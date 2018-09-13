@@ -32,7 +32,7 @@ namespace NSE_SIMPLE {
     /// </summary>
     class NusseltNumber {
 
-        GridData GridDat;
+        IGridData GridDat;
 
         SinglePhaseField Temperature;
         SinglePhaseField dTdx;
@@ -47,7 +47,7 @@ namespace NSE_SIMPLE {
         /// <param name="Temperature"></param>
         /// <param name="EoS"></param>
         /// <param name="edgeTagNames"></param>
-        public NusseltNumber(GridData GridDat, SinglePhaseField Temperature, MaterialLaw EoS, string[] edgeTagNames) {
+        public NusseltNumber(IGridData GridDat, SinglePhaseField Temperature, MaterialLaw EoS, string[] edgeTagNames) {
             this.GridDat = GridDat;
             this.Temperature = Temperature;
 
@@ -60,7 +60,7 @@ namespace NSE_SIMPLE {
             Nusselt = new double[edgeTagNames.Length];
 
             for (int bc = 0; bc < edgeTagNames.Length; bc++) {
-                NusseltIntegrals[bc] = new EdgeIntegral(GridDat,
+                NusseltIntegrals[bc] = new EdgeIntegral((BoSSS.Foundation.Grid.Classic.GridData)GridDat,
                     edgeTagNames[bc],
                     new NusseltFlux2D(EoS),
                     new CoordinateMapping(dTdx, dTdy, Temperature),

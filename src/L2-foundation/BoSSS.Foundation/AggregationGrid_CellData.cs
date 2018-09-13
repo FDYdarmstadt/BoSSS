@@ -23,6 +23,7 @@ using BoSSS.Foundation.Grid.RefElements;
 using BoSSS.Platform.Utils.Geom;
 using ilPSP;
 using System.Diagnostics;
+using ilPSP.Utils;
 
 namespace BoSSS.Foundation.Grid.Aggregation {
     partial class AggregationGrid {
@@ -78,9 +79,9 @@ namespace BoSSS.Foundation.Grid.Aggregation {
                 }
             }
 
-            public int NoOfCells {
+            public int Count {
                 get {
-                    return m_Owner.ParentGrid.iGeomCells.NoOfCells;
+                    return m_Owner.ParentGrid.iGeomCells.Count;
                 }
             }
 
@@ -96,8 +97,42 @@ namespace BoSSS.Foundation.Grid.Aggregation {
                 }
             }
 
+            public int[] GeomCell2LogicalCell {
+                get;
+                internal set;
+            }
+
+            public int NoOfLocalUpdatedCells {
+                get {
+                    return m_Owner.ParentGrid.iGeomCells.NoOfLocalUpdatedCells;
+                }
+            }
+
             public void GetCellBoundingBox(int j, BoundingBox bb) {
                 m_Owner.ParentGrid.iGeomCells.GetCellBoundingBox(j, bb);
+            }
+
+
+            CellMask[] m_Cells4Refelement;
+
+            public GeomCellData() {
+            }
+
+            public CellMask GetCells4Refelement(RefElement Kref) {
+                int iKref = Array.IndexOf(this.RefElements, Kref);
+
+                if (m_Cells4Refelement == null) {
+                    m_Cells4Refelement = new CellMask[this.RefElements.Length];
+                }
+
+                if(m_Cells4Refelement[iKref] == null) { 
+                    var OrgMsk = m_Owner.ParentGrid.iGeomCells.GetCells4Refelement(Kref);
+                    Debug.Assert(OrgMsk.MaskType == MaskType.Geometrical);
+                    Debug.Assert(object.ReferenceEquals(OrgMsk.GridData, m_Owner.ParentGrid));
+
+                    m_Cells4Refelement[iKref] = new CellMask(m_Owner, OrgMsk, MaskType.Geometrical);
+                }
+                return m_Cells4Refelement[iKref];
             }
 
             public CellType GetCellType(int jCell) {
@@ -120,8 +155,32 @@ namespace BoSSS.Foundation.Grid.Aggregation {
                 return m_Owner.ParentGrid.iGeomCells.GetRefElementIndex(jCell);
             }
 
+            /// <summary>
+            /// Always false for aggregation grids, since they require the orthonormalization (<see cref="BasisData.OrthonormalizationTrafo"/>) in each geometrical cell.
+            /// </summary>
+            /// <param name="j">
+            /// Geometric cell index
+            /// </param>
+            /// <returns>
+            /// always false
+            /// </returns>
             public bool IsCellAffineLinear(int j) {
-                return m_Owner.ParentGrid.iGeomCells.IsCellAffineLinear(j);
+                if (j < 0)
+                    throw new IndexOutOfRangeException();
+                if( j >= Count)
+                    throw new IndexOutOfRangeException();
+                return false; 
+            }
+
+            public int GetInterpolationDegree(int jCell) {
+                return m_Owner.ParentGrid.iGeomCells.GetInterpolationDegree(jCell);
+            }
+
+            /// <summary>
+            /// Center-of-gravity
+            /// </summary>
+            public double[] GetCenter(int jCell) {
+                return m_Owner.ParentGrid.iGeomCells.GetCenter(jCell);
             }
         }
 
@@ -151,7 +210,7 @@ namespace BoSSS.Foundation.Grid.Aggregation {
                 internal set;
             }
 
-            public int NoOfCells {
+            public int Count {
                 get {
                     return NoOfLocalUpdatedCells + NoOfExternalCells;
                 }
@@ -195,12 +254,40 @@ namespace BoSSS.Foundation.Grid.Aggregation {
                 throw new NotImplementedException();
             }
 
+            public int GetInterpolationDegree(int j) {
+                int r = int.MinValue;
+                foreach(int jPart in AggregateCellToParts[j]) {
+                    r = Math.Max(r, m_Owner.m_GeomCellData.GetInterpolationDegree(j));
+                }
+                return r;
+            }
+
             public bool IsCellAffineLinear(int j) {
                 bool ret = true;
                 foreach(int jPart in AggregateCellToParts[j]) {
                     ret &= m_Owner.m_GeomCellData.IsCellAffineLinear(j);
                 }
                 return ret;
+            }
+
+            /// <summary>
+            /// Center-of-gravity
+            /// </summary>
+            public double[] GetCenter(int jCell) {
+                int D = m_Owner.SpatialDimension;
+                double VolAcc = 0.0;
+                double[] CenAcc = new double[D];
+
+                foreach (int jG in this.AggregateCellToParts[jCell]) {
+                    double Vol = m_Owner.m_GeomCellData.GetCellVolume(jG);
+                    var g_cent = m_Owner.m_GeomCellData.GetCenter(jG);
+
+                    VolAcc += Vol;
+                    CenAcc.AccV(Vol, g_cent);
+                }
+
+                CenAcc.ScaleV(1 / VolAcc);
+                return CenAcc;
             }
         }
 

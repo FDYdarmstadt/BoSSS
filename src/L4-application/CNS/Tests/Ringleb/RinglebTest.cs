@@ -129,7 +129,7 @@ namespace CNS.Tests.Ringleb {
             /// </summary>
             /// <param name="gridData"></param>
             /// <param name="control"></param>
-            public RinglebBoundaryConditionMap(GridData gridData, RinglebControl control)
+            public RinglebBoundaryConditionMap(IGridData gridData, RinglebControl control)
                 : base(gridData, control) {
                 this.ringlebControl = control;
             }

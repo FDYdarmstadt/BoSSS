@@ -38,7 +38,7 @@ namespace CNS.Diffusion {
 
         private IBoundaryConditionMap boundaryMap;
 
-        private GridData gridDat;
+        private IGridData gridDat;
 
         public bool AdiabaticWall { get; set; }
 
@@ -70,7 +70,7 @@ namespace CNS.Diffusion {
             }
         }
 
-        public OptimizedSIPGEnergyFlux(CNSControl config, IBoundaryConditionMap boundaryMap, ISpeciesMap speciesMap, GridData gridData, Func<MultidimensionalArray> cellMetricFunc) {
+        public OptimizedSIPGEnergyFlux(CNSControl config, IBoundaryConditionMap boundaryMap, ISpeciesMap speciesMap, IGridData gridData, Func<MultidimensionalArray> cellMetricFunc) {
             this.config = config;
             this.speciesMap = speciesMap;
             this.boundaryMap = boundaryMap;
@@ -82,7 +82,7 @@ namespace CNS.Diffusion {
             double p = new int[] { config.DensityDegree, config.MomentumDegree, config.EnergyDegree }.Max();
             penaltyFactor = config.SIPGPenaltyScaling * p * p;
 
-            foreach (byte edgeTag in gridData.Edges.EdgeTags) {
+            foreach (byte edgeTag in gridData.iGeomEdges.EdgeTags) {
                 if (boundaryMap.EdgeTagNames[edgeTag].StartsWith("adiabaticWall", StringComparison.InvariantCultureIgnoreCase)) {
                     edgeTagBool[edgeTag] = true;
                 } else {
@@ -335,11 +335,13 @@ namespace CNS.Diffusion {
             double[,] GradU_in = new double[dimension, NumOfArguments];
             double[,] GradU_ot = new double[dimension, NumOfArguments];
 
+            int[,] E2Cl = gridDat.iGeomEdges.LogicalCellIndices;
+
             for (int cell = 0; cell < NumOfCells; cell++) { // loop over cells...
                 int iEdge = efp.e0 + cell;
                 //double Penalty = penalty(gridDat.Edges.CellIndices[iEdge, 0], gridDat.Edges.CellIndices[iEdge, 1], gridDat.Cells.cj);
-                int jCellIn = gridDat.Edges.CellIndices[iEdge, 0];
-                int jCellOut = gridDat.Edges.CellIndices[iEdge, 1];
+                int jCellIn = E2Cl[iEdge, 0];
+                int jCellOut = E2Cl[iEdge, 1];
                 double Penalty = penaltyFactor * Math.Max(cellMetric[jCellIn], cellMetric[jCellOut]);
                 if (EVIL_HACK_CELL_INDEX >= 0) {
                     Penalty = penaltyFactor * cellMetric[EVIL_HACK_CELL_INDEX];
@@ -442,10 +444,12 @@ namespace CNS.Diffusion {
             StateVector stateIn;
             StateVector stateOut;
 
+            int[,] E2Cl = gridDat.iGeomEdges.LogicalCellIndices;
+
             for (int cell = 0; cell < NumOfCells; cell++) { // loop over cells...
                 int iEdge = efp.e0 + cell;
                 //double Penalty = penalty(gridDat.Edges.CellIndices[iEdge, 0], gridDat.Edges.CellIndices[iEdge, 1], gridDat.Cells.cj);
-                int jCellIn = gridDat.Edges.CellIndices[iEdge, 0];
+                int jCellIn = E2Cl[iEdge, 0];
                 double Penalty = penaltyFactor * cellMetric[jCellIn];
 
                 for (int node = 0; node < NumOfNodes; node++) { // loop over nodes...

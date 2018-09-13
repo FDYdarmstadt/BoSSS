@@ -44,6 +44,16 @@ SSH.Net:				BSD-licence
 SharpSSH:				BSD-Licence (3-clause)
 SLN-Tools:				MIT-licence
 Zlib:					LibPNG-Licence
+Css-Loader:             MIT-licence
+Electron:               MIT-licence
+Electron-Edge-Js:       ApacheV2-licence
+Markdown-js:            MIT-licence
+Mathjax-Electron:       MIT-licence
+Monaco-Editor:          MIT-licence
+Split.js:               MIT-licence
+Style-loader:           MIT-licence
+Webpack-Cli             MIT-licence
+Webpack:                MIT-licence
 
 http://www.libpng.org/pub/png/src/libpng-LICENSE.txt
 https://www.gnu.org/licenses/lgpl-3.0.de.html

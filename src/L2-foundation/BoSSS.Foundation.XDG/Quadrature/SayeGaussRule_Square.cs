@@ -15,111 +15,94 @@ using System.Collections;
 
 namespace BoSSS.Foundation.XDG.Quadrature
 {
-
-    /// <summary>
-    /// Gauss rules for \f$ \int_{\frakA \cap K_j } \ldots \dV \f$ in the 2D case
-    /// </summary>
-    public class SayeGaussRule_Volume2D :
-        SayeFactory_Square
-    {
-        public SayeGaussRule_Volume2D(LevelSetTracker.LevelSetData _lsData, IRootFindingAlgorithm RootFinder) :
-            base(_lsData, RootFinder, QuadratureMode.Volume)
-        {
-        }
-    }
-
-    /// <summary>
-    /// Gauss rules for \f$ \oint_{\frakI \cap K_j } \ldots \dS \f$ in the 2D case
-    /// </summary>
-    public class SayeGaussRule_LevelSet2D :
-        SayeFactory_Square
-    {
-        public SayeGaussRule_LevelSet2D(LevelSetTracker.LevelSetData _lsData, IRootFindingAlgorithm RootFinder) :
-            base(_lsData, RootFinder, QuadratureMode.Surface)
-        {
-        }
-    }
-
     public class SayeFactory_Square :
-        SayeIntegrand<LinearPSI<Square>, SayeSquare>,
-        IQuadRuleFactory<QuadRule>
+        SayeComboIntegrand<LinearPSI<Square>, SayeSquare>,
+        ISayeGaussRule<LinearPSI<Square>, SayeSquare>
     {
         LevelSetTracker.LevelSetData lsData;
 
         IRootFindingAlgorithm rootFinder;
 
-        int order;
-
         IGridData grid;
 
         int iKref;
 
-        public enum QuadratureMode { Surface, Volume };
+        public enum QuadratureMode { Surface, PositiveVolume, NegativeVolume };
 
-        QuadratureMode mode; 
+
+        QuadratureMode quadratureMode;
 
         public SayeFactory_Square(
             LevelSetTracker.LevelSetData _lsData, 
             IRootFindingAlgorithm RootFinder,
-            QuadratureMode Mode)
+            QuadratureMode Mode
+            )
         {
             this.lsData = _lsData;
             this.rootFinder = RootFinder;
-            mode = Mode;
+            quadratureMode = Mode;
+            grid = lsData.GridDat;
+            iKref = lsData.GridDat.iGeomCells.RefElements.IndexOf(this.RefElement, (A, B) => object.ReferenceEquals(A, B));
+
         }
 
-        SayeSquare CreateStartSetup()
-        {
-            bool IsSurfaceIntegral = (mode == QuadratureMode.Surface);
+        #region ISayeGaussRule<LinearPSI<Square>, SayeSquare>
 
+        public int order { get; set; }
+
+        public SayeSquare CreateStartSetup()
+        {
+            bool IsSurfaceIntegral = ( quadratureMode == QuadratureMode.Surface );
+            int domainSign = ( quadratureMode == QuadratureMode.NegativeVolume ) ? -1 : 1;
             LinearPSI<Square> psi = new LinearPSI<Square>(Square.Instance);
-            Tuple<LinearPSI<Square>, int> psi_i_s_i = new Tuple<LinearPSI<Square>, int>(psi, 1);
+            Tuple<LinearPSI<Square>, int> psi_i_s_i = new Tuple<LinearPSI<Square>, int>(psi, domainSign);
             SayeSquare arg = new SayeSquare(psi_i_s_i, IsSurfaceIntegral);
             arg.Reset();
             return arg;
         }
 
-        #region IQaudRuleFactory<QuadRule>
+//<<<<<<< HEAD
+//        #region IQaudRuleFactory<QuadRule>
 
-        public IEnumerable<IChunkRulePair<QuadRule>> GetQuadRuleSet(ExecutionMask mask, int Order)
-        {
-            order = Order;
-            QuadRule gaussRule_1D = Line.Instance.GetQuadratureRule(Order);
-            var result = new List<ChunkRulePair<QuadRule>>();
-            grid = mask.GridData;
-            iKref = mask.GridData.iGeomCells.RefElements.IndexOf(this.RefElement, (A, B) => object.ReferenceEquals(A, B));
+//        public IEnumerable<IChunkRulePair<QuadRule>> GetQuadRuleSet(ExecutionMask mask, int Order)
+//        {
+//            if (mask.MaskType != MaskType.Geometrical)
+//                throw new ArgumentException("Expecting a geometrical mask.");
 
-            int number = 0;
-            Stopwatch stopWatch = new Stopwatch();
-            stopWatch.Start();
-            //Find quadrature nodes and weights in each cell/chunk
-            foreach (Chunk chunk in mask)
-            {
-                foreach (int cell in chunk.Elements)
-                {
-                    SayeSquare arg = CreateStartSetup();
-                    QuadRule sayeRule = this.Evaluate(cell, arg);
-                    ChunkRulePair<QuadRule> sayePair = new ChunkRulePair<QuadRule>(Chunk.GetSingleElementChunk(cell), sayeRule);
-                    result.Add(sayePair);
-                    ++number;
-                }
-            }
-            stopWatch.Stop();
-            long ts = stopWatch.ElapsedMilliseconds;
-            Console.WriteLine("Number Of Cells " + number);
-            Console.WriteLine("RunTime " + ts + "ms");
-            return result;
-        }
+//            order = Order;
+//            QuadRule gaussRule_1D = Line.Instance.GetQuadratureRule(Order);
+//            var result = new List<ChunkRulePair<QuadRule>>();
+//            grid = mask.GridData;
+//            iKref = mask.GridData.iGeomCells.RefElements.IndexOf(this.RefElement, (A, B) => object.ReferenceEquals(A, B));
 
+//            int number = 0;
+//            Stopwatch stopWatch = new Stopwatch();
+//            stopWatch.Start();
+//            //Find quadrature nodes and weights in each cell/chunk
+//            foreach (Chunk chunk in mask)
+//            {
+//                foreach (int cell in chunk.Elements)
+//                {
+//                    SayeSquare arg = CreateStartSetup();
+//                    QuadRule sayeRule = this.Evaluate(cell, arg);
+//                    ChunkRulePair<QuadRule> sayePair = new ChunkRulePair<QuadRule>(Chunk.GetSingleElementChunk(cell), sayeRule);
+//                    result.Add(sayePair);
+//                    ++number;
+//                }
+//            }
+//            stopWatch.Stop();
+//            long ts = stopWatch.ElapsedMilliseconds;
+//            Console.WriteLine("Number Of Cells " + number);
+//            Console.WriteLine("RunTime " + ts + "ms");
+//            return result;
+//        }
+
+//=======
+//>>>>>>> experimental/master
         public RefElement RefElement {
             get {
                 return Square.Instance;
             }
-        }
-
-        public int[] GetCachedRuleOrders()
-        {
-            throw new NotImplementedException();
         }
 
         #endregion

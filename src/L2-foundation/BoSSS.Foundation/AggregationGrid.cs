@@ -25,6 +25,7 @@ using BoSSS.Foundation.Comm;
 using BoSSS.Platform;
 using System.Diagnostics;
 using BoSSS.Foundation.Caching;
+using System.Collections;
 
 namespace BoSSS.Foundation.Grid.Aggregation {
     public partial class AggregationGrid : IGridData {
@@ -58,14 +59,14 @@ namespace BoSSS.Foundation.Grid.Aggregation {
         /// <summary>
         /// The ancestor grid, from which the aggregation sequence was derived.
         /// </summary>
-        public IGridData AncestorGrid {
+        public GridData AncestorGrid {
             get {
                 if(ParentGrid is AggregationGrid) {
-                    IGridData Ancestor = ((AggregationGrid)ParentGrid).AncestorGrid;
-                    Debug.Assert(this.iGeomCells.NoOfCells == Ancestor.iGeomCells.NoOfCells);
+                    GridData Ancestor = ((AggregationGrid)ParentGrid).AncestorGrid;
+                    Debug.Assert(this.iGeomCells.Count == Ancestor.iGeomCells.Count);
                     return Ancestor;
                 } else {
-                    return ParentGrid;
+                    return (GridData) ParentGrid;
                 }
             }
         }
@@ -101,6 +102,15 @@ namespace BoSSS.Foundation.Grid.Aggregation {
             private set;
         }
 
+        /// <summary>
+        /// The global ID for each cell
+        /// </summary>
+        public Permutation CurrentGlobalIdPermutation {
+            get {
+                throw new NotImplementedException();
+            }
+        }
+
 
         /// <summary>
         /// Constructor.
@@ -118,12 +128,12 @@ namespace BoSSS.Foundation.Grid.Aggregation {
             ParentGrid = pGrid;
 
             int JlocFine = pGrid.iLogicalCells.NoOfLocalUpdatedCells;
-            int JElocFine = pGrid.iLogicalCells.NoOfCells;
+            int JElocFine = pGrid.iLogicalCells.Count;
 
             m_GeomCellData = new GeomCellData() { m_Owner = this };
             m_LogicalCellData = new LogicalCellData() { m_Owner = this };
             m_GeomEdgeData = new GeomEdgeData() { m_Owner = this };
-            m_LogEdgeData = new LogEdgeData();
+            m_LogEdgeData = new LogEdgeData(this);
             m_VertexData = new VertexData();
             m_Parallel = new Parallelization() { m_owner = this };
             
@@ -134,6 +144,9 @@ namespace BoSSS.Foundation.Grid.Aggregation {
             BuildNeighborship(AggregationCells);
             DefineCellParts();
             CollectEdges();
+            m_GeomEdgeData.CollectGeomEdges2logCells();
+
+            m_ChefBasis = new _BasisData(this);
         }
 
 
@@ -142,7 +155,7 @@ namespace BoSSS.Foundation.Grid.Aggregation {
             int[] F2C = this.jCellFine2jCellCoarse;
             
             int JlocCoarse = iLogicalCells.NoOfLocalUpdatedCells;
-            int JElocCoarse = iLogicalCells.NoOfCells;
+            int JElocCoarse = iLogicalCells.Count;
 
             // collect edges
             // =========================
@@ -161,86 +174,92 @@ namespace BoSSS.Foundation.Grid.Aggregation {
             int[,] E2Cfine = ParentGrid.iLogicalEdges.CellIndices;
             int NoOfEdgesFine = ParentGrid.iLogicalEdges.Count;
             int[][] FineLogicalToGeom = ParentGrid.iLogicalEdges.EdgeToParts;
-            for(int iEdgeFine = 0; iEdgeFine < NoOfEdgesFine; iEdgeFine++) { // loop over all logical edges in the fine grid.
+            for (int iEdgeFine = 0; iEdgeFine < NoOfEdgesFine; iEdgeFine++) { // loop over all logical edges in the fine grid.
                 int jCellFine1 = E2Cfine[iEdgeFine, 0];
                 int jCellFine2 = E2Cfine[iEdgeFine, 1];
 
                 int jCellCoarse1 = F2C[jCellFine1];
                 int jCellCoarse2 = jCellFine2 >= 0 ? F2C[jCellFine2] : -7544890;
 
+                if (jCellCoarse1 != jCellCoarse2) {
 
-                if (jCellCoarse2 >= 0) {
-                    // +++++++++++++
-                    // internal edge
-                    // +++++++++++++
 
-                    // does the edge exists already?
-                    EdgeTmp edgTmp = null;
-                    foreach (int i in tmpC2E[jCellCoarse1]) {
-                        int iEdge = Math.Abs(i) - 1;
-                        EdgeTmp _edgTmp = tmpEdges[iEdge];
-                        if (   (_edgTmp.jCell1 == jCellCoarse1 && _edgTmp.jCell2 == jCellCoarse2) 
-                            || (_edgTmp.jCell2 == jCellCoarse1 && _edgTmp.jCell1 == jCellCoarse2)) {
-                            edgTmp = _edgTmp;
-                            break;
+                    if (jCellCoarse2 >= 0) {
+                        // +++++++++++++
+                        // internal edge
+                        // +++++++++++++
+
+                        // does the edge exists already?
+                        EdgeTmp edgTmp = null;
+                        foreach (int i in tmpC2E[jCellCoarse1]) {
+                            int iEdge = Math.Abs(i) - 1;
+                            EdgeTmp _edgTmp = tmpEdges[iEdge];
+                            if ((_edgTmp.jCell1 == jCellCoarse1 && _edgTmp.jCell2 == jCellCoarse2)
+                                || (_edgTmp.jCell2 == jCellCoarse1 && _edgTmp.jCell1 == jCellCoarse2)) {
+                                edgTmp = _edgTmp;
+                                break;
+                            }
                         }
-                    }
 
-                    // allocate edge structure 
-                    if (edgTmp == null) {
-                        edgTmp = new EdgeTmp();
-                        edgTmp.jCell1 = jCellCoarse1;
-                        edgTmp.jCell2 = jCellCoarse2;
-                        tmpEdges.Add(edgTmp);
-                        tmpC2E[jCellCoarse1].Add(+tmpEdges.Count); // rem.: edge index shifted by 1, 
-                        tmpC2E[jCellCoarse2].Add(-tmpEdges.Count); // sign denotes in resp. out - cell.
-                    }
+                        // allocate edge structure 
+                        if (edgTmp == null) {
+                            edgTmp = new EdgeTmp();
+                            edgTmp.jCell1 = jCellCoarse1;
+                            edgTmp.jCell2 = jCellCoarse2;
 
-                    // add edge parts
-                    int[] FineL2G = null; // logical-to-geometrical edge translation on the fine grid.
-                    if (FineLogicalToGeom != null) {
-                        FineL2G = FineLogicalToGeom[iEdgeFine];
-                    }
-                    if (FineL2G == null) {
-                        FineL2G = new int[] { iEdgeFine };
-                    }
-                    edgTmp.LogicalToGeometricalMap.AddRange(FineL2G);
+                            Debug.Assert(edgTmp.jCell1 != edgTmp.jCell2);
 
-                } else {
-                    // +++++++++++++
-                    // boundary edge
-                    // +++++++++++++
-
-
-                    // does the edge exists already?
-                    EdgeTmp edgTmp = null;
-                    foreach (int i in tmpC2E[jCellCoarse1]) {
-                        int iEdge = Math.Abs(i) - 1;
-                        EdgeTmp _edgTmp = tmpEdges[iEdge];
-                        if (_edgTmp.jCell1 == jCellCoarse1 && _edgTmp.jCell2 < 0) {
-                            edgTmp = _edgTmp;
-                            break;
+                            tmpEdges.Add(edgTmp);
+                            tmpC2E[jCellCoarse1].Add(+tmpEdges.Count); // rem.: edge index shifted by 1, 
+                            tmpC2E[jCellCoarse2].Add(-tmpEdges.Count); // sign denotes in resp. out - cell.
                         }
-                    }
 
-                    // allocate edge structure 
-                    if (edgTmp == null) {
-                        edgTmp = new EdgeTmp();
-                        edgTmp.jCell1 = jCellCoarse1;
-                        edgTmp.jCell2 = jCellCoarse2;
-                        tmpEdges.Add(edgTmp);
-                        tmpC2E[jCellCoarse1].Add(+tmpEdges.Count); // rem.: edge index shifted by 1, 
-                    }
+                        // add edge parts
+                        int[] FineL2G = null; // logical-to-geometrical edge translation on the fine grid.
+                        if (FineLogicalToGeom != null) {
+                            FineL2G = FineLogicalToGeom[iEdgeFine];
+                        }
+                        if (FineL2G == null) {
+                            FineL2G = new int[] { iEdgeFine };
+                        }
+                        edgTmp.LogicalToGeometricalMap.AddRange(FineL2G);
 
-                    // add edge parts
-                    int[] FineL2G = null; // logical-to-geometrical edge translation on the fine grid.
-                    if (FineLogicalToGeom != null) {
-                        FineL2G = FineLogicalToGeom[iEdgeFine];
+                    } else {
+                        // +++++++++++++
+                        // boundary edge
+                        // +++++++++++++
+
+
+                        // does the edge exists already?
+                        EdgeTmp edgTmp = null;
+                        foreach (int i in tmpC2E[jCellCoarse1]) {
+                            int iEdge = Math.Abs(i) - 1;
+                            EdgeTmp _edgTmp = tmpEdges[iEdge];
+                            if (_edgTmp.jCell1 == jCellCoarse1 && _edgTmp.jCell2 < 0) {
+                                edgTmp = _edgTmp;
+                                break;
+                            }
+                        }
+
+                        // allocate edge structure 
+                        if (edgTmp == null) {
+                            edgTmp = new EdgeTmp();
+                            edgTmp.jCell1 = jCellCoarse1;
+                            edgTmp.jCell2 = jCellCoarse2;
+                            tmpEdges.Add(edgTmp);
+                            tmpC2E[jCellCoarse1].Add(+tmpEdges.Count); // rem.: edge index shifted by 1, 
+                        }
+
+                        // add edge parts
+                        int[] FineL2G = null; // logical-to-geometrical edge translation on the fine grid.
+                        if (FineLogicalToGeom != null) {
+                            FineL2G = FineLogicalToGeom[iEdgeFine];
+                        }
+                        if (FineL2G == null) {
+                            FineL2G = new int[] { iEdgeFine };
+                        }
+                        edgTmp.LogicalToGeometricalMap.AddRange(FineL2G);
                     }
-                    if (FineL2G == null) {
-                        FineL2G = new int[] { iEdgeFine };
-                    }
-                    edgTmp.LogicalToGeometricalMap.AddRange(FineL2G);
                 }
             }
 
@@ -268,8 +287,33 @@ namespace BoSSS.Foundation.Grid.Aggregation {
                 E2C[e, 0] = eTmp.jCell1;
                 E2C[e, 1] = eTmp.jCell2;
             }
+
+
+#if DEBUG
+            {
+                // test if the logical edges match the geometrical ones 
+
+                bool[] geomMarker = new bool[iGeomEdges.Count];
+                for (int iEdge = 0; iEdge < iLogicalEdges.Count; iEdge++) {
+                    foreach (int iGE in iLogicalEdges.EdgeToParts[iEdge]) {
+                        Debug.Assert(geomMarker[iGE] == false, "geometrical edge referenced by two different logical edges");
+                        geomMarker[iGE] = true;
+                    }
+                }
+                //for (int iGE = 0; iGE < iGeomEdges.Count; iGE++) {
+                //    Debug.Assert(geomMarker[iGE] == true, "unreferenced geometrical edge");
+                //}
+            }
+#endif
         }
 
+
+        
+
+
+        /// <summary>
+        /// helper data structure
+        /// </summary>
         class EdgeTmp {
             public int jCell1;
             public int jCell2;
@@ -303,11 +347,18 @@ namespace BoSSS.Foundation.Grid.Aggregation {
         private void DefineCellParts() {
             IGridData pGrid = ParentGrid;
             int J = this.iLogicalCells.NoOfLocalUpdatedCells;
-            int JE = this.iLogicalCells.NoOfCells;
+            int JE = this.iLogicalCells.Count;
 
             m_LogicalCellData.AggregateCellToParts = new int[JE][];
-            var AggPartC = m_LogicalCellData.AggregateCellToParts;
-            var AggPartF = pGrid.iLogicalCells.AggregateCellToParts;
+            m_GeomCellData.GeomCell2LogicalCell = new int[pGrid.iGeomCells.Count];
+
+            int[][] AggPartC = m_LogicalCellData.AggregateCellToParts;
+            int[][] AggPartF = pGrid.iLogicalCells.AggregateCellToParts; // aggregate-to-geometric on parent grid
+            int[] Geom2Agg = m_GeomCellData.GeomCell2LogicalCell;
+#if DEBUG
+            ArrayTools.SetAll(Geom2Agg, -1);
+#endif
+
             List<int> tmp = new List<int>();
             for (int j = 0; j < JE; j++) { // loop over coarse/this cells
                 tmp.Clear();
@@ -326,14 +377,24 @@ namespace BoSSS.Foundation.Grid.Aggregation {
                 }
 
                 AggPartC[j] = tmp.ToArray();
+                foreach(int jGeom in AggPartC[j]) {
+#if DEBUG
+                    Debug.Assert(Geom2Agg[jGeom] < 0);
+#endif
+                    Geom2Agg[jGeom] = j;
+                }
             }
+
+#if DEBUG
+            Debug.Assert(Geom2Agg.Where(i => i < 0).Count() == 0);
+#endif
         }
 
         private void BuildNeighborship(int[][] AggregationCells) {
             IGridData pGrid = ParentGrid;
             int j0Coarse = CellPartitioning.i0;
             int JlocCoarse = CellPartitioning.LocalLength;
-            int JElocFine = pGrid.iLogicalCells.NoOfCells;
+            int JElocFine = pGrid.iLogicalCells.Count;
             int JlocFine = pGrid.iLogicalCells.NoOfLocalUpdatedCells;
 
             // compute fine-to-coarse mapping
@@ -588,12 +649,7 @@ namespace BoSSS.Foundation.Grid.Aggregation {
             ParentGrid.TransformGlobal2Local(GlobalVerticesIn, LocalVerticesOut, jCell, NewtonConvergence);
         }
 
-        public GridData.BasisData ChefBasis {
-            get {
-                throw new NotImplementedException();
-            }
-        }
-
+        
         public CacheLogicImplBy_CNs InverseJacobian {
             get {
                 return ParentGrid.InverseJacobian;

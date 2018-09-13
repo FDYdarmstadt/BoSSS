@@ -377,7 +377,7 @@ namespace BoSSS.Foundation.Grid.Classic {
             // mapping: cell --> Neighbour cell index, face index
             // 1st index: Cell index;
             // 2nd index: enumeration
-            List<Tuple<int, int>>[] FoundPairings = new List<Tuple<int, int>>[gdat.Cells.NoOfCells];
+            List<Tuple<int, int>>[] FoundPairings = new List<Tuple<int, int>>[gdat.Cells.Count];
 
             int[][] C2E = gdat.Cells.Cells2Edges;
             byte[,] E2F = gdat.Edges.FaceIndices;
