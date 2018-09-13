@@ -37,9 +37,9 @@ namespace CNS.Diffusion {
 
         public bool AdiabaticWall { get; set; }
 
-        private GridData gridData;
+        private IGridData gridData;
 
-        public OptimizedSIPGDensityFlux(CNSControl config, IBoundaryConditionMap boundaryMap, ISpeciesMap speciesMap, GridData gridData, Func<MultidimensionalArray> cellMetric) {
+        public OptimizedSIPGDensityFlux(CNSControl config, IBoundaryConditionMap boundaryMap, ISpeciesMap speciesMap, IGridData gridData, Func<MultidimensionalArray> cellMetric) {
             this.config = config;
             this.speciesMap = speciesMap;
             this.boundaryMap = boundaryMap;

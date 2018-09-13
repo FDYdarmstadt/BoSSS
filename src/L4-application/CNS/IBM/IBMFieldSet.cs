@@ -49,7 +49,7 @@ namespace CNS.IBM {
         /// </summary>
         /// <param name="gridData"></param>
         /// <param name="config"></param>
-        public IBMFieldSet(GridData gridData, IBMControl config)
+        public IBMFieldSet(IGridData gridData, IBMControl config)
             : base(gridData, config) {
             this.config = config;
 
@@ -68,7 +68,7 @@ namespace CNS.IBM {
             }
         }
 
-        private IBMFieldSet(GridData gridData, CNSControl config, IBMFieldSet template)
+        private IBMFieldSet(IGridData gridData, CNSControl config, IBMFieldSet template)
             : base(gridData, config, template) {
             LevelSet = template.LevelSet.CloneAs();
         }

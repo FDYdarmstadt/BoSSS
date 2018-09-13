@@ -42,7 +42,7 @@ namespace BoSSS.Foundation.Quadrature {
     public interface IQuadRuleFactory<out TQuadRule> where TQuadRule : QuadRule {
 
         /// <summary>
-        /// The simplex to be integrated over.
+        /// The reference element to be integrated over.
         /// </summary>
         Grid.RefElements.RefElement RefElement {
             get;

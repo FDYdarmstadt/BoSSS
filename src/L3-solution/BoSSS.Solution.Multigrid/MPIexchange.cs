@@ -53,7 +53,7 @@ namespace BoSSS.Solution.Multigrid {
             // =========
 
             IGridData master = map.AggGrid;
-            int J = master.iLogicalCells.NoOfCells;
+            int J = master.iLogicalCells.Count;
             if (vector.Count != map.LocalLength)
                 throw new ArgumentException("wrong length of input vector.");
 
@@ -350,7 +350,7 @@ namespace BoSSS.Solution.Multigrid {
             // =========
 
             IGridData master = map.AggGrid;
-            int J = master.iLogicalCells.NoOfCells;
+            int J = master.iLogicalCells.Count;
             if (vector.Count != map.LocalLength)
                 throw new ArgumentException("wrong length of input vector.");
 

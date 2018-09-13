@@ -12,38 +12,13 @@ using ilPSP;
 
 namespace BoSSS.Foundation.XDG.Quadrature
 {
-    /// <summary>
-    /// Gauss rules for \f$ \oint_{\frakI \cap K_j } \ldots \dS \f$ in the 3D case
-    /// </summary>
-    /// 
-    public class SayeGaussRule_Volume3D :
-        SayeFactory_Cube
-    {
-        public SayeGaussRule_Volume3D(LevelSetTracker.LevelSetData _lsData, IRootFindingAlgorithm RootFinder) :
-            base(_lsData, RootFinder, QuadratureMode.Volume)
-        {
-        }
-    }
-
-    public class SayeGaussRule_LevelSet3D :
-        SayeFactory_Cube
-    {
-        public SayeGaussRule_LevelSet3D(LevelSetTracker.LevelSetData _lsData, IRootFindingAlgorithm RootFinder) :
-            base(_lsData, RootFinder, QuadratureMode.Surface)
-        {
-        }
-    }
-
-
     public class SayeFactory_Cube :
-        SayeIntegrand<LinearPSI<Cube>, LinearSayeSpace<Cube>>,
-        IQuadRuleFactory<QuadRule>
+        SayeComboIntegrand<LinearPSI<Cube>, LinearSayeSpace<Cube>>,
+        ISayeGaussRule< LinearPSI<Cube>, LinearSayeSpace<Cube>>
     {
         LevelSetTracker.LevelSetData lsData;
 
         IRootFindingAlgorithm rootFinder;
-
-        int order;
 
         IGridData grid;
 
@@ -61,9 +36,15 @@ namespace BoSSS.Foundation.XDG.Quadrature
             this.lsData = _lsData;
             this.rootFinder = RootFinder;
             mode = Mode;
+            grid = lsData.GridDat;
+            iKref = lsData.GridDat.iGeomCells.RefElements.IndexOf(this.RefElement, (A, B) => object.ReferenceEquals(A, B));
         }
 
-        LinearSayeSpace<Cube> CreateStartSetup()
+        #region ISayeGaussRule< LinearPSI<Cube>, LinearSayeSpace<Cube>>
+
+        public int order { get; set; }
+
+        public LinearSayeSpace<Cube> CreateStartSetup()
         {
             bool IsSurfaceIntegral = (mode == QuadratureMode.Surface);
 
@@ -74,47 +55,48 @@ namespace BoSSS.Foundation.XDG.Quadrature
             return arg;
         }
 
-        #region IQaudRuleFactory<QuadRule>
+//<<<<<<< HEAD
+//        #region IQaudRuleFactory<QuadRule>
 
-        public IEnumerable<IChunkRulePair<QuadRule>> GetQuadRuleSet(ExecutionMask mask, int Order)
-        {
-            order = Order;
-            QuadRule gaussRule_1D = Line.Instance.GetQuadratureRule(Order);
-            var result = new List<ChunkRulePair<QuadRule>>();
-            grid = mask.GridData;
-            iKref = mask.GridData.iGeomCells.RefElements.IndexOf(this.RefElement, (A, B) => object.ReferenceEquals(A, B));
+//        public IEnumerable<IChunkRulePair<QuadRule>> GetQuadRuleSet(ExecutionMask mask, int Order)
+//        {
+//            if (mask.MaskType != MaskType.Geometrical)
+//                throw new ArgumentException("Expecting a geometrical mask.");
 
-            int number = 0;
-            Stopwatch stopWatch = new Stopwatch();
-            stopWatch.Start();
-            //Find quadrature nodes and weights in each cell/chunk
-            foreach (Chunk chunk in mask)
-            {
-                foreach (int cell in chunk.Elements)
-                {
-                    LinearSayeSpace<Cube> arg = CreateStartSetup();
-                    QuadRule sayeRule = this.Evaluate(cell, arg);
-                    ChunkRulePair<QuadRule> sayePair = new ChunkRulePair<QuadRule>(Chunk.GetSingleElementChunk(cell), sayeRule);
-                    result.Add(sayePair);
-                    ++number;
-                }
-            }
-            stopWatch.Stop();
-            long ts = stopWatch.ElapsedMilliseconds;
-            Console.WriteLine("Number Of Cells " + number);
-            Console.WriteLine("RunTime " + ts + "ms");
-            return result;
-        }
+//            order = Order;
+//            QuadRule gaussRule_1D = Line.Instance.GetQuadratureRule(Order);
+//            var result = new List<ChunkRulePair<QuadRule>>();
+//            grid = mask.GridData;
+//            iKref = mask.GridData.iGeomCells.RefElements.IndexOf(this.RefElement, (A, B) => object.ReferenceEquals(A, B));
 
+//            int number = 0;
+//            Stopwatch stopWatch = new Stopwatch();
+//            stopWatch.Start();
+//            //Find quadrature nodes and weights in each cell/chunk
+//            foreach (Chunk chunk in mask)
+//            {
+//                foreach (int cell in chunk.Elements)
+//                {
+//                    LinearSayeSpace<Cube> arg = CreateStartSetup();
+//                    QuadRule sayeRule = this.Evaluate(cell, arg);
+//                    ChunkRulePair<QuadRule> sayePair = new ChunkRulePair<QuadRule>(Chunk.GetSingleElementChunk(cell), sayeRule);
+//                    result.Add(sayePair);
+//                    ++number;
+//                }
+//            }
+//            stopWatch.Stop();
+//            long ts = stopWatch.ElapsedMilliseconds;
+//            Console.WriteLine("Number Of Cells " + number);
+//            Console.WriteLine("RunTime " + ts + "ms");
+//            return result;
+//        }
+
+//=======
+//>>>>>>> experimental/master
         public RefElement RefElement {
             get {
                 return Cube.Instance;
             }
-        }
-
-        public int[] GetCachedRuleOrders()
-        {
-            throw new NotImplementedException();
         }
 
         #endregion
@@ -416,7 +398,6 @@ namespace BoSSS.Foundation.XDG.Quadrature
             line.ProjectBasisPolynomials(levelSet.Basis);
             double[] roots = rootFinder.GetRoots(line, levelSet, cell, this.iKref);
 
-            //Check if roots are in bounds, return infinity otherwise
             return roots;
         }
 

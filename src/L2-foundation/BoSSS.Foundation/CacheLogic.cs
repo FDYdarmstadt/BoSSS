@@ -450,7 +450,7 @@ namespace BoSSS.Foundation.Caching {
         public MultidimensionalArray GetValue_Cell(NodeSet NS, int j0, int Len, int Degree) {
             if(j0 < 0) throw new ArgumentOutOfRangeException("j0", "must be greater or equal than zero.");
             if(Len < 1) throw new ArgumentOutOfRangeException("Len", "must be greater or equal than one.");
-            if((j0 + Len) > this.GridData.iGeomCells.NoOfCells)
+            if((j0 + Len) > this.GridData.iGeomCells.Count)
                 throw new ArgumentOutOfRangeException("j0 + Len exceeds the number of local cells");
             if(NS.GetNodeCoordinateSystem(this.GridData) != NodeCoordinateSystem.CellCoord)
                 throw new ArgumentException("Expecting a node set in local cell coordinate system");
@@ -752,7 +752,7 @@ namespace BoSSS.Foundation.Caching {
         public MultidimensionalArray GetValue_Cell(NodeSet NS, int j0, int Len) {
             if(j0 < 0) throw new ArgumentOutOfRangeException("j0", "must be greater or equal than zero.");
             if(Len < 1) throw new ArgumentOutOfRangeException("Len", "must be greater or equal than one.");
-            if((j0 + Len) > this.GridData.iLogicalCells.NoOfCells)
+            if((j0 + Len) > this.GridData.iLogicalCells.Count)
                 throw new ArgumentOutOfRangeException("j0 + Len exceeds the number of local cells");
             if(NS.GetNodeCoordinateSystem(this.GridData) != NodeCoordinateSystem.CellCoord)
                 throw new ArgumentException("Expecting a node set in local cell coordinate system");
@@ -1114,7 +1114,7 @@ namespace BoSSS.Foundation.Caching {
         /// </summary>
         public CacheLogicImpl_CP(IGridData g, Func<int, int, int, MultidimensionalArray> _ComputeValues) {
             this.GridData = g;
-            this.m_impl = new CorEP_logic(g.iGeomCells.NoOfCells, _ComputeValues);
+            this.m_impl = new CorEP_logic(g.iGeomCells.Count, _ComputeValues);
         }
 
 
@@ -1135,7 +1135,7 @@ namespace BoSSS.Foundation.Caching {
         /// calling <see cref="CorEP_logic.GetValue(int, int, int)"/>.
         /// </remarks>
         public MultidimensionalArray GetValue_Cell(int j0, int Len, int degree) {
-            int JE = this.GridData.iGeomCells.NoOfCells;
+            int JE = this.GridData.iGeomCells.Count;
             if(j0 < 0) throw new ArgumentOutOfRangeException("j0", "must be greater or equal than zero.");
             if(Len < 1) throw new ArgumentOutOfRangeException("Len", "must be greater or equal than one.");
             if((j0 + Len) > JE)
@@ -1211,7 +1211,7 @@ namespace BoSSS.Foundation.Caching {
         public MultidimensionalArray GetValue_Cell(int j0, int Len) {
             if(j0 < 0) throw new ArgumentOutOfRangeException("j0", "must be greater or equal than zero.");
             if(Len < 1) throw new ArgumentOutOfRangeException("Len", "must be greater or equal than one.");
-            if((j0 + Len) > this.GridData.Cells.NoOfCells)
+            if((j0 + Len) > this.GridData.Cells.Count)
                 throw new ArgumentOutOfRangeException("j0 + Len exceeds the number of local cells");
 
 #if DEBUG
