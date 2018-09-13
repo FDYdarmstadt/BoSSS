@@ -56,7 +56,8 @@ namespace MiniBatchProcessor {
         /// </summary>
         public int MaxProcessors {
             get {
-                return Math.Max(1, Environment.ProcessorCount / 2);  // most of out machines have hyper-threading
+                return 1;
+                //return Math.Max(1, Environment.ProcessorCount / 2);  // most of our machines have hyper-threading
             }
         }
 
