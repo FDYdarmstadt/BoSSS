@@ -25,6 +25,7 @@ using ilPSP.Utils;
 using ilPSP;
 using BoSSS.Foundation.Grid.RefElements;
 using BoSSS.Foundation.Grid.Aggregation;
+using ilPSP.Connectors.Matlab;
 
 namespace BoSSS.Application.SipPoisson {
 
@@ -347,8 +348,44 @@ namespace BoSSS.Application.SipPoisson {
 
             
             R.GridFunc = delegate() {
-                AggregationGrid grd = null;
+                GridCommons grd = null;
+
+                var Matlab = new BatchmodeConnector();
+
                 
+                // generate Delaunay vertices
+                Random rnd = new Random(0);
+                double[] xNodes = Res.ForLoop(idx => rnd.NextDouble());
+                double[] yNodes = Res.ForLoop(idx => rnd.NextDouble());
+
+                var Nodes = MultidimensionalArray.Create(xNodes.Length, 2);
+                Nodes.SetColumn(0, xNodes);
+                Nodes.SetColumn(1, yNodes);
+
+                Matlab.PutMatrix(Nodes, "Nodes");
+               
+                // compute Voronoi diagramm
+                Matlab.Cmd("[V, C] = voronoin(Nodes);");
+
+                // output (export from matlab)
+                int[][] OutputVertexIndex = new int[Nodes.NoOfRows][];
+                Matlab.GetStaggeredIntArray(OutputVertexIndex, "C");
+                Matlab.GetMatrix(null, "V");
+
+                 // run matlab
+                Matlab.Execute(false);
+
+                // import here
+                MultidimensionalArray VertexCoordinates = (MultidimensionalArray)(Matlab.OutputObjects["V"]);
+
+                // correct indices (1-based index to 0-based index)
+                foreach(int[] cell in OutputVertexIndex) {
+                    int K = cell.Length;
+                    for (int k = 0; k < K; k++) {
+                        cell[k]--;
+                    }
+                }
+
 
                 return grd;
             };
