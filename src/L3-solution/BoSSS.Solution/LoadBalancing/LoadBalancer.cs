@@ -16,6 +16,7 @@ limitations under the License.
 
 using BoSSS.Foundation.Grid;
 using BoSSS.Foundation.Grid.Classic;
+using BoSSS.Foundation.IO;
 using BoSSS.Solution.Control;
 using ilPSP;
 using MPI.Wrappers;
@@ -78,7 +79,7 @@ namespace BoSSS.Solution {
         /// See <see cref="Control.AppControl.DynamicLoadBalancing_Period"/>.
         /// </param>
         /// <returns></returns>
-        public int[] GetNewPartitioning(IApplication app, int performanceClassCount, int[] cellToPerformanceClassMap, int TimestepNo, GridPartType gridPartType, string PartOptions, double imbalanceThreshold, int Period, bool redistributeAtStartup) {
+        public int[] GetNewPartitioning(IApplication app, int performanceClassCount, int[] cellToPerformanceClassMap, int TimestepNo, GridPartType gridPartType, string PartOptions, double imbalanceThreshold, int Period, bool redistributeAtStartup, TimestepNumber TimestepNoRestart) {
             // Create new model if number of cell classes has changed
             for (int i = 0; i < cellCostEstimatorFactories.Count; i++) {
                 if (CurrentCellCostEstimators[i] == null
@@ -94,7 +95,8 @@ namespace BoSSS.Solution {
             }
 
             bool performPertationing;
-            if (TimestepNo == 0) {
+
+            if (TimestepNo == 0 || (TimestepNoRestart != null && TimestepNo == TimestepNoRestart.MajorNumber)) {
                 performPertationing = redistributeAtStartup;
             } else {
                 performPertationing = (Period > 0 && TimestepNo % Period == 0);

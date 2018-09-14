@@ -26,6 +26,8 @@ namespace BoSSS.Application.IBM_Solver {
         /// </summary>
         Newton = 2,
 
+        PicardGMRES = 3,
+
     }
 
     /// <summary>
@@ -97,6 +99,14 @@ namespace BoSSS.Application.IBM_Solver {
         /// ILU decomposition with modification for saddle-point (highly experimental)
         /// </summary>
         exp_ILU = 12,
+
+        exp_Schur = 13,
+        exp_localPrec = 14,
+        exp_Simple = 15,
+        exp_AS_1000 = 16,
+        exp_AS_5000 = 17,
+        exp_AS_10000 = 18,
+        exp_AS_MG = 19,
 
     }
 
