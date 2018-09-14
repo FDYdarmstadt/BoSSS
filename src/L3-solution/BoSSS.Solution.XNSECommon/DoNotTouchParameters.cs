@@ -104,6 +104,60 @@ namespace BoSSS.Solution.XNSECommon {
     }
 
 
+    /// <summary>
+    /// Options for the localization of the slip-region for the generalized navier-slip boundary condition
+    /// </summary>
+    public enum NavierSlip_Localization {
+
+        /// <summary>
+        /// GNBC on the whole boundary
+        /// </summary>
+        Bulk = 0,
+
+        /// <summary>
+        /// GNBC localized to the nearband boundary, elsewhere velocity inlet
+        /// </summary>
+        Nearband = 1,
+
+        /// <summary>
+        /// only the contact line part of GNBC
+        /// </summary>
+        ContactLine = 2,
+
+        /// <summary>
+        /// prescribed prescription of the slip length
+        /// </summary>
+        Prescribed = 3
+
+    }
+
+    /// <summary>
+    /// Options for the friction coefficient in GNBC
+    /// </summary>
+    public enum NavierSlip_SlipLength {
+
+        /// <summary>
+        /// prescribed frictions coeff from control file
+        /// </summary>
+        Prescribed_Beta = 0,
+
+        /// <summary>
+        /// prescribed slipLength from control file
+        /// </summary>
+        Prescribed_SlipLength = 1,
+
+        /// <summary>
+        /// friction coeff computed according to h_min
+        /// </summary>
+        hmin_Grid = 2,
+
+        /// <summary>
+        /// friction coeff computed according to h_min / (p + 1)
+        /// </summary>
+        hmin_DG = 3,
+
+    }
+
 
     /// <summary>
     /// 
@@ -251,6 +305,20 @@ namespace BoSSS.Solution.XNSECommon {
         [DataMember]
         public CurvatureAlgorithms.FilterConfiguration FilterConfiguration = new CurvatureAlgorithms.FilterConfiguration();
 
+
+        /// <summary>
+        /// See <see cref="NavierSlip_Localization"/>
+        /// </summary>
+        [DataMember]
+        public NavierSlip_Localization GNBC_Localization = NavierSlip_Localization.Nearband;
+
+        /// <summary>
+        /// See <see cref="NavierSlip_SlipLength"/>
+        /// </summary>
+        [DataMember]
+        public NavierSlip_SlipLength GNBC_SlipLength = NavierSlip_SlipLength.Prescribed_Beta;
+
+
         /// <summary>
         /// clone
         /// </summary>
@@ -268,7 +336,10 @@ namespace BoSSS.Solution.XNSECommon {
                 ViscosityMode = this.ViscosityMode,
                 //ViscosityImplementation = this.ViscosityImplementation,
                 UseGhostPenalties = this.UseGhostPenalties,
-                FilterConfiguration = this.FilterConfiguration
+                FilterConfiguration = this.FilterConfiguration,
+                GNBC_Localization = this.GNBC_Localization,
+                GNBC_SlipLength = this.GNBC_SlipLength
+                
             };
             return cl;
         }

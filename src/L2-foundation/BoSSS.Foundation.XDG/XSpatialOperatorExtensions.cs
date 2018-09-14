@@ -27,7 +27,7 @@ namespace BoSSS.Foundation.XDG {
             UnsetteledCoordinateMapping DomainMap, IList<DGField> Parameters, UnsetteledCoordinateMapping CodomainMap,
             M Matrix, V AffineOffset, bool OnlyAffine, double time, bool ParameterMPIExchange,
             IDictionary<SpeciesId, MultidimensionalArray> CellLengthScales,
-            IDictionary<SpeciesId, MultidimensionalArray> InterfaceLengthScales,
+            IDictionary<SpeciesId, MultidimensionalArray> InterfaceLengthScales, MultidimensionalArray SlipLengths,
             SubGrid SubGrid, params SpeciesId[] whichSpc)
             where M : IMutableMatrixEx
             where V : IList<double> //
@@ -42,7 +42,7 @@ namespace BoSSS.Foundation.XDG {
                 DomainMap, Parameters, CodomainMap,
                 Matrix, AffineOffset, OnlyAffine, time,
                 ParameterMPIExchange, SpeciesDictionary, CellLengthScales,
-                InterfaceLengthScales,
+                InterfaceLengthScales, SlipLengths,
                 //agg, out mass,
                 SubGrid);
 
@@ -58,7 +58,7 @@ namespace BoSSS.Foundation.XDG {
             M Matrix, V AffineOffset, bool OnlyAffine,
             double time, bool ParameterMPIExchange,
             IDictionary<SpeciesId, MultidimensionalArray> CellLengthScales,
-            IDictionary<SpeciesId, MultidimensionalArray> InterfaceLengthScales,
+            IDictionary<SpeciesId, MultidimensionalArray> InterfaceLengthScales, MultidimensionalArray SlipLengths,
             params SpeciesId[] whichSpc)
             where M : IMutableMatrixEx
             where V : IList<double> //
@@ -70,7 +70,7 @@ namespace BoSSS.Foundation.XDG {
                 Matrix, AffineOffset, OnlyAffine, time,
                 ParameterMPIExchange,
                 CellLengthScales,
-                InterfaceLengthScales,
+                InterfaceLengthScales, SlipLengths,
                 null, whichSpc);
         }
 
@@ -129,7 +129,7 @@ namespace BoSSS.Foundation.XDG {
                 DomainMap, Parameters, CodomainMap,
                 Matrix, AffineOffset,
                 OnlyAffine, time, MPIParameterExchange, bla,
-                dummy.CellLengthScales, Idummy, subGrid);
+                dummy.CellLengthScales, Idummy, SubGrid:subGrid);
 
             Debug.Assert(dummy.TotalNumberOfAgglomerations <= 0, "internal error");
 
@@ -145,7 +145,7 @@ namespace BoSSS.Foundation.XDG {
             UnsetteledCoordinateMapping DomainMap, IList<DGField> Parameters, UnsetteledCoordinateMapping CodomainMap,
             M Matrix, V AffineOffset, bool OnlyAffine, double time, bool MPIParameterExchange,
             IDictionary<SpeciesId, XSpatialOperator.QrSchemPair> SpeciesSchemes, IDictionary<SpeciesId, MultidimensionalArray> CellLengthScales,
-            IDictionary<SpeciesId, MultidimensionalArray> InterfaceLengthScales,
+            IDictionary<SpeciesId, MultidimensionalArray> InterfaceLengthScales, MultidimensionalArray SlipLengths = null,
             SubGrid SubGrid = null)
             where M : IMutableMatrixEx
             where V : IList<double> //
@@ -215,19 +215,10 @@ namespace BoSSS.Foundation.XDG {
                 }
                 ev.SpeciesOperatorCoefficients[s].UserDefinedValues["InterfaceLengths"] = InterfaceLengthScales[s];
 
-                MultidimensionalArray slipLengths = lsTrk.GridDat.Cells.h_min.CloneAs();
-                slipLengths.Clear();
-                double hmin = lsTrk.GridDat.Cells.h_min.To1DArray().Min();
-                int degU = DomainMap.BasisS.ToArray()[0].Degree;
-                CellMask ContactArea = lsTrk.Regions.GetNearFieldMask(1).Intersect(lsTrk.GridDat.BoundaryCells.VolumeMask);
-                foreach(Chunk cnk in ContactArea) {
-                    for(int i = cnk.i0; i < cnk.JE; i++) {
-                        slipLengths[i] = hmin / (degU + 1);
-                    }
-                }
-                ev.SpeciesOperatorCoefficients[s].UserDefinedValues["SlipLengths"] = slipLengths;
+                if(SlipLengths != null)
+                    ev.SpeciesOperatorCoefficients[s].UserDefinedValues["SlipLengths"] = SlipLengths;
             }
-
+            
 
             if(OnlyAffine)
                 ev.ComputeAffine(AffineOffset);

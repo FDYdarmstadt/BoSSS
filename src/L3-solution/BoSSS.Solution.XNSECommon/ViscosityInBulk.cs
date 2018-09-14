@@ -36,8 +36,8 @@ namespace BoSSS.Solution.XNSECommon.Operator.Viscosity {
             : base(penalty, d, D, bcMap, NSECommon.ViscosityOption.ConstantViscosity, constantViscosityValue: double.NegativeInfinity) {
             muA = _muA;
             muB = _muB;
-            //betaA = _betaA;
-            //betaB = _betaB;
+            betaA = _betaA;
+            betaB = _betaB;
             base.m_alpha = sw;
             this.m_bcMap = bcMap;
             base.velFunction = null;
@@ -125,8 +125,8 @@ namespace BoSSS.Solution.XNSECommon.Operator.Viscosity {
             : base(penalty, d, D, bcMap, NSECommon.ViscosityOption.ConstantViscosity, constantViscosityValue: double.NegativeInfinity) {
             muA = _muA;
             muB = _muB;
-            //betaA = _betaA;
-            //betaB = _betaB;
+            betaA = _betaA;
+            betaB = _betaB;
             base.m_alpha = sw;
             base.velFunction = null;
             this.m_bcMap = bcMap;

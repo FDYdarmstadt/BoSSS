@@ -276,10 +276,10 @@ namespace BoSSS.Solution.XNSECommon {
                                     // Bulk operator
                                     var Visc1 = new Operator.Viscosity.ViscosityInBulk_GradUTerm(
                                         dntParams.UseGhostPenalties ? 0.0 : penalty, 1.0,
-                                        BcMap, d, D, muA, muB); //, _betaA: this.physParams.betaS_A, _betaB: this.physParams.betaS_B);
+                                        BcMap, d, D, muA, muB, _betaA: this.physParams.betaS_A, _betaB: this.physParams.betaS_B);
                                     var Visc2 = new Operator.Viscosity.ViscosityInBulk_GradUtranspTerm(
                                         dntParams.UseGhostPenalties ? 0.0 : penalty, 1.0,
-                                        BcMap, d, D, muA, muB); //, _betaA: this.physParams.betaS_A, _betaB: this.physParams.betaS_B);
+                                        BcMap, d, D, muA, muB, _betaA: this.physParams.betaS_A, _betaB: this.physParams.betaS_B);
                                     //var Visc3 = new Operator.Viscosity.ViscosityInBulk_divTerm(dntParams.UseGhostPenalties ? 0.0 : penalty, 1.0, BcMap, d, D, muA, muB);
 
 
@@ -305,6 +305,8 @@ namespace BoSSS.Solution.XNSECommon {
 
                                     // Level-Set operator
                                     comps.Add(new Operator.Viscosity.ViscosityAtLevelSet_FullySymmetric(LsTrk, muA, muB, penalty, d));
+
+                                    //comps.Add(new Operator.Viscosity.ViscosityAtLevelSet_Slip(LsTrk, muA, muB, penalty, d));
 
                                     break;
                                 }
@@ -536,6 +538,65 @@ namespace BoSSS.Solution.XNSECommon {
 
             IDictionary<SpeciesId, MultidimensionalArray> InterfaceLengths = this.LsTrk.GetXDGSpaceMetrics(this.LsTrk.SpeciesIdS.ToArray(), CutCellQuadOrder).CutCellMetrics.InterfaceArea;
 
+
+            // advanced settings for the navier slip boundary condition
+            // ========================================================
+
+            CellMask SlipArea;
+            switch(this.dntParams.GNBC_Localization) {
+                case NavierSlip_Localization.Bulk: {
+                        SlipArea = this.LsTrk.GridDat.BoundaryCells.VolumeMask;
+                        break;
+                    }
+                case NavierSlip_Localization.ContactLine: {
+                        SlipArea = null;
+                        break;
+                    }
+                case NavierSlip_Localization.Nearband: {
+                        SlipArea = this.LsTrk.GridDat.BoundaryCells.VolumeMask.Intersect(this.LsTrk.Regions.GetNearFieldMask(this.LsTrk.NearRegionWidth));
+                        break;
+                    }
+                case NavierSlip_Localization.Prescribed: {
+                        throw new NotImplementedException();
+                    }
+                default:
+                    throw new ArgumentException();
+            }
+
+
+            MultidimensionalArray SlipLengths;
+            SlipLengths = this.LsTrk.GridDat.Cells.h_min.CloneAs();
+            SlipLengths.Clear();
+            //SlipLengths.AccConstant(-1.0);
+
+            if(SlipArea != null) {
+                foreach(Chunk cnk in SlipArea) {
+                    for(int i = cnk.i0; i < cnk.JE; i++) {
+                        switch(this.dntParams.GNBC_SlipLength) {
+                            case NavierSlip_SlipLength.hmin_DG: {
+                                    int degU = ColMapping.BasisS.ToArray()[0].Degree;
+                                    SlipLengths[i] = this.LsTrk.GridDat.Cells.h_min[i] / (degU + 1);
+                                    break;
+                                }
+                            case NavierSlip_SlipLength.hmin_Grid: {
+                                    SlipLengths[i] = SlipLengths[i] = this.LsTrk.GridDat.Cells.h_min[i];
+                                    break;
+                                }
+                            case NavierSlip_SlipLength.Prescribed_SlipLength: {
+                                    SlipLengths[i] = this.physParams.sliplength;
+                                    break;
+                                }
+                            case NavierSlip_SlipLength.Prescribed_Beta: {
+                                    SlipLengths[i] = -1.0;
+                                    break;
+                                }
+                        }
+                    }
+                }
+
+            }
+
+
             // parameter assembly
             // ==================
 
@@ -595,7 +656,7 @@ namespace BoSSS.Solution.XNSECommon {
                     ColMapping, Params, RowMapping,
                     OpMatrix, OpAffine, false, time, true,
                     AgglomeratedCellLengthScales,
-                    InterfaceLengths,
+                    InterfaceLengths, SlipLengths,
                     SpcToCompute);
             } else {
                 XSpatialOperator.XEvaluatorNonlin eval = Op.GetEvaluatorEx(Tracker,
@@ -628,7 +689,7 @@ namespace BoSSS.Solution.XNSECommon {
                     ColMapping, Params, RowMapping,
                     OpMatrix, OpAffine, false, time, true,
                     AgglomeratedCellLengthScales,
-                    InterfaceLengths,
+                    InterfaceLengths, SlipLengths,
                     SpcToCompute);
 
 

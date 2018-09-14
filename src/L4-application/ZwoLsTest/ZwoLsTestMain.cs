@@ -353,7 +353,7 @@ namespace BoSSS.Application.ZwoLsTest {
             Op.ComputeMatrixEx(LsTrk,
                 u.Mapping, null, u.Mapping,
                 OperatorMatrix, Affine, false, 0.0, true,
-                Agg.CellLengthScales, null,
+                Agg.CellLengthScales, null, null,
                 LsTrk.GetSpeciesId("B"));
             Agg.ManipulateMatrixAndRHS(OperatorMatrix, Affine, u.Mapping, u.Mapping);
 

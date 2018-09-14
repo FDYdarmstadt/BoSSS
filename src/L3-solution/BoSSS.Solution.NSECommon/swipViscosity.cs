@@ -579,33 +579,58 @@ namespace BoSSS.Solution.NSECommon {
                     break;
                 }
                 case IncompressibleBcType.FreeSlip:
-                case IncompressibleBcType.SlipSymmetry:
+                case IncompressibleBcType.SlipSymmetry: {
+
+                        int D = inp.D;
+                        double g_D;
+
+                        for(int dN = 0; dN < D; dN++) {
+                            g_D = base.g_Diri(inp.X, inp.time, inp.EdgeTag, dN);
+
+                            for(int dD = 0; dD < D; dD++) {
+                                // consistency
+                                Acc += muA * (inp.Normale[dN] * _Grad_uA[dN, dD] * inp.Normale[dD]) * (_vA * inp.Normale[m_iComp]) * base.m_alpha;
+                                // symmetry
+                                Acc += muA * (inp.Normale[m_iComp] * _Grad_vA[dD] * inp.Normale[dD]) * (_uA[dN] - g_D) * inp.Normale[dN] * base.m_alpha;
+                            }
+
+                            // penalty
+                            Acc -= muA * ((_uA[dN] - g_D) * inp.Normale[dN]) * ((_vA - 0) * inp.Normale[m_iComp]) * pnlty;
+                        }
+                        break;
+                    }
                 case IncompressibleBcType.NavierSlip_Linear: {
 
-                    int D = inp.D;
-                    double g_D;
+                        double ls = Lslip[inp.jCellIn];
+                        if(ls == 0.0) 
+                            goto case IncompressibleBcType.Velocity_Inlet;
 
-                    for (int dN = 0; dN < D; dN++) {
-                        g_D = base.g_Diri(inp.X, inp.time, inp.EdgeTag, dN);
+                        if(ls > 0)
+                            m_beta = muA / ls;
 
-                        for (int dD = 0; dD < D; dD++) {
-                            // consistency
-                            Acc += muA * (inp.Normale[dN] * _Grad_uA[dN, dD] * inp.Normale[dD]) * (_vA * inp.Normale[m_iComp]) * base.m_alpha;
-                            // symmetry
-                            Acc += muA * (inp.Normale[m_iComp] * _Grad_vA[dD] * inp.Normale[dD]) * (_uA[dN] - g_D) * inp.Normale[dN] * base.m_alpha;
+                        int D = inp.D;
+                        double g_D;
+
+                        for(int dN = 0; dN < D; dN++) {
+                            g_D = base.g_Diri(inp.X, inp.time, inp.EdgeTag, dN);
+
+                            for(int dD = 0; dD < D; dD++) {
+                                // consistency
+                                Acc += muA * (inp.Normale[dN] * _Grad_uA[dN, dD] * inp.Normale[dD]) * (_vA * inp.Normale[m_iComp]) * base.m_alpha;
+                                // symmetry
+                                Acc += muA * (inp.Normale[m_iComp] * _Grad_vA[dD] * inp.Normale[dD]) * (_uA[dN] - g_D) * inp.Normale[dN] * base.m_alpha;
+                            }
+
+                            // penalty
+                            Acc -= muA * ((_uA[dN] - g_D) * inp.Normale[dN]) * ((_vA - 0) * inp.Normale[m_iComp]) * pnlty;
                         }
 
-                        // penalty
-                        Acc -= muA * ((_uA[dN] - g_D) * inp.Normale[dN]) * ((_vA - 0) * inp.Normale[m_iComp]) * pnlty;
-                    }
-
-                    if (edgType == IncompressibleBcType.NavierSlip_Linear && m_beta > 0.0) {
 
                         double[,] P = new double[D, D];
-                        for (int d1 = 0; d1 < D; d1++) {
-                            for (int d2 = 0; d2 < D; d2++) {
+                        for(int d1 = 0; d1 < D; d1++) {
+                            for(int d2 = 0; d2 < D; d2++) {
                                 double nn = inp.Normale[d1] * inp.Normale[d2];
-                                if (d1 == d2) {
+                                if(d1 == d2) {
                                     P[d1, d2] = 1 - nn;
                                 } else {
                                     P[d1, d2] = -nn;
@@ -614,27 +639,25 @@ namespace BoSSS.Solution.NSECommon {
                         }
 
                         // tangential dissipation force term
-                        for (int d1 = 0; d1 < D; d1++) {
-                            for (int d2 = 0; d2 < D; d2++) {
+                        for(int d1 = 0; d1 < D; d1++) {
+                            for(int d2 = 0; d2 < D; d2++) {
                                 g_D = base.g_Diri(inp.X, inp.time, inp.EdgeTag, d2);
                                 Acc -= (m_beta * P[d1, d2] * (_uA[d2] - g_D)) * (P[d1, m_iComp] * _vA) * base.m_alpha;
                             }
                         }
 
+                        break;
                     }
+                //case IncompressibleBcType.NavierSlip_localized: {
 
-                    break;
-                }
-                case IncompressibleBcType.NavierSlip_localized: {
-
-                        double ls = Lslip[inp.jCellIn];
-                        if(ls > 0.0) {
-                            m_beta = muA / ls;
-                            goto case IncompressibleBcType.NavierSlip_Linear;
-                        } else {
-                            goto case IncompressibleBcType.Velocity_Inlet;
-                        }
-                    }
+                //    double ls = Lslip[inp.jCellIn];
+                //    if(ls > 0.0) {
+                //        m_beta = muA / ls;
+                //        goto case IncompressibleBcType.NavierSlip_Linear;
+                //    } else {
+                //        goto case IncompressibleBcType.Velocity_Inlet;
+                //    }
+                //}
                 case IncompressibleBcType.Outflow:
                 case IncompressibleBcType.Pressure_Outlet: {
                     // Atmospheric outlet/pressure outflow: hom. Neumann
@@ -805,44 +828,53 @@ namespace BoSSS.Solution.NSECommon {
                     break;
                 }
                 case IncompressibleBcType.FreeSlip:
-                case IncompressibleBcType.SlipSymmetry:
+                case IncompressibleBcType.SlipSymmetry: {
+
+                        int D = inp.D;
+                        double g_D;
+
+                        for(int dN = 0; dN < D; dN++) {
+                            for(int dD = 0; dD < D; dD++) {
+                                // consistency
+                                Acc += muA * (inp.Normale[dN] * _Grad_uA[dD, dN] * inp.Normale[dD]) * (_vA * inp.Normale[m_iComp]) * base.m_alpha;
+                                // symmetry
+                                switch(ViscSolverMode) {
+                                    case ViscositySolverMode.FullyCoupled:
+                                        g_D = this.g_Diri(inp.X, inp.time, inp.EdgeTag, dD);
+                                        Acc += muA * (inp.Normale[dN] * _Grad_vA[dN] * inp.Normale[m_iComp]) * (_uA[dD] - g_D) * inp.Normale[dD] * base.m_alpha;
+                                        break;
+                                    case ViscositySolverMode.Segregated:
+                                    default:
+                                        throw new NotImplementedException();
+                                }
+                            }
+                            g_D = this.g_Diri(inp.X, inp.time, inp.EdgeTag, dN);
+                            // penalty
+                            Acc -= muA * ((_uA[dN] - g_D) * inp.Normale[dN]) * ((_vA - 0) * inp.Normale[m_iComp]) * pnlty;
+                        }
+
+                        break;
+                    }
                 case IncompressibleBcType.NavierSlip_Linear: {
 
-                    int D = inp.D;
-                    double g_D;
+                    double ls = Lslip[inp.jCellIn];
+                    if(ls == 0.0)
+                        goto case IncompressibleBcType.Velocity_Inlet;
+                    else
+                        goto case IncompressibleBcType.FreeSlip;
 
-                    for (int dN = 0; dN < D; dN++) {
-                        for (int dD = 0; dD < D; dD++) {
-                            // consistency
-                            Acc += muA * (inp.Normale[dN] * _Grad_uA[dD, dN] * inp.Normale[dD]) * (_vA * inp.Normale[m_iComp]) * base.m_alpha;
-                            // symmetry
-                            switch (ViscSolverMode) {
-                                case ViscositySolverMode.FullyCoupled:
-                                g_D = this.g_Diri(inp.X, inp.time, inp.EdgeTag, dD);
-                                Acc += muA * (inp.Normale[dN] * _Grad_vA[dN] * inp.Normale[m_iComp]) * (_uA[dD] - g_D) * inp.Normale[dD] * base.m_alpha;
-                                break;
-                                case ViscositySolverMode.Segregated:
-                                default:
-                                throw new NotImplementedException();
-                            }
-                        }
-                        g_D = this.g_Diri(inp.X, inp.time, inp.EdgeTag, dN);
-                        // penalty
-                        Acc -= muA * ((_uA[dN] - g_D) * inp.Normale[dN]) * ((_vA - 0) * inp.Normale[m_iComp]) * pnlty;
-                    }
-
-                    break;
+                    
                 }
-                case IncompressibleBcType.NavierSlip_localized: {
+                //case IncompressibleBcType.NavierSlip_localized: {
 
-                        double ls = Lslip[inp.jCellIn];
-                        if(ls > 0.0) {
-                            m_beta = muA / ls;
-                            goto case IncompressibleBcType.NavierSlip_Linear;
-                        } else {
-                            goto case IncompressibleBcType.Velocity_Inlet;
-                        }
-                    }
+                //        double ls = Lslip[inp.jCellIn];
+                //        if(ls > 0.0) {
+                //            m_beta = muA / ls;
+                //            goto case IncompressibleBcType.NavierSlip_Linear;
+                //        } else {
+                //            goto case IncompressibleBcType.Velocity_Inlet;
+                //        }
+                //    }
                 case IncompressibleBcType.Pressure_Dirichlet:
                 case IncompressibleBcType.Outflow:
                 case IncompressibleBcType.Pressure_Outlet: {
