@@ -1568,8 +1568,11 @@ namespace BoSSS.Solution {
         /// </summary>
         protected Boolean TerminationKey = false;
 
-
-
+        /// <summary>
+        /// If the current simualation has been restarted, <see cref="TimeStepNoRestart"/>
+        /// is set by the method <see cref="LoadRestart(out double, out TimestepNumber)"/>.
+        /// </summary>
+        protected TimestepNumber TimeStepNoRestart = null;
 
         /// <summary>
         /// Runs the application in the "solver"-mode. This method makes
@@ -1618,9 +1621,10 @@ namespace BoSSS.Solution {
                             throw new ApplicationException("Invalid state in control object: the specification of initial values ('AppControl.InitialValues') and restart info ('AppControl.RestartInfo') is exclusive: "
                                 + " both cannot be unequal null at the same time.");
 
-                        if (this.Control.RestartInfo != null)
+                        if (this.Control.RestartInfo != null) {
                             LoadRestart(out physTime, out i0);
-                        else
+                            TimeStepNoRestart = i0;
+                        } else
                             SetInitial();
                     }
                 }
@@ -2104,7 +2108,7 @@ namespace BoSSS.Solution {
         protected virtual int[] ComputeNewCellDistribution(int TimeStepNo, double physTime) {
             if (Control == null
                 || !Control.DynamicLoadBalancing_On
-                || (TimeStepNo % Control.DynamicLoadBalancing_Period != 0)
+                || (TimeStepNo % Control.DynamicLoadBalancing_Period != 0 && !(Control.DynamicLoadBalancing_RedistributeAtStartup && TimeStepNo == TimeStepNoRestart))  // Variant for single partioning at restart
                 || (Control.DynamicLoadBalancing_Period < 0 && !Control.DynamicLoadBalancing_RedistributeAtStartup)
                 || MPISize <= 1) {
                 return null;
@@ -2135,7 +2139,8 @@ namespace BoSSS.Solution {
                 Control.GridPartOptions,
                 Control != null ? Control.DynamicLoadBalancing_ImbalanceThreshold : 0.12,
                 Control != null ? Control.DynamicLoadBalancing_Period : 5,
-                redistributeAtStartup: Control.DynamicLoadBalancing_RedistributeAtStartup);
+                redistributeAtStartup: Control.DynamicLoadBalancing_RedistributeAtStartup,
+                TimestepNoRestart: TimeStepNoRestart);
         }
 
 
@@ -2154,7 +2159,7 @@ namespace BoSSS.Solution {
         }
 
 
-        
+
 
         /// <summary>
         /// The name of a specific simulation should be logged in the <see cref="ISessionInfo.KeysAndQueries"/>
