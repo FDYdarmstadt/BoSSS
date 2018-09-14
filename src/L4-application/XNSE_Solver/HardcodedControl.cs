@@ -5129,14 +5129,14 @@ namespace BoSSS.Application.XNSE_Solver {
             // ===================
             #region BC
 
-            C.AddBoundaryCondition("navierslip_linear_lower");
-            C.AddBoundaryCondition("navierslip_linear_upper");
-            C.AddBoundaryCondition("navierslip_linear_left");
-            C.AddBoundaryCondition("navierslip_linear_right");
+            C.AddBoundaryValue("navierslip_linear_lower");
+            C.AddBoundaryValue("navierslip_linear_upper");
+            C.AddBoundaryValue("navierslip_linear_left");
+            C.AddBoundaryValue("navierslip_linear_right");
 
             if(D == 3) {
-                C.AddBoundaryCondition("navierslip_linear_front");
-                C.AddBoundaryCondition("navierslip_linear_back");
+                C.AddBoundaryValue("navierslip_linear_front");
+                C.AddBoundaryValue("navierslip_linear_back");
             }
 
             #endregion

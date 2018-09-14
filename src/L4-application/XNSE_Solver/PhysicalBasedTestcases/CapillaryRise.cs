@@ -188,10 +188,10 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             // ===================
             #region BC
 
-            C.AddBoundaryCondition("pressure_outlet_lower");
-            C.AddBoundaryCondition("pressure_outlet_upper");
-            C.AddBoundaryCondition("navierslip_linear_left");
-            C.AddBoundaryCondition("navierslip_linear_right");
+            C.AddBoundaryValue("pressure_outlet_lower");
+            C.AddBoundaryValue("pressure_outlet_upper");
+            C.AddBoundaryValue("navierslip_linear_left");
+            C.AddBoundaryValue("navierslip_linear_right");
 
 
             #endregion
@@ -549,21 +549,21 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             #region BC
 
             if(startUp) {
-                C.AddBoundaryCondition("wall_lower");
+                C.AddBoundaryValue("wall_lower");
             } else {
                 //C.AddBoundaryCondition("wall_lower");
                 C.ChangeBoundaryCondition("wall_lower", "pressure_outlet_lower");
-                C.AddBoundaryCondition("pressure_outlet_lower");
+                C.AddBoundaryValue("pressure_outlet_lower");
             }
-            C.AddBoundaryCondition("pressure_outlet_upper");
+            C.AddBoundaryValue("pressure_outlet_upper");
 
             if(symmetry)
-                C.AddBoundaryCondition("slipsymmetry_left");
+                C.AddBoundaryValue("slipsymmetry_left");
             else
-                C.AddBoundaryCondition("navierslip_linear_left");
+                C.AddBoundaryValue("navierslip_linear_left");
 
             //C.ChangeBoundaryCondition("navierslip_localized_right", "navierslip_linear_right");
-            C.AddBoundaryCondition("navierslip_linear_right");
+            C.AddBoundaryValue("navierslip_linear_right");
 
             C.AdvancedDiscretizationOptions.GNBC_Localization = NavierSlip_Localization.Nearband;
             C.AdvancedDiscretizationOptions.GNBC_SlipLength = NavierSlip_SlipLength.hmin_Grid;
