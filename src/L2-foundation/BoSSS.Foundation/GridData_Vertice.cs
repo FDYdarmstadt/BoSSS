@@ -239,7 +239,7 @@ namespace BoSSS.Foundation.Grid.Classic {
 
                     int D = grdDat.SpatialDimension;
                     int J;
-                    J = IncludeExt ? grdDat.Cells.NoOfCells : grdDat.Cells.NoOfLocalUpdatedCells;
+                    J = IncludeExt ? grdDat.Cells.Count : grdDat.Cells.NoOfLocalUpdatedCells;
 
                     //int NV = celVtx.GetLength(1);
                     var Krefs = grdDat.Grid.RefElements;
@@ -396,7 +396,7 @@ namespace BoSSS.Foundation.Grid.Classic {
                 Debug.Assert(VerticeToCell == null);
 
                 int K = this.Count;
-                int J = this.m_owner.Cells.NoOfCells;
+                int J = this.m_owner.Cells.Count;
                 var CellVertices = this.m_owner.Cells.CellVertices;
 
                 VerticeToCell = new int[K][];

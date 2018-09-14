@@ -148,7 +148,7 @@ namespace BoSSS.Foundation.Grid {
         public static IEnumerable<int> GetGeometricCellIndices(this IGridData g, Chunk C) {
             if (C.i0 < 0)
                 throw new ArgumentException();
-            if (C.JE > g.iLogicalCells.NoOfCells)
+            if (C.JE > g.iLogicalCells.Count)
                 throw new ArgumentException();
             return new Logical2Geom_Enumable() { j0 = C.i0, Len = C.Len, Log2Geom = g.iLogicalCells.AggregateCellToParts };
         }
@@ -170,9 +170,32 @@ namespace BoSSS.Foundation.Grid {
         public static IEnumerable<int> GetGeometricCellIndices(this IGridData g, int j) {
             if (j < 0)
                 throw new ArgumentException();
-            if (j >= g.iLogicalCells.NoOfCells)
+            if (j >= g.iLogicalCells.Count)
                 throw new ArgumentException();
-            return new Logical2Geom_Enumable() { j0 = j, Len = 1, Log2Geom = g.iLogicalCells.AggregateCellToParts };
+
+
+            var enu = new Logical2Geom_Enumable() { j0 = j, Len = 1, Log2Geom = g.iLogicalCells.AggregateCellToParts };
+#if DEBUG
+            int[] geom2log = g.iGeomCells.GeomCell2LogicalCell;
+            if (geom2log == null) {
+                int cnt = 0;
+                foreach (int jG in enu) {
+                    Debug.Assert(jG == j);
+                    cnt++;
+                }
+                Debug.Assert(cnt == 1);
+            } else {
+                int cnt = 0;
+                foreach (int jG in enu) {
+                    Debug.Assert(geom2log[jG] == j);
+                    cnt++;
+                }
+                Debug.Assert(g.iLogicalCells.AggregateCellToParts != null && g.iLogicalCells.AggregateCellToParts[j] != null);
+                Debug.Assert(g.iLogicalCells.AggregateCellToParts[j].Length == cnt);
+            }
+
+#endif
+            return enu;
         }
 
 
@@ -260,7 +283,7 @@ namespace BoSSS.Foundation.Grid {
                 }
 
                 int MaxLen;
-                if (i0 < grd.iGeomCells.NoOfCells)
+                if (i0 < grd.iGeomCells.Count)
                     MaxLen = grd.iGeomCells.GetNoOfSimilarConsecutiveCells(this.ConsecutiveMask, i0, this.MaxVecLen);
                 else
                     MaxLen = 1;
@@ -354,13 +377,13 @@ namespace BoSSS.Foundation.Grid {
         public static IEnumerable<Tuple<int, int>> GetGeometricCellChunks(this CellMask CM, int MaxVecLen, CellInfo ConsecutiveMask = CellInfo.Undefined) {
             var ret = new Mask2GeomChunks_Enumable() { CM = CM, MaxVecLen = MaxVecLen, ConsecutiveMask = ConsecutiveMask };
 #if DEBUG
-            int JG = CM.GridData.iGeomCells.NoOfCells;
+            int JG = CM.GridData.iGeomCells.Count;
             BitArray test = new BitArray(JG);
-            foreach(var t_i0_len in ret) {
+            foreach (var t_i0_len in ret) {
                 int j0 = t_i0_len.Item1;
                 int Len = t_i0_len.Item2;
                 var Flag_j0 = CM.GridData.iGeomCells.InfoFlags[j0] & ConsecutiveMask;
-                for(int j = j0; j < j0 + Len; j++) {
+                for (int j = j0; j < j0 + Len; j++) {
                     Debug.Assert(test[j] == false); // each geometric cell is touched only once.
                     test[j] = true;
                     var Flag_j = CM.GridData.iGeomCells.InfoFlags[j0] & ConsecutiveMask;
@@ -370,16 +393,16 @@ namespace BoSSS.Foundation.Grid {
 
             BitArray CMmask = CM.GetBitMask();
             int[][] L2G = CM.GridData.iLogicalCells.AggregateCellToParts;
-            for(int jL = 0; jL < CMmask.Count; jL++) {
-                if(L2G == null || L2G[jL] == null) {
+            for (int jL = 0; jL < CMmask.Count; jL++) {
+                if (L2G == null || L2G[jL] == null) {
                     int jG = jL;
-                    if(CMmask[jL] != test[jG]) {
+                    if (CMmask[jL] != test[jG]) {
                         var r = new Mask2GeomChunks_Enumable() { CM = CM, MaxVecLen = MaxVecLen, ConsecutiveMask = ConsecutiveMask };
 
-                        foreach(var _t_i0_len in r) {
+                        foreach (var _t_i0_len in r) {
                             int j0 = _t_i0_len.Item1;
                             int Len = _t_i0_len.Item2;
-                            for(int j = j0; j < j0 + Len; j++) {
+                            for (int j = j0; j < j0 + Len; j++) {
                                 Console.WriteLine(j);
                             }
                         }
@@ -388,7 +411,7 @@ namespace BoSSS.Foundation.Grid {
                     }
                     Debug.Assert(CMmask[jL] == test[jG]);
                 } else {
-                    foreach(int jG in L2G[jL])
+                    foreach (int jG in L2G[jL])
                         Debug.Assert(CMmask[jL] == test[jG]);
                 }
             }
@@ -417,7 +440,6 @@ namespace BoSSS.Foundation.Grid {
                 throw new ArgumentException();
             return new Logical2Geom_Enumable() { j0 = C.i0, Len = C.Len, Log2Geom = g.iLogicalEdges.EdgeToParts };
         }
-
 
         /// <summary>
         /// Returns an enumeration of geometrical edge indices (<see cref="IGeometricalCellsData"/>)
@@ -598,8 +620,7 @@ namespace BoSSS.Foundation.Grid {
                 GlobalId = long.MinValue;
             }
 
-            unsafe
-            {
+            unsafe {
                 long* buf = stackalloc long[2];
                 buf[0] = GlobalId;
                 buf[1] = GlobalIndex;
@@ -639,9 +660,6 @@ namespace BoSSS.Foundation.Grid {
 
             return new EdgeMask(gdat, boundaryEdges);
         }
-
-
-
 
         /// <summary>
         /// Finds all neighbor cells for a given cell; 
@@ -795,6 +813,213 @@ namespace BoSSS.Foundation.Grid {
             }
 
         }
+
+        /// <summary>
+        /// true, if edge <paramref name="e"/> is a boundary-edge.
+        /// </summary>
+        static public bool IsEdgeBoundaryEdge(this IGeometricalEdgeData ge, int e) {
+            bool R = (ge.Info[e] & EdgeInfo.Boundary) != 0;
+            return R;
+        }
+
+
+        ///// <summary>
+        ///// true, if edge <paramref name="e"/> is affine-linear, false if not
+        ///// </summary>
+        //static public bool IsEdgeAffineLinear(this IGeometricalEdgeData ge, int e) {
+        //    return (ge.Info[e] & EdgeInfo.EdgeIsAffineLinear) != 0;
+        //}
+
+
+        /// <summary>
+        /// Returns a mask containing all cells which lie at the domain boundary
+        /// </summary>
+        static public CellMask GetBoundaryCells(this IGridData gdat) {
+            int J = gdat.iLogicalCells.NoOfLocalUpdatedCells;
+            BitArray boundaryCells = new BitArray(J);
+
+            int E = gdat.iLogicalEdges.Count;
+
+
+            int[,] CellIndices = gdat.iLogicalEdges.CellIndices;
+
+            // loop over all Edges
+            for (int e = 0; e < E; e++) {
+                int Cel1 = CellIndices[e, 0];
+                int Cel2 = CellIndices[e, 1];
+
+                if (Cel2 < 0) {
+                    // edge is located on the computational domain boundary
+
+
+                    boundaryCells[Cel1] = true;
+                }
+
+
+
+            }
+
+            return new CellMask(gdat, boundaryCells, MaskType.Logical);
+
+
+        }
+
+        /// <summary>
+        /// Returns a mask which contains all boundary edges
+        /// </summary>
+        static public EdgeMask GetBoundaryEdges(this IGridData gdat) {
+
+            int E = gdat.iLogicalEdges.Count;
+            BitArray boundaryEdges = new BitArray(E);
+
+
+            int[,] CellIndices = gdat.iLogicalEdges.CellIndices;
+
+            // loop over all Edges
+            for (int e = 0; e < E; e++) {
+                int Cel1 = CellIndices[e, 0];
+                int Cel2 = CellIndices[e, 1];
+
+                if (Cel2 < 0) {
+                    // edge is located on the computational domain boundary
+                    boundaryEdges[e] = true;
+
+                }
+
+
+
+            }
+
+
+
+            return new EdgeMask(gdat, boundaryEdges, MaskType.Logical);
+
+        }
+
+
+        /// <summary>
+        /// computes a global time-step length ("delta t") according to the 
+        /// Courant-Friedrichs-Lax - criterion, based on a velocity
+        /// vector (<paramref name="velvect"/>) and the cell size
+        /// this.<see cref="Cells"/>.<see cref="CellData.h_min"/>;
+        /// </summary>
+        /// <param name="velvect">
+        /// components of a velocity vector
+        /// </param>
+        /// <param name="max">
+        /// an upper maximum for the return value; This is useful if the velocity
+        /// defined by <paramref name="velvect"/> is 0 or very small everywhere;
+        /// </param>
+        /// <param name="cm">
+        /// optional restriction of domain.
+        /// </param>
+        /// <returns>
+        /// the minimum (over all cells j in all processes) of <see cref="CellData.h_min"/>[j]
+        /// over v, where v is the Euclidean norm of a vector build from 
+        /// <paramref name="velvect"/>;
+        /// This vector is evaluated at cell center and all cell vertices.
+        /// The return value is the same on all processes;
+        /// </returns>
+        static public double ComputeCFLTime<T>(this IGridData __gdat, IEnumerable<T> velvect, double max, CellMask cm = null)
+            where T : DGField //
+        {
+            using (var tr = new FuncTrace()) {
+                GridData gdat = (GridData)__gdat;
+
+                ilPSP.MPICollectiveWatchDog.Watch(MPI.Wrappers.csMPI.Raw._COMM.WORLD);
+
+                T[] _velvect = velvect.ToArray();
+
+                if (cm == null)
+                    cm = CellMask.GetFullMask(gdat);
+
+                int D = gdat.SpatialDimension;
+                var KrefS = gdat.Grid.RefElements;
+
+                // find cfl number on this processor
+                // ---------------------------------
+
+                var m_CFL_EvalPoints = new NodeSet[KrefS.Length];
+                for (int i = 0; i < KrefS.Length; i++) {
+                    var Kref = KrefS[i];
+                    int N = Kref.NoOfVertices + 1;
+
+                    MultidimensionalArray vert = MultidimensionalArray.Create(N, D);
+                    vert.SetSubArray(Kref.Vertices, new int[] { 0, 0 }, new int[] { N - 2, D - 1 });
+
+                    m_CFL_EvalPoints[i] = new NodeSet(Kref, vert);
+                }
+                
+
+
+                // evaluators an memory for result
+                int VecMax = 1000;
+                DGField[] evalers = new DGField[_velvect.Length];
+                MultidimensionalArray[] fieldValues = new MultidimensionalArray[_velvect.Length];
+                for (int i = 0; i < _velvect.Length; i++) {
+                    evalers[i] = _velvect[i];
+                    fieldValues[i] = MultidimensionalArray.Create(VecMax, m_CFL_EvalPoints[0].NoOfNodes);
+                }
+
+                var h_min = gdat.Cells.h_min;
+                int K = _velvect.Length;
+                double cflhere = max;
+
+                //for (int j = 0; j < J; j += VectorSize) {
+                foreach (Chunk chk in cm) {
+                    int VectorSize = VecMax;
+                    for (int j = chk.i0; j < chk.JE; j += VectorSize) {
+                        if (j + VectorSize > chk.JE + 1)
+                            VectorSize = chk.JE - j;
+                        VectorSize = gdat.Cells.GetNoOfSimilarConsecutiveCells(CellInfo.RefElementIndex_Mask, j, VectorSize);
+
+
+                        int iKref = gdat.Cells.GetRefElementIndex(j);
+                        int N = m_CFL_EvalPoints[iKref].GetLength(0);
+
+                        if (fieldValues[0].GetLength(0) != VectorSize) {
+                            for (int i = 0; i < _velvect.Length; i++) {
+                                fieldValues[i].Allocate(VectorSize, N);
+                            }
+                        }
+
+                        for (int k = 0; k < K; k++)
+                            evalers[k].Evaluate(j, VectorSize, m_CFL_EvalPoints[iKref], fieldValues[k], 0, 0.0);
+
+                        // loop over cells ...
+                        for (int jj = j; jj < j + VectorSize; jj++) {
+
+                            // loop over nodes ...
+                            for (int n = 0; n < N; n++) {
+                                double velabs = 0;
+
+                                // loop over velocity components ...
+                                for (int k = 0; k < K; k++) {
+                                    double v = fieldValues[k][jj - j, n];
+                                    velabs += v * v;
+                                }
+
+                                velabs = Math.Sqrt(velabs);
+
+                                double cfl = h_min[jj] / velabs;
+                                cflhere = Math.Min(cfl, cflhere);
+                            }
+                        }
+                    }
+
+                }
+
+                // find the minimum over all processes via MPI and return
+                // ------------------------------------------------------
+                double cfltotal;
+                unsafe {
+                    csMPI.Raw.Allreduce((IntPtr)(&cflhere), (IntPtr)(&cfltotal), 1, csMPI.Raw._DATATYPE.DOUBLE, csMPI.Raw._OP.MIN, csMPI.Raw._COMM.WORLD);
+                }
+                tr.Info("computed CFL timestep: " + cfltotal);
+                return cfltotal;
+
+            }
+        }
     }
 
     /// <summary>
@@ -812,4 +1037,7 @@ namespace BoSSS.Foundation.Grid {
         /// </summary>
         ViaVertices
     }
+
+    
+
 }

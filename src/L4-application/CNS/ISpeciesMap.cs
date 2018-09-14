@@ -50,7 +50,7 @@ namespace CNS {
         /// <summary>
         /// Information about the grid
         /// </summary>
-        GridData GridData {
+        IGridData GridData {
             get;
         }
     }

@@ -135,7 +135,7 @@ namespace BoSSS.Foundation.IO {
         /// don't have to be created over and over again.
         /// </summary>
         /// <param name="gridData"></param>
-        void AddGridInitializationContext(Grid.Classic.GridData gridData);
+        void AddGridInitializationContext(IGridData gridData);
 
         /// <summary>
         /// Retrieves the initialization for a particular time-step.

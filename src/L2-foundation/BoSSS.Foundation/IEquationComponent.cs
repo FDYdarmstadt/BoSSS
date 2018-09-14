@@ -59,16 +59,29 @@ namespace BoSSS.Foundation {
     /// Set of various custom resp. predefined coefficients, 
     /// </summary>
     /// <remarks>
-    /// By encapsulation of the arguments of <see cref="IEquationComponentCoefficient.CoefficientUpdate(CoefficientSet)"/> in a separate
+    /// By encapsulation of the arguments of <see cref="IEquationComponentCoefficient.CoefficientUpdate"/> in a separate
     /// class it is easy tho change/add variables without updating each and every interface implementation.
     /// </remarks>
     public class CoefficientSet {
+
+        /// <summary>
+        /// Reference to grid
+        /// </summary>
         public IGridData GrdDat;
 
+        /// <summary>
+        /// length scales for cells (e.g. for computing penalty parameters or local CFL numbers)
+        /// </summary>
         public MultidimensionalArray CellLengthScales;
 
+        /// <summary>
+        /// length scales for edges (e.g. for computing penalty parameters)
+        /// </summary>
         public MultidimensionalArray EdgeLengthScales;
 
+        /// <summary>
+        /// collection of user-defined objects
+        /// </summary>
         public Dictionary<string, object> UserDefinedValues = new Dictionary<string, object>();
     }
 

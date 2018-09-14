@@ -55,7 +55,7 @@ namespace BoSSS.Solution.XNSECommon.Operator.SurfaceTension {
             this.m_bOutput = __bOutput;
             var GridDat = m_bInput.GridDat;
             
-            this.AggregateBasisTrafo = new MultidimensionalArray[GridDat.iLogicalCells.NoOfCells];
+            this.AggregateBasisTrafo = new MultidimensionalArray[GridDat.iLogicalCells.Count];
             this.UpdateDomain(cm, RestrictToCellMask);
         }
 

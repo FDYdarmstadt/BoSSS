@@ -36,7 +36,7 @@ namespace BoSSS.Solution {
         /// <summary>
         /// Instantiates those fields that are marked by an <see cref="InstantiateFromControlFileAttribute"/> - attribute;
         /// </summary>
-        public static void CreateFieldsAuto(object _this, GridData context,
+        public static void CreateFieldsAuto(object _this, IGridData context,
             IDictionary<string, FieldOpts> FieldOptions, XQuadFactoryHelper.MomentFittingVariants cutCellQuadType,
             ICollection<DGField> IOFields, ICollection<DGField> RegisteredFields) {
             FieldInfo[] fields = _this.GetType().GetFields(BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.FlattenHierarchy | BindingFlags.Static);
@@ -174,16 +174,16 @@ namespace BoSSS.Solution {
 
                     switch (LevelSetsSorted.Length) {
                         case 1:
-                            lsTrk = new LevelSetTracker(context, cutCellQuadType, att.m_NearCellWidth, (string[])(att.GetSpeciesTable(1)), LevelSetsInstances[0]);
+                            lsTrk = new LevelSetTracker((GridData)context, cutCellQuadType, att.m_NearCellWidth, (string[])(att.GetSpeciesTable(1)), LevelSetsInstances[0]);
                             break;
                         case 2:
-                            lsTrk = new LevelSetTracker(context, cutCellQuadType, att.m_NearCellWidth, (string[,])(att.GetSpeciesTable(2)), LevelSetsInstances[0], LevelSetsInstances[1]);
+                            lsTrk = new LevelSetTracker((GridData)context, cutCellQuadType, att.m_NearCellWidth, (string[,])(att.GetSpeciesTable(2)), LevelSetsInstances[0], LevelSetsInstances[1]);
                             break;
                         case 3:
-                            lsTrk = new LevelSetTracker(context, cutCellQuadType, att.m_NearCellWidth, (string[,,])(att.GetSpeciesTable(3)), LevelSetsInstances[0], LevelSetsInstances[1], LevelSetsInstances[2]);
+                            lsTrk = new LevelSetTracker((GridData)context, cutCellQuadType, att.m_NearCellWidth, (string[,,])(att.GetSpeciesTable(3)), LevelSetsInstances[0], LevelSetsInstances[1], LevelSetsInstances[2]);
                             break;
                         case 4:
-                            lsTrk = new LevelSetTracker(context, cutCellQuadType, att.m_NearCellWidth, (string[,,,])(att.GetSpeciesTable(4)), LevelSetsInstances[0], LevelSetsInstances[1], LevelSetsInstances[2], LevelSetsInstances[3]);
+                            lsTrk = new LevelSetTracker((GridData)context, cutCellQuadType, att.m_NearCellWidth, (string[,,,])(att.GetSpeciesTable(4)), LevelSetsInstances[0], LevelSetsInstances[1], LevelSetsInstances[2], LevelSetsInstances[3]);
                             break;
 
                     }
@@ -207,7 +207,7 @@ namespace BoSSS.Solution {
         static void InstantiateField(FieldInfo f, object o, ICollection<DGField> IOFields, ICollection<DGField> RegisteredFields,
             //AppControl ctrl, 
             IDictionary<string, FieldOpts> FieldOptions,
-            GridData ctx, LevelSetTracker lstrk) {
+            IGridData ctx, LevelSetTracker lstrk) {
             // get attribute
             // =============
             InstantiateFromControlFileAttribute at;
@@ -233,7 +233,7 @@ namespace BoSSS.Solution {
             ICollection<DGField> IOFields, ICollection<DGField> RegisteredFields,
             //AppControl ctrl,
             IDictionary<string, FieldOpts> FieldOptions,
-            GridData ctx, LevelSetTracker lstrk) {
+            IGridData ctx, LevelSetTracker lstrk) {
 
             // create instance
             // ===============

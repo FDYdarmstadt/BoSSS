@@ -70,7 +70,7 @@ namespace CNS.EquationSystem {
         /// </summary>
         /// <param name="gridData"></param>
         /// <param name="workingSet"></param>
-        public CFLConstraint(GridData gridData, CNSFieldSet workingSet)
+        public CFLConstraint(IGridData gridData, CNSFieldSet workingSet)
             : base(gridData, workingSet.config.dtMin, workingSet.config.dtMax, workingSet.config.CFLFraction, workingSet.config.Endtime) {
             this.workingSet = workingSet;
         }
@@ -89,7 +89,7 @@ namespace CNS.EquationSystem {
         /// <paramref name="i0"/> + <paramref name="Length"/>.
         /// </returns>
         public override double GetLocalStepSize(int i0, int Length) {
-            NodeSet evaluationPoints = EvaluationPoints[this.gridData.Cells.GetRefElementIndex(i0)];
+            NodeSet evaluationPoints = EvaluationPoints[this.gridData.iGeomCells.GetRefElementIndex(i0)];
 
             // If called via GetGloballyAdmissibleStepSize, these buffers have
             // already been created with an optimal size

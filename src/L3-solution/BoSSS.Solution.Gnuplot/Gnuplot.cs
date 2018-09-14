@@ -202,14 +202,37 @@ namespace BoSSS.Solution.Gnuplot {
             if (path == null)
                 path = "";
 
+            /*
+            string bosss_install = System.Environment.GetEnvironmentVariable("BOSSS_INSTALL");
+            if(bosss_install != null) {
+                // +++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+                // Prefer gnuplut which ships with BoSSS, if existent;
+                // +++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+                
+                PlatformID CurrentSys = System.Environment.OSVersion.Platform;
+                if(CurrentSys == PlatformID.Win32NT || CurrentSys == PlatformID.Win32S || CurrentSys == PlatformID.Win32Windows) {
+                    // on windows
+
+                    string dir1 = Directory.GetDirectories(bosss_install, "bin\\native\\win\\gnuplot*").FirstOrDefault();
+                    if(dir1 != null) {
+                        string dir2 = Directory.GetDirectories(dir1, "gnuplot\\bin").FirstOrDefault();
+                        if(dir2 != null) {
+                            path = dir2 + Path.PathSeparator + path;
+                        }
+                    }
+                }
+            }
+            */
+
+
             List<string> pathDirs;
             if (alternativeGnuplotPath != null) {
                 pathDirs = (new string[] { alternativeGnuplotPath }).ToList();
             } else {
-                string WinPath = GetBoSSSGnuplot();
+                string WinPath = GetBoSSSGnuplot(); // prefers gnuplot from $BOSSS_INSTALL
                 pathDirs = path.Split(new[] { Path.PathSeparator }, StringSplitOptions.RemoveEmptyEntries).ToList();
                 if (WinPath != null)
-                    pathDirs.Insert(0, WinPath);
+                    pathDirs.Insert(0, WinPath); // insert additional search path at top
             }
 
             foreach (string s4 in pathDirs) {

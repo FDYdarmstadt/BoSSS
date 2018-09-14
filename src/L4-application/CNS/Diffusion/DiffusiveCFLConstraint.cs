@@ -14,6 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+using BoSSS.Foundation.Grid;
 using BoSSS.Foundation.Grid.Classic;
 using BoSSS.Foundation.XDG;
 using BoSSS.Platform.LinAlg;
@@ -69,13 +70,13 @@ namespace CNS.Diffusion {
         /// <param name="workingSet"></param>
         /// <param name="speciesMap"></param>
         public DiffusiveCFLConstraint(
-            CNSControl config, GridData gridData, CNSFieldSet workingSet, ISpeciesMap speciesMap)
+            CNSControl config, IGridData gridData, CNSFieldSet workingSet, ISpeciesMap speciesMap)
             : base(gridData, workingSet) {
 
             this.config = config;
             this.speciesMap = speciesMap;
 
-            if (gridData.Grid.RefElements.Length > 1) {
+            if (gridData.iGeomCells.RefElements.Length > 1 || !(gridData is GridData)) {
                 throw new NotImplementedException();
             }
         }
@@ -88,10 +89,12 @@ namespace CNS.Diffusion {
         /// <param name="Length"></param>
         /// <returns></returns>
         protected override double GetCFLStepSize(int i0, int Length) {
-            int iKref = gridData.Cells.GetRefElementIndex(i0);
+            var __gridData = (GridData)gridData;
+
+            int iKref = __gridData.Cells.GetRefElementIndex(i0);
             int noOfNodesPerCell = base.EvaluationPoints[iKref].NoOfNodes;
             Material material = speciesMap.GetMaterial(double.NaN);
-            var hmin = gridData.Cells.h_min;
+            var hmin = __gridData.Cells.h_min;
             double scaling = Math.Max(4.0 / 3.0, config.EquationOfState.HeatCapacityRatio / config.PrandtlNumber);
 
             // Following code is performance-critical, so expect spagetti code ahead
@@ -185,7 +188,7 @@ namespace CNS.Diffusion {
                             int cell = i0 + i;
 
                             for (int node = 0; node < noOfNodesPerCell; node++) {
-                                double hminlocal = gridData.Cells.h_min[cell];
+                                double hminlocal = __gridData.Cells.h_min[cell];
                                 double cflhere = hminlocal * hminlocal / scaling / nu;
                                 cfl = Math.Min(cfl, cflhere);
                             }
