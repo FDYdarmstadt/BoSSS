@@ -873,13 +873,20 @@ namespace BoSSS.Application.IBM_Solver {
         /// </summary>
         protected override void SetInitial() {
 
-            if (false) {
+            if (true) {
                 DGField mpiRank = new SinglePhaseField(new Basis(GridData, 0), "rank");
                 m_IOFields.Add(mpiRank);
 
                 for (int j = 0; j < GridData.iLogicalCells.NoOfLocalUpdatedCells; j++) {
                     mpiRank.SetMeanValue(j, DatabaseDriver.MyRank);
                 }
+
+                ilPSP.Environment.StdoutOnlyOnRank0 = false;
+                Console.WriteLine("Total number of cells:    {0}", Grid.Cells.Count());
+                Console.WriteLine("Total number of DOFs:     {0}", CurrentSolution.Count());
+                Console.WriteLine("Total number of cut cells:     {0}", LsTrk.Regions.GetCutCellMask().NoOfItemsLocally);
+
+                ilPSP.Environment.StdoutOnlyOnRank0 = true;
             }
 
             // Using defauls CellCostEstimateFactories          
@@ -888,7 +895,7 @@ namespace BoSSS.Application.IBM_Solver {
                 Control.DynamicLoadBalancing_CellCostEstimatorFactories.Add(delegate (IApplication app, int noOfPerformanceClasses) {
                     Console.WriteLine("i was called");
                     int[] map = new int[] { 1, 1, 10 };
-                    return new StaticCellCostEstimator(map);
+                    return new StaticCellCostEstimator(map); 
                 });
                 Control.DynamicLoadBalancing_CellCostEstimatorFactories.Add(delegate (IApplication app, int noOfPerformanceClasses) {
                     Console.WriteLine("i was called");
@@ -905,6 +912,7 @@ namespace BoSSS.Application.IBM_Solver {
             // Set particle radius for exact circle integration
             if (this.Control.CutCellQuadratureType == XQuadFactoryHelper.MomentFittingVariants.ExactCircle)
                 BoSSS.Foundation.XDG.Quadrature.HMF.ExactCircleLevelSetIntegration.RADIUS = new double[] { this.Control.particleRadius };
+            
             Console.WriteLine("Total number of cells:    {0}", Grid.Cells.Count().MPISum());
             Console.WriteLine("Total number of DOFs:     {0}", CurrentSolution.Count().MPISum());
             base.SetInitial();

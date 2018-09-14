@@ -27,20 +27,8 @@ namespace BoSSS.Application.IBM_Solver {
             if (Control.PhysicalParameters.IncludeConvection == false)
                 Control.NonlinearSolve = NonlinearSolverCodes.Picard;
 
-            // Set nonlinear Solver
-            switch (Control.NonlinearSolve) {
-                case NonlinearSolverCodes.NewtonGMRES:
-                    Timestepper.Config_NonlinearSolver = NonlinearSolverMethod.NewtonGMRES;
-                    break;
-                case NonlinearSolverCodes.Picard:
-                    Timestepper.Config_NonlinearSolver = NonlinearSolverMethod.Picard;
-                    break;
-                case NonlinearSolverCodes.Newton:
-                    Timestepper.Config_NonlinearSolver = NonlinearSolverMethod.Newton;
-                    break;
-                default:
-                    throw new NotImplementedException("Nonlinear solver option not available");
-            }
+            
+            ISolverSmootherTemplate templinearSolve = null;
 
             switch (Control.LinearSolve) {
                 case LinearSolverCodes.automatic:
@@ -158,9 +146,127 @@ namespace BoSSS.Application.IBM_Solver {
                     Timestepper.Config_linearSolver = new ILU() { };
                     break;
 
+                case LinearSolverCodes.exp_Schur:
+                    templinearSolve = new SchurPrecond()
+                    {
+                        SchurOpt = SchurPrecond.SchurOptions.decoupledApprox
+                    };
+                    break;
+
+                case LinearSolverCodes.exp_Simple:
+                    templinearSolve = new SchurPrecond()
+                    {
+                        SchurOpt = SchurPrecond.SchurOptions.SIMPLE
+                    };
+                    break;
+
+                case LinearSolverCodes.exp_AS_1000:
+                    templinearSolve = new Schwarz()
+                    {
+                        m_BlockingStrategy = new Schwarz.METISBlockingStrategy()
+                        {
+                            //noofparts = 213,
+                            NoOfPartsPerProcess = 213,
+                        },
+                        CoarseSolver = new DirectSolver()
+                        {
+                            WhichSolver = DirectSolver._whichSolver.PARDISO    //MUMPS
+                        },
+                        Overlap = 1
+                    };
+                    break;
+
+                case LinearSolverCodes.exp_AS_5000:
+                    templinearSolve = new Schwarz()
+                    {
+                        m_BlockingStrategy = new Schwarz.METISBlockingStrategy()
+                        {
+                            //noofparts = 43,
+                            NoOfPartsPerProcess = 43,
+                        },
+                        CoarseSolver = new DirectSolver()
+                        {
+                            WhichSolver = DirectSolver._whichSolver.PARDISO    //MUMPS
+                        },
+                        Overlap = 1
+                    };
+                    break;
+
+                case LinearSolverCodes.exp_AS_10000:
+                    templinearSolve = new Schwarz()
+                    {
+                        m_BlockingStrategy = new Schwarz.METISBlockingStrategy()
+                        {
+                            //noofparts = 22,
+                            NoOfPartsPerProcess = 22,
+                        },
+                        CoarseSolver = new DirectSolver()
+                        {
+                            WhichSolver = DirectSolver._whichSolver.PARDISO    //MUMPS
+                        },
+                        Overlap = 1
+                    };
+                    break;
+
+                case LinearSolverCodes.exp_AS_MG:
+                    templinearSolve = new Schwarz()
+                    {
+                        m_BlockingStrategy = new Schwarz.MultigridBlocks()
+                        {
+                            //depth = asdepth,
+                            Depth = 2,
+                        },
+                        CoarseSolver = new DirectSolver()
+                        {
+                            WhichSolver = DirectSolver._whichSolver.PARDISO    //MUMPS
+                        },
+
+                        Overlap = 1
+                    };
+                    break;
+
+
+                case LinearSolverCodes.exp_localPrec:
+                    templinearSolve = new LocalizedOperatorPrec()
+                    {
+                        m_dt = Control.GetFixedTimestep(),
+                        m_muA = Control.PhysicalParameters.mu_A,
+                    };
+                    break;
+
                 default:
                     throw new NotImplementedException("Linear solver option not available");
             }
+
+            // Set nonlinear Solver
+            switch (Control.NonlinearSolve)
+            {
+                case NonlinearSolverCodes.NewtonGMRES:
+                    Timestepper.Config_NonlinearSolver = NonlinearSolverMethod.NewtonGMRES;
+                    Timestepper.Config_linearSolver = templinearSolve;
+                    break;
+                case NonlinearSolverCodes.Picard:
+                    Timestepper.Config_NonlinearSolver = NonlinearSolverMethod.Picard;
+                    Timestepper.Config_linearSolver = templinearSolve;
+                    break;
+                case NonlinearSolverCodes.Newton:
+                    Timestepper.Config_NonlinearSolver = NonlinearSolverMethod.Newton;
+                    Timestepper.Config_linearSolver = templinearSolve;
+                    break;
+                case NonlinearSolverCodes.PicardGMRES:
+                    Timestepper.Config_NonlinearSolver = NonlinearSolverMethod.Picard;
+                    Timestepper.Config_linearSolver = new SoftGMRES()
+                    {
+                        MaxKrylovDim = Timestepper.Config_MaxKrylovDim,
+                        m_Tolerance = Timestepper.Config_SolverConvergenceCriterion,
+                        Precond = templinearSolve,
+                        m_MaxIterations = Timestepper.Config_MaxIterations,
+                    };
+                    break;
+                default:
+                    throw new NotImplementedException("Nonlinear solver option not available");
+            }
+
         }
 
         /// <summary>
