@@ -1028,8 +1028,11 @@ namespace BoSSS.Foundation.Grid.Classic {
                         csMPI.Raw.Allreduce((IntPtr)(&NodeIdMin_loc), (IntPtr)(&NodeIdMin), 1, csMPI.Raw._DATATYPE.INT, csMPI.Raw._OP.MIN, csMPI.Raw._COMM.WORLD);
                     }
 
-                    if (NodeIdMin != 0) {
-                        throw new ApplicationException("Illegal node indexing: minimal node index is " + NodeIdMin + "(must start at 0).");
+                    NodeIdMin = Math.Min(NodeIdMin, 0);
+                    if (NodeIdMin <= 0) {
+
+                        throw new ApplicationException("Illegal node indexing: minimal node index is " + NodeIdMin + "(must be non-negative).");
+
                     }
 
                     int iNode_0 = (NodeIdMax + 1) * MyRank / Size;
