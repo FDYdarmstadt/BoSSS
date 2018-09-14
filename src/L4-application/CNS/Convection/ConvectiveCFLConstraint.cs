@@ -52,13 +52,13 @@ namespace CNS.Convection {
         /// <param name="workingSet"></param>
         /// <param name="speciesMap"></param>
         public ConvectiveCFLConstraint(
-            CNSControl config, GridData gridData, CNSFieldSet workingSet, ISpeciesMap speciesMap)
+            CNSControl config, IGridData gridData, CNSFieldSet workingSet, ISpeciesMap speciesMap)
             : base(gridData, workingSet) {
 
             this.control = config;
             this.speciesMap = speciesMap;
 
-            if (gridData.Grid.RefElements.Length > 1) {
+            if (gridData.iGeomCells.RefElements.Length > 1 || !(gridData is GridData)) {
                 throw new NotImplementedException();
             }
         }
@@ -78,10 +78,12 @@ namespace CNS.Convection {
         /// <param name="Length"></param>
         /// <returns></returns>
         protected override double GetCFLStepSize(int i0, int Length) {
-            int iKref = gridData.Cells.GetRefElementIndex(i0);
+            var __gridData = (GridData)gridData;
+
+            int iKref = __gridData.Cells.GetRefElementIndex(i0);
             int noOfNodesPerCell = base.EvaluationPoints[iKref].NoOfNodes;
-            int D = gridData.Grid.SpatialDimension;
-            MultidimensionalArray hmin = this.gridData.Cells.h_min;
+            int D = gridData.SpatialDimension;
+            MultidimensionalArray hmin = __gridData.Cells.h_min;
             Material material = speciesMap.GetMaterial(double.NaN);
             double gamma = material.EquationOfState.HeatCapacityRatio;
             double Ma = material.Control.MachNumber;
@@ -95,7 +97,7 @@ namespace CNS.Convection {
                         SpeciesId species = ibmMap.Tracker.GetSpeciesId(ibmMap.Control.FluidSpeciesName);
                         MultidimensionalArray hminCut = ibmMap.CellAgglomeration.CellLengthScales[species];
 
-                        CellMask cutCellsThatAreNotSourceCells = ibmMap.Tracker.Regions.GetCutCellMask().Except(ibmMap.Agglomerator.AggInfo.SourceCells);
+                        //CellMask cutCellsThatAreNotSourceCells = ibmMap.Tracker.Regions.GetCutCellMask().Except(ibmMap.Agglomerator.AggInfo.SourceCells);
                         //foreach (int cell in cutCellsThatAreNotSourceCells.ItemEnum) {
                         //    hmin[cell] = hminCut[cell];
                         //}
@@ -105,7 +107,8 @@ namespace CNS.Convection {
 
                             //double hminLocal = hmin[cell];
                             double hminLocal = double.NaN;
-                            if (cutCellsThatAreNotSourceCells.ItemEnum.Contains(cell)) {
+                            //if (cutCellsThatAreNotSourceCells.ItemEnum.Contains(cell)) {
+                            if (ibmMap.cutCellsThatAreNotSourceCells[cell]) {
                                 hminLocal = hminCut[cell];
                             } else {
                                 hminLocal = hmin[cell];
@@ -167,7 +170,7 @@ namespace CNS.Convection {
                         SpeciesId species = ibmMap.Tracker.GetSpeciesId(ibmMap.Control.FluidSpeciesName);
                         MultidimensionalArray hminCut = ibmMap.CellAgglomeration.CellLengthScales[species];
 
-                        CellMask cutCellsThatAreNotSourceCells = ibmMap.Tracker.Regions.GetCutCellMask().Except(ibmMap.Agglomerator.AggInfo.SourceCells);
+                        //CellMask cutCellsThatAreNotSourceCells = ibmMap.Tracker.Regions.GetCutCellMask().Except(ibmMap.Agglomerator.AggInfo.SourceCells);
                         //foreach (int cell in cutCellsThatAreNotSourceCells.ItemEnum) {
                         //    hmin[cell] = hminCut[cell];
                         //}
@@ -175,7 +178,8 @@ namespace CNS.Convection {
                         for (int i = 0; i < Length; i++) {
                             int cell = i0 + i;
                             double hminLocal = double.NaN;
-                            if (cutCellsThatAreNotSourceCells.ItemEnum.Contains(cell)) {
+                            //if (cutCellsThatAreNotSourceCells.ItemEnum.Contains(cell)) {
+                            if (ibmMap.cutCellsThatAreNotSourceCells[cell]) {
                                 hminLocal = hminCut[cell];
                             } else {
                                 hminLocal = hmin[cell];

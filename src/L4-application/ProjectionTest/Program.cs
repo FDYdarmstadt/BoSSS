@@ -109,7 +109,7 @@ namespace ProjectionTest {
             SinglePhaseField[] fields = SpecFEMInterpolation(rho, u, v, p);
 
             // Save everything
-            database.Controller.DBDriver.SaveGrid(grid);
+            database.Controller.DBDriver.SaveGrid(grid, database);
 
             SessionInfo session = database.Controller.DBDriver.CreateNewSession(database);
             session.Description = sessionDescription;

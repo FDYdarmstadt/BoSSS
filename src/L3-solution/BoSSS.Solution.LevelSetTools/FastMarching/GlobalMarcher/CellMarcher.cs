@@ -52,7 +52,7 @@ namespace BoSSS.Solution.LevelSetTools.FastMarching.GlobalMarcher {
         public void Reinit(SinglePhaseField Phi, CellMask Accepted, CellMask ReinitField) {
 
             //Build Marcher 
-            IFastMarchingQueue<IMarchingNode> Heap = new MarchingHeap(this.gridDat.Cells.NoOfCells);
+            IFastMarchingQueue<IMarchingNode> Heap = new MarchingHeap(this.gridDat.Cells.Count);
             Fastmarcher Solver = new Fastmarcher(Heap);
 
             //Initialize Graph for Marching and build initial accepted nodes

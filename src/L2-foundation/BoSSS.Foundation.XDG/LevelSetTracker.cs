@@ -1119,7 +1119,7 @@ namespace BoSSS.Foundation.XDG {
 
             for (int i = 0; i < NoOfLevelSets; i++) { // loop over level sets
                 var data = this.m_DataHistories[i].Current;
-                for (int j = 0; j < m_gDat.Cells.NoOfCells; j++) {
+                for (int j = 0; j < m_gDat.Cells.Count; j++) {
                     int iKref = this.GridDat.Cells.GetRefElementIndex(j);
 
                     MultidimensionalArray levSetVals = data.GetLevSetValues(TestNodes[iKref], j, 1);
@@ -1356,7 +1356,7 @@ namespace BoSSS.Foundation.XDG {
 
                 m_VersionCnt++;
                 int J = m_gDat.Cells.NoOfLocalUpdatedCells;
-                int JA = m_gDat.Cells.NoOfCells;
+                int JA = m_gDat.Cells.Count;
                 int D = m_gDat.Grid.SpatialDimension;
                 var smplx = m_gDat.Grid.RefElements;
                 //int NoOfSmplxVertice = smplx.NoOfVertices;
@@ -1859,7 +1859,7 @@ namespace BoSSS.Foundation.XDG {
             var VerticeInd = grdDat.Cells.CellVertices;
 
             int J = grdDat.Cells.NoOfLocalUpdatedCells;
-            int JA = grdDat.Cells.NoOfCells;
+            int JA = grdDat.Cells.Count;
 
 
             unsafe

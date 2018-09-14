@@ -66,7 +66,13 @@ namespace BoSSS.Application.XNSE_Solver {
 
 
         static void Main(string[] args) {
-        
+
+            //BoSSS.Application.XNSE_Solver.Tests.UnitTest.TestFixtureSetUp();
+            //BoSSS.Application.XNSE_Solver.Tests.UnitTest.MovingDropletTest(2, 0.01d, true, SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_Flux, 0.69711d, ViscosityMode.Standard, true, false);
+            //Debug.Assert(false);
+            
+
+
             _Main(args, false, delegate () {
                 var p = new XNSE_SolverMain();
                 return p;
@@ -248,11 +254,11 @@ namespace BoSSS.Application.XNSE_Solver {
                 // ==============================
                 this.LevSet = ContinuityProjection.CreateField(
                     DGLevelSet: this.DGLevSet.Current,
-                    gridData: GridData,
+                    gridData: (GridData)GridData,
                     Option: Control.LSContiProjectionMethod
                     );
 
-                this.LsTrk = new LevelSetTracker(this.GridData, base.Control.CutCellQuadratureType, base.Control.LS_TrackerWidth, new string[] { "A", "B" }, this.LevSet);
+                this.LsTrk = new LevelSetTracker((GridData) this.GridData, base.Control.CutCellQuadratureType, base.Control.LS_TrackerWidth, new string[] { "A", "B" }, this.LevSet);
                 base.RegisterField(this.LevSet);
                 this.LevSetGradient = new VectorField<SinglePhaseField>(D.ForLoop(d => new SinglePhaseField(this.LevSet.Basis, "dPhi_dx[" + d + "]")));
                 base.RegisterField(this.LevSetGradient);
@@ -1084,31 +1090,33 @@ namespace BoSSS.Application.XNSE_Solver {
                         throw new NotSupportedException();
                     }
 
-                    /// +++++++++++++++++++++++++++++++++++++
-                    /// compute/check time step restrictions
-                    /// +++++++++++++++++++++++++++++++++++++
 
-                    dt = base.Control.dtFixed;
+                /// +++++++++++++++++++++++++++++++++++++
+                /// compute/check time step restrictions
+                /// +++++++++++++++++++++++++++++++++++++
 
-                    // Level-Set motion-CFL
-                    double LevSet_Deg2 = this.DGLevSet.Current.Basis.Degree;
-                    LevSet_Deg2 = LevSet_Deg2 * LevSet_Deg2;
-                    double dt_LevSetCFL = base.GridData.ComputeCFLTime(this.ExtensionVelocity.Current, dt * LevSet_Deg2);
-                    dt_LevSetCFL = dt_LevSetCFL / LevSet_Deg2;
+                dt = base.Control.dtFixed;
 
-                    //dt = Math.Min(dt, dt_LevSetCFL);
+                // Level-Set motion-CFL
+                double LevSet_Deg2 = this.DGLevSet.Current.Basis.Degree;
+                LevSet_Deg2 = LevSet_Deg2 * LevSet_Deg2;
+                double dt_LevSetCFL = base.GridData.ComputeCFLTime(this.ExtensionVelocity.Current, dt * LevSet_Deg2);
+                dt_LevSetCFL = dt_LevSetCFL / LevSet_Deg2;
 
-                    // Capillary Timestep restriction
-                    if(this.Control.PhysicalParameters.Sigma != 0.0) {
-                        MultidimensionalArray h_mins = this.GridData.Cells.h_min;
-                        double h = h_mins.Min();
-                        double LevSet_Deg = this.LevSet.Basis.Degree + 1;
-                        h /= LevSet_Deg;
-                        double dt_sigma = Math.Sqrt((this.Control.PhysicalParameters.rho_A + this.Control.PhysicalParameters.rho_B)
-                            * Math.Pow(h, 3) / (2 * Math.PI * this.Control.PhysicalParameters.Sigma));
-                        if(dt > dt_sigma)
-                            Console.WriteLine("Warning: exceeding Capillary timestep: dt = {0}, dt_sigma = {1}, frac = {2}", dt, dt_sigma, dt / dt_sigma);
-                    }
+                //dt = Math.Min(dt, dt_LevSetCFL);
+
+                // Capillary Timestep restriction
+                if (this.Control.PhysicalParameters.Sigma != 0.0) {
+                    MultidimensionalArray h_mins = ((GridData)this.GridData).Cells.h_min;
+                    double h = h_mins.Min();
+                    double LevSet_Deg = this.LevSet.Basis.Degree + 1;
+                    h /= LevSet_Deg; 
+                    double dt_sigma = Math.Sqrt((this.Control.PhysicalParameters.rho_A + this.Control.PhysicalParameters.rho_B)
+                        * Math.Pow(h, 3) / (2 * Math.PI * this.Control.PhysicalParameters.Sigma));
+                    if (dt > dt_sigma)
+                        Console.WriteLine("Warning: exceeding Capillary timestep: dt = {0}, dt_sigma = {1}, frac = {2}", dt, dt_sigma, dt / dt_sigma);
+                }
+
 
                     // elo
                     // ---
@@ -1852,10 +1860,10 @@ namespace BoSSS.Application.XNSE_Solver {
 
                 var innerDom = QuadDom.Except(this.GridData.GetBoundaryEdgeMask());
 
-                System.Collections.BitArray lowerBits = new System.Collections.BitArray(this.GridData.Edges.Count);
+                System.Collections.BitArray lowerBits = new System.Collections.BitArray(((GridData)this.GridData).Edges.Count);
                 foreach(Chunk cnk in boundaryCutEdge) {
                     for(int iE = cnk.i0; iE < cnk.JE; iE++) {
-                        if(this.GridData.Edges.EdgeTags[iE] == 1) {
+                        if(((GridData)this.GridData).Edges.EdgeTags[iE] == 1) {
                             lowerBits[iE] = true;
                         }
                     }
@@ -2052,7 +2060,7 @@ namespace BoSSS.Application.XNSE_Solver {
                         TestVec.Clear();
                         Random rnd = new Random(rnd_seed);
                         XDGField Pressack = TestVec.Mapping.Fields[D] as XDGField;
-                        int J = this.GridData.Cells.NoOfLocalUpdatedCells;
+                        int J = this.GridData.iLogicalCells.NoOfLocalUpdatedCells;
                         for (int j = 0; j < J; j++) {
                             int N = Pressack.Basis.GetLength(j);
 
@@ -2785,7 +2793,7 @@ namespace BoSSS.Application.XNSE_Solver {
                     // additional refinement
                     switch(this.Control.RefineStrategy) {
                         case XNSE_Control.RefinementStrategy.CurvatureRefined: {
-                                double curv_max = 1.0 / (2.0 * this.GridData.Cells.h_min[j]);
+                                double curv_max = 1.0 / (2.0 * ((GridData)this.GridData).Cells.h_min[j]);
                                 double mean_curv = Math.Abs(this.Curvature.GetMeanValue(j));
                                 double minCurv, maxCurv;
                                 this.Curvature.GetExtremalValuesInCell(out minCurv, out maxCurv, j);
@@ -2800,7 +2808,7 @@ namespace BoSSS.Application.XNSE_Solver {
                                 break;
                             }
                         case XNSE_Control.RefinementStrategy.ContactLineRefined: {
-                                CellMask BCells = this.GridData.BoundaryCells.VolumeMask;
+                                CellMask BCells = ((GridData)this.GridData).BoundaryCells.VolumeMask;
                                 if(ccm.Contains(j) && BCells.Contains(j) && CurrentLevel == this.Control.RefinementLevel) {
                                     DesiredLevel_j++;
                                 } else if(!BCells.Contains(j) && CurrentLevel == this.Control.RefinementLevel + 1) {
@@ -2949,14 +2957,14 @@ namespace BoSSS.Application.XNSE_Solver {
                     NScm = new CellMask(this.GridData);
                     NSbuffer = new CellMask(this.GridData);
                     if(this.Control.RefineNavierSlipBoundary) {
-                        BitArray NSc = new BitArray(this.GridData.Cells.NoOfCells);
-                        CellMask bnd = this.GridData.BoundaryCells.VolumeMask;
-                        int[][] c2e = this.GridData.Cells.Cells2Edges;
+                        BitArray NSc = new BitArray(((GridData)this.GridData).Cells.Count);
+                        CellMask bnd = ((GridData)this.GridData).BoundaryCells.VolumeMask;
+                        int[][] c2e = ((GridData)this.GridData).Cells.Cells2Edges;
                         foreach(Chunk cnk in bnd) {
                             for(int i = cnk.i0; i < cnk.JE; i++) {
                                 foreach(int e in c2e[i]) {
                                     int eId = (e < 0) ? -e - 1 : e - 1;
-                                    byte et = this.GridData.Edges.EdgeTags[eId];
+                                    byte et = ((GridData)this.GridData).Edges.EdgeTags[eId];
                                     if(this.GridData.EdgeTagNames[et].Contains("navierslip_linear"))
                                         NSc[i] = true;
                                 }
@@ -2976,11 +2984,13 @@ namespace BoSSS.Application.XNSE_Solver {
 
                     //PlotCurrentState(hack_Phystime, new TimestepNumber(TimestepNo, 1), 2);
 
-                    bool AnyChange = GridRefinementController.ComputeGridChange(this.GridData, BlockedCells, LevelIndicator, out List<int> CellsToRefineList, out List<int[]> Coarsening);
-                    int NoOfCellsToRefine = 0;
-                    int NoOfCellsToCoarsen = 0;
-                    if(AnyChange) {
-                        int[] glb = (new int[] {
+
+                bool AnyChange = GridRefinementController.ComputeGridChange((BoSSS.Foundation.Grid.Classic.GridData) this.GridData, BlockedCells, LevelIndicator, out List<int> CellsToRefineList, out List<int[]> Coarsening);
+                int NoOfCellsToRefine = 0;
+                int NoOfCellsToCoarsen = 0;
+                if (AnyChange) {
+                    int[] glb = (new int[] {
+
                     CellsToRefineList.Count,
                     Coarsening.Sum(L => L.Length),
                 }).MPISum();
@@ -2999,9 +3009,10 @@ namespace BoSSS.Application.XNSE_Solver {
                         Console.WriteLine("       Refining " + NoOfCellsToRefine + " of " + oldJ + " cells");
                         Console.WriteLine("       Coarsening " + NoOfCellsToCoarsen + " of " + oldJ + " cells");
 
-                        newGrid = this.GridData.Adapt(CellsToRefineList, Coarsening, out old2NewGrid);
+                        newGrid = ((GridData)this.GridData).Adapt(CellsToRefineList, Coarsening, out old2NewGrid);
 
-                        //PlotCurrentState(hack_Phystime, new TimestepNumber(new int[] { hack_TimestepIndex, 2 }), 2);#
+                        //PlotCurrentState(hack_Phystime, new TimestepNumber(new int[] { hack_TimestepIndex, 2 }), 2);
+
 
                     } else {
 
@@ -3182,10 +3193,10 @@ namespace BoSSS.Application.XNSE_Solver {
                             // Fast Marching: Specify the Domains first
                             // Perform Fast Marching only on the Far Field
                             if(this.Control.AdaptiveMeshRefinement) {
-                                int NoCells = this.GridData.Cells.NoOfCells;
+                                int NoCells = ((GridData)this.GridData).Cells.Count;
                                 System.Collections.BitArray Refined = new System.Collections.BitArray(NoCells);
                                 for(int j = 0; j < NoCells; j++) {
-                                    if(this.GridData.Cells.GetCell(j).RefinementLevel > 0)
+                                    if(((GridData)this.GridData).Cells.GetCell(j).RefinementLevel > 0)
                                         Refined[j] = true;
                                 }
                                 CellMask Accepted = new CellMask(this.GridData, Refined);

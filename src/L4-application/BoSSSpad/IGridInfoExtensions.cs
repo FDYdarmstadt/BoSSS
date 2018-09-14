@@ -109,7 +109,7 @@ namespace BoSSS.Foundation.IO {
         public static void Save(this IGridInfo grid) {
             if (grid is GridCommons) {
                 GridCommons realGrid = (GridCommons)grid;
-                grid.Database.Controller.DBDriver.SaveGrid(realGrid);
+                grid.Database.Controller.DBDriver.SaveGrid(realGrid, grid.Database.Controller.Database);
             } else {
                 throw new NotImplementedException();
             }

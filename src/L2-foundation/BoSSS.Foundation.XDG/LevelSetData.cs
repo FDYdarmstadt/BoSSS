@@ -82,7 +82,7 @@ namespace BoSSS.Foundation.XDG {
             /// Update of <see cref="m_LenToNextChange"/>.
             /// </summary>
             public void Recalc_LenToNextchange() {
-                int JA = m_owner.GridDat.iLogicalCells.NoOfCells;
+                int JA = m_owner.GridDat.iLogicalCells.Count;
                 m_LenToNextChange = new int[JA];
                 m_LenToNextChange[JA - 1] = 1;
                 ushort regionCd = m_LevSetRegions[JA - 1];
@@ -292,9 +292,10 @@ namespace BoSSS.Foundation.XDG {
                     throw new IndexOutOfRangeException();
 
 
-                if(m_NearMask4LevelSet == null || m_NearMask4LevelSet.GetLength(1) != m_owner.m_NearRegionWidth) {
+                if(m_NearMask4LevelSet == null || m_NearMask4LevelSet.GetLength(1) != (m_owner.m_NearRegionWidth + 1)) {
                     m_NearMask4LevelSet = new CellMask[m_owner.NoOfLevelSets, m_owner.m_NearRegionWidth + 1];
                 }
+                
 
                 if(m_NearMask4LevelSet[levSetIdx, FieldWidth] == null) {
                     // create subgrid

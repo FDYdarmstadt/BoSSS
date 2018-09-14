@@ -2,10 +2,10 @@
 #include "DllExportPreProc.h"
 
 /*
- * Within this file, we define the MPI funstions that should be exported by the Platform_Native - library;
- * We add a BoSSS-prefic to avoid naming confusion.
+ * Within this file, we define the MPI functions that should be exported by the Platform_Native - library;
+ * We add a BoSSS-prefix to avoid naming confusion.
  * (On Windows, it would be easier to us an .def - export file, but that is not supported by fu**ing Linux,
- * so I have to write this extremly silly pice of code.)
+ * so I have to write this extremely silly piece of code.)
  */
 
 int DLL_EXPORT BoSSS_Get_MPI_COMM_WORLD()   { return MPI_Comm_c2f(MPI_COMM_WORLD); }

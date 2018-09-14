@@ -85,7 +85,7 @@ namespace CNS.IBM {
 
             // Does _not_ include agglomerated edges
             EdgeMask nonVoidEdges = speciesMap.QuadSchemeHelper.GetEdgeMask(species);
-            nonVoidEdges = nonVoidEdges.Intersect(ABSubGrid.AllEdgesMask);
+            nonVoidEdges = nonVoidEdges.Intersect(ABSubGrid.AllEdgesMask.ToGeometicalMask());
             EdgeQuadratureScheme edgeScheme = speciesMap.QuadSchemeHelper.GetEdgeQuadScheme(
                 species, true, nonVoidEdges, control.LevelSetQuadratureOrder);
 
@@ -115,26 +115,28 @@ namespace CNS.IBM {
 
 
         protected override void ComputeChangeRate(double[] k, double AbsTime, double RelTime, double[] edgeFluxes = null) {
-            RaiseOnBeforeComputechangeRate(AbsTime, RelTime);
+            using (new ilPSP.Tracing.FuncTrace()) {
+                RaiseOnBeforeComputechangeRate(AbsTime, RelTime);
 
-            Evaluator.time = AbsTime;
-            Evaluator.Evaluate(1.0, 0.0, k, outputBndEdge: edgeFluxes);
-            Debug.Assert(
-                !k.Any(f => double.IsNaN(f)),
-                "Unphysical flux in standard terms");
+                Evaluator.time = AbsTime;
+                Evaluator.Evaluate(1.0, 0.0, k, outputBndEdge: edgeFluxes);
+                Debug.Assert(
+                    !k.Any(f => double.IsNaN(f)),
+                    "Unphysical flux in standard terms");
 
-            boundaryEvaluator.Value.time = AbsTime;
-            boundaryEvaluator.Value.Evaluate(1.0, 1.0, k);
-            Debug.Assert(
-                !k.Any(f => double.IsNaN(f)),
-                "Unphysical flux in boundary terms");
+                boundaryEvaluator.Value.time = AbsTime;
+                boundaryEvaluator.Value.Evaluate(1.0, 1.0, k);
+                Debug.Assert(
+                    !k.Any(f => double.IsNaN(f)),
+                    "Unphysical flux in boundary terms");
 
-            // Agglomerate fluxes
-            speciesMap.Agglomerator.ManipulateRHS(k, Mapping);
+                // Agglomerate fluxes
+                speciesMap.Agglomerator.ManipulateRHS(k, Mapping);
 
-            // Apply inverse to all cells with non-identity mass matrix
-            IBMMassMatrixFactory massMatrixFactory = speciesMap.GetMassMatrixFactory(Mapping);
-            IBMUtility.SubMatrixSpMV(massMatrixFactory.InverseMassMatrix, 1.0, k, 0.0, k, cutAndTargetCells);
+                // Apply inverse to all cells with non-identity mass matrix
+                IBMMassMatrixFactory massMatrixFactory = speciesMap.GetMassMatrixFactory(Mapping);
+                IBMUtility.SubMatrixSpMV(massMatrixFactory.InverseMassMatrix, 1.0, k, 0.0, k, cutAndTargetCells);
+            }
         }
 
         internal bool agglomerationPatternHasChanged = true;
@@ -166,20 +168,22 @@ namespace CNS.IBM {
         }
 
         protected override double[] ComputesUpdatedDGCoordinates(double[] completeChangeRate) {
-            double[] y0 = new double[Mapping.LocalLength];
-            CurrentState.CopyTo(y0, 0);
-            CurrentState.axpy<double[]>(completeChangeRate, -1);
+            using (new ilPSP.Tracing.FuncTrace("ComputesUpdatedDGCoordinates")) {
+                double[] y0 = new double[Mapping.LocalLength];
+                CurrentState.CopyTo(y0, 0);
+                CurrentState.axpy<double[]>(completeChangeRate, -1);
 
-            // Speciality for IBM: Do the extrapolation
-            speciesMap.Agglomerator.Extrapolate(CurrentState.Mapping);
+                // Speciality for IBM: Do the extrapolation
+                speciesMap.Agglomerator.Extrapolate(CurrentState.Mapping);
 
-            double[] upDGC = CurrentState.ToArray();
-            upDGC = OrderValuesBySgrd(upDGC);
-            // DGCoordinates should be untouched after calling this method
-            CurrentState.Clear();
-            CurrentState.CopyFrom(y0, 0);
+                double[] upDGC = CurrentState.ToArray();
+                upDGC = OrderValuesBySgrd(upDGC);
+                // DGCoordinates should be untouched after calling this method
+                CurrentState.Clear();
+                CurrentState.CopyFrom(y0, 0);
 
-            return upDGC;
+                return upDGC;
+            }
         }
 
         /// <summary>

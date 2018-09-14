@@ -37,13 +37,13 @@ namespace CNS.ShockCapturing {
     public class ArtificialViscosityCFLConstraint : CFLConstraint {
 
         public ArtificialViscosityCFLConstraint(
-            CNSControl config, GridData gridData, CNSFieldSet workingSet, ISpeciesMap speciesMap)
+            CNSControl config, IGridData gridData, CNSFieldSet workingSet, ISpeciesMap speciesMap)
             : base(gridData, workingSet) {
 
             this.config = config;
             this.speciesMap = speciesMap;
 
-            if (gridData.Grid.RefElements.Length > 1) {
+            if (gridData.iGeomCells.RefElements.Length > 1) {
                 throw new NotImplementedException();
             }
         }
@@ -78,10 +78,12 @@ namespace CNS.ShockCapturing {
         /// <param name="Length"></param>
         /// <returns></returns>
         protected override double GetCFLStepSize(int i0, int Length) {
-            int iKref = gridData.Cells.GetRefElementIndex(i0);
+            BoSSS.Foundation.Grid.Classic.GridData __gridData = (BoSSS.Foundation.Grid.Classic.GridData)(this.gridData);
+
+            int iKref = __gridData.Cells.GetRefElementIndex(i0);
             int noOfNodesPerCell = base.EvaluationPoints[iKref].NoOfNodes;
             double scaling = Math.Max(4.0 / 3.0, config.EquationOfState.HeatCapacityRatio / config.PrandtlNumber);
-            MultidimensionalArray hmin = this.gridData.Cells.h_min;
+            MultidimensionalArray hmin = __gridData.Cells.h_min;
             DGField artificialViscosity = workingSet.ParameterFields.Where(c => c.Identification.Equals(Variables.ArtificialViscosity)).Single();
             double cfl = double.MaxValue;
 
@@ -91,13 +93,16 @@ namespace CNS.ShockCapturing {
                         SpeciesId species = ibmMap.Tracker.GetSpeciesId(ibmMap.Control.FluidSpeciesName);
                         MultidimensionalArray hminCut = ibmMap.CellAgglomeration.CellLengthScales[species];
 
-                        CellMask cutCellsThatAreNotSourceCells = ibmMap.Tracker.Regions.GetCutCellMask().Except(ibmMap.Agglomerator.AggInfo.SourceCells);
+                        //ibmMap.Agglomerator.AggInfo.SourceCells
 
-                        for (int i = 0; i < Length; i++) {
+                        // cutCellsThatAreNotSourceCells = 
+                        //    ibmMap.Tracker.Regions.GetCutCellMask().Except(ibmMap.Agglomerator.AggInfo.SourceCells);
+
+                        for (int i = 0; i < Length; i++) { // loop over cells...
                             int cell = i0 + i;
 
                             double hminLocal = double.NaN;
-                            if (cutCellsThatAreNotSourceCells.ItemEnum.Contains(cell)) {
+                            if (ibmMap.cutCellsThatAreNotSourceCells[cell]) {
                                 hminLocal = hminCut[cell];
                             } else {
                                 hminLocal = hmin[cell];

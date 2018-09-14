@@ -79,6 +79,9 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
                 if (mask != null && mask is CellMask == false) {
                     throw new ArgumentException("Cell mask required", "mask");
                 }
+                if (mask.MaskType != MaskType.Geometrical)
+                    throw new ArgumentException("Expecting a geometrical mask.");
+
 
                 Stopwatch totalTimer = new Stopwatch();
                 Stopwatch projectionTimer = new Stopwatch();

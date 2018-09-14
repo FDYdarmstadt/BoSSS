@@ -68,6 +68,8 @@ namespace CutCellQuadrature {
         }
 
         public IEnumerable<IChunkRulePair<QuadRule>> GetQuadRuleSet(ExecutionMask mask, int order) {
+            if (mask.MaskType != MaskType.Geometrical)
+                throw new ArgumentException("Expecting a geometrical mask.");
             var baseSet = baseFactory.GetQuadRuleSet(mask, order);
 
             var result = new List<ChunkRulePair<QuadRule>>();

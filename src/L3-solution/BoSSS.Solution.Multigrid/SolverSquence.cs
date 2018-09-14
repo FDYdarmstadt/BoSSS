@@ -4,8 +4,6 @@ using ilPSP.Utils;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace BoSSS.Solution.Multigrid {
 
@@ -92,7 +90,7 @@ namespace BoSSS.Solution.Multigrid {
         public int Fixedterations = 1;
 
 
-        bool m_converged = false;
+        //bool m_converged = false;
         int NoOfIterations = 0;
 
 
@@ -170,6 +168,8 @@ namespace BoSSS.Solution.Multigrid {
                     this.IterationCallback(iIter + 1, xl.ToArray(), _bl, this.m_MgOperator);
                 }
             }
+
+            //m_converged = false;
         }
 
         /// <summary>
@@ -203,7 +203,7 @@ namespace BoSSS.Solution.Multigrid {
         }
 
         public void ResetStat() {
-            this.m_converged = false;
+            //this.m_converged = false;
             this.NoOfIterations = 0;
             foreach (var s in this.SolverChain)
                 s.ResetStat();

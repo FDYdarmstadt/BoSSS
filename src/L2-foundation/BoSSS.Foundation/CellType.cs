@@ -15,6 +15,9 @@ limitations under the License.
 */
 
 
+using System;
+using System.Linq;
+
 namespace BoSSS.Foundation.Grid.RefElements {
 
     /// <summary>
@@ -248,6 +251,24 @@ namespace BoSSS.Foundation.Grid.RefElements {
                 || type == CellType.Triangle_3
                 || type == CellType.Line_2
                 || type == CellType.Point);
+        }
+
+        /// <summary>
+        /// Returns the reference element which corresponds to <see cref="CellType"/>
+        /// </summary>
+        static public RefElement GetRefElement(this CellType type) {
+            if (Line.Instance.SupportedCellTypes.Contains(type))
+                return Line.Instance;
+            if (Triangle.Instance.SupportedCellTypes.Contains(type))
+                return Triangle.Instance;
+            if (Square.Instance.SupportedCellTypes.Contains(type))
+                return Square.Instance;
+            if (Tetra.Instance.SupportedCellTypes.Contains(type))
+                return Tetra.Instance;
+            if (Cube.Instance.SupportedCellTypes.Contains(type))
+                return Cube.Instance;
+
+            throw new NotImplementedException("Unable to convert cell '" + type + "' type to ref element");
         }
     }
 }

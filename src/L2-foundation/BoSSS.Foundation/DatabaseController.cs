@@ -23,6 +23,7 @@ using ilPSP;
 using BoSSS.Platform;
 using Renci.SshNet;
 using Renci.SshNet.Common;
+using BoSSS.Foundation.Grid;
 
 namespace BoSSS.Foundation.IO {
 
@@ -602,13 +603,13 @@ namespace BoSSS.Foundation.IO {
         /// don't have to be created over and over again.
         /// </summary>
         /// <param name="gridData"></param>
-        public void AddGridInitializationContext(Grid.Classic.GridData gridData) {
-            if (m_gridInitializationContexts.ContainsKey(gridData.Grid.ID)) {
+        public void AddGridInitializationContext(IGridData gridData) {
+            if (m_gridInitializationContexts.ContainsKey(gridData.GridID)) {
                 throw new ArgumentException(
                     "An initialization context for the given grid already exists");
             }
 
-            m_gridInitializationContexts[gridData.Grid.ID] = new GridInitializationContext(gridData);
+            m_gridInitializationContexts[gridData.GridID] = new GridInitializationContext(gridData);
         }
 
         /// <summary>
@@ -644,9 +645,9 @@ namespace BoSSS.Foundation.IO {
         /// <param name="grid">The grid to be saved.</param>
         public void SaveGridInfo(IGridInfo grid) {
             if (grid is Grid.Classic.GridCommons) {
-                DBDriver.SaveGrid((Grid.Classic.GridCommons)grid);
+                DBDriver.SaveGrid((Grid.Classic.GridCommons)grid, this.Database);
             } else if (grid is GridProxy) {
-                DBDriver.SaveGrid(grid.Cast<GridProxy>().RealGrid.Cast<Grid.Classic.GridCommons>());
+                DBDriver.SaveGrid(grid.Cast<GridProxy>().RealGrid.Cast<Grid.Classic.GridCommons>(), this.Database);
             } else {
                 throw new NotSupportedException("As of now, only GridCommons objects can be saved.");
             }

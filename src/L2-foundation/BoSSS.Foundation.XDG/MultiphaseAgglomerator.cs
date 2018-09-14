@@ -594,7 +594,7 @@ namespace BoSSS.Foundation.XDG {
             SpeciesId[] species = this.SpeciesList.ToArray();
 
             int J = this.Tracker.GridDat.Cells.NoOfLocalUpdatedCells;
-            int JE = this.Tracker.GridDat.Cells.NoOfCells;
+            int JE = this.Tracker.GridDat.Cells.Count;
             int[][] C2E = this.Tracker.GridDat.Cells.Cells2Edges;
 
             var CellLengthScalesMda = MultidimensionalArray.Create(JE, species.Length, 2); // 1st index: cell, 2nd index: species
@@ -731,7 +731,7 @@ namespace BoSSS.Foundation.XDG {
                 int myMpiRank = Tracker.GridDat.MpiRank;
                 int NoOfEdges = grdDat.Edges.Count;
                 int Jup = grdDat.Cells.NoOfLocalUpdatedCells;
-                int Jtot = grdDat.Cells.NoOfCells;
+                int Jtot = grdDat.Cells.Count;
                 Partitioning CellPart = Tracker.GridDat.CellPartitioning;
                 int i0 = CellPart.i0;
                 var GidxExt = Tracker.GridDat.Parallel.GlobalIndicesExternalCells;

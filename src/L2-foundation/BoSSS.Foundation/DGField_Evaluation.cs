@@ -35,7 +35,7 @@ namespace BoSSS.Foundation {
         /// <summary>
         /// evaluation of DG field; may be used in derived classes to implement <see cref="DGField.Evaluate(int,int,NodeSet,MultidimensionalArray,int,double)"/>.
         /// </summary>
-        protected static void EvaluateInternal(int j0, int L, NodeSet NS, Basis basis, MultidimensionalArray Coördinates, MultidimensionalArray ResultAcc, double ResultPreScale) {
+        protected static void EvaluateInternal(int j0, int L, NodeSet NS, Basis basis, MultidimensionalArray Coördinates, int coördOffset, MultidimensionalArray ResultAcc, double ResultPreScale) {
 
             int D, N, NumNodes;
             bool AffineLinear;
@@ -43,7 +43,7 @@ namespace BoSSS.Foundation {
             Debug.Assert(ResultAcc.Dimension == 2);
             Debug.Assert(L == ResultAcc.GetLength(0));
             Debug.Assert(NumNodes == ResultAcc.GetLength(1));
-            
+
             /*
             MultidimensionalArray BasisValues;
             BasisValues = basis.CellEval(NS, j0, L);
@@ -54,18 +54,25 @@ namespace BoSSS.Foundation {
             ResultAcc.Multiply(1.0, Coördinates, BasisValues, ResultPreScale, "jm", "jn", "jmn");
             */
 
-            
+            //int[] geom2log = basis.GridDat.iGeomCells.GeomCell2LogicalCell;
+
             MultidimensionalArray BasisValues = basis.Evaluate(NS);
             
             if(L == 1 && AffineLinear) {
                 // Special optimization for single-cell evaluation:
                 // this happens very often for edge quadrature, so it is quite relevant.
                 double scale0 = basis.GridDat.ChefBasis.Scaling[j0];
-                ResultAcc.Multiply(scale0, Coördinates, BasisValues, ResultPreScale, ref mp_jk_jm_km); //"jk", "jm", "km");
+                Debug.Assert(basis.GridDat.iGeomCells.GeomCell2LogicalCell == null || basis.GridDat.iGeomCells.GeomCell2LogicalCell[j0] == j0);
+                MultidimensionalArray Coördinates_j;
+                if (coördOffset == 0 && Coördinates.GetLength(0) == 1)
+                    Coördinates_j = Coördinates;
+                else
+                    Coördinates_j = Coördinates.ExtractSubArrayShallow(new int[] { coördOffset, 0 }, new int[] { coördOffset, N - 1 });
+                ResultAcc.Multiply(scale0, Coördinates_j, BasisValues, ResultPreScale, ref mp_jk_jm_km); //"jk", "jm", "km");
             } else {
                 int iBuf;
                 MultidimensionalArray trfCoördinates = TempBuffer.GetTempMultidimensionalarray(out iBuf, L, N);
-                TransformCoördinates(j0, L, basis, Coördinates, N, AffineLinear, trfCoördinates);
+                TransformCoördinates(j0, L, basis, Coördinates, coördOffset, N, AffineLinear, trfCoördinates);
 
                 if(ResultAcc.IsContinious && trfCoördinates.IsContinious && BasisValues.IsContinious) {
                     unsafe {
@@ -123,41 +130,107 @@ namespace BoSSS.Foundation {
 
         static MultidimensionalArray.MultiplyProgram mp_jk_jm_km = MultidimensionalArray.MultiplyProgram.Compile("jk", "jm", "km");
 
-        private static void TransformCoördinates(int j0, int L, Basis basis, MultidimensionalArray Coördinates, int N, bool AffineLinear, MultidimensionalArray trfCoördinates) {
-            if(AffineLinear) {
-                MultidimensionalArray scale = basis.GridDat.ChefBasis.Scaling.ExtractSubArrayShallow(new int[] { j0 }, new int[] { j0 + L - 1 });
-                trfCoördinates.Multiply(1.0, scale, Coördinates, 0.0, ref mp_jn_j_jn);
-             
-            } else {
+        private static void TransformCoördinates(int j0, int L, 
+            Basis basis, 
+            MultidimensionalArray Coördinates, int coördOffset, 
+            int N, bool AffineLinear, 
+            MultidimensionalArray trfCoördinates) {
+            int[] geom2log = basis.GridDat.iGeomCells.GeomCell2LogicalCell;
+
+            if (geom2log != null) {
+                // +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+                // aggregation grid branch -- apply index trafo to coordinates
+                // (j0..j0+L) are geometical grid indices
+                // +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+                // extract trafo
                 MultidimensionalArray trafo = basis.GridDat.ChefBasis.OrthonormalizationTrafo.GetValue_Cell(j0, L, basis.Degree);
                 Debug.Assert(trafo.GetLength(0) == L);
-                if(trafo.GetLength(1) > N)
+                if (trafo.GetLength(1) > N)
                     trafo = trafo.ExtractSubArrayShallow(new int[] { 0, 0, 0 }, new int[] { L - 1, N - 1, N - 1 });
 
-                trfCoördinates.Multiply(1.0, trafo, Coördinates, 0.0, ref mp_jm_jmn_jn);
+                // apply trafo
+                unsafe {
+                    fixed (int* p_geom2log = geom2log) {
+                        trfCoördinates.Multiply(1.0, trafo, Coördinates, 0.0, ref mp_jm_jmn_Tjn,
+                            p_geom2log, p_geom2log,
+                            trfPreOffset_A: 0, trfCycle_A: 0, trfPostOffset_A: 0,
+                            trfPreOffset_B: coördOffset, trfCycle_B: 1, trfPostOffset_B: 0); // geom cell to logical cell trafo for coördinates
+
+                    }
+                }
+            } else if (AffineLinear) {
+                // +++++++++++++++++++++++++
+                // affine-linear grid branch
+                // +++++++++++++++++++++++++
+
+                // extract coördinates
+                MultidimensionalArray _Coördinates;
+                if(coördOffset > 0 || coördOffset + L < Coördinates.GetLength(0)) {
+                    _Coördinates = Coördinates.ExtractSubArrayShallow(new[] { coördOffset, 0 }, new[] { coördOffset + L - 1, N - 1 });
+                } else {
+                    _Coördinates = Coördinates;
+                }
+                
+                // extract trafo
+                MultidimensionalArray scale = basis.GridDat.ChefBasis.Scaling.ExtractSubArrayShallow(new int[] { j0 }, new int[] { j0 + L - 1 });
+
+                // apply trafo
+                trfCoördinates.Multiply(1.0, scale, _Coördinates, 0.0, ref mp_jn_j_jn);
+
+            } else {
+                // ++++++++++++++++++
+                // curved cell branch
+                // ++++++++++++++++++
+
+                // extract coördinates
+                MultidimensionalArray _Coördinates;
+                if(coördOffset > 0 || coördOffset + L < Coördinates.GetLength(0)) {
+                    _Coördinates = Coördinates.ExtractSubArrayShallow(new[] { coördOffset, 0 }, new[] { coördOffset + L - 1, N - 1 });
+                } else {
+                    _Coördinates = Coördinates;
+                }
+
+                // extract trafo
+                MultidimensionalArray trafo = basis.GridDat.ChefBasis.OrthonormalizationTrafo.GetValue_Cell(j0, L, basis.Degree);
+                Debug.Assert(trafo.GetLength(0) == L);
+                if (trafo.GetLength(1) > N)
+                    trafo = trafo.ExtractSubArrayShallow(new int[] { 0, 0, 0 }, new int[] { L - 1, N - 1, N - 1 });
+
+                // apply trafo
+                trfCoördinates.Multiply(1.0, trafo, _Coördinates, 0.0, ref mp_jm_jmn_jn);
             }
         }
 
         static MultidimensionalArray.MultiplyProgram mp_jn_j_jn = MultidimensionalArray.MultiplyProgram.Compile("jn", "j", "jn");
         static MultidimensionalArray.MultiplyProgram mp_jm_jmn_jn = MultidimensionalArray.MultiplyProgram.Compile("jm", "jmn", "jn");
+        static MultidimensionalArray.MultiplyProgram mp_jm_jmn_Tjn = MultidimensionalArray.MultiplyProgram.Compile("jm", "jmn", "T(j)n", true);
 
         private static void CheckArgs(int j0, int L, NodeSet NS, Basis basis, MultidimensionalArray Coördinates, MultidimensionalArray ResultAcc, out int D, out int N, out int M, out bool AffineLinear) {
+            int[] g2l = basis.GridDat.iGeomCells.GeomCell2LogicalCell;
+
             D = basis.GridDat.SpatialDimension; // spatial dimension
-            N = basis.GetLength(j0);      // number of coordinates per cell
+            if(g2l == null)
+                N = basis.GetLength(j0);      // number of coordinates per cell -- standard grid
+            else 
+                N = basis.GetLength(g2l[j0]); // number of coordinates per cell -- aggregation grid
             M = NS.NoOfNodes;            // number of nodes
             AffineLinear = basis.GridDat.iGeomCells.IsCellAffineLinear(j0);
 
             Debug.Assert(basis.GetType() == typeof(Basis));
 
             Debug.Assert(Coördinates.Dimension == 2);
-            Debug.Assert(Coördinates.GetLength(0) == L);
             Debug.Assert(Coördinates.GetLength(1) == N);
 
 #if DEBUG
             for(int i = 1; i < L; i++) {
                 int jCell = j0 + i;
                 Debug.Assert(basis.GridDat.iGeomCells.IsCellAffineLinear(jCell) == AffineLinear);
-                Debug.Assert(basis.GetLength(jCell) == N);
+
+                if(g2l == null)
+                    Debug.Assert(basis.GetLength(jCell) == N);
+                else 
+                    Debug.Assert(basis.GetLength(g2l[jCell]) == N);
             }
 #endif
         }
@@ -165,7 +238,7 @@ namespace BoSSS.Foundation {
         /// <summary>
         /// evaluation of DG field gradient; may be used in derived classes to implement <see cref="EvaluateGradient"/>.
         /// </summary>
-        protected static void EvaluateGradientInternal(int j0, int L, NodeSet NS, Basis basis, MultidimensionalArray Coördinates, MultidimensionalArray ResultAcc, double ResultPreScale) {
+        protected static void EvaluateGradientInternal(int j0, int L, NodeSet NS, Basis basis, MultidimensionalArray Coördinates, int coördOffset, MultidimensionalArray ResultAcc, double ResultPreScale) {
 
 
             int D, N, K;
@@ -198,7 +271,14 @@ namespace BoSSS.Foundation {
                     MultidimensionalArray GradientRef = TempBuffer.GetTempMultidimensionalarray(out iBuf2, L, K, D);
                     MultidimensionalArray InvJacobi = basis.GridDat.iGeomCells.InverseTransformation.ExtractSubArrayShallow(j0, -1, -1);
 
-                    GradientRef.Multiply(scale0, Coördinates, BasisGradValues, 0.0, ref mp_jke_jm_kme);  // gradient in reference coördinates
+                    Debug.Assert(basis.GridDat.iGeomCells.GeomCell2LogicalCell == null || basis.GridDat.iGeomCells.GeomCell2LogicalCell[j0] == j0);
+                    MultidimensionalArray Coördinates_j;
+                    if (coördOffset == 0 && Coördinates.GetLength(0) == 1)
+                        Coördinates_j = Coördinates;
+                    else
+                        Coördinates_j = Coördinates.ExtractSubArrayShallow(new int[] { coördOffset, 0 }, new int[] { coördOffset, N - 1 });
+
+                    GradientRef.Multiply(scale0, Coördinates_j, BasisGradValues, 0.0, ref mp_jke_jm_kme);  // gradient in reference coördinates
                     ResultAcc.Multiply(1.0, InvJacobi, GradientRef, ResultPreScale, ref mp_jkd_ed_jke);
                     
                     TempBuffer.FreeTempBuffer(iBuf2);
@@ -207,7 +287,7 @@ namespace BoSSS.Foundation {
                     MultidimensionalArray GradientRef = TempBuffer.GetTempMultidimensionalarray(out iBuf2, L, K, D);
                     MultidimensionalArray InvJacobi = basis.GridDat.iGeomCells.InverseTransformation.ExtractSubArrayShallow(new int[] { j0, 0, 0 }, new int[] { j0 + L - 1, D - 1, D - 1 });
 
-                    TransformCoördinates(j0, L, basis, Coördinates, N, AffineLinear, trfCoördinates);
+                    TransformCoördinates(j0, L, basis, Coördinates, coördOffset, N, AffineLinear, trfCoördinates);
                     GradientRef.Multiply(1.0, trfCoördinates, BasisGradValues, 0.0, ref mp_jke_jm_kme);  // gradient in reference coördinates
                     ResultAcc.Multiply(1.0, InvJacobi, GradientRef, ResultPreScale, ref mp_jkd_jed_jke);
                     
@@ -224,7 +304,7 @@ namespace BoSSS.Foundation {
                 MultidimensionalArray GradientRef = TempBuffer.GetTempMultidimensionalarray(out iBuf2, L, K, D);
                 MultidimensionalArray InvJacobi = basis.GridDat.InverseJacobian.GetValue_Cell(NS, j0, L);
                 
-                TransformCoördinates(j0, L, basis, Coördinates, N, AffineLinear, trfCoördinates);
+                TransformCoördinates(j0, L, basis, Coördinates, coördOffset, N, AffineLinear, trfCoördinates);
                 GradientRef.Multiply(1.0, trfCoördinates, BasisGradValues, 0.0, ref mp_jke_jm_kme);  // gradient in reference coördinates
                 ResultAcc.Multiply(1.0, InvJacobi, GradientRef, ResultPreScale, ref mp_jkd_jked_jke);
 
@@ -260,42 +340,31 @@ namespace BoSSS.Foundation {
             Debug.Assert(valOT == null || valOT.GetLength(1) == NoOfNodes);
 
             int[,] trfIdx = grd.iGeomEdges.Edge2CellTrafoIndex;
-            int[,] E2C = grd.iGeomEdges.CellIndices;
+            int[,] E2Cl = grd.iGeomEdges.LogicalCellIndices;
+            int[,] E2Cg = grd.iGeomEdges.CellIndices;
 
-            int Nin = _Basis.GetLength(E2C[e0, 0]);
-            int Not = -1;
-
-            int jCellMin = int.MaxValue, jCellMax = int.MinValue;
-            for(int e = 0; e < Len; e++) {
-                int iEdge = e + e0;
-                int jCellIN = E2C[iEdge, 0];
-                int jCellOT = E2C[iEdge, 1];
-                {
-                    //Debug.Assert(BasisValues.GetLength(2) >= _Basis.GetLength(jCellIN));
-                    jCellMin = Math.Min(jCellMin, jCellIN);
-                    jCellMax = Math.Max(jCellMax, jCellIN);
-                    Debug.Assert(Nin == _Basis.GetLength(jCellIN));
-                }
-                if(jCellOT >= 0) {
-                    //Debug.Assert(BasisValues.GetLength(2) >= _Basis.GetLength(jCellOT));
-                    jCellMin = Math.Min(jCellMin, jCellOT);
-                    jCellMax = Math.Max(jCellMax, jCellOT);
-                    if(Not < 0)
-                        Not = _Basis.GetLength(jCellOT);
-                    else
-                        Debug.Assert(Not == _Basis.GetLength(jCellOT));
-                }
-                Debug.Assert(grd.iGeomEdges.IsEdgeAffineLinear(iEdge) == AffineLinear);
-            }
+            
 
             // transform DG coördinates
             // ========================
 
+            int Nin = _Basis.GetLength(E2Cl[e0, 0]);
+            int Not = Nin;
+
+#if DEBUG
+            for (int e = 0; e < Len; e++) {
+                int iEdge = e + e0;
+                int jCellIN = E2Cl[iEdge, 0];
+                int jCellOT = E2Cl[iEdge, 1];
+                Debug.Assert(_Basis.GetLength(jCellIN) == Nin);
+                if (jCellOT >= 0)
+                    Debug.Assert(_Basis.GetLength(jCellOT) == Not);
+            }
+#endif
             int iBufIN, iBufOT = 0;
             MultidimensionalArray trfCoördinatesIN = TempBuffer.GetTempMultidimensionalarray(out iBufIN, Len, Nin);
             MultidimensionalArray trfCoördinatesOT = Not > 0 ? TempBuffer.GetTempMultidimensionalarray(out iBufOT, Len, Not) : null;
-            TransformCoördinatesEdge(e0, Len, grd, Coord, Nin, Not, AffineLinear, trfCoördinatesIN, trfCoördinatesOT,
-                jCellMin, jCellMax, _Basis.Degree);
+            TransformCoördinatesEdge(e0, Len, grd, Coord, Nin, Not, _Basis.Degree, AffineLinear, trfCoördinatesIN, trfCoördinatesOT);
 
             // Evaluate
             // ========
@@ -328,12 +397,12 @@ namespace BoSSS.Foundation {
 
                         {
                             valIN.Multiply(1.0, trfCoördinatesIN, BasisValuesIN, ResultPreScale, ref mp_ik_im_Tikm,
-                                pTrfIndex, trfIdx.GetLength(0),
+                                pTrfIndex, pTrfIndex,
                                 trfPreOffset_A: 0, trfCycle_A: 0, trfPostOffset_A: 0, trfPreOffset_B: (2 * e0), trfCycle_B: 2, trfPostOffset_B: 0);
                         }
                         if(Not > 0) {
                             valOT.Multiply(1.0, trfCoördinatesOT, BasisValuesOT, ResultPreScale, ref mp_ik_im_Tikm,
-                                pTrfIndex, trfIdx.GetLength(0),
+                                pTrfIndex, pTrfIndex,
                                 trfPreOffset_A: 0, trfCycle_A: 0, trfPostOffset_A: 0, trfPreOffset_B: (2 * e0 + 1), trfCycle_B: 2, trfPostOffset_B: 0);
                         }
                     }
@@ -355,12 +424,12 @@ namespace BoSSS.Foundation {
 
                         {
                             meanValIN.Multiply(1.0, _trfCoördinatesIN, _Basis0Values, ResultPreScale, ref mp_i_i_Ti,
-                                pTrfIndex, trfIdx.GetLength(0),
+                                pTrfIndex, pTrfIndex,
                                 trfPreOffset_A: 0, trfCycle_A: 0, trfPostOffset_A: 0, trfPreOffset_B: (2 * e0), trfCycle_B: 2, trfPostOffset_B: 0);
                         }
                         if(Not > 0) {
                             meanValOT.Multiply(1.0, _trfCoördinatesOT, _Basis0Values, ResultPreScale, ref mp_i_i_Ti,
-                                pTrfIndex, trfIdx.GetLength(0),
+                                pTrfIndex, pTrfIndex,
                                 trfPreOffset_A: 0, trfCycle_A: 0, trfPostOffset_A: 0, trfPreOffset_B: (2 * e0 + 1), trfCycle_B: 2, trfPostOffset_B: 0);
                         }
                     }
@@ -400,25 +469,28 @@ namespace BoSSS.Foundation {
 
                             var InvJacobi = grd.iGeomCells.InverseTransformation;
 
-                            fixed(int* pE2C = E2C) {
+                            Debug.Assert(grd is Grid.Classic.GridData, "implementation only valid for classic grid");
+                            Debug.Assert(object.ReferenceEquals(E2Cg, E2Cl));
+
+                            fixed(int* pE2Cl = E2Cl) {
 
                                 {
                                     GradientRef.Multiply(1.0, trfCoördinatesIN, BasisGradValuesIN, 0.0, ref mp_ike_im_Tikme,
-                                        pTrfIndex, trfIdx.GetLength(0),
+                                        pTrfIndex, pTrfIndex,
                                         trfPreOffset_A: 0, trfCycle_A: 0, trfPostOffset_A: 0, trfPreOffset_B: (2 * e0), trfCycle_B: 2, trfPostOffset_B: 0);  // gradient in reference coördinates
 
                                     gradIN.Multiply(1.0, InvJacobi, GradientRef, ResultPreScale, ref mp_ikd_Tied_ike,
-                                        pE2C, E2C.GetLength(0),
+                                        pE2Cl, pE2Cl, 
                                         trfPreOffset_A: (2 * e0), trfCycle_A: 2, trfPostOffset_A: 0, trfPreOffset_B: 0, trfCycle_B: 0, trfPostOffset_B: 0);
                                 }
 
                                 if(Not > 0) {
                                     GradientRef.Multiply(1.0, trfCoördinatesOT, BasisGradValuesOT, 0.0, ref mp_ike_im_Tikme,
-                                        pTrfIndex, trfIdx.GetLength(0),
+                                        pTrfIndex, pTrfIndex,
                                         trfPreOffset_A: 0, trfCycle_A: 0, trfPostOffset_A: 0, trfPreOffset_B: (2 * e0 + 1), trfCycle_B: 2, trfPostOffset_B: 0);  // gradient in reference coördinates
 
                                     gradOT.Multiply(1.0, InvJacobi, GradientRef, ResultPreScale, ref mp_ikd_Tied_ike,
-                                        pE2C, E2C.GetLength(0),
+                                        pE2Cl, pE2Cl,
                                         trfPreOffset_A: (2 * e0 + 1), trfCycle_A: 2, trfPostOffset_A: 0, trfPreOffset_B: 0, trfCycle_B: 0, trfPostOffset_B: 0);
                                 }
                             }
@@ -438,7 +510,7 @@ namespace BoSSS.Foundation {
 
                             {
                                 GradientRef.Multiply(1.0, trfCoördinatesIN, BasisGradValuesIN, 0.0, ref mp_ike_im_Tikme,
-                                    pTrfIndex, trfIdx.GetLength(0),
+                                    pTrfIndex, pTrfIndex,
                                     trfPreOffset_A: 0, trfCycle_A: 0, trfPostOffset_A: 0, trfPreOffset_B: (2 * e0), trfCycle_B: 2, trfPostOffset_B: 0);  // gradient in reference coördinates, i.e. \f$ \nabla_{\vec{xi}} \f$
 
                                 gradIN.Multiply(1.0, invJacobiIN, GradientRef, ResultPreScale, ref mp_ikd_iked_ike);   // gradient in physical coördinates, i.e. \f$ \nabla_{\vec{x}}n \f$
@@ -446,7 +518,7 @@ namespace BoSSS.Foundation {
 
                             if(Not > 0) {
                                 GradientRef.Multiply(1.0, trfCoördinatesOT, BasisGradValuesOT, 0.0, ref mp_ike_im_Tikme,
-                                    pTrfIndex, trfIdx.GetLength(0),
+                                    pTrfIndex, pTrfIndex,
                                     trfPreOffset_A: 0, trfCycle_A: 0, trfPostOffset_A: 0, trfPreOffset_B: (2 * e0 + 1), trfCycle_B: 2, trfPostOffset_B: 0);  // gradient in reference coördinates, i.e. \f$ \nabla_{\vec{xi}} \f$
 
                                 gradOT.Multiply(1.0, invJacobiOT, GradientRef, ResultPreScale, ref mp_ikd_iked_ike);   // gradient in physical coördinates, i.e. \f$ \nabla_{\vec{x}} \f$
@@ -527,36 +599,60 @@ namespace BoSSS.Foundation {
 
 
         private static void TransformCoördinatesEdge(int e0, int L, IGridData grd,
-            MultidimensionalArray Coördinates, int N_IN, int N_OT, bool AffineLinear,
-            MultidimensionalArray trfCoördinatesIN, MultidimensionalArray trfCoördinatesOT,
-            int jCellMin, int jCellMax,
-            int Degree) //
+            MultidimensionalArray Coördinates, int N_IN, int N_OT, int Degree, bool AffineLinear,
+            MultidimensionalArray trfCoördinatesIN, MultidimensionalArray trfCoördinatesOT) //
         {
 
-            int[,] Edge2Cell = grd.iGeomEdges.CellIndices;
+            int[,] Edge2Cell_g = grd.iGeomEdges.CellIndices;
+            int[,] Edge2Cell_l = grd.iGeomEdges.LogicalCellIndices;
+
+
+            int jCellMin_g = int.MaxValue, jCellMax_g = int.MinValue;
+            for(int e = 0; e < L; e++) {
+                int iEdge = e + e0;
+                int jCellIN = Edge2Cell_g[iEdge, 0];
+                int jCellOT = Edge2Cell_g[iEdge, 1];
+                {
+                    //Debug.Assert(BasisValues.GetLength(2) >= _Basis.GetLength(jCellIN));
+                    jCellMin_g = Math.Min(jCellMin_g, jCellIN);
+                    jCellMax_g = Math.Max(jCellMax_g, jCellIN);
+                    
+                }
+                if(jCellOT >= 0) {
+                    //Debug.Assert(BasisValues.GetLength(2) >= _Basis.GetLength(jCellOT));
+                    jCellMin_g = Math.Min(jCellMin_g, jCellOT);
+                    jCellMax_g = Math.Max(jCellMax_g, jCellOT);
+                }
+                Debug.Assert(grd.iGeomEdges.IsEdgeAffineLinear(iEdge) == AffineLinear);
+            }
+
             unsafe {
-                fixed(int* pEdge2Cell = Edge2Cell) {
+                fixed(int* pEdge2Cell_g = Edge2Cell_g, pEdge2Cell_l = Edge2Cell_l) {
 
                     if(AffineLinear) {
+                        Debug.Assert(grd is BoSSS.Foundation.Grid.Classic.GridData);
+                        Debug.Assert(object.ReferenceEquals(Edge2Cell_g, Edge2Cell_l)); 
+                        // this branch only for Classic.GridData
+
                         MultidimensionalArray scale = grd.ChefBasis.Scaling;
 
                         // trfCoördinatesIN[i,n] = scale[T(i)]*Coördinates[T(i),n], where T(i) = Edge2Cell[i + e0,0]
                         {
                             trfCoördinatesIN.Multiply(1.0, scale, Coördinates, 0.0, ref mp_in_Ti_Tin,
-                                pEdge2Cell, Edge2Cell.GetLength(0),
+                                pEdge2Cell_g, pEdge2Cell_g,
                                 trfPreOffset_A: (2 * e0), trfCycle_A: 2, trfPostOffset_A: 0, trfPreOffset_B: (2 * e0), trfCycle_B: 2, trfPostOffset_B: 0);
                         }
 
                         // trfCoördinatesOT[i,n] = scale[T(i)]*Coördinates[T(i),n], where T(i) = Edge2Cell[i + e0,1]
                         if(N_OT > 0) {
                             trfCoördinatesOT.Multiply(1.0, scale, Coördinates, 0.0, ref mp_in_Ti_Tin,
-                                pEdge2Cell, Edge2Cell.GetLength(0),
+                                pEdge2Cell_g, pEdge2Cell_g,
                                 trfPreOffset_A: (2 * e0 + 1), trfCycle_A: 2, trfPostOffset_A: 0, trfPreOffset_B: (2 * e0 + 1), trfCycle_B: 2, trfPostOffset_B: 0);
                         }
 
 
                     } else {
-                        MultidimensionalArray trafo = grd.ChefBasis.OrthonormalizationTrafo.GetValue_Cell(jCellMin, jCellMax - jCellMin + 1, Degree);
+                        MultidimensionalArray trafo = grd.ChefBasis.OrthonormalizationTrafo.GetValue_Cell(jCellMin_g, jCellMax_g - jCellMin_g + 1, Degree);
                         MultidimensionalArray trafoIN, trafoOT;
                         if(trafo.GetLength(1) > N_IN)
                             trafoIN = trafo.ExtractSubArrayShallow(new int[] { 0, 0, 0 }, new int[] { trafo.GetLength(0) - 1, N_IN - 1, N_IN - 1 });
@@ -575,16 +671,18 @@ namespace BoSSS.Foundation {
 
                             // trfCoördinatesIN[i,m] = sum_{n} trafo[T(i),m,n]*Coördinates[T(i),m,n], where T(i) = Edge2Cell[i,0]
                             trfCoördinatesIN.Multiply(1.0, trafoIN, Coördinates, 0.0, ref mp_im_Timn_Tin,
-                                pEdge2Cell, Edge2Cell.GetLength(0),
-                                trfPreOffset_A: (2 * e0), trfCycle_A: 2, trfPostOffset_A: -jCellMin, trfPreOffset_B: (2 * e0), trfCycle_B: 2, trfPostOffset_B: 0);
+                                pEdge2Cell_g, pEdge2Cell_l,
+                                trfPreOffset_A: (2 * e0), trfCycle_A: 2, trfPostOffset_A: -jCellMin_g, 
+                                trfPreOffset_B: (2 * e0), trfCycle_B: 2, trfPostOffset_B: 0);
                         }
                         if(N_OT > 0) {
                             Debug.Assert(trfCoördinatesOT.GetLength(1) == N_OT);
                             Debug.Assert(Coördinates.GetLength(1) == N_OT);
 
                             trfCoördinatesOT.Multiply(1.0, trafoOT, Coördinates, 0.0, ref mp_im_Timn_Tin,
-                                pEdge2Cell, Edge2Cell.GetLength(0),
-                                trfPreOffset_A: (2 * e0 + 1), trfCycle_A: 2, trfPostOffset_A: -jCellMin, trfPreOffset_B: (2 * e0 + 1), trfCycle_B: 2, trfPostOffset_B: 0);
+                                pEdge2Cell_g, pEdge2Cell_l,
+                                trfPreOffset_A: (2 * e0 + 1), trfCycle_A: 2, trfPostOffset_A: -jCellMin_g, 
+                                trfPreOffset_B: (2 * e0 + 1), trfCycle_B: 2, trfPostOffset_B: 0);
                         }
                     }
                 }

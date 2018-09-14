@@ -255,9 +255,7 @@ namespace BoSSS.Solution.NSECommon {
             }
         }
 
-        int m_jCellInOld;
-        int m_jCellOutOld;
-        double m_PenaltyVal;
+       
 
 
         /// <summary>
