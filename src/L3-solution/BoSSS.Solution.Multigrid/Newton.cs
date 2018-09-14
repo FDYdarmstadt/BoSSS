@@ -79,7 +79,7 @@ namespace BoSSS.Solution.Multigrid {
 
         public CoordinateVector m_SolutionVec;
 
-        public enum ApproxInvJacobianOptions { GMRES = 1, DirectSolver = 2, DirectSolverHybrid = 3, DirectSolverOpMatrix = 4 }
+        public enum ApproxInvJacobianOptions { GMRES = 1, DirectSolver = 2 }
 
         public ApproxInvJacobianOptions ApproxJac = ApproxInvJacobianOptions.GMRES;
 
@@ -138,14 +138,6 @@ namespace BoSSS.Solution.Multigrid {
 
                 OnIterationCallback(itc, x.CloneAs(), f0.CloneAs(), this.CurrentLin);
 
-                //int[] Velocity_idx = SolutionVec.Mapping.GetSubvectorIndices(false, 0, 1, 2);
-                //int[] Stresses_idx = SolutionVec.Mapping.GetSubvectorIndices(false, 3, 4, 5);
-
-                //int[] Velocity_fields = new int[] { 0, 1, 2 };
-                //int[] Stress_fields = new int[] { 3, 4, 5 };
-
-                //int NoCoupledIterations = 1;
-
                 using (new BlockTrace("Slv Iter", tr)) {
                     while (fnorm > ConvCrit && itc < MaxIter) {
                         rat = fnorm / fNormo;
@@ -168,183 +160,10 @@ namespace BoSSS.Solution.Multigrid {
                             f0.ScaleV(-1.0);
                             solver.Solve(step, f0);
 
-                        } else if (ApproxJac == ApproxInvJacobianOptions.DirectSolverHybrid) {
-                            //EXPERIMENTAL_____________________________________________________________________
-                            MultidimensionalArray OpMatrixMatl = MultidimensionalArray.Create(x.Length, x.Length);
-                            var CurrentJac = diffjac(SolutionVec, x, f0);
-                            //Console.WriteLine("Calling MATLAB/Octave...");
-                            using (BatchmodeConnector bmc = new BatchmodeConnector()) {
-                                bmc.PutSparseMatrix(CurrentJac, "Jacobi");
-                                bmc.PutSparseMatrix(CurrentLin.OperatorMatrix, "OpMatrix");
-                                bmc.Cmd("Jacobi(abs(Jacobi) < 10^-6)=0; dim = length(OpMatrix);");
-                                bmc.Cmd("dim = length(OpMatrix);");
-                                bmc.Cmd(@"for i=1:dim
-
-                                if (i >= 16) && (i <= 33) && (i + 6 <= 33) && (i + 12 <= 33)
-                                    OpMatrix(i, i) = Jacobi(i, i);
-                                    OpMatrix(i, i + 6) = Jacobi(i, i + 6);
-                                    OpMatrix(i + 6, i) = Jacobi(i + 6, i);
-                                    OpMatrix(i + 12, i + 6) = Jacobi(i + 12, i + 6);
-                                    OpMatrix(i + 6, i + 12) = Jacobi(i + 6, i + 12);
-                                end
-
-                                if (i >= 49) && (i <= 66) && (i + 6 <= 66) && (i + 12 <= 66)
-                                    OpMatrix(i, i) = Jacobi(i, i);
-                                    OpMatrix(i, i + 6) = Jacobi(i, i + 6);
-                                    OpMatrix(i + 6, i) = Jacobi(i + 6, i);
-                                    OpMatrix(i + 12, i + 6) = Jacobi(i + 12, i + 6);
-                                    OpMatrix(i + 6, i + 12) = Jacobi(i + 6, i + 12);
-                                end
-
-                                if (i >= 82) && (i <= 99) && (i + 6 <= 99) && (i + 12 <= 99)
-                                    OpMatrix(i, i) = Jacobi(i, i);
-                                    OpMatrix(i, i + 6) = Jacobi(i, i + 6);
-                                    OpMatrix(i + 6, i) = Jacobi(i + 6, i);
-                                    OpMatrix(i + 12, i + 6) = Jacobi(i + 12, i + 6);
-                                    OpMatrix(i + 6, i + 12) = Jacobi(i + 6, i + 12);
-                                end
-
-                                if (i >= 115) && (i <= 132) && (i + 6 <= 132) && (i + 12 <= 132)
-                                    OpMatrix(i, i) = Jacobi(i, i);
-                                    OpMatrix(i, i + 6) = Jacobi(i, i + 6);
-                                    OpMatrix(i + 6, i) = Jacobi(i + 6, i);
-                                    OpMatrix(i + 12, i + 6) = Jacobi(i + 12, i + 6);
-                                    OpMatrix(i + 6, i + 12) = Jacobi(i + 6, i + 12);
-                                end
-
-                                if (i >= 148) && (i <= 165) && (i + 6 <= 165) && (i + 12 <= 165)
-                                    OpMatrix(i, i) = Jacobi(i, i);
-                                    OpMatrix(i, i + 6) = Jacobi(i, i + 6);
-                                    OpMatrix(i + 6, i) = Jacobi(i + 6, i);
-                                    OpMatrix(i + 12, i + 6) = Jacobi(i + 12, i + 6);
-                                    OpMatrix(i + 6, i + 12) = Jacobi(i + 6, i + 12);
-                                end 
-
-                                if (i >= 181) && (i <= 198) && (i + 6 <= 198) && (i + 12 <= 198)
-                                    OpMatrix(i, i) = Jacobi(i, i);
-                                    OpMatrix(i, i + 6) = Jacobi(i, i + 6);
-                                    OpMatrix(i + 6, i) = Jacobi(i + 6, i);
-                                    OpMatrix(i + 12, i + 6) = Jacobi(i + 12, i + 6);
-                                    OpMatrix(i + 6, i + 12) = Jacobi(i + 6, i + 12);
-                                end  
-
-                                if (i >= 214) && (i <= 231) && (i + 6 <= 231) && (i + 12 <= 231)
-                                    OpMatrix(i, i) = Jacobi(i, i);
-                                    OpMatrix(i, i + 6) = Jacobi(i, i + 6);
-                                    OpMatrix(i + 6, i) = Jacobi(i + 6, i);
-                                    OpMatrix(i + 12, i + 6) = Jacobi(i + 12, i + 6);
-                                    OpMatrix(i + 6, i + 12) = Jacobi(i + 6, i + 12);
-                                end
-                                if (i >= 247) && (i <= 264) && (i + 6 <= 264) && (i + 12 <= 264)
-                                    OpMatrix(i, i) = Jacobi(i, i);
-                                    OpMatrix(i, i + 6) = Jacobi(i, i + 6);
-                                    OpMatrix(i + 6, i) = Jacobi(i + 6, i);
-                                    OpMatrix(i + 12, i + 6) = Jacobi(i + 12, i + 6);
-                                    OpMatrix(i + 6, i + 12) = Jacobi(i + 6, i + 12);
-                                end
-                                if (i >= 280) && (i <= 297) && (i + 6 <= 297) && (i + 12 <= 297)
-                                    OpMatrix(i, i) = Jacobi(i, i);
-                                    OpMatrix(i, i + 6) = Jacobi(i, i + 6);
-                                    OpMatrix(i + 6, i) = Jacobi(i + 6, i);
-                                    OpMatrix(i + 12, i + 6) = Jacobi(i + 12, i + 6);
-                                    OpMatrix(i + 6, i + 12) = Jacobi(i + 6, i + 12);
-                                end
-                                if (i >= 313) && (i <= 330) && (i + 6 <= 330) && (i + 12 <= 330)
-                                    OpMatrix(i, i) = Jacobi(i, i);
-                                    OpMatrix(i, i + 6) = Jacobi(i, i + 6);
-                                    OpMatrix(i + 6, i) = Jacobi(i + 6, i);
-                                    OpMatrix(i + 12, i + 6) = Jacobi(i + 12, i + 6);
-                                    OpMatrix(i + 6, i + 12) = Jacobi(i + 6, i + 12);
-                                end
-                                if (i >= 346) && (i <= 363) && (i + 6 <= 363) && (i + 12 <= 363)
-                                    OpMatrix(i, i) = Jacobi(i, i);
-                                    OpMatrix(i, i + 6) = Jacobi(i, i + 6);
-                                    OpMatrix(i + 6, i) = Jacobi(i + 6, i);
-                                    OpMatrix(i + 12, i + 6) = Jacobi(i + 12, i + 6);
-                                    OpMatrix(i + 6, i + 12) = Jacobi(i + 6, i + 12);
-                                end
-                                if (i >= 379) && (i <= 396) && (i + 6 <= 396) && (i + 12 <= 396)
-                                    OpMatrix(i, i) = Jacobi(i, i);
-                                    OpMatrix(i, i + 6) = Jacobi(i, i + 6);
-                                    OpMatrix(i + 6, i) = Jacobi(i + 6, i);
-                                    OpMatrix(i + 12, i + 6) = Jacobi(i + 12, i + 6);
-                                    OpMatrix(i + 6, i + 12) = Jacobi(i + 6, i + 12);
-                                end
-                                if (i >= 412) && (i <= 429) && (i + 6 <= 429) && (i + 12 <= 429)
-                                    OpMatrix(i, i) = Jacobi(i, i);
-                                    OpMatrix(i, i + 6) = Jacobi(i, i + 6);
-                                    OpMatrix(i + 6, i) = Jacobi(i + 6, i);
-                                    OpMatrix(i + 12, i + 6) = Jacobi(i + 12, i + 6);
-                                    OpMatrix(i + 6, i + 12) = Jacobi(i + 6, i + 12);
-                                end
-                                if (i >= 445) && (i <= 462) && (i + 6 <= 462) && (i + 12 <= 462)
-                                    OpMatrix(i, i) = Jacobi(i, i);
-                                    OpMatrix(i, i + 6) = Jacobi(i, i + 6);
-                                    OpMatrix(i + 6, i) = Jacobi(i + 6, i);
-                                    OpMatrix(i + 12, i + 6) = Jacobi(i + 12, i + 6);
-                                    OpMatrix(i + 6, i + 12) = Jacobi(i + 6, i + 12);
-                                end
-                                if (i >= 478) && (i <= 495) && (i + 6 <= 495) && (i + 12 <= 495)
-                                    OpMatrix(i, i) = Jacobi(i, i);
-                                    OpMatrix(i, i + 6) = Jacobi(i, i + 6);
-                                    OpMatrix(i + 6, i) = Jacobi(i + 6, i);
-                                    OpMatrix(i + 12, i + 6) = Jacobi(i + 12, i + 6);
-                                    OpMatrix(i + 6, i + 12) = Jacobi(i + 6, i + 12);
-                                end
-                                if (i >= 511) && (i <= 528) && (i + 6 <= 528) && (i + 12 <= 528)
-                                    OpMatrix(i, i) = Jacobi(i, i);
-                                    OpMatrix(i, i + 6) = Jacobi(i, i + 6);
-                                    OpMatrix(i + 6, i) = Jacobi(i + 6, i);
-                                    OpMatrix(i + 12, i + 6) = Jacobi(i + 12, i + 6);
-                                    OpMatrix(i + 6, i + 12) = Jacobi(i + 6, i + 12);
-                                end
-                                end");
-                                bmc.Cmd("OpMatrix = full(OpMatrix)");
-                                bmc.GetMatrix(OpMatrixMatl, "OpMatrix");
-                                bmc.Execute(false);
-                            }
-
-                            MsrMatrix OpMatrix = OpMatrixMatl.ToMsrMatrix();
-                            var solver = new ilPSP.LinSolvers.MUMPS.MUMPSSolver();
-
-                            //Console.WriteLine("USING HIGH EXPERIMENTAL OPMATRIX WITH JAC! only for p=1, GridLevel=2");
-                            solver.DefineMatrix(OpMatrix);
-                            //______________________________________________________________________________________________________
-
-                            step.ClearEntries();
-                            solver.Solve(step, f0);
-
-
-                        } else if (ApproxJac == ApproxInvJacobianOptions.DirectSolverOpMatrix) {
-                            var CurrentJac = CurrentLin.OperatorMatrix;
-                            var solver = new ilPSP.LinSolvers.MUMPS.MUMPSSolver();
-                            solver.DefineMatrix(CurrentJac);
-                            step.ClearEntries();
-                            solver.Solve(step, f0);
-
                         } else {
                             throw new NotImplementedException("Your approximation option for the jacobian seems not to be existent.");
                         }
 
-                        //if (itc > NoCoupledIterations)
-                        //{
-                        //    if (solveVelocity)
-                        //    {
-                        //        Console.WriteLine("stress correction = 0");
-                        //        foreach (int idx in Stresses_idx)
-                        //        {
-                        //            step[idx] = 0.0;
-                        //        }
-                        //    }
-                        //    else
-                        //    {
-                        //        Console.WriteLine("velocity correction = 0");
-                        //        foreach (int idx in Velocity_idx)
-                        //        {
-                        //            step[idx] = 0.0;
-                        //        }
-                        //    }
-                        //}
 
                         // Start line search
                         xOld = x;
@@ -408,40 +227,6 @@ namespace BoSSS.Solution.Multigrid {
 
                         x = xt;
                         f0 = ft.CloneAs();
-
-                        //if (itc > NoCoupledIterations)
-                        //{
-
-                        //    double coupledL2Res = 0.0;
-                        //    if (solveVelocity)
-                        //    {
-                        //        foreach (int idx in Velocity_idx)
-                        //        {
-                        //            coupledL2Res += f0[idx].Pow2();
-                        //        }
-                        //    }
-                        //    else
-                        //    {
-                        //        foreach (int idx in Stresses_idx)
-                        //        {
-                        //            coupledL2Res += f0[idx].Pow2();
-                        //        }
-                        //    }
-                        //    coupledL2Res = coupledL2Res.Sqrt();
-
-                        //    Console.WriteLine("coupled residual = {0}", coupledL2Res);
-
-                        //    if (solveVelocity && coupledL2Res < this.VelocitySolver_ConvergenceCriterion)
-                        //    {
-                        //        Console.WriteLine("SolveVelocity = false");
-                        //        this.solveVelocity = false;
-                        //    }
-                        //    else if (!solveVelocity && coupledL2Res < this.StressSolver_ConvergenceCriterion)
-                        //    {
-                        //        Console.WriteLine("SolveVelocity = true");
-                        //        this.solveVelocity = true;
-                        //    }
-                        //}
 
                         OnIterationCallback(itc, x.CloneAs(), f0.CloneAs(), this.CurrentLin);
 
@@ -799,8 +584,7 @@ namespace BoSSS.Solution.Multigrid {
         }
 
 
-        BlockMsrMatrix OpMtxRaw, MassMtxRaw;
-        double[] OpAffineRaw;
+       
 
         /// <summary>
         /// Computes a forward difference jacobian and returns the dense jacobian

@@ -464,7 +464,7 @@ namespace BoSSS.Foundation {
         /// <typeparam name="T"></typeparam>
         /// <param name="CatParams">
         /// if true, parameter variables (see <see cref="IEquationComponent.ParameterOrdering"/>)
-        /// are concatenated with domain variable names (see <see cref="IEquationComponent."ArgumentOrdering/>).
+        /// are concatenated with domain variable names (see <see cref="IEquationComponent.ArgumentOrdering"/>).
         /// </param>
         /// <param name="F">
         /// optional filter;
@@ -856,11 +856,17 @@ namespace BoSSS.Foundation {
                     order = owner.GetOrderFromQuadOrderFunction(m_DomainMapping, ParameterMap, CodomainVarMap);
 
                     m_OperatorCoefficients = new CoefficientSet() {
-                        CellLengthScales = ((BoSSS.Foundation.Grid.Classic.GridData)(this.GridData)).Cells.CellLengthScale,
-                        EdgeLengthScales = ((BoSSS.Foundation.Grid.Classic.GridData)(this.GridData)).Edges.h_min_Edge,
                         UserDefinedValues = new Dictionary<string, object>(),
                         GrdDat = this.GridData
                     };
+
+                    if(this.GridData is Grid.Classic.GridData) {
+                        m_OperatorCoefficients.CellLengthScales = ((BoSSS.Foundation.Grid.Classic.GridData)(this.GridData)).Cells.CellLengthScale;
+                        m_OperatorCoefficients.EdgeLengthScales = ((BoSSS.Foundation.Grid.Classic.GridData)(this.GridData)).Edges.h_min_Edge;
+                       
+                    } else {
+                        Console.WriteLine("Rem: still missing cell length scales");
+                    }
                 }
             }
 
@@ -939,6 +945,8 @@ namespace BoSSS.Foundation {
             public void ActivateSubgridBoundary(CellMask sgrd, SubGridBoundaryModes subGridBoundaryTreatment = SubGridBoundaryModes.BoundaryEdge) {
                 if (!object.ReferenceEquals(sgrd.GridData, this.GridData))
                     throw new ArgumentException("grid mismatch");
+                if (sgrd != null && sgrd.MaskType != MaskType.Logical)
+                    throw new ArgumentException("expecting logical mask");
                 m_SubGrid_InCells = sgrd;
                 m_SubGridBoundaryTreatment = subGridBoundaryTreatment;
             }
@@ -1221,14 +1229,12 @@ namespace BoSSS.Foundation {
                     if(base.m_TRX != null)
                         m_TRX.TransceiveFinish();
 
-                    //if(!rem) {
-                    //    rem = true;
-                    //    Console.WriteLine("Reminder: edge terms deactivated.");
-                    //}
 
-                    
-                    if(m_NonlinearEdge != null) {
+
+
+                    if (m_NonlinearEdge != null) {
                         using(new BlockTrace("Edge_Integration_NonLin", tr)) {
+
                             m_NonlinearEdge.m_Output = output;
                             m_NonlinearEdge.m_alpha = alpha;
                             m_NonlinearEdge.Time = time;
@@ -1244,6 +1250,7 @@ namespace BoSSS.Foundation {
                             m_NonlinearEdge.m_outputBndEdge = null;
                             m_NonlinearEdge.m_alpha = 1.0;
                             m_NonlinearEdge.SubGridCellsMarker = null;
+                          
 
                         }
                     }
@@ -1405,7 +1412,7 @@ namespace BoSSS.Foundation {
                             var mxtbuilder2 = new LECEdgeQuadrature2<M, V>(this.Owner);
                             mxtbuilder2.Execute(edgeRule, CodomainMapping, Parameters, DomainMapping, OnlyAffine ? default(M) : Matrix, AffineOffset, time);
                             mxtbuilder2 = null;
-                            //Console.WriteLine("edge lin deact");
+                            
                         }
                     }
                 }
@@ -1599,7 +1606,7 @@ namespace BoSSS.Foundation {
 
                 int[][] Neighs = gDat.iLogicalCells.CellNeighbours;
                 int J = gDat.iLogicalCells.NoOfLocalUpdatedCells;
-                int JE = gDat.iLogicalCells.NoOfCells;
+                int JE = gDat.iLogicalCells.Count;
                 long[] GlidxExt = gDat.iParallel.GlobalIndicesExternalCells;
                 var Gl2LocExt = gDat.iParallel.Global2LocalIdx;
                 var CellPart = gDat.CellPartitioning;
@@ -1615,6 +1622,19 @@ namespace BoSSS.Foundation {
                     }
                 }
 #endif
+                /*
+                this.ColorLists = new int[J][];
+                this.ExternalColorLists = new int[J][];
+                this.ExternalColorListsNeighbors = new int[J][][];
+                for(int j = 0; j < J; j++) {
+                    this.ColorLists[j] = new int[] { j };
+                    this.ExternalColorLists[j] = new int[0];
+                    this.ExternalColorListsNeighbors[j] = new int[0][];
+                }
+
+                return;
+                */
+
 
                 int[] LocalMarker = new int[JE]; //    marker for blocked in the current pass 
                 int[] ExchangedMarker = new int[JE]; //  accumulation buffer for MPI exchange
@@ -1926,7 +1946,7 @@ namespace BoSSS.Foundation {
 
                 int j0 = Eval.GridData.CellPartitioning.i0;
                 int J = Eval.GridData.iLogicalCells.NoOfLocalUpdatedCells;
-                int JE = Eval.GridData.iLogicalCells.NoOfCells;
+                int JE = Eval.GridData.iLogicalCells.Count;
                 int NoOfDomFields = domMap.BasisS.Count;
                 int NoOfCodFields = codMap.BasisS.Count;
 
@@ -2079,9 +2099,9 @@ namespace BoSSS.Foundation {
                                         jRow = Neighs_j[k - 1];
                                     }
 
-                                    if (jRow >= J)
+                                    if (jRow >= J) { 
                                         continue; // external cell; should be treated on other proc.
-
+                                    }
                                     int i0Row = codMap.LocalUniqueCoordinateIndex(0, jRow, 0);
                                     int NoOfRows = codMap.GetBlockLen(jRow);
 
@@ -2094,6 +2114,7 @@ namespace BoSSS.Foundation {
 
                                         double diff = (u1 - u0) / h;
                                         Buffer[iRow, iRelCol] = diff;
+
                                     }
                                 }
                             }
@@ -2197,11 +2218,10 @@ namespace BoSSS.Foundation {
             /// <param name="sgrd"></param>
             /// <param name="subGridBoundaryTreatment"></param>
             public void ActivateSubgridBoundary(CellMask sgrd, SubGridBoundaryModes subGridBoundaryTreatment = SubGridBoundaryModes.BoundaryEdge) {
+                if (sgrd != null && sgrd.MaskType != MaskType.Logical)
+                    throw new ArgumentException("expecting logical mask");
                 Eval.ActivateSubgridBoundary(sgrd, subGridBoundaryTreatment);
             }
         }
-
-
-
     }
 }

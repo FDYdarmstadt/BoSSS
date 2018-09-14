@@ -48,8 +48,8 @@ namespace CNS.IBM {
 
         private IBMControl control;
 
-        public IBMAdamsBashforthLTS(SpatialOperator standardOperator, SpatialOperator boundaryOperator, CoordinateMapping fieldsMap, CoordinateMapping boundaryParameterMap, ISpeciesMap ibmSpeciesMap, IBMControl control, IList<TimeStepConstraint> timeStepConstraints, int reclusteringInterval, bool fluxCorrection, bool forceReclustering, int maxNumOfSubSteps = 0, bool logging = false)
-            : base(standardOperator, fieldsMap, boundaryParameterMap, control.ExplicitOrder, control.NumberOfSubGrids, true, timeStepConstraints, reclusteringInterval: reclusteringInterval, fluxCorrection: fluxCorrection, subGrid: ibmSpeciesMap.SubGrid, forceReclustering: forceReclustering, logging: logging) {
+        public IBMAdamsBashforthLTS(SpatialOperator standardOperator, SpatialOperator boundaryOperator, CoordinateMapping fieldsMap, CoordinateMapping boundaryParameterMap, ISpeciesMap ibmSpeciesMap, IBMControl control, IList<TimeStepConstraint> timeStepConstraints, int reclusteringInterval, bool fluxCorrection, bool forceReclustering, int maxNumOfSubSteps = 0, bool logging = false, bool consoleOutput = false)
+            : base(standardOperator, fieldsMap, boundaryParameterMap, control.ExplicitOrder, control.NumberOfSubGrids, true, timeStepConstraints, reclusteringInterval: reclusteringInterval, fluxCorrection: fluxCorrection, subGrid: ibmSpeciesMap.SubGrid, forceReclustering: forceReclustering, logging: logging, consoleOutput: consoleOutput) {
 
             this.speciesMap = ibmSpeciesMap as ImmersedSpeciesMap;
             if (this.speciesMap == null) {
@@ -67,9 +67,11 @@ namespace CNS.IBM {
 
             cutCells = speciesMap.Tracker.Regions.GetCutCellMask();
             cutAndTargetCells = cutCells.Union(speciesMap.Agglomerator.AggInfo.TargetCells);
-            //#if DEBUG
-            Console.WriteLine("### This is IBM ABLTS ctor ###");
-            //#endif
+
+            if (consoleOutput) {
+                Console.WriteLine("### This is IBM ABLTS ctor ###");
+            }
+
             // Normal LTS constructor
             clusterer = new Clusterer(this.gridData, maxNumOfSubSteps);
             CurrentClustering = clusterer.CreateClustering(control.NumberOfSubGrids, this.TimeStepConstraints, speciesMap.SubGrid);
@@ -129,26 +131,28 @@ namespace CNS.IBM {
         }
 
         protected override void ComputeChangeRate(double[] k, double AbsTime, double RelTime, double[] edgeFluxes = null) {
-            RaiseOnBeforeComputechangeRate(AbsTime, RelTime);
+            using (new ilPSP.Tracing.FuncTrace()) {
+                RaiseOnBeforeComputechangeRate(AbsTime, RelTime);
 
-            Evaluator.time = AbsTime;
-            Evaluator.Evaluate(1.0, 0.0, k, outputBndEdge: edgeFluxes);
-            Debug.Assert(
-                !k.Any(f => double.IsNaN(f)),
-                "Unphysical flux in standard terms");
+                Evaluator.time = AbsTime;
+                Evaluator.Evaluate(1.0, 0.0, k, outputBndEdge: edgeFluxes);
+                Debug.Assert(
+                    !k.Any(f => double.IsNaN(f)),
+                    "Unphysical flux in standard terms");
 
-            boundaryEvaluator.Value.time = AbsTime;
-            boundaryEvaluator.Value.Evaluate(1.0, 1.0, k);
-            Debug.Assert(
-                !k.Any(f => double.IsNaN(f)),
-                "Unphysical flux in boundary terms");
+                boundaryEvaluator.Value.time = AbsTime;
+                boundaryEvaluator.Value.Evaluate(1.0, 1.0, k);
+                Debug.Assert(
+                    !k.Any(f => double.IsNaN(f)),
+                    "Unphysical flux in boundary terms");
 
-            // Agglomerate fluxes
-            speciesMap.Agglomerator.ManipulateRHS(k, Mapping);
+                // Agglomerate fluxes
+                speciesMap.Agglomerator.ManipulateRHS(k, Mapping);
 
-            // Apply inverse to all cells with non-identity mass matrix
-            IBMMassMatrixFactory massMatrixFactory = speciesMap.GetMassMatrixFactory(Mapping);
-            IBMUtility.SubMatrixSpMV(massMatrixFactory.InverseMassMatrix, 1.0, k, 0.0, k, cutAndTargetCells);
+                // Apply inverse to all cells with non-identity mass matrix
+                IBMMassMatrixFactory massMatrixFactory = speciesMap.GetMassMatrixFactory(Mapping);
+                IBMUtility.SubMatrixSpMV(massMatrixFactory.InverseMassMatrix, 1.0, k, 0.0, k, cutAndTargetCells);
+            }
         }
 
         /// <summary>

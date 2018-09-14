@@ -97,7 +97,7 @@ namespace BoSSS.Foundation.Grid.Classic {
                         ba[j] = (this.GetRefElementIndex(j) == iKref);
                     }
 
-                    m_RefElementMask[iKref] = new CellMask(this.m_owner, ba);
+                    m_RefElementMask[iKref] = new CellMask(this.m_owner, ba, MaskType.Geometrical);
                 }
 
                 return m_RefElementMask[iKref];
@@ -112,26 +112,7 @@ namespace BoSSS.Foundation.Grid.Classic {
                 if (iKref < 0 || iKref >= KRefs.Length)
                     throw new ArgumentException();
 
-                if (m_RefElementMask == null) {
-                    m_RefElementMask = new CellMask[KRefs.Length];
-                }
-
-                if (iKref < 0 || iKref >= KRefs.Length) {
-                    throw new ArgumentOutOfRangeException();
-                }
-
-                if (m_RefElementMask[iKref] == null) {
-                    int J = this.NoOfLocalUpdatedCells;
-                    BitArray ba = new BitArray(J);
-
-                    for (int j = 0; j < J; j++) {
-                        ba[j] = (this.GetRefElementIndex(j) == iKref);
-                    }
-
-                    m_RefElementMask[iKref] = new CellMask(this.m_owner, ba);
-                }
-
-                return m_RefElementMask[iKref];
+                return GetCells4Refelement(iKref);
             }
 
             /// <summary>
@@ -297,7 +278,7 @@ namespace BoSSS.Foundation.Grid.Classic {
             /// </summary>
             internal void Init() {
                 using (new FuncTrace()) {
-                    int JE = NoOfCells;
+                    int JE = Count;
                     int J = NoOfLocalUpdatedCells;
                     int D = m_owner.SpatialDimension;
 
@@ -680,7 +661,7 @@ namespace BoSSS.Foundation.Grid.Classic {
                 using (new FuncTrace()) {
                     var edgeDat = m_owner.Edges;
 
-                    int Jtot = this.NoOfCells;
+                    int Jtot = this.Count;
                     int Jloc = this.NoOfLocalUpdatedCells;
                     this.cj = MultidimensionalArray.Create(Jtot);
                     this.CellLengthScale = MultidimensionalArray.Create(Jtot);
@@ -720,7 +701,7 @@ namespace BoSSS.Foundation.Grid.Classic {
                 using (new FuncTrace()) {
 
                     var edgDat = this.m_owner.Edges;
-                    int Jtot = this.NoOfCells;
+                    int Jtot = this.Count;
                     int Jloc = this.NoOfLocalUpdatedCells;
                     this.CellSurfaceArea = new double[Jtot];
 
@@ -768,7 +749,7 @@ namespace BoSSS.Foundation.Grid.Classic {
             /// <summary>
             /// <see cref="NoOfExternalCells"/> plus <see cref="NoOfLocalUpdatedCells"/>;
             /// </summary>
-            public int NoOfCells {
+            public int Count {
                 get {
                     return (NoOfLocalUpdatedCells + NoOfExternalCells);
                 }
@@ -782,7 +763,7 @@ namespace BoSSS.Foundation.Grid.Classic {
             /// </param>
             public Cell GetCell(int j) {
                 Debug.Assert(j >= 0);
-                Debug.Assert(j < NoOfCells);
+                Debug.Assert(j < Count);
                 int J = NoOfLocalUpdatedCells;
                 return ((j < J) ? m_owner.m_Grid.Cells[j] : m_owner.m_Parallel.ExternalCells[j - J]);
             }
@@ -811,7 +792,7 @@ namespace BoSSS.Foundation.Grid.Classic {
                         _vertGlob[l] = MultidimensionalArray.Create(1, _vertices[l].GetLength(0), _vertices[l].GetLength(1));
                     }
 
-                    int JE = NoOfCells;
+                    int JE = Count;
                     int J = NoOfLocalUpdatedCells;
                     double __m_h_minGlobal = double.MaxValue;
                     double __m_h_max_Global = 0;
@@ -881,6 +862,13 @@ namespace BoSSS.Foundation.Grid.Classic {
             }
 
             /// <summary>
+            /// Center-of-gravity
+            /// </summary>
+            public double[] GetCenter(int jCell) {
+                return this.CellCenter.GetRow(jCell);
+            }
+
+            /// <summary>
             /// Which edges (see <see cref="EdgeData.CellIndices"/>) bound to
             /// which cells? <br/>
             /// - 1st index: local cell index <em>j</em>, only local updated<br/>
@@ -908,6 +896,15 @@ namespace BoSSS.Foundation.Grid.Classic {
             /// this is not required and therefore, equal to null.
             /// </summary>
             public int[][] AggregateCellToParts {
+                get {
+                    return null;
+                }
+            }
+
+            /// <summary>
+            /// null for the classical grid
+            /// </summary>
+            public int[] GeomCell2LogicalCell {
                 get {
                     return null;
                 }

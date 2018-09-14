@@ -38,6 +38,7 @@ using BoSSS.Platform.LinAlg;
 using BoSSS.Foundation.Grid.Classic;
 using BoSSS.Foundation.Grid.RefElements;
 using BoSSS.Solution;
+using BoSSS.Foundation.Grid.Aggregation;
 
 namespace BoSSS.Application.DerivativeTest {
 
@@ -76,7 +77,7 @@ namespace BoSSS.Application.DerivativeTest {
 #if DEBUG
         public static void DerivativeTest_BuildInGrid([Range(1, 13)] int gridCase, [Values(2, 10000000)] int bulksize_limit, [Values(1024)] int cache_size) {
 #else
-        public static void DerivativeTest_BuildInGrid([Range(1, 16)] int gridCase, [Values(1, 500, 10000000)] int bulksize_limit, [Values(1024, 1024 * 1024 * 128)] int cache_size) {
+        public static void DerivativeTest_BuildInGrid([Range(1, 17)] int gridCase, [Values(1, 500, 10000000)] int bulksize_limit, [Values(1024, 1024 * 1024 * 128)] int cache_size) {
 #endif
             DerivativeTestMain.GRID_CASE = gridCase;
             DerivativeTestMain p = null;
@@ -160,7 +161,7 @@ namespace BoSSS.Application.DerivativeTest {
                 p = new DerivativeTestMain();
                 return p;
             });
-
+            
             Assert.IsTrue(p.m_passed);
         }
 
@@ -202,7 +203,7 @@ namespace BoSSS.Application.DerivativeTest {
 
             Quadrature_Bulksize.CHUNK_DATA_LIMIT = 1;
             //BoSSS.Foundation.Caching.Cache.MaxMem = 1024;
-            for (int i = 15; i <= 15; i++) {
+            for (int i = 1; i <= 1; i++) {
                 BoSSS.Solution.Application._Main(args, true,  delegate () {
                     var R = new DerivativeTestMain();
                     GRID_CASE = i;
@@ -257,12 +258,20 @@ namespace BoSSS.Application.DerivativeTest {
         /// Creation of DG fields.
         /// </summary>
         protected override void CreateFields() {
-            int GridDeg = this.Grid.Cells.Select(cl => this.Grid.GetRefElement(cl.Type).GetInterpolationDegree(cl.Type)).Max();
+            int GridDeg;
             int D = this.GridData.SpatialDimension;
-            if (this.Grid.GetRefElement(this.Grid.Cells[0].Type) == Square.Instance
-                || this.Grid.GetRefElement(this.Grid.Cells[0].Type) == Cube.Instance) {
-                // hack: otherwise DG deg gets to high
-                GridDeg = (int)Math.Round(Math.Pow(GridDeg, 1.0 / D));
+
+            if (this.Grid != null) {
+                GridDeg = this.Grid.Cells.Select(cl => this.Grid.GetRefElement(cl.Type).GetInterpolationDegree(cl.Type)).Max();
+
+
+                if (this.Grid.GetRefElement(this.Grid.Cells[0].Type) == Square.Instance
+                    || this.Grid.GetRefElement(this.Grid.Cells[0].Type) == Cube.Instance) {
+                    // hack: otherwise DG deg gets to large
+                    GridDeg = (int)Math.Round(Math.Pow(GridDeg, 1.0 / D));
+                }
+            } else {
+                GridDeg = 1; // aggregation grid
             }
 
             Basis b = new Basis(this.GridData, 2 + GridDeg);
@@ -337,7 +346,7 @@ namespace BoSSS.Application.DerivativeTest {
 
                 case 5: {
                     double[] xnodes = GenericBlas.Linspace(-1, 1, 8);
-                    double[] ynodes = GenericBlas.Linspace(-1, 1, 13); 
+                    double[] ynodes = GenericBlas.Linspace(-1, 1, 13);
                     grd = Grid2D.UnstructuredTriangleGrid(xnodes, ynodes, JitterScale: 0.5);
                     break;
                 }
@@ -399,7 +408,7 @@ namespace BoSSS.Application.DerivativeTest {
                     break;
 
                 }
-                
+
                 case 11: {
                     grd = Grid2D.Trapezoidal2dGrid(4, 2, 2, GenericBlas.Linspace(0, 1, 2));
                     break;
@@ -427,12 +436,12 @@ namespace BoSSS.Application.DerivativeTest {
                     var grid5 = gdat4.Adapt(new[] { 4, 21, 22, 10 }, new[] { new[] { 13, 14, 15, 16 } }, out GridCorrelation o2c_4);
 
                     //grid5.Plot2DGrid();
-                                        
+
                     grd = grid5;
 
                     break;
                 }
-                
+
                 case 13: {
                     double[] rNodes = GenericBlas.Linspace(1, 4, 8);
                     double[] sNodes = GenericBlas.Linspace(0, 0.5, 15);
@@ -457,10 +466,34 @@ namespace BoSSS.Application.DerivativeTest {
 
                 case 16: {
                     grd = Grid2D.Ogrid(0.5, 1, 5, 3, CellType.Square_4);
-                    //grd = Grid3D.Ogrid(0.5, 1, 5, 3, GenericBlas.Linspace(0,4,5));
                     break;
                 }
 
+                case 17: {
+                    grd = Grid3D.Ogrid(0.5, 1, 3, 3, GenericBlas.Linspace(0, 4, 3));
+                    break;
+                }
+
+                case 18: {
+                    // aggregation grid
+                    double[] xNodes = GenericBlas.Linspace(-1, 1, 5);
+                    double[] yNodes = GenericBlas.Linspace(-1, 1, 5);
+
+                    var baseGrid = Grid2D.UnstructuredTriangleGrid(xNodes, yNodes);
+                    var baseGdat = new GridData(baseGrid);
+                    var aggGrid = CoarseningAlgorithms.Coarsen(baseGdat, 2);
+                    base.AggGrid = aggGrid;
+                    grd = null;
+
+                    double dx = xNodes[1] - xNodes[0];
+                    double dy = yNodes[1] - yNodes[0];
+                    this.CellVolume = dx * dy;
+                    if (Math.Abs(dx - dy) <= 1.0e-12)
+                        EdgeArea = dx;
+
+
+                    break;
+                }
 
                 // ++++++++++++++++++++++++++++++++++++++++++++++++++++
                 // more expensive grids (not tested in DEBUG MODE)
@@ -649,7 +682,7 @@ namespace BoSSS.Application.DerivativeTest {
             base.NoOfTimesteps = 0;
 
             int D = this.GridData.SpatialDimension;
-            int J = this.GridData.Cells.NoOfLocalUpdatedCells;
+            int J = this.GridData.iLogicalCells.NoOfLocalUpdatedCells;
 
             Console.WriteLine("DerivativeTest.exe, test case #" + GRID_CASE + " ******************************");
 
@@ -662,8 +695,8 @@ namespace BoSSS.Application.DerivativeTest {
             // sealing test
             // =================
 
-            TestSealing(this.GridData);
-
+            if(this.GridData is Foundation.Grid.Classic.GridData)
+                TestSealing(this.GridData); 
 
             // cell volume and edge area check, if possible
             // ===============================================
@@ -675,7 +708,7 @@ namespace BoSSS.Application.DerivativeTest {
 
 
                 for (int j = 0; j < J; j++) {
-                    err += Math.Abs(this.GridData.Cells.GetCellVolume(j) - this.CellVolume);
+                    err += Math.Abs(this.GridData.iLogicalCells.GetCellVolume(j) - this.CellVolume);
                 }
 
                 bool passed = (err < Treshold);
@@ -689,10 +722,10 @@ namespace BoSSS.Application.DerivativeTest {
                 double err = 0;
                 double Treshold = 1.0e-10;
 
-                int E = this.GridData.Edges.Count;
+                int E = this.GridData.iLogicalEdges.Count;
 
                 for (int e = 0; e < E; e++) {
-                    err += Math.Abs(this.GridData.Edges.GetEdgeArea(e) - this.EdgeArea);
+                    err += Math.Abs(this.GridData.iLogicalEdges.GetEdgeArea(e) - this.EdgeArea);
                 }
 
                 bool passed = (err < Treshold);
@@ -708,7 +741,9 @@ namespace BoSSS.Application.DerivativeTest {
             {
                 Basis Bs = this.f1.Basis;
                 int N = Bs.Length;
-                int degQuad = this.GridData.Cells.GetInterpolationDegree(0) * D + Bs.Degree + 3;
+                int degQuad = this.GridData.iLogicalCells.GetInterpolationDegree(0) * D + Bs.Degree + 3;
+                int[] jG2jL = this.GridData.iGeomCells.GeomCell2LogicalCell;
+
 
                 // mass matrix: should be identity!
                 MultidimensionalArray MassMatrix = MultidimensionalArray.Create(J, N, N);
@@ -722,7 +757,15 @@ namespace BoSSS.Application.DerivativeTest {
                         EvalResult.Multiply(1.0, BasisVals, BasisVals, 0.0, "jknm", "jkn", "jkm");
                     },
                     delegate (int i0, int Length, MultidimensionalArray ResultsOfIntegration) {
-                        MassMatrix.SetSubArray(ResultsOfIntegration, new int[] { i0, 0, 0 }, new int[] { i0 + Length - 1, N - 1, N - 1 });
+                        if(jG2jL != null) {
+                            for(int i = 0; i < Length; i++) {
+                                int jG = i + i0;
+                                MassMatrix.ExtractSubArrayShallow(jG2jL[jG], -1, -1)
+                                    .Acc(1.0, ResultsOfIntegration.ExtractSubArrayShallow(i, -1, -1));
+                            }
+                        } else {
+                            MassMatrix.SetSubArray(ResultsOfIntegration, new int[] { i0, 0, 0 }, new int[] { i0 + Length - 1, N - 1, N - 1 });
+                        }
                     },
                     cs: CoordinateSystem.Physical);
                 quad.Execute();
@@ -934,6 +977,7 @@ namespace BoSSS.Application.DerivativeTest {
 
                 // comparison of finite difference Jacobian and Operator matrix
                 if (TestFDJacobian) {
+                    this.f1.Clear();
                     var FDJbuilder = Laplace.GetFDJacobianBuilder(this.f1.Mapping.Fields, null, this.f1.Mapping,
                         delegate (IEnumerable<DGField> U0, IEnumerable<DGField> Params) {
                             return;
@@ -954,9 +998,9 @@ namespace BoSSS.Application.DerivativeTest {
                     m_passed = m_passed && passed1;
                     m_passed = m_passed && passed2;
 
-                    //CheckMatrix.SaveToTextFileSparse("c:\\tmp\\Check.txt");
-                    //LaplaceMtx.SaveToTextFileSparse("c:\\tmp\\Laplace.txt");
-                    //ErrMatrix.SaveToTextFileSparse("c:\\tmp\\Error.txt");
+                    CheckMatrix.SaveToTextFileSparse("c:\\tmp\\Check.txt");
+                    LaplaceMtx.SaveToTextFileSparse("c:\\tmp\\Laplace.txt");
+                    ErrMatrix.SaveToTextFileSparse("c:\\tmp\\Error.txt");
                 }
                 Console.WriteLine("--------------------------------------------");
             }
@@ -1074,9 +1118,9 @@ namespace BoSSS.Application.DerivativeTest {
         /// <summary>
         /// Compares the cell surface and the boundary integral.
         /// </summary>
-        public static void TestSealing(GridData gdat) {
-            int J = gdat.Cells.NoOfLocalUpdatedCells;
-            int[,] E2C = gdat.Edges.CellIndices;
+        public static void TestSealing(IGridData gdat) {
+            int J = gdat.iLogicalCells.NoOfLocalUpdatedCells;
+            int[,] E2Clog = gdat.iGeomEdges.LogicalCellIndices;
 
             //
             // compute cell surface via edge integrals
@@ -1090,8 +1134,8 @@ namespace BoSSS.Application.DerivativeTest {
                 delegate (int i0, int Length, MultidimensionalArray ResultsOfIntegration) { // save results
                     for (int i = 0; i < Length; i++) {
                         int iEdge = i + i0;
-                        int jCellIn = E2C[iEdge, 0];
-                        int jCellOt = E2C[iEdge, 1];
+                        int jCellIn = E2Clog[iEdge, 0];
+                        int jCellOt = E2Clog[iEdge, 1];
 
                         CellSurf1[jCellIn] += ResultsOfIntegration[i, 0];
                         if (jCellOt >= 0 && jCellOt < J)
@@ -1103,7 +1147,7 @@ namespace BoSSS.Application.DerivativeTest {
             // compute cell surface via cell boundary integrals
             //
             var cbqs = new CellBoundaryQuadratureScheme(false, null);
-            foreach (var Kref in gdat.Cells.RefElements)
+            foreach (var Kref in gdat.iGeomCells.RefElements)
                 cbqs.AddFactory(new StandardCellBoundaryQuadRuleFactory(Kref));
 
             MultidimensionalArray CellSurf2 = MultidimensionalArray.Create(J);

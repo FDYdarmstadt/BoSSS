@@ -239,7 +239,7 @@ namespace BoSSS.Solution.NSECommon {
            // var UA = U.Select(u => u.GetSpeciesShadowField("A")).ToArray();
             var UA = U.ToArray();
 
-            int RequiredOrder = U[0].Basis.Degree * 3 + 2;
+            int RequiredOrder = U[0].Basis.Degree * 3;
             //int RequiredOrder = LsTrk.GetXQuadFactoryHelper(momentFittingVariant).GetCachedSurfaceOrders(0).Max();
             //Console.WriteLine("Order reduction: {0} -> {1}", _RequiredOrder, RequiredOrder);
 
@@ -247,7 +247,6 @@ namespace BoSSS.Solution.NSECommon {
             //    throw new ArgumentException();
 
             Console.WriteLine("Forces coeff: {0}, order = {1}", LsTrk.CutCellQuadratureType, RequiredOrder);
-
 
             ConventionalDGField pA = null;
 
@@ -379,7 +378,7 @@ namespace BoSSS.Solution.NSECommon {
 
             //if (D > 2) throw new NotImplementedException("Currently only 2D cases supported");
 
-            int RequiredOrder = U[0].Basis.Degree * 3 + 2;
+            int RequiredOrder = U[0].Basis.Degree * 3;
             //if (RequiredOrder > agg.HMForder)
             //    throw new ArgumentException();
 
@@ -739,6 +738,195 @@ namespace BoSSS.Solution.NSECommon {
 
             for (int i = 0; i < D; i++)
                 forces[i] = MPI.Wrappers.MPIExtensions.MPISum(forces[i]);
+
+            return forces;
+        }
+
+        /// <summary>
+        /// Calculates the drag (x-component) and lift (y-component) forces acting on a wall of a boundary fitted grid
+        /// </summary>
+        /// <param name="U"></param>
+        /// <param name="P"></param>
+        /// <param name="muA"></param>
+        /// <returns></returns>
+        static public double[] GetForces_BoundaryFitted(VectorField<SinglePhaseField> GradU, VectorField<SinglePhaseField> GradV, SinglePhaseField StressXX, 
+            SinglePhaseField StressXY, SinglePhaseField StressYY, SinglePhaseField P, LevelSetTracker LsTrk, double muA, double beta) {
+            int D = LsTrk.GridDat.SpatialDimension;
+
+            if (D > 2)
+            {
+                throw new ArgumentException("Method GetForces_BoundaryFitted only implemented for 2D (viscoelastic)!");
+            }
+            // var UA = U.Select(u => u.GetSpeciesShadowField("A")).ToArray();
+            //var UA = U.ToArray();
+            MultidimensionalArray Grad_U = new MultidimensionalArray(D);
+            var _GradU = GradU.ToArray();
+            var _GradV = GradV.ToArray();
+
+
+            int RequiredOrder = _GradU[0].Basis.Degree * 3 + 2;
+            //int RequiredOrder = U[0].Basis.Degree * 3 + 2;
+            //int RequiredOrder = LsTrk.GetXQuadFactoryHelper(momentFittingVariant).GetCachedSurfaceOrders(0).Max();
+            //Console.WriteLine("Order reduction: {0} -> {1}", _RequiredOrder, RequiredOrder);
+
+            //if (RequiredOrder > agg.HMForder)
+            //    throw new ArgumentException();
+
+            Console.WriteLine("Forces coeff: {0}, order = {1}", LsTrk.CutCellQuadratureType, RequiredOrder);
+
+            SinglePhaseField _StressXX = StressXX;
+            SinglePhaseField _StressXY = StressXY;
+            SinglePhaseField _StressYY = StressYY;
+
+            SinglePhaseField pA = null;
+
+            //pA = P.GetSpeciesShadowField("A");
+            pA = P;
+
+
+            
+
+            double[] forces = new double[D];
+            for (int d = 0; d < D; d++)
+            {
+                ScalarFunctionEx ErrFunc = delegate (int j0, int Len, NodeSet Ns, MultidimensionalArray result) {
+                    int K = result.GetLength(1); // No nof Nodes
+                    MultidimensionalArray Grad_URes = MultidimensionalArray.Create(Len, K, D);
+                    MultidimensionalArray Grad_VRes = MultidimensionalArray.Create(Len, K, D);
+                    MultidimensionalArray pARes = MultidimensionalArray.Create(Len, K);
+                    MultidimensionalArray StressXXRes = MultidimensionalArray.Create(Len, K);
+                    MultidimensionalArray StressXYRes = MultidimensionalArray.Create(Len, K);
+                    MultidimensionalArray StressYYRes = MultidimensionalArray.Create(Len, K);
+
+                    var Normals = LsTrk.GridDat.Edges.NormalsCache.GetNormals_Edge(Ns, j0, Len);
+                    //var Normals = MultidimensionalArray.Create(1, Ns.Length, 1);
+                    //var Normals = LsTrk.GridDat.Edges.NormalsForAffine;
+
+
+                    for (int i = 0; i < D; i++)
+                    {
+                            _GradU[i].EvaluateEdge(j0, Len, Ns, Grad_URes.ExtractSubArrayShallow(-1, -1, i),
+                                Grad_URes.ExtractSubArrayShallow(-1, -1, i), ResultIndexOffset: 0, ResultPreScale: 1);
+
+                            _GradV[i].EvaluateEdge(j0, Len, Ns, Grad_VRes.ExtractSubArrayShallow(-1, -1, i),
+                                Grad_VRes.ExtractSubArrayShallow(-1, -1, i), ResultIndexOffset: 0, ResultPreScale: 1);
+
+                        //UA[i].EvaluateGradient(j0, Len, Ns, Grad_UARes.ExtractSubArrayShallow(-1, -1, i, -1), 0, 1);
+                    }
+
+                    //pA.Evaluate(j0, Len, Ns, pARes);
+                    pA.EvaluateEdge(j0, Len, Ns, pARes, pARes, ResultIndexOffset: 0, ResultPreScale: 1);
+                    _StressXX.EvaluateEdge(j0, Len, Ns, StressXXRes, StressXXRes, ResultIndexOffset: 0, ResultPreScale: 1);
+                    _StressXY.EvaluateEdge(j0, Len, Ns, StressXYRes, StressXYRes, ResultIndexOffset: 0, ResultPreScale: 1);
+                    _StressYY.EvaluateEdge(j0, Len, Ns, StressYYRes, StressYYRes, ResultIndexOffset: 0, ResultPreScale: 1);
+
+
+                    //if (LsTrk.GridDat.SpatialDimension == 2)
+                    //{
+
+                    for (int j = 0; j < Len; j++)
+                    {
+                        for (int k = 0; k < K; k++)
+                        {
+                            double acc = 0.0;
+
+                            // pressure
+                            switch (d)
+                            {
+                                case 0:
+                                    acc += pARes[j, k] * Normals[j, k, 0];
+                                    acc -= (2 * muA * beta) * Grad_URes[j, k, 0] * Normals[j, k, 0];
+                                    acc -= (muA * beta) * Grad_URes[j, k, 1] * Normals[j, k, 1];
+                                    acc -= (muA * beta) * Grad_VRes[j, k, 0] * Normals[j, k, 1];
+                                    acc -= (muA * (1 - beta)) * StressXXRes[j, k] * Normals[j, k, 0];
+                                    acc -= (muA * (1 - beta)) * StressXYRes[j, k] * Normals[j, k, 1];
+                                    break;
+
+                                case 1:
+                                    acc += pARes[j, k] * Normals[j, k, 1];
+                                    acc -= (2 * muA * beta) * Grad_VRes[j, k, 1] * Normals[j, k, 1];
+                                    acc -= (muA * beta) * Grad_VRes[j, k, 0] * Normals[j, k, 0];
+                                    acc -= (muA * beta) * Grad_URes[j, k, 1] * Normals[j, k, 0];
+                                    acc -= (muA * (1 - beta)) * StressXYRes[j, k] * Normals[j, k, 0];
+                                    acc -= (muA * (1 - beta)) * StressYYRes[j, k] * Normals[j, k, 1];
+                                    break;
+                                default:
+                                    throw new NotImplementedException();
+                            }
+
+                            result[j, k] = acc;
+                        }
+                    }
+
+                    //}
+                    //else
+                    //{
+                    //    for (int j = 0; j < Len; j++)
+                    //    {
+                    //        for (int k = 0; k < K; k++)
+                    //        {
+                    //            double acc = 0.0;
+
+                    //            // pressure
+                    //            switch (d)
+                    //            {
+                    //                case 0:
+                    //                    acc += pARes[j, k] * Normals[j, k, 0];
+                    //                    acc -= (2 * muA) * Grad_UARes[j, k, 0, 0] * Normals[j, k, 0];
+                    //                    acc -= (muA) * Grad_UARes[j, k, 0, 2] * Normals[j, k, 2];
+                    //                    acc -= (muA) * Grad_UARes[j, k, 0, 1] * Normals[j, k, 1];
+                    //                    acc -= (muA) * Grad_UARes[j, k, 1, 0] * Normals[j, k, 1];
+                    //                    acc -= (muA) * Grad_UARes[j, k, 2, 0] * Normals[j, k, 2];
+                    //                    break;
+                    //                case 1:
+                    //                    acc += pARes[j, k] * Normals[j, k, 1];
+                    //                    acc -= (2 * muA) * Grad_UARes[j, k, 1, 1] * Normals[j, k, 1];
+                    //                    acc -= (muA) * Grad_UARes[j, k, 1, 2] * Normals[j, k, 2];
+                    //                    acc -= (muA) * Grad_UARes[j, k, 1, 0] * Normals[j, k, 0];
+                    //                    acc -= (muA) * Grad_UARes[j, k, 0, 1] * Normals[j, k, 0];
+                    //                    acc -= (muA) * Grad_UARes[j, k, 2, 1] * Normals[j, k, 2];
+                    //                    break;
+                    //                case 2:
+                    //                    acc += pARes[j, k] * Normals[j, k, 2];
+                    //                    acc -= (2 * muA) * Grad_UARes[j, k, 2, 2] * Normals[j, k, 2];
+                    //                    acc -= (muA) * Grad_UARes[j, k, 2, 0] * Normals[j, k, 0];
+                    //                    acc -= (muA) * Grad_UARes[j, k, 2, 1] * Normals[j, k, 1];
+                    //                    acc -= (muA) * Grad_UARes[j, k, 0, 2] * Normals[j, k, 0];
+                    //                    acc -= (muA) * Grad_UARes[j, k, 1, 2] * Normals[j, k, 1];
+                    //                    break;
+                    //                default:
+                    //                    throw new NotImplementedException();
+                    //            }
+
+                            //    result[j, k] = acc;
+                            //}
+                        //}
+                    //}
+
+                };
+
+
+                var SchemeHelper = LsTrk.GetXDGSpaceMetrics(new[] { LsTrk.GetSpeciesId("A") }, RequiredOrder, 1).XQuadSchemeHelper;
+
+                EdgeMask Mask = new EdgeMask(LsTrk.GridDat, "Wall_cylinder");
+
+                EdgeQuadratureScheme eqs = SchemeHelper.GetEdgeQuadScheme(LsTrk.GetSpeciesId("A"), IntegrationDomain: Mask);
+
+                EdgeQuadrature.GetQuadrature(new int[] { 1 }, LsTrk.GridDat,
+                    eqs.Compile(LsTrk.GridDat, RequiredOrder), //  agg.HMForder),
+                    delegate (int i0, int Length, QuadRule QR, MultidimensionalArray EvalResult) {
+                        ErrFunc(i0, Length, QR.Nodes, EvalResult.ExtractSubArrayShallow(-1, -1, 0));
+                    },
+                    delegate (int i0, int Length, MultidimensionalArray ResultsOfIntegration) {
+                        for (int i = 0; i < Length; i++)
+                            forces[d] += ResultsOfIntegration[i, 0];
+                    }
+                ).Execute();
+
+            }
+
+            //for (int i = 0; i < D; i++)
+            //    forces[i] = MPI.Wrappers.MPIExtensions.MPISum(forces[i]);
 
             return forces;
         }

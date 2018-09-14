@@ -337,6 +337,7 @@ namespace CNS {
             delegate (DGField artificialViscosity, CellMask cellMask, IProgram<CNSControl> program) {
                 ConventionalDGField avField = artificialViscosity as ConventionalDGField;
                 int D = cellMask.GridData.SpatialDimension;
+                var h_min = ((BoSSS.Foundation.Grid.Classic.GridData)program.GridData).Cells.h_min;
 
                 // Determine piecewise constant viscosity
                 avField.Clear();
@@ -365,7 +366,7 @@ namespace CNS {
                             program.SpeciesMap.GetMaterial(double.NaN));
 
                         double localViscosity = program.Control.ArtificialViscosityLaw.GetViscosity(
-                           cell, program.GridData.Cells.h_min[cell], state);
+                           cell, h_min[cell], state);
                         avField.SetMeanValue(cell, localViscosity);
                     }
                 }
@@ -374,7 +375,7 @@ namespace CNS {
                 if (D < 3) {
                     // Standard version
                     if (avSpecFEMBasis == null || !avField.Basis.Equals(avSpecFEMBasis.ContainingDGBasis)) {
-                        avSpecFEMBasis = new SpecFemBasis(program.GridData, 2);
+                        avSpecFEMBasis = new SpecFemBasis((BoSSS.Foundation.Grid.Classic.GridData) program.GridData, 2);
                     }
                     SpecFemField specFemField = new SpecFemField(avSpecFEMBasis);
                     specFemField.ProjectDGFieldMaximum(1.0, avField);
@@ -388,7 +389,7 @@ namespace CNS {
 
                     // Version that should finally also work in 3D
                     RefElement refElement = program.Grid.RefElements[0];
-                    int N = program.GridData.Cells.NoOfLocalUpdatedCells;
+                    int N = program.GridData.iLogicalCells.NoOfLocalUpdatedCells;
                     int V = refElement.NoOfVertices;
 
                     // Sample maximum at vertices
@@ -460,7 +461,6 @@ namespace CNS {
             VariableTypes.Other,
             delegate (DGField ClusterVisualizationField, CellMask cellMask, IProgram<CNSControl> program) {
                 AdamsBashforthLTS LTSTimeStepper = (AdamsBashforthLTS)program.TimeStepper;
-
                 // Don't fail, just ignore
                 if (LTSTimeStepper == null) {
                     return;
@@ -468,13 +468,14 @@ namespace CNS {
 
                 for (int i = 0; i < LTSTimeStepper.CurrentClustering.NumberOfClusters; i++) {
                     SubGrid currentCluster = LTSTimeStepper.CurrentClustering.Clusters[i];
-                    for (int j = 0; j < currentCluster.LocalNoOfCells; j++) {
-                        foreach (Chunk chunk in currentCluster.VolumeMask) {
-                            foreach (int cell in chunk.Elements) {
-                                ClusterVisualizationField.SetMeanValue(cell, i);
-                            }
-                        }
+                    //for (int j = 0; j < currentCluster.LocalNoOfCells; j++) {
+                    foreach (int cell in currentCluster.VolumeMask.ItemEnum) {
+                        //foreach (Chunk chunk in currentCluster.VolumeMask) {
+                        //    foreach (int cell in chunk.Elements) {
+                        ClusterVisualizationField.SetMeanValue(cell, i);
+                        //    }
                     }
+                    //}
                 }
             });
 

@@ -63,17 +63,29 @@ namespace CutCellQuadrature {
 
         private static ITestCase[] testCases = new ITestCase[] {
             //new SingleSquareStraightLineLengthTestCase(GridSizes.Tiny, GridTypes.Structured),
-            //new SingleSquareStraightLineVolumeTestCase(GridSizes.Tiny, GridTypes.Structured),
+            new SingleSquareStraightLineVolumeTestCase(GridSizes.Tiny, GridTypes.Structured),
             //new SingleSquareParabolaLengthTestCase(GridSizes.Tiny, GridTypes.Structured),
             //new SingleSquareParabolaVolumeTestCase(GridSizes.Tiny, GridTypes.Structured),
 
+            //new SingleCubeParaboloidVolumeTestCase(GridSizes.Tiny, GridTypes.Structured),
+            //new SphereVolume3DTestCase_NoShifts(GridSizes.Tiny, GridTypes.Structured),
+            //new SphereVolume3DTestCase_NoShifts(GridSizes.Small, GridTypes.Structured),
+            //new SphereVolume3DTestCase_NoShifts(GridSizes.Normal, GridTypes.Structured),
+            //new SphereVolume3DTestCase_NoShifts(GridSizes.Large, GridTypes.Structured),
+            //new SphereVolume3DTestCase_NoShifts(GridSizes.Huge, GridTypes.Structured)
+
+            //new ConstantIntgreandSphereSurfaceIntegral3DTestCase(GridSizes.Tiny, GridTypes.Structured),
+            //new ConstantIntgreandSphereSurfaceIntegral3DTestCase(GridSizes.Small, GridTypes.Structured),
+            //new ConstantIntgreandSphereSurfaceIntegral3DTestCase(GridSizes.Normal, GridTypes.Structured),
             
+            /*
             new SingleSquareParabolaLengthTestCase(GridSizes.Tiny, GridTypes.Structured),
             new SingleSquareParabolaLengthTestCase(GridSizes.Small, GridTypes.Structured),
             new SingleSquareParabolaLengthTestCase(GridSizes.Normal, GridTypes.Structured),
             new SingleSquareParabolaLengthTestCase(GridSizes.Large, GridTypes.Structured),
             new SingleSquareParabolaLengthTestCase(GridSizes.Huge, GridTypes.Structured),
-            
+            */
+
             //new Smereka2EllipseArcLength(GridSizes.Tiny, GridTypes.Structured),
             //new Smereka2EllipseArcLength(GridSizes.Small, GridTypes.Structured),
             //new Smereka2EllipseArcLength(GridSizes.Normal, GridTypes.Structured),
@@ -115,12 +127,13 @@ namespace CutCellQuadrature {
             //new NACA0012ArcLength(GridSizes.Large),
             //new NACA0012ArcLength(GridSizes.Huge),
 
+            
             //new CircleVolume2DTestCase(GridSizes.Tiny, GridTypes.Structured),
             //new CircleVolume2DTestCase(GridSizes.Small, GridTypes.Structured),
             //new CircleVolume2DTestCase(GridSizes.Normal, GridTypes.Structured),
             //new CircleVolume2DTestCase(GridSizes.Large, GridTypes.Structured),
             //new CircleVolume2DTestCase(GridSizes.Huge, GridTypes.Structured),
-
+            
 
             //new CircleArcLength(GridSizes.Small, GridTypes.Structured)
             //new Olshanskii(GridSizes.Tiny, GridTypes.PseudoStructured),
@@ -174,8 +187,8 @@ namespace CutCellQuadrature {
         }
 
         protected override void CreateFields() {
-            levelSet = testCase.GetLevelSet(GridData);
-            levelSetTracker = new LevelSetTracker(GridData, 
+            levelSet = testCase.GetLevelSet((BoSSS.Foundation.Grid.Classic.GridData)GridData);
+            levelSetTracker = new LevelSetTracker((BoSSS.Foundation.Grid.Classic.GridData)GridData, 
                 XQuadFactoryHelper.MomentFittingVariants.Classic, // should have no effect, this app creates its own quad-rules independent of the tracker
                 1, new string[] { "A", "B" }, levelSet);
 
@@ -188,7 +201,7 @@ namespace CutCellQuadrature {
                 m_IOFields.Add((LevelSet)levelSet);
             } else {
                 LevelSet projectedLevelSet = new LevelSet(new Basis(GridData, 4), "projectedAnalyticLevelSet");
-                projectedLevelSet.ProjectField(testCase.GetLevelSet(GridData).Evaluate);
+                projectedLevelSet.ProjectField(testCase.GetLevelSet((BoSSS.Foundation.Grid.Classic.GridData)GridData).Evaluate);
                 m_IOFields.Add(projectedLevelSet);
             }
             m_IOFields.Add(XDGField);
@@ -223,23 +236,22 @@ namespace CutCellQuadrature {
             LineSegment.IRootFindingAlgorithm rootFindingAlgorithm;
 
 
-
             /*
              * ENTER CONFIGURATION HERE
              */
 
             // Export options
-            int plotSuperSampling = -1;
-            bool logVolumeNodes = false;
+            int plotSuperSampling = 3;
+            bool logVolumeNodes = true;
             int logVolumeNodes_selectedCell = -1;
             bool logSurfaceNodes = false;
-            bool logConsole = false;
+            bool logConsole = true;
             int selectedShift = -1;
 
             // Quadrature variant
 
-            Modes mode = Modes.EquivalentPolynomials;
-            int[] orders = new int[] { 1, 2 };
+            Modes mode = Modes.SayeGaussRules;
+            int[] orders = new int[] { 3};
 
             //Modes mode = Modes.HMFClassic;
             //int[] orders = new int[] { 3, 4, 5, 6, 7, 8 };
@@ -294,7 +306,7 @@ namespace CutCellQuadrature {
             SubGrid selectedSubGrid = new SubGrid(cellMask);
 
             testCase.ScaleShifts(0.5 * testCase.GridSpacing);
-            double hBase = GridData.Cells.h_maxGlobal;
+            double hBase = ((BoSSS.Foundation.Grid.Classic.GridData)GridData).Cells.h_maxGlobal;
 
             string logName = ""
                 + testCase.GetType().Name
@@ -340,7 +352,7 @@ namespace CutCellQuadrature {
 
                 StreamWriter volumeNodesLog = null;
                 StreamWriter surfaceNodesLog = null;
-                if (plotSuperSampling >= 0) {
+                if (plotSuperSampling >= 0 && i == 1) {
                     PlotCurrentState(0.0, 0, plotSuperSampling, cutCellGrid);
                 }
 
@@ -489,7 +501,20 @@ namespace CutCellQuadrature {
             return referenceValue;
         }
 
-        private Tuple<double, int, int> PerformConfiguration(Modes mode, int order, int division = 0, StreamWriter volumeNodesLog = null, StreamWriter surfaceNodesLog = null, int leafDivisions = -1, int vanishingMoment = -1, int continuousDerivative = -1, double width = double.NaN, double hBase = double.NaN, LineSegment.IRootFindingAlgorithm rootFindingAlgorithm = null, int logVolumeNodes_selectedCell = -1) {
+        private Tuple<double, int, int> PerformConfiguration(
+            Modes mode, 
+            int order, 
+            int division = 0, 
+            StreamWriter volumeNodesLog = null, 
+            StreamWriter surfaceNodesLog = null, 
+            int leafDivisions = -1, 
+            int vanishingMoment = -1, 
+            int continuousDerivative = -1, 
+            double width = double.NaN, 
+            double hBase = double.NaN, 
+            LineSegment.IRootFindingAlgorithm rootFindingAlgorithm = null, 
+            int logVolumeNodes_selectedCell = -1)
+        {
             SubGrid cutCellGrid = levelSetTracker.Regions.GetCutCellSubGrid();
 
             IQuadRuleFactory<QuadRule> volumeFactory = null;
@@ -640,18 +665,22 @@ namespace CutCellQuadrature {
                     }
                 case Modes.SayeGaussRules: //
                     {
-                    throw new NotImplementedException();
-                    /*
-                        volumeFactory = new SayeGaussRule_Volume2D(
-                            levelSetTracker.DataHistories[0].Current,
-                            rootFindingAlgorithm
-                            );
-                        edgeFactory = new CutCellQuadRuleFactory(
-                            new BruteForceSubdivisionStrategy(
-                                Grid.RefElements[0].FaceRefElement, division),
-                            order);
+                        if (testCase is ISurfaceTestCase)
+                        {
+                            volumeFactory = SayeFactories.SayeGaussRule_LevelSet2D(
+                                levelSetTracker.DataHistories[0].Current,
+                                rootFindingAlgorithm);
+                        }
+                        else
+                        {
+                            volumeFactory = SayeFactories.SayeGaussRule_Volume2D(
+                                levelSetTracker.DataHistories[0].Current,
+                                rootFindingAlgorithm,
+                                SayeFactory_Square.QuadratureMode.PositiveVolume);
+                        }
+
+                        edgeFactory = null;
                         break;
-                    */
                     }
 
                 case Modes.EquivalentPolynomials: //
@@ -694,7 +723,8 @@ namespace CutCellQuadrature {
                 || mode == Modes.HMFClassic
                 || mode == Modes.HMFOneStepGauss
                 || mode == Modes.HMFOneStepGaussAndStokes
-                || mode == Modes.EquivalentPolynomials) {
+                || mode == Modes.EquivalentPolynomials
+                || mode == Modes.SayeGaussRules) {
 
                 result = PerformVolumeQuadrature(
                     mode, volumeFactory, cutCellGrid, order, localTimer);
@@ -718,13 +748,13 @@ namespace CutCellQuadrature {
                 foreach (int edge in chunkRulePair.Chunk.Elements) {
                     QuadRule rule = chunkRulePair.Rule;
 
-                    int cell = GridData.Edges.CellIndices[edge, 0];
+                    int cell = GridData.iGeomEdges.CellIndices[edge, 0];
 
                     NodeSet volumeVertices = new NodeSet(
-                        GridData.Cells.GetRefElement(cell),
+                        GridData.iGeomCells.GetRefElement(cell),
                         rule.NoOfNodes, Grid.SpatialDimension);
                     Grid.RefElements[0].TransformFaceCoordinates(
-                        GridData.Edges.FaceIndices[edge, 0], rule.Nodes, volumeVertices);
+                        GridData.iGeomEdges.FaceIndices[edge, 0], rule.Nodes, volumeVertices);
                     volumeVertices.LockForever();
 
                     MultidimensionalArray globalVertices = MultidimensionalArray.Create(
@@ -764,7 +794,7 @@ namespace CutCellQuadrature {
                     MultidimensionalArray metrics = levelSetTracker.DataHistories[0].Current.GetLevelSetNormalReferenceToPhysicalMetrics(
                         rule.Nodes, cell, 1);
                     GridData.TransformLocal2Global(rule.Nodes, cell, 1, globalVertices, 0);
-
+                    
                     if (selectedCell >= 0 && cell != selectedCell) {
                         continue;
                     }
@@ -776,7 +806,7 @@ namespace CutCellQuadrature {
                             // Use to get correct HMF weights in reference coordinate
                             // system (surface weights are already divided by $metrics
                             // to save this step in actual quadrature)
-                            weight *= metrics[0, k];
+                            //weight *= metrics[0, k];
                         }
 
                         if (Grid.SpatialDimension == 2) {
@@ -852,7 +882,7 @@ namespace CutCellQuadrature {
         }
 
         private void PlotCurrentState(double physTime, TimestepNumber timestepNo, int superSampling, SubGrid subGrid) {
-            Tecplot tecplot = new Tecplot(GridData, true, false, (uint)superSampling, subGrid);
+            Tecplot tecplot = new Tecplot(GridData, true, false, (uint)superSampling, subGrid.VolumeMask);
             //Tecplot tecplot = new Tecplot(m_Context, true, false, (uint)superSampling, null);
             string path = Path.Combine(Path.GetFullPath("."), "plot_" + testCase.GetType().Name);
             tecplot.PlotFields(path, physTime, m_IOFields);

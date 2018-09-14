@@ -190,8 +190,8 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             // ===================
             #region BC
 
-            C.AddBoundaryCondition("wall_lower", "VelocityX#A", X => 0.0);
-            C.AddBoundaryCondition("wall_upper", "VelocityX#B", X => 0.0);
+            C.AddBoundaryValue("wall_lower", "VelocityX#A", X => 0.0);
+            C.AddBoundaryValue("wall_upper", "VelocityX#B", X => 0.0);
 
             #endregion
 
@@ -484,8 +484,8 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             // ===================
             #region BC
 
-            C.AddBoundaryCondition("wall_lower", "VelocityX#A", X => 0.0);
-            C.AddBoundaryCondition("wall_upper", "VelocityX#B", X => 0.0);
+            C.AddBoundaryValue("wall_lower", "VelocityX#A", X => 0.0);
+            C.AddBoundaryValue("wall_upper", "VelocityX#B", X => 0.0);
 
             #endregion
 
@@ -731,8 +731,8 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             // ===================
             #region BC
 
-            C.AddBoundaryCondition("wall_lower", "VelocityX#A", X => 0.0);
-            C.AddBoundaryCondition("wall_upper", "VelocityX#B", X => 0.0);
+            C.AddBoundaryValue("wall_lower", "VelocityX#A", X => 0.0);
+            C.AddBoundaryValue("wall_upper", "VelocityX#B", X => 0.0);
 
             #endregion
 

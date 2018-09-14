@@ -93,7 +93,8 @@ namespace BoSSS.Foundation.Quadrature {
         public IEnumerable<IChunkRulePair<T>> GetQuadRuleSet(ExecutionMask mask, int order) {
             if (!(mask is CellMask))
                 throw new ArgumentException("Expecting a cell/volume mask.");
-
+            if (mask.MaskType != MaskType.Geometrical)
+                throw new ArgumentException("Expecting a geometrical mask.");
             if (!object.ReferenceEquals(this.context, mask.GridData))
                 throw new ArgumentException();
 

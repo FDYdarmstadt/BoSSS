@@ -69,7 +69,7 @@ namespace BoSSS.Foundation.Comm {
         public VectorTransceiver(IGridData master, T vector, int ItemsPerCell) {
             CheckItemTypeRecursive(typeof(V));
 
-            int J = master.iLogicalCells.NoOfCells;
+            int J = master.iLogicalCells.Count;
             if (vector.Count != ItemsPerCell * J)
                 throw new ArgumentException("wrong length of input vector.");
 
@@ -339,11 +339,11 @@ namespace BoSSS.Foundation.Comm {
             if (!vector.IsContinious || !(offset == 0) || !(vector.Storage.Length == vector.Length))
                 throw new NotSupportedException();
 
-            if (vector.GetLength(0) != master.iLogicalCells.NoOfCells)
+            if (vector.GetLength(0) != master.iLogicalCells.Count)
                 throw new ArgumentException("fist dimension must match number of local cells (including external)");
 
             double[] Stor = vector.Storage;
-            int J = master.iLogicalCells.NoOfCells;
+            int J = master.iLogicalCells.Count;
             int L = Stor.Length;
             Debug.Assert(L % J == 0);
 
@@ -376,7 +376,7 @@ namespace BoSSS.Foundation.Comm {
         static public void MPIExchange<Tlst, Titm>(this Tlst vector, IGridData master)
             where Tlst : IList<Titm>
             where Titm : struct {
-            int J = master.iLogicalCells.NoOfCells;
+            int J = master.iLogicalCells.Count;
             int L = vector.Count;
             if (L % J != 0)
                 throw new ArgumentException("Length of vector must be equal or a multiple of number of cells (including external).");
@@ -393,7 +393,7 @@ namespace BoSSS.Foundation.Comm {
         /// <param name="b"></param>
         /// <param name="GridData"></param>
         static public void MPIExchange(this BitArray b, IGridData GridData) {
-            if (b.Length != GridData.iLogicalCells.NoOfCells) {
+            if (b.Length != GridData.iLogicalCells.Count) {
                 throw new ArgumentException("length must be equal to number of cells.", "b");
             }
 

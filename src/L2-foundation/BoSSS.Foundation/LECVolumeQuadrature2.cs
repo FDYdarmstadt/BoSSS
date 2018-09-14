@@ -465,6 +465,7 @@ namespace BoSSS.Foundation.Quadrature.Linear {
             int D = this.m_GridDat.SpatialDimension;
             bool bLinearRequired = this.LinearRequired;
             bool bAffineRequired = this.AffineRequired; // 
+            int[] geom2log = m_GridDat.iGeomCells.GeomCell2LogicalCell;
             {
 
                 Affine = m_GridDat.iGeomCells.IsCellAffineLinear(i0);
@@ -479,10 +480,10 @@ namespace BoSSS.Foundation.Quadrature.Linear {
                     Debug.Assert(m_GridDat.iGeomCells.IsCellAffineLinear(jCell) == Affine);
 
                     for(int gamma = 0; gamma < GAMMA; gamma++)
-                        Debug.Assert(this.m_RowL[gamma] == m_Vfunctions[gamma].GetLength(jCell));
+                        Debug.Assert(this.m_RowL[gamma] == m_Vfunctions[gamma].GetLength(geom2log != null ? geom2log[jCell] : jCell));
 
                     for(int delta = 0; delta < DELTA; delta++)
-                        Debug.Assert(this.m_ColL[delta] == m_Ufunctions[delta].GetLength(jCell));
+                        Debug.Assert(this.m_ColL[delta] == m_Ufunctions[delta].GetLength(geom2log != null ? geom2log[jCell] : jCell));
                 }
 #endif
             }
@@ -987,11 +988,15 @@ namespace BoSSS.Foundation.Quadrature.Linear {
             int M = m_RowMap.NoOfCoordinatesPerCell;
             int N = m_ColMap.NoOfCoordinatesPerCell;
             int offset = bLinearRequired ? N : 0;
-            int NoUpdate = this.m_GridDat.iLogicalCells.NoOfLocalUpdatedCells;
+            int NoUpdate = m_GridDat.iLogicalCells.NoOfLocalUpdatedCells;
+            int[] geom2log = m_GridDat.iGeomCells.GeomCell2LogicalCell;
 
             for(int i = 0; i < Length; i++) {
-                int jCell = i + i0;
-
+                int jCell;
+                if(geom2log != null)
+                    jCell = geom2log[i + i0];
+                else
+                    jCell = i + i0;
 
                 if(bLinearRequired) {
                     var BlockRes = ResultsOfIntegration.ExtractSubArrayShallow(new int[] { i, 0, 0 }, new int[] { i - 1, M - 1, N - 1 });

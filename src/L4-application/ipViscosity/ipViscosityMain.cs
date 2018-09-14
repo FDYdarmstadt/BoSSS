@@ -192,13 +192,7 @@ namespace BoSSS.Application.ipViscosity {
                 // assemble system, create matrix
                 // ------------------------------
 
-                var volQrSch = new CellQuadratureScheme(true, CellMask.GetFullMask(this.GridData));
-                var edgQrSch = new EdgeQuadratureScheme(true, EdgeMask.GetFullMask(this.GridData));
                 
-                //var volQrSch = new CellQuadratureScheme(true, CellMask.GetEmptyMask(this.GridData));
-                //var edgQrSch = new EdgeQuadratureScheme(true, EdgeMask.GetEmptyMask(this.GridData));
-                //var edgQrSch = new EdgeQuadratureScheme(true, this.GridDat.BoundaryEdges);
-                //var edgQrSch = new EdgeQuadratureScheme(true, this.GridDat.BoundaryEdges.Complement());
 
                 int D = GridData.SpatialDimension;
                 //double penalty_base = ((double)((U[0].Basis.Degree + 1) * (U[0].Basis.Degree + D))) / ((double)D);
@@ -242,7 +236,7 @@ namespace BoSSS.Application.ipViscosity {
                 OperatorMtx = new MsrMatrix(map, map);
                 Operator.ComputeMatrixEx(map, new DGField[] { this.mu }, map,
                                          OperatorMtx, this.bnd.CoordinateVector,
-                                         volQuadScheme: volQrSch, edgeQuadScheme: edgQrSch);
+                                         volQuadScheme: null, edgeQuadScheme: null);
 
                 // test for matrix symmetry
                 // ========================
@@ -262,9 +256,9 @@ namespace BoSSS.Application.ipViscosity {
             int L = this.bnd.CoordinateVector.Count();
 
             // need to assure to use the same quadrature oder on both evaluation variants
-            var volQrSch = (new CellQuadratureScheme(false, CellMask.GetFullMask(this.GridData)))
+            var volQrSch = (new CellQuadratureScheme(false, CellMask.GetFullMask(this.GridData, MaskType.Geometrical)))
                                     .AddFixedOrderRules(this.GridData, this.PolynomialDegree*3);
-            var edgQrSch = new EdgeQuadratureScheme(true, EdgeMask.GetFullMask(this.GridData))
+            var edgQrSch = new EdgeQuadratureScheme(true, EdgeMask.GetFullMask(this.GridData, MaskType.Geometrical))
                                     .AddFixedOrderRules(this.GridData, this.PolynomialDegree*3);
 
             //var volQrSch = new CellQuadratureScheme(true, CellMask.GetEmptyMask(this.GridData));

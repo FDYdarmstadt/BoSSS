@@ -38,7 +38,8 @@ namespace CNS.Tests.ViscousShockProfile {
                 DGField mpiRank = new SinglePhaseField(new Basis(GridData, 0), "rank");
                 m_IOFields.Add(mpiRank);
 
-                for (int j = 0; j < GridData.Cells.NoOfLocalUpdatedCells; j++) {
+                int J = GridData.iLogicalCells.NoOfLocalUpdatedCells;
+                for (int j = 0; j < J; j++) {
                     mpiRank.SetMeanValue(j, DatabaseDriver.MyRank);
                 }
             }
