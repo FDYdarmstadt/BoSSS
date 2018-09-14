@@ -66,7 +66,7 @@ namespace BoSSS.Solution.Multigrid
         BlockMsrMatrix Mtx;
 
         MsrMatrix P;
-        MsrMatrix ConvDiff, pGrad, divVel, ConvDiffPoissonMtx, SchurMtx, PoissonMtx, PoissonMtx_T, PoissonMtx_H, SchurConvMtx, invVelMassMatrix, invVelMassMatrixSqrt, simpleSchur, velMassMatrix;
+        MsrMatrix ConvDiff, pGrad, divVel, SchurMtx, PoissonMtx_T, PoissonMtx_H, SchurConvMtx, invVelMassMatrix, invVelMassMatrixSqrt, simpleSchur, velMassMatrix;
         int[] Uidx, Pidx;
 
         public enum SchurOptions { exact = 1, decoupledApprox = 2, SIMPLE = 3 }
@@ -268,6 +268,8 @@ namespace BoSSS.Solution.Multigrid
             //    solver.DefineMatrix(P);
             //    solver.Solve(X, B);
             //}
+
+            m_ThisLevelIterations++;
 
             switch (SchurOpt)
             {

@@ -14,6 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+using BoSSS.Foundation.Grid;
 using BoSSS.Foundation.Grid.Classic;
 using CNS.Boundary;
 using CNS.EquationSystem;
@@ -71,7 +72,7 @@ namespace CNS.Diffusion {
         /// An instance of <see cref="FluxBuilder"/> that constructs the fluxes
         /// corresponding to <paramref name="diffusiveFlux"/>.
         /// </returns>
-        public static FluxBuilder GetBuilder(this DiffusiveFluxTypes diffusiveFlux, CNSControl control, IBoundaryConditionMap boundaryMap, ISpeciesMap speciesMap, GridData gridData) {
+        public static FluxBuilder GetBuilder(this DiffusiveFluxTypes diffusiveFlux, CNSControl control, IBoundaryConditionMap boundaryMap, ISpeciesMap speciesMap, IGridData gridData) {
             int minDegree = Math.Min(
                 Math.Min(control.DensityDegree, control.MomentumDegree),
                 control.EnergyDegree);

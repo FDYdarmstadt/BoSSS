@@ -58,7 +58,7 @@ namespace BoSSS.Solution.Queries {
         /// <returns>
         /// The L2 norm of <paramref name="fieldName"/>.
         /// </returns>
-        public static Query L2Norm(string fieldName, Func<GridData, CellMask> maskFactory = null) {
+        public static Query L2Norm(string fieldName, Func<IGridData, CellMask> maskFactory = null) {
             return (app, time) => GetField(app.IOFields, fieldName).L2Norm(GetMaskOrNull(maskFactory, app.GridData));
         }
 
@@ -81,7 +81,7 @@ namespace BoSSS.Solution.Queries {
         /// <returns>
         /// The error of <paramref name="fieldName"/> in the L2 norm.
         /// </returns>
-        public static Query L2Error(string fieldName, DGField referenceField, Func<GridData, CellMask> maskFactory = null) {
+        public static Query L2Error(string fieldName, DGField referenceField, Func<IGridData, CellMask> maskFactory = null) {
             return delegate(IApplication<AppControl> app, double time) {
                 DGField differenceField = referenceField - GetField(app.IOFields, fieldName);
                 return differenceField.L2Norm(GetMaskOrNull(maskFactory, app.GridData));
@@ -235,7 +235,7 @@ namespace BoSSS.Solution.Queries {
         /// The integral of <paramref name="fieldName"/> over the cells defined
         /// by <paramref name="maskFactory"/>.
         /// </returns>
-        public static Query Integral(string fieldName, Func<GridData, CellMask> maskFactory = null) {
+        public static Query Integral(string fieldName, Func<IGridData, CellMask> maskFactory = null) {
             return (app, time) => GetField(app.IOFields, fieldName).IntegralOver(GetMaskOrNull(maskFactory, app.GridData));
         }
 
@@ -270,7 +270,7 @@ namespace BoSSS.Solution.Queries {
         /// </returns>
         public static Query NumberOfDOF(string fieldName) {
             return delegate(IApplication<AppControl> app, double time) {
-                long noOfCells = app.GridData.Grid.NumberOfCells;
+                long noOfCells = app.GridData.CellPartitioning.TotalLength;
                 int degree = GetField(app.IOFields, fieldName).Basis.Degree;
 
                 int DOFPerCell;
@@ -303,7 +303,7 @@ namespace BoSSS.Solution.Queries {
         /// <param name="maskFactory"></param>
         /// <param name="gridData"></param>
         /// <returns></returns>
-        private static CellMask GetMaskOrNull(Func<GridData, CellMask> maskFactory, GridData gridData) {
+        private static CellMask GetMaskOrNull(Func<IGridData, CellMask> maskFactory, IGridData gridData) {
             return (maskFactory == null) ? null : maskFactory(gridData);
         }
 
@@ -326,11 +326,11 @@ namespace BoSSS.Solution.Queries {
         /// <param name="timestepGuid"></param>
         /// <param name="fieldName"></param>
         /// <returns></returns>
-        private static DGField GetStoredField(GridData gridData, Guid timestepGuid, string fieldName) {
-            IDatabaseInfo database = gridData.Grid.Database;
+        private static DGField GetStoredField(IGridData gridData, Guid timestepGuid, string fieldName) {
+            IDatabaseInfo database = ((GridData)gridData).Grid.Database;
             ITimestepInfo tsi = database.Controller.DBDriver.LoadTimestepInfo(
                 timestepGuid, null, database);
-            return database.Controller.DBDriver.LoadFields(tsi, gridData, new[] { fieldName }).Single();
+            return database.Controller.DBDriver.LoadFields(tsi, ((GridData)gridData), new[] { fieldName }).Single();
         }
     }
 }

@@ -187,7 +187,7 @@ namespace BoSSS.Solution.XNSECommon {
             var H = LsTrk.GetXDGSpaceMetrics(new[] { LsTrk.GetSpeciesId("A") }, order, 1).XQuadSchemeHelper;
             CellQuadratureScheme cqs = H.GetLevelSetquadScheme(0, CC);
             ICompositeQuadRule<QuadRule> surfRule = cqs.Compile(gDat, order);
-            ICompositeQuadRule<CellBoundaryQuadRule> bndyRule = (new CellBoundaryQuadratureScheme(true, CC)).Compile(gDat, order);
+            ICompositeQuadRule<CellBoundaryQuadRule> bndyRule = (new CellBoundaryQuadratureScheme(true, CC.ToGeometicalMask())).Compile(gDat, order);
 
 
 

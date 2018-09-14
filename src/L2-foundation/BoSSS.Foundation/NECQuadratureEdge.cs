@@ -271,7 +271,7 @@ namespace BoSSS.Foundation.Quadrature.NonLin {
 
             BitArray cellMarker = this.SubGridCellsMarker;
 
-            int[,] E2C = grid.iLogicalEdges.CellIndices;
+            int[,] E2C = grid.iGeomEdges.LogicalCellIndices;
 
             for(int jEdge = 0; jEdge < Length; jEdge++) {
 
@@ -1163,10 +1163,10 @@ namespace BoSSS.Foundation.Quadrature.NonLin {
                                 
                                 if(m_GradientFluxValuesINtrf[i] != null) {
                                     m_GradientFluxValuesINtrf[i].Multiply(1.0, m_GradientFluxValuesIN[i], invJacobi, 0.0, ref mp_jke_jkd_Tjed,
-                                        pEdge2Cell, Edge2Cell.GetLength(0),
+                                        pEdge2Cell, pEdge2Cell,
                                         trfPreOffset_A: 0, trfCycle_A: 0, trfPostOffset_A: 0, trfPreOffset_B: (2 * i0 + 0), trfCycle_B: 2, trfPostOffset_B: 0);
                                     m_GradientFluxValuesOTtrf[i].Multiply(1.0, m_GradientFluxValuesOT[i], invJacobi, 0.0, ref mp_jke_jkd_Tjed,
-                                        pEdge2Cell, Edge2Cell.GetLength(0),
+                                        pEdge2Cell, pEdge2Cell,
                                         trfPreOffset_A: 0, trfCycle_A: 0, trfPostOffset_A: 0, trfPreOffset_B: (2 * i0 + 1), trfCycle_B: 2, trfPostOffset_B: 0);
                                 }
                             }
@@ -1242,12 +1242,12 @@ namespace BoSSS.Foundation.Quadrature.NonLin {
                                 //          k: quadrature node index
                                 //       T(j) = trfIdx[i0 + j, 0]
                                 QuadResultIN.Multiply(1.0, _TestFunction, m_FluxValuesIN[gamma], cF, ref mp_jn_Tjkn_jk,
-                                    pTrfIdx, trfIdx.GetLength(0),
+                                    pTrfIdx, pTrfIdx,
                                     trfPreOffset_A: (2 * i0), trfCycle_A: 2, trfPostOffset_A: 0, trfPreOffset_B: 0, trfCycle_B: 0, trfPostOffset_B: 0);
 
                                 // analog, aber mit T(j) = trfIdx[i0 + j, 1]
                                 QuadResultOT.Multiply(1.0, _TestFunction, m_FluxValuesOT[gamma], cF, ref mp_jn_Tjkn_jk,
-                                    pTrfIdx, trfIdx.GetLength(0),
+                                    pTrfIdx, pTrfIdx,
                                     trfPreOffset_A: (2 * i0 + 1), trfCycle_A: 2, trfPostOffset_A: 0, trfPreOffset_B: 0, trfCycle_B: 0, trfPostOffset_B: 0);
                             }
 
@@ -1272,10 +1272,10 @@ namespace BoSSS.Foundation.Quadrature.NonLin {
                                     // QuadResultIN[j,n] = sum_{k,d}  _TestFunctionGradient[T(j),k,n,d]*m_GradientFluxValuesINtrf[gamma][j,k,d] 
                                     //   ansonsten wie oben
                                     QuadResultIN.Multiply(1.0, _TstFuncGradXwgt, m_GradientFluxValuesINtrf[gamma], cF, ref mp_jn_Tjknd_jkd,
-                                        pTrfIdx, trfIdx.GetLength(0),
+                                        pTrfIdx, pTrfIdx,
                                         trfPreOffset_A: (2 * i0 + 0), trfCycle_A: 2, trfPostOffset_A: 0, trfPreOffset_B: 0, trfCycle_B: 0, trfPostOffset_B: 0);
                                     QuadResultOT.Multiply(1.0, _TstFuncGradXwgt, m_GradientFluxValuesOTtrf[gamma], cF, ref mp_jn_Tjknd_jkd,
-                                        pTrfIdx, trfIdx.GetLength(0),
+                                        pTrfIdx, pTrfIdx,
                                         trfPreOffset_A: (2 * i0 + 1), trfCycle_A: 2, trfPostOffset_A: 0, trfPreOffset_B: 0, trfCycle_B: 0, trfPostOffset_B: 0);
                                 }
                             }
@@ -1318,10 +1318,10 @@ namespace BoSSS.Foundation.Quadrature.NonLin {
                             fixed(int* pEdge2Cell = Edge2Cell) {
 
                                 QuadResultINtrf.Multiply(1.0, _OrthoTrfIN, QuadResultIN, 0.0, ref mp_jn_Tjmn_jm,
-                                    pEdge2Cell, Edge2Cell.GetLength(0),
+                                    pEdge2Cell, pEdge2Cell,
                                     trfPreOffset_A: (2 * i0), trfCycle_A: 2, trfPostOffset_A: -jCellMin, trfPostOffset_B: 0, trfCycle_B: 0, trfPreOffset_B: 0);
                                 QuadResultOTtrf.Multiply(1.0, _OrthoTrfOT, QuadResultOT, 0.0, ref mp_jn_Tjmn_jm,
-                                    pEdge2Cell, Edge2Cell.GetLength(0),
+                                    pEdge2Cell, pEdge2Cell,
                                     trfPreOffset_A: (2 * i0 + 1), trfCycle_A: 2, trfPostOffset_A: -jCellMin, trfPostOffset_B: 0, trfCycle_B: 0, trfPreOffset_B: 0);
                             }
                         }
@@ -1345,12 +1345,12 @@ namespace BoSSS.Foundation.Quadrature.NonLin {
                         fixed(int* pEdge2Cell = Edge2Cell) {
                             // QuadResultINtrf[i,n] = QuadResultINtrf[i,n]*scaling[T(i)], where T(i) = Edge2Cell[i,0]
                             QuadResultINtrf.Multiply(1.0, QuadResultINtrf, scaling, 0.0, ref mp_in_in_Ti,
-                                pEdge2Cell, Edge2Cell.GetLength(0),
+                                pEdge2Cell, pEdge2Cell,
                                 trfPostOffset_A: 0, trfCycle_A: 0, trfPreOffset_A: 0, trfPreOffset_B: (2 * i0), trfCycle_B: 2, trfPostOffset_B: 0);
 
                             // QuadResultINtrf[i,n] = QuadResultINtrf[i,n]*scaling[T(i)], where T(i) = Edge2Cell[i,1]
                             QuadResultOTtrf.Multiply(1.0, QuadResultOTtrf, scaling, 0.0, ref mp_in_in_Ti,
-                                pEdge2Cell, Edge2Cell.GetLength(0),
+                                pEdge2Cell, pEdge2Cell,
                                 trfPostOffset_A: 0, trfCycle_A: 0, trfPreOffset_A: 0, trfPreOffset_B: (2 * i0 + 1), trfCycle_B: 2, trfPostOffset_B: 0);
                         }
                     }

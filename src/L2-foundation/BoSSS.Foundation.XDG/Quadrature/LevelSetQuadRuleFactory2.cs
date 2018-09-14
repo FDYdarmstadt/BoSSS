@@ -59,6 +59,8 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
             public IEnumerable<IChunkRulePair<QuadRule>> GetQuadRuleSet(ExecutionMask mask, int order) {
                 if (!(mask is CellMask))
                     throw new ArgumentException("Expecting a cell mask.");
+                if (mask.MaskType != MaskType.Geometrical)
+                    throw new ArgumentException("Expecting a geometrical mask.");
 
 #if DEBUG
                 if (mask.Except(m_Owner.MaxGrid).NoOfItemsLocally > 0)

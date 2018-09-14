@@ -182,12 +182,15 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
         /// <returns></returns>
         public IEnumerable<IChunkRulePair<CellEdgeBoundaryQuadRule>> GetQuadRuleSet(ExecutionMask mask, int order) {
             if (mask == null) {
-                mask = CellMask.GetFullMask(this.lsData.GridDat);
+                mask = CellMask.GetFullMask(this.lsData.GridDat, MaskType.Geometrical);
             }
 
             if (mask is CellMask == false) {
                 throw new ArgumentException("Edge mask required", "mask");
             }
+            if (mask.MaskType != MaskType.Geometrical)
+                throw new ArgumentException("Expecting a geometrical mask.");
+
 
             if (lastOrder != order) {
                 cache.Clear();

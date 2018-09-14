@@ -71,6 +71,9 @@ namespace BoSSS.Foundation.Quadrature {
         /// <see cref="IQuadRuleFactory{QuadRule}.GetQuadRuleSet"/>
         /// </returns>
         public IEnumerable<IChunkRulePair<T>> GetQuadRuleSet(ExecutionMask mask, int order) {
+            if (mask.MaskType != MaskType.Geometrical)
+                throw new ArgumentException("Expecting a geometrical mask.");
+
             var result = new List<IChunkRulePair<T>>(mask.Count());
             var quadRule = m_qr;
             foreach (Chunk chunk in mask) {

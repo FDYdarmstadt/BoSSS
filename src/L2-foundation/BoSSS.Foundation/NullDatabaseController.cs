@@ -88,7 +88,7 @@ namespace BoSSS.Foundation.IO {
         /// Does nothing.
         /// </summary>
         /// <param name="gridData"></param>
-        public void AddGridInitializationContext(Grid.Classic.GridData gridData) {
+        public void AddGridInitializationContext(IGridData gridData) {
         }
 
         /// <summary>

@@ -29,6 +29,7 @@ namespace BoSSS.Foundation.Grid {
     /// Basic algorithms for refinement and coarsening.
     /// </summary>
     public class GridRefinementController {
+        
         /// <summary>
         /// Computes refinement and coarsening lists 
         /// (inputs for <see cref="GridData.Adapt(IEnumerable{int}, IEnumerable{int[]}, out GridCorrelation)"/>),
@@ -125,7 +126,7 @@ namespace BoSSS.Foundation.Grid {
 
 
         static int[][] FindCoarseningClusters(BitArray Ok2Coarsen, GridData CurrentGrid) {
-            int JE = CurrentGrid.Cells.NoOfCells;
+            int JE = CurrentGrid.Cells.Count;
             int J = CurrentGrid.Cells.NoOfLocalUpdatedCells;
 
             if (Ok2Coarsen.Length != JE)
