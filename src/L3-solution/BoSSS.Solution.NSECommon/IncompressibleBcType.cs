@@ -87,10 +87,10 @@ namespace BoSSS.Solution.NSECommon {
         /// \sigma \boldsymbol{P}_S \tau_L = -\beta_L (\vec{u} \cdot \vec{n}_L) + \sigma \cos(\Theta_e) \vec{n}_L \text{ on } L
         /// \f]
         /// </summary>
-        NavierSlip_Linear = 8,
+        NavierSlip_Linear = 8
 
 
-        NavierSlip_localized = 9
+        //NavierSlip_localized = 9
 
 
     }

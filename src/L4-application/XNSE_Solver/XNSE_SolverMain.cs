@@ -54,7 +54,7 @@ using BoSSS.Solution.XdgTimestepping;
 using BoSSS.Foundation.Grid.Aggregation;
 using NUnit.Framework;
 using MPI.Wrappers;
-
+using System.Collections;
 
 namespace BoSSS.Application.XNSE_Solver {
 
@@ -2772,6 +2772,9 @@ namespace BoSSS.Application.XNSE_Solver {
 
             CellMask ccm = this.LsTrk.Regions.GetCutCellMask();
             CellMask near = this.LsTrk.Regions.GetNearFieldMask(1);
+            CellMask nearBnd = near.AllNeighbourCells();
+            CellMask buffer = nearBnd.AllNeighbourCells().Union(nearBnd).Except(near);
+
 
             int DesiredLevel_j = CurrentLevel;
 
@@ -2811,15 +2814,25 @@ namespace BoSSS.Application.XNSE_Solver {
                     }
                 }           
 
+            } else if(NScm.Contains(j)) {
+                if(CurrentLevel < this.Control.RefinementLevel)
+                    DesiredLevel_j++;
+
+            } else if(buffer.Contains(j) || NSbuffer.Contains(j)) {
+                if(CurrentLevel < this.Control.RefinementLevel - 1)
+                    DesiredLevel_j++;
             } else {
-                //if(CurrentLevel > 0)
-                //    DesiredLevel_j--;
                 DesiredLevel_j = 0;
             }
 
             return DesiredLevel_j;
 
         }
+
+
+        CellMask NScm; 
+
+        CellMask NSbuffer;  
 
 
         /// <summary>
@@ -2930,6 +2943,36 @@ namespace BoSSS.Application.XNSE_Solver {
                             this.Curvature, out VectorField<SinglePhaseField> LevSetGradient, this.LsTrk,
                             this.m_HMForder, this.DGLevSet.Current);
                     }
+
+
+                    // navier slip boundary cells
+                    NScm = new CellMask(this.GridData);
+                    NSbuffer = new CellMask(this.GridData);
+                    if(this.Control.RefineNavierSlipBoundary) {
+                        BitArray NSc = new BitArray(this.GridData.Cells.NoOfCells);
+                        CellMask bnd = this.GridData.BoundaryCells.VolumeMask;
+                        int[][] c2e = this.GridData.Cells.Cells2Edges;
+                        foreach(Chunk cnk in bnd) {
+                            for(int i = cnk.i0; i < cnk.JE; i++) {
+                                foreach(int e in c2e[i]) {
+                                    int eId = (e < 0) ? -e - 1 : e - 1;
+                                    byte et = this.GridData.Edges.EdgeTags[eId];
+                                    if(this.GridData.EdgeTagNames[et].Contains("navierslip_linear"))
+                                        NSc[i] = true;
+                                }
+                            }
+                        }
+                        NScm = new CellMask(this.GridData, NSc);
+                        CellMask bndNScm = NScm.AllNeighbourCells();
+                        int bndLvl = 2;
+                        for(int lvl = 1; lvl < bndLvl; lvl++) {
+                            NScm = NScm.Union(bndNScm);
+                            bndNScm = NScm.AllNeighbourCells();
+                            NSbuffer = NScm.Union(bndNScm);
+                        }
+                        NSbuffer = NSbuffer.AllNeighbourCells();
+                    }
+
 
                     //PlotCurrentState(hack_Phystime, new TimestepNumber(TimestepNo, 1), 2);
 

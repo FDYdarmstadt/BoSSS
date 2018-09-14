@@ -134,7 +134,14 @@ namespace BoSSS.Application.XNSE_Solver {
         /// desired minimum refinement level
         /// </summary>
         [DataMember]
-        public int RefinementLevel = 1; 
+        public int RefinementLevel = 1;
+
+        /// <summary>
+        /// additional refinement of the navier slip boundary 
+        /// </summary>
+        [DataMember]
+        public bool RefineNavierSlipBoundary = false;
+
 
         /// <summary>
         /// Expert options regarding the spatial discretization.

@@ -207,7 +207,7 @@ namespace BoSSS.Application.AdaptiveMeshRefinementTest {
                 
             } else {
                 //throw new NotImplementedException("todo");
-                PlotCurrentState(100, new TimestepNumber(100, 1), 2);
+                //PlotCurrentState(100, new TimestepNumber(100, 1), 2);
             }
         }
 
