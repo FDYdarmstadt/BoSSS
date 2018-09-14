@@ -996,8 +996,6 @@ namespace BoSSS.Foundation.Grid.Classic {
             get {
                 if (m_NodePartitioning == null) {
 
-                    int NodeIdMin = int.MaxValue;
-                    int NodeIdMax = int.MinValue;
                     int NodeIdMin_loc = int.MaxValue;
                     int NodeIdMax_loc = int.MinValue;
                     int J = this.NoOfUpdateCells;
@@ -1021,14 +1019,15 @@ namespace BoSSS.Foundation.Grid.Classic {
                         }
                     }
 
-
-                    unsafe
+                    int NodeIdMin, NodeIdMax;
                     {
-                        csMPI.Raw.Allreduce((IntPtr)(&NodeIdMax_loc), (IntPtr)(&NodeIdMax), 1, csMPI.Raw._DATATYPE.INT, csMPI.Raw._OP.MAX, csMPI.Raw._COMM.WORLD);
-                        csMPI.Raw.Allreduce((IntPtr)(&NodeIdMin_loc), (IntPtr)(&NodeIdMin), 1, csMPI.Raw._DATATYPE.INT, csMPI.Raw._OP.MIN, csMPI.Raw._COMM.WORLD);
+                        var MaxMin = MPIExtensions.MPIMax(new int[] { NodeIdMax_loc, -NodeIdMin_loc });
+                        NodeIdMax = MaxMin[0];
+                        NodeIdMin = -MaxMin[1];
                     }
 
-                    if (NodeIdMin != 0) {
+                    NodeIdMin = Math.Min(NodeIdMin, 0);
+                    if (NodeIdMin <= 0) {
                         throw new ApplicationException("Illegal node indexing: minimal node index is " + NodeIdMin + "(must start at 0).");
                     }
 
