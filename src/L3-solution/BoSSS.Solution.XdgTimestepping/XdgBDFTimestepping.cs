@@ -1428,9 +1428,6 @@ namespace BoSSS.Solution.XdgTimestepping {
                     this.AssembleMatrixCallback(out System, out RHS, out MaMa, CurrentStateMapping.Fields.ToArray(), true);
                     RHS.ScaleV(-1);
 
-                    Console.WriteLine("Erinnerung: Hack in XdgBDFTimestepping.cs");
-                    RHS.SaveToTextFile("E:\\Matlab\\RHSbosss.txt");
-
                     // update the multigrid operator
                     MultigridOperator mgOperator = new MultigridOperator(this.MultigridBasis, CurrentStateMapping,
                         System, MaMa,
