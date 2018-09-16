@@ -120,7 +120,7 @@ var UY = new Formula (string.Format("X=> \{0\}*Math.Atan(X[1]*5)*2.0/Math.PI",Si
  }
 \BoSSSexeSilent
 \BoSSScmd{
-///After the velocities and boundary conditions are set. We need to determine all other simulation parameters needed to proceed. The variable "ctrl" helps to skip the whole name "IBM_Control()". All other parameters are selfexplanatory.
+///After the velocities and boundary conditions are set. We need to determine all other simulation parameters needed to proceed. The variable $"ctrl"$ helps to skip the whole name $IBM Control()$. All other parameters are selfexplanatory.
  }
 \BoSSSexeSilent
 \BoSSScmd{
@@ -161,7 +161,7 @@ ctrl.InitialValues.Add("Phi", new Formula ("X=> -1.0" false));
 \BoSSSexeSilent
 \BoSSScmd{
 /// \section{Fluid properties}
-/// Here we set up the density and the Reynolds number, keep in mind that the calculations are dimensionles, so leave the values as seen above (100 is an example value)
+/// Here we set up the density and the Reynolds number, keep in mind that the calculations are dimensionles, so leave the values as seen above ($100$ is an example value)
  }
 \BoSSSexeSilent
 \BoSSScmd{
@@ -196,5 +196,174 @@ ctrl.RunBatch(myHPC,NumberOfMPIProcs:1);\newline
  \newline 
 Console.WriteLine(" Submitting " + ctrl.SessionName);\newline 
 ctrl.RunBatch(myBatch,NumberOfMPIProcs:1, UseComputerNodesExclusive:true);
+ }
+\BoSSSexeSilent
+\BoSSScmd{
+/// \section{Evaluation and Error Calculation}
+/// After all of the desired simulation are finished, you need to evaluate the different parameters and their effect on the whole system. Typing the following command gives you a list of all simulations with their status (FinishedSuccessful or with certain errors)
+ }
+\BoSSSexeSilent
+\BoSSScmd{
+WorkflowMgm.AllJobs.Select(kv => kv.Key + ": \textbackslash t" + kv.Value.Status);
+ }
+\BoSSSexeSilent
+\BoSSScmd{
+/// With the next command line you are able to select a certain session(simulation) and see the different time-steps for control purposes.
+ }
+\BoSSSexeSilent
+\BoSSScmd{
+WorkflowMgm.AllJobs.ElementAt(9).Value.Stdout;
+ }
+\BoSSSexeSilent
+\BoSSScmd{
+/// \subsection{L$2$-Error}
+/// This section introduces the calculation of the L$2$-Error.
+ }
+\BoSSSexeSilent
+\BoSSScmd{
+ ITimestepInfo[] AllSolutionS = WorkflowMgm.AllJobs.Select( kv => kv.Value.LatestSession.Timesteps.Last()).ToArray();
+ }
+\BoSSSexeSilent
+\BoSSScmd{
+ITimestepInfo[] k1\_SolutionS = AllSolutionS.Where(ts => ts.Fields.Single(f => f.Identification == "Pressure").Basis.Degree == 0).ToArray();\newline 
+ITimestepInfo[] k2\_SolutionS = AllSolutionS.Where(ts => ts.Fields.Single(f => f.Identification == "Pressure").Basis.Degree == 1).ToArray();\newline 
+ITimestepInfo[] k3\_SolutionS = AllSolutionS.Where(ts => ts.Fields.Single(f => f.Identification == "Pressure").Basis.Degree == 2).ToArray();
+ }
+\BoSSSexeSilent
+\BoSSScmd{
+k1\_SolutionS.Select(ts => ts.Fields.Single(f => f.Identification == "Pressure").Basis.Degree);
+ }
+\BoSSSexeSilent
+\BoSSScmd{
+double[] GridRes;\newline 
+Dictionary<string, double[]> L2Errors;\newline 
+DGFieldComparison.ComputeErrors(new[]\{"VelocityX","VelocityY"\}, k1\_SolutionS, out GridRes, out L2Errors);
+ }
+\BoSSSexeSilent
+\BoSSScmd{
+/// To check the particular errors, type
+ }
+\BoSSSexeSilent
+\BoSSScmd{
+GridRes;
+ }
+\BoSSSexeSilent
+\BoSSScmd{
+L2Errors["VelocityX"];
+ }
+\BoSSSexeSilent
+\BoSSScmd{
+L2Errors["VelocityY"];
+ }
+\BoSSSexeSilent
+\BoSSScmd{
+/// \section{Plotting of errors}
+/// This section gives a brief example of how to plot the erros and all the data from the previous simulations.
+ }
+\BoSSSexeSilent
+\BoSSScmd{
+Plot(GridRes,L2Errors["VelocityX"],"VelXErr","-oy",\newline 
+\btab  GridRes,L2Errors["VelocityY"],"VelXErr","-xb",logX:true,logY:true);
+ }
+\BoSSSexeSilent
+\BoSSScmd{
+/// for a plot with more specifics and more possible adjustments, here is an example code
+ }
+\BoSSSexeSilent
+\BoSSScmd{
+var FancyPlot = new Plot2Ddata();
+ }
+\BoSSSexeSilent
+\BoSSScmd{
+FancyPlot.LogX = true;\newline 
+FancyPlot.LogY = true;
+ }
+\BoSSSexeSilent
+\BoSSScmd{
+var k1plot = new Plot2Ddata.XYvalues("VelXErr-k1",GridRes,L2Errors["VelocityY"]);
+ }
+\BoSSSexeSilent
+\BoSSScmd{
+ArrayTools.AddToArray(k1plot, ref FancyPlot.dataGroups);
+ }
+\BoSSSexeSilent
+\BoSSScmd{
+var CL = FancyPlot.ToGnuplot().PlotCairolatex();
+ }
+\BoSSSexeSilent
+\BoSSScmd{
+CL.PlotNow();
+ }
+\BoSSSexeSilent
+\BoSSScmd{
+/// \section{Exporting}
+ }
+\BoSSSexeSilent
+\BoSSScmd{
+static class AddCols \{\newline 
+\btab static public object SipMatrixAssembly\_time(ISessionInfo SI) \{\newline 
+\btab \btab var mcr = SI.GetProfiling()[0];\newline 
+\btab \btab var ndS = mcr.FindChildren("SipMatrixAssembly");\newline 
+\btab \btab var nd  = ndS.ElementAt(0);\newline 
+\btab \btab return nd.TimeSpentInMethod.TotalSeconds  / nd.CallCount;\newline 
+\btab \}\newline 
+\btab static public object Aggregation\_basis\_init\_time(ISessionInfo SI) \{\newline 
+\btab \btab var mcr = SI.GetProfiling()[0];\newline 
+\btab \btab var ndS = mcr.FindChildren("Aggregation\_basis\_init");\newline 
+\btab \btab var nd  = ndS.ElementAt(0);\newline 
+\btab \btab return nd.TimeSpentInMethod.TotalSeconds  / nd.CallCount;\newline 
+\btab \}\newline 
+\btab static public object Solver\_Init\_time(ISessionInfo SI) \{\newline 
+\btab \btab var mcr = SI.GetProfiling()[0];\newline 
+\btab \btab var ndS = mcr.FindChildren("Solver\_Init");\newline 
+\btab \btab var nd  = ndS.ElementAt(0);\newline 
+\btab \btab //Console.WriteLine("Number of nodes: " + ndS.Count() + " cc " + nd.CallCount );\newline 
+\btab \btab return nd.TimeSpentInMethod.TotalSeconds / nd.CallCount;\newline 
+\btab \}\newline 
+\btab static public object Solver\_Run\_time(ISessionInfo SI) \{\newline 
+\btab \btab var mcr = SI.GetProfiling()[0];\newline 
+\btab \btab var ndS = mcr.FindChildren("Solver\_Run");\newline 
+\btab \btab var nd  = ndS.ElementAt(0);\newline 
+\btab \btab return nd.TimeSpentInMethod.TotalSeconds  / nd.CallCount;\newline 
+\btab \}\newline 
+\}
+ }
+\BoSSSexeSilent
+\BoSSScmd{
+/// this code adds additional/user-defined colums. Now, we want to export he saved session table in a file.
+ }
+\BoSSSexeSilent
+\BoSSScmd{
+var SessTab = WorkflowMgm.SessionTable;
+ }
+\BoSSSexeSilent
+\BoSSScmd{
+SessTab = SessTab.ExtractColumns(AllCols.ToArray());
+ }
+\BoSSSexeSilent
+\BoSSScmd{
+using System.IO;
+ }
+\BoSSSexeSilent
+\BoSSScmd{
+/// Here, we define the filename
+ }
+\BoSSSexeSilent
+\BoSSScmd{
+var now           = DateTime.Now;\newline 
+SessTab.TableName = "SolverRuns--" + now.Year + "-" + now.Month + "-" + now.Day;\newline 
+string docpath    = Path.Combine(CurrentDocDir, SessTab.TableName + ".json");
+ }
+\BoSSSexeSilent
+\BoSSScmd{
+/// saving the session table as a file could also be done in our git reposatory
+ }
+\BoSSSexeSilent
+\BoSSScmd{
+SessTab.SaveToFile(docpath);
+ }
+\BoSSSexeSilent
+\BoSSScmd{
+///
  }
 \BoSSSexeSilent
