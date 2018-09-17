@@ -359,6 +359,30 @@ namespace BoSSS.Application.SipPoisson {
             R.solver_name = solver_name;
             //R.TargetBlockSize = 100;
 
+
+            bool IsIn(params double[] X) {
+                Debug.Assert(X.Length == 2);
+                double xi = X[0];
+                double yi = X[1];
+                //for(int l = 0; l < bndys.Length; l++) {
+                //    Debug.Assert(bndys[l].Normal.Length == 2);
+                //    if (bndys[l].PointDistance(xi, yi) > 0.0)
+                //        return false;
+                //}
+                if (xi > 1.0)
+                    return false;
+                if (yi > 1.0)
+                    return false;
+                if (xi < 0 && yi < 0)
+                    return false;
+                if (xi < -1)
+                    return false;
+                if (yi < -1)
+                    return false;
+
+                return true;
+            }
+
             int Mirror(ref double[] _x, ref double[] _y, AffineManifold[] bndys) {
                 if (_x.Length != _y.Length)
                     throw new ArgumentException();
@@ -366,33 +390,21 @@ namespace BoSSS.Application.SipPoisson {
                 var y = _y.ToList();
                 int N = _x.Length;
 
-                bool IsIn(double xi, double yi) {
-                    //for(int l = 0; l < bndys.Length; l++) {
-                    //    Debug.Assert(bndys[l].Normal.Length == 2);
-                    //    if (bndys[l].PointDistance(xi, yi) > 0.0)
-                    //        return false;
-                    //}
-                    if (xi > 1.0)
-                        return false;
-                    if (yi > 1.0)
-                        return false;
-                    if (xi < 0 && yi < 0)
-                        return false;
-                    if (xi < -1)
-                        return false;
-                    if (yi < -1)
-                        return false;
 
-                    return true;
-                }
-                
+
                 // filter all points that are outside of the domain
-                for(int n = 0; n < N; n++) {
-                    if(!IsIn(x[n],y[n])) {
+                for (int n = 0; n < N; n++) {
+                    if (!IsIn(x[n], y[n])) {
                         x.RemoveAt(n);
                         y.RemoveAt(n);
                         N--;
+                        n--;
                     }
+                }
+                Debug.Assert(x.Count == N);
+                Debug.Assert(y.Count == N);
+                for (int n = 0; n < N; n++) {
+                    Debug.Assert(IsIn(x[n], y[n]));
                 }
 
                 // mirror each point 
@@ -431,13 +443,13 @@ namespace BoSSS.Application.SipPoisson {
                 var Matlab = new BatchmodeConnector();
 
                 // boundaries for L-domain
-                AffineManifold[] Boundaries = new AffineManifold[5];
+                AffineManifold[] Boundaries = new AffineManifold[6];
                 Boundaries[0] = new AffineManifold(new[] { 0.0, 1.0 }, new[] { 0.0, 1.0 });
                 Boundaries[1] = new AffineManifold(new[] { 1.0, 0.0 }, new[] { 1.0, 0.0 });
                 Boundaries[2] = new AffineManifold(new[] { -1.0, 0.0 }, new[] { -1.0, 0.0 });
                 Boundaries[3] = new AffineManifold(new[] { -1.0, 0.0 }, new[] { 0.0, 0.0 });
-                Boundaries[4] = new AffineManifold(new[] { 0.0, -1.0 }, new[] { 0.0, -11.0 });
-                Boundaries[4] = new AffineManifold(new[] { 0.0, -1.0 }, new[] { 0.0, 0.0 });
+                Boundaries[4] = new AffineManifold(new[] { 0.0, -1.0 }, new[] { 0.0, -1.0 });
+                Boundaries[5] = new AffineManifold(new[] { 0.0, -1.0 }, new[] { 0.0, 0.0 });
 
                 
                 // generate Delaunay vertices
@@ -446,10 +458,12 @@ namespace BoSSS.Application.SipPoisson {
                 double[] yNodes = Res.ForLoop(idx => rnd.NextDouble()*2 - 1);
                 int ResFix = Mirror(ref xNodes, ref yNodes, Boundaries);
 
+                
                 var Nodes = MultidimensionalArray.Create(xNodes.Length, 2);
                 Nodes.SetColumn(0, xNodes);
                 Nodes.SetColumn(1, yNodes);
-
+                Nodes.SaveToTextFile("C:\\tmp\\Nudes.txt");
+                
                 Matlab.PutMatrix(Nodes, "Nodes");
                
                 // compute Voronoi diagramm
@@ -477,13 +491,13 @@ namespace BoSSS.Application.SipPoisson {
                 //
                 List<Cell> cells = new List<Cell>();
                 for(int jV = 0; jV < ResFix; jV++) { // loop over Voronoi Cells
-
+                    Debug.Assert(IsIn(Nodes.GetRow(jV)));
                     int[] iVtxS = OutputVertexIndex[jV];
                     int NV = iVtxS.Length;
 
                     for(int iTri = 0; iTri < NV - 2; iTri++) {
                         int iV0 = iVtxS[0];
-                        int iV1 = iVtxS[1];
+                        int iV1 = iVtxS[iTri + 1];
                         int iV2 = iVtxS[iTri + 2];
 
                         double[] V0 = VertexCoordinates.GetRow(iV0);
@@ -502,6 +516,9 @@ namespace BoSSS.Application.SipPoisson {
                             iV1 = t;
                         }
 
+                        double[] Center = V0.Plus(V1).Plus(V2).Mul(1.0 / 3.0);
+                        //Debug.Assert(IsIn(Center[0], Center[1]));
+
                         Cell Cj = new Cell();
                         Cj.GlobalID = cells.Count;
                         Cj.Type = CellType.Triangle_3;
@@ -519,7 +536,11 @@ namespace BoSSS.Application.SipPoisson {
                 grd = new Grid2D(Triangle.Instance);
                 grd.Cells = cells.ToArray();
 
-                grd.Plot2DGrid();
+                //grd.Plot2DGrid();
+
+                grd.EdgeTagNames.Add(1, BoundaryType.Dirichlet.ToString());
+                grd.DefineEdgeTags(X => (byte)1);
+
 
                 return grd;
             };
@@ -527,12 +548,13 @@ namespace BoSSS.Application.SipPoisson {
 
             R.AddBoundaryValue(BoundaryType.Dirichlet.ToString(), "T",
                  delegate (double[] X) {
-                     double x = X[0], y = X[1];
+                     //double x = X[0], y = X[1];
 
-                     if(Math.Abs(X[0] - (0.0)) < 1.0e-8)
-                         return 0.0;
-
-                     throw new ArgumentOutOfRangeException();
+                     return 0.0;
+                     //if(Math.Abs(X[0] - (0.0)) < 1.0e-8)
+                     //    return 0.0;
+                     //
+                     //throw new ArgumentOutOfRangeException();
                  });
 
             
