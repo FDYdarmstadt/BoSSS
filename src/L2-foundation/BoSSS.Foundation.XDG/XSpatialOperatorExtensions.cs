@@ -213,7 +213,9 @@ namespace BoSSS.Foundation.XDG {
                             GrdDat = lsTrk.GridDat
                         });
                 }
-                ev.SpeciesOperatorCoefficients[s].UserDefinedValues["InterfaceLengths"] = InterfaceLengthScales[s];
+
+                if(InterfaceLengthScales != null)
+                    ev.SpeciesOperatorCoefficients[s].UserDefinedValues["InterfaceLengths"] = InterfaceLengthScales[s];
 
                 if(SlipLengths != null)
                     ev.SpeciesOperatorCoefficients[s].UserDefinedValues["SlipLengths"] = SlipLengths;
