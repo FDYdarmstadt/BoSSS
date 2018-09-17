@@ -1024,7 +1024,7 @@ namespace ilPSP.Utils {
             int D = a.Length;
 
             double[] R = a.CloneAs();
-            a.AccV(1.0, b);
+            R.AccV(1.0, b);
             return R;
         }
 
@@ -1038,16 +1038,16 @@ namespace ilPSP.Utils {
             int D = a.Length;
 
             double[] R = a.CloneAs();
-            a.AccV(-1.0, b);
+            R.AccV(-1.0, b);
             return R;
         }
 
         /// <summary>
         /// Multiplication with a scalar
         /// </summary>
-        public static double[] Times(this double[] a, double b) {
+        public static double[] Mul(this double[] a, double b) {
             double[] R = a.CloneAs();
-            a.ScaleV(b);
+            R.ScaleV(b);
             return R;
         }
 
