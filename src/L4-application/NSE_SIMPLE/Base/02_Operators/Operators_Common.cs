@@ -98,7 +98,6 @@ namespace NSE_SIMPLE {
         protected override SpatialOperator GetSpatialOperator(SolverConfiguration SolverConf, int SpatialComponent, int SpatialDirection) {
             return (new PressureStabilization(
                 SolverConf.Control.PressureStabilizationScaling,
-                base.GridData.Edges.h_max_Edge,
                 SolverConf.Control.Reynolds)).Operator();
         }
     }
