@@ -9,6 +9,7 @@ using BoSSS.Solution.Multigrid;
 namespace BoSSS.Application.IBM_Solver {
     class SolverChooser {
 
+
         /// <summary>
         /// Choose solver depending on configurations made in the control file.
         /// </summary>
@@ -26,21 +27,20 @@ namespace BoSSS.Application.IBM_Solver {
             // Set to pseudo Picard if the Stokes equations should be solved
             if (Control.PhysicalParameters.IncludeConvection == false)
                 Control.NonlinearSolve = NonlinearSolverCodes.Picard;
-
             
             ISolverSmootherTemplate templinearSolve = null;
 
             switch (Control.LinearSolve) {
                 case LinearSolverCodes.automatic:
-                    AutomaticChoice(Control, Timestepper);
+                    templinearSolve = AutomaticChoice(Control, Timestepper);
                     break;
 
                 case LinearSolverCodes.classic_mumps:
-                    Timestepper.Config_linearSolver = new DirectSolver() { WhichSolver = DirectSolver._whichSolver.MUMPS };
+                    templinearSolve = new DirectSolver() { WhichSolver = DirectSolver._whichSolver.MUMPS };
                     break;
 
                 case LinearSolverCodes.classic_pardiso:
-                    Timestepper.Config_linearSolver = new DirectSolver() { WhichSolver = DirectSolver._whichSolver.PARDISO };
+                    templinearSolve = new DirectSolver() { WhichSolver = DirectSolver._whichSolver.PARDISO };
                     break;
 
                 case LinearSolverCodes.exp_schwarz_directcoarse_overlap:
@@ -48,7 +48,7 @@ namespace BoSSS.Application.IBM_Solver {
                     if (Control.NoOfMultigridLevels < 2)
                         throw new ApplicationException("At least 2 Multigridlevels are required");
 
-                    Timestepper.Config_linearSolver = new Schwarz() {
+                    templinearSolve = new Schwarz() {
                         m_BlockingStrategy = new Schwarz.METISBlockingStrategy() {
                             NoOfPartsPerProcess = 1,
                         },
@@ -62,7 +62,7 @@ namespace BoSSS.Application.IBM_Solver {
                     if (Control.NoOfMultigridLevels < 2)
                         throw new ApplicationException("At least 2 Multigridlevels are required");
 
-                    Timestepper.Config_linearSolver = new Schwarz() {
+                    templinearSolve = new Schwarz() {
                         m_BlockingStrategy = new Schwarz.METISBlockingStrategy() {
                             NoOfPartsPerProcess = 1,
                         },
@@ -76,7 +76,7 @@ namespace BoSSS.Application.IBM_Solver {
                     if (Control.NoOfMultigridLevels < 2)
                         throw new ApplicationException("At least 2 Multigridlevels are required");
 
-                    Timestepper.Config_linearSolver = new Schwarz() {
+                    templinearSolve = new Schwarz() {
                         m_BlockingStrategy = new Schwarz.MultigridBlocks() {
                             Depth = Control.NoOfMultigridLevels - 1
                         },
@@ -90,7 +90,7 @@ namespace BoSSS.Application.IBM_Solver {
                     if (Control.NoOfMultigridLevels < 2)
                         throw new ApplicationException("At least 2 Multigridlevels are required");
 
-                    Timestepper.Config_linearSolver = new Schwarz() {
+                    templinearSolve = new Schwarz() {
                         m_BlockingStrategy = new Schwarz.MultigridBlocks() {
                             Depth = Control.NoOfMultigridLevels - 1
                         },
@@ -100,14 +100,14 @@ namespace BoSSS.Application.IBM_Solver {
                     break;
 
                 case LinearSolverCodes.exp_softgmres:
-                    Timestepper.Config_linearSolver = new SoftGMRES() {
+                    templinearSolve = new SoftGMRES() {
                         MaxKrylovDim = Timestepper.Config_MaxKrylovDim,
                         m_Tolerance = Timestepper.Config_SolverConvergenceCriterion,
                     };
                     break;
 
                 case LinearSolverCodes.exp_softgmres_schwarz_Kcycle_directcoarse_overlap:
-                    Timestepper.Config_linearSolver = new SoftGMRES() {
+                    templinearSolve = new SoftGMRES() {
                         MaxKrylovDim = Timestepper.Config_MaxKrylovDim,
                         m_Tolerance = Timestepper.Config_SolverConvergenceCriterion,
                         Precond = new Schwarz() {
@@ -123,7 +123,7 @@ namespace BoSSS.Application.IBM_Solver {
                 case LinearSolverCodes.exp_softgmres_schwarz_directcoarse_overlap:
                     if (Control.NoOfMultigridLevels < 2)
                         throw new ApplicationException("At least 2 Multigridlevels are required");
-                    Timestepper.Config_linearSolver = new SoftGMRES() {
+                    templinearSolve = new SoftGMRES() {
                         MaxKrylovDim = Timestepper.Config_MaxKrylovDim,
                         m_Tolerance = Timestepper.Config_SolverConvergenceCriterion,
                         Precond = new Schwarz() {
@@ -139,11 +139,11 @@ namespace BoSSS.Application.IBM_Solver {
                 case LinearSolverCodes.exp_multigrid:
                     if (Control.NoOfMultigridLevels < 2)
                         throw new ApplicationException("At least 2 Multigridlevels are required");
-                    Timestepper.Config_linearSolver = new ILU() { };
+                    templinearSolve = new ILU() { };
                     break;
 
                 case LinearSolverCodes.exp_ILU:
-                    Timestepper.Config_linearSolver = new ILU() { };
+                    templinearSolve = new ILU() { };
                     break;
 
                 case LinearSolverCodes.exp_Schur:
@@ -272,7 +272,7 @@ namespace BoSSS.Application.IBM_Solver {
         /// <summary>
         /// Automatic choice of linear solver depending on problem size, immersed boundary, polynomial degree, etc.
         /// </summary>
-        static void AutomaticChoice(IBM_Control Control, XdgBDFTimestepping Timestepper) {
+        static ISolverSmootherTemplate AutomaticChoice(IBM_Control Control, XdgBDFTimestepping Timestepper) {
 
             //int pV = Control.FieldOptions["VelocityX"].Degree;
             int pP = Control.FieldOptions["Pressure"].Degree;
@@ -282,6 +282,8 @@ namespace BoSSS.Application.IBM_Solver {
             var D = Timestepper.MultigridSequence[0].SpatialDimension;
             var cellsLoc = Timestepper.MultigridSequence[0].CellPartitioning.LocalLength;
             var cellsGlo = Timestepper.MultigridSequence[0].CellPartitioning.TotalLength;
+
+            ISolverSmootherTemplate tempsolve = null;
 
 
             var size = Timestepper.MultigridSequence[0].CellPartitioning.MpiSize;
@@ -351,7 +353,7 @@ namespace BoSSS.Application.IBM_Solver {
                             if (Control.NoOfMultigridLevels < 2)
                                 throw new ApplicationException("At least 2 Multigridlevels are required");
 
-                            Timestepper.Config_linearSolver = new SoftGMRES() {
+                            tempsolve = new SoftGMRES() {
                                 MaxKrylovDim = Timestepper.Config_MaxKrylovDim,
                                 m_Tolerance = Timestepper.Config_SolverConvergenceCriterion,
                                 Precond = new Schwarz() {
@@ -363,15 +365,18 @@ namespace BoSSS.Application.IBM_Solver {
                                 },
                             };
                         } else {
-                            Timestepper.Config_linearSolver = new DirectSolver() { WhichSolver = DirectSolver._whichSolver.MUMPS };
+                            tempsolve = new DirectSolver() { WhichSolver = DirectSolver._whichSolver.MUMPS };
                         }
                         break;
 
                     default:
                         throw new NotImplementedException("Currently not implemented for " + D + " Dimensions");
                 }
+
+                
             }
 
+            return tempsolve;
             //Timestepper.
 
             // Wenn Gesamtproblem in 2D < 100000 DoFs -> Direct Solver
