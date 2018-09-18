@@ -215,17 +215,17 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
                     return empty;
                 }
 
-                //if (cachedRules.Count > 0 && cachedRules.Keys.Max() >= order) {
-                //    order = cachedRules.Keys.Where(cachedOrder => cachedOrder >= order).Min();
-                //    CellMask cachedMask = new CellMask(mask.GridData, cachedRules[order].Select(p => p.Chunk).ToArray());
+                if (cachedRules.Count > 0 && cachedRules.Keys.Max() >= order) {
+                    order = cachedRules.Keys.Where(cachedOrder => cachedOrder >= order).Min();
+                    CellMask cachedMask = new CellMask(mask.GridData, cachedRules[order].Select(p => p.Chunk).ToArray());
 
-                //    if (cachedMask.Equals(mask)) {
-                //        return cachedRules[order];
-                //    } else {
-                //        throw new NotImplementedException(
-                //            "Case not yet covered yet in combination with caching; deactivate caching to get rid of this message");
-                //    }
-                //}
+                    if (cachedMask.Equals(mask)) {
+                        return cachedRules[order];
+                    } else {
+                        throw new NotImplementedException(
+                            "Case not yet covered yet in combination with caching; deactivate caching to get rid of this message");
+                    }
+                }
 
                 var result = new List<ChunkRulePair<QuadRule>>(mask.NoOfItemsLocally);
                 if (UseNodesOnLevset) {
