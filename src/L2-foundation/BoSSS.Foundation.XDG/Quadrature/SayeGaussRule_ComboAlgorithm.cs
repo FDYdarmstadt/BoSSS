@@ -9,7 +9,7 @@ using ilPSP;
 
 namespace BoSSS.Foundation.XDG.Quadrature
 {
-    public abstract class SayeComboIntegrand<S, T>
+    abstract class SayeComboIntegrand<S, T>
         : SayeIntegrand<S, T>
         where S : IPsi
         where T : SayeArgument<S>    

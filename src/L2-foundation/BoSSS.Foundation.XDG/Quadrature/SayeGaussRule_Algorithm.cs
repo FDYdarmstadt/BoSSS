@@ -12,7 +12,7 @@ using System.Diagnostics;
 
 namespace BoSSS.Foundation.XDG.Quadrature
 {
-    public interface ISayeQuadRule
+    interface ISayeQuadRule
     {
         IEnumerable<Tuple<MultidimensionalArray,double>> IntegrationNodes 
         {
@@ -23,7 +23,7 @@ namespace BoSSS.Foundation.XDG.Quadrature
         QuadRule GetQuadRule();
     }
 
-    public interface IPsi
+    interface IPsi
     {
        
     }
@@ -40,7 +40,7 @@ namespace BoSSS.Foundation.XDG.Quadrature
         }
     }
 
-    public abstract class SayeArgument<S>
+    abstract class SayeArgument<S>
         where S : IPsi
     {
         public enum Mode
@@ -81,7 +81,7 @@ namespace BoSSS.Foundation.XDG.Quadrature
         }
     }
 
-    public abstract class SayeIntegrand<S, T>
+    abstract class SayeIntegrand<S, T>
         where S : IPsi
         where T : SayeArgument<S>
     {

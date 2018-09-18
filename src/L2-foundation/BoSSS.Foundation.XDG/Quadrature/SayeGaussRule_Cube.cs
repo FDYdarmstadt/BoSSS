@@ -12,10 +12,10 @@ using ilPSP;
 
 namespace BoSSS.Foundation.XDG.Quadrature
 {
-    public class SayeFactory_Cube :
+    class SayeFactory_Cube :
         SayeComboIntegrand<LinearPSI<Cube>, LinearSayeSpace<Cube>>,
-        ISayeGaussRule< LinearPSI<Cube>, LinearSayeSpace<Cube>>,
-        ISayeGaussComboRule<LinearPSI<Cube>, LinearSayeSpace<Cube>>
+        ISayeGaussRule,
+        ISayeGaussComboRule
     {
         LevelSetTracker.LevelSetData lsData;
 
@@ -45,7 +45,13 @@ namespace BoSSS.Foundation.XDG.Quadrature
 
         public int order { get; set; }
 
-        public LinearSayeSpace<Cube> CreateStartSetup()
+        public QuadRule Evaluate(int Cell)
+        {
+            LinearSayeSpace<Cube> startArg = CreateStartSetup();
+            return Evaluate(Cell, startArg);
+        }
+
+        private LinearSayeSpace<Cube> CreateStartSetup()
         {
             bool IsSurfaceIntegral = (mode == QuadratureMode.Surface);
 
@@ -64,6 +70,16 @@ namespace BoSSS.Foundation.XDG.Quadrature
 
         #endregion
 
+        #region ISayeGaussComboRule
+
+        public QuadRule[] ComboEvaluate(int Cell)
+        {
+            LinearSayeSpace<Cube> startArg = CreateStartSetup();
+            return ComboEvaluate(Cell, startArg);
+        }
+
+        #endregion
+
         #region SayeComboIntegrand
 
         protected override ISayeQuadRule GetEmptySurfaceRule()
@@ -72,6 +88,8 @@ namespace BoSSS.Foundation.XDG.Quadrature
             nodesAndWeights.Reset();
             return nodesAndWeights;
         }
+
+
 
         #endregion
 
