@@ -1029,7 +1029,7 @@ namespace BoSSS.Foundation.Grid.Classic {
                     }
 
                     NodeIdMin = Math.Min(NodeIdMin, 0);
-                    if (NodeIdMin <= 0) {
+                    if (NodeIdMin < 0) {
 
                         throw new ApplicationException("Illegal node indexing: minimal node index is " + NodeIdMin + "(must be non-negative).");
 
