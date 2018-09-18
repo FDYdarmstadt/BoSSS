@@ -37,9 +37,8 @@ namespace BoSSS.Solution.NSECommon {
         /// <summary>
         /// Ctor.
         /// </summary>
-        public PressureStabilization(double PressureStabilizationFactor, MultidimensionalArray h_max_Edge, double Reynolds) {
+        public PressureStabilization(double PressureStabilizationFactor, double Reynolds) {
             this.PressureStabilizationFactor = PressureStabilizationFactor;
-            this.h_max_Edge = h_max_Edge;
             this.Reynolds = Reynolds;
         }
 
