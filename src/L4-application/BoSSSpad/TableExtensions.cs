@@ -522,6 +522,52 @@ namespace BoSSS.Application.BoSSSpad {
         }
 
         /// <summary>
+        /// Extracts rows by indice.
+        /// </summary>
+        public static DataTable ExtractRowSelection(this DataTable Tab, params int[] RowIndice)
+        {
+            DataTable R = new DataTable();
+
+            // check args
+            // ==========
+            List<string> ColNames = new List<string>();
+            foreach (DataColumn orgCol in Tab.Columns)
+            {
+
+                // Create first column and add to the DataTable.
+                DataColumn column = new DataColumn();
+                column.DataType = orgCol.DataType;
+                column.ColumnName = orgCol.ColumnName;
+                column.Caption = orgCol.Caption;
+                column.ReadOnly = orgCol.ReadOnly;
+                column.Unique = orgCol.Unique;
+                column.DefaultValue = orgCol.DefaultValue;
+                ColNames.Add(orgCol.ColumnName);
+
+                R.Columns.Add(column);
+            }
+
+            // extract rows
+            // ===============
+            int L = Tab.Rows.Count;
+            foreach (int aRow in RowIndice)
+            {
+                DataRow rowSrc = Tab.Rows[aRow];
+                DataRow rowDst = R.NewRow();
+
+                foreach (string colName in ColNames)
+                {
+                    rowDst[colName] = rowSrc[colName];
+                }
+
+                R.Rows.Add(rowDst);
+            }
+
+            return R;
+        }
+
+
+        /// <summary>
         /// Extracts columns by name.
         /// </summary>
         public static DataTable ExtractColumns(this DataTable Tab, params string[] ColumnNames) {

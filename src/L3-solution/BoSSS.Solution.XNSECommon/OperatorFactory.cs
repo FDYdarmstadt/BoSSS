@@ -225,7 +225,7 @@ namespace BoSSS.Solution.XNSECommon {
                                     // Bulk operator:
                                     var Visc = new Operator.Viscosity.ViscosityInBulk_GradUTerm(
                                         dntParams.UseGhostPenalties ? 0.0 : penalty, 1.0,
-                                        BcMap, d, D, muA, muB, _betaA: this.physParams.betaS_A, _betaB: this.physParams.betaS_B);
+                                        BcMap, d, D, muA, muB); // , _betaA: this.physParams.betaS_A, _betaB: this.physParams.betaS_B);
 
                                     comps.Add(Visc);
 
@@ -306,6 +306,8 @@ namespace BoSSS.Solution.XNSECommon {
                                     // Level-Set operator
                                     comps.Add(new Operator.Viscosity.ViscosityAtLevelSet_FullySymmetric(LsTrk, muA, muB, penalty, d));
 
+                                    //comps.Add(new Operator.Viscosity.ViscosityAtLevelSet_Slip(LsTrk, muA, muB, penalty, d));
+
                                     break;
                                 }
 
@@ -349,17 +351,16 @@ namespace BoSSS.Solution.XNSECommon {
                 // surface tension
                 // ===============
 
-
-                if (config.PressureGradient && config.physParams.Sigma != 0.0) {
+                if(config.PressureGradient && config.physParams.Sigma != 0.0) {
 
                     // isotropic part of the surface stress tensor
-                    if (config.dntParams.SST_isotropicMode == SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_Flux
+                    if(config.dntParams.SST_isotropicMode == SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_Flux
                      || config.dntParams.SST_isotropicMode == SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_Local
                      || config.dntParams.SST_isotropicMode == SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_ContactLine) {
 
-                        for (int d = 0; d < D; d++) {
+                        for(int d = 0; d < D; d++) {
 
-                            if (config.dntParams.SST_isotropicMode != SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_ContactLine) {
+                            if(config.dntParams.SST_isotropicMode != SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_ContactLine) {
                                 IEquationComponent G = new SurfaceTension_LaplaceBeltrami_Surface(d, config.physParams.Sigma * 0.5);
                                 IEquationComponent H = new SurfaceTension_LaplaceBeltrami_BndLine(d, config.physParams.Sigma * 0.5, config.dntParams.SST_isotropicMode == SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_Flux);
                                 m_OP.SurfaceElementOperator.EquationComponents[CodName[d]].Add(G);
@@ -367,7 +368,7 @@ namespace BoSSS.Solution.XNSECommon {
                             } else {
                                 //G = new SurfaceTension_LaplaceBeltrami2_Surface(d, config.physParams.Sigma * 0.5);
                                 //H = new SurfaceTension_LaplaceBeltrami2_BndLine(d, config.physParams.Sigma * 0.5, config.physParams.Theta_e, config.physParams.betaL);
-                                IEquationComponent isoSurfT = new IsotropicSurfaceTension_LaplaceBeltrami(d, config.physParams.Sigma * 0.5, BcMap.EdgeTag2Type, config.physParams.Theta_e, config.physParams.betaL);
+                                IEquationComponent isoSurfT = new IsotropicSurfaceTension_LaplaceBeltrami(d, D, config.physParams.Sigma * 0.5, BcMap.EdgeTag2Type, config.physParams.theta_e, config.physParams.betaL);
                                 m_OP.SurfaceElementOperator.EquationComponents[CodName[d]].Add(isoSurfT);
                             }
 
@@ -376,12 +377,12 @@ namespace BoSSS.Solution.XNSECommon {
                         this.NormalsRequired = true;
 
 
-                    } else if (config.dntParams.SST_isotropicMode == SurfaceStressTensor_IsotropicMode.Curvature_Projected
+                    } else if(config.dntParams.SST_isotropicMode == SurfaceStressTensor_IsotropicMode.Curvature_Projected
                             || config.dntParams.SST_isotropicMode == SurfaceStressTensor_IsotropicMode.Curvature_ClosestPoint
                             || config.dntParams.SST_isotropicMode == SurfaceStressTensor_IsotropicMode.Curvature_LaplaceBeltramiMean
                             || config.dntParams.SST_isotropicMode == SurfaceStressTensor_IsotropicMode.Curvature_Fourier) {
 
-                        for (int d = 0; d < D; d++) {
+                        for(int d = 0; d < D; d++) {
                             m_OP.EquationComponents[CodName[d]].Add(new CurvatureBasedSurfaceTension(d, D, LsTrk, config.physParams.Sigma));
                         }
 
@@ -406,7 +407,7 @@ namespace BoSSS.Solution.XNSECommon {
 
 
                     // dynamic part
-                    if (config.dntParams.SurfStressTensor != SurfaceSressTensor.Isotropic) {
+                    if(config.dntParams.SurfStressTensor != SurfaceSressTensor.Isotropic) {
 
                         double muI = config.physParams.mu_I;
                         double lamI = config.physParams.lambda_I;
@@ -415,31 +416,45 @@ namespace BoSSS.Solution.XNSECommon {
                         double penalty = penalty_base * dntParams.PenaltySafety;
 
                         // surface shear viscosity 
-                        if (config.dntParams.SurfStressTensor == SurfaceSressTensor.SurfaceRateOfDeformation ||
+                        if(config.dntParams.SurfStressTensor == SurfaceSressTensor.SurfaceRateOfDeformation ||
+                            config.dntParams.SurfStressTensor == SurfaceSressTensor.SemiImplicit ||
                             config.dntParams.SurfStressTensor == SurfaceSressTensor.FullBoussinesqScriven) {
 
-                            for (int d = 0; d < D; d++) {
+                            for(int d = 0; d < D; d++) {
                                 var surfDeformRate = new BoussinesqScriven_SurfaceDeformationRate_GradU(d, muI * 0.5, penalty);
                                 m_OP.SurfaceElementOperator.EquationComponents[CodName[d]].Add(surfDeformRate);
+                                //m_OP.OnIntegratingSurfaceElement += surfDeformRate.SetParameter;
 
-                                var surfDeformRateT = new BoussinesqScriven_ShearViscosity_GradUTranspose(d, muI * 0.5, penalty);
-                                m_OP.SurfaceElementOperator.EquationComponents[CodName[d]].Add(surfDeformRateT);
+                                if(config.dntParams.SurfStressTensor != SurfaceSressTensor.SemiImplicit) {
+                                    var surfDeformRateT = new BoussinesqScriven_SurfaceDeformationRate_GradUTranspose(d, muI * 0.5, penalty);
+                                    m_OP.SurfaceElementOperator.EquationComponents[CodName[d]].Add(surfDeformRateT);
+                                    //m_OP.OnIntegratingSurfaceElement += surfDeformRateT.SetParameter;
+                                }
                             }
 
                         }
                         // surface dilatational viscosity
-                        if (config.dntParams.SurfStressTensor == SurfaceSressTensor.SurfaceVelocityDivergence ||
+                        if(config.dntParams.SurfStressTensor == SurfaceSressTensor.SurfaceVelocityDivergence ||
                             config.dntParams.SurfStressTensor == SurfaceSressTensor.FullBoussinesqScriven) {
 
-                            for (int d = 0; d < D; d++) {
+                            for(int d = 0; d < D; d++) {
                                 var surfVelocDiv = new BoussinesqScriven_SurfaceVelocityDivergence(d, muI * 0.5, lamI * 0.5, penalty, BcMap.EdgeTag2Type);
                                 m_OP.SurfaceElementOperator.EquationComponents[CodName[d]].Add(surfVelocDiv);
+                                //m_OP.OnIntegratingSurfaceElement += surfVelocDiv.SetParameter;
                             }
 
                         }
                     }
 
-                    
+
+                    // stabilization
+                    if(config.dntParams.UseLevelSetStabilization) {
+
+                        for(int d = 0; d < D; d++) {
+                            m_OP.EquationComponents[CodName[d]].Add(new LevelSetStabilization(d, D, LsTrk));
+                        }
+                    }
+
                 }
 
 
@@ -521,6 +536,66 @@ namespace BoSSS.Solution.XNSECommon {
 
             SpeciesId[] SpcToCompute = AgglomeratedCellLengthScales.Keys.ToArray();
 
+            IDictionary<SpeciesId, MultidimensionalArray> InterfaceLengths = this.LsTrk.GetXDGSpaceMetrics(this.LsTrk.SpeciesIdS.ToArray(), CutCellQuadOrder).CutCellMetrics.InterfaceArea;
+
+
+            // advanced settings for the navier slip boundary condition
+            // ========================================================
+
+            CellMask SlipArea;
+            switch(this.dntParams.GNBC_Localization) {
+                case NavierSlip_Localization.Bulk: {
+                        SlipArea = this.LsTrk.GridDat.BoundaryCells.VolumeMask;
+                        break;
+                    }
+                case NavierSlip_Localization.ContactLine: {
+                        SlipArea = null;
+                        break;
+                    }
+                case NavierSlip_Localization.Nearband: {
+                        SlipArea = this.LsTrk.GridDat.BoundaryCells.VolumeMask.Intersect(this.LsTrk.Regions.GetNearFieldMask(this.LsTrk.NearRegionWidth));
+                        break;
+                    }
+                case NavierSlip_Localization.Prescribed: {
+                        throw new NotImplementedException();
+                    }
+                default:
+                    throw new ArgumentException();
+            }
+
+
+            MultidimensionalArray SlipLengths;
+            SlipLengths = this.LsTrk.GridDat.Cells.h_min.CloneAs();
+            SlipLengths.Clear();
+            //SlipLengths.AccConstant(-1.0);
+
+            if(SlipArea != null) {
+                foreach(Chunk cnk in SlipArea) {
+                    for(int i = cnk.i0; i < cnk.JE; i++) {
+                        switch(this.dntParams.GNBC_SlipLength) {
+                            case NavierSlip_SlipLength.hmin_DG: {
+                                    int degU = ColMapping.BasisS.ToArray()[0].Degree;
+                                    SlipLengths[i] = this.LsTrk.GridDat.Cells.h_min[i] / (degU + 1);
+                                    break;
+                                }
+                            case NavierSlip_SlipLength.hmin_Grid: {
+                                    SlipLengths[i] = SlipLengths[i] = this.LsTrk.GridDat.Cells.h_min[i];
+                                    break;
+                                }
+                            case NavierSlip_SlipLength.Prescribed_SlipLength: {
+                                    SlipLengths[i] = this.physParams.sliplength;
+                                    break;
+                                }
+                            case NavierSlip_SlipLength.Prescribed_Beta: {
+                                    SlipLengths[i] = -1.0;
+                                    break;
+                                }
+                        }
+                    }
+                }
+
+            }
+
 
             // parameter assembly
             // ==================
@@ -581,19 +656,27 @@ namespace BoSSS.Solution.XNSECommon {
                     ColMapping, Params, RowMapping,
                     OpMatrix, OpAffine, false, time, true,
                     AgglomeratedCellLengthScales,
+                    InterfaceLengths, SlipLengths,
                     SpcToCompute);
             } else {
-                var eval = Op.GetEvaluatorEx(Tracker,
+                XSpatialOperator.XEvaluatorNonlin eval = Op.GetEvaluatorEx(Tracker,
                     CurrentState.ToArray(), Params, RowMapping,
                     SpcToCompute);
 
-                foreach (var kv in AgglomeratedCellLengthScales)
+                foreach(var kv in AgglomeratedCellLengthScales) {
                     eval.SpeciesOperatorCoefficients[kv.Key].CellLengthScales = kv.Value;
+                    eval.SpeciesOperatorCoefficients[kv.Key].UserDefinedValues.Add("SlipLengths", kv.Value);
+                }
+
+                if(Op.SurfaceElementOperator.TotalNoOfComponents > 0) {
+                    foreach(var kv in InterfaceLengths)
+                        eval.SpeciesOperatorCoefficients[kv.Key].UserDefinedValues.Add("InterfaceLengths", kv.Value);
+                }
+
 
                 eval.time = time;
 
                 eval.Evaluate(1.0, 1.0, OpAffine);
-
 
 #if DEBUG
                 // remark: remove this piece in a few months from now on (09may18) if no problems occur
@@ -606,6 +689,7 @@ namespace BoSSS.Solution.XNSECommon {
                     ColMapping, Params, RowMapping,
                     OpMatrix, OpAffine, false, time, true,
                     AgglomeratedCellLengthScales,
+                    InterfaceLengths, SlipLengths,
                     SpcToCompute);
 
 

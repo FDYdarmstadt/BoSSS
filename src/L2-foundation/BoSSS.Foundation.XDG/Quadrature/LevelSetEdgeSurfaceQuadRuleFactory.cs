@@ -222,7 +222,7 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
                     }
 
                     MultidimensionalArray normals = EvaluateRefNormalsOnEdge(this.LevelSetData, cell, optimizedRule, e);
-                    //MultidimensionalArray metrics = GetMetricTermsOnEdge(tracker, levelSetIndex, optimizedRule, cell, e);
+                    MultidimensionalArray metrics = GetMetricTermsOnEdge(this.LevelSetData, levelSetIndex, optimizedRule, cell, e);
 
                     //lh = tracker.GridDat.NSC.LockNodeSetFamily(tracker.GridDat.NSC.CreateContainer(
                     //    optimizedRule.Nodes.ExtractSubArrayShallow(
@@ -235,6 +235,7 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
                            new int[] { noOfProcessedNodes, 0 },
                            new int[] { noOfProcessedNodes + noOfNodesOnEdge - 1, optimizedRule.SpatialDim - 1 }));
                     MultidimensionalArray phiValues = EvaluatePhis(irgendwelcheNodes, cell, e);
+                    
 
                     double[] matrix = new double[numberOfPhis * noOfNodesOnEdge];
                     // Additional space required by Fortran routine
@@ -258,8 +259,8 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
                     int edge = Math.Abs(LevelSetData.GridDat.Cells.Cells2Edges[cell][e]) - 1;
                     double maxWeight = 0.0;
                     for (int i = 0; i < noOfNodesOnEdge; i++) {
-                        //optimizedRule.Weights[noOfProcessedNodes + i] = rhs[i] / metrics[i];
-                        optimizedRule.Weights[noOfProcessedNodes + i] = rhs[i];
+                        optimizedRule.Weights[noOfProcessedNodes + i] = rhs[i] / metrics[i];
+                        //optimizedRule.Weights[noOfProcessedNodes + i] = rhs[i];
                         maxWeight = Math.Max(optimizedRule.Weights[noOfProcessedNodes + i].Abs(), maxWeight);
                     }
                     noOfProcessedNodes += noOfNodesOnEdge;
@@ -392,8 +393,8 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
                     normRef += refGradients[j, d] * refGradients[j, d];
                 }
 
-                result[j] = Math.Sqrt(normRef / normPhys) / SqrtGramian[edge] *
-                    Math.Sqrt(JacobiDet[cell]);
+                //result[j] = Math.Sqrt(normRef / normPhys) / SqrtGramian[edge] * Math.Sqrt(JacobiDet[cell]);
+                result[j] = JacobiDet[cell] / SqrtGramian[edge];
                 //    result[j] = Math.Sqrt(normRef / normPhys) / tracker.GridDat.Edges.SqrtGramian[edge] / tracker.Ctx.GridDat.OneOverSqrt_AbsDetTransformation[cell];
             }
 

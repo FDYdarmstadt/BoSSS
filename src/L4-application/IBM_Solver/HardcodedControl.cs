@@ -527,13 +527,15 @@ namespace BoSSS.Application.IBM_Solver {
                 C.MaxKrylovDim = 20;
                 C.MaxSolverIterations = 50;
                 C.VelocityBlockPrecondMode = MultigridOperator.Mode.SymPart_DiagBlockEquilib_DropIndefinite;
-                C.NoOfMultigridLevels = 0;
+                C.NoOfMultigridLevels = 1;
+                C.NonlinearSolve = NonlinearSolverCodes.PicardGMRES;
+                C.LinearSolve = LinearSolverCodes.classic_mumps;
 
                 // Timestepping
                 // ============
 
                 C.Timestepper_Scheme = IBM_Control.TimesteppingScheme.ImplicitEuler;
-                double dt = 1E14;
+                double dt = 1E20;
                 C.dtMax = dt;
                 C.dtMin = dt;
                 C.Endtime = 70;
