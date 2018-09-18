@@ -559,13 +559,6 @@ namespace BoSSS.Solution.XdgTimestepping {
         /// </summary>
         public bool m_TransformedResi = true;
 
-        public double m_LastLevelSetResidual;
-
-        protected bool LevelSetConvergenceReached() {
-
-            return (m_LastLevelSetResidual < Config_LevelSetConvergenceCriterion);
-        }
-
         /// <summary>
         /// Logging of residuals (provisional).
         /// </summary>
@@ -622,6 +615,16 @@ namespace BoSSS.Solution.XdgTimestepping {
                 m_ResLogger.NextIteration(true);
             }
         }
+
+
+
+        public double m_LastLevelSetResidual;
+
+        protected bool LevelSetConvergenceReached() {
+
+            return (m_LastLevelSetResidual < Config_LevelSetConvergenceCriterion);
+        }
+
 
         /// <summary>
         /// Sets <see cref="Config_MultigridOperator"/> to a default configuration.

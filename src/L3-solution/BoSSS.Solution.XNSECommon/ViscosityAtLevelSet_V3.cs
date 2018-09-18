@@ -379,4 +379,137 @@ namespace BoSSS.Solution.XNSECommon.Operator.Viscosity {
     }
 
 
+    public class ViscosityAtLevelSet_Slip : BoSSS.Foundation.XDG.ILevelSetForm, ILevelSetEquationComponentCoefficient {
+
+        LevelSetTracker m_LsTrk;
+
+        public ViscosityAtLevelSet_Slip(LevelSetTracker lstrk, double _muA, double _muB, double _penalty, int _component) {
+            this.m_LsTrk = lstrk;
+            this.muA = _muA;
+            this.muB = _muB;
+            this.penalty = _penalty;
+            this.component = _component;
+            this.m_D = lstrk.GridDat.SpatialDimension;
+        }
+
+        double muA;
+        double muB;
+        double penalty;
+        int component;
+        int m_D;
+
+
+        /// <summary>
+        /// 
+        /// </summary>
+        public double LevelSetForm(ref CommonParamsLs inp,
+            double[] uA, double[] uB, double[,] Grad_uA, double[,] Grad_uB,
+            double vA, double vB, double[] Grad_vA, double[] Grad_vB) {
+            double[] N = inp.n;
+            double hCellMin = this.m_LsTrk.GridDat.Cells.h_min[inp.jCell];
+
+            int D = N.Length;
+            Debug.Assert(this.ArgumentOrdering.Count == D);
+            Debug.Assert(Grad_uA.GetLength(0) == this.ArgumentOrdering.Count);
+            Debug.Assert(Grad_uB.GetLength(0) == this.ArgumentOrdering.Count);
+            Debug.Assert(Grad_uA.GetLength(1) == D);
+            Debug.Assert(Grad_uB.GetLength(1) == D);
+
+
+            double Ret = 0.0;
+
+            double PosCellLengthScale = PosLengthScaleS[inp.jCell];
+            double NegCellLengthScale = NegLengthScaleS[inp.jCell];
+
+            double hCutCellMin = Math.Min(NegCellLengthScale, PosCellLengthScale);
+            if(hCutCellMin <= 1.0e-10 * hCellMin)
+                // very small cell -- clippling
+                hCutCellMin = hCellMin;
+
+            Debug.Assert(uA.Length == this.ArgumentOrdering.Count);
+            Debug.Assert(uB.Length == this.ArgumentOrdering.Count);
+
+            double muMax = (Math.Abs(muA) > Math.Abs(muB)) ? muA : muB;
+
+            if(NegSlipLengths[inp.jCell] == 0.0 && NegSlipLengths[inp.jCell] == 0.0) {
+
+                double Grad_uA_xN = 0, Grad_uB_xN = 0, Grad_vA_xN = 0, Grad_vB_xN = 0;
+                for(int d = 0; d < D; d++) {
+                    Grad_uA_xN += Grad_uA[component, d] * N[d];
+                    Grad_uB_xN += Grad_uB[component, d] * N[d];
+                    Grad_vA_xN += Grad_vA[d] * N[d];
+                    Grad_vB_xN += Grad_vB[d] * N[d];
+                }
+
+                Ret -= 0.5 * (muA * Grad_uA_xN + muB * Grad_uB_xN) * (vA - vB);                           // consistency term
+                Ret -= 0.5 * (muA * Grad_vA_xN + muB * Grad_vB_xN) * (uA[component] - uB[component]);     // symmetry term
+                Ret += (penalty / hCutCellMin) * (uA[component] - uB[component]) * (vA - vB) * muMax; // penalty term
+                                                                                                      // Transpose Term
+                for(int i = 0; i < D; i++) {
+                    Ret -= 0.5 * (muA * Grad_uA[i, component] + muB * Grad_uB[i, component]) * (vA - vB) * N[i];  // consistency term
+                    Ret -= 0.5 * (muA * Grad_vA[i] + muB * Grad_vB[i]) * (uA[i] - uB[i]) * N[component];  // symmetry term
+                }
+
+            } else {
+
+                for(int dN = 0; dN < m_D; dN++) {
+                    for(int dD = 0; dD < m_D; dD++) {
+                        Ret -= 0.5 * N[dN] * (muA * Grad_uA[dD, dN] + muB * Grad_uB[dN, dD]) * N[dD] * (vA - vB) * N[component];     // consistency term
+                        Ret -= 0.5 * N[dN] * (muA * Grad_vA[dN] + muB * Grad_vB[dD]) * N[component] * (uA[dD] - uB[dN]) * N[dD];    // symmetry term
+                                                                                                                                    // transposed term
+                        Ret -= 0.5 * N[dN] * (muA * Grad_uA[dN, dD] + muB * Grad_uB[dN, dD]) * N[dD] * (vA - vB) * N[component];    // consistency term
+                        Ret -= 0.5 * N[component] * (muA * Grad_vA[dD] + muB * Grad_vB[dD]) * N[dD] * (uA[dN] - uB[dN]) * N[dN];    // symmetry term
+                    }
+                    Ret += (penalty / hCutCellMin) * (uA[dN] - uB[dN]) * (vA - vB) * N[dN] * muMax;     // penalty term
+                }
+            }
+
+            return Ret;
+        }
+
+
+        MultidimensionalArray PosLengthScaleS;
+        MultidimensionalArray NegLengthScaleS;
+
+        MultidimensionalArray PosSlipLengths;
+        MultidimensionalArray NegSlipLengths;
+
+        public void CoefficientUpdate(CoefficientSet csA, CoefficientSet csB, int[] DomainDGdeg, int TestDGdeg) {
+            NegLengthScaleS = csA.CellLengthScales;
+            PosLengthScaleS = csB.CellLengthScales;
+
+            NegSlipLengths = (MultidimensionalArray)csA.UserDefinedValues["SlipLengths"];
+            PosSlipLengths = (MultidimensionalArray)csB.UserDefinedValues["SlipLengths"];
+        }
+
+
+        public int LevelSetIndex {
+            get { return 0; }
+        }
+
+        public IList<string> ArgumentOrdering {
+            get { return VariableNames.VelocityVector(this.m_D); }
+        }
+
+        public SpeciesId PositiveSpecies {
+            get { return m_LsTrk.GetSpeciesId("B"); }
+        }
+
+        public SpeciesId NegativeSpecies {
+            get { return m_LsTrk.GetSpeciesId("A"); }
+        }
+
+        public TermActivationFlags LevelSetTerms {
+            get {
+                return TermActivationFlags.UxV | TermActivationFlags.UxGradV | TermActivationFlags.GradUxV;
+            }
+        }
+
+        public IList<string> ParameterOrdering {
+            get { return null; }
+        }
+
+
+    }
+
 }

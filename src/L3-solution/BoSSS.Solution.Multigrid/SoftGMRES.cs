@@ -289,7 +289,7 @@ namespace BoSSS.Solution.Multigrid
 
                         //using (StreamWriter writer = new StreamWriter(m_SessionPath + "//GMRES_Stats.txt", true))
                         //{
-                        //Console.WriteLine(i + "   " + error);
+                        Console.WriteLine(i + "   " + error);
                         //}
 
 
