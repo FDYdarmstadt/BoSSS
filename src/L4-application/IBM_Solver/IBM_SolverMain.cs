@@ -373,7 +373,6 @@ namespace BoSSS.Application.IBM_Solver {
 
                         //var presStab = new PressureStabilization(1, this.GridData.Edges.h_max_Edge, 1 / this.Control.PhysicalParameters.mu_A);
                         //IBM_Op.EquationComponents["div"].Add(presStab);
-
                     }
 
                     var divPen = new BoSSS.Solution.NSECommon.Operator.Continuity.DivergenceAtIB(D, LsTrk, 1,

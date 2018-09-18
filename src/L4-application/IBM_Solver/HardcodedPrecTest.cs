@@ -206,7 +206,7 @@ namespace BoSSS.Application.IBM_Solver {
         }
 
 
-        static public IBM_Control PrecTest3dDegenhardt(int precNo = 4, int channel = 1, int name_newton =1, int k =3, int cells_x = 4, int cells_yz =5, int re = 100, int ASparts = 3, int ASDepth = 2, int MGLevels = 3, int maxKrDim = 1000, int saveToDB = 1)
+        static public IBM_Control PrecTest3dDegenhardt(int precNo = 4, int channel = 1, int name_newton =1, int k =3, int cells_x = 4, int cells_yz =5, int re = 100, int ASparts = 3, int ASDepth = 2, int MGLevels = 3, int maxKrDim = 1000, int saveToDB = 0)
         {
             IBM_Control C = new IBM_Control();
 
@@ -254,7 +254,7 @@ namespace BoSSS.Application.IBM_Solver {
                 C.savetodb = false;
 
 
-            C.DbPath = @"\\dc1\userspace\Krueger\BoSSS\BoSSS_DBs\degenhardt";
+            C.DbPath = @"\\hpccluster\hpccluster-scratch\krause\cluster_db";
             //C.DbPath = @"/home/oe11okuz/BoSSS_DB/Lichtenberg_DB";
 
 
