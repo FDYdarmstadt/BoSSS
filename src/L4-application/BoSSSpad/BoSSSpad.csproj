@@ -170,6 +170,14 @@
       <Project>{5c52e2f7-a6dd-4e3e-a31e-1b0ff34c0cc2}</Project>
       <Name>FSI_Solver</Name>
     </ProjectReference>
+    <ProjectReference Include="..\..\..\..\internal\src\private-die\L4-application\PoissonScalar2CylinderCoords\PoissonScalar2CylinderCoords\PoissonScalar2CylinderCoords.csproj">
+      <Project>{2bc5598f-fbdb-4064-a26d-30acfd982a09}</Project>
+      <Name>PoissonScalar2CylinderCoords</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\..\..\..\internal\src\private-die\L4-application\StokesHelical\StokesHelical.csproj">
+      <Project>{af092a39-7916-4a59-a2b4-5820fbd33b63}</Project>
+      <Name>StokesHelical</Name>
+    </ProjectReference>
     <ProjectReference Include="..\..\L3-solution\BoSSS.Solution.LevelSetTools\BoSSS.Solution.LevelSetTools.csproj">
       <Project>{9ee2fcad-e8a4-4f14-b932-d1a4904d715d}</Project>
       <Name>BoSSS.Solution.LevelSetTools</Name>
