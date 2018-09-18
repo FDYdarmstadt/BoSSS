@@ -201,14 +201,14 @@ namespace MiniBatchProcessor {
                     while (true) {
                         try {
                             File.Move(Src, Dst);
-                            return;
+                            break;
                         } catch (Exception e) {
                             if (ReTryCount < ClientAndServer.IO_OPS_MAX_RETRY_COUNT) {
                                 ReTryCount++;
                                 Thread.Sleep(ClientAndServer.IOwaitTime);
                             } else {
                                 Console.Error.WriteLine("{0} while trying to move file '{1}' to '{2}', message: {3}.", e.GetType().Name, Src, Dst, e.Message);
-                                return;
+                                break;
                             }
                         }
                     }

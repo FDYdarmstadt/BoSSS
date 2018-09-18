@@ -195,14 +195,14 @@ namespace BoSSS.Application.Matrix_MPItest {
             Op.ComputeMatrixEx(LsTrk,
                 ProblemMapping, null, ProblemMapping,
                 OperatorMatrix, Affine, false, 0.0, true,
-                Agg.CellLengthScales,
+                Agg.CellLengthScales, null, null,
                 LsTrk.SpeciesIdS.ToArray());
             Agg.ManipulateMatrixAndRHS(OperatorMatrix, Affine, this.ProblemMapping, this.ProblemMapping);
 
             Op.ComputeMatrixEx(LsTrk,
                 ProblemMapping, null, ProblemMapping,
                 AltOperatorMatrix, Affine, false, 0.0, true,
-                Agg.CellLengthScales,
+                Agg.CellLengthScales, null, null,
                 LsTrk.SpeciesIdS.ToArray());
             Agg.ManipulateMatrixAndRHS(AltOperatorMatrix, Affine, this.ProblemMapping, this.ProblemMapping);
 

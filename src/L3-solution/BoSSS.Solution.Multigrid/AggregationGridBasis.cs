@@ -688,6 +688,13 @@ namespace BoSSS.Solution.Multigrid {
             }
         }
 
+//<<<<<<< HEAD
+//                        MassMatrix.AccEye(-1.0);
+//                        Debug.Assert(MassMatrix.InfNorm() < 1.0e-8);
+//#endif
+//                    }
+//=======
+//>>>>>>> 194f8c566ec46e985d0a6f0b37e02f3ee621ccaa
         
 
         /// <summary>
