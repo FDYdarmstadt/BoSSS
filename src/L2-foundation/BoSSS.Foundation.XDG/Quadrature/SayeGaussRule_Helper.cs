@@ -11,7 +11,7 @@ using BoSSS.Foundation.Quadrature;
 
 namespace BoSSS.Foundation.XDG.Quadrature
 {
-    public class LinearPSI<S>
+    class LinearPSI<S>
         : IPsi
         where S : RefElement
 
@@ -125,7 +125,7 @@ namespace BoSSS.Foundation.XDG.Quadrature
         }
     }
 
-    public class LinearSayeSpace<T> :
+    class LinearSayeSpace<T> :
         SayeArgument<LinearPSI<T>>
         where T : RefElement
     {
@@ -334,7 +334,7 @@ namespace BoSSS.Foundation.XDG.Quadrature
         #endregion
     }
 
-    public class TreeNode<T>
+    class TreeNode<T>
     {
         LinkedList<TreeNode<T>> children = new LinkedList<TreeNode<T>>();
         TreeNode<T> parent;
@@ -411,7 +411,7 @@ namespace BoSSS.Foundation.XDG.Quadrature
         }
     }
 
-    public class SayeQuadRule //: IEnumerable<Tuple<MultidimensionalArray, double>>
+    class SayeQuadRule //: IEnumerable<Tuple<MultidimensionalArray, double>>
     {
         private SayeQuadRule() { }
 
@@ -443,7 +443,7 @@ namespace BoSSS.Foundation.XDG.Quadrature
         }   
     }
 
-    public abstract class NodesAndWeights : ISayeQuadRule
+    abstract class NodesAndWeights : ISayeQuadRule
     {
         //Must be static in implementation
         protected abstract LinkedList<Tuple<MultidimensionalArray, double>> data { get; set; }
@@ -564,7 +564,7 @@ namespace BoSSS.Foundation.XDG.Quadrature
         }
     }
 
-    public class NodesAndWeightsLinkedList :NodesAndWeights
+    class NodesAndWeightsLinkedList :NodesAndWeights
     {
         static LinkedList<Tuple<MultidimensionalArray, double>> Data =
             new LinkedList<Tuple<MultidimensionalArray, double>>();
@@ -603,7 +603,7 @@ namespace BoSSS.Foundation.XDG.Quadrature
 
     }
 
-    public class NodesAndWeightsSurface : NodesAndWeights
+    class NodesAndWeightsSurface : NodesAndWeights
     {
         static LinkedList<Tuple<MultidimensionalArray, double>> Data =
             new LinkedList<Tuple<MultidimensionalArray, double>>();
@@ -636,7 +636,7 @@ namespace BoSSS.Foundation.XDG.Quadrature
 
     }
 
-    public class NodesAndWeightsHashMap :ISayeQuadRule
+    class NodesAndWeightsHashMap :ISayeQuadRule
     {
         public NodesAndWeightsHashMap()
         {
