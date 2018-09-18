@@ -394,13 +394,13 @@ namespace BoSSS.Foundation.Grid.Classic {
             if(GlobalVerticesOut.GetLength(0) > Len || OutArrayOffset != 0)
                 GlobalVerticesOut = GlobalVerticesOut.ExtractSubArrayShallow(new int[] { OutArrayOffset, 0, 0 }, new int[] { OutArrayOffset + Len - 1, NoOfNodes - 1, D - 1 });
 
-            if(AffineLinear && this.Cells.Transformation != null) {
+            if (AffineLinear && this.Cells.Transformation != null) {
                 var Trf = this.Cells.Transformation.ExtractSubArrayShallow(new int[] { j0, 0, 0 }, new int[] { j0 + Len - 1, D - 1, D - 1 });
                 var Aff = this.Cells.CellCenter;//.ExtractSubArrayShallow(new int[] { j0, 0 }, new int[] { j0 + Len - 1, D - 1 });
 
-                for(int j = 0; j < Len; j++) {
-                    for(int k = 0; k < NoOfNodes; k++) {
-                        for(int d = 0; d < D; d++) {
+                for (int j = 0; j < Len; j++) {
+                    for (int k = 0; k < NoOfNodes; k++) {
+                        for (int d = 0; d < D; d++) {
                             GlobalVerticesOut[j, k, d] = Aff[j + j0, d];
                         }
                     }
@@ -408,29 +408,36 @@ namespace BoSSS.Foundation.Grid.Classic {
 
                 GlobalVerticesOut.Multiply(1.0, Trf, LocalVerticesIn, 1.0, ref mp_jkd_jde_ke);
             } else {
-                if(LocalVerticesIn is NodeSet) {
 
+                // work with polynomial caches
 
-                    // work with polynomial caches
+                var Krefs = this.Cells.RefElements;
+                NodeSet[] _LocalVerticesIn = new NodeSet[Krefs.Length];        
 
-                    // loop over cells ...
-                    for(int j = 0; j < Len; j++) {
-                        int jCell = j0 + j;
-                        var Cl = m_Cells.GetCell(jCell);
-                        var Kref = m_Cells.GetRefElement(jCell);
+                // loop over cells ...
+                for (int j = 0; j < Len; j++) {
+                    int jCell = j0 + j;
+                    var Cl = m_Cells.GetCell(jCell);
+                    int iKref = m_Cells.GetRefElementIndex(jCell);
+                    var Kref = Krefs[iKref];
 
-                        PolynomialList polys = Kref.GetInterpolationPolynomials(Cl.Type);
-                        MultidimensionalArray polyVals = polys.Values.GetValues((NodeSet)LocalVerticesIn);
-
-                        for(int d = 0; d < D; d++) {
-                            GlobalVerticesOut.ExtractSubArrayShallow(j, -1, d)
-                                .Multiply(1.0, polyVals, Cl.TransformationParams.ExtractSubArrayShallow(-1, d), 0.0, ref mp_k_kn_n);
+                    if(_LocalVerticesIn[iKref] == null) {
+                        if (LocalVerticesIn is NodeSet) {
+                            _LocalVerticesIn[iKref] = (NodeSet)LocalVerticesIn; 
+                        } else {
+                            _LocalVerticesIn[iKref] = new NodeSet(Kref, LocalVerticesIn); // convert to node set
                         }
                     }
 
-                } else {
+                    Debug.Assert(object.ReferenceEquals(Kref, _LocalVerticesIn[iKref].RefElement));
 
-                    throw new NotImplementedException("todo");
+                    PolynomialList polys = Kref.GetInterpolationPolynomials(Cl.Type);
+                    MultidimensionalArray polyVals = polys.Values.GetValues(_LocalVerticesIn[iKref]);
+
+                    for (int d = 0; d < D; d++) {
+                        GlobalVerticesOut.ExtractSubArrayShallow(j, -1, d)
+                            .Multiply(1.0, polyVals, Cl.TransformationParams.ExtractSubArrayShallow(-1, d), 0.0, ref mp_k_kn_n);
+                    }
                 }
             }
         }
