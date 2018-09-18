@@ -4929,5 +4929,263 @@ namespace BoSSS.Application.XNSE_Solver {
 
         }
 
+
+        public static XNSE_Control HMF_3DcontactlineTest() {
+
+            XNSE_Control C = new XNSE_Control();
+
+            int D = 3;
+
+            if(D == 3)
+                C.CutCellQuadratureType = Foundation.XDG.XQuadFactoryHelper.MomentFittingVariants.Classic;
+
+            AppControl._CompMode compMode = AppControl._CompMode.Steady;
+
+            // basic database options
+            // ======================
+            #region db
+
+            C.DbPath = null;
+            C.savetodb = C.DbPath != null;
+            C.ProjectName = "XNSE/HMF3D";
+
+            #endregion
+
+
+            // DG degrees
+            // ==========
+            #region degrees
+
+            int p = 2;
+
+            C.FieldOptions.Add("VelocityX", new FieldOpts() {
+                Degree = p,
+                SaveToDB = FieldOpts.SaveToDBOpt.TRUE
+            });
+            C.FieldOptions.Add("VelocityY", new FieldOpts() {
+                Degree = p,
+                SaveToDB = FieldOpts.SaveToDBOpt.TRUE
+            });
+            if(D == 3) {
+                C.FieldOptions.Add("VelocityZ", new FieldOpts() {
+                    Degree = p,
+                    SaveToDB = FieldOpts.SaveToDBOpt.TRUE
+                });
+            }
+            C.FieldOptions.Add("GravityY", new FieldOpts() {
+                SaveToDB = FieldOpts.SaveToDBOpt.TRUE
+            });
+            C.FieldOptions.Add("Pressure", new FieldOpts() {
+                Degree = p - 1,
+                SaveToDB = FieldOpts.SaveToDBOpt.TRUE
+            });
+            C.FieldOptions.Add("PhiDG", new FieldOpts() {
+                SaveToDB = FieldOpts.SaveToDBOpt.TRUE
+            });
+            C.FieldOptions.Add("Phi", new FieldOpts() {
+                Degree = p,
+                SaveToDB = FieldOpts.SaveToDBOpt.TRUE
+            });
+            C.FieldOptions.Add("Curvature", new FieldOpts() {
+                Degree = p,
+                SaveToDB = FieldOpts.SaveToDBOpt.TRUE
+            });
+
+            #endregion
+
+
+            // Physical Parameters
+            // ===================
+            #region physics
+
+            C.Tags.Add("Reusken");
+            C.PhysicalParameters.rho_A = 1;
+            C.PhysicalParameters.rho_B = 1;
+            C.PhysicalParameters.mu_A = 1;
+            C.PhysicalParameters.mu_B = 1;
+            double sigma = 0.0;
+            C.PhysicalParameters.Sigma = sigma;
+
+            //C.PhysicalParameters.betaS_A = 0.05;
+            //C.PhysicalParameters.betaS_B = 0.05;
+
+            //C.PhysicalParameters.betaL = 0;
+            //C.PhysicalParameters.theta_e = Math.PI / 2.0;
+
+            C.PhysicalParameters.IncludeConvection = false;
+            C.PhysicalParameters.Material = true;
+
+            #endregion
+
+
+            // grid generation
+            // ===============
+            #region grid
+
+            double scale = 0.2;
+
+            int xkelem = 8;
+            int ykelem = 8;
+            int zkelem = 1;
+
+            double xSize = (scale * (double)xkelem) / 2.0;
+            double ySize = (scale * (double)ykelem) / 2.0;
+            double zSize = 2.0 * scale * (double)zkelem;
+
+            if(D == 2) {
+                C.GridFunc = delegate () {
+                    double[] Xnodes = GenericBlas.Linspace(-xSize, xSize, xkelem + 1);
+                    double[] Ynodes = GenericBlas.Linspace(-ySize, ySize, ykelem + 1);
+                    var grd = Grid2D.Cartesian2DGrid(Xnodes, Ynodes);
+
+                    grd.EdgeTagNames.Add(1, "navierslip_linear_lower");
+                    grd.EdgeTagNames.Add(2, "navierslip_linear_upper");
+                    grd.EdgeTagNames.Add(3, "navierslip_linear_left");
+                    grd.EdgeTagNames.Add(4, "navierslip_linear_right");
+
+                    grd.DefineEdgeTags(delegate (double[] X) {
+                        byte et = 0;
+                        if(Math.Abs(X[1] + ySize) <= 1.0e-8)
+                            et = 1;
+                        if(Math.Abs(X[1] - ySize) <= 1.0e-8)
+                            et = 2;
+                        if(Math.Abs(X[0] + xSize) <= 1.0e-8)
+                            et = 3;
+                        if(Math.Abs(X[0] - xSize) <= 1.0e-8)
+                            et = 4;
+
+                        return et;
+                    });
+
+                    return grd;
+                };
+            }
+
+            if(D == 3) {
+                C.GridFunc = delegate () {
+                    double[] Xnodes = GenericBlas.Linspace(-xSize, xSize, xkelem + 1);
+                    double[] Ynodes = GenericBlas.Linspace(-ySize, ySize, ykelem + 1);
+                    double[] Znodes = GenericBlas.Linspace(0, zSize, zkelem + 1);
+                    var grd = Grid3D.Cartesian3DGrid(Xnodes, Ynodes, Znodes);
+
+                    grd.EdgeTagNames.Add(1, "navierslip_linear_lower");
+                    grd.EdgeTagNames.Add(2, "navierslip_linear_upper");
+                    grd.EdgeTagNames.Add(3, "navierslip_linear_left");
+                    grd.EdgeTagNames.Add(4, "navierslip_linear_right");
+                    grd.EdgeTagNames.Add(5, "navierslip_linear_front");
+                    grd.EdgeTagNames.Add(6, "navierslip_linear_back");
+
+                    grd.DefineEdgeTags(delegate (double[] X) {
+                        byte et = 0;
+                        if(Math.Abs(X[2]) <= 1.0e-8)
+                            et = 1;
+                        if(Math.Abs(X[2] - zSize) <= 1.0e-8)
+                            et = 2;
+                        if(Math.Abs(X[0] + xSize) <= 1.0e-8)
+                            et = 3;
+                        if(Math.Abs(X[0] - xSize) <= 1.0e-8)
+                            et = 4;
+                        if(Math.Abs(X[1] + ySize) <= 1.0e-8)
+                            et = 5;
+                        if(Math.Abs(X[1] - ySize) <= 1.0e-8)
+                            et = 6;
+
+                        return et;
+                    });
+
+                    return grd;
+                };
+            }
+
+            #endregion
+
+
+            // Initial Values
+            // ==============
+            #region init
+
+            double R = (scale * 5.0) / 2.0;
+
+            Func<double[], double> PhiFunc = X => -1.0;
+            if(D == 2) {
+                PhiFunc = (X => ((X[0] - 0.0).Pow2() + (X[1] - 0.0).Pow2()).Sqrt() - R);
+            }
+
+            if(D == 3) {
+                PhiFunc = (X => ((X[0] - 0.0).Pow2() + (X[1] - 0.0).Pow2()).Sqrt() - R);  //zylinder
+                //PhiFunc = (X => ((X[0] - 0.0).Pow2() + (X[1] - 0.0).Pow2() + (X[2] - 0.0).Pow2()).Sqrt() - R);  //sphere
+            }
+
+            C.InitialValues_Evaluators.Add("Phi", PhiFunc);
+
+            double pJump = sigma / R;
+            C.InitialValues_Evaluators.Add("Pressure#A", X => 0.0);
+            C.InitialValues_Evaluators.Add("Pressure#B", X => 0.0);
+
+            #endregion
+
+
+            // boundary conditions
+            // ===================
+            #region BC
+
+            C.AddBoundaryValue("navierslip_linear_lower");
+            C.AddBoundaryValue("navierslip_linear_upper");
+            C.AddBoundaryValue("navierslip_linear_left");
+            C.AddBoundaryValue("navierslip_linear_right");
+
+            if(D == 3) {
+                C.AddBoundaryValue("navierslip_linear_front");
+                C.AddBoundaryValue("navierslip_linear_back");
+            }
+
+            #endregion
+
+
+            // misc. solver options
+            // ====================
+            #region solver
+
+            C.ComputeEnergy = false;
+
+            C.LSContiProjectionMethod = Solution.LevelSetTools.ContinuityProjectionOption.None;
+            C.VelocityBlockPrecondMode = MultigridOperator.Mode.SymPart_DiagBlockEquilib;
+            C.Solver_MaxIterations = 50;
+            C.Solver_ConvergenceCriterion = 1e-8;
+            C.LevelSet_ConvergenceCriterion = 1e-6;
+
+            //C.AdvancedDiscretizationOptions.ViscosityMode = ViscosityMode.Standard;
+
+            C.Option_LevelSetEvolution = (compMode == AppControl._CompMode.Steady) ? LevelSetEvolution.None : LevelSetEvolution.FastMarching;
+            C.AdvancedDiscretizationOptions.FilterConfiguration = CurvatureAlgorithms.FilterConfiguration.NoFilter;
+
+            C.AdvancedDiscretizationOptions.SST_isotropicMode = Solution.XNSECommon.SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_ContactLine;
+
+            #endregion
+
+
+            // Timestepping
+            // ============
+            #region time
+
+            C.Timestepper_Scheme = XNSE_Control.TimesteppingScheme.ImplicitEuler;
+            C.Timestepper_BDFinit = TimeStepperInit.SingleInit;
+            C.Timestepper_LevelSetHandling = (compMode == AppControl._CompMode.Steady) ? LevelSetHandling.None : LevelSetHandling.LieSplitting;
+
+            C.CompMode = compMode;
+            double dt = 3e-3;
+            C.dtMax = dt;
+            C.dtMin = dt;
+            C.Endtime = 1000;
+            C.NoOfTimesteps = 1000;
+            C.saveperiod = 1;
+
+            #endregion
+
+
+            return C;
+
+        }
+
     }
 }
