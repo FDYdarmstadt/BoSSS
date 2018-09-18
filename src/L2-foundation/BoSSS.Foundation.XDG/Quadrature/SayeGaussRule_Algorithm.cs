@@ -45,13 +45,13 @@ namespace BoSSS.Foundation.XDG.Quadrature
     {
         public enum Mode
         {
-            Standart,
+            Standard,
             GaussQuadrature,
             LowOrderQuadrature,
             DomainIsEmpty
         };
 
-        public Mode Status = Mode.Standart;
+        public Mode Status = Mode.Standard;
 
         public abstract void RemoveDimension(int k);
 
@@ -125,7 +125,7 @@ namespace BoSSS.Foundation.XDG.Quadrature
             SayeQuadRule newRule;
             switch (nodeArg.Status)
             {
-                case SayeArgument<S>.Mode.Standart:
+                case SayeArgument<S>.Mode.Standard:
                     SetStandartNodes(node);
                     break;
                 case SayeArgument<S>.Mode.GaussQuadrature:

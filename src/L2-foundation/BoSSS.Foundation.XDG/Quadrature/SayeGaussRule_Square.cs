@@ -17,7 +17,8 @@ namespace BoSSS.Foundation.XDG.Quadrature
 {
     public class SayeFactory_Square :
         SayeComboIntegrand<LinearPSI<Square>, SayeSquare>,
-        ISayeGaussRule<LinearPSI<Square>, SayeSquare>
+        ISayeGaussRule<LinearPSI<Square>, SayeSquare>,
+        ISayeGaussComboRule<LinearPSI<Square>, SayeSquare>
     {
         LevelSetTracker.LevelSetData lsData;
 
@@ -27,8 +28,7 @@ namespace BoSSS.Foundation.XDG.Quadrature
 
         int iKref;
 
-        public enum QuadratureMode { Surface, PositiveVolume, NegativeVolume };
-
+        public enum QuadratureMode { Surface, PositiveVolume, NegativeVolume, Combo };
 
         QuadratureMode quadratureMode;
 
@@ -61,48 +61,19 @@ namespace BoSSS.Foundation.XDG.Quadrature
             return arg;
         }
 
-//<<<<<<< HEAD
-//        #region IQaudRuleFactory<QuadRule>
-
-//        public IEnumerable<IChunkRulePair<QuadRule>> GetQuadRuleSet(ExecutionMask mask, int Order)
-//        {
-//            if (mask.MaskType != MaskType.Geometrical)
-//                throw new ArgumentException("Expecting a geometrical mask.");
-
-//            order = Order;
-//            QuadRule gaussRule_1D = Line.Instance.GetQuadratureRule(Order);
-//            var result = new List<ChunkRulePair<QuadRule>>();
-//            grid = mask.GridData;
-//            iKref = mask.GridData.iGeomCells.RefElements.IndexOf(this.RefElement, (A, B) => object.ReferenceEquals(A, B));
-
-//            int number = 0;
-//            Stopwatch stopWatch = new Stopwatch();
-//            stopWatch.Start();
-//            //Find quadrature nodes and weights in each cell/chunk
-//            foreach (Chunk chunk in mask)
-//            {
-//                foreach (int cell in chunk.Elements)
-//                {
-//                    SayeSquare arg = CreateStartSetup();
-//                    QuadRule sayeRule = this.Evaluate(cell, arg);
-//                    ChunkRulePair<QuadRule> sayePair = new ChunkRulePair<QuadRule>(Chunk.GetSingleElementChunk(cell), sayeRule);
-//                    result.Add(sayePair);
-//                    ++number;
-//                }
-//            }
-//            stopWatch.Stop();
-//            long ts = stopWatch.ElapsedMilliseconds;
-//            Console.WriteLine("Number Of Cells " + number);
-//            Console.WriteLine("RunTime " + ts + "ms");
-//            return result;
-//        }
-
-//=======
-//>>>>>>> experimental/master
         public RefElement RefElement {
             get {
                 return Square.Instance;
             }
+        }
+
+        #endregion
+
+        #region SayeComboIntegrand
+
+        protected override ISayeQuadRule GetEmptySurfaceRule()
+        {
+            return new NodesAndWeightsSurface(RefElement.SpatialDimension, RefElement);
         }
 
         #endregion
