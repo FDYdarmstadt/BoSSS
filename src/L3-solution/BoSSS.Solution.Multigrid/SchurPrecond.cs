@@ -27,6 +27,7 @@ using BoSSS.Platform.Utils;
 using BoSSS.Foundation;
 using ilPSP.Connectors.Matlab;
 using MathNet.Numerics.LinearAlgebra.Double;
+using BoSSS.Solution.NSECommon;
 
 namespace BoSSS.Solution.Multigrid
 {
@@ -86,6 +87,8 @@ namespace BoSSS.Solution.Multigrid
             var MgMap = op.Mapping;
             this.m_mgop = op;
 
+            
+
             if (!M.RowPartitioning.EqualsPartition(MgMap.Partitioning))
                 throw new ArgumentException("Row partitioning mismatch.");
             if (!M.ColPartition.EqualsPartition(MgMap.Partitioning))
@@ -93,6 +96,7 @@ namespace BoSSS.Solution.Multigrid
 
             Uidx = MgMap.ProblemMapping.GetSubvectorIndices(true, D.ForLoop(i => i));
             Pidx = MgMap.ProblemMapping.GetSubvectorIndices(true, D);
+
 
             int Upart = Uidx.Length;
             int Ppart = Pidx.Length;
@@ -117,7 +121,7 @@ namespace BoSSS.Solution.Multigrid
             P.Clear();
 
             // Debugging output
-            pGrad.SaveToTextFileSparse("pGrad");
+            //pGrad.SaveToTextFileSparse("pGrad");
             //PxP.SaveToTextFileSparse("PxP");
 
 
