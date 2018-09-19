@@ -76,7 +76,9 @@ namespace BoSSS.Foundation.Grid {
                 int ActualLevel_j = CurrentGrid.Cells.GetCell(j).RefinementLevel;
                 int DesiredLevel_j = DesiredLevel[j];
 
-                if (ActualLevel_j > DesiredLevel_j) {
+                int[][] CellNeighbours = CurrentGrid.Cells.CellNeighbours;
+
+                if (ActualLevel_j > DesiredLevel_j && DesiredLevel_j >= CellNeighbours[j].Select(cn => DesiredLevel[cn]).Max() - 1 ) {
                     Ok2Coarsen[j] = true;
                 }
             }

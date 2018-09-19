@@ -71,6 +71,7 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="PhysicalBasedTestcases\CapillaryRise.cs" />
     <Compile Include="PhysicalBasedTestcases\ElementalTestProgramm.cs" />
     <Compile Include="PhysicalBasedTestcases\TwoPhaseCouetteFlow.cs" />
     <Compile Include="PhysicalBasedTestcases\CapillaryWave.cs" />
