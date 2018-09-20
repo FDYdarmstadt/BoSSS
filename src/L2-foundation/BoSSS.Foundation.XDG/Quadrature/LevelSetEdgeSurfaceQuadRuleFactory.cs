@@ -156,7 +156,7 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
                 LevelSetData.GridDat,
                 RefElement,
                 new FixedRuleFactory<QuadRule>(RefElement.FaceRefElement.GetQuadratureRule(minOrder))).
-                GetQuadRuleSet(new CellMask(LevelSetData.GridDat, Chunk.GetSingleElementChunk(0)), -1).
+                GetQuadRuleSet(new CellMask(LevelSetData.GridDat, new[] { Chunk.GetSingleElementChunk(0) }, MaskType.Geometrical), -1).
                 First().Rule;
         }
 
