@@ -38,9 +38,14 @@ namespace BoSSS.Foundation.XDG.Quadrature
         {
             public bool initialized;
             public int order;
+            public ExecutionMask initialMask;
+            public Mode RecalculationMode;
         }
 
         Status ComboStatus;
+
+        public enum Mode { RecalculateOnEveryVolumeCall, RecalculateWhenInstanced};
+
 
         /// <summary>
         /// Calculates surface and volume quadrature rules in one step, which is faster when both rules 
@@ -48,30 +53,43 @@ namespace BoSSS.Foundation.XDG.Quadrature
         /// CalculateComboQuadRuleSet(...).
         /// </summary>
         /// <param name="ComboRule"></param>
-        public SayeGaussComboRuleFactory(ISayeGaussComboRule ComboRule)
+        public SayeGaussComboRuleFactory(ISayeGaussComboRule ComboRule, Mode recalculationMode)
         {
             comboRule = ComboRule;
+
             rulez = new[] {
                 new List<ChunkRulePair<QuadRule>>(),
                 new List<ChunkRulePair<QuadRule>>()
             };
+
             ComboStatus = new Status
             {
                 initialized = false,
-                order = 0
+                order = 0,
+                RecalculationMode = recalculationMode
             };
             
-            volumeRuleFactory = new ComboFactoryWrapper(CalculateComboQuadRuleSet, rulez[0], comboRule.RefElement, ComboStatus);
-            surfaceRuleFactory = new ComboFactoryWrapper(CalculateComboQuadRuleSet, rulez[1], comboRule.RefElement, ComboStatus);
-
+            volumeRuleFactory = new ComboFactoryWrapper(
+                CalculateComboQuadRuleSet, 
+                rulez[0], 
+                comboRule.RefElement, 
+                ComboStatus,
+                ComboFactoryWrapper.QuadratureType.Volume);
+            surfaceRuleFactory = new ComboFactoryWrapper(
+                CalculateComboQuadRuleSet, 
+                rulez[1], 
+                comboRule.RefElement, 
+                ComboStatus,
+                ComboFactoryWrapper.QuadratureType.Surface);
         }
 
         /// <summary>
         /// Returns factory for surface rules
         /// </summary>
         /// <returns></returns>
-        public IQuadRuleFactory<QuadRule> GetSurfaceRule()
+        public IQuadRuleFactory<QuadRule> GetSurfaceFactory()
         {
+            Console.WriteLine("Calling Surface Factory \n");
             return surfaceRuleFactory;
         }
 
@@ -79,8 +97,9 @@ namespace BoSSS.Foundation.XDG.Quadrature
         /// Returns factory for volume rules
         /// </summary>
         /// <returns></returns>
-        public IQuadRuleFactory<QuadRule> GetVolumeRule()
+        public IQuadRuleFactory<QuadRule> GetVolumeFactory()
         {
+            Console.WriteLine("Calling Volume Factory \n");
             return volumeRuleFactory;
         }
 
@@ -91,7 +110,7 @@ namespace BoSSS.Foundation.XDG.Quadrature
         /// <param name="order"></param>
         void CalculateComboQuadRuleSet(ExecutionMask mask, int order)
         {
-            comboRule.order = 2 * order;
+            comboRule.order = order;
             rulez[0].Clear();
             rulez[1].Clear();
             //Find quadrature nodes and weights in each cell/chunk
@@ -112,63 +131,101 @@ namespace BoSSS.Foundation.XDG.Quadrature
         class ComboFactoryWrapper :
             IQuadRuleFactory<QuadRule>
         {
-            Action<ExecutionMask, int> ComboRule;
+            public enum QuadratureType {Surface, Volume};
+
+            QuadratureType quadMode; 
+
+            Action<ExecutionMask, int> ComboRuleEvaluator;
+
             private IEnumerable<IChunkRulePair<QuadRule>> rule;
+
             private RefElement refElem;
-            ExecutionMask initialMask;
+
             Status RuleStatus;
 
             public ComboFactoryWrapper(
-                Action<ExecutionMask, int> comboRule, 
-                IEnumerable<IChunkRulePair<QuadRule>> Rule, 
-                RefElement RefElem, 
-                Status ruleStatus)
+                Action<ExecutionMask, int> comboRuleEvaluator,
+                IEnumerable<IChunkRulePair<QuadRule>> Rule,
+                RefElement RefElem,
+                Status ruleStatus,
+                QuadratureType quadType)
             {
                 rule = Rule;
                 refElem = RefElem;
-                ComboRule = comboRule;
+                ComboRuleEvaluator = comboRuleEvaluator;
                 RuleStatus = ruleStatus;
+                quadMode = quadType;
             }
 
             public RefElement RefElement => refElem;
 
-            public IEnumerable<IChunkRulePair<QuadRule>> GetQuadRuleSet(ExecutionMask subMask, int Order)
+            public IEnumerable<IChunkRulePair<QuadRule>> GetQuadRuleSet(ExecutionMask mask, int order)
             {
-                if(!RuleStatus.initialized || Order != RuleStatus.order)
+                if(!RuleStatus.initialized || order != RuleStatus.order)
                 {
-                    ComboRule(subMask, Order);
-                    RuleStatus.order = Order;
-                    initialMask = subMask;
-                    RuleStatus.initialized = true;
-                    return rule;
+                    Console.WriteLine("Initialize {0} \n", quadMode);
+                    return InitializeRule(mask, order);
                 }
                 else
                 {
-                    //Check if subMask is initialMask. If so, return all rules
-                    if (subMask.Equals(initialMask))
+                    switch (RuleStatus.RecalculationMode)
                     {
-                        return rule;
-                    }
-                    //If not, filter rules to fit subMask
-                    else
-                    {
-                        Debug.Assert(subMask.IsSubMaskOf(initialMask));
-                        List<IChunkRulePair<QuadRule>> subRulez = new List<IChunkRulePair<QuadRule>>(subMask.Count());
-
-                        IEnumerator<int> initialMask_enum = initialMask.GetItemEnumerator();
-                        int i = 0;
-                        BitArray subMask_bitmask = subMask.GetBitMask();
-                        while (initialMask_enum.MoveNext())
-                        {
-                            if (subMask_bitmask[initialMask_enum.Current])
+                        case Mode.RecalculateWhenInstanced:
+                            Console.WriteLine("Reusing {0} \n", quadMode);
+                            return UseExistingRule(mask);
+                            //break;
+                        case Mode.RecalculateOnEveryVolumeCall:
+                            if (quadMode == QuadratureType.Volume)
                             {
-                                subRulez.Add(rule.ElementAt(i));
+                                Console.WriteLine("Recalcing {0} \n", quadMode);
+                                return InitializeRule(mask, order);
                             }
-                            ++i;
-                        }
-                        return subRulez;
-                        
+                            else
+                            {
+                                Console.WriteLine("Reusing {0} \n", quadMode);
+                                return UseExistingRule(mask);
+                            }
+                            //break;
+                        default:
+                            throw new NotImplementedException();
+                            //break;
                     }
+                }
+            }
+
+            IEnumerable<IChunkRulePair<QuadRule>> InitializeRule(ExecutionMask subMask, int Order)
+            {
+                ComboRuleEvaluator(subMask, Order);
+                RuleStatus.order = Order;
+                RuleStatus.initialMask = subMask;
+                RuleStatus.initialized = true;
+                return rule;
+            }
+
+            IEnumerable<IChunkRulePair<QuadRule>> UseExistingRule(ExecutionMask subMask)
+            {
+                if (subMask.Equals(RuleStatus.initialMask))
+                {
+                    return rule;
+                }
+                //If not, filter rules to fit subMask
+                else
+                {
+                    Debug.Assert(subMask.IsSubMaskOf(RuleStatus.initialMask));
+                    List<IChunkRulePair<QuadRule>> subRulez = new List<IChunkRulePair<QuadRule>>(subMask.Count());
+
+                    IEnumerator<int> initialMask_enum = RuleStatus.initialMask.GetItemEnumerator();
+                    int i = 0;
+                    BitArray subMask_bitmask = subMask.GetBitMask();
+                    while (initialMask_enum.MoveNext())
+                    {
+                        if (subMask_bitmask[initialMask_enum.Current])
+                        {
+                            subRulez.Add(rule.ElementAt(i));
+                        }
+                        ++i;
+                    }
+                    return subRulez;
                 }
             }
 
@@ -176,8 +233,8 @@ namespace BoSSS.Foundation.XDG.Quadrature
             {
                 throw new NotImplementedException();
             }
-        }
 
+        }
     }
 
     class SayeGaussRuleFactory :
@@ -199,12 +256,12 @@ namespace BoSSS.Foundation.XDG.Quadrature
 
         public IEnumerable<IChunkRulePair<QuadRule>> GetQuadRuleSet(ExecutionMask mask, int order)
         {
-            rule.order = 2 * order;
+            rule.order = order;
             var result = new List<ChunkRulePair<QuadRule>>();
 
             int number = 0;
-            Stopwatch stopWatch = new Stopwatch();
-            stopWatch.Start();
+            //Stopwatch stopWatch = new Stopwatch();
+            //stopWatch.Start();
             //Find quadrature nodes and weights in each cell/chunk
             foreach (Chunk chunk in mask)
             {
@@ -216,10 +273,10 @@ namespace BoSSS.Foundation.XDG.Quadrature
                     ++number;
                 }
             }
-            stopWatch.Stop();
-            long ts = stopWatch.ElapsedMilliseconds;
-            Console.WriteLine("Number Of Cells " + number);
-            Console.WriteLine("RunTime " + ts + "ms");
+            //stopWatch.Stop();
+            //long ts = stopWatch.ElapsedMilliseconds;
+            //Console.WriteLine("Number Of Cells " + number);
+            //Console.WriteLine("RunTime " + ts + "ms");
             return result;
         }
     }
@@ -309,7 +366,9 @@ namespace BoSSS.Foundation.XDG.Quadrature
                 RootFinder,
                 SayeFactory_Square.QuadratureMode.Combo
                 );
-            return new SayeGaussComboRuleFactory(rule);
+            return new SayeGaussComboRuleFactory(
+                rule, 
+                SayeGaussComboRuleFactory.Mode.RecalculateWhenInstanced);
         }
 
         public static SayeGaussComboRuleFactory SayeGaussRule_Combo3D(
@@ -322,7 +381,9 @@ namespace BoSSS.Foundation.XDG.Quadrature
                 RootFinder,
                 SayeFactory_Cube.QuadratureMode.Combo
                 );
-            return new SayeGaussComboRuleFactory(rule);
+            return new SayeGaussComboRuleFactory(
+                rule, 
+                SayeGaussComboRuleFactory.Mode.RecalculateOnEveryVolumeCall);
         }
 
         #endregion
