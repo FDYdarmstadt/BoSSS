@@ -457,7 +457,7 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
                     new CellEdgeBoundaryQuadratureScheme(
                         false,
                         owner.edgeRuleFactory,
-                        new CellMask(lsData.GridDat, Chunk.GetSingleElementChunk(element)))
+                        new CellMask(lsData.GridDat, new[] { Chunk.GetSingleElementChunk(element) }, MaskType.Geometrical ) )
                 .Compile(lsData.GridDat, maxPhiDegree),
                 CoordinateSystem.Reference) {
                 this.LevelSetData = lsData;
