@@ -490,9 +490,9 @@ namespace BoSSS.Application.IBM_Solver {
             C.PhysicalParameters.rho_A = 1;
             // 1/Re
             //C.PhysicalParameters.mu_A = 1.0 / 10.0;
-            C.PhysicalParameters.mu_A = 0.2 / re;
+            //C.PhysicalParameters.mu_A = 0.2 / re;
 
-            //C.PhysicalParameters.mu_A = 1.0 / re;
+            C.PhysicalParameters.mu_A = 1.0 / re;
 
             // Boundary conditions
             C.AddBoundaryValue("Velocity_inlet", "VelocityY", (x, t) => 0);
@@ -556,19 +556,19 @@ namespace BoSSS.Application.IBM_Solver {
                 case 3:
                     {
                         C.LinearSolve = LinearSolverCodes.exp_AS_1000;
-                        C.NoOfMultigridLevels = 1;  // 3 // --> grobes MG am Ende nochmal
+                        C.NoOfMultigridLevels = MGLevels;  // 3 // --> grobes MG am Ende nochmal
                         break;
                     }
                 case 4:
                     {
                         C.LinearSolve = LinearSolverCodes.exp_AS_5000;
-                        C.NoOfMultigridLevels = 3;
+                        C.NoOfMultigridLevels = MGLevels;
                         break;
                     }
                 case 5:
                     {
                         C.LinearSolve = LinearSolverCodes.exp_AS_10000;
-                        C.NoOfMultigridLevels = 3;
+                        C.NoOfMultigridLevels = MGLevels;
                         break;
                     }
                 case 6:
@@ -576,13 +576,13 @@ namespace BoSSS.Application.IBM_Solver {
                         //depth = 2,
                         //   Depth = ASDepth,  //--> MG bei der Blockzerlegung --> Resultat ergibt die Blöcke zur Berechnung (kleine Blöcke--> schlecht)
                         C.LinearSolve = LinearSolverCodes.exp_AS_MG;
-                        C.NoOfMultigridLevels = 3;
+                        C.NoOfMultigridLevels = MGLevels;
                         break;
                     }
                 case 7:
                     {
                         C.LinearSolve = LinearSolverCodes.exp_localPrec; ;
-                        C.NoOfMultigridLevels = 3;
+                        C.NoOfMultigridLevels = MGLevels;
                         break;
                     }
                 case 8:
