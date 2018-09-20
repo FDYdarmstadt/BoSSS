@@ -27,6 +27,7 @@ using BoSSS.Platform.Utils;
 using BoSSS.Foundation;
 using ilPSP.Connectors.Matlab;
 using MathNet.Numerics.LinearAlgebra.Double;
+using BoSSS.Solution.NSECommon;
 
 namespace BoSSS.Solution.Multigrid
 {
@@ -79,8 +80,14 @@ namespace BoSSS.Solution.Multigrid
         {
             int D = op.Mapping.GridData.SpatialDimension;
             var M = op.OperatorMatrix;
+
+
+            //M.SaveToTextFileSparse("OpMatrix2");
+
             var MgMap = op.Mapping;
             this.m_mgop = op;
+
+            
 
             if (!M.RowPartitioning.EqualsPartition(MgMap.Partitioning))
                 throw new ArgumentException("Row partitioning mismatch.");
@@ -90,18 +97,19 @@ namespace BoSSS.Solution.Multigrid
             Uidx = MgMap.ProblemMapping.GetSubvectorIndices(true, D.ForLoop(i => i));
             Pidx = MgMap.ProblemMapping.GetSubvectorIndices(true, D);
 
+
             int Upart = Uidx.Length;
             int Ppart = Pidx.Length;
-
             ConvDiff = new MsrMatrix(Upart, Upart, 1, 1);
             pGrad = new MsrMatrix(Upart, Ppart, 1, 1);
             divVel = new MsrMatrix(Ppart, Upart, 1, 1);
             var PxP = new MsrMatrix(Ppart, Ppart, 1, 1);
 
-            M.AccSubMatrixTo(1.0, ConvDiff, Uidx, default(int[]), Uidx, default(int[]), default(int[]), default(int[]));
-            M.AccSubMatrixTo(1.0, pGrad, Uidx, default(int[]), Pidx, default(int[]), default(int[]), default(int[]));
-            M.AccSubMatrixTo(1.0, divVel, Pidx, default(int[]), Uidx, default(int[]), default(int[]), default(int[]));
-            M.AccSubMatrixTo(1.0, PxP, Pidx, default(int[]), Pidx, default(int[]), default(int[]), default(int[]));
+
+            M.AccSubMatrixTo(1.0, ConvDiff, Uidx, default(int[]), Uidx, default(int[]));//, default(int[]), default(int[]));
+            M.AccSubMatrixTo(1.0, pGrad, Uidx, default(int[]), Pidx, default(int[]));//, default(int[]), default(int[]));
+            M.AccSubMatrixTo(1.0, divVel, Pidx, default(int[]), Uidx, default(int[]));//, default(int[]), default(int[]));
+            M.AccSubMatrixTo(1.0, PxP, Pidx, default(int[]), Pidx, default(int[]));//, default(int[]), default(int[]));
 
             Mtx = M;
 
@@ -113,8 +121,6 @@ namespace BoSSS.Solution.Multigrid
             P.Clear();
 
             // Debugging output
-            //ConvDiff.SaveToTextFileSparse("ConvDiff");
-            //divVel.SaveToTextFileSparse("divVel");
             //pGrad.SaveToTextFileSparse("pGrad");
             //PxP.SaveToTextFileSparse("PxP");
 
@@ -214,7 +220,7 @@ namespace BoSSS.Solution.Multigrid
                         // Possion scaled by inverse of the velocity mass matrix 
                         PoissonMtx_T = MsrMatrix.Multiply(invVelMassMatrix, pGrad); 
                         PoissonMtx_T = MsrMatrix.Multiply(divVel, PoissonMtx_T);
-                        ////PoissonMtx_T.Acc(PxP, 1); // p.379
+                        //PoissonMtx_T.Acc(PxP, 1); // p.379
 
                         // Poisson scaled by sqrt of inverse of velocity mass matrix
                         PoissonMtx_H = MsrMatrix.Multiply(invVelMassMatrixSqrt, pGrad);
@@ -313,12 +319,12 @@ namespace BoSSS.Solution.Multigrid
             where V : IList<double>
         {
             // For MPI
-            var idxU = Uidx[0];
-            for (int i = 0; i < Uidx.Length; i++)
-                Uidx[i] -= idxU;
-            var idxP = Pidx[0];
-            for (int i = 0; i < Pidx.Length; i++)
-                Pidx[i] -= idxP;
+            //var idxU = Uidx[0];
+            //for (int i = 0; i < Uidx.Length; i++)
+            //    Uidx[i] -= idxU;
+            //var idxP = Pidx[0];
+            //for (int i = 0; i < Pidx.Length; i++)
+            //    Pidx[i] -= idxP;
 
             var Bu = new double[Uidx.Length];
             var Xu = Bu.CloneAs();
@@ -417,12 +423,12 @@ namespace BoSSS.Solution.Multigrid
             var Xu = Bu.CloneAs();
 
             // For MPI
-            var idxU = Uidx[0];
-            for (int i = 0; i < Uidx.Length; i++)
-                Uidx[i] -= idxU;
-            var idxP = Pidx[0];
-            for (int i = 0; i < Pidx.Length; i++)
-                Pidx[i] -= idxP;
+            //var idxU = Uidx[0];
+            //for (int i = 0; i < Uidx.Length; i++)
+            //    Uidx[i] -= idxU;
+            //var idxP = Pidx[0];
+            //for (int i = 0; i < Pidx.Length; i++)
+            //    Pidx[i] -= idxP;
 
             Bu = B.GetSubVector(Uidx, default(int[]));
             var Bp = new double[Pidx.Length];

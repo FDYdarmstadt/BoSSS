@@ -176,7 +176,7 @@ namespace BoSSS.Solution.Multigrid {
 
             P = Schur.ToMsrMatrix();
 
-            P.SaveToTextFileSparse("LocalSchur");
+            //P.SaveToTextFileSparse("LocalSchur");
 
             using(var solver = new ilPSP.LinSolvers.MUMPS.MUMPSSolver()) {
                 solver.DefineMatrix(P);
