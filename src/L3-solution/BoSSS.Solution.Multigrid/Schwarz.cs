@@ -727,13 +727,13 @@ namespace BoSSS.Solution.Multigrid {
                             Blocks.Add(Block);
                         }
 #endif
-                        blockSolvers[iPart] = new PARDISOSolver()
-                        {
-                            CacheFactorization = true,
-                            UseDoublePrecision = false
-                        };
+                        //blockSolvers[iPart] = new PARDISOSolver()
+                        //{
+                        //    CacheFactorization = true,
+                        //    UseDoublePrecision = false
+                        //};
                         //blockSolvers[iPart] = new FullDirectSolver();
-                        //blockSolvers[iPart] = new ilPSP.LinSolvers.MUMPS.MUMPSSolver();
+                        blockSolvers[iPart] = new ilPSP.LinSolvers.MUMPS.MUMPSSolver();
                         blockSolvers[iPart].DefineMatrix(Block);
                     }
 

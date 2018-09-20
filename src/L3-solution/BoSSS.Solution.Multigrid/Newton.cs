@@ -54,7 +54,7 @@ namespace BoSSS.Solution.Multigrid {
         /// <summary>
         /// Maximum number of GMRES(m) restarts
         /// </summary>
-        public int restart_limit = 1;
+        public int restart_limit = 1000;
 
 
         /// <summary>
