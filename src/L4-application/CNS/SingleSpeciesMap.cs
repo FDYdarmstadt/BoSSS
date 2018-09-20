@@ -41,7 +41,7 @@ namespace CNS {
         /// <param name="material">
         /// The material/fluid that applies everywhere.
         /// </param>
-        public SingleSpeciesMap(GridData gridData, Material material) {
+        public SingleSpeciesMap(IGridData gridData, Material material) {
             this.GridData = gridData;
             this.material = material;
         }
@@ -51,7 +51,7 @@ namespace CNS {
         /// <summary>
         /// Information about the grid
         /// </summary>
-        public GridData GridData {
+        public IGridData GridData {
             get;
             private set;
         }

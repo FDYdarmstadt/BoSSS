@@ -1107,7 +1107,7 @@ namespace BoSSS.Foundation.IO {
         /// <returns>
         /// An object containing information about the time-step.
         /// </returns>
-        public TimestepInfo SaveTimestep(double physTime, TimestepNumber TimestepNo, SessionInfo currentSession, Grid.Classic.GridData GridDat, IEnumerable<DGField> fields) {
+        public TimestepInfo SaveTimestep(double physTime, TimestepNumber TimestepNo, SessionInfo currentSession, IGridData GridDat, IEnumerable<DGField> fields) {
             using (var tr = new FuncTrace()) {
 
                 {
@@ -1133,7 +1133,7 @@ namespace BoSSS.Foundation.IO {
 
                 // build vector
                 // ============
-                int J = GridDat.Cells.NoOfLocalUpdatedCells;
+                int J = GridDat.iLogicalCells.NoOfLocalUpdatedCells;
                 var vec = new CellFieldDataSet[J];
                 var _fields = fields.ToArray();
                 int NF = _fields.Length;
@@ -1309,7 +1309,7 @@ namespace BoSSS.Foundation.IO {
         /// Loads a time-step from the database into previously allocated
         /// DG-fields (<paramref name="PreAllocatedFields"/>).
         /// </summary>
-        public void LoadFieldData(ITimestepInfo info, Grid.Classic.GridData grdDat, IEnumerable<DGField> PreAllocatedFields) {
+        public void LoadFieldData(ITimestepInfo info, IGridData grdDat, IEnumerable<DGField> PreAllocatedFields) {
             using (var tr = new FuncTrace()) {
                 DGField[] Fields = PreAllocatedFields.ToArray(); // enforce 'evaluation' of the enum (in the case it is some delayed linq-expr).
                 List<DGField> FieldsFlatten = new List<DGField>();
@@ -1364,11 +1364,11 @@ namespace BoSSS.Foundation.IO {
         /// By using this method, it is ensured that the loaded/returned fields
         /// have the same DG polynomial degree as in the database.
         /// </remarks>
-        public IEnumerable<DGField> LoadFields(ITimestepInfo info, Grid.Classic.GridData grdDat, IEnumerable<string> NameFilter = null) {
+        public IEnumerable<DGField> LoadFields(ITimestepInfo info, IGridData grdDat, IEnumerable<string> NameFilter = null) {
             using (var tr = new FuncTrace()) {
                 // check
                 // =====
-                if (!info.Grid.ID.Equals(grdDat.Grid.GridGuid))
+                if (!info.Grid.ID.Equals(grdDat.GridID))
                     throw new ArgumentException("Mismatch in Grid.");
 
                 // Instantiate

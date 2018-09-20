@@ -74,7 +74,8 @@ namespace BoSSS.Foundation.Quadrature {
         public NodeSet Nodes;
         
         /// <summary>
-        /// quadrature weights; <br/>
+        /// quadrature weights; 
+        /// 
         /// index corresponds with 1st index of <see cref="Nodes"/>;
         /// </summary>
         public MultidimensionalArray Weights;

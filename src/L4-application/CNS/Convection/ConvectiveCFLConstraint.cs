@@ -52,13 +52,13 @@ namespace CNS.Convection {
         /// <param name="workingSet"></param>
         /// <param name="speciesMap"></param>
         public ConvectiveCFLConstraint(
-            CNSControl config, GridData gridData, CNSFieldSet workingSet, ISpeciesMap speciesMap)
+            CNSControl config, IGridData gridData, CNSFieldSet workingSet, ISpeciesMap speciesMap)
             : base(gridData, workingSet) {
 
             this.control = config;
             this.speciesMap = speciesMap;
 
-            if (gridData.Grid.RefElements.Length > 1) {
+            if (gridData.iGeomCells.RefElements.Length > 1 || !(gridData is GridData)) {
                 throw new NotImplementedException();
             }
         }
@@ -78,10 +78,12 @@ namespace CNS.Convection {
         /// <param name="Length"></param>
         /// <returns></returns>
         protected override double GetCFLStepSize(int i0, int Length) {
-            int iKref = gridData.Cells.GetRefElementIndex(i0);
+            var __gridData = (GridData)gridData;
+
+            int iKref = __gridData.Cells.GetRefElementIndex(i0);
             int noOfNodesPerCell = base.EvaluationPoints[iKref].NoOfNodes;
-            int D = gridData.Grid.SpatialDimension;
-            MultidimensionalArray hmin = this.gridData.Cells.h_min;
+            int D = gridData.SpatialDimension;
+            MultidimensionalArray hmin = __gridData.Cells.h_min;
             Material material = speciesMap.GetMaterial(double.NaN);
             double gamma = material.EquationOfState.HeatCapacityRatio;
             double Ma = material.Control.MachNumber;

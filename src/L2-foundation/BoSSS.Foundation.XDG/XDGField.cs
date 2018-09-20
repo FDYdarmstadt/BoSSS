@@ -101,7 +101,7 @@ namespace BoSSS.Foundation.XDG {
             // allocate memory
             // ---------------
 
-            int J = this.GridDat.iLogicalCells.NoOfCells;
+            int J = this.GridDat.iLogicalCells.Count;
             m_Coordinates = new FieldStorage(J, m_CCBasis.MinimalLength, m_CCBasis.MaximalLength);
             m_Coordinates.BeginResize(m_CCBasis.MaximalLength);
             for (int j = 0; j < J; j++) {
@@ -650,7 +650,7 @@ namespace BoSSS.Foundation.XDG {
             LevelSetTracker trk = m_CCBasis.Tracker;
             int Nsep = m_CCBasis.DOFperSpeciesPerCell;
 
-            int J = this.GridDat.iLogicalCells.NoOfCells;
+            int J = this.GridDat.iLogicalCells.Count;
             for (int j = 0; j < J; j++) {
                 ReducedRegionCode redRegionCode = ReducedRegionCode.Extract(trk.Regions.m_LevSetRegions[j]);
                 int spec_idx = trk.GetSpeciesIndex(redRegionCode, SpeciesId);
@@ -766,7 +766,7 @@ namespace BoSSS.Foundation.XDG {
         /// <param name="j"></param>
         /// <returns></returns>
         public override double GetMeanValue(int j) {
-            if (j < 0 || j > this.GridDat.iLogicalCells.NoOfCells)
+            if (j < 0 || j > this.GridDat.iLogicalCells.Count)
                 throw new ArgumentException("cell index out of range.", "j");
 
             throw new NotImplementedException();
@@ -1212,7 +1212,7 @@ namespace BoSSS.Foundation.XDG {
         /// </summary>
         /// <param name="levelSetStatus"></param>
         public void OnNext(LevelSetTracker.LevelSetRegions levelSetStatus) {
-            int J = this.GridDat.iLogicalCells.NoOfCells;
+            int J = this.GridDat.iLogicalCells.Count;
             LevelSetTracker trk = m_CCBasis.Tracker;
 
             m_Coordinates.BeginResize(m_CCBasis.MaximalLength);

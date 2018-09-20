@@ -172,7 +172,7 @@ namespace BoSSS.Foundation {
             if (x.Count == m_mapping.LocalLength)
                 nc = m_mapping.GridDat.iLogicalCells.NoOfLocalUpdatedCells;
             else if (x.Count == this.Count)
-                nc = m_mapping.GridDat.iLogicalCells.NoOfCells;
+                nc = m_mapping.GridDat.iLogicalCells.Count;
             else
                 throw new ArgumentException("length of x must be either NUpdate or Count.");
 

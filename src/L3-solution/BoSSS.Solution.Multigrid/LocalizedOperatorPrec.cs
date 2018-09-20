@@ -58,7 +58,6 @@ namespace BoSSS.Solution.Multigrid {
             }
         }
 
-        int D;
         string[] DomName;
         string[] CodName;
         string[] Params;
@@ -177,7 +176,7 @@ namespace BoSSS.Solution.Multigrid {
 
             P = Schur.ToMsrMatrix();
 
-            P.SaveToTextFileSparse("LocalSchur");
+            //P.SaveToTextFileSparse("LocalSchur");
 
             using(var solver = new ilPSP.LinSolvers.MUMPS.MUMPSSolver()) {
                 solver.DefineMatrix(P);
@@ -214,6 +213,7 @@ namespace BoSSS.Solution.Multigrid {
             }
 
             X.SetV(temp);
+            m_ThisLevelIterations++;
 
         }
 

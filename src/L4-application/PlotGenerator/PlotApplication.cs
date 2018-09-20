@@ -142,7 +142,7 @@ namespace BoSSS.PlotGenerator {
         /// <summary>
         /// the grid
         /// </summary>
-        public GridData GridDat {
+        public IGridData GridDat {
             get;
             private set;
         }
@@ -169,11 +169,11 @@ namespace BoSSS.PlotGenerator {
                 double physTime = ts.PhysicalTime;
                 TimestepNumber timestepNo = ts.TimeStepNumber;
 
-                if (this.GridDat == null || !this.GridDat.Grid.ID.Equals(ts.Grid.ID)) {
+                if (this.GridDat == null || !this.GridDat.GridID.Equals(ts.Grid.ID)) {
                     WriteMessage(process, processCount, "Loading grid ...");
                     GridCommons grid = DBDriver.LoadGrid(ts.Grid.ID, m_Database);
                     this.GridDat = this.m_Database.Controller.GetInitializationContext(ts).GridData;
-                    WriteMessage(process, processCount, "   Number of cells: " + this.GridDat.Grid.NoOfUpdateCells);
+                    WriteMessage(process, processCount, "   Number of cells: " + this.GridDat.iLogicalCells.NoOfLocalUpdatedCells);
                     this.CreatePlotter();
                 }
 

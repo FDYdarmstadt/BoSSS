@@ -29,6 +29,7 @@ namespace BoSSS.Foundation.Grid {
     /// Basic algorithms for refinement and coarsening.
     /// </summary>
     public class GridRefinementController {
+        
         /// <summary>
         /// Computes refinement and coarsening lists 
         /// (inputs for <see cref="GridData.Adapt(IEnumerable{int}, IEnumerable{int[]}, out GridCorrelation)"/>),
@@ -75,7 +76,9 @@ namespace BoSSS.Foundation.Grid {
                 int ActualLevel_j = CurrentGrid.Cells.GetCell(j).RefinementLevel;
                 int DesiredLevel_j = DesiredLevel[j];
 
-                if (ActualLevel_j > DesiredLevel_j) {
+                int[][] CellNeighbours = CurrentGrid.Cells.CellNeighbours;
+
+                if (ActualLevel_j > DesiredLevel_j && DesiredLevel_j >= CellNeighbours[j].Select(cn => DesiredLevel[cn]).Max() - 1 ) {
                     Ok2Coarsen[j] = true;
                 }
             }
@@ -125,7 +128,7 @@ namespace BoSSS.Foundation.Grid {
 
 
         static int[][] FindCoarseningClusters(BitArray Ok2Coarsen, GridData CurrentGrid) {
-            int JE = CurrentGrid.Cells.NoOfCells;
+            int JE = CurrentGrid.Cells.Count;
             int J = CurrentGrid.Cells.NoOfLocalUpdatedCells;
 
             if (Ok2Coarsen.Length != JE)

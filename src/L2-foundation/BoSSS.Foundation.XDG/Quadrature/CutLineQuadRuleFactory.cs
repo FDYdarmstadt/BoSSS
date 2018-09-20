@@ -205,6 +205,8 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
         public IEnumerable<IChunkRulePair<CellBoundaryQuadRule>> GetQuadRuleSet(ExecutionMask mask, int order) {
             if (!(mask is CellMask))
                 throw new ArgumentException("This works on cell basis, so a volume mask is required.");
+            if (mask.MaskType != MaskType.Geometrical)
+                throw new ArgumentException("Expecting a geometrical mask.");
             //Console.WriteLine("boundary order: " + order);
 
             if (mask == null) {

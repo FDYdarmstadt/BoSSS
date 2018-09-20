@@ -106,6 +106,16 @@ namespace BoSSS.Foundation.XDG {
             private set;
         }
 
+
+        ///// <summary>
+        ///// I don't know a funky name for it.
+        ///// </summary>
+        //public SpatialOperator Y {
+        //    get;
+        //    private set;
+        //}
+
+
         /// <summary>
         /// not supported for <see cref="XSpatialOperator"/>, use <see cref="GetEvaluatorEx(LevelSetTracker, IList{DGField}, IList{DGField}, UnsetteledCoordinateMapping, IDictionary{SpeciesId, QrSchemPair})"/>
         /// </summary>
@@ -255,7 +265,6 @@ namespace BoSSS.Foundation.XDG {
                     base.MPITtransceive = true;
                     
                     
-                   
                 }
             }
 
@@ -631,6 +640,16 @@ namespace BoSSS.Foundation.XDG {
 
                     //  coupling
                     ///////////////////
+
+
+                    //if(OnIntegratingSurfaceElement != null)
+                    //    OnIntegratingSurfaceElement(lsTrk.GetSpeciesName(SpeciesId), SpeciesId, InterfaceLengths[SpeciesId]);
+
+
+                    //SurfaceElementOperator.ComputeMatrixEx(
+                    //    mtx.ColMapping, Params, mtx.RowMapping,
+                    //    _mtx, vec, OnlyAffine, time,
+                    //    SurfaceElement_Edge, SurfaceElement_volume, null);
 
                     
                     using (new BlockTrace("surface_integration", tr)) {
@@ -1374,7 +1393,7 @@ namespace BoSSS.Foundation.XDG {
 #if DEBUG
                 var grdDat = RowFrame.FullMap.BasisS.First().GridDat;
                 int J = grdDat.iLogicalCells.NoOfLocalUpdatedCells;
-                int JE = grdDat.iLogicalCells.NoOfCells;
+                int JE = grdDat.iLogicalCells.Count;
                 var spc = RowFrame.Species;
                 Debug.Assert(RowFrame.Species.Equals(ColFrame.Species));
                 var lsTrk = m_LsTrk_regions;

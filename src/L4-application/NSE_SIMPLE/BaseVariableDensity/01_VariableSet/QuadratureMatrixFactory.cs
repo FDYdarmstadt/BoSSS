@@ -38,7 +38,7 @@ namespace NSE_SIMPLE {
         /// <param name="PressureBasis"></param>        
         /// <param name="EoS"></param>
         /// <param name="Scalar"></param>        
-        public VariableMatrices(GridData GridDat, Basis VelocityBasis, Basis PressureBasis, MaterialLaw EoS, params SinglePhaseField[] Scalar) {
+        public VariableMatrices(IGridData GridDat, Basis VelocityBasis, Basis PressureBasis, MaterialLaw EoS, params SinglePhaseField[] Scalar) {
 
             // Construct matrices            
             m_Rho = new QuadratureMatrix_Rho(VelocityBasis, GridDat, EoS, Scalar);            

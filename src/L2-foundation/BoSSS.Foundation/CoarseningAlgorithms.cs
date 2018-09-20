@@ -41,7 +41,7 @@ namespace BoSSS.Foundation.Grid.Aggregation {
         /// <param name="GridDat">original grid</param>
         /// <param name="MaxDepth">maximum number of refinements</param>
         /// <returns></returns>
-        public static AggregationGrid[] CreateSequence(GridData GridDat, int MaxDepth = -1) {
+        public static AggregationGrid[] CreateSequence(IGridData GridDat, int MaxDepth = -1) {
             using(new FuncTrace()) {
                 int D = GridDat.SpatialDimension;
                 MaxDepth = MaxDepth >= 0 ? MaxDepth : int.MaxValue;
@@ -70,9 +70,9 @@ namespace BoSSS.Foundation.Grid.Aggregation {
 
 #if DEBUG
                     int iLevel = aggGrids.Count - 2; // index of fine level (finer == low index)
-                    int JFine = aggGrids[iLevel].iLogicalCells.NoOfCells;
-                    int JCoarse = aggGrids[iLevel + 1].iLogicalCells.NoOfCells;
-                    Debug.Assert(aggGrids[iLevel + 1].iLogicalCells.NoOfCells == (aggGrids[iLevel + 1].iLogicalCells.NoOfLocalUpdatedCells + aggGrids[iLevel + 1].iLogicalCells.NoOfExternalCells));
+                    int JFine = aggGrids[iLevel].iLogicalCells.Count;
+                    int JCoarse = aggGrids[iLevel + 1].iLogicalCells.Count;
+                    Debug.Assert(aggGrids[iLevel + 1].iLogicalCells.Count == (aggGrids[iLevel + 1].iLogicalCells.NoOfLocalUpdatedCells + aggGrids[iLevel + 1].iLogicalCells.NoOfExternalCells));
                     
                     // test that the coarse grid has significantly less cells than the fine grid.
                     double dJfine = aggGrids[iLevel].iLogicalCells.NoOfLocalUpdatedCells;
@@ -113,9 +113,9 @@ namespace BoSSS.Foundation.Grid.Aggregation {
         /// <summary>
         /// creates an initial aggregated grid which is in fact equivalent to <paramref name="g"/>
         /// </summary>
-        public static AggregationGrid ZeroAggregation(GridData g) {
-            var Cls = g.Cells;
-            int J = Cls.NoOfLocalUpdatedCells;
+        public static AggregationGrid ZeroAggregation(IGridData g) {
+            //var Cls = g.Cells;
+            int J = g.iLogicalCells.NoOfLocalUpdatedCells;
             int D = g.SpatialDimension;
 
             int[][] AggregateCells = new int[J][];
@@ -281,40 +281,7 @@ namespace BoSSS.Foundation.Grid.Aggregation {
             }
         }
         
-
-/*    
-        /// <summary>
-        /// Number of composite/aggregated cell in the aggregated grid.
-        /// </summary>
-        public int NoOfAggregateCells {
-            get {
-                int Jcomp = AggregateCells.Length;
-                Debug.Assert(Jcomp == Neighbourship.Length);
-                Debug.Assert(Jcomp == CompositeVolume.Length);
-                Debug.Assert(Jcomp == CompositeCellBB.Length);
-                return Jcomp;
-            }
-        }
-
-        public int NoOfGhostCells {
-            private set;
-            get;
-        }
-
-        /// <summary>
-        /// Neighborhood relations in the aggregation grid;<br/>
-        /// - 1st index: MPI-local cell index of composite cell <em>j</em><br/>
-        /// - 2nd index: enumeration; local composite cell indices of all neighbor cells of composite cell <em>j</em>
-        /// </summary>
-        public int[][] Neighbourship;
-        */
-
-            /*
-        /// <summary>
-        /// Cell volume of each composite cell.
-        /// </summary>
-        public double[] CompositeVolume;
-        */
+        
 
             /*
 

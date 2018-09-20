@@ -52,7 +52,7 @@ namespace NSE_SIMPLE {
         /// <param name="Basis"></param>        
         /// <param name="GridDat"></param>
         /// <param name="Fields"></param>
-        public QuadratureMatrix(Basis Basis, GridData GridDat, params SinglePhaseField[] Fields)
+        public QuadratureMatrix(Basis Basis, IGridData GridDat, params SinglePhaseField[] Fields)
             : base(new int[] { Basis.MaximalLength * Basis.MaximalLength },
                 GridDat,
                 (new CellQuadratureScheme()).Compile(GridDat, Fields[0].Basis.Degree + 2 * Basis.Degree)) //
