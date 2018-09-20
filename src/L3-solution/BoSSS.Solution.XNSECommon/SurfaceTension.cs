@@ -1698,8 +1698,7 @@ namespace BoSSS.Solution.XNSECommon.Operator.SurfaceTension {
 
         LevelSetTracker m_LsTrk;
 
-        double sigma;
-
+        
         /// <summary>
         /// 
         /// </summary>
