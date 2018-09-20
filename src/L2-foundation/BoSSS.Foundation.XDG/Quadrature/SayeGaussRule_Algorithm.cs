@@ -12,7 +12,7 @@ using System.Diagnostics;
 
 namespace BoSSS.Foundation.XDG.Quadrature
 {
-    public interface ISayeQuadRule
+    interface ISayeQuadRule
     {
         IEnumerable<Tuple<MultidimensionalArray,double>> IntegrationNodes 
         {
@@ -23,7 +23,7 @@ namespace BoSSS.Foundation.XDG.Quadrature
         QuadRule GetQuadRule();
     }
 
-    public interface IPsi
+    interface IPsi
     {
        
     }
@@ -40,18 +40,18 @@ namespace BoSSS.Foundation.XDG.Quadrature
         }
     }
 
-    public abstract class SayeArgument<S>
+    abstract class SayeArgument<S>
         where S : IPsi
     {
         public enum Mode
         {
-            Standart,
+            Standard,
             GaussQuadrature,
             LowOrderQuadrature,
             DomainIsEmpty
         };
 
-        public Mode Status = Mode.Standart;
+        public Mode Status = Mode.Standard;
 
         public abstract void RemoveDimension(int k);
 
@@ -81,7 +81,7 @@ namespace BoSSS.Foundation.XDG.Quadrature
         }
     }
 
-    public abstract class SayeIntegrand<S, T>
+    abstract class SayeIntegrand<S, T>
         where S : IPsi
         where T : SayeArgument<S>
     {
@@ -125,7 +125,7 @@ namespace BoSSS.Foundation.XDG.Quadrature
             SayeQuadRule newRule;
             switch (nodeArg.Status)
             {
-                case SayeArgument<S>.Mode.Standart:
+                case SayeArgument<S>.Mode.Standard:
                     SetStandartNodes(node);
                     break;
                 case SayeArgument<S>.Mode.GaussQuadrature:
