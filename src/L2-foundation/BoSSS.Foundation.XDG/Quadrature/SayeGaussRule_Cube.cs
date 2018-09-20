@@ -275,9 +275,16 @@ namespace BoSSS.Foundation.XDG.Quadrature
             return gradient;
         }
 
-#endregion
+        #endregion
 
         #region Evaluate Saye Integrand
+
+        protected override QuadRule CreateZeroQuadrule()
+        {
+            QuadRule zeroRule = QuadRule.CreateEmpty(RefElement, 1, RefElement.SpatialDimension);
+            zeroRule.Nodes.LockForever();
+            return zeroRule;
+        }
 
         protected override SayeQuadRule SetLowOrderQuadratureNodes(LinearSayeSpace<Cube> arg)
         {

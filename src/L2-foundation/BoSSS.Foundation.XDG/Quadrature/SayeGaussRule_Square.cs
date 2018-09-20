@@ -136,6 +136,8 @@ namespace BoSSS.Foundation.XDG.Quadrature
             return value;
         }
 
+
+        static readonly double sqrt_2 = Math.Sqrt(2.0);
         /// <summary>
         /// First order approximation of  delta >= sup_x|psi(x) - psi(x_center)|  
         /// </summary>
@@ -157,7 +159,7 @@ namespace BoSSS.Foundation.XDG.Quadrature
             MultidimensionalArray grad = ScaledReferenceGradient(nodeOnPsi, cell);
             
             grad.ApplyAll(x => Math.Abs(x));     
-            double delta = grad.InnerProduct(diameters);
+            double delta = grad.InnerProduct(diameters) * sqrt_2;
 
             return delta;
         }
@@ -234,6 +236,8 @@ namespace BoSSS.Foundation.XDG.Quadrature
 
         #endregion
 
+        #region Evaluate Saye Integrand
+
         private MultidimensionalArray ScaledReferenceGradient(NodeSet Node, int Cell)
         {
             MultidimensionalArray gradient = lsData.GetLevelSetReferenceGradients(Node, Cell, 1);
@@ -248,7 +252,12 @@ namespace BoSSS.Foundation.XDG.Quadrature
             return gradient;
         }
 
-        #region Evaluate Saye Integrand
+        protected override QuadRule CreateZeroQuadrule()
+        {
+            QuadRule zeroRule = QuadRule.CreateEmpty(RefElement, 1, RefElement.SpatialDimension);
+            zeroRule.Nodes.LockForever();
+            return zeroRule;
+        }
 
         protected override SayeQuadRule SetLowOrderQuadratureNodes(SayeSquare arg)
         {
@@ -347,9 +356,12 @@ namespace BoSSS.Foundation.XDG.Quadrature
             NodeSet node = new NodeSet(RefElement, X.To2DArray());
             MultidimensionalArray gradient = lsData.GetLevelSetGradients(node, cell, 1);
             gradient = gradient.ExtractSubArrayShallow(new int[] { 0, 0, -1 });
-            
+
+            MultidimensionalArray jacobian = grid.Jacobian.GetValue_Cell(node, cell, 1).ExtractSubArrayShallow(0, 0, -1, -1);
+
             //Scale weight
-            weight *= gradient.L2Norm() / Math.Abs(gradient[heightDirection]);
+            weight *= gradient.L2Norm()/ Math.Abs(gradient[heightDirection]);
+            weight /= jacobian[heightDirection, heightDirection];
 
             MultidimensionalArray weightArr = new MultidimensionalArray(1);
             weightArr.Allocate(1);
