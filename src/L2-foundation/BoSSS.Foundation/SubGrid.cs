@@ -49,6 +49,8 @@ namespace BoSSS.Foundation.Grid {
         /// </param>
         public SubGrid(CellMask volMask) {
             MPICollectiveWatchDog.Watch();
+            if(volMask.MaskType != MaskType.Logical)
+                throw new ArgumentException();
             this.m_VolumeMask = volMask;
             m_GridData = volMask.GridData;
         }
@@ -87,7 +89,7 @@ namespace BoSSS.Foundation.Grid {
         /// <returns></returns>
         private int[] ComputeLocalCellIndex2SubgridIndex() {
             int[] inverse = SubgridIndex2LocalCellIndex;
-            int JE = m_GridData.iLogicalCells.NoOfCells;
+            int JE = m_GridData.iLogicalCells.Count;
             int[] localCellIndex2SubgridIndex = new int[JE];
             ArrayTools.SetAll(localCellIndex2SubgridIndex, int.MinValue);
 

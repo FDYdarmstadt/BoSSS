@@ -14,6 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+using BoSSS.Foundation.Grid;
 using BoSSS.Foundation.Grid.Classic;
 using BoSSS.Solution.Control;
 using System;
@@ -28,7 +29,7 @@ namespace CNS.Boundary {
     /// </summary>
     public class BoundaryConditionMap : IBoundaryConditionMap {
 
-        private GridData gridData;
+        private IGridData gridData;
 
         /// <summary>
         /// Cache for <see cref="ConditionMap"/>
@@ -42,7 +43,7 @@ namespace CNS.Boundary {
             get {
                 if (conditionMap == null) {
                     conditionMap = new Dictionary<string, BoundaryCondition>();
-                    foreach (byte edgeTag in gridData.Edges.EdgeTags) {
+                    foreach (byte edgeTag in gridData.iGeomEdges.EdgeTags) {
                         // Only process non-periodic boundary edges
                         if (edgeTag == 0 || edgeTag >= GridCommons.FIRST_PERIODIC_BC_TAG) {
                             continue;
@@ -70,7 +71,7 @@ namespace CNS.Boundary {
         /// </summary>
         /// <param name="gridData">The omnipresent grid data</param>
         /// <param name="control">Configuration options</param>
-        public BoundaryConditionMap(GridData gridData, CNSControl control) {
+        public BoundaryConditionMap(IGridData gridData, CNSControl control) {
             this.gridData = gridData;
             this.control = control;
         }
@@ -211,7 +212,7 @@ namespace CNS.Boundary {
         /// </summary>
         public IDictionary<byte, string> EdgeTagNames {
             get {
-                return gridData.Grid.EdgeTagNames;
+                return gridData.EdgeTagNames;
             }
         }
 

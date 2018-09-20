@@ -214,7 +214,7 @@ namespace BoSSS.Foundation.Grid.Classic {
                 // bla bla
                 // =======
 
-                this.ChefBasis = new GridData.BasisData(this);
+                this.ChefBasis = new GridData._BasisData(this);
 
                 // a good point for garbage collection
                 // -----------------------------------
@@ -242,7 +242,7 @@ namespace BoSSS.Foundation.Grid.Classic {
 
 
         private void InitNoOfCellsPerRefElement() {
-            int JE = Cells.NoOfCells;
+            int JE = Cells.Count;
             int J = Cells.NoOfLocalUpdatedCells;
 
             var KrefS = Grid.RefElements;
@@ -394,13 +394,13 @@ namespace BoSSS.Foundation.Grid.Classic {
             if(GlobalVerticesOut.GetLength(0) > Len || OutArrayOffset != 0)
                 GlobalVerticesOut = GlobalVerticesOut.ExtractSubArrayShallow(new int[] { OutArrayOffset, 0, 0 }, new int[] { OutArrayOffset + Len - 1, NoOfNodes - 1, D - 1 });
 
-            if(AffineLinear && this.Cells.Transformation != null) {
+            if (AffineLinear && this.Cells.Transformation != null) {
                 var Trf = this.Cells.Transformation.ExtractSubArrayShallow(new int[] { j0, 0, 0 }, new int[] { j0 + Len - 1, D - 1, D - 1 });
                 var Aff = this.Cells.CellCenter;//.ExtractSubArrayShallow(new int[] { j0, 0 }, new int[] { j0 + Len - 1, D - 1 });
 
-                for(int j = 0; j < Len; j++) {
-                    for(int k = 0; k < NoOfNodes; k++) {
-                        for(int d = 0; d < D; d++) {
+                for (int j = 0; j < Len; j++) {
+                    for (int k = 0; k < NoOfNodes; k++) {
+                        for (int d = 0; d < D; d++) {
                             GlobalVerticesOut[j, k, d] = Aff[j + j0, d];
                         }
                     }
@@ -408,29 +408,36 @@ namespace BoSSS.Foundation.Grid.Classic {
 
                 GlobalVerticesOut.Multiply(1.0, Trf, LocalVerticesIn, 1.0, ref mp_jkd_jde_ke);
             } else {
-                if(LocalVerticesIn is NodeSet) {
 
+                // work with polynomial caches
 
-                    // work with polynomial caches
+                var Krefs = this.Cells.RefElements;
+                NodeSet[] _LocalVerticesIn = new NodeSet[Krefs.Length];        
 
-                    // loop over cells ...
-                    for(int j = 0; j < Len; j++) {
-                        int jCell = j0 + j;
-                        var Cl = m_Cells.GetCell(jCell);
-                        var Kref = m_Cells.GetRefElement(jCell);
+                // loop over cells ...
+                for (int j = 0; j < Len; j++) {
+                    int jCell = j0 + j;
+                    var Cl = m_Cells.GetCell(jCell);
+                    int iKref = m_Cells.GetRefElementIndex(jCell);
+                    var Kref = Krefs[iKref];
 
-                        PolynomialList polys = Kref.GetInterpolationPolynomials(Cl.Type);
-                        MultidimensionalArray polyVals = polys.Values.GetValues((NodeSet)LocalVerticesIn);
-
-                        for(int d = 0; d < D; d++) {
-                            GlobalVerticesOut.ExtractSubArrayShallow(j, -1, d)
-                                .Multiply(1.0, polyVals, Cl.TransformationParams.ExtractSubArrayShallow(-1, d), 0.0, ref mp_k_kn_n);
+                    if(_LocalVerticesIn[iKref] == null) {
+                        if (LocalVerticesIn is NodeSet) {
+                            _LocalVerticesIn[iKref] = (NodeSet)LocalVerticesIn; 
+                        } else {
+                            _LocalVerticesIn[iKref] = new NodeSet(Kref, LocalVerticesIn); // convert to node set
                         }
                     }
 
-                } else {
+                    Debug.Assert(object.ReferenceEquals(Kref, _LocalVerticesIn[iKref].RefElement));
 
-                    throw new NotImplementedException("todo");
+                    PolynomialList polys = Kref.GetInterpolationPolynomials(Cl.Type);
+                    MultidimensionalArray polyVals = polys.Values.GetValues(_LocalVerticesIn[iKref]);
+
+                    for (int d = 0; d < D; d++) {
+                        GlobalVerticesOut.ExtractSubArrayShallow(j, -1, d)
+                            .Multiply(1.0, polyVals, Cl.TransformationParams.ExtractSubArrayShallow(-1, d), 0.0, ref mp_k_kn_n);
+                    }
                 }
             }
         }
@@ -1390,7 +1397,7 @@ namespace BoSSS.Foundation.Grid.Classic {
             }
 
             if (m_RefElementSgrd[iKref] == null) {
-                m_RefElementSgrd[iKref] = new SubGrid(this.Cells.GetCells4Refelement(iKref));
+                m_RefElementSgrd[iKref] = new SubGrid(this.Cells.GetCells4Refelement(iKref).ToLogicalMask());
             }
 
             return m_RefElementSgrd[iKref];
@@ -1594,135 +1601,9 @@ namespace BoSSS.Foundation.Grid.Classic {
             }
         }
 
-        /// <summary>
-        /// node set used in <see cref="ComputeCFLTime"/>
-        /// </summary>
-        NodeSet[] m_CFL_EvalPoints = null;
+      
 
-        /// <summary>
-        /// computes a global time-step length ("delta t") according to the 
-        /// Courant-Friedrichs-Lax - criterion, based on a velocity
-        /// vector (<paramref name="velvect"/>) and the cell size
-        /// this.<see cref="Cells"/>.<see cref="CellData.h_min"/>;
-        /// </summary>
-        /// <param name="velvect">
-        /// components of a velocity vector
-        /// </param>
-        /// <param name="max">
-        /// an upper maximum for the return value; This is useful if the velocity
-        /// defined by <paramref name="velvect"/> is 0 or very small everywhere;
-        /// </param>
-        /// <param name="cm">
-        /// optional restriction of domain.
-        /// </param>
-        /// <returns>
-        /// the minimum (over all cells j in all processes) of <see cref="CellData.h_min"/>[j]
-        /// over v, where v is the Euclidean norm of a vector build from 
-        /// <paramref name="velvect"/>;
-        /// This vector is evaluated at cell center and all cell vertices.
-        /// The return value is the same on all processes;
-        /// </returns>
-        public double ComputeCFLTime<T>(IEnumerable<T> velvect, double max, CellMask cm = null)
-            where T : DGField {
-            using(var tr = new FuncTrace()) {
-                ilPSP.MPICollectiveWatchDog.Watch(MPI.Wrappers.csMPI.Raw._COMM.WORLD);
-
-                T[] _velvect = velvect.ToArray();
-
-                if(cm == null)
-                    cm = CellMask.GetFullMask(this);
-
-                int D = SpatialDimension;
-                var KrefS = Grid.RefElements;
-
-                // find cfl number on this processor
-                // ---------------------------------
-
-                // nodes for the evaluation of the velocity vector
-                // (all vertices an 0)
-                if(m_CFL_EvalPoints == null) {
-                    m_CFL_EvalPoints = new NodeSet[KrefS.Length];
-                    for(int i = 0; i < KrefS.Length; i++) {
-                        var Kref = KrefS[i];
-                        int N = Kref.NoOfVertices + 1;
-
-                        MultidimensionalArray vert = MultidimensionalArray.Create(N, D);
-                        vert.SetSubArray(Kref.Vertices, new int[] { 0, 0 }, new int[] { N - 2, D - 1 });
-
-                        m_CFL_EvalPoints[i] = new NodeSet(Kref, vert);
-                    }
-                }
-
-
-                // evaluators an memory for result
-                int VecMax = 1000;
-                DGField[] evalers = new DGField[_velvect.Length];
-                MultidimensionalArray[] fieldValues = new MultidimensionalArray[_velvect.Length];
-                for(int i = 0; i < _velvect.Length; i++) {
-                    evalers[i] = _velvect[i];
-                    fieldValues[i] = MultidimensionalArray.Create(VecMax, m_CFL_EvalPoints[0].NoOfNodes);
-                }
-
-                var h_min = m_Cells.h_min;
-                int K = _velvect.Length;
-                double cflhere = max;
-
-                //for (int j = 0; j < J; j += VectorSize) {
-                foreach(Chunk chk in cm) {
-                    int VectorSize = VecMax;
-                    for(int j = chk.i0; j < chk.JE; j += VectorSize) {
-                        if(j + VectorSize > chk.JE + 1)
-                            VectorSize = chk.JE - j;
-                        VectorSize = this.Cells.GetNoOfSimilarConsecutiveCells(CellInfo.RefElementIndex_Mask, j, VectorSize);
-                        
-
-                        int iKref = Cells.GetRefElementIndex(j);
-                        int N = m_CFL_EvalPoints[iKref].GetLength(0);
-
-                        if(fieldValues[0].GetLength(0) != VectorSize) {
-                            for(int i = 0; i < _velvect.Length; i++) {
-                                fieldValues[i].Allocate(VectorSize, N);
-                            }
-                        }
-
-                        for(int k = 0; k < K; k++)
-                            evalers[k].Evaluate(j, VectorSize, m_CFL_EvalPoints[iKref], fieldValues[k], 0, 0.0);
-
-                        // loop over cells ...
-                        for(int jj = j; jj < j + VectorSize; jj++) {
-
-                            // loop over nodes ...
-                            for(int n = 0; n < N; n++) {
-                                double velabs = 0;
-
-                                // loop over velocity components ...
-                                for(int k = 0; k < K; k++) {
-                                    double v = fieldValues[k][jj - j, n];
-                                    velabs += v * v;
-                                }
-
-                                velabs = Math.Sqrt(velabs);
-
-                                double cfl = h_min[jj] / velabs;
-                                cflhere = Math.Min(cfl, cflhere);
-                            }
-                        }
-                    }
-
-                }
-
-                // find the minimum over all processes via MPI and return
-                // ------------------------------------------------------
-                double cfltotal;
-                unsafe {
-                    csMPI.Raw.Allreduce((IntPtr)(&cflhere), (IntPtr)(&cfltotal), 1, csMPI.Raw._DATATYPE.DOUBLE, csMPI.Raw._OP.MIN, csMPI.Raw._COMM.WORLD);
-                }
-                tr.Info("computed CFL timestep: " + cfltotal);
-                return cfltotal;
-
-            }
-        }
-
+        
         /// <summary>
         /// 
         /// </summary>

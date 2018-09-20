@@ -717,7 +717,7 @@ namespace BoSSS.Solution.Multigrid {
         /// <param name="n"></param>
         /// <returns></returns>
         override internal int N_Murks(int j, int n, int N) {
-            Debug.Assert(j >= 0 && j < this.DGBasis.GridDat.iLogicalCells.NoOfCells);
+            Debug.Assert(j >= 0 && j < this.DGBasis.GridDat.iLogicalCells.Count);
             Debug.Assert(n >= 0 && n < this.XDGBasis.GetLength(j));
 
             int[,] sim = this.SpeciesIndexMapping[j];

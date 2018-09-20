@@ -116,7 +116,7 @@ namespace BoSSS.Application.XdgTimesteppingTest {
             foreach (int j in this.LsTrk.Regions.GetNearFieldMask(1).ItemEnum) {
                 NearMarker.SetMeanValue(j, 1);
             }
-            int J = this.GridData.Cells.NoOfLocalUpdatedCells;
+            int J = this.GridData.iLogicalCells.NoOfLocalUpdatedCells;
             for (int j = 0; j < J; j++) {
                 DOFMarker.SetMeanValue(j, this.u.Basis.GetLength(j));
             }
@@ -384,7 +384,7 @@ namespace BoSSS.Application.XdgTimesteppingTest {
             Operator.ComputeMatrixEx(this.LsTrk,
                 Mapping, Params, Mapping,
                 OpMtx, OpAffine, false, phystime, true,
-                AgglomeratedCellLengthScales,
+                AgglomeratedCellLengthScales, null, null,
                 AgglomeratedCellLengthScales.Keys.ToArray());
         }
 

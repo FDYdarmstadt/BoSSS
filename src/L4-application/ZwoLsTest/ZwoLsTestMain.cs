@@ -115,7 +115,7 @@ namespace BoSSS.Application.ZwoLsTest {
                 speciesTable[1, 0] = "X"; // 'verbotene' Species: sollte in der geg. LevelSet-Konstellation nicht vorkommen!
                 speciesTable[1, 1] = "A"; // linker Rand von A
                
-                base.LsTrk = new LevelSetTracker(this.GridData, MomentFittingVariant, 1, speciesTable, Phi0, Phi1);
+                base.LsTrk = new LevelSetTracker((BoSSS.Foundation.Grid.Classic.GridData)(this.GridData), MomentFittingVariant, 1, speciesTable, Phi0, Phi1);
             }
 
             u = new SinglePhaseField(new Basis(this.GridData, DEGREE), "U");
@@ -353,7 +353,7 @@ namespace BoSSS.Application.ZwoLsTest {
             Op.ComputeMatrixEx(LsTrk,
                 u.Mapping, null, u.Mapping,
                 OperatorMatrix, Affine, false, 0.0, true,
-                Agg.CellLengthScales,
+                Agg.CellLengthScales, null, null,
                 LsTrk.GetSpeciesId("B"));
             Agg.ManipulateMatrixAndRHS(OperatorMatrix, Affine, u.Mapping, u.Mapping);
 
@@ -432,12 +432,13 @@ namespace BoSSS.Application.ZwoLsTest {
         /// (**not** a good balancing, but triggers redistributon).
         /// </summary>
         protected override int[] ComputeNewCellDistribution(int TimeStepNo, double physTime) {
+            
             if(DYNAMIC_BALANCE && MPISize == 4) {
                 int J = this.GridData.iLogicalCells.NoOfLocalUpdatedCells;
                 int[] Part = new int[J];
 
                 for(int j = 0; j < J; j++) {
-                    double[] X = this.GridData.Cells.CellCenter.GetRow(j);
+                    double[] X = this.GridData.iLogicalCells.GetCenter(j);
                     double x = X[0];
                     double y = X[1];
 
@@ -458,9 +459,9 @@ namespace BoSSS.Application.ZwoLsTest {
         /// some helper for manual debugging
         /// </summary>
         private void MatrixTests(MsrMatrix OpMatrix) {
-            int J = this.GridData.Cells.NoOfLocalUpdatedCells;
-            int E = this.GridData.Edges.Count;
-            int[,] e2c = this.GridData.Edges.CellIndices;
+            int J = this.GridData.iLogicalCells.NoOfLocalUpdatedCells;
+            int E = this.GridData.iLogicalEdges.Count;
+            int[,] e2c = this.GridData.iLogicalEdges.CellIndices;
 
             MsrMatrix ConMatrix = new MsrMatrix(new Partitioning(J));
             MsrMatrix ConMatrix2 = new MsrMatrix(new Partitioning(J));
@@ -478,7 +479,7 @@ namespace BoSSS.Application.ZwoLsTest {
 
                 int j0G;
                 if (j0 >= J) {
-                    j0G = (int)(this.GridData.Parallel.GlobalIndicesExternalCells[j0 - J]);
+                    j0G = (int)(this.GridData.iParallel.GlobalIndicesExternalCells[j0 - J]);
                 } else {
                     j0G = j0 + jCell0;
                 }
@@ -486,7 +487,7 @@ namespace BoSSS.Application.ZwoLsTest {
                 int j1G;
                 if (j1 >= 0) {
                     if (j1 >= J) {
-                        j1G = (int)(this.GridData.Parallel.GlobalIndicesExternalCells[j1 - J]);
+                        j1G = (int)(this.GridData.iParallel.GlobalIndicesExternalCells[j1 - J]);
                     } else {
                         j1G = j1 + jCell0;
                     }
@@ -512,7 +513,7 @@ namespace BoSSS.Application.ZwoLsTest {
 
 
             for (int jCell = 0; jCell < J; jCell++) {
-                Debug.Assert(jCell + jCell0 == this.GridData.Cells.GetCell(jCell).GlobalID);
+                Debug.Assert(jCell + jCell0 == this.GridData.iLogicalCells.GetGlobalID(jCell));
             }
 
 

@@ -43,7 +43,7 @@ namespace BoSSS.Solution.XdgTimestepping {
 
             using (new FuncTrace()) {
                 BoSSS.Foundation.Grid.IGridData GridData = LsTrk.GridDat;
-                int JE = GridData.iLogicalCells.NoOfCells;
+                int JE = GridData.iLogicalCells.Count;
                 int Jup = GridData.iLogicalCells.NoOfLocalUpdatedCells;
                 int cell_j0 = GridData.CellPartitioning.i0;
 
@@ -505,7 +505,7 @@ namespace BoSSS.Solution.XdgTimestepping {
         /// Diagnostic output.
         /// </summary>
         static public void PrintMappingUpdate(LevelSetTracker LsTrk, UnsetteledCoordinateMapping Mapping) {
-            int JE = LsTrk.GridDat.Cells.NoOfCells;
+            int JE = LsTrk.GridDat.Cells.Count;
 
             for (int j = 0; j < JE; j++) {
                 Console.Write(j);

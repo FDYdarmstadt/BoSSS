@@ -36,7 +36,7 @@ namespace BoSSS.Solution.XNSECommon {
 
         public CutCellBoundingBoxes(LevelSetTracker __lsTrk) {
             this.lsTrk = __lsTrk;
-            int J = lsTrk.GridDat.Cells.NoOfCells;
+            int J = lsTrk.GridDat.Cells.Count;
             int D = lsTrk.GridDat.SpatialDimension;
             this.BoundingBoxes = new BoundingBox[J][];
             this.UpdateBoundingBoxes();
@@ -74,7 +74,7 @@ namespace BoSSS.Solution.XNSECommon {
 
             var grd = lsTrk.GridDat;
             int D = grd.SpatialDimension;
-            int J = grd.Cells.NoOfCells;
+            int J = grd.Cells.Count;
             var KrefS = grd.Grid.RefElements;
             var VolQRs = KrefS.Select(Kref => Kref.GetBruteForceQuadRule(6, 2)).ToArray();
             var BruteForceVolFam = VolQRs;

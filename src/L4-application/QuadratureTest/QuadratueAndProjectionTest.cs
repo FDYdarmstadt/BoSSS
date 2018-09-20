@@ -38,7 +38,7 @@ namespace QuadratureAndProjectionTest {
         /// <summary>
         /// The BoSSS context which we need in order to compute a DG projection
         /// </summary>
-        private GridData context;
+        private IGridData context;
 
         /// <summary>
         /// The test application to be run
@@ -265,7 +265,7 @@ namespace QuadratureAndProjectionTest {
                 double LInfError = 0;
                 for (int j = 0; j < rule.NoOfNodes; j++) {
                     MultidimensionalArray result = MultidimensionalArray.Create(1, 1);
-                    NodeSet point = new NodeSet(context.Cells.GetRefElement(0), 1, rule.SpatialDim);
+                    NodeSet point = new NodeSet(context.iGeomCells.GetRefElement(0), 1, rule.SpatialDim);
                     for (int k = 0; k < rule.SpatialDim; k++) {
                         point[0, k] = rule.Nodes[j, k];
                     }

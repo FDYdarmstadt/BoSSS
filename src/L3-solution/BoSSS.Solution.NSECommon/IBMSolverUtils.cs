@@ -239,7 +239,7 @@ namespace BoSSS.Solution.NSECommon {
            // var UA = U.Select(u => u.GetSpeciesShadowField("A")).ToArray();
             var UA = U.ToArray();
 
-            int RequiredOrder = U[0].Basis.Degree * 3 + 2;
+            int RequiredOrder = U[0].Basis.Degree * 3;
             //int RequiredOrder = LsTrk.GetXQuadFactoryHelper(momentFittingVariant).GetCachedSurfaceOrders(0).Max();
             //Console.WriteLine("Order reduction: {0} -> {1}", _RequiredOrder, RequiredOrder);
 
@@ -247,7 +247,6 @@ namespace BoSSS.Solution.NSECommon {
             //    throw new ArgumentException();
 
             Console.WriteLine("Forces coeff: {0}, order = {1}", LsTrk.CutCellQuadratureType, RequiredOrder);
-
 
             ConventionalDGField pA = null;
 
@@ -379,7 +378,7 @@ namespace BoSSS.Solution.NSECommon {
 
             //if (D > 2) throw new NotImplementedException("Currently only 2D cases supported");
 
-            int RequiredOrder = U[0].Basis.Degree * 3 + 2;
+            int RequiredOrder = U[0].Basis.Degree * 3;
             //if (RequiredOrder > agg.HMForder)
             //    throw new ArgumentException();
 

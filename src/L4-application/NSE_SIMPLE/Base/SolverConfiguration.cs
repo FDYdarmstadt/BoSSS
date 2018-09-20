@@ -31,7 +31,7 @@ namespace NSE_SIMPLE {
         public readonly SIMPLEControl Control;
 
         public SolverConfiguration(
-            SIMPLEControl control, GridData GridDat, VariableSet workingSet, int MPIRank) {
+            SIMPLEControl control, IGridData GridDat, VariableSet workingSet, int MPIRank) {
 
             this.SpatialDimension = GridDat.SpatialDimension;
             this.MPIRank = MPIRank;
@@ -115,11 +115,14 @@ namespace NSE_SIMPLE {
         /// <returns>
         /// Base part of SIP penalty.
         /// </returns>
-        private double GetSIPPenaltyBase(int DegreeBasis, GridData GridDat) {
-            if (GridDat.Grid.RefElements.Length > 1)
+        private double GetSIPPenaltyBase(int DegreeBasis, IGridData GridDat) {
+            if (!(GridDat is BoSSS.Foundation.Grid.Classic.GridData))
+                throw new NotImplementedException("SIP penalty is only implemented for Classic grid.");
+
+            if (GridDat.iGeomCells.RefElements.Length > 1)
                 throw new NotImplementedException("SIP penalty implemented only for one type of RefElements.");
 
-            Type GridType = GridDat.Grid.RefElements[0].GetType();
+            Type GridType = GridDat.iGeomCells.RefElements[0].GetType();
 
             double PenaltyBase;
 

@@ -15,9 +15,10 @@ using System.Collections;
 
 namespace BoSSS.Foundation.XDG.Quadrature
 {
-    public class SayeFactory_Square :
+    class SayeFactory_Square :
         SayeComboIntegrand<LinearPSI<Square>, SayeSquare>,
-        ISayeGaussRule<LinearPSI<Square>, SayeSquare>
+        ISayeGaussRule,
+        ISayeGaussComboRule
     {
         LevelSetTracker.LevelSetData lsData;
 
@@ -27,8 +28,7 @@ namespace BoSSS.Foundation.XDG.Quadrature
 
         int iKref;
 
-        public enum QuadratureMode { Surface, PositiveVolume, NegativeVolume };
-
+        public enum QuadratureMode { Surface, PositiveVolume, NegativeVolume, Combo };
 
         QuadratureMode quadratureMode;
 
@@ -50,6 +50,12 @@ namespace BoSSS.Foundation.XDG.Quadrature
 
         public int order { get; set; }
 
+        public QuadRule Evaluate(int Cell)
+        {
+            SayeSquare startArg = CreateStartSetup();
+            return Evaluate(Cell, startArg);
+        }
+
         public SayeSquare CreateStartSetup()
         {
             bool IsSurfaceIntegral = ( quadratureMode == QuadratureMode.Surface );
@@ -65,6 +71,25 @@ namespace BoSSS.Foundation.XDG.Quadrature
             get {
                 return Square.Instance;
             }
+        }
+
+        #endregion
+
+        #region ISayeGaussComboRule
+
+        public QuadRule[] ComboEvaluate(int Cell)
+        {
+            SayeSquare startArg = CreateStartSetup();
+            return ComboEvaluate(Cell, startArg);
+        }
+
+        #endregion
+
+        #region SayeComboIntegrand
+
+        protected override ISayeQuadRule GetEmptySurfaceRule()
+        {
+            return new NodesAndWeightsSurface(RefElement.SpatialDimension, RefElement);
         }
 
         #endregion
@@ -348,7 +373,7 @@ namespace BoSSS.Foundation.XDG.Quadrature
         #endregion
     }
 
-    public class SayeSquare :
+    class SayeSquare :
         SayeArgument<LinearPSI<Square>>
     {
         static Square refElement = Square.Instance;

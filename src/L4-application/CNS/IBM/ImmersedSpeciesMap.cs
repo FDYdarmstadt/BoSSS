@@ -251,7 +251,7 @@ namespace CNS.IBM {
         /// <summary>
         /// Information about the grid
         /// </summary>
-        public GridData GridData {
+        public IGridData GridData {
             get {
                 return tracker.GridDat;
             }

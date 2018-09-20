@@ -88,10 +88,13 @@ namespace MltdimAryMultiply_CodeGen {
             Out.Close();
         }
 
+        // params for routines without index trafo
         static string PARAMS_TYPES = "int RunDim, int SumDim, double* pT_org, double* pA_org, double* pB_org, int* lenRun, int* cycRunT, int* cycRunA, int* cycRunB, int* lenSum, int* cycSumA, int* cycSumB, double scl, double Tscl";
         static string PARAMS_ONLY = "RunDim, SumDim, pT_org, pA_org, pB_org, lenRun, cycRunT, cycRunA, cycRunB, lenSum, cycSumA, cycSumB, scl, Tscl";
-        static string PARAMS_TYPES_WTRF = "int RunDim, int SumDim, double* pT_org, double* pA_org, double* pB_org, int* lenRun, int* cycRunT, int* cycRunA, int* cycRunB, int* lenSum, int* cycSumA, int* cycSumB, double scl, double Tscl, int* Trf, int TrfEnd, int trfT0sw, int trfA0sw, int trfB0sw, int trfPreOffset_T, int trfCycle_T, int trfPostOffset_T, int trfPreOffset_A, int trfCycle_A, int trfPostOffset_A, int trfPreOffset_B, int trfCycle_B, int trfPostOffset_B";
-        static string PARAMS_ONLY_WTRF = "RunDim, SumDim, pT_org, pA_org, pB_org, lenRun, cycRunT, cycRunA, cycRunB, lenSum, cycSumA, cycSumB, scl, Tscl, Trf, TrfEnd, trfT0sw, trfA0sw, trfB0sw, trfPreOffset_T, trfCycle_T, trfPostOffset_T, trfPreOffset_A, trfCycle_A, trfPostOffset_A, trfPreOffset_B, trfCycle_B, trfPostOffset_B";
+
+        // params for routines with index trafo
+        static string PARAMS_TYPES_WTRF = "int RunDim, int SumDim, double* pT_org, double* pA_org, double* pB_org, int* lenRun, int* cycRunT, int* cycRunA, int* cycRunB, int* lenSum, int* cycSumA, int* cycSumB, double scl, double Tscl, int* Trf_T, int* Trf_A, int* Trf_B, int trfT0sw, int trfA0sw, int trfB0sw, int trfPreOffset_T, int trfCycle_T, int trfPostOffset_T, int trfPreOffset_A, int trfCycle_A, int trfPostOffset_A, int trfPreOffset_B, int trfCycle_B, int trfPostOffset_B";
+        static string PARAMS_ONLY_WTRF = "RunDim, SumDim, pT_org, pA_org, pB_org, lenRun, cycRunT, cycRunA, cycRunB, lenSum, cycSumA, cycSumB, scl, Tscl, Trf_T, Trf_A, Trf_B, trfT0sw, trfA0sw, trfB0sw, trfPreOffset_T, trfCycle_T, trfPostOffset_T, trfPreOffset_A, trfCycle_A, trfPostOffset_A, trfPreOffset_B, trfCycle_B, trfPostOffset_B";
 
         static void Dispatcher(int RUN_UNROLL, int SUM_UNROLL, bool withTrafo) {
             string mod = withTrafo ? "WTrafo" : "";
@@ -355,10 +358,10 @@ namespace MltdimAryMultiply_CodeGen {
                     Out.WriteLine("for (int i{0} = I{0}; i{0} > 0; i{0}--) {{", i);
                 }
                 if(i == 0) {
-                    Out.WriteLine("Debug.Assert(i0 < TrfEnd);");
-                    Out.WriteLine("int Trf_i0_T = (Trf[i0 * trfCycle_T + trfPreOffset_T]  + trfPostOffset_T) * trfT0sw;");
-                    Out.WriteLine("int Trf_i0_A = (Trf[i0 * trfCycle_A + trfPreOffset_A]  + trfPostOffset_A) * trfA0sw;");
-                    Out.WriteLine("int Trf_i0_B = (Trf[i0 * trfCycle_B + trfPreOffset_B]  + trfPostOffset_B) * trfB0sw;");
+                    //Out.WriteLine("Debug.Assert(i0 < TrfEnd);");
+                    Out.WriteLine("int Trf_i0_T = (Trf_T[i0 * trfCycle_T + trfPreOffset_T]  + trfPostOffset_T) * trfT0sw;");
+                    Out.WriteLine("int Trf_i0_A = (Trf_A[i0 * trfCycle_A + trfPreOffset_A]  + trfPostOffset_A) * trfA0sw;");
+                    Out.WriteLine("int Trf_i0_B = (Trf_B[i0 * trfCycle_B + trfPreOffset_B]  + trfPostOffset_B) * trfB0sw;");
                     Out.WriteLine("if(Trf_i0_T < 0) continue;");
                     Out.WriteLine("if(Trf_i0_A < 0) continue;");
                     Out.WriteLine("if(Trf_i0_B < 0) continue;");

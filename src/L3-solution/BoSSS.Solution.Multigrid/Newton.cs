@@ -585,8 +585,7 @@ namespace BoSSS.Solution.Multigrid {
         }
 
 
-        BlockMsrMatrix OpMtxRaw, MassMtxRaw;
-        double[] OpAffineRaw;
+       
 
         /// <summary>
         /// Computes a forward difference jacobian and returns the dense jacobian

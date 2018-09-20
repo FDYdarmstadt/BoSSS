@@ -214,6 +214,9 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
                 if (!(mask is CellMask)) {
                     throw new ArgumentException("CellMask required", "mask");
                 }
+                if (mask.MaskType != MaskType.Geometrical)
+                    throw new ArgumentException("Expecting a geometrical mask.");
+
 #if DEBUG 
                 CellMask differingCells = ((CellMask)mask).Except(this.LevelSetData.Region.GetCutCellMask4LevSet(this.levelSetIndex));
                 if (differingCells.NoOfItemsLocally > 0) {
@@ -925,8 +928,8 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
                     for (int e = 0; e < gridData.iGeomCells.RefElements[0].NoOfFaces; e++) {
                         MultidimensionalArray levelSetNormals =
                             LevelSetEdgeSurfaceQuadRuleFactory.EvaluateRefNormalsOnEdge(this.owner.LevelSetData, i0 + i, CurrentRule, e);
-                        //MultidimensionalArray metrics = LevelSetEdgeSurfaceQuadRuleFactory.GetMetricTermsOnEdge(
-                        //    owner.tracker, owner.levSetInd, CurrentRule, i0 + i, e);
+                        MultidimensionalArray metrics = LevelSetEdgeSurfaceQuadRuleFactory.GetMetricTermsOnEdge(
+                            this.owner.LevelSetData, this.owner.levelSetIndex, CurrentRule, i0 + i, e);
 
                         for (int j = 0; j < CurrentRule.NumbersOfNodesPerFace[e]; j++) {
                             nodeIndex++;
@@ -936,7 +939,7 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
                                     EvalResult[i, nodeIndex, k] += lambdaValues[nodeIndex, k, d] * levelSetNormals[j, d];
                                 }
 
-                                //EvalResult[i, nodeIndex, k] *= metrics[j];
+                                EvalResult[i, nodeIndex, k] *= metrics[j];
                             }
                         }
                     }

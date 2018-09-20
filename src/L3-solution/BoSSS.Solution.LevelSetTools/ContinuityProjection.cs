@@ -63,12 +63,12 @@ namespace BoSSS.Solution.LevelSetTools {
         /// <param name="gridData"></param>
         /// <param name="Option">Choice of algorithm</param>
         /// <param name="SmoothedLevelSet">The Continuous Field</param>
-        public ContinuityProjection(SinglePhaseField DGLevelSet, Foundation.Grid.Classic.GridData gridData, ContinuityProjectionOption Option) {
+        public ContinuityProjection(SinglePhaseField DGLevelSet, IGridData gridData, ContinuityProjectionOption Option) {
             int k = DGLevelSet.Basis.Degree + 1;
             myOption = Option;
             switch (Option) {
                 case ContinuityProjectionOption.SpecFEM: {
-                        var ContinuousLevelSetBasis = new SpecFemBasis(gridData, k);
+                        var ContinuousLevelSetBasis = new SpecFemBasis((BoSSS.Foundation.Grid.Classic.GridData) gridData, k);
                         MyProjection = new ContinuityProjectionSpecFem(ContinuousLevelSetBasis);
                         break;
                     }

@@ -144,7 +144,8 @@ namespace BoSSS.Application.SipPoisson {
                     BoundaryCondMap<BoundaryType> PoissonBcMap = new BoundaryCondMap<BoundaryType>(this.GridData, this.Control.BoundaryValues, "T");
 
                     LapaceIp = new SpatialOperator(1, 1, QuadOrderFunc.SumOfMaxDegrees(), "T", "T");
-                    var flux = new ipFlux(penalty_base * base.Control.penalty_poisson, this.GridData.Cells.cj, PoissonBcMap);
+                    var flux = new ipFlux(penalty_base * base.Control.penalty_poisson, ((GridData)(this.GridData)).Cells.cj, PoissonBcMap);
+
                     LapaceIp.EquationComponents["T"].Add(flux);
 
                     LapaceIp.Commit();
@@ -162,8 +163,8 @@ namespace BoSSS.Application.SipPoisson {
                     Console.WriteLine("creating sparse system for {0} DOF's ...", T.Mapping.Ntotal);
 
                     // quadrature domain
-                    var volQrSch = new CellQuadratureScheme(true, CellMask.GetFullMask(this.GridData));
-                    var edgQrSch = new EdgeQuadratureScheme(true, EdgeMask.GetFullMask(this.GridData));
+                    var volQrSch = new CellQuadratureScheme(true, CellMask.GetFullMask(this.GridData, MaskType.Geometrical));
+                    var edgQrSch = new EdgeQuadratureScheme(true, EdgeMask.GetFullMask(this.GridData, MaskType.Geometrical));
 
 #if DEBUG
                     // in DEBUG mode, we compare 'MsrMatrix' (old, reference implementation) and 'BlockMsrMatrix' (new standard)
@@ -237,7 +238,7 @@ namespace BoSSS.Application.SipPoisson {
                 throw new NotImplementedException();
             }
 
-            SpecFemBasis SEM_basis = new SpecFemBasis(this.GridData, kSEM);
+            SpecFemBasis SEM_basis = new SpecFemBasis((GridData)(this.GridData), kSEM);
 
             SEM_basis.CellNodes[0].SaveToTextFile("NODES_SEM" + kSEM + ".txt");
             SEM_basis.MassMatrix.SaveToTextFileSparse("MASS_SEM" + kSEM + ".txt");
@@ -256,7 +257,7 @@ namespace BoSSS.Application.SipPoisson {
                 TEST.Clear();
                 TEST.ProjectField((_2D)((x, y) => x * y));
 
-                int J = this.GridData.Cells.NoOfCells;
+                int J = this.GridData.iGeomCells.Count;
                 int N = SEM_basis.NodesPerCell[0];
                 MultidimensionalArray TEST_at_NODES = MultidimensionalArray.Create(J, N);
 
@@ -806,26 +807,7 @@ namespace BoSSS.Application.SipPoisson {
                     MultigridChain[iLevel] = MgLevel;
 
 
-
-
-                    //Schwarz swz2 = new Schwarz() {
-                    //    m_MaxIterations = 1,
-                    //    CoarseSolver = null,
-                    //    m_BlockingStrategy = new Schwarz.METISBlockingStrategy() {
-                    //        NoOfParts = NoOfBlocks
-                    //    },
-                    //    Overlap = 0
-                    //};
-
-
-
-                    //*/
-
-
-
-
-
-
+                    
                     ISolverSmootherTemplate pre, pst;
                     if (iLevel > 0) {
 

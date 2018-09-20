@@ -25,7 +25,7 @@ using ilPSP;
 namespace BoSSS.Foundation.XDG {
     public partial class XDGField {
 
-        delegate void EvaluateInternalSignature(int j0, int L, NodeSet NS, Basis basis, MultidimensionalArray Coördinates, MultidimensionalArray ResultAcc, double ResultPreScale);
+        delegate void EvaluateInternalSignature(int j0, int L, NodeSet NS, Basis basis, MultidimensionalArray Coördinates, int coördOffset, MultidimensionalArray ResultAcc, double ResultPreScale);
 
 
         /// <summary>
@@ -168,8 +168,6 @@ namespace BoSSS.Foundation.XDG {
             }
         }
 
-
-
         MultidimensionalArray m_CoordinateBuffer;
 
         private void Evaluate_ithSpecies(int j0, NodeSet NodeSet, MultidimensionalArray result, int ResultCellindexOffset, double ResultPreScale, int iSpecies, EvaluateInternalSignature EvalFunc) {
@@ -181,9 +179,17 @@ namespace BoSSS.Foundation.XDG {
             if (m_CoordinateBuffer == null)
                 m_CoordinateBuffer = MultidimensionalArray.Create(1, M);
 
+
+            int jL;
+            if(this.GridDat.iGeomCells.GeomCell2LogicalCell == null) {
+                jL = j0;
+            } else {
+                jL = this.GridDat.iGeomCells.GeomCell2LogicalCell[j0];
+            }
+
             int N0 = iSpecies*M;
             for (int n = 0; n < M; n++)
-                m_CoordinateBuffer[0, n] = this.m_Coordinates[j0, n + N0];
+                m_CoordinateBuffer[0, n] = this.m_Coordinates[jL, n + N0];
 
             int LL = result.Dimension;
             int[] I0 = new int[LL], IE = new int[LL];
@@ -200,7 +206,7 @@ namespace BoSSS.Foundation.XDG {
 
             EvalFunc(j0, 1, NodeSet,
                 this.Basis.NonX_Basis,
-                m_CoordinateBuffer, resAcc, ResultPreScale);
+                m_CoordinateBuffer, 0, resAcc, ResultPreScale);
         }
 
         /// <summary>
@@ -213,7 +219,15 @@ namespace BoSSS.Foundation.XDG {
             Debug.Assert(result.GetLength(1) == K, "rank 1 is assumed to correlate with node set");
 
             double[] CoördBase = m_Coordinates.m_BaseStorage;
-            var Coörd = MultidimensionalArray.CreateWrapper(CoördBase, this.GridDat.iLogicalCells.NoOfCells, M);
+            var Coörd = MultidimensionalArray.CreateWrapper(CoördBase, this.GridDat.iLogicalCells.Count, M);
+
+            
+            if(this.GridDat.iGeomCells.GeomCell2LogicalCell == null) {
+                //jL = j0;
+            } else {
+                //jL = this.GridDat.iGeomCells.GeomCell2LogicalCell[j0];
+                throw new NotImplementedException("todo");
+            }
 
             var C = Coörd.ExtractSubArrayShallow(new int[] { j0, 0 }, new int[] { j0 + Len - 1, M - 1 });
 
@@ -232,7 +246,7 @@ namespace BoSSS.Foundation.XDG {
 
             EvalFunc(j0, Len, NodeSet,
                 this.Basis.NonX_Basis,
-                C, resAcc, ResultPreScale);
+                C, 0, resAcc, ResultPreScale);
         }
     }
 }
