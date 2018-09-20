@@ -223,7 +223,7 @@ namespace BoSSS.Application.IBM_Solver {
             get {
                 int VelDeg = this.Velocity.Max(field => field.Basis.Degree);
                 int Order = (VelDeg * (this.Control.PhysicalParameters.IncludeConvection ? 3 : 2));
-                Order += 2; // safety factor
+                Order += 1; // safety factor
                 return Order;
             }
         }
@@ -639,9 +639,9 @@ namespace BoSSS.Application.IBM_Solver {
                     }
                 }
 
-                force = IBMSolverUtils.GetForces(Velocity, Pressure, this.LsTrk, this.Control.PhysicalParameters.mu_A);
+                //force = IBMSolverUtils.GetForces(Velocity, Pressure, this.LsTrk, this.Control.PhysicalParameters.mu_A);
                 //oldtorque = torque;
-                torque = IBMSolverUtils.GetTorque(Velocity, Pressure, this.LsTrk, this.Control.PhysicalParameters.mu_A, this.Control.particleRadius);
+                //torque = IBMSolverUtils.GetTorque(Velocity, Pressure, this.LsTrk, this.Control.PhysicalParameters.mu_A, this.Control.particleRadius);
 
                 if ((base.MPIRank == 0) && (Log_DragAndLift != null)) {
                     string line;

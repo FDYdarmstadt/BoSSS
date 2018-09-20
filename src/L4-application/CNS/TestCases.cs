@@ -248,6 +248,8 @@ namespace CNS {
             //dbPath = @"c:\bosss_db";                                          // Local
             //dbPath = @"\\dc1\userspace\geisenhofer\bosss_db_IBMShockTube";    // Network
 
+            //dbPath = @"\\dc1\userspace\Krueger\BoSSS\BoSSS_DBs\markus_ShockVortexInteraction";
+
             c.DbPath = dbPath;
             c.savetodb = dbPath != null;
             c.saveperiod = savePeriod;

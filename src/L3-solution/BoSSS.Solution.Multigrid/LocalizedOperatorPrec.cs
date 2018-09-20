@@ -134,10 +134,10 @@ namespace BoSSS.Solution.Multigrid {
             M.AccSubMatrixTo(1.0, pGrad, Uidx, default(int[]), Pidx, default(int[]), default(int[]), default(int[]));
             M.AccSubMatrixTo(1.0, divVel, Pidx, default(int[]), Uidx, default(int[]), default(int[]), default(int[]));
 
-            LocalMatrix.SaveToTextFileSparse("LocalConvDiffMatrix");
-            ConvDiff.SaveToTextFileSparse("ConvDiff");
-            op.MassMatrix.SaveToTextFileSparse("MassMatrix");
-            VelocityMass.SaveToTextFileSparse("VelocityMass");
+            //LocalMatrix.SaveToTextFileSparse("LocalConvDiffMatrix");
+            //ConvDiff.SaveToTextFileSparse("ConvDiff");
+            //op.MassMatrix.SaveToTextFileSparse("MassMatrix");
+            //VelocityMass.SaveToTextFileSparse("VelocityMass");
         }
 
         public void ResetStat() {
