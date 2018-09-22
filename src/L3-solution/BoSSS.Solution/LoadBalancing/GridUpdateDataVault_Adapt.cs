@@ -226,7 +226,7 @@ namespace BoSSS.Solution {
 
 
         /// <summary>
-        /// Loads the DG coordinates after grid-redistribution.
+        /// Loads the DG coordinates after grid adaptation.
         /// </summary>
         /// <param name="f"></param>
         /// <param name="Reference">
@@ -369,7 +369,8 @@ namespace BoSSS.Solution {
             Debug.Assert(ReDistDGCoords_jl.Length == Np);
 
             for(int n = 0; n < Np; n++) {
-                Coords_j[n] = f.Coordinates[j, N0acc + n];
+                //Coords_j[n] = f.Coordinates[j, N0acc + n]; // Warum????
+                Coords_j[n] = 0.0;
             }
             
             int L = ReDistDGCoords_j.Length;

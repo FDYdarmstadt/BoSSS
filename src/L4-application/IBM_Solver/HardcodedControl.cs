@@ -65,7 +65,10 @@ namespace BoSSS.Application.IBM_Solver {
             C.dtMin = dt;
             C.Endtime = 60;
             C.NoOfTimesteps = 1;
+            C.MaxKrylovDim = 1000;
             C.NonlinearSolve = NonlinearSolverCodes.NewtonGMRES;
+            C.LinearSolve = LinearSolverCodes.exp_localPrec;
+            C.VelocityBlockPrecondMode = MultigridOperator.Mode.SymPart_DiagBlockEquilib_DropIndefinite;
 
             // Physical values
             C.PhysicalParameters.rho_A = 1;
@@ -86,7 +89,7 @@ namespace BoSSS.Application.IBM_Solver {
 
                 if (!periodic) {
                     grd.EdgeTagNames.Add(1, "Velocity_inlet");
-                    //grd.EdgeTagNames.Add(4, "Pressure_Outlet");
+                    grd.EdgeTagNames.Add(4, "Pressure_Outlet");
                 }
 
                 grd.EdgeTagNames.Add(2, "Wall_bottom");
@@ -112,7 +115,7 @@ namespace BoSSS.Application.IBM_Solver {
 
                         if (Math.Abs(x - (10)) < 1.0e-6)
                             // right
-                            return 1;
+                            return 4;
                     }
                     throw new ArgumentOutOfRangeException();
                 });
@@ -131,7 +134,7 @@ namespace BoSSS.Application.IBM_Solver {
 
             if (!periodic) {
                 C.AddBoundaryValue("Velocity_inlet", "VelocityX", X => 1 - X[1] * X[1]);
-                //C.AddBoundaryCondition("Pressure_Outlet");
+                C.AddBoundaryValue("Pressure_Outlet");
             }
 
             C.AddBoundaryValue("Wall_bottom");
@@ -301,7 +304,7 @@ namespace BoSSS.Application.IBM_Solver {
 
                 switch (i) {
                     case 1:
-                        C.MeshFactor = 1.33; // was 1.33
+                        C.MeshFactor = 0.3; // was 1.33
                         break;
 
                     case 2:
@@ -473,7 +476,7 @@ namespace BoSSS.Application.IBM_Solver {
                 //C.InitialValues.Add("Phi", X => ((X[0] / (radius * BaseSize)) - mPx) * (X[0] / (radius * BaseSize)) - mPx) + ((X[1]) / (radius * BaseSize)) - 2.)Pow2() - radius.Pow2()));  // quadratic form
                 //    );
                 C.InitialValues_Evaluators.Add("Phi", X => -(X[0]).Pow2() + -(X[1]).Pow2() + radius.Pow2());
-                //C.InitialValues.Add("Phi", X => -1);
+                //C.InitialValues_Evaluators.Add("Phi", X => -1);
 
                 C.InitialValues_Evaluators.Add("VelocityX", X => 4 * 1.5 * (X[1] + 2) * (4.1 - (X[1] + 2)) / (4.1 * 4.1));
                 //C.InitialValues.Add("VelocityX", delegate (double[] X)
@@ -524,16 +527,18 @@ namespace BoSSS.Application.IBM_Solver {
                 C.AdvancedDiscretizationOptions.PenaltySafety = 4;
                 C.LevelSetSmoothing = false;
                 //C.option_solver = "direct";
-                C.MaxKrylovDim = 20;
+                C.MaxKrylovDim = 1000;
                 C.MaxSolverIterations = 50;
                 C.VelocityBlockPrecondMode = MultigridOperator.Mode.SymPart_DiagBlockEquilib_DropIndefinite;
-                C.NoOfMultigridLevels = 0;
+                C.NoOfMultigridLevels = 1;
+                C.NonlinearSolve = NonlinearSolverCodes.NewtonGMRES;
+                C.LinearSolve = LinearSolverCodes.exp_Schur;
 
                 // Timestepping
                 // ============
 
                 C.Timestepper_Scheme = IBM_Control.TimesteppingScheme.ImplicitEuler;
-                double dt = 1E14;
+                double dt = 1E20;
                 C.dtMax = dt;
                 C.dtMin = dt;
                 C.Endtime = 70;
@@ -1311,6 +1316,10 @@ namespace BoSSS.Application.IBM_Solver {
             VelocityYex = (X, t) => (0);
             Pressure = (X, t) => (0);
 
+            C.NonlinearSolve = NonlinearSolverCodes.PicardGMRES;
+
+            C.LinearSolve = LinearSolverCodes.exp_Schur;
+
 
 
             C.AddBoundaryValue("Velocity_inlet", "VelocityX", X => 1);
@@ -1331,7 +1340,7 @@ namespace BoSSS.Application.IBM_Solver {
             return C;
         }
 
-        static public IBM_Control BackwardStep(int k = 2, int cells_x = 20, int cells_y = 10, string dbpath = null) {
+        static public IBM_Control BackwardStep(int k = 2, int cells_x = 40, int cells_y = 20, string dbpath = null) {
             IBM_Control C = new IBM_Control();
 
 
@@ -1363,6 +1372,8 @@ namespace BoSSS.Application.IBM_Solver {
             C.dtMin = dt;
             C.Endtime = 60;
             C.NoOfTimesteps = 1;
+            C.NonlinearSolve = NonlinearSolverCodes.Picard;
+            C.LinearSolve = LinearSolverCodes.classic_mumps;
 
             // Physical values
             C.PhysicalParameters.rho_A = 1;
@@ -1454,60 +1465,8 @@ namespace BoSSS.Application.IBM_Solver {
             VelocityYex = (X, t) => (0);
             Pressure = (X, t) => (0);
 
-            ISolverSmootherTemplate Prec;
-
-            Prec = new SchurPrecond()
-            {
-                SchurOpt = SchurPrecond.SchurOptions.decoupledApprox,
-                ApproxScaling = true
-            };
-
 
             //Prec = new DirectSolver()
-            //{
-            //    WhichSolver = DirectSolver._whichSolver.MUMPS
-            //};
-
-            //Prec = new SchurPrecond()
-            //{
-            //    SchurOpt = SchurPrecond.SchurOptions.SIMPLE
-            //};
-
-            //Prec = new Schwarz()
-            //{
-            //    m_BlockingStrategy = new Schwarz.METISBlockingStrategy()
-            //    {
-            //        NoOfParts = 5,
-            //    },
-            //    CoarseSolver = new DirectSolver()
-            //    {
-            //        WhichSolver = DirectSolver._whichSolver.MUMPS
-            //    },
-            // overlap =1
-            //};
-
-
-            //Prec = new Schwarz()
-            //{
-            //    m_BlockingStrategy = new Schwarz.MultigridBlocks()
-            //    {
-            //        Depth = 5,
-            //    },
-            //    CoarseSolver = new DirectSolver()
-            //    {
-            //        WhichSolver = DirectSolver._whichSolver.MUMPS
-            //    },
-            //    overlap = 1
-            //};
-
-
-            //C.LinearSolver = new SoftGMRES()
-            //{
-            //    MaxKrylovDim = C.MaxKrylovDim,
-            //    Precond = Prec,
-            //    m_Tolerance = 1E-6,
-            //    m_MaxIterations = 50
-            //};
 
 
             C.AddBoundaryValue("Velocity_inlet", "VelocityX", X => -4*X[1]*(X[1]+4));

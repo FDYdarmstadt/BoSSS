@@ -119,9 +119,9 @@ namespace BoSSS.Application.BoSSSpad {
             eval.ReferenceAssembly(typeof(BoSSS.Application.SipPoisson.SipPoissonMain).Assembly);
 
             // Helical shit
-            eval.ReferenceAssembly(typeof(KontiHelical.HelicalMain).Assembly);
+            //eval.ReferenceAssembly(typeof(KontiHelical.HelicalMain).Assembly);
            // eval.ReferenceAssembly(typeof(PosissonScalar3CylinderCoords.PoissonScalar3CCMain).Assembly);
-            eval.ReferenceAssembly(typeof(PoissonScalar2CylinderCoords.PoissonScalar2CCMain).Assembly);
+            //eval.ReferenceAssembly(typeof(PoissonScalar2CylinderCoords.PoissonScalar2CCMain).Assembly);
 
 
             eval.Compile(

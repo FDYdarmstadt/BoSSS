@@ -11,7 +11,7 @@ using BoSSS.Foundation.Quadrature;
 
 namespace BoSSS.Foundation.XDG.Quadrature
 {
-    public class LinearPSI<S>
+    class LinearPSI<S>
         : IPsi
         where S : RefElement
 
@@ -125,7 +125,7 @@ namespace BoSSS.Foundation.XDG.Quadrature
         }
     }
 
-    public class LinearSayeSpace<T> :
+    class LinearSayeSpace<T> :
         SayeArgument<LinearPSI<T>>
         where T : RefElement
     {
@@ -334,7 +334,7 @@ namespace BoSSS.Foundation.XDG.Quadrature
         #endregion
     }
 
-    public class TreeNode<T>
+    class TreeNode<T>
     {
         LinkedList<TreeNode<T>> children = new LinkedList<TreeNode<T>>();
         TreeNode<T> parent;
@@ -411,7 +411,7 @@ namespace BoSSS.Foundation.XDG.Quadrature
         }
     }
 
-    public class SayeQuadRule //: IEnumerable<Tuple<MultidimensionalArray, double>>
+    class SayeQuadRule //: IEnumerable<Tuple<MultidimensionalArray, double>>
     {
         private SayeQuadRule() { }
 
@@ -443,11 +443,13 @@ namespace BoSSS.Foundation.XDG.Quadrature
         }   
     }
 
-    public class NodesAndWeightsLinkedList :ISayeQuadRule
+    abstract class NodesAndWeights : ISayeQuadRule
     {
-        static LinkedList<Tuple<MultidimensionalArray, double>> data = new LinkedList<Tuple<MultidimensionalArray, double>>();
+        //Must be static in implementation
+        protected abstract LinkedList<Tuple<MultidimensionalArray, double>> data { get; set; }
 
-        static LinkedListNode<Tuple<MultidimensionalArray, double>> activeNode;
+        //Must be static in implementation
+        protected abstract LinkedListNode<Tuple<MultidimensionalArray, double>> activeNode { get; set; }
 
         public void Reset()
         {
@@ -459,18 +461,16 @@ namespace BoSSS.Foundation.XDG.Quadrature
         int length = 0;
 
         RefElement refElement;
-        
-        public NodesAndWeightsLinkedList(int SpatialDim, RefElement _refElement)
+
+        public NodesAndWeights(int SpatialDim, RefElement _refElement)
         {
             spatialDim = SpatialDim;
             refElement = _refElement;
         }
 
-        public IEnumerable<Tuple<MultidimensionalArray, double>> IntegrationNodes 
-        {
-            get 
-            {
-                if(length > 0)
+        public IEnumerable<Tuple<MultidimensionalArray, double>> IntegrationNodes {
+            get {
+                if (length > 0)
                 {
                     int counter = 0;
                     activeNode = startNode;
@@ -495,9 +495,9 @@ namespace BoSSS.Foundation.XDG.Quadrature
         {
             //SayeQuadRule rule = _rule as SayeQuadRule;
             //Debug.Assert(rule != null);
-            
+
             //SetStartNode
-            MultidimensionalArray node = rule.Nodes.ExtractSubArrayShallow(new int[] { 0, -1}).ResizeShallow(new int[] { 1, spatialDim});
+            MultidimensionalArray node = rule.Nodes.ExtractSubArrayShallow(new int[] { 0, -1 }).ResizeShallow(new int[] { 1, spatialDim });
             double weight = rule.Weights[0];
 
             if (deriveFromExistingNode == true)
@@ -527,7 +527,7 @@ namespace BoSSS.Foundation.XDG.Quadrature
 
             for (int i = 1; i < rule.NoOfNodes; ++i)
             {
-                node = rule.Nodes.ExtractSubArrayShallow(new int[] { i, -1 }).ResizeShallow(new int[] { 1, spatialDim});
+                node = rule.Nodes.ExtractSubArrayShallow(new int[] { i, -1 }).ResizeShallow(new int[] { 1, spatialDim });
                 weight = rule.Weights[i];
                 Tuple<MultidimensionalArray, double> newValue = new Tuple<MultidimensionalArray, double>(node, weight);
                 AddNode = data.AddAfter(AddNode, newValue);
@@ -544,14 +544,13 @@ namespace BoSSS.Foundation.XDG.Quadrature
 
         public QuadRule GetQuadRule()
         {
-            
             MultidimensionalArray Nodes = MultidimensionalArray.Create(new int[] { data.Count, spatialDim });
-            MultidimensionalArray Weights = MultidimensionalArray.Create(new int[] { data.Count});
+            MultidimensionalArray Weights = MultidimensionalArray.Create(new int[] { data.Count });
             int i = 0;
             foreach (Tuple<MultidimensionalArray, double> dataNode in data)
             {
                 Weights[i] = dataNode.Item2;
-                for(int j = 0; j < spatialDim; ++j)
+                for (int j = 0; j < spatialDim; ++j)
                 {
 
                     Nodes[i, j] = dataNode.Item1[0, j];
@@ -565,7 +564,79 @@ namespace BoSSS.Foundation.XDG.Quadrature
         }
     }
 
-    public class NodesAndWeightsHashMap :ISayeQuadRule
+    class NodesAndWeightsLinkedList :NodesAndWeights
+    {
+        static LinkedList<Tuple<MultidimensionalArray, double>> Data =
+            new LinkedList<Tuple<MultidimensionalArray, double>>();
+
+        static LinkedListNode<Tuple<MultidimensionalArray, double>> ActiveNode;
+
+
+        protected override LinkedList<Tuple<MultidimensionalArray, double>> data 
+        {
+            get 
+            {
+                return Data;
+            }
+            set 
+            {
+                Data = value;
+            }
+        }
+
+        protected override LinkedListNode<Tuple<MultidimensionalArray, double>> activeNode 
+        {
+            get 
+            {
+                return ActiveNode; 
+            }
+            set 
+            {
+                ActiveNode = value;
+            }
+        }
+
+        public NodesAndWeightsLinkedList(int SpatialDim, RefElement _refElement) 
+            : base(SpatialDim, _refElement)
+        {
+        }
+
+    }
+
+    class NodesAndWeightsSurface : NodesAndWeights
+    {
+        static LinkedList<Tuple<MultidimensionalArray, double>> Data =
+            new LinkedList<Tuple<MultidimensionalArray, double>>();
+
+        static LinkedListNode<Tuple<MultidimensionalArray, double>> ActiveNode;
+
+
+        protected override LinkedList<Tuple<MultidimensionalArray, double>> data {
+            get {
+                return Data;
+            }
+            set {
+                Data = value;
+            }
+        }
+
+        protected override LinkedListNode<Tuple<MultidimensionalArray, double>> activeNode {
+            get {
+                return ActiveNode;
+            }
+            set {
+                ActiveNode = value;
+            }
+        }
+
+        public NodesAndWeightsSurface(int SpatialDim, RefElement _refElement)
+            : base(SpatialDim, _refElement)
+        {
+        }
+
+    }
+
+    class NodesAndWeightsHashMap :ISayeQuadRule
     {
         public NodesAndWeightsHashMap()
         {
@@ -595,11 +666,12 @@ namespace BoSSS.Foundation.XDG.Quadrature
         List<double> list;
         double min;
         double max;
-        double tolerance = 1.0e-13;
+        readonly double tolerance;
 
-        public SayeSortedList(int initialSize)
+        public SayeSortedList(int initialSize, double Tolerance)
         {
             list = new List<double>( initialSize);
+            tolerance = Tolerance;
         }
 
         public void SetBounds(double Min, double Max)

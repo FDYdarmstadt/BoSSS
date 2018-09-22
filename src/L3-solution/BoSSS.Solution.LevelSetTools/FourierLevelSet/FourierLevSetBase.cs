@@ -926,10 +926,10 @@ namespace BoSSS.Solution.LevelSetTools.FourierLevelSet {
             return current_samplP;
         }
 
-        /// <summary>
-        /// saves L2-error of the Fourier series onto the DG-Fields
-        /// </summary>
-        TextWriter Log_projErrFLS;
+        ///// <summary>
+        ///// saves L2-error of the Fourier series onto the DG-Fields
+        ///// </summary>
+        //TextWriter Log_projErrFLS;
 
         /// <summary>
         /// saves interpolated sample points

@@ -117,7 +117,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
                         C.PhysicalParameters.betaS_B = 1.5;
 
                         C.PhysicalParameters.betaL = 0.0;
-                        C.PhysicalParameters.Theta_e = Math.PI / 2.0;
+                        C.PhysicalParameters.theta_e = Math.PI / 2.0;
                         break;
                     }
                 case 2: {
@@ -131,7 +131,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
                         C.PhysicalParameters.betaS_B = 1.5;
 
                         C.PhysicalParameters.betaL = 0.0;
-                        C.PhysicalParameters.Theta_e = Math.Acos(0.38);
+                        C.PhysicalParameters.theta_e = Math.Acos(0.38);
                         break;
                     }
             }
