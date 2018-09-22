@@ -241,6 +241,7 @@ namespace BoSSS.Solution {
                 if(!object.ReferenceEquals(NewGrid, f.Basis.GridDat))
                     throw new ArgumentException("DG field must be assigned to new grid.");
 
+                f.Clear();
 
                 int[][] TargMappingIdx = m_Old2NewCorr.GetTargetMappingIndex(NewGrid.CellPartitioning);
                 double[][][] ReDistDGCoords = m_newDGFieldData_GridAdapta[Reference];
@@ -369,8 +370,8 @@ namespace BoSSS.Solution {
             Debug.Assert(ReDistDGCoords_jl.Length == Np);
 
             for(int n = 0; n < Np; n++) {
-                //Coords_j[n] = f.Coordinates[j, N0acc + n]; // Warum????
-                Coords_j[n] = 0.0;
+                Coords_j[n] = f.Coordinates[j, N0acc + n]; // for coarsening, we 'touch' each cell multiple times -- therefore, values must be accumulated
+                //Coords_j[n] = 0.0;
             }
             
             int L = ReDistDGCoords_j.Length;
