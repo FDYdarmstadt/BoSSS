@@ -75,6 +75,7 @@ namespace BoSSS.Solution.NSECommon {
                 case IncompressibleBcType.Velocity_Inlet:
                 case IncompressibleBcType.Wall:
                 case IncompressibleBcType.FreeSlip:
+                case IncompressibleBcType.SlipSymmetry:
                 case IncompressibleBcType.NavierSlip_Linear:
                 case IncompressibleBcType.NoSlipNeumann:
                     // hom. Neumann b.c.

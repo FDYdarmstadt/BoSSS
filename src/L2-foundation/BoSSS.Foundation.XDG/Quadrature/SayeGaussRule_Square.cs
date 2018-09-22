@@ -15,9 +15,10 @@ using System.Collections;
 
 namespace BoSSS.Foundation.XDG.Quadrature
 {
-    public class SayeFactory_Square :
+    class SayeFactory_Square :
         SayeComboIntegrand<LinearPSI<Square>, SayeSquare>,
-        ISayeGaussRule<LinearPSI<Square>, SayeSquare>
+        ISayeGaussRule,
+        ISayeGaussComboRule
     {
         LevelSetTracker.LevelSetData lsData;
 
@@ -27,8 +28,7 @@ namespace BoSSS.Foundation.XDG.Quadrature
 
         int iKref;
 
-        public enum QuadratureMode { Surface, PositiveVolume, NegativeVolume };
-
+        public enum QuadratureMode { Surface, PositiveVolume, NegativeVolume, Combo };
 
         QuadratureMode quadratureMode;
 
@@ -50,6 +50,12 @@ namespace BoSSS.Foundation.XDG.Quadrature
 
         public int order { get; set; }
 
+        public QuadRule Evaluate(int Cell)
+        {
+            SayeSquare startArg = CreateStartSetup();
+            return Evaluate(Cell, startArg);
+        }
+
         public SayeSquare CreateStartSetup()
         {
             bool IsSurfaceIntegral = ( quadratureMode == QuadratureMode.Surface );
@@ -61,48 +67,29 @@ namespace BoSSS.Foundation.XDG.Quadrature
             return arg;
         }
 
-//<<<<<<< HEAD
-//        #region IQaudRuleFactory<QuadRule>
-
-//        public IEnumerable<IChunkRulePair<QuadRule>> GetQuadRuleSet(ExecutionMask mask, int Order)
-//        {
-//            if (mask.MaskType != MaskType.Geometrical)
-//                throw new ArgumentException("Expecting a geometrical mask.");
-
-//            order = Order;
-//            QuadRule gaussRule_1D = Line.Instance.GetQuadratureRule(Order);
-//            var result = new List<ChunkRulePair<QuadRule>>();
-//            grid = mask.GridData;
-//            iKref = mask.GridData.iGeomCells.RefElements.IndexOf(this.RefElement, (A, B) => object.ReferenceEquals(A, B));
-
-//            int number = 0;
-//            Stopwatch stopWatch = new Stopwatch();
-//            stopWatch.Start();
-//            //Find quadrature nodes and weights in each cell/chunk
-//            foreach (Chunk chunk in mask)
-//            {
-//                foreach (int cell in chunk.Elements)
-//                {
-//                    SayeSquare arg = CreateStartSetup();
-//                    QuadRule sayeRule = this.Evaluate(cell, arg);
-//                    ChunkRulePair<QuadRule> sayePair = new ChunkRulePair<QuadRule>(Chunk.GetSingleElementChunk(cell), sayeRule);
-//                    result.Add(sayePair);
-//                    ++number;
-//                }
-//            }
-//            stopWatch.Stop();
-//            long ts = stopWatch.ElapsedMilliseconds;
-//            Console.WriteLine("Number Of Cells " + number);
-//            Console.WriteLine("RunTime " + ts + "ms");
-//            return result;
-//        }
-
-//=======
-//>>>>>>> experimental/master
         public RefElement RefElement {
             get {
                 return Square.Instance;
             }
+        }
+
+        #endregion
+
+        #region ISayeGaussComboRule
+
+        public QuadRule[] ComboEvaluate(int Cell)
+        {
+            SayeSquare startArg = CreateStartSetup();
+            return ComboEvaluate(Cell, startArg);
+        }
+
+        #endregion
+
+        #region SayeComboIntegrand
+
+        protected override ISayeQuadRule GetEmptySurfaceRule()
+        {
+            return new NodesAndWeightsSurface(RefElement.SpatialDimension, RefElement);
         }
 
         #endregion
@@ -149,6 +136,8 @@ namespace BoSSS.Foundation.XDG.Quadrature
             return value;
         }
 
+
+        static readonly double sqrt_2 = Math.Sqrt(2.0);
         /// <summary>
         /// First order approximation of  delta >= sup_x|psi(x) - psi(x_center)|  
         /// </summary>
@@ -170,7 +159,7 @@ namespace BoSSS.Foundation.XDG.Quadrature
             MultidimensionalArray grad = ScaledReferenceGradient(nodeOnPsi, cell);
             
             grad.ApplyAll(x => Math.Abs(x));     
-            double delta = grad.InnerProduct(diameters);
+            double delta = grad.InnerProduct(diameters) * sqrt_2;
 
             return delta;
         }
@@ -247,6 +236,8 @@ namespace BoSSS.Foundation.XDG.Quadrature
 
         #endregion
 
+        #region Evaluate Saye Integrand
+
         private MultidimensionalArray ScaledReferenceGradient(NodeSet Node, int Cell)
         {
             MultidimensionalArray gradient = lsData.GetLevelSetReferenceGradients(Node, Cell, 1);
@@ -261,7 +252,12 @@ namespace BoSSS.Foundation.XDG.Quadrature
             return gradient;
         }
 
-        #region Evaluate Saye Integrand
+        protected override QuadRule CreateZeroQuadrule()
+        {
+            QuadRule zeroRule = QuadRule.CreateEmpty(RefElement, 1, RefElement.SpatialDimension);
+            zeroRule.Nodes.LockForever();
+            return zeroRule;
+        }
 
         protected override SayeQuadRule SetLowOrderQuadratureNodes(SayeSquare arg)
         {
@@ -360,9 +356,12 @@ namespace BoSSS.Foundation.XDG.Quadrature
             NodeSet node = new NodeSet(RefElement, X.To2DArray());
             MultidimensionalArray gradient = lsData.GetLevelSetGradients(node, cell, 1);
             gradient = gradient.ExtractSubArrayShallow(new int[] { 0, 0, -1 });
-            
+
+            MultidimensionalArray jacobian = grid.Jacobian.GetValue_Cell(node, cell, 1).ExtractSubArrayShallow(0, 0, -1, -1);
+
             //Scale weight
-            weight *= gradient.L2Norm() / Math.Abs(gradient[heightDirection]);
+            weight *= gradient.L2Norm()/ Math.Abs(gradient[heightDirection]);
+            weight /= jacobian[heightDirection, heightDirection];
 
             MultidimensionalArray weightArr = new MultidimensionalArray(1);
             weightArr.Allocate(1);
@@ -386,7 +385,7 @@ namespace BoSSS.Foundation.XDG.Quadrature
         #endregion
     }
 
-    public class SayeSquare :
+    class SayeSquare :
         SayeArgument<LinearPSI<Square>>
     {
         static Square refElement = Square.Instance;
