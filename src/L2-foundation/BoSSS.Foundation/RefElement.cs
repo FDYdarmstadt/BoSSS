@@ -1787,10 +1787,7 @@ namespace BoSSS.Foundation.Grid.RefElements {
                         Debug.Assert(Math.Abs(LeafVal - RootVal) < 1.0e-8);
                     }
                 }
-
-
 #endif
-
                 return A;
             }
 
