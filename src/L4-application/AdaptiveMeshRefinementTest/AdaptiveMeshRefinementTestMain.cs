@@ -30,16 +30,17 @@ namespace BoSSS.Application.AdaptiveMeshRefinementTest {
     class AdaptiveMeshRefinementTestMain : BoSSS.Solution.Application {
         
         static void Main(string[] args) {
-            //BoSSS.Solution.Application._Main(
-            //    args,
-            //    true,
-            //    () => new AdaptiveMeshRefinementTestMain());
-            AllUpTest.SetUp();
-            AllUpTest.RuntimeCostDynamicBalanceTest(2);
-            AllUpTest.TestFixtureTearDown();
+            BoSSS.Solution.Application._Main(
+                args,
+                true,
+                () => new AdaptiveMeshRefinementTestMain());
+            //AllUpTest.SetUp();
+            //AllUpTest.RuntimeCostDynamicBalanceTest(2);
+            //AllUpTest.TestFixtureTearDown();
         }
 
         protected override GridCommons CreateOrLoadGrid() {
+            /*
             double[] xNodes = GenericBlas.Linspace(-5, 5, 21);
             double[] yNodes = GenericBlas.Linspace(-5, 5, 21);
             //double[] xNodes = GenericBlas.Linspace(-3, 3, 4);
@@ -47,6 +48,17 @@ namespace BoSSS.Application.AdaptiveMeshRefinementTest {
 
             var grd = Grid2D.Cartesian2DGrid(xNodes, yNodes);
             return grd;
+            */
+
+           
+            double[] xNodes = GenericBlas.Linspace(-5, 5, 21);
+            double[] yNodes = GenericBlas.Linspace(-5, 5, 21);
+            //double[] xNodes = GenericBlas.Linspace(-3, 3, 4);
+            //double[] yNodes = GenericBlas.Linspace(-1, 1, 2);
+
+            var grd =  Grid2D.BilinearSquareGrid(xNodes, yNodes, factor:0.8);
+            return grd;
+            
         }
 
         public override void Init(BoSSS.Solution.Control.AppControl control) {
@@ -81,10 +93,15 @@ namespace BoSSS.Application.AdaptiveMeshRefinementTest {
             base.m_RegisteredFields.Add(LevSet);
 
             var xBasis = new XDGBasis(base.LsTrk, DEGREE);
+
             uX = new XDGField(xBasis, "uX");
-            uX.UpdateBehaviour = BehaveUnder_LevSetMoovement.AutoExtrapolate;
             uXResidual = new XDGField(xBasis, "ResX");
             uXEx = new XDGField(xBasis, "uXEx");
+
+            uX.UpdateBehaviour = BehaveUnder_LevSetMoovement.JustReallocate;
+            uXResidual.UpdateBehaviour = BehaveUnder_LevSetMoovement.JustReallocate;
+            uXEx.UpdateBehaviour = BehaveUnder_LevSetMoovement.JustReallocate;
+
             base.m_RegisteredFields.Add(uX);
             base.m_RegisteredFields.Add(uXResidual);
             base.m_RegisteredFields.Add(uXEx);
@@ -94,7 +111,7 @@ namespace BoSSS.Application.AdaptiveMeshRefinementTest {
         /// <summary>
         /// DG polynomial degree
         /// </summary>
-        internal int DEGREE = 3;
+        internal int DEGREE = 4;
 
         /// <summary>
         /// Setting initial value.
@@ -104,6 +121,12 @@ namespace BoSSS.Application.AdaptiveMeshRefinementTest {
             DelUpdateLevelset(new DGField[] { uX }, 0.0, 0.0, 1.0, false);
 
             uX.ProjectField((x, y) => 1.0);
+            
+            // check error
+            double L2err = TestData.L2Error(TestDataFunc);
+            Console.WriteLine("Projection error from old to new grid: " + L2err);
+            Assert.LessOrEqual(L2err, 1.0e-8, "Projection error of test field to high.");
+
 
             /*
             RefinedGrid = this.GridData;
@@ -224,12 +247,12 @@ namespace BoSSS.Application.AdaptiveMeshRefinementTest {
             if(GradMag > 0.81)
                 DesiredLevel_j = 2;
 
-            return DesiredLevel_j;
+            return Math.Max(CurrentLevel, DesiredLevel_j);
         }
 
         protected override void AdaptMesh(int TimestepNo, out GridCommons newGrid, out GridCorrelation old2NewGrid) {
-
             if(TimestepNo > 3 && TimestepNo % 3 != 0) {
+            //{ 
                 newGrid = null;
                 old2NewGrid = null;
                 return;
@@ -287,7 +310,7 @@ namespace BoSSS.Application.AdaptiveMeshRefinementTest {
                 // check error
                 double L2err = TestData.L2Error(TestDataFunc);
                 Console.WriteLine("Projection error from old to new grid: " + L2err);
-                Assert.LessOrEqual(L2err, 1.0e-8, "Projection error from old to new grid to high.");
+                //Assert.LessOrEqual(L2err, 1.0e-8, "Projection error from old to new grid to high.");
 
                 // return
                 //base.TerminationKey = true;

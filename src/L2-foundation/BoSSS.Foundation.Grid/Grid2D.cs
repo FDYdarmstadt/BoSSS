@@ -875,8 +875,7 @@ namespace BoSSS.Foundation.Grid.Classic {
                         grid.Cells[0] = Cj0;
                         grid.Cells[0].NodeIndices = new int[] { 0, 1, 2, 3 };
 
-                    }
-                    else {
+                    } else {
 
 
                         for (int i = 0; i < (xNodes.Length - 1); i++) {
@@ -887,54 +886,54 @@ namespace BoSSS.Foundation.Grid.Classic {
                                 Cj0.TransformationParams = MultidimensionalArray.Create(4, 2);
                                 var Bild0 = Cj0.TransformationParams;
 
+                                double dx = xNodes[i + 1] - xNodes[i];
+                                double KK = dx / (yNodes.Length);
+
+
                                 if (i == 0) {
                                     Bild0[0, 0] = xNodes[i];
-                                    Bild0[1, 0] = xNodes[i + 1] - k * factor;
+                                    Bild0[1, 0] = xNodes[i + 1] - k * KK * factor;
                                     Bild0[2, 0] = xNodes[i];
-                                    Bild0[3, 0] = xNodes[i + 1] - (k + 1) * factor;
+                                    Bild0[3, 0] = xNodes[i + 1] - (k + 1) * KK * factor;
                                     Bild0[0, 1] = yNodes[k];
                                     Bild0[1, 1] = yNodes[k];
                                     Bild0[2, 1] = yNodes[k + 1];
                                     Bild0[3, 1] = yNodes[k + 1];
-                                    Rotate(Bild0, Rotation);
-                                }
-                                else if (i == xNodes.Length - 2) {
-                                    Bild0[0, 0] = (xNodes[i] > threshold) ? (xNodes[i]) : (xNodes[i] - k * factor);
+                                } else if (i == xNodes.Length - 2) {
+                                    Bild0[0, 0] = (xNodes[i] > threshold) ? (xNodes[i]) : (xNodes[i] - k * KK * factor);
                                     Bild0[1, 0] = xNodes[i + 1];
-                                    Bild0[2, 0] = (xNodes[i] > threshold) ? (xNodes[i]) : (xNodes[i] - (k + 1) * factor);
+                                    Bild0[2, 0] = (xNodes[i] > threshold) ? (xNodes[i]) : (xNodes[i] - (k + 1) * KK * factor);
                                     Bild0[3, 0] = xNodes[i + 1];
                                     Bild0[0, 1] = yNodes[k];
                                     Bild0[1, 1] = yNodes[k];
                                     Bild0[2, 1] = yNodes[k + 1];
                                     Bild0[3, 1] = yNodes[k + 1];
-                                    Rotate(Bild0, Rotation);
-                                }
-                                else {
-                                    Bild0[0, 0] = (xNodes[i] > threshold) ? (xNodes[i]) : (xNodes[i] - k * factor);
-                                    Bild0[1, 0] = (xNodes[i + 1] > threshold) ? (xNodes[i + 1]) : (xNodes[i + 1] - k * factor);
-                                    Bild0[2, 0] = (xNodes[i] > threshold) ? (xNodes[i]) : (xNodes[i] - (k + 1) * factor);
-                                    Bild0[3, 0] = (xNodes[i + 1] > threshold) ? (xNodes[i + 1]) : (xNodes[i + 1] - (k + 1) * factor);
+                                } else {
+                                    Bild0[0, 0] = (xNodes[i] > threshold) ? (xNodes[i]) : (xNodes[i] - k * KK * factor);
+                                    Bild0[1, 0] = (xNodes[i + 1] > threshold) ? (xNodes[i + 1]) : (xNodes[i + 1] - k * KK * factor);
+                                    Bild0[2, 0] = (xNodes[i] > threshold) ? (xNodes[i]) : (xNodes[i] - (k + 1) * KK * factor);
+                                    Bild0[3, 0] = (xNodes[i + 1] > threshold) ? (xNodes[i + 1]) : (xNodes[i + 1] - (k + 1) * KK * factor);
                                     Bild0[0, 1] = yNodes[k];
                                     Bild0[1, 1] = yNodes[k];
                                     Bild0[2, 1] = yNodes[k + 1];
                                     Bild0[3, 1] = yNodes[k + 1];
-                                    Rotate(Bild0, Rotation);
                                 }
 
                                 if (!(Bild0[0, 0] < Bild0[1, 0]))
                                     throw new ArgumentException("stretching factor chosen to large");
                                 if (!(Bild0[2, 0] < Bild0[3, 0]))
                                     throw new ArgumentException("stretching factor chosen to large");
+                                Rotate(Bild0, Rotation);
 
                                 if (pf != null)
                                     pf(Bild0);
 
                                 Cj0.NodeIndices = new int[] {
-                                k*xNodes.Length + i,          // unten, links
-                                k*xNodes.Length + (i + 1),    // unten, rechts
-                                (k + 1)*xNodes.Length + i,    // oben, links
-                                (k + 1)*xNodes.Length + i + 1 // oben, rechts
-                            };
+                                    k*xNodes.Length + i,          // unten, links
+                                    k*xNodes.Length + (i + 1),    // unten, rechts
+                                    (k + 1)*xNodes.Length + i,    // oben, links
+                                    (k + 1)*xNodes.Length + i + 1 // oben, rechts
+                                };
 
 
 
@@ -943,8 +942,7 @@ namespace BoSSS.Foundation.Grid.Classic {
                             }
                         }
                     }
-                }
-                else {
+                } else {
                     grid.Cells = new Cell[0];
                 }
 

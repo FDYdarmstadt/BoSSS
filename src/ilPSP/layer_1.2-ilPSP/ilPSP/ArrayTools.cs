@@ -462,6 +462,9 @@ namespace ilPSP.Utils {
             return ret;
         }
 
+        
+
+
 
         /// <summary>
         /// Extracts a sub-vector from <paramref name="inp"/>.
