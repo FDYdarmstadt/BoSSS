@@ -24,6 +24,12 @@ using BoSSS.Solution.Control;
 using ilPSP.Utils;
 using ilPSP;
 using BoSSS.Foundation.Grid.RefElements;
+using BoSSS.Foundation.Grid.Aggregation;
+using ilPSP.Connectors.Matlab;
+using BoSSS.Platform.LinAlg;
+using System.Diagnostics;
+using BoSSS.Platform.Utils.Geom;
+using BoSSS.Solution.Gnuplot;
 
 namespace BoSSS.Application.SipPoisson {
 
@@ -313,5 +319,252 @@ namespace BoSSS.Application.SipPoisson {
 
             return R;
         }
+
+
+
+        /// <summary>
+        /// Test on a 2D Voronoi mesh
+        /// </summary>
+        /// <param name="Res">
+        /// number of randomly chosen Delaunay vertices
+        /// </param>
+        /// <param name="deg">
+        /// polynomial degree
+        /// </param>
+        /// <param name="solver_name">
+        /// Name of solver to use.
+        /// </param>
+        public static SipControl TestVoronoi(int Res, SolverCodes solver_name = SolverCodes.classic_pardiso, int deg = 3) {
+            
+             if (System.Environment.MachineName.ToLowerInvariant().EndsWith("rennmaschin")
+                //|| System.Environment.MachineName.ToLowerInvariant().Contains("jenkins")
+                ) {
+                // This is Florians Laptop;
+                // he is to poor to afford MATLAB, so he uses OCTAVE
+                BatchmodeConnector.Flav = BatchmodeConnector.Flavor.Octave;
+                BatchmodeConnector.MatlabExecuteable = "C:\\cygwin64\\bin\\bash.exe";
+            } 
+
+            
+            var R = new SipControl();
+            R.ProjectName = "ipPoison/cartesian";
+            R.savetodb = false;
+
+            R.FieldOptions.Add("T", new FieldOpts() { Degree = deg, SaveToDB = FieldOpts.SaveToDBOpt.TRUE });
+            R.FieldOptions.Add("Tex", new FieldOpts() { Degree = deg*2 });
+            R.InitialValues_Evaluators.Add("RHS", X => 1.0);
+            R.InitialValues_Evaluators.Add("Tex", X => 0.0);
+            R.ExactSolution_provided = false;
+            R.NoOfMultigridLevels = int.MaxValue;
+            R.solver_name = solver_name;
+            //R.TargetBlockSize = 100;
+
+
+            bool IsIn(params double[] X) {
+                Debug.Assert(X.Length == 2);
+                double xi = X[0];
+                double yi = X[1];
+                //for(int l = 0; l < bndys.Length; l++) {
+                //    Debug.Assert(bndys[l].Normal.Length == 2);
+                //    if (bndys[l].PointDistance(xi, yi) > 0.0)
+                //        return false;
+                //}
+                if (xi > 1.0)
+                    return false;
+                if (yi > 1.0)
+                    return false;
+                if (xi < 0 && yi < 0)
+                    return false;
+                if (xi < -1)
+                    return false;
+                if (yi < -1)
+                    return false;
+
+                return true;
+            }
+
+            int Mirror(ref double[] _x, ref double[] _y, AffineManifold[] bndys) {
+                if (_x.Length != _y.Length)
+                    throw new ArgumentException();
+                var x = _x.ToList();
+                var y = _y.ToList();
+                int N = _x.Length;
+
+
+
+                // filter all points that are outside of the domain
+                for (int n = 0; n < N; n++) {
+                    if (!IsIn(x[n], y[n])) {
+                        x.RemoveAt(n);
+                        y.RemoveAt(n);
+                        N--;
+                        n--;
+                    }
+                }
+                Debug.Assert(x.Count == N);
+                Debug.Assert(y.Count == N);
+                for (int n = 0; n < N; n++) {
+                    Debug.Assert(IsIn(x[n], y[n]));
+                }
+
+                // mirror each point 
+                for(int n = 0; n < N; n++) {
+                    double xn = x[n];
+                    double yn = y[n];
+                    for(int l = 0; l < bndys.Length; l++) {
+                        var bndy_l = bndys[l];
+
+                        double dist = bndy_l.PointDistance(xn, yn);
+                        
+                        if(dist < 0) {
+                            double xMirr = xn - bndy_l.Normal[0] * dist*2;
+                            double yMirr = yn - bndy_l.Normal[1] * dist*2;
+
+                            Debug.Assert(bndy_l.PointDistance(xMirr, yMirr) > 0);
+
+                            if(!IsIn(xMirr, yMirr)) {
+                                x.Add(xMirr);
+                                y.Add(yMirr);
+                            }
+                        }
+                    }
+                }
+
+                // return
+                _x = x.ToArray();
+                _y = y.ToArray();
+                return N;
+            }
+
+            
+            GridCommons GridFunc() {
+                GridCommons grd = null;
+
+                var Matlab = new BatchmodeConnector();
+
+                // boundaries for L-domain
+                AffineManifold[] Boundaries = new AffineManifold[6];
+                Boundaries[0] = new AffineManifold(new[] { 0.0, 1.0 }, new[] { 0.0, 1.0 });
+                Boundaries[1] = new AffineManifold(new[] { 1.0, 0.0 }, new[] { 1.0, 0.0 });
+                Boundaries[2] = new AffineManifold(new[] { -1.0, 0.0 }, new[] { -1.0, 0.0 });
+                Boundaries[3] = new AffineManifold(new[] { -1.0, 0.0 }, new[] { 0.0, 0.0 });
+                Boundaries[4] = new AffineManifold(new[] { 0.0, -1.0 }, new[] { 0.0, -1.0 });
+                Boundaries[5] = new AffineManifold(new[] { 0.0, -1.0 }, new[] { 0.0, 0.0 });
+
+                
+                // generate Delaunay vertices
+                Random rnd = new Random(0);
+                double[] xNodes = Res.ForLoop(idx => rnd.NextDouble()*2 - 1);
+                double[] yNodes = Res.ForLoop(idx => rnd.NextDouble()*2 - 1);
+                int ResFix = Mirror(ref xNodes, ref yNodes, Boundaries);
+
+                
+                var Nodes = MultidimensionalArray.Create(xNodes.Length, 2);
+                Nodes.SetColumn(0, xNodes);
+                Nodes.SetColumn(1, yNodes);
+                Nodes.SaveToTextFile("C:\\tmp\\Nudes.txt");
+                
+                Matlab.PutMatrix(Nodes, "Nodes");
+               
+                // compute Voronoi diagramm
+                Matlab.Cmd("[V, C] = voronoin(Nodes);");
+
+                // output (export from matlab)
+                int[][] OutputVertexIndex = new int[Nodes.NoOfRows][];
+                Matlab.GetStaggeredIntArray(OutputVertexIndex, "C");
+                Matlab.GetMatrix(null, "V");
+
+                 // run matlab
+                Matlab.Execute(false);
+
+                // import here
+                MultidimensionalArray VertexCoordinates = (MultidimensionalArray)(Matlab.OutputObjects["V"]);
+
+                // correct indices (1-based index to 0-based index)
+                foreach(int[] cell in OutputVertexIndex) {
+                    int K = cell.Length;
+                    for (int k = 0; k < K; k++) {
+                        cell[k]--;
+                    }
+                }
+
+                //
+                List<Cell> cells = new List<Cell>();
+                for(int jV = 0; jV < ResFix; jV++) { // loop over Voronoi Cells
+                    Debug.Assert(IsIn(Nodes.GetRow(jV)));
+                    int[] iVtxS = OutputVertexIndex[jV];
+                    int NV = iVtxS.Length;
+
+                    for(int iTri = 0; iTri < NV - 2; iTri++) {
+                        int iV0 = iVtxS[0];
+                        int iV1 = iVtxS[iTri + 1];
+                        int iV2 = iVtxS[iTri + 2];
+
+                        double[] V0 = VertexCoordinates.GetRow(iV0);
+                        double[] V1 = VertexCoordinates.GetRow(iV1);
+                        double[] V2 = VertexCoordinates.GetRow(iV2);
+
+                        double[] D1 = V1.Minus(V0);
+                        double[] D2 = V2.Minus(V0);
+                        Debug.Assert(D1.CrossProduct2D(D2).Abs() > 1.0e-8);
+                        if(D1.CrossProduct2D(D2) < 0) {
+                            double[] T = V2;
+                            int t = iV2;
+                            V2 = V1;
+                            iV2 = iV1;
+                            V1 = T;
+                            iV1 = t;
+                        }
+
+                        double[] Center = V0.Plus(V1).Plus(V2).Mul(1.0 / 3.0);
+                        //Debug.Assert(IsIn(Center[0], Center[1]));
+
+                        Cell Cj = new Cell();
+                        Cj.GlobalID = cells.Count;
+                        Cj.Type = CellType.Triangle_3;
+                        Cj.TransformationParams = MultidimensionalArray.Create(3, 2);
+                        Cj.NodeIndices = new int[] { iV0, iV1, iV2 };
+                        Cj.TransformationParams.SetRow(0, V0);
+                        Cj.TransformationParams.SetRow(1, V1);
+                        Cj.TransformationParams.SetRow(2, V2);
+                        cells.Add(Cj);
+                    }
+
+                }
+
+                // return grid
+                grd = new Grid2D(Triangle.Instance);
+                grd.Cells = cells.ToArray();
+
+                //grd.Plot2DGrid();
+
+                grd.EdgeTagNames.Add(1, BoundaryType.Dirichlet.ToString());
+                grd.DefineEdgeTags(X => (byte)1);
+
+
+                return grd;
+            };
+            R.GridFunc = GridFunc;
+
+            R.AddBoundaryValue(BoundaryType.Dirichlet.ToString(), "T",
+                 delegate (double[] X) {
+                     //double x = X[0], y = X[1];
+
+                     return 0.0;
+                     //if(Math.Abs(X[0] - (0.0)) < 1.0e-8)
+                     //    return 0.0;
+                     //
+                     //throw new ArgumentOutOfRangeException();
+                 });
+
+            
+
+
+           
+            return R;
+        }
+
+
+
     }
 }
