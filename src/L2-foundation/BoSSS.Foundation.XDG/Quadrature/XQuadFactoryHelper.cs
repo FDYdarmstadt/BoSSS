@@ -296,18 +296,11 @@ namespace BoSSS.Foundation.XDG {
                             break;
                         }
                         case MomentFittingVariants.Saye:
-                            /*
-                            var comboFactory = Quadrature.SayeFactories.SayeGaussRule_Combo2D(
+                            var comboFactory = Quadrature.SayeFactories.SayeGaussRule_Combo(
                                 this.m_LevelSetDatas[levSetIndex],
                                 new LineSegment.SafeGuardedNewtonMethod(1e-14));
                             m_VolumeFactory[levSetIndex] = comboFactory.GetVolumeFactory();
-                            //m_SurfaceFactory[levSetIndex] = comboFactory.GetSurfaceFactory();
-                            //*/
-                            //*
-                            m_VolumeFactory[levSetIndex] = Quadrature.SayeFactories.SayeGaussRule_Volume2D(
-                                this.m_LevelSetDatas[levSetIndex],
-                                new LineSegment.SafeGuardedNewtonMethod(1e-14));
-                            //*/
+                            m_SurfaceFactory[levSetIndex] = comboFactory.GetSurfaceFactory();
                             break;
                         default:
                             throw new NotSupportedException(String.Format(
@@ -416,18 +409,11 @@ namespace BoSSS.Foundation.XDG {
                     return new ExactCircleLevelSetIntegration(levSetIndex, this.m_LevelSetDatas[levSetIndex].GridDat, Kref);
 
                     case MomentFittingVariants.Saye:
-                        /*
-                        var comboFactory = Quadrature.SayeFactories.SayeGaussRule_Combo2D(
+                        var comboFactory = Quadrature.SayeFactories.SayeGaussRule_Combo(
                                 this.m_LevelSetDatas[levSetIndex],
                                 new LineSegment.SafeGuardedNewtonMethod(1e-14));
                         m_VolumeFactory[levSetIndex] = comboFactory.GetVolumeFactory();
                         m_SurfaceFactory[levSetIndex] = comboFactory.GetSurfaceFactory();
-                        //*/
-                        //*
-                        m_SurfaceFactory[levSetIndex] = Quadrature.SayeFactories.SayeGaussRule_LevelSet2D(
-                            this.m_LevelSetDatas[levSetIndex],
-                            new LineSegment.SafeGuardedNewtonMethod(1e-14));
-                        //*/
                         break;
                     default:
                     throw new NotSupportedException(String.Format(

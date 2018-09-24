@@ -41,7 +41,7 @@ namespace BoSSS.Foundation.XDG.Quadrature
             iKref = lsData.GridDat.iGeomCells.RefElements.IndexOf(this.RefElement, (A, B) => object.ReferenceEquals(A, B));
         }
 
-        #region ISayeGaussRule< LinearPSI<Cube>, LinearSayeSpace<Cube>>
+        #region ISayeGaussRule
 
         public int order { get; set; }
 
@@ -84,9 +84,9 @@ namespace BoSSS.Foundation.XDG.Quadrature
 
         protected override ISayeQuadRule GetEmptySurfaceRule()
         {
-            NodesAndWeightsSurface nodesAndWeights = new NodesAndWeightsSurface(RefElement.SpatialDimension, RefElement);
-            nodesAndWeights.Reset();
-            return nodesAndWeights;
+            NodesAndWeightsSurface emptyRule = new NodesAndWeightsSurface(RefElement.SpatialDimension, RefElement);
+            emptyRule.Reset();
+            return emptyRule;
         }
 
 
