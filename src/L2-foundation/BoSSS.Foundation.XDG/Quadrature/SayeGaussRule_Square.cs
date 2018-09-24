@@ -46,7 +46,7 @@ namespace BoSSS.Foundation.XDG.Quadrature
 
         }
 
-        #region ISayeGaussRule<LinearPSI<Square>, SayeSquare>
+        #region ISayeGaussRule
 
         public int order { get; set; }
 
@@ -89,7 +89,9 @@ namespace BoSSS.Foundation.XDG.Quadrature
 
         protected override ISayeQuadRule GetEmptySurfaceRule()
         {
-            return new NodesAndWeightsSurface(RefElement.SpatialDimension, RefElement);
+            var emptyRule = new NodesAndWeightsSurface(RefElement.SpatialDimension, RefElement);
+            emptyRule.Reset();
+            return emptyRule;
         }
 
         #endregion
