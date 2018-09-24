@@ -444,7 +444,7 @@ namespace BoSSS.Foundation.XDG.Quadrature
                 );
             return new SayeGaussComboRuleFactory(
                 rule, 
-                SayeGaussComboRuleFactory.Mode.RecalculateOnEverySurfaceCall);
+                SayeGaussComboRuleFactory.Mode.CalculateOnceAfterInstantiation);
         }
 
         public static SayeGaussComboRuleFactory SayeGaussRule_Combo3D(
@@ -459,7 +459,7 @@ namespace BoSSS.Foundation.XDG.Quadrature
                 );
             return new SayeGaussComboRuleFactory(
                 rule, 
-                SayeGaussComboRuleFactory.Mode.RecalculateOnEveryVolumeCall);
+                SayeGaussComboRuleFactory.Mode.CalculateOnceAfterInstantiation);
         }
 
         public static SayeGaussComboRuleFactory SayeGaussRule_Combo(
