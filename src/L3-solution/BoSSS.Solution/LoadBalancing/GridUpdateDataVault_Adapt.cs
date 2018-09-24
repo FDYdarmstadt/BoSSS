@@ -170,6 +170,10 @@ namespace BoSSS.Solution {
         /// Unique string reference under which the re-distributed data can be accessed later, within <see cref="RestoreDGField(DGField, string)"/>.
         /// </param>
         override public void BackupField(DGField f, string Reference) {
+            Oasch = f.Identification.Equals("TestData");
+             if(Oasch) {
+                    Console.WriteLine("Using oasch");
+                }
             if(!object.ReferenceEquals(f.GridDat, m_OldGrid)) {
                 throw new ArgumentException("DG field seems to be assigned to some other grid.");
             }
@@ -229,6 +233,12 @@ namespace BoSSS.Solution {
             }
         }
 
+
+        static public bool Oasch = false;
+       
+        /// <summary>
+        /// Additional Transformation in  nonlinear cells
+        /// </summary>
         static void FwdTrafo(double[] Coord, int Np, int i0, GridData g, int jCell, int p) {
             if (!g.Cells.IsCellAffineLinear(jCell)) {
                 var trafoF = g.ChefBasis.OrthonormalizationTrafo.GetValue_Cell(jCell, 1, p);
@@ -237,7 +247,12 @@ namespace BoSSS.Solution {
                 var CoordOrg = Coord.GetSubVector(i0, Np);
                 var CoordTrf = new double[Np];
 
-                trafo.Solve(CoordTrf, CoordOrg);
+                if (Oasch) {
+                    //trafo.Solve(CoordTrf, CoordOrg);
+                    trafo.gemv(1.0, CoordOrg, 0.0, CoordTrf, transpose: false);
+                } else {
+                    CoordTrf.SetV(CoordOrg);
+                }
 
                 Array.Copy(CoordTrf, 0, Coord, i0, Np);
             }
@@ -254,12 +269,18 @@ namespace BoSSS.Solution {
                 var CoordOrg = Coord.GetSubVector(i0, Np);
                 var CoordTrf = new double[Np];
 
-                trafo.gemv(1.0, CoordOrg, 0.0, CoordTrf, transpose: false);
+                if (Oasch) {
+                    //trafo.gemv(1.0, CoordOrg, 0.0, CoordTrf, transpose: false);
+                    trafo.Solve(CoordTrf, CoordOrg);
+                    //CoordTrf.ScaleV(0.25);
+                } else {
+                    CoordTrf.SetV(CoordOrg);
+                }
 
                 Array.Copy(CoordTrf, 0, Coord, i0, Np);
             }
         }
-
+        
 
         /// <summary>
         /// Loads the DG coordinates after grid adaptation.
@@ -270,6 +291,10 @@ namespace BoSSS.Solution {
         /// </param>
         public override void RestoreDGField(DGField f, string Reference) {
             using(new FuncTrace()) {
+                Oasch = f.Identification.Equals("TestData");
+                if(Oasch) {
+                    Console.WriteLine("Using oasch");
+                }
                 int newJ = this.m_newJ;
                 GridData NewGrid = (GridData)m_NewGrid;
                 int pDeg = f.Basis.Degree; //  Refined_TestData.Basis.Degree;
@@ -297,7 +322,16 @@ namespace BoSSS.Solution {
                         if(TargMappingIdx[j] == null) {
                             // unchanged cell
                             Debug.Assert(ReDistDGCoords[j].Length == 1);
-                            f.Coordinates.SetRow(j, ReDistDGCoords[j][0]);
+                            double[] Coord = ReDistDGCoords[j][0];
+                            Debug.Assert(Coord.Length == Np);
+                            
+                            if(Oasch) {
+                                // test code
+                                Coord = Coord.CloneAs();
+                                BckTrafo(Coord, Np, 0, NewGrid, j, pDeg);
+                            }
+
+                            f.Coordinates.SetRow(j, Coord);
                         } else {
                             int L = ReDistDGCoords[j].Length;
                             for(int l = 0; l < L; l++) {
@@ -425,6 +459,8 @@ namespace BoSSS.Solution {
                 }
                 Trafo.gemv(1.0, ReDistDGCoords_jl, 1.0, Coords_j, transpose: false);
                 BckTrafo(Coords_j, Np, 0, NewGrid, j, pDeg);
+                if (Oasch)
+                    Coords_j.ScaleV(2.0);
             } else {
                 // ++++++++++
                 // coarsening
