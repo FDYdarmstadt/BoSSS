@@ -858,14 +858,17 @@ namespace BoSSS.Platform.Utils.Geom {
         }
     }
 
+    /// <summary>
+    /// Various geometric utilities
+    /// </summary>
     public static class SimpleGeoTools {
         /// <summary>
-        /// Calculates the cross product of two vectors in 2D
+        /// Calculates the cross product of two vectors in 2D 
         /// </summary>
         /// <param name="a"></param>
         /// <param name="b"></param>
         /// <returns></returns>
-        public static double CrossProduct2D(double[] a, double[] b) {
+        public static double CrossProduct2D(this double[] a, double[] b) {
             return a[0] * b[1] - a[1] * b[0];
         }
 
@@ -885,8 +888,7 @@ namespace BoSSS.Platform.Utils.Geom {
         }
 
         /// <summary>
-        /// Smoothes, e.g., an initial condition over the range h/p using
-        /// a tanh profile
+        /// Smooths, e.g., an initial condition over the range h/p using a tanh profile
         /// </summary>
         /// <param name="distance">The distance to e.g. a shock</param>
         /// <param name="cellSize">The cell size h</param>

@@ -1016,6 +1016,42 @@ namespace ilPSP.Utils {
         }
 
         /// <summary>
+        /// Vector Addition
+        /// </summary>
+        public static double[] Plus(this double[] a, double[] b) {
+            if (a.Length != b.Length)
+                throw new ArgumentException();
+            int D = a.Length;
+
+            double[] R = a.CloneAs();
+            R.AccV(1.0, b);
+            return R;
+        }
+
+
+        /// <summary>
+        /// Vector Difference
+        /// </summary>
+        public static double[] Minus(this double[] a, double[] b) {
+            if (a.Length != b.Length)
+                throw new ArgumentException();
+            int D = a.Length;
+
+            double[] R = a.CloneAs();
+            R.AccV(-1.0, b);
+            return R;
+        }
+
+        /// <summary>
+        /// Multiplication with a scalar
+        /// </summary>
+        public static double[] Mul(this double[] a, double b) {
+            double[] R = a.CloneAs();
+            R.ScaleV(b);
+            return R;
+        }
+
+        /// <summary>
         /// implementation of <see cref="SetAll"/>
         /// </summary>
         static void SetRecursive(Array a, object val, int[] indices, int dim) {
