@@ -210,6 +210,8 @@ namespace BoSSS.Application.IBM_Solver {
         {
             IBM_Control C = new IBM_Control();
 
+            //in SolverChooser die DoF parts ändern
+
             //Possibilities:
             //channel = 0 --> channel 3D with sphere
             //channel = 1 --> channel 3D empty
