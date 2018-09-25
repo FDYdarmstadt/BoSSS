@@ -727,7 +727,8 @@ namespace BoSSS.Solution.Multigrid {
                             Blocks.Add(Block);
                         }
 #endif
-                        //blockSolvers[iPart] = new PARDISOSolver() {
+                        //blockSolvers[iPart] = new PARDISOSolver()
+                        //{
                         //    CacheFactorization = true,
                         //    UseDoublePrecision = false
                         //};
