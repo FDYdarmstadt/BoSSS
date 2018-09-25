@@ -1,4 +1,6 @@
-﻿using System;
+﻿#undef LOG_ACTIONS
+#undef LOG_TIME
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -9,6 +11,8 @@ using BoSSS.Foundation.Grid.RefElements;
 using BoSSS.Foundation.Quadrature;
 using System.Diagnostics;
 using static BoSSS.Foundation.XDG.Quadrature.HMF.LineSegment;
+
+
 
 namespace BoSSS.Foundation.XDG.Quadrature
 {
@@ -44,7 +48,7 @@ namespace BoSSS.Foundation.XDG.Quadrature
 
         Status ComboStatus;
 
-        public enum Mode { RecalculateOnEveryVolumeCall, RecalculateWhenInstanced};
+        public enum Mode { RecalculateOnEveryVolumeCall, CalculateOnceAfterInstantiation, RecalculateOnEverySurfaceCall};
 
 
         /// <summary>
@@ -89,7 +93,9 @@ namespace BoSSS.Foundation.XDG.Quadrature
         /// <returns></returns>
         public IQuadRuleFactory<QuadRule> GetSurfaceFactory()
         {
+#if LOG_ACTIONS
             Console.WriteLine("Calling Surface Factory \n");
+#endif
             return surfaceRuleFactory;
         }
 
@@ -99,7 +105,9 @@ namespace BoSSS.Foundation.XDG.Quadrature
         /// <returns></returns>
         public IQuadRuleFactory<QuadRule> GetVolumeFactory()
         {
+#if LOG_ACTIONS
             Console.WriteLine("Calling Volume Factory \n");
+#endif
             return volumeRuleFactory;
         }
 
@@ -114,6 +122,10 @@ namespace BoSSS.Foundation.XDG.Quadrature
             rulez[0].Clear();
             rulez[1].Clear();
             //Find quadrature nodes and weights in each cell/chunk
+#if LOG_TIME
+            Stopwatch stopWatch = new Stopwatch();
+            stopWatch.Start();
+#endif
             foreach (Chunk chunk in mask)
             {
                 foreach (int cell in chunk.Elements)
@@ -125,6 +137,11 @@ namespace BoSSS.Foundation.XDG.Quadrature
                     rulez[1].Add(sayePair_surface);
                 }
             }
+#if LOG_TIME
+            stopWatch.Stop();
+            long ts = stopWatch.ElapsedMilliseconds;
+            Console.WriteLine("Calculated combo cutcell rule : {0}ms", ts);
+#endif
         }
 
         //
@@ -163,29 +180,53 @@ namespace BoSSS.Foundation.XDG.Quadrature
             {
                 if(!RuleStatus.initialized || order != RuleStatus.order)
                 {
+#if LOG_ACTIONS
                     Console.WriteLine("Initialize {0} \n", quadMode);
+#endif
                     return InitializeRule(mask, order);
                 }
                 else
                 {
                     switch (RuleStatus.RecalculationMode)
                     {
-                        case Mode.RecalculateWhenInstanced:
+                        case Mode.CalculateOnceAfterInstantiation:
+#if LOG_ACTIONS
                             Console.WriteLine("Reusing {0} \n", quadMode);
+#endif
                             return UseExistingRule(mask);
                             //break;
                         case Mode.RecalculateOnEveryVolumeCall:
                             if (quadMode == QuadratureType.Volume)
                             {
+#if LOG_ACTIONS
                                 Console.WriteLine("Recalcing {0} \n", quadMode);
+#endif
                                 return InitializeRule(mask, order);
                             }
                             else
                             {
+#if LOG_ACTIONS
                                 Console.WriteLine("Reusing {0} \n", quadMode);
+#endif
                                 return UseExistingRule(mask);
                             }
-                            //break;
+                        //break;
+                        case Mode.RecalculateOnEverySurfaceCall:
+                            if (quadMode == QuadratureType.Surface)
+                            {
+#if LOG_ACTIONS
+                                Console.WriteLine("Recalcing {0} \n", quadMode);
+#endif
+                                return InitializeRule(mask, order);
+                            }
+                            else
+                            {
+#if LOG_ACTIONS
+                                Console.WriteLine("Reusing {0} \n", quadMode);
+#endif
+                                return UseExistingRule(mask);
+                            }
+                        //break;
                         default:
                             throw new NotImplementedException();
                             //break;
@@ -259,9 +300,11 @@ namespace BoSSS.Foundation.XDG.Quadrature
             rule.order = order;
             var result = new List<ChunkRulePair<QuadRule>>();
 
-            int number = 0;
-            //Stopwatch stopWatch = new Stopwatch();
-            //stopWatch.Start();
+
+#if LOG_TIME
+            Stopwatch stopWatch = new Stopwatch();
+            stopWatch.Start();
+#endif
             //Find quadrature nodes and weights in each cell/chunk
             foreach (Chunk chunk in mask)
             {
@@ -270,13 +313,13 @@ namespace BoSSS.Foundation.XDG.Quadrature
                     QuadRule sayeRule = rule.Evaluate(cell);
                     ChunkRulePair<QuadRule> sayePair = new ChunkRulePair<QuadRule>(Chunk.GetSingleElementChunk(cell), sayeRule);
                     result.Add(sayePair);
-                    ++number;
                 }
             }
-            //stopWatch.Stop();
-            //long ts = stopWatch.ElapsedMilliseconds;
-            //Console.WriteLine("Number Of Cells " + number);
-            //Console.WriteLine("RunTime " + ts + "ms");
+#if LOG_TIME
+            stopWatch.Stop();
+            long ts = stopWatch.ElapsedMilliseconds;
+            Console.WriteLine("Calculated cutcell rule : {0}ms", ts);
+#endif
             return result;
         }
     }
@@ -286,21 +329,19 @@ namespace BoSSS.Foundation.XDG.Quadrature
     /// </summary>
     public static class SayeFactories
     {
-        #region Single QuadRules
+    #region Single QuadRules
         /// <summary>
         /// Gauss rules for \f$ \oint_{\frakI \cap K_j } \ldots \dS \f$ in the 3D case
         /// </summary>
         /// 
         public static IQuadRuleFactory<QuadRule> SayeGaussRule_Volume3D( 
             LevelSetTracker.LevelSetData _lsData, 
-            IRootFindingAlgorithm RootFinder
-            )
+            IRootFindingAlgorithm RootFinder)
         {
             ISayeGaussRule rule = new SayeFactory_Cube(
                 _lsData,
                 RootFinder,
-                SayeFactory_Cube.QuadratureMode.Volume
-                );
+                SayeFactory_Cube.QuadratureMode.Volume);
             return new SayeGaussRuleFactory(rule);
         }
 
@@ -309,8 +350,7 @@ namespace BoSSS.Foundation.XDG.Quadrature
         /// </summary>
         public static IQuadRuleFactory<QuadRule> SayeGaussRule_LevelSet3D( 
             LevelSetTracker.LevelSetData _lsData, 
-            IRootFindingAlgorithm RootFinder
-            )
+            IRootFindingAlgorithm RootFinder)
         {
             ISayeGaussRule rule = new SayeFactory_Cube(
                 _lsData,
@@ -325,8 +365,7 @@ namespace BoSSS.Foundation.XDG.Quadrature
         /// </summary>
         public static IQuadRuleFactory<QuadRule> SayeGaussRule_Volume2D( 
             LevelSetTracker.LevelSetData _lsData, 
-            IRootFindingAlgorithm RootFinder
-            )
+            IRootFindingAlgorithm RootFinder)
         {
             ISayeGaussRule rule = new SayeFactory_Square(
                 _lsData,
@@ -341,20 +380,57 @@ namespace BoSSS.Foundation.XDG.Quadrature
         /// </summary>
         public static IQuadRuleFactory<QuadRule> SayeGaussRule_LevelSet2D( 
             LevelSetTracker.LevelSetData _lsData, 
-            IRootFindingAlgorithm RootFinder
-            )
+            IRootFindingAlgorithm RootFinder)
         {
             ISayeGaussRule rule = new SayeFactory_Square(
                 _lsData,
                 RootFinder,
-                SayeFactory_Square.QuadratureMode.Surface
-                );
+                SayeFactory_Square.QuadratureMode.Surface);
             return new SayeGaussRuleFactory(rule);
         }
 
-        #endregion
 
-        #region Combo QuadRules
+        public static IQuadRuleFactory<QuadRule> SayeGaussRule_LevelSet(
+            LevelSetTracker.LevelSetData _lsData,
+            IRootFindingAlgorithm RootFinder)
+        {
+            RefElement refElem = _lsData.GridDat.Grid.GetRefElement(0);
+            if (refElem is Grid.RefElements.Square)
+            {
+                return SayeGaussRule_LevelSet2D(_lsData, RootFinder);
+            }
+            else if (refElem is Grid.RefElements.Cube)
+            {
+                return SayeGaussRule_LevelSet3D(_lsData, RootFinder);
+            }
+            else
+            {
+                throw new NotImplementedException("Saye quadrature not available for this RefElement");
+            }
+        }
+
+        public static IQuadRuleFactory<QuadRule> SayeGaussRule_Volume(
+            LevelSetTracker.LevelSetData _lsData,
+            IRootFindingAlgorithm RootFinder)
+        {
+            RefElement refElem = _lsData.GridDat.Grid.GetRefElement(0);
+            if (refElem is Grid.RefElements.Square)
+            {
+                return SayeGaussRule_Volume2D(_lsData, RootFinder);
+            }
+            else if (refElem is Grid.RefElements.Cube)
+            {
+                return SayeGaussRule_Volume3D(_lsData, RootFinder);
+            }
+            else
+            {
+                throw new NotImplementedException("Saye quadrature not available for this RefElement");
+            }
+        }
+
+#endregion
+
+    #region Combo QuadRules
 
         public static SayeGaussComboRuleFactory SayeGaussRule_Combo2D(
             LevelSetTracker.LevelSetData _lsData,
@@ -368,7 +444,7 @@ namespace BoSSS.Foundation.XDG.Quadrature
                 );
             return new SayeGaussComboRuleFactory(
                 rule, 
-                SayeGaussComboRuleFactory.Mode.RecalculateWhenInstanced);
+                SayeGaussComboRuleFactory.Mode.CalculateOnceAfterInstantiation);
         }
 
         public static SayeGaussComboRuleFactory SayeGaussRule_Combo3D(
@@ -383,9 +459,28 @@ namespace BoSSS.Foundation.XDG.Quadrature
                 );
             return new SayeGaussComboRuleFactory(
                 rule, 
-                SayeGaussComboRuleFactory.Mode.RecalculateOnEveryVolumeCall);
+                SayeGaussComboRuleFactory.Mode.CalculateOnceAfterInstantiation);
         }
 
-        #endregion
+        public static SayeGaussComboRuleFactory SayeGaussRule_Combo(
+           LevelSetTracker.LevelSetData _lsData,
+           IRootFindingAlgorithm RootFinder)
+        {
+            RefElement refElem = _lsData.GridDat.Grid.GetRefElement(0);
+            if (refElem is Grid.RefElements.Square)
+            {
+                return SayeGaussRule_Combo2D(_lsData, RootFinder);
+            }
+            else if (refElem is Grid.RefElements.Cube)
+            {
+                return SayeGaussRule_Combo3D(_lsData, RootFinder);
+            }
+            else
+            {
+                throw new NotImplementedException("Saye quadrature not available for this RefElement");
+            }
+        }
+
+    #endregion
     }
 }
