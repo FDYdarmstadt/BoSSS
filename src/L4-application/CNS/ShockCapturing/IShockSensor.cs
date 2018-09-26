@@ -29,7 +29,6 @@ namespace CNS.ShockCapturing {
         /// <summary>
         /// Updates the sensor values in all cells
         /// </summary>
-        /// <param name="fieldSet"></param>
         void UpdateSensorValues(CNSFieldSet fieldSet, ISpeciesMap speciesMap, CellMask cellMask);
 
         /// <summary>
@@ -49,9 +48,6 @@ namespace CNS.ShockCapturing {
         /// Returns a cell mask containing all cells that are considered shock
         /// if the sensor limit is given <paramref name="sensorLimit"/>
         /// </summary>
-        /// <param name="sensor"></param>
-        /// <param name="gridData"></param>
-        /// <param name="sensorLimit"></param>
         /// <returns></returns>
         public static CellMask GetShockedCellMask(this IShockSensor sensor, IGridData gridData, double sensorLimit, double cellSize, int dgDegree) {
             BitArray shockedCellArray = new BitArray(gridData.iLogicalCells.NoOfLocalUpdatedCells);
