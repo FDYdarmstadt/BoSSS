@@ -46,6 +46,7 @@ namespace BoSSS.Application.AdaptiveMeshRefinementTest {
             //double[] yNodes = GenericBlas.Linspace(-1, 1, 2);
 
             var grd = Grid2D.Cartesian2DGrid(xNodes, yNodes);
+            //var grd = Grid2D.CurvedSquareGrid(xNodes, yNodes);
             return grd;
         }
 

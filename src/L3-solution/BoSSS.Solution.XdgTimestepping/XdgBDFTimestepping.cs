@@ -750,6 +750,7 @@ namespace BoSSS.Solution.XdgTimestepping {
                     if (m_PrivateBalancingInfo.m_Stack_u[i]) {
                         DGField[] _Fields = m_Stack_u[i].Mapping.Fields.ToArray();
                         for (int iF = 0; iF < _Fields.Length; iF++) {
+                            _Fields[iF].Clear();
                             L.RestoreDGField(_Fields[iF], GetName__Stack_u(i, iF));
                         }
                     }
