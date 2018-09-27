@@ -68,6 +68,9 @@ namespace CNS.ShockCapturing {
         /// Optional: Additional scaling coefficient for the AV. If none is
         /// given, an estimate will be used according the local flow state
         /// </param>
+        /// <param name="fudgeFactor">
+        /// Correction factor, typically set to 0.5 for the compressible Euler equations (Kloeckner et al. 2011)
+        /// </param>
         public SmoothedHeavisideArtificialViscosityLaw(IShockSensor sensor, int dgDegree, double refSensorLimit, double refMaxViscosity, double kappa, double? lambdaMax = null, double? fudgeFactor = null) {
             this.sensor = sensor;
             this.dgDegree = dgDegree;

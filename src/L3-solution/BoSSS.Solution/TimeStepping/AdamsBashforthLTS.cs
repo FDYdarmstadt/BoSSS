@@ -134,9 +134,9 @@ namespace BoSSS.Solution.Timestepping {
             private set;
         }
 
-        //################# Hack for saving to database in every (A)LTS sub-step
-        private Action<TimestepNumber, double> saveToDBCallback;
-        //################# Hack for saving to database in every (A)LTS sub-step
+        ////################# Hack for saving to database in every (A)LTS sub-step
+        //private Action<TimestepNumber, double> saveToDBCallback;
+        ////################# Hack for saving to database in every (A)LTS sub-step
 
         /// <summary>
         /// Standard constructor for the (adaptive) local time stepping algorithm
@@ -300,10 +300,10 @@ namespace BoSSS.Solution.Timestepping {
 
                         TimestepNumber subTimestep = new TimestepNumber(TimeInfo.TimeStepNumber - 1);
 
-                        if (saveToDBCallback != null) {
-                            subTimestep = subTimestep.NextIteration();
-                            saveToDBCallback(subTimestep, m_Time);
-                        }
+                        //if (saveToDBCallback != null) {
+                        //    subTimestep = subTimestep.NextIteration();
+                        //    saveToDBCallback(subTimestep, m_Time);
+                        //}
 
                         // Saves the history of DG_Coordinates for each cluster
                         Queue<double[]>[] historyDGC_Q = new Queue<double[]>[CurrentClustering.NumberOfClusters];
@@ -347,10 +347,10 @@ namespace BoSSS.Solution.Timestepping {
 
                                     m_Time = ABevolver.Min(s => s.Time);
 
-                                    if (saveToDBCallback != null) {
-                                        subTimestep = subTimestep.NextIteration();
-                                        saveToDBCallback(subTimestep, m_Time);
-                                    }
+                                    //if (saveToDBCallback != null) {
+                                    //    subTimestep = subTimestep.NextIteration();
+                                    //    saveToDBCallback(subTimestep, m_Time);
+                                    //}
                                 }
 
                                 // Are we at an (intermediate-) syncronization levels?
