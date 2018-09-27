@@ -32,7 +32,7 @@ namespace CNS.Tests.BoundaryConditions {
     /// A set of test cases to verify the correct implementation of different
     /// types of boundary conditions for the Euler equations. To separate the
     /// influences of different types of errors, most of them use
-    /// <see cref="SupersonicInlet"/> at some edges, i.e. a non-physical
+    /// SupersonicInlet at some edges, i.e. a non-physical
     /// Dirichlet boundary condition. This speeds up convergence and does not
     /// spoil the exact solution, as long as the Dirichlet values do not
     /// contradict the analytical solution
@@ -150,7 +150,7 @@ namespace CNS.Tests.BoundaryConditions {
         }
 
         /// <summary>
-        /// Test using <see cref="SupersonicInlet"/> (Dirichlet) everywhere
+        /// Test using SupersonicInlet (Dirichlet) everywhere
         /// </summary>
         /// <returns></returns>
         public static CNSControl[] EulerSupersonicInlet1D() {
@@ -174,8 +174,8 @@ namespace CNS.Tests.BoundaryConditions {
         }
 
         /// <summary>
-        /// Test using <see cref="SupersonicInlet"/> (Dirichlet) at the inlet
-        /// and <see cref="SubsonicOutlet"/> at the outlet
+        /// Test using SupersonicInlet (Dirichlet) at the inlet
+        /// and SubsonicOutlet at the outlet
         /// </summary>
         /// <returns></returns>
         public static CNSControl[] EulerSubsonicOutlet1D() {
@@ -200,8 +200,8 @@ namespace CNS.Tests.BoundaryConditions {
         }
 
         /// <summary>
-        /// Test using <see cref="SubsonicInlet"/> at the inlet and
-        /// <see cref="SupersonicInlet"/> (Dirichlet) at the outlet
+        /// Test using subsonicInlet at the inlet and
+        /// supersonicInlet (Dirichlet) at the outlet
         /// </summary>
         /// <returns></returns>
         public static CNSControl[] EulerSubsonicInlet1D() {
@@ -226,8 +226,8 @@ namespace CNS.Tests.BoundaryConditions {
         }
 
         /// <summary>
-        /// Test using <see cref="SubsonicInlet"/> at the inlet and
-        /// <see cref="SubsonicOutlet"/> at the outlet. That is, this test case
+        /// Test using SubsonicInlet at the inlet and
+        /// SubsonicOutlet at the outlet. That is, this test case
         /// uses physically correct boundary conditions
         /// </summary>
         /// <returns></returns>
@@ -253,8 +253,8 @@ namespace CNS.Tests.BoundaryConditions {
         }
 
         /// <summary>
-        /// Uses <see cref="SubsonicPressureInlet"/> at the inlet and
-        /// <see cref="SupersonicInlet"/> (Dirichlet) at the outlet
+        /// Uses SubsonicPressureInlet at the inlet and
+        /// SupersonicInlet (Dirichlet) at the outlet
         /// </summary>
         /// <returns></returns>
         public static CNSControl[] EulerSubsonicPressureInletTest1D() {
@@ -278,8 +278,8 @@ namespace CNS.Tests.BoundaryConditions {
         }
 
         /// <summary>
-        /// Test using <see cref="SubsonicPressureInlet"/> at the inlet and
-        /// <see cref="SubsonicOutlet"/> at the outlet. That is, this test case
+        /// Test using SubsonicPressureInlet at the inlet and
+        /// SubsonicOutlet at the outlet. That is, this test case
         /// uses physically correct boundary conditions
         /// </summary>
         /// <returns></returns>

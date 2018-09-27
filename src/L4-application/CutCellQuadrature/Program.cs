@@ -69,7 +69,7 @@ namespace CutCellQuadrature {
 
             //new SingleCubeParaboloidVolumeTestCase(GridSizes.Tiny, GridTypes.Structured),
             //new SphereVolume3DTestCase_NoShifts(GridSizes.Tiny, GridTypes.Structured),
-            //new SphereVolume3DTestCase(GridSizes.Small, GridTypes.Structured),
+            //new SphereVolume3DTestCase(GridSizes.Tiny, GridTypes.Structured),
             //new SphereVolume3DTestCase_NoShifts(GridSizes.Normal, GridTypes.Structured),
             //new SphereVolume3DTestCase_NoShifts(GridSizes.Large, GridTypes.Structured),
             //new SphereVolume3DTestCase_NoShifts(GridSizes.Huge, GridTypes.Structured)
@@ -88,7 +88,7 @@ namespace CutCellQuadrature {
             */
 
             //new Smereka2EllipseArcLength(GridSizes.Tiny, GridTypes.Structured),
-            //new Smereka2EllipseArcLength(GridSizes.Small, GridTypes.Structured),
+            new Smereka2EllipseArcLength(GridSizes.Small, GridTypes.Structured),
             //new Smereka2EllipseArcLength(GridSizes.Normal, GridTypes.Structured),
             //new Smereka2EllipseArcLength(GridSizes.Large, GridTypes.Structured),
             //new Smereka2EllipseArcLength(GridSizes.Huge, GridTypes.Structured),
@@ -666,20 +666,20 @@ namespace CutCellQuadrature {
                     }
                 case Modes.SayeGaussRules: //
                     {
-                        SayeGaussComboRuleFactory FactoryFactory = SayeFactories.SayeGaussRule_Combo3D(
+                        SayeGaussComboRuleFactory FactoryFactory = SayeFactories.SayeGaussRule_Combo2D(
                                 levelSetTracker.DataHistories[0].Current,
                                 rootFindingAlgorithm
                             );
 
                         if (testCase is ISurfaceTestCase)
                         {
-                            volumeFactory = FactoryFactory.GetSurfaceRule();
-                            //volumeFactory = SayeFactories.SayeGaussRule_LevelSet3D(levelSetTracker.DataHistories[0].Current, rootFindingAlgorithm);
+                            //volumeFactory = FactoryFactory.GetSurfaceFactory();
+                            volumeFactory = SayeFactories.SayeGaussRule_LevelSet2D(levelSetTracker.DataHistories[0].Current, rootFindingAlgorithm);
                         }
                         else
                         {
                             //volumeFactory = SayeFactories.SayeGaussRule_Volume3D(levelSetTracker.DataHistories[0].Current, rootFindingAlgorithm);
-                            volumeFactory = FactoryFactory.GetVolumeRule();
+                            volumeFactory = FactoryFactory.GetVolumeFactory();
                         }
 
                         edgeFactory = null;
@@ -794,8 +794,8 @@ namespace CutCellQuadrature {
 
                     MultidimensionalArray globalVertices = MultidimensionalArray.Create(
                         1, rule.NoOfNodes, Grid.SpatialDimension);
-                    //MultidimensionalArray metrics = levelSetTracker.DataHistories[0].Current.GetLevelSetNormalReferenceToPhysicalMetrics(
-                    //    rule.Nodes, cell, 1);
+                    MultidimensionalArray metrics = levelSetTracker.DataHistories[0].Current.GetLevelSetNormalReferenceToPhysicalMetrics(
+                        rule.Nodes, cell, 1);
                     GridData.TransformLocal2Global(rule.Nodes, cell, 1, globalVertices, 0);
                     
                     if (selectedCell >= 0 && cell != selectedCell) {
