@@ -39,7 +39,7 @@ namespace CNS.Boundary {
     public interface IBoundaryConditionMap {
 
         /// <summary>
-        /// Mapping of edge tags to edge tag names, <see cref="GridCommons.EdgeTagNames"/>
+        /// Mapping of edge tags to edge tag names
         /// </summary>
         IDictionary<byte, string> EdgeTagNames {
             get;
@@ -74,7 +74,7 @@ namespace CNS.Boundary {
 
         /// <summary>
         /// Returns the <see cref="BoundaryCondition"/> associated to the given
-        /// edge tag name (see <see cref="GridCommons.EdgeTagNames"/>)
+        /// edge tag name
         /// </summary>
         /// <param name="edgeTageName">
         /// The name of the edge type
