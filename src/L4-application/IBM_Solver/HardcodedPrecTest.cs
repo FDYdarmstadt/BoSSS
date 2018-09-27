@@ -257,7 +257,7 @@ namespace BoSSS.Application.IBM_Solver {
 
             C.savetodb = true;
 
-            C.DbPath = @" \\dc1\userspace\Krueger\BoSSS\BoSSS_DBs\degenhardt_final";
+            C.DbPath = @" \\dc1\scratch\Krause\Datenbank_Louis\degenhardt_final";
             //C.DbPath = @"\\hpccluster\hpccluster-scratch\krause\cluster_db";
             //C.DbPath = @"/home/oe11okuz/BoSSS_DB/Lichtenberg_DB";
 
