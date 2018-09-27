@@ -48,6 +48,20 @@ namespace BoSSS.Foundation.XDG.Quadrature
             QuadRule[] rulezOfKrom = new QuadRule[2];
             rulezOfKrom[0] = fullSpace.Value.NodesAndWeights.GetQuadRule(); //Volume rule
             rulezOfKrom[1] = SurfRule.GetQuadRule();    //Surface rule
+            
+            //Handle empty QuadRule
+            if (rulezOfKrom[0].NoOfNodes == 0)
+            {
+                Debug.WriteLine("Evaluation of cell {0} returned empty volume quadrule", cell);
+                rulezOfKrom[0] = CreateZeroQuadrule();
+            }
+            if(rulezOfKrom[1].NoOfNodes == 0)
+            {
+                Debug.WriteLine("Evaluation of cell {0} returned empty surface quadrule", cell);
+                rulezOfKrom[1] = CreateZeroQuadrule();
+            }
+
+
             return rulezOfKrom;
         }
 
@@ -105,7 +119,7 @@ namespace BoSSS.Foundation.XDG.Quadrature
             int heightDirection = arg.HeightDirection;
 
             //Sort R into ascending order such that ... (line 2) : Implemented with a sortedList
-            ISortedBoundedList<double> roots = new SayeSortedList(arg.n * 2);
+            ISortedBoundedList<double> roots = new SayeSortedList(2 + arg.n, 1.0e-14);
             double[] bounds = GetBoundaries(arg, heightDirection);
             roots.SetBounds(bounds[0], bounds[1]);
             RestrictToBound(X, bounds[0], arg.HeightDirection);
