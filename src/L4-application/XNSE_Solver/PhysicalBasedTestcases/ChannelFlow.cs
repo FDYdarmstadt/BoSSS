@@ -44,7 +44,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
         /// control object for various testing
         /// </summary>
         /// <returns></returns>
-        public static XNSE_Control ChannelFlow_WithInterface(int p = 2, int kelem = 16, int wallBC = 1) {
+        public static XNSE_Control ChannelFlow_WithInterface(int p = 2, int kelem = 8, int wallBC = 1) {
 
             XNSE_Control C = new XNSE_Control();
 
@@ -133,7 +133,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             C.GridFunc = delegate () {
                 double[] Xnodes = GenericBlas.Linspace(0, L, 2 * kelem + 1);
                 double[] Ynodes = GenericBlas.Linspace(0, H, kelem + 1);
-                var grd = Grid2D.Cartesian2DGrid(Xnodes, Ynodes);
+                var grd = Grid2D.Cartesian2DGrid(Xnodes, Ynodes, periodicX:true);
 
                 switch (wallBC) {
                     case 0:
@@ -153,8 +153,8 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
 
                 }
                 //grd.EdgeTagNames.Add(3, "velocity_inlet_left");
-                grd.EdgeTagNames.Add(3, "pressure_outlet_left");
-                grd.EdgeTagNames.Add(4, "pressure_outlet_right");
+                grd.EdgeTagNames.Add(3, "freeslip_left");
+                grd.EdgeTagNames.Add(4, "freeslip_right");
 
                 grd.DefineEdgeTags(delegate (double[] X) {
                     byte et = 0;
@@ -162,9 +162,9 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
                         et = 1;
                     if (Math.Abs(X[1] - H) <= 1.0e-8)
                         et = 2;
-                    if (Math.Abs(X[0]) <= 1.0e-8)
+                    if(Math.Abs(X[0]) <= 1.0e-8)
                         et = 3;
-                    if (Math.Abs(X[0] - L) <= 1.0e-8)
+                    if(Math.Abs(X[0] - L) <= 1.0e-8)
                         et = 4;
 
                     return et;
@@ -180,7 +180,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             // ==============
             #region init
 
-            Func<double[], double> PhiFunc = (X => X[1] - (H / 2)); // + (H/20)*Math.Cos(8 * Math.PI * X[0] / L));
+            Func<double[], double> PhiFunc = (X => X[1] - (H / 2.0)); // + (H/20)*Math.Cos(8 * Math.PI * X[0] / L));
 
             //double[] center = new double[] { H / 2.0, H / 2.0 };
             //double radius = 0.25;
@@ -194,8 +194,8 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
 
             double U = 1.0;
 
-            C.InitialValues_Evaluators.Add("VelocityX#A", X => -U);
-            C.InitialValues_Evaluators.Add("VelocityX#B", X => U);
+            C.InitialValues_Evaluators.Add("VelocityY#A", X => U);
+            C.InitialValues_Evaluators.Add("VelocityY#B", X => U);
 
             //double Pjump = sigma / radius;
             //C.InitialValues_Evaluators.Add("Pressure#A", X => Pjump);
@@ -216,10 +216,10 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
                 case 0:
                     goto default;
                 case 1:
-                    C.AddBoundaryValue("velocity_inlet_lower", "VelocityX#A", X => -U);
-                    C.AddBoundaryValue("velocity_inlet_lower", "VelocityX#B", X => -U);
-                    C.AddBoundaryValue("velocity_inlet_upper", "VelocityX#A", X => U);
-                    C.AddBoundaryValue("velocity_inlet_upper", "VelocityX#B", X => U);
+                    C.AddBoundaryValue("velocity_inlet_lower", "VelocityY#A", X => U);
+                    C.AddBoundaryValue("velocity_inlet_lower", "VelocityY#B", X => U);
+                    C.AddBoundaryValue("velocity_inlet_upper", "VelocityY#A", X => U);
+                    C.AddBoundaryValue("velocity_inlet_upper", "VelocityY#B", X => U);
                     break;
                 case 2:
                     C.AddBoundaryValue("navierslip_linear_lower");
@@ -232,9 +232,8 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
 
             }
 
-            C.AddBoundaryValue("velocity_inlet_left", "VelocityX#A", X => U);
-            C.AddBoundaryValue("velocity_inlet_left", "VelocityX#B", X => U);
-            C.AddBoundaryValue("pressure_outlet_right");
+            C.AddBoundaryValue("freeslip_left");
+            C.AddBoundaryValue("freeslip_right");
 
 
             #endregion
@@ -252,14 +251,14 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             C.Solver_ConvergenceCriterion = 1e-8;
             C.LevelSet_ConvergenceCriterion = 1e-6;
 
-            C.LSContiProjectionMethod = Solution.LevelSetTools.ContinuityProjectionOption.ContinuousDG;
+            C.LSContiProjectionMethod = Solution.LevelSetTools.ContinuityProjectionOption.None;
 
-            C.Option_LevelSetEvolution = LevelSetEvolution.None;
+            C.Option_LevelSetEvolution = LevelSetEvolution.FastMarching;
             C.AdvancedDiscretizationOptions.FilterConfiguration = CurvatureAlgorithms.FilterConfiguration.NoFilter;
             C.AdvancedDiscretizationOptions.SST_isotropicMode = Solution.XNSECommon.SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_ContactLine;
 
             //C.LS_TrackerWidth = 2;
-            C.AdaptiveMeshRefinement = false;
+            C.AdaptiveMeshRefinement = true;
             C.RefinementLevel = 1;
 
             #endregion
@@ -271,14 +270,14 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
 
             C.Timestepper_Scheme = XNSE_Control.TimesteppingScheme.BDF2;
             C.Timestepper_BDFinit = TimeStepperInit.SingleInit;
-            C.Timestepper_LevelSetHandling = LevelSetHandling.None;
+            C.Timestepper_LevelSetHandling = LevelSetHandling.Coupled_Once;
 
-            C.CompMode = AppControl._CompMode.Steady;
+            C.CompMode = AppControl._CompMode.Transient;
             double dt = 2e-3;
             C.dtMax = dt;
             C.dtMin = dt;
             C.Endtime = 1000;
-            C.NoOfTimesteps = 2000;
+            C.NoOfTimesteps = 20;
             C.saveperiod = 10;
 
             #endregion
