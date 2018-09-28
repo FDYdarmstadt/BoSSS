@@ -824,15 +824,12 @@ namespace BoSSS.Solution.NSECommon {
                     //if (LsTrk.GridDat.SpatialDimension == 2)
                     //{
 
-                    for (int j = 0; j < Len; j++)
-                    {
-                        for (int k = 0; k < K; k++)
-                        {
+                    for (int j = 0; j < Len; j++) {
+                        for (int k = 0; k < K; k++) {
                             double acc = 0.0;
 
                             // pressure
-                            switch (d)
-                            {
+                            switch (d) {
                                 case 0:
                                     acc += pARes[j, k] * Normals[j, k, 0];
                                     acc -= (2 * muA * beta) * Grad_URes[j, k, 0] * Normals[j, k, 0];
