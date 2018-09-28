@@ -1210,10 +1210,10 @@ namespace BoSSS.Solution {
                             }
                             var _Grid = DatabaseDriver.LoadGrid(tsi_toLoad.GridID, m_Database);
 
-                            foreach(string oldBndy in this.Control.BoundaryValuesChanges.Keys) {
+                            foreach(string oldBndy in this.Control.BoundaryValueChanges.Keys) {
                                 int bndyInd = _Grid.EdgeTagNames.Values.FirstIndexWhere(bndyVal => bndyVal.Equals(oldBndy, StringComparison.InvariantCultureIgnoreCase));
                                 if( bndyInd > -1) {
-                                    _Grid.EdgeTagNames[_Grid.EdgeTagNames.Keys.ElementAt(bndyInd)] = this.Control.BoundaryValuesChanges[oldBndy];
+                                    _Grid.EdgeTagNames[_Grid.EdgeTagNames.Keys.ElementAt(bndyInd)] = this.Control.BoundaryValueChanges[oldBndy];
                                 } else {
                                     throw new ArgumentException("Boundary " + oldBndy + " is not found in EdgeTagNames of the loaded Grid");
                                 }
@@ -2020,7 +2020,7 @@ namespace BoSSS.Solution {
                         //    }
                         //}
 
-                        // set dg coördinates
+                        //set dg coördinates
                         foreach(var f in m_RegisteredFields) {
                             if(f is XDGField) {
                                 XDGBasis xb = ((XDGField)f).Basis;
