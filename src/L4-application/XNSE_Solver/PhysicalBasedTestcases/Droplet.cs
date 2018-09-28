@@ -1017,7 +1017,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
         /// 
         /// </summary>
         /// <returns></returns>
-        public static XNSE_Control StaticDroplet_OnPlate(int p = 2, int kelem = 32, string _DbPath = null) {
+        public static XNSE_Control StaticDroplet_OnPlate(int p = 2, int kelem = 16, string _DbPath = null) {
 
             XNSE_Control C = new XNSE_Control();
 
@@ -1026,9 +1026,9 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             if(D == 3)
                 C.CutCellQuadratureType = Foundation.XDG.XQuadFactoryHelper.MomentFittingVariants.Classic;
 
-            AppControl._CompMode compMode = AppControl._CompMode.Transient;
+            AppControl._CompMode compMode = AppControl._CompMode.Steady;
 
-            _DbPath = @"\\fdyprime\userspace\smuda\cluster\cluster_db";
+            //_DbPath = @"\\fdyprime\userspace\smuda\cluster\cluster_db";
             //_DbPath = @"D:\local\local_Testcase_databases\Testcase_ContactLine";
             //_DbPath = @"D:\local\local_spatialConvStudy\StaticDropletOnPlateConvergence\SDoPConvDB";
 
@@ -1100,8 +1100,8 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             double sigma = 0.5;
             C.PhysicalParameters.Sigma = sigma;
 
-            C.PhysicalParameters.betaS_A = 0.05;
-            C.PhysicalParameters.betaS_B = 0.05;
+            //C.PhysicalParameters.betaS_A = 0.0;
+            //C.PhysicalParameters.betaS_B = 0.0;
 
             C.PhysicalParameters.betaL = 0.0;
             C.PhysicalParameters.theta_e = Math.PI / 3.0;
@@ -1194,7 +1194,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             #region init
 
             double R = 0.1;
-            double Theta_e = Math.PI / 2.0;
+            double Theta_e = Math.PI / 3.0;
             double s = 2 * R * Math.Sin(Theta_e);
             double h = Math.Sqrt(R.Pow2() - (0.25 * s.Pow2()));
 
@@ -1238,6 +1238,9 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
                 C.AddBoundaryValue("navierslip_linear_back");
             }
 
+            C.AdvancedDiscretizationOptions.GNBC_Localization = NavierSlip_Localization.Bulk;
+            C.AdvancedDiscretizationOptions.GNBC_SlipLength = NavierSlip_SlipLength.hmin_Grid;
+
             #endregion
 
 
@@ -1273,7 +1276,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
 
             //C.AdvancedDiscretizationOptions.ViscosityMode = ViscosityMode.Standard;
 
-            C.Option_LevelSetEvolution = (compMode == AppControl._CompMode.Steady) ? LevelSetEvolution.None : LevelSetEvolution.ExtensionVelocity;
+            C.Option_LevelSetEvolution = (compMode == AppControl._CompMode.Steady) ? LevelSetEvolution.None : LevelSetEvolution.FastMarching;
             C.AdvancedDiscretizationOptions.FilterConfiguration = CurvatureAlgorithms.FilterConfiguration.NoFilter;
 
             C.AdvancedDiscretizationOptions.SST_isotropicMode= Solution.XNSECommon.SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_ContactLine;
