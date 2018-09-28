@@ -750,6 +750,7 @@ namespace BoSSS.Solution.XdgTimestepping {
                     if (m_PrivateBalancingInfo.m_Stack_u[i]) {
                         DGField[] _Fields = m_Stack_u[i].Mapping.Fields.ToArray();
                         for (int iF = 0; iF < _Fields.Length; iF++) {
+                            _Fields[iF].Clear();
                             L.RestoreDGField(_Fields[iF], GetName__Stack_u(i, iF));
                         }
                     }
@@ -1490,7 +1491,7 @@ namespace BoSSS.Solution.XdgTimestepping {
                     double distL2 = GenericBlas.L2DistPow2(checkResidual, base.Residuals).MPISum().Sqrt();
                     double refL2 = (new double[] { GenericBlas.L2NormPow2(m_Stack_u[0]), GenericBlas.L2NormPow2(checkResidual), GenericBlas.L2NormPow2(base.Residuals) }).MPISum().Max().Sqrt();
 
-                    Assert.Less(distL2, refL2 * 1.0e-5, "argh");
+                    //Assert.Less(distL2, refL2 * 1.0e-5, "argh");
 
                 }
 #endif

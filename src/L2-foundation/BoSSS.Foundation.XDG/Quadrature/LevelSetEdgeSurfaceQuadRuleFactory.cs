@@ -156,7 +156,7 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
                 LevelSetData.GridDat,
                 RefElement,
                 new FixedRuleFactory<QuadRule>(RefElement.FaceRefElement.GetQuadratureRule(minOrder))).
-                GetQuadRuleSet(new CellMask(LevelSetData.GridDat, Chunk.GetSingleElementChunk(0)), -1).
+                GetQuadRuleSet(new CellMask(LevelSetData.GridDat, Chunk.GetSingleElementChunk(0), MaskType.Geometrical), -1).
                 First().Rule;
         }
 
@@ -457,7 +457,7 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
                     new CellEdgeBoundaryQuadratureScheme(
                         false,
                         owner.edgeRuleFactory,
-                        new CellMask(lsData.GridDat, Chunk.GetSingleElementChunk(element)))
+                        new CellMask(lsData.GridDat, Chunk.GetSingleElementChunk(element), MaskType.Geometrical))
                 .Compile(lsData.GridDat, maxPhiDegree),
                 CoordinateSystem.Reference) {
                 this.LevelSetData = lsData;

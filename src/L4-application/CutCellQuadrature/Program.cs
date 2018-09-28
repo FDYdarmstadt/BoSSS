@@ -63,13 +63,13 @@ namespace CutCellQuadrature {
 
         private static ITestCase[] testCases = new ITestCase[] {
             //new SingleSquareStraightLineLengthTestCase(GridSizes.Tiny, GridTypes.Structured),
-            new SingleSquareStraightLineVolumeTestCase(GridSizes.Tiny, GridTypes.Structured),
+            //new SingleSquareStraightLineVolumeTestCase(GridSizes.Tiny, GridTypes.Structured),
             //new SingleSquareParabolaLengthTestCase(GridSizes.Tiny, GridTypes.Structured),
             //new SingleSquareParabolaVolumeTestCase(GridSizes.Tiny, GridTypes.Structured),
 
             //new SingleCubeParaboloidVolumeTestCase(GridSizes.Tiny, GridTypes.Structured),
             //new SphereVolume3DTestCase_NoShifts(GridSizes.Tiny, GridTypes.Structured),
-            //new SphereVolume3DTestCase_NoShifts(GridSizes.Small, GridTypes.Structured),
+            //new SphereVolume3DTestCase(GridSizes.Tiny, GridTypes.Structured),
             //new SphereVolume3DTestCase_NoShifts(GridSizes.Normal, GridTypes.Structured),
             //new SphereVolume3DTestCase_NoShifts(GridSizes.Large, GridTypes.Structured),
             //new SphereVolume3DTestCase_NoShifts(GridSizes.Huge, GridTypes.Structured)
@@ -78,8 +78,9 @@ namespace CutCellQuadrature {
             //new ConstantIntgreandSphereSurfaceIntegral3DTestCase(GridSizes.Small, GridTypes.Structured),
             //new ConstantIntgreandSphereSurfaceIntegral3DTestCase(GridSizes.Normal, GridTypes.Structured),
             
+            
+            //new SingleSquareParabolaLengthTestCase(GridSizes.Tiny, GridTypes.Structured),
             /*
-            new SingleSquareParabolaLengthTestCase(GridSizes.Tiny, GridTypes.Structured),
             new SingleSquareParabolaLengthTestCase(GridSizes.Small, GridTypes.Structured),
             new SingleSquareParabolaLengthTestCase(GridSizes.Normal, GridTypes.Structured),
             new SingleSquareParabolaLengthTestCase(GridSizes.Large, GridTypes.Structured),
@@ -87,7 +88,7 @@ namespace CutCellQuadrature {
             */
 
             //new Smereka2EllipseArcLength(GridSizes.Tiny, GridTypes.Structured),
-            //new Smereka2EllipseArcLength(GridSizes.Small, GridTypes.Structured),
+            new Smereka2EllipseArcLength(GridSizes.Small, GridTypes.Structured),
             //new Smereka2EllipseArcLength(GridSizes.Normal, GridTypes.Structured),
             //new Smereka2EllipseArcLength(GridSizes.Large, GridTypes.Structured),
             //new Smereka2EllipseArcLength(GridSizes.Huge, GridTypes.Structured),
@@ -665,18 +666,20 @@ namespace CutCellQuadrature {
                     }
                 case Modes.SayeGaussRules: //
                     {
+                        SayeGaussComboRuleFactory FactoryFactory = SayeFactories.SayeGaussRule_Combo2D(
+                                levelSetTracker.DataHistories[0].Current,
+                                rootFindingAlgorithm
+                            );
+
                         if (testCase is ISurfaceTestCase)
                         {
-                            volumeFactory = SayeFactories.SayeGaussRule_LevelSet2D(
-                                levelSetTracker.DataHistories[0].Current,
-                                rootFindingAlgorithm);
+                            //volumeFactory = FactoryFactory.GetSurfaceFactory();
+                            volumeFactory = SayeFactories.SayeGaussRule_LevelSet2D(levelSetTracker.DataHistories[0].Current, rootFindingAlgorithm);
                         }
                         else
                         {
-                            volumeFactory = SayeFactories.SayeGaussRule_Volume2D(
-                                levelSetTracker.DataHistories[0].Current,
-                                rootFindingAlgorithm,
-                                SayeFactory_Square.QuadratureMode.PositiveVolume);
+                            //volumeFactory = SayeFactories.SayeGaussRule_Volume3D(levelSetTracker.DataHistories[0].Current, rootFindingAlgorithm);
+                            volumeFactory = FactoryFactory.GetVolumeFactory();
                         }
 
                         edgeFactory = null;
