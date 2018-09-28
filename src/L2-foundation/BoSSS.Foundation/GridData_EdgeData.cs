@@ -1046,7 +1046,7 @@ namespace BoSSS.Foundation.Grid.Classic {
                             return false;
 
                         if (Math.Abs((h1 - l1) / (h2 - l2)) <= 1.0e-9 || Math.Abs((h2 - l2) / (h1 - l1)) < 1.0e-9)
-                            throw new NotSupportedException("Cell size ratios to high for reliable non-conformal matching.");
+                            throw new NotSupportedException("Cell size ratios too high for reliable non-conformal matching.");
 
                         // so there is some intersection ...
                         if (Math.Abs(l1 - l2) < Tol_Dist && Math.Abs(h1 - h2) < Tol_Dist) {
