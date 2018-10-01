@@ -22,6 +22,7 @@ using BoSSS.Foundation.XDG;
 using ilPSP.LinSolvers;
 using ilPSP.Utils;
 using BoSSS.Solution.NSECommon;
+using BoSSS.Solution.XheatCommon;
 using BoSSS.Solution.XNSECommon.Operator;
 using BoSSS.Foundation;
 using System.Diagnostics;
@@ -143,8 +144,10 @@ namespace BoSSS.Solution.XNSECommon {
 
             MatInt = config.physParams.Material;
 
-            if (!MatInt)
-                throw new NotSupportedException("Non-Material interface is NOT tested!");
+            double MassFlux = -0.1;
+
+            //if (!MatInt)
+            //    throw new NotSupportedException("Non-Material interface is NOT tested!");
 
             // create Operator
             // ===============
@@ -198,8 +201,8 @@ namespace BoSSS.Solution.XNSECommon {
                         var pres = new Operator.Pressure.PressureInBulk(d, BcMap);
                         comps.Add(pres);
 
-                        if (!MatInt)
-                            throw new NotSupportedException("New Style pressure coupling does not support non-material interface.");
+                        //if (!MatInt)
+                        //    throw new NotSupportedException("New Style pressure coupling does not support non-material interface.");
                         var presLs = new Operator.Pressure.PressureFormAtLevelSet(d, D, LsTrk);
                         comps.Add(presLs);
                     }
@@ -306,7 +309,7 @@ namespace BoSSS.Solution.XNSECommon {
                                     // Level-Set operator
                                     comps.Add(new Operator.Viscosity.ViscosityAtLevelSet_FullySymmetric(LsTrk, muA, muB, penalty, d));
 
-                                    //comps.Add(new Operator.Viscosity.ViscosityAtLevelSet_Slip(LsTrk, muA, muB, penalty, d));
+                                    //comps.Add(new Operator.Viscosity.GeneralizedViscosityAtLevelSet_FullySymmetric(LsTrk, muA, muB, penalty, d, rhoA, rhoB, MassFlux));
 
                                     break;
                                 }
@@ -333,6 +336,8 @@ namespace BoSSS.Solution.XNSECommon {
                     var divPen = new Operator.Continuity.DivergenceAtLevelSet(D, LsTrk, rhoA, rhoB, MatInt, config.dntParams.ContiSign, config.dntParams.RescaleConti);
                     m_OP.EquationComponents["div"].Add(divPen);
 
+                    //var divPenGen = new Operator.Continuity.GeneralizedDivergenceAtLevelSet(D, LsTrk, rhoA, rhoB, MatInt, config.dntParams.ContiSign, config.dntParams.RescaleConti, MassFlux);
+                    //m_OP.EquationComponents["div"].Add(divPenGen);
 
                     //// pressure stabilization
                     //if (this.config.PressureStab) {
@@ -467,6 +472,15 @@ namespace BoSSS.Solution.XNSECommon {
                         m_OP.EquationComponents[CodName[d]].Add(new SurfaceTension_ArfForceSrc(d, D, LsTrk));
                     }
                 }
+
+
+                // evaporation (mass flux)
+                // =======================
+
+                //for(int d = 0; d < D; d++) {
+                //    m_OP.EquationComponents[CodName[d]].Add(new Operator.DynamicInterfaceConditions.PrescribedMassFlux(d, D, LsTrk, rhoA, rhoB, MassFlux));
+                //}
+
 
             }
 
@@ -652,12 +666,29 @@ namespace BoSSS.Solution.XNSECommon {
 
             // compute matrix
             if (OpMatrix != null) {
-                Op.ComputeMatrixEx(Tracker,
-                    ColMapping, Params, RowMapping,
-                    OpMatrix, OpAffine, false, time, true,
-                    AgglomeratedCellLengthScales,
-                    InterfaceLengths, SlipLengths,
-                    SpcToCompute);
+                //Op.ComputeMatrixEx(Tracker,
+                //    ColMapping, Params, RowMapping,
+                //    OpMatrix, OpAffine, false, time, true,
+                //    AgglomeratedCellLengthScales,
+                //    InterfaceLengths, SlipLengths,
+                //    SpcToCompute);
+
+                XSpatialOperator.XEvaluatorLinear mtxBuilder = Op.GetMatrixBuilder(LsTrk, ColMapping, Params, RowMapping, SpcToCompute);
+
+                foreach(var kv in AgglomeratedCellLengthScales) {
+                    mtxBuilder.SpeciesOperatorCoefficients[kv.Key].CellLengthScales = kv.Value;
+                    mtxBuilder.SpeciesOperatorCoefficients[kv.Key].UserDefinedValues.Add("SlipLengths", SlipLengths);
+                }
+
+                if(Op.SurfaceElementOperator.TotalNoOfComponents > 0) {
+                    foreach(var kv in InterfaceLengths)
+                        mtxBuilder.SpeciesOperatorCoefficients[kv.Key].UserDefinedValues.Add("InterfaceLengths", kv.Value);
+                }
+
+                mtxBuilder.time = time;
+
+                mtxBuilder.ComputeMatrix(OpMatrix, OpAffine);
+
             } else {
                 XSpatialOperator.XEvaluatorNonlin eval = Op.GetEvaluatorEx(Tracker,
                     CurrentState.ToArray(), Params, RowMapping,
@@ -665,14 +696,13 @@ namespace BoSSS.Solution.XNSECommon {
 
                 foreach(var kv in AgglomeratedCellLengthScales) {
                     eval.SpeciesOperatorCoefficients[kv.Key].CellLengthScales = kv.Value;
-                    eval.SpeciesOperatorCoefficients[kv.Key].UserDefinedValues.Add("SlipLengths", kv.Value);
+                    eval.SpeciesOperatorCoefficients[kv.Key].UserDefinedValues.Add("SlipLengths", SlipLengths);
                 }
 
                 if(Op.SurfaceElementOperator.TotalNoOfComponents > 0) {
                     foreach(var kv in InterfaceLengths)
                         eval.SpeciesOperatorCoefficients[kv.Key].UserDefinedValues.Add("InterfaceLengths", kv.Value);
                 }
-
 
                 eval.time = time;
 
