@@ -287,7 +287,7 @@ namespace BoSSS.Solution.NSECommon {
 
             cj = cs.CellLengthScales;
 
-            if(cs.UserDefinedValues.Keys.Contains("SlipLength"))
+            if(cs.UserDefinedValues.Keys.Contains("SlipLengths"))
                 Lslip = (MultidimensionalArray)cs.UserDefinedValues["SlipLengths"];
         }
 
