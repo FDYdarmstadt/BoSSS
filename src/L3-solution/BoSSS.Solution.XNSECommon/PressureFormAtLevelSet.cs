@@ -24,6 +24,9 @@ using BoSSS.Solution.NSECommon;
 
 namespace BoSSS.Solution.XNSECommon.Operator.Pressure {
     
+    /// <summary>
+    /// 
+    /// </summary>
     public class PressureFormAtLevelSet : ILevelSetForm {
 
         LevelSetTracker m_LsTrk;
@@ -73,4 +76,67 @@ namespace BoSSS.Solution.XNSECommon.Operator.Pressure {
             get { return null; }
         }
     }
+
+    ///// <summary>
+    ///// 
+    ///// </summary>
+    //public class GeneralizedPressureFormAtLevelSet : ILevelSetForm {
+
+    //    LevelSetTracker m_LsTrk;
+
+    //    public GeneralizedPressureFormAtLevelSet(int _d, int _D, LevelSetTracker LsTrk, , double _rhoA, double _rhoB, double _M) {
+    //        m_d = _d;
+    //        m_D = _D;
+    //        m_LsTrk = LsTrk;
+    //        if(_d >= _D)
+    //            throw new ArgumentException();
+
+    //        this.rhoA = _rhoA;
+    //        this.rhoB = _rhoB;
+    //        this.M = _M;
+    //    }
+
+    //    int m_d;
+    //    int m_D;
+
+    //    double rhoA;
+    //    double rhoB;
+    //    double M;
+
+
+    //    public double LevelSetForm(ref CommonParamsLs inp, double[] pA, double[] pB, double[,] Grad_pA, double[,] Grad_pB, double vA, double vB, double[] Grad_vA, double[] Grad_vB) {
+    //        return -(vB - vA) * inp.n[m_d] * 0.5 * (pB[0] + pA[0]);
+    //    }
+
+
+
+    //    public IList<string> ArgumentOrdering {
+    //        get {
+    //            return new string[] { VariableNames.Pressure };
+    //        }
+    //    }
+
+    //    public int LevelSetIndex {
+    //        get { return 0; }
+    //    }
+
+    //    public SpeciesId PositiveSpecies {
+    //        get { return this.m_LsTrk.GetSpeciesId("B"); }
+    //    }
+
+    //    public SpeciesId NegativeSpecies {
+    //        get { return this.m_LsTrk.GetSpeciesId("A"); }
+    //    }
+
+    //    public TermActivationFlags LevelSetTerms {
+    //        get {
+    //            return TermActivationFlags.UxV;
+    //        }
+    //    }
+
+    //    public IList<string> ParameterOrdering {
+    //        get { return null; }
+    //    }
+    //}
+
 }

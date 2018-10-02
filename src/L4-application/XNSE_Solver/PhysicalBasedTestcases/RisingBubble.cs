@@ -336,7 +336,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
         /// <param name="kelem"></param>
         /// <param name="_DbPath"></param>
         /// <returns></returns>
-        public static XNSE_Control RB_BenchmarkTest(int p = 2, int kelem = 20, string _DbPath = null) {
+        public static XNSE_Control RB_BenchmarkTest(int p = 2, int kelem = 10, string _DbPath = null) {
 
             XNSE_Control C = new XNSE_Control();
 
@@ -605,7 +605,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
 
             C.CompMode = AppControl._CompMode.Transient;
 
-            double dt = 1e-3;
+            double dt = 1e-2;
             C.dtMax = dt;
             C.dtMin = dt;
             C.NoOfTimesteps = 3000;

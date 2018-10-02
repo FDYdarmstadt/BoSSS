@@ -127,7 +127,7 @@ namespace BoSSS.Foundation.Quadrature {
                 }
             }
             IEnumerable<IChunkRulePair<QuadRule>> edgeRuleMap = edgeRuleFactory.GetQuadRuleSet(
-                    new EdgeMask(context, edgeBitMask,MaskType.Geometrical), order);
+                    new EdgeMask(context, edgeBitMask, MaskType.Geometrical), order);
 
             
             // build cell boundary rule

@@ -108,8 +108,18 @@ namespace BoSSS.Foundation.XDG.Quadrature
             recursionTree.UnrollFunc(IntegrandEvaluation);
             //ConvertToQuadRule
             QuadRule toRuleThemAll = fullSpace.Value.NodesAndWeights.GetQuadRule();
+
+            //Handle empty QuadRule
+            if (toRuleThemAll.NoOfNodes == 0)
+            {
+                Debug.WriteLine("Evaluation of cell {0} returned empty Quadrule", cell);
+                toRuleThemAll = CreateZeroQuadrule();
+            }
+
             return toRuleThemAll;
         }
+
+        protected abstract QuadRule CreateZeroQuadrule();
 
         #region Evaluate Integrand
 
@@ -183,7 +193,7 @@ namespace BoSSS.Foundation.XDG.Quadrature
             int heightDirection = arg.HeightDirection;
 
             //Sort R into ascending order such that ... (line 2) : Implemented with a sortedList
-            ISortedBoundedList<double> roots = new SayeSortedList(arg.n * 2);
+            ISortedBoundedList<double> roots = new SayeSortedList(2 + arg.n,  1.0e-14);
             double[] bounds = GetBoundaries(arg, heightDirection);
             roots.SetBounds(bounds[0], bounds[1]);
             RestrictToBound(X, bounds[0], arg.HeightDirection);
@@ -234,7 +244,7 @@ namespace BoSSS.Foundation.XDG.Quadrature
             S phi = arg.PsiAndS[0].Item1;
             int heightDirection = arg.HeightDirection;
             double[] bounds = GetBoundaries(arg, heightDirection);
-            ISortedBoundedList<double> roots = new SayeSortedList(1);
+            ISortedBoundedList<double> roots = new SayeSortedList(3, 1.0e-14);
             roots.SetBounds(bounds[0], bounds[1]);
             double[] newRoots = FindRoots(phi, X, heightDirection, bounds, this.cell);
             roots.Add(newRoots);
