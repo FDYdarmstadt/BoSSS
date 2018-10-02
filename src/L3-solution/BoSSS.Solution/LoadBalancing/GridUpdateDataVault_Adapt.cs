@@ -428,8 +428,8 @@ namespace BoSSS.Solution {
                             tmpLS[iLS] = new SinglePhaseField(NewLSbasis[iLS], "tmpLS#" + iLS);
                             this.RestoreDGField(tmpLS[iLS], base.GetLSbackupName(iH, iLS));
 
-                            tmpLS[iLS].GetExtremalValues(out double min, out double max);
-                            Console.WriteLine("phi[{2}] min value = {0} / phi max value = {1}", min, max, iH);
+                            //tmpLS[iLS].GetExtremalValues(out double min, out double max);
+                            //Console.WriteLine("phi[{2}] min value = {0} / phi max value = {1}", min, max, iH);
                         }
 
                         m_NewTracker.ReplaceCurrentTimeLevel(tmpLS, m_LsTrkPrivData.Versions[1 - iH]);
