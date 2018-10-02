@@ -666,11 +666,12 @@ namespace BoSSS.Foundation.XDG.Quadrature
         List<double> list;
         double min;
         double max;
-        double tolerance = 1.0e-13;
+        readonly double tolerance;
 
-        public SayeSortedList(int initialSize)
+        public SayeSortedList(int initialSize, double Tolerance)
         {
             list = new List<double>( initialSize);
+            tolerance = Tolerance;
         }
 
         public void SetBounds(double Min, double Max)

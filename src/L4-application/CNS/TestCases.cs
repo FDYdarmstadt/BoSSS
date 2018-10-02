@@ -394,13 +394,13 @@ namespace CNS {
 
             double cellSize = Math.Min((xMax - xMin) / numOfCellsX, (yMax - yMin) / numOfCellsY);
 
-            bool IsNearVortex(double[] X) {
-                bool result = false;
-                if ((X[0] - xc) * (X[0] - xc) + (X[1] - yc) * (X[1] - yc) <= (b * b) + (4.0 * cellSize / Math.Max(dgDegree, 1))) {
-                    result = true;
-                }
-                return result;
-            }
+            //bool IsNearVortex(double[] X) {
+            //    bool result = false;
+            //    if ((X[0] - xc) * (X[0] - xc) + (X[1] - yc) * (X[1] - yc) <= (b * b) + (4.0 * cellSize / Math.Max(dgDegree, 1))) {
+            //        result = true;
+            //    }
+            //    return result;
+            //}
             #endregion
 
             double vPhi(double[] X, double radius) {
@@ -819,7 +819,7 @@ namespace CNS {
 
             double epsilon0 = 1.0;
             double kappa = 0.5;
-            double lambdaMax = 2.0;
+            //double lambdaMax = 2.0;
             if (AV) {
                 Variable sensorVariable = Variables.Density;
                 c.ShockSensor = new PerssonSensor(sensorVariable, sensorLimit);
@@ -1149,7 +1149,7 @@ namespace CNS {
 
             if (restart == "True") {
                 // Restart Lichtenberg "paper_ibmdmr"
-                c.RestartInfo = new Tuple<Guid, TimestepNumber>(new Guid("114a089b-5e28-4b53-bcfe-d1e1e57fe7d0"), -1);
+                c.RestartInfo = new Tuple<Guid, TimestepNumber>(new Guid("8c6e3af9-8f53-4de6-87e5-ba1949732119"), -1);
                 c.GridGuid = new Guid("0f4e4dad-7930-428f-80b1-a3ae28dc251c");
             } else {
                 c.GridFunc = delegate {
@@ -1265,7 +1265,7 @@ namespace CNS {
 
             IBMControl c = IBMDoubleMachReflection(dbPath, savePeriod, dgDegree, numOfCellsX, numOfCellsY, sensorLimit, dtFixed, CFLFraction, explicitScheme, explicitOrder, numberOfSubGrids, reclusteringInterval, maxNumOfSubSteps, agg, fugdeFactor, endTime, kappa, restart);
 
-            c.ProjectName = "paper_ibmdmr_run3_restart2";
+            c.ProjectName = "paper_ibmdmr_run3_restart5";
             //c.NoOfTimesteps = 10;
 
             return c;

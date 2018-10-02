@@ -104,10 +104,10 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
         /// </summary>
         private PolynomialList lambdaBasis;
 
-        ///// <summary>
-        ///// The sub-grid for the current execution mask
-        ///// </summary>
-        //private SubGrid subGrid;
+        /// <summary>
+        /// The sub-grid for the current execution mask
+        /// </summary>
+        private SubGrid subGrid;
 
         /// <summary>
         /// The requested polynomial order in the last call of
@@ -173,7 +173,7 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
 
             signTestRule = new CellBoundaryFromEdgeRuleFactory<CellBoundaryQuadRule>(
                 LevelSetData.GridDat, simplex, new FixedRuleFactory<QuadRule>(signEdgeRule)).
-                GetQuadRuleSet(new CellMask(LevelSetData.GridDat, new[] { Chunk.GetSingleElementChunk(0) }, MaskType.Geometrical), -1).
+                GetQuadRuleSet(new CellMask(LevelSetData.GridDat, Chunk.GetSingleElementChunk(0), MaskType.Geometrical), -1).
                 First().Rule;
         }
 
@@ -217,18 +217,18 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
                 if (mask.MaskType != MaskType.Geometrical)
                     throw new ArgumentException("Expecting a geometrical mask.");
 
-#if DEBUG 
-                CellMask differingCells = ((CellMask)mask).Except(this.LevelSetData.Region.GetCutCellMask4LevSet(this.levelSetIndex).ToGeometicalMask());
+                int noOfEdges = LevelSetData.GridDat.Grid.RefElements[0].NoOfFaces;
+                CellMask tmpLogicalMask = new CellMask(mask.GridData, mask.GetBitMask(), MaskType.Logical);
+#if DEBUG
+                CellMask differingCells = tmpLogicalMask.Except(this.LevelSetData.Region.GetCutCellMask4LevSet(this.levelSetIndex));
                 if (differingCells.NoOfItemsLocally > 0) {
-                    throw new ArgumentException("The provided mask has to be a sub-set of the cut cells. Cells " + differingCells.GetSummary() +  " are not in the CutCellMaks of this tracker.");
+                    throw new ArgumentException("The provided mask has to be a sub-set of the cut cells. " +
+                        "Cells {0} are not in the CutCellMaks of this tracker.", differingCells.GetSummary());
                 }
 #endif
 
-
-                int noOfEdges = LevelSetData.GridDat.Grid.RefElements[0].NoOfFaces;
-                //var subGrid = new SubGrid((CellMask)mask);
-                //localCellIndex2SubgridIndex = subGrid.LocalCellIndex2SubgridIndex;
-                localCellIndex2SubgridIndex = mask.GetIndex2MaskItemMap();
+                subGrid = new SubGrid(tmpLogicalMask);
+                localCellIndex2SubgridIndex = subGrid.LocalCellIndex2SubgridIndex;
 
                 if (order != lastOrder) {
                     cache.Clear();
@@ -487,7 +487,7 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
             int iKref = this.LevelSetData.GridDat.Cells.RefElements.IndexOf(this.RefElement, (A, B) => object.ReferenceEquals(A, B));
             int noOfFaces = LevelSetData.GridDat.Grid.RefElements[iKref].NoOfFaces;
             int D = RefElement.FaceRefElement.SpatialDimension;
-            
+
             Polynomial[] basePolynomials = RefElement.FaceRefElement.GetOrthonormalPolynomials(order).ToArray();
             Polynomial[] antiderivativePolynomials =
                 new Polynomial[basePolynomials.Length * D];
@@ -519,7 +519,7 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
                 LevelSetData.GridDat,
                 LevelSetData.GridDat.Grid.RefElements[0],
                 new FixedRuleFactory<QuadRule>(singleEdgeRule)).
-                GetQuadRuleSet(new CellMask(LevelSetData.GridDat, new[] { Chunk.GetSingleElementChunk(0) }, MaskType.Geometrical), -1).
+                GetQuadRuleSet(new CellMask(LevelSetData.GridDat, Chunk.GetSingleElementChunk(0), MaskType.Geometrical), -1).
                 First().Rule;
 
             //Basis singleEdgeBasis = new Basis(tracker.GridDat, order, RefElement.FaceRefElement);

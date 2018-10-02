@@ -750,6 +750,7 @@ namespace BoSSS.Solution.XdgTimestepping {
                     if (m_PrivateBalancingInfo.m_Stack_u[i]) {
                         DGField[] _Fields = m_Stack_u[i].Mapping.Fields.ToArray();
                         for (int iF = 0; iF < _Fields.Length; iF++) {
+                            _Fields[iF].Clear();
                             L.RestoreDGField(_Fields[iF], GetName__Stack_u(i, iF));
                         }
                     }
@@ -1671,7 +1672,7 @@ namespace BoSSS.Solution.XdgTimestepping {
             return description;
         }
 
-
+        public bool coupledOperator = false;
 
         /// <summary>
         /// Performs:
@@ -1710,8 +1711,10 @@ namespace BoSSS.Solution.XdgTimestepping {
             int newPushCount = m_LsTrk.PushCount;
 
 
-            if ((newVersion - oldVersion) != 1)
+            if ((newVersion - oldVersion) != 1 && !coupledOperator)
                 throw new ApplicationException("Expecting exactly one call to 'UpdateTracker(...)' in 'UpdateLevelset(...)'.");
+            if((newVersion - oldVersion) != 0 && coupledOperator)
+                throw new ApplicationException("Expecting exactly no call to 'UpdateTracker(...)' in 'UpdateLevelset(...)' for coupled Operators.");
             if ((newPushCount - oldPushCount) != 0)
                 throw new ApplicationException("Calling 'LevelSetTracker.PushStacks()' is not allowed. Level-set-tracker stacks must be controlled by time-stepper.");
 
