@@ -1041,17 +1041,17 @@ namespace BoSSS.Foundation.XDG {
         //    return Array.IndexOf<ILevelSet>(m_LevelSets, levSet);
         //}
 
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <param name="levSetInd"></param>
-        /// <returns></returns>
-        public ushort LevelSetBitmask(int levSetInd) {
-            if (levSetInd < 0 || levSetInd >= NoOfLevelSets)
-                throw new ArgumentException("unknown level set.", "levset");
+        ///// <summary>
+        ///// 
+        ///// </summary>
+        ///// <param name="levSetInd"></param>
+        ///// <returns></returns>
+        //public ushort LevelSetBitmask(int levSetInd) {
+        //    if (levSetInd < 0 || levSetInd >= NoOfLevelSets)
+        //        throw new ArgumentException("unknown level set.", "levset");
 
-            return (ushort)(0xF << (4 * levSetInd));
-        }
+        //    return (ushort)(0xF << (4 * levSetInd));
+        //}
 
 
         /// <summary>

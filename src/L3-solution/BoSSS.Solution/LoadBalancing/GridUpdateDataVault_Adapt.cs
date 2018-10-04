@@ -241,6 +241,7 @@ namespace BoSSS.Solution {
                 if(!object.ReferenceEquals(NewGrid, f.Basis.GridDat))
                     throw new ArgumentException("DG field must be assigned to new grid.");
 
+                f.Clear();
 
                 int[][] TargMappingIdx = m_Old2NewCorr.GetTargetMappingIndex(NewGrid.CellPartitioning);
                 double[][][] ReDistDGCoords = m_newDGFieldData_GridAdapta[Reference];
