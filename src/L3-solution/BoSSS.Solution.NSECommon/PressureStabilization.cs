@@ -18,6 +18,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using BoSSS.Foundation;
 using BoSSS.Solution.Utils;
 using ilPSP;
 
@@ -28,7 +29,7 @@ namespace BoSSS.Solution.NSECommon {
     /// D. A. D. Pietro and A. Ern, Mathematical Aspects of Discontinuous Galerkin Methods. Springer Berlin Heidelberg, 2012.
     /// (Chapter 6.2.4.2)
     /// </summary>
-    public class PressureStabilization : BoSSS.Solution.Utils.LinearDualValueFlux {
+    public class PressureStabilization : BoSSS.Solution.Utils.LinearDualValueFlux, IEquationComponentCoefficient {
 
         double PressureStabilizationFactor;
         double Reynolds;
@@ -36,9 +37,8 @@ namespace BoSSS.Solution.NSECommon {
         /// <summary>
         /// Ctor.
         /// </summary>
-        public PressureStabilization(double PressureStabilizationFactor, MultidimensionalArray h_max_Edge, double Reynolds) {
+        public PressureStabilization(double PressureStabilizationFactor, double Reynolds) {
             this.PressureStabilizationFactor = PressureStabilizationFactor;
-            this.h_max_Edge = h_max_Edge;
             this.Reynolds = Reynolds;
         }
 
@@ -59,6 +59,10 @@ namespace BoSSS.Solution.NSECommon {
 
         protected override void BorderEdgeFlux_(ref BoSSS.Foundation.CommonParamsBnd inp, double[] Uin, out double FluxInCell) {
             FluxInCell = 0.0;
+        }
+
+        public void CoefficientUpdate(CoefficientSet cs, int[] DomainDGdeg, int TestDGdeg) {
+            h_max_Edge = cs.EdgeLengthScales;
         }
     }
 }

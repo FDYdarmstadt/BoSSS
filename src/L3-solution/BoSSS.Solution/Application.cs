@@ -1196,12 +1196,36 @@ namespace BoSSS.Solution {
                     if (this.Control.GridFunc != null && this.Control.GridGuid != Guid.Empty)
                         throw new ApplicationException("Control object error: 'AppControl.GridFunc' and 'AppControl.GridGuid' are exclusive, cannot be unequal null at the same time.");
 
-                    if (this.Control.GridFunc != null) {
+                    if(this.Control.GridFunc != null) {
                         return this.Control.GridFunc();
-                    } else if (this.Control.GridGuid != null) {
-                        var _Grid = DatabaseDriver.LoadGrid(this.Control.GridGuid, m_Database);
-                        ht.LogMemoryStat();
-                        return _Grid;
+                    } else if(this.Control.GridGuid != null) {
+                        if(this.Control.RestartInfo != null) {
+                            ISessionInfo session = m_Database.Controller.GetSessionInfo(this.Control.RestartInfo.Item1);
+                            TimestepNumber timestep = this.Control.RestartInfo.Item2;
+                            ITimestepInfo tsi_toLoad;
+                            if(timestep == null || timestep.MajorNumber < 0) {
+                                tsi_toLoad = session.Timesteps.OrderBy(tsi => tsi.PhysicalTime).Last();
+                            } else {
+                                tsi_toLoad = session.Timesteps.Single(t => t.TimeStepNumber.Equals(timestep));
+                            }
+                            var _Grid = DatabaseDriver.LoadGrid(tsi_toLoad.GridID, m_Database);
+
+                            foreach(string oldBndy in this.Control.BoundaryValueChanges.Keys) {
+                                int bndyInd = _Grid.EdgeTagNames.Values.FirstIndexWhere(bndyVal => bndyVal.Equals(oldBndy, StringComparison.InvariantCultureIgnoreCase));
+                                if( bndyInd > -1) {
+                                    _Grid.EdgeTagNames[_Grid.EdgeTagNames.Keys.ElementAt(bndyInd)] = this.Control.BoundaryValueChanges[oldBndy];
+                                } else {
+                                    throw new ArgumentException("Boundary " + oldBndy + " is not found in EdgeTagNames of the loaded Grid");
+                                }
+                            }
+
+                            ht.LogMemoryStat();
+                            return _Grid;
+                        } else {
+                            var _Grid = DatabaseDriver.LoadGrid(this.Control.GridGuid, m_Database);
+                            ht.LogMemoryStat();
+                            return _Grid;
+                        }
                     } else {
                         throw new ApplicationException("Unable to create grid from control object. 'AppControl.GridFunc' and 'AppControl.GridGuid' are both null.");
                     }
@@ -1581,8 +1605,11 @@ namespace BoSSS.Solution {
         /// </summary>
         protected Boolean TerminationKey = false;
 
-
-
+        /// <summary>
+        /// If the current simualation has been restarted, <see cref="TimeStepNoRestart"/>
+        /// is set by the method <see cref="LoadRestart(out double, out TimestepNumber)"/>.
+        /// </summary>
+        protected TimestepNumber TimeStepNoRestart = null;
 
         /// <summary>
         /// Runs the application in the "solver"-mode. This method makes
@@ -1631,9 +1658,10 @@ namespace BoSSS.Solution {
                             throw new ApplicationException("Invalid state in control object: the specification of initial values ('AppControl.InitialValues') and restart info ('AppControl.RestartInfo') is exclusive: "
                                 + " both cannot be unequal null at the same time.");
 
-                        if (this.Control.RestartInfo != null)
+                        if (this.Control.RestartInfo != null) {
                             LoadRestart(out physTime, out i0);
-                        else
+                            TimeStepNoRestart = i0;
+                        } else
                             SetInitial();
                     }
                 }
@@ -1731,7 +1759,7 @@ namespace BoSSS.Solution {
             //    return;
             //Console.WriteLine("REM: dynamic load balancing for 1 processor is active.");
 
-            using (new FuncTrace()) {
+            using (var tr = new FuncTrace()) {
 
                 // ===============
                 // mesh adaptation
@@ -1873,137 +1901,149 @@ namespace BoSSS.Solution {
 
 
                 } else {
-                    // ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-                    // mesh adaptation
-                    // ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
-                    // backup old data
-                    // ===============
+                    using(new BlockTrace("Mesh Adaption", tr)) {
+                        // ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+                        // mesh adaptation
+                        // ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
-                    GridData oldGridData = (GridData) this.GridData;
-                    GridCommons oldGrid = oldGridData.Grid;
-                    Guid oldGridId = oldGrid.ID;
-                    Permutation tau;
-                    GridUpdateDataVault_Adapt remshDat = new GridUpdateDataVault_Adapt(oldGridData, this.LsTrk);
-                    BackupData(oldGridData, this.LsTrk, remshDat, out tau);
+                        //PlotCurrentState(0, new TimestepNumber(new int[] { 0, 9 }), 2);
 
-                    // save new grid to database
-                    // ==========================
+                        // backup old data
+                        // ===============
 
-                    if (!passiveIo) {
+                        GridData oldGridData = (GridData)this.GridData;
+                        GridCommons oldGrid = oldGridData.Grid;
+                        Guid oldGridId = oldGrid.ID;
+                        Permutation tau;
+                        GridUpdateDataVault_Adapt remshDat = new GridUpdateDataVault_Adapt(oldGridData, this.LsTrk);
+                        BackupData(oldGridData, this.LsTrk, remshDat, out tau);
 
-                        if (newGrid.GridGuid == null || newGrid.GridGuid.Equals(Guid.Empty))
-                            throw new ApplicationException();
-                        if (newGrid.GridGuid.Equals(oldGridId))
-                            throw new ApplicationException();
-                        if (DatabaseDriver.GridExists(newGrid.GridGuid))
-                            throw new ApplicationException();
+                        // save new grid to database
+                        // ==========================
 
-                        DatabaseDriver.SaveGrid(newGrid, this.m_Database);
-                    }
+                        if(!passiveIo) {
 
-                    // check for grid redistribution
-                    // =============================
-
-                    int[] NewPartition = fixedPartition ?? ComputeNewCellDistribution(TimeStepNo, physTime);
-                    if (NewPartition != null) {
-                        // grid also has to be re-distributed
-
-                        // rem: the new Partition correlates to the OLD grid
-                        // (don't know how to solve this)
-
-                        throw new NotImplementedException("todo.");
-
-                        /*
-                        int JupOld = this.GridData.iLogicalCells.NoOfLocalUpdatedCells;
-                        int NoOfRedistCells = CheckPartition(NewPartition, JupOld);
-
-                        if(NoOfRedistCells <= 0) {
-                            // nop
-                        } else {
-                            Console.WriteLine("Re-distribution of " + NoOfRedistCells + " cells.");
-                        }
-                        */
-                    }
-
-
-                    // create new grid
-                    // ===============
-                    GridData newGridData;
-                    {
-                        this.MultigridSequence = null;
-
-                        this.Grid = newGrid;
-                        newGridData = new GridData(this.Grid);
-                        this.GridData = newGridData;
-                        oldGridData.Invalidate();
-                        if (this.LsTrk != null) {
-                            this.LsTrk.Invalidate();
-                        }
-                        oldGridData = null;
-
-                        if (this.Control == null || this.Control.NoOfMultigridLevels > 0)
-                            this.MultigridSequence = CoarseningAlgorithms.CreateSequence(this.GridData,
-                                MaxDepth: (this.Control != null ? this.Control.NoOfMultigridLevels : 1));
-                        else
-                            this.MultigridSequence = new AggregationGrid[0];
-
-                        //Console.WriteLine("P {0}: new grid: {1} cells.", MPIRank, newGridData.iLogicalCells.NoOfLocalUpdatedCells);
-                    }
-
-                    // compute redistribution permutation
-                    // ==================================
-
-                    old2newGridCorr.ComputeDataRedist(newGridData);
-
-                    int newJ = newGridData.Cells.NoOfLocalUpdatedCells;
-                    //int[][] TargMappingIdx = old2newGridCorr.GetTargetMappingIndex(newGridData.CellPartitioning);
-
-                    // sent data around the world
-                    // ==========================
-
-
-                    remshDat.Resort(old2newGridCorr, newGridData);
-
-                    // re-init simulation
-                    // ==================
-
-                    // release old DG fields
-                    this.m_RegisteredFields.Clear();
-                    this.m_IOFields.Clear();
-
-                    // re-create fields
-                    if (this.Control != null) {
-                        InitFromAttributes.CreateFieldsAuto(
-                            this, GridData, this.Control.FieldOptions, this.Control.CutCellQuadratureType, this.m_IOFields, this.m_RegisteredFields);
-                    }
-                    CreateFields(); // full user control   
-                    PostRestart(physTime, TimeStepNo);
-
-                    // re-set Level-Set tracker
-                    int trackerVersion = remshDat.SetNewTracker(this.LsTrk);
-                    //if(this.LsTrk != null) {
-                    //    Debug.Assert(object.ReferenceEquals(this.LsTrk.GridDat, this.GridData));
-                    //    Debug.Assert(this.LsTrk.Regions.Version == trackerVersion);
-                    //    foreach(var f in m_RegisteredFields) {
-                    //        if(f is XDGField) {
-                    //            ((XDGField)f).Override_TrackerVersionCnt(trackerVersion);
-                    //        }
-                    //    }
-                    //}
-
-                    // set dg coördinates
-                    foreach (var f in m_RegisteredFields) {
-                        if (f is XDGField) {
-                            XDGBasis xb = ((XDGField)f).Basis;
-                            if (!object.ReferenceEquals(xb.Tracker, this.LsTrk))
+                            if(newGrid.GridGuid == null || newGrid.GridGuid.Equals(Guid.Empty))
                                 throw new ApplicationException();
-                        }
-                        remshDat.RestoreDGField(f);
-                    }
+                            if(newGrid.GridGuid.Equals(oldGridId))
+                                throw new ApplicationException();
+                            if(DatabaseDriver.GridExists(newGrid.GridGuid))
+                                throw new ApplicationException();
 
-                    // re-create solvers, blablabla
-                    CreateEquationsAndSolvers(remshDat);
+                            DatabaseDriver.SaveGrid(newGrid, this.m_Database);
+                        }
+
+
+                        // check for grid redistribution
+                        // =============================
+
+                        int[] NewPartition = fixedPartition ?? ComputeNewCellDistribution(TimeStepNo, physTime);
+                        if(NewPartition != null) {
+                            // grid also has to be re-distributed
+
+                            // rem: the new Partition correlates to the OLD grid
+                            // (don't know how to solve this)
+
+                            throw new NotImplementedException("todo.");
+
+                            /*
+                            int JupOld = this.GridData.iLogicalCells.NoOfLocalUpdatedCells;
+                            int NoOfRedistCells = CheckPartition(NewPartition, JupOld);
+
+                            if(NoOfRedistCells <= 0) {
+                                // nop
+                            } else {
+                                Console.WriteLine("Re-distribution of " + NoOfRedistCells + " cells.");
+                            }
+                            */
+                        }
+
+
+                        // create new grid
+                        // ===============
+                        GridData newGridData;
+                        {
+                            this.MultigridSequence = null;
+
+                            this.Grid = newGrid;
+                            newGridData = new GridData(this.Grid);
+                            this.GridData = newGridData;
+                            oldGridData.Invalidate();
+                            if(this.LsTrk != null) {
+                                this.LsTrk.Invalidate();
+                            }
+                            oldGridData = null;
+
+                            if(this.Control == null || this.Control.NoOfMultigridLevels > 0)
+                                this.MultigridSequence = CoarseningAlgorithms.CreateSequence(this.GridData,
+                                    MaxDepth: (this.Control != null ? this.Control.NoOfMultigridLevels : 1));
+                            else
+                                this.MultigridSequence = new AggregationGrid[0];
+
+                            //Console.WriteLine("P {0}: new grid: {1} cells.", MPIRank, newGridData.iLogicalCells.NoOfLocalUpdatedCells);
+                        }
+
+                        // compute redistribution permutation
+                        // ==================================
+
+                        old2newGridCorr.ComputeDataRedist(newGridData);
+
+                        int newJ = newGridData.Cells.NoOfLocalUpdatedCells;
+                        //int[][] TargMappingIdx = old2newGridCorr.GetTargetMappingIndex(newGridData.CellPartitioning);
+
+                        // sent data around the world
+                        // ==========================
+
+
+                        remshDat.Resort(old2newGridCorr, newGridData);
+
+                        // re-init simulation
+                        // ==================
+
+                        // release old DG fields
+                        this.m_RegisteredFields.Clear();
+                        this.m_IOFields.Clear();
+
+                        // re-create fields
+                        if(this.Control != null) {
+                            InitFromAttributes.CreateFieldsAuto(
+                                this, GridData, this.Control.FieldOptions, this.Control.CutCellQuadratureType, this.m_IOFields, this.m_RegisteredFields);
+                        }
+                        CreateFields(); // full user control   
+                        PostRestart(physTime, TimeStepNo);
+
+                        //PlotCurrentState(0, new TimestepNumber(new int[] { 0, 10 }), 2);
+
+                        // re-set Level-Set tracker
+                        int trackerVersion = remshDat.SetNewTracker(this.LsTrk);
+                        //if(this.LsTrk != null) {
+                        //    Debug.Assert(object.ReferenceEquals(this.LsTrk.GridDat, this.GridData));
+                        //    Debug.Assert(this.LsTrk.Regions.Version == trackerVersion);
+                        //    foreach(var f in m_RegisteredFields) {
+                        //        if(f is XDGField) {
+                        //            ((XDGField)f).Override_TrackerVersionCnt(trackerVersion);
+                        //        }
+                        //    }
+                        //}
+
+                        //set dg coördinates
+                        foreach(var f in m_RegisteredFields) {
+                            if(f is XDGField) {
+                                XDGBasis xb = ((XDGField)f).Basis;
+                                if(!object.ReferenceEquals(xb.Tracker, this.LsTrk))
+                                    throw new ApplicationException();
+                            }
+                            if (f.Identification == "Phi")
+                                continue;
+                            //f.Clear();
+
+                            remshDat.RestoreDGField(f);
+                        }
+
+                        // re-create solvers, blablabla
+                        CreateEquationsAndSolvers(remshDat);
+                    }
                 }
 
                 this.QueryHandler.ValueQuery("UsedNoOfMultigridLevels", this.MultigridSequence.Length, true);
@@ -2117,7 +2157,7 @@ namespace BoSSS.Solution {
         protected virtual int[] ComputeNewCellDistribution(int TimeStepNo, double physTime) {
             if (Control == null
                 || !Control.DynamicLoadBalancing_On
-                || (TimeStepNo % Control.DynamicLoadBalancing_Period != 0)
+                || (TimeStepNo % Control.DynamicLoadBalancing_Period != 0 && !(Control.DynamicLoadBalancing_RedistributeAtStartup && TimeStepNo == TimeStepNoRestart))  // Variant for single partioning at restart
                 || (Control.DynamicLoadBalancing_Period < 0 && !Control.DynamicLoadBalancing_RedistributeAtStartup)
                 || MPISize <= 1) {
                 return null;
@@ -2148,7 +2188,8 @@ namespace BoSSS.Solution {
                 Control.GridPartOptions,
                 Control != null ? Control.DynamicLoadBalancing_ImbalanceThreshold : 0.12,
                 Control != null ? Control.DynamicLoadBalancing_Period : 5,
-                redistributeAtStartup: Control.DynamicLoadBalancing_RedistributeAtStartup);
+                redistributeAtStartup: Control.DynamicLoadBalancing_RedistributeAtStartup,
+                TimestepNoRestart: TimeStepNoRestart);
         }
 
 
@@ -2167,7 +2208,7 @@ namespace BoSSS.Solution {
         }
 
 
-        
+
 
         /// <summary>
         /// The name of a specific simulation should be logged in the <see cref="ISessionInfo.KeysAndQueries"/>

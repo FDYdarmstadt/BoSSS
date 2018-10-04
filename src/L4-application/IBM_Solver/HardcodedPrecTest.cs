@@ -206,333 +206,453 @@ namespace BoSSS.Application.IBM_Solver {
         }
 
 
-        //static public IBM_Control PrecTest3DChannelDegenhardt(int precNo, int k, int cells_x, int cells_yz, int re, int ASparts = 5, int ASDepth = 2, int MGLevels = 3, int maxKrDim = 1000, int saveToDB = 1, int proc = 1) {
-        //    IBM_Control C = new IBM_Control();
-        //    bool name_newton = true;
+        static public IBM_Control PrecTest3dDegenhardt(int precNo = 4, int channel = 1, int name_newton =1, int k =3, int cells_x = 4, int cells_yz =5, int re = 100, int ASparts = 3, int ASDepth = 2, int MGLevels = 3, int maxKrDim = 1000, int saveToDB = 1)
+        {
+            IBM_Control C = new IBM_Control();
 
-        //    // basic database options
-        //    // ======================
-        //    if (saveToDB == 1) {
-        //        C.savetodb = true;
-        //    } else {
-        //        C.savetodb = false;
-        //    }
-        //    //C.savetodb = saveToDB;
-        //    C.savetodb = true;
-        //    C.DbPath = @"/home/oe11okuz/BoSSS_DB/Lichtenberg_DB"; ;
-        //    //C.DbPath = @"\\dc1\scratch\Stange\\HiWi\performance_db";
+            //in SolverChooser die DoF parts ändern
 
+            //Possibilities:
+            //channel = 0 --> channel 3D with sphere
+            //channel = 1 --> channel 3D empty
+            //channel = 2 --> channel 2D with cylinder
+            //channel = 3 --> channel 2D empty
 
-        //    //string restartSession = "727da287-1b6a-463e-b7c9-7cc19093b5b3";
-        //    //string restartGrid = "3f8f3445-46f1-47ed-ac0e-8f0260f64d8f";
+            string sessName = "";
+            if (channel == 0)
+                sessName = "Channel_3D_Sphere";
+            else if (channel == 1)
+                sessName = "Channel_3D_empty";
+            else if (channel == 2)
+                sessName = "Channel_2D_Cylinder";
+            else if (channel == 3)
+                sessName = "Channel_2D_empty";
 
-        //    C.DynamicLoadBalancing_Period = 1;
-        //    //C.DynamicLoadBalancing_CellCostEstimatorFactory = delegate (IApplication<AppControl> app, int noOfPerformanceClasses) {
-        //    //    Console.WriteLine("i was called");
-        //    //    int[] map = new int[] { 1, 5, 100 };
-        //    //    return new StaticCellCostEstimator(map);
-        //    //};
-
-        //    // Assign correct names
-        //    if (name_newton) {
-        //        C.SessionName = "StrongScaling_Channel_prec" + precNo + "_proc" + proc + "_k" + k + "_x" + cells_x + "_yz" + cells_yz + "_re" + re + "_asp" + ASparts + "_asd" + ASDepth + "_mgl" + MGLevels + "_kr" + maxKrDim;
-        //        C.ProjectDescription = "Newton_Sphere_k_prec" + precNo + "_k" + k + "_x" + cells_x + "_yz" + cells_yz + "_re" + re + "_asp" + ASparts + "_asd" + ASDepth + "_mgl" + MGLevels + "_kr" + maxKrDim;
-
-        //    } else {
-        //        C.SessionName = "Channel_prec" + precNo + "_k" + k + "_x" + cells_x + "_yz" + cells_yz + "_re" + re + "_asp" + ASparts + "_asd" + ASDepth + "_mgl" + MGLevels + "_kr" + maxKrDim;
-        //        C.ProjectDescription = "Sphere_k_prec" + precNo + "_k" + k + "_x" + cells_x + "_yz" + cells_yz + "_re" + re + "_asp" + ASparts + "_asd" + ASDepth + "_mgl" + MGLevels + "_kr" + maxKrDim;
-
-        //    }
-
-        //    C.saveperiod = 1;
-        //    //C.SessionName = "Sphere_k" + k + "_h" + h+"Re100";
-        //    C.ProjectName = "3DChannel";
-        //    C.Tags.Add("Prec param study");
-
-        //    // Create Fields
-        //    C.FieldOptions.Add("VelocityX", new FieldOpts() {
-        //        Degree = k,
-        //        SaveToDB = FieldOpts.SaveToDBOpt.TRUE
-        //    });
-        //    C.FieldOptions.Add("VelocityY", new FieldOpts() {
-        //        Degree = k,
-        //        SaveToDB = FieldOpts.SaveToDBOpt.TRUE
-        //    });
-        //    C.FieldOptions.Add("VelocityZ", new FieldOpts() {
-        //        Degree = k,
-        //        SaveToDB = FieldOpts.SaveToDBOpt.TRUE
-        //    });
-        //    C.FieldOptions.Add("Pressure", new FieldOpts() {
-        //        Degree = k - 1,
-        //        SaveToDB = FieldOpts.SaveToDBOpt.TRUE
-        //    });
-        //    C.FieldOptions.Add("PhiDG", new FieldOpts() {
-        //        Degree = 2,
-        //        SaveToDB = FieldOpts.SaveToDBOpt.TRUE
-        //    });
-        //    C.FieldOptions.Add("Phi", new FieldOpts() {
-        //        Degree = 2,
-        //        SaveToDB = FieldOpts.SaveToDBOpt.TRUE
-        //    });
-
-        //    #region Creates grid () and sets BC
-        //    //// Create Grid
-        //    Console.WriteLine("...generating grid");
-        //    C.GridFunc = delegate {
-
-        //        // x-direction
-        //        var _xNodes = GenericBlas.Linspace(-0.5, 1.5, cells_x + 1);
-
-        //        // y-direction
-        //        var _yNodes = GenericBlas.Linspace(-0.5, 0.5, cells_yz + 1);
-
-        //        // z-direction
-        //        var _zNodes = GenericBlas.Linspace(-0.5, 0.5, cells_yz + 1);
-
-        //        // Cut Out
-        //        var grd = Grid3D.Cartesian3DGrid(_xNodes, _yNodes, _zNodes, false, true, false, CellType.Cube_Linear);
-
-        //        grd.EdgeTagNames.Add(1, "Velocity_inlet");
-        //        grd.EdgeTagNames.Add(2, "Wall");
-        //        grd.EdgeTagNames.Add(3, "Pressure_Outlet");
-
-        //        grd.DefineEdgeTags(delegate (double[] _X)
-        //        {
-        //            var X = _X;
-        //            double x = X[0];
-        //            double y = X[1];
-        //            double z = X[2];
-
-        //            if (Math.Abs(x - (-0.5)) < 1.0e-6)
-        //                // inlet
-        //                return 1;
-
-        //            if (Math.Abs(x - (1.5)) < 1.0e-6)
-        //                // outlet
-        //                return 3;
-
-        //            if (Math.Abs(y - (-0.5)) < 1.0e-6)
-        //                // left
-        //                return 2;
-
-        //            if (Math.Abs(y - (0.5)) < 1.0e-6)
-        //                // right
-        //                return 2;
-
-        //            if (Math.Abs(z - (-0.5)) < 1.0e-6)
-        //                // top left
-        //                return 2;
-
-        //            if (Math.Abs(z - (0.5)) < 1.0e-6)
-        //                // top right
-        //                return 2;
-
-        //            throw new ArgumentOutOfRangeException();
-        //        });
-
-        //        return grd;
-        //    };
-
-        //    #endregion
+            string precString = "";
+            if (precNo == 0)
+                precString = "_noPrec";
+            if (precNo == 1)
+                precString = "_Schur";
+            if (precNo == 2)
+                precString = "_Simple";
+            if (precNo == 3)
+                precString = "_AS-1000";
+            if (precNo == 4)
+                precString = "_AS-5000";
+            if (precNo == 5)
+                precString = "_AS-10000";
+            if (precNo == 6)
+                precString = "_AS-MG";
+            if (precNo == 7)
+                precString = "_localPrec";
 
 
 
-        //    // Set Initial Conditions
-        //    C.InitialValues_Evaluators.Add("VelocityX", X => 0);
-        //    C.InitialValues_Evaluators.Add("VelocityY", X => 0);
-        //    C.InitialValues_Evaluators.Add("VelocityZ", X => 0);
-        //    C.InitialValues_Evaluators.Add("Pressure", X => 0);
+            // basic database options
+            // ======================
+           // if (saveToDB == 1)
+               // C.savetodb = true;
+            //else
+                //C.savetodb = false;
 
-        //    // Because its a sphere
+            C.savetodb = true;
 
-        //    // C.particleRadius = 0.1;
-        //    //C.InitialValues_Evaluators.Add("Phi", X => -(X[0]).Pow2() + -(X[1]).Pow2() + -(X[2]).Pow2() + C.particleRadius.Pow2());
-        //    C.InitialValues_Evaluators.Add("Phi", X => -1);
-
-        //    Console.WriteLine("...starting calculation of Preconditioning test with 3D Channel");
-        //    if (name_newton) {
-        //        Console.WriteLine("Newton_Channel_k_prec" + precNo + "_k" + k + "_x" + cells_x + "_yz" + cells_yz + "_re" + re + "_asp" + ASparts + "_asd" + ASDepth + "_mgl" + MGLevels + "_kr" + maxKrDim);
-
-        //    } else {
-        //        Console.WriteLine("Sphere_k_prec" + precNo + "_k" + k + "_x" + cells_x + "_yz" + cells_yz + "_re" + re + "_asp" + ASparts + "_asd" + ASDepth + "_mgl" + MGLevels + "_kr" + maxKrDim);
-
-        //    }
-
-        //    // Physical values
-        //    C.PhysicalParameters.rho_A = 1;
-        //    // 1/Re
-        //    //C.PhysicalParameters.mu_A = 1.0 / 10.0;
-        //    //C.PhysicalParameters.mu_A = 0.2 / re;
-
-        //    C.PhysicalParameters.mu_A = 1.0 / re;
-
-        //    // Boundary conditions
-        //    C.AddBoundaryCondition("Velocity_inlet", "VelocityX", (X, t) => 1 - 4 * (X[2] * X[2]));
-        //    C.AddBoundaryCondition("Velocity_inlet", "VelocityY", (X, t) => 0);
-        //    C.AddBoundaryCondition("Wall");
-        //    C.AddBoundaryCondition("Pressure_Outlet");
+            C.DbPath = @" \\dc1\scratch\Krause\Datenbank_Louis\degenhardt_final";
+            //C.DbPath = @"\\hpccluster\hpccluster-scratch\krause\cluster_db";
+            //C.DbPath = @"/home/oe11okuz/BoSSS_DB/Lichtenberg_DB";
 
 
-        //    // misc. solver options
-        //    // ====================
-        //    C.PhysicalParameters.IncludeConvection = true;
-        //    C.AdvancedDiscretizationOptions.PenaltySafety = 4;
-        //    C.AdvancedDiscretizationOptions.CellAgglomerationThreshold = 0.2;
-        //    C.LevelSetSmoothing = false;
-        //    //C.MaxKrylovDim = 1000;
-        //    C.MaxKrylovDim = maxKrDim;
-        //    //C.MaxSolverIterations = 50;
-        //    C.MaxSolverIterations = 1;
-        //    C.MinSolverIterations = 1;
-        //    // C.MaxSolverIterations = 10000;
-        //    C.Solver_ConvergenceCriterion = 1E-5;
-        //    //C.Solver_ConvergenceCriterion = 1E-6;
-        //    C.VelocityBlockPrecondMode = MultigridOperator.Mode.SymPart_DiagBlockEquilib_DropIndefinite;
+            //string restartSession = "727da287-1b6a-463e-b7c9-7cc19093b5b3";
+            //string restartGrid = "3f8f3445-46f1-47ed-ac0e-8f0260f64d8f";
 
-        //    // Choosing the Preconditioner
-        //    ISolverSmootherTemplate Prec;
+            C.DynamicLoadBalancing_Period = 1;
+            //C.DynamicLoadBalancing_CellCostEstimatorFactory = delegate (IApplication<AppControl> app, int noOfPerformanceClasses) {
+            //    Console.WriteLine("i was called");
+            //    int[] map = new int[] { 1, 5, 100 };
+            //    return new StaticCellCostEstimator(map);
+            //};
 
+            
 
+            if (name_newton == 1)
+            {
+                C.SessionName = "Newton_" + sessName + precString + "_k" + k + "_x" + cells_x + "_yz" + cells_yz + "_re" + re + "_asp" + ASparts + "_asd" + ASDepth + "_mgl" + MGLevels + "_kr" + maxKrDim;
+                C.ProjectDescription = "Newton_" + sessName + precString + "_k" + k + "_x" + cells_x + "_yz" + cells_yz + "_re" + re + "_asp" + ASparts + "_asd" + ASDepth + "_mgl" + MGLevels + "_kr" + maxKrDim;
+            }
+            else
+            {
+                C.SessionName = "Picard_" + sessName + precString + "_k" + k + "_x" + cells_x + "_yz" + cells_yz + "_re" + re + "_asp" + ASparts + "_asd" + ASDepth + "_mgl" + MGLevels + "_kr" + maxKrDim;
+                C.ProjectDescription = "Picard_" + sessName + precString + "_k" + k + "_x" + cells_x + "_yz" + cells_yz + "_re" + re + "_asp" + ASparts + "_asd" + ASDepth + "_mgl" + MGLevels + "_kr" + maxKrDim;
+            }
 
-        //    switch (precNo) {
-        //        case 0: {
-        //                Prec = null;
-        //                break;
-        //            }
-        //        case 1: {
-        //                Prec = new SchurPrecond() {
-        //                    SchurOpt = SchurPrecond.SchurOptions.decoupledApprox
-        //                };
-        //                break;
-        //            }
-        //        case 2: {
-        //                Prec = new SchurPrecond() {
-        //                    SchurOpt = SchurPrecond.SchurOptions.SIMPLE
-        //                };
-        //                break;
-        //            }
-        //        case 3: {
-        //                Prec = new Schwarz() {
-        //                    m_BlockingStrategy = new Schwarz.METISBlockingStrategy() {
-        //                        //NoOfParts = 5,
-        //                        NoOfPartsPerProcess = ASparts,
-        //                    },
-        //                    CoarseSolver = new DirectSolver() {
-        //                        WhichSolver = DirectSolver._whichSolver.MUMPS
-        //                    },
-        //                    Overlap = 1
-        //                };
-        //                C.NoOfMultigridLevels = 2;
-        //                break;
-        //            }
-        //        case 4: {
-        //                //C.NoOfMultigridLevels = 3;
-        //                C.NoOfMultigridLevels = MGLevels;
-        //                Prec = new Schwarz() {
-        //                    m_BlockingStrategy = new Schwarz.MultigridBlocks() {
-        //                        //Depth = 2,
-        //                        Depth = ASDepth,
-        //                    },
-        //                    CoarseSolver = new DirectSolver() {
-        //                        WhichSolver = DirectSolver._whichSolver.MUMPS
-        //                    },
-        //                    Overlap = 1
-        //                };
-        //                break;
-        //            }
-        //        case 5: {
-        //                C.NoOfMultigridLevels = 5;
-        //                Prec = new Schwarz() {
-        //                    m_BlockingStrategy = new Schwarz.METISBlockingStrategy() {
-        //                        //NoOfParts = 5,
-        //                        NoOfPartsPerProcess = ASparts,
-        //                    },
-        //                    CoarseSolver = new ClassicMultigrid() {
-        //                        CoarserLevelSolver = new ClassicMultigrid() {
-        //                            CoarserLevelSolver = new ClassicMultigrid() {
-        //                                CoarserLevelSolver = new DirectSolver() {
-        //                                    WhichSolver = DirectSolver._whichSolver.MUMPS
-        //                                },
-        //                            },
-        //                        },
-        //                    },
-        //                    Overlap = 1
-        //                };
-        //                break;
-        //            }
-        //        default: {
-        //                Prec = new SchurPrecond() {
-        //                    SchurOpt = SchurPrecond.SchurOptions.decoupledApprox
-        //                };
-        //                break;
-        //            }
+            C.saveperiod = 1;
+            //C.SessionName = "Sphere_k" + k + "_h" + h+"Re100";
+            C.ProjectName = "iteration-study";
+            C.Tags.Add("Prec param study");
 
-        //    }
+            // Create Fields
+            C.FieldOptions.Add("VelocityX", new FieldOpts()
+            {
+                Degree = k,
+                SaveToDB = FieldOpts.SaveToDBOpt.TRUE
+            });
+            C.FieldOptions.Add("VelocityY", new FieldOpts()
+            {
+                Degree = k,
+                SaveToDB = FieldOpts.SaveToDBOpt.TRUE
+            });
+            C.FieldOptions.Add("Pressure", new FieldOpts()
+            {
+                Degree = k - 1,
+                SaveToDB = FieldOpts.SaveToDBOpt.TRUE
+            });
+            C.FieldOptions.Add("PhiDG", new FieldOpts()
+            {
+                Degree = 2,
+                SaveToDB = FieldOpts.SaveToDBOpt.TRUE
+            });
+            C.FieldOptions.Add("Phi", new FieldOpts()
+            {
+                Degree = 2,
+                SaveToDB = FieldOpts.SaveToDBOpt.TRUE
+            });
 
-        //    //Prec = new SchurPrecond()
-        //    //{
-        //    //    SchurOpt = SchurPrecond.SchurOptions.decoupledApprox
-        //    //};
-
-        //    //Prec = new SchurPrecond()
-        //    //{
-        //    //    SchurOpt = SchurPrecond.SchurOptions.SIMPLE
-        //    //};
-
-        //    //Prec = new Schwarz()
-        //    //{
-        //    //    m_BlockingStrategy = new Schwarz.METISBlockingStrategy()
-        //    //    {
-        //    //        NoOfParts = 5,
-        //    //    },
-        //    //    CoarseSolver = new DirectSolver()
-        //    //    {
-        //    //        WhichSolver = DirectSolver._whichSolver.MUMPS
-        //    //    },
-        //    //    overlap = 1
-        //    //};
+            if (channel == 0 || channel == 1) //3D
+            {
+                C.FieldOptions.Add("VelocityZ", new FieldOpts()
+                {
+                    Degree = k,
+                    SaveToDB = FieldOpts.SaveToDBOpt.TRUE
+                });
+            }
 
 
-        //    //C.NoOfMultigridLevels = 3;
-        //    //Prec = new Schwarz()
-        //    //{
-        //    //    m_BlockingStrategy = new Schwarz.MultigridBlocks()
-        //    //    {
-        //    //        Depth = 2,
-        //    //    },
-        //    //    CoarseSolver = new DirectSolver()
-        //    //    {
-        //    //        WhichSolver = DirectSolver._whichSolver.MUMPS
-        //    //    },
-        //    //    overlap = 1
-        //    //};
 
-        //    // For Newton
-        //    C.LinearSolver = Prec;
+            #region Creates grid () and sets BC
+            //// Create Grid
+            Console.WriteLine("...generating grid");
+            if (channel == 0 || channel == 1) //3D
+            {
+                #region grid 3D
+                C.GridFunc = delegate
+                {
+                    // x-direction
+                    var _xNodes = GenericBlas.Linspace(-0.5, 1.5, cells_x + 1);
 
-        //    ////For Picard
-        //    //C.LinearSolver = new SoftGMRES()
-        //    //{
-        //    //    MaxKrylovDim = C.MaxKrylovDim,
-        //    //    Precond = Prec,
-        //    //    m_Tolerance = 1E-6,
-        //    //    m_MaxIterations = 50
-        //    //};
+                    // y-direction
+                    var _yNodes = GenericBlas.Linspace(-0.5, 0.5, cells_yz + 1);
 
-         
+                    // z-direction
+                    var _zNodes = GenericBlas.Linspace(-0.5, 0.5, cells_yz + 1);
 
-        //    // Timestepping
-        //    // ============
-        //    C.Timestepper_Scheme = IBM_Control.TimesteppingScheme.BDF2;
-        //    double dt = 1E20;
-        //    C.dtFixed = dt;
-        //    C.dtMax = dt;
-        //    C.dtMin = dt;
-        //    C.Endtime = 10000000;
-        //    C.NoOfTimesteps = 1;
+                    // Cut Out
+                    var grd = Grid3D.Cartesian3DGrid(_xNodes, _yNodes, _zNodes, false, true, false, CellType.Cube_Linear);
+
+                    grd.EdgeTagNames.Add(1, "Velocity_inlet");
+                    grd.EdgeTagNames.Add(2, "Wall");
+                    grd.EdgeTagNames.Add(3, "Pressure_Outlet");
+
+                    grd.DefineEdgeTags(delegate (double[] _X)
+                    {
+                        var X = _X;
+                        double x = X[0];
+                        double y = X[1];
+                        double z = X[2];
+
+                        if (Math.Abs(x - (-0.5)) < 1.0e-6)
+                        // inlet
+                        return 1;
+
+                        if (Math.Abs(x - (1.5)) < 1.0e-6)
+                        // outlet
+                        return 3;
+
+                        if (Math.Abs(y - (-0.5)) < 1.0e-6)
+                        // left
+                        return 2;
+
+                        if (Math.Abs(y - (0.5)) < 1.0e-6)
+                        // right
+                        return 2;
+
+                        if (Math.Abs(z - (-0.5)) < 1.0e-6)
+                        // top left
+                        return 2;
+
+                        if (Math.Abs(z - (0.5)) < 1.0e-6)
+                        // top right
+                        return 2;
+
+                        throw new ArgumentOutOfRangeException();
+                    });
+
+                    return grd;
+                };
+                #endregion
+            }else
+            {
+                #region grid 2D
+                C.GridFunc = delegate {
+
+                    // x-direction
+                    var _xnodes = GenericBlas.Linspace(-0.5, 1.5, cells_x + 1);
+                    // y-direction
+                    var _ynodes = GenericBlas.Linspace(-0.5, 0.5, cells_yz + 1);
+
+                    var grd = Grid2D.Cartesian2DGrid(_xnodes, _ynodes, CellType.Square_Linear, false, false);
+
+                    grd.EdgeTagNames.Add(1, "Velocity_inlet");
+                    grd.EdgeTagNames.Add(2, "Wall");
+                    grd.EdgeTagNames.Add(3, "Pressure_Outlet");
+
+                    grd.DefineEdgeTags(delegate (double[] _X)
+                    {
+                        var X = _X;
+                        double x = X[0];
+                        double y = X[1];
+
+                        if (Math.Abs(x - (-0.5)) < 1.0e-6)
+                            // inlet
+                            return 1;
+
+                        if (Math.Abs(x - (1.5)) < 1.0e-6)
+                            // outlet
+                            return 3;
+
+                        if (Math.Abs(y - (-0.5)) < 1.0e-6)
+                            // left
+                            return 2;
+
+                        if (Math.Abs(y - (0.5)) < 1.0e-6)
+                            // right
+                            return 2;
+
+                        throw new ArgumentOutOfRangeException();
+                    });
+
+                    return grd;
+                                       
+                };
+                #endregion 
+            }
+            #endregion
 
 
-        //    return C;
-        //}
+            // set initial conditions
+            C.InitialValues_Evaluators.Add("Pressure", X => 0);
+            C.InitialValues_Evaluators.Add("VelocityY", X => 0);
+
+            if (channel == 0 | channel == 1)  //3D
+            {
+                //C.InitialValues_Evaluators.Add("VelocityX", X => 1 - 4 * (X[2] * X[2]));
+                C.InitialValues_Evaluators.Add("VelocityX", X => 0);
+
+                C.InitialValues_Evaluators.Add("VelocityZ", X => 0);
+            }
+            else
+            {
+                //C.InitialValues_Evaluators.Add("VelocityX", X => 1 - 4 * (X[1] * X[1]));
+                C.InitialValues_Evaluators.Add("VelocityX", X => 0);
+            }
+
+
+
+            // Because its a sphere
+
+            if (channel == 0)  //3D channel sphere
+            {
+                C.particleRadius = 0.1;
+                C.InitialValues_Evaluators.Add("Phi", x => -(x[0]).Pow2() + -(x[1]).Pow2() + -(x[2]).Pow2() + C.particleRadius.Pow2());
+            }
+            else if (channel == 1 || channel == 3)  //3D channel empty or 2D channel empty
+            {
+                C.InitialValues_Evaluators.Add("Phi", x => -1);
+            }
+            else if (channel == 2)   //2D channel cylinder
+            {
+                var radius = 0.1;
+                C.particleRadius = radius;
+                C.InitialValues_Evaluators.Add("Phi", X => -(X[0]).Pow2() + -(X[1]).Pow2() + radius.Pow2());
+            }
+
+
+
+
+            Console.WriteLine("...starting calculation of Preconditioning test with 3D Channel");
+            if (name_newton == 1)
+            {
+                Console.WriteLine("newton_" + sessName + precString + "_k" + k + "_x" + cells_x + "_yz" + cells_yz + "_re" + re + "_asp" + ASparts + "_asd" + ASDepth + "_mgl" + MGLevels + "_kr" + maxKrDim);
+
+            }
+            else
+            {
+                Console.WriteLine("picard_" + sessName + precString + "_k" + k + "_x" + cells_x + "_yz" + cells_yz + "_re" + re + "_asp" + ASparts + "_asd" + ASDepth + "_mgl" + MGLevels + "_kr" + maxKrDim);
+            }
+
+           
+            // Physical values
+            C.PhysicalParameters.rho_A = 1;
+            // 1/Re
+            //C.PhysicalParameters.mu_A = 1.0 / 10.0;
+            //C.PhysicalParameters.mu_A = 0.2 / re;
+
+            C.PhysicalParameters.mu_A = 1.0 / re;
+
+            // Boundary conditions
+            C.AddBoundaryValue("Velocity_inlet", "VelocityY", (x, t) => 0);
+            C.AddBoundaryValue("Wall");
+            C.AddBoundaryValue("Pressure_Outlet");
+        
+            if (channel == 0 || channel == 1) //3D
+            {
+                C.AddBoundaryValue("Velocity_inlet", "VelocityX", (x, t) => 1 - 4 * (x[2] * x[2]));
+            }
+            else
+            {
+                C.AddBoundaryValue("Velocity_inlet", "VelocityX", (x, t) => 1 - 4 * (x[1] * x[1]));
+            }
+
+
+
+            // misc. solver options
+            // ====================
+            C.PhysicalParameters.IncludeConvection = true;
+            C.AdvancedDiscretizationOptions.PenaltySafety = 4;
+            C.AdvancedDiscretizationOptions.CellAgglomerationThreshold = 0.2;
+            C.LevelSetSmoothing = false;
+            //C.MaxKrylovDim = 1000;
+            C.MaxKrylovDim = maxKrDim;
+            C.MaxSolverIterations = 100;
+            //C.MaxSolverIterations = 1;
+            C.MinSolverIterations = 1;
+            // C.MaxSolverIterations = 10000;
+            C.Solver_ConvergenceCriterion = 1E-5;
+            //C.Solver_ConvergenceCriterion = 1E-6;
+            C.VelocityBlockPrecondMode = MultigridOperator.Mode.SymPart_DiagBlockEquilib_DropIndefinite;
+
+            // Choosing the Preconditioner
+            ISolverSmootherTemplate Prec;
+
+            if (name_newton == 1)
+                C.NonlinearSolve = NonlinearSolverCodes.NewtonGMRES;
+            else
+                C.NonlinearSolve = NonlinearSolverCodes.PicardGMRES;
+
+
+            switch (precNo)
+            {
+                case 0:
+                    {
+                        Prec = null;
+                        break;
+                    }
+                case 1:
+                    {
+                        C.LinearSolve = LinearSolverCodes.exp_Schur;
+                        break;
+                    }
+                case 2:
+                    {
+
+                        C.LinearSolve = LinearSolverCodes.exp_Simple;
+                        break;
+                    }
+                case 3:
+                    {
+                        C.LinearSolve = LinearSolverCodes.exp_AS_1000;
+                        C.NoOfMultigridLevels = MGLevels;  // 3 // --> grobes MG am Ende nochmal
+                        break;
+                    }
+                case 4:
+                    {
+                        C.LinearSolve = LinearSolverCodes.exp_AS_5000;
+                        C.NoOfMultigridLevels = MGLevels;
+                        break;
+                    }
+                case 5:
+                    {
+                        C.LinearSolve = LinearSolverCodes.exp_AS_10000;
+                        C.NoOfMultigridLevels = MGLevels;
+                        break;
+                    }
+                case 6:
+                    {
+                        //depth = 2,
+                        //   Depth = ASDepth,  //--> MG bei der Blockzerlegung --> Resultat ergibt die Blöcke zur Berechnung (kleine Blöcke--> schlecht)
+                        C.LinearSolve = LinearSolverCodes.exp_AS_MG;
+                        C.NoOfMultigridLevels = MGLevels;
+                        break;
+                    }
+                case 7:
+                    {
+                        C.LinearSolve = LinearSolverCodes.exp_localPrec; ;
+                        C.NoOfMultigridLevels = MGLevels;
+                        break;
+                    }
+                case 8:
+                    {
+                        C.NoOfMultigridLevels = 5;
+                        Prec = new Schwarz()
+                        {
+                            m_BlockingStrategy = new Schwarz.METISBlockingStrategy()
+                            {
+                                //noofparts = 5,
+                                NoOfPartsPerProcess = ASparts,
+                            },
+                            CoarseSolver = new ClassicMultigrid()
+                            {
+                                CoarserLevelSolver = new ClassicMultigrid()
+                                {
+                                    CoarserLevelSolver = new ClassicMultigrid()
+                                    {
+                                        CoarserLevelSolver = new DirectSolver()
+                                        {
+                                            WhichSolver = DirectSolver._whichSolver.MUMPS
+                                        },
+                                    },
+                                },
+                            },
+                            Overlap = 1
+                        };
+                        break;
+                    }
+                default:
+                    {
+                        Prec = new SchurPrecond()
+                        {
+                            SchurOpt = SchurPrecond.SchurOptions.decoupledApprox
+                        };
+                        break;
+                    }
+            }
+
+
+            // For Newton
+            //  C.LinearSolver = Prec;
+
+            ////For Picard
+            //C.LinearSolver = new SoftGMRES()
+            //{
+            //    MaxKrylovDim = C.MaxKrylovDim,
+            //    Precond = Prec,
+            //    m_Tolerance = 1E-6,
+            //    m_MaxIterations = 50
+            //};
+
+
+
+            // Timestepping
+            // ============
+            C.Timestepper_Scheme = IBM_Control.TimesteppingScheme.BDF2;
+            double dt = 1E20;
+            C.dtFixed = dt;
+            C.dtMax = dt;
+            C.dtMin = dt;
+            C.Endtime = 10000000;
+            C.NoOfTimesteps = 1;
+
+
+            return C;
+        }
     }
 }

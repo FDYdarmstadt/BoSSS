@@ -1720,6 +1720,8 @@ namespace BoSSS.Foundation.XDG {
                     }
                 }
 
+                //throwCFL = false;
+
                 // update memory of XDG fields, etc.
                 // =================================
 

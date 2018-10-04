@@ -9,14 +9,16 @@ using ilPSP;
 
 namespace BoSSS.Foundation.XDG.Quadrature
 {
-    public abstract class SayeComboIntegrand<S, T>
+    abstract class SayeComboIntegrand<S, T>
         : SayeIntegrand<S, T>
         where S : IPsi
-        where T : SayeArgument<S>
-        
+        where T : SayeArgument<S>    
     {
+        //The surface quadrature rule is saved here.
+        ISayeQuadRule SurfRule;
+
         /// <summary>
-        /// Returns surface & volume quadrature nodes, respectively.
+        /// Returns surface and volume quadrature nodes, respectively.
         /// </summary>
         /// <param name="Cell"></param>
         /// <param name="arg"></param>
@@ -37,23 +39,34 @@ namespace BoSSS.Foundation.XDG.Quadrature
             //Evaluate Integrand
             //----------------------------------------------------------------------
             //Fill nodesAndWeights
+
+            SurfRule = GetEmptySurfaceRule();
             recursionTree.UnrollFunc(ComboIntegrandEvaluation);
-            //ConvertToQuadRule
-            QuadRule[] toRuleThemAll = GetComboQuadRule();
-            return toRuleThemAll;
+            
+            //Convert data to QuadRule. The volume rule is saved in SayeArgument as in the single algorithm. 
+            //The surface rule is saved SurfRule.
+            QuadRule[] rulezOfKrom = new QuadRule[2];
+            rulezOfKrom[0] = fullSpace.Value.NodesAndWeights.GetQuadRule(); //Volume rule
+            rulezOfKrom[1] = SurfRule.GetQuadRule();    //Surface rule
+            
+            //Handle empty QuadRule
+            if (rulezOfKrom[0].NoOfNodes == 0)
+            {
+                Debug.WriteLine("Evaluation of cell {0} returned empty volume quadrule", cell);
+                rulezOfKrom[0] = CreateZeroQuadrule();
+            }
+            if(rulezOfKrom[1].NoOfNodes == 0)
+            {
+                Debug.WriteLine("Evaluation of cell {0} returned empty surface quadrule", cell);
+                rulezOfKrom[1] = CreateZeroQuadrule();
+            }
+
+
+            return rulezOfKrom;
         }
 
-        private QuadRule[] GetComboQuadRule()
-        {
-            QuadRule[] rulez = new QuadRule[2];
-            rulez[0] = VolumeRule.GetQuadRule();
-            rulez[1] = SurfRule.GetQuadRule();
-            return rulez;
-        }
-
-        ISayeQuadRule SurfRule;
-        ISayeQuadRule VolumeRule; 
-
+        protected abstract ISayeQuadRule GetEmptySurfaceRule();
+        
         private void ComboIntegrandEvaluation(TreeNode<T> node)
         {
             if (node.level == 1)
@@ -62,16 +75,16 @@ namespace BoSSS.Foundation.XDG.Quadrature
                 T nodeArg = node.Value;
                 switch (nodeArg.Status)
                 {
-                    case SayeArgument<S>.Mode.Standart:
+                    case SayeArgument<S>.Mode.Standard:
                         SetStandartComboNodes(node);
                         break;
                     case SayeArgument<S>.Mode.GaussQuadrature:
-                        //Surface must be 0;
-                        throw new NotImplementedException();
-
+                        //No need for surface quadNodes
+                        SayeQuadRule newRule = SetGaussQuadratureNodes(nodeArg);
+                        nodeArg.NodesAndWeights.AddRule(newRule, false);
+                        break;
                     case SayeArgument<S>.Mode.LowOrderQuadrature:
                         throw new NotImplementedException();
-                        
                     case SayeArgument<S>.Mode.DomainIsEmpty:
                         break;
                     default:
@@ -99,13 +112,14 @@ namespace BoSSS.Foundation.XDG.Quadrature
             }
         }
 
+        //Evaluate volume and surface integrand
         private void ComboIntegrand(MultidimensionalArray X, double X_weight, T arg)
         {
             //Calculate the set of roots and union with the interval endpoints ( line 1)
             int heightDirection = arg.HeightDirection;
 
             //Sort R into ascending order such that ... (line 2) : Implemented with a sortedList
-            ISortedBoundedList<double> roots = new SayeSortedList(arg.n * 2);
+            ISortedBoundedList<double> roots = new SayeSortedList(2 + arg.n, 1.0e-14);
             double[] bounds = GetBoundaries(arg, heightDirection);
             roots.SetBounds(bounds[0], bounds[1]);
             RestrictToBound(X, bounds[0], arg.HeightDirection);
@@ -116,6 +130,8 @@ namespace BoSSS.Foundation.XDG.Quadrature
                 roots.Add(rootsInPsi);
             }
 
+            //Volume evaluation
+            //-----------------------------------------------------------------------------------
             //For j = 1 to l - 1 do (line 4)
             bool xIsUnchanged = true;
             for (int j = 0; j < roots.Count() - 1; ++j)
@@ -135,12 +151,22 @@ namespace BoSSS.Foundation.XDG.Quadrature
                 //Update I = ...(line 7)
                 if (updateIntegrand)
                 {
+                    //Update 
                     SayeQuadRule newRule = BuildQuadRule(x_c, X_weight, heightDirection, L);
-                    bool deriveFromExistingNode = xIsUnchanged;
-                    arg.NodesAndWeights.AddRule(newRule, deriveFromExistingNode);
+                    arg.NodesAndWeights.AddRule(newRule, true);
                     xIsUnchanged = false;
                 }
             }
+            //Surface evaluation
+            //-----------------------------------------------------------------------------------
+            Debug.Assert(roots.Count() <= 3);
+            if (roots.Count() > 2)
+            {
+                X[0, heightDirection] = roots[1];
+                SayeQuadRule surfaceQuadNode = BuildSurfaceQuadRule(X, X_weight, heightDirection, this.cell);
+                SurfRule.AddRule(surfaceQuadNode, false);
+            }
+
             if (xIsUnchanged)
             {
                 arg.NodesAndWeights.RemoveActiveNode();
