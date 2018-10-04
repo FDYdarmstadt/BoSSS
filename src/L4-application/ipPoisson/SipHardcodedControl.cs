@@ -24,6 +24,8 @@ using BoSSS.Solution.Control;
 using ilPSP.Utils;
 using ilPSP;
 using BoSSS.Foundation.Grid.RefElements;
+using BoSSS.Foundation.Grid.Aggregation;
+using ilPSP.Connectors.Matlab;
 
 namespace BoSSS.Application.SipPoisson {
 
@@ -313,5 +315,99 @@ namespace BoSSS.Application.SipPoisson {
 
             return R;
         }
+
+
+
+        /// <summary>
+        /// Test on a 2D Voronoi mesh
+        /// </summary>
+        /// <param name="Res">
+        /// number of randomly chosen Delaunay vertices
+        /// </param>
+        /// <param name="deg">
+        /// polynomial degree
+        /// </param>
+        /// <param name="solver_name">
+        /// Name of solver to use.
+        /// </param>
+        public static SipControl TestVoronoi(int Res, SolverCodes solver_name = SolverCodes.classic_pardiso, int deg = 3) {
+            
+            
+            var R = new SipControl();
+            R.ProjectName = "ipPoison/cartesian";
+            R.savetodb = false;
+
+            R.FieldOptions.Add("T", new FieldOpts() { Degree = deg, SaveToDB = FieldOpts.SaveToDBOpt.TRUE });
+            R.FieldOptions.Add("Tex", new FieldOpts() { Degree = deg*2 });
+            R.InitialValues_Evaluators.Add("RHS", X => 1.0);
+            R.InitialValues_Evaluators.Add("Tex", X => 0.0);
+            R.ExactSolution_provided = false;
+            R.NoOfMultigridLevels = int.MaxValue;
+            R.solver_name = solver_name;
+            //R.TargetBlockSize = 100;
+
+            
+            R.GridFunc = delegate() {
+                GridCommons grd = null;
+
+                var Matlab = new BatchmodeConnector();
+
+                
+                // generate Delaunay vertices
+                Random rnd = new Random(0);
+                double[] xNodes = Res.ForLoop(idx => rnd.NextDouble());
+                double[] yNodes = Res.ForLoop(idx => rnd.NextDouble());
+
+                var Nodes = MultidimensionalArray.Create(xNodes.Length, 2);
+                Nodes.SetColumn(0, xNodes);
+                Nodes.SetColumn(1, yNodes);
+
+                Matlab.PutMatrix(Nodes, "Nodes");
+               
+                // compute Voronoi diagramm
+                Matlab.Cmd("[V, C] = voronoin(Nodes);");
+
+                // output (export from matlab)
+                int[][] OutputVertexIndex = new int[Nodes.NoOfRows][];
+                Matlab.GetStaggeredIntArray(OutputVertexIndex, "C");
+                Matlab.GetMatrix(null, "V");
+
+                 // run matlab
+                Matlab.Execute(false);
+
+                // import here
+                MultidimensionalArray VertexCoordinates = (MultidimensionalArray)(Matlab.OutputObjects["V"]);
+
+                // correct indices (1-based index to 0-based index)
+                foreach(int[] cell in OutputVertexIndex) {
+                    int K = cell.Length;
+                    for (int k = 0; k < K; k++) {
+                        cell[k]--;
+                    }
+                }
+
+
+                return grd;
+            };
+
+            R.AddBoundaryValue(BoundaryType.Dirichlet.ToString(), "T",
+                 delegate (double[] X) {
+                     double x = X[0], y = X[1];
+
+                     if(Math.Abs(X[0] - (0.0)) < 1.0e-8)
+                         return 0.0;
+
+                     throw new ArgumentOutOfRangeException();
+                 });
+
+            
+
+
+           
+            return R;
+        }
+
+
+
     }
 }
