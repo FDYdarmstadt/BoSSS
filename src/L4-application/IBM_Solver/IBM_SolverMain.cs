@@ -645,9 +645,9 @@ namespace BoSSS.Application.IBM_Solver {
                     }
                 }
 
-                //force = IBMSolverUtils.GetForces(Velocity, Pressure, this.LsTrk, this.Control.PhysicalParameters.mu_A);
+                force = IBMSolverUtils.GetForces(Velocity, Pressure, this.LsTrk, this.Control.PhysicalParameters.mu_A);
                 //oldtorque = torque;
-                //torque = IBMSolverUtils.GetTorque(Velocity, Pressure, this.LsTrk, this.Control.PhysicalParameters.mu_A, this.Control.particleRadius);
+                torque = IBMSolverUtils.GetTorque(Velocity, Pressure, this.LsTrk, this.Control.PhysicalParameters.mu_A, this.Control.particleRadius);
 
                 if ((base.MPIRank == 0) && (Log_DragAndLift != null)) {
                     string line;
