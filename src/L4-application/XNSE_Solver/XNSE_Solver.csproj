@@ -71,7 +71,9 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="PhysicalBasedTestcases\CapillaryRise.cs" />
     <Compile Include="PhysicalBasedTestcases\ElementalTestProgramm.cs" />
+    <Compile Include="PhysicalBasedTestcases\HeatedWall.cs" />
     <Compile Include="PhysicalBasedTestcases\TwoPhaseCouetteFlow.cs" />
     <Compile Include="PhysicalBasedTestcases\CapillaryWave.cs" />
     <Compile Include="PhysicalBasedTestcases\ChannelFlow.cs" />
@@ -130,6 +132,10 @@
     <ProjectReference Include="..\..\L3-solution\BoSSS.Solution.XdgTimestepping\BoSSS.Solution.XdgTimestepping.csproj">
       <Project>{d8a961c8-75a9-4ecd-8627-c598697e7318}</Project>
       <Name>BoSSS.Solution.XdgTimestepping</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\..\L3-solution\BoSSS.Solution.XheatCommon\BoSSS.Solution.XheatCommon.csproj">
+      <Project>{556af24d-182b-4b77-a727-7e18b6488f78}</Project>
+      <Name>BoSSS.Solution.XheatCommon</Name>
     </ProjectReference>
     <ProjectReference Include="..\..\L3-solution\BoSSS.Solution\BoSSS.Solution.csproj">
       <Project>{DF7F5ABD-E606-41CD-BEEF-31A95D136DEA}</Project>

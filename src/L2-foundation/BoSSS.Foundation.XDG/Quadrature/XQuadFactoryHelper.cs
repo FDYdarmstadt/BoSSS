@@ -69,7 +69,11 @@ namespace BoSSS.Foundation.XDG {
             TwoStepStokesAndGauss,
 
 
-            ExactCircle
+            ExactCircle,
+
+            Saye
+
+
         }
 
         /// <summary>
@@ -241,7 +245,6 @@ namespace BoSSS.Foundation.XDG {
                 throw new ArgumentOutOfRangeException("unsupported jump type");
         }
 
-
         /// <summary>
         /// Generates a quadrature rule factory for the cut volume integrals.
         /// </summary>
@@ -292,7 +295,13 @@ namespace BoSSS.Foundation.XDG {
                                     jmp));
                             break;
                         }
-                        
+                        case MomentFittingVariants.Saye:
+                            var comboFactory = Quadrature.SayeFactories.SayeGaussRule_Combo(
+                                this.m_LevelSetDatas[levSetIndex],
+                                new LineSegment.SafeGuardedNewtonMethod(1e-14));
+                            m_VolumeFactory[levSetIndex] = comboFactory.GetVolumeFactory();
+                            m_SurfaceFactory[levSetIndex] = comboFactory.GetSurfaceFactory();
+                            break;
                         default:
                             throw new NotSupportedException(String.Format(
                                 "Variant {0} not implemented.", CutCellQuadratureType));
@@ -388,7 +397,7 @@ namespace BoSSS.Foundation.XDG {
                     }
                                         
                     case MomentFittingVariants.TwoStepStokesAndGauss:
-                    m_SurfaceFactory[levSetIndex] = (new SurfaceStokes_2D(
+                        m_SurfaceFactory[levSetIndex] = (new SurfaceStokes_2D(
                             m_LevelSetDatas[levSetIndex],
                             this.GetCellFaceFactory(levSetIndex, Kref),
                             this._GetSurfaceElement_BoundaryRuleFactory(levSetIndex, Kref),
@@ -399,6 +408,13 @@ namespace BoSSS.Foundation.XDG {
                     case MomentFittingVariants.ExactCircle:
                     return new ExactCircleLevelSetIntegration(levSetIndex, this.m_LevelSetDatas[levSetIndex].GridDat, Kref);
 
+                    case MomentFittingVariants.Saye:
+                        var comboFactory = Quadrature.SayeFactories.SayeGaussRule_Combo(
+                                this.m_LevelSetDatas[levSetIndex],
+                                new LineSegment.SafeGuardedNewtonMethod(1e-14));
+                        m_VolumeFactory[levSetIndex] = comboFactory.GetVolumeFactory();
+                        m_SurfaceFactory[levSetIndex] = comboFactory.GetSurfaceFactory();
+                        break;
                     default:
                     throw new NotSupportedException(String.Format(
                         "Variant {0} not implemented.", CutCellQuadratureType));
@@ -488,10 +504,9 @@ namespace BoSSS.Foundation.XDG {
 
                     compQr.Nodes.SetSubArray(fullRule.Nodes, new int[] { 0, 0 }, new int[] { L1 - 1, D - 1 });
                     compQr.Weights.SetSubArray(fullRule.Weights, new int[] { 0 }, new int[] { L1 - 1 });
-
                     compQr.Nodes.SetSubArray(qr.Nodes, new int[] { L1, 0 }, new int[] { L1 + L2 - 1, D - 1 });
                     compQr.Weights.AccSubArray(-1, qr.Weights, new int[] { L1 }, new int[] { L1 + L2 - 1 });
-
+                    
                     compQr.Nodes.LockForever();
 
                     ret.Add(new ChunkRulePair<QuadRule>(chk, compQr));

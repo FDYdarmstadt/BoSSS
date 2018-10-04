@@ -31,7 +31,7 @@ namespace BoSSS.Solution.XNSECommon.Operator.Viscosity {
     
     public class ViscosityInBulk_GradUTerm : BoSSS.Solution.NSECommon.swipViscosity_Term1, IEquationComponentSpeciesNotification {
 
-        public ViscosityInBulk_GradUTerm(double penalty, double sw, IncompressibleMultiphaseBoundaryCondMap bcMap, int d, int D, double _muA, double _muB, 
+        public ViscosityInBulk_GradUTerm(double penalty, double sw, IncompressibleMultiphaseBoundaryCondMap bcMap, int d, int D, double _muA, double _muB,
             double _betaA = 0.0, double _betaB = 0.0)
             : base(penalty, d, D, bcMap, NSECommon.ViscosityOption.ConstantViscosity, constantViscosityValue: double.NegativeInfinity) {
             muA = _muA;
@@ -112,8 +112,10 @@ namespace BoSSS.Solution.XNSECommon.Operator.Viscosity {
         }
 
         //public void CoefficientUpdate(CoefficientSet cs, int[] DomainDGdeg, int TestDGdeg) {
-        //    m_LenScales = cs.CellLengthScales;
+
+        //    m_slipLengths = (MultidimensionalArray)cs.UserDefinedValues["SlipLengths"];
         //}
+
     }
 
     public class ViscosityInBulk_GradUtranspTerm : BoSSS.Solution.NSECommon.swipViscosity_Term2, IEquationComponentSpeciesNotification {
@@ -154,8 +156,8 @@ namespace BoSSS.Solution.XNSECommon.Operator.Viscosity {
 
         public void SetParameter(string speciesName, SpeciesId SpcId) {
             switch(speciesName) {
-                case "A": currentMu = muA; complementMu = muB; SetBndfunction("A"); break;
-                case "B": currentMu = muB; complementMu = muA; SetBndfunction("B"); break;
+                case "A": currentMu = muA; complementMu = muB; SetBndfunction("A"); m_beta = betaA;  break;
+                case "B": currentMu = muB; complementMu = muA; SetBndfunction("B"); m_beta = betaB; break;
                 default: throw new ArgumentException("Unknown species.");
             }
 

@@ -161,6 +161,7 @@ namespace BoSSS.Solution.NSECommon {
                 }
                 case IncompressibleBcType.Wall:
                 case IncompressibleBcType.FreeSlip:
+                case IncompressibleBcType.SlipSymmetry:
                 case IncompressibleBcType.NoSlipNeumann:
                 {
                     double u_j_In = Uin[0];

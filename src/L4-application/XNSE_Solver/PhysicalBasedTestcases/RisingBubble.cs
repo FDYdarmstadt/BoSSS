@@ -336,7 +336,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
         /// <param name="kelem"></param>
         /// <param name="_DbPath"></param>
         /// <returns></returns>
-        public static XNSE_Control RB_BenchmarkTest(int p = 2, int kelem = 20, string _DbPath = null) {
+        public static XNSE_Control RB_BenchmarkTest(int p = 2, int kelem = 10, string _DbPath = null) {
 
             XNSE_Control C = new XNSE_Control();
 
@@ -356,6 +356,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             C.Tags.Add("benchmark setup");
 
             C.LogValues = XNSE_Control.LoggingValues.RisingBubble;
+            C.LogPeriod = 30;
 
             #endregion
 
@@ -390,10 +391,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
                 Degree = p,
                 SaveToDB = FieldOpts.SaveToDBOpt.TRUE
             });
-            C.FieldOptions.Add("DivergenceVelocity", new FieldOpts() {
-                Degree = p,
-                SaveToDB = FieldOpts.SaveToDBOpt.TRUE
-            });
+
 
             #endregion
 
@@ -415,7 +413,8 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             //C.PhysicalParameters.rho_B = 1000;
             //C.PhysicalParameters.mu_A = 0.1;
             //C.PhysicalParameters.mu_B = 10;
-            //C.PhysicalParameters.Sigma = 1.96;
+            //double sigma = 1.96;
+            //C.PhysicalParameters.Sigma = sigma;
 
 
             C.PhysicalParameters.IncludeConvection = true;
@@ -442,13 +441,13 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
 
                 grd.DefineEdgeTags(delegate (double[] X) {
                     byte et = 0;
-                    if (Math.Abs(X[1]) <= 1.0e-8)
+                    if(Math.Abs(X[1]) <= 1.0e-8)
                         et = 1;
-                    if (Math.Abs(X[1] - 2.0) <= 1.0e-8)
+                    if(Math.Abs(X[1] - 2.0) <= 1.0e-8)
                         et = 2;
-                    if (Math.Abs(X[0]) <= 1.0e-8)
+                    if(Math.Abs(X[0]) <= 1.0e-8)
                         et = 3;
-                    if (Math.Abs(X[0] - 1.0) <= 1.0e-8)
+                    if(Math.Abs(X[0] - 1.0) <= 1.0e-8)
                         et = 4;
                     return et;
                 });
@@ -511,8 +510,8 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
 
 
             //var database = new DatabaseInfo(_DbPath);
-            //Guid restartID = new Guid("977338d3-6840-43ab-a4b5-1983aa10b735");
-            //C.RestartInfo = new Tuple<Guid, Foundation.IO.TimestepNumber>(restartID, null);
+            //Guid restartID = new Guid("b90c5f79-9b82-47cd-b400-e9abbbd83e19");  //new Guid("2953cd96-ea27-4989-abd3-07e99d35de5f"); 
+            //C.RestartInfo = new Tuple<Guid, Foundation.IO.TimestepNumber>(restartID, 1140);
 
             #endregion
 
@@ -565,10 +564,10 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
 
 
             C.LSContiProjectionMethod = ContinuityProjectionOption.ContinuousDG;
-            //C.option_solver = C.PhysicalParameters.IncludeConvection ? "fixpoint+levelset" : "direct";
+
             C.VelocityBlockPrecondMode = MultigridOperator.Mode.SymPart_DiagBlockEquilib;
             C.NoOfMultigridLevels = 1;
-            C.Solver_MaxIterations = 50;
+            C.Solver_MaxIterations = 80;
             C.Solver_ConvergenceCriterion = 1e-8;
             C.LevelSet_ConvergenceCriterion = 1e-6;
 
@@ -581,14 +580,15 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             //C.AdvancedDiscretizationOptions.FilterConfiguration.FilterCurvatureCycles = 1;
 
 
-            C.AdvancedDiscretizationOptions.SurfStressTensor = SurfaceSressTensor.FullBoussinesqScriven;
+            C.AdvancedDiscretizationOptions.SurfStressTensor = SurfaceSressTensor.Isotropic;
             C.PhysicalParameters.mu_I = 1 * sigma;
             C.PhysicalParameters.lambda_I = 2 * sigma;
 
             C.AdvancedDiscretizationOptions.SST_isotropicMode = SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_ContactLine;
 
-            C.LS_TrackerWidth = 2;
+            //C.LS_TrackerWidth = 2;
             C.AdaptiveMeshRefinement = true;
+            C.RefineStrategy = XNSE_Control.RefinementStrategy.constantInterface;
             C.RefinementLevel = 1;
 
 
@@ -605,11 +605,11 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
 
             C.CompMode = AppControl._CompMode.Transient;
 
-            double dt = 3e-3;
+            double dt = 1e-2;
             C.dtMax = dt;
             C.dtMin = dt;
-            C.NoOfTimesteps = 1000;
-            C.saveperiod = 1;
+            C.NoOfTimesteps = 3000;
+            C.saveperiod = 3;
 
 
             #endregion

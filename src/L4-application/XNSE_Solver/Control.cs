@@ -22,10 +22,12 @@ using System.Text;
 using BoSSS.Solution.Control;
 using BoSSS.Solution.LevelSetTools.FourierLevelSet;
 using BoSSS.Solution.LevelSetTools.Advection;
+using BoSSS.Solution.XheatCommon;
 using BoSSS.Solution.XNSECommon;
 using BoSSS.Solution.Multigrid;
 using BoSSS.Solution.XdgTimestepping;
 using BoSSS.Solution.NSECommon;
+
 using BoSSS.Foundation.XDG;
 using BoSSS.Solution.LevelSetTools;
 using BoSSS.Solution.LevelSetTools.EllipticExtension;
@@ -93,6 +95,10 @@ namespace BoSSS.Application.XNSE_Solver {
                 Degree = LevSetDegree*2,
                 SaveToDB = SaveCurvature
             });
+            FieldOptions.Add(VariableNames.Temperature, new FieldOpts() {
+                Degree = VelDegree,
+                SaveToDB = FieldOpts.SaveToDBOpt.TRUE
+            });
         }
 
        
@@ -109,27 +115,39 @@ namespace BoSSS.Application.XNSE_Solver {
         public enum RefinementStrategy {
 
             /// <summary>
-            /// same refinement level on a cut-cells
+            /// same refinement level on near band
             /// </summary>
-            Interface,
+            constantInterface,
 
             /// <summary>
             /// additional refinement on cells with high curvature
             /// </summary>
-            CurvatureBased,
+            CurvatureRefined,
+
+            /// <summary>
+            /// additional refinement at contact line
+            /// </summary>
+            ContactLineRefined
         }
 
         /// <summary>
         /// See <see cref="LoggingValues"/>
         /// </summary>
         [DataMember]
-        public RefinementStrategy RefineStrategy = RefinementStrategy.Interface;
+        public RefinementStrategy RefineStrategy = RefinementStrategy.constantInterface;
 
         /// <summary>
-        /// desired maximal refinement level
+        /// desired minimum refinement level
         /// </summary>
         [DataMember]
-        public int RefinementLevel = 0; 
+        public int RefinementLevel = 1;
+
+        /// <summary>
+        /// additional refinement of the navier slip boundary 
+        /// </summary>
+        [DataMember]
+        public bool RefineNavierSlipBoundary = false;
+
 
         /// <summary>
         /// Expert options regarding the spatial discretization.
@@ -173,7 +191,7 @@ namespace BoSSS.Application.XNSE_Solver {
             /// <summary>
             /// no data will be written
             /// </summary>
-            none,
+            None,
 
             /// <summary>
             /// for elemental test programm with line like interfaces
@@ -199,14 +217,19 @@ namespace BoSSS.Application.XNSE_Solver {
             /// <summary>
             /// contact points and corresponding contact angle
             /// </summary>
-            MovingContactLine
+            MovingContactLine,
+
+            /// <summary>
+            /// height of a rising capillary in a tube
+            /// </summary>
+            CapillaryHeight
         }
 
         /// <summary>
         /// See <see cref="LoggingValues"/>
         /// </summary>
         [DataMember]
-        public LoggingValues LogValues = LoggingValues.none;
+        public LoggingValues LogValues = LoggingValues.None;
 
         [DataMember]
         public int LogPeriod = 1;
@@ -355,11 +378,19 @@ namespace BoSSS.Application.XNSE_Solver {
         /// </summary>
         public bool EnforceLevelSetConservation = false;
 
-      
+
         /// <summary>
         /// Switch for selection of linear Solvers library
         /// </summary>
+        [DataMember]
         public DirectSolver._whichSolver LinearSolver = DirectSolver._whichSolver.MUMPS;
+
+        /// <summary>
+        /// Switch for selection of linear Solvers library
+        /// </summary>
+        [DataMember]
+        public NonlinearSolverMethod NonLinearSolver = NonlinearSolverMethod.Picard;
+
 
         /// <summary>
         /// If true, kinetic and surface energy will be evaluated in every cycle.
@@ -436,5 +467,31 @@ namespace BoSSS.Application.XNSE_Solver {
         /// Control Options for ExtVel
         /// </summary>
         internal EllipticExtVelAlgoControl EllipticExtVelAlgoControl = new EllipticExtVelAlgoControl();
+
+
+
+        /// <summary>
+        /// switch for the computation of the coupled heat solver
+        /// </summary>
+        public bool solveCoupledHeatSolver = false;
+
+        /// <summary>
+        /// Block-Precondition for the Temperature-block
+        /// </summary>
+        public MultigridOperator.Mode TemperatureBlockPrecondMode = MultigridOperator.Mode.SymPart_DiagBlockEquilib;
+
+        /// <summary>
+        /// density, heat capacity and thermal conductivity
+        /// </summary>
+        [DataMember]
+        public ThermalParameters ThermalParameters = new ThermalParameters() {
+            Material = true,
+            rho_A = 1.0,
+            rho_B = 1.0,
+            c_A = 1.0,
+            c_B = 1.0,
+            k_A = 1.0,
+            k_B = 1.0
+        };
     }
 }

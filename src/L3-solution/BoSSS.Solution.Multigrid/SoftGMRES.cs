@@ -289,7 +289,7 @@ namespace BoSSS.Solution.Multigrid
 
                         //using (StreamWriter writer = new StreamWriter(m_SessionPath + "//GMRES_Stats.txt", true))
                         //{
-                        //Console.WriteLine(i + "   " + error);
+                        Console.WriteLine(i + "   " + error);
                         //}
 
 
@@ -324,6 +324,7 @@ namespace BoSSS.Solution.Multigrid
 
                     if (error <= this.m_Tolerance)
                     {
+                        Console.WriteLine("Picard completed after:   " + i + "steps");
                         this.m_Converged = true;
                         break;
                     }

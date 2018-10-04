@@ -226,7 +226,7 @@ namespace BoSSS.Solution {
 
 
         /// <summary>
-        /// Loads the DG coordinates after grid-redistribution.
+        /// Loads the DG coordinates after grid adaptation.
         /// </summary>
         /// <param name="f"></param>
         /// <param name="Reference">
@@ -370,7 +370,8 @@ namespace BoSSS.Solution {
             Debug.Assert(ReDistDGCoords_jl.Length == Np);
 
             for(int n = 0; n < Np; n++) {
-                Coords_j[n] = f.Coordinates[j, N0acc + n];
+                Coords_j[n] = f.Coordinates[j, N0acc + n]; // Warum????
+                //Coords_j[n] = 0.0;
             }
             
             int L = ReDistDGCoords_j.Length;
@@ -427,6 +428,9 @@ namespace BoSSS.Solution {
                         for(int iLS = 0; iLS < NoLs; iLS++) {
                             tmpLS[iLS] = new SinglePhaseField(NewLSbasis[iLS], "tmpLS#" + iLS);
                             this.RestoreDGField(tmpLS[iLS], base.GetLSbackupName(iH, iLS));
+
+                            //tmpLS[iLS].GetExtremalValues(out double min, out double max);
+                            //Console.WriteLine("phi[{2}] min value = {0} / phi max value = {1}", min, max, iH);
                         }
 
                         m_NewTracker.ReplaceCurrentTimeLevel(tmpLS, m_LsTrkPrivData.Versions[1 - iH]);

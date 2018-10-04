@@ -419,8 +419,8 @@ namespace CNS {
 
                 // Update clustering before cell redistribution when LTS is being used
                 if (TimeStepper is AdamsBashforthLTS ABLTSTimeStepper) {
-                    if (TimeStepNo % Control.DynamicLoadBalancing_Period != 0) {
-                        throw new Exception("Mismatch between time step number and dynmaic load balacing period!");
+                    if (TimeStepNo % Control.DynamicLoadBalancing_Period != 0 && !(Control.DynamicLoadBalancing_RedistributeAtStartup && TimeStepNo == TimeStepNoRestart)) {
+                        throw new Exception("Mismatch between time step number and dynamic load balacing period!");
                     }
 
                     // Just to be sure...
