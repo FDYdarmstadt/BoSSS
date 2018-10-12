@@ -36,7 +36,7 @@ namespace BoSSS.Application.IBM_Solver {
         /// </summary>
         public IBM_Control() {
             base.NoOfMultigridLevels = 1;
-            base.CutCellQuadratureType = Foundation.XDG.XQuadFactoryHelper.MomentFittingVariants.Classic;
+            base.CutCellQuadratureType = Foundation.XDG.XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes;
         }
 
         /// <summary>
