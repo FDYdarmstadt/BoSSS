@@ -325,7 +325,7 @@ namespace BoSSS.Application.AdaptiveMeshRefinementTest {
                 double L2err = TestData.L2Error(TestDataFunc);
 
                 Console.WriteLine("Projection error from old to new grid: " + L2err);
-                //Assert.LessOrEqual(L2err, 1.0e-8, "Projection error from old to new grid to high.");
+                Assert.LessOrEqual(L2err, 1.0e-8, "Projection error from old to new grid to high.");
 
                 // return
                 //base.TerminationKey = true;
