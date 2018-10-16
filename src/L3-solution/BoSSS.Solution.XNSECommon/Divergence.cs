@@ -192,10 +192,10 @@ namespace BoSSS.Solution.XNSECommon.Operator.Continuity {
             double uBxN = GenericBlas.InnerProd(U_Pos, cp.n);
 
             double s = 0;//cp.ParamsNeg[0];
-            if (!MaterialInterface) {
-                Debug.Assert(cp.ParamsNeg[0] == cp.ParamsPos[0], "The interface velocity must be continuous across the level set!");
-                throw new NotImplementedException();
-            }
+            //if (!MaterialInterface) {
+            //    Debug.Assert(cp.ParamsNeg[0] == cp.ParamsPos[0], "The interface velocity must be continuous across the level set!");
+            //    throw new NotImplementedException();
+            //}
 
 
             double rhoJmp = rhoB - rhoA;
@@ -349,4 +349,128 @@ namespace BoSSS.Solution.XNSECommon.Operator.Continuity {
             get { return this.m_lsTrk.GetSpeciesId("A"); }
         }
     }
+
+
+
+    /// <summary>
+    /// velocity jump penalty for the divergence operator, on the level set
+    /// </summary>
+    public class GeneralizedDivergenceAtLevelSet : ILevelSetForm {
+
+        LevelSetTracker m_lsTrk;
+
+        public GeneralizedDivergenceAtLevelSet(int _D, LevelSetTracker lsTrk, double _rhoA, double _rhoB,
+            bool _MaterialInterface, double vorZeichen, bool RescaleConti, double _M) {
+            this.D = _D;
+            this.rhoA = _rhoA;
+            this.rhoB = _rhoB;
+            this.m_lsTrk = lsTrk;
+            MaterialInterface = _MaterialInterface;
+
+            scaleA = vorZeichen;
+            scaleB = vorZeichen;
+
+            if(RescaleConti) {
+                scaleA /= rhoA;
+                scaleB /= rhoB;
+            }
+
+            this.M = _M;
+        }
+
+        bool MaterialInterface;
+        int D;
+        double rhoA;
+        double rhoB;
+
+        double scaleA;
+        double scaleB;
+
+        double M;
+
+
+        public TermActivationFlags LevelSetTerms {
+            get {
+                return TermActivationFlags.UxV;
+            }
+        }
+
+        public double LevelSetForm(ref Foundation.XDG.CommonParamsLs cp,
+            double[] U_Neg, double[] U_Pos, double[,] Grad_uA, double[,] Grad_uB,
+            double vA, double vB, double[] Grad_vA, double[] Grad_vB) {
+
+            //double uAxN = GenericBlas.InnerProd(U_Neg, cp.n);
+            //double uBxN = GenericBlas.InnerProd(U_Pos, cp.n);
+            double uAxN = -M * (1 / rhoA);
+            double uBxN = -M * (1 / rhoB);
+
+            double s = 0;//cp.ParamsNeg[0];
+            //if (!MaterialInterface) {
+            //    Debug.Assert(cp.ParamsNeg[0] == cp.ParamsPos[0], "The interface velocity must be continuous across the level set!");
+            //    throw new NotImplementedException();
+            //}
+
+
+            double rhoJmp = rhoB - rhoA;
+
+            // transform from species B to A: we call this the "A-fictitious" value
+            double uAxN_fict;
+            if(!MaterialInterface)
+                uAxN_fict = (1 / rhoA) * (rhoB * uBxN + (-s) * rhoJmp);
+            else
+                uAxN_fict = uBxN;
+
+
+            // transform from species A to B: we call this the "B-fictitious" value
+            double uBxN_fict;
+            if(!MaterialInterface)
+                uBxN_fict = (1 / rhoB) * (rhoA * uAxN - (-s) * rhoJmp);
+            else
+                uBxN_fict = uAxN;
+
+            // compute the fluxes: note that for the continuity equation, we use not a real flux,
+            // but some kind of penalization, therefore the fluxes have opposite signs!
+            double FlxNeg = -Flux(uAxN, uAxN_fict); // flux on A-side
+            double FlxPos = +Flux(uBxN_fict, uBxN);  // flux on B-side
+
+            FlxNeg *= scaleA;
+            FlxPos *= scaleB;
+
+            return FlxNeg * vA - FlxPos * vB;
+        }
+
+
+        /// <summary>
+        /// the penalty flux
+        /// </summary>
+        static double Flux(double UxN_in, double UxN_out) {
+            return 0.5 * (UxN_in - UxN_out);
+        }
+
+
+        public IList<string> ArgumentOrdering {
+            get {
+                return VariableNames.VelocityVector(this.D);
+            }
+        }
+
+        public IList<string> ParameterOrdering {
+            get { return null; }
+        }
+
+        public int LevelSetIndex {
+            get { return 0; }
+        }
+
+        public SpeciesId PositiveSpecies {
+            get { return this.m_lsTrk.GetSpeciesId("B"); }
+        }
+
+        public SpeciesId NegativeSpecies {
+            get { return this.m_lsTrk.GetSpeciesId("A"); }
+        }
+    }
+
+
+
 }

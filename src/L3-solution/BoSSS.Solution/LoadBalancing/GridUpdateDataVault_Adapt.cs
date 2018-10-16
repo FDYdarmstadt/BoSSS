@@ -443,7 +443,6 @@ namespace BoSSS.Solution {
 
             for(int n = 0; n < Np; n++) {
                 Coords_j[n] = f.Coordinates[j, N0acc + n]; // for coarsening, we 'touch' each cell multiple times -- therefore, values must be accumulated
-                //Coords_j[n] = 0.0;
             }
             
             int L = ReDistDGCoords_j.Length;
@@ -506,6 +505,9 @@ namespace BoSSS.Solution {
                         for(int iLS = 0; iLS < NoLs; iLS++) {
                             tmpLS[iLS] = new SinglePhaseField(NewLSbasis[iLS], "tmpLS#" + iLS);
                             this.RestoreDGField(tmpLS[iLS], base.GetLSbackupName(iH, iLS));
+
+                            //tmpLS[iLS].GetExtremalValues(out double min, out double max);
+                            //Console.WriteLine("phi[{2}] min value = {0} / phi max value = {1}", min, max, iH);
                         }
 
                         m_NewTracker.ReplaceCurrentTimeLevel(tmpLS, m_LsTrkPrivData.Versions[1 - iH]);

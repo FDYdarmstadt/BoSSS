@@ -324,6 +324,7 @@ namespace BoSSS.Solution.Multigrid
 
                     if (error <= this.m_Tolerance)
                     {
+                        Console.WriteLine("Picard completed after:   " + i + "steps");
                         this.m_Converged = true;
                         break;
                     }
