@@ -467,7 +467,7 @@ namespace BoSSS.Solution {
                 // coarsening
                 // ++++++++++
                 var Trafo = Old2NewCorr.GetSubdivBasisTransform(iKref, TargMappingIdx_j[l], pDeg).Item1;
-                double scale = Old2NewCorr.GetSubdivBasisTransform(iKref, TargMappingIdx_j[0], pDeg).Item2;
+                double scale = Old2NewCorr.GetSubdivBasisTransform(iKref, TargMappingIdx_j[l], pDeg).Item2;
 
                 for (int n = 0; n < Np; n++) {
                     ReDistDGCoords_jl[n] = ReDistDGCoords_j[l][N0rcv + n];
