@@ -139,13 +139,7 @@ namespace BoSSS.Application.AdaptiveMeshRefinementTest {
             Assert.LessOrEqual(L2err, 1.0e-8, "Projection error of test field to high.");
 
 
-            /*
-            RefinedGrid = this.GridData;
-            Refined_u = this.u;
-            Refined_TestData = new SinglePhaseField(this.u.Basis, "TestData");
-            Refined_Grad_u = this.Grad_u;
-            Refined_MagGrad_u = this.MagGrad_u;
-            */
+          
         }
 
    
@@ -245,8 +239,7 @@ namespace BoSSS.Application.AdaptiveMeshRefinementTest {
             }
         }
 
-
-        bool LevelReminder = false;
+        //bool LevelReminder = false;
 
         /// <summary>
         /// Very primitive refinement indicator, works on a gradient criterion.
@@ -260,13 +253,13 @@ namespace BoSSS.Application.AdaptiveMeshRefinementTest {
             if(GradMag > 0.81)
                 DesiredLevel_j = 2;
 
-            if(DesiredLevel_j < CurrentLevel) {
-                DesiredLevel_j = CurrentLevel;
-                if(!LevelReminder) {
-                    Console.WriteLine("Reminder: coarsening disabled");
-                    LevelReminder = true;
-                }
-            }
+            //if(DesiredLevel_j < CurrentLevel) {
+            //    DesiredLevel_j = CurrentLevel;
+            //    if(!LevelReminder) {
+            //        Console.WriteLine("Reminder: coarsening disabled");
+            //        LevelReminder = true;
+            //    }
+            //}
 
             return DesiredLevel_j;
             

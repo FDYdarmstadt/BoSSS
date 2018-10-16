@@ -286,6 +286,14 @@ namespace BoSSS.Solution {
         /// </param>
         public override void RestoreDGField(DGField f, string Reference) {
             using(new FuncTrace()) {
+                //if(f.Identification == "TestData") {
+                //    Console.WriteLine("using oasch");
+                //    Oasch = true;
+                //} else {
+                //    Oasch = false;
+                //}
+
+
 
                 int newJ = this.m_newJ;
                 GridData NewGrid = (GridData)m_NewGrid;
@@ -448,24 +456,32 @@ namespace BoSSS.Solution {
                 Debug.Assert(l == 0);
                 MultidimensionalArray Trafo = Old2NewCorr.GetSubdivBasisTransform(iKref, TargMappingIdx_j[0], pDeg).Item1;
                 double scale = Old2NewCorr.GetSubdivBasisTransform(iKref, TargMappingIdx_j[0], pDeg).Item2;
-                
+
                 for (int n = 0; n < Np; n++) {
                     ReDistDGCoords_jl[n] = ReDistDGCoords_j[0][N0rcv + n];
                 }
                 Trafo.gemv(1.0, ReDistDGCoords_jl, 1.0, Coords_j, transpose: false);
-                BckTrafo(Coords_j, Np, 0, NewGrid, j, pDeg, scale);
+                BckTrafo(Coords_j, Np, 0, NewGrid, j, pDeg, scale.Sqrt());
 
             } else {
                 // ++++++++++
                 // coarsening
                 // ++++++++++
                 var Trafo = Old2NewCorr.GetSubdivBasisTransform(iKref, TargMappingIdx_j[l], pDeg).Item1;
+                double scale = Old2NewCorr.GetSubdivBasisTransform(iKref, TargMappingIdx_j[0], pDeg).Item2;
 
                 for (int n = 0; n < Np; n++) {
                     ReDistDGCoords_jl[n] = ReDistDGCoords_j[l][N0rcv + n];
                 }
+                //if (!Oasch) {
+                //    Trafo.gemv(1.0, ReDistDGCoords_jl, 1.0, Coords_j, transpose: true);
+                //} else {
+                double[] buf = new double[Np];
+                Trafo.gemv(1.0, ReDistDGCoords_jl, 1.0, buf, transpose: true);
+                BckTrafo(buf, Np, 0, NewGrid, j, pDeg, 1.0 / scale.Sqrt());
 
-                Trafo.gemv(1.0, ReDistDGCoords_jl, 1.0, Coords_j, transpose: true);
+                Coords_j.AccV(1.0, buf);
+                //}
             }
 
             for(int n = 0; n < Np; n++) {
