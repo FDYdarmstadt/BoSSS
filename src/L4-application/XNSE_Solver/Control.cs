@@ -22,10 +22,12 @@ using System.Text;
 using BoSSS.Solution.Control;
 using BoSSS.Solution.LevelSetTools.FourierLevelSet;
 using BoSSS.Solution.LevelSetTools.Advection;
+using BoSSS.Solution.XheatCommon;
 using BoSSS.Solution.XNSECommon;
 using BoSSS.Solution.Multigrid;
 using BoSSS.Solution.XdgTimestepping;
 using BoSSS.Solution.NSECommon;
+
 using BoSSS.Foundation.XDG;
 using BoSSS.Solution.LevelSetTools;
 using BoSSS.Solution.LevelSetTools.EllipticExtension;
@@ -92,6 +94,10 @@ namespace BoSSS.Application.XNSE_Solver {
             FieldOptions.Add("Curvature", new FieldOpts() {
                 Degree = LevSetDegree*2,
                 SaveToDB = SaveCurvature
+            });
+            FieldOptions.Add(VariableNames.Temperature, new FieldOpts() {
+                Degree = VelDegree,
+                SaveToDB = FieldOpts.SaveToDBOpt.TRUE
             });
         }
 
@@ -372,11 +378,19 @@ namespace BoSSS.Application.XNSE_Solver {
         /// </summary>
         public bool EnforceLevelSetConservation = false;
 
-      
+
         /// <summary>
         /// Switch for selection of linear Solvers library
         /// </summary>
+        [DataMember]
         public DirectSolver._whichSolver LinearSolver = DirectSolver._whichSolver.MUMPS;
+
+        /// <summary>
+        /// Switch for selection of linear Solvers library
+        /// </summary>
+        [DataMember]
+        public NonlinearSolverMethod NonLinearSolver = NonlinearSolverMethod.Picard;
+
 
         /// <summary>
         /// If true, kinetic and surface energy will be evaluated in every cycle.
@@ -453,5 +467,31 @@ namespace BoSSS.Application.XNSE_Solver {
         /// Control Options for ExtVel
         /// </summary>
         internal EllipticExtVelAlgoControl EllipticExtVelAlgoControl = new EllipticExtVelAlgoControl();
+
+
+
+        /// <summary>
+        /// switch for the computation of the coupled heat solver
+        /// </summary>
+        public bool solveCoupledHeatSolver = false;
+
+        /// <summary>
+        /// Block-Precondition for the Temperature-block
+        /// </summary>
+        public MultigridOperator.Mode TemperatureBlockPrecondMode = MultigridOperator.Mode.SymPart_DiagBlockEquilib;
+
+        /// <summary>
+        /// density, heat capacity and thermal conductivity
+        /// </summary>
+        [DataMember]
+        public ThermalParameters ThermalParameters = new ThermalParameters() {
+            Material = true,
+            rho_A = 1.0,
+            rho_B = 1.0,
+            c_A = 1.0,
+            c_B = 1.0,
+            k_A = 1.0,
+            k_B = 1.0
+        };
     }
 }

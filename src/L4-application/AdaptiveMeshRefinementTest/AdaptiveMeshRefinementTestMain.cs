@@ -66,10 +66,9 @@ namespace BoSSS.Application.AdaptiveMeshRefinementTest {
 
                 default:
                 throw new ArgumentException("unknown test-case index");
-
             }
-            return grd;
 
+            return grd;
         }
 
         public override void Init(BoSSS.Solution.Control.AppControl control) {

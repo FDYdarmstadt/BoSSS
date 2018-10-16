@@ -181,6 +181,8 @@ namespace BoSSS.Solution {
                         var TimeLevel = m_OldTracker.BackupTimeLevel(iH);
                         for(int iLs = 0; iLs < NoOfLS; iLs++) {
                             this.BackupField(TimeLevel.Item1[iLs], GetLSbackupName(iH, iLs));
+                            //TimeLevel.Item1[iLs].GetExtremalValues(out double min, out double max);
+                            //Console.WriteLine("before backup: phi[{2}] min value = {0} / phi max value = {1}", min, max, iH);
                         }
                         this.BackupVector(TimeLevel.Item2, GetLSregioncodeName(iH));
 
