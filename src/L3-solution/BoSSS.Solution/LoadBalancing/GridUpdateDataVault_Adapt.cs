@@ -20,6 +20,7 @@ using BoSSS.Foundation.Grid.Classic;
 using BoSSS.Foundation.XDG;
 using ilPSP;
 using ilPSP.Tracing;
+using ilPSP.Utils;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -185,6 +186,8 @@ namespace BoSSS.Solution {
                         data_j[n] = f.Coordinates[j, n];
                     }
 
+                    FwdTrafo(data_j, Nj, 0, (GridData) m_OldGrid, j, f.Basis.Degree);
+
                     oldFieldsData[j] = data_j;
                 }
             } else if(f is XDGField) {
@@ -204,7 +207,7 @@ namespace BoSSS.Solution {
                     double[] data_j = new double[Nj + NoOfSpc + 1];
                     data_j[0] = NoOfSpc;
                     int c = 1;
-                    for(int iSpc = 0; iSpc < NoOfSpc; iSpc++) {
+                    for(int iSpc = 0; iSpc < NoOfSpc; iSpc++) { // loop over species
                         SpeciesId spc = lsTrk.Regions.GetSpeciesIdFromIndex(j, iSpc);
                         data_j[c] = spc.cntnt;
                         c++;
@@ -212,6 +215,8 @@ namespace BoSSS.Solution {
                             data_j[c] = f.Coordinates[j, n + Np*iSpc];
                             c++;
                         }
+
+                        FwdTrafo(data_j, Np, (Np + 1) * iSpc + 2, (GridData)m_OldGrid, j, f.Basis.Degree);
                     }
                     Debug.Assert(data_j.Length == c);
 
@@ -225,6 +230,53 @@ namespace BoSSS.Solution {
         }
 
 
+        //static public bool Oasch = false;
+       
+        /// <summary>
+        /// Additional Transformation in nonlinear cells (curved cells)
+        /// </summary>
+        static void FwdTrafo(double[] Coord, int Np, int i0, GridData g, int jCell, int p) {
+            if (!g.Cells.IsCellAffineLinear(jCell)) {
+                var trafoF = g.ChefBasis.OrthonormalizationTrafo.GetValue_Cell(jCell, 1, p);
+                var trafo = trafoF.ExtractSubArrayShallow(new[] { 0, 0, 0 }, new[] { -1, Np - 1, Np - 1 });
+                
+                var CoordOrg = Coord.GetSubVector(i0, Np);
+                var CoordTrf = new double[Np];
+
+                //if (Oasch) {
+                trafo.gemv(1.0, CoordOrg, 0.0, CoordTrf, transpose: false);
+                //} else {
+                //    CoordTrf.SetV(CoordOrg);
+                //}
+
+                Array.Copy(CoordTrf, 0, Coord, i0, Np);
+            }
+        }
+
+        /// <summary>
+        /// Additional Transformation in nonlinear cells (curved cells)
+        /// </summary>
+        static void BckTrafo(double[] Coord, int Np, int i0, GridData g, int jCell, int p, double scale) {
+            if (!g.Cells.IsCellAffineLinear(jCell)) {
+                var trafoF = g.ChefBasis.OrthonormalizationTrafo.GetValue_Cell(jCell, 1, p);
+                var trafo = trafoF.ExtractSubArrayShallow(new[] { 0, 0, 0 }, new[] { -1, Np - 1, Np - 1 });
+
+                var CoordOrg = Coord.GetSubVector(i0, Np);
+                var CoordTrf = new double[Np];
+
+                //if (Oasch) {
+                trafo.Solve(CoordTrf, CoordOrg);
+                //CoordTrf.ScaleV(0.25);
+                //} else {
+                //    CoordTrf.SetV(CoordOrg);
+                //}
+
+                //Array.Copy(CoordTrf, 0, Coord, i0, Np);
+                Coord.SetV(CoordTrf, scale);
+            }
+        }
+        
+
         /// <summary>
         /// Loads the DG coordinates after grid adaptation.
         /// </summary>
@@ -234,6 +286,15 @@ namespace BoSSS.Solution {
         /// </param>
         public override void RestoreDGField(DGField f, string Reference) {
             using(new FuncTrace()) {
+                //if(f.Identification == "TestData") {
+                //    Console.WriteLine("using oasch");
+                //    Oasch = true;
+                //} else {
+                //    Oasch = false;
+                //}
+
+
+
                 int newJ = this.m_newJ;
                 GridData NewGrid = (GridData)m_NewGrid;
                 int pDeg = f.Basis.Degree; //  Refined_TestData.Basis.Degree;
@@ -261,7 +322,12 @@ namespace BoSSS.Solution {
                         if(TargMappingIdx[j] == null) {
                             // unchanged cell
                             Debug.Assert(ReDistDGCoords[j].Length == 1);
-                            f.Coordinates.SetRow(j, ReDistDGCoords[j][0]);
+                            double[] Coord = ReDistDGCoords[j][0];
+                            Debug.Assert(Coord.Length == Np);
+                            
+                            BckTrafo(Coord, Np, 0, NewGrid, j, pDeg, 1.0);
+
+                            f.Coordinates.SetRow(j, Coord);
                         } else {
                             int L = ReDistDGCoords[j].Length;
                             for(int l = 0; l < L; l++) {
@@ -290,7 +356,10 @@ namespace BoSSS.Solution {
                         f.Coordinates.ClearRow(j);
 
                         if(TargMappingIdx[j] == null) {
+                            // + + + + + + + + + 
                             // unchanged cell
+                            // + + + + + + + + + 
+
                             Debug.Assert(ReDistDGCoords[j].Length == 1);
                             double[] ReDistDGCoords_jl = ReDistDGCoords[j][0];
                             //Debug.Assert(ReDistDGCoords_jl.Length == NoOfSpc*Np + NoOfSpc + 1);
@@ -318,9 +387,9 @@ namespace BoSSS.Solution {
                                         c++;
                                     }
                                 } else {
-                                    double testNorm = 0;
+                                    //double testNorm = 0;
                                     for(int n = 0; n < Np; n++) {
-                                        testNorm += ReDistDGCoords_jl[c].Pow2();
+                                        //testNorm += ReDistDGCoords_jl[c].Pow2();
                                         c++;
                                     }
 
@@ -329,7 +398,9 @@ namespace BoSSS.Solution {
                             Debug.Assert(c == ReDistDGCoords_jl.Length);
 
                         } else {
+                            // + + + + + + + + + + + + +
                             // coarsening or refinement
+                            // + + + + + + + + + + + + +
 
                             int L = ReDistDGCoords[j].Length;
                             for(int l = 0; l < L; l++) {
@@ -363,6 +434,7 @@ namespace BoSSS.Solution {
 
         static private void DoCellj(int j, DGField f, GridData NewGrid, int pDeg, int[] TargMappingIdx_j, double[][] ReDistDGCoords_j, int l, GridCorrelation Old2NewCorr, int N0rcv, int N0acc, int Np, double[] ReDistDGCoords_jl, double[] Coords_j) {
             Debug.Assert(ReDistDGCoords_j.Length == TargMappingIdx_j.Length);
+            Debug.Assert(object.ReferenceEquals(NewGrid, f.GridDat));
 
             int iKref = NewGrid.Cells.GetRefElementIndex(j);
 
@@ -370,40 +442,45 @@ namespace BoSSS.Solution {
             Debug.Assert(ReDistDGCoords_jl.Length == Np);
 
             for(int n = 0; n < Np; n++) {
-                Coords_j[n] = f.Coordinates[j, N0acc + n]; // Warum????
-                //Coords_j[n] = 0.0;
+                Coords_j[n] = f.Coordinates[j, N0acc + n]; // for coarsening, we 'touch' each cell multiple times -- therefore, values must be accumulated
             }
             
             int L = ReDistDGCoords_j.Length;
 
 
-            if(TargMappingIdx_j.Length == 1) {
+            if (TargMappingIdx_j.Length == 1) {
                 // ++++++++++
                 // refinement
                 // ++++++++++
                 Debug.Assert(l == 0);
-                MultidimensionalArray Trafo = Old2NewCorr.GetSubdivBasisTransform(iKref, TargMappingIdx_j[0], pDeg);
+                MultidimensionalArray Trafo = Old2NewCorr.GetSubdivBasisTransform(iKref, TargMappingIdx_j[0], pDeg).Item1;
+                double scale = Old2NewCorr.GetSubdivBasisTransform(iKref, TargMappingIdx_j[0], pDeg).Item2;
 
-                for(int n = 0; n < Np; n++) {
+                for (int n = 0; n < Np; n++) {
                     ReDistDGCoords_jl[n] = ReDistDGCoords_j[0][N0rcv + n];
                 }
                 Trafo.gemv(1.0, ReDistDGCoords_jl, 1.0, Coords_j, transpose: false);
+                BckTrafo(Coords_j, Np, 0, NewGrid, j, pDeg, scale.Sqrt());
+
             } else {
                 // ++++++++++
                 // coarsening
                 // ++++++++++
+                var Trafo = Old2NewCorr.GetSubdivBasisTransform(iKref, TargMappingIdx_j[l], pDeg).Item1;
+                double scale = Old2NewCorr.GetSubdivBasisTransform(iKref, TargMappingIdx_j[0], pDeg).Item2;
 
-
-                var Trafo = Old2NewCorr.GetSubdivBasisTransform(iKref, TargMappingIdx_j[l], pDeg);
-
-                for(int n = 0; n < Np; n++) {
+                for (int n = 0; n < Np; n++) {
                     ReDistDGCoords_jl[n] = ReDistDGCoords_j[l][N0rcv + n];
                 }
+                //if (!Oasch) {
+                //    Trafo.gemv(1.0, ReDistDGCoords_jl, 1.0, Coords_j, transpose: true);
+                //} else {
+                double[] buf = new double[Np];
+                Trafo.gemv(1.0, ReDistDGCoords_jl, 1.0, buf, transpose: true);
+                BckTrafo(buf, Np, 0, NewGrid, j, pDeg, 1.0 / scale.Sqrt());
 
-                Trafo.gemv(1.0, ReDistDGCoords_jl, 1.0, Coords_j, transpose: true);
-
-
-
+                Coords_j.AccV(1.0, buf);
+                //}
             }
 
             for(int n = 0; n < Np; n++) {
