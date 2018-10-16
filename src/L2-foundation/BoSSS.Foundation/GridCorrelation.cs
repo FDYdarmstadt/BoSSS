@@ -87,7 +87,7 @@ namespace BoSSS.Foundation.Grid.Classic {
                 MultidimensionalArray R = KrefS_SubdivLeaves[iKref][iSubdiv].GetBasisTrafo(p);
                 Subdiv_BasisTransform[iKref][iSubdiv] = new Tuple<MultidimensionalArray, double>(
                     R,
-                    KrefS_SubdivLeaves[iKref][iSubdiv].Trafo2Root.Matrix.Determinant()
+                    KrefS_SubdivLeaves[iKref][iSubdiv].TrafoFromRoot.Matrix.Determinant()
                     );
             }
 
@@ -104,8 +104,6 @@ namespace BoSSS.Foundation.Grid.Classic {
 
         }
 
-
-
         /// <summary>
         /// Mapping from local cell indices of the old grid to global cell indices of the new grid.
         /// - 1st index: local cell index into old grid
@@ -113,7 +111,6 @@ namespace BoSSS.Foundation.Grid.Classic {
         /// - content: global target index (index into new grid) of respective cell.
         /// </summary>
         int[][] TargetIdx;
-
        
         public void ComputeDataRedist(GridData NewGrid) {
             using(new FuncTrace()) {
