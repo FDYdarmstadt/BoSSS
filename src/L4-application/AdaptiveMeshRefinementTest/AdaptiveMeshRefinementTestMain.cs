@@ -39,26 +39,37 @@ namespace BoSSS.Application.AdaptiveMeshRefinementTest {
             //AllUpTest.TestFixtureTearDown();
         }
 
+        public int TestCase = 2;
+
         protected override GridCommons CreateOrLoadGrid() {
-            /*
-            double[] xNodes = GenericBlas.Linspace(-5, 5, 21);
-            double[] yNodes = GenericBlas.Linspace(-5, 5, 21);
-            //double[] xNodes = GenericBlas.Linspace(-3, 3, 4);
-            //double[] yNodes = GenericBlas.Linspace(-1, 1, 2);
+            GridCommons grd;
+            switch (TestCase) {
+                case 1: {
+                    // ++++++++++++++++++
+                    // affine-linear mesh
+                    // ++++++++++++++++++
+                    double[] xNodes = GenericBlas.Linspace(-5, 5, 21);
+                    double[] yNodes = GenericBlas.Linspace(-5, 5, 21);
+                    grd = Grid2D.Cartesian2DGrid(xNodes, yNodes);
+                    break;
+                }
 
-            var grd = Grid2D.Cartesian2DGrid(xNodes, yNodes);
+                case 2: {
+                    // +++++++++++
+                    // curved mesh
+                    // +++++++++++
+                    double[] xNodes = GenericBlas.Linspace(-5, 5, 21);
+                    double[] yNodes = GenericBlas.Linspace(-5, 5, 21);
+                    grd = Grid2D.BilinearSquareGrid(xNodes, yNodes, factor: 0.8);
+                    break;
+                }
+
+                default:
+                throw new ArgumentException("unknown test-case index");
+
+            }
             return grd;
-            */
 
-           
-            double[] xNodes = GenericBlas.Linspace(-5, 5, 21);
-            double[] yNodes = GenericBlas.Linspace(-5, 5, 21);
-            //double[] xNodes = GenericBlas.Linspace(-3, 3, 4);
-            //double[] yNodes = GenericBlas.Linspace(-1, 1, 2);
-
-            var grd =  Grid2D.BilinearSquareGrid(xNodes, yNodes, factor:0.8);
-            return grd;
-            
         }
 
         public override void Init(BoSSS.Solution.Control.AppControl control) {
@@ -235,6 +246,8 @@ namespace BoSSS.Application.AdaptiveMeshRefinementTest {
         }
 
 
+        bool LevelReminder = false;
+
         /// <summary>
         /// Very primitive refinement indicator, works on a gradient criterion.
         /// </summary>
@@ -247,7 +260,16 @@ namespace BoSSS.Application.AdaptiveMeshRefinementTest {
             if(GradMag > 0.81)
                 DesiredLevel_j = 2;
 
-            return Math.Max(CurrentLevel, DesiredLevel_j);
+            if(DesiredLevel_j < CurrentLevel) {
+                DesiredLevel_j = CurrentLevel;
+                if(!LevelReminder) {
+                    Console.WriteLine("Reminder: coarsening disabled");
+                    LevelReminder = true;
+                }
+            }
+
+            return DesiredLevel_j;
+            
         }
 
         protected override void AdaptMesh(int TimestepNo, out GridCommons newGrid, out GridCorrelation old2NewGrid) {
@@ -309,6 +331,7 @@ namespace BoSSS.Application.AdaptiveMeshRefinementTest {
 
                 // check error
                 double L2err = TestData.L2Error(TestDataFunc);
+
                 Console.WriteLine("Projection error from old to new grid: " + L2err);
                 //Assert.LessOrEqual(L2err, 1.0e-8, "Projection error from old to new grid to high.");
 

@@ -56,8 +56,12 @@ namespace BoSSS.Foundation.Grid.Classic {
 
         /// <summary>
         /// Cache for <see cref="GetSubdivBasisTransform(int, int, int)"/>.
+        /// - 1st index: reference element
+        /// - 2nd index: subdivision node
+        /// - Item 1: basis transformation matrix, <see cref="RefElement.SubdivisionTreeNode.GetBasisTrafo(int)"/>
+        /// - Item 2: Jacobian determinate, <see cref="RefElement.SubdivisionTreeNode.Trafo2Root"/>
         /// </summary>
-        MultidimensionalArray[][] Subdiv_BasisTransform;
+        Tuple<MultidimensionalArray,double>[][] Subdiv_BasisTransform;
         
         /// <summary>
         /// Transformation matrices, for cell subdivision, as computed by <see cref="RefElement.SubdivisionTreeNode.GetBasisTrafo(int)"/>,
@@ -67,27 +71,34 @@ namespace BoSSS.Foundation.Grid.Classic {
         /// <param name="iSubdiv">Subdivision leaf index, correlates with 2nd index of <see cref="KrefS_SubdivLeaves"/>.</param>
         /// <param name="p">Requested polynomial degree.</param>
         /// <returns></returns>
-        public MultidimensionalArray GetSubdivBasisTransform(int iKref, int iSubdiv, int p) {
+        public Tuple<MultidimensionalArray,double> GetSubdivBasisTransform(int iKref, int iSubdiv, int p) {
             if(Subdiv_BasisTransform == null) {
-                Subdiv_BasisTransform = new MultidimensionalArray[KrefS_SubdivLeaves.Length][];
+                Subdiv_BasisTransform = new Tuple<MultidimensionalArray,double>[KrefS_SubdivLeaves.Length][];
             }
 
             if(Subdiv_BasisTransform[iKref] == null) {
-                Subdiv_BasisTransform[iKref] = new MultidimensionalArray[KrefS_SubdivLeaves[iKref].Length];
+                Subdiv_BasisTransform[iKref] = new Tuple<MultidimensionalArray,double>[KrefS_SubdivLeaves[iKref].Length];
             }
 
             RefElement Kref = KrefS_SubdivLeaves[iKref][0].RefElement;
             int Np = Kref.GetNoOfOrthonormalPolynomialsUptoDegree(p);
 
-            if(Subdiv_BasisTransform[iKref][iSubdiv] == null || Subdiv_BasisTransform[iKref][iSubdiv].NoOfCols < Np) {
-                Subdiv_BasisTransform[iKref][iSubdiv] = KrefS_SubdivLeaves[iKref][iSubdiv].GetBasisTrafo(p);
+            if(Subdiv_BasisTransform[iKref][iSubdiv] == null || Subdiv_BasisTransform[iKref][iSubdiv].Item1.NoOfCols < Np) {
+                MultidimensionalArray R = KrefS_SubdivLeaves[iKref][iSubdiv].GetBasisTrafo(p);
+                Subdiv_BasisTransform[iKref][iSubdiv] = new Tuple<MultidimensionalArray, double>(
+                    R,
+                    KrefS_SubdivLeaves[iKref][iSubdiv].Trafo2Root.Matrix.Determinant()
+                    );
             }
 
-            if(Subdiv_BasisTransform[iKref][iSubdiv].NoOfCols >= Np) {
-                return Subdiv_BasisTransform[iKref][iSubdiv].ExtractSubArrayShallow(new[] { 0, 0 }, new[] { Np - 1, Np - 1 });
+            if(Subdiv_BasisTransform[iKref][iSubdiv].Item1.NoOfCols >= Np) {
+                return new Tuple<MultidimensionalArray, double>(
+                    Subdiv_BasisTransform[iKref][iSubdiv].Item1.ExtractSubArrayShallow(new[] { 0, 0 }, new[] { Np - 1, Np - 1 }),
+                    Subdiv_BasisTransform[iKref][iSubdiv].Item2
+                    );
             } else {
-                Debug.Assert(Subdiv_BasisTransform[iKref][iSubdiv].NoOfCols == Np);
-                Debug.Assert(Subdiv_BasisTransform[iKref][iSubdiv].NoOfRows == Np);
+                Debug.Assert(Subdiv_BasisTransform[iKref][iSubdiv].Item1.NoOfCols == Np);
+                Debug.Assert(Subdiv_BasisTransform[iKref][iSubdiv].Item1.NoOfRows == Np);
                 return Subdiv_BasisTransform[iKref][iSubdiv];
             }
 
