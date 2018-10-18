@@ -54,7 +54,7 @@ namespace BoSSS.Solution.Multigrid {
         /// <summary>
         /// Maximum number of GMRES(m) restarts
         /// </summary>
-        public int restart_limit = 1;
+        public int restart_limit = 1000;
 
 
         /// <summary>
@@ -389,10 +389,11 @@ namespace BoSSS.Solution.Multigrid {
 
                 }
 
+                Console.WriteLine("GMRES completed after:   " + k + "steps");
 
                 k--;
 
-                //Console.WriteLine("GMRES completed after:   " + k + "steps");
+           
 
                 // update approximation and exit
                 //y = H(1:i,1:i) \ g(1:i);    

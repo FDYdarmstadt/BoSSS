@@ -245,9 +245,9 @@ C.InitialValues.Add("Phi", GetFormulaObject(InitialValues.Phi));
         //C.PhysicalParameters.mu_A = 1.0 / re;
 
         // Boundary conditions
-        C.AddBoundaryCondition("Velocity_inlet", "VelocityX", GetFormulaObject(InitialValues.VelocityInlet));
-        C.AddBoundaryCondition("Velocity_inlet", "VelocityY", GetFormulaObject(InitialValues.ZERO));
-        C.AddBoundaryCondition("Wall");
+        C.AddBoundaryValue("Velocity_inlet", "VelocityX", GetFormulaObject(InitialValues.VelocityInlet));
+        C.AddBoundaryValue("Velocity_inlet", "VelocityY", GetFormulaObject(InitialValues.ZERO));
+        C.AddBoundaryValue("Wall");
 
 
         // misc. solver options
@@ -807,6 +807,8 @@ string docpath    = Path.Combine(CurrentDocDir, SessTab.TableName + ".json");
 // save session table as file: this can be stored in our git 
 // repository
 SessTab.SaveToFile(docpath);
+**************
+==============
 **************
 ==============
 **************
