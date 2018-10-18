@@ -15,7 +15,7 @@ limitations under the License.
 */
 
 
-namespace CNS.MaterialProperty {
+namespace BoSSS.Solution.CompressibleFlowCommon.MaterialProperty {
 
     /// <summary>
     /// Represents a relation between the temperature and the viscosity of 

@@ -15,7 +15,7 @@ limitations under the License.
 */
 
 
-namespace CNS.MaterialProperty {
+namespace BoSSS.Solution.CompressibleFlowCommon.MaterialProperty {
 
     /// <summary>
     /// Summarizes all material properties of a fluid. At the moment, these are
@@ -30,16 +30,16 @@ namespace CNS.MaterialProperty {
         /// <param name="control">
         /// <see cref="CNSControl"/>
         /// </param>
-        public Material(CNSControl control) {
-            this.Control = control;
-            this.EquationOfState = control.EquationOfState;
-            this.ViscosityLaw = control.ViscosityLaw;
+        public Material(IEquationOfState __EquationOfState, IViscosityLaw __ViscosityLaw) {
+            //this.Control = control;
+            this.EquationOfState = __EquationOfState;
+            this.ViscosityLaw = __ViscosityLaw;
         }
 
-        /// <summary>
-        /// Associated CNScontrol file to generate the material
-        /// </summary>
-        public readonly CNSControl Control;
+        ///// <summary>
+        ///// Associated CNScontrol file to generate the material
+        ///// </summary>
+        //public readonly CNSControl Control;
 
         /// <summary>
         /// The equation of state linking pressure, density and inner energy
