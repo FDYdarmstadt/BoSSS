@@ -15,13 +15,13 @@ limitations under the License.
 */
 
 using BoSSS.Platform.LinAlg;
-using CNS.MaterialProperty;
+using BoSSS.Solution.CompressibleFlowCommon.MaterialProperty;
 using ilPSP;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 
-namespace CNS {
+namespace BoSSS.Solution.CompressibleFlowCommon {
 
     /// <summary>
     /// Struct representing the flow state in a single point which is defined by

@@ -317,10 +317,8 @@ namespace CNS {
             "nu",
             VariableTypes.Other,
             delegate (DGField nu, CellMask cellMask, IProgram<CNSControl> program) {
-                foreach (Chunk chunk in cellMask) {
-                    foreach (int cell in chunk.Elements) {
-                        nu.SetMeanValue(cell, program.Control.ViscosityLaw.GetViscosity(0.0, cell));
-                    }
+                foreach (int cell in cellMask.ItemEnum) {
+                    nu.SetMeanValue(cell, program.Control.ViscosityLaw.GetViscosity(0.0, cell));
                 }
             });
 
