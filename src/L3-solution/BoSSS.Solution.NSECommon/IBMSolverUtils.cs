@@ -772,6 +772,7 @@ namespace BoSSS.Solution.NSECommon {
             //if (RequiredOrder > agg.HMForder)
             //    throw new ArgumentException();
 
+            Console.WriteLine();
             Console.WriteLine("Forces coeff: {0}, order = {1}", LsTrk.CutCellQuadratureType, RequiredOrder);
 
             SinglePhaseField _StressXX = StressXX;
