@@ -601,7 +601,7 @@ namespace BoSSS.Application.IBM_Solver {
         //    return new CutCellMetrics(momentFittingVariant, this.HMForder, LsTrk, this.FluidSpecies);
         //}
 
-        protected TextWriter Log_DragAndLift;
+        protected TextWriter Log_DragAndLift,Log_DragAndLift_P1;
         protected double[] force = new double[3];
         protected double torque = new double();
         protected double oldtorque = new double();
