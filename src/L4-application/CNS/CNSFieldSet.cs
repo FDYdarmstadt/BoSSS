@@ -19,6 +19,7 @@ using BoSSS.Foundation.Grid;
 using BoSSS.Foundation.Grid.Classic;
 using BoSSS.Foundation.Quadrature;
 using BoSSS.Platform.LinAlg;
+using BoSSS.Solution.CompressibleFlowCommon;
 using BoSSS.Solution.Utils;
 using CNS.EquationSystem;
 using CNS.IBM;

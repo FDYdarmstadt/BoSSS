@@ -14,11 +14,14 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+using BoSSS.Foundation;
 using BoSSS.Foundation.Grid;
 using BoSSS.Foundation.Grid.Classic;
+using BoSSS.Solution.CompressibleFlowCommon.MaterialProperty;
 using System.Collections;
+using System.Collections.Generic;
 
-namespace CNS.ShockCapturing {
+namespace BoSSS.Solution.CompressibleFlowCommon.ShockCapturing {
 
     /// <summary>
     /// Defines a sensor that yields large positive values in regions with
@@ -29,7 +32,7 @@ namespace CNS.ShockCapturing {
         /// <summary>
         /// Updates the sensor values in all cells
         /// </summary>
-        void UpdateSensorValues(CNSFieldSet fieldSet, ISpeciesMap speciesMap, CellMask cellMask);
+        void UpdateSensorValues(IEnumerable<DGField> fieldSet, ISpeciesMap speciesMap, CellMask cellMask);
 
         /// <summary>
         /// Returns the current value of the sensor in cell <paramref name="cell"/>
