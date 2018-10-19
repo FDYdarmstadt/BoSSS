@@ -16,6 +16,7 @@ limitations under the License.
 
 using BoSSS.Foundation;
 using BoSSS.Solution;
+using BoSSS.Solution.CompressibleFlowCommon;
 using BoSSS.Solution.Control;
 using CNS.Convection;
 using CNS.Diffusion;

@@ -17,6 +17,7 @@ limitations under the License.
 using BoSSS.Foundation;
 using BoSSS.Foundation.Grid;
 using BoSSS.Foundation.Quadrature;
+using BoSSS.Solution.CompressibleFlowCommon.ShockCapturing;
 using System.Linq;
 
 namespace CNS.ShockCapturing {
