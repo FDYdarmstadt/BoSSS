@@ -200,6 +200,14 @@ namespace BoSSS.Platform.LinAlg {
             return Math.Sqrt(x * x + y * y + z * z);
         }
 
+
+        /// <summary>
+        /// the absolute value (length) of this vector to the power of two
+        /// </summary>
+        /// <returns></returns>
+        public double AbsSquare() {
+            return (x * x + y * y + z * z);
+        }
         /// <summary>
         /// The angle between this vector and the positive x-Axis, counted counterclockwise
         /// </summary>

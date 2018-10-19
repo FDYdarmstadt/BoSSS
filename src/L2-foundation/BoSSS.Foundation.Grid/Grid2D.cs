@@ -53,11 +53,16 @@ namespace BoSSS.Foundation.Grid.Classic {
             : base(new RefElement[] { Square.Instance }, new RefElement[] { Line.Instance }) {
         }
 
-        static private bool IsInCutoutRegion(int indX, int indY, double[] xNodes, double[] yNodes, Vector2D[] cutoutMin, Vector2D[] cutoutMax) {
+        static private bool IsInCutoutRegion(int indX, int indY, double[] xNodes, double[] yNodes, Vector[] cutoutMin, Vector[] cutoutMax) {
             double Xcenter = 0.5 * (xNodes[indX] + xNodes[indX + 1]);
             double Ycenter = 0.5 * (yNodes[indY] + yNodes[indY + 1]);
 
             for (int l = cutoutMin.Length - 1; l >= 0; l--) {
+                if(cutoutMin[l].Dim != 2)
+                    throw new ArgumentException("expecting a 2D vector");
+                if(cutoutMax[l].Dim != 2)
+                    throw new ArgumentException("expecting a 2D vector");
+
                 if (Xcenter >= cutoutMin[l].x && Xcenter <= cutoutMax[l].x
                     && Ycenter >= cutoutMin[l].y && Ycenter <= cutoutMax[l].y)
                     return true;
@@ -385,7 +390,7 @@ namespace BoSSS.Foundation.Grid.Classic {
         /// </param>
         public static Grid2D Cartesian2DGrid(double[] xNodes, double[] yNodes, CellType type = CellType.Square_Linear, 
             bool periodicX = false, bool periodicY = false, 
-            Func<Vector2D,Vector2D> NonlinearGridTrafo = null,
+            Func<Vector,Vector> NonlinearGridTrafo = null,
             params BoundingBox[] CutOuts) {
             using (var tr = new FuncTrace()) {
                 MPICollectiveWatchDog.Watch();
@@ -490,21 +495,18 @@ namespace BoSSS.Foundation.Grid.Classic {
                                 double yL = yNodes[j];
                                 double yR = yNodes[j + 1];
 
-                                for (int iNode = 0; iNode < NoOfNodes; iNode++) {
+                                for(int iNode = 0; iNode < NoOfNodes; iNode++) {
                                     double xi = 0.5 * (RefNodes[iNode, 0] + 1.0);
                                     double eta = 0.5 * (RefNodes[iNode, 1] + 1.0);
 
-                                    Vector2D A = new Vector2D();
+                                    Vector A = new Vector(2);
                                     A.x = xL * (1.0 - xi) + xR * xi;
                                     A.y = yL * (1.0 - eta) + yR * eta;
 
-                                    Vector2D B;
-                                    if(NonlinearGridTrafo != null)
-                                    {
+                                    Vector B = new Vector(2);
+                                    if(NonlinearGridTrafo != null) {
                                         B = NonlinearGridTrafo(A);
-                                    }
-                                    else
-                                    {
+                                    } else {
                                         B = A;
                                     }
 
@@ -1030,7 +1032,7 @@ namespace BoSSS.Foundation.Grid.Classic {
                     //Periodic Boundary Inlet
                     double[][] PerBoundIn = { Param2XY(rNodes.First(), sNodes.First()), Param2XY(rNodes.Last(), sNodes.First()) };
                     // Vector Connecting the two Points of the inlet
-                    Vector2D PerBoundInCon;
+                    Vector PerBoundInCon = new Vector(2);
                     PerBoundInCon.x = PerBoundIn[1][0] - PerBoundIn[0][0];//(Param2XY(rNodes.First(), sNodes.First())[0] - Param2XY(rNodes.Last(), sNodes.First())[0]);
                     PerBoundInCon.y = PerBoundIn[1][1] - PerBoundIn[0][1];//(Param2XY(rNodes.First(), sNodes.First())[1] - Param2XY(rNodes.Last(), sNodes.First())[1]);
                     // Normal onto Inlet Pointing outwards
@@ -1038,7 +1040,7 @@ namespace BoSSS.Foundation.Grid.Classic {
                     double[] PerBoundInNormal = { -PerBoundInCon.y, +PerBoundInCon.x };
                     //Periodic Boundary Inlet
                     double[][] PerBoundOut = { Param2XY(rNodes.First(), sNodes.Last()), Param2XY(rNodes.Last(), sNodes.Last()) };
-                    Vector2D PerBoundOutCon;
+                    Vector PerBoundOutCon = new Vector(2);
                     PerBoundOutCon.x = PerBoundOut[1][0] - PerBoundOut[0][0];//(Param2XY(rNodes.First(), sNodes.Last())[0] - Param2XY(rNodes.Last(), sNodes.Last())[0]);
                     PerBoundOutCon.y = PerBoundOut[1][1] - PerBoundOut[0][1];//(Param2XY(rNodes.First(), sNodes.Last())[1] - Param2XY(rNodes.Last(), sNodes.Last())[1]);
                     PerBoundOutCon.Normalize();
@@ -1081,7 +1083,7 @@ namespace BoSSS.Foundation.Grid.Classic {
 
                                 // Interpolate in rs-Domain according to these Coordinates
 
-                                Vector2D rsPoint = new Vector2D();
+                                Vector rsPoint = new Vector(2);
                                 rsPoint[0] = rNodes[i] + (rNodes[i + 1] - rNodes[i]) * 0.5 * (InterpolationNodes[PointNumber, 0] + 1);
                                 rsPoint[1] = sNodes[k] + (sNodes[k + 1] - sNodes[k]) * 0.5 * (InterpolationNodes[PointNumber, 1] + 1);
 
@@ -1231,7 +1233,7 @@ namespace BoSSS.Foundation.Grid.Classic {
                     //Periodic Boundary Inlet
                     double[][] PerBoundIn = { Topology(rNodes.First(), sNodes.First()), Topology(rNodes.First(), sNodes.Last()) };
                     // Vector Connecting the two Points of the inlet
-                    Vector2D PerBoundInCon;
+                    Vector PerBoundInCon = new Vector(2);
                     PerBoundInCon.x = PerBoundIn[1][0] - PerBoundIn[0][0]; //(Topology(rNodes.First(), sNodes.First())[0] - Topology(rNodes.Last(), sNodes.First())[0]);
                     PerBoundInCon.y = PerBoundIn[1][1] - PerBoundIn[0][1]; //(Topology(rNodes.First(), sNodes.First())[1] - Topology(rNodes.Last(), sNodes.First())[1]);
                     // Normal onto Inlet Pointing outwards
@@ -1239,7 +1241,7 @@ namespace BoSSS.Foundation.Grid.Classic {
                     double[] PerBoundInNormal = { -PerBoundInCon.y, +PerBoundInCon.x };
                     //Periodic Boundary Inlet
                     double[][] PerBoundOut = { Topology(rNodes.Last(), sNodes.First()), Topology(rNodes.Last(), sNodes.Last()) };
-                    Vector2D PerBoundOutCon;
+                    Vector PerBoundOutCon = new Vector(2);
                     PerBoundOutCon.x = PerBoundOut[1][0] - PerBoundOut[0][0];//(Topology(rNodes.First(), sNodes.Last())[0] - Topology(rNodes.Last(), sNodes.Last())[0]);
                     PerBoundOutCon.y = PerBoundOut[1][1] - PerBoundOut[0][1];//(Topology(rNodes.First(), sNodes.Last())[1] - Topology(rNodes.Last(), sNodes.Last())[1]);
                     PerBoundOutCon.Normalize();
@@ -1282,7 +1284,7 @@ namespace BoSSS.Foundation.Grid.Classic {
 
                                 // Interpolate in rs-Domain according to these Coordinates
 
-                                Vector2D rsPoint = new Vector2D();
+                                Vector rsPoint = new Vector(2);
                                 rsPoint[0] = rNodes[i] + (rNodes[i + 1] - rNodes[i]) * 0.5 * (InterpolationNodes[PointNumber, 0] + 1);
                                 rsPoint[1] = sNodes[k] + (sNodes[k + 1] - sNodes[k]) * 0.5 * (InterpolationNodes[PointNumber, 1] + 1);
 
