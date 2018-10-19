@@ -27,14 +27,43 @@ namespace BoSSS.Solution.CompressibleFlowCommon.MaterialProperty {
         /// <summary>
         /// Constructs a new material.
         /// </summary>
-        /// <param name="control">
-        /// <see cref="CNSControl"/>
-        /// </param>
-        public Material(IEquationOfState __EquationOfState, IViscosityLaw __ViscosityLaw) {
+        public Material(IEquationOfState __EquationOfState, IViscosityLaw __ViscosityLaw, double __MachNumber, double __ReynoldsNumber, double __PrandtlNumber, double __FroudeNumber, double __ViscosityRatio) {
             //this.Control = control;
             this.EquationOfState = __EquationOfState;
             this.ViscosityLaw = __ViscosityLaw;
+            MachNumber = __MachNumber;
+            ReynoldsNumber = __ReynoldsNumber;
+            FroudeNumber = __FroudeNumber;
+            PrandtlNumber = __PrandtlNumber;
+            ViscosityRatio = __ViscosityRatio;
         }
+
+
+        /// <summary>
+        /// The configured Mach Number in the far field.
+        /// </summary>
+        public double MachNumber { get; private set; }
+
+        /// <summary>
+        /// The configured Reynolds number in the far field, ignored if Euler equations are solved.
+        /// </summary>
+        public double ReynoldsNumber { get; private set; }
+
+        /// <summary>
+        /// The configured Prandtl number in the far field, ignored if Euler equations are solved;
+        /// </summary>
+        public double PrandtlNumber { get; private set; }
+
+        /// <summary>
+        /// The ratio of a characteristic flow velocity to the velocity of a gravitational wave.
+        /// </summary>
+        public double FroudeNumber { get; private set; }
+
+        /// <summary>
+        /// The ratio of the bulk viscosity to the shear viscosity.
+        /// </summary>
+        public double ViscosityRatio { get; private set; }
+
 
         ///// <summary>
         ///// Associated CNScontrol file to generate the material
