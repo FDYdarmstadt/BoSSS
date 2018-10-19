@@ -168,7 +168,7 @@ namespace BoSSS.Application.IBM_Solver {
                             m_BlockingStrategy = new Schwarz.METISBlockingStrategy()
                             {
                                 //noofparts = 76,
-                                NoOfPartsPerProcess = 76,
+                                NoOfPartsPerProcess = 213, // Warum 76
                             },
                             CoarseSolver = new DirectSolver()
                             {
@@ -219,7 +219,7 @@ namespace BoSSS.Application.IBM_Solver {
                             m_BlockingStrategy = new Schwarz.METISBlockingStrategy()
                             {
                                 //noofparts = 16,
-                                NoOfPartsPerProcess = 16,
+                                NoOfPartsPerProcess = 43,
                             },
                             CoarseSolver = new DirectSolver()
                             {
@@ -256,7 +256,7 @@ namespace BoSSS.Application.IBM_Solver {
                             m_BlockingStrategy = new Schwarz.METISBlockingStrategy()
                             {
                                 //noofparts = 8,
-                                NoOfPartsPerProcess = 8,
+                                NoOfPartsPerProcess = 22, //
 
                             },
                             CoarseSolver = new DirectSolver()
