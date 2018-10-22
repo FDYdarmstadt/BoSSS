@@ -19,6 +19,7 @@ using BoSSS.Foundation.Grid;
 using BoSSS.Solution.CompressibleFlowCommon.ShockCapturing;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace CNS.ShockCapturing {
 
@@ -42,14 +43,14 @@ namespace CNS.ShockCapturing {
             private set;
         }
 
-        public void LimitFieldValues(IEnumerable<DGField> fielsSet) {
+        public void LimitFieldValues(IEnumerable<DGField> ConservativeVariables, IEnumerable<DGField> DerivedFields) {
 
-            IProgram<CNSControl> program;
-            CellMask shockedCells = Sensor.GetShockedCellMask(program.GridData, sensorLimit, cellSize, dgDegree);
+            var gdat = ConservativeVariables.First().GridDat;
+            CellMask shockedCells = Sensor.GetShockedCellMask(gdat, sensorLimit, cellSize, dgDegree);
 
 
 
-            foreach (DGField field in program.WorkingSet.ConservativeVariables) {
+            foreach (DGField field in ConservativeVariables) {
                 for (int i = 0; i < field.GridDat.iLogicalCells.NoOfLocalUpdatedCells; i++) { // loop over all cells
                     foreach (Chunk chunk in shockedCells) { // loop over all cells in mask *inside* loop over cells => quadratic runtime
                         foreach (int cell in chunk.Elements) { // where is the 'cell' index actually used?? 

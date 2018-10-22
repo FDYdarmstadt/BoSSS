@@ -19,6 +19,7 @@ using BoSSS.Solution.CompressibleFlowCommon;
 using CNS.MaterialProperty;
 using System;
 using BoSSS.Solution.CompressibleFlowCommon.MaterialProperty;
+using CNS.LinAlg;
 
 namespace CNS.Convection {
 
