@@ -19,6 +19,7 @@ using BoSSS.Foundation.Grid;
 using CNS.Boundary;
 using ilPSP;
 using BoSSS.Foundation.Grid.Classic;
+using BoSSS.Solution.CompressibleFlowCommon;
 
 namespace CNS.Diffusion {
 

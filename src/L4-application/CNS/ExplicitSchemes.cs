@@ -16,6 +16,7 @@ limitations under the License.
 
 using BoSSS.Foundation;
 using BoSSS.Solution;
+using BoSSS.Solution.CompressibleFlowCommon;
 using BoSSS.Solution.Timestepping;
 using CNS.EquationSystem;
 using CNS.IBM;
@@ -242,7 +243,7 @@ namespace CNS {
                 explicitEulerBasedTimestepper.OnBeforeComputeChangeRate += delegate (double absTime, double relTime) {
                     // Note: Only shock sensor is updated, _NOT_ the corresponding variable
                     program.Control.ShockSensor.UpdateSensorValues(
-                        program.WorkingSet,
+                        program.WorkingSet.AllFields,
                         program.SpeciesMap,
                         explicitEulerBasedTimestepper.SubGrid.VolumeMask);
                     // Note: When being called, artificial viscosity is updated in the _ENTIRE_ (fluid) domain
@@ -268,7 +269,7 @@ namespace CNS {
                 }
 
                 explicitEulerBasedTimestepper.OnAfterFieldUpdate +=
-                    (t, f) => control.Limiter.LimitFieldValues(program);
+                    (t, f) => control.Limiter.LimitFieldValues(program.WorkingSet.AllFields);
             }
 
             return timeStepper;

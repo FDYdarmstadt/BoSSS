@@ -15,8 +15,10 @@ limitations under the License.
 */
 
 using BoSSS.Platform.LinAlg;
+using BoSSS.Solution.CompressibleFlowCommon;
 using CNS.MaterialProperty;
 using System;
+using BoSSS.Solution.CompressibleFlowCommon.MaterialProperty;
 
 namespace CNS.Convection {
 
@@ -82,7 +84,7 @@ namespace CNS.Convection {
         /// Velocities in the edge coordinate system defined by the given edge
         /// normal.
         /// </summary>
-        private Vector3D velocityLeft, velocityRight, edgeNormal;
+        private Vector velocityLeft, velocityRight, edgeNormal;
 
         /// <summary>
         /// Constructor for the multiphase case, initializes values
@@ -97,7 +99,7 @@ namespace CNS.Convection {
         /// The normal vector of the edge between the 'left' and the 'right'
         /// state (pointing from 'left' to 'right'). 
         /// </param>
-        public ExactRiemannSolver(StateVector stateLeft, StateVector stateRight, Vector3D edgeNormal) {
+        public ExactRiemannSolver(StateVector stateLeft, StateVector stateRight, Vector edgeNormal) {
             IdealGas gasLeft = stateLeft.Material.EquationOfState as IdealGas;
             IdealGas gasRight = stateRight.Material.EquationOfState as IdealGas;
             if (gasLeft == null || gasRight == null) {
@@ -164,7 +166,7 @@ namespace CNS.Convection {
             Sample(meanPressure, meanVelocity, S, out densityStar, out normalVelocityStar, out pressureStar);
 
             // Return exact solution in conservative variables
-            Vector3D u;
+            Vector u;
             Material material;
             if (S <= meanVelocity) {
                 // left of the interface

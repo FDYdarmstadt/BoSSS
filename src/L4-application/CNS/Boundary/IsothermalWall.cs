@@ -15,6 +15,7 @@ limitations under the License.
 */
 
 using BoSSS.Platform.LinAlg;
+using BoSSS.Solution.CompressibleFlowCommon;
 using System;
 
 namespace CNS.Boundary {
@@ -95,16 +96,16 @@ namespace CNS.Boundary {
                 return new StateVector(
                     stateIn.Material,
                     stateIn.Density,
-                    new Vector3D(),
+                    new Vector(),
                     stateIn.Density * innerEnergy);
             } else {
-                Vector3D velocity = new Vector3D();
+                Vector velocity = new Vector();
                 for (int d = 0; d < CNSEnvironment.NumberOfDimensions; d++) {
                     velocity[d] = WallVelocities[d](x, time);
                 }
 
 #if DEBUG
-                Vector3D n = new Vector3D(normal);
+                Vector n = new Vector(normal);
                 if (Math.Abs(velocity * n) > 1e-10) {
                     throw new Exception(
                         "Wall velocity must be tangent to the wall");

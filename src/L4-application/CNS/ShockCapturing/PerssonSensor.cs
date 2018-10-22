@@ -18,6 +18,9 @@ using BoSSS.Foundation;
 using BoSSS.Foundation.Grid;
 using BoSSS.Foundation.Quadrature;
 using BoSSS.Platform;
+using BoSSS.Solution.CompressibleFlowCommon;
+using BoSSS.Solution.CompressibleFlowCommon.ShockCapturing;
+using CNS.IBM;
 using ilPSP;
 using ilPSP.LinSolvers;
 using ilPSP.Tracing;
@@ -27,7 +30,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 
-namespace BoSSS.Solution.CompressibleFlowCommon.ShockCapturing {
+namespace CNS.ShockCapturing {
 
     public class PerssonSensor : IShockSensor {
 

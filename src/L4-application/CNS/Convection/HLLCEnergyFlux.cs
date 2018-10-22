@@ -15,6 +15,7 @@ limitations under the License.
 */
 
 using BoSSS.Platform.LinAlg;
+using BoSSS.Solution.CompressibleFlowCommon;
 using CNS.Boundary;
 
 namespace CNS.Convection {
@@ -54,7 +55,7 @@ namespace CNS.Convection {
         /// <see cref="HLLCFlux.GetModifiedVariableValue"/>
         /// </param>
         /// <returns>See Toro2009, equation 10.73</returns>
-        protected override double GetModifiedVariableValue(StateVector state, double cellWaveSpeed, double cellNormalVelocity, double intermediateWaveSpeed, ref Vector3D normal) {
+        protected override double GetModifiedVariableValue(StateVector state, double cellWaveSpeed, double cellNormalVelocity, double intermediateWaveSpeed, ref Vector normal) {
             // corrected according to dimensionless equations 
             double MachScaling = config.EquationOfState.HeatCapacityRatio * config.MachNumber * config.MachNumber;
             double factor = intermediateWaveSpeed * MachScaling

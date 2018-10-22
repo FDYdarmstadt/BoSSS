@@ -15,6 +15,7 @@ limitations under the License.
 */
 
 using System.Linq;
+using BoSSS.Solution.CompressibleFlowCommon;
 using CNS.Boundary;
 using CNS.EquationSystem;
 

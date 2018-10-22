@@ -220,7 +220,7 @@ namespace CNS {
                         double rho = densityFunction(X);
                         double p = pressureFunction(X);
 
-                        Vector3D u = new Vector3D();
+                        Vector u = new Vector();
                         for (int d = 0; d < numberOfDimensions; d++) {
                             u[d] = velocityFunctions[d](X);
                         }
@@ -244,7 +244,7 @@ namespace CNS {
         public void UpdateDerivedVariables(IProgram<CNSControl> program, CellMask cellMask) {
             using (var tr = new FuncTrace()) {
 
-                program.Control.ShockSensor?.UpdateSensorValues(program.WorkingSet, program.SpeciesMap, cellMask);
+                program.Control.ShockSensor?.UpdateSensorValues(program.WorkingSet.AllFields, program.SpeciesMap, cellMask);
                 foreach (var pair in DerivedFields) {
                     using (new BlockTrace("UpdateFunction:" + pair.Value.Identification + "-" + pair.Key.Name, tr)) {
                         pair.Key.UpdateFunction(pair.Value, cellMask, program);
@@ -270,7 +270,7 @@ namespace CNS {
         public void UpdateShockCapturingVariables(IProgram<CNSControl> program, CellMask cellMask) {
             using (var tr = new FuncTrace()) {
                 // Update sensor
-                program.Control.ShockSensor.UpdateSensorValues(program.WorkingSet, program.SpeciesMap, cellMask);
+                program.Control.ShockSensor.UpdateSensorValues(program.WorkingSet.AllFields, program.SpeciesMap, cellMask);
 
                 // Update sensor variable (not necessary as only needed for IO)
                 using (new BlockTrace("ShockSensor.UpdateFunction", tr)) {

@@ -16,6 +16,7 @@ limitations under the License.
 
 using System;
 using BoSSS.Platform.LinAlg;
+using BoSSS.Solution.CompressibleFlowCommon;
 using CNS.Boundary;
 using CNS.Convection;
 
@@ -23,14 +24,14 @@ namespace CNS.IBM {
 
     public class MovingFrameRusanovFlux : EulerFlux {
 
-        private Func<double[], double, Vector3D> levelSetVelocity;
+        private Func<double[], double, Vector> levelSetVelocity;
 
         public MovingFrameRusanovFlux(CNSControl config, IBoundaryConditionMap boundaryMap, IEulerEquationComponent equationComponent, ImmersedSpeciesMap speciesMap)
             : base(config, boundaryMap, equationComponent, speciesMap) {
             this.levelSetVelocity = speciesMap.Control.LevelSetVelocity;
         }
 
-        protected internal override double InnerEdgeFlux(double[] x, double time, StateVector stateIn, StateVector stateOut, ref Vector3D normal, int edgeIndex) {
+        protected internal override double InnerEdgeFlux(double[] x, double time, StateVector stateIn, StateVector stateOut, ref Vector normal, int edgeIndex) {
             // Version: Subtract -s * flux from upwind
             double uIn = stateIn.Velocity * normal;
             double uOut = stateOut.Velocity * normal;

@@ -15,6 +15,7 @@ limitations under the License.
 */
 
 using BoSSS.Foundation;
+using BoSSS.Solution.CompressibleFlowCommon;
 using CNS.Boundary;
 
 namespace CNS.EquationSystem {

@@ -19,6 +19,7 @@ using BoSSS.Foundation.Grid.Classic;
 using BoSSS.Foundation.IO;
 using BoSSS.Solution;
 using BoSSS.Solution.ASCIIExport;
+using BoSSS.Solution.CompressibleFlowCommon;
 using BoSSS.Solution.Tecplot;
 using BoSSS.Solution.Timestepping;
 using CNS.Boundary;

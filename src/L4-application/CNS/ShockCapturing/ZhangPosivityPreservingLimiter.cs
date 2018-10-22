@@ -19,6 +19,8 @@ using BoSSS.Foundation.Grid;
 using BoSSS.Foundation.Quadrature;
 using BoSSS.Foundation.XDG;
 using BoSSS.Platform.LinAlg;
+using BoSSS.Solution.CompressibleFlowCommon;
+using BoSSS.Solution.CompressibleFlowCommon.ShockCapturing;
 using CNS.IBM;
 using ilPSP;
 using System;
@@ -50,7 +52,8 @@ namespace CNS.ShockCapturing {
             this.quadRuleSet = quadRuleSet;
         }
 
-        public void LimitFieldValues(IProgram<CNSControl> program) {
+        public void LimitFieldValues(IEnumerable<DGField> _fieldSet) {
+            IProgram<CNSControl> program;
             CNSFieldSet fieldSet = program.WorkingSet;
 
             foreach (var chunkRulePair in quadRuleSet) {
@@ -166,7 +169,7 @@ namespace CNS.ShockCapturing {
                         StateVector state = new StateVector(
                             speciesMap.GetMaterial(1.0),
                             densityValues[i, j],
-                            new Vector3D(m0Values[i, j], m1Values[i, j], 0.0),
+                            new Vector(m0Values[i, j], m1Values[i, j], 0.0),
                             energyValues[i, j]);
                         if (!state.IsValid) {
                             throw new System.Exception();

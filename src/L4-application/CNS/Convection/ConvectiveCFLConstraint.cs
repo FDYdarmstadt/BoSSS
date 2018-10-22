@@ -18,6 +18,7 @@ using BoSSS.Foundation.Grid;
 using BoSSS.Foundation.Grid.Classic;
 using BoSSS.Foundation.XDG;
 using BoSSS.Platform.LinAlg;
+using BoSSS.Solution.CompressibleFlowCommon;
 using CNS.EquationSystem;
 using CNS.IBM;
 using CNS.MaterialProperty;
@@ -25,6 +26,7 @@ using ilPSP;
 using System;
 using System.Diagnostics;
 using System.Linq;
+using BoSSS.Solution.CompressibleFlowCommon.MaterialProperty;
 
 namespace CNS.Convection {
 
@@ -86,7 +88,7 @@ namespace CNS.Convection {
             MultidimensionalArray hmin = __gridData.Cells.h_min;
             Material material = speciesMap.GetMaterial(double.NaN);
             double gamma = material.EquationOfState.HeatCapacityRatio;
-            double Ma = material.Control.MachNumber;
+            double Ma = material.MachNumber;
             double cfl = double.MaxValue;
 
             // Following code is performance-critical, so expect spaghetti code ahead
@@ -144,7 +146,7 @@ namespace CNS.Convection {
                                     throw new Exception("Could not determine CFL number");
                                 }
 
-                                Vector3D momentum = new Vector3D();
+                                Vector momentum = new Vector();
                                 for (int d = 0; d < CNSEnvironment.NumberOfDimensions; d++) {
                                     momentum[d] = momentumValues[d][i, node];
                                 }
@@ -195,7 +197,7 @@ namespace CNS.Convection {
                                     continue;
                                 }
 
-                                Vector3D momentum = new Vector3D();
+                                Vector momentum = new Vector();
                                 for (int d = 0; d < CNSEnvironment.NumberOfDimensions; d++) {
                                     momentum[d] = momentumValues[d][i, node];
                                 }
@@ -248,7 +250,7 @@ namespace CNS.Convection {
                                     throw new Exception("Could not determine CFL number");
                                 }
 
-                                Vector3D momentum = new Vector3D();
+                                Vector momentum = new Vector();
                                 for (int d = 0; d < CNSEnvironment.NumberOfDimensions; d++) {
                                     momentum[d] = momentumValues[d][i, node];
                                 }
@@ -280,7 +282,7 @@ namespace CNS.Convection {
                             for (int node = 0; node < noOfNodesPerCell; node++) {
                                 double cflhere = double.MaxValue;
 
-                                Vector3D momentum = new Vector3D();
+                                Vector momentum = new Vector();
                                 for (int d = 0; d < CNSEnvironment.NumberOfDimensions; d++) {
                                     momentum[d] = momentumValues[d][i, node];
                                 }
