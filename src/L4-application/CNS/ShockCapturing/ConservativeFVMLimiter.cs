@@ -18,6 +18,7 @@ using BoSSS.Foundation;
 using BoSSS.Foundation.Grid;
 using BoSSS.Solution.CompressibleFlowCommon.ShockCapturing;
 using System;
+using System.Collections.Generic;
 
 namespace CNS.ShockCapturing {
 
@@ -41,7 +42,9 @@ namespace CNS.ShockCapturing {
             private set;
         }
 
-        public void LimitFieldValues(IProgram<CNSControl> program) {
+        public void LimitFieldValues(IEnumerable<DGField> fielsSet) {
+
+            IProgram<CNSControl> program;
             CellMask shockedCells = Sensor.GetShockedCellMask(program.GridData, sensorLimit, cellSize, dgDegree);
 
 

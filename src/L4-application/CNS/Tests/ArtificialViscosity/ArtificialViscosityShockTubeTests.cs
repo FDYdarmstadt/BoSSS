@@ -16,6 +16,8 @@ limitations under the License.
 
 using BoSSS.Foundation.Grid.Classic;
 using BoSSS.Platform.LinAlg;
+using BoSSS.Solution.CompressibleFlowCommon;
+using BoSSS.Solution.CompressibleFlowCommon.MaterialProperty;
 using BoSSS.Solution.Queries;
 using CNS.Convection;
 using CNS.EquationSystem;
@@ -238,11 +240,11 @@ namespace CNS.Tests.ArtificialViscosity {
 
             c.AddBoundaryValue("AdiabaticSlipWall");
 
-            Material material = new Material(c);
+            Material material = new Material(c.EquationOfState, c.ViscosityLaw, c.MachNumber, c.ReynoldsNumber, c.PrandtlNumber, c.FroudeNumber, c.ViscosityRatio);
             StateVector stateLeft = StateVector.FromPrimitiveQuantities(
-                material, densityLeft, new Vector3D(velocityLeft, 0.0, 0.0), pressureLeft);
+                material, densityLeft, new Vector(velocityLeft, 0.0, 0.0), pressureLeft);
             StateVector stateRight = StateVector.FromPrimitiveQuantities(
-                material, densityRight, new Vector3D(velocityRight, 0.0, 0.0), pressureRight);
+                material, densityRight, new Vector(velocityRight, 0.0, 0.0), pressureRight);
 
             c.InitialValues_Evaluators.Add(
                     Variables.Density,
@@ -254,7 +256,7 @@ namespace CNS.Tests.ArtificialViscosity {
                 Variables.Pressure,
                 X => stateLeft.Pressure + (stateRight.Pressure - stateLeft.Pressure) * (X[0] - discontinuityPosition).Heaviside());
 
-            var riemannSolver = new ExactRiemannSolver(stateLeft, stateRight, new Vector3D(1.0, 0.0, 0.0));
+            var riemannSolver = new ExactRiemannSolver(stateLeft, stateRight, new Vector(1.0, 0.0, 0.0));
             double pStar, uStar;
             riemannSolver.GetStarRegionValues(out pStar, out uStar);
 

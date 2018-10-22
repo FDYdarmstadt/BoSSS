@@ -15,6 +15,7 @@ limitations under the License.
 */
 
 using BoSSS.Platform.LinAlg;
+using BoSSS.Solution.CompressibleFlowCommon;
 
 namespace CNS.Boundary {
 
@@ -59,7 +60,7 @@ namespace CNS.Boundary {
             return new StateVector(
                 stateIn.Material,
                 stateIn.Density,
-                new Vector3D(),
+                new Vector(),
                 stateIn.Density * stateIn.SpecificInnerEnergy);
         }
     }

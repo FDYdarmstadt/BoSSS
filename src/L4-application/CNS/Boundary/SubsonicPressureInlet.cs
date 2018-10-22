@@ -16,6 +16,7 @@ limitations under the License.
 
 using System;
 using BoSSS.Platform.LinAlg;
+using BoSSS.Solution.CompressibleFlowCommon;
 
 namespace CNS.Boundary {
 
@@ -85,7 +86,7 @@ namespace CNS.Boundary {
         public override StateVector GetBoundaryState(double time, double[] x, double[] normal, StateVector stateIn) {
             double gamma = config.EquationOfState.HeatCapacityRatio;
             double Mach = config.MachNumber;
-            Vector3D inwardNormal = new Vector3D();
+            Vector inwardNormal = new Vector();
             for (int i = 0; i < normal.Length; i++) {
                 inwardNormal[i] = -normal[i];
             }
@@ -98,7 +99,7 @@ namespace CNS.Boundary {
             double rho = p / T;
 
             double VelocitySquare = 2.0 * T / ((gamma - 1.0) * (Mach* Mach)) * (T0/T - 1.0);
-            Vector3D velocityOut = Math.Sqrt(VelocitySquare) * inwardNormal;
+            Vector velocityOut = Math.Sqrt(VelocitySquare) * inwardNormal;
 
             return StateVector.FromPrimitiveQuantities(stateIn.Material, rho, velocityOut, p);
         }

@@ -16,6 +16,7 @@ limitations under the License.
 
 using System;
 using BoSSS.Platform.LinAlg;
+using BoSSS.Solution.CompressibleFlowCommon;
 using CNS.MaterialProperty;
 
 namespace CNS.Boundary {

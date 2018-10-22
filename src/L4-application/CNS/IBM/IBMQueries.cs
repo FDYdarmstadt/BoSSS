@@ -20,6 +20,8 @@ using BoSSS.Foundation.Quadrature;
 using BoSSS.Foundation.XDG;
 using BoSSS.Platform.LinAlg;
 using BoSSS.Solution;
+using BoSSS.Solution.CompressibleFlowCommon;
+using BoSSS.Solution.CompressibleFlowCommon.MaterialProperty;
 using BoSSS.Solution.Control;
 using BoSSS.Solution.Queries;
 using BoSSS.Solution.Utils;
@@ -183,7 +185,7 @@ namespace CNS.IBM {
                         energy.Evaluate(chunk.i0, chunk.Len, nodes, rhoE);
 
                         double[] X = new double[CNSEnvironment.NumberOfDimensions];
-                        Vector3D mVec = new Vector3D();
+                        Vector mVec = new Vector();
                         for (int i = 0; i < chunk.Len; i++) {
                             for (int j = 0; j < rule.NoOfNodes; j++) {
                                 for (int d = 0; d < CNSEnvironment.NumberOfDimensions; d++) {
@@ -327,7 +329,7 @@ namespace CNS.IBM {
 
                 MultidimensionalArray normals = speciesMap.Tracker.DataHistories[0].Current.GetLevelSetNormals(nodes, j0, Len);
 
-                Vector3D mVec = new Vector3D();
+                Vector mVec = new Vector();
                 for (int i = 0; i < Len; i++) {
                     for (int j = 0; j < noOfNodes; j++) {
                         for (int d = 0; d < CNSEnvironment.NumberOfDimensions; d++) {

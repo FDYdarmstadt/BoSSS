@@ -106,7 +106,7 @@ namespace BoSSS.Solution.CompressibleFlowCommon {
         /// <param name="pressure"><see cref="Pressure"/></param>
         /// <returns></returns>
         public static StateVector FromPrimitiveQuantities(Material material, double density, Vector velocity, double pressure) {
-            double MachScaling = material.EquationOfState.HeatCapacityRatio * material.Control.MachNumber * material.Control.MachNumber;
+            double MachScaling = material.EquationOfState.HeatCapacityRatio * material.MachNumber * material.MachNumber;
             StateVector state = new StateVector(
                 material,
                 density,
@@ -190,7 +190,7 @@ namespace BoSSS.Solution.CompressibleFlowCommon {
             get {
                 double kineticEnergy = 0.5 * Momentum.AbsSquare() / Density;
                 // needs scaling according to Nondimensionalization
-                double dimensionalScaling = Material.EquationOfState.HeatCapacityRatio * Material.Control.MachNumber * Material.Control.MachNumber;
+                double dimensionalScaling = Material.EquationOfState.HeatCapacityRatio * Material.MachNumber * Material.MachNumber;
                 return dimensionalScaling * kineticEnergy;
             }
         }

@@ -18,6 +18,7 @@ using BoSSS.Foundation;
 using BoSSS.Foundation.Grid;
 using BoSSS.Foundation.Quadrature;
 using BoSSS.Solution.CompressibleFlowCommon.ShockCapturing;
+using System.Collections.Generic;
 using System.Linq;
 
 namespace CNS.ShockCapturing {
@@ -42,7 +43,9 @@ namespace CNS.ShockCapturing {
             private set;
         }
 
-        public void LimitFieldValues(IProgram<CNSControl> program) {
+        public void LimitFieldValues(IEnumerable<DGField> fieldSet) {
+
+            IProgram<CNSControl> program;
             // Make sure primitive fields are up-to-date
             for (int d = 0; d < CNSEnvironment.NumberOfDimensions; d++) {
                 Variables.Velocity[d].UpdateFunction(
