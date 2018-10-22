@@ -352,7 +352,7 @@ namespace BoSSS.Platform.LinAlg {
 
 
         /// <summary>
-        /// standard Dot/Vector2D/Inner-Product.
+        /// standard Dot/Vector/Inner-Product.
         /// </summary>
         /// <param name="a">1st operand</param>
         /// <param name="b">2nd operand</param>
