@@ -27,6 +27,14 @@ namespace CNS {
     public static class CNSEnvironment {
 
         /// <summary>
+        /// Link to program instance.
+        /// </summary>
+        public static IProgram<CNSControl> Program {
+            get;
+            private set;
+        }
+
+        /// <summary>
         /// The number of spatial dimensions of the considered problem.
         /// </summary>
         public static int NumberOfDimensions {
@@ -78,8 +86,9 @@ namespace CNS {
         /// <remarks>
         /// May only be called once, even though this is not checked.
         /// </remarks>
-        public static void Initialize(int numberOfDimensions) {
+        public static void Initialize(int numberOfDimensions, IProgram<CNSControl> _Program) {
             NumberOfDimensions = numberOfDimensions;
+            Program = _Program;
 
             switch (numberOfDimensions) {
                 case 1:

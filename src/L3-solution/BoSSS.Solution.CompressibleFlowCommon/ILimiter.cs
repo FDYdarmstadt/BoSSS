@@ -35,6 +35,6 @@ namespace BoSSS.Solution.CompressibleFlowCommon.ShockCapturing {
         /// Limits the values of the primal variables
         /// </summary>
         /// <param name="program"></param>
-        void LimitFieldValues(IEnumerable<DGField> fieldSet);
+        void LimitFieldValues(IEnumerable<DGField> ConservativeVariables, IEnumerable<DGField> DerivedFields);
     }
 }

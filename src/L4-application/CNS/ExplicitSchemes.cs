@@ -269,7 +269,7 @@ namespace CNS {
                 }
 
                 explicitEulerBasedTimestepper.OnAfterFieldUpdate +=
-                    (t, f) => control.Limiter.LimitFieldValues(program.WorkingSet.AllFields);
+                    (t, f) => control.Limiter.LimitFieldValues(program.WorkingSet.ConservativeVariables, program.WorkingSet.DerivedFields.Values);
             }
 
             return timeStepper;
