@@ -33,7 +33,7 @@ namespace CNS.Source {
         /// </param>
         /// <param name="boundaryMap"></param>
         /// <param name="speciesMap"></param>
-        public CustomSourceBuilder(CNSControl control, IBoundaryConditionMap boundaryMap, ISpeciesMap speciesMap)
+        public CustomSourceBuilder(CNSControl control, BoundaryConditionMap boundaryMap, ISpeciesMap speciesMap)
             : base(control, boundaryMap, speciesMap) {
         }
 

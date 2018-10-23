@@ -78,7 +78,7 @@ namespace CNS.Diffusion {
             }
         }
 
-        public OptimizedSIPGEnergyFlux(CNSControl config, IBoundaryConditionMap boundaryMap, ISpeciesMap speciesMap, IGridData gridData, Func<MultidimensionalArray> cellMetricFunc) {
+        public OptimizedSIPGEnergyFlux(CNSControl config, BoundaryConditionMap boundaryMap, ISpeciesMap speciesMap, IGridData gridData, Func<MultidimensionalArray> cellMetricFunc) {
             this.config = config;
             this.speciesMap = speciesMap;
             this.boundaryMap = boundaryMap;
@@ -90,8 +90,9 @@ namespace CNS.Diffusion {
             double p = new int[] { config.DensityDegree, config.MomentumDegree, config.EnergyDegree }.Max();
             penaltyFactor = config.SIPGPenaltyScaling * p * p;
 
-            foreach (byte edgeTag in gridData.iGeomEdges.EdgeTags) {
-                if (boundaryMap.EdgeTagNames[edgeTag].StartsWith("adiabaticWall", StringComparison.InvariantCultureIgnoreCase)) {
+            foreach (byte edgeTag in boundaryMap.EdgeTag2EdgeTagName.Keys) {
+                //if (boundaryMap.EdgeTagNames[edgeTag].StartsWith("adiabaticWall", StringComparison.InvariantCultureIgnoreCase)) {
+                if (boundaryMap.EdgeTag2Type[edgeTag] == CompressibleBcType.adiabaticWall) {
                     edgeTagBool[edgeTag] = true;
                 } else {
                     edgeTagBool[edgeTag] = false;

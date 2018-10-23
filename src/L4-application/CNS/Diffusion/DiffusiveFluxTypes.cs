@@ -73,7 +73,7 @@ namespace CNS.Diffusion {
         /// An instance of <see cref="FluxBuilder"/> that constructs the fluxes
         /// corresponding to <paramref name="diffusiveFlux"/>.
         /// </returns>
-        public static FluxBuilder GetBuilder(this DiffusiveFluxTypes diffusiveFlux, CNSControl control, IBoundaryConditionMap boundaryMap, ISpeciesMap speciesMap, IGridData gridData) {
+        public static FluxBuilder GetBuilder(this DiffusiveFluxTypes diffusiveFlux, CNSControl control, BoundaryConditionMap boundaryMap, ISpeciesMap speciesMap, IGridData gridData) {
             int minDegree = Math.Min(
                 Math.Min(control.DensityDegree, control.MomentumDegree),
                 control.EnergyDegree);

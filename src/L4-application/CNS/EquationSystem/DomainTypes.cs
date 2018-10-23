@@ -137,7 +137,7 @@ namespace CNS.EquationSystem {
         /// <see cref="CNSControl.DiffusiveFluxType"/>.
         /// </returns>
         public static OperatorFactory GetOperatorFactory(
-            this DomainTypes formulation, CNSControl control, IGridData gridData, IBoundaryConditionMap boundaryMap, CNSFieldSet workingSet, ISpeciesMap speciesMap) {
+            this DomainTypes formulation, CNSControl control, IGridData gridData, BoundaryConditionMap boundaryMap, CNSFieldSet workingSet, ISpeciesMap speciesMap) {
             switch (formulation) {
                 case DomainTypes.Standard:
                     return new OperatorFactory(
