@@ -18,7 +18,7 @@ using BoSSS.Foundation;
 using BoSSS.Foundation.Grid;
 using BoSSS.Foundation.Grid.Classic;
 using BoSSS.Solution.CompressibleFlowCommon;
-using CNS.Boundary;
+using BoSSS.Solution.CompressibleFlowCommon.Boundary;
 using CNS.MaterialProperty;
 using ilPSP;
 using System;
@@ -64,8 +64,10 @@ namespace CNS.Diffusion {
 
         /// <summary>
         /// Dictionary, especially needed adiabatic wall
+        /// - index: edge tag
+        /// - value: some switch
         /// </summary>
-        protected Dictionary<byte, bool> edgeTagBool = new Dictionary<byte, bool>();
+        protected bool[] edgeTagBool = new bool[byte.MaxValue];
 
         /// <summary>
         /// Frequently used constant, see AnnualReport2014_SKE
