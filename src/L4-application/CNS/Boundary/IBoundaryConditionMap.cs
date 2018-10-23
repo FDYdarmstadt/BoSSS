@@ -38,7 +38,7 @@ namespace CNS.Boundary {
     /// edge tag.
     /// </summary>
     public interface IBoundaryConditionMap {
-
+        
         /// <summary>
         /// Mapping of edge tags to edge tag names
         /// </summary>
