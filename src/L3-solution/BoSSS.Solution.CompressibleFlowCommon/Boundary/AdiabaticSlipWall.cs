@@ -18,7 +18,7 @@ using System;
 using BoSSS.Platform.LinAlg;
 using BoSSS.Solution.CompressibleFlowCommon;
 
-namespace CNS.Boundary {
+namespace BoSSS.Solution.CompressibleFlowCommon.Boundary {
 
     /// <summary>
     /// Implementation of the boundary value on an isolating wall with a slip
@@ -37,7 +37,7 @@ namespace CNS.Boundary {
         /// </summary>
         /// <param name="config"><see cref="BoundaryCondition"/></param>
         /// <param name="wallVelocities"></param>
-        public AdiabaticSlipWall(CNSControl config, Func<double[], double, double>[] wallVelocities = null)
+        public AdiabaticSlipWall(MaterialProperty.Material config, Func<double[], double, double>[] wallVelocities = null)
             : base(config) {
             this.WallVelocities = wallVelocities;
         }

@@ -15,6 +15,7 @@ limitations under the License.
 */
 
 using BoSSS.Solution.CompressibleFlowCommon;
+using BoSSS.Solution.CompressibleFlowCommon.Convection;
 using CNS.Boundary;
 using CNS.EquationSystem;
 
@@ -55,7 +56,7 @@ namespace CNS.Convection {
 
             for (int i = 0; i < CNSEnvironment.NumberOfDimensions; i++) {
                 op.MomentumComponents[i].Add(new HLLFlux(
-                    control, boundaryMap, new EulerMomentumComponent(i, control.EquationOfState.HeatCapacityRatio, control.MachNumber), speciesMap));
+                    control, boundaryMap, new EulerMomentumComponent(i, control.EquationOfState.HeatCapacityRatio, control.MachNumber, CNSEnvironment.NumberOfDimensions), speciesMap));
             }
 
             op.EnergyComponents.Add(new HLLFlux(

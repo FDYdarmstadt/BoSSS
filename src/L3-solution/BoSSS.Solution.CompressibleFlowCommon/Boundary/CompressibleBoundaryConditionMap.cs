@@ -22,13 +22,13 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 
-namespace CNS.Boundary {
+namespace BoSSS.Solution.CompressibleFlowCommon.Boundary {
 
     /// <summary>
     /// Standard implementation of <see cref="IBoundaryConditionMap"/> which
     /// works with instances of <see cref="BoundaryConditionMap"/>.
     /// </summary>
-    public class BoundaryConditionMap : IBoundaryConditionMap {
+    public class BoundaryConditionMap : BoSSS.Solution.Utils.BoundaryCondMap<CompressibleBcType>, IBoundaryConditionMap {
 
         private IGridData gridData;
 
@@ -58,11 +58,13 @@ namespace CNS.Boundary {
                 return conditionMap;
             }
         }
-
+        /*
         /// <summary>
         /// Configuration options
         /// </summary>
         protected readonly CNSControl control;
+        */
+
 
         /// <summary>
         /// Constructs a new map by searching through all the edge tags
@@ -72,7 +74,7 @@ namespace CNS.Boundary {
         /// </summary>
         /// <param name="gridData">The omnipresent grid data</param>
         /// <param name="control">Configuration options</param>
-        public BoundaryConditionMap(IGridData gridData, CNSControl control) {
+        public BoundaryConditionMap(IGridData gridData, AppControl control) : base(gridData, control.BoundaryValues) {
             this.gridData = gridData;
             this.control = control;
         }
@@ -208,14 +210,7 @@ namespace CNS.Boundary {
 
         #region IBoundaryConditionMap Members
 
-        /// <summary>
-        /// Mapping between edges tags and their names (that is, ids)
-        /// </summary>
-        public IDictionary<byte, string> EdgeTagNames {
-            get {
-                return gridData.EdgeTagNames;
-            }
-        }
+        
 
         /// <summary>
         /// Retrieves the configured boundary condition for a given
@@ -240,27 +235,19 @@ namespace CNS.Boundary {
         }
 
         /// <summary>
-        /// Uses <see cref="ConditionMap"/> to find the boundary value as
-        /// described in <see cref="IBoundaryConditionMap.GetBoundaryState"/>
+        /// Returns the value at the boundary value defined by
+        /// <paramref name="EdgeTag"/> at global the coordinates
+        /// <paramref name="x"/> at time <paramref name="time"/> for the inner
+        /// values <paramref name="stateVector"/>
         /// </summary>
-        /// <param name="EdgeTag">
-        /// <see cref="IBoundaryConditionMap.GetBoundaryState"/>
-        /// </param>
-        /// <param name="time">
-        /// <see cref="IBoundaryConditionMap.GetBoundaryState"/>
-        /// </param>
+        /// <param name="EdgeTag">The edge tag of the boundary</param>
+        /// <param name="time">The physical time</param>
         /// <param name="x">
-        /// <see cref="IBoundaryConditionMap.GetBoundaryState"/>
+        /// The global coordinates of the point at the boundary
         /// </param>
-        /// <param name="normal">
-        /// <see cref="IBoundaryConditionMap.GetBoundaryState"/>
-        /// </param>
-        /// <param name="stateVector">
-        /// <see cref="IBoundaryConditionMap.GetBoundaryState"/>
-        /// </param>
-        /// <returns>
-        /// <see cref="IBoundaryConditionMap.GetBoundaryState"/>
-        /// </returns>
+        /// <param name="normal">The outward unit normal vector</param>
+        /// <param name="stateVector">The flow state inside the domain</param>
+        /// <returns>The value at the boundary</returns>
         public StateVector GetBoundaryState(byte EdgeTag, double time, double[] x, double[] normal, StateVector stateVector) {
             string edgeTagName = EdgeTagNames[EdgeTag];
             if (!ConditionMap.ContainsKey(edgeTagName)) {
@@ -295,6 +282,8 @@ namespace CNS.Boundary {
 
         #endregion
 
+
+        /*
         /// <summary>
         /// Mapping between edge tag names an the corresponding implementations
         /// of <see cref="BoundaryCondition"/>
@@ -355,5 +344,7 @@ namespace CNS.Boundary {
                     (config, boundaryValues) => new SupersonicOutlet(config)
                 }
             };
+
+        */
     }
 }

@@ -17,7 +17,7 @@ limitations under the License.
 using BoSSS.Platform.LinAlg;
 using BoSSS.Solution.CompressibleFlowCommon;
 
-namespace CNS.Convection {
+namespace BoSSS.Solution.CompressibleFlowCommon.Convection {
 
     /// <summary>
     /// Common interface for all components of the Euler equations (i.e.,
