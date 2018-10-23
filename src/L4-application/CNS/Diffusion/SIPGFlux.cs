@@ -125,7 +125,7 @@ namespace CNS.Diffusion {
         /// <param name="speciesMap">Mapping that determines the active species in some point</param>
         /// <param name="gridData"></param>
         /// <param name="cellMetric"></param>
-        public SIPGFlux(CNSControl config, IBoundaryConditionMap boundaryMap, ISpeciesMap speciesMap, IGridData gridData, Func<MultidimensionalArray> cellMetric) {
+        public SIPGFlux(CNSControl config, BoundaryConditionMap boundaryMap, ISpeciesMap speciesMap, IGridData gridData, Func<MultidimensionalArray> cellMetric) {
             this.config = config;
             this.boundaryMap = boundaryMap;
             this.speciesMap = speciesMap;
@@ -133,14 +133,10 @@ namespace CNS.Diffusion {
             this.dimension = CNSEnvironment.NumberOfDimensions;
             this.cellMetricFunc = cellMetric;
 
-            //Fills the dictionary, to avoid later string comparison
-            foreach (byte edgeTag in gridData.iGeomEdges.EdgeTags) {
-                if (boundaryMap.EdgeTagNames[edgeTag].StartsWith("adiabaticWall", StringComparison.InvariantCultureIgnoreCase)) {
-                    edgeTagBool[edgeTag] = true;
-                } else {
-                    edgeTagBool[edgeTag] = false;
-                }
+            foreach (byte edgeTag in boundaryMap.EdgeTag2EdgeTagName.Keys) {
+                edgeTagBool[edgeTag] = (boundaryMap.EdgeTag2Type[edgeTag] == CompressibleBcType.adiabaticWall);
             }
+
             // calculation of the penalty factor
             double p = new int[] { config.DensityDegree, config.MomentumDegree, config.EnergyDegree }.Max();
             penaltyFactor = config.SIPGPenaltyScaling * p * p;

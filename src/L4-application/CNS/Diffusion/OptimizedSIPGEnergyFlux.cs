@@ -91,12 +91,7 @@ namespace CNS.Diffusion {
             penaltyFactor = config.SIPGPenaltyScaling * p * p;
 
             foreach (byte edgeTag in boundaryMap.EdgeTag2EdgeTagName.Keys) {
-                //if (boundaryMap.EdgeTagNames[edgeTag].StartsWith("adiabaticWall", StringComparison.InvariantCultureIgnoreCase)) {
-                if (boundaryMap.EdgeTag2Type[edgeTag] == CompressibleBcType.adiabaticWall) {
-                    edgeTagBool[edgeTag] = true;
-                } else {
-                    edgeTagBool[edgeTag] = false;
-                }
+                edgeTagBool[edgeTag] = (boundaryMap.EdgeTag2Type[edgeTag] == CompressibleBcType.adiabaticWall);
             }
 
             // [NumOfArguments, dimension, dimension]
