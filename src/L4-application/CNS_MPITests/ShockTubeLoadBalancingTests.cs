@@ -402,7 +402,7 @@ namespace CNS_MPITests.Tests.LoadBalancing {
             };
             c.AddBoundaryValue("AdiabaticSlipWall");
 
-            Material material = new Material(c.EquationOfState, c.ViscosityLaw, c.MachNumber, c.ReynoldsNumber, c.PrandtlNumber, c.FroudeNumber, c.ViscosityRatio);
+            Material material = c.GetMaterial();
             StateVector stateLeft = StateVector.FromPrimitiveQuantities(
                 material, densityLeft, new Vector(velocityLeft, 0.0, 0.0), pressureLeft);
             StateVector stateRight = StateVector.FromPrimitiveQuantities(

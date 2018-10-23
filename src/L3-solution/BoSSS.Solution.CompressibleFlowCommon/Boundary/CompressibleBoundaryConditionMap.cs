@@ -60,7 +60,10 @@ namespace BoSSS.Solution.CompressibleFlowCommon.Boundary {
                     continue;
                 }
 
-                ConditionMap[edgeTag] = GetBoundaryCondition(edgeTag);
+
+               
+                CompressibleBcType bcType = base.EdgeTag2Type[edgeTag];
+                ConditionMap[edgeTag] = BoundaryConditionFactory(bcType, Material, edgeTag);
             }
         }
         
@@ -73,8 +76,8 @@ namespace BoSSS.Solution.CompressibleFlowCommon.Boundary {
         /// The boundary condition that has been assigned to edges with
         /// name <paramref name="edgeTagName"/>
         /// </returns>
-        public BoundaryCondition GetBoundaryCondition(string edgeTagName) {
-            return this[edgeTagName];
+        public virtual BoundaryCondition GetBoundaryCondition(string edgeTagName) {
+            return ConditionMap[base.EdgeTagName2EdgeTag[edgeTagName]];
         }
 
         /// <summary>
@@ -166,8 +169,7 @@ namespace BoSSS.Solution.CompressibleFlowCommon.Boundary {
         /// <paramref name="edgeTag"/>.
         /// </summary>
         public virtual BoundaryCondition GetBoundaryCondition(byte edgeTag) {
-            CompressibleBcType bcType = base.EdgeTag2Type[edgeTag];
-            return BoundaryConditionFactory(bcType, Material, edgeTag);
+            return ConditionMap[edgeTag];
         }
 
         /// <summary>
@@ -197,7 +199,7 @@ namespace BoSSS.Solution.CompressibleFlowCommon.Boundary {
         /// <returns><see cref="IBoundaryConditionMap"/></returns>
         public BoundaryCondition this[string edgeTagName] {
             get {
-                return ConditionMap[base.EdgeTagName2EdgeTag[edgeTagName]];
+                return GetBoundaryCondition(edgeTagName);
             }
         }
 
@@ -208,7 +210,7 @@ namespace BoSSS.Solution.CompressibleFlowCommon.Boundary {
         /// <returns></returns>
         public BoundaryCondition this[byte EdgeTag] {
             get {
-                return ConditionMap[EdgeTag];
+                return GetBoundaryCondition(EdgeTag);
             }
         }
 
