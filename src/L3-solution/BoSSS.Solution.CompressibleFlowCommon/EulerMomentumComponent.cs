@@ -17,7 +17,7 @@ limitations under the License.
 using BoSSS.Platform.LinAlg;
 using BoSSS.Solution.CompressibleFlowCommon;
 
-namespace CNS.Convection {
+namespace BoSSS.Solution.CompressibleFlowCommon.Convection {
 
     /// <summary>
     /// Represents the momentum equations which are part of the Euler system
@@ -53,9 +53,12 @@ namespace CNS.Convection {
         /// <param name="MachNumber">
         /// The reference Mach number
         /// </param>
-        public EulerMomentumComponent(int momentumComponent, double heatCapacityRatio, double MachNumber) {
+        /// <param name="Dim">
+        /// Spatial dimension
+        /// </param>
+        public EulerMomentumComponent(int momentumComponent, double heatCapacityRatio, double MachNumber, int Dim) {
             this.MomentumComponent = momentumComponent;
-            ComponentVector = Vector.StdBasis(momentumComponent, CNSEnvironment.NumberOfDimensions);
+            ComponentVector = Vector.StdBasis(momentumComponent, Dim);
             this.heatCapacityRatio = heatCapacityRatio;
             this.MachNumber = MachNumber;
         }

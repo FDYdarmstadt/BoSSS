@@ -18,7 +18,7 @@ using System;
 using BoSSS.Platform.LinAlg;
 using BoSSS.Solution.CompressibleFlowCommon;
 
-namespace CNS.Boundary {
+namespace BoSSS.Solution.CompressibleFlowCommon.Boundary {
 
     /// <summary>
     /// Implementation of the boundary condition for a supersonic inlet (i.e.
@@ -59,7 +59,7 @@ namespace CNS.Boundary {
         /// <param name="pressureFunction">
         /// The prescribed pressure at the inlet
         /// </param>
-        public SupersonicInlet(CNSControl config, Func<double[], double, double> densityFunction, Func<double[], double, double>[] velocityFunctions, Func<double[], double, double> pressureFunction)
+        public SupersonicInlet(MaterialProperty.Material config, Func<double[], double, double> densityFunction, Func<double[], double, double>[] velocityFunctions, Func<double[], double, double> pressureFunction)
             : base(config) {
             this.DensityFunction = densityFunction;
             this.VelocityFunctions = velocityFunctions;
