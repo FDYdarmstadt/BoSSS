@@ -90,17 +90,20 @@ namespace BoSSS.Solution.Utils {
             #endregion
         }
 
-
         /// <summary>
         /// scalar functions that encode boundary values;
+        /// - Keys: User-defined names that were provided with the constructor
+        ///   (e.g. 'VelocityX', 'Pressure',...) 
+        /// - Values: a function, to evaluate the BC values
+        /// - Array index: edge tag;        
         /// </summary>
-        /// <remarks>
-        /// Keys: User-defined names that were provided with the constructor
-        /// (e.g. 'VelocityX', 'Pressure',...) <br/>
-        /// Values: a function, to evaluate the BC values
-        /// Array index: edge tag;
-        /// </remarks>
-        public Dictionary<string, Func<double[], double, double>[]> bndFunction = new Dictionary<string, Func<double[], double, double>[]>();
+        public Dictionary<string, Func<double[], double, double>[]> bndFunction {
+            get {
+                return m_bndFunction;
+            }
+        }
+            
+        Dictionary<string, Func<double[], double, double>[]> m_bndFunction = new Dictionary<string, Func<double[], double, double>[]>();
 
         IGridData m_grdDat;
 
@@ -110,7 +113,7 @@ namespace BoSSS.Solution.Utils {
         /// <param name="grdDat"></param>
         /// <param name="_bndy"></param>
         /// <param name="bndFunctionNames">
-        /// all names of boundary functions that should be parsed for;
+        /// all names of boundary functions that should be parsed for, see <see cref="bndFunction"/>
         /// </param>
         public BoundaryCondMap(IGridData grdDat, IDictionary<string, AppControl.BoundaryValueCollection> _bndy, params string[] bndFunctionNames) {
 

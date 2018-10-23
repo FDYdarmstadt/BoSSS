@@ -20,6 +20,7 @@ using System.Linq;
 using System.Text;
 using BoSSS.Platform.LinAlg;
 using BoSSS.Solution.CompressibleFlowCommon;
+using BoSSS.Solution.CompressibleFlowCommon.Convection;
 
 namespace CNS.Convection {
 

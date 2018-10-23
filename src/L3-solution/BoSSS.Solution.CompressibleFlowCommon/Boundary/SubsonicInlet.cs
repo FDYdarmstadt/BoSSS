@@ -18,7 +18,7 @@ using System;
 using BoSSS.Platform.LinAlg;
 using BoSSS.Solution.CompressibleFlowCommon;
 
-namespace CNS.Boundary {
+namespace BoSSS.Solution.CompressibleFlowCommon.Boundary {
 
     /// <summary>
     /// Implementation for boundary values for an inlet with a Mach number
@@ -48,7 +48,7 @@ namespace CNS.Boundary {
         /// <param name="velocityFunctions">
         /// A function specifying the momentum at the boundary.
         /// </param>
-        public SubsonicInlet(CNSControl config, Func<double[], double, double> densityFunction, Func<double[], double, double>[] velocityFunctions)
+        public SubsonicInlet(MaterialProperty.Material config, Func<double[], double, double> densityFunction, Func<double[], double, double>[] velocityFunctions)
             : base(config) {
             this.densityFunction = densityFunction;
             this.velocityFunctions = velocityFunctions;

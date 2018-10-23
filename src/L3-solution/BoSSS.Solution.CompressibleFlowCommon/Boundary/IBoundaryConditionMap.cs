@@ -21,7 +21,7 @@ using BoSSS.Foundation.Grid;
 using BoSSS.Solution.CompressibleFlowCommon;
 using BoSSS.Solution.Control;
 
-namespace CNS.Boundary {
+namespace BoSSS.Solution.CompressibleFlowCommon.Boundary {
 
     /// <summary>
     /// Delegate for all functions that can be evaluated to a boundary value.

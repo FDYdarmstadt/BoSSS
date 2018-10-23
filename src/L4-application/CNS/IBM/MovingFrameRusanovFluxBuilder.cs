@@ -16,6 +16,7 @@ limitations under the License.
 
 using BoSSS.Platform.LinAlg;
 using BoSSS.Solution.CompressibleFlowCommon;
+using BoSSS.Solution.CompressibleFlowCommon.Convection;
 using CNS.Boundary;
 using CNS.Convection;
 using CNS.EquationSystem;
@@ -62,7 +63,7 @@ namespace CNS.IBM {
 
             for (int d = 0; d < CNSEnvironment.NumberOfDimensions; d++) {
                 op.MomentumComponents[d].Add(new MovingFrameRusanovFlux(
-                    control, boundaryMap, new EulerMomentumComponent(d, control.EquationOfState.HeatCapacityRatio, control.MachNumber), ibmSpeciesMap));
+                    control, boundaryMap, new EulerMomentumComponent(d, control.EquationOfState.HeatCapacityRatio, control.MachNumber, CNSEnvironment.NumberOfDimensions), ibmSpeciesMap));
             }
 
             op.EnergyComponents.Add(new MovingFrameRusanovFlux(
