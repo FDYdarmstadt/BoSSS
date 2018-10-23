@@ -93,12 +93,8 @@
       <Project>{17a60fba-20b4-451d-98e1-8d742f368569}</Project>
       <Name>BoSSS.Foundation</Name>
     </ProjectReference>
-    <ProjectReference Include="..\..\L3-solution\BoSSS.Solution.ASCIIExport\BoSSS.Solution.ASCIIExport.csproj">
-      <Project>{ed2e6c6e-1517-4aad-b3c6-1b56c5cd9828}</Project>
-      <Name>BoSSS.Solution.ASCIIExport</Name>
-    </ProjectReference>
     <ProjectReference Include="..\..\L3-solution\BoSSS.Solution.CompressibleFlowCommon\BoSSS.Solution.CompressibleFlowCommon.csproj">
-      <Project>{e7529ff9-f0d0-4b4f-a0f0-44e69e32c290}</Project>
+      <Project>{c0c92515-fc32-49b7-b128-29cc7bfa7b6c}</Project>
       <Name>BoSSS.Solution.CompressibleFlowCommon</Name>
     </ProjectReference>
     <ProjectReference Include="..\..\L3-solution\BoSSS.Solution.Gnuplot\BoSSS.Solution.Gnuplot.csproj">
