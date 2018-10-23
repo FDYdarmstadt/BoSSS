@@ -17,6 +17,7 @@ limitations under the License.
 using System;
 using BoSSS.Platform.LinAlg;
 using BoSSS.Solution.CompressibleFlowCommon;
+using System.Diagnostics;
 
 namespace BoSSS.Solution.CompressibleFlowCommon.Boundary {
 
@@ -79,8 +80,11 @@ namespace BoSSS.Solution.CompressibleFlowCommon.Boundary {
         public override StateVector GetBoundaryState(double time, double[] x, double[] normal, StateVector stateIn) {
             double rhoOut = densityFunction(x, time);
 
+            Debug.Assert(x.Length == stateIn.Dimension);
+            int D = x.Length;
+
             Vector uOut = new Vector();
-            for (int i = 0; i < CNSEnvironment.NumberOfDimensions; i++) {
+            for (int i = 0; i < D; i++) {
                 uOut[i] = velocityFunctions[i](x, time);
             }
 

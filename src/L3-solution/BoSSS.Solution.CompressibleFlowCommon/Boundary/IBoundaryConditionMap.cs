@@ -39,12 +39,7 @@ namespace BoSSS.Solution.CompressibleFlowCommon.Boundary {
     /// </summary>
     public interface IBoundaryConditionMap {
         
-        /// <summary>
-        /// Mapping of edge tags to edge tag names
-        /// </summary>
-        IDictionary<byte, string> EdgeTagNames {
-            get;
-        }
+       
 
         /// <summary>
         /// Retrieves the configured boundary condition for a given
