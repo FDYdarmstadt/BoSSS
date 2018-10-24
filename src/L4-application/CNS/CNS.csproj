@@ -282,10 +282,6 @@
       <Project>{ED2E6C6E-1517-4AAD-B3C6-1B56C5CD9828}</Project>
       <Name>BoSSS.Solution.ASCIIExport</Name>
     </ProjectReference>
-    <ProjectReference Include="..\..\L3-solution\BoSSS.Solution.CompressibleFlowCommon\BoSSS.Solution.CompressibleFlowCommon.csproj">
-      <Project>{e7529ff9-f0d0-4b4f-a0f0-44e69e32c290}</Project>
-      <Name>BoSSS.Solution.CompressibleFlowCommon</Name>
-    </ProjectReference>
     <ProjectReference Include="..\..\L3-solution\BoSSS.Solution.GridImport\BoSSS.Solution.GridImport.csproj">
       <Project>{28E4A331-ECA2-43A6-A11F-6D6A5E410434}</Project>
       <Name>BoSSS.Solution.GridImport</Name>
