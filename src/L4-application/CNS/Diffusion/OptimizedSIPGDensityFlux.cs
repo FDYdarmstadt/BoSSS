@@ -18,7 +18,7 @@ using BoSSS.Foundation;
 using BoSSS.Foundation.Grid;
 using BoSSS.Foundation.Grid.Classic;
 using BoSSS.Solution.CompressibleFlowCommon;
-using CNS.Boundary;
+using BoSSS.Solution.CompressibleFlowCommon.Boundary;
 using ilPSP;
 using System;
 using System.Collections.Generic;

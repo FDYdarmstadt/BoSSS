@@ -17,7 +17,7 @@ limitations under the License.
 using BoSSS.Platform.LinAlg;
 using BoSSS.Solution.CompressibleFlowCommon;
 
-namespace CNS.Boundary {
+namespace BoSSS.Solution.CompressibleFlowCommon.Boundary {
 
     /// <summary>
     /// Base class for implementations of boundary value calculations. That is,
@@ -30,13 +30,13 @@ namespace CNS.Boundary {
         /// <summary>
         /// Configuration options
         /// </summary>
-        protected CNSControl config;
+        protected MaterialProperty.Material config;
 
         /// <summary>
         /// Constructs a new boundary condition
         /// </summary>
         /// <param name="config">Configuration options</param>
-        protected BoundaryCondition(CNSControl config) {
+        protected BoundaryCondition(MaterialProperty.Material config) {
             this.config = config;
         }
 
@@ -63,7 +63,7 @@ namespace CNS.Boundary {
         /// remaining elements of the vector are set to zero.
         /// </returns>
         protected static Vector GetNormalVector(double[] normal) {
-            Vector normalVector = new Vector();
+            Vector normalVector = new Vector(normal.Length);
             for (int i = 0; i < normal.Length; i++) {
                 normalVector[i] = normal[i];
             }

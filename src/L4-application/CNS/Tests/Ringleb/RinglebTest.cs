@@ -17,9 +17,10 @@ limitations under the License.
 using System;
 using BoSSS.Foundation.Grid;
 using BoSSS.Solution;
-using CNS.Boundary;
+using BoSSS.Solution.CompressibleFlowCommon.Boundary;
 using NUnit.Framework;
 using BoSSS.Foundation.Grid.Classic;
+using BoSSS.Solution.CompressibleFlowCommon.MaterialProperty;
 
 namespace CNS.Tests.Ringleb {
 
@@ -130,7 +131,7 @@ namespace CNS.Tests.Ringleb {
             /// <param name="gridData"></param>
             /// <param name="control"></param>
             public RinglebBoundaryConditionMap(IGridData gridData, RinglebControl control)
-                : base(gridData, control) {
+                : base(gridData, control, control.GetMaterial()) {
                 this.ringlebControl = control;
             }
 

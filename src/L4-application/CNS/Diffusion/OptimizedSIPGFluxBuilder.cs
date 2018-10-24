@@ -18,7 +18,7 @@ using BoSSS.Foundation.Grid;
 using BoSSS.Foundation.Grid.Classic;
 using BoSSS.Foundation.XDG;
 using BoSSS.Solution.CompressibleFlowCommon;
-using CNS.Boundary;
+using BoSSS.Solution.CompressibleFlowCommon.Boundary;
 using CNS.EquationSystem;
 using CNS.IBM;
 using ilPSP;
@@ -45,7 +45,7 @@ namespace CNS.Diffusion {
         /// <param name="boundaryMap"></param>
         /// <param name="speciesMap"></param>
         /// <param name="gridData"></param>
-        public OptimizedSIPGFluxBuilder(CNSControl control, IBoundaryConditionMap boundaryMap, ISpeciesMap speciesMap, IGridData gridData)
+        public OptimizedSIPGFluxBuilder(CNSControl control, BoundaryConditionMap boundaryMap, ISpeciesMap speciesMap, IGridData gridData)
             : base(control, boundaryMap, speciesMap) {
             this.gridData = gridData;
 

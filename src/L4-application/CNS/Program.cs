@@ -22,7 +22,7 @@ using BoSSS.Solution.ASCIIExport;
 using BoSSS.Solution.CompressibleFlowCommon;
 using BoSSS.Solution.Tecplot;
 using BoSSS.Solution.Timestepping;
-using CNS.Boundary;
+using BoSSS.Solution.CompressibleFlowCommon.Boundary;
 using CNS.EquationSystem;
 using CNS.IBM;
 using CNS.LoadBalancing;
@@ -36,6 +36,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Threading;
+using BoSSS.Solution.CompressibleFlowCommon.MaterialProperty;
 
 namespace CNS {
 
@@ -51,10 +52,11 @@ namespace CNS {
         /// <param name="args"></param>
         static void Main(string[] args) {
 
-            //Application.InitMPI(args);
-            ////CNS.Tests.IBMTests.IBMCylinderTest.IBMCylinder0th();
+            Application.InitMPI(args);
+            //CNS.Tests.IBMTests.IBMCylinderTest.IBMCylinder0th();
             //CNS.Tests.IBMTests.IBMIsentropicVortexTest.IBMVortexClassicAgglomerationTest();
-            //Debug.Assert(false);
+            CNS.Tests.ArtificialViscosity.ArtificialViscosityShockTubeTests.ToroTest1_ALTS1_3();
+            Debug.Assert(false);
 
             Application<CNSControl>._Main(
                 args,
@@ -447,7 +449,7 @@ namespace CNS {
         /// </summary>
         /// <returns></returns>
         protected virtual BoundaryConditionMap GetBoundaryConditionMap() {
-            return new BoundaryConditionMap(GridData, Control);
+            return new BoundaryConditionMap(GridData, Control, Control.GetMaterial());
         }
 
         /// <summary>

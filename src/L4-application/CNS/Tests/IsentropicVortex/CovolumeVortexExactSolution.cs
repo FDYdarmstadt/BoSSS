@@ -54,7 +54,7 @@ namespace CNS.Tests.IsentropicVortex {
                 0.0);
 
             return new StateVector(
-                new Material(c.EquationOfState, c.ViscosityLaw, c.MachNumber, c.ReynoldsNumber, c.PrandtlNumber, c.FroudeNumber, c.ViscosityRatio),
+                c.GetMaterial(),
                 rho,
                 rho * U,
                 p * (1.0 - covolume * rho) / (gamma - 1.0) + 0.5 * rho * U * U);
