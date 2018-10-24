@@ -184,11 +184,11 @@ namespace BoSSS.Platform.LinAlg {
             if(v.Dim != this.Dim)
                 throw new ArgumentException("Dimension mismatch");
 
-            return new Vector() {
+            return new Vector(
                 x = this.y * v.z - this.z * v.y,
                 y = this.z * v.x - this.x * v.z,
                 z = this.x * v.y - this.y * v.x
-            };
+            );
         }
 
 
@@ -224,6 +224,8 @@ namespace BoSSS.Platform.LinAlg {
         /// <param name="r">Distance to origin.</param>
         /// <param name="phi">angle to the positive x-Axis, counted counterclockwise</param>
         public void FromPolar(double r, double phi) {
+            if(this.Dim < 2)
+                throw new NotSupportedException();
             this.x = Math.Cos(phi) * r;
             this.y = Math.Sin(phi) * r;
         }
@@ -282,7 +284,7 @@ namespace BoSSS.Platform.LinAlg {
         /// <param name="y"></param>
         /// <param name="z"></param>
         public void Set(double x, double y, double z) {
-            if(this.Dim != 2)
+            if(this.Dim != 3)
                 throw new NotSupportedException("spatial dimension mismatch");
             this.x = x;
             this.y = y;
