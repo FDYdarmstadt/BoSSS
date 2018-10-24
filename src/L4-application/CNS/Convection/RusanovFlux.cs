@@ -16,7 +16,8 @@ limitations under the License.
 
 using BoSSS.Platform.LinAlg;
 using BoSSS.Solution.CompressibleFlowCommon;
-using CNS.Boundary;
+using BoSSS.Solution.CompressibleFlowCommon.Convection;
+using BoSSS.Solution.CompressibleFlowCommon.Boundary;
 using System;
 
 namespace CNS.Convection {

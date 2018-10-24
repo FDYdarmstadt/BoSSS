@@ -16,7 +16,7 @@ limitations under the License.
 
 using BoSSS.Platform.LinAlg;
 using BoSSS.Solution.CompressibleFlowCommon;
-using CNS.Boundary;
+using BoSSS.Solution.CompressibleFlowCommon.Boundary;
 
 namespace CNS.Tests.Ringleb {
 
@@ -33,7 +33,7 @@ namespace CNS.Tests.Ringleb {
         /// </summary>
         /// <param name="control"></param>
         public ExactRinglebBoundaryState(RinglebControl control)
-            : base(control) {
+            : base(control.GetMaterial()) {
             this.control = control;
         }
 

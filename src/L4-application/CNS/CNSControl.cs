@@ -436,5 +436,10 @@ namespace CNS {
         public override Type GetSolverType() {
             return typeof(CNS.Program);
         }
+
+        public Material GetMaterial() {
+            return new Material(EquationOfState, ViscosityLaw, MachNumber, ReynoldsNumber, PrandtlNumber, FroudeNumber, ViscosityRatio);
+        }
+
     }
 }

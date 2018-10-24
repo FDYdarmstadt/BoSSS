@@ -19,7 +19,7 @@ using BoSSS.Platform.LinAlg;
 using BoSSS.Solution.CompressibleFlowCommon;
 using BoSSS.Solution.CompressibleFlowCommon.MaterialProperty;
 using BoSSS.Solution.Utils;
-using CNS.Boundary;
+using BoSSS.Solution.CompressibleFlowCommon.Boundary;
 using CNS.Convection;
 using CNS.Diffusion;
 using CNS.MaterialProperty;
