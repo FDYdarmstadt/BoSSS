@@ -52,10 +52,11 @@ namespace CNS {
         /// <param name="args"></param>
         static void Main(string[] args) {
 
-            //Application.InitMPI(args);
-            ////CNS.Tests.IBMTests.IBMCylinderTest.IBMCylinder0th();
+            Application.InitMPI(args);
+            //CNS.Tests.IBMTests.IBMCylinderTest.IBMCylinder0th();
             //CNS.Tests.IBMTests.IBMIsentropicVortexTest.IBMVortexClassicAgglomerationTest();
-            //Debug.Assert(false);
+            CNS.Tests.ArtificialViscosity.ArtificialViscosityShockTubeTests.ToroTest1_ALTS1_3();
+            Debug.Assert(false);
 
             Application<CNSControl>._Main(
                 args,
