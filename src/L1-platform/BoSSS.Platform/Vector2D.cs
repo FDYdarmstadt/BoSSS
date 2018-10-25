@@ -18,6 +18,7 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 using System.Runtime.InteropServices;
+using System.Diagnostics;
 
 namespace BoSSS.Platform.LinAlg {
 
@@ -72,7 +73,6 @@ namespace BoSSS.Platform.LinAlg {
                 throw new ArgumentException();
             }
 
-
             this.Dim = X.Length;
             x = X[0];
             if(this.Dim > 1)
@@ -86,7 +86,6 @@ namespace BoSSS.Platform.LinAlg {
                 z = 0;
 
             Dummy_256bitAlign = 0;
-
         }
 
         /// <summary>
@@ -121,6 +120,9 @@ namespace BoSSS.Platform.LinAlg {
         /// <returns></returns>
         public double this[int i] {
             set {
+                if(i < 0 || i >= this.Dim)
+                    throw new IndexOutOfRangeException("vector component out of range.");
+
                 if (i == 0)
                     x = value;
                 else if (i == 1 && Dim > 1)
@@ -131,7 +133,10 @@ namespace BoSSS.Platform.LinAlg {
                     throw new IndexOutOfRangeException("vector component index must be either 0 or 1.");
             }
             get {
-                if(i == 0)
+                if (i < 0 || i >= this.Dim)
+                    throw new IndexOutOfRangeException("vector component out of range.");
+
+                if (i == 0)
                     return x;
                 else if(i == 1 && Dim > 1)
                     return y;
@@ -139,6 +144,7 @@ namespace BoSSS.Platform.LinAlg {
                     return z;
                 else
                     throw new IndexOutOfRangeException("vector component index must be either 0 or 1.");
+
             }
         }
 
@@ -184,11 +190,13 @@ namespace BoSSS.Platform.LinAlg {
             if(v.Dim != this.Dim)
                 throw new ArgumentException("Dimension mismatch");
 
-            return new Vector(
-                x = this.y * v.z - this.z * v.y,
-                y = this.z * v.x - this.x * v.z,
-                z = this.x * v.y - this.y * v.x
+            var R = new Vector(
+                __x: this.y * v.z - this.z * v.y,
+                __y: this.z * v.x - this.x * v.z,
+                __z: this.x * v.y - this.y * v.x
             );
+            Debug.Assert(R.Dim == 3);
+            return R;
         }
 
 
@@ -455,10 +463,6 @@ namespace BoSSS.Platform.LinAlg {
             distPow2 += d * d;
             return Math.Sqrt(distPow2);
         }
-
-        
-        
-
  
         /// <summary>
         /// Copies the components 0 to <paramref name="length"/> - 1 of this
@@ -506,6 +510,4 @@ namespace BoSSS.Platform.LinAlg {
         }
 
     }
-
-    
 }

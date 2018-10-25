@@ -37,8 +37,7 @@ namespace BoSSS.Solution.CompressibleFlowCommon {
         /// <param name="material">
         /// The equation of state associated with the represented state.
         /// </param>
-        private StateVector(Material material)
-            : this() {
+        private StateVector(Material material) : this() {
             this.Material = material;
         }
 
@@ -53,6 +52,7 @@ namespace BoSSS.Solution.CompressibleFlowCommon {
         /// <param name="energy"><see cref="Energy"/></param>
         public StateVector(Material material, double density, Vector momentum, double energy)
             : this(material) {
+            Debug.Assert(momentum.Dim > 0);
             this.Density = density;
             this.Momentum = momentum;
             this.Energy = energy;
@@ -88,6 +88,9 @@ namespace BoSSS.Solution.CompressibleFlowCommon {
             }
 
             this.Density = stateVectorAsArray[0];
+            this.Momentum.Dim = stateVectorAsArray.Count - 2;
+            Debug.Assert(Momentum.Dim > 0);
+
             for (int d = 0; d < Dimension; d++) {
                 this.Momentum[d] = stateVectorAsArray[d + 1];
             }
@@ -106,12 +109,15 @@ namespace BoSSS.Solution.CompressibleFlowCommon {
         /// <param name="pressure"><see cref="Pressure"/></param>
         /// <returns></returns>
         public static StateVector FromPrimitiveQuantities(Material material, double density, Vector velocity, double pressure) {
+            Debug.Assert(velocity.Dim > 0);
             double MachScaling = material.EquationOfState.HeatCapacityRatio * material.MachNumber * material.MachNumber;
             StateVector state = new StateVector(
                 material,
                 density,
                 density * velocity,
                 material.EquationOfState.GetInnerEnergy(density, pressure) + 0.5 * MachScaling * density * velocity.AbsSquare());
+            Debug.Assert(state.Dimension > 0);
+            Debug.Assert(state.Dimension == velocity.Dim);
             return state;
         }
 
@@ -136,17 +142,19 @@ namespace BoSSS.Solution.CompressibleFlowCommon {
         /// </param>
         public StateVector(Material material, MultidimensionalArray[] stateAsArray, int i, int j)
             : this(material) {
-            if (stateAsArray.Length < this.Dimension + 2) {
-                throw new ArgumentException(
-                    "The given state vector has an invalid length. In n dimensions, the length should at least be n + 2",
-                    "stateVectorAsArray");
-            }
+            //if (stateAsArray.Length < this.Dimension + 2) {
+            //    throw new ArgumentException(
+            //        "The given state vector has an invalid length. In n dimensions, the length should at least be n + 2",
+            //        "stateVectorAsArray");
+            //}
 
             this.Density = stateAsArray[0][i, j];
+            this.Momentum.Dim = stateAsArray.Length - 2;
             for (int d = 0; d < this.Dimension; d++) {
                 this.Momentum[d] = stateAsArray[d + 1][i, j];
             }
             this.Energy = stateAsArray[this.Dimension + 1][i, j];
+            Debug.Assert(Momentum.Dim > 0);
         }
 
         /// <summary>
@@ -178,7 +186,10 @@ namespace BoSSS.Solution.CompressibleFlowCommon {
         /// <returns>$\vec{m} / \rho$</returns>
         public Vector Velocity {
             get {
-                return Momentum / Density;
+                Debug.Assert(Momentum.Dim > 0);
+                Vector Vel = Momentum / Density;
+                Debug.Assert(Vel.Dim == Momentum.Dim);
+                return Vel;
             }
         }
 
@@ -188,6 +199,7 @@ namespace BoSSS.Solution.CompressibleFlowCommon {
         /// </summary>
         public double KineticEnergy {
             get {
+                Debug.Assert(Momentum.Dim > 0);
                 double kineticEnergy = 0.5 * Momentum.AbsSquare() / Density;
                 // needs scaling according to Nondimensionalization
                 double dimensionalScaling = Material.EquationOfState.HeatCapacityRatio * Material.MachNumber * Material.MachNumber;
