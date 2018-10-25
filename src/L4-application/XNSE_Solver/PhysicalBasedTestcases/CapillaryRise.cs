@@ -253,12 +253,12 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
         /// 
         /// </summary>
         /// <returns></returns>
-        public static XNSE_Control CapillaryRise_Tube_SFB1194(int p = 2, int kelemR = 8, int omegaTc = 3, bool startUp = true, bool symmetry = true, string _DbPath = null) {
+        public static XNSE_Control CapillaryRise_Tube_SFB1194(int p = 2, int kelemR = 8, int omegaTc = 3, bool startUp = false, bool symmetry = true, string _DbPath = null) {
 
             XNSE_Control C = new XNSE_Control();
 
-            _DbPath = @"\\dc1\userspace\smuda\cluster\CapillaryRise\CapillaryRise_studyDB";
-            //_DbPath = @"\\HPCCLUSTER\hpccluster-scratch\smuda\CapillaryRise_studyDB";
+            //_DbPath = @"\\dc1\userspace\smuda\cluster\CapillaryRise\CapillaryRise_studyDB";
+            _DbPath = @"\\HPCCLUSTER\hpccluster-scratch\smuda\CapillaryRise_studyDB";
 
             // basic database options
             // ======================
@@ -316,8 +316,8 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             #region physics
 
             // the gaseous phase should be close to air
-            C.PhysicalParameters.rho_B = 1.204e-6;  // kg / cm^3
-            C.PhysicalParameters.mu_B = 17.1e-8;    // kg / cm s
+            //C.PhysicalParameters.rho_B = 1.204e-6;  // kg / cm^3
+            //C.PhysicalParameters.mu_B = 17.1e-8;    // kg / cm s
 
             double g = 0;
             double R = 0;
@@ -337,6 +337,9 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
                         C.PhysicalParameters.mu_A = 0.01;
                         C.PhysicalParameters.Sigma = 0.2;       // kg / s^2
 
+                        C.PhysicalParameters.rho_B = 1663.8 / 1000;
+                        C.PhysicalParameters.mu_B = 0.01 / 1000;
+
                         C.PhysicalParameters.betaS_A = 1e-3 / Math.Min(R / kelemR, H / (5 * kelemR));
                         C.PhysicalParameters.betaS_B = 1e-5 / Math.Min(R / kelemR, H / (5 * kelemR));
 
@@ -346,13 +349,14 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
                         g = 1.04;         // cm / s^2
 
                         t_end = 13.86;
-                        t_startUp = 0.49032;
-                        dt = 4e-5;
+                        t_startUp = 0.5204; // 0.49032;
+                        dt = 1e-4;
                         dt_startUp = 4e-5;
 
                         //restartID = new Guid("07ca4397-8eed-4769-b795-9725fe7d3cd7");
                         //restartID = new Guid("fa8454ce-c05a-4dea-a308-663b6be04ff7");
-                        restartID = new Guid("6380b408-e043-4ed3-8ae5-819d7566e241");
+                        //restartID = new Guid("6380b408-e043-4ed3-8ae5-819d7566e241");
+                        restartID = new Guid("32d62e31-2b42-4a2c-850a-038befc43072");
 
                         break;
                     }
@@ -385,14 +389,17 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
                 case 3: {
                         C.Tags.Add("omega = 1");
                         R = 5e-3;           // cm
-                        H = 3e-2;
+                        H = 4e-2;
 
                         C.PhysicalParameters.rho_A = 83.1;
                         C.PhysicalParameters.mu_A = 0.01;
                         C.PhysicalParameters.Sigma = 0.04;       // kg / s^2
 
-                        C.PhysicalParameters.betaS_A = 8;
-                        C.PhysicalParameters.betaS_B = 0.008;
+                        C.PhysicalParameters.rho_B = 83.1 / 1000;
+                        C.PhysicalParameters.mu_B = 0.01 / 1000;
+
+                        C.PhysicalParameters.betaS_A = 0; // 8;
+                        C.PhysicalParameters.betaS_B = 0; // 0.008;
 
                         C.PhysicalParameters.betaL = 0; // 0.04; // 4.004;
                         C.PhysicalParameters.theta_e = 3.0 * Math.PI / 18.0;
@@ -400,14 +407,16 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
                         g = 4.17;         // cm / s^2
 
                         t_end = 0.7;
-                        t_startUp = 0.098;
-                        dt = 3.5e-5;
+                        t_startUp = 0.19586;
+                        dt = 1e-4;
                         dt_startUp = 4e-5;
 
-                        restartID = new Guid("e2a38f38-bcdb-4588-bd87-9914dc2989e4");   //startUp
+                        //restartID = new Guid("e2a38f38-bcdb-4588-bd87-9914dc2989e4");   //startUp
                         //restartID = new Guid("3a1136f2-5363-43b0-8084-5c2ee6ce9d06");   //restart
 
                         //restartID = new Guid("f37c9194-1bfb-4250-8dc6-a4d1bbe01ed9");
+
+                        restartID = new Guid("33e5c091-f326-4508-8326-21b7361cd479");
 
                         break;
                     }
@@ -562,11 +571,12 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             else
                 C.AddBoundaryValue("navierslip_linear_left");
 
-            //C.ChangeBoundaryCondition("navierslip_localized_right", "navierslip_linear_right");
+            C.ChangeBoundaryCondition("navierslip_localized_right", "navierslip_linear_right");
             C.AddBoundaryValue("navierslip_linear_right");
 
-            C.AdvancedDiscretizationOptions.GNBC_Localization = NavierSlip_Localization.Nearband;
-            C.AdvancedDiscretizationOptions.GNBC_SlipLength = NavierSlip_SlipLength.hmin_Grid;
+            C.AdvancedDiscretizationOptions.GNBC_Localization = NavierSlip_Localization.Bulk;
+            C.AdvancedDiscretizationOptions.GNBC_SlipLength = NavierSlip_SlipLength.Prescribed_SlipLength;
+            C.PhysicalParameters.sliplength = 1e-3;
 
 
             #endregion

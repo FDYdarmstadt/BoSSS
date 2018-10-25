@@ -137,10 +137,17 @@ namespace BoSSS.Application.XNSE_Solver {
         public RefinementStrategy RefineStrategy = RefinementStrategy.constantInterface;
 
         /// <summary>
-        /// desired minimum refinement level
+        /// desired minimum refinement level at interface
+        /// </summary>
+        [DataMember]
+        public int BaseRefinementLevel = 1;
+
+        /// <summary>
+        /// maximum refinement level including additional refinement (contact line, curvature, etc.)
         /// </summary>
         [DataMember]
         public int RefinementLevel = 1;
+
 
         /// <summary>
         /// additional refinement of the navier slip boundary 

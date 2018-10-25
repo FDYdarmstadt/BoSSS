@@ -1711,7 +1711,8 @@ namespace BoSSS.Application.XNSE_Solver {
                         EdgeQuadratureScheme SurfaceElement_Edge = SchemeHelper.Get_SurfaceElement_EdgeQuadScheme(this.LsTrk.GetSpeciesId("A"));
 
                         var QuadDom = SurfaceElement_Edge.Domain;
-                        var boundaryCutEdge = QuadDom.Intersect(((GridData)this.GridData).GetBoundaryEdgeMask());
+                        var boundaryEdge = ((GridData)this.GridData).GetBoundaryEdgeMask().GetBitMask();
+                        var boundaryCutEdge = QuadDom.Intersect(new EdgeMask((GridData)this.GridData, boundaryEdge, MaskType.Geometrical));
 
                         var factory = this.LsTrk.GetXDGSpaceMetrics(this.LsTrk.SpeciesIdS.ToArray(), this.m_HMForder).XQuadFactoryHelper.GetSurfaceElement_BoundaryRuleFactory(0, LsTrk.GridDat.Grid.RefElements[0]);
                         SurfaceElement_Edge = new EdgeQuadratureScheme(factory, boundaryCutEdge);
@@ -2864,7 +2865,7 @@ namespace BoSSS.Application.XNSE_Solver {
             int DesiredLevel_j = CurrentLevel;
 
             if(near.Contains(j)) {
-                if(CurrentLevel < this.Control.RefinementLevel) {
+                if(CurrentLevel < this.Control.BaseRefinementLevel) {
                     DesiredLevel_j++;
                 } else {
                     // additional refinement
@@ -2886,9 +2887,9 @@ namespace BoSSS.Application.XNSE_Solver {
                             }
                         case XNSE_Control.RefinementStrategy.ContactLineRefined: {
                                 CellMask BCells = ((GridData)this.GridData).BoundaryCells.VolumeMask;
-                                if(ccm.Contains(j) && BCells.Contains(j) && CurrentLevel == this.Control.RefinementLevel) {
+                                if(ccm.Contains(j) && BCells.Contains(j) && CurrentLevel < this.Control.RefinementLevel) {
                                     DesiredLevel_j++;
-                                } else if(!BCells.Contains(j) && CurrentLevel == this.Control.RefinementLevel + 1) {
+                                } else if(!BCells.Contains(j)) { // && CurrentLevel == this.Control.RefinementLevel + 1) {
                                     DesiredLevel_j--;
                                 }
                                 break;
@@ -2900,11 +2901,11 @@ namespace BoSSS.Application.XNSE_Solver {
                 }
 
             } else if(NScm.Contains(j)) {
-                if(CurrentLevel < this.Control.RefinementLevel)
+                if(CurrentLevel < this.Control.BaseRefinementLevel)
                     DesiredLevel_j++;
 
             } else if(buffer.Contains(j) || NSbuffer.Contains(j)) {
-                if(CurrentLevel < this.Control.RefinementLevel - 1)
+                if(CurrentLevel < this.Control.BaseRefinementLevel - 1)
                     DesiredLevel_j++;
             } else {
                 DesiredLevel_j = 0;
@@ -2998,7 +2999,6 @@ namespace BoSSS.Application.XNSE_Solver {
         //}
 
         //CellMask refinedInterfaceCells;
-
 
         protected override void AdaptMesh(int TimestepNo, out GridCommons newGrid, out GridCorrelation old2NewGrid) {
             using(new FuncTrace()) {
