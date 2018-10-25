@@ -250,7 +250,7 @@ namespace CNS.Convection {
                                     throw new Exception("Could not determine CFL number");
                                 }
 
-                                Vector momentum = new Vector();
+                                Vector momentum = new Vector(CNSEnvironment.NumberOfDimensions);
                                 for (int d = 0; d < CNSEnvironment.NumberOfDimensions; d++) {
                                     momentum[d] = momentumValues[d][i, node];
                                 }
