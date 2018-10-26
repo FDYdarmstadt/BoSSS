@@ -192,7 +192,7 @@ namespace CNS.IBM {
                 for (int j = 0; j < noOfNodes; j++) {
                     StateVector stateIn = new StateVector(material, U, i, j);
 
-                    Vector levelSetNormal = new Vector();
+                    Vector levelSetNormal = new Vector(stateIn.Dimension);
                     int offset = CNSEnvironment.NumberOfDimensions + 2;
                     for (int d = 0; d < CNSEnvironment.NumberOfDimensions; d++) {
                         levelSetNormal[d] = U[offset + d][i + IndexOffset, j];

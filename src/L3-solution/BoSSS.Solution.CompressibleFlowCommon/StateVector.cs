@@ -149,7 +149,7 @@ namespace BoSSS.Solution.CompressibleFlowCommon {
             //}
 
             this.Density = stateAsArray[0][i, j];
-            this.Momentum.Dim = stateAsArray.Length - 2;
+            this.Momentum.Dim = stateAsArray[0].Dimension;
             for (int d = 0; d < this.Dimension; d++) {
                 this.Momentum[d] = stateAsArray[d + 1][i, j];
             }
