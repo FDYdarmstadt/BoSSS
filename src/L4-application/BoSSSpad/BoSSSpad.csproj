@@ -166,6 +166,10 @@
     <None Include="app.config" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\..\..\..\internal\src\private-gutz\L4-application\FuelCell\FuelCell.csproj">
+      <Project>{59bc9ff6-7558-48a7-b1bc-1b8fdc68c401}</Project>
+      <Name>FuelCell</Name>
+    </ProjectReference>
     <ProjectReference Include="..\..\L3-solution\BoSSS.Solution.LevelSetTools\BoSSS.Solution.LevelSetTools.csproj">
       <Project>{9ee2fcad-e8a4-4f14-b932-d1a4904d715d}</Project>
       <Name>BoSSS.Solution.LevelSetTools</Name>
