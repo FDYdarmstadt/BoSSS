@@ -18,6 +18,8 @@ using BoSSS.Foundation.Grid;
 using BoSSS.Foundation.Grid.Classic;
 using BoSSS.Foundation.XDG;
 using BoSSS.Platform.LinAlg;
+using BoSSS.Solution.CompressibleFlowCommon;
+using BoSSS.Solution.CompressibleFlowCommon.MaterialProperty;
 using CNS.EquationSystem;
 using CNS.IBM;
 using CNS.MaterialProperty;
@@ -157,7 +159,7 @@ namespace CNS.Diffusion {
                                     continue;
                                 }
 
-                                Vector3D momentum = new Vector3D();
+                                Vector momentum = new Vector();
                                 for (int d = 0; d < CNSEnvironment.NumberOfDimensions; d++) {
                                     momentum[d] = momentumValues[d][i, node];
                                 }
@@ -202,7 +204,7 @@ namespace CNS.Diffusion {
                             int cell = i0 + i;
 
                             for (int node = 0; node < noOfNodesPerCell; node++) {
-                                Vector3D momentum = new Vector3D();
+                                Vector momentum = new Vector();
                                 for (int d = 0; d < CNSEnvironment.NumberOfDimensions; d++) {
                                     momentum[d] = momentumValues[d][i, node];
                                 }

@@ -14,7 +14,10 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-namespace CNS.ShockCapturing {
+using BoSSS.Foundation;
+using System.Collections.Generic;
+
+namespace BoSSS.Solution.CompressibleFlowCommon.ShockCapturing {
 
     /// <summary>
     /// A generic sloper limiter
@@ -32,6 +35,6 @@ namespace CNS.ShockCapturing {
         /// Limits the values of the primal variables
         /// </summary>
         /// <param name="program"></param>
-        void LimitFieldValues(IProgram<CNSControl> program);
+        void LimitFieldValues(IEnumerable<DGField> ConservativeVariables, IEnumerable<DGField> DerivedFields);
     }
 }

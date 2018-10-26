@@ -16,9 +16,9 @@ limitations under the License.
 
 using BoSSS.Foundation.Grid;
 using BoSSS.Foundation.Grid.Classic;
-using CNS.MaterialProperty;
+using BoSSS.Solution.CompressibleFlowCommon.MaterialProperty;
 
-namespace CNS {
+namespace BoSSS.Solution.CompressibleFlowCommon {
 
     /// <summary>
     /// A map that determines the active species in some point.

@@ -17,6 +17,7 @@ limitations under the License.
 using BoSSS.Foundation.Grid;
 using BoSSS.Foundation.Grid.Classic;
 using BoSSS.Foundation.XDG;
+using BoSSS.Solution.CompressibleFlowCommon;
 using CNS.Boundary;
 using CNS.EquationSystem;
 using CNS.IBM;

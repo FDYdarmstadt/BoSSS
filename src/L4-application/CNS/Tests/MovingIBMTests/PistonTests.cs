@@ -295,7 +295,7 @@ namespace CNS.Tests.MovingIBMTests {
                 double newLevelSetPosition = initialLevelSetPosition + pistonVelocity * time;
                 return X[0] - newLevelSetPosition;
             };
-            c.LevelSetVelocity = (X, t) => new Vector3D(pistonVelocity, 0.0, 0.0);
+            c.LevelSetVelocity = (X, t) => new Vector(pistonVelocity, 0.0, 0.0);
 
             c.AddBoundaryValue("adiabaticSlipWall", Variables.Velocity.xComponent, X => pistonVelocity);
             c.AddBoundaryValue("adiabaticSlipWall", Variables.Velocity.yComponent, X => 0.0);

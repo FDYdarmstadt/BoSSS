@@ -15,13 +15,13 @@ limitations under the License.
 */
 
 using BoSSS.Platform.LinAlg;
-using CNS.MaterialProperty;
+using BoSSS.Solution.CompressibleFlowCommon.MaterialProperty;
 using ilPSP;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 
-namespace CNS {
+namespace BoSSS.Solution.CompressibleFlowCommon {
 
     /// <summary>
     /// Struct representing the flow state in a single point which is defined by
@@ -51,11 +51,20 @@ namespace CNS {
         /// <param name="density"><see cref="Density"/></param>
         /// <param name="momentum"><see cref="Momentum"/></param>
         /// <param name="energy"><see cref="Energy"/></param>
-        public StateVector(Material material, double density, Vector3D momentum, double energy)
+        public StateVector(Material material, double density, Vector momentum, double energy)
             : this(material) {
             this.Density = density;
             this.Momentum = momentum;
             this.Energy = energy;
+        }
+
+        /// <summary>
+        /// spatial dimension/number of momentum components
+        /// </summary>
+        public int Dimension {
+            get {
+                return Momentum.Dim;
+            }
         }
 
         /// <summary>
@@ -71,7 +80,7 @@ namespace CNS {
         /// </param>
         public StateVector(IList<double> stateVectorAsArray, Material material)
             : this(material) {
-            if (stateVectorAsArray.Count < CNSEnvironment.NumberOfDimensions + 2) {
+            if (stateVectorAsArray.Count < Dimension + 2) {
                 throw new ArgumentException(
                     "The given state vector has an invalid length. In n dimensions,"
                         + " the length should at least be n + 2",
@@ -79,10 +88,10 @@ namespace CNS {
             }
 
             this.Density = stateVectorAsArray[0];
-            for (int d = 0; d < CNSEnvironment.NumberOfDimensions; d++) {
+            for (int d = 0; d < Dimension; d++) {
                 this.Momentum[d] = stateVectorAsArray[d + 1];
             }
-            this.Energy = stateVectorAsArray[CNSEnvironment.NumberOfDimensions + 1];
+            this.Energy = stateVectorAsArray[Dimension + 1];
         }
 
         /// <summary>
@@ -96,8 +105,8 @@ namespace CNS {
         /// <param name="velocity"><see cref="Velocity"/></param>
         /// <param name="pressure"><see cref="Pressure"/></param>
         /// <returns></returns>
-        public static StateVector FromPrimitiveQuantities(Material material, double density, Vector3D velocity, double pressure) {
-            double MachScaling = material.EquationOfState.HeatCapacityRatio * material.Control.MachNumber * material.Control.MachNumber;
+        public static StateVector FromPrimitiveQuantities(Material material, double density, Vector velocity, double pressure) {
+            double MachScaling = material.EquationOfState.HeatCapacityRatio * material.MachNumber * material.MachNumber;
             StateVector state = new StateVector(
                 material,
                 density,
@@ -127,19 +136,17 @@ namespace CNS {
         /// </param>
         public StateVector(Material material, MultidimensionalArray[] stateAsArray, int i, int j)
             : this(material) {
-            int D = CNSEnvironment.NumberOfDimensions;
-            if (stateAsArray.Length < D + 2) {
+            if (stateAsArray.Length < this.Dimension + 2) {
                 throw new ArgumentException(
-                    "The given state vector has an invalid length. In n dimensions,"
-                        + " the length should at least be n + 2",
+                    "The given state vector has an invalid length. In n dimensions, the length should at least be n + 2",
                     "stateVectorAsArray");
             }
 
             this.Density = stateAsArray[0][i, j];
-            for (int d = 0; d < CNSEnvironment.NumberOfDimensions; d++) {
+            for (int d = 0; d < this.Dimension; d++) {
                 this.Momentum[d] = stateAsArray[d + 1][i, j];
             }
-            this.Energy = stateAsArray[D + 1][i, j];
+            this.Energy = stateAsArray[this.Dimension + 1][i, j];
         }
 
         /// <summary>
@@ -148,11 +155,9 @@ namespace CNS {
         public readonly double Density;
 
         /// <summary>
-        /// The momentum vector $\rho \vec{u}$. If
-        /// <see cref="CNSEnvironment.NumberOfDimensions"/> is less than
-        /// three, surplus components are set to zero.
+        /// The momentum vector $\rho \vec{u}$.
         /// </summary>
-        public readonly Vector3D Momentum;
+        public readonly Vector Momentum;
 
         /// <summary>
         /// The total energy per volume $\rho E$
@@ -168,11 +173,10 @@ namespace CNS {
         }
 
         /// <summary>
-        /// Calculates the velocity from <see cref="Momentum"/> and
-        /// <see cref="Density"/>.
+        /// Calculates the velocity from <see cref="Momentum"/> and <see cref="Density"/>.
         /// </summary>
         /// <returns>$\vec{m} / \rho$</returns>
-        public Vector3D Velocity {
+        public Vector Velocity {
             get {
                 return Momentum / Density;
             }
@@ -186,7 +190,7 @@ namespace CNS {
             get {
                 double kineticEnergy = 0.5 * Momentum.AbsSquare() / Density;
                 // needs scaling according to Nondimensionalization
-                double dimensionalScaling = Material.EquationOfState.HeatCapacityRatio * Material.Control.MachNumber * Material.Control.MachNumber;
+                double dimensionalScaling = Material.EquationOfState.HeatCapacityRatio * Material.MachNumber * Material.MachNumber;
                 return dimensionalScaling * kineticEnergy;
             }
         }
@@ -305,13 +309,13 @@ namespace CNS {
         /// </summary>
         /// <returns></returns>
         public double[] ToArray() {
-            int D = CNSEnvironment.NumberOfDimensions;
+            int D = this.Dimension;
 
-            Debug.Assert(CNSEnvironment.PrimalArgumentToIndexMap[Variables.Density] == 0);
-            for (int d = 0; d < D; d++) {
-                Debug.Assert(CNSEnvironment.PrimalArgumentToIndexMap[Variables.Momentum[d]] == d + 1);
-            }
-            Debug.Assert(CNSEnvironment.PrimalArgumentToIndexMap[Variables.Energy] == D + 1);
+            //Debug.Assert(CNSEnvironment.PrimalArgumentToIndexMap[Variables.Density] == 0);
+            //for (int d = 0; d < D; d++) {
+            //    Debug.Assert(CNSEnvironment.PrimalArgumentToIndexMap[Variables.Momentum[d]] == d + 1);
+            //}
+            //Debug.Assert(CNSEnvironment.PrimalArgumentToIndexMap[Variables.Energy] == D + 1);
 
             double[] ret = new double[D + 2];
             ret[0] = Density;

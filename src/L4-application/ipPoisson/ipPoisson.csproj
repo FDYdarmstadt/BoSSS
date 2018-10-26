@@ -147,6 +147,10 @@
       <Project>{17A60FBA-20B4-451D-98E1-8D742F368569}</Project>
       <Name>BoSSS.Foundation</Name>
     </ProjectReference>
+    <ProjectReference Include="..\..\L3-solution\BoSSS.Solution.Gnuplot\BoSSS.Solution.Gnuplot.csproj">
+      <Project>{d4fadb7c-0b11-4f41-a97a-146dc1f7034e}</Project>
+      <Name>BoSSS.Solution.Gnuplot</Name>
+    </ProjectReference>
     <ProjectReference Include="..\..\L3-solution\BoSSS.Solution.Multigrid\BoSSS.Solution.Multigrid.csproj">
       <Project>{efe8c307-09bc-4f58-b991-6ef8fd6d5eff}</Project>
       <Name>BoSSS.Solution.Multigrid</Name>

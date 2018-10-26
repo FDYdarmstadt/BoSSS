@@ -161,51 +161,112 @@ namespace BoSSS.Application.IBM_Solver {
                     break;
 
                 case LinearSolverCodes.exp_AS_1000:
-                    templinearSolve = new Schwarz()
+                    if (Timestepper.MultigridSequence[0].SpatialDimension == 3)   //3D --> 212940DoF 
                     {
-                        m_BlockingStrategy = new Schwarz.METISBlockingStrategy()
+                        templinearSolve = new Schwarz()
                         {
-                            //noofparts = 213,
-                            NoOfPartsPerProcess = 213,
-                        },
-                        CoarseSolver = new DirectSolver()
+                            m_BlockingStrategy = new Schwarz.METISBlockingStrategy()
+                            {
+                                //noofparts = 76,
+                                NoOfPartsPerProcess = 76,
+                            },
+                            CoarseSolver = new DirectSolver()
+                            {
+                                WhichSolver = DirectSolver._whichSolver.MUMPS    //PARDISO
+                            },
+                            Overlap = 1
+                        };
+                    }
+                    else  //2D --> 75088DoF
+                    {
+                        templinearSolve = new Schwarz()
                         {
-                            WhichSolver = DirectSolver._whichSolver.PARDISO    //MUMPS
-                        },
-                        Overlap = 1
-                    };
+                            m_BlockingStrategy = new Schwarz.METISBlockingStrategy()
+                            {
+                                //noofparts = 213,
+                                NoOfPartsPerProcess = 213,
+                            },
+                            CoarseSolver = new DirectSolver()
+                            {
+                                WhichSolver = DirectSolver._whichSolver.MUMPS    //PARDISO
+                            },
+                            Overlap = 1
+                        };
+                    }
                     break;
 
                 case LinearSolverCodes.exp_AS_5000:
-                    templinearSolve = new Schwarz()
+                    if (Timestepper.MultigridSequence[0].SpatialDimension == 3)   //3D --> 212940DoF
                     {
-                        m_BlockingStrategy = new Schwarz.METISBlockingStrategy()
+                        templinearSolve = new Schwarz()
                         {
-                            //noofparts = 43,
-                            NoOfPartsPerProcess = 43,
-                        },
-                        CoarseSolver = new DirectSolver()
+                            m_BlockingStrategy = new Schwarz.METISBlockingStrategy()
+                            {
+                                //noofparts = 43,
+                                NoOfPartsPerProcess = 43,
+                            },
+                            CoarseSolver = new DirectSolver()
+                            {
+                                WhichSolver = DirectSolver._whichSolver.MUMPS    //PARDISO
+                            },
+                            Overlap = 1
+                        };
+                    }
+                    else  //2D --> 75088DoF
+                    {
+                        templinearSolve = new Schwarz()
                         {
-                            WhichSolver = DirectSolver._whichSolver.PARDISO    //MUMPS
-                        },
-                        Overlap = 1
-                    };
+                            m_BlockingStrategy = new Schwarz.METISBlockingStrategy()
+                            {
+                                //noofparts = 16,
+                                NoOfPartsPerProcess = 16,
+                            },
+                            CoarseSolver = new DirectSolver()
+                            {
+                                WhichSolver = DirectSolver._whichSolver.MUMPS    //PARDISO
+                            },
+                            Overlap = 1
+                        };
+                    } 
+                        
                     break;
 
                 case LinearSolverCodes.exp_AS_10000:
-                    templinearSolve = new Schwarz()
+                    if (Timestepper.MultigridSequence[0].SpatialDimension == 3)   //3D --> 212940DoF
                     {
-                        m_BlockingStrategy = new Schwarz.METISBlockingStrategy()
+                        templinearSolve = new Schwarz()
                         {
-                            //noofparts = 22,
-                            NoOfPartsPerProcess = 22,
-                        },
-                        CoarseSolver = new DirectSolver()
+                            m_BlockingStrategy = new Schwarz.METISBlockingStrategy()
+                            {
+                                //noofparts = 22,
+                                NoOfPartsPerProcess = 22,
+
+                            },
+                            CoarseSolver = new DirectSolver()
+                            {
+                                WhichSolver = DirectSolver._whichSolver.MUMPS    //PARDISO
+                            },
+                            Overlap = 1
+                        };
+                    }
+                    else  //2D --> 75088DoF
+                    {
+                        templinearSolve = new Schwarz()
                         {
-                            WhichSolver = DirectSolver._whichSolver.PARDISO    //MUMPS
-                        },
-                        Overlap = 1
-                    };
+                            m_BlockingStrategy = new Schwarz.METISBlockingStrategy()
+                            {
+                                //noofparts = 8,
+                                NoOfPartsPerProcess = 8,
+
+                            },
+                            CoarseSolver = new DirectSolver()
+                            {
+                                WhichSolver = DirectSolver._whichSolver.MUMPS    //PARDISO
+                            },
+                            Overlap = 1
+                        };
+                    }
+                        
                     break;
 
                 case LinearSolverCodes.exp_AS_MG:
@@ -218,7 +279,7 @@ namespace BoSSS.Application.IBM_Solver {
                         },
                         CoarseSolver = new DirectSolver()
                         {
-                            WhichSolver = DirectSolver._whichSolver.PARDISO    //MUMPS
+                            WhichSolver = DirectSolver._whichSolver.MUMPS    //PARDISO
                         },
 
                         Overlap = 1

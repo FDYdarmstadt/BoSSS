@@ -84,7 +84,7 @@ namespace BoSSS.Solution.Control {
         public AppControl() {
             this.FieldOptions = new Dictionary<string, FieldOpts>();
             this.BoundaryValues = new Dictionary<string, BoundaryValueCollection>(new InvariantCultureIgnoreCase_Comparer());
-            this.BoundaryValuesChanges = new Dictionary<string, string>(new InvariantCultureIgnoreCase_Comparer());
+            this.BoundaryValueChanges = new Dictionary<string, string>(new InvariantCultureIgnoreCase_Comparer());
             this.Tags = new List<string>();
             this.m_InitialValues_Evaluators = new Dictionary<string, Func<double[], double>>();
             this.m_InitialValues = new Dictionary<string, IBoundaryAndInitialData>();
@@ -298,19 +298,19 @@ namespace BoSSS.Solution.Control {
         /// 
         /// </summary>
         [DataMember]
-        public IDictionary<string, string> BoundaryValuesChanges {
+        public IDictionary<string, string> BoundaryValueChanges {
             get;
             private set;
         }
 
         /// <summary>
         /// only for restarts with loaded grid, 
-        /// changes an empty boundary condition in the loaded grid
+        /// changes a boundary condition in the loaded grid
         /// </summary>
         /// <param name="EdgeTagNames"></param>
         public void ChangeBoundaryCondition(string oldEdgeTagName, string newEdgeTagName) {
-            if(!this.BoundaryValuesChanges.ContainsKey(oldEdgeTagName))
-                this.BoundaryValuesChanges.Add(oldEdgeTagName, newEdgeTagName);
+            if(!this.BoundaryValueChanges.ContainsKey(oldEdgeTagName))
+                this.BoundaryValueChanges.Add(oldEdgeTagName, newEdgeTagName);
         }
 
         /// <summary>

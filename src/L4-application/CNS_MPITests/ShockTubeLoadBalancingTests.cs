@@ -20,6 +20,8 @@ using BoSSS.Foundation.Grid.Classic;
 using BoSSS.Foundation.XDG;
 using BoSSS.Platform.LinAlg;
 using BoSSS.Solution;
+using BoSSS.Solution.CompressibleFlowCommon;
+using BoSSS.Solution.CompressibleFlowCommon.MaterialProperty;
 using BoSSS.Solution.Queries;
 using CNS;
 using CNS.Convection;
@@ -400,11 +402,11 @@ namespace CNS_MPITests.Tests.LoadBalancing {
             };
             c.AddBoundaryValue("AdiabaticSlipWall");
 
-            Material material = new Material(c);
+            Material material = new Material(c.EquationOfState, c.ViscosityLaw, c.MachNumber, c.ReynoldsNumber, c.PrandtlNumber, c.FroudeNumber, c.ViscosityRatio);
             StateVector stateLeft = StateVector.FromPrimitiveQuantities(
-                material, densityLeft, new Vector3D(velocityLeft, 0.0, 0.0), pressureLeft);
+                material, densityLeft, new Vector(velocityLeft, 0.0, 0.0), pressureLeft);
             StateVector stateRight = StateVector.FromPrimitiveQuantities(
-                material, densityRight, new Vector3D(velocityRight, 0.0, 0.0), pressureRight);
+                material, densityRight, new Vector(velocityRight, 0.0, 0.0), pressureRight);
 
             c.InitialValues_Evaluators.Add(
                     Variables.Density,
@@ -420,7 +422,7 @@ namespace CNS_MPITests.Tests.LoadBalancing {
             }
 
             if (!twoD) {
-                var riemannSolver = new ExactRiemannSolver(stateLeft, stateRight, new Vector3D(1.0, 0.0, 0.0));
+                var riemannSolver = new ExactRiemannSolver(stateLeft, stateRight, new Vector(1.0, 0.0, 0.0));
                 riemannSolver.GetStarRegionValues(out double pStar, out double uStar);
 
                 c.Queries.Add("L2ErrorDensity", QueryLibrary.L2Error(
@@ -568,10 +570,10 @@ namespace CNS_MPITests.Tests.LoadBalancing {
             c.AddBoundaryValue("AdiabaticSlipWall");
 
             // Normal vector of initial shock
-            Vector2D normalVector = new Vector2D(1, 0);
+            Vector normalVector = new Vector(1, 0);
 
             // Direction vector of initial shock
-            Vector2D r = new Vector2D(normalVector.y, -normalVector.x);
+            Vector r = new Vector(normalVector.y, -normalVector.x);
             r.Normalize();
 
             // Distance from a point X to the initial shock

@@ -15,6 +15,8 @@ limitations under the License.
 */
 
 using BoSSS.Platform.LinAlg;
+using BoSSS.Solution.CompressibleFlowCommon;
+using BoSSS.Solution.CompressibleFlowCommon.MaterialProperty;
 using CNS.MaterialProperty;
 using System;
 
@@ -46,13 +48,13 @@ namespace CNS.Tests.IsentropicVortex {
             double rho = GetDensity(r, eos, c1);
             double p = Math.Pow(rho / (1 - covolume * rho), gamma);
             double normU = r * Math.Exp(0.5 * (1.0 - r * r));
-            Vector3D U = new Vector3D(
+            Vector U = new Vector(
                 u - Math.Sin(theta) * normU,
                 Math.Cos(theta) * normU,
                 0.0);
 
             return new StateVector(
-                new Material(c),
+                new Material(c.EquationOfState, c.ViscosityLaw, c.MachNumber, c.ReynoldsNumber, c.PrandtlNumber, c.FroudeNumber, c.ViscosityRatio),
                 rho,
                 rho * U,
                 p * (1.0 - covolume * rho) / (gamma - 1.0) + 0.5 * rho * U * U);
