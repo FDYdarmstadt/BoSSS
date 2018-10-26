@@ -46,7 +46,6 @@ namespace BoSSS.Solution.CompressibleFlowCommon.Boundary {
         /// Initialization of <see cref="ConditionMap"/>
         /// </summary>
         void InitConditionMap() {
-
             ConditionMap = new BoundaryCondition[GridCommons.FIRST_PERIODIC_BC_TAG];
 
             foreach(byte edgeTag in gridData.EdgeTagNames.Keys) {
@@ -88,8 +87,7 @@ namespace BoSSS.Solution.CompressibleFlowCommon.Boundary {
             private set;
         }
 
-
-        static string[] bndFuncNames = new[] { "u0", "u1", "u2", "T", "rho", "p0", "T0" };
+        static string[] bndFuncNames = new[] { "u0", "u1", "u2", "p", "T", "rho", "p0", "T0" };
         
         /// <summary>
         /// Constructs a new map by searching through all the edge tags
@@ -104,7 +102,6 @@ namespace BoSSS.Solution.CompressibleFlowCommon.Boundary {
             this.Material = __material;
             InitConditionMap();
         }
-
        
         private Func<double[], double, double> GetBoundaryValueFunction(byte EdgeTag, string fieldName) {
             if (!base.bndFunction.ContainsKey(fieldName)) {
@@ -160,9 +157,7 @@ namespace BoSSS.Solution.CompressibleFlowCommon.Boundary {
             }
 
             return result;
-        }
-
-      
+        }      
 
         /// <summary>
         /// Retrieves the configured boundary condition for a given
@@ -212,9 +207,7 @@ namespace BoSSS.Solution.CompressibleFlowCommon.Boundary {
             get {
                 return GetBoundaryCondition(EdgeTag);
             }
-        }
-
-     
+        }     
 
         /// <summary>
         /// Mapping between edge tag names an the corresponding implementations
@@ -249,21 +242,25 @@ namespace BoSSS.Solution.CompressibleFlowCommon.Boundary {
                     material,
                     GetBoundaryValueFunction(EdgeTag, "rho"),
                     GetVelocityBoundaryValueFunction(EdgeTag));
+
                 case CompressibleBcType.subsonicPressureInlet:
                 return new SubsonicPressureInlet(
                     material,
                     GetBoundaryValueFunction(EdgeTag, "p0"),
                     GetBoundaryValueFunction(EdgeTag, "T0"));
+
                 case CompressibleBcType.subsonicOutlet:
                 return new SubsonicOutlet(
                     material,
                     GetBoundaryValueFunction(EdgeTag, "p"));
+
                 case CompressibleBcType.supersonicInlet:
                 return new SupersonicInlet(
                     material,
                     GetBoundaryValueFunction(EdgeTag, "rho"),
                     GetVelocityBoundaryValueFunction(EdgeTag),
                     GetBoundaryValueFunction(EdgeTag, "p"));
+
                 case CompressibleBcType.supersonicOutlet:
                 return new SupersonicOutlet(material);
 

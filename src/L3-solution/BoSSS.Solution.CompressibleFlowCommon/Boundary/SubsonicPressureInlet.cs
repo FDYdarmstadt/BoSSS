@@ -86,7 +86,7 @@ namespace BoSSS.Solution.CompressibleFlowCommon.Boundary {
         public override StateVector GetBoundaryState(double time, double[] x, double[] normal, StateVector stateIn) {
             double gamma = config.EquationOfState.HeatCapacityRatio;
             double Mach = config.MachNumber;
-            Vector inwardNormal = new Vector();
+            Vector inwardNormal = new Vector(stateIn.Dimension);
             for (int i = 0; i < normal.Length; i++) {
                 inwardNormal[i] = -normal[i];
             }
