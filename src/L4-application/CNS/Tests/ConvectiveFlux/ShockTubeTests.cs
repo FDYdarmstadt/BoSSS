@@ -356,9 +356,9 @@ namespace CNS.Tests.ConvectiveFlux {
 
             Material material = c.GetMaterial();
             StateVector stateLeft = StateVector.FromPrimitiveQuantities(
-                material, densityLeft, new Vector(velocityLeft, 0.0, 0.0), pressureLeft);
+                material, densityLeft, new Vector(velocityLeft), pressureLeft);
             StateVector stateRight = StateVector.FromPrimitiveQuantities(
-                material, densityRight, new Vector(velocityRight, 0.0, 0.0), pressureRight);
+                material, densityRight, new Vector(velocityRight), pressureRight);
 
             c.InitialValues_Evaluators.Add(
                 Variables.Density,
@@ -370,7 +370,7 @@ namespace CNS.Tests.ConvectiveFlux {
                 Variables.Pressure,
                 X => stateLeft.Pressure + (stateRight.Pressure - stateLeft.Pressure) * (X[0] - discontinuityPosition).Heaviside());
 
-            var riemannSolver = new ExactRiemannSolver(stateLeft, stateRight, new Vector(1.0, 0.0, 0.0));
+            var riemannSolver = new ExactRiemannSolver(stateLeft, stateRight, new Vector(1.0));
             double pStar, uStar;
             riemannSolver.GetStarRegionValues(out pStar, out uStar);
 

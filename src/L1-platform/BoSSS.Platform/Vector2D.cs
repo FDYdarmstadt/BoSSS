@@ -43,6 +43,17 @@ namespace BoSSS.Platform.LinAlg {
         }
 
         /// <summary>
+        /// initializes a 1D vector.
+        /// </summary>
+        public Vector(double __x) {
+            x = __x;
+            Dim = 1;
+            y = 0;
+            z = 0;
+            Dummy_256bitAlign = 0;
+        }
+
+        /// <summary>
         /// initializes a 2D vector.
         /// </summary>
         public Vector(double __x, double __y) {
