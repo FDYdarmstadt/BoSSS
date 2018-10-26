@@ -790,9 +790,9 @@ namespace ilPSP {
         static public double Determinant<T>(this T M) where T : IMatrix {
             int m_NoOfCols = M.NoOfCols, m_NoOfRows = M.NoOfRows;
             if (m_NoOfCols != m_NoOfRows)
-                throw new NotSupportedException("determinat only defined for quadratic matrices.");
+                throw new NotSupportedException("Determinate only defined for quadratic matrices.");
             if (m_NoOfCols > 4) {
-                throw new NotImplementedException("only implemented for 1x1, 2x2, 3x3 and 4x4 matrices");
+                throw new NotImplementedException("Only implemented for 1x1, 2x2, 3x3 and 4x4 matrices.");
             }
 
             switch (m_NoOfCols) {

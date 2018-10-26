@@ -1110,9 +1110,9 @@ namespace BoSSS.Solution.GridImport {
 
             double[] averagePoint = CalculateAveragePoint(indices, numberOfNodes);
 
-            Vector2D u = new Vector2D(x[index1], y[index1]);
-            Vector2D v = new Vector2D(x[index2], y[index2]);
-            Vector2D w = new Vector2D(averagePoint[0], averagePoint[1]);
+            Vector u = new Vector(x[index1], y[index1]);
+            Vector v = new Vector(x[index2], y[index2]);
+            Vector w = new Vector(averagePoint[0], averagePoint[1]);
 
             u -= w;
             v -= w;
@@ -1122,8 +1122,8 @@ namespace BoSSS.Solution.GridImport {
             if (number_of_coord_dimensions == 3) {
                 double crossProductAbs = Math.Abs(crossProduct);
 
-                u = new Vector2D(x[index1], z[index1]);
-                v = new Vector2D(x[index2], z[index2]);
+                u = new Vector(x[index1], z[index1]);
+                v = new Vector(x[index2], z[index2]);
 
                 u -= w;
                 v -= w;
@@ -1137,8 +1137,8 @@ namespace BoSSS.Solution.GridImport {
                     crossProductAbs = crossProductAbs1;
                 }
 
-                u = new Vector2D(y[index1], z[index1]);
-                v = new Vector2D(y[index2], z[index2]);
+                u = new Vector(y[index1], z[index1]);
+                v = new Vector(y[index2], z[index2]);
 
                 u -= w;
                 v -= w;
@@ -1162,8 +1162,8 @@ namespace BoSSS.Solution.GridImport {
         /// <summary>
         /// Generates the cross product.
         /// </summary>
-        private static double CrossProduct(Vector2D u, Vector2D v) {
-            return u.x * v.y - u.y * v.x;
+        private static double CrossProduct(Vector u, Vector v) {
+            return u.CrossProduct(v).z;
         }
 
         /// <summary>

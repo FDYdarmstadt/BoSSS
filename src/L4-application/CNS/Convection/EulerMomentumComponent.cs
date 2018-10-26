@@ -15,6 +15,7 @@ limitations under the License.
 */
 
 using BoSSS.Platform.LinAlg;
+using BoSSS.Solution.CompressibleFlowCommon;
 
 namespace CNS.Convection {
 
@@ -32,7 +33,7 @@ namespace CNS.Convection {
         /// <summary>
         /// The <see cref="MomentumComponent"/>'s basis vector
         /// </summary>
-        public readonly Vector3D ComponentVector;
+        public readonly Vector ComponentVector;
 
 
         double heatCapacityRatio;
@@ -54,7 +55,7 @@ namespace CNS.Convection {
         /// </param>
         public EulerMomentumComponent(int momentumComponent, double heatCapacityRatio, double MachNumber) {
             this.MomentumComponent = momentumComponent;
-            ComponentVector = Vector3D.StdBasis(momentumComponent);
+            ComponentVector = Vector.StdBasis(momentumComponent, CNSEnvironment.NumberOfDimensions);
             this.heatCapacityRatio = heatCapacityRatio;
             this.MachNumber = MachNumber;
         }
@@ -67,7 +68,7 @@ namespace CNS.Convection {
         /// <returns>
         /// \f$ \rho (\vec{u} \cdot \vec{e_i}) \vec{u} + p \vec{e_i}\f$ 
         /// </returns>
-        public Vector3D Flux(StateVector state) {
+        public Vector Flux(StateVector state) {
             return state.Momentum[MomentumComponent] * state.Velocity
                 + 1 / (heatCapacityRatio * MachNumber * MachNumber) * state.Pressure * ComponentVector;
         }

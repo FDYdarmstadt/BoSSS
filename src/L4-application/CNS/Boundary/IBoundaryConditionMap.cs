@@ -18,6 +18,7 @@ using System;
 using System.Collections.Generic;
 using BoSSS.Foundation;
 using BoSSS.Foundation.Grid;
+using BoSSS.Solution.CompressibleFlowCommon;
 using BoSSS.Solution.Control;
 
 namespace CNS.Boundary {

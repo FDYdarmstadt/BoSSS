@@ -134,12 +134,12 @@ namespace CNS.Tests.IBMTests {
 
             Func<double[], double, double> DistanceToLine = delegate (double[] X, double t) {
                 // direction vector
-                Vector2D p1 = new Vector2D(0.5, 0.0);
-                Vector2D p2 = new Vector2D(0.5, 1.0);
-                Vector2D p = p2 - p1;
+                Vector p1 = new Vector(0.5, 0.0);
+                Vector p2 = new Vector(0.5, 1.0);
+                Vector p = p2 - p1;
 
                 // normal vector
-                Vector2D n = new Vector2D(p.y, -p.x);
+                Vector n = new Vector(p.y, -p.x);
                 n.Normalize();
 
                 // angle between line and x-axis

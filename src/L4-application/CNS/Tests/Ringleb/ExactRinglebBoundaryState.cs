@@ -15,6 +15,7 @@ limitations under the License.
 */
 
 using BoSSS.Platform.LinAlg;
+using BoSSS.Solution.CompressibleFlowCommon;
 using CNS.Boundary;
 
 namespace CNS.Tests.Ringleb {
@@ -55,7 +56,7 @@ namespace CNS.Tests.Ringleb {
                 x[0], x[1], kappa, pi, a0, p0);
 
             double rho = ringlebState.Density;
-            Vector3D v = new Vector3D(ringlebState.Velocity[0], ringlebState.Velocity[1], 0.0);
+            Vector v = new Vector(ringlebState.Velocity[0], ringlebState.Velocity[1], 0.0);
             return new StateVector(
                 stateIn.Material,
                 rho,
