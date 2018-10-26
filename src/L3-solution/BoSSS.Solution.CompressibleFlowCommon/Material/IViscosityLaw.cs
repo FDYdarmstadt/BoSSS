@@ -14,24 +14,27 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-namespace CNS.ShockCapturing {
+
+namespace BoSSS.Solution.CompressibleFlowCommon.MaterialProperty {
 
     /// <summary>
-    /// A generic sloper limiter
+    /// Represents a relation between the temperature and the viscosity of 
+    /// a fluid.
     /// </summary>
-    public interface ILimiter {
+    public interface IViscosityLaw {
 
         /// <summary>
-        /// The sensor used by this slope limiter to detected troubled cells
+        /// Determines the dimensionless viscosity at the given dimensionless
+        /// temperature
         /// </summary>
-        IShockSensor Sensor {
-            get;
-        }
-
-        /// <summary>
-        /// Limits the values of the primal variables
-        /// </summary>
-        /// <param name="program"></param>
-        void LimitFieldValues(IProgram<CNSControl> program);
+        /// <param name="temperature">
+        /// The local fluid temperature
+        /// </param>
+        /// <param name="cellIndex"></param>
+        /// <returns>
+        /// The dimensionless viscosity at the given dimensionless
+        /// temperature
+        /// </returns>
+        double GetViscosity(double temperature, int cellIndex);
     }
 }

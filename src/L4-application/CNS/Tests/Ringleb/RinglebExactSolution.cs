@@ -63,8 +63,8 @@ namespace CNS.Tests.Ringleb {
                 tau: tau,
                 pressure: (p0 + pi) * Math.Pow(1.0 - tau, kappa / (kappa - 1.0)) - pi,
                 density: rho0 * Math.Pow(1.0 - tau, 1.0 / (kappa - 1.0)),
-                velocity: a0 * Math.Sqrt(2.0 * tau / (kappa - 1.0)) *
-                    new Vector2D(Math.Cos(theta), Math.Sin(theta)),
+                velocity_2d: a0 * Math.Sqrt(2.0 * tau / (kappa - 1.0)) *
+                    new Vector(Math.Cos(theta), Math.Sin(theta)),
                 Mach: Math.Sqrt(2.0 / (kappa - 1.0) * tau / (1.0 - tau)),
                 kappa: kappa,
                 pi: pi);
@@ -193,12 +193,12 @@ namespace CNS.Tests.Ringleb {
             /// <summary>
             /// Velocity
             /// </summary>
-            public readonly Vector2D Velocity;
+            public readonly Vector Velocity;
 
             /// <summary>
             /// Momentum
             /// </summary>
-            public readonly Vector2D Momentum;
+            public readonly Vector Momentum;
 
             /// <summary>
             /// Local Mach number
@@ -218,20 +218,20 @@ namespace CNS.Tests.Ringleb {
             /// <param name="tau"></param>
             /// <param name="pressure"></param>
             /// <param name="density"></param>
-            /// <param name="velocity"></param>
+            /// <param name="velocity_2D"></param>
             /// <param name="Mach"></param>
             /// <param name="kappa"></param>
             /// <param name="pi"></param>
-            public FlowState(double V, double theta, double tau, double pressure, double density, Vector2D velocity, double Mach, double kappa, double pi) {
+            public FlowState(double V, double theta, double tau, double pressure, double density, Vector velocity_2d, double Mach, double kappa, double pi) {
                 this.V = V;
                 this.Theta = theta;
                 this.Tau = tau;
                 this.Pressure = pressure;
                 this.Density = density;
-                this.Velocity = velocity;
+                this.Velocity = velocity_2d;
                 this.Mach = Mach;
-                this.Momentum = density * velocity;
-                this.Energy = (pressure + kappa * pi) / (kappa - 1.0) + 0.5 * Momentum * velocity;
+                this.Momentum = density * velocity_2d;
+                this.Energy = (pressure + kappa * pi) / (kappa - 1.0) + 0.5 * Momentum * velocity_2d;
             }
         }
     }

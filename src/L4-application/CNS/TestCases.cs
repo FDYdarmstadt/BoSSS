@@ -20,6 +20,8 @@ using BoSSS.Foundation.IO;
 using BoSSS.Foundation.XDG;
 using BoSSS.Platform.LinAlg;
 using BoSSS.Solution;
+using BoSSS.Solution.CompressibleFlowCommon;
+using BoSSS.Solution.CompressibleFlowCommon.MaterialProperty;
 using BoSSS.Solution.Queries;
 using CNS.Convection;
 using CNS.EquationSystem;
@@ -149,10 +151,10 @@ namespace CNS {
             //}
 
             // Normal vector of initial shock
-            //Vector2D normalVector = new Vector2D(1, 0);
+            //Vector normalVector = new Vector(1, 0);
 
             // Direction vector of initial shock
-            //Vector2D r = new Vector2D(normalVector.y, -normalVector.x);
+            //Vector r = new Vector(normalVector.y, -normalVector.x);
             //r.Normalize();
 
             // Distance from a point X to the initial shock
@@ -194,13 +196,13 @@ namespace CNS {
             c.InitialValues_Evaluators.Add(Variables.Velocity.yComponent, X => 0.0);
 
             // ### Evaluation ###
-            Material material = new Material(c);
+            Material material = new Material(c.EquationOfState, c.ViscosityLaw, c.MachNumber, c.ReynoldsNumber, c.PrandtlNumber, c.FroudeNumber, c.ViscosityRatio);
             StateVector stateLeft = StateVector.FromPrimitiveQuantities(
-                material, densityLeft, new Vector3D(velocityLeft, 0.0, 0.0), pressureLeft);
+                material, densityLeft, new Vector(velocityLeft, 0.0, 0.0), pressureLeft);
             StateVector stateRight = StateVector.FromPrimitiveQuantities(
-                material, densityRight, new Vector3D(velocityRight, 0.0, 0.0), pressureRight);
+                material, densityRight, new Vector(velocityRight, 0.0, 0.0), pressureRight);
 
-            var riemannSolver = new ExactRiemannSolver(stateLeft, stateRight, new Vector3D(1.0, 0.0, 0.0));
+            var riemannSolver = new ExactRiemannSolver(stateLeft, stateRight, new Vector(1.0, 0.0, 0.0));
             double pStar, uStar;
             riemannSolver.GetStarRegionValues(out pStar, out uStar);
 
@@ -689,12 +691,12 @@ namespace CNS {
 
             Func<double[], double, double> DistanceToInitialShock = delegate (double[] X, double t) {
                 // direction vector
-                Vector2D p1 = new Vector2D(xWall, 0.0);
-                Vector2D p2 = new Vector2D(xWall + 1 / Math.Tan(Math.PI / 3), 1.0);
-                Vector2D p = p2 - p1;
+                Vector p1 = new Vector(xWall, 0.0);
+                Vector p2 = new Vector(xWall + 1 / Math.Tan(Math.PI / 3), 1.0);
+                Vector p = p2 - p1;
 
                 // normal vector
-                Vector2D n = new Vector2D(p.y, -p.x);
+                Vector n = new Vector(p.y, -p.x);
                 n.Normalize();
 
                 // Angle between line and x-axis
@@ -897,10 +899,10 @@ namespace CNS {
             //}
 
             // Normal vector of initial shock
-            //Vector2D normalVector = new Vector2D(1, 0);
+            //Vector normalVector = new Vector(1, 0);
 
             // Direction vector of initial shock
-            //Vector2D r = new Vector2D(normalVector.y, -normalVector.x);
+            //Vector r = new Vector(normalVector.y, -normalVector.x);
             //r.Normalize();
 
             // Distance from a point X to the initial shock
@@ -944,13 +946,13 @@ namespace CNS {
             }
 
             // ### Evaluation ###
-            Material material = new Material(c);
+            Material material = new Material(c.EquationOfState, c.ViscosityLaw, c.MachNumber, c.ReynoldsNumber, c.PrandtlNumber, c.FroudeNumber, c.ViscosityRatio);
             StateVector stateLeft = StateVector.FromPrimitiveQuantities(
-                material, densityLeft, new Vector3D(velocityLeft, 0.0, 0.0), pressureLeft);
+                material, densityLeft, new Vector(velocityLeft, 0.0, 0.0), pressureLeft);
             StateVector stateRight = StateVector.FromPrimitiveQuantities(
-                material, densityRight, new Vector3D(velocityRight, 0.0, 0.0), pressureRight);
+                material, densityRight, new Vector(velocityRight, 0.0, 0.0), pressureRight);
 
-            var riemannSolver = new ExactRiemannSolver(stateLeft, stateRight, new Vector3D(1.0, 0.0, 0.0));
+            var riemannSolver = new ExactRiemannSolver(stateLeft, stateRight, new Vector(1.0, 0.0, 0.0));
             double pStar, uStar;
             riemannSolver.GetStarRegionValues(out pStar, out uStar);
 
@@ -1184,7 +1186,7 @@ namespace CNS {
             }
 
             // Direction vector of initial shock (vertical)
-            Vector2D r = new Vector2D(0.0, 1.0);
+            Vector r = new Vector(0.0, 1.0);
 
             // Current x-position of the shock
             double shockSpeed = 10;
@@ -1453,7 +1455,7 @@ namespace CNS {
         //    }
 
         //    // Direction vector of initial shock (vertical)
-        //    Vector2D r = new Vector2D(0.0, 1.0);
+        //    Vector r = new Vector(0.0, 1.0);
 
         //    // Current x-position of the shock
         //    double shockSpeed = 10;

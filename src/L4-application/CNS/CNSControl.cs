@@ -16,6 +16,9 @@ limitations under the License.
 
 using BoSSS.Foundation;
 using BoSSS.Solution;
+using BoSSS.Solution.CompressibleFlowCommon;
+using BoSSS.Solution.CompressibleFlowCommon.MaterialProperty;
+using BoSSS.Solution.CompressibleFlowCommon.ShockCapturing;
 using BoSSS.Solution.Control;
 using CNS.Convection;
 using CNS.Diffusion;
@@ -364,7 +367,7 @@ namespace CNS {
         /// An optional sensor to detect shocks
         /// </summary>
         public IShockSensor ShockSensor = null;
-
+        
         /// <summary>
         /// An optional viscosity law to determine the magnitude of the
         /// artificial viscosity if <see cref="ActiveOperators"/> includes

@@ -16,6 +16,8 @@ limitations under the License.
 
 using BoSSS.Foundation;
 using BoSSS.Platform.LinAlg;
+using BoSSS.Solution.CompressibleFlowCommon;
+using BoSSS.Solution.CompressibleFlowCommon.MaterialProperty;
 using BoSSS.Solution.Utils;
 using CNS.Boundary;
 using CNS.Convection;
@@ -130,7 +132,7 @@ namespace CNS.IBM {
         /// <summary>
         /// The flux function to be used to evaluate the flux across the zero
         /// level set (by making use of
-        /// <see cref="EulerFlux.InnerEdgeFlux(double[], double, StateVector, StateVector, ref Vector3D, int)"/>)
+        /// <see cref="EulerFlux.InnerEdgeFlux(double[], double, StateVector, StateVector, ref Vector, int)"/>)
         /// </summary>
         private INonlinearFlux fluxFunction;
 
@@ -190,7 +192,7 @@ namespace CNS.IBM {
                 for (int j = 0; j < noOfNodes; j++) {
                     StateVector stateIn = new StateVector(material, U, i, j);
 
-                    Vector3D levelSetNormal = new Vector3D();
+                    Vector levelSetNormal = new Vector();
                     int offset = CNSEnvironment.NumberOfDimensions + 2;
                     for (int d = 0; d < CNSEnvironment.NumberOfDimensions; d++) {
                         levelSetNormal[d] = U[offset + d][i + IndexOffset, j];

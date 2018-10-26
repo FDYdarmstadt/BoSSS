@@ -22,32 +22,71 @@ using System.Runtime.InteropServices;
 namespace BoSSS.Platform.LinAlg {
 
     /// <summary>
-    /// A 2D Vector2D, or Stage 1 Tensor in 2D Space;
+    /// A spatial coordinate or vector, in 1D, 2D, 3D
     /// </summary>
     [StructLayout(LayoutKind.Sequential)]
-    public struct Vector2D {
+    public struct Vector {
 
         /// <summary>
-        /// initializes to (<paramref name="__x"/>,<paramref name="__y"/>).
+        /// initializes a <paramref name="D"/>-dimensional vector.
         /// </summary>
-        /// <param name="__x">x - component</param>
-        /// <param name="__y">y - component</param>
-        public Vector2D(double __x, double __y) {
+        public Vector(int D) {
+            if (D < 1 || D > 3) {
+                throw new ArgumentException("supports only 1D, 2D or 3D");
+            }
+            x = 0;
+            y = 0;
+            z = 0;
+            Dim = D;
+            Dummy_256bitAlign = 0;
+        }
+
+        /// <summary>
+        /// initializes a 2D vector.
+        /// </summary>
+        public Vector(double __x, double __y) {
             x = __x;
             y = __y;
+            Dim = 2;
+            z = 0;
+            Dummy_256bitAlign = 0;
+        }
+
+        /// <summary>
+        ///initializes a 3D vector.
+        /// </summary>
+        public Vector(double __x, double __y, double __z) {
+            x = __x;
+            y = __y;
+            z = __z;
+            Dim = 3;
+            Dummy_256bitAlign = 0;
         }
 
         /// <summary>
         /// 
         /// </summary>
         /// <param name="X"></param>
-        public Vector2D(double[] X) {
-            if (X.Length != 2) {
+        public Vector(double[] X) {
+            if (X.Length < 1 || X.Length > 3) {
                 throw new ArgumentException();
             }
 
+
+            this.Dim = X.Length;
             x = X[0];
-            y = X[1];
+            if(this.Dim > 1)
+                y = X[1];
+            else
+                y = 0;
+
+            if(this.Dim > 2)
+                z = X[2];
+            else
+                z = 0;
+
+            Dummy_256bitAlign = 0;
+
         }
 
         /// <summary>
@@ -55,9 +94,25 @@ namespace BoSSS.Platform.LinAlg {
         /// </summary>
         public double x;
         /// <summary>
-        /// y - component
+        /// y - component (used for dimensions >= 2)
         /// </summary>
         public double y;
+
+        /// <summary>
+        /// z - component (used for dimensions >= 3)
+        /// </summary>
+        public double z;
+
+        /// <summary>
+        /// spatial dimension
+        /// </summary>
+        public int Dim;
+
+        /// <summary>
+        /// Dummy entry/reserved; enforces the entire structure to be 256 bit in size.
+        /// </summary>
+        public int Dummy_256bitAlign;
+
 
         /// <summary>
         /// set/get entries
@@ -68,16 +123,20 @@ namespace BoSSS.Platform.LinAlg {
             set {
                 if (i == 0)
                     x = value;
-                else if (i == 1)
+                else if (i == 1 && Dim > 1)
                     y = value;
+                else if (i == 2 && Dim > 2)
+                    z = value;
                 else
                     throw new IndexOutOfRangeException("vector component index must be either 0 or 1.");
             }
             get {
-                if (i == 0)
+                if(i == 0)
                     return x;
-                else if (i == 1)
+                else if(i == 1 && Dim > 1)
                     return y;
+                else if(i == 2 && Dim > 2)
+                    return z;
                 else
                     throw new IndexOutOfRangeException("vector component index must be either 0 or 1.");
             }
@@ -88,39 +147,79 @@ namespace BoSSS.Platform.LinAlg {
         /// adds <paramref name="v"/> to this vector;
         /// </summary>
         /// <param name="v">the vector that should be added</param>
-        public void Acc(Vector2D v) {
+        public void Acc(Vector v) {
+            if(v.Dim != this.Dim)
+                throw new ArgumentException("Dimension mismatch");
+
             this.x += v.x;
             this.y += v.y;
+            this.z += v.z;
         }
 
         /// <summary>
         /// adds <paramref name="v"/>*<paramref name="s"/> to this vector;
         /// </summary>
         /// <param name="v">the vector that should be added</param>
-        /// <param name="s">the scaleing of the vector to add</param>
-        public void Acc(Vector2D v, double s) {
+        /// <param name="s">the scaling of the vector to add</param>
+        public void Acc(Vector v, double s) {
+             if(v.Dim != this.Dim)
+                throw new ArgumentException("Dimension mismatch");
+
             this.x += v.x * s;
             this.y += v.y * s;
+            this.z += v.z * s;
         }
 
         /// <summary>
-        /// the absolut value (length) of this vector 
+        /// Calculates the cross product between this vector and the given vector <paramref name="v"/>.
+        /// </summary>
+        /// <param name="v">A vector</param>
+        /// <returns>
+        /// \f$ \vec{u} \times \vec{v}\f$ 
+        /// Note
+        /// - return value will always be a 3D vector (<see cref="Dim"/>==3)
+        /// - for 2D arguments, only the <see cref="z"/> component will be unequal 0.
+        /// </returns>
+        public Vector CrossProduct(Vector v) {
+            if(v.Dim != this.Dim)
+                throw new ArgumentException("Dimension mismatch");
+
+            return new Vector() {
+                x = this.y * v.z - this.z * v.y,
+                y = this.z * v.x - this.x * v.z,
+                z = this.x * v.y - this.y * v.x
+            };
+        }
+
+
+        /// <summary>
+        /// the absolute value (length) of this vector 
         /// </summary>
         /// <returns></returns>
         public double Abs() {
-            return Math.Sqrt(x * x + y * y);
+            return Math.Sqrt(x * x + y * y + z * z);
         }
 
+
+        /// <summary>
+        /// the absolute value (length) of this vector to the power of two
+        /// </summary>
+        /// <returns></returns>
+        public double AbsSquare() {
+            return (x * x + y * y + z * z);
+        }
         /// <summary>
         /// The angle between this vector and the positive x-Axis, counted counterclockwise
         /// </summary>
         /// <returns></returns>
-        public double Angle() {
+        public double Angle2D() {
+            if(this.Dim != 2)
+                throw new NotSupportedException();
             return Math.Atan2(this.y, this.x);
         }
 
         /// <summary>
-        /// sets (the cartesian) coordinates of this vector from polar coordinates
+        /// sets (the Cartesian) coordinates of this vector from polar coordinates
         /// </summary>
         /// <param name="r">Distance to origin.</param>
         /// <param name="phi">angle to the positive x-Axis, counted counterclockwise</param>
@@ -137,24 +236,31 @@ namespace BoSSS.Platform.LinAlg {
             double l = 1.0 / Abs();
             x *= l;
             y *= l;
+            z *= l;
         }
 
         /// <summary>
         /// subtracts <paramref name="v"/> from this vector;
         /// </summary>
-        /// <param name="v">the vector that should be substracted</param>
-        public void Sub(Vector2D v) {
+        /// <param name="v">the vector that should be subtracted</param>
+        public void Sub(Vector v) {
+
+            if(v.Dim != this.Dim)
+                throw new ArgumentException("Dimension mismatch");
+
             this.x -= v.x;
             this.y -= v.y;
+            this.z -= v.z;
         }
 
         /// <summary>
-        /// multiplyes this vector with  scalar <paramref name="s"/>;
+        /// multiples this vector with  scalar <paramref name="s"/>;
         /// </summary>
         /// <param name="s"></param>
         public void Scale(double s) {
             this.x *= s;
             this.y *= s;
+            this.z *= s;
         }
 
         /// <summary>
@@ -163,91 +269,99 @@ namespace BoSSS.Platform.LinAlg {
         /// <param name="x"></param>
         /// <param name="y"></param>
         public void Set(double x, double y) {
+            if(this.Dim != 2)
+                throw new NotSupportedException("spatial dimension mismatch");
             this.x = x;
             this.y = y;
         }
 
         /// <summary>
-        /// multiplyes this vector by a matrix from the left hand side,
-        /// i.e does "matrix <paramref name="M"/>" * "column vector";
+        /// sets the components of this object
         /// </summary>
-        /// <param name="M"></param>
-        public void MulLeft(TensorSt2 M) {
-            double xold = x;
-
-            x = M._00 * xold + M._01 * y;
-            y = M._10 * xold + M._11 * y;
-        }
-
-        /// <summary>
-        /// multiplyes this vector by a matrix from the right hand side,
-        /// i.e does "row vector" * "matrix <paramref name="M"/>";
-        /// </summary>
-        /// <param name="M"></param>
-        public void MulRight(TensorSt2 M) {
-            double xold = x;
-
-            x = M._00 * xold + M._10 * y;
-            y = M._01 * xold + M._11 * y;
+        /// <param name="x"></param>
+        /// <param name="y"></param>
+        /// <param name="z"></param>
+        public void Set(double x, double y, double z) {
+            if(this.Dim != 2)
+                throw new NotSupportedException("spatial dimension mismatch");
+            this.x = x;
+            this.y = y;
+            this.z = z;
         }
 
 
+       
 
         /// <summary>
-        /// standart vector addition
+        /// standard vector addition
         /// </summary>
         /// <param name="left">op1</param>
         /// <param name="right">op2</param>
         /// <returns>clear;</returns>
-        public static Vector2D operator +(Vector2D left, Vector2D right) {
-            Vector2D ret = left;
+        public static Vector operator +(Vector left, Vector right) {
+            Vector ret = left;
             ret.Acc(right);
             return ret;
         }
 
         /// <summary>
-        /// standart vector addition
+        /// standard vector subtraction
         /// </summary>
         /// <param name="left">op1</param>
         /// <param name="right">op2</param>
         /// <returns>clear;</returns>
-        public static Vector2D operator -(Vector2D left, Vector2D right) {
-            Vector2D ret = left;
+        public static Vector operator -(Vector left, Vector right) {
+            Vector ret = left;
             ret.Sub(right);
             return ret;
         }
 
         /// <summary>
-        /// multiplication by a acalar
+        /// multiplication by a scalar
         /// </summary>
         /// <param name="s">the scalar</param>
         /// <param name="v">the vector</param>
         /// <returns>clear;</returns>
-        public static Vector2D operator *(Vector2D v, double s) {
-            Vector2D ret = v;
+        public static Vector operator *(Vector v, double s) {
+            Vector ret = v;
             ret.Scale(s);
             return ret;
         }
 
         /// <summary>
-        /// multiplication by a acalar
+        /// multiplication by a scalar
         /// </summary>
         /// <param name="s">the scalar</param>
         /// <param name="v">the vector</param>
         /// <returns>clear;</returns>
-        public static Vector2D operator *(double s, Vector2D v) {
+        public static Vector operator *(double s, Vector v) {
             return (v * s);
+        }
+
+        /// <summary>
+        /// Division by a scalar
+        /// </summary>
+        /// <param name="v">The vector</param>
+        /// <param name="s">The scalar</param>
+        /// <returns>v / s</returns>
+        public static Vector operator /(Vector v, double s) {
+            Vector result = v;
+            result.Scale(1.0 / s);
+            return result;
         }
 
 
         /// <summary>
-        /// Standart Dot/Vector2D/Inner-Product.
+        /// standard Dot/Vector/Inner-Product.
         /// </summary>
         /// <param name="a">1st operand</param>
         /// <param name="b">2nd operand</param>
         /// <returns>a*b*</returns>
-        public static double operator *(Vector2D a, Vector2D b) {
-            return (a.x * b.x + a.y * b.y);
+        public static double operator *(Vector a, Vector b) {
+             if(a.Dim != b.Dim)
+                throw new ArgumentException("Dimension mismatch");
+
+            return (a.x * b.x + a.y * b.y + a.z * b.z);
         }
 
         /// <summary>
@@ -255,8 +369,17 @@ namespace BoSSS.Platform.LinAlg {
         /// </summary>
         /// <param name="v">The vector to be converted</param>
         /// <returns>An array of doubles of length 2</returns>
-        public static implicit operator double[] (Vector2D v) {
-            return new double[] { v[0], v[1] };
+        public static implicit operator double[] (Vector v) {
+            switch(v.Dim) {
+                case 1:
+                return new double[] { v.x };
+                case 2:
+                return new double[] { v.x, v.y };
+                case 3:
+                return new double[] { v.x, v.y, v.z };
+                default:
+                throw new NotSupportedException();
+            }
         }
 
         /// <summary>
@@ -264,61 +387,123 @@ namespace BoSSS.Platform.LinAlg {
         /// </summary>
         /// <returns>(x|y)</returns>
         public override string ToString() {
-            return ("(" + x + "|" + y + ")");
+            switch(this.Dim) {
+                case 1:
+                return ("(" + x + ")");
+                case 2:
+                return ("(" + x + "|" + y + ")");
+                case 3:
+                return ("(" + x + "|" + y + "|" + z + ")");
+                default:
+                throw new NotSupportedException();
+            }
         }
 
         /// <summary>
-        /// the <paramref name="d"/>-th Standart basis
+        /// the <paramref name="d"/>-th standard basis
         /// </summary>
-        /// <param name="d">Dimension index</param>
-        /// <returns>(1,0) if <paramref name="d"/>=0, (0,1) if <paramref name="d"/>=1;</returns>
-        public static Vector2D StdBasis(int d) {
-            if (d == 0)
-                return new Vector2D(1, 0);
-            else if (d == 1)
-                return new Vector2D(0, 1);
-            else
-                throw new ArgumentOutOfRangeException("in 2D, a Dimension index must be either 0 or 1");
+        /// <param name="D">spatial dimension</param>
+        /// <param name="d">direction index</param>
+        /// <returns>
+        /// a <paramref name="D"/>-dimensional vector with <paramref name="d"/>-th coordinate equal to 1.0.
+        /// </returns>
+        public static Vector StdBasis(int d, int D) {
+            Vector e = default(Vector);
+            e.Dim = D;
+            e[d] = 1.0;
+            return e;
+        }
+
+        /// <summary>
+        /// the <paramref name="d"/>-th standard basis in 2D
+        /// </summary>
+        /// <param name="d">direction index</param>
+        /// <returns>
+        /// a two-dimensional vector with <paramref name="d"/>-th coordinate equal to 1.0.
+        /// </returns>
+        public static Vector StdBasis2D(int d, int D) {
+            return StdBasis(d, 2);
+        }
+
+        /// <summary>
+        /// the <paramref name="d"/>-th standard basis in 3D
+        /// </summary>
+        /// <param name="d">direction index</param>
+        /// <returns>
+        /// a three-dimensional vector with <paramref name="d"/>-th coordinate equal to 1.0.
+        /// </returns>
+        public static Vector StdBasis3D(int d, int D) {
+            return StdBasis(d, 3);
+        }
+
+        /// <summary>
+        /// Euclidean distance between the points <paramref name="a"/> and <paramref name="b"/>
+        /// </summary>
+        public static double Dist(Vector a, Vector b) {
+             if(a.Dim != b.Dim)
+                throw new ArgumentException("Dimension mismatch");
+
+            double distPow2 = 0;
+            double d;
+            d = (a.x - b.x);
+            distPow2 += d * d;
+            d = (a.y - b.y);
+            distPow2 += d * d;
+            d = (a.z - b.z);
+            distPow2 += d * d;
+            return Math.Sqrt(distPow2);
+        }
+
+        
+        
+
+ 
+        /// <summary>
+        /// Copies the components 0 to <paramref name="length"/> - 1 of this
+        /// object into <paramref name="destination"/>
+        /// </summary>
+        /// <param name="destination">An array of length three</param>
+        /// <param name="length">The number of elements to be copied</param>
+        public void CopyTo(double[] destination, int length) {
+            if (destination.Length < length) {
+                throw new ArgumentException("The destination array is too small", "destination");
+            }
+
+            if (length > 3 || length < 1) {
+                throw new ArgumentException("Length can only be 0, 1 or 2", "length");
+            }
+
+            for (int i = 0; i < length; i++) {
+                destination[i] = this[i];
+            }
+        }
+
+        /// <summary>
+        /// Copies the components 0 to <paramref name="length"/> - 1 of this
+        /// object into <paramref name="destination"/> starting with <paramref name="destinationIndex" />
+        /// </summary>
+        /// <param name="destination">The target array</param>
+        /// <param name="length">The number of elements to be copied</param>
+        /// <param name="destinationIndex">The index of the target array at which copying should be started</param>
+        public void CopyTo(double[] destination, int destinationIndex, int length) {
+            if (destination.Length < destinationIndex + length) {
+                throw new ArgumentException("The destination array is too small", "destination");
+            }
+
+            if (length > 3 || length < 1) {
+                throw new ArgumentException("Length can only be 0, 1 or 2", "length");
+            }
+
+            if (destinationIndex < 0) {
+                throw new ArgumentException("The destination index must be >= 0", "destinationIndex");
+            }
+
+            for (int i = 0; i < length; i++) {
+                destination[i + destinationIndex] = this[i];
+            }
         }
 
     }
 
-
-
-    /// <summary>
-    /// A stage 2 - Tensor in 2D - Space, or Matrix
-    /// </summary>
-    public struct TensorSt2 {
-        /// <summary> entry in first row, first column </summary>
-        public double _00;
-        /// <summary> entry in first row, second column </summary>
-        public double _01;
-        /// <summary> entry in second row, first column </summary>
-        public double _10;
-        /// <summary> entry in second row, second column </summary>
-        public double _11;
-
-        /// <summary>
-        /// matrix times column vector
-        /// </summary>
-        /// <param name="M">Matrix</param>
-        /// <param name="v">vector</param>
-        /// <returns><paramref name="M"/>*<paramref name="v"/></returns>
-        public static Vector2D operator *(TensorSt2 M, Vector2D v) {
-            v.MulLeft(M);
-            return v;
-        }
-
-        /// <summary>
-        /// row vector times matrix
-        /// </summary>
-        /// <param name="M">Matrix</param>
-        /// <param name="v">vector</param>
-        /// <returns><paramref name="v"/>*<paramref name="M"/></returns>
-        public static Vector2D operator *(Vector2D v, TensorSt2 M) {
-            v.MulRight(M);
-            return v;
-        }
-    }
-
+    
 }
