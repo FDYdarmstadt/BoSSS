@@ -33,7 +33,7 @@ namespace LTSTests {
         }
 
         protected override double BorderEdgeFlux(double time, double[] x, double[] normal, byte EdgeTag, double[] Uin, int jEdge) {
-            Vector2D n;
+            Vector n = new Vector(2);
             n.x = normal[0];
             n.y = normal[1];
             if (n * FlowField(x) >= 0) {
@@ -44,14 +44,14 @@ namespace LTSTests {
         }
 
         protected override void Flux(double time, double[] x, double[] U, double[] output) {
-            Vector2D o;
+            Vector o;
             o = FlowField(x) * U[0];
             output[0] = o.x;
             output[1] = o.y;
         }
 
         protected override double InnerEdgeFlux(double time, double[] x, double[] normal, double[] Uin, double[] Uout, int jEdge) {
-            Vector2D n;
+            Vector n = new Vector(2);
             n.x = normal[0];
             n.y = normal[1];
             if (FlowField(x) * n > 0)
@@ -60,8 +60,8 @@ namespace LTSTests {
                 return (FlowField(x) * Uout[0]) * n;
         }
 
-        Vector2D FlowField(double[] x) {
-            Vector2D u;
+        Vector FlowField(double[] x) {
+            Vector u = new Vector(2);
             u.x = 1;
             u.y = 0;
             return u;

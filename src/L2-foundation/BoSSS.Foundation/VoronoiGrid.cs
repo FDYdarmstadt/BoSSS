@@ -544,9 +544,9 @@ namespace BoSSS.Foundation.Grid.Voronoi {
                     double[] O2 = V1.CloneAs(); Debug.Assert(R[l][1] == R[(l + 1) % L][0]);
                     double[] V2 = C.GetRow(R[(l + 1) % L][1]);
 
-                    Vector3D _V1; _V1.x = V1[0] - O1[0]; _V1.y = V1[1] - O1[1]; _V1.z = 0;
-                    Vector3D _V2; _V2.x = V2[0] - O2[0]; _V2.y = V2[1] - O2[1]; _V2.z = 0;
-                    Vector3D Norm = _V1.CrossProduct(_V2);
+                    Vector _V1 = new Vector(V1[0] - O1[0], V1[1] - O1[1], 0.0);
+                    Vector _V2 = new Vector(V2[0] - O2[0], V2[1] - O2[1], 0.0);
+                    Vector Norm = _V1.CrossProduct(_V2);
 
                     double orient = Math.Sign(Norm.z);
                     if(l == 0) {

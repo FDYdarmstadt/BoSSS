@@ -34,8 +34,8 @@ namespace BoSSS.Application.ScalarTransport {
         /// <summary>
         /// the predefined, div-free flow field
         /// </summary>
-        Vector2D FlowField(double[] x, double[] Uin, double[] Uot) {
-            Vector2D u;
+        Vector FlowField(double[] x, double[] Uin, double[] Uot) {
+            Vector u = new Vector(2);
             u.x = 0.5 * (Uin[1] + Uot[1]);
             u.y = 0.5 * (Uin[2] + Uot[2]);
             return u;
@@ -44,7 +44,7 @@ namespace BoSSS.Application.ScalarTransport {
 
 
         protected override double BorderEdgeFlux(double time, double[] x, double[] normal, byte EdgeTag, double[] Uin, int jEdge) {
-            Vector2D n; n.x = normal[0]; n.y = normal[1];
+            Vector n = new Vector(2); n.x = normal[0]; n.y = normal[1];
 
             var vel = FlowField(x, Uin, Uin);
 
@@ -68,7 +68,7 @@ namespace BoSSS.Application.ScalarTransport {
         /// <param name="Uout"></param>
         /// <returns></returns>
         protected override double InnerEdgeFlux(double time, double[] x, double[] normal, double[] Uin, double[] Uout, int jEdge) {
-            Vector2D n; n.x = normal[0]; n.y = normal[1];
+            Vector n = new Vector(2); n.x = normal[0]; n.y = normal[1];
 
             var vel = FlowField(x, Uin, Uout);
 
@@ -80,7 +80,7 @@ namespace BoSSS.Application.ScalarTransport {
         }
 
         protected override void Flux(double time, double[] x, double[] U, double[] output) {
-            Vector2D o;
+            Vector o;
             o = FlowField(x, U, U) * U[0];
             output[0] = o.x;
             output[1] = o.y;
@@ -134,7 +134,7 @@ namespace BoSSS.Application.ScalarTransport {
 
 
         protected override double BorderEdgeFlux(double time, double[] x, double[] normal, byte EdgeTag, double[] Uin, int jEdge) {
-            //Vector2D n; n.x = normal[0]; n.y = normal[1];
+            //Vector n; n.x = normal[0]; n.y = normal[1];
             var u = FlowField(x, Uin, Uin);
 
             if (Dot(u,normal) >= 0) {

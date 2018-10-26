@@ -24,6 +24,8 @@ using System.IO;
 using System.Linq;
 using ilPSP;
 using System.Collections.Generic;
+using BoSSS.Solution.CompressibleFlowCommon;
+using BoSSS.Solution.CompressibleFlowCommon.MaterialProperty;
 
 namespace CNS.IBM {
 
@@ -280,6 +282,7 @@ namespace CNS.IBM {
 
         #endregion
 
+        
         #region IObservable<LevelSetData> Members
 
         /// <summary>
@@ -306,5 +309,6 @@ namespace CNS.IBM {
         }
 
         #endregion
+        
     }
 }

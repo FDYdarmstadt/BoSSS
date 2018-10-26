@@ -16,6 +16,10 @@ limitations under the License.
 
 using BoSSS.Foundation;
 using BoSSS.Foundation.Grid;
+using BoSSS.Solution.CompressibleFlowCommon.ShockCapturing;
+using System;
+using System.Collections.Generic;
+using System.Linq;
 
 namespace CNS.ShockCapturing {
 
@@ -39,13 +43,17 @@ namespace CNS.ShockCapturing {
             private set;
         }
 
-        public void LimitFieldValues(IProgram<CNSControl> program) {
-            CellMask shockedCells = Sensor.GetShockedCellMask(program.GridData, sensorLimit, cellSize, dgDegree);
+        public void LimitFieldValues(IEnumerable<DGField> ConservativeVariables, IEnumerable<DGField> DerivedFields) {
 
-            foreach (DGField field in program.WorkingSet.ConservativeVariables) {
-                for (int i = 0; i < field.GridDat.iLogicalCells.NoOfLocalUpdatedCells; i++) {
-                    foreach (Chunk chunk in shockedCells) {
-                        foreach (int cell in chunk.Elements) {
+            var gdat = ConservativeVariables.First().GridDat;
+            CellMask shockedCells = Sensor.GetShockedCellMask(gdat, sensorLimit, cellSize, dgDegree);
+
+
+
+            foreach (DGField field in ConservativeVariables) {
+                for (int i = 0; i < field.GridDat.iLogicalCells.NoOfLocalUpdatedCells; i++) { // loop over all cells
+                    foreach (Chunk chunk in shockedCells) { // loop over all cells in mask *inside* loop over cells => quadratic runtime
+                        foreach (int cell in chunk.Elements) { // where is the 'cell' index actually used?? 
                             for (int j = 1; j < field.Coordinates.NoOfCols; j++) {
                                 field.Coordinates[i, j] = 0.0;
                             }
@@ -53,6 +61,9 @@ namespace CNS.ShockCapturing {
                     }
                 }
             }
+
+            throw new NotImplementedException("Implementation is seriously flawed, quadratic runtime w.r.t. number of cells: check implementation!");
+
         }
     }
 }

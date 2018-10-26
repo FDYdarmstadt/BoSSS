@@ -15,6 +15,8 @@ limitations under the License.
 */
 
 
+using BoSSS.Solution.CompressibleFlowCommon.MaterialProperty;
+
 namespace CNS.MaterialProperty {
 
     /// <summary>

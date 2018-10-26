@@ -15,6 +15,7 @@ limitations under the License.
 */
 
 using BoSSS.Foundation;
+using BoSSS.Solution.CompressibleFlowCommon;
 using BoSSS.Solution.NSECommon;
 using CNS.Boundary;
 using ilPSP;

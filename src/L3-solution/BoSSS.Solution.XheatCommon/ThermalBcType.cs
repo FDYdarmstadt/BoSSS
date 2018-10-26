@@ -14,27 +14,20 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
 
-namespace CNS.MaterialProperty {
+namespace BoSSS.Solution.XheatCommon {
 
-    /// <summary>
-    /// Represents a relation between the temperature and the viscosity of 
-    /// a fluid.
-    /// </summary>
-    public interface IViscosityLaw {
 
-        /// <summary>
-        /// Determines the dimensionless viscosity at the given dimensionless
-        /// temperature
-        /// </summary>
-        /// <param name="temperature">
-        /// The local fluid temperature
-        /// </param>
-        /// <param name="cellIndex"></param>
-        /// <returns>
-        /// The dimensionless viscosity at the given dimensionless
-        /// temperature
-        /// </returns>
-        double GetViscosity(double temperature, int cellIndex);
+    public enum ThermalBcType {
+
+        Dirichlet = 0,
+
+        ZeroGradient = 1
+
     }
+
 }

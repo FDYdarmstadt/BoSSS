@@ -16,6 +16,8 @@ limitations under the License.
 
 using BoSSS.Foundation.Grid;
 using BoSSS.Foundation.Grid.Classic;
+using BoSSS.Solution.CompressibleFlowCommon;
+using BoSSS.Solution.CompressibleFlowCommon.MaterialProperty;
 using CNS.Boundary;
 using CNS.Convection;
 using CNS.IBM;
@@ -97,7 +99,7 @@ namespace CNS.EquationSystem {
         /// A species map that is suitable for the current application.
         /// </returns>
         public static ISpeciesMap CreateSpeciesMap(this DomainTypes domainType, CNSFieldSet workingSet, CNSControl control, IGridData gridData) {
-            Material material = new Material(control);
+            Material material = new Material(control.EquationOfState, control.ViscosityLaw, control.MachNumber, control.ReynoldsNumber, control.PrandtlNumber, control.FroudeNumber, control.ViscosityRatio);
 
             switch (domainType) {
                 case DomainTypes.Standard:

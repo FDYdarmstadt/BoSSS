@@ -76,6 +76,7 @@
     <Compile Include="Boundary\IsothermalWall.cs" />
     <Compile Include="Boundary\SubsonicPressureInlet.cs" />
     <Compile Include="CNSControl.cs" />
+    <Compile Include="CNSEnvironment.cs" />
     <Compile Include="CNSQueries.cs" />
     <Compile Include="ControlExamples.cs" />
     <Compile Include="Convection\ConvectiveCFLConstraint.cs" />
@@ -90,7 +91,6 @@
     <Compile Include="Convection\OptimizedHLLCFLuxBuilder.cs" />
     <Compile Include="Convection\RusanovFluxBuilder.cs" />
     <Compile Include="Convection\RusanovFlux.cs" />
-    <Compile Include="CNSEnvironment.cs" />
     <Compile Include="LoadBalancing\ArtificialViscosityCellClassifier.cs" />
     <Compile Include="LoadBalancing\IBMCellClassifierTwo.cs" />
     <Compile Include="LoadBalancing\IBMCellCostEstimatorTwo.cs" />
@@ -117,9 +117,9 @@
     <Compile Include="ShockCapturing\LaplacianArtificialViscosityFluxBuilder.cs" />
     <Compile Include="ShockCapturing\LaplacianArtificialViscosityFlux.cs" />
     <Compile Include="ShockCapturing\OptimizedLaplacianArtificialViscosityFlux.cs" />
+    <Compile Include="ShockCapturing\PerssonSensor.cs" />
     <Compile Include="ShockCapturing\SmoothedHeavisideArtificialViscosityLaw.cs" />
     <Compile Include="ShockCapturing\PrimitiveFVMLimiter.cs" />
-    <Compile Include="ShockCapturing\ILimiter.cs" />
     <Compile Include="ShockCapturing\ZhangPosivityPreservingLimiter.cs" />
     <Compile Include="Source\SpongeLayerConfig.cs" />
     <Compile Include="TestCases.cs" />
@@ -133,7 +133,6 @@
     <Compile Include="Tests\MovingIBMTests\MovingIBMIsentropicVortexTests.cs" />
     <Compile Include="Tests\MovingIBMTests\PistonTests.cs" />
     <Compile Include="Tests\TestUtils.cs" />
-    <Compile Include="Variables.cs" />
     <Compile Include="Diffusion\INonlinear2ndOrderForm.cs" />
     <Compile Include="Diffusion\OptimizedSIPGMomentumFlux.cs" />
     <Compile Include="Diffusion\OptimizedSIPGFluxBuilder.cs" />
@@ -150,8 +149,6 @@
     <Compile Include="IBM\IBMUtility.cs" />
     <Compile Include="IProgram.cs" />
     <Compile Include="ShockCapturing\BarterDarmofalSensor.cs" />
-    <Compile Include="ShockCapturing\IShockSensor.cs" />
-    <Compile Include="ShockCapturing\PerssonSensor.cs" />
     <Compile Include="Source\GravityEnergySource.cs" />
     <Compile Include="Source\GravityFluxBuilder.cs" />
     <Compile Include="Source\GravityMomentumSource.cs" />
@@ -162,8 +159,6 @@
     <Compile Include="IBM\IBMControl.cs" />
     <Compile Include="MaterialProperty\ConstantViscosity.cs" />
     <Compile Include="MaterialProperty\CovolumeGas.cs" />
-    <Compile Include="MaterialProperty\Material.cs" />
-    <Compile Include="MaterialProperty\IViscosityLaw.cs" />
     <Compile Include="MaterialProperty\PowerLaw.cs" />
     <Compile Include="MaterialProperty\StiffenedGas.cs" />
     <Compile Include="MaterialProperty\SutherlandLaw.cs" />
@@ -178,7 +173,6 @@
     <Compile Include="IBM\BoundaryConditionSourceFluxBuilder.cs" />
     <Compile Include="IBM\BoundaryConditionSource.cs" />
     <Compile Include="IBM\IBMRungeKutta.cs" />
-    <Compile Include="ISpeciesMap.cs" />
     <Compile Include="Source\SpongeLayerSource.cs" />
     <Compile Include="Source\SpongeLayerFluxBuilder.cs" />
     <Compile Include="Tests\BoundaryConditions\ControlFiles.cs" />
@@ -215,7 +209,6 @@
     <Compile Include="Convection\EulerMomentumComponent.cs" />
     <Compile Include="Convection\IEulerEquationComponent.cs" />
     <Compile Include="MaterialProperty\IdealGas.cs" />
-    <Compile Include="MaterialProperty\IEquationOfState.cs" />
     <Compile Include="MaterialProperty\TaitLaw.cs" />
     <Compile Include="Residual\ResidualLogger.cs" />
     <Compile Include="Residual\RigorousResidualLogger.cs" />
@@ -227,8 +220,6 @@
     <Compile Include="ExplicitSchemes.cs" />
     <Compile Include="Boundary\AdiabaticSlipWall.cs" />
     <Compile Include="Boundary\AdiabaticWall.cs" />
-    <Compile Include="Variable.cs" />
-    <Compile Include="StateVector.cs" />
     <Compile Include="Boundary\BoundaryConditionMap.cs" />
     <Compile Include="EquationSystem\OperatorFactory.cs" />
     <Compile Include="Program.cs" />
@@ -242,6 +233,9 @@
     <Compile Include="Boundary\SupersonicInlet.cs" />
     <Compile Include="Boundary\SupersonicOutlet.cs" />
     <Compile Include="CNSFieldSet.cs" />
+    <Compile Include="Variable.cs" />
+    <Compile Include="Variables.cs" />
+    <Compile Include="Vector_Extensions.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\ilPSP\layer_1.1-MPI.NET\MPI.Wrappers\MPI.Wrappers.csproj">
@@ -287,6 +281,10 @@
     <ProjectReference Include="..\..\L3-solution\BoSSS.Solution.ASCIIExport\BoSSS.Solution.ASCIIExport.csproj">
       <Project>{ED2E6C6E-1517-4AAD-B3C6-1B56C5CD9828}</Project>
       <Name>BoSSS.Solution.ASCIIExport</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\..\L3-solution\BoSSS.Solution.CompressibleFlowCommon\BoSSS.Solution.CompressibleFlowCommon.csproj">
+      <Project>{c0c92515-fc32-49b7-b128-29cc7bfa7b6c}</Project>
+      <Name>BoSSS.Solution.CompressibleFlowCommon</Name>
     </ProjectReference>
     <ProjectReference Include="..\..\L3-solution\BoSSS.Solution.GridImport\BoSSS.Solution.GridImport.csproj">
       <Project>{28E4A331-ECA2-43A6-A11F-6D6A5E410434}</Project>
