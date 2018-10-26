@@ -37,6 +37,7 @@ using System.IO;
 using System.Linq;
 using System.Threading;
 using BoSSS.Solution.CompressibleFlowCommon.MaterialProperty;
+using CNS.Convection;
 
 namespace CNS {
 
@@ -52,9 +53,9 @@ namespace CNS {
         /// <param name="args"></param>
         static void Main(string[] args) {
 
-            Application.InitMPI(args);
-            CNS.Tests.BoundaryConditions.EulerBoundaryConditionTest.TestSubsonicPressureInletAndOutletBoundaryCondition1D();
-            Debug.Assert(false);
+            //Application.InitMPI(args);
+            //CNS.Tests.ConvectiveFlux.ShockTubeTests.Toro1AllButRusanovTest(ConvectiveFluxTypes.Godunov);
+            //Debug.Assert(false);
 
             Application<CNSControl>._Main(
                 args,
