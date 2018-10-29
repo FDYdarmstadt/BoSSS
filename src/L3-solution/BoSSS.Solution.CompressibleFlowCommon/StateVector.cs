@@ -140,16 +140,16 @@ namespace BoSSS.Solution.CompressibleFlowCommon {
         /// <param name="j">
         /// Second index into the entries of <paramref name="stateAsArray"/>
         /// </param>
-        public StateVector(Material material, MultidimensionalArray[] stateAsArray, int i, int j)
+        public StateVector(Material material, MultidimensionalArray[] stateAsArray, int i, int j, int dim)
             : this(material) {
-            //if (stateAsArray.Length < this.Dimension + 2) {
-            //    throw new ArgumentException(
-            //        "The given state vector has an invalid length. In n dimensions, the length should at least be n + 2",
-            //        "stateVectorAsArray");
-            //}
+            if (stateAsArray.Length < this.Dimension + 2) {
+                throw new ArgumentException(
+                    "The given state vector has an invalid length. In n dimensions, the length should at least be n + 2",
+                    "stateVectorAsArray");
+            }
 
             this.Density = stateAsArray[0][i, j];
-            this.Momentum.Dim = stateAsArray[0].Dimension;
+            this.Momentum.Dim = dim;
             for (int d = 0; d < this.Dimension; d++) {
                 this.Momentum[d] = stateAsArray[d + 1][i, j];
             }

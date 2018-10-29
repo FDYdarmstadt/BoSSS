@@ -89,7 +89,7 @@ namespace CNS.LinAlg {
             GetTransformationToEdgeCoordinates(edgeNormal).gemv(
                 1.0, __this, 0.0, transformedVector);
 
-            Debug.Assert(transformedVector.Skip(edgeNormal.Dim).L2Norm() == 0.0);
+            //Debug.Assert(transformedVector.Skip(edgeNormal.Dim).L2Norm() == 0.0);
             var R = new Vector(transformedVector.GetSubVector(0, edgeNormal.Dim));
             return R;
         }
@@ -116,7 +116,7 @@ namespace CNS.LinAlg {
             GetTransformationToEdgeCoordinates(edgeNormal).Transpose().gemv(
                 1.0, __this, 0.0, transformedVector);
 
-            Debug.Assert(transformedVector.Skip(edgeNormal.Dim).L2Norm() == 0.0);
+            //Debug.Assert(transformedVector.Skip(edgeNormal.Dim).L2Norm() == 0.0);
             var R = new Vector(transformedVector.GetSubVector(0, edgeNormal.Dim));
             return R;
         }
