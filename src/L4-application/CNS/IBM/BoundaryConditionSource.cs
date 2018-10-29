@@ -190,9 +190,9 @@ namespace CNS.IBM {
             Material material = speciesMap.GetMaterial(double.NaN);
             for (int i = 0; i < Lenght; i++) {
                 for (int j = 0; j < noOfNodes; j++) {
-                    StateVector stateIn = new StateVector(material, U, i, j);
+                    StateVector stateIn = new StateVector(material, U, i, j, CNSEnvironment.NumberOfDimensions);
 
-                    Vector levelSetNormal = new Vector(stateIn.Dimension);
+                    Vector levelSetNormal = new Vector(CNSEnvironment.NumberOfDimensions);
                     int offset = CNSEnvironment.NumberOfDimensions + 2;
                     for (int d = 0; d < CNSEnvironment.NumberOfDimensions; d++) {
                         levelSetNormal[d] = U[offset + d][i + IndexOffset, j];
@@ -472,7 +472,7 @@ namespace CNS.IBM {
                     normal[d] /= abs;
                 }
 
-                StateVector stateIn = new StateVector(material, U, 0, j);
+                StateVector stateIn = new StateVector(material, U, 0, j, CNSEnvironment.NumberOfDimensions);
                 StateVector stateBoundary = boundaryCondition.GetBoundaryState(
                     prm.time, x, normal, stateIn);
                 Debug.Assert(stateBoundary.IsValid, "Invalid boundary state");

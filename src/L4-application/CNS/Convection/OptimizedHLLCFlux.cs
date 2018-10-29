@@ -110,7 +110,7 @@ namespace CNS.Convection {
                         normalLocal[d] = normal[edge, n, d] * sign;
                     }
 
-                    StateVector stateIn = new StateVector(material, Uin, edge, n);
+                    StateVector stateIn = new StateVector(material, Uin, edge, n, D);
                     StateVector stateBoundary = boundaryMap.GetBoundaryState(
                         EdgeTags[e + EdgeTagsOffset], time, xLocal, normalLocal, stateIn);
 
