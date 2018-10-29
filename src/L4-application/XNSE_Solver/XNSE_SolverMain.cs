@@ -147,7 +147,7 @@ namespace BoSSS.Application.XNSE_Solver {
 
         SinglePhaseField EnergyBalanceAtInterface;
 
-
+        XDGField KineticDissipation;
 
         /// <summary>
         /// If requested, performs the projection of the level-set on a continuous field
@@ -322,6 +322,9 @@ namespace BoSSS.Application.XNSE_Solver {
                     //basis = new Basis(this.GridData, this.Control.FieldOptions[VariableNames.Pressure].Degree + this.Control.FieldOptions[VariableNames.VelocityX].Degree + this.Control.FieldOptions["Phi"].Degree);
                     this.EnergyBalanceAtInterface = new SinglePhaseField(basis, "EnergyBalanceAtInterface");
                     base.RegisterField(this.EnergyBalanceAtInterface);
+
+                    this.KineticDissipation = new XDGField(new XDGBasis(this.LsTrk, 2 * (this.Control.FieldOptions[VariableNames.VelocityX].Degree - 1)), "KineticDissipation");
+                    base.RegisterField(this.KineticDissipation);
                 }
 
             }
@@ -1395,8 +1398,8 @@ namespace BoSSS.Application.XNSE_Solver {
                 // changerate of the discretization
                 double[] muS = new double[] { this.Control.PhysicalParameters.mu_A, this.Control.PhysicalParameters.mu_B };
                 //double prevCR_discEnergy = XNSEUtils.GetEnergyChangerate(this.LsTrk, prevVel, muS, this.m_HMForder, 0);
-                double currentCR_discEnergy = XNSEUtils.GetEnergyChangerate(this.LsTrk, this.XDGvelocity.Velocity.ToArray(), muS, this.m_HMForder);
-
+                double kineticDissipationBulk = XNSEUtils.GetKineticDissipation(this.LsTrk, this.XDGvelocity.Velocity.ToArray(), muS, this.m_HMForder);
+                XNSEUtils.ProjectKineticDissipation(this.KineticDissipation, this.LsTrk, this.XDGvelocity.Velocity.ToArray(), muS, this.m_HMForder);
 
                 this.EnergyLogger.TimeStep = TimestepInt;
                 this.EnergyLogger.CustomValue(phystime + dt, "PhysicalTime");
@@ -1405,7 +1408,7 @@ namespace BoSSS.Application.XNSE_Solver {
                 this.EnergyLogger.CustomValue(CR_KinEnergy, "ChangerateKineticEnergy");
                 this.EnergyLogger.CustomValue(CR_SurfEnergy, "ChangerateSurfaceEnergy");
                 this.EnergyLogger.CustomValue(SurfDivergence, "SurfaceDivergence");
-                this.EnergyLogger.CustomValue(currentCR_discEnergy, "BulkDissipationrate");
+                this.EnergyLogger.CustomValue(kineticDissipationBulk, "KineticDissipationBulk");
 
 
                 // surface viscosity parts
@@ -1432,11 +1435,11 @@ namespace BoSSS.Application.XNSE_Solver {
                     this.EnergyLogger.CustomValue(shearViscEnergyCR, "ShearViscosityDR");
                     this.EnergyLogger.CustomValue(dilViscEnergyCR, "DilatationalViscosityDR");
 
-                    Console.WriteLine("current discretization Energy changerate = {0} / {1}", currentCR_discEnergy - shearViscEnergyCR - dilViscEnergyCR, CR_KinEnergy + CR_SurfEnergy);
+                    Console.WriteLine("current discretization Energy changerate = {0} / {1}", kineticDissipationBulk - shearViscEnergyCR - dilViscEnergyCR, CR_KinEnergy + CR_SurfEnergy);
 
                 } else {
 
-                    Console.WriteLine("current discretization Energy changerate = {0} / {1}", currentCR_discEnergy, CR_KinEnergy + CR_SurfEnergy);
+                    Console.WriteLine("current discretization Energy changerate = {0} / {1}", kineticDissipationBulk, CR_KinEnergy + CR_SurfEnergy);
                 }
 
 

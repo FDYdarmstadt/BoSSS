@@ -371,7 +371,7 @@ namespace BoSSS.Solution.XNSECommon {
             var LsTrk = U[0].Basis.Tracker;
             int D = LsTrk.GridDat.SpatialDimension;
 
-            ScalarFunctionEx ErrFunc = GetVelocityJumpErrFunc(U, false, true);
+            ScalarFunctionEx ErrFunc = GetVelocityJumpErrFunc(U, true, true);
 
             var SchemeHelper = LsTrk.GetXDGSpaceMetrics(LsTrk.SpeciesIdS.ToArray(), momentFittingOrder, 1).XQuadSchemeHelper;
             CellQuadratureScheme cqs = SchemeHelper.GetLevelSetquadScheme(0, LsTrk.Regions.GetCutCellMask());
@@ -831,7 +831,7 @@ namespace BoSSS.Solution.XNSECommon {
         }
 
 
-        static ScalarFunctionEx GetSpeciesEnergyChangerateFunc(DGField[] U, double mu) {
+        static ScalarFunctionEx GetSpeciesKineticDissipationFunc(DGField[] U, double mu) {
 
             int D = U[0].Basis.GridDat.SpatialDimension;
 
@@ -857,7 +857,7 @@ namespace BoSSS.Solution.XNSECommon {
                             }
                         }
 
-                        result[j, k] = -mu * acc;
+                        result[j, k] = mu * acc;
                     }
                 }
 
@@ -865,7 +865,7 @@ namespace BoSSS.Solution.XNSECommon {
 
         }
 
-        public static double GetEnergyChangerate(LevelSetTracker LsTrk, DGField[] Velocity, double[] mu, int momentFittingOrder, int HistInd = 1) {
+        public static double GetKineticDissipation(LevelSetTracker LsTrk, DGField[] Velocity, double[] mu, int momentFittingOrder, int HistInd = 1) {
             using (new FuncTrace()) {
 
                 int D = LsTrk.GridDat.SpatialDimension;
@@ -884,7 +884,7 @@ namespace BoSSS.Solution.XNSECommon {
                     double _mu = mu[iSpc];
 
                     var Uspc = Velocity.Select(u => (u as XDGField).GetSpeciesShadowField(spcId)).ToArray();
-                    ScalarFunctionEx changerate_dEspc = GetSpeciesEnergyChangerateFunc(Uspc, _mu);
+                    ScalarFunctionEx changerate_dEspc = GetSpeciesKineticDissipationFunc(Uspc, _mu);
 
                     CellQuadratureScheme vqs = SchemeHelper.GetVolumeQuadScheme(spcId);
                     CellQuadrature.GetQuadrature(new int[] { 1 }, LsTrk.GridDat,
@@ -903,6 +903,33 @@ namespace BoSSS.Solution.XNSECommon {
                 return dE;
             }
         }
+
+        public static void ProjectKineticDissipation(this XDGField proj, LevelSetTracker LsTrk, DGField[] Velocity, double[] mu, int momentFittingOrder, int HistInd = 1) {
+            using(new FuncTrace()) {
+
+                int D = LsTrk.GridDat.SpatialDimension;
+                if(Velocity.Count() != D) {
+                    throw new ArgumentException();
+                }
+                if(LsTrk.SpeciesIdS.Count != mu.Length)
+                    throw new ArgumentException();
+
+                var SchemeHelper = LsTrk.GetXDGSpaceMetrics(LsTrk.SpeciesIdS.ToArray(), momentFittingOrder, HistInd).XQuadSchemeHelper;
+
+                for(int iSpc = 0; iSpc < LsTrk.SpeciesIdS.Count; iSpc++) {
+                    SpeciesId spcId = LsTrk.SpeciesIdS[iSpc];
+                    double _mu = mu[iSpc];
+
+                    var Uspc = Velocity.Select(u => (u as XDGField).GetSpeciesShadowField(spcId)).ToArray();
+                    ScalarFunctionEx spcKinDissip = GetSpeciesKineticDissipationFunc(Uspc, _mu);
+
+                    proj.GetSpeciesShadowField(spcId).ProjectField(spcKinDissip);
+
+                }
+            }
+        }
+
+
 
         public static double GetInterfaceDilatationalViscosityEnergyCR(LevelSetTracker LsTrk, ConventionalDGField[] uI, double lamI, int momentFittingOrder) {
 
@@ -1290,8 +1317,8 @@ namespace BoSSS.Solution.XNSECommon {
                             acc -= (pB_res[j, k] * UB_res[j, k, d] - pA_res[j, k] * UA_res[j, k, d]) * Normals[j, k, d];
 
                             for (int dd = 0; dd < D; dd++) {
-                                acc -= (muB * GradUB_res[j, k, d, dd] * UB_res[j, k, dd] - muA * GradUA_res[j, k, d, dd] * UA_res[j, k, dd]) * Normals[j, k, d];
-                                acc -= (muB * GradUB_res[j, k, dd, d] * UB_res[j, k, dd] - muA * GradUA_res[j, k, dd, d] * UA_res[j, k, dd]) * Normals[j, k, d];     // Transposed Term
+                                acc += (muB * GradUB_res[j, k, d, dd] * UB_res[j, k, dd] - muA * GradUA_res[j, k, d, dd] * UA_res[j, k, dd]) * Normals[j, k, d];
+                                acc += (muB * GradUB_res[j, k, dd, d] * UB_res[j, k, dd] - muA * GradUA_res[j, k, dd, d] * UA_res[j, k, dd]) * Normals[j, k, d];     // Transposed Term
                             }
 
                             // surface energy changerate
@@ -1304,7 +1331,7 @@ namespace BoSSS.Solution.XNSECommon {
                             }
 
                             // curvature energy
-                            acc += sigma * Curv_res[j, k] * U_res[j, k, d] * Normals[j, k, d];
+                            acc -= sigma * Curv_res[j, k] * U_res[j, k, d] * Normals[j, k, d];
                         }
 
                         if (squared) {
