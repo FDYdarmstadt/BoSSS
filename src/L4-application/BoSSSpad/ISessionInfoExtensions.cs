@@ -1962,7 +1962,7 @@ namespace BoSSS.Foundation.IO {
         public static void EvalEnergy(this IEnumerable<ISessionInfo> pSessions, string[] energytype)
         {            
             int numberSessions = pSessions.Count();
-            List<Plot2Ddata> Time_Energy = new List<Plot2Ddata>();
+            List<Gnuplot> Plots = new List<Gnuplot>();
 
             // Cycle over all given energytypes
             for (int g = 0; g < energytype.Length; g++) {
@@ -2015,9 +2015,7 @@ namespace BoSSS.Foundation.IO {
                 {
                     dataRowsEnergy[i] = new KeyValuePair<string, double[][]>(pSessions.Pick(i).Name, new double[][] { times[i], energies[i] });
                 }
-                
-                Plot2Ddata energyPlotData = new Plot2Ddata(dataRowsEnergy);
-                Time_Energy.Add(energyPlotData);
+                Plot2Ddata Time_Energy = new Plot2Ddata(dataRowsEnergy);
 
                 // Plot energy
                 int lineColor = 0;
@@ -2026,13 +2024,14 @@ namespace BoSSS.Foundation.IO {
                 gp.SetXLabel("Time");
                 gp.SetYLabel(energytype[g]);
                 gp.Cmd("set grid xtics ytics");
-                foreach (var group in Time_Energy[g].dataGroups)
+                foreach (var group in Time_Energy.dataGroups)
                 {
                     gp.PlotXY(group.Abscissas, group.Values, group.Name.Split('.').Last(),
                         new PlotFormat(lineColor: ((LineColors)(++lineColor))));
                 }
                 gp.WriteDeferredPlotCommands();
-                gp.Execute();
+                Plots.Add(gp);
+                Plots[g].Execute();
             }            
         }
     }
