@@ -103,12 +103,7 @@ namespace CNS.Tests.DiffusiveFlux {
 
             double threshold = 1E-11;
             string[] refSolString = File.ReadAllLines(refSolutionFile);
-            double[] refSol = new double[refSolString.Length];
-            for (int i = 0; i < refSol.Length; i++) {   // Replace comma with point
-                double.TryParse(refSolString[i].Replace(',', '.'), out double tmp);
-                refSol[i] = tmp;
-            }
-            //double[] refSol = refSolString.Select(c => Convert.ToDouble(c)).ToArray();
+            double[] refSol = refSolString.Select(c => Convert.ToDouble(c)).ToArray();
 
             Console.WriteLine("SIPG Consistency Test: [" + numOfCells + "x" + numOfCells + "] and p_dg=" + p);
             for (int i = 0; i < prog.output.Count; i++) {
@@ -143,12 +138,7 @@ namespace CNS.Tests.DiffusiveFlux {
 
             double threshold = 1E-11;
             string[] refSolString = File.ReadAllLines(refSolutionFile);
-            double[] refSol = new double[refSolString.Length];
-            for (int i = 0; i < refSol.Length; i++) {   // Replace comma with point
-                double.TryParse(refSolString[i].Replace(',', '.'), out double tmp);
-                refSol[i] = tmp;
-            }
-            //double[] refSol = refSolString.Select(c => Convert.ToDouble(c)).ToArray();
+            double[] refSol = refSolString.Select(c => Convert.ToDouble(c)).ToArray();
 
             Console.WriteLine("SIPG Consistency Test: [" + numOfCells + "x" + numOfCells + "] and p_dg=" + p);
             for (int i = 0; i < prog.output.Count; i++) {
