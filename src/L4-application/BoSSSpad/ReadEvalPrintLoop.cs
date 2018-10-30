@@ -118,9 +118,11 @@ namespace BoSSS.Application.BoSSSpad {
             eval.ReferenceAssembly(typeof(XNSE_Solver.XNSE_SolverMain).Assembly);
             eval.ReferenceAssembly(typeof(BoSSS.Application.SipPoisson.SipPoissonMain).Assembly);
 
+            eval.ReferenceAssembly(typeof(FuelCell.FuelCellMain).Assembly);
+
             // Helical shit
             //eval.ReferenceAssembly(typeof(KontiHelical.HelicalMain).Assembly);
-           // eval.ReferenceAssembly(typeof(PosissonScalar3CylinderCoords.PoissonScalar3CCMain).Assembly);
+            // eval.ReferenceAssembly(typeof(PosissonScalar3CylinderCoords.PoissonScalar3CCMain).Assembly);
             //eval.ReferenceAssembly(typeof(PoissonScalar2CylinderCoords.PoissonScalar2CCMain).Assembly);
 
 
