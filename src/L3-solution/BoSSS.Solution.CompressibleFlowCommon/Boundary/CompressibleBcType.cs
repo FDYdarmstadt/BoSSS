@@ -51,6 +51,11 @@ namespace BoSSS.Solution.CompressibleFlowCommon.Boundary {
         /// <summary>
         /// %
         /// </summary>
-        supersonicOutlet
+        supersonicOutlet,
+
+        /// <summary>
+        /// %
+        /// </summary>
+        ringleb
     }
 }

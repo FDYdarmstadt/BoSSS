@@ -210,8 +210,6 @@
     <Compile Include="Source\CustomSourceBuilder.cs" />
     <Compile Include="Tests\IsentropicVortex\IsentropicVortexTest.cs" />
     <Compile Include="Tests\Ringleb\RinglebTest.cs" />
-    <Compile Include="Tests\Ringleb\ExactRinglebBoundaryState.cs" />
-    <Compile Include="Tests\Ringleb\RinglebExactSolution.cs" />
     <Compile Include="ExplicitSchemes.cs" />
     <Compile Include="EquationSystem\OperatorFactory.cs" />
     <Compile Include="Program.cs" />

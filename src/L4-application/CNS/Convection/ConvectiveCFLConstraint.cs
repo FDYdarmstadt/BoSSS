@@ -282,7 +282,7 @@ namespace CNS.Convection {
                             for (int node = 0; node < noOfNodesPerCell; node++) {
                                 double cflhere = double.MaxValue;
 
-                                Vector momentum = new Vector();
+                                Vector momentum = new Vector(CNSEnvironment.NumberOfDimensions);
                                 for (int d = 0; d < CNSEnvironment.NumberOfDimensions; d++) {
                                     momentum[d] = momentumValues[d][i, node];
                                 }
