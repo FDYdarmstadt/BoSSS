@@ -437,7 +437,10 @@ namespace CNS {
             return typeof(CNS.Program);
         }
 
-        public Material GetMaterial() {
+        /// <summary>
+        /// %
+        /// </summary>
+        virtual public Material GetMaterial() {
             return new Material(EquationOfState, ViscosityLaw, MachNumber, ReynoldsNumber, PrandtlNumber, FroudeNumber, ViscosityRatio);
         }
 

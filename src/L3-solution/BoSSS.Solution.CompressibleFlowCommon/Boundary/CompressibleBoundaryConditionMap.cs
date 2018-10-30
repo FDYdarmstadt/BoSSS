@@ -48,24 +48,24 @@ namespace BoSSS.Solution.CompressibleFlowCommon.Boundary {
         void InitConditionMap() {
             ConditionMap = new BoundaryCondition[GridCommons.FIRST_PERIODIC_BC_TAG];
 
-            foreach(byte edgeTag in gridData.EdgeTagNames.Keys) {
+            foreach (byte edgeTag in gridData.EdgeTagNames.Keys) {
                 // Only process non-periodic boundary edges
-                if(edgeTag == 0 || edgeTag >= GridCommons.FIRST_PERIODIC_BC_TAG) {
+                if (edgeTag == 0 || edgeTag >= GridCommons.FIRST_PERIODIC_BC_TAG) {
                     continue;
                 }
 
-                if(ConditionMap[edgeTag] != null) {
+                if (ConditionMap[edgeTag] != null) {
                     // already initialized
                     continue;
                 }
 
 
-               
+
                 CompressibleBcType bcType = base.EdgeTag2Type[edgeTag];
                 ConditionMap[edgeTag] = BoundaryConditionFactory(bcType, Material, edgeTag);
             }
         }
-        
+
         /// <summary>
         /// Retrieves the configured boundary condition for a given
         /// <paramref name="edgeTagName"/>.
@@ -87,8 +87,8 @@ namespace BoSSS.Solution.CompressibleFlowCommon.Boundary {
             private set;
         }
 
-        static string[] bndFuncNames = new[] { "u0", "u1", "u2", "p", "T", "rho", "p0", "T0" };
-        
+        static string[] bndFuncNames = new[] { "u0", "u1", "u2", "p", "T", "rho", "p0", "T0", "ringleb" };
+
         /// <summary>
         /// Constructs a new map by searching through all the edge tags
         /// (<see cref="GridData.EdgeData.EdgeTags"/> and instantiating sub classes
@@ -102,7 +102,7 @@ namespace BoSSS.Solution.CompressibleFlowCommon.Boundary {
             this.Material = __material;
             InitConditionMap();
         }
-       
+
         private Func<double[], double, double> GetBoundaryValueFunction(byte EdgeTag, string fieldName) {
             if (!base.bndFunction.ContainsKey(fieldName)) {
                 throw new ArgumentException(
@@ -112,14 +112,14 @@ namespace BoSSS.Solution.CompressibleFlowCommon.Boundary {
 
             return base.bndFunction[fieldName][EdgeTag];
         }
-       
+
         /// <summary>
         /// Vector version of <see cref="GetBoundaryValueFunction"/> for the
         /// velocity components
         /// </summary>
         private Func<double[], double, double>[] GetVelocityBoundaryValueFunction(byte EdgeTag) {
             Func<double[], double, double>[] result = GetOptionalVelocityBoundaryValueFunction(EdgeTag);
-            
+
             if (result == null) {
                 throw new Exception(String.Format(
                     "Missing definition of velocity component for boundary condition"));
@@ -134,7 +134,7 @@ namespace BoSSS.Solution.CompressibleFlowCommon.Boundary {
         /// </summary>
         private Func<double[], double, double>[] GetOptionalVelocityBoundaryValueFunction(byte EdgeTag) {
             int numberOfDimensions = gridData.SpatialDimension;
-            
+
             // First check x-component only
             Func<double[], double, double> boundaryValue;
             bool found = base.bndFunction.ContainsKey("u0");
@@ -157,7 +157,7 @@ namespace BoSSS.Solution.CompressibleFlowCommon.Boundary {
             }
 
             return result;
-        }      
+        }
 
         /// <summary>
         /// Retrieves the configured boundary condition for a given
@@ -207,7 +207,7 @@ namespace BoSSS.Solution.CompressibleFlowCommon.Boundary {
             get {
                 return GetBoundaryCondition(EdgeTag);
             }
-        }     
+        }
 
         /// <summary>
         /// Mapping between edge tag names an the corresponding implementations
@@ -218,54 +218,56 @@ namespace BoSSS.Solution.CompressibleFlowCommon.Boundary {
             //Dictionary<string, Func<MaterialProperty.Material, AppControl.BoundaryValueCollection, BoundaryCondition>> boundaryValueMap =
             //new Dictionary<string, Func<MaterialProperty.Material, AppControl.BoundaryValueCollection, BoundaryCondition>>() {
 
-            switch(bcType) {
+            switch (bcType) {
                 case CompressibleBcType.adiabaticSlipWall:
-                return new AdiabaticSlipWall(
-                    material,
-                    GetOptionalVelocityBoundaryValueFunction(EdgeTag));
-
+                    return new AdiabaticSlipWall(
+                        material,
+                        GetOptionalVelocityBoundaryValueFunction(EdgeTag));
 
                 case CompressibleBcType.symmetryPlane:
-                return new AdiabaticSlipWall(material);
+                    return new AdiabaticSlipWall(material);
 
                 case CompressibleBcType.adiabaticWall:
-                return new AdiabaticWall(material);
+                    return new AdiabaticWall(material);
 
                 case CompressibleBcType.isothermalWall:
-                return new IsothermalWall(
+                    return new IsothermalWall(
                         material,
                         GetBoundaryValueFunction(EdgeTag, "T"),
                         GetOptionalVelocityBoundaryValueFunction(EdgeTag));
 
                 case CompressibleBcType.subsonicInlet:
-                return new SubsonicInlet(
-                    material,
-                    GetBoundaryValueFunction(EdgeTag, "rho"),
-                    GetVelocityBoundaryValueFunction(EdgeTag));
+                    return new SubsonicInlet(
+                        material,
+                        GetBoundaryValueFunction(EdgeTag, "rho"),
+                        GetVelocityBoundaryValueFunction(EdgeTag));
 
                 case CompressibleBcType.subsonicPressureInlet:
-                return new SubsonicPressureInlet(
-                    material,
-                    GetBoundaryValueFunction(EdgeTag, "p0"),
-                    GetBoundaryValueFunction(EdgeTag, "T0"));
+                    return new SubsonicPressureInlet(
+                        material,
+                        GetBoundaryValueFunction(EdgeTag, "p0"),
+                        GetBoundaryValueFunction(EdgeTag, "T0"));
 
                 case CompressibleBcType.subsonicOutlet:
-                return new SubsonicOutlet(
-                    material,
-                    GetBoundaryValueFunction(EdgeTag, "p"));
+                    return new SubsonicOutlet(
+                        material,
+                        GetBoundaryValueFunction(EdgeTag, "p"));
 
                 case CompressibleBcType.supersonicInlet:
-                return new SupersonicInlet(
-                    material,
-                    GetBoundaryValueFunction(EdgeTag, "rho"),
-                    GetVelocityBoundaryValueFunction(EdgeTag),
-                    GetBoundaryValueFunction(EdgeTag, "p"));
+                    return new SupersonicInlet(
+                        material,
+                        GetBoundaryValueFunction(EdgeTag, "rho"),
+                        GetVelocityBoundaryValueFunction(EdgeTag),
+                        GetBoundaryValueFunction(EdgeTag, "p"));
 
                 case CompressibleBcType.supersonicOutlet:
-                return new SupersonicOutlet(material);
+                    return new SupersonicOutlet(material);
+
+                case CompressibleBcType.ringleb:
+                    return new ExactRinglebBoundaryState(material);
 
                 default:
-                throw new ArgumentException("unknown boundary type: " + bcType);
+                    throw new ArgumentException("unknown boundary type: " + bcType);
             }
         }
     }

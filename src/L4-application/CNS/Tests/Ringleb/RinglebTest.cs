@@ -42,14 +42,6 @@ namespace CNS.Tests.Ringleb {
         //}
 
         /// <summary>
-        /// 
-        /// </summary>
-        /// <returns></returns>
-        protected override BoundaryConditionMap GetBoundaryConditionMap() {
-            return new RinglebBoundaryConditionMap(GridData, Control);
-        }
-
-        /// <summary>
         /// Tests the error for an ideal gas.
         /// </summary>
         [Test]
@@ -115,37 +107,6 @@ namespace CNS.Tests.Ringleb {
             Assert.IsTrue(entropyError < maxErrorEntropy);
             Assert.IsTrue(densityError < maxErrorDensity);
             Assert.IsTrue(pressureError < maxErrorPressure);
-        }
-
-        /// <summary>
-        /// Dummy variant of <see cref="BoundaryConditionMap"/> that always
-        /// returns <see cref="ExactRinglebBoundaryState"/>.
-        /// </summary>
-        private class RinglebBoundaryConditionMap : BoundaryConditionMap {
-
-            private RinglebControl ringlebControl;
-
-            /// <summary>
-            /// Constructs a new map
-            /// </summary>
-            /// <param name="gridData"></param>
-            /// <param name="control"></param>
-            public RinglebBoundaryConditionMap(IGridData gridData, RinglebControl control)
-                : base(gridData, control, control.GetMaterial()) {
-                this.ringlebControl = control;
-            }
-
-            /// <summary>
-            /// Always returns an instance of <see cref="ExactRinglebBoundaryState"/>
-            /// </summary>
-            /// <param name="edgeTagName">Irrelevant</param>
-            /// <returns>
-            /// An appropriate instance of
-            /// <see cref="ExactRinglebBoundaryState"/>.
-            /// </returns>
-            public override BoundaryCondition GetBoundaryCondition(string edgeTagName) {
-                return new ExactRinglebBoundaryState(ringlebControl);
-            }
         }
     }
 }
