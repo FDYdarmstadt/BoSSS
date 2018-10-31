@@ -24,6 +24,7 @@ using CNS.MaterialProperty;
 using ilPSP.Utils;
 using NUnit.Framework;
 using System;
+using System.Globalization;
 using System.IO;
 using System.Linq;
 
@@ -103,7 +104,7 @@ namespace CNS.Tests.DiffusiveFlux {
 
             double threshold = 1E-11;
             string[] refSolString = File.ReadAllLines(refSolutionFile);
-            double[] refSol = refSolString.Select(c => Convert.ToDouble(c)).ToArray();
+            double[] refSol = refSolString.Select(c => Convert.ToDouble(c, NumberFormatInfo.InvariantInfo)).ToArray();
 
             Console.WriteLine("SIPG Consistency Test: [" + numOfCells + "x" + numOfCells + "] and p_dg=" + p);
             for (int i = 0; i < prog.output.Count; i++) {
@@ -138,7 +139,7 @@ namespace CNS.Tests.DiffusiveFlux {
 
             double threshold = 1E-11;
             string[] refSolString = File.ReadAllLines(refSolutionFile);
-            double[] refSol = refSolString.Select(c => Convert.ToDouble(c)).ToArray();
+            double[] refSol = refSolString.Select(c => Convert.ToDouble(c, NumberFormatInfo.InvariantInfo)).ToArray();
 
             Console.WriteLine("SIPG Consistency Test: [" + numOfCells + "x" + numOfCells + "] and p_dg=" + p);
             for (int i = 0; i < prog.output.Count; i++) {
