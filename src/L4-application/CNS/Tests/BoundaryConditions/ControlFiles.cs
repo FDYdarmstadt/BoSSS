@@ -39,6 +39,22 @@ namespace CNS.Tests.BoundaryConditions {
     /// </summary>
     public static class ControlFiles {
 
+        // Exact solutions
+        private static readonly double Ma = 1.0;
+        private static readonly double MaSquared = 1.0;
+        private static readonly double gamma = 1.4;
+        private static Func<double[], double> exactDensity = X => (2.0 + Math.Cos(2 * X[0])) / 2.0;
+        private static Func<double[], double> exactMomentum = X => (7.0 - Math.Cos(4.0 * X[0])) / 16.0;
+        private static Func<double[], double> exactEnergy = X => (25.0 + 7.0 / 16.0 * MaSquared * (-2.0 + Math.Cos(2.0 * X[0])) * (-2.0 + Math.Cos(2.0 * X[0]))) * (2.0 + Math.Cos(2.0 * X[0])) / 20.0;
+        private static Func<double[], double> exactVelocity = X => exactMomentum(X) / exactDensity(X);
+        private static Func<double[], double> exactPressure = X => 1 + Math.Cos(2.0 * X[0]) / 2;
+        private static Func<double[], double> localMach = X => Ma * exactVelocity(X) / (Math.Sqrt(exactPressure(X) / exactDensity(X)));
+        // Spurk: p305, eq(9.100)
+        private static Func<double[], double> totalPressure = X => exactPressure(X) * Math.Pow((gamma - 1.0) / 2 * localMach(X) * localMach(X) + 1.0, gamma / (gamma - 1.0));
+        // Spurk: p305, eq(9.101)
+        private static Func<double[], double> totalTemperature = X => exactPressure(X) / exactDensity(X) * ((gamma - 1.0) / 2 * localMach(X) * localMach(X) + 1.0);
+
+        // Control templates
         private static CNSControl[] GetTemplates() {
             int minDivisions = 0;
             int maxDivisions = 2;
@@ -46,7 +62,7 @@ namespace CNS.Tests.BoundaryConditions {
             int maxDegree = 3;
 
             List<CNSControl> result = new List<CNSControl>();
-            for (int dgDegree = minDegree; dgDegree <= maxDegree; dgDegree++) { 
+            for (int dgDegree = minDegree; dgDegree <= maxDegree; dgDegree++) {
                 for (int divisions = minDivisions; divisions <= maxDivisions; divisions++) {
 
                     CNSControl c = new CNSControl();
@@ -54,7 +70,7 @@ namespace CNS.Tests.BoundaryConditions {
                     //c.DbPath = @"c:\bosss_dbv2\exp";
                     c.savetodb = false;
                     int noOfCells = (2 << divisions) * 8;
-                    
+
                     c.PrintInterval = 1000;
                     c.ResidualInterval = 100;
                     c.saveperiod = 100000;
@@ -64,12 +80,7 @@ namespace CNS.Tests.BoundaryConditions {
                     c.ExplicitScheme = ExplicitSchemes.RungeKutta;
                     c.ExplicitOrder = 1;
                     c.EquationOfState = IdealGas.Air;
-
-                    double gamma = c.EquationOfState.HeatCapacityRatio;
-
                     c.MachNumber = 1.0;
-                    double MaSquared = c.MachNumber * c.MachNumber;
-
 
                     c.AddVariable(Variables.Density, dgDegree);
                     c.AddVariable(Variables.Momentum.xComponent, dgDegree);
@@ -78,49 +89,13 @@ namespace CNS.Tests.BoundaryConditions {
                     c.AddVariable(Variables.Pressure, dgDegree);
                     c.AddVariable(Variables.LocalMachNumber, dgDegree);
 
-                    Func<double[], double> exactDensity = X =>
-                        (2.0 + Math.Cos(2 * X[0])) / 2.0;
-                    Func<double[], double> exactMomentum = X =>
-                        (7.0 - Math.Cos(4.0 * X[0])) / 16.0;
-                    Func<double[], double> exactEnergy = X =>
-                            (25.0 + 7.0 / 16.0 * MaSquared * (-2.0 + Math.Cos(2.0 * X[0])) * (-2.0 + Math.Cos(2.0 * X[0]))) * (2.0 + Math.Cos(2.0 * X[0])) / 20.0;
-
-                    // Add all types of boundary conditions for convenience
-                    Func<double[], double> exactVelocity = X =>
-                        exactMomentum(X) / exactDensity(X);
-                    Func<double[], double> exactPressure = X =>
-                        1 + Math.Cos(2.0 * X[0])/2 ;
-
                     c.InitialValues_Evaluators.Add(Variables.Density, exactDensity);
                     c.InitialValues_Evaluators.Add(Variables.Velocity.xComponent, exactVelocity);
                     c.InitialValues_Evaluators.Add(Variables.Pressure, exactPressure);
 
-                    c.AddBoundaryValue("supersonicInlet", Variables.Density, exactDensity);
-                    c.AddBoundaryValue("supersonicInlet", Variables.Velocity[0], exactVelocity);
-                    c.AddBoundaryValue("supersonicInlet", Variables.Pressure, exactPressure);
-
-                    c.AddBoundaryValue("subsonicInlet", Variables.Density, exactDensity);
-                    c.AddBoundaryValue("subsonicInlet", Variables.Velocity[0], exactVelocity);
-
-                    c.AddBoundaryValue("subsonicOutlet", Variables.Pressure, exactPressure);
-
-                    Func<double[], double> localMach = X => c.MachNumber * exactVelocity(X) / (Math.Sqrt(exactPressure(X) / exactDensity(X)));
-                    // Spurk: p305, eq(9.100)
-                    Func<double[], double> totalPressure = X => exactPressure(X) * Math.Pow((gamma - 1.0) / 2 * localMach(X) * localMach(X) + 1.0, gamma / (gamma - 1.0));
-                    // Spurk: p305, eq(9.101)
-                    Func<double[], double> totalTemperature = X => exactPressure(X) / exactDensity(X) * ((gamma - 1.0) / 2 * localMach(X) * localMach(X) + 1.0);
-                    c.AddBoundaryValue("subsonicPressureInlet", "p0", totalPressure);
-                    c.AddBoundaryValue("subsonicPressureInlet", "T0", totalTemperature);
-
-                    c.CustomContinuitySources.Add(map => new AdHocSourceTerm(map,
-                        (x, t, state) => -Math.Sin(4.0 * x[0]) / 4.0));
-                    c.CustomMomentumSources[0].Add(map => new AdHocSourceTerm(map,
-                        (x, t, state) => (160.0 - 35.0 * MaSquared - 56.0 * MaSquared * Math.Cos(2.0 * x[0]) + 21.0 * MaSquared * Math.Cos(4.0 * x[0])) * Math.Sin(2.0 * x[0]) / (224.0 * MaSquared)));
-
-
-                    c.CustomEnergySources.Add(map => new AdHocSourceTerm(map,
-                            (x, t, state) => -(7.0 / 640.0) * Math.Sin(2 * x[0]) * ((160.0 + 3.0 * MaSquared) * Math.Cos(2 * x[0]) + MaSquared * (10.0 - 6.0 * Math.Cos(4.0 * x[0]) + Math.Cos(6.0 * x[0])))));
-
+                    c.CustomContinuitySources.Add(map => new AdHocSourceTerm(map, (x, t, state) => -Math.Sin(4.0 * x[0]) / 4.0));
+                    c.CustomMomentumSources[0].Add(map => new AdHocSourceTerm(map, (x, t, state) => (160.0 - 35.0 * MaSquared - 56.0 * MaSquared * Math.Cos(2.0 * x[0]) + 21.0 * MaSquared * Math.Cos(4.0 * x[0])) * Math.Sin(2.0 * x[0]) / (224.0 * MaSquared)));
+                    c.CustomEnergySources.Add(map => new AdHocSourceTerm(map, (x, t, state) => -(7.0 / 640.0) * Math.Sin(2 * x[0]) * ((160.0 + 3.0 * MaSquared) * Math.Cos(2 * x[0]) + MaSquared * (10.0 - 6.0 * Math.Cos(4.0 * x[0]) + Math.Cos(6.0 * x[0])))));
 
                     c.Queries.Add("densityError", QueryLibrary.L2Error(Variables.Density, exactDensity, 10));
                     c.Queries.Add("momentumError", QueryLibrary.L2Error(Variables.Momentum[0], exactMomentum, 10));
@@ -168,6 +143,10 @@ namespace CNS.Tests.BoundaryConditions {
                     return grid;
                 };
                 c.ProjectName += "_supersonicAll";
+
+                c.AddBoundaryValue("supersonicInlet", Variables.Density, exactDensity);
+                c.AddBoundaryValue("supersonicInlet", Variables.Velocity[0], exactVelocity);
+                c.AddBoundaryValue("supersonicInlet", Variables.Pressure, exactPressure);
             }
 
             return templates.ToArray();
@@ -194,6 +173,12 @@ namespace CNS.Tests.BoundaryConditions {
                     return grid;
                 };
                 c.ProjectName += "_subsonicOutlet";
+
+                c.AddBoundaryValue("supersonicInlet", Variables.Density, exactDensity);
+                c.AddBoundaryValue("supersonicInlet", Variables.Velocity[0], exactVelocity);
+                c.AddBoundaryValue("supersonicInlet", Variables.Pressure, exactPressure);
+
+                c.AddBoundaryValue("subsonicOutlet", Variables.Pressure, exactPressure);
             }
 
             return templates;
@@ -220,6 +205,13 @@ namespace CNS.Tests.BoundaryConditions {
                     return grid;
                 };
                 c.ProjectName += "_subsonicInlet2";
+
+                c.AddBoundaryValue("subsonicInlet", Variables.Density, exactDensity);
+                c.AddBoundaryValue("subsonicInlet", Variables.Velocity[0], exactVelocity);
+
+                c.AddBoundaryValue("supersonicInlet", Variables.Density, exactDensity);
+                c.AddBoundaryValue("supersonicInlet", Variables.Velocity[0], exactVelocity);
+                c.AddBoundaryValue("supersonicInlet", Variables.Pressure, exactPressure);
             }
 
             return templates;
@@ -247,6 +239,11 @@ namespace CNS.Tests.BoundaryConditions {
                     return grid;
                 };
                 c.ProjectName += "_subsonicAll";
+
+                c.AddBoundaryValue("subsonicInlet", Variables.Density, exactDensity);
+                c.AddBoundaryValue("subsonicInlet", Variables.Velocity[0], exactVelocity);
+
+                c.AddBoundaryValue("subsonicOutlet", Variables.Pressure, exactPressure);
             }
 
             return templates;
@@ -272,6 +269,13 @@ namespace CNS.Tests.BoundaryConditions {
                     grid.DefineEdgeTags(x => Math.Abs(x[0]) < 1e-14 ? (byte)2 : (byte)1);
                     return grid;
                 };
+
+                c.AddBoundaryValue("subsonicPressureInlet", "p0", totalPressure);
+                c.AddBoundaryValue("subsonicPressureInlet", "T0", totalTemperature);
+
+                c.AddBoundaryValue("supersonicInlet", Variables.Density, exactDensity);
+                c.AddBoundaryValue("supersonicInlet", Variables.Velocity[0], exactVelocity);
+                c.AddBoundaryValue("supersonicInlet", Variables.Pressure, exactPressure);
             }
 
             return templates;
@@ -298,6 +302,11 @@ namespace CNS.Tests.BoundaryConditions {
                     grid.DefineEdgeTags(x => Math.Abs(x[0]) < 1e-14 ? (byte)1 : (byte)2);
                     return grid;
                 };
+
+                c.AddBoundaryValue("subsonicPressureInlet", "p0", totalPressure);
+                c.AddBoundaryValue("subsonicPressureInlet", "T0", totalTemperature);
+
+                c.AddBoundaryValue("subsonicOutlet", Variables.Pressure, exactPressure);
             }
 
             return templates;

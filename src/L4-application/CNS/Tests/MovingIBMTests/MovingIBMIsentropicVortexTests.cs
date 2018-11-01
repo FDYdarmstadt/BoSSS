@@ -100,10 +100,7 @@ namespace CNS.Tests.MovingIBMTests {
                 double newLevelSetPosition = initialLevelSetPosition + amplitude * Math.Sin(10.0 * time);
                 return X[1] - newLevelSetPosition;
             };
-            c.LevelSetVelocity = (X, t) => new Vector(
-                0.0,
-                10.0 * amplitude * Math.Cos(10.0 * t),
-                0.0);
+            c.LevelSetVelocity = (X, t) => new Vector(0.0, 10.0 * amplitude * Math.Cos(10.0 * t));
 
             c.AddBoundaryValue("adiabaticSlipWall");
             c.AddBoundaryValue("supersonicInlet", Variables.Density, rho);

@@ -36,6 +36,21 @@
     <Reference Include="System.Core" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Boundary\AdiabaticSlipWall.cs" />
+    <Compile Include="Boundary\AdiabaticWall.cs" />
+    <Compile Include="Boundary\BoundaryCondition.cs" />
+    <Compile Include="Boundary\CompressibleBcType.cs" />
+    <Compile Include="Boundary\CompressibleBoundaryConditionMap.cs" />
+    <Compile Include="Boundary\ExactRinglebBoundaryState.cs" />
+    <Compile Include="Boundary\IBoundaryConditionMap.cs" />
+    <Compile Include="Boundary\IsothermalWall.cs" />
+    <Compile Include="Boundary\SubsonicInlet.cs" />
+    <Compile Include="Boundary\SubsonicOutlet.cs" />
+    <Compile Include="Boundary\SubsonicPressureInlet.cs" />
+    <Compile Include="Boundary\SupersonicInlet.cs" />
+    <Compile Include="Boundary\SupersonicOutlet.cs" />
+    <Compile Include="Convection\EulerMomentumComponent.cs" />
+    <Compile Include="Convection\IEulerEquationComponent.cs" />
     <Compile Include="ILimiter.cs" />
     <Compile Include="IShockSensor.cs" />
     <Compile Include="ISpeciesMap.cs" />
