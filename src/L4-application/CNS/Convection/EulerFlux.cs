@@ -20,8 +20,9 @@ using System.Diagnostics;
 using System.Runtime.CompilerServices;
 using BoSSS.Platform.LinAlg;
 using BoSSS.Solution.CompressibleFlowCommon;
+using BoSSS.Solution.CompressibleFlowCommon.Convection;
 using BoSSS.Solution.Utils;
-using CNS.Boundary;
+using BoSSS.Solution.CompressibleFlowCommon.Boundary;
 
 namespace CNS.Convection {
 
@@ -108,7 +109,7 @@ namespace CNS.Convection {
             StateVector stateIn = new StateVector(Uin, speciesMap.GetMaterial(double.NaN));
             StateVector stateOut = new StateVector(Uout, speciesMap.GetMaterial(double.NaN));
 
-            Vector Normal = new Vector();
+            Vector Normal = new Vector(stateIn.Dimension);
             for (int i = 0; i < normal.Length; i++) {
                 Normal[i] = normal[i];
             }
@@ -161,12 +162,13 @@ namespace CNS.Convection {
         /// <see cref="InnerEdgeFlux(double, double[], double[], double[], double[], int)"/>
         /// </returns>
         protected override double BorderEdgeFlux(double time, double[] x, double[] normal, byte EdgeTag, double[] Uin, int jEdge) {
-            Vector Normal = new Vector();
+            StateVector stateIn = new StateVector(Uin, speciesMap.GetMaterial(double.NaN));
+
+            Vector Normal = new Vector(stateIn.Dimension);
             for (int i = 0; i < normal.Length; i++) {
                 Normal[i] = normal[i];
             }
 
-            StateVector stateIn = new StateVector(Uin, speciesMap.GetMaterial(double.NaN));
             StateVector stateBoundary = boundaryMap.GetBoundaryState(
                 EdgeTag, time, x, normal, stateIn);
 

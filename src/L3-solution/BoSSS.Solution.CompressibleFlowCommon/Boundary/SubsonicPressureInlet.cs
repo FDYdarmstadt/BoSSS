@@ -18,7 +18,7 @@ using System;
 using BoSSS.Platform.LinAlg;
 using BoSSS.Solution.CompressibleFlowCommon;
 
-namespace CNS.Boundary {
+namespace BoSSS.Solution.CompressibleFlowCommon.Boundary {
 
     /// <summary>
     /// Implementation of a pressure boundary condition for subsonic inlets
@@ -47,7 +47,7 @@ namespace CNS.Boundary {
         /// <param name="temperatureFunction">
         /// The prescribed (stagnation) temperature
         /// </param>
-        public SubsonicPressureInlet(CNSControl config, Func<double[], double, double> pressureFunction, Func<double[], double, double> temperatureFunction)
+        public SubsonicPressureInlet(MaterialProperty.Material config, Func<double[], double, double> pressureFunction, Func<double[], double, double> temperatureFunction)
             : base(config) {
             this.TotalPressureFunction = pressureFunction;
             this.TotalTemperatureFunction = temperatureFunction;
@@ -86,7 +86,7 @@ namespace CNS.Boundary {
         public override StateVector GetBoundaryState(double time, double[] x, double[] normal, StateVector stateIn) {
             double gamma = config.EquationOfState.HeatCapacityRatio;
             double Mach = config.MachNumber;
-            Vector inwardNormal = new Vector();
+            Vector inwardNormal = new Vector(stateIn.Dimension);
             for (int i = 0; i < normal.Length; i++) {
                 inwardNormal[i] = -normal[i];
             }

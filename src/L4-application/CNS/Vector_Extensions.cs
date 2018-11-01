@@ -15,6 +15,8 @@ limitations under the License.
 */
 
 using System;
+using System.Diagnostics;
+using System.Linq;
 using System.Runtime.InteropServices;
 using BoSSS.Platform.LinAlg;
 using ilPSP;
@@ -22,14 +24,12 @@ using ilPSP.Utils;
 
 namespace CNS.LinAlg {
 
-    
+
 
     /// <summary>
     /// Extension methods for the <see cref="Vector"/> structure
     /// </summary>
     static public class Vector_Extensions {
-
-               
 
         /// <summary>
         /// Computes the transformation for a arbitrary vector from the
@@ -40,15 +40,18 @@ namespace CNS.LinAlg {
         /// where \f$  \vec{n} = (n_1, n_2, n_3)^T\f$ 
         /// is given by <paramref name="edgeNormal"/>.
         /// </summary>
-        /// <param name="edgeNormal">
+        /// <param name="_edgeNormal">
         /// The normal of an edge
         /// </param>
         /// <returns>
         /// An orthonormal 3x3 matrix that, when applied to a vector,
         /// transforms this vector into the above-mentioned coordinate system.
         /// </returns>
-        static private MultidimensionalArray GetTransformationToEdgeCoordinates(Vector edgeNormal) {
-            Vector t1 = new Vector(-edgeNormal[1], edgeNormal[0], 0.0);
+        static private MultidimensionalArray GetTransformationToEdgeCoordinates(Vector _edgeNormal) {
+            int D = _edgeNormal.Dim;
+            Vector edgeNormal = new Vector(_edgeNormal.x, _edgeNormal.y, _edgeNormal.z);
+
+            Vector t1 = new Vector(D > 1 ? -edgeNormal[1] : 0.0, edgeNormal[0], 0.0);
             Vector t2 = edgeNormal.CrossProduct(t1);
             MultidimensionalArray trafo = MultidimensionalArray.Create(3, 3);
             for (int i = 0; i < 3; i++) {
@@ -77,10 +80,18 @@ namespace CNS.LinAlg {
         /// is given by <paramref name="edgeNormal"/>
         /// </returns>
         static public Vector ToEdgeCoordinates(this Vector _this, Vector edgeNormal) {
+            if (_this.Dim != edgeNormal.Dim)
+                throw new ArgumentException();
+
             double[] transformedVector = new double[3];
+            double[] __this = new double[] { _this.x, _this.y, _this.z };
+
             GetTransformationToEdgeCoordinates(edgeNormal).gemv(
-                1.0, (double[])_this, 0.0, transformedVector);
-            return new Vector(transformedVector);
+                1.0, __this, 0.0, transformedVector);
+
+            //Debug.Assert(transformedVector.Skip(edgeNormal.Dim).L2Norm() == 0.0);
+            var R = new Vector(transformedVector.GetSubVector(0, edgeNormal.Dim));
+            return R;
         }
 
         /// <summary>
@@ -96,11 +107,18 @@ namespace CNS.LinAlg {
         /// This vector in the standard coordinate system
         /// </returns>
         static public Vector FromEdgeCoordinates(this Vector _this, Vector edgeNormal) {
+            if (_this.Dim != edgeNormal.Dim)
+                throw new ArgumentException();
+
             double[] transformedVector = new double[3];
+            double[] __this =  new double[] { _this.x, _this.y, _this.z };
+
             GetTransformationToEdgeCoordinates(edgeNormal).Transpose().gemv(
-                1.0, (double[])_this, 0.0, transformedVector);
-            return new Vector(transformedVector);
+                1.0, __this, 0.0, transformedVector);
+
+            //Debug.Assert(transformedVector.Skip(edgeNormal.Dim).L2Norm() == 0.0);
+            var R = new Vector(transformedVector.GetSubVector(0, edgeNormal.Dim));
+            return R;
         }
     }
-
 }

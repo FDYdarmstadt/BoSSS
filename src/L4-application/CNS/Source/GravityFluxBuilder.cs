@@ -16,7 +16,7 @@ limitations under the License.
 
 using System.Linq;
 using BoSSS.Solution.CompressibleFlowCommon;
-using CNS.Boundary;
+using BoSSS.Solution.CompressibleFlowCommon.Boundary;
 using CNS.EquationSystem;
 
 namespace CNS.Source {
@@ -32,7 +32,7 @@ namespace CNS.Source {
         /// <param name="control"></param>
         /// <param name="boundaryMap"></param>
         /// <param name="speciesMap"></param>
-        public GravityFluxBuilder(CNSControl control, IBoundaryConditionMap boundaryMap, ISpeciesMap speciesMap)
+        public GravityFluxBuilder(CNSControl control, BoundaryConditionMap boundaryMap, ISpeciesMap speciesMap)
             : base(control, boundaryMap, speciesMap) {
         }
 

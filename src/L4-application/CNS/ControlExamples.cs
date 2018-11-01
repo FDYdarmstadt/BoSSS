@@ -233,7 +233,7 @@ namespace CNS {
             };
 
             StateVector refState = StateVector.FromPrimitiveQuantities(
-                new Material(c.EquationOfState, c.ViscosityLaw, c.MachNumber, c.ReynoldsNumber, c.PrandtlNumber, c.FroudeNumber, c.ViscosityRatio),
+                c.GetMaterial(),
                 1.0,
                 new Vector(advectionVelocity, 0.0, 0.0),
                 8.0);
@@ -1234,7 +1234,7 @@ namespace CNS {
 
             c.AddBoundaryValue("AdiabaticSlipWall");
 
-            Material material = new Material(c.EquationOfState, c.ViscosityLaw, c.MachNumber, c.ReynoldsNumber, c.PrandtlNumber, c.FroudeNumber, c.ViscosityRatio);
+            Material material = c.GetMaterial();
             StateVector stateLeft = StateVector.FromPrimitiveQuantities(
                 material, densityLeft, new Vector(velocityLeft, 0.0, 0.0), pressureLeft);
             StateVector stateRight = StateVector.FromPrimitiveQuantities(
