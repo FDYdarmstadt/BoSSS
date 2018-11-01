@@ -20,6 +20,7 @@ using CNS.EquationSystem;
 using System;
 using BoSSS.Solution;
 using System.Collections.Generic;
+using BoSSS.Solution.CompressibleFlowCommon;
 
 namespace CNS.IBM {
 

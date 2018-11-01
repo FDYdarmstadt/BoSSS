@@ -16,7 +16,7 @@ limitations under the License.
 
 using System;
 using BoSSS.Platform.LinAlg;
-using CNS.Boundary;
+using BoSSS.Solution.CompressibleFlowCommon.Boundary;
 
 namespace CNS.Tests.IsentropicVortex {
 

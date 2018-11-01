@@ -131,7 +131,6 @@ namespace BoSSS.Application.DerivativeTest {
                 // Too much for DEBUG-configration.
 #if DEBUG
                 R.Remove("kubus.cgns");
-                R.Remove("kubus.cgns");
                 R.Remove("WallMountedCube.cgns");
                 R.Remove("Tria_coarse3rd.msh");
                 R.Remove("Tria_coarse2nd.msh");
@@ -187,7 +186,7 @@ namespace BoSSS.Application.DerivativeTest {
         /// <summary>
         /// Grid/mesh file to use, see implementation of <see cref="CreateOrLoadGrid"/>.
         /// </summary>
-        public static string GRID_FILE = "..\\..\\TestGrids\\box2d.cgns";
+        public static string GRID_FILE = "..\\..\\TestGrids\\kubus.cgns";
 
         /// <summary>
         /// Application entry point.
@@ -203,7 +202,7 @@ namespace BoSSS.Application.DerivativeTest {
 
             Quadrature_Bulksize.CHUNK_DATA_LIMIT = 1;
             //BoSSS.Foundation.Caching.Cache.MaxMem = 1024;
-            for (int i = 1; i <= 1; i++) {
+            for (int i = 50; i <= 50; i++) {
                 BoSSS.Solution.Application._Main(args, true,  delegate () {
                     var R = new DerivativeTestMain();
                     GRID_CASE = i;

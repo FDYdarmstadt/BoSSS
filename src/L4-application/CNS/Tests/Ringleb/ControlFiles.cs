@@ -18,6 +18,7 @@ using BoSSS.Solution.Queries;
 using CNS.EquationSystem;
 using CNS.MaterialProperty;
 using System;
+using static BoSSS.Solution.CompressibleFlowCommon.Boundary.ExactRinglebBoundaryState;
 
 namespace CNS.Tests.Ringleb {
 

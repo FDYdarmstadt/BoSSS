@@ -15,7 +15,9 @@ limitations under the License.
 */
 
 using BoSSS.Platform.LinAlg;
-using CNS.Boundary;
+using BoSSS.Solution.CompressibleFlowCommon;
+using BoSSS.Solution.CompressibleFlowCommon.Convection;
+using BoSSS.Solution.CompressibleFlowCommon.Boundary;
 using CNS.MaterialProperty;
 using System;
 
@@ -45,25 +47,25 @@ namespace CNS.Convection {
         /// Evaluates the HLLC flux according to Toro2009
         /// </summary>
         /// <param name="x">
-        /// <see cref="InnerEdgeFlux(double[], double, StateVector, StateVector, ref Vector3D, int)"/>
+        /// <see cref="InnerEdgeFlux(double[], double, StateVector, StateVector, ref Vector, int)"/>
         /// </param>
         /// <param name="time">
-        /// <see cref="InnerEdgeFlux(double[], double, StateVector, StateVector, ref Vector3D, int)"/>
+        /// <see cref="InnerEdgeFlux(double[], double, StateVector, StateVector, ref Vector, int)"/>
         /// </param>
         /// <param name="stateIn">
-        /// <see cref="InnerEdgeFlux(double[], double, StateVector, StateVector, ref Vector3D, int)"/>
+        /// <see cref="InnerEdgeFlux(double[], double, StateVector, StateVector, ref Vector, int)"/>
         /// </param>
         /// <param name="stateOut">
-        /// <see cref="InnerEdgeFlux(double[], double, StateVector, StateVector, ref Vector3D, int)"/>
+        /// <see cref="InnerEdgeFlux(double[], double, StateVector, StateVector, ref Vector, int)"/>
         /// </param>
         /// <param name="normal">
-        /// <see cref="InnerEdgeFlux(double[], double, StateVector, StateVector, ref Vector3D, int)"/>
+        /// <see cref="InnerEdgeFlux(double[], double, StateVector, StateVector, ref Vector, int)"/>
         /// </param>
         /// <param name="edgeIndex">
-        /// <see cref="InnerEdgeFlux(double[], double, StateVector, StateVector, ref Vector3D, int)"/>
+        /// <see cref="InnerEdgeFlux(double[], double, StateVector, StateVector, ref Vector, int)"/>
         /// </param>
         /// <returns>see Toro2009, equation 10.71</returns>
-        protected internal override double InnerEdgeFlux(double[] x, double time, StateVector stateIn, StateVector stateOut, ref Vector3D normal, int edgeIndex) {
+        protected internal override double InnerEdgeFlux(double[] x, double time, StateVector stateIn, StateVector stateOut, ref Vector normal, int edgeIndex) {
             double waveSpeedIn;
             double waveSpeedOut;
             EstimateWaveSpeeds(stateIn, stateOut, ref normal, out waveSpeedIn, out waveSpeedOut);
@@ -122,6 +124,6 @@ namespace CNS.Convection {
         /// <returns>
         /// An estimate for the variable value in the star region
         /// </returns>
-        abstract protected double GetModifiedVariableValue(StateVector state, double cellWaveSpeed, double cellNormalVelocity, double intermediateWaveSpeed, ref Vector3D normal);
+        abstract protected double GetModifiedVariableValue(StateVector state, double cellWaveSpeed, double cellNormalVelocity, double intermediateWaveSpeed, ref Vector normal);
     }
 }

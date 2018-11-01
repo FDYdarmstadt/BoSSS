@@ -31,15 +31,15 @@ namespace BoSSS.Application.XdgTimesteppingTest {
 
         public Func<double[], double, double>[] Inflow;
         
-        Vector2D FlowField(double[] x, double[] Uin, double[] Uot) {
-            Vector2D u;
+        Vector FlowField(double[] x, double[] Uin, double[] Uot) {
+            Vector u = new Vector(2);
             u.x = 0.5 * (Uin[0] + Uot[0]);
             u.y = 0.5 * (Uin[1] + Uot[1]);
             return u;
         }
 
         protected override double BorderEdgeFlux(ref CommonParamsBnd inp, double[] Uin) {
-            Vector2D n; n.x = inp.Normale[0]; n.y = inp.Normale[1];
+            Vector n = new Vector(2); n.x = inp.Normale[0]; n.y = inp.Normale[1];
 
             var vel = FlowField(inp.X, inp.Parameters_IN, inp.Parameters_IN);
 
@@ -55,7 +55,7 @@ namespace BoSSS.Application.XdgTimesteppingTest {
         }
 
         protected override double InnerEdgeFlux(ref CommonParams inp, double[] Uin, double[] Uout) {
-            Vector2D n; n.x = inp.Normale[0]; n.y = inp.Normale[1];
+            Vector n = new Vector(2); n.x = inp.Normale[0]; n.y = inp.Normale[1];
 
             var vel = FlowField(inp.X, inp.Parameters_IN, inp.Parameters_OUT);
             if (vel * n  > 0)
@@ -65,7 +65,7 @@ namespace BoSSS.Application.XdgTimesteppingTest {
         }
 
         protected override void Flux(ref CommonParamsVol inp, double[] U, double[] output) {
-            Vector2D o;
+            Vector o;
             o = FlowField(inp.Xglobal, inp.Parameters, inp.Parameters) * U[0];
             output[0] = o.x;
             output[1] = o.y;
@@ -102,8 +102,8 @@ namespace BoSSS.Application.XdgTimesteppingTest {
             m_NormalVel = NormalVel;
         }
 
-        Vector2D FlowField(double[] x, double[] Uin, double[] Uot) {
-            Vector2D u;
+        Vector FlowField(double[] x, double[] Uin, double[] Uot) {
+            Vector u = new Vector(2);
             u.x = 0.5 * (Uin[0] + Uot[0]);
             u.y = 0.5 * (Uin[1] + Uot[1]);
             return u;
@@ -113,8 +113,8 @@ namespace BoSSS.Application.XdgTimesteppingTest {
             double[] uA, double[] uB, double[,] Grad_uA, double[,] Grad_uB,
             double vA, double vB, double[] Grad_vA, double[] Grad_vB) {
 
-            Vector2D V = FlowField(inp.x, inp.ParamsNeg, inp.ParamsPos);
-            Vector2D N = new Vector2D(inp.n);
+            Vector V = FlowField(inp.x, inp.ParamsNeg, inp.ParamsPos);
+            Vector N = new Vector(inp.n);
 
             double s = m_NormalVel(inp.x, inp.time);
             double RelSpeed = V * N - s;
