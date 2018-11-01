@@ -300,7 +300,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
 
             XNSE_Control C = new XNSE_Control();
 
-            bool solveHeat = false;
+            bool solveHeat = true;
             //_DbPath = @"\\dc1\userspace\smuda\cluster\CapillaryRise\CapillaryRise_studyDB";
 
             // basic database options
@@ -310,7 +310,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             C.DbPath = _DbPath;
             C.savetodb = false; // C.DbPath != null;
             C.ProjectName = "XNSE/HeatedWall";
-            C.ProjectDescription = "leikonfiguration for SFB 1194";
+            C.ProjectDescription = "Leikonfiguration for SFB 1194";
 
             C.ContinueOnIoError = false;
 
@@ -373,7 +373,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             C.ThermalParameters.rho_B = C.PhysicalParameters.rho_B;
             C.ThermalParameters.c_A = 1.0;
             C.ThermalParameters.c_B = 1.0;
-            C.ThermalParameters.k_A = 1.0;
+            C.ThermalParameters.k_A = 10.0;
             C.ThermalParameters.k_B = 1.0;
 
             C.PhysicalParameters.betaS_A = 0.0;
@@ -401,10 +401,10 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
                 var grd = Grid2D.Cartesian2DGrid(Xnodes, Ynodes);
 
                 if(solveHeat) {
-                    grd.EdgeTagNames.Add(1, "wall_Dirichlet_lower");
+                    grd.EdgeTagNames.Add(1, "velocity_inlet_Dirichlet_lower");
                     grd.EdgeTagNames.Add(2, "pressure_outlet_ZeroGradient_upper");
-                    grd.EdgeTagNames.Add(3, "slipsymmetry_ZeroGradient_left");
-                    grd.EdgeTagNames.Add(4, "navierslip_linear_ZeroGradient_right");
+                    grd.EdgeTagNames.Add(3, "freeslip_ZeroGradient_left");
+                    grd.EdgeTagNames.Add(4, "freeslip_ZeroGradient_right");
                 } else {
                     grd.EdgeTagNames.Add(1, "velocity_inlet_lower");
                     grd.EdgeTagNames.Add(2, "pressure_outlet_upper");
@@ -459,12 +459,12 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             #region BC
 
             if(solveHeat) {
-                C.AddBoundaryValue("wall_Dirichlet_lower", "Temperature#A", (X, t) => 0.0);
-                C.AddBoundaryValue("wall_Dirichlet_lower", "Temperature#B", (X, t) => 0.0);
+                C.AddBoundaryValue("velocity_inlet_Dirichlet_lower", "Temperature#A", (X, t) => 5.0);
+                C.AddBoundaryValue("velocity_inlet_Dirichlet_lower", "VelocityY#A", (X, t) => 0.1);
                 C.AddBoundaryValue("pressure_outlet_ZeroGradient_upper");
 
-                C.AddBoundaryValue("slipsymmetry_ZeroGradient_left");
-                C.AddBoundaryValue("navierslip_linear_ZeroGradient_right");
+                C.AddBoundaryValue("freeslip_ZeroGradient_left");
+                C.AddBoundaryValue("freeslip_ZeroGradient_right");
             } else {
 
                 C.AddBoundaryValue("velocity_inlet_lower", "VelocityY#A", (X, t) => 0.1);

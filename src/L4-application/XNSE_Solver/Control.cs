@@ -487,18 +487,18 @@ namespace BoSSS.Application.XNSE_Solver {
         /// </summary>
         public MultigridOperator.Mode TemperatureBlockPrecondMode = MultigridOperator.Mode.SymPart_DiagBlockEquilib;
 
+
         /// <summary>
         /// density, heat capacity and thermal conductivity
         /// </summary>
         [DataMember]
         public ThermalParameters ThermalParameters = new ThermalParameters() {
-            Material = true,
             rho_A = 1.0,
             rho_B = 1.0,
             c_A = 1.0,
             c_B = 1.0,
             k_A = 1.0,
-            k_B = 1.0
+            k_B = 1.0,
         };
     }
 }

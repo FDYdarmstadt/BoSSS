@@ -450,7 +450,7 @@ namespace BoSSS.Solution.XNSECommon.Operator.Continuity {
 
         public IList<string> ArgumentOrdering {
             get {
-                return VariableNames.VelocityVector(this.D);
+                return null;
             }
         }
 

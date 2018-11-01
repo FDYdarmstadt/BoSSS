@@ -110,5 +110,4 @@ namespace BoSSS.Solution.XNSECommon.Operator.DynamicInterfaceConditions {
     }
 
 
-
 }

@@ -144,7 +144,12 @@ namespace BoSSS.Solution.XNSECommon {
 
             MatInt = config.physParams.Material;
 
-            double MassFlux = -0.1;
+            double mEvap;
+            if(config.thermParams.hVap_A > 0) {
+                mEvap = -config.thermParams.rho_A * config.thermParams.prescribedVolumeFlux;
+            } else {
+                mEvap = config.thermParams.rho_B * config.thermParams.prescribedVolumeFlux;
+            }
 
             //if (!MatInt)
             //    throw new NotSupportedException("Non-Material interface is NOT tested!");
@@ -307,9 +312,9 @@ namespace BoSSS.Solution.XNSECommon {
                                     }
 
                                     // Level-Set operator
-                                    comps.Add(new Operator.Viscosity.ViscosityAtLevelSet_FullySymmetric(LsTrk, muA, muB, penalty, d));
+                                    //comps.Add(new Operator.Viscosity.ViscosityAtLevelSet_FullySymmetric(LsTrk, muA, muB, penalty, d));
 
-                                    //comps.Add(new Operator.Viscosity.GeneralizedViscosityAtLevelSet_FullySymmetric(LsTrk, muA, muB, penalty, d, rhoA, rhoB, MassFlux));
+                                    comps.Add(new Operator.Viscosity.GeneralizedViscosityAtLevelSet_FullySymmetric(LsTrk, muA, muB, penalty, d, rhoA, rhoB, mEvap));
 
                                     break;
                                 }
@@ -336,8 +341,8 @@ namespace BoSSS.Solution.XNSECommon {
                     var divPen = new Operator.Continuity.DivergenceAtLevelSet(D, LsTrk, rhoA, rhoB, MatInt, config.dntParams.ContiSign, config.dntParams.RescaleConti);
                     m_OP.EquationComponents["div"].Add(divPen);
 
-                    //var divPenGen = new Operator.Continuity.GeneralizedDivergenceAtLevelSet(D, LsTrk, rhoA, rhoB, MatInt, config.dntParams.ContiSign, config.dntParams.RescaleConti, MassFlux);
-                    //m_OP.EquationComponents["div"].Add(divPenGen);
+                    var divPenGen = new Operator.Continuity.GeneralizedDivergenceAtLevelSet(D, LsTrk, rhoA, rhoB, MatInt, config.dntParams.ContiSign, config.dntParams.RescaleConti, mEvap);
+                    m_OP.EquationComponents["div"].Add(divPenGen);
 
                     //// pressure stabilization
                     //if (this.config.PressureStab) {
@@ -477,9 +482,9 @@ namespace BoSSS.Solution.XNSECommon {
                 // evaporation (mass flux)
                 // =======================
 
-                //for(int d = 0; d < D; d++) {
-                //    m_OP.EquationComponents[CodName[d]].Add(new Operator.DynamicInterfaceConditions.PrescribedMassFlux(d, D, LsTrk, rhoA, rhoB, MassFlux));
-                //}
+                for(int d = 0; d < D; d++) {
+                    m_OP.EquationComponents[CodName[d]].Add(new Operator.DynamicInterfaceConditions.PrescribedMassFlux(d, D, LsTrk, rhoA, rhoB, mEvap));
+                }
 
 
             }

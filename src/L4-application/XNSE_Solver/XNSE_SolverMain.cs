@@ -532,6 +532,7 @@ namespace BoSSS.Application.XNSE_Solver {
                 DomBlocks = new bool[] { true, true },
                 dntParams = this.Control.AdvancedDiscretizationOptions,
                 physParams = this.Control.PhysicalParameters,
+                thermParams = this.Control.ThermalParameters,
                 UseXDG4Velocity = this.Control.UseXDG4Velocity
             };
 
@@ -3465,6 +3466,12 @@ namespace BoSSS.Application.XNSE_Solver {
         #region coupled heat solver
 
         /// <summary>
+        /// prescribed volume flux for testing. If volume flux > 0, mass flux for domain A is > 0.
+        /// </summary>
+        //double m_prescribedVolumeFlux;
+
+
+        /// <summary>
         /// Temperature
         /// </summary>
         XDGField Temperature;
@@ -3645,7 +3652,7 @@ namespace BoSSS.Application.XNSE_Solver {
                                 throw new NotImplementedException();
                         }
 
-                        comps.Add(new HeatConvectionAtLevelSet(D, LsTrk, capA, capB, LFFA, LFFB, this.Control.ThermalParameters.Material, coupledBcMap, movingmesh));       // LevelSet component
+                        comps.Add(new HeatConvectionAtLevelSet(D, LsTrk, capA, capB, LFFA, LFFB, this.Control.PhysicalParameters.Material, coupledBcMap, movingmesh));       // LevelSet component
                     }
 
                 }
@@ -3670,6 +3677,23 @@ namespace BoSSS.Application.XNSE_Solver {
 
                     // Level-Set operator:
                     comps.Add(new ConductivityAtLevelSet(LsTrk, kA, kB, penalty * 1.0));
+                }
+
+                // mass flux at interface
+                // ======================
+                {
+
+                    double hVap;
+                    double mEvap;
+                    if(this.Control.ThermalParameters.hVap_A > 0) {
+                        hVap = this.Control.ThermalParameters.hVap_A;
+                        mEvap = -this.Control.ThermalParameters.rho_A * this.Control.ThermalParameters.prescribedVolumeFlux;
+                    } else {
+                        hVap = this.Control.ThermalParameters.hVap_B;
+                        mEvap = this.Control.ThermalParameters.rho_B * this.Control.ThermalParameters.prescribedVolumeFlux;
+                    }
+                    Xheat_Operator.EquationComponents[CodName[0]].Add(new EvaporationAtLevelSet(LsTrk, mEvap, hVap));
+
                 }
 
 

@@ -41,39 +41,22 @@ namespace BoSSS.Solution.XheatCommon {
         /// <param name="_D">spatial dimension</param>
         /// <param name="LsTrk"></param>
         /// <param name="_sigma">surface-tension constant</param>
-        public EvaporationAtLevelSet(int _d, int _D, LevelSetTracker LsTrk, double _mInt, double _rhoA, double _rhoB) {
+        public EvaporationAtLevelSet(LevelSetTracker LsTrk, double _mEvap, double _hVap) {
             m_LsTrk = LsTrk;
-            if(_d >= _D)
-                throw new ArgumentOutOfRangeException();
-            this.m_D = _D;
-            this.m_d = _d;
-            this.mInt = _mInt;
-            this.rhoA = _rhoA;
-            this.rhoB = _rhoB;
+            this.mEvap = _mEvap;
+            this.hVap = _hVap;
         }
 
-        int m_D;
-        int m_d;
-
-        double mInt;
-
-        double rhoA;
-        double rhoB;
+        double mEvap;
+        double hVap;
 
 
         public double LevelSetForm(ref CommonParamsLs cp, double[] uA, double[] uB, double[,] Grad_uA, double[,] Grad_uB, double vA, double vB, double[] Grad_vA, double[] Grad_vB) {
 
-    
-            double[] Normal = cp.n;
+            double massFluxEvap = mEvap * hVap;
 
-            double massFlux = mInt.Pow2() * Normal[m_d];
-            if(rhoA > rhoB)
-                massFlux *= ((1 / rhoB) - (1 / rhoA));
-            else
-                massFlux *= ((1 / rhoA) - (1 / rhoB));
-
-            double FlxNeg = -0.5 * massFlux;
-            double FlxPos = +0.5 * massFlux;
+            double FlxNeg = -0.5 * massFluxEvap;
+            double FlxPos = +0.5 * massFluxEvap;
 
 
             Debug.Assert(!(double.IsNaN(FlxNeg) || double.IsInfinity(FlxNeg)));
@@ -112,6 +95,5 @@ namespace BoSSS.Solution.XheatCommon {
         }
 
     }
-
 
 }

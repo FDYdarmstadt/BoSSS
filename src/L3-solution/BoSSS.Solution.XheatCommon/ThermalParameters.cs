@@ -73,10 +73,38 @@ namespace BoSSS.Solution.XheatCommon {
 
 
         /// <summary>
+        /// enthalpy of vaporization, a.k.a. (latent) heat of vaporization. Is always positive (heat is absorbed by the substance).
+        /// The enthalpy of condensation (heat of condensation) is by definition equal to h_vap but with opposite sign (heat is released by the substance).
+        /// Therefore the enthalpy of vaporization has to be set according to the liquid phase.
+        /// </summary>
+        [DataMember]
+        public double hVap_A = 0.0;
+
+        /// <summary>
+        /// enthalpy of vaporization, a.k.a. (latent) heat of vaporization. Is always positive (heat is absorbed by the substance).
+        /// The enthalpy of condensation (heat of condensation) is by definition equal to h_vap but with opposite sign (heat is released by the substance).
+        /// Therefore the enthalpy of vaporization has to be set according to the liquid phase.
+        /// </summary>
+        [DataMember]
+        public double hVap_B = 0.0;
+
+        /// <summary>
+        /// prescribed volume flux for testing. 
+        /// </summary>
+        [DataMember]
+        public double prescribedVolumeFlux = 0.0;
+
+        /// <summary>
         /// is the interface a material one or is it non-material?
         /// </summary>
         [DataMember]
-        public bool Material;
+        public bool Material = true;
+
+        ///// <summary>
+        ///// is the interface a material one or is it non-material?
+        ///// </summary>
+        //[DataMember]
+        //public bool Material;
 
 
         /// <summary>
@@ -90,6 +118,9 @@ namespace BoSSS.Solution.XheatCommon {
             cl.c_B = this.c_B;
             cl.k_A = this.k_A;
             cl.k_B = this.k_B;
+            cl.hVap_A = this.hVap_A;
+            cl.hVap_B = this.hVap_B;
+            cl.prescribedVolumeFlux = this.prescribedVolumeFlux;
             cl.Material = this.Material;
             return cl;
         }
