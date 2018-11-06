@@ -989,7 +989,7 @@ namespace BoSSS.Foundation.Grid.Classic {
                                 }
                             }
                         }
-                        Output.ToTxtFile("C:\\tmp\\Newton-Problem.txt");
+                        Output.ToTxtFile("C:\\tmptest\\Newton-Problem.txt");
 #endif
                         //throw new ArithmeticException("Newton algorithm divergence.");
                         return;

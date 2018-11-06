@@ -997,9 +997,9 @@ namespace BoSSS.Application.DerivativeTest {
                     m_passed = m_passed && passed1;
                     m_passed = m_passed && passed2;
 
-                    CheckMatrix.SaveToTextFileSparse("c:\\tmp\\Check.txt");
-                    LaplaceMtx.SaveToTextFileSparse("c:\\tmp\\Laplace.txt");
-                    ErrMatrix.SaveToTextFileSparse("c:\\tmp\\Error.txt");
+                    CheckMatrix.SaveToTextFileSparse("c:\\tmptest\\Check.txt");
+                    LaplaceMtx.SaveToTextFileSparse("c:\\tmptest\\Laplace.txt");
+                    ErrMatrix.SaveToTextFileSparse("c:\\tmptest\\Error.txt");
                 }
                 Console.WriteLine("--------------------------------------------");
             }

@@ -203,8 +203,8 @@ namespace BoSSS.Application.SipPoisson {
                     //ErrMtx2.Acc(-1.0, JacobiMtx);
                     //double LinfErrMtx2 = ErrMtx2.InfNorm();
 
-                    //JacobiMtx.SaveToTextFileSparse("D:\\tmp\\Jac.txt");
-                    //LaplaceMtx.SaveToTextFileSparse("D:\\tmp\\Lap.txt");
+                    //JacobiMtx.SaveToTextFileSparse("D:\\tmptest\\Jac.txt");
+                    //LaplaceMtx.SaveToTextFileSparse("D:\\tmptest\\Lap.txt");
 
                     //Console.WriteLine("FD Jacobi Mtx: {0:e14}, Affine: {1:e14}", LinfErrMtx2, L2ErrAffine);
 
