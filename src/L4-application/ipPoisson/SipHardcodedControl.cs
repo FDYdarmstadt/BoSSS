@@ -275,7 +275,7 @@ namespace BoSSS.Application.SipPoisson {
         /// <summary>
         /// Poisson Equation on a (-1,1)x(-1,1), Dirichlet everywhere
         /// </summary>
-        public static SipControl Square(int xRes = 21, int yRes = 16, int deg = 5) {
+        public static SipControl Square(int xRes = 5, int yRes = 5, int deg = 5) {
 
             //Func<double[], double> exRhs = X => 2 * X[0] * X[0] + 2 * X[1] * X[1] - 4;
             //Func<double[], double> exSol = X => (1.0 - X[0] * X[0]) * (1.0 - X[1] * X[1]);
@@ -316,6 +316,10 @@ namespace BoSSS.Application.SipPoisson {
             R.AddBoundaryValue(BoundaryType.Dirichlet.ToString(), "T", exSol);
 
             R.NoOfSolverRuns = 1;
+
+            R.AdaptiveMeshRefinement = true;
+            R.NoOfTimesteps = 5; 
+
 
             return R;
         }
