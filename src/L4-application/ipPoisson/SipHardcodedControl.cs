@@ -351,7 +351,8 @@ namespace BoSSS.Application.SipPoisson {
 
             
             var R = new SipControl();
-            R.ProjectName = "ipPoison/cartesian";
+            R.ProjectName = "SipPoisson-Voronoi";
+            R.SessionName = "testrun";
             R.savetodb = false;
 
             R.FieldOptions.Add("T", new FieldOpts() { Degree = deg, SaveToDB = FieldOpts.SaveToDBOpt.TRUE });
@@ -362,6 +363,7 @@ namespace BoSSS.Application.SipPoisson {
             R.NoOfMultigridLevels = int.MaxValue;
             R.solver_name = solver_name;
             //R.TargetBlockSize = 100;
+
 
 
             bool IsIn(params double[] X) {
