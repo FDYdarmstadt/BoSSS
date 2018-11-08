@@ -392,10 +392,12 @@ namespace BoSSS.Application.SipPoisson {
             using (new FuncTrace()) {
                 //this.WriteSEMMatrices();
 
-                //base.NoOfTimesteps = -1;
-                //if (TimestepNo > 1)
-                //    throw new ApplicationException("steady-state-equation.");
-                //base.TerminationKey = true;
+                if (Control.AdaptiveMeshRefinement == false) {
+                    base.NoOfTimesteps = -1;
+                    if (TimestepNo > 1)
+                        throw new ApplicationException("steady-state-equation.");
+                    base.TerminationKey = true;
+                }
 
                 // Update matrices
                 // ---------------
