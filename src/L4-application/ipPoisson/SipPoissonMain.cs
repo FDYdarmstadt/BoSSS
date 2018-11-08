@@ -337,6 +337,10 @@ namespace BoSSS.Application.SipPoisson {
                 int MyLevelIndicator(int j, int CurrentLevel) {
                     double CellNorm = this.ResiualKP1.Coordinates.GetRow(j).L2NormPow2();
 
+
+                    if (j == 0)
+                        CurrentLevel = CurrentLevel + 1;
+
                     if (CellNorm > MeanNormPow2PerCell * 1.1)
                         return CurrentLevel + 1;
                     else
