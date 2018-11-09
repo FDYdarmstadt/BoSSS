@@ -98,8 +98,7 @@ namespace BoSSS.Application.SipPoisson {
                 return p;
             });
         }
-
-
+        
         /// <summary>
         /// Sets the multigrid coloring
         /// </summary>

@@ -468,7 +468,6 @@ namespace BoSSS.Application.SipPoisson {
                 var Nodes = MultidimensionalArray.Create(xNodes.Length, 2);
                 Nodes.SetColumn(0, xNodes);
                 Nodes.SetColumn(1, yNodes);
-                //Nodes.SaveToTextFile("C:\\tmp\\Nudes.txt");
                 
                 Matlab.PutMatrix(Nodes, "Nodes");
                
