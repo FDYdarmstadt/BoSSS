@@ -12,11 +12,8 @@ WorkflowMgm.Init("Name of Workflow");
  }
 \BoSSSexeSilent
 \BoSSScmd{
-/// This line helps us manage the sessions later on while evaluating the results.
- }
-\BoSSSexeSilent
-\BoSSScmd{
-/// Next, we determine the directory of the database.
+/// This line helps us manage the sessions later on while evaluating the results. 
+/// Next, we connect to the database.
  }
 \BoSSSexeSilent
 \BoSSScmd{
@@ -43,7 +40,7 @@ using BoSSS.Platform.LinAlg;
  }
 \BoSSSexeSilent
 \BoSSScmd{
-/// The last part of the initialization is to set up processors. Here, we have two choices - either we do the calculations locally (myBatch) or on the network cluster (myHPC). 
+/// The last part of the initialization is to set up processors. Here, we have two choices - either we do the calculations locally $(\code{myBatch})$ or on the network cluster $(\code{myHPC})$. 
 /// In order to use the network cluster, create a folder "cluster" in "P" and then set the HPC-Directory to this path.
  }
 \BoSSSexeSilent
@@ -54,7 +51,7 @@ var myHPC   = new MsHPC2012Client(@"Cluster Directory");
 \BoSSSexeSilent
 \BoSSScmd{
 /// \section{Grid Generation}
-///Firstly, we need to determine the boundaries of our grid/control volume. Is it important to know that the number of nodes needed are equal to the number of cells $+1$. For instance, for $10$ cells we need $11$ nodes. In this example we will use the Carthesian2D grid from the database which requires x- and y-Nodes. The J term in the code is for doing a check if the desired resolution of the volume is correctly typed.
+///Firstly, we need to determine the boundaries of our grid/control volume. Is it important to know that the number of nodes needed are equal to the number of cells $+1$. For instance, for $10$ cells we need $11$ nodes. In this example we will use the Cartesian $2D$ grid from the database which requires $x$- and $y$-Nodes. The J term in the code is for doing a check if the desired resolution of the volume is correctly typed.
  }
 \BoSSSexeSilent
 \BoSSScmd{
@@ -63,15 +60,15 @@ double[] yNodes = GenericBlas.Linspace(0, 1, Res + 1);\newline
 int J           = (xNodes.Length - 1)*(yNodes.Length - 1);\newline 
 string GridName = string.Format(WorkflowMgm.CurrentProject + "\_J" +J);\newline 
  \newline 
-\btab Console.WriteLine("Creating grid with " + J + " cells. ");\newline 
+Console.WriteLine("Creating grid with " + J + " cells. ");\newline 
  \newline 
-\btab GridCommons g;\newline 
-\btab g      = Grid2D.Cartesian2DGrid(xNodes, yNodes);\newline 
-\btab g.Name = GridName;
+GridCommons g;\newline 
+g      = Grid2D.Cartesian2DGrid(xNodes, yNodes);\newline 
+g.Name = GridName;
  }
 \BoSSSexeSilent
 \BoSSScmd{
-/// \section{Define Edges}
+/// \section{Define geometrical boundaries}
 /// After loading the grid and giving the dimensions, we need to adjust the edges and their names. With the following code we assign every edge with number and name. Keep in mind that the name corresponds to the boundary condition (in this case "Pressure Dirichlet").
  }
 \BoSSSexeSilent
@@ -111,7 +108,7 @@ string SinBeta = Math.Sin(beta*Math.PI/180.0).ToString();
  }
 \BoSSSexeSilent
 \BoSSScmd{
-///These code lines set up the case name and introduce the sine and cosine functions to our simulation. Next, we define the velocities in x- and y-direction via a tan-function. These velocities and angles are only for this particular example and would not be suited for your simulation.
+///These code lines set up the case name and introduce the sine and cosine functions to our simulation. Next, we define the velocities in $x$- and $y$-direction via a tan-function. These velocities and angles are only for this particular example and would not be suited for your simulation.
  }
 \BoSSSexeSilent
 \BoSSScmd{
@@ -120,7 +117,7 @@ var UY = new Formula (string.Format("X=> \{0\}*Math.Atan(X[1]*5)*2.0/Math.PI",Si
  }
 \BoSSSexeSilent
 \BoSSScmd{
-///After the velocities and boundary conditions are set. We need to determine all other simulation parameters needed to proceed. The variable $"ctrl"$ helps to skip the whole name $IBM Control()$. All other parameters are selfexplanatory.
+///After the velocities and boundary conditions are set. We need to determine all other simulation parameters needed to proceed. The variable $\code{ctrl}$ is used to store the $\code{IBM_Control}$-object. All other parameters are selfexplanatory.
  }
 \BoSSSexeSilent
 \BoSSScmd{
@@ -187,7 +184,7 @@ ctrl.NoOfTimesteps      = 100;
 \BoSSScmd{
 /// for the time-stepping scheme, you can choose either BDF2 or ImplicitEuler.
 /// \section{Starting of simulation}
-/// You have two possible ways to start a simulation - locally on the PC via myBatch or on the network cluster myHPC.
+/// You have two possible ways to start a simulation - locally on the PC via $\code{myBatch}$ or on the network cluster $\code{myHPC}$.
  }
 \BoSSSexeSilent
 \BoSSScmd{
@@ -216,8 +213,8 @@ WorkflowMgm.AllJobs.ElementAt(9).Value.Stdout;
  }
 \BoSSSexeSilent
 \BoSSScmd{
-/// \subsection{L$2$-Error}
-/// This section introduces the calculation of the L$2$-Error.
+/// \subsection{$L^2$-Error}
+/// This section introduces the calculation of the $L^2$-Error.
  }
 \BoSSSexeSilent
 \BoSSScmd{
@@ -296,7 +293,7 @@ CL.PlotNow();
  }
 \BoSSSexeSilent
 \BoSSScmd{
-/// \section{Exporting}
+/// \section{Exporting the session table}
  }
 \BoSSSexeSilent
 \BoSSScmd{
