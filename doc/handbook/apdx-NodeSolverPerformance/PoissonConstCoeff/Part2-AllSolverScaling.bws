@@ -1,13 +1,13 @@
 restart
 **************
 
-  Database Explorer v2
-  ____________________
+  BoSSSpad C# interpreter
+  _______________________
 
 Databases loaded:
-List of 0 instances of IDatabaseInfo {
+List of 1 instances of IDatabaseInfo {
+  0: { Session Count = 0; Grid Count = 34; Path = C:\BoSSS_DB }
 }
-Setting Matlab Connector to Octave...
 
  Console ready for input. Type 'help' for help.
 
@@ -21,7 +21,7 @@ using System.IO;
 using BoSSS.Application.SipPoisson;
 **************
 ==============
-string dateString = "2018-3-26";
+string dateString = "2018-11-7";
 string File       = "SolverRuns--" + dateString + ".json";
 string FilePath   = Path.Combine(CurrentDocDir, File);
 var SessTab       = TableExtensions.LoadFromFile(FilePath);
@@ -37,7 +37,7 @@ var SessTab       = TableExtensions.LoadFromFile(FilePath);
 ==============
 SessTab.GetColumnNames();
 **************
-List of 49 instances of String {
+List of 50 instances of String {
   0: SessionName
   1: DGdegree:T
   2: DGdegree:Tex
@@ -68,25 +68,26 @@ List of 49 instances of String {
   27: DynamicLoadBalancing_RedistributeAtStartup
   28: DynamicLoadBalancing_Period
   29: DynamicLoadBalancing_ImbalanceThreshold
-  30: AdaptiveMeshRefinement
-  31: CutCellQuadratureType
-  32: ContinueOnIoError
-  33: Grid:NoOfCells
-  34: Grid:hMax
-  35: Grid:hMin
-  36: UsedNoOfMultigridLevels
-  37: minSolRunT
-  38: maxSolRunT
-  39: Conv
-  40: NoIter
-  41: NoOfCells
-  42: DOFs
-  43: BlockSize
-  44: RegularTerminated
-  45: SipMatrixAssembly_time
-  46: Aggregation_basis_init_time
-  47: Solver_Init_time
-  48: Solver_Run_time
+  30: DynamicLoadBalancing_On
+  31: AdaptiveMeshRefinement
+  32: CutCellQuadratureType
+  33: ContinueOnIoError
+  34: Grid:NoOfCells
+  35: Grid:hMax
+  36: Grid:hMin
+  37: UsedNoOfMultigridLevels
+  38: minSolRunT
+  39: maxSolRunT
+  40: Conv
+  41: NoIter
+  42: NoOfCells
+  43: DOFs
+  44: BlockSize
+  45: RegularTerminated
+  46: SipMatrixAssembly_time
+  47: Aggregation_basis_init_time
+  48: Solver_Init_time
+  49: Solver_Run_time
 }
 ==============
 var SubTab_1 = SessTab.ExtractColumns("DGdegree:T", "Grid:NoOfCells", "solver_name", "DOFs", "minSolRunT", "maxSolRunT", "NoIter", "RegularTerminated", "Conv");
@@ -103,81 +104,17 @@ var SubTab = SubTab_2.ExtractColumns("DGdegree:T", "Grid:NoOfCells", "solver_nam
 ==============
 SubTab.Print();
 **************
-    DGdegree:T Grid:NoOfCells solver_name DOFs    minSolRunT  maxSolRunT  NoIter 
-0:  2          20480          4           204800  38.8239197  38.8239197  25     
-1:  2          2560           4           25600   5.7797818   5.7797818   30     
-2:  2          163840         4           1638400 310.8046237 310.8046237 23     
-3:  3          20480          6           409600  139.5348553 139.5348553 34     
-4:  3          2560           6           51200   14.3340817  14.3340817  38     
-5:  3          320            6           6400    6.4271863   6.4271863   211    
-6:  3          40             6           800     0.6650459   0.6650459   31     
-7:  2          163840         6           1638400 967.526137  967.526137  34     
-8:  2          20480          6           204800  47.4579363  47.4579363  32     
-9:  2          2560           6           25600   5.1623265   5.1623265   32     
-10: 2          320            6           3200    1.5083119   1.5083119   78     
-11: 2          40             6           400     0.5427695   0.5427695   28     
-12: 3          20480          4           409600  105.9824714 105.9824714 19     
-13: 3          2560           4           51200   14.9818409  14.9818409  26     
-14: 3          320            4           6400    1.7271275   1.7271275   5      
-15: 3          40             4           800     0.4727006   0.4727006   5      
-16: 2          320            4           3200    0.6922625   0.6922625   5      
-17: 2          40             4           400     0.401851    0.401851    5      
-18: 2          163840         3           1638400 205.9214854 207.712435  1      
-19: 3          20480          0           409600  490.1100894 518.7101765 1      
-20: 3          2560           0           51200   6.9900132   7.2164411   1      
-21: 3          320            0           6400    0.3281247   0.4473527   1      
-22: 3          40             0           800     0.0258516   0.1660214   1      
-23: 2          20480          0           204800  66.3348715  66.9722856  1      
-24: 2          2560           0           25600   1.8313964   1.9939942   1      
-25: 2          320            0           3200    0.0933036   0.227141    1      
-26: 2          40             0           400     0.0075192   0.1870387   1      
-27: 6          320            0           26880   7.3551583   7.509196    1      
-28: 5          320            0           17920   2.7617928   2.8880695   1      
-29: 4          320            0           11200   0.9386579   1.0991877   1      
-30: 3          320            0           6400    0.305347    0.4267376   1      
-31: 2          320            0           3200    0.0874117   0.2781498   1      
-32: 2          163840         2           1638400 52.1191614  52.2078826  6364   
-33: 4          20480          2           716800  79.2762248  79.3159898  6550   
-34: 4          2560           2           89600   4.7661487   4.7827978   2777   
-35: 4          320            2           11200   0.4063721   0.4315301   1129   
-36: 4          40             2           1400    0.1017392   0.1467253   442    
-37: 3          20480          2           409600  20.5670768  20.5828078  4496   
-38: 3          2560           2           51200   1.4128504   1.4770409   1907   
-39: 3          320            2           6400    0.188596    0.226396    772    
-40: 3          40             2           800     0.0554063   0.1030974   282    
-41: 2          20480          2           204800  3.3484205   3.3933564   2834   
-42: 2          2560           2           25600   0.3635454   0.4008203   1209   
-43: 2          320            2           3200    0.0930494   0.1289767   488    
-44: 2          40             2           400     0.0300314   0.069585    140    
-45: 6          2560           1           215040  309.0160683 310.168468  1      
-46: 6          320            1           26880   10.9285249  11.0252954  1      
-47: 6          40             1           3360    0.2176497   0.2381427   1      
-48: 5          2560           1           143360  99.9565818  101.6222717 1      
-49: 5          320            1           17920   4.1333074   4.2888166   1      
-50: 5          40             1           2240    0.0898083   0.0909635   1      
-51: 4          2560           1           89600   26.3633732  26.5831369  1      
-52: 4          320            1           11200   1.2207308   1.227546    1      
-53: 4          40             1           1400    0.029743    0.0854211   1      
-54: 3          20480          1           409600  242.6439168 243.0862851 1      
-55: 3          2560           1           51200   7.0109432   7.1546289   1      
-56: 3          320            1           6400    0.4149952   0.4240334   1      
-57: 3          40             1           800     0.0130627   0.0351609   1      
-58: 2          20480          1           204800  46.3075623  46.5139476  1      
-59: 2          2560           1           25600   1.5280948   1.5659212   1      
-60: 2          320            1           3200    0.0442264   0.062788    1      
-61: 2          40             1           400     0.0036322   0.0435425   1      
-62: 6          2560           0           215040  344.8825203 345.9041878 1      
-63: 6          40             0           3360    0.3406199   0.460534    1      
-64: 5          2560           0           143360  108.6526829 108.6534426 1      
-65: 5          40             0           2240    0.1639026   0.2790131   1      
-66: 4          2560           0           89600   29.095991   29.7360778  1      
-67: 4          40             0           1400    0.0604208   0.193336    1      
-68: 3          20480          0           409600  464.9720118 475.8218817 1      
-69: 3          2560           0           51200   6.2259657   6.4669901   1      
-70: 3          40             0           800     0.024444    0.1487611   1      
-71: 2          20480          0           204800  58.7884026  59.4603266  1      
-72: 2          2560           0           25600   1.5580864   1.7271004   1      
-73: 2          40             0           400     0.0088426   0.3545052   1      
+   DGdegree:T Grid:NoOfCells solver_name DOFs    minSolRunT   maxSolRunT   NoIter 
+0: 2          163840         4           1638400 768.206441   768.206441   67     
+1: 2          20480          4           204800  87.5742284   87.5742284   66     
+2: 2          2560           4           25600   10.2581241   10.2581241   77     
+3: 2          320            4           3200    0.6203332    0.6203332    5      
+4: 2          40             4           400     0.3336844    0.3336844    5      
+5: 2          163840         6           1638400 2969.0162684 2969.0162684 39     
+6: 2          20480          6           204800  285.9048549  285.9048549  36     
+7: 2          2560           6           25600   14.2846454   14.2846454   21     
+8: 2          320            6           3200    0.6953308    0.6953308    5      
+9: 2          40             6           400     0.8118458    0.8118458    5      
 ==============
 **************
 ==============
@@ -405,7 +342,7 @@ multiplots.AddDummyPlotsForLegend(2,0);
 ==============
 var CL = multiplots.ToGnuplot().PlotCairolatex(xSize:17, ySize:17);
 **************
-Using gnuplot: C:\Program Files (x86)\FDY\BoSSS\bin\native\win\gnuplot-gp510-20160418-win32-mingw\gnuplot\bin\gnuplot.exe
+Using gnuplot: C:\Program Files\FDY\BoSSS\bin\native\win\gnuplot-gp510-20160418-win32-mingw\gnuplot\bin\gnuplot.exe
 
 ==============
 //CL.SaveTo(Path.Combine(CurrentDocDir, "ConstCoeffPoissonScaling.tex"));
@@ -413,11 +350,14 @@ Using gnuplot: C:\Program Files (x86)\FDY\BoSSS\bin\native\win\gnuplot-gp510-201
 ==============
 CL.PlotNow();
 **************
-System.Drawing.Bitmap
+System.ComponentModel.Win32Exception occurred: Das System kann die angegebene Datei nicht finden. Type 'LastError' for details.
+
 ==============
 CL.WriteMinimalCompileableExample(
    Path.Combine(CurrentDocDir, "plots", "MainConstCoeffPoissonScaling.tex"),
    "ConstCoeffPoissonScaling.tex");
+**************
+==============
 **************
 ==============
 **************
