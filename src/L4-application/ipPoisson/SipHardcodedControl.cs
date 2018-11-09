@@ -494,14 +494,17 @@ namespace BoSSS.Application.SipPoisson {
                     }
                 }
 
-                //
+                // tessellation
                 List<Cell> cells = new List<Cell>();
+                List<int[]> aggregation = new List<int[]>();
                 for(int jV = 0; jV < ResFix; jV++) { // loop over Voronoi Cells
                     Debug.Assert(IsIn(Nodes.GetRow(jV)));
                     int[] iVtxS = OutputVertexIndex[jV];
                     int NV = iVtxS.Length;
 
-                    for(int iTri = 0; iTri < NV - 2; iTri++) {
+                    List<int> Agg2Pt = new List<int>();
+
+                    for(int iTri = 0; iTri < NV - 2; iTri++) { // loop over triangles of voronoi cell
                         int iV0 = iVtxS[0];
                         int iV1 = iVtxS[iTri + 1];
                         int iV2 = iVtxS[iTri + 2];
@@ -533,21 +536,25 @@ namespace BoSSS.Application.SipPoisson {
                         Cj.TransformationParams.SetRow(0, V0);
                         Cj.TransformationParams.SetRow(1, V1);
                         Cj.TransformationParams.SetRow(2, V2);
+
+                        Agg2Pt.Add(cells.Count);
+
                         cells.Add(Cj);
                     }
 
+                    aggregation.Add(Agg2Pt.ToArray());
                 }
 
                 // return grid
                 grd = new Grid2D(Triangle.Instance);
                 grd.Cells = cells.ToArray();
-
-                //grd.Plot2DGrid();
-
                 grd.EdgeTagNames.Add(1, BoundaryType.Dirichlet.ToString());
                 grd.DefineEdgeTags(X => (byte)1);
 
+                //grd.Plot2DGrid();
 
+                // create aggregation grid
+                var agrd = new AggregationGrid(grd, aggregation.ToArray());
                 return grd;
             };
             R.GridFunc = GridFunc;
