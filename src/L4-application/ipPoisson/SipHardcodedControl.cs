@@ -553,7 +553,7 @@ namespace BoSSS.Application.SipPoisson {
                 //grd.Plot2DGrid();
 
                 // create aggregation grid
-                var agrd = new AggregationGrid(grd, aggregation.ToArray());
+                //var agrd = new AggregationGrid(grd, aggregation.ToArray());
                 return grd;
             };
             R.GridFunc = GridFunc;
