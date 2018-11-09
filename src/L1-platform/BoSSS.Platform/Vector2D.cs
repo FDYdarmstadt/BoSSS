@@ -549,8 +549,6 @@ namespace BoSSS.Platform.LinAlg {
         /// <paramref name="RowNo"/>-th row of <paramref name="inp"/>
         /// </returns>
         public static Vector GetRowPt(this IMatrix inp, int RowNo) {
-
-
             switch(inp.NoOfCols) {
                 case 1:
                 return new Vector(inp[RowNo, 0]);
