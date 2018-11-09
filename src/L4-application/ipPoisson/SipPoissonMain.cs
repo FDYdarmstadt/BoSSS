@@ -83,28 +83,6 @@ namespace BoSSS.Application.SipPoisson {
             });
         }
 
-        /// <summary>
-        /// 1D Nodes which can be blended between linear- and Cosine-spacing
-        /// </summary>
-        /// <param name="l"></param>
-        /// <param name="r"></param>
-        /// <param name="a">blending between linear and cosine - spacing: 1.0 = full cosine,
-        /// 0.0 = full linear;</param>
-        /// <param name="n">number of nodes</param>
-        /// <returns></returns>
-        static double[] CosLinSpaceing(double l, double r, double a, int n) {
-            double[] linnodes = GenericBlas.Linspace(0, Math.PI * 0.5, n);
-            double[] linnodes2 = GenericBlas.Linspace(0, 1, n);
-            double[] nodes = new double[n];
-
-            for (int i = 0; i < n; i++)
-                nodes[i] = linnodes2[i] * (1 - a) + (1.0 - Math.Cos(linnodes[i])) * a;
-
-            for (int i = 0; i < n; i++)
-                nodes[i] = nodes[i] * (r - l) + l;
-            return nodes;
-
-        }
 
         protected override void SetInitial() {
             base.SetInitial();
