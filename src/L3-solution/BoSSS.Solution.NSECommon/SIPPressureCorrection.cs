@@ -26,7 +26,7 @@ namespace BoSSS.Solution.NSECommon {
     /// SIP discretization of Laplace operator for pressure correction,
     /// with penalty for pressure correction.
     /// </summary>
-    public class IP1_Flux_PressureCorrection : ipLaplace {
+    public class IP1_Flux_PressureCorrection : SIPLaplace {
 
         IncompressibleBoundaryCondMap m_BcMap;
 

@@ -19,6 +19,7 @@ using System.Collections.Generic;
 using System.Text;
 using System.Runtime.InteropServices;
 using System.Diagnostics;
+using ilPSP.Utils;
 
 namespace BoSSS.Platform.LinAlg {
 
@@ -218,8 +219,15 @@ namespace BoSSS.Platform.LinAlg {
         public double Abs() {
             return Math.Sqrt(x * x + y * y + z * z);
         }
-
-
+        
+        /// <summary>
+        /// the absolute value (length) of this vector 
+        /// </summary>
+        /// <returns></returns>
+        public double L2Norm() {
+            return Math.Sqrt(x * x + y * y + z * z);
+        }
+        
         /// <summary>
         /// the absolute value (length) of this vector to the power of two
         /// </summary>
@@ -519,6 +527,41 @@ namespace BoSSS.Platform.LinAlg {
                 destination[i + destinationIndex] = this[i];
             }
         }
-
     }
+
+    /// <summary>
+    /// Extension methods for <see cref="Vector"/>
+    /// </summary>
+    public static class VectorExtensions {
+
+        /// <summary>
+        /// extracts the <paramref name="RowNo"/>-th row from
+        /// <paramref name="inp"/>.
+        /// </summary>
+        /// <param name="inp">
+        /// input matrix
+        /// </param>
+        /// <param name="RowNo">
+        /// row which should be extracted
+        /// </param>
+        /// <returns>
+        /// an array with length equal to 2nd length of <paramref name="inp"/>, containing the
+        /// <paramref name="RowNo"/>-th row of <paramref name="inp"/>
+        /// </returns>
+        public static Vector GetRowPt(this IMatrix inp, int RowNo) {
+
+
+            switch(inp.NoOfCols) {
+                case 1:
+                return new Vector(inp[RowNo, 0]);
+                case 2:
+                return new Vector(inp[RowNo, 0], inp[RowNo, 1]);
+                case 3:
+                return new Vector(inp[RowNo, 0], inp[RowNo, 1], inp[RowNo, 2]);
+                default:
+                throw new ArgumentException();
+            }
+        }
+    }
+
 }

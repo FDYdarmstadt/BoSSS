@@ -53,7 +53,7 @@ namespace BoSSS.Application.ExternalBinding {
         }
 
 
-        class Laplace : BoSSS.Solution.NSECommon.ipLaplace {
+        class Laplace : BoSSS.Solution.NSECommon.SIPLaplace {
             public Laplace(double penalty_const, MultidimensionalArray cj)
                 : base(penalty_const, cj, "T") //
             {

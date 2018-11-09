@@ -1537,7 +1537,7 @@ namespace BoSSS.Solution {
 
         /// <summary>
         /// number of time-steps to be performed; <see cref="RunSolverMode"/>
-        /// terminates if the number of time-steps exceeds this number;
+        /// terminates if the number of time-steps exceeds this number; At startup, initialized equal to  <see cref="AppControl.NoOfTimesteps"/>.
         /// </summary>
         /// <remarks>
         /// This also holds if the configured <see cref="EndTime"/> has not
