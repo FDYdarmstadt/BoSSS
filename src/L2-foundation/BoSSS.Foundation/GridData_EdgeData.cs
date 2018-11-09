@@ -1103,24 +1103,24 @@ namespace BoSSS.Foundation.Grid.Classic {
                         var second_polygon = CheckFace(VtxEdge2_Loc);
                         double ref_area = Math.Min(SpanArea(first_polygon), SpanArea(second_polygon));
 
-                        var intersect = new List<double[]>(second_polygon);
+                        var intersect = new List<Vector>(second_polygon);
                         bool _conformal2 = true;
                         for (int i = 0; i < first_polygon.Count; i++) {
-                            var V1 = first_polygon[i];
+                            Vector V1 = first_polygon[i];
                             int ip1 = (i + 1) % first_polygon.Count;
-                            var V2 = first_polygon[ip1];
+                            Vector V2 = first_polygon[ip1];
 
                             var H = AffineManifold.FromPoints(V1, V2);
-                            var Tol_Dist = Math.Max(V1.L2Norm(), V2.L2Norm()) * 1e-10;
+                            var Tol_Dist = Math.Max(V1.Abs(), V2.Abs()) * 1e-10;
 
                             {
                                 int ip2 = (i + 2) % first_polygon.Count;
                                 var Pin = first_polygon[ip2];
                                 if (H.PointDistance(Pin) < 0)
-                                    H.Normal.ScaleV(-1);
+                                    H.Normal.Scale(-1);
                             }
 
-                            var C = new List<double[]>();
+                            var C = new List<Vector>();
                             for (int j = 0; j < intersect.Count; j++) {
                                 var V3 = intersect[j];
                                 int jp1 = (j + 1) % intersect.Count;
@@ -1173,7 +1173,7 @@ namespace BoSSS.Foundation.Grid.Classic {
                                     int ip2 = (i + 2) % N2;
                                     var Pin = second_polygon[ip2];
                                     if (H.PointDistance(Pin) < 0)
-                                        H.Normal.ScaleV(-1);
+                                        H.Normal.Scale(-1);
                                 }
 
 
@@ -1229,7 +1229,7 @@ namespace BoSSS.Foundation.Grid.Classic {
                 }
             }
 
-            private static double SpanArea(List<double[]> second_polygon) {
+            private static double SpanArea(List<Vector> second_polygon) {
                 double span_area;
                 int N2 = second_polygon.Count;
                 double sp1x = second_polygon[1][0] - second_polygon[0][0];
@@ -1245,7 +1245,7 @@ namespace BoSSS.Foundation.Grid.Classic {
             /// </summary>
             /// <param name="VtxEdge1_Loc"></param>
             /// <returns></returns>
-            private static List<double[]> CheckFace(MultidimensionalArray _VtxEdge1_Loc) {
+            private static List<Vector> CheckFace(MultidimensionalArray _VtxEdge1_Loc) {
 
                 MultidimensionalArray VtxEdge1_Loc = MultidimensionalArray.Create(_VtxEdge1_Loc.Lengths);
                 VtxEdge1_Loc.Set(_VtxEdge1_Loc);
@@ -1269,9 +1269,9 @@ namespace BoSSS.Foundation.Grid.Classic {
                 }
 
 
-                var ret = new List<double[]>();
+                var ret = new List<Vector>();
                 for (int i = 0; i < N1; i++) {
-                    ret.Add(VtxEdge1_Loc.GetRow(i));
+                    ret.Add(VtxEdge1_Loc.GetRowPt(i));
                 }
                 return ret;
             }

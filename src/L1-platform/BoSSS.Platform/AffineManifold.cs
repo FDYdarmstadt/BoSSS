@@ -31,7 +31,9 @@ namespace BoSSS.Platform.LinAlg {
         /// </summary>
         /// <param name="D"></param>
         public AffineManifold(int D) {
-            Normal = new double[D];
+            if (D <= 1)
+                throw new ArgumentException("1D or lower is not supported");
+            Normal = new Vector(D);
         }
 
         /// <summary>
@@ -39,17 +41,30 @@ namespace BoSSS.Platform.LinAlg {
         /// </summary>
         /// <param name="_Normal">normal onto the affine manifold</param>
         /// <param name="_Offset">one point in the plane, can be null</param>
-        public AffineManifold(double[] _Normal, double[] _Offset) {
-            if (_Normal.Length != _Offset.Length)
-                throw new ArgumentException();
+        public AffineManifold(double[] _Normal, double[] _Offset) 
+            : this(new Vector(_Normal), new Vector(_Offset != null ? _Offset : new double[_Normal.Length]))
+        {
 
-            Normal = _Normal.CloneAs();
-            if (_Offset != null) {
-                int D = Normal.Length;
-                for (int d = 0; d < D; d++) {
-                    this.a += Normal[d]*_Offset[d];
-                }
+        }
+
+        /// <summary>
+        /// constructs an affine manifold from normal vector and offset point
+        /// </summary>
+        /// <param name="_Normal">normal onto the affine manifold</param>
+        /// <param name="_Offset">one point in the plane, can be null</param>
+        public AffineManifold(Vector _Normal, Vector _Offset) {
+            if (_Normal.Dim != _Offset.Dim)
+                throw new ArgumentException();
+            if (_Normal.Dim <= 1)
+                throw new ArgumentException("1D or lower is not supported");
+
+            Normal = _Normal;
+
+            int D = Normal.Dim;
+            for (int d = 0; d < D; d++) {
+                this.a += Normal[d] * _Offset[d];
             }
+
         }
 
         /// <summary>
@@ -58,12 +73,13 @@ namespace BoSSS.Platform.LinAlg {
         /// <param name="pts">
         /// points on the manifold;
         /// 1st index: point index.
-        /// 2nd index: spatial dimension.
         /// </param>
-        static public AffineManifold FromPoints(params double[][] pts) {
+        static public AffineManifold FromPoints(params Vector[] pts) {
             int D = pts.Length;
+            if (D <= 1)
+                throw new ArgumentException("1D or lower is not supported");
             for (int i = 0; i < D; i++)
-                if (pts[i].Length != D)
+                if (pts[i].Dim != D)
                     throw new ArgumentException();
             var ret = new AffineManifold(D);
 
@@ -90,10 +106,9 @@ namespace BoSSS.Platform.LinAlg {
                 throw new NotSupportedException();
 
             }
-            ret.a = GenericBlas.InnerProd(ret.Normal, pts[0]);
+            ret.a = ret.Normal * pts[0];
 
             return ret;
-
         }
 
 
@@ -149,7 +164,7 @@ namespace BoSSS.Platform.LinAlg {
 
             }
             double[] Offset = pts.ExtractSubArrayShallow(0, -1).To1DArray();
-            ret.a = GenericBlas.InnerProd(ret.Normal, Offset);
+            ret.a = ret.Normal * (new Vector(Offset));
 
             return ret;
         }
@@ -159,7 +174,7 @@ namespace BoSSS.Platform.LinAlg {
         /// <summary>
         /// surface normal
         /// </summary>
-        public double[] Normal;
+        public Vector Normal;
 
         /// <summary>
         /// affine offset (result of scalar product of <see cref="Normal"/>*x, with x being an arbitrary point in the surface)
@@ -170,11 +185,11 @@ namespace BoSSS.Platform.LinAlg {
         /// the distance of some point to the affine manifold/plane, in multiples of the norm of <see cref="Normal"/>;
         /// </summary>
         public double PointDistance(params double[] pt) {
-            if (pt.Length != this.Normal.Length)
+            if (pt.Length != this.Normal.Dim)
                 throw new ArgumentException();
 
             double ret = 0;
-            for (int d = this.Normal.Length - 1; d >= 0; d--) {
+            for (int d = this.Normal.Dim - 1; d >= 0; d--) {
                 ret += pt[d]*this.Normal[d];
             }
             ret -= this.a;
@@ -190,14 +205,14 @@ namespace BoSSS.Platform.LinAlg {
             var other = _other as AffineManifold;
             if (other == null)
                 throw new ArgumentException();
-            if (other.Normal.Length != this.Normal.Length)
+            if (other.Normal.Dim != this.Normal.Dim)
                 throw new ArgumentException();
 
-            double l1 = GenericBlas.L2NormPow2(this.Normal);
-            double l2 = GenericBlas.L2NormPow2(other.Normal);
+            double l1 = this.Normal.AbsSquare();
+            double l2 = other.Normal.AbsSquare();
             double Tol = (l1 + l2) * RelTol;
 
-            var inner_prod = GenericBlas.InnerProd(this.Normal, other.Normal);
+            double inner_prod =   this.Normal * other.Normal;
 
             double cos_alpha = inner_prod / Math.Sqrt(l1*l2);
             if (Math.Abs(Math.Abs(cos_alpha) - 1) > 1.0E-12)
@@ -225,7 +240,7 @@ namespace BoSSS.Platform.LinAlg {
         /// hash
         /// </summary>
         public override int GetHashCode() {
-            return (int)((a + GenericBlas.L2NormPow2(this.Normal))*1000.0);
+            return (int)((a + (this.Normal.AbsSquare()))*1000.0);
         }
 
         /// <summary>
@@ -233,8 +248,8 @@ namespace BoSSS.Platform.LinAlg {
         /// </summary>
         /// <returns></returns>
         public object Clone() {
-            var ret = new AffineManifold(this.Normal.Length);
-            Array.Copy(this.Normal, ret.Normal, this.Normal.Length);
+            var ret = new AffineManifold(this.Normal.Dim);
+            Array.Copy(this.Normal, ret.Normal, this.Normal.Dim);
             ret.a = this.a;
             return ret;
         }
@@ -242,13 +257,11 @@ namespace BoSSS.Platform.LinAlg {
         /// <summary>
         /// Intersection of two 1D affine manifolds in 2D space
         /// </summary>
-        static public double[] Intersect2D(AffineManifold A, AffineManifold B) {
-            if (A.Normal.Length != 2)
+        static public Vector Intersect2D(AffineManifold A, AffineManifold B) {
+            if (A.Normal.Dim != 2)
                 throw new ArgumentException();
-            if (B.Normal.Length != 2)
+            if (B.Normal.Dim != 2)
                 throw new ArgumentException();
-
-            double[] ret = new double[2];
 
             double n1x = A.Normal[0];
             double n1y = A.Normal[1];
@@ -257,10 +270,10 @@ namespace BoSSS.Platform.LinAlg {
             double n2y = B.Normal[1];
             double a2 = B.a;
 
-            ret[0] = (-n1y*a2+a1*n2y)/(n1x*n2y-n2x*n1y);
-            ret[1] = -(-n1x*a2+n2x*a1)/(n1x*n2y-n2x*n1y);
-
-            return ret;
+            return new Vector(
+                (-n1y*a2+a1*n2y)/(n1x*n2y-n2x*n1y),
+               -(-n1x*a2+n2x*a1)/(n1x*n2y-n2x*n1y)
+               );
         }
     }
 }
