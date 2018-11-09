@@ -34,7 +34,7 @@ namespace BoSSS.Foundation.IO {
     public static class Utils {
 
         /// <summary>
-        /// searches for the User- or Machine-environment variable 'BOSSS_INSTALL'
+        /// searches for the User- or Machine-environment variable 'BOSSS_INSTALL_TEST'
         /// and verifies the existence of this directory.
         /// </summary>
         /// <returns></returns>
