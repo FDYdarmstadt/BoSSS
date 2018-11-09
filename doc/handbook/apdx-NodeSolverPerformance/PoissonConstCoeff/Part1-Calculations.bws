@@ -1,5 +1,6 @@
 restart
 **************
+
   BoSSSpad C# interpreter
   _______________________
 
@@ -36,7 +37,7 @@ var myBatch = new MiniBatchProcessorClient(@"C:\tmp\deploy");
 MiniBatchProcessor.Server.StartIfNotRunning();
 **************
 Starting mini batch processor in external process...
-Started mini batch processor on local machine, process id is 7020.
+Started mini batch processor on local machine, process id is 13768.
 
 ==============
 // ===================
@@ -123,23 +124,23 @@ for(int cnt = 0; cnt < Resolutions_3D.Length; cnt++) {
     
 }
 **************
-Found Grid: { Guid = c2d46229-0844-42fa-89f0-b966355264a0; Name = PoissonSolverPerformance_J40; Cell Count = 40; Dim = 3 }
-Found Grid: { Guid = b5591d70-2ddb-4a26-8197-03cb69f36377; Name = PoissonSolverPerformance_J320; Cell Count = 320; Dim = 3 }
-Found Grid: { Guid = 6495e003-ee53-443e-b9ee-6fae551ec191; Name = PoissonSolverPerformance_J2560; Cell Count = 2560; Dim = 3 }
-Found Grid: { Guid = 17668409-afe8-4e51-b438-5b7bffb898ac; Name = PoissonSolverPerformance_J20480; Cell Count = 20480; Dim = 3 }
-Found Grid: { Guid = 2c206d7b-b091-46fa-a808-9cb810b8662a; Name = PoissonSolverPerformance_J163840; Cell Count = 163840; Dim = 3 }
-Found Grid: { Guid = 8f74c894-3d47-466a-963b-2a610ad68fc5; Name = PoissonSolverPerformance_J1310720; Cell Count = 1310720; Dim = 3 }
+Creating grid with 40 cells.
+Creating grid with 320 cells.
+Creating grid with 2560 cells.
+Creating grid with 20480 cells.
+Creating grid with 163840 cells.
+Creating grid with 1310720 cells.
 
 ==============
 grids;
 **************
 List of 6 instances of IGridInfo {
-  0: { Guid = c2d46229-0844-42fa-89f0-b966355264a0; Name = PoissonSolverPerformance_J40; Cell Count = 40; Dim = 3 }
-  1: { Guid = b5591d70-2ddb-4a26-8197-03cb69f36377; Name = PoissonSolverPerformance_J320; Cell Count = 320; Dim = 3 }
-  2: { Guid = 6495e003-ee53-443e-b9ee-6fae551ec191; Name = PoissonSolverPerformance_J2560; Cell Count = 2560; Dim = 3 }
-  3: { Guid = 17668409-afe8-4e51-b438-5b7bffb898ac; Name = PoissonSolverPerformance_J20480; Cell Count = 20480; Dim = 3 }
-  4: { Guid = 2c206d7b-b091-46fa-a808-9cb810b8662a; Name = PoissonSolverPerformance_J163840; Cell Count = 163840; Dim = 3 }
-  5: { Guid = 8f74c894-3d47-466a-963b-2a610ad68fc5; Name = PoissonSolverPerformance_J1310720; Cell Count = 1310720; Dim = 3 }
+  0: { Guid = 9a10788a-a2e8-4291-8a90-33f9fd225e19; Name = PoissonSolverPerformance_J40; Cell Count = 40; Dim = 3 }
+  1: { Guid = ee16a351-cbeb-4ca1-842b-d8d4bbcdad85; Name = PoissonSolverPerformance_J320; Cell Count = 320; Dim = 3 }
+  2: { Guid = 91edad8e-70d8-46a5-b853-b5a8c01b77aa; Name = PoissonSolverPerformance_J2560; Cell Count = 2560; Dim = 3 }
+  3: { Guid = c8debc1e-16e7-4332-b69b-ba16266690cd; Name = PoissonSolverPerformance_J20480; Cell Count = 20480; Dim = 3 }
+  4: { Guid = cff05621-aa69-4853-b4dc-88d70da2a27f; Name = PoissonSolverPerformance_J163840; Cell Count = 163840; Dim = 3 }
+  5: { Guid = bb01590c-e20a-418d-9ddc-75dea56cc790; Name = PoissonSolverPerformance_J1310720; Cell Count = 1310720; Dim = 3 }
 }
 ==============
 **************
@@ -427,13 +428,13 @@ setting up: J20480_k8_exp_softpcg_mg
 ==============
 **************
 ==============
-int cnt = 0;
-//foreach(var ctrl in controls) {
+//int cnt = 0;
+foreach(var ctrl in controls) {
     Console.WriteLine(" Submitting: " + ctrl.SessionName);
     ctrl.RunBatch(myBatch);
     //ctrl.RunBatch(TestBatches[cnt]); 
     //cnt = (cnt+ 1) % TestBatches.Length;
-//}
+}
 **************
  Submitting: J40_k2_classic_pardiso
 System.ArgumentException occurred: Job with name 'J40_k2_classic_pardiso' is already defined in the workflow management.. Type 'LastError' for details.
@@ -443,7 +444,151 @@ System.ArgumentException occurred: Job with name 'J40_k2_classic_pardiso' is alr
 ==============
 WorkflowMgm.AllJobs.Select(kv => kv.Key + ": \t" + kv.Value.Status);
 **************
-List of 0 instances of String {
+List of 144 instances of String {
+  0: J40_k2_classic_pardiso: 	FinishedSuccessful
+  1: J320_k2_classic_pardiso: 	FinishedSuccessful
+  2: J2560_k2_classic_pardiso: 	FinishedSuccessful
+  3: J20480_k2_classic_pardiso: 	FinishedSuccessful
+  4: J163840_k2_classic_pardiso: 	FinishedSuccessful
+  5: J40_k3_classic_pardiso: 	FinishedSuccessful
+  6: J320_k3_classic_pardiso: 	FinishedSuccessful
+  7: J2560_k3_classic_pardiso: 	FinishedSuccessful
+  8: J20480_k3_classic_pardiso: 	FinishedSuccessful
+  9: J163840_k3_classic_pardiso: 	Failed
+  10: J40_k5_classic_pardiso: 	FinishedSuccessful
+  11: J320_k5_classic_pardiso: 	FinishedSuccessful
+  12: J2560_k5_classic_pardiso: 	FinishedSuccessful
+  13: J20480_k5_classic_pardiso: 	Failed
+  14: J40_k8_classic_pardiso: 	Failed
+  15: J320_k8_classic_pardiso: 	Failed
+  16: J2560_k8_classic_pardiso: 	Failed
+  17: J20480_k8_classic_pardiso: 	Failed
+  18: J40_k2_classic_mumps: 	FinishedSuccessful
+  19: J320_k2_classic_mumps: 	FinishedSuccessful
+  20: J2560_k2_classic_mumps: 	FinishedSuccessful
+  21: J20480_k2_classic_mumps: 	FinishedSuccessful
+  22: J163840_k2_classic_mumps: 	Failed
+  23: J40_k3_classic_mumps: 	FinishedSuccessful
+  24: J320_k3_classic_mumps: 	FinishedSuccessful
+  25: J2560_k3_classic_mumps: 	FinishedSuccessful
+  26: J20480_k3_classic_mumps: 	Failed
+  27: J163840_k3_classic_mumps: 	Failed
+  28: J40_k5_classic_mumps: 	FinishedSuccessful
+  29: J320_k5_classic_mumps: 	FinishedSuccessful
+  30: J2560_k5_classic_mumps: 	FinishedSuccessful
+  31: J20480_k5_classic_mumps: 	Failed
+  32: J40_k8_classic_mumps: 	Failed
+  33: J320_k8_classic_mumps: 	Failed
+  34: J2560_k8_classic_mumps: 	Failed
+  35: J20480_k8_classic_mumps: 	Failed
+  36: J40_k2_classic_cg: 	FinishedSuccessful
+  37: J320_k2_classic_cg: 	FinishedSuccessful
+  38: J2560_k2_classic_cg: 	FinishedSuccessful
+  39: J20480_k2_classic_cg: 	FinishedSuccessful
+  40: J163840_k2_classic_cg: 	FinishedSuccessful
+  41: J40_k3_classic_cg: 	FinishedSuccessful
+  42: J320_k3_classic_cg: 	FinishedSuccessful
+  43: J2560_k3_classic_cg: 	FinishedSuccessful
+  44: J20480_k3_classic_cg: 	FinishedSuccessful
+  45: J163840_k3_classic_cg: 	Failed
+  46: J40_k5_classic_cg: 	FinishedSuccessful
+  47: J320_k5_classic_cg: 	FinishedSuccessful
+  48: J2560_k5_classic_cg: 	FinishedSuccessful
+  49: J20480_k5_classic_cg: 	Failed
+  50: J40_k8_classic_cg: 	Failed
+  51: J320_k8_classic_cg: 	Failed
+  52: J2560_k8_classic_cg: 	Failed
+  53: J20480_k8_classic_cg: 	Failed
+  54: J40_k2_exp_softpcg_schwarz_directcoarse: 	FinishedSuccessful
+  55: J320_k2_exp_softpcg_schwarz_directcoarse: 	FinishedSuccessful
+  56: J2560_k2_exp_softpcg_schwarz_directcoarse: 	FinishedSuccessful
+  57: J20480_k2_exp_softpcg_schwarz_directcoarse: 	FinishedSuccessful
+  58: J163840_k2_exp_softpcg_schwarz_directcoarse: 	FinishedSuccessful
+  59: J40_k3_exp_softpcg_schwarz_directcoarse: 	FinishedSuccessful
+  60: J320_k3_exp_softpcg_schwarz_directcoarse: 	FinishedSuccessful
+  61: J2560_k3_exp_softpcg_schwarz_directcoarse: 	FinishedSuccessful
+  62: J20480_k3_exp_softpcg_schwarz_directcoarse: 	FinishedSuccessful
+  63: J163840_k3_exp_softpcg_schwarz_directcoarse: 	InProgress
+  64: J40_k5_exp_softpcg_schwarz_directcoarse: 	PendingInExecutionQueue
+  65: J320_k5_exp_softpcg_schwarz_directcoarse: 	PendingInExecutionQueue
+  66: J2560_k5_exp_softpcg_schwarz_directcoarse: 	PendingInExecutionQueue
+  67: J20480_k5_exp_softpcg_schwarz_directcoarse: 	PendingInExecutionQueue
+  68: J40_k8_exp_softpcg_schwarz_directcoarse: 	PendingInExecutionQueue
+  69: J320_k8_exp_softpcg_schwarz_directcoarse: 	PendingInExecutionQueue
+  70: J2560_k8_exp_softpcg_schwarz_directcoarse: 	PendingInExecutionQueue
+  71: J20480_k8_exp_softpcg_schwarz_directcoarse: 	PendingInExecutionQueue
+  72: J40_k2_exp_direct: 	PendingInExecutionQueue
+  73: J320_k2_exp_direct: 	PendingInExecutionQueue
+  74: J2560_k2_exp_direct: 	PendingInExecutionQueue
+  75: J20480_k2_exp_direct: 	PendingInExecutionQueue
+  76: J163840_k2_exp_direct: 	PendingInExecutionQueue
+  77: J40_k3_exp_direct: 	PendingInExecutionQueue
+  78: J320_k3_exp_direct: 	PendingInExecutionQueue
+  79: J2560_k3_exp_direct: 	PendingInExecutionQueue
+  80: J20480_k3_exp_direct: 	PendingInExecutionQueue
+  81: J163840_k3_exp_direct: 	PendingInExecutionQueue
+  82: J40_k5_exp_direct: 	PendingInExecutionQueue
+  83: J320_k5_exp_direct: 	PendingInExecutionQueue
+  84: J2560_k5_exp_direct: 	PendingInExecutionQueue
+  85: J20480_k5_exp_direct: 	PendingInExecutionQueue
+  86: J40_k8_exp_direct: 	PendingInExecutionQueue
+  87: J320_k8_exp_direct: 	PendingInExecutionQueue
+  88: J2560_k8_exp_direct: 	PendingInExecutionQueue
+  89: J20480_k8_exp_direct: 	PendingInExecutionQueue
+  90: J40_k2_exp_softpcg_schwarz: 	PendingInExecutionQueue
+  91: J320_k2_exp_softpcg_schwarz: 	PendingInExecutionQueue
+  92: J2560_k2_exp_softpcg_schwarz: 	PendingInExecutionQueue
+  93: J20480_k2_exp_softpcg_schwarz: 	PendingInExecutionQueue
+  94: J163840_k2_exp_softpcg_schwarz: 	PendingInExecutionQueue
+  95: J40_k3_exp_softpcg_schwarz: 	PendingInExecutionQueue
+  96: J320_k3_exp_softpcg_schwarz: 	PendingInExecutionQueue
+  97: J2560_k3_exp_softpcg_schwarz: 	PendingInExecutionQueue
+  98: J20480_k3_exp_softpcg_schwarz: 	PendingInExecutionQueue
+  99: J163840_k3_exp_softpcg_schwarz: 	PendingInExecutionQueue
+  100: J40_k5_exp_softpcg_schwarz: 	PendingInExecutionQueue
+  101: J320_k5_exp_softpcg_schwarz: 	PendingInExecutionQueue
+  102: J2560_k5_exp_softpcg_schwarz: 	PendingInExecutionQueue
+  103: J20480_k5_exp_softpcg_schwarz: 	PendingInExecutionQueue
+  104: J40_k8_exp_softpcg_schwarz: 	PendingInExecutionQueue
+  105: J320_k8_exp_softpcg_schwarz: 	PendingInExecutionQueue
+  106: J2560_k8_exp_softpcg_schwarz: 	PendingInExecutionQueue
+  107: J20480_k8_exp_softpcg_schwarz: 	PendingInExecutionQueue
+  108: J40_k2_exp_direct_lapack: 	PendingInExecutionQueue
+  109: J320_k2_exp_direct_lapack: 	PendingInExecutionQueue
+  110: J2560_k2_exp_direct_lapack: 	PendingInExecutionQueue
+  111: J20480_k2_exp_direct_lapack: 	PendingInExecutionQueue
+  112: J163840_k2_exp_direct_lapack: 	PendingInExecutionQueue
+  113: J40_k3_exp_direct_lapack: 	PendingInExecutionQueue
+  114: J320_k3_exp_direct_lapack: 	PendingInExecutionQueue
+  115: J2560_k3_exp_direct_lapack: 	PendingInExecutionQueue
+  116: J20480_k3_exp_direct_lapack: 	PendingInExecutionQueue
+  117: J163840_k3_exp_direct_lapack: 	PendingInExecutionQueue
+  118: J40_k5_exp_direct_lapack: 	PendingInExecutionQueue
+  119: J320_k5_exp_direct_lapack: 	PendingInExecutionQueue
+  120: J2560_k5_exp_direct_lapack: 	PendingInExecutionQueue
+  121: J20480_k5_exp_direct_lapack: 	PendingInExecutionQueue
+  122: J40_k8_exp_direct_lapack: 	PendingInExecutionQueue
+  123: J320_k8_exp_direct_lapack: 	PendingInExecutionQueue
+  124: J2560_k8_exp_direct_lapack: 	PendingInExecutionQueue
+  125: J20480_k8_exp_direct_lapack: 	PendingInExecutionQueue
+  126: J40_k2_exp_softpcg_mg: 	PendingInExecutionQueue
+  127: J320_k2_exp_softpcg_mg: 	PendingInExecutionQueue
+  128: J2560_k2_exp_softpcg_mg: 	PendingInExecutionQueue
+  129: J20480_k2_exp_softpcg_mg: 	PendingInExecutionQueue
+  130: J163840_k2_exp_softpcg_mg: 	PendingInExecutionQueue
+  131: J40_k3_exp_softpcg_mg: 	PendingInExecutionQueue
+  132: J320_k3_exp_softpcg_mg: 	PendingInExecutionQueue
+  133: J2560_k3_exp_softpcg_mg: 	PendingInExecutionQueue
+  134: J20480_k3_exp_softpcg_mg: 	PendingInExecutionQueue
+  135: J163840_k3_exp_softpcg_mg: 	PendingInExecutionQueue
+  136: J40_k5_exp_softpcg_mg: 	PendingInExecutionQueue
+  137: J320_k5_exp_softpcg_mg: 	PendingInExecutionQueue
+  138: J2560_k5_exp_softpcg_mg: 	PendingInExecutionQueue
+  139: J20480_k5_exp_softpcg_mg: 	PendingInExecutionQueue
+  140: J40_k8_exp_softpcg_mg: 	PendingInExecutionQueue
+  141: J320_k8_exp_softpcg_mg: 	PendingInExecutionQueue
+  142: J2560_k8_exp_softpcg_mg: 	PendingInExecutionQueue
+  143: J20480_k8_exp_softpcg_mg: 	PendingInExecutionQueue
 }
 ==============
 //WorkflowMgm.AllJobs.ElementAt(9).Value.Stdout;
