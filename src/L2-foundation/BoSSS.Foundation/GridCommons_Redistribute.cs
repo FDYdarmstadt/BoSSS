@@ -214,7 +214,6 @@ namespace BoSSS.Foundation.Grid.Classic {
             using (new FuncTrace()) {
                 int size = this.Size;
                 int rank = this.MyRank;
-                System.Console.WriteLine("METIS läuft");
 
                 if (size == 1) {
                     return new int[NoOfUpdateCells];
