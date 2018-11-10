@@ -146,8 +146,8 @@ namespace BoSSS.Solution.Multigrid {
             // ------------------------------------------------------
             MultidimensionalArray Mass_Level = MultidimensionalArray.Create(Jbase, Np, Np);
             Mass_Level.Multiply(1.0, a, a, 0.0, "jlk", "jnl", "jnk");
-            //a.ResizeShallow(Jbase * Np, Np).SaveToTextFile("c:\\tmp\\a.txt");
-            //Mass_Level.ResizeShallow(Jbase * Np, Np).SaveToTextFile("c:\\tmp\\mass.txt");
+            //a.ResizeShallow(Jbase * Np, Np).SaveToTextFile("c:\\tmptest\\a.txt");
+            //Mass_Level.ResizeShallow(Jbase * Np, Np).SaveToTextFile("c:\\tmptest\\mass.txt");
 
             // Orthonormalize and create injection operator
             // --------------------------------------------
