@@ -47,7 +47,7 @@ namespace BoSSS.Solution.XNSECommon {
     /// <summary>
     /// Laplace operator in the bulk.
     /// </summary>
-    public class XLaplace_Bulk : BoSSS.Solution.NSECommon.ipLaplace, IEquationComponentSpeciesNotification, IEquationComponentCoefficient {
+    public class XLaplace_Bulk : BoSSS.Solution.NSECommon.SIPLaplace, IEquationComponentSpeciesNotification, IEquationComponentCoefficient {
 
         public XLaplace_Bulk(LevelSetTracker __LsTrk, double __penatly_baseFactor, string n, XLaplaceBCs boundaries, double sw, double _muA, double _muB, MultidimensionalArray PenaltyLengthScales, XLaplace_Interface.Mode _m)
             : base(__penatly_baseFactor, PenaltyLengthScales, n) {
