@@ -378,8 +378,6 @@ namespace BoSSS.Foundation {
             if(op.DomainVar.Count + op.ParameterVar.Count + op.CodomainVar.Count != f.Length)
                 throw new ArgumentException("wrong number of domain/parameter/codomain fields", "f");
 
-
-
             CoordinateMapping inp = new CoordinateMapping(f.GetSubVector(0, op.DomainVar.Count));
             DGField[] Parameters = f.GetSubVector(op.DomainVar.Count, op.ParameterVar.Count);
             CoordinateMapping outp = new CoordinateMapping(f.GetSubVector(op.DomainVar.Count + op.ParameterVar.Count, op.CodomainVar.Count));
@@ -389,7 +387,7 @@ namespace BoSSS.Foundation {
 
 
         /// <summary>
-        /// <see cref="Evaluate(SpatialOperator,double,double,CoordinateMapping,IList{DGField},CoordinateMapping,SubGrid,EdgeQuadratureScheme,CellQuadratureScheme,SpatialOperator.SubGridBoundaryModes)"/>
+        /// And another wrapper.
         /// </summary>
         static public void Evaluate(this SpatialOperator op, uint NoOfDomainVar, uint NoOfCodomainVar, double time, params DGField[] fields) {
             if(fields.Length != (NoOfDomainVar + NoOfCodomainVar))

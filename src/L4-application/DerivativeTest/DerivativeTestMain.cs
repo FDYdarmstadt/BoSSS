@@ -202,7 +202,7 @@ namespace BoSSS.Application.DerivativeTest {
 
             Quadrature_Bulksize.CHUNK_DATA_LIMIT = 1;
             //BoSSS.Foundation.Caching.Cache.MaxMem = 1024;
-            for (int i = 50; i <= 50; i++) {
+            for (int i = 15; i <= 15; i++) {
                 BoSSS.Solution.Application._Main(args, true,  delegate () {
                     var R = new DerivativeTestMain();
                     GRID_CASE = i;
@@ -997,9 +997,6 @@ namespace BoSSS.Application.DerivativeTest {
                     m_passed = m_passed && passed1;
                     m_passed = m_passed && passed2;
 
-                    CheckMatrix.SaveToTextFileSparse("c:\\tmptest\\Check.txt");
-                    LaplaceMtx.SaveToTextFileSparse("c:\\tmptest\\Laplace.txt");
-                    ErrMatrix.SaveToTextFileSparse("c:\\tmptest\\Error.txt");
                 }
                 Console.WriteLine("--------------------------------------------");
             }

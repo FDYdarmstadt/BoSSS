@@ -522,13 +522,11 @@ namespace BoSSS.Application.ZwoLsTest {
                 ConMatrix.SaveToFile("conMtx.bin");
                 ConMatrix2.SaveToFile("conMtx2.bin");
 
-                //OpMatrix.SaveToTextFileSparse("C:\\tmptest\\matrix1.txt");
             } else {
                 var compOpMatrix = MsrMatrix.LoadFromFile("matrix.bin", csMPI.Raw._COMM.WORLD, OpMatrix.RowPartitioning, OpMatrix.ColPartition);
                 var compConMatrix = MsrMatrix.LoadFromFile("conMtx.bin", csMPI.Raw._COMM.WORLD, ConMatrix.RowPartitioning, ConMatrix.ColPartition);
                 var compConMatrix2 = MsrMatrix.LoadFromFile("conMtx2.bin", csMPI.Raw._COMM.WORLD, ConMatrix2.RowPartitioning, ConMatrix2.ColPartition);
 
-                //OpMatrix.SaveToTextFileSparse("C:\\tmptest\\matrix2.txt");
 
                 compOpMatrix.Acc(-1.0, OpMatrix);
                 compConMatrix.Acc(-1.0, ConMatrix);
