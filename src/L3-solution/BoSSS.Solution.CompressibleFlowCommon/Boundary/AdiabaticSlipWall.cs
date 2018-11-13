@@ -16,8 +16,10 @@ limitations under the License.
 
 using System;
 using BoSSS.Platform.LinAlg;
+using BoSSS.Solution.CompressibleFlowCommon;
+using System.Diagnostics;
 
-namespace CNS.Boundary {
+namespace BoSSS.Solution.CompressibleFlowCommon.Boundary {
 
     /// <summary>
     /// Implementation of the boundary value on an isolating wall with a slip
@@ -36,7 +38,7 @@ namespace CNS.Boundary {
         /// </summary>
         /// <param name="config"><see cref="BoundaryCondition"/></param>
         /// <param name="wallVelocities"></param>
-        public AdiabaticSlipWall(CNSControl config, Func<double[], double, double>[] wallVelocities = null)
+        public AdiabaticSlipWall(MaterialProperty.Material config, Func<double[], double, double>[] wallVelocities = null)
             : base(config) {
             this.WallVelocities = wallVelocities;
         }
@@ -65,20 +67,23 @@ namespace CNS.Boundary {
         /// <see cref="BoundaryCondition.GetBoundaryState"/>
         /// </returns>
         public override StateVector GetBoundaryState(double time, double[] x, double[] normal, StateVector stateIn) {
-            Vector3D normalVector = GetNormalVector(normal);
+            Vector normalVector = GetNormalVector(normal);
 
+            Debug.Assert(normal.Length == stateIn.Dimension);
+            int D = normal.Length;
+            
             StateVector stateOut;
             if (WallVelocities == null) {
                 // VegtVen2002, page 14, second equation
-                Vector3D mOut = stateIn.Momentum - 2.0 * (stateIn.Momentum * normalVector) * normalVector;
+                Vector mOut = stateIn.Momentum - 2.0 * (stateIn.Momentum * normalVector) * normalVector;
                 stateOut = new StateVector(stateIn.Material, stateIn.Density, mOut, stateIn.Energy);
             } else {
-                Vector3D uWall = new Vector3D();
-                for (int d = 0; d < CNSEnvironment.NumberOfDimensions; d++) {
+                Vector uWall = new Vector(D);
+                for (int d = 0; d < D; d++) {
                     uWall[d] = WallVelocities[d](x, time);
                 }
 
-                Vector3D uOut = stateIn.Velocity
+                Vector uOut = stateIn.Velocity
                     - 2.0 * ((stateIn.Velocity - uWall) * normalVector) * normalVector;
                 stateOut = StateVector.FromPrimitiveQuantities(
                     stateIn.Material, stateIn.Density, uOut, stateIn.Pressure);

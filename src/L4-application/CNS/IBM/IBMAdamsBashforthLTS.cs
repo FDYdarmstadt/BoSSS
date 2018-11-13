@@ -23,6 +23,7 @@ using BoSSS.Foundation.Grid;
 using BoSSS.Foundation.Quadrature;
 using BoSSS.Foundation.XDG;
 using BoSSS.Solution;
+using BoSSS.Solution.CompressibleFlowCommon;
 using BoSSS.Solution.Timestepping;
 using BoSSS.Solution.Utils;
 

@@ -41,12 +41,18 @@ namespace BoSSS.Application.BoSSSpad {
             Console.WriteLine(
                 "Congratulations! Your basic BoSSS installation seems to be working");
 
+
             int numberOfBits = IntPtr.Size * 8;
             Console.WriteLine();
             Console.WriteLine(
                 "You are running {0} bit BoSSS on a {1} operating system",
                 numberOfBits,
                 System.Environment.OSVersion.Platform);
+
+            string installdir = BoSSS.Solution.Application.GetBoSSSInstallDir();
+            Console.WriteLine("Installation directory: " + installdir);
+
+
 
             csMPI.Raw.Comm_Rank(csMPI.Raw._COMM.WORLD, out int rank);
             csMPI.Raw.Comm_Size(csMPI.Raw._COMM.WORLD, out int size);

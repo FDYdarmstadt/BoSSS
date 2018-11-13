@@ -21,6 +21,9 @@ using BoSSS.Foundation.Quadrature;
 using BoSSS.Foundation.SpecFEM;
 using BoSSS.Platform.LinAlg;
 using BoSSS.Solution;
+using BoSSS.Solution.CompressibleFlowCommon;
+using BoSSS.Solution.CompressibleFlowCommon.MaterialProperty;
+using BoSSS.Solution.CompressibleFlowCommon.ShockCapturing;
 using BoSSS.Solution.Timestepping;
 using CNS.Convection;
 using CNS.MaterialProperty;
@@ -317,10 +320,8 @@ namespace CNS {
             "nu",
             VariableTypes.Other,
             delegate (DGField nu, CellMask cellMask, IProgram<CNSControl> program) {
-                foreach (Chunk chunk in cellMask) {
-                    foreach (int cell in chunk.Elements) {
-                        nu.SetMeanValue(cell, program.Control.ViscosityLaw.GetViscosity(0.0, cell));
-                    }
+                foreach (int cell in cellMask.ItemEnum) {
+                    nu.SetMeanValue(cell, program.Control.ViscosityLaw.GetViscosity(0.0, cell));
                 }
             });
 
@@ -527,13 +528,14 @@ namespace CNS {
                     double velocityRight = 0.0;
                     double discontinuityPosition = 0.5;
 
-                    Material material = new Material(program.Control);
+                    var control = program.Control;
+                    Material material = new Material(control.EquationOfState, control.ViscosityLaw, control.MachNumber, control.ReynoldsNumber, control.PrandtlNumber, control.FroudeNumber, control.ViscosityRatio);
                     StateVector stateLeft = StateVector.FromPrimitiveQuantities(
-                        material, densityLeft, new Vector3D(velocityLeft, 0.0, 0.0), pressureLeft);
+                        material, densityLeft, new Vector(velocityLeft, 0.0, 0.0), pressureLeft);
                     StateVector stateRight = StateVector.FromPrimitiveQuantities(
-                        material, densityRight, new Vector3D(velocityRight, 0.0, 0.0), pressureRight);
+                        material, densityRight, new Vector(velocityRight, 0.0, 0.0), pressureRight);
 
-                    var riemannSolver = new ExactRiemannSolver(stateLeft, stateRight, new Vector3D(1.0, 0.0, 0.0));
+                    var riemannSolver = new ExactRiemannSolver(stateLeft, stateRight, new Vector(1.0, 0.0, 0.0));
                     double pStar, uStar;
                     riemannSolver.GetStarRegionValues(out pStar, out uStar);
                     field.Clear();
