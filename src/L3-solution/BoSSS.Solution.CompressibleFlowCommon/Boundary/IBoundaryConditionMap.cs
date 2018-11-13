@@ -18,9 +18,10 @@ using System;
 using System.Collections.Generic;
 using BoSSS.Foundation;
 using BoSSS.Foundation.Grid;
+using BoSSS.Solution.CompressibleFlowCommon;
 using BoSSS.Solution.Control;
 
-namespace CNS.Boundary {
+namespace BoSSS.Solution.CompressibleFlowCommon.Boundary {
 
     /// <summary>
     /// Delegate for all functions that can be evaluated to a boundary value.
@@ -37,13 +38,8 @@ namespace CNS.Boundary {
     /// edge tag.
     /// </summary>
     public interface IBoundaryConditionMap {
-
-        /// <summary>
-        /// Mapping of edge tags to edge tag names
-        /// </summary>
-        IDictionary<byte, string> EdgeTagNames {
-            get;
-        }
+        
+       
 
         /// <summary>
         /// Retrieves the configured boundary condition for a given

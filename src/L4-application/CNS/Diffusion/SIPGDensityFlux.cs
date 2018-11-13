@@ -16,9 +16,10 @@ limitations under the License.
 
 using System;
 using BoSSS.Foundation.Grid;
-using CNS.Boundary;
+using BoSSS.Solution.CompressibleFlowCommon.Boundary;
 using ilPSP;
 using BoSSS.Foundation.Grid.Classic;
+using BoSSS.Solution.CompressibleFlowCommon;
 
 namespace CNS.Diffusion {
 
@@ -41,7 +42,7 @@ namespace CNS.Diffusion {
         /// <param name="gridData"><see cref="SIPGFlux"/></param>
         /// <param name="component"><see cref="SIPGFlux"/></param>
         /// <param name="cellMetricFunc"><see cref="SIPGFlux"/></param>
-        public SIPGDensityFlux(CNSControl config, IBoundaryConditionMap boundaryMap, ISpeciesMap speciesMap, IGridData gridData, int component, Func<MultidimensionalArray> cellMetricFunc)
+        public SIPGDensityFlux(CNSControl config, BoundaryConditionMap boundaryMap, ISpeciesMap speciesMap, IGridData gridData, int component, Func<MultidimensionalArray> cellMetricFunc)
             : base(config, boundaryMap, speciesMap, gridData, cellMetricFunc) {
             this.component = component;
         }

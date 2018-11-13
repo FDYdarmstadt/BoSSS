@@ -66,6 +66,22 @@ namespace BoSSS.Application.SipPoisson {
 #pragma warning restore 649
 
         /// <summary>
+        /// Solver residual, for a DG discretization which is one degree higher than the degree of the solution
+        /// </summary>
+        private SinglePhaseField ResiualKP1;
+
+        /// <summary>
+        /// DG field instantiation
+        /// </summary>
+        protected override void CreateFields() {
+            base.CreateFields();
+
+            ResiualKP1 = new SinglePhaseField(new Basis(this.GridData, T.Basis.Degree + 1), "ResidualKP1");
+            base.IOFields.Add(ResiualKP1);
+        }
+
+
+        /// <summary>
         /// Main routine
         /// </summary>
         /// <param name="args"></param>
@@ -82,30 +98,10 @@ namespace BoSSS.Application.SipPoisson {
                 return p;
             });
         }
-
+        
         /// <summary>
-        /// 1D Nodes which can be blended between linear- and Cosine-spacing
+        /// Sets the multigrid coloring
         /// </summary>
-        /// <param name="l"></param>
-        /// <param name="r"></param>
-        /// <param name="a">blending between linear and cosine - spacing: 1.0 = full cosine,
-        /// 0.0 = full linear;</param>
-        /// <param name="n">number of nodes</param>
-        /// <returns></returns>
-        static double[] CosLinSpaceing(double l, double r, double a, int n) {
-            double[] linnodes = GenericBlas.Linspace(0, Math.PI * 0.5, n);
-            double[] linnodes2 = GenericBlas.Linspace(0, 1, n);
-            double[] nodes = new double[n];
-
-            for (int i = 0; i < n; i++)
-                nodes[i] = linnodes2[i] * (1 - a) + (1.0 - Math.Cos(linnodes[i])) * a;
-
-            for (int i = 0; i < n; i++)
-                nodes[i] = nodes[i] * (r - l) + l;
-            return nodes;
-
-        }
-
         protected override void SetInitial() {
             base.SetInitial();
 
@@ -121,9 +117,21 @@ namespace BoSSS.Application.SipPoisson {
 
         }
 
-
+        /// <summary>
+        /// LHS of the equation <see cref="LaplaceMtx"/>*<see cref="T"/> + <see cref="LaplaceAffine"/> = <see cref="RHS"/>.
+        /// </summary>
         BlockMsrMatrix LaplaceMtx;
+
+        /// <summary>
+        /// Part of the RHS which contains e.g. boundary conditions; still on LHS, must be subtracted from RHS of the equation.
+        /// <see cref="LaplaceMtx"/>*<see cref="T"/> + <see cref="LaplaceAffine"/> = <see cref="RHS"/>
+        /// </summary>
         double[] LaplaceAffine;
+
+        /// <summary>
+        /// Spatial operator to assemble <see cref="LaplaceMtx"/> and <see cref="LaplaceAffine"/>.
+        /// </summary>
+        SpatialOperator LapaceIp;
 
         /// <summary>
         /// Includes assembly of the matrix.
@@ -134,9 +142,7 @@ namespace BoSSS.Application.SipPoisson {
 
                 // create operator
                 // ===============
-                SpatialOperator LapaceIp;
                 {
-
                     double D = this.GridData.SpatialDimension;
                     double penalty_base = (T.Basis.Degree + 1) * (T.Basis.Degree + D) / D;
                     double penalty_factor = base.Control.penalty_poisson;
@@ -151,69 +157,71 @@ namespace BoSSS.Application.SipPoisson {
                     LapaceIp.Commit();
                 }
 
-                // Create Matrices
-                // ===============
-
-                {
-                    // time measurement for matrix assembly
-                    Stopwatch stw = new Stopwatch();
-                    stw.Start();
-
-                    // console
-                    Console.WriteLine("creating sparse system for {0} DOF's ...", T.Mapping.Ntotal);
-
-                    // quadrature domain
-                    var volQrSch = new CellQuadratureScheme(true, CellMask.GetFullMask(this.GridData, MaskType.Geometrical));
-                    var edgQrSch = new EdgeQuadratureScheme(true, EdgeMask.GetFullMask(this.GridData, MaskType.Geometrical));
-
-#if DEBUG
-                    // in DEBUG mode, we compare 'MsrMatrix' (old, reference implementation) and 'BlockMsrMatrix' (new standard)
-                    var RefLaplaceMtx = new MsrMatrix(T.Mapping);
-#endif
-                    using (new BlockTrace("SipMatrixAssembly", tr)) {
-                        LaplaceMtx = new BlockMsrMatrix(T.Mapping);
-                        LaplaceAffine = new double[T.Mapping.LocalLength];
-
-                        LapaceIp.ComputeMatrixEx(T.Mapping, null, T.Mapping,
-                                                 LaplaceMtx, LaplaceAffine,
-                                                 volQuadScheme: volQrSch, edgeQuadScheme: edgQrSch);
-                    }
-#if DEBUG
-                    LaplaceAffine.ClearEntries();
-                    LapaceIp.ComputeMatrixEx(T.Mapping, null, T.Mapping,
-                                             RefLaplaceMtx, LaplaceAffine,
-                                             volQuadScheme: volQrSch, edgeQuadScheme: edgQrSch);
-                    MsrMatrix ErrMtx = RefLaplaceMtx.CloneAs();
-                    ErrMtx.Acc(-1.0, LaplaceMtx);
-                    double err = ErrMtx.InfNorm();
-                    double infNrm = LaplaceMtx.InfNorm();
-                    Console.WriteLine("Matrix comparison error: " + err + ", matrix norm is: " + infNrm);
-                    Assert.Less(err, infNrm * 1e-10, "MsrMatrix2 comparison failed.");
-#endif
-                    stw.Stop();
-                    Console.WriteLine("done {0} sec.", stw.Elapsed.TotalSeconds);
-
-
-                    //var JB = LapaceIp.GetFDJacobianBuilder(T.Mapping.Fields, null, T.Mapping, edgQrSch, volQrSch);
-                    //var JacobiMtx = new BlockMsrMatrix(T.Mapping);
-                    //var JacobiAffine = new double[T.Mapping.LocalLength];
-                    //JB.ComputeMatrix(JacobiMtx, JacobiAffine);
-                    //double L2ErrAffine = GenericBlas.L2Dist(JacobiAffine, LaplaceAffine);
-                    //var ErrMtx2 = LaplaceMtx.CloneAs();
-                    //ErrMtx2.Acc(-1.0, JacobiMtx);
-                    //double LinfErrMtx2 = ErrMtx2.InfNorm();
-
-                    //JacobiMtx.SaveToTextFileSparse("D:\\tmp\\Jac.txt");
-                    //LaplaceMtx.SaveToTextFileSparse("D:\\tmp\\Lap.txt");
-
-                    //Console.WriteLine("FD Jacobi Mtx: {0:e14}, Affine: {1:e14}", LinfErrMtx2, L2ErrAffine);
-
-                }
 
 
                 //double condNo = LaplaceMtx.condest(BatchmodeConnector.Flavor.Octave);
                 //Console.WriteLine("condition number: {0:0.####E-00} ",condNo);
 
+            }
+        }
+
+        /// <summary>
+        /// computes <see cref="LaplaceMtx"/> and <see cref="LaplaceAffine"/>
+        /// </summary>
+        private void UpdateMatrices() {
+            using (var tr = new FuncTrace()) {
+                // time measurement for matrix assembly
+                Stopwatch stw = new Stopwatch();
+                stw.Start();
+
+                // console
+                Console.WriteLine("creating sparse system for {0} DOF's ...", T.Mapping.Ntotal);
+
+                // quadrature domain
+                var volQrSch = new CellQuadratureScheme(true, CellMask.GetFullMask(this.GridData, MaskType.Geometrical));
+                var edgQrSch = new EdgeQuadratureScheme(true, EdgeMask.GetFullMask(this.GridData, MaskType.Geometrical));
+
+#if DEBUG
+                // in DEBUG mode, we compare 'MsrMatrix' (old, reference implementation) and 'BlockMsrMatrix' (new standard)
+                var RefLaplaceMtx = new MsrMatrix(T.Mapping);
+#endif
+                using (new BlockTrace("SipMatrixAssembly", tr)) {
+                    LaplaceMtx = new BlockMsrMatrix(T.Mapping);
+                    LaplaceAffine = new double[T.Mapping.LocalLength];
+
+                    LapaceIp.ComputeMatrixEx(T.Mapping, null, T.Mapping,
+                                             LaplaceMtx, LaplaceAffine,
+                                             volQuadScheme: volQrSch, edgeQuadScheme: edgQrSch);
+                }
+#if DEBUG
+                LaplaceAffine.ClearEntries();
+                LapaceIp.ComputeMatrixEx(T.Mapping, null, T.Mapping,
+                                         RefLaplaceMtx, LaplaceAffine,
+                                         volQuadScheme: volQrSch, edgeQuadScheme: edgQrSch);
+                MsrMatrix ErrMtx = RefLaplaceMtx.CloneAs();
+                ErrMtx.Acc(-1.0, LaplaceMtx);
+                double err = ErrMtx.InfNorm();
+                double infNrm = LaplaceMtx.InfNorm();
+                Console.WriteLine("Matrix comparison error: " + err + ", matrix norm is: " + infNrm);
+                Assert.Less(err, infNrm * 1e-10, "MsrMatrix2 comparison failed.");
+#endif
+                stw.Stop();
+                Console.WriteLine("done {0} sec.", stw.Elapsed.TotalSeconds);
+
+
+                //var JB = LapaceIp.GetFDJacobianBuilder(T.Mapping.Fields, null, T.Mapping, edgQrSch, volQrSch);
+                //var JacobiMtx = new BlockMsrMatrix(T.Mapping);
+                //var JacobiAffine = new double[T.Mapping.LocalLength];
+                //JB.ComputeMatrix(JacobiMtx, JacobiAffine);
+                //double L2ErrAffine = GenericBlas.L2Dist(JacobiAffine, LaplaceAffine);
+                //var ErrMtx2 = LaplaceMtx.CloneAs();
+                //ErrMtx2.Acc(-1.0, JacobiMtx);
+                //double LinfErrMtx2 = ErrMtx2.InfNorm();
+
+                //JacobiMtx.SaveToTextFileSparse("D:\\tmp\\Jac.txt");
+                //LaplaceMtx.SaveToTextFileSparse("D:\\tmp\\Lap.txt");
+
+                //Console.WriteLine("FD Jacobi Mtx: {0:e14}, Affine: {1:e14}", LinfErrMtx2, L2ErrAffine);
             }
         }
 
@@ -312,24 +320,99 @@ namespace BoSSS.Application.SipPoisson {
         }
 
 
+        /// <summary>
+        /// control of mesh adaptation
+        /// </summary>
+        protected override void AdaptMesh(int TimestepNo, out GridCommons newGrid, out GridCorrelation old2NewGrid) {
+            if (this.Control.AdaptiveMeshRefinement && TimestepNo > 1) {
 
+                int oldJ = this.GridData.CellPartitioning.TotalLength;
+
+                double LocNormPow2 = this.ResiualKP1.CoordinateVector.L2NormPow2(); // norm of residual on this processor
+                double TotNormPow2 = LocNormPow2.MPISum(); //                          norm of residual over all processors
+                double MeanNormPow2PerCell = TotNormPow2 / oldJ; //                    mean norm per cell
+
+
+                int MyLevelIndicator(int j, int CurrentLevel) {
+                    double CellNorm = this.ResiualKP1.Coordinates.GetRow(j).L2NormPow2();
+
+
+                    if (j == 0)
+                        CurrentLevel = CurrentLevel + 1;
+
+                    if (CellNorm > MeanNormPow2PerCell * 1.1)
+                        return CurrentLevel + 1;
+                    else
+                        return CurrentLevel;
+                }
+
+
+                
+                bool AnyChange = GridRefinementController.ComputeGridChange((GridData)(this.GridData), null, MyLevelIndicator, out List<int> CellsToRefineList, out List<int[]> Coarsening);
+                int NoOfCellsToRefine = 0;
+                int NoOfCellsToCoarsen = 0;
+                if (AnyChange) {
+                    int[] glb = (new int[] {
+                        CellsToRefineList.Count,
+                        Coarsening.Sum(L => L.Length),
+                        //0, 0
+                    }).MPISum();
+
+                    NoOfCellsToRefine = glb[0];
+                    NoOfCellsToCoarsen = glb[1];
+                }
+                //*/
+
+
+                // Update Grid
+                // ===========
+
+                if (AnyChange) {
+
+
+                    Console.WriteLine("       Refining " + NoOfCellsToRefine + " of " + oldJ + " cells");
+                    Console.WriteLine("       Coarsening " + NoOfCellsToCoarsen + " of " + oldJ + " cells");
+
+                    newGrid = ((GridData)(this.GridData)).Adapt(CellsToRefineList, Coarsening, out old2NewGrid);
+                    
+                } else {
+
+                    newGrid = null;
+                    old2NewGrid = null;
+                }
+            } else {
+
+                newGrid = null;
+                old2NewGrid = null;
+            }
+        }
+
+
+        /// <summary>
+        /// Single run of the solver
+        /// </summary>
         protected override double RunSolverOneStep(int TimestepNo, double phystime, double dt) {
             using (new FuncTrace()) {
                 //this.WriteSEMMatrices();
 
-                base.NoOfTimesteps = -1;
-                if (TimestepNo > 1)
-                    throw new ApplicationException("steady-state-equation.");
+                if (Control.AdaptiveMeshRefinement == false) {
+                    base.NoOfTimesteps = -1;
+                    if (TimestepNo > 1)
+                        throw new ApplicationException("steady-state-equation.");
+                    base.TerminationKey = true;
+                }
 
-                base.TerminationKey = true;
+                // Update matrices
+                // ---------------
+
+                UpdateMatrices();
 
                 // call solver
                 // -----------
                 double mintime, maxtime;
                 bool converged;
                 int NoOfIterations;
-
-
+                
                 switch (base.Control.solver_name) {
 
                     case SolverCodes.classic_cg:
@@ -352,7 +435,7 @@ namespace BoSSS.Application.SipPoisson {
                 base.QueryHandler.ValueQuery("maxSolRunT", maxtime, true);
                 base.QueryHandler.ValueQuery("Conv", converged ? 1.0 : 0.0, true);
                 base.QueryHandler.ValueQuery("NoIter", NoOfIterations, true);
-                base.QueryHandler.ValueQuery("NoOfCells", this.GridData.CellPartitioning.TotalLength);
+                base.QueryHandler.ValueQuery("NoOfCells", this.GridData.CellPartitioning.TotalLength, true);
                 base.QueryHandler.ValueQuery("DOFs", T.Mapping.TotalLength, true);
                 base.QueryHandler.ValueQuery("BlockSize", T.Basis.Length, true);
 
@@ -373,11 +456,30 @@ namespace BoSSS.Application.SipPoisson {
 
                 }
 
+                // evaluate residual
+                // =================
+                {
+                    this.ResiualKP1.Clear();
+                    if(this.Control.InitialValues_Evaluators.ContainsKey("RHS")) {
+                        this.ResiualKP1.ProjectField(this.Control.InitialValues_Evaluators["RHS"]);
+                    }
+
+                    var ev = this.LapaceIp.GetEvaluator(T.Mapping, ResiualKP1.Mapping);
+                    ev.Evaluate(-1.0, 1.0, ResiualKP1.CoordinateVector);
+                }
+
+                // return
+                // ======
 
                 return 0.0;
             }
         }
 
+        /// <summary>
+        /// Solution of the system
+        /// <see cref="LaplaceMtx"/>*<see cref="T"/> + <see cref="LaplaceAffine"/> = <see cref="RHS"/>
+        /// using a black-box solver
+        /// </summary>
         private void ClassicSolve(out double mintime, out double maxtime, out bool Converged, out int NoOfIter) {
 
             mintime = double.MaxValue;
@@ -473,7 +575,11 @@ namespace BoSSS.Application.SipPoisson {
 
         }
 
-
+        /// <summary>
+        /// Solution of the system
+        /// <see cref="LaplaceMtx"/>*<see cref="T"/> + <see cref="LaplaceAffine"/> = <see cref="RHS"/>
+        /// using the modular solver framework.
+        /// </summary>
         private void ExperimentalSolve(out double mintime, out double maxtime, out bool Converged, out int NoOfIter) {
             using (var tr = new FuncTrace()) {
                 int p = this.T.Basis.Degree;
@@ -895,7 +1001,9 @@ namespace BoSSS.Application.SipPoisson {
         }
 
 
-
+        /// <summary>
+        /// Shutdown function
+        /// </summary>
         protected override void Bye() {
             object SolL2err;
             if (this.QueryHandler.QueryResults.TryGetValue("SolL2err", out SolL2err)) {
@@ -906,10 +1014,11 @@ namespace BoSSS.Application.SipPoisson {
         }
 
 
-
+        /// <summary>
+        /// default plotting
+        /// </summary>
         protected override void PlotCurrentState(double phystime, TimestepNumber timestepNo, int superSampling = 0) {
-            BoSSS.Solution.Tecplot.Tecplot.PlotFields(new DGField[] { T, Tex, RHS }, "poisson" + timestepNo, phystime, superSampling);
-            BoSSS.Solution.Tecplot.Tecplot.PlotFields(ArrayTools.Cat(new DGField[] { T, Tex, RHS }, this.MGColoring), "poisson_grid" + timestepNo, phystime, 0);
+            BoSSS.Solution.Tecplot.Tecplot.PlotFields(new DGField[] { T, Tex, RHS, ResiualKP1 }, "poisson" + timestepNo, phystime, superSampling);
         }
 
     }
@@ -917,7 +1026,7 @@ namespace BoSSS.Application.SipPoisson {
     /// <summary>
     /// Interior Penalty Flux
     /// </summary>
-    class ipFlux : BoSSS.Solution.NSECommon.ipLaplace {
+    class ipFlux : BoSSS.Solution.NSECommon.SIPLaplace {
 
         public ipFlux(double penalty_const, MultidimensionalArray cj, BoundaryCondMap<BoundaryType> __boundaryCondMap)
             : base(penalty_const, cj, "T") //

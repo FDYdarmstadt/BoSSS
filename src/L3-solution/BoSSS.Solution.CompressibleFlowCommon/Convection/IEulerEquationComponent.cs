@@ -15,8 +15,9 @@ limitations under the License.
 */
 
 using BoSSS.Platform.LinAlg;
+using BoSSS.Solution.CompressibleFlowCommon;
 
-namespace CNS.Convection {
+namespace BoSSS.Solution.CompressibleFlowCommon.Convection {
 
     /// <summary>
     /// Common interface for all components of the Euler equations (i.e.,
@@ -51,6 +52,6 @@ namespace CNS.Convection {
         /// The term <i>flux</i> must not be mistaken for the <i>numerical</i>
         /// flux. This is implemented in <see cref="EulerFlux"/>.
         /// </remarks>
-        Vector3D Flux(StateVector state);
+        Vector Flux(StateVector state);
     }
 }

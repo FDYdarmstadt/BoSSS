@@ -18,6 +18,7 @@ using System;
 using BoSSS.Solution;
 using CNS.EquationSystem;
 using BoSSS.Foundation.IO;
+using BoSSS.Solution.CompressibleFlowCommon;
 
 namespace CNS {
 

@@ -17,6 +17,8 @@ limitations under the License.
 using BoSSS.Foundation;
 using BoSSS.Platform.LinAlg;
 using BoSSS.Solution;
+using BoSSS.Solution.CompressibleFlowCommon;
+using BoSSS.Solution.CompressibleFlowCommon.MaterialProperty;
 using BoSSS.Solution.Control;
 using BoSSS.Solution.Queries;
 using BoSSS.Solution.Utils;
@@ -146,7 +148,7 @@ namespace CNS {
             /// </summary>
             protected override double BorderEdgeFlux(double time, double[] x, double[] normal, byte EdgeTag, double[] Uin, int jEdge) {
                 StateVector state = new StateVector(
-                    material, Uin[0], new Vector3D(Uin[1], Uin[2], 0.0), Uin[3]);
+                    material, Uin[0], new Vector(Uin[1], Uin[2], 0.0), Uin[3]);
 
                 double mu = 0.0;
                 if (ReynoldsNumber != 0.0) {

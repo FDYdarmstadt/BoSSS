@@ -15,9 +15,11 @@ limitations under the License.
 */
 
 using BoSSS.Platform.LinAlg;
+using BoSSS.Solution.CompressibleFlowCommon;
 using System;
+using System.Diagnostics;
 
-namespace CNS.Boundary {
+namespace BoSSS.Solution.CompressibleFlowCommon.Boundary {
 
     /// <summary>
     /// Implementation of the boundary condition for a no-slip wall with a
@@ -45,15 +47,13 @@ namespace CNS.Boundary {
         /// <param name="wallVelocities">
         /// Optional wall velocity (individual formula for each direction) 
         /// </param>
-        public IsothermalWall(CNSControl config, Func<double[], double, double> temperatureFunction, Func<double[], double, double>[] wallVelocities = null)
+        public IsothermalWall(MaterialProperty.Material config, Func<double[], double, double> temperatureFunction, Func<double[], double, double>[] wallVelocities = null)
             : base(config) {
             this.TemperatureFunction = temperatureFunction;
             this.WallVelocities = wallVelocities;
 
             if (wallVelocities != null) {
-                if (wallVelocities.Length != CNSEnvironment.NumberOfDimensions) {
-                    throw new Exception();
-                }
+               
 
                 for (int d = 0; d < wallVelocities.Length; d++) {
                     if (wallVelocities[d] == null) {
@@ -90,21 +90,24 @@ namespace CNS.Boundary {
             double innerEnergy = TemperatureFunction(x, time) / (gamma - 1.0);
             double MachScaling = gamma * config.MachNumber * config.MachNumber;
 
+            Debug.Assert(stateIn.Dimension == normal.Length);
+            int D = normal.Length;
+
             if (WallVelocities == null) {
                 // Kinetic energy is zero at a no-slip boundary, we can omit it
                 return new StateVector(
                     stateIn.Material,
                     stateIn.Density,
-                    new Vector3D(),
+                    new Vector(),
                     stateIn.Density * innerEnergy);
             } else {
-                Vector3D velocity = new Vector3D();
-                for (int d = 0; d < CNSEnvironment.NumberOfDimensions; d++) {
+                Vector velocity = new Vector(D);
+                for (int d = 0; d < D; d++) {
                     velocity[d] = WallVelocities[d](x, time);
                 }
 
 #if DEBUG
-                Vector3D n = new Vector3D(normal);
+                Vector n = new Vector(normal);
                 if (Math.Abs(velocity * n) > 1e-10) {
                     throw new Exception(
                         "Wall velocity must be tangent to the wall");
