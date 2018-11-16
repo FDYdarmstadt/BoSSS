@@ -203,8 +203,7 @@ namespace BoSSS.Solution.NSECommon {
                             if (m_SpatialDimension == 3) {
                                 r += u_d * v3 * inp.Normale[2];
                             }
-                        }
-                        else {
+                        } else {
                             // Setup params
                             // ============
                             Foundation.CommonParams inp2;
@@ -218,8 +217,7 @@ namespace BoSSS.Solution.NSECommon {
                             // Dirichlet value for velocity
                             // ============================
                             double Uout = velFunction[inp.EdgeTag, m_component](inp.X, inp.time);
-
-
+                            
                             // Specify Parameters_OUT
                             // ======================
                             inp2.Parameters_OUT = new double[inp.Parameters_IN.Length];
@@ -274,13 +272,13 @@ namespace BoSSS.Solution.NSECommon {
                                                 // opt1: (using Dirichlet values for the temperature)
                                                 inp2.Parameters_OUT[2 * m_SpatialDimension] = m_bcmap.bndFunction[VariableNames.Temperature][inp.EdgeTag](inp.X, inp.time);
                                                 for (int n = 1; n < NumberOfReactants + 1; n++) {
-                                                    // using inner values for the mass the mass fractions
+                                                    // using inner values for the mass fractions
                                                     inp2.Parameters_OUT[2 * m_SpatialDimension + n] = inp2.Parameters_IN[2 * m_SpatialDimension + n];
                                                 }
                                                 break;
                                             case IncompressibleBcType.NoSlipNeumann:
                                                 for (int n = 0; n < NumberOfReactants + 1; n++) {
-                                                    // using inner values
+                                                    // using inner values for the temperature and the mass fractions
                                                     inp2.Parameters_OUT[2 * m_SpatialDimension + n] = inp2.Parameters_IN[2 * m_SpatialDimension + n];
                                                 }
                                                 break;
@@ -299,7 +297,7 @@ namespace BoSSS.Solution.NSECommon {
 
                             // Calculate BorderEdgeFlux as InnerEdgeFlux
                             // =========================================
-                            r = InnerEdgeFlux(ref inp2, Uin, new double[] { Uout });
+                            r = InnerEdgeFlux(ref inp2, Uin, new double[] { Uout }); 
                         }
 
                         return r;
