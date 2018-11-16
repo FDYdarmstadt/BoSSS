@@ -448,8 +448,8 @@ namespace BoSSS.Foundation.XDG {
                             //                                Console.WriteLine("Warning SubGrid Rule Diagnosis is Switched on!");
                             //                            }
                             //                            if (SubGridRuleDiagnosis) {
-                            //                                edgeRule.SumOfWeightsToTextFileEdge(GridDat, string.Format("C:\\tmp\\BoSSS_Diagnosis\\PhysEdge_{0}.csv", lsTrk.GetSpeciesName(SpeciesId)));
-                            //                                volRule.SumOfWeightsToTextFileVolume(GridDat, string.Format("C:\\tmp\\BoSSS_Diagnosis\\PhysVol_{0}.csv", lsTrk.GetSpeciesName(SpeciesId)));
+                            //                                edgeRule.SumOfWeightsToTextFileEdge(GridDat, string.Format("C:\\tmptest\\BoSSS_Diagnosis\\PhysEdge_{0}.csv", lsTrk.GetSpeciesName(SpeciesId)));
+                            //                                volRule.SumOfWeightsToTextFileVolume(GridDat, string.Format("C:\\tmptest\\BoSSS_Diagnosis\\PhysVol_{0}.csv", lsTrk.GetSpeciesName(SpeciesId)));
                             //                            }
                             //#endif
 

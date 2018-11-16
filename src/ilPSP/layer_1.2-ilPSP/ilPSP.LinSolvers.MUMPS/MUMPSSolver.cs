@@ -196,8 +196,7 @@ namespace ilPSP.LinSolvers.MUMPS {
                 csMPI.Raw.Comm_Rank(this.m_MPI_Comm, out rank);
                 csMPI.Raw.Comm_Size(this.m_MPI_Comm, out size);
 
-
-
+                
                 //Initialize MUMPS
                 mumps_par.par = 1; mumps_par.job = -1; mumps_par.comm_fortran = this.m_MPI_Comm.m1; mumps_par.sym = m_MumpsMatrix.Symmetric;
 
