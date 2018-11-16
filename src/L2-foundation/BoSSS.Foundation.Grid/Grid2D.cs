@@ -42,7 +42,10 @@ namespace BoSSS.Foundation.Grid.Classic {
         /// The <see cref="RefElement"/> for this grid. Currently only grids with _one_ RefElement are supported!!!
         /// </param>
         public Grid2D(RefElement _RefElement)
-            : base(new RefElement[] { _RefElement }, new RefElement[] { _RefElement.FaceRefElement }) {
+            : base(new RefElement[] { _RefElement }, new RefElement[] { _RefElement.FaceRefElement }) //
+        {
+            if (_RefElement.SpatialDimension != 2)
+                throw new ArgumentException();
         }
 
 

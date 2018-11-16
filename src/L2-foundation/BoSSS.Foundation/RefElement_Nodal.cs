@@ -168,6 +168,8 @@ namespace BoSSS.Foundation.Grid.RefElements {
                 for (int iCoFace = this.NoOfCoFaces - 1; iCoFace >= 0; iCoFace--) { // loop over co-faces
                     var plane0 = this.GetFacePlane(this.CoFace_FaceIndices[iCoFace, 0]);
                     var plane1 = this.GetFacePlane(this.CoFace_FaceIndices[iCoFace, 1]);
+                    Debug.Assert(plane0.Normal.Dim == D);
+                    Debug.Assert(plane1.Normal.Dim == D);
 
 
                     for (int i = 0; i < NoOfNodes; i++) { // loop over all nodes
@@ -176,6 +178,8 @@ namespace BoSSS.Foundation.Grid.RefElements {
                         if (UnsortType[i] != Vert_type)
                             continue;
                         var vx = UnsortNodes.GetRow(i);
+
+
 
                         double a1 = plane0.PointDistance(vx);
                         double a2 = plane1.PointDistance(vx);
