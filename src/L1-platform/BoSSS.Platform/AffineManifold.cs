@@ -17,6 +17,7 @@ limitations under the License.
 using System;
 using ilPSP.Utils;
 using ilPSP;
+using System.Diagnostics;
 
 namespace BoSSS.Platform.LinAlg {
 
@@ -44,7 +45,12 @@ namespace BoSSS.Platform.LinAlg {
         public AffineManifold(double[] _Normal, double[] _Offset) 
             : this(new Vector(_Normal), new Vector(_Offset != null ? _Offset : new double[_Normal.Length]))
         {
-
+#if DEBUG
+            Debug.Assert(_Normal.Length == this.Normal.Dim);
+            for(int d = 0; d < _Normal.Length; d++) {
+                Debug.Assert(_Normal[d] == this.Normal[d]);
+            }
+#endif
         }
 
         /// <summary>
@@ -59,6 +65,8 @@ namespace BoSSS.Platform.LinAlg {
                 throw new ArgumentException("1D or lower is not supported");
 
             Normal = _Normal;
+            if(Normal.AbsSquare() <= 0.0)
+                throw new ArgumentException();
 
             int D = Normal.Dim;
             for (int d = 0; d < D; d++) {
@@ -107,6 +115,8 @@ namespace BoSSS.Platform.LinAlg {
 
             }
             ret.a = ret.Normal * pts[0];
+            if(ret.Normal.AbsSquare() <= 0.0)
+                throw new ArithmeticException();
 
             return ret;
         }
@@ -165,6 +175,8 @@ namespace BoSSS.Platform.LinAlg {
             }
             double[] Offset = pts.ExtractSubArrayShallow(0, -1).To1DArray();
             ret.a = ret.Normal * (new Vector(Offset));
+            if(ret.Normal.AbsSquare() <= 0.0)
+                throw new ArithmeticException();
 
             return ret;
         }
@@ -187,6 +199,8 @@ namespace BoSSS.Platform.LinAlg {
         public double PointDistance(params double[] pt) {
             if (pt.Length != this.Normal.Dim)
                 throw new ArgumentException();
+            if(Normal.AbsSquare() <= 0.0)
+                throw new ArithmeticException();
 
             double ret = 0;
             for (int d = this.Normal.Dim - 1; d >= 0; d--) {
@@ -249,7 +263,7 @@ namespace BoSSS.Platform.LinAlg {
         /// <returns></returns>
         public object Clone() {
             var ret = new AffineManifold(this.Normal.Dim);
-            Array.Copy(this.Normal, ret.Normal, this.Normal.Dim);
+            ret.Normal = this.Normal;
             ret.a = this.a;
             return ret;
         }
@@ -262,6 +276,10 @@ namespace BoSSS.Platform.LinAlg {
                 throw new ArgumentException();
             if (B.Normal.Dim != 2)
                 throw new ArgumentException();
+            if(A.Normal.AbsSquare() <= 0.0)
+                throw new ArithmeticException();
+            if(B.Normal.AbsSquare() <= 0.0)
+                throw new ArithmeticException();
 
             double n1x = A.Normal[0];
             double n1y = A.Normal[1];

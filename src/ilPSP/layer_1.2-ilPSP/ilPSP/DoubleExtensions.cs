@@ -210,8 +210,6 @@ namespace ilPSP {
         }
 
 
-        
-
         /// <summary>
         /// Calculates the distance between the given sequences in the L2-norm.
         /// </summary>
