@@ -631,9 +631,9 @@ namespace CNS {
             c.PrandtlNumber = 0.71;
 
             c.AddVariable(Variables.Density, dgDegree);
-            c.AddVariable(Variables.Momentum.xComponent, dgDegree, saveToDB: false);
-            c.AddVariable(Variables.Momentum.yComponent, dgDegree, saveToDB: false);
-            c.AddVariable(Variables.Energy, dgDegree, saveToDB: false);
+            c.AddVariable(Variables.Momentum.xComponent, dgDegree);
+            c.AddVariable(Variables.Momentum.yComponent, dgDegree);
+            c.AddVariable(Variables.Energy, dgDegree);
 
             //c.AddVariable(Variables.Velocity.xComponent, dgDegree);
             //c.AddVariable(Variables.Velocity.yComponent, dgDegree);
@@ -648,8 +648,8 @@ namespace CNS {
             //    c.AddVariable(Variables.Schlieren, dgDegree - 1);
             //}
             if (AV) {
-                c.AddVariable(Variables.ShockSensor, 0, saveToDB: false);
-                c.AddVariable(Variables.ArtificialViscosity, 2, saveToDB: false);
+                c.AddVariable(Variables.ShockSensor, 0);
+                c.AddVariable(Variables.ArtificialViscosity, 2);
             }
 
             // Time stepping variables
@@ -804,14 +804,14 @@ namespace CNS {
 
             // Lichtenberg
             //string dbPath = @"/home/yp19ysog/bosss_db_paper_ibmdmr2";
-            string dbPath = @"/work/scratch/yp19ysog/bosss_db_dmr_video";
+            string dbPath = @"/work/scratch/yp19ysog/bosss_db_dmr_video_coarse";
             //string dbPath = @"/work/scratch/yp19ysog/bosss_db_paper_ibmdmr_run3_test";
             //string dbPath = @"C:\bosss_db_paper_ibmdmr_scratch_run3_test";
             string restart = "False";
 
             CNSControl c = DoubleMachReflection(dbPath, savePeriod, dgDegree, xMax, yMax, numOfCellsX, numOfCellsY, sensorLimit, CFLFraction, explicitScheme, explicitOrder, numberOfSubGrids, reclusteringInterval, maxNumOfSubSteps, endTime, restart);
 
-            c.ProjectName = "dmr_video_run0_test3";
+            c.ProjectName = "dmr_video_coarse_run0";
 
             return c;
         }
