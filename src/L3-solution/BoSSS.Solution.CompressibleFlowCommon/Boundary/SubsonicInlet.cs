@@ -16,8 +16,10 @@ limitations under the License.
 
 using System;
 using BoSSS.Platform.LinAlg;
+using BoSSS.Solution.CompressibleFlowCommon;
+using System.Diagnostics;
 
-namespace CNS.Boundary {
+namespace BoSSS.Solution.CompressibleFlowCommon.Boundary {
 
     /// <summary>
     /// Implementation for boundary values for an inlet with a Mach number
@@ -47,7 +49,7 @@ namespace CNS.Boundary {
         /// <param name="velocityFunctions">
         /// A function specifying the momentum at the boundary.
         /// </param>
-        public SubsonicInlet(CNSControl config, Func<double[], double, double> densityFunction, Func<double[], double, double>[] velocityFunctions)
+        public SubsonicInlet(MaterialProperty.Material config, Func<double[], double, double> densityFunction, Func<double[], double, double>[] velocityFunctions)
             : base(config) {
             this.densityFunction = densityFunction;
             this.velocityFunctions = velocityFunctions;
@@ -78,8 +80,11 @@ namespace CNS.Boundary {
         public override StateVector GetBoundaryState(double time, double[] x, double[] normal, StateVector stateIn) {
             double rhoOut = densityFunction(x, time);
 
-            Vector3D uOut = new Vector3D();
-            for (int i = 0; i < CNSEnvironment.NumberOfDimensions; i++) {
+            Debug.Assert(x.Length == stateIn.Dimension);
+            int D = x.Length;
+
+            Vector uOut = new Vector(stateIn.Dimension);
+            for (int i = 0; i < D; i++) {
                 uOut[i] = velocityFunctions[i](x, time);
             }
 

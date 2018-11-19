@@ -1127,14 +1127,7 @@ namespace BoSSS.Solution.GridImport.Gambit {
             int[,] NodeNumbers2Index = null;
 
             int D = nodal_coordinates_3.coord.GetLength(1);
-            Vector3D v1, v2;
-            v1.x = 0;
-            v1.y = 0;
-            v1.z = 0;
-            v2.x = 0;
-            v2.y = 0;
-            v2.z = 0;
-
+            Vector v1 = new Vector(3), v2 = new Vector(3);
 
             for (int j = 0; j < J; j++) {
                 ElementType et = elements_cells_4.NTYPE_ElementType[j];

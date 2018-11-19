@@ -31,10 +31,10 @@ namespace BoSSS.Application.XdgTimesteppingTest {
 
         public Func<double[], double, double> Inflow;
 
-        public Vector2D Direction;
+        public Vector Direction;
 
         protected override double BorderEdgeFlux(ref CommonParamsBnd inp, double[] Uin) {
-            Vector2D n; n.x = inp.Normale[0]; n.y = inp.Normale[1];
+            Vector n = new Vector(2); n.x = inp.Normale[0]; n.y = inp.Normale[1];
 
             double u0In = inp.Parameters_IN[0];
             double u0Ot = Inflow(inp.X, inp.time);
@@ -45,7 +45,7 @@ namespace BoSSS.Application.XdgTimesteppingTest {
         }
 
         protected override double InnerEdgeFlux(ref CommonParams inp, double[] Uin, double[] Uout) {
-            Vector2D n; n.x = inp.Normale[0]; n.y = inp.Normale[1];
+            Vector n = new Vector(2); n.x = inp.Normale[0]; n.y = inp.Normale[1];
 
             double u0In = inp.Parameters_IN[0];
             double u0Ot = inp.Parameters_OUT[0];
@@ -55,12 +55,12 @@ namespace BoSSS.Application.XdgTimesteppingTest {
             return UpWind(Direction, n, u0In, u0Ot, uIn, uOt);
         }
 
-        internal static double UpWind(Vector2D Direction, Vector2D n, double u0In, double u0Ot, double uIn, double uOt) {
+        internal static double UpWind(Vector Direction, Vector n, double u0In, double u0Ot, double uIn, double uOt) {
 
             // shock speed of the Riemann problem
             double s_Riemann = 0.5 * (u0In + u0Ot);
 
-            Vector2D CharakterisicVel = Direction * s_Riemann;
+            Vector CharakterisicVel = Direction * s_Riemann;
             if (CharakterisicVel * n > 0)
                 return (Direction * (u0In * uIn * 0.5)) * n;
             else
@@ -97,9 +97,9 @@ namespace BoSSS.Application.XdgTimesteppingTest {
 
         Func<double[], double, double> m_NormalVel;
 
-        Vector2D m_Direction;
+        Vector m_Direction;
 
-        public BurgersFlux_Interface(LevelSetTracker lstrk, Func<double[], double, double> NormalVel, Vector2D Direction) {
+        public BurgersFlux_Interface(LevelSetTracker lstrk, Func<double[], double, double> NormalVel, Vector Direction) {
             m_LsTrk = lstrk;
             m_NormalVel = NormalVel;
             m_Direction = Direction;
@@ -110,7 +110,7 @@ namespace BoSSS.Application.XdgTimesteppingTest {
             double[] uA, double[] uB, double[,] Grad_uA, double[,] Grad_uB,
             double vA, double vB, double[] Grad_vA, double[] Grad_vB) {
 
-            Vector2D N = new Vector2D(inp.n);
+            Vector N = new Vector(inp.n);
             if (Math.Abs(N * m_Direction - 1.0) >= 1.0e-8)
                 throw new ArithmeticException("Normal Vector mismatch.");
 

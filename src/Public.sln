@@ -135,6 +135,10 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BoSSS.Solution.LevelSetTool
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ElectronWorksheet", "BoSSSpadGUI\src\cs\ElectronWorksheet.csproj", "{FF12C08F-10A2-4882-8D9D-F559E85E4518}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BoSSS.Solution.CompressibleFlowCommon", "L3-solution\BoSSS.Solution.CompressibleFlowCommon\BoSSS.Solution.CompressibleFlowCommon.csproj", "{C0C92515-FC32-49B7-B128-29CC7BFA7B6C}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BoSSS.Solution.XheatCommon", "L3-solution\BoSSS.Solution.XheatCommon\BoSSS.Solution.XheatCommon.csproj", "{556AF24D-182B-4B77-A727-7E18B6488F78}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -345,6 +349,14 @@ Global
 		{FF12C08F-10A2-4882-8D9D-F559E85E4518}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{FF12C08F-10A2-4882-8D9D-F559E85E4518}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{FF12C08F-10A2-4882-8D9D-F559E85E4518}.Release|Any CPU.Build.0 = Release|Any CPU
+		{C0C92515-FC32-49B7-B128-29CC7BFA7B6C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{C0C92515-FC32-49B7-B128-29CC7BFA7B6C}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{C0C92515-FC32-49B7-B128-29CC7BFA7B6C}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{C0C92515-FC32-49B7-B128-29CC7BFA7B6C}.Release|Any CPU.Build.0 = Release|Any CPU
+		{556AF24D-182B-4B77-A727-7E18B6488F78}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{556AF24D-182B-4B77-A727-7E18B6488F78}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{556AF24D-182B-4B77-A727-7E18B6488F78}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{556AF24D-182B-4B77-A727-7E18B6488F78}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -408,6 +420,8 @@ Global
 		{0D8F577E-316D-4362-816B-9F610C5EB4A5} = {3303F7B6-36AF-43F0-AD12-217ADDE38B43}
 		{9EE2FCAD-E8A4-4F14-B932-D1A4904D715D} = {3303F7B6-36AF-43F0-AD12-217ADDE38B43}
 		{FF12C08F-10A2-4882-8D9D-F559E85E4518} = {D8CE9C4A-43B5-44F0-B6B7-23A4E1EE8AF7}
+		{C0C92515-FC32-49B7-B128-29CC7BFA7B6C} = {3303F7B6-36AF-43F0-AD12-217ADDE38B43}
+		{556AF24D-182B-4B77-A727-7E18B6488F78} = {3303F7B6-36AF-43F0-AD12-217ADDE38B43}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {B302C86E-A207-460C-8E9F-13EA258F7D8B}

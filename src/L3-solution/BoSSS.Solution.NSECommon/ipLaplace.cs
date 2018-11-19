@@ -23,9 +23,9 @@ using ilPSP;
 namespace BoSSS.Solution.NSECommon {
 
     /// <summary>
-    /// Interior Penalty - discetization of the Laplace operator
+    /// Symmetric Interior Penalty - discetization of the Laplace operator
     /// </summary>
-    abstract public class ipLaplace : BoSSS.Foundation.IEdgeForm, BoSSS.Foundation.IVolumeForm {
+    abstract public class SIPLaplace : BoSSS.Foundation.IEdgeForm, BoSSS.Foundation.IVolumeForm, BoSSS.Foundation.IEquationComponentCoefficient {
 
         /// <summary>
         /// no parameters in default implementation
@@ -43,7 +43,7 @@ namespace BoSSS.Solution.NSECommon {
         /// the one and only string that is returned by the default implementation of <see cref="ArgumentOrdering"/>;
         /// </param>
         /// <param name="PenaltyLengthScales"></param>
-        public ipLaplace(double penalty, MultidimensionalArray PenaltyLengthScales, string ArgumentVarName) {
+        public SIPLaplace(double penalty, MultidimensionalArray PenaltyLengthScales, string ArgumentVarName) {
             m_penalty = penalty;
             m_ArgumentOrdering = new string[] { ArgumentVarName };
             this.PenaltyLengthScales = PenaltyLengthScales;
@@ -93,17 +93,41 @@ namespace BoSSS.Solution.NSECommon {
         /// </returns>
         protected abstract bool IsDirichlet(ref Foundation.CommonParamsBnd inp);
 
-        protected  MultidimensionalArray PenaltyLengthScales;
+        
+        /// <summary>
+        /// Currently, not operational - intended for update of penalty length scales.
+        /// </summary>
+        public void CoefficientUpdate(CoefficientSet cs, int[] DomainDGdeg, int TestDGdeg) {
+            /*
+            int m_D = cs.GrdDat.SpatialDimension;
+            double _D = m_D;
+            double _p = DomainDGdeg.Max();
 
-       
+            double penalty_deg_tri = (_p + 1) * (_p + _D) / _D; // formula for triangles/tetras
+            double penalty_deg_sqr = (_p + 1.0) * (_p + 1.0); // formula for squares/cubes
+
+            m_penalty = Math.Max(penalty_deg_tri, penalty_deg_sqr); // the conservative choice
+
+            cj = cs.CellLengthScales;
+
+            */
+
+            
+        }
+        
+
+
+        /// <summary>
+        /// Length scales used in <see cref="GetPenalty"/>
+        /// </summary>
+        protected  MultidimensionalArray PenaltyLengthScales;
+               
         /// <summary>
         /// computation of penalty parameter according to:
         /// An explicit expression for the penalty parameter of the
         /// interior penalty method, K. Shahbazi, J. of Comp. Phys. 205 (2004) 401-407,
         /// look at formula (7) in cited paper
         /// </summary>
-        /// <param name="inp"></param>
-        /// <returns></returns>
         protected virtual double GetPenalty(int jCellIn, int jCellOut) {
             double cj_in = PenaltyLengthScales[jCellIn];
             double mu = m_penalty* cj_in;
@@ -138,6 +162,9 @@ namespace BoSSS.Solution.NSECommon {
             }
         }
 
+        /// <summary>
+        /// Volume integrand of the SIP
+        /// </summary>
         public double VolumeForm(ref Foundation.CommonParamsVol cpv, double[] U, double[,] GradU, double V, double[] GradV) {
             double acc = 0;
             for(int d = 0; d < cpv.D; d++)

@@ -16,8 +16,10 @@ limitations under the License.
 
 using System;
 using BoSSS.Platform.LinAlg;
+using BoSSS.Solution.CompressibleFlowCommon;
+using System.Diagnostics;
 
-namespace CNS.Boundary {
+namespace BoSSS.Solution.CompressibleFlowCommon.Boundary {
 
     /// <summary>
     /// Implementation of the boundary condition for a supersonic inlet (i.e.
@@ -58,7 +60,7 @@ namespace CNS.Boundary {
         /// <param name="pressureFunction">
         /// The prescribed pressure at the inlet
         /// </param>
-        public SupersonicInlet(CNSControl config, Func<double[], double, double> densityFunction, Func<double[], double, double>[] velocityFunctions, Func<double[], double, double> pressureFunction)
+        public SupersonicInlet(MaterialProperty.Material config, Func<double[], double, double> densityFunction, Func<double[], double, double>[] velocityFunctions, Func<double[], double, double> pressureFunction)
             : base(config) {
             this.DensityFunction = densityFunction;
             this.VelocityFunctions = velocityFunctions;
@@ -88,8 +90,11 @@ namespace CNS.Boundary {
         /// \f$ (\rho^*, u_0^*[, u_1^*[, u_2^*]], p*)^T\f$ 
         /// </returns>
         public override StateVector GetBoundaryState(double time, double[] x, double[] normal, StateVector stateIn) {
-            Vector3D uOut = new Vector3D();
-            for (int i = 0; i < CNSEnvironment.NumberOfDimensions; i++) {
+            Debug.Assert(x.Length == stateIn.Dimension);
+            int D = x.Length;
+
+            Vector uOut = new Vector(D);
+            for (int i = 0; i < D; i++) {
                 uOut[i] = VelocityFunctions[i](x, time);
             }
 
