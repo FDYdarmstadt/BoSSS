@@ -963,7 +963,7 @@ namespace BoSSS.Foundation.IO {
         /// Searches for an equivalent grid in the database and, if none is found
         /// saves a grid object to the database.
         /// </summary>
-        /// <param name="grd">
+        /// <param name="_grd">
         /// On entry, the grid which should be saved to the database.
         /// On exit, either unchanged, or the equivalent grid.
         /// </param>
@@ -971,12 +971,13 @@ namespace BoSSS.Foundation.IO {
         /// Inidicates that an equivalent grid was found.
         /// </param>
         /// <param name="database"></param>
-        public Guid SaveGridIfUnique(ref Grid.Classic.GridCommons grd, out bool EquivalentGridFound, IDatabaseInfo database) {
+        public Guid SaveGridIfUnique(ref IGrid _grd, out bool EquivalentGridFound, IDatabaseInfo database) {
             using (new FuncTrace()) {
+                GridCommons grd = (GridCommons)_grd;
 
                 var Grids = database.Grids;
                 foreach (var GrdInf in Grids) {
-                    Grid.Classic.GridCommons GrdInDb = (Grid.Classic.GridCommons)this.LoadGridInfo(GrdInf.ID, database);
+                    GridCommons GrdInDb = (Grid.Classic.GridCommons)this.LoadGridInfo(GrdInf.ID, database);
 
                     if (GridCommons_CustomEquality(grd, GrdInDb) == false)
                         continue;
@@ -1004,17 +1005,19 @@ namespace BoSSS.Foundation.IO {
         /// Saves the given grid object to the database;
         /// </summary>
         /// <returns>
-        /// the Guid of the <see cref="GridCommons"/>-object that was saved
-        /// (equal to the <see cref="GridCommons.GridGuid"/>-property).
+        /// the Guid of the <see cref="IGrid"/>-object that was saved
+        /// (equal to the <see cref="IDatabaseEntityInfo{T}.ID"/>-property).
         /// </returns>
-        /// <param name="grd">
+        /// <param name="_grd">
         /// The grid to save.
         /// </param>
         /// <param name="database">
         /// chaos
         /// </param>
-        public Guid SaveGrid(Grid.Classic.GridCommons grd, IDatabaseInfo database) {
+        public Guid SaveGrid(IGrid _grd, IDatabaseInfo database) {
             using (new FuncTrace()) {
+                GridCommons grd = (GridCommons)_grd;
+
                 if (grd.GridGuid.Equals(Guid.Empty)) {
                     throw new ApplicationException("cannot save grid with empty Guid (Grid Guid is " + Guid.Empty.ToString() + ");");
                 }
