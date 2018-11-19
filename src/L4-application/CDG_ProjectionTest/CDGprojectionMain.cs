@@ -54,7 +54,7 @@ namespace BoSSS.Application.CDG_ProjectionTest {
         }
 
 
-        protected override GridCommons CreateOrLoadGrid() {
+        protected override IGrid CreateOrLoadGrid() {
 
             double[] Xnodes = GenericBlas.Linspace(0, 4, 3);
             double[] Ynodes = GenericBlas.Linspace(0, 4, 3);

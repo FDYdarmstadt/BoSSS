@@ -305,7 +305,7 @@ namespace BoSSS.Application.DerivativeTest {
         /// <summary>
         /// See also <see cref="GRID_CASE"/> and <see cref="GRID_FILE"/>.
         /// </summary>
-        protected override GridCommons CreateOrLoadGrid() {
+        protected override IGrid CreateOrLoadGrid() {
 
             GridCommons grd;
             switch (GRID_CASE) {

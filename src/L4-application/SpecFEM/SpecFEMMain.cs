@@ -53,7 +53,7 @@ namespace BoSSS.Application.SpecFEM {
             base.Init(control);
         }
 
-        protected override GridCommons CreateOrLoadGrid() {
+        protected override IGrid CreateOrLoadGrid() {
             int MeshPara = 32;
 
             double[] nodesX = GenericBlas.Linspace(-2, 2, MeshPara + 1); 
