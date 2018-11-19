@@ -14,6 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+using BoSSS.Foundation.IO;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -22,9 +23,26 @@ using System.Threading.Tasks;
 
 namespace BoSSS.Foundation.Grid {
 
+    /// <summary>
+    /// Common interface for all grids
+    /// </summary>
+    public interface IGrid<T> : IGridInfo 
+        where T: IGridData
+        {
 
-    public interface IGrid {
+        /// <summary>
+        /// Access to grid metrics
+        /// </summary>
+        IGridData iGridData {
+            get;
+        }
 
+        /// <summary>
+        /// Access to grid metrics
+        /// </summary>
+        T GridData {
+            get;
+        }
 
 
     }
