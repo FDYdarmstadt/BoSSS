@@ -989,7 +989,7 @@ namespace BoSSS.Solution {
                     }
 
 
-                    GridData = new GridData(Grid);
+                    GridData = Grid.iGridData;
 
                     if (this.Control == null || this.Control.NoOfMultigridLevels > 0) {
                         this.MultigridSequence = CoarseningAlgorithms.CreateSequence(this.GridData, MaxDepth: (this.Control != null ? this.Control.NoOfMultigridLevels : 1));
@@ -1156,7 +1156,7 @@ namespace BoSSS.Solution {
         /// <summary>
         /// BoSSS grid.
         /// </summary>
-        public GridCommons Grid {
+        public IGrid Grid {
             get;
             private set;
         }
@@ -1189,7 +1189,7 @@ namespace BoSSS.Solution {
         /// use this method to either create a grid or to load a grid from
         /// the IO system (See <see cref="IDatabaseDriver"/>);
         /// </summary>
-        protected virtual GridCommons CreateOrLoadGrid() {
+        protected virtual IGrid CreateOrLoadGrid() {
             using (var ht = new FuncTrace()) {
 
                 if (this.Control != null) {
@@ -1210,12 +1210,15 @@ namespace BoSSS.Solution {
                             }
                             var _Grid = DatabaseDriver.LoadGrid(tsi_toLoad.GridID, m_Database);
 
-                            foreach(string oldBndy in this.Control.BoundaryValueChanges.Keys) {
-                                int bndyInd = _Grid.EdgeTagNames.Values.FirstIndexWhere(bndyVal => bndyVal.Equals(oldBndy, StringComparison.InvariantCultureIgnoreCase));
-                                if( bndyInd > -1) {
-                                    _Grid.EdgeTagNames[_Grid.EdgeTagNames.Keys.ElementAt(bndyInd)] = this.Control.BoundaryValueChanges[oldBndy];
-                                } else {
-                                    throw new ArgumentException("Boundary " + oldBndy + " is not found in EdgeTagNames of the loaded Grid");
+                            if(_Grid is GridCommons) {
+                                GridCommons __Grid = (GridCommons)_Grid;
+                                foreach(string oldBndy in this.Control.BoundaryValueChanges.Keys) {
+                                    int bndyInd = __Grid.EdgeTagNames.Values.FirstIndexWhere(bndyVal => bndyVal.Equals(oldBndy, StringComparison.InvariantCultureIgnoreCase));
+                                    if(bndyInd > -1) {
+                                        __Grid.EdgeTagNames[__Grid.EdgeTagNames.Keys.ElementAt(bndyInd)] = this.Control.BoundaryValueChanges[oldBndy];
+                                    } else {
+                                        throw new ArgumentException("Boundary " + oldBndy + " is not found in EdgeTagNames of the loaded Grid");
+                                    }
                                 }
                             }
 

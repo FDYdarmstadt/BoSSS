@@ -32,6 +32,7 @@ using ilPSP.Utils;
 using log4net;
 using MPI.Wrappers;
 using BoSSS.Foundation.Grid.RefElements;
+using Newtonsoft.Json;
 
 namespace BoSSS.Foundation.Grid.Classic {
 
@@ -41,7 +42,7 @@ namespace BoSSS.Foundation.Grid.Classic {
     /// </summary>
     [Serializable]
     [DataContract]
-    public partial class GridCommons : IGridInfo, ICloneable, IGrid<Grid.Classic.GridData> {
+    public partial class GridCommons : IGridInfo, ICloneable, IGrid {
 
 
         static ILog Logger = LogManager.GetLogger(typeof(GridCommons));
@@ -54,6 +55,7 @@ namespace BoSSS.Foundation.Grid.Classic {
         /// for fields.
         /// </remarks>
         [NonSerialized]
+        [JsonIgnore]
         public Cell[] Cells;
 
         /// <summary>
@@ -61,6 +63,7 @@ namespace BoSSS.Foundation.Grid.Classic {
         /// start after those of the <see cref="Cells"/>.
         /// </summary>
         [NonSerialized]
+        [JsonIgnore]
         public BCElement[] BcCells;
 
         /// <summary>
@@ -1050,7 +1053,7 @@ namespace BoSSS.Foundation.Grid.Classic {
         }
 
         /// <summary>
-        /// 
+        /// Typed version of <see cref="iGridData"/>
         /// </summary>
         public GridData GridData {
             get {
@@ -1059,7 +1062,24 @@ namespace BoSSS.Foundation.Grid.Classic {
             }
         }
 
+        /// <summary>
+        /// 
+        /// </summary>
+        public IReadOnlyCollection<Guid> AllDataVectorIDs {
+            get {
+                List<Guid> L = new List<Guid>();
+
+                L.Add(this.StorageGuid);
+                L.Add(this.BcCellsStorageGuid);
+                L.AddRange(this.PredefinedGridPartitioning.Values.Select(v => v.Guid));
+
+                return L.AsReadOnly();
+            }
+
+        }
+
         [NonSerialized]
+        [JsonIgnore]
         GridData m_GridData;
 
         void InvalidateGridData () {

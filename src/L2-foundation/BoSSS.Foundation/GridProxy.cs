@@ -18,6 +18,7 @@ using System;
 using BoSSS.Foundation.Grid;
 using BoSSS.Platform;
 using BoSSS.Foundation.Grid.Classic;
+using System.Collections.Generic;
 
 namespace BoSSS.Foundation.IO {
 
@@ -168,6 +169,15 @@ namespace BoSSS.Foundation.IO {
         public IDatabaseInfo Database {
             get;
             private set;
+        }
+
+        /// <summary>
+        /// %
+        /// </summary>
+        public IReadOnlyCollection<Guid> AllDataVectorIDs {
+            get {
+                return realGrid.Value.AllDataVectorIDs;
+            }
         }
 
         /// <summary>

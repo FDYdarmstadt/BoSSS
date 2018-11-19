@@ -463,7 +463,7 @@ namespace BoSSS.Solution.Control {
         /// </summary>
         [NonSerialized]
         [JsonIgnore]
-        public Func<GridCommons> GridFunc;
+        public Func<IGrid> GridFunc;
 
         /// <summary>
         /// Sets <see cref="GridGuid"/>

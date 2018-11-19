@@ -15,6 +15,7 @@ limitations under the License.
 */
 
 using System;
+using System.Collections.Generic;
 
 namespace BoSSS.Foundation.IO {
 
@@ -36,6 +37,13 @@ namespace BoSSS.Foundation.IO {
         /// The simplex dimension in the sense of measure-theory.
         /// </summary>
         int SpatialDimension {
+            get;
+        }
+
+        /// <summary>
+        /// collection of all (parallel) data vectors used in the grid
+        /// </summary>
+        IReadOnlyCollection<Guid> AllDataVectorIDs {
             get;
         }
     }

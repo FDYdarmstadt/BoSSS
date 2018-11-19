@@ -638,7 +638,7 @@ namespace BoSSS.Foundation.IO {
         /// </summary>
         /// <param name="grid"></param>
         /// <returns></returns>
-        public GridCommons LoadGridData(GridCommons grid) {
+        public IGrid LoadGridData(GridCommons grid) {
             // load grid data
             Partitioning p = null;
             grid.Cells = LoadVector<Cell>(grid.StorageGuid, ref p).ToArray();
@@ -665,7 +665,7 @@ namespace BoSSS.Foundation.IO {
         /// <returns>
         /// The loaded grid
         /// </returns>
-        public Grid.Classic.GridCommons LoadGrid(Guid uid, IDatabaseInfo database) {
+        public IGrid LoadGrid(Guid uid, IDatabaseInfo database) {
             return LoadGridData((Grid.Classic.GridCommons)LoadGridInfo(uid, database));
         }
 
@@ -982,7 +982,7 @@ namespace BoSSS.Foundation.IO {
                         continue;
 
                     if (GridCommons_CellEquality(grd, GrdInDb)) {
-                        grd = LoadGridData(GrdInDb);
+                        grd = (Grid.Classic.GridCommons)LoadGridData(GrdInDb);
                         EquivalentGridFound = true;
                         //Console.WriteLine("Found equivalent grid: " + grd.GridGuid);
                         return grd.ID;
