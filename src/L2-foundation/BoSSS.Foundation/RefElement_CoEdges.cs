@@ -222,11 +222,13 @@ namespace BoSSS.Foundation.Grid.RefElements {
                 var fNor = this.FaceNormals;
                 for (int iF = 0; iF < this.NoOfFaces; iF++) {
                     m_FacePlanes[iF] = new AffineManifold(fNor.GetRow(iF), fCen.GetRow(iF));
-
+                    Debug.Assert(m_FacePlanes[iF].Normal.AbsSquare() > 0.0);
                     Debug.Assert(m_FacePlanes[iF].PointDistance(fCen.GetRow(iF)).Abs() < 1.0e-6);
                 }
             }
 
+            Debug.Assert(m_FacePlanes[iFace].Normal.Dim == this.SpatialDimension);
+            Debug.Assert(m_FacePlanes[iFace].Normal.AbsSquare() > 0.0);
             return m_FacePlanes[iFace].CloneAs();
         }
     
