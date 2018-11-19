@@ -41,7 +41,7 @@ namespace BoSSS.Foundation.Grid.Classic {
     /// </summary>
     [Serializable]
     [DataContract]
-    public partial class GridCommons : IGridInfo, ICloneable, IGrid {
+    public partial class GridCommons : IGridInfo, ICloneable, IGrid<Grid.Classic.GridData> {
 
 
         static ILog Logger = LogManager.GetLogger(typeof(GridCommons));
@@ -1041,6 +1041,43 @@ namespace BoSSS.Foundation.Grid.Classic {
         }
 
         /// <summary>
+        /// Access to grid metrics 
+        /// </summary>
+        public IGridData iGridData {
+            get {
+                return GridData;
+            }
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        public GridData GridData {
+            get {
+                InitGridData();
+                return m_GridData;
+            }
+        }
+
+        [NonSerialized]
+        GridData m_GridData;
+
+        void InvalidateGridData () {
+            if(m_GridData == null)
+                return; // nothing to do
+            m_GridData.Invalidate();
+            m_GridData = null;
+        }
+
+        void InitGridData() {
+            if(m_GridData != null)
+                return; // nothing to do
+            m_GridData = new GridData(this);
+        }
+
+
+
+        /// <summary>
         /// Checks whether the given <paramref name="nodes"/> are in
         /// monotonically increasing order.
         /// </summary>
@@ -1553,6 +1590,7 @@ namespace BoSSS.Foundation.Grid.Classic {
         /// </summary>
         public void CheckAndFixJacobianDeterminat() {
             using (var tr = new FuncTrace()) {
+                InvalidateGridData();
 
                 List<int> unrecoverAbleErrors = new List<int>();
 
@@ -1652,14 +1690,16 @@ namespace BoSSS.Foundation.Grid.Classic {
 
         /// <summary>
         /// For some reference element, this computes the permutation of nodes under a mirror operation.
-        /// The purpose of this operation is to fix cellc with negative Jacobian determinante by mirroring them,
-        /// since the mirror operation flips the sign of the Jacobian determinat.
-        /// The reference emenet must be centered around the origin, so that the mirror operation maps it onto itself.
+        /// The purpose of this operation is to fix cells with negative Jacobian determinant by mirroring them,
+        /// since the mirror operation flips the sign of the Jacobian determinant.
+        /// The reference element must be centered around the origin, so that the mirror operation maps it onto itself.
         /// </summary>
         /// <param name="ct"></param>
         /// <param name="NodesPerm">Permutation of interpolation nodes, see <see cref="RefElement.GetInterpolationNodes"/>.</param>
         /// <param name="VertxPerm">Permutation of reference element vertices, see <see cref="RefElement.Vertices"/>.</param>
         void MirrorPermutation(CellType ct, out int[] NodesPerm, out int[] VertxPerm) {
+            
+
             RefElement Kref = this.GetRefElement(ct);
             NodeSet _Nodes = Kref.GetInterpolationNodes(ct);
             NodeSet _Vertx = Kref.Vertices;
