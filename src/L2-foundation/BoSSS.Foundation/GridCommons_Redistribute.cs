@@ -1066,10 +1066,8 @@ namespace BoSSS.Foundation.Grid.Classic {
         /// MPI processor rank for each cell; index: local cell index;
         /// </param>
         public void RedistributeGrid(int[] part) {
-            int Size;
-            int MyRank;
-            csMPI.Raw.Comm_Rank(csMPI.Raw._COMM.WORLD, out MyRank);
-            csMPI.Raw.Comm_Size(csMPI.Raw._COMM.WORLD, out Size);
+            int Size = this.Size;
+            int MyRank = this.MyRank;
             
             CheckPartitioning(part);
 

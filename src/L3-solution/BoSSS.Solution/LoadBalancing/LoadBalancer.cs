@@ -91,6 +91,7 @@ namespace BoSSS.Solution {
             }
 
             if (app.Grid.Size == 1) {
+                // only one processor => no load balancing necessary
                 return null;
             }
 
@@ -139,7 +140,7 @@ namespace BoSSS.Solution {
                 case GridPartType.METIS:
                     int.TryParse(PartOptions, out int noOfPartitioningsToChooseFrom);
                     noOfPartitioningsToChooseFrom = Math.Max(1, noOfPartitioningsToChooseFrom);
-                    result = app.Grid.ComputePartitionMETIS(cellCosts.Single());
+                    result = ((GridCommons)(app.Grid)).ComputePartitionMETIS(cellCosts.Single());
                     isFirstRepartitioning = false;
                     break;
 
@@ -147,22 +148,22 @@ namespace BoSSS.Solution {
                     // Do full ParMETIS run on first repartitioning since
                     // initial partitioning may be _really_ bad
                     if (isFirstRepartitioning) {
-                        result = app.Grid.ComputePartitionParMETIS(cellCosts);
+                        result = ((GridCommons)(app.Grid)).ComputePartitionParMETIS(cellCosts);
                         isFirstRepartitioning = false;
                     } else {
                         // Refinement currently deactivate because it behaves
                         // strangely when large numbers of cells should be
                         // repartitioned
                         //result = Grid.ComputePartitionParMETIS(cellCosts, refineCurrentPartitioning: true);
-                        result = app.Grid.ComputePartitionParMETIS(cellCosts);
+                        result = ((GridCommons)(app.Grid)).ComputePartitionParMETIS(cellCosts);
                     }
                     break;
 
                 case GridPartType.Hilbert:
-                    return app.Grid.ComputePartitionHilbert(localcellCosts: cellCosts, Functype: 0);
+                    return ((GridCommons)(app.Grid)).ComputePartitionHilbert(localcellCosts: cellCosts, Functype: 0);
 
                 case GridPartType.directHilbert:
-                    return app.Grid.ComputePartitionHilbert(localcellCosts: cellCosts, Functype: 1);
+                    return ((GridCommons)(app.Grid)).ComputePartitionHilbert(localcellCosts: cellCosts, Functype: 1);
 
                 case GridPartType.none:
                     result = IndexBasedPartition(cellCosts.Single());

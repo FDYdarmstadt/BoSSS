@@ -894,7 +894,7 @@ namespace BoSSS.Solution {
                 //====================
 
                 Grid = CreateOrLoadGrid();
-                if (Grid == null && AggGrid == null) {
+                if (Grid == null) {
                     throw new ApplicationException("No grid loaded through CreateOrLoadGrid");
                 }
 
@@ -976,43 +976,32 @@ namespace BoSSS.Solution {
                 //====================
                 //RedistributeGrid();
 
-                if (Grid != null) {
+                {
                     Grid.Redistribute(DatabaseDriver, Control.GridPartType, Control.GridPartOptions);
-                    if (!passiveIo && !DatabaseDriver.GridExists(Grid.GridGuid)) {
+                    if (!passiveIo && !DatabaseDriver.GridExists(Grid.ID)) {
 
-                        //DatabaseDriver.SaveGrid(Grid);
-                        GridCommons _grid = this.Grid;
-                        DatabaseDriver.SaveGrid(_grid, this.m_Database);
+                        DatabaseDriver.SaveGrid(this.Grid, this.m_Database);
                         //DatabaseDriver.SaveGridIfUnique(ref _grid, out GridReplaced, this.m_Database);
-                        this.Grid = _grid;
-
                     }
-
-
-                    GridData = Grid.iGridData;
+                                        
 
                     if (this.Control == null || this.Control.NoOfMultigridLevels > 0) {
                         this.MultigridSequence = CoarseningAlgorithms.CreateSequence(this.GridData, MaxDepth: (this.Control != null ? this.Control.NoOfMultigridLevels : 1));
                     } else {
                         this.MultigridSequence = new AggregationGrid[0];
                     }
-                } else {
-                    GridData = this.AggGrid;
-                    this.MultigridSequence = new AggregationGrid[0];
                 }
 
 
                 csMPI.Raw.Barrier(csMPI.Raw._COMM.WORLD);
 
                 if (DoDbLogging) {
-
                     if (!this.CurrentSessionInfo.KeysAndQueries.ContainsKey("Grid:NoOfCells"))
-                        this.CurrentSessionInfo.KeysAndQueries.Add("Grid:NoOfCells", Grid.CellPartitioning.TotalLength);
+                        this.CurrentSessionInfo.KeysAndQueries.Add("Grid:NoOfCells", Grid.NumberOfCells);
                     if (!this.CurrentSessionInfo.KeysAndQueries.ContainsKey("Grid:hMax"))
                         this.CurrentSessionInfo.KeysAndQueries.Add("Grid:hMax", ((GridData)GridData).Cells.h_maxGlobal);
                     if (!this.CurrentSessionInfo.KeysAndQueries.ContainsKey("Grid:hMin"))
                         this.CurrentSessionInfo.KeysAndQueries.Add("Grid:hMin", ((GridData)GridData).Cells.h_minGlobal);
-
                 }
 
 
@@ -1140,8 +1129,9 @@ namespace BoSSS.Solution {
         /// Extended grid information.
         /// </summary>
         public IGridData GridData {
-            get;
-            private set;
+            get {
+                return Grid.iGridData;
+            }
         }
 
         /// <summary>
@@ -1161,10 +1151,10 @@ namespace BoSSS.Solution {
             private set;
         }
 
-        /// <summary>
-        /// Provisional alternative grid;
-        /// </summary>
-        protected AggregationGrid AggGrid;
+        ///// <summary>
+        ///// Provisional alternative grid;
+        ///// </summary>
+        //protected AggregationGrid AggGrid;
 
 
         /// <summary>
@@ -1812,8 +1802,7 @@ namespace BoSSS.Solution {
                         this.MultigridSequence = null;
 
                         this.Grid.RedistributeGrid(NewPartition);
-                        newGridData = new GridData(this.Grid);
-                        this.GridData = newGridData;
+                        newGridData = (GridData) this.Grid.iGridData;
                         oldGridData.Invalidate();
                         if (this.LsTrk != null) {
                             this.LsTrk.Invalidate();
@@ -1970,8 +1959,7 @@ namespace BoSSS.Solution {
                             this.MultigridSequence = null;
 
                             this.Grid = newGrid;
-                            newGridData = new GridData(this.Grid);
-                            this.GridData = newGridData;
+                            newGridData = (GridData) this.Grid.iGridData;
                             oldGridData.Invalidate();
                             if(this.LsTrk != null) {
                                 this.LsTrk.Invalidate();
@@ -2340,7 +2328,7 @@ namespace BoSSS.Solution {
                         app.RunSolverMode();
                         CorrectlyTerminated = true;
                         nlog.LogValue("pstudy_case_successful", true);
-                        nlog.LogValue("GrdRes:NumberOfCells", app.Grid.CellPartitioning.TotalLength);
+                        nlog.LogValue("GrdRes:NumberOfCells", app.Grid.NumberOfCells);
                         nlog.LogValue("GrdRes:h_min", ((GridData)(app.GridData)).Cells.h_minGlobal);
                         nlog.LogValue("GrdRes:h_max", ((GridData)(app.GridData)).Cells.h_maxGlobal);
 #if DEBUG
