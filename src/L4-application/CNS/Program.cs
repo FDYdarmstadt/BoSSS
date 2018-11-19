@@ -38,6 +38,7 @@ using System.Linq;
 using System.Threading;
 using BoSSS.Solution.CompressibleFlowCommon.MaterialProperty;
 using CNS.Convection;
+using BoSSS.Foundation.Grid;
 
 namespace CNS {
 
@@ -145,7 +146,7 @@ namespace CNS {
         /// loaded regularly via <see cref="Application{T}.CreateOrLoadGrid"/>
         /// </summary>
         /// <returns></returns>
-        protected override GridCommons CreateOrLoadGrid() {
+        protected override IGrid CreateOrLoadGrid() {
             using (var ht = new FuncTrace()) {
                 GridCommons grid = base.CreateOrLoadGrid();
                 CNSEnvironment.Initialize(grid.SpatialDimension, this);

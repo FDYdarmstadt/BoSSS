@@ -58,7 +58,7 @@ namespace LTSTests {
 
         double endTime = 2;
 
-        protected override GridCommons CreateOrLoadGrid() {
+        protected override IGrid CreateOrLoadGrid() {
             double[] xnodes1 = GenericBlas.Linspace(-1, 0, a1 + 1);
             double[] xnodes2 = GenericBlas.Linspace(0, 0.5, a2 + 1);
             double[] xnodes3 = GenericBlas.Linspace(0.5, 1, a3 + 1);
