@@ -2566,9 +2566,9 @@ namespace BoSSS.Foundation.Grid.RefElements {
             }
 
             //Determine vertices bounding of the edge triangle
-            Vector3D a = new Vector3D();
-            Vector3D b = new Vector3D();
-            Vector3D c = new Vector3D();
+            Vector a = new Vector(3);
+            Vector b = new Vector(3);
+            Vector c = new Vector(3);
             switch (EdgeIndex) {
                 case (int)Edge.Front:
                     a.Set(Vertices[2, 0], Vertices[2, 1], Vertices[2, 2]);
@@ -2599,8 +2599,8 @@ namespace BoSSS.Foundation.Grid.RefElements {
             }
 
             //Create 3D representation of the 2D basis on this triangle
-            Vector3D e1 = b - a;
-            Vector3D e2 = c - 0.5 * (a + b);
+            Vector e1 = b - a;
+            Vector e2 = c - 0.5 * (a + b);
 
             e1.Normalize();
             e2.Normalize();
@@ -2610,9 +2610,9 @@ namespace BoSSS.Foundation.Grid.RefElements {
             //    throw new ApplicationException("not orthonormal.");
 
             //Do the transformation
-            Vector3D faceCenter = (1.0 / 3.0) * (a + b + c);
+            Vector faceCenter = (1.0 / 3.0) * (a + b + c);
             for (int i = 0; i < N; i++) {
-                Vector3D volumeCoordinate = faceCenter + (EdgeVertices[i, 0] * e1 + EdgeVertices[i, 1] * e2);
+                Vector volumeCoordinate = faceCenter + (EdgeVertices[i, 0] * e1 + EdgeVertices[i, 1] * e2);
                 VolumeVertices[i, 0] = volumeCoordinate.x;
                 VolumeVertices[i, 1] = volumeCoordinate.y;
                 VolumeVertices[i, 2] = volumeCoordinate.z;

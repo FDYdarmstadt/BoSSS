@@ -228,7 +228,7 @@ namespace BoSSS.Foundation.Grid.Classic {
                             C_cnt.Type = _CellType;
 
                             C_cnt.TransformationParams = MultidimensionalArray.Create(NoOfNodes, 3);
-                            Vector3D xyzPoint = new Vector3D();
+                            Vector xyzPoint = new Vector(3);
                             //  var Bild0 = Cj0.TransformationParams;
 
 
@@ -601,7 +601,7 @@ namespace BoSSS.Foundation.Grid.Classic {
                                     double sR = sNodes[k + 1];
                                     double zL = zNodes[l];
                                     double zR = zNodes[l + 1];
-                                    Vector3D rsPoint = new Vector3D();
+                                    Vector rsPoint = new Vector(3);
 
                                     rsPoint[0] = rL + (rR - rL) * 0.5 * (InterpolationNodes[PointNumber, 0] + 1);
                                     rsPoint[1] = sL + (sR - sL) * 0.5 * (InterpolationNodes[PointNumber, 1] + 1);

@@ -15,8 +15,9 @@ limitations under the License.
 */
 
 using BoSSS.Platform.LinAlg;
+using BoSSS.Solution.CompressibleFlowCommon;
 
-namespace CNS.Boundary {
+namespace BoSSS.Solution.CompressibleFlowCommon.Boundary {
 
     /// <summary>
     /// Base class for implementations of boundary value calculations. That is,
@@ -29,13 +30,13 @@ namespace CNS.Boundary {
         /// <summary>
         /// Configuration options
         /// </summary>
-        protected CNSControl config;
+        protected MaterialProperty.Material config;
 
         /// <summary>
         /// Constructs a new boundary condition
         /// </summary>
         /// <param name="config">Configuration options</param>
-        protected BoundaryCondition(CNSControl config) {
+        protected BoundaryCondition(MaterialProperty.Material config) {
             this.config = config;
         }
 
@@ -52,7 +53,7 @@ namespace CNS.Boundary {
         abstract public StateVector GetBoundaryState(double time, double[] x, double[] normal, StateVector stateIn);
 
         /// <summary>
-        /// Utility function create a <see cref="Vector3D"/> out of double[]
+        /// Utility function create a <see cref="Vector"/> out of double[]
         /// representation of the outward unit normal.
         /// </summary>
         /// <param name="normal">The original normal to be transformed</param>
@@ -61,8 +62,8 @@ namespace CNS.Boundary {
         /// <paramref name="normal"/>.Length is smaller than three the
         /// remaining elements of the vector are set to zero.
         /// </returns>
-        protected static Vector3D GetNormalVector(double[] normal) {
-            Vector3D normalVector = new Vector3D();
+        protected static Vector GetNormalVector(double[] normal) {
+            Vector normalVector = new Vector(normal.Length);
             for (int i = 0; i < normal.Length; i++) {
                 normalVector[i] = normal[i];
             }

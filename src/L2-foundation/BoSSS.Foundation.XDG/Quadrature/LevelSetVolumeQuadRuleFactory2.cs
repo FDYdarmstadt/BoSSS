@@ -213,12 +213,12 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
 
             //// convert to FORTRAN order
             //FullMatrix _Mtx = new FullMatrix(Mtx);
-            ////_Mtx.ToTxtFile("C:\\tmp\\Msd.txt");
+            ////_Mtx.ToTxtFile("C:\\tmptest\\Msd.txt");
 
 
 
 
-            ////(new FullMatrix(RHS)).ToTxtFile("C:\\tmp\\RHSsd.txt");
+            ////(new FullMatrix(RHS)).ToTxtFile("C:\\tmptest\\RHSsd.txt");
 
             //// convert to FORTRAN order
             var _RHS = MultidimensionalArray.Create(NoOfNodes, sgrd.LocalNoOfCells); // this is also output, so it must be larger!
@@ -386,12 +386,12 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
 
                     // convert to FORTRAN order
                     FullMatrix _Mtx = new FullMatrix(Mtx);
-                    //_Mtx.ToTxtFile("C:\\tmp\\Msd.txt");
+                    //_Mtx.ToTxtFile("C:\\tmptest\\Msd.txt");
 
 
 
 
-                    //(new FullMatrix(RHS)).ToTxtFile("C:\\tmp\\RHSsd.txt");
+                    //(new FullMatrix(RHS)).ToTxtFile("C:\\tmptest\\RHSsd.txt");
 
                     // convert to FORTRAN order
                     //GuessWeight.Clear();

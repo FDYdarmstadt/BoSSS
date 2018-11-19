@@ -167,7 +167,7 @@ namespace ilPSP {
             return ret;
         }
 
-
+        
 
         /// <summary>
         /// extracts the <paramref name="ColNo"/>-th column from

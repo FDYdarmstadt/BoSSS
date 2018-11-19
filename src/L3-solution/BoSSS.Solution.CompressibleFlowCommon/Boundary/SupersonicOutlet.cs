@@ -14,42 +14,29 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-using System;
 using BoSSS.Platform.LinAlg;
-using CNS.MaterialProperty;
+using BoSSS.Solution.CompressibleFlowCommon;
 
-namespace CNS.Boundary {
+namespace BoSSS.Solution.CompressibleFlowCommon.Boundary {
 
     /// <summary>
-    /// Calculation of boundary values for an outlet with a Mach number smaller
-    /// than 1.0.
+    /// Implementation of boundary condition for a supersonic outlet (i.e. an
+    /// outlet with a local Mach number greater than 1.0)
     /// </summary>
-    public class SubsonicOutlet : BoundaryCondition {
+    public class SupersonicOutlet : BoundaryCondition {
 
         /// <summary>
-        /// The function for the prescribed (dimensionless) pressure in the
-        /// free stream.
-        /// </summary>
-        private Func<double[], double, double> pressureFunction;
-
-        /// <summary>
-        /// Sets <see cref="pressureFunction"/>
+        /// <see cref="BoundaryCondition"/>
         /// </summary>
         /// <param name="config"><see cref="BoundaryCondition"/></param>
-        /// <param name="pressureFunction">
-        /// The function for the prescribed (dimensionless) pressure in the
-        /// free stream.
-        /// </param>
-        public SubsonicOutlet(CNSControl config, Func<double[], double, double> pressureFunction)
+        public SupersonicOutlet(MaterialProperty.Material config)
             : base(config) {
-            this.pressureFunction = pressureFunction;
         }
 
         /// <summary>
-        /// Calculates the boundary values for a subsonic outlet (Mach number
-        /// smaller than 1). We have to impose one condition (here, we choose
-        /// the pressure <see cref="pressureFunction"/>) and extrapolate the
-        /// other values following FerzigerPeric2001 (p. 315ff)
+        /// At a supersonic outlet, we do not need to (and must not) impose
+        /// any boundary values since all characteristics travel out of the
+        /// domain and must thus be calculated
         /// </summary>
         /// <param name="time">
         /// <see cref="BoundaryCondition.GetBoundaryState"/>
@@ -64,16 +51,10 @@ namespace CNS.Boundary {
         /// <see cref="BoundaryCondition.GetBoundaryState"/>
         /// </param>
         /// <returns>
-        /// \f$ 
-        /// (\rho^-, u^-, p^*)^T
-        /// \f$ 
+        /// \f$ (\rho^-, m_0^-[, m_1^-[, m_2^-]], (\rho E)^-)^T\f$ 
         /// </returns>
         public override StateVector GetBoundaryState(double time, double[] x, double[] normal, StateVector stateIn) {
-            return StateVector.FromPrimitiveQuantities(
-                stateIn.Material,
-                stateIn.Density,
-                stateIn.Velocity,
-                pressureFunction(x, time));
+            return stateIn;
         }
     }
 }

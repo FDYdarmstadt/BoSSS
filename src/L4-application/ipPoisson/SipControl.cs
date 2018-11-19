@@ -37,6 +37,8 @@ namespace BoSSS.Application.SipPoisson {
         /// </summary>
         public SipControl() : base() {
             base.NoOfMultigridLevels = 1;
+            base.CompMode = _CompMode.Steady;
+            base.NoOfTimesteps = 1;
         }
 
         /// <summary>
@@ -58,18 +60,14 @@ namespace BoSSS.Application.SipPoisson {
         }
 
         /// <summary>
-        /// 
+        /// Settings verification
         /// </summary>
         public override void Verify() {
             base.Verify();
-
-
-
         }
 
-       
         /// <summary>
-        /// Multiplyer for the penalty parameter, should be around 1.0.
+        /// Multiplier for the penalty parameter, should be around 1.0.
         /// </summary>
         [DataMember]
         [BoSSS.Solution.Control.ExclusiveLowerBound(0.0)]
@@ -80,7 +78,6 @@ namespace BoSSS.Application.SipPoisson {
         /// </summary>
         [DataMember]
         public SolverCodes solver_name = SolverCodes.classic_pardiso;
-
 
         /// <summary>
         /// If any blocking is used (Schwarz, block Jacobi), a target for the block size.

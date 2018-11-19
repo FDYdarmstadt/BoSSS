@@ -15,7 +15,7 @@ limitations under the License.
 */
 
 
-namespace CNS.MaterialProperty {
+namespace BoSSS.Solution.CompressibleFlowCommon.MaterialProperty {
 
     /// <summary>
     /// Interface for an equation of state which allows for the calculation of

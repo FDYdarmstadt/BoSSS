@@ -14,7 +14,8 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-using CNS.Boundary;
+using BoSSS.Solution.CompressibleFlowCommon;
+using BoSSS.Solution.CompressibleFlowCommon.Boundary;
 using CNS.EquationSystem;
 using System.Linq;
 
@@ -42,7 +43,7 @@ namespace CNS.IBM {
         /// <param name="convectiveBuilder"></param>
         /// <param name="diffusiveBuilder"></param>
         public BoundaryConditionSourceFluxBuilder(
-            IBMControl control, IBoundaryConditionMap boundaryMap, ISpeciesMap speciesMap, FluxBuilder convectiveBuilder, FluxBuilder diffusiveBuilder)
+            IBMControl control, BoundaryConditionMap boundaryMap, ISpeciesMap speciesMap, FluxBuilder convectiveBuilder, FluxBuilder diffusiveBuilder)
             : base(control, boundaryMap, speciesMap) {
             standardOperator = new Operator(control);
 

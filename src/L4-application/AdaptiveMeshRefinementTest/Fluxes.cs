@@ -20,8 +20,8 @@ namespace BoSSS.Application.AdaptiveMeshRefinementTest {
         /// <summary>
         /// The predefined, div-free flow field
         /// </summary>
-        Vector2D FlowField(double[] x) {
-            Vector2D u;
+        Vector FlowField(double[] x) {
+            Vector u = new Vector(2);
             u.x = x[1];
             u.y = -x[0];
             return u;
@@ -30,7 +30,7 @@ namespace BoSSS.Application.AdaptiveMeshRefinementTest {
 
 
         protected override double BorderEdgeFlux(double time, double[] X, double[] normal, byte EdgeTag, double[] Uin, int jEdge) {
-            Vector2D n; n.x = normal[0]; n.y = normal[1];
+            Vector n= new Vector(2); n.x = normal[0]; n.y = normal[1];
 
             var vel = FlowField(X);
 
@@ -54,7 +54,7 @@ namespace BoSSS.Application.AdaptiveMeshRefinementTest {
         /// <param name="Uout"></param>
         /// <returns></returns>
         protected override double InnerEdgeFlux(double time, double[] X, double[] normal, double[] Uin, double[] Uout, int jEdge) {
-            Vector2D n; n.x = normal[0]; n.y = normal[1];
+            Vector n= new Vector(2); n.x = normal[0]; n.y = normal[1];
 
             var vel = FlowField(X);
 
@@ -66,7 +66,7 @@ namespace BoSSS.Application.AdaptiveMeshRefinementTest {
         }
 
         protected override void Flux(double time, double[] X, double[] U, double[] output) {
-            Vector2D o;
+            Vector o;
             o = FlowField(X) * U[0];
             output[0] = o.x;
             output[1] = o.y;

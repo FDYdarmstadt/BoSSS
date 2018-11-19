@@ -15,8 +15,9 @@ limitations under the License.
 */
 
 using BoSSS.Platform.LinAlg;
+using BoSSS.Solution.CompressibleFlowCommon;
 
-namespace CNS.Boundary {
+namespace BoSSS.Solution.CompressibleFlowCommon.Boundary {
 
     /// <summary>
     /// Implementation of the boundary condition for an isolating (i.e.
@@ -29,7 +30,7 @@ namespace CNS.Boundary {
         /// <see cref="BoundaryCondition"/>
         /// </summary>
         /// <param name="config"><see cref="BoundaryCondition"/></param>
-        public AdiabaticWall(CNSControl config)
+        public AdiabaticWall(MaterialProperty.Material config)
             : base(config) {
         }
 
@@ -59,7 +60,7 @@ namespace CNS.Boundary {
             return new StateVector(
                 stateIn.Material,
                 stateIn.Density,
-                new Vector3D(),
+                new Vector(),
                 stateIn.Density * stateIn.SpecificInnerEnergy);
         }
     }

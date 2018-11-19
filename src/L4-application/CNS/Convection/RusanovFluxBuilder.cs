@@ -14,7 +14,9 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-using CNS.Boundary;
+using BoSSS.Solution.CompressibleFlowCommon;
+using BoSSS.Solution.CompressibleFlowCommon.Convection;
+using BoSSS.Solution.CompressibleFlowCommon.Boundary;
 using CNS.EquationSystem;
 
 namespace CNS.Convection {
@@ -36,7 +38,7 @@ namespace CNS.Convection {
         /// <param name="speciesMap">
         /// <see cref="FluxBuilder"/>
         /// </param>
-        public RusanovFluxBuilder(CNSControl control, IBoundaryConditionMap boundaryMap, ISpeciesMap speciesMap)
+        public RusanovFluxBuilder(CNSControl control, BoundaryConditionMap boundaryMap, ISpeciesMap speciesMap)
             : base(control, boundaryMap, speciesMap) {
         }
 
@@ -53,7 +55,7 @@ namespace CNS.Convection {
 
             for (int d = 0; d < CNSEnvironment.NumberOfDimensions; d++) {
                 op.MomentumComponents[d].Add(new RusanovFlux(
-                    control, boundaryMap, new EulerMomentumComponent(d, control.EquationOfState.HeatCapacityRatio, control.MachNumber), speciesMap));
+                    control, boundaryMap, new EulerMomentumComponent(d, control.EquationOfState.HeatCapacityRatio, control.MachNumber, CNSEnvironment.NumberOfDimensions), speciesMap));
             }
 
             op.EnergyComponents.Add(new RusanovFlux(
