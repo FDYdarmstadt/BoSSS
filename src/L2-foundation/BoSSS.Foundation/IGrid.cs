@@ -26,9 +26,7 @@ namespace BoSSS.Foundation.Grid {
     /// <summary>
     /// Common interface for all grids
     /// </summary>
-    public interface IGrid<T> : IGridInfo 
-        where T: IGridData
-        {
+    public interface IGrid : IGridInfo {
 
         /// <summary>
         /// Access to grid metrics
@@ -37,13 +35,18 @@ namespace BoSSS.Foundation.Grid {
             get;
         }
 
+        
+
+
+
+        /*
         /// <summary>
         /// Access to grid metrics
         /// </summary>
         T GridData {
             get;
         }
-
+        */
 
     }
 }
