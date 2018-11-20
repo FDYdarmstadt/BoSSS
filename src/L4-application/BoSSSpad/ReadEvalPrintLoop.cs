@@ -118,6 +118,8 @@ namespace BoSSS.Application.BoSSSpad {
             eval.ReferenceAssembly(typeof(XNSE_Solver.XNSE_SolverMain).Assembly);
             eval.ReferenceAssembly(typeof(Rheology.Rheology).Assembly);
             eval.ReferenceAssembly(typeof(BoSSS.Application.SipPoisson.SipPoissonMain).Assembly);
+            eval.ReferenceAssembly(typeof(Rheology.Rheology).Assembly);
+            
 
             //eval.ReferenceAssembly(typeof(FuelCell.FuelCellMain).Assembly);
 
