@@ -225,6 +225,7 @@ namespace BoSSS.Application.SipPoisson {
             }
         }
 
+        /*
         /// <summary>
         /// Deprecated utility, writes matrices for spectral element method.
         /// </summary>
@@ -319,7 +320,7 @@ namespace BoSSS.Application.SipPoisson {
             }
         }
 
-
+        */
         /// <summary>
         /// control of mesh adaptation
         /// </summary>

@@ -37,7 +37,8 @@ namespace CNS.LoadBalancing {
             }
 
             // Pure fluid cells are "0"
-            int[] cellToPerformanceClassMap = new int[program.Grid.NoOfUpdateCells];
+            int J = program.GridData.iLogicalCells.NoOfLocalUpdatedCells;
+            int[] cellToPerformanceClassMap = new int[J];
 
             // Cut cells are "1"
             foreach (int j in speciesMap.Tracker.Regions.GetCutCellMask().ItemEnum) {

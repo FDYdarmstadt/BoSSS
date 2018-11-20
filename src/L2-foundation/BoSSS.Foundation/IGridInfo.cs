@@ -34,6 +34,14 @@ namespace BoSSS.Foundation.IO {
         }
 
         /// <summary>
+        /// a string to store some user-information about the grid;
+        /// </summary>
+        string Description {
+            get;
+            set;
+        }
+
+        /// <summary>
         /// The simplex dimension in the sense of measure-theory.
         /// </summary>
         int SpatialDimension {
@@ -46,5 +54,24 @@ namespace BoSSS.Foundation.IO {
         IReadOnlyCollection<Guid> AllDataVectorIDs {
             get;
         }
+
+        /// <summary>
+        /// This is a mapping from each used <em>EdgeTag</em> to a string that
+        /// provides a name and additional information about the EdgeTag. The
+        /// intention for this member is to provide both, a name (e.g.
+        /// 'Left wall') for different regions of the boundary as well as
+        /// boundary condition type info (e.g. 'inlet' or 'wall' or 'outflow' ...).
+        /// </summary>
+        /// <remarks>
+        /// The names have no impact on the application on this application
+        /// layer (L2-layer of BoSSS). They may be used on a higher application
+        /// layer; Usually, this member (as like mostly all other public
+        /// variable of this class) should be initialized by grid generator
+        /// programs.
+        /// </remarks>
+        IDictionary<byte, string> EdgeTagNames {
+            get;
+        }
+
     }
 }

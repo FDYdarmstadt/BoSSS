@@ -181,6 +181,27 @@ namespace BoSSS.Foundation.IO {
         }
 
         /// <summary>
+        /// Stupid thing about the dumb grid
+        /// </summary>
+        public string Description {
+            get {
+                return realGrid.Value.Description;
+            }
+            set {
+                realGrid.Value.Description = value;
+            }
+        }
+
+        /// <summary>
+        /// Mapping between *edge tags* (numbers) and *edge tag names*.
+        /// </summary>
+        public IDictionary<byte, string> EdgeTagNames {
+            get {
+                return realGrid.Value.EdgeTagNames;
+            }
+        }
+
+        /// <summary>
         /// Creates a new grid proxy associated to database
         /// <paramref name="targetDatabase"/>.
         /// </summary>
