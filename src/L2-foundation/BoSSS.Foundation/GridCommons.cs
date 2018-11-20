@@ -363,7 +363,10 @@ namespace BoSSS.Foundation.Grid.Classic {
         /// a string to store some user-information about the grid;
         /// </summary>
         [DataMember]
-        public string Description;
+        public string Description {
+            get;
+            set;
+        }
 
         /// <summary>
         /// returns the Guid of the vector in which

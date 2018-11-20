@@ -260,12 +260,13 @@ namespace BoSSS.Application.DerivativeTest {
             int GridDeg;
             int D = this.GridData.SpatialDimension;
 
-            if (this.Grid != null) {
-                GridDeg = this.Grid.Cells.Select(cl => this.Grid.GetRefElement(cl.Type).GetInterpolationDegree(cl.Type)).Max();
+            if (this.Grid is GridCommons) {
+                GridCommons _Grid = (GridCommons)this.Grid;
+                GridDeg = _Grid.Cells.Select(cl => _Grid.GetRefElement(cl.Type).GetInterpolationDegree(cl.Type)).Max();
 
 
-                if (this.Grid.GetRefElement(this.Grid.Cells[0].Type) == Square.Instance
-                    || this.Grid.GetRefElement(this.Grid.Cells[0].Type) == Cube.Instance) {
+                if (_Grid.GetRefElement(_Grid.Cells[0].Type) == Square.Instance
+                    || _Grid.GetRefElement(_Grid.Cells[0].Type) == Cube.Instance) {
                     // hack: otherwise DG deg gets to large
                     GridDeg = (int)Math.Round(Math.Pow(GridDeg, 1.0 / D));
                 }

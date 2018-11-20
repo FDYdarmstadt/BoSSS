@@ -185,7 +185,7 @@ namespace BoSSS.Application.SpecFEM {
             
             Console.WriteLine("L2 Error: " + L2Err);
             Console.WriteLine("L2 Norm of [[u]]: " + L2Jump);
-            if ((L2Err < 1.0e-10 || this.Grid.PeriodicTrafo.Count > 0) && L2Jump < 1.0e-10) {
+            if ((L2Err < 1.0e-10 || ((GridCommons)this.Grid).PeriodicTrafo.Count > 0) && L2Jump < 1.0e-10) {
                 Console.WriteLine("Test PASSED");
                 Passed = true;
             } else {

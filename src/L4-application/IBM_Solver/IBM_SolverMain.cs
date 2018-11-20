@@ -881,7 +881,7 @@ namespace BoSSS.Application.IBM_Solver {
                 }
 
                 ilPSP.Environment.StdoutOnlyOnRank0 = false;
-                Console.WriteLine("Total number of cells:    {0}", Grid.Cells.Count());
+                Console.WriteLine("Total number of cells:    {0}", Grid.NumberOfCells);
                 Console.WriteLine("Total number of DOFs:     {0}", CurrentSolution.Count());
                 Console.WriteLine("Total number of cut cells:     {0}", LsTrk.Regions.GetCutCellMask().NoOfItemsLocally);
 
@@ -912,7 +912,7 @@ namespace BoSSS.Application.IBM_Solver {
             if (this.Control.CutCellQuadratureType == XQuadFactoryHelper.MomentFittingVariants.ExactCircle)
                 BoSSS.Foundation.XDG.Quadrature.HMF.ExactCircleLevelSetIntegration.RADIUS = new double[] { this.Control.particleRadius };
             
-            Console.WriteLine("Total number of cells:    {0}", Grid.Cells.Count().MPISum());
+            Console.WriteLine("Total number of cells:    {0}", Grid.NumberOfCells);
             Console.WriteLine("Total number of DOFs:     {0}", CurrentSolution.Count().MPISum());
             base.SetInitial();
 

@@ -60,8 +60,8 @@ namespace BoSSS.Application.BoSSSpad {
             // because hacks work. (TODO)
             IFileSystemDriver fsdrv = new StandardFsDriver(grid.Database.Path);
             dbDriver = new DatabaseDriver(fsdrv);
-            GridCommons gridComm = dbDriver.LoadGrid(grid.ID, grid.Database);
-            GridDat = new GridData(gridComm);
+            var gridComm = dbDriver.LoadGrid(grid.ID, grid.Database);
+            GridDat = (GridData)(gridComm.iGridData);
         }
 
         /// <summary>

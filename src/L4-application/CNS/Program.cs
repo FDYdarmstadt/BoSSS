@@ -148,7 +148,7 @@ namespace CNS {
         /// <returns></returns>
         protected override IGrid CreateOrLoadGrid() {
             using (var ht = new FuncTrace()) {
-                GridCommons grid = base.CreateOrLoadGrid();
+                IGrid grid = base.CreateOrLoadGrid();
                 CNSEnvironment.Initialize(grid.SpatialDimension, this);
                 return grid;
             }
