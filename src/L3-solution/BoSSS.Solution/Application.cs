@@ -988,7 +988,7 @@ namespace BoSSS.Solution {
                     if (this.Control == null || this.Control.NoOfMultigridLevels > 0) {
                         this.MultigridSequence = CoarseningAlgorithms.CreateSequence(this.GridData, MaxDepth: (this.Control != null ? this.Control.NoOfMultigridLevels : 1));
                     } else {
-                        this.MultigridSequence = new AggregationGrid[0];
+                        this.MultigridSequence = new AggregationGridData[0];
                     }
                 }
 
@@ -1138,7 +1138,7 @@ namespace BoSSS.Solution {
         /// Multigrid levels, sorted from fine to coarse, i.e. the 0-th entry contains the finest grid.
         /// The number of levels is controlled by <see cref="Control.AppControl.NoOfMultigridLevels"/>.
         /// </summary>
-        public AggregationGrid[] MultigridSequence {
+        public AggregationGridData[] MultigridSequence {
             get;
             private set;
         }
@@ -1811,7 +1811,7 @@ namespace BoSSS.Solution {
                         if (this.Control == null || this.Control.NoOfMultigridLevels > 0)
                             this.MultigridSequence = CoarseningAlgorithms.CreateSequence(this.GridData, MaxDepth: (this.Control != null ? this.Control.NoOfMultigridLevels : 1));
                         else
-                            this.MultigridSequence = new AggregationGrid[0];
+                            this.MultigridSequence = new AggregationGridData[0];
 
                         //Console.WriteLine("P {0}: new grid: {1} cells.", MPIRank, newGridData.iLogicalCells.NoOfLocalUpdatedCells);
                     }
@@ -1970,7 +1970,7 @@ namespace BoSSS.Solution {
                                 this.MultigridSequence = CoarseningAlgorithms.CreateSequence(this.GridData,
                                     MaxDepth: (this.Control != null ? this.Control.NoOfMultigridLevels : 1));
                             else
-                                this.MultigridSequence = new AggregationGrid[0];
+                                this.MultigridSequence = new AggregationGridData[0];
 
                             //Console.WriteLine("P {0}: new grid: {1} cells.", MPIRank, newGridData.iLogicalCells.NoOfLocalUpdatedCells);
                         }

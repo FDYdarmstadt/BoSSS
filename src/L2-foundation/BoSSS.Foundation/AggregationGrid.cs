@@ -28,7 +28,7 @@ using BoSSS.Foundation.Caching;
 using System.Collections;
 
 namespace BoSSS.Foundation.Grid.Aggregation {
-    public partial class AggregationGrid : IGridData {
+    public partial class AggregationGridData : IGridData {
 
         /// <summary>
         /// The grid from which this was coarsened.
@@ -61,8 +61,8 @@ namespace BoSSS.Foundation.Grid.Aggregation {
         /// </summary>
         public GridData AncestorGrid {
             get {
-                if(ParentGrid is AggregationGrid) {
-                    GridData Ancestor = ((AggregationGrid)ParentGrid).AncestorGrid;
+                if(ParentGrid is AggregationGridData) {
+                    GridData Ancestor = ((AggregationGridData)ParentGrid).AncestorGrid;
                     Debug.Assert(this.iGeomCells.Count == Ancestor.iGeomCells.Count);
                     return Ancestor;
                 } else {
@@ -76,8 +76,8 @@ namespace BoSSS.Foundation.Grid.Aggregation {
         /// </summary>
         public int MgLevel {
             get {
-                if(ParentGrid is AggregationGrid) {
-                    return ((AggregationGrid)ParentGrid).MgLevel + 1;
+                if(ParentGrid is AggregationGridData) {
+                    return ((AggregationGridData)ParentGrid).MgLevel + 1;
                 } else {
                     return 0;
                 }
@@ -124,7 +124,7 @@ namespace BoSSS.Foundation.Grid.Aggregation {
         /// - 2nd index: enumeration
         /// - content: local cell index into the parent grid <paramref name="pGrid"/>.
         /// </param>
-        public AggregationGrid(IGridData pGrid, int[][] AggregationCells) {
+        public AggregationGridData(IGridData pGrid, int[][] AggregationCells) {
             ParentGrid = pGrid;
 
             int JlocFine = pGrid.iLogicalCells.NoOfLocalUpdatedCells;

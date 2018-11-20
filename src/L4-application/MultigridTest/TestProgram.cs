@@ -74,7 +74,7 @@ namespace BoSSS.Application.MultigridTest {
         /// Sequence of aggregation grids;
         /// index: grid level, coarser grids are found at higher indices.
         /// </summary>
-        internal static AggregationGrid[] MgSeq;
+        internal static AggregationGridData[] MgSeq;
 
 
         internal static GridData grid;
