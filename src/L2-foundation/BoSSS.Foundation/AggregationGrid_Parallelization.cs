@@ -22,7 +22,7 @@ using System.Text;
 using System.Threading.Tasks;
 
 namespace BoSSS.Foundation.Grid.Aggregation {
-    partial class AggregationGrid {
+    partial class AggregationGridData {
 
         /// <summary>
         /// see <see cref="Parallelization"/>
@@ -47,7 +47,7 @@ namespace BoSSS.Foundation.Grid.Aggregation {
             /// <summary>
             /// pointer to owner object
             /// </summary>
-            internal AggregationGrid m_owner;
+            internal AggregationGridData m_owner;
 
             /// <summary>
             /// Conversion of global cell indices to local cell indices, 

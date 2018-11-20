@@ -41,7 +41,7 @@ namespace BoSSS.Foundation.Grid.Aggregation {
         /// <param name="GridDat">original grid</param>
         /// <param name="MaxDepth">maximum number of refinements</param>
         /// <returns></returns>
-        public static AggregationGrid[] CreateSequence(IGridData GridDat, int MaxDepth = -1) {
+        public static AggregationGridData[] CreateSequence(IGridData GridDat, int MaxDepth = -1) {
             using(new FuncTrace()) {
                 int D = GridDat.SpatialDimension;
                 MaxDepth = MaxDepth >= 0 ? MaxDepth : int.MaxValue;
@@ -51,14 +51,14 @@ namespace BoSSS.Foundation.Grid.Aggregation {
                 // create sequence of aggregation multigrid grids and basises 
                 // ==========================================================
 
-                List<AggregationGrid> aggGrids = new List<AggregationGrid>();
+                List<AggregationGridData> aggGrids = new List<AggregationGridData>();
                 aggGrids.Add(ZeroAggregation(GridDat));
                 while(true) {
                     if( aggGrids.Count >= MaxDepth)
                         break;
 
              
-                    AggregationGrid grid = Coarsen(aggGrids.Last(), (int)(Math.Pow(2, D)));
+                    AggregationGridData grid = Coarsen(aggGrids.Last(), (int)(Math.Pow(2, D)));
 
 
                     if ((grid.iLogicalCells.NoOfLocalUpdatedCells.MPISum() >= aggGrids.Last().iLogicalCells.NoOfLocalUpdatedCells.MPISum()))
@@ -113,7 +113,7 @@ namespace BoSSS.Foundation.Grid.Aggregation {
         /// <summary>
         /// creates an initial aggregated grid which is in fact equivalent to <paramref name="g"/>
         /// </summary>
-        public static AggregationGrid ZeroAggregation(IGridData g) {
+        public static AggregationGridData ZeroAggregation(IGridData g) {
             //var Cls = g.Cells;
             int J = g.iLogicalCells.NoOfLocalUpdatedCells;
             int D = g.SpatialDimension;
@@ -123,7 +123,7 @@ namespace BoSSS.Foundation.Grid.Aggregation {
                 AggregateCells[j] = new int[] { j };
             }
 
-            AggregationGrid ret = new AggregationGrid(g, AggregateCells);
+            AggregationGridData ret = new AggregationGridData(g, AggregateCells);
             
             return ret;
         }
@@ -131,7 +131,7 @@ namespace BoSSS.Foundation.Grid.Aggregation {
         /// <summary>
         /// coarsens level <paramref name="ag"/>
         /// </summary>
-        public static AggregationGrid Coarsen(IGridData ag, int AggCellCount) {
+        public static AggregationGridData Coarsen(IGridData ag, int AggCellCount) {
             using(new FuncTrace()) {
                 int Jloc = ag.iLogicalCells.NoOfLocalUpdatedCells;
                 int D = ag.SpatialDimension;
@@ -247,7 +247,7 @@ namespace BoSSS.Foundation.Grid.Aggregation {
 
                 // return
                 // ======
-                return new AggregationGrid(ag, Coarsened_ComositeCells.ToArray());
+                return new AggregationGridData(ag, Coarsened_ComositeCells.ToArray());
             }
         }
         
@@ -257,7 +257,7 @@ namespace BoSSS.Foundation.Grid.Aggregation {
         /// assigns the cell index of the aggregated cell <em>j</em> to all (fine) grid cells that 
         /// the aggregated cell <em>j</em> consists of.
         /// </summary>
-        static public void ColorDGField(this AggregationGrid ag, DGField f) {
+        static public void ColorDGField(this AggregationGridData ag, DGField f) {
             if(!object.ReferenceEquals(f.GridDat, ag.AncestorGrid))
                 throw new ArgumentException("mismatch in base grid.");
 

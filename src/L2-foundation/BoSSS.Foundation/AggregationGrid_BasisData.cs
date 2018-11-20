@@ -9,7 +9,7 @@ using ilPSP.Tracing;
 using ilPSP.Utils;
 
 namespace BoSSS.Foundation.Grid.Aggregation {
-    public partial class AggregationGrid {
+    public partial class AggregationGridData {
 
         public BasisData ChefBasis {
             get {
@@ -21,9 +21,9 @@ namespace BoSSS.Foundation.Grid.Aggregation {
 
         class _BasisData : BasisData {
 
-            AggregationGrid m_owner;
+            AggregationGridData m_owner;
 
-            internal _BasisData(AggregationGrid o) : base(o) {
+            internal _BasisData(AggregationGridData o) : base(o) {
                 m_owner = o;
             }
 
@@ -117,8 +117,8 @@ namespace BoSSS.Foundation.Grid.Aggregation {
                 int[][] Ag2Pt = m_owner.iLogicalCells.AggregateCellToParts;
                 int[][] C2F = m_owner.jCellCoarse2jCellFine;
 
-                if (m_owner.ParentGrid is AggregationGrid) {
-                    var agParrent = m_owner.ParentGrid as AggregationGrid;
+                if (m_owner.ParentGrid is AggregationGridData) {
+                    var agParrent = m_owner.ParentGrid as AggregationGridData;
                     int[][] Ag2Pt_Fine = agParrent.iLogicalCells.AggregateCellToParts;
 
                     agParrent.m_ChefBasis.Init(MaxSupportedDegree);
@@ -385,7 +385,7 @@ namespace BoSSS.Foundation.Grid.Aggregation {
 
 
             MultidimensionalArray CA(int _jAgg, int Np) {
-                AggregationGrid ag = this.m_owner;
+                AggregationGridData ag = this.m_owner;
                 var compCell = ag.iLogicalCells.AggregateCellToParts[_jAgg];
                 int thisMgLevel = ag.MgLevel;
 
@@ -410,7 +410,7 @@ namespace BoSSS.Foundation.Grid.Aggregation {
                 int[] AggIndex = new int[] { _jAgg };
                 _BasisData basisLevel = this;
                 for (int mgLevelIdx = thisMgLevel; mgLevelIdx >= 0; mgLevelIdx--) {
-                    AggregationGrid mgLevel = basisLevel.m_owner;
+                    AggregationGridData mgLevel = basisLevel.m_owner;
                     int[][] agg2part_parrent = mgLevel.ParentGrid.iLogicalCells.AggregateCellToParts;
 #if DEBUG
                     btouch.Clear();
@@ -485,8 +485,8 @@ namespace BoSSS.Foundation.Grid.Aggregation {
                             nextAggIndex.AddRange(NextLevel);
                         }
                         AggIndex = nextAggIndex.ToArray();
-                        if (m_owner.ParentGrid is AggregationGrid)
-                            basisLevel = ((AggregationGrid)(m_owner.ParentGrid)).m_ChefBasis;
+                        if (m_owner.ParentGrid is AggregationGridData)
+                            basisLevel = ((AggregationGridData)(m_owner.ParentGrid)).m_ChefBasis;
                         else
                             basisLevel = null;
                     }
