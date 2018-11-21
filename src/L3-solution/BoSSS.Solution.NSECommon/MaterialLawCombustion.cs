@@ -62,7 +62,7 @@ namespace BoSSS.Solution.NSECommon {
                 for (int n = 1; n < phi.Length; n++) {
                     MassFractionsOverMolarFractions += phi[n] / MolarMasses[n - 1];
                 }
-                rho = base.ThermodynamicPressure.Current.GetMeanValue(0) / (phi[0] * MassFractionsOverMolarFractions);
+              rho = base.ThermodynamicPressure.Current.GetMeanValue(0) / (phi[0] * MassFractionsOverMolarFractions);
                 Debug.Assert(!(double.IsNaN(rho) || double.IsInfinity(rho)));
                 return rho;
             }
