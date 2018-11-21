@@ -37,6 +37,7 @@ using BoSSS.Foundation.Grid.RefElements;
 using NUnit.Framework;
 using BoSSS.Solution.Multigrid;
 using ilPSP.Connectors.Matlab;
+using BoSSS.Foundation.Grid.Aggregation;
 
 namespace BoSSS.Application.SipPoisson {
 
@@ -151,7 +152,17 @@ namespace BoSSS.Application.SipPoisson {
                     BoundaryCondMap<BoundaryType> PoissonBcMap = new BoundaryCondMap<BoundaryType>(this.GridData, this.Control.BoundaryValues, "T");
 
                     LapaceIp = new SpatialOperator(1, 1, QuadOrderFunc.SumOfMaxDegrees(), "T", "T");
-                    var flux = new ipFlux(penalty_base * base.Control.penalty_poisson, ((GridData)(this.GridData)).Cells.cj, PoissonBcMap);
+
+                    MultidimensionalArray LengthScales;
+                    if(this.GridData is GridData) {
+                        LengthScales = ((GridData)GridData).Cells.cj;
+                    } else if(this.GridData is AggregationGridData) {
+                        LengthScales = ((AggregationGridData)GridData).AncestorGrid.Cells.cj;
+                    } else {
+                        throw new NotImplementedException();
+                    }
+
+                    var flux = new ipFlux(penalty_base * base.Control.penalty_poisson, LengthScales, PoissonBcMap);
 
                     LapaceIp.EquationComponents["T"].Add(flux);
 
