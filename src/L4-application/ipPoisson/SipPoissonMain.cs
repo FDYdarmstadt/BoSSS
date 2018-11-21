@@ -111,6 +111,7 @@ namespace BoSSS.Application.SipPoisson {
                 SinglePhaseField c = new SinglePhaseField(new Basis(this.GridData, 0), "MgLevel_" + iLevel);
                 Foundation.Grid.Aggregation.CoarseningAlgorithms.ColorDGField(MgL, c);
                 this.MGColoring.Add(c);
+                base.IOFields.Add(c);
                 iLevel++;
             }
 
@@ -1019,7 +1020,9 @@ namespace BoSSS.Application.SipPoisson {
         /// default plotting
         /// </summary>
         protected override void PlotCurrentState(double phystime, TimestepNumber timestepNo, int superSampling = 0) {
-            BoSSS.Solution.Tecplot.Tecplot.PlotFields(new DGField[] { T, Tex, RHS, ResiualKP1 }, "poisson" + timestepNo, phystime, superSampling);
+            DGField[] Fields = new DGField[] { T, Tex, RHS, ResiualKP1 };
+            Fields = Fields.Cat(this.MGColoring);
+            BoSSS.Solution.Tecplot.Tecplot.PlotFields(Fields, "poisson" + timestepNo, phystime, superSampling);
         }
 
     }
