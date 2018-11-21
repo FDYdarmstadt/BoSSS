@@ -169,6 +169,9 @@
     <ProjectReference Include="..\..\..\..\internal\src\experimental\L4-application\RheologySolver2\Rheology2.csproj">
       <Project>{985a90c0-4e63-4b8d-bc9b-946af1ad3132}</Project>
       <Name>Rheology2</Name>
+    <ProjectReference Include="..\..\..\..\internal\src\experimental\L4-application\FSI_Solver\FSI_Solver.csproj">
+      <Project>{5c52e2f7-a6dd-4e3e-a31e-1b0ff34c0cc2}</Project>
+      <Name>FSI_Solver</Name>
     </ProjectReference>
     <ProjectReference Include="..\..\L3-solution\BoSSS.Solution.LevelSetTools\BoSSS.Solution.LevelSetTools.csproj">
       <Project>{9ee2fcad-e8a4-4f14-b932-d1a4904d715d}</Project>
