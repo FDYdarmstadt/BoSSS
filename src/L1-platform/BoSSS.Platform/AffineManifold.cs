@@ -211,6 +211,24 @@ namespace BoSSS.Platform.LinAlg {
             return ret;
         }
 
+        /// <summary>
+        /// the distance of some point to the affine manifold/plane, in multiples of the norm of <see cref="Normal"/>;
+        /// </summary>
+        public double PointDistance(Vector pt) {
+            if (pt.Dim != this.Normal.Dim)
+                throw new ArgumentException();
+            if (Normal.AbsSquare() <= 0.0)
+                throw new ArithmeticException();
+
+            double ret = 0;
+            for (int d = this.Normal.Dim - 1; d >= 0; d--) {
+                ret += pt[d] * this.Normal[d];
+            }
+            ret -= this.a;
+
+            return ret;
+        }
+
 
         /// <summary>
         /// equality check: tests if two objects represent the same affine manifold/plane
