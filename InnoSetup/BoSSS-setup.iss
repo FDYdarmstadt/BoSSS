@@ -57,7 +57,16 @@ Name: "{group}\BoSSS Handbook"; Filename: "{app}\doc\BoSSShandbook.pdf"
 Name: "{group}\BoSSS API Reference"; Filename: "{app}\doc\APIreference\index.html" 
 
 [InstallDelete]
-Type: filesandordirs; Name: "{app}\bin\native"; 
+; clean up old .dll, especially msmpi (conflict with mpiexec)
+Type: files; Name: "{app}\bin\native\win\amd64\msmpi.dll";
+Type: files; Name: "{app}\bin\native\win\amd64\libacml_dll.dll";
+Type: files; Name: "{app}\bin\native\win\amd64\libacml_mv_dll.dll";
+Type: files; Name: "{app}\bin\native\win\amd64\msvcm90.dll";
+Type: files; Name: "{app}\bin\native\win\amd64\msvcp90.dll";
+Type: files; Name: "{app}\bin\native\win\amd64\msvcr90.dll";
+Type: files; Name: "{app}\bin\native\win\amd64\msvcp100.dll";
+Type: files; Name: "{app}\bin\native\win\amd64\msvcr100.dll";
+Type: files; Name: "{app}\bin\native\win\amd64\tec360.dll";
 
 [Registry]
 ; as elevated user (Admin): set BOSSS_INSTALL system-wide

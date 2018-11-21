@@ -745,10 +745,6 @@ namespace BoSSS.Solution.NSECommon {
         /// <summary>
         /// Calculates the drag (x-component) and lift (y-component) forces acting on a wall of a boundary fitted grid
         /// </summary>
-        /// <param name="U"></param>
-        /// <param name="P"></param>
-        /// <param name="muA"></param>
-        /// <returns></returns>
         static public double[] GetForces_BoundaryFitted(VectorField<SinglePhaseField> GradU, VectorField<SinglePhaseField> GradV, SinglePhaseField StressXX, 
             SinglePhaseField StressXY, SinglePhaseField StressYY, SinglePhaseField P, LevelSetTracker LsTrk, double muA, double beta) {
             int D = LsTrk.GridDat.SpatialDimension;
@@ -772,6 +768,7 @@ namespace BoSSS.Solution.NSECommon {
             //if (RequiredOrder > agg.HMForder)
             //    throw new ArgumentException();
 
+            Console.WriteLine();
             Console.WriteLine("Forces coeff: {0}, order = {1}", LsTrk.CutCellQuadratureType, RequiredOrder);
 
             SinglePhaseField _StressXX = StressXX;
