@@ -1,4 +1,5 @@
-﻿using System;
+﻿using BoSSS.Platform.LinAlg;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -29,5 +30,41 @@ namespace BoSSS.Application.SipPoisson {
         //       S = E;
         //    done
         // done
+
+
+        static Vector[] SutherlandHodgmanClipping(AffineManifold[] ClipPolygon, Vector[] SubjectPolygon) {
+            List<Vector> outputList = new List<Vector>(SubjectPolygon);
+
+            foreach(AffineManifold clipEdge in ClipPolygon) {
+                List<Vector> InputList = new List<Vector>(outputList);
+                outputList.Clear();
+
+                Vector S = InputList.Last();
+                
+
+                foreach (Vector E in InputList) {
+                    bool E_inside = clipEdge.PointDistance(E) <= 0;
+                    bool S_inside = clipEdge.PointDistance(S) <= 0;
+                    if (E_inside) {
+                        if(!S_inside) {
+                            throw new NotImplementedException("todo:  outputList.add( ComputeIntersection(S,E,clipEdge) )");
+                        }
+                        
+                        outputList.Add(E);
+                    } else {
+
+                        if (!S_inside) {
+                            throw new NotImplementedException("todo:  outputList.add( ComputeIntersection(S,E,clipEdge) )");
+                        }
+                    }
+                    S = E;
+                }
+            }
+            
+
+            return outputList.ToArray();
+        }
+
+
     }
 }
