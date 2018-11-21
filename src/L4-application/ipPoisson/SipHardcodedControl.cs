@@ -30,6 +30,7 @@ using BoSSS.Platform.LinAlg;
 using System.Diagnostics;
 using BoSSS.Platform.Utils.Geom;
 using BoSSS.Solution.Gnuplot;
+using BoSSS.Foundation.Grid;
 
 namespace BoSSS.Application.SipPoisson {
 
@@ -443,7 +444,7 @@ namespace BoSSS.Application.SipPoisson {
             }
 
             
-            GridCommons GridFunc() {
+            IGrid GridFunc() {
                 GridCommons grd = null;
 
                 var Matlab = new BatchmodeConnector();
@@ -553,8 +554,9 @@ namespace BoSSS.Application.SipPoisson {
                 //grd.Plot2DGrid();
 
                 // create aggregation grid
-                //var agrd = new AggregationGrid(grd, aggregation.ToArray());
-                return grd;
+                var agrd = new AggregationGrid(grd, aggregation.ToArray());
+                return agrd;
+
             };
             R.GridFunc = GridFunc;
 

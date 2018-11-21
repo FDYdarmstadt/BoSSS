@@ -1018,7 +1018,7 @@ namespace BoSSS.Foundation.IO {
             using (new FuncTrace()) {
                 GridCommons grd = (GridCommons)_grd;
 
-                if (grd.GridGuid.Equals(Guid.Empty)) {
+                if (grd.ID.Equals(Guid.Empty)) {
                     throw new ApplicationException("cannot save grid with empty Guid (Grid Guid is " + Guid.Empty.ToString() + ");");
                 }
                 MPICollectiveWatchDog.Watch(csMPI.Raw._COMM.WORLD);
@@ -1052,7 +1052,7 @@ namespace BoSSS.Foundation.IO {
                 // save header data
                 // ================
                 if (MyRank == 0) {
-                    using (Stream s = m_fsDriver.GetGridStream(true, grd.GridGuid))
+                    using (Stream s = m_fsDriver.GetGridStream(true, grd.ID))
                     using (var writer = GetJsonWriter(s)) {
                         m_Formatter.Serialize(writer, grd);
                         writer.Close();
@@ -1065,7 +1065,7 @@ namespace BoSSS.Foundation.IO {
 
                 grd.Database = database;
 
-                return grd.GridGuid;
+                return grd.ID;
             }
         }
 

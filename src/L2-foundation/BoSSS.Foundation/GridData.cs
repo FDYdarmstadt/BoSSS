@@ -60,7 +60,6 @@ namespace BoSSS.Foundation.Grid.Classic {
         /// </summary>
         public Guid GridID {
             get {
-                Debug.Assert(Grid.ID.Equals(Grid.GridGuid));
                 return Grid.ID;
             }
         }
