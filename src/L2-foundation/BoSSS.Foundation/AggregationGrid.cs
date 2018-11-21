@@ -4,6 +4,7 @@ using MPI.Wrappers;
 using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Runtime.Serialization;
 using System.Text;
@@ -60,7 +61,7 @@ namespace BoSSS.Foundation.Grid.Aggregation {
             AggCells = new AggCell[J];
             for (int j = 0; j < J; j++) {
                 int[] AggCell = AggregationCells[j];
-                int L = AggCells.Length;
+                int L = AggCell.Length;
                 AggCells[j].GlobalID = AggregationCellGids[j];
                 AggCells[j].PartGlobalId = new long[L];
                 long[] _PartGlobalId = AggCells[j].PartGlobalId;
@@ -69,6 +70,8 @@ namespace BoSSS.Foundation.Grid.Aggregation {
                 }
             }
 
+
+            m_GridData = gdat;
         }
 
         /// <summary>
@@ -243,8 +246,85 @@ namespace BoSSS.Foundation.Grid.Aggregation {
             }
         }
 
+        [NonSerialized]
+        AggregationGridData m_GridData;
 
-        public IGridData iGridData => throw new NotImplementedException();
+        void InitGridData() {
+            if (m_GridData != null)
+                return;
+
+            if(this.Size > 1) {
+                Console.WriteLine("Warning: will probably not work in parallel");
+            }
+
+            // compute mapping: 
+            // globalID -> Global Index for parent grid
+            // =================================================
+            var ParentGids = this.ParentGrid.iGridData.CurrentGlobalIdPermutation;
+            var ParentIdx = ParentGids.Invert();
+
+            // get parent grid indices for aggregation cells
+            // =================================================
+            int[][] AggIdx;
+            {
+                int J = this.AggCells.Length;
+                AggIdx = new int[J][];
+
+                int L = 0;
+                for (int j = 0; j < J; j++) {
+                    L += this.AggCells[j].PartGlobalId.Length;
+                }
+
+                long[] InputBuffer = new long[L];
+                int l = 0;
+                for (int j = 0; j < J; j++) {
+                    long[] src = this.AggCells[j].PartGlobalId;
+                    Array.Copy(src, 0, InputBuffer, l, src.Length);
+                    l += src.Length;
+                }
+
+                long[] EvalBuffer = new long[L];
+                ParentIdx.EvaluatePermutation(InputBuffer, EvalBuffer);
+
+                int i0_Parent = ParentGrid.CellPartitioning.i0;
+                int J_Parent = ParentGrid.iGridData.iLogicalCells.NoOfLocalUpdatedCells;
+
+                l = 0;
+                for (int j = 0; j < J; j++) {
+                    int AG = this.AggCells[j].PartGlobalId.Length;
+                    int[] AggIdx_j = new int[AG];
+                    AggIdx[j] = AggIdx_j;
+
+                    for (int k = 0; k < AG; k++) { // loop over parts of aggregation cell
+                        Debug.Assert(EvalBuffer[l] >= 0);
+                        Debug.Assert(EvalBuffer[l] < ParentGrid.NumberOfCells);
+                        AggIdx_j[k] = (int)EvalBuffer[l] - i0_Parent;
+                        Debug.Assert(AggIdx_j[k] >= 0);
+                        Debug.Assert(AggIdx_j[k] < J_Parent);
+
+                        l++;
+                    }
+                }
+            }
+
+            // create grid data
+            // ===================
+            m_GridData = new AggregationGridData(ParentGrid.iGridData, AggIdx);
+
+        }
+
+
+        /// <summary>
+        /// returns the grid metrics, of type <see cref="AggregationGridData"/>
+        /// </summary>
+        public IGridData iGridData {
+            get {
+                if(m_GridData ==  null) {
+
+                }
+                return m_GridData;
+            }
+        }
 
         /// <summary>
         /// MPI process rank (within world communicator)
@@ -297,6 +377,9 @@ namespace BoSSS.Foundation.Grid.Aggregation {
         }
 
         public void Redistribute(IDatabaseDriver iom, GridPartType method, string PartOptions) {
+            if (Size <= 1)
+                return; // nothing to do
+
             throw new NotImplementedException();
         }
 
