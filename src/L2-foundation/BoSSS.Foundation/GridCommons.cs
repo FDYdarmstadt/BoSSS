@@ -318,24 +318,12 @@ namespace BoSSS.Foundation.Grid.Classic {
             }
         }
 
-        /// <summary>
-        /// see <see cref="GridGuid"/>;
-        /// </summary>
-        [DataMember]
-        Guid m_GridGuid;
 
-        /// <summary>
-        /// Guid which identifies this grid;
-        /// </summary>
-        public Guid GridGuid {
-            get {
-                return m_GridGuid;
-            }
-        }
 
+        /*
         /// <summary>
         /// This method enables the user to manually override
-        /// the Guid of this grid object (<see cref="GridGuid"/>).
+        /// the Guid of this grid object (<see cref="ID"/>).
         /// This may be useful in some situations (e.g. the user wants to use 
         /// IO for fields, but he also wants to create a new grid object every
         /// time he starts the application, instead of loading the grid from
@@ -346,6 +334,7 @@ namespace BoSSS.Foundation.Grid.Classic {
         public void SetGridGuid(Guid NewGridGuid) {
             m_GridGuid = NewGridGuid;
         }
+        */
 
         /// <summary>
         /// see <see cref="BcCellsStorageGuid"/>.
@@ -353,20 +342,27 @@ namespace BoSSS.Foundation.Grid.Classic {
         [DataMember]
         private Guid m_BcCellsStorageGuid = Guid.Empty;
 
-        /// <summary>
-        /// see <see cref="StorageGuid"/>.
-        /// </summary>
-        [DataMember]
-        private Guid m_StorageGuid;
+        
 
         /// <summary>
         /// a string to store some user-information about the grid;
         /// </summary>
         [DataMember]
         public string Description {
-            get;
-            set;
+            get {
+                return m_Description;
+            }
+            set {
+                m_Description = value;
+                if (Database != null) {
+                    Database.Controller.SaveGridInfo(this);
+                }
+            }
         }
+
+        [JsonProperty(PropertyName = "Description")]
+        [DataMember]
+        string m_Description;
 
         /// <summary>
         /// returns the Guid of the vector in which
@@ -380,10 +376,16 @@ namespace BoSSS.Foundation.Grid.Classic {
                 m_StorageGuid = value;
             }
         }
+        
+        /// <summary>
+        /// see <see cref="StorageGuid"/>.
+        /// </summary>
+        [DataMember]
+        private Guid m_StorageGuid;
 
         /// <summary>
         /// returns the Guid of the vector in which
-        /// <see cref="BcCells"/> is stored in the database.
+        /// <see cref="BcCells"/> is stored in the database, see also <see cref="AllDataVectorIDs"/>
         /// </summary>
         public Guid BcCellsStorageGuid {
             get {

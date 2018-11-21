@@ -1916,11 +1916,11 @@ namespace BoSSS.Solution {
 
                         if(!passiveIo) {
 
-                            if(newGrid.GridGuid == null || newGrid.GridGuid.Equals(Guid.Empty))
+                            if(newGrid.ID == null || newGrid.ID.Equals(Guid.Empty))
                                 throw new ApplicationException();
-                            if(newGrid.GridGuid.Equals(oldGridId))
+                            if(newGrid.ID.Equals(oldGridId))
                                 throw new ApplicationException();
-                            if(DatabaseDriver.GridExists(newGrid.GridGuid))
+                            if(DatabaseDriver.GridExists(newGrid.ID))
                                 throw new ApplicationException();
 
                             DatabaseDriver.SaveGrid(newGrid, this.m_Database);

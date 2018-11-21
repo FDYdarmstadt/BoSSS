@@ -308,7 +308,7 @@ namespace BoSSS.Application.DerivativeTest {
         /// </summary>
         protected override IGrid CreateOrLoadGrid() {
 
-            GridCommons grd;
+            IGrid grd;
             switch (GRID_CASE) {
                 case 1:
                 grd = Grid1D.LineGrid(GenericBlas.Linspace(-4, 4, 5));
@@ -480,11 +480,9 @@ namespace BoSSS.Application.DerivativeTest {
                     double[] yNodes = GenericBlas.Linspace(-1, 1, 5);
 
                     var baseGrid = Grid2D.UnstructuredTriangleGrid(xNodes, yNodes);
-                    var baseGdat = new GridData(baseGrid);
-                    var aggGrid = CoarseningAlgorithms.Coarsen(baseGdat, 2);
-                    base.AggGrid = aggGrid;
-                    grd = null;
 
+                    grd = CoarseningAlgorithms.Coarsen(baseGrid, 2);
+                    
                     double dx = xNodes[1] - xNodes[0];
                     double dy = yNodes[1] - yNodes[0];
                     this.CellVolume = dx * dy;
@@ -517,13 +515,13 @@ namespace BoSSS.Application.DerivativeTest {
                     // gmsh grid import test
 
                     Console.WriteLine("Loading file: '" + GRID_FILE + "'...");
-                    grd = GridImporter.Import(GRID_FILE);
+                    GridCommons _grd = GridImporter.Import(GRID_FILE);
                     //Console.WriteLine("done. " + grd.NoOfUpdateCells.MPISum() + " cells loaded.");
 
                     //Plot2dGridGnuplot(grd);
 
                     HashSet<CellType> cellTypes = new HashSet<CellType>();
-                    foreach (var cell in grd.Cells) {
+                    foreach (var cell in _grd.Cells) {
                         if (!cellTypes.Contains(cell.Type))
                             cellTypes.Add(cell.Type);
                     }
@@ -533,7 +531,7 @@ namespace BoSSS.Application.DerivativeTest {
                         Console.Write(" ");
                     }
                     Console.WriteLine();
-
+                    grd = _grd;
 
                     break;
                 }
