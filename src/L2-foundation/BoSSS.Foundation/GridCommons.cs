@@ -347,7 +347,6 @@ namespace BoSSS.Foundation.Grid.Classic {
         /// <summary>
         /// a string to store some user-information about the grid;
         /// </summary>
-        [DataMember]
         public string Description {
             get {
                 return m_Description;
