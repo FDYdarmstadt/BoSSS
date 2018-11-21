@@ -280,31 +280,67 @@ namespace BoSSS.Foundation.Grid.Aggregation {
         }
 
 
+        static bool IsAnc(IGridData gdat, AggregationGridData aGdat) {
+            if (object.ReferenceEquals(aGdat.ParentGrid, gdat))
+                return true;
+
+            if (aGdat.ParentGrid is AggregationGridData)
+                return IsAnc(gdat, (AggregationGridData)(aGdat.ParentGrid));
+
+            return false;
+        }
+
 
         /// <summary>
         /// assigns the cell index of the aggregated cell <em>j</em> to all (fine) grid cells that 
         /// the aggregated cell <em>j</em> consists of.
         /// </summary>
         static public void ColorDGField(this AggregationGridData ag, DGField f) {
-            if(!object.ReferenceEquals(f.GridDat, ag.AncestorGrid))
-                throw new ArgumentException("mismatch in base grid.");
+            IGridData Anc = f.GridDat;
+            if (!IsAnc(Anc, ag))
+                throw new ArgumentException("Field 'f' must be defined on an ancestor grid of 'ag'.");
 
 
             f.Clear();
-            int J = ag.iLogicalCells.NoOfLocalUpdatedCells;
-            for(int j = 0; j < J; j++) { // loog over logical/aggregate cells
+            int Jag = ag.iLogicalCells.NoOfLocalUpdatedCells;
+            int Janc = Anc.iLogicalCells.NoOfLocalUpdatedCells;
+
+            Debug.Assert(Anc.iGeomCells.Count == ag.iGeomCells.Count);
+           
+            int[] jG2jL = Anc.iGeomCells.GeomCell2LogicalCell;
+
+            int[] Colors = new int[Jag];
+            BitArray Marked = new BitArray(Janc);
+            for (int j = 0; j < Jag; j++) { // loop over logical/aggregate cells
+
+                // determine colors of neighbor cells
                 int[] Neighs = ag.iLogicalCells.CellNeighbours[j];
-                var NeighColors = Neighs.Select(jNeigComp => (int)Math.Round(f.GetMeanValue(ag.iLogicalCells.AggregateCellToParts[jNeigComp][0])));
+                var NeighColors = Neighs.Select(jN => Colors[jN]);
+
+                // select color for cell 'j'
                 int iCol = 1;
-                for(iCol = 1; iCol < 2 * J; iCol++) {
+                for(iCol = 1; iCol < 2 * Jag; iCol++) {
                     if(!NeighColors.Contains(iCol))
                         break;
                 }
-                
-                foreach(int jGeom in ag.iLogicalCells.AggregateCellToParts[j]) {
-                    
-                    f.SetMeanValue(jGeom, iCol);
-                    //f.SetMeanValue(jGeom, j);
+                Colors[j] = iCol;
+
+                // color all logical cells in ancestor grid
+                // idea: convert to geometrical and back to logical
+                //    in this way we can e.g. skip multiple grid levels
+                foreach (int jGeom in ag.iLogicalCells.AggregateCellToParts[j]) {
+                    int jLogAnc;
+                    if (jG2jL != null) {
+                        jLogAnc = jG2jL[jGeom];
+                    } else {
+                        jLogAnc = jGeom;
+                    }
+                    if (!Marked[jLogAnc]) {
+                        f.SetMeanValue(jLogAnc, iCol);
+                        Marked[jLogAnc] = true;
+                    } else {
+                        // nop
+                    }
                 }
             }
         }
