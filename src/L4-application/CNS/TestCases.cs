@@ -553,7 +553,7 @@ namespace CNS {
             return c;
         }
 
-        public static CNSControl DoubleMachReflection(string dbPath = null, int savePeriod = 1, int dgDegree = 3, double xMax = 4.0, double yMax = 1.0, int numOfCellsX = 1600, int numOfCellsY = 400, double sensorLimit = 1e-3, double CFLFraction = 0.3, int explicitScheme = 3, int explicitOrder = 3, int numberOfSubGrids = 3, int reclusteringInterval = 1, int maxNumOfSubSteps = 10, double endTime = 0.25, string restart = "False") {
+        public static CNSControl DoubleMachReflection(string dbPath = null, int savePeriod = 1, int dgDegree = 3, double xMax = 8.0, double yMax = 2.0, int numOfCellsX = 1600, int numOfCellsY = 400, double sensorLimit = 1e-3, double CFLFraction = 0.1, int explicitScheme = 3, int explicitOrder = 3, int numberOfSubGrids = 3, int reclusteringInterval = 1, int maxNumOfSubSteps = 0, double endTime = 0.25, string restart = "False") {
             CNSControl c = new CNSControl();
 
             //dbPath = @"/work/scratch/yp19ysog/bosss_db_dmr_video";          // Lichtenberg
@@ -811,7 +811,7 @@ namespace CNS {
 
             CNSControl c = DoubleMachReflection(dbPath, savePeriod, dgDegree, xMax, yMax, numOfCellsX, numOfCellsY, sensorLimit, CFLFraction, explicitScheme, explicitOrder, numberOfSubGrids, reclusteringInterval, maxNumOfSubSteps, endTime, restart);
 
-            c.ProjectName = "dmr_video_coarse_run0";
+            c.ProjectName = "dmr_video_coarse_run2";
 
             return c;
         }
