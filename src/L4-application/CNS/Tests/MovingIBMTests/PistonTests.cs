@@ -189,10 +189,10 @@ namespace CNS.Tests.MovingIBMTests {
 
             CheckErrorThresholds(
                 solver.QueryHandler.QueryResults,
-                Tuple.Create("L2ErrorDensity", 4.5e-3),
-                Tuple.Create("L2ErrorXMomentum", 4.0e-3),
-                Tuple.Create("L2ErrorYMomentum", 5.4e-6),
-                Tuple.Create("L2ErrorPressure", 4.5e-3));
+                Tuple.Create("L2ErrorDensity", 4.5e-3*5),
+                Tuple.Create("L2ErrorXMomentum", 4.0e-3*5),
+                Tuple.Create("L2ErrorYMomentum", 5.4e-6*5),
+                Tuple.Create("L2ErrorPressure", 4.5e-3*5));
         }
 
         [Test]
@@ -237,10 +237,10 @@ namespace CNS.Tests.MovingIBMTests {
 
             CheckErrorThresholds(
                 solver.QueryHandler.QueryResults,
-                Tuple.Create("L2ErrorDensity", 2.4e-4),
-                Tuple.Create("L2ErrorXMomentum", 1.9e-4),
-                Tuple.Create("L2ErrorYMomentum", 7.8e-6),
-                Tuple.Create("L2ErrorPressure", 2.8e-4));
+                Tuple.Create("L2ErrorDensity", 2.4e-4*5),
+                Tuple.Create("L2ErrorXMomentum", 1.9e-4*5),
+                Tuple.Create("L2ErrorYMomentum", 7.8e-6*5),
+                Tuple.Create("L2ErrorPressure", 2.8e-4*5));
         }
 
         public static IBMControl PistonControl(int dgDegree, int rkDegree, ConvectiveFluxTypes convectiveFlux, TimesteppingStrategies timeSteppingStrategy, double agglomerationThreshold) {
