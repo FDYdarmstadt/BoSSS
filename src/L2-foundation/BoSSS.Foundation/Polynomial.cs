@@ -206,7 +206,7 @@ namespace BoSSS.Foundation.Grid {
                 R.Coeff[i] *= alpha;
 
                 for (int d = 0; d < D; d++) {
-                    R.Exponents[i, d] *= _Exponents[d];
+                    R.Exponents[i, d] += _Exponents[d];
                 }
             }
             
