@@ -38,6 +38,8 @@ using NUnit.Framework;
 using BoSSS.Solution.Multigrid;
 using ilPSP.Connectors.Matlab;
 using BoSSS.Foundation.Grid.Aggregation;
+using BoSSS.Platform.LinAlg;
+using BoSSS.Solution.Gnuplot;
 
 namespace BoSSS.Application.SipPoisson {
 
@@ -90,6 +92,44 @@ namespace BoSSS.Application.SipPoisson {
 
             //BatchmodeConnector.Flav = BatchmodeConnector.Flavor.Octave;
             //BatchmodeConnector.MatlabExecuteable = "C:\\cygwin\\bin\\bash.exe";
+
+
+            Vector[] DomainBndy = new[] {
+                new Vector(-1, 0), // 6
+                new Vector(-1.1, 0.9), // 5
+                new Vector(1.1, 1.1), // 4
+                new Vector(1, -1.3), // 3
+                new Vector(0.02, -1), // 2
+                new Vector(0.01, 0.01), // 1
+            };
+
+            Gnuplot gp = new Gnuplot();
+
+            gp.PlotXY(DomainBndy.Select(X => X.x).ToArray(), DomainBndy.Select(X => X.y).ToArray(), "domain",
+                new PlotFormat("-xk"));
+
+
+            AffineManifold[] VoronoiCell = new[] {
+                new AffineManifold(new Vector(0, 1), new Vector(0, +0.5)),
+                new AffineManifold(new Vector(1, 0), new Vector(+0.5, 0)),
+                new AffineManifold(new Vector(-1, -1), new Vector(-10, -10))
+            };
+
+            var Test = PolygonItersection.SutherlandHodgmanClipping(VoronoiCell, DomainBndy);
+            ArrayTools.AddToArray(Test.First(), ref Test);
+
+            gp.PlotXY(Test.Select(X => X.x).ToArray(), Test.Select(X => X.y).ToArray(), "intersect",
+                new PlotFormat("-or"));
+
+
+            gp.SetXRange(-15, 3);
+            gp.SetYRange(-15, 3);
+            gp.Execute();
+            Console.ReadKey();
+
+            return;
+
+
 
             _Main(args, false, delegate () {
                 SipPoissonMain p = new SipPoissonMain();
