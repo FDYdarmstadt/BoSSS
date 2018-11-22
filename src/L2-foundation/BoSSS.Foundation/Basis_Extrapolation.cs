@@ -95,7 +95,7 @@ namespace BoSSS.Foundation {
 
                 bool swap;
                 if (jCell0 >= J) {
-                //if(true) {
+                    //if(true) {
                     swap = true;
                     int a = jCell0;
                     jCell0 = jCell1;
@@ -113,12 +113,12 @@ namespace BoSSS.Foundation {
                 Debug.Assert(jCell0 < J);
 
                 var cellMask = new CellMask(m_Context, new[] { new Chunk() { i0 = jCell0, Len = 1 } }, MaskType.Geometrical);
-                
+
                 // we project the basis function from 'jCell1' onto 'jCell0'
 
                 CellQuadrature.GetQuadrature(new int[2] { N, N }, m_Context,
-                    (new CellQuadratureScheme(true, cellMask)).Compile(m_Context, this.Degree*2), // integrate over target cell
-                    delegate(int i0, int Length, QuadRule QR, MultidimensionalArray _EvalResult) {
+                    (new CellQuadratureScheme(true, cellMask)).Compile(m_Context, this.Degree * 2), // integrate over target cell
+                    delegate (int i0, int Length, QuadRule QR, MultidimensionalArray _EvalResult) {
                         NodeSet nodes_Cell0 = QR.Nodes;
                         Debug.Assert(Length == 1);
 
@@ -136,13 +136,13 @@ namespace BoSSS.Foundation {
 
                         EvalResult.Multiply(1.0, phi_1, phi_0, 0.0, "kmn", "kn", "km");
                     },
-                    /*_SaveIntegrationResults:*/ delegate(int i0, int Length, MultidimensionalArray ResultsOfIntegration) {
-                        Debug.Assert(Length == 1);
+                    /*_SaveIntegrationResults:*/ delegate (int i0, int Length, MultidimensionalArray ResultsOfIntegration) {
+                                                     Debug.Assert(Length == 1);
 
-                        var res = ResultsOfIntegration.ExtractSubArrayShallow(0, -1, -1);
-                        Minv_tmp.Clear();
-                        Minv_tmp.Acc(1.0, res);
-                    }).Execute();
+                                                     var res = ResultsOfIntegration.ExtractSubArrayShallow(0, -1, -1);
+                                                     Minv_tmp.Clear();
+                                                     Minv_tmp.Acc(1.0, res);
+                                                 }).Execute();
 
                 // compute the inverse
                 Minv_tmp.InvertTo(M_tmp);
@@ -162,7 +162,55 @@ namespace BoSSS.Foundation {
             }
         }
 
+        /// <summary>
+        /// Change-of-basis, in cell 0 
+        /// </summary>
+        /// <param name="jCell"></param>
+        /// <param name="pl"></param>
+        public MultidimensionalArray GetChangeofBasisMatrix(int jCell, PolynomialList pl) {
+            var m_Context = this.GridDat;
+            int N = this.Length;
+            int M = pl.Count;
+            int J = this.GridDat.iLogicalCells.NoOfLocalUpdatedCells;
 
-    
+            if (jCell < 0 || jCell >= J)
+                throw new ArgumentOutOfRangeException("cell index out of range");
+            MultidimensionalArray Mtx = MultidimensionalArray.Create(N, M);
+            
+            
+            var cellMask = new CellMask(m_Context, new[] { new Chunk() { i0 = jCell, Len = 1 } }, MaskType.Geometrical);
+
+            // we project the basis function from 'jCell1' onto 'jCell0'
+
+            CellQuadrature.GetQuadrature(new int[2] { N, M }, m_Context,
+                (new CellQuadratureScheme(true, cellMask)).Compile(m_Context, this.Degree * 2), // integrate over target cell
+                delegate (int i0, int Length, QuadRule QR, MultidimensionalArray _EvalResult) {
+                    NodeSet nodes_Cell0 = QR.Nodes;
+                    Debug.Assert(Length == 1);
+
+                    //NodesGlobal.Allocate(1, nodes_Cell0.GetLength(0), nodes_Cell0.GetLength(1));
+                    //m_Context.TransformLocal2Global(nodes_Cell0, jCell0, 1, NodesGlobal, 0);
+                    //var nodes_Cell1 = new NodeSet(GridDat.iGeomCells.GetRefElement(jCell1), nodes_Cell0.GetLength(0), nodes_Cell0.GetLength(1));
+                    //m_Context.TransformGlobal2Local(NodesGlobal.ExtractSubArrayShallow(0, -1, -1), nodes_Cell1, jCell1, null);
+                    //nodes_Cell1.LockForever();
+
+                    var phi_0 = this.CellEval(nodes_Cell0, jCell, 1).ExtractSubArrayShallow(0, -1, -1);
+                    MultidimensionalArray R = MultidimensionalArray.Create(QR.NoOfNodes, pl.Count);
+                    pl.Evaluate(nodes_Cell0, R);
+
+                    var EvalResult = _EvalResult.ExtractSubArrayShallow(0, -1, -1, -1);
+                    EvalResult.Multiply(1.0, R, phi_0, 0.0, "knm", "km", "kn");
+                },
+                delegate (int i0, int Length, MultidimensionalArray ResultsOfIntegration) {
+                    Debug.Assert(Length == 1);
+
+                    var res = ResultsOfIntegration.ExtractSubArrayShallow(0, -1, -1);
+                    Mtx.Clear();
+                    Mtx.Acc(1.0, res);
+                }).Execute();
+
+            return Mtx;
+        }
+
     }
 }
