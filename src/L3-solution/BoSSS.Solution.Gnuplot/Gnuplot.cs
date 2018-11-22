@@ -183,7 +183,7 @@ namespace BoSSS.Solution.Gnuplot {
             if (System.Environment.OSVersion.Platform != PlatformID.Win32NT)
                 return null;
 
-            string bi = System.Environment.GetEnvironmentVariable("BOSSS_INSTALL_TEST");
+            string bi = System.Environment.GetEnvironmentVariable("BOSSS_INSTALL");
             if (bi == null || bi.Length < 0)
                 return null;
 
