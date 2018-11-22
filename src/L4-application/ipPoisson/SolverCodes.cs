@@ -27,7 +27,7 @@ namespace BoSSS.Application.SipPoisson {
         /// </summary>
         classic_cg = 2,
 
-        /// <summary>
+                             /// <summary>
         /// Direct solver from new solver framework (causes some overhead in comparison to <see cref="classic_pardiso"/>).
         /// </summary>
         exp_direct = 3,
@@ -60,7 +60,9 @@ namespace BoSSS.Application.SipPoisson {
         exp_Kcycle_schwarz = 8,
 
       
-
-
+        /// <summary>
+        /// do nothing
+        /// </summary>
+        nix = 1000
     }
 }
