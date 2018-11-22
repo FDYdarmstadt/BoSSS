@@ -5,8 +5,10 @@ restart
   _______________________
 
 Databases loaded:
-List of 1 instances of IDatabaseInfo {
+List of 3 instances of IDatabaseInfo {
   0: { Session Count = 0; Grid Count = 34; Path = C:\BoSSS_DB }
+  1: { Session Count = 80; Grid Count = 6; Path = C:\tmp\fk_temp_db }
+  2: { Session Count = 36; Grid Count = 6; Path = P:\Performance_DB }
 }
 
  Console ready for input. Type 'help' for help.
@@ -21,7 +23,7 @@ using System.IO;
 using BoSSS.Application.SipPoisson;
 **************
 ==============
-string dateString = "2018-11-7";
+string dateString = "2018-11-13";
 string File       = "SolverRuns--" + dateString + ".json";
 string FilePath   = Path.Combine(CurrentDocDir, File);
 var SessTab       = TableExtensions.LoadFromFile(FilePath);
@@ -104,17 +106,103 @@ var SubTab = SubTab_2.ExtractColumns("DGdegree:T", "Grid:NoOfCells", "solver_nam
 ==============
 SubTab.Print();
 **************
-   DGdegree:T Grid:NoOfCells solver_name DOFs    minSolRunT   maxSolRunT   NoIter 
-0: 2          163840         4           1638400 768.206441   768.206441   67     
-1: 2          20480          4           204800  87.5742284   87.5742284   66     
-2: 2          2560           4           25600   10.2581241   10.2581241   77     
-3: 2          320            4           3200    0.6203332    0.6203332    5      
-4: 2          40             4           400     0.3336844    0.3336844    5      
-5: 2          163840         6           1638400 2969.0162684 2969.0162684 39     
-6: 2          20480          6           204800  285.9048549  285.9048549  36     
-7: 2          2560           6           25600   14.2846454   14.2846454   21     
-8: 2          320            6           3200    0.6953308    0.6953308    5      
-9: 2          40             6           400     0.8118458    0.8118458    5      
+    DGdegree:T Grid:NoOfCells solver_name DOFs    minSolRunT   maxSolRunT   NoIter 
+0:  3          320            3           6400    0.6630391    0.6630391    1      
+1:  3          40             3           800     0.3180686    0.3180686    1      
+2:  2          20480          3           204800  103.9352247  103.9352247  1      
+3:  2          2560           3           25600   1.8138219    1.8138219    1      
+4:  2          320            3           3200    0.3856737    0.3856737    1      
+5:  2          40             3           400     0.3188107    0.3188107    1      
+6:  5          2560           6           143360  745.9701467  745.9701467  24     
+7:  5          320            6           17920   29.6009367   29.6009367   14     
+8:  5          40             6           2240    1.3172529    1.3172529    5      
+9:  3          20480          6           409600  978.173381   978.173381   30     
+10: 3          2560           6           51200   51.4506551   51.4506551   17     
+11: 3          320            6           6400    1.5539292    1.5539292    5      
+12: 3          40             6           800     0.5456465    0.5456465    5      
+13: 2          163840         6           1638400 3041.2554003 3041.2554003 39     
+14: 2          20480          6           204800  280.9989682  280.9989682  36     
+15: 2          2560           6           25600   14.0090913   14.0090913   21     
+16: 2          320            6           3200    0.6995531    0.6995531    5      
+17: 2          40             6           400     0.8195228    0.8195228    5      
+18: 3          20480          2           409600  300.7775069  300.7775069  4496   
+19: 3          2560           2           51200   16.2753465   16.2753465   1907   
+20: 3          320            2           6400    0.9725268    0.9725268    772    
+21: 3          40             2           800     0.1259513    0.1259513    282    
+22: 2          163840         2           1638400 802.1119429  802.1119429  6364   
+23: 2          20480          2           204800  44.1541618   44.1541618   2834   
+24: 2          2560           2           25600   2.6158589    2.6158589    1209   
+25: 2          320            2           3200    0.2461983    0.2461983    488    
+26: 2          40             2           400     0.0814964    0.0814964    140    
+27: 5          2560           1           143360  62.343227    62.343227    1      
+28: 5          320            1           17920   2.1058585    2.1058585    1      
+29: 5          40             1           2240    0.0803845    0.0803845    1      
+30: 3          2560           1           51200   4.6008129    4.6008129    1      
+31: 3          320            1           6400    0.2174756    0.2174756    1      
+32: 3          40             1           800     0.0309357    0.0309357    1      
+33: 2          20480          1           204800  33.8600544   33.8600544   1      
+34: 2          2560           1           25600   0.9700324    0.9700324    1      
+35: 2          320            1           3200    0.0539627    0.0539627    1      
+36: 2          40             1           400     0.337557     0.337557     1      
+37: 5          2560           0           143360  110.9574367  110.9574367  1      
+38: 5          320            0           17920   2.2701388    2.2701388    1      
+39: 5          40             0           2240    0.2613452    0.2613452    1      
+40: 3          20480          0           409600  464.1284485  464.1284485  1      
+41: 3          2560           0           51200   6.4626242    6.4626242    1      
+42: 3          320            0           6400    0.378776     0.378776     1      
+43: 3          40             0           800     0.1478624    0.1478624    1      
+44: 2          20480          0           204800  78.369234    78.369234    1      
+45: 2          2560           0           25600   1.5872584    1.5872584    1      
+46: 2          320            0           3200    0.1950518    0.1950518    1      
+47: 2          40             0           400     0.3042771    0.3042771    1      
+48: 5          2560           4           143360  522.5265008  522.5265008  84     
+49: 3          20480          4           409600  737.0268793  737.0268793  113    
+50: 5          320            4           17920   36.375969    36.375969    73     
+51: 5          40             4           2240    1.8393759    1.8393759    5      
+52: 5          2560           6           143360  1262.8511345 1262.8511345 24     
+53: 3          20480          6           409600  1556.1256888 1556.1256888 30     
+54: 3          2560           4           51200   38.5478257   38.5478257   72     
+55: 3          320            4           6400    2.3006768    2.3006768    5      
+56: 3          40             4           800     0.6021896    0.6021896    5      
+57: 5          320            6           17920   48.075456    48.075456    14     
+58: 5          40             6           2240    2.1373618    2.1373618    5      
+59: 3          2560           6           51200   81.3303042   81.3303042   17     
+60: 3          320            6           6400    2.255887     2.255887     5      
+61: 3          40             6           800     0.8860619    0.8860619    5      
+62: 2          163840         6           1638400 4680.1770368 4680.1770368 39     
+63: 2          163840         4           1638400 1011.686184  1011.686184  67     
+64: 2          20480          4           204800  107.0599399  107.0599399  66     
+65: 2          20480          6           204800  448.4341211  448.4341211  36     
+66: 2          2560           4           25600   12.2427857   12.2427857   77     
+67: 2          320            4           3200    0.9510909    0.9510909    5      
+68: 2          40             4           400     0.5870666    0.5870666    5      
+69: 2          2560           6           25600   21.8992796   21.8992796   21     
+70: 2          320            6           3200    1.1326499    1.1326499    5      
+71: 2          40             6           400     0.844895     0.844895     5      
+72: 5          2560           4           143360  522.5265008  522.5265008  84     
+73: 3          20480          4           409600  737.0268793  737.0268793  113    
+74: 5          320            4           17920   36.375969    36.375969    73     
+75: 5          40             4           2240    1.8393759    1.8393759    5      
+76: 5          2560           6           143360  1262.8511345 1262.8511345 24     
+77: 3          20480          6           409600  1556.1256888 1556.1256888 30     
+78: 3          2560           4           51200   38.5478257   38.5478257   72     
+79: 3          320            4           6400    2.3006768    2.3006768    5      
+80: 3          40             4           800     0.6021896    0.6021896    5      
+81: 5          320            6           17920   48.075456    48.075456    14     
+82: 5          40             6           2240    2.1373618    2.1373618    5      
+83: 3          2560           6           51200   81.3303042   81.3303042   17     
+84: 3          320            6           6400    2.255887     2.255887     5      
+85: 3          40             6           800     0.8860619    0.8860619    5      
+86: 2          163840         6           1638400 4680.1770368 4680.1770368 39     
+87: 2          163840         4           1638400 1011.686184  1011.686184  67     
+88: 2          20480          4           204800  107.0599399  107.0599399  66     
+89: 2          20480          6           204800  448.4341211  448.4341211  36     
+90: 2          2560           4           25600   12.2427857   12.2427857   77     
+91: 2          320            4           3200    0.9510909    0.9510909    5      
+92: 2          40             4           400     0.5870666    0.5870666    5      
+93: 2          2560           6           25600   21.8992796   21.8992796   21     
+94: 2          320            6           3200    1.1326499    1.1326499    5      
+95: 2          40             6           400     0.844895     0.844895     5      
 ==============
 **************
 ==============
@@ -191,7 +279,35 @@ foreach(Plot2Ddata.XYvalues graph in RuntimePlot.dataGroups) {
 Incomplete statement - missing closing parentheses?.
 
 ==============
+//extract all Degrees and put them into array
+int rowcount       = SubTab.Rows.Count;
+int selectedcolumn = 0;
+int[] tmp= new int[20];
+
+int count = 0;
+for(int r=0;r<rowcount;r++){
+System.Data.DataRow row = (System.Data.DataRow)SubTab.Rows[r];
+int bla                 = Convert.ToInt32(row[selectedcolumn]);
+if (tmp[bla]==0){
+  tmp[bla]=1;
+  count++;
+}
+}
+int[] DGdegrees = new int[count];
+int count2 = 0;
+for(int i=0;i<tmp.Length;i++){
+   if(tmp[i]==1){
+      DGdegrees[count2]=i;
+      count2++; 
+   }
+}
+DGdegrees;
 **************
+List of 3 instances of Int32 {
+  0: 2
+  1: 3
+  2: 5
+}
 ==============
 **************
 ==============
@@ -210,14 +326,19 @@ Incomplete statement - missing closing parentheses?.
 **************
 ==============
 Plot2Ddata[,] multiplots = new Plot2Ddata[3,2];
-int pDegree = 2;
+int pDegree = 0;
+
 for(int iRow = 0; iRow < 3; iRow++) {
 //var RuntimePlot = SubTab.ToPlot("DOFs", "minSolRunT", // column for x- and y
 //                        "solver_name", "DGdegree:T"); // column for group
 for(int iCol = 0; iCol < 2; iCol++) {
+    //Space of 2*3 Multiplots is exceeded
     if(pDegree > 6)
         continue;
- 
+    int tmpDG = 0;
+    if(pDegree < DGdegrees.Length)
+        tmpDG = DGdegrees[pDegree];
+    
     multiplots[iRow,iCol] = SubTab.ToPlot("DOFs", "minSolRunT", // column for x- and y
        delegate (int iTabRow, 
                  IDictionary<string, object> Row, 
@@ -229,7 +350,7 @@ for(int iCol = 0; iCol < 2; iCol++) {
            // and the respective color  
            // - - - - - - - - - - - - - - - - - - - - - - - - 
            int k = Convert.ToInt32(Row["DGdegree:T"]);
-           if(k != pDegree) {
+           if(k != tmpDG) {
                 // degree does not match -> not in this plot
                 Nmn = null;
                 Fmt = null;
@@ -290,7 +411,7 @@ for(int iCol = 0; iCol < 2; iCol++) {
     linP.Format.FromString("- black");
     ArrayTools.AddToArray(linP, ref multiplots[iRow,iCol].dataGroups);
  
-    string Title = string.Format("$k = {0}$", pDegree);
+    string Title = string.Format("$k = {0}$", tmpDG);
     multiplots[iRow,iCol].Ylabel = Title;
     multiplots[iRow,iCol].LogX = true;
     multiplots[iRow,iCol].LogY = true;
@@ -353,9 +474,28 @@ CL.PlotNow();
 System.ComponentModel.Win32Exception occurred: Das System kann die angegebene Datei nicht finden. Type 'LastError' for details.
 
 ==============
+LastError
+**************
+System.ComponentModel.Win32Exception (0x80004005): Das System kann die angegebene Datei nicht finden
+   bei System.Diagnostics.Process.StartWithShellExecuteEx(ProcessStartInfo startInfo)
+   bei BoSSS.Application.BoSSSpad.GnuplotExtensions.CairolatexContainer.Preview(Boolean trimPage, Int32 dpi) in C:\BoSSS\BoSSS-experimental\public\src\L4-application\BoSSSpad\GnuplotExtensions.cs:Zeile 325.
+   bei <InteractiveExpressionClass>.Host(Object& $retval)
+   bei Mono.CSharp.Evaluator.Evaluate(String input, Object& result, Boolean& result_set)
+   bei BoSSS.Application.BoSSSpad.ReadEvalPrintLoop.EvalPrint(String line, Assembly& AssemblyProduced) in C:\BoSSS\BoSSS-experimental\public\src\L4-application\BoSSSpad\ReadEvalPrintLoop.cs:Zeile 318.
+==============
 CL.WriteMinimalCompileableExample(
    Path.Combine(CurrentDocDir, "plots", "MainConstCoeffPoissonScaling.tex"),
    "ConstCoeffPoissonScaling.tex");
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
 **************
 ==============
 **************
