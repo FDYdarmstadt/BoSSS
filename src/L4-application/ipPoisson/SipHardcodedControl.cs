@@ -210,6 +210,7 @@ namespace BoSSS.Application.SipPoisson {
             //R.TargetBlockSize = 100;
 
             R.TracingNamespaces = "BoSSS,ilPSP";
+            
 
             R.GridFunc = delegate() {
                 GridCommons grd = null;
