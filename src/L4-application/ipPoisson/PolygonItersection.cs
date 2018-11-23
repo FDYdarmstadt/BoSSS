@@ -155,6 +155,8 @@ namespace BoSSS.Application.SipPoisson {
 
             List<Vector> ClipReg = _ClipReg.ToList();
             List<Vector> SubjPoly = _SubjPoly.ToList();
+            _ClipReg = null; //  avoid accidental use
+            _SubjPoly = null; // avoid accidental use
             
             // =================
             // step 2:
@@ -208,6 +210,54 @@ namespace BoSSS.Application.SipPoisson {
                     }
                 }
             }
+
+            // =================
+            // step 4 & 5
+            // =================
+
+            Debug.Assert(SubjPoly.Count == SubjInside.Count);
+            Debug.Assert(SubjInside.Where(b => b > 0).Count() >= 1);
+
+            int iStart = -1;
+            for(int i = 0; i < SubjInside.Count; i++) {
+                if(SubjInside[i] > 0) {
+                    iStart = i;
+                    break;
+                }
+            }
+
+            List<Vector> R = new List<Vector>();
+
+            int iCurrent = iStart;
+            bool bOnSub = true;
+            int iNext = -1;
+            int linksPointer = 0;
+            if()
+            do {
+                int L;
+                if (bOnSub) {
+                    R.Add(SubjPoly[iCurrent]);
+                    L = SubjPoly.Count;
+                } else {
+                    R.Add(ClipReg[iCurrent]);
+                    L = ClipReg.Count;
+                }
+
+                iNext = iCurrent;
+                iNext++;
+                if (iNext >= L)
+                    iNext = 0;
+
+                if(bOnSub) {
+                    Debug.Assert(SubjInside[iNext] >= 0);
+
+                }
+
+
+
+            } while (iNext != iStart && bOnSub);
+
+
 
             // =================
             // return
