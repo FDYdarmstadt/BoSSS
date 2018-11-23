@@ -83,6 +83,27 @@ namespace BoSSS.Application.SipPoisson {
             base.IOFields.Add(ResiualKP1);
         }
 
+        unsafe static void my_dgemm(int TRANSA, int TRANSB,
+                                        int M, int N, int K,
+                                        double ALPHA,
+                                        double* A, int LDA,
+                                        double* B, int LDB,
+                                        double BETA,
+                                        double* C, int LDC) {
+            for(int m = 0; m < M; m++) {
+                for(int n = 0; n < N; n++) {
+                    double acc = 0;
+                    for(int k = 0; k < K; k++) {
+                        acc += A[m * K + k] * B[k * N + n];
+                    }
+                    C[m * N + n] = BETA * C[m * N + n] + ALPHA * acc;
+                }
+            }
+
+        }
+
+
+
 
         /// <summary>
         /// Main routine
@@ -90,18 +111,40 @@ namespace BoSSS.Application.SipPoisson {
         /// <param name="args"></param>
         static void Main(string[] args) {
 
-            //BatchmodeConnector.Flav = BatchmodeConnector.Flavor.Octave;
-            //BatchmodeConnector.MatlabExecuteable = "C:\\cygwin\\bin\\bash.exe";
-
-
-            Vector[] DomainBndy = new[] {
+           Vector[] DomainBndy = new[] {
                 new Vector(-1, 0), // 6
-                new Vector(-1.1, 0.9), // 5
-                new Vector(1.1, 1.1), // 4
-                new Vector(1, -1.3), // 3
-                new Vector(0.02, -1), // 2
-                new Vector(0.01, 0.01), // 1
+                new Vector(-1, 1), // 5
+                new Vector(1, 1), // 4
+                new Vector(1, -1), // 3
+                new Vector(0, -1), // 2
+                new Vector(0, 0), // 1
             };
+
+            bool IsIn(double xi, double yi) {
+                
+                //for(int l = 0; l < bndys.Length; l++) {
+                //    Debug.Assert(bndys[l].Normal.Length == 2);
+                //    if (bndys[l].PointDistance(xi, yi) > 0.0)
+                //        return false;
+                //}
+                if (xi > 1.0)
+                    return false;
+                if (yi > 1.0)
+                    return false;
+                if (xi < 0 && yi < 0)
+                    return false;
+                if (xi < -1)
+                    return false;
+                if (yi < -1)
+                    return false;
+
+                return true;
+            }
+
+            bool IsInV(Vector X) {
+                Debug.Assert(X.Dim == 2);
+                return IsIn(X.x, X.y);
+            }
 
             Gnuplot gp = new Gnuplot();
 
@@ -109,27 +152,120 @@ namespace BoSSS.Application.SipPoisson {
                 new PlotFormat("-xk"));
 
 
-            AffineManifold[] VoronoiCell = new[] {
-                new AffineManifold(new Vector(0, 1), new Vector(0, +0.5)),
-                new AffineManifold(new Vector(1, 0), new Vector(+0.5, 0)),
-                new AffineManifold(new Vector(-1, -1), new Vector(-10, -10))
+            Vector[] VoronoiCell = new Vector[] {
+                new Vector(0.5, 0.5),
+                new Vector(0.5, -2),
+                new Vector(-2,-2),
+                new Vector(-2, 0.5)
             };
 
-            var Test = PolygonItersection.SutherlandHodgmanClipping(VoronoiCell, DomainBndy);
+            //var Test = VoronoiCell.CloneAs();
+            var Test = PolygonItersection.WeilerAthertonClipping(DomainBndy, IsInV, VoronoiCell);
             ArrayTools.AddToArray(Test.First(), ref Test);
 
             gp.PlotXY(Test.Select(X => X.x).ToArray(), Test.Select(X => X.y).ToArray(), "intersect",
                 new PlotFormat("-or"));
 
 
-            gp.SetXRange(-15, 3);
-            gp.SetYRange(-15, 3);
+            gp.SetXRange(-2.2, 2.2);
+            gp.SetYRange(-2.2, 2.2);
             gp.Execute();
             Console.ReadKey();
 
             return;
 
+            
+            /*
+            //Some performance testing - don't delete, I still need this!
+            //Florian
 
+
+            ilPSP.Environment.Bootstrap(
+                args,
+                GetBoSSSInstallDir(),
+                out bool _MustFinalizeMPI);
+            {
+                int rank, size;
+                csMPI.Raw.Comm_Rank(csMPI.Raw._COMM.WORLD, out rank);
+                csMPI.Raw.Comm_Size(csMPI.Raw._COMM.WORLD, out size);
+                if (rank == 0) {
+                    Console.WriteLine("BoSSS: Running with " + size + " MPI process(es)");
+                }
+            }
+
+
+            //BatchmodeConnector.Flav = BatchmodeConnector.Flavor.Octave;
+            //BatchmodeConnector.MatlabExecuteable = "C:\\cygwin\\bin\\bash.exe";
+
+
+            //MultidimensionalArray.MultiplyProgram mp = MultidimensionalArray.MultiplyProgram.Compile("imn", "kma", "ikna"); // original sort
+            MultidimensionalArray.MultiplyProgram mp = MultidimensionalArray.MultiplyProgram.Compile("mni", "mka", "kani"); // re-sort for GEMM
+
+            int I = 1;
+            int D = 3;
+            int K = 343;
+            int N = 84;
+
+            Console.WriteLine("Complexity: " + (I*N*N*K*D));
+
+            //var R = MultidimensionalArray.Create(I, N, N); //    original sort
+            //var V = MultidimensionalArray.Create(K, N, D); //    original sort
+            //var Z = MultidimensionalArray.Create(I, K, N, D); // original sort
+            var R = MultidimensionalArray.Create(N, N, I); //    re-sort for GEMM
+            var V = MultidimensionalArray.Create(N, K, D); //    re-sort for GEMM
+            var Z = MultidimensionalArray.Create(K, D, N, I); // re-sort for GEMM
+
+            var rnd = new Random();
+
+            R.ApplyAll(delegate (int[] index, ref double entry) {
+                entry = rnd.NextDouble();
+            });
+
+            Stopwatch myDings = new Stopwatch();
+            Stopwatch blasDings = new Stopwatch();
+
+            int Ntests = 500000;
+
+            for (int l = 0; l < 2; l++) {
+                for (int i = 0; i < Ntests; i++) {
+
+                    if (l > 0)
+                        myDings.Start();
+                    R.Multiply(0.5, V, Z, 0.5, ref mp);
+                    //R.Multiply(0.5, V, Z, 0.5, "imn", "kma", "ikna");
+                    if (l > 0)
+                        myDings.Stop();
+
+                    if (l > 0)
+                        blasDings.Start();
+                    unsafe {
+                        fixed (double* pR = R.Storage, pV = V.Storage, pZ = Z.Storage) {
+                            BLAS.dgemm(
+                            //my_dgemm(
+                                'N', 'N', 
+                                N, N * I, K * D, 
+                                0.5, 
+                                pV, N, 
+                                pZ, K * D, 
+                                0.5, 
+                                pR, N);
+                        }
+                    }
+                    if (l > 0)
+                        blasDings.Stop();
+
+                    R.CheckForNanOrInf();
+                }
+            }
+
+            double MyDing = myDings.Elapsed.TotalSeconds / Ntests;
+            double BlasGing = blasDings.Elapsed.TotalSeconds / Ntests;
+
+            Console.WriteLine("BoSSS [sec]: " + MyDing);
+            Console.WriteLine("BLAS [sec]:  " + BlasGing + "   (" + (MyDing/BlasGing) + " faster)");
+
+            return;
+            */
 
             _Main(args, false, delegate () {
                 SipPoissonMain p = new SipPoissonMain();
@@ -226,8 +362,39 @@ namespace BoSSS.Application.SipPoisson {
                 Stopwatch stw = new Stopwatch();
                 stw.Start();
 
-                // console
+                // Stats:
+                {
+                    int BlkSize = T.Mapping.MaxTotalNoOfCoordinatesPerCell;
+                    int NoOfMtxBlocks = 0;
+                    foreach (int[] Neigs in this.GridData.iLogicalCells.CellNeighbours) {
+                        NoOfMtxBlocks++; //               diagonal block
+                        NoOfMtxBlocks += Neigs.Length; // off-diagonal block
+                    }
+                    NoOfMtxBlocks = NoOfMtxBlocks.MPISum();
+
+                    int MtxBlockSize = BlkSize * BlkSize;
+                    int MtxSize = MtxBlockSize * NoOfMtxBlocks;
+
+                    double MtxStorage = MtxSize * (8.0 + 4.0) / (1024 * 1024); // 12 bytes (double+int) per entry
+
+                    Console.WriteLine("   System size:                 {0}", T.Mapping.TotalLength);
+                    Console.WriteLine("   No of blocks:                {0}", T.Mapping.TotalNoOfBlocks);
+                    Console.WriteLine("   No of blocks in matrix:      {0}", NoOfMtxBlocks);
+                    Console.WriteLine("   DG coordinates per cell:     {0}", BlkSize);
+                    Console.WriteLine("   Non-zeros per matrix block:  {0}", MtxBlockSize);
+                    Console.WriteLine("   Total non-zeros in matrix:   {0}", MtxSize);
+                    Console.WriteLine("   Approx. matrix storage (MB): {0}", MtxStorage);
+
+
+                    base.QueryHandler.ValueQuery("MtxBlkSz", MtxBlockSize, true);
+                    base.QueryHandler.ValueQuery("NNZMtx", MtxSize, true);
+                    base.QueryHandler.ValueQuery("NNZblk", NoOfMtxBlocks, true);
+                    base.QueryHandler.ValueQuery("MtxMB", MtxStorage, true);
+                }
+
+
                 Console.WriteLine("creating sparse system for {0} DOF's ...", T.Mapping.Ntotal);
+                
 
                 // quadrature domain
                 var volQrSch = new CellQuadratureScheme(true, CellMask.GetFullMask(this.GridData, MaskType.Geometrical));
@@ -259,6 +426,8 @@ namespace BoSSS.Application.SipPoisson {
 #endif
                 stw.Stop();
                 Console.WriteLine("done {0} sec.", stw.Elapsed.TotalSeconds);
+
+                
 
 
                 //var JB = LapaceIp.GetFDJacobianBuilder(T.Mapping.Fields, null, T.Mapping, edgQrSch, volQrSch);
@@ -459,24 +628,32 @@ namespace BoSSS.Application.SipPoisson {
                 // ---------------
 
                 UpdateMatrices();
+                
 
                 // call solver
                 // -----------
                 double mintime, maxtime;
                 bool converged;
                 int NoOfIterations;
-                
+
                 switch (base.Control.solver_name) {
 
                     case SolverCodes.classic_cg:
                     case SolverCodes.classic_mumps:
                     case SolverCodes.classic_pardiso:
-                        ClassicSolve(out mintime, out maxtime, out converged, out NoOfIterations);
-                        break;
+                    ClassicSolve(out mintime, out maxtime, out converged, out NoOfIterations);
+                    break;
+
+                    case SolverCodes.nix:
+                    NoOfIterations = 0;
+                    mintime = 0;
+                    maxtime = 0;
+                    converged = false;
+                    break;
 
                     default:
-                        ExperimentalSolve(out mintime, out maxtime, out converged, out NoOfIterations);
-                        break;
+                    ExperimentalSolve(out mintime, out maxtime, out converged, out NoOfIterations);
+                    break;
                 }
 
                 Console.WriteLine("finished; " + NoOfIterations + " iterations.");
