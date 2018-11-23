@@ -66,7 +66,7 @@ namespace BoSSS.Platform.LinAlg {
         }
 
         /// <summary>
-        ///initializes a 3D vector.
+        /// initializes a 3D vector.
         /// </summary>
         public Vector(double __x, double __y, double __z) {
             x = __x;
@@ -77,7 +77,7 @@ namespace BoSSS.Platform.LinAlg {
         }
 
         /// <summary>
-        /// 
+        /// initializes a vector from an array
         /// </summary>
         /// <param name="X"></param>
         public Vector(double[] X) {
@@ -235,6 +235,7 @@ namespace BoSSS.Platform.LinAlg {
         public double AbsSquare() {
             return (x * x + y * y + z * z);
         }
+
         /// <summary>
         /// The angle between this vector and the positive x-Axis, counted counterclockwise
         /// </summary>
@@ -243,6 +244,22 @@ namespace BoSSS.Platform.LinAlg {
             if(this.Dim != 2)
                 throw new NotSupportedException();
             return Math.Atan2(this.y, this.x);
+        }
+
+        /// <summary>
+        /// The angle, in radians, between this vector and vector <paramref name="o"/>
+        /// </summary>
+        public double AngleTo(Vector o) {
+            if (o.Dim != this.Dim)
+                throw new ArgumentException("spatial dimension mismatch");
+
+            Vector tn = this;
+            tn.Normalize();
+
+            Vector on = o;
+            on.Normalize();
+
+            return Math.Acos(tn * on);
         }
 
         /// <summary>
@@ -557,7 +574,7 @@ namespace BoSSS.Platform.LinAlg {
                 case 3:
                 return new Vector(inp[RowNo, 0], inp[RowNo, 1], inp[RowNo, 2]);
                 default:
-                throw new ArgumentException();
+                throw new ArgumentException("Matrix has " + inp.NoOfCols + " columns, this cannot be a spatial dimension.");
             }
         }
     }

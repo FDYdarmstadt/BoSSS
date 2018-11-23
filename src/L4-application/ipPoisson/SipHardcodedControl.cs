@@ -211,6 +211,7 @@ namespace BoSSS.Application.SipPoisson {
             //R.TargetBlockSize = 100;
 
             R.TracingNamespaces = "BoSSS,ilPSP";
+            
 
             R.GridFunc = delegate() {
                 GridCommons grd = null;
@@ -366,11 +367,10 @@ namespace BoSSS.Application.SipPoisson {
             //R.TargetBlockSize = 100;
 
 
+            
 
-            bool IsIn(params double[] X) {
-                Debug.Assert(X.Length == 2);
-                double xi = X[0];
-                double yi = X[1];
+            bool IsIn(double xi, double yi) {
+                
                 //for(int l = 0; l < bndys.Length; l++) {
                 //    Debug.Assert(bndys[l].Normal.Length == 2);
                 //    if (bndys[l].PointDistance(xi, yi) > 0.0)
@@ -388,6 +388,11 @@ namespace BoSSS.Application.SipPoisson {
                     return false;
 
                 return true;
+            }
+
+            bool IsInV(Vector X) {
+                Debug.Assert(X.Dim == 2);
+                return IsIn(X.x, X.y);
             }
 
             int Mirror(ref double[] _x, ref double[] _y, AffineManifold[] bndys) {
@@ -498,7 +503,8 @@ namespace BoSSS.Application.SipPoisson {
                 List<Cell> cells = new List<Cell>();
                 List<int[]> aggregation = new List<int[]>();
                 for(int jV = 0; jV < ResFix; jV++) { // loop over Voronoi Cells
-                    Debug.Assert(IsIn(Nodes.GetRow(jV)));
+                    Debug.Assert(IsInV(Nodes.GetRowPt(jV)));
+
                     int[] iVtxS = OutputVertexIndex[jV];
                     int NV = iVtxS.Length;
 

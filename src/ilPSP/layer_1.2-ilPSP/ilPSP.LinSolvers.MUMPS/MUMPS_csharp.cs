@@ -25,10 +25,10 @@ namespace ilPSP.LinSolvers.MUMPS
 {
 	public unsafe class MUMPS_csharp
 	{
-		[DllImport("dmumps")]
-		extern static unsafe int* mumps_get_mapping();
+        [DllImport("dmumps")]
+        extern static unsafe int* mumps_get_mapping();
 
-		[DllImport("dmumps")]
+        [DllImport("dmumps")]
 		extern static unsafe int* mumps_get_pivnul_list();
 
 		[DllImport("dmumps")]

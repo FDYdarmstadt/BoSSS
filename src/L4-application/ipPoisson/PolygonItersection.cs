@@ -1,4 +1,5 @@
 ﻿using BoSSS.Platform.LinAlg;
+using ilPSP;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -81,6 +82,139 @@ namespace BoSSS.Application.SipPoisson {
             Debug.Assert(!double.IsInfinity(I.y));
 
             return I;
+        }
+
+
+
+        static bool ComputeIntersection(Vector S1, Vector S2, Vector E1, Vector E2, out double alpha1, out double alpha2, out Vector I) {
+            if (S1.Dim != 2)
+                throw new ArgumentException("spatial dimension mismatch.");
+            if (S2.Dim != 2)
+                throw new ArgumentException("spatial dimension mismatch.");
+            if (E1.Dim != 2)
+                throw new ArgumentException("spatial dimension mismatch.");
+            if (E2.Dim != 2)
+                throw new ArgumentException("spatial dimension mismatch.");
+
+
+            var P_S12 = AffineManifold.FromPoints(S1, S2);
+            var P_E12 = AffineManifold.FromPoints(E1, E2);
+
+            Vector NS = P_S12.Normal; NS.Normalize();
+            Vector NE = P_E12.Normal; NE.Normalize();
+
+            double parallel = NS * NE;
+            if (parallel.Abs() >= 1.0) {
+                alpha1 = double.PositiveInfinity;
+                alpha2 = double.PositiveInfinity;
+                I = new Vector(double.PositiveInfinity, double.PositiveInfinity);
+                return false;
+            }
+            Vector S12 = S2 - S1;
+            Vector E12 = E2 - E1;
+
+            //S12.Normalize();
+            //E12.Normalize();
+
+            I = AffineManifold.Intersect2D(P_S12, P_E12);
+
+            Vector IS2 = I - S1;
+            Vector IE2 = I - E1;
+            Debug.Assert((S12.AngleTo(IS2).Abs() <= 1.0e-5) || ((S12.AngleTo(IS2).Abs() - Math.PI).Abs() <= 1.0e-5));
+            Debug.Assert((E12.AngleTo(IE2).Abs() <= 1.0e-5) || ((E12.AngleTo(IE2).Abs() - Math.PI).Abs() <= 1.0e-5));
+
+            alpha1 = (S12 * IS2)/S12.AbsSquare();
+            alpha2 = (E12 * IE2)/E12.AbsSquare();
+            return true;
+        }
+
+
+        
+
+        public static Vector[] WeilerAthertonClipping(Vector[] _ClipReg, Func<Vector,bool> IsInClipReg, Vector[] _SubjPoly) {
+            // Given polygon A as the clipping region and polygon B as the subject polygon to be clipped, 
+            // the algorithm consists of the following steps:
+            //
+            // 1. List the vertices of the clipping-region polygon A and those of the subject polygon B.
+            // 2. Label the listed vertices of subject polygon B as either inside or outside of clipping region A.
+            // 3. Find all the polygon intersections and insert them into both lists, linking the lists at the intersections.
+            // 4. Generate a list of "inbound" intersections – the intersections where the vector from the intersection 
+            //    to the subsequent vertex of subject polygon B begins inside the clipping region.
+            // 5. Follow each intersection clockwise around the linked lists until the start position is found.
+            //
+            // If there are no intersections then one of three conditions must be true:
+            // i.   A is inside B – return A for clipping, B for merging.
+            // ii.  B is inside A – return B for clipping, A for merging.
+            // iii. A and B do not overlap – return None for clipping or A & B for merging.
+            //
+            // (from https://en.wikipedia.org/wiki/Weiler%E2%80%93Atherton_clipping_algorithm)
+
+            // =================
+            // step 1:
+            // =================
+
+            List<Vector> ClipReg = _ClipReg.ToList();
+            List<Vector> SubjPoly = _SubjPoly.ToList();
+            
+            // =================
+            // step 2:
+            // =================
+            List<bool> SubjInside = SubjPoly.Select(X => IsInClipReg(X)).ToList();
+
+            if (SubjInside.All(b => b))
+                // case (ii)
+                return SubjPoly.ToArray();
+
+            if(SubjInside.All(b => !b)) {
+                // case (iii)
+                // for the moment, we ignore case (i)
+
+                return null;
+            }
+
+            // =================
+            // step 3:
+            // =================
+
+            List<Tuple<int, int>> links = new List<Tuple<int, int>>();
+
+            for(int iEdgeSub = 1; iEdgeSub <= SubjPoly.Count; iEdgeSub++) {
+                Vector V1 = SubjPoly[iEdgeSub - 1];
+                Vector V2 = SubjPoly[iEdgeSub % SubjPoly.Count];
+                
+                // test against all edges 
+                for(int iEdgeClip = 1; iEdgeClip <= ClipReg.Count; iEdgeClip++) {
+                    Vector S1 = ClipReg[iEdgeClip - 1];
+                    Vector S2 = ClipReg[iEdgeClip % ClipReg.Count];
+
+                    bool Intersect = ComputeIntersection(V1, V2, S1, S2, out double alpha1, out double alpha2, out Vector I);
+                    if(Intersect) {
+                        if(alpha1 >= 0.0 && alpha1 <= 1.0 && alpha2 >= 0.0 && alpha2 <= 1.0) {
+
+                            SubjPoly.Insert(iEdgeSub, I);
+                            ClipReg.Insert(iEdgeClip, I);
+                            links.Add(new Tuple<int, int>(iEdgeSub, iEdgeClip));
+
+                            iEdgeSub++;
+                            iEdgeClip++;
+                                                       
+                        } else {
+                            // somewhere outside
+                        }
+                    } else {
+                        // parallel
+
+                    }
+                }
+
+            }
+
+            // =================
+            // return
+            // =================
+
+            return SubjPoly.ToArray();
+
         }
 
     }

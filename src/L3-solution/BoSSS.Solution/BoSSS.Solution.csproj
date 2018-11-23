@@ -75,7 +75,6 @@
     <Compile Include="FieldOptions.cs" />
     <Compile Include="AppControl.cs" />
     <Compile Include="Application.cs" />
-    <Compile Include="ArrayHelper.cs" />
     <Compile Include="TimeStepping\BDFCommon.cs" />
     <Compile Include="BoundaryConditionMap.cs" />
     <Compile Include="Kmeans.cs" />
@@ -101,9 +100,7 @@
     <Compile Include="TimeStepping\ExplicitEuler.cs" />
     <Compile Include="TimeStepping\ImplicitEuler.cs" />
     <Compile Include="TimeStepping\ImplicitTimeStepper.cs" />
-    <Compile Include="Instruction.cs" />
     <Compile Include="TimeStepping\ITimeStepper.cs" />
-    <Compile Include="LexicalError.cs" />
     <Compile Include="LinearDerivativeSource.cs" />
     <Compile Include="LinearDualValueFlux.cs" />
     <Compile Include="LinearFlux.cs" />
@@ -112,7 +109,6 @@
     <Compile Include="NonlinearFlux.cs" />
     <Compile Include="NonlinearFluxEx.cs" />
     <Compile Include="NonlinearSource.cs" />
-    <Compile Include="ParseException.cs" />
     <Compile Include="PlotDriver.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Query.cs" />
@@ -123,11 +119,9 @@
     <Compile Include="TimeStepping\RungeKutta.cs" />
     <Compile Include="TimeStepping\RungeKuttaScheme.cs" />
     <Compile Include="Spline1D.cs" />
-    <Compile Include="SyntaxError.cs" />
     <Compile Include="TimeStepping\TimeInfo.cs" />
     <Compile Include="TimeStepping\TimeStepConstraint.cs" />
     <Compile Include="TimeStepping\TimeStepperCommon.cs" />
-    <Compile Include="Tokenizer.cs" />
     <Compile Include="VariableHistory.cs" />
   </ItemGroup>
   <ItemGroup>
