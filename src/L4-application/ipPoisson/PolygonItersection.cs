@@ -159,13 +159,13 @@ namespace BoSSS.Application.SipPoisson {
             // =================
             // step 2:
             // =================
-            List<bool> SubjInside = SubjPoly.Select(X => IsInClipReg(X)).ToList();
+            List<int> SubjInside = SubjPoly.Select(X => IsInClipReg(X) ? 1 : -1).ToList();
 
-            if (SubjInside.All(b => b))
+            if (SubjInside.All(b => b > 0))
                 // case (ii)
                 return SubjPoly.ToArray();
 
-            if(SubjInside.All(b => !b)) {
+            if(SubjInside.All(b => b < 0)) {
                 // case (iii)
                 // for the moment, we ignore case (i)
 
@@ -194,6 +194,7 @@ namespace BoSSS.Application.SipPoisson {
                             SubjPoly.Insert(iEdgeSub, I);
                             ClipReg.Insert(iEdgeClip, I);
                             links.Add(new Tuple<int, int>(iEdgeSub, iEdgeClip));
+                            SubjInside.Insert(iEdgeSub, 0);
 
                             iEdgeSub++;
                             iEdgeClip++;
@@ -206,7 +207,6 @@ namespace BoSSS.Application.SipPoisson {
 
                     }
                 }
-
             }
 
             // =================
