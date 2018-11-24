@@ -153,7 +153,7 @@ namespace BoSSS.Application.SipPoisson {
 
             Vector[] VoronoiCell;
 
-            int iTestCase = 1;
+            int iTestCase = 3;
             switch (iTestCase) {
                 case 1:
                 VoronoiCell = new Vector[] {

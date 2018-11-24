@@ -1,6 +1,7 @@
 ﻿using BoSSS.Platform.LinAlg;
 using ilPSP;
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
@@ -169,7 +170,7 @@ namespace BoSSS.Application.SipPoisson {
         //    public int iClip_2;
         //}
 
-        class PolygonList {
+        class PolygonList : IEnumerable<PolygonList> {
             public Vector v;
             public PolygonList next;
             public PolygonList prev;
@@ -199,10 +200,14 @@ namespace BoSSS.Application.SipPoisson {
                 return head;
             }
 
-            public Vector[] ToArray() {
-                List<Vector> R = new List<Vector>();
+            public Vector[] ToVecArray() {
+                return this.ToArray().Select(pl => pl.v).ToArray();
+            }
+            
+            public PolygonList[] ToArray() {
+                List<PolygonList> R = new List<PolygonList>();
                 for(var node = this; node != null; node = node.next) {
-                    R.Add(node.v);
+                    R.Add(node);
                 }
                 return R.ToArray();
             }
@@ -224,6 +229,23 @@ namespace BoSSS.Application.SipPoisson {
                 }
 
                 return newNode;
+            }
+
+            public IEnumerator<PolygonList> GetEnumerator() {
+                return ((IEnumerable<PolygonList>)(this.ToArray())).GetEnumerator();
+            }
+
+            IEnumerator IEnumerable.GetEnumerator() {
+                return this.ToArray().GetEnumerator();
+            }
+
+            public PolygonList Tail {
+                get {
+                    if (next == null)
+                        return this;
+                    else
+                        return next.Tail;
+                }
             }
         }
 
@@ -284,7 +306,7 @@ namespace BoSSS.Application.SipPoisson {
             //List<int> SubjInside = SubjPoly.Select(X => IsInClipReg(X) ? 1 : -1).ToList();
             bool AllInside = true;
             bool AllOutSide = true;
-            for(var node = SubjPoly; node.next != null; node = node.next) {
+            for(var node = SubjPoly; node != null; node = node.next) {
                 bool isin = IsInClipReg(node.v);
                 node.inside = isin ? 1 : -1;
 
@@ -298,7 +320,7 @@ namespace BoSSS.Application.SipPoisson {
             //if (SubjInside.All(node => node.ins > 0))
             if (AllInside)
                 // case (ii)
-                return SubjPoly.ToArray();
+                return SubjPoly.ToVecArray();
 
             if(AllOutSide) {
                 // case (iii)
@@ -320,6 +342,7 @@ namespace BoSSS.Application.SipPoisson {
                 var V1 = node_S;
                 var V2 = node_S.next != null ? node_S.next : SubjPoly;
 
+                List<Tuple<double, PolygonList>> Alpha1sAndNodes = new List<Tuple<double, PolygonList>>();
                 
                 // test against all edges 
                 //for(int iEdgeClip = 1; iEdgeClip <= ClipReg.Count; iEdgeClip++) {
@@ -350,6 +373,7 @@ namespace BoSSS.Application.SipPoisson {
                                 SubjInsert = V1.InsertAfter(I);
                                 SubjInsert.inside = 0;
                                 node_S = SubjInsert;
+                                Alpha1sAndNodes.Add(new Tuple<double, PolygonList>(alpha1, SubjInsert));
                             }
 
                             
@@ -398,18 +422,71 @@ namespace BoSSS.Application.SipPoisson {
 
                     }
                 }
+
+                 // multiple cuts per edge are probably not handeled correctly {
+                 if(Alpha1sAndNodes.Count > 1) {
+                    for(int i = 1; i < Alpha1sAndNodes.Count; i++) {
+                        double alpha1_prev = Alpha1sAndNodes[i - 1].Item1;
+                        double alpha1 = Alpha1sAndNodes[i].Item1;
+
+                        if(alpha1_prev >= alpha1) {
+                            throw new ArithmeticException("nodes not inserted in correct order - todo: implement resorting");
+                        }
+                    }
+                }
             }
 
-            var R = SubjPoly.ToArray();
-            return R;
-            /*
+
             // =================
             // step 4 & 5
             // =================
 
-            Debug.Assert(SubjPoly.Count == SubjInside.Count);
-            Debug.Assert(SubjInside.Where(b => b > 0).Count() >= 1);
+            if (SubjPoly.Where(node => node.inside == 0).Count() % 2 != 0) {
+                throw new ArithmeticException("un-even number of intersections.");
+            }
 
+            PolygonList start = SubjPoly;
+            while(start.inside <= 0) {
+                start = start.next;
+            }
+
+            int Lmax = SubjPoly.Count() + ClipReg.Count();
+            SubjPoly.Tail.next = SubjPoly;
+            ClipReg.Tail.next = ClipReg;
+
+            List<Vector> R = new List<Vector>();
+
+            PolygonList current = start;
+            int lcur = 0;
+            bool bOnSub = true;
+            do {
+                R.Add(current.v);
+
+
+
+
+                PolygonList next;
+                if (current.crossJoin != null)
+                    next = current.crossJoin.next;
+                else
+                    next = current.next;
+
+                current = next;
+
+
+                if(lcur > Lmax) {
+                    throw new ApplicationException("running into infinity loop.");
+                }
+                lcur++;
+            } while (!object.ReferenceEquals(start, current));
+
+
+
+            //Debug.Assert(SubjPoly.Count == SubjInside.Count);
+            //Debug.Assert(SubjInside.Where(b => b > 0).Count() >= 1);
+            
+
+            /*
             int iStart = -1;
             for(int i = 0; i < SubjInside.Count; i++) {
                 if(SubjInside[i] > 0) {
@@ -470,14 +547,14 @@ namespace BoSSS.Application.SipPoisson {
 
             } while (!bOnSub || iCurrent != iStart);
 
-
+            */
 
             // =================
             // return
             // =================
 
             return R.ToArray();
-            */
+            
         }
 
     }
