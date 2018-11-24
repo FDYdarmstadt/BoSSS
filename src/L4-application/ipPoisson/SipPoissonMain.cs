@@ -111,7 +111,7 @@ namespace BoSSS.Application.SipPoisson {
         /// <param name="args"></param>
         static void Main(string[] args) {
 
-           Vector[] DomainBndy = new[] {
+            Vector[] DomainBndy = new[] {
                 new Vector(-1, 0), // 6
                 new Vector(-1, 1), // 5
                 new Vector(1, 1), // 4
@@ -121,7 +121,7 @@ namespace BoSSS.Application.SipPoisson {
             };
 
             bool IsIn(double xi, double yi) {
-                
+
                 //for(int l = 0; l < bndys.Length; l++) {
                 //    Debug.Assert(bndys[l].Normal.Length == 2);
                 //    if (bndys[l].PointDistance(xi, yi) > 0.0)
@@ -151,18 +151,47 @@ namespace BoSSS.Application.SipPoisson {
             gp.PlotXY(DomainBndy.Select(X => X.x).ToArray(), DomainBndy.Select(X => X.y).ToArray(), "domain",
                 new PlotFormat("-xk"));
 
+            Vector[] VoronoiCell;
 
-            Vector[] VoronoiCell = new Vector[] {
-                new Vector(0.5, 0.5),
-                new Vector(0.5, -2),
-                new Vector(-2,-2),
-                new Vector(-2, 0.5)
-            };
+            int iTestCase = 3;
+            switch (iTestCase) {
+                case 1:
+                VoronoiCell = new Vector[] {
+                    new Vector(0.5, 0.5),
+                    new Vector(0.5, -2),
+                    new Vector(-2,-2),
+                    new Vector(-2, 0.5)
+                };
+                break;
 
-            //var Test = VoronoiCell.CloneAs();
+                case 2:
+                VoronoiCell = new Vector[] {
+                    new Vector(-0.7, 0.5),
+                    new Vector(-0.2, 0.0),
+                    new Vector(-0.8,0.0)
+                };
+                break;
+
+                case 3:
+                VoronoiCell = new Vector[] {
+                    new Vector(-1.5, 0.5),
+                    new Vector(-0.2, 0.5),
+                    new Vector(-0.2, 0.0),
+                    new Vector(-1.5, 0.0)
+                };
+                break;
+
+                default:
+                throw new ArgumentOutOfRangeException();
+            }
+
+            var org = VoronoiCell.CloneAs();
             var Test = PolygonItersection.WeilerAthertonClipping(DomainBndy, IsInV, VoronoiCell);
-            ArrayTools.AddToArray(Test.First(), ref Test);
+            //ArrayTools.AddToArray(Test.First(), ref Test);
+            ArrayTools.AddToArray(org.First(), ref org);
 
+            gp.PlotXY(org.Select(X => X.x).ToArray(), org.Select(X => X.y).ToArray(), "org",
+                new PlotFormat("-ob"));
             gp.PlotXY(Test.Select(X => X.x).ToArray(), Test.Select(X => X.y).ToArray(), "intersect",
                 new PlotFormat("-or"));
 
