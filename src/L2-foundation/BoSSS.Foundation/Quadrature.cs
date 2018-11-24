@@ -27,9 +27,12 @@ using System.Threading;
 
 namespace BoSSS.Foundation.Quadrature {
 
+    /// <summary>
+    /// tuning parameters for the quadrature
+    /// </summary>
     public static class Quadrature_Bulksize {
         /// <summary>
-        /// Number of floats (#items * #nodes * #integralg per cell) done at maximum
+        /// Number of floats (#items * #nodes * #integrals per cell) done at maximum
         /// </summary>
         public static int CHUNK_DATA_LIMIT = 12*1024*1024;
     }
@@ -327,6 +330,7 @@ namespace BoSSS.Foundation.Quadrature {
 
         int[] m_CustomTimers_RootPointer = new int[0];
 
+        
         /// <summary>
         /// performs an integration over cells or edges in the composite rule provided to the constructor;
         /// </summary>
@@ -379,6 +383,8 @@ namespace BoSSS.Foundation.Quadrature {
                     if(MaxChunkLength < 1)
                         MaxChunkLength = 1;
 
+                    //if (OberOasch && Bulkcnt == 0)
+                    //    Console.WriteLine("Max Chunk length: " + MaxChunkLength);
 
                     int j = chunk.i0;
                     int ChunkLength = MaxChunkLength;

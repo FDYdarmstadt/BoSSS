@@ -744,7 +744,7 @@ namespace BoSSS.Solution.Control {
         /// this setting has no effect.
         /// </summary>
         [DataMember]
-        public XQuadFactoryHelper.MomentFittingVariants CutCellQuadratureType = XQuadFactoryHelper.MomentFittingVariants.Classic;
+        public XQuadFactoryHelper.MomentFittingVariants CutCellQuadratureType = XQuadFactoryHelper.MomentFittingVariants.Saye;
 
         /// <summary>
         /// Calculation is not stopped if an I/O exception is thrown in <see cref="Application{T}.SaveToDatabase(TimestepNumber, double)"/>.
