@@ -1076,8 +1076,9 @@ namespace BoSSS.Foundation.Grid.Classic {
                 L.Add(this.StorageGuid);
                 L.Add(this.BcCellsStorageGuid);
                 L.AddRange(this.PredefinedGridPartitioning.Values.Select(v => v.Guid));
+                               
 
-                return L.AsReadOnly();
+                return L.Where(guid => !guid.Equals(Guid.Empty)).ToList().AsReadOnly();
             }
 
         }
