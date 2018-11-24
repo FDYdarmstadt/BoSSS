@@ -153,7 +153,7 @@ namespace BoSSS.Application.SipPoisson {
 
             Vector[] VoronoiCell;
 
-            int iTestCase = 3;
+            int iTestCase = 1;
             switch (iTestCase) {
                 case 1:
                 VoronoiCell = new Vector[] {
@@ -188,7 +188,7 @@ namespace BoSSS.Application.SipPoisson {
             var org = VoronoiCell.CloneAs();
             var Test = PolygonItersection.WeilerAthertonClipping(DomainBndy, IsInV, VoronoiCell);
             //ArrayTools.AddToArray(Test.First(), ref Test);
-            ArrayTools.AddToArray(org.First(), ref org);
+            //ArrayTools.AddToArray(org.First(), ref org);
 
             gp.PlotXY(org.Select(X => X.x).ToArray(), org.Select(X => X.y).ToArray(), "org",
                 new PlotFormat("-ob"));
