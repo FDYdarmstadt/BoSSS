@@ -34,7 +34,7 @@ namespace BoSSS.Foundation.IO {
     public static class Utils {
 
         /// <summary>
-        /// searches for the User- or Machine-environment variable 'BOSSS_INSTALL_TEST'
+        /// searches for the User- or Machine-environment variable 'BOSSS_INSTALL'
         /// and verifies the existence of this directory.
         /// </summary>
         /// <returns></returns>
@@ -42,17 +42,17 @@ namespace BoSSS.Foundation.IO {
             logger = logger ?? NullLog.Instance;
 
             string si1 = System.Environment.GetEnvironmentVariable(
-                "BOSSS_INSTALL_TEST", EnvironmentVariableTarget.User);
+                "BOSSS_INSTALL", EnvironmentVariableTarget.User);
             if (si1 != null && si1.Length > 0)
-                logger.Info("found USER variable 'BOSSS_INSTALL_TEST': '" + si1 + "'.");
+                logger.Info("found USER variable 'BOSSS_INSTALL': '" + si1 + "'.");
             else
-                logger.Info("unable to find a USER variable 'BOSSS_INSTALL_TEST'.");
+                logger.Info("unable to find a USER variable 'BOSSS_INSTALL'.");
 
-            string si2 = System.Environment.GetEnvironmentVariable("BOSSS_INSTALL_TEST", EnvironmentVariableTarget.Machine);
+            string si2 = System.Environment.GetEnvironmentVariable("BOSSS_INSTALL", EnvironmentVariableTarget.Machine);
             if (si2 != null && si2.Length > 0)
-                logger.Info("found MACHINE variable 'BOSSS_INSTALL_TEST': '" + si1 + "'.");
+                logger.Info("found MACHINE variable 'BOSSS_INSTALL': '" + si1 + "'.");
             else
-                logger.Info("unable to find a MACHINE variable 'BOSSS_INSTALL_TEST'.");
+                logger.Info("unable to find a MACHINE variable 'BOSSS_INSTALL'.");
 
             string si = null;
             if (si1 != null && si1.Length > 0) {
@@ -73,10 +73,10 @@ namespace BoSSS.Foundation.IO {
                 if (success) {
                     //logger.Error(Err);
                     //throw new ApplicationException(Err);
-                    Console.WriteLine("   !!!  WARNING  !!! Environment variable 'BOSSS_INSTALL_TEST' is defined as '" + si + "', but directory seems to be non-existent. Could lead to Problems!");
+                    Console.WriteLine("   !!!  WARNING  !!! Environment variable 'BOSSS_INSTALL' is defined as '" + si + "', but directory seems to be non-existent. Could lead to Problems!");
                 }
             } else {
-                logger.Info("Unable to find environment variable 'BOSSS_INSTALL_TEST'; Hopefully the directory of the executable contains 'amd64' and 'x86', otherwise we're screwed.");
+                logger.Info("Unable to find environment variable 'BOSSS_INSTALL'; Hopefully the directory of the executable contains 'amd64' and 'x86', otherwise we're screwed.");
             }
             return si;
         }

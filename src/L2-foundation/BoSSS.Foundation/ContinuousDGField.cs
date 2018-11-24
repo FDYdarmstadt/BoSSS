@@ -814,7 +814,7 @@ namespace BoSSS.Foundation {
             //A.AccBlock(0, 0, 1.0, B.ExtractSubArrayShallow(new int[] { 0, 0 }, new int[] { nodeCount - 1, m_Coordinates.Length - 1 }));
             //A.AccBlock(rowPart.i0 + nodeCount, 0, 1.0, B2);
 
-            //A.SaveToTextFile("C:\\tmptest\\AMatrix.txt");
+            //A.SaveToTextFile("C:\\tmp\\AMatrix.txt");
 
             // test with matlab
             //MultidimensionalArray output = MultidimensionalArray.Create(1, 2);
