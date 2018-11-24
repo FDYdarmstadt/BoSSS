@@ -163,11 +163,70 @@ namespace BoSSS.Application.SipPoisson {
         }
 
 
-        struct MyTuple {
-            public MyTuple(int __iSubj_1, int __iClip_2) { iSubj_1 = __iSubj_1; iClip_2 = __iClip_2; }
-            public int iSubj_1;
-            public int iClip_2;
+        //struct MyTuple {
+        //    public MyTuple(int __iSubj_1, int __iClip_2) { iSubj_1 = __iSubj_1; iClip_2 = __iClip_2; }
+        //    public int iSubj_1;
+        //    public int iClip_2;
+        //}
+
+        class PolygonList {
+            public Vector v;
+            public PolygonList next;
+            public PolygonList prev;
+            public PolygonList crossJoin;
+            public int inside; // only for subject polygon
+
+            static public PolygonList FromEnum(IEnumerable<Vector> vecs) {
+                PolygonList head = null;
+                PolygonList tail = null;
+
+                foreach(var _v in vecs) {
+                    if (_v.Dim != 2)
+                        throw new ArgumentException();
+
+                    var N = new PolygonList() {
+                        v = _v
+                    };
+                    if(head == null) {
+                        head = N;
+                    } else {
+                        tail.next = N;
+                        N.prev = tail;
+                    }
+                    tail = N;
+                }
+
+                return head;
+            }
+
+            public Vector[] ToArray() {
+                List<Vector> R = new List<Vector>();
+                for(var node = this; node != null; node = node.next) {
+                    R.Add(node.v);
+                }
+                return R.ToArray();
+            }
+
+            public PolygonList InsertAfter(Vector _v) {
+                if (_v.Dim != 2)
+                    throw new ArgumentException();
+
+                PolygonList newNode = new PolygonList() { v = _v };
+
+                if (this.next != null) {
+                    newNode.prev = this;
+                    newNode.next = this.next;
+                    newNode.next.prev = newNode;
+                    this.next = newNode;
+                } else {
+                    this.next = newNode;
+                    newNode.prev = this;
+                }
+
+                return newNode;
+            }
         }
+
 
         public static Vector[] WeilerAthertonClipping(Vector[] _ClipReg, Func<Vector,bool> IsInClipReg, Vector[] _SubjPoly) {
             // =========================
@@ -211,21 +270,37 @@ namespace BoSSS.Application.SipPoisson {
             // step 1:
             // =================
 
-            List<Vector> ClipReg = _ClipReg.ToList();
-            List<Vector> SubjPoly = _SubjPoly.ToList();
+            //List<Vector> ClipReg = _ClipReg.ToList();
+            //List<Vector> SubjPoly = _SubjPoly.ToList();
+            var ClipReg = PolygonList.FromEnum(_ClipReg);
+            var SubjPoly = PolygonList.FromEnum(_SubjPoly);
             _ClipReg = null; //  avoid accidental use
             _SubjPoly = null; // avoid accidental use
-            
+
+
             // =================
             // step 2:
             // =================
-            List<int> SubjInside = SubjPoly.Select(X => IsInClipReg(X) ? 1 : -1).ToList();
+            //List<int> SubjInside = SubjPoly.Select(X => IsInClipReg(X) ? 1 : -1).ToList();
+            bool AllInside = true;
+            bool AllOutSide = true;
+            for(var node = SubjPoly; node.next != null; node = node.next) {
+                bool isin = IsInClipReg(node.v);
+                node.inside = isin ? 1 : -1;
 
-            if (SubjInside.All(b => b > 0))
+                AllInside = AllInside && isin;
+                AllOutSide = AllOutSide && !isin;
+            }
+            for(var node = ClipReg; node.next != null; node = node.next) {
+                node.inside = 1;
+            }
+
+            //if (SubjInside.All(node => node.ins > 0))
+            if (AllInside)
                 // case (ii)
                 return SubjPoly.ToArray();
 
-            if(SubjInside.All(b => b < 0)) {
+            if(AllOutSide) {
                 // case (iii)
                 // for the moment, we ignore case (i)
 
@@ -236,48 +311,84 @@ namespace BoSSS.Application.SipPoisson {
             // step 3:
             // =================
 
-            List<MyTuple> links = new List<MyTuple>();
+            //List<MyTuple> links = new List<MyTuple>();
 
-            for(int iEdgeSub = 1; iEdgeSub <= SubjPoly.Count; iEdgeSub++) {
-                Vector V1 = SubjPoly[iEdgeSub - 1];
-                Vector V2 = SubjPoly[iEdgeSub % SubjPoly.Count];
+            //for(int iEdgeSub = 1; iEdgeSub <= SubjPoly.Count; iEdgeSub++) {
+            for(var node_S = SubjPoly; node_S != null; node_S = node_S.next) {
+                //Vector V1 = SubjPoly[iEdgeSub - 1];
+                //Vector V2 = SubjPoly[iEdgeSub % SubjPoly.Count];
+                var V1 = node_S;
+                var V2 = node_S.next != null ? node_S.next : SubjPoly;
+
                 
                 // test against all edges 
-                for(int iEdgeClip = 1; iEdgeClip <= ClipReg.Count; iEdgeClip++) {
-                    Vector S1 = ClipReg[iEdgeClip - 1];
-                    Vector S2 = ClipReg[iEdgeClip % ClipReg.Count];
+                //for(int iEdgeClip = 1; iEdgeClip <= ClipReg.Count; iEdgeClip++) {
+                 for(var node_C = ClipReg; node_C.next != null; node_C = node_C.next) {
+                    //Vector S1 = ClipReg[iEdgeClip - 1];
+                    //Vector S2 = ClipReg[iEdgeClip % ClipReg.Count];
+                    var S1 = node_C;
+                    var S2 = node_C.next != null ? node_C.next : ClipReg;
 
-                    bool Intersect = ComputeIntersection(V1, V2, S1, S2, out double alpha1, out double alpha2, out Vector I);
+                    bool Intersect = ComputeIntersection(V1.v, V2.v, S1.v, S2.v, out double alpha1, out double alpha2, out Vector I);
                     if(Intersect) {
                         if(alpha1 >= 0.0 && alpha1 <= 1.0 && alpha2 >= 0.0 && alpha2 <= 1.0) {
 
-                            int iEdgeSubInsert;
+                            //int iEdgeSubInsert;
+                            PolygonList SubjInsert;
                             if(alpha1 <= 0.0) {
+                                SubjInsert = V1;
+                                SubjInsert.inside = 0;
 
                             } else if(alpha1 >= 1.0) {
-
+                                SubjInsert = V2;
+                                SubjInsert.inside = 0;
                             } else {
-                                iEdgeSubInsert = iEdgeSub;
-                                SubjPoly.Insert(iEdgeSub, I);
-                                iEdgeSub++;
+                                //iEdgeSubInsert = iEdgeSub;
+                                //SubjPoly.Insert(iEdgeSub, I);
+                                //iEdgeSub++;
+
+                                SubjInsert = V1.InsertAfter(I);
+                                SubjInsert.inside = 0;
+                                node_S = SubjInsert;
                             }
 
                             
-                            ClipReg.Insert(iEdgeClip, I);
-
-                            for(int i = 0; i < links.Count; i++) {
-                                if (links[i].iClip_2 >= iEdgeClip) {
-                                    var a = links[i];
-                                    a.iClip_2++;
-                                    links[i] = a;
-                                }
-                            }
-                            Debug.Assert(links.Count <= 0 || iEdgeSubInsert > links.Max(tt => tt.iSubj_1));
-                            links.Add(new MyTuple(iEdgeSubInsert, iEdgeClip));
-                            SubjInside.Insert(iEdgeSub, 0);
+                            //ClipReg.Insert(iEdgeClip, I);
+                            //
+                            //for(int i = 0; i < links.Count; i++) {
+                            //    if (links[i].iClip_2 >= iEdgeClip) {
+                            //        var a = links[i];
+                            //        a.iClip_2++;
+                            //        links[i] = a;
+                            //    }
+                            //}
+                            //Debug.Assert(links.Count <= 0 || iEdgeSubInsert > links.Max(tt => tt.iSubj_1));
+                            //links.Add(new MyTuple(iEdgeSubInsert, iEdgeClip));
+                            //SubjInside.Insert(iEdgeSub, 0);
 
                             
-                            iEdgeClip++;
+                            //iEdgeClip++;
+
+                            PolygonList ClipInsert;
+                            if(alpha2 <= 0.0) {
+                                ClipInsert = S1;
+                                
+
+                            } else if(alpha2 >= 1.0) {
+                                ClipInsert = S2;
+                                
+                            } else {
+                                //iEdgeSubInsert = iEdgeSub;
+                                //SubjPoly.Insert(iEdgeSub, I);
+                                //iEdgeSub++;
+
+                                ClipInsert = S1.InsertAfter(I);
+                                node_C = ClipInsert;
+                            }
+
+                            ClipInsert.crossJoin = SubjInsert;
+                            SubjInsert.crossJoin = ClipInsert;
+
                                                        
                         } else {
                             // somewhere outside
@@ -289,8 +400,9 @@ namespace BoSSS.Application.SipPoisson {
                 }
             }
 
-            return SubjPoly.ToArray();
-
+            var R = SubjPoly.ToArray();
+            return R;
+            /*
             // =================
             // step 4 & 5
             // =================
@@ -365,7 +477,7 @@ namespace BoSSS.Application.SipPoisson {
             // =================
 
             return R.ToArray();
-
+            */
         }
 
     }
