@@ -94,7 +94,7 @@ namespace BoSSS.Foundation.Grid.Classic {
         /// A Cartesian 3D grid with the given nodes.
         /// </returns>
         public static Grid3D Cartesian3DGrid(double[] xNodes, double[] yNodes, double[] zNodes, bool periodicX = false, bool periodicY = false, bool periodicZ = false, CellType _CellType = CellType.Cube_Linear,params BoundingBox[] CutOuts) {
-            using (new FuncTrace()) {
+            using (var tr = new FuncTrace()) {
                 MPICollectiveWatchDog.Watch();
 
                 // Some Checks
@@ -136,8 +136,10 @@ namespace BoSSS.Foundation.Grid.Classic {
                 // Return object
                 // =============
 
-                Grid3D grid = new Grid3D(Cube.Instance);
-
+                Grid3D grid;
+                using (new BlockTrace("GridInstantiation", tr)) {
+                    grid = new Grid3D(Cube.Instance);
+                }
 
                 // define periodic transformations, if necessary
                 // =============================================

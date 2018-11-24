@@ -1,0 +1,25 @@
+\BoSSSopen{GridGeneration/GridGeneration}
+\graphicspath{{GridGeneration/GridGeneration.texbatch/}}
+
+\BoSSScmd{
+restart
+ }
+\BoSSSexeSilent
+\BoSSScmd{
+/// \section{Grid Generation}
+///Firstly, we need to determine the boundaries of our grid/control volume. Is it important to know that the number of nodes needed are equal to the number of cells $+1$. For instance, for $10$ cells we need $11$ nodes. In this example we will use the Cartesian $2D$ grid from the database which requires $x$- and $y$-Nodes. The J term in the code is for doing a check if the desired resolution of the volume is correctly typed.
+ }
+\BoSSSexe
+\BoSSScmd{
+double[] xNodes = GenericBlas.Linspace(0, 1, Res + 1);\newline 
+double[] yNodes = GenericBlas.Linspace(0, 1, Res + 1);\newline 
+int J           = (xNodes.Length - 1)*(yNodes.Length - 1);\newline 
+string GridName = string.Format(WorkflowMgm.CurrentProject + "\_J" +J);\newline 
+ \newline 
+Console.WriteLine("Creating grid with " + J + " cells. ");\newline 
+ \newline 
+GridCommons g;\newline 
+g      = Grid2D.Cartesian2DGrid(xNodes, yNodes);\newline 
+g.Name = GridName;
+ }
+\BoSSSexe

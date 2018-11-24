@@ -23,7 +23,7 @@ using System.Collections.Generic;
 
 namespace CNS.ShockCapturing {
 
-    class LaplacianArtificialViscosityFlux : ipLaplace {
+    class LaplacianArtificialViscosityFlux : SIPLaplace {
 
         private IBoundaryConditionMap boundaryMap;
 
