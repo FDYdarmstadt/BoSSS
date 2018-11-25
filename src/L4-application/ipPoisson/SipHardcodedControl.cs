@@ -661,7 +661,7 @@ namespace BoSSS.Application.SipPoisson {
             }
 
             var org = VoronoiCell.CloneAs();
-            var Test = PolygonItersection.WeilerAthertonClipping(DomainBndy, IsInV, VoronoiCell);
+            var Test = PolygonClipping.WeilerAthertonClipping(DomainBndy, IsInV, VoronoiCell);
             //ArrayTools.AddToArray(Test.First(), ref Test);
             //ArrayTools.AddToArray(org.First(), ref org);
 
