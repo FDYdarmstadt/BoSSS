@@ -66,6 +66,7 @@
   <ItemGroup>
     <Compile Include="BoundaryType.cs" />
     <Compile Include="PolygonItersection.cs" />
+    <Compile Include="PolygonTesselation.cs" />
     <Compile Include="SipHardcodedControl.cs" />
     <Compile Include="SipControl.cs" />
     <Compile Include="SolverCodes.cs" />

@@ -9,7 +9,12 @@ using System.Text;
 using System.Threading.Tasks;
 
 namespace BoSSS.Application.SipPoisson {
-    static class PolygonItersection {
+
+    /// <summary>
+    /// polygon clipping algorithms (geometrical intersection of two polygons),
+    /// used for limiting 2D Voronoi meshes to polygonal domains.
+    /// </summary>
+    static class PolygonClipping {
 
 
         // Sutherland–Hodgman for clipping polygons
