@@ -226,7 +226,7 @@ namespace NSE_SIMPLE {
                 Log_DragAndLift.Flush();
             }
 
-            //var fs = File.Open("C:\\tmptest\\DragAndLift.txt", FileMode.Append, FileAccess.Write);
+            //var fs = File.Open("C:\\tmp\\DragAndLift.txt", FileMode.Append, FileAccess.Write);
             //StreamWriter sw = new StreamWriter(fs);
             //sw.WriteLine(phystime + "\t" + DragAndLift.XForce + "\t" + DragAndLift.YForce);
             //sw.Close();
