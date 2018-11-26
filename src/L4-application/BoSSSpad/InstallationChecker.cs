@@ -255,7 +255,7 @@ namespace BoSSS.Application.BoSSSpad {
         class MUMPS : DynLibLoader {
 
             public MUMPS() :
-                base(new string[] { "dmumps.dll", "libdmumps.so" },
+                base(new string[] { "dmumps-mpi.dll", "libdmumps.so" },
                      new string[2][][],
                      new GetNameMangling[] { NoMangling, NoMangling },
                      new PlatformID[] { PlatformID.Win32NT, PlatformID.Unix },

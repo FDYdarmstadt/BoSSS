@@ -577,6 +577,7 @@ namespace BoSSS.Foundation.XDG {
             }
         }
 
+        /*
         /// <summary>
         /// Sets the DG coordinates for a specific species in a specific cell;
         /// </summary>
@@ -613,6 +614,7 @@ namespace BoSSS.Foundation.XDG {
                 return true;
             }
         }
+        */
 
         void AutoExtrapolateSpecies(SpeciesId Id, SubGrid oldSpeciesSubGrid) {
             LevelSetTracker LsTrk = m_CCBasis.Tracker;

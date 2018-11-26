@@ -143,15 +143,15 @@ namespace NSE_SIMPLE {
         private void SaveMatricesToTextFile(OperatorFactoryFlowFieldVariableDensity OperatorsFlowField,
             UnsetteledCoordinateMapping VelocityMapping, UnsetteledCoordinateMapping VelocityVectorMapping) {
 
-            OperatorsFlowField.Swip2[0].OperatorMatrix.SaveToTextFileSparse("C:\\tmptest\\Swip20.txt");
-            OperatorsFlowField.Swip2[1].OperatorMatrix.SaveToTextFileSparse("C:\\tmptest\\Swip21.txt");
-            OperatorsFlowField.Swip3[0].OperatorMatrix.SaveToTextFileSparse("C:\\tmptest\\Swip30.txt");
-            OperatorsFlowField.Swip3[1].OperatorMatrix.SaveToTextFileSparse("C:\\tmptest\\Swip31.txt");
+            OperatorsFlowField.Swip2[0].OperatorMatrix.SaveToTextFileSparse("C:\\tmp\\Swip20.txt");
+            OperatorsFlowField.Swip2[1].OperatorMatrix.SaveToTextFileSparse("C:\\tmp\\Swip21.txt");
+            OperatorsFlowField.Swip3[0].OperatorMatrix.SaveToTextFileSparse("C:\\tmp\\Swip30.txt");
+            OperatorsFlowField.Swip3[1].OperatorMatrix.SaveToTextFileSparse("C:\\tmp\\Swip31.txt");
 
-            ViscSplit[0, 0].AssemblyMatrix.SaveToTextFileSparse("C:\\tmptest\\ViscSplit00.txt");
-            ViscSplit[0, 1].AssemblyMatrix.SaveToTextFileSparse("C:\\tmptest\\ViscSplit01.txt");
-            ViscSplit[1, 0].AssemblyMatrix.SaveToTextFileSparse("C:\\tmptest\\ViscSplit10.txt");
-            ViscSplit[1, 1].AssemblyMatrix.SaveToTextFileSparse("C:\\tmptest\\ViscSplit11.txt");
+            ViscSplit[0, 0].AssemblyMatrix.SaveToTextFileSparse("C:\\tmp\\ViscSplit00.txt");
+            ViscSplit[0, 1].AssemblyMatrix.SaveToTextFileSparse("C:\\tmp\\ViscSplit01.txt");
+            ViscSplit[1, 0].AssemblyMatrix.SaveToTextFileSparse("C:\\tmp\\ViscSplit10.txt");
+            ViscSplit[1, 1].AssemblyMatrix.SaveToTextFileSparse("C:\\tmp\\ViscSplit11.txt");
 
             int[] IndicesVelocity = VelocityMapping.GetSubvectorIndices(true, 0);
             int[] IndicesVelocityVector0 = VelocityVectorMapping.GetSubvectorIndices(true, 0);
@@ -183,7 +183,7 @@ namespace NSE_SIMPLE {
                 IndicesVelocityVector1,
                 IndicesVelocityVector1);
 
-            Swip2Mtx.SaveToTextFileSparse("C:\\tmptest\\Swip2.txt");
+            Swip2Mtx.SaveToTextFileSparse("C:\\tmp\\Swip2.txt");
         }
     }
 }
