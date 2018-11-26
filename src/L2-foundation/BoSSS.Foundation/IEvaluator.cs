@@ -75,8 +75,28 @@ namespace BoSSS.Foundation {
     /// </summary>
     public interface IEvaluatorLinear : IEvaluator {
 
+        /// <summary>
+        /// Computation of matrix \f$ \mathcal{M} \f$ *and* affine offset \f$ \tilde{b} \f$; the
+        /// DG operator <see cref="IEvaluator.Owner"/> is discretized as
+        /// \f[
+        ///    \mathcal{M} \cdot \tilde{U} + \tilde{b}
+        /// \f]
+        /// where \f$ \tilde{U} \f$ are the DG coordinates of the trial function.
+        /// </summary>
+        /// <param name="Matrix">
+        /// On entry, some pre-allocated matrix; on exit, the operator matrix will be accumulated.
+        /// - <see cref="ISparseMatrix.RowPartitioning"/> correlates with <see cref="IEvaluator.CodomainMapping"/>.
+        /// - <see cref="ISparseMatrix.ColPartition"/> correlates with <see cref="IEvaluator.DomainMapping"/>
+        /// </param>
+        /// <param name="AffineOffset">
+        /// On entry, some pre-allocated vector; on exit, the affine vector  will be accumulated.
+        /// Length correlates with <see cref="IEvaluator.CodomainMapping"/>.
+        /// </param>
         void ComputeMatrix<M, V>(M Matrix, V AffineOffset) where M : IMutableMatrixEx where V : IList<double>;
 
+        /// <summary>
+        /// Equal to <see cref=""/>
+        /// </summary>
         void ComputeAffine<V>(V AffineOffset) where V : IList<double>;
     }
 
