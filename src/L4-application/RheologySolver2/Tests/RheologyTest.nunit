@@ -1,0 +1,10 @@
+﻿<NUnitProject>
+  <Settings activeconfig="Debug" />
+  <Config name="Debug" binpathtype="Auto">
+    <assembly path="..\bin\Debug\RheologySolver.exe" />
+    <assembly path="..\bin\Release\RheologySolver.exe" />
+  </Config>
+  <Config name="Release" binpathtype="Auto">
+    <assembly path="..\bin\Release\RheologySolver.exe" />
+  </Config>
+</NUnitProject>
