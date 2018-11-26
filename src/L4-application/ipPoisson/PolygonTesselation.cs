@@ -60,9 +60,52 @@ namespace BoSSS.Application.SipPoisson {
             Vector vTst = Polygon[iTst];
             Vector vNxt = Polygon[iNxt];
 
+            for(int l = 0; l < L; l++) {
+                if (l == iPrv || l == iNxt || l == iTst)
+                    continue;
+
+                if (!PointInTriangle(Polygon[l], vPrv, vNxt, vTst))
+                    return false;
+            }
+
+            return true;
         }
     
+        public static int[,] TesselatePolygon(IEnumerable<Vector> _Polygon) {
+            List<Vector> Polygon = _Polygon.ToList();
+            //var R = new List<ValueTuple<int, int, int>>();
+            int[,] R = new int[Polygon.Count - 2, 3];
 
+            int I = Polygon.Count - 2;
+            for(int i = 0; i < I; i--) { // Theorem: every simple polygon decomposes into I-2 triangles
+
+                int iEar = -1;
+                for (int iTst = 0; iTst < Polygon.Count; iTst++) {
+                    if(IsEar(Polygon, iEar)) {
+                        iTst = iEar;
+                        break;
+                    }
+                }
+
+                if (iEar < 0)
+                    throw new ArithmeticException("unable to find ear.");
+
+
+                int iNxt = iEar + 1;
+                if (iNxt >= Polygon.Count)
+                    iNxt -= Polygon.Count;
+                int iPrv = iEar - 1;
+                if (iPrv < 0)
+                    iPrv += Polygon.Count;
+
+                R[i, 0] = iPrv;
+                R[i, 1] = iEar;
+                R[i, 2] = iNxt;
+            }
+
+            // return
+            return R;
+        }
 
 
     }

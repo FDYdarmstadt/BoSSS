@@ -515,15 +515,15 @@ namespace BoSSS.Application.SipPoisson {
                         int iV1 = iVtxS[iTri + 1];
                         int iV2 = iVtxS[iTri + 2];
 
-                        double[] V0 = VertexCoordinates.GetRow(iV0);
-                        double[] V1 = VertexCoordinates.GetRow(iV1);
-                        double[] V2 = VertexCoordinates.GetRow(iV2);
+                        Vector V0 = VertexCoordinates.GetRowPt(iV0);
+                        Vector V1 = VertexCoordinates.GetRowPt(iV1);
+                        Vector V2 = VertexCoordinates.GetRowPt(iV2);
 
-                        double[] D1 = V1.Minus(V0);
-                        double[] D2 = V2.Minus(V0);
+                        double[] D1 = V1 - V0;
+                        double[] D2 = V2 - V0;
                         Debug.Assert(D1.CrossProduct2D(D2).Abs() > 1.0e-8);
                         if(D1.CrossProduct2D(D2) < 0) {
-                            double[] T = V2;
+                            Vector T = V2;
                             int t = iV2;
                             V2 = V1;
                             iV2 = iV1;

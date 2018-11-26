@@ -65,7 +65,7 @@
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="BoundaryType.cs" />
-    <Compile Include="PolygonItersection.cs" />
+    <Compile Include="PolygonClipping.cs" />
     <Compile Include="PolygonTesselation.cs" />
     <Compile Include="SipHardcodedControl.cs" />
     <Compile Include="SipControl.cs" />
