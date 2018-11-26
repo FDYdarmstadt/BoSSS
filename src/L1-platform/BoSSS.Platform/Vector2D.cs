@@ -562,7 +562,7 @@ namespace BoSSS.Platform.LinAlg {
         /// row which should be extracted
         /// </param>
         /// <returns>
-        /// an array with length equal to 2nd length of <paramref name="inp"/>, containing the
+        /// A vector with dimension (<see cref="Vector.Dim"/>) equal to 2nd length of <paramref name="inp"/>, containing the
         /// <paramref name="RowNo"/>-th row of <paramref name="inp"/>
         /// </returns>
         public static Vector GetRowPt(this IMatrix inp, int RowNo) {
@@ -575,6 +575,35 @@ namespace BoSSS.Platform.LinAlg {
                 return new Vector(inp[RowNo, 0], inp[RowNo, 1], inp[RowNo, 2]);
                 default:
                 throw new ArgumentException("Matrix has " + inp.NoOfCols + " columns, this cannot be a spatial dimension.");
+            }
+        }
+
+
+        /// <summary>
+        /// sets the <paramref name="RowNo"/>-th row from <paramref name="inp"/> to values provided by <paramref name="row"/>.
+        /// </summary>
+        /// <param name="inp">
+        /// matrix that should be altered
+        /// </param>
+        /// <param name="RowNo">
+        /// row index of the row to set
+        /// </param>
+        /// <param name="row">
+        /// a vector 
+        /// </param>
+        public static void SetRowPt(this IMatrix inp, int RowNo, Vector row) {
+            if (row.Dim != inp.NoOfCols)
+                throw new ArgumentException("Dimension mismatch.");
+
+            switch(row.Dim) {
+                case 1:
+                inp[RowNo, 0] = row.x; return;
+                case 2:
+                inp[RowNo, 0] = row.x; inp[RowNo, 1] = row.y; return;
+                case 3:
+                inp[RowNo, 0] = row.x; inp[RowNo, 1] = row.y; inp[RowNo, 2] = row.z; return;
+                default:
+                throw new NotImplementedException();
             }
         }
     }

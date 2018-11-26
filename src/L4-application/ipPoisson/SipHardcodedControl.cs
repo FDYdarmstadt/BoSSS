@@ -531,7 +531,7 @@ namespace BoSSS.Application.SipPoisson {
                             iV1 = t;
                         }
 
-                        double[] Center = V0.Plus(V1).Plus(V2).Mul(1.0 / 3.0);
+                        //double[] Center = V0.Plus(V1).Plus(V2).Mul(1.0 / 3.0);
                         //Debug.Assert(IsIn(Center[0], Center[1]));
 
                         Cell Cj = new Cell();
@@ -539,9 +539,9 @@ namespace BoSSS.Application.SipPoisson {
                         Cj.Type = CellType.Triangle_3;
                         Cj.TransformationParams = MultidimensionalArray.Create(3, 2);
                         Cj.NodeIndices = new int[] { iV0, iV1, iV2 };
-                        Cj.TransformationParams.SetRow(0, V0);
-                        Cj.TransformationParams.SetRow(1, V1);
-                        Cj.TransformationParams.SetRow(2, V2);
+                        Cj.TransformationParams.SetRowPt(0, V0);
+                        Cj.TransformationParams.SetRowPt(1, V1);
+                        Cj.TransformationParams.SetRowPt(2, V2);
 
                         Agg2Pt.Add(cells.Count);
 
