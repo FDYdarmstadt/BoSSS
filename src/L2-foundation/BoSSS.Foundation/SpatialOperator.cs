@@ -235,6 +235,13 @@ namespace BoSSS.Foundation {
             }
         }
 
+        /// <summary>
+        /// Evaluation of the <see cref="QuadOrderFunction"/>.
+        /// </summary>
+        /// <param name="DomainMap"></param>
+        /// <param name="Parameters"></param>
+        /// <param name="CodomainMap"></param>
+        /// <returns></returns>
         public int GetOrderFromQuadOrderFunction(UnsetteledCoordinateMapping DomainMap, IList<DGField> Parameters, UnsetteledCoordinateMapping CodomainMap) {
             /// Compute Quadrature Order
             int order;
@@ -496,8 +503,7 @@ namespace BoSSS.Foundation {
 
         /// <summary>
         /// returns true, if this spatial differential operator contains any 
-        /// linear component (i.e. an object that implements
-        /// <see cref="ILinear2ndDerivativeFlux"/> or <see cref="ILinearSource"/> or <see cref="ILinearFlux"/>),
+        /// linear component,
         /// otherwise returns false;
         /// </summary>
         /// <returns></returns>
@@ -512,9 +518,7 @@ namespace BoSSS.Foundation {
 
         /// <summary>
         /// returns true, if this spatial differential operator contains any 
-        /// nonlinear component (i.e. an object that implements
-        /// <see cref="INonlinearFlux"/> or <see cref="INonlinearFluxEx"/> or <see cref="INonlinearSource"/>
-        /// or <see cref="IDualValueFlux"/>),
+        /// nonlinear component,
         /// otherwise returns false;
         /// </summary>
         public bool ContainsNonlinear {
@@ -561,8 +565,6 @@ namespace BoSSS.Foundation {
         /// <summary>
         /// returns true, if any of the equation components associated with 
         /// variable <paramref name="CodomVar"/> is linear
-        /// (i.e. an object that implements
-        /// <see cref="ILinear2ndDerivativeFlux"/> or <see cref="ILinearSource"/> or <see cref="ILinearFlux"/>);
         /// These components are <see cref="EquationComponents"/>[<paramref name="CodomVar"/>];
         /// </summary>
         /// <param name="CodomVar">
@@ -577,29 +579,33 @@ namespace BoSSS.Foundation {
             foreach(object o in EquationComponents[CodomVar]) {
                 Type[] interfaces = o.GetType().GetInterfaces();
 
-                //if (Array.IndexOf<Type>(interfaces, typeof(ILinear2ndDerivativeFlux)) >= 0)
-                //    return true;
-                //if (Array.IndexOf<Type>(interfaces, typeof(ILinearDualValueFlux)) >= 0)
-                //    return true;
-                //if (Array.IndexOf<Type>(interfaces, typeof(ILinearSource)) >= 0)
-                //    return true;
-                //if (Array.IndexOf<Type>(interfaces, typeof(ILinearDerivativeSource)) >= 0)
-                //    return true;
-                //if (Array.IndexOf<Type>(interfaces, typeof(ILinearFlux)) >= 0)
-                //    return true;
                 if(Array.IndexOf<Type>(interfaces, typeof(IVolumeForm_GradUxGradV)) >= 0)
                     return true;
-                if(Array.IndexOf<Type>(interfaces, typeof(IEdgeform_GradUxV)) >= 0)
+                if(Array.IndexOf<Type>(interfaces, typeof(IVolumeForm_GradUxV)) >= 0)
                     return true;
-                if(Array.IndexOf<Type>(interfaces, typeof(IVolumeForm_GradUxGradV)) >= 0)
+                if(Array.IndexOf<Type>(interfaces, typeof(IVolumeForm_UxGradV)) >= 0)
+                    return true;
+                if(Array.IndexOf<Type>(interfaces, typeof(IVolumeForm_UxV)) >= 0)
+                    return true;
+
+                if (Array.IndexOf<Type>(interfaces, typeof(IVolumeSource_GradV)) >= 0)
+                    return true;
+                if (Array.IndexOf<Type>(interfaces, typeof(IVolumeSource_V)) >= 0)
+                    return true;
+
+
+                if (Array.IndexOf<Type>(interfaces, typeof(IEdgeform_GradUxGradV)) >= 0)
+                    return true;
+                if (Array.IndexOf<Type>(interfaces, typeof(IEdgeform_GradUxV)) >= 0)
                     return true;
                 if(Array.IndexOf<Type>(interfaces, typeof(IEdgeform_UxGradV)) >= 0)
                     return true;
-                if(Array.IndexOf<Type>(interfaces, typeof(IEdgeSource_V)) >= 0)
+                if(Array.IndexOf<Type>(interfaces, typeof(IEdgeform_UxV)) >= 0)
                     return true;
+
                 if(Array.IndexOf<Type>(interfaces, typeof(IEdgeSource_GradV)) >= 0)
                     return true;
-                if(Array.IndexOf<Type>(interfaces, typeof(IEdgeform_UxV)) >= 0)
+                if(Array.IndexOf<Type>(interfaces, typeof(IEdgeSource_V)) >= 0)
                     return true;
             }
 
@@ -782,9 +788,6 @@ namespace BoSSS.Foundation {
             }
         }
 
-
-
-
         /// <summary>
         /// Container for the evaluation of nonlinear fluxes/sources
         /// </summary>
@@ -924,9 +927,7 @@ namespace BoSSS.Foundation {
                 get;
                 private set;
             }
-
-
-
+                       
             SubGridBoundaryModes m_SubGridBoundaryTreatment = SubGridBoundaryModes.BoundaryEdge;
 
             /// <summary>
@@ -935,23 +936,33 @@ namespace BoSSS.Foundation {
             protected CellMask m_SubGrid_InCells;
 
 
+            /// <summary>
+            /// State set by <see cref="ActivateSubgridBoundary"/>
+            /// </summary>
             public SubGridBoundaryModes SubGridBoundaryTreatment {
                 get {
                     return m_SubGridBoundaryTreatment;
                 }
             }
 
-
-            public void ActivateSubgridBoundary(CellMask sgrd, SubGridBoundaryModes subGridBoundaryTreatment = SubGridBoundaryModes.BoundaryEdge) {
-                if (!object.ReferenceEquals(sgrd.GridData, this.GridData))
+            /// <summary>
+            /// Restricts the evaluation of the operator to a specific cell mask.
+            /// </summary>
+            /// <param name="Mask">
+            /// cell mask where the operator should be evaluated
+            /// </param>
+            /// <param name="subGridBoundaryTreatment">
+            /// defines what is to be done at edges where one neighboring cell is part of the cell mask <paramref name="Mask"/>, 
+            /// but the other neighboring cell is *not* part of the cell mask <paramref name="Mask"/>.
+            /// </param>
+            public void ActivateSubgridBoundary(CellMask Mask, SubGridBoundaryModes subGridBoundaryTreatment = SubGridBoundaryModes.BoundaryEdge) {
+                if (!object.ReferenceEquals(Mask.GridData, this.GridData))
                     throw new ArgumentException("grid mismatch");
-                if (sgrd != null && sgrd.MaskType != MaskType.Logical)
+                if (Mask != null && Mask.MaskType != MaskType.Logical)
                     throw new ArgumentException("expecting logical mask");
-                m_SubGrid_InCells = sgrd;
+                m_SubGrid_InCells = Mask;
                 m_SubGridBoundaryTreatment = subGridBoundaryTreatment;
             }
-
-
 
             /// <summary>
             /// <see cref="CodomainMapping"/>
@@ -1008,7 +1019,7 @@ namespace BoSSS.Foundation {
 
 
 
-            public double m_time = 0.0;
+            double m_time = 0.0;
 
             /// <summary>
             /// Time passed e.g. to <see cref="CommonParams.time"/>, <see cref="CommonParamsBnd.time"/> and <see cref="CommonParamsVol.time"/>.

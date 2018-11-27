@@ -52,11 +52,15 @@ namespace ilPSP {
         /// must contain the 'x86' and the 'amd64' sub-directories, which
         /// themselves contain the native libs (e.g. HYPRE.dll, ...).
         /// </param>
-        public static void Bootstrap(string[] CommandLineArgs, string ilPSP_Directory, out bool mpiInitialized) {
+        /// <returns>
+        /// File directory for native files.
+        /// </returns>
+        public static string Bootstrap(string[] CommandLineArgs, string ilPSP_Directory, out bool mpiInitialized) {
             //be forgiving on multiple calls
             mpiInitialized = false;
+            string ret = "";
             if (m_BootStrapDone == true) {
-                return;
+                return ret;
             }
 
             StdOut = new DuplicatingTextWriter(new StreamWriter(Console.OpenStandardOutput()), 25, false);
@@ -143,6 +147,7 @@ namespace ilPSP {
                 
                 // search for the right Dll's (either 64 or 32 Bit)
                 SetDllDirectory(nativeDir.FullName);
+                ret = nativeDir.FullName;
 
                 // MPI init
                 // ========
@@ -167,6 +172,7 @@ namespace ilPSP {
             // ===================
             m_MpiEnv = new MPIEnviroment();
             StdoutOnlyOnRank0 = true;
+            return ret;
         }
 
         /// <summary>

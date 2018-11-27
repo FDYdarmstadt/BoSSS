@@ -19,6 +19,8 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using BoSSS.Platform.LinAlg;
+using BoSSS.Solution.CompressibleFlowCommon;
+using BoSSS.Solution.CompressibleFlowCommon.Convection;
 
 namespace CNS.Convection {
 
@@ -30,8 +32,8 @@ namespace CNS.Convection {
             return 0.0;
         }
 
-        public Vector3D Flux(StateVector state) {
-            return new Vector3D();
+        public Vector Flux(StateVector state) {
+            return new Vector();
         }
 
         #endregion

@@ -16,6 +16,7 @@ limitations under the License.
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using BoSSS.Foundation;
@@ -68,10 +69,15 @@ namespace BoSSS.Solution.NSECommon {
             get { return m_ParameterOrdering; }
         }
 
-        
+        /// <summary>
+        /// 
+        /// </summary>
         protected override double Source(double[] x, double[] parameters, double[] U) {
             rho = EoS.GetDensity(parameters);
+            Debug.Assert(!double.IsNaN(rho));
+            Debug.Assert(!double.IsInfinity(rho));
             ReactionRate = ReactionRateConstants[0] * Math.Exp(-ReactionRateConstants[1] / parameters[0]) * OneOverMolarMass0MolarMass1 * Math.Pow(rho * parameters[1], ReactionRateConstants[2]) * Math.Pow(rho * parameters[2], ReactionRateConstants[3]);
+            Debug.Assert(ReactionRate == 0);
             return HeatReleaseFactor * U[0] * ReactionRate;
         }
     }

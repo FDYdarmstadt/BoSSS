@@ -36,7 +36,7 @@ namespace BoSSS.Solution.LevelSetTools.EllipticReInit {
     /// \f$ \operatorname{div}(\operatorname{grad} \varphi) \f$
     /// No Boundary Conditions are set -> Boundary Conditions are determined by Interface only
     /// </summary>
-    class EllipticReInitUpwindForm_Laplace : ipLaplace, IObserver<LevelSetTracker.LevelSetRegions> {
+    class EllipticReInitUpwindForm_Laplace : SIPLaplace, IObserver<LevelSetTracker.LevelSetRegions> {
         public EllipticReInitUpwindForm_Laplace(double PenaltyBase, LevelSetTracker LSTrck) : base(PenaltyBase, LSTrck.GridDat.Cells.PenaltyLengthScales, VariableNames.LevelSet) {
             this.D = LSTrck.GridDat.SpatialDimension;
             this.m_CutCells = LSTrck.Regions.GetCutCellMask().GetBitMask();

@@ -35,7 +35,8 @@ namespace BoSSS.Foundation.Grid.Classic {
         /// constructs an empty 1D grid.
         /// </summary>
         public Grid1D()
-            : base(new RefElement[] { Line.Instance }, new RefElement[] { Point.Instance }) {
+            : base(new RefElement[] { Line.Instance }, new RefElement[] { Point.Instance }) //
+        {
         }
         
 
