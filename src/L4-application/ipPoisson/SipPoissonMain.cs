@@ -83,6 +83,7 @@ namespace BoSSS.Application.SipPoisson {
             base.IOFields.Add(ResiualKP1);
         }
 
+        /*
         unsafe static void my_dgemm(int TRANSA, int TRANSB,
                                         int M, int N, int K,
                                         double ALPHA,
@@ -101,7 +102,7 @@ namespace BoSSS.Application.SipPoisson {
             }
 
         }
-
+        */
 
 
 
