@@ -14,7 +14,8 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-using CNS.Boundary;
+using BoSSS.Solution.CompressibleFlowCommon;
+using BoSSS.Solution.CompressibleFlowCommon.Boundary;
 using CNS.EquationSystem;
 
 namespace CNS.Source {
@@ -32,7 +33,7 @@ namespace CNS.Source {
         /// </param>
         /// <param name="boundaryMap"></param>
         /// <param name="speciesMap"></param>
-        public CustomSourceBuilder(CNSControl control, IBoundaryConditionMap boundaryMap, ISpeciesMap speciesMap)
+        public CustomSourceBuilder(CNSControl control, BoundaryConditionMap boundaryMap, ISpeciesMap speciesMap)
             : base(control, boundaryMap, speciesMap) {
         }
 

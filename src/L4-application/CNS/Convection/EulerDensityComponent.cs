@@ -15,6 +15,8 @@ limitations under the License.
 */
 
 using BoSSS.Platform.LinAlg;
+using BoSSS.Solution.CompressibleFlowCommon;
+using BoSSS.Solution.CompressibleFlowCommon.Convection;
 
 namespace CNS.Convection {
 
@@ -29,7 +31,7 @@ namespace CNS.Convection {
         /// </summary>
         /// <param name="state">The flow state inside a cell</param>
         /// <returns>\f$ \rho \vec{u}\f$ </returns>
-        public Vector3D Flux(StateVector state) {
+        public Vector Flux(StateVector state) {
             return state.Momentum;
         }
 

@@ -165,8 +165,8 @@ class ScalarTransportFlux : NonlinearFlux \{  \newline
     /// where the normal vector \code{normal} points from \emph{in} to \emph{out}
 \btab protected override double InnerEdgeFlux(double time, double[] x, double[] normal, \newline 
 \btab double[] Uin, double[] Uout, int jEdge) \{  \newline 
-\btab \btab Vector2D n = new Vector2D(normal);  \newline 
-\btab \btab Vector2D velocityVector = new Vector2D(u(x), v(x));  \newline 
+\btab \btab Vector n              = new Vector(normal);  \newline 
+\btab \btab Vector velocityVector = new Vector(u(x), v(x));  \newline 
  \newline 
 \btab \btab if (velocityVector * n > 0) \{  \newline 
 \btab \btab \btab return (velocityVector * Uin[0]) * n;  \newline 
