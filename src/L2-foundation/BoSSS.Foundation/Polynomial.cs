@@ -63,6 +63,8 @@ namespace BoSSS.Foundation.Grid {
                 Coeff = new double[1];
                 Exponents = new int[1, _Exponents.Length];
             } else {
+
+
                 Array.Resize<double>(ref Coeff, Coeff.Length + 1);
                 int[,] exp_new = new int[Exponents.GetLength(0) + 1, Exponents.GetLength(1)];
                 Array.Copy(Exponents, exp_new, Exponents.Length);
@@ -171,6 +173,46 @@ namespace BoSSS.Foundation.Grid {
         public static Polynomial operator *(Polynomial p, double scale) {
             return scale * p;
         }
+
+        /// <summary>
+        /// Symbolic multiplication of two polynomials
+        /// </summary>
+        public static Polynomial operator *(Polynomial p, Polynomial q) {
+            if (p.SpatialDimension != q.SpatialDimension)
+                throw new ArgumentException("Spatial dimension mismatch.");
+            Polynomial R = new Polynomial();
+            if(p.Coeff.Length > 0 && q.Coeff.Length > 0) {
+                for( int i = 0; i < q.Coeff.Length; i++) {
+                    Polynomial Ri = p.MultiplyByMonomial(q.Exponents.GetRow(i), q.Coeff[i]);
+                    if (i == 0)
+                        R = Ri;
+                    else
+                        R = R + Ri;
+                }
+            }
+            return R;
+        }
+
+        /// <summary>
+        /// multiplies this polynomial with a monomial expression
+        /// </summary>
+        public Polynomial MultiplyByMonomial(int[] _Exponents, double alpha) {
+            if (_Exponents.Length != this.SpatialDimension)
+                throw new ArgumentException("Spatial dimension mismatch.");
+            var R = this.CloneAs();
+            int D = this.SpatialDimension;
+
+            for( int i = 0; i < R.Coeff.Length; i++) {
+                R.Coeff[i] *= alpha;
+
+                for (int d = 0; d < D; d++) {
+                    R.Exponents[i, d] += _Exponents[d];
+                }
+            }
+            
+            return R;
+        }
+
 
 
         /// <summary>

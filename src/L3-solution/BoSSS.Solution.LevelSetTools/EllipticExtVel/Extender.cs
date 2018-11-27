@@ -272,7 +272,6 @@ namespace BoSSS.Solution.LevelSetTools.EllipticExtension {
 #endif
 
             //Only for Debugging purposes
-            //OpMatrix.SaveToTextFileSparse("C:\\tmp\\EllipticReInit.txt");
 
             Debug.Assert(OpMatrix_interface.GetDiagVector().L2Norm() > 0, "L2-Norm of Diagonal of InterfaceOperator is 0");
             Debug.Assert(OpMatrix_bulk.GetDiagVector().L2Norm() > 0, "L2-Norm of Diagonal of BulkOperator is 0");
