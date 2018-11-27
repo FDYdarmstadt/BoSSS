@@ -8,7 +8,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace BoSSS.Application.SipPoisson {
+namespace BoSSS.Application.SipPoisson.Voronoi {
 
     /// <summary>
     /// polygon clipping algorithms (geometrical intersection of two polygons),

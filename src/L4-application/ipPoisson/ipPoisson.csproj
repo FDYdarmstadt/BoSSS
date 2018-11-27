@@ -73,6 +73,7 @@
     <Compile Include="Tests\TestProgram.cs" />
     <Compile Include="SipPoissonMain.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="VoronoiMeshGen.cs" />
   </ItemGroup>
   <ItemGroup>
     <BootstrapperPackage Include="Microsoft.Net.Client.3.5">

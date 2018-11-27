@@ -211,6 +211,17 @@ namespace BoSSS.Platform.LinAlg {
             return R;
         }
 
+        /// <summary>
+        /// z-component of the cross product between 2D-vectors with zero z-component.
+        /// </summary>
+        public double CrossProduct2D(Vector b) {
+            if (this.Dim != 2)
+                throw new NotSupportedException("Only supported for 2D vectors.");
+            if (b.Dim != 2)
+                throw new ArgumentException("Only supported for 2D vectors.");
+            return this[0] * b[1] - this[1] * b[0];
+        }
+
 
         /// <summary>
         /// the absolute value (length) of this vector 
