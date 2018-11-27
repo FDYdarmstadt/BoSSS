@@ -28,7 +28,7 @@ using ilPSP.Utils;
 using BoSSS.Platform.LinAlg;
 using System.Diagnostics;
 using BoSSS.Solution.NSECommon;
-using BoSSS.Solution.Utils.Formula;
+//using BoSSS.Solution.Utils.Formula;
 using BoSSS.Foundation.Grid.Classic;
 
 namespace BoSSS.Application.XNSE_Solver.Tests {

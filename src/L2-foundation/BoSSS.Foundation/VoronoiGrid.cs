@@ -388,9 +388,9 @@ namespace BoSSS.Foundation.Grid.Voronoi {
 
                                     Debug.Assert(EdgeVtx.Count >= 3);
                                     var FacePlane = AffineManifold.FromPoints(
-                                        m_VertexData.Coordinates.GetRow(EdgeVtx[0]),
-                                        m_VertexData.Coordinates.GetRow(EdgeVtx[1]),
-                                        m_VertexData.Coordinates.GetRow(EdgeVtx[2])
+                                        m_VertexData.Coordinates.GetRowPt(EdgeVtx[0]),
+                                        m_VertexData.Coordinates.GetRowPt(EdgeVtx[1]),
+                                        m_VertexData.Coordinates.GetRowPt(EdgeVtx[2])
                                         );
 
                                     BoundingBox BB = new BoundingBox(D);

@@ -178,6 +178,14 @@
       <Project>{0d8f577e-316d-4362-816b-9f610c5eb4a5}</Project>
       <Name>BoSSS.Solution.XNSECommon</Name>
     </ProjectReference>
+    <ProjectReference Include="..\FSI_Solver\FSI_Solver.csproj">
+      <Project>{5c52e2f7-a6dd-4e3e-a31e-1b0ff34c0cc2}</Project>
+      <Name>FSI_Solver</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\RheologySolver2\Rheology2.csproj">
+      <Project>{985a90c0-4e63-4b8d-bc9b-946af1ad3132}</Project>
+      <Name>Rheology2</Name>
+    </ProjectReference>
     <ProjectReference Include="..\XNSE_Solver\XNSE_Solver.csproj">
       <Project>{3d867374-bf9a-475e-8f5c-e1c067605b9c}</Project>
       <Name>XNSE_Solver</Name>
