@@ -919,8 +919,8 @@ namespace BoSSS.Solution.NSECommon {
 
             }
 
-            //for (int i = 0; i < D; i++)
-            //    forces[i] = MPI.Wrappers.MPIExtensions.MPISum(forces[i]);
+            for (int i = 0; i < D; i++)
+                forces[i] = MPI.Wrappers.MPIExtensions.MPISum(forces[i]);
 
             return forces;
         }
