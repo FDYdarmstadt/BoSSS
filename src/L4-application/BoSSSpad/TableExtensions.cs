@@ -36,7 +36,7 @@ namespace BoSSS.Application.BoSSSpad {
         /// The keys and queries (see <see cref="ISessionInfo.KeysAndQueries"/>) of all sessions in an enumeration
         /// <paramref name="sessions"/> in one table.
         /// </summary>
-        public static DataTable GetSessionTable(this IEnumerable<ISessionInfo> sessions, Tuple<string, Func<ISessionInfo, object>>[] AdditionalColums) {
+        public static DataTable GetSessionTable(this IEnumerable<ISessionInfo> sessions, Tuple<string, Func<ISessionInfo, object>>[] AdditionalColums = null) {
 
             Dictionary<string, object[]> Ret = new Dictionary<string, object[]>();
 
