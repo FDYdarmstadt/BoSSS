@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<VisualState xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema" ShowCheckBoxes="true">
+  <TopNode>[0-1002]BoSSS.Application.Rheology.RheologyTestProgram.ChannelTestComputeRes</TopNode>
+  <SelectedNode>[0-1039]C:\BoSSS-code\internal\src\experimental\L4-application\RheologySolver2\Tests\..\bin\Release\RheologySolver.exe</SelectedNode>
+  <ExcludeCategories>false</ExcludeCategories>
+  <Nodes>
+    <Node UniqueName="[0-1000]C:\BoSSS-code\internal\src\experimental\L4-application\RheologySolver2\Tests\RheologyTest.nunit" Expanded="true" />
+    <Node UniqueName="[0-1018]C:\BoSSS-code\internal\src\experimental\L4-application\RheologySolver2\Tests\..\bin\Debug\RheologySolver.exe" Expanded="true" />
+    <Node UniqueName="[0-1019]BoSSS" Expanded="true" />
+    <Node UniqueName="[0-1020]BoSSS.Application" Expanded="true" />
+    <Node UniqueName="[0-1021]BoSSS.Application.Rheology" Expanded="true" />
+    <Node UniqueName="[0-1001]BoSSS.Application.Rheology.RheologyTestProgram" Expanded="true" />
+    <Node UniqueName="[0-1002]BoSSS.Application.Rheology.RheologyTestProgram.ChannelTestComputeRes" Expanded="true" />
+    <Node UniqueName="[0-1005]BoSSS.Application.Rheology.RheologyTestProgram.ChannelTestStokes" Expanded="true" />
+    <Node UniqueName="[0-1012]BoSSS.Application.Rheology.RheologyTestProgram.ManufacturedSolutionTestComputeRes" Expanded="true" />
+    <Node UniqueName="[0-1015]BoSSS.Application.Rheology.RheologyTestProgram.ManufacturedSolutionTestStokes" Expanded="true" />
+    <Node UniqueName="[0-1039]C:\BoSSS-code\internal\src\experimental\L4-application\RheologySolver2\Tests\..\bin\Release\RheologySolver.exe" Expanded="true" />
+    <Node UniqueName="[0-1040]BoSSS" Expanded="true" />
+    <Node UniqueName="[0-1041]BoSSS.Application" Expanded="true" />
+    <Node UniqueName="[0-1042]BoSSS.Application.Rheology" Expanded="true" />
+    <Node UniqueName="[0-1022]BoSSS.Application.Rheology.RheologyTestProgram" Expanded="true" />
+    <Node UniqueName="[0-1023]BoSSS.Application.Rheology.RheologyTestProgram.ChannelTestComputeRes" Expanded="true" />
+    <Node UniqueName="[0-1026]BoSSS.Application.Rheology.RheologyTestProgram.ChannelTestStokes" Expanded="true" />
+    <Node UniqueName="[0-1033]BoSSS.Application.Rheology.RheologyTestProgram.ManufacturedSolutionTestComputeRes" Expanded="true" />
+    <Node UniqueName="[0-1035]BoSSS.Application.Rheology.RheologyTestProgram.ManufacturedSolutionTestComputeRes(3,2,1.0d)" Checked="true" />
+    <Node UniqueName="[0-1036]BoSSS.Application.Rheology.RheologyTestProgram.ManufacturedSolutionTestStokes" Expanded="true" />
+  </Nodes>
+</VisualState>

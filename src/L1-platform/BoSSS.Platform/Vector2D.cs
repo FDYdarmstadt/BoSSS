@@ -18,6 +18,8 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 using System.Runtime.InteropServices;
+using System.Diagnostics;
+using ilPSP.Utils;
 
 namespace BoSSS.Platform.LinAlg {
 
@@ -38,6 +40,17 @@ namespace BoSSS.Platform.LinAlg {
             y = 0;
             z = 0;
             Dim = D;
+            Dummy_256bitAlign = 0;
+        }
+
+        /// <summary>
+        /// initializes a 1D vector.
+        /// </summary>
+        public Vector(double __x) {
+            x = __x;
+            Dim = 1;
+            y = 0;
+            z = 0;
             Dummy_256bitAlign = 0;
         }
 
@@ -72,7 +85,6 @@ namespace BoSSS.Platform.LinAlg {
                 throw new ArgumentException();
             }
 
-
             this.Dim = X.Length;
             x = X[0];
             if(this.Dim > 1)
@@ -86,7 +98,6 @@ namespace BoSSS.Platform.LinAlg {
                 z = 0;
 
             Dummy_256bitAlign = 0;
-
         }
 
         /// <summary>
@@ -121,6 +132,9 @@ namespace BoSSS.Platform.LinAlg {
         /// <returns></returns>
         public double this[int i] {
             set {
+                if(i < 0 || i >= this.Dim)
+                    throw new IndexOutOfRangeException("vector component out of range.");
+
                 if (i == 0)
                     x = value;
                 else if (i == 1 && Dim > 1)
@@ -131,7 +145,10 @@ namespace BoSSS.Platform.LinAlg {
                     throw new IndexOutOfRangeException("vector component index must be either 0 or 1.");
             }
             get {
-                if(i == 0)
+                if (i < 0 || i >= this.Dim)
+                    throw new IndexOutOfRangeException("vector component out of range.");
+
+                if (i == 0)
                     return x;
                 else if(i == 1 && Dim > 1)
                     return y;
@@ -139,6 +156,7 @@ namespace BoSSS.Platform.LinAlg {
                     return z;
                 else
                     throw new IndexOutOfRangeException("vector component index must be either 0 or 1.");
+
             }
         }
 
@@ -184,11 +202,13 @@ namespace BoSSS.Platform.LinAlg {
             if(v.Dim != this.Dim)
                 throw new ArgumentException("Dimension mismatch");
 
-            return new Vector() {
-                x = this.y * v.z - this.z * v.y,
-                y = this.z * v.x - this.x * v.z,
-                z = this.x * v.y - this.y * v.x
-            };
+            var R = new Vector(
+                __x: this.y * v.z - this.z * v.y,
+                __y: this.z * v.x - this.x * v.z,
+                __z: this.x * v.y - this.y * v.x
+            );
+            Debug.Assert(R.Dim == 3);
+            return R;
         }
 
 
@@ -199,8 +219,15 @@ namespace BoSSS.Platform.LinAlg {
         public double Abs() {
             return Math.Sqrt(x * x + y * y + z * z);
         }
-
-
+        
+        /// <summary>
+        /// the absolute value (length) of this vector 
+        /// </summary>
+        /// <returns></returns>
+        public double L2Norm() {
+            return Math.Sqrt(x * x + y * y + z * z);
+        }
+        
         /// <summary>
         /// the absolute value (length) of this vector to the power of two
         /// </summary>
@@ -224,6 +251,8 @@ namespace BoSSS.Platform.LinAlg {
         /// <param name="r">Distance to origin.</param>
         /// <param name="phi">angle to the positive x-Axis, counted counterclockwise</param>
         public void FromPolar(double r, double phi) {
+            if(this.Dim < 2)
+                throw new NotSupportedException();
             this.x = Math.Cos(phi) * r;
             this.y = Math.Sin(phi) * r;
         }
@@ -282,7 +311,7 @@ namespace BoSSS.Platform.LinAlg {
         /// <param name="y"></param>
         /// <param name="z"></param>
         public void Set(double x, double y, double z) {
-            if(this.Dim != 2)
+            if(this.Dim != 3)
                 throw new NotSupportedException("spatial dimension mismatch");
             this.x = x;
             this.y = y;
@@ -453,10 +482,6 @@ namespace BoSSS.Platform.LinAlg {
             distPow2 += d * d;
             return Math.Sqrt(distPow2);
         }
-
-        
-        
-
  
         /// <summary>
         /// Copies the components 0 to <paramref name="length"/> - 1 of this
@@ -502,8 +527,39 @@ namespace BoSSS.Platform.LinAlg {
                 destination[i + destinationIndex] = this[i];
             }
         }
-
     }
 
-    
+    /// <summary>
+    /// Extension methods for <see cref="Vector"/>
+    /// </summary>
+    public static class VectorExtensions {
+
+        /// <summary>
+        /// extracts the <paramref name="RowNo"/>-th row from
+        /// <paramref name="inp"/>.
+        /// </summary>
+        /// <param name="inp">
+        /// input matrix
+        /// </param>
+        /// <param name="RowNo">
+        /// row which should be extracted
+        /// </param>
+        /// <returns>
+        /// an array with length equal to 2nd length of <paramref name="inp"/>, containing the
+        /// <paramref name="RowNo"/>-th row of <paramref name="inp"/>
+        /// </returns>
+        public static Vector GetRowPt(this IMatrix inp, int RowNo) {
+            switch(inp.NoOfCols) {
+                case 1:
+                return new Vector(inp[RowNo, 0]);
+                case 2:
+                return new Vector(inp[RowNo, 0], inp[RowNo, 1]);
+                case 3:
+                return new Vector(inp[RowNo, 0], inp[RowNo, 1], inp[RowNo, 2]);
+                default:
+                throw new ArgumentException();
+            }
+        }
+    }
+
 }

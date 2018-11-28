@@ -223,7 +223,7 @@ namespace CNS {
                         double rho = densityFunction(X);
                         double p = pressureFunction(X);
 
-                        Vector u = new Vector();
+                        Vector u = new Vector(numberOfDimensions);
                         for (int d = 0; d < numberOfDimensions; d++) {
                             u[d] = velocityFunctions[d](X);
                         }

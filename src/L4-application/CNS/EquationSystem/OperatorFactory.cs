@@ -18,7 +18,7 @@ using BoSSS.Foundation;
 using BoSSS.Foundation.Grid;
 using BoSSS.Foundation.Grid.Classic;
 using BoSSS.Solution.CompressibleFlowCommon;
-using CNS.Boundary;
+using BoSSS.Solution.CompressibleFlowCommon.Boundary;
 using CNS.Convection;
 using CNS.Diffusion;
 using CNS.IBM;
@@ -95,7 +95,7 @@ namespace CNS.EquationSystem {
             IGridData gridData,
             CNSFieldSet workingSet,
             ISpeciesMap speciesMap,
-            IBoundaryConditionMap boundaryMap) {
+            BoundaryConditionMap boundaryMap) {
 
             bool hasConvection = control.ActiveOperators.HasFlag(Operators.Convection);
             bool hasDiffusion = control.ActiveOperators.HasFlag(Operators.Diffusion);

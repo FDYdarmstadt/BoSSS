@@ -58,9 +58,9 @@ namespace ilPSP.Utils {
         /// ctor
         /// </summary>
         public LAPACK() :
-            base(new string[] { "libacml_dll.dll", "libacml.so", "liblapack.so", "libopenblas.so" },
+            base(new string[] { "BLAS_LAPACK.dll", "libacml.so", "liblapack.so", "libopenblas.so" },
                  new string[4][][],
-                 new GetNameMangling[] { DynLibLoader.CAPITAL_LETTERS, DynLibLoader.SmallLetters_TrailingUnderscore, DynLibLoader.SmallLetters_TrailingUnderscore, DynLibLoader.SmallLetters_TrailingUnderscore },
+                 new GetNameMangling[] { DynLibLoader.SmallLetters_TrailingUnderscore, DynLibLoader.SmallLetters_TrailingUnderscore, DynLibLoader.SmallLetters_TrailingUnderscore, DynLibLoader.SmallLetters_TrailingUnderscore },
                  Helper(),
                  new int[] { -1, -1, -1, -1 }) {
         }
