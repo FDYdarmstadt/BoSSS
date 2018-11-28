@@ -16,7 +16,7 @@ limitations under the License.
 
 using System;
 using BoSSS.Foundation.Grid;
-using CNS.Boundary;
+using BoSSS.Solution.CompressibleFlowCommon.Boundary;
 using ilPSP;
 using BoSSS.Foundation.Grid.Classic;
 using BoSSS.Solution.CompressibleFlowCommon;
@@ -43,7 +43,7 @@ namespace CNS.Diffusion {
         /// <param name="gridData"><see cref="SIPGFlux.gridData"/></param>
         /// <param name="component"><see cref="SIPGFlux.Component"/></param>
         /// <param name="cellMetricFunc"><see cref="SIPGFlux"/></param>
-        public SIPGMomentumFlux(CNSControl config, IBoundaryConditionMap boundaryMap, ISpeciesMap speciesMap, IGridData gridData, int component, Func<MultidimensionalArray> cellMetricFunc)
+        public SIPGMomentumFlux(CNSControl config, BoundaryConditionMap boundaryMap, ISpeciesMap speciesMap, IGridData gridData, int component, Func<MultidimensionalArray> cellMetricFunc)
             : base(config, boundaryMap, speciesMap, gridData, cellMetricFunc) {
             if (component < 1 || component > CNSEnvironment.NumberOfDimensions) {
                 throw new ArgumentOutOfRangeException("component");

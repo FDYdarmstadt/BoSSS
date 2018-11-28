@@ -185,7 +185,7 @@ namespace CNS.IBM {
                         energy.Evaluate(chunk.i0, chunk.Len, nodes, rhoE);
 
                         double[] X = new double[CNSEnvironment.NumberOfDimensions];
-                        Vector mVec = new Vector();
+                        Vector mVec = new Vector(CNSEnvironment.NumberOfDimensions);
                         for (int i = 0; i < chunk.Len; i++) {
                             for (int j = 0; j < rule.NoOfNodes; j++) {
                                 for (int d = 0; d < CNSEnvironment.NumberOfDimensions; d++) {

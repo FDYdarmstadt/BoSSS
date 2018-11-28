@@ -166,10 +166,6 @@
     <None Include="app.config" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\..\..\..\internal\src\private-gutz\L4-application\FuelCell\FuelCell.csproj">
-      <Project>{59bc9ff6-7558-48a7-b1bc-1b8fdc68c401}</Project>
-      <Name>FuelCell</Name>
-    </ProjectReference>
     <ProjectReference Include="..\..\L3-solution\BoSSS.Solution.LevelSetTools\BoSSS.Solution.LevelSetTools.csproj">
       <Project>{9ee2fcad-e8a4-4f14-b932-d1a4904d715d}</Project>
       <Name>BoSSS.Solution.LevelSetTools</Name>
@@ -177,6 +173,14 @@
     <ProjectReference Include="..\..\L3-solution\BoSSS.Solution.XNSECommon\BoSSS.Solution.XNSECommon.csproj">
       <Project>{0d8f577e-316d-4362-816b-9f610c5eb4a5}</Project>
       <Name>BoSSS.Solution.XNSECommon</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\FSI_Solver\FSI_Solver.csproj">
+      <Project>{5c52e2f7-a6dd-4e3e-a31e-1b0ff34c0cc2}</Project>
+      <Name>FSI_Solver</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\RheologySolver2\Rheology2.csproj">
+      <Project>{985a90c0-4e63-4b8d-bc9b-946af1ad3132}</Project>
+      <Name>Rheology2</Name>
     </ProjectReference>
     <ProjectReference Include="..\XNSE_Solver\XNSE_Solver.csproj">
       <Project>{3d867374-bf9a-475e-8f5c-e1c067605b9c}</Project>

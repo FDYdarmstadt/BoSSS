@@ -15,7 +15,7 @@ limitations under the License.
 */
 
 using BoSSS.Solution.CompressibleFlowCommon;
-using CNS.Boundary;
+using BoSSS.Solution.CompressibleFlowCommon.Boundary;
 using CNS.EquationSystem;
 using CNS.IBM;
 using System;
@@ -85,7 +85,7 @@ namespace CNS.Convection {
         /// An instance of a flux builder that builds fluxes
         /// corresponding to the given <paramref name="flux"/>.
         /// </returns>
-        public static FluxBuilder GetBuilder(this ConvectiveFluxTypes flux, CNSControl control, IBoundaryConditionMap boundaryMap, ISpeciesMap speciesMap) {
+        public static FluxBuilder GetBuilder(this ConvectiveFluxTypes flux, CNSControl control, BoundaryConditionMap boundaryMap, ISpeciesMap speciesMap) {
             switch (flux) {
                 case ConvectiveFluxTypes.Rusanov:
                     return new RusanovFluxBuilder(control, boundaryMap, speciesMap);

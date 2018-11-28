@@ -16,6 +16,7 @@ limitations under the License.
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using BoSSS.Foundation;
@@ -34,6 +35,7 @@ namespace BoSSS.Solution.NSECommon {
         double HeatReleaseFactor;
         double[] ReactionRateConstants;
         double OneOverMolarMass0MolarMass1;
+        bool m_speciesTransportOK;
         MaterialLaw EoS;
         double rho;
 
@@ -44,7 +46,7 @@ namespace BoSSS.Solution.NSECommon {
         /// <param name="ReactionRateConstants">0. PreExpFactor/Damköhler number, 1. ActivationTemperature, 2. MassFraction0Exponent, 3. MassFraction1Exponent</param>  
         /// <param name="OneOverMolarMass0MolarMass1"> 1/(M_infty^(a + b -1) * MolarMassFuel^a * MolarMassOxidizer^b). M_infty is the reference for the molar mass steming from non-dimensionalisation of the governing equations.</param>  
         /// <param name="EoS">MaterialLawCombustion</param>  
-        public ReactionHeatSourceLinearized(double HeatReleaseFactor, double[] ReactionRateConstants, double OneOverMolarMass0MolarMass1, MaterialLaw EoS) {
+        public ReactionHeatSourceLinearized(double HeatReleaseFactor, double[] ReactionRateConstants, double OneOverMolarMass0MolarMass1, MaterialLaw EoS, bool speciesTransportOK) {
             m_ArgumentOrdering = new string[] { VariableNames.Temperature };
             m_ParameterOrdering = new string[] { VariableNames.Temperature0, VariableNames.MassFraction0_0, VariableNames.MassFraction1_0, VariableNames.MassFraction2_0, VariableNames.MassFraction3_0 };
             this.HeatReleaseFactor = HeatReleaseFactor;
@@ -68,11 +70,23 @@ namespace BoSSS.Solution.NSECommon {
             get { return m_ParameterOrdering; }
         }
 
-        
+        /// <summary>
+        /// 
+        /// </summary>
         protected override double Source(double[] x, double[] parameters, double[] U) {
             rho = EoS.GetDensity(parameters);
-            ReactionRate = ReactionRateConstants[0] * Math.Exp(-ReactionRateConstants[1] / parameters[0]) * OneOverMolarMass0MolarMass1 * Math.Pow(rho * parameters[1], ReactionRateConstants[2]) * Math.Pow(rho * parameters[2], ReactionRateConstants[3]);
+            Debug.Assert(!double.IsNaN(rho));
+            Debug.Assert(!double.IsInfinity(rho));
+
+            if (m_speciesTransportOK) {              
+                ReactionRate = ReactionRateConstants[0] * Math.Exp(-ReactionRateConstants[1] / parameters[0]) * OneOverMolarMass0MolarMass1 * Math.Pow(rho * parameters[1], ReactionRateConstants[2]) * Math.Pow(rho * parameters[2], ReactionRateConstants[3]);
+            }
+            else {
+                ReactionRate = 0.0;
+            }
+
             return HeatReleaseFactor * U[0] * ReactionRate;
+            
         }
     }
 }
