@@ -17,9 +17,11 @@ limitations under the License.
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.Serialization;
 using System.Text;
 using System.Threading.Tasks;
-using System.Runtime.Serialization;
+
+
 
 namespace BoSSS.Application.FSI_Solver {
     [DataContract]
@@ -79,27 +81,30 @@ namespace BoSSS.Application.FSI_Solver {
             /// </summary>
             MovingMesh = 2
         }
-
+        [DataMember]
         public TimesteppingMode Timestepper_Mode = TimesteppingMode.Splitting;
         /*
         /// <summary>
         /// Function describing the boundary values at the level-set (VelocityX, VelocityY)
         /// </summary>
         public Func<double, double>[] BoundaryFunc;
+<<<<<<< HEAD:public/src/L4-application/FSI_Solver/FSI_Control.cs
         */
+=======
+
+>>>>>>> 15057d440a0a91354d4b17eb02ab1e9b6945fd82:internal/src/experimental/L4-application/FSI_Solver/FSI_Control.cs
         [DataMember]
         public List<Particle> Particles;
-
+       
         public enum CollisionModel {
-            RepulsiveForce_v1 = 0,
+            RepulsiveForce = 0,
 
             MomentumConservation = 1,
 
-            MomentumConservation_NoCollisionBool =2,
-
-            MomentumConservation_ModifiedCollisionBool =3
+            NoCollisionModel = 2
 
         }
+<<<<<<< HEAD:public/src/L4-application/FSI_Solver/FSI_Control.cs
 
         [DataMember]
         public CollisionModel collisionModel = CollisionModel.MomentumConservation;
@@ -108,8 +113,23 @@ namespace BoSSS.Application.FSI_Solver {
 
         //public double particleRho;
 
+=======
+        [DataMember]
+        public CollisionModel collisionModel = CollisionModel.MomentumConservation;
+
+>>>>>>> 15057d440a0a91354d4b17eb02ab1e9b6945fd82:internal/src/experimental/L4-application/FSI_Solver/FSI_Control.cs
         [DataMember]
         public bool pureDryCollisions = false;
+
+        /// <summary>
+        /// Adds particle to particle list
+        /// </summary>
+        /// <param name="D"></param>
+        /// <param name="HistoryLength"></param>
+        /// <param name="start"></param>
+        public void AddParticle(int D, int HistoryLength, double[] start) {
+            this.Particles.Add(new Particle(D, HistoryLength, start));
+        }
 
 
     }
