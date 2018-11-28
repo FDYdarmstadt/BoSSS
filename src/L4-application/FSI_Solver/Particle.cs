@@ -139,12 +139,13 @@ namespace BoSSS.Application.FSI_Solver {
         /// <summary>
         /// Level set function describing the particle
         /// </summary>
-        [DataMember]
+        //[DataMember]
         public Func<double[], double, double> phi_P;
 
         /// <summary>
         /// Mass of the current particle
         /// </summary>
+        [DataMember]
         public double mass_P {
             get {
                 double mass;
@@ -182,6 +183,7 @@ namespace BoSSS.Application.FSI_Solver {
         /// <summary>
         /// Mass of the current particle
         /// </summary>
+        [DataMember]
         public double area_P {
             get {
                 double area;
@@ -221,6 +223,7 @@ namespace BoSSS.Application.FSI_Solver {
         /// <summary>
         /// Moment of inertia of the current particle
         /// </summary>
+        [DataMember]
         public double MomentOfInertia_P {
             get {
                 double moment;
