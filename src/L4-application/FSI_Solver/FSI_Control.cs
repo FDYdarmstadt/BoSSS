@@ -88,11 +88,10 @@ namespace BoSSS.Application.FSI_Solver {
         /// Function describing the boundary values at the level-set (VelocityX, VelocityY)
         /// </summary>
         public Func<double, double>[] BoundaryFunc;
-<<<<<<< HEAD:public/src/L4-application/FSI_Solver/FSI_Control.cs
         */
-=======
 
->>>>>>> 15057d440a0a91354d4b17eb02ab1e9b6945fd82:internal/src/experimental/L4-application/FSI_Solver/FSI_Control.cs
+
+
         [DataMember]
         public List<Particle> Particles;
        
@@ -104,7 +103,6 @@ namespace BoSSS.Application.FSI_Solver {
             NoCollisionModel = 2
 
         }
-<<<<<<< HEAD:public/src/L4-application/FSI_Solver/FSI_Control.cs
 
         [DataMember]
         public CollisionModel collisionModel = CollisionModel.MomentumConservation;
@@ -113,11 +111,6 @@ namespace BoSSS.Application.FSI_Solver {
 
         //public double particleRho;
 
-=======
-        [DataMember]
-        public CollisionModel collisionModel = CollisionModel.MomentumConservation;
-
->>>>>>> 15057d440a0a91354d4b17eb02ab1e9b6945fd82:internal/src/experimental/L4-application/FSI_Solver/FSI_Control.cs
         [DataMember]
         public bool pureDryCollisions = false;
 
@@ -131,6 +124,10 @@ namespace BoSSS.Application.FSI_Solver {
             this.Particles.Add(new Particle(D, HistoryLength, start));
         }
 
+
+        public override Type GetSolverType() {
+            return typeof(FSI_SolverMain);
+        }
 
     }
 }
