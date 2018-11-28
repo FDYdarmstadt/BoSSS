@@ -291,7 +291,12 @@ export class InteractiveList{
         var box = this.boxes[i];
         if(box.BoxType  === RunBox ){
           myCommands.push(this.getSelectionValue(box));
-          myResults.push(box.boxContent.readoutLI.firstChild.innerHTML);
+          try{
+            myResults.push(box.boxContent.readoutLI.firstChild.innerHTML);
+          }catch(err){
+            console.log("Did not get result: " + err );
+            myResults.push("");
+          }
         }
       }
       return{
