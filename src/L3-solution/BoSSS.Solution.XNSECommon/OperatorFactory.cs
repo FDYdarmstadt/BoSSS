@@ -67,6 +67,8 @@ namespace BoSSS.Solution.XNSECommon {
 
         public bool movingmesh;
 
+        public bool evaporation;
+
         //XQuadFactoryHelper.MomentFittingVariants momentFittingVariant;
         int HMFDegree;
 
@@ -76,7 +78,8 @@ namespace BoSSS.Solution.XNSECommon {
             int _HMFdegree,
             int degU,
             IncompressibleMultiphaseBoundaryCondMap BcMap,
-            bool _movingmesh) {
+            bool _movingmesh, 
+            bool _evaporation) {
 
             // variable names
             // ==============
@@ -88,6 +91,7 @@ namespace BoSSS.Solution.XNSECommon {
             this.physParams = config.physParams.CloneAs();
             this.UseExtendedVelocity = config.UseXDG4Velocity;
             this.movingmesh = _movingmesh;
+            this.evaporation = _evaporation;
             // test input
             // ==========
             {
@@ -144,11 +148,13 @@ namespace BoSSS.Solution.XNSECommon {
 
             MatInt = config.physParams.Material;
 
-            double mEvap;
-            if(config.thermParams.hVap_A > 0) {
-                mEvap = -config.thermParams.rho_A * config.thermParams.prescribedVolumeFlux;
-            } else {
-                mEvap = config.thermParams.rho_B * config.thermParams.prescribedVolumeFlux;
+            double mEvap = 0.0;
+            if(this.evaporation) {
+                if(config.thermParams.hVap_A > 0) {
+                    mEvap = -config.thermParams.rho_A * config.thermParams.prescribedVolumeFlux;
+                } else {
+                    mEvap = config.thermParams.rho_B * config.thermParams.prescribedVolumeFlux;
+                }
             }
 
             //if (!MatInt)
@@ -181,6 +187,9 @@ namespace BoSSS.Solution.XNSECommon {
                         comps.Add(conv); // Bulk component
                         comps.Add(new Operator.Convection.ConvectionAtLevelSet_LLF(d, D, LsTrk, rhoA, rhoB, LFFA, LFFB, config.physParams.Material, BcMap, movingmesh));       // LevelSet component
 
+                        if(evaporation) {
+                            comps.Add(new Operator.Convection.GeneralizedConvectionAtLevelSet_DissipativePart(d, D, LsTrk, rhoA, rhoB, LFFA, LFFB, BcMap, mEvap));
+                        }
 
                         // variante 3:
                         //var convA = new LocalConvection(D, d, rhoA, rhoB, this.config.varMode, LsTrk);
@@ -208,7 +217,7 @@ namespace BoSSS.Solution.XNSECommon {
 
                         //if (!MatInt)
                         //    throw new NotSupportedException("New Style pressure coupling does not support non-material interface.");
-                        var presLs = new Operator.Pressure.PressureFormAtLevelSet(d, D, LsTrk);
+                        var presLs = new Operator.Pressure.PressureFormAtLevelSet(d, D, LsTrk); //, dntParams.UseWeightedAverages, muA, muB);
                         comps.Add(presLs);
                     }
                 }
@@ -312,9 +321,11 @@ namespace BoSSS.Solution.XNSECommon {
                                     }
 
                                     // Level-Set operator
-                                    //comps.Add(new Operator.Viscosity.ViscosityAtLevelSet_FullySymmetric(LsTrk, muA, muB, penalty, d));
+                                    comps.Add(new Operator.Viscosity.ViscosityAtLevelSet_FullySymmetric(LsTrk, muA, muB, penalty, d, dntParams.UseWeightedAverages));
 
-                                    comps.Add(new Operator.Viscosity.GeneralizedViscosityAtLevelSet_FullySymmetric(LsTrk, muA, muB, penalty, d, rhoA, rhoB, mEvap));
+                                    //if(this.evaporation) {
+                                    //    comps.Add(new Operator.Viscosity.GeneralizedViscosityAtLevelSet_FullySymmetric(LsTrk, muA, muB, penalty, d, rhoA, rhoB, mEvap));
+                                    //}
 
                                     break;
                                 }
@@ -338,11 +349,13 @@ namespace BoSSS.Solution.XNSECommon {
                         m_OP.EquationComponents["div"].Add(src);
                     }
 
-                    var divPen = new Operator.Continuity.DivergenceAtLevelSet(D, LsTrk, rhoA, rhoB, MatInt, config.dntParams.ContiSign, config.dntParams.RescaleConti);
+                    var divPen = new Operator.Continuity.DivergenceAtLevelSet(D, LsTrk, rhoA, rhoB, MatInt, config.dntParams.ContiSign, config.dntParams.RescaleConti); //, dntParams.UseWeightedAverages, muA, muB);
                     m_OP.EquationComponents["div"].Add(divPen);
 
-                    var divPenGen = new Operator.Continuity.GeneralizedDivergenceAtLevelSet(D, LsTrk, rhoA, rhoB, MatInt, config.dntParams.ContiSign, config.dntParams.RescaleConti, mEvap);
-                    m_OP.EquationComponents["div"].Add(divPenGen);
+                    if(this.evaporation) {
+                        var divPenGen = new Operator.Continuity.GeneralizedDivergenceAtLevelSet(D, LsTrk, rhoA, rhoB, MatInt, config.dntParams.ContiSign, config.dntParams.RescaleConti, mEvap);
+                        m_OP.EquationComponents["div"].Add(divPenGen);
+                    }
 
                     //// pressure stabilization
                     //if (this.config.PressureStab) {
@@ -482,8 +495,10 @@ namespace BoSSS.Solution.XNSECommon {
                 // evaporation (mass flux)
                 // =======================
 
-                for(int d = 0; d < D; d++) {
-                    m_OP.EquationComponents[CodName[d]].Add(new Operator.DynamicInterfaceConditions.PrescribedMassFlux(d, D, LsTrk, rhoA, rhoB, mEvap));
+                if(this.evaporation) {
+                    for(int d = 0; d < D; d++) {
+                        m_OP.EquationComponents[CodName[d]].Add(new Operator.DynamicInterfaceConditions.PrescribedMassFlux(d, D, LsTrk, rhoA, rhoB, mEvap));
+                    }
                 }
 
 

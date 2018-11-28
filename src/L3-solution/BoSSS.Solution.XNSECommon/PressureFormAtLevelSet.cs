@@ -31,19 +31,34 @@ namespace BoSSS.Solution.XNSECommon.Operator.Pressure {
 
         LevelSetTracker m_LsTrk;
 
-        public PressureFormAtLevelSet(int _d, int _D, LevelSetTracker LsTrk) {
+        public PressureFormAtLevelSet(int _d, int _D, LevelSetTracker LsTrk, bool _weighted = false, double _wA = 1.0, double _wB = 1.0) {
             m_d = _d;
             m_D = _D;
             m_LsTrk = LsTrk;
             if (_d >= _D)
                 throw new ArgumentException();
+
+            weighted = _weighted;
+            wA = _wA;
+            wB = _wB;
         }
 
         int m_d;
         int m_D;
 
+        bool weighted;
+        double wA;
+        double wB;
+
         public double LevelSetForm(ref CommonParamsLs inp, double[] pA, double[] pB, double[,] Grad_pA, double[,] Grad_pB, double vA, double vB, double[] Grad_vA, double[] Grad_vB) {
-            return -(vB - vA)*inp.n[m_d]*0.5*(pB[0] + pA[0]);
+
+            if(!weighted) {
+                return -(vB - vA) * inp.n[m_d] * 0.5 * (pB[0] + pA[0]);
+            } else {
+                return -(vB - vA) * inp.n[m_d] * (wA * pB[0] + wB * pA[0]) / (wA + wB);
+            }
+
+
         }
 
        

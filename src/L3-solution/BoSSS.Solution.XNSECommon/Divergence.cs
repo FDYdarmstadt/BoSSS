@@ -154,7 +154,8 @@ namespace BoSSS.Solution.XNSECommon.Operator.Continuity {
         LevelSetTracker m_lsTrk;
 
         public DivergenceAtLevelSet(int _D, LevelSetTracker lsTrk, double _rhoA, double _rhoB,
-            bool _MaterialInterface, double vorZeichen, bool RescaleConti) {
+            bool _MaterialInterface, double vorZeichen, bool RescaleConti,
+            bool _weighted = false, double _wA = 1.0, double _wB = 1.0) {
             this.D = _D;
             this.rhoA = _rhoA;
             this.rhoB = _rhoB;
@@ -168,6 +169,10 @@ namespace BoSSS.Solution.XNSECommon.Operator.Continuity {
                 scaleA /= rhoA;
                 scaleB /= rhoB;
             }
+
+            this.weighted = _weighted;
+            this.wA = _wA;
+            this.wB = _wB;
         }
 
         bool MaterialInterface;
@@ -177,6 +182,10 @@ namespace BoSSS.Solution.XNSECommon.Operator.Continuity {
 
         double scaleA;
         double scaleB;
+
+        bool weighted;
+        double wA;
+        double wB;
 
         public TermActivationFlags LevelSetTerms {
             get {
@@ -217,8 +226,15 @@ namespace BoSSS.Solution.XNSECommon.Operator.Continuity {
 
             // compute the fluxes: note that for the continuity equation, we use not a real flux,
             // but some kind of penalization, therefore the fluxes have opposite signs!
-            double FlxNeg = -Flux(uAxN, uAxN_fict); // flux on A-side
-            double FlxPos = +Flux(uBxN_fict, uBxN);  // flux on B-side
+            double FlxNeg;
+            double FlxPos;
+            if(!weighted) {
+                FlxNeg = -Flux(uAxN, uAxN_fict, 1.0, 1.0); // flux on A-side
+                FlxPos = +Flux(uBxN_fict, uBxN, 1.0, 1.0);  // flux on B-side
+            } else {
+                FlxNeg = -Flux(uAxN, uAxN_fict, wB, wA); // flux on A-side
+                FlxPos = +Flux(uBxN_fict, uBxN, wA, wB);  // flux on B-side
+            }
 
             FlxNeg *= scaleA;
             FlxPos *= scaleB;
@@ -248,8 +264,8 @@ namespace BoSSS.Solution.XNSECommon.Operator.Continuity {
         /// <summary>
         /// the penalty flux
         /// </summary>
-        static double Flux(double UxN_in, double UxN_out) {
-            return 0.5*(UxN_in - UxN_out);
+        static double Flux(double UxN_in, double UxN_out, double w_in, double w_out) {
+                return (UxN_in - UxN_out) * w_in / (w_in + w_out);
         }
 /*
         public void DerivativVar_LevelSetFlux(out double FlxNeg, out double FlxPos,
@@ -391,7 +407,7 @@ namespace BoSSS.Solution.XNSECommon.Operator.Continuity {
 
         public TermActivationFlags LevelSetTerms {
             get {
-                return TermActivationFlags.UxV;
+                return TermActivationFlags.V;
             }
         }
 
@@ -450,13 +466,17 @@ namespace BoSSS.Solution.XNSECommon.Operator.Continuity {
 
         public IList<string> ArgumentOrdering {
             get {
-                return null;
+                return new string[] { };
             }
         }
 
+
         public IList<string> ParameterOrdering {
-            get { return null; }
+            get {
+                return new string[] { };
+            }
         }
+
 
         public int LevelSetIndex {
             get { return 0; }

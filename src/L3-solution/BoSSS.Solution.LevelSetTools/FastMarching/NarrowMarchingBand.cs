@@ -231,7 +231,8 @@ namespace BoSSS.Solution.LevelSetTools.Advection {
             double dt, LevelSetTracker Tracker,
             SinglePhaseField OldLevSet, SinglePhaseField NewLevelSet, VectorField<SinglePhaseField> LevelSetGrad,
             ConventionalDGField[] Velocity, SinglePhaseField[] ExtVel,
-            int HMForder, int TimestepNo = 0, bool plotMarchingSteps = false) //
+            int HMForder, int TimestepNo = 0, bool plotMarchingSteps = false,
+            double volFlux = 0.0) //
         {
             GridData gdat = Tracker.GridDat;
             int D = gdat.SpatialDimension;
@@ -427,7 +428,7 @@ namespace BoSSS.Solution.LevelSetTools.Advection {
             // --------------
 
             if (ComponentMode) {
-                MoveLevelSet(dt, NewLevelSet, LevelSetGrad, ExtVel, NEARgrid, marcher);
+                MoveLevelSet(dt, NewLevelSet, LevelSetGrad, ExtVel, NEARgrid, marcher, volFlux);
             }
             else {
                 throw new NotImplementedException("todo");
@@ -468,7 +469,8 @@ namespace BoSSS.Solution.LevelSetTools.Advection {
             //return x0;
         }
 
-        private static void MoveLevelSet(double dt, SinglePhaseField LevelSet, VectorField<SinglePhaseField> LevelSetGrad, SinglePhaseField[] ExtVel, SubGrid NEARgrid, Reinit.FastMarch.FastMarchReinit marcher) {
+        private static void MoveLevelSet(double dt, SinglePhaseField LevelSet, VectorField<SinglePhaseField> LevelSetGrad, SinglePhaseField[] ExtVel, 
+            SubGrid NEARgrid, Reinit.FastMarch.FastMarchReinit marcher, double volFlux) {
 
             GridData gdat = (GridData)(LevelSet.GridDat);
             int D = gdat.SpatialDimension;
@@ -478,6 +480,7 @@ namespace BoSSS.Solution.LevelSetTools.Advection {
 
             SpatialOperator TimeEvoOp = new SpatialOperator(1, 2 * D, 1, QuadOrderFunc.NonLinear(2), "Phi", "dPhi_dx", "dPhi_dy", "Sx", "Sy", "c1");
             TimeEvoOp.EquationComponents["c1"].Add(new LevelSetEvoTerm_Vector());
+            TimeEvoOp.EquationComponents["c1"].Add(new LevelSetEvoTerm_Source(volFlux));
             TimeEvoOp.EquationComponents["c1"].Add(new UpwindStabiForm());
             TimeEvoOp.Commit();
 
@@ -492,7 +495,7 @@ namespace BoSSS.Solution.LevelSetTools.Advection {
             dt_CFL *= 1.0 / (((double)(LevelSet.Basis.Degree)).Pow2());
             if (dt / dt_CFL >= 1.0) {
                 Console.WriteLine(" Warning: exceeding Level-Set CFL: dt = {0:e4}, dt_CFL = {1:e4}, frac = {2:e4}", dt, dt_CFL, dt / dt_CFL);
-                throw new ArithmeticException("Levelset CFL exceeded");
+                //throw new ArithmeticException("Levelset CFL exceeded");
             }
 
             RunschCjuda.Perform(dt);
@@ -580,6 +583,37 @@ namespace BoSSS.Solution.LevelSetTools.Advection {
                     return new string[] { "dPhi_dx", "dPhi_dy", "Sx", "Sy" }; 
                 }
             }
+        }
+
+
+        class LevelSetEvoTerm_Source : IVolumeForm {
+
+            double source;
+
+            public LevelSetEvoTerm_Source(double _source) {
+                this.source = _source;
+            }
+
+            public TermActivationFlags VolTerms {
+                get { return TermActivationFlags.V; }
+            }
+
+            public Double VolumeForm(ref CommonParamsVol cpv, Double[] U, Double[,] GradU, Double V, Double[] GradV) {
+                return -this.source * V;
+            }
+
+            public IList<string> ArgumentOrdering {
+                get {
+                    return new string[0];
+                }
+            }
+
+            public IList<string> ParameterOrdering {
+                get {
+                    return new string[0];
+                }
+            }
+
         }
 
 

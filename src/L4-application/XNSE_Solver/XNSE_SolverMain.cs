@@ -147,6 +147,8 @@ namespace BoSSS.Application.XNSE_Solver {
 
         SinglePhaseField EnergyBalanceAtInterface;
 
+        XDGField KineticEnergy;
+
         XDGField KineticDissipation;
 
         /// <summary>
@@ -322,6 +324,9 @@ namespace BoSSS.Application.XNSE_Solver {
                     //basis = new Basis(this.GridData, this.Control.FieldOptions[VariableNames.Pressure].Degree + this.Control.FieldOptions[VariableNames.VelocityX].Degree + this.Control.FieldOptions["Phi"].Degree);
                     this.EnergyBalanceAtInterface = new SinglePhaseField(basis, "EnergyBalanceAtInterface");
                     base.RegisterField(this.EnergyBalanceAtInterface);
+
+                    this.KineticEnergy = new XDGField(new XDGBasis(this.LsTrk, 2 * (this.Control.FieldOptions[VariableNames.VelocityX].Degree)), "KineticEnergy");
+                    base.RegisterField(this.KineticEnergy);
 
                     this.KineticDissipation = new XDGField(new XDGBasis(this.LsTrk, 2 * (this.Control.FieldOptions[VariableNames.VelocityX].Degree - 1)), "KineticDissipation");
                     base.RegisterField(this.KineticDissipation);
@@ -583,7 +588,8 @@ namespace BoSSS.Application.XNSE_Solver {
                this.m_HMForder,
                degU,
                this.BcMap,
-               movingmesh);
+               movingmesh,
+               this.Control.withEvaporation);
 
 
             // coupled heat Operator
@@ -1174,27 +1180,37 @@ namespace BoSSS.Application.XNSE_Solver {
                 /// compute/check time step restrictions
                 /// +++++++++++++++++++++++++++++++++++++
 
-                dt = base.Control.dtFixed;
+                    dt = base.Control.dtFixed;
 
-                // Level-Set motion-CFL
-                double LevSet_Deg2 = this.DGLevSet.Current.Basis.Degree;
-                LevSet_Deg2 = LevSet_Deg2 * LevSet_Deg2;
-                double dt_LevSetCFL = base.GridData.ComputeCFLTime(this.ExtensionVelocity.Current, dt * LevSet_Deg2);
-                dt_LevSetCFL = dt_LevSetCFL / LevSet_Deg2;
+                    // Level-Set motion-CFL
+                    double LevSet_Deg2 = this.DGLevSet.Current.Basis.Degree;
+                    LevSet_Deg2 = LevSet_Deg2 * LevSet_Deg2;
+                    double dt_LevSetCFL = base.GridData.ComputeCFLTime(this.ExtensionVelocity.Current, dt * LevSet_Deg2);
+                    dt_LevSetCFL = dt_LevSetCFL / LevSet_Deg2;
+                    if(this.Control.Timestepper_LevelSetHandling == LevelSetHandling.Coupled_Iterative && this.Control.LSunderrelax == 1.0) {
+                        if(dt / dt_LevSetCFL > 1.0) {
+                            double underrelax = Math.Round(dt_LevSetCFL / dt, 1);
+                            m_BDF_Timestepper.IterUnderrelax = underrelax;
+                            Console.WriteLine("Exceeding Level-Set CFL: Setting underrelaxation factor to {0}", underrelax);
+                        } else {
+                            m_BDF_Timestepper.IterUnderrelax = 1.0;
+                        }
+                    }
 
-                //dt = Math.Min(dt, dt_LevSetCFL);
 
-                // Capillary Timestep restriction
-                if (this.Control.PhysicalParameters.Sigma != 0.0) {
-                    MultidimensionalArray h_mins = ((GridData)this.GridData).Cells.h_min;
-                    double h = h_mins.Min();
-                    double LevSet_Deg = this.LevSet.Basis.Degree + 1;
-                    h /= LevSet_Deg; 
-                    double dt_sigma = Math.Sqrt((this.Control.PhysicalParameters.rho_A + this.Control.PhysicalParameters.rho_B)
-                        * Math.Pow(h, 3) / (2 * Math.PI * this.Control.PhysicalParameters.Sigma));
-                    if (dt > dt_sigma)
-                        Console.WriteLine("Warning: exceeding Capillary timestep: dt = {0}, dt_sigma = {1}, frac = {2}", dt, dt_sigma, dt / dt_sigma);
-                }
+                    //dt = Math.Min(dt, dt_LevSetCFL);
+
+                    // Capillary Timestep restriction
+                    if(this.Control.PhysicalParameters.Sigma != 0.0) {
+                        MultidimensionalArray h_mins = ((GridData)this.GridData).Cells.h_min;
+                        double h = h_mins.Min();
+                        double LevSet_Deg = this.LevSet.Basis.Degree + 1;
+                        h /= LevSet_Deg;
+                        double dt_sigma = Math.Sqrt((this.Control.PhysicalParameters.rho_A + this.Control.PhysicalParameters.rho_B)
+                            * Math.Pow(h, 3) / (2 * Math.PI * this.Control.PhysicalParameters.Sigma));
+                        if(dt > dt_sigma)
+                            Console.WriteLine("Warning: exceeding Capillary timestep: dt = {0}, dt_sigma = {1}, frac = {2}", dt, dt_sigma, dt / dt_sigma);
+                    }
 
 
                     // elo
@@ -1349,14 +1365,14 @@ namespace BoSSS.Application.XNSE_Solver {
 
 
                 // energy balance
-                double energyBal_Norm = XNSEUtils.EnergyBalanceNormAtInterface(this.Pressure, this.XDGvelocity.Velocity, meanVelocity, this.Curvature,
-                    this.Control.PhysicalParameters.mu_A, this.Control.PhysicalParameters.mu_B, this.Control.PhysicalParameters.Sigma, this.m_HMForder);
+                //double energyBal_Norm = XNSEUtils.EnergyBalanceNormAtInterface(this.Pressure, this.XDGvelocity.Velocity, meanVelocity, this.Curvature,
+                //    this.Control.PhysicalParameters.mu_A, this.Control.PhysicalParameters.mu_B, this.Control.PhysicalParameters.Sigma, this.m_HMForder);
 
-                Console.WriteLine("energy balance norm = {0}", energyBal_Norm);
+                //Console.WriteLine("energy balance norm = {0}", energyBal_Norm);
 
-                this.EnergyBalanceAtInterface.Clear();
-                XNSEUtils.ProjectEnergyBalanceNorm(this.EnergyBalanceAtInterface, 1.0, this.Pressure, this.XDGvelocity.Velocity, meanVelocity, this.Curvature,
-                    this.Control.PhysicalParameters.mu_A, this.Control.PhysicalParameters.mu_B, this.Control.PhysicalParameters.Sigma, this.m_HMForder);
+                //this.EnergyBalanceAtInterface.Clear();
+                //XNSEUtils.ProjectEnergyBalanceNorm(this.EnergyBalanceAtInterface, 1.0, this.Pressure, this.XDGvelocity.Velocity, meanVelocity, this.Curvature,
+                //    this.Control.PhysicalParameters.mu_A, this.Control.PhysicalParameters.mu_B, this.Control.PhysicalParameters.Sigma, this.m_HMForder);
 
             }
 
@@ -1372,15 +1388,15 @@ namespace BoSSS.Application.XNSE_Solver {
             if(this.Control.ComputeEnergy) {
 
                 // compute current energies
-                double[] RhoS = new double[] { this.Control.PhysicalParameters.rho_A, this.Control.PhysicalParameters.rho_B };
-                double currentKinEnergy = XNSEUtils.GetKineticEnergy(this.LsTrk, this.XDGvelocity.Velocity.ToArray(), RhoS, this.m_HMForder);
+                double[] rhoS = new double[] { this.Control.PhysicalParameters.rho_A, this.Control.PhysicalParameters.rho_B };
+                double currentKinEnergy = XNSEUtils.GetKineticEnergy(this.LsTrk, this.XDGvelocity.Velocity.ToArray(), rhoS, this.m_HMForder);
                 double currentSurfEnergy = XNSEUtils.GetSurfaceEnergy(this.LsTrk, this.Control.PhysicalParameters.Sigma, this.m_HMForder);
 
                 // compute changerates (kinetic, surface)
                 double CR_KinEnergy = 0.0;
                 double CR_SurfEnergy = 0.0;
                 if(this.Control.CompMode == AppControl._CompMode.Transient) {
-                    double prevKinEnergy = XNSEUtils.GetKineticEnergy(this.LsTrk, this.prevVel, RhoS, this.m_HMForder, 0);
+                    double prevKinEnergy = XNSEUtils.GetKineticEnergy(this.LsTrk, this.prevVel, rhoS, this.m_HMForder, 0);
                     CR_KinEnergy = (currentKinEnergy - prevKinEnergy) / dt;
 
                     double prevSurfEnergy = XNSEUtils.GetSurfaceEnergy(this.LsTrk, this.Control.PhysicalParameters.Sigma, this.m_HMForder, 0);
@@ -1390,17 +1406,19 @@ namespace BoSSS.Application.XNSE_Solver {
                     Console.WriteLine("current surface energy = {0}; actual changerate = {1}", currentSurfEnergy, CR_SurfEnergy);
                 }
 
-
-                ConventionalDGField[] meanVelocity = XNSEUtils.GetMeanVelocity(this.XDGvelocity.Velocity, this.LsTrk,
-                        this.Control.PhysicalParameters.rho_A, this.Control.PhysicalParameters.rho_B);
-                double SurfDivergence = XNSEUtils.GetSurfaceChangerate(this.LsTrk, meanVelocity, this.m_HMForder);
-
-
-                // changerate of the discretization
+                // changerate of kinetic energy from discretization
                 double[] muS = new double[] { this.Control.PhysicalParameters.mu_A, this.Control.PhysicalParameters.mu_B };
                 //double prevCR_discEnergy = XNSEUtils.GetEnergyChangerate(this.LsTrk, prevVel, muS, this.m_HMForder, 0);
                 double kineticDissipationBulk = XNSEUtils.GetKineticDissipation(this.LsTrk, this.XDGvelocity.Velocity.ToArray(), muS, this.m_HMForder);
                 XNSEUtils.ProjectKineticDissipation(this.KineticDissipation, this.LsTrk, this.XDGvelocity.Velocity.ToArray(), muS, this.m_HMForder);
+
+                // changerate of surface energy form discretization
+                ConventionalDGField[] meanVelocity = XNSEUtils.GetMeanVelocity(this.XDGvelocity.Velocity, this.LsTrk,
+                    this.Control.PhysicalParameters.rho_A, this.Control.PhysicalParameters.rho_B);
+                double SurfDivergence = XNSEUtils.GetSurfaceChangerate(this.LsTrk, meanVelocity, this.m_HMForder);
+
+                // project kinetic energy
+                XNSEUtils.ProjectKineticEnergy(this.KineticEnergy, this.LsTrk, this.XDGvelocity.Velocity.ToArray(), rhoS, this.m_HMForder);
 
                 this.EnergyLogger.TimeStep = TimestepInt;
                 this.EnergyLogger.CustomValue(phystime + dt, "PhysicalTime");
@@ -1436,11 +1454,11 @@ namespace BoSSS.Application.XNSE_Solver {
                     this.EnergyLogger.CustomValue(shearViscEnergyCR, "ShearViscosityDR");
                     this.EnergyLogger.CustomValue(dilViscEnergyCR, "DilatationalViscosityDR");
 
-                    Console.WriteLine("current discretization Energy changerate = {0} / {1}", kineticDissipationBulk - shearViscEnergyCR - dilViscEnergyCR, CR_KinEnergy + CR_SurfEnergy);
+                    Console.WriteLine("current kinetic energy dissipation from discretization = {0}", kineticDissipationBulk + shearViscEnergyCR + dilViscEnergyCR);
 
                 } else {
 
-                    Console.WriteLine("current discretization Energy changerate = {0} / {1}", kineticDissipationBulk, CR_KinEnergy + CR_SurfEnergy);
+                    Console.WriteLine("current kinetic energy dissipation from discretization = {0}", kineticDissipationBulk);
                 }
 
 
@@ -1546,7 +1564,12 @@ namespace BoSSS.Application.XNSE_Solver {
                 LogQueryValue(phystime + dt);
             } else {
                 if(Log != null && this.Control.LogValues != XNSE_Control.LoggingValues.None && base.MPIRank == 0 && (TimestepNo.MajorNumber % this.Control.LogPeriod == 0))
-                    WriteLogLine(TimestepNo, phystime + dt);
+                    try {
+                        WriteLogLine(TimestepNo, phystime + dt);
+                    } catch(Exception e) {
+                        Console.WriteLine("An error occured during WriteLogLine: '{0}'", e);
+                    }
+
             }
 
             //Console.WriteLine("Pause");
@@ -2629,6 +2652,12 @@ namespace BoSSS.Application.XNSE_Solver {
             //this.XDGvelocity.Gravity[1].GetSpeciesShadowField("A").AccConstant(-9.81e2);
             //this.XDGvelocity.Gravity[1].GetSpeciesShadowField("B").AccConstant(-9.81e2);
 
+            if(this.Control.ClearVelocitiesOnRestart) {
+                Console.WriteLine("clearing all velocities");
+                this.XDGvelocity.Velocity.Clear();
+            }                
+             
+
             // Load the sample Points for the restart of the Fourier LevelSet
             if (this.Control.FourierLevSetControl != null) {
 
@@ -2860,6 +2889,9 @@ namespace BoSSS.Application.XNSE_Solver {
         /// </summary>
         int LevelIndicator(int j, int CurrentLevel) {
 
+            if(this.Control.BaseRefinementLevel == 0)
+                return 0;
+
             CellMask ccm = this.LsTrk.Regions.GetCutCellMask();
             CellMask near = this.LsTrk.Regions.GetNearFieldMask(1);
             CellMask nearBnd = near.AllNeighbourCells();
@@ -2923,6 +2955,19 @@ namespace BoSSS.Application.XNSE_Solver {
         CellMask NScm; 
 
         CellMask NSbuffer;
+
+
+        //int LevelIndicator(int j, int CurrentLevel) {
+
+        //    CellMask spc = this.LsTrk.Regions.GetSpeciesMask("A");
+
+        //    if(spc.Contains(j)) {
+        //        return 2;
+        //    } else {
+        //        return 0;
+        //    }
+
+        //}
 
 
         /// <summary>
@@ -3217,7 +3262,7 @@ namespace BoSSS.Application.XNSE_Solver {
                         NarrowMarchingBand.Evolve_Mk2(
                              dt, this.LsTrk, DGLevSet_old, this.DGLevSet.Current, this.DGLevSetGradient,
                              meanVelocity, this.ExtensionVelocity.Current.ToArray(),
-                             this.m_HMForder, iTimestep);
+                             this.m_HMForder, iTimestep, volFlux : this.Control.PhysicalParameters.prescribedVolumeFlux);
 
                             //if(this.Control.AdaptiveMeshRefinement == false) {
                             //    CellMask Accepted = LsTrk.Regions.GetCutCellMask();
@@ -3276,7 +3321,7 @@ namespace BoSSS.Application.XNSE_Solver {
                             // Perform Fast Marching only on the Far Field
                             if(this.Control.AdaptiveMeshRefinement) {
                                 int NoCells = ((GridData)this.GridData).Cells.Count;
-                                System.Collections.BitArray Refined = new System.Collections.BitArray(NoCells);
+                                BitArray Refined = new BitArray(NoCells);
                                 for(int j = 0; j < NoCells; j++) {
                                     if(((GridData)this.GridData).Cells.GetCell(j).RefinementLevel > 0)
                                         Refined[j] = true;
@@ -3424,6 +3469,7 @@ namespace BoSSS.Application.XNSE_Solver {
             meanVelocity = new ConventionalDGField[D];
 
             double rho_A = this.Control.PhysicalParameters.rho_A, rho_B = this.Control.PhysicalParameters.rho_B;
+            double mu_A = this.Control.PhysicalParameters.mu_A, mu_B = this.Control.PhysicalParameters.mu_B;
             CellMask CC = this.LsTrk.Regions.GetCutCellMask4LevSet(0);
             CellMask Neg = this.LsTrk.Regions.GetLevelSetWing(0, -1).VolumeMask;
             CellMask Pos = this.LsTrk.Regions.GetLevelSetWing(0, +1).VolumeMask;
@@ -3437,14 +3483,29 @@ namespace BoSSS.Application.XNSE_Solver {
 
                 foreach (string spc in this.LsTrk.SpeciesNames) {
                     double rhoSpc;
+                    double muSpc;
                     switch (spc) {
-                        case "A": rhoSpc = rho_A; break;
-                        case "B": rhoSpc = rho_B; break;
+                        case "A": rhoSpc = rho_A; muSpc = mu_A; break;
+                        case "B": rhoSpc = rho_B; muSpc = mu_B; break;
                         default: throw new NotSupportedException("Unknown species name '" + spc + "'");
                     }
 
-                    double scale = rhoSpc / (rho_A + rho_B);
-
+                    double scale = 1.0;
+                    switch(this.Control.InterAverage) {
+                        case XNSE_Control.InterfaceAveraging.mean: {
+                                scale = 0.5;
+                                break;
+                            }
+                        case XNSE_Control.InterfaceAveraging.density: {
+                                scale = rhoSpc / (rho_A + rho_B);
+                                break;
+                            }
+                        case XNSE_Control.InterfaceAveraging.viscosity: {
+                                scale = muSpc / (mu_A + mu_B);
+                                break;
+                            }
+                    }
+                     
                     meanVelocity[d].Acc(scale, ((XDGField)EvoVelocity[d]).GetSpeciesShadowField(spc), CC);
                     switch (spc) {
                         //case "A": meanVelocity[d].Acc(1.0, ((XDGField)EvoVelocity[d]).GetSpeciesShadowField(spc), Neg.Except(CC)); break;
@@ -3682,17 +3743,18 @@ namespace BoSSS.Application.XNSE_Solver {
                 // mass flux at interface
                 // ======================
                 {
-
-                    double hVap;
-                    double mEvap;
-                    if(this.Control.ThermalParameters.hVap_A > 0) {
-                        hVap = this.Control.ThermalParameters.hVap_A;
-                        mEvap = -this.Control.ThermalParameters.rho_A * this.Control.ThermalParameters.prescribedVolumeFlux;
-                    } else {
-                        hVap = this.Control.ThermalParameters.hVap_B;
-                        mEvap = this.Control.ThermalParameters.rho_B * this.Control.ThermalParameters.prescribedVolumeFlux;
+                    if(this.Control.withEvaporation) {
+                        double hVap;
+                        double mEvap;
+                        if(this.Control.ThermalParameters.hVap_A > 0) {
+                            hVap = this.Control.ThermalParameters.hVap_A;
+                            mEvap = -this.Control.ThermalParameters.rho_A * this.Control.ThermalParameters.prescribedVolumeFlux;
+                        } else {
+                            hVap = this.Control.ThermalParameters.hVap_B;
+                            mEvap = this.Control.ThermalParameters.rho_B * this.Control.ThermalParameters.prescribedVolumeFlux;
+                        }
+                        Xheat_Operator.EquationComponents[CodName[0]].Add(new EvaporationAtLevelSet(LsTrk, mEvap, hVap));
                     }
-                    Xheat_Operator.EquationComponents[CodName[0]].Add(new EvaporationAtLevelSet(LsTrk, mEvap, hVap));
 
                 }
 

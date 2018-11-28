@@ -155,6 +155,12 @@ namespace BoSSS.Application.XNSE_Solver {
         [DataMember]
         public bool RefineNavierSlipBoundary = false;
 
+        /// <summary>
+        /// option for clearing the velocities for restart
+        /// </summary>
+        [DataMember]
+        public bool ClearVelocitiesOnRestart = false;
+
 
         /// <summary>
         /// Expert options regarding the spatial discretization.
@@ -432,7 +438,12 @@ namespace BoSSS.Application.XNSE_Solver {
             /// <summary>
             /// density weighted average
             /// </summary>
-            density           
+            density,
+
+            /// <summary>
+            /// viscosity weighted average
+            /// </summary>
+            viscosity
 
         }
 
@@ -481,6 +492,11 @@ namespace BoSSS.Application.XNSE_Solver {
         /// switch for the computation of the coupled heat solver
         /// </summary>
         public bool solveCoupledHeatSolver = false;
+
+        /// <summary>
+        /// switch for computations with evaporation
+        /// </summary>
+        public bool withEvaporation = false;
 
         /// <summary>
         /// Block-Precondition for the Temperature-block

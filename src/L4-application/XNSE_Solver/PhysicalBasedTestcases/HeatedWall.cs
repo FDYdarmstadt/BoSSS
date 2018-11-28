@@ -296,11 +296,12 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
         /// 
         /// </summary>
         /// <returns></returns>
-        public static XNSE_Control Evaporation_test(int p = 2, int kelemR = 8, string _DbPath = null) {
+        public static XNSE_Control Evaporation_test(int p = 2, int kelemR = 16, string _DbPath = null) {
 
             XNSE_Control C = new XNSE_Control();
 
-            bool solveHeat = true;
+            bool solveHeat = false;
+            bool evaporation = true;
             //_DbPath = @"\\dc1\userspace\smuda\cluster\CapillaryRise\CapillaryRise_studyDB";
 
             // basic database options
@@ -376,13 +377,19 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             C.ThermalParameters.k_A = 10.0;
             C.ThermalParameters.k_B = 1.0;
 
+            C.withEvaporation = evaporation;
+            C.ThermalParameters.prescribedVolumeFlux = 0.1;
+            C.PhysicalParameters.prescribedVolumeFlux = C.ThermalParameters.prescribedVolumeFlux;
+            C.ThermalParameters.hVap_A = 1.0;
+            C.ThermalParameters.hVap_B = -1.0;
+
             C.PhysicalParameters.betaS_A = 0.0;
             C.PhysicalParameters.betaS_B = 0.0;
 
             C.PhysicalParameters.betaL = 0.0;
             C.PhysicalParameters.theta_e = Math.PI / 2.0;
 
-            C.PhysicalParameters.IncludeConvection = false;
+            C.PhysicalParameters.IncludeConvection = true;
             C.PhysicalParameters.Material = false;
 
             #endregion
@@ -405,6 +412,11 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
                     grd.EdgeTagNames.Add(2, "pressure_outlet_ZeroGradient_upper");
                     grd.EdgeTagNames.Add(3, "freeslip_ZeroGradient_left");
                     grd.EdgeTagNames.Add(4, "freeslip_ZeroGradient_right");
+                } else if(evaporation) {
+                    grd.EdgeTagNames.Add(1, "wall_lower");
+                    grd.EdgeTagNames.Add(2, "pressure_outlet_upper");
+                    grd.EdgeTagNames.Add(3, "freeslip_left");
+                    grd.EdgeTagNames.Add(4, "freeslip_right");
                 } else {
                     grd.EdgeTagNames.Add(1, "velocity_inlet_lower");
                     grd.EdgeTagNames.Add(2, "pressure_outlet_upper");
@@ -462,15 +474,18 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
                 C.AddBoundaryValue("velocity_inlet_Dirichlet_lower", "Temperature#A", (X, t) => 5.0);
                 C.AddBoundaryValue("velocity_inlet_Dirichlet_lower", "VelocityY#A", (X, t) => 0.1);
                 C.AddBoundaryValue("pressure_outlet_ZeroGradient_upper");
-
                 C.AddBoundaryValue("freeslip_ZeroGradient_left");
                 C.AddBoundaryValue("freeslip_ZeroGradient_right");
-            } else {
 
-                C.AddBoundaryValue("velocity_inlet_lower", "VelocityY#A", (X, t) => 0.1);
-                //C.AddBoundaryValue("velocity_inlet_lower", "VelocityY#B", (X, t) => 1.0);
+            } else if(evaporation) {
+                C.AddBoundaryValue("wall_lower");
                 C.AddBoundaryValue("pressure_outlet_upper");
+                C.AddBoundaryValue("freeslip_left");
+                C.AddBoundaryValue("freeslip_right");
 
+            } else {
+                C.AddBoundaryValue("velocity_inlet_lower", "VelocityY#A", (X, t) => 0.1);
+                C.AddBoundaryValue("pressure_outlet_upper");
                 C.AddBoundaryValue("freeslip_left");
                 C.AddBoundaryValue("freeslip_right");
             }
@@ -518,7 +533,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             // =========
             #region levelset
 
-            C.Option_LevelSetEvolution = LevelSetEvolution.None;
+            C.Option_LevelSetEvolution = LevelSetEvolution.FastMarching;
 
             #endregion
 
@@ -529,7 +544,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
 
             C.Timestepper_Scheme = XNSE_Control.TimesteppingScheme.ImplicitEuler;
             C.Timestepper_BDFinit = TimeStepperInit.SingleInit;
-            C.Timestepper_LevelSetHandling = LevelSetHandling.None;
+            C.Timestepper_LevelSetHandling = LevelSetHandling.LieSplitting;
 
             C.CompMode = AppControl._CompMode.Transient;
             C.dtMax = 1e-1;

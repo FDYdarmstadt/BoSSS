@@ -115,31 +115,32 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             // ===================
             #region physics
 
-            C.Tags.Add("Hysing");
-            C.Tags.Add("La = 5000");
-            C.PhysicalParameters.rho_A = 1e4;
-            C.PhysicalParameters.rho_B = 1e4;
-            C.PhysicalParameters.mu_A = 1;
-            C.PhysicalParameters.mu_B = 1;
-            double sigma = 1;
-            C.PhysicalParameters.Sigma = sigma;
+            //C.Tags.Add("Hysing");
+            //C.Tags.Add("La = 5000");
+            //C.PhysicalParameters.rho_A = 1e4;
+            //C.PhysicalParameters.rho_B = 1e4;
+            //C.PhysicalParameters.mu_A = 1;
+            //C.PhysicalParameters.mu_B = 1;
+            //double sigma = 1;
+            //C.PhysicalParameters.Sigma = sigma;
 
             //C.Tags.Add("La = 0.005");
             //C.PhysicalParameters.rho_A = 1;
             //C.PhysicalParameters.rho_B = 1;
             //C.PhysicalParameters.mu_A = 10;
             //C.PhysicalParameters.mu_B = 10;
-            //C.PhysicalParameters.Sigma = 1;
-
-            // Air-Water (lenght scale == centimeters, 3D space)
-            //C.PhysicalParameters.rho_A = 1e-3;      // kg / cm^3
-            //C.PhysicalParameters.rho_B = 1.2e-6;    // kg / cm^3
-            //C.PhysicalParameters.mu_A = 1e-5;       // kg / cm * sec
-            //C.PhysicalParameters.mu_B = 17.1e-8;    // kg / cm * sec
-            //double sigma = 72.75e-3;                // kg / sec^2 
+            //double sigma = 1;
             //C.PhysicalParameters.Sigma = sigma;
 
-            C.PhysicalParameters.IncludeConvection = false;
+            //Air - Water(lenght scale == centimeters, 3D space)
+            C.PhysicalParameters.rho_A = 1e-3;      // kg / cm^3
+            C.PhysicalParameters.rho_B = 1.2e-6;    // kg / cm^3
+            C.PhysicalParameters.mu_A = 1e-5;       // kg / cm * sec
+            C.PhysicalParameters.mu_B = 17.1e-8;    // kg / cm * sec
+            double sigma = 72.75e-3;                // kg / sec^2 
+            C.PhysicalParameters.Sigma = sigma;
+
+            C.PhysicalParameters.IncludeConvection = true;
             C.PhysicalParameters.Material = true;
 
             #endregion
@@ -316,7 +317,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             //C.AdvancedDiscretizationOptions.PenaltySafety = 40;
 
 
-            C.LSContiProjectionMethod = Solution.LevelSetTools.ContinuityProjectionOption.None;
+            C.LSContiProjectionMethod = Solution.LevelSetTools.ContinuityProjectionOption.ContinuousDG;
 
             //C.AdaptiveMeshRefinement = true;
 
@@ -339,8 +340,10 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             C.PhysicalParameters.lambda_I = 2 * sigma;
 
             C.AdvancedDiscretizationOptions.SST_isotropicMode = SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_ContactLine;
+            C.AdvancedDiscretizationOptions.UseLevelSetStabilization = false;
 
-
+            C.AdvancedDiscretizationOptions.UseWeightedAverages = false;
+            C.InterAverage = XNSE_Control.InterfaceAveraging.viscosity;
 
 
             if (C.Option_LevelSetEvolution == LevelSetEvolution.Fourier) {
@@ -368,30 +371,30 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             // ============
             #region time
 
-            //switch(p) {
-            //    case 1: {
-            //            C.Timestepper_Scheme = XNSE_Control.TimesteppingScheme.ImplicitEuler;
-            //            C.Timestepper_BDFinit = TimeStepperInit.SingleInit;
-            //            break;
-            //        }
-            //    case 2: {
-            //            C.Timestepper_Scheme = XNSE_Control.TimesteppingScheme.BDF2;
-            //            C.Timestepper_BDFinit = TimeStepperInit.MultiInit;
-            //            break;
-            //        }
-            //    default:
-            //        C.Timestepper_Scheme = XNSE_Control.TimesteppingScheme.ImplicitEuler;
-            //        C.Timestepper_BDFinit = TimeStepperInit.SingleInit;
-            //        break;
+            switch(p) {
+                case 1: {
+                        C.Timestepper_Scheme = XNSE_Control.TimesteppingScheme.ImplicitEuler;
+                        C.Timestepper_BDFinit = TimeStepperInit.SingleInit;
+                        break;
+                    }
+                case 2: {
+                        C.Timestepper_Scheme = XNSE_Control.TimesteppingScheme.BDF2;
+                        C.Timestepper_BDFinit = TimeStepperInit.MultiInit;
+                        break;
+                    }
+                default:
+                    C.Timestepper_Scheme = XNSE_Control.TimesteppingScheme.ImplicitEuler;
+                    C.Timestepper_BDFinit = TimeStepperInit.SingleInit;
+                    break;
+            }
 
-            //}
             //if(D == 3) {
             //    C.Timestepper_Scheme = XNSE_Control.TimesteppingScheme.ImplicitEuler;
             //    C.Timestepper_BDFinit = TimeStepperInit.SingleInit;
             //}
 
-            C.Timestepper_Scheme = XNSE_Control.TimesteppingScheme.ImplicitEuler;
-            C.Timestepper_BDFinit = TimeStepperInit.SingleInit;
+            //C.Timestepper_Scheme = XNSE_Control.TimesteppingScheme.ImplicitEuler;
+            //C.Timestepper_BDFinit = TimeStepperInit.SingleInit;
 
             C.Timestepper_LevelSetHandling = (compMode == AppControl._CompMode.Steady) ? LevelSetHandling.None : LevelSetHandling.Coupled_Once;
             //C.LSunderrelax = 0.05;
@@ -400,11 +403,11 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             C.CompMode = compMode;
             //C.CompMode = AppControl._CompMode.Transient; 
 
-            double dt = 0.01;
+            double dt = 5e-5; //0.01;
             C.dtMax = dt;
             C.dtMin = dt;
             C.Endtime = 1000;
-            C.NoOfTimesteps = 12500; // (int)(125.0 / dt);
+            C.NoOfTimesteps = 10000; // (int)(125.0 / dt);
             C.saveperiod = 10;
 
             #endregion
@@ -1019,7 +1022,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
         /// 
         /// </summary>
         /// <returns></returns>
-        public static XNSE_Control StaticDroplet_OnPlate(int p = 4, int kelem = 32, string _DbPath = null) {
+        public static XNSE_Control StaticDroplet_OnPlate(int p = 2, int kelem = 32, string _DbPath = null) {
 
             XNSE_Control C = new XNSE_Control();
 
@@ -1289,7 +1292,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
 
             C.AdvancedDiscretizationOptions.SST_isotropicMode= Solution.XNSECommon.SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_ContactLine;
 
-            C.AdaptiveMeshRefinement = true;
+            C.AdaptiveMeshRefinement = false;
             C.RefineStrategy = XNSE_Control.RefinementStrategy.ContactLineRefined;
             C.BaseRefinementLevel = 1;
             C.RefinementLevel = 12;

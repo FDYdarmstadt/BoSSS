@@ -292,7 +292,15 @@ namespace BoSSS.Solution.XNSECommon {
         /// </summary>
         [DataMember]
         public bool UseLevelSetStabilization = false;
-            
+
+
+        /// <summary>
+        /// Turn the use of weighted averages at the interface on or off
+        /// </summary>
+        [DataMember]
+        public bool UseWeightedAverages = false;
+
+
         /// <summary>
         /// implementation variant of the isotropic surface stress
         /// </summary>
@@ -333,6 +341,7 @@ namespace BoSSS.Solution.XNSECommon {
                 SurfStressTensor = this.SurfStressTensor,
                 SST_isotropicMode = this.SST_isotropicMode,
                 UseLevelSetStabilization = this.UseLevelSetStabilization,
+                UseWeightedAverages = this.UseWeightedAverages,
                 ViscosityMode = this.ViscosityMode,
                 //ViscosityImplementation = this.ViscosityImplementation,
                 UseGhostPenalties = this.UseGhostPenalties,

@@ -554,8 +554,8 @@ namespace BoSSS.Solution.XNSECommon {
                 int K = result.GetLength(1); // No nof Nodes
                 MultidimensionalArray pARes = MultidimensionalArray.Create(Len, K);
                 MultidimensionalArray pBRes = MultidimensionalArray.Create(Len, K);
-                MultidimensionalArray Grad_UARes = MultidimensionalArray.Create(Len, K, D);
-                MultidimensionalArray Grad_UBRes = MultidimensionalArray.Create(Len, K, D);
+                MultidimensionalArray Grad_UARes = MultidimensionalArray.Create(Len, K, D, D);
+                MultidimensionalArray Grad_UBRes = MultidimensionalArray.Create(Len, K, D, D);
                 //MultidimensionalArray U_Res = MultidimensionalArray.Create(Len, K, D);
                 //MultidimensionalArray GradU_Res = MultidimensionalArray.Create(Len, K, D, D);
                 MultidimensionalArray curvRes = MultidimensionalArray.Create(Len, K);
@@ -563,8 +563,10 @@ namespace BoSSS.Solution.XNSECommon {
                 pA.Evaluate(i0, Len, nds, pARes);
                 pB.Evaluate(i0, Len, nds, pBRes);
 
-                UA[d].EvaluateGradient(i0, Len, nds, Grad_UARes);
-                UB[d].EvaluateGradient(i0, Len, nds, Grad_UBRes);
+                for(int _d = 0; _d < D; _d++) {
+                    UA[_d].EvaluateGradient(i0, Len, nds, Grad_UARes.ExtractSubArrayShallow(-1, -1, _d, -1));
+                    UB[_d].EvaluateGradient(i0, Len, nds, Grad_UBRes.ExtractSubArrayShallow(-1, -1, _d, -1));
+                }
 
                 //for (int i = 0; i < D; i++) {
                 //    Umean[i].Evaluate(i0, Len, nds, U_Res.ExtractSubArrayShallow(-1, -1, i));
@@ -929,6 +931,55 @@ namespace BoSSS.Solution.XNSECommon {
             }
         }
 
+
+        public static void ProjectKineticEnergy(this XDGField proj, LevelSetTracker LsTrk, XDGField[] Velocity, double[] rho, int momentFittingOrder, int HistInd = 1) {
+            using(new FuncTrace()) {
+
+                int D = LsTrk.GridDat.SpatialDimension;
+                if(Velocity.Count() != D) {
+                    throw new ArgumentException();
+                }
+                if(LsTrk.SpeciesIdS.Count != rho.Length)
+                    throw new ArgumentException();
+
+                var SchemeHelper = LsTrk.GetXDGSpaceMetrics(LsTrk.SpeciesIdS.ToArray(), momentFittingOrder, HistInd).XQuadSchemeHelper;
+
+                for(int iSpc = 0; iSpc < LsTrk.SpeciesIdS.Count; iSpc++) {
+                    SpeciesId spcId = LsTrk.SpeciesIdS[iSpc];
+                    double _rho = rho[iSpc];
+
+                    var Uspc = Velocity.Select(u => (u as XDGField).GetSpeciesShadowField(spcId)).ToArray();
+                    //ScalarFunctionEx spcKinDissip = GetSpeciesKineticDissipationFunc(Uspc, _rho);
+
+                    ScalarFunctionEx spcKinEnergy = delegate (int i0, int Len, NodeSet nds, MultidimensionalArray result) {
+
+                        int K = result.GetLength(1); // No nof Nodes
+
+                        MultidimensionalArray U_res = MultidimensionalArray.Create(Len, K, D);
+                        for(int i = 0; i < D; i++) {
+                            Uspc[i].Evaluate(i0, Len, nds, U_res.ExtractSubArrayShallow(-1, -1, i));
+                        }
+
+                        double acc;
+                        for(int j = 0; j < Len; j++) {
+                            for(int k = 0; k < K; k++) {
+
+                                acc = 0.0;
+
+                                for(int d = 0; d < D; d++) {
+                                    acc += U_res[j, k, d] * U_res[j, k, d];
+                                }
+                                result[j, k] = _rho * acc;
+                            }
+                        }
+
+                    };
+
+                    proj.GetSpeciesShadowField(spcId).ProjectField(spcKinEnergy);
+
+                }
+            }
+        }
 
 
         public static double GetInterfaceDilatationalViscosityEnergyCR(LevelSetTracker LsTrk, ConventionalDGField[] uI, double lamI, int momentFittingOrder) {
@@ -1322,13 +1373,13 @@ namespace BoSSS.Solution.XNSECommon {
                             }
 
                             // surface energy changerate
-                            for (int dd = 0; dd < D; dd++) {
-                                if (dd == d) {
-                                    acc += sigma * (1 - Normals[j, k, d] * Normals[j, k, dd]) * GradU_res[j, k, dd, d];
-                                } else {
-                                    acc += sigma * (-Normals[j, k, d] * Normals[j, k, dd]) * GradU_res[j, k, dd, d];
-                                }
-                            }
+                            //for (int dd = 0; dd < D; dd++) {
+                            //    if (dd == d) {
+                            //        acc += sigma * (1 - Normals[j, k, d] * Normals[j, k, dd]) * GradU_res[j, k, dd, d];
+                            //    } else {
+                            //        acc += sigma * (-Normals[j, k, d] * Normals[j, k, dd]) * GradU_res[j, k, dd, d];
+                            //    }
+                            //}
 
                             // curvature energy
                             acc -= sigma * Curv_res[j, k] * U_res[j, k, d] * Normals[j, k, d];
