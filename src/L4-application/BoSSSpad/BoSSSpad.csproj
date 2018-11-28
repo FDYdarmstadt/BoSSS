@@ -166,7 +166,7 @@
     <None Include="app.config" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\..\..\..\internal\src\experimental\L4-application\FSI_Solver\FSI_Solver.csproj">
+    <ProjectReference Include="..\FSI_Solver\FSI_Solver.csproj">
       <Project>{5c52e2f7-a6dd-4e3e-a31e-1b0ff34c0cc2}</Project>
       <Name>FSI_Solver</Name>
     </ProjectReference>
