@@ -57,30 +57,35 @@ namespace BoSSS.Solution.NSECommon {
         /// <returns>
         /// Density
         /// </returns>
-        public override double GetDensity(params double[] phi) {
+        public override double GetDensity(params double[] phi)
+        {
             if (phi.Length < 4)
                 throw new ArgumentException("Error in density computation. Number of reactants needs to be atleast 3.");
-            if (IsInitialized) {
+            if (IsInitialized)
+            {
                 double rho = 1.0;
                 double MassFractionsOverMolarFractions = 1.0;
 
-
-                if (energyEquationOK) {
-                    if (speciesTransportOK) {
-                        for (int n = 1; n < phi.Length; n++) {
+                if (energyEquationOK)
+                {
+                    if (speciesTransportOK)
+                    {
+                        MassFractionsOverMolarFractions = 0.0;
+                        for (int n = 1; n < phi.Length; n++)
+                        {                           
                             MassFractionsOverMolarFractions += phi[n] / MolarMasses[n - 1];
                         }
                     }
                     rho = base.ThermodynamicPressure.Current.GetMeanValue(0) / (phi[0] * MassFractionsOverMolarFractions);
                 }
-                
                 Debug.Assert(!(double.IsNaN(rho) || double.IsInfinity(rho)));
                 return rho;
             }
-            else {
+            else
+            {
                 throw new ApplicationException("ThermodynamicPressure is not initialized.");
             }
-         }
+        }
 
         public double GetHeatConductivity(double phi) {
             switch (this.MatParamsMode) {
