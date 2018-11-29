@@ -19,10 +19,12 @@ using BoSSS.Foundation.Grid;
 using BoSSS.Solution.CompressibleFlowCommon;
 using BoSSS.Solution.CompressibleFlowCommon.ShockCapturing;
 using CNS.IBM;
+using ilPSP;
 using ilPSP.LinSolvers;
 using ilPSP.Tracing;
 using ilPSP.Utils;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 
 namespace CNS.ShockCapturing {
@@ -54,10 +56,10 @@ namespace CNS.ShockCapturing {
 
                 IMatrix coordinatesTimesMassMatrix;
                 IMatrix coordinatesTruncatedTimesMassMatrix;
+
                 if (speciesMap is ImmersedSpeciesMap ibmMap) {
                     // Note: This has to be the _non_-agglomerated mass matrix
-                    // because we still live on the non-agglomerated mesh at this
-                    // point
+                    // because we still live on the non-agglomerated mesh at this point
                     BlockMsrMatrix massMatrix = ibmMap.GetMassMatrixFactory(fieldToTest.Mapping).NonAgglomeratedMassMatrix;
 
                     // Old
@@ -96,7 +98,7 @@ namespace CNS.ShockCapturing {
                 //cellMask.SaveToTextFile("fluidCells.txt");
 
                 // This is equivalent to norm(restrictedField) / norm(originalField)
-                // Note: THIS WILL FAIL IN CUT CELLS
+                // Note: THIS WILL FAIL IN TRUE XDG CUT CELLS WITH TWO SPECIES
                 foreach (int cell in cellMask.ItemEnum) {
                     double numerator = 0.0;
                     foreach (int coordinate in fieldToTest.Basis.GetPolynomialIndicesForDegree(cell, degree)) {
@@ -117,11 +119,9 @@ namespace CNS.ShockCapturing {
                         result = numerator / denominator;
                     }
 
-                    //Debug.Assert(denominator != 0, "Persson sensor: Denominator is zero!");
-
-                    //Debug.Assert(!(numerator / denominator).IsNaN(), "Persson sensor: Sensor value is NaN!");
-
-                    //Debug.Assert(numerator / denominator >= 0, "Persson sensor: Sensor value is negative!");
+                    Debug.Assert(denominator != 0, "Persson sensor: Denominator is zero!");
+                    Debug.Assert(!(numerator / denominator).IsNaN(), "Persson sensor: Sensor value is NaN!");
+                    Debug.Assert(numerator / denominator >= 0, "Persson sensor: Sensor value is negative!");
 
                     sensorValues[cell] = result;
                 }
@@ -144,13 +144,12 @@ namespace CNS.ShockCapturing {
 
             IMatrix coordinatesTimesMassMatrix;
             IMatrix coordinatesTruncatedTimesMassMatrix;
+
             // Note: This has to be the _non_-agglomerated mass matrix
-            // because we still live on the non-agglomerated mesh at this
-            // point
-            //MassMatrixFactory massMatrixFactory = levelSetTracker.GetXDGSpaceMetrics(new SpeciesId[] { a_speciesID, b_speciesID }, nonLinearQuadratureDegree).MassMatrixFactory;
+            // because we still live on the non-agglomerated mesh at this point
 
             // Old
-          DGField temp = fieldToTest.CloneAs();
+            DGField temp = fieldToTest.CloneAs();
             massMatrix.SpMV(1.0, fieldToTest.CoordinateVector, 0.0, temp.CoordinateVector);
             coordinatesTimesMassMatrix = temp.Coordinates;
 
@@ -180,7 +179,7 @@ namespace CNS.ShockCapturing {
             //cellMask.SaveToTextFile("fluidCells.txt");
 
             // This is equivalent to norm(restrictedField) / norm(originalField)
-            // Note: THIS WILL FAIL IN CUT CELLS
+            // Note: THIS WILL FAIL IN TRUE XDG CUT CELLS WITH TWO SPECIES
             foreach (int cell in cellMask.ItemEnum) {
                 double numerator = 0.0;
                 foreach (int coordinate in fieldToTest.Basis.GetPolynomialIndicesForDegree(cell, degree)) {
@@ -201,11 +200,9 @@ namespace CNS.ShockCapturing {
                     result = numerator / denominator;
                 }
 
-                //Debug.Assert(denominator != 0, "Persson sensor: Denominator is zero!");
-
-                //Debug.Assert(!(numerator / denominator).IsNaN(), "Persson sensor: Sensor value is NaN!");
-
-                //Debug.Assert(numerator / denominator >= 0, "Persson sensor: Sensor value is negative!");
+                Debug.Assert(denominator != 0, "Persson sensor: Denominator is zero!");
+                Debug.Assert(!(numerator / denominator).IsNaN(), "Persson sensor: Sensor value is NaN!");
+                Debug.Assert(numerator / denominator >= 0, "Persson sensor: Sensor value is negative!");
 
                 sensorValues[cell] = result;
             }
@@ -214,6 +211,5 @@ namespace CNS.ShockCapturing {
         public double GetSensorValue(int cellIndex) {
             return sensorValues[cellIndex];
         }
-
     }
 }
