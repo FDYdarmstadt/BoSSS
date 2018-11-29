@@ -266,35 +266,7 @@ foreach(Plot2Ddata.XYvalues graph in RuntimePlot.dataGroups) {
 Incomplete statement - missing closing parentheses?.
 
 ==============
-//extract all Degrees and put them into array
-int rowcount       = SubTab.Rows.Count;
-int selectedcolumn = 0;
-int[] tmp= new int[20];
-
-int count = 0;
-for(int r=0;r<rowcount;r++){
-System.Data.DataRow row = (System.Data.DataRow)SubTab.Rows[r];
-int bla                 = Convert.ToInt32(row[selectedcolumn]);
-if (tmp[bla]==0){
-  tmp[bla]=1;
-  count++;
-}
-}
-int[] DGdegrees = new int[count];
-int count2 = 0;
-for(int i=0;i<tmp.Length;i++){
-   if(tmp[i]==1){
-      DGdegrees[count2]=i;
-      count2++; 
-   }
-}
-DGdegrees;
 **************
-List of 3 instances of Int32 {
-  0: 2
-  1: 3
-  2: 5
-}
 ==============
 **************
 ==============
@@ -312,21 +284,15 @@ List of 3 instances of Int32 {
 ==============
 **************
 ==============
-int rows    = 3;
-int columns = 2;
-Plot2Ddata[,] multiplots = new Plot2Ddata[rows,columns];
-int pDegree = 0;
-for(int iRow = 0; iRow < rows; iRow++) {
+Plot2Ddata[,] multiplots = new Plot2Ddata[3,2];
+int pDegree = 2;
+for(int iRow = 0; iRow < 3; iRow++) {
 //var RuntimePlot = SubTab.ToPlot("DOFs", "minSolRunT", // column for x- and y
 //                        "solver_name", "DGdegree:T"); // column for group
-for(int iCol = 0; iCol < columns; iCol++) {
-    
-    if(pDegree > rows*columns-2)
+for(int iCol = 0; iCol < 2; iCol++) {
+    if(pDegree > 6)
         continue;
-    int tmpDG = 0;
-    if(pDegree < DGdegrees.Length)
-        tmpDG = DGdegrees[pDegree];
-    
+ 
     multiplots[iRow,iCol] = SubTab.ToPlot("DOFs", "minSolRunT", // column for x- and y
        delegate (int iTabRow, 
                  IDictionary<string, object> Row, 
@@ -338,7 +304,7 @@ for(int iCol = 0; iCol < columns; iCol++) {
            // and the respective color  
            // - - - - - - - - - - - - - - - - - - - - - - - - 
            int k = Convert.ToInt32(Row["DGdegree:T"]);
-           if(k != tmpDG) {
+           if(k != pDegree) {
                 // degree does not match -> not in this plot
                 Nmn = null;
                 Fmt = null;
@@ -387,7 +353,7 @@ for(int iCol = 0; iCol < columns; iCol++) {
                Nmn = "unknown"; 
                break;
            } 
-           Console.WriteLine("name is: " + solver_name); 
+           //Console.WriteLine("name is: " + solver_name); 
            Fmt.PointSize = 0.5;
            Fmt.Style     = Styles.LinesPoints;
            Fmt.LineColor = LineColors.Black;
@@ -399,7 +365,7 @@ for(int iCol = 0; iCol < columns; iCol++) {
     linP.Format.FromString("- black");
     ArrayTools.AddToArray(linP, ref multiplots[iRow,iCol].dataGroups);
  
-    string Title = string.Format("$k = {0}$", tmpDG);
+    string Title = string.Format("$k = {0}$", pDegree);
     multiplots[iRow,iCol].Ylabel = Title;
     multiplots[iRow,iCol].LogX = true;
     multiplots[iRow,iCol].LogY = true;
@@ -412,14 +378,10 @@ for(int iCol = 0; iCol < columns; iCol++) {
     multiplots[iRow,iCol].Y2rangeMax = 1e+4;
     multiplots[iRow,iCol].X2rangeMin = 1e2;
     multiplots[iRow,iCol].X2rangeMax = 1e7;
-    //legend is plotted only for the last diagram and is pushed to next dummy plot
-    //therefore AddDummyPlotsForLegend()
-    if(iRow == 1) {
+ 
+    if(iRow == 2) {
         multiplots[iRow,iCol].ShowLegend = true;
-        //if the 3rd plot is the last
-        multiplots[iRow,iCol].LegendPosition = new double[] {1e12,1e-5};
-        //if the 5th plot is the last
-        //multiplots[iRow,iCol].LegendPosition = new double[] {1e12,1e4};
+        multiplots[iRow,iCol].LegendPosition = new double[] {1e12,1e4};
     } else {
         multiplots[iRow,iCol].ShowLegend = false;
     }
@@ -443,93 +405,9 @@ for(int iCol = 0; iCol < columns; iCol++) {
     pDegree++;
 }                        
 }
-;
+multiplots.PlotNow();
 multiplots.AddDummyPlotsForLegend(2,0);
-multiplots.PlotNow()
 **************
-name is: exp_softpcg_mg
-name is: exp_softpcg_mg
-name is: exp_softpcg_mg
-name is: exp_softpcg_mg
-name is: exp_softpcg_mg
-name is: exp_direct_lapack
-name is: exp_direct_lapack
-name is: exp_softpcg_schwarz
-name is: exp_softpcg_schwarz
-name is: exp_softpcg_schwarz
-name is: exp_softpcg_schwarz
-name is: exp_softpcg_schwarz
-name is: exp_direct
-name is: exp_direct
-name is: exp_direct
-name is: exp_direct
-name is: exp_direct
-name is: exp_softpcg_schwarz_directcoarse
-name is: exp_softpcg_schwarz_directcoarse
-name is: exp_softpcg_schwarz_directcoarse
-name is: exp_softpcg_schwarz_directcoarse
-name is: exp_softpcg_schwarz_directcoarse
-name is: classic_cg
-name is: classic_cg
-name is: classic_cg
-name is: classic_cg
-name is: classic_cg
-name is: classic_mumps
-name is: classic_mumps
-name is: classic_mumps
-name is: classic_mumps
-name is: classic_pardiso
-name is: classic_pardiso
-name is: classic_pardiso
-name is: classic_pardiso
-name is: exp_softpcg_mg
-name is: exp_softpcg_mg
-name is: exp_softpcg_mg
-name is: exp_softpcg_mg
-name is: exp_direct_lapack
-name is: exp_direct_lapack
-name is: exp_softpcg_schwarz
-name is: exp_softpcg_schwarz
-name is: exp_softpcg_schwarz
-name is: exp_softpcg_schwarz
-name is: exp_direct
-name is: exp_direct
-name is: exp_direct
-name is: exp_direct
-name is: exp_softpcg_schwarz_directcoarse
-name is: exp_softpcg_schwarz_directcoarse
-name is: exp_softpcg_schwarz_directcoarse
-name is: exp_softpcg_schwarz_directcoarse
-name is: classic_cg
-name is: classic_cg
-name is: classic_cg
-name is: classic_cg
-name is: classic_mumps
-name is: classic_mumps
-name is: classic_mumps
-name is: classic_pardiso
-name is: classic_pardiso
-name is: classic_pardiso
-name is: classic_pardiso
-name is: exp_softpcg_mg
-name is: exp_softpcg_mg
-name is: exp_softpcg_mg
-name is: exp_direct_lapack
-name is: exp_softpcg_schwarz
-name is: exp_softpcg_schwarz
-name is: exp_softpcg_schwarz
-name is: exp_direct
-name is: exp_direct
-name is: exp_direct
-name is: exp_softpcg_schwarz_directcoarse
-name is: exp_softpcg_schwarz_directcoarse
-name is: exp_softpcg_schwarz_directcoarse
-name is: classic_mumps
-name is: classic_mumps
-name is: classic_mumps
-name is: classic_pardiso
-name is: classic_pardiso
-name is: classic_pardiso
 Using gnuplot: C:\Program Files\FDY\BoSSS\bin\native\win\gnuplot-gp510-20160418-win32-mingw\gnuplot\bin\gnuplot.exe
 System.Drawing.Bitmap
 ==============
@@ -539,7 +417,7 @@ System.Drawing.Bitmap
 ==============
 **************
 ==============
-var CL = multiplots.ToGnuplot().PlotCairolatex(xSize:14,ySize:14);
+var CL = multiplots.ToGnuplot().PlotCairolatex(xSize:17, ySize:17);
 **************
 Using gnuplot: C:\Program Files\FDY\BoSSS\bin\native\win\gnuplot-gp510-20160418-win32-mingw\gnuplot\bin\gnuplot.exe
 
@@ -552,28 +430,9 @@ CL.PlotNow();
 System.ComponentModel.Win32Exception occurred: Das System kann die angegebene Datei nicht finden. Type 'LastError' for details.
 
 ==============
-LastError
-**************
-System.ComponentModel.Win32Exception (0x80004005): Das System kann die angegebene Datei nicht finden
-   bei System.Diagnostics.Process.StartWithShellExecuteEx(ProcessStartInfo startInfo)
-   bei BoSSS.Application.BoSSSpad.GnuplotExtensions.CairolatexContainer.Preview(Boolean trimPage, Int32 dpi)
-   bei <InteractiveExpressionClass>.Host(Object& $retval)
-   bei Mono.CSharp.Evaluator.Evaluate(String input, Object& result, Boolean& result_set)
-   bei BoSSS.Application.BoSSSpad.ReadEvalPrintLoop.EvalPrint(String line, Assembly& AssemblyProduced)
-==============
 CL.WriteMinimalCompileableExample(
    Path.Combine(CurrentDocDir, "plots", "MainConstCoeffPoissonScaling.tex"),
    "ConstCoeffPoissonScaling.tex");
-**************
-==============
-**************
-==============
-**************
-==============
-**************
-==============
-**************
-==============
 **************
 ==============
 **************
