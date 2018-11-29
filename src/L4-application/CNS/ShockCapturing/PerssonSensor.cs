@@ -119,9 +119,9 @@ namespace CNS.ShockCapturing {
                         result = numerator / denominator;
                     }
 
-                    Debug.Assert(denominator != 0, "Persson sensor: Denominator is zero!");
-                    Debug.Assert(!(numerator / denominator).IsNaN(), "Persson sensor: Sensor value is NaN!");
-                    Debug.Assert(numerator / denominator >= 0, "Persson sensor: Sensor value is negative!");
+                    //Debug.Assert(denominator != 0, "Persson sensor: Denominator is zero!");
+                    //Debug.Assert(!(numerator / denominator).IsNaN(), "Persson sensor: Sensor value is NaN!");
+                    //Debug.Assert(numerator / denominator >= 0, "Persson sensor: Sensor value is negative!");
 
                     sensorValues[cell] = result;
                 }
@@ -200,9 +200,9 @@ namespace CNS.ShockCapturing {
                     result = numerator / denominator;
                 }
 
-                Debug.Assert(denominator != 0, "Persson sensor: Denominator is zero!");
-                Debug.Assert(!(numerator / denominator).IsNaN(), "Persson sensor: Sensor value is NaN!");
-                Debug.Assert(numerator / denominator >= 0, "Persson sensor: Sensor value is negative!");
+                //Debug.Assert(denominator != 0, "Persson sensor: Denominator is zero!");
+                //Debug.Assert(!(numerator / denominator).IsNaN(), "Persson sensor: Sensor value is NaN!");
+                //Debug.Assert(numerator / denominator >= 0, "Persson sensor: Sensor value is negative!");
 
                 sensorValues[cell] = result;
             }
