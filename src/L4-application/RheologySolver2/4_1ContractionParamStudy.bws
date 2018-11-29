@@ -1,0 +1,150 @@
+restart
+**************
+
+  Database Explorer v2
+  ____________________
+
+Databases loaded:
+List of 5 instances of IDatabaseInfo {
+  1: { Session Count = 1; Grid Count = 1; Path = c:\AnnesBoSSSdb\OperatorTest }
+  2: { Session Count = 0; Grid Count = 0; Path = C:\AnnesBoSSSdb\StokesChannel }
+  3: { Session Count = 76; Grid Count = 8; Path = C:\AnnesBoSSSdb\Channel }
+  4: { Session Count = 76; Grid Count = 8; Path = c:\AnnesBoSSSdb\Channel }
+  5: { Session Count = 4; Grid Count = 1; Path = c:\AnnesBoSSSdb\Contraction }
+}
+
+ Console ready for input. Type 'help' for help.
+
+==============
+WorkflowMgm.Init("4_1Contraction");
+**************
+==============
+WorkflowMgm.AllJobs;
+**************
+List of 0 instances of KeyValuePair{String,Job} {
+}
+==============
+var myDb = OpenOrCreateDatabase(@"C:\AnnesBoSSSdb\Contraction");
+**************
+Opening existing database 'C:\AnnesBoSSSdb\Contraction'.
+
+==============
+//databases;
+var myBatch = new MiniBatchProcessorClient(@"D:\local\binaries");
+var myHPC   = myBatch;
+//var myHPC = new MsHPC2012Client(@"\\dc1\userspace\smuda\cluster\binaries","hpccluster",ComputeNodes : new[] {"hpccluster", "pcmit34"});
+**************
+==============
+MiniBatchProcessor.Server.StartIfNotRunning(false);
+**************
+Starting mini batch processor in background thread...
+
+==============
+LoadAssembly(@"C:\BoSSS-code\src\experimental\L4-application\RheologySolver2\bin\Release\RheologySolver.exe");
+**************
+==============
+using BoSSS.Application.Rheology;
+**************
+==============
+Type solver = typeof(BoSSS.Application.Rheology.Rheology);
+**************
+==============
+solver.Assembly.Location;
+**************
+C:\BoSSS-code\src\experimental\L4-application\RheologySolver2\bin\Release\RheologySolver.exe
+==============
+int[] kelem = new int[] {4, 8, 10};
+foreach (int k in kelem){
+    string StartupString = string.Format("cs:BoSSS.Application.Rheology.RheologyControlExamples.Contraction({0})", k);
+    string jobName       = string.Format("4_1Contraction_k"+k);
+//    string StartupString = string.Format("cs:BoSSS.Application.XNSE_Solver.HardcodedControl.RayleighTaylor_Paramstudy(@\"{0}\")", myDb.Path);
+//    string jobName       = string.Format("RTp2_coupledBDF1_tempConv2");
+    var oneJob           = new Job (jobName,solver);
+    oneJob.SetCommandLineArguments(StartupString);
+    oneJob.Activate(myHPC);
+    }
+**************
+Loading session b1d1fa13-15da-4754-a627-f07f7ed7f882 failed with message 'Die Datei "C:\AnnesBoSSSdb\Channel\sessions\b1d1fa13-15da-4754-a627-f07f7ed7f882\Session.info" konnte nicht gefunden werden.'
+Loading session b1d1fa13-15da-4754-a627-f07f7ed7f882 failed with message 'Die Datei "c:\AnnesBoSSSdb\Channel\sessions\b1d1fa13-15da-4754-a627-f07f7ed7f882\Session.info" konnte nicht gefunden werden.'
+Job is marked as failed by job manager, but no database entry is found; performing new deployment and submission.
+Deploying executables and additional files ...
+Deployment directory: D:\local\binaries\RheologySolver2017Apr25_12-10-48
+Source directory: C:\BoSSS-code\src\experimental\L4-application\RheologySolver2\bin\Release
+   copied: RheologySolver.exe 
+Source directory: C:\BoSSS-code\src\public\L4-application\BoSSSpad\bin\Release
+   copied: BoSSS.Solution.dll log4net.dll BoSSS.Foundation.dll ilPSP.dll MPI.Wrappers.dll nunit.framework.dll Renci.SshNet.dll Newtonsoft.Json.dll BoSSS.Platform.dll ilPSP.LinSolvers.monkey.dll ilPSP.Connectors.Matlab.dll CommandLine.dll Mono.CSharp.dll BoSSS.Foundation.XDG.dll BoSSS.Foundation.Grid.dll MathNet.Numerics.dll BoSSS.Solution.NSECommon.dll BoSSS.Solution.Multigrid.dll BoSSS.Solution.Gnuplot.dll ilPSP.LinSolvers.PARDISO.dll BoSSS.Solution.Tecplot.dll ilPSP.LinSolvers.MUMPS.dll BoSSS.Solution.XdgTimestepping.dll deployment finished.
+Job is marked as failed by job manager, but no database entry is found; performing new deployment and submission.
+Deploying executables and additional files ...
+Deployment directory: D:\local\binaries\RheologySolver2017Apr25_12-10-51
+Source directory: C:\BoSSS-code\src\experimental\L4-application\RheologySolver2\bin\Release
+   copied: RheologySolver.exe 
+Source directory: C:\BoSSS-code\src\public\L4-application\BoSSSpad\bin\Release
+   copied: BoSSS.Solution.dll log4net.dll BoSSS.Foundation.dll ilPSP.dll MPI.Wrappers.dll nunit.framework.dll Renci.SshNet.dll Newtonsoft.Json.dll BoSSS.Platform.dll ilPSP.LinSolvers.monkey.dll ilPSP.Connectors.Matlab.dll CommandLine.dll Mono.CSharp.dll BoSSS.Foundation.XDG.dll BoSSS.Foundation.Grid.dll MathNet.Numerics.dll BoSSS.Solution.NSECommon.dll BoSSS.Solution.Multigrid.dll BoSSS.Solution.Gnuplot.dll ilPSP.LinSolvers.PARDISO.dll BoSSS.Solution.Tecplot.dll ilPSP.LinSolvers.MUMPS.dll BoSSS.Solution.XdgTimestepping.dll deployment finished.
+Job is marked as failed by job manager, but no database entry is found; performing new deployment and submission.
+Deploying executables and additional files ...
+Deployment directory: D:\local\binaries\RheologySolver2017Apr25_12-10-52
+Source directory: C:\BoSSS-code\src\experimental\L4-application\RheologySolver2\bin\Release
+   copied: RheologySolver.exe 
+Source directory: C:\BoSSS-code\src\public\L4-application\BoSSSpad\bin\Release
+   copied: BoSSS.Solution.dll log4net.dll BoSSS.Foundation.dll ilPSP.dll MPI.Wrappers.dll nunit.framework.dll Renci.SshNet.dll Newtonsoft.Json.dll BoSSS.Platform.dll ilPSP.LinSolvers.monkey.dll ilPSP.Connectors.Matlab.dll CommandLine.dll Mono.CSharp.dll BoSSS.Foundation.XDG.dll BoSSS.Foundation.Grid.dll MathNet.Numerics.dll BoSSS.Solution.NSECommon.dll BoSSS.Solution.Multigrid.dll BoSSS.Solution.Gnuplot.dll ilPSP.LinSolvers.PARDISO.dll BoSSS.Solution.Tecplot.dll ilPSP.LinSolvers.MUMPS.dll BoSSS.Solution.XdgTimestepping.dll deployment finished.
+
+==============
+WorkflowMgm.AllJobs;
+**************
+List of 3 instances of KeyValuePair{String,Job} {
+  1: [4_1Contraction_k4, BoSSS.Application.BoSSSpad.Job]
+  2: [4_1Contraction_k8, BoSSS.Application.BoSSSpad.Job]
+  3: [4_1Contraction_k10, BoSSS.Application.BoSSSpad.Job]
+}
+==============
+WorkflowMgm.BlockUntilAllJobsTerminate(360);
+**************
+All jobs finished.
+
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============

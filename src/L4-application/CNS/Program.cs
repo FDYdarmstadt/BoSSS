@@ -19,9 +19,10 @@ using BoSSS.Foundation.Grid.Classic;
 using BoSSS.Foundation.IO;
 using BoSSS.Solution;
 using BoSSS.Solution.ASCIIExport;
+using BoSSS.Solution.CompressibleFlowCommon;
 using BoSSS.Solution.Tecplot;
 using BoSSS.Solution.Timestepping;
-using CNS.Boundary;
+using BoSSS.Solution.CompressibleFlowCommon.Boundary;
 using CNS.EquationSystem;
 using CNS.IBM;
 using CNS.LoadBalancing;
@@ -35,6 +36,8 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Threading;
+using BoSSS.Solution.CompressibleFlowCommon.MaterialProperty;
+using CNS.Convection;
 
 namespace CNS {
 
@@ -51,8 +54,7 @@ namespace CNS {
         static void Main(string[] args) {
 
             //Application.InitMPI(args);
-            ////CNS.Tests.IBMTests.IBMCylinderTest.IBMCylinder0th();
-            //CNS.Tests.IBMTests.IBMIsentropicVortexTest.IBMVortexClassicAgglomerationTest();
+            //CNS.Tests.ConvectiveFlux.ShockTubeTests.Toro1AllButRusanovTest(ConvectiveFluxTypes.Godunov);
             //Debug.Assert(false);
 
             Application<CNSControl>._Main(
@@ -146,7 +148,7 @@ namespace CNS {
         protected override GridCommons CreateOrLoadGrid() {
             using (var ht = new FuncTrace()) {
                 GridCommons grid = base.CreateOrLoadGrid();
-                CNSEnvironment.Initialize(grid.SpatialDimension);
+                CNSEnvironment.Initialize(grid.SpatialDimension, this);
                 return grid;
             }
         }
@@ -267,7 +269,7 @@ namespace CNS {
                         e = ee;
                     }
                     e.ExceptionBcast();
-                    
+
 
                     if (DatabaseDriver.MyRank == 0 && TimestepNo % printInterval == 0) {
                         if (TimestepNo % printInterval == 0) {
@@ -446,7 +448,7 @@ namespace CNS {
         /// </summary>
         /// <returns></returns>
         protected virtual BoundaryConditionMap GetBoundaryConditionMap() {
-            return new BoundaryConditionMap(GridData, Control);
+            return new BoundaryConditionMap(GridData, Control, Control.GetMaterial());
         }
 
         /// <summary>

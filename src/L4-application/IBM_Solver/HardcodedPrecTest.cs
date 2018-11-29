@@ -206,9 +206,11 @@ namespace BoSSS.Application.IBM_Solver {
         }
 
 
-        static public IBM_Control PrecTest3dDegenhardt(int precNo = 4, int channel = 1, int name_newton =1, int k =3, int cells_x = 4, int cells_yz =5, int re = 100, int ASparts = 3, int ASDepth = 2, int MGLevels = 3, int maxKrDim = 1000, int saveToDB = 0)
+        static public IBM_Control PrecTest3dDegenhardt(int precNo = 4, int channel = 1, int name_newton =1, int k =3, int cells_x = 4, int cells_yz =5, int re = 100, int ASparts = 3, int ASDepth = 2, int MGLevels = 3, int maxKrDim = 1000, int saveToDB = 1)
         {
             IBM_Control C = new IBM_Control();
+
+            //in SolverChooser die DoF parts ändern
 
             //Possibilities:
             //channel = 0 --> channel 3D with sphere
@@ -248,13 +250,15 @@ namespace BoSSS.Application.IBM_Solver {
 
             // basic database options
             // ======================
-            if (saveToDB == 1)
-                C.savetodb = true;
-            else
-                C.savetodb = false;
+           // if (saveToDB == 1)
+               // C.savetodb = true;
+            //else
+                //C.savetodb = false;
 
+            C.savetodb = true;
 
-            C.DbPath = @"\\hpccluster\hpccluster-scratch\krause\cluster_db";
+            C.DbPath = @" \\dc1\scratch\Krause\Datenbank_Louis\degenhardt_final";
+            //C.DbPath = @"\\hpccluster\hpccluster-scratch\krause\cluster_db";
             //C.DbPath = @"/home/oe11okuz/BoSSS_DB/Lichtenberg_DB";
 
 
@@ -490,9 +494,9 @@ namespace BoSSS.Application.IBM_Solver {
             C.PhysicalParameters.rho_A = 1;
             // 1/Re
             //C.PhysicalParameters.mu_A = 1.0 / 10.0;
-            C.PhysicalParameters.mu_A = 0.2 / re;
+            //C.PhysicalParameters.mu_A = 0.2 / re;
 
-            //C.PhysicalParameters.mu_A = 1.0 / re;
+            C.PhysicalParameters.mu_A = 1.0 / re;
 
             // Boundary conditions
             C.AddBoundaryValue("Velocity_inlet", "VelocityY", (x, t) => 0);
@@ -556,19 +560,19 @@ namespace BoSSS.Application.IBM_Solver {
                 case 3:
                     {
                         C.LinearSolve = LinearSolverCodes.exp_AS_1000;
-                        C.NoOfMultigridLevels = 1;  // 3 // --> grobes MG am Ende nochmal
+                        C.NoOfMultigridLevels = MGLevels;  // 3 // --> grobes MG am Ende nochmal
                         break;
                     }
                 case 4:
                     {
                         C.LinearSolve = LinearSolverCodes.exp_AS_5000;
-                        C.NoOfMultigridLevels = 3;
+                        C.NoOfMultigridLevels = MGLevels;
                         break;
                     }
                 case 5:
                     {
                         C.LinearSolve = LinearSolverCodes.exp_AS_10000;
-                        C.NoOfMultigridLevels = 3;
+                        C.NoOfMultigridLevels = MGLevels;
                         break;
                     }
                 case 6:
@@ -576,13 +580,13 @@ namespace BoSSS.Application.IBM_Solver {
                         //depth = 2,
                         //   Depth = ASDepth,  //--> MG bei der Blockzerlegung --> Resultat ergibt die Blöcke zur Berechnung (kleine Blöcke--> schlecht)
                         C.LinearSolve = LinearSolverCodes.exp_AS_MG;
-                        C.NoOfMultigridLevels = 3;
+                        C.NoOfMultigridLevels = MGLevels;
                         break;
                     }
                 case 7:
                     {
                         C.LinearSolve = LinearSolverCodes.exp_localPrec; ;
-                        C.NoOfMultigridLevels = 3;
+                        C.NoOfMultigridLevels = MGLevels;
                         break;
                     }
                 case 8:

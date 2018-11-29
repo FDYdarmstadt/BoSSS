@@ -18,11 +18,14 @@ using BoSSS.Foundation;
 using BoSSS.Foundation.Grid;
 using BoSSS.Foundation.Quadrature;
 using BoSSS.Platform;
+using BoSSS.Solution.CompressibleFlowCommon;
+using BoSSS.Solution.CompressibleFlowCommon.ShockCapturing;
 using CNS.IBM;
 using ilPSP;
 using ilPSP.LinSolvers;
 using ilPSP.Tracing;
 using ilPSP.Utils;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
@@ -31,22 +34,21 @@ namespace CNS.ShockCapturing {
 
     public class PerssonSensor : IShockSensor {
 
-        private Variable sensorVariable;
+        private string m_sensorVariableName;
 
         private double sensorLimit;
 
         private double[] sensorValues;
 
-        public PerssonSensor(Variable sensorVariable, double sensorLimit) {
-            this.sensorVariable = sensorVariable;
+        public PerssonSensor(string  sensorVariableName, double sensorLimit) {
+            this.m_sensorVariableName = sensorVariableName;
             this.sensorLimit = sensorLimit;
         }
 
-        public void UpdateSensorValues(CNSFieldSet fieldSet, ISpeciesMap speciesMap, CellMask cellMask) {
+        public void UpdateSensorValues(IEnumerable<DGField> fieldSet, ISpeciesMap speciesMap, CellMask cellMask) {
             using (new FuncTrace()) {
-                DGField fieldToTest = fieldSet.ConservativeVariables.
-                    Concat(fieldSet.DerivedFields.Values).
-                    Where(f => f.Identification == sensorVariable.Name).
+                DGField fieldToTest = fieldSet.
+                    Where(f => f.Identification == m_sensorVariableName).
                     Single();
                 int degree = fieldToTest.Basis.Degree;
                 int noOfCells = fieldToTest.GridDat.iLogicalCells.NoOfLocalUpdatedCells;

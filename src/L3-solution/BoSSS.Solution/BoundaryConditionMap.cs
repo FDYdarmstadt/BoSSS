@@ -52,9 +52,9 @@ namespace BoSSS.Solution.Utils {
     public class BoundaryCondMap<BCType> where BCType : struct {
 
         /// <summary>
-        /// keys: the names of the members of <typeparamref name="BCType"/>,
-        /// i.e. all enum entries as strings;<br/>
-        /// values: the corresponding <typeparamref name="BCType"/>-values;
+        /// - keys: the names of the members of <typeparamref name="BCType"/>,
+        ///   i.e. all enum entries as strings;
+        /// - values: the corresponding <typeparamref name="BCType"/>-values;
         /// </summary>
         protected SortedDictionary<string, BCType> BoundaryCondTypes = new SortedDictionary<string, BCType>(new StringIgnoreCaseComp());
 
@@ -90,17 +90,20 @@ namespace BoSSS.Solution.Utils {
             #endregion
         }
 
-
         /// <summary>
         /// scalar functions that encode boundary values;
+        /// - Keys: User-defined names that were provided with the constructor
+        ///   (e.g. 'VelocityX', 'Pressure',...) 
+        /// - Values: a function, to evaluate the BC values
+        /// - Array index: edge tag;        
         /// </summary>
-        /// <remarks>
-        /// Keys: User-defined names that were provided with the constructor
-        /// (e.g. 'VelocityX', 'Pressure',...) <br/>
-        /// Values: a function, to evaluate the BC values
-        /// Array index: edge tag;
-        /// </remarks>
-        public Dictionary<string, Func<double[], double, double>[]> bndFunction = new Dictionary<string, Func<double[], double, double>[]>();
+        public Dictionary<string, Func<double[], double, double>[]> bndFunction {
+            get {
+                return m_bndFunction;
+            }
+        }
+            
+        Dictionary<string, Func<double[], double, double>[]> m_bndFunction = new Dictionary<string, Func<double[], double, double>[]>();
 
         IGridData m_grdDat;
 
@@ -110,7 +113,7 @@ namespace BoSSS.Solution.Utils {
         /// <param name="grdDat"></param>
         /// <param name="_bndy"></param>
         /// <param name="bndFunctionNames">
-        /// all names of boundary functions that should be parsed for;
+        /// all names of boundary functions that should be parsed for, see <see cref="bndFunction"/>
         /// </param>
         public BoundaryCondMap(IGridData grdDat, IDictionary<string, AppControl.BoundaryValueCollection> _bndy, params string[] bndFunctionNames) {
 
@@ -396,15 +399,50 @@ namespace BoSSS.Solution.Utils {
                 BCTypeUseCount.Add(bct, GlobCnt);
 
             }
+
+            // additional info
+            // ===============
+            {
+                var _EdgeTag2EdgeTagName = new Dictionary<byte, string>();
+                var _EdgeTagName2EdgeTag = new Dictionary<string, byte>();
+
+                foreach(var kv in grdDat.EdgeTagNames) {
+                    _EdgeTag2EdgeTagName.Add(kv.Key, kv.Value);
+                    _EdgeTagName2EdgeTag.Add(kv.Value, kv.Key);
+                }
+                EdgeTag2EdgeTagName = _EdgeTag2EdgeTagName;
+                EdgeTagName2EdgeTag = _EdgeTagName2EdgeTag;
+            }
         }
 
         /// <summary>
-        /// Keys: boundary condition type;<br/>
-        /// Values: number of edges in the actual grid that make use of this boundary condition.
+        /// A plain copy of <see cref="IGridData.EdgeTagNames"/>
+        /// - key: edge tag number
+        /// - value: the name which corresponds to the number
+        /// </summary>
+        public IReadOnlyDictionary<byte, string> EdgeTag2EdgeTagName {
+            get;
+            private set;
+        }
+
+        /// <summary>
+        /// The inverse of <see cref="EdgeTag2EdgeTagName"/>
+        /// - key: edge tag number
+        /// - value: the name which corresponds to the number
+        /// </summary>
+        public IReadOnlyDictionary<string, byte> EdgeTagName2EdgeTag {
+            get;
+            private set;
+        }
+
+        
+        
+        /// <summary>
+        /// - Keys: boundary condition type;<br/>
+        /// - Values: number of edges in the actual grid that make use of this boundary condition.
         /// </summary>
         public Dictionary<BCType, int> BCTypeUseCount = new Dictionary<BCType, int>();
-
-
+        
         /// <summary>
         /// a function, which returns always 0.0;
         /// </summary>
@@ -416,9 +454,9 @@ namespace BoSSS.Solution.Utils {
         }
 
         /// <summary>
-        /// Map: EdgeTag (see
-        /// <see cref="GridData.EdgeData.EdgeTags"/>) to boundary
-        /// condition type
+        /// Map: EdgeTag (see <see cref="IGeometricalEdgeData.EdgeTags"/>) to boundary condition type
+        /// - index: edge tag
+        /// - item: type of boundary condition
         /// </summary>
         public BCType[] EdgeTag2Type = new BCType[GridCommons.FIRST_PERIODIC_BC_TAG];
 

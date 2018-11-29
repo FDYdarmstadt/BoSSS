@@ -392,6 +392,7 @@ namespace BoSSS.Application.XNSE_Solver {
             C.Solver_MaxIterations = 50;
             C.Solver_ConvergenceCriterion = 1e-8;
             C.LevelSet_ConvergenceCriterion = 1e-6;
+            C.LinearSolver = DirectSolver._whichSolver.PARDISO;
 
             C.AdvancedDiscretizationOptions.ViscosityMode = ViscosityMode.FullySymmetric;
 

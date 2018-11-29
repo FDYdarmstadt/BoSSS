@@ -42,7 +42,10 @@ namespace BoSSS.Foundation.Grid.Classic {
         /// The <see cref="RefElement"/> for this grid. Currently only grids with _one_ RefElement are supported!!!
         /// </param>
         public Grid2D(RefElement _RefElement)
-            : base(new RefElement[] { _RefElement }, new RefElement[] { _RefElement.FaceRefElement }) {
+            : base(new RefElement[] { _RefElement }, new RefElement[] { _RefElement.FaceRefElement }) //
+        {
+            if (_RefElement.SpatialDimension != 2)
+                throw new ArgumentException();
         }
 
 
@@ -53,11 +56,16 @@ namespace BoSSS.Foundation.Grid.Classic {
             : base(new RefElement[] { Square.Instance }, new RefElement[] { Line.Instance }) {
         }
 
-        static private bool IsInCutoutRegion(int indX, int indY, double[] xNodes, double[] yNodes, Vector2D[] cutoutMin, Vector2D[] cutoutMax) {
+        static private bool IsInCutoutRegion(int indX, int indY, double[] xNodes, double[] yNodes, Vector[] cutoutMin, Vector[] cutoutMax) {
             double Xcenter = 0.5 * (xNodes[indX] + xNodes[indX + 1]);
             double Ycenter = 0.5 * (yNodes[indY] + yNodes[indY + 1]);
 
             for (int l = cutoutMin.Length - 1; l >= 0; l--) {
+                if(cutoutMin[l].Dim != 2)
+                    throw new ArgumentException("expecting a 2D vector");
+                if(cutoutMax[l].Dim != 2)
+                    throw new ArgumentException("expecting a 2D vector");
+
                 if (Xcenter >= cutoutMin[l].x && Xcenter <= cutoutMax[l].x
                     && Ycenter >= cutoutMin[l].y && Ycenter <= cutoutMax[l].y)
                     return true;
@@ -385,7 +393,7 @@ namespace BoSSS.Foundation.Grid.Classic {
         /// </param>
         public static Grid2D Cartesian2DGrid(double[] xNodes, double[] yNodes, CellType type = CellType.Square_Linear, 
             bool periodicX = false, bool periodicY = false, 
-            Func<Vector2D,Vector2D> NonlinearGridTrafo = null,
+            Func<Vector,Vector> NonlinearGridTrafo = null,
             params BoundingBox[] CutOuts) {
             using (var tr = new FuncTrace()) {
                 MPICollectiveWatchDog.Watch();
@@ -490,21 +498,18 @@ namespace BoSSS.Foundation.Grid.Classic {
                                 double yL = yNodes[j];
                                 double yR = yNodes[j + 1];
 
-                                for (int iNode = 0; iNode < NoOfNodes; iNode++) {
+                                for(int iNode = 0; iNode < NoOfNodes; iNode++) {
                                     double xi = 0.5 * (RefNodes[iNode, 0] + 1.0);
                                     double eta = 0.5 * (RefNodes[iNode, 1] + 1.0);
 
-                                    Vector2D A = new Vector2D();
+                                    Vector A = new Vector(2);
                                     A.x = xL * (1.0 - xi) + xR * xi;
                                     A.y = yL * (1.0 - eta) + yR * eta;
 
-                                    Vector2D B;
-                                    if(NonlinearGridTrafo != null)
-                                    {
+                                    Vector B = new Vector(2);
+                                    if(NonlinearGridTrafo != null) {
                                         B = NonlinearGridTrafo(A);
-                                    }
-                                    else
-                                    {
+                                    } else {
                                         B = A;
                                     }
 
@@ -875,8 +880,7 @@ namespace BoSSS.Foundation.Grid.Classic {
                         grid.Cells[0] = Cj0;
                         grid.Cells[0].NodeIndices = new int[] { 0, 1, 2, 3 };
 
-                    }
-                    else {
+                    } else {
 
 
                         for (int i = 0; i < (xNodes.Length - 1); i++) {
@@ -887,54 +891,54 @@ namespace BoSSS.Foundation.Grid.Classic {
                                 Cj0.TransformationParams = MultidimensionalArray.Create(4, 2);
                                 var Bild0 = Cj0.TransformationParams;
 
+                                double dx = xNodes[i + 1] - xNodes[i];
+                                double KK = dx / (yNodes.Length);
+
+
                                 if (i == 0) {
                                     Bild0[0, 0] = xNodes[i];
-                                    Bild0[1, 0] = xNodes[i + 1] - k * factor;
+                                    Bild0[1, 0] = xNodes[i + 1] - k * KK * factor;
                                     Bild0[2, 0] = xNodes[i];
-                                    Bild0[3, 0] = xNodes[i + 1] - (k + 1) * factor;
+                                    Bild0[3, 0] = xNodes[i + 1] - (k + 1) * KK * factor;
                                     Bild0[0, 1] = yNodes[k];
                                     Bild0[1, 1] = yNodes[k];
                                     Bild0[2, 1] = yNodes[k + 1];
                                     Bild0[3, 1] = yNodes[k + 1];
-                                    Rotate(Bild0, Rotation);
-                                }
-                                else if (i == xNodes.Length - 2) {
-                                    Bild0[0, 0] = (xNodes[i] > threshold) ? (xNodes[i]) : (xNodes[i] - k * factor);
+                                } else if (i == xNodes.Length - 2) {
+                                    Bild0[0, 0] = (xNodes[i] > threshold) ? (xNodes[i]) : (xNodes[i] - k * KK * factor);
                                     Bild0[1, 0] = xNodes[i + 1];
-                                    Bild0[2, 0] = (xNodes[i] > threshold) ? (xNodes[i]) : (xNodes[i] - (k + 1) * factor);
+                                    Bild0[2, 0] = (xNodes[i] > threshold) ? (xNodes[i]) : (xNodes[i] - (k + 1) * KK * factor);
                                     Bild0[3, 0] = xNodes[i + 1];
                                     Bild0[0, 1] = yNodes[k];
                                     Bild0[1, 1] = yNodes[k];
                                     Bild0[2, 1] = yNodes[k + 1];
                                     Bild0[3, 1] = yNodes[k + 1];
-                                    Rotate(Bild0, Rotation);
-                                }
-                                else {
-                                    Bild0[0, 0] = (xNodes[i] > threshold) ? (xNodes[i]) : (xNodes[i] - k * factor);
-                                    Bild0[1, 0] = (xNodes[i + 1] > threshold) ? (xNodes[i + 1]) : (xNodes[i + 1] - k * factor);
-                                    Bild0[2, 0] = (xNodes[i] > threshold) ? (xNodes[i]) : (xNodes[i] - (k + 1) * factor);
-                                    Bild0[3, 0] = (xNodes[i + 1] > threshold) ? (xNodes[i + 1]) : (xNodes[i + 1] - (k + 1) * factor);
+                                } else {
+                                    Bild0[0, 0] = (xNodes[i] > threshold) ? (xNodes[i]) : (xNodes[i] - k * KK * factor);
+                                    Bild0[1, 0] = (xNodes[i + 1] > threshold) ? (xNodes[i + 1]) : (xNodes[i + 1] - k * KK * factor);
+                                    Bild0[2, 0] = (xNodes[i] > threshold) ? (xNodes[i]) : (xNodes[i] - (k + 1) * KK * factor);
+                                    Bild0[3, 0] = (xNodes[i + 1] > threshold) ? (xNodes[i + 1]) : (xNodes[i + 1] - (k + 1) * KK * factor);
                                     Bild0[0, 1] = yNodes[k];
                                     Bild0[1, 1] = yNodes[k];
                                     Bild0[2, 1] = yNodes[k + 1];
                                     Bild0[3, 1] = yNodes[k + 1];
-                                    Rotate(Bild0, Rotation);
                                 }
 
                                 if (!(Bild0[0, 0] < Bild0[1, 0]))
                                     throw new ArgumentException("stretching factor chosen to large");
                                 if (!(Bild0[2, 0] < Bild0[3, 0]))
                                     throw new ArgumentException("stretching factor chosen to large");
+                                Rotate(Bild0, Rotation);
 
                                 if (pf != null)
                                     pf(Bild0);
 
                                 Cj0.NodeIndices = new int[] {
-                                k*xNodes.Length + i,          // unten, links
-                                k*xNodes.Length + (i + 1),    // unten, rechts
-                                (k + 1)*xNodes.Length + i,    // oben, links
-                                (k + 1)*xNodes.Length + i + 1 // oben, rechts
-                            };
+                                    k*xNodes.Length + i,          // unten, links
+                                    k*xNodes.Length + (i + 1),    // unten, rechts
+                                    (k + 1)*xNodes.Length + i,    // oben, links
+                                    (k + 1)*xNodes.Length + i + 1 // oben, rechts
+                                };
 
 
 
@@ -943,8 +947,7 @@ namespace BoSSS.Foundation.Grid.Classic {
                             }
                         }
                     }
-                }
-                else {
+                } else {
                     grid.Cells = new Cell[0];
                 }
 
@@ -1032,7 +1035,7 @@ namespace BoSSS.Foundation.Grid.Classic {
                     //Periodic Boundary Inlet
                     double[][] PerBoundIn = { Param2XY(rNodes.First(), sNodes.First()), Param2XY(rNodes.Last(), sNodes.First()) };
                     // Vector Connecting the two Points of the inlet
-                    Vector2D PerBoundInCon;
+                    Vector PerBoundInCon = new Vector(2);
                     PerBoundInCon.x = PerBoundIn[1][0] - PerBoundIn[0][0];//(Param2XY(rNodes.First(), sNodes.First())[0] - Param2XY(rNodes.Last(), sNodes.First())[0]);
                     PerBoundInCon.y = PerBoundIn[1][1] - PerBoundIn[0][1];//(Param2XY(rNodes.First(), sNodes.First())[1] - Param2XY(rNodes.Last(), sNodes.First())[1]);
                     // Normal onto Inlet Pointing outwards
@@ -1040,7 +1043,7 @@ namespace BoSSS.Foundation.Grid.Classic {
                     double[] PerBoundInNormal = { -PerBoundInCon.y, +PerBoundInCon.x };
                     //Periodic Boundary Inlet
                     double[][] PerBoundOut = { Param2XY(rNodes.First(), sNodes.Last()), Param2XY(rNodes.Last(), sNodes.Last()) };
-                    Vector2D PerBoundOutCon;
+                    Vector PerBoundOutCon = new Vector(2);
                     PerBoundOutCon.x = PerBoundOut[1][0] - PerBoundOut[0][0];//(Param2XY(rNodes.First(), sNodes.Last())[0] - Param2XY(rNodes.Last(), sNodes.Last())[0]);
                     PerBoundOutCon.y = PerBoundOut[1][1] - PerBoundOut[0][1];//(Param2XY(rNodes.First(), sNodes.Last())[1] - Param2XY(rNodes.Last(), sNodes.Last())[1]);
                     PerBoundOutCon.Normalize();
@@ -1083,7 +1086,7 @@ namespace BoSSS.Foundation.Grid.Classic {
 
                                 // Interpolate in rs-Domain according to these Coordinates
 
-                                Vector2D rsPoint = new Vector2D();
+                                Vector rsPoint = new Vector(2);
                                 rsPoint[0] = rNodes[i] + (rNodes[i + 1] - rNodes[i]) * 0.5 * (InterpolationNodes[PointNumber, 0] + 1);
                                 rsPoint[1] = sNodes[k] + (sNodes[k + 1] - sNodes[k]) * 0.5 * (InterpolationNodes[PointNumber, 1] + 1);
 
@@ -1233,7 +1236,7 @@ namespace BoSSS.Foundation.Grid.Classic {
                     //Periodic Boundary Inlet
                     double[][] PerBoundIn = { Topology(rNodes.First(), sNodes.First()), Topology(rNodes.First(), sNodes.Last()) };
                     // Vector Connecting the two Points of the inlet
-                    Vector2D PerBoundInCon;
+                    Vector PerBoundInCon = new Vector(2);
                     PerBoundInCon.x = PerBoundIn[1][0] - PerBoundIn[0][0]; //(Topology(rNodes.First(), sNodes.First())[0] - Topology(rNodes.Last(), sNodes.First())[0]);
                     PerBoundInCon.y = PerBoundIn[1][1] - PerBoundIn[0][1]; //(Topology(rNodes.First(), sNodes.First())[1] - Topology(rNodes.Last(), sNodes.First())[1]);
                     // Normal onto Inlet Pointing outwards
@@ -1241,7 +1244,7 @@ namespace BoSSS.Foundation.Grid.Classic {
                     double[] PerBoundInNormal = { -PerBoundInCon.y, +PerBoundInCon.x };
                     //Periodic Boundary Inlet
                     double[][] PerBoundOut = { Topology(rNodes.Last(), sNodes.First()), Topology(rNodes.Last(), sNodes.Last()) };
-                    Vector2D PerBoundOutCon;
+                    Vector PerBoundOutCon = new Vector(2);
                     PerBoundOutCon.x = PerBoundOut[1][0] - PerBoundOut[0][0];//(Topology(rNodes.First(), sNodes.Last())[0] - Topology(rNodes.Last(), sNodes.Last())[0]);
                     PerBoundOutCon.y = PerBoundOut[1][1] - PerBoundOut[0][1];//(Topology(rNodes.First(), sNodes.Last())[1] - Topology(rNodes.Last(), sNodes.Last())[1]);
                     PerBoundOutCon.Normalize();
@@ -1284,7 +1287,7 @@ namespace BoSSS.Foundation.Grid.Classic {
 
                                 // Interpolate in rs-Domain according to these Coordinates
 
-                                Vector2D rsPoint = new Vector2D();
+                                Vector rsPoint = new Vector(2);
                                 rsPoint[0] = rNodes[i] + (rNodes[i + 1] - rNodes[i]) * 0.5 * (InterpolationNodes[PointNumber, 0] + 1);
                                 rsPoint[1] = sNodes[k] + (sNodes[k + 1] - sNodes[k]) * 0.5 * (InterpolationNodes[PointNumber, 1] + 1);
 

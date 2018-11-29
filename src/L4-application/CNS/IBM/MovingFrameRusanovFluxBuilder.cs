@@ -15,7 +15,9 @@ limitations under the License.
 */
 
 using BoSSS.Platform.LinAlg;
-using CNS.Boundary;
+using BoSSS.Solution.CompressibleFlowCommon;
+using BoSSS.Solution.CompressibleFlowCommon.Convection;
+using BoSSS.Solution.CompressibleFlowCommon.Boundary;
 using CNS.Convection;
 using CNS.EquationSystem;
 
@@ -40,7 +42,7 @@ namespace CNS.IBM {
         /// <param name="speciesMap">
         /// <see cref="FluxBuilder"/>
         /// </param>
-        public MovingFrameRusanovFluxBuilder(CNSControl control, IBoundaryConditionMap boundaryMap, ISpeciesMap speciesMap)
+        public MovingFrameRusanovFluxBuilder(CNSControl control, BoundaryConditionMap boundaryMap, ISpeciesMap speciesMap)
             : base(control, boundaryMap, speciesMap) {
             this.ibmSpeciesMap = speciesMap as ImmersedSpeciesMap;
             if (ibmSpeciesMap == null) {
@@ -61,7 +63,7 @@ namespace CNS.IBM {
 
             for (int d = 0; d < CNSEnvironment.NumberOfDimensions; d++) {
                 op.MomentumComponents[d].Add(new MovingFrameRusanovFlux(
-                    control, boundaryMap, new EulerMomentumComponent(d, control.EquationOfState.HeatCapacityRatio, control.MachNumber), ibmSpeciesMap));
+                    control, boundaryMap, new EulerMomentumComponent(d, control.EquationOfState.HeatCapacityRatio, control.MachNumber, CNSEnvironment.NumberOfDimensions), ibmSpeciesMap));
             }
 
             op.EnergyComponents.Add(new MovingFrameRusanovFlux(

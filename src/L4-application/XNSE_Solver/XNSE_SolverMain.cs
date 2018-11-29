@@ -2257,8 +2257,6 @@ namespace BoSSS.Application.XNSE_Solver {
                         // check condition number, etc
                         // +++++++++++++++++++++++++++++++
 
-                        //DiffMatrix.SaveToTextFileSparse("C:\\tmp\\DiffMatrix.txt");
-
                         MultidimensionalArray ret = MultidimensionalArray.Create(1, 5);
                         Console.WriteLine("Calling MATLAB/Octave...");
                         using (BatchmodeConnector bmc = new BatchmodeConnector()) {

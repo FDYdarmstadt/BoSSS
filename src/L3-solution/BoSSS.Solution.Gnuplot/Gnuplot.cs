@@ -203,8 +203,8 @@ namespace BoSSS.Solution.Gnuplot {
                 path = "";
 
             /*
-            string bosss_install = System.Environment.GetEnvironmentVariable("BOSSS_INSTALL");
-            if(bosss_install != null) {
+            string BOSSS_INSTALL = System.Environment.GetEnvironmentVariable("BOSSS_INSTALL");
+            if(BOSSS_INSTALL != null) {
                 // +++++++++++++++++++++++++++++++++++++++++++++++++++++++++
                 // Prefer gnuplut which ships with BoSSS, if existent;
                 // +++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -213,7 +213,7 @@ namespace BoSSS.Solution.Gnuplot {
                 if(CurrentSys == PlatformID.Win32NT || CurrentSys == PlatformID.Win32S || CurrentSys == PlatformID.Win32Windows) {
                     // on windows
 
-                    string dir1 = Directory.GetDirectories(bosss_install, "bin\\native\\win\\gnuplot*").FirstOrDefault();
+                    string dir1 = Directory.GetDirectories(BOSSS_INSTALL, "bin\\native\\win\\gnuplot*").FirstOrDefault();
                     if(dir1 != null) {
                         string dir2 = Directory.GetDirectories(dir1, "gnuplot\\bin").FirstOrDefault();
                         if(dir2 != null) {

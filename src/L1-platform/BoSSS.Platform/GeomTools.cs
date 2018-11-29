@@ -247,30 +247,16 @@ namespace BoSSS.Platform.Utils.Geom {
         /// when the point is inside (3D - version);
         /// </summary>
         /// <param name="pt"></param>
-        public void AddPoint(Vector3D pt) {
-            if (D != 3)
+        public void AddPoint(Vector pt) {
+            if (D != pt.Dim)
                 throw new ArgumentException("wrong spatial dimension of point");
-            Min[0] = Math.Min(Min[0], pt.x);
-            Max[0] = Math.Max(Max[0], pt.x);
-            Min[1] = Math.Min(Min[1], pt.y);
-            Max[1] = Math.Max(Max[1], pt.y);
-            Min[2] = Math.Min(Min[2], pt.z);
-            Max[2] = Math.Max(Max[2], pt.z);
+            for(int d = 0; d < D; d++) {
+                Min[d] = Math.Min(Min[d], pt[d]);
+                Max[d] = Math.Max(Max[d], pt[d]);
+            }
         }
 
-        /// <summary>
-        /// adds a point to the bounding box, i.e. enlarges it when the point is outside and does not change it
-        /// when the point is inside (2D - version);
-        /// </summary>
-        /// <param name="pt"></param>
-        public void AddPoint(Vector2D pt) {
-            if (D != 2)
-                throw new ArgumentException("wrong spatial dimension of point");
-            Min[0] = Math.Min(Min[0], pt.x);
-            Max[0] = Math.Max(Max[0], pt.x);
-            Min[1] = Math.Min(Min[1], pt.y);
-            Max[1] = Math.Max(Max[1], pt.y);
-        }
+        
 
         /// <summary>
         /// increases the size of this bounding box to contain the box <paramref name="other"/>
@@ -499,15 +485,11 @@ namespace BoSSS.Platform.Utils.Geom {
 
             // 'regular' cases: compare with all edge points
             // =============================================
-            Vector3D vec; // we also embedd the 1D and the 2D case in a 3D Vector (Vector3D is a stack object, while an array would be a heap object)
-            vec.x = 0;
-            vec.y = 0;
-            vec.z = 0;
+            Vector vec = default(Vector); // we also embed the 1D and the 2D case in a 3D Vector (Vector3D is a stack object, while an array would be a heap object)
+            vec.Dim = _D;
 
-            Vector3D _pt;
-            _pt.x = 0;
-            _pt.y = 0;
-            _pt.z = 0;
+            Vector _pt = default(Vector);
+            _pt.Dim = _D;
             for (int d = 0; d < _D; d++)
                 _pt[d] = pt[d];
 
@@ -539,7 +521,7 @@ namespace BoSSS.Platform.Utils.Geom {
                 }
 
                 // compare distance
-                dist = Math.Min(dist, Vector3D.Dist(_pt, vec));
+                dist = Math.Min(dist, Vector.Dist(_pt, vec));
             }
             return dist;
         }
@@ -858,14 +840,17 @@ namespace BoSSS.Platform.Utils.Geom {
         }
     }
 
+    /// <summary>
+    /// Various geometric utilities
+    /// </summary>
     public static class SimpleGeoTools {
         /// <summary>
-        /// Calculates the cross product of two vectors in 2D
+        /// Calculates the cross product of two vectors in 2D 
         /// </summary>
         /// <param name="a"></param>
         /// <param name="b"></param>
         /// <returns></returns>
-        public static double CrossProduct2D(double[] a, double[] b) {
+        public static double CrossProduct2D(this double[] a, double[] b) {
             return a[0] * b[1] - a[1] * b[0];
         }
 
@@ -885,8 +870,7 @@ namespace BoSSS.Platform.Utils.Geom {
         }
 
         /// <summary>
-        /// Smoothes, e.g., an initial condition over the range h/p using
-        /// a tanh profile
+        /// Smooths, e.g., an initial condition over the range h/p using a tanh profile
         /// </summary>
         /// <param name="distance">The distance to e.g. a shock</param>
         /// <param name="cellSize">The cell size h</param>
