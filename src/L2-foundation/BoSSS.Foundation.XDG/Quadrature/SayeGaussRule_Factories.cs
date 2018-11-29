@@ -1,5 +1,6 @@
 ﻿#undef LOG_ACTIONS
 #undef LOG_TIME
+
 using System;
 using System.Collections.Generic;
 using System.Linq;
