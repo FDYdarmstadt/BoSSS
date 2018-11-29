@@ -1377,9 +1377,9 @@ namespace BoSSS.Solution.XdgTimestepping {
 
                 int newPushCount = m_LsTrk.PushCount;
                 int newVersion = m_LsTrk.VersionCnt;
-                if ((newPushCount - oldPushCount) != 0)
+                if ((newPushCount - oldPushCount) != 0 && !coupledOperator)
                     throw new ApplicationException("Calling 'LevelSetTracker.PushStacks()' is not allowed. Level-set-tracker stacks must be controlled by time-stepper.");
-                if ((newVersion - oldVersion) != 1)
+                if ((newVersion - oldVersion) != 1 && !coupledOperator)
                     throw new ApplicationException("Expecting exactly one call to 'UpdateTracker(...)' in 'UpdateLevelset(...)'.");
 
                 // in the case of splitting, the fields must be extrapolated 

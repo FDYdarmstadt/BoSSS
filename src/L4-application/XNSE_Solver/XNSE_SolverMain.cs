@@ -291,7 +291,7 @@ namespace BoSSS.Application.XNSE_Solver {
                 }
 
 
-                if(this.Control.solveCoupledHeatSolver) {
+                if(this.Control.solveCoupledHeatEquation) {
                     this.Temperature = new XDGField(new XDGBasis(this.LsTrk, this.Control.FieldOptions[VariableNames.Temperature].Degree), VariableNames.Temperature);
                     base.RegisterField(this.Temperature);
                     this.ResidualHeat = new XDGField(this.Temperature.Basis, "ResidualHeat");
@@ -589,20 +589,20 @@ namespace BoSSS.Application.XNSE_Solver {
                degU,
                this.BcMap,
                movingmesh,
-               this.Control.withEvaporation);
+               (this.Control.ThermalParameters.hVap_A != 0.0 && this.Control.ThermalParameters.hVap_B != 0.0));
 
 
             // coupled heat Operator
             // =====================
 
-            if(this.Control.solveCoupledHeatSolver) {
+            if(this.Control.solveCoupledHeatEquation) {
                 this.generateCoupledOperator();
             }
 
             #endregion
 
             #region Create Timestepper
-            // ==================
+            // =======================
             if (L == null) {
 
                 switch (this.Control.Timestepper_Scheme) {
@@ -686,7 +686,7 @@ namespace BoSSS.Application.XNSE_Solver {
                     }
                     //Console.WriteLine("noofpartsperprocess = {0}", this.CurrentSolution.Count / 10000);
 
-                    if(this.Control.solveCoupledHeatSolver) {
+                    if(this.Control.solveCoupledHeatEquation) {
                         m_BDF_coupledTimestepper = new XdgBDFTimestepping(
                         this.coupledCurrentSolution.Mapping.Fields,
                         this.coupledCurrentResidual.Mapping.Fields,
@@ -746,7 +746,7 @@ namespace BoSSS.Application.XNSE_Solver {
                     ArrayTools.Cat<DGField>(this.XDGvelocity.ResidualMomentum.ToArray(), this.ResidualContinuity), 
                     this.LsTrk, this.MultigridSequence);
 
-                if(this.Control.solveCoupledHeatSolver)
+                if(this.Control.solveCoupledHeatEquation)
                     m_BDF_coupledTimestepper.DataRestoreAfterBalancing(L,
                           this.Temperature.ToEnumerable(),
                           this.ResidualHeat.ToEnumerable(),
@@ -771,7 +771,7 @@ namespace BoSSS.Application.XNSE_Solver {
 
         public override void DataBackupBeforeBalancing(GridUpdateDataVaultBase L) {
             m_BDF_Timestepper.DataBackupBeforeBalancing(L);
-            if(this.Control.solveCoupledHeatSolver)
+            if(this.Control.solveCoupledHeatEquation)
                 m_BDF_coupledTimestepper.DataBackupBeforeBalancing(L);
         }
 
@@ -837,7 +837,9 @@ namespace BoSSS.Application.XNSE_Solver {
                 this.Curvature,
                 codMap,
                 domMap,
-                phystime);
+                phystime,
+                (this.Control.solveCoupledHeatEquation ? this.coupledCurrentSolution.Mapping.Fields : null));
+
 
             if (filtLevSetGradient != null) {
                 if (this.Control.AdvancedDiscretizationOptions.FilterConfiguration.LevelSetSource == CurvatureAlgorithms.LevelSetSource.fromC0) {
@@ -1250,8 +1252,8 @@ namespace BoSSS.Application.XNSE_Solver {
 
                     if(m_BDF_Timestepper != null) {
                         m_BDF_Timestepper.Solve(phystime, dt, Control.SkipSolveAndEvaluateResidual);
-                        if(this.Control.solveCoupledHeatSolver && m_BDF_coupledTimestepper != null)
-                            m_BDF_coupledTimestepper.Solve(phystime, dt, Control.SkipSolveAndEvaluateResidual);
+                        //if(this.Control.solveCoupledHeatEquation && m_BDF_coupledTimestepper != null)
+                        //    m_BDF_coupledTimestepper.Solve(phystime, dt, Control.SkipSolveAndEvaluateResidual);
                     } else {
                         //m_RK_Timestepper.Solve(phystime, dt);
                     }
@@ -3216,6 +3218,19 @@ namespace BoSSS.Application.XNSE_Solver {
 
 
                 // ==================================================================
+                // compute source terms for the interface evolution, e.g. evaporation
+                // ==================================================================
+
+                #region Compute volume flux from temperature gradient
+
+                SinglePhaseField LevSetSrc = new SinglePhaseField(meanVelocity[0].Basis);
+                LevSetSrc.AccConstant(0.1);    // prescribedVolumeFlux for testing purpose
+
+                // TODO
+
+                #endregion
+
+                // ==================================================================
                 // backup interface properties (mass conservation, surface changerate)
                 // ==================================================================
 
@@ -3261,8 +3276,8 @@ namespace BoSSS.Application.XNSE_Solver {
 
                         NarrowMarchingBand.Evolve_Mk2(
                              dt, this.LsTrk, DGLevSet_old, this.DGLevSet.Current, this.DGLevSetGradient,
-                             meanVelocity, this.ExtensionVelocity.Current.ToArray(),
-                             this.m_HMForder, iTimestep, volFlux : this.Control.PhysicalParameters.prescribedVolumeFlux);
+                             meanVelocity, this.ExtensionVelocity.Current.ToArray(), new DGField[] { LevSetSrc },
+                             this.m_HMForder, iTimestep);
 
                             //if(this.Control.AdaptiveMeshRefinement == false) {
                             //    CellMask Accepted = LsTrk.Regions.GetCutCellMask();
@@ -3743,15 +3758,16 @@ namespace BoSSS.Application.XNSE_Solver {
                 // mass flux at interface
                 // ======================
                 {
-                    if(this.Control.withEvaporation) {
+                    if(this.Control.ThermalParameters.hVap_A != 0.0 && this.Control.ThermalParameters.hVap_B != 0.0) {
                         double hVap;
                         double mEvap;
+                        double prescribedVolumeFlux = 0.1;
                         if(this.Control.ThermalParameters.hVap_A > 0) {
                             hVap = this.Control.ThermalParameters.hVap_A;
-                            mEvap = -this.Control.ThermalParameters.rho_A * this.Control.ThermalParameters.prescribedVolumeFlux;
+                            mEvap = -this.Control.ThermalParameters.rho_A * prescribedVolumeFlux;
                         } else {
                             hVap = this.Control.ThermalParameters.hVap_B;
-                            mEvap = this.Control.ThermalParameters.rho_B * this.Control.ThermalParameters.prescribedVolumeFlux;
+                            mEvap = this.Control.ThermalParameters.rho_B * prescribedVolumeFlux;
                         }
                         Xheat_Operator.EquationComponents[CodName[0]].Add(new EvaporationAtLevelSet(LsTrk, mEvap, hVap));
                     }

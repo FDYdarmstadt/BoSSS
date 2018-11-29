@@ -112,8 +112,8 @@ namespace BoSSS.Solution.XNSECommon {
         /// <summary>
         /// prescribed volume flux for testing. 
         /// </summary>
-        [DataMember]
-        public double prescribedVolumeFlux = 0.0;
+        //[DataMember]
+        //public double prescribedVolumeFlux = 0.0;
 
         /// <summary>
         /// Use the artificial surface force (usually only used in manufactured solutions)?
@@ -140,7 +140,7 @@ namespace BoSSS.Solution.XNSECommon {
             cl.theta_e = this.theta_e;
             cl.sliplength = this.sliplength;
             cl.Material = this.Material;
-            cl.prescribedVolumeFlux = this.prescribedVolumeFlux;
+            //cl.prescribedVolumeFlux = this.prescribedVolumeFlux;
             cl.useArtificialSurfaceForce = this.useArtificialSurfaceForce;
             return cl;
         }

@@ -91,20 +91,14 @@ namespace BoSSS.Solution.XheatCommon {
         /// <summary>
         /// prescribed volume flux for testing. 
         /// </summary>
-        [DataMember]
-        public double prescribedVolumeFlux = 0.0;
+        //[DataMember]
+        //public double prescribedVolumeFlux = 0.0;
 
         /// <summary>
         /// is the interface a material one or is it non-material?
         /// </summary>
-        [DataMember]
-        public bool Material = true;
-
-        ///// <summary>
-        ///// is the interface a material one or is it non-material?
-        ///// </summary>
         //[DataMember]
-        //public bool Material;
+        //public bool Material = true;
 
 
         /// <summary>
@@ -120,8 +114,8 @@ namespace BoSSS.Solution.XheatCommon {
             cl.k_B = this.k_B;
             cl.hVap_A = this.hVap_A;
             cl.hVap_B = this.hVap_B;
-            cl.prescribedVolumeFlux = this.prescribedVolumeFlux;
-            cl.Material = this.Material;
+            //cl.prescribedVolumeFlux = this.prescribedVolumeFlux;
+            //cl.Material = this.Material;
             return cl;
         }
 

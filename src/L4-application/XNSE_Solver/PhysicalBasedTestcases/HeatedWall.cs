@@ -116,7 +116,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             C.PhysicalParameters.mu_B = 1.0;
             C.PhysicalParameters.Sigma = 1.0;
 
-            C.solveCoupledHeatSolver = solveHeat;
+            C.solveCoupledHeatEquation = solveHeat;
             C.ThermalParameters.rho_A = C.PhysicalParameters.rho_A;
             C.ThermalParameters.rho_B = C.PhysicalParameters.rho_B;
             C.ThermalParameters.c_A = 1.0;
@@ -369,7 +369,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             C.PhysicalParameters.mu_B = 1.0;
             C.PhysicalParameters.Sigma = 0.0;
 
-            C.solveCoupledHeatSolver = solveHeat;
+            C.solveCoupledHeatEquation = solveHeat;
             C.ThermalParameters.rho_A = C.PhysicalParameters.rho_A;
             C.ThermalParameters.rho_B = C.PhysicalParameters.rho_B;
             C.ThermalParameters.c_A = 1.0;
@@ -377,9 +377,8 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             C.ThermalParameters.k_A = 10.0;
             C.ThermalParameters.k_B = 1.0;
 
-            C.withEvaporation = evaporation;
-            C.ThermalParameters.prescribedVolumeFlux = 0.1;
-            C.PhysicalParameters.prescribedVolumeFlux = C.ThermalParameters.prescribedVolumeFlux;
+            //C.ThermalParameters.prescribedVolumeFlux = 0.1;
+            //C.PhysicalParameters.prescribedVolumeFlux = C.ThermalParameters.prescribedVolumeFlux;
             C.ThermalParameters.hVap_A = 1.0;
             C.ThermalParameters.hVap_B = -1.0;
 
@@ -390,7 +389,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             C.PhysicalParameters.theta_e = Math.PI / 2.0;
 
             C.PhysicalParameters.IncludeConvection = true;
-            C.PhysicalParameters.Material = false;
+            //C.PhysicalParameters.Material = false;
 
             #endregion
 
@@ -407,22 +406,22 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
                 double[] Ynodes = GenericBlas.Linspace(0, H, 3 * kelemR + 1);
                 var grd = Grid2D.Cartesian2DGrid(Xnodes, Ynodes);
 
-                if(solveHeat) {
-                    grd.EdgeTagNames.Add(1, "velocity_inlet_Dirichlet_lower");
-                    grd.EdgeTagNames.Add(2, "pressure_outlet_ZeroGradient_upper");
-                    grd.EdgeTagNames.Add(3, "freeslip_ZeroGradient_left");
-                    grd.EdgeTagNames.Add(4, "freeslip_ZeroGradient_right");
-                } else if(evaporation) {
+
+                    //grd.EdgeTagNames.Add(1, "velocity_inlet_Dirichlet_lower");
+                    //grd.EdgeTagNames.Add(2, "pressure_outlet_ZeroGradient_upper");
+                    //grd.EdgeTagNames.Add(3, "freeslip_ZeroGradient_left");
+                    //grd.EdgeTagNames.Add(4, "freeslip_ZeroGradient_right");
+
                     grd.EdgeTagNames.Add(1, "wall_lower");
                     grd.EdgeTagNames.Add(2, "pressure_outlet_upper");
                     grd.EdgeTagNames.Add(3, "freeslip_left");
                     grd.EdgeTagNames.Add(4, "freeslip_right");
-                } else {
-                    grd.EdgeTagNames.Add(1, "velocity_inlet_lower");
-                    grd.EdgeTagNames.Add(2, "pressure_outlet_upper");
-                    grd.EdgeTagNames.Add(3, "freeslip_left");
-                    grd.EdgeTagNames.Add(4, "freeslip_right");
-                }
+
+                    //grd.EdgeTagNames.Add(1, "velocity_inlet_lower");
+                    //grd.EdgeTagNames.Add(2, "pressure_outlet_upper");
+                    //grd.EdgeTagNames.Add(3, "freeslip_left");
+                    //grd.EdgeTagNames.Add(4, "freeslip_right");
+
 
                 grd.DefineEdgeTags(delegate (double[] X) {
                     byte et = 0;
@@ -470,25 +469,25 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             // ===================
             #region BC
 
-            if(solveHeat) {
-                C.AddBoundaryValue("velocity_inlet_Dirichlet_lower", "Temperature#A", (X, t) => 5.0);
-                C.AddBoundaryValue("velocity_inlet_Dirichlet_lower", "VelocityY#A", (X, t) => 0.1);
-                C.AddBoundaryValue("pressure_outlet_ZeroGradient_upper");
-                C.AddBoundaryValue("freeslip_ZeroGradient_left");
-                C.AddBoundaryValue("freeslip_ZeroGradient_right");
 
-            } else if(evaporation) {
+                //C.AddBoundaryValue("velocity_inlet_Dirichlet_lower", "Temperature#A", (X, t) => 5.0);
+                //C.AddBoundaryValue("velocity_inlet_Dirichlet_lower", "VelocityY#A", (X, t) => 0.1);
+                //C.AddBoundaryValue("pressure_outlet_ZeroGradient_upper");
+                //C.AddBoundaryValue("freeslip_ZeroGradient_left");
+                //C.AddBoundaryValue("freeslip_ZeroGradient_right");
+
+
                 C.AddBoundaryValue("wall_lower");
                 C.AddBoundaryValue("pressure_outlet_upper");
                 C.AddBoundaryValue("freeslip_left");
                 C.AddBoundaryValue("freeslip_right");
 
-            } else {
-                C.AddBoundaryValue("velocity_inlet_lower", "VelocityY#A", (X, t) => 0.1);
-                C.AddBoundaryValue("pressure_outlet_upper");
-                C.AddBoundaryValue("freeslip_left");
-                C.AddBoundaryValue("freeslip_right");
-            }
+
+                //C.AddBoundaryValue("velocity_inlet_lower", "VelocityY#A", (X, t) => 0.1);
+                //C.AddBoundaryValue("pressure_outlet_upper");
+                //C.AddBoundaryValue("freeslip_left");
+                //C.AddBoundaryValue("freeslip_right");
+
 
             //C.AdvancedDiscretizationOptions.GNBC_Localization = NavierSlip_Localization.Bulk;
             //C.AdvancedDiscretizationOptions.GNBC_SlipLength = NavierSlip_SlipLength.hmin_Grid;

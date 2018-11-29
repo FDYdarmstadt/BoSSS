@@ -376,12 +376,11 @@ namespace BoSSS.Solution.XNSECommon.Operator.Continuity {
         LevelSetTracker m_lsTrk;
 
         public GeneralizedDivergenceAtLevelSet(int _D, LevelSetTracker lsTrk, double _rhoA, double _rhoB,
-            bool _MaterialInterface, double vorZeichen, bool RescaleConti, double _M) {
+            double vorZeichen, bool RescaleConti, double _kA, double _kB, double _hVapA) {
             this.D = _D;
             this.rhoA = _rhoA;
             this.rhoB = _rhoB;
             this.m_lsTrk = lsTrk;
-            MaterialInterface = _MaterialInterface;
 
             scaleA = vorZeichen;
             scaleB = vorZeichen;
@@ -391,10 +390,12 @@ namespace BoSSS.Solution.XNSECommon.Operator.Continuity {
                 scaleB /= rhoB;
             }
 
-            this.M = _M;
+            //this.M = _M;
+            this.kA = _kA;
+            this.kB = _kB;
+            this.hVapA = _hVapA;
         }
 
-        bool MaterialInterface;
         int D;
         double rhoA;
         double rhoB;
@@ -402,7 +403,11 @@ namespace BoSSS.Solution.XNSECommon.Operator.Continuity {
         double scaleA;
         double scaleB;
 
-        double M;
+        double kA;
+        double kB;
+        double hVapA;   // for the identification of the liquid phase
+
+        //double M;
 
 
         public TermActivationFlags LevelSetTerms {
@@ -411,38 +416,41 @@ namespace BoSSS.Solution.XNSECommon.Operator.Continuity {
             }
         }
 
+
+        private double ComputeEvaporationMass(double[] GradT_A, double[] GradT_B, double[] n) {
+
+            double mEvap = 0.0;
+
+            // for testing purposes
+            double prescribedVolumeFlux = 0.1;
+            if(hVapA > 0) {
+                mEvap = -rhoA * prescribedVolumeFlux;
+            } else {
+                mEvap = rhoB * prescribedVolumeFlux;
+            }
+
+            // TODO 
+
+            return mEvap;
+        }
+
         public double LevelSetForm(ref Foundation.XDG.CommonParamsLs cp,
             double[] U_Neg, double[] U_Pos, double[,] Grad_uA, double[,] Grad_uB,
             double vA, double vB, double[] Grad_vA, double[] Grad_vB) {
 
-            //double uAxN = GenericBlas.InnerProd(U_Neg, cp.n);
-            //double uBxN = GenericBlas.InnerProd(U_Pos, cp.n);
+            double M = ComputeEvaporationMass(cp.ParamsNeg, cp.ParamsPos, cp.n);
+
             double uAxN = -M * (1 / rhoA);
             double uBxN = -M * (1 / rhoB);
 
-            double s = 0;//cp.ParamsNeg[0];
-            //if (!MaterialInterface) {
-            //    Debug.Assert(cp.ParamsNeg[0] == cp.ParamsPos[0], "The interface velocity must be continuous across the level set!");
-            //    throw new NotImplementedException();
-            //}
-
-
-            double rhoJmp = rhoB - rhoA;
-
             // transform from species B to A: we call this the "A-fictitious" value
             double uAxN_fict;
-            if(!MaterialInterface)
-                uAxN_fict = (1 / rhoA) * (rhoB * uBxN + (-s) * rhoJmp);
-            else
-                uAxN_fict = uBxN;
-
+            uAxN_fict = (1 / rhoA) * (rhoB * uBxN);
 
             // transform from species A to B: we call this the "B-fictitious" value
             double uBxN_fict;
-            if(!MaterialInterface)
-                uBxN_fict = (1 / rhoB) * (rhoA * uAxN - (-s) * rhoJmp);
-            else
-                uBxN_fict = uAxN;
+            uBxN_fict = (1 / rhoB) * (rhoA * uAxN);
+
 
             // compute the fluxes: note that for the continuity equation, we use not a real flux,
             // but some kind of penalization, therefore the fluxes have opposite signs!
@@ -473,7 +481,7 @@ namespace BoSSS.Solution.XNSECommon.Operator.Continuity {
 
         public IList<string> ParameterOrdering {
             get {
-                return new string[] { };
+                return new string[] { "GradTempX", "GradTempY", "GradTempZ" }.GetSubVector(0, D);
             }
         }
 

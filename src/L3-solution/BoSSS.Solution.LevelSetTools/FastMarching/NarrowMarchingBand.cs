@@ -230,9 +230,8 @@ namespace BoSSS.Solution.LevelSetTools.Advection {
         public static void Evolve_Mk2(
             double dt, LevelSetTracker Tracker,
             SinglePhaseField OldLevSet, SinglePhaseField NewLevelSet, VectorField<SinglePhaseField> LevelSetGrad,
-            ConventionalDGField[] Velocity, SinglePhaseField[] ExtVel,
-            int HMForder, int TimestepNo = 0, bool plotMarchingSteps = false,
-            double volFlux = 0.0) //
+            ConventionalDGField[] Velocity, SinglePhaseField[] ExtVel, DGField[] SourceParams,
+            int HMForder, int TimestepNo = 0, bool plotMarchingSteps = false) //
         {
             GridData gdat = Tracker.GridDat;
             int D = gdat.SpatialDimension;
@@ -428,7 +427,7 @@ namespace BoSSS.Solution.LevelSetTools.Advection {
             // --------------
 
             if (ComponentMode) {
-                MoveLevelSet(dt, NewLevelSet, LevelSetGrad, ExtVel, NEARgrid, marcher, volFlux);
+                MoveLevelSet(dt, NewLevelSet, LevelSetGrad, ExtVel, SourceParams, NEARgrid, marcher);
             }
             else {
                 throw new NotImplementedException("todo");
@@ -470,7 +469,7 @@ namespace BoSSS.Solution.LevelSetTools.Advection {
         }
 
         private static void MoveLevelSet(double dt, SinglePhaseField LevelSet, VectorField<SinglePhaseField> LevelSetGrad, SinglePhaseField[] ExtVel, 
-            SubGrid NEARgrid, Reinit.FastMarch.FastMarchReinit marcher, double volFlux) {
+            DGField[] SourceParams, SubGrid NEARgrid, Reinit.FastMarch.FastMarchReinit marcher) {
 
             GridData gdat = (GridData)(LevelSet.GridDat);
             int D = gdat.SpatialDimension;
@@ -478,14 +477,14 @@ namespace BoSSS.Solution.LevelSetTools.Advection {
             //var TimeEvoOp = (new LevelSetEvoTerm_Vector()).Operator(2);
 
 
-            SpatialOperator TimeEvoOp = new SpatialOperator(1, 2 * D, 1, QuadOrderFunc.NonLinear(2), "Phi", "dPhi_dx", "dPhi_dy", "Sx", "Sy", "c1");
+            SpatialOperator TimeEvoOp = new SpatialOperator(1, 2 * D + 1, 1, QuadOrderFunc.NonLinear(2), "Phi", "dPhi_dx", "dPhi_dy", "ExtVelX", "ExtVelY", "Src", "c1");
             TimeEvoOp.EquationComponents["c1"].Add(new LevelSetEvoTerm_Vector());
-            TimeEvoOp.EquationComponents["c1"].Add(new LevelSetEvoTerm_Source(volFlux));
+            TimeEvoOp.EquationComponents["c1"].Add(new LevelSetEvoTerm_Source());
             TimeEvoOp.EquationComponents["c1"].Add(new UpwindStabiForm());
             TimeEvoOp.Commit();
 
             RungeKutta RunschCjuda = new RungeKutta(RungeKuttaScheme.TVD3, TimeEvoOp,
-                LevelSet.Mapping, new CoordinateMapping(ArrayTools.Cat<DGField>(LevelSetGrad, ExtVel)), sgrd: NEARgrid);
+                LevelSet.Mapping, new CoordinateMapping(ArrayTools.Cat<DGField>(LevelSetGrad, ExtVel, SourceParams)), sgrd: NEARgrid);
 
             RunschCjuda.OnBeforeComputeChangeRate += delegate (double AbsTime, double RelTime) {
                 marcher.GradientUpdate(NEARgrid, LevelSet, LevelSetGrad);
@@ -551,7 +550,7 @@ namespace BoSSS.Solution.LevelSetTools.Advection {
 
             public IList<string> ParameterOrdering {
                 get { 
-                    return new string[] { "Sx", "Sy" }; 
+                    return new string[] { "ExtVelX", "ExtVelY" }; 
                 }
             }
         }
@@ -580,7 +579,7 @@ namespace BoSSS.Solution.LevelSetTools.Advection {
 
             public IList<string> ParameterOrdering {
                 get { 
-                    return new string[] { "dPhi_dx", "dPhi_dy", "Sx", "Sy" }; 
+                    return new string[] { "dPhi_dx", "dPhi_dy", "ExtVelX", "ExtVelY" }; 
                 }
             }
         }
@@ -588,10 +587,10 @@ namespace BoSSS.Solution.LevelSetTools.Advection {
 
         class LevelSetEvoTerm_Source : IVolumeForm {
 
-            double source;
+            //double source;
 
-            public LevelSetEvoTerm_Source(double _source) {
-                this.source = _source;
+            public LevelSetEvoTerm_Source() {
+                //this.source = _source;
             }
 
             public TermActivationFlags VolTerms {
@@ -599,7 +598,7 @@ namespace BoSSS.Solution.LevelSetTools.Advection {
             }
 
             public Double VolumeForm(ref CommonParamsVol cpv, Double[] U, Double[,] GradU, Double V, Double[] GradV) {
-                return -this.source * V;
+                return -cpv.Parameters[0] * V;
             }
 
             public IList<string> ArgumentOrdering {
@@ -610,7 +609,7 @@ namespace BoSSS.Solution.LevelSetTools.Advection {
 
             public IList<string> ParameterOrdering {
                 get {
-                    return new string[0];
+                    return new string[] { "Src" };
                 }
             }
 

@@ -43,7 +43,7 @@ namespace BoSSS.Solution.XNSECommon.Operator.DynamicInterfaceConditions {
         /// <param name="_D">spatial dimension</param>
         /// <param name="LsTrk"></param>
         /// <param name="_sigma">surface-tension constant</param>
-        public PrescribedMassFlux(int _d, int _D, LevelSetTracker LsTrk, double _rhoA, double _rhoB, double _M) {
+        public PrescribedMassFlux(int _d, int _D, LevelSetTracker LsTrk, double _rhoA, double _rhoB, double _kA, double _kB, double _hVapA) {
             m_LsTrk = LsTrk;
             if(_d >= _D)
                 throw new ArgumentOutOfRangeException();
@@ -52,7 +52,10 @@ namespace BoSSS.Solution.XNSECommon.Operator.DynamicInterfaceConditions {
 
             this.rhoA = _rhoA;
             this.rhoB = _rhoB;
-            this.M = _M;
+            //this.M = _M;
+            this.kA = _kA;
+            this.kB = _kB;
+            this.hVapA = _hVapA;
         }
 
         int m_D;
@@ -60,12 +63,37 @@ namespace BoSSS.Solution.XNSECommon.Operator.DynamicInterfaceConditions {
 
         double rhoA;
         double rhoB;
-        double M;
+
+        double kA;
+        double kB;
+        double hVapA;   // for the identification of the liquid phase
+
+        //double M;
+
+
+        private double ComputeEvaporationMass(double[] GradT_A, double[] GradT_B, double[] n) {
+
+            double mEvap = 0.0;
+
+            // for testing purposes
+            double prescribedVolumeFlux = 0.1;
+            if(hVapA > 0) {
+                mEvap = -rhoA * prescribedVolumeFlux;
+            } else {
+                mEvap = rhoB * prescribedVolumeFlux;
+            }
+
+            // TODO 
+
+            return mEvap;
+        }
 
 
         public double LevelSetForm(ref CommonParamsLs cp, double[] uA, double[] uB, double[,] Grad_uA, double[,] Grad_uB, double vA, double vB, double[] Grad_vA, double[] Grad_vB) {
 
             double[] Normal = cp.n;
+
+            double M = ComputeEvaporationMass(cp.ParamsNeg, cp.ParamsPos, Normal);
 
             double massFlux = -M.Pow2() * ((1/rhoA) - (1/rhoB)) * Normal[m_d];
 
@@ -81,14 +109,14 @@ namespace BoSSS.Solution.XNSECommon.Operator.DynamicInterfaceConditions {
 
         public IList<string> ArgumentOrdering {
             get {
-                return new string[] { };
+                return new string[] {  };
             }
         }
 
 
         public IList<string> ParameterOrdering {
             get {
-                return new string[] { };
+                return new string[] { "GradTempX", "GradTempY", "GradTempZ" }.GetSubVector(0, m_D);
             }
         }
 

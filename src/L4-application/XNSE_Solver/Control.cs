@@ -491,12 +491,12 @@ namespace BoSSS.Application.XNSE_Solver {
         /// <summary>
         /// switch for the computation of the coupled heat solver
         /// </summary>
-        public bool solveCoupledHeatSolver = false;
+        public bool solveCoupledHeatEquation = false;
 
         /// <summary>
         /// switch for computations with evaporation
         /// </summary>
-        public bool withEvaporation = false;
+        //public bool withEvaporation = false;
 
         /// <summary>
         /// Block-Precondition for the Temperature-block
