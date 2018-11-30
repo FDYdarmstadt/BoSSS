@@ -326,6 +326,8 @@ namespace BoSSS.Application.SipPoisson {
             return R;
         }
 
+        /*
+
         /// <summary>
         /// Test on a 2D Voronoi mesh
         /// </summary>
@@ -582,6 +584,8 @@ namespace BoSSS.Application.SipPoisson {
             return R;
         }
 
+        //*/
+
         /// <summary>
         /// Test on a 2D Voronoi mesh
         /// </summary>
@@ -615,7 +619,7 @@ namespace BoSSS.Application.SipPoisson {
 
             R.FieldOptions.Add("T", new FieldOpts() { Degree = deg, SaveToDB = FieldOpts.SaveToDBOpt.TRUE });
             R.FieldOptions.Add("Tex", new FieldOpts() { Degree = deg*2 });
-            R.InitialValues_Evaluators.Add("RHS", X => -1.0);
+            R.InitialValues_Evaluators.Add("RHS", X => -1.0 + X[0]*X[0] );
             R.InitialValues_Evaluators.Add("Tex", X => 0.0);
             R.ExactSolution_provided = false;
             R.NoOfMultigridLevels = int.MaxValue;
@@ -660,13 +664,14 @@ namespace BoSSS.Application.SipPoisson {
             */
 
              bool IsIn(double xi, double yi) {
-                if (xi > 1.0)
+                double myEps = 1e-8;
+                if (xi > 1.0 + myEps)
                     return false;
-                if (yi > 1.0)
+                if (yi > 1.0 + myEps)
                     return false;
-                if (xi < -1)
+                if (xi < -1 - myEps)
                     return false;
-                if (yi < -1)
+                if (yi < -1 - myEps)
                     return false;
 
                 return true;

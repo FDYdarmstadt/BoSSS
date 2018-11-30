@@ -652,7 +652,9 @@ namespace BoSSS.Application.DerivativeTest {
         /// </summary>
         protected override void PlotCurrentState(double physTime, TimestepNumber timestepNo, int superSampling = 0) {
             Tecplot.PlotFields(
-                ArrayTools.Cat<DGField>(f1Gradient_Analytical, f1Gradient_Numerical, f1, GridData.BoundaryMark(), Laplace_f1_Numerical, Laplace_f2_Numerical),
+                ArrayTools.Cat<DGField>(
+                    f1Gradient_Analytical, f1Gradient_Numerical, f1, 
+                    GridData.BoundaryMark(), Laplace_f1_Numerical, Laplace_f2_Numerical, f2),
                 "derivatives", 0.0, superSampling);
         }
 
@@ -975,7 +977,10 @@ namespace BoSSS.Application.DerivativeTest {
 
                 // comparison of finite difference Jacobian and Operator matrix
                 if (TestFDJacobian) {
-                    this.f1.Clear();
+                   
+                    //this.f1.Clear();
+                    var NullField = new SinglePhaseField(this.f1.Basis);
+
                     var FDJbuilder = Laplace.GetFDJacobianBuilder(this.f1.Mapping.Fields, null, this.f1.Mapping,
                         delegate (IEnumerable<DGField> U0, IEnumerable<DGField> Params) {
                             return;
@@ -995,13 +1000,14 @@ namespace BoSSS.Application.DerivativeTest {
                     Console.WriteLine("Finite Difference Jacobian: Matrix/Affine delta norm {0} {1}, passed? {2} {3}", LinfMtx, L2Aff, passed1, passed2);
                     m_passed = m_passed && passed1;
                     m_passed = m_passed && passed2;
+                    
 
                 }
                 Console.WriteLine("--------------------------------------------");
             }
 
             
-
+            
 
             // finally...
             // =================

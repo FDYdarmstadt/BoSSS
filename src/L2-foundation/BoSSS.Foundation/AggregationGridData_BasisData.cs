@@ -10,8 +10,7 @@ using ilPSP.Utils;
 
 namespace BoSSS.Foundation.Grid.Aggregation {
     public partial class AggregationGridData {
-        static public Action<Classic.GridCommons, int[]> PlotScheisse;
-
+        
         public BasisData ChefBasis {
             get {
                 return m_ChefBasis;
@@ -251,18 +250,36 @@ namespace BoSSS.Foundation.Grid.Aggregation {
                         if (I > 1) {
                             // compute extrapolation
                             int[,] CellPairs = new int[I - 1, 2];
+
                             int cnt = 0;
                             for (int i = 0; i < I; i++) {
                                 if (i != iRoot) {
                                     CellPairs[cnt, 0] = compCell[iRoot];
                                     CellPairs[cnt, 1] = compCell[i];
+                                    Debug.Assert(CellPairs[cnt, 0] != CellPairs[cnt, 1]);
                                     cnt++;
                                 }
                             }
+
+                            //cnt = 0;
+                            //for (int i = 0; i < I - 1; i++) {
+                            //    CellPairs[cnt, 0] = compCell[0];
+                            //    CellPairs[cnt, 1] = compCell[i + 1];
+                            //    cnt++;
+                            //}
+
+
                             var ExpolMtx = MultidimensionalArray.Create(I, Np, Np);
                             maxDgBasis.GetExtrapolationMatrices(CellPairs, ExpolMtx.ExtractSubArrayShallow(new int[] { 1, 0, 0 }, new int[] { I - 1, Np - 1, Np - 1 }));
+                            for(int i = 0; i < iRoot; i++) {
+                                var M2 = ExpolMtx.ExtractSubArrayShallow(i, -1, -1);
+                                var M1 = ExpolMtx.ExtractSubArrayShallow(i + 1, -1, -1);
+                                M2.Set(M1);
+                            }
                             for (int n = 0; n < Np; n++) {
-                                ExpolMtx[0, n, n] = 1.0;
+                                for (int m = 0; m < Np; m++) {
+                                    ExpolMtx[iRoot, n, m] = n == m ? 1.0 : 0.0;
+                                }
                             }
 
                             // Compute intermediate mass matrix
