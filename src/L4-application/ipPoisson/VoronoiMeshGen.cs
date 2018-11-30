@@ -3,6 +3,7 @@ using BoSSS.Foundation.Grid.Aggregation;
 using BoSSS.Foundation.Grid.Classic;
 using BoSSS.Foundation.Grid.RefElements;
 using BoSSS.Platform.LinAlg;
+using BoSSS.Solution.Gnuplot;
 using ilPSP;
 using ilPSP.Connectors.Matlab;
 using System;
@@ -190,11 +191,11 @@ namespace BoSSS.Application.SipPoisson.Voronoi {
 
                 Vector[] VoronoiCell = iVtxS.Select(iVtx => VertexCoordinates.GetRowPt(iVtx)).ToArray();
                 
-                bool AnyIn = VoronoiCell.Any(V => IsIn(V));
+                bool AnyIn = VoronoiCell.All(V => IsIn(V));
 
                 if (AnyIn) {
 
-                    VoronoiCell = PolygonTesselation.FixOrientation(VoronoiCell);
+                    FixOrientation(ref VoronoiCell, ref iVtxS);
                     
                     //int[,] iVtxTri = PolygonTesselation.TesselatePolygon(VoronoiCell);
                     int[,] iVtxTri = PolygonTesselation.TesselateConvexPolygon(VoronoiCell);
@@ -221,7 +222,7 @@ namespace BoSSS.Application.SipPoisson.Voronoi {
                         Cj.GlobalID = cells.Count;
                         Cj.Type = CellType.Triangle_3;
                         Cj.TransformationParams = MultidimensionalArray.Create(3, 2);
-                        Cj.NodeIndices = new int[] { iV0, iV1, iV2 };
+                        Cj.NodeIndices = new int[] { iVtxS[iV0], iVtxS[iV1], iVtxS[iV2] };
                         Cj.TransformationParams.SetRowPt(0, V0);
                         Cj.TransformationParams.SetRowPt(1, V1);
                         Cj.TransformationParams.SetRowPt(2, V2);
@@ -245,7 +246,11 @@ namespace BoSSS.Application.SipPoisson.Voronoi {
             grd = new Grid2D(Triangle.Instance);
             grd.Cells = cells.ToArray();
             grd.EdgeTagNames.Add(1, BoundaryType.Dirichlet.ToString());
+            //grd.Plot2DGrid();
             grd.DefineEdgeTags(X => (byte)1);
+
+
+           
 
             // aggregation grid
             var agrd = new AggregationGrid(grd, aggregation.ToArray());
@@ -253,6 +258,47 @@ namespace BoSSS.Application.SipPoisson.Voronoi {
 
         }
 
+
+        static void FixOrientation(ref Vector[] Polygon, ref int[] iVtx) {
+            int L = Polygon.Length;
+            
+            double[] signs = new double[L - 2];
+
+            bool AllPos = true;
+            bool AllNeg = true;
+
+            for (int iTri = 0; iTri < L - 2; iTri++) { // loop over triangles of voronoi cell
+                int iV0 = 0;
+                int iV1 = iTri + 1;
+                int iV2 = iTri + 2;
+
+                Vector V0 = Polygon[iV0];
+                Vector V1 = Polygon[iV1];
+                Vector V2 = Polygon[iV2];
+
+                Vector D1 = V1 - V0;
+                Vector D2 = V2 - V0;
+
+                signs[iTri] = D1.CrossProduct2D(D2);
+
+                AllPos = AllPos && (signs[iTri] > 0);
+                AllNeg = AllNeg && (signs[iTri] < 0);
+            }
+
+            if (AllNeg == AllPos)
+                throw new ArithmeticException("Indefinite polygon");
+
+            if (AllPos)
+                return;
+
+            if (AllNeg) {
+                Polygon = Polygon.Reverse().ToArray();
+                iVtx = iVtx.Reverse().ToArray();
+                return;
+            }
+
+            throw new ArithmeticException("Indefinite polygon");
+        }
 
     }
 }
