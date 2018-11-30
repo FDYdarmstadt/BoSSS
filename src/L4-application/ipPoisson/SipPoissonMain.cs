@@ -220,6 +220,7 @@ namespace BoSSS.Application.SipPoisson {
         /// Sets the multigrid coloring
         /// </summary>
         protected override void SetInitial() {
+                       
             base.SetInitial();
 
             // mg coloring

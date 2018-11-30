@@ -149,45 +149,6 @@ namespace BoSSS.Application.SipPoisson.Voronoi {
 
 
 
-        public static Vector[] FixOrientation(IEnumerable<Vector> _Polygon) {
-            Vector[] Polygon = _Polygon.ToArray();
-            int L = Polygon.Length;
-
-
-
-            double[] signs = new double[L - 2];
-
-            bool AllPos = true;
-            bool AllNeg = true;
-
-            for (int iTri = 0; iTri < L - 2; iTri++) { // loop over triangles of voronoi cell
-                int iV0 = 0;
-                int iV1 = iTri + 1;
-                int iV2 = iTri + 2;
-
-                Vector V0 = Polygon[iV0];
-                Vector V1 = Polygon[iV1];
-                Vector V2 = Polygon[iV2];
-
-                Vector D1 = V1 - V0;
-                Vector D2 = V2 - V0;
-
-                signs[iTri] = D1.CrossProduct2D(D2);
-
-                AllPos = AllPos && (signs[iTri] > 0);
-                AllNeg = AllNeg && (signs[iTri] < 0);
-            }
-
-            if (AllNeg == AllPos)
-                throw new ArithmeticException("Indefinite polygon");
-
-            if (AllPos)
-                return Polygon;
-
-            if (AllNeg)
-                return Polygon.Reverse().ToArray();
-
-            throw new ArithmeticException("Indefinite polygon");
-        }
+        
     }
 }
