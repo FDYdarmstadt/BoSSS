@@ -235,6 +235,13 @@ namespace BoSSS.Application.SipPoisson.Voronoi {
                     aggregation.Add(Agg2Pt.ToArray());
                 } else {
                     // nop
+                    double xMin = VoronoiCell.Min(V => V.x);
+                    double xMax = VoronoiCell.Max(V => V.x);
+                    double yMin = VoronoiCell.Min(V => V.y);
+                    double yMax = VoronoiCell.Max(V => V.y);
+                    if (xMax < 1.1 && xMin > -1.1 && yMax < 1.1 && yMax > -1.1) {
+                        Console.WriteLine(" Say Tschüs to cell {0}-{1} // {2}-{3}", xMin, xMax, yMin, yMax);
+                    }
                 }
             }
 
@@ -248,9 +255,6 @@ namespace BoSSS.Application.SipPoisson.Voronoi {
             grd.EdgeTagNames.Add(1, BoundaryType.Dirichlet.ToString());
             //grd.Plot2DGrid();
             grd.DefineEdgeTags(X => (byte)1);
-
-
-           
 
             // aggregation grid
             var agrd = new AggregationGrid(grd, aggregation.ToArray());

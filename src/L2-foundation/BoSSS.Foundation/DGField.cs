@@ -532,7 +532,7 @@ namespace BoSSS.Foundation {
         /// <param name="j">a local cell index</param>
         /// <returns>%</returns>
         virtual public double GetMeanValue(int j) {
-            if (j < 0 || j > Basis.GridDat.iLogicalCells.Count)
+            if (j < 0 || j >= Basis.GridDat.iLogicalCells.Count)
                 throw new ArgumentException("cell index out of range.", "j");
 
             int iKref = this.Basis.GridDat.iGeomCells.GetRefElementIndex(j);

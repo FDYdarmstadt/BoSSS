@@ -63,13 +63,17 @@ namespace BoSSS.Solution.Utils {
                 int[,] Edges = m_gridData.iGeomEdges.CellIndices;
                 byte[] EdgeTags = m_gridData.iGeomEdges.EdgeTags;
 
+                int[] jG2jL = m_gridData.iGeomCells.GeomCell2LogicalCell;
+
                 int E = Edges.GetLength(0);
                 for (int ee = 0; ee < E; ee++) {
-                    int j = Edges[ee, 0];
+                    int jGeom = Edges[ee, 0];
+                    int jLog = jG2jL != null ? jG2jL[jGeom] : jGeom;
+
                     if (Edges[ee, 1] < 0) {
                         int tag = EdgeTags[ee];
 
-                        boundaries[tag].SetMeanValue(j, boundaries[tag].GetMeanValue(j) + 1);
+                        boundaries[tag].SetMeanValue(jLog, boundaries[tag].GetMeanValue(jLog) + 1);
                     }
                 }
                 demo_fields.AddRange(boundaries);
