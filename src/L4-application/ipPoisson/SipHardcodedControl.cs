@@ -610,7 +610,6 @@ namespace BoSSS.Application.SipPoisson {
             }
 
 
-            AggregationGridData.PlotScheisse = Plot2dGrid_ext.Plot2DGrid;
 
             var R = new SipControl();
             R.ProjectName = "SipPoisson-Voronoi";
@@ -664,7 +663,7 @@ namespace BoSSS.Application.SipPoisson {
             */
 
              bool IsIn(double xi, double yi) {
-                double myEps = 1e-8;
+                double myEps = 0.0;
                 if (xi > 1.0 + myEps)
                     return false;
                 if (yi > 1.0 + myEps)
@@ -696,9 +695,11 @@ namespace BoSSS.Application.SipPoisson {
                                 
                 // generate Delaunay vertices
                 Random rnd = new Random(0);
-                var Node = MultidimensionalArray.Create(Res, 2);
-                Node.SetColumn(0, Res.ForLoop(idx => rnd.NextDouble() * 2 - 1));
-                Node.SetColumn(1, Res.ForLoop(idx => rnd.NextDouble() * 2 - 1));
+                int RR = Res * 9;
+                var Node = MultidimensionalArray.Create(RR, 2);
+
+                Node.SetColumn(0, RR.ForLoop(idx => rnd.NextDouble() * 4 - 2));
+                Node.SetColumn(1, RR.ForLoop(idx => rnd.NextDouble() * 4 - 2));
 
                 // generate mesh
                 return Voronoi.VoronoiMeshGen.FromPolygonalDomain(Node, DomainBndyPolygon, IsInV);
