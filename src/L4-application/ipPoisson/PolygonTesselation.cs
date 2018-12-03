@@ -65,7 +65,7 @@ namespace BoSSS.Application.SipPoisson.Voronoi {
                 if (l == iPrv || l == iNxt || l == iTst)
                     continue;
 
-                if (!PointInTriangle(Polygon[l], vPrv, vNxt, vTst))
+                if (PointInTriangle(Polygon[l], vPrv, vNxt, vTst))
                     return false;
             }
 
@@ -78,11 +78,11 @@ namespace BoSSS.Application.SipPoisson.Voronoi {
             int[,] R = new int[Polygon.Count - 2, 3];
 
             int I = Polygon.Count - 2;
-            for(int i = 0; i < I; i--) { // Theorem: every simple polygon decomposes into I-2 triangles
+            for(int i = 0; i < I; i--) { // Theorem: every simple polygon decomposes into (I-2) triangles
 
                 int iEar = -1;
                 for (int iTst = 0; iTst < Polygon.Count; iTst++) {
-                    if(IsEar(Polygon, iEar)) {
+                    if(IsEar(Polygon, iTst)) {
                         iTst = iEar;
                         break;
                     }

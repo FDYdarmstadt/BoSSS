@@ -225,14 +225,24 @@ namespace BoSSS.Application.SipPoisson.Voronoi {
                 if (AnyIn) {
 
                     FixOrientation(ref VoronoiCell, ref iVtxS);
-                    
-                    //int[,] iVtxTri = PolygonTesselation.TesselatePolygon(VoronoiCell);
-                    int[,] iVtxTri = PolygonTesselation.TesselateConvexPolygon(VoronoiCell);
+
+                    int[,] iVtxTri;
                     
                     if(AnyOt) {
                         // ++++++++++++++++++++
                         // clipping required
                         // ++++++++++++++++++++
+
+
+
+                        iVtxTri = PolygonTesselation.TesselatePolygon(VoronoiCell);
+
+                    } else {
+                        // +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+                        // all vertices inside - standard convex polygon tesselation
+                        // +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+                        iVtxTri = PolygonTesselation.TesselateConvexPolygon(VoronoiCell);
                     }
 
 
