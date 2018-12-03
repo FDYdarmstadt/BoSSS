@@ -233,10 +233,12 @@ namespace BoSSS.Application.SipPoisson.Voronoi {
                         // clipping required
                         // ++++++++++++++++++++
 
+                        var VoronoiCellOld = VoronoiCell;
+                        VoronoiCell = PolygonClipping.WeilerAthertonClipping(PolygonBoundary, IsIn, VoronoiCellOld);
 
 
-                        //iVtxTri = PolygonTesselation.TesselatePolygon(VoronoiCell);
-                        iVtxTri = PolygonTesselation.TesselateConvexPolygon(VoronoiCell);
+                        iVtxTri = PolygonTesselation.TesselatePolygon(VoronoiCell);
+                        //iVtxTri = PolygonTesselation.TesselateConvexPolygon(VoronoiCell);
 
                     } else {
                         // +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
