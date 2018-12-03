@@ -235,7 +235,8 @@ namespace BoSSS.Application.SipPoisson.Voronoi {
 
 
 
-                        iVtxTri = PolygonTesselation.TesselatePolygon(VoronoiCell);
+                        //iVtxTri = PolygonTesselation.TesselatePolygon(VoronoiCell);
+                        iVtxTri = PolygonTesselation.TesselateConvexPolygon(VoronoiCell);
 
                     } else {
                         // +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++

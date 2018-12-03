@@ -1,4 +1,5 @@
 ﻿using BoSSS.Platform.LinAlg;
+using ilPSP;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -74,24 +75,26 @@ namespace BoSSS.Application.SipPoisson.Voronoi {
     
         public static int[,] TesselatePolygon(IEnumerable<Vector> _Polygon) {
             List<Vector> Polygon = _Polygon.ToList();
+            List<int> orgIdx = Polygon.Count.ForLoop(i => i).ToList();
+
             //var R = new List<ValueTuple<int, int, int>>();
             int[,] R = new int[Polygon.Count - 2, 3];
 
+
             int I = Polygon.Count - 2;
-            for(int i = 0; i < I; i--) { // Theorem: every simple polygon decomposes into (I-2) triangles
+            for(int i = 0; i < I; i++) { // Theorem: every simple polygon decomposes into (I-2) triangles
 
                 int iEar = -1;
                 for (int iTst = 0; iTst < Polygon.Count; iTst++) {
                     if(IsEar(Polygon, iTst)) {
-                        iTst = iEar;
+                        iEar = iTst;
                         break;
                     }
                 }
 
                 if (iEar < 0)
                     throw new ArithmeticException("unable to find ear.");
-
-
+                
                 int iNxt = iEar + 1;
                 if (iNxt >= Polygon.Count)
                     iNxt -= Polygon.Count;
@@ -99,9 +102,12 @@ namespace BoSSS.Application.SipPoisson.Voronoi {
                 if (iPrv < 0)
                     iPrv += Polygon.Count;
 
-                R[i, 0] = iPrv;
-                R[i, 1] = iEar;
-                R[i, 2] = iNxt;
+                R[i, 0] = orgIdx[iPrv];
+                R[i, 1] = orgIdx[iEar];
+                R[i, 2] = orgIdx[iNxt];
+
+                orgIdx.RemoveAt(iEar);
+                Polygon.RemoveAt(iEar);
             }
 
             // return
