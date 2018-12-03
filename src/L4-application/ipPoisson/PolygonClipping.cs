@@ -40,7 +40,7 @@ namespace BoSSS.Application.SipPoisson.Voronoi {
         // done
 
 
-        public static Vector[] SutherlandHodgmanClipping(AffineManifold[] ClipPolygon, Vector[] SubjectPolygon) {
+        static Vector[] SutherlandHodgmanClipping(AffineManifold[] ClipPolygon, Vector[] SubjectPolygon) {
             List<Vector> outputList = new List<Vector>(SubjectPolygon);
 
             foreach(AffineManifold clipEdge in ClipPolygon) {
