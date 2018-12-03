@@ -229,6 +229,29 @@ namespace BoSSS.Platform.LinAlg {
             return ret;
         }
 
+        /// <summary>
+        /// returns the point in this affine manifold (plane) which is closest to <paramref name="pt"/>
+        /// </summary>
+        public Vector ProjectPoint(Vector pt) {
+            if (pt.Dim != this.Normal.Dim)
+                throw new ArgumentException();
+            if (Normal.AbsSquare() <= 0.0)
+                throw new ArithmeticException();
+
+
+            double dist = 0;
+            for (int d = this.Normal.Dim - 1; d >= 0; d--) {
+                dist += pt[d] * this.Normal[d];
+            }
+            dist -= this.a;
+
+            Vector cp = pt;
+            cp.Acc(Normal, -dist);
+
+            return cp;
+        }
+
+
 
         /// <summary>
         /// equality check: tests if two objects represent the same affine manifold/plane

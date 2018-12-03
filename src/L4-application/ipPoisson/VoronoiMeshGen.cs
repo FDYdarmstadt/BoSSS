@@ -29,6 +29,7 @@ using BoSSS.Platform.LinAlg;
 using BoSSS.Solution.Gnuplot;
 using ilPSP;
 using ilPSP.Connectors.Matlab;
+using ilPSP.Utils;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -100,6 +101,41 @@ namespace BoSSS.Application.SipPoisson.Voronoi {
 
 
 
+        class VoronoiEdge {
+            /// <summary>
+            /// First vertex in voronoi cell
+            /// </summary>
+            public int iVtxA;
+
+            /// <summary>
+            /// Second vertex in voronoi cell
+            /// </summary>
+            public int iVtxB;
+
+
+            public List<int> Cells = new List<int>();
+
+
+            public override bool Equals(object obj) {
+                if (iVtxA == iVtxB)
+                    throw new ApplicationException();
+
+                var E2 = obj as VoronoiEdge;
+                if (iVtxA == E2.iVtxA && iVtxB == E2.iVtxB)
+                    return true;
+                if (iVtxA == E2.iVtxB && iVtxB == E2.iVtxA)
+                    return true;
+
+                return false;
+            }
+
+
+            public override int GetHashCode() {
+                return iVtxA + (iVtxB << 16);
+            }
+        }
+
+
         /// <summary>
         /// 
         /// </summary>
@@ -110,7 +146,7 @@ namespace BoSSS.Application.SipPoisson.Voronoi {
         /// </param>
         /// <param name="PolygonBoundary"></param>
         /// <returns></returns>
-        static public AggregationGrid FromPolygonalDomain(MultidimensionalArray Nodes, Vector[] PolygonBoundary, Func<Vector,bool> IsIn) {
+        static public AggregationGrid FromPolygonalDomain(MultidimensionalArray Nodes, Vector[] PolygonBoundary, Func<Vector,bool> IsIn, Func<Vector,Vector,bool> PointIdentity) {
             
             // check arguments
             // ===============
@@ -142,7 +178,7 @@ namespace BoSSS.Application.SipPoisson.Voronoi {
 
                 Boundaries[i] = new AffineManifold(N, O);
 
-                double eps = 1.0e-6;
+                double eps = Math.Sqrt(BLAS.MachineEps)*10;
                 Vector Cen = O  + 0.5*OE;
                 Vector IN = Cen - eps * N;
                 Vector OT = Cen + eps * N;
@@ -150,6 +186,13 @@ namespace BoSSS.Application.SipPoisson.Voronoi {
                 Debug.Assert(IsIn(IN) == true);
                 Debug.Assert(Boundaries[i].PointDistance(OT) > 0);
                 Debug.Assert(IsIn(OT) == false);
+
+
+                Vector CenProj = Boundaries[i].ProjectPoint(Cen);
+                if (PointIdentity(Cen, CenProj) == false)
+                    throw new ArithmeticException("point identity does not seem to work");
+
+                Debug.Assert(PointIdentity(Cen, Boundaries[i].ProjectPoint(Cen + N * OE.Abs()))); // tests if the 'ProjectPoint' works correctly
 
             }
 
@@ -176,7 +219,7 @@ namespace BoSSS.Application.SipPoisson.Voronoi {
             // Create Voronoi mesh (call Matlab)
             // =================================
 
-            int[][] OutputVertexIndex;
+            int[][] VocellVertexIndex;
             MultidimensionalArray VertexCoordinates;
             using (var Matlab = new BatchmodeConnector()) {
 
@@ -187,8 +230,8 @@ namespace BoSSS.Application.SipPoisson.Voronoi {
                 Matlab.Cmd("[V, C] = voronoin(Nodes);");
 
                 // output (export from matlab)
-                OutputVertexIndex = new int[NewNodes.NoOfRows][];
-                Matlab.GetStaggeredIntArray(OutputVertexIndex, "C");
+                VocellVertexIndex = new int[NewNodes.NoOfRows][];
+                Matlab.GetStaggeredIntArray(VocellVertexIndex, "C");
                 Matlab.GetMatrix(null, "V");
 
                 // run matlab
@@ -198,23 +241,108 @@ namespace BoSSS.Application.SipPoisson.Voronoi {
                 VertexCoordinates = (MultidimensionalArray)(Matlab.OutputObjects["V"]);
 
                 // correct indices (1-based index to 0-based index)
-                foreach (int[] cell in OutputVertexIndex) {
+                foreach (int[] cell in VocellVertexIndex) {
                     int K = cell.Length;
                     for (int k = 0; k < K; k++) {
                         cell[k]--;
                     }
                 }
             }
-                        
+
+            // detect edges
+            // ============
+
+            {
+                List<VoronoiEdge> A = new List<VoronoiEdge>();
+                A.Add(new VoronoiEdge() { iVtxA = 1, iVtxB = 2 });
+                A.Add(new VoronoiEdge() { iVtxA = 3, iVtxB = 2 });
+                A.Add(new VoronoiEdge() { iVtxA = 4, iVtxB = 1 });
+                A.Add(new VoronoiEdge() { iVtxA = 2, iVtxB = 1 });
+
+                Debug.Assert(A.IndexOf(new VoronoiEdge() { iVtxA = 4, iVtxB = 1 }) == 2);
+                Debug.Assert(A.IndexOf(new VoronoiEdge() { iVtxA = 1, iVtxB = 4 }) == 2);
+
+            }
+
+            List<int>[] Cell2Edge; // cell-2-edge map: 1st index voronoi cell; 2nd index: enum;
+            List<VoronoiEdge> Edges; // index: edge index
+            {
+                Edges = new List<VoronoiEdge>();
+                Cell2Edge  = VocellVertexIndex.Length.ForLoop(i => new List<int>());
+                bool anyDouble = false;
+                for (int jV = 0; jV < VocellVertexIndex.Length; jV++) {
+                    int[] iVtxS = VocellVertexIndex[jV];
+
+                    int I = iVtxS.Length;
+                    for (int i = 0; i < I; i++) {
+                        VoronoiEdge newEdge = new VoronoiEdge() {
+                            iVtxA = iVtxS[i],
+                            iVtxB = iVtxS[(i + 1) % I]
+                        };
+
+                        int iEdge = Edges.IndexOf(newEdge);
+                        if(iEdge < 0) {
+                            for(int e = 0; e < Edges.Count; e++) {
+                                Debug.Assert(Edges[e].Equals(newEdge) == false);
+                            }
+
+                            Edges.Add(newEdge);
+                            iEdge = Edges.Count - 1;
+                        } else {
+                            anyDouble = true;
+                            if (Edges[iEdge].Cells.Count > 1)
+                                throw new ArithmeticException("edge shared by more than two cells");
+                            newEdge = Edges[iEdge];
+                        }
+                        Debug.Assert(newEdge.Equals(Edges[iEdge]));
+                        Debug.Assert(Edges.Where(ve => ve.Equals(newEdge)).Count() == 1);
+
+                        Cell2Edge[jV].Add(iEdge);
+                        newEdge.Cells.Add(jV);
+                    }
+                }
+
+                if (!anyDouble)
+                    throw new ArithmeticException("Voronoi diagram seems to be completely disjoint - no edge is used by at least two cells.");
+            }
+
+            // intersections of edges and boundary
+            // ===================================
+
+            {
+
+                // test all edges against all boundaries
+
+                int E = Edges.Count;
+                for(int e = 0; e < E; e++) { 
+                    var Edge = Edges[e];
+                    Vector vA = Nodes.GetRowPt(Edge.iVtxA);
+                    Vector vB = Nodes.GetRowPt(Edge.iVtxB);
+
+                    for(int iBnd = 0; iBnd < Boundaries.Length; iBnd++) {
+                        var vaProj = Boundaries[iBnd].ProjectPoint(vA);
+                        bool vAinPlane = PointIdentity(vaProj, vA);
+
+                        var vbProj = Boundaries[iBnd].ProjectPoint(vB);
+                        bool vBinPlane = PointIdentity(vbProj, vB);
+
+
+                    }
+                }
+            }
+
+
+
 
             // tessellation
             // ============
 
+
             List<Cell> cells = new List<Cell>();
             List<int[]> aggregation = new List<int[]>();
-            for (int jV = 0; jV < OutputVertexIndex.Length; jV++) { // loop over Voronoi Cells
+            for (int jV = 0; jV < VocellVertexIndex.Length; jV++) { // loop over Voronoi Cells
                 
-                int[] iVtxS = OutputVertexIndex[jV];
+                int[] iVtxS = VocellVertexIndex[jV];
                 int NV = iVtxS.Length;
 
                 Vector[] VoronoiCell = iVtxS.Select(iVtx => VertexCoordinates.GetRowPt(iVtx)).ToArray();

@@ -264,6 +264,10 @@ namespace BoSSS.Platform.LinAlg {
         public double AngleTo(Vector o) {
             if (o.Dim != this.Dim)
                 throw new ArgumentException("spatial dimension mismatch");
+            if (o.AbsSquare() <= 0)
+                throw new ArithmeticException("other vector is zero - unable to determine angle");
+            if (this.AbsSquare() <= 0)
+                throw new ArithmeticException("this vector is zero - unable to determine angle");
 
             Vector tn = this;
             tn.Normalize();
