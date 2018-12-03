@@ -134,6 +134,7 @@ namespace BoSSS.Application.SipPoisson.Voronoi {
             // ================
             MultidimensionalArray NewNodes;
             {
+                /*
                 double[] xNodes = Nodes.GetColumn(0);
                 double[] yNodes = Nodes.GetColumn(1);
 
@@ -143,6 +144,10 @@ namespace BoSSS.Application.SipPoisson.Voronoi {
                 NewNodes = MultidimensionalArray.Create(xNodes.Length, 2);
                 NewNodes.SetColumn(0, xNodes);
                 NewNodes.SetColumn(1, yNodes);
+                */
+
+                NewNodes = Nodes.CloneAs();
+                Nodes = null;
             }
 
             // Create Voronoi mesh (call Matlab)
@@ -191,7 +196,7 @@ namespace BoSSS.Application.SipPoisson.Voronoi {
 
                 Vector[] VoronoiCell = iVtxS.Select(iVtx => VertexCoordinates.GetRowPt(iVtx)).ToArray();
                 
-                bool AnyIn = VoronoiCell.All(V => IsIn(V));
+                bool AnyIn = VoronoiCell.Any(V => IsIn(V));
 
                 if (AnyIn) {
 
@@ -239,9 +244,9 @@ namespace BoSSS.Application.SipPoisson.Voronoi {
                     double xMax = VoronoiCell.Max(V => V.x);
                     double yMin = VoronoiCell.Min(V => V.y);
                     double yMax = VoronoiCell.Max(V => V.y);
-                    if (xMax < 1.1 && xMin > -1.1 && yMax < 1.1 && yMax > -1.1) {
-                        Console.WriteLine(" Say Tschüs to cell {0}-{1} // {2}-{3}", xMin, xMax, yMin, yMax);
-                    }
+                    //if (xMax < 1.1 && xMin > -1.1 && yMax < 1.1 && yMax > -1.1) {
+                    //    Console.WriteLine(" Say Tschus to cell {0} : {1} // {2} : {3}", xMin, xMax, yMin, yMax);
+                    //}
                 }
             }
 
