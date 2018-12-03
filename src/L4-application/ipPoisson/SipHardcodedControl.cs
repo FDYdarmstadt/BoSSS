@@ -690,6 +690,10 @@ namespace BoSSS.Application.SipPoisson {
                 Debug.Assert(X.Dim == 2);
                 return IsIn(X.x, X.y);
             }
+
+            bool Idenity(Vector A, Vector B) {
+                return (A - B).AbsSquare() < 1.0e-10;
+            }
             
             IGrid GridFunc() {
                                 
@@ -702,7 +706,7 @@ namespace BoSSS.Application.SipPoisson {
                 Node.SetColumn(1, RR.ForLoop(idx => rnd.NextDouble() * 4 - 2));
 
                 // generate mesh
-                return Voronoi.VoronoiMeshGen.FromPolygonalDomain(Node, DomainBndyPolygon, IsInV);
+                return Voronoi.VoronoiMeshGen.FromPolygonalDomain(Node, DomainBndyPolygon, IsInV, Idenity);
 
             };
             R.GridFunc = GridFunc;
