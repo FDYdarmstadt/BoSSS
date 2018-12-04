@@ -141,7 +141,7 @@ The choice of C\#, on the other hand, is a key enabler for a series of interesti
 For instance, a C\# program can be compiled once and executed everywhere. this means that a user can
 develop and compile a code on her or his Mac or Windows laptop, and then execute
 the code on a Linux-based supercomputer. This is obviously a great improvement
-in comparison to a traditional HPC workflow, where the code has to be compiled and configured
+in comparison to a traditional High Performance Computing (HPC) workflow, where the code has to be compiled and configured
 for every computer separately. In addition, the compilation of C\# is also much faster than
 C++ compilation - on a recent machine, the whole \BoSSS{} code
 (more than 1000 files, 300'000 lines of code and 100'000 lines of comment)
@@ -185,10 +185,10 @@ and for the bum a so-called level-set representation is used.
 
 \begin{figure}[!h]
 \begin{center}
-\includegraphics[width=0.2\textwidth]{figures/Bubble_t0}
-\includegraphics[width=0.2\textwidth]{figures/Bubble_t1}
-\includegraphics[width=0.2\textwidth]{figures/Bubble_t2}
-\includegraphics[width=0.2\textwidth]{figures/Bubble_t3}
+\includegraphics[height=0.4\textwidth]{figures/Bubble_t0}
+\includegraphics[height=0.4\textwidth]{figures/Bubble_t1}
+\includegraphics[height=0.4\textwidth]{figures/Bubble_t2}
+\includegraphics[height=0.4\textwidth]{figures/Bubble_t3}
 \end{center}
 \caption{
 The second important application in \BoSSS{} using dynamic interfaces:
@@ -233,7 +233,7 @@ details on the specific, modal \ac{dg} basis, indexing conventions, etc.)
 \emph{Common Intermediate Language} (CIL). CIL-code is platform independent and can be executed (without recompilation) 
 on any platform where an implementation of the standardized \emph{Common Language Infrastructure} (CLI) is available. 
 Examples include Windows (using the .NET framework), Linux and Mac OS X (both using the mono framework). 
-Almost all parts of \BoSSS{} are thus platform-independent and directly be used after obtaining the \BoSSS{} binaries 
+Almost all parts of \BoSSS{} are thus platform-independent and directly usable after obtaining the \BoSSS{} binaries 
 and a platform-specific CLI implementation (cf. Section \ref{sec:gettingStarted_installation}).
 
 Like for any other language, a C\# program needs to be compiled. Any C\# compiler produces executable 
@@ -265,7 +265,7 @@ Note also C\# programs are always compiled into {\tt .exe} files, even on Linux 
 which seems unusual for these operating systems. 
 
 Finally, we note that traditional languages like C differentiate between compiling and linking, whereas 
-C\# always performs both steps are done at once.
+C\# always performs both steps at once.
 (Although one could philosophize on this, since 
 modern compilers like {\tt gcc} can do both, compiling and linking
 in one step or separately.)
@@ -288,12 +288,9 @@ and libraries to be present on the target computer.
 In addition to C\# code,  \BoSSS{} relies on platform-specific ('\emph{native}') third party libraries for specific tasks, 
 such as MPI for parallelization and BLAS/LAPACK for high-performance linear algebra. In 
 section \ref{sec:gettingStarted_installation}, we will thus 
-=========
-such MPI for parallelization and BLAS/LAPACK for high-performance linear algebra. In 
-section \ref{sec:gettingStarted_installation}, we will thus 
 summarize some best practices for the installation of \BoSSS{} on different operating systems.
 
-Once the required libraries and middleware for \BoSSS{} have been installed on an 
+To run \BoSSS{} on any system, only a few libraries and some middleware is required. Once those have been installed on an 
 \ac{hpc} system, all simulation set-up and development can be done 
 on a user's local machine.
 This is advantageous, since the development tools on \ac{hpc} systems are usually limited
@@ -310,7 +307,7 @@ Since the \BoSSS{} code is essentially a research-project, therefore
 tools with a \ac{gui}  are limited.
 
 However, also for research codes  one faces the challenge of performing 
-e.g. parameter studies with which involve thousands of individual 
+e.g. parameter studies which involve thousands of individual 
 solver runs.
 Therefore, some management tools are inevitable, since manual or semi-automated
 organization of simulation result using usual operating system tools (e.g. 
@@ -390,11 +387,11 @@ using a third-party tool, e.g. {\tt gmsh};
 This data is imported into \BoSSS{} 
 (via the function \code{GridImporter.Import})
 and saved in the \BoSSS{} database (using \code{IDatabaseDriver.SaveGridIfUnique}).
-The workflow management tools (see chapter \ref{sec:WorkflowMgm}) of \BoSSSpad
+The workflow management tools (see chapter \ref{sec:WorkflowMgm}) of \BoSSSpad 
 can then be used to launch one of the provided solvers, which also save their results to the database.
 Finally, \BoSSSpad{} ~can also be used to launch post-processing or data export tools.
 The solver as well as the database can optionally be located/run on some other 
-computer, e.g. some sort of High Performance Compute (HPC) system.
+computer, e.g. some sort of High Performance Computing (HPC) system.
 }
 \label{fig:BoSSS-workflow}
 \end{figure}
@@ -481,8 +478,7 @@ The .NET framework is shipped with two JIT compilers that compile the CIL to mac
 
 
 \subsection{Linux}
-In the following, we thus focus on the installation of \BoSSS{} itself. 
-The \BoSSS{} group does not maintain packages of the native libraries listed in section \ref{sec:installation_libraries} for Linux because high-performance computers typically provide specifically optimized versions of these libraries that should be used in order to obtain optimal performance. 
+The \BoSSS{} group does not maintain packages of the native libraries listed in section \ref{sec:installation_libraries} for Linux because high-performance computers typically provide specifically optimized versions of these libraries that should be used in order to obtain optimal performance. In the following, we thus focus on the installation of \BoSSS{} itself. 
 
 \begin{itemize}
 	\item Obtain Mono\footnote{\url{www.mono-project.com}} (version 3.0 or higher), either by installing a pre-built package\footnote{\url{www.mono-project.com/download/}} or by compiling\footnote{\url{www.mono-project.com/docs/compiling-mono/linux/}} it from a tarball\footnote{\url{https://download.mono-project.com/sources/mono/}}
@@ -490,6 +486,7 @@ The \BoSSS{} group does not maintain packages of the native libraries listed in 
 	\item Obtain/install/load BLAS and LAPACK (tested with AMD Core Math Library 5.3.1)
 	\item Test your basic installation (cf. section \ref{sec:installation_testing})
 	\item Obtain/install/load additional libraries if required by the particular \BoSSS{} application
+	\item TODO how to obtain \BoSSS{} for Linux
 \end{itemize}
 
 
@@ -508,7 +505,7 @@ Support for Mac OS X will follow soon.
 \section{Testing the installation}
 \label{sec:installation_testing}
 
-\code{BoSSSpad.exe --check}
+\code{BoSSSpad.exe ---check}
 
 
 \subsection{Third-party libraries}
@@ -587,7 +584,7 @@ This issue renders them significantly inferior to Visual Studio.
 
 On Linux, however, Xamarin Studio supports 64 bit and can therefore be used without any restriction.
 If possible, we recommend to use the latest version of Xamarin Studio from
-the official and not the version from the Linux distributions package management system,
+the official website and not the version from the Linux distributions package management system,
 since these are very often out-dated (still called Monodevelop).
 
 On Mac OS, one certainly should use Xamarin Studio, resp. Visual Studio for Mac.
@@ -631,8 +628,8 @@ When Mono is used, the equivalent to {\tt msbuild} is {\tt xbuild}. Both tools h
 \chapter{Creating and importing grids/meshes }
 \label{sec:GridCreation}
 % ################################################################################
-%\import{./quickStartCNS/}{IsentropicVortex.tex}
-Will come soon...
+\import{./GridGeneration/}{GridGeneration.tex}
+
 
 
 % ################################################################################
@@ -675,6 +672,10 @@ Will come soon...
 % ################################################################################
 \import{./tutorial2/}{uebung2tutorial.tex}
 
+\chapter{Parameter Study}
+\label{sec:Parameterstudy}
+% ################################################################################
+\import{./ParameterStudy/}{ParameterStudy.tex}
 
 % ################################################################################
 \chapter{Defining a Spatial Operator and using explicit time integration}

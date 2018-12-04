@@ -1732,7 +1732,7 @@ namespace BoSSS.Foundation.Grid.RefElements {
             /// </summary>
             /// <param name="p">Polynomial degree.</param>
             /// <returns>
-            /// The transformation matrix, which is upper-triangular.
+            /// the transformation matrix, which is upper-triangular.
             /// </returns>
             public MultidimensionalArray GetBasisTrafo(int p) {
 
@@ -1753,7 +1753,8 @@ namespace BoSSS.Foundation.Grid.RefElements {
                 MultidimensionalArray PolyAtRootNodes = MultidimensionalArray.Create(Nk, Np);
                 Polys.Evaluate(NodesAtRoot, PolyAtRootNodes);
 
-                double onbScale = 1.0/Math.Sqrt(TrafoFromRoot.Matrix.Determinant());
+                double jacDet = TrafoFromRoot.Matrix.Determinant();
+                double onbScale = 1.0/Math.Sqrt(jacDet);
 
                 MultidimensionalArray A = MultidimensionalArray.Create(Np, Np);
                 A.Multiply(onbScale, PolyAtNodes, PolyAtRootNodes, qr.Weights, 0.0, "mn", "km", "kn", "k");
@@ -1787,10 +1788,7 @@ namespace BoSSS.Foundation.Grid.RefElements {
                         Debug.Assert(Math.Abs(LeafVal - RootVal) < 1.0e-8);
                     }
                 }
-
-
 #endif
-
                 return A;
             }
 

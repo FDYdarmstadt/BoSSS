@@ -17,7 +17,9 @@ limitations under the License.
 using BoSSS.Foundation;
 using BoSSS.Foundation.Grid;
 using BoSSS.Foundation.Grid.Classic;
-using CNS.Boundary;
+using BoSSS.Solution.CompressibleFlowCommon;
+using BoSSS.Solution.CompressibleFlowCommon.MaterialProperty;
+using BoSSS.Solution.CompressibleFlowCommon.Boundary;
 using CNS.MaterialProperty;
 using ilPSP;
 using System;
@@ -48,8 +50,10 @@ namespace CNS.Diffusion {
 
         /// <summary>
         /// Dictionary, especially needed adiabatic wall
+        /// - index: edge tag
+        /// - value: some switch
         /// </summary>
-        protected Dictionary<byte, bool> edgeTagBool = new Dictionary<byte, bool>();
+        protected bool[] edgeTagBool = new bool[byte.MaxValue];
 
         // [Dimension, Dimension, NumOfArguments]
         // [ k , l , j] --> indices according to Hartmann2008 or AnnualReport2014_SKE (i doesn't exist)
@@ -90,7 +94,7 @@ namespace CNS.Diffusion {
          /// <param name="gridData"></param>
          /// <param name="component"></param>
          /// <param name="cellMetricFunc"></param>
-        public OptimizedSIPGMomentumFlux(CNSControl config, IBoundaryConditionMap boundaryMap, ISpeciesMap speciesMap, IGridData gridData, int component, Func<MultidimensionalArray> cellMetricFunc) {
+        public OptimizedSIPGMomentumFlux(CNSControl config, BoundaryConditionMap boundaryMap, ISpeciesMap speciesMap, IGridData gridData, int component, Func<MultidimensionalArray> cellMetricFunc) {
             this.config = config;
             this.speciesMap = speciesMap;
             this.boundaryMap = boundaryMap;
@@ -103,14 +107,10 @@ namespace CNS.Diffusion {
             double p = new int[] { config.DensityDegree, config.MomentumDegree, config.EnergyDegree }.Max();
             penaltyFactor = config.SIPGPenaltyScaling * p * p;
 
-            //Fills the dictionary, to avoid later string comparison
-            foreach (byte edgeTag in gridData.iGeomEdges.EdgeTags) {
-                if (boundaryMap.EdgeTagNames[edgeTag].StartsWith("adiabaticWall", StringComparison.InvariantCultureIgnoreCase)) {
-                    edgeTagBool[edgeTag] = true;
-                } else {
-                    edgeTagBool[edgeTag] = false;
-                }
+            foreach (byte edgeTag in boundaryMap.EdgeTag2EdgeTagName.Keys) {
+                edgeTagBool[edgeTag] = (boundaryMap.EdgeTag2Type[edgeTag] == CompressibleBcType.adiabaticWall);
             }
+
 
             // [NumOfArguments, dimension, dimension]
             // [ k , l , j] --> indices according to Hartmann2008 or AnnualReport2014_SKE (i doesn't exist)

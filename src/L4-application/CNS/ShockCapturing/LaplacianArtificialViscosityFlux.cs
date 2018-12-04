@@ -15,14 +15,15 @@ limitations under the License.
 */
 
 using BoSSS.Foundation;
+using BoSSS.Solution.CompressibleFlowCommon;
 using BoSSS.Solution.NSECommon;
-using CNS.Boundary;
+using BoSSS.Solution.CompressibleFlowCommon.Boundary;
 using ilPSP;
 using System.Collections.Generic;
 
 namespace CNS.ShockCapturing {
 
-    class LaplacianArtificialViscosityFlux : ipLaplace {
+    class LaplacianArtificialViscosityFlux : SIPLaplace {
 
         private IBoundaryConditionMap boundaryMap;
 

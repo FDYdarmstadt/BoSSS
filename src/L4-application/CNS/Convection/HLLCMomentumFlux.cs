@@ -15,7 +15,9 @@ limitations under the License.
 */
 
 using BoSSS.Platform.LinAlg;
-using CNS.Boundary;
+using BoSSS.Solution.CompressibleFlowCommon;
+using BoSSS.Solution.CompressibleFlowCommon.Convection;
+using BoSSS.Solution.CompressibleFlowCommon.Boundary;
 
 namespace CNS.Convection {
 
@@ -69,7 +71,7 @@ namespace CNS.Convection {
         /// normal vector. Correct version follows from BattenEtAl1997, 
         /// equation 37
         /// </remarks>
-        protected override double GetModifiedVariableValue(StateVector state, double cellWaveSpeed, double cellNormalVelocity, double intermediateWaveSpeed, ref Vector3D normal) {
+        protected override double GetModifiedVariableValue(StateVector state, double cellWaveSpeed, double cellNormalVelocity, double intermediateWaveSpeed, ref Vector normal) {
             return state.Density
                 * (cellWaveSpeed - cellNormalVelocity)
                 / (cellWaveSpeed - intermediateWaveSpeed)

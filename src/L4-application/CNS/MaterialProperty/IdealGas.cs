@@ -14,6 +14,8 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+using BoSSS.Solution.CompressibleFlowCommon;
+using BoSSS.Solution.CompressibleFlowCommon.MaterialProperty;
 using System;
 
 namespace CNS.MaterialProperty {
@@ -126,7 +128,7 @@ namespace CNS.MaterialProperty {
         /// </returns>
         public double GetSpeedOfSound(StateVector state) {
             // Equals sqrt{\kappa \frac{p}{\rho}} for Ma = \kappa
-            return Math.Sqrt(state.Pressure / state.Density) / state.Material.Control.MachNumber;
+            return Math.Sqrt(state.Pressure / state.Density) / state.Material.MachNumber;
         }
 
         /// <summary>

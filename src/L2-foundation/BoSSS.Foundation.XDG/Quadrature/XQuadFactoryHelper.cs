@@ -71,6 +71,16 @@ namespace BoSSS.Foundation.XDG {
 
             ExactCircle,
 
+
+            /// <summary>
+            /// Gaussian quadrature rules for <see cref="Square"/> and <see cref="Cube"/> elements,
+            /// obtained throug recursive subdivision, as described in 
+            /// (Saye 2015)
+            /// </summary>
+            /// <remarks>
+            /// High-Order Quadrature Methods for Implicitly Defined Surfaces and Volumes in Hyperrectangles,
+            /// R. Saye, SIAM Journal on Scientific Computing, 2015
+            /// </remarks>
             Saye
 
 

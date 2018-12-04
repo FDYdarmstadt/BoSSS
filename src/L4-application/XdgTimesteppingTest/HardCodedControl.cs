@@ -190,7 +190,7 @@ namespace BoSSS.Application.XdgTimesteppingTest {
             double Nx = Math.Cos(angle);
             double Ny = Math.Sin(angle);
 
-            R.BurgersDirection = new Platform.LinAlg.Vector2D(Nx, Ny);
+            R.BurgersDirection = new Platform.LinAlg.Vector(Nx, Ny);
 
             const double S = 0.5 * (2 + 1);
             R.S = ((double[] X, double t) => S);
@@ -893,7 +893,7 @@ namespace BoSSS.Application.XdgTimesteppingTest {
             double Nx = Math.Cos(angle);
             double Ny = Math.Sin(angle);
 
-            R.BurgersDirection = new Platform.LinAlg.Vector2D(Nx, Ny);
+            R.BurgersDirection = new Platform.LinAlg.Vector(Nx, Ny);
 
             const double S = 0.5 * (2 + 1);
             R.S = ((double[] X, double t) => S);

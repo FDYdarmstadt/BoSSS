@@ -38,7 +38,7 @@ ChangesEnvironment=yes
 Name: "english"; MessagesFile: "compiler:Default.isl"
 
 [Files]
-Source: ".\bin\*"; DestDir: "{app}\bin"; Flags: ignoreversion recursesubdirs createallsubdirs
+Source: ".\bin\*"; Excludes: "old" ;DestDir: "{app}\bin"; Flags: ignoreversion recursesubdirs createallsubdirs
 ;Source: ".\doc\APIreference\*"; DestDir: "{app}\doc\APIreference"; Flags: ignoreversion recursesubdirs createallsubdirs
 Source: ".\doc\BoSSSPad_Command_Overview.pdf"; DestDir: "{app}\doc"; Flags: ignoreversion recursesubdirs createallsubdirs
 Source: ".\doc\BoSSShandbook.pdf"; DestDir: "{app}\doc"; Flags: ignoreversion recursesubdirs createallsubdirs
@@ -55,6 +55,20 @@ Name: "{group}\BoSSSpad (worksheet)"; Filename: "{app}\bin\Release\BoSSSpad.exe"
 Name: "{group}\BoSSSpad (electron)"; Filename: "{app}\bin\BoSSSpad-win32-x64\BoSSSpad.exe"         
 Name: "{group}\BoSSS Handbook"; Filename: "{app}\doc\BoSSShandbook.pdf" 
 Name: "{group}\BoSSS API Reference"; Filename: "{app}\doc\APIreference\index.html" 
+
+[InstallDelete]
+; BLACKLIST: these .dll are obsolete or replaced by newer versions, 
+; especially msmpi (conflict with mpiexec)
+Type: files; Name: "{app}\bin\native\win\amd64\msmpi.dll";
+Type: files; Name: "{app}\bin\native\win\amd64\libacml_dll.dll";
+Type: files; Name: "{app}\bin\native\win\amd64\libacml_mv_dll.dll";
+Type: files; Name: "{app}\bin\native\win\amd64\msvcm90.dll";
+Type: files; Name: "{app}\bin\native\win\amd64\msvcp90.dll";
+Type: files; Name: "{app}\bin\native\win\amd64\msvcr90.dll";
+Type: files; Name: "{app}\bin\native\win\amd64\msvcp100.dll";
+Type: files; Name: "{app}\bin\native\win\amd64\msvcr100.dll";
+Type: files; Name: "{app}\bin\native\win\amd64\tec360.dll";
+Type: files; Name: "{app}\bin\native\win\amd64\dmumps.dll";
 
 [Registry]
 ; as elevated user (Admin): set BOSSS_INSTALL system-wide
@@ -86,11 +100,25 @@ Root: HKCU; \
     ValueData: "{olddata};{app}\bin\Release;"; \
     Check: NeedsAddPath(ExpandConstant('{app}\bin\Release')) and ( IsRegularUser() )
 
-[Run]
- Filename: bcl.exe; \
- Flags: waituntilterminated runhidden; \
- Description: "Initialization run of bcl";
+;[Run]
+; Filename: bcl.exe; \
+; Flags: waituntilterminated runhidden; \
+; Description: "Initialization run of bcl";
 
+[Run]
+Filename: {app}\bin\native\win\redist\vcredist_x64.exe; \
+    Parameters: "/install /passive /norestart"; \
+    StatusMsg: "Installing Visual C++ 2017 Redistributables..."; \
+	Flags: waituntilterminated postinstall;
+Filename: {app}\bin\native\win\redist\MSMpiSetup-9.0.1.exe; \
+    Parameters: "-force"; \
+    StatusMsg: "Installing Microsoft MPI..."; \
+	Flags: waituntilterminated skipifsilent postinstall;
+Filename: {app}\bin\native\win\redist\NDP472-KB4054531-Web.exe;  \
+    StatusMsg: "Installing Microsoft .NET 4.7.2..."; \
+	Flags: waituntilterminated skipifsilent postinstall;
+	
+ 
 [Code]
 function NeedsAddPath(Param: string): boolean;
 var

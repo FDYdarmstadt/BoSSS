@@ -27,9 +27,11 @@ namespace BoSSS.Application.AdaptiveMeshRefinementTest {
         /// <summary>
         /// Da Test!
         /// </summary>
-        [Test]
+        [Test, Sequential]
         static public void RuntimeCostDynamicBalanceTest(
-            [Values(2, 3)] int DGdegree) {
+            [Values(2, 3, 4)] int DGdegree,
+            [Values(1, 1, 2)] int MeshCaseIndex
+            ) {
             AdaptiveMeshRefinementTestMain p = null;
             
             BoSSS.Solution.Application._Main(
@@ -38,6 +40,7 @@ namespace BoSSS.Application.AdaptiveMeshRefinementTest {
                 delegate () {
                     p = new AdaptiveMeshRefinementTestMain();
                     p.DEGREE = DGdegree;
+                    p.TestCase = MeshCaseIndex;
                     return p;
                 });
         }
