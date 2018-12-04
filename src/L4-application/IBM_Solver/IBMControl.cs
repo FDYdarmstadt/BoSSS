@@ -60,6 +60,18 @@ namespace BoSSS.Application.IBM_Solver {
         public DoNotTouchParameters AdvancedDiscretizationOptions = new DoNotTouchParameters();
 
         /// <summary>
+        /// desired minimum refinement level, 2 is minimum
+        /// </summary>
+        [DataMember]
+        public int RefinementLevel = 2;
+
+        /// <summary>
+        /// reciprocal of the ratio between curvature and hmin
+        /// </summary>
+        [DataMember]
+        public int maxCurvature = 2;
+
+        /// <summary>
         /// Sets the DG polynomial degree 
         /// </summary>
         /// <param name="k">Degree for velocity; pressure  will be one order lower.</param>
@@ -183,6 +195,12 @@ namespace BoSSS.Application.IBM_Solver {
         public double particleRadius;
 
         public double MeshFactor;
+
+        /// <summary>
+        /// Exponent of time step 
+        /// </summary>
+        [DataMember]
+        public int dtLevel;
 
 
 
