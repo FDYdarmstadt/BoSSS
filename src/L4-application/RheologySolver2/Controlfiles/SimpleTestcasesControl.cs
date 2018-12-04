@@ -58,13 +58,13 @@ namespace BoSSS.Application.Rheology
             C.NonlinearMethod = NonlinearSolverMethod.Newton;
             C.ObjectiveParam = 1.0;
 
-            C.UsePerssonSensor = true;
+            C.UsePerssonSensor = false;
             C.SensorLimit = 1e-4;
 
             C.AdaptiveMeshRefinement = false;
             C.RefinementLevel = 10;
 
-            C.UseArtificialDiffusion = true;
+            C.UseArtificialDiffusion = false;
 
             C.Bodyforces = true;
             //C.WhichWall = "Wall_Cylinder";
@@ -80,7 +80,7 @@ namespace BoSSS.Application.Rheology
             //Physical Params
             C.Stokes = false;
             C.FixedStreamwisePeriodicBC = false;
-            C.beta = 0;
+            C.beta = 0.5;
             C.Reynolds = 1;
             C.Weissenberg = 0.0;
             C.Weissenberg = 0.1; //aim Weissenberg number!
