@@ -550,6 +550,20 @@ namespace ilPSP {
         public static bool SetEquals<T>(this IEnumerable<T> A, IEnumerable<T> B) {
             return (A.IsSubsetOf<T>(B) && B.IsSubsetOf<T>(A));
         }
+
+        /// <summary>
+        /// the set-union of <paramref name="A"/> and <paramref name="B"/>
+        /// </summary>
+        public static HashSet<T> SetUnion<T>(this IEnumerable<T> A, IEnumerable<T> B) {
+            HashSet<T> R = new HashSet<T>();
+            foreach(T i in A) {
+                R.Add(i);
+            }
+            foreach(T i in B) {
+                R.Add(i);
+            }
+            return R;
+        }
         
         /// <summary>
         /// Wraps each entity into an <see cref="SmartEnumerable{T}.Entry"/>

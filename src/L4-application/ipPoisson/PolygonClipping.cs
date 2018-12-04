@@ -92,7 +92,7 @@ namespace BoSSS.Application.SipPoisson.Voronoi {
 
 
 
-        static bool ComputeIntersection(Vector S1, Vector S2, Vector E1, Vector E2, out double alpha1, out double alpha2, out Vector I) {
+        public static bool ComputeIntersection(Vector S1, Vector S2, Vector E1, Vector E2, out double alpha1, out double alpha2, out Vector I) {
             if (S1.Dim != 2)
                 throw new ArgumentException("spatial dimension mismatch.");
             if (S2.Dim != 2)

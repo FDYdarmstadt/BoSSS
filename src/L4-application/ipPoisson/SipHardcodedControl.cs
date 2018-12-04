@@ -699,7 +699,7 @@ namespace BoSSS.Application.SipPoisson {
                                 
                 // generate Delaunay vertices
                 Random rnd = new Random(0);
-                int RR = Res * 9;
+                int RR = Res ;
                 var Node = MultidimensionalArray.Create(RR, 2);
 
                 Node.SetColumn(0, RR.ForLoop(idx => rnd.NextDouble() * 4 - 2));
