@@ -16,7 +16,8 @@ limitations under the License.
 
 using System.Collections.Generic;
 using BoSSS.Foundation;
-using CNS.Boundary;
+using BoSSS.Solution.CompressibleFlowCommon;
+using BoSSS.Solution.CompressibleFlowCommon.Boundary;
 using CNS.MaterialProperty;
 using ilPSP;
 
@@ -98,7 +99,7 @@ namespace CNS.Convection {
                 Uout[i] = MultidimensionalArray.Create(Uin[i].GetLength(0), Uin[i].GetLength(1));
             }
 
-            Material material = speciesMap.GetMaterial(double.NaN);
+            BoSSS.Solution.CompressibleFlowCommon.MaterialProperty.Material material = speciesMap.GetMaterial(double.NaN);
             for (int e = 0; e < Lenght; e++) {
                 int edge = e + Offset;
                 for (int n = 0; n < NoOfNodes; n++) {
@@ -109,7 +110,7 @@ namespace CNS.Convection {
                         normalLocal[d] = normal[edge, n, d] * sign;
                     }
 
-                    StateVector stateIn = new StateVector(material, Uin, edge, n);
+                    StateVector stateIn = new StateVector(material, Uin, edge, n, D);
                     StateVector stateBoundary = boundaryMap.GetBoundaryState(
                         EdgeTags[e + EdgeTagsOffset], time, xLocal, normalLocal, stateIn);
 

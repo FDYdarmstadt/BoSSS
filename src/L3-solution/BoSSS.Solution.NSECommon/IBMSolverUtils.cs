@@ -745,10 +745,6 @@ namespace BoSSS.Solution.NSECommon {
         /// <summary>
         /// Calculates the drag (x-component) and lift (y-component) forces acting on a wall of a boundary fitted grid
         /// </summary>
-        /// <param name="U"></param>
-        /// <param name="P"></param>
-        /// <param name="muA"></param>
-        /// <returns></returns>
         static public double[] GetForces_BoundaryFitted(VectorField<SinglePhaseField> GradU, VectorField<SinglePhaseField> GradV, SinglePhaseField StressXX, 
             SinglePhaseField StressXY, SinglePhaseField StressYY, SinglePhaseField P, LevelSetTracker LsTrk, double muA, double beta) {
             int D = LsTrk.GridDat.SpatialDimension;
@@ -772,6 +768,7 @@ namespace BoSSS.Solution.NSECommon {
             //if (RequiredOrder > agg.HMForder)
             //    throw new ArgumentException();
 
+            Console.WriteLine();
             Console.WriteLine("Forces coeff: {0}, order = {1}", LsTrk.CutCellQuadratureType, RequiredOrder);
 
             SinglePhaseField _StressXX = StressXX;
@@ -824,6 +821,7 @@ namespace BoSSS.Solution.NSECommon {
                     //if (LsTrk.GridDat.SpatialDimension == 2)
                     //{
 
+
                     for (int j = 0; j < Len; j++) {
                         for (int k = 0; k < K; k++) {
                             double acc = 0.0;
@@ -831,12 +829,13 @@ namespace BoSSS.Solution.NSECommon {
                             // pressure
                             switch (d) {
                                 case 0:
-                                    acc += pARes[j, k] * Normals[j, k, 0];
+                                    acc += pARes[j, k] * Normals[j, k, 0];                                 
                                     acc -= (2 * muA * beta) * Grad_URes[j, k, 0] * Normals[j, k, 0];
                                     acc -= (muA * beta) * Grad_URes[j, k, 1] * Normals[j, k, 1];
-                                    acc -= (muA * beta) * Grad_VRes[j, k, 0] * Normals[j, k, 1];
+                                    acc -= (muA * beta) * Grad_VRes[j, k, 0] * Normals[j, k, 1];                                
                                     acc -= (muA * (1 - beta)) * StressXXRes[j, k] * Normals[j, k, 0];
                                     acc -= (muA * (1 - beta)) * StressXYRes[j, k] * Normals[j, k, 1];
+         
                                     break;
 
                                 case 1:
@@ -854,51 +853,6 @@ namespace BoSSS.Solution.NSECommon {
                             result[j, k] = acc;
                         }
                     }
-
-                    //}
-                    //else
-                    //{
-                    //    for (int j = 0; j < Len; j++)
-                    //    {
-                    //        for (int k = 0; k < K; k++)
-                    //        {
-                    //            double acc = 0.0;
-
-                    //            // pressure
-                    //            switch (d)
-                    //            {
-                    //                case 0:
-                    //                    acc += pARes[j, k] * Normals[j, k, 0];
-                    //                    acc -= (2 * muA) * Grad_UARes[j, k, 0, 0] * Normals[j, k, 0];
-                    //                    acc -= (muA) * Grad_UARes[j, k, 0, 2] * Normals[j, k, 2];
-                    //                    acc -= (muA) * Grad_UARes[j, k, 0, 1] * Normals[j, k, 1];
-                    //                    acc -= (muA) * Grad_UARes[j, k, 1, 0] * Normals[j, k, 1];
-                    //                    acc -= (muA) * Grad_UARes[j, k, 2, 0] * Normals[j, k, 2];
-                    //                    break;
-                    //                case 1:
-                    //                    acc += pARes[j, k] * Normals[j, k, 1];
-                    //                    acc -= (2 * muA) * Grad_UARes[j, k, 1, 1] * Normals[j, k, 1];
-                    //                    acc -= (muA) * Grad_UARes[j, k, 1, 2] * Normals[j, k, 2];
-                    //                    acc -= (muA) * Grad_UARes[j, k, 1, 0] * Normals[j, k, 0];
-                    //                    acc -= (muA) * Grad_UARes[j, k, 0, 1] * Normals[j, k, 0];
-                    //                    acc -= (muA) * Grad_UARes[j, k, 2, 1] * Normals[j, k, 2];
-                    //                    break;
-                    //                case 2:
-                    //                    acc += pARes[j, k] * Normals[j, k, 2];
-                    //                    acc -= (2 * muA) * Grad_UARes[j, k, 2, 2] * Normals[j, k, 2];
-                    //                    acc -= (muA) * Grad_UARes[j, k, 2, 0] * Normals[j, k, 0];
-                    //                    acc -= (muA) * Grad_UARes[j, k, 2, 1] * Normals[j, k, 1];
-                    //                    acc -= (muA) * Grad_UARes[j, k, 0, 2] * Normals[j, k, 0];
-                    //                    acc -= (muA) * Grad_UARes[j, k, 1, 2] * Normals[j, k, 1];
-                    //                    break;
-                    //                default:
-                    //                    throw new NotImplementedException();
-                    //            }
-
-                            //    result[j, k] = acc;
-                            //}
-                        //}
-                    //}
 
                 };
 
@@ -922,8 +876,8 @@ namespace BoSSS.Solution.NSECommon {
 
             }
 
-            //for (int i = 0; i < D; i++)
-            //    forces[i] = MPI.Wrappers.MPIExtensions.MPISum(forces[i]);
+            for (int i = 0; i < D; i++)
+                forces[i] = MPI.Wrappers.MPIExtensions.MPISum(forces[i]);
 
             return forces;
         }

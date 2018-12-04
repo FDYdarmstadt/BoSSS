@@ -215,7 +215,6 @@ namespace BoSSS.Foundation.Grid.Classic {
                 int size = this.Size;
                 int rank = this.MyRank;
 
-
                 if (size == 1) {
                     return new int[NoOfUpdateCells];
                 }
@@ -832,6 +831,53 @@ namespace BoSSS.Foundation.Grid.Classic {
             return partitioning;
         }*/
 
+        private double[] GetShortestDistance() {
+            int D = this.SpatialDimension;
+            IEnumerable<Neighbour>[] bla = this.GetCellNeighbourship(true);
+            var GlobalBB = this.GetGridBoundingBox();
+            int cellInd = 0;
+            double[] ShortestGlobalDistance = GlobalBB.Max;
+
+            foreach (IEnumerable<Neighbour> enumNb in bla) {
+                //Loop over all Cells
+                Cell C_O = this.Cells[cellInd];
+                double[] CenterC_O = new double[D];
+
+                //Barycentre of Origin
+                for (int d = 0; d < D; d++) {
+                    double NoOfNodes = C_O.TransformationParams.NoOfRows;
+                    double center = 0;
+                    for (int k = 0; k < NoOfNodes; k++) {
+                        center += C_O.TransformationParams[k, d];
+                    }
+                    CenterC_O[d] = center / (NoOfNodes);
+                }
+
+                foreach (Neighbour nb in enumNb) {
+                    //Loop over Neighbours
+                    int NIndex=nb.Neighbour_GlobalIndex;
+                    Cell C_N = this.Cells[NIndex];
+                    double[] CenterC_N = new double[D];
+
+                    //Barycentre of Neighbour
+                    for (int d = 0; d < D; d++) {
+                        double NoOfNodes = C_N.TransformationParams.NoOfRows;
+                        double center = 0;
+                        for (int k = 0; k < NoOfNodes; k++) {
+                            center += C_N.TransformationParams[k, d];
+                        }
+                        CenterC_N[d] = center / (NoOfNodes);
+
+                        //Save shortest distance
+                        double distance = Math.Abs(CenterC_O[d] - CenterC_N[d]);
+                        ShortestGlobalDistance[d] = Math.Min(ShortestGlobalDistance[d], distance);
+                    }
+                }
+                cellInd++;
+            }
+            return ShortestGlobalDistance;
+        }
+
         private BoundingBox GetGridBoundingBox() {
             int D = this.SpatialDimension;
             var BB = new BoundingBox(D);
@@ -852,10 +898,14 @@ namespace BoSSS.Foundation.Grid.Classic {
         /// <summary>
         /// Computes a grid partitioning (which cell should be on which processor) based on a Hilbertcurve of maximum order (64 bit>nBit*nDim).
         /// </summary>
-        public int[] ComputePartitionHilbert(IList<int[]> localcellCosts = null, int Functype = 0) {
+        public int[] ComputePartitionHilbert(IList<int[]> localcellCosts = null, int Functype = 0, bool adjustRefinement=false) {
 #if DEBUG
             System.Threading.Thread.Sleep(5000);
 #endif
+
+            //CONSTRUCTIONSITE: GetShortestDistance will be called from here, the return argument will be used to calculate a refinement order
+            //This refinement order has to be stored once and is available in here during runtime
+
             //Functype: Constraint mapping (0) or direct Costmapping (1)
             //Notice: Functype=1 will lead to bad behavior, when using Clusters
 
