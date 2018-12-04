@@ -76,7 +76,7 @@ namespace BoSSS.Application.Rheology {
             C.FixedStreamwisePeriodicBC = false;
             C.beta = 0.11;
             C.Reynolds = 1;
-            C.Weissenberg = 0;
+            C.Weissenberg = 0.1;
             C.RaiseWeissenberg = true;
 
             //Grid Params
@@ -419,16 +419,16 @@ namespace BoSSS.Application.Rheology {
             C.FixedStreamwisePeriodicBC = false;
             C.beta = 0.59;
             C.Reynolds = 1;
-            C.Weissenberg = 5.0; //aim Weissenberg number!
+            C.Weissenberg = 0.1; //aim Weissenberg number!
             C.RaiseWeissenberg = true;
             C.WeissenbergIncrement = 0.1;
 
             //Penalties
             C.ViscousPenaltyScaling = 1;
-            C.Penalty2 = 2;
+            C.Penalty2 = 1;
             C.Penalty1[0] = 0.0;
             C.Penalty1[1] = 0.0;
-            C.PresPenalty2 = 2;
+            C.PresPenalty2 = 1;
             C.PresPenalty1[0] = 0.0;
             C.PresPenalty1[1] = 0.0;
             C.alpha = 1;
@@ -473,14 +473,14 @@ namespace BoSSS.Application.Rheology {
 
             // Create Grid
             //fine grid - only on cluster!           
-            string grid = "70797022-eba0-4c77-b179-334c665044b5";
+            //string grid = "70797022-eba0-4c77-b179-334c665044b5";
 
             //more refined in wake of cylinder - only on cluster!
             //string grid = "3637610b-bcdf-4cdd-a647-cd7f91e373e8";
 
 
             //coarser grid - works without cluster!
-            //string grid = "f9aa12dc-53bb-4e2c-81b3-ffccc251a3f7";
+            string grid = "f9aa12dc-53bb-4e2c-81b3-ffccc251a3f7";
 
             //very coarse grid as starting point for refinement
             //string grid = "e296a1b2-98f9-4fdf-8a32-04e0954ff369";
