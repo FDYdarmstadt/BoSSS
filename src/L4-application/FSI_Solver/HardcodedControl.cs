@@ -25,6 +25,7 @@ using ilPSP.Utils;
 using BoSSS.Foundation.Grid.Classic;
 using ilPSP;
 using BoSSS.Foundation.IO;
+using BoSSS.Solution.XdgTimestepping;
 
 namespace BoSSS.Application.FSI_Solver {
     public class HardcodedControl : IBM_Solver.HardcodedTestExamples {
@@ -107,7 +108,7 @@ namespace BoSSS.Application.FSI_Solver {
             // ==============
 
             // Coupling Properties
-            C.LevelSetMovement = "coupled";
+            C.Timestepper_LevelSetHandling = LevelSetHandling.Coupled_Once;
             C.includeTranslation = false;
             C.includeRotation = true;
 
@@ -341,7 +342,7 @@ namespace BoSSS.Application.FSI_Solver {
             C.particleRadius = 0.5;
             C.includeRotation = false;
             C.includeTranslation = false;
-            C.LevelSetMovement = "fixed";
+            C.Timestepper_LevelSetHandling = LevelSetHandling.None;
             C.PhysicalParameters.rho_A = 1;
             C.PhysicalParameters.mu_A = 1.0 / 185;
 
@@ -567,7 +568,7 @@ namespace BoSSS.Application.FSI_Solver {
             // ==============
 
             // Coupling Properties
-            C.LevelSetMovement = "coupled";
+            C.Timestepper_LevelSetHandling = LevelSetHandling.Coupled_Once;
             C.includeRotation = false;
             C.includeTranslation = true;
 
@@ -777,7 +778,7 @@ namespace BoSSS.Application.FSI_Solver {
             // ==============
 
             // Coupling Properties
-            C.LevelSetMovement = "coupled";
+            C.Timestepper_LevelSetHandling = LevelSetHandling.Coupled_Once;
             C.includeRotation = true;
             C.includeTranslation = true;
 
@@ -1014,7 +1015,7 @@ namespace BoSSS.Application.FSI_Solver {
             // ==============
 
             // Coupling Properties
-            C.LevelSetMovement = "coupled";
+            C.Timestepper_LevelSetHandling = LevelSetHandling.Coupled_Once;
             C.includeRotation = true;
             C.includeTranslation = true;
 
@@ -1265,7 +1266,7 @@ namespace BoSSS.Application.FSI_Solver {
             // ==============
 
             // Coupling Properties
-            C.LevelSetMovement = "coupled";
+            C.Timestepper_LevelSetHandling = LevelSetHandling.Coupled_Once;
             C.includeRotation = true;
             C.includeTranslation = true;
 
@@ -1520,7 +1521,7 @@ namespace BoSSS.Application.FSI_Solver {
             // ==============
 
             // Coupling Properties
-            C.LevelSetMovement = "coupled";
+            C.Timestepper_LevelSetHandling = LevelSetHandling.Coupled_Once;
             C.includeRotation = true;
             C.includeTranslation = true;
 
@@ -1734,7 +1735,7 @@ namespace BoSSS.Application.FSI_Solver {
             // ==============
 
             // Coupling Properties
-            C.LevelSetMovement = "coupled";
+            C.Timestepper_LevelSetHandling = LevelSetHandling.Coupled_Once;
             C.includeRotation = true;
             C.includeTranslation = true;
 

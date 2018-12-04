@@ -14,6 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+using BoSSS.Solution.XdgTimestepping;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -55,10 +56,39 @@ namespace BoSSS.Application.FSI_Solver {
         public Func<double, double>[] anglVelocityFunc;
 
         /// <summary>
-        /// How should the level set be moved? Options: none, fixed, coupled
+        /// See <see cref="LevelSetHandling"/>
         /// </summary>
         [DataMember]
-        public string LevelSetMovement = "none";
+        public LevelSetHandling Timestepper_LevelSetHandling = LevelSetHandling.LieSplitting;
+
+        /// <summary>
+        /// The termination criterion for fully coupled/implicit level-set evolution.
+        /// </summary>
+        [DataMember]
+        public double LevelSet_ConvergenceCriterion = 1.0e-6;
+
+        /// <summary>
+        /// underrelaxation of the level set movement in case of coupled iterative
+        /// </summary>
+        public double LSunderrelax = 1.0;
+
+        /// <summary>
+        /// desired minimum refinement level, 2 is minimum
+        /// </summary>
+        [DataMember]
+        public int RefinementLevel = 2;
+
+
+        /// <summary>
+        /// reciprocal of the ratio between curvature and hmin
+        /// </summary>
+        [DataMember]
+        public int maxCurvature = 2;
+
+        ///// <summary>
+        ///// How should the level set be moved? Options: none, fixed, coupled
+        ///// </summary>
+        //public string LevelSetMovement = "none";
 
         /// <summary>
         /// 
@@ -111,7 +141,6 @@ namespace BoSSS.Application.FSI_Solver {
         public void AddParticle(int D, int HistoryLength, double[] start) {
             this.Particles.Add(new Particle(D, HistoryLength, start));
         }
-
 
     }
 }
