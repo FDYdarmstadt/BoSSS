@@ -259,6 +259,58 @@ namespace BoSSS.Application.SipPoisson.Voronoi {
             public Vector Interpol(double alpha) {
                 return (1 - alpha) * (VtxA.VTX) + alpha * (VtxB.VTX);
             }
+
+            public bool Intersect(VoEdge other, out double beta, out Vector I) {
+                Vector Dthis = this.Dir;
+                Dthis.Normalize();
+                Vector Dother = other.Dir;
+                Dother.Normalize();
+                if(Dother*Dthis < 0) {
+                    Dother.Scale(-1.0);
+                }
+                if(PointIdentity(Dother,Dthis)) {
+                    beta = double.PositiveInfinity;
+                    I = new Vector(double.PositiveInfinity, double.PositiveInfinity);
+                    return false; // parallel - this method is inappropriate
+                }
+
+
+                bool nonParallel = PolygonClipping.ComputeIntersection(VtxA.VTX, VtxB.VTX, other.VtxA.VTX, other.VtxB.VTX, 
+                    out double alpha, out beta, out I);
+
+                if (nonParallel == false)
+                    return false;
+
+                if (PointIdentity(I, VtxA.VTX)) {
+                    alpha = 0.0;
+                    I = VtxA.VTX;
+                }
+                if (PointIdentity(I, VtxB.VTX)) {
+                    alpha = 1.0;
+                    I = VtxB.VTX;
+                }
+
+                if (PointIdentity(I, other.VtxA.VTX)) {
+                    beta = 0.0;
+                    I = other.VtxA.VTX;
+                }
+                if (PointIdentity(I, other.VtxB.VTX)) {
+                    beta = 1.0;
+                    I = other.VtxB.VTX;
+                }
+                
+                if (alpha < 0)
+                    return false;
+                if (alpha > 1)
+                    return false;
+                if (beta < 0)
+                    return false;
+                if (beta > 1)
+                    return false;
+
+
+                return true;
+            }
         }
 
         class VoPolygon : VoItem {
@@ -555,8 +607,8 @@ namespace BoSSS.Application.SipPoisson.Voronoi {
                         }
                         Debug.Assert(bndy.isBoundary == true);
 
-                        // exact overlap
-                        // -------------
+                        // Colinear: exact overlap
+                        // -----------------------
 
                         if(edge.Equals(bndy)) {
                             // +++++++++++++++++++++++++++++++++++++++++++
@@ -578,8 +630,8 @@ namespace BoSSS.Application.SipPoisson.Voronoi {
                             continue;
                         }
 
-                        // partial overlap
-                        // ---------------
+                        // Colinear: partial overlap
+                        // -------------------------
                         var vaProj = bndy.plane.ProjectPoint(edge.VtxA.VTX);
                         bool vAinPlane = PointIdentity(vaProj, edge.VtxA.VTX);
 
@@ -627,6 +679,7 @@ namespace BoSSS.Application.SipPoisson.Voronoi {
 
                                     bndy.VtxA = edge.VtxB;
 
+                                    iEdge--;
                                     continue;
                                 }
 
@@ -644,6 +697,7 @@ namespace BoSSS.Application.SipPoisson.Voronoi {
 
                                     bndy.VtxB = edge.VtxA;
 
+                                    iEdge--;
                                     continue;
                                 }
 
@@ -656,10 +710,11 @@ namespace BoSSS.Application.SipPoisson.Voronoi {
                                     edge.VtxA = bndy.VtxB;
                                     edge.isBoundary = false; // outside domain
                                     
+                                    iEdge--;
                                     continue;
                                 }
 
-                                if(alphaA == 0 && alphaB > 1) {
+                                if(alphaA < 0 && alphaB == 1) {
                                     // edge:  o------------o
                                     // bndy:      o--------o
                                     //
@@ -668,6 +723,7 @@ namespace BoSSS.Application.SipPoisson.Voronoi {
                                     edge.VtxB = bndy.VtxA;
                                     edge.isBoundary = false; // outside domain
                                     
+                                    iEdge--;
                                     continue;
                                 }
 
@@ -692,6 +748,7 @@ namespace BoSSS.Application.SipPoisson.Voronoi {
 
                                     bndy.Cells.AddRange(edge.Cells);
 
+                                    iEdge--;
                                     continue;
                                 }
 
@@ -717,6 +774,7 @@ namespace BoSSS.Application.SipPoisson.Voronoi {
                                     bndyEdges.Add(newBndy);
                                     edgeS.Add(newBndy);
 
+                                    iEdge--;
                                     continue;
                                 }
 
@@ -740,6 +798,7 @@ namespace BoSSS.Application.SipPoisson.Voronoi {
 
                                     bndy.VtxA = edge.VtxB;
 
+                                    iEdge--;
                                     continue;
                                 }
 
@@ -766,6 +825,7 @@ namespace BoSSS.Application.SipPoisson.Voronoi {
                                     newEdge.Cells.AddRange(edge.Cells);
                                     edgeS.Add(newEdge);
                                     
+                                    iEdge--;
                                     continue;
                                 }
 
@@ -773,6 +833,91 @@ namespace BoSSS.Application.SipPoisson.Voronoi {
                             }
                         }
 
+                        // regular intersections
+                        // =====================
+
+                        if (PointIdentity(bndy.VtxA.VTX, edge.VtxA.VTX)) continue; 
+                        if (PointIdentity(bndy.VtxA.VTX, edge.VtxB.VTX)) continue; 
+                        if (PointIdentity(bndy.VtxB.VTX, edge.VtxA.VTX)) continue; 
+                        if (PointIdentity(bndy.VtxB.VTX, edge.VtxB.VTX)) continue; 
+
+
+                        bool cutfound = bndy.Intersect(edge, out double alpha, out Vector I);
+
+                        if(cutfound) {
+                            if (alpha == 0.0 || alpha == 1.0) {
+                                // T-junction
+                                
+                                // find junction vertex
+                                VoVertex newVert;
+                                if (alpha == 0.0) {
+                                    Debug.Assert(vAinPlane);
+                                    newVert = edge.VtxA;
+                                } else {
+                                    Debug.Assert(alpha == 1.0);
+                                    Debug.Assert(vBinPlane);
+                                    newVert = edge.VtxB;
+                                }
+
+                                // split bndy -- 1st part:
+                                var t = bndy.VtxB;
+                                bndy.VtxB = newVert;
+
+                                // split bndy -- 2nd part:
+                                var newBndy = new VoEdge() {
+                                    isBoundary = true,
+                                    VtxA = newVert,
+                                    VtxB = t
+                                };
+                                newBndy.Cells.AddRange(bndy.Cells);
+                                bndyEdges.Add(newBndy);
+                                edgeS.Add(newBndy);
+
+                                //
+                                continue;
+
+                            } else {
+                                // X-junction
+                                
+                                // introduce new vertex
+                                var newVert = new VoVertex() {
+                                    VTX = I
+                                };
+                                Debug.Assert(verticeS.Where(vtx => PointIdentity(vtx.VTX, I)).Count() == 0);
+                                verticeS.Add(newVert);
+                                
+                                // split bndy -- 1st part:
+                                var t = bndy.VtxB;
+                                bndy.VtxB = newVert;
+
+                                // split bndy -- 2nd part:
+                                var newBndy = new VoEdge() {
+                                    isBoundary = true,
+                                    VtxA = newVert,
+                                    VtxB = t
+                                };
+                                newBndy.Cells.AddRange(bndy.Cells);
+                                bndyEdges.Add(newBndy);
+                                edgeS.Add(newBndy);
+
+                                // split edge -- 1st part:
+                                var tt = edge.VtxB;
+                                edge.VtxB = newVert;
+
+                                // split edge -- 1st part:
+                                var newEdge = new VoEdge() {
+                                    VtxA = newVert,
+                                    VtxB = tt
+                                };
+                                newEdge.Cells.AddRange(edge.Cells);
+                                edgeS.Add(newEdge);
+
+                                //
+                                iEdge--;
+                                continue;
+                            }
+                            
+                        }
 
                     }
                 }
