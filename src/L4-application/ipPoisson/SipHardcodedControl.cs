@@ -628,7 +628,7 @@ namespace BoSSS.Application.SipPoisson {
 
 
             
-            /*
+            
             bool IsIn(double xi, double yi) {
                 
                 //for(int l = 0; l < bndys.Length; l++) {
@@ -660,8 +660,9 @@ namespace BoSSS.Application.SipPoisson {
                 new Vector(+1,-1),
                 new Vector(+0,-1)
             };
-            */
+            
 
+            /*
              bool IsIn(double xi, double yi) {
                 double myEps = 0.0;
                 if (xi > 1.0 + myEps)
@@ -684,7 +685,7 @@ namespace BoSSS.Application.SipPoisson {
                 new Vector(+1,-1),
                 new Vector(-1,-1)
             };
-
+            */
 
             bool IsInV(Vector X) {
                 Debug.Assert(X.Dim == 2);
@@ -729,7 +730,7 @@ namespace BoSSS.Application.SipPoisson {
             return R;
         }
 
-
+        /*
         static void VoronoiTestCode() { 
             Vector[] DomainBndy = new[] {
                 new Vector(-1, 0), // 6
@@ -821,7 +822,7 @@ namespace BoSSS.Application.SipPoisson {
 
             return;
         }
-
+        */
 
     }
 }
