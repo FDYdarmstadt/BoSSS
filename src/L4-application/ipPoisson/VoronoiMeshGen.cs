@@ -100,6 +100,34 @@ namespace BoSSS.Application.SipPoisson.Voronoi {
         }
 
 
+        enum VertexType {
+            unspecified = 0,
+            
+            Inside = 1,
+
+            Outside = 2,
+
+            OnBoundaryplane_Inside = 3,
+
+            //OnBoundaryplane_Outside = 4,
+
+            OnCorner = 5,
+
+            FarPoint = 6 // somewhere at infty
+        }
+
+
+        class VoronoiVertex {
+            public Vector VTX;
+
+            public VertexType type;
+
+
+
+
+        }
+
+
 
         class VoronoiEdge {
             /// <summary>
@@ -136,6 +164,31 @@ namespace BoSSS.Application.SipPoisson.Voronoi {
         }
 
 
+        static double CoordOnLine(Vector P, Vector A, Vector B) {
+            Vector AP = P - A;
+            Vector AB = B - A;
+
+            if (AB.AbsSquare() <= 0.0)
+                throw new ArgumentException();
+
+            if (AP.AbsSquare() <= 0.0)
+                return 0.0;
+
+            return (AB*AP) / AB.AbsSquare();
+            
+        }
+
+        static bool isFarPoint(Vector V) {
+            if (double.IsInfinity(V.x))
+                return true;
+            if (double.IsInfinity(V.x))
+                return true;
+
+            return false;
+        }
+
+
+
         /// <summary>
         /// 
         /// </summary>
@@ -163,6 +216,15 @@ namespace BoSSS.Application.SipPoisson.Voronoi {
                     throw new ArgumentException();
                 }
             }
+
+            // check if any two boundary vertices are identical:
+            for (int iBnd = 0; iBnd < PolygonBoundary.Length; iBnd++) {
+                for (int iBnd2 = iBnd + 1; iBnd2 < PolygonBoundary.Length; iBnd2++) {
+                    if (PointIdentity(PolygonBoundary[iBnd], PolygonBoundary[iBnd2]))
+                        throw new ArgumentException("degenerate boundary");
+                }
+            }
+
 
             // boundaries for domain
             // =====================
@@ -200,7 +262,7 @@ namespace BoSSS.Application.SipPoisson.Voronoi {
             // ================
             MultidimensionalArray NewNodes;
             {
-                /*
+                
                 double[] xNodes = Nodes.GetColumn(0);
                 double[] yNodes = Nodes.GetColumn(1);
 
@@ -210,9 +272,9 @@ namespace BoSSS.Application.SipPoisson.Voronoi {
                 NewNodes = MultidimensionalArray.Create(xNodes.Length, 2);
                 NewNodes.SetColumn(0, xNodes);
                 NewNodes.SetColumn(1, yNodes);
-                */
+                
 
-                NewNodes = Nodes.CloneAs();
+                //NewNodes = Nodes.CloneAs();
                 Nodes = null;
             }
 
@@ -220,7 +282,7 @@ namespace BoSSS.Application.SipPoisson.Voronoi {
             // =================================
 
             int[][] VocellVertexIndex;
-            MultidimensionalArray VertexCoordinates;
+            List<VoronoiVertex> Verts;
             using (var Matlab = new BatchmodeConnector()) {
 
 
@@ -238,7 +300,11 @@ namespace BoSSS.Application.SipPoisson.Voronoi {
                 Matlab.Execute(false);
 
                 // import here
-                VertexCoordinates = (MultidimensionalArray)(Matlab.OutputObjects["V"]);
+                MultidimensionalArray VertexCoordinates = (MultidimensionalArray)(Matlab.OutputObjects["V"]);
+                Verts = new List<VoronoiVertex>();
+                for(int iVtx = 0; iVtx < VertexCoordinates.NoOfRows; iVtx++) {
+                    Verts.Add(new VoronoiVertex() { VTX = VertexCoordinates.GetRowPt(iVtx) });
+                }
 
                 // correct indices (1-based index to 0-based index)
                 foreach (int[] cell in VocellVertexIndex) {
@@ -247,7 +313,108 @@ namespace BoSSS.Application.SipPoisson.Voronoi {
                         cell[k]--;
                     }
                 }
+
+                // fix voronoi cell orientation
+                for (int jV = 0; jV < VocellVertexIndex.Length; jV++) {
+                    int[] iVtxS = VocellVertexIndex[jV];
+                    if (iVtxS.Any(i => isFarPoint(Verts[i].VTX)))
+                        continue;
+
+                    Vector[] vectors = iVtxS.Select(i => Verts[i].VTX).ToArray();
+                    FixOrientation(ref vectors, ref iVtxS);
+                    VocellVertexIndex[jV] = iVtxS;
+                }
             }
+
+            // vertex classification
+            // =====================
+            {
+                for (int iVtx = 0; iVtx < Verts.Count; iVtx++) {
+                    var Vert = Verts[iVtx];
+
+                    // check if the vertex coincides with a corner
+                    Debug.Assert(Vert.type == VertexType.unspecified);
+                    if(isFarPoint(Vert.VTX)) {
+                        Vert.type = VertexType.FarPoint;
+                        continue;
+                    }
+
+                    // check if the vertex coincides with a corner
+                    Debug.Assert(Vert.type == VertexType.unspecified);
+                    for(int iBnd = 0; iBnd < PolygonBoundary.Length; iBnd++) {
+                        Vector VB = PolygonBoundary[iBnd];
+
+                        if(PointIdentity(VB, Vert.VTX)) {
+                            if (Vert.type != VertexType.unspecified)
+                                throw new ArithmeticException();
+                            Vert.type = VertexType.OnCorner;
+                        }
+                    }
+
+                    if (Vert.type == VertexType.OnCorner)
+                        continue;
+
+                    // check if the vertex is on one of the boundary sides
+                    Debug.Assert(Vert.type == VertexType.unspecified);
+                    for (int iBnd = 0; iBnd < PolygonBoundary.Length; iBnd++) {
+                        AffineManifold bndy = Boundaries[iBnd];
+
+
+                        var vaProj = Boundaries[iBnd].ProjectPoint(Vert.VTX);
+                        if (PointIdentity(vaProj, Vert.VTX)) {
+                            if (Vert.type != VertexType.unspecified)
+                                throw new ArithmeticException();
+
+                            // point is identical with its projection onto the boundary
+                            // => it must be on the on one of the sides
+
+                            Vector cornerA = PolygonBoundary[iBnd];
+                            Vector cornerB = PolygonBoundary[(iBnd + 1) % PolygonBoundary.Length];
+
+                            if(PointIdentity(vaProj, cornerA)) {
+                                Vert.type = VertexType.OnCorner;
+                                break;
+                            }
+                            if(PointIdentity(vaProj, cornerB)) {
+                                Vert.type = VertexType.OnCorner;
+                                break;
+                            }
+
+                            double alpha = CoordOnLine(vaProj, cornerA, cornerB);
+                            Debug.Assert(PointIdentity(vaProj, cornerA * (1 - alpha) + cornerB * alpha));
+                            if (alpha == 0.0)
+                                throw new ArithmeticException("point identity seems inconsistent"); // should have been handled above
+                            if (alpha == 1.0)
+                                throw new ArithmeticException("point identity seems inconsistent"); // should have been handled above
+
+                            if(alpha > 0 && alpha < 1.0) {
+                                Vert.type = VertexType.OnBoundaryplane_Inside;
+                                break;
+                            }
+
+                            //if (IsIn(Vert.VTX))
+                            //    Vert.type = VertexType.OnBoundaryplane_Inside;
+                            //else
+                            //    Vert.type = VertexType.OnBoundaryplane_Outside;
+
+
+
+                        }
+
+                    }
+
+                    if (Vert.type == VertexType.OnBoundaryplane_Inside || Vert.type == VertexType.OnCorner)
+                        continue;
+
+                    // check whether the vertex is inside or outside
+                    Debug.Assert(Vert.type == VertexType.unspecified);
+                    if (IsIn(Vert.VTX))
+                        Vert.type = VertexType.Inside;
+                    else
+                        Vert.type = VertexType.Outside;
+                }
+            }
+
 
             // detect edges
             // ============
@@ -314,28 +481,123 @@ namespace BoSSS.Application.SipPoisson.Voronoi {
                 // test all edges against all boundaries
 
                 int E = Edges.Count;
-                for(int e = 0; e < E; e++) { 
+                for(int e = 0; e < E; e++) { // loop over edges...
                     var Edge = Edges[e];
-                    Vector vA = Nodes.GetRowPt(Edge.iVtxA);
-                    Vector vB = Nodes.GetRowPt(Edge.iVtxB);
+                    VoronoiVertex vA = Verts[Edge.iVtxA];
+                    VoronoiVertex vB = Verts[Edge.iVtxB];
 
-                    for(int iBnd = 0; iBnd < Boundaries.Length; iBnd++) {
-                        var vaProj = Boundaries[iBnd].ProjectPoint(vA);
-                        bool vAinPlane = PointIdentity(vaProj, vA);
+                    if(vA.type == VertexType.FarPoint || vB.type == VertexType.FarPoint) {
+                        // cant deal with those guys at the moment
+                        continue;
+                    }
 
-                        var vbProj = Boundaries[iBnd].ProjectPoint(vB);
-                        bool vBinPlane = PointIdentity(vbProj, vB);
+                    for(int iBnd = 0; iBnd < Boundaries.Length; iBnd++) { // loop over boundaries...
+                        AffineManifold Bndy_i = Boundaries[iBnd];
+                        Vector B1 = PolygonBoundary[iBnd];
+                        Vector B2 = PolygonBoundary[(iBnd + 1)%Boundaries.Length];
+
+                        var vaProj = Boundaries[iBnd].ProjectPoint(vA.VTX);
+                        bool vAinPlane = PointIdentity(vaProj, vA.VTX);
+
+                        var vbProj = Boundaries[iBnd].ProjectPoint(vB.VTX);
+                        bool vBinPlane = PointIdentity(vbProj, vB.VTX);
+                        // -----
+
+                        if(vAinPlane && vBinPlane) {
+                            // +++++++++++++++++++++++++++++++++++++++++++++++++++++
+                            // special case: Voronoi edge and boundary are parallel
+                            // +++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+                            Console.Write("");
+                        } else {
+
+                            bool cutfound = PolygonClipping.ComputeIntersection(vA.VTX, vB.VTX, B1, B2, out double alpha1, out double alpha2, out Vector I);
+
+                            if(PointIdentity(I, vA.VTX)) {
+                                alpha1 = 0;
+                            }
+                            if(PointIdentity(I, vB.VTX)) {
+                                alpha1 = 1;
+                            }
+
+                            if(PointIdentity(I, B1)) {
+                                alpha2 = 0;
+                            }
+                            if(PointIdentity(I, B2)) {
+                                alpha2 = 1;
+                            }
 
 
+                            if(cutfound) {
+                                // Voronoi edge and boundary are NOT parallel
+
+                                if(alpha1 >= 0 && alpha1 <= 1 && alpha2 >= 0 && alpha2 <= 1) {
+                                    // 'alpha1' is relative coordinate on the boundary
+                                    // 'alpha2' is relative coordinate on the edge
+
+                                    Verts.Add(new VoronoiVertex() {
+                                        VTX = I,
+                                        type = VertexType.OnBoundaryplane_Inside
+                                    });
+                                    int iNew = Verts.Count - 1;
+
+                                }
+
+
+                                
+                                
+                                
+                            }
+                        }
                     }
                 }
             }
 
 
+            //
+            //
+            List<int[]> ClippedPolygons;
+            {
+                ClippedPolygons = new List<int[]>();
+
+                Debug.Assert(Cell2Edge.Length == VocellVertexIndex.Length);
+                for(int jV = 0; jV < Cell2Edge.Length; jV++) {
+                    int[] Edges_jV = Cell2Edge[jV].ToArray();
+                    int[] VtxS = VocellVertexIndex[jV];
+
+                    if (VtxS.Any(iVtx => Verts[iVtx].type == VertexType.FarPoint)) {
+                        // don't know how to deal with those guys yet.
+                        continue;
+                    }
+
+                    
+
+#if DEBUG
+                    {
+                        var VtxAset = Edges_jV.Select(edge => Edges[edge].iVtxA);
+                        var VtxBset = Edges_jV.Select(edge => Edges[edge].iVtxB);
+                        var VtxSet = VtxAset.SetUnion(VtxBset);
+
+                        Debug.Assert(VtxS.SetEquals(VtxSet));
+                    }
+#endif
+
+                    
+                    for(int i = 0; i < VtxS.Length; i++) {
+                        int _iVtxA = VtxS[i];
+                        int _iVtxB = VtxS[i % VtxS.Length];
+                        int iEdge = Edges_jV.Single(e => Edges[e].Equals(new VoronoiEdge() { iVtxA = _iVtxA, iVtxB = _iVtxB }));
+                        VoronoiEdge edge = Edges[iEdge];
 
 
-            // tessellation
-            // ============
+                    }
+
+                }
+
+            }
+
+            // tessellation of clipped polygons
+            // ================================
 
 
             List<Cell> cells = new List<Cell>();
@@ -345,7 +607,7 @@ namespace BoSSS.Application.SipPoisson.Voronoi {
                 int[] iVtxS = VocellVertexIndex[jV];
                 int NV = iVtxS.Length;
 
-                Vector[] VoronoiCell = iVtxS.Select(iVtx => VertexCoordinates.GetRowPt(iVtx)).ToArray();
+                Vector[] VoronoiCell = null;// iVtxS.Select(iVtx => VertexCoordinates.GetRowPt(iVtx)).ToArray();
                 
                 bool AnyIn = VoronoiCell.Any(V => IsIn(V));
                 bool AnyOt = VoronoiCell.Any(V => !IsIn(V));
