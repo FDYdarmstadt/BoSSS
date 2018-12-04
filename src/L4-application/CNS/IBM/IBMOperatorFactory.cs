@@ -16,7 +16,8 @@ limitations under the License.
 
 using BoSSS.Foundation.Grid;
 using BoSSS.Foundation.Grid.Classic;
-using CNS.Boundary;
+using BoSSS.Solution.CompressibleFlowCommon;
+using BoSSS.Solution.CompressibleFlowCommon.Boundary;
 using CNS.EquationSystem;
 using System.Collections.Generic;
 
@@ -47,7 +48,7 @@ namespace CNS.IBM {
             IGridData gridData,
             CNSFieldSet workingSet,
             ISpeciesMap speciesMap,
-            IBoundaryConditionMap boundaryMap)
+            BoundaryConditionMap boundaryMap)
             : base(control, gridData, workingSet, speciesMap, boundaryMap) {
 
             this.immersedBoundaryFluxBuilders.Add(new BoundaryConditionSourceFluxBuilder(

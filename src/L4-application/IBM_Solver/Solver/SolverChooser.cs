@@ -168,7 +168,7 @@ namespace BoSSS.Application.IBM_Solver {
                             m_BlockingStrategy = new Schwarz.METISBlockingStrategy()
                             {
                                 //noofparts = 76,
-                                NoOfPartsPerProcess = 76,
+                                NoOfPartsPerProcess = 213, // Warum 76
                             },
                             CoarseSolver = new DirectSolver()
                             {
@@ -219,7 +219,7 @@ namespace BoSSS.Application.IBM_Solver {
                             m_BlockingStrategy = new Schwarz.METISBlockingStrategy()
                             {
                                 //noofparts = 16,
-                                NoOfPartsPerProcess = 16,
+                                NoOfPartsPerProcess = 43,
                             },
                             CoarseSolver = new DirectSolver()
                             {
@@ -256,7 +256,7 @@ namespace BoSSS.Application.IBM_Solver {
                             m_BlockingStrategy = new Schwarz.METISBlockingStrategy()
                             {
                                 //noofparts = 8,
-                                NoOfPartsPerProcess = 8,
+                                NoOfPartsPerProcess = 22, //
 
                             },
                             CoarseSolver = new DirectSolver()
@@ -357,11 +357,11 @@ namespace BoSSS.Application.IBM_Solver {
                     case 1:
                         break;
                         throw new NotImplementedException("Currently not implemented for " + D + " Dimensions");
-                        break;
+                        //break;
 
                     case 2:
                         throw new NotImplementedException("Currently not implemented for " + D + " Dimensions");
-                        break;
+                        //break;
 
                     case 3:
                         var dofsPerCell3D = (3 * (pV * pV * pV + 6 * pV * pV + 11 * pV + 6) / 6 + 1 * (pP * pP * pP + 6 * pP * pP + 11 * pP + 6) / 6);
@@ -398,11 +398,11 @@ namespace BoSSS.Application.IBM_Solver {
                     case 1:
                         break;
                         throw new NotImplementedException("Currently not implemented for " + D + " Dimensions");
-                        break;
+                        //break;
 
                     case 2:
                         throw new NotImplementedException("Currently not implemented for " + D + " Dimensions");
-                        break;
+                        //break;
 
                     case 3:
                         var dofsPerCell3D = (3 * (pV * pV * pV + 6 * pV * pV + 11 * pV + 6) / 6 + 1 * (pP * pP * pP + 6 * pP * pP + 11 * pP + 6) / 6);

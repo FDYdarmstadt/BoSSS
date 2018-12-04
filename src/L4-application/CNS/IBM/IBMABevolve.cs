@@ -27,6 +27,7 @@ using BoSSS.Solution.Timestepping;
 using ilPSP.Utils;
 using System.Collections;
 using System.Collections.Generic;
+using BoSSS.Solution.CompressibleFlowCommon;
 
 namespace CNS.IBM {
 

@@ -157,14 +157,14 @@ namespace CutCellQuadrature {
         }
 
         private void GetLevelSetApproximationCofficients(int cell, double[] firstNode, double[] secondNode, out double a, out double b, out double c) {
-            Vector2D p = new Vector2D(firstNode[0], firstNode[1]);
-            Vector2D q = new Vector2D(secondNode[0], secondNode[1]);
-            Vector2D n = new Vector2D(-(q[1] - p[1]), q[0] - p[0]);
+            Vector p = new Vector(firstNode[0], firstNode[1]);
+            Vector q = new Vector(secondNode[0], secondNode[1]);
+            Vector n = new Vector(-(q[1] - p[1]), q[0] - p[0]);
 
             // Use gradient of first root to determine correct direction of normal vector
             NodeSet bla = new NodeSet(RefElement, firstNode);
             MultidimensionalArray gradient = tracker.DataHistories[0].Current.GetLevelSetGradients(bla, cell, 1);
-            Vector2D gradientVector = new Vector2D(
+            Vector gradientVector = new Vector(
                 gradient[0, 0, 0], gradient[0, 0, 1]);
             n.Scale(Math.Sign(gradientVector * n));
 

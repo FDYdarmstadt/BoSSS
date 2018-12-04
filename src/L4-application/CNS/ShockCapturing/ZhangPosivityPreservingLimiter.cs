@@ -19,6 +19,8 @@ using BoSSS.Foundation.Grid;
 using BoSSS.Foundation.Quadrature;
 using BoSSS.Foundation.XDG;
 using BoSSS.Platform.LinAlg;
+using BoSSS.Solution.CompressibleFlowCommon;
+using BoSSS.Solution.CompressibleFlowCommon.ShockCapturing;
 using CNS.IBM;
 using ilPSP;
 using System;
@@ -50,8 +52,14 @@ namespace CNS.ShockCapturing {
             this.quadRuleSet = quadRuleSet;
         }
 
-        public void LimitFieldValues(IProgram<CNSControl> program) {
-            CNSFieldSet fieldSet = program.WorkingSet;
+        public void LimitFieldValues(IEnumerable<DGField> ConservativeVariables, IEnumerable<DGField> DerivedFields) {
+            //IProgram<CNSControl> program;
+            //CNSFieldSet fieldSet = program.WorkingSet;
+
+            DGField Density = ConservativeVariables.Single(f => f.Identification == Variables.Density.Name);
+            DGField Momentum_0 = ConservativeVariables.Single(f => f.Identification == Variables.Momentum[0].Name);
+            DGField Momentum_1 = ConservativeVariables.Single(f => f.Identification == Variables.Momentum[1].Name);
+            DGField Energy = ConservativeVariables.Single(f => f.Identification == Variables.Energy.Name);
 
             foreach (var chunkRulePair in quadRuleSet) {
                 if (chunkRulePair.Chunk.Len > 1) {
@@ -59,13 +67,13 @@ namespace CNS.ShockCapturing {
                 }
 
                 MultidimensionalArray densityValues = MultidimensionalArray.Create(chunkRulePair.Chunk.Len, chunkRulePair.Rule.NoOfNodes);
-                fieldSet.Density.Evaluate(chunkRulePair.Chunk.i0, chunkRulePair.Chunk.Len, chunkRulePair.Rule.Nodes, densityValues);
+                Density.Evaluate(chunkRulePair.Chunk.i0, chunkRulePair.Chunk.Len, chunkRulePair.Rule.Nodes, densityValues);
                 MultidimensionalArray m0Values = MultidimensionalArray.Create(chunkRulePair.Chunk.Len, chunkRulePair.Rule.NoOfNodes);
-                fieldSet.Momentum[0].Evaluate(chunkRulePair.Chunk.i0, chunkRulePair.Chunk.Len, chunkRulePair.Rule.Nodes, m0Values);
+                Momentum_0.Evaluate(chunkRulePair.Chunk.i0, chunkRulePair.Chunk.Len, chunkRulePair.Rule.Nodes, m0Values);
                 MultidimensionalArray m1Values = MultidimensionalArray.Create(chunkRulePair.Chunk.Len, chunkRulePair.Rule.NoOfNodes);
-                fieldSet.Momentum[1].Evaluate(chunkRulePair.Chunk.i0, chunkRulePair.Chunk.Len, chunkRulePair.Rule.Nodes, m1Values);
+                Momentum_1.Evaluate(chunkRulePair.Chunk.i0, chunkRulePair.Chunk.Len, chunkRulePair.Rule.Nodes, m1Values);
                 MultidimensionalArray energyValues = MultidimensionalArray.Create(chunkRulePair.Chunk.Len, chunkRulePair.Rule.NoOfNodes);
-                fieldSet.Energy.Evaluate(chunkRulePair.Chunk.i0, chunkRulePair.Chunk.Len, chunkRulePair.Rule.Nodes, energyValues);
+                Energy.Evaluate(chunkRulePair.Chunk.i0, chunkRulePair.Chunk.Len, chunkRulePair.Rule.Nodes, energyValues);
 
                 for (int i = 0; i < chunkRulePair.Chunk.Len; i++) {
                     int cell = i + chunkRulePair.Chunk.i0;
@@ -78,7 +86,7 @@ namespace CNS.ShockCapturing {
                     SpeciesId species = speciesMap.Tracker.GetSpeciesId(speciesMap.Control.FluidSpeciesName);
                     double volume = speciesMap.QuadSchemeHelper.NonAgglomeratedMetrics.CutCellVolumes[species][cell];
 
-                    double integralDensity = fieldSet.Density.LxError((ScalarFunction)null, (X, a, b) => a, singleCellRule);
+                    double integralDensity = Density.LxError((ScalarFunction)null, (X, a, b) => a, singleCellRule);
                     double meanDensity = integralDensity / volume;
 
                     if (meanDensity < epsilon) {
@@ -96,14 +104,14 @@ namespace CNS.ShockCapturing {
                     }
                     
                     // Scale for positive density (Beware: Basis is not orthonormal on sub-volume!)
-                    for (int j = 0; j < fieldSet.Density.Basis.Length; j++) {
-                        fieldSet.Density.Coordinates[cell, j] *= thetaDensity;
+                    for (int j = 0; j < Density.Basis.Length; j++) {
+                        Density.Coordinates[cell, j] *= thetaDensity;
                     }
-                    fieldSet.Density.AccConstant(meanDensity * (1.0 - thetaDensity), singleCellMask);
+                    Density.AccConstant(meanDensity * (1.0 - thetaDensity), singleCellMask);
 
                     // Re-evaluate since inner energy has changed
                     densityValues.Clear();
-                    fieldSet.Density.Evaluate(cell, 1, chunkRulePair.Rule.Nodes, densityValues);
+                    Density.Evaluate(cell, 1, chunkRulePair.Rule.Nodes, densityValues);
 
 #if DEBUG
                     // Probe 1
@@ -114,11 +122,11 @@ namespace CNS.ShockCapturing {
                     }
 #endif
 
-                    double integralMomentumX = fieldSet.Momentum[0].LxError((ScalarFunction)null, (X, a, b) => a, singleCellRule);
+                    double integralMomentumX = Momentum_0.LxError((ScalarFunction)null, (X, a, b) => a, singleCellRule);
                     double meanMomentumX = integralMomentumX / volume;
-                    double integralMomentumY = fieldSet.Momentum[1].LxError((ScalarFunction)null, (X, a, b) => a, singleCellRule);
+                    double integralMomentumY = Momentum_1.LxError((ScalarFunction)null, (X, a, b) => a, singleCellRule);
                     double meanMomentumY = integralMomentumY / volume;
-                    double integralEnergy = fieldSet.Energy.LxError((ScalarFunction)null, (X, a, b) => a, singleCellRule);
+                    double integralEnergy = Energy.LxError((ScalarFunction)null, (X, a, b) => a, singleCellRule);
                     double meanEnergy = integralEnergy / volume;
 
                     double meanInnerEnergy = meanEnergy - 0.5 * (meanMomentumX * meanMomentumX + meanMomentumY * meanMomentumY) / meanDensity;
@@ -139,34 +147,34 @@ namespace CNS.ShockCapturing {
                     }
 
                     
-                    for (int j = 0; j < fieldSet.Density.Basis.Length; j++) {
-                        fieldSet.Density.Coordinates[chunkRulePair.Chunk.i0 + i, j] *= thetaInnerEnergy;
-                        fieldSet.Momentum[0].Coordinates[chunkRulePair.Chunk.i0 + i, j] *= thetaInnerEnergy;
-                        fieldSet.Momentum[1].Coordinates[chunkRulePair.Chunk.i0 + i, j] *= thetaInnerEnergy;
-                        fieldSet.Energy.Coordinates[chunkRulePair.Chunk.i0 + i, j] *= thetaInnerEnergy;
+                    for (int j = 0; j < Density.Basis.Length; j++) {
+                        Density.Coordinates[chunkRulePair.Chunk.i0 + i, j] *= thetaInnerEnergy;
+                        Momentum_0.Coordinates[chunkRulePair.Chunk.i0 + i, j] *= thetaInnerEnergy;
+                        Momentum_1.Coordinates[chunkRulePair.Chunk.i0 + i, j] *= thetaInnerEnergy;
+                        Energy.Coordinates[chunkRulePair.Chunk.i0 + i, j] *= thetaInnerEnergy;
                     }
-                    fieldSet.Density.AccConstant(meanDensity * (1.0 - thetaInnerEnergy), singleCellMask);
-                    fieldSet.Momentum[0].AccConstant(meanMomentumX * (1.0 - thetaInnerEnergy), singleCellMask);
-                    fieldSet.Momentum[1].AccConstant(meanMomentumY * (1.0 - thetaInnerEnergy), singleCellMask);
-                    fieldSet.Energy.AccConstant(meanEnergy * (1.0 - thetaInnerEnergy), singleCellMask);
+                    Density.AccConstant(meanDensity * (1.0 - thetaInnerEnergy), singleCellMask);
+                    Momentum_0.AccConstant(meanMomentumX * (1.0 - thetaInnerEnergy), singleCellMask);
+                    Momentum_1.AccConstant(meanMomentumY * (1.0 - thetaInnerEnergy), singleCellMask);
+                    Energy.AccConstant(meanEnergy * (1.0 - thetaInnerEnergy), singleCellMask);
 
 
 #if DEBUG
                     // Probe 2
                     densityValues.Clear();
-                    fieldSet.Density.Evaluate(chunkRulePair.Chunk.i0, chunkRulePair.Chunk.Len, chunkRulePair.Rule.Nodes, densityValues);
+                    Density.Evaluate(chunkRulePair.Chunk.i0, chunkRulePair.Chunk.Len, chunkRulePair.Rule.Nodes, densityValues);
                     m0Values.Clear();
-                    fieldSet.Momentum[0].Evaluate(chunkRulePair.Chunk.i0, chunkRulePair.Chunk.Len, chunkRulePair.Rule.Nodes, m0Values);
+                    Momentum_0.Evaluate(chunkRulePair.Chunk.i0, chunkRulePair.Chunk.Len, chunkRulePair.Rule.Nodes, m0Values);
                     m1Values.Clear();
-                    fieldSet.Momentum[1].Evaluate(chunkRulePair.Chunk.i0, chunkRulePair.Chunk.Len, chunkRulePair.Rule.Nodes, m1Values);
+                    Momentum_1.Evaluate(chunkRulePair.Chunk.i0, chunkRulePair.Chunk.Len, chunkRulePair.Rule.Nodes, m1Values);
                     energyValues.Clear();
-                    fieldSet.Energy.Evaluate(chunkRulePair.Chunk.i0, chunkRulePair.Chunk.Len, chunkRulePair.Rule.Nodes, energyValues);
+                    Energy.Evaluate(chunkRulePair.Chunk.i0, chunkRulePair.Chunk.Len, chunkRulePair.Rule.Nodes, energyValues);
 
                     for (int j = 0; j < chunkRulePair.Rule.NoOfNodes; j++) {
                         StateVector state = new StateVector(
                             speciesMap.GetMaterial(1.0),
                             densityValues[i, j],
-                            new Vector3D(m0Values[i, j], m1Values[i, j], 0.0),
+                            new Vector(m0Values[i, j], m1Values[i, j], 0.0),
                             energyValues[i, j]);
                         if (!state.IsValid) {
                             throw new System.Exception();

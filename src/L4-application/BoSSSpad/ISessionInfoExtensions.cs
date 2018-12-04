@@ -1886,21 +1886,24 @@ namespace BoSSS.Foundation.IO {
         /// Plots circularity and rise velocity over time if a  "BenchmarkQuantities_RisingBubble.txt" exists.
         /// </summary>
         /// <param name="sess"></param> List of sessions to be evaluated
-        public static void EvalRisingBubble(this IEnumerable<ISessionInfo> sess) {
+        public static void EvalRisingBubble(this IEnumerable<ISessionInfo> sess)
+        {
             int numberSessions = sess.Count();
             double[][] times = new double[numberSessions][];
             double[][] circularities = new double[numberSessions][];
             double[][] riseVelocities = new double[numberSessions][];
 
             // Read all data
-            for (int j = 0; j < numberSessions; j++) {
+            for (int j = 0; j < numberSessions; j++)
+            {
                 string path = @sess.Pick(j).Database.Path + "\\sessions\\" + sess.Pick(j).ID + "\\BenchmarkQuantities_RisingBubble.txt";
                 string[] lines = File.ReadAllLines(path);
                 double[] time = new double[lines.Length - 1];
                 double[] circularity = new double[lines.Length - 1];
                 double[] riseVelocity = new double[lines.Length - 1];
 
-                for (int i = 0; i < lines.Length - 1; i++) {
+                for (int i = 0; i < lines.Length - 1; i++)
+                {
                     time[i] = Convert.ToDouble(lines[i + 1].Split(new string[] { "\t" }, StringSplitOptions.RemoveEmptyEntries)[1]);
                     circularity[i] = Convert.ToDouble(lines[i + 1].Split(new string[] { "\t" }, StringSplitOptions.RemoveEmptyEntries)[4]);
                     riseVelocity[i] = Convert.ToDouble(lines[i + 1].Split(new string[] { "\t" }, StringSplitOptions.RemoveEmptyEntries)[5]);
@@ -1913,7 +1916,8 @@ namespace BoSSS.Foundation.IO {
             // Build DataSets
             KeyValuePair<string, double[][]>[] dataRowsCircularity = new KeyValuePair<string, double[][]>[numberSessions];
             KeyValuePair<string, double[][]>[] dataRowsRiseVelocity = new KeyValuePair<string, double[][]>[numberSessions];
-            for (int i = 0; i < numberSessions; i++) {
+            for (int i = 0; i < numberSessions; i++)
+            {
                 dataRowsCircularity[i] = new KeyValuePair<string, double[][]>(sess.Pick(i).Name, new double[][] { times[i], circularities[i] });
                 dataRowsRiseVelocity[i] = new KeyValuePair<string, double[][]>(sess.Pick(i).Name, new double[][] { times[i], riseVelocities[i] });
             }
@@ -1927,7 +1931,8 @@ namespace BoSSS.Foundation.IO {
             gp.SetXLabel("Time");
             gp.SetYLabel("Circularity");
             gp.Cmd("set grid xtics ytics");
-            foreach (var group in Time_Circularity.dataGroups) {
+            foreach (var group in Time_Circularity.dataGroups)
+            {
                 gp.PlotXY(group.Abscissas, group.Values, group.Name.Split('.').Last(),
                     new PlotFormat(lineColor: ((LineColors)(++lineColor))));
             }
@@ -1940,12 +1945,94 @@ namespace BoSSS.Foundation.IO {
             gp2.SetXLabel("Time");
             gp2.SetYLabel("Rise velocity");
             gp2.Cmd("set grid xtics ytics");
-            foreach (var group in Time_riseVelocity.dataGroups) {
+            foreach (var group in Time_riseVelocity.dataGroups)
+            {
                 gp2.PlotXY(group.Abscissas, group.Values, group.Name.Split('.').Last(),
                     new PlotFormat(lineColor: ((LineColors)(++lineColor))));
             }
             gp2.WriteDeferredPlotCommands();
             gp2.Execute();
+        }
+
+        /// <summary>
+        /// Plots selected energy over time if an  "Energy.txt" exists.
+        /// </summary>
+        /// <param name="pSessions"></param> List of sessions to be evaluated
+        /// <param name="energytype"></param> Energytypes to be plotted, can be partial
+        public static void EvalEnergy(this IEnumerable<ISessionInfo> pSessions, string[] energytype)
+        {            
+            int numberSessions = pSessions.Count();
+            List<Gnuplot> Plots = new List<Gnuplot>();
+
+            // Cycle over all given energytypes
+            for (int g = 0; g < energytype.Length; g++) {
+                // Create evaluation variables
+                int validSessions = 0;
+                int energypos = -1;
+                List<double[]> times = new List<double[]>();
+                List<double[]> energies = new List<double[]>();
+
+                // Read the data from the sessions
+                for (int j = 0; j < numberSessions; j++)
+                {
+                    string path = @pSessions.Pick(j).Database.Path + "\\sessions\\" + pSessions.Pick(j).ID + "\\Energy.txt";
+                    string[] lines = File.ReadAllLines(path);
+
+                    int energycount = lines[0].Split(new string[] { "\t" }, StringSplitOptions.RemoveEmptyEntries).Length;
+
+                    List<string> energynames = new List<string>();
+                    for (int i = 0; i < energycount; i++)
+                    {
+                        energynames.Add(lines[0].Split(new string[] { "\t" }, StringSplitOptions.RemoveEmptyEntries)[i]);
+                    }
+                    energypos = energynames.FindIndex(s => s.Contains(energytype[g]));
+
+                    double[] time = new double[lines.Length - 1];
+                    double[] energy = new double[lines.Length - 1];
+
+                    if (energypos != -1)
+                    {
+                        energytype[g] = energynames[energypos];
+                        Console.WriteLine("Found " + energytype[g] + " in " + pSessions.Pick(j).Name);
+                        for (int k = 0; k < lines.Length - 1; k++)
+                        {
+                            time[k] = Convert.ToDouble(lines[k + 1].Split(new string[] { "\t" }, StringSplitOptions.RemoveEmptyEntries)[1]);
+                            energy[k] = Convert.ToDouble(lines[k + 1].Split(new string[] { "\t" }, StringSplitOptions.RemoveEmptyEntries)[energypos]);
+                        }
+                        validSessions++;
+                    }
+                    else
+                    {
+                        Console.WriteLine(pSessions.Pick(j).Name + " does not contain an Energytype with key '" + energytype[g] + "', maybe try a different spelling/capitalization");
+                    }
+                    times.Add(time);
+                    energies.Add(energy);
+                }
+
+                // Build DataSets
+                KeyValuePair<string, double[][]>[] dataRowsEnergy = new KeyValuePair<string, double[][]>[validSessions];
+                for (int i = 0; i < validSessions; i++)
+                {
+                    dataRowsEnergy[i] = new KeyValuePair<string, double[][]>(pSessions.Pick(i).Name, new double[][] { times[i], energies[i] });
+                }
+                Plot2Ddata Time_Energy = new Plot2Ddata(dataRowsEnergy);
+
+                // Plot energy
+                int lineColor = 0;
+                PlotFormat format = new PlotFormat(lineColor: ((LineColors)(++lineColor)));
+                Gnuplot gp = new Gnuplot(baseLineFormat: format);
+                gp.SetXLabel("Time");
+                gp.SetYLabel(energytype[g]);
+                gp.Cmd("set grid xtics ytics");
+                foreach (var group in Time_Energy.dataGroups)
+                {
+                    gp.PlotXY(group.Abscissas, group.Values, group.Name.Split('.').Last(),
+                        new PlotFormat(lineColor: ((LineColors)(++lineColor))));
+                }
+                gp.WriteDeferredPlotCommands();
+                Plots.Add(gp);
+                Plots[g].Execute();
+            }            
         }
     }
 }

@@ -294,7 +294,7 @@ namespace BoSSS.Application.IBM_Solver {
 
                 IBM_Op = new XSpatialOperator(DomNameSelected, Params, CodNameSelected,
                     (A, B, C) => this.HMForder);
-
+                
                 // Momentum equation
                 // =================
 
@@ -436,6 +436,7 @@ namespace BoSSS.Application.IBM_Solver {
                         this.MultigridOperatorConfig, base.MultigridSequence,
                         this.FluidSpecies, this.HMForder,
                         this.Control.AdvancedDiscretizationOptions.CellAgglomerationThreshold, false);
+
                     m_BDF_Timestepper.m_ResLogger = base.ResLogger;
                     m_BDF_Timestepper.m_ResidualNames = ArrayTools.Cat(this.ResidualMomentum.Select(f => f.Identification), this.ResidualContinuity.Identification);
                     m_BDF_Timestepper.Config_SolverConvergenceCriterion = this.Control.Solver_ConvergenceCriterion;
@@ -610,7 +611,7 @@ namespace BoSSS.Application.IBM_Solver {
         //    return new CutCellMetrics(momentFittingVariant, this.HMForder, LsTrk, this.FluidSpecies);
         //}
 
-        protected TextWriter Log_DragAndLift;
+        protected TextWriter Log_DragAndLift,Log_DragAndLift_P1;
         protected double[] force = new double[3];
         protected double torque = new double();
         protected double oldtorque = new double();
@@ -654,9 +655,9 @@ namespace BoSSS.Application.IBM_Solver {
                     }
                 }
 
-                force = IBMSolverUtils.GetForces(Velocity, Pressure, this.LsTrk, this.Control.PhysicalParameters.mu_A);
+                force = IBMSolverUtils.GetForces(Velocity, Pressure, this.LsTrk, this.Control.PhysicalParameters.mu_A/this.Control.PhysicalParameters.rho_A);
                 //oldtorque = torque;
-                torque = IBMSolverUtils.GetTorque(Velocity, Pressure, this.LsTrk, this.Control.PhysicalParameters.mu_A, this.Control.particleRadius);
+                torque = IBMSolverUtils.GetTorque(Velocity, Pressure, this.LsTrk, this.Control.PhysicalParameters.mu_A / this.Control.PhysicalParameters.rho_A, this.Control.particleRadius);
 
                 if ((base.MPIRank == 0) && (Log_DragAndLift != null)) {
                     string line;
@@ -668,7 +669,7 @@ namespace BoSSS.Application.IBM_Solver {
                     Log_DragAndLift.WriteLine(line);
                     Log_DragAndLift.Flush();
                 }
-
+                
                 Console.WriteLine("x-Force:   {0}", force[0]);
                 Console.WriteLine("y-Force:   {0}", force[1]);
                 if (this.GridData.SpatialDimension == 3)

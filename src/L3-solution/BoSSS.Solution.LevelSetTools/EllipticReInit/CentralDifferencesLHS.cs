@@ -36,7 +36,7 @@ namespace BoSSS.Solution.LevelSetTools.EllipticReInit {
     /// \f$ \operatorname{div}(\operatorname{grad} \varphi) \f$
     /// No Boundary Conditions are set -> Boundary Conditions are determined by Interface only
     /// </summary>
-    public class CentralDifferencesLHSForm : ipLaplace{
+    public class CentralDifferencesLHSForm : SIPLaplace{
         public CentralDifferencesLHSForm(double PenaltyBase,MultidimensionalArray PenaltyLengthScales ) : base(PenaltyBase, PenaltyLengthScales, VariableNames.LevelSet) {
             //Do nothing
         }

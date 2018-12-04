@@ -19,8 +19,10 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
 using BoSSS.Platform.LinAlg;
+using BoSSS.Solution.CompressibleFlowCommon;
+using BoSSS.Solution.CompressibleFlowCommon.Convection;
 using BoSSS.Solution.Utils;
-using CNS.Boundary;
+using BoSSS.Solution.CompressibleFlowCommon.Boundary;
 
 namespace CNS.Convection {
 
@@ -80,7 +82,7 @@ namespace CNS.Convection {
         /// <summary>
         /// Converts <paramref name="Uin"/> and <paramref name="Uout"/> into
         /// instances of <see cref="StateVector"/> and calls
-        /// <see cref="InnerEdgeFlux(double[], double, StateVector, StateVector, ref Vector3D, int)"/>
+        /// <see cref="InnerEdgeFlux(double[], double, StateVector, StateVector, ref Vector, int)"/>
         /// </summary>
         /// <param name="time">
         /// <see cref="NonlinearFlux.InnerEdgeFlux(double, double[], double[],double[], double[], int)"/>
@@ -101,13 +103,13 @@ namespace CNS.Convection {
         /// <see cref="NonlinearFlux.InnerEdgeFlux(double, double[], double[],double[], double[], int)"/>
         /// </param>
         /// <returns>
-        /// <see cref="InnerEdgeFlux(double[], double, StateVector, StateVector, ref Vector3D, int)"/>
+        /// <see cref="InnerEdgeFlux(double[], double, StateVector, StateVector, ref Vector, int)"/>
         /// </returns>
         protected override double InnerEdgeFlux(double time, double[] x, double[] normal, double[] Uin, double[] Uout, int jEdge) {
             StateVector stateIn = new StateVector(Uin, speciesMap.GetMaterial(double.NaN));
             StateVector stateOut = new StateVector(Uout, speciesMap.GetMaterial(double.NaN));
 
-            Vector3D Normal = new Vector3D();
+            Vector Normal = new Vector(stateIn.Dimension);
             for (int i = 0; i < normal.Length; i++) {
                 Normal[i] = normal[i];
             }
@@ -129,7 +131,7 @@ namespace CNS.Convection {
         /// Processor-local index of the current edge
         /// </param>
         /// <returns>See Toro2009 (p. 332)</returns>
-        protected internal abstract double InnerEdgeFlux(double[] x, double time, StateVector stateIn, StateVector stateOut, ref Vector3D normal, int edgeIndex);
+        protected internal abstract double InnerEdgeFlux(double[] x, double time, StateVector stateIn, StateVector stateOut, ref Vector normal, int edgeIndex);
 
         /// <summary>
         /// Weakly imposes the specific boundary condition for this boundary
@@ -160,12 +162,13 @@ namespace CNS.Convection {
         /// <see cref="InnerEdgeFlux(double, double[], double[], double[], double[], int)"/>
         /// </returns>
         protected override double BorderEdgeFlux(double time, double[] x, double[] normal, byte EdgeTag, double[] Uin, int jEdge) {
-            Vector3D Normal = new Vector3D();
+            StateVector stateIn = new StateVector(Uin, speciesMap.GetMaterial(double.NaN));
+
+            Vector Normal = new Vector(stateIn.Dimension);
             for (int i = 0; i < normal.Length; i++) {
                 Normal[i] = normal[i];
             }
 
-            StateVector stateIn = new StateVector(Uin, speciesMap.GetMaterial(double.NaN));
             StateVector stateBoundary = boundaryMap.GetBoundaryState(
                 EdgeTag, time, x, normal, stateIn);
 
@@ -214,7 +217,7 @@ namespace CNS.Convection {
         /// <paramref name="normal"/> in the considered neighbor cell
         /// </param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        protected void EstimateWaveSpeeds(StateVector stateIn, StateVector stateOut, ref Vector3D normal, out double waveSpeedIn, out double waveSpeedOut) {
+        protected void EstimateWaveSpeeds(StateVector stateIn, StateVector stateOut, ref Vector normal, out double waveSpeedIn, out double waveSpeedOut) {
             double normalVelocityIn = stateIn.Velocity * normal;
             double normalVelocityOut = stateOut.Velocity * normal;
 

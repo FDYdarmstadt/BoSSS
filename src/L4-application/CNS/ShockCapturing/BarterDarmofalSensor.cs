@@ -18,9 +18,12 @@ using BoSSS.Foundation;
 using BoSSS.Foundation.Grid;
 using BoSSS.Foundation.Grid.Classic;
 using BoSSS.Foundation.Quadrature;
+using BoSSS.Solution.CompressibleFlowCommon;
+using BoSSS.Solution.CompressibleFlowCommon.ShockCapturing;
 using ilPSP;
 using ilPSP.Tracing;
 using System;
+using System.Collections.Generic;
 using System.Linq;
 
 namespace CNS.ShockCapturing {
@@ -39,10 +42,9 @@ namespace CNS.ShockCapturing {
             return sensorValues.GetMeanValue(cellIndex);
         }
 
-        public void UpdateSensorValues(CNSFieldSet fieldSet, ISpeciesMap speciesMap, CellMask cellMask) {
+        public void UpdateSensorValues(IEnumerable<DGField> fieldSet, ISpeciesMap speciesMap, CellMask cellMask) {
             using (new FuncTrace()) {
-                DGField fieldToTest = fieldSet.ConservativeVariables.
-                    Concat(fieldSet.DerivedFields.Values).
+                DGField fieldToTest = fieldSet.
                     Where(f => f.Identification == sensorVariable.Name).
                     Single();
 

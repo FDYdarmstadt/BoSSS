@@ -24,6 +24,7 @@ using CNS.MaterialProperty;
 using ilPSP.Utils;
 using NUnit.Framework;
 using System;
+using System.Globalization;
 using System.IO;
 using System.Linq;
 
@@ -36,7 +37,7 @@ namespace CNS.Tests.DiffusiveFlux {
     /// </summary>
     public class SIPGConsistency : TestProgram<CNSControl> {
 
-       
+
         int noOfCells = 3;
         CoordinateVector output;
 
@@ -95,18 +96,19 @@ namespace CNS.Tests.DiffusiveFlux {
             Application<CNSControl>._Main(
                 new string[] { controlFile },
                 false,
-                delegate() {
+                delegate () {
                     prog = new SIPGConsistency();
                     prog.noOfCells = numOfCells;
                     return prog;
                 });
 
-            double treshold = 1E-11;
-            double[] refSol = File.ReadAllLines(refSolutionFile).Select(c => Convert.ToDouble(c)).ToArray();
+            double threshold = 1E-11;
+            string[] refSolString = File.ReadAllLines(refSolutionFile);
+            double[] refSol = refSolString.Select(c => Convert.ToDouble(c, NumberFormatInfo.InvariantInfo)).ToArray();
 
             Console.WriteLine("SIPG Consistency Test: [" + numOfCells + "x" + numOfCells + "] and p_dg=" + p);
             for (int i = 0; i < prog.output.Count; i++) {
-                Assert.IsTrue(Math.Abs(refSol[i] - prog.output[i]) < treshold, "wrong flux in DOF:" + i);
+                Assert.IsTrue(Math.Abs(refSol[i] - prog.output[i]) < threshold, "wrong flux in DOF: {0}, difference is {1}", i, Math.Abs(refSol[i] - prog.output[i]));
             }
         }
         /// <summary>
@@ -135,12 +137,13 @@ namespace CNS.Tests.DiffusiveFlux {
                     return prog;
                 });
 
-            double treshold = 1E-11;
-            double[] refSol = File.ReadAllLines(refSolutionFile).Select(c => Convert.ToDouble(c)).ToArray();
+            double threshold = 1E-11;
+            string[] refSolString = File.ReadAllLines(refSolutionFile);
+            double[] refSol = refSolString.Select(c => Convert.ToDouble(c, NumberFormatInfo.InvariantInfo)).ToArray();
 
             Console.WriteLine("SIPG Consistency Test: [" + numOfCells + "x" + numOfCells + "] and p_dg=" + p);
             for (int i = 0; i < prog.output.Count; i++) {
-                Assert.IsTrue(Math.Abs(refSol[i] - prog.output[i]) < treshold, "wrong flux in DOF:" + i);
+                Assert.IsTrue(Math.Abs(refSol[i] - prog.output[i]) < threshold, "wrong flux in DOF: {0}, difference is {1}", i, Math.Abs(refSol[i] - prog.output[i]));
             }
         }
 
@@ -185,7 +188,7 @@ namespace CNS.Tests.DiffusiveFlux {
             c.AddVariable(Variables.Momentum[1], dgDegree);
             c.AddVariable(Variables.Energy, dgDegree);
 
-            c.GridFunc = delegate() {
+            c.GridFunc = delegate () {
                 GridCommons grid = Grid2D.Cartesian2DGrid(
                     GenericBlas.Linspace(0.0, 2 * Math.PI, noOfCells + 1),
                     GenericBlas.Linspace(0.0, 2 * Math.PI, noOfCells + 1),
