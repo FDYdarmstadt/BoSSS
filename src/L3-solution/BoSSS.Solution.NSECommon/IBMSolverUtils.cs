@@ -829,13 +829,13 @@ namespace BoSSS.Solution.NSECommon {
                             // pressure
                             switch (d) {
                                 case 0:
-                                    acc += pARes[j, k] * Normals[j, k, 0];                                 
+                                    acc += pARes[j, k] * Normals[j, k, 0];
                                     acc -= (2 * muA * beta) * Grad_URes[j, k, 0] * Normals[j, k, 0];
                                     acc -= (muA * beta) * Grad_URes[j, k, 1] * Normals[j, k, 1];
-                                    acc -= (muA * beta) * Grad_VRes[j, k, 0] * Normals[j, k, 1];                                
-                                    acc -= (muA * (1 - beta)) * StressXXRes[j, k] * Normals[j, k, 0];
-                                    acc -= (muA * (1 - beta)) * StressXYRes[j, k] * Normals[j, k, 1];
-         
+                                    acc -= (muA * beta) * Grad_VRes[j, k, 0] * Normals[j, k, 1];                           
+                                    acc -= (muA) * StressXXRes[j, k] * Normals[j, k, 0];
+                                    acc -= (muA) * StressXYRes[j, k] * Normals[j, k, 1];
+
                                     break;
 
                                 case 1:
@@ -843,8 +843,8 @@ namespace BoSSS.Solution.NSECommon {
                                     acc -= (2 * muA * beta) * Grad_VRes[j, k, 1] * Normals[j, k, 1];
                                     acc -= (muA * beta) * Grad_VRes[j, k, 0] * Normals[j, k, 0];
                                     acc -= (muA * beta) * Grad_URes[j, k, 1] * Normals[j, k, 0];
-                                    acc -= (muA * (1 - beta)) * StressXYRes[j, k] * Normals[j, k, 0];
-                                    acc -= (muA * (1 - beta)) * StressYYRes[j, k] * Normals[j, k, 1];
+                                    acc -= (muA) * StressXYRes[j, k] * Normals[j, k, 0];
+                                    acc -= (muA) * StressYYRes[j, k] * Normals[j, k, 1];
                                     break;
                                 default:
                                     throw new NotImplementedException();
@@ -859,7 +859,7 @@ namespace BoSSS.Solution.NSECommon {
 
                 var SchemeHelper = LsTrk.GetXDGSpaceMetrics(new[] { LsTrk.GetSpeciesId("A") }, RequiredOrder, 1).XQuadSchemeHelper;
 
-                EdgeMask Mask = new EdgeMask(LsTrk.GridDat, "Wall_cylinder");
+                EdgeMask Mask = new EdgeMask(LsTrk.GridDat, "Wall_bottom");
 
                 EdgeQuadratureScheme eqs = SchemeHelper.GetEdgeQuadScheme(LsTrk.GetSpeciesId("A"), IntegrationDomain: Mask);
 
