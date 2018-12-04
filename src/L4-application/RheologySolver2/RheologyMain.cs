@@ -688,14 +688,39 @@ namespace BoSSS.Application.Rheology {
 
                     for (int i = 0; i <= NoIncrementTimestep; i++) {
 
+                        if(Control.UseArtificialDiffusion == true){
+
+                        
                         artificialMaxViscosity = 1.0;
 
-                        for(int j = 0; j<3; j++) {
+                            for (int j = 0; j < 3; j++) {
 
-                            if (Control.UsePerssonSensor == true) {
-                                perssonsensor.Update(StressXX);
+                                if (Control.UsePerssonSensor == true) {
+                                    perssonsensor.Update(StressXX);
+                                } else {
+                                    throw new ArgumentException("artificial viscosity is turned on, but Persson sensor is turned off!");
+                                }
+
+                                m_BDF_Timestepper.Solve(phystime, dt, m_SkipSolveAndEvaluateResidual);
+
+                                //this.ResLogger.NextTimestep(false);
+
+                                // this evaluation must later out of this loop. now here for comparing resluts with  
+                                PlotCurrentState(phystime, new TimestepNumber(TimestepNo.MajorNumber, i));
+                                SaveToDatabase(new TimestepNumber(TimestepNo.MajorNumber, i), phystime);
+
+                                if (Control.Bodyforces == true) {
+
+                                    double[] force = IBMSolverUtils.GetForces_BoundaryFitted(VelocityXGradient, VelocityYGradient, StressXX, StressXY, StressYY, Pressure, LevSetTrk, 1 / Control.Reynolds, Control.beta);
+                                    Console.WriteLine();
+                                    Console.WriteLine("Force in x:" + force[0] + ", force in y:" + force[1]);
+                                    Console.WriteLine();
+
+                                }
+
+                                artificialMaxViscosity = artificialMaxViscosity - 0.5;
                             }
-
+                        } else {
                             m_BDF_Timestepper.Solve(phystime, dt, m_SkipSolveAndEvaluateResidual);
 
                             //this.ResLogger.NextTimestep(false);
@@ -706,14 +731,12 @@ namespace BoSSS.Application.Rheology {
 
                             if (Control.Bodyforces == true) {
 
-                                    double[] force = IBMSolverUtils.GetForces_BoundaryFitted(VelocityXGradient, VelocityYGradient, StressXX, StressXY, StressYY, Pressure, LevSetTrk, 1 / Control.Reynolds, Control.beta);
-                                    Console.WriteLine();
-                                    Console.WriteLine("Force in x:" + force[0] + ", force in y:" + force[1]);
-                                    Console.WriteLine();
+                                double[] force = IBMSolverUtils.GetForces_BoundaryFitted(VelocityXGradient, VelocityYGradient, StressXX, StressXY, StressYY, Pressure, LevSetTrk, 1 / Control.Reynolds, Control.beta);
+                                Console.WriteLine();
+                                Console.WriteLine("Force in x:" + force[0] + ", force in y:" + force[1]);
+                                Console.WriteLine();
 
                             }
-
-                            artificialMaxViscosity = artificialMaxViscosity - 0.5;
                         }
 
                         ChangeMesh = Control.AdaptiveMeshRefinement;
@@ -735,14 +758,40 @@ namespace BoSSS.Application.Rheology {
 
                     currentWeissenberg = Control.Weissenberg;
 
-                    artificialMaxViscosity = 1.0;
+                    if (Control.UseArtificialDiffusion == true) {
+                        artificialMaxViscosity = 1.0;
 
-                    for (int j = 0; j < 3; j++) {
+                        for (int j = 0; j < 3; j++) {
 
-                        if (Control.UsePerssonSensor == true) {
-                            perssonsensor.Update(StressXX);
+                            if (Control.UsePerssonSensor == true) {
+                                perssonsensor.Update(StressXX);
+                            } else {
+                                throw new ArgumentException("artificial viscosity is turned on, but Persson sensor is turned off!");
+                            }
+
+                            m_BDF_Timestepper.Solve(phystime, dt, m_SkipSolveAndEvaluateResidual);
+
+                            // this evaluation must later out of this loop. now here for comparing resluts with  
+                            //PlotCurrentState(phystime, new TimestepNumber(TimestepNo.MajorNumber, i));
+                            //SaveToDatabase(new TimestepNumber(TimestepNo.MajorNumber, i), phystime);
+
+                            if (Control.Bodyforces == true) {
+
+                                double[] force = IBMSolverUtils.GetForces_BoundaryFitted(VelocityXGradient, VelocityYGradient, StressXX, StressXY, StressYY, Pressure, LevSetTrk, 1 / Control.Reynolds, Control.beta);
+                                Console.WriteLine();
+                                Console.WriteLine("Force in x:" + force[0] + ", force in y:" + force[1]);
+                                Console.WriteLine();
+
+                            }
+
+                            artificialMaxViscosity = artificialMaxViscosity - 0.5;
                         }
 
+                        ChangeMesh = Control.AdaptiveMeshRefinement;
+                        while (ChangeMesh == true) {
+                            this.MpiRedistributeAndMeshAdapt(TimestepNo.MajorNumber, phystime);
+                        }
+                    } else {
                         m_BDF_Timestepper.Solve(phystime, dt, m_SkipSolveAndEvaluateResidual);
 
                         // this evaluation must later out of this loop. now here for comparing resluts with  
@@ -757,37 +806,8 @@ namespace BoSSS.Application.Rheology {
                             Console.WriteLine();
 
                         }
-
-                        artificialMaxViscosity = artificialMaxViscosity - 0.5;
-                    }
-
-                    ChangeMesh = Control.AdaptiveMeshRefinement;
-                    while (ChangeMesh == true) {
-                        this.MpiRedistributeAndMeshAdapt(TimestepNo.MajorNumber, phystime);
                     }
                 }
-
-
-
-                //if (Control.RaiseWeissenberg == true)
-                //{
-                //    //int timeintervall = 20;
-                //    //if (TimestepNo > timeintervall)
-                //    //{
-                //        if (Control.Weissenberg < 10)
-                //        {
-                //            var newWeissenberg = Control.Weissenberg + 0.1;
-                //            Console.WriteLine();
-                //            Console.WriteLine("Raise Weisenberg number from " + Control.Weissenberg + " to " + newWeissenberg);
-                //            Console.WriteLine();
-                //            Control.Weissenberg = newWeissenberg;
-                //            m_BDF_Timestepper = null;
-                //            CreateEquationsAndSolvers(null);
-                            
-                //       //     timeintervall += TimestepNo;
-                //        }
-                //   // }
-                //}
 
                 if (Control.ComputeL2Error == true) {
                     this.ComputeL2Error();
