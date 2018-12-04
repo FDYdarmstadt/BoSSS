@@ -703,8 +703,8 @@ namespace BoSSS.Application.SipPoisson {
                 int RR = Res ;
                 var Node = MultidimensionalArray.Create(RR, 2);
 
-                Node.SetColumn(0, RR.ForLoop(idx => rnd.NextDouble() * 4 - 2));
-                Node.SetColumn(1, RR.ForLoop(idx => rnd.NextDouble() * 4 - 2));
+                Node.SetColumn(0, RR.ForLoop(idx => rnd.NextDouble() * 2 - 1));
+                Node.SetColumn(1, RR.ForLoop(idx => rnd.NextDouble() * 2 - 1));
 
                 // generate mesh
                 return Voronoi.VoronoiMeshGen.FromPolygonalDomain(Node, DomainBndyPolygon, IsInV, Idenity);
