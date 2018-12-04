@@ -188,7 +188,7 @@ namespace BoSSS.Application.SipPoisson.Voronoi {
         }
 
 
-
+        /*
         /// <summary>
         /// 
         /// </summary>
@@ -700,7 +700,7 @@ namespace BoSSS.Application.SipPoisson.Voronoi {
 
         }
 
-
+    */
         static void FixOrientation(ref Vector[] Polygon, ref int[] iVtx) {
             int L = Polygon.Length;
             
