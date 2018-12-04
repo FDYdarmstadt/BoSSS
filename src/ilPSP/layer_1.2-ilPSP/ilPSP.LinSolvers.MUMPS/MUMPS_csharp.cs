@@ -25,19 +25,19 @@ namespace ilPSP.LinSolvers.MUMPS
 {
 	public unsafe class MUMPS_csharp
 	{
-		[DllImport("dmumps")]
-		extern static unsafe int* mumps_get_mapping();
+        [DllImport("dmumps-mpi")]
+        extern static unsafe int* mumps_get_mapping();
 
-		[DllImport("dmumps")]
+        [DllImport("dmumps-mpi")]
 		extern static unsafe int* mumps_get_pivnul_list();
 
-		[DllImport("dmumps")]
+		[DllImport("dmumps-mpi")]
 		extern static unsafe int* mumps_get_sym_perm();
 
-		[DllImport("dmumps")]
+		[DllImport("dmumps-mpi")]
 		extern static unsafe int* mumps_get_uns_perm();
 
-		[DllImport("dmumps", EntryPoint = "dmumps_f77_")]
+		[DllImport("dmumps-mpi", EntryPoint = "dmumps_f77_")]
 		extern static unsafe void MUMPS_F77(
 		   int* job,
 		   int* sym,

@@ -133,6 +133,7 @@ namespace BoSSS.Foundation.XDG.Quadrature
             return value;
         }
 
+        static readonly double sqrt_3 = Math.Sqrt(3.0);
         /// <summary>
         /// First order approximation of  delta >= sup_x|psi(x) - psi(x_center)|  
         /// </summary>
@@ -152,7 +153,7 @@ namespace BoSSS.Foundation.XDG.Quadrature
             MultidimensionalArray grad = ReferenceGradient(nodeOnPsi, cell);
 
             grad.ApplyAll(x => Math.Abs(x));
-            double delta = grad.InnerProduct(diameters);
+            double delta = grad.InnerProduct(diameters) * sqrt_3;
 
             return delta;
         }

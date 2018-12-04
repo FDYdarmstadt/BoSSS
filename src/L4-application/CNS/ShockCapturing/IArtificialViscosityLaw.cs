@@ -15,6 +15,7 @@ limitations under the License.
 */
 
 using BoSSS.Foundation.Grid;
+using BoSSS.Solution.CompressibleFlowCommon;
 using System.Collections;
 
 namespace CNS.ShockCapturing {

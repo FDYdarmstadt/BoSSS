@@ -16,7 +16,9 @@ limitations under the License.
 
 using BoSSS.Foundation.Grid;
 using BoSSS.Foundation.Grid.Classic;
-using CNS.Boundary;
+using BoSSS.Solution.CompressibleFlowCommon;
+using BoSSS.Solution.CompressibleFlowCommon.MaterialProperty;
+using BoSSS.Solution.CompressibleFlowCommon.Boundary;
 using CNS.Convection;
 using CNS.IBM;
 using CNS.MaterialProperty;
@@ -97,7 +99,7 @@ namespace CNS.EquationSystem {
         /// A species map that is suitable for the current application.
         /// </returns>
         public static ISpeciesMap CreateSpeciesMap(this DomainTypes domainType, CNSFieldSet workingSet, CNSControl control, IGridData gridData) {
-            Material material = new Material(control);
+            Material material = new Material(control.EquationOfState, control.ViscosityLaw, control.MachNumber, control.ReynoldsNumber, control.PrandtlNumber, control.FroudeNumber, control.ViscosityRatio);
 
             switch (domainType) {
                 case DomainTypes.Standard:
@@ -135,7 +137,7 @@ namespace CNS.EquationSystem {
         /// <see cref="CNSControl.DiffusiveFluxType"/>.
         /// </returns>
         public static OperatorFactory GetOperatorFactory(
-            this DomainTypes formulation, CNSControl control, IGridData gridData, IBoundaryConditionMap boundaryMap, CNSFieldSet workingSet, ISpeciesMap speciesMap) {
+            this DomainTypes formulation, CNSControl control, IGridData gridData, BoundaryConditionMap boundaryMap, CNSFieldSet workingSet, ISpeciesMap speciesMap) {
             switch (formulation) {
                 case DomainTypes.Standard:
                     return new OperatorFactory(

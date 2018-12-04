@@ -14,7 +14,9 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+using BoSSS.Solution.CompressibleFlowCommon.MaterialProperty;
 using CNS.MaterialProperty;
+using static BoSSS.Solution.CompressibleFlowCommon.Boundary.ExactRinglebBoundaryState;
 
 namespace CNS.Tests.Ringleb {
 
@@ -66,6 +68,17 @@ namespace CNS.Tests.Ringleb {
             set {
                 ringlebReferenceTotalPressure = value;
             }
+        }
+
+        /// <summary>
+        /// %
+        /// </summary>
+        override public Material GetMaterial() {
+            return new RinglebMaterial(EquationOfState, ViscosityLaw, MachNumber, ReynoldsNumber, PrandtlNumber, FroudeNumber, ViscosityRatio) {
+                RinglebReferenceSpeedOfSound = this.RinglebReferenceSpeedOfSound,
+                RinglebReferencePressure = this.equationOfState.ReferencePressure,
+                RinglebReferenceTotalPressure = this.RinglebReferenceTotalPressure
+            };
         }
     }
 }

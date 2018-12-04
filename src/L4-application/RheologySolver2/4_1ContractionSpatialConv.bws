@@ -1,0 +1,153 @@
+restart
+**************
+
+  Database Explorer v2
+  ____________________
+
+Databases loaded:
+List of 2 instances of IDatabaseInfo {
+  1: { Session Count = 10; Grid Count = 3; Path = P:\cluster\cluster_db }
+  2: { Session Count = 4; Grid Count = 5; Path = P:\cluster\RTp2_spatialConv_coupledCN }
+}
+
+ Console ready for input. Type 'help' for help.
+
+==============
+using BoSSS.Foundation.XDG;
+**************
+==============
+//WorkflowMgm.Init("XNSE/CapillaryWave");
+//WorkflowMgm.Init("CapillaryWavePopinet");
+WorkflowMgm.Init("RayleighTaylor");
+**************
+==============
+var myTable = WorkflowMgm.SessionTable;
+**************
+==============
+//myTable.GetColumnInfo();
+**************
+==============
+//myTable.ExtractColumns("dtFixed", "DGdegree:VelocityX", "Timestepper_Scheme", "Timestepper_LevelSetHandling", "FourierLevSetControl/h_min", "NoOfTimesteps", "RegularTerminated").Print();
+**************
+==============
+//var relevantTable = myTable.ExtractRows(
+//(i,row) => Convert.ToBoolean(row["RegularTerminated"]) == true
+//           && Convert.ToDouble(row["dtFixed"]) == 1E-05);
+**************
+==============
+myTable.ExtractColumns("dtFixed", "Grid:NoOfCells", "RegularTerminated").Print();
+**************
+   dtFixed Grid:NoOfCells RegularTerminated 
+0: 3E-06   81920          True              
+1: 3E-06   20480          True              
+2: 3E-06   5120           True              
+3: 3E-06   1280           True              
+==============
+string[] FieldsToCompare = new string[] {"VelocityX", "VelocityY"};
+**************
+==============
+ITimestepInfo[] timesteps = WorkflowMgm.Sessions.Select(S => S.Timesteps.Newest()).ToArray();
+**************
+==============
+double[] GridRes;
+Dictionary<string, double[]> L2Errors;
+**************
+==============
+DGFieldComparison.ComputeErrors(FieldsToCompare, timesteps, out GridRes, out L2Errors)
+**************
+Loading timestep 1 of 4, (1a00c28e-2b6c-419e-b7f5-b10a099d670e)...
+done (Grid has 81920 cells).
+Loading timestep 2 of 4, (b6ca14b6-dd67-4806-8fe6-69065675fa73)...
+done (Grid has 20480 cells).
+Loading timestep 3 of 4, (ed812608-857d-422f-b97d-d91c24e6fac6)...
+done (Grid has 5120 cells).
+Loading timestep 4 of 4, (333c82a7-d331-46a5-9d9c-e747acc8e37d)...
+done (Grid has 1280 cells).
+Injecting 'VelocityX' from level 0 to finest grid...
+done.
+Injecting 'VelocityX' from level 1 to finest grid...
+done.
+Injecting 'VelocityX' from level 2 to finest grid...
+done.
+Injecting 'VelocityY' from level 0 to finest grid...
+done.
+Injecting 'VelocityY' from level 1 to finest grid...
+done.
+Injecting 'VelocityY' from level 2 to finest grid...
+done.
+Computing L2 error of 'VelocityX' on level 0 ...
+done (Error is 7.468E-05).
+Computing L2 error of 'VelocityX' on level 1 ...
+done (Error is 4.0898E-05).
+Computing L2 error of 'VelocityX' on level 2 ...
+done (Error is 1.8534E-05).
+Computing L2 error of 'VelocityY' on level 0 ...
+done (Error is 1.9862E-05).
+Computing L2 error of 'VelocityY' on level 1 ...
+done (Error is 5.5317E-06).
+Computing L2 error of 'VelocityY' on level 2 ...
+done (Error is 2.1323E-06).
+
+==============
+**************
+==============
+double[] errors = new double[GridRes.Length];
+for (int i = 0; i < GridRes.Length; i++) {
+    errors[i] = Math.Sqrt(L2Errors["VelocityX"][i].Pow2() + L2Errors["VelocityY"][i].Pow2());
+} 
+**************
+==============
+**************
+==============
+var gpL2Errors = new Gnuplot();
+gpL2Errors.PlotLogXLogY(GridRes, errors);
+gpL2Errors.PlotNow();
+**************
+System.Drawing.Bitmap
+==============
+**************
+==============
+Func < double [], double [], double > slope =
+delegate ( double [] xValues , double [] yValues ) {
+
+    if ( xValues . Length != yValues . Length ) {
+        throw new ArgumentException ();
+    }
+
+    xValues = xValues . Select (s => Math . Log10 (s)). ToArray ();
+    yValues = yValues . Select (s => Math . Log10 (s)). ToArray ();
+
+    double xAverage = xValues .Sum () / xValues . Length ;
+    double yAverage = yValues .Sum () / yValues . Length ;
+
+    double v1 = 0.0;
+    double v2 = 0.0;
+
+    // Computation of the regressioncoefficient for the slope
+    for (int i = 0; i < yValues . Length ; i++) {
+        v1 += ( xValues [i] - xAverage ) * ( yValues [i] - yAverage );
+        v2 += Math .Pow( xValues [i] - xAverage , 2);
+    }
+    
+    return v1 / v2;
+};
+**************
+==============
+**************
+==============
+slope(GridRes, errors)
+**************
+1.02516575587235
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============

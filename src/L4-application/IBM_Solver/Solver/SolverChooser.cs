@@ -357,11 +357,11 @@ namespace BoSSS.Application.IBM_Solver {
                     case 1:
                         break;
                         throw new NotImplementedException("Currently not implemented for " + D + " Dimensions");
-                        break;
+                        //break;
 
                     case 2:
                         throw new NotImplementedException("Currently not implemented for " + D + " Dimensions");
-                        break;
+                        //break;
 
                     case 3:
                         var dofsPerCell3D = (3 * (pV * pV * pV + 6 * pV * pV + 11 * pV + 6) / 6 + 1 * (pP * pP * pP + 6 * pP * pP + 11 * pP + 6) / 6);
@@ -398,11 +398,11 @@ namespace BoSSS.Application.IBM_Solver {
                     case 1:
                         break;
                         throw new NotImplementedException("Currently not implemented for " + D + " Dimensions");
-                        break;
+                        //break;
 
                     case 2:
                         throw new NotImplementedException("Currently not implemented for " + D + " Dimensions");
-                        break;
+                        //break;
 
                     case 3:
                         var dofsPerCell3D = (3 * (pV * pV * pV + 6 * pV * pV + 11 * pV + 6) / 6 + 1 * (pP * pP * pP + 6 * pP * pP + 11 * pP + 6) / 6);

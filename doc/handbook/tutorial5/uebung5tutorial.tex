@@ -98,8 +98,8 @@ using BoSSS.Platform.LinAlg;
  }
 \BoSSSexe
 \BoSSScmd{
-Func<double, double, Vector2D, Vector2D, double> upwindFlux =     \newline 
-\btab delegate(double Uin, double Uout, Vector2D n, Vector2D velocityVector) \{     \newline 
+Func<double, double, Vector, Vector, double> upwindFlux =     \newline 
+\btab delegate(double Uin, double Uout, Vector n, Vector velocityVector) \{     \newline 
  \newline 
 \btab \btab if (velocityVector * n > 0) \{     \newline 
 \btab \btab \btab return (velocityVector * Uin) * n;     \newline 
@@ -125,8 +125,8 @@ Func<double, double, Vector2D, Vector2D, double> upwindFlux =     \newline
 \BoSSScmd{
 double C = 0.3;     \newline 
  \newline 
-Func<double, double, Vector2D, Vector2D, double> laxFriedrichsFlux =     \newline 
-\btab delegate(double Uin, double Uout, Vector2D n, Vector2D velocityVector) \{     \newline 
+Func<double, double, Vector, Vector, double> laxFriedrichsFlux =     \newline 
+\btab delegate(double Uin, double Uout, Vector n, Vector velocityVector) \{     \newline 
  \newline 
 \btab \btab return 0.5 * (Uin + Uout) * velocityVector * n - C * (Uout - Uin);     \newline 
 \btab \};
@@ -138,11 +138,11 @@ Func<double, double, Vector2D, Vector2D, double> laxFriedrichsFlux =     \newlin
 /// and the implementation of \code{InnerEdgeFlux} is rewritten in terms of the \code{numericalFlux}.
 class ScalarTransportFlux : NonlinearFlux \{     \newline 
  \newline 
-\btab private Func<double, double, Vector2D, Vector2D, double> numericalFlux;     \newline 
+\btab private Func<double, double, Vector, Vector, double> numericalFlux;     \newline 
  \newline 
 \btab // Provides instances of this class with a specific flux implementation     \newline 
 \btab public ScalarTransportFlux(     \newline 
-\btab \btab Func<double, double, Vector2D, Vector2D, double> numericalFlux) \{     \newline 
+\btab \btab Func<double, double, Vector, Vector, double> numericalFlux) \{     \newline 
  \newline 
 \btab \btab this.numericalFlux = numericalFlux;     \newline 
 \btab \}     \newline 
@@ -163,8 +163,8 @@ class ScalarTransportFlux : NonlinearFlux \{     \newline
 \btab \btab double time, double[] x, double[] normal,      \newline 
 \btab \btab double[] Uin, double[] Uout, int jEdge) \{     \newline 
  \newline 
-\btab \btab Vector2D n              = new Vector2D(normal);     \newline 
-\btab \btab Vector2D velocityVector = new Vector2D(u(x), v(x));     \newline 
+\btab \btab Vector n              = new Vector(normal);     \newline 
+\btab \btab Vector velocityVector = new Vector(u(x), v(x));     \newline 
  \newline 
 \btab \btab return numericalFlux(Uin[0], Uout[0], n, velocityVector);     \newline 
 \btab \}     \newline 
