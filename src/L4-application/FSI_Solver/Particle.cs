@@ -1061,7 +1061,7 @@ namespace BoSSS.Application.FSI_Solver {
                 case ParticleShape.elliptic:
                     double a = 3.0;
                     double b = 1.0;
-                    if (-((((point[0] - currentPos_P[0][0]) * Math.Cos(alpha) - (point[1] - currentPos_P[0][1]) * Math.Sin(alpha)).Pow2()) / length_P.Pow2()) + -(((point[0] - currentPos_P[0][0]) * Math.Sin(alpha) + (point[1] - currentPos_P[0][1]) * Math.Cos(alpha)).Pow2() / thickness_P.Pow2()) + radiusTolerance.Pow2() > 0)
+                    if (-((((point[0] - currentPos_P[0][0]) * Math.Cos(currentAng_P[0]) - (point[1] - currentPos_P[0][1]) * Math.Sin(currentAng_P[0])).Pow2()) / length_P.Pow2()) + -(((point[0] - currentPos_P[0][0]) * Math.Sin(currentAng_P[0]) + (point[1] - currentPos_P[0][1]) * Math.Cos(currentAng_P[0])).Pow2() / thickness_P.Pow2()) + radiusTolerance.Pow2() > 0) { 
                         return true;
                     }
                     break;
@@ -1069,19 +1069,19 @@ namespace BoSSS.Application.FSI_Solver {
                 case ParticleShape.hippopede:
                     a = 4.0 * radiusTolerance.Pow2();
                     b = 1.0 * radiusTolerance.Pow2();
-                    if (-((((point[0] - currentPos_P[0][0]) * Math.Cos(alpha) - (point[1] - currentPos_P[0][1]) * Math.Sin(alpha)).Pow(2) + ((point[0] - currentPos_P[0][0]) * Math.Sin(alpha) + (point[1] - currentPos_P[0][1]) * Math.Cos(alpha)).Pow(2)).Pow2() - length_P * ((point[0] - currentPos_P[0][0]) * Math.Cos(alpha) - (point[1] - currentPos_P[0][1]) * Math.Sin(alpha)).Pow2() - thickness_P * ((point[0] - currentPos_P[0][0]) * Math.Sin(alpha) + (point[1] - currentPos_P[0][1]) * Math.Cos(alpha)).Pow2()) > 0)
+                    if (-((((point[0] - currentPos_P[0][0]) * Math.Cos(currentAng_P[0]) - (point[1] - currentPos_P[0][1]) * Math.Sin(currentAng_P[0])).Pow(2) + ((point[0] - currentPos_P[0][0]) * Math.Sin(currentAng_P[0]) + (point[1] - currentPos_P[0][1]) * Math.Cos(currentAng_P[0])).Pow(2)).Pow2() - length_P * ((point[0] - currentPos_P[0][0]) * Math.Cos(currentAng_P[0]) - (point[1] - currentPos_P[0][1]) * Math.Sin(currentAng_P[0])).Pow2() - thickness_P * ((point[0] - currentPos_P[0][0]) * Math.Sin(currentAng_P[0]) + (point[1] - currentPos_P[0][1]) * Math.Cos(currentAng_P[0])).Pow2()) > 0)
                         return true;
                     break;
 
                 case ParticleShape.bean:
                     a = 4.0 * radiusTolerance.Pow2();
                     b = 1.0 * radiusTolerance.Pow2();
-                    if (-((((point[0] - currentPos_P[0][0]) * Math.Cos(alpha) - (point[1] - currentPos_P[0][1]) * Math.Sin(alpha)).Pow(2) + ((point[0] - currentPos_P[0][0]) * Math.Sin(alpha) + (point[1] - currentPos_P[0][1]) * Math.Cos(alpha)).Pow(2)).Pow2() - a * ((point[0] - currentPos_P[0][0]) * Math.Cos(alpha) - (point[1] - currentPos_P[0][1]) * Math.Sin(alpha)).Pow(3) - b * ((point[0] - currentPos_P[0][0]) * Math.Sin(alpha) + (point[1] - currentPos_P[0][1]) * Math.Cos(alpha)).Pow2()) > 0)
+                    if (-((((point[0] - currentPos_P[0][0]) * Math.Cos(currentAng_P[0]) - (point[1] - currentPos_P[0][1]) * Math.Sin(currentAng_P[0])).Pow(2) + ((point[0] - currentPos_P[0][0]) * Math.Sin(currentAng_P[0]) + (point[1] - currentPos_P[0][1]) * Math.Cos(currentAng_P[0])).Pow(2)).Pow2() - a * ((point[0] - currentPos_P[0][0]) * Math.Cos(currentAng_P[0]) - (point[1] - currentPos_P[0][1]) * Math.Sin(currentAng_P[0])).Pow(3) - b * ((point[0] - currentPos_P[0][0]) * Math.Sin(currentAng_P[0]) + (point[1] - currentPos_P[0][1]) * Math.Cos(currentAng_P[0])).Pow2()) > 0)
                         return true;
                     break;
 
                 case ParticleShape.squircle:
-                    if (-((((point[0] - currentPos_P[0][0]) * Math.Cos(alpha) - (point[1] - currentPos_P[0][1]) * Math.Sin(alpha)).Pow(4) + ((point[0] - currentPos_P[0][0]) * Math.Sin(alpha) + (point[1] - currentPos_P[0][1]) * Math.Cos(alpha)).Pow(4)) - radiusTolerance.Pow(4)) > 0)
+                    if (-((((point[0] - currentPos_P[0][0]) * Math.Cos(currentAng_P[0]) - (point[1] - currentPos_P[0][1]) * Math.Sin(currentAng_P[0])).Pow(4) + ((point[0] - currentPos_P[0][0]) * Math.Sin(currentAng_P[0]) + (point[1] - currentPos_P[0][1]) * Math.Cos(currentAng_P[0])).Pow(4)) - radiusTolerance.Pow(4)) > 0)
                         return true;
                     break;
 

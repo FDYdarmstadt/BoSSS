@@ -192,7 +192,7 @@ namespace BoSSS.Application.FSI_Solver {
                                         {
                                             containsParticle = true;
                                         }
-                                        else { containsParticle = p.Contains(X); }
+                                        else { containsParticle = p.Contains(X, LsTrk); }
 
                                         // active particles
                                         if (containsParticle && p.active_P == true)
@@ -287,7 +287,8 @@ namespace BoSSS.Application.FSI_Solver {
                         var ViscLs = new BoSSS.Solution.NSECommon.Operator.Viscosity.ActiveViscosityAtIB(d, D, LsTrk,
                             penalty, this.ComputePenaltyIB,
                             this.Control.PhysicalParameters.mu_A / this.Control.PhysicalParameters.rho_A,
-                            delegate (double[] X, double time) {
+                            delegate (double[] X, double time)
+                            {
 
                                 double[] result = new double[X.Length + 6];
 
@@ -320,7 +321,7 @@ namespace BoSSS.Application.FSI_Solver {
                                     {
                                         containsParticle = true;
                                     }
-                                    else { containsParticle = p.Contains(X); }
+                                    else { containsParticle = p.Contains(X, LsTrk); }
 
                                     // active particles
                                     if (containsParticle && p.active_P == true)
@@ -328,12 +329,18 @@ namespace BoSSS.Application.FSI_Solver {
                                         result[0] = p.vel_P[0][0];
                                         result[1] = p.vel_P[0][1];
                                         result[2] = p.rot_P[0];
-                                        result[3] = p.currentPos_P[0].L2Distance(X);
+                                        if (p.m_shape == Particle.ParticleShape.spherical)
+                                        {
+                                            result[3] = p.radius_P;
+                                        }
+                                        else
+                                        {
+                                            result[3] = p.currentPos_P[0].L2Distance(X);
+                                        }
                                         result[4] = p.active_stress_P;
                                         result[5] = -cos_theta;
                                         result[6] = scale_2;// Math.Abs(scale_2);
                                         result[7] = p.currentAng_P[0];
-                                        return result;
                                     }
 
                                     // active particles
@@ -342,19 +349,23 @@ namespace BoSSS.Application.FSI_Solver {
                                         result[0] = p.vel_P[0][0];
                                         result[1] = p.vel_P[0][1];
                                         result[2] = p.rot_P[0];
-                                        if (p.m_shape == Particle.ParticleShape.spherical) {
+                                        if (p.m_shape == Particle.ParticleShape.spherical)
+                                        {
                                             result[3] = p.radius_P;
-                                        } else {
+                                        }
+                                        else
+                                        {
                                             result[3] = p.currentPos_P[0].L2Distance(X);
+                                        }
                                         result[4] = 0;
                                         result[5] = 0;
                                         result[6] = 0;
                                         result[7] = p.currentAng_P[0];
-                                        return result;
                                     }
                                 }
                                 return result;
-                            });
+                            }
+                         );
                         comps.Add(ViscLs); // immersed boundary component
                     }
                 }
@@ -400,7 +411,7 @@ namespace BoSSS.Application.FSI_Solver {
                                {
                                    containsParticle = true;
                                }
-                               else { containsParticle = p.Contains(X); }
+                               else { containsParticle = p.Contains(X, LsTrk); }
                                if (containsParticle)
                                {
                                    result[0] = p.vel_P[0][0];
