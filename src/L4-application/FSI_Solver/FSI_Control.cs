@@ -27,6 +27,18 @@ namespace BoSSS.Application.FSI_Solver {
     [DataContract]
     [Serializable]
     public class FSI_Control : IBM_Solver.IBM_Control {
+        
+        /// <summary>
+        /// Set true if the coupling between fluid and particle should be calculated iterative, while using Lie-Splitting.
+        /// </summary>
+        [DataMember]
+        public bool splitting_fully_coupled = false;
+
+        /// <summary>
+        /// Set true if the coupling between fluid and particle should be calculated iterative, while using Lie-Splitting.
+        /// </summary>
+        [DataMember]
+        public int max_iterations_fully_coupled = 10000;
 
         /// <summary>
         /// Set true if translation of the particle should be induced by hydrodynamical forces.

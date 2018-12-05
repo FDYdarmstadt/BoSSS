@@ -171,6 +171,8 @@ namespace BoSSS.Application.FSI_Solver
             // =============================
             //C.LevelSetMovement = "coupled";
             C.Timestepper_LevelSetHandling = LevelSetHandling.LieSplitting;
+            C.splitting_fully_coupled = true;
+            C.max_iterations_fully_coupled = 1000;
             C.includeRotation = true;
             C.includeTranslation = true;
 
@@ -249,7 +251,7 @@ namespace BoSSS.Application.FSI_Solver
             C.MaxSolverIterations = 1000;
             C.MinSolverIterations = 1;
             C.NoOfMultigridLevels = 1;
-            C.LevelSet_ConvergenceCriterion = 1e-8;
+            C.LevelSet_ConvergenceCriterion = 1e-14;
             C.LSunderrelax = 1.0;
 
 
