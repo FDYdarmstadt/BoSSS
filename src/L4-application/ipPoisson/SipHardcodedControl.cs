@@ -703,11 +703,14 @@ namespace BoSSS.Application.SipPoisson {
                 int RR = Res ;
                 var Node = MultidimensionalArray.Create(RR, 2);
 
-                Node.SetColumn(0, RR.ForLoop(idx => rnd.NextDouble() * 2 - 1));
-                Node.SetColumn(1, RR.ForLoop(idx => rnd.NextDouble() * 2 - 1));
+                bool useMirror = false;
+                double scl = useMirror ? 2.0 : 4.0;
+
+                Node.SetColumn(0, RR.ForLoop(idx => rnd.NextDouble() * scl - 0.5*scl));
+                Node.SetColumn(1, RR.ForLoop(idx => rnd.NextDouble() * scl - 0.5*scl));
 
                 // generate mesh
-                return Voronoi.VoronoiMeshGen.FromPolygonalDomain(Node, DomainBndyPolygon, IsInV, Idenity);
+                return Voronoi.VoronoiMeshGen.FromPolygonalDomain(Node, DomainBndyPolygon, useMirror, IsInV, Idenity);
 
             };
             R.GridFunc = GridFunc;
