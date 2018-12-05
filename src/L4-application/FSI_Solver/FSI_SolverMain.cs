@@ -703,7 +703,7 @@ namespace BoSSS.Application.FSI_Solver {
                     else
                     {
                         int iteration_counter = 1;
-                        for (double posResidual_splitting = 1; posResidual_splitting > ((FSI_Control)this.Control).LevelSet_ConvergenceCriterion;)
+                        for (double posResidual_splitting = 1; posResidual_splitting > ((FSI_Control)this.Control).LevelSet_ConvergenceCriterion;)// && iteration_counter <= (this.Control).max_iterations_fully_coupled;)
                         {
                             if (iteration_counter == 1)
                             {
@@ -836,6 +836,14 @@ namespace BoSSS.Application.FSI_Solver {
                             posResidual_splitting = Math.Sqrt(acc);
                             Console.WriteLine("Full coupled system, number of iterations:  " + iteration_counter + ", position Residual is: " + posResidual_splitting);
                             iteration_counter += 1;
+                            if (((FSI_Control)this.Control).splitting_fully_coupled == false)
+                            {
+                                break;
+                            }
+                            if (iteration_counter > ((FSI_Control)this.Control).max_iterations_fully_coupled)
+                            {
+                                throw new ApplicationException("no convergence in coupled iterative solver, number of iterations: " + iteration_counter);
+                            }
                         }
                         //foreach (Particle p in m_Particles)
                         //{
