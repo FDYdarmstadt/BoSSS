@@ -112,8 +112,9 @@ namespace BoSSS.Application.SipPoisson {
         /// <param name="args"></param>
         static void Main(string[] args) {
 
-            
-
+            Vector[] Convex = new[] { new Vector(1, 1), new Vector(1, -1), new Vector(0, -2), new Vector(-1, -1), new Vector(-1, 1) };
+            bool isClockwise = Voronoi.VoronoiMeshGen.FixOrientation(ref Convex);
+            return;
             
             /*
             //Some performance testing - don't delete, I still need this!

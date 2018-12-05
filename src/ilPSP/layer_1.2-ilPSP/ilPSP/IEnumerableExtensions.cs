@@ -619,5 +619,16 @@ namespace ilPSP {
         public static IEnumerable<T> Except<T>(this IEnumerable<T> sequence, T excludedItem) {
             return sequence.Where(item => !item.Equals(excludedItem));
         }
+
+        /// <summary>
+        /// tests if <paramref name="i"/> is contained in <paramref name="sequence"/> by object reference equality
+        /// </summary>
+        public static bool ContainsRefEqual<T>(this IEnumerable<T> sequence, T i) {
+            foreach(T e in sequence) {
+                if (object.ReferenceEquals(i, e))
+                    return true;
+            }
+            return false;
+        }
     }
 }
