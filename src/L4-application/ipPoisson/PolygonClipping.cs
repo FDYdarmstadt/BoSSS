@@ -91,8 +91,22 @@ namespace BoSSS.Application.SipPoisson.Voronoi {
         }
 
 
-
-        public static bool ComputeIntersection(Vector S1, Vector S2, Vector E1, Vector E2, out double alpha1, out double alpha2, out Vector I) {
+        /// <summary>
+        /// Intersection of line <paramref name="S1"/>--<paramref name="S2"/> and <paramref name="E1"/>--<paramref name="E2"/>
+        /// </summary>
+        /// <param name="S1"></param>
+        /// <param name="S2"></param>
+        /// <param name="E1"></param>
+        /// <param name="E2"></param>
+        /// <param name="alpha1">
+        /// coordinate of <paramref name="I"/> on the line <paramref name="S1"/>--<paramref name="S2"/>
+        /// </param>
+        /// <param name="alpha2">
+        /// coordinate of <paramref name="I"/> on the line <paramref name="E1"/>--<paramref name="E2"/>
+        /// </param>
+        /// <param name="I"></param>
+        /// <returns></returns>
+        internal static bool ComputeIntersection(Vector S1, Vector S2, Vector E1, Vector E2, out double alpha1, out double alpha2, out Vector I) {
             if (S1.Dim != 2)
                 throw new ArgumentException("spatial dimension mismatch.");
             if (S2.Dim != 2)
