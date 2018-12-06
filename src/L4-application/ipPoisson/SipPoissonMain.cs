@@ -112,8 +112,15 @@ namespace BoSSS.Application.SipPoisson {
         /// <param name="args"></param>
         static void Main(string[] args) {
 
-            
-            
+            if (System.Environment.MachineName.ToLowerInvariant().EndsWith("terminal03")
+                //|| System.Environment.MachineName.ToLowerInvariant().Contains("jenkins")
+                ) {
+                // This is Florians Laptop;
+                // he is to poor to afford MATLAB, so he uses OCTAVE
+                BatchmodeConnector.Flav = BatchmodeConnector.Flavor.Octave;
+                BatchmodeConnector.MatlabExecuteable = "C:\\cygwin64\\bin\\bash.exe";
+            }
+
             /*
             //Some performance testing - don't delete, I still need this!
             //Florian

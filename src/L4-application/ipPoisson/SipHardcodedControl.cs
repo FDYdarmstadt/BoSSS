@@ -627,7 +627,7 @@ namespace BoSSS.Application.SipPoisson {
             //R.TargetBlockSize = 100;
 
 
-            /*
+            
             
             bool IsIn(double xi, double yi) {
                 
@@ -661,7 +661,7 @@ namespace BoSSS.Application.SipPoisson {
                 new Vector(+0,-1)
             };
             
-            */
+            /*
             
             bool IsIn(double xi, double yi) {
                 double myEps = 0.0;

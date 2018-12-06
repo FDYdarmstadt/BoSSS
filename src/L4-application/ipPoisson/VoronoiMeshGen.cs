@@ -183,7 +183,15 @@ namespace BoSSS.Application.SipPoisson.Voronoi {
         }
 
         class VoVertex : VoItem {
-            public Vector VTX;
+            public Vector VTX {
+                get {
+                    return new Vector(x, y);
+                }
+            }
+
+            double x;
+            double y;
+
             public bool deleted = false;
             public VertexType type = VertexType.unspecified;
 
@@ -194,8 +202,7 @@ namespace BoSSS.Application.SipPoisson.Voronoi {
                     return IsFarPoint(VTX);
                 }
             }
-
-
+            
             public int ID {
                 get;
                 private set;
@@ -203,7 +210,12 @@ namespace BoSSS.Application.SipPoisson.Voronoi {
 
             static int IDcounter = 1;
 
-            public VoVertex() {
+            public VoVertex(Vector __VTX) {
+                if (__VTX.Dim != 2)
+                    throw new ArgumentException();
+                x = __VTX.x;
+                y = __VTX.y;
+
                 ID = IDcounter;
                 IDcounter++;
             }
@@ -211,6 +223,8 @@ namespace BoSSS.Application.SipPoisson.Voronoi {
             public override string ToString() {
                 return (ID + ": " + VTX.ToString());
             }
+
+
         }
 
 
@@ -779,10 +793,7 @@ namespace BoSSS.Application.SipPoisson.Voronoi {
             // =====================
             List<VoVertex> verticeS = new List<VoVertex>();
             for(int i = 0; i < Verts.Count; i++) {
-                verticeS.Add(new VoVertex() {
-                    //Index = i,
-                    VTX = Verts[i]
-                });
+                verticeS.Add(new VoVertex(Verts[i]));
             }
 
             List<VoPolygon> cellS = new List<VoPolygon>();
@@ -865,10 +876,7 @@ namespace BoSSS.Application.SipPoisson.Voronoi {
                     }
 
                     if (idxFound < 0) {
-                        var newVtx = new VoVertex() {
-                            //Index = verticeS.Count,
-                            VTX = bVtx
-                        };
+                        var newVtx = new VoVertex(bVtx);
 
 
                         verticeS.Add(newVtx);
@@ -1276,9 +1284,7 @@ namespace BoSSS.Application.SipPoisson.Voronoi {
                                     // X-junction
 
                                     // introduce new vertex
-                                    var newVert = new VoVertex() {
-                                        VTX = I
-                                    };
+                                    var newVert = new VoVertex(I);
                                     Debug.Assert(verticeS.Where(vtx => PointIdentityG(vtx.VTX, I)).Count() == 0);
                                     verticeS.Add(newVert);
 
@@ -1480,8 +1486,10 @@ namespace BoSSS.Application.SipPoisson.Voronoi {
 
                 VoVertex[] seq = Cj.GetVerticesSequence(out bool Closed, false);
                 int sign = CheckOrientation(seq);
-                if (sign == 0)
+                if (sign == 0) {
+                    DebugPlot(VocellVertexIndex, Verts, Cj.Edges);
                     throw new ArithmeticException("indefinite polygon.");
+                }
                 if (sign < 0)
                     seq = seq.Reverse().ToArray();
                 Debug.Assert(CheckOrientation(seq) > 0);
