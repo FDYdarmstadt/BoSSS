@@ -30,7 +30,7 @@ namespace BoSSS.Application.FSI_Solver
 {
     public class HardcodedControlDeussen : IBM_Solver.HardcodedTestExamples
     {
-        public static FSI_Control TestActiveParticle(string _DbPath = null, int k = 2, double VelXBase = 0.0, double stressM = 1 , double cellAgg = 0.2, int maxCurv = 20, double muA = 1e3)
+        public static FSI_Control TestActiveParticle(string _DbPath = null, int k = 2, double VelXBase = 0.0, double stressM = 1 , double cellAgg = 0.2, int maxCurv = 20, double muA = 1e6)
         {
             FSI_Control C = new FSI_Control();
 
@@ -180,7 +180,7 @@ namespace BoSSS.Application.FSI_Solver
             // Fluid Properties
             // =============================
             C.PhysicalParameters.rho_A = 0.9982;//pg/(mum^3)
-            C.PhysicalParameters.mu_A = muA;//pg(mum*mus)
+            C.PhysicalParameters.mu_A = muA;//pg(mum*s)
             C.PhysicalParameters.Material = true;
 
 
@@ -202,7 +202,9 @@ namespace BoSSS.Application.FSI_Solver
                     thickness_P = 0.5,
                     length_P = 0.5,
                     C_v = 10000,
-                    velResidual_ConvergenceCriterion = 1e-15
+                    velResidual_ConvergenceCriterion = 1e-18,
+                    underrelaxationFT_constant = false,
+                    underrelaxationFT_exponent = -3
                 });
             }
             //Define level-set
@@ -251,7 +253,7 @@ namespace BoSSS.Application.FSI_Solver
             C.MaxSolverIterations = 1000;
             C.MinSolverIterations = 1;
             C.NoOfMultigridLevels = 1;
-            C.LevelSet_ConvergenceCriterion = 1e-14;
+            C.LevelSet_ConvergenceCriterion = 1e-12;
             C.LSunderrelax = 1.0;
 
 
@@ -259,7 +261,7 @@ namespace BoSSS.Application.FSI_Solver
             // =============================  
             C.Timestepper_Mode = FSI_Control.TimesteppingMode.Splitting;
             C.Timestepper_Scheme = FSI_Solver.FSI_Control.TimesteppingScheme.BDF2;
-            double dt = 1e-6;//ms
+            double dt = 1e-2;//s
             C.dtMax = dt;
             C.dtMin = dt;
             C.Endtime = 10000;

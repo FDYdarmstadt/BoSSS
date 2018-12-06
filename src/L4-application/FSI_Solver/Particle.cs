@@ -101,7 +101,8 @@ namespace BoSSS.Application.FSI_Solver {
         public double[] tempPos_P = new double[2];
         public double tempAng_P;
         public int iteration_counter_P = 0;
-
+        public bool underrelaxationFT_constant = true;
+        public int underrelaxationFT_exponent = 1;
 
         /// <summary>
         /// Shape of the particle
@@ -511,7 +512,7 @@ namespace BoSSS.Application.FSI_Solver {
             gravity[0] = 0;
             if (includeGravity == true)
             {
-                gravity[1] = -9.81;
+                gravity[1] = -9.81e0;
             }
             else
             {
@@ -548,7 +549,7 @@ namespace BoSSS.Application.FSI_Solver {
             {
                 for (int i = 0; i < 2; i++)
                 {
-                    C_v_mod[i] = 0.5;// * Math.Abs(forces_P[0][i] / (forces_P[0][i] + forces_P[1][i] + 1e-30));
+                    C_v_mod[i] = 0.1;// * Math.Abs(forces_P[0][i] / (forces_P[0][i] + forces_P[1][i] + 1e-30));
                     c_a[i] = (C_v_mod[i] * rho_Fluid) / (rho_P + C_v_mod[i] * rho_Fluid);
                     c_u[i] = 1 / (area_P * (rho_P + C_v_mod[i] * rho_P));
                     f_vTemp[i] = (C_v_mod[i]) / (1 + C_v_mod[i]) * (11 * temp[i] - 18 * vel_P[0][i] + 9 * vel_P[1][i] - 2 * vel_P[2][i]) / (8 * dt);
@@ -584,7 +585,7 @@ namespace BoSSS.Application.FSI_Solver {
 
             for (int i = 0; i < 2; i++)
             {
-                if (Math.Abs(temp[i]) < 1e-20)
+                if (Math.Abs(temp[i]) < 1e-9)
                 {
                     temp[i] = 0;
                 }
@@ -655,7 +656,7 @@ namespace BoSSS.Application.FSI_Solver {
                 //Console.WriteLine("Current velResidual:  " + velResidual);
             }
             Console.WriteLine("Number of Iterations for angular velocity calculation:  " + rot_iteration_counter);
-            if (Math.Abs(temp) < 1e-20)
+            if (Math.Abs(temp) < 1e-9)
             {
                 temp = 0;
             }
@@ -831,33 +832,46 @@ namespace BoSSS.Application.FSI_Solver {
             //forces_w[0] = (989 * forces_P[7][0] + 5888 * forces_P[6][0] - 928 * forces_P[5][0] + 10496 * forces_P[4][0] - 4540 * forces_P[3][0] + 10496 * forces_P[2][0] - 928 * forces_P[1][0] + 5888 * forces_P[0][0] + 989 * forces[0]) / 28350;
             //forces_w[1] = (989 * forces_P[7][1] + 5888 * forces_P[6][1] - 928 * forces_P[5][1] + 10496 * forces_P[4][1] - 4540 * forces_P[3][1] + 10496 * forces_P[2][1] - 928 * forces_P[1][1] + 5888 * forces_P[0][1] + 989 * forces[1]) / 28350;
             double underrelaxationFT = 1.0;
-            if (vel_P[0][0] > 0)
-            {
-                if (forces[0] > (0.1 * forces[0] + (1 - 0.1) * forces_P[0][0]))
-                {
-                    underrelaxationFT = 0.1;
-                }
-                else
-                {
-                    underrelaxationFT = 0.3;
-                }
-            }
-            else
-            {
-                if (forces[0] < (0.1 * forces[0] + (1 - 0.1) * forces_P[0][0]))
-                {
-                    underrelaxationFT = 0.1;
-                }
-                else
-                {
-                    underrelaxationFT = 0.3;
-                }
-            }
             if (iteration_counter_P == 0)
             {
                 underrelaxationFT = 1;
             }
-            Console.WriteLine("Temporal forces:  " + forces[0] + ", underrelaxationFT is: " + underrelaxationFT);
+            else if (underrelaxationFT_constant == true)
+            {
+                underrelaxationFT = Math.Pow(10, underrelaxationFT_exponent);
+            }
+            else if (underrelaxationFT_constant == false)
+            {
+                double[] relaxation_helper = new double[2];
+                relaxation_helper[0] = forces[0] - (forces_P[0][0] + forces_P[1][0]) / 2;
+                relaxation_helper[1] = forces[1];// - (forces_P[0][0] + forces_P[1][0]) / 2;
+                if (Math.Abs((forces_P[0][1] + forces_P[1][1]) / 2) < Math.Abs(forces[1]) * Math.Pow(10, (underrelaxationFT_exponent)))//relaxation_helper[0]) > Math.Pow(10, (2 - underrelaxationFT_exponent)) || 
+                {
+                    underrelaxationFT_exponent -= 1;
+                }
+                //if (Math.Abs((forces_P[0][1] + forces_P[1][1]) / 2) < Math.Abs(forces[1]) * Math.Pow(10, (underrelaxationFT_exponent - 1)))
+                //{
+                //    underrelaxationFT_exponent += 1;
+                //}
+                if (Math.Abs(forces_P[0][1] - (forces_P[1][1] + forces_P[2][1] + forces_P[3][1] + forces_P[4][1]) / 4) < Math.Pow(10, (underrelaxationFT_exponent + 4)))
+                {
+                    underrelaxationFT_exponent += 1;
+                }
+                if (underrelaxationFT_exponent < -8)
+                {
+                    underrelaxationFT_exponent = -8;
+                }
+                if (underrelaxationFT_exponent > 0)
+                {
+                    underrelaxationFT_exponent = 0;
+                }
+                underrelaxationFT = Math.Pow(10, underrelaxationFT_exponent);
+            }
+            else
+            {
+                throw new NotImplementedException();
+            }
+            Console.WriteLine("Temporal forces:  " + forces[1] + ", underrelaxationFT is: " + underrelaxationFT);
             forces_w[0] = underrelaxationFT * forces[0] + (1 - underrelaxationFT) * forces_P[0][0];
             forces_w[1] = underrelaxationFT * forces[1] + (1 - underrelaxationFT) * forces_P[0][1];
             this.forces_P.Insert(0, forces_w);
