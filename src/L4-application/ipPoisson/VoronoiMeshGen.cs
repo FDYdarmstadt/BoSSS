@@ -183,7 +183,17 @@ namespace BoSSS.Application.SipPoisson.Voronoi {
         }
 
         class VoVertex : VoItem {
-            public Vector VTX;
+            public Vector VTX {
+                get {
+                    return new Vector(x, y);
+                }
+            }
+
+            double x;
+            double y;
+
+
+
             public bool deleted = false;
             public VertexType type = VertexType.unspecified;
 
@@ -203,13 +213,29 @@ namespace BoSSS.Application.SipPoisson.Voronoi {
 
             static int IDcounter = 1;
 
-            public VoVertex() {
+            public VoVertex(Vector __VTX) {
+                if (__VTX.Dim != 2)
+                    throw new ArgumentException();
+                x = __VTX.x;
+                y = __VTX.y;
+
                 ID = IDcounter;
                 IDcounter++;
             }
 
             public override string ToString() {
                 return (ID + ": " + VTX.ToString());
+            }
+
+            public override bool Equals(object obj) {
+                if (object.ReferenceEquals(this, obj))
+                    return true;
+
+                return PointIdentity(this, (VoVertex)obj);
+            }
+
+            public override int GetHashCode() {
+                return 0; // no hashing possible for such objects due to the equality definition by 'PointIdentity'
             }
         }
 
@@ -378,7 +404,35 @@ namespace BoSSS.Application.SipPoisson.Voronoi {
         }
 
         class VoPolygon : VoItem {
-            public List<VoEdge> Edges = new List<VoEdge>();
+            public VoPolygon(IEnumerable<VoEdge> edges) {
+                m_Edges.AddRange(edges);
+                foreach(var e in this.Edges) {
+                    if (!e.Cells.ContainsRefEqual(this))
+                        e.Cells.Add(this);
+                }
+            }
+
+
+            public IReadOnlyList<VoEdge> Edges {
+                get {
+                    return m_Edges.AsReadOnly();
+                }
+            }
+                        
+            List<VoEdge> m_Edges = new List<VoEdge>();
+
+            public void AddEdge(VoEdge e) {
+                if(m_Edges.Contains(e)) {
+                    return;
+                }
+                m_Edges.Add(e);
+            }
+
+
+            public void ClearEdges() {
+                m_Edges.Clear();
+            }
+
 
             /// <summary>
             /// true when all vertices are <see cref="VertexType.Inside"/>
@@ -432,8 +486,8 @@ namespace BoSSS.Application.SipPoisson.Voronoi {
             /// - false: boundary edges remain in the polygon
             /// </param>
             public void RemoveOutsideParts(bool AlsoBoundary) {
-                for(int ie = 0; ie < Edges.Count; ie++) {
-                    VoEdge e = Edges[ie];
+                for(int ie = 0; ie < m_Edges.Count; ie++) {
+                    VoEdge e = m_Edges[ie];
 
                     if (e.VtxA.type == VertexType.unspecified) {
                         throw new NotSupportedException();
@@ -447,7 +501,7 @@ namespace BoSSS.Application.SipPoisson.Voronoi {
                        || e.VtxB.IsFar
                        || (AlsoBoundary && e.isBoundary)
                         ) {
-                        Edges.RemoveAt(ie);
+                        m_Edges.RemoveAt(ie);
                         ie--;
                         continue;
                     }
@@ -779,10 +833,7 @@ namespace BoSSS.Application.SipPoisson.Voronoi {
             // =====================
             List<VoVertex> verticeS = new List<VoVertex>();
             for(int i = 0; i < Verts.Count; i++) {
-                verticeS.Add(new VoVertex() {
-                    //Index = i,
-                    VTX = Verts[i]
-                });
+                verticeS.Add(new VoVertex(Verts[i]));
             }
 
             List<VoPolygon> cellS = new List<VoPolygon>();
@@ -792,15 +843,13 @@ namespace BoSSS.Application.SipPoisson.Voronoi {
 
                 bool anyDouble = false;
                 for (int jV = 0; jV < VocellVertexIndex.Length; jV++) {
-                    var cell = new VoPolygon() {
-                        //Index = jV
-                    };
-                    cellS.Add(cell);
                     
                     int[] iVtxS = VocellVertexIndex[jV];
 
+                    List<VoEdge> edges_jV = null;
                     int I = iVtxS.Length;
                     for (int i = 0; i < I; i++) {
+                        edges_jV = new List<VoEdge>();
                         int _iVtxA = iVtxS[i];
                         int _iVtxB = iVtxS[(i + 1) % I];
                         
@@ -835,9 +884,12 @@ namespace BoSSS.Application.SipPoisson.Voronoi {
                         Debug.Assert(newEdge.Equals(edgeS[iEdge]));
                         Debug.Assert(edgeS.Where(ve => ve.Equals(newEdge)).Count() == 1);
 
-                        newEdge.Cells.Add(cell);
-                        cell.Edges.Add(newEdge);
+                        
+                        edges_jV.Add(newEdge);
                     }
+
+                    var cell = new VoPolygon(edges_jV);
+                    cellS.Add(cell);
 
                     //if (cell.Edges.Count <= 1)
                     //    Console.WriteLine("warn0: degen poly");
@@ -865,10 +917,7 @@ namespace BoSSS.Application.SipPoisson.Voronoi {
                     }
 
                     if (idxFound < 0) {
-                        var newVtx = new VoVertex() {
-                            //Index = verticeS.Count,
-                            VTX = bVtx
-                        };
+                        var newVtx = new VoVertex(bVtx);
 
 
                         verticeS.Add(newVtx);
@@ -1276,9 +1325,7 @@ namespace BoSSS.Application.SipPoisson.Voronoi {
                                     // X-junction
 
                                     // introduce new vertex
-                                    var newVert = new VoVertex() {
-                                        VTX = I
-                                    };
+                                    var newVert = new VoVertex(I);
                                     Debug.Assert(verticeS.Where(vtx => PointIdentityG(vtx.VTX, I)).Count() == 0);
                                     verticeS.Add(newVert);
 
@@ -1403,7 +1450,7 @@ namespace BoSSS.Application.SipPoisson.Voronoi {
                     var cell = cellS[jV];
                     //if (cell.Edges.Count <= 1)
                     //    Console.WriteLine("warn: less than 2");
-                    cell.Edges.Clear();
+                    cell.ClearEdges();
                 }
 
                 HashSet<VoPolygon> cellS4edge = new HashSet<VoPolygon>(new FuncEqualityComparer<VoPolygon>((a, b) => object.ReferenceEquals(a, b)));
@@ -1421,7 +1468,7 @@ namespace BoSSS.Application.SipPoisson.Voronoi {
                     for (int ic = 0; ic < edge.Cells.Count; ic++) {
                         var cell = edge.Cells[ic];
                         Debug.Assert(cell.Edges.ContainsRefEqual(edge) == false);
-                        cell.Edges.Add(edge);
+                        cell.AddEdge(edge);
                     }
 
 
@@ -1448,8 +1495,8 @@ namespace BoSSS.Application.SipPoisson.Voronoi {
             // ========================
             VoPolygon bndyPoly;
             {
-                bndyPoly = new VoPolygon();
-                bndyPoly.Edges = edgeS.Where(edge => edge.isBoundary == true).ToList();
+                bndyPoly = new VoPolygon(edgeS.Where(edge => edge.isBoundary == true));
+                
 
                 VoVertex[] bndyPolyVertices;
                 bndyPolyVertices = bndyPoly.GetVerticesSequence(out bool bndyClosed, true);
@@ -1461,6 +1508,7 @@ namespace BoSSS.Application.SipPoisson.Voronoi {
             // collect inside polygons
             // =======================
             List<VoVertex[]> Insiders = new List<VoVertex[]>();
+            int NoOfIndef = 0;
             for(int j = 0; j < cellS.Count; j++) {
                 VoPolygon Cj = cellS[j];
 
@@ -1480,8 +1528,12 @@ namespace BoSSS.Application.SipPoisson.Voronoi {
 
                 VoVertex[] seq = Cj.GetVerticesSequence(out bool Closed, false);
                 int sign = CheckOrientation(seq);
-                if (sign == 0)
-                    throw new ArithmeticException("indefinite polygon.");
+                if (sign == 0) {
+                    DebugPlot(VocellVertexIndex, Verts, Cj.Edges);
+                    NoOfIndef++;
+                    continue;
+                    //throw new ArithmeticException("indefinite polygon.");
+                }
                 if (sign < 0)
                     seq = seq.Reverse().ToArray();
                 Debug.Assert(CheckOrientation(seq) > 0);
@@ -1579,7 +1631,7 @@ namespace BoSSS.Application.SipPoisson.Voronoi {
         }
 
 
-        static void DebugPlot(int[][] VocellVertexIndex, IList<Vector> Verts, IList<VoEdge> edgeS) {
+        static void DebugPlot(int[][] VocellVertexIndex, IList<Vector> Verts, IEnumerable<VoEdge> edgeS) {
             using (var gp = new Gnuplot()) {
                 if (VocellVertexIndex != null) {
                     PlotFormat orgF = new PlotFormat(":k");
