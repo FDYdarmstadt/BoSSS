@@ -402,12 +402,24 @@ namespace BoSSS.Application.SipPoisson.Voronoi {
                         e.Cells.Add(this);
                 }
             }
-
-
-            public List<VoEdge> Edges {
+            
+            public IReadOnlyList<VoEdge> Edges {
                 get {
-                    return m_Edges;// m_Edges.AsReadOnly();
+                    return m_Edges.AsReadOnly();
                 }
+            }
+
+            // hack, nicht im sinne der Kapselung
+            public void AddEdge(VoEdge e) {
+                if (m_Edges.Contains(e)) {
+                    return;
+                }
+                m_Edges.Add(e);
+            }
+
+            // hack, nicht im Sinne der Kapselung
+            public void ClearEdges() {
+                m_Edges.Clear();
             }
 
             List<VoEdge> m_Edges = new List<VoEdge>();
@@ -479,7 +491,7 @@ namespace BoSSS.Application.SipPoisson.Voronoi {
                        || e.VtxB.IsFar
                        || (AlsoBoundary && e.isBoundary)
                         ) {
-                        Edges.RemoveAt(ie);
+                        m_Edges.RemoveAt(ie);
                         ie--;
                         continue;
                     }
@@ -1428,7 +1440,7 @@ namespace BoSSS.Application.SipPoisson.Voronoi {
                     var cell = cellS[jV];
                     //if (cell.Edges.Count <= 1)
                     //    Console.WriteLine("warn: less than 2");
-                    cell.Edges.Clear();
+                    cell.ClearEdges();
                 }
 
                 HashSet<VoPolygon> cellS4edge = new HashSet<VoPolygon>(new FuncEqualityComparer<VoPolygon>((a, b) => object.ReferenceEquals(a, b)));
@@ -1446,7 +1458,7 @@ namespace BoSSS.Application.SipPoisson.Voronoi {
                     for (int ic = 0; ic < edge.Cells.Count; ic++) {
                         var cell = edge.Cells[ic];
                         Debug.Assert(cell.Edges.ContainsRefEqual(edge) == false);
-                        cell.Edges.Add(edge);
+                        cell.AddEdge(edge);
                     }
 
 
@@ -1605,7 +1617,7 @@ namespace BoSSS.Application.SipPoisson.Voronoi {
         }
 
 
-        static void DebugPlot(int[][] VocellVertexIndex, IList<Vector> Verts, IList<VoEdge> edgeS) {
+        static void DebugPlot(int[][] VocellVertexIndex, IList<Vector> Verts, IEnumerable<VoEdge> edgeS) {
             using (var gp = new Gnuplot()) {
                 if (VocellVertexIndex != null) {
                     PlotFormat orgF = new PlotFormat(":k");
