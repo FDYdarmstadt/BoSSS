@@ -44,7 +44,7 @@ namespace BoSSS.Application.FSI_Solver {
             csMPI.Raw.mpiFinalize();
         }
 
-        //[Test]
+        [Test]
         public static void TestFlowRotationalCoupling() {
 
             FSI_SolverMain p = null;
