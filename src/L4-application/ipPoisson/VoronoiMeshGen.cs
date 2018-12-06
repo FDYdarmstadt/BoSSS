@@ -395,7 +395,7 @@ namespace BoSSS.Application.SipPoisson.Voronoi {
 
             //public List<VoEdge> Edges = new List<VoEdge>();
 
-            public VoPolygon(IEnumerable<VoEdge> edges) {
+            public VoPolygon(IEnumerable<VoEdge> edges, bool isConvex) {
                 m_Edges.AddRange(edges);
                 foreach (var e in m_Edges) {
                     if (!e.Cells.ContainsRefEqual(this))
@@ -491,8 +491,17 @@ namespace BoSSS.Application.SipPoisson.Voronoi {
                        || e.VtxB.IsFar
                        || (AlsoBoundary && e.isBoundary)
                         ) {
+
+                        // remove linking of edge to this cell
+                        VoEdge edge2remove = m_Edges[ie];
+                        int i1 = edge2remove.Cells.IndexOf(this);
+                        edge2remove.Cells.RemoveAt(i1);
+                        
+                        // remove edge
                         m_Edges.RemoveAt(ie);
                         ie--;
+
+
                         continue;
                     }
 
@@ -878,7 +887,7 @@ namespace BoSSS.Application.SipPoisson.Voronoi {
                         //cell.Edges.Add(newEdge);
                         edges_jV.Add(newEdge);
                     }
-                    var cell = new VoPolygon(edges_jV);
+                    var cell = new VoPolygon(edges_jV, true);
                     cellS.Add(cell);
 
                     //if (cell.Edges.Count <= 1)
@@ -1485,7 +1494,7 @@ namespace BoSSS.Application.SipPoisson.Voronoi {
             // ========================
             VoPolygon bndyPoly;
             {
-                bndyPoly = new VoPolygon(edgeS.Where(edge => edge.isBoundary == true));
+                bndyPoly = new VoPolygon(edgeS.Where(edge => edge.isBoundary == true), false);
 
                 VoVertex[] bndyPolyVertices;
                 bndyPolyVertices = bndyPoly.GetVerticesSequence(out bool bndyClosed, true);
@@ -1497,6 +1506,7 @@ namespace BoSSS.Application.SipPoisson.Voronoi {
             // collect inside polygons
             // =======================
             List<VoVertex[]> Insiders = new List<VoVertex[]>();
+            int indefcount = 0;
             for(int j = 0; j < cellS.Count; j++) {
                 VoPolygon Cj = cellS[j];
 
@@ -1518,7 +1528,10 @@ namespace BoSSS.Application.SipPoisson.Voronoi {
                 int sign = CheckOrientation(seq);
                 if (sign == 0) {
                     DebugPlot(VocellVertexIndex, Verts, Cj.Edges);
-                    throw new ArithmeticException("indefinite polygon.");
+                    Console.WriteLine("indef polygon");
+                    indefcount++;
+                    continue;
+                    //throw new ArithmeticException("indefinite polygon.");
                 }
                 if (sign < 0)
                     seq = seq.Reverse().ToArray();
@@ -1538,7 +1551,8 @@ namespace BoSSS.Application.SipPoisson.Voronoi {
                 }
                 Insiders.Add(seq);
             }
-
+            if(indefcount != 0)
+                throw new ArithmeticException("indefinite polygon.");
 
             //DebugPlot(VocellVertexIndex, Verts, edgeS);
 
