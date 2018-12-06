@@ -49,8 +49,6 @@ namespace CNS.Tests.IBMTests {
         public static IBMControl IBMNACA0012(int MeshPara, int dgDegree, double CFL, double agglomeration, double alpha) {
             IBMControl c = new IBMControl();
 
-            c.savetodb = true;
-            
             // Solver Settings
             c.dtMin = 0.0;
             c.dtMax = 1.0;
@@ -59,13 +57,13 @@ namespace CNS.Tests.IBMTests {
             c.NoOfTimesteps = 200000;
 
             c.PrintInterval = 10;
-            c.ResidualInterval = 100;
-            c.ResidualLoggerType = ResidualLoggerTypes.ChangeRate | ResidualLoggerTypes.Query;
-            c.ResidualBasedTerminationCriteria.Add("changeRate_L2_abs_rhoE", 1E-8);
+            //c.ResidualInterval = 100;
+            //c.ResidualLoggerType = ResidualLoggerTypes.ChangeRate | ResidualLoggerTypes.Query;
+            //c.ResidualBasedTerminationCriteria.Add("changeRate_L2_abs_rhoE", 1E-8);
 
             //IBM Settings
-            c.LevelSetBoundaryTag = "adiabaticSlipWall";
-            c.LevelSetQuadratureOrder = 2*dgDegree+2;
+            c.LevelSetBoundaryTag = "AdiabaticSlipWall";
+            c.LevelSetQuadratureOrder = 2 * dgDegree + 2;
             c.AgglomerationThreshold = agglomeration;
 
             // NEXT STEP: SET THIS BOOL TO FALSE AND JUST USE IN POSITIVE SUB_VOLUME;
@@ -83,11 +81,10 @@ namespace CNS.Tests.IBMTests {
             //c.RestartInfo = new Tuple<Guid, BoSSS.Foundation.IO.TimestepNumber>(restart, -1);
 
             // Session Settings
-            c.DbPath = @"\\fdyprime\userspace\kraemer-eis\FDY-Cluster\dbe_NACA\";
-            //c.DbPath = @"C:\bosss_dbv2\NACA0012";
-            c.savetodb = true;
+            //c.DbPath = @"\\fdyprime\userspace\kraemer-eis\FDY-Cluster\dbe_NACA\";
+            c.savetodb = false;
             c.saveperiod = 10000;
-            c.ProjectName = "MeshPara:" + MeshPara  + "_CFL=" + c.CFLFraction + "_p=" + dgDegree + "_agg=" + c.AgglomerationThreshold + "_alpha="+ alpha + "_HMF="+ c.CutCellQuadratureType;
+            c.ProjectName = "MeshPara:" + MeshPara + "_CFL=" + c.CFLFraction + "_p=" + dgDegree + "_agg=" + c.AgglomerationThreshold + "_alpha=" + alpha + "_HMF=" + c.CutCellQuadratureType;
             c.ProjectDescription = "NACA0012 Steady Test with Ma=0.5";
             c.Tags.Add("NACA0012");
             c.Tags.Add("IBM Test");
@@ -104,9 +101,7 @@ namespace CNS.Tests.IBMTests {
 
             //Material Settings
             c.EquationOfState = IdealGas.Air;
-
-
-
+            c.MachNumber = 1.0 / Math.Sqrt(c.EquationOfState.HeatCapacityRatio);
 
             // Primary Variables
             c.AddVariable(Variables.Density, dgDegree);
@@ -120,9 +115,7 @@ namespace CNS.Tests.IBMTests {
             double xBegin = -0.012;
             double xEnd = 1.01;
 
-            c.GridFunc = delegate
-            {
-
+            c.GridFunc = delegate {
                 int chords = 100;
 
                 int xleft = -chords;
@@ -165,23 +158,18 @@ namespace CNS.Tests.IBMTests {
                     yComplete[i + ynodes1.Length + ynodes2.Length - 2] = ynodes3[i];
                 }
 
-
                 int numOfCellsX = (xRight - xleft) * MeshPara;
                 int numOfCellsY = (yTop - yBottom) * MeshPara;
 
-                GridCommons grid = Grid2D.Cartesian2DGrid(
-                    xComplete,
-                    yComplete
-                    );
+                GridCommons grid = Grid2D.Cartesian2DGrid(xComplete, yComplete);
 
                 grid.EdgeTagNames.Add(1, "supersonicinlet");
+                grid.EdgeTagNames.Add(2, "AdiabaticSlipWall");
                 grid.DefineEdgeTags(x => 1);
-                grid.Name = "[" + xleft + "," + xRight + "]x[" + yBottom + "," + yTop + "]_Cells:(" + (xComplete.Length-1) + "x" + (yComplete.Length-1) + ")";
+                grid.Name = "[" + xleft + "," + xRight + "]x[" + yBottom + "," + yTop + "]_Cells:(" + (xComplete.Length - 1) + "x" + (yComplete.Length - 1) + ")";
 
                 return grid;
             };
-
-
 
             // Functions
             Func<double[], double, double> rho = (X, t) => 1.0;
@@ -196,8 +184,8 @@ namespace CNS.Tests.IBMTests {
 
                 double radian = alpha * Math.PI / 180;
 
-                double xRotated =1 + Math.Cos(radian) * (X[0]-1) - Math.Sin(radian) * (X[1]);
-                double yRotated = Math.Sin(radian) * (X[0]-1) + Math.Cos(radian) * (X[1]);
+                double xRotated = 1 + Math.Cos(radian) * (X[0] - 1) - Math.Sin(radian) * (X[1]);
+                double yRotated = Math.Sin(radian) * (X[0] - 1) + Math.Cos(radian) * (X[1]);
 
                 double a = 0.6;
                 //double b = 0.2969;
@@ -207,9 +195,9 @@ namespace CNS.Tests.IBMTests {
                 double f = 0.1036;
 
 
-                if (yRotated >= 0.0 || (X[0]>0.562875 && X[1]>0)) { 
-                //if (yRotated >= 0.0 ){
-                    value = Math.Pow((yRotated + a * (c1 * xRotated + d * Math.Pow(xRotated,2) - e * Math.Pow(xRotated, 3) + f * Math.Pow(xRotated, 4))),2) - 0.0317338596 * xRotated;
+                if (yRotated >= 0.0 || (X[0] > 0.562875 && X[1] > 0)) {
+                    //if (yRotated >= 0.0 ){
+                    value = Math.Pow((yRotated + a * (c1 * xRotated + d * Math.Pow(xRotated, 2) - e * Math.Pow(xRotated, 3) + f * Math.Pow(xRotated, 4))), 2) - 0.0317338596 * xRotated;
                 } else {
                     value = Math.Pow((-yRotated + a * (c1 * xRotated + d * Math.Pow(xRotated, 2) - e * Math.Pow(xRotated, 3) + f * Math.Pow(xRotated, 4))), 2) - 0.0317338596 * xRotated;
                 }
@@ -228,18 +216,16 @@ namespace CNS.Tests.IBMTests {
             c.InitialValues_Evaluators.Add(Variables.Pressure, X => pressure(X, 0.0));
 
             //BoundaryConditions
-            c.AddBoundaryValue("adiabaticSlipWall");
+            c.AddBoundaryValue("AdiabaticSlipWall");
             c.AddBoundaryValue("supersonicInlet", Variables.Density, rho);
             c.AddBoundaryValue("supersonicInlet", Variables.Velocity.xComponent, u0);
             c.AddBoundaryValue("supersonicInlet", Variables.Velocity.yComponent, u1);
             c.AddBoundaryValue("supersonicInlet", Variables.Pressure, pressure);
 
-
             // Queries
-
-            c.Queries.Add("L2ErrorEntropy", IBMQueries.L2Error(state => state.Entropy, (X, t) => 2.8571428571428));
-            c.Queries.Add("IBMDragForce", IBMQueries.IBMDragForce());
-            c.Queries.Add("IBMLiftForce", IBMQueries.IBMLiftForce());
+            //c.Queries.Add("L2ErrorEntropy", IBMQueries.L2Error(state => state.Entropy, (X, t) => 2.8571428571428));
+            //c.Queries.Add("IBMDragForce", IBMQueries.IBMDragForce());
+            //c.Queries.Add("IBMLiftForce", IBMQueries.IBMLiftForce());
             return c;
         }
     }
