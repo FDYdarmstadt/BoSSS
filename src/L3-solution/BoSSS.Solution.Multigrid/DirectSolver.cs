@@ -221,12 +221,12 @@ namespace BoSSS.Solution.Multigrid {
 
                     double ResidualNorm = Residual.L2NormPow2().MPISum().Sqrt();
                     double SolutionNorm = X.L2NormPow2().MPISum().Sqrt();
-                    double Denom = Math.Max(MatrixInfNorm, Math.Max(RhsNorm, Math.Max(SolutionNorm, Math.Sqrt(double.Epsilon))));
+                    double Denom = Math.Max(MatrixInfNorm, Math.Max(RhsNorm, Math.Max(SolutionNorm, Math.Sqrt(BLAS.MachineEps))));
                     double RelResidualNorm = ResidualNorm / Denom;
 
                     //Console.WriteLine("done: Abs.: {0}, Rel.: {1}", ResidualNorm, RelResidualNorm);
 
-                    if (RelResidualNorm > 0.0) { //1.0e-10) {
+                    if (RelResidualNorm >= 1.0e-10) {
 
                         //Console.WriteLine("High residual from direct solver: abs {0}, rel {1}", ResidualNorm , ResidualNorm / SolutionNorm);
 
