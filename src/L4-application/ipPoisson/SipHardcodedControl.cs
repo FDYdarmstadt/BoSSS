@@ -623,7 +623,7 @@ namespace BoSSS.Application.SipPoisson {
             R.ExactSolution_provided = false;
             R.NoOfMultigridLevels = int.MaxValue;
             R.solver_name = solver_name;
-            R.NoOfMultigridLevels = 0;
+            R.NoOfMultigridLevels = 1;
             //R.TargetBlockSize = 100;
 
 
@@ -695,7 +695,7 @@ namespace BoSSS.Application.SipPoisson {
             bool Idenity(Vector A, Vector B) {
                 bool t2 = (A - B).AbsSquare() < 1.0e-10;
                 bool t1 = (A - B).AbsSquare() < 1.0e-15;
-                Debug.Assert(t1 == t2);
+                //Debug.Assert(t1 == t2);
                 return t1;
             }
             
