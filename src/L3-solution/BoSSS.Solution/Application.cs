@@ -177,7 +177,22 @@ namespace BoSSS.Solution {
                 csMPI.Raw.Comm_Rank(csMPI.Raw._COMM.WORLD, out rank);
                 csMPI.Raw.Comm_Size(csMPI.Raw._COMM.WORLD, out size);
                 if (rank == 0) {
-                    Console.WriteLine("BoSSS: Running with " + size + " MPI process(es)");
+                    
+                    Console.WriteLine(@"      ___           ___           ___           ___           ___     ");
+                    Console.WriteLine(@"     /\  \         /\  \         /\  \         /\  \         /\  \    ");
+                    Console.WriteLine(@"    /::\  \       /::\  \       /::\  \       /::\  \       /::\  \   ");
+                    Console.WriteLine(@"   /:/\:\  \     /:/\:\  \     /:/\ \  \     /:/\ \  \     /:/\ \  \  ");
+                    Console.WriteLine(@"  /::\~\:\__\   /:/  \:\  \   _\:\~\ \  \   _\:\~\ \  \   _\:\~\ \  \ ");
+                    Console.WriteLine(@" /:/\:\ \:|__| /:/__/ \:\__\ /\ \:\ \ \__\ /\ \:\ \ \__\ /\ \:\ \ \__\");
+                    Console.WriteLine(@" \:\~\:\/:/  / \:\  \ /:/  / \:\ \:\ \/__/ \:\ \:\ \/__/ \:\ \:\ \/__/");
+                    Console.WriteLine(@"  \:\ \::/  /   \:\  /:/  /   \:\ \:\__\    \:\ \:\__\    \:\ \:\__\  ");
+                    Console.WriteLine(@"   \:\/:/  /     \:\/:/  /     \:\/:/  /     \:\/:/  /     \:\/:/  /  ");
+                    Console.WriteLine(@"    \::/__/       \::/  /       \::/  /       \::/  /       \::/  /   ");
+                    Console.WriteLine(@"     ~~            \/__/         \/__/         \/__/         \/__/    ");
+                    Console.WriteLine(@"                                                                      ");
+
+
+                    Console.WriteLine("Running with " + size + " MPI process(es)");
                 }
             }
         }
