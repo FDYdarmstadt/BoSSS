@@ -38,7 +38,7 @@ ChangesEnvironment=yes
 Name: "english"; MessagesFile: "compiler:Default.isl"
 
 [Files]
-Source: ".\bin\*"; DestDir: "{app}\bin"; Flags: ignoreversion recursesubdirs createallsubdirs
+Source: ".\bin\*"; Excludes: "old" ;DestDir: "{app}\bin"; Flags: ignoreversion recursesubdirs createallsubdirs
 ;Source: ".\doc\APIreference\*"; DestDir: "{app}\doc\APIreference"; Flags: ignoreversion recursesubdirs createallsubdirs
 Source: ".\doc\BoSSSPad_Command_Overview.pdf"; DestDir: "{app}\doc"; Flags: ignoreversion recursesubdirs createallsubdirs
 Source: ".\doc\BoSSShandbook.pdf"; DestDir: "{app}\doc"; Flags: ignoreversion recursesubdirs createallsubdirs
