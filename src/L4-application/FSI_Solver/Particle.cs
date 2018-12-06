@@ -842,30 +842,47 @@ namespace BoSSS.Application.FSI_Solver {
             }
             else if (underrelaxationFT_constant == false)
             {
-                double[] relaxation_helper = new double[2];
-                relaxation_helper[0] = forces[0] - (forces_P[0][0] + forces_P[1][0]) / 2;
-                relaxation_helper[1] = forces[1];// - (forces_P[0][0] + forces_P[1][0]) / 2;
-                if (Math.Abs((forces_P[0][1] + forces_P[1][1]) / 2) < Math.Abs(forces[1]) * Math.Pow(10, (underrelaxationFT_exponent)))//relaxation_helper[0]) > Math.Pow(10, (2 - underrelaxationFT_exponent)) || 
+                bool underrelaxation_ok = false;
+                for (int i = 0; underrelaxation_ok == false; i++)
                 {
-                    underrelaxationFT_exponent -= 1;
+                    if (Math.Abs(underrelaxationFT * forces[1]) > Math.Abs(forces_P[0][1]))
+                    {
+                        underrelaxationFT_exponent -= 1;
+                    }
+                    //else if (Math.Abs(underrelaxationFT * forces[1]) < Math.Abs(0.01 * forces_P[0][1]))
+                    //{
+                    //    underrelaxationFT_exponent += 1;
+                    //}
+                    else
+                    {
+                        underrelaxation_ok = true;
+                    }
+                    underrelaxationFT = Math.Pow(10, underrelaxationFT_exponent);
                 }
-                //if (Math.Abs((forces_P[0][1] + forces_P[1][1]) / 2) < Math.Abs(forces[1]) * Math.Pow(10, (underrelaxationFT_exponent - 1)))
+                //double[] relaxation_helper = new double[2];
+                //relaxation_helper[0] = forces[0] - (forces_P[0][0] + forces_P[1][0]) / 2;
+                //relaxation_helper[1] = forces[1];// - (forces_P[0][0] + forces_P[1][0]) / 2;
+                //if (Math.Abs((forces_P[0][1] + forces_P[1][1]) / 2) < Math.Abs(forces[1]) * Math.Pow(10, (underrelaxationFT_exponent)))//relaxation_helper[0]) > Math.Pow(10, (2 - underrelaxationFT_exponent)) || 
                 //{
-                //    underrelaxationFT_exponent += 1;
+                //    underrelaxationFT_exponent -= 1;
                 //}
-                if (Math.Abs(forces_P[0][1] - (forces_P[1][1] + forces_P[2][1] + forces_P[3][1] + forces_P[4][1]) / 4) < Math.Pow(10, (underrelaxationFT_exponent + 4)))
-                {
-                    underrelaxationFT_exponent += 1;
-                }
-                if (underrelaxationFT_exponent < -8)
-                {
-                    underrelaxationFT_exponent = -8;
-                }
-                if (underrelaxationFT_exponent > 0)
-                {
-                    underrelaxationFT_exponent = 0;
-                }
-                underrelaxationFT = Math.Pow(10, underrelaxationFT_exponent);
+                ////if (Math.Abs((forces_P[0][1] + forces_P[1][1]) / 2) < Math.Abs(forces[1]) * Math.Pow(10, (underrelaxationFT_exponent - 1)))
+                ////{
+                ////    underrelaxationFT_exponent += 1;
+                ////}
+                //if (Math.Abs(1 - (forces_P[1][1] + forces_P[1][1] + forces_P[2][1] + forces_P[3][1]) / (4 * (underrelaxationFT * forces[1] + (1 - underrelaxationFT) * forces_P[0][1]))) < 0.1)
+                //{
+                //    underrelaxationFT_exponent += 2;
+                //}
+                //if (underrelaxationFT_exponent < -8)
+                //{
+                //    underrelaxationFT_exponent = -8;
+                //}
+                //if (underrelaxationFT_exponent > 0)
+                //{
+                //    underrelaxationFT_exponent = 0;
+                //}
+                //underrelaxationFT = Math.Pow(10, underrelaxationFT_exponent);
             }
             else
             {
