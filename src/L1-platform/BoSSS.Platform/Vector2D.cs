@@ -225,17 +225,22 @@ namespace BoSSS.Platform.LinAlg {
 
 
         /// <summary>
-        /// the absolute value (length) of this vector 
+        /// the absolute value (length) of this vector  (synonym for <see cref="L2Norm"/>)
         /// </summary>
-        /// <returns></returns>
         public double Abs() {
             return Math.Sqrt(x * x + y * y + z * z);
         }
+
+        /// <summary>
+        /// the absolute distance (length) to some other point <paramref name="o"/> 
+        /// </summary>
+        public double Dist(Vector o) {
+            return (this - o).L2Norm();
+        }
         
         /// <summary>
-        /// the absolute value (length) of this vector 
+        /// the absolute value (length) of this vector (synonym for <see cref="Abs"/>)
         /// </summary>
-        /// <returns></returns>
         public double L2Norm() {
             return Math.Sqrt(x * x + y * y + z * z);
         }
@@ -243,15 +248,13 @@ namespace BoSSS.Platform.LinAlg {
         /// <summary>
         /// the absolute value (length) of this vector to the power of two
         /// </summary>
-        /// <returns></returns>
         public double AbsSquare() {
             return (x * x + y * y + z * z);
         }
 
         /// <summary>
-        /// The angle between this vector and the positive x-Axis, counted counterclockwise
+        /// The angle (in radians) between this vector and the positive x-Axis, counted counterclockwise
         /// </summary>
-        /// <returns></returns>
         public double Angle2D() {
             if(this.Dim != 2)
                 throw new NotSupportedException();
