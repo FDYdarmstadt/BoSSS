@@ -76,6 +76,11 @@ namespace BoSSS.Application.FSI_Solver {
                 Degree = 2,
                 SaveToDB = FieldOpts.SaveToDBOpt.TRUE
             });
+            C.FieldOptions.Add("Curvature", new FieldOpts()
+            {
+                Degree = 2,
+                SaveToDB = FieldOpts.SaveToDBOpt.TRUE
+            });
 
             // grid and boundary conditions
             // ============================
@@ -127,7 +132,7 @@ namespace BoSSS.Application.FSI_Solver {
             C.Particles = new List<Particle>();
 
 
-            C.Particles.Add(new Particle(2, 4, new double[] { 0.0, 0.0 }) {
+            C.Particles.Add(new Particle(2, 8, new double[] { 0.0, 0.0 }) {
                 radius_P = 0.4,
                 rho_P = 1
             });
