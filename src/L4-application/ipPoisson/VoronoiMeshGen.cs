@@ -1496,10 +1496,7 @@ namespace BoSSS.Application.SipPoisson.Voronoi {
                         seq = seq.Cat(closing_inner);
                     }
 
-                    //Console.WriteLine("#edges before/after culling " + NoEdgesB4 + " / " + NoEdgesAf);
-                    //DebugPlot(VocellVertexIndex, Verts, Cj.Edges);
                     
-                    //throw new Exception();
                 }
                 Insiders.Add(seq);
             }
@@ -1507,8 +1504,78 @@ namespace BoSSS.Application.SipPoisson.Voronoi {
 
             //DebugPlot(VocellVertexIndex, Verts, edgeS);
 
+            // Build BoSSS structure 
+            // =====================
+            List<Cell> cells = new List<Cell>();
+            List<int[]> aggregation = new List<int[]>();
+            {
+                for (int jV = 0; jV < Insiders.Count; jV++) { // loop over Voronoi Cells
 
-            return null;
+                    int[] iVtxS = Insiders[jV].Select(voVtx => voVtx.ID).ToArray();
+                    int NV = iVtxS.Length;
+
+                    Vector[] VoronoiCell = Insiders[jV].Select(voVtx => voVtx.VTX).ToArray();
+
+
+
+
+
+                    //FixOrientation(ref VoronoiCell, ref iVtxS);
+
+                    int[,] iVtxTri = PolygonTesselation.TesselatePolygon(VoronoiCell); ;
+
+
+                    List<int> Agg2Pt = new List<int>();
+
+                    for (int iTri = 0; iTri < iVtxTri.GetLength(0); iTri++) { // loop over triangles of voronoi cell
+                        int iV0 = iVtxTri[iTri, 0];
+                        int iV1 = iVtxTri[iTri, 1];
+                        int iV2 = iVtxTri[iTri, 2];
+
+                        Vector V0 = VoronoiCell[iV0];
+                        Vector V1 = VoronoiCell[iV1];
+                        Vector V2 = VoronoiCell[iV2];
+
+                        Vector D1 = V1 - V0;
+                        Vector D2 = V2 - V0;
+                        Debug.Assert(D1.CrossProduct2D(D2) > 1.0e-8);
+
+
+                        Cell Cj = new Cell();
+                        Cj.GlobalID = cells.Count;
+                        Cj.Type = CellType.Triangle_3;
+                        Cj.TransformationParams = MultidimensionalArray.Create(3, 2);
+                        Cj.NodeIndices = new int[] { iVtxS[iV0], iVtxS[iV1], iVtxS[iV2] };
+                        Cj.TransformationParams.SetRowPt(0, V0);
+                        Cj.TransformationParams.SetRowPt(1, V1);
+                        Cj.TransformationParams.SetRowPt(2, V2);
+
+                        Agg2Pt.Add(cells.Count);
+
+                        cells.Add(Cj);
+                    }
+
+                    aggregation.Add(Agg2Pt.ToArray());
+
+                }
+            }
+
+            // return grid
+            // ===========
+            {
+                // base grid
+                GridCommons grd;
+                grd = new Grid2D(Triangle.Instance);
+                grd.Cells = cells.ToArray();
+                grd.EdgeTagNames.Add(1, BoundaryType.Dirichlet.ToString());
+                //grd.Plot2DGrid();
+                grd.DefineEdgeTags(X => (byte)1);
+
+                // aggregation grid
+                var agrd = new AggregationGrid(grd, aggregation.ToArray());
+                return agrd;
+
+            }
         }
 
 
