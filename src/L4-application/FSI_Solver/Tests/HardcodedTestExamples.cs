@@ -28,6 +28,7 @@ using ilPSP.Utils;
 using BoSSS.Platform.Utils.Geom;
 using BoSSS.Foundation.IO;
 using BoSSS.Foundation.Grid.Classic;
+using BoSSS.Solution.XdgTimestepping;
 
 namespace BoSSS.Application.FSI_Solver {
      public class HardcodedTestExamples {
@@ -117,7 +118,8 @@ namespace BoSSS.Application.FSI_Solver {
             // Initial Values
             // ==============
             // Coupling Properties
-            C.LevelSetMovement = "coupled";
+            //C.LevelSetMovement = "coupled";
+            C.Timestepper_LevelSetHandling = LevelSetHandling.Coupled_Once;
             C.includeTranslation = false;
             C.includeRotation = true;
 

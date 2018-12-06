@@ -226,7 +226,7 @@ namespace BoSSS.Solution.Multigrid {
 
                     //Console.WriteLine("done: Abs.: {0}, Rel.: {1}", ResidualNorm, RelResidualNorm);
 
-                    if (RelResidualNorm >= 1.0e-10) {
+                    if (RelResidualNorm > 1.0e-10) {
 
                         //Console.WriteLine("High residual from direct solver: abs {0}, rel {1}", ResidualNorm , ResidualNorm / SolutionNorm);
 

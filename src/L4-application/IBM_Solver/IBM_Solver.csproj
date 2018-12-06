@@ -120,6 +120,10 @@
       <Project>{EFE8C307-09BC-4F58-B991-6EF8FD6D5EFF}</Project>
       <Name>BoSSS.Solution.Multigrid</Name>
     </ProjectReference>
+    <ProjectReference Include="..\..\L3-solution\BoSSS.Solution.XNSECommon\BoSSS.Solution.XNSECommon.csproj">
+      <Project>{0D8F577E-316D-4362-816B-9F610C5EB4A5}</Project>
+      <Name>BoSSS.Solution.XNSECommon</Name>
+    </ProjectReference>
     <ProjectReference Include="..\..\L3-solution\BoSSS.Solution\BoSSS.Solution.csproj">
       <Project>{DF7F5ABD-E606-41CD-BEEF-31A95D136DEA}</Project>
       <Name>BoSSS.Solution</Name>
