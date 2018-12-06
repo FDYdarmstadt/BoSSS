@@ -821,6 +821,7 @@ namespace BoSSS.Solution.NSECommon {
                     //if (LsTrk.GridDat.SpatialDimension == 2)
                     //{
 
+
                     for (int j = 0; j < Len; j++) {
                         for (int k = 0; k < K; k++) {
                             double acc = 0.0;
@@ -831,9 +832,10 @@ namespace BoSSS.Solution.NSECommon {
                                     acc += pARes[j, k] * Normals[j, k, 0];
                                     acc -= (2 * muA * beta) * Grad_URes[j, k, 0] * Normals[j, k, 0];
                                     acc -= (muA * beta) * Grad_URes[j, k, 1] * Normals[j, k, 1];
-                                    acc -= (muA * beta) * Grad_VRes[j, k, 0] * Normals[j, k, 1];
-                                    acc -= (muA * (1 - beta)) * StressXXRes[j, k] * Normals[j, k, 0];
-                                    acc -= (muA * (1 - beta)) * StressXYRes[j, k] * Normals[j, k, 1];
+                                    acc -= (muA * beta) * Grad_VRes[j, k, 0] * Normals[j, k, 1];                           
+                                    acc -= (muA) * StressXXRes[j, k] * Normals[j, k, 0];
+                                    acc -= (muA) * StressXYRes[j, k] * Normals[j, k, 1];
+
                                     break;
 
                                 case 1:
@@ -841,8 +843,8 @@ namespace BoSSS.Solution.NSECommon {
                                     acc -= (2 * muA * beta) * Grad_VRes[j, k, 1] * Normals[j, k, 1];
                                     acc -= (muA * beta) * Grad_VRes[j, k, 0] * Normals[j, k, 0];
                                     acc -= (muA * beta) * Grad_URes[j, k, 1] * Normals[j, k, 0];
-                                    acc -= (muA * (1 - beta)) * StressXYRes[j, k] * Normals[j, k, 0];
-                                    acc -= (muA * (1 - beta)) * StressYYRes[j, k] * Normals[j, k, 1];
+                                    acc -= (muA) * StressXYRes[j, k] * Normals[j, k, 0];
+                                    acc -= (muA) * StressYYRes[j, k] * Normals[j, k, 1];
                                     break;
                                 default:
                                     throw new NotImplementedException();
@@ -852,57 +854,12 @@ namespace BoSSS.Solution.NSECommon {
                         }
                     }
 
-                    //}
-                    //else
-                    //{
-                    //    for (int j = 0; j < Len; j++)
-                    //    {
-                    //        for (int k = 0; k < K; k++)
-                    //        {
-                    //            double acc = 0.0;
-
-                    //            // pressure
-                    //            switch (d)
-                    //            {
-                    //                case 0:
-                    //                    acc += pARes[j, k] * Normals[j, k, 0];
-                    //                    acc -= (2 * muA) * Grad_UARes[j, k, 0, 0] * Normals[j, k, 0];
-                    //                    acc -= (muA) * Grad_UARes[j, k, 0, 2] * Normals[j, k, 2];
-                    //                    acc -= (muA) * Grad_UARes[j, k, 0, 1] * Normals[j, k, 1];
-                    //                    acc -= (muA) * Grad_UARes[j, k, 1, 0] * Normals[j, k, 1];
-                    //                    acc -= (muA) * Grad_UARes[j, k, 2, 0] * Normals[j, k, 2];
-                    //                    break;
-                    //                case 1:
-                    //                    acc += pARes[j, k] * Normals[j, k, 1];
-                    //                    acc -= (2 * muA) * Grad_UARes[j, k, 1, 1] * Normals[j, k, 1];
-                    //                    acc -= (muA) * Grad_UARes[j, k, 1, 2] * Normals[j, k, 2];
-                    //                    acc -= (muA) * Grad_UARes[j, k, 1, 0] * Normals[j, k, 0];
-                    //                    acc -= (muA) * Grad_UARes[j, k, 0, 1] * Normals[j, k, 0];
-                    //                    acc -= (muA) * Grad_UARes[j, k, 2, 1] * Normals[j, k, 2];
-                    //                    break;
-                    //                case 2:
-                    //                    acc += pARes[j, k] * Normals[j, k, 2];
-                    //                    acc -= (2 * muA) * Grad_UARes[j, k, 2, 2] * Normals[j, k, 2];
-                    //                    acc -= (muA) * Grad_UARes[j, k, 2, 0] * Normals[j, k, 0];
-                    //                    acc -= (muA) * Grad_UARes[j, k, 2, 1] * Normals[j, k, 1];
-                    //                    acc -= (muA) * Grad_UARes[j, k, 0, 2] * Normals[j, k, 0];
-                    //                    acc -= (muA) * Grad_UARes[j, k, 1, 2] * Normals[j, k, 1];
-                    //                    break;
-                    //                default:
-                    //                    throw new NotImplementedException();
-                    //            }
-
-                            //    result[j, k] = acc;
-                            //}
-                        //}
-                    //}
-
                 };
 
 
                 var SchemeHelper = LsTrk.GetXDGSpaceMetrics(new[] { LsTrk.GetSpeciesId("A") }, RequiredOrder, 1).XQuadSchemeHelper;
 
-                EdgeMask Mask = new EdgeMask(LsTrk.GridDat, "Wall_cylinder");
+                EdgeMask Mask = new EdgeMask(LsTrk.GridDat, "Wall_bottom");
 
                 EdgeQuadratureScheme eqs = SchemeHelper.GetEdgeQuadScheme(LsTrk.GetSpeciesId("A"), IntegrationDomain: Mask);
 
