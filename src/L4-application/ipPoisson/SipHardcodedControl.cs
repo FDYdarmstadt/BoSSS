@@ -698,7 +698,8 @@ namespace BoSSS.Application.SipPoisson {
                 bool t2 = (A - B).AbsSquare() < 1.0e-10;
                 bool t1 = (A - B).AbsSquare() < 1.0e-15;
                 //Debug.Assert(t1 == t2);
-                return t1;
+                Voronoi.VoronoiMeshGen.AccuracyFlag = (t1 == t2);
+                return t2;
             }
             
             IGrid GridFunc() {
