@@ -54,7 +54,7 @@ namespace BoSSS.Solution.Multigrid {
 
         public string m_SessionPath;
 
-        public double UnderRelax = 1.0;
+        public double UnderRelax = 1;
 
 
         ///// <summary>
@@ -70,7 +70,7 @@ namespace BoSSS.Solution.Multigrid {
 
         public CoupledConvergenceReached CoupledIteration_Converged;
 
-        public int MaxCoupledIter = 10;
+        public int MaxCoupledIter = 1000;
 
 
         public delegate int IterationCounter(int NoIter, ref int coupledIter);
