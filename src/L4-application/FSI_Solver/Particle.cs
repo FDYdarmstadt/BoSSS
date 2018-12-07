@@ -635,32 +635,39 @@ namespace BoSSS.Application.FSI_Solver {
             noOfSubtimesteps = 1;
             subtimestep = dt / noOfSubtimesteps;
 
+            // Benjamin Stuff
             //for (int i = 1; i <= noOfSubtimesteps; i++) {
             //    newAngularVelocity = c_a * (3 * rot_P[0] - 4 * rot_P[1] + rot_P[2]) / 2 + 0.5 * c_u * dt * (3 * torque_P[0] - torque_P[1]); // for 2D
             //    oldAngularVelocity = newAngularVelocity;
             //}
-            for (double rotResidual = 1; rotResidual > velResidual_ConvergenceCriterion;)
-            {
-                m_vTemp = c_a * (1 * temp + 3 * rot_P[0] + 3 * rot_P[1] + 1 * rot_P[2]) / (8 * dt);
-                tempMomentTemp = (torque_P[0]) * (c_u) + m_vTemp;
-                tempMomentNew = (torque_P[1]);
-                tempMomentOld = (torque_P[2]);
-                old_temp = temp;
-                temp = rot_P[0] + (1 * tempMomentTemp + 4 * tempMomentNew + 1 * tempMomentOld) * dt / 6;
-                rot_iteration_counter += 1;
-                if (rot_iteration_counter == MaxParticleVelIterations)
-                {
-                    throw new ApplicationException("no convergence in particle velocity calculation");
-                }
-                rotResidual = Math.Sqrt((temp - old_temp).Pow2());
-                //Console.WriteLine("Current velResidual:  " + velResidual);
+
+            for (int i = 1; i <= noOfSubtimesteps; i++) {
+                newAngularVelocity = rot_P[0] + (dt / MomentOfInertia_P) * (torque_P[0] + torque_P[1]); // for 2D
+
+                oldAngularVelocity = newAngularVelocity;
+
             }
-            Console.WriteLine("Number of Iterations for angular velocity calculation:  " + rot_iteration_counter);
-            if (Math.Abs(temp) < 1e-9)
-            {
-                temp = 0;
-            }
-            rot_P.Insert(0, temp);
+
+            //for (double rotResidual = 1; rotResidual > velResidual_ConvergenceCriterion;) {
+            //    m_vTemp = c_a * (1 * temp + 3 * rot_P[0] + 3 * rot_P[1] + 1 * rot_P[2]) / (8 * dt);
+            //    tempMomentTemp = (torque_P[0]) * (c_u) + m_vTemp;
+            //    tempMomentNew = (torque_P[1]);
+            //    tempMomentOld = (torque_P[2]);
+            //    old_temp = temp;
+            //    temp = rot_P[0] + (1 * tempMomentTemp + 4 * tempMomentNew + 1 * tempMomentOld) * dt / 6;
+            //    rot_iteration_counter += 1;
+            //    if (rot_iteration_counter == MaxParticleVelIterations) {
+            //        throw new ApplicationException("no convergence in particle velocity calculation");
+            //    }
+            //    rotResidual = Math.Sqrt((temp - old_temp).Pow2());
+            //    //Console.WriteLine("Current velResidual:  " + velResidual);
+            //}
+            //Console.WriteLine("Number of Iterations for angular velocity calculation:  " + rot_iteration_counter);
+            //if (Math.Abs(temp) < 1e-9)
+            //{
+            //    temp = 0;
+            //}
+            rot_P.Insert(0, newAngularVelocity);
             rot_P.Remove(rot_P.Last());
         }
         #endregion
