@@ -477,7 +477,6 @@ namespace BoSSS.Application.SipPoisson.Voronoi {
 
             PolygonList current = start;
             int lcur = 0;
-            bool bOnSub = true;
             do {
                 R.Add(current.v);
 

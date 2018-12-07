@@ -197,18 +197,7 @@ namespace BoSSS.Platform.LinAlg {
         /// the distance of some point to the affine manifold/plane, in multiples of the norm of <see cref="Normal"/>;
         /// </summary>
         public double PointDistance(params double[] pt) {
-            if (pt.Length != this.Normal.Dim)
-                throw new ArgumentException();
-            if(Normal.AbsSquare() <= 0.0)
-                throw new ArithmeticException();
-
-            double ret = 0;
-            for (int d = this.Normal.Dim - 1; d >= 0; d--) {
-                ret += pt[d]*this.Normal[d];
-            }
-            ret -= this.a;
-
-            return ret;
+            return PointDistance(new Vector(pt));
         }
 
         /// <summary>
@@ -221,10 +210,14 @@ namespace BoSSS.Platform.LinAlg {
                 throw new ArithmeticException();
 
             double ret = 0;
+            double absN = 0;
             for (int d = this.Normal.Dim - 1; d >= 0; d--) {
-                ret += pt[d] * this.Normal[d];
+                double Nd = this.Normal[d];
+                ret += pt[d] * Nd; 
+                absN += Nd * Nd;
             }
             ret -= this.a;
+            ret /= absN;
 
             return ret;
         }
@@ -240,10 +233,14 @@ namespace BoSSS.Platform.LinAlg {
 
 
             double dist = 0;
+            double absN = 0;
             for (int d = this.Normal.Dim - 1; d >= 0; d--) {
-                dist += pt[d] * this.Normal[d];
+                double Nd = this.Normal[d];
+                dist += pt[d] * Nd;
+                absN += Nd * Nd;
             }
             dist -= this.a;
+            dist /= absN;
 
             Vector cp = pt;
             cp.Acc(Normal, -dist);
