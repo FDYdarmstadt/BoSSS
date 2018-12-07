@@ -1839,10 +1839,11 @@ namespace BoSSS.Application.SipPoisson.Voronoi {
                 }
             }
 
-            // repair cell-to-edges, vertices-to-edges
+            // test cell-to-edges, vertices-to-edges
             // =======================================
             {
-                VoEdge[][] cell2edge_check = cellS.Select(cell => cell.Edges.ToArray()).ToArray();
+#if DEBUG
+                //VoEdge[][] cell2edge_check = cellS.Select(cell => cell.Edges.ToArray()).ToArray();
 
                 for (int ie = 0; ie < VoEdge.edgeS.Count; ie++) {
                     var edge = VoEdge.edgeS[ie];
@@ -1850,13 +1851,14 @@ namespace BoSSS.Application.SipPoisson.Voronoi {
                 }
 
 
-                for (int jV = 0; jV < cellS.Count; jV++){
-                    var cell = cellS[jV];
-                    //if (cell.Edges.Count <= 1)
-                    //    Console.WriteLine("warn: less than 2");
-                    cell.ClearEdges();
-                }
+                //for (int jV = 0; jV < cellS.Count; jV++){
+                //    var cell = cellS[jV];
+                //    //if (cell.Edges.Count <= 1)
+                //    //    Console.WriteLine("warn: less than 2");
+                //    cell.ClearEdges();
+                //}
 
+                List<VoEdge>[] cell2edge_check = cellS.Count.ForLoop(i => new List<VoEdge>());
 
 
                 for(int ie = 0; ie < VoEdge.edgeS.Count; ie++) {
@@ -1865,12 +1867,12 @@ namespace BoSSS.Application.SipPoisson.Voronoi {
 
                     for (int ic = 0; ic < edge.Cells.Count; ic++) {
                         var cell = edge.Cells[ic];
-                        //int iCell = cellS.IndexOf(cell);
-                        //if (!cell2edge_check[iCell].ContainsExactly(edge))
-                        //    cell2edge_check[iCell].Add(edge);
+                        int iCell = cellS.IndexOf(cell);
+                        if (!cell2edge_check[iCell].ContainsExactly(edge))
+                            cell2edge_check[iCell].Add(edge);
 
-                        Debug.Assert(cell.Edges.ContainsRefEqual(edge) == false);
-                        cell.AddEdge(edge);
+                        //Debug.Assert(cell.Edges.ContainsRefEqual(edge) == false);
+                        //cell.AddEdge(edge);
 
                     }
 
@@ -1894,6 +1896,7 @@ namespace BoSSS.Application.SipPoisson.Voronoi {
                     //    Console.WriteLine("warn2: less than 2");
                     Debug.Assert(cell2edge_check[jV].SetEquals(cell.Edges));
                 }
+#endif
             }
 
             // collect boundary polygon
