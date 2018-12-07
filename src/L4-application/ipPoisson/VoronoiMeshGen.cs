@@ -287,17 +287,57 @@ namespace BoSSS.Application.SipPoisson.Voronoi {
                 Vector Ip = this.plane.ProjectPoint(I.VTX);
                 Debug.Assert(PointIdentityG(I.VTX, Ip));
 
+                bool bndy = this.isBoundary;
+                var cellsClone = this.Cells.ToArray();
+
+                // create first part (by modifying this)
                 VoVertex t = this.VtxB;
                 this.VtxB = I;
                 Edge1 = this;
 
-                Edge2 = Create(I, t);
+                //var miselfAnd = edgeS.Where(edg => edg.Equals(this)).ToArray();
+                //Debug.Assert(miselfAnd.Length == 1);
+                //Debug.Assert(object.ReferenceEquals(miselfAnd[0], this));
+                int w = 0;
+                for( int i = 0; i < edgeS.Count; i++) {
+                    var edg = edgeS[i];
+                    if (object.ReferenceEquals(edg, this))
+                        continue;
 
+                    if(edg.Equals(this)) {
+                        if (edg.isBoundary)
+                            this.isBoundary = true;
+
+                        VoPolygon[] otherCells = edg.Cells.ToArray();
+                        foreach(var cl in otherCells) {
+                            //if (!this.Cells.Contains(cl))
+                            //    this.Cells.Add(cl);
+
+                            //cl.RemoveEdge(edg);
+                            //cl.AddEdge(this);
+                            cl.ReplaceEdge(edg, this);
+
+                            Debug.Assert(this.Cells.ContainsRefEqual(cl));
+                        }
+
+
+                        w++;
+                        Debug.Assert(w <= 1);
+                        edgeS.RemoveAt(i);
+                        i--;
+                    }
+                }
+
+
+                // create second part
+                Edge2 = Create(I, t);
                 foreach(var cl in this.Cells) {
                     cl.AddEdge(Edge2);
                     if (!Edge2.Cells.Contains(cl))
                         Edge2.Cells.Add(cl);
                 }
+                if (bndy)
+                    Edge2.isBoundary = bndy;
             }
 
 
@@ -367,7 +407,7 @@ namespace BoSSS.Application.SipPoisson.Voronoi {
 
 
             public override int GetHashCode() {
-                return  VtxA.ID + VtxB.ID; // (int)((VtxA.VTX - VtxB.VTX).AbsSquare()*12345.0);
+                return 0; // VtxA.ID + VtxB.ID; // (int)((VtxA.VTX - VtxB.VTX).AbsSquare()*12345.0);
             }
 
 
@@ -513,6 +553,20 @@ namespace BoSSS.Application.SipPoisson.Voronoi {
                 }
                 m_Edges.Add(e);
             }
+
+            public void ReplaceEdge(VoEdge old, VoEdge nju) {
+                if (!this.Edges.ContainsRefEqual(old))
+                    throw new ApplicationException();
+                if (!old.Equals(nju))
+                    throw new ApplicationException();
+
+                int i = IEnumerableExtensions.IndexOf(this.m_Edges, old);
+                this.m_Edges[i] = nju;
+
+                if (!nju.Cells.ContainsRefEqual(this))
+                    nju.Cells.Add(this);
+            }
+
 
             // hack, nicht im Sinne der Kapselung
             public void ClearEdges() {
@@ -1386,6 +1440,7 @@ namespace BoSSS.Application.SipPoisson.Voronoi {
                                 //
                                 // out:   o---o--------o~~~~o
 
+                                /*
                                 // pt1 (edge)
                                 var t = edge.VtxB;
                                 edge.VtxB = bndy.VtxA;
@@ -1400,7 +1455,17 @@ namespace BoSSS.Application.SipPoisson.Voronoi {
                                 newEdge.Cells.AddRange(edge.Cells);
                                 CheckEdgeUniqueness();
                                 Debug.Assert(newEdge.isBoundary == false); // outside domain
+                                */
 
+                                
+                                VoVertex I1 = bndy.VtxA;
+                                VoVertex I2 = bndy.VtxB;
+                                edge.Split(I1, out VoEdge pt1, out VoEdge temp);
+                                temp.Split(I2, out VoEdge pt2, out VoEdge pt3);
+                                pt2.isBoundary = true;
+                                bndyEdges.Add(pt2);
+                                
+                                
                                 // cont
                                 iEdge--;
                                 CheckEdgeUniqueness();
@@ -1415,6 +1480,7 @@ namespace BoSSS.Application.SipPoisson.Voronoi {
                                 // out:    o--o-o~~~o
                                 Debug.Assert(alphaB > 0);
 
+                                /*
                                 // pt1 (bndy)
                                 var t = bndy.VtxB;
                                 bndy.VtxB = edge.VtxA;
@@ -1428,6 +1494,19 @@ namespace BoSSS.Application.SipPoisson.Voronoi {
                                 var newBndy = VoEdge.Create(edge.VtxB, t);
                                 newBndy.isBoundary = true;
                                 bndyEdges.Add(newBndy);
+                                */
+                                
+                                VoVertex I1 = edge.VtxA;
+                                VoVertex I2 = edge.VtxB;
+                                bndy.Split(I1, out VoEdge pt1, out VoEdge temp);
+                                temp.Split(I2, out VoEdge pt2, out VoEdge pt3);
+                                pt1.isBoundary = true;
+                                pt2.isBoundary = true;
+                                pt3.isBoundary = true;
+                                bndyEdges.Add(pt1);
+                                bndyEdges.Add(pt2);
+                                bndyEdges.Add(pt3);
+                                
 
                                 // cont
                                 iEdge--;
@@ -1637,6 +1716,8 @@ namespace BoSSS.Application.SipPoisson.Voronoi {
                 }
                 */
 
+                var A = bndyEdges.ToArray();
+                var B = VoEdge.edgeS.Where(edge => edge.isBoundary).ToArray();
                 Debug.Assert(VoEdge.edgeS.Where(edge => edge.isBoundary).SetEquals(bndyEdges));
                 bndyEdges = null; // forget
 
