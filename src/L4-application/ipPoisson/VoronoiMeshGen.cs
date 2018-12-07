@@ -228,9 +228,7 @@ namespace BoSSS.Application.SipPoisson.Voronoi {
                 x = __VTX.x;
                 y = __VTX.y;
 
-                if(Math.Abs(y - (-0.918)) < 0.001 && Math.Abs(x) < 0.001) {
-                    Console.WriteLine("suspicious");
-                }
+               
 
                 ID = IDcounter;
                 IDcounter++;
@@ -573,16 +571,167 @@ namespace BoSSS.Application.SipPoisson.Voronoi {
                 public bool used;
             }
 
-            public VoVertex[] GetVerticesSequence(out bool isClosed, bool includeBoundaries = false) {
-                List<VoVertex> R = new List<VoVertex>();
+
+            public VoVertex[] GetIntersectionSequence(VoPolygon bndyPoly) {
+                VoVertex[][] seqS = GetVerticesSequence(out bool isClosed, false);
+                if (isClosed) {
+                    Debug.Assert(seqS.Length == 1);
+                    return seqS[0];
+                }
+
+                //if (seqS.Length > 1)
+                //    throw new NotSupportedException();
+
+                if (seqS.Length == 1) {
+                    int sign = CheckOrientation(seqS[0]);
+                    if (sign == 0) {
+                        //DebugPlot(VocellVertexIndex, Verts, Cj.Edges);
+                        //Console.WriteLine("indef polygon");
+                        //NoOfIndef++;
+                        //continue;
+                        throw new ArithmeticException("indefinite polygon.");
+                    }
+                    if (sign < 0)
+                        seqS[0] = seqS[0].Reverse().ToArray();
+                    Debug.Assert(CheckOrientation(seqS[0]) > 0);
+
+
+                    Debug.Assert(isClosed == false);
+
+
+                    VoVertex[] closing = bndyPoly.GetSegmentBetween(seqS[0].Last(), seqS[0][0]);
+                    if (closing.Length > 2) {
+                        VoVertex[] closing_inner = closing.GetSubVector(1, closing.Length - 2);
+
+                        seqS[0] = seqS[0].Cat(closing_inner);
+                    }
+
+                    return seqS[0];
+                } else {
+
+                    List<VoVertex> R = new List<VoVertex>();
+                    bool[] seqUsed = new bool[seqS.Length];
+                    R.AddRange(seqS[0]);
+                    seqUsed[0] = true;
+
+                    VoVertex start = R[0];
+                    VoVertex current = R.Last();
+
+
+                    while(seqUsed.Any(b => !b)) {
+
+                        double minlength = double.MaxValue;
+                        VoVertex[] close = null;
+                        int iNext = -1;
+                        for(int i = 0; i < seqS.Length; i++) {
+                            if (seqUsed[i])
+                                continue;
+                            Debug.Assert(i != 0); // i need the sign of i
+
+                            VoVertex[] nextTry = seqS[i];
+
+
+                            VoVertex[] close1 = bndyPoly.GetSegmentBetween(current, nextTry[0]);
+                            double len1 = Length(close1);
+                            Debug.Assert(close1.Length > 1);
+                            if(len1 < minlength) {
+                                close = close1;
+                                minlength = len1;
+                                iNext = i;
+                            }
+
+                            VoVertex[] close2 = bndyPoly.GetSegmentBetween(current, nextTry[nextTry.Length -1]);
+                            double len2 = Length(close2);
+                            Debug.Assert(close2.Length > 1);
+                            if(len2 < minlength) {
+                                close = close2;
+                                minlength = len2;
+                                iNext = -i;
+                            }
+                        }
+
+                        if(close.Length > 2) {
+                            R.AddRange(close.GetSubVector(1, close.Length - 2));
+                        }
+
+                        seqUsed[Math.Abs(iNext)] = true;
+                        if(iNext > 0) {
+                            R.AddRange(seqS[iNext]);
+                        } else if( iNext < 0) {
+                            R.AddRange(seqS[-iNext].Reverse());
+                        } else {
+                            throw new ApplicationException("error in algorithm");
+                        }
+
+                        current = R.Last();
+                    }
+
+                    if(current.Equals(start))
+                        throw new ApplicationException("error in algorithm");
+
+
+                    VoVertex[] finalClosing = bndyPoly.GetSegmentBetween(current, start);
+                    if (finalClosing.Length > 2) {
+                        VoVertex[] closing_inner = finalClosing.GetSubVector(1, finalClosing.Length - 2);
+
+                        R.AddRange(closing_inner);
+                    }
+                    /*
+                    using(var gp = new Gnuplot()) {
+                        var x = R.Select(X => X.VTX.x).ToArray();
+                        var y = R.Select(X => X.VTX.y).ToArray();
+                        gp.PlotXY(x, y);
+                        gp.Execute();
+                        Console.ReadKey();
+                    }
+                    */
+
+                    return R.ToArray();
+                }
+            }
+
+            static double Length(VoVertex[] seq) {
+                double a = 0;
+                for(int i = 1; i < seq.Length; i++) {
+                    a += seq[i].VTX.Dist(seq[i - 1].VTX);
+                }
+
+                return a;
+            }
+
+
+            public VoVertex[][] GetVerticesSequence(out bool isClosed, bool includeBoundaries = false) {
+                List<VoVertex[]> R = new List<VoVertex[]>();
                 isClosed = false;
-                
+
                 MyTuple[] EdgesLoc = this.Edges
                     .Where(edg => includeBoundaries || edg.isBoundary == false)
                     .Select(edg => new MyTuple(edg, false))
                     .ToArray();
-                
-                MyTuple CurrEdge = EdgesLoc[0]; // select any edge
+
+                while (EdgesLoc.Any(ee => ee.used == false)) {
+                    VoVertex[] rr;
+                    isClosed = isClosed | VertSeq(out rr, EdgesLoc);
+                    R.Add(rr);
+                }
+
+                //Debug.Assert(EdgesLoc.All(e => e.used),"öha");
+
+                if (!EdgesLoc.All(e => e.used)) {
+                    DebugPlot(null, null, this.Edges);
+                }
+
+                if(isClosed)
+                    Debug.Assert(R.Count == 1);
+
+                return R.ToArray();
+            }
+
+            private static bool VertSeq(out VoVertex[] _R, MyTuple[] EdgesLoc) {
+                bool isClosed = false;
+                List<VoVertex> R = new List<VoVertex>();
+
+                MyTuple CurrEdge = EdgesLoc.First(ee => ee.used == false); // select any edge
                 CurrEdge.used = true;
                 VoVertex start = CurrEdge.edge.VtxA;
                 R.Add(CurrEdge.edge.VtxA);
@@ -596,7 +745,7 @@ namespace BoSSS.Application.SipPoisson.Voronoi {
                     R.Add(NextVtx);
                     MyTuple[] NextEdgeS = EdgesLoc.Where(tt =>
                         tt.used == false
-                     && (PointIdentity(tt.edge.VtxA, NextVtx) || PointIdentity(tt.edge.VtxB, NextVtx)) 
+                     && (PointIdentity(tt.edge.VtxA, NextVtx) || PointIdentity(tt.edge.VtxB, NextVtx))
                      && (!object.ReferenceEquals(tt.edge, CurrEdge))
                     ).ToArray();
 
@@ -611,7 +760,7 @@ namespace BoSSS.Application.SipPoisson.Voronoi {
                     CurrEdge.used = true;
                 }
 
-                if(SearchReverse) {
+                if (SearchReverse) {
                     Debug.Assert(isClosed == false);
 
                     while (true) {
@@ -631,7 +780,7 @@ namespace BoSSS.Application.SipPoisson.Voronoi {
                         MyTuple NextEdge = NextEdgeS[0];
                         Debug.Assert(NextEdge.used == false);
                         VoVertex NextVertex;
-                        if(PointIdentity(NextEdge.edge.VtxA, CurrVertex)) {
+                        if (PointIdentity(NextEdge.edge.VtxA, CurrVertex)) {
                             NextVertex = NextEdge.edge.VtxB;
                         } else {
                             Debug.Assert(PointIdentity(NextEdge.edge.VtxB, CurrVertex));
@@ -642,18 +791,20 @@ namespace BoSSS.Application.SipPoisson.Voronoi {
                     }
                 }
 
-                                             
-                return R.ToArray();
+                _R = R.ToArray();
+                return isClosed;
             }
-
 
             public VoVertex[] GetSegmentBetween(VoVertex Start, VoVertex End) {
                 if (PointIdentity(Start, End))
                     throw new ArgumentException();
 
-                VoVertex[] all = GetVerticesSequence(out bool isClosed, true);
+                VoVertex[][] __all = GetVerticesSequence(out bool isClosed, true);
                 if (!isClosed)
                     throw new NotSupportedException();
+                if(isClosed && __all.Length > 1)
+                    throw new NotSupportedException();
+                var all = __all[0];
 
 
 
@@ -744,8 +895,7 @@ namespace BoSSS.Application.SipPoisson.Voronoi {
 
         }
 
-        static public bool AccuracyFlag = false;
-
+        
         static public AggregationGrid FromPolygonalDomain(MultidimensionalArray Nodes, Vector[] PolygonBoundary, bool mirroring, Func<Vector, bool> IsIn, Func<Vector, Vector, bool> __PointIdentity) {
 
             // check arguments
@@ -1076,8 +1226,7 @@ namespace BoSSS.Application.SipPoisson.Voronoi {
                                 continue;
                             }
 
-                            Debug.Assert(AccuracyFlag == false);
-
+                            
                             if (alphaA == 0 && alphaB < 1) {
                                 // edge:  o---o
                                 // bndy:  o--------o
@@ -1508,9 +1657,8 @@ namespace BoSSS.Application.SipPoisson.Voronoi {
             VoPolygon bndyPoly;
             {
                 bndyPoly = new VoPolygon(VoEdge.edgeS.Where(edge => edge.isBoundary == true), false);
-
-                VoVertex[] bndyPolyVertices;
-                bndyPolyVertices = bndyPoly.GetVerticesSequence(out bool bndyClosed, true);
+                                
+                bndyPoly.GetVerticesSequence(out bool bndyClosed, true); // only purpose: test if bndy polygon is closed 
                 if (!bndyClosed)
                     throw new Exception();
             }
@@ -1537,8 +1685,9 @@ namespace BoSSS.Application.SipPoisson.Voronoi {
 
                 int NoEdgesAf = Cj.Edges.Count;
 
-                VoVertex[] seq = Cj.GetVerticesSequence(out bool Closed, false);
-                int sign = CheckOrientation(seq);
+                /*
+                VoVertex[][] seq = Cj.GetVerticesSequence(out bool Closed, false);
+                int sign = CheckOrientation(seq[0]);
                 if (sign == 0) {
                     DebugPlot(VocellVertexIndex, Verts, Cj.Edges);
                     Console.WriteLine("indef polygon");
@@ -1562,12 +1711,15 @@ namespace BoSSS.Application.SipPoisson.Voronoi {
 
                     
                 }
+                */
+
+                VoVertex[] seq = Cj.GetIntersectionSequence(bndyPoly); 
                 Insiders.Add(seq);
             }
             if(NoOfIndef != 0)
                 throw new ArithmeticException("indefinite polygon.");
 
-            //DebugPlot(VocellVertexIndex, Verts, edgeS);
+            //DebugPlot(VocellVertexIndex, Verts, VoEdge.edgeS);
 
             // Build BoSSS structure 
             // =====================
@@ -1603,6 +1755,28 @@ namespace BoSSS.Application.SipPoisson.Voronoi {
 
                         Vector D1 = V1 - V0;
                         Vector D2 = V2 - V0;
+
+                        if (D1.CrossProduct2D(D2) < 0) {
+                            //using (var gp = new Gnuplot()) {
+                            //    var x = new[] { V0.x, V1.x, V2.x };
+                            //    var y = new[] { V0.y, V1.y, V2.y };
+                            //    gp.PlotXY(x, y);
+                            //    gp.Execute();
+                            //    Console.ReadKey();
+                            //}
+
+                            int it = iV0;
+                            iV0 = iV2;
+                            iV2 = it;
+
+                            Vector vt = V0;
+                            V0 = V2;
+                            V2 = vt;
+
+                            D1 = V1 - V0;
+                            D2 = V2 - V0;
+                        }
+
                         Debug.Assert(D1.CrossProduct2D(D2) > 1.0e-8);
 
 
