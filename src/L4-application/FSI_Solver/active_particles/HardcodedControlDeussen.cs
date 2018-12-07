@@ -199,9 +199,8 @@ namespace BoSSS.Application.FSI_Solver
                     includeGravity = true,
                     active_P = false,
                     stress_magnitude_P = stressM,
-                    thickness_P = 0.5,
+                    thickness_P = 0.05,
                     length_P = 0.5,
-                    C_v = 10000,
                     velResidual_ConvergenceCriterion = 1e-18,
                     underrelaxationFT_constant = false,
                     underrelaxationFT_exponent = -0,
@@ -254,7 +253,7 @@ namespace BoSSS.Application.FSI_Solver
             C.MaxSolverIterations = 1000;
             C.MinSolverIterations = 1;
             C.NoOfMultigridLevels = 1;
-            C.LevelSet_ConvergenceCriterion = 5e-9;
+            C.LevelSet_ConvergenceCriterion = 5e-10;
             C.LSunderrelax = 1.0;
 
 
