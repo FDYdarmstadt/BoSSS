@@ -122,6 +122,47 @@ namespace BoSSS.Application.SipPoisson {
             }
 
             /*
+            Random rnd = new Random(0);
+            for(int i = 0; i < 10000; i++) {
+                Vector A = new Vector(rnd.NextDouble(), rnd.NextDouble());
+                Vector B = new Vector(rnd.NextDouble(), rnd.NextDouble());
+
+                AffineManifold plane = AffineManifold.FromPoints(A, B);
+
+               
+                Vector[] iter = new Vector[100];
+                iter[0] = new Vector(rnd.NextDouble(), rnd.NextDouble());
+
+                bool bfound = false;
+                for(int j = 1; j < iter.Length; j++) {
+                    iter[j] = plane.ProjectPoint(iter[j - 1]);
+
+                    if(j > 2) {
+                        Debug.Assert(iter[j].Dist(iter[j - 1]) < 1.0e-8);
+                    }
+
+                    if(iter[j].x == iter[j-1].x && iter[j].y == iter[j-1].y) {
+                        Console.WriteLine("Try {0}: conf after {1} iter", i, j);
+                        
+                        bfound = true;
+                        break;
+                    } else {
+                        if(j > 50) {
+                            Console.Write("");
+                        }
+                    }
+
+                }
+
+                if(!bfound) {
+                    Console.WriteLine("Try {0}: NO CONVERGENCE", i);
+                }
+
+            }
+
+            return;
+
+            /*
             //Some performance testing - don't delete, I still need this!
             //Florian
 
