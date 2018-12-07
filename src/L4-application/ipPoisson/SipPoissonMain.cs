@@ -121,6 +121,7 @@ namespace BoSSS.Application.SipPoisson {
                 BatchmodeConnector.MatlabExecuteable = "C:\\cygwin64\\bin\\bash.exe";
             }
 
+            /*
             Random rnd = new Random(0);
             for(int i = 0; i < 10000; i++) {
                 Vector A = new Vector(rnd.NextDouble(), rnd.NextDouble());
