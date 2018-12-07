@@ -298,6 +298,24 @@ namespace BoSSS.Application.SipPoisson.Voronoi {
 
             public List<VoPolygon> Cells = new List<VoPolygon>();
 
+            /// <summary>
+            /// removes duplicates from <see cref="Cells"/>; this is a hack, we should find a cleaner way of doing this at some point
+            /// </summary>
+            public void SanitizeCells () {
+                for(int i = 0; i < Cells.Count; i++) {
+                    for(int j = i + 1; j < Cells.Count; j++) {
+                        var Cj = Cells[j];
+                        var Ci = Cells[i];
+
+                        if(Ci.Equals(Cj)) {
+                            Cells.RemoveAt(j);
+                            j--;
+                        }
+                    }
+                }
+            }
+
+
             public bool isBoundary {
                 get {
                     return (VtxA.type == VertexType.Boundary) && (VtxB.type == VertexType.Boundary);
@@ -589,11 +607,11 @@ namespace BoSSS.Application.SipPoisson.Voronoi {
                         //Console.WriteLine("indef polygon");
                         //NoOfIndef++;
                         //continue;
-                        throw new ArithmeticException("indefinite polygon.");
+                        //throw new ArithmeticException("indefinite polygon.");
                     }
                     if (sign < 0)
                         seqS[0] = seqS[0].Reverse().ToArray();
-                    Debug.Assert(CheckOrientation(seqS[0]) > 0);
+                    //Debug.Assert(CheckOrientation(seqS[0]) > 0);
 
 
                     Debug.Assert(isClosed == false);
@@ -1614,18 +1632,10 @@ namespace BoSSS.Application.SipPoisson.Voronoi {
                     cell.ClearEdges();
                 }
 
-                HashSet<VoPolygon> cellS4edge = new HashSet<VoPolygon>(new FuncEqualityComparer<VoPolygon>((a, b) => object.ReferenceEquals(a, b)));
-
                 for(int ie = 0; ie < VoEdge.edgeS.Count; ie++) {
                     var edge = VoEdge.edgeS[ie];
+                    edge.SanitizeCells();
 
-                    cellS4edge.Clear();
-                    cellS4edge.AddRange(edge.Cells);
-                    Debug.Assert(cellS4edge.Count == edge.Cells.Count);
-                    foreach(var cell in cellS4edge) {
-                        Debug.Assert(cellS.ContainsRefEqual(cell));
-                    }
-                    
                     for (int ic = 0; ic < edge.Cells.Count; ic++) {
                         var cell = edge.Cells[ic];
                         Debug.Assert(cell.Edges.ContainsRefEqual(edge) == false);
@@ -1667,7 +1677,6 @@ namespace BoSSS.Application.SipPoisson.Voronoi {
             // collect inside polygons
             // =======================
             List<VoVertex[]> Insiders = new List<VoVertex[]>();
-            int NoOfIndef = 0;
             for(int j = 0; j < cellS.Count; j++) {
                 VoPolygon Cj = cellS[j];
 
@@ -1716,8 +1725,7 @@ namespace BoSSS.Application.SipPoisson.Voronoi {
                 VoVertex[] seq = Cj.GetIntersectionSequence(bndyPoly); 
                 Insiders.Add(seq);
             }
-            if(NoOfIndef != 0)
-                throw new ArithmeticException("indefinite polygon.");
+            
 
             //DebugPlot(VocellVertexIndex, Verts, VoEdge.edgeS);
 
