@@ -48,13 +48,10 @@ namespace BoSSS.Application.FSI_Solver {
         public static void TestFlowRotationalCoupling() { 
 
             FSI_SolverMain p = null;
-            Application<IBM_Solver.IBM_Control>._Main(new string[] {
-                "--control", "cs:BoSSS.Application.FSI_Solver.HardcodedTestExamples.ParticleInShearFlow(k:1)"
-            }, false, delegate () {
-                p = new FSI_SolverMain();
-                return p;
-            });
 
+            var ctrl = BoSSS.Application.FSI_Solver.HardcodedTestExamples.ParticleInShearFlow(k: 1);
+            p.Init(ctrl);
+            p.RunSolverMode();
 
             double angularVelocity_Sol = 0.00487;
 
