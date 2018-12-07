@@ -545,42 +545,42 @@ namespace BoSSS.Application.FSI_Solver {
             //}
 
             // implicit Adams Moulton (modified)
-            for (double velResidual = 1; velResidual > velResidual_ConvergenceCriterion;)
-            {
-                for (int i = 0; i < 2; i++)
-                {
-                    C_v_mod[i] = 0.1;// * Math.Abs(forces_P[0][i] / (forces_P[0][i] + forces_P[1][i] + 1e-30));
-                    c_a[i] = (C_v_mod[i] * rho_Fluid) / (rho_P + C_v_mod[i] * rho_Fluid);
-                    c_u[i] = 1 / (area_P * (rho_P + C_v_mod[i] * rho_P));
-                    f_vTemp[i] = (C_v_mod[i]) / (1 + C_v_mod[i]) * (11 * temp[i] - 18 * vel_P[0][i] + 9 * vel_P[1][i] - 2 * vel_P[2][i]) / (8 * dt);
-                    f_vNew[i] = (C_v_mod[i]) / (1 + C_v_mod[i]) * (11 * vel_P[0][i] - 18 * vel_P[1][i] + 9 * vel_P[2][i] - 2 * vel_P[3][i]) / (6 * dt);
-                    f_vOld[i] = (C_v_mod[i]) / (1 + C_v_mod[i]) * (11 * vel_P[1][i] - 18 * vel_P[2][i] + 9 * vel_P[3][i] - 2 * vel_P[4][i]) / (6 * dt);
-                    tempForceTemp[i] = (forces_P[0][i] + massDifference * gravity[i]) * (c_u[i]) + f_vTemp[i];
-                    tempForceNew[i] = (forces_P[1][i] + massDifference * gravity[i]) * (c_u[i]) + f_vNew[i];
-                    tempForceOld[i] = (forces_P[2][i] + massDifference * gravity[i]) * (c_u[i]) + f_vOld[i];
-                    old_temp[i] = temp[i];
-                    temp[i] = previous_vel[i] + (1 * tempForceTemp[i] + 4 * tempForceNew[i] + 1 * tempForceOld[i]) * dt / 6;
-                }
-                vel_iteration_counter += 1;
-                if (vel_iteration_counter == MaxParticleVelIterations)
-                {
-                    throw new ApplicationException("no convergence in particle velocity calculation");
-                }
-                velResidual = Math.Sqrt((temp[0] - old_temp[0]).Pow2() + (temp[1] - old_temp[1]).Pow2());
+            //for (double velResidual = 1; velResidual > velResidual_ConvergenceCriterion;)
+            //{
+            //    for (int i = 0; i < 2; i++)
+            //    {
+            //        C_v_mod[i] = 0.1;// * Math.Abs(forces_P[0][i] / (forces_P[0][i] + forces_P[1][i] + 1e-30));
+            //        c_a[i] = (C_v_mod[i] * rho_Fluid) / (rho_P + C_v_mod[i] * rho_Fluid);
+            //        c_u[i] = 1 / (area_P * (rho_P + C_v_mod[i] * rho_P));
+            //        f_vTemp[i] = (C_v_mod[i]) / (1 + C_v_mod[i]) * (11 * temp[i] - 18 * vel_P[0][i] + 9 * vel_P[1][i] - 2 * vel_P[2][i]) / (8 * dt);
+            //        f_vNew[i] = (C_v_mod[i]) / (1 + C_v_mod[i]) * (11 * vel_P[0][i] - 18 * vel_P[1][i] + 9 * vel_P[2][i] - 2 * vel_P[3][i]) / (6 * dt);
+            //        f_vOld[i] = (C_v_mod[i]) / (1 + C_v_mod[i]) * (11 * vel_P[1][i] - 18 * vel_P[2][i] + 9 * vel_P[3][i] - 2 * vel_P[4][i]) / (6 * dt);
+            //        tempForceTemp[i] = (forces_P[0][i] + massDifference * gravity[i]) * (c_u[i]) + f_vTemp[i];
+            //        tempForceNew[i] = (forces_P[1][i] + massDifference * gravity[i]) * (c_u[i]) + f_vNew[i];
+            //        tempForceOld[i] = (forces_P[2][i] + massDifference * gravity[i]) * (c_u[i]) + f_vOld[i];
+            //        old_temp[i] = temp[i];
+            //        temp[i] = previous_vel[i] + (1 * tempForceTemp[i] + 4 * tempForceNew[i] + 1 * tempForceOld[i]) * dt / 6;
+            //    }
+            //    vel_iteration_counter += 1;
+            //    if (vel_iteration_counter == MaxParticleVelIterations)
+            //    {
+            //        throw new ApplicationException("no convergence in particle velocity calculation");
+            //    }
+            //    velResidual = Math.Sqrt((temp[0] - old_temp[0]).Pow2() + (temp[1] - old_temp[1]).Pow2());
 
-                //Console.WriteLine("Current velResidual:  " + velResidual);
-            }
-            Console.WriteLine("Number of Iterations for translational velocity calculation:  " + vel_iteration_counter);
-            Console.WriteLine("C_v_mod:  " + C_v_mod[0]);
+            //    //Console.WriteLine("Current velResidual:  " + velResidual);
+            //}
+            //Console.WriteLine("Number of Iterations for translational velocity calculation:  " + vel_iteration_counter);
+            //Console.WriteLine("C_v_mod:  " + C_v_mod[0]);
 
             //Crank Nicolson
             // =============================
-            //tempForceNew[0] = (0.5 * forces_P[0][0] + 0.5 * forces_P[1][0]) + massDifference * gravity[0];
-            //tempForceNew[1] = (forces_P[1][1] + forces_P[0][1]) / 2 + massDifference * gravity[1];
-            ////temp.SetV(vel_P[0], 1);
-            ////temp.AccV(dt / mass_P, tempForceNew);
-            //temp[0] = previous_vel[0] + dt / mass_P * tempForceNew[0];
-            //temp[1] = previous_vel[1] + dt / mass_P * tempForceNew[1];
+            tempForceNew[0] = (0.5 * forces_P[0][0] + 0.5 * forces_P[1][0]) + massDifference * gravity[0];
+            tempForceNew[1] = (forces_P[1][1] + forces_P[0][1]) / 2 + massDifference * gravity[1];
+            //temp.SetV(vel_P[0], 1);
+            //temp.AccV(dt / mass_P, tempForceNew);
+            temp[0] = previous_vel[0] + dt / mass_P * tempForceNew[0];
+            temp[1] = previous_vel[1] + dt / mass_P * tempForceNew[1];
 
 
             for (int i = 0; i < 2; i++)
@@ -825,12 +825,6 @@ namespace BoSSS.Application.FSI_Solver {
             }
 
             double[] forces_w = new double[D];
-            //forces_w[0] = (forces_P[3][0] + 3 * forces_P[2][0] + 3 * forces_P[1][0] + forces[0]) / 8;
-            //forces_w[1] = (forces_P[3][1] + 3 * forces_P[2][1] + 3 * forces_P[1][1] + forces[1]) / 8;
-            //forces_w[0] = (41 * forces_P[6][0] + 216 * forces_P[5][0] + 27 * forces_P[4][0] + 272 * forces_P[3][0] + 27 * forces_P[2][0] + 216 * forces_P[1][0] + 41 * forces[0]) / 840;
-            //forces_w[1] = (41 * forces_P[6][1] + 216 * forces_P[5][1] + 27 * forces_P[4][1] + 272 * forces_P[3][1] + 27 * forces_P[2][1] + 216 * forces_P[1][1] + 41 * forces[1]) / 840;
-            //forces_w[0] = (989 * forces_P[7][0] + 5888 * forces_P[6][0] - 928 * forces_P[5][0] + 10496 * forces_P[4][0] - 4540 * forces_P[3][0] + 10496 * forces_P[2][0] - 928 * forces_P[1][0] + 5888 * forces_P[0][0] + 989 * forces[0]) / 28350;
-            //forces_w[1] = (989 * forces_P[7][1] + 5888 * forces_P[6][1] - 928 * forces_P[5][1] + 10496 * forces_P[4][1] - 4540 * forces_P[3][1] + 10496 * forces_P[2][1] - 928 * forces_P[1][1] + 5888 * forces_P[0][1] + 989 * forces[1]) / 28350;
             double underrelaxationFT = 1.0;
             if (iteration_counter_P == 0)
             {
@@ -843,46 +837,24 @@ namespace BoSSS.Application.FSI_Solver {
             else if (underrelaxationFT_constant == false)
             {
                 bool underrelaxation_ok = false;
+                underrelaxationFT_exponent = 1;
                 for (int i = 0; underrelaxation_ok == false; i++)
                 {
                     if (Math.Abs(underrelaxationFT * forces[1]) > Math.Abs(forces_P[0][1]))
                     {
                         underrelaxationFT_exponent -= 1;
+                        underrelaxationFT = Math.Pow(10, underrelaxationFT_exponent);
                     }
-                    //else if (Math.Abs(underrelaxationFT * forces[1]) < Math.Abs(0.01 * forces_P[0][1]))
-                    //{
-                    //    underrelaxationFT_exponent += 1;
-                    //}
                     else
                     {
                         underrelaxation_ok = true;
+                        if (underrelaxationFT_exponent > -1)
+                        {
+                            underrelaxationFT_exponent = -1;
+                            underrelaxationFT = Math.Pow(10, underrelaxationFT_exponent);
+                        }
                     }
-                    underrelaxationFT = Math.Pow(10, underrelaxationFT_exponent);
                 }
-                //double[] relaxation_helper = new double[2];
-                //relaxation_helper[0] = forces[0] - (forces_P[0][0] + forces_P[1][0]) / 2;
-                //relaxation_helper[1] = forces[1];// - (forces_P[0][0] + forces_P[1][0]) / 2;
-                //if (Math.Abs((forces_P[0][1] + forces_P[1][1]) / 2) < Math.Abs(forces[1]) * Math.Pow(10, (underrelaxationFT_exponent)))//relaxation_helper[0]) > Math.Pow(10, (2 - underrelaxationFT_exponent)) || 
-                //{
-                //    underrelaxationFT_exponent -= 1;
-                //}
-                ////if (Math.Abs((forces_P[0][1] + forces_P[1][1]) / 2) < Math.Abs(forces[1]) * Math.Pow(10, (underrelaxationFT_exponent - 1)))
-                ////{
-                ////    underrelaxationFT_exponent += 1;
-                ////}
-                //if (Math.Abs(1 - (forces_P[1][1] + forces_P[1][1] + forces_P[2][1] + forces_P[3][1]) / (4 * (underrelaxationFT * forces[1] + (1 - underrelaxationFT) * forces_P[0][1]))) < 0.1)
-                //{
-                //    underrelaxationFT_exponent += 2;
-                //}
-                //if (underrelaxationFT_exponent < -8)
-                //{
-                //    underrelaxationFT_exponent = -8;
-                //}
-                //if (underrelaxationFT_exponent > 0)
-                //{
-                //    underrelaxationFT_exponent = 0;
-                //}
-                //underrelaxationFT = Math.Pow(10, underrelaxationFT_exponent);
             }
             else
             {
@@ -980,8 +952,8 @@ namespace BoSSS.Application.FSI_Solver {
 
             ).Execute();
             //double torque_w = (torque_P[3] + 3 * torque_P[2] + 3 * torque_P[1] + torque) / 8;
-            double torque_w = (989 * torque_P[7] + 5888 * torque_P[6] - 928 * torque_P[5] + 10496 * torque_P[4] -4540 * torque_P[3] + 10496 * torque_P[2] - 928 * torque_P[1] + 5888 * torque_P[0] + 989 * torque) / 28350;
-            torque_w  = underrelaxationFT * torque + (1 - underrelaxationFT) * torque_P[0];
+            //double torque_w = (989 * torque_P[7] + 5888 * torque_P[6] - 928 * torque_P[5] + 10496 * torque_P[4] -4540 * torque_P[3] + 10496 * torque_P[2] - 928 * torque_P[1] + 5888 * torque_P[0] + 989 * torque) / 28350;
+            double torque_w  = underrelaxationFT * torque + (1 - underrelaxationFT) * torque_P[0];
             this.torque_P.Remove(torque_P.Last());
             this.torque_P.Insert(0, torque_w);
 
