@@ -45,7 +45,7 @@ namespace BoSSS.Application.FSI_Solver {
         }
 
         [Test]
-        public static void TestFlowRotationalCoupling() {
+        public static void TestFlowRotationalCoupling() { 
 
             FSI_SolverMain p = null;
             Application<IBM_Solver.IBM_Control>._Main(new string[] {
