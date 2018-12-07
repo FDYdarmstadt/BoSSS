@@ -204,7 +204,8 @@ namespace BoSSS.Application.FSI_Solver
                     C_v = 10000,
                     velResidual_ConvergenceCriterion = 1e-18,
                     underrelaxationFT_constant = false,
-                    underrelaxationFT_exponent = -0
+                    underrelaxationFT_exponent = -0,
+                    underrelaxation_factor = 0.5
                 });
             }
             //Define level-set

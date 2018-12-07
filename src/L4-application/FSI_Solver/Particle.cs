@@ -103,6 +103,7 @@ namespace BoSSS.Application.FSI_Solver {
         public int iteration_counter_P = 0;
         public bool underrelaxationFT_constant = true;
         public int underrelaxationFT_exponent = 1;
+        public double underrelaxation_factor = 0.5;
 
         /// <summary>
         /// Shape of the particle
@@ -583,13 +584,13 @@ namespace BoSSS.Application.FSI_Solver {
             temp[1] = previous_vel[1] + dt / mass_P * tempForceNew[1];
 
 
-            for (int i = 0; i < 2; i++)
-            {
-                if (Math.Abs(temp[i]) < 1e-9)
-                {
-                    temp[i] = 0;
-                }
-            }
+            //for (int i = 0; i < 2; i++)
+            //{
+            //    if (Math.Abs(temp[i]) < 1e-9)
+            //    {
+            //        temp[i] = 0;
+            //    }
+            //}
             // Save new velocity
             // =============================
 
@@ -847,18 +848,18 @@ namespace BoSSS.Application.FSI_Solver {
                 underrelaxationFT_exponent = 1;
                 for (int i = 0; underrelaxation_ok == false; i++)
                 {
-                    if (Math.Abs(underrelaxationFT * forces[1]) > Math.Abs(forces_P[0][1]))
+                    if (10 * Math.Abs(underrelaxationFT * forces[1]) > Math.Abs(forces_P[0][1]))
                     {
                         underrelaxationFT_exponent -= 1;
-                        underrelaxationFT = Math.Pow(10, underrelaxationFT_exponent);
+                        underrelaxationFT = underrelaxation_factor * Math.Pow(10, underrelaxationFT_exponent);
                     }
                     else
                     {
                         underrelaxation_ok = true;
-                        if (underrelaxationFT_exponent > -1)
+                        if (underrelaxationFT_exponent > -0)
                         {
-                            underrelaxationFT_exponent = -1;
-                            underrelaxationFT = Math.Pow(10, underrelaxationFT_exponent);
+                            underrelaxationFT_exponent = -0;
+                            underrelaxationFT = underrelaxation_factor * Math.Pow(10, underrelaxationFT_exponent);
                         }
                     }
                 }
