@@ -131,15 +131,21 @@ namespace BoSSS.Application.FSI_Solver {
             // Particle Properties
             C.Particles = new List<Particle>();
 
-
-            C.Particles.Add(new Particle(2, 8, new double[] { 0.0, 0.0 }) {
+            C.Particles.Add(new Particle(2, 4, new double[] { 0.0 , 0.0 }) {
                 radius_P = 0.4,
-                rho_P = 1
+                rho_P = 1.0,
             });
-            Func<double[], double, double> phiComplete = (X, t) => 1;
 
+            //Define level-set
+            Func<double[], double, double> phiComplete = delegate (double[] X, double t) {
+                int exp = C.Particles.Count - 1;
+                double ret = Math.Pow(-1, exp);
+                for (int i = 0; i < C.Particles.Count; i++) {
+                    ret *= C.Particles[i].phi_P(X, t);
+                }
+                return ret;
+            };
 
-            phiComplete = (X, t) => C.Particles[0].phi_P(X, t);
 
             //Func<double[], double, double> phi = (X, t) => -(X[0] - t+X[1]);
             //C.MovementFunc = phi;
