@@ -545,42 +545,42 @@ namespace BoSSS.Application.FSI_Solver {
             //}
 
             // implicit Adams Moulton (modified)
-            for (double velResidual = 1; velResidual > velResidual_ConvergenceCriterion;)
-            {
-                for (int i = 0; i < 2; i++)
-                {
-                    C_v_mod[i] = 0.1;// * Math.Abs(forces_P[0][i] / (forces_P[0][i] + forces_P[1][i] + 1e-30));
-                    c_a[i] = (C_v_mod[i] * rho_Fluid) / (rho_P + C_v_mod[i] * rho_Fluid);
-                    c_u[i] = 1 / (area_P * (rho_P + C_v_mod[i] * rho_P));
-                    f_vTemp[i] = (C_v_mod[i]) / (1 + C_v_mod[i]) * (11 * temp[i] - 18 * vel_P[0][i] + 9 * vel_P[1][i] - 2 * vel_P[2][i]) / (8 * dt);
-                    f_vNew[i] = (C_v_mod[i]) / (1 + C_v_mod[i]) * (11 * vel_P[0][i] - 18 * vel_P[1][i] + 9 * vel_P[2][i] - 2 * vel_P[3][i]) / (6 * dt);
-                    f_vOld[i] = (C_v_mod[i]) / (1 + C_v_mod[i]) * (11 * vel_P[1][i] - 18 * vel_P[2][i] + 9 * vel_P[3][i] - 2 * vel_P[4][i]) / (6 * dt);
-                    tempForceTemp[i] = (forces_P[0][i] + massDifference * gravity[i]) * (c_u[i]) + f_vTemp[i];
-                    tempForceNew[i] = (forces_P[1][i] + massDifference * gravity[i]) * (c_u[i]) + f_vNew[i];
-                    tempForceOld[i] = (forces_P[2][i] + massDifference * gravity[i]) * (c_u[i]) + f_vOld[i];
-                    old_temp[i] = temp[i];
-                    temp[i] = previous_vel[i] + (1 * tempForceTemp[i] + 4 * tempForceNew[i] + 1 * tempForceOld[i]) * dt / 6;
-                }
-                vel_iteration_counter += 1;
-                if (vel_iteration_counter == MaxParticleVelIterations)
-                {
-                    throw new ApplicationException("no convergence in particle velocity calculation");
-                }
-                velResidual = Math.Sqrt((temp[0] - old_temp[0]).Pow2() + (temp[1] - old_temp[1]).Pow2());
+            //for (double velResidual = 1; velResidual > velResidual_ConvergenceCriterion;)
+            //{
+            //    for (int i = 0; i < 2; i++)
+            //    {
+            //        C_v_mod[i] = 0.1;// * Math.Abs(forces_P[0][i] / (forces_P[0][i] + forces_P[1][i] + 1e-30));
+            //        c_a[i] = (C_v_mod[i] * rho_Fluid) / (rho_P + C_v_mod[i] * rho_Fluid);
+            //        c_u[i] = 1 / (area_P * (rho_P + C_v_mod[i] * rho_P));
+            //        f_vTemp[i] = (C_v_mod[i]) / (1 + C_v_mod[i]) * (11 * temp[i] - 18 * vel_P[0][i] + 9 * vel_P[1][i] - 2 * vel_P[2][i]) / (8 * dt);
+            //        f_vNew[i] = (C_v_mod[i]) / (1 + C_v_mod[i]) * (11 * vel_P[0][i] - 18 * vel_P[1][i] + 9 * vel_P[2][i] - 2 * vel_P[3][i]) / (6 * dt);
+            //        f_vOld[i] = (C_v_mod[i]) / (1 + C_v_mod[i]) * (11 * vel_P[1][i] - 18 * vel_P[2][i] + 9 * vel_P[3][i] - 2 * vel_P[4][i]) / (6 * dt);
+            //        tempForceTemp[i] = (forces_P[0][i] + massDifference * gravity[i]) * (c_u[i]) + f_vTemp[i];
+            //        tempForceNew[i] = (forces_P[1][i] + massDifference * gravity[i]) * (c_u[i]) + f_vNew[i];
+            //        tempForceOld[i] = (forces_P[2][i] + massDifference * gravity[i]) * (c_u[i]) + f_vOld[i];
+            //        old_temp[i] = temp[i];
+            //        temp[i] = previous_vel[i] + (1 * tempForceTemp[i] + 4 * tempForceNew[i] + 1 * tempForceOld[i]) * dt / 6;
+            //    }
+            //    vel_iteration_counter += 1;
+            //    if (vel_iteration_counter == MaxParticleVelIterations)
+            //    {
+            //        throw new ApplicationException("no convergence in particle velocity calculation");
+            //    }
+            //    velResidual = Math.Sqrt((temp[0] - old_temp[0]).Pow2() + (temp[1] - old_temp[1]).Pow2());
 
-                //Console.WriteLine("Current velResidual:  " + velResidual);
-            }
+            //    //Console.WriteLine("Current velResidual:  " + velResidual);
+            //}
             Console.WriteLine("Number of Iterations for translational velocity calculation:  " + vel_iteration_counter);
             Console.WriteLine("C_v_mod:  " + C_v_mod[0]);
 
             //Crank Nicolson
             // =============================
-            //tempForceNew[0] = (0.5 * forces_P[0][0] + 0.5 * forces_P[1][0]) + massDifference * gravity[0];
-            //tempForceNew[1] = (forces_P[1][1] + forces_P[0][1]) / 2 + massDifference * gravity[1];
-            ////temp.SetV(vel_P[0], 1);
-            ////temp.AccV(dt / mass_P, tempForceNew);
-            //temp[0] = previous_vel[0] + dt / mass_P * tempForceNew[0];
-            //temp[1] = previous_vel[1] + dt / mass_P * tempForceNew[1];
+            tempForceNew[0] = (0.5 * forces_P[0][0] + 0.5 * forces_P[1][0]) + massDifference * gravity[0];
+            tempForceNew[1] = (forces_P[1][1] + forces_P[0][1]) / 2 + massDifference * gravity[1];
+            //temp.SetV(vel_P[0], 1);
+            //temp.AccV(dt / mass_P, tempForceNew);
+            temp[0] = previous_vel[0] + dt / mass_P * tempForceNew[0];
+            temp[1] = previous_vel[1] + dt / mass_P * tempForceNew[1];
 
 
             for (int i = 0; i < 2; i++)
@@ -635,32 +635,39 @@ namespace BoSSS.Application.FSI_Solver {
             noOfSubtimesteps = 1;
             subtimestep = dt / noOfSubtimesteps;
 
+            // Benjamin Stuff
             //for (int i = 1; i <= noOfSubtimesteps; i++) {
             //    newAngularVelocity = c_a * (3 * rot_P[0] - 4 * rot_P[1] + rot_P[2]) / 2 + 0.5 * c_u * dt * (3 * torque_P[0] - torque_P[1]); // for 2D
             //    oldAngularVelocity = newAngularVelocity;
             //}
-            for (double rotResidual = 1; rotResidual > velResidual_ConvergenceCriterion;)
-            {
-                m_vTemp = c_a * (1 * temp + 3 * rot_P[0] + 3 * rot_P[1] + 1 * rot_P[2]) / (8 * dt);
-                tempMomentTemp = (torque_P[0]) * (c_u) + m_vTemp;
-                tempMomentNew = (torque_P[1]);
-                tempMomentOld = (torque_P[2]);
-                old_temp = temp;
-                temp = rot_P[0] + (1 * tempMomentTemp + 4 * tempMomentNew + 1 * tempMomentOld) * dt / 6;
-                rot_iteration_counter += 1;
-                if (rot_iteration_counter == MaxParticleVelIterations)
-                {
-                    throw new ApplicationException("no convergence in particle velocity calculation");
-                }
-                rotResidual = Math.Sqrt((temp - old_temp).Pow2());
-                //Console.WriteLine("Current velResidual:  " + velResidual);
+
+            for (int i = 1; i <= noOfSubtimesteps; i++) {
+                newAngularVelocity = rot_P[0] + (dt / MomentOfInertia_P) * (torque_P[0] + torque_P[1]); // for 2D
+
+                oldAngularVelocity = newAngularVelocity;
+
             }
-            Console.WriteLine("Number of Iterations for angular velocity calculation:  " + rot_iteration_counter);
-            if (Math.Abs(temp) < 1e-9)
-            {
-                temp = 0;
-            }
-            rot_P.Insert(0, temp);
+
+            //for (double rotResidual = 1; rotResidual > velResidual_ConvergenceCriterion;) {
+            //    m_vTemp = c_a * (1 * temp + 3 * rot_P[0] + 3 * rot_P[1] + 1 * rot_P[2]) / (8 * dt);
+            //    tempMomentTemp = (torque_P[0]) * (c_u) + m_vTemp;
+            //    tempMomentNew = (torque_P[1]);
+            //    tempMomentOld = (torque_P[2]);
+            //    old_temp = temp;
+            //    temp = rot_P[0] + (1 * tempMomentTemp + 4 * tempMomentNew + 1 * tempMomentOld) * dt / 6;
+            //    rot_iteration_counter += 1;
+            //    if (rot_iteration_counter == MaxParticleVelIterations) {
+            //        throw new ApplicationException("no convergence in particle velocity calculation");
+            //    }
+            //    rotResidual = Math.Sqrt((temp - old_temp).Pow2());
+            //    //Console.WriteLine("Current velResidual:  " + velResidual);
+            //}
+            //Console.WriteLine("Number of Iterations for angular velocity calculation:  " + rot_iteration_counter);
+            //if (Math.Abs(temp) < 1e-9)
+            //{
+            //    temp = 0;
+            //}
+            rot_P.Insert(0, newAngularVelocity);
             rot_P.Remove(rot_P.Last());
         }
         #endregion
@@ -980,8 +987,8 @@ namespace BoSSS.Application.FSI_Solver {
 
             ).Execute();
             //double torque_w = (torque_P[3] + 3 * torque_P[2] + 3 * torque_P[1] + torque) / 8;
-            double torque_w = (989 * torque_P[7] + 5888 * torque_P[6] - 928 * torque_P[5] + 10496 * torque_P[4] -4540 * torque_P[3] + 10496 * torque_P[2] - 928 * torque_P[1] + 5888 * torque_P[0] + 989 * torque) / 28350;
-            torque_w  = underrelaxationFT * torque + (1 - underrelaxationFT) * torque_P[0];
+            //double torque_w = (989 * torque_P[7] + 5888 * torque_P[6] - 928 * torque_P[5] + 10496 * torque_P[4] -4540 * torque_P[3] + 10496 * torque_P[2] - 928 * torque_P[1] + 5888 * torque_P[0] + 989 * torque) / 28350;
+            double torque_w  = underrelaxationFT * torque + (1 - underrelaxationFT) * torque_P[0];
             this.torque_P.Remove(torque_P.Last());
             this.torque_P.Insert(0, torque_w);
 
