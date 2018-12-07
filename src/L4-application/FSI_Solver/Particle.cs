@@ -832,47 +832,47 @@ namespace BoSSS.Application.FSI_Solver {
                 ).Execute();
             }
 
-            double[] forces_w = new double[D];
-            double underrelaxationFT = 1.0;
-            if (iteration_counter_P == 0)
-            {
-                underrelaxationFT = 1;
-            }
-            else if (underrelaxationFT_constant == true)
-            {
-                underrelaxationFT = Math.Pow(10, underrelaxationFT_exponent);
-            }
-            else if (underrelaxationFT_constant == false)
-            {
-                bool underrelaxation_ok = false;
-                underrelaxationFT_exponent = 1;
-                for (int i = 0; underrelaxation_ok == false; i++)
-                {
-                    if (10 * Math.Abs(underrelaxationFT * forces[1]) > Math.Abs(forces_P[0][1]))
-                    {
-                        underrelaxationFT_exponent -= 1;
-                        underrelaxationFT = underrelaxation_factor * Math.Pow(10, underrelaxationFT_exponent);
-                    }
-                    else
-                    {
-                        underrelaxation_ok = true;
-                        if (underrelaxationFT_exponent > -0)
-                        {
-                            underrelaxationFT_exponent = -0;
-                            underrelaxationFT = underrelaxation_factor * Math.Pow(10, underrelaxationFT_exponent);
-                        }
-                    }
-                }
-            }
-            else
-            {
-                throw new NotImplementedException();
-            }
-            Console.WriteLine("Temporal forces:  " + forces[1] + ", underrelaxationFT is: " + underrelaxationFT);
-            forces_w[0] = underrelaxationFT * forces[0] + (1 - underrelaxationFT) * forces_P[0][0];
-            forces_w[1] = underrelaxationFT * forces[1] + (1 - underrelaxationFT) * forces_P[0][1];
-            this.forces_P.Insert(0, forces_w);
-            forces_P.Remove(forces_P.Last());
+            //double[] forces_w = new double[D];
+            //double underrelaxationFT = 1.0;
+            //if (iteration_counter_P == 0)
+            //{
+            //    underrelaxationFT = 1;
+            //}
+            //else if (underrelaxationFT_constant == true)
+            //{
+            //    underrelaxationFT = Math.Pow(10, underrelaxationFT_exponent);
+            //}
+            //else if (underrelaxationFT_constant == false)
+            //{
+            //    bool underrelaxation_ok = false;
+            //    underrelaxationFT_exponent = 1;
+            //    for (int i = 0; underrelaxation_ok == false; i++)
+            //    {
+            //        if (10 * Math.Abs(underrelaxationFT * forces[1]) > Math.Abs(forces_P[0][1]))
+            //        {
+            //            underrelaxationFT_exponent -= 1;
+            //            underrelaxationFT = underrelaxation_factor * Math.Pow(10, underrelaxationFT_exponent);
+            //        }
+            //        else
+            //        {
+            //            underrelaxation_ok = true;
+            //            if (underrelaxationFT_exponent > -0)
+            //            {
+            //                underrelaxationFT_exponent = -0;
+            //                underrelaxationFT = underrelaxation_factor * Math.Pow(10, underrelaxationFT_exponent);
+            //            }
+            //        }
+            //    }
+            //}
+            //else
+            //{
+            //    throw new NotImplementedException();
+            //}
+            //Console.WriteLine("Temporal forces:  " + forces[1] + ", underrelaxationFT is: " + underrelaxationFT);
+            //forces_w[0] = underrelaxationFT * forces[0] + (1 - underrelaxationFT) * forces_P[0][0];
+            //forces_w[1] = underrelaxationFT * forces[1] + (1 - underrelaxationFT) * forces_P[0][1];
+            //this.forces_P.Insert(0, forces_w);
+            //forces_P.Remove(forces_P.Last());
             #endregion
 
             #region Torque
@@ -959,9 +959,81 @@ namespace BoSSS.Application.FSI_Solver {
                 }
 
             ).Execute();
-            //double torque_w = (torque_P[3] + 3 * torque_P[2] + 3 * torque_P[1] + torque) / 8;
-            //double torque_w = (989 * torque_P[7] + 5888 * torque_P[6] - 928 * torque_P[5] + 10496 * torque_P[4] -4540 * torque_P[3] + 10496 * torque_P[2] - 928 * torque_P[1] + 5888 * torque_P[0] + 989 * torque) / 28350;
-            double torque_w  = underrelaxationFT * torque + (1 - underrelaxationFT) * torque_P[0];
+            
+            double underrelaxationFT = 1.0;
+            double[] temp_underR = new double[D + 1];
+            for (int k = 0; k < D+1; k++)
+            {
+                temp_underR[k] = underrelaxation_factor;
+            }
+            if (iteration_counter_P == 0)
+            {
+                underrelaxationFT = 1;
+            }
+            else if (underrelaxationFT_constant == true)
+            {
+                underrelaxationFT = Math.Pow(10, underrelaxationFT_exponent);
+            }
+            else if (underrelaxationFT_constant == false)
+            {
+                //double[] temp_underR = new double[D + 1];
+                bool underrelaxation_ok = false;
+                underrelaxationFT_exponent = 1;
+                for (int j = 0; j < D; j++)
+                {
+                    underrelaxation_ok = false;
+                    temp_underR[j] = underrelaxation_factor;
+                    for (int i = 0; underrelaxation_ok == false; i++)
+                    {
+                        if (Math.Abs(temp_underR[j] * forces[j]) > Math.Abs(forces_P[0][j]))
+                        {
+                            underrelaxationFT_exponent -= 1;
+                            temp_underR[j] = underrelaxation_factor * Math.Pow(10, underrelaxationFT_exponent);
+                        }
+                        else
+                        {
+                            underrelaxation_ok = true;
+                            if (underrelaxationFT_exponent > -0)
+                            {
+                                underrelaxationFT_exponent = -0;
+                                temp_underR[j] = underrelaxation_factor * Math.Pow(10, underrelaxationFT_exponent);
+                            }
+                        }
+                    }
+                }
+                underrelaxation_ok = false;
+                temp_underR[D] = underrelaxation_factor;
+                for (int i = 0; underrelaxation_ok == false; i++)
+                {
+                    if (Math.Abs(temp_underR[D] * torque) > Math.Abs(torque_P[0]))
+                    {
+                        underrelaxationFT_exponent -= 1;
+                        temp_underR[D] = underrelaxation_factor * Math.Pow(10, underrelaxationFT_exponent);
+                    }
+                    else
+                    {
+                        underrelaxation_ok = true;
+                        if (underrelaxationFT_exponent > -0)
+                        {
+                            underrelaxationFT_exponent = -0;
+                            temp_underR[D] = underrelaxation_factor * Math.Pow(10, underrelaxationFT_exponent);
+                        }
+                    }
+                }
+                underrelaxationFT = temp_underR.Min();
+                //Console.WriteLine("temp_underR[0]:  " + temp_underR[0] + "temp_underR[1]:  " + temp_underR[1] + "temp_underR[2]:  " + temp_underR[2]);
+            }
+            else
+            {
+                throw new NotImplementedException();
+            }
+            Console.WriteLine("Temporal forces:  " + forces[1] + ", underrelaxationFT is: " + temp_underR[1]);
+            double[] forces_w = new double[D];
+            forces_w[0] = temp_underR[0] * forces[0] + (1 - temp_underR[0]) * forces_P[0][0];
+            forces_w[1] = temp_underR[1] * forces[1] + (1 - temp_underR[1]) * forces_P[0][1];
+            this.forces_P.Insert(0, forces_w);
+            forces_P.Remove(forces_P.Last());
+            double torque_w  = temp_underR[2] * torque + (1 - temp_underR[2]) * torque_P[0];
             this.torque_P.Remove(torque_P.Last());
             this.torque_P.Insert(0, torque_w);
 
