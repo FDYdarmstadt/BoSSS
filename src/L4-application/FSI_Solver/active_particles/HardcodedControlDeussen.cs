@@ -254,7 +254,7 @@ namespace BoSSS.Application.FSI_Solver
             C.MaxSolverIterations = 1000;
             C.MinSolverIterations = 1;
             C.NoOfMultigridLevels = 1;
-            C.LevelSet_ConvergenceCriterion = 1e-6;
+            C.LevelSet_ConvergenceCriterion = 5e-9;
             C.LSunderrelax = 1.0;
 
 
