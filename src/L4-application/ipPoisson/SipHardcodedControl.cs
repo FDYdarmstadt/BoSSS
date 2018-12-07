@@ -709,7 +709,7 @@ namespace BoSSS.Application.SipPoisson {
                 int RR = Res ;
                 var Node = MultidimensionalArray.Create(RR, 2);
 
-                bool useMirror = false;
+                bool useMirror = true;
                 double scl = useMirror ? 2.0 : 4.0;
 
                 Node.SetColumn(0, RR.ForLoop(idx => rnd.NextDouble() * scl - 0.5*scl));
