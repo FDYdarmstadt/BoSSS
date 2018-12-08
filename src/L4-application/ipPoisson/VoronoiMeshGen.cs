@@ -1113,21 +1113,7 @@ namespace BoSSS.Application.SipPoisson.Voronoi {
                     // bndy:  o--------o
                     //
                     // out:   o---o----o
-
-                    /*
-                    // pt1 (edge)
-                    edge.isBoundary = true;
-                    if (!bndyEdges.Contains(edge, (a, b) => object.ReferenceEquals(a, b)))
-                        bndyEdges.Add(edge);
-                    Debug.Assert(PointIdentityG(bndy.Interpol(alphaB), edge.VtxB.VTX));
-                    CheckEdgeUniqueness();
-
-                    // pt2 (bndy)
-                    bndy.VtxA = edge.VtxB;
-                    Debug.Assert(bndy.isBoundary == true);
-                    CheckEdgeUniqueness();
-                    */
-
+                    
                     bndy.Split(edge.VtxB, out VoEdge pt1, out VoEdge pt2);
                     pt1.isBoundary = true;
                     pt2.isBoundary = true;
@@ -1146,19 +1132,6 @@ namespace BoSSS.Application.SipPoisson.Voronoi {
                     //
                     // out:   o----o---o
 
-                    /*
-                    // pt2 (edge)
-                    edge.isBoundary = true;
-                    if (!bndyEdges.Contains(edge, (a, b) => object.ReferenceEquals(a, b)))
-                        bndyEdges.Add(edge);
-                    Debug.Assert(PointIdentityG(bndy.Interpol(alphaA), edge.VtxA.VTX));
-                    CheckEdgeUniqueness();
-
-                    // pt1 (bndy)
-                    bndy.VtxB = edge.VtxA;
-                    bndy.isBoundary = true;
-                    CheckEdgeUniqueness();
-                    */
                     bndy.Split(edge.VtxA, out VoEdge pt1, out VoEdge pt2);
                     pt1.isBoundary = true;
                     pt2.isBoundary = true;
@@ -1178,16 +1151,7 @@ namespace BoSSS.Application.SipPoisson.Voronoi {
                     //
                     // out:   o--------o---o
 
-                    /*
-                    // pt1 (bndy)
-                    bndy.Cells.AddRange(edge.Cells);
-
-                    // pt2 (edge)
-                    edge.VtxA = bndy.VtxB;
-                    CheckEdgeUniqueness();
-                    Debug.Assert(edge.isBoundary == false); // outside domain
-                    */
-
+                   
                     edge.Split(bndy.VtxB, out VoEdge pt1, out VoEdge pt2);
                     bndyEdges.MyRemove(bndy);
                     bndyEdges.MySetAdd(pt1);
@@ -1203,15 +1167,6 @@ namespace BoSSS.Application.SipPoisson.Voronoi {
                     //
                     // out:   o---o--------o
 
-                    /*
-                    // pt1 (edge)
-                    edge.VtxB = bndy.VtxA;
-                    CheckEdgeUniqueness();
-                    Debug.Assert(edge.isBoundary == false); // outside domain
-
-                    // pt2 (bndy) 
-                    bndy.Cells.AddRange(edge.Cells);
-                    */
                     edge.Split(bndy.VtxA, out VoEdge pt1, out VoEdge pt2);
                     bndyEdges.MyRemove(bndy);
                     bndyEdges.MySetAdd(pt2);
@@ -1230,24 +1185,7 @@ namespace BoSSS.Application.SipPoisson.Voronoi {
                     //
                     // out:   o---o--------o~~~~o
 
-                    /*
-                    // pt1 (edge)
-                    var t = edge.VtxB;
-                    edge.VtxB = bndy.VtxA;
-                    Debug.Assert(edge.isBoundary == false); // outside domain
-
-                    // pt2 (bndy)
-                    bndy.Cells.AddRange(edge.Cells);
-                    Debug.Assert(bndy.isBoundary == true);
-
-                    // pt3 (new)
-                    var newEdge = VoEdge.Create(bndy.VtxB, t);
-                    newEdge.Cells.AddRange(edge.Cells);
-                    CheckEdgeUniqueness();
-                    Debug.Assert(newEdge.isBoundary == false); // outside domain
-                    */
-
-                    
+                                        
                     VoVertex I1 = bndy.VtxA;
                     VoVertex I2 = bndy.VtxB;
                     edge.Split(I1, out VoEdge pt1, out VoEdge temp);
@@ -1270,22 +1208,7 @@ namespace BoSSS.Application.SipPoisson.Voronoi {
                     // out:    o--o-o~~~o
                     Debug.Assert(alphaB > 0);
 
-                    /*
-                    // pt1 (bndy)
-                    var t = bndy.VtxB;
-                    bndy.VtxB = edge.VtxA;
-                    bndy.isBoundary = true;
-
-                    // pt2 (edge)
-                    edge.isBoundary = true;
-                    bndyEdges.Add(edge);
-
-                    // pt3 (new)
-                    var newBndy = VoEdge.Create(edge.VtxB, t);
-                    newBndy.isBoundary = true;
-                    bndyEdges.Add(newBndy);
-                    */
-
+                   
                     VoVertex I1 = edge.VtxA;
                     VoVertex I2 = edge.VtxB;
                     bndy.Split(I1, out VoEdge pt1, out VoEdge temp);
@@ -1403,19 +1326,6 @@ namespace BoSSS.Application.SipPoisson.Voronoi {
                         newVert = edge.VtxB;
                     }
 
-                    /*
-                    // split bndy -- 1st part:
-                    var t = bndy.VtxB;
-                    bndy.VtxB = newVert;
-                    bndy.isBoundary = true;
-                    CheckEdgeUniqueness();
-
-                    // split bndy -- 2nd part:
-                    var newBndy = VoEdge.Create(newVert, t);
-                    newBndy.isBoundary = true;
-                    newBndy.Cells.AddRange(bndy.Cells);
-                    bndyEdges.Add(newBndy);
-                    */
                     bndy.Split(newVert, out VoEdge pt1, out VoEdge pt2);
                     pt1.isBoundary = true;
                     pt2.isBoundary = true;
@@ -1453,17 +1363,6 @@ namespace BoSSS.Application.SipPoisson.Voronoi {
                     // introduce new vertex
                     var newVert = VoVertex.Create(I);
 
-                    /*
-                    // split bndy -- 1st part:
-                    var t = bndy.VtxB;
-                    bndy.VtxB = newVert;
-
-                    // split bndy -- 2nd part:
-                    var newBndy = VoEdge.Create(newVert, t);
-                    newBndy.isBoundary = true;
-                    newBndy.Cells.AddRange(bndy.Cells);
-                    bndyEdges.Add(newBndy);
-                    */
                     bndy.Split(newVert, out VoEdge pt1, out VoEdge pt2);
                     pt1.isBoundary = true;
                     pt2.isBoundary = true;
@@ -1471,20 +1370,6 @@ namespace BoSSS.Application.SipPoisson.Voronoi {
                     bndyEdges.MySetAdd(pt1);
                     bndyEdges.MySetAdd(pt2);
 
-
-                    /*
-                    // split edge -- 1st part:
-                    var tt = edge.VtxB;
-                    edge.VtxB = newVert;
-                    Debug.Assert(edge.isBoundary == false); // could fail in those cases when an edge exits the domain and enters again
-                    //                                         => store 'isBoundary' separately
-
-                    // split edge -- 2nd part:
-                    var newEdge = VoEdge.Create(newVert, tt);
-                    newEdge.Cells.AddRange(edge.Cells);
-                    Debug.Assert(edge.isBoundary == false); // could fail in those cases when an edge exits the domain and enters again
-                    //                                         => store 'isBoundary' separately
-                    */
                     edge.Split(newVert, out VoEdge ept1, out VoEdge ept2);
 
 
