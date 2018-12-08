@@ -1230,7 +1230,7 @@ namespace BoSSS.Application.SipPoisson.Voronoi {
                     //
                     // out:   o---o--------o~~~~o
 
-
+                    /*
                     // pt1 (edge)
                     var t = edge.VtxB;
                     edge.VtxB = bndy.VtxA;
@@ -1245,18 +1245,17 @@ namespace BoSSS.Application.SipPoisson.Voronoi {
                     newEdge.Cells.AddRange(edge.Cells);
                     CheckEdgeUniqueness();
                     Debug.Assert(newEdge.isBoundary == false); // outside domain
+                    */
 
-
-                    /*
+                    
                     VoVertex I1 = bndy.VtxA;
                     VoVertex I2 = bndy.VtxB;
                     edge.Split(I1, out VoEdge pt1, out VoEdge temp);
                     temp.Split(I2, out VoEdge pt2, out VoEdge pt3);
                     pt2.isBoundary = true;
-                    bool s = bndyEdges.Remove(bndy);
-                    Debug.Assert(s);
+                    bndyEdges.MyRemove(bndy);
                     bndyEdges.Add(pt2);
-                    */
+                    
 
                     // cont
                     CheckEdgeUniqueness();
@@ -1787,13 +1786,25 @@ namespace BoSSS.Application.SipPoisson.Voronoi {
                             Debug.Assert(bndy.VtxA.type == VertexType.Boundary);
                             Debug.Assert(bndy.VtxB.type == VertexType.Boundary);
 
+                            foreach (var eb in bndyEdges) {
+                                eb.CheckCell2Edge();
+                            }
+
+                            //if (iRun == 292)
+                            //    Debugger.Break();
 
                             bool intsc = Intersect(edge, bndy, bndyEdges);
 
 
                             if (intsc) {
                                 iEdge--;
-                                gefinden = true;
+                                gefinden = true; // both lists ('bndyEdges', 'edgeS') may have changed 
+                                //                  the easiest approach is to restart all loops
+
+
+                                foreach(var eb in bndyEdges) {
+                                    eb.CheckCell2Edge();
+                                }
                             }
                         }
                     }
