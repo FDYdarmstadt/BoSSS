@@ -598,7 +598,10 @@ namespace BoSSS.Application.SipPoisson {
         /// <param name="solver_name">
         /// Name of solver to use.
         /// </param>
-        public static SipControl TestVoronoi(int Res, SolverCodes solver_name = SolverCodes.classic_pardiso, int deg = 3) {
+        /// <param name="mirror">
+        /// use vertex mirroring at boundary  to make a large fraction of the Voronoi cells conformal
+        /// </param>
+        public static SipControl TestVoronoi(int Res, SolverCodes solver_name = SolverCodes.classic_pardiso, int deg = 3, bool mirror = true) {
             
              if (System.Environment.MachineName.ToLowerInvariant().EndsWith("rennmaschin")
                 //|| System.Environment.MachineName.ToLowerInvariant().Contains("jenkins")
@@ -709,7 +712,7 @@ namespace BoSSS.Application.SipPoisson {
                 int RR = Res ;
                 var Node = MultidimensionalArray.Create(RR, 2);
 
-                bool useMirror = true;
+                bool useMirror = mirror;
                 double scl = useMirror ? 2.0 : 4.0;
 
                 Node.SetColumn(0, RR.ForLoop(idx => rnd.NextDouble() * scl - 0.5*scl));
@@ -739,99 +742,7 @@ namespace BoSSS.Application.SipPoisson {
             return R;
         }
 
-        /*
-        static void VoronoiTestCode() { 
-            Vector[] DomainBndy = new[] {
-                new Vector(-1, 0), // 6
-                new Vector(-1, 1), // 5
-                new Vector(1, 1), // 4
-                new Vector(1, -1), // 3
-                new Vector(0, -1), // 2
-                new Vector(0, 0), // 1
-            };
-
-            bool IsIn(double xi, double yi) {
-
-                //for(int l = 0; l < bndys.Length; l++) {
-                //    Debug.Assert(bndys[l].Normal.Length == 2);
-                //    if (bndys[l].PointDistance(xi, yi) > 0.0)
-                //        return false;
-                //}
-                if (xi > 1.0)
-                    return false;
-                if (yi > 1.0)
-                    return false;
-                if (xi < 0 && yi < 0)
-                    return false;
-                if (xi < -1)
-                    return false;
-                if (yi < -1)
-                    return false;
-
-                return true;
-            }
-
-            bool IsInV(Vector X) {
-                Debug.Assert(X.Dim == 2);
-                return IsIn(X.x, X.y);
-            }
-
-            Gnuplot gp = new Gnuplot();
-
-            gp.PlotXY(DomainBndy.Select(X => X.x).ToArray(), DomainBndy.Select(X => X.y).ToArray(), "domain",
-                new PlotFormat("-xk"));
-
-            Vector[] VoronoiCell;
-
-            int iTestCase = 3;
-            switch (iTestCase) {
-                case 1:
-                VoronoiCell = new Vector[] {
-                    new Vector(0.5, 0.5),
-                    new Vector(0.5, -2),
-                    new Vector(-2,-2),
-                    new Vector(-2, 0.5)
-                };
-                break;
-
-                case 2:
-                VoronoiCell = new Vector[] {
-                    new Vector(-0.7, 0.5),
-                    new Vector(-0.2, 0.0),
-                    new Vector(-0.8,0.0)
-                };
-                break;
-
-                case 3:
-                VoronoiCell = new Vector[] {
-                    new Vector(-1.5, 0.5),
-                    new Vector(-0.2, 0.5),
-                    new Vector(-0.2, 0.0),
-                    new Vector(-1.5, 0.0)
-                };
-                break;
-
-                default:
-                throw new ArgumentOutOfRangeException();
-            }
-
-            var org = VoronoiCell.CloneAs();
-            var Test = Voronoi.PolygonClipping.WeilerAthertonClipping(DomainBndy, IsInV, VoronoiCell);
-            
-            gp.PlotXY(org.Select(X => X.x).ToArray(), org.Select(X => X.y).ToArray(), "org",
-                new PlotFormat("-ob"));
-            gp.PlotXY(Test.Select(X => X.x).ToArray(), Test.Select(X => X.y).ToArray(), "intersect",
-                new PlotFormat("-or"));
-
-
-            gp.SetXRange(-2.2, 2.2);
-            gp.SetYRange(-2.2, 2.2);
-            gp.Execute();
-            Console.ReadKey();
-
-            return;
-        }
-        */
+        
 
     }
 }
