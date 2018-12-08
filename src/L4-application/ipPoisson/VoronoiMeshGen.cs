@@ -1005,6 +1005,460 @@ namespace BoSSS.Application.SipPoisson.Voronoi {
 
         }
 
+
+        static bool Intersect(VoEdge edge, VoEdge bndy, List<VoEdge> bndyEdges) {
+            // Colinear: exact overlap
+            // - - - - - - - - - - - - 
+
+            if (edge.Equals(bndy)) {
+                // +++++++++++++++++++++++++++++++++++++++++++
+                // special case: edge and bndy overlap exactly
+                // => remove edge
+                // +++++++++++++++++++++++++++++++++++++++++++
+
+                //bndy.Cells.AddRange(edge.Cells);
+                //foreach (var cell in edge.Cells) {
+                //    Debug.Assert(cell.Edges.Contains(edge));
+                //    cell.Edges.Remove(edge);
+                //    cell.Edges.Add(bndy);
+                //}
+
+                //VoEdge.edgeS.RemoveAt(iEdge);
+                //Debug.Assert(false);
+
+                //edge.deleted = true;
+                //iEdge--;
+                //continue;
+                throw new ApplicationException("Error in graph - duplicate edges");
+            }
+
+            // Colinear: partial overlap
+            // - - - - - - - - - - - - - 
+            var vaProj = bndy.plane.ProjectPoint(edge.VtxA.VTX);
+            bool vAinPlane = PointIdentityG(vaProj, edge.VtxA.VTX);
+
+            var vbProj = bndy.plane.ProjectPoint(edge.VtxB.VTX);
+            bool vBinPlane = PointIdentityG(vbProj, edge.VtxB.VTX);
+
+            if (vAinPlane && vBinPlane) {
+                // +++++++++++++++++++
+                // edges are co-linear
+                // +++++++++++++++++++
+
+                if (edge.Dir * bndy.Dir < 0) {
+                    edge.Flip();
+                    Vector t = vaProj;
+                    vaProj = vbProj;
+                    vbProj = t;
+                }
+                Debug.Assert(edge.Dir * bndy.Dir > 0);
+
+                double alphaA = bndy.GetCoord(vaProj);
+                double alphaB = bndy.GetCoord(vbProj);
+                Debug.Assert(alphaA < alphaB);
+                Debug.Assert((alphaA == 0 && alphaB == 1) == false);
+
+                if (alphaB <= 0.0) {
+                    // no overlap
+                    CheckEdgeUniqueness();
+                    return false;
+                }
+
+                if (alphaA >= 1.0) {
+                    // no overlap
+                    CheckEdgeUniqueness();
+                    return false;
+                }
+
+
+                if (alphaA == 0 && alphaB < 1) {
+                    // edge:  o---o
+                    // bndy:  o--------o
+                    //
+                    // out:   o---o----o
+
+                    /*
+                    // pt1 (edge)
+                    edge.isBoundary = true;
+                    if (!bndyEdges.Contains(edge, (a, b) => object.ReferenceEquals(a, b)))
+                        bndyEdges.Add(edge);
+                    Debug.Assert(PointIdentityG(bndy.Interpol(alphaB), edge.VtxB.VTX));
+                    CheckEdgeUniqueness();
+
+                    // pt2 (bndy)
+                    bndy.VtxA = edge.VtxB;
+                    Debug.Assert(bndy.isBoundary == true);
+                    CheckEdgeUniqueness();
+                    */
+
+                    bndy.Split(edge.VtxB, out VoEdge pt1, out VoEdge pt2);
+                    pt1.isBoundary = true;
+                    pt2.isBoundary = true;
+                    bndyEdges.MyRemove(bndy);
+                    bndyEdges.MySetAdd(pt1);
+                    bndyEdges.MySetAdd(pt2);
+
+                    // cont
+                    CheckEdgeUniqueness();
+                    return true;
+                }
+
+                if (alphaB == 1 && alphaA > 0) {
+                    // edge:       o---o
+                    // bndy:  o--------o
+                    //
+                    // out:   o----o---o
+
+                    /*
+                    // pt2 (edge)
+                    edge.isBoundary = true;
+                    if (!bndyEdges.Contains(edge, (a, b) => object.ReferenceEquals(a, b)))
+                        bndyEdges.Add(edge);
+                    Debug.Assert(PointIdentityG(bndy.Interpol(alphaA), edge.VtxA.VTX));
+                    CheckEdgeUniqueness();
+
+                    // pt1 (bndy)
+                    bndy.VtxB = edge.VtxA;
+                    bndy.isBoundary = true;
+                    CheckEdgeUniqueness();
+                    */
+                    bndy.Split(edge.VtxA, out VoEdge pt1, out VoEdge pt2);
+                    pt1.isBoundary = true;
+                    pt2.isBoundary = true;
+                    bndyEdges.MyRemove(bndy);
+                    bndyEdges.MySetAdd(pt1);
+                    bndyEdges.MySetAdd(pt2);
+
+
+                    // cont
+                    CheckEdgeUniqueness();
+                    return true;
+                }
+
+                if (alphaA == 0 && alphaB > 1) {
+                    // edge:  o------------o
+                    // bndy:  o--------o
+                    //
+                    // out:   o--------o---o
+
+                    /*
+                    // pt1 (bndy)
+                    bndy.Cells.AddRange(edge.Cells);
+
+                    // pt2 (edge)
+                    edge.VtxA = bndy.VtxB;
+                    CheckEdgeUniqueness();
+                    Debug.Assert(edge.isBoundary == false); // outside domain
+                    */
+
+                    edge.Split(bndy.VtxB, out VoEdge pt1, out VoEdge pt2);
+                    bndyEdges.MyRemove(bndy);
+                    bndyEdges.MySetAdd(pt1);
+
+                    // cont
+                    CheckEdgeUniqueness();
+                    return true;
+                }
+
+                if (alphaA < 0 && alphaB == 1) {
+                    // edge:  o------------o
+                    // bndy:      o--------o
+                    //
+                    // out:   o---o--------o
+
+                    /*
+                    // pt1 (edge)
+                    edge.VtxB = bndy.VtxA;
+                    CheckEdgeUniqueness();
+                    Debug.Assert(edge.isBoundary == false); // outside domain
+
+                    // pt2 (bndy) 
+                    bndy.Cells.AddRange(edge.Cells);
+                    */
+                    edge.Split(bndy.VtxA, out VoEdge pt1, out VoEdge pt2);
+                    bndyEdges.MyRemove(bndy);
+                    bndyEdges.MySetAdd(pt2);
+
+                    // cont
+                    CheckEdgeUniqueness();
+                    return true;
+                }
+
+                Debug.Assert(alphaA != 0.0); // all special cases should treated by now
+                Debug.Assert(alphaB != 1.0); // all special cases should treated by now
+
+                if (alphaA < 0 && alphaB > 0) {
+                    // edge:  o-----------------o
+                    // bndy:      o--------o
+                    //
+                    // out:   o---o--------o~~~~o
+
+
+                    // pt1 (edge)
+                    var t = edge.VtxB;
+                    edge.VtxB = bndy.VtxA;
+                    Debug.Assert(edge.isBoundary == false); // outside domain
+
+                    // pt2 (bndy)
+                    bndy.Cells.AddRange(edge.Cells);
+                    Debug.Assert(bndy.isBoundary == true);
+
+                    // pt3 (new)
+                    var newEdge = VoEdge.Create(bndy.VtxB, t);
+                    newEdge.Cells.AddRange(edge.Cells);
+                    CheckEdgeUniqueness();
+                    Debug.Assert(newEdge.isBoundary == false); // outside domain
+
+
+                    /*
+                    VoVertex I1 = bndy.VtxA;
+                    VoVertex I2 = bndy.VtxB;
+                    edge.Split(I1, out VoEdge pt1, out VoEdge temp);
+                    temp.Split(I2, out VoEdge pt2, out VoEdge pt3);
+                    pt2.isBoundary = true;
+                    bool s = bndyEdges.Remove(bndy);
+                    Debug.Assert(s);
+                    bndyEdges.Add(pt2);
+                    */
+
+                    // cont
+                    CheckEdgeUniqueness();
+                    return true;
+                }
+
+
+                if (alphaA > 0 && alphaB < 1) {
+                    // edge:      o-o
+                    // bndy:   o--------o
+                    //
+                    // out:    o--o-o~~~o
+                    Debug.Assert(alphaB > 0);
+
+                    /*
+                    // pt1 (bndy)
+                    var t = bndy.VtxB;
+                    bndy.VtxB = edge.VtxA;
+                    bndy.isBoundary = true;
+
+                    // pt2 (edge)
+                    edge.isBoundary = true;
+                    bndyEdges.Add(edge);
+
+                    // pt3 (new)
+                    var newBndy = VoEdge.Create(edge.VtxB, t);
+                    newBndy.isBoundary = true;
+                    bndyEdges.Add(newBndy);
+                    */
+
+                    VoVertex I1 = edge.VtxA;
+                    VoVertex I2 = edge.VtxB;
+                    bndy.Split(I1, out VoEdge pt1, out VoEdge temp);
+                    temp.Split(I2, out VoEdge pt2, out VoEdge pt3);
+                    pt1.isBoundary = true;
+                    pt2.isBoundary = true;
+                    pt3.isBoundary = true;
+                    bndyEdges.MyRemove(bndy);
+                    bndyEdges.MySetAdd(pt1);
+                    bndyEdges.MySetAdd(pt2);
+                    bndyEdges.MySetAdd(pt3);
+
+
+                    // cont
+                    return true;
+                }
+
+                if (alphaA < 0 && alphaB < 1) {
+                    // edge:   o-----o
+                    // bndy:      o--------o
+                    //
+                    // out:    o~~o--o-----o
+
+                    // pt1 (new)
+                    var newEdge = VoEdge.Create(edge.VtxA, bndy.VtxA);
+                    newEdge.Cells.AddRange(edge.Cells);
+                    Debug.Assert(newEdge.isBoundary == false); // outside domain
+
+                    // pt2 (edge)
+                    edge.VtxA = bndy.VtxA;
+                    edge.isBoundary = true;
+                    bndyEdges.MySetAdd(edge);
+
+                    // pt3 (bndy)
+                    bndy.VtxA = edge.VtxB;
+                    bndy.isBoundary = true;
+
+                    // cont
+                    return true;
+                }
+
+                if (alphaA > 0 && alphaB > 1) {
+                    // edge:        o-----o
+                    // bndy:   o--------o
+                    //
+                    // out:    o----o---o~o
+
+                    // pt1 (bndy)
+                    var t = bndy.VtxB;
+                    bndy.VtxB = edge.VtxA;
+                    bndy.isBoundary = true;
+
+                    // pt2 (edge)
+                    edge.isBoundary = true;
+                    var tt = edge.VtxB;
+                    edge.VtxB = t;
+                    bndyEdges.MySetAdd(edge);
+
+                    // pt3 (new)
+                    var newEdge = VoEdge.Create(t, tt);
+                    newEdge.Cells.AddRange(edge.Cells);
+                    Debug.Assert(newEdge.isBoundary == false); // outside domain
+                    CheckEdgeUniqueness();
+
+                    // cont
+                    CheckEdgeUniqueness();
+                    return true;
+                }
+
+
+
+            } else {
+                // +++++++++++++++++++++++++
+                // edges are NOT colinear
+                // +++++++++++++++++++++++++
+
+                if (PointIdentity(bndy.VtxA, edge.VtxA)) { CheckEdgeUniqueness(); return false; } // L-junction
+                if (PointIdentity(bndy.VtxA, edge.VtxB)) { CheckEdgeUniqueness(); return false; } // L-junction
+                if (PointIdentity(bndy.VtxB, edge.VtxA)) { CheckEdgeUniqueness(); return false; } // L-junction
+                if (PointIdentity(bndy.VtxB, edge.VtxB)) { CheckEdgeUniqueness(); return false; } // L-junction
+
+
+                bool cutfound = bndy.Intersect(edge, out double alpha, out double beta, out Vector I);
+                // alpha - coordinate: bndy
+                // beta  - coordinate: edge
+
+                if (!cutfound)
+                    return false;
+
+                if ((alpha == 0 || alpha == 1) && (beta == 0.0 || beta == 1.0)) {
+                    // L-junction: nothing to do
+                    // this *should* have been caught already by the L-junction detection upwards
+                    throw new ApplicationException("should never reach this point - error in algorithm");
+                }
+
+                if (alpha < 0 || alpha > 1 || beta < 0 || beta > 1) {
+                    // no intersection within the finite line segment
+                    return false;
+                }
+
+                if ((beta == 0.0 || beta == 1.0) && (alpha > 0.0 && alpha < 1.0)) {
+                    // T-junction
+
+                    // find junction vertex
+                    VoVertex newVert;
+                    if (beta == 0.0) {
+                        Debug.Assert(vAinPlane);
+                        newVert = edge.VtxA;
+                    } else {
+                        Debug.Assert(beta == 1.0);
+                        Debug.Assert(vBinPlane);
+                        newVert = edge.VtxB;
+                    }
+
+                    /*
+                    // split bndy -- 1st part:
+                    var t = bndy.VtxB;
+                    bndy.VtxB = newVert;
+                    bndy.isBoundary = true;
+                    CheckEdgeUniqueness();
+
+                    // split bndy -- 2nd part:
+                    var newBndy = VoEdge.Create(newVert, t);
+                    newBndy.isBoundary = true;
+                    newBndy.Cells.AddRange(bndy.Cells);
+                    bndyEdges.Add(newBndy);
+                    */
+                    bndy.Split(newVert, out VoEdge pt1, out VoEdge pt2);
+                    pt1.isBoundary = true;
+                    pt2.isBoundary = true;
+                    bndyEdges.MyRemove(bndy);
+                    bndyEdges.MySetAdd(pt1);
+                    bndyEdges.MySetAdd(pt2);
+
+
+                    //
+                    CheckEdgeUniqueness();
+                    return true;
+
+                }
+
+                if ((beta > 0.0 || beta < 1.0) && (alpha == 0.0 || alpha == 1.0)) {
+                    // T-junction
+
+                    // find junction vertex
+                    VoVertex newVert;
+                    if (alpha == 0.0) {
+                        newVert = bndy.VtxA;
+                    } else {
+                        Debug.Assert(alpha == 1.0);
+                        newVert = bndy.VtxB;
+                    }
+
+                    edge.Split(newVert, out VoEdge ept1, out VoEdge ept2);
+                    return true;
+
+                }
+
+                if ((beta > 0.0 || beta < 1.0) && (alpha > 0.0 || alpha < 1.0)){
+                    // X-junction
+
+                    // introduce new vertex
+                    var newVert = VoVertex.Create(I);
+
+                    /*
+                    // split bndy -- 1st part:
+                    var t = bndy.VtxB;
+                    bndy.VtxB = newVert;
+
+                    // split bndy -- 2nd part:
+                    var newBndy = VoEdge.Create(newVert, t);
+                    newBndy.isBoundary = true;
+                    newBndy.Cells.AddRange(bndy.Cells);
+                    bndyEdges.Add(newBndy);
+                    */
+                    bndy.Split(newVert, out VoEdge pt1, out VoEdge pt2);
+                    pt1.isBoundary = true;
+                    pt2.isBoundary = true;
+                    bndyEdges.MyRemove(bndy);
+                    bndyEdges.MySetAdd(pt1);
+                    bndyEdges.MySetAdd(pt2);
+
+
+                    /*
+                    // split edge -- 1st part:
+                    var tt = edge.VtxB;
+                    edge.VtxB = newVert;
+                    Debug.Assert(edge.isBoundary == false); // could fail in those cases when an edge exits the domain and enters again
+                    //                                         => store 'isBoundary' separately
+
+                    // split edge -- 2nd part:
+                    var newEdge = VoEdge.Create(newVert, tt);
+                    newEdge.Cells.AddRange(edge.Cells);
+                    Debug.Assert(edge.isBoundary == false); // could fail in those cases when an edge exits the domain and enters again
+                    //                                         => store 'isBoundary' separately
+                    */
+                    edge.Split(newVert, out VoEdge ept1, out VoEdge ept2);
+
+
+                    //
+                    return true;
+                }
+
+                throw new ApplicationException("should never reach this point - error in algorithm");
+
+            } // edges are NOT colinear
+
+            throw new ApplicationException("should never reach this point - error in algorithm");
+        }
         
 
         
@@ -1289,462 +1743,10 @@ namespace BoSSS.Application.SipPoisson.Voronoi {
                         Debug.Assert(bndy.VtxA.type == VertexType.Boundary);
                         Debug.Assert(bndy.VtxB.type == VertexType.Boundary);
 
-                        // Colinear: exact overlap
-                        // - - - - - - - - - - - - 
-
-                        if (edge.Equals(bndy)) {
-                            // +++++++++++++++++++++++++++++++++++++++++++
-                            // special case: edge and bndy overlap exactly
-                            // => remove edge
-                            // +++++++++++++++++++++++++++++++++++++++++++
-
-                            //bndy.Cells.AddRange(edge.Cells);
-                            //foreach (var cell in edge.Cells) {
-                            //    Debug.Assert(cell.Edges.Contains(edge));
-                            //    cell.Edges.Remove(edge);
-                            //    cell.Edges.Add(bndy);
-                            //}
-
-                            //VoEdge.edgeS.RemoveAt(iEdge);
-                            Debug.Assert(false);
-
-                            //edge.deleted = true;
+                        
+                        bool intsc = Intersect(edge, bndy, bndyEdges);
+                        if(intsc) {
                             iEdge--;
-                            continue;
-                        }
-
-                        // Colinear: partial overlap
-                        // - - - - - - - - - - - - - 
-                        var vaProj = bndy.plane.ProjectPoint(edge.VtxA.VTX);
-                        bool vAinPlane = PointIdentityG(vaProj, edge.VtxA.VTX);
-
-                        var vbProj = bndy.plane.ProjectPoint(edge.VtxB.VTX);
-                        bool vBinPlane = PointIdentityG(vbProj, edge.VtxB.VTX);
-
-                        if (vAinPlane && vBinPlane) {
-                            // +++++++++++++++++++
-                            // edges are co-linear
-                            // +++++++++++++++++++
-
-                            if (edge.Dir * bndy.Dir < 0) {
-                                edge.Flip();
-                                Vector t = vaProj;
-                                vaProj = vbProj;
-                                vbProj = t;
-                            }
-                            Debug.Assert(edge.Dir * bndy.Dir > 0);
-
-                            double alphaA = bndy.GetCoord(vaProj);
-                            double alphaB = bndy.GetCoord(vbProj);
-                            Debug.Assert(alphaA < alphaB);
-                            Debug.Assert((alphaA == 0 && alphaB == 1) == false);
-
-                            if (alphaB <= 0.0) {
-                                // no overlap
-                                CheckEdgeUniqueness();
-                                continue;
-                            }
-
-                            if (alphaA >= 1.0) {
-                                // no overlap
-                                CheckEdgeUniqueness();
-                                continue;
-                            }
-
-                            
-                            if (alphaA == 0 && alphaB < 1) {
-                                // edge:  o---o
-                                // bndy:  o--------o
-                                //
-                                // out:   o---o----o
-
-                                /*
-                                // pt1 (edge)
-                                edge.isBoundary = true;
-                                if (!bndyEdges.Contains(edge, (a, b) => object.ReferenceEquals(a, b)))
-                                    bndyEdges.Add(edge);
-                                Debug.Assert(PointIdentityG(bndy.Interpol(alphaB), edge.VtxB.VTX));
-                                CheckEdgeUniqueness();
-
-                                // pt2 (bndy)
-                                bndy.VtxA = edge.VtxB;
-                                Debug.Assert(bndy.isBoundary == true);
-                                CheckEdgeUniqueness();
-                                */
-
-                                bndy.Split(edge.VtxB, out VoEdge pt1, out VoEdge pt2);
-                                pt1.isBoundary = true;
-                                pt2.isBoundary = true;
-                                bndyEdges.MyRemove(bndy);
-                                bndyEdges.MySetAdd(pt1);
-                                bndyEdges.MySetAdd(pt2);
-
-                                // cont
-                                iEdge--;
-                                CheckEdgeUniqueness();
-                                continue;
-                            }
-
-                            if (alphaB == 1 && alphaA > 0) {
-                                // edge:       o---o
-                                // bndy:  o--------o
-                                //
-                                // out:   o----o---o
-
-                                /*
-                                // pt2 (edge)
-                                edge.isBoundary = true;
-                                if (!bndyEdges.Contains(edge, (a, b) => object.ReferenceEquals(a, b)))
-                                    bndyEdges.Add(edge);
-                                Debug.Assert(PointIdentityG(bndy.Interpol(alphaA), edge.VtxA.VTX));
-                                CheckEdgeUniqueness();
-
-                                // pt1 (bndy)
-                                bndy.VtxB = edge.VtxA;
-                                bndy.isBoundary = true;
-                                CheckEdgeUniqueness();
-                                */
-                                bndy.Split(edge.VtxA, out VoEdge pt1, out VoEdge pt2);
-                                pt1.isBoundary = true;
-                                pt2.isBoundary = true;
-                                bndyEdges.MyRemove(bndy);
-                                bndyEdges.MySetAdd(pt1);
-                                bndyEdges.MySetAdd(pt2);
-
-
-                                // cont
-                                iEdge--;
-                                CheckEdgeUniqueness();
-                                continue;
-                            }
-
-                            if (alphaA == 0 && alphaB > 1) {
-                                // edge:  o------------o
-                                // bndy:  o--------o
-                                //
-                                // out:   o--------o---o
-
-                                /*
-                                // pt1 (bndy)
-                                bndy.Cells.AddRange(edge.Cells);
-
-                                // pt2 (edge)
-                                edge.VtxA = bndy.VtxB;
-                                CheckEdgeUniqueness();
-                                Debug.Assert(edge.isBoundary == false); // outside domain
-                                */
-
-                                edge.Split(bndy.VtxB, out VoEdge pt1, out VoEdge pt2);
-                                bndyEdges.MyRemove(bndy);
-                                bndyEdges.MySetAdd(pt1);
-
-                                // cont
-                                iEdge--;
-                                CheckEdgeUniqueness();
-                                continue;
-                            }
-
-                            if (alphaA < 0 && alphaB == 1) {
-                                // edge:  o------------o
-                                // bndy:      o--------o
-                                //
-                                // out:   o---o--------o
-
-                                /*
-                                // pt1 (edge)
-                                edge.VtxB = bndy.VtxA;
-                                CheckEdgeUniqueness();
-                                Debug.Assert(edge.isBoundary == false); // outside domain
-
-                                // pt2 (bndy) 
-                                bndy.Cells.AddRange(edge.Cells);
-                                */
-                                edge.Split(bndy.VtxA, out VoEdge pt1, out VoEdge pt2);
-                                bndyEdges.MyRemove(bndy);
-                                bndyEdges.MySetAdd(pt2);
-                                
-                                // cont
-                                iEdge--;
-                                CheckEdgeUniqueness();
-                                continue;
-                            }
-
-                            Debug.Assert(alphaA != 0.0); // all special cases should treated by now
-                            Debug.Assert(alphaB != 1.0); // all special cases should treated by now
-
-                            if (alphaA < 0 && alphaB > 0) {
-                                // edge:  o-----------------o
-                                // bndy:      o--------o
-                                //
-                                // out:   o---o--------o~~~~o
-
-                                
-                                // pt1 (edge)
-                                var t = edge.VtxB;
-                                edge.VtxB = bndy.VtxA;
-                                Debug.Assert(edge.isBoundary == false); // outside domain
-
-                                // pt2 (bndy)
-                                bndy.Cells.AddRange(edge.Cells);
-                                Debug.Assert(bndy.isBoundary == true);
-
-                                // pt3 (new)
-                                var newEdge = VoEdge.Create(bndy.VtxB, t);
-                                newEdge.Cells.AddRange(edge.Cells);
-                                CheckEdgeUniqueness();
-                                Debug.Assert(newEdge.isBoundary == false); // outside domain
-                                
-
-                                /*
-                                VoVertex I1 = bndy.VtxA;
-                                VoVertex I2 = bndy.VtxB;
-                                edge.Split(I1, out VoEdge pt1, out VoEdge temp);
-                                temp.Split(I2, out VoEdge pt2, out VoEdge pt3);
-                                pt2.isBoundary = true;
-                                bool s = bndyEdges.Remove(bndy);
-                                Debug.Assert(s);
-                                bndyEdges.Add(pt2);
-                                */
-                                
-                                // cont
-                                iEdge--;
-                                CheckEdgeUniqueness();
-                                continue;
-                            }
-
-
-                            if (alphaA > 0 && alphaB < 1) {
-                                // edge:      o-o
-                                // bndy:   o--------o
-                                //
-                                // out:    o--o-o~~~o
-                                Debug.Assert(alphaB > 0);
-
-                                /*
-                                // pt1 (bndy)
-                                var t = bndy.VtxB;
-                                bndy.VtxB = edge.VtxA;
-                                bndy.isBoundary = true;
-
-                                // pt2 (edge)
-                                edge.isBoundary = true;
-                                bndyEdges.Add(edge);
-
-                                // pt3 (new)
-                                var newBndy = VoEdge.Create(edge.VtxB, t);
-                                newBndy.isBoundary = true;
-                                bndyEdges.Add(newBndy);
-                                */
-                                
-                                VoVertex I1 = edge.VtxA;
-                                VoVertex I2 = edge.VtxB;
-                                bndy.Split(I1, out VoEdge pt1, out VoEdge temp);
-                                temp.Split(I2, out VoEdge pt2, out VoEdge pt3);
-                                pt1.isBoundary = true;
-                                pt2.isBoundary = true;
-                                pt3.isBoundary = true;
-                                bndyEdges.MyRemove(bndy);
-                                bndyEdges.MySetAdd(pt1);
-                                bndyEdges.MySetAdd(pt2);
-                                bndyEdges.MySetAdd(pt3);
-                                
-
-                                // cont
-                                iEdge--;
-                                continue;
-                            }
-
-                            if (alphaA < 0 && alphaB < 1) {
-                                // edge:   o-----o
-                                // bndy:      o--------o
-                                //
-                                // out:    o~~o--o-----o
-
-                                // pt1 (new)
-                                var newEdge = VoEdge.Create(edge.VtxA, bndy.VtxA);
-                                newEdge.Cells.AddRange(edge.Cells);
-                                Debug.Assert(newEdge.isBoundary == false); // outside domain
-
-                                // pt2 (edge)
-                                edge.VtxA = bndy.VtxA;
-                                edge.isBoundary = true;
-                                if (!bndyEdges.Contains(edge, (a, b) => object.ReferenceEquals(a, b)))
-                                    bndyEdges.Add(edge);
-
-                                // pt3 (bndy)
-                                bndy.VtxA = edge.VtxB;
-                                bndy.isBoundary = true;
-
-                                // cont
-                                iEdge--;
-                                continue;
-                            }
-
-                            if (alphaA > 0 && alphaB > 1) {
-                                // edge:        o-----o
-                                // bndy:   o--------o
-                                //
-                                // out:    o----o---o~o
-
-                                // pt1 (bndy)
-                                var t = bndy.VtxB;
-                                bndy.VtxB = edge.VtxA;
-                                bndy.isBoundary = true;
-
-                                // pt2 (edge)
-                                edge.isBoundary = true;
-                                var tt = edge.VtxB;
-                                edge.VtxB = t;
-                                if (!bndyEdges.Contains(edge, (a, b) => object.ReferenceEquals(a, b)))
-                                    bndyEdges.Add(edge);
-
-                                // pt3 (new)
-                                var newEdge = VoEdge.Create(t, tt);
-                                newEdge.Cells.AddRange(edge.Cells);
-                                Debug.Assert(newEdge.isBoundary == false); // outside domain
-                                CheckEdgeUniqueness();
-
-                                // cont
-                                iEdge--;
-                                CheckEdgeUniqueness();
-                                continue;
-                            }
-
-
-
-                        } else {
-                            // +++++++++++++++++++++++++
-                            // edges are NOT colinear
-                            // +++++++++++++++++++++++++
-
-                            if (PointIdentity(bndy.VtxA, edge.VtxA)) { CheckEdgeUniqueness(); continue; } // L-junction
-                            if (PointIdentity(bndy.VtxA, edge.VtxB)) { CheckEdgeUniqueness(); continue; } // L-junction
-                            if (PointIdentity(bndy.VtxB, edge.VtxA)) { CheckEdgeUniqueness(); continue; } // L-junction
-                            if (PointIdentity(bndy.VtxB, edge.VtxB)) { CheckEdgeUniqueness(); continue; } // L-junction
-
-
-                            bool cutfound = bndy.Intersect(edge, out double alpha, out double beta, out Vector I);
-                            // alpha - coordinate: bndy
-                            // beta  - coordinate: edge
-
-                            if (cutfound) {
-                                //var vaProj = bndy.plane.ProjectPoint(edge.VtxA.VTX);
-                                //bool vAinPlane = PointIdentity(vaProj, edge.VtxA.VTX);
-
-                                //var vbProj = bndy.plane.ProjectPoint(edge.VtxB.VTX);
-                                //bool vBinPlane = PointIdentity(vbProj, edge.VtxB.VTX);
-
-                                bool isL = false;
-                                if ((alpha == 0 || alpha == 1) && (beta == 0.0 || beta == 1.0)) {
-                                    // L-junction: nothing to do
-
-                                    isL = true;
-                                    //
-                                    //continue;
-                                }
-                                Debug.Assert(isL == false);
-
-                                if ((beta == 0.0 || beta == 1.0) && (alpha > 0.0 && alpha < 1.0)) {
-                                    // T-junction
-
-                                    // find junction vertex
-                                    VoVertex newVert;
-                                    if (beta == 0.0) {
-                                        Debug.Assert(vAinPlane);
-                                        newVert = edge.VtxA;
-                                    } else {
-                                        Debug.Assert(beta == 1.0);
-                                        Debug.Assert(vBinPlane);
-                                        newVert = edge.VtxB;
-                                    }
-
-                                    /*
-                                    // split bndy -- 1st part:
-                                    var t = bndy.VtxB;
-                                    bndy.VtxB = newVert;
-                                    bndy.isBoundary = true;
-                                    CheckEdgeUniqueness();
-
-                                    // split bndy -- 2nd part:
-                                    var newBndy = VoEdge.Create(newVert, t);
-                                    newBndy.isBoundary = true;
-                                    newBndy.Cells.AddRange(bndy.Cells);
-                                    bndyEdges.Add(newBndy);
-                                    */
-                                    bndy.Split(newVert, out VoEdge pt1, out VoEdge pt2);
-                                    pt1.isBoundary = true;
-                                    pt2.isBoundary = true;
-                                    bndyEdges.MyRemove(bndy);
-                                    bndyEdges.MySetAdd(pt1);
-                                    bndyEdges.MySetAdd(pt2);
-
-
-                                    //
-                                    CheckEdgeUniqueness();
-                                    continue;
-
-                                } if ((beta > 0.0 || beta < 1.0) && (alpha == 0.0 || alpha == 1.0)) {
-                                    // T-junction
-
-                                    // find junction vertex
-                                    VoVertex newVert;
-                                    if (alpha == 0.0) {
-                                        newVert = bndy.VtxA;
-                                    } else {
-                                        Debug.Assert(alpha == 1.0);
-                                        newVert = bndy.VtxB;
-                                    }
-
-                                    edge.Split(newVert, out VoEdge ept1, out VoEdge ept2);
-                                    
-
-                                } else {
-                                    // X-junction
-
-                                    // introduce new vertex
-                                    var newVert = VoVertex.Create(I);
-
-                                    /*
-                                    // split bndy -- 1st part:
-                                    var t = bndy.VtxB;
-                                    bndy.VtxB = newVert;
-
-                                    // split bndy -- 2nd part:
-                                    var newBndy = VoEdge.Create(newVert, t);
-                                    newBndy.isBoundary = true;
-                                    newBndy.Cells.AddRange(bndy.Cells);
-                                    bndyEdges.Add(newBndy);
-                                    */
-                                    bndy.Split(newVert, out VoEdge pt1, out VoEdge pt2);
-                                    pt1.isBoundary = true;
-                                    pt2.isBoundary = true;
-                                    bndyEdges.MyRemove(bndy);
-                                    bndyEdges.MySetAdd(pt1);
-                                    bndyEdges.MySetAdd(pt2);
-
-
-                                    /*
-                                    // split edge -- 1st part:
-                                    var tt = edge.VtxB;
-                                    edge.VtxB = newVert;
-                                    Debug.Assert(edge.isBoundary == false); // could fail in those cases when an edge exits the domain and enters again
-                                    //                                         => store 'isBoundary' separately
-
-                                    // split edge -- 2nd part:
-                                    var newEdge = VoEdge.Create(newVert, tt);
-                                    newEdge.Cells.AddRange(edge.Cells);
-                                    Debug.Assert(edge.isBoundary == false); // could fail in those cases when an edge exits the domain and enters again
-                                    //                                         => store 'isBoundary' separately
-                                    */
-                                    edge.Split(newVert, out VoEdge ept1, out VoEdge ept2);
-
-
-                                    //
-                                    iEdge--;
-                                    continue;
-                                }
-
-                            }
                         }
                     }
                 }
