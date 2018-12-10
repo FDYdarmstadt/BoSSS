@@ -140,17 +140,6 @@ namespace BoSSS.Application.XNSE_Solver {
         /// </summary>
         //XDGField divVelocity;
 
-
-        SinglePhaseField MassBalanceAtInterface;
-
-        VectorField<SinglePhaseField> MomentumBalanceAtInterface;
-
-        SinglePhaseField EnergyBalanceAtInterface;
-
-        XDGField KineticEnergy;
-
-        XDGField KineticDissipation;
-
         /// <summary>
         /// If requested, performs the projection of the level-set on a continuous field
         /// </summary>
@@ -3532,6 +3521,25 @@ namespace BoSSS.Application.XNSE_Solver {
 
             return meanVelocity;
         }
+
+        // ===================================
+        // related stuff for property tracking (e.g. kinetic energy)
+        // ===================================
+        #region tracking
+
+        SinglePhaseField MassBalanceAtInterface;
+
+        VectorField<SinglePhaseField> MomentumBalanceAtInterface;
+
+        SinglePhaseField EnergyBalanceAtInterface;
+
+        XDGField KineticEnergy;
+
+        XDGField KineticDissipation;
+
+        XSpatialOperator KineticEnergyBalance;
+
+        #endregion
 
 
         // =====================================

@@ -126,7 +126,7 @@ namespace BoSSS.Solution.XNSECommon {
                 "Curvature",
                 (new string[] { "surfForceX", "surfForceY", "surfForceZ" }).GetSubVector(0, D),
                 (new string[] { "NX", "NY", "NZ" }).GetSubVector(0, D),
-                (evaporation ? new string[] { "GradTempX", "GradTempY", "GradTempZ" }.GetSubVector(0, D) : null)
+                (new string[] { "GradTempX", "GradTempY", "GradTempZ" }.GetSubVector(0, D))
                 );
             DomName = ArrayTools.Cat(VariableNames.VelocityVector(D), VariableNames.Pressure);
 
@@ -685,7 +685,7 @@ namespace BoSSS.Solution.XNSECommon {
                 Curvature,
                 ((SurfaceForce != null) ? SurfaceForce.ToArray() : new SinglePhaseField[D]),
                 Normals,
-                ((evaporation) ? GradTemp : null));
+                ((evaporation) ? GradTemp.ToArray() : new SinglePhaseField[D]));
 
             // linearization velocity:
             if(this.U0meanrequired) {

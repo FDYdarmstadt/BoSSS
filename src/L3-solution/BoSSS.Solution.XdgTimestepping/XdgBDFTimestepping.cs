@@ -936,6 +936,7 @@ namespace BoSSS.Solution.XdgTimestepping {
 
                 bool updateAgglom = false;
                 if ((this.Config_LevelSetHandling == LevelSetHandling.Coupled_Once && m_IterationCounter == 0)
+                    || (this.Config_LevelSetHandling == LevelSetHandling.Coupled_Iterative && m_IterationCounter == 0)
                     || (this.Config_LevelSetHandling == LevelSetHandling.Coupled_Iterative && CoupledIteration)) {
 
                     m_CoupledIterations++;
