@@ -102,8 +102,9 @@ namespace BoSSS.Application.FSI_Solver {
         public double tempAng_P;
         public int iteration_counter_P = 0;
         public bool underrelaxationFT_constant = true;
-        public int underrelaxationFT_exponent = 1;
+        public int underrelaxationFT_exponent = 0;
         public double underrelaxation_factor = 1;
+        public int underrelaxationFT_exponent_min = 0;
 
         /// <summary>
         /// Shape of the particle
@@ -503,7 +504,7 @@ namespace BoSSS.Application.FSI_Solver {
             double massDifference = (rho_P - rho_Fluid) * (area_P);
             double[] previous_vel = new double[2];
 
-            if (iteration_counter_P == 0)
+            if (iteration_counter_P == 1)
             {
                 previous_vel = vel_P[0];
             }
@@ -576,8 +577,10 @@ namespace BoSSS.Application.FSI_Solver {
 
             //Crank Nicolson
             // =============================
-            tempForceNew[0] = (forces_P[0][0] + forces_P[1][0]) / 2+ massDifference * gravity[0];
-            tempForceNew[1] = (forces_P[1][1] + forces_P[0][1]) / 2 + massDifference * gravity[1];
+            //tempForceNew[0] = (forces_P[0][0] + forces_P[1][0]) / 2 + massDifference * gravity[0];
+            //tempForceNew[1] = (forces_P[1][1] + forces_P[0][1]) / 2 + massDifference * gravity[1];
+            tempForceNew[0] = (forces_P[0][0]) + massDifference * gravity[0];
+            tempForceNew[1] = (forces_P[0][1]) + massDifference * gravity[1];
             //temp.SetV(vel_P[0], 1);
             //temp.AccV(dt / mass_P, tempForceNew);
             temp[0] = previous_vel[0] + dt / mass_P * tempForceNew[0];
@@ -627,6 +630,11 @@ namespace BoSSS.Application.FSI_Solver {
             double rot_iteration_counter = 0;
             noOfSubtimesteps = 1;
             subtimestep = dt / noOfSubtimesteps;
+            double previous_rot = new double();
+            if (iteration_counter_P == 1)
+            {
+                previous_rot = rot_P[0];
+            }
 
             // Benjamin Stuff
             //for (int i = 1; i <= noOfSubtimesteps; i++) {
@@ -635,7 +643,8 @@ namespace BoSSS.Application.FSI_Solver {
             //}
 
             for (int i = 1; i <= noOfSubtimesteps; i++) {
-                newAngularVelocity = rot_P[0] + (dt / MomentOfInertia_P) * (torque_P[0] + torque_P[1]); // for 2D
+                //newAngularVelocity = rot_P[0] + (dt / MomentOfInertia_P) * (torque_P[0] + torque_P[1]); // for 2D
+                newAngularVelocity = previous_rot + (dt / MomentOfInertia_P) * (torque_P[0]); // for 2D
 
                 oldAngularVelocity = newAngularVelocity;
 
@@ -894,30 +903,42 @@ namespace BoSSS.Application.FSI_Solver {
                 }
 
             ).Execute();
-            
+
+            // determine underrelaxation factor (URF)
+            // =============================
             double underrelaxationFT = 1.0;
             double[] temp_underR = new double[D + 1];
             for (int k = 0; k < D+1; k++)
             {
                 temp_underR[k] = underrelaxation_factor;
             }
-            if (iteration_counter_P == 0)
+            // first iteration, set URF to 1
+            if (iteration_counter_P == 1)
             {
-                underrelaxationFT = 1;
+                for (int k = 0; k < D + 1; k++)
+                {
+                    temp_underR[k] = 1;
+                }
             }
+            // constant predefined URF
             else if (underrelaxationFT_constant == true)
             {
-                underrelaxationFT = underrelaxation_factor * Math.Pow(10, underrelaxationFT_exponent);
+                for (int k = 0; k < D + 1; k++)
+                {
+                    temp_underR[k] = underrelaxation_factor * Math.Pow(10, underrelaxationFT_exponent);
+                }
             }
+            // calculation of URF for adaptive underrelaxation
             else if (underrelaxationFT_constant == false)
             {
-                //double[] temp_underR = new double[D + 1];
+                // forces
                 bool underrelaxation_ok = false;
                 underrelaxationFT_exponent = 1;
                 for (int j = 0; j < D; j++)
                 {
                     underrelaxation_ok = false;
                     temp_underR[j] = underrelaxation_factor;
+                    underrelaxationFT_exponent = 0;
                     for (int i = 0; underrelaxation_ok == false; i++)
                     {
                         if (Math.Abs(temp_underR[j] * forces[j]) > Math.Abs(forces_P[0][j]))
@@ -925,19 +946,27 @@ namespace BoSSS.Application.FSI_Solver {
                             underrelaxationFT_exponent -= 1;
                             temp_underR[j] = underrelaxation_factor * Math.Pow(10, underrelaxationFT_exponent);
                         }
+
                         else
                         {
                             underrelaxation_ok = true;
-                            if (underrelaxationFT_exponent > -0)
+                            if (underrelaxationFT_exponent >= underrelaxationFT_exponent_min && iteration_counter_P > 15)
                             {
-                                underrelaxationFT_exponent = -0;
+                                underrelaxationFT_exponent = underrelaxationFT_exponent_min;
+                                temp_underR[j] = underrelaxation_factor * Math.Pow(10, underrelaxationFT_exponent);
+                            }
+                            else if (underrelaxationFT_exponent > 0)
+                            {
+                                underrelaxationFT_exponent = 0;
                                 temp_underR[j] = underrelaxation_factor * Math.Pow(10, underrelaxationFT_exponent);
                             }
                         }
                     }
                 }
+                // torque
                 underrelaxation_ok = false;
                 temp_underR[D] = underrelaxation_factor;
+                underrelaxationFT_exponent = 0;
                 for (int i = 0; underrelaxation_ok == false; i++)
                 {
                     if (Math.Abs(temp_underR[D] * torque) > Math.Abs(torque_P[0]))
@@ -948,21 +977,33 @@ namespace BoSSS.Application.FSI_Solver {
                     else
                     {
                         underrelaxation_ok = true;
-                        if (underrelaxationFT_exponent > -0)
+                        if (underrelaxationFT_exponent > underrelaxationFT_exponent_min && iteration_counter_P > 15)
                         {
-                            underrelaxationFT_exponent = -0;
+                            underrelaxationFT_exponent = underrelaxationFT_exponent_min;
+                            temp_underR[D] = underrelaxation_factor * Math.Pow(10, underrelaxationFT_exponent);
+                        }
+                        else if (underrelaxationFT_exponent > 0)
+                        {
+                            underrelaxationFT_exponent = 0;
                             temp_underR[D] = underrelaxation_factor * Math.Pow(10, underrelaxationFT_exponent);
                         }
                     }
                 }
             }
-
+            Console.WriteLine("tempunderR[0]  " + temp_underR[0] + ", temp_underR[1]: " + temp_underR[1] + ", temp_underR[D] " + temp_underR[D]);
+            Console.WriteLine("tempfForces[0]  " + forces[0] + ", temp_Forces[1]: " + forces[1] + ", tempTorque " + torque);
+            // calculation of forces and torque with underrelaxation
+            // =============================
+            //forces
             double[] forces_underR = new double[D];
             for (int i = 0; i < D; i++)
             {
                 forces_underR[i] = temp_underR[i] * forces[i] + (1 - temp_underR[i]) * forces_P[0][i];
             }
+            //torque
+
             double torque_underR = temp_underR[D] * torque + (1 - temp_underR[D]) * torque_P[0];
+            //update forces and torque
             this.forces_P.Insert(0, forces_underR);
             forces_P.Remove(forces_P.Last());
             this.torque_P.Remove(torque_P.Last());
