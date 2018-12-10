@@ -183,7 +183,7 @@ namespace BoSSS.Foundation {
             // we project the basis function from 'jCell1' onto 'jCell0'
 
             CellQuadrature.GetQuadrature(new int[2] { N, M }, m_Context,
-                (new CellQuadratureScheme(true, cellMask)).Compile(m_Context, this.Degree * 2), // integrate over target cell
+                (new CellQuadratureScheme(true, cellMask)).Compile(m_Context, this.Degree + pl.MaxAbsoluteDegree), // integrate over target cell
                 delegate (int i0, int Length, QuadRule QR, MultidimensionalArray _EvalResult) {
                     NodeSet nodes_Cell0 = QR.Nodes;
                     Debug.Assert(Length == 1);

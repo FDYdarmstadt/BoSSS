@@ -1661,5 +1661,28 @@ namespace ilPSP {
         }
 
         #endregion
+
+        /// <summary>
+        /// a vector if 1D, a matrix if 2D, otherwise only the dimensions
+        /// </summary>
+        /// <returns></returns>
+        public override string ToString() {
+            using (var stw = new StringWriter()) {
+                if (this.Dimension == 1) {
+                    VectorIO.SaveToStream(this.To1DArray(), stw, MPI.Wrappers.csMPI.Raw._COMM.SELF);
+                } else if(this.Dimension == 2) {
+                    IMatrixExtensions.SaveToStream(this, stw);
+                } else {
+                    stw.Write("Multidimensional Array: ");
+                    for(int d = 0; d < Dimension; d++) {
+                        stw.Write(GetLength(d));
+                        if (d < Dimension - 1)
+                            stw.Write("x");
+                    }
+                }
+                
+                return stw.ToString();
+            }
+        }
     }
 }
