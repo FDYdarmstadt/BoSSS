@@ -716,7 +716,7 @@ namespace BoSSS.Application.FSI_Solver {
                             {
                                 foreach (Particle p in m_Particles)
                                 {
-                                    Console.WriteLine("Temp x-position:  " + p.currentPos_P[0][0]);
+                                    Console.WriteLine("Temp x-position:  " + p.currentPos_P[0][1]);
                                     p.iteration_counter_P = 1;
                                     p.tempPos_P[0] = p.currentPos_P[0][0];
                                     p.tempPos_P[1] = p.currentPos_P[0][1];
