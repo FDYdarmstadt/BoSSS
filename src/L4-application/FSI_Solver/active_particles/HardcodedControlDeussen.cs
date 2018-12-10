@@ -30,7 +30,7 @@ namespace BoSSS.Application.FSI_Solver
 {
     public class HardcodedControlDeussen : IBM_Solver.HardcodedTestExamples
     {
-        public static FSI_Control TestActiveParticle(string _DbPath = null, int k = 2, double VelXBase = 0.0, double stressM = 1 , double cellAgg = 0.2, int maxCurv = 20, double muA = 1e-1)
+        public static FSI_Control TestActiveParticle(string _DbPath = null, int k = 2, double VelXBase = 0.0, double stressM = 1 , double cellAgg = 0.2, int maxCurv = 20, double muA = 1e6)
         {
             FSI_Control C = new FSI_Control();
 
@@ -199,12 +199,11 @@ namespace BoSSS.Application.FSI_Solver
                     includeGravity = true,
                     active_P = false,
                     stress_magnitude_P = stressM,
-                    thickness_P = 0.05,
+                    thickness_P = 0.5,
                     length_P = 0.5,
-                    velResidual_ConvergenceCriterion = 1e-18,
                     underrelaxationFT_constant = false,
-                    underrelaxationFT_exponent = -0,
-                    underrelaxation_factor = 0.5
+                    underrelaxation_factor = 0.1,
+                    underrelaxationFT_exponent_min = -3
                 });
             }
             //Define level-set
@@ -253,7 +252,7 @@ namespace BoSSS.Application.FSI_Solver
             C.MaxSolverIterations = 1000;
             C.MinSolverIterations = 1;
             C.NoOfMultigridLevels = 1;
-            C.LevelSet_ConvergenceCriterion = 5e-10;
+            C.LevelSet_ConvergenceCriterion = 1e-10;
             C.LSunderrelax = 1.0;
 
 
