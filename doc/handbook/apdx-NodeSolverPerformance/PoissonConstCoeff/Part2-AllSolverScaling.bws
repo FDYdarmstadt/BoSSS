@@ -548,7 +548,7 @@ LastError
 ==============
 **************
 ==============
-var CL = multiplots.ToGnuplot().PlotCairolatex(xSize:16,ySize:12);
+var CL = multiplots.ToGnuplot().PlotCairolatex(xSize:14,ySize:12);
 **************
 Using gnuplot: C:\Program Files (x86)\FDY\BoSSS\bin\native\win\gnuplot-gp510-20160418-win32-mingw\gnuplot\bin\gnuplot.exe
 set key inside top left Left reverse 
@@ -564,6 +564,12 @@ System.ComponentModel.Win32Exception occurred: Das System kann die angegebene Da
 ==============
 LastError
 **************
+System.ComponentModel.Win32Exception (0x80004005): Das System kann die angegebene Datei nicht finden
+   bei System.Diagnostics.Process.StartWithShellExecuteEx(ProcessStartInfo startInfo)
+   bei BoSSS.Application.BoSSSpad.GnuplotExtensions.CairolatexContainer.Preview(Boolean trimPage, Int32 dpi) in C:\BoSSS\BoSSS-SolverPerformance\public\src\L4-application\BoSSSpad\GnuplotExtensions.cs:Zeile 325.
+   bei <InteractiveExpressionClass>.Host(Object& $retval)
+   bei Mono.CSharp.Evaluator.Evaluate(String input, Object& result, Boolean& result_set)
+   bei BoSSS.Application.BoSSSpad.ReadEvalPrintLoop.EvalPrint(String line, Assembly& AssemblyProduced) in C:\BoSSS\BoSSS-SolverPerformance\public\src\L4-application\BoSSSpad\ReadEvalPrintLoop.cs:Zeile 318.
 ==============
 CL.WriteMinimalCompileableExample(
    Path.Combine(CurrentDocDir, "plots", "MainConstCoeffPoissonScaling.tex"),
