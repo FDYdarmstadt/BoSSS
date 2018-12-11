@@ -1519,7 +1519,7 @@ namespace BoSSS.Application.SipPoisson.Voronoi {
 
 
 
-        static public AggregationGrid FromPolygonalDomain(MultidimensionalArray Nodes, Vector[] PolygonBoundary, bool mirroring, Func<Vector, bool> IsIn, Func<Vector, Vector, bool> __PointIdentity) {
+        static public AggregationGrid FromPolygonalDomain(MultidimensionalArray Nodes, Vector[] PolygonBoundary, bool mirroring, int NoOfLyyodsIter, Func<Vector, bool> IsIn, Func<Vector, Vector, bool> __PointIdentity) {
 
             // check arguments
             // ===============
@@ -1587,10 +1587,11 @@ namespace BoSSS.Application.SipPoisson.Voronoi {
 
             int[][] VocellVertexIndex;
             List<Vector> Verts;
+            MultidimensionalArray DelaunayVertices;
             {
                 VocellVertexIndex = null;
                 Verts = null;
-                for (int iLloyd = 0; iLloyd < 5; iLloyd++) {
+                for (int iLloyd = 0; iLloyd < NoOfLyyodsIter; iLloyd++) {
 
                     // Lloyds algorithm (Voronoi relaxation)
                     // -------------------------------------
@@ -1609,7 +1610,18 @@ namespace BoSSS.Application.SipPoisson.Voronoi {
                                 }
                                 COG.Scale(1.0 / cell.Length);
 
+                                // apply gravity
+                                double x = COG.x;
+                                double y = COG.y;
+                                double a = 2.0;
+                                Vector G = new Vector(
+                                    -2 * x * a * a * Math.Exp(-(x * x + y * y) * a * a),
+                                    -2 * y * a * a * Math.Exp(-(x * x + y * y) * a * a)
+                                    );
+                                COG += G * 0.1;
 
+
+                                // 
                                 Nodes.SetRowPt(jV, COG);
                             }
                         }
@@ -1617,7 +1629,6 @@ namespace BoSSS.Application.SipPoisson.Voronoi {
 
                     // Optional Vertex Mirroring
                     // -------------------------
-                    MultidimensionalArray NewNodes;
                     if (mirroring) {
 
                         double[] xNodes = Nodes.GetColumn(0);
@@ -1626,25 +1637,25 @@ namespace BoSSS.Application.SipPoisson.Voronoi {
                         Mirror(ref xNodes, ref yNodes, Boundaries, IsIn);
                         Debug.Assert(xNodes.Length == yNodes.Length);
 
-                        NewNodes = MultidimensionalArray.Create(xNodes.Length, 2);
-                        NewNodes.SetColumn(0, xNodes);
-                        NewNodes.SetColumn(1, yNodes);
+                        DelaunayVertices = MultidimensionalArray.Create(xNodes.Length, 2);
+                        DelaunayVertices.SetColumn(0, xNodes);
+                        DelaunayVertices.SetColumn(1, yNodes);
 
                     } else {
-                        NewNodes = Nodes.CloneAs();
+                        DelaunayVertices = Nodes.CloneAs();
                     }
 
                     // Voronoi generation using matlab
                     // --------------------------------
 
                     using (var Matlab = new BatchmodeConnector()) {
-                        Matlab.PutMatrix(NewNodes, "Nodes");
+                        Matlab.PutMatrix(DelaunayVertices, "Nodes");
 
                         // compute Voronoi diagramm
                         Matlab.Cmd("[V, C] = voronoin(Nodes);");
 
                         // output (export from matlab)
-                        VocellVertexIndex = new int[NewNodes.NoOfRows][];
+                        VocellVertexIndex = new int[DelaunayVertices.NoOfRows][];
                         Matlab.GetStaggeredIntArray(VocellVertexIndex, "C");
                         Matlab.GetMatrix(null, "V");
 
@@ -1667,6 +1678,8 @@ namespace BoSSS.Application.SipPoisson.Voronoi {
                         }
                     }
                 }
+
+
 
                 // fix Voronoi cell orientation
                 // ----------------------------
@@ -1763,6 +1776,7 @@ namespace BoSSS.Application.SipPoisson.Voronoi {
                 //    throw new ArithmeticException("Voronoi diagram seems to be completely disjoint - no edge is used by at least two cells.");
             }
 
+            //DelaunayVertices.NoOfRows
 
          
             // Add boundary edges 
@@ -2082,7 +2096,13 @@ namespace BoSSS.Application.SipPoisson.Voronoi {
 
                     //FixOrientation(ref VoronoiCell, ref iVtxS);
 
-                    int[,] iVtxTri = PolygonTesselation.TesselatePolygon(VoronoiCell); ;
+                    int[,] iVtxTri;
+                    try {
+                        iVtxTri = PolygonTesselation.TesselatePolygon(VoronoiCell); ;
+                    } catch(ArithmeticException ae) {
+                        DebugPlot(null, null, null, Insiders[jV]);
+                        iVtxTri = PolygonTesselation.TesselatePolygon(VoronoiCell); ;
+                    }
 
 
                     List<int> Agg2Pt = new List<int>();
@@ -2197,7 +2217,7 @@ namespace BoSSS.Application.SipPoisson.Voronoi {
                     }
                 }
                 if (SomePoints != null) {
-                    PlotFormat ptF = new PlotFormat(Style: Styles.Points, pointType: PointTypes.Asterisk, lineColor: LineColors.Black);
+                    PlotFormat ptF = new PlotFormat(Style: Styles.LinesPoints, pointType: PointTypes.Asterisk, lineColor: LineColors.Black);
 
 
 
