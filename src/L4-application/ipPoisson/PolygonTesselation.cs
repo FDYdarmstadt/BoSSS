@@ -73,8 +73,11 @@ namespace BoSSS.Application.SipPoisson.Voronoi {
 
             Vector D1 = vPrv - vTst;
             Vector D2 = vNxt - vTst;
-            if (D1.CrossProduct2D(D2).Abs() < 1.0e-6)
+            if (D1.AngleTo(D2) >= (179.9999999 / 180.0) * Math.PI) {
+                //if (D1.CrossProduct2D(D2).Abs() < 1.0e-6)
+                D1.AngleTo(D2);
                 return false; // this is a hack to avoid very skinny triangles
+            }
             return true;
         }
     

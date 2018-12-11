@@ -719,7 +719,7 @@ namespace BoSSS.Application.SipPoisson {
                 Node.SetColumn(1, RR.ForLoop(idx => rnd.NextDouble() * scl - 0.5*scl));
 
                 // generate mesh
-                return Voronoi.VoronoiMeshGen.FromPolygonalDomain(Node, DomainBndyPolygon, useMirror, IsInV, Idenity);
+                return Voronoi.VoronoiMeshGen.FromPolygonalDomain(Node, DomainBndyPolygon, useMirror, 5, IsInV, Idenity);
 
             };
             R.GridFunc = GridFunc;
