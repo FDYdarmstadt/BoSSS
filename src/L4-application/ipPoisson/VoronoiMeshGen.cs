@@ -341,18 +341,7 @@ namespace BoSSS.Application.SipPoisson.Voronoi {
                         i--;
                     }
                 }
-
-                // check
-                foreach(var cl in Edge1.Cells) {
-                    bool s = cl.CheckOriginalDomain();
-                    if(!s) {
-                        DebugPlot(null, null, cl.Edges, null);
-                    }
-                    Debug.Assert(s);
-                }
                
-
-
                 // create second part
                 Edge2 = Create(I, t);
                 foreach (var cl in cellsClone) {
@@ -367,16 +356,16 @@ namespace BoSSS.Application.SipPoisson.Voronoi {
                 // check
                 foreach(var cl in Edge1.Cells) {
                     bool s = cl.CheckOriginalDomain();
-                    if(!s) {
-                        DebugPlot(null, null, cl.Edges, null);
-                    }
+                    //if(!s) {
+                    //    DebugPlot(null, null, cl.Edges, null);
+                    //}
                     Debug.Assert(s);
                 }
                 foreach(var cl in Edge2.Cells) {
                     bool s = cl.CheckOriginalDomain();
-                    if(!s) {
-                        DebugPlot(null, null, cl.Edges, null);
-                    }
+                    //if(!s) {
+                    //    DebugPlot(null, null, cl.Edges, null);
+                    //}
                     Debug.Assert(s);
                 }
             }
@@ -1137,7 +1126,20 @@ namespace BoSSS.Application.SipPoisson.Voronoi {
             return false;
         }
 
-        static Func<Vector, Vector, bool> PointIdentityG;
+        static Func<Vector, Vector, bool> PointIdentityG_User;
+
+        static bool PointIdentityG(Vector V1, Vector V2) {
+            bool infEq_x = (double.IsPositiveInfinity(V1.x) && double.IsPositiveInfinity(V2.x))
+                || (double.IsNegativeInfinity(V1.x) && double.IsNegativeInfinity(V2.x));
+            bool infEq_y = (double.IsPositiveInfinity(V1.y) && double.IsPositiveInfinity(V2.y))
+                || (double.IsNegativeInfinity(V1.y) && double.IsNegativeInfinity(V2.y));
+            
+            if (infEq_x && infEq_y)
+                return true;
+
+            return PointIdentityG_User(V1, V2);
+        }
+
 
         static bool PointIdentity(VoVertex V1, VoVertex V2) {
             if (object.ReferenceEquals(V1, V2)) {
@@ -1524,7 +1526,7 @@ namespace BoSSS.Application.SipPoisson.Voronoi {
             // check arguments
             // ===============
 
-            PointIdentityG = __PointIdentity;
+            PointIdentityG_User = __PointIdentity;
 
             if (Nodes.Dimension != 2)
                 throw new ArgumentException("expecting 2D array;");
@@ -1613,12 +1615,12 @@ namespace BoSSS.Application.SipPoisson.Voronoi {
                                 // apply gravity
                                 double x = COG.x;
                                 double y = COG.y;
-                                double a = 2.0;
+                                double a = 3.0;
                                 Vector G = new Vector(
                                     -2 * x * a * a * Math.Exp(-(x * x + y * y) * a * a),
                                     -2 * y * a * a * Math.Exp(-(x * x + y * y) * a * a)
                                     );
-                                COG += G * 0.1;
+                                //COG += G * 0.1;
 
 
                                 // 
@@ -1711,10 +1713,10 @@ namespace BoSSS.Application.SipPoisson.Voronoi {
             List<int> verticesIndices = new List<int>();
             for(int i = 0; i < Verts.Count; i++) {
                 var v = VoVertex.Create(Verts[i]);
-                if(v.ID != VoVertex.verticeS.Last().ID) {
-                    throw new ArithmeticException("Matlab produced indistinguishable Voronoi vertices.");
-                }
-                verticesIndices.Add(VoVertex.verticeS.Count - 1);
+                //if(v.ID != VoVertex.verticeS.Last().ID) {
+                //    throw new ArithmeticException("Matlab produced indistinguishable Voronoi vertices.");
+                //}
+                verticesIndices.Add(v.ID - 1);
             }
 
             List<VoPolygon> cellS = new List<VoPolygon>();
@@ -1735,6 +1737,9 @@ namespace BoSSS.Application.SipPoisson.Voronoi {
                         
                         VoVertex _VtxA = VoVertex.verticeS[verticesIndices[_iVtxA]];
                         VoVertex _VtxB = VoVertex.verticeS[verticesIndices[_iVtxB]];
+
+                        Debug.Assert(PointIdentityG(_VtxA.VTX, Verts[iVtxS[i]]));
+                        Debug.Assert(PointIdentityG(_VtxB.VTX, Verts[iVtxS[(i + 1) % I]]));
 
                         if (_VtxA.IsFar)
                             continue;
@@ -2096,15 +2101,8 @@ namespace BoSSS.Application.SipPoisson.Voronoi {
 
                     //FixOrientation(ref VoronoiCell, ref iVtxS);
 
-                    int[,] iVtxTri;
-                    try {
-                        iVtxTri = PolygonTesselation.TesselatePolygon(VoronoiCell); ;
-                    } catch(ArithmeticException ae) {
-                        DebugPlot(null, null, null, Insiders[jV]);
-                        iVtxTri = PolygonTesselation.TesselatePolygon(VoronoiCell); ;
-                    }
-
-
+                    int[,] iVtxTri = PolygonTesselation.TesselatePolygon(VoronoiCell); ;
+                    
                     List<int> Agg2Pt = new List<int>();
 
                     for (int iTri = 0; iTri < iVtxTri.GetLength(0); iTri++) { // loop over triangles of voronoi cell
