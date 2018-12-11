@@ -994,6 +994,10 @@ namespace BoSSS.Foundation.IO {
         /// <param name="fieldName">
         /// The name of the DG field whose error should be estimated.
         /// </param>
+        /// <param name="xAxis_Is_hOrDof">
+        /// - true: the x-axis (<see cref="Plot2Ddata.XYvalues.Abscissas"/>) is the grid resolution \f$ h \f$
+        /// - false: the x-axis (<see cref="Plot2Ddata.XYvalues.Abscissas"/>) is the number of degrees-of-freedom
+        /// </param>        
         /// <returns>
         /// A data set containing information about the grid resolution and the
         /// corresponding errors with respect to the finest corresponding grid,
@@ -1002,8 +1006,8 @@ namespace BoSSS.Foundation.IO {
         /// estimated error of zero (by definition) and is thus excluded from
         /// the result.
         /// </returns>
-        public static Plot2Ddata ToEstimatedGridConvergenceData(this IEnumerable<ISessionInfo> sessions, string fieldName) {
-            return sessions.Select(s => s.Timesteps.Last()).ToEstimatedGridConvergenceData(fieldName);
+        public static Plot2Ddata ToEstimatedGridConvergenceData(this IEnumerable<ISessionInfo> sessions, string fieldName, bool xAxis_Is_hOrDof = true) {
+            return sessions.Select(s => s.Timesteps.Last()).ToEstimatedGridConvergenceData(fieldName, xAxis_Is_hOrDof);
         }
 
         /// <summary>
