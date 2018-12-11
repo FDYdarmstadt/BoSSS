@@ -1,142 +1,86 @@
 set output 'ConstCoeffPoissonScaling.tex'
-set terminal cairolatex  pdf   size 14cm,14cm
+set terminal cairolatex  pdf   size 14cm,12cm
 set multiplot
-set size 0.5,0.333333333333333
-set size 0.49,0.326666666666667
-set origin 0.005,0.67
+set size 1,0.333333333333333
+set size 0.98,0.326666666666667
+set origin 0.01,0.67
 set lmargin 1e01
-set rmargin 1e00
-set tmargin 1e00
+set rmargin 5e00
+set tmargin 0e00
 set bmargin 1e00
-unset logscale x
+set logscale x 10
 set logscale y 10
-set logscale x2 10
+unset logscale x2
 unset logscale y2
-set xrange [100:10000000]
-set yrange [0.001:10000]
-set x2range [100:10000000]
-set y2range [0.001:10000]
+set xrange [10:10000000]
+set yrange [0.01:10000]
+set autoscale x2
+set autoscale y2
 unset xlabel
 set ylabel "$k = 2$"
 unset x2label
 unset y2label
 unset title 
-set key off
+unset key
+set key inside top left Left reverse 
 set xtics format " " 
-set x2tics format "$10^{%L}$" 
+set x2tics format " " 
 set ytics format "$10^{%L}$" 
 set y2tics format " " 
 set termoption dashed
-set termoption dashed
-plot "ConstCoeffPoissonScaling_data_0.csv" title "Mult Gr w Blk Jac" axes x2y1  with linespoints linecolor  "black" dashtype 1 linewidth 3 pointtype 5 pointsize 0.5, "ConstCoeffPoissonScaling_data_1.csv" title "LAPACK" axes x2y1  with linespoints linecolor  "black" dashtype 1 linewidth 3 pointtype 1 pointsize 0.5, "ConstCoeffPoissonScaling_data_2.csv" title "Add Swz" axes x2y1  with linespoints linecolor  "black" dashtype 1 linewidth 3 pointtype 9 pointsize 0.5, "ConstCoeffPoissonScaling_data_3.csv" title "Pardiso w Blk PC" axes x2y1  with linespoints linecolor  "black" dashtype 1 linewidth 3 pointtype 4 pointsize 0.5, "ConstCoeffPoissonScaling_data_4.csv" title "Add Swz w Coarse" axes x2y1  with linespoints linecolor  "black" dashtype 1 linewidth 3 pointtype 11 pointsize 0.5, "ConstCoeffPoissonScaling_data_5.csv" title "CG" axes x2y1  with linespoints linecolor  "black" dashtype 1 linewidth 3 pointtype 3 pointsize 0.5, "ConstCoeffPoissonScaling_data_6.csv" title "Mumps" axes x2y1  with linespoints linecolor  "black" dashtype 3 linewidth 3 pointtype 10 pointsize 0.5, "ConstCoeffPoissonScaling_data_7.csv" title "Pardiso" axes x2y1  with linespoints linecolor  "black" dashtype 3 linewidth 3 pointtype 6 pointsize 0.5, "ConstCoeffPoissonScaling_data_8.csv" title "linear" axes x2y1  with lines linecolor  "black" dashtype 1 linewidth 1
-set size 0.49,0.326666666666667
-set origin 0.505,0.67
-set lmargin 1e00
-set rmargin 1e01
-set tmargin 1e00
-set bmargin 1e00
-unset logscale x
-unset logscale y
-set logscale x2 10
-set logscale y2 10
-set xrange [100:10000000]
-set yrange [0.001:10000]
-set x2range [100:10000000]
-set y2range [0.001:10000]
-unset xlabel
-unset ylabel
-unset x2label
-set y2label "$k = 3$"
-unset title 
-set key off
-set xtics format " " 
-set x2tics format "$10^{%L}$" 
-set ytics format " " 
-set y2tics format "$10^{%L}$" 
-set termoption dashed
-set termoption dashed
-plot "ConstCoeffPoissonScaling_data_9.csv" title "Mult Gr w Blk Jac" axes x2y2  with linespoints linecolor  "black" dashtype 1 linewidth 3 pointtype 5 pointsize 0.5, "ConstCoeffPoissonScaling_data_10.csv" title "LAPACK" axes x2y2  with linespoints linecolor  "black" dashtype 1 linewidth 3 pointtype 1 pointsize 0.5, "ConstCoeffPoissonScaling_data_11.csv" title "Add Swz" axes x2y2  with linespoints linecolor  "black" dashtype 1 linewidth 3 pointtype 9 pointsize 0.5, "ConstCoeffPoissonScaling_data_12.csv" title "Pardiso w Blk PC" axes x2y2  with linespoints linecolor  "black" dashtype 1 linewidth 3 pointtype 4 pointsize 0.5, "ConstCoeffPoissonScaling_data_13.csv" title "Add Swz w Coarse" axes x2y2  with linespoints linecolor  "black" dashtype 1 linewidth 3 pointtype 11 pointsize 0.5, "ConstCoeffPoissonScaling_data_14.csv" title "CG" axes x2y2  with linespoints linecolor  "black" dashtype 1 linewidth 3 pointtype 3 pointsize 0.5, "ConstCoeffPoissonScaling_data_15.csv" title "Mumps" axes x2y2  with linespoints linecolor  "black" dashtype 3 linewidth 3 pointtype 10 pointsize 0.5, "ConstCoeffPoissonScaling_data_16.csv" title "Pardiso" axes x2y2  with linespoints linecolor  "black" dashtype 3 linewidth 3 pointtype 6 pointsize 0.5, "ConstCoeffPoissonScaling_data_17.csv" title "linear" axes x2y2  with lines linecolor  "black" dashtype 1 linewidth 1
-set size 0.49,0.326666666666667
-set origin 0.005,0.336666666666667
+plot "ConstCoeffPoissonScaling_data_0.csv" title "Mult Gr w Blk Jac" with linespoints linecolor  "black" dashtype 1 linewidth 3 pointtype 5 pointsize 0.5, "ConstCoeffPoissonScaling_data_1.csv" title "Add Swz w Coarse" with linespoints linecolor  "black" dashtype 1 linewidth 3 pointtype 11 pointsize 0.5, "ConstCoeffPoissonScaling_data_2.csv" title "Mumps" with linespoints linecolor  "black" dashtype 3 linewidth 3 pointtype 10 pointsize 0.5, "ConstCoeffPoissonScaling_data_3.csv" title "linear" with lines linecolor  "black" dashtype 1 linewidth 1
+set size 0.98,0.326666666666667
+set origin 0.01,0.336666666666667
 set lmargin 1e01
-set rmargin 1e00
-set tmargin 1e00
+set rmargin 5e00
+set tmargin 0e00
 set bmargin 1e00
 set logscale x 10
 set logscale y 10
 unset logscale x2
 unset logscale y2
-set xrange [100:10000000]
-set yrange [0.001:10000]
-set x2range [100:10000000]
-set y2range [0.001:10000]
+set xrange [10:10000000]
+set yrange [0.01:10000]
+set autoscale x2
+set autoscale y2
+unset xlabel
+set ylabel "$k = 3$"
+unset x2label
+unset y2label
+unset title 
+set key off
+set xtics format " " 
+set x2tics format " " 
+set ytics format "$10^{%L}$" 
+set y2tics format " " 
+set termoption dashed
+plot "ConstCoeffPoissonScaling_data_4.csv" title "Mult Gr w Blk Jac" with linespoints linecolor  "black" dashtype 1 linewidth 3 pointtype 5 pointsize 0.5, "ConstCoeffPoissonScaling_data_5.csv" title "Add Swz w Coarse" with linespoints linecolor  "black" dashtype 1 linewidth 3 pointtype 11 pointsize 0.5, "ConstCoeffPoissonScaling_data_6.csv" title "Mumps" with linespoints linecolor  "black" dashtype 3 linewidth 3 pointtype 10 pointsize 0.5, "ConstCoeffPoissonScaling_data_7.csv" title "linear" with lines linecolor  "black" dashtype 1 linewidth 1
+set size 0.98,0.326666666666667
+set origin 0.01,0.00333333333333333
+set lmargin 1e01
+set rmargin 5e00
+set tmargin 0e00
+set bmargin 1e00
+set logscale x 10
+set logscale y 10
+unset logscale x2
+unset logscale y2
+set xrange [10:10000000]
+set yrange [0.01:10000]
+set autoscale x2
+set autoscale y2
 unset xlabel
 set ylabel "$k = 5$"
 unset x2label
 unset y2label
 unset title 
-unset key
-set key at 1e12,1e-05 vertical maxrows 8 
-set xtics format " " 
-set x2tics format " " 
-set ytics format "$10^{%L}$" 
-set y2tics format " " 
-set termoption dashed
-set termoption dashed
-plot "ConstCoeffPoissonScaling_data_18.csv" title "Mult Gr w Blk Jac" with linespoints linecolor  "black" dashtype 1 linewidth 3 pointtype 5 pointsize 0.5, "ConstCoeffPoissonScaling_data_19.csv" title "LAPACK" with linespoints linecolor  "black" dashtype 1 linewidth 3 pointtype 1 pointsize 0.5, "ConstCoeffPoissonScaling_data_20.csv" title "Add Swz" with linespoints linecolor  "black" dashtype 1 linewidth 3 pointtype 9 pointsize 0.5, "ConstCoeffPoissonScaling_data_21.csv" title "Pardiso w Blk PC" with linespoints linecolor  "black" dashtype 1 linewidth 3 pointtype 4 pointsize 0.5, "ConstCoeffPoissonScaling_data_22.csv" title "Add Swz w Coarse" with linespoints linecolor  "black" dashtype 1 linewidth 3 pointtype 11 pointsize 0.5, "ConstCoeffPoissonScaling_data_23.csv" title "Mumps" with linespoints linecolor  "black" dashtype 3 linewidth 3 pointtype 10 pointsize 0.5, "ConstCoeffPoissonScaling_data_24.csv" title "Pardiso" with linespoints linecolor  "black" dashtype 3 linewidth 3 pointtype 6 pointsize 0.5, "ConstCoeffPoissonScaling_data_25.csv" title "linear" with lines linecolor  "black" dashtype 1 linewidth 1
-set size 0.49,0.326666666666667
-set origin 0.505,0.336666666666667
-set lmargin 1e00
-set rmargin 1e01
-set tmargin 1e00
-set bmargin 1e00
-set logscale x 10
-unset logscale y
-unset logscale x2
-set logscale y2 10
-set xrange [100:10000000]
-set yrange [0.001:10000]
-set x2range [100:10000000]
-set y2range [0.001:10000]
-unset xlabel
-unset ylabel
-unset x2label
-set y2label "$k = 0$"
-unset title 
-unset key
-set key at 1e12,1e-05 vertical maxrows 1 
-set xtics format "$10^{%L}$" 
-set x2tics format " " 
-set ytics format " " 
-set y2tics format "$10^{%L}$" 
-plot "ConstCoeffPoissonScaling_data_26.csv" title "linear" axes x1y2  with lines linecolor  "black" dashtype 1 linewidth 1
-set size 0.49,0.326666666666667
-set origin 0.005,0.00333333333333333
-set lmargin 1e01
-set rmargin 1e00
-set tmargin 1e00
-set bmargin 1e00
-set logscale x 10
-set logscale y 10
-unset logscale x2
-unset logscale y2
-set xrange [100:10000000]
-set yrange [0.001:10000]
-set x2range [100:10000000]
-set y2range [0.001:10000]
-unset xlabel
-set ylabel "$k = 0$"
-unset x2label
-unset y2label
-unset title 
 set key off
 set xtics format "$10^{%L}$" 
 set x2tics format " " 
 set ytics format "$10^{%L}$" 
 set y2tics format " " 
 set termoption dashed
-set termoption dashed
-plot "ConstCoeffPoissonScaling_data_27.csv" title "linear" with lines linecolor  "black" dashtype 1 linewidth 1, "ConstCoeffPoissonScaling_data_28.csv" title "Mult Gr w Blk Jac" with linespoints linecolor  "black" dashtype 1 linewidth 3 pointtype 5 pointsize 0.5, "ConstCoeffPoissonScaling_data_29.csv" title "LAPACK" with linespoints linecolor  "black" dashtype 1 linewidth 3 pointtype 1 pointsize 0.5, "ConstCoeffPoissonScaling_data_30.csv" title "Add Swz" with linespoints linecolor  "black" dashtype 1 linewidth 3 pointtype 9 pointsize 0.5, "ConstCoeffPoissonScaling_data_31.csv" title "Pardiso w Blk PC" with linespoints linecolor  "black" dashtype 1 linewidth 3 pointtype 4 pointsize 0.5, "ConstCoeffPoissonScaling_data_32.csv" title "Add Swz w Coarse" with linespoints linecolor  "black" dashtype 1 linewidth 3 pointtype 11 pointsize 0.5, "ConstCoeffPoissonScaling_data_33.csv" title "CG" with linespoints linecolor  "black" dashtype 1 linewidth 3 pointtype 3 pointsize 0.5, "ConstCoeffPoissonScaling_data_34.csv" title "Mumps" with linespoints linecolor  "black" dashtype 3 linewidth 3 pointtype 10 pointsize 0.5, "ConstCoeffPoissonScaling_data_35.csv" title "Pardiso" with linespoints linecolor  "black" dashtype 3 linewidth 3 pointtype 6 pointsize 0.5
+plot "ConstCoeffPoissonScaling_data_8.csv" title "Mult Gr w Blk Jac" with linespoints linecolor  "black" dashtype 1 linewidth 3 pointtype 5 pointsize 0.5, "ConstCoeffPoissonScaling_data_9.csv" title "Add Swz w Coarse" with linespoints linecolor  "black" dashtype 1 linewidth 3 pointtype 11 pointsize 0.5, "ConstCoeffPoissonScaling_data_10.csv" title "Mumps" with linespoints linecolor  "black" dashtype 3 linewidth 3 pointtype 10 pointsize 0.5, "ConstCoeffPoissonScaling_data_11.csv" title "linear" with lines linecolor  "black" dashtype 1 linewidth 1
 
 
 exit

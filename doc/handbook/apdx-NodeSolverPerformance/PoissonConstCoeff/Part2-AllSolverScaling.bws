@@ -5,16 +5,18 @@ restart
   _______________________
 
 Databases loaded:
-List of 3 instances of IDatabaseInfo {
+List of 4 instances of IDatabaseInfo {
   0: { Session Count = 0; Grid Count = 34; Path = C:\BoSSS_DB }
   1: { Session Count = 224; Grid Count = 6; Path = C:\tmp\fk_temp_db }
   2: { Session Count = 197; Grid Count = 6; Path = P:\Performance_DB }
+  3: { Session Count = 112; Grid Count = 6; Path = E:\Performance_oldLibs_DB }
 }
 
  Console ready for input. Type 'help' for help.
 
 ==============
-WorkflowMgm.Init("PoissonSolverPerformance_0_1");
+string WFlowName = "PoissonSolverPerformance_0_1";
+WorkflowMgm.Init(WFlowName);
 **************
 Project name is set to 'PoissonSolverPerformance_0_1'.
 
@@ -191,6 +193,8 @@ SubTab.Print();
 81: 2          320            0           3200    0.1964491     0.1964491     1      
 82: 2          40             0           400     0.167278      0.167278      1      
 ==============
+//Extract to excel-File
+SubTab.ToCSVFile(WFlowName);
 **************
 ==============
 var RuntimePlot = SubTab.ToPlot("DOFs", "minSolRunT", // column for x- and y
@@ -313,20 +317,21 @@ List of 3 instances of Int32 {
 **************
 ==============
 int rows    = 3;
-int columns = 2;
+int columns = 1;
+SolverCodes[] ignore_solvers = {SolverCodes.classic_pardiso, SolverCodes.classic_cg, SolverCodes.exp_direct, SolverCodes.exp_softpcg_schwarz, SolverCodes.exp_direct_lapack};
+
 Plot2Ddata[,] multiplots = new Plot2Ddata[rows,columns];
 int pDegree = 0;
 for(int iRow = 0; iRow < rows; iRow++) {
-//var RuntimePlot = SubTab.ToPlot("DOFs", "minSolRunT", // column for x- and y
-//                        "solver_name", "DGdegree:T"); // column for group
 for(int iCol = 0; iCol < columns; iCol++) {
     
-    if(pDegree > rows*columns-2)
+    if(pDegree > rows*columns-1)
         continue;
-    int tmpDG = 0;
+    int tmpDG = -1;
     if(pDegree < DGdegrees.Length)
         tmpDG = DGdegrees[pDegree];
     
+    //Create Graphs
     multiplots[iRow,iCol] = SubTab.ToPlot("DOFs", "minSolRunT", // column for x- and y
        delegate (int iTabRow, 
                  IDictionary<string, object> Row, 
@@ -346,7 +351,17 @@ for(int iCol = 0; iCol < columns; iCol++) {
            }
  
            SolverCodes solver_name = (SolverCodes) Convert.ToInt32(Row["solver_name"]);
-           Fmt                     = new PlotFormat();
+           //ignore the solvers specified in ingore_solvers
+           foreach(SolverCodes sc in ignore_solvers){
+               if(solver_name==sc){
+                   System.Console.WriteLine("skipped");
+                   Nmn = null;
+                   Fmt = null;
+               return;
+               }
+           }
+           //process the other solvers
+           Fmt = new PlotFormat();
            switch(solver_name) {
            case SolverCodes.classic_pardiso: 
                Nmn           = "Pardiso"; 
@@ -384,7 +399,7 @@ for(int iCol = 0; iCol < columns; iCol++) {
                break;
            default:
                Console.WriteLine("unknown: " + solver_name); 
-               Nmn = "unknown"; 
+               Nmn = "unknown";
                break;
            } 
            Console.WriteLine("name is: " + solver_name); 
@@ -399,52 +414,44 @@ for(int iCol = 0; iCol < columns; iCol++) {
     linP.Format.FromString("- black");
     ArrayTools.AddToArray(linP, ref multiplots[iRow,iCol].dataGroups);
  
+    //all about axis
     string Title = string.Format("$k = {0}$", tmpDG);
     multiplots[iRow,iCol].Ylabel = Title;
     multiplots[iRow,iCol].LogX = true;
     multiplots[iRow,iCol].LogY = true;
- 
-    multiplots[iRow,iCol].YrangeMin = 1e-3;
+    //specify range of axis
+    multiplots[iRow,iCol].YrangeMin = 1e-2;
     multiplots[iRow,iCol].YrangeMax = 1e+4;
-    multiplots[iRow,iCol].XrangeMin = 1e2;
+    multiplots[iRow,iCol].XrangeMin = 1e1;
     multiplots[iRow,iCol].XrangeMax = 1e7;
-    multiplots[iRow,iCol].Y2rangeMin = 1e-3;
-    multiplots[iRow,iCol].Y2rangeMax = 1e+4;
-    multiplots[iRow,iCol].X2rangeMin = 1e2;
-    multiplots[iRow,iCol].X2rangeMax = 1e7;
-    //legend is plotted only for the last diagram and is pushed to next dummy plot
-    //therefore AddDummyPlotsForLegend()
-    if(iRow == 1) {
-        multiplots[iRow,iCol].ShowLegend = true;
-        //if the 3rd plot is the last
-        multiplots[iRow,iCol].LegendPosition = new double[] {1e12,1e-5};
-        //if the 5th plot is the last
-        //multiplots[iRow,iCol].LegendPosition = new double[] {1e12,1e4};
-    } else {
-        multiplots[iRow,iCol].ShowLegend = false;
-    }
- 
-    if(iCol == 1) {
-        multiplots[iRow,iCol].SwapYaxes();
-        multiplots[iRow,iCol].lmargin = 1;
-        multiplots[iRow,iCol].rmargin = 10;
-    } else {
-        multiplots[iRow,iCol].lmargin = 10;
-        multiplots[iRow,iCol].rmargin = 1;
-    }
-    multiplots[iRow,iCol].tmargin = 1;
+    //multiplots[iRow,iCol].Y2rangeMin = 1e-3;
+    //multiplots[iRow,iCol].Y2rangeMax = 1e+4;
+    //multiplots[iRow,iCol].X2rangeMin = 1e2;
+    //multiplots[iRow,iCol].X2rangeMax = 1e7;
+    
+    //spacing around plots
+    multiplots[iRow,iCol].ShowLegend = false;
+    multiplots[iRow,iCol].tmargin = 0;
     multiplots[iRow,iCol].bmargin = 1;
-    if(iRow == 0) {
-        multiplots[iRow,iCol].SwapXaxes();
+    multiplots[iRow,iCol].lmargin = 10;
+    multiplots[iRow,iCol].rmargin = 5;
+    multiplots[iRow,iCol].ShowXtics=false;
+
+    //I am legend ...
+    if(iRow == 0){
+    multiplots[iRow,iCol].ShowLegend = true;
+    multiplots[iRow,iCol].LegendAlignment=new string[]{"i","t","l"};
+    multiplots[iRow,iCol].LegendSwap=true;
     }
-    if(iRow == 1 && iCol == 0) {  
-        multiplots[iRow,iCol].ShowXtics = false;
-    }
+
+    //and i am special ...
+    if(iRow == rows-1)
+        multiplots[iRow,iCol].ShowXtics=true;
     pDegree++;
 }                        
 }
 ;
-multiplots.AddDummyPlotsForLegend(2,0);
+//multiplots.AddDummyPlotsForLegend(3,0);
 multiplots.PlotNow()
 **************
 name is: exp_softpcg_mg
@@ -452,96 +459,99 @@ name is: exp_softpcg_mg
 name is: exp_softpcg_mg
 name is: exp_softpcg_mg
 name is: exp_softpcg_mg
-name is: exp_direct_lapack
-name is: exp_direct_lapack
-name is: exp_softpcg_schwarz
-name is: exp_softpcg_schwarz
-name is: exp_softpcg_schwarz
-name is: exp_softpcg_schwarz
-name is: exp_softpcg_schwarz
-name is: exp_direct
-name is: exp_direct
-name is: exp_direct
-name is: exp_direct
-name is: exp_direct
+skipped
+skipped
+skipped
+skipped
+skipped
+skipped
+skipped
+skipped
+skipped
+skipped
+skipped
+skipped
 name is: exp_softpcg_schwarz_directcoarse
 name is: exp_softpcg_schwarz_directcoarse
 name is: exp_softpcg_schwarz_directcoarse
 name is: exp_softpcg_schwarz_directcoarse
 name is: exp_softpcg_schwarz_directcoarse
-name is: classic_cg
-name is: classic_cg
-name is: classic_cg
-name is: classic_cg
-name is: classic_cg
+skipped
+skipped
+skipped
+skipped
+skipped
 name is: classic_mumps
 name is: classic_mumps
 name is: classic_mumps
 name is: classic_mumps
-name is: classic_pardiso
-name is: classic_pardiso
-name is: classic_pardiso
-name is: classic_pardiso
+skipped
+skipped
+skipped
+skipped
 name is: exp_softpcg_mg
 name is: exp_softpcg_mg
 name is: exp_softpcg_mg
 name is: exp_softpcg_mg
-name is: exp_direct_lapack
-name is: exp_direct_lapack
-name is: exp_softpcg_schwarz
-name is: exp_softpcg_schwarz
-name is: exp_softpcg_schwarz
-name is: exp_softpcg_schwarz
-name is: exp_direct
-name is: exp_direct
-name is: exp_direct
-name is: exp_direct
+skipped
+skipped
+skipped
+skipped
+skipped
+skipped
+skipped
+skipped
+skipped
+skipped
 name is: exp_softpcg_schwarz_directcoarse
 name is: exp_softpcg_schwarz_directcoarse
 name is: exp_softpcg_schwarz_directcoarse
 name is: exp_softpcg_schwarz_directcoarse
-name is: classic_cg
-name is: classic_cg
-name is: classic_cg
-name is: classic_cg
+skipped
+skipped
+skipped
+skipped
 name is: classic_mumps
 name is: classic_mumps
 name is: classic_mumps
-name is: classic_pardiso
-name is: classic_pardiso
-name is: classic_pardiso
-name is: classic_pardiso
+skipped
+skipped
+skipped
+skipped
 name is: exp_softpcg_mg
 name is: exp_softpcg_mg
 name is: exp_softpcg_mg
-name is: exp_direct_lapack
-name is: exp_softpcg_schwarz
-name is: exp_softpcg_schwarz
-name is: exp_softpcg_schwarz
-name is: exp_direct
-name is: exp_direct
-name is: exp_direct
+skipped
+skipped
+skipped
+skipped
+skipped
+skipped
+skipped
 name is: exp_softpcg_schwarz_directcoarse
 name is: exp_softpcg_schwarz_directcoarse
 name is: exp_softpcg_schwarz_directcoarse
 name is: classic_mumps
 name is: classic_mumps
 name is: classic_mumps
-name is: classic_pardiso
-name is: classic_pardiso
-name is: classic_pardiso
-Using gnuplot: C:\Program Files\FDY\BoSSS\bin\native\win\gnuplot-gp510-20160418-win32-mingw\gnuplot\bin\gnuplot.exe
+skipped
+skipped
+skipped
+Using gnuplot: C:\Program Files (x86)\FDY\BoSSS\bin\native\win\gnuplot-gp510-20160418-win32-mingw\gnuplot\bin\gnuplot.exe
+set key inside top left Left reverse 
 System.Drawing.Bitmap
 ==============
+LastError
 **************
 ==============
 **************
 ==============
 **************
 ==============
-var CL = multiplots.ToGnuplot().PlotCairolatex(xSize:14,ySize:14);
+var CL = multiplots.ToGnuplot().PlotCairolatex(xSize:16,ySize:12);
 **************
-Using gnuplot: C:\Program Files\FDY\BoSSS\bin\native\win\gnuplot-gp510-20160418-win32-mingw\gnuplot\bin\gnuplot.exe
+Using gnuplot: C:\Program Files (x86)\FDY\BoSSS\bin\native\win\gnuplot-gp510-20160418-win32-mingw\gnuplot\bin\gnuplot.exe
+set key inside top left Left reverse 
 
 ==============
 //CL.SaveTo(Path.Combine(CurrentDocDir, "ConstCoeffPoissonScaling.tex"));
@@ -554,16 +564,48 @@ System.ComponentModel.Win32Exception occurred: Das System kann die angegebene Da
 ==============
 LastError
 **************
-System.ComponentModel.Win32Exception (0x80004005): Das System kann die angegebene Datei nicht finden
-   bei System.Diagnostics.Process.StartWithShellExecuteEx(ProcessStartInfo startInfo)
-   bei BoSSS.Application.BoSSSpad.GnuplotExtensions.CairolatexContainer.Preview(Boolean trimPage, Int32 dpi)
-   bei <InteractiveExpressionClass>.Host(Object& $retval)
-   bei Mono.CSharp.Evaluator.Evaluate(String input, Object& result, Boolean& result_set)
-   bei BoSSS.Application.BoSSSpad.ReadEvalPrintLoop.EvalPrint(String line, Assembly& AssemblyProduced)
 ==============
 CL.WriteMinimalCompileableExample(
    Path.Combine(CurrentDocDir, "plots", "MainConstCoeffPoissonScaling.tex"),
    "ConstCoeffPoissonScaling.tex");
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
 **************
 ==============
 **************
