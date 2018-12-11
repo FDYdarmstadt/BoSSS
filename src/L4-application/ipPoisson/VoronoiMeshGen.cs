@@ -38,7 +38,7 @@ using System.Text;
 using System.Threading.Tasks;
 
 namespace BoSSS.Application.SipPoisson.Voronoi {
-    static class VoronoiMeshGen {
+    class VoronoiMeshGen {
 
 
         static int Mirror(ref double[] _x, ref double[] _y, AffineManifold[] bndys, Func<Vector, bool> _IsIn) {
@@ -99,70 +99,21 @@ namespace BoSSS.Application.SipPoisson.Voronoi {
             return N;
         }
 
-        /*
-        enum VertexType {
-            unspecified = 0,
-            
-            Inside = 1,
+        int VoVertex_IDcounter = 1;
 
-            Outside = 2,
-
-            OnBoundaryplane_Inside = 3,
-
-            //OnBoundaryplane_Outside = 4,
-
-            OnCorner = 5,
-
-            FarPoint = 6 // somewhere at infty
-        }
-
-
-        class VoronoiVertex {
-            public Vector VTX;
-
-            public VertexType type;
-
-
-
-
-        }
-
-
-
-        class VoronoiEdge {
-            /// <summary>
-            /// First vertex in voronoi cell
-            /// </summary>
-            public int iVtxA;
-
-            /// <summary>
-            /// Second vertex in voronoi cell
-            /// </summary>
-            public int iVtxB;
-
-
-            public List<int> Cells = new List<int>();
-
-
-            public override bool Equals(object obj) {
-                if (iVtxA == iVtxB)
-                    throw new ApplicationException();
-
-                var E2 = obj as VoronoiEdge;
-                if (iVtxA == E2.iVtxA && iVtxB == E2.iVtxB)
-                    return true;
-                if (iVtxA == E2.iVtxB && iVtxB == E2.iVtxA)
-                    return true;
-
-                return false;
+        VoVertex CreateVertex(Vector __VTX) {
+            foreach (var v in verticeS) {
+                if (PointIdentityG(v.VTX, __VTX))
+                    return v;
             }
-
-
-            public override int GetHashCode() {
-                return iVtxA + (iVtxB << 16);
-            }
+            var vv = new VoVertex(__VTX, VoVertex_IDcounter);
+            verticeS.Add(vv);
+            VoVertex_IDcounter++;
+            return vv;
         }
-        */
+
+        List<VoVertex> verticeS = new List<VoVertex>();
+
 
         enum VertexType {
             unspecified = 0,
@@ -206,31 +157,17 @@ namespace BoSSS.Application.SipPoisson.Voronoi {
                 get;
                 private set;
             }
-
-            static int IDcounter = 1;
-
-            public static VoVertex Create(Vector __VTX) {
-                foreach (var v in verticeS) {
-                    if (PointIdentityG(v.VTX, __VTX))
-                        return v;
-                }
-                var vv = new VoVertex(__VTX);
-                verticeS.Add(vv);
-                return vv;
-            }
-
-            public static List<VoVertex> verticeS = new List<VoVertex>();
-
-            private VoVertex(Vector __VTX) {
+                
+            /// <summary>
+            /// not to be used directly, only by <see cref="CreateVertex(Vector)"/>
+            /// </summary>
+            internal VoVertex(Vector __VTX, int __id) {
                 if (__VTX.Dim != 2)
                     throw new ArgumentException();
                 x = __VTX.x;
                 y = __VTX.y;
-
-
-
-                ID = IDcounter;
-                IDcounter++;
+                
+                ID = __id;
             }
 
 
@@ -253,36 +190,43 @@ namespace BoSSS.Application.SipPoisson.Voronoi {
         }
 
 
+        int VoEdge_IDcounter;
+
+        VoEdge Create(VoVertex __VtxA, VoVertex __VtxB) {
+            if (__VtxA.Equals(__VtxB))
+                throw new ArgumentException();
+
+            //CheckEdgeUniqueness(true);
+            foreach (var e in edgeS) {
+                if ((e.VtxA.Equals(__VtxA) && e.VtxB.Equals(__VtxB))
+                   || (e.VtxA.Equals(__VtxB) && e.VtxB.Equals(__VtxA))) {
+                    return e;
+                }
+            }
+
+            var ee = new VoEdge() { VtxA = __VtxA, VtxB = __VtxB };
+            edgeS.Add(ee);
+            //CheckEdgeUniqueness(true);
+            return ee;
+
+        }
+
+        List<VoEdge> edgeS = new List<VoEdge>();
+        
+        int VoEdge_IDcounter = 1;
 
         class VoEdge : VoItem {
-            public static VoEdge Create(VoVertex __VtxA, VoVertex __VtxB) {
-                if (__VtxA.Equals(__VtxB))
-                    throw new ArgumentException();
-
-                //CheckEdgeUniqueness(true);
-                foreach (var e in edgeS) {
-                    if ((e.VtxA.Equals(__VtxA) && e.VtxB.Equals(__VtxB))
-                       || (e.VtxA.Equals(__VtxB) && e.VtxB.Equals(__VtxA))) {
-                        return e;
-                    }
-                }
-
-                var ee = new VoEdge() { VtxA = __VtxA, VtxB = __VtxB };
-                edgeS.Add(ee);
-                //CheckEdgeUniqueness(true);
-                return ee;
-
-            }
+           
 
             public int ID {
                 get;
                 private set;
             }
 
-            static int IDcounter = 1;
+            
 
             private VoEdge() {
-                this.ID = IDcounter;
+                this.ID = IDcounter; 
                 IDcounter++;
             }
 
@@ -372,8 +316,7 @@ namespace BoSSS.Application.SipPoisson.Voronoi {
 
 
 
-            static public List<VoEdge> edgeS = new List<VoEdge>();
-
+            
             /// <summary>
             /// First vertex in Voronoi cell
             /// </summary>
@@ -1713,9 +1656,9 @@ namespace BoSSS.Application.SipPoisson.Voronoi {
             List<int> verticesIndices = new List<int>();
             for(int i = 0; i < Verts.Count; i++) {
                 var v = VoVertex.Create(Verts[i]);
-                //if(v.ID != VoVertex.verticeS.Last().ID) {
-                //    throw new ArithmeticException("Matlab produced indistinguishable Voronoi vertices.");
-                //}
+                if(v.ID != VoVertex.verticeS.Last().ID) {
+                    throw new ArithmeticException("Matlab produced indistinguishable Voronoi vertices.");
+                }
                 verticesIndices.Add(v.ID - 1);
             }
 
