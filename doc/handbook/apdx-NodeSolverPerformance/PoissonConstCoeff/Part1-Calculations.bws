@@ -1,13 +1,16 @@
 restart
 **************
 
-  Database Explorer v2
-  ____________________
+  BoSSSpad C# interpreter
+  _______________________
 
 Databases loaded:
-List of 0 instances of IDatabaseInfo {
+List of 4 instances of IDatabaseInfo {
+  0: { Session Count = 0; Grid Count = 34; Path = C:\BoSSS_DB }
+  1: { Session Count = 224; Grid Count = 6; Path = C:\tmp\fk_temp_db }
+  2: { Session Count = 197; Grid Count = 6; Path = P:\Performance_DB }
+  3: { Session Count = 0; Grid Count = 6; Path = E:\Performance_oldLibs_DB }
 }
-Setting Matlab Connector to Octave...
 
  Console ready for input. Type 'help' for help.
 
@@ -15,23 +18,29 @@ Setting Matlab Connector to Octave...
 using BoSSS.Application.SipPoisson;
 **************
 ==============
-WorkflowMgm.Init("PoissonSolverPerformance");
 **************
-Project name is set to 'PoissonSolverPerformance'.
+==============
+string WFlowName = "PoissonSolverPerformance_beforeNewLibs";
+WorkflowMgm.Init(WFlowName);
+WorkflowMgm.AllJobs;
+**************
+Project name is set to 'PoissonSolverPerformance_beforeNewLibs'.
+List of 0 instances of KeyValuePair{String,Job} {
+}
+==============
+//var tempDB = OpenOrCreateDatabase(@"\\dc1\userspace\weber\Performance_oldLibs_DB");
+var tempDB = OpenOrCreateDatabase(@"E:\Performance_oldLibs_DB");
+**************
+Opening existing database 'E:\Performance_oldLibs_DB'.
 
 ==============
-var tempDB = OpenOrCreateDatabase("D:\\tmp\\fk_temp_db");
-**************
-Opening existing database 'D:\tmp\fk_temp_db'.
-
-==============
- var myBatch = new MiniBatchProcessorClient(@"D:\tmp\fk_deploy");
+var myBatch = new MiniBatchProcessorClient(@"G:\deploy-Mini");
+//var myBatch = new MsHPC2012Client(@"\\dc1\userspace\weber\deploy","hpccluster",ComputeNodes : new[] {"hpccluster"});
 **************
 ==============
 MiniBatchProcessor.Server.StartIfNotRunning();
 **************
-Starting mini batch processor in external process...
-Started mini batch processor on local machine, process id is 12352.
+Mini batch processor is already running.
 
 ==============
 // ===================
@@ -70,12 +79,12 @@ static class Utils {
 tempDB.Grids;
 **************
 List of 6 instances of IGridInfo {
-  0: { Guid = b185b7b5-caf5-47e0-a19b-e36c3fb19359; Name = PoissonSolverPerformance_J40; Cell Count = 40; Dim = 3 }
-  1: { Guid = a3b8e37f-d0cb-4c2c-b033-c75e962a3a31; Name = PoissonSolverPerformance_J1310720; Cell Count = 1310720; Dim = 3 }
-  2: { Guid = 7f49a48c-a3f4-4874-b7b2-1effa827f74b; Name = PoissonSolverPerformance_J163840; Cell Count = 163840; Dim = 3 }
-  3: { Guid = db9288ba-09ef-45ec-aead-641acc31d741; Name = PoissonSolverPerformance_J20480; Cell Count = 20480; Dim = 3 }
-  4: { Guid = a27dbfca-f6b0-4eee-ad6f-cf0bfdc1610a; Name = PoissonSolverPerformance_J2560; Cell Count = 2560; Dim = 3 }
-  5: { Guid = ff72b866-8921-4289-94a1-69af196e36a2; Name = PoissonSolverPerformance_J320; Cell Count = 320; Dim = 3 }
+  0: { Guid = 08cc827c-a65e-4a46-b9f0-437fd27f76bc; Name = PoissonSolverPerformance_beforeNewLibs_J1310720; Cell Count = 1310720; Dim = 3 }
+  1: { Guid = a918d1bc-ab10-4e51-8ab1-0773fb9adf5c; Name = PoissonSolverPerformance_beforeNewLibs_J163840; Cell Count = 163840; Dim = 3 }
+  2: { Guid = b448dc07-bd76-4cb7-b9c0-3a0f7a20f707; Name = PoissonSolverPerformance_beforeNewLibs_J20480; Cell Count = 20480; Dim = 3 }
+  3: { Guid = 4c6f06af-b6bb-43c7-803c-c64465ca46e4; Name = PoissonSolverPerformance_beforeNewLibs_J2560; Cell Count = 2560; Dim = 3 }
+  4: { Guid = b7cca2e2-4d7e-4fea-8f8a-c0402ede5864; Name = PoissonSolverPerformance_beforeNewLibs_J320; Cell Count = 320; Dim = 3 }
+  5: { Guid = 57d9b963-04cb-4d4a-8bfb-324fbf6a387e; Name = PoissonSolverPerformance_beforeNewLibs_J40; Cell Count = 40; Dim = 3 }
 }
 ==============
 int[] Resolutions_3D = new int[] { 2, 4, 8, 16, 32, 64 };
@@ -124,23 +133,23 @@ for(int cnt = 0; cnt < Resolutions_3D.Length; cnt++) {
     
 }
 **************
-Found Grid: { Guid = b185b7b5-caf5-47e0-a19b-e36c3fb19359; Name = PoissonSolverPerformance_J40; Cell Count = 40; Dim = 3 }
-Found Grid: { Guid = ff72b866-8921-4289-94a1-69af196e36a2; Name = PoissonSolverPerformance_J320; Cell Count = 320; Dim = 3 }
-Found Grid: { Guid = a27dbfca-f6b0-4eee-ad6f-cf0bfdc1610a; Name = PoissonSolverPerformance_J2560; Cell Count = 2560; Dim = 3 }
-Found Grid: { Guid = db9288ba-09ef-45ec-aead-641acc31d741; Name = PoissonSolverPerformance_J20480; Cell Count = 20480; Dim = 3 }
-Found Grid: { Guid = 7f49a48c-a3f4-4874-b7b2-1effa827f74b; Name = PoissonSolverPerformance_J163840; Cell Count = 163840; Dim = 3 }
-Found Grid: { Guid = a3b8e37f-d0cb-4c2c-b033-c75e962a3a31; Name = PoissonSolverPerformance_J1310720; Cell Count = 1310720; Dim = 3 }
+Found Grid: { Guid = 57d9b963-04cb-4d4a-8bfb-324fbf6a387e; Name = PoissonSolverPerformance_beforeNewLibs_J40; Cell Count = 40; Dim = 3 }
+Found Grid: { Guid = b7cca2e2-4d7e-4fea-8f8a-c0402ede5864; Name = PoissonSolverPerformance_beforeNewLibs_J320; Cell Count = 320; Dim = 3 }
+Found Grid: { Guid = 4c6f06af-b6bb-43c7-803c-c64465ca46e4; Name = PoissonSolverPerformance_beforeNewLibs_J2560; Cell Count = 2560; Dim = 3 }
+Found Grid: { Guid = b448dc07-bd76-4cb7-b9c0-3a0f7a20f707; Name = PoissonSolverPerformance_beforeNewLibs_J20480; Cell Count = 20480; Dim = 3 }
+Found Grid: { Guid = a918d1bc-ab10-4e51-8ab1-0773fb9adf5c; Name = PoissonSolverPerformance_beforeNewLibs_J163840; Cell Count = 163840; Dim = 3 }
+Found Grid: { Guid = 08cc827c-a65e-4a46-b9f0-437fd27f76bc; Name = PoissonSolverPerformance_beforeNewLibs_J1310720; Cell Count = 1310720; Dim = 3 }
 
 ==============
 grids;
 **************
 List of 6 instances of IGridInfo {
-  0: { Guid = b185b7b5-caf5-47e0-a19b-e36c3fb19359; Name = PoissonSolverPerformance_J40; Cell Count = 40; Dim = 3 }
-  1: { Guid = ff72b866-8921-4289-94a1-69af196e36a2; Name = PoissonSolverPerformance_J320; Cell Count = 320; Dim = 3 }
-  2: { Guid = a27dbfca-f6b0-4eee-ad6f-cf0bfdc1610a; Name = PoissonSolverPerformance_J2560; Cell Count = 2560; Dim = 3 }
-  3: { Guid = db9288ba-09ef-45ec-aead-641acc31d741; Name = PoissonSolverPerformance_J20480; Cell Count = 20480; Dim = 3 }
-  4: { Guid = 7f49a48c-a3f4-4874-b7b2-1effa827f74b; Name = PoissonSolverPerformance_J163840; Cell Count = 163840; Dim = 3 }
-  5: { Guid = a3b8e37f-d0cb-4c2c-b033-c75e962a3a31; Name = PoissonSolverPerformance_J1310720; Cell Count = 1310720; Dim = 3 }
+  0: { Guid = 57d9b963-04cb-4d4a-8bfb-324fbf6a387e; Name = PoissonSolverPerformance_beforeNewLibs_J40; Cell Count = 40; Dim = 3 }
+  1: { Guid = b7cca2e2-4d7e-4fea-8f8a-c0402ede5864; Name = PoissonSolverPerformance_beforeNewLibs_J320; Cell Count = 320; Dim = 3 }
+  2: { Guid = 4c6f06af-b6bb-43c7-803c-c64465ca46e4; Name = PoissonSolverPerformance_beforeNewLibs_J2560; Cell Count = 2560; Dim = 3 }
+  3: { Guid = b448dc07-bd76-4cb7-b9c0-3a0f7a20f707; Name = PoissonSolverPerformance_beforeNewLibs_J20480; Cell Count = 20480; Dim = 3 }
+  4: { Guid = a918d1bc-ab10-4e51-8ab1-0773fb9adf5c; Name = PoissonSolverPerformance_beforeNewLibs_J163840; Cell Count = 163840; Dim = 3 }
+  5: { Guid = 08cc827c-a65e-4a46-b9f0-437fd27f76bc; Name = PoissonSolverPerformance_beforeNewLibs_J1310720; Cell Count = 1310720; Dim = 3 }
 }
 ==============
 **************
@@ -199,19 +208,19 @@ List<SipControl> controls = new List<SipControl>();
 ==============
 // polynomial degrees to test
 //int[] PolyDegS = new int[] {2, 3, 4, 5, 6};
-int[] PolyDegS = new int[] {2}; // reduced options for dev.
+int[] PolyDegS = new int[] {2,3,5}; // reduced options for dev.
 **************
 ==============
 // Solvers which we want to instrument:
 SolverCodes[] solver_nameS = new SolverCodes[] {
-//    SolverCodes.classic_pardiso, 
-//    SolverCodes.classic_mumps, 
-//    SolverCodes.classic_cg,
-      SolverCodes.exp_softpcg_schwarz_directcoarse,
-//    SolverCodes.exp_direct,
-//    SolverCodes.exp_softpcg_schwarz
-//    SolverCodes.exp_direct_lapack
-      SolverCodes.exp_softpcg_mg
+    SolverCodes.classic_pardiso, 
+    SolverCodes.classic_mumps, 
+    SolverCodes.classic_cg,
+    SolverCodes.exp_softpcg_schwarz_directcoarse,
+    SolverCodes.exp_direct,
+    SolverCodes.exp_softpcg_schwarz,
+    SolverCodes.exp_direct_lapack,
+    SolverCodes.exp_softpcg_mg
 }; 
 **************
 ==============
@@ -243,7 +252,7 @@ foreach(IGridInfo grd in grids) {
     var ctrl = new SipControl();
     controls.Add(ctrl);
     
-    ctrl.SessionName = caseName;
+    //ctrl.SessionName = caseName;
     ctrl.SetDatabase(tempDB);
     ctrl.SetGrid(grd);
     ctrl.SetDGdegree(k);
@@ -251,25 +260,128 @@ foreach(IGridInfo grd in grids) {
     ctrl.NoOfMultigridLevels = int.MaxValue;
     
     ctrl.InitialValues.Add("RHS", GetFormulaObject(InitialValues.RHS));
-    ctrl.AddBoundaryCondition(BoundaryType.Dirichlet.ToString(), "T",
+    ctrl.AddBoundaryValue(BoundaryType.Dirichlet.ToString(), "T",
         GetFormulaObject(InitialValues.DirichletBC));
-    ctrl.AddBoundaryCondition(BoundaryType.Neumann.ToString(), "T",
+    ctrl.AddBoundaryValue(BoundaryType.Neumann.ToString(), "T",
         GetFormulaObject(InitialValues.NeumannBC));
+    ctrl.SessionName = "PoissonConstCoeff_"+caseName;
 }
 }
 }
 
 **************
+setting up: J40_k2_classic_pardiso
+setting up: J320_k2_classic_pardiso
+setting up: J2560_k2_classic_pardiso
+setting up: J20480_k2_classic_pardiso
+setting up: J163840_k2_classic_pardiso
+setting up: J40_k3_classic_pardiso
+setting up: J320_k3_classic_pardiso
+setting up: J2560_k3_classic_pardiso
+setting up: J20480_k3_classic_pardiso
+setting up: J163840_k3_classic_pardiso
+setting up: J40_k5_classic_pardiso
+setting up: J320_k5_classic_pardiso
+setting up: J2560_k5_classic_pardiso
+setting up: J20480_k5_classic_pardiso
+setting up: J40_k2_classic_mumps
+setting up: J320_k2_classic_mumps
+setting up: J2560_k2_classic_mumps
+setting up: J20480_k2_classic_mumps
+setting up: J163840_k2_classic_mumps
+setting up: J40_k3_classic_mumps
+setting up: J320_k3_classic_mumps
+setting up: J2560_k3_classic_mumps
+setting up: J20480_k3_classic_mumps
+setting up: J163840_k3_classic_mumps
+setting up: J40_k5_classic_mumps
+setting up: J320_k5_classic_mumps
+setting up: J2560_k5_classic_mumps
+setting up: J20480_k5_classic_mumps
+setting up: J40_k2_classic_cg
+setting up: J320_k2_classic_cg
+setting up: J2560_k2_classic_cg
+setting up: J20480_k2_classic_cg
+setting up: J163840_k2_classic_cg
+setting up: J40_k3_classic_cg
+setting up: J320_k3_classic_cg
+setting up: J2560_k3_classic_cg
+setting up: J20480_k3_classic_cg
+setting up: J163840_k3_classic_cg
+setting up: J40_k5_classic_cg
+setting up: J320_k5_classic_cg
+setting up: J2560_k5_classic_cg
+setting up: J20480_k5_classic_cg
 setting up: J40_k2_exp_softpcg_schwarz_directcoarse
 setting up: J320_k2_exp_softpcg_schwarz_directcoarse
 setting up: J2560_k2_exp_softpcg_schwarz_directcoarse
 setting up: J20480_k2_exp_softpcg_schwarz_directcoarse
 setting up: J163840_k2_exp_softpcg_schwarz_directcoarse
+setting up: J40_k3_exp_softpcg_schwarz_directcoarse
+setting up: J320_k3_exp_softpcg_schwarz_directcoarse
+setting up: J2560_k3_exp_softpcg_schwarz_directcoarse
+setting up: J20480_k3_exp_softpcg_schwarz_directcoarse
+setting up: J163840_k3_exp_softpcg_schwarz_directcoarse
+setting up: J40_k5_exp_softpcg_schwarz_directcoarse
+setting up: J320_k5_exp_softpcg_schwarz_directcoarse
+setting up: J2560_k5_exp_softpcg_schwarz_directcoarse
+setting up: J20480_k5_exp_softpcg_schwarz_directcoarse
+setting up: J40_k2_exp_direct
+setting up: J320_k2_exp_direct
+setting up: J2560_k2_exp_direct
+setting up: J20480_k2_exp_direct
+setting up: J163840_k2_exp_direct
+setting up: J40_k3_exp_direct
+setting up: J320_k3_exp_direct
+setting up: J2560_k3_exp_direct
+setting up: J20480_k3_exp_direct
+setting up: J163840_k3_exp_direct
+setting up: J40_k5_exp_direct
+setting up: J320_k5_exp_direct
+setting up: J2560_k5_exp_direct
+setting up: J20480_k5_exp_direct
+setting up: J40_k2_exp_softpcg_schwarz
+setting up: J320_k2_exp_softpcg_schwarz
+setting up: J2560_k2_exp_softpcg_schwarz
+setting up: J20480_k2_exp_softpcg_schwarz
+setting up: J163840_k2_exp_softpcg_schwarz
+setting up: J40_k3_exp_softpcg_schwarz
+setting up: J320_k3_exp_softpcg_schwarz
+setting up: J2560_k3_exp_softpcg_schwarz
+setting up: J20480_k3_exp_softpcg_schwarz
+setting up: J163840_k3_exp_softpcg_schwarz
+setting up: J40_k5_exp_softpcg_schwarz
+setting up: J320_k5_exp_softpcg_schwarz
+setting up: J2560_k5_exp_softpcg_schwarz
+setting up: J20480_k5_exp_softpcg_schwarz
+setting up: J40_k2_exp_direct_lapack
+setting up: J320_k2_exp_direct_lapack
+setting up: J2560_k2_exp_direct_lapack
+setting up: J20480_k2_exp_direct_lapack
+setting up: J163840_k2_exp_direct_lapack
+setting up: J40_k3_exp_direct_lapack
+setting up: J320_k3_exp_direct_lapack
+setting up: J2560_k3_exp_direct_lapack
+setting up: J20480_k3_exp_direct_lapack
+setting up: J163840_k3_exp_direct_lapack
+setting up: J40_k5_exp_direct_lapack
+setting up: J320_k5_exp_direct_lapack
+setting up: J2560_k5_exp_direct_lapack
+setting up: J20480_k5_exp_direct_lapack
 setting up: J40_k2_exp_softpcg_mg
 setting up: J320_k2_exp_softpcg_mg
 setting up: J2560_k2_exp_softpcg_mg
 setting up: J20480_k2_exp_softpcg_mg
 setting up: J163840_k2_exp_softpcg_mg
+setting up: J40_k3_exp_softpcg_mg
+setting up: J320_k3_exp_softpcg_mg
+setting up: J2560_k3_exp_softpcg_mg
+setting up: J20480_k3_exp_softpcg_mg
+setting up: J163840_k3_exp_softpcg_mg
+setting up: J40_k5_exp_softpcg_mg
+setting up: J320_k5_exp_softpcg_mg
+setting up: J2560_k5_exp_softpcg_mg
+setting up: J20480_k5_exp_softpcg_mg
 
 ==============
 // ==========
@@ -296,67 +408,173 @@ setting up: J163840_k2_exp_softpcg_mg
 ==============
 foreach(var ctrl in controls) {
     Console.WriteLine(" Submitting: " + ctrl.SessionName); 
-    ctrl.RunBatch(myBatch,NumberOfMPIProcs:1,UseComputeNodesExclusive:true); 
+    ctrl.RunBatch(myBatch); 
 }
 **************
- Submitting: J40_k2_exp_softpcg_schwarz_directcoarse
-Job was successful (according to job manager), latest session related to job is:
-{ Guid = c6c86ad8-1cbe-4dfb-b3c9-f86c80cfcf43; 03/23/2018 12:56:43 Name = J40_k2_exp_softpcg_schwarz_directcoarse }
-No further action.
- Submitting: J320_k2_exp_softpcg_schwarz_directcoarse
-Job was successful (according to job manager), latest session related to job is:
-{ Guid = aafc90b9-09bb-44b3-9f12-6da3d63d191a; 03/23/2018 12:57:14 Name = J320_k2_exp_softpcg_schwarz_directcoarse }
-No further action.
- Submitting: J2560_k2_exp_softpcg_schwarz_directcoarse
-Job was successful (according to job manager), latest session related to job is:
-{ Guid = 626aa661-d412-4554-bfcc-165d118a00e6; 03/23/2018 12:57:45 Name = J2560_k2_exp_softpcg_schwarz_directcoarse }
-No further action.
- Submitting: J20480_k2_exp_softpcg_schwarz_directcoarse
-Job was successful (according to job manager), latest session related to job is:
-{ Guid = be9af85d-35ee-4bd3-869a-d382eae1120b; 03/23/2018 12:58:24 Name = J20480_k2_exp_softpcg_schwarz_directcoarse }
-No further action.
- Submitting: J163840_k2_exp_softpcg_schwarz_directcoarse
-Job was successful (according to job manager), latest session related to job is:
-{ Guid = f5b0e8dd-4d8b-40a6-9a6b-5f3152b444b6; 03/23/2018 13:00:04 Name = J163840_k2_exp_softpcg_schwarz_directcoarse }
-No further action.
- Submitting: J40_k2_exp_softpcg_mg
-Job was successful (according to job manager), latest session related to job is:
-{ Guid = 143ecb65-6399-4a81-b7b4-e250e83d8461; 03/23/2018 12:34:37 Name = J40_k2_exp_softpcg_mg }
-No further action.
- Submitting: J320_k2_exp_softpcg_mg
-Job was successful (according to job manager), latest session related to job is:
-{ Guid = 36d50272-328b-4475-bc8a-2dfd4880a26a; 03/23/2018 12:35:07 Name = J320_k2_exp_softpcg_mg }
-No further action.
- Submitting: J2560_k2_exp_softpcg_mg
+ Submitting: PoissonConstCoeff_J40_k2_classic_pardiso
+System.ArgumentException occurred: Job with name 'PoissonConstCoeff_J40_k2_classic_pardiso' is already defined in the workflow management.. Type 'LastError' for details.
 
-Job was successful (according to job manager), latest session related to job is:
-{ Guid = 209a5ec1-ee55-4c5f-8723-cd5cdbfbc644; 03/26/2018 08:39:04 Name = J2560_k2_exp_softpcg_mg }
-No further action.
- Submitting: J20480_k2_exp_softpcg_mg
-Job was successful (according to job manager), latest session related to job is:
-{ Guid = 319b314e-e799-4352-b906-8d9cb039c5cc; 03/26/2018 08:39:44 Name = J20480_k2_exp_softpcg_mg }
-No further action.
- Submitting: J163840_k2_exp_softpcg_mg
-Job was successful (according to job manager), latest session related to job is:
-{ Guid = da78c65e-3dc7-493b-b427-cdaca6e159c0; 03/23/2018 13:41:37 Name = J163840_k2_exp_softpcg_mg }
-No further action.
-
+==============
+**************
+==============
+**************
+==============
+tempDB.Projects.Where(p=>p.Key.Contains(WFlowName)).Pick(0).Value
+**************
+List of 33 instances of ISessionInfo {
+  0: PoissonSolverPerformance_beforeNewLibs	PoissonConstCoeff_J163840_k2_classic_cg*	12/04/2018 15:43:12	d3e267de...
+  1: PoissonSolverPerformance_beforeNewLibs	PoissonConstCoeff_J20480_k2_classic_cg	12/04/2018 15:41:32	f7d3ba3a...
+  2: PoissonSolverPerformance_beforeNewLibs	PoissonConstCoeff_J2560_k2_classic_cg	12/04/2018 15:41:02	b96c6c85...
+  3: PoissonSolverPerformance_beforeNewLibs	PoissonConstCoeff_J320_k2_classic_cg	12/04/2018 15:40:32	991bbbc8...
+  4: PoissonSolverPerformance_beforeNewLibs	PoissonConstCoeff_J40_k2_classic_cg	12/04/2018 15:40:02	c5623e09...
+  5: PoissonSolverPerformance_beforeNewLibs	PoissonConstCoeff_J20480_k5_classic_mumps*	12/04/2018 15:36:41	f99ac394...
+  6: PoissonSolverPerformance_beforeNewLibs	PoissonConstCoeff_J2560_k5_classic_mumps	12/04/2018 15:34:21	a7f9f4bc...
+  7: PoissonSolverPerformance_beforeNewLibs	PoissonConstCoeff_J320_k5_classic_mumps	12/04/2018 15:33:41	5b98cae3...
+  8: PoissonSolverPerformance_beforeNewLibs	PoissonConstCoeff_J40_k5_classic_mumps	12/04/2018 15:33:11	4dfcd634...
+  9: PoissonSolverPerformance_beforeNewLibs	PoissonConstCoeff_J163840_k3_classic_mumps*	12/04/2018 15:28:31	0442cf5e...
+  10: PoissonSolverPerformance_beforeNewLibs	PoissonConstCoeff_J20480_k3_classic_mumps*	12/04/2018 15:27:00	d6e3be5f...
+  11: PoissonSolverPerformance_beforeNewLibs	PoissonConstCoeff_J2560_k3_classic_mumps	12/04/2018 15:26:20	59c370f6...
+  12: PoissonSolverPerformance_beforeNewLibs	PoissonConstCoeff_J320_k3_classic_mumps	12/04/2018 15:25:50	7c84e289...
+  13: PoissonSolverPerformance_beforeNewLibs	PoissonConstCoeff_J40_k3_classic_mumps	12/04/2018 15:25:20	32211745...
+  14: PoissonSolverPerformance_beforeNewLibs	PoissonConstCoeff_J163840_k2_classic_mumps*	12/04/2018 15:20:10	0da6801a...
+  15: PoissonSolverPerformance_beforeNewLibs	PoissonConstCoeff_J20480_k2_classic_mumps	12/04/2018 15:18:39	e326c570...
+  16: PoissonSolverPerformance_beforeNewLibs	PoissonConstCoeff_J2560_k2_classic_mumps	12/04/2018 15:18:09	c4f1b7cd...
+  17: PoissonSolverPerformance_beforeNewLibs	PoissonConstCoeff_J320_k2_classic_mumps	12/04/2018 15:17:39	e7be9feb...
+  18: PoissonSolverPerformance_beforeNewLibs	PoissonConstCoeff_J40_k2_classic_mumps	12/04/2018 15:17:09	f2b1389b...
+  19: PoissonSolverPerformance_beforeNewLibs	PoissonConstCoeff_J20480_k5_classic_pardiso*	12/04/2018 15:13:59	b51ad32f...
+  20: PoissonSolverPerformance_beforeNewLibs	PoissonConstCoeff_J2560_k5_classic_pardiso	12/04/2018 15:11:29	d880159c...
+  21: PoissonSolverPerformance_beforeNewLibs	PoissonConstCoeff_J320_k5_classic_pardiso	12/04/2018 15:10:49	0abddee9...
+  22: PoissonSolverPerformance_beforeNewLibs	PoissonConstCoeff_J40_k5_classic_pardiso	12/04/2018 15:10:19	9300d521...
+  23: PoissonSolverPerformance_beforeNewLibs	PoissonConstCoeff_J163840_k3_classic_pardiso*	12/04/2018 15:05:18	5715d79a...
+  24: PoissonSolverPerformance_beforeNewLibs	PoissonConstCoeff_J20480_k3_classic_pardiso	12/04/2018 14:54:57	68a3ce7d...
+  25: PoissonSolverPerformance_beforeNewLibs	PoissonConstCoeff_J2560_k3_classic_pardiso	12/04/2018 14:54:17	5366ffbb...
+  26: PoissonSolverPerformance_beforeNewLibs	PoissonConstCoeff_J320_k3_classic_pardiso	12/04/2018 14:53:47	b9663d73...
+  27: PoissonSolverPerformance_beforeNewLibs	PoissonConstCoeff_J40_k3_classic_pardiso	12/04/2018 14:53:17	420a7ce2...
+  28: PoissonSolverPerformance_beforeNewLibs	PoissonConstCoeff_J163840_k2_classic_pardiso	12/04/2018 14:49:06	2f6f357b...
+  29: PoissonSolverPerformance_beforeNewLibs	PoissonConstCoeff_J20480_k2_classic_pardiso	12/04/2018 14:47:16	67959dfa...
+  30: PoissonSolverPerformance_beforeNewLibs	PoissonConstCoeff_J2560_k2_classic_pardiso	12/04/2018 14:46:46	742ecc88...
+  31: PoissonSolverPerformance_beforeNewLibs	PoissonConstCoeff_J320_k2_classic_pardiso	12/04/2018 14:46:26	367b49e1...
+  32: PoissonSolverPerformance_beforeNewLibs	PoissonConstCoeff_J40_k2_classic_pardiso	12/04/2018 14:45:56	b92f62db...
+}
 ==============
 **************
 ==============
 WorkflowMgm.AllJobs.Select(kv => kv.Key + ": \t" + kv.Value.Status);
 **************
-List of 10 instances of String {
-  0: J40_k2_exp_softpcg_schwarz_directcoarse: 	FinishedSuccessful
-  1: J320_k2_exp_softpcg_schwarz_directcoarse: 	FinishedSuccessful
-  2: J2560_k2_exp_softpcg_schwarz_directcoarse: 	FinishedSuccessful
-  3: J20480_k2_exp_softpcg_schwarz_directcoarse: 	FinishedSuccessful
-  4: J163840_k2_exp_softpcg_schwarz_directcoarse: 	FinishedSuccessful
-  5: J40_k2_exp_softpcg_mg: 	FinishedSuccessful
-  6: J320_k2_exp_softpcg_mg: 	FinishedSuccessful
-  7: J2560_k2_exp_softpcg_mg: 	FinishedSuccessful
-  8: J20480_k2_exp_softpcg_mg: 	FinishedSuccessful
-  9: J163840_k2_exp_softpcg_mg: 	FinishedSuccessful
+Loading session 03bbcb6c-89aa-4c92-b1f6-dd479bf3baa1 failed with message 'Der Objektverweis wurde nicht auf eine Objektinstanz festgelegt.'
+List of 112 instances of String {
+  0: PoissonConstCoeff_J40_k2_classic_pardiso: 	FinishedSuccessful
+  1: PoissonConstCoeff_J320_k2_classic_pardiso: 	FinishedSuccessful
+  2: PoissonConstCoeff_J2560_k2_classic_pardiso: 	FinishedSuccessful
+  3: PoissonConstCoeff_J20480_k2_classic_pardiso: 	FinishedSuccessful
+  4: PoissonConstCoeff_J163840_k2_classic_pardiso: 	FinishedSuccessful
+  5: PoissonConstCoeff_J40_k3_classic_pardiso: 	FinishedSuccessful
+  6: PoissonConstCoeff_J320_k3_classic_pardiso: 	FinishedSuccessful
+  7: PoissonConstCoeff_J2560_k3_classic_pardiso: 	FinishedSuccessful
+  8: PoissonConstCoeff_J20480_k3_classic_pardiso: 	FinishedSuccessful
+  9: PoissonConstCoeff_J163840_k3_classic_pardiso: 	Failed
+  10: PoissonConstCoeff_J40_k5_classic_pardiso: 	FinishedSuccessful
+  11: PoissonConstCoeff_J320_k5_classic_pardiso: 	FinishedSuccessful
+  12: PoissonConstCoeff_J2560_k5_classic_pardiso: 	FinishedSuccessful
+  13: PoissonConstCoeff_J20480_k5_classic_pardiso: 	Failed
+  14: PoissonConstCoeff_J40_k2_classic_mumps: 	FinishedSuccessful
+  15: PoissonConstCoeff_J320_k2_classic_mumps: 	FinishedSuccessful
+  16: PoissonConstCoeff_J2560_k2_classic_mumps: 	FinishedSuccessful
+  17: PoissonConstCoeff_J20480_k2_classic_mumps: 	FinishedSuccessful
+  18: PoissonConstCoeff_J163840_k2_classic_mumps: 	Failed
+  19: PoissonConstCoeff_J40_k3_classic_mumps: 	FinishedSuccessful
+  20: PoissonConstCoeff_J320_k3_classic_mumps: 	FinishedSuccessful
+  21: PoissonConstCoeff_J2560_k3_classic_mumps: 	FinishedSuccessful
+  22: PoissonConstCoeff_J20480_k3_classic_mumps: 	Failed
+  23: PoissonConstCoeff_J163840_k3_classic_mumps: 	Failed
+  24: PoissonConstCoeff_J40_k5_classic_mumps: 	FinishedSuccessful
+  25: PoissonConstCoeff_J320_k5_classic_mumps: 	FinishedSuccessful
+  26: PoissonConstCoeff_J2560_k5_classic_mumps: 	FinishedSuccessful
+  27: PoissonConstCoeff_J20480_k5_classic_mumps: 	Failed
+  28: PoissonConstCoeff_J40_k2_classic_cg: 	FinishedSuccessful
+  29: PoissonConstCoeff_J320_k2_classic_cg: 	FinishedSuccessful
+  30: PoissonConstCoeff_J2560_k2_classic_cg: 	FinishedSuccessful
+  31: PoissonConstCoeff_J20480_k2_classic_cg: 	FinishedSuccessful
+  32: PoissonConstCoeff_J163840_k2_classic_cg: 	FinishedSuccessful
+  33: PoissonConstCoeff_J40_k3_classic_cg: 	FinishedSuccessful
+  34: PoissonConstCoeff_J320_k3_classic_cg: 	FinishedSuccessful
+  35: PoissonConstCoeff_J2560_k3_classic_cg: 	FinishedSuccessful
+  36: PoissonConstCoeff_J20480_k3_classic_cg: 	FinishedSuccessful
+  37: PoissonConstCoeff_J163840_k3_classic_cg: 	Failed
+  38: PoissonConstCoeff_J40_k5_classic_cg: 	FinishedSuccessful
+  39: PoissonConstCoeff_J320_k5_classic_cg: 	FinishedSuccessful
+  40: PoissonConstCoeff_J2560_k5_classic_cg: 	FinishedSuccessful
+  41: PoissonConstCoeff_J20480_k5_classic_cg: 	Failed
+  42: PoissonConstCoeff_J40_k2_exp_softpcg_schwarz_directcoarse: 	FinishedSuccessful
+  43: PoissonConstCoeff_J320_k2_exp_softpcg_schwarz_directcoarse: 	FinishedSuccessful
+  44: PoissonConstCoeff_J2560_k2_exp_softpcg_schwarz_directcoarse: 	FinishedSuccessful
+  45: PoissonConstCoeff_J20480_k2_exp_softpcg_schwarz_directcoarse: 	FinishedSuccessful
+  46: PoissonConstCoeff_J163840_k2_exp_softpcg_schwarz_directcoarse: 	FinishedSuccessful
+  47: PoissonConstCoeff_J40_k3_exp_softpcg_schwarz_directcoarse: 	FinishedSuccessful
+  48: PoissonConstCoeff_J320_k3_exp_softpcg_schwarz_directcoarse: 	FinishedSuccessful
+  49: PoissonConstCoeff_J2560_k3_exp_softpcg_schwarz_directcoarse: 	FinishedSuccessful
+  50: PoissonConstCoeff_J20480_k3_exp_softpcg_schwarz_directcoarse: 	FinishedSuccessful
+  51: PoissonConstCoeff_J163840_k3_exp_softpcg_schwarz_directcoarse: 	Failed
+  52: PoissonConstCoeff_J40_k5_exp_softpcg_schwarz_directcoarse: 	FinishedSuccessful
+  53: PoissonConstCoeff_J320_k5_exp_softpcg_schwarz_directcoarse: 	FinishedSuccessful
+  54: PoissonConstCoeff_J2560_k5_exp_softpcg_schwarz_directcoarse: 	FinishedSuccessful
+  55: PoissonConstCoeff_J20480_k5_exp_softpcg_schwarz_directcoarse: 	Failed
+  56: PoissonConstCoeff_J40_k2_exp_direct: 	FinishedSuccessful
+  57: PoissonConstCoeff_J320_k2_exp_direct: 	FinishedSuccessful
+  58: PoissonConstCoeff_J2560_k2_exp_direct: 	FinishedSuccessful
+  59: PoissonConstCoeff_J20480_k2_exp_direct: 	FinishedSuccessful
+  60: PoissonConstCoeff_J163840_k2_exp_direct: 	FinishedSuccessful
+  61: PoissonConstCoeff_J40_k3_exp_direct: 	FinishedSuccessful
+  62: PoissonConstCoeff_J320_k3_exp_direct: 	FinishedSuccessful
+  63: PoissonConstCoeff_J2560_k3_exp_direct: 	FinishedSuccessful
+  64: PoissonConstCoeff_J20480_k3_exp_direct: 	FinishedSuccessful
+  65: PoissonConstCoeff_J163840_k3_exp_direct: 	Failed
+  66: PoissonConstCoeff_J40_k5_exp_direct: 	FinishedSuccessful
+  67: PoissonConstCoeff_J320_k5_exp_direct: 	FinishedSuccessful
+  68: PoissonConstCoeff_J2560_k5_exp_direct: 	FinishedSuccessful
+  69: PoissonConstCoeff_J20480_k5_exp_direct: 	Failed
+  70: PoissonConstCoeff_J40_k2_exp_softpcg_schwarz: 	FinishedSuccessful
+  71: PoissonConstCoeff_J320_k2_exp_softpcg_schwarz: 	FinishedSuccessful
+  72: PoissonConstCoeff_J2560_k2_exp_softpcg_schwarz: 	FinishedSuccessful
+  73: PoissonConstCoeff_J20480_k2_exp_softpcg_schwarz: 	FinishedSuccessful
+  74: PoissonConstCoeff_J163840_k2_exp_softpcg_schwarz: 	FinishedSuccessful
+  75: PoissonConstCoeff_J40_k3_exp_softpcg_schwarz: 	FinishedSuccessful
+  76: PoissonConstCoeff_J320_k3_exp_softpcg_schwarz: 	FinishedSuccessful
+  77: PoissonConstCoeff_J2560_k3_exp_softpcg_schwarz: 	FinishedSuccessful
+  78: PoissonConstCoeff_J20480_k3_exp_softpcg_schwarz: 	FinishedSuccessful
+  79: PoissonConstCoeff_J163840_k3_exp_softpcg_schwarz: 	Failed
+  80: PoissonConstCoeff_J40_k5_exp_softpcg_schwarz: 	FinishedSuccessful
+  81: PoissonConstCoeff_J320_k5_exp_softpcg_schwarz: 	FinishedSuccessful
+  82: PoissonConstCoeff_J2560_k5_exp_softpcg_schwarz: 	FinishedSuccessful
+  83: PoissonConstCoeff_J20480_k5_exp_softpcg_schwarz: 	Failed
+  84: PoissonConstCoeff_J40_k2_exp_direct_lapack: 	FinishedSuccessful
+  85: PoissonConstCoeff_J320_k2_exp_direct_lapack: 	FinishedSuccessful
+  86: PoissonConstCoeff_J2560_k2_exp_direct_lapack: 	Failed
+  87: PoissonConstCoeff_J20480_k2_exp_direct_lapack: 	Failed
+  88: PoissonConstCoeff_J163840_k2_exp_direct_lapack: 	Failed
+  89: PoissonConstCoeff_J40_k3_exp_direct_lapack: 	FinishedSuccessful
+  90: PoissonConstCoeff_J320_k3_exp_direct_lapack: 	FinishedSuccessful
+  91: PoissonConstCoeff_J2560_k3_exp_direct_lapack: 	Failed
+  92: PoissonConstCoeff_J20480_k3_exp_direct_lapack: 	Failed
+  93: PoissonConstCoeff_J163840_k3_exp_direct_lapack: 	Failed
+  94: PoissonConstCoeff_J40_k5_exp_direct_lapack: 	FinishedSuccessful
+  95: PoissonConstCoeff_J320_k5_exp_direct_lapack: 	Failed
+  96: PoissonConstCoeff_J2560_k5_exp_direct_lapack: 	Failed
+  97: PoissonConstCoeff_J20480_k5_exp_direct_lapack: 	Failed
+  98: PoissonConstCoeff_J40_k2_exp_softpcg_mg: 	FinishedSuccessful
+  99: PoissonConstCoeff_J320_k2_exp_softpcg_mg: 	FinishedSuccessful
+  100: PoissonConstCoeff_J2560_k2_exp_softpcg_mg: 	FinishedSuccessful
+  101: PoissonConstCoeff_J20480_k2_exp_softpcg_mg: 	FinishedSuccessful
+  102: PoissonConstCoeff_J163840_k2_exp_softpcg_mg: 	FinishedSuccessful
+  103: PoissonConstCoeff_J40_k3_exp_softpcg_mg: 	FinishedSuccessful
+  104: PoissonConstCoeff_J320_k3_exp_softpcg_mg: 	FinishedSuccessful
+  105: PoissonConstCoeff_J2560_k3_exp_softpcg_mg: 	FinishedSuccessful
+  106: PoissonConstCoeff_J20480_k3_exp_softpcg_mg: 	FinishedSuccessful
+  107: PoissonConstCoeff_J163840_k3_exp_softpcg_mg: 	Failed
+  108: PoissonConstCoeff_J40_k5_exp_softpcg_mg: 	FinishedSuccessful
+  109: PoissonConstCoeff_J320_k5_exp_softpcg_mg: 	FinishedSuccessful
+  110: PoissonConstCoeff_J2560_k5_exp_softpcg_mg: 	FinishedSuccessful
+  111: PoissonConstCoeff_J20480_k5_exp_softpcg_mg: 	Failed
 }
 ==============
 //WorkflowMgm.AllJobs.ElementAt(9).Value.Stdout;
@@ -367,7 +585,8 @@ List of 10 instances of String {
 ==============
 WorkflowMgm.SessionTable.Rows.Count;
 **************
-96
+Loading session 03bbcb6c-89aa-4c92-b1f6-dd479bf3baa1 failed with message 'Der Objektverweis wurde nicht auf eine Objektinstanz festgelegt.'
+224
 ==============
 **************
 ==============
@@ -431,6 +650,8 @@ WorkflowMgm.AdditionalSessionTableColums.Add(
 var SessTab = WorkflowMgm.SessionTable;
 **************
 ==============
+**************
+==============
 // The Session column can't be serialized,
 // we have to remove it
 List<string> AllCols = SessTab.GetColumnNames().ToList();
@@ -453,6 +674,21 @@ string docpath    = Path.Combine(CurrentDocDir, SessTab.TableName + ".json");
 // save session table as file: this can be stored in our git 
 // repository
 SessTab.SaveToFile(docpath);
+**************
+==============
+**************
+==============
+LastError;
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
 **************
 ==============
 **************
