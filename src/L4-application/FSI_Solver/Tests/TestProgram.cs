@@ -45,22 +45,22 @@ namespace BoSSS.Application.FSI_Solver {
         }
 
         [Test]
-        public static void TestFlowRotationalCoupling() { 
+        public static void TestFlowRotationalCoupling() {
+            using (FSI_SolverMain p = new FSI_SolverMain()) {
 
-            FSI_SolverMain p = null;
+                var ctrl = BoSSS.Application.FSI_Solver.HardcodedTestExamples.ParticleInShearFlow(k: 1);
+                p.Init(ctrl);
+                p.RunSolverMode();
 
-            var ctrl = BoSSS.Application.FSI_Solver.HardcodedTestExamples.ParticleInShearFlow(k: 1);
-            p.Init(ctrl);
-            p.RunSolverMode();
+                double angularVelocity_Sol = 0.00487;
 
-            double angularVelocity_Sol = 0.00487;
+                double angularVelocity = (double)p.QueryHandler.QueryResults["Angular_Velocity"];
 
-            double angularVelocity = (double)p.QueryHandler.QueryResults["Angular_Velocity"];
+                double diff_Velocity = Math.Abs(angularVelocity - angularVelocity_Sol);
 
-            double diff_Velocity = Math.Abs(angularVelocity - angularVelocity_Sol);
+                Assert.LessOrEqual(diff_Velocity, 0.00025);
 
-            Assert.LessOrEqual(diff_Velocity, 0.00025);
-
+            }
         }
 
 
