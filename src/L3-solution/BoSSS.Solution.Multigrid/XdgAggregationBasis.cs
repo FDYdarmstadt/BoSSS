@@ -55,7 +55,7 @@ namespace BoSSS.Solution.Multigrid {
         /// <param name="inj">
         /// injection operators.
         /// </param>
-        internal XdgAggregationBasis(XDGBasis xb, XdgAggregationBasis parentBasis, AggregationGrid ag, MultidimensionalArray[] inj)
+        internal XdgAggregationBasis(XDGBasis xb, XdgAggregationBasis parentBasis, AggregationGridData ag, MultidimensionalArray[] inj)
             : base(xb.NonX_Basis, parentBasis, ag, inj) //
         {
             using(new FuncTrace()) {
@@ -713,9 +713,6 @@ namespace BoSSS.Solution.Multigrid {
         /// for XDG, the cell mode index <paramref name="n"/> may not be equal
         /// in the full and the aggregated grid. This method performs the transformation.
         /// </summary>
-        /// <param name="j"></param>
-        /// <param name="n"></param>
-        /// <returns></returns>
         override internal int N_Murks(int j, int n, int N) {
             Debug.Assert(j >= 0 && j < this.DGBasis.GridDat.iLogicalCells.Count);
             Debug.Assert(n >= 0 && n < this.XDGBasis.GetLength(j));

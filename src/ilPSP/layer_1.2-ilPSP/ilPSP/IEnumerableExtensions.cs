@@ -550,6 +550,20 @@ namespace ilPSP {
         public static bool SetEquals<T>(this IEnumerable<T> A, IEnumerable<T> B) {
             return (A.IsSubsetOf<T>(B) && B.IsSubsetOf<T>(A));
         }
+
+        /// <summary>
+        /// the set-union of <paramref name="A"/> and <paramref name="B"/>
+        /// </summary>
+        public static HashSet<T> SetUnion<T>(this IEnumerable<T> A, IEnumerable<T> B) {
+            HashSet<T> R = new HashSet<T>();
+            foreach(T i in A) {
+                R.Add(i);
+            }
+            foreach(T i in B) {
+                R.Add(i);
+            }
+            return R;
+        }
         
         /// <summary>
         /// Wraps each entity into an <see cref="SmartEnumerable{T}.Entry"/>
@@ -604,6 +618,17 @@ namespace ilPSP {
         /// <returns></returns>
         public static IEnumerable<T> Except<T>(this IEnumerable<T> sequence, T excludedItem) {
             return sequence.Where(item => !item.Equals(excludedItem));
+        }
+
+        /// <summary>
+        /// tests if <paramref name="i"/> is contained in <paramref name="sequence"/> by object reference equality
+        /// </summary>
+        public static bool ContainsRefEqual<T>(this IEnumerable<T> sequence, T i) {
+            foreach(T e in sequence) {
+                if (object.ReferenceEquals(i, e))
+                    return true;
+            }
+            return false;
         }
     }
 }

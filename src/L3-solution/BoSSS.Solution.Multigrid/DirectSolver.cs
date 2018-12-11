@@ -221,7 +221,7 @@ namespace BoSSS.Solution.Multigrid {
 
                     double ResidualNorm = Residual.L2NormPow2().MPISum().Sqrt();
                     double SolutionNorm = X.L2NormPow2().MPISum().Sqrt();
-                    double Denom = Math.Max(MatrixInfNorm, Math.Max(RhsNorm, Math.Max(SolutionNorm, Math.Sqrt(double.Epsilon))));
+                    double Denom = Math.Max(MatrixInfNorm, Math.Max(RhsNorm, Math.Max(SolutionNorm, Math.Sqrt(BLAS.MachineEps))));
                     double RelResidualNorm = ResidualNorm / Denom;
 
                     //Console.WriteLine("done: Abs.: {0}, Rel.: {1}", ResidualNorm, RelResidualNorm);

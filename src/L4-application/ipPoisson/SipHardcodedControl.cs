@@ -30,6 +30,7 @@ using BoSSS.Platform.LinAlg;
 using System.Diagnostics;
 using BoSSS.Platform.Utils.Geom;
 using BoSSS.Solution.Gnuplot;
+using BoSSS.Foundation.Grid;
 
 namespace BoSSS.Application.SipPoisson {
 
@@ -210,6 +211,7 @@ namespace BoSSS.Application.SipPoisson {
             //R.TargetBlockSize = 100;
 
             R.TracingNamespaces = "BoSSS,ilPSP";
+            
 
             R.GridFunc = delegate() {
                 GridCommons grd = null;
@@ -324,7 +326,7 @@ namespace BoSSS.Application.SipPoisson {
             return R;
         }
 
-
+        /*
 
         /// <summary>
         /// Test on a 2D Voronoi mesh
@@ -338,7 +340,7 @@ namespace BoSSS.Application.SipPoisson {
         /// <param name="solver_name">
         /// Name of solver to use.
         /// </param>
-        public static SipControl TestVoronoi(int Res, SolverCodes solver_name = SolverCodes.classic_pardiso, int deg = 3) {
+        public static SipControl TestVoronoiOld(int Res, SolverCodes solver_name = SolverCodes.classic_pardiso, int deg = 3) {
             
              if (System.Environment.MachineName.ToLowerInvariant().EndsWith("rennmaschin")
                 //|| System.Environment.MachineName.ToLowerInvariant().Contains("jenkins")
@@ -365,11 +367,10 @@ namespace BoSSS.Application.SipPoisson {
             //R.TargetBlockSize = 100;
 
 
+            
 
-            bool IsIn(params double[] X) {
-                Debug.Assert(X.Length == 2);
-                double xi = X[0];
-                double yi = X[1];
+            bool IsIn(double xi, double yi) {
+                
                 //for(int l = 0; l < bndys.Length; l++) {
                 //    Debug.Assert(bndys[l].Normal.Length == 2);
                 //    if (bndys[l].PointDistance(xi, yi) > 0.0)
@@ -387,6 +388,11 @@ namespace BoSSS.Application.SipPoisson {
                     return false;
 
                 return true;
+            }
+
+            bool IsInV(Vector X) {
+                Debug.Assert(X.Dim == 2);
+                return IsIn(X.x, X.y);
             }
 
             int Mirror(ref double[] _x, ref double[] _y, AffineManifold[] bndys) {
@@ -443,7 +449,7 @@ namespace BoSSS.Application.SipPoisson {
             }
 
             
-            GridCommons GridFunc() {
+            IGrid GridFunc() {
                 GridCommons grd = null;
 
                 var Matlab = new BatchmodeConnector();
@@ -497,7 +503,8 @@ namespace BoSSS.Application.SipPoisson {
                 List<Cell> cells = new List<Cell>();
                 List<int[]> aggregation = new List<int[]>();
                 for(int jV = 0; jV < ResFix; jV++) { // loop over Voronoi Cells
-                    Debug.Assert(IsIn(Nodes.GetRow(jV)));
+                    Debug.Assert(IsInV(Nodes.GetRowPt(jV)));
+
                     int[] iVtxS = OutputVertexIndex[jV];
                     int NV = iVtxS.Length;
 
@@ -508,15 +515,15 @@ namespace BoSSS.Application.SipPoisson {
                         int iV1 = iVtxS[iTri + 1];
                         int iV2 = iVtxS[iTri + 2];
 
-                        double[] V0 = VertexCoordinates.GetRow(iV0);
-                        double[] V1 = VertexCoordinates.GetRow(iV1);
-                        double[] V2 = VertexCoordinates.GetRow(iV2);
+                        Vector V0 = VertexCoordinates.GetRowPt(iV0);
+                        Vector V1 = VertexCoordinates.GetRowPt(iV1);
+                        Vector V2 = VertexCoordinates.GetRowPt(iV2);
 
-                        double[] D1 = V1.Minus(V0);
-                        double[] D2 = V2.Minus(V0);
+                        double[] D1 = V1 - V0;
+                        double[] D2 = V2 - V0;
                         Debug.Assert(D1.CrossProduct2D(D2).Abs() > 1.0e-8);
                         if(D1.CrossProduct2D(D2) < 0) {
-                            double[] T = V2;
+                            Vector T = V2;
                             int t = iV2;
                             V2 = V1;
                             iV2 = iV1;
@@ -524,7 +531,7 @@ namespace BoSSS.Application.SipPoisson {
                             iV1 = t;
                         }
 
-                        double[] Center = V0.Plus(V1).Plus(V2).Mul(1.0 / 3.0);
+                        //double[] Center = V0.Plus(V1).Plus(V2).Mul(1.0 / 3.0);
                         //Debug.Assert(IsIn(Center[0], Center[1]));
 
                         Cell Cj = new Cell();
@@ -532,9 +539,9 @@ namespace BoSSS.Application.SipPoisson {
                         Cj.Type = CellType.Triangle_3;
                         Cj.TransformationParams = MultidimensionalArray.Create(3, 2);
                         Cj.NodeIndices = new int[] { iV0, iV1, iV2 };
-                        Cj.TransformationParams.SetRow(0, V0);
-                        Cj.TransformationParams.SetRow(1, V1);
-                        Cj.TransformationParams.SetRow(2, V2);
+                        Cj.TransformationParams.SetRowPt(0, V0);
+                        Cj.TransformationParams.SetRowPt(1, V1);
+                        Cj.TransformationParams.SetRowPt(2, V2);
 
                         Agg2Pt.Add(cells.Count);
 
@@ -553,8 +560,9 @@ namespace BoSSS.Application.SipPoisson {
                 //grd.Plot2DGrid();
 
                 // create aggregation grid
-                //var agrd = new AggregationGrid(grd, aggregation.ToArray());
-                return grd;
+                var agrd = new AggregationGrid(grd, aggregation.ToArray());
+                return agrd;
+
             };
             R.GridFunc = GridFunc;
 
@@ -576,7 +584,254 @@ namespace BoSSS.Application.SipPoisson {
             return R;
         }
 
+        //*/
 
+        /// <summary>
+        /// Test on a 2D Voronoi mesh
+        /// </summary>
+        /// <param name="Res">
+        /// number of randomly chosen Delaunay vertices
+        /// </param>
+        /// <param name="deg">
+        /// polynomial degree
+        /// </param>
+        /// <param name="solver_name">
+        /// Name of solver to use.
+        /// </param>
+        public static SipControl TestVoronoi(int Res, SolverCodes solver_name = SolverCodes.classic_pardiso, int deg = 3) {
+            
+             if (System.Environment.MachineName.ToLowerInvariant().EndsWith("rennmaschin")
+                //|| System.Environment.MachineName.ToLowerInvariant().Contains("jenkins")
+                ) {
+                // This is Florians Laptop;
+                // he is to poor to afford MATLAB, so he uses OCTAVE
+                BatchmodeConnector.Flav = BatchmodeConnector.Flavor.Octave;
+                BatchmodeConnector.MatlabExecuteable = "C:\\cygwin64\\bin\\bash.exe";
+            }
+
+
+
+            var R = new SipControl();
+            R.ProjectName = "SipPoisson-Voronoi";
+            R.SessionName = "testrun";
+            R.savetodb = false;
+
+            R.FieldOptions.Add("T", new FieldOpts() { Degree = deg, SaveToDB = FieldOpts.SaveToDBOpt.TRUE });
+            R.FieldOptions.Add("Tex", new FieldOpts() { Degree = deg*2 });
+            R.InitialValues_Evaluators.Add("RHS", X => -1.0 + X[0]*X[0] );
+            R.InitialValues_Evaluators.Add("Tex", X => 0.0);
+            R.ExactSolution_provided = false;
+            R.NoOfMultigridLevels = int.MaxValue;
+            R.solver_name = solver_name;
+            R.NoOfMultigridLevels = 1;
+            //R.TargetBlockSize = 100;
+
+
+            
+            
+            bool IsIn(double xi, double yi) {
+                
+                //for(int l = 0; l < bndys.Length; l++) {
+                //    Debug.Assert(bndys[l].Normal.Length == 2);
+                //    if (bndys[l].PointDistance(xi, yi) > 0.0)
+                //        return false;
+                //}
+                if (xi > 1.0)
+                    return false;
+                if (yi > 1.0)
+                    return false;
+                if (xi < 0 && yi < 0)
+                    return false;
+                if (xi < -1)
+                    return false;
+                if (yi < -1)
+                    return false;
+
+                return true;
+            }
+
+           
+
+            Vector[] DomainBndyPolygon = new[] {
+                new Vector(+0,+0),
+                new Vector(-1,+0),
+                new Vector(-1,+1),
+                new Vector(+1,+1),
+                new Vector(+1,-1),
+                new Vector(+0,-1)
+            };
+            
+
+            //*/
+            
+            /*
+            bool IsIn(double xi, double yi) {
+                double myEps = 0.0;
+                if (xi > 1.0 + myEps)
+                    return false;
+                if (yi > 1.0 + myEps)
+                    return false;
+                if (xi < -1 - myEps)
+                    return false;
+                if (yi < -1 - myEps)
+                    return false;
+
+                return true;
+            }
+
+           
+
+            Vector[] DomainBndyPolygon = new[] {
+                new Vector(-1,+1),
+                new Vector(+1,+1),
+                new Vector(+1,-1),
+                new Vector(-1,-1)
+            };
+            //*/
+
+            bool IsInV(Vector X) {
+                Debug.Assert(X.Dim == 2);
+                return IsIn(X.x, X.y);
+            }
+
+            bool Idenity(Vector A, Vector B) {
+                bool t2 = (A - B).AbsSquare() < 1.0e-10;
+                bool t1 = (A - B).AbsSquare() < 1.0e-15;
+                Debug.Assert(t1 == t2);
+                //Voronoi.VoronoiMeshGen.AccuracyFlag = (t1 == t2);
+                return t2;
+            }
+            
+            IGrid GridFunc() {
+                                
+                // generate Delaunay vertices
+                Random rnd = new Random(0);
+                int RR = Res ;
+                var Node = MultidimensionalArray.Create(RR, 2);
+
+                bool useMirror = false;
+                double scl = useMirror ? 2.0 : 4.0;
+
+                Node.SetColumn(0, RR.ForLoop(idx => rnd.NextDouble() * scl - 0.5*scl));
+                Node.SetColumn(1, RR.ForLoop(idx => rnd.NextDouble() * scl - 0.5*scl));
+
+                // generate mesh
+                return Voronoi.VoronoiMeshGen.FromPolygonalDomain(Node, DomainBndyPolygon, useMirror, IsInV, Idenity);
+
+            };
+            R.GridFunc = GridFunc;
+
+            R.AddBoundaryValue(BoundaryType.Dirichlet.ToString(), "T",
+                 delegate (double[] X) {
+                     //double x = X[0], y = X[1];
+
+                     return 0.0;
+                     //if(Math.Abs(X[0] - (0.0)) < 1.0e-8)
+                     //    return 0.0;
+                     //
+                     //throw new ArgumentOutOfRangeException();
+                 });
+
+            
+
+
+           
+            return R;
+        }
+
+        /*
+        static void VoronoiTestCode() { 
+            Vector[] DomainBndy = new[] {
+                new Vector(-1, 0), // 6
+                new Vector(-1, 1), // 5
+                new Vector(1, 1), // 4
+                new Vector(1, -1), // 3
+                new Vector(0, -1), // 2
+                new Vector(0, 0), // 1
+            };
+
+            bool IsIn(double xi, double yi) {
+
+                //for(int l = 0; l < bndys.Length; l++) {
+                //    Debug.Assert(bndys[l].Normal.Length == 2);
+                //    if (bndys[l].PointDistance(xi, yi) > 0.0)
+                //        return false;
+                //}
+                if (xi > 1.0)
+                    return false;
+                if (yi > 1.0)
+                    return false;
+                if (xi < 0 && yi < 0)
+                    return false;
+                if (xi < -1)
+                    return false;
+                if (yi < -1)
+                    return false;
+
+                return true;
+            }
+
+            bool IsInV(Vector X) {
+                Debug.Assert(X.Dim == 2);
+                return IsIn(X.x, X.y);
+            }
+
+            Gnuplot gp = new Gnuplot();
+
+            gp.PlotXY(DomainBndy.Select(X => X.x).ToArray(), DomainBndy.Select(X => X.y).ToArray(), "domain",
+                new PlotFormat("-xk"));
+
+            Vector[] VoronoiCell;
+
+            int iTestCase = 3;
+            switch (iTestCase) {
+                case 1:
+                VoronoiCell = new Vector[] {
+                    new Vector(0.5, 0.5),
+                    new Vector(0.5, -2),
+                    new Vector(-2,-2),
+                    new Vector(-2, 0.5)
+                };
+                break;
+
+                case 2:
+                VoronoiCell = new Vector[] {
+                    new Vector(-0.7, 0.5),
+                    new Vector(-0.2, 0.0),
+                    new Vector(-0.8,0.0)
+                };
+                break;
+
+                case 3:
+                VoronoiCell = new Vector[] {
+                    new Vector(-1.5, 0.5),
+                    new Vector(-0.2, 0.5),
+                    new Vector(-0.2, 0.0),
+                    new Vector(-1.5, 0.0)
+                };
+                break;
+
+                default:
+                throw new ArgumentOutOfRangeException();
+            }
+
+            var org = VoronoiCell.CloneAs();
+            var Test = Voronoi.PolygonClipping.WeilerAthertonClipping(DomainBndy, IsInV, VoronoiCell);
+            
+            gp.PlotXY(org.Select(X => X.x).ToArray(), org.Select(X => X.y).ToArray(), "org",
+                new PlotFormat("-ob"));
+            gp.PlotXY(Test.Select(X => X.x).ToArray(), Test.Select(X => X.y).ToArray(), "intersect",
+                new PlotFormat("-or"));
+
+
+            gp.SetXRange(-2.2, 2.2);
+            gp.SetYRange(-2.2, 2.2);
+            gp.Execute();
+            Console.ReadKey();
+
+            return;
+        }
+        */
 
     }
 }

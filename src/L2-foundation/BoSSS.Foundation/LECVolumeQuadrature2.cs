@@ -178,6 +178,7 @@ namespace BoSSS.Foundation.Quadrature.Linear {
             this.m_VolumeSource_GradV_Watches = this.m_VolumeSource_GradV.InitStopWatches(0, q);
 
             q.Execute();
+
         }
 
         double m_time;

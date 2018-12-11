@@ -24,7 +24,7 @@ using BoSSS.Foundation.Grid;
 using BoSSS.Solution.Control;
 using System.Globalization;
 using BoSSS.Solution.NSECommon;
-using BoSSS.Solution.Utils.Formula;
+//using BoSSS.Solution.Utils.Formula;
 using BoSSS.Foundation.Grid.Classic;
 using ilPSP.Utils;
 
