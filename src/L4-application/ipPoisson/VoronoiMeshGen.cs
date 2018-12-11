@@ -342,10 +342,20 @@ namespace BoSSS.Application.SipPoisson.Voronoi {
                     }
                 }
 
+                // check
+                foreach(var cl in Edge1.Cells) {
+                    bool s = cl.CheckOriginalDomain();
+                    if(!s) {
+                        DebugPlot(null, null, cl.Edges, null);
+                    }
+                    Debug.Assert(s);
+                }
+               
+
 
                 // create second part
                 Edge2 = Create(I, t);
-                foreach (var cl in this.Cells) {
+                foreach (var cl in cellsClone) {
                     cl.AddEdge(Edge2);
                     if (!Edge2.Cells.Contains(cl))
                         Edge2.Cells.Add(cl);
@@ -353,6 +363,22 @@ namespace BoSSS.Application.SipPoisson.Voronoi {
                 if (bndy)
                     Edge2.isBoundary = bndy;
                 Edge2.CheckCell2Edge();
+
+                // check
+                foreach(var cl in Edge1.Cells) {
+                    bool s = cl.CheckOriginalDomain();
+                    if(!s) {
+                        DebugPlot(null, null, cl.Edges, null);
+                    }
+                    Debug.Assert(s);
+                }
+                foreach(var cl in Edge2.Cells) {
+                    bool s = cl.CheckOriginalDomain();
+                    if(!s) {
+                        DebugPlot(null, null, cl.Edges, null);
+                    }
+                    Debug.Assert(s);
+                }
             }
 
 
@@ -552,15 +578,54 @@ namespace BoSSS.Application.SipPoisson.Voronoi {
                 private set;
             }
 
+            AffineManifold[] DomainCheck;
+
+            double hmin;
+
+
             public VoPolygon(IEnumerable<VoEdge> edges, bool bConvex) {
                 m_Edges.AddRange(edges);
+                hmin = double.MaxValue;
                 foreach (var e in this.Edges) {
                     if (!e.Cells.ContainsRefEqual(this))
                         e.Cells.Add(this);
+                    hmin = Math.Min(hmin, e.Dir.Abs());
                 }
                 this.ID = IDcounter;
                 IDcounter++;
+
+
+                DomainCheck = new AffineManifold[m_Edges.Count];
+                for(int ie = 0; ie < m_Edges.Count; ie++) {
+                    VoVertex VA = m_Edges[ie].VtxA;
+                    VoVertex VB = m_Edges[ie].VtxB;
+
+                    DomainCheck[ie] = AffineManifold.FromPoints(VA.VTX, VB.VTX);
+
+                    double sign = 0;
+                    foreach(var vtx in this.Vertices) {
+                        sign += DomainCheck[ie].PointDistance(vtx.VTX);
+                    }
+
+                    if(sign > 0) {
+                        DomainCheck[ie].Normal.Scale(-1.0);
+                        DomainCheck[ie].a *= -1.0;
+                    }
+                }
             }
+
+            internal bool CheckOriginalDomain() {
+
+                foreach (var v in this.Vertices) {
+                    foreach (var edge in DomainCheck) {
+                        if (edge.PointDistance(v.VTX) >= hmin * 1e-3) { // all inside vertices should have a *negative* distance
+                            return false;
+                        }
+                    }
+                }
+                return true;
+            }
+
 
             static int IDcounter = 1;
 
@@ -574,14 +639,14 @@ namespace BoSSS.Application.SipPoisson.Voronoi {
             List<VoEdge> m_Edges = new List<VoEdge>();
 
             // hack, nicht im sinne der Kapselung
-            public void AddEdge(VoEdge e) {
+            internal void AddEdge(VoEdge e) {
                 if (m_Edges.Contains(e)) {
                     return;
                 }
                 m_Edges.Add(e);
             }
 
-            public void ReplaceEdge(VoEdge old, VoEdge nju) {
+            internal void ReplaceEdge(VoEdge old, VoEdge nju) {
                 if (!this.Edges.ContainsRefEqual(old))
                     throw new ApplicationException();
                 if (!old.Equals(nju))
@@ -630,7 +695,7 @@ namespace BoSSS.Application.SipPoisson.Voronoi {
                 get {
                     bool r = true;
 
-                    foreach (var e in Edges) {
+                    foreach (var e in Edges) { // loop over edges
                         if (e.VtxA.type != VertexType.Outside) {
                             r = false;
                             break;
@@ -652,18 +717,47 @@ namespace BoSSS.Application.SipPoisson.Voronoi {
             /// - true: also edges with <see cref="VoEdge.isBoundary"/>==true will be removed
             /// - false: boundary edges remain in the polygon
             /// </param>
-            public void RemoveOutsideParts(bool AlsoBoundary) {
-                for (int ie = 0; ie < m_Edges.Count; ie++) {
+            public void RemoveOutsideParts(bool AlsoBoundary, Func<Vector, bool> IsIn) {
+                for (int ie = 0; ie < m_Edges.Count; ie++) { // loop over edges
                     VoEdge e = m_Edges[ie];
 
                     if (e.VtxA.type == VertexType.unspecified) {
-                        throw new NotSupportedException();
+                        throw new InvalidOperationException();
                     }
 
                     if(   (e.VtxA.type == VertexType.Outside && e.VtxB.type == VertexType.Inside)
                        || (e.VtxA.type == VertexType.Inside && e.VtxB.type == VertexType.Outside)) {
                         throw new InvalidOperationException("found a non-intersected edge.");
 
+                    }
+
+                    bool bRemove = false;
+                    if (e.VtxA.type == VertexType.Boundary && e.VtxB.type == VertexType.Boundary) {
+                        Vector near_a = e.Interpol(0.001);
+                        Vector near_b = e.Interpol(0.999);
+
+                        bool in_near_a = IsIn(near_a);
+                        bool in_near_b = IsIn(near_b);
+
+                        if(in_near_a && in_near_b) {
+                            // edge allowed to stay
+                            continue;
+                        }
+
+                        if( !in_near_a && !in_near_b) {
+                            bRemove = true;
+                        }
+
+                        if (in_near_b != in_near_a) {
+                            /*
+                            DebugPlot(null, null, this.Edges, new VoVertex[] { e.VtxA, e.VtxB });
+
+
+                            throw new InvalidOperationException("found a non-intersected edge.");
+                            */
+                            bRemove = true;
+
+                        }
                     }
 
 
@@ -674,6 +768,7 @@ namespace BoSSS.Application.SipPoisson.Voronoi {
                        || e.VtxA.IsFar
                        || e.VtxB.IsFar
                        || (AlsoBoundary && e.isBoundary)
+                       || bRemove
                         ) {
 
                         // remove linking of edge to this cell
@@ -701,7 +796,17 @@ namespace BoSSS.Application.SipPoisson.Voronoi {
 
 
             public VoVertex[] GetIntersectionSequence(VoPolygon bndyPoly) {
+
                 VoVertex[][] seqS = GetVerticesSequence(out bool isClosed, false);
+
+              
+
+
+                if (seqS.Length == 0)
+                    return new VoVertex[0];
+                if(seqS.All(seq => seq.Length == 0))
+                    return new VoVertex[0];
+
                 if (isClosed) {
                     Debug.Assert(seqS.Length == 1);
                     return seqS[0];
@@ -1411,9 +1516,9 @@ namespace BoSSS.Application.SipPoisson.Voronoi {
 
             throw new ApplicationException("should never reach this point - error in algorithm");
         }
-        
 
-        
+
+
         static public AggregationGrid FromPolygonalDomain(MultidimensionalArray Nodes, Vector[] PolygonBoundary, bool mirroring, Func<Vector, bool> IsIn, Func<Vector, Vector, bool> __PointIdentity) {
 
             // check arguments
@@ -1475,66 +1580,96 @@ namespace BoSSS.Application.SipPoisson.Voronoi {
             }
 
 
-            // Vertex Mirroring
-            // ================
-            MultidimensionalArray NewNodes;
-            if(mirroring) {
-                
-                double[] xNodes = Nodes.GetColumn(0);
-                double[] yNodes = Nodes.GetColumn(1);
-
-                Mirror(ref xNodes, ref yNodes, Boundaries, IsIn);
-                Debug.Assert(xNodes.Length == yNodes.Length);
-
-                NewNodes = MultidimensionalArray.Create(xNodes.Length, 2);
-                NewNodes.SetColumn(0, xNodes);
-                NewNodes.SetColumn(1, yNodes);
-                
-
-                
-                Nodes = null;
-            } else {
-                NewNodes = Nodes.CloneAs();
-                Nodes = null;
-            }
+           
 
             // Create Voronoi mesh (call Matlab)
             // =================================
 
             int[][] VocellVertexIndex;
             List<Vector> Verts;
-            using (var Matlab = new BatchmodeConnector()) {
+            {
+                VocellVertexIndex = null;
+                Verts = null;
+                for (int iLloyd = 0; iLloyd < 5; iLloyd++) {
+
+                    // Lloyds algorithm (Voronoi relaxation)
+                    // -------------------------------------
+                    if (iLloyd > 0) {
+                        for (int jV = 0; jV < Nodes.NoOfRows; jV++) {
+
+                            Vector oldNode = Nodes.GetRowPt(jV);
+
+                            if (IsIn(oldNode)) {
+                                // replace, for each cell, the node with the center-of-gravity
+
+                                int[] cell = VocellVertexIndex[jV];
+                                Vector COG = new Vector(0, 0);
+                                for (int k = 0; k < cell.Length; k++) {
+                                    COG += Verts[cell[k]];
+                                }
+                                COG.Scale(1.0 / cell.Length);
 
 
-                Matlab.PutMatrix(NewNodes, "Nodes");
+                                Nodes.SetRowPt(jV, COG);
+                            }
+                        }
+                    }
 
-                // compute Voronoi diagramm
-                Matlab.Cmd("[V, C] = voronoin(Nodes);");
+                    // Optional Vertex Mirroring
+                    // -------------------------
+                    MultidimensionalArray NewNodes;
+                    if (mirroring) {
 
-                // output (export from matlab)
-                VocellVertexIndex = new int[NewNodes.NoOfRows][];
-                Matlab.GetStaggeredIntArray(VocellVertexIndex, "C");
-                Matlab.GetMatrix(null, "V");
+                        double[] xNodes = Nodes.GetColumn(0);
+                        double[] yNodes = Nodes.GetColumn(1);
 
-                // run matlab
-                Matlab.Execute(false);
+                        Mirror(ref xNodes, ref yNodes, Boundaries, IsIn);
+                        Debug.Assert(xNodes.Length == yNodes.Length);
 
-                // import here
-                MultidimensionalArray VertexCoordinates = (MultidimensionalArray)(Matlab.OutputObjects["V"]);
-                Verts = new List<Vector>();
-                for(int iVtx = 0; iVtx < VertexCoordinates.NoOfRows; iVtx++) {
-                    Verts.Add(VertexCoordinates.GetRowPt(iVtx));
-                }
+                        NewNodes = MultidimensionalArray.Create(xNodes.Length, 2);
+                        NewNodes.SetColumn(0, xNodes);
+                        NewNodes.SetColumn(1, yNodes);
 
-                // correct indices (1-based index to 0-based index)
-                foreach (int[] cell in VocellVertexIndex) {
-                    int K = cell.Length;
-                    for (int k = 0; k < K; k++) {
-                        cell[k]--;
+                    } else {
+                        NewNodes = Nodes.CloneAs();
+                    }
+
+                    // Voronoi generation using matlab
+                    // --------------------------------
+
+                    using (var Matlab = new BatchmodeConnector()) {
+                        Matlab.PutMatrix(NewNodes, "Nodes");
+
+                        // compute Voronoi diagramm
+                        Matlab.Cmd("[V, C] = voronoin(Nodes);");
+
+                        // output (export from matlab)
+                        VocellVertexIndex = new int[NewNodes.NoOfRows][];
+                        Matlab.GetStaggeredIntArray(VocellVertexIndex, "C");
+                        Matlab.GetMatrix(null, "V");
+
+                        // run matlab
+                        Matlab.Execute(false);
+
+                        // import here
+                        MultidimensionalArray VertexCoordinates = (MultidimensionalArray)(Matlab.OutputObjects["V"]);
+                        Verts = new List<Vector>();
+                        for (int iVtx = 0; iVtx < VertexCoordinates.NoOfRows; iVtx++) {
+                            Verts.Add(VertexCoordinates.GetRowPt(iVtx));
+                        }
+
+                        // correct indices (1-based index to 0-based index)
+                        foreach (int[] cell in VocellVertexIndex) {
+                            int K = cell.Length;
+                            for (int k = 0; k < K; k++) {
+                                cell[k]--;
+                            }
+                        }
                     }
                 }
 
-                // fix voronoi cell orientation
+                // fix Voronoi cell orientation
+                // ----------------------------
                 for (int jV = 0; jV < VocellVertexIndex.Length; jV++) {
                     int[] iVtxS = VocellVertexIndex[jV];
                     if (iVtxS.Any(i => IsFarPoint(Verts[i])))
@@ -1543,15 +1678,18 @@ namespace BoSSS.Application.SipPoisson.Voronoi {
                     Vector[] vectors = iVtxS.Select(i => Verts[i]).ToArray();
                     //Vector[] _vectors = vectors;
                     int sign = CheckOrientation(vectors);
-                    if(sign > 0) {
+                    if (sign > 0) {
                         // nop
-                    } else if(sign < 0) {
+                    } else if (sign < 0) {
                         iVtxS = iVtxS.Reverse().ToArray();
                     } else {
                         throw new ArithmeticException("got indefinite polygon form matlab");
                     }
                     VocellVertexIndex[jV] = iVtxS;
                 }
+
+                //
+                Nodes = null;
             }
 
 
@@ -1884,6 +2022,21 @@ namespace BoSSS.Application.SipPoisson.Voronoi {
                     throw new Exception();
             }
 
+            /*
+            {
+                for (int j = 0; j < cellS.Count; j++) {
+                    VoPolygon Cj = cellS[j];
+                    var vtxS = Cj.Vertices.ToArray();
+                    bool contain_Arsch = vtxS.Any(vtx => (vtx.VTX.x - (-1.0)).Abs() <= 0.001 && (vtx.VTX.y - (0.207)).Abs() <= 0.01);
+                    bool contain_Brsch = vtxS.Any(vtx => (vtx.VTX.x - (-0.895)).Abs() <= 0.01 && (vtx.VTX.y - (0.0)).Abs() <= 0.001);
+                    if (contain_Arsch && contain_Brsch) {
+
+                        Console.WriteLine("poly  " + j + " is outside? " + Cj.IsOutside);
+                        DebugPlot(null, null, Cj.Edges, null);
+                    }
+                }
+            }
+            */
 
             // collect inside polygons
             // =======================
@@ -1894,22 +2047,26 @@ namespace BoSSS.Application.SipPoisson.Voronoi {
                 if (Cj.IsOutside)
                     continue;
 
+                //if (j == 125)
+                //    Console.Write("");
+
                 int NoEdgesB4 = Cj.Edges.Count;
 
                 bool wasInside = Cj.IsInside;
                 if (!wasInside) {
-                    Cj.RemoveOutsideParts(true);
-                    if (Cj.Edges.Count <= 1)
+                    Cj.RemoveOutsideParts(true, IsIn);
+                    if (Cj.Edges.Count <= 0 || (Cj.Edges.Count == 1 && Cj.Edges[0].isBoundary))
                         continue; // everything culled away
                 }
 
                 
-                VoVertex[] seq = Cj.GetIntersectionSequence(bndyPoly); 
-                Insiders.Add(seq);
+                VoVertex[] seq = Cj.GetIntersectionSequence(bndyPoly);
+                if(seq.Length > 0)
+                    Insiders.Add(seq);
             }
             
 
-            //DebugPlot(VocellVertexIndex, Verts, VoEdge.edgeS);
+           
 
             // Build BoSSS structure 
             // =====================
@@ -1922,10 +2079,6 @@ namespace BoSSS.Application.SipPoisson.Voronoi {
                     int NV = iVtxS.Length;
 
                     Vector[] VoronoiCell = Insiders[jV].Select(voVtx => voVtx.VTX).ToArray();
-
-
-
-
 
                     //FixOrientation(ref VoronoiCell, ref iVtxS);
 
