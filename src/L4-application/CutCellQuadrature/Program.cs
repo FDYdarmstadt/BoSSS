@@ -178,7 +178,7 @@ namespace CutCellQuadrature {
 
         private static NumberFormatInfo formatInfo = NumberFormatInfo.InvariantInfo;
 
-        protected override GridCommons CreateOrLoadGrid() {
+        protected override IGrid CreateOrLoadGrid() {
             return testCase.GetGrid(CurrentSessionInfo.Database);
         }
 
@@ -213,6 +213,13 @@ namespace CutCellQuadrature {
         }
 
         protected override void CreateEquationsAndSolvers(GridUpdateDataVaultBase L) {
+        }
+
+
+        internal new GridCommons Grid {
+            get {
+                return ((GridCommons)(base.Grid));
+            }
         }
 
         protected override double RunSolverOneStep(int TimestepNo, double phystime, double dt) {

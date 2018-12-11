@@ -168,7 +168,7 @@ namespace ilPSP {
         }
 
         
-
+    
         /// <summary>
         /// extracts the <paramref name="ColNo"/>-th column from
         /// <paramref name="inp"/> and copies it to <paramref name="outp"/>,

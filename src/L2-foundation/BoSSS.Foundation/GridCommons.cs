@@ -32,6 +32,7 @@ using ilPSP.Utils;
 using log4net;
 using MPI.Wrappers;
 using BoSSS.Foundation.Grid.RefElements;
+using Newtonsoft.Json;
 
 namespace BoSSS.Foundation.Grid.Classic {
 
@@ -54,6 +55,7 @@ namespace BoSSS.Foundation.Grid.Classic {
         /// for fields.
         /// </remarks>
         [NonSerialized]
+        [JsonIgnore]
         public Cell[] Cells;
 
         /// <summary>
@@ -61,6 +63,7 @@ namespace BoSSS.Foundation.Grid.Classic {
         /// start after those of the <see cref="Cells"/>.
         /// </summary>
         [NonSerialized]
+        [JsonIgnore]
         public BCElement[] BcCells;
 
         /// <summary>
@@ -315,24 +318,12 @@ namespace BoSSS.Foundation.Grid.Classic {
             }
         }
 
-        /// <summary>
-        /// see <see cref="GridGuid"/>;
-        /// </summary>
-        [DataMember]
-        Guid m_GridGuid;
 
-        /// <summary>
-        /// Guid which identifies this grid;
-        /// </summary>
-        public Guid GridGuid {
-            get {
-                return m_GridGuid;
-            }
-        }
 
+        /*
         /// <summary>
         /// This method enables the user to manually override
-        /// the Guid of this grid object (<see cref="GridGuid"/>).
+        /// the Guid of this grid object (<see cref="ID"/>).
         /// This may be useful in some situations (e.g. the user wants to use 
         /// IO for fields, but he also wants to create a new grid object every
         /// time he starts the application, instead of loading the grid from
@@ -343,6 +334,7 @@ namespace BoSSS.Foundation.Grid.Classic {
         public void SetGridGuid(Guid NewGridGuid) {
             m_GridGuid = NewGridGuid;
         }
+        */
 
         /// <summary>
         /// see <see cref="BcCellsStorageGuid"/>.
@@ -350,17 +342,26 @@ namespace BoSSS.Foundation.Grid.Classic {
         [DataMember]
         private Guid m_BcCellsStorageGuid = Guid.Empty;
 
-        /// <summary>
-        /// see <see cref="StorageGuid"/>.
-        /// </summary>
-        [DataMember]
-        private Guid m_StorageGuid;
+        
 
         /// <summary>
         /// a string to store some user-information about the grid;
         /// </summary>
+        public string Description {
+            get {
+                return m_Description;
+            }
+            set {
+                m_Description = value;
+                if (Database != null) {
+                    Database.Controller.SaveGridInfo(this);
+                }
+            }
+        }
+
+        [JsonProperty(PropertyName = "Description")]
         [DataMember]
-        public string Description;
+        string m_Description;
 
         /// <summary>
         /// returns the Guid of the vector in which
@@ -374,10 +375,16 @@ namespace BoSSS.Foundation.Grid.Classic {
                 m_StorageGuid = value;
             }
         }
+        
+        /// <summary>
+        /// see <see cref="StorageGuid"/>.
+        /// </summary>
+        [DataMember]
+        private Guid m_StorageGuid;
 
         /// <summary>
         /// returns the Guid of the vector in which
-        /// <see cref="BcCells"/> is stored in the database.
+        /// <see cref="BcCells"/> is stored in the database, see also <see cref="AllDataVectorIDs"/>
         /// </summary>
         public Guid BcCellsStorageGuid {
             get {
@@ -1041,6 +1048,61 @@ namespace BoSSS.Foundation.Grid.Classic {
         }
 
         /// <summary>
+        /// Access to grid metrics 
+        /// </summary>
+        public IGridData iGridData {
+            get {
+                return GridData;
+            }
+        }
+
+        /// <summary>
+        /// Typed version of <see cref="iGridData"/>
+        /// </summary>
+        public GridData GridData {
+            get {
+                InitGridData();
+                return m_GridData;
+            }
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        public IReadOnlyCollection<Guid> AllDataVectorIDs {
+            get {
+                List<Guid> L = new List<Guid>();
+
+                L.Add(this.StorageGuid);
+                L.Add(this.BcCellsStorageGuid);
+                L.AddRange(this.PredefinedGridPartitioning.Values.Select(v => v.Guid));
+                               
+
+                return L.Where(guid => !guid.Equals(Guid.Empty)).ToList().AsReadOnly();
+            }
+
+        }
+
+        [NonSerialized]
+        [JsonIgnore]
+        GridData m_GridData;
+
+        void InvalidateGridData () {
+            if(m_GridData == null)
+                return; // nothing to do
+            m_GridData.Invalidate();
+            m_GridData = null;
+        }
+
+        void InitGridData() {
+            if(m_GridData != null)
+                return; // nothing to do
+            m_GridData = new GridData(this);
+        }
+
+
+
+        /// <summary>
         /// Checks whether the given <paramref name="nodes"/> are in
         /// monotonically increasing order.
         /// </summary>
@@ -1553,6 +1615,7 @@ namespace BoSSS.Foundation.Grid.Classic {
         /// </summary>
         public void CheckAndFixJacobianDeterminat() {
             using (var tr = new FuncTrace()) {
+                InvalidateGridData();
 
                 List<int> unrecoverAbleErrors = new List<int>();
 
@@ -1652,14 +1715,16 @@ namespace BoSSS.Foundation.Grid.Classic {
 
         /// <summary>
         /// For some reference element, this computes the permutation of nodes under a mirror operation.
-        /// The purpose of this operation is to fix cellc with negative Jacobian determinante by mirroring them,
-        /// since the mirror operation flips the sign of the Jacobian determinat.
-        /// The reference emenet must be centered around the origin, so that the mirror operation maps it onto itself.
+        /// The purpose of this operation is to fix cells with negative Jacobian determinant by mirroring them,
+        /// since the mirror operation flips the sign of the Jacobian determinant.
+        /// The reference element must be centered around the origin, so that the mirror operation maps it onto itself.
         /// </summary>
         /// <param name="ct"></param>
         /// <param name="NodesPerm">Permutation of interpolation nodes, see <see cref="RefElement.GetInterpolationNodes"/>.</param>
         /// <param name="VertxPerm">Permutation of reference element vertices, see <see cref="RefElement.Vertices"/>.</param>
         void MirrorPermutation(CellType ct, out int[] NodesPerm, out int[] VertxPerm) {
+            
+
             RefElement Kref = this.GetRefElement(ct);
             NodeSet _Nodes = Kref.GetInterpolationNodes(ct);
             NodeSet _Vertx = Kref.Vertices;

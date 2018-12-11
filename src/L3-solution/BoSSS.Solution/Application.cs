@@ -177,7 +177,22 @@ namespace BoSSS.Solution {
                 csMPI.Raw.Comm_Rank(csMPI.Raw._COMM.WORLD, out rank);
                 csMPI.Raw.Comm_Size(csMPI.Raw._COMM.WORLD, out size);
                 if (rank == 0) {
-                    Console.WriteLine("BoSSS: Running with " + size + " MPI process(es)");
+                    
+                    Console.WriteLine(@"      ___           ___           ___           ___           ___     ");
+                    Console.WriteLine(@"     /\  \         /\  \         /\  \         /\  \         /\  \    ");
+                    Console.WriteLine(@"    /::\  \       /::\  \       /::\  \       /::\  \       /::\  \   ");
+                    Console.WriteLine(@"   /:/\:\  \     /:/\:\  \     /:/\ \  \     /:/\ \  \     /:/\ \  \  ");
+                    Console.WriteLine(@"  /::\~\:\__\   /:/  \:\  \   _\:\~\ \  \   _\:\~\ \  \   _\:\~\ \  \ ");
+                    Console.WriteLine(@" /:/\:\ \:|__| /:/__/ \:\__\ /\ \:\ \ \__\ /\ \:\ \ \__\ /\ \:\ \ \__\");
+                    Console.WriteLine(@" \:\~\:\/:/  / \:\  \ /:/  / \:\ \:\ \/__/ \:\ \:\ \/__/ \:\ \:\ \/__/");
+                    Console.WriteLine(@"  \:\ \::/  /   \:\  /:/  /   \:\ \:\__\    \:\ \:\__\    \:\ \:\__\  ");
+                    Console.WriteLine(@"   \:\/:/  /     \:\/:/  /     \:\/:/  /     \:\/:/  /     \:\/:/  /  ");
+                    Console.WriteLine(@"    \::/__/       \::/  /       \::/  /       \::/  /       \::/  /   ");
+                    Console.WriteLine(@"     ~~            \/__/         \/__/         \/__/         \/__/    ");
+                    Console.WriteLine(@"                                                                      ");
+
+
+                    Console.WriteLine("Running with " + size + " MPI process(es)");
                 }
             }
         }
@@ -894,7 +909,7 @@ namespace BoSSS.Solution {
                 //====================
 
                 Grid = CreateOrLoadGrid();
-                if (Grid == null && AggGrid == null) {
+                if (Grid == null) {
                     throw new ApplicationException("No grid loaded through CreateOrLoadGrid");
                 }
 
@@ -976,43 +991,32 @@ namespace BoSSS.Solution {
                 //====================
                 //RedistributeGrid();
 
-                if (Grid != null) {
+                {
                     Grid.Redistribute(DatabaseDriver, Control.GridPartType, Control.GridPartOptions);
-                    if (!passiveIo && !DatabaseDriver.GridExists(Grid.GridGuid)) {
+                    if (!passiveIo && !DatabaseDriver.GridExists(Grid.ID)) {
 
-                        //DatabaseDriver.SaveGrid(Grid);
-                        GridCommons _grid = this.Grid;
-                        DatabaseDriver.SaveGrid(_grid, this.m_Database);
+                        DatabaseDriver.SaveGrid(this.Grid, this.m_Database);
                         //DatabaseDriver.SaveGridIfUnique(ref _grid, out GridReplaced, this.m_Database);
-                        this.Grid = _grid;
-
                     }
-
-
-                    GridData = new GridData(Grid);
+                                        
 
                     if (this.Control == null || this.Control.NoOfMultigridLevels > 0) {
                         this.MultigridSequence = CoarseningAlgorithms.CreateSequence(this.GridData, MaxDepth: (this.Control != null ? this.Control.NoOfMultigridLevels : 1));
                     } else {
-                        this.MultigridSequence = new AggregationGrid[0];
+                        this.MultigridSequence = new AggregationGridData[0];
                     }
-                } else {
-                    GridData = this.AggGrid;
-                    this.MultigridSequence = new AggregationGrid[0];
                 }
 
 
                 csMPI.Raw.Barrier(csMPI.Raw._COMM.WORLD);
 
                 if (DoDbLogging) {
-
                     if (!this.CurrentSessionInfo.KeysAndQueries.ContainsKey("Grid:NoOfCells"))
-                        this.CurrentSessionInfo.KeysAndQueries.Add("Grid:NoOfCells", Grid.CellPartitioning.TotalLength);
+                        this.CurrentSessionInfo.KeysAndQueries.Add("Grid:NoOfCells", Grid.NumberOfCells);
                     if (!this.CurrentSessionInfo.KeysAndQueries.ContainsKey("Grid:hMax"))
                         this.CurrentSessionInfo.KeysAndQueries.Add("Grid:hMax", ((GridData)GridData).Cells.h_maxGlobal);
                     if (!this.CurrentSessionInfo.KeysAndQueries.ContainsKey("Grid:hMin"))
                         this.CurrentSessionInfo.KeysAndQueries.Add("Grid:hMin", ((GridData)GridData).Cells.h_minGlobal);
-
                 }
 
 
@@ -1140,15 +1144,16 @@ namespace BoSSS.Solution {
         /// Extended grid information.
         /// </summary>
         public IGridData GridData {
-            get;
-            private set;
+            get {
+                return Grid.iGridData;
+            }
         }
 
         /// <summary>
         /// Multigrid levels, sorted from fine to coarse, i.e. the 0-th entry contains the finest grid.
         /// The number of levels is controlled by <see cref="Control.AppControl.NoOfMultigridLevels"/>.
         /// </summary>
-        public AggregationGrid[] MultigridSequence {
+        public AggregationGridData[] MultigridSequence {
             get;
             private set;
         }
@@ -1156,15 +1161,15 @@ namespace BoSSS.Solution {
         /// <summary>
         /// BoSSS grid.
         /// </summary>
-        public GridCommons Grid {
+        public IGrid Grid {
             get;
             private set;
         }
 
-        /// <summary>
-        /// Provisional alternative grid;
-        /// </summary>
-        protected AggregationGrid AggGrid;
+        ///// <summary>
+        ///// Provisional alternative grid;
+        ///// </summary>
+        //protected AggregationGrid AggGrid;
 
 
         /// <summary>
@@ -1189,7 +1194,7 @@ namespace BoSSS.Solution {
         /// use this method to either create a grid or to load a grid from
         /// the IO system (See <see cref="IDatabaseDriver"/>);
         /// </summary>
-        protected virtual GridCommons CreateOrLoadGrid() {
+        protected virtual IGrid CreateOrLoadGrid() {
             using (var ht = new FuncTrace()) {
 
                 if (this.Control != null) {
@@ -1210,12 +1215,15 @@ namespace BoSSS.Solution {
                             }
                             var _Grid = DatabaseDriver.LoadGrid(tsi_toLoad.GridID, m_Database);
 
-                            foreach(string oldBndy in this.Control.BoundaryValueChanges.Keys) {
-                                int bndyInd = _Grid.EdgeTagNames.Values.FirstIndexWhere(bndyVal => bndyVal.Equals(oldBndy, StringComparison.InvariantCultureIgnoreCase));
-                                if( bndyInd > -1) {
-                                    _Grid.EdgeTagNames[_Grid.EdgeTagNames.Keys.ElementAt(bndyInd)] = this.Control.BoundaryValueChanges[oldBndy];
-                                } else {
-                                    throw new ArgumentException("Boundary " + oldBndy + " is not found in EdgeTagNames of the loaded Grid");
+                            if(_Grid is GridCommons) {
+                                GridCommons __Grid = (GridCommons)_Grid;
+                                foreach(string oldBndy in this.Control.BoundaryValueChanges.Keys) {
+                                    int bndyInd = __Grid.EdgeTagNames.Values.FirstIndexWhere(bndyVal => bndyVal.Equals(oldBndy, StringComparison.InvariantCultureIgnoreCase));
+                                    if(bndyInd > -1) {
+                                        __Grid.EdgeTagNames[__Grid.EdgeTagNames.Keys.ElementAt(bndyInd)] = this.Control.BoundaryValueChanges[oldBndy];
+                                    } else {
+                                        throw new ArgumentException("Boundary " + oldBndy + " is not found in EdgeTagNames of the loaded Grid");
+                                    }
                                 }
                             }
 
@@ -1809,8 +1817,7 @@ namespace BoSSS.Solution {
                         this.MultigridSequence = null;
 
                         this.Grid.RedistributeGrid(NewPartition);
-                        newGridData = new GridData(this.Grid);
-                        this.GridData = newGridData;
+                        newGridData = (GridData) this.Grid.iGridData;
                         oldGridData.Invalidate();
                         if (this.LsTrk != null) {
                             this.LsTrk.Invalidate();
@@ -1819,7 +1826,7 @@ namespace BoSSS.Solution {
                         if (this.Control == null || this.Control.NoOfMultigridLevels > 0)
                             this.MultigridSequence = CoarseningAlgorithms.CreateSequence(this.GridData, MaxDepth: (this.Control != null ? this.Control.NoOfMultigridLevels : 1));
                         else
-                            this.MultigridSequence = new AggregationGrid[0];
+                            this.MultigridSequence = new AggregationGridData[0];
 
                         //Console.WriteLine("P {0}: new grid: {1} cells.", MPIRank, newGridData.iLogicalCells.NoOfLocalUpdatedCells);
                     }
@@ -1924,11 +1931,11 @@ namespace BoSSS.Solution {
 
                         if(!passiveIo) {
 
-                            if(newGrid.GridGuid == null || newGrid.GridGuid.Equals(Guid.Empty))
+                            if(newGrid.ID == null || newGrid.ID.Equals(Guid.Empty))
                                 throw new ApplicationException();
-                            if(newGrid.GridGuid.Equals(oldGridId))
+                            if(newGrid.ID.Equals(oldGridId))
                                 throw new ApplicationException();
-                            if(DatabaseDriver.GridExists(newGrid.GridGuid))
+                            if(DatabaseDriver.GridExists(newGrid.ID))
                                 throw new ApplicationException();
 
                             DatabaseDriver.SaveGrid(newGrid, this.m_Database);
@@ -1967,8 +1974,7 @@ namespace BoSSS.Solution {
                             this.MultigridSequence = null;
 
                             this.Grid = newGrid;
-                            newGridData = new GridData(this.Grid);
-                            this.GridData = newGridData;
+                            newGridData = (GridData) this.Grid.iGridData;
                             oldGridData.Invalidate();
                             if(this.LsTrk != null) {
                                 this.LsTrk.Invalidate();
@@ -1979,7 +1985,7 @@ namespace BoSSS.Solution {
                                 this.MultigridSequence = CoarseningAlgorithms.CreateSequence(this.GridData,
                                     MaxDepth: (this.Control != null ? this.Control.NoOfMultigridLevels : 1));
                             else
-                                this.MultigridSequence = new AggregationGrid[0];
+                                this.MultigridSequence = new AggregationGridData[0];
 
                             //Console.WriteLine("P {0}: new grid: {1} cells.", MPIRank, newGridData.iLogicalCells.NoOfLocalUpdatedCells);
                         }
@@ -2337,7 +2343,7 @@ namespace BoSSS.Solution {
                         app.RunSolverMode();
                         CorrectlyTerminated = true;
                         nlog.LogValue("pstudy_case_successful", true);
-                        nlog.LogValue("GrdRes:NumberOfCells", app.Grid.CellPartitioning.TotalLength);
+                        nlog.LogValue("GrdRes:NumberOfCells", app.Grid.NumberOfCells);
                         nlog.LogValue("GrdRes:h_min", ((GridData)(app.GridData)).Cells.h_minGlobal);
                         nlog.LogValue("GrdRes:h_max", ((GridData)(app.GridData)).Cells.h_maxGlobal);
 #if DEBUG

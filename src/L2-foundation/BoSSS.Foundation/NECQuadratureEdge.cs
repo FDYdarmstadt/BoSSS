@@ -53,7 +53,6 @@ namespace BoSSS.Foundation.Quadrature.NonLin {
         Stopwatch Basis_Eval;
         Stopwatch Loops;
         Stopwatch ParametersAndNormals;
-        Stopwatch[][] m_DualValueFluxes_Watches;
         Stopwatch[][] m_EdgeForm_V_Watches;
         Stopwatch[][] m_EdgeForm_GradV_Watches;
 
@@ -81,11 +80,6 @@ namespace BoSSS.Foundation.Quadrature.NonLin {
             // ------------------------
             // sort equation components
             // ------------------------
-
-            m_DualValueFluxes = new EquationComponentArgMapping<IDualValueFlux>[m_CodomainBasisS.Length];
-            for(int ti = 0; ti < m_CodomainBasisS.Length; ti++) {
-                m_DualValueFluxes[ti] = new EquationComponentArgMapping<IDualValueFlux>(DiffOp, DiffOp.CodomainVar[ti], DiffOp.DomainVar, DiffOp.ParameterVar, null, null);
-            }
 
             m_EdgeForm_V = DiffOp.GetArgMapping<INonlinEdgeForm_V>(true,
                 comp => (((comp.BoundaryEdgeTerms | comp.InnerEdgeTerms) & (TermActivationFlags.V | TermActivationFlags.UxV | TermActivationFlags.GradUxV)) != 0),
@@ -136,7 +130,6 @@ namespace BoSSS.Foundation.Quadrature.NonLin {
             m_Quad.CustomTimers_RootPointer = new int[_CustomTimers_Names.Length];
             ArrayTools.SetAll(m_Quad.CustomTimers_RootPointer, -1);
 
-            this.m_DualValueFluxes_Watches = this.m_DualValueFluxes.InitStopWatches(0, m_Quad);
             this.m_EdgeForm_V_Watches = this.m_EdgeForm_V.InitStopWatches(0, m_Quad);
             this.m_EdgeForm_GradV_Watches = this.m_EdgeForm_GradV.InitStopWatches(0, m_Quad);
             base.m_NonlinFluxesWatches = base.m_NonlinFluxes.InitStopWatches(0, m_Quad);
@@ -241,12 +234,6 @@ namespace BoSSS.Foundation.Quadrature.NonLin {
         Basis maxTestBasis = null;
         Basis maxTestGradientBasis = null;
 
-
-
-        /// <summary>
-        /// array index: codomain variable
-        /// </summary>
-        EquationComponentArgMapping<IDualValueFlux>[] m_DualValueFluxes;
 
         /// <summary>
         /// array index: codomain variable
@@ -1087,36 +1074,7 @@ namespace BoSSS.Foundation.Quadrature.NonLin {
 #endif
 
 
-                // -------------------------------
-                // All IDualValueFlux - Components
-                // -------------------------------
-
-                EvalFlux(m_DualValueFluxes[e], i0, Length, grid, NoOfSec, true, false, this.m_DualValueFluxes_Watches[e],
-                    delegate(IDualValueFlux nonlinFlx, int _jEdge, int _IndexOffset, int _L, int NoArgs, int NoParams, MultidimensionalArray[] Uin, MultidimensionalArray[] Uout, MultidimensionalArray[] UinMean, MultidimensionalArray[] UoutMean, MultidimensionalArray[] UinGrad, MultidimensionalArray[] UoutGrad) {
-                        nonlinFlx.InnerEdgeFlux(m_Time, _jEdge,
-                                                NodesGlobalCoords,
-                                                NormalsGlobalCoords,
-                                                Uin, Uout,
-                                                _IndexOffset, _L,
-                                                FluxValuesIN,
-                                                FluxValuesOT);
-                    },
-                    delegate(IDualValueFlux nonlinFlx, int _jEdge, int _IndexOffset, int _L, int _EdgeTagsOffset, bool flipNormal, int NoArgs, int NoParams, MultidimensionalArray[] Uin, MultidimensionalArray[] UinMean, MultidimensionalArray[] UinGrad) {
-                        nonlinFlx.BorderEdgeFlux(m_Time, _jEdge,
-                                                 NodesGlobalCoords,
-                                                 NormalsGlobalCoords, flipNormal,
-                                                 grid.iGeomEdges.EdgeTags, _EdgeTagsOffset,
-                                                 Uin,
-                                                 _IndexOffset, _L,
-                                                 FluxValuesIN);
-                    });
-#if DEBUG
-                if(FluxValuesIN != null)
-                    FluxValuesIN.CheckForNanOrInf(true, true, true);
-                if(FluxValuesOT != null)
-                    FluxValuesOT.CheckForNanOrInf(true, true, true);
-#endif
-
+                
             }
 
 

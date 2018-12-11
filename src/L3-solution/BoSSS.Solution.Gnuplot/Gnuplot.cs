@@ -176,14 +176,14 @@ namespace BoSSS.Solution.Gnuplot {
         /// <summary>
         /// A hack: on Windows, we
         /// prefer gnuplot which is shiped with BoSSS, e.g. in
-        /// $BOSSS_INSTALL_TEST\bin\native\win\gnuplot-gp510-20160418-win32-mingw\gnuplot\bin
+        /// $BOSSS_INSTALL\bin\native\win\gnuplot-gp510-20160418-win32-mingw\gnuplot\bin
         /// </summary>
         /// <returns></returns>
         private static string GetBoSSSGnuplot() {
             if (System.Environment.OSVersion.Platform != PlatformID.Win32NT)
                 return null;
 
-            string bi = System.Environment.GetEnvironmentVariable("BOSSS_INSTALL_TEST");
+            string bi = System.Environment.GetEnvironmentVariable("BOSSS_INSTALL");
             if (bi == null || bi.Length < 0)
                 return null;
 
@@ -203,8 +203,8 @@ namespace BoSSS.Solution.Gnuplot {
                 path = "";
 
             /*
-            string BOSSS_INSTALL_TEST = System.Environment.GetEnvironmentVariable("BOSSS_INSTALL_TEST");
-            if(BOSSS_INSTALL_TEST != null) {
+            string BOSSS_INSTALL = System.Environment.GetEnvironmentVariable("BOSSS_INSTALL");
+            if(BOSSS_INSTALL != null) {
                 // +++++++++++++++++++++++++++++++++++++++++++++++++++++++++
                 // Prefer gnuplut which ships with BoSSS, if existent;
                 // +++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -213,7 +213,7 @@ namespace BoSSS.Solution.Gnuplot {
                 if(CurrentSys == PlatformID.Win32NT || CurrentSys == PlatformID.Win32S || CurrentSys == PlatformID.Win32Windows) {
                     // on windows
 
-                    string dir1 = Directory.GetDirectories(BOSSS_INSTALL_TEST, "bin\\native\\win\\gnuplot*").FirstOrDefault();
+                    string dir1 = Directory.GetDirectories(BOSSS_INSTALL, "bin\\native\\win\\gnuplot*").FirstOrDefault();
                     if(dir1 != null) {
                         string dir2 = Directory.GetDirectories(dir1, "gnuplot\\bin").FirstOrDefault();
                         if(dir2 != null) {
@@ -229,7 +229,7 @@ namespace BoSSS.Solution.Gnuplot {
             if (alternativeGnuplotPath != null) {
                 pathDirs = (new string[] { alternativeGnuplotPath }).ToList();
             } else {
-                string WinPath = GetBoSSSGnuplot(); // prefers gnuplot from $BOSSS_INSTALL_TEST
+                string WinPath = GetBoSSSGnuplot(); // prefers gnuplot from $BOSSS_INSTALL
                 pathDirs = path.Split(new[] { Path.PathSeparator }, StringSplitOptions.RemoveEmptyEntries).ToList();
                 if (WinPath != null)
                     pathDirs.Insert(0, WinPath); // insert additional search path at top

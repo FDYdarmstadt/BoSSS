@@ -638,7 +638,7 @@ namespace BoSSS.Foundation.IO {
         /// </summary>
         /// <param name="grid"></param>
         /// <returns></returns>
-        public GridCommons LoadGridData(GridCommons grid) {
+        public IGrid LoadGridData(GridCommons grid) {
             // load grid data
             Partitioning p = null;
             grid.Cells = LoadVector<Cell>(grid.StorageGuid, ref p).ToArray();
@@ -665,7 +665,7 @@ namespace BoSSS.Foundation.IO {
         /// <returns>
         /// The loaded grid
         /// </returns>
-        public Grid.Classic.GridCommons LoadGrid(Guid uid, IDatabaseInfo database) {
+        public IGrid LoadGrid(Guid uid, IDatabaseInfo database) {
             return LoadGridData((Grid.Classic.GridCommons)LoadGridInfo(uid, database));
         }
 
@@ -963,7 +963,7 @@ namespace BoSSS.Foundation.IO {
         /// Searches for an equivalent grid in the database and, if none is found
         /// saves a grid object to the database.
         /// </summary>
-        /// <param name="grd">
+        /// <param name="_grd">
         /// On entry, the grid which should be saved to the database.
         /// On exit, either unchanged, or the equivalent grid.
         /// </param>
@@ -971,18 +971,19 @@ namespace BoSSS.Foundation.IO {
         /// Inidicates that an equivalent grid was found.
         /// </param>
         /// <param name="database"></param>
-        public Guid SaveGridIfUnique(ref Grid.Classic.GridCommons grd, out bool EquivalentGridFound, IDatabaseInfo database) {
+        public Guid SaveGridIfUnique(ref IGrid _grd, out bool EquivalentGridFound, IDatabaseInfo database) {
             using (new FuncTrace()) {
+                GridCommons grd = (GridCommons)_grd;
 
                 var Grids = database.Grids;
                 foreach (var GrdInf in Grids) {
-                    Grid.Classic.GridCommons GrdInDb = (Grid.Classic.GridCommons)this.LoadGridInfo(GrdInf.ID, database);
+                    GridCommons GrdInDb = (Grid.Classic.GridCommons)this.LoadGridInfo(GrdInf.ID, database);
 
                     if (GridCommons_CustomEquality(grd, GrdInDb) == false)
                         continue;
 
                     if (GridCommons_CellEquality(grd, GrdInDb)) {
-                        grd = LoadGridData(GrdInDb);
+                        grd = (Grid.Classic.GridCommons)LoadGridData(GrdInDb);
                         EquivalentGridFound = true;
                         //Console.WriteLine("Found equivalent grid: " + grd.GridGuid);
                         return grd.ID;
@@ -1004,18 +1005,20 @@ namespace BoSSS.Foundation.IO {
         /// Saves the given grid object to the database;
         /// </summary>
         /// <returns>
-        /// the Guid of the <see cref="GridCommons"/>-object that was saved
-        /// (equal to the <see cref="GridCommons.GridGuid"/>-property).
+        /// the Guid of the <see cref="IGrid"/>-object that was saved
+        /// (equal to the <see cref="IDatabaseEntityInfo{T}.ID"/>-property).
         /// </returns>
-        /// <param name="grd">
+        /// <param name="_grd">
         /// The grid to save.
         /// </param>
         /// <param name="database">
         /// chaos
         /// </param>
-        public Guid SaveGrid(Grid.Classic.GridCommons grd, IDatabaseInfo database) {
+        public Guid SaveGrid(IGrid _grd, IDatabaseInfo database) {
             using (new FuncTrace()) {
-                if (grd.GridGuid.Equals(Guid.Empty)) {
+                GridCommons grd = (GridCommons)_grd;
+
+                if (grd.ID.Equals(Guid.Empty)) {
                     throw new ApplicationException("cannot save grid with empty Guid (Grid Guid is " + Guid.Empty.ToString() + ");");
                 }
                 MPICollectiveWatchDog.Watch(csMPI.Raw._COMM.WORLD);
@@ -1049,7 +1052,7 @@ namespace BoSSS.Foundation.IO {
                 // save header data
                 // ================
                 if (MyRank == 0) {
-                    using (Stream s = m_fsDriver.GetGridStream(true, grd.GridGuid))
+                    using (Stream s = m_fsDriver.GetGridStream(true, grd.ID))
                     using (var writer = GetJsonWriter(s)) {
                         m_Formatter.Serialize(writer, grd);
                         writer.Close();
@@ -1062,7 +1065,7 @@ namespace BoSSS.Foundation.IO {
 
                 grd.Database = database;
 
-                return grd.GridGuid;
+                return grd.ID;
             }
         }
 
