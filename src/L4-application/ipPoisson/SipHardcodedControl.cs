@@ -634,7 +634,7 @@ namespace BoSSS.Application.SipPoisson {
 
 
 
-            /*
+            
             bool IsIn(double xi, double yi) {
                 
                 //for(int l = 0; l < bndys.Length; l++) {
@@ -670,7 +670,7 @@ namespace BoSSS.Application.SipPoisson {
 
             //*/
 
-
+            /*
             bool IsIn(double xi, double yi) {
                 double myEps = 0.0;
                 if (xi > 1.0 + myEps)
