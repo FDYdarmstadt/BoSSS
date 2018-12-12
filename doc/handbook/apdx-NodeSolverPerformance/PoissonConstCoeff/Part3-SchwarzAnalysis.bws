@@ -1,27 +1,30 @@
 restart
 **************
 
-  Database Explorer v2
-  ____________________
+  BoSSSpad C# interpreter
+  _______________________
 
 Databases loaded:
-List of 0 instances of IDatabaseInfo {
+List of 4 instances of IDatabaseInfo {
+  0: { Session Count = 0; Grid Count = 34; Path = C:\BoSSS_DB }
+  1: { Session Count = 224; Grid Count = 6; Path = C:\tmp\fk_temp_db }
+  2: { Session Count = 197; Grid Count = 6; Path = P:\Performance_DB }
+  3: { Session Count = 112; Grid Count = 6; Path = E:\Performance_oldLibs_DB }
 }
-Setting Matlab Connector to Octave...
 
  Console ready for input. Type 'help' for help.
 
 ==============
-WorkflowMgm.Init("PoissonSolverPerformance");
+WorkflowMgm.Init("PoissonSolverPerformance_0_1");
 **************
-Project name is set to 'PoissonSolverPerformance'.
+Project name is set to 'PoissonSolverPerformance_0_1'.
 
 ==============
 using System.IO;
 using BoSSS.Application.SipPoisson;
 **************
 ==============
-string dateString = "2018-3-26";
+string dateString = "2018-11-27";
 string File       = "SolverRuns--" + dateString + ".json";
 string FilePath   = Path.Combine(CurrentDocDir, File);
 var SessTab       = TableExtensions.LoadFromFile(FilePath);
@@ -45,7 +48,7 @@ var SessTab       = TableExtensions.LoadFromFile(FilePath);
 ==============
 SessTab.GetColumnNames();
 **************
-List of 49 instances of String {
+List of 50 instances of String {
   0: SessionName
   1: DGdegree:T
   2: DGdegree:Tex
@@ -76,25 +79,26 @@ List of 49 instances of String {
   27: DynamicLoadBalancing_RedistributeAtStartup
   28: DynamicLoadBalancing_Period
   29: DynamicLoadBalancing_ImbalanceThreshold
-  30: AdaptiveMeshRefinement
-  31: CutCellQuadratureType
-  32: ContinueOnIoError
-  33: Grid:NoOfCells
-  34: Grid:hMax
-  35: Grid:hMin
-  36: UsedNoOfMultigridLevels
-  37: minSolRunT
-  38: maxSolRunT
-  39: Conv
-  40: NoIter
-  41: NoOfCells
-  42: DOFs
-  43: BlockSize
-  44: RegularTerminated
-  45: SipMatrixAssembly_time
-  46: Aggregation_basis_init_time
-  47: Solver_Init_time
-  48: Solver_Run_time
+  30: DynamicLoadBalancing_On
+  31: AdaptiveMeshRefinement
+  32: CutCellQuadratureType
+  33: ContinueOnIoError
+  34: Grid:NoOfCells
+  35: Grid:hMax
+  36: Grid:hMin
+  37: RegularTerminated
+  38: SipMatrixAssembly_time
+  39: Aggregation_basis_init_time
+  40: Solver_Init_time
+  41: Solver_Run_time
+  42: UsedNoOfMultigridLevels
+  43: minSolRunT
+  44: maxSolRunT
+  45: Conv
+  46: NoIter
+  47: NoOfCells
+  48: DOFs
+  49: BlockSize
 }
 ==============
 //var SubTab_1 = SessTab.ExtractColumns("DGdegree:T", "Grid:NoOfCells", "solver_name", "DOFs", "minSolRunT", "maxSolRunT", "NoIter", "RegularTerminated", "Conv");
@@ -102,7 +106,6 @@ List of 49 instances of String {
 ==============
 var SubTab_1 = SessTab.ExtractRows(delegate(int i, IDictionary<string,object> row) {
     return (  (Convert.ToInt32(row["solver_name"]) ==  ((int) SolverCodes.exp_softpcg_schwarz_directcoarse))
-          || (Convert.ToInt32(row["solver_name"]) ==  ((int) SolverCodes.exp_softpcg_schwarz))
           || (Convert.ToInt32(row["solver_name"]) ==  ((int) SolverCodes.exp_softpcg_mg)))
           && (Convert.ToInt32(row["Conv"]) != 0);
     });
@@ -115,29 +118,63 @@ var SubTab = SubTab_1.ExtractColumns("DGdegree:T", "Grid:NoOfCells", "solver_nam
 ==============
 SubTab.Print();
 **************
-    DGdegree:T Grid:NoOfCells solver_name DOFs    minSolRunT  maxSolRunT  UsedNoOfMultigridLevels SipMatrixAssembly_time Aggregation_basis_init_time Solver_Init_time Solver_Run_time 
-0:  2          20480          4           204800  38.8239197  38.8239197  17                      6.4596572              6.9449986                   18.2143001       20.5668529      
-1:  2          2560           4           25600   5.7797818   5.7797818   13                      1.3015266              0.4715114                   1.666943         4.0796191       
-2:  2          163840         4           1638400 310.8046237 310.8046237 19                      45.4857921             257.5563455                 163.2613595      147.4251731     
-3:  3          20480          6           409600  139.5348553 139.5348553 17                      16.7081511             14.4612296                  29.5035664       109.9848556     
-4:  3          2560           6           51200   14.3340817  14.3340817  13                      2.650307               1.4250857                   3.9121149        10.3914818      
-5:  3          320            6           6400    6.4271863   6.4271863   10                      0.7432895              0.1999902                   0.6074329        5.791525        
-6:  3          40             6           800     0.6650459   0.6650459   7                       0.5053224              0.076162                    0.2342179        0.4039286       
-7:  2          163840         6           1638400 967.526137  967.526137  19                      45.5037232             255.7187384                 83.7181901       883.6840101     
-8:  2          20480          6           204800  47.4579363  47.4579363  17                      6.0707563              6.7004336                   10.0276219       37.3944455      
-9:  2          2560           6           25600   5.1623265   5.1623265   13                      1.2403959              0.453002                    1.3212015        3.8127094       
-10: 2          320            6           3200    1.5083119   1.5083119   10                      0.6073005              0.0963891                   0.3306114        1.1502791       
-11: 2          40             6           400     0.5427695   0.5427695   7                       0.4774382              0.0484646                   0.2100461        0.3061235       
-12: 3          20480          4           409600  105.9824714 105.9824714 17                      16.7044044             14.6538214                  63.490203        42.4402443      
-13: 3          2560           4           51200   14.9818409  14.9818409  13                      2.5362439              1.3464582                   7.6681464        7.2813662       
-14: 3          320            4           6400    1.7271275   1.7271275   10                      0.7293988              0.200079                    0.4174832        1.2797338       
-15: 3          40             4           800     0.4727006   0.4727006   7                       0.5021611              0.0692231                   0.1619232        0.2815732       
-16: 2          320            4           3200    0.6922625   0.6922625   10                      0.5472974              0.0942285                   0.1913936        0.4712207       
-17: 2          40             4           400     0.401851    0.401851    7                       0.4927452              0.0506556                   0.138031         0.234129        
+    DGdegree:T Grid:NoOfCells solver_name DOFs    minSolRunT   maxSolRunT   UsedNoOfMultigridLevels SipMatrixAssembly_time Aggregation_basis_init_time Solver_Init_time Solver_Run_time 
+0:  5          2560           4           143360  497.1330584  497.1330584  5                       16.7298691             14.0356003                  43.0682371       454.0343456     
+1:  5          320            4           17920   28.3973134   28.3973134   4                       2.426101               1.8252537                   4.6311497        23.7402641      
+2:  5          40             4           2240    1.1212961    1.1212961    3                       0.6543525              0.282564                    0.4274076        0.6688036       
+3:  3          20480          4           409600  704.9570708  704.9570708  7                       12.9115116             11.3176181                  34.3530146       670.5629089     
+4:  3          2560           4           51200   31.6771171   31.6771171   5                       1.9476166              1.0471178                   3.8097454        27.8396438      
+5:  3          320            4           6400    1.557986     1.557986     4                       0.5831198              0.1652818                   0.3579663        1.1750633       
+6:  3          40             4           800     0.4036891    0.4036891    3                       0.4129103              0.052442                    0.1335032        0.24494         
+7:  2          163840         4           1638400 951.588482   951.588482   7                       37.5235688             242.7597558                 79.6920794       871.807734      
+8:  2          20480          4           204800  103.7714009  103.7714009  7                       5.0056401              5.8112875                   8.9437361        94.794033       
+9:  2          2560           4           25600   9.908968     9.908968     5                       0.9746563              0.3718167                   1.0590948        8.8231086       
+10: 2          320            4           3200    0.6306171    0.6306171    4                       0.4704671              0.0771852                   0.1624043        0.4428931       
+11: 2          40             4           400     0.3780025    0.3780025    3                       0.3938432              0.0405479                   0.1180742        0.2349079       
+12: 5          2560           6           143360  935.7729459  935.7729459  5                       16.5087015             13.9688942                  32.216042        903.5287137     
+13: 5          320            6           17920   41.5323656   41.5323656   4                       2.4090213              1.7911133                   3.8261885        37.682652       
+14: 5          40             6           2240    1.9254439    1.9254439    3                       0.6524113              0.2785621                   0.5674528        1.3351335       
+15: 3          20480          6           409600  1421.0780502 1421.0780502 7                       12.8999762             10.5674858                  28.6763605       1392.3640335    
+16: 3          2560           6           51200   78.0868387   78.0868387   5                       1.954605               1.0328634                   3.1537011        74.9106666      
+17: 3          320            6           6400    2.2752466    2.2752466    4                       0.5880044              0.1622375                   0.4985092        1.7553133       
+18: 3          40             6           800     0.578944     0.578944     3                       0.4102341              0.0540802                   0.2002866        0.3584104       
+19: 2          163840         6           1638400 4494.0690912 4494.0690912 7                       36.9717805             202.2463584                 153.9420908      4340.0410768    
+20: 2          20480          6           204800  434.8776575  434.8776575  7                       4.9913418              5.1588303                   9.3340327        425.5150515     
+21: 2          2560           6           25600   23.7388973   23.7388973   5                       0.976203               0.3616897                   1.0065361        22.7107868      
+22: 2          320            6           3200    0.8816629    0.8816629    4                       0.4562033              0.0772112                   0.2564623        0.6045317       
+23: 2          40             6           400     0.5294159    0.5294159    3                       0.3879074              0.0422406                   0.1835803        0.3248682       
 ==============
 **************
 ==============
+//extract all Degrees and put them into array
+int rowcount       = SubTab.Rows.Count;
+int selectedcolumn = 0;
+int[] tmp= new int[20];
+
+int count = 0;
+for(int r=0;r<rowcount;r++){
+System.Data.DataRow row = (System.Data.DataRow)SubTab.Rows[r];
+int bla                 = Convert.ToInt32(row[selectedcolumn]);
+if (tmp[bla]==0){
+  tmp[bla]=1;
+  count++;
+}
+}
+int[] DGdegrees = new int[count];
+int count2 = 0;
+for(int i=0;i<tmp.Length;i++){
+   if(tmp[i]==1){
+      DGdegrees[count2]=i;
+      count2++; 
+   }
+}
+DGdegrees;
 **************
+List of 3 instances of Int32 {
+  0: 2
+  1: 3
+  2: 5
+}
 ==============
 **************
 ==============
@@ -152,13 +189,17 @@ SolverCodes.exp_softpcg_mg
 ==============
 **************
 ==============
+int rows = 3;
+int columns = 1;
+
 Plot2Ddata[][,] AllMultiplots = new Plot2Ddata[2][,];
 for(int iPlot = 0; iPlot < AllMultiplots.Length; iPlot++) {
-Plot2Ddata[,] multiplots = new Plot2Ddata[2,1];
+Plot2Ddata[,] multiplots = new Plot2Ddata[rows,columns];
 AllMultiplots[iPlot] = multiplots;
-int pDegree = 2;
-for(int iRow = 0; iRow < 2; iRow++) {
- 
+int pDegree = 0;
+
+for(int iRow = 0; iRow < rows; iRow++) {
+int iCol = 0; 
     multiplots[iRow,0] = SubTab.ToPlot(
        delegate (int iSweep, int iTabRow, 
                  IDictionary<string, object> Row, 
@@ -173,7 +214,7 @@ for(int iRow = 0; iRow < 2; iRow++) {
            int k = Convert.ToInt32(Row["DGdegree:T"]);
            SolverCodes solver_name = (SolverCodes) Convert.ToInt32(Row["solver_name"]);
            
-           if(    k != pDegree 
+           if(    k != DGdegrees[pDegree] 
                || solver_name != Solvers[iPlot]) {
                 // degree does not match -> not in this plot
                 Nmn    = null;
@@ -239,12 +280,12 @@ for(int iRow = 0; iRow < 2; iRow++) {
        4 // 4 sweeps over table
        );
  
-    string Title = string.Format("$k = {0}$", pDegree);
+    string Title = string.Format("$k = {0}$", DGdegrees[pDegree]);
     multiplots[iRow,0].Ylabel = Title;
     multiplots[iRow,0].LogX = true;
     multiplots[iRow,0].LogY = true;
  
-    multiplots[iRow,0].YrangeMin = 0.1;
+    multiplots[iRow,0].YrangeMin = 1e-2;
     multiplots[iRow,0].YrangeMax = 1e+4;
     
     double[] dof = new[]{1e3,1e6};
@@ -252,41 +293,49 @@ for(int iRow = 0; iRow < 2; iRow++) {
     var linP = new Plot2Ddata.XYvalues("linear", dof, linT);
     linP.Format.FromString("- black");
     ArrayTools.AddToArray(linP, ref multiplots[iRow,0].dataGroups);
-    //multiplots[iRow,iCol].XrangeMin = 1e2;
-    //multiplots[iRow,iCol].XrangeMax = 1e7;
+    multiplots[iRow,iCol].XrangeMin = 1e1;
+    multiplots[iRow,iCol].XrangeMax = 1e7;
     //multiplots[iRow,iCol].Y2rangeMin = 1e-3;
     //multiplots[iRow,iCol].Y2rangeMax = 1e+4;
     //multiplots[iRow,iCol].X2rangeMin = 1e2;
     //multiplots[iRow,iCol].X2rangeMax = 1e7;
  
-    //if(iRow == 2) {
-    //    multiplots[iRow,iCol].ShowLegend = true;
-    //    multiplots[iRow,iCol].LegendPosition = new double[] {1e12,1e4};
-    //} else {
-    //    multiplots[iRow,iCol].ShowLegend = false;
-    //}
- 
-    //if(iCol == 1) {
-    //    multiplots[iRow,iCol].SwapYaxes();
-    //    multiplots[iRow,iCol].lmargin = 1;
-    //    multiplots[iRow,iCol].rmargin = 10;
-    //} else {
-    //    multiplots[iRow,iCol].lmargin = 10;
-    //    multiplots[iRow,iCol].rmargin = 1;
-    //}
-    //multiplots[iRow,iCol].tmargin = 1;
-    //multiplots[iRow,iCol].bmargin = 1;
+    //spacing around plots
+    multiplots[iRow,iCol].ShowLegend = false;
+    multiplots[iRow,iCol].tmargin = 0;
+    multiplots[iRow,iCol].bmargin = 1;
+    multiplots[iRow,iCol].lmargin = 10;
+    multiplots[iRow,iCol].rmargin = 5;
+    multiplots[iRow,iCol].ShowXtics=false;
+
+    //I am legend ...
+    if(iRow == 0){
+    multiplots[iRow,iCol].ShowLegend = true;
+    multiplots[iRow,iCol].LegendAlignment=new string[]{"i","t","l"};
+    multiplots[iRow,iCol].LegendSwap=true;
+    }
+
+    //and i am special ...
+    if(iRow == rows-1)
+        multiplots[iRow,iCol].ShowXtics=true;
     
     pDegree++;                       
 }
 }
+;
+AllMultiplots[0].PlotNow()
 **************
+Using gnuplot: C:\Program Files (x86)\FDY\BoSSS\bin\native\win\gnuplot-gp510-20160418-win32-mingw\gnuplot\bin\gnuplot.exe
+set key inside top left Left reverse 
+System.Drawing.Bitmap
 ==============
-var CL = AllMultiplots[0].ToGnuplot().PlotCairolatex(xSize:16, ySize:12);
+var CL = AllMultiplots[0].ToGnuplot().PlotCairolatex(xSize:14, ySize:12);
 CL.PlotNow();
 **************
 Using gnuplot: C:\Program Files (x86)\FDY\BoSSS\bin\native\win\gnuplot-gp510-20160418-win32-mingw\gnuplot\bin\gnuplot.exe
-System.Drawing.Bitmap
+set key inside top left Left reverse 
+System.ComponentModel.Win32Exception occurred: Das System kann die angegebene Datei nicht finden. Type 'LastError' for details.
+
 ==============
 CL.WriteMinimalCompileableExample(
     Path.Combine(CurrentDocDir, "plots", "MainConstCoeffPoisson_Schwarz.tex"),
@@ -300,15 +349,34 @@ CL.WriteMinimalCompileableExample(
 ==============
 **************
 ==============
-var CL = AllMultiplots[1].ToGnuplot().PlotCairolatex(xSize:16, ySize:12);
+var CL = AllMultiplots[1].ToGnuplot().PlotCairolatex(xSize:14, ySize:12);
 CL.PlotNow();
 **************
 Using gnuplot: C:\Program Files (x86)\FDY\BoSSS\bin\native\win\gnuplot-gp510-20160418-win32-mingw\gnuplot\bin\gnuplot.exe
-System.Drawing.Bitmap
+set key inside top left Left reverse 
+System.ComponentModel.Win32Exception occurred: Das System kann die angegebene Datei nicht finden. Type 'LastError' for details.
+
+==============
+LastError;
+**************
+System.ComponentModel.Win32Exception (0x80004005): Das System kann die angegebene Datei nicht finden
+   bei System.Diagnostics.Process.StartWithShellExecuteEx(ProcessStartInfo startInfo)
+   bei BoSSS.Application.BoSSSpad.GnuplotExtensions.CairolatexContainer.Preview(Boolean trimPage, Int32 dpi) in C:\BoSSS\BoSSS-SolverPerformance\public\src\L4-application\BoSSSpad\GnuplotExtensions.cs:Zeile 325.
+   bei <InteractiveExpressionClass>.Host(Object& $retval)
+   bei Mono.CSharp.Evaluator.Evaluate(String input, Object& result, Boolean& result_set)
+   bei BoSSS.Application.BoSSSpad.ReadEvalPrintLoop.EvalPrint(String line, Assembly& AssemblyProduced) in C:\BoSSS\BoSSS-SolverPerformance\public\src\L4-application\BoSSSpad\ReadEvalPrintLoop.cs:Zeile 318.
 ==============
 CL.WriteMinimalCompileableExample(
     Path.Combine(CurrentDocDir, "plots", "MainConstCoeffPoisson_MG.tex"),
     "ConstCoeffPoisson_MG.tex");
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
 **************
 ==============
 **************
