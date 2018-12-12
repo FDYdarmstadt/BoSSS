@@ -34,7 +34,8 @@ namespace BoSSS.Application.TutorialTests {
             //AllUpTest.RunWorksheets("tutorial9-SIP/sip.tex");
             //AllUpTest.RunWorksheets("tutorial10-PoissonSystem/Poisson.tex");
             //AllUpTest.RunWorksheets("tutorial11-Stokes/StokesEq.tex");
-            AllUpTest.RunWorksheets("shortTutorialMatlab/tutorialMatlab.tex");
+            //AllUpTest.RunWorksheets("shortTutorialMatlab/tutorialMatlab.tex");
+            AllUpTest.RunWorksheets("GridGeneration/GridGeneration.tex");
             AllUpTest.TestFixtureTearDown();
         }
 

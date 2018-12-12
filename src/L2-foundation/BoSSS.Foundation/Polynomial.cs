@@ -539,5 +539,48 @@ namespace BoSSS.Foundation.Grid {
                     R += this.Exponents[i, j] * (i + 13);
             return R;
         }
+
+        /// <summary>
+        /// nice formatting
+        /// </summary>
+        public override string ToString() {
+            using(var stw = new System.IO.StringWriter()) {
+                int L = this.Coeff.Length;
+                int D = this.SpatialDimension;
+                
+                for (int l = 0; l < L; l++) {
+                    if(l == 0)
+                        stw.Write(Coeff[l]);
+                    else
+                        stw.Write(Math.Abs(Coeff[l]));
+
+                    for( int d = 0; d < D; d++) {
+                        if(Exponents[l,d] > 0) {
+                            stw.Write("*");
+                            switch(d) {
+                                case 0: stw.Write("xi"); break;
+                                case 1: stw.Write("eta"); break;
+                                case 2: stw.Write("nu"); break;
+                                default: throw new NotImplementedException();
+                            }
+                            if(Exponents[l, d] > 1) {
+                                stw.Write("^");
+                                stw.Write(Exponents[l, d]);
+                            }
+                        }
+                    }
+
+
+                    if(l < L - 1) {
+                        if (Math.Sign(Coeff[l + 1]) >= 0)
+                            stw.Write(" + ");
+                        else
+                            stw.Write(" - ");
+                    }
+                }
+
+                return stw.ToString();
+            }
+        }
     }
 }

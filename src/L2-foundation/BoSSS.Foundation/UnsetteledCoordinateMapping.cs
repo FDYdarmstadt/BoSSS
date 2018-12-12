@@ -84,7 +84,6 @@ namespace BoSSS.Foundation {
         /// Constructs a new mapping from an ordered list of basis functions;
         /// </summary>
         /// <param name="_basis">the list of DG basis'es that define this mapping</param>
-        /// <param name="mt"></param>
         public UnsetteledCoordinateMapping(IEnumerable<Basis> _basis) :
             base(ComputeLength(_basis), _basis.ElementAt(0).GridDat.CellPartitioning.MPI_Comm) //
             {
@@ -417,6 +416,26 @@ namespace BoSSS.Foundation {
             for (int f = m_BasisS.Length - 1; f >= 0; f--)
                 L += m_BasisS[f].GetLength(j);
             return L;
+        }
+
+        /// <summary>
+        /// Local (on this MPI process) number of degrees-of-freedom; 
+        /// this can be different than <see cref="Partitioning.LocalLength"/>, e.g. in the XDG case.
+        /// </summary>
+        public int GetLocalNoOfDOFs() {
+            int J = this.GridDat.iLogicalCells.NoOfLocalUpdatedCells;
+            int dofs = 0;
+            for (int j = 0; j < J; j++) {
+                dofs += GetTotalNoOfCoordinatesPerCell(j);
+            }
+            return dofs;
+        }
+
+        /// <summary>
+        /// the sum of <see cref="GetLocalNoOfDOFs"/> over all MPI processors in communicator <see cref="MPI_Comm"/>.
+        /// </summary>
+        public int GetTotalNoOfDOFs() {
+            return GetLocalNoOfDOFs().MPISum(this.MPI_Comm);
         }
 
 
