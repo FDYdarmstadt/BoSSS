@@ -109,8 +109,6 @@ namespace BoSSS.Application.SipPoisson.Voronoi {
 
             Boundary = 3,
 
-
-
             FarPoint = 6 // somewhere at infty
         }
 
@@ -130,7 +128,7 @@ namespace BoSSS.Application.SipPoisson.Voronoi {
 
             public bool deleted = false;
             public VertexType type = VertexType.unspecified;
-
+            
 
             public bool IsFar {
                 get {
@@ -305,7 +303,6 @@ namespace BoSSS.Application.SipPoisson.Voronoi {
                     Debug.Assert(s);
                 }
             }
-
 
 
             static public List<VoEdge> edgeS = new List<VoEdge>();
@@ -1476,6 +1473,10 @@ namespace BoSSS.Application.SipPoisson.Voronoi {
                     throw new ArgumentException();
                 }
             }
+
+            // reset
+            VoVertex.verticeS.Clear();
+            VoEdge.edgeS.Clear();
 
             // check if any two boundary vertices are identical:
             for (int iBnd = 0; iBnd < PolygonBoundary.Length; iBnd++) {
