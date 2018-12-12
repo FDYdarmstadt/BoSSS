@@ -1456,7 +1456,7 @@ namespace BoSSS.Application.SipPoisson.Voronoi {
 
 
 
-        static public AggregationGrid FromPolygonalDomain(MultidimensionalArray Nodes, Vector[] PolygonBoundary, bool mirroring, int NoOfLyyodsIter, Func<Vector, bool> IsIn, Func<Vector, Vector, bool> __PointIdentity) {
+        static public AggregationGrid FromPolygonalDomain(MultidimensionalArray Nodes, Vector[] PolygonBoundary, bool mirroring, double NoOfLyyodsIter, Func<Vector, bool> IsIn, Func<Vector, Vector, bool> __PointIdentity) {
 
             // check arguments
             // ===============

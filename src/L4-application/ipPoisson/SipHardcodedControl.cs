@@ -604,7 +604,7 @@ namespace BoSSS.Application.SipPoisson {
         /// <param name="NoOfLlyodsIter">
         /// Number of iterations for Llyod's algorithm (aka. Voronoi relaxation)
         /// </param>
-        public static SipControl TestVoronoi(int Res, SolverCodes solver_name = SolverCodes.classic_pardiso, int deg = 3, bool mirror = true, int NoOfLlyodsIter = 0) {
+        public static SipControl TestVoronoi(int Res, SolverCodes solver_name = SolverCodes.classic_pardiso, int deg = 3, bool mirror = true, double NoOfLlyodsIter = 0) {
 
             if (System.Environment.MachineName.ToLowerInvariant().EndsWith("rennmaschin")
                //|| System.Environment.MachineName.ToLowerInvariant().Contains("jenkins")
