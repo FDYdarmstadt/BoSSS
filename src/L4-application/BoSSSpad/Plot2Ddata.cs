@@ -278,11 +278,28 @@ namespace BoSSS.Application.BoSSSpad {
         public bool ShowLegend = true;
 
         /// <summary>
+        /// Aligns the legend (the key, in gnuplot terms) in (i) and outside (o) of the plot. Valid alignments are: l=left, c=center, r=right for horizontal spacing and t=top, c=center, b=bottom for vertical spacing. Ordering is {inside/outside,horizontal,vertical}
+        /// </summary>
+        [DataMember]
+        public string[] LegendAlignment = null;
+
+        /// <summary>
+        /// Orders the legend entries rowwise if set to true
+        /// </summary>
+        [DataMember]
+        public bool LegendHorizontal = false;
+
+        /// <summary>
         /// Position of legend, in graph coordinates (e.g. for a log-range, with values from 10 to 1000, this may be 10000 to print the legend rigth from the plot).
         /// </summary>
         [DataMember]
         public double[] LegendPosition = null;
 
+        /// <summary>
+        /// Swaps entries of legend
+        /// </summary>
+        [DataMember]
+        public bool LegendSwap = true;
 
         /// <summary>
         /// Numbers on the primary x-axis
@@ -990,12 +1007,51 @@ namespace BoSSS.Application.BoSSSpad {
 
                 if (this.ShowLegend) {
                     gp.Cmd("unset key");
+                    string command="set key ";
+
+                    if ((this.LegendPosition != null) & (this.LegendAlignment != null))
+                        System.Console.WriteLine("legend position and legend alignment is set. Choose only one of them! Ignoring alignment ...");
 
                     if (this.LegendPosition != null) {
-                        gp.Cmd("set key at {1:0.####e-00},{2:0.####e-00} vertical maxrows {0} ", this.dataGroups.Length, this.LegendPosition[0], this.LegendPosition[1]);
+                        command+=String.Format("at {1:0.####e-00},{2:0.####e-00} vertical maxrows {0} ", this.dataGroups.Length, this.LegendPosition[0], this.LegendPosition[1]);
+                    } else if (this.LegendAlignment != null) {
+                        Dictionary<string, string> alignments = new Dictionary<string, string>();
+                        alignments.Add("r", "right");
+                        alignments.Add("c", "center");
+                        alignments.Add("l", "left");
+                        alignments.Add("b", "bottom");
+                        alignments.Add("t", "top");
+
+                        switch (LegendAlignment[0]) {
+                            case "o":
+                                //alignment within plotboundary
+                                command += "outside ";
+                                break;
+                            case "i":
+                                //alignement within graphyboundary
+                                command += "inside ";
+                                break;
+                            default:
+                                throw new ArgumentException("this style is not specified: use [i/o]");
+                        }
+
+                        for (int i = 1; i <= 2; i++)
+                            foreach (KeyValuePair<string, string> kvp in alignments) {
+                                if (LegendAlignment[i] == kvp.Key)
+                                    command += kvp.Value + " ";
+                            }
+
                     } else {
-                        gp.Cmd("set key outside right vertical maxrows {0} ", this.dataGroups.Length);
+                        throw new ArgumentNullException("no alignment or position chosen");
                     }
+                    if (this.LegendHorizontal == true)
+                        command += "horizontal ";
+
+                    if (this.LegendSwap == true)
+                        command += "Left reverse ";
+
+                    System.Console.WriteLine(command);
+                    gp.Cmd(command);
                 } else {
                     gp.Cmd("set key off");
                 }
