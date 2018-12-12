@@ -61,9 +61,15 @@ WorkflowMgm.AllJobs;
 /// BoSSScmdSilent BoSSSexeSilent
 // first, do some cleanup\newline 
 if(System.IO.Directory.Exists(@"C:\textbackslash tmp\textbackslash TutorialLocal\_db")) \{\newline 
-\btab System.IO.Directory.Delete(@"C:\textbackslash tmp\textbackslash TutorialLocal\_db",true);\newline 
-\} else \{\newline 
-\btab //\newline 
+\btab try \{\newline 
+\btab \btab System.IO.Directory.Delete(@"C:\textbackslash tmp\textbackslash TutorialLocal\_db",true);\newline 
+\btab \} catch(Exception) \{ \}\newline 
+\}\newline 
+if(System.IO.Directory.Exists(@"C:\textbackslash tmp\textbackslash deploy"))\{\newline 
+\btab try \{\newline 
+\btab \btab System.IO.Directory.Delete(@"C:\textbackslash tmp\textbackslash deploy",true);\newline 
+\btab \} catch(Exception) \{ \}\newline 
+ \newline 
 \}
  }
 \BoSSSexeSilent
@@ -87,9 +93,6 @@ databases;
 /// We have to initialize all batch systems that we want to use.
 /// Normally, one would put these statements into the 
 /// {\tt $\sim$/.BoSSS/etc/DBErc.cs}-file
-if(System.IO.Directory.Exists(@"C:\textbackslash tmp\textbackslash deploy"))\{\newline 
-\btab System.IO.Directory.Delete(@"C:\textbackslash tmp\textbackslash deploy",true);\newline 
-\}\newline 
 System.IO.Directory.CreateDirectory(@"C:\textbackslash tmp\textbackslash deploy");\newline 
 var myBatch = new MiniBatchProcessorClient(@"C:\textbackslash tmp\textbackslash deploy");
  }
@@ -289,7 +292,7 @@ JobLocal.NumberOfMPIProcs = 1;
  }
 \BoSSSexe
 \BoSSScmd{
-JobLocal.Activate(myBatch); // execute thwe job in 'myBatch'
+JobLocal.Activate(myBatch); // execute the job in 'myBatch'
  }
 \BoSSSexe
 \BoSSScmd{
@@ -307,7 +310,7 @@ JobLocal.Status;
 \BoSSSexe
 \BoSSScmd{
 /// Here, we block until both of our jobs have finished:
-//WorkflowMgm.BlockUntilAllJobsTerminate(360);
+WorkflowMgm.BlockUntilAllJobsTerminate(360);
  }
 \BoSSSexe
 \BoSSScmd{
