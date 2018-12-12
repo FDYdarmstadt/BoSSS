@@ -157,6 +157,11 @@ namespace BoSSS.Application.SipPoisson.Voronoi {
 
             public static List<VoVertex> verticeS = new List<VoVertex>();
 
+            static internal void Reset() {
+                verticeS.Clear();
+                IDcounter = 1;
+            }
+
             private VoVertex(Vector __VTX) {
                 if (__VTX.Dim != 2)
                     throw new ArgumentException();
@@ -308,6 +313,11 @@ namespace BoSSS.Application.SipPoisson.Voronoi {
 
 
             static public List<VoEdge> edgeS = new List<VoEdge>();
+
+            static internal void Reset() {
+                edgeS.Clear();
+                IDcounter = 1;
+            }
 
             /// <summary>
             /// First vertex in Voronoi cell
@@ -1075,7 +1085,6 @@ namespace BoSSS.Application.SipPoisson.Voronoi {
             return PointIdentityG_User(V1, V2);
         }
 
-
         static bool PointIdentity(VoVertex V1, VoVertex V2) {
             if (object.ReferenceEquals(V1, V2)) {
                 Debug.Assert(PointIdentityG(V1.VTX, V2.VTX));
@@ -1086,7 +1095,6 @@ namespace BoSSS.Application.SipPoisson.Voronoi {
 
 
         }
-
 
         static bool Intersect(VoEdge edge, VoEdge bndy, List<VoEdge> bndyEdges) {
             // Colinear: exact overlap
@@ -1454,12 +1462,13 @@ namespace BoSSS.Application.SipPoisson.Voronoi {
             throw new ApplicationException("should never reach this point - error in algorithm");
         }
 
-
-
         static public AggregationGrid FromPolygonalDomain(MultidimensionalArray Nodes, Vector[] PolygonBoundary, bool mirroring, double NoOfLyyodsIter, Func<Vector, bool> IsIn, Func<Vector, Vector, bool> __PointIdentity) {
 
             // check arguments
             // ===============
+
+            if (NoOfLyyodsIter < 0)
+                throw new ArgumentOutOfRangeException();
 
             PointIdentityG_User = __PointIdentity;
 
@@ -1477,8 +1486,9 @@ namespace BoSSS.Application.SipPoisson.Voronoi {
             }
 
             // reset
-            VoVertex.verticeS.Clear();
-            VoEdge.edgeS.Clear();
+            VoVertex.Reset();
+            VoEdge.Reset();
+            
 
             // check if any two boundary vertices are identical:
             for (int iBnd = 0; iBnd < PolygonBoundary.Length; iBnd++) {
@@ -1532,11 +1542,15 @@ namespace BoSSS.Application.SipPoisson.Voronoi {
             {
                 VocellVertexIndex = null;
                 Verts = null;
-                for (int iLloyd = 0; iLloyd < NoOfLyyodsIter; iLloyd++) {
+                for (int iLloyd = 0; iLloyd <= Math.Ceiling(NoOfLyyodsIter); iLloyd++) {
 
                     // Lloyds algorithm (Voronoi relaxation)
                     // -------------------------------------
                     if (iLloyd > 0) {
+                        double r = Math.Min(NoOfLyyodsIter - iLloyd + 1, 1.0);
+                        Debug.Assert(r >= -0.00001);
+                        Debug.Assert(r <= 1.00001);
+
                         for (int jV = 0; jV < Nodes.NoOfRows; jV++) {
 
                             Vector oldNode = Nodes.GetRowPt(jV);
@@ -1563,7 +1577,8 @@ namespace BoSSS.Application.SipPoisson.Voronoi {
 
 
                                 // 
-                                Nodes.SetRowPt(jV, COG);
+
+                                Nodes.SetRowPt(jV, COG * r + Nodes.GetRowPt(jV) * (1 - r));
                             }
                         }
                     }
@@ -1652,7 +1667,8 @@ namespace BoSSS.Application.SipPoisson.Voronoi {
             List<int> verticesIndices = new List<int>();
             for (int i = 0; i < Verts.Count; i++) {
                 var v = VoVertex.Create(Verts[i]);
-                //if(v.ID != VoVertex.verticeS.Last().ID) {
+                Debug.Assert(object.ReferenceEquals(v, VoVertex.verticeS[v.ID - 1]));
+                //if(v.ID != i+1) {
                 //    throw new ArithmeticException("Matlab produced indistinguishable Voronoi vertices.");
                 //}
                 verticesIndices.Add(v.ID - 1);
@@ -1674,8 +1690,14 @@ namespace BoSSS.Application.SipPoisson.Voronoi {
                         int _iVtxA = iVtxS[i];
                         int _iVtxB = iVtxS[(i + 1) % I];
 
+
                         VoVertex _VtxA = VoVertex.verticeS[verticesIndices[_iVtxA]];
                         VoVertex _VtxB = VoVertex.verticeS[verticesIndices[_iVtxB]];
+
+                        if (_VtxA.Equals(_VtxB))
+                            // according to user-defined point equality criterion, both vertices of the ede are equal
+                            // => skip it
+                            continue;
 
                         Debug.Assert(PointIdentityG(_VtxA.VTX, Verts[iVtxS[i]]));
                         Debug.Assert(PointIdentityG(_VtxB.VTX, Verts[iVtxS[(i + 1) % I]]));
@@ -2109,7 +2131,6 @@ namespace BoSSS.Application.SipPoisson.Voronoi {
             }
         }
 
-
         static void DebugPlot(int[][] VocellVertexIndex, IList<Vector> Verts, IEnumerable<VoEdge> edgeS, IEnumerable<VoVertex> SomePoints) {
             using (var gp = new Gnuplot()) {
                 if (VocellVertexIndex != null) {
@@ -2170,8 +2191,6 @@ namespace BoSSS.Application.SipPoisson.Voronoi {
                 Console.ReadKey();
             }
         }
-
-
 
         static void CheckEdgeUniqueness(bool really = false) {
             VoEdge[] Allbndy = VoEdge.edgeS.ToArray();
