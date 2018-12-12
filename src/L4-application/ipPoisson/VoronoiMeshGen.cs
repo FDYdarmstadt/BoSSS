@@ -98,71 +98,7 @@ namespace BoSSS.Application.SipPoisson.Voronoi {
             _y = y.ToArray();
             return N;
         }
-
-        /*
-        enum VertexType {
-            unspecified = 0,
-            
-            Inside = 1,
-
-            Outside = 2,
-
-            OnBoundaryplane_Inside = 3,
-
-            //OnBoundaryplane_Outside = 4,
-
-            OnCorner = 5,
-
-            FarPoint = 6 // somewhere at infty
-        }
-
-
-        class VoronoiVertex {
-            public Vector VTX;
-
-            public VertexType type;
-
-
-
-
-        }
-
-
-
-        class VoronoiEdge {
-            /// <summary>
-            /// First vertex in voronoi cell
-            /// </summary>
-            public int iVtxA;
-
-            /// <summary>
-            /// Second vertex in voronoi cell
-            /// </summary>
-            public int iVtxB;
-
-
-            public List<int> Cells = new List<int>();
-
-
-            public override bool Equals(object obj) {
-                if (iVtxA == iVtxB)
-                    throw new ApplicationException();
-
-                var E2 = obj as VoronoiEdge;
-                if (iVtxA == E2.iVtxA && iVtxB == E2.iVtxB)
-                    return true;
-                if (iVtxA == E2.iVtxB && iVtxB == E2.iVtxA)
-                    return true;
-
-                return false;
-            }
-
-
-            public override int GetHashCode() {
-                return iVtxA + (iVtxB << 16);
-            }
-        }
-        */
+       
 
         enum VertexType {
             unspecified = 0,
@@ -1080,7 +1016,7 @@ namespace BoSSS.Application.SipPoisson.Voronoi {
                     }
 
                     if (!bFound) {
-                        DebugPlot(null, null, this.Edges, new VoVertex[] { Start, End });
+                    //    DebugPlot(null, null, this.Edges, new VoVertex[] { Start, End });
 
 
                         throw new ArgumentException("End vertex is not an element of this polygon.", "End");
