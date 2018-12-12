@@ -1199,9 +1199,17 @@ namespace BoSSS.Application.SipPoisson {
         /// default plotting
         /// </summary>
         protected override void PlotCurrentState(double phystime, TimestepNumber timestepNo, int superSampling = 0) {
+            string caseStr = "";
+            if (base.Control.Paramstudy_CaseIdentification != null) {
+                var pstudy_case = base.Control.Paramstudy_CaseIdentification.FirstOrDefault(tt => tt.Item1 == "pstudy_case");
+                if (pstudy_case != null) {
+                    caseStr = "." + pstudy_case.Item2;
+                }
+            }
+
             DGField[] Fields = new DGField[] { T, Tex, RHS, ResiualKP1 };
             Fields = Fields.Cat(this.MGColoring);
-            BoSSS.Solution.Tecplot.Tecplot.PlotFields(Fields, "poisson" + timestepNo, phystime, superSampling);
+            BoSSS.Solution.Tecplot.Tecplot.PlotFields(Fields, "poisson" + timestepNo + caseStr, phystime, superSampling);
         }
 
     }

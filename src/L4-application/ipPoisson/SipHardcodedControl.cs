@@ -634,7 +634,7 @@ namespace BoSSS.Application.SipPoisson {
 
 
 
-            
+            /*
             bool IsIn(double xi, double yi) {
                 
                 //for(int l = 0; l < bndys.Length; l++) {
@@ -670,7 +670,7 @@ namespace BoSSS.Application.SipPoisson {
 
             //*/
 
-            /*
+            
             bool IsIn(double xi, double yi) {
                 double myEps = 0.0;
                 if (xi > 1.0 + myEps)
@@ -747,8 +747,9 @@ namespace BoSSS.Application.SipPoisson {
 
 
         public static SipControl[] VoronoiPStudy() {
-         
-            int[] NoOfLli = new int[] { 1, 2, 5, 10, 20, 100 };
+
+            //double[] NoOfLli = new double[] { 2, 5, 10, 20, 100 };
+            double[] NoOfLli = GenericBlas.Linspace(0, 100, 201);
             List<SipControl> R = new List<SipControl>();
             for(int i = 0; i < NoOfLli.Length; i++) {
                 R.Add(TestVoronoi(100, deg: 1, mirror: true, NoOfLlyodsIter: NoOfLli[i]));
