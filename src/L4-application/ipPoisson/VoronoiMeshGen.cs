@@ -40,6 +40,8 @@ using System.Threading.Tasks;
 namespace BoSSS.Application.SipPoisson.Voronoi {
     static class VoronoiMeshGen {
 
+        
+
 
         static int Mirror(ref double[] _x, ref double[] _y, AffineManifold[] bndys, Func<Vector, bool> _IsIn) {
             bool IsIn(double xp, double yp) {
@@ -99,70 +101,7 @@ namespace BoSSS.Application.SipPoisson.Voronoi {
             return N;
         }
 
-        /*
-        enum VertexType {
-            unspecified = 0,
-            
-            Inside = 1,
-
-            Outside = 2,
-
-            OnBoundaryplane_Inside = 3,
-
-            //OnBoundaryplane_Outside = 4,
-
-            OnCorner = 5,
-
-            FarPoint = 6 // somewhere at infty
-        }
-
-
-        class VoronoiVertex {
-            public Vector VTX;
-
-            public VertexType type;
-
-
-
-
-        }
-
-
-
-        class VoronoiEdge {
-            /// <summary>
-            /// First vertex in voronoi cell
-            /// </summary>
-            public int iVtxA;
-
-            /// <summary>
-            /// Second vertex in voronoi cell
-            /// </summary>
-            public int iVtxB;
-
-
-            public List<int> Cells = new List<int>();
-
-
-            public override bool Equals(object obj) {
-                if (iVtxA == iVtxB)
-                    throw new ApplicationException();
-
-                var E2 = obj as VoronoiEdge;
-                if (iVtxA == E2.iVtxA && iVtxB == E2.iVtxB)
-                    return true;
-                if (iVtxA == E2.iVtxB && iVtxB == E2.iVtxA)
-                    return true;
-
-                return false;
-            }
-
-
-            public override int GetHashCode() {
-                return iVtxA + (iVtxB << 16);
-            }
-        }
-        */
+       
 
         enum VertexType {
             unspecified = 0,
