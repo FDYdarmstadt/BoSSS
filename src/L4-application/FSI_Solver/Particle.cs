@@ -401,7 +401,8 @@ namespace BoSSS.Application.FSI_Solver {
             //double[] tempForce = new double[2];
             double[] gravity = new double[2];
             gravity[0] = 0;
-            gravity[1] = -98.0;
+            //gravity[1] = -98.0;
+            gravity[1] = 0;
             double C_v = 0.5;
             // In case we want to quickly adapt to all possible fluid densities
             double[] f_vNew = new double[2];

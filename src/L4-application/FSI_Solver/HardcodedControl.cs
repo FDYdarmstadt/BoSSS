@@ -181,7 +181,7 @@ namespace BoSSS.Application.FSI_Solver {
             C.ProjectName = "Uhlmann_k2_Re185_dt01_CellAgglo02_penalty4_SinglePhase";
             C.ProjectDescription = "Cylinder";
             C.Tags.Add("with immersed boundary method");
-
+            
             // DG degrees
             // ==========
 
@@ -616,7 +616,7 @@ namespace BoSSS.Application.FSI_Solver {
 
             // misc. solver options
             // ====================
-
+            
             C.AdvancedDiscretizationOptions.PenaltySafety = 4;
             C.AdvancedDiscretizationOptions.CellAgglomerationThreshold = 0.2;
             C.LevelSetSmoothing = false;
@@ -1303,7 +1303,7 @@ namespace BoSSS.Application.FSI_Solver {
                 radius_P = 0.1,
                 rho_P = 3.0,
             });
-
+            
             C.Particles.Add(new Particle(2, 4, new double[] { -0.5, 7.2 }, startAngl: -45.0, shape: Particle.ParticleShape.spherical) {
                 radius_P = 0.15,
                 rho_P = 3.0,
