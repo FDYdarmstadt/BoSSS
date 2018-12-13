@@ -63,16 +63,20 @@ namespace BoSSS.Application.TutorialTests {
         static public void RunWorksheets([Values(
             "quickStartCNS/IsentropicVortex.tex",
             "MetaJobManager/MetaJobManager.tex",
+            "GridGeneration/GridGeneration.tex",
             "quickStartIBM/channel.tex",
             "shortTutorialMatlab/tutorialMatlab.tex",
+            // ----
             "tutorial2/uebung2tutorial.tex",
             "tutorial4/tutorial4.tex",
             "tutorial5/uebung5tutorial.tex",
             "tutorial6/tutorial6.tex",
             "tutorial9-SIP/sip.tex",
+            // ---
             "tutorial10-PoissonSystem/Poisson.tex",
             "tutorial11-Stokes/StokesEq.tex",
-            "CsharpAndBoSSSpad/CsharpAndBoSSSpad.tex"//   */
+            "CsharpAndBoSSSpad/CsharpAndBoSSSpad.tex"  
+            //"ParameterStudy/ParameterStudy.tex"
             )] string TexFileName) {
 
             string FullTexName = Path.Combine(DirectoryOffset, TexFileName);

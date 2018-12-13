@@ -14,6 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+using BoSSS.Foundation.Grid;
 using BoSSS.Foundation.Grid.Classic;
 using BoSSS.Solution.GridImport;
 using System;
@@ -96,9 +97,13 @@ namespace BoSSS.Foundation.IO {
         /// <returns></returns>
         public static Guid SaveGrid(this IDatabaseInfo database, ref Grid.Classic.GridCommons grd) {
             bool found;
-            Guid GridGuid = database.Controller.DBDriver.SaveGridIfUnique(ref grd, out found, database);
-            if (found)
+            IGrid grid = grd;
+
+            Guid GridGuid = database.Controller.DBDriver.SaveGridIfUnique(ref grid, out found, database);
+            if (found) {
                 Console.WriteLine("An equivalent grid is already present in the database -- the grid will not be saved.");
+                grd = (GridCommons)grid;
+            }
             return GridGuid;
         }
     }

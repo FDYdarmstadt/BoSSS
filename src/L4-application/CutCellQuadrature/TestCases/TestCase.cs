@@ -132,7 +132,7 @@ namespace CutCellQuadrature.TestCases {
         /// <returns>
         /// <see cref="ITestCase.GetGrid"/>
         /// </returns>
-        public abstract GridCommons GetGrid(IDatabaseInfo db);
+        public abstract IGrid GetGrid(IDatabaseInfo db);
 
         /// <summary>
         /// <see cref="ITestCase.GridSpacing"/>

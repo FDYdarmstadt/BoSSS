@@ -37,20 +37,17 @@ namespace BoSSS.Application.FSI_Solver {
     [Serializable]
     public class Particle : ICloneable {
 
-        public Particle(int Dim =2, int HistoryLength=4, double[] startPos = null, double startAngl = 0.0, ParticleShape shape = ParticleShape.spherical) {
+        #region particle
+        public Particle(int Dim, int HistoryLength, double[] startPos = null, double startAngl = 0.0, ParticleShape shape = ParticleShape.spherical) {
 
-            if (startPos == null) {
-                if (Dim == 2) {
-                    startPos = new double[] { 0.0, 0.0 };
-                } else {
-                    startPos = new double[] { 0.0, 0.0, 0.0 };
-                }
-            }
-
+            
             m_Dim = Dim;
             m_HistoryLength = HistoryLength;
             m_shape = shape;
 
+
+            #region Particle history
+            // =============================   
             for (int i = 0; i < HistoryLength; i++) {
                 currentPos_P.Add(new double[Dim]);
                 currentAng_P.Add(new double());
@@ -59,15 +56,32 @@ namespace BoSSS.Application.FSI_Solver {
                 forces_P.Add(new double[Dim]);
                 torque_P.Add(new double());
             }
+            #endregion
 
+            #region Initial values
+            // ============================= 
+            if (startPos == null)
+            {
+                if (Dim == 2)
+                {
+                    startPos = new double[] { 0.0, 0.0 };
+                }
+                else
+                {
+                    startPos = new double[] { 0.0, 0.0, 0.0 };
+                }
+            }
             currentPos_P[0] = startPos;
             //From degree to radiant
             currentAng_P[0] = startAngl * 2 * Math.PI / 360;
+            //vel_P[0][0] = 2e-8;
 
             UpdateLevelSetFunction();
-
+            #endregion
         }
+        #endregion
 
+        #region Particle parameter
         /// <summary>
         /// empty constructor important for serialization
         /// </summary>
@@ -83,6 +97,13 @@ namespace BoSSS.Application.FSI_Solver {
         public bool[] m_collidedWithWall;
         public double[][] m_closeInterfacePointTo;
 
+
+        public double[] tempPos_P = new double[2];
+        public double tempAng_P;
+        public int iteration_counter_P = 0;
+        public bool underrelaxationFT_constant = true;
+        public int underrelaxationFT_exponent = 1;
+        public double underrelaxation_factor = 1;
 
         /// <summary>
         /// Shape of the particle
@@ -112,13 +133,25 @@ namespace BoSSS.Application.FSI_Solver {
         public double radius_P;
 
         /// <summary>
-        /// Initial position of the particle (the center of mass)
+        /// Lenght of an elliptic particle.
+        /// </summary>
+        [DataMember]
+        public double length_P;
+
+        /// <summary>
+        /// Thickness of an elliptic particle.
+        /// </summary>
+        [DataMember]
+        public double thickness_P;
+
+        /// <summary>
+        /// Current position of the particle (the center of mass)
         /// </summary>
         [DataMember]
         public List<double[]> currentPos_P = new List<double[]>();
 
         /// <summary>
-        /// Initial angle of the particle (the center of mass)
+        /// Current angle of the particle (the center of mass)
         /// </summary>
         [DataMember]
         public List<double> currentAng_P = new List<double>();
@@ -152,6 +185,77 @@ namespace BoSSS.Application.FSI_Solver {
         /// </summary>       
         public Func<double[], double, double> phi_P;
 
+        /// <summary>
+        /// Set true if the particle should be an active particle, i.e. self driven
+        /// </summary>
+        [DataMember]
+        public bool active_P = false;
+
+        /// <summary>
+        /// Set true if the particle should be an active particle, i.e. self driven
+        /// </summary>
+        [DataMember]
+        public bool includeGravity = true;
+
+        /// <summary>
+        /// Active stress on the current particle
+        /// </summary>
+        public double stress_magnitude_P;
+
+        /// <summary>
+        /// heaviside function depending on arclength 
+        /// </summary>
+        public int H_P;
+
+        /// <summary>
+        /// heaviside function depending on arclength 
+        /// </summary>
+        public double C_v = 0.5;
+
+        /// <summary>
+        /// heaviside function depending on arclength 
+        /// </summary>
+        public double velResidual_ConvergenceCriterion = 1e-6;
+        /// <summary>
+        /// heaviside function depending on arclength 
+        /// </summary>
+        public double MaxParticleVelIterations = 100;
+
+        /// <summary>
+        /// Active stress on the current particle
+        /// </summary>
+        public double active_stress_P 
+        {
+            get
+            {
+                double stress;
+                switch (m_shape)
+                {
+                    case ParticleShape.spherical:
+                        stress = 2 * Math.PI * radius_P * stress_magnitude_P;
+                        break;
+
+                    case ParticleShape.elliptic:
+                        //Approximation formula for circumference according to Ramanujan
+                        double circumference;
+                        circumference = Math.PI * ((length_P + thickness_P) + (3 * (length_P - thickness_P).Pow2()) / (10 * (length_P + thickness_P) + Math.Sqrt(length_P.Pow2() + 14 * length_P * thickness_P + thickness_P.Pow2()))); 
+                        stress = 0.5 * circumference * stress_magnitude_P;
+                        break;
+
+                    case ParticleShape.squircle:
+                        stress = 2 * Math.PI * 3.708 * stress_magnitude_P;
+                        break;
+
+                    default:
+
+                        throw new NotImplementedException("");
+                }
+
+                return stress;
+            }
+
+        }
+        
         /// <summary>
         /// Mass of the current particle
         /// </summary>
@@ -203,7 +307,7 @@ namespace BoSSS.Application.FSI_Solver {
                         break;
 
                     case ParticleShape.elliptic:
-                        area = (3.0 * radius_P) * (radius_P* 1.0) * Math.PI;
+                        area = length_P * thickness_P * Math.PI * radius_P;
                         break;
 
                     case ParticleShape.hippopede:
@@ -243,7 +347,7 @@ namespace BoSSS.Application.FSI_Solver {
                         break;
 
                     case ParticleShape.elliptic:
-                        moment = (1 / 4.0) * (mass_P * (3.0 * 3.0 + 1.0 * 1.0) * radius_P * radius_P);
+                        moment = (1 / 4.0) * (mass_P * (length_P * length_P + thickness_P * thickness_P) * radius_P * radius_P);
                         break;
 
                     case ParticleShape.hippopede:
@@ -269,9 +373,10 @@ namespace BoSSS.Application.FSI_Solver {
 
                 return moment;
             }
-
         }
+        #endregion
 
+        #region Particle history
         /// <summary>
         /// Clean all Particle histories until a certain length
         /// </summary>
@@ -291,9 +396,10 @@ namespace BoSSS.Application.FSI_Solver {
 
                 }
             }
-
         }
+        #endregion
 
+        #region Move particle with current velocity
         /// <summary>
         /// Move particle with current velocity
         /// </summary>
@@ -319,17 +425,14 @@ namespace BoSSS.Application.FSI_Solver {
             UpdateLevelSetFunction();
 
         }
+        #endregion
 
+        #region Update Level-set
         public void UpdateLevelSetFunction() {
 
             double a;
             double b;
             double alpha;
-
-
-            // For angle and shift positions
-            // for X[0] choose ((X[0] - currentPos_P[0][0]) * Math.Cos(alpha) - (X[1] - currentPos_P[0][1]) * Math.Sin(alpha))
-            // for X[1] choose ((X[0] - currentPos_P[0][0]) * Math.Sin(alpha) + (X[1] - currentPos_P[0][1]) * Math.Cos(alpha))
 
             switch (m_shape) {
 
@@ -339,16 +442,15 @@ namespace BoSSS.Application.FSI_Solver {
 
                 case ParticleShape.elliptic:
                     alpha = -(currentAng_P[0]);
-                    a = 3.0;
-                    b = 1.0;
-                    phi_P = (X, t) => -((((X[0] - currentPos_P[0][0]) * Math.Cos(alpha) - (X[1] - currentPos_P[0][1]) * Math.Sin(alpha)).Pow2()) / a.Pow2()) + -(((X[0] - currentPos_P[0][0]) * Math.Sin(alpha) + (X[1] - currentPos_P[0][1]) * Math.Cos(alpha)).Pow2() / b.Pow2()) + radius_P.Pow2();
+                    a = 3.0;//no longer necessary
+                    b = 1.0;//no longer necessary
+                    phi_P = (X, t) => -((((X[0] - currentPos_P[0][0]) * Math.Cos(alpha) - (X[1] - currentPos_P[0][1]) * Math.Sin(alpha)).Pow2()) / length_P.Pow2()) + -(((X[0] - currentPos_P[0][0]) * Math.Sin(alpha) + (X[1] - currentPos_P[0][1]) * Math.Cos(alpha)).Pow2() / thickness_P.Pow2()) + radius_P.Pow2();
                     break;
 
                 case ParticleShape.hippopede:
                     a = 4.0 * radius_P.Pow2();
                     b = 1.0 * radius_P.Pow2();
                     alpha = -(currentAng_P[0]);
-                    // hippopede
                     phi_P = (X, t) => -((((X[0] - currentPos_P[0][0]) * Math.Cos(alpha) - (X[1] - currentPos_P[0][1]) * Math.Sin(alpha)).Pow(2) + ((X[0] - currentPos_P[0][0]) * Math.Sin(alpha) + (X[1] - currentPos_P[0][1]) * Math.Cos(alpha)).Pow(2)).Pow2() - a * ((X[0] - currentPos_P[0][0]) * Math.Cos(alpha) - (X[1] - currentPos_P[0][1]) * Math.Sin(alpha)).Pow2() - b * ((X[0] - currentPos_P[0][0]) * Math.Sin(alpha) + (X[1] - currentPos_P[0][1]) * Math.Cos(alpha)).Pow2());
                     break;
 
@@ -368,9 +470,10 @@ namespace BoSSS.Application.FSI_Solver {
                 default:
                     throw new NotImplementedException("Shape is not implemented yet");
             }
-
         }
+        #endregion
 
+        #region Update translational velocity
         /// <summary>
         /// Calculate the new translational velocity of the particle using explicit Euler scheme.
         /// </summary>
@@ -380,67 +483,117 @@ namespace BoSSS.Application.FSI_Solver {
         /// <param name="particleMass"></param>
         /// <param name="force"></param>
         /// <returns></returns>
-        //public static double[] GetTransVelocity(double phystime, double dt, double[] oldTransVelocity, double radius, double particleRho, double[] force, double[] oldforce, bool includeTranslation)
         public void UpdateTransVelocity(double dt, double rho_Fluid = 1, bool includeTranslation = true, bool LiftAndDrag = true) {
 
-            double[] temp = new double[2];
-
-            if (includeTranslation == false) {
-
+            // no translation
+            // =============================
+            if (includeTranslation == false)
+            {
                 vel_P[0][0] = 0.0;
                 vel_P[0][1] = 0.0;
-
                 return;
             }
-            // Uncommented parts are for introducing virtual mass force in order to stabilize calculations for light spheres. Approach taken from
-            // "Schwarz et al. - 2015 A temporal discretization scheme to compute the motion of light particles in viscous flows by an immersed boundary", paper is saved in 
-            // Z:\Stange\HiWi\Arbeitspakete
 
+            double[] temp = new double[2];
+            double[] old_temp = new double[2];
+            double[] tempForceTemp = new double[2];
             double[] tempForceNew = new double[2];
             double[] tempForceOld = new double[2];
-            //double[] tempForce = new double[2];
             double[] gravity = new double[2];
+            double massDifference = (rho_P - rho_Fluid) * (area_P);
+            double[] previous_vel = new double[2];
+
+            if (iteration_counter_P == 0)
+            {
+                previous_vel = vel_P[0];
+            }
+            Console.WriteLine("Previous Velocity:  " + previous_vel[0]);
+            // gravity
+            // =============================
             gravity[0] = 0;
-            //gravity[1] = -98.0;
-            gravity[1] = 0;
-            double C_v = 0.5;
-            // In case we want to quickly adapt to all possible fluid densities
+            if (includeGravity == true)
+            {
+                gravity[1] = -9.81e0;
+            }
+            else
+            {
+                gravity[1] = 0;
+            }
+
+            // Virtual force model (Schwarz et al. - 2015 A temporal discretization scheme to compute the motion of light particles in viscous flows by an immersed boundary")
+            // =============================
+            double[] f_vTemp = new double[2];
             double[] f_vNew = new double[2];
             double[] f_vOld = new double[2];
-            double c_a = (C_v * rho_Fluid) / (rho_P + C_v * rho_Fluid);
-
-
-            double massDifference = (rho_P - rho_Fluid) * (area_P);
-
-            //Console.WriteLine("Mass difference:    " + massDifference);
-
-            //Console.WriteLine("Mass difference times gravity:    " + (massDifference*gravity[1]));
-
-            // VIRTUAL MASS MODEL
-            //for (int i = 0; i < 2; i++) {
-            //    tempForceNew[i] = forces_P[0][i] + massDifference * gravity[i];
-            //    tempForceOld[i] = forces_P[1][i] + massDifference * gravity[i];
-            //    f_vNew[i] = c_a * (3 * vel_P[0][i] - 4 * vel_P[1][i] + vel_P[2][i]) / dt;
-            //    f_vOld[i] = c_a * (3 * vel_P[1][i] - 4 * vel_P[2][i] + vel_P[3][i]) / dt;
-            //    tempForceNew[i] = tempForceNew[i] / ((Math.PI * radius_P * radius_P) * (rho_P + C_v * rho_Fluid)) + f_vNew[i];
-            //    tempForceOld[i] = tempForceOld[i] / ((Math.PI * radius_P * radius_P) * (rho_P + C_v * rho_Fluid)) + f_vOld[i];
+            double[] k_1 = new double[2];
+            double[] k_2 = new double[2];
+            double[] k_3 = new double[2];
+            double[] C_v_mod = new double[2];
+            C_v_mod[0] = C_v;
+            C_v_mod[1] = C_v;
+            double[] c_a = new double[2];
+            double[] c_u = new double[2];
+            double vel_iteration_counter = 0;
+            double[] test = new double[2];
+            // 2nd order Adam Bashford
+            //for (int i = 0; i < 2; i++)
+            //{
+            //    f_vNew[i] = c_a * (3 * vel_P[0][i] - 4 * vel_P[1][i] + vel_P[2][i]) / (2 * dt);
+            //    f_vOld[i] = c_a * (3 * vel_P[1][i] - 4 * vel_P[2][i] + vel_P[3][i]) / (2 * dt);
+            //    tempForceNew[i] = (forces_P[0][i] + massDifference * gravity[i]) * (c_u) + f_vNew[i];
+            //    tempForceOld[i] = (forces_P[1][i] + massDifference * gravity[i]) * (c_u) + f_vOld[i];
             //    temp[i] = vel_P[0][i] + (3 * tempForceNew[i] - tempForceOld[i]) * dt / 2;
             //}
 
-            // MODELL 1
-            tempForceNew[0] = 0.5 * (forces_P[1][0] + forces_P[0][0]) + massDifference * gravity[0];
-            tempForceNew[1] = 0.5 * (forces_P[1][1] + forces_P[0][1]) + massDifference * gravity[1];
-            temp.SetV(vel_P[0], 1);
-            temp.AccV(dt / mass_P, tempForceNew);
+            // implicit Adams Moulton (modified)
+            //for (double velResidual = 1; velResidual > velResidual_ConvergenceCriterion;)
+            //{
+            //    for (int i = 0; i < 2; i++)
+            //    {
+            //        C_v_mod[i] = 0.1;// * Math.Abs(forces_P[0][i] / (forces_P[0][i] + forces_P[1][i] + 1e-30));
+            //        c_a[i] = (C_v_mod[i] * rho_Fluid) / (rho_P + C_v_mod[i] * rho_Fluid);
+            //        c_u[i] = 1 / (area_P * (rho_P + C_v_mod[i] * rho_P));
+            //        f_vTemp[i] = (C_v_mod[i]) / (1 + C_v_mod[i]) * (11 * temp[i] - 18 * vel_P[0][i] + 9 * vel_P[1][i] - 2 * vel_P[2][i]) / (8 * dt);
+            //        f_vNew[i] = (C_v_mod[i]) / (1 + C_v_mod[i]) * (11 * vel_P[0][i] - 18 * vel_P[1][i] + 9 * vel_P[2][i] - 2 * vel_P[3][i]) / (6 * dt);
+            //        f_vOld[i] = (C_v_mod[i]) / (1 + C_v_mod[i]) * (11 * vel_P[1][i] - 18 * vel_P[2][i] + 9 * vel_P[3][i] - 2 * vel_P[4][i]) / (6 * dt);
+            //        tempForceTemp[i] = (forces_P[0][i] + massDifference * gravity[i]) * (c_u[i]) + f_vTemp[i];
+            //        tempForceNew[i] = (forces_P[1][i] + massDifference * gravity[i]) * (c_u[i]) + f_vNew[i];
+            //        tempForceOld[i] = (forces_P[2][i] + massDifference * gravity[i]) * (c_u[i]) + f_vOld[i];
+            //        old_temp[i] = temp[i];
+            //        temp[i] = previous_vel[i] + (1 * tempForceTemp[i] + 4 * tempForceNew[i] + 1 * tempForceOld[i]) * dt / 6;
+            //    }
+            //    vel_iteration_counter += 1;
+            //    if (vel_iteration_counter == MaxParticleVelIterations)
+            //    {
+            //        throw new ApplicationException("no convergence in particle velocity calculation");
+            //    }
+            //    velResidual = Math.Sqrt((temp[0] - old_temp[0]).Pow2() + (temp[1] - old_temp[1]).Pow2());
 
+            //    //Console.WriteLine("Current velResidual:  " + velResidual);
+            //}
+            //Console.WriteLine("Number of Iterations for translational velocity calculation:  " + vel_iteration_counter);
+            //Console.WriteLine("C_v_mod:  " + C_v_mod[0]);
+
+            //Crank Nicolson
+            // =============================
+            tempForceNew[0] = (forces_P[0][0] + forces_P[1][0]) / 2+ massDifference * gravity[0];
+            tempForceNew[1] = (forces_P[1][1] + forces_P[0][1]) / 2 + massDifference * gravity[1];
+            //temp.SetV(vel_P[0], 1);
+            //temp.AccV(dt / mass_P, tempForceNew);
+            temp[0] = previous_vel[0] + dt / mass_P * tempForceNew[0];
+            temp[1] = previous_vel[1] + dt / mass_P * tempForceNew[1];
+            
+            // Save new velocity
+            // =============================
 
             vel_P.Insert(0, temp);
-
             vel_P.Remove(vel_P.Last());
 
             return;
         }
+        #endregion
 
+        #region Update angular velocity
         /// <summary>
         /// Calculate the new angular velocity of the particle using explicit Euler scheme.
         /// </summary>
@@ -451,19 +604,35 @@ namespace BoSSS.Application.FSI_Solver {
         /// <param name="ParticleMass"></param>
         /// <param name="Torque"></param>
         /// <returns></returns>
-        public void UpdateAngularVelocity(double dt, bool includeRotation = true, int noOfSubtimesteps = 1) {
+        public void UpdateAngularVelocity(double dt, double rho_Fluid = 1, bool includeRotation = true, int noOfSubtimesteps = 1) {
+
+            // no rotation
+            // =============================
             if (includeRotation == false) {
                 rot_P.Insert(0, 0.0);
                 rot_P.Remove(rot_P.Last());
                 return;
             }
-
-            double newAngularVelocity = new double();
+            double temp = 0;
+            double old_temp = 0;
+            double tempMomentTemp = 0;
+            double tempMomentNew = 0;
+            double tempMomentOld = 0;
+            double m_vTemp;
+            double c_a = (C_v * rho_Fluid) / (rho_P + C_v * rho_Fluid);
+            double c_u = 1 / (rho_P + C_v * rho_Fluid * MomentOfInertia_P);
+            double newAngularVelocity = 0;
             double oldAngularVelocity = new double();
             double subtimestep;
-
+            double rot_iteration_counter = 0;
             noOfSubtimesteps = 1;
             subtimestep = dt / noOfSubtimesteps;
+
+            // Benjamin Stuff
+            //for (int i = 1; i <= noOfSubtimesteps; i++) {
+            //    newAngularVelocity = c_a * (3 * rot_P[0] - 4 * rot_P[1] + rot_P[2]) / 2 + 0.5 * c_u * dt * (3 * torque_P[0] - torque_P[1]); // for 2D
+            //    oldAngularVelocity = newAngularVelocity;
+            //}
 
             for (int i = 1; i <= noOfSubtimesteps; i++) {
                 newAngularVelocity = rot_P[0] + (dt / MomentOfInertia_P) * (torque_P[0] + torque_P[1]); // for 2D
@@ -472,18 +641,40 @@ namespace BoSSS.Application.FSI_Solver {
 
             }
 
+            //for (double rotResidual = 1; rotResidual > velResidual_ConvergenceCriterion;) {
+            //    m_vTemp = c_a * (1 * temp + 3 * rot_P[0] + 3 * rot_P[1] + 1 * rot_P[2]) / (8 * dt);
+            //    tempMomentTemp = (torque_P[0]) * (c_u) + m_vTemp;
+            //    tempMomentNew = (torque_P[1]);
+            //    tempMomentOld = (torque_P[2]);
+            //    old_temp = temp;
+            //    temp = rot_P[0] + (1 * tempMomentTemp + 4 * tempMomentNew + 1 * tempMomentOld) * dt / 6;
+            //    rot_iteration_counter += 1;
+            //    if (rot_iteration_counter == MaxParticleVelIterations) {
+            //        throw new ApplicationException("no convergence in particle velocity calculation");
+            //    }
+            //    rotResidual = Math.Sqrt((temp - old_temp).Pow2());
+            //    //Console.WriteLine("Current velResidual:  " + velResidual);
+            //}
+            //Console.WriteLine("Number of Iterations for angular velocity calculation:  " + rot_iteration_counter);
+            //if (Math.Abs(temp) < 1e-9)
+            //{
+            //    temp = 0;
+            //}
             rot_P.Insert(0, newAngularVelocity);
-
             rot_P.Remove(rot_P.Last());
         }
-
+        #endregion
+        
+        #region Cloning
         /// <summary>
         /// clone
         /// </summary>
         public object Clone() {
             throw new NotImplementedException("Currently cloning of a particle is not available");
         }
+        #endregion
 
+        #region Update forces and torque
         /// <summary>
         /// Update forces and torque acting from fluid onto the particle
         /// </summary>
@@ -542,17 +733,16 @@ namespace BoSSS.Application.FSI_Solver {
                         for (int j = 0; j < Len; j++) {
                             for (int k = 0; k < K; k++) {
                                 double acc = 0.0;
-
                                 // pressure
                                 switch (d) {
                                     case 0:
-                                        acc += pARes[j, k] * Normals[j, k, 0];
-                                        acc -= (2 * muA) * Grad_UARes[j, k, 0, 0] * Normals[j, k, 0];
+                                        acc += (pARes[j, k]) * Normals[j, k, 0];
+                                        acc -= (2 * muA) * Grad_UARes[j, k, 0, 0] * Normals[j, k, 0]; 
                                         acc -= (muA) * Grad_UARes[j, k, 0, 1] * Normals[j, k, 1];
                                         acc -= (muA) * Grad_UARes[j, k, 1, 0] * Normals[j, k, 1];
                                         break;
                                     case 1:
-                                        acc += pARes[j, k] * Normals[j, k, 1];
+                                        acc += (pARes[j, k]) * Normals[j, k, 1];
                                         acc -= (2 * muA) * Grad_UARes[j, k, 1, 1] * Normals[j, k, 1];
                                         acc -= (muA) * Grad_UARes[j, k, 1, 0] * Normals[j, k, 0];
                                         acc -= (muA) * Grad_UARes[j, k, 0, 1] * Normals[j, k, 0];
@@ -606,8 +796,6 @@ namespace BoSSS.Application.FSI_Solver {
 
                 };
 
-
-
                 var SchemeHelper = LsTrk.GetXDGSpaceMetrics(new[] { LsTrk.GetSpeciesId("A") }, RequiredOrder, 1).XQuadSchemeHelper;
                 //var SchemeHelper = new XQuadSchemeHelper(LsTrk, momentFittingVariant, );
 
@@ -626,10 +814,6 @@ namespace BoSSS.Application.FSI_Solver {
                     }
                 ).Execute();
             }
-
-
-            this.forces_P.Insert(0, forces);
-            forces_P.Remove(forces_P.Last());
             #endregion
 
             #region Torque
@@ -666,10 +850,10 @@ namespace BoSSS.Application.FSI_Solver {
 
                         double acc = 0.0;
                         double acc2 = 0.0;
-
+                        
                         // Calculate the torque around a circular particle with a given radius (Paper Wan and Turek 2005)
 
-                        acc += pARes[j, k] * Normals[j, k, 0];
+                        acc += (pARes[j, k] * Normals[j, k, 0]);
                         acc -= (2 * muA) * Grad_UARes[j, k, 0, 0] * Normals[j, k, 0];
                         acc -= (muA) * Grad_UARes[j, k, 0, 1] * Normals[j, k, 1];
                         acc -= (muA) * Grad_UARes[j, k, 1, 0] * Normals[j, k, 1];
@@ -710,13 +894,85 @@ namespace BoSSS.Application.FSI_Solver {
                 }
 
             ).Execute();
+            
+            double underrelaxationFT = 1.0;
+            double[] temp_underR = new double[D + 1];
+            for (int k = 0; k < D+1; k++)
+            {
+                temp_underR[k] = underrelaxation_factor;
+            }
+            if (iteration_counter_P == 0)
+            {
+                underrelaxationFT = 1;
+            }
+            else if (underrelaxationFT_constant == true)
+            {
+                underrelaxationFT = underrelaxation_factor * Math.Pow(10, underrelaxationFT_exponent);
+            }
+            else if (underrelaxationFT_constant == false)
+            {
+                //double[] temp_underR = new double[D + 1];
+                bool underrelaxation_ok = false;
+                underrelaxationFT_exponent = 1;
+                for (int j = 0; j < D; j++)
+                {
+                    underrelaxation_ok = false;
+                    temp_underR[j] = underrelaxation_factor;
+                    for (int i = 0; underrelaxation_ok == false; i++)
+                    {
+                        if (Math.Abs(temp_underR[j] * forces[j]) > Math.Abs(forces_P[0][j]))
+                        {
+                            underrelaxationFT_exponent -= 1;
+                            temp_underR[j] = underrelaxation_factor * Math.Pow(10, underrelaxationFT_exponent);
+                        }
+                        else
+                        {
+                            underrelaxation_ok = true;
+                            if (underrelaxationFT_exponent > -0)
+                            {
+                                underrelaxationFT_exponent = -0;
+                                temp_underR[j] = underrelaxation_factor * Math.Pow(10, underrelaxationFT_exponent);
+                            }
+                        }
+                    }
+                }
+                underrelaxation_ok = false;
+                temp_underR[D] = underrelaxation_factor;
+                for (int i = 0; underrelaxation_ok == false; i++)
+                {
+                    if (Math.Abs(temp_underR[D] * torque) > Math.Abs(torque_P[0]))
+                    {
+                        underrelaxationFT_exponent -= 1;
+                        temp_underR[D] = underrelaxation_factor * Math.Pow(10, underrelaxationFT_exponent);
+                    }
+                    else
+                    {
+                        underrelaxation_ok = true;
+                        if (underrelaxationFT_exponent > -0)
+                        {
+                            underrelaxationFT_exponent = -0;
+                            temp_underR[D] = underrelaxation_factor * Math.Pow(10, underrelaxationFT_exponent);
+                        }
+                    }
+                }
+            }
+
+            double[] forces_underR = new double[D];
+            for (int i = 0; i < D; i++)
+            {
+                forces_underR[i] = temp_underR[i] * forces[i] + (1 - temp_underR[i]) * forces_P[0][i];
+            }
+            double torque_underR = temp_underR[D] * torque + (1 - temp_underR[D]) * torque_P[0];
+            this.forces_P.Insert(0, forces_underR);
+            forces_P.Remove(forces_P.Last());
             this.torque_P.Remove(torque_P.Last());
-            this.torque_P.Insert(0, torque);
+            this.torque_P.Insert(0, torque_underR);
 
             #endregion
-
         }
+        #endregion
 
+        #region Particle reynolds number
         /// <summary>
         /// Calculating the particle reynolds number according to paper Turek and testcase ParticleUnderGravity
         /// </summary>
@@ -732,7 +988,9 @@ namespace BoSSS.Application.FSI_Solver {
 
             return particleReynolds;
         }
+        #endregion
 
+        #region Cut cells
         /// <summary>
         /// get cut cells describing the boundary of this particle
         /// </summary>
@@ -755,7 +1013,7 @@ namespace BoSSS.Application.FSI_Solver {
                 case ParticleShape.elliptic:
                     double a = 3.0;
                     double b = 1.0;
-                    cells = CellMask.GetCellMask(LsTrk.GridDat, X => -((((X[0] - currentPos_P[0][0]) * Math.Cos(alpha) - (X[1] - currentPos_P[0][1]) * Math.Sin(alpha)).Pow2()) / a.Pow2()) + -(((X[0] - currentPos_P[0][0]) * Math.Sin(alpha) + (X[1] - currentPos_P[0][1]) * Math.Cos(alpha)).Pow2() / b.Pow2()) + radiusTolerance.Pow2() > 0);
+                    cells = CellMask.GetCellMask(LsTrk.GridDat, X => -((((X[0] - currentPos_P[0][0]) * Math.Cos(alpha) - (X[1] - currentPos_P[0][1]) * Math.Sin(alpha)).Pow2()) / length_P.Pow2()) + -(((X[0] - currentPos_P[0][0]) * Math.Sin(alpha) + (X[1] - currentPos_P[0][1]) * Math.Cos(alpha)).Pow2() / thickness_P.Pow2()) + radiusTolerance.Pow2() > 0);
 
                     break;
 
@@ -798,8 +1056,6 @@ namespace BoSSS.Application.FSI_Solver {
             double radiusTolerance = radius_P+2.0*Math.Sqrt(2*LsTrk.GridDat.Cells.h_minGlobal.Pow2());
 
 
-            double alpha = -(currentAng_P[0]);
-
             switch (m_shape) {
                 case ParticleShape.spherical:
                     var distance = point.L2Distance(currentPos_P[0]);
@@ -819,7 +1075,7 @@ namespace BoSSS.Application.FSI_Solver {
                 case ParticleShape.elliptic:
                     double a = 3.0;
                     double b = 1.0;
-                    if (-((((point[0] - currentPos_P[0][0]) * Math.Cos(alpha) - (point[1] - currentPos_P[0][1]) * Math.Sin(alpha)).Pow2()) / a.Pow2()) + -(((point[0] - currentPos_P[0][0]) * Math.Sin(alpha) + (point[1] - currentPos_P[0][1]) * Math.Cos(alpha)).Pow2() / b.Pow2()) + radiusTolerance.Pow2() > 0) {
+                    if (-((((point[0] - currentPos_P[0][0]) * Math.Cos(currentAng_P[0]) - (point[1] - currentPos_P[0][1]) * Math.Sin(currentAng_P[0])).Pow2()) / length_P.Pow2()) + -(((point[0] - currentPos_P[0][0]) * Math.Sin(currentAng_P[0]) + (point[1] - currentPos_P[0][1]) * Math.Cos(currentAng_P[0])).Pow2() / thickness_P.Pow2()) + radiusTolerance.Pow2() > 0) { 
                         return true;
                     }
                     break;
@@ -827,19 +1083,19 @@ namespace BoSSS.Application.FSI_Solver {
                 case ParticleShape.hippopede:
                     a = 4.0 * radiusTolerance.Pow2();
                     b = 1.0 * radiusTolerance.Pow2();
-                    if (-((((point[0] - currentPos_P[0][0]) * Math.Cos(alpha) - (point[1] - currentPos_P[0][1]) * Math.Sin(alpha)).Pow(2) + ((point[0] - currentPos_P[0][0]) * Math.Sin(alpha) + (point[1] - currentPos_P[0][1]) * Math.Cos(alpha)).Pow(2)).Pow2() - a * ((point[0] - currentPos_P[0][0]) * Math.Cos(alpha) - (point[1] - currentPos_P[0][1]) * Math.Sin(alpha)).Pow2() - b * ((point[0] - currentPos_P[0][0]) * Math.Sin(alpha) + (point[1] - currentPos_P[0][1]) * Math.Cos(alpha)).Pow2()) > 0)
+                    if (-((((point[0] - currentPos_P[0][0]) * Math.Cos(currentAng_P[0]) - (point[1] - currentPos_P[0][1]) * Math.Sin(currentAng_P[0])).Pow(2) + ((point[0] - currentPos_P[0][0]) * Math.Sin(currentAng_P[0]) + (point[1] - currentPos_P[0][1]) * Math.Cos(currentAng_P[0])).Pow(2)).Pow2() - length_P * ((point[0] - currentPos_P[0][0]) * Math.Cos(currentAng_P[0]) - (point[1] - currentPos_P[0][1]) * Math.Sin(currentAng_P[0])).Pow2() - thickness_P * ((point[0] - currentPos_P[0][0]) * Math.Sin(currentAng_P[0]) + (point[1] - currentPos_P[0][1]) * Math.Cos(currentAng_P[0])).Pow2()) > 0)
                         return true;
                     break;
 
                 case ParticleShape.bean:
                     a = 4.0 * radiusTolerance.Pow2();
                     b = 1.0 * radiusTolerance.Pow2();
-                    if (-((((point[0] - currentPos_P[0][0]) * Math.Cos(alpha) - (point[1] - currentPos_P[0][1]) * Math.Sin(alpha)).Pow(2) + ((point[0] - currentPos_P[0][0]) * Math.Sin(alpha) + (point[1] - currentPos_P[0][1]) * Math.Cos(alpha)).Pow(2)).Pow2() - a * ((point[0] - currentPos_P[0][0]) * Math.Cos(alpha) - (point[1] - currentPos_P[0][1]) * Math.Sin(alpha)).Pow(3) - b * ((point[0] - currentPos_P[0][0]) * Math.Sin(alpha) + (point[1] - currentPos_P[0][1]) * Math.Cos(alpha)).Pow2()) > 0)
+                    if (-((((point[0] - currentPos_P[0][0]) * Math.Cos(currentAng_P[0]) - (point[1] - currentPos_P[0][1]) * Math.Sin(currentAng_P[0])).Pow(2) + ((point[0] - currentPos_P[0][0]) * Math.Sin(currentAng_P[0]) + (point[1] - currentPos_P[0][1]) * Math.Cos(currentAng_P[0])).Pow(2)).Pow2() - a * ((point[0] - currentPos_P[0][0]) * Math.Cos(currentAng_P[0]) - (point[1] - currentPos_P[0][1]) * Math.Sin(currentAng_P[0])).Pow(3) - b * ((point[0] - currentPos_P[0][0]) * Math.Sin(currentAng_P[0]) + (point[1] - currentPos_P[0][1]) * Math.Cos(currentAng_P[0])).Pow2()) > 0)
                         return true;
                     break;
 
                 case ParticleShape.squircle:
-                    if (-((((point[0] - currentPos_P[0][0]) * Math.Cos(alpha) - (point[1] - currentPos_P[0][1]) * Math.Sin(alpha)).Pow(4) + ((point[0] - currentPos_P[0][0]) * Math.Sin(alpha) + (point[1] - currentPos_P[0][1]) * Math.Cos(alpha)).Pow(4)) - radiusTolerance.Pow(4)) > 0)
+                    if (-((((point[0] - currentPos_P[0][0]) * Math.Cos(currentAng_P[0]) - (point[1] - currentPos_P[0][1]) * Math.Sin(currentAng_P[0])).Pow(4) + ((point[0] - currentPos_P[0][0]) * Math.Sin(currentAng_P[0]) + (point[1] - currentPos_P[0][1]) * Math.Cos(currentAng_P[0])).Pow(4)) - radiusTolerance.Pow(4)) > 0)
                         return true;
                     break;
 
@@ -849,7 +1105,9 @@ namespace BoSSS.Application.FSI_Solver {
             }
             return false;
         }
+        #endregion
 
+        #region Particle shape
         public enum ParticleShape {
             spherical = 0,
 
@@ -861,7 +1119,7 @@ namespace BoSSS.Application.FSI_Solver {
 
             squircle = 4
         }
-
+        #endregion
     }
 }
 

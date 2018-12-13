@@ -22,7 +22,7 @@ using System.Threading.Tasks;
 using ilPSP;
 
 namespace BoSSS.Foundation.Grid.Aggregation {
-    partial class AggregationGrid {
+    partial class AggregationGridData {
         public IVertexData iVertices {
             get {
                 return m_VertexData;

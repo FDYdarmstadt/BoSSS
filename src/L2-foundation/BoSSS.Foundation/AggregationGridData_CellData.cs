@@ -26,7 +26,7 @@ using System.Diagnostics;
 using ilPSP.Utils;
 
 namespace BoSSS.Foundation.Grid.Aggregation {
-    partial class AggregationGrid {
+    partial class AggregationGridData {
 
         public IGeometricalCellsData iGeomCells {
             get {
@@ -38,10 +38,10 @@ namespace BoSSS.Foundation.Grid.Aggregation {
 
         /// <summary>
         /// Just a wrapper/proxy around the geometrical cell data (<see cref="IGridData.iGeomCells"/>) 
-        /// of the parent grid (<see cref="AggregationGrid.ParentGrid"/>).
+        /// of the parent grid (<see cref="AggregationGridData.ParentGrid"/>).
         /// </summary>
         class GeomCellData : IGeometricalCellsData {
-            internal AggregationGrid m_Owner;
+            internal AggregationGridData m_Owner;
 
             public int[][] CellVertices {
                 get {
@@ -193,7 +193,7 @@ namespace BoSSS.Foundation.Grid.Aggregation {
         }
 
         public class LogicalCellData : ILogicalCellData {
-            internal AggregationGrid m_Owner;
+            internal AggregationGridData m_Owner;
 
             public int[][] AggregateCellToParts {
                 get;

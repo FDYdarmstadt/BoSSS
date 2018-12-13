@@ -187,7 +187,8 @@ namespace CNS {
                 }
 
                 // Query each cell individually so we get local results
-                for (int i = 0; i < program.Grid.NoOfUpdateCells; i++) {
+                int J = program.GridData.iLogicalCells.NoOfLocalUpdatedCells;
+                for (int i = 0; i < J; i++) {
                     // Use "harmonic sum" of individual step sizes - see ExplicitEuler
                     double localCFL = 1.0 / program.FullOperator.CFLConstraints.Sum(c => 1.0 / (program.Control.CFLFraction * c.GetLocalStepSize(i, 1)));
                     cfl.SetMeanValue(i, localCFL);
@@ -209,7 +210,8 @@ namespace CNS {
                 TimeStepConstraint cflConstraint = program.FullOperator.CFLConstraints.OfType<ConvectiveCFLConstraint>().Single();
 
                 // Query each cell individually so we get local results
-                for (int i = 0; i < program.Grid.NoOfUpdateCells; i++) {
+                int J = program.GridData.iLogicalCells.NoOfLocalUpdatedCells;
+                for (int i = 0; i < J; i++) {
                     double localCFL = program.Control.CFLFraction * cflConstraint.GetLocalStepSize(i, 1);
                     cfl.SetMeanValue(i, localCFL);
                 }
@@ -230,7 +232,8 @@ namespace CNS {
                 TimeStepConstraint cflConstraint = program.FullOperator.CFLConstraints.OfType<ArtificialViscosityCFLConstraint>().Single();
 
                 // Query each cell individually so we get local results
-                for (int i = 0; i < program.Grid.NoOfUpdateCells; i++) {
+                int J = program.GridData.iLogicalCells.NoOfLocalUpdatedCells;
+                for (int i = 0; i < J; i++) {
                     double localCFL = program.Control.CFLFraction * cflConstraint.GetLocalStepSize(i, 1);
                     cfl.SetMeanValue(i, localCFL);
                 }
@@ -389,7 +392,7 @@ namespace CNS {
                     }
 
                     // Version that should finally also work in 3D
-                    RefElement refElement = program.Grid.RefElements[0];
+                    RefElement refElement = ((BoSSS.Foundation.Grid.Classic.GridCommons)(program.Grid)).RefElements[0];
                     int N = program.GridData.iLogicalCells.NoOfLocalUpdatedCells;
                     int V = refElement.NoOfVertices;
 

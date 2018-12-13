@@ -52,12 +52,16 @@ namespace BoSSS.Solution.Statistic {
         /// (for each field specified in <paramref name="FieldsToCompare"/>)
         /// in comparison to the solution on the finest grid.
         /// </param>
+        /// <param name="__DOFs">
+        /// On exit, the number of degrees-of-freedom 
+        /// (for each field specified in <paramref name="FieldsToCompare"/>).
+        /// </param>
         /// <param name="timestepIds">
         /// on exit, the timestep id which correlate with the resolutions <paramref name="GridRes"/>
         /// (remarks: <paramref name="timestepIds"/> may be re-sorted internally according to grid resolution).
         /// </param>
         public static void ComputeErrors( IEnumerable<string> FieldsToCompare, IEnumerable<ITimestepInfo> timestepS,
-          out double[] GridRes, out Dictionary<string, double[]> L2Errors, out Guid[] timestepIds) {
+          out double[] GridRes, out Dictionary<string,int[]> __DOFs, out Dictionary<string, double[]> L2Errors, out Guid[] timestepIds) {
 
             // load the DG-Fields
             List<IEnumerable<DGField>> fields = new List<IEnumerable<DGField>>();
@@ -87,15 +91,18 @@ namespace BoSSS.Solution.Statistic {
             // Grids and coarse-to-fine -- mappings.
             GridData[] gDataS = fields.Select(fc => (GridData)(fc.First().GridDat)).ToArray();
 
-            int[][] Fine2CoarseMapS = new int[gDataS.Length - 1][];
+            int[][] Fine2CoarseMapS = new int[gDataS.Length - 1][]; // 1st index: level; 2n index: cell index on finest level
             for(int iLevel = 0; iLevel < Fine2CoarseMapS.Length; iLevel++) {
                 ComputeFine2CoarseMap(gDataS.Last(), gDataS[iLevel], out Fine2CoarseMapS[iLevel]);
             }
 
             // extrapolate to fine grid
             Dictionary<string, List<DGField>> injectedFields = new Dictionary<string, List<DGField>>();
-            foreach(string Identification in FieldsToCompare) {
-                List<DGField> blabla = new List<DGField>();
+            Dictionary<string, List<int>> DOFs = new Dictionary<string, List<int>>();
+            
+            foreach (string Identification in FieldsToCompare) {
+                List<DGField> fields_Identification = new List<DGField>(); // fields for different resolutions
+                List<int> dofs_Idenitification = new List<int>();
 
                 DGField finestSolution = fields.Last().Single(f => f.Identification == Identification);
 
@@ -116,7 +123,8 @@ namespace BoSSS.Solution.Statistic {
 
                         InjectXDGField(Fine2CoarseMapS[iLevel], injectedSolution, _coarseSolution);
 
-                        blabla.Add(injectedSolution);
+                        fields_Identification.Add(injectedSolution);
+                        dofs_Idenitification.Add(coarseSolution.Mapping.GetTotalNoOfDOFs());
                     } else if(finestSolution is SinglePhaseField) {
                         SinglePhaseField _coarseSolution = (SinglePhaseField)coarseSolution;
                         SinglePhaseField _finestSolution = (SinglePhaseField)finestSolution;
@@ -124,7 +132,8 @@ namespace BoSSS.Solution.Statistic {
 
                         InjectDGField(Fine2CoarseMapS[iLevel], injectedSolution, _coarseSolution);
 
-                        blabla.Add(injectedSolution);
+                        fields_Identification.Add(injectedSolution);
+                        dofs_Idenitification.Add(coarseSolution.Mapping.GetTotalNoOfDOFs());
                     } else {
                         throw new NotSupportedException("DG field type '" + finestSolution.GetType().FullName + "' not supported, Identification is '" + finestSolution.Identification + "'");
                     }
@@ -132,9 +141,15 @@ namespace BoSSS.Solution.Statistic {
                     Console.WriteLine("done.");
                 }
 
-                blabla.Add(finestSolution);
-                injectedFields.Add(Identification, blabla);
+                fields_Identification.Add(finestSolution);
+                injectedFields.Add(Identification, fields_Identification);
+                DOFs.Add(Identification, dofs_Idenitification);
             }
+            __DOFs = new Dictionary<string, int[]>();
+            foreach(var kv in DOFs) {
+                __DOFs.Add(kv.Key, kv.Value.ToArray());
+            }
+
 
             // compute the errors
             L2Errors = new Dictionary<string, double[]>();

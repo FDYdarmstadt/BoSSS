@@ -69,7 +69,11 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="active_particles\ActiveViscosityAtIB.cs" />
+    <Compile Include="active_particles\ActiveConvectionAtIB.cs" />
+    <Compile Include="active_particles\ActiveDivergenceAtIB.cs" />
     <Compile Include="FSI_Movement.cs" />
+    <Compile Include="active_particles\HardcodedControlDeussen.cs" />
     <Compile Include="IBMPaperReproduce.cs" />
     <Compile Include="HardcodedControl.cs" />
     <Compile Include="FSI_Control.cs" />
