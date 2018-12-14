@@ -43,6 +43,11 @@ namespace ilPSP.Connectors.Matlab {
             /// <summary>
             /// the clone.
             /// </summary>
+            Octave_cygwin,
+
+            /// <summary>
+            /// the clone.
+            /// </summary>
             Octave,
 
             /// <summary>
@@ -84,12 +89,18 @@ namespace ilPSP.Connectors.Matlab {
             return null;
         }
 
+        static Flavor s_Flav;
+
         /// <summary>
         ///  octave or MATLAB
         /// </summary>
         static public Flavor Flav {
-            get;
-            set;
+            get {
+                return s_Flav;
+            }
+            set {
+                s_Flav = value;
+            }
         }
 
         /// <summary>
@@ -184,47 +195,55 @@ namespace ilPSP.Connectors.Matlab {
                     case PlatformID.Win32NT:
                     case PlatformID.Win32S:
                     case PlatformID.Win32Windows: {
-                            if (m_Flav == Flavor.Matlab) {
-                                if (MatlabExecuteable == null) {
-                                    MatlabExecuteable = get_program_path("matlab.exe");
-                                    if (MatlabExecuteable == null)
-                                        throw new ApplicationException("Unable to find 'matlab.exe' in your PATH environment; please provide path to 'matlab.exe'.");
+                        if (m_Flav == Flavor.Matlab) {
+                            if (MatlabExecuteable == null) {
+                                MatlabExecuteable = get_program_path("matlab.exe");
+                                if (MatlabExecuteable == null)
+                                    throw new ApplicationException("Unable to find 'matlab.exe' in your PATH environment; please provide path to 'matlab.exe'.");
+                            }
+
+                            psi.FileName = MatlabExecuteable;
+                            psi.Arguments = "-nosplash -nodesktop -minimize -wait -r " + CMDFILE + " -logfile " + LOGFILE;
+                        } else if (m_Flav == Flavor.Octave) {
+                            if (MatlabExecuteable == null) {
+                                MatlabExecuteable = get_program_path("octave-cli.exe");
+                                if (MatlabExecuteable == null)
+                                    throw new ApplicationException("Unable to find 'matlab.exe' in your PATH environment; please provide path to 'matlab.exe'.");
+                            }
+
+                            psi.FileName = MatlabExecuteable;
+                            psi.Arguments = " --no-gui " + CMDFILE + ".m > " + LOGFILE;
+                        } else if (m_Flav == Flavor.Octave_cygwin) {
+                            this.Cygwin = true;
+
+                            if (MatlabExecuteable == null) {
+                                if (File.Exists("c:\\cygwin64\\bin\\octave")) {
+                                    psi.FileName = "c:\\cygwin64\\bin\\bash.exe";
+                                } else if (File.Exists("c:\\cygwin\\bin\\octave")) {
+                                    psi.FileName = "c:\\cygwin\\bin\\bash.exe";
+                                } else {
+                                    throw new NotSupportedException("Cygwin/Octave are expected to be in the default path: C:\\cygwin or c:\\cygwin64");
+                                }
+                            } else {
+                                //throw new NotSupportedException("Cygwin/Octave are expected to be in the default path: C:\\cygwin or c:\\cygwin64");
+                                if (!MatlabExecuteable.EndsWith("bash.exe")) {
+                                    throw new NotSupportedException("For Cygwin/Octave, the 'MatlabExecuteable' is expected to point to 'bash.exe'.");
                                 }
 
                                 psi.FileName = MatlabExecuteable;
-                                psi.Arguments = "-nosplash -nodesktop -minimize -wait -r " + CMDFILE + " -logfile " + LOGFILE;
-
-                            } else if (m_Flav == Flavor.Octave) {
-                                this.Cygwin = true; // octave and windows must be cygwin!
-
-                                if (MatlabExecuteable == null) {
-                                    if (File.Exists("c:\\cygwin64\\bin\\octave")) {
-                                        psi.FileName = "c:\\cygwin64\\bin\\bash.exe";
-                                    } else if (File.Exists("c:\\cygwin\\bin\\octave")) {
-                                        psi.FileName = "c:\\cygwin\\bin\\bash.exe";
-                                    } else {
-                                        throw new NotSupportedException("Cygwin/Octave are expected to be in the default path: C:\\cygwin or c:\\cygwin64");
-                                    }
-                                } else {
-                                    //throw new NotSupportedException("Cygwin/Octave are expected to be in the default path: C:\\cygwin or c:\\cygwin64");
-                                    if (!MatlabExecuteable.EndsWith("bash.exe")) {
-                                        throw new NotSupportedException("For Cygwin/Octave, the 'MatlabExecuteable' is expected to point to 'bash.exe'.");
-                                    }
-
-                                    psi.FileName = MatlabExecuteable;
-                                }
-                                psi.Arguments = "--login -c \"cd " + TranslatePath(WorkingDirectory.FullName) + " "
-                                    + "&& octave --no-gui " + CMDFILE + ".m" + " > " + LOGFILE + "  \"";
-                                //+ "pwd && ls - l && pwd";
-
-
-
-                            } else {
-                                throw new NotImplementedException();
                             }
+                            psi.Arguments = "--login -c \"cd " + TranslatePath(WorkingDirectory.FullName) + " "
+                                + "&& octave --no-gui " + CMDFILE + ".m" + " > " + LOGFILE + "  \"";
+                            //+ "pwd && ls - l && pwd";
 
-                            break;
+
+
+                        } else {
+                            throw new NotImplementedException();
                         }
+
+                        break;
+                    }
 
 
 
