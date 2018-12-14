@@ -605,11 +605,12 @@ namespace BoSSS.Application.FSI_Solver {
             foreach (Particle p in m_Particles) {
 
                 p.ResetParticlePosition();
+                p.UpdateAngularVelocity(dt, this.Control.PhysicalParameters.rho_A);
+                p.UpdateTransVelocity(dt, this.Control.PhysicalParameters.rho_A);
                 p.UpdateParticlePosition(dt);
 
                 Console.WriteLine("Current Velocites are:   " + p.currentIterVel_P[0][0] + "        " + p.currentIterVel_P[0][1] + "       " + p.currentIterRot_P[0]);
-                p.UpdateAngularVelocity(dt, this.Control.PhysicalParameters.rho_A);
-                p.UpdateTransVelocity(dt, this.Control.PhysicalParameters.rho_A);
+                
                 //p.CleanHistoryIter();
                 //phiComplete = phiComplete* p.phi_P;
             }
@@ -704,28 +705,19 @@ namespace BoSSS.Application.FSI_Solver {
                         int iteration_counter = 1;
                         for (double posResidual_splitting = 1; posResidual_splitting > ((FSI_Control)this.Control).LevelSet_ConvergenceCriterion;)// && iteration_counter <= (this.Control).max_iterations_fully_coupled;)
                         {
-                            if (iteration_counter == 1)
+                            foreach (Particle p in m_Particles)
                             {
-                                foreach (Particle p in m_Particles)
-                                {
-                                    p.iteration_counter_P = 1;
-                                }
+                                //Console.WriteLine("Temp x-position:  " + p.currentIterPos_P[0][1]);
+                                p.iteration_counter_P = iteration_counter;
+                                p.tempPos_P[0] = p.currentIterPos_P[0][0];
+                                p.tempPos_P[1] = p.currentIterPos_P[0][1];
+                                p.tempAng_P = p.currentIterAng_P[0];
+                                //p.currentIterPos_P[0][0] = p.currentIterPos_P[1][0];
+                                //p.currentIterPos_P[0][1] = p.currentIterPos_P[1][1];
+                                //p.currentIterAng_P[0] = p.currentIterAng_P[1];
+                                //Console.WriteLine("Full coupled system, number of iterations:  " + iteration_counter + ", current x-position: " + p.currentIterPos_P[0][0] + ", previous x-position " + p.currentIterPos_P[1][0]);
                             }
-                            if (iteration_counter > 1)// && posResidual_splitting > 10e-4)
-                            {
-                                foreach (Particle p in m_Particles)
-                                {
-                                    //Console.WriteLine("Temp x-position:  " + p.currentIterPos_P[0][1]);
-                                    p.iteration_counter_P = iteration_counter;
-                                    //p.tempPos_P[0] = p.currentIterPos_P[0][0];
-                                    //p.tempPos_P[1] = p.currentIterPos_P[0][1];
-                                    //p.tempAng_P = p.currentIterAng_P[0];
-                                    //p.currentIterPos_P[0][0] = p.currentIterPos_P[1][0];
-                                    //p.currentIterPos_P[0][1] = p.currentIterPos_P[1][1];
-                                    //p.currentIterAng_P[0] = p.currentIterAng_P[1];
-                                    //Console.WriteLine("Full coupled system, number of iterations:  " + iteration_counter + ", current x-position: " + p.currentIterPos_P[0][0] + ", previous x-position " + p.currentIterPos_P[1][0]);
-                                }
-                            }
+
                             m_BDF_Timestepper.Solve(phystime, dt, false);
                             //if (iteration_counter > 1 && posResidual_splitting <= 10e-4)
                             //{
@@ -836,11 +828,6 @@ namespace BoSSS.Application.FSI_Solver {
                             base.QueryHandler.ValueQuery("C_Lift", 2 * force[1], true); // Only for Diameter 1 (TestCase NSE stationary)
                             base.QueryHandler.ValueQuery("Angular_Velocity", MPIangularVelocity, true); // (TestCase FlowRotationalCoupling)
                             #endregion
-                            
-                            //foreach (Particle p in m_Particles)
-                            //{
-                            //    p.UpdateParticlePosition(dt); 
-                            //}
                             double acc = 0;
                             foreach (Particle p in m_Particles)
                             {
@@ -858,11 +845,6 @@ namespace BoSSS.Application.FSI_Solver {
                                 throw new ApplicationException("no convergence in coupled iterative solver, number of iterations: " + iteration_counter);
                             }
                         }
-                        //foreach (Particle p in m_Particles)
-                        //{
-                        //    p.UpdateParticlePosition(dt);
-                        //}
-
                     }
                 }
 
