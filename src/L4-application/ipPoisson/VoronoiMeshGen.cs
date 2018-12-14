@@ -1573,7 +1573,7 @@ namespace BoSSS.Application.SipPoisson.Voronoi {
                                     -2 * x * a * a * Math.Exp(-(x * x + y * y) * a * a),
                                     -2 * y * a * a * Math.Exp(-(x * x + y * y) * a * a)
                                     );
-                                //COG += G * 0.1;
+                                COG += G * 0.01;
 
 
                                 // 
@@ -1633,6 +1633,9 @@ namespace BoSSS.Application.SipPoisson.Voronoi {
                             }
                         }
                     }
+
+                    Vector[] delaunay = Nodes.NoOfRows.ForLoop(iRow => Nodes.GetRowPt(iRow)).ToArray();
+                    DebugPlot(VocellVertexIndex, Verts, null, null, delaunay, iLloyd);
                 }
 
 
@@ -2131,7 +2134,7 @@ namespace BoSSS.Application.SipPoisson.Voronoi {
             }
         }
 
-        static void DebugPlot(int[][] VocellVertexIndex, IList<Vector> Verts, IEnumerable<VoEdge> edgeS, IEnumerable<VoVertex> SomePoints) {
+        static void DebugPlot(int[][] VocellVertexIndex, IList<Vector> Verts, IEnumerable<VoEdge> edgeS, IEnumerable<VoVertex> SomePoints, IEnumerable<Vector> SomePoints2, int index) {
             using (var gp = new Gnuplot()) {
                 if (VocellVertexIndex != null) {
                     PlotFormat orgF = new PlotFormat(":k");
@@ -2174,21 +2177,52 @@ namespace BoSSS.Application.SipPoisson.Voronoi {
                         gp.PlotXY(xS, yS, format: F);
                     }
                 }
-                if (SomePoints != null) {
-                    PlotFormat ptF = new PlotFormat(Style: Styles.LinesPoints, pointType: PointTypes.Asterisk, lineColor: LineColors.Black);
+                if (SomePoints != null || SomePoints2 != null) {
+                    PlotFormat ptF = new PlotFormat(Style: Styles.Points, pointType: PointTypes.Asterisk, lineColor: LineColors.Black);
 
-
-
-                    double[] xS = SomePoints.Select(V => V.VTX.x).ToArray();
-                    double[] yS = SomePoints.Select(V => V.VTX.y).ToArray();
+                    double[] xS = new double[0];
+                    double[] yS = new double[0];
+                    if (SomePoints != null) {
+                        xS = ArrayTools.Cat(xS, SomePoints.Select(V => V.VTX.x).ToArray());
+                        yS = ArrayTools.Cat(yS, SomePoints.Select(V => V.VTX.y).ToArray());
+                    }
+                    if (SomePoints2 != null) {
+                        xS = ArrayTools.Cat(xS, SomePoints2.Select(V => V.x).ToArray());
+                        yS = ArrayTools.Cat(yS, SomePoints2.Select(V => V.y).ToArray());
+                    }
 
                     gp.PlotXY(xS, yS, format: ptF);
 
                 }
 
-                gp.Execute();
-                Console.WriteLine("Press any key to continue...");
-                Console.ReadKey();
+                gp.SetXRange(-1.2, 1.2);
+                gp.SetYRange(-1.2, 1.2);
+
+                //gp.Execute();
+                //Console.WriteLine("Press any key to continue...");
+                //Console.ReadKey();
+
+                PlotGIF(gp, "voronoi-" + index + ".png");
+            }
+
+        }
+        static void PlotGIF(Gnuplot gp, string OutfileName, int xRes = 1024, int yRes = 1024) {
+
+            // set terminal
+            gp.Terminal = string.Format("pngcairo size {0},{1}", xRes, yRes);
+
+            // set output file
+            //string OutfileName = null;
+            //while (OutfileName == null || File.Exists(OutfileName)) {
+            //    OutfileName = Path.GetTempFileName() + ".gif";
+            //}
+            gp.OutputFile = OutfileName;
+
+            // call gnuplot
+            int exCode = gp.RunAndExit(); // run & close gnuplot
+            if (exCode != 0) {
+                Console.WriteLine("Gnuplot-internal error: exit code " + exCode);
+                return;
             }
         }
 

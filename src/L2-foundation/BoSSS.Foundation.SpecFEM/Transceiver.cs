@@ -50,7 +50,7 @@ namespace BoSSS.Foundation.SpecFEM {
             this.SendBuffers = _SendBuffers.ToArray();
             this.ReceiveBuffers = _ReceiveBuffers.ToArray();
         }
-
+        
 
         ~Transceiver() {
             this.Dispose();

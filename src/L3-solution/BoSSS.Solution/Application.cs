@@ -512,9 +512,6 @@ namespace BoSSS.Solution {
 
                 app.Init(ctrlV2);
                 app.RunSolverMode();
-                app.ByeInt(true);
-                app.Bye();
-                app.ProfilingLog();
                 app.Dispose();
 
 
@@ -2673,6 +2670,10 @@ namespace BoSSS.Solution {
         /// </summary>
         public virtual void Dispose() {
             if (!IsDisposed) {
+                ByeInt(true);
+                Bye();
+                ProfilingLog();
+
                 if (this.CurrentSessionInfo != null)
                     this.CurrentSessionInfo.Dispose();
                 if (DatabaseDriver != null) {
