@@ -84,8 +84,8 @@ namespace CutCellQuadrature.TestCases {
         /// <returns>
         /// A grid for the standard domain [-2,2]x[-2,2]
         /// </returns>
-        public override GridCommons GetGrid(IDatabaseInfo db) {
-            GridCommons grid;
+        public override IGrid GetGrid(IDatabaseInfo db) {
+            IGrid grid;
             switch (GridType) {
                 case GridTypes.Structured:
                     int noOfCellsPerDirection;
@@ -340,7 +340,7 @@ namespace CutCellQuadrature.TestCases {
             }
         }
 
-        public override GridCommons GetGrid(IDatabaseInfo db)
+        public override IGrid GetGrid(IDatabaseInfo db)
         {
             switch (GridType)
             {
@@ -612,7 +612,7 @@ namespace CutCellQuadrature.TestCases {
             }
         }
 
-        public override GridCommons GetGrid(IDatabaseInfo db) {
+        public override IGrid GetGrid(IDatabaseInfo db) {
             if (GridType != GridTypes.Structured) {
                 throw new NotImplementedException();
             }
@@ -658,7 +658,7 @@ namespace CutCellQuadrature.TestCases {
             }
         }
 
-        public override GridCommons GetGrid(IDatabaseInfo db) {
+        public override IGrid GetGrid(IDatabaseInfo db) {
             if (GridType != GridTypes.Structured) {
                 throw new NotImplementedException();
             }
@@ -717,7 +717,7 @@ namespace CutCellQuadrature.TestCases {
             }
         }
 
-        public override GridCommons GetGrid(IDatabaseInfo db) {
+        public override IGrid GetGrid(IDatabaseInfo db) {
             if (GridType != GridTypes.Unstructured) {
                 throw new NotImplementedException();
             }
@@ -1034,7 +1034,7 @@ namespace CutCellQuadrature.TestCases {
             }
         }
 
-        public override GridCommons GetGrid(IDatabaseInfo db) {
+        public override IGrid GetGrid(IDatabaseInfo db) {
             switch (GridType) {
                 case GridTypes.Structured:
                     int noOfCells = 2 << (int)this.GridSize;
@@ -1106,7 +1106,7 @@ namespace CutCellQuadrature.TestCases {
             }
         }
 
-        public override GridCommons GetGrid(IDatabaseInfo db) {
+        public override IGrid GetGrid(IDatabaseInfo db) {
             return Grid2D.Cartesian2DGrid(
                 GenericBlas.Linspace(-1.0, 1.0, 10),
                 GenericBlas.Linspace(-1.0, 1.0, 10));
@@ -1174,7 +1174,7 @@ namespace CutCellQuadrature.TestCases {
             }
         }
 
-        public override GridCommons GetGrid(IDatabaseInfo db) {
+        public override IGrid GetGrid(IDatabaseInfo db) {
             return Grid2D.Cartesian2DGrid(
                 GenericBlas.Linspace(-1.0, 1.0, 10),
                 GenericBlas.Linspace(-1.0, 1.0, 10));
@@ -1248,7 +1248,7 @@ namespace CutCellQuadrature.TestCases {
             }
         }
 
-        public override GridCommons GetGrid(IDatabaseInfo db) {
+        public override IGrid GetGrid(IDatabaseInfo db) {
             switch (this.GridSize) {
                 case GridSizes.Tiny:
                     return Grid2D.Cartesian2DGrid(
@@ -1298,7 +1298,7 @@ namespace CutCellQuadrature.TestCases {
             }
         }
 
-        public override GridCommons GetGrid(IDatabaseInfo db) {
+        public override IGrid GetGrid(IDatabaseInfo db) {
             GridCommons grid;
             switch (GridType) {
                 case GridTypes.Structured:
@@ -1442,7 +1442,7 @@ namespace CutCellQuadrature.TestCases {
             }
         }
 
-        public override GridCommons GetGrid(IDatabaseInfo db) {
+        public override IGrid GetGrid(IDatabaseInfo db) {
             int numberOfCells = 32 << 1;
             double stretching = 2.0;
             double D = 40.0;
@@ -1489,7 +1489,7 @@ namespace CutCellQuadrature.TestCases {
             }
         }
 
-        public override GridCommons GetGrid(IDatabaseInfo db) {
+        public override IGrid GetGrid(IDatabaseInfo db) {
             int numberOfCells = 32 << 1;
             double stretching = 2.0;
             double D = 40.0;
@@ -1557,7 +1557,7 @@ namespace CutCellQuadrature.TestCases {
             }
         }
 
-        public override GridCommons GetGrid(IDatabaseInfo db) {
+        public override IGrid GetGrid(IDatabaseInfo db) {
 
             int MeshPara;
             switch (GridSize) {
@@ -1765,7 +1765,7 @@ namespace CutCellQuadrature.TestCases {
             }
         }
 
-        public override GridCommons GetGrid(IDatabaseInfo db) {
+        public override IGrid GetGrid(IDatabaseInfo db) {
             int noOfCellsPerDirection;
             switch (GridSize) {
                 case GridSizes.Tiny:
@@ -1827,7 +1827,7 @@ namespace CutCellQuadrature.TestCases {
             }
         }
 
-        public override GridCommons GetGrid(IDatabaseInfo db) {
+        public override IGrid GetGrid(IDatabaseInfo db) {
             int noOfCellsPerDirection;
             switch (GridSize) {
                 case GridSizes.Tiny:

@@ -57,7 +57,7 @@ namespace QuadratureAndProjectionTest {
             blubb.TestProjectionError();
         }
 
-        protected override GridCommons CreateOrLoadGrid() {
+        protected override IGrid CreateOrLoadGrid() {
             return test.GetSingleCellGrid();
         }
 

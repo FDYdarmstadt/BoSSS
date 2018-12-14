@@ -20,6 +20,7 @@ using System.Text;
 using System.Runtime.InteropServices;
 using System.Diagnostics;
 using ilPSP.Utils;
+using ilPSP;
 
 namespace BoSSS.Platform.LinAlg {
 
@@ -66,7 +67,7 @@ namespace BoSSS.Platform.LinAlg {
         }
 
         /// <summary>
-        ///initializes a 3D vector.
+        /// initializes a 3D vector.
         /// </summary>
         public Vector(double __x, double __y, double __z) {
             x = __x;
@@ -77,7 +78,7 @@ namespace BoSSS.Platform.LinAlg {
         }
 
         /// <summary>
-        /// 
+        /// initializes a vector from an array
         /// </summary>
         /// <param name="X"></param>
         public Vector(double[] X) {
@@ -211,19 +212,35 @@ namespace BoSSS.Platform.LinAlg {
             return R;
         }
 
+        /// <summary>
+        /// z-component of the cross product between 2D-vectors with zero z-component.
+        /// </summary>
+        public double CrossProduct2D(Vector b) {
+            if (this.Dim != 2)
+                throw new NotSupportedException("Only supported for 2D vectors.");
+            if (b.Dim != 2)
+                throw new ArgumentException("Only supported for 2D vectors.");
+            return this[0] * b[1] - this[1] * b[0];
+        }
+
 
         /// <summary>
-        /// the absolute value (length) of this vector 
+        /// the absolute value (length) of this vector  (synonym for <see cref="L2Norm"/>)
         /// </summary>
-        /// <returns></returns>
         public double Abs() {
             return Math.Sqrt(x * x + y * y + z * z);
         }
+
+        /// <summary>
+        /// the absolute distance (length) to some other point <paramref name="o"/> 
+        /// </summary>
+        public double Dist(Vector o) {
+            return (this - o).L2Norm();
+        }
         
         /// <summary>
-        /// the absolute value (length) of this vector 
+        /// the absolute value (length) of this vector (synonym for <see cref="Abs"/>)
         /// </summary>
-        /// <returns></returns>
         public double L2Norm() {
             return Math.Sqrt(x * x + y * y + z * z);
         }
@@ -231,18 +248,46 @@ namespace BoSSS.Platform.LinAlg {
         /// <summary>
         /// the absolute value (length) of this vector to the power of two
         /// </summary>
-        /// <returns></returns>
         public double AbsSquare() {
             return (x * x + y * y + z * z);
         }
+
         /// <summary>
-        /// The angle between this vector and the positive x-Axis, counted counterclockwise
+        /// The angle (in radians) between this vector and the positive x-Axis, counted counterclockwise
         /// </summary>
-        /// <returns></returns>
         public double Angle2D() {
             if(this.Dim != 2)
                 throw new NotSupportedException();
             return Math.Atan2(this.y, this.x);
+        }
+
+        /// <summary>
+        /// The angle, in radians, between this vector and vector <paramref name="o"/>
+        /// </summary>
+        public double AngleTo(Vector o) {
+            if (o.Dim != this.Dim)
+                throw new ArgumentException("spatial dimension mismatch");
+            if (o.AbsSquare() <= 0)
+                throw new ArithmeticException("other vector is zero - unable to determine angle");
+            if (this.AbsSquare() <= 0)
+                throw new ArithmeticException("this vector is zero - unable to determine angle");
+
+            Vector tn = this;
+            tn.Normalize();
+
+            Vector on = o;
+            on.Normalize();
+
+            double inner = tn * on;
+
+            Debug.Assert(inner <= 1.0 + BLAS.MachineEps.Sqrt());
+
+            // clamp value to range [-1..+1]: e.g. an inner product of 1.00000000002 could cause an NAN in Math.Acos
+            inner = Math.Max(-1.0, inner); 
+            inner = Math.Min(+1.0, inner);
+
+            double angle =  Math.Acos(inner);
+            return angle;
         }
 
         /// <summary>
@@ -545,7 +590,7 @@ namespace BoSSS.Platform.LinAlg {
         /// row which should be extracted
         /// </param>
         /// <returns>
-        /// an array with length equal to 2nd length of <paramref name="inp"/>, containing the
+        /// A vector with dimension (<see cref="Vector.Dim"/>) equal to 2nd length of <paramref name="inp"/>, containing the
         /// <paramref name="RowNo"/>-th row of <paramref name="inp"/>
         /// </returns>
         public static Vector GetRowPt(this IMatrix inp, int RowNo) {
@@ -557,7 +602,36 @@ namespace BoSSS.Platform.LinAlg {
                 case 3:
                 return new Vector(inp[RowNo, 0], inp[RowNo, 1], inp[RowNo, 2]);
                 default:
-                throw new ArgumentException();
+                throw new ArgumentException("Matrix has " + inp.NoOfCols + " columns, this cannot be a spatial dimension.");
+            }
+        }
+
+
+        /// <summary>
+        /// sets the <paramref name="RowNo"/>-th row from <paramref name="inp"/> to values provided by <paramref name="row"/>.
+        /// </summary>
+        /// <param name="inp">
+        /// matrix that should be altered
+        /// </param>
+        /// <param name="RowNo">
+        /// row index of the row to set
+        /// </param>
+        /// <param name="row">
+        /// a vector 
+        /// </param>
+        public static void SetRowPt(this IMatrix inp, int RowNo, Vector row) {
+            if (row.Dim != inp.NoOfCols)
+                throw new ArgumentException("Dimension mismatch.");
+
+            switch(row.Dim) {
+                case 1:
+                inp[RowNo, 0] = row.x; return;
+                case 2:
+                inp[RowNo, 0] = row.x; inp[RowNo, 1] = row.y; return;
+                case 3:
+                inp[RowNo, 0] = row.x; inp[RowNo, 1] = row.y; inp[RowNo, 2] = row.z; return;
+                default:
+                throw new NotImplementedException();
             }
         }
     }

@@ -665,8 +665,8 @@ namespace CNS {
             // Grid
             if (restart == "True") {
                 // Restart Lichtenberg
-                c.RestartInfo = new Tuple<Guid, TimestepNumber>(new Guid("8c6e3af9-8f53-4de6-87e5-ba1949732119"), -1);
-                c.GridGuid = new Guid("0f4e4dad-7930-428f-80b1-a3ae28dc251c");
+                c.RestartInfo = new Tuple<Guid, TimestepNumber>(new Guid("a96d7c2c-fe35-4fc3-9f51-ef45185fe188"), -1);
+                c.GridGuid = new Guid("c544dd46-a9d8-44c8-b5bb-10516f94f0c9");
             } else {
                 c.GridFunc = delegate {
                     double[] xNodes = GenericBlas.Linspace(xMin, xMax, numOfCellsX + 1);
@@ -807,11 +807,11 @@ namespace CNS {
             string dbPath = @"/work/scratch/yp19ysog/bosss_db_dmr_video_coarse";
             //string dbPath = @"/work/scratch/yp19ysog/bosss_db_paper_ibmdmr_run3_test";
             //string dbPath = @"C:\bosss_db_paper_ibmdmr_scratch_run3_test";
-            string restart = "False";
+            string restart = "True";
 
             CNSControl c = DoubleMachReflection(dbPath, savePeriod, dgDegree, xMax, yMax, numOfCellsX, numOfCellsY, sensorLimit, CFLFraction, explicitScheme, explicitOrder, numberOfSubGrids, reclusteringInterval, maxNumOfSubSteps, endTime, restart);
 
-            c.ProjectName = "dmr_video_coarse_run2";
+            c.ProjectName = "dmr_video_coarse_run2_restart1";
 
             return c;
         }
@@ -1304,14 +1304,14 @@ namespace CNS {
 
             // Lichtenberg
             //string dbPath = @"/home/yp19ysog/bosss_db_paper_ibmdmr2";
-            string dbPath = @"/work/scratch/yp19ysog/bosss_db_paper_ibmdmr_run3";
+            string dbPath = @"/work/scratch/yp19ysog/bosss_db_ibmdmr_video";
             //string dbPath = @"/work/scratch/yp19ysog/bosss_db_paper_ibmdmr_run3_test";
             //string dbPath = @"C:\bosss_db_paper_ibmdmr_scratch_run3_test";
-            string restart = "True";
+            string restart = "False";
 
             IBMControl c = IBMDoubleMachReflection(dbPath, savePeriod, dgDegree, numOfCellsX, numOfCellsY, sensorLimit, dtFixed, CFLFraction, explicitScheme, explicitOrder, numberOfSubGrids, reclusteringInterval, maxNumOfSubSteps, agg, fugdeFactor, endTime, kappa, restart);
 
-            c.ProjectName = "paper_ibmdmr_run3_restart5";
+            c.ProjectName = "ibmdmr_paperReproduce_noSubStepLimit";
             //c.NoOfTimesteps = 10;
 
             return c;

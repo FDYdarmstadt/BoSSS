@@ -62,7 +62,7 @@ namespace BoSSS.Application.ZwoLsTest {
                 () => new ZwoLsTestMain() { DEGREE = 1, THRESHOLD = 0.0 });
         }
 
-        protected override GridCommons CreateOrLoadGrid() {
+        protected override IGrid CreateOrLoadGrid() {
             var t = Triangle.Instance;
 
 

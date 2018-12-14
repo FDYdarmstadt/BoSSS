@@ -56,7 +56,7 @@ namespace BoSSS.Application.ScalarTransport {
         /// <summary>
         /// creates a simple 2d/3d Cartesian grid within the domain \f$ (-7,7)^D \f$
         /// </summary>
-        protected override GridCommons CreateOrLoadGrid() {
+        protected override IGrid CreateOrLoadGrid() {
             /*
             double[] xnodes = GenericBlas.Linspace(-7, 7, 11);
             double[] ynodes = GenericBlas.Linspace(-7, 7, 11);
@@ -76,12 +76,10 @@ namespace BoSSS.Application.ScalarTransport {
             double[] yNodes = GenericBlas.Linspace(-7, 7, 3);
 
             var baseGrid = Grid2D.UnstructuredTriangleGrid(xNodes, yNodes);
-            var baseGdat = new GridData(baseGrid);
-            var aggGrid = CoarseningAlgorithms.Coarsen(baseGdat, 2);
-            base.AggGrid = aggGrid;
+
                   
 
-            return null;
+            return baseGrid;
             //*/
         }
 

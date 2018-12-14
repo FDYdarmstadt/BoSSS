@@ -30,6 +30,7 @@ using BoSSS.Platform.LinAlg;
 using System.Diagnostics;
 using BoSSS.Platform.Utils.Geom;
 using BoSSS.Solution.Gnuplot;
+using BoSSS.Foundation.Grid;
 
 namespace BoSSS.Application.SipPoisson {
 
@@ -52,7 +53,7 @@ namespace BoSSS.Application.SipPoisson {
             R.InitialValues_Evaluators.Add("Tex", X => (Math.Log(X[0].Pow2() + X[1].Pow2()) / Math.Log(4.0)) + 1.0);
             R.ExactSolution_provided = true;
 
-            R.GridFunc = delegate() {
+            R.GridFunc = delegate () {
                 var grd = Grid2D.CurvedSquareGrid(GenericBlas.Linspace(1, 2, 3), GenericBlas.Linspace(0, 1, 11), CellType.Square_9, true);
                 grd.EdgeTagNames.Add(1, BoundaryType.Dirichlet.ToString());
                 grd.DefineEdgeTags(X => 1);
@@ -80,7 +81,7 @@ namespace BoSSS.Application.SipPoisson {
         /// <param name="max"></param>
         /// <returns></returns>
         static double[] CreateNodes(int res, double stetch, double min, double max) {
-            if(stetch == 1.0)
+            if (stetch == 1.0)
                 return GenericBlas.Linspace(min, max, res + 1);
             else
                 return Grid1D.ExponentialSpaceing(min, max, res + 1, stetch); // without proper preconditioning,
@@ -102,7 +103,7 @@ namespace BoSSS.Application.SipPoisson {
             RR.InitialValues_Evaluators.Add("Tex", X => (0.5 * X[0].Pow2() - 10 * X[0]));
             RR.ExactSolution_provided = true;
 
-            RR.GridFunc = delegate() {
+            RR.GridFunc = delegate () {
                 double[] xNodes = CreateNodes(xRes, xStretch, 0, 10);
                 double[] yNodes = CreateNodes(yRes, yStretch, -1, +1);
 
@@ -111,13 +112,13 @@ namespace BoSSS.Application.SipPoisson {
                 grd.EdgeTagNames.Add(2, BoundaryType.Neumann.ToString());
                 grd.DefineEdgeTags(delegate (double[] X) {
                     byte ret;
-                    if(Math.Abs(X[0] - 0.0) <= 1.0e-6)
+                    if (Math.Abs(X[0] - 0.0) <= 1.0e-6)
                         ret = 1;
                     else
                         ret = 2;
                     return ret;
                 });
-                
+
                 return grd;
             };
 
@@ -146,7 +147,7 @@ namespace BoSSS.Application.SipPoisson {
             R.InitialValues_Evaluators.Add("Tex", X => (0.5 * X[0].Pow2() - 10 * X[0]));
             R.ExactSolution_provided = true;
 
-            R.GridFunc = delegate() {
+            R.GridFunc = delegate () {
                 double[] xNodes = CreateNodes(xRes, xStretch, 0, 10);
                 double[] yNodes = CreateNodes(yRes, yStretch, -1, +1);
                 double[] zNodes = CreateNodes(zRes, zStretch, -1, +1);
@@ -156,7 +157,7 @@ namespace BoSSS.Application.SipPoisson {
                 grd.EdgeTagNames.Add(2, BoundaryType.Neumann.ToString());
                 grd.DefineEdgeTags(delegate (double[] X) {
                     byte ret;
-                    if(Math.Abs(X[0] - 0.0) <= 1.0e-6)
+                    if (Math.Abs(X[0] - 0.0) <= 1.0e-6)
                         ret = 1;
                     else
                         ret = 2;
@@ -165,7 +166,7 @@ namespace BoSSS.Application.SipPoisson {
 
                 return grd;
             };
-            
+
             R.AddBoundaryValue(BoundaryType.Dirichlet.ToString());
             R.AddBoundaryValue(BoundaryType.Neumann.ToString());
 
@@ -174,7 +175,7 @@ namespace BoSSS.Application.SipPoisson {
         }
 
 
-     
+
 
 
         /// <summary>
@@ -193,15 +194,15 @@ namespace BoSSS.Application.SipPoisson {
         /// Name of solver to use.
         /// </param>
         public static SipControl TestCartesian2(int Res, int Dim, SolverCodes solver_name = SolverCodes.exp_softpcg_mg, int deg = 3) {
-            if(Dim != 2 && Dim != 3)
+            if (Dim != 2 && Dim != 3)
                 throw new ArgumentOutOfRangeException();
-            
+
             var R = new SipControl();
             R.ProjectName = "ipPoison/cartesian";
             R.savetodb = false;
 
             R.FieldOptions.Add("T", new FieldOpts() { Degree = deg, SaveToDB = FieldOpts.SaveToDBOpt.TRUE });
-            R.FieldOptions.Add("Tex", new FieldOpts() { Degree = deg*2 });
+            R.FieldOptions.Add("Tex", new FieldOpts() { Degree = deg * 2 });
             R.InitialValues_Evaluators.Add("RHS", X => -Math.Sin(X[0]));
             R.InitialValues_Evaluators.Add("Tex", X => Math.Sin(X[0]));
             R.ExactSolution_provided = true;
@@ -210,17 +211,17 @@ namespace BoSSS.Application.SipPoisson {
             //R.TargetBlockSize = 100;
 
             R.TracingNamespaces = "BoSSS,ilPSP";
-            
 
-            R.GridFunc = delegate() {
+
+            R.GridFunc = delegate () {
                 GridCommons grd = null;
-                if(Dim == 2) {
-                    double[] xNodes = GenericBlas.Linspace(0, 10, Res*5 + 1);
+                if (Dim == 2) {
+                    double[] xNodes = GenericBlas.Linspace(0, 10, Res * 5 + 1);
                     double[] yNodes = GenericBlas.SinLinSpacing(-1, +1, 0.6, Res + 1);
-                    
+
                     grd = Grid2D.Cartesian2DGrid(xNodes, yNodes);
-                } else if(Dim == 3) {
-                    double[] xNodes = GenericBlas.Linspace(0, 10, Res*5 + 1);
+                } else if (Dim == 3) {
+                    double[] xNodes = GenericBlas.Linspace(0, 10, Res * 5 + 1);
                     double[] yNodes = GenericBlas.SinLinSpacing(-1, +1, 0.6, Res + 1);
                     double[] zNodes = GenericBlas.SinLinSpacing(-1, +1, 0.6, Res + 1);
 
@@ -232,7 +233,7 @@ namespace BoSSS.Application.SipPoisson {
                 grd.EdgeTagNames.Add(2, BoundaryType.Neumann.ToString());
                 grd.DefineEdgeTags(delegate (double[] X) {
                     byte ret;
-                    if(Math.Abs(X[0] - 0.0) <= 1.0e-6)
+                    if (Math.Abs(X[0] - 0.0) <= 1.0e-6)
                         ret = 1;
                     else
                         ret = 2;
@@ -246,7 +247,7 @@ namespace BoSSS.Application.SipPoisson {
                  delegate (double[] X) {
                      double x = X[0], y = X[1];
 
-                     if(Math.Abs(X[0] - (0.0)) < 1.0e-8)
+                     if (Math.Abs(X[0] - (0.0)) < 1.0e-8)
                          return 0.0;
 
                      throw new ArgumentOutOfRangeException();
@@ -254,13 +255,13 @@ namespace BoSSS.Application.SipPoisson {
 
             R.AddBoundaryValue(BoundaryType.Neumann.ToString(), "T",
                  delegate (double[] X) {
-                     if(Math.Abs(X[1] - 1.0) < 1.0e-8 || Math.Abs(X[1] + 1.0) < 1.0e-8) // y = -1, y = +1
+                     if (Math.Abs(X[1] - 1.0) < 1.0e-8 || Math.Abs(X[1] + 1.0) < 1.0e-8) // y = -1, y = +1
                          return 0;
 
-                     if(X.Length > 2 && (Math.Abs(X[2] - 1.0) < 1.0e-8 || Math.Abs(X[2] + 1.0) < 1.0e-8)) // z = -1, z = +1
+                     if (X.Length > 2 && (Math.Abs(X[2] - 1.0) < 1.0e-8 || Math.Abs(X[2] + 1.0) < 1.0e-8)) // z = -1, z = +1
                          return 0;
 
-                     if(Math.Abs(X[0] - (+10.0)) < 1.0e-8)
+                     if (Math.Abs(X[0] - (+10.0)) < 1.0e-8)
                          return Math.Cos(10.0);
 
                      throw new ArgumentOutOfRangeException();
@@ -268,7 +269,7 @@ namespace BoSSS.Application.SipPoisson {
 
 
 
-           
+
             return R;
         }
 
@@ -299,9 +300,9 @@ namespace BoSSS.Application.SipPoisson {
             R.InitialValues_Evaluators.Add("Tex", exSol);
             R.ExactSolution_provided = true;
 
-            R.GridFunc = delegate() {
-                double[] xNodes = GenericBlas.Linspace(-1,1,xRes);
-                double[] yNodes = GenericBlas.Linspace(-1,1,yRes);
+            R.GridFunc = delegate () {
+                double[] xNodes = GenericBlas.Linspace(-1, 1, xRes);
+                double[] yNodes = GenericBlas.Linspace(-1, 1, yRes);
                 var grd = Grid2D.Cartesian2DGrid(xNodes, yNodes);
 
                 grd.EdgeTagNames.Add(1, BoundaryType.Dirichlet.ToString());
@@ -319,13 +320,13 @@ namespace BoSSS.Application.SipPoisson {
             R.NoOfSolverRuns = 1;
 
             R.AdaptiveMeshRefinement = true;
-            R.NoOfTimesteps = 5; 
+            R.NoOfTimesteps = 5;
 
 
             return R;
         }
 
-
+        /*
 
         /// <summary>
         /// Test on a 2D Voronoi mesh
@@ -339,7 +340,7 @@ namespace BoSSS.Application.SipPoisson {
         /// <param name="solver_name">
         /// Name of solver to use.
         /// </param>
-        public static SipControl TestVoronoi(int Res, SolverCodes solver_name = SolverCodes.classic_pardiso, int deg = 3) {
+        public static SipControl TestVoronoiOld(int Res, SolverCodes solver_name = SolverCodes.classic_pardiso, int deg = 3) {
             
              if (System.Environment.MachineName.ToLowerInvariant().EndsWith("rennmaschin")
                 //|| System.Environment.MachineName.ToLowerInvariant().Contains("jenkins")
@@ -366,11 +367,10 @@ namespace BoSSS.Application.SipPoisson {
             //R.TargetBlockSize = 100;
 
 
+            
 
-            bool IsIn(params double[] X) {
-                Debug.Assert(X.Length == 2);
-                double xi = X[0];
-                double yi = X[1];
+            bool IsIn(double xi, double yi) {
+                
                 //for(int l = 0; l < bndys.Length; l++) {
                 //    Debug.Assert(bndys[l].Normal.Length == 2);
                 //    if (bndys[l].PointDistance(xi, yi) > 0.0)
@@ -388,6 +388,11 @@ namespace BoSSS.Application.SipPoisson {
                     return false;
 
                 return true;
+            }
+
+            bool IsInV(Vector X) {
+                Debug.Assert(X.Dim == 2);
+                return IsIn(X.x, X.y);
             }
 
             int Mirror(ref double[] _x, ref double[] _y, AffineManifold[] bndys) {
@@ -444,7 +449,7 @@ namespace BoSSS.Application.SipPoisson {
             }
 
             
-            GridCommons GridFunc() {
+            IGrid GridFunc() {
                 GridCommons grd = null;
 
                 var Matlab = new BatchmodeConnector();
@@ -498,7 +503,8 @@ namespace BoSSS.Application.SipPoisson {
                 List<Cell> cells = new List<Cell>();
                 List<int[]> aggregation = new List<int[]>();
                 for(int jV = 0; jV < ResFix; jV++) { // loop over Voronoi Cells
-                    Debug.Assert(IsIn(Nodes.GetRow(jV)));
+                    Debug.Assert(IsInV(Nodes.GetRowPt(jV)));
+
                     int[] iVtxS = OutputVertexIndex[jV];
                     int NV = iVtxS.Length;
 
@@ -509,15 +515,15 @@ namespace BoSSS.Application.SipPoisson {
                         int iV1 = iVtxS[iTri + 1];
                         int iV2 = iVtxS[iTri + 2];
 
-                        double[] V0 = VertexCoordinates.GetRow(iV0);
-                        double[] V1 = VertexCoordinates.GetRow(iV1);
-                        double[] V2 = VertexCoordinates.GetRow(iV2);
+                        Vector V0 = VertexCoordinates.GetRowPt(iV0);
+                        Vector V1 = VertexCoordinates.GetRowPt(iV1);
+                        Vector V2 = VertexCoordinates.GetRowPt(iV2);
 
-                        double[] D1 = V1.Minus(V0);
-                        double[] D2 = V2.Minus(V0);
+                        double[] D1 = V1 - V0;
+                        double[] D2 = V2 - V0;
                         Debug.Assert(D1.CrossProduct2D(D2).Abs() > 1.0e-8);
                         if(D1.CrossProduct2D(D2) < 0) {
-                            double[] T = V2;
+                            Vector T = V2;
                             int t = iV2;
                             V2 = V1;
                             iV2 = iV1;
@@ -525,7 +531,7 @@ namespace BoSSS.Application.SipPoisson {
                             iV1 = t;
                         }
 
-                        double[] Center = V0.Plus(V1).Plus(V2).Mul(1.0 / 3.0);
+                        //double[] Center = V0.Plus(V1).Plus(V2).Mul(1.0 / 3.0);
                         //Debug.Assert(IsIn(Center[0], Center[1]));
 
                         Cell Cj = new Cell();
@@ -533,9 +539,9 @@ namespace BoSSS.Application.SipPoisson {
                         Cj.Type = CellType.Triangle_3;
                         Cj.TransformationParams = MultidimensionalArray.Create(3, 2);
                         Cj.NodeIndices = new int[] { iV0, iV1, iV2 };
-                        Cj.TransformationParams.SetRow(0, V0);
-                        Cj.TransformationParams.SetRow(1, V1);
-                        Cj.TransformationParams.SetRow(2, V2);
+                        Cj.TransformationParams.SetRowPt(0, V0);
+                        Cj.TransformationParams.SetRowPt(1, V1);
+                        Cj.TransformationParams.SetRowPt(2, V2);
 
                         Agg2Pt.Add(cells.Count);
 
@@ -554,8 +560,9 @@ namespace BoSSS.Application.SipPoisson {
                 //grd.Plot2DGrid();
 
                 // create aggregation grid
-                //var agrd = new AggregationGrid(grd, aggregation.ToArray());
-                return grd;
+                var agrd = new AggregationGrid(grd, aggregation.ToArray());
+                return agrd;
+
             };
             R.GridFunc = GridFunc;
 
@@ -577,7 +584,180 @@ namespace BoSSS.Application.SipPoisson {
             return R;
         }
 
+        //*/
 
+        /// <summary>
+        /// Test on a 2D Voronoi mesh
+        /// </summary>
+        /// <param name="Res">
+        /// number of randomly chosen Delaunay vertices
+        /// </param>
+        /// <param name="deg">
+        /// polynomial degree
+        /// </param>
+        /// <param name="solver_name">
+        /// Name of solver to use.
+        /// </param>
+        /// <param name="mirror">
+        /// use vertex mirroring at boundary  to make a large fraction of the Voronoi cells conformal
+        /// </param>
+        /// <param name="NoOfLlyodsIter">
+        /// Number of iterations for Llyod's algorithm (aka. Voronoi relaxation)
+        /// </param>
+        public static SipControl TestVoronoi(int Res, SolverCodes solver_name = SolverCodes.classic_pardiso, int deg = 3, bool mirror = true, double NoOfLlyodsIter = 0) {
+
+            if (System.Environment.MachineName.ToLowerInvariant().EndsWith("rennmaschin")
+               //|| System.Environment.MachineName.ToLowerInvariant().Contains("jenkins")
+               ) {
+                // This is Florians Laptop;
+                // he is to poor to afford MATLAB, so he uses OCTAVE
+                BatchmodeConnector.Flav = BatchmodeConnector.Flavor.Octave;
+                BatchmodeConnector.MatlabExecuteable = "C:\\cygwin64\\bin\\bash.exe";
+            }
+
+
+
+            var R = new SipControl();
+            R.ProjectName = "SipPoisson-Voronoi";
+            R.SessionName = "testrun";
+            R.savetodb = false;
+
+            R.FieldOptions.Add("T", new FieldOpts() { Degree = deg, SaveToDB = FieldOpts.SaveToDBOpt.TRUE });
+            R.FieldOptions.Add("Tex", new FieldOpts() { Degree = deg * 2 });
+            R.InitialValues_Evaluators.Add("RHS", X => -1.0 + X[0] * X[0]);
+            R.InitialValues_Evaluators.Add("Tex", X => 0.0);
+            R.ExactSolution_provided = false;
+            R.NoOfMultigridLevels = int.MaxValue;
+            R.solver_name = solver_name;
+            R.NoOfMultigridLevels = 1;
+            //R.TargetBlockSize = 100;
+
+
+
+            /*
+            bool IsIn(double xi, double yi) {
+                
+                //for(int l = 0; l < bndys.Length; l++) {
+                //    Debug.Assert(bndys[l].Normal.Length == 2);
+                //    if (bndys[l].PointDistance(xi, yi) > 0.0)
+                //        return false;
+                //}
+                if (xi > 1.0)
+                    return false;
+                if (yi > 1.0)
+                    return false;
+                if (xi < 0 && yi < 0)
+                    return false;
+                if (xi < -1)
+                    return false;
+                if (yi < -1)
+                    return false;
+
+                return true;
+            }
+
+           
+
+            Vector[] DomainBndyPolygon = new[] {
+                new Vector(+0,+0),
+                new Vector(-1,+0),
+                new Vector(-1,+1),
+                new Vector(+1,+1),
+                new Vector(+1,-1),
+                new Vector(+0,-1)
+            };
+            
+
+            //*/
+
+            
+            bool IsIn(double xi, double yi) {
+                double myEps = 0.0;
+                if (xi > 1.0 + myEps)
+                    return false;
+                if (yi > 1.0 + myEps)
+                    return false;
+                if (xi < -1 - myEps)
+                    return false;
+                if (yi < -1 - myEps)
+                    return false;
+
+                return true;
+            }
+
+
+
+            Vector[] DomainBndyPolygon = new[] {
+                new Vector(-1,+1),
+                new Vector(+1,+1),
+                new Vector(+1,-1),
+                new Vector(-1,-1)
+            };
+            //*/
+
+            bool IsInV(Vector X) {
+                Debug.Assert(X.Dim == 2);
+                return IsIn(X.x, X.y);
+            }
+
+            bool Idenity(Vector A, Vector B) {
+                bool t2 = (A - B).AbsSquare() < 1.0e-10;
+                bool t1 = (A - B).AbsSquare() < 1.0e-15;
+                //Debug.Assert(t1 == t2);
+                //Voronoi.VoronoiMeshGen.AccuracyFlag = (t1 == t2);
+                return t2;
+            }
+
+            IGrid GridFunc() {
+
+                // generate Delaunay vertices
+                Random rnd = new Random(0);
+                int RR = Res;
+                var Node = MultidimensionalArray.Create(RR, 2);
+
+                bool useMirror = mirror;
+                double scl = useMirror ? 2.0 : 4.0;
+
+                Node.SetColumn(0, RR.ForLoop(idx => rnd.NextDouble() * scl - 0.5 * scl));
+                Node.SetColumn(1, RR.ForLoop(idx => rnd.NextDouble() * scl - 0.5 * scl));
+
+                // generate mesh
+                return Voronoi.VoronoiMeshGen.FromPolygonalDomain(Node, DomainBndyPolygon, useMirror, NoOfLlyodsIter, IsInV, Idenity);
+
+            };
+            R.GridFunc = GridFunc;
+
+            R.AddBoundaryValue(BoundaryType.Dirichlet.ToString(), "T",
+                 delegate (double[] X) {
+                     //double x = X[0], y = X[1];
+
+                     return 0.0;
+                     //if(Math.Abs(X[0] - (0.0)) < 1.0e-8)
+                     //    return 0.0;
+                     //
+                     //throw new ArgumentOutOfRangeException();
+                 });
+
+
+
+
+
+            return R;
+        }
+
+
+        public static SipControl[] VoronoiPStudy() {
+
+            //double[] NoOfLli = new double[] { 2, 5, 10, 20, 100 };
+            double[] NoOfLli = GenericBlas.Linspace(0, 100, 201);
+            List<SipControl> R = new List<SipControl>();
+            for(int i = 0; i < NoOfLli.Length; i++) {
+                R.Add(TestVoronoi(100, deg: 1, mirror: true, NoOfLlyodsIter: NoOfLli[i]));
+            }
+
+            return R.ToArray();
+        } 
+        
 
     }
 }

@@ -55,7 +55,7 @@ namespace BoSSS.Solution.Multigrid {
         /// <param name="inj">
         /// injection operators.
         /// </param>
-        internal XdgAggregationBasis(XDGBasis xb, XdgAggregationBasis parentBasis, AggregationGrid ag, MultidimensionalArray[] inj)
+        internal XdgAggregationBasis(XDGBasis xb, XdgAggregationBasis parentBasis, AggregationGridData ag, MultidimensionalArray[] inj)
             : base(xb.NonX_Basis, parentBasis, ag, inj) //
         {
             using(new FuncTrace()) {

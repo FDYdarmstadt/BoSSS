@@ -144,7 +144,6 @@ namespace BoSSS.Solution.XNSECommon {
 
             MatInt = config.physParams.Material;
 
-            double MassFlux = -0.1;
 
             //if (!MatInt)
             //    throw new NotSupportedException("Non-Material interface is NOT tested!");
