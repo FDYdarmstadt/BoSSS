@@ -52,6 +52,12 @@ namespace BoSSS.Application.TutorialTests {
                 BatchmodeConnector.Flav = BatchmodeConnector.Flavor.Octave;
                 BatchmodeConnector.MatlabExecuteable = "C:\\cygwin64\\bin\\bash.exe";
             } 
+
+            string preExistingDb =BoSSS.Application.BoSSSpad.InteractiveShell.GetDefaultDatabaseDir();
+            if (Directory.Exists(preExistingDb)) {
+                //preExistingDb.Delete(true);
+                Directory.Delete(preExistingDb, true);
+            }
         }
 
         static string DirectoryOffset = Path.Combine("..", "..", "..", "..", "..", "doc", "handbook");
@@ -79,12 +85,12 @@ namespace BoSSS.Application.TutorialTests {
             //"ParameterStudy/ParameterStudy.tex"
             )] string TexFileName) {
 
-            /*
-            DirectoryInfo preExistingDb = new DirectoryInfo(BoSSS.Application.BoSSSpad.InteractiveShell.GetDefaultDatabaseDir());
-            if(preExistingDb.Exists) {
-                preExistingDb.Delete(true);
+            string preExistingDb =BoSSS.Application.BoSSSpad.InteractiveShell.GetDefaultDatabaseDir();
+            if (Directory.Exists(preExistingDb)) {
+                Directory.Delete(preExistingDb, true);
             }
-            */
+            
+            
             string FullTexName = Path.Combine(DirectoryOffset, TexFileName);
             Assert.IsTrue(File.Exists(FullTexName), "unable to find TeX source: " + FullTexName);
 
@@ -94,6 +100,11 @@ namespace BoSSS.Application.TutorialTests {
 
             Assert.LessOrEqual(ErrCount, 0, "Found " + ErrCount + " errors in worksheet: " + FullTexName + " (negative numbers may indicate file-not-found, etc.).");
             Assert.IsTrue(ErrCount >= 0, "Fatal return code: " + ErrCount + " in worksheet: " + FullTexName + " (negative numbers may indicate file-not-found, etc.).");
+
+
+            //foreach(var db in BoSSS.Application.BoSSSpad.InteractiveShell.databases) {
+            //    db.
+            //}
         }
 
     }
