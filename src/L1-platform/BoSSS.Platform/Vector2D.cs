@@ -282,9 +282,9 @@ namespace BoSSS.Platform.LinAlg {
 
             Debug.Assert(inner <= 1.0 + BLAS.MachineEps.Sqrt());
 
-            // clamp value to range [-1..+1]: e.g. an inner product of 1.00...002 could cause an NAN in Math.Acos
-            inner = Math.Min(-1.0, inner); 
-            inner = Math.Max(-1.0, inner);
+            // clamp value to range [-1..+1]: e.g. an inner product of 1.00000000002 could cause an NAN in Math.Acos
+            inner = Math.Max(-1.0, inner); 
+            inner = Math.Min(+1.0, inner);
 
             double angle =  Math.Acos(inner);
             return angle;
