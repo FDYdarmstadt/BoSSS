@@ -278,7 +278,9 @@ namespace BoSSS.Application.BoSSSpad {
         public bool ShowLegend = true;
 
         /// <summary>
-        /// Aligns the legend (the key, in gnuplot terms) in (i) and outside (o) of the plot. Valid alignments are: l=left, c=center, r=right for horizontal spacing and t=top, c=center, b=bottom for vertical spacing. Ordering is {inside/outside,horizontal,vertical}
+        /// Aligns the legend (the key, in gnuplot terms) in (i) and outside (o) of the plot. 
+        /// Valid alignments are: l=left, c=center, r=right for horizontal spacing and 
+        /// t=top, c=center, b=bottom for vertical spacing. Ordering is {inside/outside,horizontal,vertical}
         /// </summary>
         [DataMember]
         public string[] LegendAlignment = null;
@@ -1042,7 +1044,7 @@ namespace BoSSS.Application.BoSSSpad {
                             }
 
                     } else {
-                        throw new ArgumentNullException("no alignment or position chosen");
+                        //throw new ArgumentNullException("no alignment or position chosen");
                     }
                     if (this.LegendHorizontal == true)
                         command += "horizontal ";

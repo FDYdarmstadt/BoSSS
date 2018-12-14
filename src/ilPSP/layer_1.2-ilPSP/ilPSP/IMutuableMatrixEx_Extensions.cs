@@ -844,7 +844,7 @@ namespace ilPSP.LinSolvers {
         }
 
 
-
+        /*
 
         /// <summary>
         /// Extracts a sub-matrix from this one, see also
@@ -855,6 +855,7 @@ namespace ilPSP.LinSolvers {
             where V3 : IList<int> //
         {
             throw new NotImplementedException();
+            jnjkknjknj
         }
 
 
@@ -872,5 +873,6 @@ namespace ilPSP.LinSolvers {
 
             throw new NotImplementedException();
         }
+        */
     }
 }

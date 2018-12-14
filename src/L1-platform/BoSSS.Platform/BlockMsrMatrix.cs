@@ -30,7 +30,25 @@ namespace ilPSP.LinSolvers {
     /// Extension functions for the <see cref="BlockMsrMatrix"/>.
     /// </summary>
     public static class BMext {
-        
+
+        /// <summary>
+        /// Driver routine for <see cref="BlockMsrMatrix.AccSubMatrixTo{V1, V2, V3, V4}(double, IMutableMatrixEx, V1, V2, V3, V4)"/>
+        /// </summary>
+        static public BlockMsrMatrix GetSubMatrix<V1, V3>(this BlockMsrMatrix OrgMtx, V1 RowIndicesSource, V3 ColumnIndiceSource)
+            where V1 : IList<int>
+            where V3 : IList<int> //
+        {
+
+            var Blk1 = OrgMtx._RowPartitioning.GetSubBlocking(RowIndicesSource, csMPI.Raw._COMM.WORLD, -1);
+            var Blk2 = OrgMtx._RowPartitioning.GetSubBlocking(ColumnIndiceSource, csMPI.Raw._COMM.WORLD, -1);
+
+            BlockMsrMatrix SUB = new BlockMsrMatrix(Blk1, Blk1);
+            OrgMtx.AccSubMatrixTo(1.0, SUB, RowIndicesSource, default(int[]), ColumnIndiceSource, default(int[]));
+
+            return SUB;
+        }
+
+
         /// <summary>
         /// converts an arbitrary mutable matrix to an <see cref="BlockMsrMatrix"/>.
         /// </summary>
