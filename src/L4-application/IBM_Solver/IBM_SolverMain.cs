@@ -1246,7 +1246,26 @@ namespace BoSSS.Application.IBM_Solver {
                 Log_DragAndLift.WriteLine(firstline);
                 //Log_DragAndLift.WriteLine(restartLine);
             }
+        }
 
+        protected override void Bye() {
+            if(Log_DragAndLift != null) {
+                try {
+                    Log_DragAndLift.Flush();
+                    Log_DragAndLift.Close();
+                    Log_DragAndLift.Dispose();
+                } catch (Exception) { }
+                Log_DragAndLift = null;
+            }
+
+            if(Log_DragAndLift_P1 != null) {
+                try {
+                    Log_DragAndLift_P1.Flush();
+                    Log_DragAndLift_P1.Close();
+                    Log_DragAndLift_P1.Dispose();
+                } catch (Exception) { }
+                Log_DragAndLift_P1 = null;
+            }
         }
 
         /// <summary>
