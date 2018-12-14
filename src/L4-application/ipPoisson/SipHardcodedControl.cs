@@ -612,7 +612,7 @@ namespace BoSSS.Application.SipPoisson {
                 // This is Florians Laptop;
                 // he is to poor to afford MATLAB, so he uses OCTAVE
                 BatchmodeConnector.Flav = BatchmodeConnector.Flavor.Octave;
-                BatchmodeConnector.MatlabExecuteable = "C:\\cygwin64\\bin\\bash.exe";
+                //BatchmodeConnector.MatlabExecuteable = "C:\\cygwin64\\bin\\bash.exe";
             }
 
 
