@@ -121,46 +121,9 @@ namespace BoSSS.Application.SipPoisson {
                 BatchmodeConnector.MatlabExecuteable = "C:\\cygwin64\\bin\\bash.exe";
             }
 
-            /*
-            Random rnd = new Random(0);
-            for(int i = 0; i < 10000; i++) {
-                Vector A = new Vector(rnd.NextDouble(), rnd.NextDouble());
-                Vector B = new Vector(rnd.NextDouble(), rnd.NextDouble());
+            
 
-                AffineManifold plane = AffineManifold.FromPoints(A, B);
 
-               
-                Vector[] iter = new Vector[100];
-                iter[0] = new Vector(rnd.NextDouble(), rnd.NextDouble());
-
-                bool bfound = false;
-                for(int j = 1; j < iter.Length; j++) {
-                    iter[j] = plane.ProjectPoint(iter[j - 1]);
-
-                    if(j > 2) {
-                        Debug.Assert(iter[j].Dist(iter[j - 1]) < 1.0e-8);
-                    }
-
-                    if(iter[j].x == iter[j-1].x && iter[j].y == iter[j-1].y) {
-                        Console.WriteLine("Try {0}: conf after {1} iter", i, j);
-                        
-                        bfound = true;
-                        break;
-                    } else {
-                        if(j > 50) {
-                            Console.Write("");
-                        }
-                    }
-
-                }
-
-                if(!bfound) {
-                    Console.WriteLine("Try {0}: NO CONVERGENCE", i);
-                }
-
-            }
-
-            return;
 
             /*
             //Some performance testing - don't delete, I still need this!
@@ -1236,9 +1199,17 @@ namespace BoSSS.Application.SipPoisson {
         /// default plotting
         /// </summary>
         protected override void PlotCurrentState(double phystime, TimestepNumber timestepNo, int superSampling = 0) {
+            string caseStr = "";
+            if (base.Control.Paramstudy_CaseIdentification != null) {
+                var pstudy_case = base.Control.Paramstudy_CaseIdentification.FirstOrDefault(tt => tt.Item1 == "pstudy_case");
+                if (pstudy_case != null) {
+                    caseStr = "." + pstudy_case.Item2;
+                }
+            }
+
             DGField[] Fields = new DGField[] { T, Tex, RHS, ResiualKP1 };
             Fields = Fields.Cat(this.MGColoring);
-            BoSSS.Solution.Tecplot.Tecplot.PlotFields(Fields, "poisson" + timestepNo, phystime, superSampling);
+            BoSSS.Solution.Tecplot.Tecplot.PlotFields(Fields, "poisson" + timestepNo + caseStr, phystime, superSampling);
         }
 
     }

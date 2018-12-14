@@ -33,7 +33,9 @@ namespace BoSSS.Application.BoSSSpad {
             app.RunSolverMode();
 
             var S = app.CurrentSessionInfo;
-            ((IDisposable)solver).Dispose();
+            
+            if(solver is IDisposable)
+                ((IDisposable)solver).Dispose();
 
             return S;
         }
