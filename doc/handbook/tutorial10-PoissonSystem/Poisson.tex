@@ -5,48 +5,49 @@
 /// \section*{What's new?}
 /// \label{sec:poissonSystem_new}
 /// \begin{itemize}
-///     \item {implementation of a saddle point problem into \BoSSS{} (e.g. the Poisson equation as a              system)}
+///     \item {implementation of a saddle point problem into \BoSSS{} 
+///           (e.g. the Poisson equation as a system)}
 ///     \item {central-difference-form and strong form}
 ///     \item {comparison of both formulations}
 ///     \item advanced: {algebraic reduction of the poisson problem}
 /// \end{itemize}
-    /// %==========================================
-    /// \section*{Prerequisites}
-    /// %==========================================
+/// %==========================================
+/// \section*{Prerequisites}
+/// %==========================================
 /// \begin{itemize}
 ///    \item {implementation of numerical fluxes, chapter \ref{NumFlux}} 
 ///    \item {spatial operator, chapter \ref{SpatialOperator}} 
 /// \end{itemize}
-    /// %==========================================
-    /// \section{Problem statement}
-    /// %==========================================
+/// %==========================================
+/// \section{Problem statement}
+/// %==========================================
 /// Within this exercise, we are going to investigate 
 /// the discretization of a Poisson equation as a system.
 /// Obviously, it is possible to discretize the Poisson equation as a system of
 /// first-order-PDE's, introducing a vector field $\vec{\sigma}$:
 /// \begin{alignat}{3}
-    ///  \vec{\sigma}  + \nabla u & = 0, & & \text{ in } \domain
-    ///    \label{eq:PoissonSys1} \\
-    ///  \operatorname{div}(\vec{\sigma}) &  = g_{\domain}, & & \text{ in } \domain
-    ///    \label{eq:PoissonSys2} \\
-    ///   u                                               & = g_D, & & \text{ on } \Gamma_D \\
-    ///   - \vec{\sigma} \cdot \vec{n}_{\partial \domain} & = g_N, & & \text{ on } \Gamma_N
-    /// \end{alignat}
+///  \vec{\sigma}  + \nabla u & = 0, & & \text{ in } \domain
+///    \label{eq:PoissonSys1} \\
+///  \operatorname{div}(\vec{\sigma}) &  = g_{\domain}, & & \text{ in } \domain
+///    \label{eq:PoissonSys2} \\
+///   u                                               & = g_D, & & \text{ on } \Gamma_D \\
+///   - \vec{\sigma} \cdot \vec{n}_{\partial \domain} & = g_N, & & \text{ on } \Gamma_N
+/// \end{alignat}
 /// resp. in matrix-notation:
 /// \begin{align*}
-    /// \begin{bmatrix}
-        /// \one & \nabla \\
-        ///  \operatorname{div} & 0 \\
-        /// \end{bmatrix}\cdot
-    /// \begin{bmatrix}
-        /// \vec{\sigma}\\
-        /// u
-        /// \end{bmatrix}=
-    /// \begin{bmatrix}
-        /// 0 \\
-        /// g_{\domain}
-        /// \end{bmatrix}
-    /// \end{align*}
+///   \begin{bmatrix}
+///     \one & \nabla \\
+///     \operatorname{div} & 0 \\
+///   \end{bmatrix}\cdot
+///   \begin{bmatrix}
+///     \vec{\sigma}\\
+///     u
+///   \end{bmatrix}=
+///   \begin{bmatrix}
+///     0 \\
+///     g_{\domain}
+///   \end{bmatrix}
+/// \end{align*}
 /// This exercise, together with the previous one,
 /// will form the foundation for an incompressible Stokes- resp. Navier-Stokes solver.    
 /// \section{Solution within the BoSSS framework}
