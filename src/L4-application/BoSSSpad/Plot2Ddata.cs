@@ -1041,8 +1041,6 @@ namespace BoSSS.Application.BoSSSpad {
                                     command += kvp.Value + " ";
                             }
 
-                    } else {
-                        throw new ArgumentNullException("no alignment or position chosen");
                     }
                     if (this.LegendHorizontal == true)
                         command += "horizontal ";
