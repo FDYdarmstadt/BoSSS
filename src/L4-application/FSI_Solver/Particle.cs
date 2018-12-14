@@ -37,7 +37,7 @@ namespace BoSSS.Application.FSI_Solver {
     [Serializable]
     public class Particle : ICloneable {
 
-        public Particle(int Dim, int HistoryLength, double[] startPos = null, double startAngl = 0.0, ParticleShape shape = ParticleShape.spherical) {
+        public Particle(int Dim =2, int HistoryLength=4, double[] startPos = null, double startAngl = 0.0, ParticleShape shape = ParticleShape.spherical) {
 
             if (startPos == null) {
                 if (Dim == 2) {
@@ -69,6 +69,12 @@ namespace BoSSS.Application.FSI_Solver {
         }
 
         /// <summary>
+        /// empty constructor important for serialization
+        /// </summary>
+        private Particle() {
+        }
+
+        /// <summary>
         /// Dimension of the particles (Disk or Sphere)
         /// </summary>
         int m_Dim;
@@ -82,6 +88,11 @@ namespace BoSSS.Application.FSI_Solver {
         /// Shape of the particle
         /// </summary>
         public ParticleShape m_shape;
+
+        /// <summary>
+        /// Skip calculation of hydrodynamic force and torque if particles are too close
+        /// </summary>
+        public bool skipForceIntegration = false;
 
         /// <summary>
         /// Length of history for time, velocity, position etc.
@@ -138,13 +149,13 @@ namespace BoSSS.Application.FSI_Solver {
 
         /// <summary>
         /// Level set function describing the particle
-        /// </summary>
-        [DataMember]
+        /// </summary>       
         public Func<double[], double, double> phi_P;
 
         /// <summary>
         /// Mass of the current particle
         /// </summary>
+        [DataMember]
         public double mass_P {
             get {
                 double mass;
@@ -180,8 +191,9 @@ namespace BoSSS.Application.FSI_Solver {
         }
 
         /// <summary>
-        /// Mass of the current particle
+        /// Area of the current particle
         /// </summary>
+        [DataMember]
         public double area_P {
             get {
                 double area;
@@ -191,7 +203,7 @@ namespace BoSSS.Application.FSI_Solver {
                         break;
 
                     case ParticleShape.elliptic:
-                        area = 3.0 * radius_P * 1.0 * Math.PI;
+                        area = (3.0 * radius_P) * (radius_P* 1.0) * Math.PI;
                         break;
 
                     case ParticleShape.hippopede:
@@ -221,6 +233,7 @@ namespace BoSSS.Application.FSI_Solver {
         /// <summary>
         /// Moment of inertia of the current particle
         /// </summary>
+        [DataMember]
         public double MomentOfInertia_P {
             get {
                 double moment;
@@ -333,7 +346,7 @@ namespace BoSSS.Application.FSI_Solver {
 
                 case ParticleShape.hippopede:
                     a = 4.0 * radius_P.Pow2();
-                    b = 0.5 * radius_P.Pow2();
+                    b = 1.0 * radius_P.Pow2();
                     alpha = -(currentAng_P[0]);
                     // hippopede
                     phi_P = (X, t) => -((((X[0] - currentPos_P[0][0]) * Math.Cos(alpha) - (X[1] - currentPos_P[0][1]) * Math.Sin(alpha)).Pow(2) + ((X[0] - currentPos_P[0][0]) * Math.Sin(alpha) + (X[1] - currentPos_P[0][1]) * Math.Cos(alpha)).Pow(2)).Pow2() - a * ((X[0] - currentPos_P[0][0]) * Math.Cos(alpha) - (X[1] - currentPos_P[0][1]) * Math.Sin(alpha)).Pow2() - b * ((X[0] - currentPos_P[0][0]) * Math.Sin(alpha) + (X[1] - currentPos_P[0][1]) * Math.Cos(alpha)).Pow2());
@@ -388,34 +401,40 @@ namespace BoSSS.Application.FSI_Solver {
             //double[] tempForce = new double[2];
             double[] gravity = new double[2];
             gravity[0] = 0;
-            gravity[1] = -980;
+            gravity[1] = -98.0;
             double C_v = 0.5;
             // In case we want to quickly adapt to all possible fluid densities
             double[] f_vNew = new double[2];
             double[] f_vOld = new double[2];
             double c_a = (C_v * rho_Fluid) / (rho_P + C_v * rho_Fluid);
 
+
             double massDifference = (rho_P - rho_Fluid) * (area_P);
 
+            //Console.WriteLine("Mass difference:    " + massDifference);
+
+            //Console.WriteLine("Mass difference times gravity:    " + (massDifference*gravity[1]));
 
             // VIRTUAL MASS MODEL
-            //for (int i = 0; i < 2; i++) {
-            //    tempForceNew[i] = forces_P[0][i] + massDifference * gravity[i];
-            //    tempForceOld[i] = forces_P[1][i] + massDifference * gravity[i];
-            //    f_vNew[i] = c_a * (3 * vel_P[0][i] - 4 * vel_P[1][i] + vel_P[2][i]) / dt;
-            //    f_vOld[i] = c_a * (3 * vel_P[1][i] - 4 * vel_P[2][i] + vel_P[3][i]) / dt;
-            //    tempForceNew[i] = tempForceNew[i] / ((Math.PI * radius_P * radius_P) * (rho_P + C_v * rho_Fluid)) + f_vNew[i];
-            //    tempForceOld[i] = tempForceOld[i] / ((Math.PI * radius_P * radius_P) * (rho_P + C_v * rho_Fluid)) + f_vOld[i];
-            //    temp[i] = vel_P[0][i] + (3 * tempForceNew[i] - tempForceOld[i]) * dt / 2;
+            //for (int i = 0; i < 2; i++)
+            //{
+            //    tempforcenew[i] = forces_p[0][i] + massdifference * gravity[i];
+            //    tempforceold[i] = forces_p[1][i] + massdifference * gravity[i];
+            //    f_vnew[i] = c_a * (3 * vel_p[0][i] - 4 * vel_p[1][i] + vel_p[2][i]) / dt;
+            //    f_vold[i] = c_a * (3 * vel_p[1][i] - 4 * vel_p[2][i] + vel_p[3][i]) / dt;
+            //    tempforcenew[i] = tempforcenew[i] / ((math.pi * radius_p * radius_p) * (rho_p + c_v * rho_fluid)) + f_vnew[i];
+            //    tempforceold[i] = tempforceold[i] / ((math.pi * radius_p * radius_p) * (rho_p + c_v * rho_fluid)) + f_vold[i];
+            //    temp[i] = vel_p[0][i] + (3 * tempforcenew[i] - tempforceold[i]) * dt / 2;
             //}
 
+            
 
-            // MODELL 1
+            // modell 1
             tempForceNew[0] = 0.5 * (forces_P[1][0] + forces_P[0][0]) + massDifference * gravity[0];
             tempForceNew[1] = 0.5 * (forces_P[1][1] + forces_P[0][1]) + massDifference * gravity[1];
-
             temp.SetV(vel_P[0], 1);
             temp.AccV(dt / mass_P, tempForceNew);
+
 
             vel_P.Insert(0, temp);
 
@@ -477,6 +496,12 @@ namespace BoSSS.Application.FSI_Solver {
         public void UpdateForcesAndTorque(VectorField<SinglePhaseField> U, SinglePhaseField P,
             LevelSetTracker LsTrk,
             double muA) {
+
+            if (skipForceIntegration) {
+                skipForceIntegration = false;
+                return;
+            }
+
             int D = LsTrk.GridDat.SpatialDimension;
             // var UA = U.Select(u => u.GetSpeciesShadowField("A")).ToArray();
             var UA = U.ToArray();
@@ -718,7 +743,7 @@ namespace BoSSS.Application.FSI_Solver {
         public CellMask cutCells_P(LevelSetTracker LsTrk) {
 
             // tolerance is very important
-            var radiusTolerance = radius_P + 0.2 * LsTrk.GridDat.Cells.h_minGlobal;
+            var radiusTolerance = radius_P + LsTrk.GridDat.Cells.h_minGlobal;// +2.0*Math.Sqrt(2*LsTrk.GridDat.Cells.h_minGlobal.Pow2());
 
             CellMask cellCollection;
             CellMask cells = null;
@@ -738,7 +763,7 @@ namespace BoSSS.Application.FSI_Solver {
 
                 case ParticleShape.hippopede:
                     a = 4.0 * radiusTolerance.Pow2();
-                    b = 0.5 * radiusTolerance.Pow2();
+                    b = 1.0 * radiusTolerance.Pow2();
                     cells = CellMask.GetCellMask(LsTrk.GridDat, X => -((((X[0] - currentPos_P[0][0]) * Math.Cos(alpha) - (X[1] - currentPos_P[0][1]) * Math.Sin(alpha)).Pow(2) + ((X[0] - currentPos_P[0][0]) * Math.Sin(alpha) + (X[1] - currentPos_P[0][1]) * Math.Cos(alpha)).Pow(2)).Pow2() - a * ((X[0] - currentPos_P[0][0]) * Math.Cos(alpha) - (X[1] - currentPos_P[0][1]) * Math.Sin(alpha)).Pow2() - b * ((X[0] - currentPos_P[0][0]) * Math.Sin(alpha) + (X[1] - currentPos_P[0][1]) * Math.Cos(alpha)).Pow2()) > 0);
                     break;
 
@@ -769,37 +794,41 @@ namespace BoSSS.Application.FSI_Solver {
         /// </summary>
         /// <param name="point"></param>
         /// <returns></returns>
-        public bool Contains(double[] point) {
+        public bool Contains(double[] point,LevelSetTracker LsTrk) {
 
-            double radiusTolerance = radius_P * 1.5;
+            // only for squared cells
+            double radiusTolerance = radius_P+2.0*Math.Sqrt(2*LsTrk.GridDat.Cells.h_minGlobal.Pow2());
+
+
             double alpha = -(currentAng_P[0]);
 
             switch (m_shape) {
-                //case ParticleShape.spherical:
-                //    var distance = point.L2Distance(currentPos_P[0]);
-
-                //    double tolerance = 1.5;
-
-                //    if (distance < (radius_P * tolerance))
-                //        return true;
-                //    break;
-
                 case ParticleShape.spherical:
-                    if ((-(point[0] - currentPos_P[0][0]).Pow2() + -(point[1] - currentPos_P[0][1]).Pow2() + radiusTolerance.Pow2()) > 0)
+                    var distance = point.L2Distance(currentPos_P[0]);
 
+                    if (distance < (radiusTolerance)) {
+                        
                         return true;
+                    }
                     break;
+
+                //case ParticleShape.spherical:
+                //    if (((point[0] - currentPos_P[0][0]).Pow2() + -(point[1] - currentPos_P[0][1]).Pow2() + radiusTolerance.Pow2()) > 0) {
+                //        return true;
+                //    }
+                //    break;
 
                 case ParticleShape.elliptic:
                     double a = 3.0;
                     double b = 1.0;
-                    if (-((((point[0] - currentPos_P[0][0]) * Math.Cos(alpha) - (point[1] - currentPos_P[0][1]) * Math.Sin(alpha)).Pow2()) / a.Pow2()) + -(((point[0] - currentPos_P[0][0]) * Math.Sin(alpha) + (point[1] - currentPos_P[0][1]) * Math.Cos(alpha)).Pow2() / b.Pow2()) + radiusTolerance.Pow2() > 0)
+                    if (-((((point[0] - currentPos_P[0][0]) * Math.Cos(alpha) - (point[1] - currentPos_P[0][1]) * Math.Sin(alpha)).Pow2()) / a.Pow2()) + -(((point[0] - currentPos_P[0][0]) * Math.Sin(alpha) + (point[1] - currentPos_P[0][1]) * Math.Cos(alpha)).Pow2() / b.Pow2()) + radiusTolerance.Pow2() > 0) {
                         return true;
+                    }
                     break;
 
                 case ParticleShape.hippopede:
                     a = 4.0 * radiusTolerance.Pow2();
-                    b = 0.5 * radiusTolerance.Pow2();
+                    b = 1.0 * radiusTolerance.Pow2();
                     if (-((((point[0] - currentPos_P[0][0]) * Math.Cos(alpha) - (point[1] - currentPos_P[0][1]) * Math.Sin(alpha)).Pow(2) + ((point[0] - currentPos_P[0][0]) * Math.Sin(alpha) + (point[1] - currentPos_P[0][1]) * Math.Cos(alpha)).Pow(2)).Pow2() - a * ((point[0] - currentPos_P[0][0]) * Math.Cos(alpha) - (point[1] - currentPos_P[0][1]) * Math.Sin(alpha)).Pow2() - b * ((point[0] - currentPos_P[0][0]) * Math.Sin(alpha) + (point[1] - currentPos_P[0][1]) * Math.Cos(alpha)).Pow2()) > 0)
                         return true;
                     break;

@@ -17,40 +17,51 @@ limitations under the License.
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.Serialization;
 using System.Text;
 using System.Threading.Tasks;
 
+
+
 namespace BoSSS.Application.FSI_Solver {
+    [DataContract]
+    [Serializable]
     public class FSI_Control : IBM_Solver.IBM_Control {
 
         /// <summary>
         /// Set true if translation of the particle should be induced by hydrodynamical forces.
         /// </summary>
+        [DataMember]
         public bool includeTranslation = false;
 
         /// <summary>
         /// Set true if rotation of the particle should be indruced by hydrodynamical torque.
         /// </summary>
+        [DataMember]
         public bool includeRotation = false;
 
         /// <summary>
         /// Function describing the fixed level-set movement
         /// </summary>
+        [DataMember]
         public Func<double[], double, double> MovementFunc;
 
         /// <summary>
         /// Function describing the fixed level-set movement
         /// </summary>
+        [DataMember]
         public Func<double, double>[] transVelocityFunc;
 
         /// <summary>
         /// Function describing the fixed level-set movement
         /// </summary>
+        [DataMember]
         public Func<double, double>[] anglVelocityFunc;
 
         /// <summary>
         /// How should the level set be moved? Options: none, fixed, coupled
         /// </summary>
+        [DataMember]
         public string LevelSetMovement = "none";
 
         /// <summary>
@@ -70,7 +81,7 @@ namespace BoSSS.Application.FSI_Solver {
             /// </summary>
             MovingMesh = 2
         }
-
+        [DataMember]
         public TimesteppingMode Timestepper_Mode = TimesteppingMode.Splitting;
         /*
         /// <summary>
@@ -78,27 +89,45 @@ namespace BoSSS.Application.FSI_Solver {
         /// </summary>
         public Func<double, double>[] BoundaryFunc;
         */
-        public List<Particle> Particles;
 
+
+
+        [DataMember]
+        public List<Particle> Particles;
+       
         public enum CollisionModel {
-            RepulsiveForce_v1 = 0,
+            RepulsiveForce = 0,
 
             MomentumConservation = 1,
 
-            MomentumConservation_NoCollisionBool =2,
-
-            MomentumConservation_ModifiedCollisionBool =3
+            NoCollisionModel = 2
 
         }
 
+        [DataMember]
         public CollisionModel collisionModel = CollisionModel.MomentumConservation;
 
         //public double particleMass;
 
         //public double particleRho;
 
+        [DataMember]
         public bool pureDryCollisions = false;
 
+        /// <summary>
+        /// Adds particle to particle list
+        /// </summary>
+        /// <param name="D"></param>
+        /// <param name="HistoryLength"></param>
+        /// <param name="start"></param>
+        public void AddParticle(int D, int HistoryLength, double[] start) {
+            this.Particles.Add(new Particle(D, HistoryLength, start));
+        }
+
+
+        public override Type GetSolverType() {
+            return typeof(FSI_SolverMain);
+        }
 
     }
 }

@@ -133,7 +133,7 @@ namespace BoSSS.Application.FSI_Solver {
 
 
             phiComplete = (X, t) => C.Particles[0].phi_P(X, t);
-
+            
             //Func<double[], double, double> phi = (X, t) => -(X[0] - t+X[1]);
             //C.MovementFunc = phi;
 
