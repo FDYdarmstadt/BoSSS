@@ -70,7 +70,7 @@ namespace BoSSS.Solution.Multigrid {
 
         SpatialOperator LocalOp;
 
-        MsrMatrix LocalMatrix;
+        BlockMsrMatrix LocalMatrix;
         BlockMsrMatrix P;
 
         public void Init(MultigridOperator op) {
