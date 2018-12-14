@@ -738,7 +738,6 @@ namespace BoSSS.Solution.Control {
         [DataMember]
         public bool AdaptiveMeshRefinement = false;
 
-
         /// <summary>
         /// Actual type of cut cell quadrature to use; If no XDG, is used, resp. no cut cells are present,
         /// this setting has no effect.

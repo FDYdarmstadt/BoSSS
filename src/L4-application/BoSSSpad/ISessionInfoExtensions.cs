@@ -2026,7 +2026,7 @@ namespace BoSSS.Foundation.IO {
                 gp.Cmd("set grid xtics ytics");
                 foreach (var group in Time_Energy.dataGroups)
                 {
-                    gp.PlotXY(group.Abscissas, group.Values, group.Name.Split('.').Last(),
+                    gp.PlotXY(group.Abscissas, group.Values, group.Name.Split().Last(),
                         new PlotFormat(lineColor: ((LineColors)(++lineColor))));
                 }
                 gp.WriteDeferredPlotCommands();
