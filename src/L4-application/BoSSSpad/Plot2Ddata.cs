@@ -1042,7 +1042,6 @@ namespace BoSSS.Application.BoSSSpad {
                                 if (LegendAlignment[i] == kvp.Key)
                                     command += kvp.Value + " ";
                             }
-
                     } else {
                         //throw new ArgumentNullException("no alignment or position chosen");
                     }
