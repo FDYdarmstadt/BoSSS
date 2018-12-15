@@ -213,6 +213,7 @@ namespace ilPSP.Connectors.Matlab {
 
                             psi.FileName = MatlabExecuteable;
                             psi.Arguments = " --no-gui " + CMDFILE + ".m > " + LOGFILE;
+                            //psi.UseShellExecute = false;
                         } else if (m_Flav == Flavor.Octave_cygwin) {
                             this.Cygwin = true;
 
