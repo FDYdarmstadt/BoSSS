@@ -682,7 +682,7 @@ namespace ilPSP.Connectors.Matlab {
                 File.Delete(f);
             }
             if (DelWorkingDir) {
-                Directory.Delete(WorkingDirectory.FullName);
+                Directory.Delete(WorkingDirectory.FullName, true);
             }
         }
     }
