@@ -70,7 +70,7 @@ namespace BoSSS.Solution.Multigrid {
         /// <summary>
         /// aggregation grid on this level
         /// </summary>
-        public AggregationGrid AggGrid {
+        public AggregationGridData AggGrid {
             get {
                 return AggBasis[0].AggGrid;
             }

@@ -56,7 +56,7 @@ namespace BoSSS.Solution.Multigrid {
             }
         }
 
-        static public ISolverSmootherTemplate InitMultigridChain(IEnumerable<AggregationGrid> MultigridSequence,
+        static public ISolverSmootherTemplate InitMultigridChain(IEnumerable<AggregationGridData> MultigridSequence,
             Func<int, ISolverSmootherTemplate> PreSmootherFactory,
             Func<int, ISolverSmootherTemplate> PostSmootherFactory,
             Action<int, ClassicMultigrid> ParamsSeter,

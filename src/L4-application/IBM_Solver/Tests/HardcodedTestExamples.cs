@@ -145,6 +145,7 @@ namespace BoSSS.Application.IBM_Solver {
             // misc. solver options
             // ====================
 
+            C.LinearSolve = LinearSolverCodes.classic_mumps;
             C.AdvancedDiscretizationOptions.PenaltySafety = 1;
             C.AdvancedDiscretizationOptions.CellAgglomerationThreshold = 0.1;
             C.LevelSetSmoothing = false;
@@ -170,7 +171,7 @@ namespace BoSSS.Application.IBM_Solver {
             return C;
         }
 
-        static public IBM_Control ChannelFlow(int k = 2, bool periodic = false, bool pardiso = true ,int xCells = 10, int yCells = 10) {
+        static public IBM_Control ChannelFlow(int k = 2, bool periodic = false, bool pardiso = false ,int xCells = 10, int yCells = 10) {
             IBM_Control C = new IBM_Control();
 
             // Solver Options

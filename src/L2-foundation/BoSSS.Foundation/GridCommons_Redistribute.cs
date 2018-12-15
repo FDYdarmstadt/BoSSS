@@ -34,8 +34,10 @@ namespace BoSSS.Foundation.Grid.Classic {
     partial class GridCommons {
 
         /// <summary>
-        /// Distributes cells to processors by using ParMETIS;
-        /// Can't be used after <see cref="GridData"/> object is constructed.
+        /// Driver method for grid redistribution; this includes 
+        /// - computing a new partition (e.g. by <see cref="ComputePartitionMETIS"/>, <see cref="ComputePartitionHilbert"/>) 
+        ///   *or* loading a predefined partition <see cref="PredefinedGridPartitioning"/> from the database
+        /// - application of this partition to this grid, by a call to <see cref="RedistributeGrid(int[])"/>
         /// </summary>
         public void Redistribute(IDatabaseDriver iom, GridPartType method, string PartOptions) {
             using (new FuncTrace()) {
@@ -1108,20 +1110,20 @@ namespace BoSSS.Foundation.Grid.Classic {
         }
 
         /// <summary>
-        /// redistributes the grid, i.e. sends cells to different processors
+        /// redistributes this grid, i.e. sends cells to different processors
         /// </summary>
         /// <param name="part">
         /// MPI processor rank for each cell; index: local cell index;
         /// </param>
         public void RedistributeGrid(int[] part) {
-            int Size;
-            int MyRank;
-            csMPI.Raw.Comm_Rank(csMPI.Raw._COMM.WORLD, out MyRank);
-            csMPI.Raw.Comm_Size(csMPI.Raw._COMM.WORLD, out Size);
-
+            int Size = this.Size;
+            int MyRank = this.MyRank;
+            
             CheckPartitioning(part);
 
+
             // partition is no longer valid anymore!
+            InvalidateGridData();
             m_CellPartitioning = null;
 
             //

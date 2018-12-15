@@ -9,8 +9,8 @@ using ilPSP.Tracing;
 using ilPSP.Utils;
 
 namespace BoSSS.Foundation.Grid.Aggregation {
-    public partial class AggregationGrid {
-
+    public partial class AggregationGridData {
+        
         public BasisData ChefBasis {
             get {
                 return m_ChefBasis;
@@ -21,9 +21,9 @@ namespace BoSSS.Foundation.Grid.Aggregation {
 
         class _BasisData : BasisData {
 
-            AggregationGrid m_owner;
+            AggregationGridData m_owner;
 
-            internal _BasisData(AggregationGrid o) : base(o) {
+            internal _BasisData(AggregationGridData o) : base(o) {
                 m_owner = o;
             }
 
@@ -102,6 +102,8 @@ namespace BoSSS.Foundation.Grid.Aggregation {
             int MaxSupportedDegree = -1;
 
 
+            
+
             public void Init(int ReqDegree) {
                 if (ReqDegree < 0)
                     throw new ArgumentOutOfRangeException();
@@ -117,8 +119,8 @@ namespace BoSSS.Foundation.Grid.Aggregation {
                 int[][] Ag2Pt = m_owner.iLogicalCells.AggregateCellToParts;
                 int[][] C2F = m_owner.jCellCoarse2jCellFine;
 
-                if (m_owner.ParentGrid is AggregationGrid) {
-                    var agParrent = m_owner.ParentGrid as AggregationGrid;
+                if (m_owner.ParentGrid is AggregationGridData) {
+                    var agParrent = m_owner.ParentGrid as AggregationGridData;
                     int[][] Ag2Pt_Fine = agParrent.iLogicalCells.AggregateCellToParts;
 
                     agParrent.m_ChefBasis.Init(MaxSupportedDegree);
@@ -219,27 +221,65 @@ namespace BoSSS.Foundation.Grid.Aggregation {
                     }
 
 #endif
-
+                    var iLPar = maxDgBasis.GridDat.iLogicalCells; // cells of *parent* grid
 
                     for (int j = 0; j < Jagg; j++) { // loop over aggregate cells
                         Debug.Assert(ArrayTools.ListEquals(Ag2Pt[j], C2F[j]));
 
                         int[] compCell = Ag2Pt[j];
-
                         int I = compCell.Length;
+
+
+                        int iRoot = -1;
+                        double maxSize = -1.0;
+                        for(int i = 0; i < I; i++) {
+                            double sz = iLPar.GetCellVolume(compCell[i]);
+                            if (sz <= 0.0)
+                                throw new ArithmeticException("found cell with non-positive volume.");
+                            if(sz > maxSize) {
+                                iRoot = i;
+                                maxSize = sz;
+                            }
+                        }
+
+                        //var gdat = ((maxDgBasis.GridDat) as Classic.GridData);
+                        //double[] Sizes = compCell.Select(jPart => gdat.iLogicalCells.GetCellVolume(jPart)).ToArray();
+
 
                         Injectors_iLevel[j] = MultidimensionalArray.Create(I, Np, Np);
                         if (I > 1) {
                             // compute extrapolation
                             int[,] CellPairs = new int[I - 1, 2];
-                            for (int i = 0; i < I - 1; i++) {
-                                CellPairs[i, 0] = compCell[0];
-                                CellPairs[i, 1] = compCell[i + 1];
+
+                            int cnt = 0;
+                            for (int i = 0; i < I; i++) {
+                                if (i != iRoot) {
+                                    CellPairs[cnt, 0] = compCell[iRoot];
+                                    CellPairs[cnt, 1] = compCell[i];
+                                    Debug.Assert(CellPairs[cnt, 0] != CellPairs[cnt, 1]);
+                                    cnt++;
+                                }
                             }
+
+                            //cnt = 0;
+                            //for (int i = 0; i < I - 1; i++) {
+                            //    CellPairs[cnt, 0] = compCell[0];
+                            //    CellPairs[cnt, 1] = compCell[i + 1];
+                            //    cnt++;
+                            //}
+
+
                             var ExpolMtx = MultidimensionalArray.Create(I, Np, Np);
                             maxDgBasis.GetExtrapolationMatrices(CellPairs, ExpolMtx.ExtractSubArrayShallow(new int[] { 1, 0, 0 }, new int[] { I - 1, Np - 1, Np - 1 }));
+                            for(int i = 0; i < iRoot; i++) {
+                                var M2 = ExpolMtx.ExtractSubArrayShallow(i, -1, -1);
+                                var M1 = ExpolMtx.ExtractSubArrayShallow(i + 1, -1, -1);
+                                M2.Set(M1);
+                            }
                             for (int n = 0; n < Np; n++) {
-                                ExpolMtx[0, n, n] = 1.0;
+                                for (int m = 0; m < Np; m++) {
+                                    ExpolMtx[iRoot, n, m] = n == m ? 1.0 : 0.0;
+                                }
                             }
 
                             // Compute intermediate mass matrix
@@ -247,7 +287,12 @@ namespace BoSSS.Foundation.Grid.Aggregation {
                             MMtemp.Multiply(1.0, ExpolMtx, ExpolMtx, 0.0, "nm", "iln", "ilm");
 
                             // orthonormalize
-                            MMtemp.SymmetricLDLInversion(ortho, null); // ortho is output, will be overwritten
+                            //try {
+                                MMtemp.SymmetricLDLInversion(ortho, null); // ortho is output, will be overwritten
+
+                            //} catch (ArithmeticException ae) {
+                            //    PlotScheisse(gdat.Grid, compCell);
+                            //}
                             Injectors_iLevel[j].Multiply(1.0, ExpolMtx, ortho, 0.0, "inm", "ink", "km");
                         } else {
                             Injectors_iLevel[j].ExtractSubArrayShallow(0, -1, -1).AccEye(1.0);
@@ -385,7 +430,7 @@ namespace BoSSS.Foundation.Grid.Aggregation {
 
 
             MultidimensionalArray CA(int _jAgg, int Np) {
-                AggregationGrid ag = this.m_owner;
+                AggregationGridData ag = this.m_owner;
                 var compCell = ag.iLogicalCells.AggregateCellToParts[_jAgg];
                 int thisMgLevel = ag.MgLevel;
 
@@ -410,7 +455,7 @@ namespace BoSSS.Foundation.Grid.Aggregation {
                 int[] AggIndex = new int[] { _jAgg };
                 _BasisData basisLevel = this;
                 for (int mgLevelIdx = thisMgLevel; mgLevelIdx >= 0; mgLevelIdx--) {
-                    AggregationGrid mgLevel = basisLevel.m_owner;
+                    AggregationGridData mgLevel = basisLevel.m_owner;
                     int[][] agg2part_parrent = mgLevel.ParentGrid.iLogicalCells.AggregateCellToParts;
 #if DEBUG
                     btouch.Clear();
@@ -485,8 +530,8 @@ namespace BoSSS.Foundation.Grid.Aggregation {
                             nextAggIndex.AddRange(NextLevel);
                         }
                         AggIndex = nextAggIndex.ToArray();
-                        if (m_owner.ParentGrid is AggregationGrid)
-                            basisLevel = ((AggregationGrid)(m_owner.ParentGrid)).m_ChefBasis;
+                        if (m_owner.ParentGrid is AggregationGridData)
+                            basisLevel = ((AggregationGridData)(m_owner.ParentGrid)).m_ChefBasis;
                         else
                             basisLevel = null;
                     }

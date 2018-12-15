@@ -625,8 +625,8 @@ namespace BoSSS.Foundation.IO {
             
             //if (!m_timestepInitializationContexts.ContainsKey(ts.ID)) {
             if (!m_gridInitializationContexts.ContainsKey(ts.GridID)) {
-                Grid.Classic.GridCommons grid = DBDriver.LoadGrid(ts.GridID, Database);
-                Grid.Classic.GridData gridData = new Grid.Classic.GridData(grid);
+                IGrid grid = DBDriver.LoadGrid(ts.GridID, Database);
+                IGridData gridData = grid.iGridData;
                 m_gridInitializationContexts[ts.GridID] =
                     new GridInitializationContext(gridData);
             }
@@ -739,17 +739,9 @@ namespace BoSSS.Foundation.IO {
                 if (!File.Exists(gridDirDestFullPaths[i])) {
                     List<Guid> dataGuids = new List<Guid>();
 
-                    // load GridCommons object to retrieve the storage guid
-                    // for the grid data
-                    Guid gridStorageID = GetGridStorageID(grid.ID);
-                    dataGuids.Add(gridStorageID);
-
-                    // Don't forget optional custom partitionings!
-                    foreach (var s in grid.m_PredefinedGridPartitioning) {
-                        Guid partitioningGuid = s.Value.Guid;
-                        dataGuids.Add(partitioningGuid);
-                    }
-
+                    // load GridCommons object to retrieve the storage guid for the grid data
+                    dataGuids.AddRange(grid.AllDataVectorIDs);
+                    
                     // gather paths
                     string gridDataSrcBasePath =
                         Path.Combine(grid.Database.Path, StandardFsDriver.DistVectorDataDir);
@@ -884,18 +876,7 @@ namespace BoSSS.Foundation.IO {
 
             return true;
         }
-
-        /// <summary>
-        /// Returns the storage ID of a grid by deserializing the
-        /// <see cref="BoSSS.Foundation.Grid.GridCommons"/> object.
-        /// </summary>
-        /// <param name="gridId">Id of the grid</param>
-        /// <returns>The storage ID of the grid</returns>
-        private Guid GetGridStorageID(Guid gridId) {
-            Grid.Classic.GridCommons gridComm = DBDriver.LoadGrid(gridId, Database);
-            return gridComm.StorageGuid;
-        }
-
+        
         /// <summary>
         /// Retrieves all files associated with a grid.
         /// </summary>
@@ -919,11 +900,13 @@ namespace BoSSS.Foundation.IO {
             IList<string> gridFiles = new List<string> { gridMainFile };
 
             // Add data files
-            Guid gridStorageID = GetGridStorageID(gridID);
-            foreach (string gridDataFile in Directory.GetFiles(
-                Path.Combine(database.Path, StandardFsDriver.DistVectorDataDir),
-                gridStorageID.ToString() + ".*", SearchOption.AllDirectories)) {
-                gridFiles.Add(gridDataFile);
+            IGridInfo gi = this.GetGridInfo(gridID);
+            foreach(Guid gridStorageID in gi.AllDataVectorIDs) {
+                foreach(string gridDataFile in Directory.GetFiles(
+                    Path.Combine(database.Path, StandardFsDriver.DistVectorDataDir),
+                    gridStorageID.ToString() + ".*", SearchOption.AllDirectories)) {
+                    gridFiles.Add(gridDataFile);
+                }
             }
 
             return gridFiles.Distinct(); // remove duplicates
