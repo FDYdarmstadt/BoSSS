@@ -81,9 +81,9 @@ namespace BoSSS.Application.Matrix_MPItest {
             //*/
 
 
-            BoSSS.Application.Matrix_MPItest.AllUpTest.MultiplyTest(XDGusage.none, 3, true, false);
+            //BoSSS.Application.Matrix_MPItest.AllUpTest.MultiplyTest(XDGusage.none, 3, true, false);
             //MultiplyTest(XDGusage.none, 1, false, false);
-            //SubMatrixTest(XDGusage.none, 2, false, false);
+            SubMatrixTest(XDGusage.none, 2, false, false);
             //MultiplyTest(XDGusage.none, 2, false, false);
             //SpMVTest(XDGusage.none, 2, false, false);
 

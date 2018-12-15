@@ -144,7 +144,8 @@ namespace ilPSP {
                 FrameBlockSize = FrameBlkAuto;
             if (FrameBlockSize > 0)
                 LocalLength = FrameBlockSize * BlockType.Count;
-            return new BlockPartitioning(LocalLength, FrameBlockSize, Subblk_i0.ToArray(), SubblkLen.ToArray(), BlockType.ToArray(), comm);
+            return new BlockPartitioning(LocalLength, FrameBlockSize, 
+                Subblk_i0.ToArray(), SubblkLen.ToArray(), BlockType.ToArray(), comm);
         }
 
         private static void RecordBlock(List<int[]> Subblk_i0, List<int[]> SubblkLen, List<int> BlockType, int[] B_sblk_i0, int[] B_sblkLen, bool[] SblkMarker, List<int> tmp_i0, List<int> tmpLen, ref int MaxBlockSize) {

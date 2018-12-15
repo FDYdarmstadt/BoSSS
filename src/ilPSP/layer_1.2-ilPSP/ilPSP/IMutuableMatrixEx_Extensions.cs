@@ -451,8 +451,8 @@ namespace ilPSP.LinSolvers {
         ///         str = char(zeros(1,NonZerosInRow*6));
         ///         for j = 1:NonZerosInRow
         ///             i0 = 1+(j-1)*6;
-        ///             str(i0:i0+1) = '%f';
-        ///             str(i0+3:i0+4) = '%f';
+        ///             str(i0:i0+2) = '%f ';
+        ///             str(i0+3:i0+5) = '%f ';
         ///         end
         ///     end
         ///     R = fscanf(fid,str,2*NonZerosInRow);

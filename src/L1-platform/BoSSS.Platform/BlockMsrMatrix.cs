@@ -42,8 +42,12 @@ namespace ilPSP.LinSolvers {
             var Blk1 = OrgMtx._RowPartitioning.GetSubBlocking(RowIndicesSource, csMPI.Raw._COMM.WORLD, -1);
             var Blk2 = OrgMtx._RowPartitioning.GetSubBlocking(ColumnIndiceSource, csMPI.Raw._COMM.WORLD, -1);
 
-            BlockMsrMatrix SUB = new BlockMsrMatrix(Blk1, Blk1);
-            OrgMtx.AccSubMatrixTo(1.0, SUB, RowIndicesSource, default(int[]), ColumnIndiceSource, default(int[]));
+            int[] Tlist1 = default(int[]); // compressL1 ? default(int[]) : Blk1.GetOccupiedIndicesList();
+            int[] Tlist2 = default(int[]); // compressL2 ? default(int[]) : Blk2.GetOccupiedIndicesList();
+ 
+
+            BlockMsrMatrix SUB = new BlockMsrMatrix(Blk1, Blk2);
+            OrgMtx.AccSubMatrixTo(1.0, SUB, RowIndicesSource, Tlist1, ColumnIndiceSource, Tlist2);
 
             return SUB;
         }
