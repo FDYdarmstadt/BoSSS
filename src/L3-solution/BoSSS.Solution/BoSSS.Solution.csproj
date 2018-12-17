@@ -97,7 +97,6 @@
     <Compile Include="QueryHandler.cs" />
     <Compile Include="TimeStepping\BDFTimestepper.cs" />
     <Compile Include="TimeStepping\CrankNicolson.cs" />
-    <Compile Include="DualValueFlux.cs" />
     <Compile Include="TimeStepping\ExplicitEuler.cs" />
     <Compile Include="TimeStepping\ImplicitEuler.cs" />
     <Compile Include="TimeStepping\ImplicitTimeStepper.cs" />

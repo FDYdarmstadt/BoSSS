@@ -122,7 +122,7 @@ namespace BoSSS.Foundation {
                     MultidimensionalArray Output);
     }
 
-
+    /*
     /// <summary>
     /// a special 'flux' that can have different flux values for IN-to-OUT and OUT-to-IN -- cell direction;
     /// This is useful for some kinds of penalization
@@ -232,6 +232,7 @@ namespace BoSSS.Foundation {
                            MultidimensionalArray Output_OutCell);
     }
 
+    */
 
     /// <summary>
     /// specifies a nonlinear flux function; Equations 

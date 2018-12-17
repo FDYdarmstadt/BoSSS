@@ -10,7 +10,5 @@ BoSSSPad --texbatch shortTutorialMatlab\tutorialMatlab.tex
 BoSSSPad --texbatch tutorial5\uebung5tutorial.tex
 BoSSSPad --texbatch tutorial6\tutorial6.tex
 BoSSSPad --texbatch tutorial9-SIP\sip.tex
-BoSSSPad --texbatch tutorial9-SIP\sip_Solo.tex
 BoSSSPad --texbatch tutorial10-PoissonSystem\Poisson.tex
 BoSSSPad --texbatch tutorial11-Stokes\StokeEq.tex
-BoSSSPad --texbatch tutorial11-Stokes\StokeEq_Solo.tex

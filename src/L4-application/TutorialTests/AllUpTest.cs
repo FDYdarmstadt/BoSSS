@@ -50,8 +50,14 @@ namespace BoSSS.Application.TutorialTests {
                 // This is Florians Laptop;
                 // he is to poor to afford MATLAB, so he uses OCTAVE
                 BatchmodeConnector.Flav = BatchmodeConnector.Flavor.Octave;
-                BatchmodeConnector.MatlabExecuteable = "C:\\cygwin64\\bin\\bash.exe";
+                //BatchmodeConnector.MatlabExecuteable = "C:\\cygwin64\\bin\\bash.exe";
             } 
+
+            string preExistingDb =BoSSS.Application.BoSSSpad.InteractiveShell.GetDefaultDatabaseDir();
+            if (Directory.Exists(preExistingDb)) {
+                //preExistingDb.Delete(true);
+                Directory.Delete(preExistingDb, true);
+            }
         }
 
         static string DirectoryOffset = Path.Combine("..", "..", "..", "..", "..", "doc", "handbook");
@@ -63,18 +69,28 @@ namespace BoSSS.Application.TutorialTests {
         static public void RunWorksheets([Values(
             "quickStartCNS/IsentropicVortex.tex",
             "MetaJobManager/MetaJobManager.tex",
+            "GridGeneration/GridGeneration.tex",
             "quickStartIBM/channel.tex",
             "shortTutorialMatlab/tutorialMatlab.tex",
+            // ----
             "tutorial2/uebung2tutorial.tex",
             "tutorial4/tutorial4.tex",
             "tutorial5/uebung5tutorial.tex",
             "tutorial6/tutorial6.tex",
             "tutorial9-SIP/sip.tex",
+            // ---
             "tutorial10-PoissonSystem/Poisson.tex",
             "tutorial11-Stokes/StokesEq.tex",
-            "CsharpAndBoSSSpad/CsharpAndBoSSSpad.tex"//   */
+            "CsharpAndBoSSSpad/CsharpAndBoSSSpad.tex"  
+            //"ParameterStudy/ParameterStudy.tex"
             )] string TexFileName) {
 
+            string preExistingDb =BoSSS.Application.BoSSSpad.InteractiveShell.GetDefaultDatabaseDir();
+            if (Directory.Exists(preExistingDb)) {
+                Directory.Delete(preExistingDb, true);
+            }
+            
+            
             string FullTexName = Path.Combine(DirectoryOffset, TexFileName);
             Assert.IsTrue(File.Exists(FullTexName), "unable to find TeX source: " + FullTexName);
 
@@ -84,6 +100,11 @@ namespace BoSSS.Application.TutorialTests {
 
             Assert.LessOrEqual(ErrCount, 0, "Found " + ErrCount + " errors in worksheet: " + FullTexName + " (negative numbers may indicate file-not-found, etc.).");
             Assert.IsTrue(ErrCount >= 0, "Fatal return code: " + ErrCount + " in worksheet: " + FullTexName + " (negative numbers may indicate file-not-found, etc.).");
+
+
+            //foreach(var db in BoSSS.Application.BoSSSpad.InteractiveShell.databases) {
+            //    db.
+            //}
         }
 
     }

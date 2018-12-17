@@ -61,7 +61,7 @@ namespace BoSSS.Solution.Gnuplot {
         /// <summary>
         /// plot a 2D grid
         /// </summary>
-        public static void Plot2DGrid(this GridCommons grd) {
+        public static void Plot2DGrid(this GridCommons grd, params int[] Cells) {
             using (var gp = new Gnuplot()) {
                 Console.WriteLine("Plotting 2D grid with gnuplot...");
 
@@ -70,7 +70,11 @@ namespace BoSSS.Solution.Gnuplot {
                 
 
                 int J = grd.Cells.Length;
-                for (int j = 0; j < J; j++) {
+                if(Cells == null) {
+                    Cells = J.ForLoop(j => j);
+                }
+
+                foreach (int j in Cells) {
                     var Cell_j = grd.Cells[j];
                     //var Kref = grd.RefElements.Single(KK => KK.SupportedCellTypes.Contains(Cell_j.Type));
 

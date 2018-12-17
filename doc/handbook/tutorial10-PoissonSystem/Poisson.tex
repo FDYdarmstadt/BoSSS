@@ -5,48 +5,49 @@
 /// \section*{What's new?}
 /// \label{sec:poissonSystem_new}
 /// \begin{itemize}
-///     \item {implementation of a saddle point problem into \BoSSS{} (e.g. the Poisson equation as a              system)}
+///     \item {implementation of a saddle point problem into \BoSSS{} 
+///           (e.g. the Poisson equation as a system)}
 ///     \item {central-difference-form and strong form}
 ///     \item {comparison of both formulations}
 ///     \item advanced: {algebraic reduction of the poisson problem}
 /// \end{itemize}
-    /// %==========================================
-    /// \section*{Prerequisites}
-    /// %==========================================
+/// %==========================================
+/// \section*{Prerequisites}
+/// %==========================================
 /// \begin{itemize}
 ///    \item {implementation of numerical fluxes, chapter \ref{NumFlux}} 
 ///    \item {spatial operator, chapter \ref{SpatialOperator}} 
 /// \end{itemize}
-    /// %==========================================
-    /// \section{Problem statement}
-    /// %==========================================
+/// %==========================================
+/// \section{Problem statement}
+/// %==========================================
 /// Within this exercise, we are going to investigate 
 /// the discretization of a Poisson equation as a system.
 /// Obviously, it is possible to discretize the Poisson equation as a system of
 /// first-order-PDE's, introducing a vector field $\vec{\sigma}$:
 /// \begin{alignat}{3}
-    ///  \vec{\sigma}  + \nabla u & = 0, & & \text{ in } \domain
-    ///    \label{eq:PoissonSys1} \\
-    ///  \operatorname{div}(\vec{\sigma}) &  = g_{\domain}, & & \text{ in } \domain
-    ///    \label{eq:PoissonSys2} \\
-    ///   u                                               & = g_D, & & \text{ on } \Gamma_D \\
-    ///   - \vec{\sigma} \cdot \vec{n}_{\partial \domain} & = g_N, & & \text{ on } \Gamma_N
-    /// \end{alignat}
+///  \vec{\sigma}  + \nabla u & = 0, & & \text{ in } \domain
+///    \label{eq:PoissonSys1} \\
+///  \operatorname{div}(\vec{\sigma}) &  = g_{\domain}, & & \text{ in } \domain
+///    \label{eq:PoissonSys2} \\
+///   u                                               & = g_D, & & \text{ on } \Gamma_D \\
+///   - \vec{\sigma} \cdot \vec{n}_{\partial \domain} & = g_N, & & \text{ on } \Gamma_N
+/// \end{alignat}
 /// resp. in matrix-notation:
 /// \begin{align*}
-    /// \begin{bmatrix}
-        /// \one & \nabla \\
-        ///  \operatorname{div} & 0 \\
-        /// \end{bmatrix}\cdot
-    /// \begin{bmatrix}
-        /// \vec{\sigma}\\
-        /// u
-        /// \end{bmatrix}=
-    /// \begin{bmatrix}
-        /// 0 \\
-        /// g_{\domain}
-        /// \end{bmatrix}
-    /// \end{align*}
+///   \begin{bmatrix}
+///     \one & \nabla \\
+///     \operatorname{div} & 0 \\
+///   \end{bmatrix}\cdot
+///   \begin{bmatrix}
+///     \vec{\sigma}\\
+///     u
+///   \end{bmatrix}=
+///   \begin{bmatrix}
+///     0 \\
+///     g_{\domain}
+///   \end{bmatrix}
+/// \end{align*}
 /// This exercise, together with the previous one,
 /// will form the foundation for an incompressible Stokes- resp. Navier-Stokes solver.    
 /// \section{Solution within the BoSSS framework}
@@ -508,15 +509,18 @@ var MtxPoisson\_Strng = OpPoisson.ComputeMatrix(StrngOrder, null, StrngOrder);
  }
 \BoSSSexe
 \BoSSScmd{
-MtxPoisson\_Equal.SymmetryDeviation();
+double symDev\_Equal = MtxPoisson\_Equal.SymmetryDeviation();\newline 
+symDev\_Equal;
  }
 \BoSSSexe
 \BoSSScmd{
-MtxPoisson\_Mixed.SymmetryDeviation();
+double symDev\_Mixed = MtxPoisson\_Mixed.SymmetryDeviation();\newline 
+symDev\_Mixed;
  }
 \BoSSSexe
 \BoSSScmd{
-MtxPoisson\_Strng.SymmetryDeviation();
+double symDev\_Strng = MtxPoisson\_Strng.SymmetryDeviation();\newline 
+symDev\_Strng;
  }
 \BoSSSexe
 \BoSSScmd{
@@ -531,6 +535,13 @@ MtxPoisson\_Mixed.IsDefinite();
 MtxPoisson\_Strng.IsDefinite();
  }
 \BoSSSexe
+\BoSSScmdSilent{
+/// BoSSScmdSilent BoSSSexeSilent
+NUnit.Framework.Assert.LessOrEqual(symDev\_Equal, 1.0e-8);\newline 
+NUnit.Framework.Assert.LessOrEqual(symDev\_Mixed, 1.0e-8);\newline 
+NUnit.Framework.Assert.LessOrEqual(symDev\_Strng, 1.0e-8);
+ }
+\BoSSSexeSilent
 \BoSSScmd{
     /// %==========================================
     /// \section{Advanced topics}
@@ -592,17 +603,27 @@ var MtxPoissonRed\_Strng =  \newline
  }
 \BoSSSexe
 \BoSSScmd{
-MtxPoissonRed\_Equal.IsDefinite();
+bool isdef\_red\_Equal = MtxPoissonRed\_Equal.IsDefinite();\newline 
+isdef\_red\_Equal;
  }
 \BoSSSexe
 \BoSSScmd{
-MtxPoissonRed\_Mixed.IsDefinite();
+bool isdef\_red\_Mixed = MtxPoissonRed\_Mixed.IsDefinite();\newline 
+isdef\_red\_Mixed;
  }
 \BoSSSexe
 \BoSSScmd{
-MtxPoissonRed\_Strng.IsDefinite();
+bool isdef\_red\_Strng = MtxPoissonRed\_Strng.IsDefinite();\newline 
+isdef\_red\_Strng;
  }
 \BoSSSexe
+\BoSSScmdSilent{
+/// BoSSScmdSilent BoSSSexeSilent
+NUnit.Framework.Assert.IsTrue(isdef\_red\_Equal);\newline 
+NUnit.Framework.Assert.IsTrue(isdef\_red\_Mixed);\newline 
+NUnit.Framework.Assert.IsFalse(isdef\_red\_Strng);
+ }
+\BoSSSexeSilent
 \BoSSScmd{
 /// We compute the condition number of all three matrices; we observe that
 /// the mixed as well as the equal-order discretization result give rather 
@@ -611,14 +632,24 @@ MtxPoissonRed\_Strng.IsDefinite();
  }
 \BoSSSexe
 \BoSSScmd{
-MtxPoissonRed\_Mixed.condest();
+double condest\_Mixed = MtxPoissonRed\_Mixed.condest();\newline 
+condest\_Mixed;
  }
 \BoSSSexe
 \BoSSScmd{
-MtxPoissonRed\_Equal.condest();
+double condest\_Equal = MtxPoissonRed\_Equal.condest();\newline 
+condest\_Equal;
  }
 \BoSSSexe
 \BoSSScmd{
-MtxPoissonRed\_Strng.condest();
+double condest\_Strng = MtxPoissonRed\_Strng.condest();\newline 
+condest\_Strng;
  }
 \BoSSSexe
+\BoSSScmdSilent{
+/// BoSSScmdSilent BoSSSexeSilent
+NUnit.Framework.Assert.LessOrEqual(condest\_Mixed, 1e5);\newline 
+NUnit.Framework.Assert.LessOrEqual(condest\_Equal, 1e5);\newline 
+NUnit.Framework.Assert.Greater(condest\_Strng, 1e10);
+ }
+\BoSSSexeSilent

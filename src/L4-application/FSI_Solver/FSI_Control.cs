@@ -14,6 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+using BoSSS.Solution.XdgTimestepping;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -27,6 +28,18 @@ namespace BoSSS.Application.FSI_Solver {
     [DataContract]
     [Serializable]
     public class FSI_Control : IBM_Solver.IBM_Control {
+        
+        /// <summary>
+        /// Set true if the coupling between fluid and particle should be calculated iterative, while using Lie-Splitting.
+        /// </summary>
+        [DataMember]
+        public bool splitting_fully_coupled = false;
+
+        /// <summary>
+        /// Set true if the coupling between fluid and particle should be calculated iterative, while using Lie-Splitting.
+        /// </summary>
+        [DataMember]
+        public int max_iterations_fully_coupled = 10000;
 
         /// <summary>
         /// Set true if translation of the particle should be induced by hydrodynamical forces.
@@ -59,10 +72,39 @@ namespace BoSSS.Application.FSI_Solver {
         public Func<double, double>[] anglVelocityFunc;
 
         /// <summary>
-        /// How should the level set be moved? Options: none, fixed, coupled
+        /// See <see cref="LevelSetHandling"/>
         /// </summary>
         [DataMember]
-        public string LevelSetMovement = "none";
+        public LevelSetHandling Timestepper_LevelSetHandling = LevelSetHandling.LieSplitting;
+
+        /// <summary>
+        /// The termination criterion for fully coupled/implicit level-set evolution.
+        /// </summary>
+        [DataMember]
+        public double LevelSet_ConvergenceCriterion = 1.0e-6;
+
+        /// <summary>
+        /// underrelaxation of the level set movement in case of coupled iterative
+        /// </summary>
+        public double LSunderrelax = 1.0;
+
+        /// <summary>
+        /// desired minimum refinement level, 2 is minimum
+        /// </summary>
+        [DataMember]
+        public int RefinementLevel = 2;
+
+
+        /// <summary>
+        /// reciprocal of the ratio between curvature and hmin
+        /// </summary>
+        [DataMember]
+        public int maxCurvature = 2;
+
+        ///// <summary>
+        ///// How should the level set be moved? Options: none, fixed, coupled
+        ///// </summary>
+        //public string LevelSetMovement = "none";
 
         /// <summary>
         /// 
@@ -83,14 +125,11 @@ namespace BoSSS.Application.FSI_Solver {
         }
         [DataMember]
         public TimesteppingMode Timestepper_Mode = TimesteppingMode.Splitting;
-        /*
+
         /// <summary>
         /// Function describing the boundary values at the level-set (VelocityX, VelocityY)
         /// </summary>
         public Func<double, double>[] BoundaryFunc;
-        */
-
-
 
         [DataMember]
         public List<Particle> Particles;
@@ -124,10 +163,8 @@ namespace BoSSS.Application.FSI_Solver {
             this.Particles.Add(new Particle(D, HistoryLength, start));
         }
 
-
         public override Type GetSolverType() {
             return typeof(FSI_SolverMain);
         }
-
     }
 }

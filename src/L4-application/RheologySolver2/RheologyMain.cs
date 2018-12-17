@@ -735,11 +735,31 @@ namespace BoSSS.Application.Rheology {
 
                     currentWeissenberg = Control.Weissenberg;
 
-                    if (Control.UsePerssonSensor == true) {
-                        perssonsensor.Update(StressXX);
-                    }
+                    artificialMaxViscosity = 1.0;
 
-                    m_BDF_Timestepper.Solve(phystime, dt, m_SkipSolveAndEvaluateResidual);
+                    for (int j = 0; j < 3; j++) {
+
+                        if (Control.UsePerssonSensor == true) {
+                            perssonsensor.Update(StressXX);
+                        }
+
+                        m_BDF_Timestepper.Solve(phystime, dt, m_SkipSolveAndEvaluateResidual);
+
+                        // this evaluation must later out of this loop. now here for comparing resluts with  
+                        //PlotCurrentState(phystime, new TimestepNumber(TimestepNo.MajorNumber, i));
+                        //SaveToDatabase(new TimestepNumber(TimestepNo.MajorNumber, i), phystime);
+
+                        if (Control.Bodyforces == true) {
+
+                            double[] force = IBMSolverUtils.GetForces_BoundaryFitted(VelocityXGradient, VelocityYGradient, StressXX, StressXY, StressYY, Pressure, LevSetTrk, 1 / Control.Reynolds, Control.beta);
+                            Console.WriteLine();
+                            Console.WriteLine("Force in x:" + force[0] + ", force in y:" + force[1]);
+                            Console.WriteLine();
+
+                        }
+
+                        artificialMaxViscosity = artificialMaxViscosity - 0.5;
+                    }
 
                     ChangeMesh = Control.AdaptiveMeshRefinement;
                     while (ChangeMesh == true) {
@@ -1290,27 +1310,38 @@ namespace BoSSS.Application.Rheology {
 
         protected override void PlotCurrentState(double physTime, Foundation.IO.TimestepNumber timestepNo, int superSampling = 0) {
             // Standard
-            DGField[] myFields = ArrayTools.Cat<DGField>(Velocity.Current, ResidualMomentum, ResidualConti, Pressure, StressXX, StressXY, StressYY, LevSet, ResidualStressXX, ResidualStressXY, ResidualStressYY, perssonsensor.GetField(), artificalViscosity);
+            DGField[] myFields = ArrayTools.Cat<DGField>(Velocity.Current, ResidualMomentum, ResidualConti, Pressure, StressXX, StressXY, StressYY, LevSet, ResidualStressXX, ResidualStressXY, ResidualStressYY); //, VelocityXGradient, VelocityYGradient, Gravity
 
-            // Add sensor field only if Persson sensor exists
-            //if (perssonsensor != null) {
-            //    myFields.AddRange(perssonsensor.GetField());
-            //}
+            //Add sensor field only if Persson sensor exists
+            if (perssonsensor != null) {
+                myFields = ArrayTools.Cat<DGField>(myFields, perssonsensor.GetField());
+            }
 
-            Tecplot.PlotFields(
-                myFields,
-                "Rheology-" + timestepNo.ToString(),
-                physTime,
-                superSampling); //, VelocityXGradient, VelocityYGradient, Gravity
+            //Add field only if artificial viscosity is turned on
+            if (artificalViscosity != null) {
+                myFields = ArrayTools.Cat<DGField>(myFields, artificalViscosity);
+            }
+
+            Tecplot.PlotFields(myFields, "Rheology-" + timestepNo.ToString(), physTime, superSampling); 
         }
 
+
+
         protected void PlotOnIterationCallback(int iterIndex, double[] currentSol, double[] currentRes, MultigridOperator Mgop) {
-            Tecplot.PlotFields(
-                ArrayTools.Cat<DGField>(Velocity.Current, ResidualMomentum, ResidualConti, Pressure, StressXX, StressXY, StressYY, LevSet, ResidualStressXX,
-                ResidualStressXY, ResidualStressYY, perssonsensor.GetField(), artificalViscosity),
-                "Rheology-" + iterIndex.ToString(),
-                0.0,
-                2); //, VelocityXGradient, VelocityYGradient, Gravity
+            // Standard
+            DGField[] myFields = ArrayTools.Cat<DGField>(Velocity.Current, ResidualMomentum, ResidualConti, Pressure, StressXX, StressXY, StressYY, LevSet, ResidualStressXX, ResidualStressXY, ResidualStressYY); //, VelocityXGradient, VelocityYGradient, Gravity,
+
+            //Add sensor field only if Persson sensor exists
+            if (perssonsensor != null) {
+                myFields = ArrayTools.Cat<DGField>(myFields, perssonsensor.GetField());
+            }
+
+            //Add field only if artificial viscosity is turned on
+            if (artificalViscosity != null) {
+                myFields = ArrayTools.Cat<DGField>(myFields, artificalViscosity);
+            }
+
+            Tecplot.PlotFields( myFields, "Rheology-" + iterIndex.ToString(), 0.0, 2); 
         }
 
         protected override void SetInitial() {
@@ -1333,8 +1364,8 @@ namespace BoSSS.Application.Rheology {
                 VelocityYGradient.Gradient(1.0, V);
             }
 
-            Console.WriteLine("Total number of cells:    {0}", Grid.Cells.Count().MPISum());
-            Console.WriteLine("Total number of DOFs:     {0}", CurrentSolution.Count().MPISum());
+            Console.WriteLine("Total number of cells:    {0}", Grid.NumberOfCells);
+            Console.WriteLine("Total number of DOFs:     {0}", CurrentSolution.Mapping.TotalLength);
 
         }
 
