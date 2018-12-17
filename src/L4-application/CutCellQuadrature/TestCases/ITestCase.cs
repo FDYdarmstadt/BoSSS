@@ -120,7 +120,7 @@ namespace CutCellQuadrature.TestCases {
         /// <returns>
         /// The grid on which the test should be performed
         /// </returns>
-        GridCommons GetGrid(IDatabaseInfo db);
+        IGrid GetGrid(IDatabaseInfo db);
 
         /// <summary>
         /// The type of the grid.

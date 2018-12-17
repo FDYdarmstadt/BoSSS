@@ -175,7 +175,7 @@ namespace BoSSS.Application.ipViscosity {
         
         IncompressibleBoundaryCondMap BcMap;
 
-        protected override GridCommons CreateOrLoadGrid() {
+        protected override IGrid CreateOrLoadGrid() {
             GridCommons grd = grid.GetGrid();
             return grd;
         }

@@ -171,8 +171,8 @@ namespace BoSSS.PlotGenerator {
 
                 if (this.GridDat == null || !this.GridDat.GridID.Equals(ts.Grid.ID)) {
                     WriteMessage(process, processCount, "Loading grid ...");
-                    GridCommons grid = DBDriver.LoadGrid(ts.Grid.ID, m_Database);
-                    this.GridDat = this.m_Database.Controller.GetInitializationContext(ts).GridData;
+                    IGrid grid = DBDriver.LoadGrid(ts.Grid.ID, m_Database);
+                    this.GridDat = grid.iGridData;
                     WriteMessage(process, processCount, "   Number of cells: " + this.GridDat.iLogicalCells.NoOfLocalUpdatedCells);
                     this.CreatePlotter();
                 }

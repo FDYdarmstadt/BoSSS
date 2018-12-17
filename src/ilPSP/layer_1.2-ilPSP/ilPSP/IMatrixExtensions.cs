@@ -1385,6 +1385,24 @@ namespace ilPSP {
         }
 
         /// <summary>
+        /// Calculates the inverse of this matrix and stores the result in <paramref name="target"/>.
+        /// </summary>
+        /// <param name="source">the original matrix</param>
+        static public MultidimensionalArray InvertTo<M1>(this M1 source)
+            where M1 : IMatrix // 
+        {
+            if (source.NoOfCols != source.NoOfRows)
+                throw new NotSupportedException("can't invert non-square matrix.");
+            MultidimensionalArray R = MultidimensionalArray.Create(source.NoOfRows, source.NoOfCols);
+
+            InvertTo(source, R);
+
+            return R;
+        }
+        
+
+
+        /// <summary>
         /// Calculates the inverse of this matrix and stores it in-place.
         /// </summary>
         /// <param name="Mtx"></param>

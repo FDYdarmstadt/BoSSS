@@ -560,7 +560,7 @@ namespace BoSSS.Foundation.Grid {
         }
 
         /// <summary>
-        /// Mapping from logical cells to geometrical cells; only required if geometrical and logical cells are not identical.
+        /// Mapping from logical cells to geometrical cells; only required if geometrical and logical cells are not identical, *otherwise null*.
         /// - 1st index: local (logical) cell index
         /// - 2nd index: enumeration of geometrical cells (parts)
         /// </summary>

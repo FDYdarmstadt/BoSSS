@@ -26,15 +26,19 @@ namespace BoSSS.Application.TutorialTests {
             AllUpTest.TestFixtureSetUp();
             //AllUpTest.RunWorksheets("quickStartCNS/IsentropicVortex.tex");
             //AllUpTest.RunWorksheets("MetaJobManager/MetaJobManager.tex");
+            //AllUpTest.RunWorksheets("GridGeneration/GridGeneration.tex");
             //AllUpTest.RunWorksheets("quickStartIBM/channel.tex");
+            //AllUpTest.RunWorksheets("shortTutorialMatlab/tutorialMatlab.tex");
+            // ----
             //AllUpTest.RunWorksheets("tutorial2/uebung2tutorial.tex");
             //AllUpTest.RunWorksheets("tutorial4/tutorial4.tex");
             //AllUpTest.RunWorksheets("tutorial5/uebung5tutorial.tex");
             //AllUpTest.RunWorksheets("tutorial6/tutorial6.tex");
             //AllUpTest.RunWorksheets("tutorial9-SIP/sip.tex");
-            //AllUpTest.RunWorksheets("tutorial10-PoissonSystem/Poisson.tex");
+            // ---
+            AllUpTest.RunWorksheets("tutorial10-PoissonSystem/Poisson.tex");
             //AllUpTest.RunWorksheets("tutorial11-Stokes/StokesEq.tex");
-            AllUpTest.RunWorksheets("shortTutorialMatlab/tutorialMatlab.tex");
+            //AllUpTest.RunWorksheets("CsharpAndBoSSSpad/CsharpAndBoSSSpad.tex"); 
             AllUpTest.TestFixtureTearDown();
         }
 

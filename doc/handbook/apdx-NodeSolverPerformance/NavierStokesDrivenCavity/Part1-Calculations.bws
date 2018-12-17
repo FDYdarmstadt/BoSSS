@@ -43,12 +43,13 @@ using System.Threading;
 using ilPSP.Tracing;
 **************
 ==============
-WorkflowMgm.Init("SolverPerformanceDrivenCavity160518");
+string WFlowName = "SolverPerformanceDrivenCavity";
+WorkflowMgm.Init(WFlowName);
 **************
 Project name is set to 'SolverPerformanceDrivenCavity'.
 
 ==============
-var WinTempDB = OpenOrCreateDatabase(@"\\dc1\userspace\krause\BoSSS_DBs\NodePerformance");
+var WinTempDB = OpenOrCreateDatabase(@"\\dc1\userspace\weber\Performance_DB");
 //var LinuxTempDB = OpenOrCreateDatabase(@"L:\BoSSS_DB\Lichtenberg_DB");
 **************
 Opening existing database '\\dc1\userspace\krause\BoSSS_DBs\NodePerformance'.
@@ -59,7 +60,7 @@ Opening existing database '\\dc1\userspace\krause\BoSSS_DBs\NodePerformance'.
 **************
 ==============
 //var myBatch = new SlurmClient(@"L:\SLURM","lcluster3.hrz.tu-darmstadt.de","oe11okuz");
-var myBatch = new MsHPC2012Client(@"\\dc1\userspace\krause\cluster","hpccluster",ComputeNodes : new[] {"hpccluster"});
+var myBatch = new MsHPC2012Client(@"\\dc1\userspace\weber\deploy","hpccluster",ComputeNodes : new[] {"hpccluster"});
 **************
 ==============
 //var myBatch = new MiniBatchProcessorClient(@"P:\tmp\");
@@ -88,9 +89,15 @@ LinearSolverCodes[] linSolvers = new LinearSolverCodes[] {
     //LinearSolverCodes.exp_schwarz_Kcycle_directcoarse_overlap,
     //LinearSolverCodes.exp_softgmres_schwarz_Kcycle_directcoarse_overlap,
     //LinearSolverCodes.exp_softgmres_schwarz_directcoarse_overlap,
-    LinearSolverCodes.automatic,
+    //LinearSolverCodes.automatic,
     //LinearSolverCodes.classic_mumps,
     //LinearSolverCodes.exp_multigrid
+};
+NonlinearSolverCodes[] NlinSolvers = new NonlinearSolverCodes[]{
+    NonlinearSolverCodes.NewtonGMRES,
+    NonlinearSolverCodes.Newton,
+    NonlinearSolverCodes.PicardGMRES,
+    NonlinearSolverCodes.Picard
 };
 int[] ks = new int[] {2,3};
 int re        = 400; 
@@ -98,6 +105,8 @@ int saveToDB  = 1;
 int[] procs    = new int[] {1};
 //string[] estTime = new string[] {"24:00:00","18:00:00","12:00:00","06:00:00"};
 **************
+C# evaluator not initialized: use 'restart'.
+
 ==============
 // ===============================
 // Init grids and save to database
@@ -105,7 +114,7 @@ int[] procs    = new int[] {1};
 **************
 ==============
 //int[] Resolutions_3D = new int[] {5,7,10,13};//,17,25};
-int[] Resolutions_3D = new int[] {17,25};
+int[] Resolutions_3D = new int[] { 2, 4, 8, 16, 32, 64 };
 IGridInfo[] grids = new IGridInfo[Resolutions_3D.Length];
 
 for(int cnt = 0; cnt < Resolutions_3D.Length; cnt++) {
@@ -124,7 +133,7 @@ if(grids[cnt] == null){
 Console.WriteLine("Creating grid with " + J + " cells.");
 GridCommons grd; 
 grd = Grid3D.Cartesian3DGrid(_xNodes, _yNodes, _zNodes, false, true, false, CellType.Cube_Linear);
-grd.EdgeTagNames.Add(1, "Velocity_inlet");
+grd.EdgeTagNames.Add(1, "Velocity_17inlet");
 grd.EdgeTagNames.Add(2, "Wall");
 grd.DefineEdgeTags(delegate (double[] _X) {
                     var X    = _X;
@@ -203,16 +212,39 @@ static class InitialValues {
 List<IBM_Control> controls = new List<IBM_Control>();
 **************
 ==============
+// polynomial degrees to test
+int[] PolyDegS = new int[] {2};
+**************
+==============
+**************
+C# evaluator not initialized: use 'restart'.
+
+==============
+// MaxDof for one claculation (we skip fine grids for higher polynomial orders)
+int MaxDof = 5000000;
+**************
+==============
 controls.Clear();
-foreach(LinearSolverCodes linSolverName in linSolvers){    
+foreach(LinearSolverCodes linSolverName in linSolvers){
+foreach(int k in PolyDegS) {
+int iGrd = 0;    
 foreach(IGridInfo grd in grids) {
-var C = new IBM_Control();
-controls.Add(C);
+    iGrd ++;
+    var C = new IBM_Control();
+    controls.Add(C);
+
+    int Np = Utils.Np(k);
+    int J  = grd.NumberOfCells;
+    if(J*Np > MaxDof)
+        continue;
+    
+    string caseName = string.Format("J{0}_k{1}_{2}", J, k, solver_name);
+    Console.WriteLine("setting up: " + caseName);
 
 // basic database options
 // ======================
 
-C.savetodb                                   = true;
+C.savetodb = true;
 C.SetDatabase(WinTempDB);
 C.DynamicLoadBalancing_Period                = 1;
 C.GridPartType                               = GridPartType.Hilbert;
@@ -222,7 +254,8 @@ C.DynamicLoadBalancing_ImbalanceThreshold    = 0.0;
 C.saveperiod  = 1;
 C.ProjectName = "3DChannel";
 C.Tags.Add("Prec param study");
-C.SetDGdegree(2);
+C.solver_name = linSolverName;
+C.SetDGdegree(k);
 C.SetGrid(grd);
            
 // Set Initial Conditions
@@ -283,6 +316,7 @@ C.InitialValues.Add("Phi", GetFormulaObject(InitialValues.Phi));
         // Assign correct names
         C.SessionName = "DrivenCavity_k2_"+C.NonlinearSolve+"_"+linSolverName+"_J"+grd.NumberOfCells+"_MGLev"+C.NoOfMultigridLevels;
         }
+}
 }
 **************
 ==============
@@ -807,6 +841,8 @@ string docpath    = Path.Combine(CurrentDocDir, SessTab.TableName + ".json");
 // save session table as file: this can be stored in our git 
 // repository
 SessTab.SaveToFile(docpath);
+**************
+==============
 **************
 ==============
 **************

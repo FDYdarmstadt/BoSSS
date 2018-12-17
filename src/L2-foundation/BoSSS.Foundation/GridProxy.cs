@@ -18,6 +18,7 @@ using System;
 using BoSSS.Foundation.Grid;
 using BoSSS.Platform;
 using BoSSS.Foundation.Grid.Classic;
+using System.Collections.Generic;
 
 namespace BoSSS.Foundation.IO {
 
@@ -168,6 +169,36 @@ namespace BoSSS.Foundation.IO {
         public IDatabaseInfo Database {
             get;
             private set;
+        }
+
+        /// <summary>
+        /// %
+        /// </summary>
+        public IReadOnlyCollection<Guid> AllDataVectorIDs {
+            get {
+                return realGrid.Value.AllDataVectorIDs;
+            }
+        }
+
+        /// <summary>
+        /// Stupid thing about the dumb grid
+        /// </summary>
+        public string Description {
+            get {
+                return realGrid.Value.Description;
+            }
+            set {
+                realGrid.Value.Description = value;
+            }
+        }
+
+        /// <summary>
+        /// Mapping between *edge tags* (numbers) and *edge tag names*.
+        /// </summary>
+        public IDictionary<byte, string> EdgeTagNames {
+            get {
+                return realGrid.Value.EdgeTagNames;
+            }
         }
 
         /// <summary>

@@ -536,10 +536,25 @@ namespace ilPSP {
         /// <summary>
         /// True, if all elements in <paramref name="A"/> are also in <paramref name="B"/>.
         /// </summary>
-        public static bool IsSubsetOf<T>(this IEnumerable<T> A, IEnumerable<T> B) { 
+        public static bool IsSubsetOf<T>(this IEnumerable<T> A, IEnumerable<T> B) {
+            T[] Barray = B.ToArray();
+
             foreach (var a in A) {
-                if (!B.Contains(a))
+                //if (!B.Contains(a))
+                //    return false;
+                // remark: change by fk, 07dec2018; ensure that 'Equals' is used always
+
+                bool bfound = false;
+                for( int i = 0; i < Barray.Length; i++) {
+                    if(Barray[i].Equals(a)) {
+                        bfound = true;
+                        break;
+                    }
+                }
+
+                if (bfound == false)
                     return false;
+
             }
             return true;
         }
@@ -549,6 +564,20 @@ namespace ilPSP {
         /// </summary>
         public static bool SetEquals<T>(this IEnumerable<T> A, IEnumerable<T> B) {
             return (A.IsSubsetOf<T>(B) && B.IsSubsetOf<T>(A));
+        }
+
+        /// <summary>
+        /// the set-union of <paramref name="A"/> and <paramref name="B"/>
+        /// </summary>
+        public static HashSet<T> SetUnion<T>(this IEnumerable<T> A, IEnumerable<T> B) {
+            HashSet<T> R = new HashSet<T>();
+            foreach(T i in A) {
+                R.Add(i);
+            }
+            foreach(T i in B) {
+                R.Add(i);
+            }
+            return R;
         }
         
         /// <summary>
@@ -604,6 +633,17 @@ namespace ilPSP {
         /// <returns></returns>
         public static IEnumerable<T> Except<T>(this IEnumerable<T> sequence, T excludedItem) {
             return sequence.Where(item => !item.Equals(excludedItem));
+        }
+
+        /// <summary>
+        /// tests if <paramref name="i"/> is contained in <paramref name="sequence"/> by object reference equality
+        /// </summary>
+        public static bool ContainsRefEqual<T>(this IEnumerable<T> sequence, T i) {
+            foreach(T e in sequence) {
+                if (object.ReferenceEquals(i, e))
+                    return true;
+            }
+            return false;
         }
     }
 }

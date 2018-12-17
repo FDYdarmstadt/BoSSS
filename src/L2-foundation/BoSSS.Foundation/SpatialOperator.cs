@@ -680,8 +680,6 @@ namespace BoSSS.Foundation {
                     return true;
                 if(Array.IndexOf<Type>(interfaces, typeof(INonlinearFluxEx)) >= 0)
                     return true;
-                if(Array.IndexOf<Type>(interfaces, typeof(IDualValueFlux)) >= 0)
-                    return true;
             }
 
             return false;

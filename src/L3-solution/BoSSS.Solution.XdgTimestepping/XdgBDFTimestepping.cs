@@ -82,7 +82,7 @@ namespace BoSSS.Solution.XdgTimestepping {
             SpatialOperatorType _SpatialOperatorType,
             IDictionary<SpeciesId, IEnumerable<double>> _MassScale,
             MultigridOperator.ChangeOfBasisConfig[][] _MultigridOperatorConfig,
-            AggregationGrid[] _MultigridSequence,
+            AggregationGridData[] _MultigridSequence,
             SpeciesId[] _SpId,
             int _CutCellQuadOrder,
             double _AgglomerationThreshold, bool _useX) {
@@ -723,7 +723,7 @@ namespace BoSSS.Solution.XdgTimestepping {
             IEnumerable<DGField> Fields,
             IEnumerable<DGField> IterationResiduals,
             LevelSetTracker LsTrk,
-            AggregationGrid[] _MultigridSequence) //
+            AggregationGridData[] _MultigridSequence) //
         {
             using (new FuncTrace()) {
 
