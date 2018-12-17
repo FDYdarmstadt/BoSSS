@@ -1042,7 +1042,7 @@ namespace BoSSS.Application.BoSSSpad {
                             }
 
                     } else {
-                        throw new ArgumentNullException("no alignment or position chosen");
+                        //throw new ArgumentNullException("no alignment or position chosen");
                     }
                     if (this.LegendHorizontal == true)
                         command += "horizontal ";

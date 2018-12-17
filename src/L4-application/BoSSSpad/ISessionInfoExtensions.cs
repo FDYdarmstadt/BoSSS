@@ -1007,7 +1007,9 @@ namespace BoSSS.Foundation.IO {
         /// the result.
         /// </returns>
         public static Plot2Ddata ToEstimatedGridConvergenceData(this IEnumerable<ISessionInfo> sessions, string fieldName, bool xAxis_Is_hOrDof = true) {
-            return sessions.Select(s => s.Timesteps.Last()).ToEstimatedGridConvergenceData(fieldName, xAxis_Is_hOrDof);
+            ISessionInfo[] _session = sessions.ToArray();
+            ITimestepInfo[] _timesteps = sessions.Select(s => s.Timesteps.Last()).ToArray();
+            return _timesteps.ToEstimatedGridConvergenceData(fieldName, xAxis_Is_hOrDof);
         }
 
         /// <summary>
