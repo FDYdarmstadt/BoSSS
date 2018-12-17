@@ -983,7 +983,7 @@ namespace BoSSS.Foundation.IO {
                         continue;
 
                     if (GridCommons_CellEquality(grd, GrdInDb)) {
-                        grd = (Grid.Classic.GridCommons)LoadGridData(GrdInDb);
+                        _grd = (Grid.Classic.GridCommons)LoadGridData(GrdInDb);
                         EquivalentGridFound = true;
                         //Console.WriteLine("Found equivalent grid: " + grd.GridGuid);
                         return grd.ID;

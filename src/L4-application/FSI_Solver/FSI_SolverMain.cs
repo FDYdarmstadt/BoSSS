@@ -901,10 +901,12 @@ namespace BoSSS.Application.FSI_Solver {
 
         #region Initialize particles
         protected override void SetInitial() {
-            base.SetInitial();
-
             // Setup particles
             m_Particles = ((FSI_Control)this.Control).Particles;
+            UpdateLevelSetParticles(0.0);
+
+
+            base.SetInitial();
 
             // Setup Collision Model
             m_collisionModel = ((FSI_Control)this.Control).collisionModel;

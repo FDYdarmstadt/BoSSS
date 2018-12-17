@@ -38,6 +38,8 @@ namespace ilPSP.Connectors.Matlab {
         /// The condition number of <paramref name="M"/>
         /// </returns>
         public static double cond(this IMatrix M, string workingPath = null) {
+            if (M == null)
+                throw new ArgumentNullException();
             using (var connector = new BatchmodeConnector( WorkingPath: workingPath)) {
 
                 MultidimensionalArray output = MultidimensionalArray.Create(1, 1);
@@ -64,7 +66,8 @@ namespace ilPSP.Connectors.Matlab {
             if (M.NoOfCols != M.NoOfRows) {
                 throw new ArgumentException("Matrix must be square");
             }
-
+            if (M == null)
+                throw new ArgumentNullException();
             using (var connector = new BatchmodeConnector(WorkingPath: workingPath)) {
                 MultidimensionalArray output = MultidimensionalArray.Create(M.NoOfCols, 1);
                 connector.PutMatrix(M, "Matrix");
@@ -82,7 +85,8 @@ namespace ilPSP.Connectors.Matlab {
         /// matrices)
         /// </summary>
         public static double condest(this IMutableMatrixEx M, string __WorkingPath = null) {
-
+            if (M == null)
+                throw new ArgumentNullException();
             using (var connector = new BatchmodeConnector(WorkingPath:__WorkingPath)) {
 
                 MultidimensionalArray output = MultidimensionalArray.Create(1, 1); 
@@ -102,7 +106,8 @@ namespace ilPSP.Connectors.Matlab {
         /// Tests, via a Cholesky factorization, if a symmetric matrix is positive definite.
         /// </summary>
         public static bool IsPosDef(this IMutableMatrixEx M, string __WorkingPath = null) {
-
+            if (M == null)
+                throw new ArgumentNullException();
             using (var connector = new BatchmodeConnector(WorkingPath: __WorkingPath)) {
 
                 MultidimensionalArray output = MultidimensionalArray.Create(1, 1);
@@ -120,7 +125,8 @@ namespace ilPSP.Connectors.Matlab {
         /// Tests, via a Cholesky factorization, if a symmetric matrix is negative definite.
         /// </summary>
         public static bool IsNegDef(this IMutableMatrixEx M, string __WorkingPath = null) {
-
+            if (M == null)
+                throw new ArgumentNullException();
             using (var connector = new BatchmodeConnector(WorkingPath: __WorkingPath)) {
 
                 MultidimensionalArray output = MultidimensionalArray.Create(1, 1);
@@ -138,7 +144,8 @@ namespace ilPSP.Connectors.Matlab {
         /// Tests, via a Cholesky factorization, if a symmetric matrix is positive or negative definite.
         /// </summary>
         public static bool IsDefinite(this IMutableMatrixEx M, string __WorkingPath = null) {
-
+            if (M == null)
+                throw new ArgumentNullException();
             using (var connector = new BatchmodeConnector(WorkingPath: __WorkingPath)) {
 
                 MultidimensionalArray output = MultidimensionalArray.Create(1, 2);
@@ -158,8 +165,9 @@ namespace ilPSP.Connectors.Matlab {
         /// MATLAB function 'cond' (condition number for sparse matrices)
         /// </summary>
         public static double cond(this IMutableMatrixEx M, string __WorkingPath = null) {
-
-            using(var connector = new BatchmodeConnector(WorkingPath: __WorkingPath)) {
+            if (M == null)
+                throw new ArgumentNullException();
+            using (var connector = new BatchmodeConnector(WorkingPath: __WorkingPath)) {
 
                 MultidimensionalArray output = MultidimensionalArray.Create(1, 1);
                 connector.PutSparseMatrix(M, "Matrix");
@@ -178,8 +186,9 @@ namespace ilPSP.Connectors.Matlab {
         /// MATLAB function 'det' (determinante of a sparse matrix);
         /// </summary>
         public static double det(this IMutableMatrixEx M, string __WorkingPath = null) {
-
-            using(var connector = new BatchmodeConnector(WorkingPath: __WorkingPath)) {
+            if (M == null)
+                throw new ArgumentNullException();
+            using (var connector = new BatchmodeConnector(WorkingPath: __WorkingPath)) {
 
                 MultidimensionalArray output = MultidimensionalArray.Create(1, 1);
                 connector.PutSparseMatrix(M, "Matrix");
@@ -197,7 +206,8 @@ namespace ilPSP.Connectors.Matlab {
         /// MATLAB function 'rank' (rank of a matrix);
         /// </summary>
         public static double rank(this IMutableMatrixEx M, string __WorkingPath = null) {
-
+            if (M == null)
+                throw new ArgumentNullException();
             using (var connector = new BatchmodeConnector(WorkingPath: __WorkingPath)) {
 
                 MultidimensionalArray output = MultidimensionalArray.Create(1, 1);
@@ -230,8 +240,13 @@ namespace ilPSP.Connectors.Matlab {
         public static void SolveMATLAB<T1,T2>(this IMutableMatrixEx M, T1 X, T2 RHS, string __WorkingPath = null)
             where T1 : IList<double> 
             where T2 : IList<double> //
-            {
-
+        {
+            if (M == null)
+                throw new ArgumentNullException();
+            if (X == null)
+                throw new ArgumentNullException();
+            if (RHS == null)
+                throw new ArgumentNullException();
             if (M.RowPartitioning.LocalLength != RHS.Count)
                 throw new ArgumentException("Mismatch between number of rows and length of right-hand-side.");
             if (M.ColPartition.LocalLength != X.Count)
@@ -270,6 +285,8 @@ namespace ilPSP.Connectors.Matlab {
         /// <param name="__WorkingPath"></param>
         public static double[] eigs(this IMutableMatrixEx M, int K, string C, string __WorkingPath = null) {
             using (var connector = new BatchmodeConnector(WorkingPath: __WorkingPath)) {
+                if (M == null)
+                    throw new ArgumentNullException();
                 MultidimensionalArray output = MultidimensionalArray.Create(1, 1);
                 connector.PutSparseMatrix(M, "Matrix");
                 connector.Cmd(string.Format("EV = eigs(Matrix,{0},'{1}')", K, C));
