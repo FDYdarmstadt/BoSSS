@@ -244,6 +244,15 @@ namespace BoSSS.Application.SipPoisson {
             }
 
 
+            int J = this.GridData.iLogicalCells.NoOfLocalUpdatedCells;
+            //double[] colors = J.ForLoop(j => this.MGColoring[0].GetMeanValue(j));
+            //colors.SaveToTextFile("colors.txt");
+
+            double[] colors = VectorIO.LoadFromTextFile("colors.txt", csMPI.Raw._COMM.WORLD);
+            for(int j = 0; j < J; j++) {
+                double color_j = colors[j % colors.Length];
+                this.MGColoring[0].SetMeanValue(j, color_j);
+            }
         }
 
         /// <summary>
