@@ -604,7 +604,7 @@ namespace BoSSS.Application.SipPoisson {
         /// <param name="NoOfLlyodsIter">
         /// Number of iterations for Llyod's algorithm (aka. Voronoi relaxation)
         /// </param>
-        public static SipControl TestVoronoi(int Res, SolverCodes solver_name = SolverCodes.classic_pardiso, int deg = 3, bool mirror = true, double NoOfLlyodsIter = 0) {
+        public static SipControl TestVoronoi(int Res, SolverCodes solver_name = SolverCodes.classic_pardiso, int deg = 1, bool mirror = true, double NoOfLlyodsIter = 0) {
 
             if (System.Environment.MachineName.ToLowerInvariant().EndsWith("rennmaschin")
                //|| System.Environment.MachineName.ToLowerInvariant().Contains("jenkins")
@@ -634,7 +634,7 @@ namespace BoSSS.Application.SipPoisson {
 
 
 
-            /*
+            
             bool IsIn(double xi, double yi) {
                 
                 //for(int l = 0; l < bndys.Length; l++) {
@@ -670,7 +670,7 @@ namespace BoSSS.Application.SipPoisson {
 
             //*/
 
-            
+            /*
             bool IsIn(double xi, double yi) {
                 double myEps = 0.0;
                 if (xi > 1.0 + myEps)
@@ -713,13 +713,28 @@ namespace BoSSS.Application.SipPoisson {
                 // generate Delaunay vertices
                 Random rnd = new Random(0);
                 int RR = Res;
+
+                               
                 var Node = MultidimensionalArray.Create(RR, 2);
 
                 bool useMirror = mirror;
                 double scl = useMirror ? 2.0 : 4.0;
 
-                Node.SetColumn(0, RR.ForLoop(idx => rnd.NextDouble() * scl - 0.5 * scl));
-                Node.SetColumn(1, RR.ForLoop(idx => rnd.NextDouble() * scl - 0.5 * scl));
+                int cmt = 0;
+                while(cmt < Res) {
+                    double nx = rnd.NextDouble() * scl - 0.5 * scl;
+                    double ny = rnd.NextDouble() * scl - 0.5 * scl;
+
+                    if(IsIn(nx,ny)) {
+                        Node[cmt, 0] = nx;
+                        Node[cmt, 1] = ny;
+
+                        cmt++;
+                    }
+                }
+
+
+
 
                 // generate mesh
                 return Voronoi.VoronoiMeshGen.FromPolygonalDomain(Node, DomainBndyPolygon, useMirror, NoOfLlyodsIter, IsInV, Idenity);
@@ -745,11 +760,15 @@ namespace BoSSS.Application.SipPoisson {
             return R;
         }
 
-
+        /// <summary>
+        /// Still fishy: case 4, 47
+        /// (fk, 17dec18)
+        /// </summary>
+        /// <returns></returns>
         public static SipControl[] VoronoiPStudy() {
 
             //double[] NoOfLli = new double[] { 2, 5, 10, 20, 100 };
-            double[] NoOfLli = GenericBlas.Linspace(0, 100, 201);
+            double[] NoOfLli = GenericBlas.Linspace(0, 50, 201);
             List<SipControl> R = new List<SipControl>();
             for(int i = 0; i < NoOfLli.Length; i++) {
                 R.Add(TestVoronoi(100, deg: 1, mirror: true, NoOfLlyodsIter: NoOfLli[i]));
