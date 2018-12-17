@@ -418,16 +418,16 @@ namespace BoSSS.Application.FSI_Solver {
             // VIRTUAL MASS MODEL
             //for (int i = 0; i < 2; i++)
             //{
-            //    tempforcenew[i] = forces_p[0][i] + massdifference * gravity[i];
-            //    tempforceold[i] = forces_p[1][i] + massdifference * gravity[i];
-            //    f_vnew[i] = c_a * (3 * vel_p[0][i] - 4 * vel_p[1][i] + vel_p[2][i]) / dt;
-            //    f_vold[i] = c_a * (3 * vel_p[1][i] - 4 * vel_p[2][i] + vel_p[3][i]) / dt;
-            //    tempforcenew[i] = tempforcenew[i] / ((math.pi * radius_p * radius_p) * (rho_p + c_v * rho_fluid)) + f_vnew[i];
-            //    tempforceold[i] = tempforceold[i] / ((math.pi * radius_p * radius_p) * (rho_p + c_v * rho_fluid)) + f_vold[i];
-            //    temp[i] = vel_p[0][i] + (3 * tempforcenew[i] - tempforceold[i]) * dt / 2;
+            //    tempForceNew[i] = forces_P[0][i] + massDifference * gravity[i];
+            //    tempForceOld[i] = forces_P[1][i] + massDifference * gravity[i];
+            //    f_vNew[i] = c_a * (3 * vel_P[0][i] - 4 * vel_P[1][i] + vel_P[2][i]) / dt;
+            //    f_vOld[i] = c_a * (3 * vel_P[1][i] - 4 * vel_P[2][i] + vel_P[3][i]) / dt;
+            //    tempForceNew[i] = tempForceNew[i] / ((Math.PI * radius_P * radius_P) * (rho_P + C_v * rho_Fluid)) + f_vNew[i];
+            //    tempForceOld[i] = tempForceOld[i] / ((Math.PI * radius_P * radius_P) * (rho_P + C_v * rho_Fluid)) + f_vOld[i];
+            //    temp[i] = vel_P[0][i] + (3 * tempForceNew[i] - tempForceOld[i]) * dt / 2;
             //}
 
-            
+
 
             // modell 1
             tempForceNew[0] = 0.5 * (forces_P[1][0] + forces_P[0][0]) + massDifference * gravity[0];
