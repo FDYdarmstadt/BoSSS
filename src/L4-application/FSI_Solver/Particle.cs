@@ -1063,11 +1063,6 @@ namespace BoSSS.Application.FSI_Solver {
                                 underrelaxationFT_exponent = 0;
                                 temp_underR[j] = underrelaxation_factor * Math.Pow(10, underrelaxationFT_exponent);
                             }
-                            else if (underrelaxationFT_exponent <= underrelaxationFT_exponent_max)
-                            {
-                                underrelaxationFT_exponent = underrelaxationFT_exponent_max;
-                                temp_underR[j] = underrelaxation_factor * Math.Pow(10, underrelaxationFT_exponent);
-                            }
                         }
                     }
                 }
@@ -1093,11 +1088,6 @@ namespace BoSSS.Application.FSI_Solver {
                         else if (underrelaxationFT_exponent > 0)
                         {
                             underrelaxationFT_exponent = 0;
-                            temp_underR[D] = underrelaxation_factor * Math.Pow(10, underrelaxationFT_exponent);
-                        }
-                        else if (underrelaxationFT_exponent <= underrelaxationFT_exponent_max)
-                        {
-                            underrelaxationFT_exponent = underrelaxationFT_exponent_max;
                             temp_underR[D] = underrelaxation_factor * Math.Pow(10, underrelaxationFT_exponent);
                         }
                     }

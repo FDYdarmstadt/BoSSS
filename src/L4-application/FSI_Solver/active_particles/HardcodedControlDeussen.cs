@@ -30,7 +30,7 @@ namespace BoSSS.Application.FSI_Solver
 {
     public class HardcodedControlDeussen : IBM_Solver.HardcodedTestExamples
     {
-        public static FSI_Control TestActiveParticle(string _DbPath = null, int k = 2, double VelXBase = 0.0, double stressM = 1e6 , double cellAgg = 0.2, int maxCurv = 20, double muA = 1e6)
+        public static FSI_Control TestActiveParticle(string _DbPath = null, int k = 2, double VelXBase = 0.0, double stressM = 1e-6 , double cellAgg = 0.2, int maxCurv = 20, double muA = 1e3)
         {
             FSI_Control C = new FSI_Control();
 
@@ -93,11 +93,11 @@ namespace BoSSS.Application.FSI_Solver
                 int q = new int(); // #Cells in x-dircetion
                 int r = new int(); // #Cells in y-dircetion
 
-                q = 100;
-                r = 100;
+                q = 5;
+                r = 5;
                 
-                double[] Xnodes = GenericBlas.Linspace(-10 * BaseSize, 10 * BaseSize, q); 
-                double[] Ynodes = GenericBlas.Linspace(-10 * BaseSize, 10 * BaseSize, r); 
+                double[] Xnodes = GenericBlas.Linspace(-1 * BaseSize, 1 * BaseSize, q); 
+                double[] Ynodes = GenericBlas.Linspace(-1 * BaseSize, 1 * BaseSize, r); 
 
                 var grd = Grid2D.Cartesian2DGrid(Xnodes, Ynodes, periodicX: false, periodicY: false);
 
@@ -109,13 +109,13 @@ namespace BoSSS.Application.FSI_Solver
 
                 grd.DefineEdgeTags(delegate (double[] X) {
                     byte et = 0;
-                    if (Math.Abs(X[0] - (-10 * BaseSize)) <= 1.0e-8)
+                    if (Math.Abs(X[0] - (-1 * BaseSize)) <= 1.0e-8)
                         et = 1;
-                    if (Math.Abs(X[0] + (-10 * BaseSize)) <= 1.0e-8)
+                    if (Math.Abs(X[0] + (-1 * BaseSize)) <= 1.0e-8)
                         et = 2;
-                    if (Math.Abs(X[1] - (-10 * BaseSize)) <= 1.0e-8)
+                    if (Math.Abs(X[1] - (-1 * BaseSize)) <= 1.0e-8)
                         et = 3;
-                    if (Math.Abs(X[1] + (-10 * BaseSize)) <= 1.0e-8)
+                    if (Math.Abs(X[1] + (-1 * BaseSize)) <= 1.0e-8)
                         et = 4;
 
                     Debug.Assert(et != 0);
@@ -123,7 +123,7 @@ namespace BoSSS.Application.FSI_Solver
                 });
 
                 Console.WriteLine("Cells:" + grd.NumberOfCells);
-
+                
                 return grd;
             };
 
@@ -171,15 +171,14 @@ namespace BoSSS.Application.FSI_Solver
                 {
                     radius_P = 1,
                     rho_P = 1.02,//pg/(mum^3)
-                    includeGravity = false,
-                    active_P = true,
+                    includeGravity = true,
+                    active_P = false,
                     stress_magnitude_P = stressM,
-                    thickness_P = 0.05,
+                    thickness_P = 0.5,
                     length_P = 0.5,
                     underrelaxationFT_constant = false,// set true if you want to define a constant underrelaxation (not recommended)
                     underrelaxation_factor = 0.25,// underrelaxation with [factor * 10^exponent]
-                    underrelaxationFT_exponent_min = -5,
-                    underrelaxationFT_exponent_max = -16
+                    underrelaxationFT_exponent_min = -2
                 });
             }
             //Define level-set
@@ -217,7 +216,7 @@ namespace BoSSS.Application.FSI_Solver
 
             // Physical Parameters
             // =============================  
-            C.PhysicalParameters.IncludeConvection = false;
+            C.PhysicalParameters.IncludeConvection = true;
 
 
             // misc. solver options
@@ -228,7 +227,7 @@ namespace BoSSS.Application.FSI_Solver
             C.MaxSolverIterations = 1000;
             C.MinSolverIterations = 1;
             C.NoOfMultigridLevels = 1;
-            C.LevelSet_ConvergenceCriterion = 1e-9;
+            C.LevelSet_ConvergenceCriterion = 2e-9;
             C.LSunderrelax = 1.0;
 
 
@@ -236,7 +235,7 @@ namespace BoSSS.Application.FSI_Solver
             // =============================  
             C.Timestepper_Mode = FSI_Control.TimesteppingMode.Splitting;
             C.Timestepper_Scheme = FSI_Solver.FSI_Control.TimesteppingScheme.BDF2;
-            double dt = 1e-6;//s
+            double dt = 1e-2;//s
             C.dtMax = dt;
             C.dtMin = dt;
             C.Endtime = 10;
