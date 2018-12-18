@@ -242,8 +242,7 @@ namespace BoSSS.Application.SipPoisson {
                 base.IOFields.Add(c);
                 iLevel++;
             }
-
-
+         
         }
 
         /// <summary>

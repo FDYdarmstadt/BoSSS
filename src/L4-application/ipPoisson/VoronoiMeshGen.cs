@@ -1635,10 +1635,8 @@ namespace BoSSS.Application.SipPoisson.Voronoi {
                     }
 
                     Vector[] delaunay = Nodes.NoOfRows.ForLoop(iRow => Nodes.GetRowPt(iRow)).ToArray();
-                    DebugPlot(VocellVertexIndex, Verts, null, null, delaunay, iLloyd);
-                }
-
-
+                    //DebugPlot(VocellVertexIndex, Verts, null, null, delaunay, iLloyd);
+                } // end Lloyd iteration loop
 
                 // fix Voronoi cell orientation
                 // ----------------------------

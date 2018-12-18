@@ -923,11 +923,12 @@ namespace BoSSS.Application.FSI_Solver {
         protected override void SetInitial() {
             // Setup particles
             m_Particles = ((FSI_Control)this.Control).Particles;
+            hack_phystime = 0.0;
             UpdateLevelSetParticles(0.0);
-
-
+            
+            // call base implementation
             base.SetInitial();
-
+            
             // Setup Collision Model
             m_collisionModel = ((FSI_Control)this.Control).collisionModel;
 
