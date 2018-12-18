@@ -153,16 +153,6 @@ namespace BoSSS.Application.FSI_Solver {
         [DataMember]
         public bool pureDryCollisions = false;
 
-        /// <summary>
-        /// Adds particle to particle list
-        /// </summary>
-        /// <param name="D"></param>
-        /// <param name="HistoryLength"></param>
-        /// <param name="start"></param>
-        public void AddParticle(int D, int HistoryLength, double[] start) {
-            this.Particles.Add(new Particle(D, HistoryLength, start));
-        }
-
         public override Type GetSolverType() {
             return typeof(FSI_SolverMain);
         }
