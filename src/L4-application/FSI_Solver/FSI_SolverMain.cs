@@ -606,22 +606,14 @@ namespace BoSSS.Application.FSI_Solver {
         void UpdateLevelSetParticles(double dt) {
             foreach (Particle p in m_Particles) {
 
-                //p.UpdateParticlePosition(dt);
+                p.UpdateParticlePosition(dt);
 
                 Console.WriteLine("Current Velocites are:   " + p.vel_P[0][0] + "        " + p.vel_P[0][1] + "       " + p.rot_P[0]);
                 p.UpdateAngularVelocity(dt, this.Control.PhysicalParameters.rho_A);
                 p.UpdateTransVelocity(dt, this.Control.PhysicalParameters.rho_A);
-                //p.CleanHistory();
-                //phiComplete = phiComplete* p.phi_P;
             }
 
 
-            //newPosition = IBMMover.MoveCircularParticle(dt, newTransVelocity, oldPosition);
-            //TransVelocityN4 = TransVelocityN3;
-            //TransVelocityN3 = TransVelocityN2;
-            //TransVelocityN2 = oldTransVelocity;
-            //oldTransVelocity = newTransVelocity;
-            //oldPosition = newPosition;
             Func<double[], double, double> phiComplete = delegate (double[] X, double t)
             {
                 int exp = m_Particles.Count - 1;
@@ -633,9 +625,10 @@ namespace BoSSS.Application.FSI_Solver {
                 return ret;
             };
 
-
             ScalarFunction function = NonVectorizedScalarFunction.Vectorize(phiComplete, hack_phystime);
+
             LevSet.ProjectField(function);
+
             DGLevSet.Current.ProjectField(function);
             LsTrk.UpdateTracker(__NearRegionWith: 2);
         }
