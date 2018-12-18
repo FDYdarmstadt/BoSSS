@@ -624,8 +624,8 @@ namespace BoSSS.Application.SipPoisson {
 
             R.FieldOptions.Add("T", new FieldOpts() { Degree = deg, SaveToDB = FieldOpts.SaveToDBOpt.TRUE });
             R.FieldOptions.Add("Tex", new FieldOpts() { Degree = deg * 2 });
-            R.InitialValues_Evaluators.Add("RHS", X => -1.0 + X[0] * X[0]);
-            R.InitialValues_Evaluators.Add("Tex", X => 0.0);
+            R.InitialValues_Evaluators.Add("RHS", X => 0.0);// -1.0 + X[0] * X[0]);
+            R.InitialValues_Evaluators.Add("Tex", X => X[0]);
             R.ExactSolution_provided = false;
             R.NoOfMultigridLevels = int.MaxValue;
             R.solver_name = solver_name;
@@ -746,7 +746,7 @@ namespace BoSSS.Application.SipPoisson {
                  delegate (double[] X) {
                      //double x = X[0], y = X[1];
 
-                     return 0.0;
+                     return X[0];
                      //if(Math.Abs(X[0] - (0.0)) < 1.0e-8)
                      //    return 0.0;
                      //
