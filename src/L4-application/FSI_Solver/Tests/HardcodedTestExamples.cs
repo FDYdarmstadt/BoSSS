@@ -146,7 +146,6 @@ namespace BoSSS.Application.FSI_Solver {
                 return ret;
             };
 
-
             //Func<double[], double, double> phi = (X, t) => -(X[0] - t+X[1]);
             //C.MovementFunc = phi;
 

@@ -604,7 +604,7 @@ namespace BoSSS.Application.SipPoisson {
         /// <param name="NoOfLlyodsIter">
         /// Number of iterations for Llyod's algorithm (aka. Voronoi relaxation)
         /// </param>
-        public static SipControl TestVoronoi(int Res, SolverCodes solver_name = SolverCodes.classic_pardiso, int deg = 3, bool mirror = true, double NoOfLlyodsIter = 0) {
+        public static SipControl TestVoronoi(int Res, SolverCodes solver_name = SolverCodes.classic_pardiso, int deg = 1, bool mirror = true, double NoOfLlyodsIter = 0) {
 
             if (System.Environment.MachineName.ToLowerInvariant().EndsWith("rennmaschin")
                //|| System.Environment.MachineName.ToLowerInvariant().Contains("jenkins")
@@ -624,8 +624,8 @@ namespace BoSSS.Application.SipPoisson {
 
             R.FieldOptions.Add("T", new FieldOpts() { Degree = deg, SaveToDB = FieldOpts.SaveToDBOpt.TRUE });
             R.FieldOptions.Add("Tex", new FieldOpts() { Degree = deg * 2 });
-            R.InitialValues_Evaluators.Add("RHS", X => -1.0 + X[0] * X[0]);
-            R.InitialValues_Evaluators.Add("Tex", X => 0.0);
+            R.InitialValues_Evaluators.Add("RHS", X => 0.0);// -1.0 + X[0] * X[0]);
+            R.InitialValues_Evaluators.Add("Tex", X => X[0]);
             R.ExactSolution_provided = false;
             R.NoOfMultigridLevels = int.MaxValue;
             R.solver_name = solver_name;
@@ -634,7 +634,7 @@ namespace BoSSS.Application.SipPoisson {
 
 
 
-            /*
+            
             bool IsIn(double xi, double yi) {
                 
                 //for(int l = 0; l < bndys.Length; l++) {
@@ -670,7 +670,7 @@ namespace BoSSS.Application.SipPoisson {
 
             //*/
 
-            
+            /*
             bool IsIn(double xi, double yi) {
                 double myEps = 0.0;
                 if (xi > 1.0 + myEps)
@@ -713,13 +713,28 @@ namespace BoSSS.Application.SipPoisson {
                 // generate Delaunay vertices
                 Random rnd = new Random(0);
                 int RR = Res;
+
+                               
                 var Node = MultidimensionalArray.Create(RR, 2);
 
                 bool useMirror = mirror;
                 double scl = useMirror ? 2.0 : 4.0;
 
-                Node.SetColumn(0, RR.ForLoop(idx => rnd.NextDouble() * scl - 0.5 * scl));
-                Node.SetColumn(1, RR.ForLoop(idx => rnd.NextDouble() * scl - 0.5 * scl));
+                int cmt = 0;
+                while(cmt < Res) {
+                    double nx = rnd.NextDouble() * scl - 0.5 * scl;
+                    double ny = rnd.NextDouble() * scl - 0.5 * scl;
+
+                    if(IsIn(nx,ny)) {
+                        Node[cmt, 0] = nx;
+                        Node[cmt, 1] = ny;
+
+                        cmt++;
+                    }
+                }
+
+
+
 
                 // generate mesh
                 return Voronoi.VoronoiMeshGen.FromPolygonalDomain(Node, DomainBndyPolygon, useMirror, NoOfLlyodsIter, IsInV, Idenity);
@@ -731,7 +746,7 @@ namespace BoSSS.Application.SipPoisson {
                  delegate (double[] X) {
                      //double x = X[0], y = X[1];
 
-                     return 0.0;
+                     return X[0];
                      //if(Math.Abs(X[0] - (0.0)) < 1.0e-8)
                      //    return 0.0;
                      //
@@ -745,11 +760,15 @@ namespace BoSSS.Application.SipPoisson {
             return R;
         }
 
-
+        /// <summary>
+        /// Still fishy: case 4, 47
+        /// (fk, 17dec18)
+        /// </summary>
+        /// <returns></returns>
         public static SipControl[] VoronoiPStudy() {
 
             //double[] NoOfLli = new double[] { 2, 5, 10, 20, 100 };
-            double[] NoOfLli = GenericBlas.Linspace(0, 100, 201);
+            double[] NoOfLli = GenericBlas.Linspace(0, 50, 201);
             List<SipControl> R = new List<SipControl>();
             for(int i = 0; i < NoOfLli.Length; i++) {
                 R.Add(TestVoronoi(100, deg: 1, mirror: true, NoOfLlyodsIter: NoOfLli[i]));

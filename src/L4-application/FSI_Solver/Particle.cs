@@ -1108,17 +1108,16 @@ namespace BoSSS.Application.FSI_Solver {
 
             // calculation of forces and torque with underrelaxation
             // =============================
-            //forces
+            // forces
             double[] forces_underR = new double[D];
             for (int i = 0; i < D; i++)
             {
                 forces_underR[i] = temp_underR[i] * forces[i] + (1 - temp_underR[i]) * currentIterForces_P[0][i];
                 //forces_underR[i] = (forces[i] + 257 * currentIterForces_P[0][i] + 27 * currentIterForces_P[1][i] + 272 * currentIterForces_P[2][i] + 27 * currentIterForces_P[3][i] + 216 * currentIterForces_P[4][i] + 41 * currentIterForces_P[5][i]) / 840;
             }
-            //torque
-
+            // torque
             double torque_underR = temp_underR[D] * torque * 0 + (1 - temp_underR[D]) * currentIterTorque_P[0];
-            //update forces and torque
+            // update forces and torque
             this.currentIterForces_P.Insert(0, forces_underR);
             currentIterForces_P.Remove(currentIterForces_P.Last());
             this.currentIterTorque_P.Remove(currentIterTorque_P.Last());
