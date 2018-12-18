@@ -1282,8 +1282,8 @@ namespace BoSSS.Application.FSI_Solver {
                     break;
 
                 case (FSI_Solver.FSI_Control.CollisionModel.MomentumConservation):
-                    //triggerOnlyCollisionProcedure = true;
-                    // ONLY FOR DISKS AT THE MOMENT
+                    
+                   
                     if (realDistance <= (threshold) && !particle.m_collidedWithWall[0]) {
 
                         //coefficient of restitution (e=0 pastic; e=1 elastic)
