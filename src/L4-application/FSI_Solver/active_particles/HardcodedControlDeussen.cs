@@ -30,7 +30,7 @@ namespace BoSSS.Application.FSI_Solver
 {
     public class HardcodedControlDeussen : IBM_Solver.HardcodedTestExamples
     {
-        public static FSI_Control TestActiveParticle(string _DbPath = null, int k = 2, double VelXBase = 0.0, double stressM = 1e-6 , double cellAgg = 0.2, int maxCurv = 20, double muA = 1e3)
+        public static FSI_Control TestActiveParticle(string _DbPath = null, int k = 2, double VelXBase = 0.0, double stressM = 30 , double cellAgg = 0.2, int maxCurv = 20, double muA = 1e6)
         {
             FSI_Control C = new FSI_Control();
 
@@ -93,29 +93,29 @@ namespace BoSSS.Application.FSI_Solver
                 int q = new int(); // #Cells in x-dircetion
                 int r = new int(); // #Cells in y-dircetion
 
-                q = 5;
-                r = 5;
+                q = 40;
+                r = 40;
                 
-                double[] Xnodes = GenericBlas.Linspace(-1 * BaseSize, 1 * BaseSize, q); 
-                double[] Ynodes = GenericBlas.Linspace(-1 * BaseSize, 1 * BaseSize, r); 
+                double[] Xnodes = GenericBlas.Linspace(-10 * BaseSize, 10 * BaseSize, q); 
+                double[] Ynodes = GenericBlas.Linspace(-10 * BaseSize, 10 * BaseSize, r); 
 
                 var grd = Grid2D.Cartesian2DGrid(Xnodes, Ynodes, periodicX: false, periodicY: false);
 
-                grd.EdgeTagNames.Add(1, "Pressure_Outlet_left");
-                grd.EdgeTagNames.Add(2, "Pressure_Outlet_right");
+                grd.EdgeTagNames.Add(1, "Wall_left");
+                grd.EdgeTagNames.Add(2, "Wall_right");
                 grd.EdgeTagNames.Add(3, "Wall_lower");
-                grd.EdgeTagNames.Add(4, "Pressure_Outlet_upper");
+                grd.EdgeTagNames.Add(4, "Wall_upper");
 
 
                 grd.DefineEdgeTags(delegate (double[] X) {
                     byte et = 0;
-                    if (Math.Abs(X[0] - (-1 * BaseSize)) <= 1.0e-8)
+                    if (Math.Abs(X[0] - (-10 * BaseSize)) <= 1.0e-8)
                         et = 1;
-                    if (Math.Abs(X[0] + (-1 * BaseSize)) <= 1.0e-8)
+                    if (Math.Abs(X[0] + (-10 * BaseSize)) <= 1.0e-8)
                         et = 2;
-                    if (Math.Abs(X[1] - (-1 * BaseSize)) <= 1.0e-8)
+                    if (Math.Abs(X[1] - (-10 * BaseSize)) <= 1.0e-8)
                         et = 3;
-                    if (Math.Abs(X[1] + (-1 * BaseSize)) <= 1.0e-8)
+                    if (Math.Abs(X[1] + (-10 * BaseSize)) <= 1.0e-8)
                         et = 4;
 
                     Debug.Assert(et != 0);
@@ -137,10 +137,10 @@ namespace BoSSS.Application.FSI_Solver
 
             // Boundary conditions
             // =============================
-            C.AddBoundaryValue("Pressure_Outlet_left");//, "VelocityX", X => 0.0);
-            C.AddBoundaryValue("Pressure_Outlet_right");//, "VelocityX", X => 0.0);
+            C.AddBoundaryValue("Wall_left");//, "VelocityX", X => 0.0);
+            C.AddBoundaryValue("Wall_right");//, "VelocityX", X => 0.0);
             C.AddBoundaryValue("Wall_lower");
-            C.AddBoundaryValue("Pressure_Outlet_upper");
+            C.AddBoundaryValue("Wall_upper");
             
 
             // Coupling Properties
@@ -171,10 +171,10 @@ namespace BoSSS.Application.FSI_Solver
                 {
                     radius_P = 1,
                     rho_P = 1.02,//pg/(mum^3)
-                    includeGravity = true,
-                    active_P = false,
+                    includeGravity = false,
+                    active_P = true,
                     stress_magnitude_P = stressM,
-                    thickness_P = 0.5,
+                    thickness_P = 0.1,
                     length_P = 0.5,
                     underrelaxationFT_constant = false,// set true if you want to define a constant underrelaxation (not recommended)
                     underrelaxation_factor = 0.25,// underrelaxation with [factor * 10^exponent]
@@ -216,7 +216,7 @@ namespace BoSSS.Application.FSI_Solver
 
             // Physical Parameters
             // =============================  
-            C.PhysicalParameters.IncludeConvection = true;
+            C.PhysicalParameters.IncludeConvection = false;
 
 
             // misc. solver options
@@ -227,7 +227,7 @@ namespace BoSSS.Application.FSI_Solver
             C.MaxSolverIterations = 1000;
             C.MinSolverIterations = 1;
             C.NoOfMultigridLevels = 1;
-            C.LevelSet_ConvergenceCriterion = 2e-9;
+            C.LevelSet_ConvergenceCriterion = 1e-9;
             C.LSunderrelax = 1.0;
 
 
@@ -235,7 +235,7 @@ namespace BoSSS.Application.FSI_Solver
             // =============================  
             C.Timestepper_Mode = FSI_Control.TimesteppingMode.Splitting;
             C.Timestepper_Scheme = FSI_Solver.FSI_Control.TimesteppingScheme.BDF2;
-            double dt = 1e-2;//s
+            double dt = 1e-6;//s
             C.dtMax = dt;
             C.dtMin = dt;
             C.Endtime = 10;

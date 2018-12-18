@@ -80,9 +80,11 @@ namespace BoSSS.Application.FSI_Solver {
                     startPos = new double[] { 0.0, 0.0, 0.0 };
                 }
             }
-            currentIterPos_P[0] = startPos;
+            currentTimePos_P[0] = startPos;
+            currentTimePos_P[1] = startPos;
             //From degree to radiant
-            currentIterAng_P[0] = startAngl * 2 * Math.PI / 360;
+            currentTimeAng_P[0] = startAngl * 2 * Math.PI / 360;
+            currentTimeAng_P[1] = startAngl * 2 * Math.PI / 360;
             //currentIterVel_P[0][0] = 2e-8;
 
             UpdateLevelSetFunction();
@@ -473,14 +475,16 @@ namespace BoSSS.Application.FSI_Solver {
             var tempPos = currentIterPos_P[0].CloneAs();
             tempPos.AccV(dt, currentIterVel_P[0]);
 
-            currentIterPos_P.Insert(0, tempPos);
-            currentIterPos_P.Remove(currentIterPos_P.Last());
+            //currentIterPos_P.Insert(0, tempPos);
+            //currentIterPos_P.Remove(currentIterPos_P.Last());
+            currentIterPos_P[0] = tempPos;
 
             // Angle
             var tempAng = currentIterAng_P[0];
             tempAng += dt * currentIterRot_P[0];
-            currentIterAng_P.Insert(0, tempAng);
-            currentIterAng_P.Remove(currentIterAng_P.Last());
+            //currentIterAng_P.Insert(0, tempAng);
+            //currentIterAng_P.Remove(currentIterAng_P.Last());
+            currentIterAng_P[0] = tempAng;
 
             currentTimePos_P[0] = currentIterPos_P[0];
             currentTimeAng_P[0] = currentIterAng_P[0];
@@ -500,12 +504,14 @@ namespace BoSSS.Application.FSI_Solver {
             }
 
             // Position
-            currentIterPos_P.Insert(0, currentTimePos_P[1]);
+            currentIterPos_P.Insert(1, currentIterPos_P[0]);
             currentIterPos_P.Remove(currentIterPos_P.Last());
+            currentIterPos_P[0] = currentTimePos_P[1];
 
             // Angle
-            currentIterAng_P.Insert(0, currentTimeAng_P[0]);
+            currentIterAng_P.Insert(1, currentTimeAng_P[0]);
             currentIterAng_P.Remove(currentIterAng_P.Last());
+            currentIterAng_P[0] = currentTimeAng_P[1];
 
             UpdateLevelSetFunction();
         }
@@ -597,7 +603,7 @@ namespace BoSSS.Application.FSI_Solver {
             {
                 previous_vel = currentIterVel_P[0];
             }
-            Console.WriteLine("Previous Velocity:  " + previous_vel[0]);
+            
             // gravity
             // =============================
             gravity[0] = 0;
@@ -674,7 +680,8 @@ namespace BoSSS.Application.FSI_Solver {
             //temp.AccV(dt / mass_P, tempForceNew);
             temp[0] = currentTimeVel_P[1][0] + dt / mass_P * tempForceNew[0];
             temp[1] = currentTimeVel_P[1][1] + dt / mass_P * tempForceNew[1];
-            
+            Console.WriteLine("Previous Velocity:  " + currentTimeVel_P[1][1] + "Current Velocity:  " + temp[1] + "New Velocity:  " + dt / mass_P * tempForceNew[1]);
+
             // Save new velocity
             // =============================
             currentIterVel_P.Insert(0, temp);
@@ -844,6 +851,7 @@ namespace BoSSS.Application.FSI_Solver {
                         for (int j = 0; j < Len; j++) {
                             for (int k = 0; k < K; k++) {
                                 double acc = 0.0;
+                                double scale = Normals[j, k, 0] * Math.Cos(currentIterAng_P[0]) + Normals[j, k, 1] * Math.Sin(currentIterAng_P[0]);
                                 // pressure
                                 switch (d) {
                                     case 0:
@@ -956,12 +964,9 @@ namespace BoSSS.Application.FSI_Solver {
 
                 for (int j = 0; j < Len; j++) {
                     for (int k = 0; k < K; k++) {
-
-
-
+                        
                         double acc = 0.0;
                         double acc2 = 0.0;
-                        
                         // Calculate the torque around a circular particle with a given radius (Paper Wan and Turek 2005)
 
                         acc += (pARes[j, k] * Normals[j, k, 0]);
@@ -1053,9 +1058,14 @@ namespace BoSSS.Application.FSI_Solver {
                         else
                         {
                             underrelaxation_ok = true;
-                            if (underrelaxationFT_exponent >= underrelaxationFT_exponent_min && iteration_counter_P > 20)
+                            if (underrelaxationFT_exponent >= underrelaxationFT_exponent_min && iteration_counter_P > 30)
                             {
                                 underrelaxationFT_exponent = underrelaxationFT_exponent_min;
+                                temp_underR[j] = underrelaxation_factor * Math.Pow(10, underrelaxationFT_exponent);
+                            }
+                            else if (underrelaxationFT_exponent < -3)
+                            {
+                                underrelaxationFT_exponent = -3;
                                 temp_underR[j] = underrelaxation_factor * Math.Pow(10, underrelaxationFT_exponent);
                             }
                             else if (underrelaxationFT_exponent > 0)
@@ -1080,7 +1090,7 @@ namespace BoSSS.Application.FSI_Solver {
                     else
                     {
                         underrelaxation_ok = true;
-                        if (underrelaxationFT_exponent > underrelaxationFT_exponent_min && iteration_counter_P > 20)
+                        if (underrelaxationFT_exponent > underrelaxationFT_exponent_min && iteration_counter_P > 30)
                         {
                             underrelaxationFT_exponent = underrelaxationFT_exponent_min;
                             temp_underR[D] = underrelaxation_factor * Math.Pow(10, underrelaxationFT_exponent);
@@ -1103,6 +1113,7 @@ namespace BoSSS.Application.FSI_Solver {
             for (int i = 0; i < D; i++)
             {
                 forces_underR[i] = temp_underR[i] * forces[i] + (1 - temp_underR[i]) * currentIterForces_P[0][i];
+                //forces_underR[i] = (forces[i] + 257 * currentIterForces_P[0][i] + 27 * currentIterForces_P[1][i] + 272 * currentIterForces_P[2][i] + 27 * currentIterForces_P[3][i] + 216 * currentIterForces_P[4][i] + 41 * currentIterForces_P[5][i]) / 840;
             }
             //torque
 

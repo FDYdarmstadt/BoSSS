@@ -404,6 +404,23 @@ namespace BoSSS.Application.FSI_Solver {
 
                            foreach (Particle p in m_Particles)
                            {
+                               // Separating different boundary regions (for active particles)
+                               double scale;
+                               double cos_theta;
+                               // The posterior side of the particle (Neumann boundary)
+                               if (Math.Cos(p.currentIterAng_P[0]) * (X[0] - p.currentIterPos_P[0][0]) + Math.Sin(p.currentIterAng_P[0]) * (X[1] - p.currentIterPos_P[0][1]) <= 1e-8)
+                               {
+                                   cos_theta = -1;// (Math.Cos(p.currentIterAng_P[0]) * (X[0] - p.currentIterPos_P[0][0]) + Math.Sin(p.currentIterAng_P[0]) * (X[1] - p.currentIterPos_P[0][1])) / (Math.Sqrt((X[0] - p.currentIterPos_P[0][0]).Pow2() + (X[1] - p.currentIterPos_P[0][1]).Pow2()));
+                                                  // smoothing parameter, to avoid a singularity at the transition between the two boundary conditions
+                                   scale = 1;// - Math.Pow((Math.Pow(cos_theta, 2) - 1), 2);
+                               }
+                               // The anterior side of the particle (Dirichlet boundary)
+                               else
+                               {
+                                   scale = 0;
+
+                                   cos_theta = 0;
+                               }
                                bool containsParticle;
                                if (m_Particles.Count == 1)
                                {
@@ -420,6 +437,7 @@ namespace BoSSS.Application.FSI_Solver {
                                    } else {
                                        result[3] = p.currentIterPos_P[0].L2Distance(X);
                                    }
+                                   //result[4] = -cos_theta;
                                    return result;
                                }
                            }
@@ -784,13 +802,7 @@ namespace BoSSS.Application.FSI_Solver {
 
                             //newAngularVelocity = IBMMover.GetAngularVelocity(dt, oldAngularVelocity, Control.particleRadius, ((FSI_Control)this.Control).particleMass, torque, oldtorque, ((FSI_Control)Control).includeRotation);
 
-                            Console.WriteLine("Drag Force:   {0}", force[0]);
-                            Console.WriteLine("Lift Force:   {0}", force[1]);
-                            Console.WriteLine("Torqe:   {0}", torque);
-                            Console.WriteLine("Transl VelocityX:   {0}", MPItransVelocity[0]);
-                            Console.WriteLine("Transl VelocityY:   {0}", MPItransVelocity[1]);
-                            Console.WriteLine("Angular Velocity:   {0}", MPIangularVelocity);
-                            Console.WriteLine();
+                            
 
 
                             // Save for NUnit Test
@@ -801,10 +813,18 @@ namespace BoSSS.Application.FSI_Solver {
                             double acc = 0;
                             foreach (Particle p in m_Particles)
                             {
-                                acc += (p.currentIterVel_P[0][0] - p.currentIterVel_P[1][0]).Pow2() + (p.currentIterVel_P[0][1] - p.currentIterVel_P[1][1]).Pow2() + (p.currentIterRot_P[0] - p.currentIterRot_P[1]).Pow2();
+                                acc += (p.currentIterForces_P[0][0] - p.currentIterForces_P[1][0]).Pow2() + (p.currentIterForces_P[0][1] - p.currentIterForces_P[1][1]).Pow2() + (p.currentIterTorque_P[0] - p.currentIterTorque_P[1]).Pow2();
                             }
                             posResidual_splitting = Math.Sqrt(acc);
-                            Console.WriteLine("Full coupled system, number of iterations:  " + iteration_counter + ", velocity residual is: " + posResidual_splitting);
+                            Console.WriteLine("Drag Force:   {0}", force[0]);
+                            Console.WriteLine("Lift Force:   {0}", force[1]);
+                            Console.WriteLine("Torqe:   {0}", torque);
+                            Console.WriteLine("Transl VelocityX:   {0}", MPItransVelocity[0]);
+                            Console.WriteLine("Transl VelocityY:   {0}", MPItransVelocity[1]);
+                            Console.WriteLine("Angular Velocity:   {0}", MPIangularVelocity);
+                            Console.WriteLine("Fully coupled system, number of iterations:  " + iteration_counter);
+                            Console.WriteLine("Forces and torque residual: " + posResidual_splitting);
+                            Console.WriteLine();
                             iteration_counter += 1;
                             if (((FSI_Control)this.Control).splitting_fully_coupled == false)
                             {
