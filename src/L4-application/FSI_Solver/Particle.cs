@@ -520,6 +520,7 @@ namespace BoSSS.Application.FSI_Solver {
                 gravity[1] = 0;
             }
 
+
             // Virtual force model (Schwarz et al. - 2015 A temporal discretization scheme to compute the motion of light particles in viscous flows by an immersed boundary")
             // =============================
             double[] f_vTemp = new double[2];

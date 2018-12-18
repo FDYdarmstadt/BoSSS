@@ -120,8 +120,8 @@ namespace BoSSS.Application.BoSSSpad {
             eval.ReferenceAssembly(typeof(Rheology.Rheology).Assembly);
             eval.ReferenceAssembly(typeof(FSI_Solver.FSI_SolverMain).Assembly);
 
+            //eval.ReferenceAssembly(typeof(FSI_Solver.FSI_SolverMain).Assembly);
             //eval.ReferenceAssembly(typeof(FuelCell.FuelCellMain).Assembly);
-
             // Helical shit
             //eval.ReferenceAssembly(typeof(StokesHelical.HelicalMain).Assembly);
             // eval.ReferenceAssembly(typeof(PosissonScalar3CylinderCoords.PoissonScalar3CCMain).Assembly);

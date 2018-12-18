@@ -1,4 +1,5 @@
 ﻿using BoSSS.Platform.LinAlg;
+using BoSSS.Solution.Gnuplot;
 using ilPSP;
 using System;
 using System.Collections.Generic;
@@ -100,8 +101,24 @@ namespace BoSSS.Application.SipPoisson.Voronoi {
                     }
                 }
 
-                if (iEar < 0)
+                if (iEar < 0) {
+                    /*
+                    using(var gp = new Gnuplot()) {
+                        double[] xn = Polygon.Select(X => X.x).ToArray();
+                        double[] yn = Polygon.Select(X => X.y).ToArray();
+                        double[] xm = _Polygon.Select(X => X.x).ToArray();
+                        double[] ym = _Polygon.Select(X => X.y).ToArray();
+
+                        gp.PlotXY(xn, yn, "earless", new PlotFormat("-xb"));
+                        gp.PlotXY(xm, ym, "orginal", new PlotFormat(":0r"));
+
+                        gp.Execute();
+
+                        Console.ReadKey();
+                    }
+                    */
                     throw new ArithmeticException("unable to find ear.");
+                }
                 
                 int iNxt = iEar + 1;
                 if (iNxt >= Polygon.Count)

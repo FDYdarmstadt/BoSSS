@@ -37,9 +37,10 @@ namespace BoSSS.Application.FSI_Solver {
 
             // basic database options
             // ======================
-
-            C.DbPath = @"\\dc1\userspace\krause\BoSSS_DBs\Sphere3D";
+            
+            C.DbPath = @"\\dc1\userspace\rieckmann\local\FSI\Test_db";
             C.savetodb = true;
+
             C.ProjectName = "ShearFlow_Test";
             C.ProjectDescription = "ShearFlow";
             C.Tags.Add("with immersed boundary method");
