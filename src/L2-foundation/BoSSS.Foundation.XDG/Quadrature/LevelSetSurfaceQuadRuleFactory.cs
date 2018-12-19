@@ -186,6 +186,8 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
                 // 'anti-derivatives' of the real integrands
                 order += 1;
 
+               
+
                 CellMask cellMask = mask as CellMask;
                 if (mask == null) {
                     throw new ArgumentException("Cell mask required", "mask");
@@ -217,17 +219,20 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
 
                 // Uncommented for FSI after speaking to Florian
                 //______________________________________
-                //if (cachedRules.Count > 0 && cachedRules.Keys.Max() >= order) {
-                //    order = cachedRules.Keys.Where(cachedOrder => cachedOrder >= order).Min();
-                //    CellMask cachedMask = new CellMask(mask.GridData, cachedRules[order].Select(p => p.Chunk).ToArray());
+                /*
+                if (cachedRules.Count > 0 && cachedRules.Keys.Max() >= order) {
+                    order = cachedRules.Keys.Where(cachedOrder => cachedOrder >= order).Min();
+                    CellMask cachedMask = new CellMask(mask.GridData, cachedRules[order].Select(p => p.Chunk).ToArray());
 
-                //    if (cachedMask.Equals(mask)) {
-                //        return cachedRules[order];
-                //    } else {
-                //        throw new NotImplementedException(
-                //            "Case not yet covered yet in combination with caching; deactivate caching to get rid of this message");
-                //    }
-                //}
+                    if (cachedMask.Equals(mask)) {
+                        Console.WriteLine("Cached rule: " + order);
+                        return cachedRules[order];
+                    } else {
+                        throw new NotImplementedException(
+                            "Case not yet covered yet in combination with caching; deactivate caching to get rid of this message");
+                    }
+                }
+                */
 
                 var result = new List<ChunkRulePair<QuadRule>>(mask.NoOfItemsLocally);
                 if (UseNodesOnLevset) {
@@ -257,6 +262,7 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
                 }
 
                 cachedRules[order] = result.ToArray();
+
 
                 return result;
             }

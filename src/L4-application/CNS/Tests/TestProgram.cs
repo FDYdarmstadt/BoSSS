@@ -57,13 +57,18 @@ namespace CNS.Tests {
                 string queryName = valueThresholdPair.Item1;
                 double threshold = valueThresholdPair.Item2;
 
+
                 double error = (double)resultsTable[queryName];
+                double factor = error / threshold;
                 string message = String.Format(
-                    "{0}: {1} (Threshold is {2})",
+                    "{0}: {1} (Threshold is {2}, ok? {3}, ratio: {4})",
                     //"{0:F16}: {1:F16} (Threshold is {2:F16})",
                     queryName,
                     error,
-                    threshold);
+                    threshold,
+                    error < threshold,
+                    factor
+                    );
                 Console.WriteLine(message);
 
                 assertions.Add(() => Assert.IsTrue(error < threshold, message));

@@ -95,7 +95,7 @@ namespace BoSSS.Foundation.XDG {
 
             //throw new NotImplementedException("todo");
             var dict = m_XDGSpaceMetricsHistory[HistoryIndex];
-            var key = new Tuple<SpeciesId[], XQuadFactoryHelper.MomentFittingVariants, int>(Spc, this.CutCellQuadratureType, CutCellsQuadOrder);
+            var key = Tuple.Create(Spc, this.CutCellQuadratureType, CutCellsQuadOrder);
             if(!dict.ContainsKey(key)) {
                 dict.Add(key,
                     new XDGSpaceMetrics(this,

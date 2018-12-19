@@ -56,6 +56,10 @@ namespace CNS {
 
             //Application.InitMPI(args);
             //CNS.Tests.ConvectiveFlux.ShockTubeTests.Toro1AllButRusanovTest(ConvectiveFluxTypes.Godunov);
+            //CNS.Tests.IBMTests.IBMCylinderTest.IBMCylinder0th();
+            //CNS.Tests.IBMTests.IBMCylinderTest.IBMCylinder1st();
+            //CNS.Tests.IBMTests.IBMCylinderTest.IBMCylinder2nd();
+            //CNS.Tests.IBMTests.IBMCylinderTest.IBMCylinder3rd();
             //Debug.Assert(false);
 
             Application<CNSControl>._Main(
