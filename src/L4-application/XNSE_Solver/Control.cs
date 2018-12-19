@@ -395,21 +395,25 @@ namespace BoSSS.Application.XNSE_Solver {
         /// <summary>
         /// If true, kinetic and surface energy will be evaluated in every cycle.
         /// </summary>
+        [DataMember]
         public bool ComputeEnergy = false;
 
         /// <summary>
         /// If true, energy balance at the interface will be evaluated in every cycle.
         /// </summary>
+        [DataMember]
         public bool ComputeInterfaceEnergy = false;
 
         /// <summary>
         /// if true, the jump condition for mass, momentum and energy will be checked
         /// </summary>
+        [DataMember]
         public bool CheckJumpConditions = false;
 
         /// <summary>
         /// if true, the mass conservation and the surface changerate is checked
         /// </summary>
+        [DataMember]
         public bool CheckInterfaceProps = false;
 
         /// <summary>

@@ -512,9 +512,6 @@ namespace BoSSS.Solution {
 
                 app.Init(ctrlV2);
                 app.RunSolverMode();
-                app.ByeInt(true);
-                app.Bye();
-                app.ProfilingLog();
                 app.Dispose();
 
 
@@ -2400,8 +2397,10 @@ namespace BoSSS.Solution {
                     nlog.LogValue("InitTime(sec)", InitTime);
                     nlog.LogValue("solverTime(sec)", solverTime);
                     nlog.LogValue("SessionGuid", app.DatabaseDriver.FsDriver == null ? Guid.Empty : app.CurrentSessionInfo.ID);
-                    foreach (var kv in app.QueryHandler.QueryResults) { // Assume queries have already been evaluated
-                        nlog.LogValue(kv.Key, kv.Value);
+                    if (app.QueryHandler != null) {
+                        foreach (var kv in app.QueryHandler.QueryResults) { // Assume queries have already been evaluated
+                            nlog.LogValue(kv.Key, kv.Value);
+                        }
                     }
 
                     // Log only exists on rank 0
@@ -2421,10 +2420,11 @@ namespace BoSSS.Solution {
                         }
 
                         // Assume queries have already been evaluated
-                        foreach (var kv in app.QueryHandler.QueryResults) {
-                            WriteToLog(log, (double)kv.Value);
+                        if (app.QueryHandler != null) {
+                            foreach (var kv in app.QueryHandler.QueryResults) {
+                                WriteToLog(log, (double)kv.Value);
+                            }
                         }
-
                         log.WriteLine();
                         log.Flush();
 
@@ -2451,10 +2451,27 @@ namespace BoSSS.Solution {
                     }
 
                     // finalize
-                    app.ByeInt(CorrectlyTerminated);
-                    app.Bye();
-                    app.ProfilingLog();
-                    app.Dispose();
+#if DEBUG
+                    {
+#else
+                    try {
+#endif
+                        app.ByeInt(CorrectlyTerminated);
+                        app.Bye();
+                        app.ProfilingLog();
+#if DEBUG
+                    }
+#else
+                    } catch (Exception e) {
+                        nlog.LogValue("pstudy_case_successful", false);
+                        if (_control.Paramstudy_ContinueOnError) {
+                            Console.WriteLine("WARNING: Run" + (iPstudy) + "failed with message '{0}'", e.Message);
+                            failCount++;
+                        } else {
+                            throw;
+                        }
+                    }
+#endif
                 }
 
                 System.GC.Collect();
@@ -2673,13 +2690,27 @@ namespace BoSSS.Solution {
         /// </summary>
         public virtual void Dispose() {
             if (!IsDisposed) {
-                if (this.CurrentSessionInfo != null)
-                    this.CurrentSessionInfo.Dispose();
-                if (DatabaseDriver != null) {
-                    DatabaseDriver.Dispose();
+#if DEBUG
+                { 
+#else
+                try {
+#endif
+                    ByeInt(true);
+                    Bye();
+                    ProfilingLog();
+
+                    if (this.CurrentSessionInfo != null)
+                        this.CurrentSessionInfo.Dispose();
+                    if (DatabaseDriver != null) {
+                        DatabaseDriver.Dispose();
+                    }
+                    Console.Out.Flush();
+                    Console.Error.Flush();
+#if DEBUG
                 }
-                Console.Out.Flush();
-                Console.Error.Flush();
+#else
+                } catch(Exception) { }
+#endif
                 IsDisposed = true;
             }
         }
