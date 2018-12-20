@@ -678,7 +678,7 @@ namespace BoSSS.Application.FSI_Solver {
             tempForceNew[1] = (currentIterForces_P[0][1] + currentTimeForces_P[1][1]) / 2 + massDifference * gravity[1];
             //temp.SetV(currentIterVel_P[0], 1);
             //temp.AccV(dt / mass_P, tempForceNew);
-            temp[0] = currentTimeVel_P[1][0] * 0 + 0*dt / mass_P * tempForceNew[0];
+            temp[0] = currentTimeVel_P[1][0] + dt / mass_P * tempForceNew[0];
             temp[1] = currentTimeVel_P[1][1] + dt / mass_P * tempForceNew[1];
             Console.WriteLine("Previous Velocity:  " + currentTimeVel_P[1][1] + "Current Velocity:  " + temp[1] + "New Velocity:  " + dt / mass_P * tempForceNew[1]);
 
@@ -1110,14 +1110,14 @@ namespace BoSSS.Application.FSI_Solver {
             // =============================
             // forces
             double[] forces_underR = new double[D];
-            temp_underR[0] = 0;
+            //temp_underR[0] = 0;
             for (int i = 0; i < D; i++)
             {
                 forces_underR[i] = temp_underR[i] * forces[i] + (1 - temp_underR[i]) * currentIterForces_P[0][i];
                 //forces_underR[i] = (forces[i] + 257 * currentIterForces_P[0][i] + 27 * currentIterForces_P[1][i] + 272 * currentIterForces_P[2][i] + 27 * currentIterForces_P[3][i] + 216 * currentIterForces_P[4][i] + 41 * currentIterForces_P[5][i]) / 840;
             }
             // torque
-            double torque_underR = temp_underR[D] * torque * 0 + (1 - temp_underR[D]) * currentIterTorque_P[0];
+            double torque_underR = temp_underR[D] * torque + (1 - temp_underR[D]) * currentIterTorque_P[0];
             // update forces and torque
             this.currentIterForces_P.Insert(0, forces_underR);
             currentIterForces_P.Remove(currentIterForces_P.Last());

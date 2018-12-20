@@ -30,7 +30,7 @@ namespace BoSSS.Application.FSI_Solver
 {
     public class HardcodedControlDeussen : IBM_Solver.HardcodedTestExamples
     {
-        public static FSI_Control TestActiveParticle(string _DbPath = null, int k = 2, double VelXBase = 0.0, double stressM = 3, double cellAgg = 0.2, int maxCurv = 20, double muA = 1e6)
+        public static FSI_Control TestActiveParticle(string _DbPath = null, int k = 2, double VelXBase = 0.0, double stressM = 1, double cellAgg = 0.2, int maxCurv = 20, double muA = 1e6, double timestepX = 1e-6)
         {
             FSI_Control C = new FSI_Control();
 
@@ -42,8 +42,8 @@ namespace BoSSS.Application.FSI_Solver
 
             // basic database options
             // =============================
-            //C.DbPath = @"\\hpccluster\hpccluster-scratch\deussen\cluster_db\active_particle_test";
-            C.savetodb = false;
+            C.DbPath = @"\\hpccluster\hpccluster-scratch\deussen\cluster_db\active_particle_test";
+            C.savetodb = true;
             C.saveperiod = 1;
             C.ProjectName = "ActiveParticleTest";
             C.ProjectDescription = "Active";
@@ -94,8 +94,8 @@ namespace BoSSS.Application.FSI_Solver
                 int q = new int(); // #Cells in x-dircetion
                 int r = new int(); // #Cells in y-dircetion
 
-                q = 60;
-                r = 60;
+                q = 100;
+                r = 100;
 
                 double[] Xnodes = GenericBlas.Linspace(-10 * BaseSize, 10 * BaseSize, q);
                 double[] Ynodes = GenericBlas.Linspace(-10 * BaseSize, 10 * BaseSize, r);
@@ -220,7 +220,7 @@ namespace BoSSS.Application.FSI_Solver
             C.MaxSolverIterations = 1000;
             C.MinSolverIterations = 1;
             C.NoOfMultigridLevels = 1;
-            C.LevelSet_ConvergenceCriterion = 1e-4;
+            C.LevelSet_ConvergenceCriterion = 1e-5;
             C.LSunderrelax = 1.0;
             
 
@@ -237,7 +237,7 @@ namespace BoSSS.Application.FSI_Solver
             // =============================  
             C.Timestepper_Mode = FSI_Control.TimesteppingMode.Splitting;
             C.Timestepper_Scheme = FSI_Solver.FSI_Control.TimesteppingScheme.BDF2;
-            double dt = 1e-3;//s
+            double dt = timestepX;//s
             C.dtMax = dt;
             C.dtMin = dt;
             C.Endtime = 10;
