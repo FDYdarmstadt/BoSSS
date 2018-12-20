@@ -60,6 +60,7 @@ namespace CNS {
             //CNS.Tests.IBMTests.IBMCylinderTest.IBMCylinder1st();
             //CNS.Tests.IBMTests.IBMCylinderTest.IBMCylinder2nd();
             //CNS.Tests.IBMTests.IBMCylinderTest.IBMCylinder3rd();
+            //CNS.Tests.IBMTests.IBMIsentropicVortexTest.IBMVortexLocalTimeSteppingTest();
             //Debug.Assert(false);
 
             Application<CNSControl>._Main(
