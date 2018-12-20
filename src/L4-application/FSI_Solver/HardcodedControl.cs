@@ -1621,7 +1621,7 @@ namespace BoSSS.Application.FSI_Solver {
             // ======================
 
             C.DbPath = @"\\hpccluster\hpccluster-scratch\krause\DraftKissing_db";
-            C.savetodb = true;
+            C.savetodb = false;
             C.saveperiod = 10;
             C.ProjectName = "DraftKissingTumbling";
             C.ProjectDescription = "Gravity";
@@ -1650,6 +1650,10 @@ namespace BoSSS.Application.FSI_Solver {
                 SaveToDB = FieldOpts.SaveToDBOpt.TRUE
             });
             C.FieldOptions.Add("Phi", new FieldOpts() {
+                Degree = 2,
+                SaveToDB = FieldOpts.SaveToDBOpt.TRUE
+            });
+            C.FieldOptions.Add("Curvature", new FieldOpts() {
                 Degree = 2,
                 SaveToDB = FieldOpts.SaveToDBOpt.TRUE
             });
@@ -1766,10 +1770,10 @@ namespace BoSSS.Application.FSI_Solver {
 
             //C.Particles[1].currentIterVel_P[0][1] = -0.5;
 
-            Func<double[], double, double> phiComplete = (X, t) => -1 * (C.Particles[0].phi_P(X, t) * C.Particles[1].phi_P(X, t));
+            //Func<double[], double, double> phiComplete = (X, t) => -1 * (C.Particles[0].phi_P(X, t) * C.Particles[1].phi_P(X, t));
       
 
-            C.InitialValues_Evaluators.Add("Phi", X => phiComplete(X, 0));
+            //C.InitialValues_Evaluators.Add("Phi", X => phiComplete(X, 0));
             C.InitialValues_Evaluators.Add("VelocityX", X => 0);
             C.InitialValues_Evaluators.Add("VelocityY", X => 0);
 
