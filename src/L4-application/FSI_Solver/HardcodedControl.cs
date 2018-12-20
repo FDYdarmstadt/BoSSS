@@ -38,8 +38,8 @@ namespace BoSSS.Application.FSI_Solver {
             // basic database options
             // ======================
             
-            C.DbPath = @"\\dc1\userspace\rieckmann\local\FSI\Test_db";
-            C.savetodb = true;
+            //C.DbPath = @"\\dc1\userspace\rieckmann\local\FSI\Test_db";
+            C.savetodb = false;
 
             C.ProjectName = "ShearFlow_Test";
             C.ProjectDescription = "ShearFlow";
@@ -65,6 +65,11 @@ namespace BoSSS.Application.FSI_Solver {
                 SaveToDB = FieldOpts.SaveToDBOpt.TRUE
             });
             C.FieldOptions.Add("Phi", new FieldOpts() {
+                Degree = 2,
+                SaveToDB = FieldOpts.SaveToDBOpt.TRUE
+            });
+            C.FieldOptions.Add("Curvature", new FieldOpts()
+            {
                 Degree = 2,
                 SaveToDB = FieldOpts.SaveToDBOpt.TRUE
             });
@@ -128,6 +133,7 @@ namespace BoSSS.Application.FSI_Solver {
             C.InitialValues_Evaluators.Add("VelocityY", X => 0);
             //C.InitialValues.Add("Phi", X => -1);
             //C.InitialValues.Add("Phi", X => (X[0] - 0.41));
+            
 
             // For restart
             //C.RestartInfo = new Tuple<Guid, TimestepNumber>(new Guid("fec14187-4e12-43b6-af1e-e9d535c78668"), -1);
@@ -450,17 +456,17 @@ namespace BoSSS.Application.FSI_Solver {
 
             const double BaseSize = 1.0;
 
-            C.Paramstudy_CaseIdentification = new Tuple<string, object>[] {
-                                new Tuple<string,object>("k", k),
-                            };
+            //C.Paramstudy_CaseIdentification = new Tuple<string, object>[] {
+             //                   new Tuple<string,object>("k", k),
+              //              };
 
             // k = i;
 
             // basic database options
             // ======================
 
-            C.DbPath = @"\\dc1\userspace\krause\BoSSS_DBs\Bug";
-            C.savetodb = true;
+            //C.DbPath = @"\\dc1\userspace\krause\BoSSS_DBs\Bug";
+            C.savetodb = false;
             C.saveperiod = 1;
             C.ProjectName = "ParticleUnderGravity_k" + k + "_CellAgglo02_penalty4";
             C.ProjectDescription = "Gravity";
@@ -489,6 +495,11 @@ namespace BoSSS.Application.FSI_Solver {
                 SaveToDB = FieldOpts.SaveToDBOpt.TRUE
             });
             C.FieldOptions.Add("Phi", new FieldOpts() {
+                Degree = 2,
+                SaveToDB = FieldOpts.SaveToDBOpt.TRUE
+            });
+            C.FieldOptions.Add("Curvature", new FieldOpts()
+            {
                 Degree = 2,
                 SaveToDB = FieldOpts.SaveToDBOpt.TRUE
             });
@@ -1620,7 +1631,7 @@ namespace BoSSS.Application.FSI_Solver {
             // basic database options
             // ======================
 
-            C.DbPath = @"\\hpccluster\hpccluster-scratch\krause\DraftKissing_db";
+            //C.DbPath = @"\\hpccluster\hpccluster-scratch\krause\DraftKissing_db";
             C.savetodb = false;
             C.saveperiod = 10;
             C.ProjectName = "DraftKissingTumbling";

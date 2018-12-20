@@ -626,6 +626,8 @@ namespace BoSSS.Application.FSI_Solver {
                 p.UpdateAngularVelocity(dt, this.Control.PhysicalParameters.rho_A);
                 p.UpdateTransVelocity(dt, this.Control.PhysicalParameters.rho_A);
                 p.UpdateParticlePosition(dt);
+                //p.UpdateAngularVelocity(dt, this.Control.PhysicalParameters.rho_A);
+                //p.UpdateTransVelocity(dt, this.Control.PhysicalParameters.rho_A);
                 Console.WriteLine("Current Velocites are:   " + p.currentIterVel_P[0][0] + "        " + p.currentIterVel_P[0][1] + "       " + p.currentIterRot_P[0]);
             }
 
@@ -1340,7 +1342,7 @@ namespace BoSSS.Application.FSI_Solver {
                         double tempCollisionVn_P0 = collisionVn_P0 - (Fx + Fxrot) / particle.mass_P;
                         double tempCollisionVt_P0 = collisionVt_P0;
                         
-                        particle.rot_P[0] = particle.currentIterRot_P[0] + a0 * (Fx + Fxrot) / particle.MomentOfInertia_P;
+                        particle.currentIterRot_P[0] = particle.currentIterRot_P[0] + a0 * (Fx + Fxrot) / particle.MomentOfInertia_P;
 
 
                         particle.currentIterVel_P[0] = new double[] { normal[0] * tempCollisionVn_P0 + tempCollisionVt_P0 * tangential[0], normal[1] * tempCollisionVn_P0 + tempCollisionVt_P0 * tangential[1] };
