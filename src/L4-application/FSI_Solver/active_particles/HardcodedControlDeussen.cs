@@ -93,8 +93,8 @@ namespace BoSSS.Application.FSI_Solver
                 int q = new int(); // #Cells in x-dircetion
                 int r = new int(); // #Cells in y-dircetion
 
-                q = 40;
-                r = 40;
+                q = 60;
+                r = 60;
                 
                 double[] Xnodes = GenericBlas.Linspace(-10 * BaseSize, 10 * BaseSize, q); 
                 double[] Ynodes = GenericBlas.Linspace(-10 * BaseSize, 10 * BaseSize, r); 
@@ -174,11 +174,11 @@ namespace BoSSS.Application.FSI_Solver
                     includeGravity = false,
                     active_P = true,
                     stress_magnitude_P = stressM,
-                    thickness_P = 0.1,
-                    length_P = 0.5,
+                    thickness_P = 0.4,
+                    length_P = 4,
                     underrelaxationFT_constant = false,// set true if you want to define a constant underrelaxation (not recommended)
                     underrelaxation_factor = 0.25,// underrelaxation with [factor * 10^exponent]
-                    underrelaxationFT_exponent_min = -2
+                    underrelaxationFT_exponent_min = -1
                 });
             }
             //Define level-set
@@ -227,7 +227,7 @@ namespace BoSSS.Application.FSI_Solver
             C.MaxSolverIterations = 1000;
             C.MinSolverIterations = 1;
             C.NoOfMultigridLevels = 1;
-            C.LevelSet_ConvergenceCriterion = 1e-6;
+            C.LevelSet_ConvergenceCriterion = 1e-4;
             C.LSunderrelax = 1.0;
 
 

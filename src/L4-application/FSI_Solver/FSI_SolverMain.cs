@@ -397,10 +397,10 @@ namespace BoSSS.Application.FSI_Solver {
                     IBM_Op.EquationComponents["div"].Add(divPen);  // immersed boundary component
                 }
                 else {
-                    var divPen = new BoSSS.Solution.NSECommon.Operator.Continuity.DivergenceAtIB(D, LsTrk, 1,
+                    var divPen = new BoSSS.Solution.NSECommon.Operator.Continuity.ActiveDivergenceAtIB(D, LsTrk, 1,
                        delegate (double[] X, double time) {
 
-                           double[] result = new double[X.Length + 2];
+                           double[] result = new double[X.Length + 3];
 
                            foreach (Particle p in m_Particles)
                            {
@@ -410,7 +410,7 @@ namespace BoSSS.Application.FSI_Solver {
                                // The posterior side of the particle (Neumann boundary)
                                if (Math.Cos(p.currentIterAng_P[0]) * (X[0] - p.currentIterPos_P[0][0]) + Math.Sin(p.currentIterAng_P[0]) * (X[1] - p.currentIterPos_P[0][1]) <= 1e-8)
                                {
-                                   cos_theta = -1;// (Math.Cos(p.currentIterAng_P[0]) * (X[0] - p.currentIterPos_P[0][0]) + Math.Sin(p.currentIterAng_P[0]) * (X[1] - p.currentIterPos_P[0][1])) / (Math.Sqrt((X[0] - p.currentIterPos_P[0][0]).Pow2() + (X[1] - p.currentIterPos_P[0][1]).Pow2()));
+                                   cos_theta = (Math.Cos(p.currentIterAng_P[0]) * (X[0] - p.currentIterPos_P[0][0]) + Math.Sin(p.currentIterAng_P[0]) * (X[1] - p.currentIterPos_P[0][1])) / (Math.Sqrt((X[0] - p.currentIterPos_P[0][0]).Pow2() + (X[1] - p.currentIterPos_P[0][1]).Pow2()));
                                                   // smoothing parameter, to avoid a singularity at the transition between the two boundary conditions
                                    scale = 1;// - Math.Pow((Math.Pow(cos_theta, 2) - 1), 2);
                                }
@@ -437,7 +437,7 @@ namespace BoSSS.Application.FSI_Solver {
                                    } else {
                                        result[3] = p.currentIterPos_P[0].L2Distance(X);
                                    }
-                                   //result[4] = -cos_theta;
+                                   result[4] = -cos_theta;
                                    return result;
                                }
                            }
@@ -1480,7 +1480,7 @@ namespace BoSSS.Application.FSI_Solver {
             {
                 if (CurrentLevel < ((FSI_Control)Control).RefinementLevel)
                 {
-                    DesiredLevel_j = CurrentLevel + 1;
+                    DesiredLevel_j = ((FSI_Control)Control).RefinementLevel;
                 }
 
                 else
