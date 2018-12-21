@@ -170,7 +170,7 @@ namespace BoSSS.Application.FSI_Solver
                     thickness_P = 0.4,
                     length_P = 4,
                     underrelaxationFT_constant = false,// set true if you want to define a constant underrelaxation (not recommended)
-                    underrelaxation_factor = 1,// underrelaxation with [factor * 10^exponent]
+                    underrelaxation_factor = 0.25,// underrelaxation with [factor * 10^exponent]
                     underrelaxationFT_exponent_min = -1
                 });
             }
