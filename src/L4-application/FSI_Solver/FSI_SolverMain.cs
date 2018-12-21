@@ -719,6 +719,7 @@ namespace BoSSS.Application.FSI_Solver {
                             foreach (Particle p in m_Particles)
                             {
                                 p.iteration_counter_P = iteration_counter;
+                                p.forceAndTorque_convergence = ((FSI_Control)this.Control).LevelSet_ConvergenceCriterion;
                                 Console.WriteLine("Current Iter pos:  " + p.currentIterPos_P[0][1] + "Previous Iter pos:  " + p.currentIterPos_P[1][1]);
                             }
 

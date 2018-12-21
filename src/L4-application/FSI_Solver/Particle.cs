@@ -54,7 +54,9 @@ namespace BoSSS.Application.FSI_Solver {
                 currentIterVel_P.Add(new double[Dim]);
                 currentIterRot_P.Add(new double());
                 currentIterForces_P.Add(new double[Dim]);
+                temporalForces_P.Add(new double[Dim]);
                 currentIterTorque_P.Add(new double());
+                temporalTorque_P.Add(new double());
             }
             for (int i = 0; i < 4; i++)
             {
@@ -218,6 +220,12 @@ namespace BoSSS.Application.FSI_Solver {
         public List<double[]> currentTimeForces_P = new List<double[]>();
 
         /// <summary>
+        /// Force acting on the particle
+        /// </summary>
+        [DataMember]
+        public List<double[]> temporalForces_P = new List<double[]>();
+
+        /// <summary>
         /// Torque acting on the particle
         /// </summary>
         [DataMember]
@@ -228,6 +236,12 @@ namespace BoSSS.Application.FSI_Solver {
         /// </summary>
         [DataMember]
         public List<double> currentTimeTorque_P = new List<double>();
+
+        /// <summary>
+        /// Torque acting on the particle
+        /// </summary>
+        [DataMember]
+        public List<double> temporalTorque_P = new List<double>();
 
         /// <summary>
         /// Level set function describing the particle
@@ -265,6 +279,12 @@ namespace BoSSS.Application.FSI_Solver {
         /// heaviside function depending on arclength 
         /// </summary>
         public double velResidual_ConvergenceCriterion = 1e-6;
+
+        /// <summary>
+        /// heaviside function depending on arclength 
+        /// </summary>
+        public double forceAndTorque_convergence = 1e-6;
+
         /// <summary>
         /// heaviside function depending on arclength 
         /// </summary>
@@ -442,6 +462,8 @@ namespace BoSSS.Application.FSI_Solver {
                     currentIterForces_P.RemoveAt(tempPos);
                     currentIterRot_P.RemoveAt(tempPos);
                     currentIterTorque_P.RemoveAt(tempPos);
+                    temporalForces_P.RemoveAt(tempPos);
+                    temporalTorque_P.RemoveAt(tempPos);
                 }
             }
         }
@@ -1013,20 +1035,34 @@ namespace BoSSS.Application.FSI_Solver {
 
             // determine underrelaxation factor (URF)
             // =============================
+            temporalForces_P.Insert(0, forces);
+            temporalForces_P.Remove(temporalForces_P.Last());
+            temporalTorque_P.Insert(0, torque);
+            temporalTorque_P.Remove(temporalTorque_P.Last());
             double underrelaxationFT = 1.0;
             int[] pre_under_R = new int[D];
             double[] temp_underR = new double[D + 1];
-            for (int k = 0; k < D+1; k++)
+            double[] mu = new double[D + 1];
+            double[] sigmaSquared = new double[D + 1];
+            double[] muTemp = new double[D + 1];
+            double[] sigmaSquaredTemp = new double[D + 1];
+            for (int k = 0; k < D + 1; k++)
             {
                 temp_underR[k] = underrelaxation_factor;
             }
             // first iteration, set URF to 1
             if (iteration_counter_P == 1)
             {
-                for (int k = 0; k < D + 1; k++)
+                for (int k = 0; k < D; k++)
                 {
                     temp_underR[k] = 1;
+                    for (int t = 0; t < m_HistoryLength; t++)
+                    {
+                        currentIterForces_P[t][k] = currentTimeForces_P[1][k];
+                        currentIterTorque_P[t] = currentTimeTorque_P[1];
+                    }
                 }
+                temp_underR[D] = 1;
             }
             // constant predefined URF
             else if (underrelaxationFT_constant == true)
@@ -1047,28 +1083,61 @@ namespace BoSSS.Application.FSI_Solver {
                     temp_underR[j] = underrelaxation_factor;
                     pre_under_R[j] = underrelaxationFT_exponent;
                     underrelaxationFT_exponent = 0;
+                    mu[j] = 0;
+                    muTemp[j] = 0;
+                    for (int t = 0; t < m_HistoryLength; t++)
+                    {
+                        mu[j] += (currentIterForces_P[t][j]) / (m_HistoryLength);
+                        muTemp[j] += (temporalForces_P[t][j]) / (m_HistoryLength);
+                    }
+                    sigmaSquared[j] = 0;
+                    sigmaSquaredTemp[j] = 0;
+                    for (int t = 0; t < m_HistoryLength; t++)
+                    {
+                        sigmaSquared[j] += Math.Pow((currentIterForces_P[t][j] - mu[j]) / (m_HistoryLength), 2);
+                        sigmaSquaredTemp[j] += Math.Pow((temporalForces_P[t][j] - muTemp[j]) / (m_HistoryLength), 2);
+                    }
                     for (int i = 0; underrelaxation_ok == false; i++)
                     {
-                        if (Math.Abs(temp_underR[j] * forces[j]) > Math.Abs(currentIterForces_P[0][j]))
+                        if (Math.Abs(temp_underR[j] * forces[j]) > Math.Abs(currentIterForces_P[0][j]) && temp_underR[j] > forceAndTorque_convergence * 1000)
                         {
                             underrelaxationFT_exponent -= 1;
                             temp_underR[j] = underrelaxation_factor * Math.Pow(10, underrelaxationFT_exponent);
                         }
-
+                        //if (Math.Abs((1 - temp_underR[j]) * (forces[j] - currentIterForces_P[0][j])) < sigmaSquared[j] && temp_underR[j] > forceAndTorque_convergence * 1000)
+                        //{
+                        //    underrelaxationFT_exponent -= 1;
+                        //    temp_underR[j] = underrelaxation_factor * Math.Pow(10, underrelaxationFT_exponent);
+                        //}
+                        //else if (Math.Abs((1 - temp_underR[j]) * (forces[j] - currentIterForces_P[0][j])) < mu[j])
+                        //{
+                        //    underrelaxationFT_exponent -= 2;
+                        //    temp_underR[j] = underrelaxation_factor * Math.Pow(10, underrelaxationFT_exponent);
+                        //}
+                        //else if (Math.Abs((1 - temp_underR[j]) * (forces[j] - currentIterForces_P[0][j])) < 2 * mu[j])
+                        //{
+                        //    underrelaxationFT_exponent -= 2;
+                        //    temp_underR[j] = underrelaxation_factor * Math.Pow(10, underrelaxationFT_exponent);
+                        //}
+                        //if (Math.Abs(temp_underR[j] * (forces[j] - currentIterForces_P[0][j])) > Math.Abs(temp_underR[j] * (forces[j] - mu[j])) && temp_underR[j] > forceAndTorque_convergence * 1000)
+                        //{
+                        //    underrelaxationFT_exponent -= 1;
+                        //    temp_underR[j] = underrelaxation_factor * Math.Pow(10, underrelaxationFT_exponent);
+                        //}
                         else
                         {
                             underrelaxation_ok = true;
-                            if (underrelaxationFT_exponent >= underrelaxationFT_exponent_min && iteration_counter_P > 30)
+                            if (mu[j] - muTemp[j] > Math.Abs(temp_underR[j] * forces[j]))
                             {
-                                underrelaxationFT_exponent = underrelaxationFT_exponent_min;
+                                underrelaxationFT_exponent += 1;
                                 temp_underR[j] = underrelaxation_factor * Math.Pow(10, underrelaxationFT_exponent);
                             }
-                            else if (underrelaxationFT_exponent < -3)
-                            {
-                                underrelaxationFT_exponent = -3;
-                                temp_underR[j] = underrelaxation_factor * Math.Pow(10, underrelaxationFT_exponent);
-                            }
-                            else if (underrelaxationFT_exponent > 0)
+                            //if (underrelaxationFT_exponent >= underrelaxationFT_exponent_min && iteration_counter_P > 30)
+                            //{
+                            //    underrelaxationFT_exponent = underrelaxationFT_exponent_min;
+                            //    temp_underR[j] = underrelaxation_factor * Math.Pow(10, underrelaxationFT_exponent);
+                            //}
+                            if (underrelaxationFT_exponent > 0)
                             {
                                 underrelaxationFT_exponent = 0;
                                 temp_underR[j] = underrelaxation_factor * Math.Pow(10, underrelaxationFT_exponent);
@@ -1110,7 +1179,8 @@ namespace BoSSS.Application.FSI_Solver {
             // =============================
             // forces
             double[] forces_underR = new double[D];
-            //temp_underR[0] = 0;
+            temp_underR[0] = 0;
+            temp_underR[D] = 0;
             for (int i = 0; i < D; i++)
             {
                 forces_underR[i] = temp_underR[i] * forces[i] + (1 - temp_underR[i]) * currentIterForces_P[0][i];
