@@ -42,8 +42,8 @@ namespace BoSSS.Application.FSI_Solver
 
             // basic database options
             // =============================
-            C.DbPath = @"\\hpccluster\hpccluster-scratch\deussen\cluster_db\active_particle_test";
-            C.savetodb = true;
+            //C.DbPath = @"\\hpccluster\hpccluster-scratch\deussen\cluster_db\active_particle_test";
+            C.savetodb = false;
             C.saveperiod = 1;
             C.ProjectName = "ActiveParticleTest";
             C.ProjectDescription = "Active";
@@ -94,18 +94,18 @@ namespace BoSSS.Application.FSI_Solver
                 int q = new int(); // #Cells in x-dircetion
                 int r = new int(); // #Cells in y-dircetion
 
-                q = 100;
-                r = 100;
+                q = 30;
+                r = 30;
 
                 double[] Xnodes = GenericBlas.Linspace(-10 * BaseSize, 10 * BaseSize, q);
                 double[] Ynodes = GenericBlas.Linspace(-10 * BaseSize, 10 * BaseSize, r);
 
                 var grd = Grid2D.Cartesian2DGrid(Xnodes, Ynodes, periodicX: false, periodicY: false);
 
-                grd.EdgeTagNames.Add(1, "Wall_left");
-                grd.EdgeTagNames.Add(2, "Wall_right");
-                grd.EdgeTagNames.Add(3, "Wall_lower");
-                grd.EdgeTagNames.Add(4, "Wall_upper");
+                grd.EdgeTagNames.Add(1, "Pressure_Outlet_left");
+                grd.EdgeTagNames.Add(2, "Pressure_Outlet_right");
+                grd.EdgeTagNames.Add(3, "Pressure_Outlet_lower");
+                grd.EdgeTagNames.Add(4, "Pressure_Outlet_upper");
 
 
                 grd.DefineEdgeTags(delegate (double[] X)
@@ -139,10 +139,10 @@ namespace BoSSS.Application.FSI_Solver
 
             // Boundary conditions
             // =============================
-            C.AddBoundaryValue("Wall_left");//, "VelocityX", X => 0.0);
-            C.AddBoundaryValue("Wall_right");//, "VelocityX", X => 0.0);
-            C.AddBoundaryValue("Wall_lower");
-            C.AddBoundaryValue("Wall_upper");
+            C.AddBoundaryValue("Pressure_Outlet_left");//, "VelocityX", X => 0.0);
+            C.AddBoundaryValue("Pressure_Outlet_right");//, "VelocityX", X => 0.0);
+            C.AddBoundaryValue("Pressure_Outlet_lower");
+            C.AddBoundaryValue("Pressure_Outlet_upper");
             
 
             // Fluid Properties
@@ -170,8 +170,8 @@ namespace BoSSS.Application.FSI_Solver
                     thickness_P = 0.4,
                     length_P = 4,
                     underrelaxationFT_constant = false,// set true if you want to define a constant underrelaxation (not recommended)
-                    underrelaxation_factor = 0.25,// underrelaxation with [factor * 10^exponent]
-                    underrelaxationFT_exponent_min = -2
+                    underrelaxation_factor = 1,// underrelaxation with [factor * 10^exponent]
+                    underrelaxationFT_exponent_min = -1
                 });
             }
             //Define level-set
