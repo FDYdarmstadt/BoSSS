@@ -78,11 +78,10 @@ namespace BoSSS.Solution.NSECommon.Operator.Continuity {
             // transform from species B to A: we call this the "A-fictitious" value
             double uAxN_fict;
             uAxN_fict = uBxN;
-
             double FlxNeg = -DirichletFlux(uAxN, uAxN_fict); // flux on A-side
             //double FlxPos = 0;
 
-            return FlxNeg * v_Neg;
+            return FlxNeg * v_Neg * (1 - scale);
         }
 
         /*
