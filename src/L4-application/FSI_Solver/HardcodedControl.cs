@@ -38,8 +38,8 @@ namespace BoSSS.Application.FSI_Solver {
             // basic database options
             // ======================
             
-            C.DbPath = @"\\dc1\userspace\rieckmann\local\FSI\Test_db";
-            C.savetodb = true;
+            //C.DbPath = @"\\dc1\userspace\rieckmann\local\FSI\Test_db";
+            C.savetodb = false;
 
             C.ProjectName = "ShearFlow_Test";
             C.ProjectDescription = "ShearFlow";
@@ -65,6 +65,11 @@ namespace BoSSS.Application.FSI_Solver {
                 SaveToDB = FieldOpts.SaveToDBOpt.TRUE
             });
             C.FieldOptions.Add("Phi", new FieldOpts() {
+                Degree = 2,
+                SaveToDB = FieldOpts.SaveToDBOpt.TRUE
+            });
+            C.FieldOptions.Add("Curvature", new FieldOpts()
+            {
                 Degree = 2,
                 SaveToDB = FieldOpts.SaveToDBOpt.TRUE
             });
@@ -128,6 +133,7 @@ namespace BoSSS.Application.FSI_Solver {
             C.InitialValues_Evaluators.Add("VelocityY", X => 0);
             //C.InitialValues.Add("Phi", X => -1);
             //C.InitialValues.Add("Phi", X => (X[0] - 0.41));
+            
 
             // For restart
             //C.RestartInfo = new Tuple<Guid, TimestepNumber>(new Guid("fec14187-4e12-43b6-af1e-e9d535c78668"), -1);
@@ -450,17 +456,17 @@ namespace BoSSS.Application.FSI_Solver {
 
             const double BaseSize = 1.0;
 
-            C.Paramstudy_CaseIdentification = new Tuple<string, object>[] {
-                                new Tuple<string,object>("k", k),
-                            };
+            //C.Paramstudy_CaseIdentification = new Tuple<string, object>[] {
+             //                   new Tuple<string,object>("k", k),
+              //              };
 
             // k = i;
 
             // basic database options
             // ======================
 
-            C.DbPath = @"\\dc1\userspace\krause\BoSSS_DBs\Bug";
-            C.savetodb = true;
+            //C.DbPath = @"\\dc1\userspace\krause\BoSSS_DBs\Bug";
+            C.savetodb = false;
             C.saveperiod = 1;
             C.ProjectName = "ParticleUnderGravity_k" + k + "_CellAgglo02_penalty4";
             C.ProjectDescription = "Gravity";
@@ -489,6 +495,11 @@ namespace BoSSS.Application.FSI_Solver {
                 SaveToDB = FieldOpts.SaveToDBOpt.TRUE
             });
             C.FieldOptions.Add("Phi", new FieldOpts() {
+                Degree = 2,
+                SaveToDB = FieldOpts.SaveToDBOpt.TRUE
+            });
+            C.FieldOptions.Add("Curvature", new FieldOpts()
+            {
                 Degree = 2,
                 SaveToDB = FieldOpts.SaveToDBOpt.TRUE
             });
@@ -805,20 +816,20 @@ namespace BoSSS.Application.FSI_Solver {
                 radius_P = 0.2,
                 rho_P = 1.0,        
             });
-            C.Particles[1].vel_P[0][0] = 0.5;
-            C.Particles[1].vel_P[0][1] = 1.0;
+            C.Particles[1].currentIterVel_P[0][0] = 0.5;
+            C.Particles[1].currentIterVel_P[0][1] = 1.0;
 
             C.Particles.Add(new Particle(2, 4, new double[] { 0.5, 2.0 }) {
                 radius_P = 0.2,
                 rho_P = 1.0,
             });
-            //C.Particles[2].vel_P[0][0] = -1.5;
-            //C.Particles[2].vel_P[0][1] = -0.5;
+            //C.Particles[2].currentIterVel_P[0][0] = -1.5;
+            //C.Particles[2].currentIterVel_P[0][1] = -0.5;
 
 
 
-            //C.Particles[1].vel_P[1][1] = 1.0;
-            //C.Particles[1].vel_P[2][1] = 1.0;
+            //C.Particles[1].currentIterVel_P[1][1] = 1.0;
+            //C.Particles[1].currentIterVel_P[2][1] = 1.0;
 
             //C.Particles.Add(new Particle(2, 4, new double[] { -0.25, 1.0 }) {
             //    radius_P = 0.25,
@@ -1037,8 +1048,8 @@ namespace BoSSS.Application.FSI_Solver {
                 radius_P = 0.2,
                 rho_P = 1.0,
             });
-            C.Particles[0].vel_P[0][0] = -5.0;
-            C.Particles[0].rot_P[0] = -10;
+            C.Particles[0].currentIterVel_P[0][0] = -5.0;
+            C.Particles[0].currentIterRot_P[0] = -10;
 
             C.Particles.Add(new Particle(2, 4, new double[] { -0.6, 0.3},startAngl:-90.0, shape: Particle.ParticleShape.spherical) {
                 radius_P = 0.25,
@@ -1050,22 +1061,22 @@ namespace BoSSS.Application.FSI_Solver {
                 rho_P = 1.0,
             });
 
-            C.Particles[2].vel_P[0] = new double[2] { -5.0,0.0};
+            C.Particles[2].currentIterVel_P[0] = new double[2] { -5.0,0.0};
 
             C.Particles.Add(new Particle(2, 4, new double[] { 1.0, 1.0 }, startAngl: -20.0, shape: Particle.ParticleShape.squircle) {
                 radius_P = 0.25,
                 rho_P = 1.0,
             });
-            C.Particles[3].vel_P[0] = new double[2] { -5.0, -5.0 };
+            C.Particles[3].currentIterVel_P[0] = new double[2] { -5.0, -5.0 };
 
             C.Particles.Add(new Particle(2, 4, new double[] { 1.0, -1.0 }, startAngl: -20.0, shape: Particle.ParticleShape.bean) {
                 radius_P = 0.25,
                 rho_P = 1.0,
             });
 
-            C.Particles[4].vel_P[0] = new double[2] { -5.0, 5.0 };
+            C.Particles[4].currentIterVel_P[0] = new double[2] { -5.0, 5.0 };
 
-            C.Particles[4].rot_P[0] = -10;
+            C.Particles[4].currentIterRot_P[0] = -10;
 
             C.pureDryCollisions = true;
             C.collisionModel = FSI_Control.CollisionModel.MomentumConservation;
@@ -1543,7 +1554,7 @@ namespace BoSSS.Application.FSI_Solver {
                 rho_P = 10.0,
             });
 
-            //C.Particles[0].rot_P[0] = 10;
+            //C.Particles[0].currentIterRot_P[0] = 10;
 
             C.CutCellQuadratureType = Foundation.XDG.XQuadFactoryHelper.MomentFittingVariants.Classic;
 
@@ -1620,7 +1631,7 @@ namespace BoSSS.Application.FSI_Solver {
             // basic database options
             // ======================
 
-            C.DbPath = @"\\hpccluster\hpccluster-scratch\krause\DraftKissing_db";
+            //C.DbPath = @"\\hpccluster\hpccluster-scratch\krause\DraftKissing_db";
             C.savetodb = false;
             C.saveperiod = 10;
             C.ProjectName = "DraftKissingTumbling";
@@ -1761,14 +1772,14 @@ namespace BoSSS.Application.FSI_Solver {
                 rho_P = 1.01
             });
 
-            //C.Particles[0].vel_P[0][1] = -0.5;
+            //C.Particles[0].currentIterVel_P[0][1] = -0.5;
 
             C.Particles.Add(new Particle(2, 4, new double[] { 0.0, 6.8 }) {
                 radius_P = 0.1,
                 rho_P = 1.01,
             });
 
-            //C.Particles[1].vel_P[0][1] = -0.5;
+            //C.Particles[1].currentIterVel_P[0][1] = -0.5;
 
             //Func<double[], double, double> phiComplete = (X, t) => -1 * (C.Particles[0].phi_P(X, t) * C.Particles[1].phi_P(X, t));
       
@@ -1974,7 +1985,7 @@ namespace BoSSS.Application.FSI_Solver {
                 rho_P = 1.25,
             });
 
-            //C.Particles[0].rot_P[0] = 10;
+            //C.Particles[0].currentIterRot_P[0] = 10;
 
             C.CutCellQuadratureType = Foundation.XDG.XQuadFactoryHelper.MomentFittingVariants.Classic;
 
