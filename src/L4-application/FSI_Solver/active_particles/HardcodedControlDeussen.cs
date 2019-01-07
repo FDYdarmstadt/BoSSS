@@ -102,10 +102,10 @@ namespace BoSSS.Application.FSI_Solver
 
                 var grd = Grid2D.Cartesian2DGrid(Xnodes, Ynodes, periodicX: false, periodicY: false);
 
-                grd.EdgeTagNames.Add(1, "Pressure_Outlet_left");
-                grd.EdgeTagNames.Add(2, "Pressure_Outlet_right");
-                grd.EdgeTagNames.Add(3, "Pressure_Outlet_lower");
-                grd.EdgeTagNames.Add(4, "Pressure_Outlet_upper");
+                grd.EdgeTagNames.Add(1, "Wall_left");
+                grd.EdgeTagNames.Add(2, "Wall_right");
+                grd.EdgeTagNames.Add(3, "Wall_lower");
+                grd.EdgeTagNames.Add(4, "Wall_upper");
 
 
                 grd.DefineEdgeTags(delegate (double[] X)
@@ -139,10 +139,10 @@ namespace BoSSS.Application.FSI_Solver
 
             // Boundary conditions
             // =============================
-            C.AddBoundaryValue("Pressure_Outlet_left");//, "VelocityX", X => 0.0);
-            C.AddBoundaryValue("Pressure_Outlet_right");//, "VelocityX", X => 0.0);
-            C.AddBoundaryValue("Pressure_Outlet_lower");
-            C.AddBoundaryValue("Pressure_Outlet_upper");
+            C.AddBoundaryValue("Wall_left");//, "VelocityX", X => 0.0);
+            C.AddBoundaryValue("Wall_right");//, "VelocityX", X => 0.0);
+            C.AddBoundaryValue("Wall_lower");
+            C.AddBoundaryValue("Wall_upper");
             
 
             // Fluid Properties
@@ -220,7 +220,7 @@ namespace BoSSS.Application.FSI_Solver
             C.MaxSolverIterations = 1000;
             C.MinSolverIterations = 1;
             C.NoOfMultigridLevels = 1;
-            C.LevelSet_ConvergenceCriterion = 1e-5;
+            C.LevelSet_ConvergenceCriterion = 1e-3;
             C.LSunderrelax = 1.0;
             
 
