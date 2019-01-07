@@ -426,7 +426,7 @@ namespace BoSSS.Application.FSI_Solver {
                                    containsParticle = true;
                                }
                                else { containsParticle = p.Contains(X, LsTrk); }
-                               if (containsParticle)
+                               if (containsParticle && p.active_P == true)
                                {
                                    result[0] = p.currentIterVel_P[0][0];
                                    result[1] = p.currentIterVel_P[0][1];
@@ -438,6 +438,21 @@ namespace BoSSS.Application.FSI_Solver {
                                    }
                                    result[4] = -cos_theta;
                                    return result;
+                               }
+                               else if (containsParticle && p.active_P == false)
+                               {
+                                   result[0] = p.currentIterVel_P[0][0];
+                                   result[1] = p.currentIterVel_P[0][1];
+                                   result[2] = p.currentIterRot_P[0];
+                                   if (p.m_shape == Particle.ParticleShape.spherical)
+                                   {
+                                       result[3] = p.radius_P;
+                                   }
+                                   else
+                                   {
+                                       result[3] = p.currentIterPos_P[0].L2Distance(X);
+                                   }
+                                   result[4] = 0;
                                }
                            }
                            return result;
