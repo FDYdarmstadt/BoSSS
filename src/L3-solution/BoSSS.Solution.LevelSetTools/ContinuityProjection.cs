@@ -68,7 +68,7 @@ namespace BoSSS.Solution.LevelSetTools {
             myOption = Option;
             switch (Option) {
                 case ContinuityProjectionOption.SpecFEM: {
-                        var ContinuousLevelSetBasis = new SpecFemBasis((BoSSS.Foundation.Grid.Classic.GridData) gridData, k);
+                        var ContinuousLevelSetBasis = new SpecFemBasis((BoSSS.Foundation.Grid.Classic.GridData)gridData, k);
                         MyProjection = new ContinuityProjectionSpecFem(ContinuousLevelSetBasis);
                         break;
                     }
@@ -160,7 +160,7 @@ namespace BoSSS.Solution.LevelSetTools {
 
 
 
-   
+
     interface IContinuityProjection {
         void MakeContinuous(SinglePhaseField DGLevelSet, SinglePhaseField LevelSet, CellMask Domain);
     }
@@ -173,7 +173,7 @@ namespace BoSSS.Solution.LevelSetTools {
     /// Smoothing based on SpecFem
     /// => Actually ContinuousFunctionSpace
     ///</summary>
-    class ContinuityProjectionSpecFem : IContinuityProjection  {
+    class ContinuityProjectionSpecFem : IContinuityProjection {
 
         public ContinuityProjectionSpecFem(SpecFemBasis myBasis) {
             FEMLevSet = new SpecFemField(myBasis);
@@ -191,7 +191,7 @@ namespace BoSSS.Solution.LevelSetTools {
     /// Smoothing based on ContinuousDGField 
     /// => Lagrange-Multiplier Approach
     ///</summary>
-    class ContinuityProjectionCDG : IContinuityProjection {
+    public class ContinuityProjectionCDG : IContinuityProjection {
 
         public ContinuityProjectionCDG(Basis myBasis) {
             CDGField = new ContinuousDGField(myBasis);
@@ -214,12 +214,11 @@ namespace BoSSS.Solution.LevelSetTools {
 
             if (ReferenceEquals(DGLevelSet, LevelSet)) {
                 // Do nothing
-            }
-            else{
+            } else {
                 LevelSet.Clear();
                 LevelSet.AccLaidBack(1.0, DGLevelSet);
             }
-            
+
         }
     }
 
