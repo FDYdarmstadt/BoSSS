@@ -210,9 +210,9 @@ namespace BoSSS.Solution {
             // - exclude mscorlib (does not even appear on Windows, but makes problems using mono)
 
             for (int i = 0; i < stackTrace.FrameCount; i++) {
-                Type Tüpe = stackTrace.GetFrame(i).GetMethod().DeclaringType;
-                if (Tüpe != null) {
-                    Assembly entryAssembly = Tüpe.Assembly;
+                Type Tuepe = stackTrace.GetFrame(i).GetMethod().DeclaringType;
+                if (Tuepe != null) {
+                    Assembly entryAssembly = Tuepe.Assembly;
                     GetAllAssembliesRecursive(entryAssembly, allAssis);
                 }
             }
