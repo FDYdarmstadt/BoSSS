@@ -670,6 +670,21 @@ namespace MPI.Wrappers {
             MPIException.CheckReturnCode(ierr);
         }
 
+#pragma warning disable 649
+        delegate void _COMM_GET_PARENT(out MPI_Comm parent, out int ierr);
+        _COMM_GET_PARENT MPI_COMM_GET_PARENT;
+#pragma warning restore 649
+
+        /// <summary>
+        /// 
+        /// </summary>
+        public void Comm_get_parent(out MPI_Comm parent) { 
+            int ierr;
+            MPI_COMM_GET_PARENT(out parent, out ierr);
+            MPIException.CheckReturnCode(ierr);
+        }
+
+
         int m_MPI_Status_Size = -1;
 
         /// <summary>
