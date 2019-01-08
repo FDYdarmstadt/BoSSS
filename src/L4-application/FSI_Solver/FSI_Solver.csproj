@@ -74,6 +74,7 @@
     <Compile Include="active_particles\ActiveDivergenceAtIB.cs" />
     <Compile Include="FSI_Movement.cs" />
     <Compile Include="active_particles\HardcodedControlDeussen.cs" />
+    <Compile Include="FSI_GeometricalObject.cs" />
     <Compile Include="IBMPaperReproduce.cs" />
     <Compile Include="HardcodedControl.cs" />
     <Compile Include="FSI_Control.cs" />
