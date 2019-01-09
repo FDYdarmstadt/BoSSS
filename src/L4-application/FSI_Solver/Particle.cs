@@ -28,7 +28,8 @@ using ilPSP.Utils;
 using BoSSS.Foundation;
 using BoSSS.Foundation.Grid;
 
-namespace BoSSS.Application.FSI_Solver {
+namespace BoSSS.Application.FSI_Solver
+{
 
     /// <summary>
     /// Particle properties (for disk shape and spherical particles only).
@@ -293,7 +294,7 @@ namespace BoSSS.Application.FSI_Solver {
         /// <summary>
         /// Active stress on the current particle
         /// </summary>
-        public double active_stress_P 
+        virtual public double active_stress_P 
         {
             get
             {
@@ -330,35 +331,9 @@ namespace BoSSS.Application.FSI_Solver {
         /// </summary>
         [DataMember]
         public double mass_P {
-            get {
-                double mass;
-                switch (m_shape) {
-                    case ParticleShape.spherical:
-                        mass = area_P * rho_P;
-                        break;
-
-                    case ParticleShape.elliptic:
-                        mass = area_P * rho_P;
-                        break;
-
-                    case ParticleShape.hippopede:
-                        mass = area_P * rho_P;
-                        break;
-
-                    case ParticleShape.bean:
-                        mass = area_P * rho_P;
-                        break;
-
-                    case ParticleShape.squircle:
-                        mass = area_P * rho_P;
-                        break;
-
-                    default:
-
-                        throw new NotImplementedException("");
-                }
-
-                return mass;
+            get
+            {
+                return area_P * rho_P;
             }
 
         }
@@ -367,7 +342,7 @@ namespace BoSSS.Application.FSI_Solver {
         /// Area of the current particle
         /// </summary>
         [DataMember]
-        public double area_P {
+        virtual public double area_P {
             get {
                 double area;
                 switch (m_shape) {
@@ -407,7 +382,7 @@ namespace BoSSS.Application.FSI_Solver {
         /// Moment of inertia of the current particle
         /// </summary>
         [DataMember]
-        public double MomentOfInertia_P {
+        virtual public double MomentOfInertia_P {
             get {
                 double moment;
                 switch (m_shape) {
@@ -702,7 +677,6 @@ namespace BoSSS.Application.FSI_Solver {
             //temp.AccV(dt / mass_P, tempForceNew);
             temp[0] = currentTimeVel_P[1][0] + dt * tempForceNew[0] / mass_P;
             temp[1] = currentTimeVel_P[1][1] + dt * tempForceNew[1] / mass_P;
-            Console.WriteLine("Previous Velocity:  " + currentTimeVel_P[1][1] + "Current Velocity:  " + temp[1] + "New Velocity:  " + dt / mass_P * tempForceNew[1]);
 
             // Save new velocity
             // =============================
@@ -828,8 +802,12 @@ namespace BoSSS.Application.FSI_Solver {
             // save forces and torque of the last timestep
             if (iteration_counter_P == 1)
             {
-                currentTimeForces_P[1] = currentTimeForces_P[0];
-                currentTimeTorque_P[1] = currentTimeTorque_P[0];
+                //currentTimeForces_P[1] = currentTimeForces_P[0];
+                //currentTimeTorque_P[1] = currentTimeTorque_P[0];
+                currentTimeForces_P.Insert(1, currentTimeForces_P[0]);
+                currentTimeForces_P.Remove(currentTimeForces_P.Last());
+                currentTimeTorque_P.Insert(1, currentTimeTorque_P[0]);
+                currentTimeTorque_P.Remove(currentTimeTorque_P.Last());
             }
             int D = LsTrk.GridDat.SpatialDimension;
             // var UA = U.Select(u => u.GetSpeciesShadowField("A")).ToArray();
@@ -1060,7 +1038,6 @@ namespace BoSSS.Application.FSI_Solver {
                     {
                         currentIterForces_P[t][k] = currentTimeForces_P[1][k];
                         currentIterTorque_P[t] = currentTimeTorque_P[1];
-                        Console.WriteLine("currentTimeForces_P " + currentTimeForces_P[1][k]);
                     }
                 }
                 temp_underR[D] = 1;
@@ -1100,7 +1077,7 @@ namespace BoSSS.Application.FSI_Solver {
                     }
                     for (int i = 0; underrelaxation_ok == false; i++)
                     {
-                        if (Math.Abs(temp_underR[j] * forces[j]) > Math.Abs(currentIterForces_P[0][j]) && temp_underR[j] > forceAndTorque_convergence * 1000)
+                        if (Math.Abs(2 * temp_underR[j] * forces[j]) > Math.Abs(currentIterForces_P[0][j]) && temp_underR[j] > forceAndTorque_convergence * 100)
                         {
                             underrelaxationFT_exponent -= 1;
                             temp_underR[j] = underrelaxation_factor * Math.Pow(10, underrelaxationFT_exponent);
@@ -1128,16 +1105,16 @@ namespace BoSSS.Application.FSI_Solver {
                         else
                         {
                             underrelaxation_ok = true;
-                            if (mu[j] - muTemp[j] > Math.Abs(temp_underR[j] * forces[j]))
+                            if (Math.Abs(mu[j] - muTemp[j]) > Math.Abs(temp_underR[j] * forces[j]))
                             {
                                 underrelaxationFT_exponent += 1;
                                 temp_underR[j] = underrelaxation_factor * Math.Pow(10, underrelaxationFT_exponent);
                             }
-                            //if (underrelaxationFT_exponent >= underrelaxationFT_exponent_min && iteration_counter_P > 30)
-                            //{
-                            //    underrelaxationFT_exponent = underrelaxationFT_exponent_min;
-                            //    temp_underR[j] = underrelaxation_factor * Math.Pow(10, underrelaxationFT_exponent);
-                            //}
+                            if (underrelaxationFT_exponent >= underrelaxationFT_exponent_min && iteration_counter_P > 30)
+                            {
+                                underrelaxationFT_exponent = underrelaxationFT_exponent_min;
+                                temp_underR[j] = underrelaxation_factor * Math.Pow(10, underrelaxationFT_exponent);
+                            }
                             if (underrelaxationFT_exponent > 0)
                             {
                                 underrelaxationFT_exponent = 0;
@@ -1150,9 +1127,23 @@ namespace BoSSS.Application.FSI_Solver {
                 underrelaxation_ok = false;
                 temp_underR[D] = underrelaxation_factor;
                 underrelaxationFT_exponent = 0;
+                mu[D] = 0;
+                muTemp[D] = 0;
+                for (int t = 0; t < m_HistoryLength; t++)
+                {
+                    mu[D] += (currentIterTorque_P[t]) / (m_HistoryLength);
+                    muTemp[D] += (temporalTorque_P[t]) / (m_HistoryLength);
+                }
+                sigmaSquared[D] = 0;
+                sigmaSquaredTemp[D] = 0;
+                for (int t = 0; t < m_HistoryLength; t++)
+                {
+                    sigmaSquared[D] += Math.Pow((currentIterTorque_P[t] - mu[D]) / (m_HistoryLength), 2);
+                    sigmaSquaredTemp[D] += Math.Pow((temporalTorque_P[t] - muTemp[D]) / (m_HistoryLength), 2);
+                }
                 for (int i = 0; underrelaxation_ok == false; i++)
                 {
-                    if (Math.Abs(temp_underR[D] * torque) > Math.Abs(currentIterTorque_P[0]))
+                    if (Math.Abs(temp_underR[D] * torque) > Math.Abs(currentIterTorque_P[0]) && temp_underR[D] > forceAndTorque_convergence * 1000)
                     {
                         underrelaxationFT_exponent -= 1;
                         temp_underR[D] = underrelaxation_factor * Math.Pow(10, underrelaxationFT_exponent);
@@ -1160,7 +1151,7 @@ namespace BoSSS.Application.FSI_Solver {
                     else
                     {
                         underrelaxation_ok = true;
-                        if (underrelaxationFT_exponent > underrelaxationFT_exponent_min && iteration_counter_P > 30)
+                        if (mu[D] - muTemp[D] > Math.Abs(temp_underR[D] * torque))
                         {
                             underrelaxationFT_exponent = underrelaxationFT_exponent_min;
                             temp_underR[D] = underrelaxation_factor * Math.Pow(10, underrelaxationFT_exponent);
@@ -1180,7 +1171,6 @@ namespace BoSSS.Application.FSI_Solver {
             // =============================
             // forces
             double[] forces_underR = new double[D];
-            //temp_underR[0] = 0;
             //temp_underR[D] = 0;
             for (int i = 0; i < D; i++)
             {
@@ -1225,7 +1215,7 @@ namespace BoSSS.Application.FSI_Solver {
         /// </summary>
         /// <param name="LsTrk"></param>
         /// <returns></returns>
-        public CellMask cutCells_P(LevelSetTracker LsTrk) {
+        virtual public CellMask cutCells_P(LevelSetTracker LsTrk) {
 
             // tolerance is very important
             var radiusTolerance = radius_P + LsTrk.GridDat.Cells.h_minGlobal;// +2.0*Math.Sqrt(2*LsTrk.GridDat.Cells.h_minGlobal.Pow2());
@@ -1279,7 +1269,7 @@ namespace BoSSS.Application.FSI_Solver {
         /// </summary>
         /// <param name="point"></param>
         /// <returns></returns>
-        public bool Contains(double[] point,LevelSetTracker LsTrk) {
+        virtual public bool Contains(double[] point,LevelSetTracker LsTrk) {
 
             // only for squared cells
             double radiusTolerance = radius_P+2.0*Math.Sqrt(2*LsTrk.GridDat.Cells.h_minGlobal.Pow2());
@@ -1350,5 +1340,6 @@ namespace BoSSS.Application.FSI_Solver {
         }
         #endregion
     }
+
 }
 

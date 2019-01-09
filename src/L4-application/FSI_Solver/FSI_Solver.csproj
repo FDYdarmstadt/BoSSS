@@ -72,8 +72,14 @@
     <Compile Include="active_particles\ActiveViscosityAtIB.cs" />
     <Compile Include="active_particles\ActiveConvectionAtIB.cs" />
     <Compile Include="active_particles\ActiveDivergenceAtIB.cs" />
+    <Compile Include="Particle_Shapes\Particle_Bean.cs" />
+    <Compile Include="Particle_Shapes\Particle_Sphere.cs" />
+    <Compile Include="Particle_Shapes\Particle_Hippopede.cs" />
+    <Compile Include="Particle_Shapes\Particle_Squircle.cs" />
+    <Compile Include="Particle_Shapes\Particle_Ellipsoid.cs" />
     <Compile Include="FSI_Movement.cs" />
     <Compile Include="active_particles\HardcodedControlDeussen.cs" />
+    <Compile Include="FSI_GeometricalObject.cs" />
     <Compile Include="IBMPaperReproduce.cs" />
     <Compile Include="HardcodedControl.cs" />
     <Compile Include="FSI_Control.cs" />
