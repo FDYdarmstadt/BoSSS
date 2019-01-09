@@ -84,7 +84,7 @@
     <Compile Include="HardcodedControl.cs" />
     <Compile Include="FSI_Control.cs" />
     <Compile Include="FSI_SolverMain.cs" />
-    <Compile Include="Particle.cs" />
+    <Compile Include="Particle_Shapes\Particle.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Tests\HardcodedTestExamples.cs" />
     <Compile Include="Tests\TestProgram.cs" />
