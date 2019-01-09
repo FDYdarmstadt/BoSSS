@@ -24,10 +24,56 @@ namespace BoSSS.Application.FSI_Solver
 {
     [DataContract]
     [Serializable]
-    public class EllipsoidParticle : Particle
+    public class Particle_Ellipsoid : Particle
     {
-        public EllipsoidParticle(int Dim, int HistoryLength, double[] startPos = null, double startAngl = 0, ParticleShape shape = ParticleShape.spherical) : base(Dim, HistoryLength, startPos, startAngl, shape)
+        public Particle_Ellipsoid(int Dim, int HistoryLength, double[] startPos = null, double startAngl = 0, ParticleShape shape = ParticleShape.spherical) : base(Dim, HistoryLength, startPos, startAngl, shape)
         {
+            #region Particle history
+            // =============================   
+            for (int i = 0; i < HistoryLength; i++)
+            {
+                currentIterPos_P.Add(new double[Dim]);
+                currentIterAng_P.Add(new double());
+                currentIterVel_P.Add(new double[Dim]);
+                currentIterRot_P.Add(new double());
+                currentIterForces_P.Add(new double[Dim]);
+                temporalForces_P.Add(new double[Dim]);
+                currentIterTorque_P.Add(new double());
+                temporalTorque_P.Add(new double());
+            }
+            for (int i = 0; i < 4; i++)
+            {
+                currentTimePos_P.Add(new double[Dim]);
+                currentTimeAng_P.Add(new double());
+                currentTimeVel_P.Add(new double[Dim]);
+                currentTimeRot_P.Add(new double());
+                currentTimeForces_P.Add(new double[Dim]);
+                currentTimeTorque_P.Add(new double());
+            }
+            #endregion
+
+            #region Initial values
+            // ============================= 
+            if (startPos == null)
+            {
+                if (Dim == 2)
+                {
+                    startPos = new double[] { 0.0, 0.0 };
+                }
+                else
+                {
+                    startPos = new double[] { 0.0, 0.0, 0.0 };
+                }
+            }
+            currentTimePos_P[0] = startPos;
+            currentTimePos_P[1] = startPos;
+            //From degree to radiant
+            currentTimeAng_P[0] = startAngl * 2 * Math.PI / 360;
+            currentTimeAng_P[1] = startAngl * 2 * Math.PI / 360;
+            //currentIterVel_P[0][0] = 2e-8;
+
+            UpdateLevelSetFunction();
+            #endregion
         }
         override public double active_stress_P
         {

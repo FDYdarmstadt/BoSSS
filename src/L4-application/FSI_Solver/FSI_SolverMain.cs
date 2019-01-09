@@ -198,7 +198,7 @@ namespace BoSSS.Application.FSI_Solver {
                                             result[1] = p.currentIterVel_P[0][1];
                                             result[2] = p.currentIterRot_P[0];
                                             result[3] = p.currentIterPos_P[0].L2Distance(X);
-                                            result[4] = scale;
+                                            result[4] = -cos_theta;
                                             return result;
                                         }
 
@@ -1419,7 +1419,7 @@ namespace BoSSS.Application.FSI_Solver {
                     }
                 }
             }
-            else if (LevSetNeighbours.Contains(j))
+            else if (LevSetNeighbours.Contains(j) && ((FSI_Control)this.Control).Timestepper_Mode != FSI_Control.TimesteppingMode.MovingMesh)
             {
                 if (CurrentLevel < ((FSI_Control)Control).RefinementLevel)
                 {
@@ -1434,7 +1434,7 @@ namespace BoSSS.Application.FSI_Solver {
                     DesiredLevel_j = CurrentLevel;
                 }
             }
-            else if (LevSetNeighboursNeighbours.Contains(j))
+            else if (LevSetNeighboursNeighbours.Contains(j) && ((FSI_Control)this.Control).Timestepper_Mode != FSI_Control.TimesteppingMode.MovingMesh)
             {
                 if (CurrentLevel < ((FSI_Control)Control).RefinementLevel)
                 {
@@ -1449,7 +1449,7 @@ namespace BoSSS.Application.FSI_Solver {
                     DesiredLevel_j = CurrentLevel;
                 }
             }
-            else if (CurrentLevel > -2)
+            else if (CurrentLevel > -2 && ((FSI_Control)this.Control).Timestepper_Mode != FSI_Control.TimesteppingMode.MovingMesh)
             {
                 DesiredLevel_j = CurrentLevel - 1;
             }

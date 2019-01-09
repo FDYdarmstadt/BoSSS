@@ -30,7 +30,7 @@ namespace BoSSS.Application.FSI_Solver
 {
     public class HardcodedControlDeussen : IBM_Solver.HardcodedTestExamples
     {
-        public static FSI_Control TestActiveParticle(string _DbPath = null, int k = 2, double VelXBase = 0.0, double stressM = -10, double cellAgg = 0.2, int maxCurv = 20, double muA = 1e6, double timestepX = 1e-6)
+        public static FSI_Control TestActiveParticle(string _DbPath = null, int k = 2, double VelXBase = 0.0, double stressM = -1, double cellAgg = 0.2, int maxCurv = 20, double muA = 1e6, double timestepX = 1e-4)
         {
             FSI_Control C = new FSI_Control();
 
@@ -53,37 +53,7 @@ namespace BoSSS.Application.FSI_Solver
 
             // DG degrees
             // =============================
-            C.SetDGdegree(2);
-            //C.FieldOptions.Add("VelocityX", new FieldOpts()
-            //{
-            //    Degree = k,
-            //    SaveToDB = FieldOpts.SaveToDBOpt.TRUE
-            //});
-            //C.FieldOptions.Add("VelocityY", new FieldOpts()
-            //{
-            //    Degree = k,
-            //    SaveToDB = FieldOpts.SaveToDBOpt.TRUE
-            //});
-            //C.FieldOptions.Add("Pressure", new FieldOpts()
-            //{
-            //    Degree = k - 1,
-            //    SaveToDB = FieldOpts.SaveToDBOpt.TRUE
-            //});
-            //C.FieldOptions.Add("PhiDG", new FieldOpts()
-            //{
-            //    Degree = 2,
-            //    SaveToDB = FieldOpts.SaveToDBOpt.TRUE
-            //});
-            //C.FieldOptions.Add("Phi", new FieldOpts()
-            //{
-            //    Degree = 2,
-            //    SaveToDB = FieldOpts.SaveToDBOpt.TRUE
-            //});
-            C.FieldOptions.Add("Curvature", new FieldOpts()
-            {
-                Degree = 2,
-                SaveToDB = FieldOpts.SaveToDBOpt.TRUE
-            });
+            C.SetDGdegree(k);
 
 
             // Grid 
@@ -134,7 +104,7 @@ namespace BoSSS.Application.FSI_Solver
             // Mesh refinement
             // =============================
             C.AdaptiveMeshRefinement = true;
-            C.RefinementLevel = 1;
+            C.RefinementLevel = 2;
             C.maxCurvature = maxCurv;
 
 
@@ -171,7 +141,7 @@ namespace BoSSS.Application.FSI_Solver
                     thickness_P = 1,
                     length_P = 1,
                     underrelaxationFT_constant = false,// set true if you want to define a constant underrelaxation (not recommended)
-                    underrelaxation_factor = 0.25,// underrelaxation with [factor * 10^exponent]
+                    underrelaxation_factor = 0.1,// underrelaxation with [factor * 10^exponent]
                     underrelaxationFT_exponent_min = -1
                 });
             }
@@ -221,7 +191,7 @@ namespace BoSSS.Application.FSI_Solver
             C.MaxSolverIterations = 1000;
             C.MinSolverIterations = 1;
             C.NoOfMultigridLevels = 1;
-            C.LevelSet_ConvergenceCriterion = 1e-2;
+            C.LevelSet_ConvergenceCriterion = 1e-4;
             C.LSunderrelax = 1.0;
             
 
@@ -230,7 +200,7 @@ namespace BoSSS.Application.FSI_Solver
             C.Timestepper_LevelSetHandling = LevelSetHandling.Coupled_Once;
             C.splitting_fully_coupled = true;
             C.max_iterations_fully_coupled = 10000;
-            C.includeRotation = true;
+            C.includeRotation = false;
             C.includeTranslation = true;
 
 

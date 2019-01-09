@@ -331,35 +331,9 @@ namespace BoSSS.Application.FSI_Solver
         /// </summary>
         [DataMember]
         public double mass_P {
-            get {
-                double mass;
-                switch (m_shape) {
-                    case ParticleShape.spherical:
-                        mass = area_P * rho_P;
-                        break;
-
-                    case ParticleShape.elliptic:
-                        mass = area_P * rho_P;
-                        break;
-
-                    case ParticleShape.hippopede:
-                        mass = area_P * rho_P;
-                        break;
-
-                    case ParticleShape.bean:
-                        mass = area_P * rho_P;
-                        break;
-
-                    case ParticleShape.squircle:
-                        mass = area_P * rho_P;
-                        break;
-
-                    default:
-
-                        throw new NotImplementedException("");
-                }
-
-                return mass;
+            get
+            {
+                return area_P * rho_P;
             }
 
         }
@@ -368,7 +342,7 @@ namespace BoSSS.Application.FSI_Solver
         /// Area of the current particle
         /// </summary>
         [DataMember]
-        public double area_P {
+        virtual public double area_P {
             get {
                 double area;
                 switch (m_shape) {
@@ -408,7 +382,7 @@ namespace BoSSS.Application.FSI_Solver
         /// Moment of inertia of the current particle
         /// </summary>
         [DataMember]
-        public double MomentOfInertia_P {
+        virtual public double MomentOfInertia_P {
             get {
                 double moment;
                 switch (m_shape) {
@@ -1241,7 +1215,7 @@ namespace BoSSS.Application.FSI_Solver
         /// </summary>
         /// <param name="LsTrk"></param>
         /// <returns></returns>
-        public CellMask cutCells_P(LevelSetTracker LsTrk) {
+        virtual public CellMask cutCells_P(LevelSetTracker LsTrk) {
 
             // tolerance is very important
             var radiusTolerance = radius_P + LsTrk.GridDat.Cells.h_minGlobal;// +2.0*Math.Sqrt(2*LsTrk.GridDat.Cells.h_minGlobal.Pow2());
@@ -1295,7 +1269,7 @@ namespace BoSSS.Application.FSI_Solver
         /// </summary>
         /// <param name="point"></param>
         /// <returns></returns>
-        public bool Contains(double[] point,LevelSetTracker LsTrk) {
+        virtual public bool Contains(double[] point,LevelSetTracker LsTrk) {
 
             // only for squared cells
             double radiusTolerance = radius_P+2.0*Math.Sqrt(2*LsTrk.GridDat.Cells.h_minGlobal.Pow2());
@@ -1365,28 +1339,6 @@ namespace BoSSS.Application.FSI_Solver
             squircle = 4
         }
         #endregion
-    }
-
-    [DataContract]
-    [Serializable]
-    public class EllipsoidParticle : Particle
-    {
-        public EllipsoidParticle(int Dim, int HistoryLength, double[] startPos = null, double startAngl = 0, ParticleShape shape = ParticleShape.spherical) : base(Dim, HistoryLength, startPos, startAngl, shape)
-        {
-        }
-        override public double active_stress_P
-        {
-            get
-            {
-                double stress;
-                //Approximation formula for circumference according to Ramanujan
-                double circumference;
-                circumference = Math.PI * ((length_P + thickness_P) + (3 * (length_P - thickness_P).Pow2()) / (10 * (length_P + thickness_P) + Math.Sqrt(length_P.Pow2() + 14 * length_P * thickness_P + thickness_P.Pow2())));
-                stress = 0.5 * circumference * stress_magnitude_P;
-                return stress;
-            }
-
-        }
     }
 
 }
