@@ -335,7 +335,7 @@ namespace BoSSS.Application.FSI_Solver {
                                             result[3] = p.currentIterPos_P[0].L2Distance(X);
                                         }
                                         result[4] = p.active_stress_P;
-                                        result[5] = scale;
+                                        result[5] = -cos_theta;
                                         result[6] = 1;// scale_2;// Math.Abs(scale_2);
                                         result[7] = p.currentIterAng_P[0];
                                     }
@@ -436,7 +436,7 @@ namespace BoSSS.Application.FSI_Solver {
                                    } else {
                                        result[3] = p.currentIterPos_P[0].L2Distance(X);
                                    }
-                                   result[4] = scale;
+                                   result[4] = -cos_theta;
                                    return result;
                                }
                                else if (containsParticle && p.active_P == false)
@@ -769,10 +769,10 @@ namespace BoSSS.Application.FSI_Solver {
 
                             foreach (Particle p in m_Particles)
                             {
-                                totalMomentum[0] += p.mass_P * p.currentIterVel_P[0][0];
-                                totalMomentum[1] += p.mass_P * p.currentIterVel_P[0][1];
-                                totalKE[0] += 0.5 * p.mass_P * p.currentIterVel_P[0][0].Pow2();
-                                totalKE[1] += 0.5 * p.mass_P * p.currentIterVel_P[0][1].Pow2();
+                                totalMomentum[0] += p.Mass_P * p.currentIterVel_P[0][0];
+                                totalMomentum[1] += p.Mass_P * p.currentIterVel_P[0][1];
+                                totalKE[0] += 0.5 * p.Mass_P * p.currentIterVel_P[0][0].Pow2();
+                                totalKE[1] += 0.5 * p.Mass_P * p.currentIterVel_P[0][1].Pow2();
                                 totalKE[2] += 0.5 * p.MomentOfInertia_P * p.currentIterRot_P[0].Pow2();
                             }
 
@@ -1129,11 +1129,11 @@ namespace BoSSS.Application.FSI_Solver {
                                         a1 = 0.0;
 
 
-                                    double Fx = (1 + e) * ((collisionVn_P0 - collisionVn_P1) / (1 / particle0.mass_P + 1 / particle1.mass_P + a0.Pow2() / particle0.MomentOfInertia_P + a1.Pow2() / particle1.MomentOfInertia_P));
-                                    double Fxrot = (1 + e) * ((-a0 * particle0.currentIterRot_P[0] + a1 * particle1.currentIterRot_P[0]) / (1 / particle0.mass_P + 1 / particle1.mass_P + a0.Pow2() / particle0.MomentOfInertia_P + a1.Pow2() / particle1.MomentOfInertia_P));
+                                    double Fx = (1 + e) * ((collisionVn_P0 - collisionVn_P1) / (1 / particle0.Mass_P + 1 / particle1.Mass_P + a0.Pow2() / particle0.MomentOfInertia_P + a1.Pow2() / particle1.MomentOfInertia_P));
+                                    double Fxrot = (1 + e) * ((-a0 * particle0.currentIterRot_P[0] + a1 * particle1.currentIterRot_P[0]) / (1 / particle0.Mass_P + 1 / particle1.Mass_P + a0.Pow2() / particle0.MomentOfInertia_P + a1.Pow2() / particle1.MomentOfInertia_P));
 
-                                    double tempCollisionVn_P0 = collisionVn_P0 - (Fx + Fxrot) / particle0.mass_P;
-                                    double tempCollisionVn_P1 = collisionVn_P1 + (Fx + Fxrot) / particle1.mass_P;
+                                    double tempCollisionVn_P0 = collisionVn_P0 - (Fx + Fxrot) / particle0.Mass_P;
+                                    double tempCollisionVn_P1 = collisionVn_P1 + (Fx + Fxrot) / particle1.Mass_P;
                                     double tempCollisionVt_P0 = collisionVt_P0;
                                     double tempCollisionVt_P1 = collisionVt_P1;
                                     Console.WriteLine("a0:    " + a0 + "   Fx:    " + (-Fx) + "      Fxrot:    " + (-Fxrot));
@@ -1359,10 +1359,10 @@ namespace BoSSS.Application.FSI_Solver {
                             a0 = 0.0;
 
 
-                        double Fx = (1 + e) * (collisionVn_P0) / (1 / particle.mass_P + a0.Pow2() / particle.MomentOfInertia_P);
-                        double Fxrot = (1 + e) * (-a0 * particle.currentIterRot_P[0]) / (1 / particle.mass_P + a0.Pow2() / particle.MomentOfInertia_P);
+                        double Fx = (1 + e) * (collisionVn_P0) / (1 / particle.Mass_P + a0.Pow2() / particle.MomentOfInertia_P);
+                        double Fxrot = (1 + e) * (-a0 * particle.currentIterRot_P[0]) / (1 / particle.Mass_P + a0.Pow2() / particle.MomentOfInertia_P);
 
-                        double tempCollisionVn_P0 = collisionVn_P0 - (Fx + Fxrot) / particle.mass_P;
+                        double tempCollisionVn_P0 = collisionVn_P0 - (Fx + Fxrot) / particle.Mass_P;
                         double tempCollisionVt_P0 = collisionVt_P0;
                         
                         particle.currentIterRot_P[0] = particle.currentIterRot_P[0] + a0 * (Fx + Fxrot) / particle.MomentOfInertia_P;

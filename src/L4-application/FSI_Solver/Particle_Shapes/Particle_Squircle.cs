@@ -82,7 +82,7 @@ namespace BoSSS.Application.FSI_Solver
                 return 2 * Math.PI * 3.708 * stress_magnitude_P;
             }
         }
-        override public double area_P
+        override public double Area_P
         {
             get
             {
@@ -93,8 +93,13 @@ namespace BoSSS.Application.FSI_Solver
         {
             get
             {
-                return (1 / 2.0) * (mass_P * radius_P * radius_P);
+                return (1 / 2.0) * (Mass_P * radius_P * radius_P);
             }
+        }
+        override public void UpdateLevelSetFunction()
+        {
+            double alpha = -(currentIterAng_P[0]);
+            phi_P = (X, t) => -((((X[0] - currentIterPos_P[0][0]) * Math.Cos(alpha) - (X[1] - currentIterPos_P[0][1]) * Math.Sin(alpha)).Pow(4) + ((X[0] - currentIterPos_P[0][0]) * Math.Sin(alpha) + (X[1] - currentIterPos_P[0][1]) * Math.Cos(alpha)).Pow(4)) - radius_P.Pow(4));
         }
         override public CellMask cutCells_P(LevelSetTracker LsTrk)
         {
