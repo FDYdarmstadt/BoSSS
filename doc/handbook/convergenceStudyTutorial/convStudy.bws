@@ -1,12 +1,22 @@
+/// % ========================================
+/// \section{Initialization}
+/// % ========================================
+**************
+==============
+**************
+==============
+**************
+==============
 /// In order to execute the individual solver runs,
 /// we are going to employ the mini batch processor,
 /// for running the calculations on the local machine.
-/// We also have to initialize the workflow management system and create a database.
-
+/// We also have to initialize the workflow management system and create 
+/// a database.
 **************
 ==============
 restart
 **************
+
   BoSSSpad C# interpreter
   _______________________
 
@@ -18,9 +28,177 @@ List of 1 instances of IDatabaseInfo {
  Console ready for input. Type 'help' for help.
 
 ==============
+WorkflowMgm.Init("ConvStudytuorial");
+**************
+Project name is set to 'ConvStudytuorial'.
+
+==============
+var db = OpenOrCreateDefaultDatabase(); 
+**************
+Creating database 'd:\Users\kummer\default_bosss_db'.
+
+==============
 /// For sake of simplicity, we employ the Poisson solver
-/// \code{ipPoisson} which is just a benchmarking application,
-/// 
-/// For the purpose
+/// \code{ipPoisson} which is just a benchmarking application, but sufficient 
+/// for the purpose of this tutorial.
+**************
+==============
+using BoSSS.Application.SipPoisson;
+**************
+==============
+/// We are going to solve the problem 
+/// \begin{array}
+///   -\Delta T = 2 \cos(x) \cos(y)
+/// \end{array}
+/// in the square domain $\Omega = (-\pi/2,\pi/2)^2$, 
+/// with homogeneous Dirichlet boundary conditions, 
+/// for which we know the exact
+/// solution is given by
+/// \[
+///    T_\text{ex} = \cos(x) \cos(y) .
+/// \]
+**************
+==============
+/// We also instantiate a client for the \code{MiniBatchProcessor}:
+**************
+==============
+var myBatch = new MiniBatchProcessorClient();
+**************
+==============
+MiniBatchProcessor.Server.StartIfNotRunning(false);
+**************
+Mini batch processor is already running.
+
+==============
+/// % ========================================
+/// \section{Mesh Creation}
+/// % ========================================
+**************
+==============
+/// We chose resolutions of $2 \times 2$, $4 \times 4$ to $32 \times 32$
+/// cells:
+**************
+==============
+int[] resolutions = new int[] { 2, 4, 8, 16, 32};
+**************
+==============
+var grids = new GridCommons[resolutions.Length];
+for(int iRes = 0; iRes < resolutions.Length; iRes++) {
+    // create nodes:
+    var Nodes = GenericBlas.Linspace(-Math.PI*0.5, Math.PI*0.5, 
+        resolutions[iRes] + 1); // note: number of nodes = number of cells + 1!
+    
+    // create grid:
+    GridCommons grd_i = Grid2D.Cartesian2DGrid(Nodes, Nodes);
+    
+    // define all boundaries as Dirichlet:
+    grd_i.EdgeTagNames.Add(1, BoundaryType.Dirichlet.ToString());
+    grd_i.DefineEdgeTags(delegate (double[] X) {
+        byte ret = 1;
+        return ret;
+    });
+    
+    // save grid in database
+    db.SaveGrid(ref grd_i);
+    
+    // remenber reference to grid:
+    grids[iRes] = grd_i;
+}
+**************
+An equivalent grid is already present in the database -- the grid will not be saved.
+An equivalent grid is already present in the database -- the grid will not be saved.
+An equivalent grid is already present in the database -- the grid will not be saved.
+An equivalent grid is already present in the database -- the grid will not be saved.
+An equivalent grid is already present in the database -- the grid will not be saved.
+An equivalent grid is already present in the database -- the grid will not be saved.
+
+==============
+/// % ===========================================
+/// \section{Setup and execution of solver runs}
+/// % ===========================================
+**************
+==============
+/// First, we implement the exact expressions for the right-hand-side 
+/// and the exact solution.
+/// The exact solution will be used to compute the error of the simulation.
+/// Normally, the exact solution is not known; in those cases, we need to 
+/// compute the experimental convergence against the solution on the finest
+/// grid.
+**************
+==============
+static class Expressions {
+    public static double RHS(double[] X) {
+        double x = X[0];
+        double y = X[1];
+        return 2.0*Math.Cos(x)*Math.Cos(y);
+    }    
+    public static double Tex(double[] X) {
+        double x = X[0];
+        double y = X[1];
+        return Math.Cos(x)*Math.Cos(y);
+    }        
+}
+**************
+==============
+var RHSfunc = GetFormulaObject(Expressions.RHS);
+**************
+==============
+var TexFunc = GetFormulaObject(Expressions.Tex);
+**************
+==============
+/// We compute 4 different polynomial orders:
+int[] Degrees = new int[] {1, 2, 3, 4};
+**************
+==============
+/// Setup of all runs...
+**************
+==============
+var Runs = new List<SipControl>();
+Runs.Clear(); // start with an empty run list
+foreach(int pDeg in Degrees) { // loop over polynomial degrees
+foreach(var grd in grids) { //    loop over all grids
+    
+    // create object and remember in list:
+    SipControl C = new SipControl();   
+    Runs.Add(C);
+    
+    // set polynomial degree and grid:
+    C.SetDGdegree(pDeg);
+    C.SetGrid(grd);
+    
+    // specify RHS and exact solution (these are realized as initial values
+    // in the \code{ipPoisson} solver:
+    C.AddInitialValue("RHS", RHSfunc);
+    C.AddInitialValue("Tex", TexFunc);
+    
+    // specify boundary condition:
+    C.AddBoundaryValue(BoundaryType.Dirichlet.ToString()); // for homogeneous 
+    //   boundary conditions, we don not need a value, since the default value
+    //   zero is sufficient.
+}
+}
+**************
+==============
+/// ...and activate them:
+**************
+==============
+foreach(var C in Runs)
+   C.RunBatch(myBatch);
+**************
+System.ArgumentNullException occurred: Value cannot be null.
+Parameter name: key. Type 'LastError' for details.
+
+==============
+LastError
+**************
+System.ArgumentNullException: Value cannot be null.
+Parameter name: key
+   at System.Collections.Generic.Dictionary`2.FindEntry(TKey key)
+   at System.Collections.Generic.Dictionary`2.ContainsKey(TKey key)
+   at BoSSS.Application.BoSSSpad.Job..ctor(String name, Type solver)
+   at <InteractiveExpressionClass>.Host(Object& $retval)
+   at Mono.CSharp.Evaluator.Evaluate(String input, Object& result, Boolean& result_set)
+   at BoSSS.Application.BoSSSpad.ReadEvalPrintLoop.EvalPrint(String line, Assembly& AssemblyProduced)
+==============
 **************
 ==============

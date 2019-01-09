@@ -53,7 +53,7 @@ namespace BoSSS.Application.TutorialTests {
                 //BatchmodeConnector.MatlabExecuteable = "C:\\cygwin64\\bin\\bash.exe";
             } 
 
-            string preExistingDb =BoSSS.Application.BoSSSpad.InteractiveShell.GetDefaultDatabaseDir();
+            string preExistingDb = BoSSS.Application.BoSSSpad.InteractiveShell.GetDefaultDatabaseDir();
             if (Directory.Exists(preExistingDb)) {
                 //preExistingDb.Delete(true);
                 Directory.Delete(preExistingDb, true);
