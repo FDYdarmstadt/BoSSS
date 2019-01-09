@@ -1,0 +1,26 @@
+/// In order to execute the individual solver runs,
+/// we are going to employ the mini batch processor,
+/// for running the calculations on the local machine.
+/// We also have to initialize the workflow management system and create a database.
+
+**************
+==============
+restart
+**************
+  BoSSSpad C# interpreter
+  _______________________
+
+Databases loaded:
+List of 1 instances of IDatabaseInfo {
+  0: { Session Count = 7; Grid Count = 1; Path = d:\Users\kummer\Desktop\mainz\2017-01-CouettePoiseuilleFlow }
+}
+
+ Console ready for input. Type 'help' for help.
+
+==============
+/// For sake of simplicity, we employ the Poisson solver
+/// \code{ipPoisson} which is just a benchmarking application,
+/// 
+/// For the purpose
+**************
+==============
