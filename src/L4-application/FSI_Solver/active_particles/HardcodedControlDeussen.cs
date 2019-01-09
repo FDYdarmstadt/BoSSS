@@ -130,7 +130,7 @@ namespace BoSSS.Application.FSI_Solver
             int numOfParticles = 1;
             for (int d = 0; d < numOfParticles; d++)
             {
-                C.Particles.Add(new Particle_Squircle(2, 9, new double[] { 0 + 14.0 * d, 0.0 }, startAngl: 0)//, shape: Particle.ParticleShape.elliptic)
+                C.Particles.Add(new Particle_Squircle(2, 9, new double[] { 0 + 14.0 * d, 0.0 }, startAngl: 0)
                 //Generates a series of opposing particles
                 {
                     radius_P = 1,

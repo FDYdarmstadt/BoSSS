@@ -294,36 +294,9 @@ namespace BoSSS.Application.FSI_Solver
         /// <summary>
         /// Active stress on the current particle
         /// </summary>
-        virtual public double active_stress_P 
+        abstract public double active_stress_P
         {
-            get
-            {
-                double stress;
-                switch (m_shape)
-                {
-                    case ParticleShape.spherical:
-                        stress = 2 * Math.PI * radius_P * stress_magnitude_P;
-                        break;
-
-                    //case ParticleShape.elliptic:
-                    ////    Approximation formula for circumference according to Ramanujan
-                    //    double circumference;
-                    //    circumference = Math.PI * ((length_P + thickness_P) + (3 * (length_P - thickness_P).Pow2()) / (10 * (length_P + thickness_P) + Math.Sqrt(length_P.Pow2() + 14 * length_P * thickness_P + thickness_P.Pow2())));
-                    //    stress = 0.5 * circumference * stress_magnitude_P;
-                    //    break;
-
-                    case ParticleShape.squircle:
-                        stress = 2 * Math.PI * 3.708 * stress_magnitude_P;
-                        break;
-
-                    default:
-
-                        throw new NotImplementedException("");
-                }
-
-                return stress;
-            }
-
+            get;
         }
         
         /// <summary>
@@ -335,89 +308,62 @@ namespace BoSSS.Application.FSI_Solver
             {
                 return Area_P * rho_P;
             }
-
         }
 
         /// <summary>
         /// Area of the current particle
         /// </summary>
         [DataMember]
-        virtual public double Area_P {
-            get {
-                double area = 0;
-                //switch (m_shape) {
-                //    case ParticleShape.spherical:
-                //        area = Math.PI * radius_P * radius_P;
-                //        break;
-
-                //    case ParticleShape.elliptic:
-                //        area = length_P * thickness_P * Math.PI * radius_P;
-                //        break;
-
-                //    case ParticleShape.hippopede:
-                //        // not correct mass
-                //        area = Math.PI * radius_P * radius_P;
-                //        break;
-
-                //    case ParticleShape.bean:
-                //        // not correct mass
-                //        area = Math.PI * radius_P * radius_P;
-                //        break;
-
-                //    case ParticleShape.squircle:
-                //        area = 3.708 * radius_P.Pow2();
-                //        break;
-
-                //    default:
-
-                //        throw new NotImplementedException("");
-                //}
-
-                return area;
-            }
-
+        abstract public double Area_P
+        {
+            get;
         }
 
         /// <summary>
         /// Moment of inertia of the current particle
         /// </summary>
         [DataMember]
-        virtual public double MomentOfInertia_P {
-            get {
-                double moment;
-                switch (m_shape) {
-                    case ParticleShape.spherical:
-                        moment = (1 / 2.0) * (Mass_P * radius_P * radius_P);
-                        break;
+        abstract public double MomentOfInertia_P
+        {
+            get;
+        }//{
+        //    get
+        //    {
+        //        double moment;
+        //        switch (m_shape)
+        //        {
+        //            case ParticleShape.spherical:
+        //                moment = (1 / 2.0) * (Mass_P * radius_P * radius_P);
+        //                break;
 
-                    case ParticleShape.elliptic:
-                        moment = (1 / 4.0) * (Mass_P * (length_P * length_P + thickness_P * thickness_P) * radius_P * radius_P);
-                        break;
+        //            case ParticleShape.elliptic:
+        //                moment = (1 / 4.0) * (Mass_P * (length_P * length_P + thickness_P * thickness_P) * radius_P * radius_P);
+        //                break;
 
-                    case ParticleShape.hippopede:
-                        // not correct moment of inertia
-                        moment = (1 / 2.0) * (Mass_P * radius_P * radius_P);
-                        break;
+        //            case ParticleShape.hippopede:
+        //                // not correct moment of inertia
+        //                moment = (1 / 2.0) * (Mass_P * radius_P * radius_P);
+        //                break;
 
-                    case ParticleShape.bean:
-                        // not correct moment of inertia
-                        moment = (1 / 2.0) * (Mass_P * radius_P * radius_P);
-                        break;
+        //            case ParticleShape.bean:
+        //                // not correct moment of inertia
+        //                moment = (1 / 2.0) * (Mass_P * radius_P * radius_P);
+        //                break;
 
-                    case ParticleShape.squircle:
-                        // not correct moment of inertia
-                        moment = (1 / 2.0) * (Mass_P * radius_P * radius_P);
-                        break;
+        //            case ParticleShape.squircle:
+        //                // not correct moment of inertia
+        //                moment = (1 / 2.0) * (Mass_P * radius_P * radius_P);
+        //                break;
 
 
-                    default:
+        //            default:
 
-                        throw new NotImplementedException("");
-                }
+        //                throw new NotImplementedException("");
+        //        }
 
-                return moment;
-            }
-        }
+        //        return moment;
+        //    }
+        //}
         #endregion
 
         #region Particle history
@@ -515,7 +461,7 @@ namespace BoSSS.Application.FSI_Solver
         #endregion
 
         #region Update Level-set
-        virtual public void UpdateLevelSetFunction() { }
+        abstract public void UpdateLevelSetFunction();
         #endregion
 
         #region Update translational velocity

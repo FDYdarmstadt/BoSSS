@@ -86,6 +86,7 @@ namespace BoSSS.Application.FSI_Solver
         {
             get
             {
+                // not correct area
                 return Math.PI * radius_P * radius_P;
             }
         }
