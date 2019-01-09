@@ -26,7 +26,7 @@ namespace BoSSS.Application.FSI_Solver
     [Serializable]
     public class Particle_Ellipsoid : Particle
     {
-        public Particle_Ellipsoid(int Dim, int HistoryLength, double[] startPos = null, double startAngl = 0, ParticleShape shape = ParticleShape.spherical) : base(Dim, HistoryLength, startPos, startAngl, shape)
+        public Particle_Ellipsoid(int Dim, int HistoryLength, double[] startPos = null, double startAngl = 0) : base(Dim, HistoryLength, startPos, startAngl)
         {
             #region Particle history
             // =============================   
@@ -85,7 +85,7 @@ namespace BoSSS.Application.FSI_Solver
                 return 0.5 * circumference * stress_magnitude_P;
             }
         }
-        override public double area_P
+        override public double Area_P
         {
             get
             {
@@ -97,8 +97,13 @@ namespace BoSSS.Application.FSI_Solver
         {
             get
             {
-                return (1 / 4.0) * (mass_P * (length_P * length_P + thickness_P * thickness_P) * radius_P * radius_P);
+                return (1 / 4.0) * (Mass_P * (length_P * length_P + thickness_P * thickness_P) * radius_P * radius_P);
             }
+        }
+        override public void UpdateLevelSetFunction()
+        {
+            double alpha = -(currentIterAng_P[0]);
+            phi_P = (X, t) => -((((X[0] - currentIterPos_P[0][0]) * Math.Cos(alpha) - (X[1] - currentIterPos_P[0][1]) * Math.Sin(alpha)).Pow2()) / length_P.Pow2()) + -(((X[0] - currentIterPos_P[0][0]) * Math.Sin(alpha) + (X[1] - currentIterPos_P[0][1]) * Math.Cos(alpha)).Pow2() / thickness_P.Pow2()) + radius_P.Pow2();
         }
         override public CellMask cutCells_P(LevelSetTracker LsTrk)
         {

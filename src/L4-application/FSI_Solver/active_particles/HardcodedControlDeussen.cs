@@ -30,7 +30,7 @@ namespace BoSSS.Application.FSI_Solver
 {
     public class HardcodedControlDeussen : IBM_Solver.HardcodedTestExamples
     {
-        public static FSI_Control TestActiveParticle(string _DbPath = null, int k = 2, double VelXBase = 0.0, double stressM = -1, double cellAgg = 0.2, int maxCurv = 20, double muA = 1e6, double timestepX = 1e-4)
+        public static FSI_Control TestActiveParticle(string _DbPath = null, int k = 2, double VelXBase = 0.0, double stressM = -1, double cellAgg = 0.2, int maxCurv = 20, double muA = 1e6, double timestepX = 1e-3)
         {
             FSI_Control C = new FSI_Control();
 
@@ -130,7 +130,7 @@ namespace BoSSS.Application.FSI_Solver
             int numOfParticles = 1;
             for (int d = 0; d < numOfParticles; d++)
             {
-                C.Particles.Add(new Particle(2, 9, new double[] { 0 + 14.0 * d, 0.0 }, startAngl: 0, shape: Particle.ParticleShape.elliptic)
+                C.Particles.Add(new Particle_Squircle(2, 9, new double[] { 0 + 14.0 * d, 0.0 }, startAngl: 0)//, shape: Particle.ParticleShape.elliptic)
                 //Generates a series of opposing particles
                 {
                     radius_P = 1,
@@ -138,10 +138,10 @@ namespace BoSSS.Application.FSI_Solver
                     includeGravity = false,
                     active_P = true,
                     stress_magnitude_P = stressM,
-                    thickness_P = 1,
-                    length_P = 1,
+                    thickness_P = 0.2,
+                    length_P = 2,
                     underrelaxationFT_constant = false,// set true if you want to define a constant underrelaxation (not recommended)
-                    underrelaxation_factor = 0.1,// underrelaxation with [factor * 10^exponent]
+                    underrelaxation_factor = 0.5,// underrelaxation with [factor * 10^exponent]
                     underrelaxationFT_exponent_min = -1
                 });
             }
@@ -198,7 +198,7 @@ namespace BoSSS.Application.FSI_Solver
             // Coupling Properties
             // =============================
             C.Timestepper_LevelSetHandling = LevelSetHandling.Coupled_Once;
-            C.splitting_fully_coupled = true;
+            C.splitting_fully_coupled = false;
             C.max_iterations_fully_coupled = 10000;
             C.includeRotation = false;
             C.includeTranslation = true;
