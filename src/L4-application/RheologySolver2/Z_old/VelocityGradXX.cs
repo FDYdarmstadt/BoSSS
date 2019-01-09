@@ -35,9 +35,9 @@ namespace BoSSS.Application.Rheology {
 
         int Component;           // spatial dimension of momentum equation
         BoundaryCondMap<IncompressibleBcType> m_BcMap;
-        double InverseReynolds;
-        double[] pen1;
-        double pen2;
+        //double InverseReynolds;
+        //double[] pen1;
+        //double pen2;
         protected Func<double[], double, double>[,] VelFunction;
         protected Func<double[], double, double>[,] StressFunction;
 

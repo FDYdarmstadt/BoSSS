@@ -97,7 +97,7 @@ namespace BoSSS.Solution.NSECommon {
         /// <summary>
         /// Currently, not operational - intended for update of penalty length scales.
         /// </summary>
-        public void CoefficientUpdate(CoefficientSet cs, int[] DomainDGdeg, int TestDGdeg) {
+        public virtual void CoefficientUpdate(CoefficientSet cs, int[] DomainDGdeg, int TestDGdeg) {
             /*
             int m_D = cs.GrdDat.SpatialDimension;
             double _D = m_D;
