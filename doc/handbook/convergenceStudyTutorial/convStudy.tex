@@ -1,15 +1,50 @@
+% !TeX spellcheck = en_US
+
+\BoSSSopen{convergenceStudyTutorial/convStudy}
+\graphicspath{{convergenceStudyTutorial/convStudy.texbatch/}}
+
+\paragraph{What's new:} 
+\begin{itemize}
+	\item performing a convergence, resp. parameter study from a larger number of solver runs
+	\item organisation of those runs with the\emph{ work flow management tools}
+    \item especially, how to use the \emph{session table} of your project
+	\item \emph{advanced} plotting facilities and \LaTeX export
+\end{itemize}
+
+\paragraph{Prerequisites:} 
+\begin{itemize}
+	\item basic knowledge of \BoSSSpad{}
+	\item executing runs on your local machine, e.g. the quick-start guide of the \ac{cns}, see chapter \ref{sec:CNS}
+    \item knowlede of the meta job scheduler, see chapter \ref{sec:WorkflowMgm}
+\end{itemize}
+
+The fully programmable workflow management tools in \BoSSS{} are powerful helpers in
+the \emph{organization of multiple solver runs} (from dozens to thousands and beyond)
+as well as when it comes to extracting data from those runs (aka. \emph{sessions}).
+
+In order to demonstrate this, 
+we are going to perform a spatial convergence study on the following Poisson problem:
+we solve
+\begin{equation*}
+   \Delta T = -2 \cos(x) \cos(y)
+\end{equation*}
+in the square domain $\Omega = (-\pi/2,\pi/2)^2$, 
+with homogeneous Dirichlet boundary conditions, 
+for which we know the exact
+solution is given by
+\[
+   T_\text{ex} = \cos(x) \cos(y) .
+\]
+Note that this simple 2D example would be small enough to solve it in \BoSSSpad{} directly.
+However, the purpose of this tutorial is to analyze data spread over multiple sessions.
+Furthermore, although we only perform a simple convergence study,
+this tutorial can also be extended to the analysis of other metrics (e.g. run-times) collected during 
+solver runs.
+
 \BoSSScmd{
 /// % ========================================
 /// \section{Initialization}
 /// % ========================================
- }
-\BoSSSexeSilent
-\BoSSScmd{
- % 
- }
-\BoSSSexeSilent
-\BoSSScmd{
- % 
  }
 \BoSSSexeSilent
 \BoSSScmd{
@@ -24,6 +59,11 @@
 restart
  }
 \BoSSSexeSilent
+\BoSSScmdSilent{
+/// BoSSSexeSilent BoSSScmdSilent
+using NUnit.Framework;
+ }
+\BoSSSexeSilent
 \BoSSScmd{
 WorkflowMgm.Init("ConvStudytuorial");
  }
@@ -33,7 +73,17 @@ var db = OpenOrCreateDefaultDatabase();
  }
 \BoSSSexe
 \BoSSScmd{
-//db.Sessions.ForEach(si => si.Delete(true));
+/// The following (deactivated) line would delete all Sessions (i.e. solver 
+/// runs) which correspond to this project from the database.
+/// Hence, on every execution of the worksheet, all simulations would be 
+/// re-done. 
+/// Normally, without the following line, existing simulations from 
+/// the database will be used; therefore, it is save to close and open
+/// the worksheet.
+/// This is handy e.g. when simulations are running on a cluster for a long 
+/// time, and we usually don't want to re-submit the calculation 
+/// every time we execute the worksheet.
+//WorkflowMgm.Sessions.ForEach(si => si.Delete(true));
  }
 \BoSSSexe
 \BoSSScmd{
@@ -44,20 +94,6 @@ var db = OpenOrCreateDefaultDatabase();
 \BoSSSexe
 \BoSSScmd{
 using BoSSS.Application.SipPoisson;
- }
-\BoSSSexe
-\BoSSScmd{
-/// We are going to solve the problem 
-/// \begin{array}
-///   \Delta T = -2 \cos(x) \cos(y)
-/// \end{array}
-/// in the square domain $\Omega = (-\pi/2,\pi/2)^2$, 
-/// with homogeneous Dirichlet boundary conditions, 
-/// for which we know the exact
-/// solution is given by
-/// \[
-///    T_\text{ex} = \cos(x) \cos(y) .
-/// \]
  }
 \BoSSSexe
 \BoSSScmd{
@@ -75,6 +111,7 @@ MiniBatchProcessor.Server.StartIfNotRunning(false);
 \BoSSScmd{
 /// % ========================================
 /// \section{Mesh Creation}
+/// \label{sec:MeschCreation}
 /// % ========================================
  }
 \BoSSSexe
@@ -115,6 +152,7 @@ for(int iRes = 0; iRes < resolutions.Length; iRes++) \{\newline
 \BoSSScmd{
 /// % ===========================================
 /// \section{Setup and execution of solver runs}
+/// \label{sec:SetupAndExec}
 /// % ===========================================
  }
 \BoSSSexe
@@ -212,12 +250,13 @@ WorkflowMgm.BlockUntilAllJobsTerminate(720);
 \BoSSScmd{
 /// % ===========================================
 /// \section{Convergence against exact solution}
+/// \label{sec:ExactConvergence}
 /// % ===========================================
  }
 \BoSSSexe
 \BoSSScmd{
-/// As already noted, the computation of the $L^2$ error agains the 
-/// exact solution is handeled specially in the \code{ipPoisson} solver.
+/// As already noted, the computation of the $L^2$ error against the 
+/// exact solution is handled specially in the \code{ipPoisson} solver.
 /// However, the following tutorial can serve as a general template of how to
 /// extract data from the session table and visualize it.
  }
@@ -241,7 +280,8 @@ Tab.GetColumnNames().Take(7); // Take(7) is just to shorten the output.
 \BoSSSexe
 \BoSSScmd{
 Tab = Tab.ExtractColumns(\newline 
-\btab "SessionName", "DGdegree:T", "Grid:NoOfCells", "Grid:hMin", "DOFs", \newline 
+\btab //"SessionName", \newline 
+\btab "DGdegree:T", "Grid:NoOfCells", "Grid:hMin", "DOFs", \newline 
 \btab //"ExactSolution\_provided", \newline 
 \btab "SolL2err");
  }
@@ -293,8 +333,9 @@ ErrorPlot.dataGroups[3].Format.PointType = PointTypes.Asterisk;
 \BoSSSexe
 \BoSSScmd{
 foreach(var grp in ErrorPlot.dataGroups) \{\newline 
-\btab grp.Format.PointSize = 1.5;\newline 
+\btab grp.Format.PointSize = 0.8;\newline 
 \btab grp.Format.DashType  = DashTypes.Dotted;\newline 
+\btab grp.Format.LineWidth = 2;\newline 
 \}
  }
 \BoSSSexe
@@ -310,11 +351,24 @@ ErrorPlot.PlotNow();
 ErrorPlot.Regression();
  }
 \BoSSSexe
+\BoSSScmdSilent{
+/// BoSSScmdSilent
+var reg1     = ErrorPlot.Regression();\newline 
+double conv1 = reg1.Single(kv => kv.Key.Contains("T1")).Value;\newline 
+double conv2 = reg1.Single(kv => kv.Key.Contains("T2")).Value;\newline 
+double conv3 = reg1.Single(kv => kv.Key.Contains("T3")).Value;\newline 
+double conv4 = reg1.Single(kv => kv.Key.Contains("T4")).Value;\newline 
+Assert.IsTrue(Math.Abs(conv1 - (+2)) < 0.7, "experimental convergence failed on k = 1");\newline 
+Assert.IsTrue(Math.Abs(conv2 - (+3)) < 0.7, "experimental convergence failed on k = 2");\newline 
+Assert.IsTrue(Math.Abs(conv3 - (+4)) < 0.7, "experimental convergence failed on k = 3");\newline 
+Assert.IsTrue(Math.Abs(conv4 - (+5)) < 0.7, "experimental convergence failed on k = 4");
+ }
+\BoSSSexe
 \BoSSScmd{
 ///
-/// Note: these plots can alos be exported to LaTeX, in a quality 
+/// Note: these plots can also be exported to LaTeX, in a quality 
 /// that is suitable for print publication:
-ErrorPlot.ToGnuplot().PlotCairolatex().SaveTo("C:\textbackslash \textbackslash tmp\textbackslash \textbackslash errplt.tex");
+//ErrorPlot.ToGnuplot().PlotCairolatex().SaveTo("C:\textbackslash \textbackslash tmp\textbackslash \textbackslash errplt.tex");
  }
 \BoSSSexe
 \BoSSScmd{
@@ -329,10 +383,10 @@ ErrorPlot.ToGnuplot().PlotCairolatex().SaveTo("C:\textbackslash \textbackslash t
 \BoSSSexe
 \BoSSScmd{
 /// If the exact solution is not known, one can only estimate the convergence
-/// behaviour experimentally. 
+/// behavior experimentally. 
 /// \BoSSS{} provides some utility for this, the \code{DGFieldComparison}
 /// class, which has a versatile, yet complex interface.
-/// However, there is a simple interface in the workflow mangement toolbox.
+/// However, there is a simple interface in the workflow management toolbox.
  }
 \BoSSSexe
 \BoSSScmd{
@@ -361,7 +415,7 @@ Tab = Tab.ExtractColumns(\newline
 /// We observe that the \emph{experimental} $L^2$ error is approximately
 /// equal to the $L^2$ error against the exact solution, 
 /// except for the highest resolutions. There, the error of the numerical 
-/// solution is comuted against itself, and thus the error is zero up 
+/// solution is computed against itself, and thus the error is zero up 
 /// to round-off errors.
 /// 
 /// If we would like to extract convergence plots from this table, we need to
@@ -389,7 +443,7 @@ Tab.Print();
 \BoSSSexe
 \BoSSScmd{
 /// As an alternative to working with the session table, which is sometimes
-/// not versatile egnough, we demonstate a way to extract data 
+/// not versatile enough, we demonstrate a way to extract data 
 /// from the sessions in the current project directly.
  }
 \BoSSSexe
@@ -426,8 +480,9 @@ ExpPlotS[1].dataGroups[0].Name = "$k = 2$";\newline
 ExpPlotS[2].dataGroups[0].Name = "$k = 3$";\newline 
 ExpPlotS[3].dataGroups[0].Name = "$k = 4$";\newline 
 foreach(var p in ExpPlotS) \{\newline 
-\btab p.dataGroups[0].Format.PointSize = 1.5;\newline 
+\btab p.dataGroups[0].Format.PointSize = 0.8;\newline 
 \btab p.dataGroups[0].Format.DashType = DashTypes.Dotted;\newline 
+\btab p.dataGroups[0].Format.LineWidth = 2;\newline 
 \}
  }
 \BoSSSexe
@@ -446,6 +501,19 @@ ExpPlot.PlotNow();
 \BoSSScmd{
 /// and we can also verify the slope of the error curves:
 ExpPlot.Regression();
+ }
+\BoSSSexe
+\BoSSScmdSilent{
+/// BoSSScmdSilent
+var regExp   = ExpPlot.Regression();\newline 
+double conv1 = regExp.Single(kv => kv.Key.Contains("1")).Value;\newline 
+double conv2 = regExp.Single(kv => kv.Key.Contains("2")).Value;\newline 
+double conv3 = regExp.Single(kv => kv.Key.Contains("3")).Value;\newline 
+double conv4 = regExp.Single(kv => kv.Key.Contains("4")).Value;\newline 
+Assert.IsTrue(Math.Abs(conv1 - (-2)) < 0.7, "experimental convergence failed on k = 1");\newline 
+Assert.IsTrue(Math.Abs(conv2 - (-3)) < 0.7, "experimental convergence failed on k = 2");\newline 
+Assert.IsTrue(Math.Abs(conv3 - (-4)) < 0.7, "experimental convergence failed on k = 3");\newline 
+Assert.IsTrue(Math.Abs(conv4 - (-5)) < 0.7, "experimental convergence failed on k = 4");
  }
 \BoSSSexe
 \BoSSScmd{
@@ -480,7 +548,7 @@ multiplot.PlotNow();
 \BoSSSexe
 \BoSSScmd{
 /// this already looks neat, but a few 
-/// few formattings to make the multiplot look nicer:
+/// formatting tweaks to make the multi-plot look nicer:
 multiplot[0,1].dataGroups[0].UseY2 = true; // label right on right column\newline 
 multiplot[0,1].ShowYtics = false;\newline 
 multiplot[0,1].ShowY2tics = true;\newline 
@@ -508,15 +576,15 @@ multiplot[1,0].LogY2 = true;\newline
 multiplot[1,1].LogY2 = true;\newline 
  \newline 
 // set x ranges\newline 
-multiplot[0,0].X2rangeMin = 1e1;\newline 
-multiplot[0,0].X2rangeMax = 1e4;\newline 
-multiplot[0,1].X2rangeMin = 1e1;\newline 
-multiplot[0,1].X2rangeMax = 1e4;\newline 
+multiplot[0,0].X2rangeMin = 1e0;\newline 
+multiplot[0,0].X2rangeMax = 1e2;\newline 
+multiplot[0,1].X2rangeMin = 1e0;\newline 
+multiplot[0,1].X2rangeMax = 1e2;\newline 
  \newline 
-multiplot[1,0].XrangeMin = 1e1;\newline 
-multiplot[1,0].XrangeMax = 1e4;\newline 
-multiplot[1,1].XrangeMin = 1e1;\newline 
-multiplot[1,1].XrangeMax = 1e4;\newline 
+multiplot[1,0].XrangeMin = 1e0;\newline 
+multiplot[1,0].XrangeMax = 1e2;\newline 
+multiplot[1,1].XrangeMin = 1e0;\newline 
+multiplot[1,1].XrangeMax = 1e2;\newline 
  \newline 
 // set y ranges\newline 
 multiplot[0,0].YrangeMin = 1e-7;\newline 
@@ -542,5 +610,27 @@ multiplot[1,1].tmargin = 0.5;
 \BoSSSexe
 \BoSSScmd{
 multiplot.PlotNow();
+ }
+\BoSSSexe
+\BoSSScmd{
+/// % ============================================
+/// \section{Summary}
+/// % ============================================
+ }
+\BoSSSexe
+\BoSSScmd{
+/// This tutorial showed how to set-up a parameter study,
+/// by looping over a set of parameters (in this case, different grids
+/// and polynomial degrees), see sections \ref{sec:MeschCreation}
+/// and \ref{sec:SetupAndExec}.
+/// Finally, it only requires a simple loop to send all jobs to a 
+/// compute resource.
+///
+/// Afterwards, c.f. section \ref{sec:ExactConvergence},
+/// the \emph{session table} was used to combine measurements
+/// taken in each session (here, the $L^2$ error against the exact solution)
+/// into a single table.
+/// This table can either be exported to spreadsheet analysis software
+/// or visualized internally.
  }
 \BoSSSexe

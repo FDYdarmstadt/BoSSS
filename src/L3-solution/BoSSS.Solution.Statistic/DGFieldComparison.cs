@@ -83,6 +83,7 @@ namespace BoSSS.Solution.Statistic {
                 // sort according to grid resolution
                 {
                     var s = fields.OrderBy(f => f.First().GridDat.CellPartitioning.TotalLength).ToArray();
+                    var orgfields = fields.ToArray();
                     fields.Clear();
                     fields.AddRange(s);
                     s = null;
@@ -97,7 +98,7 @@ namespace BoSSS.Solution.Statistic {
                     // extract timestep Id's
                     timestepIds = new Guid[fields.Count];
                     for (int z = 0; z < timestepIds.Length; z++) {
-                        int idx = fields.IndexOf(fields[z], (f1, f2) => object.ReferenceEquals(f1, f2));
+                        int idx = orgfields.IndexOf(fields[z], (f1, f2) => object.ReferenceEquals(f1, f2));
                         timestepIds[z] = timestepS.ElementAt(idx).ID;
                     }
 
