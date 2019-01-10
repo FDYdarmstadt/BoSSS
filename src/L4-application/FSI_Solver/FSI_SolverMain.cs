@@ -296,7 +296,7 @@ namespace BoSSS.Application.FSI_Solver {
                                     double scale_2;
                                     double cos_theta;
                                     // The posterior side of the particle (Neumann boundary)
-                                    if (Math.Cos(p.currentIterAng_P[0]) * (X[0] - p.currentIterPos_P[0][0]) + Math.Sin(p.currentIterAng_P[0]) * (X[1] - p.currentIterPos_P[0][1]) <= 1e-8)
+                                    if (Math.Cos(p.currentIterAng_P[0]) * (X[0] - p.currentIterPos_P[0][0]) + Math.Sin(p.currentIterAng_P[0]) * (X[1] - p.currentIterPos_P[0][1]) < 0)
                                     {
                                         cos_theta = (Math.Cos(p.currentIterAng_P[0]) * (X[0] - p.currentIterPos_P[0][0]) + Math.Sin(p.currentIterAng_P[0]) * (X[1] - p.currentIterPos_P[0][1])) / (Math.Sqrt((X[0] - p.currentIterPos_P[0][0]).Pow2() + (X[1] - p.currentIterPos_P[0][1]).Pow2()));
                                         // smoothing parameter, to avoid a singularity at the transition between the two boundary conditions
@@ -335,7 +335,7 @@ namespace BoSSS.Application.FSI_Solver {
                                             result[3] = p.currentIterPos_P[0].L2Distance(X);
                                         }
                                         result[4] = p.active_stress_P;
-                                        result[5] = -cos_theta;
+                                        result[5] = scale;
                                         result[6] = 1;// scale_2;// Math.Abs(scale_2);
                                         result[7] = p.currentIterAng_P[0];
                                     }
@@ -561,7 +561,7 @@ namespace BoSSS.Application.FSI_Solver {
             m_BDF_Timestepper.Config_MaxIterations = ((FSI_Control)this.Control).MaxSolverIterations;
             m_BDF_Timestepper.Config_MinIterations = ((FSI_Control)this.Control).MinSolverIterations;
             m_BDF_Timestepper.IterUnderrelax = ((FSI_Control)this.Control).Timestepper_LevelSetHandling == LevelSetHandling.Coupled_Iterative ? ((FSI_Control)this.Control).LSunderrelax : 1.0;
-            m_BDF_Timestepper.Config_LevelSetConvergenceCriterion = ((FSI_Control)this.Control).LevelSet_ConvergenceCriterion;
+            m_BDF_Timestepper.Config_LevelSetConvergenceCriterion = ((FSI_Control)this.Control).ForceAndTorque_ConvergenceCriterion;
             m_BDF_Timestepper.SessionPath = SessionPath;
             m_BDF_Timestepper.Timestepper_Init = Solution.Timestepping.TimeStepperInit.SingleInit;
 
@@ -650,8 +650,8 @@ namespace BoSSS.Application.FSI_Solver {
             foreach (Particle p in m_Particles)
             {
                 p.ResetParticlePosition();
-                Console.WriteLine(" Time Pos 00:   " + p.currentTimePos_P[0][0] + " Time Pos 10:   " + p.currentTimePos_P[1][0]);
-                Console.WriteLine(" Iter Pos 00:   " + p.currentIterPos_P[0][0] + " Iter Pos 10:   " + p.currentIterPos_P[1][0]);
+                //Console.WriteLine(" Time Pos 00:   " + p.currentTimePos_P[0][0] + " Time Pos 10:   " + p.currentTimePos_P[1][0]);
+                //Console.WriteLine(" Iter Pos 00:   " + p.currentIterPos_P[0][0] + " Iter Pos 10:   " + p.currentIterPos_P[1][0]);
                 p.UpdateAngularVelocity(dt, this.Control.PhysicalParameters.rho_A, ((FSI_Control)this.Control).includeRotation);
                 p.UpdateTransVelocity(dt, this.Control.PhysicalParameters.rho_A, ((FSI_Control)this.Control).includeTranslation);
                 p.UpdateParticlePosition(dt);
@@ -743,12 +743,12 @@ namespace BoSSS.Application.FSI_Solver {
                     else
                     {
                         int iteration_counter = 1;
-                        for (double posResidual_splitting = 1; posResidual_splitting > ((FSI_Control)this.Control).LevelSet_ConvergenceCriterion;)// && iteration_counter <= (this.Control).max_iterations_fully_coupled;)
+                        for (double posResidual_splitting = 1; posResidual_splitting > ((FSI_Control)this.Control).ForceAndTorque_ConvergenceCriterion;)// && iteration_counter <= (this.Control).max_iterations_fully_coupled;)
                         {
                             foreach (Particle p in m_Particles)
                             {
                                 p.iteration_counter_P = iteration_counter;
-                                p.forceAndTorque_convergence = ((FSI_Control)this.Control).LevelSet_ConvergenceCriterion;
+                                p.forceAndTorque_convergence = ((FSI_Control)this.Control).ForceAndTorque_ConvergenceCriterion;
                             }
 
                             m_BDF_Timestepper.Solve(phystime, dt, false);

@@ -30,7 +30,7 @@ namespace BoSSS.Application.FSI_Solver
 {
     public class HardcodedControlDeussen : IBM_Solver.HardcodedTestExamples
     {
-        public static FSI_Control TestActiveParticle(string _DbPath = null, int k = 2, double VelXBase = 0.0, double stressM = -1, double cellAgg = 0.2, int maxCurv = 20, double muA = 1e6, double timestepX = 1e-3)
+        public static FSI_Control TestActiveParticle(string _DbPath = null, int k = 2, double VelXBase = 0.0, double stressM = 1, double cellAgg = 0.2, int maxCurv = 20, double muA = 1e6, double timestepX = 1e-2)
         {
             FSI_Control C = new FSI_Control();
 
@@ -65,8 +65,8 @@ namespace BoSSS.Application.FSI_Solver
                 int q = new int(); // #Cells in x-dircetion
                 int r = new int(); // #Cells in y-dircetion
 
-                q = 30;
-                r = 20;
+                q = 15;
+                r = 10;
 
                 double[] Xnodes = GenericBlas.Linspace(-3 * BaseSize, 3 * BaseSize, q);
                 double[] Ynodes = GenericBlas.Linspace(-2 * BaseSize, 2 * BaseSize, r);
@@ -130,8 +130,7 @@ namespace BoSSS.Application.FSI_Solver
             int numOfParticles = 1;
             for (int d = 0; d < numOfParticles; d++)
             {
-                C.Particles.Add(new Particle_Squircle(2, 9, new double[] { 0 + 14.0 * d, 0.0 }, startAngl: 0)
-                //Generates a series of opposing particles
+                C.Particles.Add(new Particle_Ellipsoid(2, 4, new double[] { 0 + 14.0 * d, 0.0 }, startAngl: 0)
                 {
                     radius_P = 1,
                     rho_P = 1.02,//pg/(mum^3)
@@ -180,7 +179,7 @@ namespace BoSSS.Application.FSI_Solver
 
             // Physical Parameters
             // =============================  
-            C.PhysicalParameters.IncludeConvection = true;
+            C.PhysicalParameters.IncludeConvection = false;
 
 
             // misc. solver options
@@ -191,16 +190,16 @@ namespace BoSSS.Application.FSI_Solver
             C.MaxSolverIterations = 1000;
             C.MinSolverIterations = 1;
             C.NoOfMultigridLevels = 1;
-            C.LevelSet_ConvergenceCriterion = 1e-4;
+            C.ForceAndTorque_ConvergenceCriterion = 1e-6;
             C.LSunderrelax = 1.0;
             
 
             // Coupling Properties
             // =============================
             C.Timestepper_LevelSetHandling = LevelSetHandling.Coupled_Once;
-            C.splitting_fully_coupled = false;
+            C.splitting_fully_coupled = true;
             C.max_iterations_fully_coupled = 10000;
-            C.includeRotation = false;
+            C.includeRotation = true;
             C.includeTranslation = true;
 
 
