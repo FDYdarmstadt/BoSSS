@@ -251,7 +251,15 @@ Tab.Print();
  }
 \BoSSSexe
 \BoSSScmd{
-/// This can be easily converted to a plot: the $x$-axis is determined
+///
+/// Note: the session table can also be exported, e.g. to Excel or 
+/// Libre/Open Office Calc, by using the \code{ToCSVFile} function.
+///
+ }
+\BoSSSexe
+\BoSSScmd{
+/// The columns of the session table 
+/// can be easily converted to a plot: the $x$-axis is determined
 /// by the cell width, the $y$-axis is determined by the $L^2$ error.
 /// Furthermore, we want to \emph{group} our plots according
 /// to the DG degree, i.e. have one line for each polynomial degree;
@@ -303,6 +311,17 @@ ErrorPlot.Regression();
  }
 \BoSSSexe
 \BoSSScmd{
+///
+/// Note: these plots can alos be exported to LaTeX, in a quality 
+/// that is suitable for print publication:
+ErrorPlot.ToGnuplot().PlotCairolatex().SaveTo("C:\textbackslash \textbackslash tmp\textbackslash \textbackslash errplt.tex");
+ }
+\BoSSSexe
+\BoSSScmd{
+ % 
+ }
+\BoSSSexe
+\BoSSScmd{
 /// % ===========================================
 /// \section{experimental convergence plot}
 /// % ===========================================
@@ -312,7 +331,7 @@ ErrorPlot.Regression();
 /// If the exact solution is not known, one can only estimate the convergence
 /// behaviour experimentally. 
 /// \BoSSS{} provides some utility for this, the \code{DGFieldComparison}
-/// class, which has a versital, yet complex interface.
+/// class, which has a versatile, yet complex interface.
 /// However, there is a simple interface in the workflow mangement toolbox.
  }
 \BoSSSexe
@@ -341,8 +360,8 @@ Tab = Tab.ExtractColumns(\newline
 \BoSSScmd{
 /// We observe that the \emph{experimental} $L^2$ error is approximately
 /// equal to the $L^2$ error against the exact solution, 
-/// except for the highest resolutions. there, the error of the numerical 
-/// solution is comuted against itself, and thuse the error is zero up 
+/// except for the highest resolutions. There, the error of the numerical 
+/// solution is comuted against itself, and thus the error is zero up 
 /// to round-off errors.
 /// 
 /// If we would like to extract convergence plots from this table, we need to
@@ -363,36 +382,59 @@ Tab.Print();
  }
 \BoSSSexe
 \BoSSScmd{
- % 
+/// % ============================================
+/// \subsection{Working without the session table}
+/// % ============================================
  }
 \BoSSSexe
 \BoSSScmd{
+/// As an alternative to working with the session table, which is sometimes
+/// not versatile egnough, we demonstate a way to extract data 
+/// from the sessions in the current project directly.
+ }
+\BoSSSexe
+\BoSSScmd{
+// Create a list in which we store a separate plot for each polynomial degree:\newline 
 var ExpPlotS = new List<Plot2Ddata>();\newline 
-foreach(int pDeg in Degrees) \{\newline 
+ \newline 
+foreach(int pDeg in Degrees) \{ // loop over polynomial degrees\newline 
+\btab // extract sessions with DG degree pDeg\newline 
 \btab var pDegSessions = WorkflowMgm.Sessions.Where(\newline 
+\btab \btab \btab   // function which is true on all sessions we are interested in:\newline 
 \btab \btab \btab   Si => Convert.ToInt32(Si.KeysAndQueries["DGdegree:T"]) == pDeg\newline 
 \btab \btab ).ToArray();\newline 
-\btab Plot2Ddata pDegPlot = pDegSessions.ToEstimatedGridConvergenceData("T",true);\newline 
+ \newline 
+\btab // now, create a plot from the selected sessions:\newline 
+\btab // (we could also do other things)\newline 
+\btab Plot2Ddata pDegPlot = \newline 
+\btab \btab pDegSessions.ToEstimatedGridConvergenceData("T", true);\newline 
+ \newline 
+\btab // remember the freshly created plot object in a list:\newline 
 \btab ExpPlotS.Add(pDegPlot);\newline 
 \}
  }
 \BoSSSexe
 \BoSSScmd{
- % 
+/// We adjust some plot style settings:
+ExpPlotS[0].dataGroups[0].Format.PointType = PointTypes.Diamond;\newline 
+ExpPlotS[1].dataGroups[0].Format.PointType = PointTypes.Box;\newline 
+ExpPlotS[2].dataGroups[0].Format.PointType = PointTypes.LowerTriangle;\newline 
+ExpPlotS[3].dataGroups[0].Format.PointType = PointTypes.Asterisk;\newline 
+ExpPlotS[0].dataGroups[0].Name = "$k = 1$";\newline 
+ExpPlotS[1].dataGroups[0].Name = "$k = 2$";\newline 
+ExpPlotS[2].dataGroups[0].Name = "$k = 3$";\newline 
+ExpPlotS[3].dataGroups[0].Name = "$k = 4$";\newline 
+foreach(var p in ExpPlotS) \{\newline 
+\btab p.dataGroups[0].Format.PointSize = 1.5;\newline 
+\btab p.dataGroups[0].Format.DashType = DashTypes.Dotted;\newline 
+\}
  }
 \BoSSSexe
 \BoSSScmd{
- % 
- }
-\BoSSSexe
-\BoSSScmd{
- % 
- }
-\BoSSSexe
-\BoSSScmd{
-var ExpPlot = ExpPlotS[0];\newline 
-foreach(var p in ExpPlotS.Skip(1)) \{\newline 
-\btab ExpPlot = ExpPlot.Merge(p);   \newline 
+/// and we can merge all four plot objects into a singe one:
+var ExpPlot = ExpPlotS[0]; //           select 0-th object\newline 
+foreach(var p in ExpPlotS.Skip(1)) \{ // loop over other (skip 0-th entry)\newline 
+\btab ExpPlot = ExpPlot.Merge(p); //      merge \newline 
 \}
  }
 \BoSSSexe
@@ -401,6 +443,53 @@ ExpPlot.PlotNow();
  }
 \BoSSSexe
 \BoSSScmd{
+/// and we can also verify the slope of the error curves:
 ExpPlot.Regression();
+ }
+\BoSSSexe
+\BoSSScmd{
+ % 
+ }
+\BoSSSexe
+\BoSSScmd{
+ % 
+ }
+\BoSSSexe
+\BoSSScmd{
+ % 
+ }
+\BoSSSexe
+\BoSSScmd{
+ % 
+ }
+\BoSSSexe
+\BoSSScmd{
+ % 
+ }
+\BoSSSexe
+\BoSSScmd{
+ % 
+ }
+\BoSSSexe
+\BoSSScmd{
+ % 
+ }
+\BoSSSexe
+\BoSSScmd{
+ % 
+ }
+\BoSSSexe
+\BoSSScmd{
+ % 
+ }
+\BoSSSexe
+\BoSSScmd{
+ % 
+ }
+\BoSSSexe
+\BoSSScmd{
+/// % ============================================
+/// \subsection{Working without the session table}
+/// % ============================================
  }
 \BoSSSexe
