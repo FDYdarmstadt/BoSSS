@@ -144,12 +144,10 @@ namespace BoSSS.Solution.NSECommon.Operator.Viscosity {
             //Defining active stress
             if (component == 0)
             {
-                //active_stress_visc = active_stress * Math.Abs(inp.n[1]) * Math.Cos(Ang_P) * scale;
-                active_stress_visc = active_stress * Math.Cos(Ang_P) * scale;
+                active_stress_visc =  - inp.n[0] / Math.Abs(inp.n[0]) * active_stress * scale * Math.Abs(inp.n[1]);
             } else
             {
-                //active_stress_visc = active_stress * Math.Abs(inp.n[0]) * Math.Sin(Ang_P) * scale;
-                active_stress_visc = active_stress * Math.Sin(Ang_P) * scale;
+                active_stress_visc = inp.n[1] / Math.Abs(inp.n[1]) * active_stress * scale * Math.Abs(inp.n[0]);
             }
 
             //Computing flux

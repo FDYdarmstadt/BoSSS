@@ -453,6 +453,7 @@ namespace BoSSS.Application.FSI_Solver {
                                        result[3] = p.currentIterPos_P[0].L2Distance(X);
                                    }
                                    result[4] = 0;
+                                   return result;
                                }
                            }
                            return result;
@@ -515,7 +516,7 @@ namespace BoSSS.Application.FSI_Solver {
             switch (((FSI_Control)this.Control).Timestepper_LevelSetHandling)
             {
                 case LevelSetHandling.Coupled_Once:
-                    MassMatrixShape = MassMatrixShapeandDependence.IsTimeDependent;
+                    MassMatrixShape = MassMatrixShapeandDependence.IsTimeAndSolutionDependent;
                     break;
 
                 case LevelSetHandling.Coupled_Iterative:
@@ -547,7 +548,7 @@ namespace BoSSS.Application.FSI_Solver {
                 true,
                 DelComputeOperatorMatrix, DelUpdateLevelset,
                 bdfOrder,
-                lsh,
+                ((FSI_Control)this.Control).Timestepper_LevelSetHandling,//lsh
                 MassMatrixShape,
                 SpatialOp,
                 MassScale,
@@ -573,13 +574,15 @@ namespace BoSSS.Application.FSI_Solver {
             SinglePhaseField LsBkUp = new SinglePhaseField(this.LevSet.Basis);
             LsBkUp.Acc(1.0, this.LevSet);
             CellMask oldCC = LsTrk.Regions.GetCutCellMask();
-            //double acc_vel_P_x_old = 0;
-            //double acc_vel_P_y_old = 0;
-            //foreach (Particle p in m_Particles)
-            //{
-            //    acc_vel_P_x_old = (p.currentIterVel_P[0][0] + p.currentIterVel_P[1][0] + p.currentIterVel_P[2][0] + p.currentIterVel_P[3][0]) / 4;
-            //    acc_vel_P_y_old = (p.currentIterVel_P[0][1] + p.currentIterVel_P[1][1] + p.currentIterVel_P[2][1] + p.currentIterVel_P[3][1]) / 4;
-            //}
+            double acc_force_P_x_old = 0;
+            double acc_force_P_y_old = 0;
+            double acc_torque_P_old = 0;
+            foreach (Particle p in m_Particles)
+            {
+                acc_force_P_x_old += p.currentIterForces_P[1][0];
+                acc_force_P_y_old += p.currentIterForces_P[1][1];
+                acc_torque_P_old += p.currentIterTorque_P[1];
+            }
             #region Level-set handling
             switch (((FSI_Control)this.Control).Timestepper_LevelSetHandling) { 
                 case LevelSetHandling.None:
@@ -611,23 +614,32 @@ namespace BoSSS.Application.FSI_Solver {
             }
             #endregion
             #region Level-set residual
-            double acc_vel_P_x = 0;
-            double acc_vel_P_y = 0;
+            double acc_force_P_x = 0;
+            double acc_force_P_y = 0;
+            double acc_torque_P = 0;
             double C_v_acc = 0;
             double rho_P = 0;
             foreach (Particle p in m_Particles)
             {
-                acc_vel_P_x += p.currentIterVel_P[0][0];
-                acc_vel_P_y += p.currentIterVel_P[0][1];
+                acc_force_P_x += p.currentIterForces_P[0][0];
+                acc_force_P_y += p.currentIterForces_P[0][1];
+                acc_torque_P += p.currentIterTorque_P[0];
             }
 
-            double vel_PResidual = 0;// Math.Sqrt((acc_vel_P_x_old - acc_vel_P_x).Pow2() + (acc_vel_P_y_old - acc_vel_P_y).Pow2());
+            double forces_PResidual = 0;
+
+            if (((FSI_Control)this.Control).Timestepper_LevelSetHandling == LevelSetHandling.Coupled_Iterative)
+            {
+                forces_PResidual = Math.Sqrt((acc_force_P_x_old - acc_force_P_x).Pow2() + (acc_force_P_y_old - acc_force_P_y).Pow2() + (acc_torque_P_old - acc_torque_P).Pow2());
+                Console.WriteLine("Current forces_PResidual:   " + forces_PResidual);
+            }
             var newCC = LsTrk.Regions.GetCutCellMask();
             LsBkUp.Acc(-1.0, this.LevSet);
             double LevSetResidual = LsBkUp.L2Norm(newCC.Union(oldCC));
 
             //return LevSetResidual;
-            return vel_PResidual = 0;// switched of 
+            //return forces_PResidual;
+            return LevSetResidual = 0;
             #endregion
         }
 
@@ -638,12 +650,14 @@ namespace BoSSS.Application.FSI_Solver {
             foreach (Particle p in m_Particles)
             {
                 p.ResetParticlePosition();
-                p.UpdateAngularVelocity(dt, this.Control.PhysicalParameters.rho_A);
-                p.UpdateTransVelocity(dt, this.Control.PhysicalParameters.rho_A);
+                Console.WriteLine(" Time Pos 00:   " + p.currentTimePos_P[0][0] + " Time Pos 10:   " + p.currentTimePos_P[1][0]);
+                Console.WriteLine(" Iter Pos 00:   " + p.currentIterPos_P[0][0] + " Iter Pos 10:   " + p.currentIterPos_P[1][0]);
+                p.UpdateAngularVelocity(dt, this.Control.PhysicalParameters.rho_A, ((FSI_Control)this.Control).includeRotation);
+                p.UpdateTransVelocity(dt, this.Control.PhysicalParameters.rho_A, ((FSI_Control)this.Control).includeTranslation);
                 p.UpdateParticlePosition(dt);
                 //p.UpdateAngularVelocity(dt, this.Control.PhysicalParameters.rho_A);
                 //p.UpdateTransVelocity(dt, this.Control.PhysicalParameters.rho_A);
-                Console.WriteLine("Current Velocites are:   " + p.currentIterVel_P[0][0] + "        " + p.currentIterVel_P[0][1] + "       " + p.currentIterRot_P[0]);
+                //Console.WriteLine("Current Velocites are:   " + p.currentIterVel_P[0][0] + "        " + p.currentIterVel_P[0][1] + "       " + p.currentIterRot_P[0]);
             }
 
             // Update phi complete
@@ -735,7 +749,6 @@ namespace BoSSS.Application.FSI_Solver {
                             {
                                 p.iteration_counter_P = iteration_counter;
                                 p.forceAndTorque_convergence = ((FSI_Control)this.Control).LevelSet_ConvergenceCriterion;
-                                Console.WriteLine("Current Iter pos:  " + p.currentIterPos_P[0][1] + "Previous Iter pos:  " + p.currentIterPos_P[1][1]);
                             }
 
                             m_BDF_Timestepper.Solve(phystime, dt, false);
@@ -756,10 +769,10 @@ namespace BoSSS.Application.FSI_Solver {
 
                             foreach (Particle p in m_Particles)
                             {
-                                totalMomentum[0] += p.mass_P * p.currentIterVel_P[0][0];
-                                totalMomentum[1] += p.mass_P * p.currentIterVel_P[0][1];
-                                totalKE[0] += 0.5 * p.mass_P * p.currentIterVel_P[0][0].Pow2();
-                                totalKE[1] += 0.5 * p.mass_P * p.currentIterVel_P[0][1].Pow2();
+                                totalMomentum[0] += p.Mass_P * p.currentIterVel_P[0][0];
+                                totalMomentum[1] += p.Mass_P * p.currentIterVel_P[0][1];
+                                totalKE[0] += 0.5 * p.Mass_P * p.currentIterVel_P[0][0].Pow2();
+                                totalKE[1] += 0.5 * p.Mass_P * p.currentIterVel_P[0][1].Pow2();
                                 totalKE[2] += 0.5 * p.MomentOfInertia_P * p.currentIterRot_P[0].Pow2();
                             }
 
@@ -1116,11 +1129,11 @@ namespace BoSSS.Application.FSI_Solver {
                                         a1 = 0.0;
 
 
-                                    double Fx = (1 + e) * ((collisionVn_P0 - collisionVn_P1) / (1 / particle0.mass_P + 1 / particle1.mass_P + a0.Pow2() / particle0.MomentOfInertia_P + a1.Pow2() / particle1.MomentOfInertia_P));
-                                    double Fxrot = (1 + e) * ((-a0 * particle0.currentIterRot_P[0] + a1 * particle1.currentIterRot_P[0]) / (1 / particle0.mass_P + 1 / particle1.mass_P + a0.Pow2() / particle0.MomentOfInertia_P + a1.Pow2() / particle1.MomentOfInertia_P));
+                                    double Fx = (1 + e) * ((collisionVn_P0 - collisionVn_P1) / (1 / particle0.Mass_P + 1 / particle1.Mass_P + a0.Pow2() / particle0.MomentOfInertia_P + a1.Pow2() / particle1.MomentOfInertia_P));
+                                    double Fxrot = (1 + e) * ((-a0 * particle0.currentIterRot_P[0] + a1 * particle1.currentIterRot_P[0]) / (1 / particle0.Mass_P + 1 / particle1.Mass_P + a0.Pow2() / particle0.MomentOfInertia_P + a1.Pow2() / particle1.MomentOfInertia_P));
 
-                                    double tempCollisionVn_P0 = collisionVn_P0 - (Fx + Fxrot) / particle0.mass_P;
-                                    double tempCollisionVn_P1 = collisionVn_P1 + (Fx + Fxrot) / particle1.mass_P;
+                                    double tempCollisionVn_P0 = collisionVn_P0 - (Fx + Fxrot) / particle0.Mass_P;
+                                    double tempCollisionVn_P1 = collisionVn_P1 + (Fx + Fxrot) / particle1.Mass_P;
                                     double tempCollisionVt_P0 = collisionVt_P0;
                                     double tempCollisionVt_P1 = collisionVt_P1;
                                     Console.WriteLine("a0:    " + a0 + "   Fx:    " + (-Fx) + "      Fxrot:    " + (-Fxrot));
@@ -1346,10 +1359,10 @@ namespace BoSSS.Application.FSI_Solver {
                             a0 = 0.0;
 
 
-                        double Fx = (1 + e) * (collisionVn_P0) / (1 / particle.mass_P + a0.Pow2() / particle.MomentOfInertia_P);
-                        double Fxrot = (1 + e) * (-a0 * particle.currentIterRot_P[0]) / (1 / particle.mass_P + a0.Pow2() / particle.MomentOfInertia_P);
+                        double Fx = (1 + e) * (collisionVn_P0) / (1 / particle.Mass_P + a0.Pow2() / particle.MomentOfInertia_P);
+                        double Fxrot = (1 + e) * (-a0 * particle.currentIterRot_P[0]) / (1 / particle.Mass_P + a0.Pow2() / particle.MomentOfInertia_P);
 
-                        double tempCollisionVn_P0 = collisionVn_P0 - (Fx + Fxrot) / particle.mass_P;
+                        double tempCollisionVn_P0 = collisionVn_P0 - (Fx + Fxrot) / particle.Mass_P;
                         double tempCollisionVt_P0 = collisionVt_P0;
                         
                         particle.currentIterRot_P[0] = particle.currentIterRot_P[0] + a0 * (Fx + Fxrot) / particle.MomentOfInertia_P;
@@ -1390,7 +1403,7 @@ namespace BoSSS.Application.FSI_Solver {
                     DesiredLevel_j = ((FSI_Control)Control).RefinementLevel;
                 }
 
-                else
+                else if (((FSI_Control)this.Control).Timestepper_Mode != FSI_Control.TimesteppingMode.MovingMesh)
                 {
                     double curv_max = 1.0 / (this.Control.maxCurvature * ((GridData)this.GridData).Cells.h_min[j]);
                     double mean_curv = Math.Abs(this.Curvature.GetMeanValue(j));
@@ -1406,7 +1419,7 @@ namespace BoSSS.Application.FSI_Solver {
                     }
                 }
             }
-            else if (LevSetNeighbours.Contains(j))
+            else if (LevSetNeighbours.Contains(j) && ((FSI_Control)this.Control).Timestepper_Mode != FSI_Control.TimesteppingMode.MovingMesh)
             {
                 if (CurrentLevel < ((FSI_Control)Control).RefinementLevel)
                 {
@@ -1421,7 +1434,7 @@ namespace BoSSS.Application.FSI_Solver {
                     DesiredLevel_j = CurrentLevel;
                 }
             }
-            else if (LevSetNeighboursNeighbours.Contains(j))
+            else if (LevSetNeighboursNeighbours.Contains(j) && ((FSI_Control)this.Control).Timestepper_Mode != FSI_Control.TimesteppingMode.MovingMesh)
             {
                 if (CurrentLevel < ((FSI_Control)Control).RefinementLevel)
                 {
@@ -1436,7 +1449,7 @@ namespace BoSSS.Application.FSI_Solver {
                     DesiredLevel_j = CurrentLevel;
                 }
             }
-            else if (CurrentLevel > -2)
+            else if (CurrentLevel > -2 && ((FSI_Control)this.Control).Timestepper_Mode != FSI_Control.TimesteppingMode.MovingMesh)
             {
                 DesiredLevel_j = CurrentLevel - 1;
             }

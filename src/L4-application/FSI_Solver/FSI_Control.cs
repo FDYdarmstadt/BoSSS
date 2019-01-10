@@ -101,6 +101,19 @@ namespace BoSSS.Application.FSI_Solver {
         [DataMember]
         public int maxCurvature = 2;
 
+        public override void SetDGdegree(int k)
+        {
+            if (k < 1)
+                throw new ArgumentOutOfRangeException("DG polynomial degree must be at least 1.");
+
+            base.FieldOptions.Clear();
+            this.AddFieldOption("Velocity*", k);
+            this.AddFieldOption("Pressure", k - 1);
+            this.AddFieldOption("PhiDG", 2);
+            this.AddFieldOption("Phi", 2);
+            this.AddFieldOption("Curvature", 2);
+        }
+
         ///// <summary>
         ///// How should the level set be moved? Options: none, fixed, coupled
         ///// </summary>

@@ -120,6 +120,8 @@ namespace BoSSS.Solution.Control {
         /// <param name="Degree">
         /// Polynomial degree of the DG field; if negative, the application choses a default value.
         /// </param>
+        /// <param name="DGFieldName"></param>
+        /// <param name="SaveOpt"></param>
         public void AddFieldOption(string DGFieldName, int Degree = -1, FieldOpts.SaveToDBOpt SaveOpt = FieldOpts.SaveToDBOpt.TRUE) {
             FieldOptions.Add(DGFieldName, new FieldOpts() {
                 Degree = Degree,
