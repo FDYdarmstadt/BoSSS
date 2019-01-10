@@ -64,6 +64,11 @@ namespace BoSSS.Solution.Statistic {
         public static void ComputeErrors( IEnumerable<string> FieldsToCompare, IEnumerable<ITimestepInfo> timestepS,
           out double[] GridRes, out Dictionary<string,int[]> __DOFs, out Dictionary<string, double[]> L2Errors, out Guid[] timestepIds) {
             using (var tr = new FuncTrace()) {
+                if (FieldsToCompare == null || FieldsToCompare.Count() <= 0)
+                    throw new ArgumentException("empty list of field names.");
+                if (timestepS == null || timestepS.Count() < 1)
+                    throw new ArgumentException("requiring at least two different solutions.");
+
                 // load the DG-Fields
                 List<IEnumerable<DGField>> fields = new List<IEnumerable<DGField>>();
                 int i = 1;
@@ -78,14 +83,25 @@ namespace BoSSS.Solution.Statistic {
                 // sort according to grid resolution
                 {
                     var s = fields.OrderBy(f => f.First().GridDat.CellPartitioning.TotalLength).ToArray();
-                    timestepIds = new Guid[s.Length];
+                    fields.Clear();
+                    fields.AddRange(s);
+                    s = null;
+
+                    // filter equal grids:
+                    while(fields.Count >= 2 
+                        && (fields[fields.Count - 1].First().GridDat.CellPartitioning.TotalLength 
+                        == fields[fields.Count - 2].First().GridDat.CellPartitioning.TotalLength)) {
+                        fields.RemoveAt(fields.Count - 2);
+                    }
+
+                    // extract timestep Id's
+                    timestepIds = new Guid[fields.Count];
                     for (int z = 0; z < timestepIds.Length; z++) {
-                        int idx = fields.IndexOf(s[z], (f1, f2) => object.ReferenceEquals(f1, f2));
+                        int idx = fields.IndexOf(fields[z], (f1, f2) => object.ReferenceEquals(f1, f2));
                         timestepIds[z] = timestepS.ElementAt(idx).ID;
                     }
 
-                    fields.Clear();
-                    fields.AddRange(s);
+                    
                 }
 
 

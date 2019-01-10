@@ -29,7 +29,7 @@ WorkflowMgm.Init("ConvStudytuorial");
  }
 \BoSSSexe
 \BoSSScmd{
-var db = OpenOrCreateDefaultDatabase(); 
+var db = OpenOrCreateDefaultDatabase();
  }
 \BoSSSexe
 \BoSSScmd{
@@ -407,7 +407,8 @@ foreach(int pDeg in Degrees) \{ // loop over polynomial degrees\newline
 \btab // now, create a plot from the selected sessions:\newline 
 \btab // (we could also do other things)\newline 
 \btab Plot2Ddata pDegPlot = \newline 
-\btab \btab pDegSessions.ToEstimatedGridConvergenceData("T", true);\newline 
+\btab \btab pDegSessions.ToEstimatedGridConvergenceData("T", false);\newline 
+\btab \btab // false secelsts DOFs instead of resolution h for x-axis\newline 
  \newline 
 \btab // remember the freshly created plot object in a list:\newline 
 \btab ExpPlotS.Add(pDegPlot);\newline 
@@ -448,48 +449,98 @@ ExpPlot.Regression();
  }
 \BoSSSexe
 \BoSSScmd{
- % 
- }
-\BoSSSexe
-\BoSSScmd{
- % 
- }
-\BoSSSexe
-\BoSSScmd{
- % 
- }
-\BoSSSexe
-\BoSSScmd{
- % 
- }
-\BoSSSexe
-\BoSSScmd{
- % 
- }
-\BoSSSexe
-\BoSSScmd{
- % 
- }
-\BoSSSexe
-\BoSSScmd{
- % 
- }
-\BoSSSexe
-\BoSSScmd{
- % 
- }
-\BoSSSexe
-\BoSSScmd{
- % 
- }
-\BoSSSexe
-\BoSSScmd{
- % 
- }
-\BoSSSexe
-\BoSSScmd{
 /// % ============================================
-/// \subsection{Working without the session table}
+/// \subsection{Multiplot demonstration}
 /// % ============================================
+ }
+\BoSSSexe
+\BoSSScmd{
+/// If we have more than one plot object, we can arrange them in an array 
+/// to realize multi-plots:
+ }
+\BoSSSexe
+\BoSSScmd{
+var multiplot = new Plot2Ddata[2,2];
+ }
+\BoSSSexe
+\BoSSScmd{
+multiplot[0,0] = ExpPlotS[0];\newline 
+multiplot[0,1] = ExpPlotS[1];\newline 
+multiplot[1,0] = ExpPlotS[2];\newline 
+multiplot[1,1] = ExpPlotS[3];
+ }
+\BoSSSexe
+\BoSSScmd{
+/// Now, we can draw an array of plots:
+ }
+\BoSSSexe
+\BoSSScmd{
+multiplot.PlotNow();
+ }
+\BoSSSexe
+\BoSSScmd{
+/// this already looks neat, but a few 
+/// few formattings to make the multiplot look nicer:
+multiplot[0,1].dataGroups[0].UseY2 = true; // label right on right column\newline 
+multiplot[0,1].ShowYtics = false;\newline 
+multiplot[0,1].ShowY2tics = true;\newline 
+ \newline 
+multiplot[1,1].dataGroups[0].UseY2 = true; // label right on right column\newline 
+multiplot[1,1].ShowYtics = false;\newline 
+multiplot[1,1].ShowY2tics = true;\newline 
+ \newline 
+multiplot[0,0].dataGroups[0].UseX2 = true; // label on top on top row\newline 
+multiplot[0,0].ShowXtics = false;\newline 
+multiplot[0,0].ShowX2tics = true;\newline 
+ \newline 
+multiplot[0,1].dataGroups[0].UseX2 = true; // label on top on top row\newline 
+multiplot[0,1].ShowXtics = false;\newline 
+multiplot[0,1].ShowX2tics = true;\newline 
+ \newline 
+// turn logarithm on for the secondary axis; \newline 
+multiplot[0,0].LogX2 = true;\newline 
+multiplot[0,1].LogX2 = true;\newline 
+multiplot[1,0].LogX2 = true;\newline 
+multiplot[1,1].LogX2 = true;\newline 
+multiplot[0,0].LogY2 = true;\newline 
+multiplot[0,1].LogY2 = true;\newline 
+multiplot[1,0].LogY2 = true;\newline 
+multiplot[1,1].LogY2 = true;\newline 
+ \newline 
+// set x ranges\newline 
+multiplot[0,0].X2rangeMin = 1e1;\newline 
+multiplot[0,0].X2rangeMax = 1e4;\newline 
+multiplot[0,1].X2rangeMin = 1e1;\newline 
+multiplot[0,1].X2rangeMax = 1e4;\newline 
+ \newline 
+multiplot[1,0].XrangeMin = 1e1;\newline 
+multiplot[1,0].XrangeMax = 1e4;\newline 
+multiplot[1,1].XrangeMin = 1e1;\newline 
+multiplot[1,1].XrangeMax = 1e4;\newline 
+ \newline 
+// set y ranges\newline 
+multiplot[0,0].YrangeMin = 1e-7;\newline 
+multiplot[0,0].YrangeMax = 1e0;\newline 
+multiplot[1,0].YrangeMin = 1e-7;\newline 
+multiplot[1,0].YrangeMax = 1e0;\newline 
+ \newline 
+multiplot[0,1].Y2rangeMin = 1e-7;\newline 
+multiplot[0,1].Y2rangeMax = 1e0;\newline 
+multiplot[1,1].Y2rangeMin = 1e-7;\newline 
+multiplot[1,1].Y2rangeMax = 1e0;\newline 
+ \newline 
+// reduce the whitespace in between the plots:\newline 
+multiplot[0,0].rmargin = 2;\newline 
+multiplot[0,1].lmargin = 2;\newline 
+multiplot[1,0].rmargin = 2;\newline 
+multiplot[1,1].lmargin = 2;\newline 
+multiplot[0,0].bmargin = 0.5;\newline 
+multiplot[1,0].tmargin = 0.5;\newline 
+multiplot[0,1].bmargin = 0.5;\newline 
+multiplot[1,1].tmargin = 0.5;
+ }
+\BoSSSexe
+\BoSSScmd{
+multiplot.PlotNow();
  }
 \BoSSSexe
