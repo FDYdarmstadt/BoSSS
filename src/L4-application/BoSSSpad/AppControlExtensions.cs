@@ -40,6 +40,22 @@ namespace BoSSS.Application.BoSSSpad {
             return S;
         }
 
+
+        static List<Tuple<AppControl, int>> RegisteredControls = new List<Tuple<AppControl, int>>();
+
+
+        static int GetIndex(AppControl C) {
+            int max = 0;
+            foreach(var t in RegisteredControls) {
+                if (object.ReferenceEquals(t.Item1, C))
+                    return t.Item2;
+                max = Math.Max(t.Item2, max);
+            }
+
+            RegisteredControls.Add(Tuple.Create(C, max + 1));
+            return max + 1;
+        }
+
         /// <summary>
         /// Runs the solver described by the control object <paramref name="ctrl"/> on a batch system.
         /// The method returns immediately.
@@ -50,8 +66,14 @@ namespace BoSSS.Application.BoSSSpad {
         public static Job RunBatch(this AppControl ctrl, BatchProcessorClient BatchSys) {
             ctrl.ProjectName = InteractiveShell.WorkflowMgm.CurrentProject;
 
+            string JobName = ctrl.SessionName;
+            int ctrl_idx = GetIndex(ctrl);
+            if(JobName.IsEmptyOrWhite()) {
+                JobName = "UnnamedJob_" + ctrl_idx;
+            }
+
             Type solverClass = ctrl.GetSolverType();
-            Job job = new Job(ctrl.SessionName , solverClass);
+            Job job = new Job(JobName, solverClass);
             //job.ExecutionTime = executionTime;
             //job.NumberOfMPIProcs = NumberOfMPIProcs;
             //job.UseComputeNodesExclusive = UseComputeNodesExclusive;

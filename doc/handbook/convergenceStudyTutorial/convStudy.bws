@@ -2,6 +2,8 @@
 /// \section{Initialization}
 /// % ========================================
 **************
+C# evaluator not initialized: use 'restart'.
+
 ==============
 **************
 ==============
@@ -13,6 +15,8 @@
 /// We also have to initialize the workflow management system and create 
 /// a database.
 **************
+C# evaluator not initialized: use 'restart'.
+
 ==============
 restart
 **************
@@ -35,8 +39,11 @@ Project name is set to 'ConvStudytuorial'.
 ==============
 var db = OpenOrCreateDefaultDatabase(); 
 **************
-Creating database 'd:\Users\kummer\default_bosss_db'.
+Opening existing database 'd:\Users\kummer\default_bosss_db'.
 
+==============
+//db.Sessions.ForEach(si => si.Delete(true));
+**************
 ==============
 /// For sake of simplicity, we employ the Poisson solver
 /// \code{ipPoisson} which is just a benchmarking application, but sufficient 
@@ -48,7 +55,7 @@ using BoSSS.Application.SipPoisson;
 ==============
 /// We are going to solve the problem 
 /// \begin{array}
-///   -\Delta T = 2 \cos(x) \cos(y)
+///   \Delta T = -2 \cos(x) \cos(y)
 /// \end{array}
 /// in the square domain $\Omega = (-\pi/2,\pi/2)^2$, 
 /// with homogeneous Dirichlet boundary conditions, 
@@ -67,7 +74,7 @@ var myBatch = new MiniBatchProcessorClient();
 ==============
 MiniBatchProcessor.Server.StartIfNotRunning(false);
 **************
-Mini batch processor is already running.
+Starting mini batch processor in background thread...
 
 ==============
 /// % ========================================
@@ -110,7 +117,6 @@ An equivalent grid is already present in the database -- the grid will not be sa
 An equivalent grid is already present in the database -- the grid will not be saved.
 An equivalent grid is already present in the database -- the grid will not be saved.
 An equivalent grid is already present in the database -- the grid will not be saved.
-An equivalent grid is already present in the database -- the grid will not be saved.
 
 ==============
 /// % ===========================================
@@ -130,7 +136,7 @@ static class Expressions {
     public static double RHS(double[] X) {
         double x = X[0];
         double y = X[1];
-        return 2.0*Math.Cos(x)*Math.Cos(y);
+        return -2.0*Math.Cos(x)*Math.Cos(y);
     }    
     public static double Tex(double[] X) {
         double x = X[0];
@@ -175,9 +181,36 @@ foreach(var grd in grids) { //    loop over all grids
     C.AddBoundaryValue(BoundaryType.Dirichlet.ToString()); // for homogeneous 
     //   boundary conditions, we don not need a value, since the default value
     //   zero is sufficient.
+    
+    // the exact solution is a speciality of the SIP Poisson benchmark solver;
+    // in order to evaluate the exact solution, we have to set the following 
+    // boolean:
+    C.ExactSolution_provided = true;
+
 }
 }
 **************
+Info: setting database path to: d:\Users\kummer\default_bosss_db
+Info: setting database path to: d:\Users\kummer\default_bosss_db
+Info: setting database path to: d:\Users\kummer\default_bosss_db
+Info: setting database path to: d:\Users\kummer\default_bosss_db
+Info: setting database path to: d:\Users\kummer\default_bosss_db
+Info: setting database path to: d:\Users\kummer\default_bosss_db
+Info: setting database path to: d:\Users\kummer\default_bosss_db
+Info: setting database path to: d:\Users\kummer\default_bosss_db
+Info: setting database path to: d:\Users\kummer\default_bosss_db
+Info: setting database path to: d:\Users\kummer\default_bosss_db
+Info: setting database path to: d:\Users\kummer\default_bosss_db
+Info: setting database path to: d:\Users\kummer\default_bosss_db
+Info: setting database path to: d:\Users\kummer\default_bosss_db
+Info: setting database path to: d:\Users\kummer\default_bosss_db
+Info: setting database path to: d:\Users\kummer\default_bosss_db
+Info: setting database path to: d:\Users\kummer\default_bosss_db
+Info: setting database path to: d:\Users\kummer\default_bosss_db
+Info: setting database path to: d:\Users\kummer\default_bosss_db
+Info: setting database path to: d:\Users\kummer\default_bosss_db
+Info: setting database path to: d:\Users\kummer\default_bosss_db
+
 ==============
 /// ...and activate them:
 **************
@@ -185,20 +218,428 @@ foreach(var grd in grids) { //    loop over all grids
 foreach(var C in Runs)
    C.RunBatch(myBatch);
 **************
-System.ArgumentNullException occurred: Value cannot be null.
-Parameter name: key. Type 'LastError' for details.
+Job was successful (according to job manager), latest session related to job is:
+ConvStudytuorial	UnnamedJob_1	01/09/2019 20:45:17	98639d08...
+No further action.
+Job was successful (according to job manager), latest session related to job is:
+ConvStudytuorial	UnnamedJob_2	01/09/2019 20:45:47	4ca2f553...
+No further action.
+Job was successful (according to job manager), latest session related to job is:
+ConvStudytuorial	UnnamedJob_3	01/09/2019 20:46:17	4dd63015...
+No further action.
+Job was successful (according to job manager), latest session related to job is:
+ConvStudytuorial	UnnamedJob_4	01/09/2019 20:46:47	7b0f8187...
+No further action.
+Job was successful (according to job manager), latest session related to job is:
+ConvStudytuorial	UnnamedJob_5	01/09/2019 20:47:17	111d6ba4...
+No further action.
+Job was successful (according to job manager), latest session related to job is:
+ConvStudytuorial	UnnamedJob_6	01/09/2019 20:47:47	6bc7c1f9...
+No further action.
+Job was successful (according to job manager), latest session related to job is:
+ConvStudytuorial	UnnamedJob_7	01/09/2019 20:48:17	2d20707b...
+No further action.
+Job was successful (according to job manager), latest session related to job is:
+ConvStudytuorial	UnnamedJob_8	01/09/2019 20:48:47	199bab37...
+No further action.
+Job was successful (according to job manager), latest session related to job is:
+ConvStudytuorial	UnnamedJob_9	01/09/2019 20:49:17	38266814...
+No further action.
+Job was successful (according to job manager), latest session related to job is:
+ConvStudytuorial	UnnamedJob_10	01/09/2019 20:49:47	6593d01e...
+No further action.
+Job was successful (according to job manager), latest session related to job is:
+ConvStudytuorial	UnnamedJob_11	01/09/2019 20:50:17	6a22c680...
+No further action.
+Job was successful (according to job manager), latest session related to job is:
+ConvStudytuorial	UnnamedJob_12	01/09/2019 20:50:47	ff4035f0...
+No further action.
+Job was successful (according to job manager), latest session related to job is:
+ConvStudytuorial	UnnamedJob_13	01/09/2019 20:51:17	d108e674...
+No further action.
+Job was successful (according to job manager), latest session related to job is:
+ConvStudytuorial	UnnamedJob_14	01/09/2019 20:51:47	36bdf614...
+No further action.
+Job was successful (according to job manager), latest session related to job is:
+ConvStudytuorial	UnnamedJob_15	01/09/2019 20:52:17	2d4534ac...
+No further action.
+Job was successful (according to job manager), latest session related to job is:
+ConvStudytuorial	UnnamedJob_16	01/09/2019 20:52:47	a4259fad...
+No further action.
+Job was successful (according to job manager), latest session related to job is:
+ConvStudytuorial	UnnamedJob_17	01/09/2019 20:53:18	96b6feee...
+No further action.
+Job was successful (according to job manager), latest session related to job is:
+ConvStudytuorial	UnnamedJob_18	01/09/2019 20:53:48	984382f5...
+No further action.
+Job was successful (according to job manager), latest session related to job is:
+ConvStudytuorial	UnnamedJob_19	01/09/2019 20:54:18	66651726...
+No further action.
+Job was successful (according to job manager), latest session related to job is:
+ConvStudytuorial	UnnamedJob_20	01/09/2019 20:54:47	7e5ded1d...
+No further action.
 
 ==============
-LastError
+WorkflowMgm.AllJobs;
 **************
-System.ArgumentNullException: Value cannot be null.
-Parameter name: key
-   at System.Collections.Generic.Dictionary`2.FindEntry(TKey key)
-   at System.Collections.Generic.Dictionary`2.ContainsKey(TKey key)
-   at BoSSS.Application.BoSSSpad.Job..ctor(String name, Type solver)
-   at <InteractiveExpressionClass>.Host(Object& $retval)
-   at Mono.CSharp.Evaluator.Evaluate(String input, Object& result, Boolean& result_set)
-   at BoSSS.Application.BoSSSpad.ReadEvalPrintLoop.EvalPrint(String line, Assembly& AssemblyProduced)
+List of 20 instances of KeyValuePair{String,Job} {
+  0: [UnnamedJob_1, UnnamedJob_1: FinishedSuccessful (BoSSS.Application.BoSSSpad.MiniBatchProcessorClient)]
+  1: [UnnamedJob_2, UnnamedJob_2: FinishedSuccessful (BoSSS.Application.BoSSSpad.MiniBatchProcessorClient)]
+  2: [UnnamedJob_3, UnnamedJob_3: FinishedSuccessful (BoSSS.Application.BoSSSpad.MiniBatchProcessorClient)]
+  3: [UnnamedJob_4, UnnamedJob_4: FinishedSuccessful (BoSSS.Application.BoSSSpad.MiniBatchProcessorClient)]
+  4: [UnnamedJob_5, UnnamedJob_5: FinishedSuccessful (BoSSS.Application.BoSSSpad.MiniBatchProcessorClient)]
+  5: [UnnamedJob_6, UnnamedJob_6: FinishedSuccessful (BoSSS.Application.BoSSSpad.MiniBatchProcessorClient)]
+  6: [UnnamedJob_7, UnnamedJob_7: FinishedSuccessful (BoSSS.Application.BoSSSpad.MiniBatchProcessorClient)]
+  7: [UnnamedJob_8, UnnamedJob_8: FinishedSuccessful (BoSSS.Application.BoSSSpad.MiniBatchProcessorClient)]
+  8: [UnnamedJob_9, UnnamedJob_9: FinishedSuccessful (BoSSS.Application.BoSSSpad.MiniBatchProcessorClient)]
+  9: [UnnamedJob_10, UnnamedJob_10: FinishedSuccessful (BoSSS.Application.BoSSSpad.MiniBatchProcessorClient)]
+  10: [UnnamedJob_11, UnnamedJob_11: FinishedSuccessful (BoSSS.Application.BoSSSpad.MiniBatchProcessorClient)]
+  11: [UnnamedJob_12, UnnamedJob_12: FinishedSuccessful (BoSSS.Application.BoSSSpad.MiniBatchProcessorClient)]
+  12: [UnnamedJob_13, UnnamedJob_13: FinishedSuccessful (BoSSS.Application.BoSSSpad.MiniBatchProcessorClient)]
+  13: [UnnamedJob_14, UnnamedJob_14: FinishedSuccessful (BoSSS.Application.BoSSSpad.MiniBatchProcessorClient)]
+  14: [UnnamedJob_15, UnnamedJob_15: FinishedSuccessful (BoSSS.Application.BoSSSpad.MiniBatchProcessorClient)]
+  15: [UnnamedJob_16, UnnamedJob_16: FinishedSuccessful (BoSSS.Application.BoSSSpad.MiniBatchProcessorClient)]
+  16: [UnnamedJob_17, UnnamedJob_17: FinishedSuccessful (BoSSS.Application.BoSSSpad.MiniBatchProcessorClient)]
+  17: [UnnamedJob_18, UnnamedJob_18: FinishedSuccessful (BoSSS.Application.BoSSSpad.MiniBatchProcessorClient)]
+  18: [UnnamedJob_19, UnnamedJob_19: FinishedSuccessful (BoSSS.Application.BoSSSpad.MiniBatchProcessorClient)]
+  19: [UnnamedJob_20, UnnamedJob_20: FinishedSuccessful (BoSSS.Application.BoSSSpad.MiniBatchProcessorClient)]
+}
+==============
+WorkflowMgm.BlockUntilAllJobsTerminate(720);
+**************
+All jobs finished.
+
+==============
+/// % ===========================================
+/// \section{Convergence against exact solution}
+/// % ===========================================
+**************
+==============
+/// As already noted, the computation of the $L^2$ error agains the 
+/// exact solution is handeled specially in the \code{ipPoisson} solver.
+/// However, the following tutorial can serve as a general template of how to
+/// extract data from the session table and visualize it.
+**************
+==============
+///
+/// We aquire a copy of the session table, and from all the columns in there...
+**************
+==============
+var Tab = WorkflowMgm.SessionTable;
+**************
+==============
+Tab.GetColumnNames().Take(7); // Take(7) is just to shorten the output.
+**************
+List of 7 instances of String {
+  0: SessionName
+  1: DGdegree:T
+  2: DGdegree:Tex
+  3: Bndtype:Dirichlet
+  4: GeneratedFromCode
+  5: ControlFileText_Index
+  6: dtFixed
+}
+==============
+/// ...we extract those which sound interesting:
+**************
+==============
+Tab = Tab.ExtractColumns(
+    "SessionName", "DGdegree:T", "Grid:NoOfCells", "Grid:hMin", "DOFs", 
+    //"ExactSolution_provided", 
+    "SolL2err");
+**************
+==============
+Tab.Print();
+**************
+    SessionName   DGdegree:T Grid:NoOfCells Grid:hMin          DOFs  SolL2err             
+0:  UnnamedJob_20 4          1024           0.0981747704246807 15360 4.00539437900728E-09 
+1:  UnnamedJob_19 4          256            0.196349540849362  3840  1.2884591274469E-07  
+2:  UnnamedJob_18 4          64             0.392699081698724  960   4.17174399336954E-06 
+3:  UnnamedJob_17 4          16             0.785398163397448  240   0.000136818610872136 
+4:  UnnamedJob_16 4          4              1.5707963267949    60    0.00453363217009244  
+5:  UnnamedJob_15 3          1024           0.0981747704246807 10240 3.30434399895662E-07 
+6:  UnnamedJob_14 3          256            0.196349540849362  2560  5.38240396861816E-06 
+7:  UnnamedJob_13 3          64             0.392699081698724  640   9.15227315006785E-05 
+8:  UnnamedJob_12 3          16             0.785398163397448  160   0.00169155486102963  
+9:  UnnamedJob_11 3          4              1.5707963267949    40    0.0304593810009795   
+10: UnnamedJob_10 2          1024           0.0981747704246807 6144  2.49586148820757E-05 
+11: UnnamedJob_9  2          256            0.196349540849362  1536  0.000210213579843967 
+12: UnnamedJob_8  2          64             0.392699081698724  384   0.0019841487549388   
+13: UnnamedJob_7  2          16             0.785398163397448  96    0.0216364353883056   
+14: UnnamedJob_6  2          4              1.5707963267949    24    0.206674671088653    
+15: UnnamedJob_5  1          1024           0.0981747704246807 3072  0.01061921312985     
+16: UnnamedJob_4  1          256            0.196349540849362  768   0.0441703225658538   
+17: UnnamedJob_3  1          64             0.392699081698724  192   0.175975328975729    
+18: UnnamedJob_2  1          16             0.785398163397448  48    0.543038566726878    
+19: UnnamedJob_1  1          4              1.5707963267949    12    1.00297806731398     
+20: UnnamedJob_80 4          1024           0.0981747704246807 15360 4.00539437893726E-09 
+21: UnnamedJob_79 4          256            0.196349540849362  3840  1.28845912744582E-07 
+22: UnnamedJob_78 4          64             0.392699081698724  960   4.17174399336954E-06 
+23: UnnamedJob_77 4          16             0.785398163397448  240   0.000136818610872136 
+24: UnnamedJob_76 4          4              1.5707963267949    60    0.00453363217009244  
+25: UnnamedJob_75 3          1024           0.0981747704246807 10240 3.30434399895926E-07 
+26: UnnamedJob_74 3          256            0.196349540849362  2560  5.3824039686186E-06  
+27: UnnamedJob_73 3          64             0.392699081698724  640   9.15227315006785E-05 
+28: UnnamedJob_72 3          16             0.785398163397448  160   0.00169155486102963  
+29: UnnamedJob_71 3          4              1.5707963267949    40    0.0304593810009795   
+30: UnnamedJob_70 2          1024           0.0981747704246807 6144  2.49586148820763E-05 
+31: UnnamedJob_69 2          256            0.196349540849362  1536  0.000210213579843967 
+32: UnnamedJob_68 2          64             0.392699081698724  384   0.0019841487549388   
+33: UnnamedJob_67 2          16             0.785398163397448  96    0.0216364353883056   
+34: UnnamedJob_66 2          4              1.5707963267949    24    0.206674671088653    
+35: UnnamedJob_65 1          1024           0.0981747704246807 3072  0.01061921312985     
+36: UnnamedJob_64 1          256            0.196349540849362  768   0.0441703225658538   
+37: UnnamedJob_63 1          64             0.392699081698724  192   0.175975328975729    
+38: UnnamedJob_62 1          16             0.785398163397448  48    0.543038566726878    
+39: UnnamedJob_61 1          4              1.5707963267949    12    1.00297806731398     
+==============
+/// This can be easily converted to a plot: the $x$-axis is determined
+/// by the cell width, the $y$-axis is determined by the $L^2$ error.
+/// Furthermore, we want to \emph{group} our plots according
+/// to the DG degree, i.e. have one line for each polynomial degree;
+**************
+==============
+var ErrorPlot = Tab.ToPlot("Grid:hMin", "SolL2err", // column for x- and y
+                           "DGdegree:T"); // column for group
+**************
+==============
+/// We set logarithmic axes:
+ErrorPlot.LogX = true;
+ErrorPlot.LogY = true;
+**************
+==============
+ErrorPlot.PlotNow();
+**************
+Using gnuplot: C:\Program Files\FDY\BoSSS\bin\native\win\gnuplot-gp510-20160418-win32-mingw\gnuplot\bin\gnuplot.exe
+set key Left reverse 
+System.Drawing.Bitmap
+==============
+/// Of course, we can adjust the plot styles:
+**************
+==============
+ErrorPlot.dataGroups[0].Format.PointType = PointTypes.Diamond;
+ErrorPlot.dataGroups[1].Format.PointType = PointTypes.Box;
+ErrorPlot.dataGroups[2].Format.PointType = PointTypes.LowerTriangle;
+ErrorPlot.dataGroups[3].Format.PointType = PointTypes.Asterisk;
+**************
+==============
+foreach(var grp in ErrorPlot.dataGroups) {
+    grp.Format.PointSize = 1.5;
+    grp.Format.DashType  = DashTypes.Dotted;
+}
+**************
+==============
+ErrorPlot.PlotNow();
+**************
+Using gnuplot: C:\Program Files\FDY\BoSSS\bin\native\win\gnuplot-gp510-20160418-win32-mingw\gnuplot\bin\gnuplot.exe
+set key Left reverse 
+System.Drawing.Bitmap
+==============
+/// And we can compute the convergence order:
+**************
+==============
+ErrorPlot.Regression();
+**************
+List of 4 instances of KeyValuePair{String,Double} {
+  0: [DGdegree:T4, 5.02729852272069]
+  1: [DGdegree:T3, 4.12802100010423]
+  2: [DGdegree:T2, 3.27165353503849]
+  3: [DGdegree:T1, 1.67428441482161]
+}
+==============
+/// % ===========================================
+/// \section{experimental convergence plot}
+/// % ===========================================
+**************
+==============
+/// If the exact solution is not known, one can only estimate the convergence
+/// behaviour experimentally. 
+/// \BoSSS{} provides some utility for this, the \code{DGFieldComparison}
+/// class, which has a versital, yet complex interface.
+/// However, there is a simple interface in the workflow mangement toolbox.
+**************
+==============
+///
+/// We can augment the current session table with experimental errors:
+WorkflowMgm.hConvergence.Update();
+**************
+==============
+var Tab = WorkflowMgm.SessionTable;
+**************
+==============
+/// We observe, that columns have been added to the session table, 
+/// starting with a prefix \code{L2Error\_}; 
+Tab.GetColumnNames().Skip(46);
+**************
+List of 8 instances of String {
+  0: DOFs
+  1: BlockSize
+  2: SolL2err
+  3: Session
+  4: RegularTerminated
+  5: L2Error_T
+  6: L2Error_ResidualKP1
+  7: L2Error_MgLevel_0
+}
+==============
+Tab = Tab.ExtractColumns(
+    "DGdegree:T", "Grid:NoOfCells",
+    "SolL2err", "L2Error_T");
+**************
+==============
+/// We observe that the \emph{experimental} $L^2$ error is approximately
+/// equal to the $L^2$ error against the exact solution, 
+/// except for the highest resolutions. there, the error of the numerical 
+/// solution is comuted against itself, and thuse the error is zero up 
+/// to round-off errors.
+/// 
+/// If we would like to extract convergence plots from this table, we need to
+/// exclude the rows with the finest solution using e.g. the 
+/// \code{TableExtensions.ExtractRows} method.
+Tab.Print();
+**************
+    DGdegree:T Grid:NoOfCells SolL2err             L2Error_T            
+0:  4          1024           4.00539437900728E-09 2.12666908245954E-15 
+1:  4          256            1.2884591274469E-07  1.29192465479539E-07 
+2:  4          64             4.17174399336954E-06 4.17180395360377E-06 
+3:  4          16             0.000136818610872136 0.00013681894075718  
+4:  4          4              0.00453363217009244  0.00453377825437499  
+5:  3          1024           3.30434399895662E-07 1.61811953765273E-15 
+6:  3          256            5.38240396861816E-06 5.39671117469224E-06 
+7:  3          64             9.15227315006785E-05 9.15295108759639E-05 
+8:  3          16             0.00169155486102963  0.00169156502486077  
+9:  3          4              0.0304593810009795   0.0304611813202932   
+10: 2          1024           2.49586148820757E-05 2.6338133148518E-15  
+11: 2          256            0.000210213579843967 0.000207573129506488 
+12: 2          64             0.0019841487549388   0.0019816951707696   
+13: 2          16             0.0216364353883056   0.0216333696375844   
+14: 2          4              0.206674671088653    0.206687300575255    
+15: 1          1024           0.01061921312985     1.3780308587252E-16  
+16: 1          256            0.0441703225658538   0.0337449575409876   
+17: 1          64             0.175975328975729    0.165541332844577    
+18: 1          16             0.543038566726878    0.532604250026911    
+19: 1          4              1.00297806731398     0.99272932984204     
+20: 4          1024           4.00539437893726E-09 0                    
+21: 4          256            1.28845912744582E-07 1.29192465479604E-07 
+22: 4          64             4.17174399336954E-06 4.17180395360377E-06 
+23: 4          16             0.000136818610872136 0.00013681894075718  
+24: 4          4              0.00453363217009244  0.00453377825437499  
+25: 3          1024           3.30434399895926E-07 0                    
+26: 3          256            5.3824039686186E-06  5.39671117469418E-06 
+27: 3          64             9.15227315006785E-05 9.15295108759639E-05 
+28: 3          16             0.00169155486102963  0.00169156502486077  
+29: 3          4              0.0304593810009795   0.0304611813202932   
+30: 2          1024           2.49586148820763E-05 0                    
+31: 2          256            0.000210213579843967 0.000207573129506488 
+32: 2          64             0.0019841487549388   0.0019816951707696   
+33: 2          16             0.0216364353883056   0.0216333696375844   
+34: 2          4              0.206674671088653    0.206687300575255    
+35: 1          1024           0.01061921312985     0                    
+36: 1          256            0.0441703225658538   0.0337449575409876   
+37: 1          64             0.175975328975729    0.165541332844577    
+38: 1          16             0.543038566726878    0.532604250026911    
+39: 1          4              1.00297806731398     0.99272932984204     
+==============
+/// Rows could be extracted form a table using a selector function:
+/// this is an expression, which is true for all rows that we want to extract;
+Tab = Tab.ExtractRows(
+  (iRow, RowEntries) => Convert.ToInt32(RowEntries["Grid:NoOfCells"]) != 1024);
+**************
+==============
+Tab.Print();
+**************
+    DGdegree:T Grid:NoOfCells SolL2err             L2Error_T            
+0:  4          256            1.2884591274469E-07  1.29192465479539E-07 
+1:  4          64             4.17174399336954E-06 4.17180395360377E-06 
+2:  4          16             0.000136818610872136 0.00013681894075718  
+3:  4          4              0.00453363217009244  0.00453377825437499  
+4:  3          256            5.38240396861816E-06 5.39671117469224E-06 
+5:  3          64             9.15227315006785E-05 9.15295108759639E-05 
+6:  3          16             0.00169155486102963  0.00169156502486077  
+7:  3          4              0.0304593810009795   0.0304611813202932   
+8:  2          256            0.000210213579843967 0.000207573129506488 
+9:  2          64             0.0019841487549388   0.0019816951707696   
+10: 2          16             0.0216364353883056   0.0216333696375844   
+11: 2          4              0.206674671088653    0.206687300575255    
+12: 1          256            0.0441703225658538   0.0337449575409876   
+13: 1          64             0.175975328975729    0.165541332844577    
+14: 1          16             0.543038566726878    0.532604250026911    
+15: 1          4              1.00297806731398     0.99272932984204     
+16: 4          256            1.28845912744582E-07 1.29192465479604E-07 
+17: 4          64             4.17174399336954E-06 4.17180395360377E-06 
+18: 4          16             0.000136818610872136 0.00013681894075718  
+19: 4          4              0.00453363217009244  0.00453377825437499  
+20: 3          256            5.3824039686186E-06  5.39671117469418E-06 
+21: 3          64             9.15227315006785E-05 9.15295108759639E-05 
+22: 3          16             0.00169155486102963  0.00169156502486077  
+23: 3          4              0.0304593810009795   0.0304611813202932   
+24: 2          256            0.000210213579843967 0.000207573129506488 
+25: 2          64             0.0019841487549388   0.0019816951707696   
+26: 2          16             0.0216364353883056   0.0216333696375844   
+27: 2          4              0.206674671088653    0.206687300575255    
+28: 1          256            0.0441703225658538   0.0337449575409876   
+29: 1          64             0.175975328975729    0.165541332844577    
+30: 1          16             0.543038566726878    0.532604250026911    
+31: 1          4              1.00297806731398     0.99272932984204     
+==============
+**************
+==============
+var ExpPlotS = new List<Plot2Ddata>();
+foreach(int pDeg in Degrees) {
+    var pDegSessions = WorkflowMgm.Sessions.Where(
+              Si => Convert.ToInt32(Si.KeysAndQueries["DGdegree:T"]) == pDeg
+        ).ToArray();
+    Plot2Ddata pDegPlot = pDegSessions.ToEstimatedGridConvergenceData("T",true);
+    ExpPlotS.Add(pDegPlot);
+}
+**************
+==============
+**************
+==============
+**************
+System.ArgumentException occurred: Column "SessionName" does not exist.. Type 'LastError' for details.
+
+==============
+**************
+==============
+var ExpPlot = ExpPlotS[0];
+foreach(var p in ExpPlotS.Skip(1)) {
+    ExpPlot = ExpPlot.Merge(p);   
+}
+**************
+==============
+ExpPlot.PlotNow();
+**************
+Using gnuplot: C:\Program Files\FDY\BoSSS\bin\native\win\gnuplot-gp510-20160418-win32-mingw\gnuplot\bin\gnuplot.exe
+set key Left reverse 
+System.Drawing.Bitmap
+==============
+ExpPlot.Regression();
+**************
+List of 4 instances of KeyValuePair{String,Double} {
+  0: [1, 8.27603459002901]
+  1: [2, 8.02492804557655]
+  2: [3, 8.08041542922422]
+  3: [4, 8.00656481287425]
+}
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
 ==============
 **************
 ==============

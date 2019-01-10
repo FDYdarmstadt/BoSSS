@@ -1,0 +1,406 @@
+\BoSSScmd{
+/// % ========================================
+/// \section{Initialization}
+/// % ========================================
+ }
+\BoSSSexeSilent
+\BoSSScmd{
+ % 
+ }
+\BoSSSexeSilent
+\BoSSScmd{
+ % 
+ }
+\BoSSSexeSilent
+\BoSSScmd{
+/// In order to execute the individual solver runs,
+/// we are going to employ the mini batch processor,
+/// for running the calculations on the local machine.
+/// We also have to initialize the workflow management system and create 
+/// a database.
+ }
+\BoSSSexeSilent
+\BoSSScmd{
+restart
+ }
+\BoSSSexeSilent
+\BoSSScmd{
+WorkflowMgm.Init("ConvStudytuorial");
+ }
+\BoSSSexe
+\BoSSScmd{
+var db = OpenOrCreateDefaultDatabase(); 
+ }
+\BoSSSexe
+\BoSSScmd{
+//db.Sessions.ForEach(si => si.Delete(true));
+ }
+\BoSSSexe
+\BoSSScmd{
+/// For sake of simplicity, we employ the Poisson solver
+/// \code{ipPoisson} which is just a benchmarking application, but sufficient 
+/// for the purpose of this tutorial.
+ }
+\BoSSSexe
+\BoSSScmd{
+using BoSSS.Application.SipPoisson;
+ }
+\BoSSSexe
+\BoSSScmd{
+/// We are going to solve the problem 
+/// \begin{array}
+///   \Delta T = -2 \cos(x) \cos(y)
+/// \end{array}
+/// in the square domain $\Omega = (-\pi/2,\pi/2)^2$, 
+/// with homogeneous Dirichlet boundary conditions, 
+/// for which we know the exact
+/// solution is given by
+/// \[
+///    T_\text{ex} = \cos(x) \cos(y) .
+/// \]
+ }
+\BoSSSexe
+\BoSSScmd{
+/// We also instantiate a client for the \code{MiniBatchProcessor}:
+ }
+\BoSSSexe
+\BoSSScmd{
+var myBatch = new MiniBatchProcessorClient();
+ }
+\BoSSSexe
+\BoSSScmd{
+MiniBatchProcessor.Server.StartIfNotRunning(false);
+ }
+\BoSSSexe
+\BoSSScmd{
+/// % ========================================
+/// \section{Mesh Creation}
+/// % ========================================
+ }
+\BoSSSexe
+\BoSSScmd{
+/// We chose resolutions of $2 \times 2$, $4 \times 4$ to $32 \times 32$
+/// cells:
+ }
+\BoSSSexe
+\BoSSScmd{
+int[] resolutions = new int[] \{ 2, 4, 8, 16, 32\};
+ }
+\BoSSSexe
+\BoSSScmd{
+var grids = new GridCommons[resolutions.Length];\newline 
+for(int iRes = 0; iRes < resolutions.Length; iRes++) \{\newline 
+\btab // create nodes:\newline 
+\btab var Nodes = GenericBlas.Linspace(-Math.PI*0.5, Math.PI*0.5, \newline 
+\btab \btab resolutions[iRes] + 1); // note: number of nodes = number of cells + 1!\newline 
+ \newline 
+\btab // create grid:\newline 
+\btab GridCommons grd\_i = Grid2D.Cartesian2DGrid(Nodes, Nodes);\newline 
+ \newline 
+\btab // define all boundaries as Dirichlet:\newline 
+\btab grd\_i.EdgeTagNames.Add(1, BoundaryType.Dirichlet.ToString());\newline 
+\btab grd\_i.DefineEdgeTags(delegate (double[] X) \{\newline 
+\btab \btab byte ret = 1;\newline 
+\btab \btab return ret;\newline 
+\btab \});\newline 
+ \newline 
+\btab // save grid in database\newline 
+\btab db.SaveGrid(ref grd\_i);\newline 
+ \newline 
+\btab // remenber reference to grid:\newline 
+\btab grids[iRes] = grd\_i;\newline 
+\}
+ }
+\BoSSSexe
+\BoSSScmd{
+/// % ===========================================
+/// \section{Setup and execution of solver runs}
+/// % ===========================================
+ }
+\BoSSSexe
+\BoSSScmd{
+/// First, we implement the exact expressions for the right-hand-side 
+/// and the exact solution.
+/// The exact solution will be used to compute the error of the simulation.
+/// Normally, the exact solution is not known; in those cases, we need to 
+/// compute the experimental convergence against the solution on the finest
+/// grid.
+ }
+\BoSSSexe
+\BoSSScmd{
+static class Expressions \{\newline 
+\btab public static double RHS(double[] X) \{\newline 
+\btab \btab double x = X[0];\newline 
+\btab \btab double y = X[1];\newline 
+\btab \btab return -2.0*Math.Cos(x)*Math.Cos(y);\newline 
+\btab \}    \newline 
+\btab public static double Tex(double[] X) \{\newline 
+\btab \btab double x = X[0];\newline 
+\btab \btab double y = X[1];\newline 
+\btab \btab return Math.Cos(x)*Math.Cos(y);\newline 
+\btab \}        \newline 
+\}
+ }
+\BoSSSexe
+\BoSSScmd{
+var RHSfunc = GetFormulaObject(Expressions.RHS);
+ }
+\BoSSSexe
+\BoSSScmd{
+var TexFunc = GetFormulaObject(Expressions.Tex);
+ }
+\BoSSSexe
+\BoSSScmd{
+/// We compute 4 different polynomial orders:
+int[] Degrees = new int[] \{1, 2, 3, 4\};
+ }
+\BoSSSexe
+\BoSSScmd{
+/// Setup of all runs...
+ }
+\BoSSSexe
+\BoSSScmd{
+var Runs = new List<SipControl>();\newline 
+Runs.Clear(); // start with an empty run list\newline 
+foreach(int pDeg in Degrees) \{ // loop over polynomial degrees\newline 
+foreach(var grd in grids) \{ //    loop over all grids\newline 
+ \newline 
+\btab // create object and remember in list:\newline 
+\btab SipControl C = new SipControl();   \newline 
+\btab Runs.Add(C);\newline 
+ \newline 
+\btab // set polynomial degree and grid:\newline 
+\btab C.SetDGdegree(pDeg);\newline 
+\btab C.SetGrid(grd);\newline 
+ \newline 
+\btab // specify RHS and exact solution (these are realized as initial values\newline 
+\btab // in the \textbackslash code\{ipPoisson\} solver:\newline 
+\btab C.AddInitialValue("RHS", RHSfunc);\newline 
+\btab C.AddInitialValue("Tex", TexFunc);\newline 
+ \newline 
+\btab // specify boundary condition:\newline 
+\btab C.AddBoundaryValue(BoundaryType.Dirichlet.ToString()); // for homogeneous \newline 
+\btab //   boundary conditions, we don not need a value, since the default value\newline 
+\btab //   zero is sufficient.\newline 
+ \newline 
+\btab // the exact solution is a speciality of the SIP Poisson benchmark solver;\newline 
+\btab // in order to evaluate the exact solution, we have to set the following \newline 
+\btab // boolean:\newline 
+\btab C.ExactSolution\_provided = true;\newline 
+ \newline 
+\}\newline 
+\}
+ }
+\BoSSSexe
+\BoSSScmd{
+/// ...and activate them:
+ }
+\BoSSSexe
+\BoSSScmd{
+foreach(var C in Runs)\newline 
+   C.RunBatch(myBatch);
+ }
+\BoSSSexe
+\BoSSScmd{
+WorkflowMgm.AllJobs;
+ }
+\BoSSSexe
+\BoSSScmd{
+WorkflowMgm.BlockUntilAllJobsTerminate(720);
+ }
+\BoSSSexe
+\BoSSScmd{
+/// % ===========================================
+/// \section{Convergence against exact solution}
+/// % ===========================================
+ }
+\BoSSSexe
+\BoSSScmd{
+/// As already noted, the computation of the $L^2$ error agains the 
+/// exact solution is handeled specially in the \code{ipPoisson} solver.
+/// However, the following tutorial can serve as a general template of how to
+/// extract data from the session table and visualize it.
+ }
+\BoSSSexe
+\BoSSScmd{
+///
+/// We aquire a copy of the session table, and from all the columns in there...
+ }
+\BoSSSexe
+\BoSSScmd{
+var Tab = WorkflowMgm.SessionTable;
+ }
+\BoSSSexe
+\BoSSScmd{
+Tab.GetColumnNames().Take(7); // Take(7) is just to shorten the output.
+ }
+\BoSSSexe
+\BoSSScmd{
+/// ...we extract those which sound interesting:
+ }
+\BoSSSexe
+\BoSSScmd{
+Tab = Tab.ExtractColumns(\newline 
+\btab "SessionName", "DGdegree:T", "Grid:NoOfCells", "Grid:hMin", "DOFs", \newline 
+\btab //"ExactSolution\_provided", \newline 
+\btab "SolL2err");
+ }
+\BoSSSexe
+\BoSSScmd{
+Tab.Print();
+ }
+\BoSSSexe
+\BoSSScmd{
+/// This can be easily converted to a plot: the $x$-axis is determined
+/// by the cell width, the $y$-axis is determined by the $L^2$ error.
+/// Furthermore, we want to \emph{group} our plots according
+/// to the DG degree, i.e. have one line for each polynomial degree;
+ }
+\BoSSSexe
+\BoSSScmd{
+var ErrorPlot = Tab.ToPlot("Grid:hMin", "SolL2err", // column for x- and y\newline 
+\btab \btab \btab \btab \btab \btab    "DGdegree:T"); // column for group
+ }
+\BoSSSexe
+\BoSSScmd{
+/// We set logarithmic axes:
+ErrorPlot.LogX = true;\newline 
+ErrorPlot.LogY = true;
+ }
+\BoSSSexe
+\BoSSScmd{
+ErrorPlot.PlotNow();
+ }
+\BoSSSexe
+\BoSSScmd{
+/// Of course, we can adjust the plot styles:
+ }
+\BoSSSexe
+\BoSSScmd{
+ErrorPlot.dataGroups[0].Format.PointType = PointTypes.Diamond;\newline 
+ErrorPlot.dataGroups[1].Format.PointType = PointTypes.Box;\newline 
+ErrorPlot.dataGroups[2].Format.PointType = PointTypes.LowerTriangle;\newline 
+ErrorPlot.dataGroups[3].Format.PointType = PointTypes.Asterisk;
+ }
+\BoSSSexe
+\BoSSScmd{
+foreach(var grp in ErrorPlot.dataGroups) \{\newline 
+\btab grp.Format.PointSize = 1.5;\newline 
+\btab grp.Format.DashType  = DashTypes.Dotted;\newline 
+\}
+ }
+\BoSSSexe
+\BoSSScmd{
+ErrorPlot.PlotNow();
+ }
+\BoSSSexe
+\BoSSScmd{
+/// And we can compute the convergence order:
+ }
+\BoSSSexe
+\BoSSScmd{
+ErrorPlot.Regression();
+ }
+\BoSSSexe
+\BoSSScmd{
+/// % ===========================================
+/// \section{experimental convergence plot}
+/// % ===========================================
+ }
+\BoSSSexe
+\BoSSScmd{
+/// If the exact solution is not known, one can only estimate the convergence
+/// behaviour experimentally. 
+/// \BoSSS{} provides some utility for this, the \code{DGFieldComparison}
+/// class, which has a versital, yet complex interface.
+/// However, there is a simple interface in the workflow mangement toolbox.
+ }
+\BoSSSexe
+\BoSSScmd{
+///
+/// We can augment the current session table with experimental errors:
+WorkflowMgm.hConvergence.Update();
+ }
+\BoSSSexe
+\BoSSScmd{
+var Tab = WorkflowMgm.SessionTable;
+ }
+\BoSSSexe
+\BoSSScmd{
+/// We observe, that columns have been added to the session table, 
+/// starting with a prefix \code{L2Error\_}; 
+Tab.GetColumnNames().Skip(46);
+ }
+\BoSSSexe
+\BoSSScmd{
+Tab = Tab.ExtractColumns(\newline 
+\btab "DGdegree:T", "Grid:NoOfCells",\newline 
+\btab "SolL2err", "L2Error\_T");
+ }
+\BoSSSexe
+\BoSSScmd{
+/// We observe that the \emph{experimental} $L^2$ error is approximately
+/// equal to the $L^2$ error against the exact solution, 
+/// except for the highest resolutions. there, the error of the numerical 
+/// solution is comuted against itself, and thuse the error is zero up 
+/// to round-off errors.
+/// 
+/// If we would like to extract convergence plots from this table, we need to
+/// exclude the rows with the finest solution using e.g. the 
+/// \code{TableExtensions.ExtractRows} method.
+Tab.Print();
+ }
+\BoSSSexe
+\BoSSScmd{
+/// Rows could be extracted form a table using a selector function:
+/// this is an expression, which is true for all rows that we want to extract;
+Tab = Tab.ExtractRows(\newline 
+  (iRow, RowEntries) => Convert.ToInt32(RowEntries["Grid:NoOfCells"]) != 1024);
+ }
+\BoSSSexe
+\BoSSScmd{
+Tab.Print();
+ }
+\BoSSSexe
+\BoSSScmd{
+ % 
+ }
+\BoSSSexe
+\BoSSScmd{
+var ExpPlotS = new List<Plot2Ddata>();\newline 
+foreach(int pDeg in Degrees) \{\newline 
+\btab var pDegSessions = WorkflowMgm.Sessions.Where(\newline 
+\btab \btab \btab   Si => Convert.ToInt32(Si.KeysAndQueries["DGdegree:T"]) == pDeg\newline 
+\btab \btab ).ToArray();\newline 
+\btab Plot2Ddata pDegPlot = pDegSessions.ToEstimatedGridConvergenceData("T",true);\newline 
+\btab ExpPlotS.Add(pDegPlot);\newline 
+\}
+ }
+\BoSSSexe
+\BoSSScmd{
+ % 
+ }
+\BoSSSexe
+\BoSSScmd{
+ % 
+ }
+\BoSSSexe
+\BoSSScmd{
+ % 
+ }
+\BoSSSexe
+\BoSSScmd{
+var ExpPlot = ExpPlotS[0];\newline 
+foreach(var p in ExpPlotS.Skip(1)) \{\newline 
+\btab ExpPlot = ExpPlot.Merge(p);   \newline 
+\}
+ }
+\BoSSSexe
+\BoSSScmd{
+ExpPlot.PlotNow();
+ }
+\BoSSSexe
+\BoSSScmd{
+ExpPlot.Regression();
+ }
+\BoSSSexe

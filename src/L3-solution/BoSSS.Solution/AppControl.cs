@@ -423,6 +423,17 @@ namespace BoSSS.Solution.Control {
             }
         }
 
+        /// <summary>
+        /// Adds an initial value to <see cref="InitialValues"/>
+        /// </summary>
+        /// <param name="fieldname">Name of the field for which the boundary condition is valid</param>
+        /// <param name="value">Function of the boundary condition</param>
+        public void AddInitialValue(string fieldname, IBoundaryAndInitialData value) {
+            InitialValues.Add(fieldname, value);
+        }
+
+
+
 
         ///// <summary>
         ///// Adds a time-dependent initial value (e.g. some external force field which may change over time).
