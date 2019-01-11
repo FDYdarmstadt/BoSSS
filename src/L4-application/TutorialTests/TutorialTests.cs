@@ -39,6 +39,7 @@ namespace BoSSS.Application.TutorialTests {
             AllUpTest.RunWorksheets("tutorial10-PoissonSystem/Poisson.tex");
             //AllUpTest.RunWorksheets("tutorial11-Stokes/StokesEq.tex");
             //AllUpTest.RunWorksheets("CsharpAndBoSSSpad/CsharpAndBoSSSpad.tex"); 
+            //AllUpTest.RunWorksheets("convergenceStudyTutorial/convStudy.tex"); 
             AllUpTest.TestFixtureTearDown();
         }
 
