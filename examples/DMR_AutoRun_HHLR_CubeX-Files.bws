@@ -1,0 +1,329 @@
+restart
+**************
+
+  BoSSSpad C# interpreter
+  _______________________
+
+Databases loaded:
+List of 13 instances of IDatabaseInfo {
+  0: { Session Count = 2; Grid Count = 2; Path = C:\bosss_db }
+  1: { Session Count = 5; Grid Count = 73; Path = P:\bosss_db }
+  2: { Session Count = 0; Grid Count = 0; Path = P:\bosss_db_test }
+  3: { Session Count = 3; Grid Count = 5; Path = P:\bosss_db_gb }
+  4: { Session Count = 22; Grid Count = 44; Path = P:\bosss_db_paper }
+  5: { Session Count = 10; Grid Count = 14; Path = P:\bosss_db_paper_svi }
+  6: { Session Count = 34; Grid Count = 55; Path = P:\bosss_db_paper_ibmst }
+  7: { Session Count = 18; Grid Count = 40; Path = P:\bosss_db_paper_ibmdmr }
+  8: { Session Count = 6; Grid Count = 8; Path = C:\bosss_db_paper_ibmdmr_scratch }
+  9: { Session Count = 8; Grid Count = 1; Path = C:\bosss_db_paper_ibmdmr_scratch_run3 }
+  10: { Session Count = 3; Grid Count = 3; Path = E:\dmr_movie\bosss_db_dmr_video_coarse }
+  11: { Session Count = 16; Grid Count = 16; Path = H:\geisenhofer\bosss_db_bowShock }
+  12: { Session Count = 7; Grid Count = 7; Path = E:\bosss_db_cube }
+}
+
+ Console ready for input. Type 'help' for help.
+
+==============
+// Does not matter for submission on HHLR (is set in source code)
+string WFlowName = "bla";
+**************
+==============
+WorkflowMgm.Init(WFlowName);
+**************
+Project name is set to 'bla'.
+
+==============
+WorkflowMgm.AllJobs;
+**************
+List of 0 instances of KeyValuePair{String,Job} {
+}
+==============
+//string dbPath = @"T:\bosss_db_paper_ibmdmr";
+//string dbPath = @"S:\work\scratch\yp19ysog\bosss_db_performance";
+//string dbPath = @"S:\home\yp19ysog\bosss_db_paper_ibmdmr2";
+//var myDb = OpenOrCreateDatabase(dbPath);
+**************
+Creating database 'S:\work\scratch\yp19ysog\bosss_db_performance'.
+
+==============
+//var myAutoRunJob = new SlurmClient(@"S:\home\yp19ysog\BoSSS","lcluster2.hrz.tu-darmstadt.de","yp19ysog");
+var myAutoRunJob = new SlurmClient(@"T:\BoSSS","lcluster3.hrz.tu-darmstadt.de","yp19ysog");
+**************
+Please enter your password...
+*********
+Connecting to lcluster3.hrz.tu-darmstadt.de...
+
+
+==============
+using CNS;
+using BoSSS.Application.IBM_Solver;
+using BoSSS.Foundation.Grid.RefElements;
+using BoSSS.Solution.Multigrid;
+using BoSSS.Solution.Timestepping;
+using System.Text;
+using System.Threading.Tasks;
+using ilPSP.Tracing;
+**************
+==============
+Type solver = typeof(CNS.Program);
+**************
+==============
+// Use the self-compiled BoSSSpad (release mode)
+solver.Assembly.Location;
+**************
+C:\BoSSS\root3\public\src\L4-application\BoSSSpad\bin\Release\CNS.exe
+==============
+//------------------------------------------------
+//   Parameter study - Time to make changes 
+//------------------------------------------------
+int savePeriod = 1;
+
+int[] dgDegree           = {3};
+
+double xMax     = 4.0;
+double yMax     = 1.0;
+int numOfCellsX = 400;
+int numOfCellsY = 100;
+
+double[] sensorLimit     = {1e-3};  // sensorLimit = 1e-3 (except for IBMDMR --> 1e-4)
+double CFLFraction = 0.1;
+
+ExplicitSchemes myScheme = ExplicitSchemes.RungeKutta;
+//ExplicitSchemes myScheme = ExplicitSchemes.LTS;
+//ExplicitSchemes myScheme = ExplicitSchemes.AdamsBashforth;
+int explicitScheme       = (int) myScheme;
+int[] explicitOrder        = {1};
+int[] numberOfSubGrids     = {3};
+int reclusteringInterval = 1;
+int maxNumOfSubSteps     = 0;
+
+double endTime = 0.7;
+**************
+==============
+int bla = 6;
+int[] cores = new int[bla];
+for(int ct = 0; ct < bla; ct++){
+    cores[ct] = (int)Math.Pow(2, ct+1);
+}
+
+int timeSteps = 10;
+**************
+==============
+cores
+**************
+List of 6 instances of Int32 {
+  0: 2
+  1: 4
+  2: 8
+  3: 16
+  4: 32
+  5: 64
+}
+==============
+// Feed the machine
+for (int c = 0; c < cores.Length; c++){
+for (int dg = 0; dg < dgDegree.Length; dg++){
+        for(int sl = 0; sl < sensorLimit.Length; sl++){
+            for(int or = 0; or < explicitOrder.Length; or++){
+                for(int sg = 0; sg < numberOfSubGrids.Length; sg++){
+        // Shock Tube
+        string jobName = null;
+        if (myScheme == ExplicitSchemes.RungeKutta){
+            jobName = string.Format("DMR_p{0}_xCells{1}_yCells{2}_s0={3:0.0E-00}_CFLFrac{4}_RK{5}_{6}cores",
+                dgDegree, numOfCellsX, numOfCellsY, sensorLimit, CFLFraction, explicitOrder, cores[c]);
+        } else if (myScheme == ExplicitSchemes.AdamsBashforth){
+            jobName = string.Format("DMR_p{0}_xCells{1}_yCells{2}_s0={3:0.0E-00}_CFLFrac{4}_AB{5}",
+                dgDegree, numOfCellsX, numOfCellsY, sensorLimit, CFLFraction, explicitOrder);            
+        } else {
+            jobName = string.Format("DMR_p{0}_xCells{1}_yCells{2}_s0={3:0.0E-00}_CFLFrac{4}_ALTS{5}_{6}_re{7}_subs{8}",
+                dgDegree, numOfCellsX, numOfCellsY, sensorLimit, CFLFraction, explicitOrder, numberOfSubGrids, reclusteringInterval, maxNumOfSubSteps);                
+        }
+            
+        string StartupString = string.Format("cs:CNS.TestCases.DoubleMachReflectionHHLR({0}, {1}, {2}, {3}, {4}, {5}, {6}, {7}, {8}, {9}, {10}, {11}, {12}, {13}, {14},{15})",
+        savePeriod, dgDegree[dg], xMax, yMax, numOfCellsX, numOfCellsY, sensorLimit[sl], CFLFraction, explicitScheme, explicitOrder[or], numberOfSubGrids[sg], reclusteringInterval, maxNumOfSubSteps, endTime, timeSteps, cores[c]);
+        
+        var oneJob = new Job(jobName, solver);
+        oneJob.SetCommandLineArguments(StartupString);
+        oneJob.NumberOfMPIProcs = cores[c];
+        
+        //oneJob.ExecutionTime = "00:05:00";  // 5 minutes        
+        oneJob.ExecutionTime = "00:30:00"; // 1 day
+        //oneJob.ExecutionTime    = "48:00:00"; // 2 days
+        //oneJob.ExecutionTime = "72:00:00"; // 3 days
+        //oneJob.ExecutionTime = "96:00:00"; // 4 days        
+        //oneJob.ExecutionTime = "168:00:00"; // 7 days
+        
+        //oneJob.HHLR_project = "project00747";  // Markus
+        oneJob.HHLR_project = "project00717";  // Dennis
+        //oneJob.HHLR_project = "project00880";  // Jens
+        
+        //oneJob.MemPerCPU    = "2500";
+        oneJob.MemPerCPU    = "1600";
+        oneJob.EmailAddress = "geisenhofer@fdy.tu-darmstadt.de";
+        //oneJob.UseComputeNodesExclusive = true;
+        oneJob.Activate(myAutoRunJob);
+}
+}
+}
+}
+}
+**************
+Job not submitted yet, or no result session is known - starting submission.
+Deploying executables and additional files ...
+Deployment directory: T:\BoSSS\CNS2019Jan10_11-26-35
+Source directory: C:\BoSSS\root3\public\src\L4-application\BoSSSpad\bin\Release
+   copied: CNS.exe BoSSS.Solution.dll CommandLine.dll BoSSS.Foundation.dll ilPSP.dll MPI.Wrappers.dll log4net.dll nunit.framework.dll Newtonsoft.Json.dll ilPSP.LinSolvers.MUMPS.dll BoSSS.Platform.dll Renci.SshNet.dll ilPSP.LinSolvers.monkey.dll ilPSP.Connectors.Matlab.dll BoSSS.Foundation.XDG.dll Mono.CSharp.dll BoSSS.Foundation.Grid.dll MathNet.Numerics.dll BoSSS.Solution.CompressibleFlowCommon.dll BoSSS.Foundation.SpecFEM.dll BoSSS.Solution.NSECommon.dll BoSSS.Solution.ASCIIExport.dll BoSSS.Solution.Tecplot.dll BoSSS.Solution.GridImport.dll deployment finished.
+
+Waiting for file transfer to finish.
+Modules: loading gcc/4.9.4 
+Modules: loading openmpi/gcc/1.6.6 
+Warning: openmpi/gcc/1.6.6 is now obsolete, please use openmpi/gcc (default
+version) 
+Modules: loading acml/5.3.1 
+dos2unix: converting file /home/yp19ysog/BoSSS/CNS2019Jan10_11-26-35/batch.sh to Unix format ...
+
+Submitted batch job 10249859
+[1;37m[I][0m Selected project: project00717
+[1;37m[I][0m Possible CPU types    = Sandy-Bridge([1;32mavx[0m)
+[1;37m[I][0m Possible specials     = short
+
+Job not submitted yet, or no result session is known - starting submission.
+Deploying executables and additional files ...
+Deployment directory: T:\BoSSS\CNS2019Jan10_11-26-48
+Source directory: C:\BoSSS\root3\public\src\L4-application\BoSSSpad\bin\Release
+   copied: CNS.exe BoSSS.Solution.dll CommandLine.dll BoSSS.Foundation.dll ilPSP.dll MPI.Wrappers.dll log4net.dll nunit.framework.dll Newtonsoft.Json.dll ilPSP.LinSolvers.MUMPS.dll BoSSS.Platform.dll Renci.SshNet.dll ilPSP.LinSolvers.monkey.dll ilPSP.Connectors.Matlab.dll BoSSS.Foundation.XDG.dll Mono.CSharp.dll BoSSS.Foundation.Grid.dll MathNet.Numerics.dll BoSSS.Solution.CompressibleFlowCommon.dll BoSSS.Foundation.SpecFEM.dll BoSSS.Solution.NSECommon.dll BoSSS.Solution.ASCIIExport.dll BoSSS.Solution.Tecplot.dll BoSSS.Solution.GridImport.dll deployment finished.
+
+Waiting for file transfer to finish.
+Modules: loading gcc/4.9.4 
+Modules: loading openmpi/gcc/1.6.6 
+Warning: openmpi/gcc/1.6.6 is now obsolete, please use openmpi/gcc (default
+version) 
+Modules: loading acml/5.3.1 
+dos2unix: converting file /home/yp19ysog/BoSSS/CNS2019Jan10_11-26-48/batch.sh to Unix format ...
+
+Submitted batch job 10249860
+[1;37m[I][0m Selected project: project00717
+[1;37m[I][0m Possible CPU types    = Sandy-Bridge([1;32mavx[0m)
+[1;37m[I][0m Possible specials     = short
+
+Job not submitted yet, or no result session is known - starting submission.
+Deploying executables and additional files ...
+Deployment directory: T:\BoSSS\CNS2019Jan10_11-27-01
+Source directory: C:\BoSSS\root3\public\src\L4-application\BoSSSpad\bin\Release
+   copied: CNS.exe BoSSS.Solution.dll CommandLine.dll BoSSS.Foundation.dll ilPSP.dll MPI.Wrappers.dll log4net.dll nunit.framework.dll Newtonsoft.Json.dll ilPSP.LinSolvers.MUMPS.dll BoSSS.Platform.dll Renci.SshNet.dll ilPSP.LinSolvers.monkey.dll ilPSP.Connectors.Matlab.dll BoSSS.Foundation.XDG.dll Mono.CSharp.dll BoSSS.Foundation.Grid.dll MathNet.Numerics.dll BoSSS.Solution.CompressibleFlowCommon.dll BoSSS.Foundation.SpecFEM.dll BoSSS.Solution.NSECommon.dll BoSSS.Solution.ASCIIExport.dll BoSSS.Solution.Tecplot.dll BoSSS.Solution.GridImport.dll deployment finished.
+
+Waiting for file transfer to finish.
+Modules: loading gcc/4.9.4 
+Modules: loading openmpi/gcc/1.6.6 
+Warning: openmpi/gcc/1.6.6 is now obsolete, please use openmpi/gcc (default
+version) 
+Modules: loading acml/5.3.1 
+dos2unix: converting file /home/yp19ysog/BoSSS/CNS2019Jan10_11-27-01/batch.sh to Unix format ...
+
+Submitted batch job 10249861
+[1;37m[I][0m Selected project: project00717
+[1;37m[I][0m Possible CPU types    = Sandy-Bridge([1;32mavx[0m)
+[1;37m[I][0m Possible specials     = short
+
+Job not submitted yet, or no result session is known - starting submission.
+Deploying executables and additional files ...
+Deployment directory: T:\BoSSS\CNS2019Jan10_11-27-16
+Source directory: C:\BoSSS\root3\public\src\L4-application\BoSSSpad\bin\Release
+   copied: CNS.exe BoSSS.Solution.dll CommandLine.dll BoSSS.Foundation.dll ilPSP.dll MPI.Wrappers.dll log4net.dll nunit.framework.dll Newtonsoft.Json.dll ilPSP.LinSolvers.MUMPS.dll BoSSS.Platform.dll Renci.SshNet.dll ilPSP.LinSolvers.monkey.dll ilPSP.Connectors.Matlab.dll BoSSS.Foundation.XDG.dll Mono.CSharp.dll BoSSS.Foundation.Grid.dll MathNet.Numerics.dll BoSSS.Solution.CompressibleFlowCommon.dll BoSSS.Foundation.SpecFEM.dll BoSSS.Solution.NSECommon.dll BoSSS.Solution.ASCIIExport.dll BoSSS.Solution.Tecplot.dll BoSSS.Solution.GridImport.dll deployment finished.
+
+Waiting for file transfer to finish.
+Modules: loading gcc/4.9.4 
+Modules: loading openmpi/gcc/1.6.6 
+Warning: openmpi/gcc/1.6.6 is now obsolete, please use openmpi/gcc (default
+version) 
+Modules: loading acml/5.3.1 
+dos2unix: converting file /home/yp19ysog/BoSSS/CNS2019Jan10_11-27-16/batch.sh to Unix format ...
+
+Submitted batch job 10249863
+[1;37m[I][0m Selected project: project00717
+[1;37m[I][0m Possible CPU types    = Sandy-Bridge([1;32mavx[0m)
+[1;37m[I][0m Possible specials     = short
+
+Job not submitted yet, or no result session is known - starting submission.
+Deploying executables and additional files ...
+Deployment directory: T:\BoSSS\CNS2019Jan10_11-27-28
+Source directory: C:\BoSSS\root3\public\src\L4-application\BoSSSpad\bin\Release
+   copied: CNS.exe BoSSS.Solution.dll CommandLine.dll BoSSS.Foundation.dll ilPSP.dll MPI.Wrappers.dll log4net.dll nunit.framework.dll Newtonsoft.Json.dll ilPSP.LinSolvers.MUMPS.dll BoSSS.Platform.dll Renci.SshNet.dll ilPSP.LinSolvers.monkey.dll ilPSP.Connectors.Matlab.dll BoSSS.Foundation.XDG.dll Mono.CSharp.dll BoSSS.Foundation.Grid.dll MathNet.Numerics.dll BoSSS.Solution.CompressibleFlowCommon.dll BoSSS.Foundation.SpecFEM.dll BoSSS.Solution.NSECommon.dll BoSSS.Solution.ASCIIExport.dll BoSSS.Solution.Tecplot.dll BoSSS.Solution.GridImport.dll deployment finished.
+
+Waiting for file transfer to finish.
+Modules: loading gcc/4.9.4 
+Modules: loading openmpi/gcc/1.6.6 
+Warning: openmpi/gcc/1.6.6 is now obsolete, please use openmpi/gcc (default
+version) 
+Modules: loading acml/5.3.1 
+dos2unix: converting file /home/yp19ysog/BoSSS/CNS2019Jan10_11-27-28/batch.sh to Unix format ...
+
+Submitted batch job 10249864
+[1;37m[I][0m Selected project: project00717
+[1;37m[I][0m Enforcing --exclusive
+[1;37m[I][0m Possible CPU types    = Sandy-Bridge([1;32mavx[0m)
+[1;37m[I][0m Possible specials     = short
+
+Job not submitted yet, or no result session is known - starting submission.
+Deploying executables and additional files ...
+Deployment directory: T:\BoSSS\CNS2019Jan10_11-27-41
+Source directory: C:\BoSSS\root3\public\src\L4-application\BoSSSpad\bin\Release
+   copied: CNS.exe BoSSS.Solution.dll CommandLine.dll BoSSS.Foundation.dll ilPSP.dll MPI.Wrappers.dll log4net.dll nunit.framework.dll Newtonsoft.Json.dll ilPSP.LinSolvers.MUMPS.dll BoSSS.Platform.dll Renci.SshNet.dll ilPSP.LinSolvers.monkey.dll ilPSP.Connectors.Matlab.dll BoSSS.Foundation.XDG.dll Mono.CSharp.dll BoSSS.Foundation.Grid.dll MathNet.Numerics.dll BoSSS.Solution.CompressibleFlowCommon.dll BoSSS.Foundation.SpecFEM.dll BoSSS.Solution.NSECommon.dll BoSSS.Solution.ASCIIExport.dll BoSSS.Solution.Tecplot.dll BoSSS.Solution.GridImport.dll deployment finished.
+
+Waiting for file transfer to finish.
+Modules: loading gcc/4.9.4 
+Modules: loading openmpi/gcc/1.6.6 
+Warning: openmpi/gcc/1.6.6 is now obsolete, please use openmpi/gcc (default
+version) 
+Modules: loading acml/5.3.1 
+dos2unix: converting file /home/yp19ysog/BoSSS/CNS2019Jan10_11-27-41/batch.sh to Unix format ...
+
+Submitted batch job 10249865
+[1;37m[I][0m Selected project: project00717
+[1;37m[I][0m Enforcing --exclusive
+[1;37m[I][0m Possible CPU types    = Sandy-Bridge([1;32mavx[0m)
+[1;37m[I][0m Possible specials     = short
+
+
+==============
+WorkflowMgm.AllJobs;
+**************
+List of 6 instances of KeyValuePair{String,Job} {
+  0: [DMR_pSystem.Int32[]_xCells400_yCells100_s0=System.Double[]_CFLFrac0.1_RKSystem.Int32[]_2cores, DMR_pSystem.Int32[]_xCells400_yCells100_s0=System.Double[]_CFLFrac0.1_RKSystem.Int32[]_2cores: FinishedSuccessful (BoSSS.Application.BoSSSpad.SlurmClient)]
+  1: [DMR_pSystem.Int32[]_xCells400_yCells100_s0=System.Double[]_CFLFrac0.1_RKSystem.Int32[]_4cores, DMR_pSystem.Int32[]_xCells400_yCells100_s0=System.Double[]_CFLFrac0.1_RKSystem.Int32[]_4cores: FinishedSuccessful (BoSSS.Application.BoSSSpad.SlurmClient)]
+  2: [DMR_pSystem.Int32[]_xCells400_yCells100_s0=System.Double[]_CFLFrac0.1_RKSystem.Int32[]_8cores, DMR_pSystem.Int32[]_xCells400_yCells100_s0=System.Double[]_CFLFrac0.1_RKSystem.Int32[]_8cores: FinishedSuccessful (BoSSS.Application.BoSSSpad.SlurmClient)]
+  3: [DMR_pSystem.Int32[]_xCells400_yCells100_s0=System.Double[]_CFLFrac0.1_RKSystem.Int32[]_16cores, DMR_pSystem.Int32[]_xCells400_yCells100_s0=System.Double[]_CFLFrac0.1_RKSystem.Int32[]_16cores: FinishedSuccessful (BoSSS.Application.BoSSSpad.SlurmClient)]
+  4: [DMR_pSystem.Int32[]_xCells400_yCells100_s0=System.Double[]_CFLFrac0.1_RKSystem.Int32[]_32cores, DMR_pSystem.Int32[]_xCells400_yCells100_s0=System.Double[]_CFLFrac0.1_RKSystem.Int32[]_32cores: FinishedSuccessful (BoSSS.Application.BoSSSpad.SlurmClient)]
+  5: [DMR_pSystem.Int32[]_xCells400_yCells100_s0=System.Double[]_CFLFrac0.1_RKSystem.Int32[]_64cores, DMR_pSystem.Int32[]_xCells400_yCells100_s0=System.Double[]_CFLFrac0.1_RKSystem.Int32[]_64cores: FinishedSuccessful (BoSSS.Application.BoSSSpad.SlurmClient)]
+}
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
