@@ -67,7 +67,6 @@
     <Reference Include="System.Core" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Analysis.cs" />
     <Compile Include="ConstitutiveEqns\ConstitutiveEqns_Diffusion.cs" />
     <Compile Include="ConstitutiveEqns\OLD\ConstitutiveEqns_Objective_withGrad.cs" />
     <Compile Include="ConstitutiveEqns\OLD\ConstitutiveEqns_Objective_allparam.cs" />
@@ -75,23 +74,21 @@
     <Compile Include="ConstitutiveEqns\ConstitutiveEqns_CellWiseForm.cs" />
     <Compile Include="ConstitutiveEqns\ConstitutiveEqns_Objective_Tparam.cs" />
     <Compile Include="ArtificialViscosity.cs" />
+    <Compile Include="SpatialOperatorAnalysis.cs" />
     <Compile Include="PerssonSensor.cs" />
-    <Compile Include="StressDivergence_Burman.cs" />
+    <Compile Include="Z_old\StressDivergence_Burman.cs" />
     <Compile Include="StressDivergence_Cockburn.cs" />
-    <Compile Include="Z_old\VelocityGrad_SU.cs" />
-    <Compile Include="Z_old\VelocityGradXX.cs" />
     <Compile Include="Tests\RheologyChannelTest.cs" />
     <Compile Include="Tests\RheologyConsistencyTest.cs" />
     <Compile Include="Tests\RheologyLocalDGTest.cs" />
     <Compile Include="Controlfiles\SimpleTestcasesControl.cs" />
-    <Compile Include="Z_old\OldVersionMain.cs" />
     <Compile Include="ConstitutiveEqns\OLD\ConstitutiveEqns_Convective.cs" />
     <Compile Include="ConstitutiveEqns\ConstitutiveEqns_Identity.cs" />
     <Compile Include="ConstitutiveEqns\ConstitutiveEqns_Objective.cs" />
     <Compile Include="ConstitutiveEqns\ConstitutiveEqns_Viscosity.cs" />
     <Compile Include="Controlfiles\RheologyControlExamples.cs" />
     <Compile Include="Z_old\Sources.cs" />
-    <Compile Include="StressDivergence_CentralDifference.cs" />
+    <Compile Include="Z_old\StressDivergence_CentralDifference.cs" />
     <Compile Include="RheologyControl.cs" />
     <Compile Include="RheologyMain.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
@@ -121,6 +118,10 @@
     <ProjectReference Include="..\..\ilPSP\layer_1.2-ilPSP\ilPSP.LinSolvers.PARDISO\ilPSP.LinSolvers.PARDISO.csproj">
       <Project>{DB9CA35D-9980-462A-85CC-CB33DCFD5A28}</Project>
       <Name>ilPSP.LinSolvers.PARDISO</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\..\ilPSP\layer_1.2-ilPSP\ilPSP.LinSolvers\ilPSP.LinSolvers.csproj">
+      <Project>{45eff2bd-0bcc-4aea-9e87-7d86d6423b0c}</Project>
+      <Name>ilPSP.LinSolvers</Name>
     </ProjectReference>
     <ProjectReference Include="..\..\ilPSP\layer_1.2-ilPSP\ilPSP\ilPSP.csproj">
       <Project>{8E6D8F23-623F-4204-B4AB-A088C0CD83AA}</Project>
