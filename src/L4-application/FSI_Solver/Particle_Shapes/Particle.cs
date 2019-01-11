@@ -28,14 +28,15 @@ using ilPSP.Utils;
 using BoSSS.Foundation;
 using BoSSS.Foundation.Grid;
 
-namespace BoSSS.Application.FSI_Solver {
+namespace BoSSS.Application.FSI_Solver
+{
 
     /// <summary>
     /// Particle properties (for disk shape and spherical particles only).
     /// </summary>
     [DataContract]
     [Serializable]
-    public class Particle : ICloneable {
+    abstract public class Particle : ICloneable {
 
         #region particle
         public Particle(int Dim, int HistoryLength, double[] startPos = null, double startAngl = 0.0, ParticleShape shape = ParticleShape.spherical) {
@@ -49,12 +50,23 @@ namespace BoSSS.Application.FSI_Solver {
             #region Particle history
             // =============================   
             for (int i = 0; i < HistoryLength; i++) {
-                currentPos_P.Add(new double[Dim]);
-                currentAng_P.Add(new double());
-                vel_P.Add(new double[Dim]);
-                rot_P.Add(new double());
-                forces_P.Add(new double[Dim]);
-                torque_P.Add(new double());
+                currentIterPos_P.Add(new double[Dim]);
+                currentIterAng_P.Add(new double());
+                currentIterVel_P.Add(new double[Dim]);
+                currentIterRot_P.Add(new double());
+                currentIterForces_P.Add(new double[Dim]);
+                temporalForces_P.Add(new double[Dim]);
+                currentIterTorque_P.Add(new double());
+                temporalTorque_P.Add(new double());
+            }
+            for (int i = 0; i < 4; i++)
+            {
+                currentTimePos_P.Add(new double[Dim]);
+                currentTimeAng_P.Add(new double());
+                currentTimeVel_P.Add(new double[Dim]);
+                currentTimeRot_P.Add(new double());
+                currentTimeForces_P.Add(new double[Dim]);
+                currentTimeTorque_P.Add(new double());
             }
             #endregion
 
@@ -71,10 +83,12 @@ namespace BoSSS.Application.FSI_Solver {
                     startPos = new double[] { 0.0, 0.0, 0.0 };
                 }
             }
-            currentPos_P[0] = startPos;
+            currentTimePos_P[0] = startPos;
+            currentTimePos_P[1] = startPos;
             //From degree to radiant
-            currentAng_P[0] = startAngl * 2 * Math.PI / 360;
-            //vel_P[0][0] = 2e-8;
+            currentTimeAng_P[0] = startAngl * 2 * Math.PI / 360;
+            currentTimeAng_P[1] = startAngl * 2 * Math.PI / 360;
+            //currentIterVel_P[0][0] = 2e-8;
 
             UpdateLevelSetFunction();
             #endregion
@@ -102,8 +116,10 @@ namespace BoSSS.Application.FSI_Solver {
         public double tempAng_P;
         public int iteration_counter_P = 0;
         public bool underrelaxationFT_constant = true;
-        public int underrelaxationFT_exponent = 1;
+        public int underrelaxationFT_exponent = 0;
         public double underrelaxation_factor = 1;
+        public int underrelaxationFT_exponent_min = 0;
+        public int underrelaxationFT_exponent_max = 0;
 
         /// <summary>
         /// Shape of the particle
@@ -148,37 +164,85 @@ namespace BoSSS.Application.FSI_Solver {
         /// Current position of the particle (the center of mass)
         /// </summary>
         [DataMember]
-        public List<double[]> currentPos_P = new List<double[]>();
+        public List<double[]> currentIterPos_P = new List<double[]>();
+
+        /// <summary>
+        /// Current position of the particle (the center of mass)
+        /// </summary>
+        [DataMember]
+        public List<double[]> currentTimePos_P = new List<double[]>();
 
         /// <summary>
         /// Current angle of the particle (the center of mass)
         /// </summary>
         [DataMember]
-        public List<double> currentAng_P = new List<double>();
+        public List<double> currentIterAng_P = new List<double>();
+
+        /// <summary>
+        /// Current angle of the particle (the center of mass)
+        /// </summary>
+        [DataMember]
+        public List<double> currentTimeAng_P = new List<double>();
 
         /// <summary>
         /// Current translational Velocity of the particle
         /// </summary>
         [DataMember]
-        public List<double[]> vel_P = new List<double[]>();
+        public List<double[]> currentIterVel_P = new List<double[]>();
+
+        /// <summary>
+        /// Current translational Velocity of the particle
+        /// </summary>
+        [DataMember]
+        public List<double[]> currentTimeVel_P = new List<double[]>();
 
         /// <summary>
         /// Current rotational Velocity of the particle
         /// </summary>
         [DataMember]
-        public List<double> rot_P = new List<double>();
+        public List<double> currentIterRot_P = new List<double>();
+
+        /// <summary>
+        /// Current rotational Velocity of the particle
+        /// </summary>
+        [DataMember]
+        public List<double> currentTimeRot_P = new List<double>();
 
         /// <summary>
         /// Force acting on the particle
         /// </summary>
         [DataMember]
-        public List<double[]> forces_P = new List<double[]>();
+        public List<double[]> currentIterForces_P = new List<double[]>();
+
+        /// <summary>
+        /// Force acting on the particle
+        /// </summary>
+        [DataMember]
+        public List<double[]> currentTimeForces_P = new List<double[]>();
+
+        /// <summary>
+        /// Force acting on the particle
+        /// </summary>
+        [DataMember]
+        public List<double[]> temporalForces_P = new List<double[]>();
 
         /// <summary>
         /// Torque acting on the particle
         /// </summary>
         [DataMember]
-        public List<double> torque_P = new List<double>();
+        public List<double> currentIterTorque_P = new List<double>();
+
+        /// <summary>
+        /// Torque acting on the particle
+        /// </summary>
+        [DataMember]
+        public List<double> currentTimeTorque_P = new List<double>();
+
+        /// <summary>
+        /// Torque acting on the particle
+        /// </summary>
+        [DataMember]
+        public List<double> temporalTorque_P = new List<double>();
 
         /// <summary>
         /// Level set function describing the particle
@@ -216,6 +280,12 @@ namespace BoSSS.Application.FSI_Solver {
         /// heaviside function depending on arclength 
         /// </summary>
         public double velResidual_ConvergenceCriterion = 1e-6;
+
+        /// <summary>
+        /// heaviside function depending on arclength 
+        /// </summary>
+        public double forceAndTorque_convergence = 1e-6;
+
         /// <summary>
         /// heaviside function depending on arclength 
         /// </summary>
@@ -224,156 +294,76 @@ namespace BoSSS.Application.FSI_Solver {
         /// <summary>
         /// Active stress on the current particle
         /// </summary>
-        public double active_stress_P 
+        abstract public double active_stress_P
         {
-            get
-            {
-                double stress;
-                switch (m_shape)
-                {
-                    case ParticleShape.spherical:
-                        stress = 2 * Math.PI * radius_P * stress_magnitude_P;
-                        break;
-
-                    case ParticleShape.elliptic:
-                        //Approximation formula for circumference according to Ramanujan
-                        double circumference;
-                        circumference = Math.PI * ((length_P + thickness_P) + (3 * (length_P - thickness_P).Pow2()) / (10 * (length_P + thickness_P) + Math.Sqrt(length_P.Pow2() + 14 * length_P * thickness_P + thickness_P.Pow2()))); 
-                        stress = 0.5 * circumference * stress_magnitude_P;
-                        break;
-
-                    case ParticleShape.squircle:
-                        stress = 2 * Math.PI * 3.708 * stress_magnitude_P;
-                        break;
-
-                    default:
-
-                        throw new NotImplementedException("");
-                }
-
-                return stress;
-            }
-
+            get;
         }
         
         /// <summary>
         /// Mass of the current particle
         /// </summary>
         [DataMember]
-        public double mass_P {
-            get {
-                double mass;
-                switch (m_shape) {
-                    case ParticleShape.spherical:
-                        mass = area_P * rho_P;
-                        break;
-
-                    case ParticleShape.elliptic:
-                        mass = area_P * rho_P;
-                        break;
-
-                    case ParticleShape.hippopede:
-                        mass = area_P * rho_P;
-                        break;
-
-                    case ParticleShape.bean:
-                        mass = area_P * rho_P;
-                        break;
-
-                    case ParticleShape.squircle:
-                        mass = area_P * rho_P;
-                        break;
-
-                    default:
-
-                        throw new NotImplementedException("");
-                }
-
-                return mass;
+        public double Mass_P {
+            get
+            {
+                return Area_P * rho_P;
             }
-
         }
 
         /// <summary>
         /// Area of the current particle
         /// </summary>
         [DataMember]
-        public double area_P {
-            get {
-                double area;
-                switch (m_shape) {
-                    case ParticleShape.spherical:
-                        area = Math.PI * radius_P * radius_P;
-                        break;
-
-                    case ParticleShape.elliptic:
-                        area = length_P * thickness_P * Math.PI * radius_P;
-                        break;
-
-                    case ParticleShape.hippopede:
-                        // not correct mass
-                        area = Math.PI * radius_P * radius_P;
-                        break;
-
-                    case ParticleShape.bean:
-                        // not correct mass
-                        area = Math.PI * radius_P * radius_P;
-                        break;
-
-                    case ParticleShape.squircle:
-                        area = 3.708 * radius_P.Pow2();
-                        break;
-
-                    default:
-
-                        throw new NotImplementedException("");
-                }
-
-                return area;
-            }
-
+        abstract public double Area_P
+        {
+            get;
         }
 
         /// <summary>
         /// Moment of inertia of the current particle
         /// </summary>
         [DataMember]
-        public double MomentOfInertia_P {
-            get {
-                double moment;
-                switch (m_shape) {
-                    case ParticleShape.spherical:
-                        moment = (1 / 2.0) * (mass_P * radius_P * radius_P);
-                        break;
+        abstract public double MomentOfInertia_P
+        {
+            get;
+        }//{
+        //    get
+        //    {
+        //        double moment;
+        //        switch (m_shape)
+        //        {
+        //            case ParticleShape.spherical:
+        //                moment = (1 / 2.0) * (Mass_P * radius_P * radius_P);
+        //                break;
 
-                    case ParticleShape.elliptic:
-                        moment = (1 / 4.0) * (mass_P * (length_P * length_P + thickness_P * thickness_P) * radius_P * radius_P);
-                        break;
+        //            case ParticleShape.elliptic:
+        //                moment = (1 / 4.0) * (Mass_P * (length_P * length_P + thickness_P * thickness_P) * radius_P * radius_P);
+        //                break;
 
-                    case ParticleShape.hippopede:
-                        // not correct moment of inertia
-                        moment = (1 / 2.0) * (mass_P * radius_P * radius_P);
-                        break;
+        //            case ParticleShape.hippopede:
+        //                // not correct moment of inertia
+        //                moment = (1 / 2.0) * (Mass_P * radius_P * radius_P);
+        //                break;
 
-                    case ParticleShape.bean:
-                        // not correct moment of inertia
-                        moment = (1 / 2.0) * (mass_P * radius_P * radius_P);
-                        break;
+        //            case ParticleShape.bean:
+        //                // not correct moment of inertia
+        //                moment = (1 / 2.0) * (Mass_P * radius_P * radius_P);
+        //                break;
 
-                    case ParticleShape.squircle:
-                        // not correct moment of inertia
-                        moment = (1 / 2.0) * (mass_P * radius_P * radius_P);
-                        break;
+        //            case ParticleShape.squircle:
+        //                // not correct moment of inertia
+        //                moment = (1 / 2.0) * (Mass_P * radius_P * radius_P);
+        //                break;
 
 
-                    default:
+        //            default:
 
-                        throw new NotImplementedException("");
-                }
+        //                throw new NotImplementedException("");
+        //        }
 
-                return moment;
-            }
-        }
+        //        return moment;
+        //    }
+        //}
         #endregion
 
         #region Particle history
@@ -381,19 +371,37 @@ namespace BoSSS.Application.FSI_Solver {
         /// Clean all Particle histories until a certain length
         /// </summary>
         /// <param name="length"></param>
-        public void CleanHistory() {
-            if (currentPos_P.Count > m_HistoryLength) {
-
-                for (int j = currentPos_P.Count; j > m_HistoryLength; j--) {
-
+        // iteration
+        public void CleanHistoryIter() {
+            if (currentIterPos_P.Count > m_HistoryLength)
+            {
+                for (int j = currentIterPos_P.Count; j > m_HistoryLength; j--)
+                {
                     int tempPos = j - 1;
-
-                    currentPos_P.RemoveAt(tempPos);
-                    vel_P.RemoveAt(tempPos);
-                    forces_P.RemoveAt(tempPos);
-                    rot_P.RemoveAt(tempPos);
-                    torque_P.RemoveAt(tempPos);
-
+                    currentIterPos_P.RemoveAt(tempPos);
+                    currentIterVel_P.RemoveAt(tempPos);
+                    currentIterForces_P.RemoveAt(tempPos);
+                    currentIterRot_P.RemoveAt(tempPos);
+                    currentIterTorque_P.RemoveAt(tempPos);
+                    temporalForces_P.RemoveAt(tempPos);
+                    temporalTorque_P.RemoveAt(tempPos);
+                }
+            }
+        }
+        // time
+        public void CleanHistory()
+        {
+            if (currentTimePos_P.Count > 4)
+            {
+                for (int j = currentTimePos_P.Count; j > 4; j--)
+                {
+                    int tempPos = j - 1;
+                    currentTimePos_P.RemoveAt(tempPos);
+                    currentTimeAng_P.RemoveAt(tempPos);
+                    currentTimeVel_P.RemoveAt(tempPos);
+                    currentTimeForces_P.RemoveAt(tempPos);
+                    currentTimeRot_P.RemoveAt(tempPos);
+                    currentTimeTorque_P.RemoveAt(tempPos);
                 }
             }
         }
@@ -405,72 +413,55 @@ namespace BoSSS.Application.FSI_Solver {
         /// </summary>
         /// <param name="dt"></param>
         public void UpdateParticlePosition(double dt) {
-
+            
             // Position
-            var tempPos = currentPos_P[0].CloneAs();
-            tempPos.AccV(dt, vel_P[0]);
+            var tempPos = currentIterPos_P[0].CloneAs();
+            tempPos.AccV(dt, currentIterVel_P[0]);
 
-            currentPos_P.Insert(0, tempPos);
-            currentPos_P.Remove(currentPos_P.Last());
+            //currentIterPos_P.Insert(0, tempPos);
+            //currentIterPos_P.Remove(currentIterPos_P.Last());
+            currentIterPos_P[0] = tempPos;
 
             // Angle
-            var tempAng = currentAng_P[0];
-            tempAng += dt * rot_P[0];
-            currentAng_P.Insert(0, tempAng);
-            currentAng_P.Remove(currentAng_P.Last());
+            var tempAng = currentIterAng_P[0];
+            tempAng += dt * currentIterRot_P[0];
+            //currentIterAng_P.Insert(0, tempAng);
+            //currentIterAng_P.Remove(currentIterAng_P.Last());
+            currentIterAng_P[0] = tempAng;
 
-            //Console.WriteLine("Current angle speed is " + rot_P[0]*360/Math.PI);
-            //Console.WriteLine("Current angle is " + currentAng_P[0] + " rad");
+            currentTimePos_P[0] = currentIterPos_P[0];
+            currentTimeAng_P[0] = currentIterAng_P[0];
+
+            //Console.WriteLine("Current angle speed is " + currentIterRot_P[0]*360/Math.PI);
+            //Console.WriteLine("Current angle is " + currentIterAng_P[0] + " rad");
 
             UpdateLevelSetFunction();
+        }
+        public void ResetParticlePosition()
+        {
+            // save position of the last timestep
+            if (iteration_counter_P == 1)
+            {
+                currentTimePos_P[1] = currentTimePos_P[0];
+                currentTimeAng_P[1] = currentTimeAng_P[0];
+            }
 
+            // Position
+            currentIterPos_P.Insert(1, currentIterPos_P[0]);
+            currentIterPos_P.Remove(currentIterPos_P.Last());
+            currentIterPos_P[0] = currentTimePos_P[1];
+
+            // Angle
+            currentIterAng_P.Insert(1, currentTimeAng_P[0]);
+            currentIterAng_P.Remove(currentIterAng_P.Last());
+            currentIterAng_P[0] = currentTimeAng_P[1];
+
+            UpdateLevelSetFunction();
         }
         #endregion
 
         #region Update Level-set
-        public void UpdateLevelSetFunction() {
-
-            double a;
-            double b;
-            double alpha;
-
-            switch (m_shape) {
-
-                case ParticleShape.spherical:
-                    phi_P = (X, t) => -(X[0] - currentPos_P[0][0]).Pow2() + -(X[1] - currentPos_P[0][1]).Pow2() + radius_P.Pow2();
-                    break;
-
-                case ParticleShape.elliptic:
-                    alpha = -(currentAng_P[0]);
-                    a = 3.0;//no longer necessary
-                    b = 1.0;//no longer necessary
-                    phi_P = (X, t) => -((((X[0] - currentPos_P[0][0]) * Math.Cos(alpha) - (X[1] - currentPos_P[0][1]) * Math.Sin(alpha)).Pow2()) / length_P.Pow2()) + -(((X[0] - currentPos_P[0][0]) * Math.Sin(alpha) + (X[1] - currentPos_P[0][1]) * Math.Cos(alpha)).Pow2() / thickness_P.Pow2()) + radius_P.Pow2();
-                    break;
-
-                case ParticleShape.hippopede:
-                    a = 4.0 * radius_P.Pow2();
-                    b = 1.0 * radius_P.Pow2();
-                    alpha = -(currentAng_P[0]);
-                    phi_P = (X, t) => -((((X[0] - currentPos_P[0][0]) * Math.Cos(alpha) - (X[1] - currentPos_P[0][1]) * Math.Sin(alpha)).Pow(2) + ((X[0] - currentPos_P[0][0]) * Math.Sin(alpha) + (X[1] - currentPos_P[0][1]) * Math.Cos(alpha)).Pow(2)).Pow2() - a * ((X[0] - currentPos_P[0][0]) * Math.Cos(alpha) - (X[1] - currentPos_P[0][1]) * Math.Sin(alpha)).Pow2() - b * ((X[0] - currentPos_P[0][0]) * Math.Sin(alpha) + (X[1] - currentPos_P[0][1]) * Math.Cos(alpha)).Pow2());
-                    break;
-
-
-                case ParticleShape.bean:
-                    a = 3.0 * radius_P.Pow2();
-                    b = 1.0 * radius_P.Pow2();
-                    alpha = -(currentAng_P[0]);
-                    phi_P = (X, t) => -((((X[0] - currentPos_P[0][0]) * Math.Cos(alpha) - (X[1] - currentPos_P[0][1]) * Math.Sin(alpha)).Pow(2) + ((X[0] - currentPos_P[0][0]) * Math.Sin(alpha) + (X[1] - currentPos_P[0][1]) * Math.Cos(alpha)).Pow(2)).Pow2() - a * ((X[0] - currentPos_P[0][0]) * Math.Cos(alpha) - (X[1] - currentPos_P[0][1]) * Math.Sin(alpha)).Pow(3) - b * ((X[0] - currentPos_P[0][0]) * Math.Sin(alpha) + (X[1] - currentPos_P[0][1]) * Math.Cos(alpha)).Pow2());
-                    break;
-
-                case ParticleShape.squircle:
-                    alpha = -(currentAng_P[0]);
-                    phi_P = (X, t) => -((((X[0] - currentPos_P[0][0]) * Math.Cos(alpha) - (X[1] - currentPos_P[0][1]) * Math.Sin(alpha)).Pow(4) + ((X[0] - currentPos_P[0][0]) * Math.Sin(alpha) + (X[1] - currentPos_P[0][1]) * Math.Cos(alpha)).Pow(4)) - radius_P.Pow(4));
-                    break;
-
-                default:
-                    throw new NotImplementedException("Shape is not implemented yet");
-            }
-        }
+        abstract public void UpdateLevelSetFunction();
         #endregion
 
         #region Update translational velocity
@@ -485,12 +476,20 @@ namespace BoSSS.Application.FSI_Solver {
         /// <returns></returns>
         public void UpdateTransVelocity(double dt, double rho_Fluid = 1, bool includeTranslation = true, bool LiftAndDrag = true) {
 
+            // save velocity of the last timestep
+            if (iteration_counter_P == 1)
+            {
+                currentTimeVel_P.Insert(1, currentTimeVel_P[0]);
+                currentTimeVel_P.Remove(currentTimeVel_P.Last());
+                //currentTimeVel_P[1] = currentIterVel_P[0];
+            }
+
             // no translation
             // =============================
             if (includeTranslation == false)
             {
-                vel_P[0][0] = 0.0;
-                vel_P[0][1] = 0.0;
+                currentIterVel_P[0][0] = 0.0;
+                currentIterVel_P[0][1] = 0.0;
                 return;
             }
 
@@ -500,14 +499,14 @@ namespace BoSSS.Application.FSI_Solver {
             double[] tempForceNew = new double[2];
             double[] tempForceOld = new double[2];
             double[] gravity = new double[2];
-            double massDifference = (rho_P - rho_Fluid) * (area_P);
+            double massDifference = (rho_P - rho_Fluid) * (Area_P);
             double[] previous_vel = new double[2];
 
-            if (iteration_counter_P == 0)
+            if (iteration_counter_P == 1)
             {
-                previous_vel = vel_P[0];
+                previous_vel = currentIterVel_P[0];
             }
-            Console.WriteLine("Previous Velocity:  " + previous_vel[0]);
+            
             // gravity
             // =============================
             gravity[0] = 0;
@@ -520,7 +519,7 @@ namespace BoSSS.Application.FSI_Solver {
                 gravity[1] = 0;
             }
 
-
+            #region virtual force model
             // Virtual force model (Schwarz et al. - 2015 A temporal discretization scheme to compute the motion of light particles in viscous flows by an immersed boundary")
             // =============================
             double[] f_vTemp = new double[2];
@@ -539,11 +538,11 @@ namespace BoSSS.Application.FSI_Solver {
             // 2nd order Adam Bashford
             //for (int i = 0; i < 2; i++)
             //{
-            //    f_vNew[i] = c_a * (3 * vel_P[0][i] - 4 * vel_P[1][i] + vel_P[2][i]) / (2 * dt);
-            //    f_vOld[i] = c_a * (3 * vel_P[1][i] - 4 * vel_P[2][i] + vel_P[3][i]) / (2 * dt);
+            //    f_vNew[i] = c_a * (3 * currentIterVel_P[0][i] - 4 * currentIterVel_P[1][i] + currentIterVel_P[2][i]) / (2 * dt);
+            //    f_vOld[i] = c_a * (3 * currentIterVel_P[1][i] - 4 * currentIterVel_P[2][i] + currentIterVel_P[3][i]) / (2 * dt);
             //    tempForceNew[i] = (forces_P[0][i] + massDifference * gravity[i]) * (c_u) + f_vNew[i];
             //    tempForceOld[i] = (forces_P[1][i] + massDifference * gravity[i]) * (c_u) + f_vOld[i];
-            //    temp[i] = vel_P[0][i] + (3 * tempForceNew[i] - tempForceOld[i]) * dt / 2;
+            //    temp[i] = currentIterVel_P[0][i] + (3 * tempForceNew[i] - tempForceOld[i]) * dt / 2;
             //}
 
             // implicit Adams Moulton (modified)
@@ -554,9 +553,9 @@ namespace BoSSS.Application.FSI_Solver {
             //        C_v_mod[i] = 0.1;// * Math.Abs(forces_P[0][i] / (forces_P[0][i] + forces_P[1][i] + 1e-30));
             //        c_a[i] = (C_v_mod[i] * rho_Fluid) / (rho_P + C_v_mod[i] * rho_Fluid);
             //        c_u[i] = 1 / (area_P * (rho_P + C_v_mod[i] * rho_P));
-            //        f_vTemp[i] = (C_v_mod[i]) / (1 + C_v_mod[i]) * (11 * temp[i] - 18 * vel_P[0][i] + 9 * vel_P[1][i] - 2 * vel_P[2][i]) / (8 * dt);
-            //        f_vNew[i] = (C_v_mod[i]) / (1 + C_v_mod[i]) * (11 * vel_P[0][i] - 18 * vel_P[1][i] + 9 * vel_P[2][i] - 2 * vel_P[3][i]) / (6 * dt);
-            //        f_vOld[i] = (C_v_mod[i]) / (1 + C_v_mod[i]) * (11 * vel_P[1][i] - 18 * vel_P[2][i] + 9 * vel_P[3][i] - 2 * vel_P[4][i]) / (6 * dt);
+            //        f_vTemp[i] = (C_v_mod[i]) / (1 + C_v_mod[i]) * (11 * temp[i] - 18 * currentIterVel_P[0][i] + 9 * currentIterVel_P[1][i] - 2 * currentIterVel_P[2][i]) / (8 * dt);
+            //        f_vNew[i] = (C_v_mod[i]) / (1 + C_v_mod[i]) * (11 * currentIterVel_P[0][i] - 18 * currentIterVel_P[1][i] + 9 * currentIterVel_P[2][i] - 2 * currentIterVel_P[3][i]) / (6 * dt);
+            //        f_vOld[i] = (C_v_mod[i]) / (1 + C_v_mod[i]) * (11 * currentIterVel_P[1][i] - 18 * currentIterVel_P[2][i] + 9 * currentIterVel_P[3][i] - 2 * currentIterVel_P[4][i]) / (6 * dt);
             //        tempForceTemp[i] = (forces_P[0][i] + massDifference * gravity[i]) * (c_u[i]) + f_vTemp[i];
             //        tempForceNew[i] = (forces_P[1][i] + massDifference * gravity[i]) * (c_u[i]) + f_vNew[i];
             //        tempForceOld[i] = (forces_P[2][i] + massDifference * gravity[i]) * (c_u[i]) + f_vOld[i];
@@ -574,21 +573,22 @@ namespace BoSSS.Application.FSI_Solver {
             //}
             //Console.WriteLine("Number of Iterations for translational velocity calculation:  " + vel_iteration_counter);
             //Console.WriteLine("C_v_mod:  " + C_v_mod[0]);
+            #endregion
 
             //Crank Nicolson
             // =============================
-            tempForceNew[0] = (forces_P[0][0] + forces_P[1][0]) / 2+ massDifference * gravity[0];
-            tempForceNew[1] = (forces_P[1][1] + forces_P[0][1]) / 2 + massDifference * gravity[1];
-            //temp.SetV(vel_P[0], 1);
+            tempForceNew[0] = (currentIterForces_P[0][0] + currentTimeForces_P[1][0]) / 2 + massDifference * gravity[0];
+            tempForceNew[1] = (currentIterForces_P[0][1] + currentTimeForces_P[1][1]) / 2 + massDifference * gravity[1];
+            //temp.SetV(currentIterVel_P[0], 1);
             //temp.AccV(dt / mass_P, tempForceNew);
-            temp[0] = previous_vel[0] + dt / mass_P * tempForceNew[0];
-            temp[1] = previous_vel[1] + dt / mass_P * tempForceNew[1];
-            
+            temp[0] = currentTimeVel_P[1][0] + dt * tempForceNew[0] / Mass_P;
+            temp[1] = currentTimeVel_P[1][1] + dt * tempForceNew[1] / Mass_P;
+
             // Save new velocity
             // =============================
-
-            vel_P.Insert(0, temp);
-            vel_P.Remove(vel_P.Last());
+            currentIterVel_P.Insert(0, temp);
+            currentIterVel_P.Remove(currentIterVel_P.Last());
+            currentTimeVel_P[0] = currentIterVel_P[0];
 
             return;
         }
@@ -607,62 +607,44 @@ namespace BoSSS.Application.FSI_Solver {
         /// <returns></returns>
         public void UpdateAngularVelocity(double dt, double rho_Fluid = 1, bool includeRotation = true, int noOfSubtimesteps = 1) {
 
+            // save rotation of the last timestep
+            if (iteration_counter_P == 1)
+            {
+                currentTimeRot_P.Insert(1, currentTimeRot_P[0]);
+                currentTimeRot_P.Remove(currentTimeRot_P.Last());
+                //currentTimeRot_P[1] = currentTimeRot_P[0];
+            }
+
             // no rotation
             // =============================
             if (includeRotation == false) {
-                rot_P.Insert(0, 0.0);
-                rot_P.Remove(rot_P.Last());
+                currentIterRot_P.Insert(0, 0.0);
+                currentIterRot_P.Remove(currentIterRot_P.Last());
                 return;
             }
-            double temp = 0;
-            double old_temp = 0;
-            double tempMomentTemp = 0;
-            double tempMomentNew = 0;
-            double tempMomentOld = 0;
-            double m_vTemp;
-            double c_a = (C_v * rho_Fluid) / (rho_P + C_v * rho_Fluid);
-            double c_u = 1 / (rho_P + C_v * rho_Fluid * MomentOfInertia_P);
+
             double newAngularVelocity = 0;
             double oldAngularVelocity = new double();
             double subtimestep;
-            double rot_iteration_counter = 0;
             noOfSubtimesteps = 1;
             subtimestep = dt / noOfSubtimesteps;
 
             // Benjamin Stuff
             //for (int i = 1; i <= noOfSubtimesteps; i++) {
-            //    newAngularVelocity = c_a * (3 * rot_P[0] - 4 * rot_P[1] + rot_P[2]) / 2 + 0.5 * c_u * dt * (3 * torque_P[0] - torque_P[1]); // for 2D
+            //    newAngularVelocity = c_a * (3 * currentIterRot_P[0] - 4 * currentIterRot_P[1] + currentIterRot_P[2]) / 2 + 0.5 * c_u * dt * (3 * currentIterTorque_P[0] - currentIterTorque_P[1]); // for 2D
             //    oldAngularVelocity = newAngularVelocity;
             //}
 
             for (int i = 1; i <= noOfSubtimesteps; i++) {
-                newAngularVelocity = rot_P[0] + (dt / MomentOfInertia_P) * (torque_P[0] + torque_P[1]); // for 2D
+                //newAngularVelocity = currentIterRot_P[0] + (dt / MomentOfInertia_P) * (currentIterTorque_P[0] + currentIterTorque_P[1]) / 2; // for 2D
+                newAngularVelocity = currentTimeRot_P[1] + (dt / MomentOfInertia_P) * (currentIterTorque_P[0] + currentTimeTorque_P[1]) / 2; // for 2D
 
                 oldAngularVelocity = newAngularVelocity;
 
             }
-
-            //for (double rotResidual = 1; rotResidual > velResidual_ConvergenceCriterion;) {
-            //    m_vTemp = c_a * (1 * temp + 3 * rot_P[0] + 3 * rot_P[1] + 1 * rot_P[2]) / (8 * dt);
-            //    tempMomentTemp = (torque_P[0]) * (c_u) + m_vTemp;
-            //    tempMomentNew = (torque_P[1]);
-            //    tempMomentOld = (torque_P[2]);
-            //    old_temp = temp;
-            //    temp = rot_P[0] + (1 * tempMomentTemp + 4 * tempMomentNew + 1 * tempMomentOld) * dt / 6;
-            //    rot_iteration_counter += 1;
-            //    if (rot_iteration_counter == MaxParticleVelIterations) {
-            //        throw new ApplicationException("no convergence in particle velocity calculation");
-            //    }
-            //    rotResidual = Math.Sqrt((temp - old_temp).Pow2());
-            //    //Console.WriteLine("Current velResidual:  " + velResidual);
-            //}
-            //Console.WriteLine("Number of Iterations for angular velocity calculation:  " + rot_iteration_counter);
-            //if (Math.Abs(temp) < 1e-9)
-            //{
-            //    temp = 0;
-            //}
-            rot_P.Insert(0, newAngularVelocity);
-            rot_P.Remove(rot_P.Last());
+            currentIterRot_P.Insert(0, newAngularVelocity);
+            currentIterRot_P.Remove(currentIterRot_P.Last());
+            currentTimeRot_P[0] = currentIterRot_P[0];
         }
         #endregion
         
@@ -691,7 +673,16 @@ namespace BoSSS.Application.FSI_Solver {
                 skipForceIntegration = false;
                 return;
             }
-
+            // save forces and torque of the last timestep
+            if (iteration_counter_P == 1)
+            {
+                //currentTimeForces_P[1] = currentTimeForces_P[0];
+                //currentTimeTorque_P[1] = currentTimeTorque_P[0];
+                currentTimeForces_P.Insert(1, currentTimeForces_P[0]);
+                currentTimeForces_P.Remove(currentTimeForces_P.Last());
+                currentTimeTorque_P.Insert(1, currentTimeTorque_P[0]);
+                currentTimeTorque_P.Remove(currentTimeTorque_P.Last());
+            }
             int D = LsTrk.GridDat.SpatialDimension;
             // var UA = U.Select(u => u.GetSpeciesShadowField("A")).ToArray();
             var UA = U.ToArray();
@@ -734,6 +725,7 @@ namespace BoSSS.Application.FSI_Solver {
                         for (int j = 0; j < Len; j++) {
                             for (int k = 0; k < K; k++) {
                                 double acc = 0.0;
+                                double scale = Normals[j, k, 0] * Math.Cos(currentIterAng_P[0]) + Normals[j, k, 1] * Math.Sin(currentIterAng_P[0]);
                                 // pressure
                                 switch (d) {
                                     case 0:
@@ -846,12 +838,9 @@ namespace BoSSS.Application.FSI_Solver {
 
                 for (int j = 0; j < Len; j++) {
                     for (int k = 0; k < K; k++) {
-
-
-
+                        
                         double acc = 0.0;
                         double acc2 = 0.0;
-                        
                         // Calculate the torque around a circular particle with a given radius (Paper Wan and Turek 2005)
 
                         acc += (pARes[j, k] * Normals[j, k, 0]);
@@ -859,7 +848,7 @@ namespace BoSSS.Application.FSI_Solver {
                         acc -= (muA) * Grad_UARes[j, k, 0, 1] * Normals[j, k, 1];
                         acc -= (muA) * Grad_UARes[j, k, 1, 0] * Normals[j, k, 1];
                         //acc *= -Normals[j, k, 1] * this.radius_P;
-                        acc *= -Normals[j, k, 1] * (this.currentPos_P[0][1] - tempArray[k, 1]).Abs();
+                        acc *= -Normals[j, k, 1] * (this.currentIterPos_P[0][1] - tempArray[k, 1]).Abs();
 
 
                         acc2 += pARes[j, k] * Normals[j, k, 1];
@@ -867,7 +856,7 @@ namespace BoSSS.Application.FSI_Solver {
                         acc2 -= (muA) * Grad_UARes[j, k, 1, 0] * Normals[j, k, 0];
                         acc2 -= (muA) * Grad_UARes[j, k, 0, 1] * Normals[j, k, 0];
                         //acc2 *= Normals[j, k, 0] * this.radius_P;
-                        acc2 *= Normals[j, k, 0] * (this.currentPos_P[0][0] - tempArray[k, 0]).Abs();
+                        acc2 *= Normals[j, k, 0] * (this.currentIterPos_P[0][0] - tempArray[k, 0]).Abs();
 
                         result[j, k] = acc + acc2;
 
@@ -895,53 +884,139 @@ namespace BoSSS.Application.FSI_Solver {
                 }
 
             ).Execute();
-            
+
+            // determine underrelaxation factor (URF)
+            // =============================
+            temporalForces_P.Insert(0, forces);
+            temporalForces_P.Remove(temporalForces_P.Last());
+            temporalTorque_P.Insert(0, torque);
+            temporalTorque_P.Remove(temporalTorque_P.Last());
             double underrelaxationFT = 1.0;
+            int[] pre_under_R = new int[D];
             double[] temp_underR = new double[D + 1];
-            for (int k = 0; k < D+1; k++)
+            double[] mu = new double[D + 1];
+            double[] sigmaSquared = new double[D + 1];
+            double[] muTemp = new double[D + 1];
+            double[] sigmaSquaredTemp = new double[D + 1];
+            for (int k = 0; k < D + 1; k++)
             {
                 temp_underR[k] = underrelaxation_factor;
             }
-            if (iteration_counter_P == 0)
+            // first iteration, set URF to 1
+            if (iteration_counter_P == 1)
             {
-                underrelaxationFT = 1;
+                for (int k = 0; k < D; k++)
+                {
+                    temp_underR[k] = 1;
+                    for (int t = 0; t < m_HistoryLength; t++)
+                    {
+                        currentIterForces_P[t][k] = currentTimeForces_P[1][k];
+                        currentIterTorque_P[t] = currentTimeTorque_P[1];
+                    }
+                }
+                temp_underR[D] = 1;
             }
+            // constant predefined URF
             else if (underrelaxationFT_constant == true)
             {
-                underrelaxationFT = underrelaxation_factor * Math.Pow(10, underrelaxationFT_exponent);
+                for (int k = 0; k < D + 1; k++)
+                {
+                    temp_underR[k] = underrelaxation_factor * Math.Pow(10, underrelaxationFT_exponent);
+                }
             }
+            // calculation of URF for adaptive underrelaxation
             else if (underrelaxationFT_constant == false)
             {
-                //double[] temp_underR = new double[D + 1];
+                // forces
                 bool underrelaxation_ok = false;
-                underrelaxationFT_exponent = 1;
                 for (int j = 0; j < D; j++)
                 {
                     underrelaxation_ok = false;
                     temp_underR[j] = underrelaxation_factor;
+                    pre_under_R[j] = underrelaxationFT_exponent;
+                    underrelaxationFT_exponent = 0;
+                    mu[j] = 0;
+                    muTemp[j] = 0;
+                    for (int t = 0; t < m_HistoryLength; t++)
+                    {
+                        mu[j] += (currentIterForces_P[t][j]) / (m_HistoryLength);
+                        muTemp[j] += (temporalForces_P[t][j]) / (m_HistoryLength);
+                    }
+                    sigmaSquared[j] = 0;
+                    sigmaSquaredTemp[j] = 0;
+                    for (int t = 0; t < m_HistoryLength; t++)
+                    {
+                        sigmaSquared[j] += Math.Pow((currentIterForces_P[t][j] - mu[j]) / (m_HistoryLength), 2);
+                        sigmaSquaredTemp[j] += Math.Pow((temporalForces_P[t][j] - muTemp[j]) / (m_HistoryLength), 2);
+                    }
                     for (int i = 0; underrelaxation_ok == false; i++)
                     {
-                        if (Math.Abs(temp_underR[j] * forces[j]) > Math.Abs(forces_P[0][j]))
+                        if (Math.Abs(temp_underR[j] * forces[j]) > 0.5 * Math.Abs(currentIterForces_P[0][j]))// && temp_underR[j] * forces[j] > forceAndTorque_convergence * 10)
                         {
                             underrelaxationFT_exponent -= 1;
                             temp_underR[j] = underrelaxation_factor * Math.Pow(10, underrelaxationFT_exponent);
                         }
+                        //if (Math.Abs((1 - temp_underR[j]) * (forces[j] - currentIterForces_P[0][j])) < sigmaSquared[j] && temp_underR[j] > forceAndTorque_convergence * 1000)
+                        //{
+                        //    underrelaxationFT_exponent -= 1;
+                        //    temp_underR[j] = underrelaxation_factor * Math.Pow(10, underrelaxationFT_exponent);
+                        //}
+                        //else if (Math.Abs((1 - temp_underR[j]) * (forces[j] - currentIterForces_P[0][j])) < mu[j])
+                        //{
+                        //    underrelaxationFT_exponent -= 2;
+                        //    temp_underR[j] = underrelaxation_factor * Math.Pow(10, underrelaxationFT_exponent);
+                        //}
+                        //else if (Math.Abs((1 - temp_underR[j]) * (forces[j] - currentIterForces_P[0][j])) < 2 * mu[j])
+                        //{
+                        //    underrelaxationFT_exponent -= 2;
+                        //    temp_underR[j] = underrelaxation_factor * Math.Pow(10, underrelaxationFT_exponent);
+                        //}
+                        //if (Math.Abs(temp_underR[j] * (forces[j] - currentIterForces_P[0][j])) > Math.Abs(temp_underR[j] * (forces[j] - mu[j])) && temp_underR[j] > forceAndTorque_convergence * 1000)
+                        //{
+                        //    underrelaxationFT_exponent -= 1;
+                        //    temp_underR[j] = underrelaxation_factor * Math.Pow(10, underrelaxationFT_exponent);
+                        //}
                         else
                         {
                             underrelaxation_ok = true;
-                            if (underrelaxationFT_exponent > -0)
+                            if (Math.Abs(temp_underR[j] * forces[j]) < forceAndTorque_convergence * 100)
                             {
-                                underrelaxationFT_exponent = -0;
+                                temp_underR[j] = forceAndTorque_convergence * 100;
+                            }
+                            if (underrelaxationFT_exponent >= underrelaxationFT_exponent_min && iteration_counter_P > 30)
+                            {
+                                underrelaxationFT_exponent = underrelaxationFT_exponent_min;
+                                temp_underR[j] = underrelaxation_factor * Math.Pow(10, underrelaxationFT_exponent);
+                            }
+                            if (underrelaxationFT_exponent > -1)
+                            {
+                                underrelaxationFT_exponent = -1;
                                 temp_underR[j] = underrelaxation_factor * Math.Pow(10, underrelaxationFT_exponent);
                             }
                         }
                     }
                 }
+                // torque
                 underrelaxation_ok = false;
                 temp_underR[D] = underrelaxation_factor;
+                underrelaxationFT_exponent = 0;
+                mu[D] = 0;
+                muTemp[D] = 0;
+                for (int t = 0; t < m_HistoryLength; t++)
+                {
+                    mu[D] += (currentIterTorque_P[t]) / (m_HistoryLength);
+                    muTemp[D] += (temporalTorque_P[t]) / (m_HistoryLength);
+                }
+                sigmaSquared[D] = 0;
+                sigmaSquaredTemp[D] = 0;
+                for (int t = 0; t < m_HistoryLength; t++)
+                {
+                    sigmaSquared[D] += Math.Pow((currentIterTorque_P[t] - mu[D]) / (m_HistoryLength), 2);
+                    sigmaSquaredTemp[D] += Math.Pow((temporalTorque_P[t] - muTemp[D]) / (m_HistoryLength), 2);
+                }
                 for (int i = 0; underrelaxation_ok == false; i++)
                 {
-                    if (Math.Abs(temp_underR[D] * torque) > Math.Abs(torque_P[0]))
+                    if (Math.Abs(temp_underR[D] * torque) > Math.Abs(currentIterTorque_P[0]) && temp_underR[D] > forceAndTorque_convergence * 1000)
                     {
                         underrelaxationFT_exponent -= 1;
                         temp_underR[D] = underrelaxation_factor * Math.Pow(10, underrelaxationFT_exponent);
@@ -949,25 +1024,41 @@ namespace BoSSS.Application.FSI_Solver {
                     else
                     {
                         underrelaxation_ok = true;
-                        if (underrelaxationFT_exponent > -0)
+                        if (mu[D] - muTemp[D] > Math.Abs(temp_underR[D] * torque))
                         {
-                            underrelaxationFT_exponent = -0;
+                            underrelaxationFT_exponent = underrelaxationFT_exponent_min;
+                            temp_underR[D] = underrelaxation_factor * Math.Pow(10, underrelaxationFT_exponent);
+                        }
+                        else if (underrelaxationFT_exponent > 0)
+                        {
+                            underrelaxationFT_exponent = 0;
                             temp_underR[D] = underrelaxation_factor * Math.Pow(10, underrelaxationFT_exponent);
                         }
                     }
                 }
             }
+            Console.WriteLine("tempunderR[0]  " + temp_underR[0] + ", temp_underR[1]: " + temp_underR[1] + ", temp_underR[D] " + temp_underR[D]);
+            Console.WriteLine("tempfForces[0]  " + forces[0] + ", temp_Forces[1]: " + forces[1] + ", tempTorque " + torque);
 
+            // calculation of forces and torque with underrelaxation
+            // =============================
+            // forces
             double[] forces_underR = new double[D];
+            //temp_underR[D] = 0;
             for (int i = 0; i < D; i++)
             {
-                forces_underR[i] = temp_underR[i] * forces[i] + (1 - temp_underR[i]) * forces_P[0][i];
+                forces_underR[i] = temp_underR[i] * forces[i] + (1 - temp_underR[i]) * currentIterForces_P[0][i];
+                //forces_underR[i] = (forces[i] + 257 * currentIterForces_P[0][i] + 27 * currentIterForces_P[1][i] + 272 * currentIterForces_P[2][i] + 27 * currentIterForces_P[3][i] + 216 * currentIterForces_P[4][i] + 41 * currentIterForces_P[5][i]) / 840;
             }
-            double torque_underR = temp_underR[D] * torque + (1 - temp_underR[D]) * torque_P[0];
-            this.forces_P.Insert(0, forces_underR);
-            forces_P.Remove(forces_P.Last());
-            this.torque_P.Remove(torque_P.Last());
-            this.torque_P.Insert(0, torque_underR);
+            // torque
+            double torque_underR = temp_underR[D] * torque + (1 - temp_underR[D]) * currentIterTorque_P[0];
+            // update forces and torque
+            this.currentIterForces_P.Insert(0, forces_underR);
+            currentIterForces_P.Remove(currentIterForces_P.Last());
+            this.currentIterTorque_P.Remove(currentIterTorque_P.Last());
+            this.currentIterTorque_P.Insert(0, torque_underR);
+            currentTimeForces_P[0] = currentIterForces_P[0];
+            currentTimeTorque_P[0] = currentIterTorque_P[0];
 
             #endregion
         }
@@ -985,7 +1076,7 @@ namespace BoSSS.Application.FSI_Solver {
         public double ComputeParticleRe(double mu_Fluid) {
             double particleReynolds = 0;
 
-            particleReynolds = Math.Sqrt(vel_P[0][0] * vel_P[0][0] + vel_P[0][1] * vel_P[0][1]) * 2 * radius_P * rho_P / mu_Fluid;
+            particleReynolds = Math.Sqrt(currentIterVel_P[0][0] * currentIterVel_P[0][0] + currentIterVel_P[0][1] * currentIterVel_P[0][1]) * 2 * radius_P * rho_P / mu_Fluid;
 
             return particleReynolds;
         }
@@ -997,41 +1088,41 @@ namespace BoSSS.Application.FSI_Solver {
         /// </summary>
         /// <param name="LsTrk"></param>
         /// <returns></returns>
-        public CellMask cutCells_P(LevelSetTracker LsTrk) {
+        virtual public CellMask cutCells_P(LevelSetTracker LsTrk) {
 
             // tolerance is very important
             var radiusTolerance = radius_P + LsTrk.GridDat.Cells.h_minGlobal;// +2.0*Math.Sqrt(2*LsTrk.GridDat.Cells.h_minGlobal.Pow2());
 
             CellMask cellCollection;
             CellMask cells = null;
-            double alpha = -(currentAng_P[0]);
+            double alpha = -(currentIterAng_P[0]);
 
             switch (m_shape) {
                 case ParticleShape.spherical:
-                    cells = CellMask.GetCellMask(LsTrk.GridDat, X => (-(X[0] - currentPos_P[0][0]).Pow2() + -(X[1] - currentPos_P[0][1]).Pow2() + radiusTolerance.Pow2()) > 0);
+                    cells = CellMask.GetCellMask(LsTrk.GridDat, X => (-(X[0] - currentIterPos_P[0][0]).Pow2() + -(X[1] - currentIterPos_P[0][1]).Pow2() + radiusTolerance.Pow2()) > 0);
                     break;
 
                 case ParticleShape.elliptic:
                     double a = 3.0;
                     double b = 1.0;
-                    cells = CellMask.GetCellMask(LsTrk.GridDat, X => -((((X[0] - currentPos_P[0][0]) * Math.Cos(alpha) - (X[1] - currentPos_P[0][1]) * Math.Sin(alpha)).Pow2()) / length_P.Pow2()) + -(((X[0] - currentPos_P[0][0]) * Math.Sin(alpha) + (X[1] - currentPos_P[0][1]) * Math.Cos(alpha)).Pow2() / thickness_P.Pow2()) + radiusTolerance.Pow2() > 0);
+                    cells = CellMask.GetCellMask(LsTrk.GridDat, X => -((((X[0] - currentIterPos_P[0][0]) * Math.Cos(alpha) - (X[1] - currentIterPos_P[0][1]) * Math.Sin(alpha)).Pow2()) / length_P.Pow2()) + -(((X[0] - currentIterPos_P[0][0]) * Math.Sin(alpha) + (X[1] - currentIterPos_P[0][1]) * Math.Cos(alpha)).Pow2() / thickness_P.Pow2()) + radiusTolerance.Pow2() > 0);
 
                     break;
 
                 case ParticleShape.hippopede:
                     a = 4.0 * radiusTolerance.Pow2();
                     b = 1.0 * radiusTolerance.Pow2();
-                    cells = CellMask.GetCellMask(LsTrk.GridDat, X => -((((X[0] - currentPos_P[0][0]) * Math.Cos(alpha) - (X[1] - currentPos_P[0][1]) * Math.Sin(alpha)).Pow(2) + ((X[0] - currentPos_P[0][0]) * Math.Sin(alpha) + (X[1] - currentPos_P[0][1]) * Math.Cos(alpha)).Pow(2)).Pow2() - a * ((X[0] - currentPos_P[0][0]) * Math.Cos(alpha) - (X[1] - currentPos_P[0][1]) * Math.Sin(alpha)).Pow2() - b * ((X[0] - currentPos_P[0][0]) * Math.Sin(alpha) + (X[1] - currentPos_P[0][1]) * Math.Cos(alpha)).Pow2()) > 0);
+                    cells = CellMask.GetCellMask(LsTrk.GridDat, X => -((((X[0] - currentIterPos_P[0][0]) * Math.Cos(alpha) - (X[1] - currentIterPos_P[0][1]) * Math.Sin(alpha)).Pow(2) + ((X[0] - currentIterPos_P[0][0]) * Math.Sin(alpha) + (X[1] - currentIterPos_P[0][1]) * Math.Cos(alpha)).Pow(2)).Pow2() - a * ((X[0] - currentIterPos_P[0][0]) * Math.Cos(alpha) - (X[1] - currentIterPos_P[0][1]) * Math.Sin(alpha)).Pow2() - b * ((X[0] - currentIterPos_P[0][0]) * Math.Sin(alpha) + (X[1] - currentIterPos_P[0][1]) * Math.Cos(alpha)).Pow2()) > 0);
                     break;
 
                 case ParticleShape.bean:
                     a = 4.0 * radiusTolerance.Pow2();
                     b = 1.0 * radiusTolerance.Pow2();
-                    cells = CellMask.GetCellMask(LsTrk.GridDat, X => -((((X[0] - currentPos_P[0][0]) * Math.Cos(alpha) - (X[1] - currentPos_P[0][1]) * Math.Sin(alpha)).Pow(2) + ((X[0] - currentPos_P[0][0]) * Math.Sin(alpha) + (X[1] - currentPos_P[0][1]) * Math.Cos(alpha)).Pow(2)).Pow2() - a * ((X[0] - currentPos_P[0][0]) * Math.Cos(alpha) - (X[1] - currentPos_P[0][1]) * Math.Sin(alpha)).Pow(3) - b * ((X[0] - currentPos_P[0][0]) * Math.Sin(alpha) + (X[1] - currentPos_P[0][1]) * Math.Cos(alpha)).Pow2()) > 0);
+                    cells = CellMask.GetCellMask(LsTrk.GridDat, X => -((((X[0] - currentIterPos_P[0][0]) * Math.Cos(alpha) - (X[1] - currentIterPos_P[0][1]) * Math.Sin(alpha)).Pow(2) + ((X[0] - currentIterPos_P[0][0]) * Math.Sin(alpha) + (X[1] - currentIterPos_P[0][1]) * Math.Cos(alpha)).Pow(2)).Pow2() - a * ((X[0] - currentIterPos_P[0][0]) * Math.Cos(alpha) - (X[1] - currentIterPos_P[0][1]) * Math.Sin(alpha)).Pow(3) - b * ((X[0] - currentIterPos_P[0][0]) * Math.Sin(alpha) + (X[1] - currentIterPos_P[0][1]) * Math.Cos(alpha)).Pow2()) > 0);
                     break;
 
                 case ParticleShape.squircle:
-                    cells = CellMask.GetCellMask(LsTrk.GridDat, X => -((((X[0] - currentPos_P[0][0]) * Math.Cos(alpha) - (X[1] - currentPos_P[0][1]) * Math.Sin(alpha)).Pow(4) + ((X[0] - currentPos_P[0][0]) * Math.Sin(alpha) + (X[1] - currentPos_P[0][1]) * Math.Cos(alpha)).Pow(4)) - radiusTolerance.Pow(4)) > 0);
+                    cells = CellMask.GetCellMask(LsTrk.GridDat, X => -((((X[0] - currentIterPos_P[0][0]) * Math.Cos(alpha) - (X[1] - currentIterPos_P[0][1]) * Math.Sin(alpha)).Pow(4) + ((X[0] - currentIterPos_P[0][0]) * Math.Sin(alpha) + (X[1] - currentIterPos_P[0][1]) * Math.Cos(alpha)).Pow(4)) - radiusTolerance.Pow(4)) > 0);
                     break;
 
 
@@ -1051,7 +1142,7 @@ namespace BoSSS.Application.FSI_Solver {
         /// </summary>
         /// <param name="point"></param>
         /// <returns></returns>
-        public bool Contains(double[] point,LevelSetTracker LsTrk) {
+        virtual public bool Contains(double[] point,LevelSetTracker LsTrk) {
 
             // only for squared cells
             double radiusTolerance = radius_P+2.0*Math.Sqrt(2*LsTrk.GridDat.Cells.h_minGlobal.Pow2());
@@ -1059,7 +1150,7 @@ namespace BoSSS.Application.FSI_Solver {
 
             switch (m_shape) {
                 case ParticleShape.spherical:
-                    var distance = point.L2Distance(currentPos_P[0]);
+                    var distance = point.L2Distance(currentIterPos_P[0]);
 
                     if (distance < (radiusTolerance)) {
                         
@@ -1068,7 +1159,7 @@ namespace BoSSS.Application.FSI_Solver {
                     break;
 
                 //case ParticleShape.spherical:
-                //    if (((point[0] - currentPos_P[0][0]).Pow2() + -(point[1] - currentPos_P[0][1]).Pow2() + radiusTolerance.Pow2()) > 0) {
+                //    if (((point[0] - currentIterPos_P[0][0]).Pow2() + -(point[1] - currentIterPos_P[0][1]).Pow2() + radiusTolerance.Pow2()) > 0) {
                 //        return true;
                 //    }
                 //    break;
@@ -1076,7 +1167,7 @@ namespace BoSSS.Application.FSI_Solver {
                 case ParticleShape.elliptic:
                     double a = 3.0;
                     double b = 1.0;
-                    if (-((((point[0] - currentPos_P[0][0]) * Math.Cos(currentAng_P[0]) - (point[1] - currentPos_P[0][1]) * Math.Sin(currentAng_P[0])).Pow2()) / length_P.Pow2()) + -(((point[0] - currentPos_P[0][0]) * Math.Sin(currentAng_P[0]) + (point[1] - currentPos_P[0][1]) * Math.Cos(currentAng_P[0])).Pow2() / thickness_P.Pow2()) + radiusTolerance.Pow2() > 0) { 
+                    if (-((((point[0] - currentIterPos_P[0][0]) * Math.Cos(currentIterAng_P[0]) - (point[1] - currentIterPos_P[0][1]) * Math.Sin(currentIterAng_P[0])).Pow2()) / length_P.Pow2()) + -(((point[0] - currentIterPos_P[0][0]) * Math.Sin(currentIterAng_P[0]) + (point[1] - currentIterPos_P[0][1]) * Math.Cos(currentIterAng_P[0])).Pow2() / thickness_P.Pow2()) + radiusTolerance.Pow2() > 0) { 
                         return true;
                     }
                     break;
@@ -1084,19 +1175,19 @@ namespace BoSSS.Application.FSI_Solver {
                 case ParticleShape.hippopede:
                     a = 4.0 * radiusTolerance.Pow2();
                     b = 1.0 * radiusTolerance.Pow2();
-                    if (-((((point[0] - currentPos_P[0][0]) * Math.Cos(currentAng_P[0]) - (point[1] - currentPos_P[0][1]) * Math.Sin(currentAng_P[0])).Pow(2) + ((point[0] - currentPos_P[0][0]) * Math.Sin(currentAng_P[0]) + (point[1] - currentPos_P[0][1]) * Math.Cos(currentAng_P[0])).Pow(2)).Pow2() - length_P * ((point[0] - currentPos_P[0][0]) * Math.Cos(currentAng_P[0]) - (point[1] - currentPos_P[0][1]) * Math.Sin(currentAng_P[0])).Pow2() - thickness_P * ((point[0] - currentPos_P[0][0]) * Math.Sin(currentAng_P[0]) + (point[1] - currentPos_P[0][1]) * Math.Cos(currentAng_P[0])).Pow2()) > 0)
+                    if (-((((point[0] - currentIterPos_P[0][0]) * Math.Cos(currentIterAng_P[0]) - (point[1] - currentIterPos_P[0][1]) * Math.Sin(currentIterAng_P[0])).Pow(2) + ((point[0] - currentIterPos_P[0][0]) * Math.Sin(currentIterAng_P[0]) + (point[1] - currentIterPos_P[0][1]) * Math.Cos(currentIterAng_P[0])).Pow(2)).Pow2() - length_P * ((point[0] - currentIterPos_P[0][0]) * Math.Cos(currentIterAng_P[0]) - (point[1] - currentIterPos_P[0][1]) * Math.Sin(currentIterAng_P[0])).Pow2() - thickness_P * ((point[0] - currentIterPos_P[0][0]) * Math.Sin(currentIterAng_P[0]) + (point[1] - currentIterPos_P[0][1]) * Math.Cos(currentIterAng_P[0])).Pow2()) > 0)
                         return true;
                     break;
 
                 case ParticleShape.bean:
                     a = 4.0 * radiusTolerance.Pow2();
                     b = 1.0 * radiusTolerance.Pow2();
-                    if (-((((point[0] - currentPos_P[0][0]) * Math.Cos(currentAng_P[0]) - (point[1] - currentPos_P[0][1]) * Math.Sin(currentAng_P[0])).Pow(2) + ((point[0] - currentPos_P[0][0]) * Math.Sin(currentAng_P[0]) + (point[1] - currentPos_P[0][1]) * Math.Cos(currentAng_P[0])).Pow(2)).Pow2() - a * ((point[0] - currentPos_P[0][0]) * Math.Cos(currentAng_P[0]) - (point[1] - currentPos_P[0][1]) * Math.Sin(currentAng_P[0])).Pow(3) - b * ((point[0] - currentPos_P[0][0]) * Math.Sin(currentAng_P[0]) + (point[1] - currentPos_P[0][1]) * Math.Cos(currentAng_P[0])).Pow2()) > 0)
+                    if (-((((point[0] - currentIterPos_P[0][0]) * Math.Cos(currentIterAng_P[0]) - (point[1] - currentIterPos_P[0][1]) * Math.Sin(currentIterAng_P[0])).Pow(2) + ((point[0] - currentIterPos_P[0][0]) * Math.Sin(currentIterAng_P[0]) + (point[1] - currentIterPos_P[0][1]) * Math.Cos(currentIterAng_P[0])).Pow(2)).Pow2() - a * ((point[0] - currentIterPos_P[0][0]) * Math.Cos(currentIterAng_P[0]) - (point[1] - currentIterPos_P[0][1]) * Math.Sin(currentIterAng_P[0])).Pow(3) - b * ((point[0] - currentIterPos_P[0][0]) * Math.Sin(currentIterAng_P[0]) + (point[1] - currentIterPos_P[0][1]) * Math.Cos(currentIterAng_P[0])).Pow2()) > 0)
                         return true;
                     break;
 
                 case ParticleShape.squircle:
-                    if (-((((point[0] - currentPos_P[0][0]) * Math.Cos(currentAng_P[0]) - (point[1] - currentPos_P[0][1]) * Math.Sin(currentAng_P[0])).Pow(4) + ((point[0] - currentPos_P[0][0]) * Math.Sin(currentAng_P[0]) + (point[1] - currentPos_P[0][1]) * Math.Cos(currentAng_P[0])).Pow(4)) - radiusTolerance.Pow(4)) > 0)
+                    if (-((((point[0] - currentIterPos_P[0][0]) * Math.Cos(currentIterAng_P[0]) - (point[1] - currentIterPos_P[0][1]) * Math.Sin(currentIterAng_P[0])).Pow(4) + ((point[0] - currentIterPos_P[0][0]) * Math.Sin(currentIterAng_P[0]) + (point[1] - currentIterPos_P[0][1]) * Math.Cos(currentIterAng_P[0])).Pow(4)) - radiusTolerance.Pow(4)) > 0)
                         return true;
                     break;
 
@@ -1122,5 +1213,6 @@ namespace BoSSS.Application.FSI_Solver {
         }
         #endregion
     }
+
 }
 

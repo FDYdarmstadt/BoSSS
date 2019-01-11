@@ -70,18 +70,25 @@ namespace BoSSS.Solution.NSECommon.Operator.Continuity {
             
             double[] _uLevSet = new double[D];
 
-            _uLevSet[0] = uLevSet[0] + pRadius * wLevSet *-cp.n[1];
-            _uLevSet[1] = uLevSet[1] + pRadius * wLevSet * cp.n[0];
+            _uLevSet[0] = (uLevSet[0] + pRadius * wLevSet *-cp.n[1]);
+            _uLevSet[1] = (uLevSet[1] + pRadius * wLevSet * cp.n[0]);
+
+            double[] uB_temp = new double[D];
+            uB_temp[0] = U_Neg[0] * Math.Abs(cp.n[1]);
+            uB_temp[1] = U_Neg[1] * Math.Abs(cp.n[0]);
+            double[] t = new double[D];
+            t[0] = cp.n[1];
+            t[1] = cp.n[0];
+
+            double uCxN = GenericBlas.InnerProd(uB_temp, cp.n);
 
             double uBxN = GenericBlas.InnerProd(_uLevSet, cp.n);
           
             // transform from species B to A: we call this the "A-fictitious" value
             double uAxN_fict;
-            uAxN_fict = uBxN;
-
+            uAxN_fict = uBxN * (1 - scale) + uBxN * scale;
             double FlxNeg = -DirichletFlux(uAxN, uAxN_fict); // flux on A-side
             //double FlxPos = 0;
-
             return FlxNeg * v_Neg;
         }
 

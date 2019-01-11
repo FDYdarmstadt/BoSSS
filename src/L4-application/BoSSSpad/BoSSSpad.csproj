@@ -138,13 +138,9 @@
     <Compile Include="Plot2DdataExtensions.cs" />
     <Compile Include="ReadEvalPrintLoop.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="ResidualForm.cs">
-      <SubType>Form</SubType>
-    </Compile>
+    <Compile Include="ResidualForm.cs" />
     <Compile Include="ResidualForm.Designer.cs" />
-    <Compile Include="ResidualFormLive.cs">
-      <SubType>Form</SubType>
-    </Compile>
+    <Compile Include="ResidualFormLive.cs" />
     <Compile Include="ResidualFormLive.Designer.cs" />
     <Compile Include="ResidualLog.cs" />
     <Compile Include="InteractiveShell.cs" />
@@ -156,9 +152,7 @@
     <Compile Include="TypeExtensions.cs" />
     <Compile Include="Plot2Ddata.cs" />
     <Compile Include="WorkflowMgm.cs" />
-    <Compile Include="Worksheet.cs">
-      <SubType>Form</SubType>
-    </Compile>
+    <Compile Include="Worksheet.cs" />
     <Compile Include="WorksheetEntry.cs" />
     <Compile Include="XmlDocumentationExtensions.cs" />
   </ItemGroup>
@@ -286,13 +280,6 @@
       <Project>{383DE201-6871-437E-93C6-DDD41694BBAF}</Project>
       <Name>BoSSS.PlotGenerator</Name>
     </ProjectReference>
-  </ItemGroup>
-  <ItemGroup>
-    <EmbeddedResource Include="ResidualForm.resx" />
-    <EmbeddedResource Include="ResidualFormLive.resx">
-      <DependentUpon>ResidualFormLive.cs</DependentUpon>
-    </EmbeddedResource>
-    <EmbeddedResource Include="Worksheet.resx" />
   </ItemGroup>
   <ItemGroup>
     <BootstrapperPackage Include=".NETFramework,Version=v4.5">
