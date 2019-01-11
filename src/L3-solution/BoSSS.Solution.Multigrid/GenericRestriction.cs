@@ -21,7 +21,7 @@ using System.Text;
 using ilPSP.LinSolvers;
 using System.Diagnostics;
 
-namespace BoSSS.Solution.Multigrid {
+namespace BoSSS.Solution.AdvancedSolvers {
     public class GenericRestriction : ISolverSmootherTemplate {
 
         MultigridOperator m_OpThisLevel;

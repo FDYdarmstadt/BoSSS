@@ -36,7 +36,7 @@ using ilPSP.Utils;
 using ilPSP.Connectors.Matlab;
 using System.Text;
 using ilPSP;
-using BoSSS.Solution.Multigrid;
+using BoSSS.Solution.AdvancedSolvers;
 using NUnit.Framework;
 using BoSSS.Foundation.IO;
 using System.Collections;

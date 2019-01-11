@@ -37,7 +37,7 @@ using BoSSS.Foundation.XDG;
 using BoSSS.Foundation.Grid.Aggregation;
 
 using BoSSS.Solution;
-using BoSSS.Solution.Multigrid;
+using BoSSS.Solution.AdvancedSolvers;
 using BoSSS.Solution.NSECommon;
 using BoSSS.Solution.Tecplot;
 using BoSSS.Solution.Utils;

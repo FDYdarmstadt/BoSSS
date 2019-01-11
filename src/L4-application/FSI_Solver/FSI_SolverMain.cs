@@ -35,7 +35,7 @@ using BoSSS.Foundation.IO;
 using System.Diagnostics;
 using System.IO;
 using BoSSS.Foundation.Quadrature;
-using BoSSS.Solution.Multigrid;
+using BoSSS.Solution.AdvancedSolvers;
 using ilPSP;
 using BoSSS.Solution.XdgTimestepping;
 using BoSSS.Foundation.Grid.RefElements;

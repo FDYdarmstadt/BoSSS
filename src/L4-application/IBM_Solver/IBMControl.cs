@@ -17,7 +17,7 @@ limitations under the License.
 using System;
 using System.Collections.Generic;
 using BoSSS.Solution.Control;
-using BoSSS.Solution.Multigrid;
+using BoSSS.Solution.AdvancedSolvers;
 using BoSSS.Solution.XdgTimestepping;
 using System.Linq;
 using System.Runtime.Serialization;
@@ -256,11 +256,11 @@ namespace BoSSS.Application.IBM_Solver {
         [DataMember]
         public BoSSS.Solution.Timestepping.TimeStepperInit TimeStepper_Init = Solution.Timestepping.TimeStepperInit.SingleInit;
 
-        [DataMember]
-        public NonlinearSolverCodes NonlinearSolve = NonlinearSolverCodes.Picard;
+        //[DataMember]
+        //public NonlinearSolverCodes NonlinearSolve = NonlinearSolverCodes.Picard;
 
-        [DataMember]
-        public LinearSolverCodes LinearSolve = LinearSolverCodes.classic_mumps;
+        //[DataMember]
+        //public LinearSolverCodes LinearSolve = LinearSolverCodes.classic_mumps;
 
     }
 }

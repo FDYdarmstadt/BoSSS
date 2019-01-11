@@ -29,7 +29,7 @@ using ilPSP.Tracing;
 using System.IO;
 using System.Diagnostics;
 
-namespace BoSSS.Solution.Multigrid {
+namespace BoSSS.Solution.AdvancedSolvers {
     /// <summary>
     /// Implementation based on presudocode from Kelley, C. 
     /// Solving Nonlinear Equations with Newton’s Method. Fundamentals of Algorithms. 

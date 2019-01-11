@@ -23,7 +23,7 @@ using System.Threading.Tasks;
 using ilPSP;
 using ilPSP.Utils;
 using BoSSS.Solution.Control;
-using BoSSS.Solution.Multigrid;
+using BoSSS.Solution.AdvancedSolvers;
 using BoSSS.Solution.XNSECommon;
 using BoSSS.Foundation.IO;
 using BoSSS.Foundation.Grid;

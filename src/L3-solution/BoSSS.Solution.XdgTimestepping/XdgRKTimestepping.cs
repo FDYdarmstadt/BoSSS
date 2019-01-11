@@ -27,7 +27,7 @@ using ilPSP.LinSolvers;
 using System.Diagnostics;
 using ilPSP.Utils;
 using ilPSP;
-using BoSSS.Solution.Multigrid;
+using BoSSS.Solution.AdvancedSolvers;
 using BoSSS.Foundation.Grid.Aggregation;
 
 namespace BoSSS.Solution.XdgTimestepping {

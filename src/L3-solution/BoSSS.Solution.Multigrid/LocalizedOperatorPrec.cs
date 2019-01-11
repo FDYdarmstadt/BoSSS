@@ -27,7 +27,7 @@ using ilPSP.LinSolvers;
 using ilPSP;
 using ilPSP.Connectors.Matlab;
 
-namespace BoSSS.Solution.Multigrid {
+namespace BoSSS.Solution.AdvancedSolvers {
     public class LocalizedOperatorPrec : ISolverSmootherTemplate, ISolverWithCallback {
         public int IterationsInNested {
             get {

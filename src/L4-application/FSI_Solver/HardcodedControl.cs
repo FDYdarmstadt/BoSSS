@@ -20,7 +20,7 @@ using BoSSS.Platform;
 using BoSSS.Solution.Control;
 using BoSSS.Foundation.Grid;
 using System.Diagnostics;
-using BoSSS.Solution.Multigrid;
+using BoSSS.Solution.AdvancedSolvers;
 using ilPSP.Utils;
 using BoSSS.Foundation.Grid.Classic;
 using ilPSP;
@@ -146,7 +146,7 @@ namespace BoSSS.Application.FSI_Solver {
             C.AdvancedDiscretizationOptions.PenaltySafety = 1;
             C.AdvancedDiscretizationOptions.CellAgglomerationThreshold = 0.1;
             C.LevelSetSmoothing = false;
-            C.MaxSolverIterations = 100;
+            C.LinearSolver.MaxSolverIterations = 100;
             C.NoOfMultigridLevels = 1;
 
             // Timestepping
@@ -417,8 +417,8 @@ namespace BoSSS.Application.FSI_Solver {
             C.AdvancedDiscretizationOptions.PenaltySafety = 4;
             C.AdvancedDiscretizationOptions.CellAgglomerationThreshold = 0.2;
             C.LevelSetSmoothing = false;
-            C.MaxKrylovDim = 20;
-            C.MaxSolverIterations = 100;
+            C.LinearSolver.MaxKrylovDim = 20;
+            C.LinearSolver.MaxSolverIterations = 100;
             C.VelocityBlockPrecondMode = MultigridOperator.Mode.SymPart_DiagBlockEquilib_DropIndefinite;
             C.NoOfMultigridLevels = 0;
 
@@ -621,7 +621,7 @@ namespace BoSSS.Application.FSI_Solver {
             C.AdvancedDiscretizationOptions.PenaltySafety = 4;
             C.AdvancedDiscretizationOptions.CellAgglomerationThreshold = 0.2;
             C.LevelSetSmoothing = false;
-            C.MaxSolverIterations = 100;
+            C.LinearSolver.MaxSolverIterations = 100;
             C.NoOfMultigridLevels = 1;
 
             // Timestepping
@@ -859,7 +859,7 @@ namespace BoSSS.Application.FSI_Solver {
             C.AdvancedDiscretizationOptions.PenaltySafety = 4;
             C.AdvancedDiscretizationOptions.CellAgglomerationThreshold = 0.2;
             C.LevelSetSmoothing = false;
-            C.MaxSolverIterations = 10;
+            C.LinearSolver.MaxSolverIterations = 10;
             C.NoOfMultigridLevels = 1;
 
 
@@ -1108,7 +1108,7 @@ namespace BoSSS.Application.FSI_Solver {
             C.AdvancedDiscretizationOptions.PenaltySafety = 4;
             C.AdvancedDiscretizationOptions.CellAgglomerationThreshold = 0.2;
             C.LevelSetSmoothing = false;
-            C.MaxSolverIterations = 10;
+            C.LinearSolver.MaxSolverIterations = 10;
             C.NoOfMultigridLevels = 1;
 
 
@@ -1369,7 +1369,7 @@ namespace BoSSS.Application.FSI_Solver {
             C.AdvancedDiscretizationOptions.PenaltySafety = 4;
             C.AdvancedDiscretizationOptions.CellAgglomerationThreshold = 0.2;
             C.LevelSetSmoothing = false;
-            C.MaxSolverIterations = 10;
+            C.LinearSolver.MaxSolverIterations = 10;
             C.NoOfMultigridLevels = 1;
 
 
@@ -1580,7 +1580,7 @@ namespace BoSSS.Application.FSI_Solver {
             C.AdvancedDiscretizationOptions.PenaltySafety = 4;
             C.AdvancedDiscretizationOptions.CellAgglomerationThreshold = 0.2;
             C.LevelSetSmoothing = false;
-            C.MaxSolverIterations = 10;
+            C.LinearSolver.MaxSolverIterations = 10;
             C.NoOfMultigridLevels = 1;
 
 
@@ -1789,7 +1789,7 @@ namespace BoSSS.Application.FSI_Solver {
             C.AdvancedDiscretizationOptions.PenaltySafety = 4;
             C.AdvancedDiscretizationOptions.CellAgglomerationThreshold = 0.2;
             C.LevelSetSmoothing = false;
-            C.MaxSolverIterations = 10;
+            C.LinearSolver.MaxSolverIterations = 10;
             C.NoOfMultigridLevels = 1;
 
 
@@ -2007,7 +2007,7 @@ namespace BoSSS.Application.FSI_Solver {
             C.AdvancedDiscretizationOptions.PenaltySafety = 4;
             C.AdvancedDiscretizationOptions.CellAgglomerationThreshold = 0.2;
             C.LevelSetSmoothing = false;
-            C.MaxSolverIterations = 10;
+            C.LinearSolver.MaxSolverIterations = 10;
             C.NoOfMultigridLevels = 1;
 
 

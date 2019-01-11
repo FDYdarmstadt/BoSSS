@@ -29,7 +29,7 @@ using BoSSS.Platform;
 using BoSSS.Platform.Utils;
 
 
-namespace BoSSS.Solution.Multigrid {
+namespace BoSSS.Solution.AdvancedSolvers {
 
     public class NonlinGMRES2 : NonlinearSolver {
 

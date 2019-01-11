@@ -48,7 +48,7 @@ namespace BoSSS.Solution.Control {
         virtual public Type GetSolverType() {
             throw new NotImplementedException();
         }
-
+        
         /// <summary>
         /// The generating code as text representation, this string can be used to create the control file
         /// by <see cref="FromCode(string, Type, out AppControl, out AppControl[])"/>
@@ -695,6 +695,16 @@ namespace BoSSS.Solution.Control {
             get;
             set;
         }
+
+        //-------------- new solver stuff
+
+        [DataMember]
+        public LinearSolverConfig LinearSolver= new LinearSolverConfig();
+
+        [DataMember]
+        public NonLinearSolverConfig NonLinearSolver = new NonLinearSolverConfig();
+
+        //--------------- end of new stuff
 
         /// <summary>
         /// If true, a redistribution will be attempted BEFORE the first

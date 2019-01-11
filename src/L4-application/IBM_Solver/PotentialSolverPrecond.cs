@@ -38,7 +38,7 @@ using System.IO;
 using System.Globalization;
 using BoSSS.Foundation.IO;
 using BoSSS.Solution.Control;
-using BoSSS.Solution.Multigrid;
+using BoSSS.Solution.AdvancedSolvers;
 using ilPSP;
 
 namespace BoSSS.Application.IBM_Solver {

@@ -6,7 +6,7 @@ using BoSSS.Foundation.XDG;
 using BoSSS.Platform.Utils.Geom;
 using BoSSS.Solution;
 using BoSSS.Solution.Utils;
-using BoSSS.Solution.Multigrid;
+using BoSSS.Solution.AdvancedSolvers;
 using BoSSS.Solution.Tecplot;
 using BoSSS.Solution.XdgTimestepping;
 using ilPSP;

@@ -35,7 +35,7 @@ using BoSSS.Foundation.SpecFEM;
 using BoSSS.Solution.Queries;
 using BoSSS.Foundation.Grid.RefElements;
 using NUnit.Framework;
-using BoSSS.Solution.Multigrid;
+using BoSSS.Solution.AdvancedSolvers;
 using ilPSP.Connectors.Matlab;
 using BoSSS.Foundation.Grid.Aggregation;
 using BoSSS.Platform.LinAlg;

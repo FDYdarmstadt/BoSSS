@@ -34,7 +34,7 @@ using BoSSS.Foundation.IO;
 using System.Diagnostics;
 using System.IO;
 using BoSSS.Foundation.Quadrature;
-using BoSSS.Solution.Multigrid;
+using BoSSS.Solution.AdvancedSolvers;
 using ilPSP;
 using BoSSS.Solution.XdgTimestepping;
 using BoSSS.Foundation.Grid.Aggregation;
@@ -49,11 +49,12 @@ namespace BoSSS.Application.IBM_Solver {
     /// </summary>
     public class IBM_SolverMain : Application<IBM_Control> {
 
+
         /// <summary>
         /// Application entry point.
         /// </summary>
         static void Main(string[] args) {
-
+         
             BoSSS.Solution.Application<IBM_Control>._Main(args, false, delegate () {
                 var p = new IBM_SolverMain();
                 return p;
@@ -439,14 +440,13 @@ namespace BoSSS.Application.IBM_Solver {
 
                     m_BDF_Timestepper.m_ResLogger = base.ResLogger;
                     m_BDF_Timestepper.m_ResidualNames = ArrayTools.Cat(this.ResidualMomentum.Select(f => f.Identification), this.ResidualContinuity.Identification);
-                    m_BDF_Timestepper.Config_SolverConvergenceCriterion = this.Control.Solver_ConvergenceCriterion;
-                    m_BDF_Timestepper.Config_MaxIterations = this.Control.MaxSolverIterations;
-                    m_BDF_Timestepper.Config_MinIterations = this.Control.MinSolverIterations;
+                    //m_BDF_Timestepper.Config_SolverConvergenceCriterion = this.Control.Solver_ConvergenceCriterion;
+                    //m_BDF_Timestepper.Config_MaxIterations = this.Control.MaxSolverIterations;
+                    //m_BDF_Timestepper.Config_MinIterations = this.Control.MinSolverIterations;
                     m_BDF_Timestepper.SessionPath = SessionPath;
                     m_BDF_Timestepper.Timestepper_Init = Solution.Timestepping.TimeStepperInit.MultiInit;
 
-                    SolverChooser.ChooseSolver(this.Control, ref m_BDF_Timestepper);
-
+                    SolverChooser.ChooseSolver(this.Control, out m_BDF_Timestepper, true, Control.PhysicalParameters.mu_A);
                 }
 
             } else {

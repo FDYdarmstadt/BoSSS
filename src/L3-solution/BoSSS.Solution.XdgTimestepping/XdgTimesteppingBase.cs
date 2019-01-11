@@ -16,7 +16,7 @@ limitations under the License.
 
 using BoSSS.Foundation;
 using BoSSS.Foundation.XDG;
-using BoSSS.Solution.Multigrid;
+using BoSSS.Solution.AdvancedSolvers;
 using BoSSS.Platform;
 using ilPSP.LinSolvers;
 using ilPSP.Utils;
@@ -417,6 +417,22 @@ namespace BoSSS.Solution.XdgTimestepping {
             }
         }
 
+        /// <summary>
+        /// Set when calling constructor,
+        /// </summary>
+        public Control.LinearSolverConfig config_LinearSolver;
+
+
+        public Control.NonLinearSolverConfig config_NonLinearSolver;
+
+
+        //public delegate void DelGetSolver(out NonlinearSolver nonlinSolver, out ISolverSmootherTemplate linearSolver);
+
+        //public DelComputeOperatorMatrix GetSolver {
+        //    get;
+        //    protected set;
+        //}
+
 
         /// <summary>
         /// Returns either a solver for the Navier-Stokes or the Stokes system.
@@ -428,6 +444,13 @@ namespace BoSSS.Solution.XdgTimestepping {
             nonlinSolver = null;
             linearSolver = null;
 
+            nonlinSolver = SolverChooser.GenerateNonLin(config_NonLinearSolver);
+            linearSolver = SolverChooser.GenerateLinear(config_LinearSolver);
+
+            return "waswasi";
+
+
+            /*
             string solverDescription = ""; // this.Control.option_solver;
             //solverDescription = string.Format("; No. of cells: {0}, p = {1}/{2}; MaxKrylovDim {3}, MaxIter {4};",
             //    this.GridData.Partitioning.TotalLength,
@@ -536,6 +559,7 @@ namespace BoSSS.Solution.XdgTimestepping {
 
 
             return solverDescription;
+            */
         }
 
 

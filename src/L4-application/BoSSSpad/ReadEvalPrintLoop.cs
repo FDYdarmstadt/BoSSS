@@ -104,7 +104,7 @@ namespace BoSSS.Application.BoSSSpad {
             eval.ReferenceAssembly(typeof(BoSSS.Solution.Statistic.CellLocalization).Assembly);
             eval.ReferenceAssembly(typeof(BoSSS.Solution.Tecplot.Tecplot).Assembly);
             eval.ReferenceAssembly(typeof(BoSSS.Solution.ASCIIExport.CurveExportDriver).Assembly);
-            eval.ReferenceAssembly(typeof(BoSSS.Solution.Multigrid.MultigridOperator).Assembly);
+            eval.ReferenceAssembly(typeof(BoSSS.Solution.AdvancedSolvers.MultigridOperator).Assembly);
             eval.ReferenceAssembly(typeof(BoSSS.Solution.XNSECommon.CurvatureAlgorithms).Assembly);
             eval.ReferenceAssembly(typeof(BoSSS.Solution.XdgTimestepping.LevelSetHandling).Assembly);
             eval.ReferenceAssembly(typeof(BoSSS.Solution.LevelSetTools.ContinuityProjection).Assembly);

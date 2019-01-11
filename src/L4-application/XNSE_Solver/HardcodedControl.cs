@@ -23,7 +23,7 @@ using ilPSP;
 using BoSSS.Solution.Control;
 using BoSSS.Foundation.Grid;
 using System.Diagnostics;
-using BoSSS.Solution.Multigrid;
+using BoSSS.Solution.AdvancedSolvers;
 using ilPSP.Utils;
 using BoSSS.Platform.Utils.Geom;
 using BoSSS.Solution.XNSECommon;

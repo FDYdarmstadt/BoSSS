@@ -18,7 +18,7 @@ using System;
 using BoSSS.Foundation;
 using BoSSS.Foundation.XDG;
 using BoSSS.Solution.Control;
-using BoSSS.Solution.Multigrid;
+using BoSSS.Solution.AdvancedSolvers;
 //using BoSSS.Solution.XNSECommon;
 using BoSSS.Platform.LinAlg;
 

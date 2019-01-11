@@ -323,7 +323,7 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
 
             C.Solver_ConvergenceCriterion = 1e-9;
 
-            C.LinearSolver = Solution.Multigrid.DirectSolver._whichSolver.PARDISO;
+            C.LinearSolver = Solution.AdvancedSolvers.DirectSolver._whichSolver.PARDISO;
 
             // return
             // ======

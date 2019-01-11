@@ -25,7 +25,7 @@ using BoSSS.Platform;
 using MPI.Wrappers;
 using BoSSS.Platform.Utils;
 
-namespace BoSSS.Solution.Multigrid {
+namespace BoSSS.Solution.AdvancedSolvers {
 
     /// <summary>
     /// Block-Jacobi smoother, maybe only useful in combination with the multi-grid solver (<see cref="ClassicMultigrid"/>).
