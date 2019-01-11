@@ -75,7 +75,9 @@ namespace BoSSS.Application.BoSSSpad {
                     ?? System.Environment.GetEnvironmentVariable("HOME");
 
                 this.DeploymentBaseDirectory = Path.Combine(localAppData, "BoSSS-LocalJobs");
-
+                if (!Directory.Exists(this.DeploymentBaseDirectory)) {
+                    Directory.CreateDirectory(this.DeploymentBaseDirectory);
+                }
             } else {
                 this.DeploymentBaseDirectory = DeployDir;
             }

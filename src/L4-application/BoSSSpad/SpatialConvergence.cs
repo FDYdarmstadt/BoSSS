@@ -100,7 +100,7 @@ namespace BoSSS.Application.BoSSSpad {
                     string[] fieldIds = commonFieldIds.ToArray();
 
                     // compute L2-errors
-                    DGFieldComparison.ComputeErrors(fieldIds, tsiS, out double[] hS, out var ERRs, out var tsiIdS);
+                    DGFieldComparison.ComputeErrors(fieldIds, tsiS, out double[] hS, out var DOFs, out var ERRs, out var tsiIdS);
 
 
                     // record errors

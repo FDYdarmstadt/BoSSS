@@ -46,7 +46,7 @@ namespace BoSSS.Solution {
         /// <summary>
         /// BoSSS grid
         /// </summary>
-        GridCommons Grid {
+        IGrid Grid {
             get;
         }
 

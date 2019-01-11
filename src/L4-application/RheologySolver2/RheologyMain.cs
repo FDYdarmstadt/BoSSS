@@ -1123,8 +1123,8 @@ namespace BoSSS.Application.Rheology {
                 VelocityYGradient.Gradient(1.0, V);
             }
 
-            Console.WriteLine("Total number of cells:    {0}", Grid.Cells.Count().MPISum());
-            Console.WriteLine("Total number of DOFs:     {0}", CurrentSolution.Count().MPISum());
+            Console.WriteLine("Total number of cells:    {0}", Grid.NumberOfCells);
+            Console.WriteLine("Total number of DOFs:     {0}", CurrentSolution.Mapping.TotalLength);
 
         }
 

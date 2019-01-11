@@ -191,7 +191,7 @@ namespace CNS.Tests.MovingIBMTests {
                 solver.QueryHandler.QueryResults,
                 Tuple.Create("L2ErrorDensity", 4.5e-3),
                 Tuple.Create("L2ErrorXMomentum", 4.0e-3),
-                Tuple.Create("L2ErrorYMomentum", 5.9e-6),
+                Tuple.Create("L2ErrorYMomentum", 1.0e-5),
                 Tuple.Create("L2ErrorPressure", 4.5e-3));
         }
 

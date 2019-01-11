@@ -275,8 +275,10 @@ namespace HilbertTest {
                 ulong[] local_HilbertIndex = new ulong[JE - J0];
                 int[] local_RankIndex = new int[JE - J0];
 
+                var _Grid = (GridCommons)(solver.Grid);
+
                 for (int j = J0; j < JE; j++) {
-                    Cell Cj = solver.Grid.Cells[j - J0];
+                    Cell Cj = _Grid.Cells[j - J0];
                     int NoOfNodes = Cj.TransformationParams.NoOfRows;
                     for (int d = 0; d < D; d++) {
                         double center = 0;

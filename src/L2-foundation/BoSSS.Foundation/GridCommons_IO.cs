@@ -53,11 +53,17 @@ namespace BoSSS.Foundation.Grid.Classic {
         #region IO.IGridInfo members
 
         /// <summary>
+        /// see <see cref="ID"/>;
+        /// </summary>
+        [DataMember]
+        Guid m_GridGuid;
+
+        /// <summary>
         /// Guid/Identification of this grid object in the database <see cref="Database"/>
         /// </summary>
         public Guid ID {
             get {
-                return this.GridGuid;
+                return this.m_GridGuid;
             }
         }
 

@@ -27,7 +27,7 @@ namespace CNS.Tests.IsentropicVortex {
         //    BoSSS.Solution.Application._Main(args, false, null, () => new VortexRock4());
         //}
 
-        protected override GridCommons CreateOrLoadGrid() {
+        protected override IGrid CreateOrLoadGrid() {
 
             int NumOfCells = 4;
 

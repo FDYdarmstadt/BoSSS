@@ -1,0 +1,636 @@
+% !TeX spellcheck = en_US
+
+\BoSSSopen{convergenceStudyTutorial/convStudy}
+\graphicspath{{convergenceStudyTutorial/convStudy.texbatch/}}
+
+\paragraph{What's new:} 
+\begin{itemize}
+	\item performing a convergence, resp. parameter study from a larger number of solver runs
+	\item organisation of those runs with the\emph{ work flow management tools}
+    \item especially, how to use the \emph{session table} of your project
+	\item \emph{advanced} plotting facilities and \LaTeX export
+\end{itemize}
+
+\paragraph{Prerequisites:} 
+\begin{itemize}
+	\item basic knowledge of \BoSSSpad{}
+	\item executing runs on your local machine, e.g. the quick-start guide of the \ac{cns}, see chapter \ref{sec:CNS}
+    \item knowlede of the meta job scheduler, see chapter \ref{sec:WorkflowMgm}
+\end{itemize}
+
+The fully programmable workflow management tools in \BoSSS{} are powerful helpers in
+the \emph{organization of multiple solver runs} (from dozens to thousands and beyond)
+as well as when it comes to extracting data from those runs (aka. \emph{sessions}).
+
+In order to demonstrate this, 
+we are going to perform a spatial convergence study on the following Poisson problem:
+we solve
+\begin{equation*}
+   \Delta T = -2 \cos(x) \cos(y)
+\end{equation*}
+in the square domain $\Omega = (-\pi/2,\pi/2)^2$, 
+with homogeneous Dirichlet boundary conditions, 
+for which we know the exact
+solution is given by
+\[
+   T_\text{ex} = \cos(x) \cos(y) .
+\]
+Note that this simple 2D example would be small enough to solve it in \BoSSSpad{} directly.
+However, the purpose of this tutorial is to analyze data spread over multiple sessions.
+Furthermore, although we only perform a simple convergence study,
+this tutorial can also be extended to the analysis of other metrics (e.g. run-times) collected during 
+solver runs.
+
+\BoSSScmd{
+/// % ========================================
+/// \section{Initialization}
+/// % ========================================
+ }
+\BoSSSexeSilent
+\BoSSScmd{
+/// In order to execute the individual solver runs,
+/// we are going to employ the mini batch processor,
+/// for running the calculations on the local machine.
+/// We also have to initialize the workflow management system and create 
+/// a database.
+ }
+\BoSSSexeSilent
+\BoSSScmd{
+restart
+ }
+\BoSSSexeSilent
+\BoSSScmdSilent{
+/// BoSSSexeSilent BoSSScmdSilent
+using NUnit.Framework;
+ }
+\BoSSSexeSilent
+\BoSSScmd{
+WorkflowMgm.Init("ConvStudytuorial");
+ }
+\BoSSSexe
+\BoSSScmd{
+var db = OpenOrCreateDefaultDatabase();
+ }
+\BoSSSexe
+\BoSSScmd{
+/// The following (deactivated) line would delete all Sessions (i.e. solver 
+/// runs) which correspond to this project from the database.
+/// Hence, on every execution of the worksheet, all simulations would be 
+/// re-done. 
+/// Normally, without the following line, existing simulations from 
+/// the database will be used; therefore, it is save to close and open
+/// the worksheet.
+/// This is handy e.g. when simulations are running on a cluster for a long 
+/// time, and we usually don't want to re-submit the calculation 
+/// every time we execute the worksheet.
+//WorkflowMgm.Sessions.ForEach(si => si.Delete(true));
+ }
+\BoSSSexe
+\BoSSScmd{
+/// For sake of simplicity, we employ the Poisson solver
+/// \code{ipPoisson} which is just a benchmarking application, but sufficient 
+/// for the purpose of this tutorial.
+ }
+\BoSSSexe
+\BoSSScmd{
+using BoSSS.Application.SipPoisson;
+ }
+\BoSSSexe
+\BoSSScmd{
+/// We also instantiate a client for the \code{MiniBatchProcessor}:
+ }
+\BoSSSexe
+\BoSSScmd{
+var myBatch = new MiniBatchProcessorClient();
+ }
+\BoSSSexe
+\BoSSScmd{
+MiniBatchProcessor.Server.StartIfNotRunning(false);
+ }
+\BoSSSexe
+\BoSSScmd{
+/// % ========================================
+/// \section{Mesh Creation}
+/// \label{sec:MeschCreation}
+/// % ========================================
+ }
+\BoSSSexe
+\BoSSScmd{
+/// We chose resolutions of $2 \times 2$, $4 \times 4$ to $32 \times 32$
+/// cells:
+ }
+\BoSSSexe
+\BoSSScmd{
+int[] resolutions = new int[] \{ 2, 4, 8, 16, 32\};
+ }
+\BoSSSexe
+\BoSSScmd{
+var grids = new GridCommons[resolutions.Length];\newline 
+for(int iRes = 0; iRes < resolutions.Length; iRes++) \{\newline 
+\btab // create nodes:\newline 
+\btab var Nodes = GenericBlas.Linspace(-Math.PI*0.5, Math.PI*0.5, \newline 
+\btab \btab resolutions[iRes] + 1); // note: number of nodes = number of cells + 1!\newline 
+ \newline 
+\btab // create grid:\newline 
+\btab GridCommons grd\_i = Grid2D.Cartesian2DGrid(Nodes, Nodes);\newline 
+ \newline 
+\btab // define all boundaries as Dirichlet:\newline 
+\btab grd\_i.EdgeTagNames.Add(1, BoundaryType.Dirichlet.ToString());\newline 
+\btab grd\_i.DefineEdgeTags(delegate (double[] X) \{\newline 
+\btab \btab byte ret = 1;\newline 
+\btab \btab return ret;\newline 
+\btab \});\newline 
+ \newline 
+\btab // save grid in database\newline 
+\btab db.SaveGrid(ref grd\_i);\newline 
+ \newline 
+\btab // remenber reference to grid:\newline 
+\btab grids[iRes] = grd\_i;\newline 
+\}
+ }
+\BoSSSexe
+\BoSSScmd{
+/// % ===========================================
+/// \section{Setup and execution of solver runs}
+/// \label{sec:SetupAndExec}
+/// % ===========================================
+ }
+\BoSSSexe
+\BoSSScmd{
+/// First, we implement the exact expressions for the right-hand-side 
+/// and the exact solution.
+/// The exact solution will be used to compute the error of the simulation.
+/// Normally, the exact solution is not known; in those cases, we need to 
+/// compute the experimental convergence against the solution on the finest
+/// grid.
+ }
+\BoSSSexe
+\BoSSScmd{
+static class Expressions \{\newline 
+\btab public static double RHS(double[] X) \{\newline 
+\btab \btab double x = X[0];\newline 
+\btab \btab double y = X[1];\newline 
+\btab \btab return -2.0*Math.Cos(x)*Math.Cos(y);\newline 
+\btab \}    \newline 
+\btab public static double Tex(double[] X) \{\newline 
+\btab \btab double x = X[0];\newline 
+\btab \btab double y = X[1];\newline 
+\btab \btab return Math.Cos(x)*Math.Cos(y);\newline 
+\btab \}        \newline 
+\}
+ }
+\BoSSSexe
+\BoSSScmd{
+var RHSfunc = GetFormulaObject(Expressions.RHS);
+ }
+\BoSSSexe
+\BoSSScmd{
+var TexFunc = GetFormulaObject(Expressions.Tex);
+ }
+\BoSSSexe
+\BoSSScmd{
+/// We compute 4 different polynomial orders:
+int[] Degrees = new int[] \{1, 2, 3, 4\};
+ }
+\BoSSSexe
+\BoSSScmd{
+/// Setup of all runs...
+ }
+\BoSSSexe
+\BoSSScmd{
+var Runs = new List<SipControl>();\newline 
+Runs.Clear(); // start with an empty run list\newline 
+foreach(int pDeg in Degrees) \{ // loop over polynomial degrees\newline 
+foreach(var grd in grids) \{ //    loop over all grids\newline 
+ \newline 
+\btab // create object and remember in list:\newline 
+\btab SipControl C = new SipControl();   \newline 
+\btab Runs.Add(C);\newline 
+ \newline 
+\btab // set polynomial degree and grid:\newline 
+\btab C.SetDGdegree(pDeg);\newline 
+\btab C.SetGrid(grd);\newline 
+ \newline 
+\btab // specify RHS and exact solution (these are realized as initial values\newline 
+\btab // in the \textbackslash code\{ipPoisson\} solver:\newline 
+\btab C.AddInitialValue("RHS", RHSfunc);\newline 
+\btab C.AddInitialValue("Tex", TexFunc);\newline 
+ \newline 
+\btab // specify boundary condition:\newline 
+\btab C.AddBoundaryValue(BoundaryType.Dirichlet.ToString()); // for homogeneous \newline 
+\btab //   boundary conditions, we don not need a value, since the default value\newline 
+\btab //   zero is sufficient.\newline 
+ \newline 
+\btab // the exact solution is a speciality of the SIP Poisson benchmark solver;\newline 
+\btab // in order to evaluate the exact solution, we have to set the following \newline 
+\btab // boolean:\newline 
+\btab C.ExactSolution\_provided = true;\newline 
+ \newline 
+\}\newline 
+\}
+ }
+\BoSSSexe
+\BoSSScmd{
+/// ...and activate them:
+ }
+\BoSSSexe
+\BoSSScmd{
+foreach(var C in Runs)\newline 
+   C.RunBatch(myBatch);
+ }
+\BoSSSexe
+\BoSSScmd{
+WorkflowMgm.AllJobs;
+ }
+\BoSSSexe
+\BoSSScmd{
+WorkflowMgm.BlockUntilAllJobsTerminate(720);
+ }
+\BoSSSexe
+\BoSSScmd{
+/// % ===========================================
+/// \section{Convergence against exact solution}
+/// \label{sec:ExactConvergence}
+/// % ===========================================
+ }
+\BoSSSexe
+\BoSSScmd{
+/// As already noted, the computation of the $L^2$ error against the 
+/// exact solution is handled specially in the \code{ipPoisson} solver.
+/// However, the following tutorial can serve as a general template of how to
+/// extract data from the session table and visualize it.
+ }
+\BoSSSexe
+\BoSSScmd{
+///
+/// We aquire a copy of the session table, and from all the columns in there...
+ }
+\BoSSSexe
+\BoSSScmd{
+var Tab = WorkflowMgm.SessionTable;
+ }
+\BoSSSexe
+\BoSSScmd{
+Tab.GetColumnNames().Take(7); // Take(7) is just to shorten the output.
+ }
+\BoSSSexe
+\BoSSScmd{
+/// ...we extract those which sound interesting:
+ }
+\BoSSSexe
+\BoSSScmd{
+Tab = Tab.ExtractColumns(\newline 
+\btab //"SessionName", \newline 
+\btab "DGdegree:T", "Grid:NoOfCells", "Grid:hMin", "DOFs", \newline 
+\btab //"ExactSolution\_provided", \newline 
+\btab "SolL2err");
+ }
+\BoSSSexe
+\BoSSScmd{
+Tab.Print();
+ }
+\BoSSSexe
+\BoSSScmd{
+///
+/// Note: the session table can also be exported, e.g. to Excel or 
+/// Libre/Open Office Calc, by using the \code{ToCSVFile} function.
+///
+ }
+\BoSSSexe
+\BoSSScmd{
+/// The columns of the session table 
+/// can be easily converted to a plot: the $x$-axis is determined
+/// by the cell width, the $y$-axis is determined by the $L^2$ error.
+/// Furthermore, we want to \emph{group} our plots according
+/// to the DG degree, i.e. have one line for each polynomial degree;
+ }
+\BoSSSexe
+\BoSSScmd{
+var ErrorPlot = Tab.ToPlot("Grid:hMin", "SolL2err", // column for x- and y\newline 
+\btab \btab \btab \btab \btab \btab    "DGdegree:T"); // column for group
+ }
+\BoSSSexe
+\BoSSScmd{
+/// We set logarithmic axes:
+ErrorPlot.LogX = true;\newline 
+ErrorPlot.LogY = true;
+ }
+\BoSSSexe
+\BoSSScmd{
+ErrorPlot.PlotNow();
+ }
+\BoSSSexe
+\BoSSScmd{
+/// Of course, we can adjust the plot styles:
+ }
+\BoSSSexe
+\BoSSScmd{
+ErrorPlot.dataGroups[0].Format.PointType = PointTypes.Diamond;\newline 
+ErrorPlot.dataGroups[1].Format.PointType = PointTypes.Box;\newline 
+ErrorPlot.dataGroups[2].Format.PointType = PointTypes.LowerTriangle;\newline 
+ErrorPlot.dataGroups[3].Format.PointType = PointTypes.Asterisk;
+ }
+\BoSSSexe
+\BoSSScmd{
+foreach(var grp in ErrorPlot.dataGroups) \{\newline 
+\btab grp.Format.PointSize = 0.8;\newline 
+\btab grp.Format.DashType  = DashTypes.Dotted;\newline 
+\btab grp.Format.LineWidth = 2;\newline 
+\}
+ }
+\BoSSSexe
+\BoSSScmd{
+ErrorPlot.PlotNow();
+ }
+\BoSSSexe
+\BoSSScmd{
+/// And we can compute the convergence order:
+ }
+\BoSSSexe
+\BoSSScmd{
+ErrorPlot.Regression();
+ }
+\BoSSSexe
+\BoSSScmdSilent{
+/// BoSSScmdSilent
+var reg1     = ErrorPlot.Regression();\newline 
+double conv1 = reg1.Single(kv => kv.Key.Contains("T1")).Value;\newline 
+double conv2 = reg1.Single(kv => kv.Key.Contains("T2")).Value;\newline 
+double conv3 = reg1.Single(kv => kv.Key.Contains("T3")).Value;\newline 
+double conv4 = reg1.Single(kv => kv.Key.Contains("T4")).Value;\newline 
+Assert.IsTrue(Math.Abs(conv1 - (+2)) < 0.7, "experimental convergence failed on k = 1");\newline 
+Assert.IsTrue(Math.Abs(conv2 - (+3)) < 0.7, "experimental convergence failed on k = 2");\newline 
+Assert.IsTrue(Math.Abs(conv3 - (+4)) < 0.7, "experimental convergence failed on k = 3");\newline 
+Assert.IsTrue(Math.Abs(conv4 - (+5)) < 0.7, "experimental convergence failed on k = 4");
+ }
+\BoSSSexe
+\BoSSScmd{
+///
+/// Note: these plots can also be exported to LaTeX, in a quality 
+/// that is suitable for print publication:
+//ErrorPlot.ToGnuplot().PlotCairolatex().SaveTo("C:\textbackslash \textbackslash tmp\textbackslash \textbackslash errplt.tex");
+ }
+\BoSSSexe
+\BoSSScmd{
+ % 
+ }
+\BoSSSexe
+\BoSSScmd{
+/// % ===========================================
+/// \section{experimental convergence plot}
+/// % ===========================================
+ }
+\BoSSSexe
+\BoSSScmd{
+/// If the exact solution is not known, one can only estimate the convergence
+/// behavior experimentally. 
+/// \BoSSS{} provides some utility for this, the \code{DGFieldComparison}
+/// class, which has a versatile, yet complex interface.
+/// However, there is a simple interface in the workflow management toolbox.
+ }
+\BoSSSexe
+\BoSSScmd{
+///
+/// We can augment the current session table with experimental errors:
+WorkflowMgm.hConvergence.Update();
+ }
+\BoSSSexe
+\BoSSScmd{
+var Tab = WorkflowMgm.SessionTable;
+ }
+\BoSSSexe
+\BoSSScmd{
+/// We observe, that columns have been added to the session table, 
+/// starting with a prefix \code{L2Error\_}; 
+Tab.GetColumnNames().Skip(46);
+ }
+\BoSSSexe
+\BoSSScmd{
+Tab = Tab.ExtractColumns(\newline 
+\btab "DGdegree:T", "Grid:NoOfCells",\newline 
+\btab "SolL2err", "L2Error\_T");
+ }
+\BoSSSexe
+\BoSSScmd{
+/// We observe that the \emph{experimental} $L^2$ error is approximately
+/// equal to the $L^2$ error against the exact solution, 
+/// except for the highest resolutions. There, the error of the numerical 
+/// solution is computed against itself, and thus the error is zero up 
+/// to round-off errors.
+/// 
+/// If we would like to extract convergence plots from this table, we need to
+/// exclude the rows with the finest solution using e.g. the 
+/// \code{TableExtensions.ExtractRows} method.
+Tab.Print();
+ }
+\BoSSSexe
+\BoSSScmd{
+/// Rows could be extracted form a table using a selector function:
+/// this is an expression, which is true for all rows that we want to extract;
+Tab = Tab.ExtractRows(\newline 
+  (iRow, RowEntries) => Convert.ToInt32(RowEntries["Grid:NoOfCells"]) != 1024);
+ }
+\BoSSSexe
+\BoSSScmd{
+Tab.Print();
+ }
+\BoSSSexe
+\BoSSScmd{
+/// % ============================================
+/// \subsection{Working without the session table}
+/// % ============================================
+ }
+\BoSSSexe
+\BoSSScmd{
+/// As an alternative to working with the session table, which is sometimes
+/// not versatile enough, we demonstrate a way to extract data 
+/// from the sessions in the current project directly.
+ }
+\BoSSSexe
+\BoSSScmd{
+// Create a list in which we store a separate plot for each polynomial degree:\newline 
+var ExpPlotS = new List<Plot2Ddata>();\newline 
+ \newline 
+foreach(int pDeg in Degrees) \{ // loop over polynomial degrees\newline 
+\btab // extract sessions with DG degree pDeg\newline 
+\btab var pDegSessions = WorkflowMgm.Sessions.Where(\newline 
+\btab \btab \btab   // function which is true on all sessions we are interested in:\newline 
+\btab \btab \btab   Si => Convert.ToInt32(Si.KeysAndQueries["DGdegree:T"]) == pDeg\newline 
+\btab \btab ).ToArray();\newline 
+ \newline 
+\btab // now, create a plot from the selected sessions:\newline 
+\btab // (we could also do other things)\newline 
+\btab Plot2Ddata pDegPlot = \newline 
+\btab \btab pDegSessions.ToEstimatedGridConvergenceData("T", false);\newline 
+\btab \btab // false secelsts DOFs instead of resolution h for x-axis\newline 
+ \newline 
+\btab // remember the freshly created plot object in a list:\newline 
+\btab ExpPlotS.Add(pDegPlot);\newline 
+\}
+ }
+\BoSSSexe
+\BoSSScmd{
+/// We adjust some plot style settings:
+ExpPlotS[0].dataGroups[0].Format.PointType = PointTypes.Diamond;\newline 
+ExpPlotS[1].dataGroups[0].Format.PointType = PointTypes.Box;\newline 
+ExpPlotS[2].dataGroups[0].Format.PointType = PointTypes.LowerTriangle;\newline 
+ExpPlotS[3].dataGroups[0].Format.PointType = PointTypes.Asterisk;\newline 
+ExpPlotS[0].dataGroups[0].Name = "$k = 1$";\newline 
+ExpPlotS[1].dataGroups[0].Name = "$k = 2$";\newline 
+ExpPlotS[2].dataGroups[0].Name = "$k = 3$";\newline 
+ExpPlotS[3].dataGroups[0].Name = "$k = 4$";\newline 
+foreach(var p in ExpPlotS) \{\newline 
+\btab p.dataGroups[0].Format.PointSize = 0.8;\newline 
+\btab p.dataGroups[0].Format.DashType = DashTypes.Dotted;\newline 
+\btab p.dataGroups[0].Format.LineWidth = 2;\newline 
+\}
+ }
+\BoSSSexe
+\BoSSScmd{
+/// and we can merge all four plot objects into a singe one:
+var ExpPlot = ExpPlotS[0]; //           select 0-th object\newline 
+foreach(var p in ExpPlotS.Skip(1)) \{ // loop over other (skip 0-th entry)\newline 
+\btab ExpPlot = ExpPlot.Merge(p); //      merge \newline 
+\}
+ }
+\BoSSSexe
+\BoSSScmd{
+ExpPlot.PlotNow();
+ }
+\BoSSSexe
+\BoSSScmd{
+/// and we can also verify the slope of the error curves:
+ExpPlot.Regression();
+ }
+\BoSSSexe
+\BoSSScmdSilent{
+/// BoSSScmdSilent
+var regExp   = ExpPlot.Regression();\newline 
+double conv1 = regExp.Single(kv => kv.Key.Contains("1")).Value;\newline 
+double conv2 = regExp.Single(kv => kv.Key.Contains("2")).Value;\newline 
+double conv3 = regExp.Single(kv => kv.Key.Contains("3")).Value;\newline 
+double conv4 = regExp.Single(kv => kv.Key.Contains("4")).Value;\newline 
+Assert.IsTrue(Math.Abs(conv1 - (-2)) < 0.7, "experimental convergence failed on k = 1");\newline 
+Assert.IsTrue(Math.Abs(conv2 - (-3)) < 0.7, "experimental convergence failed on k = 2");\newline 
+Assert.IsTrue(Math.Abs(conv3 - (-4)) < 0.7, "experimental convergence failed on k = 3");\newline 
+Assert.IsTrue(Math.Abs(conv4 - (-5)) < 0.7, "experimental convergence failed on k = 4");
+ }
+\BoSSSexe
+\BoSSScmd{
+/// % ============================================
+/// \subsection{Multiplot demonstration}
+/// % ============================================
+ }
+\BoSSSexe
+\BoSSScmd{
+/// If we have more than one plot object, we can arrange them in an array 
+/// to realize multi-plots:
+ }
+\BoSSSexe
+\BoSSScmd{
+var multiplot = new Plot2Ddata[2,2];
+ }
+\BoSSSexe
+\BoSSScmd{
+multiplot[0,0] = ExpPlotS[0];\newline 
+multiplot[0,1] = ExpPlotS[1];\newline 
+multiplot[1,0] = ExpPlotS[2];\newline 
+multiplot[1,1] = ExpPlotS[3];
+ }
+\BoSSSexe
+\BoSSScmd{
+/// Now, we can draw an array of plots:
+ }
+\BoSSSexe
+\BoSSScmd{
+multiplot.PlotNow();
+ }
+\BoSSSexe
+\BoSSScmd{
+/// this already looks neat, but a few 
+/// formatting tweaks to make the multi-plot look nicer:
+multiplot[0,1].dataGroups[0].UseY2 = true; // label right on right column\newline 
+multiplot[0,1].ShowYtics = false;\newline 
+multiplot[0,1].ShowY2tics = true;\newline 
+ \newline 
+multiplot[1,1].dataGroups[0].UseY2 = true; // label right on right column\newline 
+multiplot[1,1].ShowYtics = false;\newline 
+multiplot[1,1].ShowY2tics = true;\newline 
+ \newline 
+multiplot[0,0].dataGroups[0].UseX2 = true; // label on top on top row\newline 
+multiplot[0,0].ShowXtics = false;\newline 
+multiplot[0,0].ShowX2tics = true;\newline 
+ \newline 
+multiplot[0,1].dataGroups[0].UseX2 = true; // label on top on top row\newline 
+multiplot[0,1].ShowXtics = false;\newline 
+multiplot[0,1].ShowX2tics = true;\newline 
+ \newline 
+// turn logarithm on for the secondary axis; \newline 
+multiplot[0,0].LogX2 = true;\newline 
+multiplot[0,1].LogX2 = true;\newline 
+multiplot[1,0].LogX2 = true;\newline 
+multiplot[1,1].LogX2 = true;\newline 
+multiplot[0,0].LogY2 = true;\newline 
+multiplot[0,1].LogY2 = true;\newline 
+multiplot[1,0].LogY2 = true;\newline 
+multiplot[1,1].LogY2 = true;\newline 
+ \newline 
+// set x ranges\newline 
+multiplot[0,0].X2rangeMin = 1e0;\newline 
+multiplot[0,0].X2rangeMax = 1e2;\newline 
+multiplot[0,1].X2rangeMin = 1e0;\newline 
+multiplot[0,1].X2rangeMax = 1e2;\newline 
+ \newline 
+multiplot[1,0].XrangeMin = 1e0;\newline 
+multiplot[1,0].XrangeMax = 1e2;\newline 
+multiplot[1,1].XrangeMin = 1e0;\newline 
+multiplot[1,1].XrangeMax = 1e2;\newline 
+ \newline 
+// set y ranges\newline 
+multiplot[0,0].YrangeMin = 1e-7;\newline 
+multiplot[0,0].YrangeMax = 1e0;\newline 
+multiplot[1,0].YrangeMin = 1e-7;\newline 
+multiplot[1,0].YrangeMax = 1e0;\newline 
+ \newline 
+multiplot[0,1].Y2rangeMin = 1e-7;\newline 
+multiplot[0,1].Y2rangeMax = 1e0;\newline 
+multiplot[1,1].Y2rangeMin = 1e-7;\newline 
+multiplot[1,1].Y2rangeMax = 1e0;\newline 
+ \newline 
+// reduce the whitespace in between the plots:\newline 
+multiplot[0,0].rmargin = 2;\newline 
+multiplot[0,1].lmargin = 2;\newline 
+multiplot[1,0].rmargin = 2;\newline 
+multiplot[1,1].lmargin = 2;\newline 
+multiplot[0,0].bmargin = 0.5;\newline 
+multiplot[1,0].tmargin = 0.5;\newline 
+multiplot[0,1].bmargin = 0.5;\newline 
+multiplot[1,1].tmargin = 0.5;
+ }
+\BoSSSexe
+\BoSSScmd{
+multiplot.PlotNow();
+ }
+\BoSSSexe
+\BoSSScmd{
+/// % ============================================
+/// \section{Summary}
+/// % ============================================
+ }
+\BoSSSexe
+\BoSSScmd{
+/// This tutorial showed how to set-up a parameter study,
+/// by looping over a set of parameters (in this case, different grids
+/// and polynomial degrees), see sections \ref{sec:MeschCreation}
+/// and \ref{sec:SetupAndExec}.
+/// Finally, it only requires a simple loop to send all jobs to a 
+/// compute resource.
+///
+/// Afterwards, c.f. section \ref{sec:ExactConvergence},
+/// the \emph{session table} was used to combine measurements
+/// taken in each session (here, the $L^2$ error against the exact solution)
+/// into a single table.
+/// This table can either be exported to spreadsheet analysis software
+/// or visualized internally.
+ }
+\BoSSSexe

@@ -510,10 +510,17 @@ namespace BoSSS.Foundation {
             Debug.Assert(m_Basis.Polynomials[iKref][0].Coeff.Length == 1, "Polynomial degree of 0-th polynomial is expected to be 0.");
 
             double sc;
-            if (this.Basis.GridDat.iGeomCells.IsCellAffineLinear(j)) {
+            if (Basis.GridDat.iGeomCells.IsCellAffineLinear(j)) {
                 sc = Basis.Data.Scaling[j];
             } else {
-                sc = Basis.Data.OrthonormalizationTrafo.GetValue_Cell(j, 1, 0)[0, 0, 0];
+                int jG;
+                if(Basis.GridDat.iLogicalCells.AggregateCellToParts != null && Basis.GridDat.iLogicalCells.AggregateCellToParts[j] != null) {
+                    jG = Basis.GridDat.iLogicalCells.AggregateCellToParts[j][0];
+                } else {
+                    jG = j;
+                }
+
+                sc = Basis.Data.OrthonormalizationTrafo.GetValue_Cell(jG, 1, 0)[0, 0, 0];
             }
 
             this.Coordinates[j, 0] = v / (bv * sc);
@@ -525,7 +532,7 @@ namespace BoSSS.Foundation {
         /// <param name="j">a local cell index</param>
         /// <returns>%</returns>
         virtual public double GetMeanValue(int j) {
-            if (j < 0 || j > Basis.GridDat.iLogicalCells.Count)
+            if (j < 0 || j >= Basis.GridDat.iLogicalCells.Count)
                 throw new ArgumentException("cell index out of range.", "j");
 
             int iKref = this.Basis.GridDat.iGeomCells.GetRefElementIndex(j);
@@ -537,7 +544,14 @@ namespace BoSSS.Foundation {
             if (this.Basis.GridDat.iGeomCells.IsCellAffineLinear(j)) {
                 sc = Basis.Data.Scaling[j];
             } else {
-                sc = Basis.Data.OrthonormalizationTrafo.GetValue_Cell(j, 1, 0)[0, 0, 0];
+                int jG;
+                if (Basis.GridDat.iLogicalCells.AggregateCellToParts != null && Basis.GridDat.iLogicalCells.AggregateCellToParts[j] != null) {
+                    jG = Basis.GridDat.iLogicalCells.AggregateCellToParts[j][0];
+                } else {
+                    jG = j;
+                }
+
+                sc = Basis.Data.OrthonormalizationTrafo.GetValue_Cell(jG, 1, 0)[0, 0, 0];
             }
 
             return (bv * sc * this.Coordinates[j, 0]);

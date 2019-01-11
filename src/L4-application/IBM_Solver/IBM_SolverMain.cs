@@ -616,7 +616,7 @@ namespace BoSSS.Application.IBM_Solver {
         protected double torque = new double();
         protected double oldtorque = new double();
 
-        SinglePhaseField blocking = null;
+        //SinglePhaseField blocking = null;
 
         /// <summary>
         /// Depending on settings <see cref="IBM_Control.Option_Timestepper"/>, computs either one timestep or a steady-state solution.
@@ -891,7 +891,7 @@ namespace BoSSS.Application.IBM_Solver {
                 }
 
                 ilPSP.Environment.StdoutOnlyOnRank0 = false;
-                Console.WriteLine("Total number of cells:    {0}", Grid.Cells.Count());
+                Console.WriteLine("Total number of cells:    {0}", Grid.NumberOfCells);
                 Console.WriteLine("Total number of DOFs:     {0}", CurrentSolution.Count());
                 Console.WriteLine("Total number of cut cells:     {0}", LsTrk.Regions.GetCutCellMask().NoOfItemsLocally);
 
@@ -922,7 +922,7 @@ namespace BoSSS.Application.IBM_Solver {
             if (this.Control.CutCellQuadratureType == XQuadFactoryHelper.MomentFittingVariants.ExactCircle)
                 BoSSS.Foundation.XDG.Quadrature.HMF.ExactCircleLevelSetIntegration.RADIUS = new double[] { this.Control.particleRadius };
             
-            Console.WriteLine("Total number of cells:    {0}", Grid.Cells.Count().MPISum());
+            Console.WriteLine("Total number of cells:    {0}", Grid.NumberOfCells);
             Console.WriteLine("Total number of DOFs:     {0}", CurrentSolution.Count().MPISum());
             base.SetInitial();
 
@@ -1246,7 +1246,26 @@ namespace BoSSS.Application.IBM_Solver {
                 Log_DragAndLift.WriteLine(firstline);
                 //Log_DragAndLift.WriteLine(restartLine);
             }
+        }
 
+        protected override void Bye() {
+            if(Log_DragAndLift != null) {
+                try {
+                    Log_DragAndLift.Flush();
+                    Log_DragAndLift.Close();
+                    Log_DragAndLift.Dispose();
+                } catch (Exception) { }
+                Log_DragAndLift = null;
+            }
+
+            if(Log_DragAndLift_P1 != null) {
+                try {
+                    Log_DragAndLift_P1.Flush();
+                    Log_DragAndLift_P1.Close();
+                    Log_DragAndLift_P1.Dispose();
+                } catch (Exception) { }
+                Log_DragAndLift_P1 = null;
+            }
         }
 
         /// <summary>

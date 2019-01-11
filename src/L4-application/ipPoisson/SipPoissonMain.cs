@@ -37,6 +37,9 @@ using BoSSS.Foundation.Grid.RefElements;
 using NUnit.Framework;
 using BoSSS.Solution.Multigrid;
 using ilPSP.Connectors.Matlab;
+using BoSSS.Foundation.Grid.Aggregation;
+using BoSSS.Platform.LinAlg;
+using BoSSS.Solution.Gnuplot;
 
 namespace BoSSS.Application.SipPoisson {
 
@@ -80,6 +83,7 @@ namespace BoSSS.Application.SipPoisson {
             base.IOFields.Add(ResiualKP1);
         }
 
+        /*
         unsafe static void my_dgemm(int TRANSA, int TRANSB,
                                         int M, int N, int K,
                                         double ALPHA,
@@ -98,7 +102,7 @@ namespace BoSSS.Application.SipPoisson {
             }
 
         }
-
+        */
 
 
 
@@ -107,7 +111,20 @@ namespace BoSSS.Application.SipPoisson {
         /// </summary>
         /// <param name="args"></param>
         static void Main(string[] args) {
+
+            if (System.Environment.MachineName.ToLowerInvariant().EndsWith("terminal03")
+                //|| System.Environment.MachineName.ToLowerInvariant().Contains("jenkins")
+                ) {
+                // This is Florians Laptop;
+                // he is to poor to afford MATLAB, so he uses OCTAVE
+                BatchmodeConnector.Flav = BatchmodeConnector.Flavor.Octave;
+                //BatchmodeConnector.MatlabExecuteable = "C:\\cygwin64\\bin\\bash.exe";
+            }
+
             
+
+
+
             /*
             //Some performance testing - don't delete, I still need this!
             //Florian
@@ -129,6 +146,7 @@ namespace BoSSS.Application.SipPoisson {
 
             //BatchmodeConnector.Flav = BatchmodeConnector.Flavor.Octave;
             //BatchmodeConnector.MatlabExecuteable = "C:\\cygwin\\bin\\bash.exe";
+
 
             //MultidimensionalArray.MultiplyProgram mp = MultidimensionalArray.MultiplyProgram.Compile("imn", "kma", "ikna"); // original sort
             MultidimensionalArray.MultiplyProgram mp = MultidimensionalArray.MultiplyProgram.Compile("mni", "mka", "kani"); // re-sort for GEMM
@@ -212,6 +230,7 @@ namespace BoSSS.Application.SipPoisson {
         /// Sets the multigrid coloring
         /// </summary>
         protected override void SetInitial() {
+                       
             base.SetInitial();
 
             // mg coloring
@@ -220,10 +239,10 @@ namespace BoSSS.Application.SipPoisson {
                 SinglePhaseField c = new SinglePhaseField(new Basis(this.GridData, 0), "MgLevel_" + iLevel);
                 Foundation.Grid.Aggregation.CoarseningAlgorithms.ColorDGField(MgL, c);
                 this.MGColoring.Add(c);
+                base.IOFields.Add(c);
                 iLevel++;
             }
-
-
+         
         }
 
         /// <summary>
@@ -259,7 +278,17 @@ namespace BoSSS.Application.SipPoisson {
                     BoundaryCondMap<BoundaryType> PoissonBcMap = new BoundaryCondMap<BoundaryType>(this.GridData, this.Control.BoundaryValues, "T");
 
                     LapaceIp = new SpatialOperator(1, 1, QuadOrderFunc.SumOfMaxDegrees(), "T", "T");
-                    var flux = new ipFlux(penalty_base * base.Control.penalty_poisson, ((GridData)(this.GridData)).Cells.cj, PoissonBcMap);
+
+                    MultidimensionalArray LengthScales;
+                    if(this.GridData is GridData) {
+                        LengthScales = ((GridData)GridData).Cells.cj;
+                    } else if(this.GridData is AggregationGridData) {
+                        LengthScales = ((AggregationGridData)GridData).AncestorGrid.Cells.cj;
+                    } else {
+                        throw new NotImplementedException();
+                    }
+
+                    var flux = new ipFlux(penalty_base * base.Control.penalty_poisson, LengthScales, PoissonBcMap);
 
                     LapaceIp.EquationComponents["T"].Add(flux);
 
@@ -367,6 +396,7 @@ namespace BoSSS.Application.SipPoisson {
             }
         }
 
+        /*
         /// <summary>
         /// Deprecated utility, writes matrices for spectral element method.
         /// </summary>
@@ -461,7 +491,7 @@ namespace BoSSS.Application.SipPoisson {
             }
         }
 
-
+        */
         /// <summary>
         /// control of mesh adaptation
         /// </summary>
@@ -1168,7 +1198,17 @@ namespace BoSSS.Application.SipPoisson {
         /// default plotting
         /// </summary>
         protected override void PlotCurrentState(double phystime, TimestepNumber timestepNo, int superSampling = 0) {
-            BoSSS.Solution.Tecplot.Tecplot.PlotFields(new DGField[] { T, Tex, RHS, ResiualKP1 }, "poisson" + timestepNo, phystime, superSampling);
+            string caseStr = "";
+            if (base.Control.Paramstudy_CaseIdentification != null) {
+                var pstudy_case = base.Control.Paramstudy_CaseIdentification.FirstOrDefault(tt => tt.Item1 == "pstudy_case");
+                if (pstudy_case != null) {
+                    caseStr = "." + pstudy_case.Item2;
+                }
+            }
+
+            DGField[] Fields = new DGField[] { T, Tex, RHS, ResiualKP1 };
+            Fields = Fields.Cat(this.MGColoring);
+            BoSSS.Solution.Tecplot.Tecplot.PlotFields(Fields, "poisson" + timestepNo + caseStr, phystime, superSampling);
         }
 
     }

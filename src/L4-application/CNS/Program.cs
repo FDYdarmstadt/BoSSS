@@ -38,6 +38,7 @@ using System.Linq;
 using System.Threading;
 using BoSSS.Solution.CompressibleFlowCommon.MaterialProperty;
 using CNS.Convection;
+using BoSSS.Foundation.Grid;
 
 namespace CNS {
 
@@ -55,6 +56,11 @@ namespace CNS {
 
             //Application.InitMPI(args);
             //CNS.Tests.ConvectiveFlux.ShockTubeTests.Toro1AllButRusanovTest(ConvectiveFluxTypes.Godunov);
+            //CNS.Tests.IBMTests.IBMCylinderTest.IBMCylinder0th();
+            //CNS.Tests.IBMTests.IBMCylinderTest.IBMCylinder1st();
+            //CNS.Tests.IBMTests.IBMCylinderTest.IBMCylinder2nd();
+            //CNS.Tests.IBMTests.IBMCylinderTest.IBMCylinder3rd();
+            //CNS.Tests.IBMTests.IBMIsentropicVortexTest.IBMVortexLocalTimeSteppingTest();
             //Debug.Assert(false);
 
             Application<CNSControl>._Main(
@@ -145,9 +151,9 @@ namespace CNS {
         /// loaded regularly via <see cref="Application{T}.CreateOrLoadGrid"/>
         /// </summary>
         /// <returns></returns>
-        protected override GridCommons CreateOrLoadGrid() {
+        protected override IGrid CreateOrLoadGrid() {
             using (var ht = new FuncTrace()) {
-                GridCommons grid = base.CreateOrLoadGrid();
+                IGrid grid = base.CreateOrLoadGrid();
                 CNSEnvironment.Initialize(grid.SpatialDimension, this);
                 return grid;
             }

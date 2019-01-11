@@ -41,7 +41,7 @@ namespace BoSSS.Application.AdaptiveMeshRefinementTest {
 
         public int TestCase = 2;
 
-        protected override GridCommons CreateOrLoadGrid() {
+        protected override IGrid CreateOrLoadGrid() {
             GridCommons grd;
             switch (TestCase) {
                 case 1: {

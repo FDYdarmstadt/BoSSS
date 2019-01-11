@@ -27,7 +27,7 @@ using BoSSS.Platform.LinAlg;
 using ilPSP;
 
 namespace BoSSS.Foundation.Grid.Aggregation {
-    partial class AggregationGrid {
+    partial class AggregationGridData {
 
         public IGeometricalEdgeData iGeomEdges {
             get {
@@ -47,10 +47,10 @@ namespace BoSSS.Foundation.Grid.Aggregation {
 
         /// <summary>
         /// Just a wrapper/proxy around the geometrical edge data (<see cref="IGridData.iGeomEdges"/>) 
-        /// of the parent grid (<see cref="AggregationGrid.ParentGrid"/>).
+        /// of the parent grid (<see cref="AggregationGridData.ParentGrid"/>).
         /// </summary>
         class GeomEdgeData : IGeometricalEdgeData {
-            internal AggregationGrid m_Owner;
+            internal AggregationGridData m_Owner;
             
             public int[,] CellIndices {
                 get {
@@ -226,7 +226,7 @@ namespace BoSSS.Foundation.Grid.Aggregation {
         }
 
         class LogEdgeData : ILogicalEdgeData {
-            internal LogEdgeData(AggregationGrid __owner) {
+            internal LogEdgeData(AggregationGridData __owner) {
                 m_Owner = __owner;
             }
 
@@ -236,7 +236,7 @@ namespace BoSSS.Foundation.Grid.Aggregation {
                 internal set;
             }
 
-            AggregationGrid m_Owner;
+            AggregationGridData m_Owner;
 
             public int Count {
                 get {

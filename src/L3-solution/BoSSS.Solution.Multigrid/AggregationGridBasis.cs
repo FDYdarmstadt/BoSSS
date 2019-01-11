@@ -35,7 +35,7 @@ namespace BoSSS.Solution.Multigrid {
 
 
     /// <summary>
-    /// DG basis on an aggregation grid (<see cref="AggregationGrid"/>).
+    /// DG basis on an aggregation grid (<see cref="AggregationGridData"/>).
     /// </summary>
     public class AggregationGridBasis {
 
@@ -270,7 +270,7 @@ namespace BoSSS.Solution.Multigrid {
         /// - 1st index: correlates with grid level, i.e. with <paramref name="_agSeq"/>.
         /// - 2nd index: correlates with DG basis, <paramref name="dgBasisS"/>.
         /// </returns>
-        public static AggregationGridBasis[][] CreateSequence(IEnumerable<AggregationGrid> _agSeq, IEnumerable<Basis> dgBasisS) {
+        public static AggregationGridBasis[][] CreateSequence(IEnumerable<AggregationGridData> _agSeq, IEnumerable<Basis> dgBasisS) {
 
             if (_agSeq.Count() <= 0)
                 return new AggregationGridBasis[0][];
@@ -305,7 +305,7 @@ namespace BoSSS.Solution.Multigrid {
                 }
             }
 
-            AggregationGrid[] agSeq = _agSeq.ToArray();
+            AggregationGridData[] agSeq = _agSeq.ToArray();
             if (agSeq.Length <= 0)
                 throw new ArgumentException();
             if (!object.ReferenceEquals(agSeq[0].ParentGrid, agSeq[0].AncestorGrid))
@@ -619,11 +619,11 @@ namespace BoSSS.Solution.Multigrid {
 
 
 
-        static GridData GetGridData(AggregationGrid ag) {
+        static GridData GetGridData(AggregationGridData ag) {
             if(ag.ParentGrid is GridData) {
                 return ((GridData)ag.ParentGrid);
-            } else if(ag.ParentGrid is AggregationGrid) {
-                return GetGridData((AggregationGrid)ag.ParentGrid);
+            } else if(ag.ParentGrid is AggregationGridData) {
+                return GetGridData((AggregationGridData)ag.ParentGrid);
             } else {
                 throw new NotSupportedException();
             }
@@ -642,7 +642,7 @@ namespace BoSSS.Solution.Multigrid {
         /// <param name="b">DG basis on original grid</param>
         /// <param name="ag"></param>
         /// <param name="Injection">injection operator</param>
-        protected AggregationGridBasis(Basis b, AggregationGridBasis parentBasis, AggregationGrid ag, MultidimensionalArray[] Injection) {
+        protected AggregationGridBasis(Basis b, AggregationGridBasis parentBasis, AggregationGridData ag, MultidimensionalArray[] Injection) {
             using (new FuncTrace()) {
                 if (!object.ReferenceEquals(b.GridDat, GetGridData(ag)))
                     throw new ArgumentException("mismatch in grid data object.");
@@ -677,7 +677,7 @@ namespace BoSSS.Solution.Multigrid {
         /// <summary>
         /// Injection/prolongation operator to finer grid level
         /// - array index: aggregate cell index; 
-        /// - 1st index into <see cref="MultidimensionalArray"/>: index within aggregation basis, correlates with 2nd index into <see cref="AggregationGrid.jCellCoarse2jCellFine"/>
+        /// - 1st index into <see cref="MultidimensionalArray"/>: index within aggregation basis, correlates with 2nd index into <see cref="AggregationGridData.jCellCoarse2jCellFine"/>
         /// - 2nd index into <see cref="MultidimensionalArray"/>: row
         /// - 3rd index into <see cref="MultidimensionalArray"/>: column
         /// - content: local cell index into the original grid, see <see cref="Foundation.Grid.ILogicalCellData.AggregateCellToParts"/>
@@ -902,7 +902,7 @@ namespace BoSSS.Solution.Multigrid {
         }
 
         
-        public AggregationGrid AggGrid {
+        public AggregationGridData AggGrid {
             get;
             private set;
         }
@@ -966,7 +966,7 @@ namespace BoSSS.Solution.Multigrid {
         }
         
         MultidimensionalArray CA(int _jAgg) {
-            AggregationGrid ag = this.AggGrid;
+            AggregationGridData ag = this.AggGrid;
             var compCell = ag.iLogicalCells.AggregateCellToParts[_jAgg];
             int thisMgLevel = ag.MgLevel;
             int Np = this.DGBasis.Length;
@@ -985,7 +985,7 @@ namespace BoSSS.Solution.Multigrid {
             int[] AggIndex = new int[] { _jAgg };
             AggregationGridBasis basisLevel = this;
             for (int mgLevelIdx = thisMgLevel; mgLevelIdx > 0; mgLevelIdx--) {
-                AggregationGrid mgLevel = basisLevel.AggGrid;
+                AggregationGridData mgLevel = basisLevel.AggGrid;
 #if DEBUG
                 btouch.Clear();
 #endif
@@ -1072,7 +1072,7 @@ namespace BoSSS.Solution.Multigrid {
         void SetupCompositeBasis() {
             using(new FuncTrace()) {
                 Basis b = this.DGBasis;
-                AggregationGrid ag = this.AggGrid;
+                AggregationGridData ag = this.AggGrid;
                 Debug.Assert(object.ReferenceEquals(b.GridDat, GetGridData(ag)));
                 int N = b.Length;
                 

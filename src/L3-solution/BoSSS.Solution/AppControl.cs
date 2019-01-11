@@ -120,6 +120,8 @@ namespace BoSSS.Solution.Control {
         /// <param name="Degree">
         /// Polynomial degree of the DG field; if negative, the application choses a default value.
         /// </param>
+        /// <param name="DGFieldName"></param>
+        /// <param name="SaveOpt"></param>
         public void AddFieldOption(string DGFieldName, int Degree = -1, FieldOpts.SaveToDBOpt SaveOpt = FieldOpts.SaveToDBOpt.TRUE) {
             FieldOptions.Add(DGFieldName, new FieldOpts() {
                 Degree = Degree,
@@ -423,6 +425,17 @@ namespace BoSSS.Solution.Control {
             }
         }
 
+        /// <summary>
+        /// Adds an initial value to <see cref="InitialValues"/>
+        /// </summary>
+        /// <param name="fieldname">Name of the field for which the boundary condition is valid</param>
+        /// <param name="value">Function of the boundary condition</param>
+        public void AddInitialValue(string fieldname, IBoundaryAndInitialData value) {
+            InitialValues.Add(fieldname, value);
+        }
+
+
+
 
         ///// <summary>
         ///// Adds a time-dependent initial value (e.g. some external force field which may change over time).
@@ -463,7 +476,7 @@ namespace BoSSS.Solution.Control {
         /// </summary>
         [NonSerialized]
         [JsonIgnore]
-        public Func<GridCommons> GridFunc;
+        public Func<IGrid> GridFunc;
 
         /// <summary>
         /// Sets <see cref="GridGuid"/>
@@ -737,7 +750,6 @@ namespace BoSSS.Solution.Control {
         /// </summary>
         [DataMember]
         public bool AdaptiveMeshRefinement = false;
-
 
         /// <summary>
         /// Actual type of cut cell quadrature to use; If no XDG, is used, resp. no cut cells are present,
