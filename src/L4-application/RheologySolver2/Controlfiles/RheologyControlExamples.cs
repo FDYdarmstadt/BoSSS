@@ -378,7 +378,11 @@ namespace BoSSS.Application.Rheology {
             //C:\AnnesBoSSSdb\ConfinedCylinder
 
             //Solver Options
+<<<<<<< HEAD
             C.NoOfTimesteps = 1;
+=======
+            C.NoOfTimesteps = 1000;
+>>>>>>> root-public
             C.savetodb = true;
             C.DbPath = path;
             C.ProjectName = "Cylinder";
@@ -386,7 +390,11 @@ namespace BoSSS.Application.Rheology {
             C.MinIter = 1;
             C.ConvCrit = 1E-6;
             //C.UnderRelax = 1.0;
+<<<<<<< HEAD
             C.dt = 1E20;
+=======
+            C.dt = 0.1;
+>>>>>>> root-public
             C.dtMax = C.dt;
             C.dtMin = C.dt;
             C.Timestepper_Scheme = RheologyControl.TimesteppingScheme.ImplicitEuler;
@@ -419,8 +427,13 @@ namespace BoSSS.Application.Rheology {
             C.FixedStreamwisePeriodicBC = false;
             C.beta = 0.59;
             C.Reynolds = 1;
+<<<<<<< HEAD
             C.Weissenberg = 0.1; //aim Weissenberg number!
             C.RaiseWeissenberg = true;
+=======
+            C.Weissenberg = 0; //aim Weissenberg number!
+            C.RaiseWeissenberg = false;
+>>>>>>> root-public
             C.WeissenbergIncrement = 0.1;
 
             //Penalties
@@ -440,7 +453,10 @@ namespace BoSSS.Application.Rheology {
             Func<double[], double, double> VelocityXfunction = (X, t) => u0 * (1  - (X[1] *  X[1])/h);
             Func<double[], double, double> VelocityYfunction = (X, t) => 0.0;
             Func<double[], double, double> Pressurefunction = (X, t) => u0 * 0.5 * C.Reynolds * (35 - X[0]);
+<<<<<<< HEAD
                 //since C.Weissenberg is the aim Weissenberg, StressXX must be zero -> would be wrong for first Newtonian shot!
+=======
+>>>>>>> root-public
             Func<double[], double, double> StressXXfunction = (X, t) =>  2 * C.Weissenberg * (1 - C.beta) * u0 * (-2 / h) * X[1] * u0 * (-2 / h) * X[1];
             Func<double[], double, double> StressXYfunction = (X, t) => (1 - C.beta) * u0 * (-2 / h) * X[1];
             Func<double[], double, double> StressYYfunction = (X, t) => (0.0);
@@ -480,10 +496,17 @@ namespace BoSSS.Application.Rheology {
 
 
             //coarser grid - works without cluster!
+<<<<<<< HEAD
             string grid = "f9aa12dc-53bb-4e2c-81b3-ffccc251a3f7";
 
             //very coarse grid as starting point for refinement
             //string grid = "e296a1b2-98f9-4fdf-8a32-04e0954ff369";
+=======
+            //string grid = "f9aa12dc-53bb-4e2c-81b3-ffccc251a3f7";
+
+            //very coarse grid as starting point for refinement
+            string grid = "e296a1b2-98f9-4fdf-8a32-04e0954ff369";
+>>>>>>> root-public
 
             //Dennis Zylinder for drag validation
             //string grid = "a67192f5-6b59-4caf-a95a-0a08730c3365";
@@ -517,7 +540,11 @@ namespace BoSSS.Application.Rheology {
 
             //restart
             //var database = new DatabaseInfo(path);
+<<<<<<< HEAD
             //Guid restartID = new Guid("b919f595-9304-4d3c-a5f3-55d3cf4a9749");
+=======
+            //Guid restartID = new Guid("9ae08191-ee15-4803-9e3f-566f119c9de4");
+>>>>>>> root-public
             //C.RestartInfo = new Tuple<Guid, Foundation.IO.TimestepNumber>(restartID, null);
 
             //Set Initial Conditions

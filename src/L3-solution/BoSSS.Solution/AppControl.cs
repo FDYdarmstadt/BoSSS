@@ -77,7 +77,6 @@ namespace BoSSS.Solution.Control {
             private set;
         }
 
-
         /// <summary>
         /// ctor.
         /// </summary>
@@ -424,6 +423,17 @@ namespace BoSSS.Solution.Control {
                 return m_InitialValues;
             }
         }
+
+        /// <summary>
+        /// Adds an initial value to <see cref="InitialValues"/>
+        /// </summary>
+        /// <param name="fieldname">Name of the field for which the boundary condition is valid</param>
+        /// <param name="value">Function of the boundary condition</param>
+        public void AddInitialValue(string fieldname, IBoundaryAndInitialData value) {
+            InitialValues.Add(fieldname, value);
+        }
+
+
 
 
         ///// <summary>

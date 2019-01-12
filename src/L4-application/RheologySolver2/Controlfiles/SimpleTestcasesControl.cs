@@ -44,14 +44,22 @@ namespace BoSSS.Application.Rheology
             RheologyControl C = new RheologyControl();
 
             //Solver Options
+<<<<<<< HEAD
             C.NoOfTimesteps = 1;
+=======
+            C.NoOfTimesteps = 5;
+>>>>>>> root-public
             C.savetodb = false;
             C.DbPath = path;
             C.ProjectName = "Channel";
             C.MaxIter = 10;
             C.MinIter = 3;
             C.ConvCrit = 1E-10;
+<<<<<<< HEAD
             C.dt = 1E20;
+=======
+            C.dt = 0.1;
+>>>>>>> root-public
             C.dtMax = C.dt;
             C.dtMin = C.dt;
             C.Timestepper_Scheme = RheologyControl.TimesteppingScheme.ImplicitEuler;
@@ -66,7 +74,11 @@ namespace BoSSS.Application.Rheology
 
             C.UseArtificialDiffusion = false;
 
+<<<<<<< HEAD
             C.Bodyforces = true;
+=======
+            C.Bodyforces = false;
+>>>>>>> root-public
             //C.WhichWall = "Wall_Cylinder";
 
             //Debugging and Solver Analysis
@@ -76,14 +88,24 @@ namespace BoSSS.Application.Rheology
             C.SetInitialPressure = false;
             C.SetParamsAnalyticalSol = false;
             C.ComputeL2Error = true;
+<<<<<<< HEAD
+=======
+            C.GravitySource = false;
+            C.GravityX = (X, t) => 1;
+            C.GravityY = (X, t) => 0;
+>>>>>>> root-public
 
             //Physical Params
             C.Stokes = false;
             C.FixedStreamwisePeriodicBC = false;
             C.beta = 0.5;
             C.Reynolds = 1;
+<<<<<<< HEAD
             C.Weissenberg = 0.0;
             C.Weissenberg = 0.1; //aim Weissenberg number!
+=======
+            C.Weissenberg = 1.0; //aim Weissenberg number!
+>>>>>>> root-public
             C.RaiseWeissenberg = true;
             C.WeissenbergIncrement = 0.1;
 
@@ -105,9 +127,15 @@ namespace BoSSS.Application.Rheology
             C.StressPenalty = 1.0;
 
             //Exact Solution Channel
+<<<<<<< HEAD
             Func<double[], double, double> VelocityXfunction = (X, t) => 1 - X[1] * X[1];
             Func<double[], double, double> VelocityYfunction = (X, t) => 0;
             Func<double[], double, double> Pressurefunction = (X, t) => 2 / C.Reynolds * (20 - X[0]);
+=======
+            Func<double[], double, double> VelocityXfunction = (X, t) => 1 - (X[1] * X[1]);
+            Func<double[], double, double> VelocityYfunction = (X, t) => 0;
+            Func<double[], double, double> Pressurefunction = (X, t) => 2* C.Reynolds * (20 - X[0]);
+>>>>>>> root-public
             Func<double[], double, double> StressXXfunction = (X, t) => 2 * C.Weissenberg * (1 - C.beta) * (((-2 * X[1])) * ((-2 * X[1])));
             Func<double[], double, double> StressXYfunction = (X, t) => (1 - C.beta) * (-2 * X[1]);
             Func<double[], double, double> StressYYfunction = (X, t) => (0.0);
@@ -201,8 +229,19 @@ namespace BoSSS.Application.Rheology
             C.InitialValues_Evaluators.Add("Phi", X => -1);
 
             // Set Boundary Conditions
+<<<<<<< HEAD
             C.AddBoundaryValue("Wall_bottom");
             C.AddBoundaryValue("Wall_top");
+=======
+            C.AddBoundaryValue("Wall_bottom", "VelocityX", VelocityXfunction);
+            C.AddBoundaryValue("Wall_top", "VelocityX", VelocityXfunction);
+            //C.AddBoundaryValue("Wall_bottom", "VelocityY", VelocityYfunction);
+            //C.AddBoundaryValue("Wall_top", "VelocityY", VelocityYfunction);
+            //C.AddBoundaryValue("Wall_bottom", "VelocityX", X => 0);
+            //C.AddBoundaryValue("Wall_top", "VelocityX", X => 0);
+            //C.AddBoundaryValue("Wall_bottom", "VelocityY", X => 0);
+            //C.AddBoundaryValue("Wall_top", "VelocityY", X => 0);
+>>>>>>> root-public
             //C.AddBoundaryCondition("FreeSlip");
 
             if (!C.FixedStreamwisePeriodicBC)

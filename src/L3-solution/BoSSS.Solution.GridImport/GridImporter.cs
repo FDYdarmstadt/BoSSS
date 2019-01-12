@@ -73,12 +73,11 @@ namespace BoSSS.Solution.GridImport {
             throw new ArgumentException("Unknown mesh file type", "fileName");
         }
 
-
         /// <summary>
         /// Loads a BoSSS grid from an grid file; the file type (see <see cref="ImporterTypes"/>) are determined by the file ending.
         /// </summary>
         public static GridCommons Import(string fileName) {
-            using(var tr = new FuncTrace()) {
+            using (var tr = new FuncTrace()) {
                 int myrank;
                 int size;
                 csMPI.Raw.Comm_Rank(csMPI.Raw._COMM.WORLD, out myrank);
@@ -89,51 +88,51 @@ namespace BoSSS.Solution.GridImport {
                     importerType = GetImporterType(fileName);
                 }
                 importerType = importerType.MPIBroadcast(0);
-                
 
 
-                if (myrank == 0) {
+                IGridImporter importer;
+                {
                     tr.Info(string.Format("Loading {0} file '{1}'...", importerType.ToString(), fileName));
-                    IGridImporter importer;
+
                     using (new BlockTrace("Import", tr)) {
 
                         switch (importerType) {
                             case ImporterTypes.Gambit:
-                            GambitNeutral gn = new GambitNeutral(fileName);
-                            if (gn.BoSSSConversionNeccessary()) {
-                                gn = gn.ToLinearElements();
-                            }
+                                if (size > 1)
+                                    throw new NotSupportedException("Not supported in parallel mode");
+                                GambitNeutral gn = new GambitNeutral(fileName);
+                                if (gn.BoSSSConversionNeccessary()) {
+                                    gn = gn.ToLinearElements();
+                                }
 
-                            importer = gn;
-                            break;
+                                importer = gn;
+                                break;
 
                             case ImporterTypes.CGNS:
-                            importer = new Cgns(fileName);
-                            break;
+                                if (size > 1)
+                                    throw new NotSupportedException("Not supported in parallel mode");
+                                importer = new Cgns(fileName);
+                                break;
 
                             case ImporterTypes.Gmsh:
-                            importer = new Gmsh(fileName);
-                            break;
+                                importer = new Gmsh(fileName);
+                                break;
 
                             default:
-                            throw new NotImplementedException();
+                                throw new NotImplementedException();
                         }
                     }
 
                     tr.Info("Converting to BoSSS grid ...");
-                    GridCommons grid;
-                    using (new BlockTrace("Conversion", tr)) {
-                        grid = importer.GenerateBoSSSGrid();
-                    }
-
-                    return grid;
-                } else {
-                    throw new NotSupportedException("Not supported in parallel mode");
-
-                    //var g = new GridCommons(new RefElement[] { Triangle.Instance }, new RefElement[] { Line.Instance });
-                    //g.Cells = new Cell[0];
-                    //return g;
                 }
+
+                GridCommons grid;
+                using (new BlockTrace("Conversion", tr)) {
+                    grid = importer.GenerateBoSSSGrid();
+                }
+
+
+                return grid;
             }
         }
     }

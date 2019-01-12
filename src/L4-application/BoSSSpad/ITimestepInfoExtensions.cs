@@ -685,17 +685,20 @@ namespace BoSSS.Application.BoSSSpad {
                     out Dictionary<string, double[]> errors,
                     out Guid[] tsiIds);
 
+                double dim = timesteps.First().Grid.SpatialDimension;
+
                 Debug.Assert(errors.ContainsKey(fieldName));
                 Debug.Assert(errors[fieldName].Length == resolution.Length);
 
                 Debug.Assert(DOFs.ContainsKey(fieldName));
                 Debug.Assert(DOFs[fieldName].Length == resolution.Length);
-                
-                double[][] resolutionsAndErrors = new double[2][] {
-                    xAxis_Is_hOrDof ? resolution : DOFs[fieldName].Select(ix => (double)ix).ToArray(),
-                    errors[fieldName] };
 
-                double[] xValues = xAxis_Is_hOrDof ? resolution : DOFs[fieldName].Select(ix => (double)ix).ToArray();
+
+                //double[][] resolutionsAndErrors = new double[2][] {
+                //    xAxis_Is_hOrDof ? resolution : DOFs[fieldName].Select(ix => (double)ix).ToArray(),
+                //    errors[fieldName] };
+
+                double[] xValues = xAxis_Is_hOrDof ? resolution : DOFs[fieldName].Select(ix => Math.Pow((double)ix, 1.0 / dim)).ToArray();
                 double[] yValues = errors[fieldName];
                 if(xAxis_Is_hOrDof == false)
                     // data is sorted according to mesh width, this may not be equal to sorting according to No. of. DOF 

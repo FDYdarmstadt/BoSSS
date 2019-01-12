@@ -616,7 +616,8 @@ namespace BoSSS.Application.IBM_Solver {
         protected double torque = new double();
         protected double oldtorque = new double();
 
-        SinglePhaseField blocking = null;
+
+        //SinglePhaseField blocking = null;
 
         /// <summary>
         /// Depending on settings <see cref="IBM_Control.Option_Timestepper"/>, computs either one timestep or a steady-state solution.

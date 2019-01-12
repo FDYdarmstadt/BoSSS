@@ -182,7 +182,9 @@ namespace BoSSS.Solution.XNSECommon {
             }
         }
 
-        public void CoefficientUpdate(CoefficientSet cs, int[] DomainDGdeg, int TestDGdeg) {
+        override public void CoefficientUpdate(CoefficientSet cs, int[] DomainDGdeg, int TestDGdeg) {
+            base.CoefficientUpdate(cs, DomainDGdeg, TestDGdeg);
+
             this.m_LenScales = cs.CellLengthScales;
         }
     }

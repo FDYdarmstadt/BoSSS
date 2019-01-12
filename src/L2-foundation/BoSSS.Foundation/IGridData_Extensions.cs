@@ -1023,7 +1023,7 @@ namespace BoSSS.Foundation.Grid {
     }
 
     /// <summary>
-    /// used by <see cref="GetCellNeighbours"/>.
+    /// used by <see cref="IGridData_Extensions.GetCellNeighbours(IGridData, int, GetCellNeighbours_Mode, out int[], out int[])"/>.
     /// </summary>
     public enum GetCellNeighbours_Mode {
 

@@ -50,8 +50,16 @@ namespace BoSSS.Application.BoSSSpad {
         public static Job RunBatch(this AppControl ctrl, BatchProcessorClient BatchSys) {
             ctrl.ProjectName = InteractiveShell.WorkflowMgm.CurrentProject;
 
+
+            string JobName = ctrl.SessionName;
+            int ctrl_idx = InteractiveShell.WorkflowMgm.RegisterControl(ctrl);
+            if(JobName.IsEmptyOrWhite()) {
+                JobName = "UnnamedJob_" + ctrl_idx;
+            }
+
             Type solverClass = ctrl.GetSolverType();
-            Job job = new Job(ctrl.SessionName , solverClass);
+            Job job = new Job(JobName, solverClass);
+
             //job.ExecutionTime = executionTime;
             //job.NumberOfMPIProcs = NumberOfMPIProcs;
             //job.UseComputeNodesExclusive = UseComputeNodesExclusive;

@@ -554,7 +554,8 @@ namespace CNS {
             return c;
         }
 
-        public static CNSControl DoubleMachReflection(string dbPath = null, int savePeriod = 1, int dgDegree = 3, double xMax = 8.0, double yMax = 2.0, int numOfCellsX = 1600, int numOfCellsY = 400, double sensorLimit = 1e-3, double CFLFraction = 0.1, int explicitScheme = 3, int explicitOrder = 3, int numberOfSubGrids = 3, int reclusteringInterval = 1, int maxNumOfSubSteps = 0, double endTime = 0.25, string restart = "False") {
+
+        public static CNSControl DoubleMachReflection(string dbPath = null, int savePeriod = 1, int dgDegree = 3, double xMax = 8.0, double yMax = 2.0, int numOfCellsX = 1600, int numOfCellsY = 400, double sensorLimit = 1e-3, double CFLFraction = 0.1, int explicitScheme = 3, int explicitOrder = 3, int numberOfSubGrids = 3, int reclusteringInterval = 1, int maxNumOfSubSteps = 0, double endTime = 0.25, string restart = "False", int cores = int.MaxValue) {
             CNSControl c = new CNSControl();
 
             //dbPath = @"/work/scratch/yp19ysog/bosss_db_dmr_video";          // Lichtenberg
@@ -778,8 +779,8 @@ namespace CNS {
             // Session name
             string tempSessionName;
             if (c.ExplicitScheme == ExplicitSchemes.RungeKutta) {
-                tempSessionName = string.Format("DMR_p{0}_xCells{1}_yCells{2}_s0={3:0.0E-00}_CFLFrac{4}_RK{5}",
-                    dgDegree, numOfCellsX, numOfCellsY, sensorLimit, CFLFraction, explicitOrder);
+                tempSessionName = string.Format("DMR_p{0}_xCells{1}_yCells{2}_s0={3:0.0E-00}_CFLFrac{4}_RK{5}_{6}cores",
+                    dgDegree, numOfCellsX, numOfCellsY, sensorLimit, CFLFraction, explicitOrder, cores);
             } else if (c.ExplicitScheme == ExplicitSchemes.AdamsBashforth) {
                 tempSessionName = string.Format("DMR_p{0}_xCells{1}_yCells{2}_s0={3:0.0E-00}_CFLFrac{4}_AB{5}",
                     dgDegree, numOfCellsX, numOfCellsY, sensorLimit, CFLFraction, explicitOrder);
@@ -801,18 +802,19 @@ namespace CNS {
         /// <summary>
         /// Version to be submitted on the TU Darmstadt HHLR Lichtenberg cluster
         /// </summary>
-        public static CNSControl DoubleMachReflectionHHLR(int savePeriod, int dgDegree, double xMax, double yMax, int numOfCellsX, int numOfCellsY, double sensorLimit, double CFLFraction, int explicitScheme, int explicitOrder, int numberOfSubGrids, int reclusteringInterval, int maxNumOfSubSteps, double endTime) {
+        public static CNSControl DoubleMachReflectionHHLR(int savePeriod, int dgDegree, double xMax, double yMax, int numOfCellsX, int numOfCellsY, double sensorLimit, double CFLFraction, int explicitScheme, int explicitOrder, int numberOfSubGrids, int reclusteringInterval, int maxNumOfSubSteps, double endTime, int timeSteps, int cores) {
 
             // Lichtenberg
             //string dbPath = @"/home/yp19ysog/bosss_db_paper_ibmdmr2";
-            string dbPath = @"/work/scratch/yp19ysog/bosss_db_dmr_video_coarse";
+            string dbPath = @"/work/scratch/yp19ysog/bosss_db_performance";
             //string dbPath = @"/work/scratch/yp19ysog/bosss_db_paper_ibmdmr_run3_test";
             //string dbPath = @"C:\bosss_db_paper_ibmdmr_scratch_run3_test";
-            string restart = "True";
+            string restart = "False";
 
-            CNSControl c = DoubleMachReflection(dbPath, savePeriod, dgDegree, xMax, yMax, numOfCellsX, numOfCellsY, sensorLimit, CFLFraction, explicitScheme, explicitOrder, numberOfSubGrids, reclusteringInterval, maxNumOfSubSteps, endTime, restart);
+            CNSControl c = DoubleMachReflection(dbPath, savePeriod, dgDegree, xMax, yMax, numOfCellsX, numOfCellsY, sensorLimit, CFLFraction, explicitScheme, explicitOrder, numberOfSubGrids, reclusteringInterval, maxNumOfSubSteps, endTime, restart, cores);
 
-            c.ProjectName = "dmr_video_coarse_run2_restart1";
+            c.ProjectName = "dmr_cube_run3";
+            //c.NoOfTimesteps = timeSteps;
 
             return c;
         }
@@ -1740,7 +1742,8 @@ namespace CNS {
             return c;
         }
 
-        public static CNSControl BowShock(string dbPath = null, int savePeriod = 100, int dgDegree = 0,  double sensorLimit = 1e-3, double CFLFraction = 0.1, int explicitScheme = 1, int explicitOrder = 1, int numberOfSubGrids = 3, int reclusteringInterval = 1, int maxNumOfSubSteps = 0, double endTime = 5.0, string restart = "False") {
+
+        public static CNSControl BowShock(string dbPath = null, int savePeriod = 10, int dgDegree = 2, double sensorLimit = 1e-2, double CFLFraction = 0.1, int explicitScheme = 1, int explicitOrder = 1, int numberOfSubGrids = 3, int reclusteringInterval = 1, int maxNumOfSubSteps = 0, double endTime = 5.0, string restart = "False", string gridPath = @"c:\GmshGrids\N3\grid0.msh") {
             CNSControl c = new CNSControl();
 
             //dbPath = @"/work/scratch/yp19ysog/bosss_db_dmr_video";          // Lichtenberg
@@ -1789,12 +1792,13 @@ namespace CNS {
             // Shock-capturing
             double epsilon0 = 1.0;
             double kappa = 1.0;
-            double lambdaMax = 20;
+
 
             if (AV) {
                 Variable sensorVariable = Variables.Density;
                 c.ShockSensor = new PerssonSensor(sensorVariable, sensorLimit);
-                c.ArtificialViscosityLaw = new SmoothedHeavisideArtificialViscosityLaw(c.ShockSensor, dgDegree, sensorLimit, epsilon0, kappa, lambdaMax);
+                //c.ArtificialViscosityLaw = new SmoothedHeavisideArtificialViscosityLaw(c.ShockSensor, dgDegree, sensorLimit, epsilon0, kappa, lambdaMax: 20); // fixed lamdaMax
+                c.ArtificialViscosityLaw = new SmoothedHeavisideArtificialViscosityLaw(c.ShockSensor, dgDegree, sensorLimit, epsilon0, kappa);                // dynamic lambdaMax
             }
 
             c.EquationOfState = IdealGas.Air;
@@ -1841,7 +1845,7 @@ namespace CNS {
                 c.GridGuid = new Guid("c544dd46-a9d8-44c8-b5bb-10516f94f0c9");
             } else {
                 c.GridFunc = delegate {
-                    GridCommons grid = GridImporter.Import(@"c:\GmshGrids\N2\grid0.msh");
+                    GridCommons grid = GridImporter.Import(gridPath);
 
                     grid.EdgeTagNames.Add(1, "SupersonicInlet");
                     grid.EdgeTagNames.Add(2, "SupersonicOutlet");

@@ -343,7 +343,9 @@ namespace CNS {
             delegate (DGField artificialViscosity, CellMask cellMask, IProgram<CNSControl> program) {
                 ConventionalDGField avField = artificialViscosity as ConventionalDGField;
                 int D = cellMask.GridData.SpatialDimension;
-                var h_min = ((BoSSS.Foundation.Grid.Classic.GridData)program.GridData).Cells.h_min;
+
+                var h_min = ((BoSSS.Foundation.Grid.Classic.GridData)program.GridData).Cells.h_min; // Not valid for true cut cells --> volume/surface
+
 
                 // Determine piecewise constant viscosity
                 avField.Clear();
