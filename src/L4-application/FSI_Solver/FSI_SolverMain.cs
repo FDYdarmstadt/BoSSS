@@ -166,20 +166,15 @@ namespace BoSSS.Application.FSI_Solver {
                                     foreach (Particle p in m_Particles)
                                     {
                                         // Separating different boundary regions (for active particles)
-                                        double scale;
                                         double cos_theta;
                                         // The posterior side of the particle (Neumann boundary)
                                         if (Math.Cos(p.currentIterAng_P[0]) * (X[0] - p.currentIterPos_P[0][0]) + Math.Sin(p.currentIterAng_P[0]) * (X[1] - p.currentIterPos_P[0][1]) <= 1e-8)
                                         {
                                             cos_theta = (Math.Cos(p.currentIterAng_P[0]) * (X[0] - p.currentIterPos_P[0][0]) + Math.Sin(p.currentIterAng_P[0]) * (X[1] - p.currentIterPos_P[0][1])) / (Math.Sqrt((X[0] - p.currentIterPos_P[0][0]).Pow2() + (X[1] - p.currentIterPos_P[0][1]).Pow2()));
-                                            // smoothing parameter, to avoid a singularity at the transition between the two boundary conditions
-                                            scale = 1;// - Math.Pow((Math.Pow(cos_theta, 2) - 1), 2);
                                         }
                                         // The anterior side of the particle (Dirichlet boundary)
                                         else
                                         {
-                                            scale = 0;
-
                                             cos_theta = 0;
                                         }
 
@@ -287,28 +282,20 @@ namespace BoSSS.Application.FSI_Solver {
                             delegate (double[] X, double time)
                             {
 
-                                double[] result = new double[X.Length + 6];
+                                double[] result = new double[X.Length + 5];
 
                                 foreach (Particle p in m_Particles)
                                 {
                                     // Separating different boundary regions (for active particles)
-                                    double scale;
-                                    double scale_2;
                                     double cos_theta;
                                     // The posterior side of the particle (Neumann boundary)
                                     if (Math.Cos(p.currentIterAng_P[0]) * (X[0] - p.currentIterPos_P[0][0]) + Math.Sin(p.currentIterAng_P[0]) * (X[1] - p.currentIterPos_P[0][1]) < 0)
                                     {
-                                        cos_theta = (Math.Cos(p.currentIterAng_P[0]) * (X[0] - p.currentIterPos_P[0][0]) + Math.Sin(p.currentIterAng_P[0]) * (X[1] - p.currentIterPos_P[0][1])) / (Math.Sqrt((X[0] - p.currentIterPos_P[0][0]).Pow2() + (X[1] - p.currentIterPos_P[0][1]).Pow2()));
-                                        // smoothing parameter, to avoid a singularity at the transition between the two boundary conditions
-                                        scale = 1;// - Math.Pow((Math.Pow(cos_theta, 2) - 1), 2);
-                                        // smoothing parameter, to avoid a singularity at the posterior end of the particle (not used at the moment)
-                                        scale_2 = (Math.Cos(p.currentIterAng_P[0]) * (X[1] - p.currentIterPos_P[0][1]) - Math.Sin(p.currentIterAng_P[0]) * (X[0] - p.currentIterPos_P[0][0])) / (Math.Sqrt((X[0] - p.currentIterPos_P[0][0]).Pow2() + (X[1] - p.currentIterPos_P[0][1]).Pow2()));
+                                        cos_theta = -1;// (Math.Cos(p.currentIterAng_P[0]) * (X[0] - p.currentIterPos_P[0][0]) + Math.Sin(p.currentIterAng_P[0]) * (X[1] - p.currentIterPos_P[0][1])) / (Math.Sqrt((X[0] - p.currentIterPos_P[0][0]).Pow2() + (X[1] - p.currentIterPos_P[0][1]).Pow2()));
                                     }
                                     // The anterior side of the particle (Dirichlet boundary)
                                     else
                                     {
-                                        scale = 0;
-                                        scale_2 = 0;
                                         cos_theta = 0;
                                     }
 
@@ -326,7 +313,7 @@ namespace BoSSS.Application.FSI_Solver {
                                         result[0] = p.currentIterVel_P[0][0];
                                         result[1] = p.currentIterVel_P[0][1];
                                         result[2] = p.currentIterRot_P[0];
-                                        if (p.m_shape == Particle.ParticleShape.spherical)
+                                        if (p is Particle_Sphere)
                                         {
                                             result[3] = p.radius_P;
                                         }
@@ -335,18 +322,17 @@ namespace BoSSS.Application.FSI_Solver {
                                             result[3] = p.currentIterPos_P[0].L2Distance(X);
                                         }
                                         result[4] = p.active_stress_P;
-                                        result[5] = scale;
-                                        result[6] = 1;// scale_2;// Math.Abs(scale_2);
-                                        result[7] = p.currentIterAng_P[0];
+                                        result[5] = -cos_theta;
+                                        result[6] = p.currentIterAng_P[0];
                                     }
 
-                                    // active particles
+                                    // passive particles
                                     else if (containsParticle && p.active_P == false)
                                     {
                                         result[0] = p.currentIterVel_P[0][0];
                                         result[1] = p.currentIterVel_P[0][1];
                                         result[2] = p.currentIterRot_P[0];
-                                        if (p.m_shape == Particle.ParticleShape.spherical)
+                                        if (p is Particle_Sphere)
                                         {
                                             result[3] = p.radius_P;
                                         }
@@ -356,8 +342,7 @@ namespace BoSSS.Application.FSI_Solver {
                                         }
                                         result[4] = 0;
                                         result[5] = 0;
-                                        result[6] = 0;
-                                        result[7] = p.currentIterAng_P[0];
+                                        result[6] = p.currentIterAng_P[0];
                                     }
                                 }
                                 return result;
@@ -396,55 +381,25 @@ namespace BoSSS.Application.FSI_Solver {
                     IBM_Op.EquationComponents["div"].Add(divPen);  // immersed boundary component
                 }
                 else {
-                    var divPen = new BoSSS.Solution.NSECommon.Operator.Continuity.ActiveDivergenceAtIB(D, LsTrk, 1,
+                    var divPen = new BoSSS.Solution.NSECommon.Operator.Continuity.DivergenceAtIB(D, LsTrk, 1,
                        delegate (double[] X, double time) {
 
-                           double[] result = new double[X.Length + 3];
+                           double[] result = new double[X.Length + 2];
 
                            foreach (Particle p in m_Particles)
                            {
-                               // Separating different boundary regions (for active particles)
-                               double scale;
-                               double cos_theta;
-                               // The posterior side of the particle (Neumann boundary)
-                               if (Math.Cos(p.currentIterAng_P[0]) * (X[0] - p.currentIterPos_P[0][0]) + Math.Sin(p.currentIterAng_P[0]) * (X[1] - p.currentIterPos_P[0][1]) <= 1e-8)
-                               {
-                                   cos_theta = (Math.Cos(p.currentIterAng_P[0]) * (X[0] - p.currentIterPos_P[0][0]) + Math.Sin(p.currentIterAng_P[0]) * (X[1] - p.currentIterPos_P[0][1])) / (Math.Sqrt((X[0] - p.currentIterPos_P[0][0]).Pow2() + (X[1] - p.currentIterPos_P[0][1]).Pow2()));
-                                                  // smoothing parameter, to avoid a singularity at the transition between the two boundary conditions
-                                   scale = 1;// - Math.Pow((Math.Pow(cos_theta, 2) - 1), 2);
-                               }
-                               // The anterior side of the particle (Dirichlet boundary)
-                               else
-                               {
-                                   scale = 0;
-
-                                   cos_theta = 0;
-                               }
                                bool containsParticle;
                                if (m_Particles.Count == 1)
                                {
                                    containsParticle = true;
                                }
                                else { containsParticle = p.Contains(X, LsTrk); }
-                               if (containsParticle && p.active_P == true)
+                               if (containsParticle)
                                {
                                    result[0] = p.currentIterVel_P[0][0];
                                    result[1] = p.currentIterVel_P[0][1];
                                    result[2] = p.currentIterRot_P[0];
-                                   if (p.m_shape == Particle.ParticleShape.spherical) {
-                                       result[3] = p.radius_P;
-                                   } else {
-                                       result[3] = p.currentIterPos_P[0].L2Distance(X);
-                                   }
-                                   result[4] = -cos_theta;
-                                   return result;
-                               }
-                               else if (containsParticle && p.active_P == false)
-                               {
-                                   result[0] = p.currentIterVel_P[0][0];
-                                   result[1] = p.currentIterVel_P[0][1];
-                                   result[2] = p.currentIterRot_P[0];
-                                   if (p.m_shape == Particle.ParticleShape.spherical)
+                                   if (p is Particle_Sphere)
                                    {
                                        result[3] = p.radius_P;
                                    }
@@ -452,7 +407,6 @@ namespace BoSSS.Application.FSI_Solver {
                                    {
                                        result[3] = p.currentIterPos_P[0].L2Distance(X);
                                    }
-                                   result[4] = 0;
                                    return result;
                                }
                            }
@@ -466,27 +420,27 @@ namespace BoSSS.Application.FSI_Solver {
             #endregion
 
             #region Level-set handling
-            LevelSetHandling lsh;
+            //LevelSetHandling lsh;
 
-            // create coupling
-            // ------------------
-            switch (((FSI_Control)this.Control).Timestepper_Mode)
-            {
-                case FSI_Control.TimesteppingMode.MovingMesh:
-                    lsh = LevelSetHandling.Coupled_Iterative;
-                    break;
+            //// create coupling
+            //// ------------------
+            //switch (((FSI_Control)this.Control).Timestepper_Mode)
+            //{
+            //    case FSI_Control.TimesteppingMode.MovingMesh:
+            //        lsh = LevelSetHandling.Coupled_Once;
+            //        break;
 
-                case FSI_Control.TimesteppingMode.Splitting:
-                    lsh = LevelSetHandling.LieSplitting;
-                    break;
+            //    case FSI_Control.TimesteppingMode.Splitting:
+            //        lsh = LevelSetHandling.LieSplitting;
+            //        break;
 
-                case FSI_Control.TimesteppingMode.None:
-                    lsh = LevelSetHandling.None;
-                    break;
+            //    case FSI_Control.TimesteppingMode.None:
+            //        lsh = LevelSetHandling.None;
+            //        break;
 
-                default:
-                    throw new NotImplementedException();
-            }
+            //    default:
+            //        throw new NotImplementedException();
+            //}
             #endregion
             
             #region NSE or pure Stokes
@@ -536,7 +490,7 @@ namespace BoSSS.Application.FSI_Solver {
                     break;
 
                 default:
-                    throw new ApplicationException("unknown 'LevelSetMovement': " + ((FSI_Control)Control).Timestepper_LevelSetHandling);
+                    throw new ApplicationException("unknown 'LevelSetMovement': " + ((FSI_Control)this.Control).Timestepper_LevelSetHandling);
             }
                 
 
@@ -548,7 +502,7 @@ namespace BoSSS.Application.FSI_Solver {
                 true,
                 DelComputeOperatorMatrix, DelUpdateLevelset,
                 bdfOrder,
-                ((FSI_Control)this.Control).Timestepper_LevelSetHandling,//lsh
+                ((FSI_Control)this.Control).Timestepper_LevelSetHandling,
                 MassMatrixShape,
                 SpatialOp,
                 MassScale,
@@ -617,8 +571,6 @@ namespace BoSSS.Application.FSI_Solver {
             double acc_force_P_x = 0;
             double acc_force_P_y = 0;
             double acc_torque_P = 0;
-            double C_v_acc = 0;
-            double rho_P = 0;
             foreach (Particle p in m_Particles)
             {
                 acc_force_P_x += p.currentIterForces_P[0][0];
@@ -650,14 +602,10 @@ namespace BoSSS.Application.FSI_Solver {
             foreach (Particle p in m_Particles)
             {
                 p.ResetParticlePosition();
-                //Console.WriteLine(" Time Pos 00:   " + p.currentTimePos_P[0][0] + " Time Pos 10:   " + p.currentTimePos_P[1][0]);
-                //Console.WriteLine(" Iter Pos 00:   " + p.currentIterPos_P[0][0] + " Iter Pos 10:   " + p.currentIterPos_P[1][0]);
                 p.UpdateAngularVelocity(dt, this.Control.PhysicalParameters.rho_A, ((FSI_Control)this.Control).includeRotation);
                 p.UpdateTransVelocity(dt, this.Control.PhysicalParameters.rho_A, ((FSI_Control)this.Control).includeTranslation);
+                p.ComputeParticleRe(this.Control.PhysicalParameters.mu_A);
                 p.UpdateParticlePosition(dt);
-                //p.UpdateAngularVelocity(dt, this.Control.PhysicalParameters.rho_A);
-                //p.UpdateTransVelocity(dt, this.Control.PhysicalParameters.rho_A);
-                //Console.WriteLine("Current Velocites are:   " + p.currentIterVel_P[0][0] + "        " + p.currentIterVel_P[0][1] + "       " + p.currentIterRot_P[0]);
             }
 
             // Update phi complete
@@ -1123,9 +1071,9 @@ namespace BoSSS.Application.FSI_Solver {
 
                                     // Fix for Sphere
                                     // ----------------------------------------  
-                                    if (particle0.m_shape == Particle.ParticleShape.spherical)
+                                    if (particle0 is Particle_Sphere)
                                         a0 = 0.0;
-                                    if (particle1.m_shape == Particle.ParticleShape.spherical)
+                                    if (particle1 is Particle_Sphere)
                                         a1 = 0.0;
 
 
@@ -1355,7 +1303,7 @@ namespace BoSSS.Application.FSI_Solver {
                         tempPoint.AccV(-1, particle.currentIterPos_P[0]);
                         double a0 = (tempPoint[0] * tangential[0] + tempPoint[1] * tangential[1]);
 
-                        if (particle.m_shape == Particle.ParticleShape.spherical)
+                        if (particle is Particle_Sphere)
                             a0 = 0.0;
 
 
