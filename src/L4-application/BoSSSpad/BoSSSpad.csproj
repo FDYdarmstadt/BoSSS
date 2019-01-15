@@ -160,6 +160,10 @@
     <None Include="app.config" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\..\L2-foundation\BoSSS.Foundation.SpecFEM\BoSSS.Foundation.SpecFEM.csproj">
+      <Project>{9d01688e-9372-4185-adcf-d64d47f3a44a}</Project>
+      <Name>BoSSS.Foundation.SpecFEM</Name>
+    </ProjectReference>
     <ProjectReference Include="..\FSI_Solver\FSI_Solver.csproj">
       <Project>{5c52e2f7-a6dd-4e3e-a31e-1b0ff34c0cc2}</Project>
       <Name>FSI_Solver</Name>

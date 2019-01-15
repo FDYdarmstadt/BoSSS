@@ -81,7 +81,7 @@ namespace BoSSS.Application.FSI_Solver {
         /// The termination criterion for fully coupled/implicit level-set evolution.
         /// </summary>
         [DataMember]
-        public double LevelSet_ConvergenceCriterion = 1.0e-6;
+        public double ForceAndTorque_ConvergenceCriterion = 1.0e-6;
 
         /// <summary>
         /// underrelaxation of the level set movement in case of coupled iterative
@@ -111,7 +111,7 @@ namespace BoSSS.Application.FSI_Solver {
             this.AddFieldOption("Pressure", k - 1);
             this.AddFieldOption("PhiDG", 2);
             this.AddFieldOption("Phi", 2);
-            this.AddFieldOption("Curvature", 2);
+            this.AddFieldOption("Curvature", 4);
         }
 
         ///// <summary>

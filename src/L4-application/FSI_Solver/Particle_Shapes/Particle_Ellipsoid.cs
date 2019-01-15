@@ -129,6 +129,14 @@ namespace BoSSS.Application.FSI_Solver
             }     
             return false;
         }
+
+        override public double ComputeParticleRe(double mu_Fluid)
+        {
+            double particleReynolds = 0;
+            particleReynolds = Math.Sqrt(currentIterVel_P[0][0] * currentIterVel_P[0][0] + currentIterVel_P[0][1] * currentIterVel_P[0][1]) * 2 * length_P * rho_P / mu_Fluid;
+            Console.WriteLine("Particle Reynolds number:  " + particleReynolds);
+            return particleReynolds;
+        }
     }
 
 }

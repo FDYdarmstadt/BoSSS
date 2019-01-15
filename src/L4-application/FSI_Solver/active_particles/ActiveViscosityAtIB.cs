@@ -94,8 +94,7 @@ namespace BoSSS.Solution.NSECommon.Operator.Viscosity {
             double pRadius = parameters_P[3];//distance between current position and center of mass
             double active_stress = parameters_P[4];
             double scale = parameters_P[5];
-            double scale_2 = parameters_P[6];
-            double Ang_P = parameters_P[7];
+            double Ang_P = parameters_P[6];
 
             Debug.Assert(this.ArgumentOrdering.Count == D);
             Debug.Assert(Grad_uA.GetLength(0) == this.ArgumentOrdering.Count);
@@ -137,21 +136,27 @@ namespace BoSSS.Solution.NSECommon.Operator.Viscosity {
             //Defining boundary conditions (no slip/slip)
             if (component == 0) {
                 uAFict = (uLevSet[component] + pRadius * wLevSet * -inp.n[1]) * (1 - scale) + uA[component] * scale;
-            } else {
+            }
+            else
+            {
                 uAFict = (uLevSet[component] + pRadius * wLevSet * inp.n[0]) * (1 - scale) + uA[component] * scale;
             }
 
             //Defining active stress
             if (component == 0)
             {
-                active_stress_visc =  - inp.n[0] / Math.Abs(inp.n[0]) * active_stress * scale * Math.Abs(inp.n[1]);
-            } else
+                //active_stress_visc =  - inp.n[0] / Math.Abs(inp.n[0]) * active_stress * scale * Math.Abs(inp.n[1]);
+                active_stress_visc = active_stress * Math.Cos(Ang_P);
+            }
+            else
             {
-                active_stress_visc = inp.n[1] / Math.Abs(inp.n[1]) * active_stress * scale * Math.Abs(inp.n[0]);
+                //active_stress_visc = inp.n[1] / Math.Abs(inp.n[1]) * active_stress * scale * Math.Abs(inp.n[0]);
+                active_stress_visc = active_stress * Math.Sin(Ang_P);
+                //active_stress_visc = 0;
             }
 
             //Computing flux
-            Ret -= Grad_uA_xN * (vA) * (1 - scale) * muA;                    // consistency term
+            Ret -= Grad_uA_xN * (vA) * muA * (1 - scale);                    // consistency term
             Ret -= Grad_vA_xN * (uA[component] - uAFict) * muA;              // symmetry term
             Ret += _penalty * (uA[component] - uAFict) * (vA) * muA;         // penalty term
             Ret += active_stress_visc * (vA);                                // active term (Neumann boundary condition)
