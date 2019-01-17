@@ -351,7 +351,9 @@ namespace BoSSS.Application.XdgTimesteppingTest {
                     MassScale,
                     null, base.MultigridSequence,
                     this.LsTrk.SpeciesIdS.ToArray(), quadOrder,
-                    this.Control.AgglomerationThreshold, false);
+                    this.Control.AgglomerationThreshold, false,
+                    this.Control.NonLinearSolver,
+                    this.Control.LinearSolver);
             } else {
                 m_RK_Timestepper = new XdgRKTimestepping(new DGField[] { this.u }, new DGField[] { this.Residual }, LsTrk,
                     DelComputeOperatorMatrix, DelUpdateLevelset,
@@ -362,7 +364,9 @@ namespace BoSSS.Application.XdgTimesteppingTest {
                     MassScale,
                     null, base.MultigridSequence,
                     this.LsTrk.SpeciesIdS.ToArray(), quadOrder,
-                    this.Control.AgglomerationThreshold, false);
+                    this.Control.AgglomerationThreshold, false,
+                    this.Control.NonLinearSolver,
+                    this.Control.LinearSolver);
             }
         }
 

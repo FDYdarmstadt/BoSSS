@@ -492,14 +492,15 @@ namespace BoSSS.Application.Rheology {
                         MassScale,
                         this.MultigridOperatorConfig, base.MultigridSequence,
                         this.FluidSpecies, 1, // no hmf order required.
-                        0, false); //HARDCODED AGGLOMERATION FACTOR -> NOT NEEDED FOR NON-LEVELSET
+                        0, false,
+                        this.Control.NonLinearSolver,this.Control.LinearSolver); //HARDCODED AGGLOMERATION FACTOR -> NOT NEEDED FOR NON-LEVELSET
                     m_BDF_Timestepper.m_ResLogger = base.ResLogger;
                     m_BDF_Timestepper.m_ResidualNames = ArrayTools.Cat(this.ResidualMomentum.Select(f => f.Identification),
                         ResidualConti.Identification, ResidualStressXX.Identification, ResidualStressXY.Identification, ResidualStressYY.Identification); //ResidualGradXX.Identification, ResidualGradXY.Identification, ResidualGradYX.Identification, ResidualGradYY.Identification
                 }
-                m_BDF_Timestepper.Config_linearSolver = this.Control.LinearSolver;
-                m_BDF_Timestepper.Config_UnderRelax = this.Control.UnderRelax;
-                m_BDF_Timestepper.Config_NonlinearSolver = this.Control.NonlinearMethod;
+                //m_BDF_Timestepper.Config_linearSolver = this.Control.LinearSolver;
+                //m_BDF_Timestepper.Config_UnderRelax = this.Control.UnderRelax;
+                //m_BDF_Timestepper.Config_NonlinearSolver = this.Control.NonlinearMethod;
                 m_BDF_Timestepper.CustomIterationCallback += this.PlotOnIterationCallback;
                 //m_BDF_Timestepper.CustomIterationCallback += this.CoupledIterationCallback;
 
@@ -666,9 +667,9 @@ namespace BoSSS.Application.Rheology {
                 Console.WriteLine("Instationary solve, timestep #{0}, dt = {1} ...", TimestepNo, dt);
                 bool m_SkipSolveAndEvaluateResidual = this.Control.SkipSolveAndEvaluateResidual;
                 //PlotCurrentState(phystime, TimestepNo);
-                m_BDF_Timestepper.Config_SolverConvergenceCriterion = Control.ConvCrit;
-                m_BDF_Timestepper.Config_MaxIterations = Control.MaxIter;
-                m_BDF_Timestepper.Config_MinIterations = Control.MinIter;
+                //m_BDF_Timestepper.Config_SolverConvergenceCriterion = Control.ConvCrit;
+                //m_BDF_Timestepper.Config_MaxIterations = Control.MaxIter;
+                //m_BDF_Timestepper.Config_MinIterations = Control.MinIter;
 
                 if (Control.RaiseWeissenberg == true) {
 
@@ -917,7 +918,7 @@ namespace BoSSS.Application.Rheology {
 
                 bool useJacobianForOperatorMatrix = true;
 
-                if (this.Control.NonlinearMethod == NonlinearSolverMethod.Picard)
+                if (this.Control.NonLinearSolver.SolverCode == Solution.Control.NonLinearSolverConfig.Code.Picard)
                 useJacobianForOperatorMatrix = false;
 
                 // create matrix and affine vector:

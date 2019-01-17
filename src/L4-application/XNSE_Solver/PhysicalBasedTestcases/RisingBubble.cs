@@ -290,9 +290,15 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
 
             //C.EnforceLevelSetConservation = true;
             C.NoOfMultigridLevels = 1;
-            C.Solver_MaxIterations = 50;
-            C.Solver_MinIterations = 1;
-            C.Solver_ConvergenceCriterion = 1e-7;
+            C.NonLinearSolver.MaxSolverIterations = 50;
+            C.LinearSolver.MaxSolverIterations = 50;
+            //C.Solver_MaxIterations = 50;
+            C.NonLinearSolver.MinSolverIterations = 1;
+            C.LinearSolver.MinSolverIterations = 1;
+            //C.Solver_MinIterations = 1;
+            C.NonLinearSolver.ConvergenceCriterion = 1e-7;
+            C.LinearSolver.ConvergenceCriterion = 1e-7;
+            //C.Solver_ConvergenceCriterion = 1e-7;
             C.LevelSet_ConvergenceCriterion = 1e-6;
 
             //C.AdvancedDiscretizationOptions.ViscosityMode = ViscosityMode.Standard;
@@ -567,11 +573,15 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
 
             C.VelocityBlockPrecondMode = MultigridOperator.Mode.SymPart_DiagBlockEquilib;
             C.NoOfMultigridLevels = 1;
-            C.Solver_MaxIterations = 80;
-            C.Solver_ConvergenceCriterion = 1e-8;
+            C.NonLinearSolver.MaxSolverIterations = 80;
+            C.LinearSolver.MaxSolverIterations = 80;
+            //C.Solver_MaxIterations = 80;
+            C.NonLinearSolver.ConvergenceCriterion = 1e-8;
+            C.LinearSolver.ConvergenceCriterion = 1e-8;
+            //C.Solver_ConvergenceCriterion = 1e-8;
             C.LevelSet_ConvergenceCriterion = 1e-6;
 
-            C.LinearSolver = DirectSolver._whichSolver.MUMPS;
+            C.LinearSolver.SolverCode = LinearSolverConfig.Code.classic_mumps;
 
             C.AdvancedDiscretizationOptions.ViscosityMode = ViscosityMode.FullySymmetric;
 
@@ -892,8 +902,12 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
 
             C.VelocityBlockPrecondMode = MultigridOperator.Mode.SymPart_DiagBlockEquilib;
             C.NoOfMultigridLevels = 1;
-            C.Solver_MaxIterations = 50;
-            C.Solver_ConvergenceCriterion = 1e-8;
+            C.NonLinearSolver.MaxSolverIterations = 50;
+            C.LinearSolver.MaxSolverIterations = 50;
+            //C.Solver_MaxIterations = 50;
+            C.NonLinearSolver.ConvergenceCriterion = 1e-8;
+            C.LinearSolver.ConvergenceCriterion = 1e-8;
+            //C.Solver_ConvergenceCriterion = 1e-8;
             C.LevelSet_ConvergenceCriterion = 1e-6;
 
             C.AdvancedDiscretizationOptions.ViscosityMode = ViscosityMode.Standard;
@@ -1088,7 +1102,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             // ====================
             #region solver
 
-            C.LinearSolver = DirectSolver._whichSolver.MUMPS;
+            C.LinearSolver.SolverCode = LinearSolverConfig.Code.classic_mumps;
 
             //C.AdvancedDiscretizationOptions.CellAgglomerationThreshold = 0.2;
             //C.AdvancedDiscretizationOptions.PenaltySafety = 40;
@@ -1098,8 +1112,12 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             //C.option_solver = C.PhysicalParameters.IncludeConvection ? "fixpoint+levelset" : "direct";
             C.VelocityBlockPrecondMode = MultigridOperator.Mode.SymPart_DiagBlockEquilib_DropIndefinite;
             C.NoOfMultigridLevels = 1;
-            C.Solver_MaxIterations = 50;
-            C.Solver_ConvergenceCriterion = 1e-8;
+            C.NonLinearSolver.MaxSolverIterations = 50;
+            C.LinearSolver.MaxSolverIterations = 50;
+            //C.Solver_MaxIterations = 50;
+            C.NonLinearSolver.ConvergenceCriterion = 1e-8;
+            C.LinearSolver.ConvergenceCriterion = 1e-8;
+            //C.Solver_ConvergenceCriterion = 1e-8;
             C.LevelSet_ConvergenceCriterion = 1e-6;
 
             C.Option_LevelSetEvolution = LevelSetEvolution.FastMarching;

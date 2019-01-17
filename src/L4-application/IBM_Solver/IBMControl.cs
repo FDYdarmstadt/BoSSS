@@ -37,6 +37,17 @@ namespace BoSSS.Application.IBM_Solver {
         public IBM_Control() {
             base.NoOfMultigridLevels = 1;
             base.CutCellQuadratureType = Foundation.XDG.XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes;
+            //shift of Solver Information
+            base.LinearSolver.MaxKrylovDim = MaxKrylovDim;
+            base.LinearSolver.MaxSolverIterations = MaxSolverIterations;
+            base.LinearSolver.MinSolverIterations = MinSolverIterations;
+            base.LinearSolver.ConvergenceCriterion = Solver_ConvergenceCriterion;
+            base.LinearSolver.SolverCode = LinearSolverConfig.Code.classic_mumps;
+            base.NonLinearSolver.MaxKrylovDim = MaxKrylovDim;
+            base.NonLinearSolver.MaxSolverIterations = MaxSolverIterations;
+            base.NonLinearSolver.MinSolverIterations = MinSolverIterations;
+            base.NonLinearSolver.ConvergenceCriterion = Solver_ConvergenceCriterion;
+            base.NonLinearSolver.SolverCode = NonLinearSolverConfig.Code.Picard;
         }
 
         /// <summary>
@@ -85,6 +96,8 @@ namespace BoSSS.Application.IBM_Solver {
             this.AddFieldOption("PhiDG", 2);
             this.AddFieldOption("Phi", 2);
         }
+
+
 
         /// <summary>
         /// If iterative saddle-point solvers like GMRES or Orthonormalization are used, the maximum number of basis vectors

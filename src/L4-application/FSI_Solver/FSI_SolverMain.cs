@@ -524,12 +524,14 @@ namespace BoSSS.Application.FSI_Solver {
                 MassScale,
                 this.MultigridOperatorConfig, base.MultigridSequence,
                 this.FluidSpecies, base.HMForder,
-                this.Control.AdvancedDiscretizationOptions.CellAgglomerationThreshold, true);
+                this.Control.AdvancedDiscretizationOptions.CellAgglomerationThreshold, true,
+                this.Control.NonLinearSolver, this.Control.LinearSolver
+                );
             m_BDF_Timestepper.m_ResLogger = base.ResLogger;
             m_BDF_Timestepper.m_ResidualNames = ArrayTools.Cat(this.ResidualMomentum.Select(f => f.Identification), this.ResidualContinuity.Identification);
-            m_BDF_Timestepper.Config_SolverConvergenceCriterion = this.Control.Solver_ConvergenceCriterion;
-            m_BDF_Timestepper.Config_MaxIterations = ((FSI_Control)this.Control).MaxSolverIterations;
-            m_BDF_Timestepper.Config_MinIterations = ((FSI_Control)this.Control).MinSolverIterations;
+            //m_BDF_Timestepper.Config_SolverConvergenceCriterion = this.Control.Solver_ConvergenceCriterion;
+            //m_BDF_Timestepper.Config_MaxIterations = ((FSI_Control)this.Control).MaxSolverIterations;
+            //m_BDF_Timestepper.Config_MinIterations = ((FSI_Control)this.Control).MinSolverIterations;
             m_BDF_Timestepper.IterUnderrelax = ((FSI_Control)this.Control).Timestepper_LevelSetHandling == LevelSetHandling.Coupled_Iterative ? ((FSI_Control)this.Control).LSunderrelax : 1.0;
             m_BDF_Timestepper.Config_LevelSetConvergenceCriterion = ((FSI_Control)this.Control).LevelSet_ConvergenceCriterion;
             m_BDF_Timestepper.SessionPath = SessionPath;

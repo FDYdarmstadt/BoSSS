@@ -81,9 +81,9 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 Debug.Assert(SolHistory.Count >= 1);
 
                 // (approximately) solve the linearized equation:
-                Precond.Init(this.CurrentLin);
+                Precond_solver.Init(this.CurrentLin);
                 Sol1.SetV(SolHistory.Last(), 1.0);
-                Precond.Solve(Sol1, this.LinearizationRHS);
+                Precond_solver.Solve(Sol1, this.LinearizationRHS);
                 SolHistory.Add(Sol1.CloneAs());
                 Sol1.ClearEntries();
 

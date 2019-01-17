@@ -166,12 +166,32 @@ namespace BoSSS.Solution.Control {
         /// Convergence criterion for linear solver.
         /// </summary>
         [DataMember]
-        public double Solver_ConvergenceCriterion = 1e-8;
+        public double ConvergenceCriterion = 1e-8;
 
         /// <summary>
         /// Sets the algorithm to use for linear solving, e.g. MUMPS or GMRES.
         /// </summary>
         [DataMember]
         public LinearSolverConfig.Code SolverCode = LinearSolverConfig.Code.classic_mumps;
+
+        /// <summary>
+        /// Sets the number of Multigrid levels. Multigrid approach is used to get a Preconditioner for Krylov solvers, e.g. GMRES.
+        /// </summary>
+        [DataMember]
+        public int NoOfMultigridLevels = 2;
+
+        //-------------------------
+        // These parameters have to be set only, if exp_localPrec is used. They can be deleted, if exp_localPrec is removed.
+        /// <summary>
+        /// The physical viscosity has to be written to <see cref="exp_localPrec_muA"/>, if the experimental linear solver <see cref="LinearSolverConfig.Code.exp_localPrec"/> is used.
+        /// </summary>
+        [DataMember]
+        public int exp_localPrec_muA = 1;
+
+        /// <summary>
+        /// The minimum time step has to be written to <see cref="exp_localPrec_Min_dt"/>, if the experimental linear solver <see cref="LinearSolverConfig.Code.exp_localPrec"/> is used.
+        /// </summary>
+        [DataMember]
+        public int exp_localPrec_Min_dt = 0;
     }
 }

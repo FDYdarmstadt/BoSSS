@@ -436,17 +436,15 @@ namespace BoSSS.Application.IBM_Solver {
                         MassScale,
                         this.MultigridOperatorConfig, base.MultigridSequence,
                         this.FluidSpecies, this.HMForder,
-                        this.Control.AdvancedDiscretizationOptions.CellAgglomerationThreshold, false);
+                        this.Control.AdvancedDiscretizationOptions.CellAgglomerationThreshold,
+                        false, this.Control.NonLinearSolver, this.Control.LinearSolver
+                        );
 
                     m_BDF_Timestepper.m_ResLogger = base.ResLogger;
                     m_BDF_Timestepper.m_ResidualNames = ArrayTools.Cat(this.ResidualMomentum.Select(f => f.Identification), this.ResidualContinuity.Identification);
-                    //m_BDF_Timestepper.Config_SolverConvergenceCriterion = this.Control.Solver_ConvergenceCriterion;
-                    //m_BDF_Timestepper.Config_MaxIterations = this.Control.MaxSolverIterations;
-                    //m_BDF_Timestepper.Config_MinIterations = this.Control.MinSolverIterations;
+       
                     m_BDF_Timestepper.SessionPath = SessionPath;
                     m_BDF_Timestepper.Timestepper_Init = Solution.Timestepping.TimeStepperInit.MultiInit;
-
-                    SolverChooser.ChooseSolver(this.Control, out m_BDF_Timestepper, true, Control.PhysicalParameters.mu_A);
                 }
 
             } else {

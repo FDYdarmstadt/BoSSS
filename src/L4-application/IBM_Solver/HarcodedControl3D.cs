@@ -636,7 +636,7 @@ namespace BoSSS.Application.IBM_Solver {
             C.VelocityBlockPrecondMode = MultigridOperator.Mode.SymPart_DiagBlockEquilib_DropIndefinite;
             C.NonLinearSolver.SolverCode = NonLinearSolverConfig.Code.NewtonGMRES;
             C.LinearSolver.SolverCode = LinearSolverConfig.Code.exp_schwarz_directcoarse_overlap;
-            C.LinearSolver.Solver_ConvergenceCriterion = 1E-6;
+            C.LinearSolver.ConvergenceCriterion = 1E-6;
             C.NoOfMultigridLevels = 2;
 
             // Timestepping
@@ -979,7 +979,7 @@ namespace BoSSS.Application.IBM_Solver {
             C.VelocityBlockPrecondMode = MultigridOperator.Mode.SymPart_DiagBlockEquilib_DropIndefinite;
             C.NonLinearSolver.SolverCode = NonLinearSolverConfig.Code.NewtonGMRES;
             C.LinearSolver.SolverCode = LinearSolverConfig.Code.exp_schwarz_Kcycle_directcoarse_overlap;
-            C.LinearSolver.Solver_ConvergenceCriterion = 1E-6;
+            C.LinearSolver.ConvergenceCriterion = 1E-6;
             C.NoOfMultigridLevels = 3;
 
             // Timestepping
@@ -1159,7 +1159,7 @@ namespace BoSSS.Application.IBM_Solver {
             C.VelocityBlockPrecondMode = MultigridOperator.Mode.SymPart_DiagBlockEquilib_DropIndefinite;
             C.NonLinearSolver.SolverCode = NonLinearSolverConfig.Code.NewtonGMRES;
             C.LinearSolver.SolverCode = LinearSolverConfig.Code.automatic;
-            C.LinearSolver.Solver_ConvergenceCriterion = 1E-6;
+            C.LinearSolver.ConvergenceCriterion = 1E-6;
             C.NoOfMultigridLevels = 2;
 
             // Timestepping
@@ -1315,7 +1315,7 @@ namespace BoSSS.Application.IBM_Solver {
             C.VelocityBlockPrecondMode = MultigridOperator.Mode.SymPart_DiagBlockEquilib_DropIndefinite;
             C.NonLinearSolver.SolverCode = NonLinearSolverConfig.Code.NewtonGMRES;
             C.LinearSolver.SolverCode = LinearSolverConfig.Code.automatic;
-            C.LinearSolver.Solver_ConvergenceCriterion = 1E-5;
+            C.LinearSolver.ConvergenceCriterion = 1E-5;
             C.NoOfMultigridLevels = 2;
 
             // Timestepping

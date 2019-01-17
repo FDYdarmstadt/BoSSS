@@ -45,16 +45,22 @@ namespace BoSSS.Solution.Control {
 
         }
 
+        /// <summary>
+        /// preconditioner class derived from LinearSolver class.
+        /// </summary>
         public class _Precond : LinearSolverConfig {}
 
-        public  _Precond Precond;
+        /// <summary>
+        /// preconditioner of nonlinear solver, which is a <code>typeof(ISmootherTemplate)</code> with <code>typeof(LinearSolverConfig)</code>.
+        /// </summary>
+        public _Precond Precond_solver;
 
-        ///// <summary>
-        ///// If iterative saddle-point solvers like GMRES or Orthonormalization are used, the maximum number of basis vectors
-        ///// that are used to construct the accelerated solution.
-        ///// </summary>
-        //[DataMember]
-        //public int MaxKrylovDim = 30;
+        /// <summary>
+        /// If iterative saddle-point solvers like GMRES or Orthonormalization are used, the maximum number of basis vectors
+        /// that are used to construct the accelerated solution.
+        /// </summary>
+        [DataMember]
+        public int MaxKrylovDim = 30;
 
         /// <summary>
         /// If iterative solvers are used, the maximum number of iterations.
@@ -72,7 +78,13 @@ namespace BoSSS.Solution.Control {
         /// Convergence criterion for nonlinear solver.
         /// </summary>
         [DataMember]
-        public double Solver_ConvergenceCriterion = 1.0e-8;
+        public double ConvergenceCriterion = 1.0e-8;
+
+        /// <summary>
+        /// under relaxation, if a fixpoint iterator (e.g.Picard) is used.
+        /// </summary>
+        [DataMember]
+        public double UnderRelax = 1;
 
         /// <summary>
         /// Sets the algorithm to use for nonlinear solving, e.g. Newton or Picard.

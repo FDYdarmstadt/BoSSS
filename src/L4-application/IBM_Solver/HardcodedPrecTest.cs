@@ -183,7 +183,7 @@ namespace BoSSS.Application.IBM_Solver {
             C.LevelSetSmoothing = false;
             C.LinearSolver.MaxKrylovDim = 1000;
             C.LinearSolver.MaxSolverIterations = 1;
-            C.LinearSolver.Solver_ConvergenceCriterion = 1E-5;
+            C.LinearSolver.ConvergenceCriterion = 1E-5;
             C.VelocityBlockPrecondMode = MultigridOperator.Mode.SymPart_DiagBlockEquilib_DropIndefinite;                    
 
             // Solver configuration
@@ -210,7 +210,7 @@ namespace BoSSS.Application.IBM_Solver {
         {
             IBM_Control C = new IBM_Control();
 
-            //in SolverChooser die DoF parts ändern
+            //in SolverFactory die DoF parts ändern
 
             //Possibilities:
             //channel = 0 --> channel 3D with sphere
@@ -526,8 +526,8 @@ namespace BoSSS.Application.IBM_Solver {
             //C.LinearSolver.MaxSolverIterations = 1;
             C.MinSolverIterations = 1;
             // C.LinearSolver.MaxSolverIterations = 10000;
-            C.LinearSolver.Solver_ConvergenceCriterion = 1E-5;
-            //C.LinearSolver.Solver_ConvergenceCriterion = 1E-6;
+            C.LinearSolver.ConvergenceCriterion = 1E-5;
+            //C.LinearSolver.ConvergenceCriterion = 1E-6;
             C.VelocityBlockPrecondMode = MultigridOperator.Mode.SymPart_DiagBlockEquilib_DropIndefinite;
 
             // Choosing the Preconditioner
@@ -634,7 +634,7 @@ namespace BoSSS.Application.IBM_Solver {
             //C.LinearSolver.SolverCoder = new SoftGMRES()
             //{
             //    MaxKrylovDim = C.LinearSolver.MaxKrylovDim,
-            //    Precond = Prec,
+            //    Precond_solver = Prec,
             //    m_Tolerance = 1E-6,
             //    m_MaxIterations = 50
             //};

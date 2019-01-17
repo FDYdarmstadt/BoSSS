@@ -186,7 +186,9 @@ namespace BoSSS.Application.LoadBalancingTest {
                     this.LsTrk.SpeciesIdS.ToArray(),
                     quadorder,
                     this.THRESHOLD,
-                    true);
+                    true,
+                    this.Control.NonLinearSolver,
+                    this.Control.LinearSolver);
             } else {
                 Debug.Assert(object.ReferenceEquals(this.MultigridSequence[0].ParentGrid, this.GridData));
                 TimeIntegration.DataRestoreAfterBalancing(L, new DGField[] { u }, new DGField[] { uResidual }, base.LsTrk, this.MultigridSequence);
