@@ -21,7 +21,7 @@ WorkflowMgm.Init("Name of Workflow");
  }
 \BoSSSexe
 \BoSSScmd{
-var myDb = OpenOrCreateDatabase(@"Directory of database");
+var myDb = OpenOrCreateDefaultDatabase();
  }
 \BoSSSexe
 \BoSSScmd{
@@ -50,7 +50,7 @@ using BoSSS.Platform.LinAlg;
  }
 \BoSSSexe
 \BoSSScmd{
-var myBatch = new MiniBatchProcessorClient(@"C:\textbackslash tmp");\newline 
+var myBatch = new MiniBatchProcessorClient();\newline 
 //var myHPC   = new MsHPC2012Client(@"Cluster Directory");
  }
 \BoSSSexe

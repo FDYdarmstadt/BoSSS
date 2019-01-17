@@ -1,4 +1,5 @@
 ﻿using BoSSS.Platform.LinAlg;
+using BoSSS.Solution.Gnuplot;
 using ilPSP;
 using System;
 using System.Collections.Generic;
@@ -62,6 +63,7 @@ namespace BoSSS.Application.SipPoisson.Voronoi {
             Vector vTst = Polygon[iTst];
             Vector vNxt = Polygon[iNxt];
 
+
             for(int l = 0; l < L; l++) {
                 if (l == iPrv || l == iNxt || l == iTst)
                     continue;
@@ -70,6 +72,13 @@ namespace BoSSS.Application.SipPoisson.Voronoi {
                     return false;
             }
 
+            Vector D1 = vPrv - vTst;
+            Vector D2 = vNxt - vTst;
+            if (D1.AngleTo(D2) >= (179.9999999 / 180.0) * Math.PI) {
+                //if (D1.CrossProduct2D(D2).Abs() < 1.0e-6)
+                D1.AngleTo(D2);
+                return false; // this is a hack to avoid very skinny triangles
+            }
             return true;
         }
     
@@ -92,8 +101,24 @@ namespace BoSSS.Application.SipPoisson.Voronoi {
                     }
                 }
 
-                if (iEar < 0)
+                if (iEar < 0) {
+                    /*
+                    using(var gp = new Gnuplot()) {
+                        double[] xn = Polygon.Select(X => X.x).ToArray();
+                        double[] yn = Polygon.Select(X => X.y).ToArray();
+                        double[] xm = _Polygon.Select(X => X.x).ToArray();
+                        double[] ym = _Polygon.Select(X => X.y).ToArray();
+
+                        gp.PlotXY(xn, yn, "earless", new PlotFormat("-xb"));
+                        gp.PlotXY(xm, ym, "orginal", new PlotFormat(":0r"));
+
+                        gp.Execute();
+
+                        Console.ReadKey();
+                    }
+                    */
                     throw new ArithmeticException("unable to find ear.");
+                }
                 
                 int iNxt = iEar + 1;
                 if (iNxt >= Polygon.Count)

@@ -24,6 +24,7 @@ using BoSSS.Solution;
 using BoSSS.Solution.CompressibleFlowCommon;
 using BoSSS.Solution.CompressibleFlowCommon.MaterialProperty;
 using BoSSS.Solution.CompressibleFlowCommon.ShockCapturing;
+using BoSSS.Solution.LevelSetTools;
 using BoSSS.Solution.Timestepping;
 using CNS.Convection;
 using CNS.MaterialProperty;
@@ -335,13 +336,14 @@ namespace CNS {
         /// IMPORTANT: UPDATE ONLY POSSIBLE AFTER SENSOR FIELD WAS UPDATED/CREATED
         /// </remarks>
         private static SpecFemBasis avSpecFEMBasis;
+        //private static Basis avContinuousDGBasis;
         public static readonly DerivedVariable ArtificialViscosity = new DerivedVariable(
             "artificialViscosity",
             VariableTypes.Other,
             delegate (DGField artificialViscosity, CellMask cellMask, IProgram<CNSControl> program) {
                 ConventionalDGField avField = artificialViscosity as ConventionalDGField;
                 int D = cellMask.GridData.SpatialDimension;
-                var h_min = ((BoSSS.Foundation.Grid.Classic.GridData)program.GridData).Cells.h_min;
+                var h_min = ((BoSSS.Foundation.Grid.Classic.GridData)program.GridData).Cells.h_min; // Not valid for true cut cells --> volume/surface
 
                 // Determine piecewise constant viscosity
                 avField.Clear();
@@ -379,13 +381,21 @@ namespace CNS {
                 if (D < 3) {
                     // Standard version
                     if (avSpecFEMBasis == null || !avField.Basis.Equals(avSpecFEMBasis.ContainingDGBasis)) {
-                        avSpecFEMBasis = new SpecFemBasis((BoSSS.Foundation.Grid.Classic.GridData) program.GridData, 2);
+                        avSpecFEMBasis = new SpecFemBasis((BoSSS.Foundation.Grid.Classic.GridData)program.GridData, 2);
                     }
                     SpecFemField specFemField = new SpecFemField(avSpecFEMBasis);
                     specFemField.ProjectDGFieldMaximum(1.0, avField);
                     avField.Clear();
                     specFemField.AccToDGField(1.0, avField);
                     avField.Clear(CellMask.GetFullMask(program.GridData).Except(program.SpeciesMap.SubGrid.VolumeMask));
+
+                    // Continuous DG version
+                    //Basis continuousDGBasis = new Basis(program.GridData, 2);
+                    //ContinuousDGField continuousDGField = new ContinuousDGField(continuousDGBasis);
+                    //continuousDGField.ProjectDGField(1.0, avField);
+                    //avField.Clear();
+                    //continuousDGField.AccToDGField(1.0, avField);
+                    //avField.Clear(CellMask.GetFullMask(program.GridData).Except(program.SpeciesMap.SubGrid.VolumeMask));
                 } else {
                     if (program.GridData.MpiSize > 1) {
                         throw new NotImplementedException();

@@ -958,7 +958,7 @@ namespace BoSSS.Application.FSI_Solver
             };
                 C.Particles = new List<Particle>();
 
-                C.Particles.Add(new Particle(2, 4, new double[] { 0.0, 4.0 }) {
+                C.Particles.Add(new Particle_Sphere(2, 4, new double[] { 0.0, 4.0 }) {
                     radius_P = 0.125,
                     rho_P = 1.25,
                 

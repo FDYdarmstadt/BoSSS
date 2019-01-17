@@ -210,9 +210,9 @@ namespace BoSSS.Solution {
             // - exclude mscorlib (does not even appear on Windows, but makes problems using mono)
 
             for (int i = 0; i < stackTrace.FrameCount; i++) {
-                Type Tüpe = stackTrace.GetFrame(i).GetMethod().DeclaringType;
-                if (Tüpe != null) {
-                    Assembly entryAssembly = Tüpe.Assembly;
+                Type Tuepe = stackTrace.GetFrame(i).GetMethod().DeclaringType;
+                if (Tuepe != null) {
+                    Assembly entryAssembly = Tuepe.Assembly;
                     GetAllAssembliesRecursive(entryAssembly, allAssis);
                 }
             }
@@ -481,7 +481,6 @@ namespace BoSSS.Solution {
                 ParameterStudyModeV2(opt, ctrlV2_ParameterStudy, ApplicationFactory);
             } else if (ctrlV2 != null) {
 
-
                 // control file overrides from command line
                 // ----------------------------------------
 
@@ -505,6 +504,7 @@ namespace BoSSS.Solution {
                     ctrlV2.Tags.AddRange(AdHocTags);
                 }
 
+
                 // run app
                 // -------
 
@@ -512,9 +512,6 @@ namespace BoSSS.Solution {
 
                 app.Init(ctrlV2);
                 app.RunSolverMode();
-                app.ByeInt(true);
-                app.Bye();
-                app.ProfilingLog();
                 app.Dispose();
 
 
@@ -2292,13 +2289,34 @@ namespace BoSSS.Solution {
             int failCount = 0;
             int numberOfRuns = cases.Count();
 
-            for (int iPstudy = 0; iPstudy < numberOfRuns; iPstudy++) {
+            for (int iPstudy = 0; iPstudy < numberOfRuns; iPstudy++) { // loop over cases
                 // Run only one case in this process if requested
                 if (opt.PstudyCase > 0 && opt.PstudyCase != iPstudy) {
                     continue;
                 }
 
+                // select control
                 var _control = cases.ElementAt(iPstudy);
+
+                // control file overrides from command line
+                if (opt.ProjectName != null)
+                    _control.ProjectName = opt.ProjectName;
+                if (opt.SessionName != null)
+                    _control.SessionName = opt.SessionName;
+
+                if (opt.ImmediatePlotPeriod != null) {
+                    _control.ImmediatePlotPeriod = opt.ImmediatePlotPeriod.Value;
+                }
+                if (opt.SuperSampling != null) {
+                    _control.SuperSampling = opt.SuperSampling.Value;
+                }
+
+                // ad-hoc added tags (added by command-line option)
+                if (opt != null && (opt.TagsToAdd != null && opt.TagsToAdd.Length > 0)) {
+                    string[] AdHocTags;
+                    AdHocTags = opt.TagsToAdd.Split(new char[] { ',' }, StringSplitOptions.RemoveEmptyEntries);
+                    _control.Tags.AddRange(AdHocTags);
+                }
 
                 // add the case index to the 'Paramstudy_CaseIdentification'
                 {
@@ -2344,8 +2362,12 @@ namespace BoSSS.Solution {
                         CorrectlyTerminated = true;
                         nlog.LogValue("pstudy_case_successful", true);
                         nlog.LogValue("GrdRes:NumberOfCells", app.Grid.NumberOfCells);
-                        nlog.LogValue("GrdRes:h_min", ((GridData)(app.GridData)).Cells.h_minGlobal);
-                        nlog.LogValue("GrdRes:h_max", ((GridData)(app.GridData)).Cells.h_maxGlobal);
+                        if (app.GridData is GridData) {
+                            nlog.LogValue("GrdRes:h_min", ((GridData)(app.GridData)).Cells.h_minGlobal);
+                            nlog.LogValue("GrdRes:h_max", ((GridData)(app.GridData)).Cells.h_maxGlobal);
+                        } else {
+                            Console.WriteLine("Warning: unable to obtain grid resolution");
+                        }
 #if DEBUG
                     }
 #else
@@ -2375,8 +2397,10 @@ namespace BoSSS.Solution {
                     nlog.LogValue("InitTime(sec)", InitTime);
                     nlog.LogValue("solverTime(sec)", solverTime);
                     nlog.LogValue("SessionGuid", app.DatabaseDriver.FsDriver == null ? Guid.Empty : app.CurrentSessionInfo.ID);
-                    foreach (var kv in app.QueryHandler.QueryResults) { // Assume queries have already been evaluated
-                        nlog.LogValue(kv.Key, kv.Value);
+                    if (app.QueryHandler != null) {
+                        foreach (var kv in app.QueryHandler.QueryResults) { // Assume queries have already been evaluated
+                            nlog.LogValue(kv.Key, kv.Value);
+                        }
                     }
 
                     // Log only exists on rank 0
@@ -2396,10 +2420,11 @@ namespace BoSSS.Solution {
                         }
 
                         // Assume queries have already been evaluated
-                        foreach (var kv in app.QueryHandler.QueryResults) {
-                            WriteToLog(log, (double)kv.Value);
+                        if (app.QueryHandler != null) {
+                            foreach (var kv in app.QueryHandler.QueryResults) {
+                                WriteToLog(log, (double)kv.Value);
+                            }
                         }
-
                         log.WriteLine();
                         log.Flush();
 
@@ -2426,10 +2451,27 @@ namespace BoSSS.Solution {
                     }
 
                     // finalize
-                    app.ByeInt(CorrectlyTerminated);
-                    app.Bye();
-                    app.ProfilingLog();
-                    app.Dispose();
+#if DEBUG
+                    {
+#else
+                    try {
+#endif
+                        app.ByeInt(CorrectlyTerminated);
+                        app.Bye();
+                        app.ProfilingLog();
+#if DEBUG
+                    }
+#else
+                    } catch (Exception e) {
+                        nlog.LogValue("pstudy_case_successful", false);
+                        if (_control.Paramstudy_ContinueOnError) {
+                            Console.WriteLine("WARNING: Run" + (iPstudy) + "failed with message '{0}'", e.Message);
+                            failCount++;
+                        } else {
+                            throw;
+                        }
+                    }
+#endif
                 }
 
                 System.GC.Collect();
@@ -2648,13 +2690,27 @@ namespace BoSSS.Solution {
         /// </summary>
         public virtual void Dispose() {
             if (!IsDisposed) {
-                if (this.CurrentSessionInfo != null)
-                    this.CurrentSessionInfo.Dispose();
-                if (DatabaseDriver != null) {
-                    DatabaseDriver.Dispose();
+#if DEBUG
+                { 
+#else
+                try {
+#endif
+                    ByeInt(true);
+                    Bye();
+                    ProfilingLog();
+
+                    if (this.CurrentSessionInfo != null)
+                        this.CurrentSessionInfo.Dispose();
+                    if (DatabaseDriver != null) {
+                        DatabaseDriver.Dispose();
+                    }
+                    Console.Out.Flush();
+                    Console.Error.Flush();
+#if DEBUG
                 }
-                Console.Out.Flush();
-                Console.Error.Flush();
+#else
+                } catch(Exception) { }
+#endif
                 IsDisposed = true;
             }
         }

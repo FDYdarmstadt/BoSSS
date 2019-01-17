@@ -43,6 +43,10 @@
     <Reference Include="log4net">
       <HintPath>..\..\..\libs\log4net-1.2.10\bin\cli\1.0\release\log4net.dll</HintPath>
     </Reference>
+    <Reference Include="Mono.CSharp, Version=4.0.0.0, Culture=neutral, PublicKeyToken=0738eb9f132ed756, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\..\..\libs\mono\4.5\Mono.CSharp.dll</HintPath>
+    </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
     <Reference Include="nunit.framework">
@@ -107,6 +111,10 @@
     <ProjectReference Include="..\..\L3-solution\BoSSS.Solution\BoSSS.Solution.csproj">
       <Project>{DF7F5ABD-E606-41CD-BEEF-31A95D136DEA}</Project>
       <Name>BoSSS.Solution</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\..\Utils\MiniBatchProcessor\MiniBatchProcessor.csproj">
+      <Project>{db8a3a70-dbf2-48e7-824c-0829db2f8e1b}</Project>
+      <Name>MiniBatchProcessor</Name>
     </ProjectReference>
     <ProjectReference Include="..\BoSSSpad\BoSSSpad.csproj">
       <Project>{e1351588-3bc0-418a-bfa2-7ce3391aa167}</Project>

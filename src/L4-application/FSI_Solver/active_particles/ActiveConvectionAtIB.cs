@@ -184,12 +184,13 @@ namespace BoSSS.Solution.NSECommon.Operator.Convection {
             // Moving mesh
             double FlxNeg;
             if (m_UseMovingMesh == true) {
-                //FlxNeg = (this.NegFlux.InnerEdgeForm(ref inp, U_Neg, uLevSet_temp, null, null, v_Neg, 0, null, null)) * (1 - scale) - (this.NegFlux.InnerEdgeForm(ref inp, U_Neg, uLevSet_temp, null, null, v_Neg, 0, null, null));
                 FlxNeg = 0;
-                return FlxNeg;
             }
             // Splitting
-            FlxNeg = (this.NegFlux.InnerEdgeForm(ref inp, U_Neg, uLevSet_temp, null, null, v_Neg, 0, null, null)) * (1 - scale); //Flux in case of Neumann bndy condition is zero
+            else
+            {
+                FlxNeg = (this.NegFlux.InnerEdgeForm(ref inp, U_Neg, uLevSet_temp, null, null, v_Neg, 0, null, null)) * (1 - scale); //Flux in case of Neumann bndy condition is zero
+            }
             return FlxNeg;
         }
     }

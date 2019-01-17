@@ -22,6 +22,7 @@ using BoSSS.Platform.LinAlg;
 using BoSSS.Solution;
 using BoSSS.Solution.CompressibleFlowCommon;
 using BoSSS.Solution.CompressibleFlowCommon.MaterialProperty;
+using BoSSS.Solution.GridImport;
 using BoSSS.Solution.Queries;
 using CNS.Convection;
 using CNS.EquationSystem;
@@ -553,7 +554,7 @@ namespace CNS {
             return c;
         }
 
-        public static CNSControl DoubleMachReflection(string dbPath = null, int savePeriod = 1, int dgDegree = 3, double xMax = 8.0, double yMax = 2.0, int numOfCellsX = 1600, int numOfCellsY = 400, double sensorLimit = 1e-3, double CFLFraction = 0.1, int explicitScheme = 3, int explicitOrder = 3, int numberOfSubGrids = 3, int reclusteringInterval = 1, int maxNumOfSubSteps = 0, double endTime = 0.25, string restart = "False") {
+        public static CNSControl DoubleMachReflection(string dbPath = null, int savePeriod = 1, int dgDegree = 3, double xMax = 8.0, double yMax = 2.0, int numOfCellsX = 1600, int numOfCellsY = 400, double sensorLimit = 1e-3, double CFLFraction = 0.1, int explicitScheme = 3, int explicitOrder = 3, int numberOfSubGrids = 3, int reclusteringInterval = 1, int maxNumOfSubSteps = 0, double endTime = 0.25, string restart = "False", int cores = int.MaxValue) {
             CNSControl c = new CNSControl();
 
             //dbPath = @"/work/scratch/yp19ysog/bosss_db_dmr_video";          // Lichtenberg
@@ -777,8 +778,8 @@ namespace CNS {
             // Session name
             string tempSessionName;
             if (c.ExplicitScheme == ExplicitSchemes.RungeKutta) {
-                tempSessionName = string.Format("DMR_p{0}_xCells{1}_yCells{2}_s0={3:0.0E-00}_CFLFrac{4}_RK{5}",
-                    dgDegree, numOfCellsX, numOfCellsY, sensorLimit, CFLFraction, explicitOrder);
+                tempSessionName = string.Format("DMR_p{0}_xCells{1}_yCells{2}_s0={3:0.0E-00}_CFLFrac{4}_RK{5}_{6}cores",
+                    dgDegree, numOfCellsX, numOfCellsY, sensorLimit, CFLFraction, explicitOrder, cores);
             } else if (c.ExplicitScheme == ExplicitSchemes.AdamsBashforth) {
                 tempSessionName = string.Format("DMR_p{0}_xCells{1}_yCells{2}_s0={3:0.0E-00}_CFLFrac{4}_AB{5}",
                     dgDegree, numOfCellsX, numOfCellsY, sensorLimit, CFLFraction, explicitOrder);
@@ -800,18 +801,19 @@ namespace CNS {
         /// <summary>
         /// Version to be submitted on the TU Darmstadt HHLR Lichtenberg cluster
         /// </summary>
-        public static CNSControl DoubleMachReflectionHHLR(int savePeriod, int dgDegree, double xMax, double yMax, int numOfCellsX, int numOfCellsY, double sensorLimit, double CFLFraction, int explicitScheme, int explicitOrder, int numberOfSubGrids, int reclusteringInterval, int maxNumOfSubSteps, double endTime) {
+        public static CNSControl DoubleMachReflectionHHLR(int savePeriod, int dgDegree, double xMax, double yMax, int numOfCellsX, int numOfCellsY, double sensorLimit, double CFLFraction, int explicitScheme, int explicitOrder, int numberOfSubGrids, int reclusteringInterval, int maxNumOfSubSteps, double endTime, int timeSteps, int cores) {
 
             // Lichtenberg
             //string dbPath = @"/home/yp19ysog/bosss_db_paper_ibmdmr2";
-            string dbPath = @"/work/scratch/yp19ysog/bosss_db_dmr_video_coarse";
+            string dbPath = @"/work/scratch/yp19ysog/bosss_db_performance";
             //string dbPath = @"/work/scratch/yp19ysog/bosss_db_paper_ibmdmr_run3_test";
             //string dbPath = @"C:\bosss_db_paper_ibmdmr_scratch_run3_test";
-            string restart = "True";
+            string restart = "False";
 
-            CNSControl c = DoubleMachReflection(dbPath, savePeriod, dgDegree, xMax, yMax, numOfCellsX, numOfCellsY, sensorLimit, CFLFraction, explicitScheme, explicitOrder, numberOfSubGrids, reclusteringInterval, maxNumOfSubSteps, endTime, restart);
+            CNSControl c = DoubleMachReflection(dbPath, savePeriod, dgDegree, xMax, yMax, numOfCellsX, numOfCellsY, sensorLimit, CFLFraction, explicitScheme, explicitOrder, numberOfSubGrids, reclusteringInterval, maxNumOfSubSteps, endTime, restart, cores);
 
-            c.ProjectName = "dmr_video_coarse_run2_restart1";
+            c.ProjectName = "dmr_cube_run3";
+            //c.NoOfTimesteps = timeSteps;
 
             return c;
         }
@@ -1731,6 +1733,211 @@ namespace CNS {
             }
             if (c.DynamicLoadBalancing_On) {
                 string loadBal = String.Format("_Part={0}_Repart{1}_Thresh{2}", c.GridPartType.ToString(), c.DynamicLoadBalancing_Period, c.DynamicLoadBalancing_ImbalanceThreshold);
+                c.SessionName = String.Concat(tempSessionName, loadBal);
+            } else {
+                c.SessionName = tempSessionName;
+            }
+
+            return c;
+        }
+
+        public static CNSControl BowShock(string dbPath = null, int savePeriod = 10, int dgDegree = 2, double sensorLimit = 1e-2, double CFLFraction = 0.1, int explicitScheme = 1, int explicitOrder = 1, int numberOfSubGrids = 3, int reclusteringInterval = 1, int maxNumOfSubSteps = 0, double endTime = 5.0, string restart = "False", string gridPath = @"c:\GmshGrids\N3\grid0.msh") {
+            CNSControl c = new CNSControl();
+
+            //dbPath = @"/work/scratch/yp19ysog/bosss_db_dmr_video";          // Lichtenberg
+            //dbPath = @"c:\bosss_db";                                          // Local
+            //dbPath = @"E:\geisenhofer\bosss_db_paper_ibmdmr";                   // HPC cluster
+            //dbPath = @"\\dc1\userspace\geisenhofer\bosss_db_IBMShockTube";    // Network
+
+            c.DbPath = dbPath;
+            c.savetodb = dbPath != null;
+            c.saveperiod = savePeriod;
+            c.PrintInterval = 1;
+
+            c.WriteLTSLog = false;
+            c.WriteLTSConsoleOutput = false;
+
+            // Time stepping
+            c.ExplicitScheme = (ExplicitSchemes)explicitScheme;
+            c.ExplicitOrder = explicitOrder;
+            c.NumberOfSubGrids = numberOfSubGrids;
+            c.ReclusteringInterval = reclusteringInterval;
+            c.maxNumOfSubSteps = maxNumOfSubSteps;
+            c.FluxCorrection = false;
+
+            // Dynamic load balacing
+            c.GridPartType = GridPartType.ParMETIS;
+            c.DynamicLoadBalancing_On = false;
+            //c.DynamicLoadBalancing_CellClassifier = new LTSCellClassifier();
+            //c.DynamicLoadBalancing_CellCostEstimatorFactories.AddRange(LTSCellCostEstimator.Factory(c.NumberOfSubGrids));
+            //c.DynamicLoadBalancing_ImbalanceThreshold = 0.1;
+            //c.DynamicLoadBalancing_Period = c.ReclusteringInterval;
+
+            bool AV;
+            if (dgDegree > 0) {
+                AV = true;
+            } else {
+                AV = false;
+            }
+
+            if (AV) {
+                c.ActiveOperators = Operators.Convection | Operators.ArtificialViscosity;
+            } else {
+                c.ActiveOperators = Operators.Convection;
+            }
+            c.ConvectiveFluxType = ConvectiveFluxTypes.OptimizedHLLC;
+
+            // Shock-capturing
+            double epsilon0 = 1.0;
+            double kappa = 1.0;
+
+            if (AV) {
+                Variable sensorVariable = Variables.Density;
+                c.ShockSensor = new PerssonSensor(sensorVariable, sensorLimit);
+                //c.ArtificialViscosityLaw = new SmoothedHeavisideArtificialViscosityLaw(c.ShockSensor, dgDegree, sensorLimit, epsilon0, kappa, lambdaMax: 20); // fixed lamdaMax
+                c.ArtificialViscosityLaw = new SmoothedHeavisideArtificialViscosityLaw(c.ShockSensor, dgDegree, sensorLimit, epsilon0, kappa);                // dynamic lambdaMax
+            }
+
+            c.EquationOfState = IdealGas.Air;
+            c.MachNumber = 1.0 / Math.Sqrt(c.EquationOfState.HeatCapacityRatio);
+            c.ReynoldsNumber = 1.0;
+            c.PrandtlNumber = 0.71;
+
+            c.AddVariable(Variables.Density, dgDegree);
+            c.AddVariable(Variables.Momentum.xComponent, dgDegree);
+            c.AddVariable(Variables.Momentum.yComponent, dgDegree);
+            c.AddVariable(Variables.Energy, dgDegree);
+
+            c.AddVariable(Variables.Velocity.xComponent, dgDegree);
+            c.AddVariable(Variables.Velocity.yComponent, dgDegree);
+            c.AddVariable(Variables.Pressure, dgDegree);
+
+            //c.AddVariable(Variables.Entropy, dgDegree);
+            //c.AddVariable(Variables.Viscosity, dgDegree);
+            c.AddVariable(Variables.LocalMachNumber, dgDegree);
+
+            //c.AddVariable(Variables.Rank, 0);
+            //if (dgDegree > 0) {
+            //    c.AddVariable(Variables.Schlieren, dgDegree - 1);
+            //}
+            if (AV) {
+                c.AddVariable(Variables.ShockSensor, 0);
+                c.AddVariable(Variables.ArtificialViscosity, 2);
+            }
+
+            // Time stepping variables
+            //c.AddVariable(Variables.CFL, 0);
+            //c.AddVariable(Variables.CFLConvective, 0);
+            //if (AV) {
+            //    c.AddVariable(Variables.CFLArtificialViscosity, 0);
+            //}
+            //if (c.ExplicitScheme.Equals(ExplicitSchemes.LTS)) {
+            //    c.AddVariable(Variables.LTSClusters, 0);
+            //}
+
+            // Grid
+            if (restart == "True") {
+                // Restart Lichtenberg
+                c.RestartInfo = new Tuple<Guid, TimestepNumber>(new Guid("a96d7c2c-fe35-4fc3-9f51-ef45185fe188"), -1);
+                c.GridGuid = new Guid("c544dd46-a9d8-44c8-b5bb-10516f94f0c9");
+            } else {
+                c.GridFunc = delegate {
+                    GridCommons grid = GridImporter.Import(gridPath);
+
+                    grid.EdgeTagNames.Add(1, "SupersonicInlet");
+                    grid.EdgeTagNames.Add(2, "SupersonicOutlet");
+                    grid.EdgeTagNames.Add(3, "AdiabaticSlipWall");
+
+                    bool IsOnCylinder(double[] X) {
+                        bool result = false;
+
+                        // Circle 1
+                        double x0 = 0.0;
+                        double y0 = 0.5;
+                        double r0 = 0.5;
+
+                        // Circle 2
+                        double x1 = 0.0;
+                        double y1 = -0.5;
+                        double r1 = 0.5;
+
+                        if ((X[0] - x0) * (X[0] - x0) + (X[1] - y0) * (X[1] - y0) - r0 * r0 < 1e-14) {
+                            result = true;
+                        }
+
+                        if ((X[0] - x1) * (X[0] - x1) + (X[1] - y1) * (X[1] - y1) - r1 * r1 < 1e-14) {
+                            result = true;
+                        }
+
+                        if (Math.Abs(X[0] - (-0.5)) < 1e-14) {
+                            result = true;
+                        }
+
+                        return result;
+                    }
+
+                    grid.DefineEdgeTags(delegate (double[] X) {
+                        if (Math.Abs(X[0] - 0.0) < 1e-14) {
+                            return 2;
+                        } else if (IsOnCylinder(X)) {
+                            return 3;
+                        } else {
+                            return 1;
+                        }
+                    });
+
+                    return grid;
+                };
+            }
+
+            // Boundary conditions
+            double density = 1.0;
+            double pressure = 1.0;
+            double Mach = 4.0;
+            double velocityX = Mach * Math.Sqrt(c.EquationOfState.HeatCapacityRatio * pressure / density);
+            double velocityY = 0.0;
+
+            c.AddBoundaryValue("SupersonicInlet", Variables.Density, (X, t) => density);
+            c.AddBoundaryValue("SupersonicInlet", Variables.Velocity.xComponent, (X, t) => velocityX);
+            c.AddBoundaryValue("SupersonicInlet", Variables.Velocity.yComponent, (X, t) => velocityY);
+            c.AddBoundaryValue("SupersonicInlet", Variables.Pressure, (X, t) => pressure);
+
+            // In theory no outflow boundary condition has to be specified as all characteristics move downstream
+            c.AddBoundaryValue("SupersonicOutlet", Variables.Pressure, (X, t) => 0.0);
+            c.AddBoundaryValue("AdiabaticSlipWall");
+
+            // Initial conditions
+            if (restart == "False") {
+                c.InitialValues_Evaluators.Add(Variables.Density, X => density);
+                c.InitialValues_Evaluators.Add(Variables.Velocity.xComponent, X => velocityX);
+                c.InitialValues_Evaluators.Add(Variables.Velocity.yComponent, X => velocityY);
+                c.InitialValues_Evaluators.Add(Variables.Pressure, X => pressure);
+            }
+
+            // Time config
+            c.dtMin = 0.0;
+            c.dtMax = 1.0;
+            c.Endtime = endTime;
+            c.CFLFraction = CFLFraction;
+            c.NoOfTimesteps = int.MaxValue;
+
+            c.ProjectName = "bowShock";
+
+            // Session name
+            string tempSessionName;
+            if (c.ExplicitScheme == ExplicitSchemes.RungeKutta) {
+                tempSessionName = string.Format("BowShock_p{0}_s0={1:0.0E-00}_CFLFrac{2}_RK{3}",
+                    dgDegree, sensorLimit, CFLFraction, explicitOrder);
+            } else if (c.ExplicitScheme == ExplicitSchemes.AdamsBashforth) {
+                tempSessionName = string.Format("BowShock_p{0}_s0={1:0.0E-00}_CFLFrac{2}_AB{3}",
+                    dgDegree, sensorLimit, CFLFraction, explicitOrder);
+            } else {
+                tempSessionName = string.Format("BowShock_p{0}_s0={1:0.0E-00}_CFLFrac{2}_ALTS{3}_{4}_re{5}_subs{6}",
+                    dgDegree, sensorLimit, CFLFraction, explicitOrder, numberOfSubGrids, reclusteringInterval, maxNumOfSubSteps);
+            }
+            if (c.DynamicLoadBalancing_On) {
+                //string loadBal = String.Format("_Part={0}_Repart{1}_Thresh{2}", c.GridPartType.ToString(), c.DynamicLoadBalancing_Period, c.DynamicLoadBalancing_ImbalanceThreshold);
+                string loadBal = String.Format("_REPART", c.GridPartType.ToString(), c.DynamicLoadBalancing_Period, c.DynamicLoadBalancing_ImbalanceThreshold);
                 c.SessionName = String.Concat(tempSessionName, loadBal);
             } else {
                 c.SessionName = tempSessionName;

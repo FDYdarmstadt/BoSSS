@@ -44,25 +44,18 @@ namespace BoSSS.Application.Rheology
             RheologyControl C = new RheologyControl();
 
             //Solver Options
-            C.NoOfTimesteps = 1;
+            C.NoOfTimesteps = 5;
             C.savetodb = false;
             C.DbPath = path;
             C.ProjectName = "Channel";
-            C.NonLinearSolver.MaxSolverIterations = 10;
-            C.NonLinearSolver.MinSolverIterations = 3;
-            C.NonLinearSolver.ConvergenceCriterion = 1E-10;
-            C.LinearSolver.MaxSolverIterations = 10;
-            C.LinearSolver.MinSolverIterations = 3;
-            C.LinearSolver.ConvergenceCriterion = 1E-10;
-
-            //C.MaxIter = 10;
-            //C.MinIter = 3;
-            //C.ConvCrit = 1E-10;
-            C.dt = 1E20;
+            C.MaxIter = 10;
+            C.MinIter = 3;
+            C.ConvCrit = 1E-10;
+            C.dt = 0.1;
             C.dtMax = C.dt;
             C.dtMin = C.dt;
             C.Timestepper_Scheme = RheologyControl.TimesteppingScheme.ImplicitEuler;
-            C.NonLinearSolver.SolverCode = NonLinearSolverConfig.Code.Newton;//C.NonlinearMethod = NonlinearSolverMethod.Newton;
+            C.NonlinearMethod = NonlinearSolverMethod.Newton;
             C.ObjectiveParam = 1.0;
 
             C.UsePerssonSensor = false;
@@ -73,7 +66,7 @@ namespace BoSSS.Application.Rheology
 
             C.UseArtificialDiffusion = false;
 
-            C.Bodyforces = true;
+            C.Bodyforces = false;
             //C.WhichWall = "Wall_Cylinder";
 
             //Debugging and Solver Analysis
@@ -83,14 +76,16 @@ namespace BoSSS.Application.Rheology
             C.SetInitialPressure = false;
             C.SetParamsAnalyticalSol = false;
             C.ComputeL2Error = true;
+            C.GravitySource = false;
+            C.GravityX = (X, t) => 1;
+            C.GravityY = (X, t) => 0;
 
             //Physical Params
             C.Stokes = false;
             C.FixedStreamwisePeriodicBC = false;
             C.beta = 0.5;
             C.Reynolds = 1;
-            C.Weissenberg = 0.0;
-            C.Weissenberg = 0.1; //aim Weissenberg number!
+            C.Weissenberg = 1.0; //aim Weissenberg number!
             C.RaiseWeissenberg = true;
             C.WeissenbergIncrement = 0.1;
 
@@ -112,9 +107,9 @@ namespace BoSSS.Application.Rheology
             C.StressPenalty = 1.0;
 
             //Exact Solution Channel
-            Func<double[], double, double> VelocityXfunction = (X, t) => 1 - X[1] * X[1];
+            Func<double[], double, double> VelocityXfunction = (X, t) => 1 - (X[1] * X[1]);
             Func<double[], double, double> VelocityYfunction = (X, t) => 0;
-            Func<double[], double, double> Pressurefunction = (X, t) => 2 / C.Reynolds * (20 - X[0]);
+            Func<double[], double, double> Pressurefunction = (X, t) => 2* C.Reynolds * (20 - X[0]);
             Func<double[], double, double> StressXXfunction = (X, t) => 2 * C.Weissenberg * (1 - C.beta) * (((-2 * X[1])) * ((-2 * X[1])));
             Func<double[], double, double> StressXYfunction = (X, t) => (1 - C.beta) * (-2 * X[1]);
             Func<double[], double, double> StressYYfunction = (X, t) => (0.0);
@@ -208,8 +203,14 @@ namespace BoSSS.Application.Rheology
             C.InitialValues_Evaluators.Add("Phi", X => -1);
 
             // Set Boundary Conditions
-            C.AddBoundaryValue("Wall_bottom");
-            C.AddBoundaryValue("Wall_top");
+            C.AddBoundaryValue("Wall_bottom", "VelocityX", VelocityXfunction);
+            C.AddBoundaryValue("Wall_top", "VelocityX", VelocityXfunction);
+            //C.AddBoundaryValue("Wall_bottom", "VelocityY", VelocityYfunction);
+            //C.AddBoundaryValue("Wall_top", "VelocityY", VelocityYfunction);
+            //C.AddBoundaryValue("Wall_bottom", "VelocityX", X => 0);
+            //C.AddBoundaryValue("Wall_top", "VelocityX", X => 0);
+            //C.AddBoundaryValue("Wall_bottom", "VelocityY", X => 0);
+            //C.AddBoundaryValue("Wall_top", "VelocityY", X => 0);
             //C.AddBoundaryCondition("FreeSlip");
 
             if (!C.FixedStreamwisePeriodicBC)
@@ -239,21 +240,15 @@ namespace BoSSS.Application.Rheology
             C.DbPath = path;
             C.SessionName = "Degree" + degree + ", GridLevel" + GridLevel;
             C.ProjectName = "ConsistencyStudyConstitutive";
-            C.NonLinearSolver.MaxSolverIterations = 30;
-            C.NonLinearSolver.MinSolverIterations = 1;
-            C.NonLinearSolver.ConvergenceCriterion = 1E-7;
-            C.LinearSolver.MaxSolverIterations = 30;
-            C.LinearSolver.MinSolverIterations = 1;
-            C.LinearSolver.ConvergenceCriterion = 1E-7;
-            //C.MaxIter = 30;
-            //C.MinIter = 1;
-            //C.ConvCrit = 1E-7;
+            C.MaxIter = 30;
+            C.MinIter = 1;
+            C.ConvCrit = 1E-7;
             //C.ConvCritGMRES = 1E-13;
             C.dt = 1E20;
             C.dtMax = C.dt;
             C.dtMin = C.dt;
             C.Timestepper_Scheme = RheologyControl.TimesteppingScheme.ImplicitEuler;
-            C.NonLinearSolver.SolverCode = NonLinearSolverConfig.Code.NewtonGMRES;//C.NonlinearMethod = NonlinearSolverMethod.NewtonGMRES;
+            C.NonlinearMethod = NonlinearSolverMethod.NewtonGMRES;
             C.ObjectiveParam = 1.0;
 
             //Grid Params
@@ -481,15 +476,9 @@ namespace BoSSS.Application.Rheology
             C.DbPath = path;
             C.SessionName = "Degree" + degree + ", GridLevel" + GridLevel;
             C.ProjectName = "Staupunkt";
-            C.NonLinearSolver.MaxSolverIterations = 20;
-            C.NonLinearSolver.MinSolverIterations = 3;
-            C.NonLinearSolver.ConvergenceCriterion = 1E-14;
-            C.LinearSolver.MaxSolverIterations = 20;
-            C.LinearSolver.MinSolverIterations = 3;
-            C.LinearSolver.ConvergenceCriterion = 1E-14;
-            //C.MaxIter = 20;
-            //C.MinIter = 3;
-            //C.ConvCrit = 1E-14;
+            C.MaxIter = 20;
+            C.MinIter = 3;
+            C.ConvCrit = 1E-14;
             C.dt = 1E20;
             C.dtMax = C.dt;
             C.dtMin = C.dt;
@@ -674,21 +663,15 @@ namespace BoSSS.Application.Rheology
             C.DbPath = path;
             C.SessionName = "Degree" + degree + ", GridLevel" + GridLevel;
             C.ProjectName = "ConvStudyLDG";
-            C.NonLinearSolver.MaxSolverIterations = 3;
-            C.NonLinearSolver.MinSolverIterations = 1;
-            C.NonLinearSolver.ConvergenceCriterion = 5E-7;
-            C.LinearSolver.MaxSolverIterations = 3;
-            C.LinearSolver.MinSolverIterations =1;
-            C.LinearSolver.ConvergenceCriterion = 5E-7;
-            //C.MaxIter = 3;
-            //C.MinIter = 1;
-            //C.ConvCrit = 5E-7;
+            C.MaxIter = 3;
+            C.MinIter = 1;
+            C.ConvCrit = 5E-7;
             //C.ConvCritGMRES = 1E-08;
             C.dt = 1E20;
             C.dtMax = C.dt;
             C.dtMin = C.dt;
             C.Timestepper_Scheme = RheologyControl.TimesteppingScheme.ImplicitEuler;
-            C.NonLinearSolver.SolverCode = NonLinearSolverConfig.Code.Newton;//C.NonlinearMethod = NonlinearSolverMethod.Newton;
+            C.NonlinearMethod = NonlinearSolverMethod.Newton;
             C.ObjectiveParam = 1.0;
             C.UsePerssonSensor = true;
             C.AdaptiveMeshRefinement = true;
@@ -902,18 +885,9 @@ namespace BoSSS.Application.Rheology
             C.SetInitialConditions = true;
             C.SetInitialPressure = false;
             C.SetParamsAnalyticalSol = true;
-
-            C.NonLinearSolver.MaxSolverIterations = 7;
-            C.NonLinearSolver.MinSolverIterations = 3;
-            C.NonLinearSolver.ConvergenceCriterion = 1E-13;
-            C.LinearSolver.MaxSolverIterations = 7;
-            C.LinearSolver.MinSolverIterations = 3;
-            C.LinearSolver.ConvergenceCriterion = 1E-13;
-
-
-            //C.MaxIter = 7;
-            //C.MinIter = 3;
-            //C.ConvCrit = 1E-13;
+            C.MaxIter = 7;
+            C.MinIter = 3;
+            C.ConvCrit = 1E-13;
             C.dt = 1E20;
             C.dtMax = C.dt;
             C.dtMin = C.dt;
@@ -1061,17 +1035,9 @@ namespace BoSSS.Application.Rheology
                         C.ProjectName = "Channel";
                         C.Stokes = false;
                         C.FixedStreamwisePeriodicBC = true;
-
-
-                        C.NonLinearSolver.MaxSolverIterations = 2;
-                        C.NonLinearSolver.MinSolverIterations = 1;
-                        C.NonLinearSolver.ConvergenceCriterion = 1E-10;
-                        C.LinearSolver.MaxSolverIterations = 2;
-                        C.LinearSolver.MinSolverIterations = 1;
-                        C.LinearSolver.ConvergenceCriterion = 1E-10;
-                        //C.MaxIter = 2;
-                        //C.MinIter = 1;
-                        //C.ConvCrit = 1E-10;
+                        C.MaxIter = 2;
+                        C.MinIter = 1;
+                        C.ConvCrit = 1E-10;
 
 
                         // Create Fields
@@ -1191,15 +1157,9 @@ namespace BoSSS.Application.Rheology
             C.DbPath = path;
             C.SessionName = "Degree" + degree + ", GridLevel" + GridLevel;
             C.ProjectName = "ConvStudyLDG";
-            C.NonLinearSolver.MaxSolverIterations = 15;
-            C.NonLinearSolver.MinSolverIterations = 3;
-            C.NonLinearSolver.ConvergenceCriterion = 1E-14;
-            C.LinearSolver.MaxSolverIterations = 15;
-            C.LinearSolver.MinSolverIterations = 3;
-            C.LinearSolver.ConvergenceCriterion = 1E-14;
-            //C.MaxIter = 15;
-            //C.MinIter = 3;
-            //C.ConvCrit = 1E-14;
+            C.MaxIter = 15;
+            C.MinIter = 3;
+            C.ConvCrit = 1E-14;
             C.dt = 1E20;
             C.dtMax = C.dt;
             C.dtMin = C.dt;
