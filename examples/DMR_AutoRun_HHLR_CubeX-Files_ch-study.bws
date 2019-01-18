@@ -5,24 +5,25 @@ restart
   _______________________
 
 Databases loaded:
-List of 5 instances of IDatabaseInfo {
+List of 6 instances of IDatabaseInfo {
   0: { Session Count = 0; Grid Count = 34; Path = C:\BoSSS_DB }
   1: { Session Count = 224; Grid Count = 6; Path = C:\tmp\fk_temp_db }
   2: { Session Count = 197; Grid Count = 6; Path = P:\Performance_DB }
   3: { Session Count = 112; Grid Count = 6; Path = E:\Performance_oldLibs_DB }
   4: { Session Count = 0; Grid Count = 2; Path = E:\db_2delete }
+  5: { Session Count = 65; Grid Count = 65; Path = Z:\weber\Performance_Kram\bosss_db_performance }
 }
 
  Console ready for input. Type 'help' for help.
 
 ==============
 // Does not matter for submission on HHLR (is set in source code)
-string WFlowName = "bla";
+string WFlowName = "testRound_3";
 **************
 ==============
 WorkflowMgm.Init(WFlowName);
 **************
-Project name is set to 'bla'.
+Project name is set to 'testRound_3'.
 
 ==============
 WorkflowMgm.AllJobs;
@@ -33,19 +34,15 @@ List of 0 instances of KeyValuePair{String,Job} {
 //string dbPath = @"T:\bosss_db_paper_ibmdmr";
 //string dbPath = @"S:\work\scratch\yp19ysog\bosss_db_performance";
 //string dbPath = @"S:\home\yp19ysog\bosss_db_paper_ibmdmr2";
-//var myDb = OpenOrCreateDatabase(dbPath);
+var myDb = OpenOrCreateDatabase(@"\\dc1\userspace\weber\testDB");
 **************
-Creating database 'S:\work\scratch\yp19ysog\bosss_db_performance'.
+Opening existing database '\\dc1\userspace\weber\testDB'.
 
 ==============
 //var myAutoRunJob = new SlurmClient(@"S:\home\yp19ysog\BoSSS","lcluster2.hrz.tu-darmstadt.de","yp19ysog");
-var myAutoRunJob = new SlurmClient(@"T:\BoSSS","lcluster3.hrz.tu-darmstadt.de","yp19ysog");
+//var myAutoRunJob = new SlurmClient(@"T:\BoSSS","lcluster3.hrz.tu-darmstadt.de","yp19ysog");
+var myAutoRunJob = new MsHPC2012Client(@"\\dc1\userspace\weber\deploy_testDB","hpccluster",ComputeNodes : new[] {"hpccluster"});
 **************
-Please enter your password...
-*********
-Connecting to lcluster3.hrz.tu-darmstadt.de...
-
-
 ==============
 using CNS;
 using BoSSS.Application.IBM_Solver;
@@ -63,7 +60,7 @@ Type solver = typeof(CNS.Program);
 // Use the self-compiled BoSSSpad (release mode)
 solver.Assembly.Location;
 **************
-C:\BoSSS\root3\public\src\L4-application\BoSSSpad\bin\Release\CNS.exe
+C:\BoSSS\BoSSS-master\public\src\L4-application\BoSSSpad\bin\Release\CNS.exe
 ==============
 //------------------------------------------------
 //   Parameter study - Time to make changes 
@@ -72,10 +69,10 @@ int savePeriod = 1;
 
 int[] dgDegree           = {3};
 
-double xMax     = 4.0;
-double yMax     = 1.0;
-int numOfCellsX = 400;
-int numOfCellsY = 100;
+double xMax      = 4.0;
+double yMax      = 1.0;
+int _numOfCellsX = 400;
+int _numOfCellsY = 100;
 
 double[] sensorLimit     = {1e-3};  // sensorLimit = 1e-3 (except for IBMDMR --> 1e-4)
 double CFLFraction = 0.1;
@@ -92,29 +89,22 @@ int maxNumOfSubSteps     = 0;
 double endTime = 0.7;
 **************
 ==============
-int bla = 6;
+int bla = 5;
 int[] cores = new int[bla];
-double[] gridscale=new double[bla];
-for(int ct = 0; ct < bla; ct++){
-    cores[ct] = (int)Math.Pow(2, ct+1);
+double[] gridscale=new double[bla-1];
+for(int ct = 0; ct < bla; ct++)
+    cores[ct] = (int)Math.Pow(2, ct);
+for(int ct=0;ct < bla-1;ct++)
     gridscale[ct]=Math.Pow(2,ct-2);
-}
 
 int timeSteps = 10;
 **************
 ==============
-gridscale
 **************
-List of 6 instances of Double {
-  0: 0.25
-  1: 0.5
-  2: 1
-  3: 2
-  4: 4
-  5: 8
-}
 ==============
 // Feed the machine
+int numOfCellsX_0 = _numOfCellsX;
+int numOfCellsY_0 = _numOfCellsY;
 for (int c = 0; c < cores.Length; c++){
 for (int dg = 0; dg < dgDegree.Length; dg++){
         for(int sl = 0; sl < sensorLimit.Length; sl++){
@@ -122,19 +112,19 @@ for (int dg = 0; dg < dgDegree.Length; dg++){
                 for(int sg = 0; sg < numberOfSubGrids.Length; sg++){
                     for(int gr=0;gr< gridscale.Length; gr++){
         
-                        numOfCellsX = numOfCellsX*gridscale[gr];
-                        numOfCellsX = numOfCellsY*gridscale[gr];
+                        int numOfCellsX = (int)(numOfCellsX_0*gridscale[gr]);
+                        int numOfCellsY = (int)(numOfCellsY_0*gridscale[gr]);
                         // Shock Tube
         string jobName = null;
         if (myScheme == ExplicitSchemes.RungeKutta){
             jobName = string.Format("DMR_p{0}_xCells{1}_yCells{2}_s0={3:0.0E-00}_CFLFrac{4}_RK{5}_{6}cores",
-                dgDegree, numOfCellsX, numOfCellsY, sensorLimit, CFLFraction, explicitOrder, cores[c]);
+                dgDegree[dg], numOfCellsX, numOfCellsY, sensorLimit[sl], CFLFraction, explicitOrder[or], cores[c]);
         } else if (myScheme == ExplicitSchemes.AdamsBashforth){
             jobName = string.Format("DMR_p{0}_xCells{1}_yCells{2}_s0={3:0.0E-00}_CFLFrac{4}_AB{5}",
-                dgDegree, numOfCellsX, numOfCellsY, sensorLimit, CFLFraction, explicitOrder);            
+                dgDegree[dg], numOfCellsX, numOfCellsY, sensorLimit[sl], CFLFraction, explicitOrder[or]);            
         } else {
             jobName = string.Format("DMR_p{0}_xCells{1}_yCells{2}_s0={3:0.0E-00}_CFLFrac{4}_ALTS{5}_{6}_re{7}_subs{8}",
-                dgDegree, numOfCellsX, numOfCellsY, sensorLimit, CFLFraction, explicitOrder, numberOfSubGrids, reclusteringInterval, maxNumOfSubSteps);                
+                dgDegree[dg], numOfCellsX, numOfCellsY, sensorLimit[sl], CFLFraction, explicitOrder[or], numberOfSubGrids, reclusteringInterval, maxNumOfSubSteps);                
         }
             
         string StartupString = string.Format("cs:CNS.TestCases.DoubleMachReflectionHHLR({0}, {1}, {2}, {3}, {4}, {5}, {6}, {7}, {8}, {9}, {10}, {11}, {12}, {13}, {14},{15})",
@@ -145,19 +135,19 @@ for (int dg = 0; dg < dgDegree.Length; dg++){
         oneJob.NumberOfMPIProcs = cores[c];
         
         //oneJob.ExecutionTime = "00:05:00";  // 5 minutes        
-        oneJob.ExecutionTime = "00:30:00"; // 1 day
+        oneJob.ExecutionTime = "01:30:00"; // 1 day
         //oneJob.ExecutionTime    = "48:00:00"; // 2 days
         //oneJob.ExecutionTime = "72:00:00"; // 3 days
         //oneJob.ExecutionTime = "96:00:00"; // 4 days        
         //oneJob.ExecutionTime = "168:00:00"; // 7 days
         
         //oneJob.HHLR_project = "project00747";  // Markus
-        oneJob.HHLR_project = "project00717";  // Dennis
+        //oneJob.HHLR_project = "project00717";  // Dennis
         //oneJob.HHLR_project = "project00880";  // Jens
         
         //oneJob.MemPerCPU    = "2500";
         oneJob.MemPerCPU    = "1600";
-        oneJob.EmailAddress = "geisenhofer@fdy.tu-darmstadt.de";
+        //oneJob.EmailAddress = "geisenhofer@fdy.tu-darmstadt.de";
         //oneJob.UseComputeNodesExclusive = true;
         oneJob.Activate(myAutoRunJob);
 }
@@ -167,19 +157,141 @@ for (int dg = 0; dg < dgDegree.Length; dg++){
 }
 }
 **************
-C# evaluator not initialized: use 'restart'.
+Loading session 03bbcb6c-89aa-4c92-b1f6-dd479bf3baa1 failed with message 'Der Objektverweis wurde nicht auf eine Objektinstanz festgelegt.'
+Job not submitted yet, or no result session is known - starting submission.
+Deploying executables and additional files ...
+Deployment directory: \\dc1\userspace\weber\deploy_testDB\CNS2019Jan17_19-08-29
+Source directory: C:\BoSSS\BoSSS-master\public\src\L4-application\BoSSSpad\bin\Release
+   copied: CNS.exe BoSSS.Solution.dll CommandLine.dll BoSSS.Foundation.dll ilPSP.dll MPI.Wrappers.dll log4net.dll nunit.framework.dll Newtonsoft.Json.dll ilPSP.LinSolvers.MUMPS.dll BoSSS.Platform.dll Renci.SshNet.dll ilPSP.LinSolvers.monkey.dll ilPSP.Connectors.Matlab.dll BoSSS.Foundation.XDG.dll Mono.CSharp.dll BoSSS.Foundation.Grid.dll MathNet.Numerics.dll BoSSS.Solution.CompressibleFlowCommon.dll BoSSS.Foundation.SpecFEM.dll BoSSS.Solution.NSECommon.dll BoSSS.Solution.ASCIIExport.dll BoSSS.Solution.Tecplot.dll BoSSS.Solution.GridImport.dll    copied 'amd64' runtime.
+deployment finished.
+Job not submitted yet, or no result session is known - starting submission.
+Deploying executables and additional files ...
+Deployment directory: \\dc1\userspace\weber\deploy_testDB\CNS2019Jan17_19-08-33
+Source directory: C:\BoSSS\BoSSS-master\public\src\L4-application\BoSSSpad\bin\Release
+   copied: CNS.exe BoSSS.Solution.dll CommandLine.dll BoSSS.Foundation.dll ilPSP.dll MPI.Wrappers.dll log4net.dll nunit.framework.dll Newtonsoft.Json.dll ilPSP.LinSolvers.MUMPS.dll BoSSS.Platform.dll Renci.SshNet.dll ilPSP.LinSolvers.monkey.dll ilPSP.Connectors.Matlab.dll BoSSS.Foundation.XDG.dll Mono.CSharp.dll BoSSS.Foundation.Grid.dll MathNet.Numerics.dll BoSSS.Solution.CompressibleFlowCommon.dll BoSSS.Foundation.SpecFEM.dll BoSSS.Solution.NSECommon.dll BoSSS.Solution.ASCIIExport.dll BoSSS.Solution.Tecplot.dll BoSSS.Solution.GridImport.dll    copied 'amd64' runtime.
+deployment finished.
+Job not submitted yet, or no result session is known - starting submission.
+Deploying executables and additional files ...
+Deployment directory: \\dc1\userspace\weber\deploy_testDB\CNS2019Jan17_19-08-38
+Source directory: C:\BoSSS\BoSSS-master\public\src\L4-application\BoSSSpad\bin\Release
+   copied: CNS.exe BoSSS.Solution.dll CommandLine.dll BoSSS.Foundation.dll ilPSP.dll MPI.Wrappers.dll log4net.dll nunit.framework.dll Newtonsoft.Json.dll ilPSP.LinSolvers.MUMPS.dll BoSSS.Platform.dll Renci.SshNet.dll ilPSP.LinSolvers.monkey.dll ilPSP.Connectors.Matlab.dll BoSSS.Foundation.XDG.dll Mono.CSharp.dll BoSSS.Foundation.Grid.dll MathNet.Numerics.dll BoSSS.Solution.CompressibleFlowCommon.dll BoSSS.Foundation.SpecFEM.dll BoSSS.Solution.NSECommon.dll BoSSS.Solution.ASCIIExport.dll BoSSS.Solution.Tecplot.dll BoSSS.Solution.GridImport.dll    copied 'amd64' runtime.
+deployment finished.
+Job not submitted yet, or no result session is known - starting submission.
+Deploying executables and additional files ...
+Deployment directory: \\dc1\userspace\weber\deploy_testDB\CNS2019Jan17_19-08-49
+Source directory: C:\BoSSS\BoSSS-master\public\src\L4-application\BoSSSpad\bin\Release
+   copied: CNS.exe BoSSS.Solution.dll CommandLine.dll BoSSS.Foundation.dll ilPSP.dll MPI.Wrappers.dll log4net.dll nunit.framework.dll Newtonsoft.Json.dll ilPSP.LinSolvers.MUMPS.dll BoSSS.Platform.dll Renci.SshNet.dll ilPSP.LinSolvers.monkey.dll ilPSP.Connectors.Matlab.dll BoSSS.Foundation.XDG.dll Mono.CSharp.dll BoSSS.Foundation.Grid.dll MathNet.Numerics.dll BoSSS.Solution.CompressibleFlowCommon.dll BoSSS.Foundation.SpecFEM.dll BoSSS.Solution.NSECommon.dll BoSSS.Solution.ASCIIExport.dll BoSSS.Solution.Tecplot.dll BoSSS.Solution.GridImport.dll    copied 'amd64' runtime.
+deployment finished.
+Job not submitted yet, or no result session is known - starting submission.
+Deploying executables and additional files ...
+Deployment directory: \\dc1\userspace\weber\deploy_testDB\CNS2019Jan17_19-09-06
+Source directory: C:\BoSSS\BoSSS-master\public\src\L4-application\BoSSSpad\bin\Release
+   copied: CNS.exe BoSSS.Solution.dll CommandLine.dll BoSSS.Foundation.dll ilPSP.dll MPI.Wrappers.dll log4net.dll nunit.framework.dll Newtonsoft.Json.dll ilPSP.LinSolvers.MUMPS.dll BoSSS.Platform.dll Renci.SshNet.dll ilPSP.LinSolvers.monkey.dll ilPSP.Connectors.Matlab.dll BoSSS.Foundation.XDG.dll Mono.CSharp.dll BoSSS.Foundation.Grid.dll MathNet.Numerics.dll BoSSS.Solution.CompressibleFlowCommon.dll BoSSS.Foundation.SpecFEM.dll BoSSS.Solution.NSECommon.dll BoSSS.Solution.ASCIIExport.dll BoSSS.Solution.Tecplot.dll BoSSS.Solution.GridImport.dll    copied 'amd64' runtime.
+deployment finished.
+Job not submitted yet, or no result session is known - starting submission.
+Deploying executables and additional files ...
+Deployment directory: \\dc1\userspace\weber\deploy_testDB\CNS2019Jan17_19-09-21
+Source directory: C:\BoSSS\BoSSS-master\public\src\L4-application\BoSSSpad\bin\Release
+   copied: CNS.exe BoSSS.Solution.dll CommandLine.dll BoSSS.Foundation.dll ilPSP.dll MPI.Wrappers.dll log4net.dll nunit.framework.dll Newtonsoft.Json.dll ilPSP.LinSolvers.MUMPS.dll BoSSS.Platform.dll Renci.SshNet.dll ilPSP.LinSolvers.monkey.dll ilPSP.Connectors.Matlab.dll BoSSS.Foundation.XDG.dll Mono.CSharp.dll BoSSS.Foundation.Grid.dll MathNet.Numerics.dll BoSSS.Solution.CompressibleFlowCommon.dll BoSSS.Foundation.SpecFEM.dll BoSSS.Solution.NSECommon.dll BoSSS.Solution.ASCIIExport.dll BoSSS.Solution.Tecplot.dll BoSSS.Solution.GridImport.dll    copied 'amd64' runtime.
+deployment finished.
+Job not submitted yet, or no result session is known - starting submission.
+Deploying executables and additional files ...
+Deployment directory: \\dc1\userspace\weber\deploy_testDB\CNS2019Jan17_19-09-34
+Source directory: C:\BoSSS\BoSSS-master\public\src\L4-application\BoSSSpad\bin\Release
+   copied: CNS.exe BoSSS.Solution.dll CommandLine.dll BoSSS.Foundation.dll ilPSP.dll MPI.Wrappers.dll log4net.dll nunit.framework.dll Newtonsoft.Json.dll ilPSP.LinSolvers.MUMPS.dll BoSSS.Platform.dll Renci.SshNet.dll ilPSP.LinSolvers.monkey.dll ilPSP.Connectors.Matlab.dll BoSSS.Foundation.XDG.dll Mono.CSharp.dll BoSSS.Foundation.Grid.dll MathNet.Numerics.dll BoSSS.Solution.CompressibleFlowCommon.dll BoSSS.Foundation.SpecFEM.dll BoSSS.Solution.NSECommon.dll BoSSS.Solution.ASCIIExport.dll BoSSS.Solution.Tecplot.dll BoSSS.Solution.GridImport.dll    copied 'amd64' runtime.
+deployment finished.
+Job not submitted yet, or no result session is known - starting submission.
+Deploying executables and additional files ...
+Deployment directory: \\dc1\userspace\weber\deploy_testDB\CNS2019Jan17_19-09-49
+Source directory: C:\BoSSS\BoSSS-master\public\src\L4-application\BoSSSpad\bin\Release
+   copied: CNS.exe BoSSS.Solution.dll CommandLine.dll BoSSS.Foundation.dll ilPSP.dll MPI.Wrappers.dll log4net.dll nunit.framework.dll Newtonsoft.Json.dll ilPSP.LinSolvers.MUMPS.dll BoSSS.Platform.dll Renci.SshNet.dll ilPSP.LinSolvers.monkey.dll ilPSP.Connectors.Matlab.dll BoSSS.Foundation.XDG.dll Mono.CSharp.dll BoSSS.Foundation.Grid.dll MathNet.Numerics.dll BoSSS.Solution.CompressibleFlowCommon.dll BoSSS.Foundation.SpecFEM.dll BoSSS.Solution.NSECommon.dll BoSSS.Solution.ASCIIExport.dll BoSSS.Solution.Tecplot.dll BoSSS.Solution.GridImport.dll    copied 'amd64' runtime.
+deployment finished.
+Job not submitted yet, or no result session is known - starting submission.
+Deploying executables and additional files ...
+Deployment directory: \\dc1\userspace\weber\deploy_testDB\CNS2019Jan17_19-09-54
+Source directory: C:\BoSSS\BoSSS-master\public\src\L4-application\BoSSSpad\bin\Release
+   copied: CNS.exe BoSSS.Solution.dll CommandLine.dll BoSSS.Foundation.dll ilPSP.dll MPI.Wrappers.dll log4net.dll nunit.framework.dll Newtonsoft.Json.dll ilPSP.LinSolvers.MUMPS.dll BoSSS.Platform.dll Renci.SshNet.dll ilPSP.LinSolvers.monkey.dll ilPSP.Connectors.Matlab.dll BoSSS.Foundation.XDG.dll Mono.CSharp.dll BoSSS.Foundation.Grid.dll MathNet.Numerics.dll BoSSS.Solution.CompressibleFlowCommon.dll BoSSS.Foundation.SpecFEM.dll BoSSS.Solution.NSECommon.dll BoSSS.Solution.ASCIIExport.dll BoSSS.Solution.Tecplot.dll BoSSS.Solution.GridImport.dll    copied 'amd64' runtime.
+deployment finished.
+Job not submitted yet, or no result session is known - starting submission.
+Deploying executables and additional files ...
+Deployment directory: \\dc1\userspace\weber\deploy_testDB\CNS2019Jan17_19-10-04
+Source directory: C:\BoSSS\BoSSS-master\public\src\L4-application\BoSSSpad\bin\Release
+   copied: CNS.exe BoSSS.Solution.dll CommandLine.dll BoSSS.Foundation.dll ilPSP.dll MPI.Wrappers.dll log4net.dll nunit.framework.dll Newtonsoft.Json.dll ilPSP.LinSolvers.MUMPS.dll BoSSS.Platform.dll Renci.SshNet.dll ilPSP.LinSolvers.monkey.dll ilPSP.Connectors.Matlab.dll BoSSS.Foundation.XDG.dll Mono.CSharp.dll BoSSS.Foundation.Grid.dll MathNet.Numerics.dll BoSSS.Solution.CompressibleFlowCommon.dll BoSSS.Foundation.SpecFEM.dll BoSSS.Solution.NSECommon.dll BoSSS.Solution.ASCIIExport.dll BoSSS.Solution.Tecplot.dll BoSSS.Solution.GridImport.dll    copied 'amd64' runtime.
+deployment finished.
+Job not submitted yet, or no result session is known - starting submission.
+Deploying executables and additional files ...
+Deployment directory: \\dc1\userspace\weber\deploy_testDB\CNS2019Jan17_19-10-17
+Source directory: C:\BoSSS\BoSSS-master\public\src\L4-application\BoSSSpad\bin\Release
+   copied: CNS.exe BoSSS.Solution.dll CommandLine.dll BoSSS.Foundation.dll ilPSP.dll MPI.Wrappers.dll log4net.dll nunit.framework.dll Newtonsoft.Json.dll ilPSP.LinSolvers.MUMPS.dll BoSSS.Platform.dll Renci.SshNet.dll ilPSP.LinSolvers.monkey.dll ilPSP.Connectors.Matlab.dll BoSSS.Foundation.XDG.dll Mono.CSharp.dll BoSSS.Foundation.Grid.dll MathNet.Numerics.dll BoSSS.Solution.CompressibleFlowCommon.dll BoSSS.Foundation.SpecFEM.dll BoSSS.Solution.NSECommon.dll BoSSS.Solution.ASCIIExport.dll BoSSS.Solution.Tecplot.dll BoSSS.Solution.GridImport.dll    copied 'amd64' runtime.
+deployment finished.
+Job not submitted yet, or no result session is known - starting submission.
+Deploying executables and additional files ...
+Deployment directory: \\dc1\userspace\weber\deploy_testDB\CNS2019Jan17_19-10-33
+Source directory: C:\BoSSS\BoSSS-master\public\src\L4-application\BoSSSpad\bin\Release
+   copied: CNS.exe BoSSS.Solution.dll CommandLine.dll BoSSS.Foundation.dll ilPSP.dll MPI.Wrappers.dll log4net.dll nunit.framework.dll Newtonsoft.Json.dll ilPSP.LinSolvers.MUMPS.dll BoSSS.Platform.dll Renci.SshNet.dll ilPSP.LinSolvers.monkey.dll ilPSP.Connectors.Matlab.dll BoSSS.Foundation.XDG.dll Mono.CSharp.dll BoSSS.Foundation.Grid.dll MathNet.Numerics.dll BoSSS.Solution.CompressibleFlowCommon.dll BoSSS.Foundation.SpecFEM.dll BoSSS.Solution.NSECommon.dll BoSSS.Solution.ASCIIExport.dll BoSSS.Solution.Tecplot.dll BoSSS.Solution.GridImport.dll    copied 'amd64' runtime.
+deployment finished.
+Job not submitted yet, or no result session is known - starting submission.
+Deploying executables and additional files ...
+Deployment directory: \\dc1\userspace\weber\deploy_testDB\CNS2019Jan17_19-10-47
+Source directory: C:\BoSSS\BoSSS-master\public\src\L4-application\BoSSSpad\bin\Release
+   copied: CNS.exe BoSSS.Solution.dll CommandLine.dll BoSSS.Foundation.dll ilPSP.dll MPI.Wrappers.dll log4net.dll nunit.framework.dll Newtonsoft.Json.dll ilPSP.LinSolvers.MUMPS.dll BoSSS.Platform.dll Renci.SshNet.dll ilPSP.LinSolvers.monkey.dll ilPSP.Connectors.Matlab.dll BoSSS.Foundation.XDG.dll Mono.CSharp.dll BoSSS.Foundation.Grid.dll MathNet.Numerics.dll BoSSS.Solution.CompressibleFlowCommon.dll BoSSS.Foundation.SpecFEM.dll BoSSS.Solution.NSECommon.dll BoSSS.Solution.ASCIIExport.dll BoSSS.Solution.Tecplot.dll BoSSS.Solution.GridImport.dll    copied 'amd64' runtime.
+deployment finished.
+Job not submitted yet, or no result session is known - starting submission.
+Deploying executables and additional files ...
+Deployment directory: \\dc1\userspace\weber\deploy_testDB\CNS2019Jan17_19-10-58
+Source directory: C:\BoSSS\BoSSS-master\public\src\L4-application\BoSSSpad\bin\Release
+   copied: CNS.exe BoSSS.Solution.dll CommandLine.dll BoSSS.Foundation.dll ilPSP.dll MPI.Wrappers.dll log4net.dll nunit.framework.dll Newtonsoft.Json.dll ilPSP.LinSolvers.MUMPS.dll BoSSS.Platform.dll Renci.SshNet.dll ilPSP.LinSolvers.monkey.dll ilPSP.Connectors.Matlab.dll BoSSS.Foundation.XDG.dll Mono.CSharp.dll BoSSS.Foundation.Grid.dll MathNet.Numerics.dll BoSSS.Solution.CompressibleFlowCommon.dll BoSSS.Foundation.SpecFEM.dll BoSSS.Solution.NSECommon.dll BoSSS.Solution.ASCIIExport.dll BoSSS.Solution.Tecplot.dll BoSSS.Solution.GridImport.dll    copied 'amd64' runtime.
+deployment finished.
+Job not submitted yet, or no result session is known - starting submission.
+Deploying executables and additional files ...
+Deployment directory: \\dc1\userspace\weber\deploy_testDB\CNS2019Jan17_19-11-11
+Source directory: C:\BoSSS\BoSSS-master\public\src\L4-application\BoSSSpad\bin\Release
+   copied: CNS.exe BoSSS.Solution.dll CommandLine.dll BoSSS.Foundation.dll ilPSP.dll MPI.Wrappers.dll log4net.dll nunit.framework.dll Newtonsoft.Json.dll ilPSP.LinSolvers.MUMPS.dll BoSSS.Platform.dll Renci.SshNet.dll ilPSP.LinSolvers.monkey.dll ilPSP.Connectors.Matlab.dll BoSSS.Foundation.XDG.dll Mono.CSharp.dll BoSSS.Foundation.Grid.dll MathNet.Numerics.dll BoSSS.Solution.CompressibleFlowCommon.dll BoSSS.Foundation.SpecFEM.dll BoSSS.Solution.NSECommon.dll BoSSS.Solution.ASCIIExport.dll BoSSS.Solution.Tecplot.dll BoSSS.Solution.GridImport.dll    copied 'amd64' runtime.
+deployment finished.
+Job not submitted yet, or no result session is known - starting submission.
+Deploying executables and additional files ...
+Deployment directory: \\dc1\userspace\weber\deploy_testDB\CNS2019Jan17_19-11-20
+Source directory: C:\BoSSS\BoSSS-master\public\src\L4-application\BoSSSpad\bin\Release
+   copied: CNS.exe BoSSS.Solution.dll CommandLine.dll BoSSS.Foundation.dll ilPSP.dll MPI.Wrappers.dll log4net.dll nunit.framework.dll Newtonsoft.Json.dll ilPSP.LinSolvers.MUMPS.dll BoSSS.Platform.dll Renci.SshNet.dll ilPSP.LinSolvers.monkey.dll ilPSP.Connectors.Matlab.dll BoSSS.Foundation.XDG.dll Mono.CSharp.dll BoSSS.Foundation.Grid.dll MathNet.Numerics.dll BoSSS.Solution.CompressibleFlowCommon.dll BoSSS.Foundation.SpecFEM.dll BoSSS.Solution.NSECommon.dll BoSSS.Solution.ASCIIExport.dll BoSSS.Solution.Tecplot.dll BoSSS.Solution.GridImport.dll    copied 'amd64' runtime.
+deployment finished.
+Job not submitted yet, or no result session is known - starting submission.
+Deploying executables and additional files ...
+Deployment directory: \\dc1\userspace\weber\deploy_testDB\CNS2019Jan17_19-11-32
+Source directory: C:\BoSSS\BoSSS-master\public\src\L4-application\BoSSSpad\bin\Release
+   copied: CNS.exe BoSSS.Solution.dll CommandLine.dll BoSSS.Foundation.dll ilPSP.dll MPI.Wrappers.dll log4net.dll nunit.framework.dll Newtonsoft.Json.dll ilPSP.LinSolvers.MUMPS.dll BoSSS.Platform.dll Renci.SshNet.dll ilPSP.LinSolvers.monkey.dll ilPSP.Connectors.Matlab.dll BoSSS.Foundation.XDG.dll Mono.CSharp.dll BoSSS.Foundation.Grid.dll MathNet.Numerics.dll BoSSS.Solution.CompressibleFlowCommon.dll BoSSS.Foundation.SpecFEM.dll BoSSS.Solution.NSECommon.dll BoSSS.Solution.ASCIIExport.dll BoSSS.Solution.Tecplot.dll BoSSS.Solution.GridImport.dll    copied 'amd64' runtime.
+deployment finished.
+Job not submitted yet, or no result session is known - starting submission.
+Deploying executables and additional files ...
+Deployment directory: \\dc1\userspace\weber\deploy_testDB\CNS2019Jan17_19-11-42
+Source directory: C:\BoSSS\BoSSS-master\public\src\L4-application\BoSSSpad\bin\Release
+   copied: CNS.exe BoSSS.Solution.dll CommandLine.dll BoSSS.Foundation.dll ilPSP.dll MPI.Wrappers.dll log4net.dll nunit.framework.dll Newtonsoft.Json.dll ilPSP.LinSolvers.MUMPS.dll BoSSS.Platform.dll Renci.SshNet.dll ilPSP.LinSolvers.monkey.dll ilPSP.Connectors.Matlab.dll BoSSS.Foundation.XDG.dll Mono.CSharp.dll BoSSS.Foundation.Grid.dll MathNet.Numerics.dll BoSSS.Solution.CompressibleFlowCommon.dll BoSSS.Foundation.SpecFEM.dll BoSSS.Solution.NSECommon.dll BoSSS.Solution.ASCIIExport.dll BoSSS.Solution.Tecplot.dll BoSSS.Solution.GridImport.dll    copied 'amd64' runtime.
+deployment finished.
+Job not submitted yet, or no result session is known - starting submission.
+Deploying executables and additional files ...
+Deployment directory: \\dc1\userspace\weber\deploy_testDB\CNS2019Jan17_19-12-06
+Source directory: C:\BoSSS\BoSSS-master\public\src\L4-application\BoSSSpad\bin\Release
+   copied: CNS.exe BoSSS.Solution.dll CommandLine.dll BoSSS.Foundation.dll ilPSP.dll MPI.Wrappers.dll log4net.dll nunit.framework.dll Newtonsoft.Json.dll ilPSP.LinSolvers.MUMPS.dll BoSSS.Platform.dll Renci.SshNet.dll ilPSP.LinSolvers.monkey.dll ilPSP.Connectors.Matlab.dll BoSSS.Foundation.XDG.dll Mono.CSharp.dll BoSSS.Foundation.Grid.dll MathNet.Numerics.dll BoSSS.Solution.CompressibleFlowCommon.dll BoSSS.Foundation.SpecFEM.dll BoSSS.Solution.NSECommon.dll BoSSS.Solution.ASCIIExport.dll BoSSS.Solution.Tecplot.dll BoSSS.Solution.GridImport.dll    copied 'amd64' runtime.
+deployment finished.
+Job not submitted yet, or no result session is known - starting submission.
+Deploying executables and additional files ...
+Deployment directory: \\dc1\userspace\weber\deploy_testDB\CNS2019Jan17_19-12-14
+Source directory: C:\BoSSS\BoSSS-master\public\src\L4-application\BoSSSpad\bin\Release
+   copied: CNS.exe BoSSS.Solution.dll CommandLine.dll BoSSS.Foundation.dll ilPSP.dll MPI.Wrappers.dll log4net.dll nunit.framework.dll Newtonsoft.Json.dll ilPSP.LinSolvers.MUMPS.dll BoSSS.Platform.dll Renci.SshNet.dll ilPSP.LinSolvers.monkey.dll ilPSP.Connectors.Matlab.dll BoSSS.Foundation.XDG.dll Mono.CSharp.dll BoSSS.Foundation.Grid.dll MathNet.Numerics.dll BoSSS.Solution.CompressibleFlowCommon.dll BoSSS.Foundation.SpecFEM.dll BoSSS.Solution.NSECommon.dll BoSSS.Solution.ASCIIExport.dll BoSSS.Solution.Tecplot.dll BoSSS.Solution.GridImport.dll    copied 'amd64' runtime.
+deployment finished.
 
 ==============
 WorkflowMgm.AllJobs;
 **************
-List of 6 instances of KeyValuePair{String,Job} {
-  0: [DMR_pSystem.Int32[]_xCells400_yCells100_s0=System.Double[]_CFLFrac0.1_RKSystem.Int32[]_2cores, DMR_pSystem.Int32[]_xCells400_yCells100_s0=System.Double[]_CFLFrac0.1_RKSystem.Int32[]_2cores: FinishedSuccessful (BoSSS.Application.BoSSSpad.SlurmClient)]
-  1: [DMR_pSystem.Int32[]_xCells400_yCells100_s0=System.Double[]_CFLFrac0.1_RKSystem.Int32[]_4cores, DMR_pSystem.Int32[]_xCells400_yCells100_s0=System.Double[]_CFLFrac0.1_RKSystem.Int32[]_4cores: FinishedSuccessful (BoSSS.Application.BoSSSpad.SlurmClient)]
-  2: [DMR_pSystem.Int32[]_xCells400_yCells100_s0=System.Double[]_CFLFrac0.1_RKSystem.Int32[]_8cores, DMR_pSystem.Int32[]_xCells400_yCells100_s0=System.Double[]_CFLFrac0.1_RKSystem.Int32[]_8cores: FinishedSuccessful (BoSSS.Application.BoSSSpad.SlurmClient)]
-  3: [DMR_pSystem.Int32[]_xCells400_yCells100_s0=System.Double[]_CFLFrac0.1_RKSystem.Int32[]_16cores, DMR_pSystem.Int32[]_xCells400_yCells100_s0=System.Double[]_CFLFrac0.1_RKSystem.Int32[]_16cores: FinishedSuccessful (BoSSS.Application.BoSSSpad.SlurmClient)]
-  4: [DMR_pSystem.Int32[]_xCells400_yCells100_s0=System.Double[]_CFLFrac0.1_RKSystem.Int32[]_32cores, DMR_pSystem.Int32[]_xCells400_yCells100_s0=System.Double[]_CFLFrac0.1_RKSystem.Int32[]_32cores: FinishedSuccessful (BoSSS.Application.BoSSSpad.SlurmClient)]
-  5: [DMR_pSystem.Int32[]_xCells400_yCells100_s0=System.Double[]_CFLFrac0.1_RKSystem.Int32[]_64cores, DMR_pSystem.Int32[]_xCells400_yCells100_s0=System.Double[]_CFLFrac0.1_RKSystem.Int32[]_64cores: FinishedSuccessful (BoSSS.Application.BoSSSpad.SlurmClient)]
+List of 0 instances of KeyValuePair{String,Job} {
 }
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
 ==============
 **************
 ==============
