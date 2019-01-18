@@ -109,9 +109,9 @@ namespace BoSSS.Application.FSI_Solver {
             base.FieldOptions.Clear();
             this.AddFieldOption("Velocity*", k);
             this.AddFieldOption("Pressure", k - 1);
-            this.AddFieldOption("PhiDG", 2);
-            this.AddFieldOption("Phi", 2);
-            this.AddFieldOption("Curvature", 4);
+            this.AddFieldOption("PhiDG", k);
+            this.AddFieldOption("Phi", k);
+            this.AddFieldOption("Curvature", k);
         }
 
         ///// <summary>
