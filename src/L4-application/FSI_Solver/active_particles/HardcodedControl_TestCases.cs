@@ -30,7 +30,7 @@ namespace BoSSS.Application.FSI_Solver
 {
     public class HardcodedControl_TestCases : IBM_Solver.HardcodedTestExamples
     {
-        public static FSI_Control activeRod_noBackroundFlow(string _DbPath = null, int k = 2, double VelXBase = 0.0, double stressM = 1e1, double cellAgg = 0.2, double muA = 1e0, double timestepX = 1e-2)
+        public static FSI_Control activeRod_noBackroundFlow(string _DbPath = null, int k = 2, double VelXBase = 0.0, double stressM = 1e0, double cellAgg = 0.2, double muA = 1e0, double timestepX = 1e-2)
         {
             FSI_Control C = new FSI_Control();
 
@@ -129,7 +129,7 @@ namespace BoSSS.Application.FSI_Solver
             int numOfParticles = 2;
             for (int d = 0; d < numOfParticles; d++)
             {
-                C.Particles.Add(new Particle_superEllipsoid(2, 4, new double[] { -2 + 4 * d, 0.0 }, startAngl: 180*d)
+                C.Particles.Add(new Particle_superEllipsoid(2, 4, new double[] { -0.75 + 1.5 * d, 0.0 }, startAngl: 180*d)
                 {
                     radius_P = 1,
                     rho_P = 1.01,//pg/(mum^3)
