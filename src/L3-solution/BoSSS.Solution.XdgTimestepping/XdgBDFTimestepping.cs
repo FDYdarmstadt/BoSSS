@@ -185,6 +185,7 @@ namespace BoSSS.Solution.XdgTimestepping {
                 }
             }
 
+
             // multigrid - init
             // ----------------
 
@@ -591,6 +592,7 @@ namespace BoSSS.Solution.XdgTimestepping {
                     MassMatrixFactory MassFact = m_LsTrk.GetXDGSpaceMetrics(base.Config_SpeciesToCompute, base.Config_CutCellQuadratureOrder).MassMatrixFactory;
                     m_Stack_MassMatrix[0] = new BlockMsrMatrix(CurrentStateMapping);
                     MassFact.AccMassMatrix(m_Stack_MassMatrix[0], CurrentStateMapping, _alpha: Config_MassScale);
+
                 }
             }
 
@@ -1078,6 +1080,8 @@ namespace BoSSS.Solution.XdgTimestepping {
                 Debug.Assert(object.ReferenceEquals(this.m_CurrentAgglomeration.Tracker, this.m_LsTrk));
                 this.ComputeOperatorMatrix(m_Stack_OpMatrix[0], m_Stack_OpAffine[0], CurrentStateMapping, locCurSt, base.GetAgglomeratedLengthScales(), m_CurrentPhystime + m_CurrentDt);
 
+                
+
 
                 // assemble system
                 // ---------------
@@ -1184,6 +1188,7 @@ namespace BoSSS.Solution.XdgTimestepping {
                         Affine.AccV(1.0 / dt, new CoordinateVector(CurrentStateMapping));
                     }
                 }
+
 #if DEBUG
                 if (Config_MassMatrixShapeandDependence != MassMatrixShapeandDependence.IsIdentity) {
                     // compare "private" and "official" mass matrix stack
@@ -1212,6 +1217,7 @@ namespace BoSSS.Solution.XdgTimestepping {
                 // ---------------------
                 Debug.Assert(object.ReferenceEquals(m_CurrentAgglomeration.Tracker, m_LsTrk));
                 m_CurrentAgglomeration.ManipulateMatrixAndRHS(System, RHS, CurrentStateMapping, CurrentStateMapping);
+
 
                 // increase iteration counter         
                 // --------------------------
@@ -1346,9 +1352,6 @@ namespace BoSSS.Solution.XdgTimestepping {
                 dt = m_CurrentDt;
             else
                 Console.WriteLine("Increment solve, timestep #{0}, dt = {1} ...", increment, dt);
-
-
-
 
 
             // ===========================================
@@ -1570,6 +1573,7 @@ namespace BoSSS.Solution.XdgTimestepping {
 
                 Debug.Assert(m_CurrentAgglomeration == null);
             }
+
 
             // ====================
             // release end-of-stack
