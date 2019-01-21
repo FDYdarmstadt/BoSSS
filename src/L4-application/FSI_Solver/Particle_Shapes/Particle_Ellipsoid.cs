@@ -80,9 +80,10 @@ namespace BoSSS.Application.FSI_Solver
             get
             {
                 //Approximation formula for circumference according to Ramanujan
-                double circumference;
-                circumference = Math.PI * ((length_P + thickness_P) + (3 * (length_P - thickness_P).Pow2()) / (10 * (length_P + thickness_P) + Math.Sqrt(length_P.Pow2() + 14 * length_P * thickness_P + thickness_P.Pow2())));
-                return 0.5 * circumference * stress_magnitude_P;
+                //double circumference;
+                //circumference = Math.PI * ((length_P + thickness_P) + (3 * (length_P - thickness_P).Pow2()) / (10 * (length_P + thickness_P) + Math.Sqrt(length_P.Pow2() + 14 * length_P * thickness_P + thickness_P.Pow2())));
+                //return 0.5 * circumference * stress_magnitude_P;
+                return stress_magnitude_P;
             }
         }
         override public double Area_P
