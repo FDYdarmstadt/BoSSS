@@ -396,6 +396,7 @@ namespace BoSSS.Application.IBM_Solver {
             C.LevelSetSmoothing = false;
             C.LinearSolver.MaxKrylovDim = 20;
             C.LinearSolver.MaxSolverIterations = 50;
+            C.NonLinearSolver.MaxSolverIterations = 50;
             C.VelocityBlockPrecondMode = MultigridOperator.Mode.SymPart_DiagBlockEquilib_DropIndefinite;
 
             // Timestepping
@@ -416,7 +417,7 @@ namespace BoSSS.Application.IBM_Solver {
             C.Endtime = 10000000;
             //C.NoOfTimesteps = 10;
             C.NoOfTimesteps = 1;
-            C.NoOfMultigridLevels = 3;
+            C.LinearSolver.NoOfMultigridLevels = 3;
 
             return C;
         }
@@ -742,6 +743,7 @@ namespace BoSSS.Application.IBM_Solver {
             //C.option_solver = "direct";
             C.LinearSolver.MaxKrylovDim = 20;
             C.LinearSolver.MaxSolverIterations = 50;
+            C.NonLinearSolver.MaxSolverIterations = 50;
             C.VelocityBlockPrecondMode = MultigridOperator.Mode.SymPart_DiagBlockEquilib_DropIndefinite;
             //C.NoOfMultigridLevels = 0;
 

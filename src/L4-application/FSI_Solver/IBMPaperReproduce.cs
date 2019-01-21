@@ -289,8 +289,9 @@ namespace BoSSS.Application.FSI_Solver
             //C.option_solver = "direct";
             C.LinearSolver.MaxKrylovDim = 20;
             C.LinearSolver.MaxSolverIterations = 50;
+            C.NonLinearSolver.MaxSolverIterations = 50;
             C.VelocityBlockPrecondMode = MultigridOperator.Mode.SymPart_DiagBlockEquilib_DropIndefinite;
-            C.NoOfMultigridLevels = 0;
+            C.LinearSolver.NoOfMultigridLevels = 0;
 
             // Timestepping
             // ============
@@ -459,7 +460,8 @@ namespace BoSSS.Application.FSI_Solver
             C.AdvancedDiscretizationOptions.CellAgglomerationThreshold = 0.2;
             C.LevelSetSmoothing = false;
             C.LinearSolver.MaxSolverIterations = 100;
-            C.NoOfMultigridLevels = 1;
+            C.LinearSolver.NoOfMultigridLevels = 1;
+            C.NonLinearSolver.MaxSolverIterations = 100;
 
             // Timestepping
             // ============
@@ -785,8 +787,9 @@ namespace BoSSS.Application.FSI_Solver
             C.LevelSetSmoothing = false;
             C.LinearSolver.MaxKrylovDim = 20;
             C.LinearSolver.MaxSolverIterations = 100;
+            C.NonLinearSolver.MaxSolverIterations = 100;
             C.VelocityBlockPrecondMode = MultigridOperator.Mode.SymPart_DiagBlockEquilib_DropIndefinite;
-            C.NoOfMultigridLevels = 0;
+            C.LinearSolver.NoOfMultigridLevels = 0;
 
             // Timestepping
             // ============
@@ -1025,7 +1028,7 @@ namespace BoSSS.Application.FSI_Solver
             C.AdvancedDiscretizationOptions.CellAgglomerationThreshold = 0.2;
             C.LevelSetSmoothing = false;
             C.LinearSolver.MaxSolverIterations = 100;
-
+            C.NonLinearSolver.MaxSolverIterations = 100;
 
             // Timestepping
             // ============

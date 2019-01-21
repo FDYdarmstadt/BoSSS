@@ -49,7 +49,9 @@ namespace BoSSS.Application.IBM_Solver {
             // Solver Options
             C.NoOfTimesteps = 100;
             C.LinearSolver.MaxSolverIterations = 100;
-            C.MinSolverIterations = 1;
+            C.LinearSolver.MinSolverIterations = 1;
+            C.NonLinearSolver.MaxSolverIterations = 100;
+            C.NonLinearSolver.MinSolverIterations = 1;
             C.savetodb = false;
             C.DbPath = null;
             C.ProjectName = "ChannelFlow";
@@ -261,8 +263,9 @@ namespace BoSSS.Application.IBM_Solver {
             C.LevelSetSmoothing = false;
             C.LinearSolver.MaxKrylovDim = 20;
             C.LinearSolver.MaxSolverIterations = 100;
+            C.NonLinearSolver.MaxSolverIterations = 100;
             C.VelocityBlockPrecondMode = MultigridOperator.Mode.SymPart_DiagBlockEquilib_DropIndefinite;
-            C.NoOfMultigridLevels = 0;
+            C.LinearSolver.NoOfMultigridLevels = 0;
 
             // Timestepping
             // ============
@@ -529,8 +532,9 @@ namespace BoSSS.Application.IBM_Solver {
                 //C.option_solver = "direct";
                 C.LinearSolver.MaxKrylovDim = 1000;
                 C.LinearSolver.MaxSolverIterations = 50;
+                C.NonLinearSolver.MaxSolverIterations = 50;
                 C.VelocityBlockPrecondMode = MultigridOperator.Mode.SymPart_DiagBlockEquilib_DropIndefinite;
-                C.NoOfMultigridLevels = 1;
+                C.LinearSolver.NoOfMultigridLevels = 1;
                 C.NonLinearSolver.SolverCode = NonLinearSolverConfig.Code.NewtonGMRES;
                 C.LinearSolver.SolverCode = LinearSolverConfig.Code.exp_Schur;
 
@@ -654,6 +658,7 @@ namespace BoSSS.Application.IBM_Solver {
             // Solver Options
             C.NoOfTimesteps = 100;
             C.LinearSolver.MaxSolverIterations = 50;
+            C.NonLinearSolver.MaxSolverIterations = 50;
             C.savetodb = false;
             C.DbPath = @"P:\BoSSS_DBs\ChannelFlow";
             C.ProjectName = "ChannelFlow";
@@ -833,8 +838,9 @@ namespace BoSSS.Application.IBM_Solver {
             C.LevelSetSmoothing = false;
             C.LinearSolver.MaxKrylovDim = 20;
             C.LinearSolver.MaxSolverIterations = 20;
+            C.NonLinearSolver.MaxSolverIterations = 20;
             C.VelocityBlockPrecondMode = MultigridOperator.Mode.SymPart_DiagBlockEquilib_DropIndefinite;
-            C.NoOfMultigridLevels = 0;
+            C.LinearSolver.NoOfMultigridLevels = 0;
 
             // Timestepping
             // ============
@@ -854,6 +860,7 @@ namespace BoSSS.Application.IBM_Solver {
 
             // Solver options
             C.LinearSolver.MaxSolverIterations = 1;
+            C.NonLinearSolver.MaxSolverIterations = 1;
             C.ProjectName = "Cylinder3D HPCCLUSTER 18/06/15";
             C.NoOfTimesteps = 1;
             C.dtMax = 0.1;
@@ -1121,6 +1128,7 @@ namespace BoSSS.Application.IBM_Solver {
 
             // Solver Options
             C.LinearSolver.MaxSolverIterations = 1000;
+            C.NonLinearSolver.MaxSolverIterations = 1000;
             C.savetodb = false;
             C.DbPath = @"P:\BoSSS_DBs\Kovasznay";
             C.ProjectName = "KovasnayFlow";
@@ -1223,12 +1231,14 @@ namespace BoSSS.Application.IBM_Solver {
 
             // Solver Options
             C.LinearSolver.MaxSolverIterations = 100;
-            C.MinSolverIterations = 1;
+            C.LinearSolver.MinSolverIterations = 1;
+            C.NonLinearSolver.MaxSolverIterations = 100;
+            C.NonLinearSolver.MinSolverIterations = 1;
             C.savetodb = false;
             C.DbPath = null;
             C.ProjectName = "ChannelFlow";
             C.SessionName = "Channel";
-            C.NoOfMultigridLevels = 1;
+            C.LinearSolver.NoOfMultigridLevels = 1;
 
             // Calculate Navier-Stokes? 
             C.PhysicalParameters.IncludeConvection = true;
@@ -1355,11 +1365,13 @@ namespace BoSSS.Application.IBM_Solver {
 
             // Solver Options
             C.LinearSolver.MaxSolverIterations = 100;
-            C.MinSolverIterations = 1;
+            C.LinearSolver.MinSolverIterations = 1;
+            C.NonLinearSolver.MaxSolverIterations = 100;
+            C.NonLinearSolver.MinSolverIterations = 1;
             C.savetodb = false;
             C.ProjectName = "BackwardStep";
             C.SessionName = "BackwardStep";
-            C.NoOfMultigridLevels = 1;
+            C.LinearSolver.NoOfMultigridLevels = 1;
             C.LinearSolver.MaxKrylovDim = 1000;
 
             // Calculate Navier-Stokes? 

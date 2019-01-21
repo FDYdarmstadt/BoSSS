@@ -35,19 +35,18 @@ namespace BoSSS.Application.IBM_Solver {
         /// Ctor.
         /// </summary>
         public IBM_Control() {
-            base.NoOfMultigridLevels = 1;
+            base.LinearSolver.NoOfMultigridLevels = 1;
             base.CutCellQuadratureType = Foundation.XDG.XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes;
             //shift of Solver Information
-            base.LinearSolver.MaxKrylovDim = MaxKrylovDim;
-            base.LinearSolver.MaxSolverIterations = MaxSolverIterations;
-            base.LinearSolver.MinSolverIterations = MinSolverIterations;
-            base.LinearSolver.ConvergenceCriterion = Solver_ConvergenceCriterion;
-            base.LinearSolver.SolverCode = LinearSolverConfig.Code.classic_mumps;
-            base.NonLinearSolver.MaxKrylovDim = MaxKrylovDim;
-            base.NonLinearSolver.MaxSolverIterations = MaxSolverIterations;
-            base.NonLinearSolver.MinSolverIterations = MinSolverIterations;
-            base.NonLinearSolver.ConvergenceCriterion = Solver_ConvergenceCriterion;
-            base.NonLinearSolver.SolverCode = NonLinearSolverConfig.Code.Picard;
+            base.LinearSolver.MaxKrylovDim = 30; //MaxKrylovDim
+            base.LinearSolver.MaxSolverIterations = 2000; //MaxSolverIterations
+            base.LinearSolver.MinSolverIterations = 2; //MinSolverIterations
+            base.LinearSolver.ConvergenceCriterion = 1.0e-8; //Solver_ConvergenceCriterion
+            base.LinearSolver.SolverCode = LinearSolverConfig.Code.classic_mumps; //public LinearSolverCodes LinearSolve = LinearSolverCodes.classic_mumps;
+            base.NonLinearSolver.MaxSolverIterations = 2000; //MaxSolverIterations
+            base.NonLinearSolver.MinSolverIterations = 2; //MinSolverIterations
+            base.NonLinearSolver.ConvergenceCriterion = 1.0e-8; //Solver_ConvergenceCriterion
+            base.NonLinearSolver.SolverCode = NonLinearSolverConfig.Code.Picard; //public NonlinearSolverCodes NonlinearSolve = NonlinearSolverCodes.Picard;
         }
 
         /// <summary>
@@ -97,32 +96,32 @@ namespace BoSSS.Application.IBM_Solver {
             this.AddFieldOption("Phi", 2);
         }
 
+        
 
+        ///// <summary>
+        ///// If iterative saddle-point solvers like GMRES or Orthonormalization are used, the maximum number of basis vectors
+        ///// that are used to construct the accelerated solution.
+        ///// </summary>
+        //[DataMember]
+        //public int MaxKrylovDim = 30;
 
-        /// <summary>
-        /// If iterative saddle-point solvers like GMRES or Orthonormalization are used, the maximum number of basis vectors
-        /// that are used to construct the accelerated solution.
-        /// </summary>
-        [DataMember]
-        public int MaxKrylovDim = 30;
+        ///// <summary>
+        ///// If iterative solvers are used, the maximum number of iterations.
+        ///// </summary>
+        //[DataMember]
+        //public int MaxSolverIterations = 2000;
 
-        /// <summary>
-        /// If iterative solvers are used, the maximum number of iterations.
-        /// </summary>
-        [DataMember]
-        public int MaxSolverIterations = 2000;
+        ///// <summary>
+        ///// If iterative solvers are used, the maximum number of iterations.
+        ///// </summary>
+        //[DataMember]
+        //public int MinSolverIterations = 2;
 
-        /// <summary>
-        /// If iterative solvers are used, the maximum number of iterations.
-        /// </summary>
-        [DataMember]
-        public int MinSolverIterations = 2;
-
-        /// <summary>
-        /// Convergence criterion for linear/nonlinear solver.
-        /// </summary>
-        [DataMember]
-        public double Solver_ConvergenceCriterion = 1.0e-8;
+        ///// <summary>
+        ///// Convergence criterion for linear/nonlinear solver.
+        ///// </summary>
+        //[DataMember]
+        //public double Solver_ConvergenceCriterion = 1.0e-8;
 
         /// <summary>
         /// Block-Preconditiond for the velocity-components of the saddel-point system

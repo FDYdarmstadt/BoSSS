@@ -289,7 +289,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
 
 
             //C.EnforceLevelSetConservation = true;
-            C.NoOfMultigridLevels = 1;
+            C.LinearSolver.NoOfMultigridLevels = 1;
             C.NonLinearSolver.MaxSolverIterations = 50;
             C.LinearSolver.MaxSolverIterations = 50;
             //C.Solver_MaxIterations = 50;
@@ -572,7 +572,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             C.LSContiProjectionMethod = ContinuityProjectionOption.ContinuousDG;
 
             C.VelocityBlockPrecondMode = MultigridOperator.Mode.SymPart_DiagBlockEquilib;
-            C.NoOfMultigridLevels = 1;
+            C.LinearSolver.NoOfMultigridLevels = 1;
             C.NonLinearSolver.MaxSolverIterations = 80;
             C.LinearSolver.MaxSolverIterations = 80;
             //C.Solver_MaxIterations = 80;
@@ -901,7 +901,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
 
 
             C.VelocityBlockPrecondMode = MultigridOperator.Mode.SymPart_DiagBlockEquilib;
-            C.NoOfMultigridLevels = 1;
+            C.LinearSolver.NoOfMultigridLevels = 1;
             C.NonLinearSolver.MaxSolverIterations = 50;
             C.LinearSolver.MaxSolverIterations = 50;
             //C.Solver_MaxIterations = 50;
@@ -1111,7 +1111,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             C.LSContiProjectionMethod = ContinuityProjectionOption.SpecFEM;
             //C.option_solver = C.PhysicalParameters.IncludeConvection ? "fixpoint+levelset" : "direct";
             C.VelocityBlockPrecondMode = MultigridOperator.Mode.SymPart_DiagBlockEquilib_DropIndefinite;
-            C.NoOfMultigridLevels = 1;
+            C.LinearSolver.NoOfMultigridLevels = 1;
             C.NonLinearSolver.MaxSolverIterations = 50;
             C.LinearSolver.MaxSolverIterations = 50;
             //C.Solver_MaxIterations = 50;

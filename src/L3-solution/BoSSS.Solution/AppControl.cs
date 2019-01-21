@@ -88,7 +88,7 @@ namespace BoSSS.Solution.Control {
             this.Tags = new List<string>();
             this.m_InitialValues_Evaluators = new Dictionary<string, Func<double[], double>>();
             this.m_InitialValues = new Dictionary<string, IBoundaryAndInitialData>();
-            this.NoOfMultigridLevels = 0;
+            this.LinearSolver.NoOfMultigridLevels = 0;
         }
 
         [Serializable]
@@ -700,14 +700,14 @@ namespace BoSSS.Solution.Control {
         [DataMember]
         public bool Paramstudy_ContinueOnError = true;
 
-        /// <summary>
-        /// Number of aggregation multi-grid levels, <see cref="Application{T}.MultigridLevels"/>.
-        /// </summary>
-        [DataMember]
-        public int NoOfMultigridLevels {
-            get;
-            set;
-        }
+        ///// <summary>
+        ///// Number of aggregation multi-grid levels, <see cref="Application{T}.MultigridLevels"/>.
+        ///// </summary>
+        //[DataMember]
+        //public int NoOfMultigridLevels {
+        //    get;
+        //    set;
+        //}
 
         //-------------- new solver stuff
 

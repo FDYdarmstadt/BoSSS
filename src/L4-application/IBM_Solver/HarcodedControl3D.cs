@@ -281,8 +281,9 @@ namespace BoSSS.Application.IBM_Solver {
                 //C.option_solver = "direct";
                 C.LinearSolver.MaxKrylovDim = 20;
                 C.LinearSolver.MaxSolverIterations = 50;
+                C.NonLinearSolver.MaxSolverIterations = 50;
                 C.VelocityBlockPrecondMode = MultigridOperator.Mode.SymPart_DiagBlockEquilib_DropIndefinite;
-                C.NoOfMultigridLevels = 0;
+                C.LinearSolver.NoOfMultigridLevels = 0;
 
                 // Timestepping
                 // ============
@@ -633,11 +634,12 @@ namespace BoSSS.Application.IBM_Solver {
             C.LevelSetSmoothing = false;
             C.LinearSolver.MaxKrylovDim = 50;
             C.LinearSolver.MaxSolverIterations = 50;
+            C.NonLinearSolver.MaxSolverIterations = 50;
             C.VelocityBlockPrecondMode = MultigridOperator.Mode.SymPart_DiagBlockEquilib_DropIndefinite;
             C.NonLinearSolver.SolverCode = NonLinearSolverConfig.Code.NewtonGMRES;
             C.LinearSolver.SolverCode = LinearSolverConfig.Code.exp_schwarz_directcoarse_overlap;
             C.LinearSolver.ConvergenceCriterion = 1E-6;
-            C.NoOfMultigridLevels = 2;
+            C.LinearSolver.NoOfMultigridLevels = 2;
 
             // Timestepping
             // ============
@@ -976,11 +978,13 @@ namespace BoSSS.Application.IBM_Solver {
             C.LevelSetSmoothing = false;
             C.LinearSolver.MaxKrylovDim = 30;
             C.LinearSolver.MaxSolverIterations = 50;
+            C.NonLinearSolver.MaxSolverIterations = 50;
             C.VelocityBlockPrecondMode = MultigridOperator.Mode.SymPart_DiagBlockEquilib_DropIndefinite;
             C.NonLinearSolver.SolverCode = NonLinearSolverConfig.Code.NewtonGMRES;
             C.LinearSolver.SolverCode = LinearSolverConfig.Code.exp_schwarz_Kcycle_directcoarse_overlap;
             C.LinearSolver.ConvergenceCriterion = 1E-6;
-            C.NoOfMultigridLevels = 3;
+            C.NonLinearSolver.ConvergenceCriterion = 1E-6;
+            C.LinearSolver.NoOfMultigridLevels = 3;
 
             // Timestepping
             // ============
@@ -1156,11 +1160,13 @@ namespace BoSSS.Application.IBM_Solver {
             C.LevelSetSmoothing = false;
             C.LinearSolver.MaxKrylovDim = 4;
             C.LinearSolver.MaxSolverIterations = 50;
+            C.NonLinearSolver.MaxSolverIterations = 50;
             C.VelocityBlockPrecondMode = MultigridOperator.Mode.SymPart_DiagBlockEquilib_DropIndefinite;
             C.NonLinearSolver.SolverCode = NonLinearSolverConfig.Code.NewtonGMRES;
             C.LinearSolver.SolverCode = LinearSolverConfig.Code.automatic;
             C.LinearSolver.ConvergenceCriterion = 1E-6;
-            C.NoOfMultigridLevels = 2;
+            C.NonLinearSolver.ConvergenceCriterion = 1E-6;
+            C.LinearSolver.NoOfMultigridLevels = 2;
 
             // Timestepping
             // ============
@@ -1312,11 +1318,13 @@ namespace BoSSS.Application.IBM_Solver {
             C.LevelSetSmoothing = false;
             C.LinearSolver.MaxKrylovDim = 100;
             C.LinearSolver.MaxSolverIterations = 10;
+            C.NonLinearSolver.MaxSolverIterations = 10;
             C.VelocityBlockPrecondMode = MultigridOperator.Mode.SymPart_DiagBlockEquilib_DropIndefinite;
             C.NonLinearSolver.SolverCode = NonLinearSolverConfig.Code.NewtonGMRES;
             C.LinearSolver.SolverCode = LinearSolverConfig.Code.automatic;
             C.LinearSolver.ConvergenceCriterion = 1E-5;
-            C.NoOfMultigridLevels = 2;
+            C.NonLinearSolver.ConvergenceCriterion = 1E-5;
+            C.LinearSolver.NoOfMultigridLevels = 2;
 
             // Timestepping
             // ============

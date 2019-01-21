@@ -94,7 +94,7 @@ namespace BoSSS.Application.Rheology {
     // Channel Flow
     static public RheologyControl ChannelGeneric(int GridRes = 3, int PolyDeg = 2, double beta = 0) {
             RheologyControl C = new RheologyControl();
-
+            
             //Solver Options
             C.NoOfTimesteps = 1;
             C.savetodb = false;

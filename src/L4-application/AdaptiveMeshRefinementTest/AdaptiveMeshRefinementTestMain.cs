@@ -73,7 +73,7 @@ namespace BoSSS.Application.AdaptiveMeshRefinementTest {
 
         public override void Init(BoSSS.Solution.Control.AppControl control) {
             control.GridPartType = BoSSS.Foundation.Grid.GridPartType.none;
-            control.NoOfMultigridLevels = 1;
+            control.LinearSolver.NoOfMultigridLevels = 1;
             base.Init(control);
         }
 

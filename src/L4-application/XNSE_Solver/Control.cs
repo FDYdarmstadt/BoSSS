@@ -48,7 +48,7 @@ namespace BoSSS.Application.XNSE_Solver {
         /// Ctor.
         /// </summary>
         public XNSE_Control() {
-            base.NoOfMultigridLevels = 1;
+            base.LinearSolver.NoOfMultigridLevels = 1;
             base.CutCellQuadratureType = XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes;
             //shift of Solver Information
             base.LinearSolver.MaxKrylovDim = 100; //Solver_MaxKrylovDim;
@@ -56,7 +56,6 @@ namespace BoSSS.Application.XNSE_Solver {
             base.LinearSolver.MinSolverIterations = 4; //Solver_MinIterations
             base.LinearSolver.ConvergenceCriterion = 1.0e-10; //Solver_ConvergenceCriterion
             base.LinearSolver.SolverCode = LinearSolverConfig.Code.classic_mumps; //LinearSolver
-            base.NonLinearSolver.MaxKrylovDim = 100; //Solver_MaxKrylovDim;
             base.NonLinearSolver.MaxSolverIterations = 2000; //Solver_MaxIterations
             base.NonLinearSolver.MinSolverIterations = 4; //Solver_MinIterations
             base.NonLinearSolver.ConvergenceCriterion = 1.0e-10; //Solver_ConvergenceCriterion

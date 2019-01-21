@@ -665,11 +665,11 @@ namespace BoSSS.Application.XNSE_Solver {
                     //m_BDF_Timestepper.config_NonLinearSolver.MaxSolverIterations = this.Control.Solver_MaxIterations;
                     
                     this.Control.NonLinearSolver.MinSolverIterations = (this.Control.Timestepper_LevelSetHandling == LevelSetHandling.Coupled_Iterative) ? 1 : this.Control.NonLinearSolver.MinSolverIterations; //m_BDF_Timestepper.config_NonLinearSolver.MinSolverIterations = (this.Control.Timestepper_LevelSetHandling == LevelSetHandling.Coupled_Iterative) ? 1 : this.Control.Solver_MinIterations;
-                    
+
                     //m_BDF_Timestepper.config_NonLinearSolver.MaxKrylovDim = this.Control.Solver_MaxKrylovDim;
                     //m_BDF_Timestepper.config_NonLinearSolver.SolverCode = NonLinearSolverConfig.Code.Picard;
                     if (this.Control.NonLinearSolver.SolverCode == NonLinearSolverConfig.Code.NewtonGMRES) {
-                        m_BDF_Timestepper.XdgSolverFactory.Selfmade_linsolver =
+                        m_BDF_Timestepper.XdgSolverFactory.Selfmade_precond =
                                             new Schwarz() {
                                                 m_BlockingStrategy = new Schwarz.METISBlockingStrategy() {
                                                     NoOfPartsPerProcess = this.CurrentSolution.Count / 10000,

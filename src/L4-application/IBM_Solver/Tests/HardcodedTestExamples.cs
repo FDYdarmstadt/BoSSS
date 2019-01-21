@@ -151,8 +151,9 @@ namespace BoSSS.Application.IBM_Solver {
             C.LevelSetSmoothing = false;
             C.LinearSolver.MaxKrylovDim = 20;
             C.LinearSolver.MaxSolverIterations = 100;
+            C.NonLinearSolver.MaxSolverIterations = 100;
             C.VelocityBlockPrecondMode = MultigridOperator.Mode.SymPart_DiagBlockEquilib_DropIndefinite;
-            C.NoOfMultigridLevels = 1;
+            C.LinearSolver.NoOfMultigridLevels = 1;
 
             // Timestepping
             // ============
@@ -177,6 +178,7 @@ namespace BoSSS.Application.IBM_Solver {
             // Solver Options
             C.NoOfTimesteps = 100;
             C.LinearSolver.MaxSolverIterations = 50;
+            C.NonLinearSolver.MaxSolverIterations = 50;
             C.savetodb = false;
             C.ProjectName = "ChannelFlow";
 

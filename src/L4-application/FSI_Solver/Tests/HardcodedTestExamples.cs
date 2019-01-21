@@ -172,7 +172,9 @@ namespace BoSSS.Application.FSI_Solver {
             C.LevelSetSmoothing = false;
             C.LinearSolver.MaxSolverIterations = 100;
             C.LinearSolver.MinSolverIterations = 1;
-            C.NoOfMultigridLevels = 1;
+            C.NonLinearSolver.MaxSolverIterations = 100;
+            C.NonLinearSolver.MinSolverIterations = 1;
+            C.LinearSolver.NoOfMultigridLevels = 1;
 
             // Timestepping
             // ============

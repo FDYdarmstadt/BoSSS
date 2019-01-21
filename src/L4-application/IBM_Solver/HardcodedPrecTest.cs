@@ -183,7 +183,9 @@ namespace BoSSS.Application.IBM_Solver {
             C.LevelSetSmoothing = false;
             C.LinearSolver.MaxKrylovDim = 1000;
             C.LinearSolver.MaxSolverIterations = 1;
+            C.NonLinearSolver.MaxSolverIterations = 1;
             C.LinearSolver.ConvergenceCriterion = 1E-5;
+            C.NonLinearSolver.ConvergenceCriterion = 1E-5;
             C.VelocityBlockPrecondMode = MultigridOperator.Mode.SymPart_DiagBlockEquilib_DropIndefinite;                    
 
             // Solver configuration
@@ -200,7 +202,7 @@ namespace BoSSS.Application.IBM_Solver {
             C.dtMin = dt;
             C.Endtime = 10000000;
             C.NoOfTimesteps = 1;
-            C.NoOfMultigridLevels = 7;
+            C.LinearSolver.NoOfMultigridLevels = 7;
 
             return C;
         }
@@ -523,10 +525,11 @@ namespace BoSSS.Application.IBM_Solver {
             //C.LinearSolver.MaxKrylovDim = 1000;
             C.LinearSolver.MaxKrylovDim = maxKrDim;
             C.LinearSolver.MaxSolverIterations = 100;
-            //C.LinearSolver.MaxSolverIterations = 1;
-            C.MinSolverIterations = 1;
-            // C.LinearSolver.MaxSolverIterations = 10000;
+            C.LinearSolver.MinSolverIterations = 1;
+            C.NonLinearSolver.MaxSolverIterations = 100;
+            C.NonLinearSolver.MinSolverIterations = 1;
             C.LinearSolver.ConvergenceCriterion = 1E-5;
+            C.NonLinearSolver.ConvergenceCriterion = 1E-5;
             //C.LinearSolver.ConvergenceCriterion = 1E-6;
             C.VelocityBlockPrecondMode = MultigridOperator.Mode.SymPart_DiagBlockEquilib_DropIndefinite;
 
@@ -560,19 +563,19 @@ namespace BoSSS.Application.IBM_Solver {
                 case 3:
                     {
                         C.LinearSolver.SolverCode = LinearSolverConfig.Code.exp_AS_1000;
-                        C.NoOfMultigridLevels = MGLevels;  // 3 // --> grobes MG am Ende nochmal
+                        C.LinearSolver.NoOfMultigridLevels = MGLevels;  // 3 // --> grobes MG am Ende nochmal
                         break;
                     }
                 case 4:
                     {
                         C.LinearSolver.SolverCode = LinearSolverConfig.Code.exp_AS_5000;
-                        C.NoOfMultigridLevels = MGLevels;
+                        C.LinearSolver.NoOfMultigridLevels = MGLevels;
                         break;
                     }
                 case 5:
                     {
                         C.LinearSolver.SolverCode = LinearSolverConfig.Code.exp_AS_10000;
-                        C.NoOfMultigridLevels = MGLevels;
+                        C.LinearSolver.NoOfMultigridLevels = MGLevels;
                         break;
                     }
                 case 6:
@@ -580,18 +583,18 @@ namespace BoSSS.Application.IBM_Solver {
                         //depth = 2,
                         //   Depth = ASDepth,  //--> MG bei der Blockzerlegung --> Resultat ergibt die Blöcke zur Berechnung (kleine Blöcke--> schlecht)
                         C.LinearSolver.SolverCode = LinearSolverConfig.Code.exp_AS_MG;
-                        C.NoOfMultigridLevels = MGLevels;
+                        C.LinearSolver.NoOfMultigridLevels = MGLevels;
                         break;
                     }
                 case 7:
                     {
                         C.LinearSolver.SolverCode = LinearSolverConfig.Code.exp_localPrec; ;
-                        C.NoOfMultigridLevels = MGLevels;
+                        C.LinearSolver.NoOfMultigridLevels = MGLevels;
                         break;
                     }
                 case 8:
                     {
-                        C.NoOfMultigridLevels = 5;
+                        C.LinearSolver.NoOfMultigridLevels = 5;
                         Prec = new Schwarz()
                         {
                             m_BlockingStrategy = new Schwarz.METISBlockingStrategy()

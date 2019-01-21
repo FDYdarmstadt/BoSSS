@@ -25,65 +25,107 @@ using BoSSS.Solution.AdvancedSolvers;
 using BoSSS.Solution.XdgTimestepping;
 using BoSSS.Foundation;
 using BoSSS.Foundation.XDG;
+using System.Diagnostics;
 
 namespace BoSSS.Solution.AdvancedSolvers {
-//namespace BoSSS.Solution {
 
     public class SolverFactory {
 
+        /// <summary>
+        /// This <see cref="SolverFactory"/> enables creation of linear and nonlinear solver objects. The configuration <see cref="LinearSolverConfig"/> and <see cref="NonLinearSolverConfig"/> can be set in Control-Files (defined in <see cref="AppControl"/>).
+        /// </summary>
+        /// <param name="nc"></param>
+        /// <param name="lc"></param>
         public SolverFactory(NonLinearSolverConfig nc, LinearSolverConfig lc) {
             m_lc = lc;
             m_nc = nc;
         }
 
         /// <summary>
-        /// 
+        /// This will return <code>linear</code> and <code>nonlinear</code> solver objects, which are configured according to <see cref="LinearSolverConfig"/> and <see cref="NonLinearSolverConfig"/>, which can be adjusted from Controlfile (defined in <see cref="AppControl"/>).
         /// </summary>
+        /// <param name="nonlinSolver"></param>
+        /// <param name="linsolver"></param>
+        /// <param name="Timestepper"></param>
+        /// <param name="ts_AssembleMatrixCallback"></param>
+        /// <param name="ts_MultigridBasis"></param>
+        /// <param name="LevelSetConvergenceReached"></param>
+        /// <param name="PseudoNonlinear"></param>
         public void GenerateNonLin(out NonlinearSolver nonlinSolver, out ISolverSmootherTemplate linsolver, XdgTimesteppingBase Timestepper, OperatorEvalOrLin ts_AssembleMatrixCallback, IEnumerable<AggregationGridBasis[]> ts_MultigridBasis, FixpointIterator.CoupledConvergenceReached LevelSetConvergenceReached, bool PseudoNonlinear) {
+
+            if (m_nonlinsolver != null && (m_linsolver == null || m_precond == null))
+                throw new NotImplementedException("an uncomplete nonlinear solver is overgiven.");
 
             linsolver = null;
             nonlinSolver = null;
+            ISolverSmootherTemplate precondsolver = null;
 
-            if ((m_nonlinsolver != null) && (m_linsolver != null)) {
-                Check_nonlinsolver();
-                Check_linsolver();
-                nonlinSolver = m_nonlinsolver;
-                linsolver = m_linsolver;
-            } else if ((m_nonlinsolver != null) && (m_linsolver == null)) {
-                Check_nonlinsolver();
-                nonlinSolver = m_nonlinsolver;
-                linsolver=GenerateLinear_body(Timestepper,m_lc);
-            } else if ((m_nonlinsolver == null) && (m_linsolver != null)) {
-                Check_linsolver();
-                linsolver = m_linsolver;
-                GenerateNonLin_body(Timestepper, ts_AssembleMatrixCallback, ts_MultigridBasis, LevelSetConvergenceReached, PseudoNonlinear, m_nc, m_lc, linsolver);
-            } else {
-                GenerateNonLin_body(Timestepper, ts_AssembleMatrixCallback, ts_MultigridBasis, LevelSetConvergenceReached, PseudoNonlinear, m_nc, m_lc,null);
-            }
+            precondsolver = LinSolverDealer(Timestepper,true);
+            linsolver = LinSolverDealer(Timestepper,false);
+            Debug.Assert(linsolver != null);
+
+            nonlinSolver = GenerateNonLin_body(Timestepper, ts_AssembleMatrixCallback, ts_MultigridBasis, LevelSetConvergenceReached, PseudoNonlinear, m_nc, m_lc, linsolver,precondsolver);
+
+            Debug.Assert(nonlinSolver !=null);
             return;
         }
 
         /// <summary>
-        /// This will return <code>linear</code> and <code>nonlinear</code> solver objects, which are configured according to <see cref="LinearSolverConfig"/> and <see cref="NonLinearSolverConfig"/>, which can be adjusted from Controlfile (defined in <see cref="AppControl"/>).
+        /// Internal method to determine, it there is already a selfmade solver set. If there is none and <see cref="LinearSolverConfig.Code.automatic"/> is selected, then the nonlinear solver slection is considered in the choice of the linear solver, with <see cref="AutomaticChoice(Timestepper, m_nc, _lc)"/>.
         /// </summary>
-        private Tuple<NonlinearSolver, ISolverSmootherTemplate> GenerateNonLin_body(XdgTimesteppingBase Timestepper, OperatorEvalOrLin ts_AssembleMatrixCallback, IEnumerable<AggregationGridBasis[]> ts_MultigridBasis, FixpointIterator.CoupledConvergenceReached LevelSetConvergenceReached, bool PseudoNonlinear, NonLinearSolverConfig nc, LinearSolverConfig lc, ISolverSmootherTemplate LinSelfMade) {
+        /// <param name="Timestepper"></param>
+        /// <param name="IsPrecond"></param>
+        /// <returns></returns>
+        private ISolverSmootherTemplate LinSolverDealer(XdgTimesteppingBase Timestepper, bool IsPrecond) {
+            LinearSolverConfig _lc;
+            if (IsPrecond) {
+                _lc = m_nc.Precond_solver;
+                if (m_precond != null) {
+                    Check_precond();
+#if DEBUG
+                    Console.WriteLine("Preconditioner was handed over");
+#endif
+                    return m_precond;
+                }
+            } else {
+                _lc = m_lc;
+                if (m_linsolver != null) {
+                    Check_linsolver();
+#if DEBUG
+                    Console.WriteLine("LinearSolver was handed over");
+#endif
+                    return m_linsolver;
+                }
+            }
+            if (_lc.SolverCode == LinearSolverConfig.Code.automatic) {
+                return AutomaticChoice(Timestepper, m_nc, _lc);
+            } else if (_lc != null) {
+                return GenerateLinear_body(Timestepper, _lc);
+            } else {
+                throw new ArgumentNullException("LinearSolver Config is null!");
+            }
+        }
+
+        /// <summary>
+        /// This one is the method-body of <see cref="GenerateNonLinear"/> and shall not be called from the outside. The parameters are mainly handed over to the NonLinearSolver object, which lives in <see cref="AdvancedSolvers.NonlinearSolver"/>.
+        /// </summary>
+        /// <param name="Timestepper"></param>
+        /// <param name="ts_AssembleMatrixCallback"></param>
+        /// <param name="ts_MultigridBasis"></param>
+        /// <param name="LevelSetConvergenceReached"></param>
+        /// <param name="PseudoNonlinear"></param>
+        /// <param name="nc"></param>
+        /// <param name="lc"></param>
+        /// <param name="LinSolver"></param>
+        /// <param name="PrecondSolver"></param>
+        /// <returns></returns>
+        private NonlinearSolver GenerateNonLin_body(XdgTimesteppingBase Timestepper, OperatorEvalOrLin ts_AssembleMatrixCallback, IEnumerable<AggregationGridBasis[]> ts_MultigridBasis, FixpointIterator.CoupledConvergenceReached LevelSetConvergenceReached, bool PseudoNonlinear, NonLinearSolverConfig nc, LinearSolverConfig lc, ISolverSmootherTemplate LinSolver, ISolverSmootherTemplate PrecondSolver) {
 
             // +++++++++++++++++++++++++++++++++++++++++++++
             // the nonlinear solvers:
             // +++++++++++++++++++++++++++++++++++++++++++++
 
             NonlinearSolver nonlinSolver;
-            ISolverSmootherTemplate linsolver;
-            //Check if there is a self made linearsolver
-            if (LinSelfMade != null)
-                linsolver = LinSelfMade;
-
-            //not so nice ... alternative paths for lin automatic
-            if (lc.SolverCode == LinearSolverConfig.Code.automatic) {
-                linsolver = AutomaticChoice(Timestepper, nc, lc);
-            } else {
-                linsolver=GenerateLinear_body(Timestepper, lc);
-            }
 
             // Set to pseudo Picard if the Stokes equations should be solved
             if (PseudoNonlinear == true)
@@ -98,7 +140,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                             Timestepper.Config_MultigridOperator) {
                             MaxIter = nc.MaxSolverIterations,
                             MinIter = nc.MinSolverIterations,
-                            m_LinearSolver = linsolver,
+                            m_LinearSolver = LinSolver,
                             m_SessionPath = Timestepper.SessionPath, //is needed for Debug purposes, output of inter-timesteps
                             ConvCrit = nc.ConvergenceCriterion,
                             UnderRelax = nc.UnderRelax,
@@ -110,34 +152,38 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
                         break;
 
-                    case NonLinearSolverConfig.Code.Newton:
-
+                //Besides NonLinearSolverConfig Newton needs also LinearSolverConfig
+                //Newton uses MUMPS as linearsolver by default
+                case NonLinearSolverConfig.Code.Newton:
+                    
                         nonlinSolver = new Newton(
                             ts_AssembleMatrixCallback,
                             ts_MultigridBasis,
                             Timestepper.Config_MultigridOperator) {
-                            maxKrylovDim = nc.MaxKrylovDim,
+                            maxKrylovDim = lc.MaxKrylovDim, 
                             MaxIter = nc.MaxSolverIterations,
                             MinIter = nc.MinSolverIterations,
                             ApproxJac = Newton.ApproxInvJacobianOptions.DirectSolver, //MUMPS is taken, todo: enable all linear solvers
-                            Precond = GenerateLinear_body(Timestepper, nc.Precond_solver),
+                            Precond = PrecondSolver,
                             GMRESConvCrit = lc.ConvergenceCriterion,
                             ConvCrit = nc.ConvergenceCriterion,
                             m_SessionPath = Timestepper.SessionPath,
                         };
                         break;
 
-                    case NonLinearSolverConfig.Code.NewtonGMRES:
+                //in NewtonGMRES Newton is merged with GMRES, this is an optimized algorithm
+                //NonLinearSolver and LinearSolver can not be separated in this case
+                case NonLinearSolverConfig.Code.NewtonGMRES:
 
                         nonlinSolver = new Newton(
                             ts_AssembleMatrixCallback,
                             ts_MultigridBasis,
                             Timestepper.Config_MultigridOperator) {
-                            maxKrylovDim = nc.MaxKrylovDim,
+                            maxKrylovDim = lc.MaxKrylovDim,
                             MaxIter = nc.MaxSolverIterations,
                             MinIter = nc.MinSolverIterations,
                             ApproxJac = Newton.ApproxInvJacobianOptions.GMRES,
-                            Precond = GenerateLinear_body(Timestepper, nc.Precond_solver),
+                            Precond = PrecondSolver,
                             //Precond_solver = new RheologyJacobiPrecond() { m_We = 0.1},
                             GMRESConvCrit = lc.ConvergenceCriterion,
                             ConvCrit = nc.ConvergenceCriterion,
@@ -147,44 +193,58 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
                     case NonLinearSolverConfig.Code.PicardGMRES:
 
-                        nonlinSolver = new FixpointIterator(
+                    nonlinSolver = new FixpointIterator(
                             ts_AssembleMatrixCallback,
                             ts_MultigridBasis,
                             Timestepper.Config_MultigridOperator) {
                             MaxIter = nc.MaxSolverIterations,
                             MinIter = nc.MinSolverIterations,
-                            m_LinearSolver = linsolver,
+                            m_LinearSolver = LinSolver,
                             m_SessionPath = Timestepper.SessionPath, //is needed for Debug purposes, output of inter-timesteps
                             ConvCrit = nc.ConvergenceCriterion,
                             UnderRelax = nc.UnderRelax,
-                            Precond = GenerateLinear_body( Timestepper, nc.Precond_solver),
+                            Precond = PrecondSolver,
                         };
                         break;
 
                 default:
                         throw new NotImplementedException();
                 }
-            return new Tuple<NonlinearSolver, ISolverSmootherTemplate>(nonlinSolver, linsolver);
+#if DEBUG
+            Console.WriteLine("nonlinear Solver: {0}",nc.SolverCode.ToString());
+#endif
+            return nonlinSolver;
         }
 
+        /// <summary>
+        /// This will return a <code>linear</code> solver object, which is configured according to <see cref="LinearSolverConfig"/>, which can be adjusted from Controlfile (defined in <see cref="AppControl"/>). 
+        /// </summary>
+        /// <param name="templinearSolve"></param>
+        /// <param name="Timestepper"></param>
         public void GenerateLinear(out ISolverSmootherTemplate templinearSolve, XdgTimesteppingBase Timestepper) {
-            
             if (m_linsolver != null) {
-#if DEBUG
-             Console.WriteLine("Attention: A selfmade Solver is used, GenerateLinear will do nothing");   
-#endif
                 templinearSolve = m_linsolver;
             } else {
                 templinearSolve = GenerateLinear_body(Timestepper, m_lc);
             }
+            Debug.Assert(templinearSolve!=null);
             return;
         }
 
+        /// <summary>
+        /// This one is the method-body of <see cref="GenerateLinear"/> and shall not be called from the outside. Some Solver aquire additional information, thus the timestepper is overgiven as well.
+        /// </summary>
+        /// <param name="Timestepper"></param>
+        /// <param name="lc"></param>
+        /// <returns></returns>
         private ISolverSmootherTemplate GenerateLinear_body(XdgTimesteppingBase Timestepper, LinearSolverConfig lc) {
 
             // +++++++++++++++++++++++++++++++++++++++++++++
             // the linear solvers:
             // +++++++++++++++++++++++++++++++++++++++++++++
+
+            if (lc == null)
+                throw new ArgumentNullException();
 
             ISolverSmootherTemplate templinearSolve=null;
 
@@ -259,6 +319,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                     break;
 
                 case LinearSolverConfig.Code.exp_softgmres:
+
                     templinearSolve = new SoftGMRES() {
                         MaxKrylovDim = lc.MaxKrylovDim,
                         m_Tolerance = lc.ConvergenceCriterion,
@@ -439,23 +500,40 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 default:
                     throw new NotImplementedException("Linear solver option not available");
             }
+            Debug.Assert(templinearSolve != null);
+#if DEBUG
+            Console.WriteLine("linear Solver: {0}",lc.SolverCode.ToString());
+#endif
             return templinearSolve;
         }
 
         /// <summary>
-        /// Is get and set by <see cref="selfmade_linsolver"/> and used by <see cref="GenerateLinear"/>.
+        /// Is get and set by <see cref="Selfmade_linsolver"/> and used by <see cref="GenerateLinear"/>.
         /// </summary>
         private ISolverSmootherTemplate m_linsolver;
-
+        
+        /// <summary>
+        /// Is get and set by <see cref="Selfmade_nonlinsolver"/> and used by <see cref="GenerateNonLinear"/>.
+        /// </summary>
         private NonlinearSolver m_nonlinsolver;
 
+        /// <summary>
+        /// Is get and set by <see cref="Selfmade_precond"/> and used by <see cref="GenerateLinear"/>.
+        /// </summary>
+        private ISolverSmootherTemplate m_precond;
+
+        /// <summary>
+        /// Internal linear solver configuration. Shall always be != null. 
+        /// </summary>
         private LinearSolverConfig m_lc;
 
+        /// <summary>
+        /// Internal nonlinear solver configuration. Shall always be != null. 
+        /// </summary>
         private NonLinearSolverConfig m_nc;
 
         /// <summary>
-        /// For developers, who want full control over solvers: In <see cref="selfmade_linsolver"/> you can insert your own config of linear solver,
-        /// which will overwrite the output of <see cref="GenerateLinear"/> with the overgiven solver.
+        /// For developers, who want full control over solvers: In <see cref="selfmade_linsolver"/> you can insert your own config of linear solver.
         /// Set the solver to <c>null</c> to enable solver generation from <see cref="LinearSolverConfig"/> again.
         /// </summary>
         public ISolverSmootherTemplate Selfmade_linsolver {
@@ -471,15 +549,30 @@ namespace BoSSS.Solution.AdvancedSolvers {
         /// For developers, who want full control over solvers: In <see cref="selfmade_nonlinsolver"/> you can insert your own config of nonlinear solver,
         /// which will overwrite the output of <see cref="GenerateNonLinear"/> with the overgiven solver.
         /// Set the solver to <c>null</c> to enable solver generation from <see cref="NonLinearSolverConfig"/> again.
+        /// Note: The overgiven solver has to be completely defined (precond!=null and linsolve!=null) 
         /// </summary>
-        public ISolverSmootherTemplate Selfmade_nonlinsolver {
+        public NonlinearSolver Selfmade_nonlinsolver {
             set {
-                m_linsolver = value;
+                m_nonlinsolver = value;
             }
             get {
-                return m_linsolver;
+                return m_nonlinsolver;
             }
         }
+
+        /// <summary>
+        /// For developers, who want full control over solvers: In <see cref="Selfmade_precond"/> you can insert your own config of linear solver.
+        /// Set the solver to <c>null</c> to enable solver generation from <see cref="NonLinearSolverConfig.Precond_solver"/> again.
+        /// </summary>
+        public ISolverSmootherTemplate Selfmade_precond {
+            set {
+                m_precond = value;
+            }
+            get {
+                return m_precond;
+            }
+        }
+
 
         /// <summary>
         /// Automatic choice of linear solver depending on problem size, immersed boundary, polynomial degree, etc. In addition the nonlinearsolver config is considered as well.
@@ -616,24 +709,50 @@ namespace BoSSS.Solution.AdvancedSolvers {
             return solver;
         }
 
+        /// <summary>
+        /// Updates solver configuration.
+        /// </summary>
+        /// <param name="nc"></param>
+        /// <param name="lc"></param>
         public void Update(NonLinearSolverConfig nc, LinearSolverConfig lc) {
             this.m_lc = lc;
             this.m_nc = nc;
         }
 
+        /// <summary>
+        /// clears overgiven selfmade solvers
+        /// </summary>
         public void Clear() {
-            this.m_lc = null;
-            this.m_nc = null;
+            //this.m_lc = null;
+            //this.m_nc = null;
             this.m_linsolver = null;
             this.m_nonlinsolver = null;
         }
 
+        /// <summary>
+        /// Checks overgiven selfmade linear solver
+        /// </summary>
+        /// <returns></returns>
         private bool Check_linsolver() {
             bool check = true;
             //test something ... m_linsolver
             return check;
         }
 
+        /// <summary>
+        /// Checks overgiven selfmade proconditioner solver
+        /// </summary>
+        /// <returns></returns>
+        private bool Check_precond() {
+            bool check = true;
+            //test something ... m_precond
+            return check;
+        }
+
+        /// <summary>
+        /// Checks overgiven selfmade nonlinear solver
+        /// </summary>
+        /// <returns></returns>
         private bool Check_nonlinsolver() {
             bool check = true;
             //test something ... m_nonlinsolver

@@ -53,14 +53,7 @@ namespace BoSSS.Solution.Control {
         /// <summary>
         /// preconditioner of nonlinear solver, which is a <code>typeof(ISmootherTemplate)</code> with <code>typeof(LinearSolverConfig)</code>.
         /// </summary>
-        public _Precond Precond_solver;
-
-        /// <summary>
-        /// If iterative saddle-point solvers like GMRES or Orthonormalization are used, the maximum number of basis vectors
-        /// that are used to construct the accelerated solution.
-        /// </summary>
-        [DataMember]
-        public int MaxKrylovDim = 30;
+        public _Precond Precond_solver = new _Precond();
 
         /// <summary>
         /// If iterative solvers are used, the maximum number of iterations.
