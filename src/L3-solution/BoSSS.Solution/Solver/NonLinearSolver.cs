@@ -53,7 +53,7 @@ namespace BoSSS.Solution.Control {
         /// <summary>
         /// preconditioner of nonlinear solver, which is a <code>typeof(ISmootherTemplate)</code> with <code>typeof(LinearSolverConfig)</code>.
         /// </summary>
-        public _Precond Precond_solver = new _Precond();
+        public _Precond PrecondSolver = new _Precond();
 
         /// <summary>
         /// If iterative solvers are used, the maximum number of iterations.

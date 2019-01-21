@@ -79,7 +79,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
         private ISolverSmootherTemplate LinSolverDealer(XdgTimesteppingBase Timestepper, bool IsPrecond) {
             LinearSolverConfig _lc;
             if (IsPrecond) {
-                _lc = m_nc.Precond_solver;
+                _lc = m_nc.PrecondSolver;
                 if (m_precond != null) {
                     Check_precond();
 #if DEBUG
