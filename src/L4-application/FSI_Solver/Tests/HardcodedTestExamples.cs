@@ -110,9 +110,6 @@ namespace BoSSS.Application.FSI_Solver {
                 return grd;
             };
 
-
-
-
             C.AddBoundaryValue("Velocity_Inlet_left", "VelocityY", X => 0.02);
             C.AddBoundaryValue("Velocity_Inlet_right", "VelocityY", X => -0.02);
 

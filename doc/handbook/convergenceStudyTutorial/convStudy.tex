@@ -240,11 +240,19 @@ foreach(var C in Runs)\newline
  }
 \BoSSSexe
 \BoSSScmd{
-WorkflowMgm.AllJobs;
+/// The following line ensures that all jobs are complete before 
+/// post-processing analysis is started, although, there is a 720-seconds
+/// time-out.
+WorkflowMgm.BlockUntilAllJobsTerminate(720);
  }
 \BoSSSexe
 \BoSSScmd{
-WorkflowMgm.BlockUntilAllJobsTerminate(720);
+/// Note that, in a larer production run study, where jobs may run days or
+/// weeks, blocking the worksheet is not really usefull.
+/// Instead, one might split process into two workseets 
+/// (eactly at this line here), one for set-up and
+/// job sumbission and another one for the analysis.
+WorkflowMgm.AllJobs;
  }
 \BoSSSexe
 \BoSSScmd{
