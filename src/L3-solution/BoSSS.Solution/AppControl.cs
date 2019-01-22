@@ -560,6 +560,14 @@ namespace BoSSS.Solution.Control {
         public int saveperiod = 1;
 
         /// <summary>
+        /// A number of previous timesteps which are always saved in case of a simulation crash.
+        /// </summary>
+        [DataMember]
+        public int rollingSaves = 0;
+
+
+
+        /// <summary>
         /// lower threshold for the time-step
         /// </summary>
         /// <remarks>

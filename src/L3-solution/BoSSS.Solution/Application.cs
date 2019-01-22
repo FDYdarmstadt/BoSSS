@@ -570,6 +570,10 @@ namespace BoSSS.Solution {
                 if (this.Control.saveperiod > 0) {
                     this.SavePeriod = this.Control.saveperiod;
                 }
+
+                if (this.Control.rollingSaves > 0) {
+                    this.RollingSave = this.Control.rollingSaves;
+                }
             }
         }
 
@@ -1567,6 +1571,11 @@ namespace BoSSS.Solution {
         protected int SavePeriod = 1;
 
         /// <summary>
+        /// <see cref="AppControl.rollingSaves"/>
+        /// </summary>
+        protected int RollingSave = 0;
+
+        /// <summary>
         /// Implement this method by performing a single time-step of the
         /// solution algorithm.
         /// </summary>
@@ -1649,6 +1658,8 @@ namespace BoSSS.Solution {
 
             using (var tr = new FuncTrace()) {
 
+                var rollingSavesTsi = new List<Tuple<int,ITimestepInfo>>();
+
                 csMPI.Raw.Barrier(csMPI.Raw._COMM.WORLD);
 
                 m_ResLogger = new ResidualLogger(this.MPIRank, this.DatabaseDriver, this.CurrentSessionInfo.ID);
@@ -1671,9 +1682,13 @@ namespace BoSSS.Solution {
                     }
                 }
 
-                SaveToDatabase(i0, physTime); // save the initial value
-                if (this.Control != null && this.Control.ImmediatePlotPeriod > 0)
+                var ts0 = SaveToDatabase(i0, physTime); // save the initial value
+                if(this.RollingSave > 0)
+                    rollingSavesTsi.Add(Tuple.Create(0, ts0));
+
+                if (this.Control != null && this.Control.ImmediatePlotPeriod > 0) 
                     PlotCurrentState(physTime, i0, this.Control.SuperSampling);
+
 
                 csMPI.Raw.Barrier(csMPI.Raw._COMM.WORLD);
 
@@ -1699,11 +1714,34 @@ namespace BoSSS.Solution {
                     tr.LogMemoryStat();
                     physTime += dt;
 
-
+                    ITimestepInfo tsi = null;
                     if (i % SavePeriod == 0) {
-                        SaveToDatabase(i, physTime);
+                        tsi = SaveToDatabase(i, physTime);
                         this.ProfilingLog();
                     }
+                    if (this.RollingSave > 0) {
+                        if(tsi == null)
+                            tsi = SaveToDatabase(i, physTime);
+                        rollingSavesTsi.Add(Tuple.Create(i,tsi));
+
+                        while (rollingSavesTsi.Count > this.RollingSave) { // delete overdue rolling timesteps...
+                            var top_i_tsi = rollingSavesTsi[0];
+                            rollingSavesTsi.RemoveAt(0);
+
+                            if ((top_i_tsi.Item1 != 0) && (top_i_tsi.Item1 % SavePeriod != 0)) { // .. only if they should not be saved anyway
+                                if (DatabaseDriver.FsDriver != null &&
+                                    !this.CurrentSessionInfo.ID.Equals(Guid.Empty)) {
+                                    if (MPIRank == 0) 
+                                        this.CurrentSessionInfo.RemoveTimestep(top_i_tsi.Item2.ID);
+                                    ((DatabaseController)(this.m_Database.Controller)).DeleteTimestep(top_i_tsi.Item2, false);
+                                }
+                            }
+                        }
+
+                    }
+                    
+
+
                     if (this.Control != null && this.Control.ImmediatePlotPeriod > 0 && i % this.Control.ImmediatePlotPeriod == 0)
                         PlotCurrentState(physTime, i, this.Control.SuperSampling);
                 }
