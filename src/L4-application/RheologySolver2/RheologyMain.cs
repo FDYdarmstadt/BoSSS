@@ -221,7 +221,7 @@ namespace BoSSS.Application.Rheology {
         //============================================
         IncompressibleBoundaryCondMap BcMap;
         int D; // Spatial Dimension
-        double currentWeissenberg;
+        public double currentWeissenberg;
         bool ChangeMesh = true;
         SpatialOperator XOP;
         CoordinateVector m_CurrentSolution = null;
@@ -670,6 +670,10 @@ namespace BoSSS.Application.Rheology {
 
                 TimestepNumber TimestepNo = new TimestepNumber(TimestepInt, 0);
                 int D = this.GridData.SpatialDimension;
+
+                if (TimestepNo[0] > 1) {
+                    this.Control.RaiseWeissenberg = false;
+                }
 
                 base.ResLogger.TimeStep = TimestepInt;
 

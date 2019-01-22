@@ -41,6 +41,7 @@ using BoSSS.Solution.XdgTimestepping;
 using BoSSS.Foundation.Grid.RefElements;
 using BoSSS.Solution.XNSECommon;
 using BoSSS.Foundation.Grid.Classic;
+using static BoSSS.Application.FSI_Solver.FSI_Control;
 
 namespace BoSSS.Application.FSI_Solver {
     public class FSI_SolverMain : IBM_Solver.IBM_SolverMain {
@@ -77,6 +78,33 @@ namespace BoSSS.Application.FSI_Solver {
                 return;
 
             bool UseMovingMesh = false;
+            switch (((FSI_Control)this.Control).Timestepper_LevelSetHandling)
+            {
+                case LevelSetHandling.Coupled_Once:
+                    ((FSI_Control)this.Control).Timestepper_Mode = TimesteppingMode.MovingMesh;
+                    UseMovingMesh = true;
+                    break;
+
+                case LevelSetHandling.Coupled_Iterative:
+                    ((FSI_Control)this.Control).Timestepper_Mode = TimesteppingMode.MovingMesh;
+                    UseMovingMesh = true;
+                    break;
+
+                case LevelSetHandling.LieSplitting:
+                    ((FSI_Control)this.Control).Timestepper_Mode = TimesteppingMode.Splitting;
+                    break;
+
+                case LevelSetHandling.StrangSplitting:
+                    ((FSI_Control)this.Control).Timestepper_Mode = TimesteppingMode.Splitting;
+                    break;
+
+                case LevelSetHandling.None:
+                    ((FSI_Control)this.Control).Timestepper_Mode = TimesteppingMode.None;
+                    break;
+
+                default:
+                    throw new ApplicationException("unknown 'LevelSetMovement': " + ((FSI_Control)this.Control).Timestepper_LevelSetHandling);
+            }
 
             if (((FSI_Control)this.Control).Timestepper_Mode == FSI_Control.TimesteppingMode.MovingMesh)
             {
@@ -170,7 +198,7 @@ namespace BoSSS.Application.FSI_Solver {
                                         // The posterior side of the particle (Neumann boundary)
                                         if (Math.Cos(p.currentIterAng_P[0]) * (X[0] - p.currentIterPos_P[0][0]) + Math.Sin(p.currentIterAng_P[0]) * (X[1] - p.currentIterPos_P[0][1]) <= 1e-8)
                                         {
-                                            cos_theta = (Math.Cos(p.currentIterAng_P[0]) * (X[0] - p.currentIterPos_P[0][0]) + Math.Sin(p.currentIterAng_P[0]) * (X[1] - p.currentIterPos_P[0][1])) / (Math.Sqrt((X[0] - p.currentIterPos_P[0][0]).Pow2() + (X[1] - p.currentIterPos_P[0][1]).Pow2()));
+                                            cos_theta = -1;// (Math.Cos(p.currentIterAng_P[0]) * (X[0] - p.currentIterPos_P[0][0]) + Math.Sin(p.currentIterAng_P[0]) * (X[1] - p.currentIterPos_P[0][1])) / (Math.Sqrt((X[0] - p.currentIterPos_P[0][0]).Pow2() + (X[1] - p.currentIterPos_P[0][1]).Pow2()));
                                         }
                                         // The anterior side of the particle (Dirichlet boundary)
                                         else
@@ -291,7 +319,7 @@ namespace BoSSS.Application.FSI_Solver {
                                     // The posterior side of the particle (Neumann boundary)
                                     if (Math.Cos(p.currentIterAng_P[0]) * (X[0] - p.currentIterPos_P[0][0]) + Math.Sin(p.currentIterAng_P[0]) * (X[1] - p.currentIterPos_P[0][1]) < 0)
                                     {
-                                        cos_theta = -1;// (Math.Cos(p.currentIterAng_P[0]) * (X[0] - p.currentIterPos_P[0][0]) + Math.Sin(p.currentIterAng_P[0]) * (X[1] - p.currentIterPos_P[0][1])) / (Math.Sqrt((X[0] - p.currentIterPos_P[0][0]).Pow2() + (X[1] - p.currentIterPos_P[0][1]).Pow2()));
+                                        cos_theta = -1;//(Math.Cos(p.currentIterAng_P[0]) * (X[0] - p.currentIterPos_P[0][0]) + Math.Sin(p.currentIterAng_P[0]) * (X[1] - p.currentIterPos_P[0][1])) / (Math.Sqrt((X[0] - p.currentIterPos_P[0][0]).Pow2() + (X[1] - p.currentIterPos_P[0][1]).Pow2()));
                                     }
                                     // The anterior side of the particle (Dirichlet boundary)
                                     else
@@ -417,30 +445,6 @@ namespace BoSSS.Application.FSI_Solver {
             }
             #endregion
             IBM_Op.Commit();
-            #endregion
-
-            #region Level-set handling
-            //LevelSetHandling lsh;
-
-            //// create coupling
-            //// ------------------
-            //switch (((FSI_Control)this.Control).Timestepper_Mode)
-            //{
-            //    case FSI_Control.TimesteppingMode.MovingMesh:
-            //        lsh = LevelSetHandling.Coupled_Once;
-            //        break;
-
-            //    case FSI_Control.TimesteppingMode.Splitting:
-            //        lsh = LevelSetHandling.LieSplitting;
-            //        break;
-
-            //    case FSI_Control.TimesteppingMode.None:
-            //        lsh = LevelSetHandling.None;
-            //        break;
-
-            //    default:
-            //        throw new NotImplementedException();
-            //}
             #endregion
             
             #region NSE or pure Stokes
@@ -608,6 +612,8 @@ namespace BoSSS.Application.FSI_Solver {
                 p.UpdateTransVelocity(dt, this.Control.PhysicalParameters.rho_A, ((FSI_Control)this.Control).includeTranslation);
                 p.ComputeParticleRe(this.Control.PhysicalParameters.mu_A);
                 p.UpdateParticlePosition(dt);
+                
+                
             }
 
             // Update phi complete
@@ -703,7 +709,7 @@ namespace BoSSS.Application.FSI_Solver {
 
                             m_BDF_Timestepper.Solve(phystime, dt, false);
                             #region Get Drag and Lift Coefficiant
-                            
+
 
                             foreach (Particle p in m_Particles)
                             {
@@ -716,6 +722,9 @@ namespace BoSSS.Application.FSI_Solver {
 
                             double[] totalMomentum = new double[2] { 0, 0 };
                             double[] totalKE = new double[3] { 0, 0, 0 };
+                            double xPos;
+                            double yPos;
+                            double ang;
 
                             foreach (Particle p in m_Particles)
                             {
@@ -736,6 +745,10 @@ namespace BoSSS.Application.FSI_Solver {
 
                             force = m_Particles[0].currentIterForces_P[0];
                             torque = m_Particles[0].currentIterTorque_P[0];
+
+                            xPos = m_Particles[0].currentIterPos_P[0][0];
+                            yPos = m_Particles[0].currentIterPos_P[0][1];
+                            ang = m_Particles[0].currentIterRot_P[0];
 
 
                             MPItransVelocity = m_Particles[0].currentIterVel_P[0];
@@ -772,6 +785,9 @@ namespace BoSSS.Application.FSI_Solver {
                             Console.WriteLine("Transl VelocityX:   {0}", MPItransVelocity[0]);
                             Console.WriteLine("Transl VelocityY:   {0}", MPItransVelocity[1]);
                             Console.WriteLine("Angular Velocity:   {0}", MPIangularVelocity);
+                            Console.WriteLine("X-position:   {0}", xPos);
+                            Console.WriteLine("Y-position:   {0}", yPos);
+                            Console.WriteLine("Angle:   {0}", ang);
                             Console.WriteLine("Fully coupled system, number of iterations:  " + iteration_counter);
                             Console.WriteLine("Forces and torque residual: " + posResidual_splitting);
                             Console.WriteLine();
