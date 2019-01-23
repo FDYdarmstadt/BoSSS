@@ -106,7 +106,7 @@ namespace CNS.Tests.IBMTests {
             solver.Init(control);
             solver.RunSolverMode();
 
-            double IncreasedTol = 1; // due to changes in HMF, the error thresholds went up in comparison to the original reference-runs
+            //double IncreasedTol = 1; // due to changes in HMF, the error thresholds went up in comparison to the original reference-runs
             //                            once the 'IBMCylinderTests.zip' database is replaced, these tolerances may finally be  restored to 
             //                            original, sharper thresholds 
 

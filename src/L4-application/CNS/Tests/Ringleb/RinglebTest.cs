@@ -26,7 +26,6 @@ namespace CNS.Tests.Ringleb {
 
     /// <summary>
     /// Contains tests related to the Ringleb test case with the exact solution
-    /// given by <see cref="RinglebExactSolution"/>.
     /// </summary>
     public class RinglebTest : TestProgram<RinglebControl> {
 
