@@ -1295,8 +1295,8 @@ namespace BoSSS.Foundation {
                         throw new NotSupportedException("'INonlinearFlux' is not supported for linearization; (codomain variable '" + codVarName + "')");
                     if (comps.Where(cmp => cmp is INonlinearFluxEx).Count() > 0)
                         throw new NotSupportedException("'INonlinearFluxEx' is not supported for linearization; (codomain variable '" + codVarName + "')");
-                    if (comps.Where(cmp => cmp is IDualValueFlux).Count() > 0)
-                        throw new NotSupportedException("'IDualValueFlux' is not supported for linearization; (codomain variable '" + codVarName + "')");
+                    //if (comps.Where(cmp => cmp is IDualValueFlux).Count() > 0)
+                    //    throw new NotSupportedException("'IDualValueFlux' is not supported for linearization; (codomain variable '" + codVarName + "')");
                     if (comps.Where(cmp => cmp is INonlinearSource).Count() > 0)
                         throw new NotSupportedException("'INonlinearSource' is not supported for linearization; (codomain variable '" + codVarName + "')");
                 }
