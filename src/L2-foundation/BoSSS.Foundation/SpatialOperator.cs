@@ -1288,6 +1288,19 @@ namespace BoSSS.Foundation {
                 CellQuadratureScheme volQrCtx) //
                  : base(owner, DomainVarMap, ParameterMap, CodomainVarMap) //
             {
+                foreach(string codVarName in owner.CodomainVar) {
+                    var comps = owner.EquationComponents[codVarName];
+
+                    if (comps.Where(cmp => cmp is INonlinearFlux).Count() > 0)
+                        throw new NotSupportedException("'INonlinearFlux' is not supported for linearization; (codomain variable '" + codVarName + "')");
+                    if (comps.Where(cmp => cmp is INonlinearFluxEx).Count() > 0)
+                        throw new NotSupportedException("'INonlinearFluxEx' is not supported for linearization; (codomain variable '" + codVarName + "')");
+                    if (comps.Where(cmp => cmp is IDualValueFlux).Count() > 0)
+                        throw new NotSupportedException("'IDualValueFlux' is not supported for linearization; (codomain variable '" + codVarName + "')");
+                    if (comps.Where(cmp => cmp is INonlinearSource).Count() > 0)
+                        throw new NotSupportedException("'INonlinearSource' is not supported for linearization; (codomain variable '" + codVarName + "')");
+                }
+
                 this.edgeRule = edgeQrCtx.SaveCompile(base.GridData, order);
                 this.volRule = volQrCtx.SaveCompile(base.GridData, order);
                 base.MPITtransceive = true;

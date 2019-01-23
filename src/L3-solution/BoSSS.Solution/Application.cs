@@ -1001,8 +1001,8 @@ namespace BoSSS.Solution {
                     }
 
 
-                    if (this.Control == null || this.Control.NoOfMultigridLevels > 0) {
-                        this.MultigridSequence = CoarseningAlgorithms.CreateSequence(this.GridData, MaxDepth: (this.Control != null ? this.Control.NoOfMultigridLevels : 1));
+                    if (this.Control == null || this.Control.LinearSolver.NoOfMultigridLevels > 0) {
+                        this.MultigridSequence = CoarseningAlgorithms.CreateSequence(this.GridData, MaxDepth: (this.Control != null ? this.Control.LinearSolver.NoOfMultigridLevels : 1));
                     } else {
                         this.MultigridSequence = new AggregationGridData[0];
                     }
@@ -1858,8 +1858,8 @@ namespace BoSSS.Solution {
                             this.LsTrk.Invalidate();
                         }
 
-                        if (this.Control == null || this.Control.NoOfMultigridLevels > 0)
-                            this.MultigridSequence = CoarseningAlgorithms.CreateSequence(this.GridData, MaxDepth: (this.Control != null ? this.Control.NoOfMultigridLevels : 1));
+                        if (this.Control == null || this.Control.LinearSolver.NoOfMultigridLevels > 0)
+                            this.MultigridSequence = CoarseningAlgorithms.CreateSequence(this.GridData, MaxDepth: (this.Control != null ? this.Control.LinearSolver.NoOfMultigridLevels : 1));
                         else
                             this.MultigridSequence = new AggregationGridData[0];
 
@@ -2016,9 +2016,9 @@ namespace BoSSS.Solution {
                             }
                             oldGridData = null;
 
-                            if (this.Control == null || this.Control.NoOfMultigridLevels > 0)
+                            if(this.Control == null || this.Control.LinearSolver.NoOfMultigridLevels > 0)
                                 this.MultigridSequence = CoarseningAlgorithms.CreateSequence(this.GridData,
-                                    MaxDepth: (this.Control != null ? this.Control.NoOfMultigridLevels : 1));
+                                    MaxDepth: (this.Control != null ? this.Control.LinearSolver.NoOfMultigridLevels : 1));
                             else
                                 this.MultigridSequence = new AggregationGridData[0];
 

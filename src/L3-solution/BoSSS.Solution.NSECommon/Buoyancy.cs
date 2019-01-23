@@ -18,6 +18,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using BoSSS.Foundation;
 using BoSSS.Solution.Utils;
 
 namespace BoSSS.Solution.NSECommon {
@@ -25,8 +26,8 @@ namespace BoSSS.Solution.NSECommon {
     /// <summary>
     /// [LowMach] Buoyant force.
     /// </summary>
-    public class Buoyancy : NonlinearSource {
-
+    //public class Buoyancy : BoSSS.Foundation.IVolumeForm {
+    public class Buoyancy : LinearSource { 
         double[] GravityDirection;
         int SpatialComponent;
         double Froude;
@@ -40,7 +41,6 @@ namespace BoSSS.Solution.NSECommon {
         /// <param name="Froude">Dimensionless Froude number.</param>
         /// <param name="EoS">Equation of state for calculating density.</param>
         public Buoyancy(double[] GravityDirection, int SpatialComponent, double Froude, MaterialLaw EoS) {
-
             // Check direction
             double sum = 0.0;
             for (int i = 0; i < GravityDirection.Length; i++) {
@@ -56,23 +56,40 @@ namespace BoSSS.Solution.NSECommon {
             this.Froude = Froude;
             this.EoS = EoS;
         }
+           
+        
 
-        protected override double Source(double time, int j, double[] x, double[] U) {
+        protected override double Source(double[] x, double[] parameters, double[] U) {
             double src = 0.0;
 
-            double rho = EoS.GetDensity(U[0]);
-            src = 1.0 / (Froude * Froude) * rho * GravityDirection[SpatialComponent];
+            //double rho = EoS.GetDensity(U[0]);
+            double rho = EoS.GetDensity(parameters);
+
+            src =  -1.0 / (Froude * Froude) * rho * GravityDirection[SpatialComponent]; // minus sign because it is in the RHS
 
             return src;
         }
 
         /// <summary>
-        /// Temperature.
+        /// Temperature. ????
         /// </summary>
         public override IList<string> ArgumentOrdering {
             get {
-                return new string[] { VariableNames.Temperature };
+                return new string[] { /*VariableNames.Temperature */};
             }
         }
+
+        public override TermActivationFlags VolTerms {
+            get {
+                return TermActivationFlags.UxV | TermActivationFlags.V;
+            }
+        }
+
+        public override IList<string> ParameterOrdering {
+            get {               
+                return new string[] { VariableNames.Temperature0/*, VariableNames.MassFraction0_0, VariableNames.MassFraction1_0, VariableNames.MassFraction2_0, VariableNames.MassFraction3_0*/ }; }
+        }
+
+ 
     }
 }
