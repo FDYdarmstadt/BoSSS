@@ -34,6 +34,7 @@ using Newtonsoft.Json;
 using Newtonsoft.Json.Bson;
 using ilPSP.Utils;
 using BoSSS.Foundation.Grid.Classic;
+using log4net;
 
 namespace BoSSS.Foundation.IO {
 
@@ -211,6 +212,7 @@ namespace BoSSS.Foundation.IO {
 
             if (tracertxt != null) {
                 TextWriterAppender fa = new TextWriterAppender();
+                fa.ImmediateFlush = true;
                 fa.Writer = tracertxt;
                 fa.Layout = new PatternLayout("%date %-5level %logger: %message%newline");
                 fa.ActivateOptions();
