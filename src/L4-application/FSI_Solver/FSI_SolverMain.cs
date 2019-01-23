@@ -317,7 +317,7 @@ namespace BoSSS.Application.FSI_Solver {
                                     // Separating different boundary regions (for active particles)
                                     double cos_theta;
                                     // The posterior side of the particle (Neumann boundary)
-                                    if (Math.Cos(p.currentIterAng_P[0]) * (X[0] - p.currentIterPos_P[0][0]) + Math.Sin(p.currentIterAng_P[0]) * (X[1] - p.currentIterPos_P[0][1]) < 0)
+                                    if (Math.Cos(p.currentIterAng_P[0]) * (X[0] - p.currentIterPos_P[0][0]) + Math.Sin(p.currentIterAng_P[0]) * (X[1] - p.currentIterPos_P[0][1]) < 0 && Math.Cos(p.currentIterAng_P[0]) * (X[0] - p.currentIterPos_P[0][0]) + Math.Sin(p.currentIterAng_P[0]) * (X[1] - p.currentIterPos_P[0][1]) > -0.25)
                                     {
                                         cos_theta = -1;//(Math.Cos(p.currentIterAng_P[0]) * (X[0] - p.currentIterPos_P[0][0]) + Math.Sin(p.currentIterAng_P[0]) * (X[1] - p.currentIterPos_P[0][1])) / (Math.Sqrt((X[0] - p.currentIterPos_P[0][0]).Pow2() + (X[1] - p.currentIterPos_P[0][1]).Pow2()));
                                     }
@@ -610,8 +610,6 @@ namespace BoSSS.Application.FSI_Solver {
                 p.UpdateTransVelocity(dt, this.Control.PhysicalParameters.rho_A, ((FSI_Control)this.Control).includeTranslation);
                 p.ComputeParticleRe(this.Control.PhysicalParameters.mu_A);
                 p.UpdateParticlePosition(dt);
-                
-                
             }
 
             // Update phi complete
@@ -1385,9 +1383,9 @@ namespace BoSSS.Application.FSI_Solver {
             }
             else if (LevSetNeighbours.Contains(j) && ((FSI_Control)this.Control).Timestepper_Mode != FSI_Control.TimesteppingMode.MovingMesh)
             {
-                if (CurrentLevel < ((FSI_Control)Control).RefinementLevel)
+                if (CurrentLevel < ((FSI_Control)Control).RefinementLevel - 1)
                 {
-                    DesiredLevel_j = CurrentLevel + 1;
+                    DesiredLevel_j = ((FSI_Control)Control).RefinementLevel - 1;
                 }
                 else if (CurrentLevel > ((FSI_Control)Control).RefinementLevel)
                 {
@@ -1413,10 +1411,10 @@ namespace BoSSS.Application.FSI_Solver {
                     DesiredLevel_j = CurrentLevel;
                 }
             }
-            else if (CurrentLevel > -2 && ((FSI_Control)this.Control).Timestepper_Mode != FSI_Control.TimesteppingMode.MovingMesh)
-            {
-                DesiredLevel_j = CurrentLevel - 1;
-            }
+            //else if (CurrentLevel > -2 && ((FSI_Control)this.Control).Timestepper_Mode != FSI_Control.TimesteppingMode.MovingMesh)
+            //{
+            //    DesiredLevel_j = CurrentLevel - 1;
+            //}
 
             return DesiredLevel_j;
         }

@@ -85,7 +85,8 @@ namespace BoSSS.Application.FSI_Solver
             //From degree to radiant
             currentTimeAng_P[0] = startAngl * 2 * Math.PI / 360;
             currentTimeAng_P[1] = startAngl * 2 * Math.PI / 360;
-            //currentIterVel_P[0][0] = 2e-8;
+            //currentTimeVel_P[1][0] = 1e-2;
+            //currentTimeVel_P[1][1] = 1e-2;
 
             UpdateLevelSetFunction();
             #endregion

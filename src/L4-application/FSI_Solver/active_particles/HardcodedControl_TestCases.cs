@@ -65,11 +65,11 @@ namespace BoSSS.Application.FSI_Solver
                 int q = new int(); // #Cells in x-dircetion + 1
                 int r = new int(); // #Cells in y-dircetion + 1
 
-                q = 10*4;
-                r = 4*4;
+                q = 10;
+                r = 10;
 
                 double[] Xnodes = GenericBlas.Linspace(-5 * BaseSize, 5 * BaseSize, q);
-                double[] Ynodes = GenericBlas.Linspace(-2 * BaseSize, 2 * BaseSize, r);
+                double[] Ynodes = GenericBlas.Linspace(-5 * BaseSize, 5 * BaseSize, r);
 
                 var grd = Grid2D.Cartesian2DGrid(Xnodes, Ynodes, periodicX: false, periodicY: false);
 
@@ -86,9 +86,9 @@ namespace BoSSS.Application.FSI_Solver
                         et = 1;
                     if (Math.Abs(X[0] + (-5 * BaseSize)) <= 1.0e-8)
                         et = 2;
-                    if (Math.Abs(X[1] - (-2 * BaseSize)) <= 1.0e-8)
+                    if (Math.Abs(X[1] - (-5 * BaseSize)) <= 1.0e-8)
                         et = 3;
-                    if (Math.Abs(X[1] + (-2 * BaseSize)) <= 1.0e-8)
+                    if (Math.Abs(X[1] + (-5 * BaseSize)) <= 1.0e-8)
                         et = 4;
 
                     Debug.Assert(et != 0);
@@ -104,7 +104,8 @@ namespace BoSSS.Application.FSI_Solver
             // Mesh refinement
             // =============================
             C.AdaptiveMeshRefinement = true;
-            C.RefinementLevel =2;
+            C.RefinementLevel = 8;
+            C.maxCurvature = 20;
 
 
             // Boundary conditions
@@ -126,18 +127,18 @@ namespace BoSSS.Application.FSI_Solver
             // =============================   
             // Defining particles
             C.Particles = new List<Particle>();
-            int numOfParticles = 2;
+            int numOfParticles = 1;
             for (int d = 0; d < numOfParticles; d++)
             {
-                C.Particles.Add(new Particle_superEllipsoid(2, 4, new double[] { -0.75 + 1.5 * d, 0.0 }, startAngl: 180*d)
+                C.Particles.Add(new Particle_superEllipsoid(2, 4, new double[] { 0 + 1.5 * d, 0.0 }, startAngl: 45)
                 {
                     radius_P = 1,
                     rho_P = 1.01,//pg/(mum^3)
                     includeGravity = false,
                     active_P = true,
                     stress_magnitude_P = stressM,
-                    thickness_P = 0.1 * BaseSize,
-                    length_P = 0.5 * BaseSize,
+                    thickness_P = 0.2 * BaseSize,
+                    length_P = 1 * BaseSize,
                     superEllipsoidExponent = 2,
                     underrelaxationFT_constant = false,// set true if you want to define a constant underrelaxation (not recommended)
                     underrelaxation_factor = 9,// underrelaxation with [factor * 10^exponent]
@@ -197,7 +198,7 @@ namespace BoSSS.Application.FSI_Solver
             // =============================
             C.Timestepper_LevelSetHandling = LevelSetHandling.Coupled_Once;
             C.splitting_fully_coupled = true;
-            C.max_iterations_fully_coupled = 10000;
+            C.max_iterations_fully_coupled = 1000000;
             C.includeRotation = true;
             C.includeTranslation = true;
 
