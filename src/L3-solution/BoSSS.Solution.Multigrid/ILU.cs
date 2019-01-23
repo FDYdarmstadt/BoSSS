@@ -25,7 +25,7 @@ using MPI.Wrappers;
 using BoSSS.Platform;
 using BoSSS.Platform.Utils;
 
-namespace BoSSS.Solution.Multigrid {
+namespace BoSSS.Solution.AdvancedSolvers {
 
     /// <summary>
     /// Algorithm based on "Numerik linearer Gleichungssysteme, 2. Auflage, Vieweg, Andreas Meister"
@@ -98,7 +98,6 @@ namespace BoSSS.Solution.Multigrid {
                     throw new Exception("One or more diagonal elements are zero, ILU cannot work");
                 Mtx.SetDiagonalElement(bla, 1);
             }
-
 
             // ILU decomposition of matrix
             for (int k = 0; k < n - 1; k++) {

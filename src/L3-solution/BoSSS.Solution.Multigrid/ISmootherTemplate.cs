@@ -20,7 +20,7 @@ using System.Linq;
 using System.Text;
 using ilPSP.LinSolvers;
 
-namespace BoSSS.Solution.Multigrid {
+namespace BoSSS.Solution.AdvancedSolvers {
 
 
     /// <summary>

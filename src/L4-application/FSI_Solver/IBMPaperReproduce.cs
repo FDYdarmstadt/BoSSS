@@ -20,11 +20,12 @@ using BoSSS.Platform;
 using BoSSS.Solution.Control;
 using BoSSS.Foundation.Grid;
 using System.Diagnostics;
-using BoSSS.Solution.Multigrid;
+using BoSSS.Solution.AdvancedSolvers;
 using ilPSP.Utils;
 using BoSSS.Foundation.Grid.Classic;
 using ilPSP;
 using BoSSS.Foundation.IO;
+using BoSSS.Solution.XdgTimestepping;
 
 namespace BoSSS.Application.FSI_Solver
 {
@@ -286,10 +287,11 @@ namespace BoSSS.Application.FSI_Solver
             C.AdvancedDiscretizationOptions.PenaltySafety = 4;
             C.LevelSetSmoothing = false;
             //C.option_solver = "direct";
-            C.MaxKrylovDim = 20;
-            C.MaxSolverIterations = 50;
+            C.LinearSolver.MaxKrylovDim = 20;
+            C.LinearSolver.MaxSolverIterations = 50;
+            C.NonLinearSolver.MaxSolverIterations = 50;
             C.VelocityBlockPrecondMode = MultigridOperator.Mode.SymPart_DiagBlockEquilib_DropIndefinite;
-            C.NoOfMultigridLevels = 0;
+            C.LinearSolver.NoOfMultigridLevels = 0;
 
             // Timestepping
             // ============
@@ -416,7 +418,7 @@ namespace BoSSS.Application.FSI_Solver
             // ==============
 
             // Coupling Properties
-            C.LevelSetMovement = "coupled";
+            C.Timestepper_LevelSetHandling = LevelSetHandling.Coupled_Once;
             C.includeTranslation = false;
             C.includeRotation = true;
 
@@ -457,8 +459,9 @@ namespace BoSSS.Application.FSI_Solver
             C.AdvancedDiscretizationOptions.PenaltySafety = 4;
             C.AdvancedDiscretizationOptions.CellAgglomerationThreshold = 0.2;
             C.LevelSetSmoothing = false;
-            C.MaxSolverIterations = 100;
-            C.NoOfMultigridLevels = 1;
+            C.LinearSolver.MaxSolverIterations = 100;
+            C.LinearSolver.NoOfMultigridLevels = 1;
+            C.NonLinearSolver.MaxSolverIterations = 100;
 
             // Timestepping
             // ============
@@ -707,7 +710,7 @@ namespace BoSSS.Application.FSI_Solver
             double radius = 0.5;
             C.includeRotation = false;
             C.includeTranslation = false;
-            C.LevelSetMovement = "fixed";
+            C.Timestepper_LevelSetHandling = LevelSetHandling.None;
             C.PhysicalParameters.rho_A = 1;
             C.PhysicalParameters.mu_A = 1.0 / 185;
 
@@ -782,10 +785,11 @@ namespace BoSSS.Application.FSI_Solver
             C.AdvancedDiscretizationOptions.PenaltySafety = 4;
             C.AdvancedDiscretizationOptions.CellAgglomerationThreshold = 0.2;
             C.LevelSetSmoothing = false;
-            C.MaxKrylovDim = 20;
-            C.MaxSolverIterations = 100;
+            C.LinearSolver.MaxKrylovDim = 20;
+            C.LinearSolver.MaxSolverIterations = 100;
+            C.NonLinearSolver.MaxSolverIterations = 100;
             C.VelocityBlockPrecondMode = MultigridOperator.Mode.SymPart_DiagBlockEquilib_DropIndefinite;
-            C.NoOfMultigridLevels = 0;
+            C.LinearSolver.NoOfMultigridLevels = 0;
 
             // Timestepping
             // ============
@@ -810,7 +814,7 @@ namespace BoSSS.Application.FSI_Solver
             return C;
         }
 
-        public static FSI_Control ParticleUnderGravity(string _DbPath = null, int k = 2, double VelXBase = 0.0, bool movingMesh = true, bool restart = false)
+        public static FSI_Control ParticleUnderGravity(int k = 2, double VelXBase = 0.0, bool movingMesh = true, bool restart = false)
         {
             //List<FSI_Control> R = new List<FSI_Control>();
 
@@ -832,7 +836,7 @@ namespace BoSSS.Application.FSI_Solver
             // ======================
 
             //C.DbPath = _DbPath;
-            C.DbPath = @"\\dc1\userspace\stange\HiWi_database\ParticleUnderGravity";
+            C.DbPath = @"\\hpccluster\hpccluster-scratch\krause\cluster_db";
             C.savetodb = true;
             C.saveperiod = 1;
 
@@ -844,15 +848,15 @@ namespace BoSSS.Application.FSI_Solver
             {
 
                 C.ProjectDescription = "ParticleUnderGravity_dt0.001_" + k + "_MM";
-                C.ProjectName = "ParticleUnderGravity_dt0.0001_k" + k + "_MM";
-                C.SessionName = "ParticleUnderGravity_dt0.001_k" + k + "_MM_MFVOneStepGaussAndStokes"; //_MFVOneStepGaussAndStokes
+                C.ProjectName = "ParticleUnderGravity_dt0.001_k" + k + "_MM";
+                C.SessionName = "ParticleUnderGravity_dt0.001_k" + k + "_MM"; //_MFVOneStepGaussAndStokes
                 C.Tags.Add("MM");
             }
             else
             {
-                C.ProjectDescription = "ParticleUnderGravity_dt0.0001_k" + k + "_SP";
-                C.ProjectName = "ParticleUnderGravity_dt0.0001_k" + k + "_SP";
-                C.SessionName = "ParticleUnderGravity_dt0.001_k" + k + "_SP_MFVOneStepGaussAndStokes_DoF150000"; 
+                C.ProjectDescription = "ParticleUnderGravity_dt0.001_k" + k + "_SP";
+                C.ProjectName = "ParticleUnderGravity_dt0.001_k" + k + "_SP";
+                C.SessionName = "ParticleUnderGravity_dt0.001_k" + k + "_SP"; 
                 C.Tags.Add("SP");
             }
             // DG degrees
@@ -910,13 +914,13 @@ namespace BoSSS.Application.FSI_Solver
                         break;
 
                     case 2:
-                        q = 41; //41; DoF 150000: 71-141
-                        r = 121; //121;
+                        q = 71; //41; DoF 150000: 71-141
+                        r = 141; //121;
                         break;
 
                     case 3:
-                        q = 31;//45;//31;
-                        r = 91;//129;//91;
+                        q = 45;//45;//31;
+                        r = 129;//129;//91;
                         break;
 
                     default:
@@ -955,13 +959,13 @@ namespace BoSSS.Application.FSI_Solver
 
                 return grd;
             };
+                C.Particles = new List<Particle>();
 
-                C.Particles[0] = new Particle(2, 4) {
+                C.Particles.Add(new Particle_Sphere(2, 4, new double[] { 0.0, 4.0 }) {
                     radius_P = 0.125,
                     rho_P = 1.25,
                 
-                };
-                C.Particles[0].currentPos_P[0] = new double[] { 0.0, 4.0 };
+                });
 
                 //Func<double[], double, double> phi = (X, t) => -(X[0] - C.initialPos[0][0]).Pow2() + -(X[1] - C.initialPos[0][1]).Pow2() + C.particleRadius.Pow2();
                 //Func<double[], double, double> phi = (X, t) => -(X[0] - t+X[1]);
@@ -990,7 +994,7 @@ namespace BoSSS.Application.FSI_Solver
             // ==============
 
             // Coupling Properties
-            C.LevelSetMovement = "coupled";
+            C.Timestepper_LevelSetHandling = LevelSetHandling.Coupled_Once;
             C.includeRotation = false;
             C.includeTranslation = true;
 
@@ -1001,7 +1005,7 @@ namespace BoSSS.Application.FSI_Solver
             // Particle Properties
             //C.particleRho = 1.25; // 1.25;
             //C.PhysicalParameters.mu_B = 0.1;
-            C.particleRadius = 0.125;
+            //C.particleRadius = 0.125;
             //C.particleMass = Math.PI * C.particleRadius * C.particleRadius * C.particleRho;
             //C.particleMass = 1;
 
@@ -1023,8 +1027,8 @@ namespace BoSSS.Application.FSI_Solver
             C.AdvancedDiscretizationOptions.PenaltySafety = 4;
             C.AdvancedDiscretizationOptions.CellAgglomerationThreshold = 0.2;
             C.LevelSetSmoothing = false;
-            C.MaxSolverIterations = 100;
-
+            C.LinearSolver.MaxSolverIterations = 100;
+            C.NonLinearSolver.MaxSolverIterations = 100;
 
             // Timestepping
             // ============
@@ -1037,6 +1041,10 @@ namespace BoSSS.Application.FSI_Solver
             {
                 C.Timestepper_Mode = FSI_Control.TimesteppingMode.Splitting;
             }
+
+            C.NonLinearSolver.SolverCode = NonLinearSolverConfig.Code.Picard;
+            C.LinearSolver.SolverCode = LinearSolverConfig.Code.classic_mumps;
+
             C.Timestepper_Scheme = IBM_Solver.IBM_Control.TimesteppingScheme.BDF2;
             double dt = 0.001;
             C.dtMax = dt;

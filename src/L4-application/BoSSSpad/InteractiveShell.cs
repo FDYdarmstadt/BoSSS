@@ -23,6 +23,7 @@ using System.Collections.Generic;
 using System.Reflection;
 using BoSSS.Solution.Gnuplot;
 using System.Linq;
+using ilPSP;
 
 namespace BoSSS.Application.BoSSSpad {
 
@@ -146,10 +147,32 @@ namespace BoSSS.Application.BoSSSpad {
         public static IList<IDatabaseInfo> databases;
 
         /// <summary>
+        /// path to the default BoSSS database directory for the current user
+        /// </summary>
+        static public string GetDefaultDatabaseDir() {
+            string basepath = null;
+            basepath = System.Environment.GetEnvironmentVariable("USERPROFILE");
+
+            if (basepath.IsEmptyOrWhite())
+                basepath = System.Environment.GetEnvironmentVariable("HOME");
+
+            string path = Path.Combine(basepath, "default_bosss_db");
+
+            return path;
+        }
+
+
+        /// <summary>
+        /// Similar to <see cref="OpenOrCreateDatabase"/>, but uses a default database
+        /// </summary>
+        static public IDatabaseInfo OpenOrCreateDefaultDatabase() {
+            string path = GetDefaultDatabaseDir();
+            return OpenOrCreateDatabase(path);
+        }
+        
+        /// <summary>
         /// Opens a database at a specific path, resp. creates one if the 
         /// </summary>
-        /// <param name="dbDir"></param>
-        /// <returns></returns>
         static public IDatabaseInfo OpenOrCreateDatabase(string dbDir) {
             if (Directory.Exists(dbDir)) {
                 if (!DatabaseUtils.IsValidBoSSSDatabase(dbDir)) {

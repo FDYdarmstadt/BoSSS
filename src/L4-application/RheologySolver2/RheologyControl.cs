@@ -19,7 +19,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using BoSSS.Solution.Multigrid;
+using BoSSS.Solution.AdvancedSolvers;
 using BoSSS.Solution.XdgTimestepping;
 
 namespace BoSSS.Application.Rheology {
@@ -33,7 +33,17 @@ namespace BoSSS.Application.Rheology {
         /// Ctor.
         /// </summary>
         public RheologyControl() {
-            base.NoOfMultigridLevels = 1;
+            base.LinearSolver.NoOfMultigridLevels = 1;
+            //shift of Solver Information
+            base.LinearSolver.MaxSolverIterations = 10; //MaxIter
+            base.LinearSolver.MinSolverIterations = 1; //MinIter
+            base.LinearSolver.ConvergenceCriterion = 1.0e-6; //ConvCritGMRES
+            base.LinearSolver.SolverCode = LinearSolverConfig.Code.classic_mumps; //LinearSolver
+            base.NonLinearSolver.MaxSolverIterations = 10; //MaxIter
+            base.NonLinearSolver.MinSolverIterations = 1; //MinIter
+            base.NonLinearSolver.ConvergenceCriterion = 1.0e-10; //ConvCrit
+            base.NonLinearSolver.SolverCode = NonLinearSolverConfig.Code.Picard; //NonLinearSolver
+            base.NonLinearSolver.UnderRelax = 1.0; //UnderRelax
         }
 
         // CONSTITUTIVE EQUATIONS
@@ -98,26 +108,26 @@ namespace BoSSS.Application.Rheology {
         public double PresPenalty2 = 1.0; //Penalty for pressure (alpha)
         public double StressPenalty = 1.0; //penalty for stress in objective term
 
-        //Iterations for nonlinear solver (NS)
-        public int MaxIter = 10;
-        public int MinIter = 1;
-        public double ConvCrit = 1E-10;
-        public double ConvCritGMRES = 1E-6;
-        public double UnderRelax = 1.0;
+        ////Iterations for nonlinear solver (NS)
+        //public int MaxIter = 10;
+        //public int MinIter = 1;
+        //public double ConvCrit = 1E-10;
+        //public double ConvCritGMRES = 1E-6;
+        //public double UnderRelax = 1.0;
 
-        /// <summary>
-        /// Which linear solver should be used.
-        /// </summary>
-        public ISolverSmootherTemplate LinearSolver = new DirectSolver() { WhichSolver = DirectSolver._whichSolver.MUMPS };
+        ///// <summary>
+        ///// Which linear solver should be used.
+        ///// </summary>
+        //public ISolverSmootherTemplate LinearSolver = new DirectSolver() { WhichSolver = DirectSolver._whichSolver.MUMPS };
 
-        //Which nonliner Solver Method in iteration (Fixpunkt = Picard or Newton)
-        public NonlinearSolverMethod NonlinearMethod = NonlinearSolverMethod.Picard;
+        ////Which nonliner Solver Method in iteration (Fixpunkt = Picard or Newton)
+        //public NonlinearSolverMethod NonlinearMethod = NonlinearSolverMethod.Picard;
 
         // Block-Preconditiond for the velocity/momentum-block of the saddle-point system
         public MultigridOperator.Mode VelocityBlockPrecondMode = MultigridOperator.Mode.SymPart_DiagBlockEquilib_DropIndefinite; //.LeftInverse_DiagBlock; // SymPart_DiagBlockEquilib;
 
         //Block-Preconditiond for the pressure/continuity-block of the saddle-point system
-        public MultigridOperator.Mode PressureBlockPrecondMode = MultigridOperator.Mode.SymPart_DiagBlockEquilib_DropIndefinite;
+        public MultigridOperator.Mode PressureBlockPrecondMode = MultigridOperator.Mode.Eye; // no SymPart_Diag-Präcon, because there may be no zero on the diagonal!!!
 
         // Block-Preconditiond for the stresses/constitutive-block of the system
         public MultigridOperator.Mode StressBlockPrecondMode = MultigridOperator.Mode.Eye;
@@ -125,8 +135,8 @@ namespace BoSSS.Application.Rheology {
         // Block-Preconditiond for the stresses/constitutive-block of the system
         public MultigridOperator.Mode VelocityGradientBlockPrecondMode = MultigridOperator.Mode.Eye;
 
-        //Aggregation levels for multigrid
-        public int MultigridNoOfLevels = 0;
+        ////Aggregation levels for multigrid
+        //public int MultigridNoOfLevels = 0; wird nicht verwendet und ist obsolet, siehe Konstruktor ...
 
         //Refinement level for adaptive mesh refinement
         public int RefinementLevel = 0;

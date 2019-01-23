@@ -20,6 +20,7 @@ using MPI.Wrappers;
 using NUnit.Framework;
 using System;
 using System.IO;
+using System.Threading;
 
 namespace BoSSS.Application.TutorialTests {
 
@@ -50,8 +51,14 @@ namespace BoSSS.Application.TutorialTests {
                 // This is Florians Laptop;
                 // he is to poor to afford MATLAB, so he uses OCTAVE
                 BatchmodeConnector.Flav = BatchmodeConnector.Flavor.Octave;
-                BatchmodeConnector.MatlabExecuteable = "C:\\cygwin64\\bin\\bash.exe";
+                //BatchmodeConnector.MatlabExecuteable = "C:\\cygwin64\\bin\\bash.exe";
             } 
+
+            string preExistingDb = BoSSS.Application.BoSSSpad.InteractiveShell.GetDefaultDatabaseDir();
+            if (Directory.Exists(preExistingDb)) {
+                //preExistingDb.Delete(true);
+                Directory.Delete(preExistingDb, true);
+            }
         }
 
         static string DirectoryOffset = Path.Combine("..", "..", "..", "..", "..", "doc", "handbook");
@@ -75,10 +82,17 @@ namespace BoSSS.Application.TutorialTests {
             // ---
             "tutorial10-PoissonSystem/Poisson.tex",
             "tutorial11-Stokes/StokesEq.tex",
-            "CsharpAndBoSSSpad/CsharpAndBoSSSpad.tex"//   */
-            "ParameterStudy\ParameterStudy.tex"
+            "CsharpAndBoSSSpad/CsharpAndBoSSSpad.tex",
+            "convergenceStudyTutorial/convStudy.tex"
+            //"ParameterStudy/ParameterStudy.tex"
             )] string TexFileName) {
 
+            string preExistingDb =BoSSS.Application.BoSSSpad.InteractiveShell.GetDefaultDatabaseDir();
+            if (Directory.Exists(preExistingDb)) {
+                Directory.Delete(preExistingDb, true);
+            }
+            
+            
             string FullTexName = Path.Combine(DirectoryOffset, TexFileName);
             Assert.IsTrue(File.Exists(FullTexName), "unable to find TeX source: " + FullTexName);
 
@@ -88,6 +102,21 @@ namespace BoSSS.Application.TutorialTests {
 
             Assert.LessOrEqual(ErrCount, 0, "Found " + ErrCount + " errors in worksheet: " + FullTexName + " (negative numbers may indicate file-not-found, etc.).");
             Assert.IsTrue(ErrCount >= 0, "Fatal return code: " + ErrCount + " in worksheet: " + FullTexName + " (negative numbers may indicate file-not-found, etc.).");
+
+            int timeoucount = 0;
+            while(MiniBatchProcessor.Server.IsRunning) {
+                MiniBatchProcessor.Server.SendTerminationSignal();
+                Thread.Sleep(10000);
+
+                timeoucount++;
+                if(timeoucount > 100) {
+                    Assert.Fail("Unable to kill MiniBatchProcessor - server");
+                }
+            }
+
+            //foreach(var db in BoSSS.Application.BoSSSpad.InteractiveShell.databases) {
+            //    db.
+            //}
         }
 
     }

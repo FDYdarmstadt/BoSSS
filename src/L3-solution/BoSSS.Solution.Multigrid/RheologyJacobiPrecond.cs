@@ -26,9 +26,9 @@ using BoSSS.Solution.Utils;
 using ilPSP.LinSolvers;
 using ilPSP;
 using ilPSP.Connectors.Matlab;
-using BoSSS.Solution.Multigrid;
+using BoSSS.Solution.AdvancedSolvers;
 
-namespace BoSSS.Solution.Multigrid {
+namespace BoSSS.Solution.AdvancedSolvers {
     public class RheologyJacobiPrecond : ISolverSmootherTemplate, ISolverWithCallback {
         public int IterationsInNested {
             get {
@@ -70,7 +70,7 @@ namespace BoSSS.Solution.Multigrid {
 
         SpatialOperator LocalOp;
 
-        MsrMatrix LocalMatrix;
+        BlockMsrMatrix LocalMatrix;
         BlockMsrMatrix P;
 
         public void Init(MultigridOperator op) {

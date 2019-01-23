@@ -18,7 +18,7 @@ using BoSSS.Foundation.Grid;
 using BoSSS.Foundation.Grid.Classic;
 using BoSSS.Platform;
 using BoSSS.Solution.Control;
-using BoSSS.Solution.Multigrid;
+using BoSSS.Solution.AdvancedSolvers;
 using BoSSS.Solution.NSECommon;
 using BoSSS.Solution.XdgTimestepping;
 using BoSSS.Solution.XNSECommon;
@@ -388,11 +388,15 @@ namespace BoSSS.Application.XNSE_Solver {
 
 
             C.VelocityBlockPrecondMode = MultigridOperator.Mode.SymPart_DiagBlockEquilib;
-            C.NoOfMultigridLevels = 1;
-            C.Solver_MaxIterations = 50;
-            C.Solver_ConvergenceCriterion = 1e-8;
+            C.LinearSolver.NoOfMultigridLevels = 1;
+            C.NonLinearSolver.MaxSolverIterations = 50;
+            C.LinearSolver.MaxSolverIterations = 50;
+            //C.Solver_MaxIterations = 50;
+            C.NonLinearSolver.ConvergenceCriterion = 1e-8;
+            C.LinearSolver.ConvergenceCriterion = 1e-8;
+            //C.Solver_ConvergenceCriterion = 1e-8;
             C.LevelSet_ConvergenceCriterion = 1e-6;
-            C.LinearSolver = DirectSolver._whichSolver.PARDISO;
+            C.LinearSolver.SolverCode = LinearSolverConfig.Code.classic_pardiso;//C.LinearSolver = DirectSolver._whichSolver.PARDISO;
 
             C.AdvancedDiscretizationOptions.ViscosityMode = ViscosityMode.FullySymmetric;
 

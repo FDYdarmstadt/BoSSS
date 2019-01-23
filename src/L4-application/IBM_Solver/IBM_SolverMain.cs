@@ -34,12 +34,13 @@ using BoSSS.Foundation.IO;
 using System.Diagnostics;
 using System.IO;
 using BoSSS.Foundation.Quadrature;
-using BoSSS.Solution.Multigrid;
+using BoSSS.Solution.AdvancedSolvers;
 using ilPSP;
 using BoSSS.Solution.XdgTimestepping;
 using BoSSS.Foundation.Grid.Aggregation;
 using BoSSS.Foundation.Grid.Classic;
 using NUnit.Framework;
+using BoSSS.Solution.XNSECommon;
 
 namespace BoSSS.Application.IBM_Solver {
 
@@ -48,11 +49,12 @@ namespace BoSSS.Application.IBM_Solver {
     /// </summary>
     public class IBM_SolverMain : Application<IBM_Control> {
 
+
         /// <summary>
         /// Application entry point.
         /// </summary>
         static void Main(string[] args) {
-
+         
             BoSSS.Solution.Application<IBM_Control>._Main(args, false, delegate () {
                 var p = new IBM_SolverMain();
                 return p;
@@ -98,11 +100,18 @@ namespace BoSSS.Application.IBM_Solver {
         [InstantiateFromControlFile("Phi", "Phi", IOListOption.ControlFileDetermined)]
         public LevelSet LevSet;
 
+        ///// <summary>
+        ///// Curvature; DG-polynomial degree should be 2 times the polynomial degree of <see cref="LevSet"/>.
+        ///// </summary>
+        //[InstantiateFromControlFile("Curvature", "Curvature", IOListOption.ControlFileDetermined)]
+        //public SinglePhaseField Curvature;
+
         /// <summary>
         /// Residual of the continuity equation
         /// </summary>
         [InstantiateFromControlFile("ResidualConti", VariableNames.Pressure, IOListOption.ControlFileDetermined)]
         public SinglePhaseField ResidualContinuity;
+
 
         /// <summary>
         /// Residual in the momentum equation.
@@ -112,6 +121,7 @@ namespace BoSSS.Application.IBM_Solver {
             true, true,
             IOListOption.ControlFileDetermined)]
         public VectorField<SinglePhaseField> ResidualMomentum;
+        
 
 
 #pragma warning restore 649
@@ -285,7 +295,7 @@ namespace BoSSS.Application.IBM_Solver {
 
                 IBM_Op = new XSpatialOperator(DomNameSelected, Params, CodNameSelected,
                     (A, B, C) => this.HMForder);
-
+                
                 // Momentum equation
                 // =================
 
@@ -426,17 +436,15 @@ namespace BoSSS.Application.IBM_Solver {
                         MassScale,
                         this.MultigridOperatorConfig, base.MultigridSequence,
                         this.FluidSpecies, this.HMForder,
-                        this.Control.AdvancedDiscretizationOptions.CellAgglomerationThreshold, false);
+                        this.Control.AdvancedDiscretizationOptions.CellAgglomerationThreshold,
+                        false, this.Control.NonLinearSolver, this.Control.LinearSolver
+                        );
+
                     m_BDF_Timestepper.m_ResLogger = base.ResLogger;
                     m_BDF_Timestepper.m_ResidualNames = ArrayTools.Cat(this.ResidualMomentum.Select(f => f.Identification), this.ResidualContinuity.Identification);
-                    m_BDF_Timestepper.Config_SolverConvergenceCriterion = this.Control.Solver_ConvergenceCriterion;
-                    m_BDF_Timestepper.Config_MaxIterations = this.Control.MaxSolverIterations;
-                    m_BDF_Timestepper.Config_MinIterations = this.Control.MinSolverIterations;
+            
                     m_BDF_Timestepper.SessionPath = SessionPath;
                     m_BDF_Timestepper.Timestepper_Init = Solution.Timestepping.TimeStepperInit.MultiInit;
-
-                    SolverChooser.ChooseSolver(this.Control, ref m_BDF_Timestepper);
-
                 }
 
             } else {
@@ -601,12 +609,12 @@ namespace BoSSS.Application.IBM_Solver {
         //    return new CutCellMetrics(momentFittingVariant, this.HMForder, LsTrk, this.FluidSpecies);
         //}
 
-        protected TextWriter Log_DragAndLift;
+        protected TextWriter Log_DragAndLift,Log_DragAndLift_P1;
         protected double[] force = new double[3];
         protected double torque = new double();
         protected double oldtorque = new double();
 
-        SinglePhaseField blocking = null;
+        //SinglePhaseField blocking = null;
 
         /// <summary>
         /// Depending on settings <see cref="IBM_Control.Option_Timestepper"/>, computs either one timestep or a steady-state solution.
@@ -645,9 +653,9 @@ namespace BoSSS.Application.IBM_Solver {
                     }
                 }
 
-                force = IBMSolverUtils.GetForces(Velocity, Pressure, this.LsTrk, this.Control.PhysicalParameters.mu_A);
+                force = IBMSolverUtils.GetForces(Velocity, Pressure, this.LsTrk, this.Control.PhysicalParameters.mu_A/this.Control.PhysicalParameters.rho_A);
                 //oldtorque = torque;
-                torque = IBMSolverUtils.GetTorque(Velocity, Pressure, this.LsTrk, this.Control.PhysicalParameters.mu_A, this.Control.particleRadius);
+                torque = IBMSolverUtils.GetTorque(Velocity, Pressure, this.LsTrk, this.Control.PhysicalParameters.mu_A / this.Control.PhysicalParameters.rho_A, this.Control.particleRadius);
 
                 if ((base.MPIRank == 0) && (Log_DragAndLift != null)) {
                     string line;
@@ -659,7 +667,7 @@ namespace BoSSS.Application.IBM_Solver {
                     Log_DragAndLift.WriteLine(line);
                     Log_DragAndLift.Flush();
                 }
-
+                
                 Console.WriteLine("x-Force:   {0}", force[0]);
                 Console.WriteLine("y-Force:   {0}", force[1]);
                 if (this.GridData.SpatialDimension == 3)
@@ -881,7 +889,7 @@ namespace BoSSS.Application.IBM_Solver {
                 }
 
                 ilPSP.Environment.StdoutOnlyOnRank0 = false;
-                Console.WriteLine("Total number of cells:    {0}", Grid.Cells.Count());
+                Console.WriteLine("Total number of cells:    {0}", Grid.NumberOfCells);
                 Console.WriteLine("Total number of DOFs:     {0}", CurrentSolution.Count());
                 Console.WriteLine("Total number of cut cells:     {0}", LsTrk.Regions.GetCutCellMask().NoOfItemsLocally);
 
@@ -912,7 +920,7 @@ namespace BoSSS.Application.IBM_Solver {
             if (this.Control.CutCellQuadratureType == XQuadFactoryHelper.MomentFittingVariants.ExactCircle)
                 BoSSS.Foundation.XDG.Quadrature.HMF.ExactCircleLevelSetIntegration.RADIUS = new double[] { this.Control.particleRadius };
             
-            Console.WriteLine("Total number of cells:    {0}", Grid.Cells.Count().MPISum());
+            Console.WriteLine("Total number of cells:    {0}", Grid.NumberOfCells);
             Console.WriteLine("Total number of DOFs:     {0}", CurrentSolution.Count().MPISum());
             base.SetInitial();
 
@@ -1236,7 +1244,26 @@ namespace BoSSS.Application.IBM_Solver {
                 Log_DragAndLift.WriteLine(firstline);
                 //Log_DragAndLift.WriteLine(restartLine);
             }
+        }
 
+        protected override void Bye() {
+            if(Log_DragAndLift != null) {
+                try {
+                    Log_DragAndLift.Flush();
+                    Log_DragAndLift.Close();
+                    Log_DragAndLift.Dispose();
+                } catch (Exception) { }
+                Log_DragAndLift = null;
+            }
+
+            if(Log_DragAndLift_P1 != null) {
+                try {
+                    Log_DragAndLift_P1.Flush();
+                    Log_DragAndLift_P1.Close();
+                    Log_DragAndLift_P1.Dispose();
+                } catch (Exception) { }
+                Log_DragAndLift_P1 = null;
+            }
         }
 
         /// <summary>
@@ -1247,10 +1274,11 @@ namespace BoSSS.Application.IBM_Solver {
         /// <summary>
         /// Very primitive refinement indicator, works on a LevelSet criterion.
         /// </summary>
-        int LevelIndicator(int j, int CurrentLevel) {
+        /// 
+        int LevelIndicator(int j, int CurrentLevel)
+        {
             var LevSetCells = LsTrk.Regions.GetCutCellMask();
-            var LevSetNeighbours = LsTrk.Regions.GetNearFieldMask(2);
-
+            var LevSetNeighbours = LsTrk.Regions.GetNearFieldMask(1);
             int DesiredLevel_j = 0;
 
             if (!debug) {
@@ -1259,6 +1287,7 @@ namespace BoSSS.Application.IBM_Solver {
             } else {
                 if (LevSetCells.Contains(j)) {
                     DesiredLevel_j = 2;
+                    Console.WriteLine(" ich störe");
                 } else
                     if (LevSetNeighbours.Contains(j)) { DesiredLevel_j = 2; }
             }
@@ -1278,6 +1307,13 @@ namespace BoSSS.Application.IBM_Solver {
 
                 // Check grid changes
                 // ==================
+
+                //// compute curvature for levelindicator 
+                //CurvatureAlgorithms.CurvatureDriver(
+                //SurfaceStressTensor_IsotropicMode.Curvature_Projected,
+                //CurvatureAlgorithms.FilterConfiguration.Default,
+                //this.Curvature, out VectorField<SinglePhaseField> LevSetGradient, this.LsTrk,
+                //this.HMForder, this.DGLevSet.Current);
 
                 CellMask CutCells = LsTrk.Regions.GetCutCellMask();
                 //CellMask CutCellNeighbors = LsTrk.Regions.GetNearFieldMask(1);

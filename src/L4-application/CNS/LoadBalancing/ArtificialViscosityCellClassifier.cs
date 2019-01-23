@@ -33,7 +33,8 @@ namespace CNS.LoadBalancing {
             }
 
             int noOfClasses = 2;
-            int[] cellToPerformanceClassMap = new int[program.Grid.NoOfUpdateCells];
+            int J = program.GridData.iLogicalCells.NoOfLocalUpdatedCells;
+            int[] cellToPerformanceClassMap = new int[J];
 
             // old
             //foreach (Chunk chunk in program.Control.ArtificialViscosityLaw.GetShockedCellMask(program.GridData)) {

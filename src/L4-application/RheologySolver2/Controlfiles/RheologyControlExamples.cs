@@ -53,14 +53,21 @@ namespace BoSSS.Application.Rheology {
             C.savetodb = true;
             C.DbPath = path;
             C.ProjectName = "Contration";
-            C.MaxIter =  50;
-            C.MinIter = 1;
-            C.ConvCrit = 1E-7;
+            C.NonLinearSolver.MaxSolverIterations = 50;
+            C.NonLinearSolver.MinSolverIterations = 1;
+            C.NonLinearSolver.ConvergenceCriterion = 1E-7;
+            C.LinearSolver.MaxSolverIterations = 50;
+            C.LinearSolver.MinSolverIterations = 1;
+            C.LinearSolver.ConvergenceCriterion = 1E-7;
+
+            //C.MaxIter =  50;
+            //C.MinIter = 1;
+            //C.ConvCrit = 1E-7;
             C.dt = 1E20;
             C.dtMax = C.dt;
             C.dtMin = C.dt;
             C.Timestepper_Scheme = RheologyControl.TimesteppingScheme.ImplicitEuler;
-            C.NonlinearMethod = NonlinearSolverMethod.NewtonGMRES;
+            C.NonLinearSolver.SolverCode = NonLinearSolverConfig.Code.NewtonGMRES;//C.NonlinearMethod = NonlinearSolverMethod.NewtonGMRES;
             C.ObjectiveParam = 1.0;
 
             //Debugging and Solver Analysis
@@ -76,7 +83,7 @@ namespace BoSSS.Application.Rheology {
             C.FixedStreamwisePeriodicBC = false;
             C.beta = 0.11;
             C.Reynolds = 1;
-            C.Weissenberg = 0;
+            C.Weissenberg = 0.1;
             C.RaiseWeissenberg = true;
 
             //Grid Params
@@ -378,19 +385,26 @@ namespace BoSSS.Application.Rheology {
             //C:\AnnesBoSSSdb\ConfinedCylinder
 
             //Solver Options
-            C.NoOfTimesteps = 1;
+            C.NoOfTimesteps = 1000;
             C.savetodb = true;
             C.DbPath = path;
             C.ProjectName = "Cylinder";
-            C.MaxIter = 100;
-            C.MinIter = 1;
-            C.ConvCrit = 1E-6;
+
+            C.NonLinearSolver.MaxSolverIterations = 100;
+            C.LinearSolver.MaxSolverIterations = 100;
+            C.NonLinearSolver.MinSolverIterations = 1;
+            C.LinearSolver.MinSolverIterations = 1;
+            C.NonLinearSolver.ConvergenceCriterion = 1E-6;
+            C.LinearSolver.ConvergenceCriterion = 1E-6;
+            //C.MaxIter = 100;
+            //C.MinIter = 1;
+            //C.ConvCrit = 1E-6;
             //C.UnderRelax = 1.0;
-            C.dt = 1E20;
+            C.dt = 0.1;
             C.dtMax = C.dt;
             C.dtMin = C.dt;
             C.Timestepper_Scheme = RheologyControl.TimesteppingScheme.ImplicitEuler;
-            C.NonlinearMethod = NonlinearSolverMethod.Newton;
+            C.NonLinearSolver.SolverCode = NonLinearSolverConfig.Code.Newton;//C.NonlinearMethod = NonlinearSolverMethod.Newton;
             C.ObjectiveParam = 1.0;
 
             C.UsePerssonSensor = true;
@@ -419,16 +433,16 @@ namespace BoSSS.Application.Rheology {
             C.FixedStreamwisePeriodicBC = false;
             C.beta = 0.59;
             C.Reynolds = 1;
-            C.Weissenberg = 5.0; //aim Weissenberg number!
-            C.RaiseWeissenberg = true;
+            C.Weissenberg = 0; //aim Weissenberg number!
+            C.RaiseWeissenberg = false;
             C.WeissenbergIncrement = 0.1;
 
             //Penalties
             C.ViscousPenaltyScaling = 1;
-            C.Penalty2 = 2;
+            C.Penalty2 = 1;
             C.Penalty1[0] = 0.0;
             C.Penalty1[1] = 0.0;
-            C.PresPenalty2 = 2;
+            C.PresPenalty2 = 1;
             C.PresPenalty1[0] = 0.0;
             C.PresPenalty1[1] = 0.0;
             C.alpha = 1;
@@ -440,7 +454,6 @@ namespace BoSSS.Application.Rheology {
             Func<double[], double, double> VelocityXfunction = (X, t) => u0 * (1  - (X[1] *  X[1])/h);
             Func<double[], double, double> VelocityYfunction = (X, t) => 0.0;
             Func<double[], double, double> Pressurefunction = (X, t) => u0 * 0.5 * C.Reynolds * (35 - X[0]);
-                //since C.Weissenberg is the aim Weissenberg, StressXX must be zero -> would be wrong for first Newtonian shot!
             Func<double[], double, double> StressXXfunction = (X, t) =>  2 * C.Weissenberg * (1 - C.beta) * u0 * (-2 / h) * X[1] * u0 * (-2 / h) * X[1];
             Func<double[], double, double> StressXYfunction = (X, t) => (1 - C.beta) * u0 * (-2 / h) * X[1];
             Func<double[], double, double> StressYYfunction = (X, t) => (0.0);
@@ -473,7 +486,7 @@ namespace BoSSS.Application.Rheology {
 
             // Create Grid
             //fine grid - only on cluster!           
-            string grid = "70797022-eba0-4c77-b179-334c665044b5";
+            //string grid = "70797022-eba0-4c77-b179-334c665044b5";
 
             //more refined in wake of cylinder - only on cluster!
             //string grid = "3637610b-bcdf-4cdd-a647-cd7f91e373e8";
@@ -483,7 +496,7 @@ namespace BoSSS.Application.Rheology {
             //string grid = "f9aa12dc-53bb-4e2c-81b3-ffccc251a3f7";
 
             //very coarse grid as starting point for refinement
-            //string grid = "e296a1b2-98f9-4fdf-8a32-04e0954ff369";
+            string grid = "e296a1b2-98f9-4fdf-8a32-04e0954ff369";
 
             //Dennis Zylinder for drag validation
             //string grid = "a67192f5-6b59-4caf-a95a-0a08730c3365";
@@ -517,7 +530,7 @@ namespace BoSSS.Application.Rheology {
 
             //restart
             //var database = new DatabaseInfo(path);
-            //Guid restartID = new Guid("b919f595-9304-4d3c-a5f3-55d3cf4a9749");
+            //Guid restartID = new Guid("9ae08191-ee15-4803-9e3f-566f119c9de4");
             //C.RestartInfo = new Tuple<Guid, Foundation.IO.TimestepNumber>(restartID, null);
 
             //Set Initial Conditions

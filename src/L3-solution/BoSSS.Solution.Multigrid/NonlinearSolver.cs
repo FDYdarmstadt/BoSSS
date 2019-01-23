@@ -27,7 +27,7 @@ using ilPSP;
 using ilPSP.Utils;
 using System.Diagnostics;
 
-namespace BoSSS.Solution.Multigrid {
+namespace BoSSS.Solution.AdvancedSolvers {
 
     /// <summary>
     /// Evaluation or linearization/matrix assembly of the operator

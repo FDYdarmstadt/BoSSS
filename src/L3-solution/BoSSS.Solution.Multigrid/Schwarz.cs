@@ -36,7 +36,7 @@ using MPI.Wrappers;
 using System.Runtime.InteropServices;
 using ilPSP.Tracing;
 
-namespace BoSSS.Solution.Multigrid {
+namespace BoSSS.Solution.AdvancedSolvers {
 
 
     public class Schwarz : ISolverSmootherTemplate, ISolverWithCallback {
@@ -90,9 +90,9 @@ namespace BoSSS.Solution.Multigrid {
             /// </summary>
             internal override IEnumerable<List<int>> GetBlocking(MultigridOperator op) {
 
-                AggregationGrid thisLevel = op.Mapping.AggGrid;
+                AggregationGridData thisLevel = op.Mapping.AggGrid;
 
-                List<AggregationGrid> blockLevelS = new List<AggregationGrid>();
+                List<AggregationGridData> blockLevelS = new List<AggregationGridData>();
                 blockLevelS.Add(thisLevel);
                 MultigridOperator blokOp = op;
                 for (int i = 0; i < this.Depth; i++) {
@@ -101,7 +101,7 @@ namespace BoSSS.Solution.Multigrid {
                     blokOp = blokOp.CoarserLevel;
                     blockLevelS.Add(blokOp.Mapping.AggGrid);
                 }
-                AggregationGrid blckLevel = blockLevelS.Last(); // the cells of this level form the additive-Schwarz blocks
+                AggregationGridData blckLevel = blockLevelS.Last(); // the cells of this level form the additive-Schwarz blocks
                 int NoBlocks = blckLevel.iLogicalCells.NoOfLocalUpdatedCells; // each cell of 'blckLevel' forms a block
                 List<int>[] Blocks = NoBlocks.ForLoop(l => new List<int>());
 
@@ -144,7 +144,7 @@ namespace BoSSS.Solution.Multigrid {
 
 
 
-            void CollectBlock(List<int> output, List<AggregationGrid> blockLevelS, int RecDepth, int[] CoarseCell) {
+            void CollectBlock(List<int> output, List<AggregationGridData> blockLevelS, int RecDepth, int[] CoarseCell) {
 
                 if (RecDepth == blockLevelS.Count - 2) {
 #if DEBUG
@@ -153,7 +153,7 @@ namespace BoSSS.Solution.Multigrid {
 #endif
                     output.AddRange(CoarseCell);
                 } else {
-                    AggregationGrid blockLevel = blockLevelS[blockLevelS.Count - 2 - RecDepth];
+                    AggregationGridData blockLevel = blockLevelS[blockLevelS.Count - 2 - RecDepth];
                     int[][] C2F = blockLevel.jCellCoarse2jCellFine;
                     foreach (int jFine in CoarseCell) {
                         CollectBlock(output, blockLevelS, RecDepth + 1, C2F[jFine]);

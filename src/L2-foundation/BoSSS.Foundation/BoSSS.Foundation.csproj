@@ -58,11 +58,12 @@
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="AggregationGrid.cs" />
-    <Compile Include="AggregationGrid_BasisData.cs" />
-    <Compile Include="AggregationGrid_CellData.cs" />
-    <Compile Include="AggregationGrid_EdgeData.cs" />
-    <Compile Include="AggregationGrid_Parallelization.cs" />
-    <Compile Include="AggregationGrid_VertexData.cs" />
+    <Compile Include="AggregationGridData.cs" />
+    <Compile Include="AggregationGridData_BasisData.cs" />
+    <Compile Include="AggregationGridData_CellData.cs" />
+    <Compile Include="AggregationGridData_EdgeData.cs" />
+    <Compile Include="AggregationGridData_Parallelization.cs" />
+    <Compile Include="AggregationGridData_VertexData.cs" />
     <Compile Include="Basis.cs" />
     <Compile Include="Basis_Extrapolation.cs" />
     <Compile Include="Cache.cs" />

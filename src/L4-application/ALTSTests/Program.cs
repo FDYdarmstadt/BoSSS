@@ -85,7 +85,7 @@ namespace ALTSTests {
         double endTime = 10e-5;
         private const double ChangeMetricTime = 4e-5;
 
-        protected override GridCommons CreateOrLoadGrid() {
+        protected override IGrid CreateOrLoadGrid() {
             GridCommons grd;
 
             double[] xnodes = GenericBlas.Linspace(xMin, xMax, numOfCellsX + 1);

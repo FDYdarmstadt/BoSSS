@@ -1,7 +1,0 @@
-LIBRARY	"parmetis"
-EXPORTS
-
-    ; used by BoSSSS :
-	ParMETIS_V3_PartGeomKway
-	ParMETIS_V3_PartKway	
-	ParMETIS_V3_RefineKway

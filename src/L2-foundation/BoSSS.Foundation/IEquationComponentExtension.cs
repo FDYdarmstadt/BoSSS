@@ -445,14 +445,14 @@ namespace BoSSS.Foundation {
         /// simplified version of 
         /// <see cref="ComputeMatrixEx{M,V}"/>;
         /// </summary>
-        static public MsrMatrix ComputeMatrix(this SpatialOperator op,
+        static public BlockMsrMatrix ComputeMatrix(this SpatialOperator op,
             UnsetteledCoordinateMapping DomainMap, IList<DGField> Parameters, UnsetteledCoordinateMapping CodomainMap, double time = 0.0, SubGrid SubGrid = null) {
 
 
             int RowBlkSize = (CodomainMap.MaxTotalNoOfCoordinatesPerCell == CodomainMap.MinTotalNoOfCoordinatesPerCell) ? CodomainMap.MaxTotalNoOfCoordinatesPerCell : 1;
             int ColBlkSize = (DomainMap.MaxTotalNoOfCoordinatesPerCell == DomainMap.MinTotalNoOfCoordinatesPerCell) ? DomainMap.MaxTotalNoOfCoordinatesPerCell : 1;
 
-            MsrMatrix Matrix = new MsrMatrix(CodomainMap.LocalLength, (int)DomainMap.GlobalCount, RowBlkSize, ColBlkSize);
+            BlockMsrMatrix Matrix = new BlockMsrMatrix(CodomainMap, DomainMap);
 
             double[] dummyRHS = new double[Matrix.RowPartitioning.LocalLength];
             ComputeMatrix(op, 
