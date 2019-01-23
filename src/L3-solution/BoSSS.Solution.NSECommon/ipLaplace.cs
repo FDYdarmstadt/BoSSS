@@ -172,6 +172,9 @@ namespace BoSSS.Solution.NSECommon {
             return acc;
         }
 
+        /// <summary>
+        /// Integrand on interior mesh edges of the SIP
+        /// </summary>
         virtual public double InnerEdgeForm(ref Foundation.CommonParams inp, double[] _uA, double[] _uB, double[,] _Grad_uA, double[,] _Grad_uB, double _vA, double _vB, double[] _Grad_vA, double[] _Grad_vB) {
             double Acc = 0.0;
 
@@ -196,6 +199,9 @@ namespace BoSSS.Solution.NSECommon {
 
         }
 
+        /// <summary>
+        /// Integrand on boundary mesh edges of the SIP
+        /// </summary>
         virtual public double BoundaryEdgeForm(ref Foundation.CommonParamsBnd inp, double[] _uA, double[,] _Grad_uA, double _vA, double[] _Grad_vA) {
             double Acc = 0.0;
 
