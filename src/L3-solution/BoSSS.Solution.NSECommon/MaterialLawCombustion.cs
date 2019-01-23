@@ -60,8 +60,7 @@ namespace BoSSS.Solution.NSECommon {
         /// Density
         /// </returns>
         public override double GetDensity(params double[] phi) {
-            if (phi.Length < 4)
-                throw new ArgumentException("Error in density computation. Number of reactants needs to be atleast 3.");
+          
             if (IsInitialized) {
                 double rho;
                 double MassFractionsOverMolarFractions;
@@ -80,6 +79,9 @@ namespace BoSSS.Solution.NSECommon {
                         rho = base.ThermodynamicPressure.Current.GetMeanValue(0) / phi[0];
                         break;
                     case 3:
+                        if (phi.Length < 4)
+                            throw new ArgumentException("Error in density computation. Number of reactants needs to be atleast 3.");
+
                         MassFractionsOverMolarFractions = 0.0;
                         for (int n = 1; n < phi.Length; n++) {
                             MassFractionsOverMolarFractions += phi[n] / MolarMasses[n - 1];

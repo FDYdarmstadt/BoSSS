@@ -35,22 +35,24 @@ namespace BoSSS.Solution.NSECommon {
         double[] MolarMasses;
         string direction;
         double Reynolds;
+        double Froude;
         bool energyOK;
         bool speciesOK;
-        int mySwitch;
+        int mySwitch;        
 
         /// <summary>
         /// Ctor.
         /// <param name="MolarMasses">Array of the molar masses of the fuel, oxidizer and products.</param>
         /// <param name="direction">Can be "x" or "y".</param>        
         /// </summary>
-        public RHSManuSourceNS(double Reynolds, double[] MolarMasses, string direction, bool energyOK, bool speciesOK, int mySwitch) {
+        public RHSManuSourceNS(double Reynolds, double Froude, double[] MolarMasses, string direction, bool energyOK, bool speciesOK, int mySwitch) {
             this.MolarMasses = MolarMasses;
             this.direction = direction;
             this.Reynolds = Reynolds;
             this.energyOK = energyOK;
             this.speciesOK = speciesOK;
             this.mySwitch = mySwitch;
+            this.Froude = Froude;
         }
 
 
@@ -83,7 +85,7 @@ namespace BoSSS.Solution.NSECommon {
             double ConvectionTerm;
             double ViscTerm;
             double PressureGradientTerm;
-
+            double BouyancyTerm;
             if (direction == "x") {
 
                 switch (mySwitch) {
@@ -102,7 +104,8 @@ namespace BoSSS.Solution.NSECommon {
    
                 ViscTerm = -0.4e1 / 0.3e1 * Math.Cos(x_) / Reynolds; // TODO?
                 PressureGradientTerm = y_ * Math.Cos(x_ * y_); // OK
-      
+                BouyancyTerm = 0.0;
+        
 
 
             }
@@ -121,15 +124,16 @@ namespace BoSSS.Solution.NSECommon {
                         throw new NotImplementedException("should not happen");
                 }
                        
-                ViscTerm = -0.4e1 / 0.3e1 * Math.Cos(y_) / Reynolds; // TODO? maple says its 8/3 and not 4/3. maybe the sign is wrong
+                ViscTerm = -0.4e1 / 0.3e1 * Math.Cos(y_) / Reynolds; // 
                 PressureGradientTerm = x_ * Math.Cos(x_ * y_);
-               
+                BouyancyTerm = 1 / (Froude * Froude) * p0 / Math.Cos(x_ * y_);  // -1/Fr*p0/T, bouyancy term 
+               // BouyancyTerm = Math.Pow(Froude, -0.2e1) * p0 / Math.Cos(x_ * y_) / (alpha1 * Math.Cos(x_ * y_) / M1 + alpha2 * Math.Cos(x_ * y_) / M2 + alpha3 * Math.Cos(x_ * y_) / M3 + (0.10e1 - alpha1 * Math.Cos(x_ * y_) - alpha2 * Math.Cos(x_ * y_) - alpha3 * Math.Cos(x_ * y_)) / M4);
+
+
             }
             else
                 throw new ArgumentException("Specified direction not supported");
-
-
-            return -(ConvectionTerm + ViscTerm + PressureGradientTerm);
+            return -(ConvectionTerm + ViscTerm + PressureGradientTerm + BouyancyTerm);
         }
     }
 }
