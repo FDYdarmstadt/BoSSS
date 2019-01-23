@@ -26,7 +26,7 @@ using BoSSS.Platform.Utils;
 using System.Diagnostics;
 using MPI.Wrappers;
 
-namespace BoSSS.Solution.Multigrid {
+namespace BoSSS.Solution.AdvancedSolvers {
     
     /// <summary>
     /// Flexible GMRES (FGMRES), i.e. GMRES with flexible preconditioner,

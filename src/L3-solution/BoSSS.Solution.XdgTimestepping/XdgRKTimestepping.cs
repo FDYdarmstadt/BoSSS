@@ -27,7 +27,7 @@ using ilPSP.LinSolvers;
 using System.Diagnostics;
 using ilPSP.Utils;
 using ilPSP;
-using BoSSS.Solution.Multigrid;
+using BoSSS.Solution.AdvancedSolvers;
 using BoSSS.Foundation.Grid.Aggregation;
 
 namespace BoSSS.Solution.XdgTimestepping {
@@ -83,7 +83,9 @@ namespace BoSSS.Solution.XdgTimestepping {
             AggregationGridData[] _MultigridSequence,
             SpeciesId[] _SpId,
             int _CutCellQuadOrder,
-            double _AgglomerationThreshold, bool useX) {
+            double _AgglomerationThreshold, bool useX,
+            Control.NonLinearSolverConfig nonlinconfig,
+            Control.LinearSolverConfig linearconfig) : base (nonlinconfig, linearconfig) {
 
             // check args, set internals
             // -------------------------

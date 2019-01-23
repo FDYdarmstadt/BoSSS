@@ -6,7 +6,7 @@ using ilPSP.LinSolvers;
 using System.Linq;
 using ilPSP.Utils;
 using NUnit.Framework;
-using BoSSS.Solution.Multigrid;
+using BoSSS.Solution.AdvancedSolvers;
 using ilPSP;
 using ilPSP.Connectors.Matlab;
 

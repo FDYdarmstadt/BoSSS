@@ -23,7 +23,7 @@ using BoSSS.Platform;
 using BoSSS.Solution.Control;
 using BoSSS.Foundation.Grid;
 using System.Diagnostics;
-using BoSSS.Solution.Multigrid;
+using BoSSS.Solution.AdvancedSolvers;
 using ilPSP.Utils;
 using BoSSS.Platform.Utils.Geom;
 using BoSSS.Foundation.IO;
@@ -170,9 +170,11 @@ namespace BoSSS.Application.FSI_Solver {
             C.AdvancedDiscretizationOptions.PenaltySafety = 1;
             C.AdvancedDiscretizationOptions.CellAgglomerationThreshold = 0.1;
             C.LevelSetSmoothing = false;
-            C.MaxSolverIterations = 100;
-            C.MinSolverIterations = 1;
-            C.NoOfMultigridLevels = 1;
+            C.LinearSolver.MaxSolverIterations = 100;
+            C.LinearSolver.MinSolverIterations = 1;
+            C.NonLinearSolver.MaxSolverIterations = 100;
+            C.NonLinearSolver.MinSolverIterations = 1;
+            C.LinearSolver.NoOfMultigridLevels = 1;
 
             // Timestepping
             // ============
