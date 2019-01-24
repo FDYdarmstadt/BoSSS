@@ -67,14 +67,14 @@ namespace BoSSS.Solution.XheatCommon {
         
 
         void TransformU(ref double[] U_Neg, ref double[] U_Pos, out double[] U_NegFict, out double[] U_PosFict) {
-            if(this.MaterialInterface) {
+            //if(this.MaterialInterface) {
 
                 U_NegFict = U_Pos;
                 U_PosFict = U_Neg;
 
-            } else {
-                throw new NotImplementedException();
-            }
+            //} else {
+            //    throw new NotImplementedException();
+            //}
         }
 
 

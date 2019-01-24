@@ -34,7 +34,7 @@ namespace BoSSS.Solution.XheatCommon {
 
         static string[] BndFunctions(IGridData g) {
 
-            return new string[] { VariableNames.Temperature };
+            return new string[] { VariableNames.Temperature, "HeatFlux" };
 
         }
 
@@ -63,6 +63,7 @@ namespace BoSSS.Solution.XheatCommon {
 
             foreach(var S in SpeciesNames) {
                 scalarFields.Add(VariableNames.Temperature + "#" + S);
+                scalarFields.Add("HeatFlux" + "#" + S);
             }
 
             return scalarFields.ToArray();
@@ -75,7 +76,11 @@ namespace BoSSS.Solution.XheatCommon {
             string S0 = "#" + SpeciesNames[0];
 
             base.bndFunction.Add(VariableNames.Temperature, base.bndFunction[VariableNames.Temperature + S0]);
+            base.bndFunction.Add("HeatFlux", base.bndFunction["HeatFlux" + S0]);
+
         }
 
     }
+
+
 }

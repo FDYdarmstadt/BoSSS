@@ -253,7 +253,7 @@ namespace BoSSS.Solution.XheatCommon {
             ThermalBcType edgeType = m_bcmap.EdgeTag2Type[inp.EdgeTag];
 
             switch(edgeType) {
-                case ThermalBcType.Dirichlet: {
+                case ThermalBcType.ConstantTemperature: {
 
                         double r = 0.0;
 
@@ -292,7 +292,8 @@ namespace BoSSS.Solution.XheatCommon {
                         return r;
 
                     }
-                case ThermalBcType.ZeroGradient: {
+                case ThermalBcType.ZeroGradient:
+                case ThermalBcType.ConstantHeatFlux: {
 
                         double r = 0.0;
                         double u1, u2, u3 = 0, u_d;
