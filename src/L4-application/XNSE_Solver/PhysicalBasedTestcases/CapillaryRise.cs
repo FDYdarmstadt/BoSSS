@@ -253,28 +253,28 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
         /// 
         /// </summary>
         /// <returns></returns>
-        public static XNSE_Control CapillaryRise_Tube_SFB1194(int p = 2, int kelemR = 8, int omegaTc = 1, bool startUp = true, bool symmetry = true, string _DbPath = null) {
+        public static XNSE_Control CapillaryRise_Tube_SFB1194(int p = 2, int kelemR = 8, int omegaTc = 1, bool startUp = false, bool symmetry = true, string _DbPath = null) {
 
             XNSE_Control C = new XNSE_Control();
 
-            //C.CutCellQuadratureType = Foundation.XDG.XQuadFactoryHelper.MomentFittingVariants.Saye;
+            C.CutCellQuadratureType = Foundation.XDG.XQuadFactoryHelper.MomentFittingVariants.Classic;
 
             //_DbPath = @"\\dc1\userspace\smuda\cluster\CapillaryRise\CapillaryRise_studyDB";
-            //_DbPath = @"\\HPCCLUSTER\hpccluster-scratch\smuda\CapillaryRise_studyDB";
+            _DbPath = @"\\HPCCLUSTER\hpccluster-scratch\smuda\CapillaryRise_studyDB";
 
             // basic database options
             // ======================
             #region db
 
             C.DbPath = _DbPath;
-            C.savetodb = false; // C.DbPath != null;
+            C.savetodb = C.DbPath != null;
             C.ProjectName = "XNSE/CapillaryRise";
             C.ProjectDescription = "A comparative study for SFB 1194";
 
             C.ContinueOnIoError = false;
 
             C.LogValues = XNSE_Control.LoggingValues.MovingContactLine;
-            C.LogPeriod = 10;
+            C.LogPeriod = 100;
 
             #endregion
 
@@ -353,16 +353,22 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
 
                         t_end = 13.86;
                         t_startUp = 0.5204; // 0.49032;
-                        dt = 5e-5;
+                        dt = 2e-5;
                         dt_startUp = 3e-5;
 
                         //restartID = new Guid("07ca4397-8eed-4769-b795-9725fe7d3cd7");
                         //restartID = new Guid("fa8454ce-c05a-4dea-a308-663b6be04ff7");
                         //restartID = new Guid("6380b408-e043-4ed3-8ae5-819d7566e241");
-                        restartID = new Guid("32d62e31-2b42-4a2c-850a-038befc43072");
-                        ts_restart = 13010;
+                        //restartID = new Guid("32d62e31-2b42-4a2c-850a-038befc43072");
+                        //ts_restart = 13010;
+
+                        //restartID = new Guid("868a08d9-5b44-4462-9a2c-121cfc07e5db");
+                        restartID = new Guid("c3cef42c-f9e5-4757-a618-e9a4002e445f"); // restart with ReInit
+
+                        //restartID = new Guid("2f9deaa6-fab9-48ac-9279-319a1efa5547");
 
                         //C.ClearVelocitiesOnRestart = true;
+                        C.ReInitPeriod = 250;
 
                         break;
                     }
@@ -478,7 +484,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
                     }
             } 
 
-            C.PhysicalParameters.IncludeConvection = true;
+            C.PhysicalParameters.IncludeConvection = !startUp;
             C.PhysicalParameters.Material = true;
 
             #endregion
@@ -570,7 +576,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
                 C.AddBoundaryValue("wall_lower");
             } else {
                 //C.AddBoundaryCondition("wall_lower");
-                C.ChangeBoundaryCondition("wall_lower", "pressure_outlet_lower");
+                //C.ChangeBoundaryCondition("wall_lower", "pressure_outlet_lower");
                 C.AddBoundaryValue("pressure_outlet_lower");
             }
             C.AddBoundaryValue("pressure_outlet_upper");
@@ -583,9 +589,9 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             //C.ChangeBoundaryCondition("navierslip_localized_right", "navierslip_linear_right");
             C.AddBoundaryValue("navierslip_linear_right");
 
-            C.AdvancedDiscretizationOptions.GNBC_Localization = NavierSlip_Localization.Nearband;
-            C.AdvancedDiscretizationOptions.GNBC_SlipLength = NavierSlip_SlipLength.hmin_DG;
-            //C.PhysicalParameters.sliplength = 1e-3;
+            C.AdvancedDiscretizationOptions.GNBC_Localization = NavierSlip_Localization.Bulk;
+            C.AdvancedDiscretizationOptions.GNBC_SlipLength = NavierSlip_SlipLength.Prescribed_SlipLength;
+            C.PhysicalParameters.sliplength = 1e-3;
 
 
             #endregion
@@ -598,6 +604,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             C.ComputeEnergy = false;
 
             //C.AdvancedDiscretizationOptions.CellAgglomerationThreshold = 0.2;
+            //C.AdvancedDiscretizationOptions.PenaltySafety = 20;
 
             C.LSContiProjectionMethod = Solution.LevelSetTools.ContinuityProjectionOption.ContinuousDG;
 
@@ -618,7 +625,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             C.AdvancedDiscretizationOptions.SST_isotropicMode = Solution.XNSECommon.SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_ContactLine;
 
 
-            C.AdaptiveMeshRefinement = false;
+            C.AdaptiveMeshRefinement = true;
             C.RefineStrategy = XNSE_Control.RefinementStrategy.constantInterface;
             C.RefineNavierSlipBoundary = false;
             C.BaseRefinementLevel = 1;
@@ -645,7 +652,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
 
             C.Timestepper_Scheme = XNSE_Control.TimesteppingScheme.ImplicitEuler;
             C.Timestepper_BDFinit = TimeStepperInit.SingleInit;
-            C.Timestepper_LevelSetHandling = LevelSetHandling.Coupled_Iterative;
+            C.Timestepper_LevelSetHandling = LevelSetHandling.Coupled_Once;
 
             C.CompMode = AppControl._CompMode.Transient;
             C.dtMax = (startUp) ? dt_startUp : dt;
