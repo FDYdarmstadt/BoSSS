@@ -625,17 +625,26 @@ namespace BoSSS.Solution.XdgTimestepping {
 
 
         private string GetName__Stack_u(int i, int iF) {
-            return this.GetType().FullName + "::Stack_u[" + i + "," + iF + "]";
+            if(!coupledOperator)
+                return this.GetType().FullName + "::Stack_u[" + i + "," + iF + "]";
+            else
+                return this.GetType().FullName + "::CoupledStack_u[" + i + "," + iF + "]";
         }
 
 
 
         private string GetName__Stack_OpAffine(int i) {
-            return this.GetType().FullName + "::Stack_OpAffine[" + i + "]";
+            if(!coupledOperator)
+                return this.GetType().FullName + "::Stack_OpAffine[" + i + "]";
+            else
+                return this.GetType().FullName + "::CoupledStack_OpAffine[" + i + "]";
         }
 
         private string GetName__Stack_OpMatrix(int i) {
-            return this.GetType().FullName + "::Stack_OpMatrix[" + i + "]";
+            if(!coupledOperator)
+                return this.GetType().FullName + "::Stack_OpMatrix[" + i + "]";
+            else
+                return this.GetType().FullName + "::CoupledStack_OpMatrix[" + i + "]";
         }
 
         /// <summary>
