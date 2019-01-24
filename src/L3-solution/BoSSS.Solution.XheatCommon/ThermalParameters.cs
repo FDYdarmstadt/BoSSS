@@ -89,6 +89,37 @@ namespace BoSSS.Solution.XheatCommon {
         public double hVap_B = 0.0;
 
         /// <summary>
+        /// saturation temperature, is defined as the temperature of the vapor phase adjacent to the interface
+        /// </summary>
+        [DataMember]
+        public double T_sat = 0.0;
+
+        /// <summary>
+        /// condensation coefficient
+        /// </summary>
+        [DataMember]
+        public double fc = 0.0;
+
+        /// <summary>
+        /// individual gas constant
+        /// </summary>
+        [DataMember]
+        public double Rc = 0.0;
+
+        /// <summary>
+        /// Hamaker constant
+        /// </summary>
+        //[DataMember]
+        //public double Ac = 0.0;
+
+        /// <summary>
+        /// augmented capillary pressure (for testing purpose)
+        /// if negativ, the augmented capillary pressure will be calculated
+        /// </summary>
+        //[DataMember]
+        //public double pc = -1.0;
+
+        /// <summary>
         /// prescribed volume flux for testing. 
         /// </summary>
         //[DataMember]
@@ -114,6 +145,11 @@ namespace BoSSS.Solution.XheatCommon {
             cl.k_B = this.k_B;
             cl.hVap_A = this.hVap_A;
             cl.hVap_B = this.hVap_B;
+            cl.T_sat = this.T_sat;
+            cl.fc = this.fc;
+            cl.Rc = this.Rc;
+            //cl.Ac = this.Ac;
+            //cl.pc = this.pc;
             //cl.prescribedVolumeFlux = this.prescribedVolumeFlux;
             //cl.Material = this.Material;
             return cl;

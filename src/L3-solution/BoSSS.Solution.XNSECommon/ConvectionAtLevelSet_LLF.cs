@@ -254,7 +254,7 @@ namespace BoSSS.Solution.XNSECommon.Operator.Convection {
         LevelSetTracker m_LsTrk;
 
         public GeneralizedConvectionAtLevelSet_DissipativePart(int _d, int _D, LevelSetTracker LsTrk, double _rhoA, double _rhoB, double _LFFA, double _LFFB, IncompressibleMultiphaseBoundaryCondMap _bcmap, 
-            double _kA, double _kB, double _hVapA, double _hVapB) {
+            double _kA, double _kB, double _hVapA, double _hVapB, double _Rint, double _Tsat, double _sigma) {
 
             m_D = _D;
             m_d = _d;
@@ -267,9 +267,9 @@ namespace BoSSS.Solution.XNSECommon.Operator.Convection {
             //M = _M;
             m_LsTrk = LsTrk;
 
-            NegFlux = new GeneralizedConvectionInBulk_DissipativePart(_D, _bcmap, _d, _rhoA, _rhoB, _LFFA, double.NaN, LsTrk, _kA, kB, _hVapA, _hVapB);
+            NegFlux = new GeneralizedConvectionInBulk_DissipativePart(_D, _bcmap, _d, _rhoA, _rhoB, _LFFA, double.NaN, LsTrk, _kA, kB, _hVapA, _hVapB, _Rint, _Tsat, _sigma);
             NegFlux.SetParameter("A", LsTrk.GetSpeciesId("A"));
-            PosFlux = new GeneralizedConvectionInBulk_DissipativePart(_D, _bcmap, _d, _rhoA, _rhoB, double.NaN, _LFFB, LsTrk, _kA, kB, _hVapA, _hVapB);
+            PosFlux = new GeneralizedConvectionInBulk_DissipativePart(_D, _bcmap, _d, _rhoA, _rhoB, double.NaN, _LFFB, LsTrk, _kA, kB, _hVapA, _hVapB, _Rint, _Tsat, _sigma);
             PosFlux.SetParameter("B", LsTrk.GetSpeciesId("B"));
 
         }
@@ -347,7 +347,8 @@ namespace BoSSS.Solution.XNSECommon.Operator.Convection {
 
         public IList<string> ParameterOrdering {
             get {
-                return ArrayTools.Cat(VariableNames.Velocity0Vector(m_D), VariableNames.Velocity0MeanVector(m_D), new string[] { "GradTempX", "GradTempY", "GradTempZ" }.GetSubVector(0, m_D));
+                return ArrayTools.Cat(VariableNames.Velocity0Vector(m_D), 
+                    VariableNames.Velocity0MeanVector(m_D), VariableNames.Temperature, "Curvature", "DisjoiningPressure"); // new string[] { "GradTempX", "GradTempY", "GradTempZ" }.GetSubVector(0, m_SpatialDimension));
             }
         }
 
@@ -387,7 +388,7 @@ namespace BoSSS.Solution.XNSECommon.Operator.Convection {
         protected int m_component;
 
         public GeneralizedConvectionInBulk_DissipativePart(int SpatDim, IncompressibleMultiphaseBoundaryCondMap _bcmap, int _component, double _rhoA, double _rhoB, double _LFFA, double _LFFB, LevelSetTracker _lsTrk,
-            double _kA, double _kB, double _hVapA, double _hVapB) {
+            double _kA, double _kB, double _hVapA, double _hVapB, double _Rint, double _Tsat, double _sigma) {
 
             m_SpatialDimension = SpatDim;
             m_bcmap = _bcmap;
@@ -400,6 +401,10 @@ namespace BoSSS.Solution.XNSECommon.Operator.Convection {
             this.kB = _kB;
             this.hVapA = _hVapA;
             this.hVapB = _hVapB;
+            this.Rint = _Rint;
+            //this.TintMin = _TintMin;
+            this.Tsat = _Tsat;
+            this.sigma = _sigma;
 
             this.lsTrk = _lsTrk;
             this.LFFA = _LFFA;
@@ -421,6 +426,10 @@ namespace BoSSS.Solution.XNSECommon.Operator.Convection {
         double kB;
         double hVapA;   // for the identification of the liquid phase
         double hVapB;   // for the identification of the liquid phase
+        double Rint;
+        //double TintMin;
+        double Tsat;
+        double sigma;
 
         protected double rho_in;
         protected double rho_out;
@@ -432,21 +441,46 @@ namespace BoSSS.Solution.XNSECommon.Operator.Convection {
 
         //double M;
 
-        private double ComputeEvaporationMass(double[] GradT_In, double[] GradT_Out, double[] n) {
+        //private double ComputeEvaporationMass(double[] GradT_In, double[] GradT_Out, double[] n) {
 
-            double mEvap = 0.0;
+        //    double mEvap = 0.0;
 
-            // for testing purposes
-            double prescribedVolumeFlux = 0.1;
-            if(hVap_in > 0) {
-                mEvap = -rho_in * prescribedVolumeFlux;
-            } else {
-                mEvap = rho_out * prescribedVolumeFlux;
+        //    // for testing purposes
+        //    double prescribedVolumeFlux = 0.1;
+        //    if(hVap_in > 0) {
+        //        mEvap = -rho_in * prescribedVolumeFlux;
+        //    } else {
+        //        mEvap = rho_out * prescribedVolumeFlux;
+        //    }
+
+        //    // TODO 
+
+        //    return mEvap;
+        //}
+
+        private double ComputeEvaporationMass(double T_A, double T_B, double curv, double p_disp) {
+
+            if(hVapA == 0.0)
+                return 0.0;
+
+            double pc0 = 0.0; // sigma * curv + p_disp;   // augmented capillary pressure (without nonlinear evaporative masss part)
+
+            double TintMin = 0.0;
+            double hVap = 0.0;
+            double qEvap = 0.0;
+            if(hVapA > 0) {
+                hVap = hVapA;
+                TintMin = Tsat * (1 + (pc0 / (hVap * rhoA)));
+                if(T_A > TintMin)
+                    qEvap = -(T_A - TintMin) / Rint;
+            } else if(hVapA < 0) {
+                hVap = -hVapA;
+                TintMin = Tsat * (1 + (pc0 / (hVap * rhoB)));
+                if(T_B > TintMin)
+                    qEvap = (T_B - TintMin) / Rint;
             }
 
-            // TODO 
-
-            return mEvap;
+            return qEvap / hVap;
         }
 
 
@@ -532,12 +566,19 @@ namespace BoSSS.Solution.XNSECommon.Operator.Convection {
                 VelocityMeanOut[d] = inp.Parameters_OUT[m_SpatialDimension + d];
             }
 
-            double[] GradTempIn = new double[m_SpatialDimension];
-            double[] GradTempOut = new double[m_SpatialDimension];
-            for(int d = 0; d < m_SpatialDimension; d++) {
-                GradTempIn[d] = inp.Parameters_IN[2 * m_SpatialDimension + d];
-                GradTempOut[d] = inp.Parameters_OUT[2 * m_SpatialDimension + d];
-            }
+            //double[] GradTempIn = new double[m_SpatialDimension];
+            //double[] GradTempOut = new double[m_SpatialDimension];
+            //for(int d = 0; d < m_SpatialDimension; d++) {
+            //    GradTempIn[d] = inp.Parameters_IN[2 * m_SpatialDimension + d];
+            //    GradTempOut[d] = inp.Parameters_OUT[2 * m_SpatialDimension + d];
+            //}
+            double TempIn = inp.Parameters_IN[2 * m_SpatialDimension];
+            double TempOut = inp.Parameters_OUT[2 * m_SpatialDimension];
+
+            Debug.Assert(inp.Parameters_IN[(2 * m_SpatialDimension) + 1] == inp.Parameters_OUT[(2 * m_SpatialDimension) + 1], "curvature must be continuous across interface");
+            double curv = inp.Parameters_IN[(2 * m_SpatialDimension) + 1];
+            Debug.Assert(inp.Parameters_IN[(2 * m_SpatialDimension) + 2] == inp.Parameters_OUT[(2 * m_SpatialDimension) + 2], "disjoining pressure must be continuous across interface");           
+            double p_disp = inp.Parameters_IN[(2 * m_SpatialDimension) + 2];
 
             double LambdaIn;
             double LambdaOut;
@@ -547,7 +588,9 @@ namespace BoSSS.Solution.XNSECommon.Operator.Convection {
 
             double Lambda = Math.Max(LambdaIn, LambdaOut);
 
-            double M = ComputeEvaporationMass(GradTempIn, GradTempOut, inp.Normale);
+
+            double M = ComputeEvaporationMass(TempIn, TempOut, curv, p_disp);
+            //double M = ComputeEvaporationMass(TempIn, TempOut);
             double uJump = -M * ((1/rho_in) - (1/rho_out)) * inp.Normale[0];
 
             flx += Lambda * uJump * LaxFriedrichsSchemeSwitch;
@@ -588,7 +631,8 @@ namespace BoSSS.Solution.XNSECommon.Operator.Convection {
 
         public override IList<string> ParameterOrdering {
             get {
-                return ArrayTools.Cat(VariableNames.Velocity0Vector(m_SpatialDimension), VariableNames.Velocity0MeanVector(m_SpatialDimension), new string[] { "GradTempX", "GradTempY", "GradTempZ" }.GetSubVector(0, m_SpatialDimension));
+                return ArrayTools.Cat(VariableNames.Velocity0Vector(m_SpatialDimension), VariableNames.Velocity0MeanVector(m_SpatialDimension), 
+                    VariableNames.Temperature, "Curvature", "DisjoiningPressure"); // new string[] { "GradTempX", "GradTempY", "GradTempZ" }.GetSubVector(0, m_SpatialDimension));
             }
         }
 

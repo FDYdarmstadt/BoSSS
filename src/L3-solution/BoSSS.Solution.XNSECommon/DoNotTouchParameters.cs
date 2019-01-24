@@ -308,6 +308,12 @@ namespace BoSSS.Solution.XNSECommon {
         public SurfaceStressTensor_IsotropicMode SST_isotropicMode = SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_Flux;
 
         /// <summary>
+        /// in case of a Laplace-Beltrami surface tension computation the curvature is need as parameter
+        /// </summary>
+        [DataMember]
+        public bool CurvatureNeeded = false;
+
+        /// <summary>
         /// Expert options regarding the evaluation of the curvature.
         /// </summary>
         [DataMember]

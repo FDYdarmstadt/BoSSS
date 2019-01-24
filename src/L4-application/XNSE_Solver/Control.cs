@@ -161,6 +161,8 @@ namespace BoSSS.Application.XNSE_Solver {
         [DataMember]
         public bool ClearVelocitiesOnRestart = false;
 
+        [DataMember]
+        public int ReInitPeriod = 0;
 
         /// <summary>
         /// Expert options regarding the spatial discretization.
@@ -504,6 +506,12 @@ namespace BoSSS.Application.XNSE_Solver {
         /// </summary>
         public MultigridOperator.Mode TemperatureBlockPrecondMode = MultigridOperator.Mode.SymPart_DiagBlockEquilib;
 
+
+        /// <summary>
+        /// function for the disjoining pressure
+        /// </summary>
+        [NonSerialized]
+        public Func<double[], double> DisjoiningPressureFunc;
 
         /// <summary>
         /// density, heat capacity and thermal conductivity

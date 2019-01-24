@@ -41,23 +41,65 @@ namespace BoSSS.Solution.XheatCommon {
         /// <param name="_D">spatial dimension</param>
         /// <param name="LsTrk"></param>
         /// <param name="_sigma">surface-tension constant</param>
-        public EvaporationAtLevelSet(LevelSetTracker LsTrk, double _mEvap, double _hVap) {
+        public EvaporationAtLevelSet(LevelSetTracker LsTrk, double _hVapA, double _Rint, double _Tsat, double _rho, double _sigma) {
             m_LsTrk = LsTrk;
-            this.mEvap = _mEvap;
-            this.hVap = _hVap;
+            //this.mEvap = _mEvap;
+            //this.hVap = _hVap;
+            this.hVapA = _hVapA;
+            this.Rint = _Rint;
+            this.Tsat = _Tsat;
+            this.rho = _rho;
+            this.sigma = _sigma;
+
         }
 
-        double mEvap;
-        double hVap;
+        //double mEvap;
+        //double hVap;
+
+        double hVapA;   // for the identification of the liquid phase
+        double Rint;
+        double Tsat;
+        double rho;     // density of liquid phase 
+        double sigma;
+
+
+        private double ComputeHeatFlux(double T_A, double T_B, double curv, double p_disp) {
+
+            if(hVapA == 0.0)
+                return 0.0;
+
+            double pc0 = 0.0; // sigma*curv + p_disp;   // augmented capillary pressure (without nonlinear evaporative masss part)
+
+            double TintMin = 0.0;
+            double hVap = 0.0;
+            double qEvap = 0.0;
+            if(hVapA > 0) {
+                hVap = hVapA;
+                TintMin = Tsat * (1 + (pc0 / (hVap * rho)));
+                if(T_A > TintMin)
+                    qEvap = -(T_A - TintMin) / Rint;
+            } else if(hVapA < 0) {
+                hVap = -hVapA;
+                TintMin = Tsat * (1 + (pc0 / (hVap * rho)));
+                if(T_B > TintMin)
+                    qEvap = (T_B - TintMin) / Rint;
+            }
+
+            return qEvap;
+        }
 
 
         public double LevelSetForm(ref CommonParamsLs cp, double[] uA, double[] uB, double[,] Grad_uA, double[,] Grad_uB, double vA, double vB, double[] Grad_vA, double[] Grad_vB) {
 
-            double massFluxEvap = mEvap * hVap;
+            Debug.Assert(cp.ParamsPos[1] == cp.ParamsNeg[1], "curvature must be continuous across interface");
+            Debug.Assert(cp.ParamsPos[2] == cp.ParamsNeg[2], "disjoining pressure must be continuous across interface");
 
-            double FlxNeg = -0.5 * massFluxEvap;
-            double FlxPos = +0.5 * massFluxEvap;
+            double qEvap = ComputeHeatFlux(cp.ParamsNeg[0], cp.ParamsPos[0], cp.ParamsNeg[1], cp.ParamsNeg[2]);
 
+            //double massFluxEvap = mEvap * hVap;
+
+            double FlxNeg = -0.5 * qEvap;
+            double FlxPos = +0.5 * qEvap;
 
             Debug.Assert(!(double.IsNaN(FlxNeg) || double.IsInfinity(FlxNeg)));
             Debug.Assert(!(double.IsNaN(FlxPos) || double.IsInfinity(FlxPos)));
@@ -74,7 +116,7 @@ namespace BoSSS.Solution.XheatCommon {
 
         public IList<string> ParameterOrdering {
             get {
-                return new string[] { };
+                return new string[] { "Temperature0", "Curvature", "DisjoiningPressure" };
             }
         }
 

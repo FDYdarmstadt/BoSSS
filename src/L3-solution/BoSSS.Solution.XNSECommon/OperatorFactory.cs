@@ -92,6 +92,7 @@ namespace BoSSS.Solution.XNSECommon {
             this.UseExtendedVelocity = config.UseXDG4Velocity;
             this.movingmesh = _movingmesh;
             this.evaporation = _evaporation;
+
             // test input
             // ==========
             {
@@ -126,8 +127,8 @@ namespace BoSSS.Solution.XNSECommon {
                 "Curvature",
                 (new string[] { "surfForceX", "surfForceY", "surfForceZ" }).GetSubVector(0, D),
                 (new string[] { "NX", "NY", "NZ" }).GetSubVector(0, D),
-                (new string[] { "GradTempX", "GradTempY", "GradTempZ" }.GetSubVector(0, D))
-                );
+                VariableNames.Temperature, //"(new string[] { "GradTempX", "GradTempY", "GradTempZ" }.GetSubVector(0, D))
+                "DisjoiningPressure");
             DomName = ArrayTools.Cat(VariableNames.VelocityVector(D), VariableNames.Pressure);
 
             // selected part:
@@ -153,6 +154,24 @@ namespace BoSSS.Solution.XNSECommon {
             double kB = config.thermParams.k_B;
             double hVapA = config.thermParams.hVap_A;
             double hVapB = config.thermParams.hVap_B;
+
+            double Tsat = config.thermParams.T_sat;
+            double R_int = 0.0;
+            //double T_intMin = 0.0;
+            if(evaporation) {
+                double f = config.thermParams.fc;
+                double R = config.thermParams.Rc;
+                //double pc = config.thermParams.pc;
+
+                if(config.thermParams.hVap_A > 0 && config.thermParams.hVap_B < 0) {
+                    R_int = ((2.0 - f) / (2 * f)) * Tsat * Math.Sqrt(2 * Math.PI * R * Tsat) / (rhoB * hVapA.Pow2());
+                    //T_intMin = Tsat * (1 + (pc / (rhoA * hVapA.Pow2())));
+                } else if(config.thermParams.hVap_A < 0 && config.thermParams.hVap_B > 0) {
+                    R_int = ((2.0 - f) / (2 * f)) * Tsat * Math.Sqrt(2 * Math.PI * R * Tsat) / (rhoA * hVapB.Pow2());
+                    //T_intMin = Tsat * (1 + (pc / (rhoB * hVapB.Pow2())));
+                }
+                this.CurvatureRequired = true;
+            }
 
             //double mEvap = 0.0;
             //if(this.evaporation) {
@@ -194,7 +213,7 @@ namespace BoSSS.Solution.XNSECommon {
                         comps.Add(new Operator.Convection.ConvectionAtLevelSet_LLF(d, D, LsTrk, rhoA, rhoB, LFFA, LFFB, config.physParams.Material, BcMap, movingmesh));       // LevelSet component
 
                         if(evaporation) {
-                            comps.Add(new Operator.Convection.GeneralizedConvectionAtLevelSet_DissipativePart(d, D, LsTrk, rhoA, rhoB, LFFA, LFFB, BcMap, kA, kB, hVapA, hVapB));
+                            comps.Add(new Operator.Convection.GeneralizedConvectionAtLevelSet_DissipativePart(d, D, LsTrk, rhoA, rhoB, LFFA, LFFB, BcMap, kA, kB, hVapA, hVapB, R_int, Tsat, sigma));
                         }
 
                         // variante 3:
@@ -359,7 +378,7 @@ namespace BoSSS.Solution.XNSECommon {
                     m_OP.EquationComponents["div"].Add(divPen);
 
                     if(evaporation) {
-                        var divPenGen = new Operator.Continuity.GeneralizedDivergenceAtLevelSet(D, LsTrk, rhoA, rhoB, config.dntParams.ContiSign, config.dntParams.RescaleConti, kA, kB, hVapA);
+                        var divPenGen = new Operator.Continuity.GeneralizedDivergenceAtLevelSet(D, LsTrk, rhoA, rhoB, config.dntParams.ContiSign, config.dntParams.RescaleConti, kA, kB, hVapA, R_int, Tsat, sigma);
                         m_OP.EquationComponents["div"].Add(divPenGen);
                     }
 
@@ -503,7 +522,7 @@ namespace BoSSS.Solution.XNSECommon {
 
                 if(evaporation) {
                     for(int d = 0; d < D; d++) {
-                        m_OP.EquationComponents[CodName[d]].Add(new Operator.DynamicInterfaceConditions.PrescribedMassFlux(d, D, LsTrk, rhoA, rhoB, kA, kB, hVapA));
+                        m_OP.EquationComponents[CodName[d]].Add(new Operator.DynamicInterfaceConditions.PrescribedMassFlux(d, D, LsTrk, rhoA, rhoB, kA, kB, hVapA, R_int, Tsat, sigma));
                     }
                 }
 
@@ -550,7 +569,7 @@ namespace BoSSS.Solution.XNSECommon {
             VectorField<SinglePhaseField> SurfaceForce,
             VectorField<SinglePhaseField> LevelSetGradient, SinglePhaseField ExternalyProvidedCurvature,
             UnsetteledCoordinateMapping RowMapping, UnsetteledCoordinateMapping ColMapping,
-            double time, IEnumerable<T> CoupledCurrentState = null) where T : DGField {
+            double time, IEnumerable<T> CoupledCurrentState = null, IEnumerable<T> CoupledParams = null) where T : DGField {
 
             if(ColMapping.BasisS.Count != this.Op.DomainVar.Count)
                 throw new ArgumentException();
@@ -672,12 +691,13 @@ namespace BoSSS.Solution.XNSECommon {
             }
 
             // Temperature gradient for evaporation
-            VectorField<DGField> GradTemp = new VectorField<DGField>(D, U0[0].Basis, XDGField.Factory);
-            if(CoupledCurrentState != null) {
-                DGField Temp = CoupledCurrentState.ToArray()[0];
-                GradTemp = new VectorField<DGField>(D, Temp.Basis, "GradTemp", XDGField.Factory);
-                ComputeGradient(Temp, GradTemp);
-            }
+            //VectorField<DGField> GradTemp = new VectorField<DGField>(D, U0[0].Basis, XDGField.Factory);
+            //if(CoupledCurrentState != null) {
+            //    DGField Temp = CoupledCurrentState.ToArray()[0];
+            //    GradTemp = new VectorField<DGField>(D, Temp.Basis, "GradTemp", XDGField.Factory);
+            //    ComputeGradient(Temp, GradTemp);
+            //}
+
 
             // concatenate everything
             var Params = ArrayTools.Cat<DGField>(
@@ -685,7 +705,8 @@ namespace BoSSS.Solution.XNSECommon {
                 Curvature,
                 ((SurfaceForce != null) ? SurfaceForce.ToArray() : new SinglePhaseField[D]),
                 Normals,
-                ((evaporation) ? GradTemp.ToArray() : new SinglePhaseField[D]));
+                ((evaporation) ? CoupledCurrentState.ToArray<DGField>() : new SinglePhaseField[1]),
+                ((evaporation) ? CoupledParams.ToArray<DGField>() : new SinglePhaseField[1]));  //((evaporation) ? GradTemp.ToArray() : new SinglePhaseField[D]));
 
             // linearization velocity:
             if(this.U0meanrequired) {
