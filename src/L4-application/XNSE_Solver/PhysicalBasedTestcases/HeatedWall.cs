@@ -379,8 +379,8 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             C.ThermalParameters.k_B = 0.1;
 
             if(C.solveCoupledHeatEquation) {
-                C.ThermalParameters.hVap_A = 1.0;
-                C.ThermalParameters.hVap_B = -1.0;
+                C.ThermalParameters.hVap_A = 0.0;
+                C.ThermalParameters.hVap_B = 0.0;
             } 
             //C.ThermalParameters.pc = 0.0;
             C.ThermalParameters.T_sat = 297;    // for pc=0, T_intMin = T_sat
@@ -415,8 +415,8 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
                     grd.EdgeTagNames.Add(1, "wall_ZeroGradient_lower");
                     grd.EdgeTagNames.Add(2, "pressure_outlet_ZeroGradient_upper");
                     grd.EdgeTagNames.Add(3, "slipsymmetry_ZeroGradient_left");
-                    //grd.EdgeTagNames.Add(4, "navierslip_linear_ConstantTemperature_right");
-                    grd.EdgeTagNames.Add(4, "navierslip_linear_ConstantHeatFlux_right");
+                    grd.EdgeTagNames.Add(4, "navierslip_linear_ConstantTemperature_right");
+                    //grd.EdgeTagNames.Add(4, "navierslip_linear_ConstantHeatFlux_right");
                 } else {
                     grd.EdgeTagNames.Add(1, "wall_lower");
                     grd.EdgeTagNames.Add(2, "pressure_outlet_upper");
@@ -477,8 +477,8 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             // ===================
             #region BC
 
-            double U = 1.0;
-            double WallTemp = 300;
+            double U = 0.0;
+            double WallTemp = 297.5;
             double HeatFlux = 10.0;
 
             if(solveHeat) {
@@ -487,14 +487,14 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
 
                 C.AddBoundaryValue("slipsymmetry_ZeroGradient_left");
 
-                //C.AddBoundaryValue("navierslip_linear_ConstantTemperature_right", "VelocityY#A", (X, t) => U);
-                //C.AddBoundaryValue("navierslip_linear_ConstantTemperature_right", "VelocityY#B", (X, t) => U);
-                //C.AddBoundaryValue("navierslip_linear_ConstantTemperature_right", "Temperature#A", (X, t) => WallTemp);
-                //C.AddBoundaryValue("navierslip_linear_ConstantTemperature_right", "Temperature#B", (X, t) => WallTemp);
-                C.AddBoundaryValue("navierslip_linear_ConstantHeatFlux_right", "VelocityY#A", (X, t) => U);
-                C.AddBoundaryValue("navierslip_linear_ConstantHeatFlux_right", "VelocityY#B", (X, t) => U);
-                C.AddBoundaryValue("navierslip_linear_ConstantHeatFlux_right", "HeatFlux#A", (X, t) => HeatFlux);
-                C.AddBoundaryValue("navierslip_linear_ConstantHeatFlux_right", "HeatFlux#B", (X, t) => HeatFlux);
+                C.AddBoundaryValue("navierslip_linear_ConstantTemperature_right", "VelocityY#A", (X, t) => U);
+                C.AddBoundaryValue("navierslip_linear_ConstantTemperature_right", "VelocityY#B", (X, t) => U);
+                C.AddBoundaryValue("navierslip_linear_ConstantTemperature_right", "Temperature#A", (X, t) => WallTemp);
+                C.AddBoundaryValue("navierslip_linear_ConstantTemperature_right", "Temperature#B", (X, t) => WallTemp);
+                //C.AddBoundaryValue("navierslip_linear_ConstantHeatFlux_right", "VelocityY#A", (X, t) => U);
+                //C.AddBoundaryValue("navierslip_linear_ConstantHeatFlux_right", "VelocityY#B", (X, t) => U);
+                //C.AddBoundaryValue("navierslip_linear_ConstantHeatFlux_right", "HeatFlux#A", (X, t) => HeatFlux);
+                //C.AddBoundaryValue("navierslip_linear_ConstantHeatFlux_right", "HeatFlux#B", (X, t) => HeatFlux);
             } else {
 
                 C.AddBoundaryValue("wall_lower");

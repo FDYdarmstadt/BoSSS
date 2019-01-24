@@ -127,7 +127,7 @@ namespace BoSSS.Solution.XNSECommon.Operator.Energy {
             for(int d = 0; d < m_SpatialDimension; d++)
                 VelFunction.SetColumn(m_bcmap.bndFunction[VariableNames.Velocity_d(d)], d);
 
-            //ScalarFunction = m_bcmap.bndFunction["KineticEnergy"];
+            ScalarFunction = m_bcmap.bndFunction["KineticEnergy"];
 
         }
 
@@ -137,11 +137,11 @@ namespace BoSSS.Solution.XNSECommon.Operator.Energy {
         protected double LaxFriedrichsSchemeSwitch = 1.0;
 
 
-        //public override IList<string> ArgumentOrdering {
-        //    get {
-        //        return new string[] { "KineticEnergy" };
-        //    }
-        //}
+        public override IList<string> ArgumentOrdering {
+            get {
+                return new string[] { "KineticEnergy" };
+            }
+        }
 
         public override IList<string> ParameterOrdering {
             get {
@@ -228,7 +228,7 @@ namespace BoSSS.Solution.XNSECommon.Operator.Energy {
                             inp2.Parameters_OUT[j] = inp2.Parameters_IN[j]; // VelFunction[inp.EdgeTag, j](inp.X, inp.time);
 
                             // VelocityMeanOut = VelocityMeanIn
-                            inp2.Parameters_OUT[m_SpatialDimension + j] = inp.Parameters_IN[m_SpatialDimension + j]; ;
+                            inp2.Parameters_OUT[m_SpatialDimension + j] = inp.Parameters_IN[m_SpatialDimension + j];
                         }
 
                         // Calculate BorderEdgeFlux as InnerEdgeFlux

@@ -47,7 +47,8 @@ namespace BoSSS.Solution.XheatCommon {
             this.LFFA = _LFFA;
             this.LFFB = _LFFB;
             this.m_bcmap = _bcmap;
-            base.tempFunction = null;
+            base.VelFunction = null;
+            base.TempFunction = null;
         }
 
         ThermalMultiphaseBoundaryCondMap m_bcmap;
@@ -71,8 +72,11 @@ namespace BoSSS.Solution.XheatCommon {
 
         void SetBndfunc(string S) {
             int SpatDim = base.m_SpatialDimension;
-            base.tempFunction = new Func<double[], double, double>[GridCommons.FIRST_PERIODIC_BC_TAG, SpatDim];
-            base.tempFunction.SetColumn(m_bcmap.bndFunction[VariableNames.Temperature + "#" + S], 0);
+            base.VelFunction = new Func<double[], double, double>[GridCommons.FIRST_PERIODIC_BC_TAG, SpatDim];
+            for(int d = 0; d < SpatDim; d++)
+                base.VelFunction.SetColumn(m_bcmap.bndFunction[VariableNames.Velocity_d(d) + "#" + S], d);
+
+            base.TempFunction = m_bcmap.bndFunction[VariableNames.Temperature + "#" + S];
         }
 
         protected System.Collections.BitArray SubGrdMask;
@@ -174,15 +178,20 @@ namespace BoSSS.Solution.XheatCommon {
         /// 1st index: edge tag;<br/>
         /// 2nd index: spatial direction
         /// </summary>
-        protected Func<double[], double, double>[,] tempFunction;
+        protected Func<double[], double, double>[,] VelFunction;
+
+        protected Func<double[], double, double>[] TempFunction;
 
 
         public LinearizedHeatConvection(int SpatDim, ThermalBoundaryCondMap _bcmap) {
             m_SpatialDimension = SpatDim;
             m_bcmap = _bcmap;
 
-            tempFunction = new Func<double[], double, double>[GridCommons.FIRST_PERIODIC_BC_TAG, SpatDim];
-            tempFunction.SetColumn(m_bcmap.bndFunction[VariableNames.Temperature], 0);
+            VelFunction = new Func<double[], double, double>[GridCommons.FIRST_PERIODIC_BC_TAG, SpatDim];
+            for(int d = 0; d < m_SpatialDimension; d++)
+                VelFunction.SetColumn(m_bcmap.bndFunction[VariableNames.Velocity_d(d)], d);
+
+            TempFunction = m_bcmap.bndFunction[VariableNames.Temperature];
 
         }
 
@@ -267,22 +276,24 @@ namespace BoSSS.Solution.XheatCommon {
                         inp2.X = inp.X;
                         inp2.time = inp.time;
 
-                        // Dirichlet value for velocity
-                        // ============================
-                        double Uout = tempFunction[inp.EdgeTag, 0](inp.X, inp.time);
-
 
                         // Specify Parameters_OUT
                         // ======================
                         inp2.Parameters_OUT = new double[inp.Parameters_IN.Length];
 
+                        // Dirichlet value for temperature
+                        double Uout = TempFunction[inp.EdgeTag](inp.X, inp.time);
+
                         // Outer values for Velocity and VelocityMean
                         for(int j = 0; j < m_SpatialDimension; j++) {
 
-                            inp2.Parameters_OUT[j] = tempFunction[inp.EdgeTag, 0](inp.X, inp.time);
+                            inp2.Parameters_OUT[j] = inp2.Parameters_IN[j]; //velFunction[inp.EdgeTag, j](inp.X, inp.time);
 
                             // Velocity0MeanVectorOut is set to zero, i.e. always LambdaIn is used.
-                            inp2.Parameters_OUT[m_SpatialDimension + j] = 0.0;
+                            //inp2.Parameters_OUT[m_SpatialDimension + j] = 0.0;
+
+                            // VelocityMeanOut = VelocityMeanIn
+                            inp2.Parameters_OUT[m_SpatialDimension + j] = inp.Parameters_IN[m_SpatialDimension + j];
                         }
 
                         // Calculate BorderEdgeFlux as InnerEdgeFlux
@@ -320,12 +331,8 @@ namespace BoSSS.Solution.XheatCommon {
 
 
         protected override void Flux(ref CommonParamsVol inp, double[] U, double[] output) {
-            output[0] = U[0] * inp.Parameters[0];
-            output[1] = U[0] * inp.Parameters[1];
-            if(m_SpatialDimension == 3) {
-                output[2] = U[0] * inp.Parameters[2];
-            }
-
+            for(int d = 0; d < m_SpatialDimension; d++)
+                output[d] = U[0] * inp.Parameters[d];
         }
 
 
