@@ -27,6 +27,7 @@ using System;
 using System.Diagnostics;
 using System.Linq;
 using BoSSS.Solution.CompressibleFlowCommon.MaterialProperty;
+using static BoSSS.Foundation.Grid.Classic.GridData;
 
 namespace CNS.Convection {
 
@@ -222,7 +223,17 @@ namespace CNS.Convection {
                 case var speciesMap when material.EquationOfState is IdealGas: {
                         for (int i = 0; i < Length; i++) {
                             int cell = i0 + i;
-                            double hminLocal = hmin[cell];
+
+                            double hminLocal;
+                            CellData cellData = __gridData.Cells;
+
+                            //if (!cellData.IsCellAffineLinear(cell)) {
+                            //    //hminLocal = cellData.CellLengthScale[cell] * 2;
+                            //    hminLocal = cellData.GetCellVolume(cell) / cellData.CellSurfaceArea[cell];
+                            //} else {
+                            hminLocal = hmin[cell];
+                            //}
+
                             Debug.Assert(double.IsNaN(hminLocal) == false, "Hmin is NaN");
                             Debug.Assert(double.IsInfinity(hminLocal) == false, "Hmin is Inf");
 
@@ -258,7 +269,7 @@ namespace CNS.Convection {
                                 StateVector state = new StateVector(
                                     material, densityValues[i, node], momentum, energyValues[i, node]);
 
-                                double cflgeneric = hmin[cell] / (state.Velocity.Abs() + material.EquationOfState.GetSpeedOfSound(state));
+                                double cflgeneric = hminLocal / (state.Velocity.Abs() + material.EquationOfState.GetSpeedOfSound(state));
 
                                 if (Math.Abs(cflgeneric - cflhere) > 1e-15) {
                                     throw new Exception("Inconsistency in optimized evaluation of cfl number");
@@ -275,7 +286,17 @@ namespace CNS.Convection {
                 default: {
                         for (int i = 0; i < Length; i++) {
                             int cell = i0 + i;
-                            double hminLocal = hmin[cell];
+
+                            double hminLocal;
+                            CellData cellData = __gridData.Cells;
+
+                            //if (!cellData.IsCellAffineLinear(cell)) {
+                            //    //hminLocal = cellData.CellLengthScale[cell] * 2;
+                            //    hminLocal = cellData.GetCellVolume(cell) / cellData.CellSurfaceArea[cell];
+                            //} else {
+                            hminLocal = hmin[cell];
+                            //}
+
                             Debug.Assert(double.IsNaN(hminLocal) == false, "Hmin is NaN");
                             Debug.Assert(double.IsInfinity(hminLocal) == false, "Hmin is Inf");
 
