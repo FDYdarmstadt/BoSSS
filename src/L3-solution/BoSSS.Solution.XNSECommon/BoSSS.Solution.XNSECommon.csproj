@@ -54,6 +54,8 @@
     <Compile Include="ConvectionInBulk_Localized.cs" />
     <Compile Include="CutCellBoundingBoxes.cs" />
     <Compile Include="DynamicInterfaceConditions.cs" />
+    <Compile Include="EnergyOperatorComponents.cs" />
+    <Compile Include="EnergyUtils.cs" />
     <Compile Include="IncompressibleMultiphaseBoundaryCondMap.cs" />
     <Compile Include="PatchRecovery.cs" />
     <Compile Include="XLaplace.cs" />

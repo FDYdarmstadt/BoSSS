@@ -107,6 +107,10 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
                 Degree = p,
                 SaveToDB = FieldOpts.SaveToDBOpt.TRUE
             });
+            C.FieldOptions.Add("KineticEnergy", new FieldOpts() {
+                Degree = 2*p,
+                SaveToDB = FieldOpts.SaveToDBOpt.TRUE
+            });
 
             #endregion
 
@@ -308,10 +312,10 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             #region solver
 
             C.ComputeEnergy = true;
-            C.ComputeInterfaceEnergy = true;
+            //C.ComputeInterfaceEnergy = true;
 
-            C.CheckJumpConditions = true;
-            C.CheckInterfaceProps = true;
+            //C.CheckJumpConditions = true;
+            //C.CheckInterfaceProps = true;
 
             //C.AdvancedDiscretizationOptions.CellAgglomerationThreshold = 0.2;
             //C.AdvancedDiscretizationOptions.PenaltySafety = 40;
@@ -336,8 +340,8 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             C.AdvancedDiscretizationOptions.FilterConfiguration = CurvatureAlgorithms.FilterConfiguration.NoFilter;
 
             C.AdvancedDiscretizationOptions.SurfStressTensor = SurfaceSressTensor.Isotropic;
-            C.PhysicalParameters.mu_I = 1 * sigma;
-            C.PhysicalParameters.lambda_I = 2 * sigma;
+            //C.PhysicalParameters.mu_I = 1 * sigma;
+            //C.PhysicalParameters.lambda_I = 2 * sigma;
 
             C.AdvancedDiscretizationOptions.SST_isotropicMode = SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_ContactLine;
             C.AdvancedDiscretizationOptions.UseLevelSetStabilization = false;
@@ -371,30 +375,30 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             // ============
             #region time
 
-            switch(p) {
-                case 1: {
-                        C.Timestepper_Scheme = XNSE_Control.TimesteppingScheme.ImplicitEuler;
-                        C.Timestepper_BDFinit = TimeStepperInit.SingleInit;
-                        break;
-                    }
-                case 2: {
-                        C.Timestepper_Scheme = XNSE_Control.TimesteppingScheme.BDF2;
-                        C.Timestepper_BDFinit = TimeStepperInit.MultiInit;
-                        break;
-                    }
-                default:
-                    C.Timestepper_Scheme = XNSE_Control.TimesteppingScheme.ImplicitEuler;
-                    C.Timestepper_BDFinit = TimeStepperInit.SingleInit;
-                    break;
-            }
+            //switch(p) {
+            //    case 1: {
+            //            C.Timestepper_Scheme = XNSE_Control.TimesteppingScheme.ImplicitEuler;
+            //            C.Timestepper_BDFinit = TimeStepperInit.SingleInit;
+            //            break;
+            //        }
+            //    case 2: {
+            //            C.Timestepper_Scheme = XNSE_Control.TimesteppingScheme.BDF2;
+            //            C.Timestepper_BDFinit = TimeStepperInit.MultiInit;
+            //            break;
+            //        }
+            //    default:
+            //        C.Timestepper_Scheme = XNSE_Control.TimesteppingScheme.ImplicitEuler;
+            //        C.Timestepper_BDFinit = TimeStepperInit.SingleInit;
+            //        break;
+            //}
 
             //if(D == 3) {
             //    C.Timestepper_Scheme = XNSE_Control.TimesteppingScheme.ImplicitEuler;
             //    C.Timestepper_BDFinit = TimeStepperInit.SingleInit;
             //}
 
-            //C.Timestepper_Scheme = XNSE_Control.TimesteppingScheme.ImplicitEuler;
-            //C.Timestepper_BDFinit = TimeStepperInit.SingleInit;
+            C.Timestepper_Scheme = XNSE_Control.TimesteppingScheme.ImplicitEuler;
+            C.Timestepper_BDFinit = TimeStepperInit.SingleInit;
 
             C.Timestepper_LevelSetHandling = (compMode == AppControl._CompMode.Steady) ? LevelSetHandling.None : LevelSetHandling.Coupled_Once;
             //C.LSunderrelax = 0.05;
