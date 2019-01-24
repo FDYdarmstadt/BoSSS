@@ -81,7 +81,7 @@ namespace BoSSS.Application.FSI_Solver {
         /// The termination criterion for fully coupled/implicit level-set evolution.
         /// </summary>
         [DataMember]
-        public double LevelSet_ConvergenceCriterion = 1.0e-6;
+        public double ForceAndTorque_ConvergenceCriterion = 1.0e-6;
 
         /// <summary>
         /// underrelaxation of the level set movement in case of coupled iterative
@@ -100,6 +100,19 @@ namespace BoSSS.Application.FSI_Solver {
         /// </summary>
         [DataMember]
         public int maxCurvature = 2;
+
+        public override void SetDGdegree(int k)
+        {
+            if (k < 1)
+                throw new ArgumentOutOfRangeException("DG polynomial degree must be at least 1.");
+
+            base.FieldOptions.Clear();
+            this.AddFieldOption("Velocity*", k);
+            this.AddFieldOption("Pressure", k - 1);
+            this.AddFieldOption("PhiDG", k);
+            this.AddFieldOption("Phi", k);
+            this.AddFieldOption("Curvature", k);
+        }
 
         ///// <summary>
         ///// How should the level set be moved? Options: none, fixed, coupled
@@ -131,7 +144,6 @@ namespace BoSSS.Application.FSI_Solver {
         /// </summary>
         public Func<double, double>[] BoundaryFunc;
 
-
         [DataMember]
         public List<Particle> Particles;
        
@@ -153,17 +165,6 @@ namespace BoSSS.Application.FSI_Solver {
 
         [DataMember]
         public bool pureDryCollisions = false;
-
-        /// <summary>
-        /// Adds particle to particle list
-        /// </summary>
-        /// <param name="D"></param>
-        /// <param name="HistoryLength"></param>
-        /// <param name="start"></param>
-        public void AddParticle(int D, int HistoryLength, double[] start) {
-            this.Particles.Add(new Particle(D, HistoryLength, start));
-        }
-
 
         public override Type GetSolverType() {
             return typeof(FSI_SolverMain);

@@ -432,8 +432,10 @@ namespace BoSSS.Foundation.XDG {
                 MassBlocks = new Dictionary<SpeciesId, MassMatrixFactory.MassMatrixBlockContainer>();
 
             // ..., but only once: for the Basis with highest Polynomial Degree
-            if (_MaxDeg > this.MaxBasis.Degree)
-                throw new ArgumentException();
+            if (_MaxDeg > this.MaxBasis.Degree) {
+                MassBlocks.Clear();
+                this.MaxBasis = new Basis(this.MaxBasis.GridDat, _MaxDeg);
+            }
 
             Basis nonXbasis = this.MaxBasis;
 

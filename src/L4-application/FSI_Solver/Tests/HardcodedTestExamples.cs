@@ -110,9 +110,6 @@ namespace BoSSS.Application.FSI_Solver {
                 return grd;
             };
 
-
-
-
             C.AddBoundaryValue("Velocity_Inlet_left", "VelocityY", X => 0.02);
             C.AddBoundaryValue("Velocity_Inlet_right", "VelocityY", X => -0.02);
 
@@ -131,7 +128,7 @@ namespace BoSSS.Application.FSI_Solver {
             // Particle Properties
             C.Particles = new List<Particle>();
 
-            C.Particles.Add(new Particle(2, 4, new double[] { 0.0 , 0.0 }) {
+            C.Particles.Add(new Particle_Sphere(2, 4, new double[] { 0.0 , 0.0 }) {
                 radius_P = 0.4,
                 rho_P = 1.0,
             });
@@ -146,7 +143,6 @@ namespace BoSSS.Application.FSI_Solver {
                 return ret;
             };
 
-            
             //Func<double[], double, double> phi = (X, t) => -(X[0] - t+X[1]);
             //C.MovementFunc = phi;
 

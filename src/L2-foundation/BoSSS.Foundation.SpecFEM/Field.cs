@@ -73,15 +73,18 @@ namespace BoSSS.Foundation.SpecFEM {
             if (!DGField.Basis.Equals(this.m_Basis.ContainingDGBasis))
                 throw new ArgumentException("Basis does not match.");
 
-            var Trafo = m_Basis.GridDat.ChefBasis.Scaling;
+            var gdat = m_Basis.GridDat;
+            var Trafo = gdat.ChefBasis.Scaling;
             var C2N = m_Basis.CellNode_To_Node;
             var MtxM2N = m_Basis.m_Modal2Nodal;
             var CellData = this.Basis.GridDat.Cells;
 
             int[] _K = m_Basis.NodesPerCell;
             int L = m_Basis.ContainingDGBasis.Length;
+            int pDeg = m_Basis.ContainingDGBasis.Degree;
             double[][] _NodalCoordinates = _K.Select(K => new double[K]).ToArray();
             double[] ModalCoordinates = new double[L];
+            double[] InterCoordinates = new double[L]; // only used for curved cells
 
             if (mask == null) {
                 mask = CellMask.GetFullMask(this.Basis.GridDat);
@@ -103,8 +106,16 @@ namespace BoSSS.Foundation.SpecFEM {
 
                     // transform
                     DGField.Coordinates.GetRow(j, ModalCoordinates);
-                    MtxM2N[iKref].gemv(alpha / Trafo[j], NodalCoordinates, 1.0, ModalCoordinates);
+                    if (CellData.IsCellAffineLinear(j)) {
+                        MtxM2N[iKref].gemv(alpha / Trafo[j], NodalCoordinates, 1.0, ModalCoordinates);
+                    } else {
+                        MtxM2N[iKref].gemv(alpha, NodalCoordinates, 0.0, InterCoordinates);
 
+                        var OnbTrafo = gdat.ChefBasis.OrthonormalizationTrafo.GetValue_Cell(j, 1, pDeg).ExtractSubArrayShallow(0, -1, -1);
+                        //OnbTrafo.GetInverse().gemv(1.0, InterCoordinates, 0.0, ModalCoordinates);
+                        OnbTrafo.Solve(ModalCoordinates, InterCoordinates);
+
+                    }
                     // save
                     DGField.Coordinates.SetRow(j, ModalCoordinates);
                 }
@@ -123,16 +134,19 @@ namespace BoSSS.Foundation.SpecFEM {
 
             //var multiplicity = new int[this.m_Basis.NoOfLocalNodes];
 
-            int J = m_Basis.GridDat.Cells.NoOfLocalUpdatedCells;
-            var Trafo = m_Basis.GridDat.ChefBasis.Scaling;
+            var gdat = m_Basis.GridDat;
+            int J = gdat.Cells.NoOfLocalUpdatedCells;
+            var Trafo = gdat.ChefBasis.Scaling;
             var C2N = m_Basis.CellNode_To_Node;
             var MtxN2M = m_Basis.m_Nodal2Modal;
-            var CellData = this.Basis.GridDat.Cells;
+            var CellData = gdat.Cells;
 
             int[] _K = m_Basis.NodesPerCell;
             int L = m_Basis.ContainingDGBasis.Length;
+            int pDeg = m_Basis.ContainingDGBasis.Degree;
             double[][] _NodalCoordinates = _K.Select(K => new double[K]).ToArray();
             double[] ModalCoordinates = new double[L];
+            double[] IntermCoordinates = new double[L];
 
 
             for (int j = 0; j < J; j++) { // loop over cells...
@@ -146,11 +160,15 @@ namespace BoSSS.Foundation.SpecFEM {
                 for (int l = 0; l < Lmin; l++)
                     ModalCoordinates[l] = DGField.Coordinates[j, l];
 
-
                 // transform
                 DGField.Coordinates.GetRow(j, ModalCoordinates);
-                MtxN2M[iKref].gemv(alpha * Trafo[j], ModalCoordinates, 0.0, NodalCoordinates);
-
+                if (CellData.IsCellAffineLinear(j)) {
+                    MtxN2M[iKref].gemv(alpha * Trafo[j], ModalCoordinates, 0.0, NodalCoordinates);
+                } else {
+                    var OnbTrafo = gdat.ChefBasis.OrthonormalizationTrafo.GetValue_Cell(j, 1, pDeg).ExtractSubArrayShallow(0, -1, -1);
+                    OnbTrafo.gemv(alpha, ModalCoordinates, 0.0, IntermCoordinates);
+                    MtxN2M[iKref].gemv(1.0, IntermCoordinates, 0.0, NodalCoordinates);
+                }
 
                 // collect coordinates for cell 'j':
                 for (int k = 0; k < K; k++) {
@@ -177,16 +195,19 @@ namespace BoSSS.Foundation.SpecFEM {
 
             //var multiplicity = new int[this.m_Basis.NoOfLocalNodes];
 
-            int J = m_Basis.GridDat.Cells.NoOfLocalUpdatedCells;
-            var Trafo = m_Basis.GridDat.ChefBasis.Scaling;
+            var gdat = m_Basis.GridDat;
+            int J = gdat.Cells.NoOfLocalUpdatedCells;
+            var Trafo = gdat.ChefBasis.Scaling;
             var C2N = m_Basis.CellNode_To_Node;
             var MtxN2M = m_Basis.m_Nodal2Modal;
-            var CellData = this.Basis.GridDat.Cells;
+            var CellData = gdat.Cells;
 
             int[] _K = m_Basis.NodesPerCell;
             int L = m_Basis.ContainingDGBasis.Length;
+            int pDeg = m_Basis.ContainingDGBasis.Degree;
             double[][] _NodalCoordinates = _K.Select(K => new double[K]).ToArray();
             double[] ModalCoordinates = new double[L];
+            double[] IntermCoordinates = new double[L];
 
 
             for (int j = 0; j < J; j++) { // loop over cells...
@@ -200,11 +221,15 @@ namespace BoSSS.Foundation.SpecFEM {
                 for (int l = 0; l < Lmin; l++)
                     ModalCoordinates[l] = DGField.Coordinates[j, l];
 
-
                 // transform
                 DGField.Coordinates.GetRow(j, ModalCoordinates);
-                MtxN2M[iKref].gemv(alpha * Trafo[j], ModalCoordinates, 0.0, NodalCoordinates);
-
+                if (CellData.IsCellAffineLinear(j)) {
+                    MtxN2M[iKref].gemv(alpha * Trafo[j], ModalCoordinates, 0.0, NodalCoordinates);
+                } else {
+                    var OnbTrafo = gdat.ChefBasis.OrthonormalizationTrafo.GetValue_Cell(j, 1, pDeg).ExtractSubArrayShallow(0, -1, -1);
+                    OnbTrafo.gemv(alpha, ModalCoordinates, 0.0, IntermCoordinates);
+                    MtxN2M[iKref].gemv(1.0, IntermCoordinates, 0.0, NodalCoordinates);
+                }
 
                 // collect coordinates for cell 'j':
                 for (int k = 0; k < K; k++) {
@@ -265,14 +290,11 @@ namespace BoSSS.Foundation.SpecFEM {
 
                 var b = MultidimensionalArray.Create(this.m_Basis.NoOfLocalNodes);
                 {
-
-
                     int[] _K = m_Basis.NodesPerCell;
                     int L = m_Basis.ContainingDGBasis.Length;
                     double[][] _NodalCoordinates = _K.Select(K => new double[K]).ToArray(); // temporary storage for nodal coordinates per cell
-                    //                                                                         1st idx: ref. elm., 2nd idx: node index
+                                                                                            // 1st idx: ref. elm., 2nd idx: node index
                     double[] ModalCoordinates = new double[L];
-
 
                     foreach (Chunk cnk in cm) {
                         int j0 = cnk.i0;
@@ -296,7 +318,7 @@ namespace BoSSS.Foundation.SpecFEM {
                             // transform
                             //DGField.Coordinates.GetRow(j, ModalCoordinates);
                             ModalCoordinates.ClearEntries();
-                            for(int l = 0; l < Lmin; l++)
+                            for (int l = 0; l < Lmin; l++)
                                 ModalCoordinates[l] = DGField.Coordinates[j, l];
                             MtxM2N[iKref].gemv(tr, ModalCoordinates, 0.0, NodalCoordinates, transpose: true);
 
@@ -307,7 +329,6 @@ namespace BoSSS.Foundation.SpecFEM {
                             }
                         }
                     }
-
                 }
 
                 trx.AccumulateGather(b);
@@ -432,7 +453,7 @@ namespace BoSSS.Foundation.SpecFEM {
 
                     var b_sub = new double[OccupiedRows_Global.Count];
                     //try {
-                        b_sub.AccV(1.0, b.To1DArray(), default(int[]), OccupiedRows_Global, b_index_shift: -i0);
+                    b_sub.AccV(1.0, b.To1DArray(), default(int[]), OccupiedRows_Global, b_index_shift: -i0);
                     //} catch(Exception e) {
                     //    Debugger.Launch();
                     //}

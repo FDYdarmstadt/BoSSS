@@ -46,6 +46,10 @@
       <Project>{dd9bf776-38ca-4fc9-8f42-5ed700bde7ad}</Project>
       <Name>MPI.Wrappers</Name>
     </ProjectReference>
+    <ProjectReference Include="..\ilPSP.LinSolvers.MUMPS\ilPSP.LinSolvers.MUMPS.csproj">
+      <Project>{757e59f0-53bf-4c0d-87b3-3329161cb148}</Project>
+      <Name>ilPSP.LinSolvers.MUMPS</Name>
+    </ProjectReference>
     <ProjectReference Include="..\ilPSP\ilPSP.csproj">
       <Project>{8E6D8F23-623F-4204-B4AB-A088C0CD83AA}</Project>
       <Name>ilPSP</Name>

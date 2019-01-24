@@ -13,7 +13,7 @@
 \paragraph{Prerequisites:} 
 \begin{itemize}
 	\item basic knowledge of \BoSSSpad{}
-	\item executing runs on your local machine, e.g. the quickstart guide of the \ac{cns}, see chapter 5
+	\item executing runs on your local machine, e.g. the quickstart guide of the \ac{cns}, see chapter \ref{{sec:CNS}
 \end{itemize}
 
 \BoSSS ~includes several tools which aid the advanced user in running simulations and organizing simulation results among multiple computers and/or compute clusters.
@@ -60,22 +60,22 @@ WorkflowMgm.AllJobs;
 \BoSSScmdSilent{
 /// BoSSScmdSilent BoSSSexeSilent
 // first, do some cleanup\newline 
-if(System.IO.Directory.Exists(@"C:\textbackslash tmp\textbackslash TutorialLocal\_db")) \{\newline 
-\btab try \{\newline 
-\btab \btab System.IO.Directory.Delete(@"C:\textbackslash tmp\textbackslash TutorialLocal\_db",true);\newline 
-\btab \} catch(Exception) \{ \}\newline 
-\}\newline 
-if(System.IO.Directory.Exists(@"C:\textbackslash tmp\textbackslash deploy"))\{\newline 
-\btab try \{\newline 
-\btab \btab System.IO.Directory.Delete(@"C:\textbackslash tmp\textbackslash deploy",true);\newline 
-\btab \} catch(Exception) \{ \}\newline 
- \newline 
-\}
+//if(System.IO.Directory.Exists(@"C:\textbackslash tmp\textbackslash TutorialLocal\_db")) \{\newline 
+//    try \{\newline 
+//        System.IO.Directory.Delete(@"C:\textbackslash tmp\textbackslash TutorialLocal\_db",true);\newline 
+//    \} catch(Exception) \{ \}\newline 
+//\}\newline 
+//if(System.IO.Directory.Exists(@"C:\textbackslash tmp\textbackslash deploy"))\{\newline 
+//    try \{\newline 
+//        System.IO.Directory.Delete(@"C:\textbackslash tmp\textbackslash deploy",true);\newline 
+//    \} catch(Exception) \{ \}\newline 
+// \newline 
+//\}
  }
 \BoSSSexeSilent
 \BoSSScmd{
 /// and create, resp. open a \BoSSS database on a local drive.
-var myLocalDb = OpenOrCreateDatabase(@"C:\textbackslash tmp\textbackslash TutorialLocal\_db");
+var myLocalDb = OpenOrCreateDefaultDatabase();
  }
 \BoSSSexe
 \BoSSScmdSilent{
@@ -93,8 +93,7 @@ databases;
 /// We have to initialize all batch systems that we want to use.
 /// Normally, one would put these statements into the 
 /// {\tt $\sim$/.BoSSS/etc/DBErc.cs}-file
-System.IO.Directory.CreateDirectory(@"C:\textbackslash tmp\textbackslash deploy");\newline 
-var myBatch = new MiniBatchProcessorClient(@"C:\textbackslash tmp\textbackslash deploy");
+var myBatch = new MiniBatchProcessorClient();
  }
 \BoSSSexe
 \BoSSScmd{

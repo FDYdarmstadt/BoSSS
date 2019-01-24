@@ -28,7 +28,7 @@ using System.Data;
 using System.Reflection;
 using System.Threading;
 using ilPSP;
-
+using BoSSS.Solution.Control;
 
 namespace BoSSS.Application.BoSSSpad {
 
@@ -255,11 +255,30 @@ namespace BoSSS.Application.BoSSSpad {
             
         }
 
+        List<Tuple<AppControl, int>> RegisteredControls = new List<Tuple<AppControl, int>>();
+
+
+        /// <summary>
+        /// Records the control object <paramref name="C"/> in an internal list, for its entire lifetime,
+        /// and provides an index for it. 
+        /// </summary>
+        public int RegisterControl(AppControl C) {
+            int max = 0;
+            foreach (var t in RegisteredControls) {
+                if (object.ReferenceEquals(t.Item1, C))
+                    return t.Item2;
+                max = Math.Max(t.Item2, max);
+            }
+
+            RegisteredControls.Add(Tuple.Create(C, max + 1));
+            return max + 1;
+        }
+
 
     }
 
 
-
+    /*
     public static class MetaJobManager {
 
         static Dictionary<string, BatchProcessorClient> m_Computers;
@@ -278,6 +297,7 @@ namespace BoSSS.Application.BoSSSpad {
         }
 
     }
+    */
 }
 
 

@@ -38,8 +38,9 @@ namespace BoSSS.Application.FSI_Solver {
             // basic database options
             // ======================
             
-            C.DbPath = @"\\dc1\userspace\rieckmann\local\FSI\Test_db";
-            C.savetodb = true;
+            //C.DbPath = @"\\dc1\userspace\rieckmann\local\FSI\Test_db";
+            C.savetodb = false;
+
             C.ProjectName = "ShearFlow_Test";
             C.ProjectDescription = "ShearFlow";
             C.Tags.Add("with immersed boundary method");
@@ -64,6 +65,11 @@ namespace BoSSS.Application.FSI_Solver {
                 SaveToDB = FieldOpts.SaveToDBOpt.TRUE
             });
             C.FieldOptions.Add("Phi", new FieldOpts() {
+                Degree = 2,
+                SaveToDB = FieldOpts.SaveToDBOpt.TRUE
+            });
+            C.FieldOptions.Add("Curvature", new FieldOpts()
+            {
                 Degree = 2,
                 SaveToDB = FieldOpts.SaveToDBOpt.TRUE
             });
@@ -127,6 +133,7 @@ namespace BoSSS.Application.FSI_Solver {
             C.InitialValues_Evaluators.Add("VelocityY", X => 0);
             //C.InitialValues.Add("Phi", X => -1);
             //C.InitialValues.Add("Phi", X => (X[0] - 0.41));
+            
 
             // For restart
             //C.RestartInfo = new Tuple<Guid, TimestepNumber>(new Guid("fec14187-4e12-43b6-af1e-e9d535c78668"), -1);
@@ -182,7 +189,7 @@ namespace BoSSS.Application.FSI_Solver {
             C.ProjectName = "Uhlmann_k2_Re185_dt01_CellAgglo02_penalty4_SinglePhase";
             C.ProjectDescription = "Cylinder";
             C.Tags.Add("with immersed boundary method");
-            
+
             // DG degrees
             // ==========
 
@@ -449,17 +456,17 @@ namespace BoSSS.Application.FSI_Solver {
 
             const double BaseSize = 1.0;
 
-            C.Paramstudy_CaseIdentification = new Tuple<string, object>[] {
-                                new Tuple<string,object>("k", k),
-                            };
+            //C.Paramstudy_CaseIdentification = new Tuple<string, object>[] {
+             //                   new Tuple<string,object>("k", k),
+              //              };
 
             // k = i;
 
             // basic database options
             // ======================
 
-            C.DbPath = @"\\dc1\userspace\krause\BoSSS_DBs\Bug";
-            C.savetodb = true;
+            //C.DbPath = @"\\dc1\userspace\krause\BoSSS_DBs\Bug";
+            C.savetodb = false;
             C.saveperiod = 1;
             C.ProjectName = "ParticleUnderGravity_k" + k + "_CellAgglo02_penalty4";
             C.ProjectDescription = "Gravity";
@@ -488,6 +495,11 @@ namespace BoSSS.Application.FSI_Solver {
                 SaveToDB = FieldOpts.SaveToDBOpt.TRUE
             });
             C.FieldOptions.Add("Phi", new FieldOpts() {
+                Degree = 2,
+                SaveToDB = FieldOpts.SaveToDBOpt.TRUE
+            });
+            C.FieldOptions.Add("Curvature", new FieldOpts()
+            {
                 Degree = 2,
                 SaveToDB = FieldOpts.SaveToDBOpt.TRUE
             });
@@ -584,7 +596,7 @@ namespace BoSSS.Application.FSI_Solver {
             C.Particles = new List<Particle>();
 
 
-            C.Particles.Add(new Particle(2, 4, new double[] { 0.0, 1.0 }) {
+            C.Particles.Add(new Particle_Sphere(2, 4, new double[] { 0.0, 1.0 }) {
                 radius_P = (0.125/2.0),
                 rho_P = 1.25
             });
@@ -617,7 +629,7 @@ namespace BoSSS.Application.FSI_Solver {
 
             // misc. solver options
             // ====================
-            
+
             C.AdvancedDiscretizationOptions.PenaltySafety = 4;
             C.AdvancedDiscretizationOptions.CellAgglomerationThreshold = 0.2;
             C.LevelSetSmoothing = false;
@@ -795,29 +807,29 @@ namespace BoSSS.Application.FSI_Solver {
             C.Particles = new List<Particle>();
 
 
-            C.Particles.Add(new Particle(2, 4, new double[] { 0.4, 1.0 },shape:Particle.ParticleShape.elliptic) {
+            C.Particles.Add(new Particle_Ellipsoid(2, 4, new double[] { 0.4, 1.0 }) {
                 radius_P = 0.2,
                 rho_P = 1.0
             });
 
-            C.Particles.Add(new Particle(2, 4, new double[] { 0.2, 0.5 }) {
+            C.Particles.Add(new Particle_Sphere(2, 4, new double[] { 0.2, 0.5 }) {
                 radius_P = 0.2,
                 rho_P = 1.0,        
             });
-            C.Particles[1].vel_P[0][0] = 0.5;
-            C.Particles[1].vel_P[0][1] = 1.0;
+            C.Particles[1].currentIterVel_P[0][0] = 0.5;
+            C.Particles[1].currentIterVel_P[0][1] = 1.0;
 
-            C.Particles.Add(new Particle(2, 4, new double[] { 0.5, 2.0 }) {
+            C.Particles.Add(new Particle_Sphere(2, 4, new double[] { 0.5, 2.0 }) {
                 radius_P = 0.2,
                 rho_P = 1.0,
             });
-            //C.Particles[2].vel_P[0][0] = -1.5;
-            //C.Particles[2].vel_P[0][1] = -0.5;
+            //C.Particles[2].currentIterVel_P[0][0] = -1.5;
+            //C.Particles[2].currentIterVel_P[0][1] = -0.5;
 
 
 
-            //C.Particles[1].vel_P[1][1] = 1.0;
-            //C.Particles[1].vel_P[2][1] = 1.0;
+            //C.Particles[1].currentIterVel_P[1][1] = 1.0;
+            //C.Particles[1].currentIterVel_P[2][1] = 1.0;
 
             //C.Particles.Add(new Particle(2, 4, new double[] { -0.25, 1.0 }) {
             //    radius_P = 0.25,
@@ -1032,39 +1044,39 @@ namespace BoSSS.Application.FSI_Solver {
             C.Particles = new List<Particle>();
 
 
-            C.Particles.Add(new Particle(2, 4, new double[] { -1.2, 0.9 }, startAngl: 90.0, shape: Particle.ParticleShape.elliptic) {
+            C.Particles.Add(new Particle_Ellipsoid(2, 4, new double[] { -1.2, 0.9 }, startAngl: 90.0) {
                 radius_P = 0.2,
                 rho_P = 1.0,
             });
-            C.Particles[0].vel_P[0][0] = -5.0;
-            C.Particles[0].rot_P[0] = -10;
+            C.Particles[0].currentIterVel_P[0][0] = -5.0;
+            C.Particles[0].currentIterRot_P[0] = -10;
 
-            C.Particles.Add(new Particle(2, 4, new double[] { -0.6, 0.3},startAngl:-90.0, shape: Particle.ParticleShape.spherical) {
+            C.Particles.Add(new Particle_Sphere(2, 4, new double[] { -0.6, 0.3},startAngl:-90.0) {
                 radius_P = 0.25,
                 rho_P = 1.0,
             });
  
-            C.Particles.Add(new Particle(2, 4, new double[] { -0.2, -0.5 }, startAngl:-45, shape:Particle.ParticleShape.hippopede) {
+            C.Particles.Add(new Particle_Hippopede(2, 4, new double[] { -0.2, -0.5 }, startAngl:-45) {
                 radius_P = 0.15,
                 rho_P = 1.0,
             });
 
-            C.Particles[2].vel_P[0] = new double[2] { -5.0,0.0};
+            C.Particles[2].currentIterVel_P[0] = new double[2] { -5.0,0.0};
 
-            C.Particles.Add(new Particle(2, 4, new double[] { 1.0, 1.0 }, startAngl: -20.0, shape: Particle.ParticleShape.squircle) {
+            C.Particles.Add(new Particle_Squircle(2, 4, new double[] { 1.0, 1.0 }, startAngl: -20.0) {
                 radius_P = 0.25,
                 rho_P = 1.0,
             });
-            C.Particles[3].vel_P[0] = new double[2] { -5.0, -5.0 };
+            C.Particles[3].currentIterVel_P[0] = new double[2] { -5.0, -5.0 };
 
-            C.Particles.Add(new Particle(2, 4, new double[] { 1.0, -1.0 }, startAngl: -20.0, shape: Particle.ParticleShape.bean) {
+            C.Particles.Add(new Particle_Bean(2, 4, new double[] { 1.0, -1.0 }, startAngl: -20.0) {
                 radius_P = 0.25,
                 rho_P = 1.0,
             });
 
-            C.Particles[4].vel_P[0] = new double[2] { -5.0, 5.0 };
+            C.Particles[4].currentIterVel_P[0] = new double[2] { -5.0, 5.0 };
 
-            C.Particles[4].rot_P[0] = -10;
+            C.Particles[4].currentIterRot_P[0] = -10;
 
             C.pureDryCollisions = true;
             C.collisionModel = FSI_Control.CollisionModel.MomentumConservation;
@@ -1283,34 +1295,34 @@ namespace BoSSS.Application.FSI_Solver {
             C.Particles = new List<Particle>();
 
 
-            C.Particles.Add(new Particle(2, 4, new double[] { -0.2, 7.5 }, startAngl: 45.0, shape: Particle.ParticleShape.spherical) {
+            C.Particles.Add(new Particle_Sphere(2, 4, new double[] { -0.2, 7.5 }, startAngl: 45.0) {
                 radius_P = 0.1,
                 rho_P = 3.0,
             });
 
-            C.Particles.Add(new Particle(2, 4, new double[] { 0.2, 7.3 }, startAngl: 30.0, shape: Particle.ParticleShape.elliptic) {
+            C.Particles.Add(new Particle_Ellipsoid(2, 4, new double[] { 0.2, 7.3 }, startAngl: 30.0) {
                 radius_P = 0.07,
                 rho_P = 3.0,
             });
 
             // hippopede kritisch for agglomeration
-            //C.Particles.Add(new Particle(2, 4, new double[] { 0.5, 6.9 }, startAngl: -30.0, shape: Particle.ParticleShape.elliptic) {
+            //C.Particles.Add(new Particle_Ellipsoid(2, 4, new double[] { 0.5, 6.9 }, startAngl: -30.0) {
             //    radius_P = 0.07,
             //    rho_P = 3.0,
             //});
 
 
-            C.Particles.Add(new Particle(2, 4, new double[] { -0.2, 6.95 }, startAngl: -20.0, shape: Particle.ParticleShape.squircle) {
+            C.Particles.Add(new Particle_Squircle(2, 4, new double[] { -0.2, 6.95 }, startAngl: -20.0) {
                 radius_P = 0.1,
                 rho_P = 3.0,
             });
-            
-            C.Particles.Add(new Particle(2, 4, new double[] { -0.5, 7.2 }, startAngl: -45.0, shape: Particle.ParticleShape.spherical) {
+
+            C.Particles.Add(new Particle_Sphere(2, 4, new double[] { -0.5, 7.2 }, startAngl: -45.0) {
                 radius_P = 0.15,
                 rho_P = 3.0,
             });
 
-            C.Particles.Add(new Particle(2, 4, new double[] { 0.2, 6.5 }, startAngl: -45.0, shape: Particle.ParticleShape.squircle) {
+            C.Particles.Add(new Particle_Squircle(2, 4, new double[] { 0.2, 6.5 }, startAngl: -45.0) {
                 radius_P = 0.15,
                 rho_P = 3.0,
             });
@@ -1537,12 +1549,12 @@ namespace BoSSS.Application.FSI_Solver {
             C.Particles = new List<Particle>();
 
 
-            C.Particles.Add(new Particle(2, 4, new double[] { 0.0*BaseSize, 1.0*BaseSize }, startAngl: angle, shape: Particle.ParticleShape.elliptic) {
+            C.Particles.Add(new Particle_Ellipsoid(2, 4, new double[] { 0.0*BaseSize, 1.0*BaseSize }, startAngl: angle) {
                 radius_P = 0.1*BaseSize,
                 rho_P = 10.0,
             });
 
-            //C.Particles[0].rot_P[0] = 10;
+            //C.Particles[0].currentIterRot_P[0] = 10;
 
             C.CutCellQuadratureType = Foundation.XDG.XQuadFactoryHelper.MomentFittingVariants.Classic;
 
@@ -1619,8 +1631,8 @@ namespace BoSSS.Application.FSI_Solver {
             // basic database options
             // ======================
 
-            C.DbPath = @"\\hpccluster\hpccluster-scratch\krause\DraftKissing_db";
-            C.savetodb = true;
+            //C.DbPath = @"\\hpccluster\hpccluster-scratch\krause\DraftKissing_db";
+            C.savetodb = false;
             C.saveperiod = 10;
             C.ProjectName = "DraftKissingTumbling";
             C.ProjectDescription = "Gravity";
@@ -1649,6 +1661,10 @@ namespace BoSSS.Application.FSI_Solver {
                 SaveToDB = FieldOpts.SaveToDBOpt.TRUE
             });
             C.FieldOptions.Add("Phi", new FieldOpts() {
+                Degree = 2,
+                SaveToDB = FieldOpts.SaveToDBOpt.TRUE
+            });
+            C.FieldOptions.Add("Curvature", new FieldOpts() {
                 Degree = 2,
                 SaveToDB = FieldOpts.SaveToDBOpt.TRUE
             });
@@ -1751,24 +1767,24 @@ namespace BoSSS.Application.FSI_Solver {
             C.Particles = new List<Particle>();
 
 
-            C.Particles.Add(new Particle(2, 4, new double[] { 0.0, 7.2 }) {
+            C.Particles.Add(new Particle_Sphere(2, 4, new double[] { 0.0, 7.2 }) {
                 radius_P = 0.1,
                 rho_P = 1.01
             });
 
-            //C.Particles[0].vel_P[0][1] = -0.5;
+            //C.Particles[0].currentIterVel_P[0][1] = -0.5;
 
-            C.Particles.Add(new Particle(2, 4, new double[] { 0.0, 6.8 }) {
+            C.Particles.Add(new Particle_Sphere(2, 4, new double[] { 0.0, 6.8 }) {
                 radius_P = 0.1,
                 rho_P = 1.01,
             });
 
-            //C.Particles[1].vel_P[0][1] = -0.5;
+            //C.Particles[1].currentIterVel_P[0][1] = -0.5;
 
-            Func<double[], double, double> phiComplete = (X, t) => -1 * (C.Particles[0].phi_P(X, t) * C.Particles[1].phi_P(X, t));
+            //Func<double[], double, double> phiComplete = (X, t) => -1 * (C.Particles[0].phi_P(X, t) * C.Particles[1].phi_P(X, t));
       
 
-            C.InitialValues_Evaluators.Add("Phi", X => phiComplete(X, 0));
+            //C.InitialValues_Evaluators.Add("Phi", X => phiComplete(X, 0));
             C.InitialValues_Evaluators.Add("VelocityX", X => 0);
             C.InitialValues_Evaluators.Add("VelocityY", X => 0);
 
@@ -1959,17 +1975,17 @@ namespace BoSSS.Application.FSI_Solver {
             C.Particles = new List<Particle>();
 
 
-            C.Particles.Add(new Particle(2, 4, new double[] { -0.5, -1.35 }, startAngl: 0.0, shape: Particle.ParticleShape.spherical) {
+            C.Particles.Add(new Particle_Sphere(2, 4, new double[] { -0.5, -1.35 }, startAngl: 0.0) {
                 radius_P = 0.1,
                 rho_P = 1.25,
             });
 
-            C.Particles.Add(new Particle(2, 4, new double[] { 0.8, -1.35 }, startAngl: 0.0, shape: Particle.ParticleShape.spherical) {
+            C.Particles.Add(new Particle_Sphere(2, 4, new double[] { 0.8, -1.35 }, startAngl: 0.0) {
                 radius_P = 0.1,
                 rho_P = 1.25,
             });
 
-            //C.Particles[0].rot_P[0] = 10;
+            //C.Particles[0].currentIterRot_P[0] = 10;
 
             C.CutCellQuadratureType = Foundation.XDG.XQuadFactoryHelper.MomentFittingVariants.Classic;
 
