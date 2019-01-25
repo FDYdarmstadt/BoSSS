@@ -333,6 +333,23 @@ namespace CNS {
             });
 
         /// <summary>
+        /// The local non-dimensional specific enthalpy which is given by
+        /// \f[h = \frac{\rho E + p}{\rho} \f], where \f[\rho E\f] is the total energy,
+        /// \f[p\f] is the pressure, and \f[\rho\f] is the density.
+        /// </summary>
+        public static readonly DerivedVariable Enthalpy = new DerivedVariable(
+            "h",
+            VariableTypes.Other,
+            delegate (DGField h, CellMask cellMask, IProgram<CNSControl> program) {
+                h.Clear();
+                h.ProjectFunction(
+                    1.0,
+                    (X, U, j) => new StateVector(U, program.SpeciesMap.GetMaterial(double.NaN)).Enthalpy,
+                    new CellQuadratureScheme(true, cellMask),
+                    program.WorkingSet.ConservativeVariables);
+            });
+
+        /// <summary>
         /// The local non-dimensional artifical viscosity
         /// </summary>
         /// <remarks>
