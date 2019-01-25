@@ -147,7 +147,7 @@ namespace BoSSS.Solution.Control {
         /// that are used to construct the accelerated solution.
         /// </summary>
         [DataMember]
-        public int MaxKrylovDim=10;
+        public int MaxKrylovDim=30;
 
         /// <summary>
         /// If iterative solvers are used, the maximum number of iterations.
@@ -178,7 +178,7 @@ namespace BoSSS.Solution.Control {
         /// Sets the number of Multigrid levels. Multigrid approach is used to get a Preconditioner for Krylov solvers, e.g. GMRES.
         /// </summary>
         [DataMember]
-        public int NoOfMultigridLevels = 2;
+        public int NoOfMultigridLevels = 1;
 
         //-------------------------
         // These parameters have to be set only, if exp_localPrec is used. They can be deleted, if exp_localPrec is removed.

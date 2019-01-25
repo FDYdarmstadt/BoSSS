@@ -53,6 +53,11 @@ namespace BoSSS.Application.FSI_Solver {
         /// </summary>
         static void Main(string[] args) {
 
+//            System.Threading.Thread.Sleep(5000);
+//            BoSSS.Application.FSI_Solver.TestProgram.Init();
+//            BoSSS.Application.FSI_Solver.TestProgram.TestFlowRotationalCoupling();
+            //Debug.Assert(false);
+
             _Main(args, false, delegate () {
                 var p = new FSI_SolverMain();
                 return p;
