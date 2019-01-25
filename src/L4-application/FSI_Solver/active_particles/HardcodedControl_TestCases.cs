@@ -30,7 +30,7 @@ namespace BoSSS.Application.FSI_Solver
 {
     public class HardcodedControl_TestCases : IBM_Solver.HardcodedTestExamples
     {
-        public static FSI_Control activeRod_noBackroundFlow(string _DbPath = null, int k = 2, double VelXBase = 0.0, double stressM = 1e0, double cellAgg = 0.2, double muA = 1e0, double timestepX = 1e-2)
+        public static FSI_Control activeRod_noBackroundFlow(string _DbPath = null, int k = 2, double VelXBase = 0.0, double stressM = -1e0, double cellAgg = 0.2, double muA = 1e0, double timestepX = 1e-2)
         {
             FSI_Control C = new FSI_Control();
 
@@ -65,8 +65,8 @@ namespace BoSSS.Application.FSI_Solver
                 int q = new int(); // #Cells in x-dircetion + 1
                 int r = new int(); // #Cells in y-dircetion + 1
 
-                q = 10;
-                r = 10;
+                q = 15;
+                r = 15;
 
                 double[] Xnodes = GenericBlas.Linspace(-5 * BaseSize, 5 * BaseSize, q);
                 double[] Ynodes = GenericBlas.Linspace(-5 * BaseSize, 5 * BaseSize, r);
@@ -104,7 +104,7 @@ namespace BoSSS.Application.FSI_Solver
             // Mesh refinement
             // =============================
             C.AdaptiveMeshRefinement = true;
-            C.RefinementLevel = 8;
+            C.RefinementLevel = 2;
             C.maxCurvature = 20;
 
 
@@ -137,7 +137,7 @@ namespace BoSSS.Application.FSI_Solver
                     includeGravity = false,
                     active_P = true,
                     stress_magnitude_P = stressM,
-                    thickness_P = 0.2 * BaseSize,
+                    thickness_P = 1 * BaseSize,
                     length_P = 1 * BaseSize,
                     superEllipsoidExponent = 2,
                     underrelaxationFT_constant = false,// set true if you want to define a constant underrelaxation (not recommended)
@@ -161,7 +161,7 @@ namespace BoSSS.Application.FSI_Solver
 
             // Quadrature rules
             // =============================   
-            C.CutCellQuadratureType = Foundation.XDG.XQuadFactoryHelper.MomentFittingVariants.Saye;
+            C.CutCellQuadratureType = Foundation.XDG.XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes;
 
 
             //Initial Values
@@ -195,7 +195,7 @@ namespace BoSSS.Application.FSI_Solver
             C.LinearSolver.NoOfMultigridLevels = 1;
             C.LinearSolver.MaxSolverIterations = 1000;
             C.LinearSolver.MinSolverIterations = 1;
-            C.ForceAndTorque_ConvergenceCriterion = 1e-4;
+            C.ForceAndTorque_ConvergenceCriterion = 1e-5;
             C.LSunderrelax = 1.0;
             
 

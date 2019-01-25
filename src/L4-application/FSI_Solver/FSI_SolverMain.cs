@@ -314,19 +314,6 @@ namespace BoSSS.Application.FSI_Solver {
 
                                 foreach (Particle p in m_Particles)
                                 {
-                                    // Separating different boundary regions (for active particles)
-                                    double cos_theta;
-                                    // The posterior side of the particle (Neumann boundary)
-                                    if (Math.Cos(p.currentIterAng_P[0]) * (X[0] - p.currentIterPos_P[0][0]) + Math.Sin(p.currentIterAng_P[0]) * (X[1] - p.currentIterPos_P[0][1]) < 0 && Math.Cos(p.currentIterAng_P[0]) * (X[0] - p.currentIterPos_P[0][0]) + Math.Sin(p.currentIterAng_P[0]) * (X[1] - p.currentIterPos_P[0][1]) > -0.25)
-                                    {
-                                        cos_theta = -1;//(Math.Cos(p.currentIterAng_P[0]) * (X[0] - p.currentIterPos_P[0][0]) + Math.Sin(p.currentIterAng_P[0]) * (X[1] - p.currentIterPos_P[0][1])) / (Math.Sqrt((X[0] - p.currentIterPos_P[0][0]).Pow2() + (X[1] - p.currentIterPos_P[0][1]).Pow2()));
-                                    }
-                                    // The anterior side of the particle (Dirichlet boundary)
-                                    else
-                                    {
-                                        cos_theta = 0;
-                                    }
-
                                     // which particle?
                                     bool containsParticle;
                                     if (m_Particles.Count == 1)
@@ -338,6 +325,18 @@ namespace BoSSS.Application.FSI_Solver {
                                     // active particles
                                     if (containsParticle && p.active_P == true)
                                     {
+                                        // Separating different boundary regions (for active particles)
+                                        double cos_theta;
+                                        // The posterior side of the particle (Neumann boundary)
+                                        if (Math.Cos(p.currentIterAng_P[0]) * (X[0] - p.currentIterPos_P[0][0]) + Math.Sin(p.currentIterAng_P[0]) * (X[1] - p.currentIterPos_P[0][1]) < 0 && Math.Cos(p.currentIterAng_P[0]) * (X[0] - p.currentIterPos_P[0][0]) + Math.Sin(p.currentIterAng_P[0]) * (X[1] - p.currentIterPos_P[0][1]) > -0.25)
+                                        {
+                                            cos_theta = -1;//(Math.Cos(p.currentIterAng_P[0]) * (X[0] - p.currentIterPos_P[0][0]) + Math.Sin(p.currentIterAng_P[0]) * (X[1] - p.currentIterPos_P[0][1])) / (Math.Sqrt((X[0] - p.currentIterPos_P[0][0]).Pow2() + (X[1] - p.currentIterPos_P[0][1]).Pow2()));
+                                        }
+                                        // The anterior side of the particle (Dirichlet boundary)
+                                        else
+                                        {
+                                            cos_theta = 0;
+                                        }
                                         result[0] = p.currentIterVel_P[0][0];
                                         result[1] = p.currentIterVel_P[0][1];
                                         result[2] = p.currentIterRot_P[0];
@@ -746,7 +745,7 @@ namespace BoSSS.Application.FSI_Solver {
 
                             xPos = m_Particles[0].currentIterPos_P[0][0];
                             yPos = m_Particles[0].currentIterPos_P[0][1];
-                            ang = m_Particles[0].currentIterRot_P[0];
+                            ang = m_Particles[0].currentIterAng_P[0];
 
 
                             MPItransVelocity = m_Particles[0].currentIterVel_P[0];
