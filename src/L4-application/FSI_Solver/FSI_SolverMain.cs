@@ -59,7 +59,6 @@ namespace BoSSS.Application.FSI_Solver {
             });
         }
         #endregion
-
         #region field instantiation
         // =============================
         /// <summary>
@@ -196,9 +195,9 @@ namespace BoSSS.Application.FSI_Solver {
                                         // Separating different boundary regions (for active particles)
                                         double cos_theta;
                                         // The posterior side of the particle (Neumann boundary)
-                                        if (Math.Cos(p.currentIterAng_P[0]) * (X[0] - p.currentIterPos_P[0][0]) + Math.Sin(p.currentIterAng_P[0]) * (X[1] - p.currentIterPos_P[0][1]) <= 1e-8)
+                                        if (Math.Cos(p.currentIterAng_P[0]) * (X[0] - p.currentIterPos_P[0][0]) + Math.Sin(p.currentIterAng_P[0]) * (X[1] - p.currentIterPos_P[0][1]) < 1e-8)// && Math.Cos(p.currentIterAng_P[0]) * (X[0] - p.currentIterPos_P[0][0]) + Math.Sin(p.currentIterAng_P[0]) * (X[1] - p.currentIterPos_P[0][1]) > -0.25)
                                         {
-                                            cos_theta = -1;// (Math.Cos(p.currentIterAng_P[0]) * (X[0] - p.currentIterPos_P[0][0]) + Math.Sin(p.currentIterAng_P[0]) * (X[1] - p.currentIterPos_P[0][1])) / (Math.Sqrt((X[0] - p.currentIterPos_P[0][0]).Pow2() + (X[1] - p.currentIterPos_P[0][1]).Pow2()));
+                                            cos_theta = -1;//(Math.Cos(p.currentIterAng_P[0]) * (X[0] - p.currentIterPos_P[0][0]) + Math.Sin(p.currentIterAng_P[0]) * (X[1] - p.currentIterPos_P[0][1])) / (Math.Sqrt((X[0] - p.currentIterPos_P[0][0]).Pow2() + (X[1] - p.currentIterPos_P[0][1]).Pow2()));
                                         }
                                         // The anterior side of the particle (Dirichlet boundary)
                                         else
@@ -328,9 +327,9 @@ namespace BoSSS.Application.FSI_Solver {
                                         // Separating different boundary regions (for active particles)
                                         double cos_theta;
                                         // The posterior side of the particle (Neumann boundary)
-                                        if (Math.Cos(p.currentIterAng_P[0]) * (X[0] - p.currentIterPos_P[0][0]) + Math.Sin(p.currentIterAng_P[0]) * (X[1] - p.currentIterPos_P[0][1]) < 0 && Math.Cos(p.currentIterAng_P[0]) * (X[0] - p.currentIterPos_P[0][0]) + Math.Sin(p.currentIterAng_P[0]) * (X[1] - p.currentIterPos_P[0][1]) > -0.25)
+                                        if (Math.Cos(p.currentIterAng_P[0]) * (X[0] - p.currentIterPos_P[0][0]) + Math.Sin(p.currentIterAng_P[0]) * (X[1] - p.currentIterPos_P[0][1]) < 1e-8)// && Math.Cos(p.currentIterAng_P[0]) * (X[0] - p.currentIterPos_P[0][0]) + Math.Sin(p.currentIterAng_P[0]) * (X[1] - p.currentIterPos_P[0][1]) > -0.25)
                                         {
-                                            cos_theta = -1;//(Math.Cos(p.currentIterAng_P[0]) * (X[0] - p.currentIterPos_P[0][0]) + Math.Sin(p.currentIterAng_P[0]) * (X[1] - p.currentIterPos_P[0][1])) / (Math.Sqrt((X[0] - p.currentIterPos_P[0][0]).Pow2() + (X[1] - p.currentIterPos_P[0][1]).Pow2()));
+                                            cos_theta = -1;// (Math.Cos(p.currentIterAng_P[0]) * (X[0] - p.currentIterPos_P[0][0]) + Math.Sin(p.currentIterAng_P[0]) * (X[1] - p.currentIterPos_P[0][1])) / (Math.Sqrt((X[0] - p.currentIterPos_P[0][0]).Pow2() + (X[1] - p.currentIterPos_P[0][1]).Pow2()));
                                         }
                                         // The anterior side of the particle (Dirichlet boundary)
                                         else
@@ -370,6 +369,7 @@ namespace BoSSS.Application.FSI_Solver {
                                         result[4] = 0;
                                         result[5] = 0;
                                         result[6] = p.currentIterAng_P[0];
+                                        result[7] = 0;
                                     }
                                 }
                                 return result;
@@ -1371,11 +1371,12 @@ namespace BoSSS.Application.FSI_Solver {
                     double curv_max = 1.0 / (this.Control.maxCurvature * ((GridData)this.GridData).Cells.h_min[j]);
                     double mean_curv = Math.Abs(this.Curvature.GetMeanValue(j));
                     double curv_thrshld = mean_curv;
-                    if (curv_thrshld > curv_max)
+                    
+                    if (mean_curv > curv_max)
                     {
                         DesiredLevel_j = CurrentLevel + 1;
                     }
-                    else if (curv_thrshld < (curv_max / 2))
+                    else if (mean_curv < (curv_max / 5))
                     {
 
                         DesiredLevel_j = CurrentLevel - 1;
@@ -1383,21 +1384,6 @@ namespace BoSSS.Application.FSI_Solver {
                 }
             }
             else if (LevSetNeighbours.Contains(j) && ((FSI_Control)this.Control).Timestepper_Mode != FSI_Control.TimesteppingMode.MovingMesh)
-            {
-                if (CurrentLevel < ((FSI_Control)Control).RefinementLevel - 1)
-                {
-                    DesiredLevel_j = ((FSI_Control)Control).RefinementLevel - 1;
-                }
-                else if (CurrentLevel > ((FSI_Control)Control).RefinementLevel)
-                {
-                    DesiredLevel_j = CurrentLevel - 1;
-                }
-                else
-                {
-                    DesiredLevel_j = CurrentLevel;
-                }
-            }
-            else if (LevSetNeighboursNeighbours.Contains(j) && ((FSI_Control)this.Control).Timestepper_Mode != FSI_Control.TimesteppingMode.MovingMesh)
             {
                 if (CurrentLevel < ((FSI_Control)Control).RefinementLevel)
                 {
@@ -1412,10 +1398,25 @@ namespace BoSSS.Application.FSI_Solver {
                     DesiredLevel_j = CurrentLevel;
                 }
             }
-            //else if (CurrentLevel > -2 && ((FSI_Control)this.Control).Timestepper_Mode != FSI_Control.TimesteppingMode.MovingMesh)
+            //else if (LevSetNeighboursNeighbours.Contains(j) && ((FSI_Control)this.Control).Timestepper_Mode != FSI_Control.TimesteppingMode.MovingMesh)
             //{
-            //    DesiredLevel_j = CurrentLevel - 1;
+            //    if (CurrentLevel < ((FSI_Control)Control).RefinementLevel)
+            //    {
+            //        DesiredLevel_j = CurrentLevel + 1;
+            //    }
+            //    else if (CurrentLevel > ((FSI_Control)Control).RefinementLevel)
+            //    {
+            //        DesiredLevel_j = CurrentLevel - 1;
+            //    }
+            //    else
+            //    {
+            //        DesiredLevel_j = CurrentLevel;
+            //    }
             //}
+            else if (DesiredLevel_j > 0)
+            {
+                DesiredLevel_j = CurrentLevel - 1;
+            }
 
             return DesiredLevel_j;
         }

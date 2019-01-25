@@ -112,7 +112,8 @@ namespace BoSSS.Application.FSI_Solver
         public int underrelaxationFT_exponent = 0;
         public double underrelaxation_factor = 1;
         public int underrelaxationFT_exponent_max = 0;
-        
+        public double active_force_correction;
+
         /// <summary>
         /// Skip calculation of hydrodynamic force and torque if particles are too close
         /// </summary>
@@ -668,6 +669,7 @@ namespace BoSSS.Application.FSI_Solver
                         UA[i].EvaluateGradient(j0, Len, Ns, Grad_UARes.ExtractSubArrayShallow(-1, -1, i, -1), 0, 1);
                     }
 
+
                     pA.Evaluate(j0, Len, Ns, pARes);
 
                     if (LsTrk.GridDat.SpatialDimension == 2) {
@@ -1046,9 +1048,9 @@ namespace BoSSS.Application.FSI_Solver
                         else
                         {
                             underrelaxation_ok = true;
-                            if (Math.Abs(temp_underR[j] * forces[j]) < forceAndTorque_convergence * 1000 && 1000 * Math.Abs(forces[j]) > averageForce)
+                            if (Math.Abs(temp_underR[j] * forces[j]) < forceAndTorque_convergence * 100 && 100 * Math.Abs(forces[j]) > averageForce)
                             {
-                                temp_underR[j] = forceAndTorque_convergence * 1000;
+                                temp_underR[j] = forceAndTorque_convergence * 100;
                             }
                             if (temp_underR[j] >= 0.9)
                             {
@@ -1071,9 +1073,9 @@ namespace BoSSS.Application.FSI_Solver
                     else
                     {
                         underrelaxation_ok = true;
-                        if (Math.Abs(temp_underR[D] * torque) < forceAndTorque_convergence * 1000 && 1000 * Math.Abs(torque) > averageForce)
+                        if (Math.Abs(temp_underR[D] * torque) < forceAndTorque_convergence * 100 && 100 * Math.Abs(torque) > averageForce)
                         {
-                            temp_underR[D] = forceAndTorque_convergence * 1000;
+                            temp_underR[D] = forceAndTorque_convergence * 100;
                         }
                         if (underrelaxationFT_exponent > -1)
                         {

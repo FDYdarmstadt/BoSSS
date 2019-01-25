@@ -30,7 +30,7 @@ namespace BoSSS.Application.FSI_Solver
 {
     public class HardcodedControl_TestCases : IBM_Solver.HardcodedTestExamples
     {
-        public static FSI_Control activeRod_noBackroundFlow(string _DbPath = null, int k = 2, double VelXBase = 0.0, double stressM = -1e0, double cellAgg = 0.2, double muA = 1e0, double timestepX = 1e-2)
+        public static FSI_Control activeRod_noBackroundFlow(string _DbPath = null, int k = 2, double VelXBase = 0.0, double stressM = 1e0, double cellAgg = 0.2, double muA = 1e0, double timestepX = 1e-3)
         {
             FSI_Control C = new FSI_Control();
 
@@ -65,8 +65,8 @@ namespace BoSSS.Application.FSI_Solver
                 int q = new int(); // #Cells in x-dircetion + 1
                 int r = new int(); // #Cells in y-dircetion + 1
 
-                q = 15;
-                r = 15;
+                q = 20;
+                r = 20;
 
                 double[] Xnodes = GenericBlas.Linspace(-5 * BaseSize, 5 * BaseSize, q);
                 double[] Ynodes = GenericBlas.Linspace(-5 * BaseSize, 5 * BaseSize, r);
@@ -104,8 +104,8 @@ namespace BoSSS.Application.FSI_Solver
             // Mesh refinement
             // =============================
             C.AdaptiveMeshRefinement = true;
-            C.RefinementLevel = 2;
-            C.maxCurvature = 20;
+            C.RefinementLevel = 3;
+            C.maxCurvature = 2;
 
 
             // Boundary conditions
@@ -133,11 +133,11 @@ namespace BoSSS.Application.FSI_Solver
                 C.Particles.Add(new Particle_superEllipsoid(2, 4, new double[] { 0 + 1.5 * d, 0.0 }, startAngl: 45)
                 {
                     radius_P = 1,
-                    rho_P = 1.01,//pg/(mum^3)
+                    rho_P = 10,//pg/(mum^3)
                     includeGravity = false,
                     active_P = true,
                     stress_magnitude_P = stressM,
-                    thickness_P = 1 * BaseSize,
+                    thickness_P = 0.5 * BaseSize,
                     length_P = 1 * BaseSize,
                     superEllipsoidExponent = 2,
                     underrelaxationFT_constant = false,// set true if you want to define a constant underrelaxation (not recommended)
@@ -161,7 +161,7 @@ namespace BoSSS.Application.FSI_Solver
 
             // Quadrature rules
             // =============================   
-            C.CutCellQuadratureType = Foundation.XDG.XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes;
+            C.CutCellQuadratureType = Foundation.XDG.XQuadFactoryHelper.MomentFittingVariants.Saye;
 
 
             //Initial Values
@@ -195,13 +195,13 @@ namespace BoSSS.Application.FSI_Solver
             C.LinearSolver.NoOfMultigridLevels = 1;
             C.LinearSolver.MaxSolverIterations = 1000;
             C.LinearSolver.MinSolverIterations = 1;
-            C.ForceAndTorque_ConvergenceCriterion = 1e-5;
+            C.ForceAndTorque_ConvergenceCriterion = 1e-3;
             C.LSunderrelax = 1.0;
             
 
             // Coupling Properties
             // =============================
-            C.Timestepper_LevelSetHandling = LevelSetHandling.Coupled_Once;
+            C.Timestepper_LevelSetHandling = LevelSetHandling.LieSplitting;
             C.splitting_fully_coupled = true;
             C.max_iterations_fully_coupled = 1000000;
             C.includeRotation = true;
