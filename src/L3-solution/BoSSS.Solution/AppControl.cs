@@ -717,15 +717,18 @@ namespace BoSSS.Solution.Control {
         //    set;
         //}
 
-        //-------------- new solver stuff
-
+        /// <summary>
+        /// Configuration of 'primary' linear solver, respectively preconditioner used for <see cref="NonLinearSolver"/>.
+        /// </summary>
         [DataMember]
-        public LinearSolverConfig LinearSolver= new LinearSolverConfig();
+        public LinearSolverConfig LinearSolver = new LinearSolverConfig();
 
+        /// <summary>
+        /// Configuration of 'primary' nonlinear solver, if used in application
+        /// </summary>
         [DataMember]
         public NonLinearSolverConfig NonLinearSolver = new NonLinearSolverConfig();
 
-        //--------------- end of new stuff
 
         /// <summary>
         /// If true, a redistribution will be attempted BEFORE the first
