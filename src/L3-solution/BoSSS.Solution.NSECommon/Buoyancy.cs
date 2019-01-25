@@ -71,11 +71,13 @@ namespace BoSSS.Solution.NSECommon {
         }
 
         /// <summary>
-        /// Temperature. ????
+        /// Temperature
         /// </summary>
         public override IList<string> ArgumentOrdering {
             get {
-                return new string[] { /*VariableNames.Temperature */};
+                return new string[] {
+                    //VariableNames.Temperature 
+                };
             }
         }
 
@@ -87,7 +89,10 @@ namespace BoSSS.Solution.NSECommon {
 
         public override IList<string> ParameterOrdering {
             get {               
-                return new string[] { VariableNames.Temperature0/*, VariableNames.MassFraction0_0, VariableNames.MassFraction1_0, VariableNames.MassFraction2_0, VariableNames.MassFraction3_0*/ }; }
+                return new string[] { VariableNames.Temperature0
+                    //, VariableNames.MassFraction0_0, VariableNames.MassFraction1_0, VariableNames.MassFraction2_0, VariableNames.MassFraction3_0
+                };
+            }
         }
 
  
