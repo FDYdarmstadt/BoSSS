@@ -20,7 +20,7 @@ using System.Linq;
 using BoSSS.Solution.Control;
 using BoSSS.Foundation.Grid;
 using System.Diagnostics;
-using BoSSS.Solution.Multigrid;
+using BoSSS.Solution.AdvancedSolvers;
 using ilPSP.Utils;
 using BoSSS.Platform.Utils.Geom;
 using BoSSS.Foundation.IO;
@@ -145,14 +145,15 @@ namespace BoSSS.Application.IBM_Solver {
             // misc. solver options
             // ====================
 
-            C.LinearSolve = LinearSolverCodes.classic_mumps;
+            C.LinearSolver.SolverCode = LinearSolverConfig.Code.classic_mumps;
             C.AdvancedDiscretizationOptions.PenaltySafety = 1;
             C.AdvancedDiscretizationOptions.CellAgglomerationThreshold = 0.1;
             C.LevelSetSmoothing = false;
-            C.MaxKrylovDim = 20;
-            C.MaxSolverIterations = 100;
+            C.LinearSolver.MaxKrylovDim = 20;
+            C.LinearSolver.MaxSolverIterations = 100;
+            C.NonLinearSolver.MaxSolverIterations = 100;
             C.VelocityBlockPrecondMode = MultigridOperator.Mode.SymPart_DiagBlockEquilib_DropIndefinite;
-            C.NoOfMultigridLevels = 1;
+            C.LinearSolver.NoOfMultigridLevels = 1;
 
             // Timestepping
             // ============
@@ -176,7 +177,8 @@ namespace BoSSS.Application.IBM_Solver {
 
             // Solver Options
             C.NoOfTimesteps = 100;
-            C.MaxSolverIterations = 50;
+            C.LinearSolver.MaxSolverIterations = 50;
+            C.NonLinearSolver.MaxSolverIterations = 50;
             C.savetodb = false;
             C.ProjectName = "ChannelFlow";
 
@@ -188,9 +190,9 @@ namespace BoSSS.Application.IBM_Solver {
             C.SrcPressureGrad = new double[] { -0.1, 0 };
 
             if (pardiso) {
-                C.LinearSolve = LinearSolverCodes.classic_pardiso;
+                C.LinearSolver.SolverCode = LinearSolverConfig.Code.classic_pardiso;
             } else {
-                C.LinearSolve = LinearSolverCodes.classic_mumps;
+                C.LinearSolver.SolverCode = LinearSolverConfig.Code.classic_mumps;
             }
             C.Timestepper_Scheme = IBM_Control.TimesteppingScheme.ImplicitEuler;
             double dt = 1E20;

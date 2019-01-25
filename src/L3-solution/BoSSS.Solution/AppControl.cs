@@ -48,7 +48,7 @@ namespace BoSSS.Solution.Control {
         virtual public Type GetSolverType() {
             throw new NotImplementedException();
         }
-
+        
         /// <summary>
         /// The generating code as text representation, this string can be used to create the control file
         /// by <see cref="FromCode(string, Type, out AppControl, out AppControl[])"/>
@@ -88,7 +88,7 @@ namespace BoSSS.Solution.Control {
             this.Tags = new List<string>();
             this.m_InitialValues_Evaluators = new Dictionary<string, Func<double[], double>>();
             this.m_InitialValues = new Dictionary<string, IBoundaryAndInitialData>();
-            this.NoOfMultigridLevels = 0;
+            this.LinearSolver.NoOfMultigridLevels = 0;
         }
 
         [Serializable]
@@ -560,6 +560,14 @@ namespace BoSSS.Solution.Control {
         public int saveperiod = 1;
 
         /// <summary>
+        /// A number of previous timesteps which are always saved in case of a simulation crash.
+        /// </summary>
+        [DataMember]
+        public int rollingSaves = 0;
+
+
+
+        /// <summary>
         /// lower threshold for the time-step
         /// </summary>
         /// <remarks>
@@ -700,14 +708,24 @@ namespace BoSSS.Solution.Control {
         [DataMember]
         public bool Paramstudy_ContinueOnError = true;
 
-        /// <summary>
-        /// Number of aggregation multi-grid levels, <see cref="Application{T}.MultigridLevels"/>.
-        /// </summary>
+        ///// <summary>
+        ///// Number of aggregation multi-grid levels, <see cref="Application{T}.MultigridLevels"/>.
+        ///// </summary>
+        //[DataMember]
+        //public int NoOfMultigridLevels {
+        //    get;
+        //    set;
+        //}
+
+        //-------------- new solver stuff
+
         [DataMember]
-        public int NoOfMultigridLevels {
-            get;
-            set;
-        }
+        public LinearSolverConfig LinearSolver= new LinearSolverConfig();
+
+        [DataMember]
+        public NonLinearSolverConfig NonLinearSolver = new NonLinearSolverConfig();
+
+        //--------------- end of new stuff
 
         /// <summary>
         /// If true, a redistribution will be attempted BEFORE the first

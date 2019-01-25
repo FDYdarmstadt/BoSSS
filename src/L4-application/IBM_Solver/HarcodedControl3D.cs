@@ -21,7 +21,7 @@ using BoSSS.Platform;
 using BoSSS.Solution.Control;
 using BoSSS.Foundation.Grid.RefElements;
 using System.Diagnostics;
-using BoSSS.Solution.Multigrid;
+using BoSSS.Solution.AdvancedSolvers;
 using ilPSP.Utils;
 using BoSSS.Foundation.Grid.Classic;
 using BoSSS.Foundation.Grid;
@@ -279,10 +279,11 @@ namespace BoSSS.Application.IBM_Solver {
 
                 C.LevelSetSmoothing = false;
                 //C.option_solver = "direct";
-                C.MaxKrylovDim = 20;
-                C.MaxSolverIterations = 50;
+                C.LinearSolver.MaxKrylovDim = 20;
+                C.LinearSolver.MaxSolverIterations = 50;
+                C.NonLinearSolver.MaxSolverIterations = 50;
                 C.VelocityBlockPrecondMode = MultigridOperator.Mode.SymPart_DiagBlockEquilib_DropIndefinite;
-                C.NoOfMultigridLevels = 0;
+                C.LinearSolver.NoOfMultigridLevels = 0;
 
                 // Timestepping
                 // ============
@@ -631,13 +632,14 @@ namespace BoSSS.Application.IBM_Solver {
             C.AdvancedDiscretizationOptions.PenaltySafety = 4;
             C.AdvancedDiscretizationOptions.CellAgglomerationThreshold = 0.2;
             C.LevelSetSmoothing = false;
-            C.MaxKrylovDim = 50;
-            C.MaxSolverIterations = 50;
+            C.LinearSolver.MaxKrylovDim = 50;
+            C.LinearSolver.MaxSolverIterations = 50;
+            C.NonLinearSolver.MaxSolverIterations = 50;
             C.VelocityBlockPrecondMode = MultigridOperator.Mode.SymPart_DiagBlockEquilib_DropIndefinite;
-            C.NonlinearSolve = NonlinearSolverCodes.NewtonGMRES;
-            C.LinearSolve = LinearSolverCodes.exp_schwarz_directcoarse_overlap;
-            C.Solver_ConvergenceCriterion = 1E-6;
-            C.NoOfMultigridLevels = 2;
+            C.NonLinearSolver.SolverCode = NonLinearSolverConfig.Code.NewtonGMRES;
+            C.LinearSolver.SolverCode = LinearSolverConfig.Code.exp_schwarz_directcoarse_overlap;
+            C.LinearSolver.ConvergenceCriterion = 1E-6;
+            C.LinearSolver.NoOfMultigridLevels = 2;
 
             // Timestepping
             // ============
@@ -974,13 +976,15 @@ namespace BoSSS.Application.IBM_Solver {
             C.AdvancedDiscretizationOptions.PenaltySafety = 4;
             C.AdvancedDiscretizationOptions.CellAgglomerationThreshold = 0.2;
             C.LevelSetSmoothing = false;
-            C.MaxKrylovDim = 30;
-            C.MaxSolverIterations = 50;
+            C.LinearSolver.MaxKrylovDim = 30;
+            C.LinearSolver.MaxSolverIterations = 50;
+            C.NonLinearSolver.MaxSolverIterations = 50;
             C.VelocityBlockPrecondMode = MultigridOperator.Mode.SymPart_DiagBlockEquilib_DropIndefinite;
-            C.NonlinearSolve = NonlinearSolverCodes.NewtonGMRES;
-            C.LinearSolve = LinearSolverCodes.exp_schwarz_Kcycle_directcoarse_overlap;
-            C.Solver_ConvergenceCriterion = 1E-6;
-            C.NoOfMultigridLevels = 3;
+            C.NonLinearSolver.SolverCode = NonLinearSolverConfig.Code.NewtonGMRES;
+            C.LinearSolver.SolverCode = LinearSolverConfig.Code.exp_schwarz_Kcycle_directcoarse_overlap;
+            C.LinearSolver.ConvergenceCriterion = 1E-6;
+            C.NonLinearSolver.ConvergenceCriterion = 1E-6;
+            C.LinearSolver.NoOfMultigridLevels = 3;
 
             // Timestepping
             // ============
@@ -1000,9 +1004,13 @@ namespace BoSSS.Application.IBM_Solver {
         static public IBM_Control Simple3DTest(int k = 2, int h = 1) {
             IBM_Control C = new IBM_Control();
 
+            C.CutCellQuadratureType = Foundation.XDG.XQuadFactoryHelper.MomentFittingVariants.Classic;
+            C.GridPartType = GridPartType.METIS;
+
             // basic database options
             // ======================
-            C.DbPath = @"\\dc1\userspace\krause\BoSSS_DBs\Sphere3D";
+            //C.DbPath = @"\\dc1\userspace\krause\BoSSS_DBs\Sphere3D";
+            C.DbPath = null;
             C.savetodb = false;
             C.ProjectName = "Sphere3D";
             C.SessionName = "Sphere3D_" + k + "_Re350";
@@ -1150,13 +1158,15 @@ namespace BoSSS.Application.IBM_Solver {
             C.AdvancedDiscretizationOptions.PenaltySafety = 4;
             C.AdvancedDiscretizationOptions.CellAgglomerationThreshold = 0.2;
             C.LevelSetSmoothing = false;
-            C.MaxKrylovDim = 4;
-            C.MaxSolverIterations = 50;
+            C.LinearSolver.MaxKrylovDim = 4;
+            C.LinearSolver.MaxSolverIterations = 50;
+            C.NonLinearSolver.MaxSolverIterations = 50;
             C.VelocityBlockPrecondMode = MultigridOperator.Mode.SymPart_DiagBlockEquilib_DropIndefinite;
-            C.NonlinearSolve = NonlinearSolverCodes.NewtonGMRES;
-            C.LinearSolve = LinearSolverCodes.automatic;
-            C.Solver_ConvergenceCriterion = 1E-6;
-            C.NoOfMultigridLevels = 2;
+            C.NonLinearSolver.SolverCode = NonLinearSolverConfig.Code.NewtonGMRES;
+            C.LinearSolver.SolverCode = LinearSolverConfig.Code.automatic;
+            C.LinearSolver.ConvergenceCriterion = 1E-6;
+            C.NonLinearSolver.ConvergenceCriterion = 1E-6;
+            C.LinearSolver.NoOfMultigridLevels = 2;
 
             // Timestepping
             // ============
@@ -1178,7 +1188,8 @@ namespace BoSSS.Application.IBM_Solver {
 
             // basic database options
             // ======================
-            C.DbPath = @"\\dc1\userspace\krause\BoSSS_DBs\Sphere3D";
+            //C.DbPath = @"\\dc1\userspace\krause\BoSSS_DBs\Sphere3D";
+            C.DbPath = null;
             C.savetodb = false;
             C.ProjectName = "Sphere3D";
             C.SessionName = "Sphere3D_" + k + "_Re350";
@@ -1305,13 +1316,15 @@ namespace BoSSS.Application.IBM_Solver {
             C.AdvancedDiscretizationOptions.PenaltySafety = 4;
             C.AdvancedDiscretizationOptions.CellAgglomerationThreshold = 0.2;
             C.LevelSetSmoothing = false;
-            C.MaxKrylovDim = 100;
-            C.MaxSolverIterations = 10;
+            C.LinearSolver.MaxKrylovDim = 100;
+            C.LinearSolver.MaxSolverIterations = 10;
+            C.NonLinearSolver.MaxSolverIterations = 10;
             C.VelocityBlockPrecondMode = MultigridOperator.Mode.SymPart_DiagBlockEquilib_DropIndefinite;
-            C.NonlinearSolve = NonlinearSolverCodes.NewtonGMRES;
-            C.LinearSolve = LinearSolverCodes.automatic;
-            C.Solver_ConvergenceCriterion = 1E-5;
-            C.NoOfMultigridLevels = 2;
+            C.NonLinearSolver.SolverCode = NonLinearSolverConfig.Code.NewtonGMRES;
+            C.LinearSolver.SolverCode = LinearSolverConfig.Code.automatic;
+            C.LinearSolver.ConvergenceCriterion = 1E-5;
+            C.NonLinearSolver.ConvergenceCriterion = 1E-5;
+            C.LinearSolver.NoOfMultigridLevels = 2;
 
             // Timestepping
             // ============

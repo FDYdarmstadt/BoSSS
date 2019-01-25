@@ -367,15 +367,39 @@ namespace BoSSS.Foundation.IO {
         [NonSerialized]
         TextWriter m_TimeStepLog;
 
+        [NonSerialized]
+        List<Guid> m_Loggedtimesteps = new List<Guid>();
+
         internal void LogTimeStep(Guid g) {
             if (m_TimeStepLog == null) {
                 m_TimeStepLog = Database.Controller.DBDriver.FsDriver
                     .GetNewLog("TimestepLog", this.ID);
             }
 
+            m_Loggedtimesteps.Add(g);
             m_TimeStepLog.WriteLine(g.ToString());
             m_TimeStepLog.Flush();
         }
+
+        /// <summary>
+        /// don't ask
+        /// </summary>
+        public void RemoveTimestep(Guid g) {
+            if (m_TimeStepLog != null) {
+                m_TimeStepLog.Flush();
+                m_TimeStepLog.Close();
+                m_TimeStepLog.Dispose();
+            }
+
+            m_Loggedtimesteps.Remove(g);
+            m_TimeStepLog = Database.Controller.DBDriver.FsDriver.GetNewLog("TimestepLog", this.ID);
+            foreach (var gg in m_Loggedtimesteps) {
+                m_TimeStepLog.WriteLine(gg.ToString());
+            }
+            m_TimeStepLog.Flush();
+        }
+
+
 
         /// <summary>
         /// Saves the current state of this object to the associated
