@@ -46,7 +46,7 @@ namespace BoSSS.Solution.Control {
         /// Returns the type of the solver main class;
         /// </summary>
         virtual public Type GetSolverType() {
-            throw new NotImplementedException();
+            throw new NotImplementedException("forgotten to overwrite 'GetSolverType' for " + this.GetType().FullName);
         }
         
         /// <summary>

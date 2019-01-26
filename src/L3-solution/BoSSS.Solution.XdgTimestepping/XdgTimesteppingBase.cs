@@ -525,8 +525,7 @@ namespace BoSSS.Solution.XdgTimestepping {
                         double L2Res = R.Mapping.Fields[i].L2Norm();
                         m_ResLogger.CustomValue(L2Res, m_ResidualNames[i]);
                     }
-                }
-                else {
+                } else {
 
                     // +++++++++++++++++++++++
                     // un-transformed residual
@@ -538,13 +537,12 @@ namespace BoSSS.Solution.XdgTimestepping {
                         double L2Res = 0.0;
 
                         foreach (int idx in VarIdx[i])
-                            L2Res += currentRes[idx-Mgop.Mapping.i0].Pow2();
+                            L2Res += currentRes[idx - Mgop.Mapping.i0].Pow2();
                         L2Res = L2Res.MPISum().Sqrt(); // would be better to do the MPISum for all L2Res together,
                                                        //                                but this implementation is anyway inefficient....
 
                         m_ResLogger.CustomValue(L2Res, m_ResidualNames[i]);
                     }
-
                 }
 
                 if (Config_LevelSetHandling == LevelSetHandling.Coupled_Iterative) {
@@ -554,17 +552,14 @@ namespace BoSSS.Solution.XdgTimestepping {
                 m_ResLogger.NextIteration(true);
             }
         }
-
-
-
+        
         public double m_LastLevelSetResidual;
 
         protected bool LevelSetConvergenceReached() {
 
             return (m_LastLevelSetResidual < Config_LevelSetConvergenceCriterion);
         }
-
-
+        
         /// <summary>
         /// Sets <see cref="Config_MultigridOperator"/> to a default configuration.
         /// </summary>
