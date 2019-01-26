@@ -36,6 +36,13 @@ namespace BoSSS.Application.Rheology {
             base.NoOfMultigridLevels = 1;
         }
 
+        /// <summary>
+        /// 
+        /// </summary>
+        public override Type GetSolverType() {
+            return typeof(Rheology);
+        }
+
         // CONSTITUTIVE EQUATIONS
         //_____________________________________________________________________________________________
         // Reynoldsnumber of System (Re= rho * U * L / eta_0)
