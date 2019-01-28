@@ -46,6 +46,13 @@ namespace BoSSS.Application.Rheology {
             base.NonLinearSolver.UnderRelax = 1.0; //UnderRelax
         }
 
+        /// <summary>
+        /// 
+        /// </summary>
+        public override Type GetSolverType() {
+            return typeof(Rheology);
+        }
+
         // CONSTITUTIVE EQUATIONS
         //_____________________________________________________________________________________________
         // Reynoldsnumber of System (Re= rho * U * L / eta_0)

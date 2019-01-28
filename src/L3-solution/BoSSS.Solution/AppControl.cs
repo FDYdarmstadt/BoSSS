@@ -46,7 +46,7 @@ namespace BoSSS.Solution.Control {
         /// Returns the type of the solver main class;
         /// </summary>
         virtual public Type GetSolverType() {
-            throw new NotImplementedException();
+            throw new NotImplementedException("forgotten to overwrite 'GetSolverType' for " + this.GetType().FullName);
         }
         
         /// <summary>
@@ -560,6 +560,14 @@ namespace BoSSS.Solution.Control {
         public int saveperiod = 1;
 
         /// <summary>
+        /// A number of previous timesteps which are always saved in case of a simulation crash.
+        /// </summary>
+        [DataMember]
+        public int rollingSaves = 0;
+
+
+
+        /// <summary>
         /// lower threshold for the time-step
         /// </summary>
         /// <remarks>
@@ -709,15 +717,18 @@ namespace BoSSS.Solution.Control {
         //    set;
         //}
 
-        //-------------- new solver stuff
-
+        /// <summary>
+        /// Configuration of 'primary' linear solver, respectively preconditioner used for <see cref="NonLinearSolver"/>.
+        /// </summary>
         [DataMember]
-        public LinearSolverConfig LinearSolver= new LinearSolverConfig();
+        public LinearSolverConfig LinearSolver = new LinearSolverConfig();
 
+        /// <summary>
+        /// Configuration of 'primary' nonlinear solver, if used in application
+        /// </summary>
         [DataMember]
         public NonLinearSolverConfig NonLinearSolver = new NonLinearSolverConfig();
 
-        //--------------- end of new stuff
 
         /// <summary>
         /// If true, a redistribution will be attempted BEFORE the first

@@ -58,6 +58,16 @@ namespace BoSSS.Foundation {
     public class CoordinateMapping : UnsetteledCoordinateMapping, IList<DGField> {
 
         /// <summary>
+        /// Constructs an empty mapping.
+        /// </summary>
+        public CoordinateMapping(Grid.IGridData grd)
+            : base(grd) //
+        {
+            m_Fields = new DGField[0];
+        }
+
+
+        /// <summary>
         /// clears all DG fields in the mapping
         /// </summary>
         public void Clear() {

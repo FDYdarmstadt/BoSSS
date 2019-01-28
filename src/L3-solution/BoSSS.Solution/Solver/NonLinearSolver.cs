@@ -32,6 +32,7 @@ namespace BoSSS.Solution.Control {
             NewtonGMRES = 0,
 
             /// <summary>
+            /// The bald guy from the Enterprise.
             /// Picard fixpoint solver (<see cref="BoSSS.Solution.AdvancedSolvers.FixpointIterator"/>) with linear solver (<see cref="LinearSolverConfig.Code"/>) for the linearized equation system
             /// </summary>
             Picard = 1,
