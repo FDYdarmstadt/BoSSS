@@ -112,7 +112,7 @@ namespace BoSSS.Foundation.SpecFEM {
                         MtxM2N[iKref].gemv(alpha, NodalCoordinates, 0.0, InterCoordinates);
 
                         var OnbTrafo = gdat.ChefBasis.OrthonormalizationTrafo.GetValue_Cell(j, 1, pDeg).ExtractSubArrayShallow(0, -1, -1);
-                        //OnbTrafo.gemv(1.0, InterCoordinates, 0.0, ModalCoordinates);
+                        //OnbTrafo.GetInverse().gemv(1.0, InterCoordinates, 0.0, ModalCoordinates);
                         OnbTrafo.Solve(ModalCoordinates, InterCoordinates);
 
                     }
@@ -195,16 +195,19 @@ namespace BoSSS.Foundation.SpecFEM {
 
             //var multiplicity = new int[this.m_Basis.NoOfLocalNodes];
 
-            int J = m_Basis.GridDat.Cells.NoOfLocalUpdatedCells;
-            var Trafo = m_Basis.GridDat.ChefBasis.Scaling;
+            var gdat = m_Basis.GridDat;
+            int J = gdat.Cells.NoOfLocalUpdatedCells;
+            var Trafo = gdat.ChefBasis.Scaling;
             var C2N = m_Basis.CellNode_To_Node;
             var MtxN2M = m_Basis.m_Nodal2Modal;
-            var CellData = this.Basis.GridDat.Cells;
+            var CellData = gdat.Cells;
 
             int[] _K = m_Basis.NodesPerCell;
             int L = m_Basis.ContainingDGBasis.Length;
+            int pDeg = m_Basis.ContainingDGBasis.Degree;
             double[][] _NodalCoordinates = _K.Select(K => new double[K]).ToArray();
             double[] ModalCoordinates = new double[L];
+            double[] IntermCoordinates = new double[L];
 
 
             for (int j = 0; j < J; j++) { // loop over cells...
@@ -218,11 +221,15 @@ namespace BoSSS.Foundation.SpecFEM {
                 for (int l = 0; l < Lmin; l++)
                     ModalCoordinates[l] = DGField.Coordinates[j, l];
 
-
                 // transform
                 DGField.Coordinates.GetRow(j, ModalCoordinates);
-                MtxN2M[iKref].gemv(alpha * Trafo[j], ModalCoordinates, 0.0, NodalCoordinates);
-
+                if (CellData.IsCellAffineLinear(j)) {
+                    MtxN2M[iKref].gemv(alpha * Trafo[j], ModalCoordinates, 0.0, NodalCoordinates);
+                } else {
+                    var OnbTrafo = gdat.ChefBasis.OrthonormalizationTrafo.GetValue_Cell(j, 1, pDeg).ExtractSubArrayShallow(0, -1, -1);
+                    OnbTrafo.gemv(alpha, ModalCoordinates, 0.0, IntermCoordinates);
+                    MtxN2M[iKref].gemv(1.0, IntermCoordinates, 0.0, NodalCoordinates);
+                }
 
                 // collect coordinates for cell 'j':
                 for (int k = 0; k < K; k++) {

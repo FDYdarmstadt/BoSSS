@@ -44,11 +44,11 @@ namespace BoSSS.Application.Rheology
             RheologyControl C = new RheologyControl();
 
             //Solver Options
-            C.NoOfTimesteps = 5;
+            C.NoOfTimesteps = 1;
             C.savetodb = false;
             C.DbPath = path;
             C.ProjectName = "Channel";
-            C.MaxIter = 10;
+            C.MaxIter = 30;
             C.MinIter = 3;
             C.ConvCrit = 1E-10;
             C.dt = 0.1;
@@ -73,9 +73,9 @@ namespace BoSSS.Application.Rheology
             C.OperatorMatrixAnalysis = false;
             C.SkipSolveAndEvaluateResidual = false;
             C.SetInitialConditions = true;
-            C.SetInitialPressure = false;
+            C.SetInitialPressure = true;
             C.SetParamsAnalyticalSol = false;
-            C.ComputeL2Error = true;
+            C.ComputeL2Error = false;
             C.GravitySource = false;
             C.GravityX = (X, t) => 1;
             C.GravityY = (X, t) => 0;
@@ -83,10 +83,10 @@ namespace BoSSS.Application.Rheology
             //Physical Params
             C.Stokes = false;
             C.FixedStreamwisePeriodicBC = false;
-            C.beta = 0.5;
+            C.beta = 0.59;
             C.Reynolds = 1;
             C.Weissenberg = 1.0; //aim Weissenberg number!
-            C.RaiseWeissenberg = true;
+            C.RaiseWeissenberg = false;
             C.WeissenbergIncrement = 0.1;
 
             //Grid Params
@@ -110,7 +110,7 @@ namespace BoSSS.Application.Rheology
             Func<double[], double, double> VelocityXfunction = (X, t) => 1 - (X[1] * X[1]);
             Func<double[], double, double> VelocityYfunction = (X, t) => 0;
             Func<double[], double, double> Pressurefunction = (X, t) => 2* C.Reynolds * (20 - X[0]);
-            Func<double[], double, double> StressXXfunction = (X, t) => 2 * C.Weissenberg * (1 - C.beta) * (((-2 * X[1])) * ((-2 * X[1])));
+            Func<double[], double, double> StressXXfunction = (X, t) => 0;// 2  * (1 - C.beta) * (((-2 * X[1])) * ((-2 * X[1])));
             Func<double[], double, double> StressXYfunction = (X, t) => (1 - C.beta) * (-2 * X[1]);
             Func<double[], double, double> StressYYfunction = (X, t) => (0.0);
 
