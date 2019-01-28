@@ -369,7 +369,6 @@ namespace BoSSS.Application.FSI_Solver {
                                         result[4] = 0;
                                         result[5] = 0;
                                         result[6] = p.currentIterAng_P[0];
-                                        result[7] = 0;
                                     }
                                 }
                                 return result;
