@@ -1040,7 +1040,7 @@ namespace BoSSS.Application.FSI_Solver
                     underrelaxationFT_exponent = 0;
                     for (int i = 0; underrelaxation_ok == false; i++)
                     {
-                        if (Math.Abs(temp_underR[j] * forces[j]) > 0.5 * Math.Abs(currentIterForces_P[0][j]))
+                        if (Math.Abs(temp_underR[j] * forces[j]) > 0.9 * Math.Abs(currentIterForces_P[0][j]))
                         {
                             underrelaxationFT_exponent -= 1;
                             temp_underR[j] = underrelaxation_factor * Math.Pow(10, underrelaxationFT_exponent);
@@ -1048,9 +1048,9 @@ namespace BoSSS.Application.FSI_Solver
                         else
                         {
                             underrelaxation_ok = true;
-                            if (Math.Abs(temp_underR[j] * forces[j]) < forceAndTorque_convergence * 100 && 100 * Math.Abs(forces[j]) > averageForce)
+                            if (Math.Abs(temp_underR[j] * forces[j]) < forceAndTorque_convergence * 1000 && 100 * Math.Abs(forces[j]) > averageForce)
                             {
-                                temp_underR[j] = forceAndTorque_convergence * 100;
+                                temp_underR[j] = forceAndTorque_convergence * 1000;
                             }
                             if (temp_underR[j] >= 0.9)
                             {
@@ -1065,7 +1065,7 @@ namespace BoSSS.Application.FSI_Solver
                 underrelaxationFT_exponent = 0;
                 for (int i = 0; underrelaxation_ok == false; i++)
                 {
-                    if (Math.Abs(temp_underR[D] * torque) > 0.5 * Math.Abs(currentIterTorque_P[0]))
+                    if (Math.Abs(temp_underR[D] * torque) > 0.9 * Math.Abs(currentIterTorque_P[0]))
                     {
                         underrelaxationFT_exponent -= 1;
                         temp_underR[D] = underrelaxation_factor * Math.Pow(10, underrelaxationFT_exponent);
@@ -1073,9 +1073,9 @@ namespace BoSSS.Application.FSI_Solver
                     else
                     {
                         underrelaxation_ok = true;
-                        if (Math.Abs(temp_underR[D] * torque) < forceAndTorque_convergence * 100 && 100 * Math.Abs(torque) > averageForce)
+                        if (Math.Abs(temp_underR[D] * torque) < forceAndTorque_convergence * 1000 && 100 * Math.Abs(torque) > averageForce)
                         {
-                            temp_underR[D] = forceAndTorque_convergence * 100;
+                            temp_underR[D] = forceAndTorque_convergence * 1000;
                         }
                         if (underrelaxationFT_exponent > -1)
                         {

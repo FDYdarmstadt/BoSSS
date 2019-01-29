@@ -1357,51 +1357,51 @@ namespace BoSSS.Application.FSI_Solver {
         /// 
         int LevelIndicator(int j, int CurrentLevel)
         {
-            var LevSetCells = LsTrk.Regions.GetCutCellMask();
-            var LevSetNeighbours = LsTrk.Regions.GetNearFieldMask(1);
-            var LevSetNeighboursNeighbours = LevSetNeighbours.AllNeighbourCells();
-        //    var LevSetNeighboursNeighboursNeighbours = LevSetNeighbours.AllNeighbourCells();
+             var LevSetCells = LsTrk.Regions.GetCutCellMask();
+             var LevSetNeighbours = LsTrk.Regions.GetNearFieldMask(1);
+            //    var LevSetNeighboursNeighbours = LevSetNeighbours.AllNeighbourCells();
+            ////    var LevSetNeighboursNeighboursNeighbours = LevSetNeighbours.AllNeighbourCells();
 
-            int DesiredLevel_j = 0;
-            if (LevSetCells.Contains(j))
-            {
-                if (CurrentLevel < ((FSI_Control)Control).RefinementLevel)
-                {
-                    DesiredLevel_j = ((FSI_Control)Control).RefinementLevel;
-                }
+                int DesiredLevel_j = 0;
+            //    if (LevSetCells.Contains(j))
+            //    {
+            //        if (CurrentLevel < ((FSI_Control)Control).RefinementLevel)
+            //        {
+            //            DesiredLevel_j = ((FSI_Control)Control).RefinementLevel;
+            //        }
 
-                else if (((FSI_Control)this.Control).Timestepper_Mode != FSI_Control.TimesteppingMode.MovingMesh)
-                {
-                    double curv_max = 1.0 / (this.Control.maxCurvature * ((GridData)this.GridData).Cells.h_min[j]);
-                    double mean_curv = Math.Abs(this.Curvature.GetMeanValue(j));
-                    double curv_thrshld = mean_curv;
-                    
-                    if (mean_curv > curv_max)
-                    {
-                        DesiredLevel_j = CurrentLevel + 1;
-                    }
-                    else if (mean_curv < (curv_max / 5))
-                    {
+            //        //else if (((FSI_Control)this.Control).Timestepper_Mode != FSI_Control.TimesteppingMode.MovingMesh)
+            //        //{
+            //        //    double curv_max = 1.0 / (this.Control.maxCurvature * ((GridData)this.GridData).Cells.h_min[j]);
+            //        //    double mean_curv = Math.Abs(this.Curvature.GetMeanValue(j));
+            //        //    double curv_thrshld = mean_curv;
 
-                        DesiredLevel_j = CurrentLevel - 1;
-                    }
-                }
-            }
-            else if (LevSetNeighbours.Contains(j) && ((FSI_Control)this.Control).Timestepper_Mode != FSI_Control.TimesteppingMode.MovingMesh)
-            {
-                if (CurrentLevel < ((FSI_Control)Control).RefinementLevel)
-                {
-                    DesiredLevel_j = CurrentLevel + 1;
-                }
-                else if (CurrentLevel > ((FSI_Control)Control).RefinementLevel)
-                {
-                    DesiredLevel_j = CurrentLevel - 1;
-                }
-                else
-                {
-                    DesiredLevel_j = CurrentLevel;
-                }
-            }
+            //        //    if (mean_curv > curv_max)
+            //        //    {
+            //        //        DesiredLevel_j = CurrentLevel + 1;
+            //        //    }
+            //        //    else if (mean_curv < (curv_max / 5))
+            //        //    {
+
+            //        //        DesiredLevel_j = CurrentLevel - 1;
+            //        //    }
+            //        //}
+            //    }
+            //else if (LevSetNeighbours.Contains(j) && ((FSI_Control)this.Control).Timestepper_Mode != FSI_Control.TimesteppingMode.MovingMesh)
+            //{
+            //    if (CurrentLevel < ((FSI_Control)Control).RefinementLevel)
+            //    {
+            //        DesiredLevel_j = CurrentLevel + 1;
+            //    }
+            //    else if (CurrentLevel > ((FSI_Control)Control).RefinementLevel)
+            //    {
+            //        DesiredLevel_j = CurrentLevel - 1;
+            //    }
+            //    else
+            //    {
+            //        DesiredLevel_j = CurrentLevel;
+            //    }
+            //}
             //else if (LevSetNeighboursNeighbours.Contains(j) && ((FSI_Control)this.Control).Timestepper_Mode != FSI_Control.TimesteppingMode.MovingMesh)
             //{
             //    if (CurrentLevel < ((FSI_Control)Control).RefinementLevel)
@@ -1417,9 +1417,19 @@ namespace BoSSS.Application.FSI_Solver {
             //        DesiredLevel_j = CurrentLevel;
             //    }
             //}
-            else if (DesiredLevel_j > 0)
+            //else if (DesiredLevel_j > 0)
+            //{
+            //    DesiredLevel_j = CurrentLevel - 1;
+            //}
+
+            //return DesiredLevel_j
+            if (LevSetCells.Contains(j))
             {
-                DesiredLevel_j = CurrentLevel - 1;
+                DesiredLevel_j = ((FSI_Control)Control).RefinementLevel;
+            }
+            else if (LevSetNeighbours.Contains(j))
+            {
+                DesiredLevel_j = ((FSI_Control)Control).RefinementLevel;
             }
 
             return DesiredLevel_j;
