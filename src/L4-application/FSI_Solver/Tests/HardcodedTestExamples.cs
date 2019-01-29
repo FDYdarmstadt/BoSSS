@@ -30,10 +30,10 @@ using BoSSS.Foundation.IO;
 using BoSSS.Foundation.Grid.Classic;
 using BoSSS.Solution.XdgTimestepping;
 
-namespace BoSSS.Application.FSI_Solver
-{
-    public class HardcodedTestExamples 
-    {
+namespace BoSSS.Application.FSI_Solver {
+     public class HardcodedTestExamples {
+     
+
         public static FSI_Control ParticleInShearFlow(string _DbPath = null, int k = 2, double VelXBase = 0.0)
         {
             FSI_Control C = new FSI_Control();
@@ -49,8 +49,38 @@ namespace BoSSS.Application.FSI_Solver
             C.Tags.Add("with immersed boundary method");
 
             // DG degrees
-            // =============================
-            C.SetDGdegree(k);
+            // ==========
+
+            C.FieldOptions.Add("VelocityX", new FieldOpts()
+            {
+                Degree = k,
+                SaveToDB = FieldOpts.SaveToDBOpt.TRUE
+            });
+            C.FieldOptions.Add("VelocityY", new FieldOpts()
+            {
+                Degree = k,
+                SaveToDB = FieldOpts.SaveToDBOpt.TRUE
+            });
+            C.FieldOptions.Add("Pressure", new FieldOpts()
+            {
+                Degree = k - 1,
+                SaveToDB = FieldOpts.SaveToDBOpt.TRUE
+            });
+            C.FieldOptions.Add("PhiDG", new FieldOpts()
+            {
+                Degree = 2,
+                SaveToDB = FieldOpts.SaveToDBOpt.TRUE
+            });
+            C.FieldOptions.Add("Phi", new FieldOpts()
+            {
+                Degree = 2,
+                SaveToDB = FieldOpts.SaveToDBOpt.TRUE
+            });
+            C.FieldOptions.Add("Curvature", new FieldOpts()
+            {
+                Degree = 2,
+                SaveToDB = FieldOpts.SaveToDBOpt.TRUE
+            });
 
             // grid and boundary conditions
             // ============================
@@ -91,7 +121,7 @@ namespace BoSSS.Application.FSI_Solver
             // ==============
             // Coupling Properties
             //C.LevelSetMovement = "coupled";
-            C.Timestepper_LevelSetHandling = LevelSetHandling.LieSplitting;
+            C.Timestepper_LevelSetHandling = LevelSetHandling.Coupled_Once;
             C.includeTranslation = false;
             C.includeRotation = true;
 
@@ -137,12 +167,13 @@ namespace BoSSS.Application.FSI_Solver
 
             // misc. solver options
             // ====================
-            C.AdvancedDiscretizationOptions.PenaltySafety = 4;
+            C.AdvancedDiscretizationOptions.PenaltySafety = 1;
             C.AdvancedDiscretizationOptions.CellAgglomerationThreshold = 0.1;
             C.LevelSetSmoothing = false;
-            C.LinearSolver.MaxSolverIterations = 10000;
+            C.LinearSolver.SolverCode = LinearSolverConfig.Code.classic_pardiso;
+            C.LinearSolver.MaxSolverIterations = 100;
             C.LinearSolver.MinSolverIterations = 1;
-            C.NonLinearSolver.MaxSolverIterations = 10000;
+            C.NonLinearSolver.MaxSolverIterations = 100;
             C.NonLinearSolver.MinSolverIterations = 1;
             C.LinearSolver.NoOfMultigridLevels = 1;
 

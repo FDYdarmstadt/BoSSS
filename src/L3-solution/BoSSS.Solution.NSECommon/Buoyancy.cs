@@ -65,7 +65,7 @@ namespace BoSSS.Solution.NSECommon {
             //double rho = EoS.GetDensity(U[0]);
             double rho = EoS.GetDensity(parameters);
 
-            src =  -1.0 / (Froude * Froude) * rho * GravityDirection[SpatialComponent]; // minus sign because it is in the RHS
+            src =  1.0 / (Froude * Froude) * rho * GravityDirection[SpatialComponent]; // minus sign because it is in the RHS... or plus???
 
             return src;
         }
