@@ -21,8 +21,7 @@ namespace BoSSS.Platform {
 
 #pragma warning disable 1591
     /// <summary>
-    /// Some parts of the GNU scientific library which are used by certain
-    /// parts of BoSSS
+    /// Some parts of the GNU scientific library which are used by certain parts of BoSSS
     /// </summary>
     public class GSL {
 

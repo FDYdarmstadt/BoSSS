@@ -20,7 +20,6 @@ using BoSSS.Foundation.Grid;
 using BoSSS.Platform;
 using BoSSS.Solution;
 using BoSSS.Solution.Queries;
-using BoSSS.Solution.Solvers;
 using ilPSP.LinSolvers;
 using System.Globalization;
 using ilPSP.Tracing;
@@ -175,7 +174,7 @@ namespace BoSSS.Application.ipViscosity {
         
         IncompressibleBoundaryCondMap BcMap;
 
-        protected override GridCommons CreateOrLoadGrid() {
+        protected override IGrid CreateOrLoadGrid() {
             GridCommons grd = grid.GetGrid();
             return grd;
         }

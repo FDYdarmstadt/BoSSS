@@ -28,7 +28,7 @@ using System.IO;
 using System.Diagnostics;
 using BoSSS.Foundation;
 
-namespace BoSSS.Solution.Multigrid {
+namespace BoSSS.Solution.AdvancedSolvers {
 
     /// <summary>
     /// A helper class to analyze and visualize the convergence of an iterative solver algorithm.

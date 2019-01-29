@@ -177,7 +177,22 @@ namespace BoSSS.Solution {
                 csMPI.Raw.Comm_Rank(csMPI.Raw._COMM.WORLD, out rank);
                 csMPI.Raw.Comm_Size(csMPI.Raw._COMM.WORLD, out size);
                 if (rank == 0) {
-                    Console.WriteLine("BoSSS: Running with " + size + " MPI process(es)");
+
+                    Console.WriteLine(@"      ___           ___           ___           ___           ___     ");
+                    Console.WriteLine(@"     /\  \         /\  \         /\  \         /\  \         /\  \    ");
+                    Console.WriteLine(@"    /::\  \       /::\  \       /::\  \       /::\  \       /::\  \   ");
+                    Console.WriteLine(@"   /:/\:\  \     /:/\:\  \     /:/\ \  \     /:/\ \  \     /:/\ \  \  ");
+                    Console.WriteLine(@"  /::\~\:\__\   /:/  \:\  \   _\:\~\ \  \   _\:\~\ \  \   _\:\~\ \  \ ");
+                    Console.WriteLine(@" /:/\:\ \:|__| /:/__/ \:\__\ /\ \:\ \ \__\ /\ \:\ \ \__\ /\ \:\ \ \__\");
+                    Console.WriteLine(@" \:\~\:\/:/  / \:\  \ /:/  / \:\ \:\ \/__/ \:\ \:\ \/__/ \:\ \:\ \/__/");
+                    Console.WriteLine(@"  \:\ \::/  /   \:\  /:/  /   \:\ \:\__\    \:\ \:\__\    \:\ \:\__\  ");
+                    Console.WriteLine(@"   \:\/:/  /     \:\/:/  /     \:\/:/  /     \:\/:/  /     \:\/:/  /  ");
+                    Console.WriteLine(@"    \::/__/       \::/  /       \::/  /       \::/  /       \::/  /   ");
+                    Console.WriteLine(@"     ~~            \/__/         \/__/         \/__/         \/__/    ");
+                    Console.WriteLine(@"                                                                      ");
+
+
+                    Console.WriteLine("Running with " + size + " MPI process(es)");
                 }
             }
         }
@@ -195,9 +210,9 @@ namespace BoSSS.Solution {
             // - exclude mscorlib (does not even appear on Windows, but makes problems using mono)
 
             for (int i = 0; i < stackTrace.FrameCount; i++) {
-                Type Tüpe = stackTrace.GetFrame(i).GetMethod().DeclaringType;
-                if (Tüpe != null) {
-                    Assembly entryAssembly = Tüpe.Assembly;
+                Type Tuepe = stackTrace.GetFrame(i).GetMethod().DeclaringType;
+                if (Tuepe != null) {
+                    Assembly entryAssembly = Tuepe.Assembly;
                     GetAllAssembliesRecursive(entryAssembly, allAssis);
                 }
             }
@@ -466,7 +481,6 @@ namespace BoSSS.Solution {
                 ParameterStudyModeV2(opt, ctrlV2_ParameterStudy, ApplicationFactory);
             } else if (ctrlV2 != null) {
 
-
                 // control file overrides from command line
                 // ----------------------------------------
 
@@ -490,6 +504,7 @@ namespace BoSSS.Solution {
                     ctrlV2.Tags.AddRange(AdHocTags);
                 }
 
+
                 // run app
                 // -------
 
@@ -497,9 +512,6 @@ namespace BoSSS.Solution {
 
                 app.Init(ctrlV2);
                 app.RunSolverMode();
-                app.ByeInt(true);
-                app.Bye();
-                app.ProfilingLog();
                 app.Dispose();
 
 
@@ -557,6 +569,10 @@ namespace BoSSS.Solution {
 
                 if (this.Control.saveperiod > 0) {
                     this.SavePeriod = this.Control.saveperiod;
+                }
+
+                if (this.Control.rollingSaves > 0) {
+                    this.RollingSave = this.Control.rollingSaves;
                 }
             }
         }
@@ -894,7 +910,7 @@ namespace BoSSS.Solution {
                 //====================
 
                 Grid = CreateOrLoadGrid();
-                if (Grid == null && AggGrid == null) {
+                if (Grid == null) {
                     throw new ApplicationException("No grid loaded through CreateOrLoadGrid");
                 }
 
@@ -976,43 +992,32 @@ namespace BoSSS.Solution {
                 //====================
                 //RedistributeGrid();
 
-                if (Grid != null) {
+                {
                     Grid.Redistribute(DatabaseDriver, Control.GridPartType, Control.GridPartOptions);
-                    if (!passiveIo && !DatabaseDriver.GridExists(Grid.GridGuid)) {
+                    if (!passiveIo && !DatabaseDriver.GridExists(Grid.ID)) {
 
-                        //DatabaseDriver.SaveGrid(Grid);
-                        GridCommons _grid = this.Grid;
-                        DatabaseDriver.SaveGrid(_grid, this.m_Database);
+                        DatabaseDriver.SaveGrid(this.Grid, this.m_Database);
                         //DatabaseDriver.SaveGridIfUnique(ref _grid, out GridReplaced, this.m_Database);
-                        this.Grid = _grid;
-
                     }
 
 
-                    GridData = new GridData(Grid);
-
-                    if (this.Control == null || this.Control.NoOfMultigridLevels > 0) {
-                        this.MultigridSequence = CoarseningAlgorithms.CreateSequence(this.GridData, MaxDepth: (this.Control != null ? this.Control.NoOfMultigridLevels : 1));
+                    if (this.Control == null || this.Control.LinearSolver.NoOfMultigridLevels > 0) {
+                        this.MultigridSequence = CoarseningAlgorithms.CreateSequence(this.GridData, MaxDepth: (this.Control != null ? this.Control.LinearSolver.NoOfMultigridLevels : 1));
                     } else {
-                        this.MultigridSequence = new AggregationGrid[0];
+                        this.MultigridSequence = new AggregationGridData[0];
                     }
-                } else {
-                    GridData = this.AggGrid;
-                    this.MultigridSequence = new AggregationGrid[0];
                 }
 
 
                 csMPI.Raw.Barrier(csMPI.Raw._COMM.WORLD);
 
                 if (DoDbLogging) {
-
                     if (!this.CurrentSessionInfo.KeysAndQueries.ContainsKey("Grid:NoOfCells"))
-                        this.CurrentSessionInfo.KeysAndQueries.Add("Grid:NoOfCells", Grid.CellPartitioning.TotalLength);
+                        this.CurrentSessionInfo.KeysAndQueries.Add("Grid:NoOfCells", Grid.NumberOfCells);
                     if (!this.CurrentSessionInfo.KeysAndQueries.ContainsKey("Grid:hMax"))
                         this.CurrentSessionInfo.KeysAndQueries.Add("Grid:hMax", ((GridData)GridData).Cells.h_maxGlobal);
                     if (!this.CurrentSessionInfo.KeysAndQueries.ContainsKey("Grid:hMin"))
                         this.CurrentSessionInfo.KeysAndQueries.Add("Grid:hMin", ((GridData)GridData).Cells.h_minGlobal);
-
                 }
 
 
@@ -1140,15 +1145,16 @@ namespace BoSSS.Solution {
         /// Extended grid information.
         /// </summary>
         public IGridData GridData {
-            get;
-            private set;
+            get {
+                return Grid.iGridData;
+            }
         }
 
         /// <summary>
         /// Multigrid levels, sorted from fine to coarse, i.e. the 0-th entry contains the finest grid.
         /// The number of levels is controlled by <see cref="Control.AppControl.NoOfMultigridLevels"/>.
         /// </summary>
-        public AggregationGrid[] MultigridSequence {
+        public AggregationGridData[] MultigridSequence {
             get;
             private set;
         }
@@ -1156,15 +1162,15 @@ namespace BoSSS.Solution {
         /// <summary>
         /// BoSSS grid.
         /// </summary>
-        public GridCommons Grid {
+        public IGrid Grid {
             get;
             private set;
         }
 
-        /// <summary>
-        /// Provisional alternative grid;
-        /// </summary>
-        protected AggregationGrid AggGrid;
+        ///// <summary>
+        ///// Provisional alternative grid;
+        ///// </summary>
+        //protected AggregationGrid AggGrid;
 
 
         /// <summary>
@@ -1189,33 +1195,36 @@ namespace BoSSS.Solution {
         /// use this method to either create a grid or to load a grid from
         /// the IO system (See <see cref="IDatabaseDriver"/>);
         /// </summary>
-        protected virtual GridCommons CreateOrLoadGrid() {
+        protected virtual IGrid CreateOrLoadGrid() {
             using (var ht = new FuncTrace()) {
 
                 if (this.Control != null) {
                     if (this.Control.GridFunc != null && this.Control.GridGuid != Guid.Empty)
                         throw new ApplicationException("Control object error: 'AppControl.GridFunc' and 'AppControl.GridGuid' are exclusive, cannot be unequal null at the same time.");
 
-                    if(this.Control.GridFunc != null) {
+                    if (this.Control.GridFunc != null) {
                         return this.Control.GridFunc();
-                    } else if(this.Control.GridGuid != null) {
-                        if(this.Control.RestartInfo != null) {
+                    } else if (this.Control.GridGuid != null) {
+                        if (this.Control.RestartInfo != null) {
                             ISessionInfo session = m_Database.Controller.GetSessionInfo(this.Control.RestartInfo.Item1);
                             TimestepNumber timestep = this.Control.RestartInfo.Item2;
                             ITimestepInfo tsi_toLoad;
-                            if(timestep == null || timestep.MajorNumber < 0) {
+                            if (timestep == null || timestep.MajorNumber < 0) {
                                 tsi_toLoad = session.Timesteps.OrderBy(tsi => tsi.PhysicalTime).Last();
                             } else {
                                 tsi_toLoad = session.Timesteps.Single(t => t.TimeStepNumber.Equals(timestep));
                             }
                             var _Grid = DatabaseDriver.LoadGrid(tsi_toLoad.GridID, m_Database);
 
-                            foreach(string oldBndy in this.Control.BoundaryValueChanges.Keys) {
-                                int bndyInd = _Grid.EdgeTagNames.Values.FirstIndexWhere(bndyVal => bndyVal.Equals(oldBndy, StringComparison.InvariantCultureIgnoreCase));
-                                if( bndyInd > -1) {
-                                    _Grid.EdgeTagNames[_Grid.EdgeTagNames.Keys.ElementAt(bndyInd)] = this.Control.BoundaryValueChanges[oldBndy];
-                                } else {
-                                    throw new ArgumentException("Boundary " + oldBndy + " is not found in EdgeTagNames of the loaded Grid");
+                            if (_Grid is GridCommons) {
+                                GridCommons __Grid = (GridCommons)_Grid;
+                                foreach (string oldBndy in this.Control.BoundaryValueChanges.Keys) {
+                                    int bndyInd = __Grid.EdgeTagNames.Values.FirstIndexWhere(bndyVal => bndyVal.Equals(oldBndy, StringComparison.InvariantCultureIgnoreCase));
+                                    if (bndyInd > -1) {
+                                        __Grid.EdgeTagNames[__Grid.EdgeTagNames.Keys.ElementAt(bndyInd)] = this.Control.BoundaryValueChanges[oldBndy];
+                                    } else {
+                                        throw new ArgumentException("Boundary " + oldBndy + " is not found in EdgeTagNames of the loaded Grid");
+                                    }
                                 }
                             }
 
@@ -1562,6 +1571,11 @@ namespace BoSSS.Solution {
         protected int SavePeriod = 1;
 
         /// <summary>
+        /// <see cref="AppControl.rollingSaves"/>
+        /// </summary>
+        protected int RollingSave = 0;
+
+        /// <summary>
         /// Implement this method by performing a single time-step of the
         /// solution algorithm.
         /// </summary>
@@ -1644,6 +1658,8 @@ namespace BoSSS.Solution {
 
             using (var tr = new FuncTrace()) {
 
+                var rollingSavesTsi = new List<Tuple<int, ITimestepInfo>>();
+
                 csMPI.Raw.Barrier(csMPI.Raw._COMM.WORLD);
 
                 m_ResLogger = new ResidualLogger(this.MPIRank, this.DatabaseDriver, this.CurrentSessionInfo.ID);
@@ -1666,9 +1682,13 @@ namespace BoSSS.Solution {
                     }
                 }
 
-                SaveToDatabase(i0, physTime); // save the initial value
+                var ts0 = SaveToDatabase(i0, physTime); // save the initial value
+                if (this.RollingSave > 0)
+                    rollingSavesTsi.Add(Tuple.Create(0, ts0));
+
                 if (this.Control != null && this.Control.ImmediatePlotPeriod > 0)
                     PlotCurrentState(physTime, i0, this.Control.SuperSampling);
+
 
                 csMPI.Raw.Barrier(csMPI.Raw._COMM.WORLD);
 
@@ -1694,11 +1714,34 @@ namespace BoSSS.Solution {
                     tr.LogMemoryStat();
                     physTime += dt;
 
-
+                    ITimestepInfo tsi = null;
                     if (i % SavePeriod == 0) {
-                        SaveToDatabase(i, physTime);
+                        tsi = SaveToDatabase(i, physTime);
                         this.ProfilingLog();
                     }
+                    if (this.RollingSave > 0) {
+                        if (tsi == null) {
+                            tsi = SaveToDatabase(i, physTime);
+                        }
+                        rollingSavesTsi.Add(Tuple.Create(i, tsi));
+
+                        while (rollingSavesTsi.Count > this.RollingSave) { // delete overdue rolling timesteps...
+                            var top_i_tsi = rollingSavesTsi[0];
+
+                            rollingSavesTsi.RemoveAt(0);
+
+                            if ((top_i_tsi.Item1 != 0) && (top_i_tsi.Item1 % SavePeriod != 0)) { // ...only if they should not be saved anyway
+                                if (DatabaseDriver.FsDriver != null &&
+                                    !this.CurrentSessionInfo.ID.Equals(Guid.Empty)) {
+                                    if (MPIRank == 0) {
+                                        this.CurrentSessionInfo.RemoveTimestep(top_i_tsi.Item2.ID);
+                                        ((DatabaseController)this.m_Database.Controller).DeleteTimestep(top_i_tsi.Item2, false);
+                                    }
+                                }
+                            }
+                        }
+                    }
+
                     if (this.Control != null && this.Control.ImmediatePlotPeriod > 0 && i % this.Control.ImmediatePlotPeriod == 0)
                         PlotCurrentState(physTime, i, this.Control.SuperSampling);
                 }
@@ -1809,17 +1852,16 @@ namespace BoSSS.Solution {
                         this.MultigridSequence = null;
 
                         this.Grid.RedistributeGrid(NewPartition);
-                        newGridData = new GridData(this.Grid);
-                        this.GridData = newGridData;
+                        newGridData = (GridData)this.Grid.iGridData;
                         oldGridData.Invalidate();
                         if (this.LsTrk != null) {
                             this.LsTrk.Invalidate();
                         }
 
-                        if (this.Control == null || this.Control.NoOfMultigridLevels > 0)
-                            this.MultigridSequence = CoarseningAlgorithms.CreateSequence(this.GridData, MaxDepth: (this.Control != null ? this.Control.NoOfMultigridLevels : 1));
+                        if (this.Control == null || this.Control.LinearSolver.NoOfMultigridLevels > 0)
+                            this.MultigridSequence = CoarseningAlgorithms.CreateSequence(this.GridData, MaxDepth: (this.Control != null ? this.Control.LinearSolver.NoOfMultigridLevels : 1));
                         else
-                            this.MultigridSequence = new AggregationGrid[0];
+                            this.MultigridSequence = new AggregationGridData[0];
 
                         //Console.WriteLine("P {0}: new grid: {1} cells.", MPIRank, newGridData.iLogicalCells.NoOfLocalUpdatedCells);
                     }
@@ -1902,7 +1944,7 @@ namespace BoSSS.Solution {
 
                 } else {
 
-                    using(new BlockTrace("Mesh Adaption", tr)) {
+                    using (new BlockTrace("Mesh Adaption", tr)) {
                         // ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
                         // mesh adaptation
                         // ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -1922,13 +1964,13 @@ namespace BoSSS.Solution {
                         // save new grid to database
                         // ==========================
 
-                        if(!passiveIo) {
+                        if (!passiveIo) {
 
-                            if(newGrid.GridGuid == null || newGrid.GridGuid.Equals(Guid.Empty))
+                            if (newGrid.ID == null || newGrid.ID.Equals(Guid.Empty))
                                 throw new ApplicationException();
-                            if(newGrid.GridGuid.Equals(oldGridId))
+                            if (newGrid.ID.Equals(oldGridId))
                                 throw new ApplicationException();
-                            if(DatabaseDriver.GridExists(newGrid.GridGuid))
+                            if (DatabaseDriver.GridExists(newGrid.ID))
                                 throw new ApplicationException();
 
                             DatabaseDriver.SaveGrid(newGrid, this.m_Database);
@@ -1939,7 +1981,7 @@ namespace BoSSS.Solution {
                         // =============================
 
                         int[] NewPartition = fixedPartition ?? ComputeNewCellDistribution(TimeStepNo, physTime);
-                        if(NewPartition != null) {
+                        if (NewPartition != null) {
                             // grid also has to be re-distributed
 
                             // rem: the new Partition correlates to the OLD grid
@@ -1967,19 +2009,18 @@ namespace BoSSS.Solution {
                             this.MultigridSequence = null;
 
                             this.Grid = newGrid;
-                            newGridData = new GridData(this.Grid);
-                            this.GridData = newGridData;
+                            newGridData = (GridData)this.Grid.iGridData;
                             oldGridData.Invalidate();
-                            if(this.LsTrk != null) {
+                            if (this.LsTrk != null) {
                                 this.LsTrk.Invalidate();
                             }
                             oldGridData = null;
 
-                            if(this.Control == null || this.Control.NoOfMultigridLevels > 0)
+                            if(this.Control == null || this.Control.LinearSolver.NoOfMultigridLevels > 0)
                                 this.MultigridSequence = CoarseningAlgorithms.CreateSequence(this.GridData,
-                                    MaxDepth: (this.Control != null ? this.Control.NoOfMultigridLevels : 1));
+                                    MaxDepth: (this.Control != null ? this.Control.LinearSolver.NoOfMultigridLevels : 1));
                             else
-                                this.MultigridSequence = new AggregationGrid[0];
+                                this.MultigridSequence = new AggregationGridData[0];
 
                             //Console.WriteLine("P {0}: new grid: {1} cells.", MPIRank, newGridData.iLogicalCells.NoOfLocalUpdatedCells);
                         }
@@ -2006,7 +2047,7 @@ namespace BoSSS.Solution {
                         this.m_IOFields.Clear();
 
                         // re-create fields
-                        if(this.Control != null) {
+                        if (this.Control != null) {
                             InitFromAttributes.CreateFieldsAuto(
                                 this, GridData, this.Control.FieldOptions, this.Control.CutCellQuadratureType, this.m_IOFields, this.m_RegisteredFields);
                         }
@@ -2028,10 +2069,10 @@ namespace BoSSS.Solution {
                         //}
 
                         //set dg coördinates
-                        foreach(var f in m_RegisteredFields) {
-                            if(f is XDGField) {
+                        foreach (var f in m_RegisteredFields) {
+                            if (f is XDGField) {
                                 XDGBasis xb = ((XDGField)f).Basis;
-                                if(!object.ReferenceEquals(xb.Tracker, this.LsTrk))
+                                if (!object.ReferenceEquals(xb.Tracker, this.LsTrk))
                                     throw new ApplicationException();
                             }
                             if (f.Identification == "Phi")
@@ -2286,13 +2327,34 @@ namespace BoSSS.Solution {
             int failCount = 0;
             int numberOfRuns = cases.Count();
 
-            for (int iPstudy = 0; iPstudy < numberOfRuns; iPstudy++) {
+            for (int iPstudy = 0; iPstudy < numberOfRuns; iPstudy++) { // loop over cases
                 // Run only one case in this process if requested
                 if (opt.PstudyCase > 0 && opt.PstudyCase != iPstudy) {
                     continue;
                 }
 
+                // select control
                 var _control = cases.ElementAt(iPstudy);
+
+                // control file overrides from command line
+                if (opt.ProjectName != null)
+                    _control.ProjectName = opt.ProjectName;
+                if (opt.SessionName != null)
+                    _control.SessionName = opt.SessionName;
+
+                if (opt.ImmediatePlotPeriod != null) {
+                    _control.ImmediatePlotPeriod = opt.ImmediatePlotPeriod.Value;
+                }
+                if (opt.SuperSampling != null) {
+                    _control.SuperSampling = opt.SuperSampling.Value;
+                }
+
+                // ad-hoc added tags (added by command-line option)
+                if (opt != null && (opt.TagsToAdd != null && opt.TagsToAdd.Length > 0)) {
+                    string[] AdHocTags;
+                    AdHocTags = opt.TagsToAdd.Split(new char[] { ',' }, StringSplitOptions.RemoveEmptyEntries);
+                    _control.Tags.AddRange(AdHocTags);
+                }
 
                 // add the case index to the 'Paramstudy_CaseIdentification'
                 {
@@ -2337,9 +2399,13 @@ namespace BoSSS.Solution {
                         app.RunSolverMode();
                         CorrectlyTerminated = true;
                         nlog.LogValue("pstudy_case_successful", true);
-                        nlog.LogValue("GrdRes:NumberOfCells", app.Grid.CellPartitioning.TotalLength);
-                        nlog.LogValue("GrdRes:h_min", ((GridData)(app.GridData)).Cells.h_minGlobal);
-                        nlog.LogValue("GrdRes:h_max", ((GridData)(app.GridData)).Cells.h_maxGlobal);
+                        nlog.LogValue("GrdRes:NumberOfCells", app.Grid.NumberOfCells);
+                        if (app.GridData is GridData) {
+                            nlog.LogValue("GrdRes:h_min", ((GridData)(app.GridData)).Cells.h_minGlobal);
+                            nlog.LogValue("GrdRes:h_max", ((GridData)(app.GridData)).Cells.h_maxGlobal);
+                        } else {
+                            Console.WriteLine("Warning: unable to obtain grid resolution");
+                        }
 #if DEBUG
                     }
 #else
@@ -2369,8 +2435,10 @@ namespace BoSSS.Solution {
                     nlog.LogValue("InitTime(sec)", InitTime);
                     nlog.LogValue("solverTime(sec)", solverTime);
                     nlog.LogValue("SessionGuid", app.DatabaseDriver.FsDriver == null ? Guid.Empty : app.CurrentSessionInfo.ID);
-                    foreach (var kv in app.QueryHandler.QueryResults) { // Assume queries have already been evaluated
-                        nlog.LogValue(kv.Key, kv.Value);
+                    if (app.QueryHandler != null) {
+                        foreach (var kv in app.QueryHandler.QueryResults) { // Assume queries have already been evaluated
+                            nlog.LogValue(kv.Key, kv.Value);
+                        }
                     }
 
                     // Log only exists on rank 0
@@ -2390,10 +2458,11 @@ namespace BoSSS.Solution {
                         }
 
                         // Assume queries have already been evaluated
-                        foreach (var kv in app.QueryHandler.QueryResults) {
-                            WriteToLog(log, (double)kv.Value);
+                        if (app.QueryHandler != null) {
+                            foreach (var kv in app.QueryHandler.QueryResults) {
+                                WriteToLog(log, (double)kv.Value);
+                            }
                         }
-
                         log.WriteLine();
                         log.Flush();
 
@@ -2420,10 +2489,27 @@ namespace BoSSS.Solution {
                     }
 
                     // finalize
-                    app.ByeInt(CorrectlyTerminated);
-                    app.Bye();
-                    app.ProfilingLog();
-                    app.Dispose();
+#if DEBUG
+                    {
+#else
+                    try {
+#endif
+                        app.ByeInt(CorrectlyTerminated);
+                        app.Bye();
+                        app.ProfilingLog();
+#if DEBUG
+                    }
+#else
+                    } catch (Exception e) {
+                        nlog.LogValue("pstudy_case_successful", false);
+                        if (_control.Paramstudy_ContinueOnError) {
+                            Console.WriteLine("WARNING: Run" + (iPstudy) + "failed with message '{0}'", e.Message);
+                            failCount++;
+                        } else {
+                            throw;
+                        }
+                    }
+#endif
                 }
 
                 System.GC.Collect();
@@ -2642,13 +2728,27 @@ namespace BoSSS.Solution {
         /// </summary>
         public virtual void Dispose() {
             if (!IsDisposed) {
-                if (this.CurrentSessionInfo != null)
-                    this.CurrentSessionInfo.Dispose();
-                if (DatabaseDriver != null) {
-                    DatabaseDriver.Dispose();
+#if DEBUG
+                {
+#else
+                try {
+#endif
+                    ByeInt(true);
+                    Bye();
+                    ProfilingLog();
+
+                    if (this.CurrentSessionInfo != null)
+                        this.CurrentSessionInfo.Dispose();
+                    if (DatabaseDriver != null) {
+                        DatabaseDriver.Dispose();
+                    }
+                    Console.Out.Flush();
+                    Console.Error.Flush();
+#if DEBUG
                 }
-                Console.Out.Flush();
-                Console.Error.Flush();
+#else
+                } catch (Exception) { }
+#endif
                 IsDisposed = true;
             }
         }

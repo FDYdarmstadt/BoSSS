@@ -23,7 +23,7 @@ using BoSSS.Platform;
 using BoSSS.Solution.Control;
 using BoSSS.Foundation.Grid;
 using System.Diagnostics;
-using BoSSS.Solution.Multigrid;
+using BoSSS.Solution.AdvancedSolvers;
 using ilPSP.Utils;
 using BoSSS.Platform.Utils.Geom;
 using BoSSS.Foundation.IO;
@@ -76,6 +76,11 @@ namespace BoSSS.Application.FSI_Solver {
                 Degree = 2,
                 SaveToDB = FieldOpts.SaveToDBOpt.TRUE
             });
+            C.FieldOptions.Add("Curvature", new FieldOpts()
+            {
+                Degree = 2,
+                SaveToDB = FieldOpts.SaveToDBOpt.TRUE
+            });
 
             // grid and boundary conditions
             // ============================
@@ -105,9 +110,6 @@ namespace BoSSS.Application.FSI_Solver {
                 return grd;
             };
 
-
-
-
             C.AddBoundaryValue("Velocity_Inlet_left", "VelocityY", X => 0.02);
             C.AddBoundaryValue("Velocity_Inlet_right", "VelocityY", X => -0.02);
 
@@ -126,15 +128,20 @@ namespace BoSSS.Application.FSI_Solver {
             // Particle Properties
             C.Particles = new List<Particle>();
 
-
-            C.Particles.Add(new Particle(2, 4, new double[] { 0.0, 0.0 }) {
+            C.Particles.Add(new Particle_Sphere(2, 4, new double[] { 0.0 , 0.0 }) {
                 radius_P = 0.4,
-                rho_P = 1
+                rho_P = 1.0,
             });
-            Func<double[], double, double> phiComplete = (X, t) => 1;
 
-
-            phiComplete = (X, t) => C.Particles[0].phi_P(X, t);
+            //Define level-set
+            Func<double[], double, double> phiComplete = delegate (double[] X, double t) {
+                int exp = C.Particles.Count - 1;
+                double ret = Math.Pow(-1, exp);
+                for (int i = 0; i < C.Particles.Count; i++) {
+                    ret *= C.Particles[i].phi_P(X, t);
+                }
+                return ret;
+            };
 
             //Func<double[], double, double> phi = (X, t) => -(X[0] - t+X[1]);
             //C.MovementFunc = phi;
@@ -163,9 +170,12 @@ namespace BoSSS.Application.FSI_Solver {
             C.AdvancedDiscretizationOptions.PenaltySafety = 1;
             C.AdvancedDiscretizationOptions.CellAgglomerationThreshold = 0.1;
             C.LevelSetSmoothing = false;
-            C.MaxSolverIterations = 100;
-            C.MinSolverIterations = 1;
-            C.NoOfMultigridLevels = 1;
+            C.LinearSolver.SolverCode = LinearSolverConfig.Code.classic_pardiso;
+            C.LinearSolver.MaxSolverIterations = 100;
+            C.LinearSolver.MinSolverIterations = 1;
+            C.NonLinearSolver.MaxSolverIterations = 100;
+            C.NonLinearSolver.MinSolverIterations = 1;
+            C.LinearSolver.NoOfMultigridLevels = 1;
 
             // Timestepping
             // ============

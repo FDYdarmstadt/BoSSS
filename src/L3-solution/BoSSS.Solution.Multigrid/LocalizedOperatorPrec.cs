@@ -27,7 +27,7 @@ using ilPSP.LinSolvers;
 using ilPSP;
 using ilPSP.Connectors.Matlab;
 
-namespace BoSSS.Solution.Multigrid {
+namespace BoSSS.Solution.AdvancedSolvers {
     public class LocalizedOperatorPrec : ISolverSmootherTemplate, ISolverWithCallback {
         public int IterationsInNested {
             get {
@@ -72,7 +72,7 @@ namespace BoSSS.Solution.Multigrid {
 
         SpatialOperator LocalOp;
 
-        MsrMatrix LocalMatrix, ConvDiff, pGrad, divVel, P;
+        BlockMsrMatrix LocalMatrix, ConvDiff, pGrad, divVel, P;
 
         public void Init(MultigridOperator op) {
             int D = op.GridData.SpatialDimension;
@@ -112,20 +112,20 @@ namespace BoSSS.Solution.Multigrid {
             int Upart = Uidx.Length;
             int Ppart = Pidx.Length;
 
-            ConvDiff = new MsrMatrix(Upart, Upart, 1, 1);
-            pGrad = new MsrMatrix(Upart, Ppart, 1, 1);
-            divVel = new MsrMatrix(Ppart, Upart, 1, 1);
-            var VelocityMass = new MsrMatrix(Upart, Upart, 1, 1);
-            var leftChangeBasesVel = new MsrMatrix(Upart, Upart, 1, 1);
-            var rightChangeBasesVel = new MsrMatrix(Upart, Upart, 1, 1);
+            ConvDiff = null;// new BlockMsrMatrix(Upart, Upart, 1, 1);
+            pGrad = null;// new BlockMsrMatrix(Upart, Ppart, 1, 1);
+            divVel = null;// new BlockMsrMatrix(Ppart, Upart, 1, 1);
+            BlockMsrMatrix VelocityMass = null;// new BlockMsrMatrix(Upart, Upart, 1, 1);
+            BlockMsrMatrix leftChangeBasesVel = null;// new BlockMsrMatrix(Upart, Upart, 1, 1);
+            BlockMsrMatrix rightChangeBasesVel = null;// new BlockMsrMatrix(Upart, Upart, 1, 1);
 
             op.MassMatrix.AccSubMatrixTo(1.0, VelocityMass, Uidx, default(int[]), Uidx, default(int[]), default(int[]), default(int[]));
 
             op.LeftChangeOfBasis.AccSubMatrixTo(1.0, leftChangeBasesVel, Uidx, default(int[]), Uidx, default(int[]), default(int[]), default(int[]));
             op.RightChangeOfBasis.AccSubMatrixTo(1.0, rightChangeBasesVel, Uidx, default(int[]), Uidx, default(int[]), default(int[]), default(int[]));
 
-            var temp = MsrMatrix.Multiply(leftChangeBasesVel, LocalMatrix);
-            LocalMatrix = MsrMatrix.Multiply(temp, rightChangeBasesVel);
+            var temp = BlockMsrMatrix.Multiply(leftChangeBasesVel, LocalMatrix);
+            LocalMatrix = BlockMsrMatrix.Multiply(temp, rightChangeBasesVel);
 
             var M = op.OperatorMatrix;
 
@@ -160,7 +160,7 @@ namespace BoSSS.Solution.Multigrid {
             Xu = X.GetSubVector(Uidx, default(int[]));
             Xp = X.GetSubVector(Pidx, default(int[]));
 
-            P = new MsrMatrix(Pidx.Length, Pidx.Length);
+            P = new BlockMsrMatrix(null, null);// Pidx.Length, Pidx.Length); //
 
             MultidimensionalArray Schur = MultidimensionalArray.Create(Pidx.Length, Pidx.Length);
             using(BatchmodeConnector bmc = new BatchmodeConnector()) {
@@ -174,7 +174,7 @@ namespace BoSSS.Solution.Multigrid {
                 bmc.Execute(false);
             }
 
-            P = Schur.ToMsrMatrix();
+            P = null; // Schur.ToMsrMatrix();
 
             //P.SaveToTextFileSparse("LocalSchur");
 
@@ -195,7 +195,7 @@ namespace BoSSS.Solution.Multigrid {
 
 
             // Solve ConvD           iff*w=v-q*pGrad
-            pGrad.SpMVpara(-1, Xp, 1, Bu);
+            pGrad.SpMV(-1, Xp, 1, Bu);
 
             using(var solver = new ilPSP.LinSolvers.MUMPS.MUMPSSolver()) {
                 solver.DefineMatrix(ConvDiff);

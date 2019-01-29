@@ -29,7 +29,7 @@ using ilPSP.Tracing;
 using ilPSP.Connectors.Matlab;
 using System.Diagnostics;
 
-namespace BoSSS.Solution.Multigrid {
+namespace BoSSS.Solution.AdvancedSolvers {
 
     /// <summary>
     /// A sparse direct solver. Actually, this class is just a 
@@ -221,7 +221,7 @@ namespace BoSSS.Solution.Multigrid {
 
                     double ResidualNorm = Residual.L2NormPow2().MPISum().Sqrt();
                     double SolutionNorm = X.L2NormPow2().MPISum().Sqrt();
-                    double Denom = Math.Max(MatrixInfNorm, Math.Max(RhsNorm, Math.Max(SolutionNorm, Math.Sqrt(double.Epsilon))));
+                    double Denom = Math.Max(MatrixInfNorm, Math.Max(RhsNorm, Math.Max(SolutionNorm, Math.Sqrt(BLAS.MachineEps))));
                     double RelResidualNorm = ResidualNorm / Denom;
 
                     //Console.WriteLine("done: Abs.: {0}, Rel.: {1}", ResidualNorm, RelResidualNorm);

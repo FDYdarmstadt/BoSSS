@@ -129,7 +129,7 @@ namespace BoSSS.Foundation.IO {
         /// <returns>
         /// The loaded grid
         /// </returns>
-        Grid.Classic.GridCommons LoadGrid(Guid gridId, IDatabaseInfo database);
+        IGrid LoadGrid(Guid gridId, IDatabaseInfo database);
 
         /// <summary>
         /// Loads the actual grid data for the given <paramref name="grid"/>.
@@ -137,7 +137,7 @@ namespace BoSSS.Foundation.IO {
         /// </summary>
         /// <param name="grid"></param>
         /// <returns></returns>
-        Grid.Classic.GridCommons LoadGridData(Grid.Classic.GridCommons grid);
+        IGrid LoadGridData(Grid.Classic.GridCommons grid);
 
         /// <summary>
         /// Loads the given <paramref name="sessionId"/> from the given
@@ -166,7 +166,7 @@ namespace BoSSS.Foundation.IO {
         /// Inidicates that an equivalent grid was found.
         /// </param>
         /// <param name="database"></param>
-        Guid SaveGridIfUnique(ref Grid.Classic.GridCommons grd, out bool EquivalentGridFound, IDatabaseInfo database);
+        Guid SaveGridIfUnique(ref IGrid grd, out bool EquivalentGridFound, IDatabaseInfo database);
 
         /// <summary>
         /// saves the grid object to the database;
@@ -178,7 +178,7 @@ namespace BoSSS.Foundation.IO {
         /// the grid to save
         /// </param>
         /// <param name="database"></param>
-        Guid SaveGrid(Grid.Classic.GridCommons grd, IDatabaseInfo database);
+        Guid SaveGrid(IGrid grd, IDatabaseInfo database);
 
         /// <summary>
         /// Saves a time-step to the database's persistent memory.

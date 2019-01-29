@@ -334,6 +334,11 @@ namespace MPI.Wrappers {
         void Waitany(int count, MPI_Request[] array_of_requests, out int index, out MPI_Status status);
 
         /// <summary>
+        /// Return the parent communicator for this process.
+        /// </summary>
+        void Comm_get_parent(out MPI_Comm parent);
+
+        /// <summary>
         /// The size of an <see cref="MPI_Status"/>.
         /// </summary>
         int MPI_Status_Size {

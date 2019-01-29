@@ -89,7 +89,7 @@ namespace BoSSS.Foundation.IO {
                     KeyboardInteractiveConnectionInfo ci =
                         new KeyboardInteractiveConnectionInfo(host, user);
                     ci.AuthenticationPrompt +=
-                            delegate(object sender, AuthenticationPromptEventArgs arg) {
+                            delegate (object sender, AuthenticationPromptEventArgs arg) {
                                 var prompt = arg.Prompts.SingleOrDefault(p => p.Request == "Password: ");
                                 if (prompt != null) {
                                     prompt.Response = PasswordCallback(user + "@" + host);
@@ -318,11 +318,11 @@ namespace BoSSS.Foundation.IO {
                     filesToDelete.AddRange(storageVectorFiles);
                 }
 #if DEBUG
-                } catch (FileNotFoundException fnf) {
-                    if (fnf.Message.Contains("TimestepLog.txt")) {
-                        Console.WriteLine("No timestep log file found. Ignoring timestep files.");
-                    }
+            } catch (FileNotFoundException fnf) {
+                if (fnf.Message.Contains("TimestepLog.txt")) {
+                    Console.WriteLine("No timestep log file found. Ignoring timestep files.");
                 }
+            }
 #else
             } catch (FileNotFoundException) {
                 //Swallow
@@ -483,6 +483,16 @@ namespace BoSSS.Foundation.IO {
         /// </summary>
         /// <param name="timestep">The time-step to be deleted.</param>
         public void DeleteTimestep(ITimestepInfo timestep) {
+            DeleteTimestep(timestep, true);
+        }
+
+
+        /// <summary>
+        /// Deletes a time-step from the database and its files from the file
+        /// system.
+        /// </summary>
+        /// <param name="timestep">The time-step to be deleted.</param>
+        public void DeleteTimestep(ITimestepInfo timestep, bool remove) {
             FileManager fileManager = GetFileManager();
             string path = Path.Combine(
                 Path.Combine(timestep.Database.Path, "timesteps"),
@@ -497,7 +507,8 @@ namespace BoSSS.Foundation.IO {
             filesToDelete.AddRange(Utils.GetPathsFromGuid(timestep.StorageID, dataPath));
 
             // Delete all the files marked for deletion
-            DBDriver.RemoveTimestepGuid(timestep.Session.ID, timestep.ID);
+            if(remove)
+                DBDriver.RemoveTimestepGuid(timestep.Session.ID, timestep.ID);
             foreach (string file in filesToDelete) {
                 try {
                     fileManager.Delete(file);
@@ -622,11 +633,11 @@ namespace BoSSS.Foundation.IO {
             // since the DG basis is now a leightweigt object -- all expensive caching is done in 'ChefBasis',
             // see GridData.BasisData.
             // fk, 05sep16
-            
+
             //if (!m_timestepInitializationContexts.ContainsKey(ts.ID)) {
             if (!m_gridInitializationContexts.ContainsKey(ts.GridID)) {
-                Grid.Classic.GridCommons grid = DBDriver.LoadGrid(ts.GridID, Database);
-                Grid.Classic.GridData gridData = new Grid.Classic.GridData(grid);
+                IGrid grid = DBDriver.LoadGrid(ts.GridID, Database);
+                IGridData gridData = grid.iGridData;
                 m_gridInitializationContexts[ts.GridID] =
                     new GridInitializationContext(gridData);
             }
@@ -739,16 +750,8 @@ namespace BoSSS.Foundation.IO {
                 if (!File.Exists(gridDirDestFullPaths[i])) {
                     List<Guid> dataGuids = new List<Guid>();
 
-                    // load GridCommons object to retrieve the storage guid
-                    // for the grid data
-                    Guid gridStorageID = GetGridStorageID(grid.ID);
-                    dataGuids.Add(gridStorageID);
-
-                    // Don't forget optional custom partitionings!
-                    foreach (var s in grid.m_PredefinedGridPartitioning) {
-                        Guid partitioningGuid = s.Value.Guid;
-                        dataGuids.Add(partitioningGuid);
-                    }
+                    // load GridCommons object to retrieve the storage guid for the grid data
+                    dataGuids.AddRange(grid.AllDataVectorIDs);
 
                     // gather paths
                     string gridDataSrcBasePath =
@@ -757,7 +760,7 @@ namespace BoSSS.Foundation.IO {
                         Path.Combine(dest.Path, StandardFsDriver.DistVectorDataDir);
                     IList<string> gridDataSrcFullPaths =
                         Utils.GetPathsFromGuids(dataGuids, gridDataSrcBasePath).ToList();
-                    
+
                     // copy from grids subdirectory
                     fileManager.Copy(gridDirSrcFullPaths[i], gridDirDestFullPaths[i], false);
 
@@ -886,17 +889,6 @@ namespace BoSSS.Foundation.IO {
         }
 
         /// <summary>
-        /// Returns the storage ID of a grid by deserializing the
-        /// <see cref="BoSSS.Foundation.Grid.GridCommons"/> object.
-        /// </summary>
-        /// <param name="gridId">Id of the grid</param>
-        /// <returns>The storage ID of the grid</returns>
-        private Guid GetGridStorageID(Guid gridId) {
-            Grid.Classic.GridCommons gridComm = DBDriver.LoadGrid(gridId, Database);
-            return gridComm.StorageGuid;
-        }
-
-        /// <summary>
         /// Retrieves all files associated with a grid.
         /// </summary>
         /// <param name="grid">The info object of the grid</param>
@@ -919,11 +911,13 @@ namespace BoSSS.Foundation.IO {
             IList<string> gridFiles = new List<string> { gridMainFile };
 
             // Add data files
-            Guid gridStorageID = GetGridStorageID(gridID);
-            foreach (string gridDataFile in Directory.GetFiles(
-                Path.Combine(database.Path, StandardFsDriver.DistVectorDataDir),
-                gridStorageID.ToString() + ".*", SearchOption.AllDirectories)) {
-                gridFiles.Add(gridDataFile);
+            IGridInfo gi = this.GetGridInfo(gridID);
+            foreach (Guid gridStorageID in gi.AllDataVectorIDs) {
+                foreach (string gridDataFile in Directory.GetFiles(
+                    Path.Combine(database.Path, StandardFsDriver.DistVectorDataDir),
+                    gridStorageID.ToString() + ".*", SearchOption.AllDirectories)) {
+                    gridFiles.Add(gridDataFile);
+                }
             }
 
             return gridFiles.Distinct(); // remove duplicates

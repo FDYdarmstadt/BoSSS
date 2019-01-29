@@ -16,7 +16,7 @@ limitations under the License.
 
 using BoSSS.Foundation;
 using BoSSS.Foundation.XDG;
-using BoSSS.Solution.Multigrid;
+using BoSSS.Solution.AdvancedSolvers;
 using BoSSS.Platform;
 using ilPSP.LinSolvers;
 using ilPSP.Utils;
@@ -112,22 +112,22 @@ namespace BoSSS.Solution.XdgTimestepping {
     /// <summary>
     /// Which nonlinear solver should be used
     /// </summary>
-    public enum NonlinearSolverMethod {
-        /// <summary>
-        /// Standard Fixpoint-Iteration. Convergence only linear.
-        /// </summary>
-        Picard = 0,
+    //public enum NonlinearSolverMethod {
+    //    /// <summary>
+    //    /// Standard Fixpoint-Iteration. Convergence only linear.
+    //    /// </summary>
+    //    Picard = 0,
 
-        /// <summary>
-        /// Newtons method. For approximation of the inverse of the jacobian the inverse of the operator matrix is used.
-        /// </summary>
-        Newton = 1,
+    //    /// <summary>
+    //    /// Newtons method. For approximation of the inverse of the jacobian the inverse of the operator matrix is used.
+    //    /// </summary>
+    //    Newton = 1,
 
-        /// <summary>
-        /// Newtons method coupled with GMRES as default. Convergeces quadratically but needs a good approximation. Preconditioning of the Newton-GMRES is set to LinearSolver.
-        /// </summary>
-        NewtonGMRES = 2
-    }
+    //    /// <summary>
+    //    /// Newtons method coupled with GMRES as default. Convergeces quadratically but needs a good approximation. Preconditioning of the Newton-GMRES is set to LinearSolver.
+    //    /// </summary>
+    //    NewtonGMRES = 2
+    //}
 
     /// <summary>
     /// Treatment of the level-set.
@@ -178,6 +178,15 @@ namespace BoSSS.Solution.XdgTimestepping {
     /// </summary>
     abstract public class XdgTimesteppingBase {
 
+        protected XdgTimesteppingBase(
+            Control.NonLinearSolverConfig nonlinconfig,
+            Control.LinearSolverConfig linearconfig) {
+            SolverFactory SF = new SolverFactory(nonlinconfig, linearconfig);
+            m_nonlinconfig = nonlinconfig;
+            m_linearconfig = linearconfig;
+            XdgSolverFactory = SF;
+        }
+
         /// <summary>
         /// Configuration sanity checks, to be used by constructors of derived classes.
         /// </summary>
@@ -217,10 +226,10 @@ namespace BoSSS.Solution.XdgTimestepping {
             protected set;
         }
 
-        public NonlinearSolverMethod Config_NonlinearSolver {
-            get;
-            set;
-        }
+        //public NonlinearSolverMethod Config_NonlinearSolver {
+        //    get;
+        //    set;
+        //}
 
         /// <summary>
         /// in case of coupledIterative the fratro for under-relaxing the level set movement 
@@ -228,39 +237,39 @@ namespace BoSSS.Solution.XdgTimestepping {
         public double IterUnderrelax = 1.0;
 
 
-        /// <summary>
-        /// Convergence criterion if a nonlinear solver has to be used.
-        /// </summary>
-        public double Config_SolverConvergenceCriterion = 1.0e-8;
+        ///// <summary>
+        ///// Convergence criterion if a nonlinear solver has to be used.
+        ///// </summary>
+        //public double Config_SolverConvergenceCriterion = 1.0e-8;
 
         public double Config_LevelSetConvergenceCriterion = 1.0e-6;
 
-        /// <summary>
-        /// Maximum number of iterations for an iterative solver (linear or nonlinear).
-        /// </summary>
-        public int Config_MaxIterations = 1000;
+        ///// <summary>
+        ///// Maximum number of iterations for an iterative solver (linear or nonlinear).
+        ///// </summary>
+        //public int Config_MaxIterations = 1000;
 
-        public int Config_MaxKrylovDim = 100;
+        //public int Config_MaxKrylovDim = 100;
 
-        /// <summary>
-        /// Under relaxation factor for iterative solver.
-        /// </summary>
-        public double Config_UnderRelax = 1.0;
+        ///// <summary>
+        ///// Under relaxation factor for iterative solver.
+        ///// </summary>
+        //public double Config_UnderRelax = 1.0;
 
         /// <summary>
         /// Session path for writing in database
         /// </summary>
         public string SessionPath = "";
 
-        /// <summary>
-        /// Minimum number of iterations for an iterative solver (linear or nonlinear).
-        /// </summary>
-        public int Config_MinIterations = 4;
+        ///// <summary>
+        ///// Minimum number of iterations for an iterative solver (linear or nonlinear).
+        ///// </summary>
+        //public int Config_MinIterations = 4;
 
-        /// <summary>
-        /// Default Solver for the linear system
-        /// </summary>
-        public ISolverSmootherTemplate Config_linearSolver = new DirectSolver() { WhichSolver = DirectSolver._whichSolver.PARDISO };
+        ///// <summary>
+        ///// Default Solver for the linear system
+        ///// </summary>
+        //public ISolverSmootherTemplate Config_linearSolver = new DirectSolver() { WhichSolver = DirectSolver._whichSolver.PARDISO };
 
         /// <summary>
         /// Scaling of the mass matrix, for each species and each variable.
@@ -356,7 +365,7 @@ namespace BoSSS.Solution.XdgTimestepping {
         /// <summary>
         /// The sequence of aggregation grids, on which multi grid solvers work.
         /// </summary>
-        public AggregationGrid[] MultigridSequence {
+        public AggregationGridData[] MultigridSequence {
             get;
             protected set;
         }
@@ -417,6 +426,23 @@ namespace BoSSS.Solution.XdgTimestepping {
             }
         }
 
+        /// <summary>
+        /// Set when calling constructor,
+        /// </summary>
+
+        public SolverFactory XdgSolverFactory;
+
+        private Control.NonLinearSolverConfig m_nonlinconfig;
+
+        private Control.LinearSolverConfig m_linearconfig;
+
+        //public delegate void DelGetSolver(out NonlinearSolver nonlinSolver, out ISolverSmootherTemplate linearSolver);
+
+        //public DelComputeOperatorMatrix GetSolver {
+        //    get;
+        //    protected set;
+        //}
+
 
         /// <summary>
         /// Returns either a solver for the Navier-Stokes or the Stokes system.
@@ -428,101 +454,18 @@ namespace BoSSS.Solution.XdgTimestepping {
             nonlinSolver = null;
             linearSolver = null;
 
-            string solverDescription = ""; // this.Control.option_solver;
-            //solverDescription = string.Format("; No. of cells: {0}, p = {1}/{2}; MaxKrylovDim {3}, MaxIter {4};",
-            //    this.GridData.Partitioning.TotalLength,
-            //    this.CurrentVel[0].Basis.Degree,
-            //    this.Pressure.Basis.Degree,
-            //    MaxKrylovDim,
-            //    MaxIterations);
+            //m_linearconfig.NoOfMultigridLevels= this.MultigridSequence.Length;
+            bool IsLinear = false;
+            if (Config_SpatialOperatorType != SpatialOperatorType.Nonlinear)
+                IsLinear = true;
 
-
-            // define solver
-            // -------------
-
-
-            if (this.RequiresNonlinearSolver) {
-                // +++++++++++++++++++++++++++++++++++++++++++++
-                // the nonlinear solvers:
-                // +++++++++++++++++++++++++++++++++++++++++++++
-
-                switch (Config_NonlinearSolver) {
-                    case NonlinearSolverMethod.Picard:
-
-                        nonlinSolver = new FixpointIterator(
-                            this.AssembleMatrixCallback,
-                            this.MultigridBasis,
-                            this.Config_MultigridOperator)
-                        {
-                            MaxIter = Config_MaxIterations,
-                            MinIter = Config_MinIterations,
-                            m_LinearSolver = Config_linearSolver,
-                            m_SessionPath = SessionPath,
-                            ConvCrit = Config_SolverConvergenceCriterion,
-                            UnderRelax = Config_UnderRelax,    
-                        };
-
-                        if (this.Config_LevelSetHandling == LevelSetHandling.Coupled_Iterative) {
-                            ((FixpointIterator)nonlinSolver).CoupledIteration_Converged = LevelSetConvergenceReached;
-                        }
-
-                        break;
-                         
-                    case NonlinearSolverMethod.Newton:
-
-                        nonlinSolver = new Newton(
-                            this.AssembleMatrixCallback,
-                            this.MultigridBasis,
-                            this.Config_MultigridOperator)
-                        {
-                            maxKrylovDim = Config_MaxKrylovDim,
-                            MaxIter = Config_MaxIterations,
-                            MinIter = Config_MinIterations,
-                            ApproxJac = Newton.ApproxInvJacobianOptions.DirectSolver,
-                            Precond = Config_linearSolver,
-                            GMRESConvCrit = Config_SolverConvergenceCriterion,
-                            ConvCrit = Config_SolverConvergenceCriterion,
-                            m_SessionPath = SessionPath,
-                        };
-                        break;
-
-                    case NonlinearSolverMethod.NewtonGMRES:
-
-                        nonlinSolver = new Newton(
-                            this.AssembleMatrixCallback,
-                            this.MultigridBasis,
-                            this.Config_MultigridOperator) {
-                            maxKrylovDim = Config_MaxKrylovDim,
-                            MaxIter = Config_MaxIterations,
-                            MinIter = Config_MinIterations,
-                            ApproxJac = Newton.ApproxInvJacobianOptions.GMRES,
-                            Precond = Config_linearSolver,
-                            //Precond = new RheologyJacobiPrecond() { m_We = 0.1},
-                            GMRESConvCrit = Config_SolverConvergenceCriterion,
-                            ConvCrit = Config_SolverConvergenceCriterion,
-                            m_SessionPath = SessionPath,
-                        };
-                        break;
-
-                    default:
-                        throw new NotImplementedException();
-                }
-               
-            } else {
-
-                // +++++++++++++++++++++++++++++++++++++++++++++
-                // the linear solvers:
-                // +++++++++++++++++++++++++++++++++++++++++++++
-
-
-                linearSolver = Config_linearSolver;
-            }
-
-
+            
+            XdgSolverFactory.GenerateNonLin(out nonlinSolver,out linearSolver, this, this.AssembleMatrixCallback, this.MultigridBasis, LevelSetConvergenceReached, IsLinear);
+            string ls_strg = String.Format("{0}", m_linearconfig.SolverCode);
+            string nls_strg = String.Format("{0}", m_nonlinconfig.SolverCode);
 
             // set callback for diagnostic output
             // ----------------------------------
-
             if (nonlinSolver != null) {
                 nonlinSolver.IterationCallback += this.LogResis;
             }
@@ -531,11 +474,7 @@ namespace BoSSS.Solution.XdgTimestepping {
                 ((ISolverWithCallback)linearSolver).IterationCallback = this.LogResis;
             }
 
-            // return
-            // ------
-
-
-            return solverDescription;
+            return String.Format("nonlinear Solver: {0}, linear Solver: {1}", nls_strg, ls_strg);
         }
 
 
@@ -586,8 +525,7 @@ namespace BoSSS.Solution.XdgTimestepping {
                         double L2Res = R.Mapping.Fields[i].L2Norm();
                         m_ResLogger.CustomValue(L2Res, m_ResidualNames[i]);
                     }
-                }
-                else {
+                } else {
 
                     // +++++++++++++++++++++++
                     // un-transformed residual
@@ -599,13 +537,12 @@ namespace BoSSS.Solution.XdgTimestepping {
                         double L2Res = 0.0;
 
                         foreach (int idx in VarIdx[i])
-                            L2Res += currentRes[idx-Mgop.Mapping.i0].Pow2();
+                            L2Res += currentRes[idx - Mgop.Mapping.i0].Pow2();
                         L2Res = L2Res.MPISum().Sqrt(); // would be better to do the MPISum for all L2Res together,
                                                        //                                but this implementation is anyway inefficient....
 
                         m_ResLogger.CustomValue(L2Res, m_ResidualNames[i]);
                     }
-
                 }
 
                 if (Config_LevelSetHandling == LevelSetHandling.Coupled_Iterative) {
@@ -615,17 +552,14 @@ namespace BoSSS.Solution.XdgTimestepping {
                 m_ResLogger.NextIteration(true);
             }
         }
-
-
-
+        
         public double m_LastLevelSetResidual;
 
         protected bool LevelSetConvergenceReached() {
 
             return (m_LastLevelSetResidual < Config_LevelSetConvergenceCriterion);
         }
-
-
+        
         /// <summary>
         /// Sets <see cref="Config_MultigridOperator"/> to a default configuration.
         /// </summary>

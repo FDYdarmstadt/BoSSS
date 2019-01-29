@@ -25,7 +25,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using BoSSS.Platform;
-using BoSSS.Solution.Multigrid;
+using BoSSS.Solution.AdvancedSolvers;
 using BoSSS.Solution.Timestepping;
 using ilPSP;
 using BoSSS.Foundation.Grid.Aggregation;
@@ -82,10 +82,14 @@ namespace BoSSS.Solution.XdgTimestepping {
             SpatialOperatorType _SpatialOperatorType,
             IDictionary<SpeciesId, IEnumerable<double>> _MassScale,
             MultigridOperator.ChangeOfBasisConfig[][] _MultigridOperatorConfig,
-            AggregationGrid[] _MultigridSequence,
+            AggregationGridData[] _MultigridSequence,
             SpeciesId[] _SpId,
             int _CutCellQuadOrder,
-            double _AgglomerationThreshold, bool _useX) {
+            double _AgglomerationThreshold, bool _useX, Control.NonLinearSolverConfig nonlinconfig,
+            Control.LinearSolverConfig linearconfig) : base(nonlinconfig,
+            linearconfig) {
+
+            m_nonlinconfig = nonlinconfig;
 
             if (Fields.Count() != IterationResiduals.Count())
                 throw new ArgumentException("Expecting the same number of fields and residuals.");
@@ -184,6 +188,7 @@ namespace BoSSS.Solution.XdgTimestepping {
                     }
                 }
             }
+
 
             // multigrid - init
             // ----------------
@@ -591,6 +596,7 @@ namespace BoSSS.Solution.XdgTimestepping {
                     MassMatrixFactory MassFact = m_LsTrk.GetXDGSpaceMetrics(base.Config_SpeciesToCompute, base.Config_CutCellQuadratureOrder).MassMatrixFactory;
                     m_Stack_MassMatrix[0] = new BlockMsrMatrix(CurrentStateMapping);
                     MassFact.AccMassMatrix(m_Stack_MassMatrix[0], CurrentStateMapping, _alpha: Config_MassScale);
+
                 }
             }
 
@@ -723,7 +729,7 @@ namespace BoSSS.Solution.XdgTimestepping {
             IEnumerable<DGField> Fields,
             IEnumerable<DGField> IterationResiduals,
             LevelSetTracker LsTrk,
-            AggregationGrid[] _MultigridSequence) //
+            AggregationGridData[] _MultigridSequence) //
         {
             using (new FuncTrace()) {
 
@@ -1078,6 +1084,8 @@ namespace BoSSS.Solution.XdgTimestepping {
                 Debug.Assert(object.ReferenceEquals(this.m_CurrentAgglomeration.Tracker, this.m_LsTrk));
                 this.ComputeOperatorMatrix(m_Stack_OpMatrix[0], m_Stack_OpAffine[0], CurrentStateMapping, locCurSt, base.GetAgglomeratedLengthScales(), m_CurrentPhystime + m_CurrentDt);
 
+                
+
 
                 // assemble system
                 // ---------------
@@ -1184,6 +1192,7 @@ namespace BoSSS.Solution.XdgTimestepping {
                         Affine.AccV(1.0 / dt, new CoordinateVector(CurrentStateMapping));
                     }
                 }
+
 #if DEBUG
                 if (Config_MassMatrixShapeandDependence != MassMatrixShapeandDependence.IsIdentity) {
                     // compare "private" and "official" mass matrix stack
@@ -1213,6 +1222,7 @@ namespace BoSSS.Solution.XdgTimestepping {
                 Debug.Assert(object.ReferenceEquals(m_CurrentAgglomeration.Tracker, m_LsTrk));
                 m_CurrentAgglomeration.ManipulateMatrixAndRHS(System, RHS, CurrentStateMapping, CurrentStateMapping);
 
+
                 // increase iteration counter         
                 // --------------------------
 
@@ -1227,6 +1237,7 @@ namespace BoSSS.Solution.XdgTimestepping {
 
         int m_InnerCoupledIterations = 0;
 
+        Control.NonLinearSolverConfig m_nonlinconfig;
 
         /// <summary>
         /// callback routine for the handling of the coupled level-set iteration
@@ -1240,7 +1251,7 @@ namespace BoSSS.Solution.XdgTimestepping {
             double ResidualNorm = currentRes.L2NormPow2().MPISum().Sqrt();
             //Console.WriteLine("ResidualNorm in CoupledIterationCallback is {0}", ResidualNorm);
             // delay the update of the level-set until the flow solver converged
-            if(ResidualNorm >= this.Config_SolverConvergenceCriterion) {
+            if(ResidualNorm >= this.m_nonlinconfig.ConvergenceCriterion) {
                 this.CoupledIteration = false;
             } else {
                 m_InnerCoupledIterations = 0;
@@ -1346,9 +1357,6 @@ namespace BoSSS.Solution.XdgTimestepping {
                 dt = m_CurrentDt;
             else
                 Console.WriteLine("Increment solve, timestep #{0}, dt = {1} ...", increment, dt);
-
-
-
 
 
             // ===========================================
@@ -1567,6 +1575,7 @@ namespace BoSSS.Solution.XdgTimestepping {
 
                 Debug.Assert(m_CurrentAgglomeration == null);
             }
+
 
             // ====================
             // release end-of-stack

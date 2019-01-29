@@ -20,7 +20,7 @@ using BoSSS.Platform;
 using BoSSS.Solution.Control;
 using BoSSS.Foundation.Grid;
 using System.Diagnostics;
-using BoSSS.Solution.Multigrid;
+using BoSSS.Solution.AdvancedSolvers;
 using ilPSP.Utils;
 using BoSSS.Foundation.Grid.Classic;
 using ilPSP;
@@ -287,10 +287,11 @@ namespace BoSSS.Application.FSI_Solver
             C.AdvancedDiscretizationOptions.PenaltySafety = 4;
             C.LevelSetSmoothing = false;
             //C.option_solver = "direct";
-            C.MaxKrylovDim = 20;
-            C.MaxSolverIterations = 50;
+            C.LinearSolver.MaxKrylovDim = 20;
+            C.LinearSolver.MaxSolverIterations = 50;
+            C.NonLinearSolver.MaxSolverIterations = 50;
             C.VelocityBlockPrecondMode = MultigridOperator.Mode.SymPart_DiagBlockEquilib_DropIndefinite;
-            C.NoOfMultigridLevels = 0;
+            C.LinearSolver.NoOfMultigridLevels = 0;
 
             // Timestepping
             // ============
@@ -458,8 +459,9 @@ namespace BoSSS.Application.FSI_Solver
             C.AdvancedDiscretizationOptions.PenaltySafety = 4;
             C.AdvancedDiscretizationOptions.CellAgglomerationThreshold = 0.2;
             C.LevelSetSmoothing = false;
-            C.MaxSolverIterations = 100;
-            C.NoOfMultigridLevels = 1;
+            C.LinearSolver.MaxSolverIterations = 100;
+            C.LinearSolver.NoOfMultigridLevels = 1;
+            C.NonLinearSolver.MaxSolverIterations = 100;
 
             // Timestepping
             // ============
@@ -783,10 +785,11 @@ namespace BoSSS.Application.FSI_Solver
             C.AdvancedDiscretizationOptions.PenaltySafety = 4;
             C.AdvancedDiscretizationOptions.CellAgglomerationThreshold = 0.2;
             C.LevelSetSmoothing = false;
-            C.MaxKrylovDim = 20;
-            C.MaxSolverIterations = 100;
+            C.LinearSolver.MaxKrylovDim = 20;
+            C.LinearSolver.MaxSolverIterations = 100;
+            C.NonLinearSolver.MaxSolverIterations = 100;
             C.VelocityBlockPrecondMode = MultigridOperator.Mode.SymPart_DiagBlockEquilib_DropIndefinite;
-            C.NoOfMultigridLevels = 0;
+            C.LinearSolver.NoOfMultigridLevels = 0;
 
             // Timestepping
             // ============
@@ -958,7 +961,7 @@ namespace BoSSS.Application.FSI_Solver
             };
                 C.Particles = new List<Particle>();
 
-                C.Particles.Add(new Particle(2, 4, new double[] { 0.0, 4.0 }) {
+                C.Particles.Add(new Particle_Sphere(2, 4, new double[] { 0.0, 4.0 }) {
                     radius_P = 0.125,
                     rho_P = 1.25,
                 
@@ -1024,8 +1027,8 @@ namespace BoSSS.Application.FSI_Solver
             C.AdvancedDiscretizationOptions.PenaltySafety = 4;
             C.AdvancedDiscretizationOptions.CellAgglomerationThreshold = 0.2;
             C.LevelSetSmoothing = false;
-            C.MaxSolverIterations = 100;
-
+            C.LinearSolver.MaxSolverIterations = 100;
+            C.NonLinearSolver.MaxSolverIterations = 100;
 
             // Timestepping
             // ============
@@ -1039,8 +1042,8 @@ namespace BoSSS.Application.FSI_Solver
                 C.Timestepper_Mode = FSI_Control.TimesteppingMode.Splitting;
             }
 
-            C.NonlinearSolve = IBM_Solver.NonlinearSolverCodes.Picard;
-            C.LinearSolve = IBM_Solver.LinearSolverCodes.classic_mumps;
+            C.NonLinearSolver.SolverCode = NonLinearSolverConfig.Code.Picard;
+            C.LinearSolver.SolverCode = LinearSolverConfig.Code.classic_mumps;
 
             C.Timestepper_Scheme = IBM_Solver.IBM_Control.TimesteppingScheme.BDF2;
             double dt = 0.001;

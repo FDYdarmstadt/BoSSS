@@ -70,7 +70,7 @@ namespace BoSSS.Application.XdgNastyLevsetLocationTest {
 
         internal int QUAD_ORDER = 4;
 
-        protected override GridCommons CreateOrLoadGrid() {
+        protected override IGrid CreateOrLoadGrid() {
             return test.GetGrid();
         }
 

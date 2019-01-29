@@ -661,6 +661,10 @@ namespace BoSSS.Application.BoSSSpad {
         /// <param name="fieldName">
         /// The name of the DG field whose error should be estimated.
         /// </param>
+        /// <param name="xAxis_Is_hOrDof">
+        /// - true: the x-axis (<see cref="Plot2Ddata.XYvalues.Abscissas"/>) is the grid resolution \f$ h \f$
+        /// - false: the x-axis (<see cref="Plot2Ddata.XYvalues.Abscissas"/>) is the number of degrees-of-freedom
+        /// </param>
         /// <returns>
         /// A data set containing information about the grid resolution and the
         /// corresponding errors with respect to the finest corresponding grid,
@@ -669,25 +673,37 @@ namespace BoSSS.Application.BoSSSpad {
         /// estimated error of zero (by definition) and is thus excluded from
         /// the result.
         /// </returns>
-        public static Plot2Ddata ToEstimatedGridConvergenceData(this IEnumerable<ITimestepInfo> timesteps, string fieldName) {
+        public static Plot2Ddata ToEstimatedGridConvergenceData(this IEnumerable<ITimestepInfo> timesteps, string fieldName, bool xAxis_Is_hOrDof = true) {
             Dictionary<string, double[][]> dataGroups = new Dictionary<string, double[][]>();
             foreach (var group in timesteps.GroupBy(t => t.Fields.Find(fieldName).Basis.Degree)) {
-                double[] resolution;
-                Dictionary<string, double[]> errors;
-                Guid[] tsiIds;
-
+        
                 DGFieldComparison.ComputeErrors(
                     new string[] { fieldName },
                     group.ToArray(),
-                    out resolution,
-                    out errors,
-                    out tsiIds);
+                    out double[] resolution,
+                    out Dictionary<string, int[]> DOFs,
+                    out Dictionary<string, double[]> errors,
+                    out Guid[] tsiIds);
+
+                double dim = timesteps.First().Grid.SpatialDimension;
 
                 Debug.Assert(errors.ContainsKey(fieldName));
                 Debug.Assert(errors[fieldName].Length == resolution.Length);
 
-                double[][] resolutionsAndErrors = new double[2][] { resolution, errors[fieldName] };
-                dataGroups.Add(group.Key.ToString(), resolutionsAndErrors);
+                Debug.Assert(DOFs.ContainsKey(fieldName));
+                Debug.Assert(DOFs[fieldName].Length == resolution.Length);
+
+                //double[][] resolutionsAndErrors = new double[2][] {
+                //    xAxis_Is_hOrDof ? resolution : DOFs[fieldName].Select(ix => (double)ix).ToArray(),
+                //    errors[fieldName] };
+
+                double[] xValues = xAxis_Is_hOrDof ? resolution : DOFs[fieldName].Select(ix => Math.Pow((double)ix, 1.0 / dim)).ToArray();
+                double[] yValues = errors[fieldName];
+                if(xAxis_Is_hOrDof == false)
+                    // data is sorted according to mesh width, this may not be equal to sorting according to No. of. DOF 
+                    Array.Sort(xValues, yValues);
+
+                dataGroups.Add(group.Key.ToString(), new double[2][] { xValues, yValues });
             }
 
             return new Plot2Ddata(dataGroups.ToArray()).WithLogX().WithLogY();

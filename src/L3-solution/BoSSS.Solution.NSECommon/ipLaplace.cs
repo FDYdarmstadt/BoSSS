@@ -23,7 +23,8 @@ using ilPSP;
 namespace BoSSS.Solution.NSECommon {
 
     /// <summary>
-    /// Symmetric Interior Penalty - discetization of the Laplace operator
+    /// Symmetric Interior Penalty - discetization of the (positive) Laplace operator,
+    /// i.e. \f$ + \text{div}( \nu \nabla u ) \f$.
     /// </summary>
     abstract public class SIPLaplace : BoSSS.Foundation.IEdgeForm, BoSSS.Foundation.IVolumeForm, BoSSS.Foundation.IEquationComponentCoefficient {
 
@@ -97,7 +98,7 @@ namespace BoSSS.Solution.NSECommon {
         /// <summary>
         /// Currently, not operational - intended for update of penalty length scales.
         /// </summary>
-        public void CoefficientUpdate(CoefficientSet cs, int[] DomainDGdeg, int TestDGdeg) {
+        public virtual void CoefficientUpdate(CoefficientSet cs, int[] DomainDGdeg, int TestDGdeg) {
             /*
             int m_D = cs.GrdDat.SpatialDimension;
             double _D = m_D;
@@ -172,6 +173,9 @@ namespace BoSSS.Solution.NSECommon {
             return acc;
         }
 
+        /// <summary>
+        /// Integrand on interior mesh edges of the SIP
+        /// </summary>
         virtual public double InnerEdgeForm(ref Foundation.CommonParams inp, double[] _uA, double[] _uB, double[,] _Grad_uA, double[,] _Grad_uB, double _vA, double _vB, double[] _Grad_vA, double[] _Grad_vB) {
             double Acc = 0.0;
 
@@ -196,6 +200,9 @@ namespace BoSSS.Solution.NSECommon {
 
         }
 
+        /// <summary>
+        /// Integrand on boundary mesh edges of the SIP
+        /// </summary>
         virtual public double BoundaryEdgeForm(ref Foundation.CommonParamsBnd inp, double[] _uA, double[,] _Grad_uA, double _vA, double[] _Grad_vA) {
             double Acc = 0.0;
 

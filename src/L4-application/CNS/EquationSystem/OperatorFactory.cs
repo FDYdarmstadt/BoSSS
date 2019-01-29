@@ -219,7 +219,6 @@ namespace CNS.EquationSystem {
                 builder.BuildFluxes(op);
             }
 
-            // TODO add IBM AV CFL constraint
             if (control.ActiveOperators.HasFlag(Operators.ArtificialViscosity)) {
                 op.CFLConstraints.Add(new ArtificialViscosityCFLConstraint(
                     control,

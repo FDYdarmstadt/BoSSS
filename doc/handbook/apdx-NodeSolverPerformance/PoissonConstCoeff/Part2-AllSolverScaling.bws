@@ -1,27 +1,31 @@
 restart
 **************
 
-  Database Explorer v2
-  ____________________
+  BoSSSpad C# interpreter
+  _______________________
 
 Databases loaded:
-List of 0 instances of IDatabaseInfo {
+List of 4 instances of IDatabaseInfo {
+  0: { Session Count = 0; Grid Count = 34; Path = C:\BoSSS_DB }
+  1: { Session Count = 224; Grid Count = 6; Path = C:\tmp\fk_temp_db }
+  2: { Session Count = 197; Grid Count = 6; Path = P:\Performance_DB }
+  3: { Session Count = 112; Grid Count = 6; Path = E:\Performance_oldLibs_DB }
 }
-Setting Matlab Connector to Octave...
 
  Console ready for input. Type 'help' for help.
 
 ==============
-WorkflowMgm.Init("PoissonSolverPerformance");
+string WFlowName = "PoissonSolverPerformance_0_1";
+WorkflowMgm.Init(WFlowName);
 **************
-Project name is set to 'PoissonSolverPerformance'.
+Project name is set to 'PoissonSolverPerformance_0_1'.
 
 ==============
 using System.IO;
 using BoSSS.Application.SipPoisson;
 **************
 ==============
-string dateString = "2018-3-26";
+string dateString = "2018-11-27";
 string File       = "SolverRuns--" + dateString + ".json";
 string FilePath   = Path.Combine(CurrentDocDir, File);
 var SessTab       = TableExtensions.LoadFromFile(FilePath);
@@ -37,7 +41,7 @@ var SessTab       = TableExtensions.LoadFromFile(FilePath);
 ==============
 SessTab.GetColumnNames();
 **************
-List of 49 instances of String {
+List of 50 instances of String {
   0: SessionName
   1: DGdegree:T
   2: DGdegree:Tex
@@ -68,25 +72,26 @@ List of 49 instances of String {
   27: DynamicLoadBalancing_RedistributeAtStartup
   28: DynamicLoadBalancing_Period
   29: DynamicLoadBalancing_ImbalanceThreshold
-  30: AdaptiveMeshRefinement
-  31: CutCellQuadratureType
-  32: ContinueOnIoError
-  33: Grid:NoOfCells
-  34: Grid:hMax
-  35: Grid:hMin
-  36: UsedNoOfMultigridLevels
-  37: minSolRunT
-  38: maxSolRunT
-  39: Conv
-  40: NoIter
-  41: NoOfCells
-  42: DOFs
-  43: BlockSize
-  44: RegularTerminated
-  45: SipMatrixAssembly_time
-  46: Aggregation_basis_init_time
-  47: Solver_Init_time
-  48: Solver_Run_time
+  30: DynamicLoadBalancing_On
+  31: AdaptiveMeshRefinement
+  32: CutCellQuadratureType
+  33: ContinueOnIoError
+  34: Grid:NoOfCells
+  35: Grid:hMax
+  36: Grid:hMin
+  37: RegularTerminated
+  38: SipMatrixAssembly_time
+  39: Aggregation_basis_init_time
+  40: Solver_Init_time
+  41: Solver_Run_time
+  42: UsedNoOfMultigridLevels
+  43: minSolRunT
+  44: maxSolRunT
+  45: Conv
+  46: NoIter
+  47: NoOfCells
+  48: DOFs
+  49: BlockSize
 }
 ==============
 var SubTab_1 = SessTab.ExtractColumns("DGdegree:T", "Grid:NoOfCells", "solver_name", "DOFs", "minSolRunT", "maxSolRunT", "NoIter", "RegularTerminated", "Conv");
@@ -103,82 +108,93 @@ var SubTab = SubTab_2.ExtractColumns("DGdegree:T", "Grid:NoOfCells", "solver_nam
 ==============
 SubTab.Print();
 **************
-    DGdegree:T Grid:NoOfCells solver_name DOFs    minSolRunT  maxSolRunT  NoIter 
-0:  2          20480          4           204800  38.8239197  38.8239197  25     
-1:  2          2560           4           25600   5.7797818   5.7797818   30     
-2:  2          163840         4           1638400 310.8046237 310.8046237 23     
-3:  3          20480          6           409600  139.5348553 139.5348553 34     
-4:  3          2560           6           51200   14.3340817  14.3340817  38     
-5:  3          320            6           6400    6.4271863   6.4271863   211    
-6:  3          40             6           800     0.6650459   0.6650459   31     
-7:  2          163840         6           1638400 967.526137  967.526137  34     
-8:  2          20480          6           204800  47.4579363  47.4579363  32     
-9:  2          2560           6           25600   5.1623265   5.1623265   32     
-10: 2          320            6           3200    1.5083119   1.5083119   78     
-11: 2          40             6           400     0.5427695   0.5427695   28     
-12: 3          20480          4           409600  105.9824714 105.9824714 19     
-13: 3          2560           4           51200   14.9818409  14.9818409  26     
-14: 3          320            4           6400    1.7271275   1.7271275   5      
-15: 3          40             4           800     0.4727006   0.4727006   5      
-16: 2          320            4           3200    0.6922625   0.6922625   5      
-17: 2          40             4           400     0.401851    0.401851    5      
-18: 2          163840         3           1638400 205.9214854 207.712435  1      
-19: 3          20480          0           409600  490.1100894 518.7101765 1      
-20: 3          2560           0           51200   6.9900132   7.2164411   1      
-21: 3          320            0           6400    0.3281247   0.4473527   1      
-22: 3          40             0           800     0.0258516   0.1660214   1      
-23: 2          20480          0           204800  66.3348715  66.9722856  1      
-24: 2          2560           0           25600   1.8313964   1.9939942   1      
-25: 2          320            0           3200    0.0933036   0.227141    1      
-26: 2          40             0           400     0.0075192   0.1870387   1      
-27: 6          320            0           26880   7.3551583   7.509196    1      
-28: 5          320            0           17920   2.7617928   2.8880695   1      
-29: 4          320            0           11200   0.9386579   1.0991877   1      
-30: 3          320            0           6400    0.305347    0.4267376   1      
-31: 2          320            0           3200    0.0874117   0.2781498   1      
-32: 2          163840         2           1638400 52.1191614  52.2078826  6364   
-33: 4          20480          2           716800  79.2762248  79.3159898  6550   
-34: 4          2560           2           89600   4.7661487   4.7827978   2777   
-35: 4          320            2           11200   0.4063721   0.4315301   1129   
-36: 4          40             2           1400    0.1017392   0.1467253   442    
-37: 3          20480          2           409600  20.5670768  20.5828078  4496   
-38: 3          2560           2           51200   1.4128504   1.4770409   1907   
-39: 3          320            2           6400    0.188596    0.226396    772    
-40: 3          40             2           800     0.0554063   0.1030974   282    
-41: 2          20480          2           204800  3.3484205   3.3933564   2834   
-42: 2          2560           2           25600   0.3635454   0.4008203   1209   
-43: 2          320            2           3200    0.0930494   0.1289767   488    
-44: 2          40             2           400     0.0300314   0.069585    140    
-45: 6          2560           1           215040  309.0160683 310.168468  1      
-46: 6          320            1           26880   10.9285249  11.0252954  1      
-47: 6          40             1           3360    0.2176497   0.2381427   1      
-48: 5          2560           1           143360  99.9565818  101.6222717 1      
-49: 5          320            1           17920   4.1333074   4.2888166   1      
-50: 5          40             1           2240    0.0898083   0.0909635   1      
-51: 4          2560           1           89600   26.3633732  26.5831369  1      
-52: 4          320            1           11200   1.2207308   1.227546    1      
-53: 4          40             1           1400    0.029743    0.0854211   1      
-54: 3          20480          1           409600  242.6439168 243.0862851 1      
-55: 3          2560           1           51200   7.0109432   7.1546289   1      
-56: 3          320            1           6400    0.4149952   0.4240334   1      
-57: 3          40             1           800     0.0130627   0.0351609   1      
-58: 2          20480          1           204800  46.3075623  46.5139476  1      
-59: 2          2560           1           25600   1.5280948   1.5659212   1      
-60: 2          320            1           3200    0.0442264   0.062788    1      
-61: 2          40             1           400     0.0036322   0.0435425   1      
-62: 6          2560           0           215040  344.8825203 345.9041878 1      
-63: 6          40             0           3360    0.3406199   0.460534    1      
-64: 5          2560           0           143360  108.6526829 108.6534426 1      
-65: 5          40             0           2240    0.1639026   0.2790131   1      
-66: 4          2560           0           89600   29.095991   29.7360778  1      
-67: 4          40             0           1400    0.0604208   0.193336    1      
-68: 3          20480          0           409600  464.9720118 475.8218817 1      
-69: 3          2560           0           51200   6.2259657   6.4669901   1      
-70: 3          40             0           800     0.024444    0.1487611   1      
-71: 2          20480          0           204800  58.7884026  59.4603266  1      
-72: 2          2560           0           25600   1.5580864   1.7271004   1      
-73: 2          40             0           400     0.0088426   0.3545052   1      
+    DGdegree:T Grid:NoOfCells solver_name DOFs    minSolRunT    maxSolRunT    NoIter 
+0:  5          2560           4           143360  497.1330584   497.1330584   84     
+1:  5          320            4           17920   28.3973134    28.3973134    73     
+2:  5          40             4           2240    1.1212961     1.1212961     5      
+3:  3          20480          4           409600  704.9570708   704.9570708   113    
+4:  3          2560           4           51200   31.6771171    31.6771171    72     
+5:  3          320            4           6400    1.557986      1.557986      5      
+6:  3          40             4           800     0.4036891     0.4036891     5      
+7:  2          163840         4           1638400 951.588482    951.588482    67     
+8:  2          20480          4           204800  103.7714009   103.7714009   66     
+9:  2          2560           4           25600   9.908968      9.908968      77     
+10: 2          320            4           3200    0.6306171     0.6306171     5      
+11: 2          40             4           400     0.3780025     0.3780025     5      
+12: 5          40             7           2240    0.6837155     0.6837155     1      
+13: 3          320            7           6400    4.7405743     4.7405743     1      
+14: 3          40             7           800     0.1814843     0.1814843     1      
+15: 2          320            7           3200    0.8796455     0.8796455     1      
+16: 2          40             7           400     0.1693735     0.1693735     1      
+17: 5          2560           5           143360  2645.6874397  2645.6874397  73     
+18: 5          320            5           17920   28.779916     28.779916     10     
+19: 5          40             5           2240    1.7173307     1.7173307     5      
+20: 3          20480          5           409600  5357.7172523  5357.7172523  122    
+21: 3          2560           5           51200   128.0570934   128.0570934   29     
+22: 3          320            5           6400    2.024904      2.024904      5      
+23: 3          40             5           800     0.5379994     0.5379994     5      
+24: 2          163840         5           1638400 25132.5672957 25132.5672957 242    
+25: 2          20480          5           204800  1106.5892615  1106.5892615  98     
+26: 2          2560           5           25600   24.1967331    24.1967331    23     
+27: 2          320            5           3200    0.6839544     0.6839544     5      
+28: 2          40             5           400     0.4598177     0.4598177     5      
+29: 5          2560           3           143360  138.2808266   138.2808266   1      
+30: 5          320            3           17920   4.3140273     4.3140273     1      
+31: 5          40             3           2240    0.6238355     0.6238355     1      
+32: 3          20480          3           409600  497.9328873   497.9328873   1      
+33: 3          2560           3           51200   7.890124      7.890124      1      
+34: 3          320            3           6400    0.6302231     0.6302231     1      
+35: 3          40             3           800     0.3001581     0.3001581     1      
+36: 2          163840         3           1638400 154.3554152   154.3554152   1      
+37: 2          20480          3           204800  102.8835388   102.8835388   1      
+38: 2          2560           3           25600   1.7608332     1.7608332     1      
+39: 2          320            3           3200    0.3768541     0.3768541     1      
+40: 2          40             3           400     0.3029201     0.3029201     1      
+41: 5          2560           6           143360  935.7729459   935.7729459   24     
+42: 5          320            6           17920   41.5323656    41.5323656    14     
+43: 5          40             6           2240    1.9254439     1.9254439     5      
+44: 3          20480          6           409600  1421.0780502  1421.0780502  30     
+45: 3          2560           6           51200   78.0868387    78.0868387    17     
+46: 3          320            6           6400    2.2752466     2.2752466     5      
+47: 3          40             6           800     0.578944      0.578944      5      
+48: 2          163840         6           1638400 4494.0690912  4494.0690912  39     
+49: 2          20480          6           204800  434.8776575   434.8776575   36     
+50: 2          2560           6           25600   23.7388973    23.7388973    21     
+51: 2          320            6           3200    0.8816629     0.8816629     5      
+52: 2          40             6           400     0.5294159     0.5294159     5      
+53: 3          20480          2           409600  335.3554683   335.3554683   4496   
+54: 3          2560           2           51200   18.0872109    18.0872109    1907   
+55: 3          320            2           6400    1.0274752     1.0274752     772    
+56: 3          40             2           800     0.0982016     0.0982016     282    
+57: 2          163840         2           1638400 828.2878655   828.2878655   6364   
+58: 2          20480          2           204800  49.2264378    49.2264378    2834   
+59: 2          2560           2           25600   2.8354138     2.8354138     1209   
+60: 2          320            2           3200    0.2271032     0.2271032     488    
+61: 2          40             2           400     0.0891242     0.0891242     140    
+62: 5          2560           1           143360  63.0882592    63.0882592    1      
+63: 5          320            1           17920   2.1434934     2.1434934     1      
+64: 5          40             1           2240    0.0833976     0.0833976     1      
+65: 3          2560           1           51200   4.6903745     4.6903745     1      
+66: 3          320            1           6400    0.2144427     0.2144427     1      
+67: 3          40             1           800     0.0327781     0.0327781     1      
+68: 2          20480          1           204800  34.9567318    34.9567318    1      
+69: 2          2560           1           25600   1.0037422     1.0037422     1      
+70: 2          320            1           3200    0.0562819     0.0562819     1      
+71: 2          40             1           400     0.3445748     0.3445748     1      
+72: 5          2560           0           143360  112.3881988   112.3881988   1      
+73: 5          320            0           17920   2.3178092     2.3178092     1      
+74: 5          40             0           2240    0.2650369     0.2650369     1      
+75: 3          20480          0           409600  457.4925002   457.4925002   1      
+76: 3          2560           0           51200   6.7603457     6.7603457     1      
+77: 3          320            0           6400    0.3894396     0.3894396     1      
+78: 3          40             0           800     0.1515316     0.1515316     1      
+79: 2          20480          0           204800  78.808448     78.808448     1      
+80: 2          2560           0           25600   1.5792638     1.5792638     1      
+81: 2          320            0           3200    0.1964491     0.1964491     1      
+82: 2          40             0           400     0.167278      0.167278      1      
 ==============
+//Extract to excel-File
+//SubTab.ToCSVFile(WFlowName);
 **************
 ==============
 var RuntimePlot = SubTab.ToPlot("DOFs", "minSolRunT", // column for x- and y
@@ -254,7 +270,35 @@ foreach(Plot2Ddata.XYvalues graph in RuntimePlot.dataGroups) {
 Incomplete statement - missing closing parentheses?.
 
 ==============
+//extract all Degrees and put them into array
+int rowcount       = SubTab.Rows.Count;
+int selectedcolumn = 0;
+int[] tmp= new int[20];
+
+int count = 0;
+for(int r=0;r<rowcount;r++){
+System.Data.DataRow row = (System.Data.DataRow)SubTab.Rows[r];
+int bla                 = Convert.ToInt32(row[selectedcolumn]);
+if (tmp[bla]==0){
+  tmp[bla]=1;
+  count++;
+}
+}
+int[] DGdegrees = new int[count];
+int count2 = 0;
+for(int i=0;i<tmp.Length;i++){
+   if(tmp[i]==1){
+      DGdegrees[count2]=i;
+      count2++; 
+   }
+}
+DGdegrees;
 **************
+List of 3 instances of Int32 {
+  0: 2
+  1: 3
+  2: 5
+}
 ==============
 **************
 ==============
@@ -272,15 +316,22 @@ Incomplete statement - missing closing parentheses?.
 ==============
 **************
 ==============
-Plot2Ddata[,] multiplots = new Plot2Ddata[3,2];
-int pDegree = 2;
-for(int iRow = 0; iRow < 3; iRow++) {
-//var RuntimePlot = SubTab.ToPlot("DOFs", "minSolRunT", // column for x- and y
-//                        "solver_name", "DGdegree:T"); // column for group
-for(int iCol = 0; iCol < 2; iCol++) {
-    if(pDegree > 6)
+int rows    = 3;
+int columns = 1;
+SolverCodes[] ignore_solvers = {SolverCodes.classic_pardiso, SolverCodes.classic_cg, SolverCodes.exp_direct, SolverCodes.exp_softpcg_schwarz, SolverCodes.exp_direct_lapack};
+
+Plot2Ddata[,] multiplots = new Plot2Ddata[rows,columns];
+int pDegree = 0;
+for(int iRow = 0; iRow < rows; iRow++) {
+for(int iCol = 0; iCol < columns; iCol++) {
+    
+    if(pDegree > rows*columns-1)
         continue;
- 
+    int tmpDG = -1;
+    if(pDegree < DGdegrees.Length)
+        tmpDG = DGdegrees[pDegree];
+    
+    //Create Graphs
     multiplots[iRow,iCol] = SubTab.ToPlot("DOFs", "minSolRunT", // column for x- and y
        delegate (int iTabRow, 
                  IDictionary<string, object> Row, 
@@ -292,7 +343,7 @@ for(int iCol = 0; iCol < 2; iCol++) {
            // and the respective color  
            // - - - - - - - - - - - - - - - - - - - - - - - - 
            int k = Convert.ToInt32(Row["DGdegree:T"]);
-           if(k != pDegree) {
+           if(k != tmpDG) {
                 // degree does not match -> not in this plot
                 Nmn = null;
                 Fmt = null;
@@ -300,7 +351,17 @@ for(int iCol = 0; iCol < 2; iCol++) {
            }
  
            SolverCodes solver_name = (SolverCodes) Convert.ToInt32(Row["solver_name"]);
-           Fmt                     = new PlotFormat();
+           //ignore the solvers specified in ingore_solvers
+           foreach(SolverCodes sc in ignore_solvers){
+               if(solver_name==sc){
+                   System.Console.WriteLine("skipped");
+                   Nmn = null;
+                   Fmt = null;
+               return;
+               }
+           }
+           //process the other solvers
+           Fmt = new PlotFormat();
            switch(solver_name) {
            case SolverCodes.classic_pardiso: 
                Nmn           = "Pardiso"; 
@@ -338,10 +399,10 @@ for(int iCol = 0; iCol < 2; iCol++) {
                break;
            default:
                Console.WriteLine("unknown: " + solver_name); 
-               Nmn = "unknown"; 
+               Nmn = "unknown";
                break;
            } 
-           //Console.WriteLine("name is: " + solver_name); 
+           Console.WriteLine("name is: " + solver_name); 
            Fmt.PointSize = 0.5;
            Fmt.Style     = Styles.LinesPoints;
            Fmt.LineColor = LineColors.Black;
@@ -353,59 +414,144 @@ for(int iCol = 0; iCol < 2; iCol++) {
     linP.Format.FromString("- black");
     ArrayTools.AddToArray(linP, ref multiplots[iRow,iCol].dataGroups);
  
-    string Title = string.Format("$k = {0}$", pDegree);
+    //all about axis
+    string Title = string.Format("$k = {0}$", tmpDG);
     multiplots[iRow,iCol].Ylabel = Title;
     multiplots[iRow,iCol].LogX = true;
     multiplots[iRow,iCol].LogY = true;
- 
-    multiplots[iRow,iCol].YrangeMin = 1e-3;
+    //specify range of axis
+    multiplots[iRow,iCol].YrangeMin = 1e-2;
     multiplots[iRow,iCol].YrangeMax = 1e+4;
-    multiplots[iRow,iCol].XrangeMin = 1e2;
+    multiplots[iRow,iCol].XrangeMin = 1e1;
     multiplots[iRow,iCol].XrangeMax = 1e7;
-    multiplots[iRow,iCol].Y2rangeMin = 1e-3;
-    multiplots[iRow,iCol].Y2rangeMax = 1e+4;
-    multiplots[iRow,iCol].X2rangeMin = 1e2;
-    multiplots[iRow,iCol].X2rangeMax = 1e7;
- 
-    if(iRow == 2) {
-        multiplots[iRow,iCol].ShowLegend = true;
-        multiplots[iRow,iCol].LegendPosition = new double[] {1e12,1e4};
-    } else {
-        multiplots[iRow,iCol].ShowLegend = false;
-    }
- 
-    if(iCol == 1) {
-        multiplots[iRow,iCol].SwapYaxes();
-        multiplots[iRow,iCol].lmargin = 1;
-        multiplots[iRow,iCol].rmargin = 10;
-    } else {
-        multiplots[iRow,iCol].lmargin = 10;
-        multiplots[iRow,iCol].rmargin = 1;
-    }
-    multiplots[iRow,iCol].tmargin = 1;
+    //multiplots[iRow,iCol].Y2rangeMin = 1e-3;
+    //multiplots[iRow,iCol].Y2rangeMax = 1e+4;
+    //multiplots[iRow,iCol].X2rangeMin = 1e2;
+    //multiplots[iRow,iCol].X2rangeMax = 1e7;
+    
+    //spacing around plots
+    multiplots[iRow,iCol].ShowLegend = false;
+    multiplots[iRow,iCol].tmargin = 0;
     multiplots[iRow,iCol].bmargin = 1;
-    if(iRow == 0) {
-        multiplots[iRow,iCol].SwapXaxes();
+    multiplots[iRow,iCol].lmargin = 10;
+    multiplots[iRow,iCol].rmargin = 5;
+    multiplots[iRow,iCol].ShowXtics=false;
+
+    //I am legend ...
+    if(iRow == 0){
+    multiplots[iRow,iCol].ShowLegend = true;
+    multiplots[iRow,iCol].LegendAlignment=new string[]{"i","t","l"};
+    multiplots[iRow,iCol].LegendSwap=true;
     }
-    if(iRow == 1 && iCol == 0) {  
-        multiplots[iRow,iCol].ShowXtics = false;
-    }
+
+    //and i am special ...
+    if(iRow == rows-1)
+        multiplots[iRow,iCol].ShowXtics=true;
     pDegree++;
 }                        
 }
-//multiplots.PlotNow();
-multiplots.AddDummyPlotsForLegend(2,0);
+;
+//multiplots.AddDummyPlotsForLegend(3,0);
+multiplots.PlotNow()
+**************
+name is: exp_softpcg_mg
+name is: exp_softpcg_mg
+name is: exp_softpcg_mg
+name is: exp_softpcg_mg
+name is: exp_softpcg_mg
+skipped
+skipped
+skipped
+skipped
+skipped
+skipped
+skipped
+skipped
+skipped
+skipped
+skipped
+skipped
+name is: exp_softpcg_schwarz_directcoarse
+name is: exp_softpcg_schwarz_directcoarse
+name is: exp_softpcg_schwarz_directcoarse
+name is: exp_softpcg_schwarz_directcoarse
+name is: exp_softpcg_schwarz_directcoarse
+skipped
+skipped
+skipped
+skipped
+skipped
+name is: classic_mumps
+name is: classic_mumps
+name is: classic_mumps
+name is: classic_mumps
+skipped
+skipped
+skipped
+skipped
+name is: exp_softpcg_mg
+name is: exp_softpcg_mg
+name is: exp_softpcg_mg
+name is: exp_softpcg_mg
+skipped
+skipped
+skipped
+skipped
+skipped
+skipped
+skipped
+skipped
+skipped
+skipped
+name is: exp_softpcg_schwarz_directcoarse
+name is: exp_softpcg_schwarz_directcoarse
+name is: exp_softpcg_schwarz_directcoarse
+name is: exp_softpcg_schwarz_directcoarse
+skipped
+skipped
+skipped
+skipped
+name is: classic_mumps
+name is: classic_mumps
+name is: classic_mumps
+skipped
+skipped
+skipped
+skipped
+name is: exp_softpcg_mg
+name is: exp_softpcg_mg
+name is: exp_softpcg_mg
+skipped
+skipped
+skipped
+skipped
+skipped
+skipped
+skipped
+name is: exp_softpcg_schwarz_directcoarse
+name is: exp_softpcg_schwarz_directcoarse
+name is: exp_softpcg_schwarz_directcoarse
+name is: classic_mumps
+name is: classic_mumps
+name is: classic_mumps
+skipped
+skipped
+skipped
+Using gnuplot: C:\Program Files (x86)\FDY\BoSSS\bin\native\win\gnuplot-gp510-20160418-win32-mingw\gnuplot\bin\gnuplot.exe
+set key inside top left Left reverse 
+System.Drawing.Bitmap
+==============
+LastError
 **************
 ==============
 **************
 ==============
 **************
 ==============
-**************
-==============
-var CL = multiplots.ToGnuplot().PlotCairolatex(xSize:17, ySize:17);
+var CL = multiplots.ToGnuplot().PlotCairolatex(xSize:14,ySize:12);
 **************
 Using gnuplot: C:\Program Files (x86)\FDY\BoSSS\bin\native\win\gnuplot-gp510-20160418-win32-mingw\gnuplot\bin\gnuplot.exe
+set key inside top left Left reverse 
 
 ==============
 //CL.SaveTo(Path.Combine(CurrentDocDir, "ConstCoeffPoissonScaling.tex"));
@@ -413,11 +559,83 @@ Using gnuplot: C:\Program Files (x86)\FDY\BoSSS\bin\native\win\gnuplot-gp510-201
 ==============
 CL.PlotNow();
 **************
-System.Drawing.Bitmap
+System.ComponentModel.Win32Exception occurred: Das System kann die angegebene Datei nicht finden. Type 'LastError' for details.
+
+==============
+LastError
+**************
+System.ComponentModel.Win32Exception (0x80004005): Das System kann die angegebene Datei nicht finden
+   bei System.Diagnostics.Process.StartWithShellExecuteEx(ProcessStartInfo startInfo)
+   bei BoSSS.Application.BoSSSpad.GnuplotExtensions.CairolatexContainer.Preview(Boolean trimPage, Int32 dpi) in C:\BoSSS\BoSSS-SolverPerformance\public\src\L4-application\BoSSSpad\GnuplotExtensions.cs:Zeile 325.
+   bei <InteractiveExpressionClass>.Host(Object& $retval)
+   bei Mono.CSharp.Evaluator.Evaluate(String input, Object& result, Boolean& result_set)
+   bei BoSSS.Application.BoSSSpad.ReadEvalPrintLoop.EvalPrint(String line, Assembly& AssemblyProduced) in C:\BoSSS\BoSSS-SolverPerformance\public\src\L4-application\BoSSSpad\ReadEvalPrintLoop.cs:Zeile 318.
 ==============
 CL.WriteMinimalCompileableExample(
    Path.Combine(CurrentDocDir, "plots", "MainConstCoeffPoissonScaling.tex"),
    "ConstCoeffPoissonScaling.tex");
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
 **************
 ==============
 **************

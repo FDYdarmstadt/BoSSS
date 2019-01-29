@@ -45,7 +45,7 @@
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <DebugType>pdbonly</DebugType>
-    <Optimize>True</Optimize>
+    <Optimize>true</Optimize>
     <OutputPath>bin\Release\</OutputPath>
     <DefineConstants>TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
@@ -56,6 +56,8 @@
     <UseVSHostingProcess>true</UseVSHostingProcess>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Include="Solver\LinearSolver.cs" />
+    <Compile Include="Solver\NonLinearSolver.cs" />
     <Compile Include="CommandLineOptions.cs" />
     <Compile Include="Properties\Resources.Designer.cs">
       <AutoGen>True</AutoGen>
@@ -97,7 +99,6 @@
     <Compile Include="QueryHandler.cs" />
     <Compile Include="TimeStepping\BDFTimestepper.cs" />
     <Compile Include="TimeStepping\CrankNicolson.cs" />
-    <Compile Include="DualValueFlux.cs" />
     <Compile Include="TimeStepping\ExplicitEuler.cs" />
     <Compile Include="TimeStepping\ImplicitEuler.cs" />
     <Compile Include="TimeStepping\ImplicitTimeStepper.cs" />
@@ -105,7 +106,6 @@
     <Compile Include="LinearDerivativeSource.cs" />
     <Compile Include="LinearDualValueFlux.cs" />
     <Compile Include="LinearFlux.cs" />
-    <Compile Include="LinearSolver.cs" />
     <Compile Include="LinearSource.cs" />
     <Compile Include="NonlinearFlux.cs" />
     <Compile Include="NonlinearFluxEx.cs" />

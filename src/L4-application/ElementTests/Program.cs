@@ -130,7 +130,7 @@ namespace BoSSS.Application.ElementTests {
             }
         }
 
-        protected override GridCommons CreateOrLoadGrid() {
+        protected override IGrid CreateOrLoadGrid() {
             List();
             return Grid2D.Cartesian2DGrid(GenericBlas.Linspace(-1, 1, 5), GenericBlas.Linspace(-1, 1, 5));
         }
