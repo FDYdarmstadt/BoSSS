@@ -69,7 +69,6 @@ restart;
 \BoSSScmd{
 /// For the interactive mode of the solver in \BoSSSpad{} we have to load several dependencies first:
 using System.Diagnostics;\newline 
-using BoSSS.Solution.Multigrid;\newline 
 using BoSSS.Foundation.Grid.RefElements;\newline 
 using BoSSS.Application.IBM\_Solver;
  }
@@ -77,12 +76,6 @@ using BoSSS.Application.IBM\_Solver;
 \BoSSScmd{
 /// Now, a new database has to be created or opened by the following command
 var myDb = OpenOrCreateDefaultDatabase();
- }
-\BoSSSexe
-\BoSSScmd{
-/// Initialize the solver
-Type solver = typeof(IBM\_SolverMain);\newline 
-solver.Assembly.Location;
  }
 \BoSSSexe
 \BoSSScmd{
@@ -127,10 +120,6 @@ c.Tags.Add("k"+k);
 /// Here, the DG polynomial degree is set.
 /// (degree \code{k} for velocity, \code{k-1} for pressure).
 c.SetDGdegree(2);
- }
-\BoSSSexe
-\BoSSScmd{
-c.FieldOptions;
  }
 \BoSSSexe
 \BoSSScmd{
