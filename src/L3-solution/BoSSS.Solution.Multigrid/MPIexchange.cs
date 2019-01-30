@@ -9,7 +9,7 @@ using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace BoSSS.Solution.Multigrid {
+namespace BoSSS.Solution.AdvancedSolvers {
 
 
     /// <summary>

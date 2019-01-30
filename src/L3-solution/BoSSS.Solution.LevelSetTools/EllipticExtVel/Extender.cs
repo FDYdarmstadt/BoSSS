@@ -24,7 +24,7 @@ using BoSSS.Foundation.Grid;
 using BoSSS.Foundation.Quadrature;
 using BoSSS.Foundation.XDG;
 using BoSSS.Platform;
-using BoSSS.Solution.Multigrid;
+using BoSSS.Solution.AdvancedSolvers;
 using BoSSS.Solution.NSECommon;
 using ilPSP;
 using ilPSP.LinSolvers.MUMPS;

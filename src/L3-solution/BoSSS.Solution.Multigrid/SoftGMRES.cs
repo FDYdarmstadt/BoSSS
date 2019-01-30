@@ -29,7 +29,7 @@ using BoSSS.Foundation;
 using System.IO;
 using ilPSP.Tracing;
 
-namespace BoSSS.Solution.Multigrid
+namespace BoSSS.Solution.AdvancedSolvers
 {
     /// <summary>
     /// Standard preconditioned GMRES.

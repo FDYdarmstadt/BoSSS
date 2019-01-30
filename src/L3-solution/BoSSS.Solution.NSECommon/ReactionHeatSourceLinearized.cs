@@ -53,6 +53,7 @@ namespace BoSSS.Solution.NSECommon {
             this.ReactionRateConstants = ReactionRateConstants;
             this.OneOverMolarMass0MolarMass1 = OneOverMolarMass0MolarMass1;
             this.EoS = EoS;
+            this.m_speciesTransportOK = speciesTransportOK;
         }
 
 
@@ -80,6 +81,8 @@ namespace BoSSS.Solution.NSECommon {
 
             if (m_speciesTransportOK) {              
                 ReactionRate = ReactionRateConstants[0] * Math.Exp(-ReactionRateConstants[1] / parameters[0]) * OneOverMolarMass0MolarMass1 * Math.Pow(rho * parameters[1], ReactionRateConstants[2]) * Math.Pow(rho * parameters[2], ReactionRateConstants[3]);
+
+           
             }
             else {
                 ReactionRate = 0.0;

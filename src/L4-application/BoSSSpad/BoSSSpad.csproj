@@ -258,9 +258,9 @@
       <Project>{28E4A331-ECA2-43A6-A11F-6D6A5E410434}</Project>
       <Name>BoSSS.Solution.GridImport</Name>
     </ProjectReference>
-    <ProjectReference Include="..\..\L3-solution\BoSSS.Solution.Multigrid\BoSSS.Solution.Multigrid.csproj">
+    <ProjectReference Include="..\..\L3-solution\BoSSS.Solution.Multigrid\BoSSS.Solution.AdvancedSolvers.csproj">
       <Project>{efe8c307-09bc-4f58-b991-6ef8fd6d5eff}</Project>
-      <Name>BoSSS.Solution.Multigrid</Name>
+      <Name>BoSSS.Solution.AdvancedSolvers</Name>
     </ProjectReference>
     <ProjectReference Include="..\..\L3-solution\BoSSS.Solution.Statistic\BoSSS.Solution.Statistic.csproj">
       <Project>{45BCA5F9-27E7-43C0-B021-4312BF442C7D}</Project>

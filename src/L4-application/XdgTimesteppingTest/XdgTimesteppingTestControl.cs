@@ -18,7 +18,7 @@ using System;
 using BoSSS.Foundation;
 using BoSSS.Foundation.XDG;
 using BoSSS.Solution.Control;
-using BoSSS.Solution.Multigrid;
+using BoSSS.Solution.AdvancedSolvers;
 //using BoSSS.Solution.XNSECommon;
 using BoSSS.Platform.LinAlg;
 
@@ -90,7 +90,7 @@ namespace BoSSS.Application.XdgTimesteppingTest {
         /// ctor
         /// </summary>
         public XdgTimesteppingTestControl() {
-            base.NoOfMultigridLevels = 1;
+            base.LinearSolver.NoOfMultigridLevels = 1;
             base.CutCellQuadratureType = XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes;
         }
 
@@ -156,7 +156,7 @@ namespace BoSSS.Application.XdgTimesteppingTest {
         public double muA;
 
         /// <summary>
-        /// In case of Heat equation, the diffusion coefficient for species A.
+        /// In case of Heat equation, the diffusion coefficient for species B.
         /// </summary>
         public double muB;
 

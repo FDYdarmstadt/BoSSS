@@ -36,7 +36,7 @@ using MPI.Wrappers;
 using System.Runtime.InteropServices;
 using ilPSP.Tracing;
 
-namespace BoSSS.Solution.Multigrid {
+namespace BoSSS.Solution.AdvancedSolvers {
 
 
     public class Schwarz : ISolverSmootherTemplate, ISolverWithCallback {
