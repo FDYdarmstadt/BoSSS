@@ -32,7 +32,7 @@ using BoSSS.Foundation.XDG;
 using BoSSS.Foundation.Grid.Aggregation;
 using ilPSP.Tracing;
 
-namespace BoSSS.Solution.Multigrid {
+namespace BoSSS.Solution.AdvancedSolvers {
 
 
     public class ClassicMultigrid : ISolverSmootherTemplate, ISolverWithCallback {

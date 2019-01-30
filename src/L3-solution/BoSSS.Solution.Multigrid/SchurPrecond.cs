@@ -29,7 +29,7 @@ using ilPSP.Connectors.Matlab;
 using MathNet.Numerics.LinearAlgebra.Double;
 using BoSSS.Solution.NSECommon;
 
-namespace BoSSS.Solution.Multigrid
+namespace BoSSS.Solution.AdvancedSolvers
 {
     public class SchurPrecond : ISolverSmootherTemplate, ISolverWithCallback
     {

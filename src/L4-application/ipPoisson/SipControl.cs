@@ -36,7 +36,7 @@ namespace BoSSS.Application.SipPoisson {
         /// Ctor.
         /// </summary>
         public SipControl() : base() {
-            base.NoOfMultigridLevels = 1;
+            base.LinearSolver.NoOfMultigridLevels = 1;
             base.CompMode = _CompMode.Steady;
             base.NoOfTimesteps = 1;
         }

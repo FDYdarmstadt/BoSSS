@@ -22,14 +22,14 @@ using System.Text;
 using ilPSP.LinSolvers;
 using BoSSS.Foundation;
 using ilPSP.Utils;
-using BoSSS.Solution.Multigrid;
+using BoSSS.Solution.AdvancedSolvers;
 using BoSSS.Platform;
 using BoSSS.Foundation.XDG;
 using MPI.Wrappers;
 using System.Diagnostics;
 using ilPSP.Tracing;
 
-namespace BoSSS.Solution.Multigrid {
+namespace BoSSS.Solution.AdvancedSolvers {
 
 
     /// <summary>

@@ -20,7 +20,7 @@ using BoSSS.Platform;
 using BoSSS.Solution.Control;
 using BoSSS.Foundation.Grid;
 using System.Diagnostics;
-using BoSSS.Solution.Multigrid;
+using BoSSS.Solution.AdvancedSolvers;
 using ilPSP.Utils;
 using BoSSS.Foundation.Grid.RefElements;
 using BoSSS.Foundation.Grid.Classic;
@@ -31,8 +31,10 @@ using BoSSS.Solution;
 namespace BoSSS.Application.IBM_Solver {
     public class HardcodedPerformance {
 
-        static public IBM_Control SphereFlow(string _DbPath = null, int k = 2, int cells_x = 11, int cells_yz = 9, bool only_channel = true, bool pardiso = true, int no_p = 1, int no_it = 1, bool restart = false, bool load_Grid = false, string _GridGuid = null) {
+        static public IBM_Control SphereFlow(string _DbPath = null, int k = 2, int cells_x = 11, int cells_yz = 9, bool only_channel = true, bool pardiso = false, int no_p = 1, int no_it = 1, bool restart = false, bool load_Grid = false, string _GridGuid = null) {
             IBM_Control C = new IBM_Control();
+
+            C.CutCellQuadratureType = Foundation.XDG.XQuadFactoryHelper.MomentFittingVariants.Classic;
 
             // basic database options
             // ======================
@@ -41,7 +43,7 @@ namespace BoSSS.Application.IBM_Solver {
             //C.savetodb = false;
 
             //C.DbPath = @"\\dc1\userspace\krause\BoSSS_DBs\Bug";
-            C.DbPath = @"/home/ws35kire/test_db/";
+            //C.DbPath = @"/home/ws35kire/test_db/";
 
             //string restartSession = "727da287-1b6a-463e-b7c9-7cc19093b5b3";
             //string restartGrid = "3f8f3445-46f1-47ed-ac0e-8f0260f64d8f";
@@ -392,18 +394,20 @@ namespace BoSSS.Application.IBM_Solver {
             C.AdvancedDiscretizationOptions.PenaltySafety = 4;
             C.AdvancedDiscretizationOptions.CellAgglomerationThreshold = 0.2;
             C.LevelSetSmoothing = false;
-            C.MaxKrylovDim = 20;
-            C.MaxSolverIterations = 50;
+            C.LinearSolver.MaxKrylovDim = 20;
+            C.LinearSolver.MaxSolverIterations = 50;
+            C.NonLinearSolver.MaxSolverIterations = 50;
             C.VelocityBlockPrecondMode = MultigridOperator.Mode.SymPart_DiagBlockEquilib_DropIndefinite;
 
             // Timestepping
             // ============
-
+            
             if (pardiso) {
-                C.LinearSolve = LinearSolverCodes.classic_pardiso;
+                C.LinearSolver.SolverCode = LinearSolverConfig.Code.classic_pardiso;
             } else {
-                C.LinearSolve = LinearSolverCodes.classic_mumps;
+                C.LinearSolver.SolverCode = LinearSolverConfig.Code.classic_mumps;
             }
+
             //C.whichSolver = DirectSolver._whichSolver.MUMPS;
             C.Timestepper_Scheme = IBM_Control.TimesteppingScheme.BDF2;
             double dt = 0.1;
@@ -413,7 +417,7 @@ namespace BoSSS.Application.IBM_Solver {
             C.Endtime = 10000000;
             //C.NoOfTimesteps = 10;
             C.NoOfTimesteps = 1;
-            C.NoOfMultigridLevels = 3;
+            C.LinearSolver.NoOfMultigridLevels = 3;
 
             return C;
         }
@@ -737,18 +741,19 @@ namespace BoSSS.Application.IBM_Solver {
             C.AdvancedDiscretizationOptions.PenaltySafety = 4;
             C.LevelSetSmoothing = false;
             //C.option_solver = "direct";
-            C.MaxKrylovDim = 20;
-            C.MaxSolverIterations = 50;
+            C.LinearSolver.MaxKrylovDim = 20;
+            C.LinearSolver.MaxSolverIterations = 50;
+            C.NonLinearSolver.MaxSolverIterations = 50;
             C.VelocityBlockPrecondMode = MultigridOperator.Mode.SymPart_DiagBlockEquilib_DropIndefinite;
             //C.NoOfMultigridLevels = 0;
 
             if (pardiso)
             {
-                C.LinearSolve = LinearSolverCodes.classic_pardiso;
+                C.LinearSolver.SolverCode = LinearSolverConfig.Code.classic_pardiso;
             }
             else
             {
-                C.LinearSolve = LinearSolverCodes.classic_mumps;
+                C.LinearSolver.SolverCode = LinearSolverConfig.Code.classic_mumps;
             }
             // Timestepping
             // ============
