@@ -517,7 +517,7 @@ namespace BoSSS.Application.Rheology {
                         DelComputeOperatorMatrix, DelUpdateLevelset,
                         bdfOrder,
                         lsh,
-                        MassMatrixShapeandDependence.IsNonIdentity,
+                        MassMatrixShapeandDependence.IsTimeDependent,
                         SpatialOp,
                         MassScale,
                         this.MultigridOperatorConfig, base.MultigridSequence,
