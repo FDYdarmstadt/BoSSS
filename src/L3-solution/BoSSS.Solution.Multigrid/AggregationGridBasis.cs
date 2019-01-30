@@ -31,7 +31,7 @@ using BoSSS.Foundation.Grid.Classic;
 using BoSSS.Foundation.Grid;
 using BoSSS.Foundation.Quadrature;
 
-namespace BoSSS.Solution.Multigrid {
+namespace BoSSS.Solution.AdvancedSolvers {
 
 
     /// <summary>

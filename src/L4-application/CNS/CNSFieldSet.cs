@@ -265,7 +265,7 @@ namespace CNS {
 
         /// <summary>
         /// Updates the sensor value
-        /// <see cref="ShockCapturing.IShockSensor.UpdateSensorValues(CNSFieldSet, ISpeciesMap, CellMask)"/>
+        /// <see cref="BoSSS.Solution.CompressibleFlowCommon.ShockCapturing.IShockSensor.UpdateSensorValues(IEnumerable{DGField}, ISpeciesMap, CellMask)"/>
         /// and the artificial viscosity value <see cref="Variables.ArtificialViscosity"/> in every cell
         /// </summary>
         /// <param name="program"></param>

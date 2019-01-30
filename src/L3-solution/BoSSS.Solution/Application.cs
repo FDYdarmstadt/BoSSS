@@ -177,7 +177,7 @@ namespace BoSSS.Solution {
                 csMPI.Raw.Comm_Rank(csMPI.Raw._COMM.WORLD, out rank);
                 csMPI.Raw.Comm_Size(csMPI.Raw._COMM.WORLD, out size);
                 if (rank == 0) {
-                    
+
                     Console.WriteLine(@"      ___           ___           ___           ___           ___     ");
                     Console.WriteLine(@"     /\  \         /\  \         /\  \         /\  \         /\  \    ");
                     Console.WriteLine(@"    /::\  \       /::\  \       /::\  \       /::\  \       /::\  \   ");
@@ -569,6 +569,10 @@ namespace BoSSS.Solution {
 
                 if (this.Control.saveperiod > 0) {
                     this.SavePeriod = this.Control.saveperiod;
+                }
+
+                if (this.Control.rollingSaves > 0) {
+                    this.RollingSave = this.Control.rollingSaves;
                 }
             }
         }
@@ -995,10 +999,10 @@ namespace BoSSS.Solution {
                         DatabaseDriver.SaveGrid(this.Grid, this.m_Database);
                         //DatabaseDriver.SaveGridIfUnique(ref _grid, out GridReplaced, this.m_Database);
                     }
-                                        
 
-                    if (this.Control == null || this.Control.NoOfMultigridLevels > 0) {
-                        this.MultigridSequence = CoarseningAlgorithms.CreateSequence(this.GridData, MaxDepth: (this.Control != null ? this.Control.NoOfMultigridLevels : 1));
+
+                    if (this.Control == null || this.Control.LinearSolver.NoOfMultigridLevels > 0) {
+                        this.MultigridSequence = CoarseningAlgorithms.CreateSequence(this.GridData, MaxDepth: (this.Control != null ? this.Control.LinearSolver.NoOfMultigridLevels : 1));
                     } else {
                         this.MultigridSequence = new AggregationGridData[0];
                     }
@@ -1198,25 +1202,25 @@ namespace BoSSS.Solution {
                     if (this.Control.GridFunc != null && this.Control.GridGuid != Guid.Empty)
                         throw new ApplicationException("Control object error: 'AppControl.GridFunc' and 'AppControl.GridGuid' are exclusive, cannot be unequal null at the same time.");
 
-                    if(this.Control.GridFunc != null) {
+                    if (this.Control.GridFunc != null) {
                         return this.Control.GridFunc();
-                    } else if(this.Control.GridGuid != null) {
-                        if(this.Control.RestartInfo != null) {
+                    } else if (this.Control.GridGuid != null) {
+                        if (this.Control.RestartInfo != null) {
                             ISessionInfo session = m_Database.Controller.GetSessionInfo(this.Control.RestartInfo.Item1);
                             TimestepNumber timestep = this.Control.RestartInfo.Item2;
                             ITimestepInfo tsi_toLoad;
-                            if(timestep == null || timestep.MajorNumber < 0) {
+                            if (timestep == null || timestep.MajorNumber < 0) {
                                 tsi_toLoad = session.Timesteps.OrderBy(tsi => tsi.PhysicalTime).Last();
                             } else {
                                 tsi_toLoad = session.Timesteps.Single(t => t.TimeStepNumber.Equals(timestep));
                             }
                             var _Grid = DatabaseDriver.LoadGrid(tsi_toLoad.GridID, m_Database);
 
-                            if(_Grid is GridCommons) {
+                            if (_Grid is GridCommons) {
                                 GridCommons __Grid = (GridCommons)_Grid;
-                                foreach(string oldBndy in this.Control.BoundaryValueChanges.Keys) {
+                                foreach (string oldBndy in this.Control.BoundaryValueChanges.Keys) {
                                     int bndyInd = __Grid.EdgeTagNames.Values.FirstIndexWhere(bndyVal => bndyVal.Equals(oldBndy, StringComparison.InvariantCultureIgnoreCase));
-                                    if(bndyInd > -1) {
+                                    if (bndyInd > -1) {
                                         __Grid.EdgeTagNames[__Grid.EdgeTagNames.Keys.ElementAt(bndyInd)] = this.Control.BoundaryValueChanges[oldBndy];
                                     } else {
                                         throw new ArgumentException("Boundary " + oldBndy + " is not found in EdgeTagNames of the loaded Grid");
@@ -1567,6 +1571,11 @@ namespace BoSSS.Solution {
         protected int SavePeriod = 1;
 
         /// <summary>
+        /// <see cref="AppControl.rollingSaves"/>
+        /// </summary>
+        protected int RollingSave = 0;
+
+        /// <summary>
         /// Implement this method by performing a single time-step of the
         /// solution algorithm.
         /// </summary>
@@ -1649,6 +1658,8 @@ namespace BoSSS.Solution {
 
             using (var tr = new FuncTrace()) {
 
+                var rollingSavesTsi = new List<Tuple<int, ITimestepInfo>>();
+
                 csMPI.Raw.Barrier(csMPI.Raw._COMM.WORLD);
 
                 m_ResLogger = new ResidualLogger(this.MPIRank, this.DatabaseDriver, this.CurrentSessionInfo.ID);
@@ -1671,9 +1682,13 @@ namespace BoSSS.Solution {
                     }
                 }
 
-                SaveToDatabase(i0, physTime); // save the initial value
+                var ts0 = SaveToDatabase(i0, physTime); // save the initial value
+                if (this.RollingSave > 0)
+                    rollingSavesTsi.Add(Tuple.Create(0, ts0));
+
                 if (this.Control != null && this.Control.ImmediatePlotPeriod > 0)
                     PlotCurrentState(physTime, i0, this.Control.SuperSampling);
+
 
                 csMPI.Raw.Barrier(csMPI.Raw._COMM.WORLD);
 
@@ -1699,11 +1714,34 @@ namespace BoSSS.Solution {
                     tr.LogMemoryStat();
                     physTime += dt;
 
-
+                    ITimestepInfo tsi = null;
                     if (i % SavePeriod == 0) {
-                        SaveToDatabase(i, physTime);
+                        tsi = SaveToDatabase(i, physTime);
                         this.ProfilingLog();
                     }
+                    if (this.RollingSave > 0) {
+                        if (tsi == null) {
+                            tsi = SaveToDatabase(i, physTime);
+                        }
+                        rollingSavesTsi.Add(Tuple.Create(i, tsi));
+
+                        while (rollingSavesTsi.Count > this.RollingSave) { // delete overdue rolling timesteps...
+                            var top_i_tsi = rollingSavesTsi[0];
+
+                            rollingSavesTsi.RemoveAt(0);
+
+                            if ((top_i_tsi.Item1 != 0) && (top_i_tsi.Item1 % SavePeriod != 0)) { // ...only if they should not be saved anyway
+                                if (DatabaseDriver.FsDriver != null &&
+                                    !this.CurrentSessionInfo.ID.Equals(Guid.Empty)) {
+                                    if (MPIRank == 0) {
+                                        this.CurrentSessionInfo.RemoveTimestep(top_i_tsi.Item2.ID);
+                                        ((DatabaseController)this.m_Database.Controller).DeleteTimestep(top_i_tsi.Item2, false);
+                                    }
+                                }
+                            }
+                        }
+                    }
+
                     if (this.Control != null && this.Control.ImmediatePlotPeriod > 0 && i % this.Control.ImmediatePlotPeriod == 0)
                         PlotCurrentState(physTime, i, this.Control.SuperSampling);
                 }
@@ -1814,14 +1852,14 @@ namespace BoSSS.Solution {
                         this.MultigridSequence = null;
 
                         this.Grid.RedistributeGrid(NewPartition);
-                        newGridData = (GridData) this.Grid.iGridData;
+                        newGridData = (GridData)this.Grid.iGridData;
                         oldGridData.Invalidate();
                         if (this.LsTrk != null) {
                             this.LsTrk.Invalidate();
                         }
 
-                        if (this.Control == null || this.Control.NoOfMultigridLevels > 0)
-                            this.MultigridSequence = CoarseningAlgorithms.CreateSequence(this.GridData, MaxDepth: (this.Control != null ? this.Control.NoOfMultigridLevels : 1));
+                        if (this.Control == null || this.Control.LinearSolver.NoOfMultigridLevels > 0)
+                            this.MultigridSequence = CoarseningAlgorithms.CreateSequence(this.GridData, MaxDepth: (this.Control != null ? this.Control.LinearSolver.NoOfMultigridLevels : 1));
                         else
                             this.MultigridSequence = new AggregationGridData[0];
 
@@ -1906,7 +1944,7 @@ namespace BoSSS.Solution {
 
                 } else {
 
-                    using(new BlockTrace("Mesh Adaption", tr)) {
+                    using (new BlockTrace("Mesh Adaption", tr)) {
                         // ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
                         // mesh adaptation
                         // ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -1926,13 +1964,13 @@ namespace BoSSS.Solution {
                         // save new grid to database
                         // ==========================
 
-                        if(!passiveIo) {
+                        if (!passiveIo) {
 
-                            if(newGrid.ID == null || newGrid.ID.Equals(Guid.Empty))
+                            if (newGrid.ID == null || newGrid.ID.Equals(Guid.Empty))
                                 throw new ApplicationException();
-                            if(newGrid.ID.Equals(oldGridId))
+                            if (newGrid.ID.Equals(oldGridId))
                                 throw new ApplicationException();
-                            if(DatabaseDriver.GridExists(newGrid.ID))
+                            if (DatabaseDriver.GridExists(newGrid.ID))
                                 throw new ApplicationException();
 
                             DatabaseDriver.SaveGrid(newGrid, this.m_Database);
@@ -1943,7 +1981,7 @@ namespace BoSSS.Solution {
                         // =============================
 
                         int[] NewPartition = fixedPartition ?? ComputeNewCellDistribution(TimeStepNo, physTime);
-                        if(NewPartition != null) {
+                        if (NewPartition != null) {
                             // grid also has to be re-distributed
 
                             // rem: the new Partition correlates to the OLD grid
@@ -1971,16 +2009,16 @@ namespace BoSSS.Solution {
                             this.MultigridSequence = null;
 
                             this.Grid = newGrid;
-                            newGridData = (GridData) this.Grid.iGridData;
+                            newGridData = (GridData)this.Grid.iGridData;
                             oldGridData.Invalidate();
-                            if(this.LsTrk != null) {
+                            if (this.LsTrk != null) {
                                 this.LsTrk.Invalidate();
                             }
                             oldGridData = null;
 
-                            if(this.Control == null || this.Control.NoOfMultigridLevels > 0)
+                            if(this.Control == null || this.Control.LinearSolver.NoOfMultigridLevels > 0)
                                 this.MultigridSequence = CoarseningAlgorithms.CreateSequence(this.GridData,
-                                    MaxDepth: (this.Control != null ? this.Control.NoOfMultigridLevels : 1));
+                                    MaxDepth: (this.Control != null ? this.Control.LinearSolver.NoOfMultigridLevels : 1));
                             else
                                 this.MultigridSequence = new AggregationGridData[0];
 
@@ -2009,7 +2047,7 @@ namespace BoSSS.Solution {
                         this.m_IOFields.Clear();
 
                         // re-create fields
-                        if(this.Control != null) {
+                        if (this.Control != null) {
                             InitFromAttributes.CreateFieldsAuto(
                                 this, GridData, this.Control.FieldOptions, this.Control.CutCellQuadratureType, this.m_IOFields, this.m_RegisteredFields);
                         }
@@ -2031,10 +2069,10 @@ namespace BoSSS.Solution {
                         //}
 
                         //set dg coördinates
-                        foreach(var f in m_RegisteredFields) {
-                            if(f is XDGField) {
+                        foreach (var f in m_RegisteredFields) {
+                            if (f is XDGField) {
                                 XDGBasis xb = ((XDGField)f).Basis;
-                                if(!object.ReferenceEquals(xb.Tracker, this.LsTrk))
+                                if (!object.ReferenceEquals(xb.Tracker, this.LsTrk))
                                     throw new ApplicationException();
                             }
                             if (f.Identification == "Phi")
@@ -2691,7 +2729,7 @@ namespace BoSSS.Solution {
         public virtual void Dispose() {
             if (!IsDisposed) {
 #if DEBUG
-                { 
+                {
 #else
                 try {
 #endif
@@ -2709,7 +2747,7 @@ namespace BoSSS.Solution {
 #if DEBUG
                 }
 #else
-                } catch(Exception) { }
+                } catch (Exception) { }
 #endif
                 IsDisposed = true;
             }

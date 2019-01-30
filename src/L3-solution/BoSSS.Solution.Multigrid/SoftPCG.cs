@@ -28,7 +28,7 @@ using BoSSS.Platform.Utils;
 using BoSSS.Foundation;
 using ilPSP.Tracing;
 
-namespace BoSSS.Solution.Multigrid {
+namespace BoSSS.Solution.AdvancedSolvers {
     /// <summary>
     /// Pre-conditioned (<see cref="Precond"/>) conjugate gradient algorithm.
     /// </summary>
