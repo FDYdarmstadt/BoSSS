@@ -65,17 +65,19 @@ namespace BoSSS.Solution.NSECommon {
             //double rho = EoS.GetDensity(U[0]);
             double rho = EoS.GetDensity(parameters);
 
-            src =  -1.0 / (Froude * Froude) * rho * GravityDirection[SpatialComponent]; // minus sign because it is in the RHS
+            src =  1.0 / (Froude * Froude) * rho * GravityDirection[SpatialComponent]; // minus sign because it is in the RHS... or plus???
 
             return src;
         }
 
         /// <summary>
-        /// Temperature. ????
+        /// Temperature
         /// </summary>
         public override IList<string> ArgumentOrdering {
             get {
-                return new string[] { /*VariableNames.Temperature */};
+                return new string[] {
+                    //VariableNames.Temperature 
+                };
             }
         }
 
@@ -87,7 +89,10 @@ namespace BoSSS.Solution.NSECommon {
 
         public override IList<string> ParameterOrdering {
             get {               
-                return new string[] { VariableNames.Temperature0/*, VariableNames.MassFraction0_0, VariableNames.MassFraction1_0, VariableNames.MassFraction2_0, VariableNames.MassFraction3_0*/ }; }
+                return new string[] { VariableNames.Temperature0
+                    //, VariableNames.MassFraction0_0, VariableNames.MassFraction1_0, VariableNames.MassFraction2_0, VariableNames.MassFraction3_0
+                };
+            }
         }
 
  

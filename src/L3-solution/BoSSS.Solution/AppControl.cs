@@ -46,7 +46,7 @@ namespace BoSSS.Solution.Control {
         /// Returns the type of the solver main class;
         /// </summary>
         virtual public Type GetSolverType() {
-            throw new NotImplementedException();
+            throw new NotImplementedException("forgotten to overwrite 'GetSolverType' for " + this.GetType().FullName);
         }
         
         /// <summary>
@@ -717,15 +717,18 @@ namespace BoSSS.Solution.Control {
         //    set;
         //}
 
-        //-------------- new solver stuff
-
+        /// <summary>
+        /// Configuration of 'primary' linear solver, respectively preconditioner used for <see cref="NonLinearSolver"/>.
+        /// </summary>
         [DataMember]
-        public LinearSolverConfig LinearSolver= new LinearSolverConfig();
+        public LinearSolverConfig LinearSolver = new LinearSolverConfig();
 
+        /// <summary>
+        /// Configuration of 'primary' nonlinear solver, if used in application
+        /// </summary>
         [DataMember]
         public NonLinearSolverConfig NonLinearSolver = new NonLinearSolverConfig();
 
-        //--------------- end of new stuff
 
         /// <summary>
         /// If true, a redistribution will be attempted BEFORE the first
@@ -886,6 +889,8 @@ namespace BoSSS.Solution.Control {
         /// </summary>
         /// <param name="ctrlfileContent">the script.</param>
         /// <param name="t">something derived from <see cref="AppControl"/></param>
+        /// <param name="ctrl"></param>
+        /// <param name="ctrl_ParamStudy"></param>
         static public void FromCode(string ctrlfileContent, Type t, out AppControl ctrl, out AppControl[] ctrl_ParamStudy) {
 
             // try to get type from first line comment (a hack).
