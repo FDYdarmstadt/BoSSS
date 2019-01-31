@@ -815,13 +815,13 @@ namespace CNS {
 
             CNSControl c = DoubleMachReflection(dbPath, savePeriod, dgDegree, xMax, yMax, numOfCellsX, numOfCellsY, sensorLimit, CFLFraction, explicitScheme, explicitOrder, numberOfSubGrids, reclusteringInterval, maxNumOfSubSteps, endTime, restart, cores);
 
-            c.ProjectName = "dmr_cube_run4";
+            c.ProjectName = "dmr_cube_run5";
             c.NoOfTimesteps = timeSteps;
 
             return c;
         }
 
-        public static IBMControl IBMShockTube(string dbPath = null, int savePeriod = 100, int dgDegree = 2, int numOfCellsX = 50, int numOfCellsY = 50, double sensorLimit = 1e-3, double dtFixed = 0.0, double CFLFraction = 0.1, int explicitScheme = 3, int explicitOrder = 3, int numberOfSubGrids = 1, int reclusteringInterval = 0, int maxNumOfSubSteps = 0, double agg = 0.3, string restart = "False") {
+        public static IBMControl IBMShockTube(string dbPath = null, int savePeriod = 100, int dgDegree = 2, int numOfCellsX = 10, int numOfCellsY = 10, double sensorLimit = 1e-3, double dtFixed = 0.0, double CFLFraction = 0.1, int explicitScheme = 3, int explicitOrder = 3, int numberOfSubGrids = 1, int reclusteringInterval = 0, int maxNumOfSubSteps = 0, double agg = 0.3, string restart = "False") {
             IBMControl c = new IBMControl();
 
             // ### Database ###
@@ -847,7 +847,18 @@ namespace CNS {
 
             // ### Level-set ###
             c.DomainType = DomainTypes.StaticImmersedBoundary;
-            c.LevelSetFunction = ((X, t) => X[1] - 0.056);
+
+            bool rotatedGrid = true;
+            if (rotatedGrid) {
+                double[] startOfRamp = new double[] { 0.0, 0.0 };
+                Func<double, double> Ramp = delegate (double x) {
+                    return Math.Tan(45) * (x - startOfRamp[0]) + startOfRamp[1];
+                };
+                c.LevelSetFunction = (X, t) => X[1] - Ramp(X[0]);
+            } else {
+                c.LevelSetFunction = (X, t) => X[1] - 0.056;
+            }
+
             c.LevelSetBoundaryTag = "AdiabaticSlipWall";
             c.CutCellQuadratureType = XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes;
             c.LevelSetQuadratureOrder = 3 * dgDegree;
@@ -1026,7 +1037,7 @@ namespace CNS {
                 c.CFLFraction = CFLFraction;
             }
             c.Endtime = 0.25;
-            c.NoOfTimesteps = int.MaxValue;
+            c.NoOfTimesteps = 0;
 
             // ### Project and sessions name ###
             c.ProjectName = "ibm_shock_tube_pstudy";
@@ -1160,7 +1171,7 @@ namespace CNS {
                 c.ShockSensor = new PerssonSensor(sensorVariable, sensorLimit);
                 c.AddVariable(Variables.ShockSensor, 0);
                 c.ArtificialViscosityLaw = new SmoothedHeavisideArtificialViscosityLaw(c.ShockSensor, dgDegree, sensorLimit, epsilon0, kappa, lambdaMax: 25);    // fix lambdaMax
-                //c.ArtificialViscosityLaw = new SmoothedHeavisideArtificialViscosityLaw(c.ShockSensor, dgDegree, sensorLimit, epsilon0, kappa, fudgeFactor: fugdeFactor);    // dynamic lambdaMax
+                                                                                                                                                                 //c.ArtificialViscosityLaw = new SmoothedHeavisideArtificialViscosityLaw(c.ShockSensor, dgDegree, sensorLimit, epsilon0, kappa, fudgeFactor: fugdeFactor);    // dynamic lambdaMax
             }
 
             c.EquationOfState = IdealGas.Air;
@@ -1501,8 +1512,8 @@ namespace CNS {
             //dbPath = @"/work/scratch/ws35kire/work_db";                       // Lichtenberg
             //dbPath = @"/work/scratch/yp19ysog/bosss_db_paper_ibmdmr";          // Lichtenberg
             dbPath = @"c:\bosss_db";                                          // Local
-            //dbPath = @"E:\geisenhofer\bosss_db_paper_ibmdmr";                   // HPC cluster
-            //dbPath = @"\\dc1\userspace\geisenhofer\bosss_db_IBMShockTube";    // Network
+                                                                              //dbPath = @"E:\geisenhofer\bosss_db_paper_ibmdmr";                   // HPC cluster
+                                                                              //dbPath = @"\\dc1\userspace\geisenhofer\bosss_db_IBMShockTube";    // Network
 
             c.DbPath = dbPath;
             c.savetodb = dbPath != null;
@@ -1593,7 +1604,7 @@ namespace CNS {
                 c.ShockSensor = new PerssonSensor(sensorVariable, sensorLimit);
                 c.AddVariable(Variables.ShockSensor, 0);
                 c.ArtificialViscosityLaw = new SmoothedHeavisideArtificialViscosityLaw(c.ShockSensor, dgDegree, sensorLimit, epsilon0, kappa, lambdaMax: 5);    // fix lambdaMax
-                //c.ArtificialViscosityLaw = new SmoothedHeavisideArtificialViscosityLaw(c.ShockSensor, dgDegree, sensorLimit, epsilon0, kappa, fudgeFactor: fugdeFactor);    // dynamic lambdaMax
+                                                                                                                                                                //c.ArtificialViscosityLaw = new SmoothedHeavisideArtificialViscosityLaw(c.ShockSensor, dgDegree, sensorLimit, epsilon0, kappa, fudgeFactor: fugdeFactor);    // dynamic lambdaMax
             }
 
             c.EquationOfState = IdealGas.Air;
@@ -1647,11 +1658,11 @@ namespace CNS {
 
                     grid.DefineEdgeTags(delegate (double[] X) {
                         if (Math.Abs(X[1]) < 1e-14) {   // bottom
-                            //if (X[0] < wallCorner0[0]) {         // bottom left
-                            //    return 1;
-                            //} else {                    // bottom right
-                            //    return 3;
-                            //}
+                                                        //if (X[0] < wallCorner0[0]) {         // bottom left
+                                                        //    return 1;
+                                                        //} else {                    // bottom right
+                                                        //    return 3;
+                                                        //}
                             return 3;
                         } else if (Math.Abs(X[1] - (yMax - yMin)) < 1e-14) {    // top
                             return 3;
@@ -1744,7 +1755,7 @@ namespace CNS {
             return c;
         }
 
-        public static CNSControl BowShock(string dbPath = null, int savePeriod = 100, int dgDegree = 2, double sensorLimit = 1e-3, double CFLFraction = 0.1, int explicitScheme = 1, int explicitOrder = 1, int numberOfSubGrids = 3, int reclusteringInterval = 1, int maxNumOfSubSteps = 0, double endTime = 10.0, string restart = "False", string gridPath = @"c:\GmshGrids\N3\grid2.msh", double lambdaMax = 10.0) {
+        public static CNSControl BowShock(string dbPath = null, int savePeriod = 1, int dgDegree = 0, double sensorLimit = 1e-3, double CFLFraction = 0.1, int explicitScheme = 3, int explicitOrder = 1, int numberOfSubGrids = 2, int reclusteringInterval = 1, int maxNumOfSubSteps = 0, double endTime = 10.0, string restart = "False", string gridPath = @"c:\GmshGrids\N3\grid2.msh", double lambdaMax = 15.0) {
             CNSControl c = new CNSControl();
 
             //System.Threading.Thread.Sleep(10000);
@@ -1826,6 +1837,7 @@ namespace CNS {
 
             //c.AddVariable(Variables.Entropy, dgDegree);
             //c.AddVariable(Variables.Viscosity, dgDegree);
+            c.AddVariable(Variables.Enthalpy, dgDegree);
             c.AddVariable(Variables.LocalMachNumber, dgDegree);
 
             c.AddVariable(Variables.Rank, 0);
@@ -1838,14 +1850,14 @@ namespace CNS {
             }
 
             // Time stepping variables
-            //c.AddVariable(Variables.CFL, 0);
+            c.AddVariable(Variables.CFL, 0);
             //c.AddVariable(Variables.CFLConvective, 0);
             //if (AV) {
             //    c.AddVariable(Variables.CFLArtificialViscosity, 0);
             //}
-            //if (c.ExplicitScheme.Equals(ExplicitSchemes.LTS)) {
-            //    c.AddVariable(Variables.LTSClusters, 0);
-            //}
+            if (c.ExplicitScheme.Equals(ExplicitSchemes.LTS)) {
+                c.AddVariable(Variables.LTSClusters, 0);
+            }
 
             // Grid
             if (restart == "True") {
