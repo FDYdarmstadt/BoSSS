@@ -26,6 +26,7 @@ using BoSSS.Solution.XdgTimestepping;
 using BoSSS.Foundation;
 using BoSSS.Foundation.XDG;
 using System.Diagnostics;
+using MPI.Wrappers;
 
 namespace BoSSS.Solution.AdvancedSolvers {
 
@@ -97,10 +98,8 @@ namespace BoSSS.Solution.AdvancedSolvers {
                     return m_linsolver;
                 }
             }
-            if (_lc.SolverCode == LinearSolverConfig.Code.automatic) {
-                return AutomaticChoice(Timestepper, m_nc, _lc);
-            } else if (_lc != null) {
-                return GenerateLinear_body(Timestepper, _lc);
+            if (_lc != null) {
+                return GenerateLinear_body(Timestepper, _lc , m_nc);
             } else {
                 throw new ArgumentNullException("LinearSolver Config is null!");
             }
@@ -225,7 +224,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
             if (m_linsolver != null) {
                 templinearSolve = m_linsolver;
             } else {
-                templinearSolve = GenerateLinear_body(Timestepper, m_lc);
+                templinearSolve = GenerateLinear_body(Timestepper, m_lc, null);
             }
             Debug.Assert(templinearSolve!=null);
             return;
@@ -237,7 +236,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
         /// <param name="Timestepper"></param>
         /// <param name="lc"></param>
         /// <returns></returns>
-        private ISolverSmootherTemplate GenerateLinear_body(XdgTimesteppingBase Timestepper, LinearSolverConfig lc) {
+        private ISolverSmootherTemplate GenerateLinear_body(XdgTimesteppingBase Timestepper, LinearSolverConfig lc, NonLinearSolverConfig nc) {
 
             // +++++++++++++++++++++++++++++++++++++++++++++
             // the linear solvers:
@@ -250,16 +249,25 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
             switch (lc.SolverCode) {
                 case LinearSolverConfig.Code.automatic:
-                    throw new NotImplementedException();
-                    //templinearSolve = AutomaticChoice(lc, Timestepper);
-                    //break;
+                    if (nc != null) {
+                        templinearSolve = Automatic(Timestepper, nc, lc);
+                    } else {
+                        templinearSolve = AutomaticLinearOnly(Timestepper, lc);
+                    }
+                    break;
 
                 case LinearSolverConfig.Code.classic_mumps:
-                    templinearSolve = new DirectSolver() { WhichSolver = DirectSolver._whichSolver.MUMPS };
+                    templinearSolve = new SparseSolver() {
+                        WhichSolver = SparseSolver._whichSolver.MUMPS,
+                        LinConfig = lc
+                    };
                     break;
 
                 case LinearSolverConfig.Code.classic_pardiso:
-                    templinearSolve = new DirectSolver() { WhichSolver = DirectSolver._whichSolver.PARDISO };
+                    templinearSolve = new SparseSolver() {
+                        WhichSolver = SparseSolver._whichSolver.PARDISO,
+                        LinConfig = lc
+                    };
                     break;
 
                 case LinearSolverConfig.Code.exp_schwarz_directcoarse_overlap:
@@ -272,7 +280,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                             NoOfPartsPerProcess = 1,
                         },
                         Overlap = 1,
-                        CoarseSolver = DetermineMGSquence(lc.NoOfMultigridLevels - 2)
+                        CoarseSolver = DetermineMGSquence(lc.NoOfMultigridLevels - 2, lc)
                     };
                     break;
 
@@ -286,7 +294,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                             NoOfPartsPerProcess = 1,
                         },
                         Overlap = 0,
-                        CoarseSolver = DetermineMGSquence(lc.NoOfMultigridLevels - 2)
+                        CoarseSolver = DetermineMGSquence(lc.NoOfMultigridLevels - 2, lc)
                     };
                     break;
 
@@ -300,7 +308,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                             Depth = lc.NoOfMultigridLevels - 1
                         },
                         Overlap = 0,
-                        CoarseSolver = DetermineMGSquence(lc.NoOfMultigridLevels - 2)
+                        CoarseSolver = DetermineMGSquence(lc.NoOfMultigridLevels - 2, lc)
                     };
                     break;
 
@@ -314,7 +322,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                             Depth = lc.NoOfMultigridLevels - 1
                         },
                         Overlap = 1,
-                        CoarseSolver = DetermineMGSquence(lc.NoOfMultigridLevels - 2)
+                        CoarseSolver = DetermineMGSquence(lc.NoOfMultigridLevels - 2, lc)
                     };
                     break;
 
@@ -335,7 +343,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                                 Depth = lc.NoOfMultigridLevels - 1
                             },
                             Overlap = 1,
-                            CoarseSolver = DetermineMGSquence(lc.NoOfMultigridLevels - 2)
+                            CoarseSolver = DetermineMGSquence(lc.NoOfMultigridLevels - 2, lc)
                         },
                     };
                     break;
@@ -351,7 +359,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                                 NoOfPartsPerProcess = 1,
                             },
                             Overlap = 1,
-                            CoarseSolver = DetermineMGSquence(lc.NoOfMultigridLevels - 2)
+                            CoarseSolver = DetermineMGSquence(lc.NoOfMultigridLevels - 2,lc)
                         },
                     };
                     break;
@@ -386,8 +394,9 @@ namespace BoSSS.Solution.AdvancedSolvers {
                                 //noofparts = 76,
                                 NoOfPartsPerProcess = 213, // Warum 76
                             },
-                            CoarseSolver = new DirectSolver() {
-                                WhichSolver = DirectSolver._whichSolver.MUMPS    //PARDISO
+                            CoarseSolver = new SparseSolver() {
+                                WhichSolver = SparseSolver._whichSolver.MUMPS,    //PARDISO
+                                LinConfig = lc
                             },
                             Overlap = 1
                         };
@@ -398,8 +407,9 @@ namespace BoSSS.Solution.AdvancedSolvers {
                                 //noofparts = 213,
                                 NoOfPartsPerProcess = 213,
                             },
-                            CoarseSolver = new DirectSolver() {
-                                WhichSolver = DirectSolver._whichSolver.MUMPS    //PARDISO
+                            CoarseSolver = new SparseSolver() {
+                                WhichSolver = SparseSolver._whichSolver.MUMPS,    //PARDISO
+                                LinConfig = lc
                             },
                             Overlap = 1
                         };
@@ -414,8 +424,9 @@ namespace BoSSS.Solution.AdvancedSolvers {
                                 //noofparts = 43,
                                 NoOfPartsPerProcess = 43,
                             },
-                            CoarseSolver = new DirectSolver() {
-                                WhichSolver = DirectSolver._whichSolver.MUMPS    //PARDISO
+                            CoarseSolver = new SparseSolver() {
+                                WhichSolver = SparseSolver._whichSolver.MUMPS,    //PARDISO
+                                LinConfig = lc
                             },
                             Overlap = 1
                         };
@@ -426,8 +437,9 @@ namespace BoSSS.Solution.AdvancedSolvers {
                                 //noofparts = 16,
                                 NoOfPartsPerProcess = 43,
                             },
-                            CoarseSolver = new DirectSolver() {
-                                WhichSolver = DirectSolver._whichSolver.MUMPS    //PARDISO
+                            CoarseSolver = new SparseSolver() {
+                                WhichSolver = SparseSolver._whichSolver.MUMPS,    //PARDISO
+                                LinConfig = lc
                             },
                             Overlap = 1
                         };
@@ -444,8 +456,9 @@ namespace BoSSS.Solution.AdvancedSolvers {
                                 NoOfPartsPerProcess = 22,
 
                             },
-                            CoarseSolver = new DirectSolver() {
-                                WhichSolver = DirectSolver._whichSolver.MUMPS    //PARDISO
+                            CoarseSolver = new SparseSolver() {
+                                WhichSolver = SparseSolver._whichSolver.MUMPS,    //PARDISO
+                                LinConfig = lc
                             },
                             Overlap = 1
                         };
@@ -457,8 +470,9 @@ namespace BoSSS.Solution.AdvancedSolvers {
                                 NoOfPartsPerProcess = 22, //
 
                             },
-                            CoarseSolver = new DirectSolver() {
-                                WhichSolver = DirectSolver._whichSolver.MUMPS    //PARDISO
+                            CoarseSolver = new SparseSolver() {
+                                WhichSolver = SparseSolver._whichSolver.MUMPS,    //PARDISO
+                                LinConfig = lc
                             },
                             Overlap = 1
                         };
@@ -472,8 +486,9 @@ namespace BoSSS.Solution.AdvancedSolvers {
                             //depth = asdepth,
                             Depth = 2,
                         },
-                        CoarseSolver = new DirectSolver() {
-                            WhichSolver = DirectSolver._whichSolver.MUMPS    //PARDISO
+                        CoarseSolver = new SparseSolver() {
+                            WhichSolver = SparseSolver._whichSolver.MUMPS,    //PARDISO
+                            LinConfig = lc
                         },
 
                         Overlap = 1
@@ -488,13 +503,19 @@ namespace BoSSS.Solution.AdvancedSolvers {
                     };
                     break;
 
-                //case LinearSolverConfig.Code.classic_cg:
-                //    templinearSolve = new ilPSP.LinSolvers.monkey.CG() {
-                //        MaxIterations = 1000000,
-                //        Tolerance = 1.0e-10,
-                //        DevType = ilPSP.LinSolvers.monkey.DeviceType.Cuda
-                //    };
-                //    break;
+                case LinearSolverConfig.Code.classic_cg:
+                    templinearSolve = new SparseSolver() {
+                        WhichSolver = SparseSolver._whichSolver.CG,
+                        LinConfig = lc
+                    };
+                    break;
+
+                case LinearSolverConfig.Code.exp_softpcg_mg:
+                    //templinearSolve = new SpecialMultilevelSchwarz();
+                    //Timestepper.Config_MultigridOperator
+                    
+
+                    break;
 
 
                 default:
@@ -573,11 +594,19 @@ namespace BoSSS.Solution.AdvancedSolvers {
             }
         }
 
+        /// <summary>
+        /// Automatic Chooser for LinearSolver standalone
+        /// </summary>
+        /// <param name="Timestepper"></param>
+        /// <param name="lc"></param>
+        private ISolverSmootherTemplate AutomaticLinearOnly(XdgTimesteppingBase Timestepper, LinearSolverConfig lc) {
+            throw new NotImplementedException();
+        }
 
         /// <summary>
         /// Automatic choice of linear solver depending on problem size, immersed boundary, polynomial degree, etc. In addition the nonlinearsolver config is considered as well.
         /// </summary>
-        static private ISolverSmootherTemplate AutomaticChoice(XdgTimesteppingBase Timestepper, NonLinearSolverConfig nc, LinearSolverConfig lc) {
+        private ISolverSmootherTemplate Automatic(XdgTimesteppingBase Timestepper, NonLinearSolverConfig nc, LinearSolverConfig lc) {
 
             var D = Timestepper.MultigridSequence[0].SpatialDimension;
 
@@ -627,10 +656,13 @@ namespace BoSSS.Solution.AdvancedSolvers {
                                     NoOfPartsPerProcess = PPP,
                                 },
                                 Overlap = 1,
-                                CoarseSolver = DetermineMGSquence(lc.NoOfMultigridLevels - 2)
+                                CoarseSolver = DetermineMGSquence(lc.NoOfMultigridLevels - 2,lc)
                             };
                         } else {
-                            tempsolve = new DirectSolver() { WhichSolver = DirectSolver._whichSolver.MUMPS };
+                            tempsolve = new SparseSolver() {
+                                WhichSolver = SparseSolver._whichSolver.MUMPS,
+                                LinConfig = lc
+                            };
                         }
                         break;
 
@@ -667,11 +699,14 @@ namespace BoSSS.Solution.AdvancedSolvers {
                                         NoOfPartsPerProcess = (int)Math.Ceiling(dofsLoc / 6500.0),
                                     },
                                     Overlap = 1,
-                                    CoarseSolver = DetermineMGSquence(lc.NoOfMultigridLevels - 2)
+                                    CoarseSolver = DetermineMGSquence(lc.NoOfMultigridLevels - 2,lc)
                                 },
                             };
                         } else {
-                            tempsolve = new DirectSolver() { WhichSolver = DirectSolver._whichSolver.MUMPS };
+                            tempsolve = new SparseSolver() {
+                                WhichSolver = SparseSolver._whichSolver.MUMPS,
+                                LinConfig = lc
+                            };
                         }
                         break;
 
@@ -699,12 +734,15 @@ namespace BoSSS.Solution.AdvancedSolvers {
         /// <param name="MGlevels"></param>
         /// <param name="CoarsestSolver"></param>
         /// <returns></returns>
-        static ISolverSmootherTemplate DetermineMGSquence(int MGlevels) {
+        private ISolverSmootherTemplate DetermineMGSquence(int MGlevels,LinearSolverConfig lc) {
             ISolverSmootherTemplate solver;
             if (MGlevels > 0) {
-                solver = new ClassicMultigrid() { CoarserLevelSolver = DetermineMGSquence(MGlevels - 1) };
+                solver = new ClassicMultigrid() { CoarserLevelSolver = DetermineMGSquence(MGlevels - 1, lc) };
             } else {
-                solver = new DirectSolver() { WhichSolver = DirectSolver._whichSolver.MUMPS };
+                solver = new SparseSolver() {
+                    WhichSolver = SparseSolver._whichSolver.MUMPS,
+                    LinConfig = lc
+                };
             }
             return solver;
         }
@@ -757,6 +795,143 @@ namespace BoSSS.Solution.AdvancedSolvers {
             bool check = true;
             //test something ... m_nonlinsolver
             return check;
+        }
+
+
+
+        private ISolverSmootherTemplate SpecialMultilevelSchwarz(MultigridOperator op,XdgTimesteppingBase TS, LinearSolverConfig _lc) {
+            var solver = new SoftPCG() {
+                m_MaxIterations = 500,
+                m_Tolerance = 1.0e-12
+            };
+            //var solver = new OrthonormalizationScheme() {
+            //    MaxIter = 500,
+            //    Tolerance = 1.0e-10,
+            //};
+            //var solver = new SoftGMRES() {
+            //    m_MaxIterations = 500,
+            //    m_Tolerance = 1.0e-10,
+
+            //};
+
+            // my tests show that the ideal block size may be around 10'000
+            int DirectKickIn = _lc.TargetBlockSize;
+
+            //TS.MultigridSequence[0].CellPartitioning.TotalLength*TS.Config_MultigridOperator.
+            MultigridOperator Current = op;
+            ISolverSmootherTemplate[] MultigridChain = new ISolverSmootherTemplate[_lc.NoOfMultigridLevels];
+            for (int iLevel = 0; iLevel < _lc.NoOfMultigridLevels; iLevel++) {
+                
+                int SysSize = Current.Mapping.TotalLength;
+                int NoOfBlocks = (int)Math.Ceiling(((double)SysSize) / ((double)DirectKickIn));
+
+                bool useDirect = false;
+                useDirect |= (SysSize < DirectKickIn);
+                useDirect |= iLevel == _lc.NoOfMultigridLevels - 1;
+                useDirect |= NoOfBlocks.MPISum() <= 1;
+
+                if (useDirect) {
+                    MultigridChain[iLevel] = new SparseSolver() {
+                        WhichSolver = SparseSolver._whichSolver.PARDISO,
+                        TestSolution = false
+                    };
+                } else {
+
+                    ClassicMultigrid MgLevel = new ClassicMultigrid() {
+                        m_MaxIterations = 1,
+                        m_Tolerance = 0.0 // termination controlled by top level PCG
+                    };
+
+
+                    MultigridChain[iLevel] = MgLevel;
+
+
+
+                    ISolverSmootherTemplate pre, pst;
+                    if (iLevel > 0) {
+
+                        Schwarz swz1 = new Schwarz() {
+                            m_MaxIterations = 1,
+                            CoarseSolver = null,
+                            m_BlockingStrategy = new Schwarz.METISBlockingStrategy() {
+                                NoOfPartsPerProcess = NoOfBlocks
+                            },
+                            Overlap = 0 // overlap does **NOT** seem to help
+                        };
+
+                        SoftPCG pcg1 = new SoftPCG() {
+                            m_MinIterations = 5,
+                            m_MaxIterations = 5
+                        };
+
+                        SoftPCG pcg2 = new SoftPCG() {
+                            m_MinIterations = 5,
+                            m_MaxIterations = 5
+                        };
+
+                        var preChain = new ISolverSmootherTemplate[] { swz1, pcg1 };
+                        var pstChain = new ISolverSmootherTemplate[] { swz1, pcg2 };
+
+                        pre = new SolverSquence() { SolverChain = preChain };
+                        pst = new SolverSquence() { SolverChain = pstChain };
+                    } else {
+                        // +++++++++++++++++++++++++++++++++++++++++++++++++++
+                        // top level - use only iterative (non-direct) solvers
+                        // +++++++++++++++++++++++++++++++++++++++++++++++++++
+
+                        pre = new BlockJacobi() {
+                            NoOfIterations = 3,
+                            omega = 0.5
+                        };
+
+                        pst = new BlockJacobi() {
+                            NoOfIterations = 3,
+                            omega = 0.5
+                        };
+
+                        //preChain = new ISolverSmootherTemplate[] { pcg1 };
+                        //pstChain = new ISolverSmootherTemplate[] { pcg2 };
+                    }
+
+
+
+
+
+                    //if (iLevel > 0) {
+                    //    MgLevel.PreSmoother = pre;
+                    //    MgLevel.PostSmoother = pst;
+                    //} else {
+                    //    //MgLevel.PreSmoother = pcg1;   // ganz schlechte Idee, konvergiert gegen FALSCHE lösung
+                    //    //MgLevel.PostSmoother = pcg2;  // ganz schlechte Idee, konvergiert gegen FALSCHE lösung
+                    //    MgLevel.PreSmoother = pre;
+                    //    MgLevel.PostSmoother = pst;
+                    //}
+                    
+
+                    MgLevel.PreSmoother = pre;
+                    MgLevel.PostSmoother = pst;
+                }
+
+                if (iLevel > 0) {
+                    ((ClassicMultigrid)(MultigridChain[iLevel - 1])).CoarserLevelSolver = MultigridChain[iLevel];
+                }
+
+                if (useDirect) {
+                    Console.WriteLine("MG: using {0} levels, lowest level DOF is {1}, target size is {2}.", iLevel + 1, SysSize, DirectKickIn);
+                    break;
+                }
+
+
+
+                Current = Current.CoarserLevel;
+
+            } // end of level loop
+
+
+            solver.Precond = MultigridChain[0];
+            //solver.PrecondS = new[] { MultigridChain[0] };
+
+            return solver;
         }
     }
 }

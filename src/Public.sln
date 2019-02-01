@@ -35,7 +35,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BoSSS.Solution.NSECommon", 
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BoSSS.Solution.ASCIIExport", "L3-solution\BoSSS.Solution.ASCIIExport\BoSSS.Solution.ASCIIExport.csproj", "{ED2E6C6E-1517-4AAD-B3C6-1B56C5CD9828}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BoSSS.Solution.Multigrid", "L3-solution\BoSSS.Solution.Multigrid\BoSSS.Solution.Multigrid.csproj", "{EFE8C307-09BC-4F58-B991-6EF8FD6D5EFF}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BoSSS.Solution.AdvancedSolvers", "L3-solution\BoSSS.Solution.AdvancedSolvers\BoSSS.Solution.AdvancedSolvers.csproj", "{EFE8C307-09BC-4F58-B991-6EF8FD6D5EFF}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "L4", "L4", "{05BAB864-D412-476C-A592-C69E399CB15A}"
 EndProject

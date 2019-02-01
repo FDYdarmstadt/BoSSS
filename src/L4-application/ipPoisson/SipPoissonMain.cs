@@ -802,14 +802,14 @@ namespace BoSSS.Application.SipPoisson {
                     ISolverSmootherTemplate solver;
                     switch (base.Control.solver_name) {
                         case SolverCodes.exp_direct:
-                            solver = new DirectSolver() {
-                                WhichSolver = DirectSolver._whichSolver.PARDISO
+                            solver = new SparseSolver() {
+                                WhichSolver = SparseSolver._whichSolver.PARDISO
                             };
                             break;
 
                         case SolverCodes.exp_direct_lapack:
-                            solver = new DirectSolver() {
-                                WhichSolver = DirectSolver._whichSolver.Lapack
+                            solver = new SparseSolver() {
+                                WhichSolver = SparseSolver._whichSolver.Lapack
                             };
                             break;
 
@@ -824,8 +824,8 @@ namespace BoSSS.Application.SipPoisson {
                                         m_MaxIterations = 1,
                                         //CoarseSolver = new GenericRestriction() {
                                         //    CoarserLevelSolver = new GenericRestriction() {
-                                        CoarseSolver = new DirectSolver() {
-                                            WhichSolver = DirectSolver._whichSolver.PARDISO
+                                        CoarseSolver = new SparseSolver() {
+                                            WhichSolver = SparseSolver._whichSolver.PARDISO
                                             //            }
                                             //}
                                         },
@@ -965,8 +965,8 @@ namespace BoSSS.Application.SipPoisson {
 
                 ISolverSmootherTemplate levelSolver;
                 if (useDirect) {
-                    levelSolver = new DirectSolver() {
-                        WhichSolver = DirectSolver._whichSolver.PARDISO,
+                    levelSolver = new SparseSolver() {
+                        WhichSolver = SparseSolver._whichSolver.PARDISO,
                         TestSolution = false
                     };
                 } else {
@@ -1078,8 +1078,8 @@ namespace BoSSS.Application.SipPoisson {
                 useDirect |= NoOfBlocks.MPISum() <= 1;
 
                 if (useDirect) {
-                    MultigridChain[iLevel] = new DirectSolver() {
-                        WhichSolver = DirectSolver._whichSolver.PARDISO,
+                    MultigridChain[iLevel] = new SparseSolver() {
+                        WhichSolver = SparseSolver._whichSolver.PARDISO,
                         TestSolution = false
                     };
                 } else {
