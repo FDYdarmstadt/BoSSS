@@ -320,6 +320,7 @@ namespace BoSSS.Application.XNSE_Solver {
         /// <summary>
         /// Options for the initialization of the Fourier Level-set
         /// </summary>
+        [DataMember]
         public FourierLevSetControl FourierLevSetControl;
 
         /// <summary>

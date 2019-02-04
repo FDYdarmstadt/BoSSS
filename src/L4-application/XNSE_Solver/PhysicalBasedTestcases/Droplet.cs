@@ -423,7 +423,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             AppControl._CompMode compMode = AppControl._CompMode.Transient;
 
             //_DbPath = @"\\fdyprime\userspace\smuda\cluster\cluster_db";
-            _DbPath = @"D:\local\local_Testcase_databases\Testcase_OscillatingDroplet";
+            _DbPath = @"\\dc1\userspace\yotov\bosss-db";
 
             // basic database options
             // ======================
@@ -431,7 +431,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
 
             C.DbPath = _DbPath;
             C.savetodb = C.DbPath != null;
-            C.ProjectName = "XNSE/Droplet";
+            C.ProjectName = "XNSE /Droplet";
             C.ProjectDescription = "Oscillating droplet";
 
             C.ContinueOnIoError = false;

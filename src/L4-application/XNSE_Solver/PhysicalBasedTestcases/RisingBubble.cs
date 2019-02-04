@@ -56,7 +56,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             XNSE_Control C = new XNSE_Control();
 
             //_DbPath = @"D:\local\local_Testcase_databases\Testcase_RisingBubble";
-            //_DbPath = @"\\fdyprime\userspace\smuda\cluster\cluster_db";
+            //_DbPath = @"\\dc1\userspace\yotov\bosss-db\RisingBubble"";
 
 
             // basic database options
