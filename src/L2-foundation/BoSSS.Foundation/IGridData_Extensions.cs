@@ -579,7 +579,7 @@ namespace BoSSS.Foundation.Grid {
                 //                                               this rank will be the official finder!
 
                 if (lowestWithinRank < MpiSize) {
-                    LocatPointHelper(gdat, lowestWithinRank, jL_MinDistCel, out GlobalId, out GlobalIndex, out OnThisProcess);
+                    LocatPointHelper(gdat, lowestWithinRank, j_Within, out GlobalId, out GlobalIndex, out OnThisProcess);
                     IsInside = true;
                     return;
                 }
@@ -660,6 +660,36 @@ namespace BoSSS.Foundation.Grid {
 
             return new EdgeMask(gdat, boundaryEdges);
         }
+
+
+
+        /// <summary>
+        /// Returns a mask which contains all boundary edges
+        /// </summary>
+        static public EdgeMask GetBoundaryEdges(this IGridData gdat) {
+
+            int E = gdat.iLogicalEdges.Count;
+            BitArray boundaryEdges = new BitArray(E);
+
+
+            int[,] CellIndices = gdat.iLogicalEdges.CellIndices;
+
+            // loop over all Edges
+            for (int e = 0; e < E; e++) {
+                int Cel1 = CellIndices[e, 0];
+                int Cel2 = CellIndices[e, 1];
+
+                if (Cel2 < 0) {
+                    // edge is located on the computational domain boundary
+                    boundaryEdges[e] = true;
+
+                }
+            }
+
+            return new EdgeMask(gdat, boundaryEdges, MaskType.Logical);
+        }
+
+
 
         /// <summary>
         /// Finds all neighbor cells for a given cell; 
@@ -861,38 +891,6 @@ namespace BoSSS.Foundation.Grid {
 
             return new CellMask(gdat, boundaryCells, MaskType.Logical);
 
-
-        }
-
-        /// <summary>
-        /// Returns a mask which contains all boundary edges
-        /// </summary>
-        static public EdgeMask GetBoundaryEdges(this IGridData gdat) {
-
-            int E = gdat.iLogicalEdges.Count;
-            BitArray boundaryEdges = new BitArray(E);
-
-
-            int[,] CellIndices = gdat.iLogicalEdges.CellIndices;
-
-            // loop over all Edges
-            for (int e = 0; e < E; e++) {
-                int Cel1 = CellIndices[e, 0];
-                int Cel2 = CellIndices[e, 1];
-
-                if (Cel2 < 0) {
-                    // edge is located on the computational domain boundary
-                    boundaryEdges[e] = true;
-
-                }
-
-
-
-            }
-
-
-
-            return new EdgeMask(gdat, boundaryEdges, MaskType.Logical);
 
         }
 

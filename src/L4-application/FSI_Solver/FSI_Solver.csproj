@@ -54,6 +54,10 @@
     <StartupObject>BoSSS.Application.FSI_Solver.FSI_SolverMain</StartupObject>
   </PropertyGroup>
   <ItemGroup>
+    <Reference Include="MathNet.Numerics, Version=2.6.0.29, Culture=neutral, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\..\..\libs\MathNet.Numerics-2.6.0.29\MathNet.Numerics.dll</HintPath>
+    </Reference>
     <Reference Include="nunit.framework, Version=2.6.4.14350, Culture=neutral, PublicKeyToken=96d09a1eb7f44a77, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\..\..\libs\NUnit-2.6.0.12051\bin\framework\nunit.framework.dll</HintPath>
@@ -72,7 +76,9 @@
     <Compile Include="active_particles\ActiveViscosityAtIB.cs" />
     <Compile Include="active_particles\ActiveConvectionAtIB.cs" />
     <Compile Include="active_particles\ActiveDivergenceAtIB.cs" />
+    <Compile Include="active_particles\HardcodedControl_TestCases.cs" />
     <Compile Include="Particle_Shapes\Particle_Bean.cs" />
+    <Compile Include="Particle_Shapes\Particle_superEllipsoid.cs" />
     <Compile Include="Particle_Shapes\Particle_Sphere.cs" />
     <Compile Include="Particle_Shapes\Particle_Hippopede.cs" />
     <Compile Include="Particle_Shapes\Particle_Squircle.cs" />
@@ -122,9 +128,9 @@
       <Project>{17a60fba-20b4-451d-98e1-8d742f368569}</Project>
       <Name>BoSSS.Foundation</Name>
     </ProjectReference>
-    <ProjectReference Include="..\..\L3-solution\BoSSS.Solution.Multigrid\BoSSS.Solution.Multigrid.csproj">
+    <ProjectReference Include="..\..\L3-solution\BoSSS.Solution.Multigrid\BoSSS.Solution.AdvancedSolvers.csproj">
       <Project>{efe8c307-09bc-4f58-b991-6ef8fd6d5eff}</Project>
-      <Name>BoSSS.Solution.Multigrid</Name>
+      <Name>BoSSS.Solution.AdvancedSolvers</Name>
     </ProjectReference>
     <ProjectReference Include="..\..\L3-solution\BoSSS.Solution.NSECommon\BoSSS.Solution.NSECommon.csproj">
       <Project>{e56b9ce4-14dc-4256-a337-46e5d298b722}</Project>

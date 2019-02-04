@@ -29,7 +29,7 @@ using System.Collections;
 using ilPSP.Tracing;
 using BoSSS.Foundation.Grid.Aggregation;
 
-namespace BoSSS.Solution.Multigrid {
+namespace BoSSS.Solution.AdvancedSolvers {
     public class XdgAggregationBasis : AggregationGridBasis {
 
         /// <summary>

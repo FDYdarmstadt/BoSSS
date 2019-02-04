@@ -25,7 +25,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using BoSSS.Platform;
-using BoSSS.Solution.Multigrid;
+using BoSSS.Solution.AdvancedSolvers;
 using BoSSS.Solution.Timestepping;
 using ilPSP;
 using BoSSS.Foundation.Grid.Aggregation;
@@ -85,7 +85,11 @@ namespace BoSSS.Solution.XdgTimestepping {
             AggregationGridData[] _MultigridSequence,
             SpeciesId[] _SpId,
             int _CutCellQuadOrder,
-            double _AgglomerationThreshold, bool _useX) {
+            double _AgglomerationThreshold, bool _useX, Control.NonLinearSolverConfig nonlinconfig,
+            Control.LinearSolverConfig linearconfig) : base(nonlinconfig,
+            linearconfig) {
+
+            m_nonlinconfig = nonlinconfig;
 
             if (Fields.Count() != IterationResiduals.Count())
                 throw new ArgumentException("Expecting the same number of fields and residuals.");
@@ -1233,6 +1237,7 @@ namespace BoSSS.Solution.XdgTimestepping {
 
         int m_InnerCoupledIterations = 0;
 
+        Control.NonLinearSolverConfig m_nonlinconfig;
 
         /// <summary>
         /// callback routine for the handling of the coupled level-set iteration
@@ -1246,7 +1251,7 @@ namespace BoSSS.Solution.XdgTimestepping {
             double ResidualNorm = currentRes.L2NormPow2().MPISum().Sqrt();
             //Console.WriteLine("ResidualNorm in CoupledIterationCallback is {0}", ResidualNorm);
             // delay the update of the level-set until the flow solver converged
-            if(ResidualNorm >= this.Config_SolverConvergenceCriterion) {
+            if(ResidualNorm >= this.m_nonlinconfig.ConvergenceCriterion) {
                 this.CoupledIteration = false;
             } else {
                 m_InnerCoupledIterations = 0;

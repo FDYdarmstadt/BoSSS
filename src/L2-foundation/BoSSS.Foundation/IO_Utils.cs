@@ -182,11 +182,22 @@ namespace BoSSS.Foundation.IO {
         /// Should work on any System.
         /// </remarks>
         public static string GetExportDirectory(ISessionInfo session) {
-            string path = Path.Combine(
+            string dirname =
+                (session.ProjectName.IsEmptyOrWhite() ? "NO-PROJ" : session.ProjectName)
+                + "__" +
+                (session.Name.IsEmptyOrWhite() ? "NO-NAME" : session.Name)
+                + "__" +
+                session.ID.ToString();
+
+            foreach (char c in System.IO.Path.GetInvalidFileNameChars()) {
+                if (dirname.Contains(c))
+                    dirname = dirname.Replace(c, '_');
+            }
+
+            return Path.Combine(
                 Utils.GetExportOutputPath(),
-                StandardFsDriver.SessionsDir,
-                session.ID.ToString());
-            return path;
+                "sessions",
+                   dirname);
         }
 
         /// <summary>

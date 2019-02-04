@@ -20,7 +20,7 @@ using System.Linq;
 using System.Text;
 using BoSSS.Solution;
 using BoSSS.Foundation.XDG;
-using static BoSSS.Solution.Multigrid.DirectSolver;
+using static BoSSS.Solution.AdvancedSolvers.DirectSolver;
 using ilPSP.LinSolvers;
 
 namespace BoSSS.Solution.LevelSetTools.EllipticExtension {

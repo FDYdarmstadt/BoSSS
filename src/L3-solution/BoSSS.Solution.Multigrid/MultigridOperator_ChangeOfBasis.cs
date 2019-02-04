@@ -28,7 +28,7 @@ using ilPSP.Utils;
 using BoSSS.Foundation.Grid;
 using System.Collections;
 
-namespace BoSSS.Solution.Multigrid {
+namespace BoSSS.Solution.AdvancedSolvers {
     partial class MultigridOperator {
 
         /// <summary>

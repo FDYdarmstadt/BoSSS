@@ -27,7 +27,7 @@ using BoSSS.Platform.Utils;
 using BoSSS.Foundation;
 using ilPSP.Tracing;
 
-namespace BoSSS.Solution.Multigrid {
+namespace BoSSS.Solution.AdvancedSolvers {
 
 
     public partial class MultigridOperator {

@@ -19,6 +19,7 @@ using System.Runtime.Serialization;
 using BoSSS.Foundation.XDG;
 using ilPSP;
 using BoSSS.Foundation.Grid;
+using MathNet.Numerics;
 
 namespace BoSSS.Application.FSI_Solver
 {
@@ -86,7 +87,7 @@ namespace BoSSS.Application.FSI_Solver
         {
             get
             {
-                return 3.708 * radius_P.Pow2();
+                return 4 * radius_P.Pow2() * (SpecialFunctions.Gamma(1 + 1 / superEllipsoidExponent)).Pow2() / SpecialFunctions.Gamma(1 + 2 / superEllipsoidExponent);
             }
         }
         override public double MomentOfInertia_P

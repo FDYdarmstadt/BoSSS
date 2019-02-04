@@ -272,7 +272,7 @@ namespace ilPSP.LinSolvers.MUMPS {
                     case -12:
                     case -14:
                     case -15:
-                        throw new ApplicationException("A MUMPS memory error occured on proc with rank: " + rank +
+                        throw new ApplicationException("A MUMPS memory error occurred on proc with rank: " + rank +
                             ". Error Code:  " + mumps_par.info[0] +
                             "  (For further information see MUMPS handbook or contact your local MUMPS support)");
 

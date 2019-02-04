@@ -85,7 +85,8 @@ namespace BoSSS.Application.FSI_Solver
             //From degree to radiant
             currentTimeAng_P[0] = startAngl * 2 * Math.PI / 360;
             currentTimeAng_P[1] = startAngl * 2 * Math.PI / 360;
-            //currentIterVel_P[0][0] = 2e-8;
+            //currentTimeVel_P[1][0] = 1e-2;
+            //currentTimeVel_P[1][1] = 1e-2;
 
             UpdateLevelSetFunction();
             #endregion
@@ -110,9 +111,9 @@ namespace BoSSS.Application.FSI_Solver
         public bool underrelaxationFT_constant = true;
         public int underrelaxationFT_exponent = 0;
         public double underrelaxation_factor = 1;
-        public int underrelaxationFT_exponent_min = 0;
         public int underrelaxationFT_exponent_max = 0;
-        
+        public double active_force_correction;
+
         /// <summary>
         /// Skip calculation of hydrodynamic force and torque if particles are too close
         /// </summary>
@@ -151,6 +152,12 @@ namespace BoSSS.Application.FSI_Solver
         /// </summary>
         [DataMember]
         public double thickness_P;
+
+        /// <summary>
+        /// Thickness of an elliptic particle.
+        /// </summary>
+        [DataMember]
+        public int superEllipsoidExponent;
 
         /// <summary>
         /// Current position of the particle (the center of mass)
@@ -662,6 +669,7 @@ namespace BoSSS.Application.FSI_Solver
                         UA[i].EvaluateGradient(j0, Len, Ns, Grad_UARes.ExtractSubArrayShallow(-1, -1, i, -1), 0, 1);
                     }
 
+
                     pA.Evaluate(j0, Len, Ns, pARes);
 
                     if (LsTrk.GridDat.SpatialDimension == 2) {
@@ -810,19 +818,30 @@ namespace BoSSS.Application.FSI_Solver
                 //CellQuadratureScheme cqs = SchemeHelper.GetLevelSetquadScheme(0, LsTrk.Regions.GetCutCellMask());
                 CellQuadratureScheme cqs = SchemeHelper.GetLevelSetquadScheme(0, this.cutCells_P(LsTrk));
 
-
+                double forceNaiveSum = 0.0;
+                double forceSum = 0.0;
+                double forceC = 0.0;
                 CellQuadrature.GetQuadrature(new int[] { 1 }, LsTrk.GridDat,
                     cqs.Compile(LsTrk.GridDat, RequiredOrder), //  agg.HMForder),
                     delegate (int i0, int Length, QuadRule QR, MultidimensionalArray EvalResult) {
                         ErrFunc(i0, Length, QR.Nodes, EvalResult.ExtractSubArrayShallow(-1, -1, 0));
                     },
                     delegate (int i0, int Length, MultidimensionalArray ResultsOfIntegration) {
-                        double c = 0.0;
                         for (int i = 0; i < Length; i++)
                         {
-                            forces[d] += ResultsOfIntegration[i, 0];
+                            //forces[d] += ResultsOfIntegration[i, 0];
+                            forceNaiveSum = forceSum + ResultsOfIntegration[i, 0];
+                            if (Math.Abs(forceSum) >= Math.Abs(ResultsOfIntegration[i, 0]))
+                            {
+                                forceC += (forceSum - forceNaiveSum) + ResultsOfIntegration[i, 0];
+                            }
+                            else
+                            {
+                                forceC += (ResultsOfIntegration[i, 0] - forceNaiveSum) + forceSum;
+                            }
+                            forceSum = forceNaiveSum;
                         }
-                            
+                        forces[d] = forceSum + forceC;
                     }
                 ).Execute();
             }
@@ -943,18 +962,33 @@ namespace BoSSS.Application.FSI_Solver
             //var SchemeHelper = new XQuadSchemeHelper(LsTrk, momentFittingVariant, );
             //CellQuadratureScheme cqs2 = SchemeHelper2.GetLevelSetquadScheme(0, LsTrk.Regions.GetCutCellMask());
             CellQuadratureScheme cqs2 = SchemeHelper2.GetLevelSetquadScheme(0, this.cutCells_P(LsTrk));
-
+            double torqueNaiveSum = 0.0;
+            double torqueSum = 0.0;
+            double torqueC = 0.0;
             CellQuadrature.GetQuadrature(new int[] { 1 }, LsTrk.GridDat,
                 cqs2.Compile(LsTrk.GridDat, RequiredOrder),
                 delegate (int i0, int Length, QuadRule QR, MultidimensionalArray EvalResult) {
                     ErrFunc2(i0, Length, QR.Nodes, EvalResult.ExtractSubArrayShallow(-1, -1, 0));
                 },
                 delegate (int i0, int Length, MultidimensionalArray ResultsOfIntegration) {
-                    double c = 0.0;
+                    //for (int i = 0; i < Length; i++)
+                    //{
+                    //    torque += ResultsOfIntegration[i, 0];
+                    //}
                     for (int i = 0; i < Length; i++)
                     {
-                        torque += ResultsOfIntegration[i, 0];
+                        torqueNaiveSum = torqueSum + ResultsOfIntegration[i, 0];
+                        if (Math.Abs(torqueSum) >= Math.Abs(ResultsOfIntegration[i, 0]))
+                        {
+                            torqueC += (torqueSum - torqueNaiveSum) + ResultsOfIntegration[i, 0];
+                        }
+                        else
+                        {
+                            torqueC += (ResultsOfIntegration[i, 0] - torqueNaiveSum) + torqueSum;
+                        }
+                        torqueSum = torqueNaiveSum;
                     }
+                    torque = torqueSum + torqueC;
                 }
 
             ).Execute();
@@ -965,7 +999,6 @@ namespace BoSSS.Application.FSI_Solver
             temporalForces_P.Remove(temporalForces_P.Last());
             temporalTorque_P.Insert(0, torque);
             temporalTorque_P.Remove(temporalTorque_P.Last());
-            int[] pre_under_R = new int[D];
             double[] temp_underR = new double[D + 1];
             double averageDistance = (length_P + thickness_P) / 2;
             double averageForce = (Math.Abs(forces[0]) + Math.Abs(forces[1]) + Math.Abs(torque) / averageDistance) / 3;
@@ -1004,11 +1037,10 @@ namespace BoSSS.Application.FSI_Solver
                 {
                     underrelaxation_ok = false;
                     temp_underR[j] = underrelaxation_factor;
-                    pre_under_R[j] = underrelaxationFT_exponent;
                     underrelaxationFT_exponent = 0;
                     for (int i = 0; underrelaxation_ok == false; i++)
                     {
-                        if (Math.Abs(temp_underR[j] * forces[j]) > 0.5 * Math.Abs(currentIterForces_P[0][j]))
+                        if (Math.Abs(temp_underR[j] * forces[j]) > 0.9 * Math.Abs(currentIterForces_P[0][j]))
                         {
                             underrelaxationFT_exponent -= 1;
                             temp_underR[j] = underrelaxation_factor * Math.Pow(10, underrelaxationFT_exponent);
@@ -1016,14 +1048,13 @@ namespace BoSSS.Application.FSI_Solver
                         else
                         {
                             underrelaxation_ok = true;
-                            if (Math.Abs(temp_underR[j] * forces[j]) < forceAndTorque_convergence * 100 && 10000 * Math.Abs(forces[j]) > averageForce)
+                            if (Math.Abs(temp_underR[j] * forces[j]) < forceAndTorque_convergence * 1000 && 100 * Math.Abs(forces[j]) > averageForce)
                             {
-                                temp_underR[j] = forceAndTorque_convergence * 100;
+                                temp_underR[j] = forceAndTorque_convergence * 1000;
                             }
-                            if (underrelaxationFT_exponent > -1)
+                            if (temp_underR[j] >= 0.9)
                             {
-                                underrelaxationFT_exponent = -1;
-                                temp_underR[j] = underrelaxation_factor * Math.Pow(10, underrelaxationFT_exponent);
+                                temp_underR[j] = 0.9;
                             }
                         }
                     }
@@ -1034,7 +1065,7 @@ namespace BoSSS.Application.FSI_Solver
                 underrelaxationFT_exponent = 0;
                 for (int i = 0; underrelaxation_ok == false; i++)
                 {
-                    if (Math.Abs(temp_underR[D] * torque) > 0.5 * Math.Abs(currentIterTorque_P[0]))
+                    if (Math.Abs(temp_underR[D] * torque) > 0.9 * Math.Abs(currentIterTorque_P[0]))
                     {
                         underrelaxationFT_exponent -= 1;
                         temp_underR[D] = underrelaxation_factor * Math.Pow(10, underrelaxationFT_exponent);
@@ -1042,9 +1073,9 @@ namespace BoSSS.Application.FSI_Solver
                     else
                     {
                         underrelaxation_ok = true;
-                        if (Math.Abs(temp_underR[D] * torque) < forceAndTorque_convergence * 1000 && 10000 * Math.Abs(torque) > averageForce)
+                        if (Math.Abs(temp_underR[D] * torque) < forceAndTorque_convergence * 1000 && 100 * Math.Abs(torque) > averageForce)
                         {
-                            temp_underR[D] = forceAndTorque_convergence * 100;
+                            temp_underR[D] = forceAndTorque_convergence * 1000;
                         }
                         if (underrelaxationFT_exponent > -1)
                         {

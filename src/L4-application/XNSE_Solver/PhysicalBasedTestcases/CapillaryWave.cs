@@ -23,7 +23,7 @@ using System.Threading.Tasks;
 using ilPSP;
 using ilPSP.Utils;
 using BoSSS.Solution.Control;
-using BoSSS.Solution.Multigrid;
+using BoSSS.Solution.AdvancedSolvers;
 using BoSSS.Solution.XNSECommon;
 using BoSSS.Foundation.IO;
 using BoSSS.Foundation.Grid;
@@ -231,9 +231,13 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             //C.AdvancedDiscretizationOptions.UseGhostPenalties = true;
 
             C.VelocityBlockPrecondMode = MultigridOperator.Mode.SymPart_DiagBlockEquilib;
-            C.NoOfMultigridLevels = 1;
-            C.Solver_MaxIterations = 100;
-            C.Solver_ConvergenceCriterion = 1e-8;
+            C.LinearSolver.NoOfMultigridLevels = 1;
+            C.NonLinearSolver.MaxSolverIterations = 100;
+            C.LinearSolver.MaxSolverIterations = 100;
+            //C.Solver_MaxIterations = 100;
+            C.NonLinearSolver.ConvergenceCriterion = 1e-8;
+            C.LinearSolver.ConvergenceCriterion = 1e-8;
+            //C.Solver_ConvergenceCriterion = 1e-8;
             C.LevelSet_ConvergenceCriterion = 1e-6;
 
             C.Option_LevelSetEvolution = LevelSetEvolution.Fourier;
@@ -525,9 +529,13 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             //C.AdvancedDiscretizationOptions.UseGhostPenalties = true;
 
             C.VelocityBlockPrecondMode = MultigridOperator.Mode.SymPart_DiagBlockEquilib;
-            C.NoOfMultigridLevels = 1;
-            C.Solver_MaxIterations = 100;
-            C.Solver_ConvergenceCriterion = 1e-8;
+            C.LinearSolver.NoOfMultigridLevels = 1;
+            C.NonLinearSolver.MaxSolverIterations = 100;
+            C.LinearSolver.MaxSolverIterations = 100;
+            //C.Solver_MaxIterations = 100;
+            C.NonLinearSolver.ConvergenceCriterion = 1e-8;
+            C.LinearSolver.ConvergenceCriterion = 1e-8;
+            //C.Solver_ConvergenceCriterion = 1e-8;
             C.LevelSet_ConvergenceCriterion = 1e-6;
 
             C.Option_LevelSetEvolution = LevelSetEvolution.Fourier;
@@ -772,9 +780,13 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             //C.AdvancedDiscretizationOptions.UseGhostPenalties = true;
 
             C.VelocityBlockPrecondMode = MultigridOperator.Mode.SymPart_DiagBlockEquilib;
-            C.NoOfMultigridLevels = 1;
-            C.Solver_MaxIterations = 100;
-            C.Solver_ConvergenceCriterion = 1e-8;
+            C.LinearSolver.NoOfMultigridLevels = 1;
+            C.NonLinearSolver.MaxSolverIterations = 100;
+            C.LinearSolver.MaxSolverIterations = 100;
+            //C.Solver_MaxIterations = 100;
+            C.NonLinearSolver.ConvergenceCriterion = 1e-8;
+            C.LinearSolver.ConvergenceCriterion = 1e-8;
+            //C.Solver_ConvergenceCriterion = 1e-8;
             C.LevelSet_ConvergenceCriterion = 1e-6;
 
             //C.Option_LevelSetEvolution = LevelSetEvolution.Fourier;
