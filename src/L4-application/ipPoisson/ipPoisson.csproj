@@ -69,7 +69,6 @@
     <Compile Include="PolygonTesselation.cs" />
     <Compile Include="SipHardcodedControl.cs" />
     <Compile Include="SipControl.cs" />
-    <Compile Include="SolverCodes.cs" />
     <Compile Include="Tests\TestProgram.cs" />
     <Compile Include="SipPoissonMain.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
