@@ -29,7 +29,7 @@ using ilPSP.Tracing;
 using ilPSP.Connectors.Matlab;
 using System.Diagnostics;
 
-namespace BoSSS.Solution.Multigrid {
+namespace BoSSS.Solution.AdvancedSolvers {
 
     /// <summary>
     /// A sparse direct solver. Actually, this class is just a 

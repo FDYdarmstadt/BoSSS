@@ -27,7 +27,7 @@ using System.Diagnostics;
 using MPI.Wrappers;
 
 
-namespace BoSSS.Solution.Multigrid {
+namespace BoSSS.Solution.AdvancedSolvers {
 
     /// <summary>
     /// Memory-intensive ortho-normalization scheme;should converge with similar rate as GMRES, 

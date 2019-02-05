@@ -65,6 +65,8 @@
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
+    <Reference Include="System.Data" />
+    <Reference Include="System.Runtime.Serialization" />
   </ItemGroup>
   <ItemGroup>
     <Compile Include="ConstitutiveEqns\ConstitutiveEqns_Diffusion.cs" />
@@ -155,9 +157,9 @@
       <Project>{28E4A331-ECA2-43A6-A11F-6D6A5E410434}</Project>
       <Name>BoSSS.Solution.GridImport</Name>
     </ProjectReference>
-    <ProjectReference Include="..\..\L3-solution\BoSSS.Solution.Multigrid\BoSSS.Solution.Multigrid.csproj">
+    <ProjectReference Include="..\..\L3-solution\BoSSS.Solution.Multigrid\BoSSS.Solution.AdvancedSolvers.csproj">
       <Project>{EFE8C307-09BC-4F58-B991-6EF8FD6D5EFF}</Project>
-      <Name>BoSSS.Solution.Multigrid</Name>
+      <Name>BoSSS.Solution.AdvancedSolvers</Name>
     </ProjectReference>
     <ProjectReference Include="..\..\L3-solution\BoSSS.Solution.NSECommon\BoSSS.Solution.NSECommon.csproj">
       <Project>{E56B9CE4-14DC-4256-A337-46E5D298B722}</Project>

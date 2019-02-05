@@ -116,7 +116,7 @@ namespace BoSSS.Solution.NSECommon.Operator.Viscosity {
             // ============================= 
             double uAFict;
             double Ret = 0.0;
-            double active_stress_visc;
+            double[] active_stress_visc = new double[2];
 
             // 3D for IBM_Solver
             // ============================= 
@@ -141,25 +141,29 @@ namespace BoSSS.Solution.NSECommon.Operator.Viscosity {
             {
                 uAFict = (uLevSet[component] + pRadius * wLevSet * inp.n[0]) * (1 - scale) + uA[component] * scale;
             }
+            active_stress_visc[0] = active_stress * Math.Cos(Ang_P);
+            active_stress_visc[1] = active_stress * Math.Sin(Ang_P);
+            double f_xN;
 
             //Defining active stress
             if (component == 0)
             {
                 //active_stress_visc =  - inp.n[0] / Math.Abs(inp.n[0]) * active_stress * scale * Math.Abs(inp.n[1]);
-                active_stress_visc = active_stress * Math.Cos(Ang_P);
+                f_xN = active_stress_visc[0] * Math.Abs(inp.n[1]);
             }
             else
             {
                 //active_stress_visc = inp.n[1] / Math.Abs(inp.n[1]) * active_stress * scale * Math.Abs(inp.n[0]);
-                active_stress_visc = active_stress * Math.Sin(Ang_P);
+                f_xN = active_stress_visc[1] * Math.Abs(inp.n[0]);
                 //active_stress_visc = 0;
             }
+
 
             //Computing flux
             Ret -= Grad_uA_xN * (vA) * muA * (1 - scale);                    // consistency term
             Ret -= Grad_vA_xN * (uA[component] - uAFict) * muA;              // symmetry term
             Ret += _penalty * (uA[component] - uAFict) * (vA) * muA;         // penalty term
-            Ret += active_stress_visc * (vA);                                // active term (Neumann boundary condition)
+            Ret += f_xN * (vA);                                // active term (Neumann boundary condition)
 
             Debug.Assert(!(double.IsInfinity(Ret) || double.IsNaN(Ret)));
             return Ret;

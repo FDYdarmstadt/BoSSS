@@ -33,6 +33,7 @@ using CNS.Residual;
 using CNS.ShockCapturing;
 using ilPSP.Utils;
 using System;
+using System.Diagnostics;
 
 namespace CNS {
 
@@ -138,6 +139,8 @@ namespace CNS {
                 double[] xNodes = GenericBlas.Linspace(xMin, xMax, numOfCellsX + 1);
                 double[] yNodes = GenericBlas.Linspace(yMin, yMax, numOfCellsY + 1);
                 var grid = Grid2D.Cartesian2DGrid(xNodes, yNodes, periodicX: false, periodicY: false);
+                //var grid = Grid2D.Trapezoidal2dGrid(3, 2, 4, GenericBlas.Linspace(0, 1, 2));
+
                 grid.EdgeTagNames.Add(1, "AdiabaticSlipWall");
                 grid.DefineEdgeTags(X => 1);
                 return grid;
@@ -805,15 +808,15 @@ namespace CNS {
 
             // Lichtenberg
             //string dbPath = @"/home/yp19ysog/bosss_db_paper_ibmdmr2";
-            string dbPath = @"/work/scratch/yp19ysog/bosss_db_performance";
+            string dbPath = @"/work/scratch/yp19ysog/bosss_db_performance2";
             //string dbPath = @"/work/scratch/yp19ysog/bosss_db_paper_ibmdmr_run3_test";
             //string dbPath = @"C:\bosss_db_paper_ibmdmr_scratch_run3_test";
             string restart = "False";
 
             CNSControl c = DoubleMachReflection(dbPath, savePeriod, dgDegree, xMax, yMax, numOfCellsX, numOfCellsY, sensorLimit, CFLFraction, explicitScheme, explicitOrder, numberOfSubGrids, reclusteringInterval, maxNumOfSubSteps, endTime, restart, cores);
 
-            c.ProjectName = "dmr_cube_run3";
-            //c.NoOfTimesteps = timeSteps;
+            c.ProjectName = "dmr_cube_run4";
+            c.NoOfTimesteps = timeSteps;
 
             return c;
         }
@@ -1741,8 +1744,11 @@ namespace CNS {
             return c;
         }
 
-        public static CNSControl BowShock(string dbPath = null, int savePeriod = 10, int dgDegree = 2, double sensorLimit = 1e-2, double CFLFraction = 0.1, int explicitScheme = 1, int explicitOrder = 1, int numberOfSubGrids = 3, int reclusteringInterval = 1, int maxNumOfSubSteps = 0, double endTime = 5.0, string restart = "False", string gridPath = @"c:\GmshGrids\N3\grid0.msh") {
+        public static CNSControl BowShock(string dbPath = null, int savePeriod = 100, int dgDegree = 2, double sensorLimit = 1e-3, double CFLFraction = 0.1, int explicitScheme = 1, int explicitOrder = 1, int numberOfSubGrids = 3, int reclusteringInterval = 1, int maxNumOfSubSteps = 0, double endTime = 10.0, string restart = "False", string gridPath = @"c:\GmshGrids\N3\grid2.msh", double lambdaMax = 10.0) {
             CNSControl c = new CNSControl();
+
+            //System.Threading.Thread.Sleep(10000);
+            //Debugger.Launch();
 
             //dbPath = @"/work/scratch/yp19ysog/bosss_db_dmr_video";          // Lichtenberg
             //dbPath = @"c:\bosss_db";                                          // Local
@@ -1752,10 +1758,13 @@ namespace CNS {
             c.DbPath = dbPath;
             c.savetodb = dbPath != null;
             c.saveperiod = savePeriod;
-            c.PrintInterval = 1;
+            c.PrintInterval = 100;
+            //c.rollingSaves = 10;
 
             c.WriteLTSLog = false;
             c.WriteLTSConsoleOutput = false;
+
+            //c.TracingNamespaces = "BoSSS.Foundation";
 
             // Time stepping
             c.ExplicitScheme = (ExplicitSchemes)explicitScheme;
@@ -1766,7 +1775,7 @@ namespace CNS {
             c.FluxCorrection = false;
 
             // Dynamic load balacing
-            c.GridPartType = GridPartType.ParMETIS;
+            c.GridPartType = GridPartType.METIS;
             c.DynamicLoadBalancing_On = false;
             //c.DynamicLoadBalancing_CellClassifier = new LTSCellClassifier();
             //c.DynamicLoadBalancing_CellCostEstimatorFactories.AddRange(LTSCellCostEstimator.Factory(c.NumberOfSubGrids));
@@ -1794,8 +1803,11 @@ namespace CNS {
             if (AV) {
                 Variable sensorVariable = Variables.Density;
                 c.ShockSensor = new PerssonSensor(sensorVariable, sensorLimit);
-                //c.ArtificialViscosityLaw = new SmoothedHeavisideArtificialViscosityLaw(c.ShockSensor, dgDegree, sensorLimit, epsilon0, kappa, lambdaMax: 20); // fixed lamdaMax
-                c.ArtificialViscosityLaw = new SmoothedHeavisideArtificialViscosityLaw(c.ShockSensor, dgDegree, sensorLimit, epsilon0, kappa);                // dynamic lambdaMax
+                if (lambdaMax == -1.0) { // dynamic lambdaMax
+                    c.ArtificialViscosityLaw = new SmoothedHeavisideArtificialViscosityLaw(c.ShockSensor, dgDegree, sensorLimit, epsilon0, kappa);
+                } else { // fixed lamdaMax
+                    c.ArtificialViscosityLaw = new SmoothedHeavisideArtificialViscosityLaw(c.ShockSensor, dgDegree, sensorLimit, epsilon0, kappa, lambdaMax: lambdaMax);
+                }
             }
 
             c.EquationOfState = IdealGas.Air;
@@ -1816,7 +1828,7 @@ namespace CNS {
             //c.AddVariable(Variables.Viscosity, dgDegree);
             c.AddVariable(Variables.LocalMachNumber, dgDegree);
 
-            //c.AddVariable(Variables.Rank, 0);
+            c.AddVariable(Variables.Rank, 0);
             //if (dgDegree > 0) {
             //    c.AddVariable(Variables.Schlieren, dgDegree - 1);
             //}
@@ -1838,8 +1850,8 @@ namespace CNS {
             // Grid
             if (restart == "True") {
                 // Restart Lichtenberg
-                c.RestartInfo = new Tuple<Guid, TimestepNumber>(new Guid("a96d7c2c-fe35-4fc3-9f51-ef45185fe188"), -1);
-                c.GridGuid = new Guid("c544dd46-a9d8-44c8-b5bb-10516f94f0c9");
+                c.RestartInfo = new Tuple<Guid, TimestepNumber>(new Guid("0f005d61-039d-4603-90fb-953f0a779b93"), -1);
+                c.GridGuid = new Guid("c26db7b6-b291-411e-8424-cb3c2395500e");
             } else {
                 c.GridFunc = delegate {
                     GridCommons grid = GridImporter.Import(gridPath);
@@ -1848,43 +1860,47 @@ namespace CNS {
                     grid.EdgeTagNames.Add(2, "SupersonicOutlet");
                     grid.EdgeTagNames.Add(3, "AdiabaticSlipWall");
 
-                    bool IsOnCylinder(double[] X) {
-                        bool result = false;
+                    //bool IsOnCylinder(double[] X) {
+                    //    bool result = false;
 
-                        // Circle 1
-                        double x0 = 0.0;
-                        double y0 = 0.5;
-                        double r0 = 0.5;
+                    //    // Circle 1
+                    //    double x0 = 0.0;
+                    //    double y0 = 0.5;
+                    //    double r0 = 0.5;
 
-                        // Circle 2
-                        double x1 = 0.0;
-                        double y1 = -0.5;
-                        double r1 = 0.5;
+                    //    // Circle 2
+                    //    double x1 = 0.0;
+                    //    double y1 = -0.5;
+                    //    double r1 = 0.5;
 
-                        if ((X[0] - x0) * (X[0] - x0) + (X[1] - y0) * (X[1] - y0) - r0 * r0 < 1e-14) {
-                            result = true;
-                        }
+                    //    if ((X[0] - x0) * (X[0] - x0) + (X[1] - y0) * (X[1] - y0) - r0 * r0 < 1e-14) {
+                    //        result = true;
+                    //    }
 
-                        if ((X[0] - x1) * (X[0] - x1) + (X[1] - y1) * (X[1] - y1) - r1 * r1 < 1e-14) {
-                            result = true;
-                        }
+                    //    if ((X[0] - x1) * (X[0] - x1) + (X[1] - y1) * (X[1] - y1) - r1 * r1 < 1e-14) {
+                    //        result = true;
+                    //    }
 
-                        if (Math.Abs(X[0] - (-0.5)) < 1e-14) {
-                            result = true;
-                        }
+                    //    if (Math.Abs(X[0] - (-0.5)) < 1e-14) {
+                    //        result = true;
+                    //    }
 
-                        return result;
-                    }
+                    //    return result;
+                    //}
 
                     grid.DefineEdgeTags(delegate (double[] X) {
                         if (Math.Abs(X[0] - 0.0) < 1e-14) {
                             return 2;
-                        } else if (IsOnCylinder(X)) {
-                            return 3;
-                        } else {
+                        } else if ((X[0] - 0.0) * (X[0] - 0.0) + (X[1] - 0.0) * (X[1] - 0.0) - 1.5 * 1.5 >= 1e-14) {
                             return 1;
+                        } else {
+                            return 3;
                         }
                     });
+
+                    //var gDat = new GridData(grid);
+                    //var em1 = gDat.GetBoundaryEdges();
+                    //em1.SaveToTextFile("alledges.csv", false, (double[] CoordGlobal, int LogicalItemIndex, int GeomItemIndex) => (double)gDat.iGeomEdges.EdgeTags[GeomItemIndex]);
 
                     return grid;
                 };
@@ -1923,11 +1939,18 @@ namespace CNS {
 
             c.ProjectName = "bowShock";
 
+            // Extract grid name from grid path
+            string gridName = gridPath.Substring(gridPath.Length - 12);
+            string[] charsToRemove = new string[] { "m", "s", "h", "h", @"\", "." };
+            foreach (var ch in charsToRemove) {
+                gridName = gridName.Replace(ch, string.Empty);
+            }
+
             // Session name
             string tempSessionName;
             if (c.ExplicitScheme == ExplicitSchemes.RungeKutta) {
-                tempSessionName = string.Format("BowShock_p{0}_s0={1:0.0E-00}_CFLFrac{2}_RK{3}",
-                    dgDegree, sensorLimit, CFLFraction, explicitOrder);
+                tempSessionName = string.Format("BowShock_{0}_p{1}_s0={2:0.0E-00}_CFLFrac{3}_RK{4}",
+                    gridName, dgDegree, sensorLimit, CFLFraction, explicitOrder);
             } else if (c.ExplicitScheme == ExplicitSchemes.AdamsBashforth) {
                 tempSessionName = string.Format("BowShock_p{0}_s0={1:0.0E-00}_CFLFrac{2}_AB{3}",
                     dgDegree, sensorLimit, CFLFraction, explicitOrder);

@@ -21,14 +21,14 @@ using System.Text;
 using ilPSP.LinSolvers;
 using BoSSS.Foundation;
 using ilPSP.Utils;
-using BoSSS.Solution.Multigrid;
+using BoSSS.Solution.AdvancedSolvers;
 using BoSSS.Platform;
 using System.Diagnostics;
 using ilPSP;
 using MPI.Wrappers;
 using BoSSS.Foundation.XDG;
 
-namespace BoSSS.Solution.Multigrid {
+namespace BoSSS.Solution.AdvancedSolvers {
 
 
    
@@ -81,9 +81,9 @@ namespace BoSSS.Solution.Multigrid {
                 Debug.Assert(SolHistory.Count >= 1);
 
                 // (approximately) solve the linearized equation:
-                Precond.Init(this.CurrentLin);
+                Precond_solver.Init(this.CurrentLin);
                 Sol1.SetV(SolHistory.Last(), 1.0);
-                Precond.Solve(Sol1, this.LinearizationRHS);
+                Precond_solver.Solve(Sol1, this.LinearizationRHS);
                 SolHistory.Add(Sol1.CloneAs());
                 Sol1.ClearEntries();
 

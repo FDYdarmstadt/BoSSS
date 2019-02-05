@@ -33,7 +33,7 @@ using BoSSS.Foundation.Grid.Aggregation;
 using ilPSP.Tracing;
 using BoSSS.Foundation.XDG;
 
-namespace BoSSS.Solution.Multigrid {
+namespace BoSSS.Solution.AdvancedSolvers {
 
     /// <summary>
     /// For each aggregation grid level, this mapping defines a bijection between variable index,
