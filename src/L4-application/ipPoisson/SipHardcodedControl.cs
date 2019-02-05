@@ -207,7 +207,6 @@ namespace BoSSS.Application.SipPoisson {
             R.InitialValues_Evaluators.Add("Tex", X => Math.Sin(X[0]));
             R.ExactSolution_provided = true;
             R.LinearSolver.NoOfMultigridLevels = int.MaxValue;
-
             R.LinearSolver.SolverCode = solver_name;
             //R.TargetBlockSize = 100;
 
@@ -300,7 +299,7 @@ namespace BoSSS.Application.SipPoisson {
             R.InitialValues_Evaluators.Add("RHS", exRhs);
             R.InitialValues_Evaluators.Add("Tex", exSol);
             R.ExactSolution_provided = true;
-            R.LinearSolver.NoOfMultigridLevels = 2;
+            //R.LinearSolver.NoOfMultigridLevels = 2;
             //R.LinearSolver.SolverCode = LinearSolverConfig.Code.exp_softpcg_mg;
             //R.LinearSolver.SolverCode = LinearSolverConfig.Code.exp_softpcg_schwarz_directcoarse;
             //R.LinearSolver.SolverCode = LinearSolverConfig.Code.classic_mumps;

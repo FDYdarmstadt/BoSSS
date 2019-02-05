@@ -126,7 +126,7 @@ namespace BoSSS.Solution.NSECommon {
                        
                 ViscTerm = -0.4e1 / 0.3e1 * Math.Cos(y_) / Reynolds; // 
                 PressureGradientTerm = x_ * Math.Cos(x_ * y_);
-                BouyancyTerm = 1 / (Froude * Froude) * p0 / Math.Cos(x_ * y_);  // -1/Fr*p0/T, bouyancy term 
+                BouyancyTerm = -1 / (Froude * Froude) * p0 / Math.Cos(x_ * y_);  // -1/Fr*p0/T, bouyancy term 
                // BouyancyTerm = Math.Pow(Froude, -0.2e1) * p0 / Math.Cos(x_ * y_) / (alpha1 * Math.Cos(x_ * y_) / M1 + alpha2 * Math.Cos(x_ * y_) / M2 + alpha3 * Math.Cos(x_ * y_) / M3 + (0.10e1 - alpha1 * Math.Cos(x_ * y_) - alpha2 * Math.Cos(x_ * y_) - alpha3 * Math.Cos(x_ * y_)) / M4);
 
 
