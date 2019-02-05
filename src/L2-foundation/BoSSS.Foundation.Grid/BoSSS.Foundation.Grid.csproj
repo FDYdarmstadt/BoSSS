@@ -64,7 +64,13 @@
     <Compile Include="Grid2D.cs" />
     <Compile Include="Grid3D.cs" />
     <Compile Include="GridRefinementController.cs" />
+    <Compile Include="Intersecter.cs" />
+    <Compile Include="IntersectionMesh.cs" />
+    <Compile Include="MatlabMeshGenerator.cs" />
+    <Compile Include="Mesh.cs" />
+    <Compile Include="MIConvexHullMeshGenerator.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="VoronoiGrid2D.cs" />
   </ItemGroup>
   <ItemGroup>
     <BootstrapperPackage Include="Microsoft.Net.Client.3.5">
@@ -87,6 +93,9 @@
     <Reference Include="log4net, Version=1.2.10.0, Culture=neutral, PublicKeyToken=1b44e1d426115821">
       <HintPath>..\..\..\libs\log4net-1.2.10\bin\cli\1.0\release\log4net.dll</HintPath>
     </Reference>
+    <Reference Include="MIConvexHull">
+      <HintPath>..\..\..\libs\MIConvexHull\MIConvexHull.dll</HintPath>
+    </Reference>
     <Reference Include="System" />
     <Reference Include="Newtonsoft.Json">
       <HintPath>..\..\..\libs\Newtonsoft.Json60r4\Newtonsoft.Json.dll</HintPath>
@@ -108,6 +117,10 @@
     <ProjectReference Include="..\..\ilPSP\layer_1.1-MPI.NET\MPI.Wrappers\MPI.Wrappers.csproj">
       <Project>{dd9bf776-38ca-4fc9-8f42-5ed700bde7ad}</Project>
       <Name>MPI.Wrappers</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\..\ilPSP\layer_1.2-ilPSP\ilPSP.Connectors.Matlab\ilPSP.Connectors.Matlab.csproj">
+      <Project>{6886abb3-ce89-4537-9f2a-25f926d1840b}</Project>
+      <Name>ilPSP.Connectors.Matlab</Name>
     </ProjectReference>
     <ProjectReference Include="..\..\ilPSP\layer_1.2-ilPSP\ilPSP\ilPSP.csproj">
       <Project>{8e6d8f23-623f-4204-b4ab-a088c0cd83aa}</Project>
