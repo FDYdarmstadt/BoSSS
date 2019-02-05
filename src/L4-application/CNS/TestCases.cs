@@ -821,7 +821,7 @@ namespace CNS {
             return c;
         }
 
-        public static IBMControl IBMShockTube(string dbPath = null, int savePeriod = 100, int dgDegree = 2, int numOfCellsX = 10, int numOfCellsY = 10, double sensorLimit = 1e-3, double dtFixed = 0.0, double CFLFraction = 0.1, int explicitScheme = 3, int explicitOrder = 3, int numberOfSubGrids = 1, int reclusteringInterval = 0, int maxNumOfSubSteps = 0, double agg = 0.3, string restart = "False") {
+        public static IBMControl IBMShockTube(string dbPath = null, int savePeriod = 100, int dgDegree = 3, int numOfCellsX = 70, int numOfCellsY = 70, double sensorLimit = 1e-3, double dtFixed = 0.0, double CFLFraction = 0.1, int explicitScheme = 3, int explicitOrder = 3, int numberOfSubGrids = 1, int reclusteringInterval = 1, int maxNumOfSubSteps = 0, double agg = 0.3, string restart = "False") {
             IBMControl c = new IBMControl();
 
             // ### Database ###
@@ -848,22 +848,32 @@ namespace CNS {
             // ### Level-set ###
             c.DomainType = DomainTypes.StaticImmersedBoundary;
 
+            double angle = Math.PI / 4;
+            double[] startOfRamp = new double[] { 0.0, -0.1 };
+            double[] startOfRamp2 = new double[] { 0.0, 0.1 };
+
+            Func<double, double> Ramp = delegate (double x) {
+                return Math.Tan(angle) * (x - startOfRamp[0]) + startOfRamp[1];
+            };
+            Func<double, double> Ramp2 = delegate (double x) {
+                return Math.Tan(angle) * (x - startOfRamp2[0]) + startOfRamp2[1];
+            };
+
             bool rotatedGrid = true;
+
             if (rotatedGrid) {
-                double[] startOfRamp = new double[] { 0.0, 0.0 };
-                Func<double, double> Ramp = delegate (double x) {
-                    return Math.Tan(45) * (x - startOfRamp[0]) + startOfRamp[1];
-                };
-                c.LevelSetFunction = (X, t) => X[1] - Ramp(X[0]);
+                c.LevelSetFunction = (X, t) => -(X[1] - Ramp(X[0])) * (X[1] - Ramp2(X[0]));
+                c.AddVariable(IBMVariables.LevelSet, 2);
+                //c.ContinuousLevelSet = true;
             } else {
                 c.LevelSetFunction = (X, t) => X[1] - 0.056;
+                c.AddVariable(IBMVariables.LevelSet, 1);
             }
 
             c.LevelSetBoundaryTag = "AdiabaticSlipWall";
             c.CutCellQuadratureType = XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes;
             c.LevelSetQuadratureOrder = 3 * dgDegree;
             c.AgglomerationThreshold = agg;
-            c.AddVariable(IBMVariables.LevelSet, 1);
             //c.AddVariable(IBMVariables.FluidCells, 1);
             //c.AddVariable(IBMVariables.FluidCellsWithoutSourceCells, 1);
             //c.AddVariable(IBMVariables.CutCells, 1);
@@ -954,35 +964,51 @@ namespace CNS {
             c.AddBoundaryValue("AdiabaticSlipWall");
 
             // ### Initial smoothing ###
-            //double crossProduct2D(double[] a, double[] b) {
-            //    return a[0] * b[1] - a[1] * b[0];
-            //}
+            double shockPosX = 1.0;
+            double shockAngle = Math.PI * 3 / 4;
 
-            // Normal vector of initial shock
-            //Vector normalVector = new Vector(1, 0);
+            double temp = shockPosX / ((xMax - xMin) / numOfCellsX);
+            bool resolutionOk = (temp == Math.Truncate(temp));
+            if (!resolutionOk) {
+                throw new Exception("Number of cells in x-direction is not applicable because of xWall!");
+            }
 
-            // Direction vector of initial shock
-            //Vector r = new Vector(normalVector.y, -normalVector.x);
-            //r.Normalize();
+            double cellSize = Math.Min((xMax - xMin) / numOfCellsX, (yMax - yMin) / numOfCellsY);
+            
+            double DistanceToInitialShock(double[] X, double t) {
+                // direction vector
+                Vector p1 = new Vector(shockPosX, 0.0);
+                Vector p2 = new Vector(shockPosX + 1 / Math.Tan(shockAngle), 1.0);
+                Vector p = p2 - p1;
 
-            // Distance from a point X to the initial shock
-            //double[] p = new double[] { 0.5, 0.0 };
+                // normal vector
+                Vector n = new Vector(p.y, -p.x);
+                n.Normalize();
 
-            //double DistanceFromPointToLine(double[] X, double[] pointOnLine, double[] directionVector) {
-            //    double[] X_minus_pointOnLine = new double[] { X[0] - pointOnLine[0], X[1] - pointOnLine[1] };
-            //    double distance = crossProduct2D(directionVector, X_minus_pointOnLine) / Math.Sqrt(Math.Pow(directionVector[0], 2) + Math.Pow(directionVector[1], 2));
+                // Angle between line and x-axis
+                //double alpha = Math.Atan(Math.Abs((p2.y - p1.y)) / Math.Abs((p2.x - p1.x)));
+                double alpha = shockAngle;
 
-            //    return distance;
-            //}
+                // distance of a point X to the origin (normal to the line)
+                double nDotX = n.x * X[0] + n.y * X[1];
 
-            //double cellSize = Math.Min((xMax - xMin) / numOfCellsX, (yMax - yMin) / numOfCellsY);
+                // shock speed
+                double vs = 10;
 
-            //Func<double, double> SmoothJump = delegate (double distance) {
-            //    // smoothing should be in the range of h/p
-            //    double maxDistance = 2.0 * cellSize / Math.Max(dgDegree, 1);
+                // distance to line
+                double distance = nDotX - (Math.Sin(alpha) * p1.x + vs * t);
+                //double distance = nDotX - Math.Cos(alpha) * p1.x;
 
-            //    return (Math.Tanh(distance / maxDistance) + 1.0) * 0.5;
-            //};
+                return distance;
+            }
+
+            // Function for smoothing the initial and top boundary conditions
+            double SmoothJump(double distance) {
+                // smoothing should be in the range of h/p
+                double maxDistance = 2.0 * cellSize / Math.Max(dgDegree, 1);
+
+                return (Math.Tanh(distance / maxDistance) + 1.0) * 0.5;
+            }
 
             // ### Initial conditions ###
             double densityLeft = 1.0;
@@ -993,40 +1019,42 @@ namespace CNS {
             double velocityRight = 0.0;
             double discontinuityPosition = 0.5;
 
-            Func<double, double> Jump = (x => x <= discontinuityPosition ? 0 : 1);
-
-            //c.InitialValues_Evaluators.Add(Variables.Density, X => densityLeft - SmoothJump(DistanceFromPointToLine(X, p, r)) * (densityLeft - densityRight));
-            //c.InitialValues_Evaluators.Add(Variables.Pressure, X => pressureLeft - SmoothJump(DistanceFromPointToLine(X, p, r)) * (pressureLeft - pressureRight));
+            Func<double, double> Jump = x => x <= discontinuityPosition ? 0 : 1;
 
             if (restart == "False") {
-                c.InitialValues_Evaluators.Add(Variables.Density, X => densityLeft - Jump(X[0]) * (densityLeft - densityRight));
-                c.InitialValues_Evaluators.Add(Variables.Pressure, X => pressureLeft - Jump(X[0]) * (pressureLeft - pressureRight));
+                if (rotatedGrid) {
+                    c.InitialValues_Evaluators.Add(Variables.Density, X => densityLeft - SmoothJump(DistanceToInitialShock(X, t: 0.0)) * (densityLeft - densityRight));
+                    c.InitialValues_Evaluators.Add(Variables.Pressure, X => pressureLeft - SmoothJump(DistanceToInitialShock(X, t: 0.0)) * (pressureLeft - pressureRight));
+                } else {
+                    c.InitialValues_Evaluators.Add(Variables.Density, X => densityLeft - Jump(X[0]) * (densityLeft - densityRight));
+                    c.InitialValues_Evaluators.Add(Variables.Pressure, X => pressureLeft - Jump(X[0]) * (pressureLeft - pressureRight));
+                }
                 c.InitialValues_Evaluators.Add(Variables.Velocity.xComponent, X => 0.0);
                 c.InitialValues_Evaluators.Add(Variables.Velocity.yComponent, X => 0.0);
             }
 
             // ### Evaluation ###
-            Material material = c.GetMaterial();
-            StateVector stateLeft = StateVector.FromPrimitiveQuantities(
-                material, densityLeft, new Vector(velocityLeft, 0.0, 0.0), pressureLeft);
-            StateVector stateRight = StateVector.FromPrimitiveQuantities(
-                material, densityRight, new Vector(velocityRight, 0.0, 0.0), pressureRight);
+            //Material material = c.GetMaterial();
+            //StateVector stateLeft = StateVector.FromPrimitiveQuantities(
+            //    material, densityLeft, new Vector(velocityLeft, 0.0, 0.0), pressureLeft);
+            //StateVector stateRight = StateVector.FromPrimitiveQuantities(
+            //    material, densityRight, new Vector(velocityRight, 0.0, 0.0), pressureRight);
 
-            var riemannSolver = new ExactRiemannSolver(stateLeft, stateRight, new Vector(1.0, 0.0, 0.0));
-            double pStar, uStar;
-            riemannSolver.GetStarRegionValues(out pStar, out uStar);
+            //var riemannSolver = new ExactRiemannSolver(stateLeft, stateRight, new Vector(1.0, 0.0, 0.0));
+            //double pStar, uStar;
+            //riemannSolver.GetStarRegionValues(out pStar, out uStar);
 
-            c.Queries.Add("L2ErrorDensity", QueryLibrary.L2Error(
-                Variables.Density,
-                (X, t) => riemannSolver.GetState(pStar, uStar, X[0] - discontinuityPosition, t).Density));
-            c.Queries.Add("L2ErrorVelocity", QueryLibrary.L2Error(
-                Variables.Velocity.xComponent,
-                (X, t) => riemannSolver.GetState(pStar, uStar, X[0] - discontinuityPosition, t).Velocity.x));
-            c.Queries.Add("L2ErrorPressure", QueryLibrary.L2Error(
-                Variables.Pressure,
-                (X, t) => riemannSolver.GetState(pStar, uStar, X[0] - discontinuityPosition, t).Pressure));
+            //c.Queries.Add("L2ErrorDensity", QueryLibrary.L2Error(
+            //    Variables.Density,
+            //    (X, t) => riemannSolver.GetState(pStar, uStar, X[0] - discontinuityPosition, t).Density));
+            //c.Queries.Add("L2ErrorVelocity", QueryLibrary.L2Error(
+            //    Variables.Velocity.xComponent,
+            //    (X, t) => riemannSolver.GetState(pStar, uStar, X[0] - discontinuityPosition, t).Velocity.x));
+            //c.Queries.Add("L2ErrorPressure", QueryLibrary.L2Error(
+            //    Variables.Pressure,
+            //    (X, t) => riemannSolver.GetState(pStar, uStar, X[0] - discontinuityPosition, t).Pressure));
 
-            c.AddVariable(Variables.RiemannDensity, dgDegree);
+            //c.AddVariable(Variables.RiemannDensity, dgDegree);
 
             // ### Time configuration ###
             c.dtMin = 0.0;
@@ -1037,10 +1065,10 @@ namespace CNS {
                 c.CFLFraction = CFLFraction;
             }
             c.Endtime = 0.25;
-            c.NoOfTimesteps = 0;
+            c.NoOfTimesteps = int.MaxValue;
 
             // ### Project and sessions name ###
-            c.ProjectName = "ibm_shock_tube_pstudy";
+            c.ProjectName = "ibm_shock_tube";
 
             if (c.DynamicLoadBalancing_On) {
                 c.SessionName = String.Format("IBM shock tube, p={0}, {1}x{2} cells, agg={3}, s0={4:0.0E-00}, CFLFrac={5}, ALTS {6}/{7}/Re{8}/Sub{9}, Part={10}/Re{11}/Thresh{12}", dgDegree, numOfCellsX, numOfCellsY, c.AgglomerationThreshold, sensorLimit, c.CFLFraction, c.ExplicitOrder, c.NumberOfSubGrids, c.ReclusteringInterval, c.maxNumOfSubSteps, c.GridPartType.ToString(), c.DynamicLoadBalancing_Period, c.DynamicLoadBalancing_ImbalanceThreshold);
