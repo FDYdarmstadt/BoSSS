@@ -2,13 +2,19 @@
 \graphicspath{{ParameterStudy/ParameterStudy.texbatch}}
 
 \BoSSScmd{
-restart
+restart;
  }
 \BoSSSexeSilent
 \BoSSScmd{
-/// This guide will give you an example of how to conduct a parameter study with all the necessary steps.  
+/// This guide will give you an example of how to conduct a parameter study with
+/// all the necessary steps.  
 /// \section{Initialization of solver, processor and workflow}
 /// We start with initializing of the workflow
+ }
+\BoSSSexe
+\BoSSScmd{
+/// \section{Initialization of solver, processor and workflow}
+/// We start with initializing of the workflow.
  }
 \BoSSSexe
 \BoSSScmd{
@@ -44,22 +50,58 @@ using BoSSS.Platform.LinAlg;
  }
 \BoSSSexe
 \BoSSScmd{
-/// The last part of the initialization is to set up processors. 
-/// Here, we have two choices - either we do the calculations locally \code{myBatch} or on the network cluster \code{myHPC}. 
-/// In order to use the network cluster, create a folder "cluster" in "P" and then set the HPC-Directory to this path.
+///Here, we have two choices - either we do the calculations locally 
+///$(\code{myBatch})$ or on the network cluster $(\code{myHPC})$. 
+/// In order to use the network cluster, create a folder "cluster" in "P" 
+///and then set the HPC-Directory to this path.
  }
 \BoSSSexe
 \BoSSScmd{
-var myBatch = new MiniBatchProcessorClient();\newline 
-//var myHPC   = new MsHPC2012Client(@"Cluster Directory");
+var myHPC = new MsHPC2012Client(@"\textbackslash \textbackslash dc1\textbackslash userspace\textbackslash yotov\textbackslash cluster","hpccluster",\newline 
+\btab  ComputeNodes : new[] \{"hpccluster"\});\newline 
+var myBatch = new MiniBatchProcessorClient(@"C:\textbackslash tmp");
+ }
+\BoSSSexe
+\BoSSScmd{
+/// \section{Grid Generation}
+///Firstly, we need to determine the boundaries of our grid/control volume. 
+///Is it important to know that the number of nodes (in our case $/code{k}$)
+///needed are equal
+/// to the number of cells $+1$. For instance, for $10$ cells we need $11$ nodes.
+/// In this example we will use the Cartesian $2D$ grid from the database
+/// which requires $x$- and $y$-Nodes. The J term in the code is for doing
+/// a check if the desired resolution of the volume is correctly typed.
+ }
+\BoSSSexe
+\BoSSScmd{
+int k = 10;\newline 
+double[] xNodes = GenericBlas.Linspace(0, 1, k + 1);\newline 
+double[] yNodes = GenericBlas.Linspace(0, 1, k + 1);\newline 
+int J           = (xNodes.Length - 1)*(yNodes.Length - 1);\newline 
+string GridName = string.Format(WorkflowMgm.CurrentProject + "\_J" +J);\newline 
+ \newline 
+Console.WriteLine("Creating grid with " + J + " cells. ");\newline 
+ \newline 
+GridCommons g;\newline 
+g      = Grid2D.Cartesian2DGrid(xNodes, yNodes);\newline 
+g.Name = GridName;
  }
 \BoSSSexe
 \BoSSScmd{
 /// \section{Define geometrical boundaries}
-/// After loading the grid and giving the dimensions, we need to adjust the edges and their names. With the following code we assign every edge with number and name. Keep in mind that the name corresponds to the boundary condition (in this case "Pressure Dirichlet").
+/// After loading the grid and giving the dimensions, we need to adjust
+/// the edges and their names. With the following code we assign every edge with
+/// a number and name. Keep in mind that the name corresponds to the boundary 
+///condition (in this case "Pressure Dirichlet").
+/// In this particular case we will use inflow profile represented
+/// via tan-function and the angle of inflow will be $30$ degrees.
  }
 \BoSSSexe
 \BoSSScmd{
+GridCommons g;\newline 
+g      = Grid2D.Cartesian2DGrid(xNodes, yNodes);\newline 
+g.Name = GridName;\newline 
+ \newline 
 g.EdgeTagNames.Add(1, "wall");\newline 
 g.EdgeTagNames.Add(2, "Velocity\_Inlet");\newline 
 g.EdgeTagNames.Add(3, "Pressure\_Dirichlet\_back");\newline 
@@ -86,7 +128,8 @@ g.DefineEdgeTags(delegate (double[] X) \{\newline
  }
 \BoSSSexe
 \BoSSScmd{
-string caseName = string.Format("k\{0\}\_\{1\}", k, grd);\newline 
+string caseName = string.Format("k\{0\}\_\{1\}", k, g);\newline 
+ \newline 
 Console.WriteLine("setting up: " + caseName);\newline 
  \newline 
 double beta    = 30;\newline 
@@ -101,28 +144,34 @@ string SinBeta = Math.Sin(beta*Math.PI/180.0).ToString();
  }
 \BoSSSexe
 \BoSSScmd{
-var UX = new Formula (string.Format("X=> \{0\}*Math.Atan(X[1]*5)*2.0/Math.PI",CosBeta),false);\newline 
-var UY = new Formula (string.Format("X=> \{0\}*Math.Atan(X[1]*5)*2.0/Math.PI",SinBeta),false);
+var UX = new Formula\newline 
+\btab (string.Format("X=> \{0\}*Math.Atan(X[1]*5)*2.0/Math.PI",CosBeta),false);\newline 
+var UY = new Formula \newline 
+\btab (string.Format("X=> \{0\}*Math.Atan(X[1]*5)*2.0/Math.PI",SinBeta),false);
  }
 \BoSSSexe
 \BoSSScmd{
-///After the velocities and boundary conditions are set. We need to determine all other simulation parameters needed to proceed. The variable $\code{ctrl}$ is used to store the $\code{IBM_Control}$-object. All other parameters are selfexplanatory.
+///After the velocities and boundary conditions are set. 
+///We need to determine all other simulation parameters needed to proceed. 
+//The variable $\textbackslash code\{ctrl\}$ is used to store the $\textbackslash code\{IBM\_Control\}$-object.\newline 
+/// All other parameters are selfexplanatory.
  }
 \BoSSSexe
 \BoSSScmd{
 var ctrl = new IBM\_Control();\newline 
-controls.Add(ctrl);\newline 
+//controls.Add(ctrl);\newline 
  \newline 
 ctrl.SessionName = caseName;\newline 
 ctrl.SetDatabase(myDb);\newline 
-ctrl.SetGrid(grd);\newline 
+ctrl.SetGrid(g);\newline 
 ctrl.SetDGdegree(k);\newline 
 ctrl.NoOfMultigridLevels = int.MaxValue;
  }
 \BoSSSexe
 \BoSSScmd{
 /// \section{Boundary conditions/Initial values}
-/// We move on to the part where we define the boundary conditions and initial values.
+/// We move on to the part where we define
+/// the boundary conditions and initial values.
  }
 \BoSSSexe
 \BoSSScmd{
@@ -130,8 +179,8 @@ ctrl.AddBoundaryValue("wall");\newline
 ctrl.AddBoundaryValue("Velocity\_Inlet");\newline 
 ctrl.AddBoundaryValue("Pressure\_Dirichlet\_back");\newline 
 ctrl.AddBoundaryValue("Pressure\_Dirichlet\_top");\newline 
-ctrl.BoundaryValues("Velocity\_Inlet"].Value.Add("VelocityX",UX);\newline 
-ctrl.BoundaryValues("Velocity\_Inlet"].Value.Add("VelocityY",UY);
+ctrl.AddBoundaryValue("Velocity\_Inlet","VelocityX",UX);\newline 
+ctrl.AddBoundaryValue("Velocity\_Inlet","VelocityY",UY);
  }
 \BoSSSexe
 \BoSSScmd{
@@ -139,15 +188,17 @@ ctrl.BoundaryValues("Velocity\_Inlet"].Value.Add("VelocityY",UY);
  }
 \BoSSSexe
 \BoSSScmd{
-ctrl.InitialValues.Add("VelocityX", new Formula ("X=> 0.0" false));\newline 
-ctrl.InitialValues.Add("VelocityY", new Formula ("X=> 0.0" false));\newline 
-ctrl.InitialValues.Add("Pressure", new Formula ("X=> 0.0" false));\newline 
-ctrl.InitialValues.Add("Phi", new Formula ("X=> -1.0" false));
+ctrl.InitialValues.Add("VelocityX", new Formula ("X=> 0.0", false));\newline 
+ctrl.InitialValues.Add("VelocityY", new Formula ("X=> 0.0", false));\newline 
+ctrl.InitialValues.Add("Pressure", new Formula ("X=> 0.0", false));\newline 
+ctrl.InitialValues.Add("Phi", new Formula ("X=> -1.0", false));
  }
 \BoSSSexe
 \BoSSScmd{
 /// \section{Fluid properties}
-/// Here we set up the density and the Reynolds number, keep in mind that the calculations are dimensionles, so leave the values as seen above ($100$ is an example value)
+/// Here we set up the density and the Reynolds number,
+/// keep in mind that the calculations are dimensionles, 
+/// so leave the values as seen above ($100$ is an example value)
  }
 \BoSSSexe
 \BoSSScmd{
@@ -158,7 +209,8 @@ ctrl.PhysicalParameters.mu\_A  = 1.0/reynolds;
 \BoSSSexe
 \BoSSScmd{
 /// \section{Simulation options}
-/// We set the simulation parameters, such as time-step size, end time and number of time-steps.
+/// We set the simulation parameters, such as time-step size,
+/// end time and number of time-steps.
  }
 \BoSSSexe
 \BoSSScmd{
@@ -173,20 +225,26 @@ ctrl.NoOfTimesteps      = 100;
 \BoSSScmd{
 /// for the time-stepping scheme, you can choose either BDF2 or ImplicitEuler.
 /// \section{Starting of simulation}
-/// You have two possible ways to start a simulation - locally on the PC via $\code{myBatch}$ or on the network cluster $\code{myHPC}$.
+/// You have two possible ways to start a simulation
+/// - locally on the PC via $\code{myBatch}$
+/// or on the network cluster $\code{myHPC}$.
  }
 \BoSSSexe
 \BoSSScmd{
-Console.WriteLine(" Submitting to Cluster: " + ctrl.SessionName);\newline 
-ctrl.RunBatch(myHPC,NumberOfMPIProcs:1);\newline 
+ \newline 
+//Console.WriteLine(" Submitting to Cluster: " + ctrl.SessionName);\newline 
+//ctrl.RunBatch(myHPC);\newline 
  \newline 
 Console.WriteLine(" Submitting " + ctrl.SessionName);\newline 
-ctrl.RunBatch(myBatch,NumberOfMPIProcs:1, UseComputerNodesExclusive:true);
+ctrl.RunBatch(myBatch);
  }
 \BoSSSexe
 \BoSSScmd{
 /// \section{Evaluation and Error Calculation}
-/// After all of the desired simulation are finished, you need to evaluate the different parameters and their effect on the whole system. Typing the following command gives you a list of all simulations with their status (FinishedSuccessful or with certain errors)
+/// After all of the desired simulation are finished,
+/// you need to evaluate the different parameters and their effect on 
+///the whole system. Typing the following command gives you a list of all 
+///simulations with their status (FinishedSuccessful or with certain errors)
  }
 \BoSSSexe
 \BoSSScmd{
@@ -194,11 +252,12 @@ WorkflowMgm.AllJobs.Select(kv => kv.Key + ": \textbackslash t" + kv.Value.Status
  }
 \BoSSSexe
 \BoSSScmd{
-/// With the next command line you are able to select a certain session(simulation) and see the different time-steps for control purposes.
+/// With the next command line you are able to select a certain 
+///session(simulation) and see the different time-steps for control purposes.
  }
 \BoSSSexe
 \BoSSScmd{
-WorkflowMgm.AllJobs.ElementAt(9).Value.Stdout;
+WorkflowMgm.AllJobs.ElementAt(1).Value.Stdout;
  }
 \BoSSSexe
 \BoSSScmd{
@@ -207,23 +266,33 @@ WorkflowMgm.AllJobs.ElementAt(9).Value.Stdout;
  }
 \BoSSSexe
 \BoSSScmd{
- ITimestepInfo[] AllSolutionS = WorkflowMgm.AllJobs.Select( kv => kv.Value.LatestSession.Timesteps.Last()).ToArray();
+ ITimestepInfo[] AllSolutionS = WorkflowMgm.AllJobs.Select(\newline 
+\btab  kv = > kv.Value.LatestSession.Timesteps.Last()).ToArray();
  }
 \BoSSSexe
 \BoSSScmd{
-ITimestepInfo[] k1\_SolutionS = AllSolutionS.Where(ts => ts.Fields.Single(f => f.Identification == "Pressure").Basis.Degree == 0).ToArray();\newline 
-ITimestepInfo[] k2\_SolutionS = AllSolutionS.Where(ts => ts.Fields.Single(f => f.Identification == "Pressure").Basis.Degree == 1).ToArray();\newline 
-ITimestepInfo[] k3\_SolutionS = AllSolutionS.Where(ts => ts.Fields.Single(f => f.Identification == "Pressure").Basis.Degree == 2).ToArray();
+ITimestepInfo[] k1\_SolutionS = AllSolutionS.Where(\newline 
+\btab  ts = > ts.Fields.Single(\newline 
+\btab \btab    f = > f.Identification == "Pressure").Basis.Degree == 0).ToArray();\newline 
+ITimestepInfo[] k2\_SolutionS = AllSolutionS.Where(\newline 
+\btab  ts = > ts.Fields.Single(\newline 
+\btab \btab    f = > f.Identification == "Pressure").Basis.Degree == 1).ToArray();\newline 
+ITimestepInfo[] k3\_SolutionS = AllSolutionS.Where(\newline 
+\btab  ts = > ts.Fields.Single(\newline 
+\btab \btab    f = > f.Identification == "Pressure").Basis.Degree == 2).ToArray();
  }
 \BoSSSexe
 \BoSSScmd{
-k1\_SolutionS.Select(ts => ts.Fields.Single(f => f.Identification == "Pressure").Basis.Degree);
+k1\_SolutionS.Select(\newline 
+\btab  ts => ts.Fields.Single(\newline 
+\btab \btab    f = > f.Identification == "Pressure").Basis.Degree);
  }
 \BoSSSexe
 \BoSSScmd{
 double[] GridRes;\newline 
 Dictionary<string, double[]> L2Errors;\newline 
-DGFieldComparison.ComputeErrors(new[]\{"VelocityX","VelocityY"\}, k1\_SolutionS, out GridRes, out L2Errors);
+DGFieldComparison.ComputeErrors(\newline 
+\btab  new[]\{"VelocityX","VelocityY"\}, k1\_SolutionS, out GridRes, out L2Errors);
  }
 \BoSSSexe
 \BoSSScmd{
@@ -244,7 +313,8 @@ L2Errors["VelocityY"];
 \BoSSSexe
 \BoSSScmd{
 /// \section{Plotting of errors}
-/// This section gives a brief example of how to plot the erros and all the data from the previous simulations.
+/// This section gives a brief example of how to plot the erros 
+/// and all the data from the previous simulations.
  }
 \BoSSSexe
 \BoSSScmd{
@@ -253,7 +323,7 @@ Plot(GridRes,L2Errors["VelocityX"],"VelXErr","-oy",\newline
  }
 \BoSSSexe
 \BoSSScmd{
-/// for a plot with more specifics and more possible adjustments, here is an example code
+/// for a plot with more specifics and more possible adjustments
  }
 \BoSSSexe
 \BoSSScmd{
@@ -266,7 +336,8 @@ FancyPlot.LogY = true;
  }
 \BoSSSexe
 \BoSSScmd{
-var k1plot = new Plot2Ddata.XYvalues("VelXErr-k1",GridRes,L2Errors["VelocityY"]);
+var k1plot = new Plot2Ddata.XYvalues(\newline 
+\btab "VelXErr-k1",GridRes,L2Errors["VelocityY"]);
  }
 \BoSSSexe
 \BoSSScmd{
@@ -316,7 +387,8 @@ static class AddCols \{\newline
  }
 \BoSSSexe
 \BoSSScmd{
-/// this code adds additional/user-defined colums. Now, we want to export he saved session table in a file.
+/// this code adds additional/user-defined colums. Now, we want to export he 
+/// saved session table in a file.
  }
 \BoSSSexe
 \BoSSScmd{
