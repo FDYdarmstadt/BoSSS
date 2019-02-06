@@ -120,6 +120,12 @@ namespace BoSSS.Foundation.Grid.Voronoi {
             }
         }
 
+        public IGrid Grid {
+            get {
+                throw new NotImplementedException("todo");
+            }
+        }
+
         public IDictionary<byte, string> EdgeTagNames {
             get {
                 throw new NotImplementedException();
