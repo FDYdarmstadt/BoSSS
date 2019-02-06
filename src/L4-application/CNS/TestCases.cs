@@ -821,7 +821,7 @@ namespace CNS {
             return c;
         }
 
-        public static IBMControl IBMShockTube(string dbPath = null, int savePeriod = 100, int dgDegree = 3, int numOfCellsX = 70, int numOfCellsY = 70, double sensorLimit = 1e-3, double dtFixed = 0.0, double CFLFraction = 0.1, int explicitScheme = 3, int explicitOrder = 3, int numberOfSubGrids = 1, int reclusteringInterval = 1, int maxNumOfSubSteps = 0, double agg = 0.3, string restart = "False") {
+        public static IBMControl IBMShockTube(string dbPath = null, int savePeriod = 100, int dgDegree = 3, int numOfCellsX = 75, int numOfCellsY = 55, double sensorLimit = 1e-3, double dtFixed = 0.0, double CFLFraction = 0.1, int explicitScheme = 3, int explicitOrder = 3, int numberOfSubGrids = 1, int reclusteringInterval = 1, int maxNumOfSubSteps = 0, double agg = 0.3, string restart = "False") {
             IBMControl c = new IBMControl();
 
             // ### Database ###
@@ -848,9 +848,9 @@ namespace CNS {
             // ### Level-set ###
             c.DomainType = DomainTypes.StaticImmersedBoundary;
 
-            double angle = Math.PI / 4;
-            double[] startOfRamp = new double[] { 0.0, -0.1 };
-            double[] startOfRamp2 = new double[] { 0.0, 0.1 };
+            double angle = Math.PI / 6;
+            double[] startOfRamp = new double[] { 0.2, 0.0 };
+            double[] startOfRamp2 = new double[] { 0.0, 0.2 };
 
             Func<double, double> Ramp = delegate (double x) {
                 return Math.Tan(angle) * (x - startOfRamp[0]) + startOfRamp[1];
@@ -942,9 +942,9 @@ namespace CNS {
 
             // ### Grid ###
             double xMin = 0;
-            double xMax = 1;
+            double xMax = 1.5;
             double yMin = 0;
-            double yMax = 1;
+            double yMax = 1.1;
 
             if (restart == "True") {
                 c.RestartInfo = new Tuple<Guid, TimestepNumber>(new Guid("96aa97cf-d719-443c-9eba-67d889d344fa"), -1);
@@ -964,21 +964,22 @@ namespace CNS {
             c.AddBoundaryValue("AdiabaticSlipWall");
 
             // ### Initial smoothing ###
-            double shockPosX = 1.0;
-            double shockAngle = Math.PI * 3 / 4;
+            double shockAngle = angle + Math.PI / 2;
+            double lengthMiddleLine = (xMax - xMin) / Math.Cos(angle);
+            double shockPosX = 0.5 * lengthMiddleLine * Math.Cos(angle);
 
-            double temp = shockPosX / ((xMax - xMin) / numOfCellsX);
-            bool resolutionOk = (temp == Math.Truncate(temp));
-            if (!resolutionOk) {
-                throw new Exception("Number of cells in x-direction is not applicable because of xWall!");
-            }
+            //double temp = shockPosX / ((xMax - xMin) / numOfCellsX);
+            //bool resolutionOk = (temp == Math.Truncate(temp));
+            //if (!resolutionOk) {
+            //    throw new Exception("Number of cells in x-direction is not applicable because of xWall!");
+            //}
 
             double cellSize = Math.Min((xMax - xMin) / numOfCellsX, (yMax - yMin) / numOfCellsY);
 
             double DistanceToInitialShock(double[] X, double t) {
                 // direction vector
-                Vector p1 = new Vector(shockPosX, 0.0);
-                Vector p2 = new Vector(shockPosX + 1 / Math.Tan(shockAngle), 1.0);
+                Vector p1 = new Vector(shockPosX, Ramp(shockPosX));
+                Vector p2 = new Vector(p1.x - 0.1, p1.y + 0.1 / Math.Tan(angle));
                 Vector p = p2 - p1;
 
                 // normal vector
@@ -996,8 +997,8 @@ namespace CNS {
                 double vs = 10;
 
                 // distance to line
-                double distance = nDotX - (Math.Sin(alpha) * p1.x + vs * t);
-                //double distance = nDotX - Math.Cos(alpha) * p1.x;
+                //double distance = nDotX - (Math.Sin(alpha) * p1.x + vs * t);
+                double distance = nDotX - 0.5 * lengthMiddleLine;
 
                 return distance;
             }
@@ -1086,14 +1087,14 @@ namespace CNS {
 
             // Lichtenberg
             //string dbPath = @"/home/yp19ysog/bosss_db_paper_ibmdmr2";
-            string dbPath = @"/work/scratch/yp19ysog/bosss_db_paper_revision";
+            string dbPath = @"/work/scratch/yp19ysog/bosss_db_paper_revision2";
             //string dbPath = @"/work/scratch/yp19ysog/bosss_db_paper_ibmdmr_run3_test";
             //string dbPath = @"C:\bosss_db_paper_ibmdmr_scratch_run3_test";
             string restart = "False";
 
             IBMControl c = IBMShockTube(dbPath, savePeriod, dgDegree, numOfCellsX, numOfCellsY, sensorLimit, dtFixed, CFLFraction, explicitScheme, explicitOrder, numberOfSubGrids, reclusteringInterval, maxNumOfSubSteps, agg, restart);
 
-            c.ProjectName = "ibmst_paper_revision";
+            c.ProjectName = "ibmst_paper_revision_30deg";
             //c.NoOfTimesteps = 10;
 
             return c;
