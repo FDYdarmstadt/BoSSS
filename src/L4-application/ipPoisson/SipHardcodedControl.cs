@@ -193,7 +193,7 @@ namespace BoSSS.Application.SipPoisson {
         /// <param name="solver_name">
         /// Name of solver to use.
         /// </param>
-        public static SipControl TestCartesian2(int Res, int Dim, SolverCodes solver_name = SolverCodes.exp_softpcg_mg, int deg = 3) {
+        public static SipControl TestCartesian2(int Res, int Dim, LinearSolverConfig.Code solver_name = LinearSolverConfig.Code.exp_softpcg_mg, int deg = 3) {
             if (Dim != 2 && Dim != 3)
                 throw new ArgumentOutOfRangeException();
 
@@ -207,7 +207,7 @@ namespace BoSSS.Application.SipPoisson {
             R.InitialValues_Evaluators.Add("Tex", X => Math.Sin(X[0]));
             R.ExactSolution_provided = true;
             R.LinearSolver.NoOfMultigridLevels = int.MaxValue;
-            R.solver_name = solver_name;
+            R.LinearSolver.SolverCode = solver_name;
             //R.TargetBlockSize = 100;
 
             R.TracingNamespaces = "BoSSS,ilPSP";
@@ -299,6 +299,10 @@ namespace BoSSS.Application.SipPoisson {
             R.InitialValues_Evaluators.Add("RHS", exRhs);
             R.InitialValues_Evaluators.Add("Tex", exSol);
             R.ExactSolution_provided = true;
+            //R.LinearSolver.NoOfMultigridLevels = 2;
+            //R.LinearSolver.SolverCode = LinearSolverConfig.Code.exp_softpcg_mg;
+            //R.LinearSolver.SolverCode = LinearSolverConfig.Code.exp_softpcg_schwarz_directcoarse;
+            //R.LinearSolver.SolverCode = LinearSolverConfig.Code.classic_mumps;
 
             R.GridFunc = delegate () {
                 double[] xNodes = GenericBlas.Linspace(-1, 1, xRes);
@@ -604,7 +608,7 @@ namespace BoSSS.Application.SipPoisson {
         /// <param name="NoOfLlyodsIter">
         /// Number of iterations for Llyod's algorithm (aka. Voronoi relaxation)
         /// </param>
-        public static SipControl TestVoronoi(int Res, SolverCodes solver_name = SolverCodes.classic_pardiso, int deg = 1, bool mirror = true, double NoOfLlyodsIter = 0) {
+        public static SipControl TestVoronoi(int Res, LinearSolverConfig.Code solver_name = LinearSolverConfig.Code.classic_pardiso, int deg = 1, bool mirror = true, double NoOfLlyodsIter = 0) {
 
             if (System.Environment.MachineName.ToLowerInvariant().EndsWith("rennmaschin")
                //|| System.Environment.MachineName.ToLowerInvariant().Contains("jenkins")
@@ -629,7 +633,7 @@ namespace BoSSS.Application.SipPoisson {
             R.InitialValues_Evaluators.Add("Tex", X => X[0]);
             R.ExactSolution_provided = false;
             R.LinearSolver.NoOfMultigridLevels = int.MaxValue;
-            R.solver_name = solver_name;
+            R.LinearSolver.SolverCode = solver_name;
             R.LinearSolver.NoOfMultigridLevels = 1;
             //R.TargetBlockSize = 100;
 

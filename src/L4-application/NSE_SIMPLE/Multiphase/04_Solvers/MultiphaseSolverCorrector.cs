@@ -38,15 +38,15 @@ namespace NSE_SIMPLE {
         /// Ctor without pressure stabilization.
         /// </summary>
         /// <param name="solverConfig"></param>
-        /// <param name="sparseSolver"></param>
+        /// <param name="_sparseSolver"></param>
         /// <param name="VelocityDivergence"></param>
         /// <param name="MatAsmblyCorrector"></param>                
         /// <param name="Velocity_Intrmed"></param>        
         /// <param name="DivB4"></param>        
-        public MultiphaseSolverCorrector(SolverConfiguration solverConfig, ISparseSolver sparseSolver,
+        public MultiphaseSolverCorrector(SolverConfiguration solverConfig, ISparseSolver _sparseSolver,
             SIMPLEOperator[] VelocityDivergence, SIMPLEMatrixAssembly MatAsmblyCorrector,
             VectorField<SinglePhaseField> Velocity_Intrmed, SinglePhaseField DivB4)
-            : base(solverConfig, sparseSolver) {
+            : base(solverConfig, _sparseSolver) {
 
             if ((VelocityDivergence.Length != solverConfig.SpatialDimension) || (Velocity_Intrmed.Dim != solverConfig.SpatialDimension))
                 throw new ArgumentException("Mismatch of dimensions!");

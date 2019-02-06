@@ -53,7 +53,7 @@ namespace NSE_SIMPLE {
         /// Ctor.
         /// </summary>
         /// <param name="solverConf"></param>
-        /// <param name="sparseSolver"></param>
+        /// <param name="_sparseSolver"></param>
         /// <param name="DensityMatrix"></param>
         /// <param name="MatAsmblyPredictor"></param>
         /// <param name="MatAsmblyPredictorApprox"></param>
@@ -65,12 +65,12 @@ namespace NSE_SIMPLE {
         /// <param name="Scalar"></param>
         /// <param name="EoS"></param>
         /// <param name="BDF"></param>
-        public VariableDensitySolverPredictor(SolverConfiguration solverConf, ISparseSolver sparseSolver,
+        public VariableDensitySolverPredictor(SolverConfiguration solverConf, ISparseSolver _sparseSolver,
             BlockDiagonalMatrix DensityMatrix, SIMPLEMatrixAssembly MatAsmblyPredictor, SIMPLEMatrixAssembly MatAsmblyPredictorApprox,
             SIMPLEOperator[] PressureGradient, SinglePhaseField Pressure,
             SIMPLEMatrixAssembly[,] MatAsmblyViscSplit, IEvaluatorNonLin[] BuoyantForce,
             VectorFieldHistory<SinglePhaseField> Velocity, ScalarFieldHistory<SinglePhaseField> Scalar, MaterialLaw EoS, BDFScheme BDF)
-            : base(solverConf, sparseSolver) {
+            : base(solverConf, _sparseSolver) {
 
             m_DensityMatrix = DensityMatrix;
             m_MatAsmblyPredictor = MatAsmblyPredictor;

@@ -42,15 +42,15 @@ namespace NSE_SIMPLE {
         /// Ctor.
         /// </summary>
         /// <param name="solverConf"></param>
-        /// <param name="sparseSolver"></param>        
+        /// <param name="_sparseSolver"></param>        
         /// <param name="MatAsmblyScalar"></param>
         /// <param name="MatAsmblyScalarApprox"></param>
         /// <param name="Scalar"></param>        
         /// <param name="BDF"></param>
-        public MultiphaseSolverLevelSet(SolverConfiguration solverConf, ISparseSolver sparseSolver,
+        public MultiphaseSolverLevelSet(SolverConfiguration solverConf, ISparseSolver _sparseSolver,
             SIMPLEMatrixAssembly MatAsmblyScalar, SIMPLEMatrixAssembly MatAsmblyScalarApprox,
             ScalarFieldHistory<SinglePhaseField> Scalar, BDFScheme BDF)
-            : base(solverConf, sparseSolver) {
+            : base(solverConf, _sparseSolver) {
 
             m_MatAsmblyLevelSet = MatAsmblyScalar;
             m_MatAsmblyLevelSetApprox = MatAsmblyScalarApprox;
