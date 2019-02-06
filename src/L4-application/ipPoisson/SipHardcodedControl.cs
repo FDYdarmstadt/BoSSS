@@ -738,24 +738,14 @@ namespace BoSSS.Application.SipPoisson {
                     }
                 }
 
-                //Test Bullshit
-                Node.SetRow(0, new double[] { -1, -1 });
-                Node.SetRow(1, new double[] { 1, -1 });
-                Node.SetRow(2, new double[] { 1, 1 });
-                Node.SetRow(3, new double[] { -1, 1 });
-                /*
-                Node.SetRow(4, new double[] { -10, 0 });
-                Node.SetRow(5, new double[] { 0, -10 });
-                Node.SetRow(6, new double[] { 10, 0 });
-                Node.SetRow(7, new double[] { 0, 10 });
-                */
-
                 // generate mesh
-                var grid = BoSSS.Foundation.Grid.Voronoi.VoronoiGrid2D.FromPolygonalDomain(DomainBndyPolygon, 50, 1000);
+                AggregationGrid grid;
+                grid = BoSSS.Foundation.Grid.Voronoi.VoronoiGrid2D.FromPolygonalDomain(DomainBndyPolygon, 20, Res);
                 grid.EdgeTagNames.Add(1, BoundaryType.Dirichlet.ToString());
                 grid.DefineEdgeTags(X => (byte)1);
+
+                //grid = Voronoi.VoronoiMeshGen.FromPolygonalDomain(Node, DomainBndyPolygon, useMirror, NoOfLlyodsIter, IsInV, Idenity);
                 return grid;
-                //return Voronoi.VoronoiMeshGen.FromPolygonalDomain(Node, DomainBndyPolygon, useMirror, NoOfLlyodsIter, IsInV, Idenity);
 
             };
             R.GridFunc = GridFunc;
@@ -764,7 +754,7 @@ namespace BoSSS.Application.SipPoisson {
                  delegate (double[] X) {
                      //double x = X[0], y = X[1];
 
-                     return X[0];
+                     return Math.Pow(X[0],2) + Math.Pow(X[1],2);
                      //if(Math.Abs(X[0] - (0.0)) < 1.0e-8)
                      //    return 0.0;
                      //

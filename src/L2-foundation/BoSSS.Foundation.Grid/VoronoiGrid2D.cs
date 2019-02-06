@@ -13,8 +13,24 @@ using BoSSS.Platform;
 
 namespace BoSSS.Foundation.Grid.Voronoi
 {
+    /// <summary>
+    /// Static methods to create Voronoi Meshes
+    /// </summary>
     public static class VoronoiGrid2D
     {
+        /// <summary>
+        /// Creates a random voronoi mesh inside a polygon.
+        /// </summary>
+        /// <param name="PolygonBoundary">
+        /// Outer boundary of mesh. Is expected to be closed and must be non-overlapping.
+        /// </param>
+        /// <param name="NoOfLyyodsIter">
+        /// Number of smoothing iterations.
+        /// </param>
+        /// <param name="noOfNodeSeed">
+        /// Number of random nodes that are placed in the bounding box of the PolygonBoundary.
+        /// </param>
+        /// <returns></returns>
         public static AggregationGrid FromPolygonalDomain(
             Vector[] PolygonBoundary,
             int NoOfLyyodsIter,
@@ -24,6 +40,19 @@ namespace BoSSS.Foundation.Grid.Voronoi
             return FromPolygonalDomain(nodes, PolygonBoundary, NoOfLyyodsIter);
         }
 
+        /// <summary>
+        /// Creates a voronoi mesh inside a polygon.
+        /// </summary>
+        /// <param name="Nodes">
+        /// Voronoi nodes: Center of each agglomerated cell. Will not be considered if outside of PolygonBoundary.
+        /// </param>
+        /// <param name="PolygonBoundary">
+        /// Outer boundary of mesh. Is expected to be closed and must be non-overlapping.
+        /// </param>
+        /// <param name="NoOfLyyodsIter">
+        /// Number of smoothing iterations.
+        /// </param>
+        /// <returns></returns>
         public static AggregationGrid FromPolygonalDomain(
             MultidimensionalArray Nodes,
             Vector[] PolygonBoundary,
@@ -38,6 +67,19 @@ namespace BoSSS.Foundation.Grid.Voronoi
             return FromPolygonalDomain(nodes, PolygonBoundary, NoOfLyyodsIter);
         }
 
+        /// <summary>
+        /// Creates a voronoi mesh inside a polygon.
+        /// </summary>
+        /// <param name="nodes">
+        /// Voronoi nodes: Center of each agglomerated cell. Will not be considered if outside of PolygonBoundary.
+        /// </param>
+        /// <param name="PolygonBoundary">
+        /// Outer boundary of mesh. Is expected to be closed and must be non-overlapping.
+        /// </param>
+        /// <param name="NoOfLyyodsIter">
+        /// Number of smoothing iterations.
+        /// </param>
+        /// <returns></returns>
         public static AggregationGrid FromPolygonalDomain(
                 List<Vector> nodes,
                 Vector[] PolygonBoundary,
