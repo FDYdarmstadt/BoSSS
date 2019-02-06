@@ -974,7 +974,7 @@ namespace CNS {
             }
 
             double cellSize = Math.Min((xMax - xMin) / numOfCellsX, (yMax - yMin) / numOfCellsY);
-            
+
             double DistanceToInitialShock(double[] X, double t) {
                 // direction vector
                 Vector p1 = new Vector(shockPosX, 0.0);
@@ -1068,13 +1068,33 @@ namespace CNS {
             c.NoOfTimesteps = int.MaxValue;
 
             // ### Project and sessions name ###
-            c.ProjectName = "ibm_shock_tube";
+            c.ProjectName = "ibm_shock_tube_revision";
 
             if (c.DynamicLoadBalancing_On) {
                 c.SessionName = String.Format("IBM shock tube, p={0}, {1}x{2} cells, agg={3}, s0={4:0.0E-00}, CFLFrac={5}, ALTS {6}/{7}/Re{8}/Sub{9}, Part={10}/Re{11}/Thresh{12}", dgDegree, numOfCellsX, numOfCellsY, c.AgglomerationThreshold, sensorLimit, c.CFLFraction, c.ExplicitOrder, c.NumberOfSubGrids, c.ReclusteringInterval, c.maxNumOfSubSteps, c.GridPartType.ToString(), c.DynamicLoadBalancing_Period, c.DynamicLoadBalancing_ImbalanceThreshold);
             } else {
                 c.SessionName = String.Format("IBM shock tube, p={0}, {1}x{2} cells, agg={3}, s0={4:0.0E-00}, CFLFrac={5}, ALTS {6}/{7}/Re{8}/Sub{9}, Part={10}", dgDegree, numOfCellsX, numOfCellsY, c.AgglomerationThreshold, sensorLimit, c.CFLFraction, c.ExplicitOrder, c.NumberOfSubGrids, c.ReclusteringInterval, c.maxNumOfSubSteps, c.GridPartType.ToString());
             }
+
+            return c;
+        }
+
+        /// <summary>
+        /// Version to be submitted on the TU Darmstadt HHLR Lichtenberg cluster
+        /// </summary>
+        public static IBMControl IBMShockTubeHLLR(int savePeriod = 100, int dgDegree = 3, int numOfCellsX = 70, int numOfCellsY = 70, double sensorLimit = 1e-3, double dtFixed = 0.0, double CFLFraction = 0.1, int explicitScheme = 3, int explicitOrder = 3, int numberOfSubGrids = 1, int reclusteringInterval = 1, int maxNumOfSubSteps = 0, double agg = 0.3) {
+
+            // Lichtenberg
+            //string dbPath = @"/home/yp19ysog/bosss_db_paper_ibmdmr2";
+            string dbPath = @"/work/scratch/yp19ysog/bosss_db_paper_revision";
+            //string dbPath = @"/work/scratch/yp19ysog/bosss_db_paper_ibmdmr_run3_test";
+            //string dbPath = @"C:\bosss_db_paper_ibmdmr_scratch_run3_test";
+            string restart = "False";
+
+            IBMControl c = IBMShockTube(dbPath, savePeriod, dgDegree, numOfCellsX, numOfCellsY, sensorLimit, dtFixed, CFLFraction, explicitScheme, explicitOrder, numberOfSubGrids, reclusteringInterval, maxNumOfSubSteps, agg, restart);
+
+            c.ProjectName = "ibmst_paper_revision";
+            //c.NoOfTimesteps = 10;
 
             return c;
         }
