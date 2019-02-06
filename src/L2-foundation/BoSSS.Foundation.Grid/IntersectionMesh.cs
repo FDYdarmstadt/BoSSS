@@ -7,6 +7,65 @@ using BoSSS.Platform;
 
 namespace BoSSS.Foundation.Grid.Voronoi
 {
+    class ArrayEnum<T> : IEnumerator<T>
+    {
+        int pointer;
+        IList<T> arr;
+        public ArrayEnum(IList<T> Arr)
+        {
+            arr = Arr;
+            pointer = -1;
+        }
+
+        public T Current => arr[pointer];
+
+        object IEnumerator.Current => Current;
+
+        public void Dispose()
+        {
+        }
+
+        public bool MoveNext()
+        {
+            return (++pointer < arr.Count);
+        }
+
+        public void Reset()
+        {
+            pointer = -1;
+        }
+    }
+
+    class Line
+    {
+        public static Line[] ToLines(Vector[] polygon)
+        {
+            Line[] lines = new Line[polygon.Length];
+            Line line;
+            for (int i = 0; i < polygon.Length - 1; ++i)
+            {
+                line = new Line { start = new Vertex(), end = new Vertex() };
+                line.start.Position = polygon[i];
+                line.end.Position = polygon[i + 1];
+                lines[i] = line;
+            }
+            line = new Line { start = new Vertex(), end = new Vertex() };
+            line.start.Position = polygon[polygon.Length - 1];
+            line.end.Position = polygon[0];
+            lines[lines.Length - 1] = line;
+
+            return lines;
+        }
+        public static IEnumerator<Line> GetEnumerator(Vector[] polygon)
+        {
+            Line[] lines = ToLines(polygon);
+            return new ArrayEnum<Line>(lines);
+        }
+
+        public Vertex start { get; set; }
+        public Vertex end { get; set; }
+    }
+
     class IntersectionMesh : Mesh, IIntersectableMesh<Cell, Ridge, Line>
     {
         public IntersectionMesh(IIdMesh Mesh) : base(Mesh)

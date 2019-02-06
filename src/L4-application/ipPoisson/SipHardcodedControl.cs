@@ -621,6 +621,7 @@ namespace BoSSS.Application.SipPoisson {
             R.ProjectName = "SipPoisson-Voronoi";
             R.SessionName = "testrun";
             R.savetodb = false;
+            R.ImmediatePlotPeriod = 1;
 
             R.FieldOptions.Add("T", new FieldOpts() { Degree = deg, SaveToDB = FieldOpts.SaveToDBOpt.TRUE });
             R.FieldOptions.Add("Tex", new FieldOpts() { Degree = deg * 2 });
@@ -659,12 +660,12 @@ namespace BoSSS.Application.SipPoisson {
            
 
             Vector[] DomainBndyPolygon = new[] {
-                new Vector(+0,+0),
-                new Vector(-1,+0),
-                new Vector(-1,+1),
-                new Vector(+1,+1),
-                new Vector(+1,-1),
-                new Vector(+0,-1)
+                new Vector(-1,1),
+                new Vector(1,1),
+                new Vector(1,-1),
+                new Vector(0,-1),
+                new Vector(0,0),
+                new Vector(-1,0)
             };
             
 
@@ -733,11 +734,24 @@ namespace BoSSS.Application.SipPoisson {
                     }
                 }
 
-
-
+                //Test Bullshit
+                Node.SetRow(0, new double[] { -1, -1 });
+                Node.SetRow(1, new double[] { 1, -1 });
+                Node.SetRow(2, new double[] { 1, 1 });
+                Node.SetRow(3, new double[] { -1, 1 });
+                /*
+                Node.SetRow(4, new double[] { -10, 0 });
+                Node.SetRow(5, new double[] { 0, -10 });
+                Node.SetRow(6, new double[] { 10, 0 });
+                Node.SetRow(7, new double[] { 0, 10 });
+                */
 
                 // generate mesh
-                return Voronoi.VoronoiMeshGen.FromPolygonalDomain(Node, DomainBndyPolygon, useMirror, NoOfLlyodsIter, IsInV, Idenity);
+                var grid = BoSSS.Foundation.Grid.Voronoi.VoronoiGrid2D.FromPolygonalDomain(DomainBndyPolygon, 50, 1000);
+                grid.EdgeTagNames.Add(1, BoundaryType.Dirichlet.ToString());
+                grid.DefineEdgeTags(X => (byte)1);
+                return grid;
+                //return Voronoi.VoronoiMeshGen.FromPolygonalDomain(Node, DomainBndyPolygon, useMirror, NoOfLlyodsIter, IsInV, Idenity);
 
             };
             R.GridFunc = GridFunc;

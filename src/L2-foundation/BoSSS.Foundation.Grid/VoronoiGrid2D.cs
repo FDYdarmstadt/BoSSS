@@ -13,89 +13,70 @@ using BoSSS.Platform;
 
 namespace BoSSS.Foundation.Grid.Voronoi
 {
-    class VoronoiGrid2D //: AggregationGrid
+    public static class VoronoiGrid2D
     {
-        VoronoiGrid2D(MultidimensionalArray Nodes, Vector[] PolygonBoundary, double NoOfLyyodsIter)
+        public static AggregationGrid FromPolygonalDomain(
+            Vector[] PolygonBoundary,
+            int NoOfLyyodsIter,
+            int noOfNodeSeed)
         {
-            //bla bla bla 
-        }
-    }
-
-    class ArrayEnum<T> : IEnumerator<T>
-        {
-            int pointer;
-            IList<T> arr;
-            public ArrayEnum(IList<T> Arr)
-            {
-                arr = Arr;
-                pointer = -1;
-            }
-
-            public T Current => arr[pointer];
-
-            object IEnumerator.Current => Current;
-
-            public void Dispose()
-            {
-            }
-
-            public bool MoveNext()
-            {
-                return (++pointer < arr.Count);
-            }
-
-            public void Reset()
-            {
-                pointer = -1;
-            }
+            List<Vector> nodes = CreateVoronoiNodesFromPolygon(PolygonBoundary, noOfNodeSeed);
+            return FromPolygonalDomain(nodes, PolygonBoundary, NoOfLyyodsIter);
         }
 
-    class Line
-    {
-        public static Line[] ToLines(Vector[] polygon)
+        public static AggregationGrid FromPolygonalDomain(
+            MultidimensionalArray Nodes,
+            Vector[] PolygonBoundary,
+            int NoOfLyyodsIter)
         {
-            Line[] lines = new Line[polygon.Length];
-            Line line;
-            for (int i = 0; i < polygon.Length - 1; ++i)
+            //Short hack
+            List<Vector> nodes = new List<Vector>(Nodes.NoOfRows);
+            for (int i = 0; i < Nodes.NoOfRows; ++i)
             {
-                line = new Line { start = new Vertex(), end = new Vertex() };
-                line.start.Position = polygon[i];
-                line.end.Position = polygon[i + 1];
-                lines[i] = line;
+                nodes.Add(new Vector(Nodes.GetRow(i)));
             }
-            line = new Line { start = new Vertex(), end = new Vertex() };
-            line.start.Position = polygon[polygon.Length - 1];
-            line.end.Position = polygon[0];
-            lines[lines.Length - 1] = line;
-
-            return lines;
-        }
-        public static IEnumerator<Line> GetEnumerator(Vector[] polygon)
-        {
-            Line[] lines = ToLines(polygon);
-            return new ArrayEnum<Line>(lines);
+            return FromPolygonalDomain(nodes, PolygonBoundary, NoOfLyyodsIter);
         }
 
-        public Vertex start { get; set; }
-        public Vertex end { get; set; }
-    }
-
-    static class VoronoiMeshGen
-    {
-        static void RelaxVoronois(IReadOnlyList<Cell> Cells, MultidimensionalArray Nodes)
+        public static AggregationGrid FromPolygonalDomain(
+                List<Vector> nodes,
+                Vector[] PolygonBoundary,
+                int NoOfLyyodsIter
+                )
         {
-            for (int i = 8; i < Nodes.NoOfRows; ++i)
+            // Create Voronoi mesh
+            // =================================
+
+            IEnumerator<Line> lines = Line.GetEnumerator(PolygonBoundary);
+            IntersectionMesh voronoiMesh = null;
+            Func<List<Vector>, IntersectionMesh> CreateMesh = MIConvexHullMeshGenerator.CreateMesh;
+
+            for (int iLloyd = 0; iLloyd <= NoOfLyyodsIter; ++iLloyd)
             {
-                double relaxValue = 0.1;
-                Cell cell = Cells[i];
-                Vector CenterOfGravity = new Vector(0, 0);
-                foreach (Vertex vertex in cell.Vertices)
+                // Voronoi generation
+                //-------------------------------------
+                Stopwatch stopwatch = new Stopwatch();
+                stopwatch.Start();
+                AddFarNodes(nodes, PolygonBoundary);
+                voronoiMesh = CreateMesh(nodes);
+                stopwatch.Stop();
+                Console.WriteLine(stopwatch.ElapsedMilliseconds);
+                //Clip
+                //-------------------------------------
+                stopwatch.Restart();
+                Intersecter.Intersect(voronoiMesh, lines);
+                stopwatch.Stop();
+                Console.WriteLine(stopwatch.ElapsedMilliseconds);
+                //Console.ReadKey();
+
+                // Lloyds algorithm (Voronoi relaxation)
+                // -------------------------------------
+                if (iLloyd != NoOfLyyodsIter)
                 {
-                    CenterOfGravity += vertex.Position;
+                    nodes = RelaxVoronois(voronoiMesh.GetInnerCells());
                 }
-                CenterOfGravity.Scale(1.0 / cell.Vertices.Length);
-                Nodes.SetRowPt(i, CenterOfGravity * relaxValue + Nodes.GetRowPt(i) * (1 - relaxValue));
             }
+            return voronoiMesh.ToAggregationGrid();
         }
 
         static List<Vector> RelaxVoronois(IEnumerable<Cell> Cells)
@@ -124,60 +105,75 @@ namespace BoSSS.Foundation.Grid.Voronoi
             return nodes;
         }
 
-        /* boundaries of domain as 
-            * 
-            * 
-            * 
-            */
-        static public AggregationGrid FromPolygonalDomain(  MultidimensionalArray Nodes,
-                                                            Vector[] PolygonBoundary,
-                                                            double NoOfLyyodsIter)
+        static List<Vector> CreateVoronoiNodesFromPolygon(Vector[] PolygonBoundary, int nSeedVoronois)
         {
-            //Short hack
-            List<Vector> nodes = new List<Vector>(Nodes.NoOfRows);
-            for (int i = 0; i < Nodes.NoOfRows; ++i)
+            Debug.Assert(PolygonBoundary.Length > 0);
+            int dim = PolygonBoundary[0].Dim;
+            Vector[] nodes = new Vector[nSeedVoronois];
+            Random rnd = new Random(0);
+
+            double[,] max_min = FindMaxMin(PolygonBoundary);
+            double[] scl = new double[dim];
+            Vector center = new Vector(dim);
+            for (int j = 0; j < dim; ++j)
             {
-                nodes.Add(new Vector(Nodes.GetRow(i)));
+                scl[j] = (max_min[j, 0] - max_min[j, 1]);
+                center[j] = (max_min[j, 0] + max_min[j, 1]) / 2;
             }
-            // Create Voronoi mesh
-            // =================================
 
-            IEnumerator<Line> lines = Line.GetEnumerator(PolygonBoundary);
-            IntersectionMesh voronoiMesh = null;
-            Func<List<Vector>, IntersectionMesh> CreateMesh = MIConvexHullMeshGenerator.CreateMesh;
-
-            int LloydIterations = (int)Math.Ceiling(NoOfLyyodsIter);
-            for (int iLloyd = 0; iLloyd <= LloydIterations; ++iLloyd)
+            for (int i = 0; i < nSeedVoronois; ++i)
             {
-                // Voronoi generation
-                //-------------------------------------
-                Stopwatch stopwatch = new Stopwatch();
-                stopwatch.Start();
-                voronoiMesh = CreateMesh(nodes);
-                stopwatch.Stop();
-                Console.WriteLine(stopwatch.ElapsedMilliseconds);
-                //Clip
-                //-------------------------------------
-                stopwatch.Restart();
-                Intersecter.Intersect(voronoiMesh, lines);
-                stopwatch.Stop();
-                Console.WriteLine(stopwatch.ElapsedMilliseconds);
-                //Console.ReadKey();
-
-                // Lloyds algorithm (Voronoi relaxation)
-                // -------------------------------------
-                if (iLloyd != LloydIterations)
+                nodes[i] = new Vector(dim);
+                for(int j = 0; j < dim; ++j)
                 {
-                    nodes = RelaxVoronois(voronoiMesh.GetInnerCells());
-                    //---------------------------------------------------------------Achtung Hack!-----------------------
-                    nodes.Add(new Vector(new double[] { -10, 0 }));
-                    nodes.Add(new Vector(new double[] { 10, 0 }));
-                    nodes.Add(new Vector(new double[] { 0, 10 }));
-                    nodes.Add(new Vector(new double[] { 0, -10 }));
+                    nodes[i][j] = center[j] - 0.5 * scl[j] + rnd.NextDouble() * scl[j];
                 }
             }
-            return voronoiMesh.ToAggregationGrid();
+            nodes[3] = PolygonBoundary[0];
+            return nodes.ToList();
+        }
 
+        static double[,] FindMaxMin(Vector[] PolygonBoundary)
+        {
+            Debug.Assert(PolygonBoundary.Length > 0);
+            int dim = PolygonBoundary[0].Dim;
+            double[,] max_min = new double[dim,2];
+            for(int i = 0; i < dim; ++i)
+            {
+                max_min[i,0] = -double.MaxValue; //Look for maximum
+                max_min[i, 1] = double.MaxValue; //Look for minimum
+            }
+            foreach(Vector vec in PolygonBoundary)
+            {
+                for (int i = 0; i < dim; ++i)
+                {
+                    if(max_min[i,0] < vec[i])
+                    {
+                        max_min[i,0] = vec[i];
+                    }
+                    if (max_min[i, 1] > vec[i])
+                    {
+                        max_min[i, 1] = vec[i];
+                    }
+                }
+            }
+            return max_min;
+        }
+
+        static void AddFarNodes(List<Vector> nodes, Vector[] PolygonBoundary)
+        {
+            Debug.Assert(nodes.Count > 0);
+            double[,] max_min = FindMaxMin(PolygonBoundary);
+            int dim = nodes[0].Dim;
+            for(int i = 0; i < dim; ++i)
+            {
+                for (int j = 0; j < 2; ++j)
+                {
+                    Vector far = new Vector(dim);
+                    far[i] = max_min[i,j] * 10;
+                    nodes.Add(far);
+                }
+            }
         }
     }
 }
