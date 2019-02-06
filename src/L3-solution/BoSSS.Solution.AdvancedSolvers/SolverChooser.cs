@@ -286,6 +286,7 @@ namespace BoSSS.Solution{
             int NoCellsGlob = MultigridSequence[0].CellPartitioning.TotalLength;
             int NoOfBlocks = (int)Math.Max(1, Math.Round(LocalDOF[0] / (double)lc.TargetBlockSize));
             int SpaceDim = MultigridSequence[0].SpatialDimension;
+            int MultigridSeqLength = MultigridSequence.Length;
 
             switch (lc.SolverCode) {
                 case LinearSolverConfig.Code.automatic:
@@ -551,7 +552,7 @@ namespace BoSSS.Solution{
                     break;
 
                 case LinearSolverConfig.Code.exp_softpcg_mg:
-                    templinearSolve = SpecialMultilevelSchwarz(lc, LocalDOF);
+                    templinearSolve = SpecialMultilevelSchwarz(lc, LocalDOF, MultigridSeqLength);
                     break;
                 
                 case LinearSolverConfig.Code.exp_softpcg_schwarz:
@@ -886,7 +887,7 @@ namespace BoSSS.Solution{
 
 
 
-        private ISolverSmootherTemplate SpecialMultilevelSchwarz(LinearSolverConfig _lc, int[] _LocalDOF) {
+        private ISolverSmootherTemplate SpecialMultilevelSchwarz(LinearSolverConfig _lc, int[] _LocalDOF, int MSLength) {
             var solver = new SoftPCG() {
                 m_MaxIterations = _lc.MaxSolverIterations,
                 m_Tolerance = _lc.ConvergenceCriterion
@@ -896,7 +897,7 @@ namespace BoSSS.Solution{
             int DirectKickIn = _lc.TargetBlockSize;
 
             //MultigridOperator Current = op;
-            ISolverSmootherTemplate[] MultigridChain = new ISolverSmootherTemplate[_lc.NoOfMultigridLevels];
+            ISolverSmootherTemplate[] MultigridChain = new ISolverSmootherTemplate[MSLength];
             for (int iLevel = 0; iLevel < _lc.NoOfMultigridLevels; iLevel++) {
                 int SysSize = _LocalDOF[iLevel].MPISum();
                 //int SysSize = Current.Mapping.TotalLength;
