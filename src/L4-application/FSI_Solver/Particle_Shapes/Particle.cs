@@ -85,7 +85,7 @@ namespace BoSSS.Application.FSI_Solver
             //From degree to radiant
             currentTimeAng_P[0] = startAngl * 2 * Math.PI / 360;
             currentTimeAng_P[1] = startAngl * 2 * Math.PI / 360;
-            //currentTimeVel_P[1][0] = 1e-2;
+            //currentTimeVel_P[1][0] = 0.2;
             //currentTimeVel_P[1][1] = 1e-2;
 
             UpdateLevelSetFunction();
@@ -107,7 +107,7 @@ namespace BoSSS.Application.FSI_Solver
 
         public double[] tempPos_P = new double[2];
         public double tempAng_P;
-        public int iteration_counter_P = 0;
+        public int iteration_counter_P = 1;
         public bool underrelaxationFT_constant = true;
         public int underrelaxationFT_exponent = 0;
         public double underrelaxation_factor = 1;
@@ -283,7 +283,8 @@ namespace BoSSS.Application.FSI_Solver
         /// <summary>
         /// heaviside function depending on arclength 
         /// </summary>
-        public double MaxParticleVelIterations = 100;
+        public double MaxParticleVelIterations = 10000;
+        private int vel_iteration_counter;
 
         /// <summary>
         /// Active stress on the current particle
@@ -373,17 +374,31 @@ namespace BoSSS.Application.FSI_Solver
             
             // Position
             var tempPos = currentIterPos_P[0].CloneAs();
-            tempPos.AccV(dt, currentIterVel_P[0]);
+            double[] gravity = new double[2];
+            //tempPos.AccV(dt, currentIterVel_P[0]);
             //currentIterPos_P.Insert(0, tempPos);
             //currentIterPos_P.Remove(currentIterPos_P.Last());
+            //currentIterPos_P[0] = tempPos;
+            for (int d = 0; d < m_Dim; d++) {
+                gravity[d] = 0;
+                if (includeGravity == true)
+                {
+                    gravity[1] = -9.81;
+                }
+                double rho_Fluid = 1;
+                double massDifference = (rho_P - rho_Fluid) * (Area_P);
+                double tempForces = (currentIterForces_P[0][d] + currentTimeForces_P[1][d]) / 2;
+                tempPos[d] = currentTimePos_P[1][d] + currentTimeVel_P[1][d] * dt + 0.5 * dt * dt * (tempForces + massDifference * gravity[d]) / Mass_P;
+            }
             currentIterPos_P[0] = tempPos;
+            //currentIterPos_P.Remove(currentIterPos_P.Last());
 
             // Angle
             //var tempAng = currentIterAng_P[0] + dt * currentIterRot_P[0];
             //currentIterAng_P.Insert(0, tempAng);
             //currentIterAng_P.Remove(currentIterAng_P.Last());
-            currentIterAng_P[0] = currentTimeAng_P[1] + dt * currentIterRot_P[0];
-
+            //currentIterAng_P[0] = currentTimeAng_P[1] + dt * currentIterRot_P[0];
+            currentIterAng_P[0] = currentTimeAng_P[1] + dt * currentTimeRot_P[1] + (dt * dt / MomentOfInertia_P) * (currentIterTorque_P[0] + currentTimeTorque_P[1]) / 4;
             currentTimePos_P[0] = currentIterPos_P[0];
             currentTimeAng_P[0] = currentIterAng_P[0];
 
@@ -396,7 +411,7 @@ namespace BoSSS.Application.FSI_Solver
         public void ResetParticlePosition()
         {
             // save position of the last timestep
-            if (iteration_counter_P == 1)
+            if (iteration_counter_P == 0)
             {
                 currentTimePos_P.Insert(1, currentTimePos_P[0]);
                 currentTimePos_P.Remove(currentTimePos_P.Last());
@@ -437,7 +452,7 @@ namespace BoSSS.Application.FSI_Solver
         public void UpdateTransVelocity(double dt, double rho_Fluid = 1, bool includeTranslation = true, bool LiftAndDrag = true) {
 
             // save velocity of the last timestep
-            if (iteration_counter_P == 1)
+            if (iteration_counter_P == 0)
             {
                 currentTimeVel_P.Insert(1, currentTimeVel_P[0]);
                 currentTimeVel_P.Remove(currentTimeVel_P.Last());
@@ -460,12 +475,6 @@ namespace BoSSS.Application.FSI_Solver
             double[] tempForceOld = new double[2];
             double[] gravity = new double[2];
             double massDifference = (rho_P - rho_Fluid) * (Area_P);
-            double[] previous_vel = new double[2];
-
-            if (iteration_counter_P == 1)
-            {
-                previous_vel = currentIterVel_P[0];
-            }
 
             #region virtual force model
             // Virtual force model (Schwarz et al. - 2015 A temporal discretization scheme to compute the motion of light particles in viscous flows by an immersed boundary")
@@ -486,27 +495,37 @@ namespace BoSSS.Application.FSI_Solver
             // 2nd order Adam Bashford
             //for (int i = 0; i < 2; i++)
             //{
-            //    f_vNew[i] = c_a * (3 * currentIterVel_P[0][i] - 4 * currentIterVel_P[1][i] + currentIterVel_P[2][i]) / (2 * dt);
-            //    f_vOld[i] = c_a * (3 * currentIterVel_P[1][i] - 4 * currentIterVel_P[2][i] + currentIterVel_P[3][i]) / (2 * dt);
-            //    tempForceNew[i] = (forces_P[0][i] + massDifference * gravity[i]) * (c_u) + f_vNew[i];
-            //    tempForceOld[i] = (forces_P[1][i] + massDifference * gravity[i]) * (c_u) + f_vOld[i];
+            //    dt = 1e-3;
+            //    C_v_mod[i] = 0.1;
+            //    c_a[i] = (C_v_mod[i] * rho_Fluid) / (rho_P + C_v_mod[i] * rho_Fluid);
+            //    c_u[i] = 1 / (Area_P * (rho_P + C_v_mod[i] * rho_P));
+            //    f_vNew[i] = c_a[i] * (3 * currentIterVel_P[0][i] - 4 * currentIterVel_P[1][i] + currentIterVel_P[2][i]) / (2 * dt);
+            //    f_vOld[i] = c_a[i] * (3 * currentIterVel_P[1][i] - 4 * currentIterVel_P[2][i] + currentIterVel_P[3][i]) / (2 * dt);
+            //    tempForceNew[i] = (currentIterForces_P[0][i] + massDifference * gravity[i]) * (c_u[i]) + f_vNew[i];
+            //    tempForceOld[i] = (currentIterForces_P[1][i] + massDifference * gravity[i]) * (c_u[i]) + f_vOld[i];
             //    temp[i] = currentIterVel_P[0][i] + (3 * tempForceNew[i] - tempForceOld[i]) * dt / 2;
             //}
 
             // implicit Adams Moulton (modified)
             //for (double velResidual = 1; velResidual > velResidual_ConvergenceCriterion;)
             //{
+            //    dt = 1e-3;
             //    for (int i = 0; i < 2; i++)
             //    {
-            //        C_v_mod[i] = 0.1;// * Math.Abs(forces_P[0][i] / (forces_P[0][i] + forces_P[1][i] + 1e-30));
+            //        gravity[0] = 0;
+            //        if (includeGravity == true)
+            //        {
+            //            gravity[1] = -9.81;
+            //        }
+            //        C_v_mod[i] = 300;// * Math.Abs(forces_P[0][i] / (forces_P[0][i] + forces_P[1][i] + 1e-30));
             //        c_a[i] = (C_v_mod[i] * rho_Fluid) / (rho_P + C_v_mod[i] * rho_Fluid);
-            //        c_u[i] = 1 / (area_P * (rho_P + C_v_mod[i] * rho_P));
+            //        c_u[i] = 1 / (Area_P * (rho_P + C_v_mod[i] * rho_P));
             //        f_vTemp[i] = (C_v_mod[i]) / (1 + C_v_mod[i]) * (11 * temp[i] - 18 * currentIterVel_P[0][i] + 9 * currentIterVel_P[1][i] - 2 * currentIterVel_P[2][i]) / (8 * dt);
             //        f_vNew[i] = (C_v_mod[i]) / (1 + C_v_mod[i]) * (11 * currentIterVel_P[0][i] - 18 * currentIterVel_P[1][i] + 9 * currentIterVel_P[2][i] - 2 * currentIterVel_P[3][i]) / (6 * dt);
             //        f_vOld[i] = (C_v_mod[i]) / (1 + C_v_mod[i]) * (11 * currentIterVel_P[1][i] - 18 * currentIterVel_P[2][i] + 9 * currentIterVel_P[3][i] - 2 * currentIterVel_P[4][i]) / (6 * dt);
-            //        tempForceTemp[i] = (forces_P[0][i] + massDifference * gravity[i]) * (c_u[i]) + f_vTemp[i];
-            //        tempForceNew[i] = (forces_P[1][i] + massDifference * gravity[i]) * (c_u[i]) + f_vNew[i];
-            //        tempForceOld[i] = (forces_P[2][i] + massDifference * gravity[i]) * (c_u[i]) + f_vOld[i];
+            //        tempForceTemp[i] = (currentIterForces_P[0][i] + massDifference * gravity[i]) * (c_u[i]) + f_vTemp[i];
+            //        tempForceNew[i] = (currentIterForces_P[1][i] + massDifference * gravity[i]) * (c_u[i]) + f_vNew[i];
+            //        tempForceOld[i] = (currentIterForces_P[2][i] + massDifference * gravity[i]) * (c_u[i]) + f_vOld[i];
             //        old_temp[i] = temp[i];
             //        temp[i] = previous_vel[i] + (1 * tempForceTemp[i] + 4 * tempForceNew[i] + 1 * tempForceOld[i]) * dt / 6;
             //    }
@@ -517,7 +536,7 @@ namespace BoSSS.Application.FSI_Solver
             //    }
             //    velResidual = Math.Sqrt((temp[0] - old_temp[0]).Pow2() + (temp[1] - old_temp[1]).Pow2());
 
-            //    //Console.WriteLine("Current velResidual:  " + velResidual);
+            //    Console.WriteLine("Current velResidual:  " + velResidual);
             //}
             //Console.WriteLine("Number of Iterations for translational velocity calculation:  " + vel_iteration_counter);
             //Console.WriteLine("C_v_mod:  " + C_v_mod[0]);
@@ -565,7 +584,7 @@ namespace BoSSS.Application.FSI_Solver
         public void UpdateAngularVelocity(double dt, double rho_Fluid = 1, bool includeRotation = true, int noOfSubtimesteps = 1) {
 
             // save rotation of the last timestep
-            if (iteration_counter_P == 1)
+            if (iteration_counter_P == 0)
             {
                 currentTimeRot_P.Insert(1, currentTimeRot_P[0]);
                 currentTimeRot_P.Remove(currentTimeRot_P.Last());
@@ -627,7 +646,7 @@ namespace BoSSS.Application.FSI_Solver
                 return;
             }
             // save forces and torque of the last timestep
-            if (iteration_counter_P == 1)
+            if (iteration_counter_P == 0)
             {
                 currentTimeForces_P.Insert(1, currentTimeForces_P[0]);
                 currentTimeForces_P.Remove(currentTimeForces_P.Last());
@@ -1007,7 +1026,7 @@ namespace BoSSS.Application.FSI_Solver
                 temp_underR[k] = underrelaxation_factor;
             }
             // first iteration, set URF to 1
-            if (iteration_counter_P == 1)
+            if (iteration_counter_P == 0)
             {
                 for (int k = 0; k < D; k++)
                 {
@@ -1040,7 +1059,7 @@ namespace BoSSS.Application.FSI_Solver
                     underrelaxationFT_exponent = 0;
                     for (int i = 0; underrelaxation_ok == false; i++)
                     {
-                        if (Math.Abs(temp_underR[j] * forces[j]) > 0.9 * Math.Abs(currentIterForces_P[0][j]))
+                        if (Math.Abs(temp_underR[j] * forces[j]) > 0.75 * Math.Abs(currentIterForces_P[0][j]))
                         {
                             underrelaxationFT_exponent -= 1;
                             temp_underR[j] = underrelaxation_factor * Math.Pow(10, underrelaxationFT_exponent);
@@ -1052,9 +1071,9 @@ namespace BoSSS.Application.FSI_Solver
                             {
                                 temp_underR[j] = forceAndTorque_convergence * 1000;
                             }
-                            if (temp_underR[j] >= 0.9)
+                            if (temp_underR[j] >= 1)
                             {
-                                temp_underR[j] = 0.9;
+                                temp_underR[j] = 0.75;
                             }
                         }
                     }
@@ -1065,7 +1084,7 @@ namespace BoSSS.Application.FSI_Solver
                 underrelaxationFT_exponent = 0;
                 for (int i = 0; underrelaxation_ok == false; i++)
                 {
-                    if (Math.Abs(temp_underR[D] * torque) > 0.9 * Math.Abs(currentIterTorque_P[0]))
+                    if (Math.Abs(temp_underR[D] * torque) > 0.75 * Math.Abs(currentIterTorque_P[0]))
                     {
                         underrelaxationFT_exponent -= 1;
                         temp_underR[D] = underrelaxation_factor * Math.Pow(10, underrelaxationFT_exponent);
@@ -1077,10 +1096,9 @@ namespace BoSSS.Application.FSI_Solver
                         {
                             temp_underR[D] = forceAndTorque_convergence * 1000;
                         }
-                        if (underrelaxationFT_exponent > -1)
+                        if (temp_underR[D] >= 1)
                         {
-                            underrelaxationFT_exponent = -1;
-                            temp_underR[D] = underrelaxation_factor * Math.Pow(10, underrelaxationFT_exponent);
+                            temp_underR[D] = 0.75;
                         }
                     }
                 }

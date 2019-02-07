@@ -625,6 +625,7 @@ namespace BoSSS.Application.SipPoisson {
             R.ProjectName = "SipPoisson-Voronoi";
             R.SessionName = "testrun";
             R.savetodb = false;
+            R.ImmediatePlotPeriod = 1;
 
             R.FieldOptions.Add("T", new FieldOpts() { Degree = deg, SaveToDB = FieldOpts.SaveToDBOpt.TRUE });
             R.FieldOptions.Add("Tex", new FieldOpts() { Degree = deg * 2 });
@@ -663,12 +664,12 @@ namespace BoSSS.Application.SipPoisson {
            
 
             Vector[] DomainBndyPolygon = new[] {
-                new Vector(+0,+0),
-                new Vector(-1,+0),
-                new Vector(-1,+1),
-                new Vector(+1,+1),
-                new Vector(+1,-1),
-                new Vector(+0,-1)
+                new Vector(-1,1),
+                new Vector(1,1),
+                new Vector(1,-1),
+                new Vector(0,-1),
+                new Vector(0,0),
+                new Vector(-1,0)
             };
             
 
@@ -737,11 +738,14 @@ namespace BoSSS.Application.SipPoisson {
                     }
                 }
 
-
-
-
                 // generate mesh
-                return Voronoi.VoronoiMeshGen.FromPolygonalDomain(Node, DomainBndyPolygon, useMirror, NoOfLlyodsIter, IsInV, Idenity);
+                AggregationGrid grid;
+                grid = BoSSS.Foundation.Grid.Voronoi.VoronoiGrid2D.FromPolygonalDomain(DomainBndyPolygon, 20, Res);
+                grid.EdgeTagNames.Add(1, BoundaryType.Dirichlet.ToString());
+                grid.DefineEdgeTags(X => (byte)1);
+
+                //grid = Voronoi.VoronoiMeshGen.FromPolygonalDomain(Node, DomainBndyPolygon, useMirror, NoOfLlyodsIter, IsInV, Idenity);
+                return grid;
 
             };
             R.GridFunc = GridFunc;
@@ -750,7 +754,7 @@ namespace BoSSS.Application.SipPoisson {
                  delegate (double[] X) {
                      //double x = X[0], y = X[1];
 
-                     return X[0];
+                     return Math.Pow(X[0],2) + Math.Pow(X[1],2);
                      //if(Math.Abs(X[0] - (0.0)) < 1.0e-8)
                      //    return 0.0;
                      //
