@@ -272,6 +272,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
             private set;
         }
 
+
         public int TotalNoOfBlocks {
             get {
                 return AggGrid.CellPartitioning.TotalLength;
@@ -284,12 +285,17 @@ namespace BoSSS.Solution.AdvancedSolvers {
             }
         }
 
+        /// <summary>
+        /// Gets the first block on this process
+        /// </summary>
         public int FirstBlock {
             get {
                 return AggGrid.CellPartitioning.i0;
             }
         }
-
+        /// <summary>
+        /// Tests, if Max and Minblocksize are equal
+        /// </summary>
         public bool AllBlockSizesEqual {
             get {
                 return (MaximalLength == MinimalLength);

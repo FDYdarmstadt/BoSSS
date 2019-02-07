@@ -193,7 +193,7 @@ namespace BoSSS.Application.SipPoisson {
         /// <param name="solver_name">
         /// Name of solver to use.
         /// </param>
-        public static SipControl TestCartesian2(int Res, int Dim, SolverCodes solver_name = SolverCodes.exp_softpcg_mg, int deg = 3) {
+        public static SipControl TestCartesian2(int Res, int Dim, LinearSolverConfig.Code solver_name = LinearSolverConfig.Code.exp_softpcg_mg, int deg = 3) {
             if (Dim != 2 && Dim != 3)
                 throw new ArgumentOutOfRangeException();
 
@@ -207,7 +207,7 @@ namespace BoSSS.Application.SipPoisson {
             R.InitialValues_Evaluators.Add("Tex", X => Math.Sin(X[0]));
             R.ExactSolution_provided = true;
             R.LinearSolver.NoOfMultigridLevels = int.MaxValue;
-            R.solver_name = solver_name;
+            R.LinearSolver.SolverCode = solver_name;
             //R.TargetBlockSize = 100;
 
             R.TracingNamespaces = "BoSSS,ilPSP";
@@ -299,6 +299,10 @@ namespace BoSSS.Application.SipPoisson {
             R.InitialValues_Evaluators.Add("RHS", exRhs);
             R.InitialValues_Evaluators.Add("Tex", exSol);
             R.ExactSolution_provided = true;
+            //R.LinearSolver.NoOfMultigridLevels = 2;
+            //R.LinearSolver.SolverCode = LinearSolverConfig.Code.exp_softpcg_mg;
+            //R.LinearSolver.SolverCode = LinearSolverConfig.Code.exp_softpcg_schwarz_directcoarse;
+            //R.LinearSolver.SolverCode = LinearSolverConfig.Code.classic_mumps;
 
             R.GridFunc = delegate () {
                 double[] xNodes = GenericBlas.Linspace(-1, 1, xRes);
@@ -604,7 +608,7 @@ namespace BoSSS.Application.SipPoisson {
         /// <param name="NoOfLlyodsIter">
         /// Number of iterations for Llyod's algorithm (aka. Voronoi relaxation)
         /// </param>
-        public static SipControl TestVoronoi(int Res, SolverCodes solver_name = SolverCodes.classic_pardiso, int deg = 1, bool mirror = true, double NoOfLlyodsIter = 0) {
+        public static SipControl TestVoronoi(int Res, LinearSolverConfig.Code solver_name = LinearSolverConfig.Code.classic_pardiso, int deg = 1, bool mirror = true, double NoOfLlyodsIter = 0) {
 
             if (System.Environment.MachineName.ToLowerInvariant().EndsWith("rennmaschin")
                //|| System.Environment.MachineName.ToLowerInvariant().Contains("jenkins")
@@ -621,6 +625,7 @@ namespace BoSSS.Application.SipPoisson {
             R.ProjectName = "SipPoisson-Voronoi";
             R.SessionName = "testrun";
             R.savetodb = false;
+            R.ImmediatePlotPeriod = 1;
 
             R.FieldOptions.Add("T", new FieldOpts() { Degree = deg, SaveToDB = FieldOpts.SaveToDBOpt.TRUE });
             R.FieldOptions.Add("Tex", new FieldOpts() { Degree = deg * 2 });
@@ -628,7 +633,7 @@ namespace BoSSS.Application.SipPoisson {
             R.InitialValues_Evaluators.Add("Tex", X => X[0]);
             R.ExactSolution_provided = false;
             R.LinearSolver.NoOfMultigridLevels = int.MaxValue;
-            R.solver_name = solver_name;
+            R.LinearSolver.SolverCode = solver_name;
             R.LinearSolver.NoOfMultigridLevels = 1;
             //R.TargetBlockSize = 100;
 
@@ -659,12 +664,12 @@ namespace BoSSS.Application.SipPoisson {
            
 
             Vector[] DomainBndyPolygon = new[] {
-                new Vector(+0,+0),
-                new Vector(-1,+0),
-                new Vector(-1,+1),
-                new Vector(+1,+1),
-                new Vector(+1,-1),
-                new Vector(+0,-1)
+                new Vector(-1,1),
+                new Vector(1,1),
+                new Vector(1,-1),
+                new Vector(0,-1),
+                new Vector(0,0),
+                new Vector(-1,0)
             };
             
 
@@ -733,11 +738,14 @@ namespace BoSSS.Application.SipPoisson {
                     }
                 }
 
-
-
-
                 // generate mesh
-                return Voronoi.VoronoiMeshGen.FromPolygonalDomain(Node, DomainBndyPolygon, useMirror, NoOfLlyodsIter, IsInV, Idenity);
+                AggregationGrid grid;
+                grid = BoSSS.Foundation.Grid.Voronoi.VoronoiGrid2D.FromPolygonalDomain(DomainBndyPolygon, 20, Res);
+                grid.EdgeTagNames.Add(1, BoundaryType.Dirichlet.ToString());
+                grid.DefineEdgeTags(X => (byte)1);
+
+                //grid = Voronoi.VoronoiMeshGen.FromPolygonalDomain(Node, DomainBndyPolygon, useMirror, NoOfLlyodsIter, IsInV, Idenity);
+                return grid;
 
             };
             R.GridFunc = GridFunc;
@@ -746,7 +754,7 @@ namespace BoSSS.Application.SipPoisson {
                  delegate (double[] X) {
                      //double x = X[0], y = X[1];
 
-                     return X[0];
+                     return Math.Pow(X[0],2) + Math.Pow(X[1],2);
                      //if(Math.Abs(X[0] - (0.0)) < 1.0e-8)
                      //    return 0.0;
                      //

@@ -1,0 +1,684 @@
+restart
+**************
+
+  BoSSSpad C# interpreter
+  _______________________
+
+Databases loaded:
+List of 8 instances of IDatabaseInfo {
+  0: { Session Count = 0; Grid Count = 34; Path = C:\BoSSS_DB }
+  1: { Session Count = 144; Grid Count = 6; Path = C:\tmp\fk_temp_db }
+  2: { Session Count = 0; Grid Count = 6; Path = P:\Performance_DB }
+  3: { Session Count = 12; Grid Count = 31; Path = P:\testDB }
+  4: { Session Count = 112; Grid Count = 6; Path = E:\Performance_oldLibs_DB }
+  5: { Session Count = 0; Grid Count = 2; Path = E:\db_2delete }
+  6: { Session Count = 112; Grid Count = 136; Path = E:\bosss_db_performance }
+  7: { Session Count = 144; Grid Count = 139; Path = Z:\weber\Performance_Kram\bosss_db_performance }
+}
+
+ Console ready for input. Type 'help' for help.
+
+==============
+using BoSSS.Application.XdgPoisson3;
+**************
+==============
+**************
+==============
+string WFlowName = "XdgPoissonSolverPerformance_2";
+WorkflowMgm.Init(WFlowName);
+WorkflowMgm.AllJobs;
+**************
+Project name is set to 'XdgPoissonSolverPerformance_2'.
+List of 0 instances of KeyValuePair{String,Job} {
+}
+==============
+//var tempDB = OpenOrCreateDatabase(@"\\dc1\userspace\weber\Performance_oldLibs_DB");
+var tempDB = OpenOrCreateDatabase(@"E:\XdgPerformance");
+**************
+Opening existing database 'E:\XdgPerformance'.
+
+==============
+var myBatch = new MiniBatchProcessorClient(@"G:\deploy-Mini");
+//var myBatch = new MsHPC2012Client(@"\\dc1\userspace\weber\deploy","hpccluster",ComputeNodes : new[] {"hpccluster"});
+**************
+==============
+MiniBatchProcessor.Server.StartIfNotRunning();
+**************
+Starting mini batch processor in external process...
+Started mini batch processor on local machine, process id is 5812.
+
+==============
+// ===================
+// Utility definitions
+// ===================
+**************
+==============
+static class Utils {
+    // DOF per cell in 3D
+    public static int Np(int p) {
+        return (p*p*p + 6*p*p + 11*p + 6)/6;
+    }    
+    
+    //Non-equidistant nodes
+    public static double[] SinLinSpacing(double l, double r, double a, int n) {
+        double[] linnodes = GenericBlas.Linspace(-Math.PI * 0.5, Math.PI * 0.5, n);
+        double[] linnodes2 = GenericBlas.Linspace(-1, 1, n);
+        double[] nodes = new double[n];
+
+        for (int i = 0; i < n; i++)
+            //nodes[i] = linnodes2[i] * (1 - a) + (1.0 - Math.Sin(linnodes[i])) * a;
+            nodes[i] = linnodes2[i] * (1 - a) + Math.Sin(linnodes[i])*a;
+
+        for (int i = 0; i < n; i++)
+            nodes[i] = nodes[i] * (r - l)*0.5 + l;
+        return nodes;
+    }
+}
+**************
+==============
+// ===============================
+// Init grids and save to database
+// ===============================
+**************
+==============
+tempDB.Grids;
+**************
+List of 6 instances of IGridInfo {
+  0: { Guid = a296cde2-4587-42a0-9b2f-99ca84c703fc; Name = XdgPoissonSolverPerformance_J1310720; Cell Count = 1310720; Dim = 3 }
+  1: { Guid = 129e008f-66d5-466c-a886-436974448400; Name = XdgPoissonSolverPerformance_J163840; Cell Count = 163840; Dim = 3 }
+  2: { Guid = ef97313d-349a-4e2a-81f1-5568f131e45f; Name = XdgPoissonSolverPerformance_J20480; Cell Count = 20480; Dim = 3 }
+  3: { Guid = cbea7b20-b9c4-4dbb-be44-e485d6263287; Name = XdgPoissonSolverPerformance_J2560; Cell Count = 2560; Dim = 3 }
+  4: { Guid = a50388ea-5ec7-4d96-806f-c6db63da5750; Name = XdgPoissonSolverPerformance_J320; Cell Count = 320; Dim = 3 }
+  5: { Guid = 09d431c6-b4c7-4337-9145-d77d7ed2c6bf; Name = XdgPoissonSolverPerformance_J40; Cell Count = 40; Dim = 3 }
+}
+==============
+int[] Resolutions_3D = new int[] { 8 };
+IGridInfo[] grids = new IGridInfo[Resolutions_3D.Length];
+for(int cnt = 0; cnt < Resolutions_3D.Length; cnt++) {
+    int Res = Resolutions_3D[cnt];    
+    
+    double[] xNodes = GenericBlas.Linspace(0, 10, Res*5 + 1);
+    double[] yNodes = Utils.SinLinSpacing(-1, +1, 0.6, Res + 1);
+    double[] zNodes = Utils.SinLinSpacing(-1, +1, 0.6, Res + 1);
+    int J = (xNodes.Length - 1)*(yNodes.Length - 1)*(zNodes.Length - 1);
+    
+    string GridName = string.Format(WorkflowMgm.CurrentProject + "_J" + J);
+    
+    grids[cnt] = tempDB.Grids.SingleOrDefault(grd => grd.Name == GridName);
+    
+    if(grids[cnt] == null){
+        Console.WriteLine("Creating grid with " + J + " cells.");
+        
+        GridCommons g;
+        g      = Grid3D.Cartesian3DGrid(xNodes, yNodes, zNodes);
+        g.Name = GridName;
+        
+        g.EdgeTagNames.Add(1, "Dirichlet");
+        g.EdgeTagNames.Add(2, "Neumann");
+    
+        g.DefineEdgeTags(delegate (double[] X) {
+            byte ret;
+            if(Math.Abs(X[0] - 0.0) <= 1.0e-6)
+                ret = 1;
+            else
+                ret = 2;
+            return ret;
+        });
+      
+        tempDB.SaveGrid(ref g);  
+        grids[cnt] = g;
+    } else {
+        Console.WriteLine("Found Grid: " + grids[cnt]);
+        if(grids[cnt].NumberOfCells != J)
+            throw new Exception("J mismatch");
+        
+        if(grids[cnt].SpatialDimension != 3)
+            throw new Exception("D mismatch");
+    }
+    
+}
+**************
+Creating grid with 2560 cells.
+An equivalent grid is already present in the database -- the grid will not be saved.
+
+==============
+grids;
+**************
+List of 1 instances of IGridInfo {
+  0: { Guid = cbea7b20-b9c4-4dbb-be44-e485d6263287; Name = XdgPoissonSolverPerformance_J2560; Cell Count = 2560; Dim = 3 }
+}
+==============
+**************
+==============
+// =====================================
+// setup control object for a solver run
+// =====================================
+**************
+==============
+**************
+==============
+// - - - - - - - - - - - - - - - - - - -
+// Initial Values & Boundary conditions
+// - - - - - - - - - - - - - - - - - - -
+**************
+==============
+static class InitialValues {
+    public static double RHS(double[] X) {
+        return -Math.Sin(X[0]);
+    }
+    
+    public static double DirichletBC(double[] X) {
+        return 0.0;
+    }
+    
+    public static double NeumannBC(double[] X) {
+       if(Math.Abs(X[1] - 1.0) < 1.0e-8 || Math.Abs(X[1] + 1.0) < 1.0e-8)
+           return 0;
+       if(X.Length > 2 && (Math.Abs(X[2] - 1.0) < 1.0e-8 || Math.Abs(X[2] + 1.0) < 1.0e-8))
+           return 0;
+
+       return Math.Cos(10.0);
+   }
+}
+**************
+==============
+InitialValues.RHS(new double[]{ 1});
+**************
+-0.841470984807897
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+// - - - - - - - - - - - - -
+// setup of parameter study
+// - - - - - - - - - - - - -
+**************
+==============
+List<XdgPoisson3Control> controls = new List<XdgPoisson3Control>();
+**************
+==============
+// polynomial degrees to test
+//int[] PolyDegS = new int[] {2, 3, 4, 5, 6};
+int[] PolyDegS = new int[] {2}; // reduced options for dev.
+**************
+==============
+// Solvers which we want to instrument:
+LinearSolverConfig.Code[] solver_nameS = new LinearSolverConfig.Code[] {
+    LinearSolverConfig.Code.classic_pardiso, 
+    LinearSolverConfig.Code.classic_mumps, 
+    LinearSolverConfig.Code.classic_cg,
+    LinearSolverConfig.Code.exp_softpcg_schwarz_directcoarse,
+    LinearSolverConfig.Code.exp_softpcg_mg
+}; 
+**************
+==============
+// MaxDof for one claculation (we skip fine grids for higher polynomial orders)
+int MaxDof = 5000000;
+**************
+==============
+using BoSSS.Solution.XNSECommon;
+using BoSSS.Foundation.XDG;
+**************
+==============
+controls.Clear();
+foreach(LinearSolverConfig.Code solver_name in solver_nameS) {
+foreach(int k in PolyDegS) {
+int iGrd = 0;    
+foreach(IGridInfo grd in grids) {
+    iGrd ++;
+    //if(k >= 3 && iGrd > 6)
+    //    continue; 
+    //if(k >= 4 && iGrd > 5)
+    //    continue; 
+    //if(k >= 5 && iGrd > 4)
+    //    continue; 
+    
+    int Np = Utils.Np(k);
+    int J  = grd.NumberOfCells;
+    if(J*Np > MaxDof)
+        continue;
+    
+    string caseName = string.Format("J{0}_k{1}_{2}", J, k, solver_name);
+    Console.WriteLine("setting up: " + caseName);
+
+    var ctrl = new XdgPoisson3Control();
+    controls.Add(ctrl);
+    
+    //ctrl.SessionName = caseName;
+    ctrl.SetDatabase(tempDB);
+    ctrl.SetGrid(grd);
+    ctrl.SetDGdegree(k);
+
+    ctrl.LinearSolver.SolverCode          = solver_name;
+    ctrl.LinearSolver.NoOfMultigridLevels = int.MaxValue;
+    
+    ctrl.ExcactSolSupported = false;
+    ctrl.InitialValues.Add("Phi", new Formula("X => X[1]+0.5"));
+    ctrl.MU_A = -1;
+    ctrl.MU_B = -1;
+    ctrl.InitialValues.Add("rhs#A", GetFormulaObject(InitialValues.RHS));
+    ctrl.InitialValues.Add("rhs#B", GetFormulaObject(InitialValues.RHS));
+    //ctrl.AddBoundaryValue("Dirichlet", "u#A",
+    //    GetFormulaObject(InitialValues.DirichletBC));
+    //ctrl.AddBoundaryValue("Dirichlet", "u#B",
+    //    GetFormulaObject(InitialValues.DirichletBC));
+    //ctrl.AddBoundaryValue("Neumann", "u#A",
+    //    GetFormulaObject(InitialValues.NeumannBC));
+    //ctrl.AddBoundaryValue("Neumann", "u#B",
+    //    GetFormulaObject(InitialValues.NeumannBC));
+    ctrl.CutCellQuadratureType = XQuadFactoryHelper.MomentFittingVariants.Classic;
+    ctrl.SetDefaultDiriBndCnd = true;
+    ctrl.ViscosityMode        = XLaplace_Interface.Mode.SIP;
+    ctrl.SessionName          = "PoissonConstCoeff_"+caseName;
+}
+}
+}
+**************
+setting up: J2560_k2_classic_pardiso
+setting up: J2560_k2_classic_mumps
+setting up: J2560_k2_classic_cg
+setting up: J2560_k2_exp_softpcg_schwarz_directcoarse
+setting up: J2560_k2_exp_softpcg_mg
+
+==============
+**************
+==============
+// ==========
+// Launch Job
+// ==========
+**************
+==============
+//var job = new Job("zwa", solver);
+**************
+==============
+//myCtrl.GetType();
+**************
+==============
+//job.SetControlObject(myCtrl);
+**************
+==============
+//tempDB.Sessions.Where(s => s.Name.Contains("softpcg") && s.Name.Contains("k2") && s.Name.Contains("mg"));//.ForEach(si => si.Delete(true));
+**************
+==============
+//tempDB.Sessions.Where(s => s.Name.Contains("exp_direct")).ForEach(si => si.Delete());
+**************
+==============
+**************
+==============
+foreach(var ctrl in controls) {
+    Console.WriteLine(" Submitting: " + ctrl.SessionName); 
+    ctrl.RunBatch(myBatch); 
+}
+**************
+ Submitting: PoissonConstCoeff_J2560_k2_classic_pardiso
+Job is failed 1 times, maximum number of tries reached, no further action.
+ Submitting: PoissonConstCoeff_J2560_k2_classic_mumps
+Job is failed 1 times, maximum number of tries reached, no further action.
+ Submitting: PoissonConstCoeff_J2560_k2_classic_cg
+Job not submitted yet, or no result session is known - starting submission.
+Deploying executables and additional files ...
+Deployment directory: G:\deploy-Mini\XdgPoisson32019Feb06_11-48-09
+Source directory: C:\BoSSS\BoSSS-SolverPerformance\public\src\L4-application\BoSSSpad\bin\Release
+   copied: XdgPoisson3.exe BoSSS.Solution.dll CommandLine.dll BoSSS.Foundation.dll ilPSP.dll MPI.Wrappers.dll log4net.dll nunit.framework.dll Newtonsoft.Json.dll ilPSP.LinSolvers.MUMPS.dll BoSSS.Platform.dll Renci.SshNet.dll ilPSP.LinSolvers.monkey.dll ilPSP.Connectors.Matlab.dll BoSSS.Foundation.XDG.dll Mono.CSharp.dll BoSSS.Foundation.Grid.dll MathNet.Numerics.dll BoSSS.Solution.XNSECommon.dll BoSSS.Solution.NSECommon.dll BoSSS.Solution.LevelSetTools.dll BoSSS.Foundation.SpecFEM.dll ilPSP.LinSolvers.PARDISO.dll BoSSS.Solution.Statistic.dll BoSSS.Solution.AdvancedSolvers.dll BoSSS.Solution.Gnuplot.dll BoSSS.Solution.Tecplot.dll    writing file: control.obj
+deployment finished.
+ Submitting: PoissonConstCoeff_J2560_k2_exp_softpcg_schwarz_directcoarse
+Job not submitted yet, or no result session is known - starting submission.
+Deploying executables and additional files ...
+Deployment directory: G:\deploy-Mini\XdgPoisson32019Feb06_11-48-09-1
+Source directory: C:\BoSSS\BoSSS-SolverPerformance\public\src\L4-application\BoSSSpad\bin\Release
+   copied: XdgPoisson3.exe BoSSS.Solution.dll CommandLine.dll BoSSS.Foundation.dll ilPSP.dll MPI.Wrappers.dll log4net.dll nunit.framework.dll Newtonsoft.Json.dll ilPSP.LinSolvers.MUMPS.dll BoSSS.Platform.dll Renci.SshNet.dll ilPSP.LinSolvers.monkey.dll ilPSP.Connectors.Matlab.dll BoSSS.Foundation.XDG.dll Mono.CSharp.dll BoSSS.Foundation.Grid.dll MathNet.Numerics.dll BoSSS.Solution.XNSECommon.dll BoSSS.Solution.NSECommon.dll BoSSS.Solution.LevelSetTools.dll BoSSS.Foundation.SpecFEM.dll ilPSP.LinSolvers.PARDISO.dll BoSSS.Solution.Statistic.dll BoSSS.Solution.AdvancedSolvers.dll BoSSS.Solution.Gnuplot.dll BoSSS.Solution.Tecplot.dll    writing file: control.obj
+deployment finished.
+ Submitting: PoissonConstCoeff_J2560_k2_exp_softpcg_mg
+Job not submitted yet, or no result session is known - starting submission.
+Deploying executables and additional files ...
+Deployment directory: G:\deploy-Mini\XdgPoisson32019Feb06_11-48-09-2
+Source directory: C:\BoSSS\BoSSS-SolverPerformance\public\src\L4-application\BoSSSpad\bin\Release
+   copied: XdgPoisson3.exe BoSSS.Solution.dll CommandLine.dll BoSSS.Foundation.dll ilPSP.dll MPI.Wrappers.dll log4net.dll nunit.framework.dll Newtonsoft.Json.dll ilPSP.LinSolvers.MUMPS.dll BoSSS.Platform.dll Renci.SshNet.dll ilPSP.LinSolvers.monkey.dll ilPSP.Connectors.Matlab.dll BoSSS.Foundation.XDG.dll Mono.CSharp.dll BoSSS.Foundation.Grid.dll MathNet.Numerics.dll BoSSS.Solution.XNSECommon.dll BoSSS.Solution.NSECommon.dll BoSSS.Solution.LevelSetTools.dll BoSSS.Foundation.SpecFEM.dll ilPSP.LinSolvers.PARDISO.dll BoSSS.Solution.Statistic.dll BoSSS.Solution.AdvancedSolvers.dll BoSSS.Solution.Gnuplot.dll BoSSS.Solution.Tecplot.dll    writing file: control.obj
+deployment finished.
+
+==============
+LastError
+**************
+Newtonsoft.Json.JsonSerializationException: Unable to find a constructor to use for type System.DelegateSerializationHolder+DelegateEntry. A class should either have a default constructor, one constructor with arguments or a constructor marked with the JsonConstructor attribute. Path 'xLaplaceBCs.IsDirichlet.Delegate', line 6, position 8.
+   bei Newtonsoft.Json.Serialization.JsonSerializerInternalReader.CreateNewObject(JsonReader reader, JsonObjectContract objectContract, JsonProperty containerMember, JsonProperty containerProperty, String id, Boolean& createdFromNonDefaultCreator)
+   bei Newtonsoft.Json.Serialization.JsonSerializerInternalReader.CreateObject(JsonReader reader, Type objectType, JsonContract contract, JsonProperty member, JsonContainerContract containerContract, JsonProperty containerMember, Object existingValue)
+   bei Newtonsoft.Json.Serialization.JsonSerializerInternalReader.CreateISerializable(JsonReader reader, JsonISerializableContract contract, JsonProperty member, String id)
+   bei Newtonsoft.Json.Serialization.JsonSerializerInternalReader.CreateObject(JsonReader reader, Type objectType, JsonContract contract, JsonProperty member, JsonContainerContract containerContract, JsonProperty containerMember, Object existingValue)
+   bei Newtonsoft.Json.Serialization.JsonSerializerInternalReader.CreateValueInternal(JsonReader reader, Type objectType, JsonContract contract, JsonProperty member, JsonContainerContract containerContract, JsonProperty containerMember, Object existingValue)
+   bei Newtonsoft.Json.Serialization.JsonSerializerInternalReader.SetPropertyValue(JsonProperty property, JsonConverter propertyConverter, JsonContainerContract containerContract, JsonProperty containerProperty, JsonReader reader, Object target)
+   bei Newtonsoft.Json.Serialization.JsonSerializerInternalReader.PopulateObject(Object newObject, JsonReader reader, JsonObjectContract contract, JsonProperty member, String id)
+   bei Newtonsoft.Json.Serialization.JsonSerializerInternalReader.CreateObject(JsonReader reader, Type objectType, JsonContract contract, JsonProperty member, JsonContainerContract containerContract, JsonProperty containerMember, Object existingValue)
+   bei Newtonsoft.Json.Serialization.JsonSerializerInternalReader.CreateValueInternal(JsonReader reader, Type objectType, JsonContract contract, JsonProperty member, JsonContainerContract containerContract, JsonProperty containerMember, Object existingValue)
+   bei Newtonsoft.Json.Serialization.JsonSerializerInternalReader.SetPropertyValue(JsonProperty property, JsonConverter propertyConverter, JsonContainerContract containerContract, JsonProperty containerProperty, JsonReader reader, Object target)
+   bei Newtonsoft.Json.Serialization.JsonSerializerInternalReader.PopulateObject(Object newObject, JsonReader reader, JsonObjectContract contract, JsonProperty member, String id)
+   bei Newtonsoft.Json.Serialization.JsonSerializerInternalReader.CreateObject(JsonReader reader, Type objectType, JsonContract contract, JsonProperty member, JsonContainerContract containerContract, JsonProperty containerMember, Object existingValue)
+   bei Newtonsoft.Json.Serialization.JsonSerializerInternalReader.CreateValueInternal(JsonReader reader, Type objectType, JsonContract contract, JsonProperty member, JsonContainerContract containerContract, JsonProperty containerMember, Object existingValue)
+   bei Newtonsoft.Json.Serialization.JsonSerializerInternalReader.Deserialize(JsonReader reader, Type objectType, Boolean checkAdditionalContent)
+   bei Newtonsoft.Json.JsonSerializer.DeserializeInternal(JsonReader reader, Type objectType)
+   bei BoSSS.Solution.Control.AppControl.Deserialize(String Str) in C:\BoSSS\BoSSS-SolverPerformance\public\src\L3-solution\BoSSS.Solution\AppControl.cs:Zeile 841.
+   bei BoSSS.Application.BoSSSpad.AppControlExtensions.VerifyEx(AppControl ctrl) in C:\BoSSS\BoSSS-SolverPerformance\public\src\L4-application\BoSSSpad\AppControlExtensions.cs:Zeile 120.
+   bei BoSSS.Application.BoSSSpad.Job.SetControlObject(AppControl ctrl) in C:\BoSSS\BoSSS-SolverPerformance\public\src\L4-application\BoSSSpad\Job.cs:Zeile 282.
+   bei BoSSS.Application.BoSSSpad.AppControlExtensions.RunBatch(AppControl ctrl, BatchProcessorClient BatchSys) in C:\BoSSS\BoSSS-SolverPerformance\public\src\L4-application\BoSSSpad\AppControlExtensions.cs:Zeile 67.
+   bei <InteractiveExpressionClass>.Host(Object& $retval)
+   bei Mono.CSharp.Evaluator.Evaluate(String input, Object& result, Boolean& result_set)
+   bei BoSSS.Application.BoSSSpad.ReadEvalPrintLoop.EvalPrint(String line, Assembly& AssemblyProduced) in C:\BoSSS\BoSSS-SolverPerformance\public\src\L4-application\BoSSSpad\ReadEvalPrintLoop.cs:Zeile 322.
+==============
+**************
+==============
+tempDB.Projects.Where(p=>p.Key.Contains(WFlowName)).Pick(0).Value
+**************
+List of 33 instances of ISessionInfo {
+  0: PoissonSolverPerformance_beforeNewLibs	PoissonConstCoeff_J163840_k2_classic_cg*	12/04/2018 15:43:12	d3e267de...
+  1: PoissonSolverPerformance_beforeNewLibs	PoissonConstCoeff_J20480_k2_classic_cg	12/04/2018 15:41:32	f7d3ba3a...
+  2: PoissonSolverPerformance_beforeNewLibs	PoissonConstCoeff_J2560_k2_classic_cg	12/04/2018 15:41:02	b96c6c85...
+  3: PoissonSolverPerformance_beforeNewLibs	PoissonConstCoeff_J320_k2_classic_cg	12/04/2018 15:40:32	991bbbc8...
+  4: PoissonSolverPerformance_beforeNewLibs	PoissonConstCoeff_J40_k2_classic_cg	12/04/2018 15:40:02	c5623e09...
+  5: PoissonSolverPerformance_beforeNewLibs	PoissonConstCoeff_J20480_k5_classic_mumps*	12/04/2018 15:36:41	f99ac394...
+  6: PoissonSolverPerformance_beforeNewLibs	PoissonConstCoeff_J2560_k5_classic_mumps	12/04/2018 15:34:21	a7f9f4bc...
+  7: PoissonSolverPerformance_beforeNewLibs	PoissonConstCoeff_J320_k5_classic_mumps	12/04/2018 15:33:41	5b98cae3...
+  8: PoissonSolverPerformance_beforeNewLibs	PoissonConstCoeff_J40_k5_classic_mumps	12/04/2018 15:33:11	4dfcd634...
+  9: PoissonSolverPerformance_beforeNewLibs	PoissonConstCoeff_J163840_k3_classic_mumps*	12/04/2018 15:28:31	0442cf5e...
+  10: PoissonSolverPerformance_beforeNewLibs	PoissonConstCoeff_J20480_k3_classic_mumps*	12/04/2018 15:27:00	d6e3be5f...
+  11: PoissonSolverPerformance_beforeNewLibs	PoissonConstCoeff_J2560_k3_classic_mumps	12/04/2018 15:26:20	59c370f6...
+  12: PoissonSolverPerformance_beforeNewLibs	PoissonConstCoeff_J320_k3_classic_mumps	12/04/2018 15:25:50	7c84e289...
+  13: PoissonSolverPerformance_beforeNewLibs	PoissonConstCoeff_J40_k3_classic_mumps	12/04/2018 15:25:20	32211745...
+  14: PoissonSolverPerformance_beforeNewLibs	PoissonConstCoeff_J163840_k2_classic_mumps*	12/04/2018 15:20:10	0da6801a...
+  15: PoissonSolverPerformance_beforeNewLibs	PoissonConstCoeff_J20480_k2_classic_mumps	12/04/2018 15:18:39	e326c570...
+  16: PoissonSolverPerformance_beforeNewLibs	PoissonConstCoeff_J2560_k2_classic_mumps	12/04/2018 15:18:09	c4f1b7cd...
+  17: PoissonSolverPerformance_beforeNewLibs	PoissonConstCoeff_J320_k2_classic_mumps	12/04/2018 15:17:39	e7be9feb...
+  18: PoissonSolverPerformance_beforeNewLibs	PoissonConstCoeff_J40_k2_classic_mumps	12/04/2018 15:17:09	f2b1389b...
+  19: PoissonSolverPerformance_beforeNewLibs	PoissonConstCoeff_J20480_k5_classic_pardiso*	12/04/2018 15:13:59	b51ad32f...
+  20: PoissonSolverPerformance_beforeNewLibs	PoissonConstCoeff_J2560_k5_classic_pardiso	12/04/2018 15:11:29	d880159c...
+  21: PoissonSolverPerformance_beforeNewLibs	PoissonConstCoeff_J320_k5_classic_pardiso	12/04/2018 15:10:49	0abddee9...
+  22: PoissonSolverPerformance_beforeNewLibs	PoissonConstCoeff_J40_k5_classic_pardiso	12/04/2018 15:10:19	9300d521...
+  23: PoissonSolverPerformance_beforeNewLibs	PoissonConstCoeff_J163840_k3_classic_pardiso*	12/04/2018 15:05:18	5715d79a...
+  24: PoissonSolverPerformance_beforeNewLibs	PoissonConstCoeff_J20480_k3_classic_pardiso	12/04/2018 14:54:57	68a3ce7d...
+  25: PoissonSolverPerformance_beforeNewLibs	PoissonConstCoeff_J2560_k3_classic_pardiso	12/04/2018 14:54:17	5366ffbb...
+  26: PoissonSolverPerformance_beforeNewLibs	PoissonConstCoeff_J320_k3_classic_pardiso	12/04/2018 14:53:47	b9663d73...
+  27: PoissonSolverPerformance_beforeNewLibs	PoissonConstCoeff_J40_k3_classic_pardiso	12/04/2018 14:53:17	420a7ce2...
+  28: PoissonSolverPerformance_beforeNewLibs	PoissonConstCoeff_J163840_k2_classic_pardiso	12/04/2018 14:49:06	2f6f357b...
+  29: PoissonSolverPerformance_beforeNewLibs	PoissonConstCoeff_J20480_k2_classic_pardiso	12/04/2018 14:47:16	67959dfa...
+  30: PoissonSolverPerformance_beforeNewLibs	PoissonConstCoeff_J2560_k2_classic_pardiso	12/04/2018 14:46:46	742ecc88...
+  31: PoissonSolverPerformance_beforeNewLibs	PoissonConstCoeff_J320_k2_classic_pardiso	12/04/2018 14:46:26	367b49e1...
+  32: PoissonSolverPerformance_beforeNewLibs	PoissonConstCoeff_J40_k2_classic_pardiso	12/04/2018 14:45:56	b92f62db...
+}
+==============
+**************
+==============
+WorkflowMgm.AllJobs.Select(kv => kv.Key + ": \t" + kv.Value.Status);
+**************
+Loading session 03bbcb6c-89aa-4c92-b1f6-dd479bf3baa1 failed with message 'Der Objektverweis wurde nicht auf eine Objektinstanz festgelegt.'
+List of 112 instances of String {
+  0: PoissonConstCoeff_J40_k2_classic_pardiso: 	FinishedSuccessful
+  1: PoissonConstCoeff_J320_k2_classic_pardiso: 	FinishedSuccessful
+  2: PoissonConstCoeff_J2560_k2_classic_pardiso: 	FinishedSuccessful
+  3: PoissonConstCoeff_J20480_k2_classic_pardiso: 	FinishedSuccessful
+  4: PoissonConstCoeff_J163840_k2_classic_pardiso: 	FinishedSuccessful
+  5: PoissonConstCoeff_J40_k3_classic_pardiso: 	FinishedSuccessful
+  6: PoissonConstCoeff_J320_k3_classic_pardiso: 	FinishedSuccessful
+  7: PoissonConstCoeff_J2560_k3_classic_pardiso: 	FinishedSuccessful
+  8: PoissonConstCoeff_J20480_k3_classic_pardiso: 	FinishedSuccessful
+  9: PoissonConstCoeff_J163840_k3_classic_pardiso: 	Failed
+  10: PoissonConstCoeff_J40_k5_classic_pardiso: 	FinishedSuccessful
+  11: PoissonConstCoeff_J320_k5_classic_pardiso: 	FinishedSuccessful
+  12: PoissonConstCoeff_J2560_k5_classic_pardiso: 	FinishedSuccessful
+  13: PoissonConstCoeff_J20480_k5_classic_pardiso: 	Failed
+  14: PoissonConstCoeff_J40_k2_classic_mumps: 	FinishedSuccessful
+  15: PoissonConstCoeff_J320_k2_classic_mumps: 	FinishedSuccessful
+  16: PoissonConstCoeff_J2560_k2_classic_mumps: 	FinishedSuccessful
+  17: PoissonConstCoeff_J20480_k2_classic_mumps: 	FinishedSuccessful
+  18: PoissonConstCoeff_J163840_k2_classic_mumps: 	Failed
+  19: PoissonConstCoeff_J40_k3_classic_mumps: 	FinishedSuccessful
+  20: PoissonConstCoeff_J320_k3_classic_mumps: 	FinishedSuccessful
+  21: PoissonConstCoeff_J2560_k3_classic_mumps: 	FinishedSuccessful
+  22: PoissonConstCoeff_J20480_k3_classic_mumps: 	Failed
+  23: PoissonConstCoeff_J163840_k3_classic_mumps: 	Failed
+  24: PoissonConstCoeff_J40_k5_classic_mumps: 	FinishedSuccessful
+  25: PoissonConstCoeff_J320_k5_classic_mumps: 	FinishedSuccessful
+  26: PoissonConstCoeff_J2560_k5_classic_mumps: 	FinishedSuccessful
+  27: PoissonConstCoeff_J20480_k5_classic_mumps: 	Failed
+  28: PoissonConstCoeff_J40_k2_classic_cg: 	FinishedSuccessful
+  29: PoissonConstCoeff_J320_k2_classic_cg: 	FinishedSuccessful
+  30: PoissonConstCoeff_J2560_k2_classic_cg: 	FinishedSuccessful
+  31: PoissonConstCoeff_J20480_k2_classic_cg: 	FinishedSuccessful
+  32: PoissonConstCoeff_J163840_k2_classic_cg: 	FinishedSuccessful
+  33: PoissonConstCoeff_J40_k3_classic_cg: 	FinishedSuccessful
+  34: PoissonConstCoeff_J320_k3_classic_cg: 	FinishedSuccessful
+  35: PoissonConstCoeff_J2560_k3_classic_cg: 	FinishedSuccessful
+  36: PoissonConstCoeff_J20480_k3_classic_cg: 	FinishedSuccessful
+  37: PoissonConstCoeff_J163840_k3_classic_cg: 	Failed
+  38: PoissonConstCoeff_J40_k5_classic_cg: 	FinishedSuccessful
+  39: PoissonConstCoeff_J320_k5_classic_cg: 	FinishedSuccessful
+  40: PoissonConstCoeff_J2560_k5_classic_cg: 	FinishedSuccessful
+  41: PoissonConstCoeff_J20480_k5_classic_cg: 	Failed
+  42: PoissonConstCoeff_J40_k2_exp_softpcg_schwarz_directcoarse: 	FinishedSuccessful
+  43: PoissonConstCoeff_J320_k2_exp_softpcg_schwarz_directcoarse: 	FinishedSuccessful
+  44: PoissonConstCoeff_J2560_k2_exp_softpcg_schwarz_directcoarse: 	FinishedSuccessful
+  45: PoissonConstCoeff_J20480_k2_exp_softpcg_schwarz_directcoarse: 	FinishedSuccessful
+  46: PoissonConstCoeff_J163840_k2_exp_softpcg_schwarz_directcoarse: 	FinishedSuccessful
+  47: PoissonConstCoeff_J40_k3_exp_softpcg_schwarz_directcoarse: 	FinishedSuccessful
+  48: PoissonConstCoeff_J320_k3_exp_softpcg_schwarz_directcoarse: 	FinishedSuccessful
+  49: PoissonConstCoeff_J2560_k3_exp_softpcg_schwarz_directcoarse: 	FinishedSuccessful
+  50: PoissonConstCoeff_J20480_k3_exp_softpcg_schwarz_directcoarse: 	FinishedSuccessful
+  51: PoissonConstCoeff_J163840_k3_exp_softpcg_schwarz_directcoarse: 	Failed
+  52: PoissonConstCoeff_J40_k5_exp_softpcg_schwarz_directcoarse: 	FinishedSuccessful
+  53: PoissonConstCoeff_J320_k5_exp_softpcg_schwarz_directcoarse: 	FinishedSuccessful
+  54: PoissonConstCoeff_J2560_k5_exp_softpcg_schwarz_directcoarse: 	FinishedSuccessful
+  55: PoissonConstCoeff_J20480_k5_exp_softpcg_schwarz_directcoarse: 	Failed
+  56: PoissonConstCoeff_J40_k2_exp_direct: 	FinishedSuccessful
+  57: PoissonConstCoeff_J320_k2_exp_direct: 	FinishedSuccessful
+  58: PoissonConstCoeff_J2560_k2_exp_direct: 	FinishedSuccessful
+  59: PoissonConstCoeff_J20480_k2_exp_direct: 	FinishedSuccessful
+  60: PoissonConstCoeff_J163840_k2_exp_direct: 	FinishedSuccessful
+  61: PoissonConstCoeff_J40_k3_exp_direct: 	FinishedSuccessful
+  62: PoissonConstCoeff_J320_k3_exp_direct: 	FinishedSuccessful
+  63: PoissonConstCoeff_J2560_k3_exp_direct: 	FinishedSuccessful
+  64: PoissonConstCoeff_J20480_k3_exp_direct: 	FinishedSuccessful
+  65: PoissonConstCoeff_J163840_k3_exp_direct: 	Failed
+  66: PoissonConstCoeff_J40_k5_exp_direct: 	FinishedSuccessful
+  67: PoissonConstCoeff_J320_k5_exp_direct: 	FinishedSuccessful
+  68: PoissonConstCoeff_J2560_k5_exp_direct: 	FinishedSuccessful
+  69: PoissonConstCoeff_J20480_k5_exp_direct: 	Failed
+  70: PoissonConstCoeff_J40_k2_exp_softpcg_schwarz: 	FinishedSuccessful
+  71: PoissonConstCoeff_J320_k2_exp_softpcg_schwarz: 	FinishedSuccessful
+  72: PoissonConstCoeff_J2560_k2_exp_softpcg_schwarz: 	FinishedSuccessful
+  73: PoissonConstCoeff_J20480_k2_exp_softpcg_schwarz: 	FinishedSuccessful
+  74: PoissonConstCoeff_J163840_k2_exp_softpcg_schwarz: 	FinishedSuccessful
+  75: PoissonConstCoeff_J40_k3_exp_softpcg_schwarz: 	FinishedSuccessful
+  76: PoissonConstCoeff_J320_k3_exp_softpcg_schwarz: 	FinishedSuccessful
+  77: PoissonConstCoeff_J2560_k3_exp_softpcg_schwarz: 	FinishedSuccessful
+  78: PoissonConstCoeff_J20480_k3_exp_softpcg_schwarz: 	FinishedSuccessful
+  79: PoissonConstCoeff_J163840_k3_exp_softpcg_schwarz: 	Failed
+  80: PoissonConstCoeff_J40_k5_exp_softpcg_schwarz: 	FinishedSuccessful
+  81: PoissonConstCoeff_J320_k5_exp_softpcg_schwarz: 	FinishedSuccessful
+  82: PoissonConstCoeff_J2560_k5_exp_softpcg_schwarz: 	FinishedSuccessful
+  83: PoissonConstCoeff_J20480_k5_exp_softpcg_schwarz: 	Failed
+  84: PoissonConstCoeff_J40_k2_exp_direct_lapack: 	FinishedSuccessful
+  85: PoissonConstCoeff_J320_k2_exp_direct_lapack: 	FinishedSuccessful
+  86: PoissonConstCoeff_J2560_k2_exp_direct_lapack: 	Failed
+  87: PoissonConstCoeff_J20480_k2_exp_direct_lapack: 	Failed
+  88: PoissonConstCoeff_J163840_k2_exp_direct_lapack: 	Failed
+  89: PoissonConstCoeff_J40_k3_exp_direct_lapack: 	FinishedSuccessful
+  90: PoissonConstCoeff_J320_k3_exp_direct_lapack: 	FinishedSuccessful
+  91: PoissonConstCoeff_J2560_k3_exp_direct_lapack: 	Failed
+  92: PoissonConstCoeff_J20480_k3_exp_direct_lapack: 	Failed
+  93: PoissonConstCoeff_J163840_k3_exp_direct_lapack: 	Failed
+  94: PoissonConstCoeff_J40_k5_exp_direct_lapack: 	FinishedSuccessful
+  95: PoissonConstCoeff_J320_k5_exp_direct_lapack: 	Failed
+  96: PoissonConstCoeff_J2560_k5_exp_direct_lapack: 	Failed
+  97: PoissonConstCoeff_J20480_k5_exp_direct_lapack: 	Failed
+  98: PoissonConstCoeff_J40_k2_exp_softpcg_mg: 	FinishedSuccessful
+  99: PoissonConstCoeff_J320_k2_exp_softpcg_mg: 	FinishedSuccessful
+  100: PoissonConstCoeff_J2560_k2_exp_softpcg_mg: 	FinishedSuccessful
+  101: PoissonConstCoeff_J20480_k2_exp_softpcg_mg: 	FinishedSuccessful
+  102: PoissonConstCoeff_J163840_k2_exp_softpcg_mg: 	FinishedSuccessful
+  103: PoissonConstCoeff_J40_k3_exp_softpcg_mg: 	FinishedSuccessful
+  104: PoissonConstCoeff_J320_k3_exp_softpcg_mg: 	FinishedSuccessful
+  105: PoissonConstCoeff_J2560_k3_exp_softpcg_mg: 	FinishedSuccessful
+  106: PoissonConstCoeff_J20480_k3_exp_softpcg_mg: 	FinishedSuccessful
+  107: PoissonConstCoeff_J163840_k3_exp_softpcg_mg: 	Failed
+  108: PoissonConstCoeff_J40_k5_exp_softpcg_mg: 	FinishedSuccessful
+  109: PoissonConstCoeff_J320_k5_exp_softpcg_mg: 	FinishedSuccessful
+  110: PoissonConstCoeff_J2560_k5_exp_softpcg_mg: 	FinishedSuccessful
+  111: PoissonConstCoeff_J20480_k5_exp_softpcg_mg: 	Failed
+}
+==============
+//WorkflowMgm.AllJobs.ElementAt(9).Value.Stdout;
+**************
+==============
+//WorkflowMgm.AllJobs.ElementAt(0).Value.Stdout;
+**************
+==============
+WorkflowMgm.SessionTable.Rows.Count;
+**************
+Loading session 03bbcb6c-89aa-4c92-b1f6-dd479bf3baa1 failed with message 'Der Objektverweis wurde nicht auf eine Objektinstanz festgelegt.'
+224
+==============
+**************
+==============
+**************
+==============
+// =====================================
+// Session table
+// =====================================
+**************
+==============
+// -------------------------------
+// Additional/user-defined columns
+// -------------------------------
+**************
+==============
+static class AddCols {
+    static public object SipMatrixAssembly_time(ISessionInfo SI) {
+        var mcr = SI.GetProfiling()[0];
+        var ndS = mcr.FindChildren("SipMatrixAssembly");
+        var nd  = ndS.ElementAt(0);
+        return nd.TimeSpentInMethod.TotalSeconds  / nd.CallCount;
+    }
+    static public object Aggregation_basis_init_time(ISessionInfo SI) {
+        var mcr = SI.GetProfiling()[0];
+        var ndS = mcr.FindChildren("Aggregation_basis_init");
+        var nd  = ndS.ElementAt(0);
+        return nd.TimeSpentInMethod.TotalSeconds  / nd.CallCount;
+    }
+    static public object Solver_Init_time(ISessionInfo SI) {
+        var mcr = SI.GetProfiling()[0];
+        var ndS = mcr.FindChildren("Solver_Init");
+        var nd  = ndS.ElementAt(0);
+        //Console.WriteLine("Number of nodes: " + ndS.Count() + " cc " + nd.CallCount );
+        return nd.TimeSpentInMethod.TotalSeconds / nd.CallCount;
+    }
+    static public object Solver_Run_time(ISessionInfo SI) {
+        var mcr = SI.GetProfiling()[0];
+        var ndS = mcr.FindChildren("Solver_Run");
+        var nd  = ndS.ElementAt(0);
+        return nd.TimeSpentInMethod.TotalSeconds  / nd.CallCount;
+    }
+}
+**************
+==============
+WorkflowMgm.AdditionalSessionTableColums.Clear();
+WorkflowMgm.AdditionalSessionTableColums.Add(
+    "SipMatrixAssembly_time", AddCols.SipMatrixAssembly_time);
+WorkflowMgm.AdditionalSessionTableColums.Add(
+    "Aggregation_basis_init_time", AddCols.Aggregation_basis_init_time);
+WorkflowMgm.AdditionalSessionTableColums.Add(
+    "Solver_Init_time", AddCols.Solver_Init_time);
+WorkflowMgm.AdditionalSessionTableColums.Add(
+    "Solver_Run_time", AddCols.Solver_Run_time);
+**************
+==============
+// --------------------------
+// Save Session table in file
+// --------------------------
+**************
+==============
+var SessTab = WorkflowMgm.SessionTable;
+**************
+==============
+**************
+==============
+// The Session column can't be serialized,
+// we have to remove it
+List<string> AllCols = SessTab.GetColumnNames().ToList();
+AllCols.Remove("Session");
+**************
+True
+==============
+SessTab = SessTab.ExtractColumns(AllCols.ToArray());
+**************
+==============
+using System.IO;
+**************
+==============
+// Filename
+var now           = DateTime.Now;
+SessTab.TableName = "SolverRuns--" + now.Year + "-" + now.Month + "-" + now.Day;
+string docpath    = Path.Combine(CurrentDocDir, SessTab.TableName + ".json");
+**************
+==============
+// save session table as file: this can be stored in our git 
+// repository
+SessTab.SaveToFile(docpath);
+**************
+==============
+**************
+==============
+LastError;
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
