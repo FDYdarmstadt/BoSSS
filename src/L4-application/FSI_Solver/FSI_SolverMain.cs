@@ -477,7 +477,7 @@ namespace BoSSS.Application.FSI_Solver {
             switch (((FSI_Control)this.Control).Timestepper_LevelSetHandling)
             {
                 case LevelSetHandling.Coupled_Once:
-                    MassMatrixShape = MassMatrixShapeandDependence.IsTimeAndSolutionDependent;
+                    MassMatrixShape = MassMatrixShapeandDependence.IsTimeDependent;
                     break;
 
                 case LevelSetHandling.Coupled_Iterative:
@@ -782,7 +782,7 @@ namespace BoSSS.Application.FSI_Solver {
                     }
                     else if (((FSI_Control)this.Control).Timestepper_LevelSetHandling != LevelSetHandling.Coupled_Iterative)
                     {
-                        int iteration_counter = 1;
+                        int iteration_counter = 0;
                         for (double posResidual_splitting = 1; posResidual_splitting > ((FSI_Control)this.Control).ForceAndTorque_ConvergenceCriterion;)// && iteration_counter <= (this.Control).max_iterations_fully_coupled;)
                         {
                             foreach (Particle p in m_Particles)

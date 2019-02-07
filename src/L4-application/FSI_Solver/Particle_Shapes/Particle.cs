@@ -379,7 +379,8 @@ namespace BoSSS.Application.FSI_Solver
             //currentIterPos_P.Insert(0, tempPos);
             //currentIterPos_P.Remove(currentIterPos_P.Last());
             //currentIterPos_P[0] = tempPos;
-            for (int d = 0; d < m_Dim; d++) {
+            for (int d = 0; d < m_Dim; d++)
+            {
                 gravity[d] = 0;
                 if (includeGravity == true)
                 {
