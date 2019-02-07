@@ -266,10 +266,6 @@ namespace BoSSS.Application.SipPoisson {
 
                      throw new ArgumentOutOfRangeException();
                  });
-
-
-
-
             return R;
         }
 
@@ -614,9 +610,10 @@ namespace BoSSS.Application.SipPoisson {
             int deg = 1,
             int NoOfLlyodsIter = 10,
             bool mirror = false,
-            LinearSolverConfig.Code solver_name = LinearSolverConfig.Code.classic_pardiso)
+            LinearSolverConfig.Code solver_name = LinearSolverConfig.Code.classic_pardiso,
+            Foundation.IO.IDatabaseInfo db = null)
         {
-            return TestGrid(new VoronoiGrid.Square(Res, NoOfLlyodsIter), deg, solver_name);
+            return TestGrid(new VoronoiGrid.Square(Res, NoOfLlyodsIter), deg, solver_name, db);
         }
 
         /// <summary>
@@ -643,9 +640,10 @@ namespace BoSSS.Application.SipPoisson {
             int deg = 1,
             int NoOfLlyodsIter = 10,
             bool mirror = false,
-            LinearSolverConfig.Code solver_name = LinearSolverConfig.Code.classic_pardiso)
+            LinearSolverConfig.Code solver_name = LinearSolverConfig.Code.classic_pardiso,
+            Foundation.IO.IDatabaseInfo db = null)
         {
-            return TestGrid(new VoronoiGrid.LDomain(Res, NoOfLlyodsIter), deg, solver_name);
+            return TestGrid(new VoronoiGrid.LDomain(Res, NoOfLlyodsIter), deg, solver_name, db);
         }
 
         /// <summary>
@@ -671,13 +669,20 @@ namespace BoSSS.Application.SipPoisson {
         static SipControl TestGrid(
             IVoronoiGrid grid,
             int deg = 1,
-            LinearSolverConfig.Code solver_name = LinearSolverConfig.Code.classic_pardiso)
+            LinearSolverConfig.Code solver_name = LinearSolverConfig.Code.classic_pardiso,
+            Foundation.IO.IDatabaseInfo db = null)
         {
 
             var R = new SipControl();
             R.ProjectName = "SipPoisson-Voronoi";
             R.SessionName = "testrun";
-            R.savetodb = false;
+            
+            
+            if (db != null)
+            {
+                R.savetodb = true;
+                R.SetDatabase(db);
+            }
             R.ImmediatePlotPeriod = 1;
 
             R.FieldOptions.Add("T", new FieldOpts() { Degree = deg, SaveToDB = FieldOpts.SaveToDBOpt.TRUE });
