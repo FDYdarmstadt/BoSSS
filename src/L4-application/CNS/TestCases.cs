@@ -558,11 +558,12 @@ namespace CNS {
         }
 
 
-        public static CNSControl ShockVortexInteractionHiOCFD5(string dbPath = null, int savePeriod = 10, int dgDegree = 4, double sensorLimit = 1e-3, double CFLFraction = 0.1, int explicitScheme = 3, int explicitOrder = 3, int numberOfSubGrids = 3, int reclusteringInterval = 1, int maxNumOfSubSteps = 0, double Mv = 0.7, double Ms = 1.5, int numOfCellsX = 200, int numOfCellsY = 100) {
+        public static CNSControl ShockVortexInteractionHiOCFD5(string dbPath = null, int savePeriod = 100, int dgDegree = 2, double sensorLimit = 1e-3, double CFLFraction = 0.1, int explicitScheme = 3, int explicitOrder = 3, int numberOfSubGrids = 3, int reclusteringInterval = 1, int maxNumOfSubSteps = 0, double Mv = 0.9, double Ms = 1.5, int numOfCellsX = 200, int numOfCellsY = 100) {
             CNSControl c = new CNSControl();
 
             // ### Database ###
             //dbPath = @"c:\bosss_db";                                          // Local
+            dbPath = @"e:\bosss_db_paper_revision";                                          // Local
             //dbPath = @"\\dc1\userspace\geisenhofer\bosss_db_IBMShockTube";    // Network
 
             c.DbPath = dbPath;
@@ -657,7 +658,7 @@ namespace CNS {
                 var grid = Grid2D.Cartesian2DGrid(xNodes, yNodes, periodicX: false, periodicY: false);
 
                 grid.EdgeTagNames.Add(1, "SupersonicInlet");
-                grid.EdgeTagNames.Add(2, "SupersonicOutlet");
+                grid.EdgeTagNames.Add(2, "SubsonicOutlet");
                 grid.EdgeTagNames.Add(3, "AdiabaticSlipWall");
 
                 grid.DefineEdgeTags(delegate (double[] X) {
@@ -691,8 +692,6 @@ namespace CNS {
             double rho0 = 1;
             double RGas = 1;
             double T0 = p0 / (RGas * rho0);
-            //double Mv = 0.7;
-            //double Ms = 1.5;
             double c0 = Math.Sqrt(gamma * p0 / rho0);
             double vm = Mv * c0;
             double Ta = T0 - (gamma - 1.0) / (RGas * gamma) * Math.Pow(vm * a / (a * a - b * b), 2) * (-0.5 * a * a + 2 * b * b * Math.Log(a) + 0.5 * b * b * b * b / (a * a) - 2 * b * b * Math.Log(b));
@@ -703,7 +702,7 @@ namespace CNS {
             double densityLeft = 1;
             double densityRight = ((gamma + 1) * Ms * Ms) / (2 + (gamma - 1) * Ms * Ms) * densityLeft;
             double pressureLeft = 1;
-            double pressureRight = 1 + (2 * gamma) / (gamma + 1) * (Ms * Ms - 1) * pressureLeft;
+            double pressureRight = (1 + (2 * gamma) / (gamma + 1) * (Ms * Ms - 1)) * pressureLeft;
             double velocityXLeft = Ms * Math.Sqrt(gamma * pressureLeft / densityLeft);
             double velocityXRight = (2 + (gamma - 1) * Ms * Ms) / ((gamma + 1) * Ms * Ms) * velocityXLeft;    // (1)
             //double velocityXRight2 = velocityXLeft * densityLeft / densityRight; // equivalent to (1)
@@ -711,9 +710,6 @@ namespace CNS {
             //double velocityXRight3 = MsPostShock * Math.Sqrt(gamma * pressureRight / densityRight);     // equivalent to (1)
             double velocityYLeft = 0;
             double velocityYRight = 0;
-
-
-            Func<double, double> Jump = (x => x < 0 ? 0 : 1);
 
             double cellSize = Math.Min((xMax - xMin) / numOfCellsX, (yMax - yMin) / numOfCellsY);
 
@@ -726,26 +722,20 @@ namespace CNS {
 
             double shockPosition = 0.5;
 
-            // Current x-position of the shock
-            Func<double, double> getShockXPosition = delegate (double time) {
-                //return shockPosition + velocityXLeft * time;
-                return shockPosition;
-            };
-
-            double DensityShock(double[] X, double t) {
-                return densityLeft - SmoothJump(X[0] - getShockXPosition(t)) * (densityLeft - densityRight);
+            double DensityShock(double[] X) {
+                return densityLeft - SmoothJump(X[0] - shockPosition) * (densityLeft - densityRight);
             }
 
-            double VelocityXShock(double[] X, double t) {
-                return velocityXLeft - SmoothJump(X[0] - getShockXPosition(t)) * (velocityXLeft - velocityXRight);
+            double VelocityXShock(double[] X) {
+                return velocityXLeft - SmoothJump(X[0] - shockPosition) * (velocityXLeft - velocityXRight);
             }
 
-            double VelocityYShock(double[] X, double t) {
-                return velocityYLeft - SmoothJump(X[0] - getShockXPosition(t)) * (velocityYLeft - velocityYRight);
+            double VelocityYShock(double[] X) {
+                return velocityYLeft - SmoothJump(X[0] - shockPosition) * (velocityYLeft - velocityYRight);
             }
 
-            double PressureShock(double[] X, double t) {
-                return pressureLeft - SmoothJump(X[0] - getShockXPosition(t)) * (pressureLeft - pressureRight);
+            double PressureShock(double[] X) {
+                return pressureLeft - SmoothJump(X[0] - shockPosition) * (pressureLeft - pressureRight);
             }
 
             // #########################
@@ -762,6 +752,8 @@ namespace CNS {
                     result = vm * r / a;
                 } else if (r > a && r <= b) {
                     result = vm * a / (a * a - b * b) * (r - b * b / r);
+                } else {
+                    throw new ArgumentException("Point is outside the vortex");
                 }
 
                 return result;
@@ -775,6 +767,8 @@ namespace CNS {
                     result = Ta - (gamma - 1.0) / (RGas * gamma) * vm * vm * 0.5 * (1.0 - r * r / (a * a));
                 } else if (r > a && r <= b) {
                     result = T0 - (gamma - 1.0) / (RGas * gamma) * Math.Pow(vm * a / (a * a - b * b), 2) * (-0.5 * r * r + 2 * b * b * Math.Log(r) + 0.5 * b * b * b * b / (r * r) - 2 * b * b * Math.Log(b));
+                } else {
+                    throw new ArgumentException("Point is outside the vortex");
                 }
 
                 return result;
@@ -791,7 +785,7 @@ namespace CNS {
             double VelocityXVortex(double[] X) {
                 double r = Radius(X);
                 double theta = Math.Atan2(X[1], X[0]);
-                double result = -vPhi(r) * Math.Sin(theta);
+                double result = VelocityXShock(X) - vPhi(r) * Math.Sin(theta);
 
                 return result;
             }
@@ -799,11 +793,10 @@ namespace CNS {
             double VelocityYVortex(double[] X) {
                 double r = Radius(X);
                 double theta = Math.Atan2(X[1], X[0]);
-                double result = vPhi(r) * Math.Cos(theta);
+                double result = VelocityYShock(X) + vPhi(r) * Math.Cos(theta);
 
                 return result;
             }
-
 
             // #########################
             // Initial conditions
@@ -816,17 +809,17 @@ namespace CNS {
             //c.InitialValues_Evaluators.Add(Variables.Pressure, X => PressureShock(X, 0));
 
             // Stationary shock wave and vortex
-            c.InitialValues_Evaluators.Add(Variables.Density, X => X[0] <= b ? DensityVortex(X) : DensityShock(X, 0));
-            c.InitialValues_Evaluators.Add(Variables.Velocity.xComponent, X => VelocityXShock(X, 0) + VelocityXVortex(X));
-            c.InitialValues_Evaluators.Add(Variables.Velocity.yComponent, X => VelocityYShock(X, 0) + VelocityYVortex(X));
-            c.InitialValues_Evaluators.Add(Variables.Pressure, X => X[0] <= b ? PressureVortex(X) : PressureShock(X, 0));
+            c.InitialValues_Evaluators.Add(Variables.Density, X => Radius(X) <= b ? DensityVortex(X) : DensityShock(X));
+            c.InitialValues_Evaluators.Add(Variables.Velocity.xComponent, X => Radius(X) <= b ? VelocityXVortex(X) : VelocityXShock(X));
+            c.InitialValues_Evaluators.Add(Variables.Velocity.yComponent, X => Radius(X) <= b ? VelocityYVortex(X) : VelocityYShock(X));
+            c.InitialValues_Evaluators.Add(Variables.Pressure, X => Radius(X) <= b ? PressureVortex(X) : PressureShock(X));
 
             // ### Boundary condtions ###
-            c.AddBoundaryValue("SupersonicInlet", Variables.Density, (X, t) => DensityShock(X, t));
-            c.AddBoundaryValue("SupersonicInlet", Variables.Velocity.xComponent, (X, t) => VelocityXShock(X, t));
-            c.AddBoundaryValue("SupersonicInlet", Variables.Velocity.yComponent, (X, t) => VelocityYShock(X, t));
-            c.AddBoundaryValue("SupersonicInlet", Variables.Pressure, (X, t) => PressureShock(X, t));
-            c.AddBoundaryValue("SubsonicOutlet", Variables.Pressure, (X, t) => pressureRight);
+            c.AddBoundaryValue("SupersonicInlet", Variables.Density, (X, t) => DensityShock(X));
+            c.AddBoundaryValue("SupersonicInlet", Variables.Velocity.xComponent, (X, t) => VelocityXShock(X));
+            c.AddBoundaryValue("SupersonicInlet", Variables.Velocity.yComponent, (X, t) => VelocityYShock(X));
+            c.AddBoundaryValue("SupersonicInlet", Variables.Pressure, (X, t) => PressureShock(X));
+            c.AddBoundaryValue("SubsonicOutlet", Variables.Pressure, (X, t) => PressureShock(X));
             c.AddBoundaryValue("AdiabaticSlipWall");
 
             // ### Time configuration ###
