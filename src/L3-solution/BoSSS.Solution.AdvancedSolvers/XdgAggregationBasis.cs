@@ -604,7 +604,8 @@ namespace BoSSS.Solution.AdvancedSolvers {
         }
 
         public override int GetMinimalLength(int p) {
-            return base.GetMinimalLength(p);
+            //return base.GetMinimalLength(p); Fehler???
+            return this.XDGBasis.Tracker.TotalNoOfSpecies * base.GetMinimalLength(p);
         }
 
 
