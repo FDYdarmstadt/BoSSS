@@ -75,6 +75,37 @@ namespace BoSSS.Foundation.Grid.Aggregation {
         }
 
         /// <summary>
+        /// sets values for <see cref="Cell.CellFaceTags"/> by using a
+        /// <paramref name="EdgeTagFunc"/>-function; also adds entries with empty names
+        /// to the <see cref="EdgeTagNames"/>-dictionary, if the edge tag
+        /// returned by the <paramref name="EdgeTagFunc"/>-function is not in
+        /// the dictionary
+        /// </summary>
+        /// <param name="EdgeTagFunc"></param>
+        public void DefineEdgeTags(Func<double[], byte> EdgeTagFunc)
+        {
+            int D = SpatialDimension;
+            double[] x = new double[D];
+            MultidimensionalArray GlobalVerticesOut = MultidimensionalArray.CreateWrapper(x, 1, D);
+            for (int iEdge = 0; iEdge < m_GridData.iGeomEdges.Count; ++iEdge)
+            {
+                if (m_GridData.iGeomEdges.IsEdgeBoundaryEdge(iEdge))
+                {
+                    int jCell = m_GridData.iGeomEdges.CellIndices[iEdge, 0];
+                    int iFace = m_GridData.iGeomEdges.FaceIndices[iEdge, 0];
+                    var KRef = m_GridData.iGeomCells.GetRefElement(jCell);
+
+                    m_GridData.TransformLocal2Global(KRef.GetFaceCenter(iFace), GlobalVerticesOut, jCell);
+                    byte et = EdgeTagFunc(x);
+
+                    if (!EdgeTagNames.ContainsKey(et))
+                        throw new ArgumentException("unable to find EdgeTagName for EdgeTag = " + et);
+                    m_GridData.iGeomEdges.EdgeTags[iEdge] = et;
+                }
+            }
+        }
+
+        /// <summary>
         /// Structure to store one Aggregation cell
         /// </summary>
         [Serializable]

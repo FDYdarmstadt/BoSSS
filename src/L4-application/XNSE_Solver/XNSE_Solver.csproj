@@ -121,7 +121,7 @@
       <Project>{d4fadb7c-0b11-4f41-a97a-146dc1f7034e}</Project>
       <Name>BoSSS.Solution.Gnuplot</Name>
     </ProjectReference>
-    <ProjectReference Include="..\..\L3-solution\BoSSS.Solution.Multigrid\BoSSS.Solution.AdvancedSolvers.csproj">
+    <ProjectReference Include="..\..\L3-solution\BoSSS.Solution.AdvancedSolvers\BoSSS.Solution.AdvancedSolvers.csproj">
       <Project>{EFE8C307-09BC-4F58-B991-6EF8FD6D5EFF}</Project>
       <Name>BoSSS.Solution.AdvancedSolvers</Name>
     </ProjectReference>

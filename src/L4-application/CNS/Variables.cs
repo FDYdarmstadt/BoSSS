@@ -27,11 +27,14 @@ using BoSSS.Solution.CompressibleFlowCommon.ShockCapturing;
 using BoSSS.Solution.LevelSetTools;
 using BoSSS.Solution.Timestepping;
 using CNS.Convection;
+using CNS.IBM;
 using CNS.MaterialProperty;
 using CNS.ShockCapturing;
 using ilPSP;
 using System;
+using System.Diagnostics;
 using System.Linq;
+using static BoSSS.Foundation.Grid.Classic.GridData;
 using static CNS.Variable;
 
 namespace CNS {
@@ -161,7 +164,7 @@ namespace CNS {
 
         /// <summary>
         /// The optional entropy field (see
-        /// <see cref="MaterialProperty.IEquationOfState.GetEntropy"/>).
+        /// <see cref="BoSSS.Solution.CompressibleFlowCommon.MaterialProperty.IEquationOfState.GetEntropy"/>).
         /// </summary>
         public static readonly DerivedVariable Entropy = new DerivedVariable(
             "S",
@@ -330,6 +333,23 @@ namespace CNS {
             });
 
         /// <summary>
+        /// The local non-dimensional specific enthalpy which is given by
+        /// \f[h = \frac{\rho E + p}{\rho} \f], where \f[\rho E\f] is the total energy,
+        /// \f[p\f] is the pressure, and \f[\rho\f] is the density.
+        /// </summary>
+        public static readonly DerivedVariable Enthalpy = new DerivedVariable(
+            "h",
+            VariableTypes.Other,
+            delegate (DGField h, CellMask cellMask, IProgram<CNSControl> program) {
+                h.Clear();
+                h.ProjectFunction(
+                    1.0,
+                    (X, U, j) => new StateVector(U, program.SpeciesMap.GetMaterial(double.NaN)).Enthalpy,
+                    new CellQuadratureScheme(true, cellMask),
+                    program.WorkingSet.ConservativeVariables);
+            });
+
+        /// <summary>
         /// The local non-dimensional artifical viscosity
         /// </summary>
         /// <remarks>
@@ -343,7 +363,24 @@ namespace CNS {
             delegate (DGField artificialViscosity, CellMask cellMask, IProgram<CNSControl> program) {
                 ConventionalDGField avField = artificialViscosity as ConventionalDGField;
                 int D = cellMask.GridData.SpatialDimension;
-                var h_min = ((BoSSS.Foundation.Grid.Classic.GridData)program.GridData).Cells.h_min; // Not valid for true cut cells --> volume/surface
+                CellData cells = ((BoSSS.Foundation.Grid.Classic.GridData)program.GridData).Cells;
+
+                // h = shortest edge (not valid for true cut cells --> volume/surface)
+                var h_min = cells.h_min;
+
+                // h = volume / surface --> trying this for curved elements 
+                //var h_min = cells.h_min;
+                //h_min.Clear();
+                //foreach (int j in cellMask.ItemEnum) {
+                //    if (!cells.IsCellAffineLinear(j)) {
+                //        h_min[j] = cells.GetCellVolume(j) / cells.CellSurfaceArea[j];
+                //    }
+                //}
+
+                //var h_min = cells.CellLengthScale.CloneAs();
+                //h_min.ApplyAll(delegate (double x) {
+                //    return x * 2;
+                //});
 
                 // Determine piecewise constant viscosity
                 avField.Clear();
@@ -373,6 +410,9 @@ namespace CNS {
 
                         double localViscosity = program.Control.ArtificialViscosityLaw.GetViscosity(
                            cell, h_min[cell], state);
+
+                        Debug.Assert(localViscosity >= 0.0);
+
                         avField.SetMeanValue(cell, localViscosity);
                     }
                 }

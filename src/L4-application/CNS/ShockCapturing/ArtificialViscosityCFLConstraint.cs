@@ -25,6 +25,7 @@ using ilPSP;
 using System;
 using System.Diagnostics;
 using System.Linq;
+using static BoSSS.Foundation.Grid.Classic.GridData;
 
 namespace CNS.ShockCapturing {
 
@@ -113,6 +114,7 @@ namespace CNS.ShockCapturing {
 
                             double nu = artificialViscosity.GetMeanValue(cell) / config.ReynoldsNumber;
                             Debug.Assert(!double.IsNaN(nu), "IBM ArtificialViscosityCFLConstraint: nu is NaN");
+                            Debug.Assert(nu >= 0.0, "IBM ArtificialViscosityCFLConstraint: nu is negative");
 
                             bool setCFL = false;
                             for (int node = 0; node < noOfNodesPerCell; node++) {
@@ -137,12 +139,22 @@ namespace CNS.ShockCapturing {
                 default: {
                         for (int i = 0; i < Length; i++) {
                             int cell = i0 + i;
-                            double hminLocal = hmin[cell];
+                            double hminLocal;
+                            CellData cellData = __gridData.Cells;
+
+                            //if (!cellData.IsCellAffineLinear(cell)) {
+                            //    //hminLocal = cellData.CellLengthScale[cell] * 2;
+                            //    hminLocal = cellData.GetCellVolume(cell) / cellData.CellSurfaceArea[cell];
+                            //} else {
+                            hminLocal = hmin[cell];
+                            //}
+
                             Debug.Assert(double.IsNaN(hminLocal) == false, "Hmin is NaN");
                             Debug.Assert(double.IsInfinity(hminLocal) == false, "Hmin is Inf");
 
                             double nu = artificialViscosity.GetMeanValue(cell) / config.ReynoldsNumber;
                             Debug.Assert(!double.IsNaN(nu), "ArtificialViscosityCFLConstraint: nu is NaN");
+                            Debug.Assert(nu >= 0.0, "IBM ArtificialViscosityCFLConstraint: nu is negative");
 
                             if (nu != 0) {
                                 double cflhere = hminLocal * hminLocal / scaling / nu;

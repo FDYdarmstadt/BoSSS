@@ -889,6 +889,8 @@ namespace BoSSS.Solution.Control {
         /// </summary>
         /// <param name="ctrlfileContent">the script.</param>
         /// <param name="t">something derived from <see cref="AppControl"/></param>
+        /// <param name="ctrl"></param>
+        /// <param name="ctrl_ParamStudy"></param>
         static public void FromCode(string ctrlfileContent, Type t, out AppControl ctrl, out AppControl[] ctrl_ParamStudy) {
 
             // try to get type from first line comment (a hack).

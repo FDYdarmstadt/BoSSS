@@ -36,7 +36,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BoSSS.Foundation.XDG", "..\
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ilPSP.LinSolvers.ALMOND", "..\..\..\ilPSP\layer_1.2-ilPSP\ilPSP.LinSolvers.ALMOND\ilPSP.LinSolvers.ALMOND.csproj", "{7E27BA16-1C00-4F06-91D0-3C0A2A3B108F}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BoSSS.Solution.Multigrid", "..\..\L3-solution\BoSSS.Solution.Multigrid\BoSSS.Solution.Multigrid.csproj", "{EFE8C307-09BC-4F58-B991-6EF8FD6D5EFF}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BoSSS.Solution.AdvancedSolvers", "..\..\L3-solution\BoSSS.Solution.AdvancedSolvers\BoSSS.Solution.AdvancedSolvers.csproj", "{EFE8C307-09BC-4F58-B991-6EF8FD6D5EFF}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BoSSS.Foundation.SpecFEM", "..\..\L2-foundation\BoSSS.Foundation.SpecFEM\BoSSS.Foundation.SpecFEM.csproj", "{9D01688E-9372-4185-ADCF-D64D47F3A44A}"
 EndProject

@@ -181,10 +181,9 @@ namespace BoSSS.Solution.XdgTimestepping {
         protected XdgTimesteppingBase(
             Control.NonLinearSolverConfig nonlinconfig,
             Control.LinearSolverConfig linearconfig) {
-            SolverFactory SF = new SolverFactory(nonlinconfig, linearconfig);
+            XdgSolverFactory = new SolverFactory(nonlinconfig, linearconfig);
             m_nonlinconfig = nonlinconfig;
             m_linearconfig = linearconfig;
-            XdgSolverFactory = SF;
         }
 
         /// <summary>
@@ -460,9 +459,13 @@ namespace BoSSS.Solution.XdgTimestepping {
                 IsLinear = true;
 
             
-            XdgSolverFactory.GenerateNonLin(out nonlinSolver,out linearSolver, this, this.AssembleMatrixCallback, this.MultigridBasis, LevelSetConvergenceReached, IsLinear);
+            XdgSolverFactory.GenerateNonLin(out nonlinSolver,out linearSolver, this.AssembleMatrixCallback, this.MultigridBasis, LevelSetConvergenceReached, IsLinear, Config_MultigridOperator, SessionPath, MultigridSequence);
             string ls_strg = String.Format("{0}", m_linearconfig.SolverCode);
             string nls_strg = String.Format("{0}", m_nonlinconfig.SolverCode);
+
+            if ((this.Config_LevelSetHandling == LevelSetHandling.Coupled_Iterative)&&(nonlinSolver.Equals(typeof(FixpointIterator)))) {
+                ((FixpointIterator)nonlinSolver).CoupledIteration_Converged = LevelSetConvergenceReached;
+            }
 
             // set callback for diagnostic output
             // ----------------------------------

@@ -114,7 +114,7 @@
       <Project>{17a60fba-20b4-451d-98e1-8d742f368569}</Project>
       <Name>BoSSS.Foundation</Name>
     </ProjectReference>
-    <ProjectReference Include="..\..\L3-solution\BoSSS.Solution.Multigrid\BoSSS.Solution.AdvancedSolvers.csproj">
+    <ProjectReference Include="..\..\L3-solution\BoSSS.Solution.AdvancedSolvers\BoSSS.Solution.AdvancedSolvers.csproj">
       <Project>{EFE8C307-09BC-4F58-B991-6EF8FD6D5EFF}</Project>
       <Name>BoSSS.Solution.AdvancedSolvers</Name>
     </ProjectReference>
