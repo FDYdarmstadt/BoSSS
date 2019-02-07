@@ -30,7 +30,7 @@ namespace BoSSS.Application.FSI_Solver
 {
     public class HardcodedControl_TestCases : IBM_Solver.HardcodedTestExamples
     {
-        public static FSI_Control activeRod_noBackroundFlow(string _DbPath = null, int k = 2, double VelXBase = 0.0, double stressM = 1e4, double cellAgg = 0.2, double muA = 1e3, double timestepX = 1e-3)
+        public static FSI_Control activeRod_noBackroundFlow(string _DbPath = null, int k = 2, double VelXBase = 0.0, double stressM = 1e3, double cellAgg = 0.2, double muA = 1e3, double timestepX = 1e-3)
         {
             FSI_Control C = new FSI_Control();
 
@@ -65,10 +65,10 @@ namespace BoSSS.Application.FSI_Solver
                 int q = new int(); // #Cells in x-dircetion + 1
                 int r = new int(); // #Cells in y-dircetion + 1
 
-                q = 20;
-                r = 8;
+                q = 28;
+                r = 16;
 
-                double[] Xnodes = GenericBlas.Linspace(-3 * BaseSize, 7 * BaseSize, q);
+                double[] Xnodes = GenericBlas.Linspace(-3 * BaseSize, 4 * BaseSize, q);
                 double[] Ynodes = GenericBlas.Linspace(-2 * BaseSize, 2 * BaseSize, r);
 
                 var grd = Grid2D.Cartesian2DGrid(Xnodes, Ynodes, periodicX: false, periodicY: false);
@@ -84,7 +84,7 @@ namespace BoSSS.Application.FSI_Solver
                     byte et = 0;
                     if (Math.Abs(X[0] - (-3 * BaseSize)) <= 1.0e-8)
                         et = 1;
-                    if (Math.Abs(X[0] + (-7 * BaseSize)) <= 1.0e-8)
+                    if (Math.Abs(X[0] + (-4 * BaseSize)) <= 1.0e-8)
                         et = 2;
                     if (Math.Abs(X[1] - (-2 * BaseSize)) <= 1.0e-8)
                         et = 3;
@@ -104,7 +104,7 @@ namespace BoSSS.Application.FSI_Solver
             // Mesh refinement
             // =============================
             C.AdaptiveMeshRefinement = true;
-            C.RefinementLevel = 2;
+            C.RefinementLevel = 1;
             C.maxCurvature = 2;
 
 
@@ -141,7 +141,7 @@ namespace BoSSS.Application.FSI_Solver
                     length_P = 2 * BaseSize,
                     superEllipsoidExponent = 2,
                     underrelaxationFT_constant = false,// set true if you want to define a constant underrelaxation (not recommended)
-                    underrelaxation_factor = 9,// underrelaxation with [factor * 10^exponent]
+                    underrelaxation_factor = 1,// underrelaxation with [factor * 10^exponent]
                 });
             }
             //Define level-set
@@ -192,21 +192,23 @@ namespace BoSSS.Application.FSI_Solver
             C.LinearSolver.NoOfMultigridLevels = 1;
             C.LinearSolver.MaxSolverIterations = 1000;
             C.LinearSolver.MinSolverIterations = 1;
-            C.ForceAndTorque_ConvergenceCriterion = 1e-5;
+            C.ForceAndTorque_ConvergenceCriterion = 1e-8;
             C.LSunderrelax = 1.0;
             
 
             // Coupling Properties
             // =============================
-            C.Timestepper_LevelSetHandling = LevelSetHandling.LieSplitting;
+            C.Timestepper_LevelSetHandling = LevelSetHandling.Coupled_Iterative;
+            C.LSunderrelax = 1;
             C.splitting_fully_coupled = true;
             C.max_iterations_fully_coupled = 1000000;
-            C.includeRotation = true;
+            C.includeRotation = false;
             C.includeTranslation = true;
 
 
             // Timestepping
             // =============================  
+            C.instationarySolver = true;
             C.Timestepper_Scheme = FSI_Solver.FSI_Control.TimesteppingScheme.BDF2;
             double dt = timestepX;//s
             C.dtMax = dt;

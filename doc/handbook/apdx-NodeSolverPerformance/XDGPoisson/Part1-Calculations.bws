@@ -1,6 +1,5 @@
 restart
 **************
-
   BoSSSpad C# interpreter
   _______________________
 
@@ -135,7 +134,6 @@ for(int cnt = 0; cnt < Resolutions_3D.Length; cnt++) {
         if(grids[cnt].SpatialDimension != 3)
             throw new Exception("D mismatch");
     }
-    
 }
 **************
 Creating grid with 2560 cells.
@@ -628,6 +626,8 @@ SessTab.SaveToFile(docpath);
 **************
 ==============
 LastError;
+**************
+==============
 **************
 ==============
 **************

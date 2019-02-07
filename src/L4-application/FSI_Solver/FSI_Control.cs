@@ -45,6 +45,12 @@ namespace BoSSS.Application.FSI_Solver {
         /// Set true if translation of the particle should be induced by hydrodynamical forces.
         /// </summary>
         [DataMember]
+        public bool instationarySolver = true;
+
+        /// <summary>
+        /// Set true if translation of the particle should be induced by hydrodynamical forces.
+        /// </summary>
+        [DataMember]
         public bool includeTranslation = false;
 
         /// <summary>

@@ -477,7 +477,7 @@ namespace BoSSS.Application.FSI_Solver {
             switch (((FSI_Control)this.Control).Timestepper_LevelSetHandling)
             {
                 case LevelSetHandling.Coupled_Once:
-                    MassMatrixShape = MassMatrixShapeandDependence.IsTimeAndSolutionDependent;
+                    MassMatrixShape = MassMatrixShapeandDependence.IsTimeDependent;
                     break;
 
                 case LevelSetHandling.Coupled_Iterative:
@@ -520,32 +520,14 @@ namespace BoSSS.Application.FSI_Solver {
                 );
             m_BDF_Timestepper.m_ResLogger = base.ResLogger;
             m_BDF_Timestepper.m_ResidualNames = ArrayTools.Cat(this.ResidualMomentum.Select(f => f.Identification), this.ResidualContinuity.Identification);
-            //m_BDF_Timestepper.Config_SolverConvergenceCriterion = this.Control.Solver_ConvergenceCriterion;
-            //m_BDF_Timestepper.Config_MaxIterations = ((FSI_Control)this.Control).MaxSolverIterations;
-            //m_BDF_Timestepper.Config_MinIterations = ((FSI_Control)this.Control).MinSolverIterations;
             m_BDF_Timestepper.IterUnderrelax = ((FSI_Control)this.Control).Timestepper_LevelSetHandling == LevelSetHandling.Coupled_Iterative ? ((FSI_Control)this.Control).LSunderrelax : 1.0;
             m_BDF_Timestepper.Config_LevelSetConvergenceCriterion = ((FSI_Control)this.Control).ForceAndTorque_ConvergenceCriterion;
             m_BDF_Timestepper.SessionPath = SessionPath;
             m_BDF_Timestepper.Timestepper_Init = Solution.Timestepping.TimeStepperInit.SingleInit;
 
         }
-
+        
         public override double DelUpdateLevelset(DGField[] CurrentState, double phystime, double dt, double UnderRelax, bool incremental) {
-
-            // Backup old level-set, in order to compute the residual
-            // ========================================================
-            SinglePhaseField LsBkUp = new SinglePhaseField(this.LevSet.Basis);
-            LsBkUp.Acc(1.0, this.LevSet);
-            CellMask oldCC = LsTrk.Regions.GetCutCellMask();
-            double acc_force_P_x_old = 0;
-            double acc_force_P_y_old = 0;
-            double acc_torque_P_old = 0;
-            foreach (Particle p in m_Particles)
-            {
-                acc_force_P_x_old += p.currentIterForces_P[1][0];
-                acc_force_P_y_old += p.currentIterForces_P[1][1];
-                acc_torque_P_old += p.currentIterTorque_P[1];
-            }
             #region Level-set handling
             switch (((FSI_Control)this.Control).Timestepper_LevelSetHandling) { 
                 case LevelSetHandling.None:
@@ -561,7 +543,13 @@ namespace BoSSS.Application.FSI_Solver {
                     break;
 
                 case LevelSetHandling.Coupled_Iterative:
+                    UpdateForcesAndTorque(dt, phystime);
                     UpdateLevelSetParticles(dt);
+                    foreach (Particle p in m_Particles)
+                    {
+                        p.iteration_counter_P += 1;
+                        p.forceAndTorque_convergence = ((FSI_Control)this.Control).ForceAndTorque_ConvergenceCriterion;
+                    }
                     break;
 
                 case LevelSetHandling.LieSplitting:
@@ -576,33 +564,54 @@ namespace BoSSS.Application.FSI_Solver {
                     throw new ApplicationException("unknown 'LevelSetMovement': " + ((FSI_Control)Control).Timestepper_LevelSetHandling);
             }
             #endregion
-            #region Level-set residual
-            double acc_force_P_x = 0;
-            double acc_force_P_y = 0;
-            double acc_torque_P = 0;
-            foreach (Particle p in m_Particles)
-            {
-                acc_force_P_x += p.currentIterForces_P[0][0];
-                acc_force_P_y += p.currentIterForces_P[0][1];
-                acc_torque_P += p.currentIterTorque_P[0];
-            }
-
+            #region Forces and Torque residual
+            /// <summary>
+            /// Computes the Residual of the forces and torque acting from to fluid to the particle.
+            /// </summary>
             double forces_PResidual = 0;
-
             if (((FSI_Control)this.Control).Timestepper_LevelSetHandling == LevelSetHandling.Coupled_Iterative)
             {
-                forces_PResidual = Math.Sqrt((acc_force_P_x_old - acc_force_P_x).Pow2() + (acc_force_P_y_old - acc_force_P_y).Pow2() + (acc_torque_P_old - acc_torque_P).Pow2());
+                double acc_force_P_x = 0;
+                double acc_force_P_y = 0;
+                double acc_torque_P = 0;
+                double acc_force_P_x_old = 0;
+                double acc_force_P_y_old = 0;
+                double acc_torque_P_old = 0;
+                double iterationCounter = -1;
+                foreach (Particle p in m_Particles)
+                {
+                    // forces and torque of the previous iteration
+                    acc_force_P_x_old += p.currentIterForces_P[1][0];
+                    acc_force_P_y_old += p.currentIterForces_P[1][1];
+                    acc_torque_P_old += p.currentIterTorque_P[1];
+
+                    // forces and torque of the current iteration
+                    acc_force_P_x += p.currentIterForces_P[0][0];
+                    acc_force_P_y += p.currentIterForces_P[0][1];
+                    acc_torque_P += p.currentIterTorque_P[0];
+                    iterationCounter = p.iteration_counter_P;
+                }
+                // first iteration, to ensure at least two iterations per timestep
+                if (iterationCounter == 0)
+                {
+                    forces_PResidual = 1;
+                }
+                // compute residual
+                else
+                {
+                    forces_PResidual = Math.Sqrt((acc_force_P_x_old - acc_force_P_x).Pow2() + (acc_force_P_y_old - acc_force_P_y).Pow2() + (acc_torque_P_old - acc_torque_P).Pow2());
+                }
                 Console.WriteLine("Current forces_PResidual:   " + forces_PResidual);
             }
-            var newCC = LsTrk.Regions.GetCutCellMask();
-            LsBkUp.Acc(-1.0, this.LevSet);
-            double LevSetResidual = LsBkUp.L2Norm(newCC.Union(oldCC));
-
-            //return LevSetResidual;
-            //return forces_PResidual;
-            return LevSetResidual = 0;
+            // no iterative solver, no residual
+            else
+            {
+                forces_PResidual = 0;
+            }
+            return forces_PResidual;
             #endregion
         }
+        
 
 
         void UpdateLevelSetParticles(double dt)
@@ -631,14 +640,91 @@ namespace BoSSS.Application.FSI_Solver {
             
             // Vectorize
             ScalarFunction function = NonVectorizedScalarFunction.Vectorize(phiComplete, hack_phystime);
-
             LevSet.ProjectField(function);
-
             DGLevSet.Current.ProjectField(function);
             LsTrk.UpdateTracker(__NearRegionWith: 2);
         }
         #endregion
 
+        void UpdateForcesAndTorque(double dt, double phystime)
+        {
+            foreach (Particle p in m_Particles)
+            {
+                if (!((FSI_Control)this.Control).pureDryCollisions)
+                {
+                    p.UpdateForcesAndTorque(Velocity, Pressure, LsTrk, this.Control.PhysicalParameters.mu_A);
+                }
+                WallCollisionForces(p, LsTrk.GridDat.Cells.h_minGlobal);
+            }
+
+            double[] totalMomentum = new double[2] { 0, 0 };
+            double[] totalKE = new double[3] { 0, 0, 0 };
+            double xPos;
+            double yPos;
+            double ang;
+
+            foreach (Particle p in m_Particles)
+            {
+                totalMomentum[0] += p.Mass_P * p.currentIterVel_P[0][0];
+                totalMomentum[1] += p.Mass_P * p.currentIterVel_P[0][1];
+                totalKE[0] += 0.5 * p.Mass_P * p.currentIterVel_P[0][0].Pow2();
+                totalKE[1] += 0.5 * p.Mass_P * p.currentIterVel_P[0][1].Pow2();
+                totalKE[2] += 0.5 * p.MomentOfInertia_P * p.currentIterRot_P[0].Pow2();
+            }
+
+            Console.WriteLine("Total-Momentum in System:  " + Math.Sqrt(totalMomentum[0].Pow2() + totalMomentum[1].Pow2()));
+            Console.WriteLine("Total-KineticEnergy in System:  " + (totalKE[0] + totalKE[1] + totalKE[2]));
+
+            totalMomentumOld = Math.Sqrt(totalMomentum[0].Pow2() + totalMomentum[1].Pow2());
+
+            if (m_Particles.Count > 1)
+                UpdateCollisionForces(m_Particles, LsTrk.GridDat.Cells.h_minGlobal);
+
+            force = m_Particles[0].currentIterForces_P[0];
+            torque = m_Particles[0].currentIterTorque_P[0];
+
+            xPos = m_Particles[0].currentIterPos_P[0][0];
+            yPos = m_Particles[0].currentIterPos_P[0][1];
+            ang = m_Particles[0].currentIterAng_P[0];
+
+
+            MPItransVelocity = m_Particles[0].currentIterVel_P[0];
+            MPIangularVelocity = m_Particles[0].currentIterRot_P[0];
+
+
+            Console.WriteLine(newPosition[1].MPIMax());
+
+            if ((base.MPIRank == 0) && (Log_DragAndLift != null))
+            {
+                double drag = force[0];
+                double lift = force[1];
+                //string line = String.Format("{0}\t{1}\t{2}\t{3}\t{4}\t{5}\t{6}\t{7}\t{8}\t{9}", TimestepNo, phystime, m_Particles[0].currentIterPos_P[0][0], m_Particles[0].currentIterPos_P[0][1], m_Particles[0].currentIterAng_P[0], m_Particles[0].currentIterVel_P[0][0], m_Particles[0].currentIterVel_P[0][1], 0.0, (totalKE[0] + totalKE[1] + totalKE[2]), Math.Sqrt(totalMomentum[0].Pow2() + totalMomentum[1].Pow2()));
+                string line = String.Format("{0}\t{1}\t{2}\t{3}\t{4}\t{5}\t{6}\t{7}\t{8}\t{9}", phystime, m_Particles[0].currentIterPos_P[0][0], m_Particles[0].currentIterPos_P[0][1], m_Particles[0].currentIterAng_P[0], m_Particles[0].currentIterVel_P[0][0], m_Particles[0].currentIterVel_P[0][1], 0.0, (totalKE[0] + totalKE[1] + totalKE[2]), Math.Sqrt(totalMomentum[0].Pow2() + totalMomentum[1].Pow2()));
+                Log_DragAndLift.WriteLine(line);
+                Log_DragAndLift.Flush();
+            }
+
+            oldAngularVelocity = newAngularVelocity;
+
+            // Save for NUnit Test
+            base.QueryHandler.ValueQuery("C_Drag", 2 * force[0], true); // Only for Diameter 1 (TestCase NSE stationary)
+            base.QueryHandler.ValueQuery("C_Lift", 2 * force[1], true); // Only for Diameter 1 (TestCase NSE stationary)
+            base.QueryHandler.ValueQuery("Angular_Velocity", MPIangularVelocity, true); // (TestCase FlowRotationalCoupling)
+            
+            
+            Console.WriteLine("Drag Force:   {0}", force[0]);
+            Console.WriteLine("Lift Force:   {0}", force[1]);
+            Console.WriteLine("Torqe:   {0}", torque);
+            Console.WriteLine("Transl VelocityX:   {0}", MPItransVelocity[0]);
+            Console.WriteLine("Transl VelocityY:   {0}", MPItransVelocity[1]);
+            Console.WriteLine("Angular Velocity:   {0}", MPIangularVelocity);
+            Console.WriteLine("X-position:   {0}", xPos);
+            Console.WriteLine("Y-position:   {0}", yPos);
+            Console.WriteLine("Angle:   {0}", ang);
+            Console.WriteLine();
+            Console.WriteLine("=======================================================");
+            Console.WriteLine();
+        }
         #endregion
         
         #region Run solver one step
@@ -653,10 +739,7 @@ namespace BoSSS.Application.FSI_Solver {
         double[] newTransVelocity = new double[2];
         double[] oldPosition = new double[2];
         double[] newPosition = new double[2];
-        //double[] force = new double[2];
         double[] oldforce = new double[2];
-        //double torque = new double();
-        //double oldtorque = new double();
         double[] MPItransVelocity = new double[2];
         double[] MPIpos = new double[2];
         double totalMomentumOld = 0;
@@ -697,9 +780,9 @@ namespace BoSSS.Application.FSI_Solver {
 
                         return dt;
                     }
-                    else
+                    else if (((FSI_Control)this.Control).Timestepper_LevelSetHandling != LevelSetHandling.Coupled_Iterative)
                     {
-                        int iteration_counter = 1;
+                        int iteration_counter = 0;
                         for (double posResidual_splitting = 1; posResidual_splitting > ((FSI_Control)this.Control).ForceAndTorque_ConvergenceCriterion;)// && iteration_counter <= (this.Control).max_iterations_fully_coupled;)
                         {
                             foreach (Particle p in m_Particles)
@@ -707,88 +790,15 @@ namespace BoSSS.Application.FSI_Solver {
                                 p.iteration_counter_P = iteration_counter;
                                 p.forceAndTorque_convergence = ((FSI_Control)this.Control).ForceAndTorque_ConvergenceCriterion;
                             }
-
                             m_BDF_Timestepper.Solve(phystime, dt, false);
                             #region Get Drag and Lift Coefficiant
-
-
-                            foreach (Particle p in m_Particles)
-                            {
-                                if (!((FSI_Control)this.Control).pureDryCollisions)
-                                {
-                                    p.UpdateForcesAndTorque(Velocity, Pressure, LsTrk, this.Control.PhysicalParameters.mu_A);
-                                }
-                                WallCollisionForces(p, LsTrk.GridDat.Cells.h_minGlobal);
-                            }
-
-                            double[] totalMomentum = new double[2] { 0, 0 };
-                            double[] totalKE = new double[3] { 0, 0, 0 };
-                            double xPos;
-                            double yPos;
-                            double ang;
-
-                            foreach (Particle p in m_Particles)
-                            {
-                                totalMomentum[0] += p.Mass_P * p.currentIterVel_P[0][0];
-                                totalMomentum[1] += p.Mass_P * p.currentIterVel_P[0][1];
-                                totalKE[0] += 0.5 * p.Mass_P * p.currentIterVel_P[0][0].Pow2();
-                                totalKE[1] += 0.5 * p.Mass_P * p.currentIterVel_P[0][1].Pow2();
-                                totalKE[2] += 0.5 * p.MomentOfInertia_P * p.currentIterRot_P[0].Pow2();
-                            }
-
-                            Console.WriteLine("Total-Momentum in System:  " + Math.Sqrt(totalMomentum[0].Pow2() + totalMomentum[1].Pow2()));
-                            Console.WriteLine("Total-KineticEnergy in System:  " + (totalKE[0] + totalKE[1] + totalKE[2]));
-
-                            totalMomentumOld = Math.Sqrt(totalMomentum[0].Pow2() + totalMomentum[1].Pow2());
-
-                            if (m_Particles.Count > 1)
-                                UpdateCollisionForces(m_Particles, LsTrk.GridDat.Cells.h_minGlobal);
-
-                            force = m_Particles[0].currentIterForces_P[0];
-                            torque = m_Particles[0].currentIterTorque_P[0];
-
-                            xPos = m_Particles[0].currentIterPos_P[0][0];
-                            yPos = m_Particles[0].currentIterPos_P[0][1];
-                            ang = m_Particles[0].currentIterAng_P[0];
-
-
-                            MPItransVelocity = m_Particles[0].currentIterVel_P[0];
-                            MPIangularVelocity = m_Particles[0].currentIterRot_P[0];
-
-
-                            Console.WriteLine(newPosition[1].MPIMax());
-
-                            if ((base.MPIRank == 0) && (Log_DragAndLift != null))
-                            {
-                                double drag = force[0];
-                                double lift = force[1];                              
-                                string line = String.Format("{0}\t{1}\t{2}\t{3}\t{4}\t{5}\t{6}\t{7}\t{8}\t{9}", TimestepNo, phystime, m_Particles[0].currentIterPos_P[0][0], m_Particles[0].currentIterPos_P[0][1], m_Particles[0].currentIterAng_P[0], m_Particles[0].currentIterVel_P[0][0], m_Particles[0].currentIterVel_P[0][1], 0.0, (totalKE[0] + totalKE[1] + totalKE[2]), Math.Sqrt(totalMomentum[0].Pow2() + totalMomentum[1].Pow2()));
-                                Log_DragAndLift.WriteLine(line);
-                                Log_DragAndLift.Flush();
-                            }
-
-                            oldAngularVelocity = newAngularVelocity;
-
-                            // Save for NUnit Test
-                            base.QueryHandler.ValueQuery("C_Drag", 2 * force[0], true); // Only for Diameter 1 (TestCase NSE stationary)
-                            base.QueryHandler.ValueQuery("C_Lift", 2 * force[1], true); // Only for Diameter 1 (TestCase NSE stationary)
-                            base.QueryHandler.ValueQuery("Angular_Velocity", MPIangularVelocity, true); // (TestCase FlowRotationalCoupling)
-                            #endregion
+                            UpdateForcesAndTorque(dt, phystime);
                             double acc = 0;
                             foreach (Particle p in m_Particles)
                             {
                                 acc += (p.currentIterForces_P[0][0] - p.currentIterForces_P[1][0]).Pow2() + (p.currentIterForces_P[0][1] - p.currentIterForces_P[1][1]).Pow2() + (p.currentIterTorque_P[0] - p.currentIterTorque_P[1]).Pow2();
                             }
                             posResidual_splitting = Math.Sqrt(acc);
-                            Console.WriteLine("Drag Force:   {0}", force[0]);
-                            Console.WriteLine("Lift Force:   {0}", force[1]);
-                            Console.WriteLine("Torqe:   {0}", torque);
-                            Console.WriteLine("Transl VelocityX:   {0}", MPItransVelocity[0]);
-                            Console.WriteLine("Transl VelocityY:   {0}", MPItransVelocity[1]);
-                            Console.WriteLine("Angular Velocity:   {0}", MPIangularVelocity);
-                            Console.WriteLine("X-position:   {0}", xPos);
-                            Console.WriteLine("Y-position:   {0}", yPos);
-                            Console.WriteLine("Angle:   {0}", ang);
                             Console.WriteLine("Fully coupled system, number of iterations:  " + iteration_counter);
                             Console.WriteLine("Forces and torque residual: " + posResidual_splitting);
                             Console.WriteLine();
@@ -818,6 +828,15 @@ namespace BoSSS.Application.FSI_Solver {
                                 }
                             }
                         }
+                    }
+                    else
+                    {
+                        foreach (Particle p in m_Particles)
+                        {
+                            p.iteration_counter_P = -1;
+                            p.forceAndTorque_convergence = ((FSI_Control)this.Control).ForceAndTorque_ConvergenceCriterion;
+                        }
+                        m_BDF_Timestepper.Solve(phystime, dt, false);
                     }
                 }
 
@@ -1525,3 +1544,4 @@ namespace BoSSS.Application.FSI_Solver {
 
 
 
+#endregion
