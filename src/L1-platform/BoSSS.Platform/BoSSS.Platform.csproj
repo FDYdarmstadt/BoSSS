@@ -68,6 +68,7 @@
     <Compile Include="ExpirableLazy.cs" />
     <Compile Include="GeomTools.cs" />
     <Compile Include="GSL.cs" />
+    <Compile Include="MeshTools.cs" />
     <Compile Include="ObjectExtensions.cs" />
     <Compile Include="PointLocalization.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

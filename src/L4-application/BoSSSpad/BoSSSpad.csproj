@@ -166,6 +166,10 @@
     <None Include="app.config" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\..\..\..\public\src\L4-application\XdgPoisson3\XdgPoisson3.csproj">
+      <Project>{efbeff7a-e40d-4808-be79-536040c0fadc}</Project>
+      <Name>XdgPoisson3</Name>
+    </ProjectReference>
     <ProjectReference Include="..\..\L2-foundation\BoSSS.Foundation.SpecFEM\BoSSS.Foundation.SpecFEM.csproj">
       <Project>{9d01688e-9372-4185-adcf-d64d47f3a44a}</Project>
       <Name>BoSSS.Foundation.SpecFEM</Name>
@@ -254,7 +258,7 @@
       <Project>{28E4A331-ECA2-43A6-A11F-6D6A5E410434}</Project>
       <Name>BoSSS.Solution.GridImport</Name>
     </ProjectReference>
-    <ProjectReference Include="..\..\L3-solution\BoSSS.Solution.Multigrid\BoSSS.Solution.AdvancedSolvers.csproj">
+    <ProjectReference Include="..\..\L3-solution\BoSSS.Solution.AdvancedSolvers\BoSSS.Solution.AdvancedSolvers.csproj">
       <Project>{efe8c307-09bc-4f58-b991-6ef8fd6d5eff}</Project>
       <Name>BoSSS.Solution.AdvancedSolvers</Name>
     </ProjectReference>

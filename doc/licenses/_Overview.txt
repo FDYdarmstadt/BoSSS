@@ -10,6 +10,7 @@ HYPRE				LGPL-V2.1
 LibCMDLine			MIT-licence
 Log4Net				ApacheV2-Licence
 Math.Net Numerics	MIT/X11-Licence
+MIConvexHull		MIT-Licence
 JSON.Net			MIT-Licence
 Metis				Apache V2
 Mono				MIT/X11-licence

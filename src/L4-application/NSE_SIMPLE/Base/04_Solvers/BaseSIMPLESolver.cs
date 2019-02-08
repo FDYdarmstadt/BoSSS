@@ -47,13 +47,13 @@ namespace NSE_SIMPLE {
         /// Ctor.
         /// </summary>
         /// <param name="solverConf">Configuration SIMPLE</param>
-        /// <param name="sparseSolver">Configuration sparse solver</param>        
-        protected SIMPLESolver(SolverConfiguration solverConf, ISparseSolver sparseSolver) {
+        /// <param name="_sparseSolver">Configuration sparse solver</param>        
+        protected SIMPLESolver(SolverConfiguration solverConf, ISparseSolver _sparseSolver) {
 
             m_solverConf = solverConf;
 
             //Create sparse solver
-            m_Solver = sparseSolver;
+            m_Solver = _sparseSolver;
             if (m_Solver == null)
                 throw new ApplicationException("Sorry - unknown error creating solver.");
         }
@@ -118,7 +118,7 @@ namespace NSE_SIMPLE {
         }
 
         /// <summary>
-        /// Dispose SparseSolver object.
+        /// Dispose _sparseSolver object.
         /// </summary>
         public void Dispose() {
             IDisposable dsolver = m_Solver as IDisposable;

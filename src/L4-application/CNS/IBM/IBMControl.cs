@@ -111,6 +111,8 @@ namespace CNS.IBM {
 
         public Func<double[], double, Vector> LevelSetVelocity;
 
+        public bool ContinuousLevelSet = false;
+
         /// <summary>
         /// Verifies the control file
         /// </summary>

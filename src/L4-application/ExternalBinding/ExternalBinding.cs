@@ -220,7 +220,7 @@ namespace BoSSS.Application.ExternalBinding {
      		XmlDocument docu = new XmlDocument();
 			docu.LoadXml(xmlString);
 				
-			XmlNode node = docu.SelectSingleNode("/document/sparsesolver");
+			XmlNode node = docu.SelectSingleNode("/document/_sparseSolver");
 				             
 			var config = ilPSP.LinSolvers.SolverConfigurationParser.parseXMLConfigurationElements(node);
 				
