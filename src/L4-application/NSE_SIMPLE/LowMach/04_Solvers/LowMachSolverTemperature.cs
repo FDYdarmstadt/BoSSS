@@ -50,7 +50,7 @@ namespace NSE_SIMPLE {
         /// Ctor.
         /// </summary>
         /// <param name="solverConfig"></param>
-        /// <param name="sparseSolver"></param>
+        /// <param name="_sparseSolver"></param>
         /// <param name="DensityMatrix"></param>
         /// <param name="MatAsmblyTemperature"></param>
         /// <param name="MatAsmblyTemperatureApprox"></param>
@@ -58,12 +58,12 @@ namespace NSE_SIMPLE {
         /// <param name="BDF"></param>
         /// <param name="EoS"></param>
         /// <param name="ThermodynamicPressure"></param>
-        public LowMachSolverTemperature(SolverConfiguration solverConfig, ISparseSolver sparseSolver,
+        public LowMachSolverTemperature(SolverConfiguration solverConfig, ISparseSolver _sparseSolver,
             BlockDiagonalMatrix DensityMatrix, SIMPLEMatrixAssembly MatAsmblyTemperature, SIMPLEMatrixAssembly MatAsmblyTemperatureApprox,
             ScalarFieldHistory<SinglePhaseField> Temperature,
             BDFScheme BDF, MaterialLaw EoS,
             ScalarFieldHistory<SinglePhaseField> ThermodynamicPressure)
-            : base(solverConfig, sparseSolver) {
+            : base(solverConfig, _sparseSolver) {
 
             this.DensityMatrix = DensityMatrix;
             this.MatAsmblyTemperature = MatAsmblyTemperature;
