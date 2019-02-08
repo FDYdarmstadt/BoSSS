@@ -1018,7 +1018,11 @@ namespace BoSSS.Foundation.IO {
         /// </param>
         public Guid SaveGrid(IGrid _grd, IDatabaseInfo database) {
             using (new FuncTrace()) {
-                GridCommons grd = (GridCommons)_grd;
+                GridCommons grd = _grd as GridCommons;
+                if(grd == null)
+                {
+                    throw new InvalidCastException("Grid not supported by save method");
+                }
 
                 if (grd.ID.Equals(Guid.Empty)) {
                     throw new ApplicationException("cannot save grid with empty Guid (Grid Guid is " + Guid.Empty.ToString() + ");");

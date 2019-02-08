@@ -97,18 +97,11 @@ namespace BoSSS.Foundation.Grid.Voronoi
             {
                 // Voronoi generation
                 //-------------------------------------
-                Stopwatch stopwatch = new Stopwatch();
-                stopwatch.Start();
                 AddFarNodes(nodes, PolygonBoundary);
                 voronoiMesh = CreateMesh(nodes);
-                stopwatch.Stop();
-                Console.WriteLine(stopwatch.ElapsedMilliseconds);
                 //Clip
                 //-------------------------------------
-                stopwatch.Restart();
                 Intersecter.Intersect(voronoiMesh, lines);
-                stopwatch.Stop();
-                Console.WriteLine(stopwatch.ElapsedMilliseconds);
                 //Console.ReadKey();
 
                 // Lloyds algorithm (Voronoi relaxation)

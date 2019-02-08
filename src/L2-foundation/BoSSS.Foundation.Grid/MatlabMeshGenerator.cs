@@ -229,6 +229,19 @@ namespace BoSSS.Foundation.Grid.Voronoi
 
             return mesh;
         }
+
+        static void ChooseBatchMode()
+        {
+            if (System.Environment.MachineName.ToLowerInvariant().EndsWith("rennmaschin")
+          //|| System.Environment.MachineName.ToLowerInvariant().Contains("jenkins")
+          )
+            {
+                // This is Florians Laptop;
+                // he is to poor to afford MATLAB, so he uses OCTAVE
+                BatchmodeConnector.Flav = BatchmodeConnector.Flavor.Octave;
+                //BatchmodeConnector.MatlabExecuteable = "C:\\cygwin64\\bin\\bash.exe";
+            }
+        }
  
     }
 }

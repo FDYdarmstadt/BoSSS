@@ -25,6 +25,8 @@ using System.Collections.Generic;
 using System.Linq;
 using ilPSP;
 using BoSSS.Solution.CompressibleFlowCommon;
+using BoSSS.Solution.LevelSetTools;
+using BoSSS.Foundation.SpecFEM;
 
 namespace CNS.IBM {
 
@@ -62,6 +64,15 @@ namespace CNS.IBM {
             LevelSet = new LevelSet(
                 new Basis(gridData, config.FieldOptions[IBMVariables.LevelSet].Degree),
                 IBMVariables.LevelSet);
+
+            if (config.ContinuousLevelSet) {
+                SpecFemBasis specFEMBasis = new SpecFemBasis((GridData)gridData, LevelSet.Basis.Degree);
+
+                SpecFemField specFemField = new SpecFemField(specFEMBasis);
+                specFemField.ProjectDGFieldMaximum(1.0, LevelSet);
+                LevelSet.Clear();
+                specFemField.AccToDGField(1.0, LevelSet);
+            }
 
             LevelSetGradient = new DGField[CNSEnvironment.NumberOfDimensions];
             for (int d = 0; d < CNSEnvironment.NumberOfDimensions; d++) {
