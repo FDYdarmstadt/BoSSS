@@ -1,16 +1,25 @@
 const electron = require('electron')
-const app = electron.app
+const app = electron.app;
 const BrowserWindow = electron.BrowserWindow;
 
 let mainWindow;
 
+
+
 function createWindow () {
 	mainWindow = new BrowserWindow({width: 800, height: 600, icon: __dirname + '/src/img/logo/logo_fdy.ico'})
 	mainWindow.loadURL(`file://${__dirname}/dist/index.html`)
-	mainWindow.on('closed', function () {
-		mainWindow = null
-	})
-	menu = new BoSSSMenu(mainWindow, electron);
+	mainWindow.on('closed', function(){ mainWindow = null}); 
+    menu = new BoSSSMenu(mainWindow, electron);
+
+    var closeBoSSSpad = false;
+    mainWindow.on('close', (event) =>{
+        if(!closeBoSSSpad)
+        {
+            event.preventDefault();
+            AreYouSure_Save(() => {closeBoSSSpad = true; mainWindow.close(); });
+        }
+    });   
 }
 
 app.on('ready', createWindow)
@@ -37,6 +46,38 @@ app.on('activate', () => {
 })
 */
 
+function AreYouSure_Save(func){
+    mainWindow.webContents.executeJavaScript( 'BoSSSpad.hasChanged()').then(
+        changed =>
+        {
+            if(changed)
+            {
+                var response = electron.dialog.showMessageBox({
+                    type: "question", 
+                    buttons: ["save", "discard"],
+                    message: "Do you want to save the changes you have made?",
+                    defaultId: 0,
+                    cancelId: 1
+                });
+                //Save changes
+                if(response == 0)
+                {
+                    menu.saveFile().then(func());
+                }
+                //Discard changes
+                else if(response == 1){
+                    func();
+                }
+                //cancel: keep open
+                else if(response == 2){
+                }
+            }else{
+                func();
+            }
+        }
+    )
+}
+
 class BoSSSMenu{
 	constructor(mainWindow, electron){
 		this.mainWindow = mainWindow;
@@ -46,7 +87,6 @@ class BoSSSMenu{
 		this.savePath = null;
 		this.createMenu();
 	}
-
 			
 	createMenu(){
 		var that = this;
@@ -55,7 +95,8 @@ class BoSSSMenu{
 				label: 'File',
 				submenu: [
 					{
-						label: 'New File',
+                        label: 'New File',
+                        accelerator: 'CmdOrCtrl+N',
 						click() {
 							that.newFile();
 						}
@@ -77,7 +118,8 @@ class BoSSSMenu{
 					},
 					{type: 'separator'},
 					{
-						label: 'Save File', 
+                        label: 'Save File',
+                        accelerator: 'CmdOrCtrl+S',
 						click() {
 							that.saveFile();
 						}
@@ -146,42 +188,55 @@ class BoSSSMenu{
 	}
 
 	saveFile(){
-		if (this.savePath === null){
-			this.saveFileAs();
-		}else{
-			var command = 'BoSSSpad.saveFile(' + this.savePath + ');';
-			this.mainWindow.webContents.executeJavaScript( command );
-		}
+        var that = this;
+        var save = new Promise(function (resolve, reject)
+        {
+            if (that.savePath === null){
+                that.saveFileAs().then(resolve());
+            }else{
+                var command = 'BoSSSpad.saveFile(' + that.savePath + ');';
+                that.mainWindow.webContents.executeJavaScript( command ).then(resolve());
+            }
+        });
+        return save;
 	}
 
 	saveFileAs(){
-		//bookmarks is mac stuff
-		function bosssPadSaveFile(fileName, bookmarks ){		
-			try{
-				var filePath = '"' + fileName.replace(/\\/g, '/')+ '"';
-				this.savePath = filePath;
-				var command = 'BoSSSpad.saveFile(' + filePath + ');';
-				this.mainWindow.webContents.executeJavaScript( command );
-		
-			}
-			catch(err){
-				console.log(err);
-			}
-		}
-	
-		this.dialog.showSaveDialog({
-			filters: [
-				{name: 'BoSSSPad Worksheet', extensions: ['bws']},
-				{name: 'TeX Files', extensions: ['tex']},
-				{name: 'All Files', extensions: ['*']}
-			]
-		}, bosssPadSaveFile.bind(this));
+        //bookmarks is mac stuff
+        var that = this;
+        var saveAs = new Promise(function(resolve, reject)
+        {
+            function bosssPadSaveFile(fileName, bookmarks ){		
+                try{
+                    var filePath = '"' + fileName.replace(/\\/g, '/')+ '"';
+                    that.savePath = filePath;
+                    var command = 'BoSSSpad.saveFile(' + filePath + ');';
+                    that.mainWindow.webContents.executeJavaScript( command ).then(resolve());
+                }
+                catch(err){
+                    console.log(err);
+                    reject();
+                }
+            }
+        
+            var path = that.dialog.showSaveDialog({
+                filters: [
+                    {name: 'BoSSSPad Worksheet', extensions: ['bws']},
+                    {name: 'TeX Files', extensions: ['tex']},
+                    {name: 'All Files', extensions: ['*']}
+                ]
+            });
+            bosssPadSaveFile(path);
+        });
+        return saveAs;
 	}
 
 	newFile(){
-		this.savePath = null;
-		this.mainWindow.webContents.executeJavaScript(
-			'BoSSSpad.resetFile();'
-		);
+        AreYouSure_Save(() =>{
+            this.savePath = null;
+            this.mainWindow.webContents.executeJavaScript(
+                'BoSSSpad.resetFile();'
+            );
+        });
 	}
 }
