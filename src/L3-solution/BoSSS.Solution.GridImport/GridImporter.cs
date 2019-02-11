@@ -89,9 +89,11 @@ namespace BoSSS.Solution.GridImport {
                 }
                 importerType = importerType.MPIBroadcast(0);
 
+
                 IGridImporter importer;
                 {
                     tr.Info(string.Format("Loading {0} file '{1}'...", importerType.ToString(), fileName));
+
                     using (new BlockTrace("Import", tr)) {
 
                         switch (importerType) {

@@ -16,6 +16,7 @@ namespace BoSSS.Application.BoSSSpad{
 
         static ElectronWorksheet worksheet;
 
+
         /// <summary>
         /// Entrypoint of Electron BoSSSpad, in detail the electron-edge-js package
         /// </summary>

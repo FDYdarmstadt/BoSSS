@@ -194,6 +194,10 @@
       <Project>{985a90c0-4e63-4b8d-bc9b-946af1ad3132}</Project>
       <Name>Rheology2</Name>
     </ProjectReference>
+    <ProjectReference Include="..\XdgPoisson3\XdgPoisson3.csproj">
+      <Project>{efbeff7a-e40d-4808-be79-536040c0fadc}</Project>
+      <Name>XdgPoisson3</Name>
+    </ProjectReference>
     <ProjectReference Include="..\XNSE_Solver\XNSE_Solver.csproj">
       <Project>{3d867374-bf9a-475e-8f5c-e1c067605b9c}</Project>
       <Name>XNSE_Solver</Name>

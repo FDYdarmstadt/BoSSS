@@ -86,6 +86,7 @@ namespace BoSSS.Application.FSI_Solver
                 return stress_magnitude_P;
             }
         }
+
         override public double Area_P
         {
             get
@@ -93,6 +94,13 @@ namespace BoSSS.Application.FSI_Solver
                 return length_P * thickness_P * Math.PI * radius_P;
             }
 
+        }
+        public override double Circumference_P
+        {
+            get
+            {
+                return Math.PI * ((length_P + thickness_P) + (3 * (length_P - thickness_P).Pow2()) / (10 * (length_P + thickness_P) + Math.Sqrt(length_P.Pow2() + 14 * length_P * thickness_P + thickness_P.Pow2())));
+            }
         }
         override public double MomentOfInertia_P
         {
