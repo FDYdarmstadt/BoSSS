@@ -184,7 +184,8 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 // min/max length
                 // ==============
                 {
-                    int Smin = 0, Smax = 0;
+                    int Smin = 0;
+                    int Smax = 0;
                     int Nofields = this.m_DgDegree.Length;
                     for (int ifld = 0; ifld < Nofields; ifld++) {
                         Smin += this.AggBasis[ifld].GetMinimalLength(this.m_DgDegree[ifld]);

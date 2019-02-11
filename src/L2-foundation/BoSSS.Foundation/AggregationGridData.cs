@@ -686,6 +686,12 @@ namespace BoSSS.Foundation.Grid.Aggregation {
             }
         }
 
+        public IGrid Grid {
+            get {
+                throw new NotImplementedException("todo");
+            }
+        }
+
         public IDictionary<byte, string> EdgeTagNames {
             get {
                 return ParentGrid.EdgeTagNames;

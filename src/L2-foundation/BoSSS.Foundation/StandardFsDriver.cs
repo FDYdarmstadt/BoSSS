@@ -334,8 +334,12 @@ namespace BoSSS.Foundation.IO {
         /// <param name="sessionGuid"></param>
         /// <returns></returns>
         public Stream GetSessionInfoStream(bool create, Guid sessionGuid) {
-            string filename = Path.Combine(
-                SessionsDir, sessionGuid.ToString(), "Session.info");
+            string dirname = Path.Combine(SessionsDir, sessionGuid.ToString());
+            string fullDirName = Path.Combine(BasePath, dirname);
+            if (!Directory.Exists(fullDirName))
+                Directory.CreateDirectory(fullDirName);
+
+            string filename = Path.Combine(dirname, "Session.info");
 
             return OpenFile(create, filename, true);
         }

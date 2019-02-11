@@ -266,10 +266,6 @@ namespace BoSSS.Application.SipPoisson {
 
                      throw new ArgumentOutOfRangeException();
                  });
-
-
-
-
             return R;
         }
 
@@ -591,7 +587,7 @@ namespace BoSSS.Application.SipPoisson {
         //*/
 
         /// <summary>
-        /// Test on a 2D Voronoi mesh
+        /// Test on a square 2D Voronoi mesh
         /// </summary>
         /// <param name="Res">
         /// number of randomly chosen Delaunay vertices
@@ -599,32 +595,94 @@ namespace BoSSS.Application.SipPoisson {
         /// <param name="deg">
         /// polynomial degree
         /// </param>
+        /// <param name="NoOfLlyodsIter">
+        /// Number of Llyods iterations. 
+        /// </param>
+        /// <param name="mirror">
+        /// Mirror vertices of boundary cells along boundary to approximate boundary
+        /// </param>
         /// <param name="solver_name">
         /// Name of solver to use.
         /// </param>
-        /// <param name="mirror">
-        /// use vertex mirroring at boundary  to make a large fraction of the Voronoi cells conformal
+        /// <returns></returns>
+        public static SipControl TestVoronoi_Square(
+            int Res,
+            int deg = 1,
+            int NoOfLlyodsIter = 10,
+            bool mirror = false,
+            LinearSolverConfig.Code solver_name = LinearSolverConfig.Code.classic_pardiso,
+            Foundation.IO.IDatabaseInfo db = null)
+        {
+            return TestGrid(new VoronoiGrid.Square(Res, NoOfLlyodsIter), deg, solver_name, db);
+        }
+
+        /// <summary>
+        /// Test on a L-shaped 2D Voronoi mesh
+        /// </summary>
+        /// <param name="Res">
+        /// number of randomly chosen Delaunay vertices
+        /// </param>
+        /// <param name="deg">
+        /// polynomial degree
         /// </param>
         /// <param name="NoOfLlyodsIter">
-        /// Number of iterations for Llyod's algorithm (aka. Voronoi relaxation)
+        /// Number of Llyods iterations. 
         /// </param>
-        public static SipControl TestVoronoi(int Res, LinearSolverConfig.Code solver_name = LinearSolverConfig.Code.classic_pardiso, int deg = 1, bool mirror = true, double NoOfLlyodsIter = 0) {
+        /// <param name="mirror">
+        /// Mirror vertices of boundary cells along boundary to approximate boundary
+        /// </param>
+        /// <param name="solver_name">
+        /// Name of solver to use.
+        /// </param>
+        /// <returns></returns>
+        public static SipControl TestVoronoi_LDomain(
+            int Res,
+            int deg = 1,
+            int NoOfLlyodsIter = 10,
+            bool mirror = false,
+            LinearSolverConfig.Code solver_name = LinearSolverConfig.Code.classic_pardiso,
+            Foundation.IO.IDatabaseInfo db = null)
+        {
+            return TestGrid(new VoronoiGrid.LDomain(Res, NoOfLlyodsIter), deg, solver_name, db);
+        }
 
-            if (System.Environment.MachineName.ToLowerInvariant().EndsWith("rennmaschin")
-               //|| System.Environment.MachineName.ToLowerInvariant().Contains("jenkins")
-               ) {
-                // This is Florians Laptop;
-                // he is to poor to afford MATLAB, so he uses OCTAVE
-                BatchmodeConnector.Flav = BatchmodeConnector.Flavor.Octave;
-                //BatchmodeConnector.MatlabExecuteable = "C:\\cygwin64\\bin\\bash.exe";
+        /// <summary>
+        /// Refines a voronoi mesh on a L-shaped domain by increasing the number of Lloyd-iterations.  
+        /// </summary>
+        /// <param name="res">
+        /// number of randomly chosen Delaunay vertices
+        /// </param>
+        /// <returns></returns>
+        public static SipControl[] VoronoiPStudy(int res) {
+
+            //double[] NoOfLli = new double[] { 2, 5, 10, 20, 100 };
+            double[] NoOfLli = GenericBlas.Linspace(0, 100, 201);
+            List<SipControl> R = new List<SipControl>();
+            for(int i = 0; i < NoOfLli.Length; i++) {
+                R.Add(TestVoronoi_LDomain(res, deg: 1, NoOfLlyodsIter: (int)NoOfLli[i]));
             }
 
+            return R.ToArray();
+        }
 
+        //Base case for Voronoi Testing
+        static SipControl TestGrid(
+            IVoronoiGrid grid,
+            int deg = 1,
+            LinearSolverConfig.Code solver_name = LinearSolverConfig.Code.classic_pardiso,
+            Foundation.IO.IDatabaseInfo db = null)
+        {
 
             var R = new SipControl();
             R.ProjectName = "SipPoisson-Voronoi";
             R.SessionName = "testrun";
-            R.savetodb = false;
+            
+            
+            if (db != null)
+            {
+                R.savetodb = true;
+                R.SetDatabase(db);
+            }
             R.ImmediatePlotPeriod = 1;
 
             R.FieldOptions.Add("T", new FieldOpts() { Degree = deg, SaveToDB = FieldOpts.SaveToDBOpt.TRUE });
@@ -637,154 +695,86 @@ namespace BoSSS.Application.SipPoisson {
             R.LinearSolver.NoOfMultigridLevels = 1;
             //R.TargetBlockSize = 100;
 
-
-
-            
-            bool IsIn(double xi, double yi) {
-                
-                //for(int l = 0; l < bndys.Length; l++) {
-                //    Debug.Assert(bndys[l].Normal.Length == 2);
-                //    if (bndys[l].PointDistance(xi, yi) > 0.0)
-                //        return false;
-                //}
-                if (xi > 1.0)
-                    return false;
-                if (yi > 1.0)
-                    return false;
-                if (xi < 0 && yi < 0)
-                    return false;
-                if (xi < -1)
-                    return false;
-                if (yi < -1)
-                    return false;
-
-                return true;
-            }
-
-           
-
-            Vector[] DomainBndyPolygon = new[] {
-                new Vector(-1,1),
-                new Vector(1,1),
-                new Vector(1,-1),
-                new Vector(0,-1),
-                new Vector(0,0),
-                new Vector(-1,0)
-            };
-            
-
-            //*/
-
-            /*
-            bool IsIn(double xi, double yi) {
-                double myEps = 0.0;
-                if (xi > 1.0 + myEps)
-                    return false;
-                if (yi > 1.0 + myEps)
-                    return false;
-                if (xi < -1 - myEps)
-                    return false;
-                if (yi < -1 - myEps)
-                    return false;
-
-                return true;
-            }
-
-
-
-            Vector[] DomainBndyPolygon = new[] {
-                new Vector(-1,+1),
-                new Vector(+1,+1),
-                new Vector(+1,-1),
-                new Vector(-1,-1)
-            };
-            //*/
-
-            bool IsInV(Vector X) {
-                Debug.Assert(X.Dim == 2);
-                return IsIn(X.x, X.y);
-            }
-
-            bool Idenity(Vector A, Vector B) {
-                bool t2 = (A - B).AbsSquare() < 1.0e-10;
-                bool t1 = (A - B).AbsSquare() < 1.0e-15;
-                //Debug.Assert(t1 == t2);
-                //Voronoi.VoronoiMeshGen.AccuracyFlag = (t1 == t2);
-                return t2;
-            }
-
-            IGrid GridFunc() {
-
-                // generate Delaunay vertices
-                Random rnd = new Random(0);
-                int RR = Res;
-
-                               
-                var Node = MultidimensionalArray.Create(RR, 2);
-
-                bool useMirror = mirror;
-                double scl = useMirror ? 2.0 : 4.0;
-
-                int cmt = 0;
-                while(cmt < Res) {
-                    double nx = rnd.NextDouble() * scl - 0.5 * scl;
-                    double ny = rnd.NextDouble() * scl - 0.5 * scl;
-
-                    if(IsIn(nx,ny)) {
-                        Node[cmt, 0] = nx;
-                        Node[cmt, 1] = ny;
-
-                        cmt++;
-                    }
-                }
-
-                // generate mesh
-                AggregationGrid grid;
-                grid = BoSSS.Foundation.Grid.Voronoi.VoronoiGrid2D.FromPolygonalDomain(DomainBndyPolygon, 20, Res);
-                grid.EdgeTagNames.Add(1, BoundaryType.Dirichlet.ToString());
-                grid.DefineEdgeTags(X => (byte)1);
-
-                //grid = Voronoi.VoronoiMeshGen.FromPolygonalDomain(Node, DomainBndyPolygon, useMirror, NoOfLlyodsIter, IsInV, Idenity);
-                return grid;
-
-            };
-            R.GridFunc = GridFunc;
-
-            R.AddBoundaryValue(BoundaryType.Dirichlet.ToString(), "T",
-                 delegate (double[] X) {
-                     //double x = X[0], y = X[1];
-
-                     return Math.Pow(X[0],2) + Math.Pow(X[1],2);
-                     //if(Math.Abs(X[0] - (0.0)) < 1.0e-8)
-                     //    return 0.0;
-                     //
-                     //throw new ArgumentOutOfRangeException();
-                 });
-
-
-
-
-
+            grid.SetGridAndBoundaries(R);
             return R;
         }
 
-        /// <summary>
-        /// Still fishy: case 4, 47
-        /// (fk, 17dec18)
-        /// </summary>
-        /// <returns></returns>
-        public static SipControl[] VoronoiPStudy() {
-
-            //double[] NoOfLli = new double[] { 2, 5, 10, 20, 100 };
-            double[] NoOfLli = GenericBlas.Linspace(0, 50, 201);
-            List<SipControl> R = new List<SipControl>();
-            for(int i = 0; i < NoOfLli.Length; i++) {
-                R.Add(TestVoronoi(100, deg: 1, mirror: true, NoOfLlyodsIter: NoOfLli[i]));
+        abstract class IVoronoiGrid
+        {
+            protected readonly int NoOfLlyodsIter;
+            protected readonly int Res;
+            public IVoronoiGrid(int res, int noOfLlyodsIter)
+            {
+                Res = res;
+                NoOfLlyodsIter = noOfLlyodsIter;
             }
 
-            return R.ToArray();
-        } 
-        
+            public void SetGridAndBoundaries(AppControl R)
+            {
+                R.GridFunc = GridFunc;
+                SetBoundaryValues(R);
+            }
 
+            protected abstract IGrid GridFunc();
+
+            protected abstract void SetBoundaryValues(AppControl R);
+        }
+
+        class VoronoiGrid
+        {
+            public class LDomain : IVoronoiGrid
+            {
+                public LDomain(int res, int noOfLlyodsIter) : base(res, noOfLlyodsIter) { }
+               
+                protected override IGrid GridFunc()
+                {
+                    Vector[] DomainBndyPolygon = new[] {
+                        new Vector(-1,1),
+                        new Vector(1,1),
+                        new Vector(1,-1),
+                        new Vector(0,-1),
+                        new Vector(0,0),
+                        new Vector(-1,0)
+                    };
+                    AggregationGrid grid;
+                    grid = BoSSS.Foundation.Grid.Voronoi.VoronoiGrid2D.FromPolygonalDomain(DomainBndyPolygon, NoOfLlyodsIter, Res);
+                    grid.EdgeTagNames.Add(1, BoundaryType.Dirichlet.ToString());
+                    grid.DefineEdgeTags(X => (byte)1);
+                    return grid;
+                }
+
+                protected override void SetBoundaryValues(AppControl R)
+                {
+                    R.AddBoundaryValue(BoundaryType.Dirichlet.ToString(), "T",
+                        X => Math.Pow(X[0],2) + Math.Pow(X[1], 2));
+                }
+            }
+
+            public class Square : IVoronoiGrid
+            {
+                public Square(int res, int noOfLlyodsIter) : base(res, noOfLlyodsIter) { }
+
+                protected override IGrid GridFunc()
+                {
+                    Vector[] DomainBndyPolygon = new[] {
+                        new Vector(-1,1),
+                        new Vector(1,1),
+                        new Vector(1,-1),
+                        new Vector(-1,-1)
+                    };
+                    AggregationGrid grid;
+                    grid = BoSSS.Foundation.Grid.Voronoi.VoronoiGrid2D.FromPolygonalDomain(DomainBndyPolygon, NoOfLlyodsIter, Res);
+                    grid.EdgeTagNames.Add(1, BoundaryType.Dirichlet.ToString());
+                    grid.DefineEdgeTags(X => (byte)1);
+                    return grid;
+                }
+
+                protected override void SetBoundaryValues(AppControl R)
+                {
+                    R.AddBoundaryValue(BoundaryType.Dirichlet.ToString(), "T",
+                        X => Math.Pow(X[0], 2) + Math.Pow(X[1], 2));
+                }
+            }
+        }
     }
 }
