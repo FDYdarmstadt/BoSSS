@@ -18,7 +18,7 @@
     "webpack-cli": "3.1.0"
   },
   "dependencies": {
-    "electron-edge-js": "8.3.8",
+    "electron-edge-js": "10.11.0",
     "css-loader": "1.0.0",
     "markdown": "0.5.0",
     "mathjax-electron": "2.0.1",
