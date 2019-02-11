@@ -80,7 +80,14 @@ namespace BoSSS.Application.FSI_Solver
         {
             get
             {
-                return 2 * Math.PI * 3.708 * stress_magnitude_P;
+                return stress_magnitude_P;
+            }
+        }
+        public override double Circumference_P
+        {
+            get
+            {
+                return 4 * radius_P;
             }
         }
         override public double Area_P

@@ -315,6 +315,15 @@ namespace BoSSS.Application.FSI_Solver
         }
 
         /// <summary>
+        /// Area of the current particle
+        /// </summary>
+        [DataMember]
+        abstract public double Circumference_P
+        {
+            get;
+        }
+
+        /// <summary>
         /// Moment of inertia of the current particle
         /// </summary>
         [DataMember]
@@ -389,6 +398,7 @@ namespace BoSSS.Application.FSI_Solver
                 double rho_Fluid = 1;
                 double massDifference = (rho_P - rho_Fluid) * (Area_P);
                 double tempForces = (currentIterForces_P[0][d] + currentTimeForces_P[1][d]) / 2;
+                //double tempForces = (currentTimeForces_P[3][d] + 3 * currentTimeForces_P[2][d] + 3 * currentTimeForces_P[1][d] + currentIterForces_P[0][d]) / 8;
                 tempPos[d] = currentTimePos_P[1][d] + currentTimeVel_P[1][d] * dt + 0.5 * dt * dt * (tempForces + massDifference * gravity[d]) / Mass_P;
             }
             currentIterPos_P[0] = tempPos;
@@ -399,7 +409,8 @@ namespace BoSSS.Application.FSI_Solver
             //currentIterAng_P.Insert(0, tempAng);
             //currentIterAng_P.Remove(currentIterAng_P.Last());
             //currentIterAng_P[0] = currentTimeAng_P[1] + dt * currentIterRot_P[0];
-            currentIterAng_P[0] = currentTimeAng_P[1] + dt * currentTimeRot_P[1] + (dt * dt / MomentOfInertia_P) * (currentIterTorque_P[0] + currentTimeTorque_P[1]) / 4;
+            double tempTorque = (currentTimeTorque_P[1] + currentIterTorque_P[0]) / 2;
+            currentIterAng_P[0] = currentTimeAng_P[1] + dt * currentTimeRot_P[1] + (dt * dt / MomentOfInertia_P) * tempTorque / 2;
             currentTimePos_P[0] = currentIterPos_P[0];
             currentTimeAng_P[0] = currentIterAng_P[0];
 
@@ -553,6 +564,7 @@ namespace BoSSS.Application.FSI_Solver
                     gravity[1] = -9.81;
                 }
                 double tempForces = (currentIterForces_P[0][d] + currentTimeForces_P[1][d]) / 2;
+                //double tempForces = (currentTimeForces_P[3][d] + 3 * currentTimeForces_P[2][d] + 3 * currentTimeForces_P[1][d] + currentIterForces_P[0][d]) / 8;
                 temp[d] = currentTimeVel_P[1][d] * Mass_P + dt * (tempForces + massDifference * gravity[d]);
                 temp[d] = temp[d] / Mass_P;
                 //if (Math.Abs(temp[d]) < 1e-14)
@@ -606,7 +618,8 @@ namespace BoSSS.Application.FSI_Solver
             subtimestep = dt / noOfSubtimesteps;
             
             for (int i = 1; i <= noOfSubtimesteps; i++) {
-                newAngularVelocity = currentTimeRot_P[1] + (dt / MomentOfInertia_P) * (currentIterTorque_P[0] + currentTimeTorque_P[1]) / 2; // for 2D
+                double tempTorque = (currentTimeTorque_P[1] + currentIterTorque_P[0]) / 2;
+                newAngularVelocity = currentTimeRot_P[1] + (dt / MomentOfInertia_P) * (tempTorque); // for 2D
 
                 oldAngularVelocity = newAngularVelocity;
 
@@ -702,20 +715,21 @@ namespace BoSSS.Application.FSI_Solver
                                 double[] integrand = new double[4];
                                 double sum = 0;
                                 double naiveSum = 0;
-
                                 // choosing direction 
                                 switch (d) {
                                     case 0:
                                         c = 0.0;
                                         naiveSum = 0;
+
                                         // integration with Neumaier algorithm, Neumaier is used to prevent rounding errors
                                         integrand[0] = -2 * Grad_UARes[j, k, 0, 0] * Normals[j, k, 0];
                                         integrand[1] = -Grad_UARes[j, k, 0, 1] * Normals[j, k, 1];
                                         integrand[2] = -Grad_UARes[j, k, 1, 0] * Normals[j, k, 1];
                                         integrand[3] = pARes[j, k] * Normals[j, k, 0];
+
                                         // Neumaier velocity gradient
                                         sum = integrand[0];
-                                        for (int i = 1; i < integrand.Length - 1; i++)
+                                        for (int i = 1; i < integrand.Length - 2; i++)
                                         {
                                             naiveSum = sum + integrand[i];
                                             if (Math.Abs(sum) >= integrand[i])
@@ -741,7 +755,7 @@ namespace BoSSS.Application.FSI_Solver
                                             c += (integrand[3] - naiveSum) + sum;
                                         }
                                         sum = naiveSum;
-                                        acc = sum + c;
+                                        acc += sum + c;
                                         break;
 
                                     case 1:
@@ -754,7 +768,7 @@ namespace BoSSS.Application.FSI_Solver
                                         integrand[3] = pARes[j, k] * Normals[j, k, 1];
                                         // Neumaier velocity gradient
                                         sum = integrand[0];
-                                        for (int i = 1; i < integrand.Length - 1; i++)
+                                        for (int i = 1; i < integrand.Length - 2; i++)
                                         {
                                             naiveSum = sum + integrand[i];
                                             if (Math.Abs(sum) >= integrand[i])
@@ -780,7 +794,7 @@ namespace BoSSS.Application.FSI_Solver
                                             c += (integrand[3] - naiveSum) + sum;
                                         }
                                         sum = naiveSum;
-                                        acc = sum + c;
+                                        acc += sum + c;
                                         break;
                                     default:
                                         throw new NotImplementedException();
@@ -896,7 +910,7 @@ namespace BoSSS.Application.FSI_Solver
 
                 for (int j = 0; j < Len; j++) {
                     for (int k = 0; k < K; k++) {
-                        
+
                         double[] integrand = new double[4];
                         double[] integrand2 = new double[4];
                         double naiveSum = 0.0;
@@ -938,7 +952,7 @@ namespace BoSSS.Application.FSI_Solver
                         }
                         sum *= -Normals[j, k, 1] * (this.currentIterPos_P[0][1] - tempArray[k, 1]).Abs();
                         c *= -Normals[j, k, 1] * (this.currentIterPos_P[0][1] - tempArray[k, 1]).Abs();
-                        
+
                         integrand2[0] = -2 * Grad_UARes[j, k, 1, 1] * Normals[j, k, 1];
                         integrand2[1] = -Grad_UARes[j, k, 1, 0] * Normals[j, k, 0];
                         integrand2[2] = -Grad_UARes[j, k, 0, 1] * Normals[j, k, 0];
@@ -974,7 +988,7 @@ namespace BoSSS.Application.FSI_Solver
                         c += c2;
 
                         result[j, k] = sum + c;
-                    }  
+                    }
                 }
             };
 
@@ -1027,7 +1041,39 @@ namespace BoSSS.Application.FSI_Solver
                 temp_underR[k] = underrelaxation_factor;
             }
             // first iteration, set URF to 1
-            if (iteration_counter_P == 0)
+            if (iteration_counter_P == 0 && underrelaxationFT_constant == false && active_stress_P != 0)
+            {
+                for (int k = 0; k < D; k++)
+                {
+                    temp_underR[k] = 1;
+                    for (int t = 0; t < m_HistoryLength; t++)
+                    {
+                        currentIterForces_P[t][k] = currentTimeForces_P[1][k];
+                        currentIterTorque_P[t] = currentTimeTorque_P[1];
+                    }
+                }
+                temp_underR[D] = 1;
+
+                // approximate active force
+                if (Math.Abs(0.05e-3 * Circumference_P * active_stress_P.Pow2() * Math.Cos(currentIterAng_P[0]) / (muA * 1e-3)) > Math.Abs(currentTimeForces_P[1][0]) && currentTimeForces_P[1][0] != 0)
+                {
+                    forces[0] = 0.5 * currentTimeForces_P[1][0];
+                }
+                else
+                {
+                    forces[0] = 0.05 * Circumference_P * active_stress_P.Pow2() * Math.Cos(currentIterAng_P[0]) / (muA);
+                }
+                if (Math.Abs(0.05e-3 * Circumference_P * active_stress_P.Pow2() * Math.Sin(currentIterAng_P[0]) / (muA * 1e-3)) > Math.Abs(currentTimeForces_P[1][1]) && currentTimeForces_P[1][1] != 0)
+                {
+                    forces[1] = 0.5 * currentTimeForces_P[1][1];
+                }
+                else
+                {
+                    forces[1] = 0.05 * Circumference_P * active_stress_P.Pow2() * Math.Sin(currentIterAng_P[1]) / (muA);
+                }
+                torque = 0;
+            }
+            else if (iteration_counter_P == 0)
             {
                 for (int k = 0; k < D; k++)
                 {
@@ -1072,9 +1118,9 @@ namespace BoSSS.Application.FSI_Solver
                             {
                                 temp_underR[j] = forceAndTorque_convergence * 1000;
                             }
-                            if (temp_underR[j] >= 1)
+                            if (temp_underR[j] >= underrelaxation_factor * 1e-1)
                             {
-                                temp_underR[j] = 0.75;
+                                temp_underR[j] = underrelaxation_factor * 1e-1;
                             }
                         }
                     }
@@ -1097,9 +1143,9 @@ namespace BoSSS.Application.FSI_Solver
                         {
                             temp_underR[D] = forceAndTorque_convergence * 1000;
                         }
-                        if (temp_underR[D] >= 1)
+                        if (temp_underR[D] >= underrelaxation_factor * 1e-1)
                         {
-                            temp_underR[D] = 0.75;
+                            temp_underR[D] = underrelaxation_factor * 1e-1;
                         }
                     }
                 }
@@ -1114,8 +1160,18 @@ namespace BoSSS.Application.FSI_Solver
             for (int i = 0; i < D; i++)
             {
                 forces_underR[i] = temp_underR[i] * forces[i] + (1 - temp_underR[i]) * currentIterForces_P[0][i];
+                if (Math.Abs(forces_underR[i]) < forceAndTorque_convergence)
+                {
+                    forces_underR[i] = 0;
+                }
             }
             double torque_underR = temp_underR[D] * torque + (1 - temp_underR[D]) * currentIterTorque_P[0];
+            if (Math.Abs(torque_underR) < forceAndTorque_convergence)
+            {
+                torque_underR = 0;
+            }
+            //forces_underR[0] = Math.Cos(currentIterAng_P[0]) * active_stress_P + forces_underR[0];
+            //forces_underR[1] = Math.Sin(currentIterAng_P[0]) * active_stress_P + forces_underR[1];
             // update forces and torque
             this.currentIterForces_P.Insert(0, forces_underR);
             currentIterForces_P.Remove(currentIterForces_P.Last());

@@ -939,7 +939,6 @@ namespace BoSSS.Solution.AdvancedSolvers {
         
         public virtual int GetLength(int jCell, int p) {
             GetNp();
-
             return m_Lengths[p];
         }
 
