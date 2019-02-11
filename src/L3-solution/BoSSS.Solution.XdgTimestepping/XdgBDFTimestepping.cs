@@ -1627,7 +1627,7 @@ namespace BoSSS.Solution.XdgTimestepping {
                             mg.Gamma = 1;
                             mg.m_MaxIterations = 1;
                         },
-                        () => new DirectSolver() { WhichSolver = DirectSolver._whichSolver.MUMPS }) },
+                        () => new SparseSolver() { WhichSolver = SparseSolver._whichSolver.MUMPS }) },
                 Tolerance = 1.0e-10
             };
 

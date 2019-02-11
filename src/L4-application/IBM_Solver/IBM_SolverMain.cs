@@ -145,7 +145,7 @@ namespace BoSSS.Application.IBM_Solver {
         /// <summary>
         /// Block scaling of the mass matrix: for each species $\frakS$, a vector $(\rho_\frakS, \ldots, \rho_frakS, 0 )$.
         /// </summary>
-        protected IDictionary<SpeciesId, IEnumerable<double>> MassScale {
+        virtual protected IDictionary<SpeciesId, IEnumerable<double>> MassScale {
             get {
                 double rho = this.Control.PhysicalParameters.rho_A;
 

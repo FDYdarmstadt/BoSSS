@@ -190,6 +190,10 @@
       <Project>{985a90c0-4e63-4b8d-bc9b-946af1ad3132}</Project>
       <Name>Rheology2</Name>
     </ProjectReference>
+    <ProjectReference Include="..\XdgPoisson3\XdgPoisson3.csproj">
+      <Project>{efbeff7a-e40d-4808-be79-536040c0fadc}</Project>
+      <Name>XdgPoisson3</Name>
+    </ProjectReference>
     <ProjectReference Include="..\XNSE_Solver\XNSE_Solver.csproj">
       <Project>{3d867374-bf9a-475e-8f5c-e1c067605b9c}</Project>
       <Name>XNSE_Solver</Name>
@@ -254,7 +258,7 @@
       <Project>{28E4A331-ECA2-43A6-A11F-6D6A5E410434}</Project>
       <Name>BoSSS.Solution.GridImport</Name>
     </ProjectReference>
-    <ProjectReference Include="..\..\L3-solution\BoSSS.Solution.Multigrid\BoSSS.Solution.AdvancedSolvers.csproj">
+    <ProjectReference Include="..\..\L3-solution\BoSSS.Solution.AdvancedSolvers\BoSSS.Solution.AdvancedSolvers.csproj">
       <Project>{efe8c307-09bc-4f58-b991-6ef8fd6d5eff}</Project>
       <Name>BoSSS.Solution.AdvancedSolvers</Name>
     </ProjectReference>

@@ -461,6 +461,34 @@ namespace BoSSS.Solution.Control {
         public Tuple<Guid, TimestepNumber> RestartInfo;
 
         /// <summary>
+        /// Setting <see cref="RestartInfo"/>
+        /// </summary>
+        public void SetRestart(ITimestepInfo tsi) {
+            this.InitialValues.Clear();
+            this.InitialValues_Evaluators.Clear();
+            this.RestartInfo = Tuple.Create(tsi.Session.ID, tsi.TimeStepNumber);
+        }
+
+        /// <summary>
+        /// Setting <see cref="RestartInfo"/>
+        /// </summary>
+        public void SetRestart(ISessionInfo si) {
+            this.InitialValues.Clear();
+            this.InitialValues_Evaluators.Clear();
+            this.RestartInfo = Tuple.Create(si.ID, default(TimestepNumber));
+        }
+
+        /// <summary>
+        /// Setting <see cref="RestartInfo"/>
+        /// </summary>
+        public void SetRestart(ISessionInfo si, TimestepNumber idx) {
+            this.InitialValues.Clear();
+            this.InitialValues_Evaluators.Clear();
+            this.RestartInfo = Tuple.Create(si.ID, idx);
+        }
+
+
+        /// <summary>
         /// The GUID of the grid to load. 
         /// The use of this member is exclusive with <see cref="GridFunc"/>, i.e. 
         /// this member may only be set unequal to null if <see cref="GridFunc"/> is null.

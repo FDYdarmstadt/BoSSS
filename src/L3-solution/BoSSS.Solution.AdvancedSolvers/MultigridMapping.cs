@@ -184,7 +184,8 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 // min/max length
                 // ==============
                 {
-                    int Smin = 0, Smax = 0;
+                    int Smin = 0;
+                    int Smax = 0;
                     int Nofields = this.m_DgDegree.Length;
                     for (int ifld = 0; ifld < Nofields; ifld++) {
                         Smin += this.AggBasis[ifld].GetMinimalLength(this.m_DgDegree[ifld]);
@@ -272,6 +273,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
             private set;
         }
 
+
         public int TotalNoOfBlocks {
             get {
                 return AggGrid.CellPartitioning.TotalLength;
@@ -284,12 +286,17 @@ namespace BoSSS.Solution.AdvancedSolvers {
             }
         }
 
+        /// <summary>
+        /// Gets the first block on this process
+        /// </summary>
         public int FirstBlock {
             get {
                 return AggGrid.CellPartitioning.i0;
             }
         }
-
+        /// <summary>
+        /// Tests, if Max and Minblocksize are equal
+        /// </summary>
         public bool AllBlockSizesEqual {
             get {
                 return (MaximalLength == MinimalLength);

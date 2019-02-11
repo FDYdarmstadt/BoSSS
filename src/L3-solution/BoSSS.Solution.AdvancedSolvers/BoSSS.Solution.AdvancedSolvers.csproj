@@ -6,8 +6,8 @@
     <ProjectGuid>{EFE8C307-09BC-4F58-B991-6EF8FD6D5EFF}</ProjectGuid>
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>BoSSS.Solution.Multigrid</RootNamespace>
-    <AssemblyName>BoSSS.Solution.Multigrid</AssemblyName>
+    <RootNamespace>BoSSS.Solution.AdvancedSolvers</RootNamespace>
+    <AssemblyName>BoSSS.Solution.AdvancedSolvers</AssemblyName>
     <TargetFrameworkVersion>v4.7</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <TargetFrameworkProfile />
@@ -34,7 +34,7 @@
     <UseVSHostingProcess>true</UseVSHostingProcess>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <Prefer32Bit>false</Prefer32Bit>
-    <DocumentationFile>bin\Release\BoSSS.Solution.Multigrid.XML</DocumentationFile>
+    <DocumentationFile>bin\Release\BoSSS.Solution.AdvancedSolvers.xml</DocumentationFile>
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="System" />
@@ -54,7 +54,8 @@
     <Compile Include="BlockJacobi.cs" />
     <Compile Include="ClassicMultigrid.cs" />
     <Compile Include="ConvergenceObserver.cs" />
-    <Compile Include="DirectSolver.cs" />
+    <Compile Include="SolverChooser.cs" />
+    <Compile Include="SparseSolver.cs" />
     <Compile Include="ExtensionMethods.cs" />
     <Compile Include="Fixpoint.cs" />
     <Compile Include="ILU.cs" />

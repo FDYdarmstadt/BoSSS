@@ -28,6 +28,8 @@ using System.IO;
 using ilPSP.Tracing;
 using ilPSP.Connectors.Matlab;
 using System.Diagnostics;
+using ilPSP.LinSolvers.monkey;
+using BoSSS.Solution.Control;
 
 namespace BoSSS.Solution.AdvancedSolvers {
 
@@ -36,8 +38,12 @@ namespace BoSSS.Solution.AdvancedSolvers {
     /// wrapper around either PARDISO (<see cref="PARDISOSolver"/>)
     /// or MUMPS (<see cref="MUMPSSolver"/>).
     /// </summary>
-    public class DirectSolver : ISolverSmootherTemplate, ISolverWithCallback {
+    public class SparseSolver : ISolverSmootherTemplate, ISolverWithCallback {
 
+
+        /// <summary>
+        /// 
+        /// </summary>
         /// <summary>
         /// 
         /// </summary>
@@ -61,7 +67,17 @@ namespace BoSSS.Solution.AdvancedSolvers {
             /// <summary>
             /// MATLAB 'backslash' solver, see <see cref="ilPSP.Connectors.Matlab.Extensions.SolveMATLAB{T1, T2}(IMutableMatrixEx, T1, T2, string)"/> 
             /// </summary>
-            Matlab
+            Matlab,
+
+            /// <summary>
+            /// conjugate gradient solver, see <see cref="ilPSP.LinSolvers.monkey.CG"/>
+            /// </summary>
+            CG,
+
+            /// <summary>
+            /// preconditioned conjugate gradient solver, see <see cref="ilPSP.LinSolvers.monkey.PCG"/>
+            /// </summary>
+            PCG
         }
 
         /// <summary>
@@ -158,6 +174,11 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
         ISparseSolver GetSolver(IMutableMatrixEx Mtx) {
             ISparseSolver solver;
+
+
+
+
+
             switch (WhichSolver) {
                 case _whichSolver.PARDISO:
                 solver = new PARDISOSolver();
@@ -175,6 +196,18 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
                 case _whichSolver.Lapack:
                 solver = new DenseSolverWrapper();
+                break;
+
+                case _whichSolver.CG:
+                solver = new CG();
+                    ((CG)solver).DevType = ilPSP.LinSolvers.monkey.DeviceType.Cuda;
+                    ((CG)solver).MaxIterations = Switcher<int>(((CG)solver).MaxIterations,LinConfig.MaxSolverIterations);
+                    ((CG)solver).Tolerance = Switcher<double>(((CG)solver).Tolerance, LinConfig.ConvergenceCriterion);
+                break;
+
+                case _whichSolver.PCG:
+                solver = new PCG();
+
                 break;
 
                 default:
@@ -296,5 +329,26 @@ namespace BoSSS.Solution.AdvancedSolvers {
         public void ResetStat() {
             m_ThisLevelIterations = 0;
         }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <typeparam name="T">generic datatype</typeparam>
+        /// <returns></returns>
+        private static T Switcher<T>(T origin,T setter) {
+            T thisreturn;
+            if (setter != null) {
+                thisreturn = setter;
+            } else {
+                thisreturn = origin;
+            }
+            return thisreturn;
+        }
+
+        public LinearSolverConfig LinConfig {
+            get;
+            set;
+        }
+
     }
 }
