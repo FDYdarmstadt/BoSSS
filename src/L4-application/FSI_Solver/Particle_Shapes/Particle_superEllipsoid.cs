@@ -27,6 +27,14 @@ namespace BoSSS.Application.FSI_Solver
     [Serializable]
     public class Particle_superEllipsoid : Particle
     {
+        /// <summary>
+        /// Empty constructor used during de-serialization
+        /// </summary>
+        private Particle_superEllipsoid() : base()
+        {
+
+        }
+
         public Particle_superEllipsoid(int Dim, int HistoryLength, double[] startPos = null, double startAngl = 0) : base(Dim, HistoryLength, startPos, startAngl)
         {
             #region Particle history

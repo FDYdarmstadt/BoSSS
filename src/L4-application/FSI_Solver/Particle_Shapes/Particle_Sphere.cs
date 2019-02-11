@@ -26,6 +26,14 @@ namespace BoSSS.Application.FSI_Solver
     [Serializable]
     public class Particle_Sphere : Particle
     {
+        /// <summary>
+        /// Empty constructor used during de-serialization
+        /// </summary>
+        private Particle_Sphere() : base()
+        {
+
+        }
+
         public Particle_Sphere(int Dim, int HistoryLength, double[] startPos = null, double startAngl = 0) : base(Dim, HistoryLength, startPos, startAngl)
         {
             #region Particle history
