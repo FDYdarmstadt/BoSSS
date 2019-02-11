@@ -40,10 +40,7 @@ namespace BoSSS.Application.TutorialTests {
             //AllUpTest.RunWorksheets("tutorial11-Stokes/StokesEq.tex");
             //AllUpTest.RunWorksheets("CsharpAndBoSSSpad/CsharpAndBoSSSpad.tex"); 
             //AllUpTest.RunWorksheets("convergenceStudyTutorial/convStudy.tex"); 
-<<<<<<< HEAD
-=======
 
->>>>>>> 6fa3faeb05dbc80532ef484f3623d6be69e8da96
             AllUpTest.TestFixtureTearDown();
         }
 

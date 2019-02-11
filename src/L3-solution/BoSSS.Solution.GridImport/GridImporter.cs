@@ -89,17 +89,11 @@ namespace BoSSS.Solution.GridImport {
                 }
                 importerType = importerType.MPIBroadcast(0);
 
-<<<<<<< HEAD
-                IGridImporter importer;
-                {
-                    tr.Info(string.Format("Loading {0} file '{1}'...", importerType.ToString(), fileName));
-=======
 
                 IGridImporter importer;
                 {
                     tr.Info(string.Format("Loading {0} file '{1}'...", importerType.ToString(), fileName));
 
->>>>>>> 6fa3faeb05dbc80532ef484f3623d6be69e8da96
                     using (new BlockTrace("Import", tr)) {
 
                         switch (importerType) {
@@ -137,10 +131,6 @@ namespace BoSSS.Solution.GridImport {
                     grid = importer.GenerateBoSSSGrid();
                 }
 
-<<<<<<< HEAD
-=======
-
->>>>>>> 6fa3faeb05dbc80532ef484f3623d6be69e8da96
                 return grid;
             }
         }

@@ -28,7 +28,6 @@
     <DefineConstants>TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
-<<<<<<< HEAD
     <RegisterForComInterop>false</RegisterForComInterop>
     <DocumentationFile>
     </DocumentationFile>
@@ -40,11 +39,6 @@
     <AutoGenerateBindingRedirects>false</AutoGenerateBindingRedirects>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="Microsoft.CSharp" />
-=======
-  </PropertyGroup>
-  <ItemGroup>
->>>>>>> 6fa3faeb05dbc80532ef484f3623d6be69e8da96
     <Reference Include="System">
       <Private>True</Private>
     </Reference>
@@ -57,12 +51,9 @@
     <Reference Include="System.Data.DataSetExtensions">
       <Private>True</Private>
     </Reference>
-<<<<<<< HEAD
-=======
     <Reference Include="Microsoft.CSharp">
       <Private>True</Private>
     </Reference>
->>>>>>> 6fa3faeb05dbc80532ef484f3623d6be69e8da96
     <Reference Include="System.Data">
       <Private>True</Private>
     </Reference>
@@ -81,18 +72,12 @@
     <ProjectReference Include="..\..\..\L4-application\BoSSSpad\BoSSSpad.csproj">
       <Project>{e1351588-3bc0-418a-bfa2-7ce3391aa167}</Project>
       <Name>BoSSSpad</Name>
-<<<<<<< HEAD
       <EmbedInteropTypes>False</EmbedInteropTypes>
-=======
->>>>>>> 6fa3faeb05dbc80532ef484f3623d6be69e8da96
     </ProjectReference>
     <ProjectReference Include="..\..\..\L2-foundation\BoSSS.Foundation\BoSSS.Foundation.csproj">
       <Project>{17a60fba-20b4-451d-98e1-8d742f368569}</Project>
       <Name>BoSSS.Foundation</Name>
-<<<<<<< HEAD
       <EmbedInteropTypes>False</EmbedInteropTypes>
-=======
->>>>>>> 6fa3faeb05dbc80532ef484f3623d6be69e8da96
     </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

@@ -1,9 +1,7 @@
 const packager = require('electron-packager');
 var path = require('path');
-<<<<<<< HEAD
-=======
 var copydir = require('copy-dir');
->>>>>>> 6fa3faeb05dbc80532ef484f3623d6be69e8da96
+
 
 //Win32_x64 Package
 packager(
@@ -14,11 +12,6 @@ packager(
     "out" : "./InnoSetup/bin/",
     "overwrite" : "true",
     "prune" : "true",
-<<<<<<< HEAD
-    "ignore" : [new RegExp('InnoSetup'), new RegExp('src/cs/bin/Debug$')]
-})
-
-=======
     "ignore" : [new RegExp('InnoSetup'), new RegExp('src/cs$')]
 }).then(copyForWindows)
 
@@ -36,4 +29,4 @@ function copyForWindows()
         }
     );
 }
->>>>>>> 6fa3faeb05dbc80532ef484f3623d6be69e8da96
+

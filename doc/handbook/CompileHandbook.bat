@@ -12,11 +12,4 @@ BoSSSPad --texbatch tutorial6\tutorial6.tex
 BoSSSPad --texbatch tutorial9-SIP\sip.tex
 BoSSSPad --texbatch tutorial10-PoissonSystem\Poisson.tex
 BoSSSPad --texbatch tutorial11-Stokes\StokeEq.tex
-<<<<<<< HEAD
 BoSSSPad --texbatch convergenceStudyTutorial\convStudy.tex
-=======
-<<<<<<< HEAD
-=======
-BoSSSPad --texbatch convergenceStudyTutorial\convStudy.tex
->>>>>>> root-public
->>>>>>> 6fa3faeb05dbc80532ef484f3623d6be69e8da96

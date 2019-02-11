@@ -77,10 +77,6 @@ namespace BoSSS.Solution.Control {
             private set;
         }
 
-<<<<<<< HEAD
-
-=======
->>>>>>> 6fa3faeb05dbc80532ef484f3623d6be69e8da96
         /// <summary>
         /// ctor.
         /// </summary>

@@ -11,7 +11,6 @@ using BoSSS.Foundation.IO;
 namespace BoSSS.Application.BoSSSpad{
 
     /// <summary>
-<<<<<<< HEAD
     /// Entrypoint used by <see cref="ElectronWorksheet"/> project to communicate between electron BoSSSpad and C# BoSSSpad   
     /// </summary>
     public sealed class ElectronWorksheet {
@@ -24,16 +23,6 @@ namespace BoSSS.Application.BoSSSpad{
         /// </param>
         public ElectronWorksheet(string BoSSSpath) {
             path = BoSSSpath;
-=======
-    /// Singleton class; 
-    /// </summary>
-    public sealed class ElectronWorksheet {
-
-        private static readonly ElectronWorksheet instance = new ElectronWorksheet();
-
-        private ElectronWorksheet() {
-
->>>>>>> 6fa3faeb05dbc80532ef484f3623d6be69e8da96
             Thread.CurrentThread.CurrentCulture = CultureInfo.InvariantCulture;
 
             // launch the app
@@ -43,7 +32,6 @@ namespace BoSSS.Application.BoSSSpad{
                 Utils.GetBoSSSInstallDir(),
                 out bool mpiInitialized
             );
-<<<<<<< HEAD
             //Find dlls in own folder if called from ElectronBoSSSpad
             AppDomain.CurrentDomain.AssemblyResolve += CurrentDomain_AssemblyResolve;
         }
@@ -83,14 +71,6 @@ namespace BoSSS.Application.BoSSSpad{
             catch (Exception ex)
             {
                 return null;
-=======
-
-        }
-
-        public static ElectronWorksheet Instance {
-            get {
-                return instance;
->>>>>>> 6fa3faeb05dbc80532ef484f3623d6be69e8da96
             }
         }
 
@@ -173,3 +153,4 @@ namespace BoSSS.Application.BoSSSpad{
         }
     }
 }
+

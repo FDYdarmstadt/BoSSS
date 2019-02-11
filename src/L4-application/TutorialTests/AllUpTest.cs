@@ -87,20 +87,16 @@ namespace BoSSS.Application.TutorialTests {
             //"ParameterStudy/ParameterStudy.tex"
             )] string TexFileName) {
 
-<<<<<<< HEAD
-=======
+
             // remove - if present - any pre-existing default database
->>>>>>> 6fa3faeb05dbc80532ef484f3623d6be69e8da96
-            string preExistingDb =BoSSS.Application.BoSSSpad.InteractiveShell.GetDefaultDatabaseDir();
+
+            string preExistingDb = BoSSS.Application.BoSSSpad.InteractiveShell.GetDefaultDatabaseDir();
             if (Directory.Exists(preExistingDb)) {
                 Directory.Delete(preExistingDb, true);
             }
             
-<<<<<<< HEAD
-            
-=======
+
             // run test:
->>>>>>> 6fa3faeb05dbc80532ef484f3623d6be69e8da96
             string FullTexName = Path.Combine(DirectoryOffset, TexFileName);
             Assert.IsTrue(File.Exists(FullTexName), "unable to find TeX source: " + FullTexName);
 
@@ -111,10 +107,7 @@ namespace BoSSS.Application.TutorialTests {
             Assert.LessOrEqual(ErrCount, 0, "Found " + ErrCount + " errors in worksheet: " + FullTexName + " (negative numbers may indicate file-not-found, etc.).");
             Assert.IsTrue(ErrCount >= 0, "Fatal return code: " + ErrCount + " in worksheet: " + FullTexName + " (negative numbers may indicate file-not-found, etc.).");
 
-<<<<<<< HEAD
-=======
             // try to terminate batch processor, if still running:
->>>>>>> 6fa3faeb05dbc80532ef484f3623d6be69e8da96
             int timeoucount = 0;
             while(MiniBatchProcessor.Server.IsRunning) {
                 MiniBatchProcessor.Server.SendTerminationSignal();
@@ -126,10 +119,7 @@ namespace BoSSS.Application.TutorialTests {
                 }
             }
 
-<<<<<<< HEAD
-=======
 
->>>>>>> 6fa3faeb05dbc80532ef484f3623d6be69e8da96
             //foreach(var db in BoSSS.Application.BoSSSpad.InteractiveShell.databases) {
             //    db.
             //}
