@@ -4,8 +4,6 @@ const BrowserWindow = electron.BrowserWindow;
 
 let mainWindow;
 
-
-
 function createWindow () {
 	mainWindow = new BrowserWindow({width: 800, height: 600, icon: __dirname + '/src/img/logo/logo_fdy.ico'})
 	mainWindow.loadURL(`file://${__dirname}/dist/index.html`)
