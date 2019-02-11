@@ -833,7 +833,11 @@ namespace BoSSS.Solution.NSECommon {
                                     acc += pARes[j, k] * Normals[j, k, 0];
                                     acc -= (2 * muA * beta) * Grad_URes[j, k, 0] * Normals[j, k, 0];
                                     acc -= (muA * beta) * Grad_URes[j, k, 1] * Normals[j, k, 1];
+<<<<<<< HEAD
                                     acc -= (muA * beta) * Grad_VRes[j, k, 0] * Normals[j, k, 1];
+=======
+                                    acc -= (muA * beta) * Grad_VRes[j, k, 0] * Normals[j, k, 1];                           
+>>>>>>> 6fa3faeb05dbc80532ef484f3623d6be69e8da96
                                     acc -= (muA) * StressXXRes[j, k] * Normals[j, k, 0];
                                     acc -= (muA) * StressXYRes[j, k] * Normals[j, k, 1];
 
@@ -860,6 +864,10 @@ namespace BoSSS.Solution.NSECommon {
 
                 var SchemeHelper = LsTrk.GetXDGSpaceMetrics(new[] { LsTrk.GetSpeciesId("A") }, RequiredOrder, 1).XQuadSchemeHelper;
 
+<<<<<<< HEAD
+=======
+                //EdgeMask Mask = new EdgeMask(LsTrk.GridDat, "Wall_bottom");
+>>>>>>> 6fa3faeb05dbc80532ef484f3623d6be69e8da96
                 EdgeMask Mask = new EdgeMask(LsTrk.GridDat, "Wall_cylinder");
 
                 EdgeQuadratureScheme eqs = SchemeHelper.GetEdgeQuadScheme(LsTrk.GetSpeciesId("A"), IntegrationDomain: Mask);

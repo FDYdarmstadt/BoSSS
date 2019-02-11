@@ -40,8 +40,11 @@ namespace BoSSS.Application.BoSSSpad {
             return S;
         }
 
+<<<<<<< HEAD
 
         
+=======
+>>>>>>> 6fa3faeb05dbc80532ef484f3623d6be69e8da96
         /// <summary>
         /// Runs the solver described by the control object <paramref name="ctrl"/> on a batch system.
         /// The method returns immediately.
@@ -52,6 +55,10 @@ namespace BoSSS.Application.BoSSSpad {
         public static Job RunBatch(this AppControl ctrl, BatchProcessorClient BatchSys) {
             ctrl.ProjectName = InteractiveShell.WorkflowMgm.CurrentProject;
 
+<<<<<<< HEAD
+=======
+
+>>>>>>> 6fa3faeb05dbc80532ef484f3623d6be69e8da96
             string JobName = ctrl.SessionName;
             int ctrl_idx = InteractiveShell.WorkflowMgm.RegisterControl(ctrl);
             if(JobName.IsEmptyOrWhite()) {
@@ -60,6 +67,10 @@ namespace BoSSS.Application.BoSSSpad {
 
             Type solverClass = ctrl.GetSolverType();
             Job job = new Job(JobName, solverClass);
+<<<<<<< HEAD
+=======
+
+>>>>>>> 6fa3faeb05dbc80532ef484f3623d6be69e8da96
             //job.ExecutionTime = executionTime;
             //job.NumberOfMPIProcs = NumberOfMPIProcs;
             //job.UseComputeNodesExclusive = UseComputeNodesExclusive;

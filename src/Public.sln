@@ -143,6 +143,11 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Rheology2", "L4-application
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FSI_Solver", "L4-application\FSI_Solver\FSI_Solver.csproj", "{5C52E2F7-A6DD-4E3E-A31E-1B0FF34C0CC2}"
 EndProject
+<<<<<<< HEAD
+=======
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "XdgPoisson3", "L4-application\XdgPoisson3\XdgPoisson3.csproj", "{EFBEFF7A-E40D-4808-BE79-536040C0FADC}"
+EndProject
+>>>>>>> 6fa3faeb05dbc80532ef484f3623d6be69e8da96
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -369,6 +374,13 @@ Global
 		{5C52E2F7-A6DD-4E3E-A31E-1B0FF34C0CC2}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{5C52E2F7-A6DD-4E3E-A31E-1B0FF34C0CC2}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{5C52E2F7-A6DD-4E3E-A31E-1B0FF34C0CC2}.Release|Any CPU.Build.0 = Release|Any CPU
+<<<<<<< HEAD
+=======
+		{EFBEFF7A-E40D-4808-BE79-536040C0FADC}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{EFBEFF7A-E40D-4808-BE79-536040C0FADC}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{EFBEFF7A-E40D-4808-BE79-536040C0FADC}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{EFBEFF7A-E40D-4808-BE79-536040C0FADC}.Release|Any CPU.Build.0 = Release|Any CPU
+>>>>>>> 6fa3faeb05dbc80532ef484f3623d6be69e8da96
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -436,6 +448,10 @@ Global
 		{556AF24D-182B-4B77-A727-7E18B6488F78} = {3303F7B6-36AF-43F0-AD12-217ADDE38B43}
 		{985A90C0-4E63-4B8D-BC9B-946AF1AD3132} = {92405EB8-3356-435E-9969-26756C41A843}
 		{5C52E2F7-A6DD-4E3E-A31E-1B0FF34C0CC2} = {92405EB8-3356-435E-9969-26756C41A843}
+<<<<<<< HEAD
+=======
+		{EFBEFF7A-E40D-4808-BE79-536040C0FADC} = {D9C6B595-1F33-48F4-A87F-13C7D35F5199}
+>>>>>>> 6fa3faeb05dbc80532ef484f3623d6be69e8da96
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {B302C86E-A207-460C-8E9F-13EA258F7D8B}

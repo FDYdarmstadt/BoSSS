@@ -614,6 +614,10 @@ namespace BoSSS.Application.IBM_Solver {
         protected double torque = new double();
         protected double oldtorque = new double();
 
+<<<<<<< HEAD
+=======
+
+>>>>>>> 6fa3faeb05dbc80532ef484f3623d6be69e8da96
         //SinglePhaseField blocking = null;
 
         /// <summary>

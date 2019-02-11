@@ -2152,6 +2152,10 @@ namespace CNS {
             double epsilon0 = 1.0;
             double kappa = 1.0;
 
+<<<<<<< HEAD
+=======
+
+>>>>>>> 6fa3faeb05dbc80532ef484f3623d6be69e8da96
             if (AV) {
                 Variable sensorVariable = Variables.Density;
                 c.ShockSensor = new PerssonSensor(sensorVariable, sensorLimit);

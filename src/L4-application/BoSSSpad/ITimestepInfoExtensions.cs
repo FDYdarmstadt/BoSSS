@@ -693,6 +693,10 @@ namespace BoSSS.Application.BoSSSpad {
                 Debug.Assert(DOFs.ContainsKey(fieldName));
                 Debug.Assert(DOFs[fieldName].Length == resolution.Length);
 
+<<<<<<< HEAD
+=======
+
+>>>>>>> 6fa3faeb05dbc80532ef484f3623d6be69e8da96
                 //double[][] resolutionsAndErrors = new double[2][] {
                 //    xAxis_Is_hOrDof ? resolution : DOFs[fieldName].Select(ix => (double)ix).ToArray(),
                 //    errors[fieldName] };

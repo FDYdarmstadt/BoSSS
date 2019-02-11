@@ -656,7 +656,11 @@ namespace BoSSS.Application.SipPoisson {
         public static SipControl[] VoronoiPStudy(int res) {
 
             //double[] NoOfLli = new double[] { 2, 5, 10, 20, 100 };
+<<<<<<< HEAD
             double[] NoOfLli = GenericBlas.Linspace(0, 100, 201);
+=======
+            double[] NoOfLli = GenericBlas.Linspace(0, 100, 101);
+>>>>>>> 6fa3faeb05dbc80532ef484f3623d6be69e8da96
             List<SipControl> R = new List<SipControl>();
             for(int i = 0; i < NoOfLli.Length; i++) {
                 R.Add(TestVoronoi_LDomain(res, deg: 1, NoOfLlyodsIter: (int)NoOfLli[i]));

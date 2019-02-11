@@ -1084,8 +1084,11 @@ namespace BoSSS.Solution.XdgTimestepping {
                 Debug.Assert(object.ReferenceEquals(this.m_CurrentAgglomeration.Tracker, this.m_LsTrk));
                 this.ComputeOperatorMatrix(m_Stack_OpMatrix[0], m_Stack_OpAffine[0], CurrentStateMapping, locCurSt, base.GetAgglomeratedLengthScales(), m_CurrentPhystime + m_CurrentDt);
 
+<<<<<<< HEAD
                 
 
+=======
+>>>>>>> 6fa3faeb05dbc80532ef484f3623d6be69e8da96
 
                 // assemble system
                 // ---------------
