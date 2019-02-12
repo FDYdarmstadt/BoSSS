@@ -202,7 +202,7 @@ namespace BoSSS.Application.FSI_Solver {
                                         // The posterior side of the particle (Neumann boundary)
                                         if (Math.Cos(p.currentIterAng_P[0]) * (X[0] - p.currentIterPos_P[0][0]) + Math.Sin(p.currentIterAng_P[0]) * (X[1] - p.currentIterPos_P[0][1]) < 1e-8)// && Math.Cos(p.currentIterAng_P[0]) * (X[0] - p.currentIterPos_P[0][0]) + Math.Sin(p.currentIterAng_P[0]) * (X[1] - p.currentIterPos_P[0][1]) > -0.25)
                                         {
-                                            cos_theta = -1;//(Math.Cos(p.currentIterAng_P[0]) * (X[0] - p.currentIterPos_P[0][0]) + Math.Sin(p.currentIterAng_P[0]) * (X[1] - p.currentIterPos_P[0][1])) / (Math.Sqrt((X[0] - p.currentIterPos_P[0][0]).Pow2() + (X[1] - p.currentIterPos_P[0][1]).Pow2()));
+                                            cos_theta = (Math.Cos(p.currentIterAng_P[0]) * (X[0] - p.currentIterPos_P[0][0]) + Math.Sin(p.currentIterAng_P[0]) * (X[1] - p.currentIterPos_P[0][1])) / (Math.Sqrt((X[0] - p.currentIterPos_P[0][0]).Pow2() + (X[1] - p.currentIterPos_P[0][1]).Pow2()));
                                         }
                                         // The anterior side of the particle (Dirichlet boundary)
                                         else
@@ -261,7 +261,7 @@ namespace BoSSS.Application.FSI_Solver {
                     //IBM_Op.OnIntegratingBulk += pres.SetParameter;
                     comps.Add(pres); // bulk component
 
-                    var presLs = new BoSSS.Solution.NSECommon.Operator.Pressure.PressureFormAtIB(d, D, LsTrk);//no changes necessary for impl. of active particles
+                    var presLs = new BoSSS.Solution.NSECommon.Operator.Pressure.ActivePressureAtIB(d, D, LsTrk);//no changes necessary for impl. of active particles
                     comps.Add(presLs); // immersed boundary component
 
                     // if periodic boundary conditions are applied a fixed pressure gradient drives the flow
@@ -334,7 +334,7 @@ namespace BoSSS.Application.FSI_Solver {
                                         // The posterior side of the particle (Neumann boundary)
                                         if (Math.Cos(p.currentIterAng_P[0]) * (X[0] - p.currentIterPos_P[0][0]) + Math.Sin(p.currentIterAng_P[0]) * (X[1] - p.currentIterPos_P[0][1]) < 1e-8)// && Math.Cos(p.currentIterAng_P[0]) * (X[0] - p.currentIterPos_P[0][0]) + Math.Sin(p.currentIterAng_P[0]) * (X[1] - p.currentIterPos_P[0][1]) > -0.25)
                                         {
-                                            cos_theta = -1;// (Math.Cos(p.currentIterAng_P[0]) * (X[0] - p.currentIterPos_P[0][0]) + Math.Sin(p.currentIterAng_P[0]) * (X[1] - p.currentIterPos_P[0][1])) / (Math.Sqrt((X[0] - p.currentIterPos_P[0][0]).Pow2() + (X[1] - p.currentIterPos_P[0][1]).Pow2()));
+                                            cos_theta =  (Math.Cos(p.currentIterAng_P[0]) * (X[0] - p.currentIterPos_P[0][0]) + Math.Sin(p.currentIterAng_P[0]) * (X[1] - p.currentIterPos_P[0][1])) / (Math.Sqrt((X[0] - p.currentIterPos_P[0][0]).Pow2() + (X[1] - p.currentIterPos_P[0][1]).Pow2()));
                                         }
                                         // The anterior side of the particle (Dirichlet boundary)
                                         else
@@ -493,7 +493,7 @@ namespace BoSSS.Application.FSI_Solver {
                     break;
 
                 case LevelSetHandling.None:
-                    MassMatrixShape = MassMatrixShapeandDependence.IsNonIdentity;
+                    MassMatrixShape = MassMatrixShapeandDependence.IsTimeDependent;
                     break;
 
                 default:
@@ -620,10 +620,10 @@ namespace BoSSS.Application.FSI_Solver {
             foreach (Particle p in m_Particles)
             {
                 p.ResetParticlePosition();
-                p.UpdateAngularVelocity(dt, this.Control.PhysicalParameters.rho_A, ((FSI_Control)this.Control).includeRotation);
+                p.UpdateAngularVelocity(dt, ((FSI_Control)this.Control).includeRotation);
                 p.UpdateTransVelocity(dt, this.Control.PhysicalParameters.rho_A, ((FSI_Control)this.Control).includeTranslation);
                 p.ComputeParticleRe(this.Control.PhysicalParameters.mu_A);
-                p.UpdateParticlePosition(dt);
+                p.UpdateParticlePosition(dt, this.Control.PhysicalParameters.rho_A);
             }
 
             // Update phi complete
@@ -764,11 +764,13 @@ namespace BoSSS.Application.FSI_Solver {
                         UpdateLevelSetParticles(dt);
                         triggerOnlyCollisionProcedure = false;
                         if (phystime == 0) {
-                            if ((base.MPIRank == 0) && (CurrentSessionInfo.ID != Guid.Empty)) {
+                            if ((base.MPIRank == 0) && (CurrentSessionInfo.ID != Guid.Empty))
+                            {
                                 Log_DragAndLift = base.DatabaseDriver.FsDriver.GetNewLog("PhysicalData", CurrentSessionInfo.ID);
                                 string firstline = String.Format("{0}\t{1}\t{2}\t{3}\t{4}\t{5}\t{6}\t{7}\t{8}\t{9}", "#Timestep", "#Time", "P0_PosX", "P0_PosY", "P0_angle", "P0_VelX", "P0_VelY", "xPosition", "TotalKineticEnergy", "TotalMomentum");
                                 Log_DragAndLift.WriteLine(firstline);
-                                if (m_Particles.Count > 1) {
+                                if (m_Particles.Count > 1)
+                                {
                                     Log_DragAndLift_P1 = base.DatabaseDriver.FsDriver.GetNewLog("PhysicalData_P1", CurrentSessionInfo.ID);
                                     string firstline_P1 = String.Format("{0}\t{1}\t{2}\t{3}\t{4}\t{5}\t{6}\t{7}\t{8}\t{9}", "#Timestep", "#Time", "P1_PosX", "P1_PosY", "P1_angle", "P1_VelX", "P1_VelY", "xPosition", "TotalKineticEnergy", "TotalMomentum");
                                     Log_DragAndLift_P1.WriteLine(firstline_P1);
@@ -814,7 +816,7 @@ namespace BoSSS.Application.FSI_Solver {
                         }
                         if (phystime == 0)
                         {
-                            if ((base.MPIRank == 0) && (CurrentSessionInfo.ID != Guid.Empty))
+                            if ((base.MPIRank == 0) && (CurrentSessionInfo.ID != Guid.Empty) && iteration_counter == 0)
                             {
                                 Log_DragAndLift = base.DatabaseDriver.FsDriver.GetNewLog("PhysicalData", CurrentSessionInfo.ID);
                                 string firstline = String.Format("{0}\t{1}\t{2}\t{3}\t{4}\t{5}\t{6}\t{7}\t{8}\t{9}", "#Timestep", "#Time", "P0_PosX", "P0_PosY", "P0_angle", "P0_VelX", "P0_VelY", "xPosition", "TotalKineticEnergy", "TotalMomentum");

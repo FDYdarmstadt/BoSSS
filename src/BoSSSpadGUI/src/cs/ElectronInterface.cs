@@ -16,8 +16,15 @@ namespace BoSSS.Application.BoSSSpad{
 
         static ElectronWorksheet worksheet;
 
+        /// <summary>
+        /// Entrypoint of Electron BoSSSpad, in detail the electron-edge-js package
+        /// </summary>
+        /// <param name="input">
+        /// Path to the ElectronWorksheet.dll, ElectronBoSSSpad.exe and affiliated DLLs
+        /// </param>
+        /// <returns></returns>
         public async Task<object> Invoke(object input){
-            worksheet = ElectronWorksheet.Instance;
+            worksheet = new ElectronWorksheet(input.ToString());
             return new{
                 runCommand = (Func<object, Task<object>>)(async (i) => {
                     return await Task.Run(() => ElectronInterface.RunCommand(i));
@@ -35,12 +42,12 @@ namespace BoSSS.Application.BoSSSpad{
         }
 
         static object RunCommand(object input){
-            System.Diagnostics.Debugger.Break();
             Tuple<string, string> output = worksheet.RunCommand(input.ToString());
             return output;
         }
 
         static bool Save(dynamic input){
+            Debugger.Launch();
             string path = (string)input.path;
             object[] commands = (object[])input.commands;
             object[] results = (object[])input.results;
