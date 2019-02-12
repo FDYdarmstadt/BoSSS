@@ -117,6 +117,7 @@ namespace BoSSS.Application.FSI_Solver
         public int underrelaxationFT_exponent = 0;
         public double underrelaxation_factor = 1;
         public int underrelaxationFT_exponent_max = 0;
+        public bool deleteSmallValues = false;
         public double active_force_correction;
 
         /// <summary>
@@ -1045,7 +1046,8 @@ namespace BoSSS.Application.FSI_Solver
             {
                 temp_underR[k] = underrelaxation_factor;
             }
-            // first iteration, set URF to 1
+            // first iteration, set URF to 1 (non-constant URF)
+            // =============================
             if (iteration_counter_P == 0 && underrelaxationFT_constant == false && active_stress_P != 0)
             {
                 for (int k = 0; k < D; k++)
@@ -1059,7 +1061,8 @@ namespace BoSSS.Application.FSI_Solver
                 }
                 temp_underR[D] = 1;
 
-                // approximate active force
+                // approximate active force to improve convergence (only in first iteration)
+                // =============================
                 if (Math.Abs(0.125 * Circumference_P * active_stress_P.Pow2() * Math.Cos(currentIterAng_P[0]) / muA) > Math.Abs(currentTimeForces_P[1][0]) && currentTimeForces_P[1][0] != 0)
                 {
                     forces[0] = 0.5 * currentTimeForces_P[1][0];
@@ -1078,6 +1081,8 @@ namespace BoSSS.Application.FSI_Solver
                 }
                 torque = 0;
             }
+            // first iteration, set URF to 1 (constant URF or no iterative process)
+            // =============================
             else if (iteration_counter_P == 0)
             {
                 for (int k = 0; k < D; k++)
@@ -1092,6 +1097,7 @@ namespace BoSSS.Application.FSI_Solver
                 temp_underR[D] = 1;
             }
             // constant predefined URF
+            // =============================
             else if (underrelaxationFT_constant == true)
             {
                 for (int k = 0; k < D + 1; k++)
@@ -1100,6 +1106,7 @@ namespace BoSSS.Application.FSI_Solver
                 }
             }
             // calculation of URF for adaptive underrelaxation
+            // =============================
             else if (underrelaxationFT_constant == false)
             {
                 // forces
@@ -1165,18 +1172,19 @@ namespace BoSSS.Application.FSI_Solver
             for (int i = 0; i < D; i++)
             {
                 forces_underR[i] = temp_underR[i] * forces[i] + (1 - temp_underR[i]) * currentIterForces_P[0][i];
-                if (Math.Abs(forces_underR[i]) < forceAndTorque_convergence * 1e-2)
+                // kill all forces smaller than a certain value (increases stability)
+                if (Math.Abs(forces_underR[i]) < forceAndTorque_convergence * 1e-2 && deleteSmallValues == true)
                 {
                     forces_underR[i] = 0;
                 }
             }
+            // torque
             double torque_underR = temp_underR[D] * torque + (1 - temp_underR[D]) * currentIterTorque_P[0];
-            if (Math.Abs(torque_underR) < forceAndTorque_convergence * 1e-2)
+            // kill all values smaller than a certain value (increases stability)
+            if (Math.Abs(torque_underR) < forceAndTorque_convergence * 1e-2 && deleteSmallValues == true)
             {
                 torque_underR = 0;
             }
-            //forces_underR[0] = Math.Cos(currentIterAng_P[0]) * active_stress_P + forces_underR[0];
-            //forces_underR[1] = Math.Sin(currentIterAng_P[0]) * active_stress_P + forces_underR[1];
             // update forces and torque
             this.currentIterForces_P.Insert(0, forces_underR);
             currentIterForces_P.Remove(currentIterForces_P.Last());
