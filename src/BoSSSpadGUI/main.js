@@ -101,7 +101,8 @@ class BoSSSMenu{
 					},
 					{type: 'separator'},
 					{
-						label: 'Open File',
+                        label: 'Open File',
+                        accelerator: 'CmdOrCtrl+O',
 						click() {
 							that.openFile();
 						}
@@ -129,6 +130,36 @@ class BoSSSMenu{
 						}
 					}
 				]
+            },
+            {
+                label: 'Commands',
+                submenu:[
+                    {
+                        label: 'Execute from here...',
+                        accelerator: 'CmdOrCtrl+F5'
+                    },
+                    {
+                        label: 'Execute entire worksheet',
+                        accelerator: 'F5'
+                    },
+                    {
+                        label: 'Execute until here',
+                        accelerator: 'CmdOrCtrl+Shift+F5'
+                    },
+                    {
+                        label: 'Interrupt current command'
+                    },
+                    {
+                        label: 'Execute until here'
+                    },
+                ]
+            },
+            {	
+				label: 'Dev',
+				submenu:[
+					{role: 'reload'},
+					{role: 'toggledevtools'}
+				]
 			},
 			{
 				label: 'Help',
@@ -145,13 +176,6 @@ class BoSSSMenu{
 							electron.shell.openExternal('http://www.fdy.tu-darmstadt.de/fdy/fdyresearch/bossscode/framework/framework.de.jsp');
 						} 
 					}
-				]
-			},
-			{	
-				label: 'Dev',
-				submenu:[
-					{role: 'reload'},
-					{role: 'toggledevtools'}
 				]
 			}
 		];
