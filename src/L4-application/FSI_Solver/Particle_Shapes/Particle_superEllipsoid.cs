@@ -46,9 +46,7 @@ namespace BoSSS.Application.FSI_Solver
                 currentIterVel_P.Add(new double[Dim]);
                 currentIterRot_P.Add(new double());
                 currentIterForces_P.Add(new double[Dim]);
-                temporalForces_P.Add(new double[Dim]);
                 currentIterTorque_P.Add(new double());
-                temporalTorque_P.Add(new double());
             }
             for (int i = 0; i < 4; i++)
             {
@@ -83,13 +81,6 @@ namespace BoSSS.Application.FSI_Solver
 
             UpdateLevelSetFunction();
             #endregion
-        }
-        override public double active_stress_P
-        {
-            get
-            {
-                return stress_magnitude_P;
-            }
         }
 
         public override double Circumference_P 
