@@ -5,7 +5,7 @@ var path = require('path');
 class BoSSS{
     constructor(){
         if(! this.constructor.prototype.instance ){
-            var BoSSS_DLL_path = path.join(__dirname, '../src/cs/bin/Debug/ElectronWorksheet.dll');
+            var BoSSS_DLL_path = path.join(__dirname, '../src/cs/bin/Release/ElectronWorksheet.dll');
             var requireBoSSS = edge.func(
             {
                 assemblyFile: BoSSS_DLL_path,
@@ -54,6 +54,7 @@ class BoSSS{
         );
         return runPromise;
     }
+    
     save(data){
         //data {path: string, commands: string[], results: string[]}
         var that = this;

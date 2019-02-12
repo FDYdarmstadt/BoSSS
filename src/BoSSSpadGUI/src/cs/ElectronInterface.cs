@@ -47,7 +47,6 @@ namespace BoSSS.Application.BoSSSpad{
         }
 
         static bool Save(dynamic input){
-            Debugger.Launch();
             string path = (string)input.path;
             object[] commands = (object[])input.commands;
             object[] results = (object[])input.results;
