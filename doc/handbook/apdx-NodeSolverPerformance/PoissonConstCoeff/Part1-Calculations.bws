@@ -5,11 +5,17 @@ restart
   _______________________
 
 Databases loaded:
-List of 4 instances of IDatabaseInfo {
+List of 10 instances of IDatabaseInfo {
   0: { Session Count = 0; Grid Count = 34; Path = C:\BoSSS_DB }
-  1: { Session Count = 224; Grid Count = 6; Path = C:\tmp\fk_temp_db }
-  2: { Session Count = 197; Grid Count = 6; Path = P:\Performance_DB }
-  3: { Session Count = 0; Grid Count = 6; Path = E:\Performance_oldLibs_DB }
+  1: { Session Count = 144; Grid Count = 6; Path = C:\tmp\fk_temp_db }
+  2: { Session Count = 0; Grid Count = 6; Path = P:\Performance_DB }
+  3: { Session Count = 12; Grid Count = 31; Path = P:\testDB }
+  4: { Session Count = 112; Grid Count = 6; Path = E:\Performance_oldLibs_DB }
+  5: { Session Count = 0; Grid Count = 3; Path = E:\db_2delete }
+  6: { Session Count = 34; Grid Count = 9; Path = E:\XdgPerformance }
+  7: { Session Count = 112; Grid Count = 136; Path = E:\bosss_db_performance }
+  8: { Session Count = 3; Grid Count = 2; Path = F:\test_db }
+  9: { Session Count = 144; Grid Count = 139; Path = Z:\weber\Performance_Kram\bosss_db_performance }
 }
 
  Console ready for input. Type 'help' for help.
@@ -20,18 +26,18 @@ using BoSSS.Application.SipPoisson;
 ==============
 **************
 ==============
-string WFlowName = "PoissonSolverPerformance_beforeNewLibs";
+string WFlowName = "SIP_SingleNodePerformance_1";
 WorkflowMgm.Init(WFlowName);
 WorkflowMgm.AllJobs;
 **************
-Project name is set to 'PoissonSolverPerformance_beforeNewLibs'.
+Project name is set to 'SIP_SingleNodePerformance_1'.
 List of 0 instances of KeyValuePair{String,Job} {
 }
 ==============
 //var tempDB = OpenOrCreateDatabase(@"\\dc1\userspace\weber\Performance_oldLibs_DB");
-var tempDB = OpenOrCreateDatabase(@"E:\Performance_oldLibs_DB");
+var tempDB = OpenOrCreateDatabase(@"E:\Performance_newLibs_DB");
 **************
-Opening existing database 'E:\Performance_oldLibs_DB'.
+Opening existing database 'E:\Performance_newLibs_DB'.
 
 ==============
 var myBatch = new MiniBatchProcessorClient(@"G:\deploy-Mini");
@@ -79,12 +85,12 @@ static class Utils {
 tempDB.Grids;
 **************
 List of 6 instances of IGridInfo {
-  0: { Guid = 08cc827c-a65e-4a46-b9f0-437fd27f76bc; Name = PoissonSolverPerformance_beforeNewLibs_J1310720; Cell Count = 1310720; Dim = 3 }
-  1: { Guid = a918d1bc-ab10-4e51-8ab1-0773fb9adf5c; Name = PoissonSolverPerformance_beforeNewLibs_J163840; Cell Count = 163840; Dim = 3 }
-  2: { Guid = b448dc07-bd76-4cb7-b9c0-3a0f7a20f707; Name = PoissonSolverPerformance_beforeNewLibs_J20480; Cell Count = 20480; Dim = 3 }
-  3: { Guid = 4c6f06af-b6bb-43c7-803c-c64465ca46e4; Name = PoissonSolverPerformance_beforeNewLibs_J2560; Cell Count = 2560; Dim = 3 }
-  4: { Guid = b7cca2e2-4d7e-4fea-8f8a-c0402ede5864; Name = PoissonSolverPerformance_beforeNewLibs_J320; Cell Count = 320; Dim = 3 }
-  5: { Guid = 57d9b963-04cb-4d4a-8bfb-324fbf6a387e; Name = PoissonSolverPerformance_beforeNewLibs_J40; Cell Count = 40; Dim = 3 }
+  0: { Guid = bb01590c-e20a-418d-9ddc-75dea56cc790; Name = PoissonSolverPerformance_J1310720; Cell Count = 1310720; Dim = 3 }
+  1: { Guid = cff05621-aa69-4853-b4dc-88d70da2a27f; Name = PoissonSolverPerformance_J163840; Cell Count = 163840; Dim = 3 }
+  2: { Guid = c8debc1e-16e7-4332-b69b-ba16266690cd; Name = PoissonSolverPerformance_J20480; Cell Count = 20480; Dim = 3 }
+  3: { Guid = 91edad8e-70d8-46a5-b853-b5a8c01b77aa; Name = PoissonSolverPerformance_J2560; Cell Count = 2560; Dim = 3 }
+  4: { Guid = ee16a351-cbeb-4ca1-842b-d8d4bbcdad85; Name = PoissonSolverPerformance_J320; Cell Count = 320; Dim = 3 }
+  5: { Guid = 9a10788a-a2e8-4291-8a90-33f9fd225e19; Name = PoissonSolverPerformance_J40; Cell Count = 40; Dim = 3 }
 }
 ==============
 int[] Resolutions_3D = new int[] { 2, 4, 8, 16, 32, 64 };
@@ -133,23 +139,29 @@ for(int cnt = 0; cnt < Resolutions_3D.Length; cnt++) {
     
 }
 **************
-Found Grid: { Guid = 57d9b963-04cb-4d4a-8bfb-324fbf6a387e; Name = PoissonSolverPerformance_beforeNewLibs_J40; Cell Count = 40; Dim = 3 }
-Found Grid: { Guid = b7cca2e2-4d7e-4fea-8f8a-c0402ede5864; Name = PoissonSolverPerformance_beforeNewLibs_J320; Cell Count = 320; Dim = 3 }
-Found Grid: { Guid = 4c6f06af-b6bb-43c7-803c-c64465ca46e4; Name = PoissonSolverPerformance_beforeNewLibs_J2560; Cell Count = 2560; Dim = 3 }
-Found Grid: { Guid = b448dc07-bd76-4cb7-b9c0-3a0f7a20f707; Name = PoissonSolverPerformance_beforeNewLibs_J20480; Cell Count = 20480; Dim = 3 }
-Found Grid: { Guid = a918d1bc-ab10-4e51-8ab1-0773fb9adf5c; Name = PoissonSolverPerformance_beforeNewLibs_J163840; Cell Count = 163840; Dim = 3 }
-Found Grid: { Guid = 08cc827c-a65e-4a46-b9f0-437fd27f76bc; Name = PoissonSolverPerformance_beforeNewLibs_J1310720; Cell Count = 1310720; Dim = 3 }
+Creating grid with 40 cells.
+An equivalent grid is already present in the database -- the grid will not be saved.
+Creating grid with 320 cells.
+An equivalent grid is already present in the database -- the grid will not be saved.
+Creating grid with 2560 cells.
+An equivalent grid is already present in the database -- the grid will not be saved.
+Creating grid with 20480 cells.
+An equivalent grid is already present in the database -- the grid will not be saved.
+Creating grid with 163840 cells.
+An equivalent grid is already present in the database -- the grid will not be saved.
+Creating grid with 1310720 cells.
+An equivalent grid is already present in the database -- the grid will not be saved.
 
 ==============
 grids;
 **************
 List of 6 instances of IGridInfo {
-  0: { Guid = 57d9b963-04cb-4d4a-8bfb-324fbf6a387e; Name = PoissonSolverPerformance_beforeNewLibs_J40; Cell Count = 40; Dim = 3 }
-  1: { Guid = b7cca2e2-4d7e-4fea-8f8a-c0402ede5864; Name = PoissonSolverPerformance_beforeNewLibs_J320; Cell Count = 320; Dim = 3 }
-  2: { Guid = 4c6f06af-b6bb-43c7-803c-c64465ca46e4; Name = PoissonSolverPerformance_beforeNewLibs_J2560; Cell Count = 2560; Dim = 3 }
-  3: { Guid = b448dc07-bd76-4cb7-b9c0-3a0f7a20f707; Name = PoissonSolverPerformance_beforeNewLibs_J20480; Cell Count = 20480; Dim = 3 }
-  4: { Guid = a918d1bc-ab10-4e51-8ab1-0773fb9adf5c; Name = PoissonSolverPerformance_beforeNewLibs_J163840; Cell Count = 163840; Dim = 3 }
-  5: { Guid = 08cc827c-a65e-4a46-b9f0-437fd27f76bc; Name = PoissonSolverPerformance_beforeNewLibs_J1310720; Cell Count = 1310720; Dim = 3 }
+  0: { Guid = 9a10788a-a2e8-4291-8a90-33f9fd225e19; Name = PoissonSolverPerformance_J40; Cell Count = 40; Dim = 3 }
+  1: { Guid = ee16a351-cbeb-4ca1-842b-d8d4bbcdad85; Name = PoissonSolverPerformance_J320; Cell Count = 320; Dim = 3 }
+  2: { Guid = 91edad8e-70d8-46a5-b853-b5a8c01b77aa; Name = PoissonSolverPerformance_J2560; Cell Count = 2560; Dim = 3 }
+  3: { Guid = c8debc1e-16e7-4332-b69b-ba16266690cd; Name = PoissonSolverPerformance_J20480; Cell Count = 20480; Dim = 3 }
+  4: { Guid = cff05621-aa69-4853-b4dc-88d70da2a27f; Name = PoissonSolverPerformance_J163840; Cell Count = 163840; Dim = 3 }
+  5: { Guid = bb01590c-e20a-418d-9ddc-75dea56cc790; Name = PoissonSolverPerformance_J1310720; Cell Count = 1310720; Dim = 3 }
 }
 ==============
 **************
@@ -211,16 +223,19 @@ List<SipControl> controls = new List<SipControl>();
 int[] PolyDegS = new int[] {2,3,5}; // reduced options for dev.
 **************
 ==============
+using BoSSS.Solution.AdvancedSolvers;
+**************
+==============
 // Solvers which we want to instrument:
-SolverCodes[] solver_nameS = new SolverCodes[] {
-    SolverCodes.classic_pardiso, 
-    SolverCodes.classic_mumps, 
-    SolverCodes.classic_cg,
-    SolverCodes.exp_softpcg_schwarz_directcoarse,
-    SolverCodes.exp_direct,
-    SolverCodes.exp_softpcg_schwarz,
-    SolverCodes.exp_direct_lapack,
-    SolverCodes.exp_softpcg_mg
+LinearSolverConfig.Code[] solver_nameS = new LinearSolverConfig.Code[] {
+    //SolverCodes.classic_pardiso, 
+    LinearSolverConfig.Code.classic_mumps, 
+    LinearSolverConfig.Code.classic_cg,
+    LinearSolverConfig.Code.exp_softpcg_schwarz_directcoarse,
+    //SolverCodes.exp_direct,
+    //SolverCodes.exp_softpcg_schwarz,
+    //SolverCodes.exp_direct_lapack,
+    LinearSolverConfig.Code.exp_softpcg_mg
 }; 
 **************
 ==============
@@ -229,7 +244,7 @@ int MaxDof = 5000000;
 **************
 ==============
 controls.Clear();
-foreach(SolverCodes solver_name in solver_nameS) {
+foreach(LinearSolverConfig.Code solver_name in solver_nameS) {
 foreach(int k in PolyDegS) {
 int iGrd = 0;    
 foreach(IGridInfo grd in grids) {
@@ -256,8 +271,8 @@ foreach(IGridInfo grd in grids) {
     ctrl.SetDatabase(tempDB);
     ctrl.SetGrid(grd);
     ctrl.SetDGdegree(k);
-    ctrl.solver_name         = solver_name;
-    ctrl.NoOfMultigridLevels = int.MaxValue;
+    ctrl.LinearSolver.SolverCode          = solver_name;
+    ctrl.LinearSolver.NoOfMultigridLevels = int.MaxValue;
     
     ctrl.InitialValues.Add("RHS", GetFormulaObject(InitialValues.RHS));
     ctrl.AddBoundaryValue(BoundaryType.Dirichlet.ToString(), "T",
@@ -270,118 +285,11 @@ foreach(IGridInfo grd in grids) {
 }
 
 **************
-setting up: J40_k2_classic_pardiso
-setting up: J320_k2_classic_pardiso
-setting up: J2560_k2_classic_pardiso
-setting up: J20480_k2_classic_pardiso
-setting up: J163840_k2_classic_pardiso
-setting up: J40_k3_classic_pardiso
-setting up: J320_k3_classic_pardiso
-setting up: J2560_k3_classic_pardiso
-setting up: J20480_k3_classic_pardiso
-setting up: J163840_k3_classic_pardiso
-setting up: J40_k5_classic_pardiso
-setting up: J320_k5_classic_pardiso
-setting up: J2560_k5_classic_pardiso
-setting up: J20480_k5_classic_pardiso
-setting up: J40_k2_classic_mumps
-setting up: J320_k2_classic_mumps
-setting up: J2560_k2_classic_mumps
-setting up: J20480_k2_classic_mumps
-setting up: J163840_k2_classic_mumps
-setting up: J40_k3_classic_mumps
-setting up: J320_k3_classic_mumps
-setting up: J2560_k3_classic_mumps
-setting up: J20480_k3_classic_mumps
-setting up: J163840_k3_classic_mumps
-setting up: J40_k5_classic_mumps
-setting up: J320_k5_classic_mumps
-setting up: J2560_k5_classic_mumps
-setting up: J20480_k5_classic_mumps
-setting up: J40_k2_classic_cg
-setting up: J320_k2_classic_cg
-setting up: J2560_k2_classic_cg
-setting up: J20480_k2_classic_cg
-setting up: J163840_k2_classic_cg
-setting up: J40_k3_classic_cg
-setting up: J320_k3_classic_cg
-setting up: J2560_k3_classic_cg
-setting up: J20480_k3_classic_cg
-setting up: J163840_k3_classic_cg
-setting up: J40_k5_classic_cg
-setting up: J320_k5_classic_cg
-setting up: J2560_k5_classic_cg
-setting up: J20480_k5_classic_cg
-setting up: J40_k2_exp_softpcg_schwarz_directcoarse
-setting up: J320_k2_exp_softpcg_schwarz_directcoarse
-setting up: J2560_k2_exp_softpcg_schwarz_directcoarse
-setting up: J20480_k2_exp_softpcg_schwarz_directcoarse
-setting up: J163840_k2_exp_softpcg_schwarz_directcoarse
-setting up: J40_k3_exp_softpcg_schwarz_directcoarse
-setting up: J320_k3_exp_softpcg_schwarz_directcoarse
-setting up: J2560_k3_exp_softpcg_schwarz_directcoarse
-setting up: J20480_k3_exp_softpcg_schwarz_directcoarse
-setting up: J163840_k3_exp_softpcg_schwarz_directcoarse
-setting up: J40_k5_exp_softpcg_schwarz_directcoarse
-setting up: J320_k5_exp_softpcg_schwarz_directcoarse
-setting up: J2560_k5_exp_softpcg_schwarz_directcoarse
-setting up: J20480_k5_exp_softpcg_schwarz_directcoarse
-setting up: J40_k2_exp_direct
-setting up: J320_k2_exp_direct
-setting up: J2560_k2_exp_direct
-setting up: J20480_k2_exp_direct
-setting up: J163840_k2_exp_direct
-setting up: J40_k3_exp_direct
-setting up: J320_k3_exp_direct
-setting up: J2560_k3_exp_direct
-setting up: J20480_k3_exp_direct
-setting up: J163840_k3_exp_direct
-setting up: J40_k5_exp_direct
-setting up: J320_k5_exp_direct
-setting up: J2560_k5_exp_direct
-setting up: J20480_k5_exp_direct
-setting up: J40_k2_exp_softpcg_schwarz
-setting up: J320_k2_exp_softpcg_schwarz
-setting up: J2560_k2_exp_softpcg_schwarz
-setting up: J20480_k2_exp_softpcg_schwarz
-setting up: J163840_k2_exp_softpcg_schwarz
-setting up: J40_k3_exp_softpcg_schwarz
-setting up: J320_k3_exp_softpcg_schwarz
-setting up: J2560_k3_exp_softpcg_schwarz
-setting up: J20480_k3_exp_softpcg_schwarz
-setting up: J163840_k3_exp_softpcg_schwarz
-setting up: J40_k5_exp_softpcg_schwarz
-setting up: J320_k5_exp_softpcg_schwarz
-setting up: J2560_k5_exp_softpcg_schwarz
-setting up: J20480_k5_exp_softpcg_schwarz
-setting up: J40_k2_exp_direct_lapack
-setting up: J320_k2_exp_direct_lapack
-setting up: J2560_k2_exp_direct_lapack
-setting up: J20480_k2_exp_direct_lapack
-setting up: J163840_k2_exp_direct_lapack
-setting up: J40_k3_exp_direct_lapack
-setting up: J320_k3_exp_direct_lapack
-setting up: J2560_k3_exp_direct_lapack
-setting up: J20480_k3_exp_direct_lapack
-setting up: J163840_k3_exp_direct_lapack
-setting up: J40_k5_exp_direct_lapack
-setting up: J320_k5_exp_direct_lapack
-setting up: J2560_k5_exp_direct_lapack
-setting up: J20480_k5_exp_direct_lapack
-setting up: J40_k2_exp_softpcg_mg
-setting up: J320_k2_exp_softpcg_mg
-setting up: J2560_k2_exp_softpcg_mg
-setting up: J20480_k2_exp_softpcg_mg
-setting up: J163840_k2_exp_softpcg_mg
-setting up: J40_k3_exp_softpcg_mg
-setting up: J320_k3_exp_softpcg_mg
-setting up: J2560_k3_exp_softpcg_mg
-setting up: J20480_k3_exp_softpcg_mg
-setting up: J163840_k3_exp_softpcg_mg
-setting up: J40_k5_exp_softpcg_mg
-setting up: J320_k5_exp_softpcg_mg
-setting up: J2560_k5_exp_softpcg_mg
-setting up: J20480_k5_exp_softpcg_mg
+(29,10): error CS1061: Type `BoSSS.Application.SipPoisson.SipControl' does not contain a definition for `solver_name' and no extension method `solver_name' of type `BoSSS.Application.SipPoisson.SipControl' could be found. Are you missing an assembly reference?
+C:\BoSSS\BoSSS-SolverPerformance\public\src\L4-application\BoSSSpad\bin\Release\ipPoisson.exe (Location of the symbol related to previous error)
+(30,10): error CS1061: Type `BoSSS.Application.SipPoisson.SipControl' does not contain a definition for `NoOfMultigridLevels' and no extension method `NoOfMultigridLevels' of type `BoSSS.Application.SipPoisson.SipControl' could be found. Are you missing an assembly reference?
+C:\BoSSS\BoSSS-SolverPerformance\public\src\L4-application\BoSSSpad\bin\Release\ipPoisson.exe (Location of the symbol related to previous error)
+No. of errors|warnings: 2|0.
 
 ==============
 // ==========
@@ -411,9 +319,6 @@ foreach(var ctrl in controls) {
     ctrl.RunBatch(myBatch); 
 }
 **************
- Submitting: PoissonConstCoeff_J40_k2_classic_pardiso
-System.ArgumentException occurred: Job with name 'PoissonConstCoeff_J40_k2_classic_pardiso' is already defined in the workflow management.. Type 'LastError' for details.
-
 ==============
 **************
 ==============
@@ -679,6 +584,8 @@ SessTab.SaveToFile(docpath);
 **************
 ==============
 LastError;
+**************
+==============
 **************
 ==============
 **************

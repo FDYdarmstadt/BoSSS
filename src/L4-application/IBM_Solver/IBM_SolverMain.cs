@@ -1189,6 +1189,8 @@ namespace BoSSS.Application.IBM_Solver {
         }
 
         public override void PostRestart(double time, TimestepNumber timestep) {
+
+            //This might be obsolete ...
             // Find path to PhysicalData.txt
             var fsDriver = this.DatabaseDriver.FsDriver;
             string pathToOldSessionDir = System.IO.Path.Combine(

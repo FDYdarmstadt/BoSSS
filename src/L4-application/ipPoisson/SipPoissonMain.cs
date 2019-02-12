@@ -105,6 +105,13 @@ namespace BoSSS.Application.SipPoisson {
         }
         */
 
+        static void MyHandler(object sender, UnhandledExceptionEventArgs args) {
+            Exception e = (Exception)args.ExceptionObject;
+            Console.WriteLine("MyHandler caught : " + e.Message);
+            Console.WriteLine("Runtime terminating: {0}", args.IsTerminating);
+            System.Environment.Exit(-12343);
+        }
+
         /// <summary>
         /// Main routine
         /// </summary>
@@ -120,7 +127,7 @@ namespace BoSSS.Application.SipPoisson {
                 //BatchmodeConnector.MatlabExecuteable = "C:\\cygwin64\\bin\\bash.exe";
             }
 
-            
+          
 
 
 
