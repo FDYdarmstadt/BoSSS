@@ -1,0 +1,277 @@
+% !TeX spellcheck = en_US
+
+\BoSSSopen{InitialValues/InitialValues}
+\graphicspath{{InitialValues/InitialValues.texbatch/}}
+
+\paragraph{What's new:} 
+In this tutorial you will learn to set initial values and boundary values
+\begin{itemize}
+	\item from basic formulas
+	\item from MATLAB scripts
+\end{itemize}
+
+\paragraph{Prerequisites:} 
+\begin{itemize}
+	\item basic knowledge of \BoSSSpad{}
+	\item executing runs on your local machine, e.g. the quick-start guide of the \ac{cns}, see chapter \ref{sec:CNS}
+    \item an understanding, what a \BoSSS{} database is
+\end{itemize}
+\BoSSScmd{
+/// % ====================
+/// \section{Introduction}
+/// % ====================
+ }
+\BoSSSexeSilent
+\BoSSScmd{
+restart
+ }
+\BoSSSexeSilent
+\BoSSScmd{
+/// Note: (1) Setting Boundary values and initial values is similar; 
+/// (2) For most solvers, inital and boundary values are set the same way;
+/// (3) We will use the incompressible solver as an example:
+ }
+\BoSSSexe
+\BoSSScmd{
+using BoSSS.Application.IBM\_Solver;
+ }
+\BoSSSexe
+\BoSSScmd{
+/// Create a control object:
+ }
+\BoSSSexe
+\BoSSScmd{
+var C = new IBM\_Control();
+ }
+\BoSSSexe
+\BoSSScmd{
+/// % =======================
+/// \section{From Formulas}
+/// % =======================
+ }
+\BoSSSexe
+\BoSSScmd{
+/// If the Formula is simple enougth to be represented by C\# code,
+/// it can be embedded in the control file. The most
+ }
+\BoSSSexe
+\BoSSScmd{
+/// First option: from code, e.g.:
+ }
+\BoSSSexe
+\BoSSScmd{
+static class MyInitialValue \{ // class should be static!\newline 
+ \newline 
+\btab // Warning: static constants are allowed,\newline 
+\btab // but any changes outside of the current text box in BoSSSpad\newline 
+\btab // will not be recorded for the code that is passed to the solver.\newline 
+\btab public static double alpha = 0.7;\newline 
+ \newline 
+\btab // a method, which should be used for an initial value,\newline 
+\btab // must be static!\newline 
+\btab public static double VelocityX(double[] X, double t) \{\newline 
+\btab \btab double x = X[0];\newline 
+\btab \btab double y = X[1];\newline 
+\btab \btab return Math.Sin(x*y*alpha);\newline 
+\btab \}   \newline 
+\}
+ }
+\BoSSSexe
+\BoSSScmd{
+ % 
+ }
+\BoSSSexe
+\BoSSScmd{
+/// Use the BoSSSpad-intrinsic \code{GetFormulaObject} to set tie hinital value:
+C.AddInitialValue("VelocityX", GetFormulaObject(MyInitialValue.VelocityX));
+ }
+\BoSSSexe
+\BoSSScmd{
+ % 
+ }
+\BoSSSexe
+\BoSSScmd{
+/// Note: such a declaration is very restrictive;
+/// \code{GetFormulaObject} works only for 
+/// \begin{itemize}
+/// \item use a static class
+/// \item no dependence on any external parameters
+/// \end[itemize}
+/// E.g. the following code would only change the behavior in BoSSSpad,
+/// but not the code that is passed to the solver:
+ }
+\BoSSSexe
+\BoSSScmd{
+MyInitialValue.alpha = 0.5;\newline 
+MyInitialValue.VelocityX(new double[]\{ 0.5, 0.5 \}, 0.0);
+ }
+\BoSSSexe
+\BoSSScmd{
+C.InitialValues["VelocityX"].Evaluate(new double[]\{ 0.5, 0.5 \}, 0.0);
+ }
+\BoSSSexe
+\BoSSScmd{
+/// Obviously, both values are different.
+ }
+\BoSSSexe
+\BoSSScmd{
+ % 
+ }
+\BoSSSexe
+\BoSSScmd{
+ % 
+ }
+\BoSSSexe
+\BoSSScmd{
+/// \subsection{Advanced functions}
+/// % =============================
+ }
+\BoSSSexe
+\BoSSScmd{
+/// Some more advanced mathematical funstions, e.g.
+/// Jacobian elliptic functions $\text{sn}(u|m)$, $\text{cn}(u|m)$ and $\text{dn}(u|m)$
+/// are available throug the GNU Scientific Library, for which BoSSS provides
+/// bindings, see e.g.
+/// \code{BoSSS.Platform.GSL.gsl_sf_elljac_e}.
+ }
+\BoSSSexe
+\BoSSScmd{
+/// % ========================
+/// \section{From MATLAB code}
+/// % ========================
+ }
+\BoSSSexe
+\BoSSScmd{
+ % 
+ }
+\BoSSSexe
+\BoSSScmd{
+/// Asssume e.g. the following rather complex MATLAB code:
+ }
+\BoSSSexe
+\BoSSScmd{
+string[] MatlabCode = new string[] \{\newline 
+@"[n,d2] =  size(X\_values);",\newline 
+@"u=zeros(2,n);",\newline 
+@"for k=1:n",\newline 
+@"X=[X\_values(k,1),X\_values(k,2)];",\newline 
+@"",\newline 
+@"u\_x\_main     = -(-sqrt(X(1).^ 2 + X(2).^ 2) / 0.3e1 + 0.4e1 / 0.3e1 * (X(1).^ 2 + X(2).^ 2) ^ (-0.1e1 / 0.2e1)) * sin(atan2(X(2), X(1)));",\newline 
+@"u\_y\_main     = (-sqrt(X(1).^ 2 + X(2).^ 2) / 0.3e1 + 0.4e1 / 0.3e1 * (X(1).^ 2 + X(2).^ 2) ^ (-0.1e1 / 0.2e1)) * cos(atan2(X(2), X(1)));",\newline 
+@"u\_x\_pertubed = real((-0.32953067134717515988e-1+0.14691575764228225878e0*i) * exp(0.1e1*i * atan2(X(2), X(1))) * ((-0.99935918904292018420e0-0.13523363784596167546e1*i) * X(1) * ((X(1).^ 2 + X(2).^ 2) ^ (0.92264973081037423549e0-0.28867513459481288226e0*i)) * hypergeom([(-0.77350269189625764509e-1-0.28867513459481288225e0*i)], [(-0.15470053837925152902e0-0.57735026918962576451e0*i), (0.19226497308103742355e1-0.28867513459481288225e0*i)], (-0.97820497088478669638e1-0.14705934397668425274e0*i) * (X(1).^ 2 + X(2).^ 2)) + (0.56614891583101072089e0-0.16255295566023115846e1*i) * X(2)* ((X(1).^ 2 + X(2).^ 2) ^ (0.92264973081037423550e0-0.28867513459481288226e0*i)) * hypergeom([(-0.77350269189625764509e-1-0.28867513459481288225e0*i)], [(-0.15470053837925152902e0-0.57735026918962576451e0*i), (0.19226497308103742355e1-0.28867513459481288225e0*i)], (-0.97820497088478669633e1-0.14705934397668425274e0*i) * (X(1).^ 2 + X(2).^ 2)) + (-0.75348734013490270473e1+0.38497792144129101325e1*i) * X(2)* ((X(1).^ 2 + X(2).^ 2) ^ (0.19226497308103742355e1-0.28867513459481288226e0*i)) * hypergeom([(0.92264973081037423549e0-0.28867513459481288225e0*i)], [(0.29226497308103742355e1-0.28867513459481288225e0*i), (0.84529946162074847098e0-0.57735026918962576451e0*i)], (-0.97820497088478669633e1-0.14705934397668425274e0*i) * (X(1).^ 2 + X(2).^ 2)) + (0.60541882227115241146e1-0.13579487602343605491e1*i) * X(1)* ((X(1).^ 2 + X(2).^ 2) ^ (0.20773502691896257645e1+0.28867513459481288226e0*i)) * hypergeom([(0.10773502691896257645e1+0.28867513459481288225e0*i)], [(0.21547005383792515290e1+0.57735026918962576451e0*i), (0.30773502691896257645e1+0.28867513459481288225e0*i)], (-0.97820497088478669638e1-0.14705934397668425274e0*i) * (X(1).^ 2 + X(2).^ 2)) + (0.78853448489561394672e0+0.19883162927904395722e2*i) * X(2)* ((X(1).^ 2 + X(2).^ 2) ^ (0.20773502691896257645e1+0.28867513459481288226e0*i)) * hypergeom([(0.10773502691896257645e1+0.28867513459481288225e0*i)], [(0.21547005383792515290e1+0.57735026918962576451e0*i), (0.30773502691896257645e1+0.28867513459481288225e0*i)], (-0.97820497088478669633e1-0.14705934397668425274e0*i) * (X(1).^ 2 + X(2).^ 2)) + (-0.57876545209388145028e1-0.18766572601599597486e2*i) * X(2)* ((X(1).^ 2 + X(2).^ 2) ^ (0.30773502691896257645e1+0.28867513459481288226e0*i)) * hypergeom([(0.20773502691896257645e1+0.28867513459481288225e0*i)], [(0.31547005383792515290e1+0.57735026918962576451e0*i), (0.40773502691896257645e1+0.28867513459481288225e0*i)], (-0.97820497088478669633e1-0.14705934397668425274e0*i) * (X(1).^ 2 + X(2).^ 2)) + (-0.99999999999999999995e0-0.13261596589510350427e1*i) * (X(2).^ 3) + (-0.13261596589510350427e1+0.10000000000000000000e1*i) * X(1)* (X(2).^ 2) + ((-0.53520531923309439656e-1+0.15672515225563089710e0*i) + (-0.99999999999999999995e0-0.13261596589510350427e1*i) * (X(1).^ 2)) * X(2)+ (-0.13261596589510350427e1+0.10000000000000000000e1*i) * (X(1).^ 3) + (-0.15672515225563089710e0-0.53520531923309439656e-1*i) * X(1)) * ((X(1).^ 2 + X(2).^ 2) ^ (-0.3e1 / 0.2e1)));",\newline 
+@"u\_y\_pertubed = real((0.43701028272767542537e-1-0.19483375104942196048e0*i) * exp(0.1e1*i * atan2(X(2), X(1))) * ((-0.75357381164300586958e0-0.10197387390966838469e1*i) * X(2) * ((X(1).^ 2 + X(2).^ 2) ^ (0.92264973081037423549e0-0.28867513459481288226e0*i)) * hypergeom([(-0.77350269189625764509e-1-0.28867513459481288225e0*i)], [(-0.15470053837925152902e0-0.57735026918962576451e0*i), (0.19226497308103742355e1-0.28867513459481288225e0*i)], (-0.97820497088478669638e1-0.14705934397668425274e0*i) * (X(1).^ 2 + X(2).^ 2)) + (-0.42690856414590596479e0+0.12257419727938881513e1*i) * X(1)* ((X(1).^ 2 + X(2).^ 2) ^ (0.92264973081037423550e0-0.28867513459481288226e0*i)) * hypergeom([(-0.77350269189625764509e-1-0.28867513459481288225e0*i)], [(-0.15470053837925152902e0-0.57735026918962576451e0*i), (0.19226497308103742355e1-0.28867513459481288225e0*i)], (-0.97820497088478669633e1-0.14705934397668425274e0*i) * (X(1).^ 2 + X(2).^ 2)) + (0.56817241804120000225e1-0.29029530407055257170e1*i) * X(1)* ((X(1).^ 2 + X(2).^ 2) ^ (0.19226497308103742355e1-0.28867513459481288226e0*i)) * hypergeom([(0.92264973081037423549e0-0.28867513459481288225e0*i)], [(0.29226497308103742355e1-0.28867513459481288225e0*i), (0.84529946162074847098e0-0.57735026918962576451e0*i)], (-0.97820497088478669633e1-0.14705934397668425274e0*i) * (X(1).^ 2 + X(2).^ 2)) + (0.45652031275783658045e1-0.10239707949708484047e1*i) * X(2)* ((X(1).^ 2 + X(2).^ 2) ^ (0.20773502691896257645e1+0.28867513459481288226e0*i)) * hypergeom([(0.10773502691896257645e1+0.28867513459481288225e0*i)], [(0.21547005383792515290e1+0.57735026918962576451e0*i), (0.30773502691896257645e1+0.28867513459481288225e0*i)], (-0.97820497088478669638e1-0.14705934397668425274e0*i) * (X(1).^ 2 + X(2).^ 2)) + (-0.59459996356647469742e0-0.14993038578500847926e2*i) * X(1)* ((X(1).^ 2 + X(2).^ 2) ^ (0.20773502691896257645e1+0.28867513459481288226e0*i)) * hypergeom([(0.10773502691896257645e1+0.28867513459481288225e0*i)], [(0.21547005383792515290e1+0.57735026918962576451e0*i), (0.30773502691896257645e1+0.28867513459481288225e0*i)], (-0.97820497088478669633e1-0.14705934397668425274e0*i) * (X(1).^ 2 + X(2).^ 2)) + (0.43642215187850985771e1+0.14151065804884737351e2*i) * X(1)* ((X(1).^ 2 + X(2).^ 2) ^ (0.30773502691896257645e1+0.28867513459481288226e0*i)) * hypergeom([(0.20773502691896257645e1+0.28867513459481288225e0*i)], [(0.31547005383792515290e1+0.57735026918962576451e0*i), (0.40773502691896257645e1+0.28867513459481288225e0*i)], (-0.97820497088478669633e1-0.14705934397668425274e0*i) * (X(1).^ 2 + X(2).^ 2)) + (0.75405701964345634626e0+0.10000000000000000000e1*i) * (X(1).^ 3) + (-0.10000000000000000000e1+0.75405701964345634631e0*i) * X(2)* (X(1).^ 2) + ((0.40357532791823178605e-1-0.11817970121304795407e0*i) + (0.75405701964345634626e0+0.10000000000000000000e1*i) * (X(2).^ 2)) * X(1)+ (-0.10000000000000000000e1+0.75405701964345634631e0*i) * (X(2).^ 3) + (-0.11817970121304795407e0-0.40357532791823178605e-1*i) * X(2)) * ((X(1).^ 2 + X(2).^ 2) ^ (-0.3e1 / 0.2e1)));",\newline 
+@"",   \newline 
+@"",    \newline 
+@"u(1,k)=u\_x\_main+ epsilon*u\_x\_pertubed;",\newline 
+@"u(2,k)=u\_y\_main+ epsilon*u\_y\_pertubed;",\newline 
+@"end" \};
+ }
+\BoSSSexe
+\BoSSScmd{
+/// We can evaluate this code in \BoSSS{} using the MATLAB connector;
+/// We encapsulate it in a \code{ScalarFunction} which allows 
+/// \emph{vectorized} evaluation 
+/// (multiple evaluatiuons in one function call) e
+/// of some function.
+/// This is much more efficient, since there will be significant overhead
+/// for calling MATLAB (starting MATLAB, checking the license, 
+/// transfering data, etc.).
+ }
+\BoSSSexe
+\BoSSScmd{
+using ilPSP.Connectors.Matlab;
+ }
+\BoSSSexe
+\BoSSScmd{
+ScalarFunction VelocityXInitial = \newline 
+delegate(MultidimensionalArray input, MultidimensionalArray output) \{\newline 
+\btab int N          = input.GetLength(0); // number of points which we evaluate \newline 
+\btab //                                      at once.\newline 
+\btab var output\_vec = MultidimensionalArray.Create(N, 2); // the MATLAB code\newline 
+\btab //                        returns an entire vector.\newline 
+\btab using(var bmc = new BatchmodeConnector()) \{\newline 
+\btab    bmc.PutMatrix(input,"X\_values");\newline 
+ \newline 
+\btab    foreach(var line in MatlabCode) \{\newline 
+\btab \btab    bmc.Cmd(line);   \newline 
+\btab    \}\newline 
+ \newline 
+\btab    bmc.GetMatrix(output\_vec, "u");\newline 
+   \}\newline 
+   output.Set(output.ExtractSubArrayShallow(-1,0)); // extract column 0 from \newline 
+   //                       output\_vec and store it in output\newline 
+\}
+ }
+\BoSSSexe
+\BoSSScmd{
+/// We test our implementation:
+ }
+\BoSSSexe
+\BoSSScmd{
+var inputTest = MultidimensionalArray.Create(3,2); // set some test values for input\newline 
+inputTest.SetColumn(0, GenericBlas.Linspace(1,2,3));\newline 
+inputTest.SetColumn(1, GenericBlas.Linspace(2,3,3));\newline 
+ \newline 
+var outputTest = MultidimensionalArray.Create(3); // allocate memory for output
+ }
+\BoSSSexe
+\BoSSScmd{
+ % 
+ }
+\BoSSSexe
+\BoSSScmd{
+int N          = 3;\newline 
+var output\_vec = MultidimensionalArray.Create(N, 2); // the MATLAB code\newline 
+\btab //                        returns an entire vector.\newline 
+\btab //using(var bmc = new BatchmodeConnector()) \{\newline 
+\btab \btab var bmc = new BatchmodeConnector();\newline 
+\btab    bmc.PutMatrix(inputTest,"X\_values");\newline 
+ \newline 
+\btab    foreach(var line in MatlabCode) \{\newline 
+\btab \btab    bmc.Cmd(line);   \newline 
+\btab    \}\newline 
+ \newline 
+\btab    bmc.GetMatrix(output\_vec, "u");\newline 
+ \newline 
+\btab    bmc.Execute();\newline 
+   //\}
+ }
+\BoSSSexe
+\BoSSScmd{
+LastError;
+ }
+\BoSSSexe
+\BoSSScmd{
+ % 
+ }
+\BoSSSexe
+\BoSSScmd{
+VelocityXInitial(inputTest, outputTest);
+ }
+\BoSSSexe
+\BoSSScmd{
+LastError;
+ }
+\BoSSSexe
+\BoSSScmd{
+/// As for a standard calculation, we create a mesh, save it to some database
+/// and set the mesh in the control object.
+ }
+\BoSSSexe
+\BoSSScmd{
+var nodes        = GenericBlas.Linspace(1,2,11);\newline 
+GridCommons grid = Grid2D.Cartesian2DGrid(nodes,nodes);
+ }
+\BoSSSexe
+\BoSSScmd{
+var db = OpenOrCreateDefaultDatabase();
+ }
+\BoSSSexe
+\BoSSScmd{
+db.SaveGrid(ref grid);
+ }
+\BoSSSexe
+\BoSSScmd{
+C.SetGrid(grid);
+ }
+\BoSSSexe
