@@ -134,7 +134,7 @@ namespace BoSSS.Application.FSI_Solver
                 {
                     radius_P = 1,
                     rho_P = 1.5,//pg/(mum^3)
-                    includeGravity = false,
+                    gravityVertical = 0,
                     active_P = true,
                     active_stress_P = stressM,
                     thickness_P = 0.1 * BaseSize,

@@ -42,8 +42,8 @@ namespace BoSSS.Application.FSI_Solver
 
             // basic database options
             // =============================
-            //C.DbPath = @"\\hpccluster\hpccluster-scratch\deussen\cluster_db\active_particle_test";
-            C.savetodb = false;
+            C.DbPath = @"P:\databases\activeRod_noBackroundFlow";
+            C.savetodb = true;
             C.saveperiod = 1;
             C.ProjectName = "ActiveParticleTest";
             C.ProjectDescription = "Active";
@@ -65,11 +65,11 @@ namespace BoSSS.Application.FSI_Solver
                 int q = new int(); // #Cells in x-dircetion + 1
                 int r = new int(); // #Cells in y-dircetion + 1
 
-                q = 14;
-                r = 8;
+                q = 20;
+                r = 20;
 
-                double[] Xnodes = GenericBlas.Linspace(-7 * BaseSize, 7 * BaseSize, q);
-                double[] Ynodes = GenericBlas.Linspace(-4 * BaseSize, 4 * BaseSize, r);
+                double[] Xnodes = GenericBlas.Linspace(-10 * BaseSize, 10 * BaseSize, q);
+                double[] Ynodes = GenericBlas.Linspace(-10 * BaseSize, 10 * BaseSize, r);
 
                 var grd = Grid2D.Cartesian2DGrid(Xnodes, Ynodes, periodicX: false, periodicY: false);
 
@@ -82,13 +82,13 @@ namespace BoSSS.Application.FSI_Solver
                 grd.DefineEdgeTags(delegate (double[] X)
                 {
                     byte et = 0;
-                    if (Math.Abs(X[0] - (-7 * BaseSize)) <= 1.0e-8)
+                    if (Math.Abs(X[0] - (-10 * BaseSize)) <= 1.0e-8)
                         et = 1;
-                    if (Math.Abs(X[0] + (-7 * BaseSize)) <= 1.0e-8)
+                    if (Math.Abs(X[0] + (-10 * BaseSize)) <= 1.0e-8)
                         et = 2;
-                    if (Math.Abs(X[1] - (-4 * BaseSize)) <= 1.0e-8)
+                    if (Math.Abs(X[1] - (-10 * BaseSize)) <= 1.0e-8)
                         et = 3;
-                    if (Math.Abs(X[1] + (-4 * BaseSize)) <= 1.0e-8)
+                    if (Math.Abs(X[1] + (-10 * BaseSize)) <= 1.0e-8)
                         et = 4;
 
                     Debug.Assert(et != 0);
@@ -127,10 +127,10 @@ namespace BoSSS.Application.FSI_Solver
             // =============================   
             // Defining particles
             C.Particles = new List<Particle>();
-            int numOfParticles = 1;
+            int numOfParticles = 2;
             for (int d = 0; d < numOfParticles; d++)
             {
-                C.Particles.Add(new Particle_Ellipsoid(2, 4, new double[] { 0.0 , 0.0 }, startAngl: 0)
+                C.Particles.Add(new Particle_Ellipsoid(2, 4, new double[] { -8+16*d , 0.0 }, startAngl: 180*d)
                 {
                     radius_P = 1,
                     rho_P = 2,//pg/(mum^3)
