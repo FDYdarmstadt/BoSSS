@@ -38,7 +38,7 @@ namespace BoSSS.Application.FSI_Solver
     [Serializable]
     abstract public class Particle : ICloneable {
 
-        #region particle
+        #region particle init
         /// <summary>
         /// Empty constructor used during de-serialization
         /// </summary>
@@ -46,8 +46,7 @@ namespace BoSSS.Application.FSI_Solver
         {
 
         }
-
-
+        
         public Particle(int Dim, int HistoryLength, double[] startPos = null, double startAngl = 0.0, ParticleShape shape = ParticleShape.spherical) {
             
             m_HistoryLength = HistoryLength;
@@ -94,8 +93,6 @@ namespace BoSSS.Application.FSI_Solver
             //From degree to radiant
             currentTimeAng_P[0] = startAngl * 2 * Math.PI / 360;
             currentTimeAng_P[1] = startAngl * 2 * Math.PI / 360;
-            //currentTimeVel_P[1][0] = 0.2;
-            //currentTimeVel_P[1][1] = 1e-2;
 
             UpdateLevelSetFunction();
             #endregion
@@ -103,46 +100,60 @@ namespace BoSSS.Application.FSI_Solver
         #endregion
 
         #region Particle parameter
-      
-        
+        #region Collision parameters
+        /// <summary>
+        /// Check whether any particles is collided with another particle
+        /// </summary>
         public bool[] m_collidedWithParticle;
+        /// <summary>
+        /// Check whether any particles is collided with the wall
+        /// </summary>
         public bool[] m_collidedWithWall;
         public double[][] m_closeInterfacePointTo;
-
-
-        public double[] tempPos_P = new double[2];
-        public double tempAng_P;
-        public int iteration_counter_P = 1;
-        public bool underrelaxationFT_constant = true;
-        public int underrelaxationFT_exponent = 0;
-        public double underrelaxation_factor = 1;
-        public int underrelaxationFT_exponent_max = 0;
-        public bool deleteSmallValues = false;
-        public double active_force_correction;
-
         /// <summary>
         /// Skip calculation of hydrodynamic force and torque if particles are too close
         /// </summary>
         public bool skipForceIntegration = false;
+        #endregion
 
+        #region Iteration parameters
+        /// <summary>
+        /// Number of iterations
+        /// </summary>
+        public int iteration_counter_P = 1;
+        /// <summary>
+        /// Constant forces and torque underrelaxation?
+        /// </summary>
+        public bool underrelaxationFT_constant = true;
+        /// <summary>
+        /// Defines the order of the underrelaxation factor
+        /// </summary>
+        public int underrelaxationFT_exponent = 0;
+        /// <summary>
+        /// Underrelaxation factor
+        /// </summary>
+        public double underrelaxation_factor = 1;
+        /// <summary>
+        /// Set true if you want to delete all values of the forces anf torque smaller than convergenceCriterion*1e-2
+        /// </summary>
+        public bool deleteSmallValues = false;
+        #endregion
+
+        #region Misc parameters
         /// <summary>
         /// Length of history for time, velocity, position etc.
         /// </summary>
         int m_HistoryLength;
+        #endregion
 
+        #region Geometric parameters
         /// <summary>
         /// Dimension
         /// </summary>
         int m_Dim;
 
         /// <summary>
-        /// Density of the particle.
-        /// </summary>
-        [DataMember]
-        public double rho_P;
-
-        /// <summary>
-        /// Radius of the particle.
+        /// Radius of the particle. Not necessary for particles defined by their length and thickness
         /// </summary>
         [DataMember]
         public double radius_P;
@@ -160,97 +171,105 @@ namespace BoSSS.Application.FSI_Solver
         public double thickness_P;
 
         /// <summary>
-        /// Thickness of an elliptic particle.
+        /// Exponent of the super ellipsoid. Higher exponent leads to a more "squary" appearence.
         /// </summary>
         [DataMember]
         public int superEllipsoidExponent;
+        #endregion
 
+        #region Physical parameters
         /// <summary>
-        /// Current position of the particle (the center of mass)
+        /// Density of the particle.
+        /// </summary>
+        [DataMember]
+        public double rho_P;
+        
+        /// <summary>
+        /// The position (center of mass) of the particle in the current iteration.
         /// </summary>
         [DataMember]
         public List<double[]> currentIterPos_P = new List<double[]>();
 
         /// <summary>
-        /// Current position of the particle (the center of mass)
+        /// The position (center of mass) of the particle in the current time step.
         /// </summary>
         [DataMember]
         public List<double[]> currentTimePos_P = new List<double[]>();
 
         /// <summary>
-        /// Current angle of the particle (the center of mass)
+        /// The angle (center of mass) of the particle in the current iteration.
         /// </summary>
         [DataMember]
         public List<double> currentIterAng_P = new List<double>();
 
         /// <summary>
-        /// Current angle of the particle (the center of mass)
+        /// The angle (center of mass) of the particle in the current time step.
         /// </summary>
         [DataMember]
         public List<double> currentTimeAng_P = new List<double>();
 
         /// <summary>
-        /// Current translational Velocity of the particle
+        /// The translational velocity of the particle in the current iteration.
         /// </summary>
         [DataMember]
         public List<double[]> currentIterVel_P = new List<double[]>();
 
         /// <summary>
-        /// Current translational Velocity of the particle
+        /// The translational velocity of the particle in the current time step.
         /// </summary>
         [DataMember]
         public List<double[]> currentTimeVel_P = new List<double[]>();
 
         /// <summary>
-        /// Current rotational Velocity of the particle
+        /// The angular velocity of the particle in the current iteration.
         /// </summary>
         [DataMember]
         public List<double> currentIterRot_P = new List<double>();
 
         /// <summary>
-        /// Current rotational Velocity of the particle
+        /// The angular velocity of the particle in the current time step.
         /// </summary>
         [DataMember]
         public List<double> currentTimeRot_P = new List<double>();
 
         /// <summary>
-        /// Force acting on the particle
+        /// The force acting on the particle in the current iteration.
         /// </summary>
         [DataMember]
         public List<double[]> currentIterForces_P = new List<double[]>();
 
         /// <summary>
-        /// Force acting on the particle
+        /// The force acting on the particle in the current time step.
         /// </summary>
         [DataMember]
         public List<double[]> currentTimeForces_P = new List<double[]>();
 
         /// <summary>
-        /// Force acting on the particle
+        /// obsolete
         /// </summary>
         [DataMember]
         public List<double[]> temporalForces_P = new List<double[]>();
 
         /// <summary>
-        /// Torque acting on the particle
+        /// The torque acting on the particle in the current iteration.
         /// </summary>
         [DataMember]
         public List<double> currentIterTorque_P = new List<double>();
 
         /// <summary>
-        /// Torque acting on the particle
+        /// The torque acting on the particle in the current time step.
         /// </summary>
         [DataMember]
         public List<double> currentTimeTorque_P = new List<double>();
 
         /// <summary>
-        /// Torque acting on the particle
+        /// obsolete
         /// </summary>
         [DataMember]
         public List<double> temporalTorque_P = new List<double>();
 
         /// <summary>
-        /// Level set function describing the particle
+        /// Level set function describing the particle.
         /// </summary>       
         public Func<double[], double, double> phi_P;
 
@@ -261,7 +280,7 @@ namespace BoSSS.Application.FSI_Solver
         public bool active_P = false;
 
         /// <summary>
-        /// Set true if the particle should be an active particle, i.e. self driven
+        /// Set true if gravity should have an effect (in vertical direction)
         /// </summary>
         [DataMember]
         public bool includeGravity = true;
@@ -270,30 +289,33 @@ namespace BoSSS.Application.FSI_Solver
         /// Active stress on the current particle
         /// </summary>
         public double stress_magnitude_P;
-        
+
+        #region Virtual force model parameter
         /// <summary>
-        /// heaviside function depending on arclength 
+        /// needed for second velocity model
         /// </summary>
         public double C_v = 0.5;
 
         /// <summary>
-        /// heaviside function depending on arclength 
+        /// needed for second velocity model, obsolete?
         /// </summary>
         public double velResidual_ConvergenceCriterion = 1e-6;
 
         /// <summary>
-        /// heaviside function depending on arclength 
-        /// </summary>
-        public double forceAndTorque_convergence = 1e-8;
-
-        /// <summary>
-        /// heaviside function depending on arclength 
+        /// needed for second velocity model, obsolete?
         /// </summary>
         public double MaxParticleVelIterations = 10000;
+
         private int vel_iteration_counter;
+        #endregion
 
         /// <summary>
-        /// Active stress on the current particle
+        /// Convergence criterion for the calculation of the forces and torque
+        /// </summary>
+        public double forceAndTorque_convergence = 1e-8;
+        
+        /// <summary>
+        /// Active stress on the current particle.
         /// </summary>
         abstract public double active_stress_P
         {
@@ -301,7 +323,7 @@ namespace BoSSS.Application.FSI_Solver
         }
         
         /// <summary>
-        /// Mass of the current particle
+        /// Mass of the current particle.
         /// </summary>
         [DataMember]
         public double Mass_P {
@@ -312,7 +334,7 @@ namespace BoSSS.Application.FSI_Solver
         }
 
         /// <summary>
-        /// Area of the current particle
+        /// Area of the current particle.
         /// </summary>
         [DataMember]
         abstract public double Area_P
@@ -321,7 +343,7 @@ namespace BoSSS.Application.FSI_Solver
         }
 
         /// <summary>
-        /// Area of the current particle
+        /// Circumference of the current particle.
         /// </summary>
         [DataMember]
         abstract public double Circumference_P
@@ -330,13 +352,14 @@ namespace BoSSS.Application.FSI_Solver
         }
 
         /// <summary>
-        /// Moment of inertia of the current particle
+        /// Moment of inertia of the current particle.
         /// </summary>
         [DataMember]
         abstract public double MomentOfInertia_P
         {
             get;
         }
+        #endregion
         #endregion
 
         #region Particle history
