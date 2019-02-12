@@ -143,26 +143,28 @@ export class BoSSSpad{
     //Command actions
     //===========================================================================
     executeFromHere(){
-        
-    }
-
-    async executeEntireWorksheet(){
         if(!this.status.isLocked()){
             this.status.toggleLock();
+            var lineNumber = this.boSSS.getSelection().selectionStartLineNumber;
+            var boxArray = this.userGUI.getAllBoxesFromLine(lineNumber);
+            this.userGUI.executeBoxes(boxArray);
+        }
+    }
+
+    executeEntireWorksheet(){
+        if(!this.status.isLocked()){
             var boxArray = this.userGUI.getAllBoxes();
-            //Change Backgroundcolor
-            for(var i = 1; i < boxArray.length; ++i){
-                boxArray[i].boxContent.toggleWaitingForWork();
-            }
-            //Start calculation in respective order
-            for(var i = 0; i < boxArray.length; ++i){
-                await boxArray[i].boxContent.run();
-            }
-            this.status.toggleLock();
+            this.userGUI.executeBoxes(boxArray);
         }
     }
 
     executeUntilHere(){
+        if(!this.status.isLocked()){
+            this.status.toggleLock();
+            var lineNumber = this.boSSS.getSelection().selectionStartLineNumber;
+            var boxArray = this.userGUI.getAllBoxesUntilLine(lineNumber);
+            this.userGUI.executeBoxes(boxArray);
+        }
 
     }
 

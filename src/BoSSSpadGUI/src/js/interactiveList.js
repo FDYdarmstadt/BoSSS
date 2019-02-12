@@ -80,6 +80,19 @@ export class InteractiveList{
       var value = this.editor.getValueInRange(box.range);
       return value;
     }
+
+    async executeBoxes(boxArray){
+        this.status.toggleLock();
+        //Change Backgroundcolor
+        for(var i = 1; i < boxArray.length; ++i){
+            boxArray[i].boxContent.toggleWaitingForWork();
+        }
+        //Start calculation in respective order
+        for(var i = 0; i < boxArray.length; ++i){
+            await boxArray[i].boxContent.run();
+        }
+        this.status.toggleLock();
+    }
    
     getAllBoxes(){
         return this.boxes;
@@ -91,6 +104,21 @@ export class InteractiveList{
       }
       return this.boxes.filter(check);
     }
+
+    getAllBoxesUntilLine(lineNumber){
+        var check = function(someBox){
+            return someBox.range.startLineNumber <= lineNumber;
+        }
+        return this.boxes.filter(check);
+    }
+
+    getAllBoxesFromLine(lineNumber){
+        var check = function(someBox){
+            return someBox.range.startLineNumber >= lineNumber;
+        }
+        return this.boxes.filter(check);
+    }
+
   
     deleteBoxByBox(box){
       var index = this.boxes.indexOf(box);
