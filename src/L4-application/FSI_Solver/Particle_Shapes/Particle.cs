@@ -1055,21 +1055,21 @@ namespace BoSSS.Application.FSI_Solver
                 temp_underR[D] = 1;
 
                 // approximate active force
-                if (Math.Abs(0.05e-3 * Circumference_P * active_stress_P.Pow2() * Math.Cos(currentIterAng_P[0]) / (muA * 1e-3)) > Math.Abs(currentTimeForces_P[1][0]) && currentTimeForces_P[1][0] != 0)
+                if (Math.Abs(0.125 * Circumference_P * active_stress_P.Pow2() * Math.Cos(currentIterAng_P[0]) / muA) > Math.Abs(currentTimeForces_P[1][0]) && currentTimeForces_P[1][0] != 0)
                 {
                     forces[0] = 0.5 * currentTimeForces_P[1][0];
                 }
                 else
                 {
-                    forces[0] = 0.05 * Circumference_P * active_stress_P.Pow2() * Math.Cos(currentIterAng_P[0]) / (muA);
+                    forces[0] = 0.125 * Circumference_P * active_stress_P.Pow2() * Math.Cos(currentIterAng_P[0]) / (muA);
                 }
-                if (Math.Abs(0.05e-3 * Circumference_P * active_stress_P.Pow2() * Math.Sin(currentIterAng_P[0]) / (muA * 1e-3)) > Math.Abs(currentTimeForces_P[1][1]) && currentTimeForces_P[1][1] != 0)
+                if (Math.Abs(0.125 * Circumference_P * active_stress_P.Pow2() * Math.Sin(currentIterAng_P[0]) / muA) > Math.Abs(currentTimeForces_P[1][1]) && currentTimeForces_P[1][1] != 0)
                 {
                     forces[1] = 0.5 * currentTimeForces_P[1][1];
                 }
                 else
                 {
-                    forces[1] = 0.05 * Circumference_P * active_stress_P.Pow2() * Math.Sin(currentIterAng_P[1]) / (muA);
+                    forces[1] = 0.125 * Circumference_P * active_stress_P.Pow2() * Math.Sin(currentIterAng_P[0]) / muA;
                 }
                 torque = 0;
             }
@@ -1160,13 +1160,13 @@ namespace BoSSS.Application.FSI_Solver
             for (int i = 0; i < D; i++)
             {
                 forces_underR[i] = temp_underR[i] * forces[i] + (1 - temp_underR[i]) * currentIterForces_P[0][i];
-                if (Math.Abs(forces_underR[i]) < forceAndTorque_convergence)
+                if (Math.Abs(forces_underR[i]) < forceAndTorque_convergence * 1e-2)
                 {
                     forces_underR[i] = 0;
                 }
             }
             double torque_underR = temp_underR[D] * torque + (1 - temp_underR[D]) * currentIterTorque_P[0];
-            if (Math.Abs(torque_underR) < forceAndTorque_convergence)
+            if (Math.Abs(torque_underR) < forceAndTorque_convergence * 1e-2)
             {
                 torque_underR = 0;
             }

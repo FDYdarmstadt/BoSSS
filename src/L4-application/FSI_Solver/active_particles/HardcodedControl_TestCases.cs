@@ -30,7 +30,7 @@ namespace BoSSS.Application.FSI_Solver
 {
     public class HardcodedControl_TestCases : IBM_Solver.HardcodedTestExamples
     {
-        public static FSI_Control activeRod_noBackroundFlow(string _DbPath = null, int k = 4, double VelXBase = 0.0, double stressM = 1e2, double cellAgg = 0.2, double muA = 1e4, double timestepX = 1e-4)
+        public static FSI_Control activeRod_noBackroundFlow(string _DbPath = null, int k = 2, double VelXBase = 0.0, double stressM = 1e5, double cellAgg = 0.2, double muA = 1e4, double timestepX = 1e-3)
         {
             FSI_Control C = new FSI_Control();
 
@@ -65,8 +65,8 @@ namespace BoSSS.Application.FSI_Solver
                 int q = new int(); // #Cells in x-dircetion + 1
                 int r = new int(); // #Cells in y-dircetion + 1
 
-                q = 28;
-                r = 16;
+                q = 14;
+                r = 8;
 
                 double[] Xnodes = GenericBlas.Linspace(-7 * BaseSize, 7 * BaseSize, q);
                 double[] Ynodes = GenericBlas.Linspace(-4 * BaseSize, 4 * BaseSize, r);
@@ -130,7 +130,7 @@ namespace BoSSS.Application.FSI_Solver
             int numOfParticles = 1;
             for (int d = 0; d < numOfParticles; d++)
             {
-                C.Particles.Add(new Particle_superEllipsoid(2, 4, new double[] { 0.0 , 0.0 }, startAngl: 0)
+                C.Particles.Add(new Particle_Ellipsoid(2, 4, new double[] { 0.0 , 0.0 }, startAngl: 0)
                 {
                     radius_P = 1,
                     rho_P = 2,//pg/(mum^3)
@@ -192,7 +192,7 @@ namespace BoSSS.Application.FSI_Solver
             C.LinearSolver.NoOfMultigridLevels = 1;
             C.LinearSolver.MaxSolverIterations = 1000;
             C.LinearSolver.MinSolverIterations = 1;
-            C.ForceAndTorque_ConvergenceCriterion = 1e-2;
+            C.ForceAndTorque_ConvergenceCriterion = 1e-1;
             C.LSunderrelax = 1.0;
             
 
@@ -210,7 +210,7 @@ namespace BoSSS.Application.FSI_Solver
             // =============================  
             C.instationarySolver = true;
             C.Timestepper_Scheme = FSI_Solver.FSI_Control.TimesteppingScheme.BDF2;
-            double dt = timestepX;//s
+            double dt = timestepX;
             C.dtMax = dt;
             C.dtMin = dt;
             C.Endtime = 1000000;
