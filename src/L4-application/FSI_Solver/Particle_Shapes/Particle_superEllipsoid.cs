@@ -27,6 +27,14 @@ namespace BoSSS.Application.FSI_Solver
     [Serializable]
     public class Particle_superEllipsoid : Particle
     {
+        /// <summary>
+        /// Empty constructor used during de-serialization
+        /// </summary>
+        private Particle_superEllipsoid() : base()
+        {
+
+        }
+
         public Particle_superEllipsoid(int Dim, int HistoryLength, double[] startPos = null, double startAngl = 0) : base(Dim, HistoryLength, startPos, startAngl)
         {
             #region Particle history
@@ -83,6 +91,15 @@ namespace BoSSS.Application.FSI_Solver
                 return stress_magnitude_P;
             }
         }
+
+        public override double Circumference_P 
+        {
+            get
+            {
+                return (2 * length_P + 2 * thickness_P + 2 * Math.PI * thickness_P) / 2;
+            }
+        }
+
         override public double Area_P
         {
             get

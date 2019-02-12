@@ -26,6 +26,14 @@ namespace BoSSS.Application.FSI_Solver
     [Serializable]
     public class Particle_Sphere : Particle
     {
+        /// <summary>
+        /// Empty constructor used during de-serialization
+        /// </summary>
+        private Particle_Sphere() : base()
+        {
+
+        }
+
         public Particle_Sphere(int Dim, int HistoryLength, double[] startPos = null, double startAngl = 0) : base(Dim, HistoryLength, startPos, startAngl)
         {
             #region Particle history
@@ -79,7 +87,7 @@ namespace BoSSS.Application.FSI_Solver
         {
             get
             {
-                return 2 * Math.PI * radius_P * stress_magnitude_P;
+                return stress_magnitude_P;
             }
         }
         override public double Area_P
@@ -87,6 +95,13 @@ namespace BoSSS.Application.FSI_Solver
             get
             {
                 return Math.PI * radius_P * radius_P;
+            }
+        }
+        public override double Circumference_P
+        {
+            get
+            {
+                return 2 * Math.PI * radius_P;
             }
         }
         override public double MomentOfInertia_P

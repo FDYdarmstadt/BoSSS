@@ -87,12 +87,15 @@ namespace BoSSS.Application.TutorialTests {
             //"ParameterStudy/ParameterStudy.tex"
             )] string TexFileName) {
 
+
             // remove - if present - any pre-existing default database
-            string preExistingDb =BoSSS.Application.BoSSSpad.InteractiveShell.GetDefaultDatabaseDir();
+
+            string preExistingDb = BoSSS.Application.BoSSSpad.InteractiveShell.GetDefaultDatabaseDir();
             if (Directory.Exists(preExistingDb)) {
                 Directory.Delete(preExistingDb, true);
             }
             
+
             // run test:
             string FullTexName = Path.Combine(DirectoryOffset, TexFileName);
             Assert.IsTrue(File.Exists(FullTexName), "unable to find TeX source: " + FullTexName);
