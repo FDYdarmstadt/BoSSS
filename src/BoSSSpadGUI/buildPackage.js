@@ -11,5 +11,4 @@ packager(
     "overwrite" : "true",
     "prune" : "true",
     "ignore" : [new RegExp('InnoSetup'), new RegExp('src/cs/bin/Debug$')]
-})
-
+});

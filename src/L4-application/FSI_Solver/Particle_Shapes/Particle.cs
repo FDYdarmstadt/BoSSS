@@ -39,6 +39,15 @@ namespace BoSSS.Application.FSI_Solver
     abstract public class Particle : ICloneable {
 
         #region particle
+        /// <summary>
+        /// Empty constructor used during de-serialization
+        /// </summary>
+        protected Particle()
+        {
+
+        }
+
+
         public Particle(int Dim, int HistoryLength, double[] startPos = null, double startAngl = 0.0, ParticleShape shape = ParticleShape.spherical) {
             
             m_HistoryLength = HistoryLength;
@@ -94,11 +103,7 @@ namespace BoSSS.Application.FSI_Solver
         #endregion
 
         #region Particle parameter
-        /// <summary>
-        /// empty constructor important for serialization
-        /// </summary>
-        private Particle() {
-        }
+      
         
         public bool[] m_collidedWithParticle;
         public bool[] m_collidedWithWall;

@@ -77,7 +77,6 @@ namespace BoSSS.Solution.Control {
             private set;
         }
 
-
         /// <summary>
         /// ctor.
         /// </summary>
