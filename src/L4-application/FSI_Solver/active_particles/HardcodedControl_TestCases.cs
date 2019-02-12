@@ -134,14 +134,15 @@ namespace BoSSS.Application.FSI_Solver
                 {
                     radius_P = 1,
                     rho_P = 2,//pg/(mum^3)
-                    includeGravity = false,
+                    gravityVertical = 0,
                     active_P = true,
-                    stress_magnitude_P = stressM,
+                    active_stress_P = stressM,
                     thickness_P = 0.4 * BaseSize,
                     length_P = 2 * BaseSize,
                     superEllipsoidExponent = 4,
                     underrelaxationFT_constant = false,// set true if you want to define a constant underrelaxation (not recommended)
                     underrelaxation_factor = 1,// underrelaxation with [factor * 10^exponent]
+                    deleteSmallValues = true
                 });
             }
             //Define level-set
@@ -325,9 +326,9 @@ namespace BoSSS.Application.FSI_Solver
                 {
                     radius_P = 1,
                     rho_P = 1.5,//pg/(mum^3)
-                    includeGravity = false,
+                    gravityVertical = 0,
                     active_P = true,
-                    stress_magnitude_P = stressM,
+                    active_stress_P = stressM,
                     thickness_P = 0.1 * BaseSize,
                     length_P = 2 * BaseSize,
                     underrelaxationFT_constant = false,// set true if you want to define a constant underrelaxation (not recommended)

@@ -136,7 +136,7 @@ namespace BoSSS.Application.FSI_Solver
                     rho_P = 1.5,//pg/(mum^3)
                     includeGravity = false,
                     active_P = true,
-                    stress_magnitude_P = stressM,
+                    active_stress_P = stressM,
                     thickness_P = 0.1 * BaseSize,
                     length_P = 2 * BaseSize,
                     superEllipsoidExponent = 4, // only even numbers are supported

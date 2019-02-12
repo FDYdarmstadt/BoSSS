@@ -47,7 +47,7 @@ namespace BoSSS.Application.FSI_Solver
 
         }
         
-        public Particle(int Dim, int HistoryLength, double[] startPos = null, double startAngl = 0.0, ParticleShape shape = ParticleShape.spherical) {
+        public Particle(int Dim, int HistoryLength, double[] startPos = null, double startAngl = 0.0) {
             
             m_HistoryLength = HistoryLength;
             m_Dim = Dim;
@@ -60,9 +60,7 @@ namespace BoSSS.Application.FSI_Solver
                 currentIterVel_P.Add(new double[Dim]);
                 currentIterRot_P.Add(new double());
                 currentIterForces_P.Add(new double[Dim]);
-                temporalForces_P.Add(new double[Dim]);
                 currentIterTorque_P.Add(new double());
-                temporalTorque_P.Add(new double());
             }
             for (int i = 0; i < 4; i++)
             {
@@ -105,11 +103,14 @@ namespace BoSSS.Application.FSI_Solver
         /// Check whether any particles is collided with another particle
         /// </summary>
         public bool[] m_collidedWithParticle;
+
         /// <summary>
         /// Check whether any particles is collided with the wall
         /// </summary>
         public bool[] m_collidedWithWall;
+
         public double[][] m_closeInterfacePointTo;
+
         /// <summary>
         /// Skip calculation of hydrodynamic force and torque if particles are too close
         /// </summary>
@@ -121,18 +122,22 @@ namespace BoSSS.Application.FSI_Solver
         /// Number of iterations
         /// </summary>
         public int iteration_counter_P = 1;
+
         /// <summary>
         /// Constant forces and torque underrelaxation?
         /// </summary>
         public bool underrelaxationFT_constant = true;
+
         /// <summary>
         /// Defines the order of the underrelaxation factor
         /// </summary>
         public int underrelaxationFT_exponent = 0;
+
         /// <summary>
         /// Underrelaxation factor
         /// </summary>
         public double underrelaxation_factor = 1;
+
         /// <summary>
         /// Set true if you want to delete all values of the forces anf torque smaller than convergenceCriterion*1e-2
         /// </summary>
@@ -175,6 +180,25 @@ namespace BoSSS.Application.FSI_Solver
         /// </summary>
         [DataMember]
         public int superEllipsoidExponent;
+        #endregion
+
+        #region Virtual force model parameter
+        ///// <summary>
+        ///// needed for second velocity model
+        ///// </summary>
+        //public double C_v = 0.5;
+
+        ///// <summary>
+        ///// needed for second velocity model, obsolete?
+        ///// </summary>
+        //public double velResidual_ConvergenceCriterion = 1e-6;
+
+        ///// <summary>
+        ///// needed for second velocity model, obsolete?
+        ///// </summary>
+        //public double MaxParticleVelIterations = 10000;
+
+        //private int vel_iteration_counter;
         #endregion
 
         #region Physical parameters
@@ -243,13 +267,7 @@ namespace BoSSS.Application.FSI_Solver
         /// </summary>
         [DataMember]
         public List<double[]> currentTimeForces_P = new List<double[]>();
-
-        /// <summary>
-        /// obsolete
-        /// </summary>
-        [DataMember]
-        public List<double[]> temporalForces_P = new List<double[]>();
-
+        
         /// <summary>
         /// The torque acting on the particle in the current iteration.
         /// </summary>
@@ -263,12 +281,6 @@ namespace BoSSS.Application.FSI_Solver
         public List<double> currentTimeTorque_P = new List<double>();
 
         /// <summary>
-        /// obsolete
-        /// </summary>
-        [DataMember]
-        public List<double> temporalTorque_P = new List<double>();
-
-        /// <summary>
         /// Level set function describing the particle.
         /// </summary>       
         public Func<double[], double, double> phi_P;
@@ -280,59 +292,21 @@ namespace BoSSS.Application.FSI_Solver
         public bool active_P = false;
 
         /// <summary>
-        /// Set true if gravity should have an effect (in vertical direction)
+        /// Sets the gravity in vertical direction, default is 9.81
         /// </summary>
         [DataMember]
-        public bool includeGravity = true;
-
-        /// <summary>
-        /// Active stress on the current particle
-        /// </summary>
-        public double stress_magnitude_P;
-
-        #region Virtual force model parameter
-        /// <summary>
-        /// needed for second velocity model
-        /// </summary>
-        public double C_v = 0.5;
-
-        /// <summary>
-        /// needed for second velocity model, obsolete?
-        /// </summary>
-        public double velResidual_ConvergenceCriterion = 1e-6;
-
-        /// <summary>
-        /// needed for second velocity model, obsolete?
-        /// </summary>
-        public double MaxParticleVelIterations = 10000;
-
-        private int vel_iteration_counter;
-        #endregion
-
+        public double gravityVertical = 9.81;
+        
         /// <summary>
         /// Convergence criterion for the calculation of the forces and torque
         /// </summary>
         public double forceAndTorque_convergence = 1e-8;
-        
+
         /// <summary>
         /// Active stress on the current particle.
         /// </summary>
-        abstract public double active_stress_P
-        {
-            get;
-        }
+        public double active_stress_P;
         
-        /// <summary>
-        /// Mass of the current particle.
-        /// </summary>
-        [DataMember]
-        public double Mass_P {
-            get
-            {
-                return Area_P * rho_P;
-            }
-        }
-
         /// <summary>
         /// Area of the current particle.
         /// </summary>
@@ -340,6 +314,18 @@ namespace BoSSS.Application.FSI_Solver
         abstract public double Area_P
         {
             get;
+        }
+
+        /// <summary>
+        /// Mass of the current particle.
+        /// </summary>
+        [DataMember]
+        public double Mass_P
+        {
+            get
+            {
+                return Area_P * rho_P;
+            }
         }
 
         /// <summary>
@@ -379,8 +365,6 @@ namespace BoSSS.Application.FSI_Solver
                     currentIterForces_P.RemoveAt(tempPos);
                     currentIterRot_P.RemoveAt(tempPos);
                     currentIterTorque_P.RemoveAt(tempPos);
-                    temporalForces_P.RemoveAt(tempPos);
-                    temporalTorque_P.RemoveAt(tempPos);
                 }
             }
         }
@@ -420,10 +404,7 @@ namespace BoSSS.Application.FSI_Solver
             for (int d = 0; d < m_Dim; d++)
             {
                 gravity[d] = 0;
-                if (includeGravity == true)
-                {
-                    gravity[1] = -9.81;
-                }
+                gravity[1] = gravityVertical;
                 double rho_Fluid = 1;
                 double massDifference = (rho_P - rho_Fluid) * (Area_P);
                 double tempForces = (currentIterForces_P[0][d] + currentTimeForces_P[1][d]) / 2;
@@ -497,7 +478,6 @@ namespace BoSSS.Application.FSI_Solver
             {
                 currentTimeVel_P.Insert(1, currentTimeVel_P[0]);
                 currentTimeVel_P.Remove(currentTimeVel_P.Last());
-                //currentTimeVel_P[1] = currentIterVel_P[0];
             }
 
             // no translation
@@ -527,8 +507,8 @@ namespace BoSSS.Application.FSI_Solver
             double[] k_2 = new double[2];
             double[] k_3 = new double[2];
             double[] C_v_mod = new double[2];
-            C_v_mod[0] = C_v;
-            C_v_mod[1] = C_v;
+            //C_v_mod[0] = C_v;
+            //C_v_mod[1] = C_v;
             double[] c_a = new double[2];
             double[] c_u = new double[2];
             //double vel_iteration_counter = 0;
@@ -588,18 +568,10 @@ namespace BoSSS.Application.FSI_Solver
             for (int d = 0; d < m_Dim; d++)
             {
                 gravity[d] = 0;
-                if (includeGravity == true)
-                {
-                    gravity[1] = -9.81;
-                }
+                gravity[1] = gravityVertical;
                 double tempForces = (currentIterForces_P[0][d] + currentTimeForces_P[1][d]) / 2;
-                //double tempForces = (currentTimeForces_P[3][d] + 3 * currentTimeForces_P[2][d] + 3 * currentTimeForces_P[1][d] + currentIterForces_P[0][d]) / 8;
                 temp[d] = currentTimeVel_P[1][d] * Mass_P + dt * (tempForces + massDifference * gravity[d]);
                 temp[d] = temp[d] / Mass_P;
-                //if (Math.Abs(temp[d]) < 1e-14)
-                //{
-                //    temp[d] = 0;
-                //}
             }
 
             // Save new velocity
@@ -653,10 +625,6 @@ namespace BoSSS.Application.FSI_Solver
                 oldAngularVelocity = newAngularVelocity;
 
             }
-            //if (Math.Abs(newAngularVelocity) < 1e-14)
-            //{
-            //    newAngularVelocity = 0;
-            //}
             currentIterRot_P.Insert(0, newAngularVelocity);
             currentIterRot_P.Remove(currentIterRot_P.Last());
             currentTimeRot_P[0] = currentIterRot_P[0];
@@ -1058,10 +1026,6 @@ namespace BoSSS.Application.FSI_Solver
 
             // determine underrelaxation factor (URF)
             // =============================
-            temporalForces_P.Insert(0, forces);
-            temporalForces_P.Remove(temporalForces_P.Last());
-            temporalTorque_P.Insert(0, torque);
-            temporalTorque_P.Remove(temporalTorque_P.Last());
             double[] temp_underR = new double[D + 1];
             double averageDistance = (length_P + thickness_P) / 2;
             double averageForce = (Math.Abs(forces[0]) + Math.Abs(forces[1]) + Math.Abs(torque) / averageDistance) / 3;
@@ -1247,21 +1211,7 @@ namespace BoSSS.Application.FSI_Solver
         /// <returns></returns>
         abstract public bool Contains(double[] point, LevelSetTracker LsTrk); 
         #endregion
-
-        #region Particle shape
-        public enum ParticleShape {
-            spherical = 0,
-
-            elliptic = 1,
-
-            hippopede = 2,
-
-            bean = 3,
-
-            squircle = 4
-        }
-        #endregion
+        
     }
-
 }
 
