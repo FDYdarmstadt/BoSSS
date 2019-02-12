@@ -26,6 +26,13 @@ namespace BoSSS.Application.FSI_Solver
     [Serializable]
     public class Particle_Hippopede : Particle
     {
+        /// <summary>
+        /// Empty constructor used during de-serialization
+        /// </summary>
+        private Particle_Hippopede() : base()
+        {
+
+        }
         public Particle_Hippopede(int Dim, int HistoryLength, double[] startPos = null, double startAngl = 0) : base(Dim, HistoryLength, startPos, startAngl)
         {
             #region Particle history
