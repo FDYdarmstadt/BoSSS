@@ -209,7 +209,7 @@ class BoSSSMenu{
                     var filePath = '"' + fileName.replace(/\\/g, '/')+ '"';
                     that.savePath = filePath;
                     var command = 'BoSSSpad.saveFile(' + filePath + ');';
-                    that.mainWindow.webContents.executeJavaScript( command ).then(resolve());
+                    that.mainWindow.webContents.executeJavaScript( command ).then( resolve());
                 }
                 catch(err){
                     console.log(err);

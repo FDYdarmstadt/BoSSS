@@ -163,8 +163,8 @@ export class BoSSSpad{
             commands : value.commands,
             results : value.results
         }
-        await boSSSRuntime.save(data);
-        return true;
+        var result = await boSSSRuntime.save(data);
+        return result;
     }
 
     hasChanged(){
