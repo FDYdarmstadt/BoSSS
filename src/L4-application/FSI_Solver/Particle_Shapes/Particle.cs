@@ -295,7 +295,7 @@ namespace BoSSS.Application.FSI_Solver
         /// Sets the gravity in vertical direction, default is 9.81
         /// </summary>
         [DataMember]
-        public double gravityVertical = 9.81;
+        public double gravityVertical;
         
         /// <summary>
         /// Convergence criterion for the calculation of the forces and torque
@@ -350,10 +350,9 @@ namespace BoSSS.Application.FSI_Solver
 
         #region Particle history
         /// <summary>
-        /// Clean all Particle histories until a certain length
+        /// Clean all Particle iteration histories until a certain length
         /// </summary>
         /// <param name="length"></param>
-        // iteration
         public void CleanHistoryIter() {
             if (currentIterPos_P.Count > m_HistoryLength)
             {
@@ -368,7 +367,10 @@ namespace BoSSS.Application.FSI_Solver
                 }
             }
         }
-        // time
+        /// <summary>
+        /// Clean all Particle histories until a certain length
+        /// </summary>
+        /// <param name="length"></param>
         public void CleanHistory()
         {
             if (currentTimePos_P.Count > 4)
@@ -392,40 +394,28 @@ namespace BoSSS.Application.FSI_Solver
         /// Move particle with current velocity
         /// </summary>
         /// <param name="dt"></param>
-        public void UpdateParticlePosition(double dt) {
-            
+        public void UpdateParticlePosition(double dt, double rho_Fluid) {
+
             // Position
+            // =============================
             var tempPos = currentIterPos_P[0].CloneAs();
             double[] gravity = new double[2];
-            //tempPos.AccV(dt, currentIterVel_P[0]);
-            //currentIterPos_P.Insert(0, tempPos);
-            //currentIterPos_P.Remove(currentIterPos_P.Last());
-            //currentIterPos_P[0] = tempPos;
             for (int d = 0; d < m_Dim; d++)
             {
                 gravity[d] = 0;
                 gravity[1] = gravityVertical;
-                double rho_Fluid = 1;
                 double massDifference = (rho_P - rho_Fluid) * (Area_P);
                 double tempForces = (currentIterForces_P[0][d] + currentTimeForces_P[1][d]) / 2;
-                //double tempForces = (currentTimeForces_P[3][d] + 3 * currentTimeForces_P[2][d] + 3 * currentTimeForces_P[1][d] + currentIterForces_P[0][d]) / 8;
                 tempPos[d] = currentTimePos_P[1][d] + currentTimeVel_P[1][d] * dt + 0.5 * dt * dt * (tempForces + massDifference * gravity[d]) / Mass_P;
             }
             currentIterPos_P[0] = tempPos;
-            //currentIterPos_P.Remove(currentIterPos_P.Last());
 
             // Angle
-            //var tempAng = currentIterAng_P[0] + dt * currentIterRot_P[0];
-            //currentIterAng_P.Insert(0, tempAng);
-            //currentIterAng_P.Remove(currentIterAng_P.Last());
-            //currentIterAng_P[0] = currentTimeAng_P[1] + dt * currentIterRot_P[0];
+            // =============================
             double tempTorque = (currentTimeTorque_P[1] + currentIterTorque_P[0]) / 2;
             currentIterAng_P[0] = currentTimeAng_P[1] + dt * currentTimeRot_P[1] + (dt * dt / MomentOfInertia_P) * tempTorque / 2;
             currentTimePos_P[0] = currentIterPos_P[0];
             currentTimeAng_P[0] = currentIterAng_P[0];
-
-            //Console.WriteLine("Current angle speed is " + currentIterRot_P[0]);// *360/Math.PI);
-            //Console.WriteLine("Current angle is " + currentIterAng_P[0] + " rad");
 
             UpdateLevelSetFunction();
         }
@@ -433,22 +423,23 @@ namespace BoSSS.Application.FSI_Solver
         public void ResetParticlePosition()
         {
             // save position of the last timestep
+            // =============================
             if (iteration_counter_P == 0)
             {
                 currentTimePos_P.Insert(1, currentTimePos_P[0]);
                 currentTimePos_P.Remove(currentTimePos_P.Last());
                 currentTimeAng_P.Insert(1, currentTimeAng_P[0]);
                 currentTimeAng_P.Remove(currentTimeAng_P.Last());
-                //currentTimePos_P[1] = currentTimePos_P[0];
-                //currentTimeAng_P[1] = currentTimeAng_P[0];
             }
 
             // Position
+            // =============================
             currentIterPos_P.Insert(1, currentIterPos_P[0]);
             currentIterPos_P.Remove(currentIterPos_P.Last());
             currentIterPos_P[0] = currentTimePos_P[1];
 
             // Angle
+            // =============================
             currentIterAng_P.Insert(1, currentTimeAng_P[0]);
             currentIterAng_P.Remove(currentIterAng_P.Last());
             currentIterAng_P[0] = currentTimeAng_P[1];
@@ -471,7 +462,7 @@ namespace BoSSS.Application.FSI_Solver
         /// <param name="particleMass"></param>
         /// <param name="force"></param>
         /// <returns></returns>
-        public void UpdateTransVelocity(double dt, double rho_Fluid = 1, bool includeTranslation = true, bool LiftAndDrag = true) {
+        public void UpdateTransVelocity(double dt, double rho_Fluid, bool includeTranslation = true, bool LiftAndDrag = true) {
 
             // save velocity of the last timestep
             if (iteration_counter_P == 0)
@@ -595,7 +586,7 @@ namespace BoSSS.Application.FSI_Solver
         /// <param name="ParticleMass"></param>
         /// <param name="Torque"></param>
         /// <returns></returns>
-        public void UpdateAngularVelocity(double dt, double rho_Fluid = 1, bool includeRotation = true, int noOfSubtimesteps = 1) {
+        public void UpdateAngularVelocity(double dt, bool includeRotation = true, int noOfSubtimesteps = 1) {
 
             // save rotation of the last timestep
             if (iteration_counter_P == 0)
@@ -648,15 +639,15 @@ namespace BoSSS.Application.FSI_Solver
         /// <param name="P"></param>
         /// <param name="LsTrk"></param>
         /// <param name="muA"></param>
-        public void UpdateForcesAndTorque(VectorField<SinglePhaseField> U, SinglePhaseField P,
-            LevelSetTracker LsTrk,
-            double muA) {
+        public void UpdateForcesAndTorque(VectorField<SinglePhaseField> U, SinglePhaseField P, LevelSetTracker LsTrk, double muA) {
 
             if (skipForceIntegration) {
                 skipForceIntegration = false;
                 return;
             }
+
             // save forces and torque of the last timestep
+            // =============================
             if (iteration_counter_P == 0)
             {
                 currentTimeForces_P.Insert(1, currentTimeForces_P[0]);
@@ -664,55 +655,46 @@ namespace BoSSS.Application.FSI_Solver
                 currentTimeTorque_P.Insert(1, currentTimeTorque_P[0]);
                 currentTimeTorque_P.Remove(currentTimeTorque_P.Last());
             }
+
             int D = LsTrk.GridDat.SpatialDimension;
-            // var UA = U.Select(u => u.GetSpeciesShadowField("A")).ToArray();
+
             var UA = U.ToArray();
 
             int RequiredOrder = U[0].Basis.Degree * 3 + 2;
-            //int RequiredOrder = LsTrk.GetXQuadFactoryHelper(momentFittingVariant).GetCachedSurfaceOrders(0).Max();
-            //Console.WriteLine("Order reduction: {0} -> {1}", _RequiredOrder, RequiredOrder);
-
-            //if (RequiredOrder > agg.HMForder)
-            //    throw new ArgumentException();
-
             Console.WriteLine("Forces coeff: {0}, order = {1}", LsTrk.CutCellQuadratureType, RequiredOrder);
 
-
             ConventionalDGField pA = null;
-
-            //pA = P.GetSpeciesShadowField("A");
             pA = P;
 
             #region Force
             double[] forces = new double[D];
             for (int d = 0; d < D; d++) {
                 ScalarFunctionEx ErrFunc = delegate (int j0, int Len, NodeSet Ns, MultidimensionalArray result) {
-                    int K = result.GetLength(1); // No nof Nodes
-                    MultidimensionalArray Grad_UARes = MultidimensionalArray.Create(Len, K, D, D); ;
+                    int K = result.GetLength(1); // No of Nodes
+                    MultidimensionalArray Grad_UARes = MultidimensionalArray.Create(Len, K, D, D); 
                     MultidimensionalArray pARes = MultidimensionalArray.Create(Len, K);
 
                     // Evaluate tangential velocity to level-set surface
+                    // =============================
+                    // Normal vector
                     var Normals = LsTrk.DataHistories[0].Current.GetLevelSetNormals(Ns, j0, Len);
-
-
+                    // Velocity
                     for (int i = 0; i < D; i++) {
                         UA[i].EvaluateGradient(j0, Len, Ns, Grad_UARes.ExtractSubArrayShallow(-1, -1, i, -1), 0, 1);
                     }
-
-
+                    // Pressure
                     pA.Evaluate(j0, Len, Ns, pARes);
 
                     if (LsTrk.GridDat.SpatialDimension == 2) {
-
                         for (int j = 0; j < Len; j++) {
                             for (int k = 0; k < K; k++) {
-                                // defining variables
+                                // Defining variables
                                 double acc = 0.0;
                                 double c = 0.0;
                                 double[] integrand = new double[4];
                                 double sum = 0;
                                 double naiveSum = 0;
-                                // choosing direction 
+                                // Choosing dircetion
                                 switch (d) {
                                     case 0:
                                         c = 0.0;
