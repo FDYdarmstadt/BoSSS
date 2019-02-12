@@ -21,19 +21,19 @@ function createWindow () {
     });   
 }
 
-app.on('ready', createWindow)
+app.on('ready', createWindow);
 
 app.on('window-all-closed', function () {
 	if (process.platform !== 'darwin') {
 		app.quit()
 	}
-})
+});
 
 app.on('activate', function () {
 	if (mainWindow === null) {
 		createWindow()
 	}
-})
+});
 
 /* Mac Stuff
 app.on('activate', () => {
@@ -45,7 +45,7 @@ app.on('activate', () => {
 })
 */
 
-async function AreYouSure_Save(func){
+function AreYouSure_Save(func){
     mainWindow.webContents.executeJavaScript( 'BoSSSpad.hasChanged()').then(
         async(changed) =>
         {
@@ -138,21 +138,36 @@ class BoSSSMenu{
                 submenu:[
                     {
                         label: 'Execute from here...',
-                        accelerator: 'CmdOrCtrl+F5'
+                        accelerator: 'CmdOrCtrl+F5',
+                        click(){
+                            that.executeFromHere();
+                        }
                     },
                     {
                         label: 'Execute entire worksheet',
-                        accelerator: 'F5'
+                        accelerator: 'F5',
+                        click(){
+                            that.executeEntireWorksheet();
+                        }
                     },
                     {
                         label: 'Execute until here',
-                        accelerator: 'CmdOrCtrl+Shift+F5'
+                        accelerator: 'CmdOrCtrl+Shift+F5',
+                        click(){
+                            that.executeUntilHere();
+                        }
                     },
                     {
-                        label: 'Interrupt current command'
+                        label: 'Interrupt current command',
+                        click(){
+                            that.interruptCurrentComand();
+                        }
                     },
                     {
-                        label: 'Execute until here'
+                        label: 'De-Queue all pending commands',
+                        click(){
+                            that.deQueueAllPendingCommands();
+                        }
                     },
                 ]
             },
@@ -183,8 +198,37 @@ class BoSSSMenu{
 		];
 		const menu = this.Menu.buildFromTemplate(template);
 		this.Menu.setApplicationMenu(menu);
-	}
+    }
+    
+    //Command actions
+    //===========================================================================
+    executeFromHere(){
+        var command = 'BoSSSpad.executeFromHere();';
+        this.mainWindow.webContents.executeJavaScript( command );
+    }
 
+    executeEntireWorksheet(){
+        var command = 'BoSSSpad.executeEntireWorksheet();';
+        this.mainWindow.webContents.executeJavaScript( command );
+    }
+
+    executeUntilHere(){
+        var command = 'BoSSSpad.executeUntilHere();';
+        this.mainWindow.webContents.executeJavaScript( command );
+    }
+
+    interruptCurrentComand(){
+        var command = 'BoSSSpad.interruptCurrentComand();';
+        this.mainWindow.webContents.executeJavaScript( command );
+    }
+
+    deQueueAllPendingCommands(){
+        var command = 'BoSSSpad.deQueueAllPendingCommands();';
+        this.mainWindow.webContents.executeJavaScript( command );
+    }
+
+    //File actions
+    //===========================================================================
 	openFile(){
         //bookmarks is mac stuff
         var that = this;

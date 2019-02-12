@@ -81,6 +81,10 @@ export class InteractiveList{
       return value;
     }
    
+    getAllBoxes(){
+        return this.boxes;
+    }
+
     getAllBoxesUntil(box, boxType){
       var check = function(someBox){
         return someBox.BoxType === boxType && someBox.range.startLineNumber <= box.range.startLineNumber;

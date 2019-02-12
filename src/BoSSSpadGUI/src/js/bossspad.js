@@ -46,7 +46,7 @@ export class BoSSSpad{
             isLocked(){
                 return this.locked;
             }
-            
+
             toggleLock(){
                 this.locked = !this.locked;
             }
@@ -140,6 +140,42 @@ export class BoSSSpad{
         this.boSSS.update();
     }
 
+    //Command actions
+    //===========================================================================
+    executeFromHere(){
+        
+    }
+
+    async executeEntireWorksheet(){
+        if(!this.status.isLocked()){
+            this.status.toggleLock();
+            var boxArray = this.userGUI.getAllBoxes();
+            //Change Backgroundcolor
+            for(var i = 1; i < boxArray.length; ++i){
+                boxArray[i].boxContent.toggleWaitingForWork();
+            }
+            //Start calculation in respective order
+            for(var i = 0; i < boxArray.length; ++i){
+                await boxArray[i].boxContent.run();
+            }
+            this.status.toggleLock();
+        }
+    }
+
+    executeUntilHere(){
+
+    }
+
+    interruptCurrentComand(){
+
+    }
+
+    deQueueAllPendingCommands(){
+
+    }
+
+    //File actions
+    //===========================================================================
     resetFile(){
         this.userGUI.reset();
         this.boSSS.reset();
