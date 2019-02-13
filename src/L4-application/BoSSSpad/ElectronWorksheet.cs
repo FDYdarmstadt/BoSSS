@@ -74,6 +74,11 @@ namespace BoSSS.Application.BoSSSpad{
             }
         }
 
+        public void TerminateCommand()
+        {
+
+        }
+
         public Tuple<string, string> RunCommand(string command) {
 
             
