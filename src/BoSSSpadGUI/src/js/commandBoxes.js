@@ -82,7 +82,7 @@ class BoxWithMenu{
       this.readoutLI.classList.toggle("blinkingreadoutLI");
       this.readOutInterval = setInterval( function() {
         that.readoutLI.classList.toggle("blinkingreadoutLI");
-      }, 1500);
+      }, 1200);
   
       //Start calculating
       var calculating = new Promise(async function(resolve, reject){
@@ -93,7 +93,7 @@ class BoxWithMenu{
         
         //Stop Blinking
         clearInterval(that.readOutInterval, value);
-        that.readoutLI.classList.remove("blinkingreadoutLI");
+        setTimeout(() => {that.readoutLI.classList.remove("blinkingreadoutLI");}, 150);
         resolve();
       });
       return calculating;

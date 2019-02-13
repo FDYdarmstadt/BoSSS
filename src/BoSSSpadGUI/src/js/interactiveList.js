@@ -119,7 +119,6 @@ export class InteractiveList{
         return this.boxes.filter(check);
     }
 
-  
     deleteBoxByBox(box){
       var index = this.boxes.indexOf(box);
       this.deleteBox(index);

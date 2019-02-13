@@ -165,15 +165,15 @@ export class BoSSSpad{
             var boxArray = this.userGUI.getAllBoxesUntilLine(lineNumber);
             this.userGUI.executeBoxes(boxArray);
         }
-
     }
 
     interruptCurrentComand(){
-
+        deQueueAllPendingCommands();
+        
     }
 
     deQueueAllPendingCommands(){
-
+        console.log("De-Queueing ;)")
     }
 
     //File actions
