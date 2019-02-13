@@ -535,6 +535,8 @@ namespace CNS {
 
         /// <summary>
         /// The so-called Schlieren variables is based on the magnitude of the density gradient
+        /// The implementation is based on the definition for the shock-vortex interaction test case
+        /// of the HiOCFD5 workshop
         /// </summary>
         public static readonly DerivedVariable Schlieren = new DerivedVariable(
             "schlieren",
@@ -543,6 +545,7 @@ namespace CNS {
                 schlierenField.Clear();
                 int D = program.GridData.SpatialDimension;
 
+                // Old version by Björn
                 /*
                 // Calculate the magnitude of the density gradient
                 SinglePhaseField derivative = new SinglePhaseField(schlierenField.Basis, "derivative");
@@ -561,23 +564,25 @@ namespace CNS {
                 }
                 */
 
-                var Density = program.WorkingSet.Density;
-                var DensityGradient = new VectorField<SinglePhaseField>(D, Density.Basis, (b, S) => new SinglePhaseField(b, S));
+                // New version by Florian
+                DGField Density = program.WorkingSet.Density;
+                VectorField<SinglePhaseField> DensityGradient = new VectorField<SinglePhaseField>(D, Density.Basis, (b, S) => new SinglePhaseField(b, S));
                 DensityGradient.Gradient(1.0, Density, cellMask);
 
-                schlierenField.ProjectFunction(1.0, 
+                schlierenField.ProjectFunction(1.0,
                     delegate (double[] X, double[] U, int jCell) {
-                        double R ;
+                        double R;
                         R = 1.0;
-                        if (D == 2)
+                        if (D == 2) {
                             R += Math.Sqrt(U[0] * U[0] + U[1] * U[1]);
-                        else if (D == 3)
+                        } else if (D == 3) {
                             R += Math.Sqrt(U[0] * U[0] + U[1] * U[1] + U[2] * U[2]);
-                        else
+                        } else {
                             throw new NotSupportedException();
+                        }
                         R = Math.Log(R) / Math.Log(10);
                         return R;
-                    }, 
+                    },
                     new CellQuadratureScheme(true, cellMask),
                     DensityGradient.ToArray());
 
