@@ -37,9 +37,12 @@ namespace BoSSS.Solution.LevelSetTools.EllipticReInit {
     /// Div(DiffusionRate(Abs(Grad Phi)) Grad(Phi)  )
     /// </summary>
     public class CentralDifferencesRHSForm : RHSForm {
+
+        /// <summary>
+        /// ctor
+        /// </summary>
         public CentralDifferencesRHSForm(double PenaltyBase, LevelSetTracker LSTrck) : base(PenaltyBase, LSTrck) { }
-        
-        
+                
 
         public new IList<string> ParameterOrdering {
             get {
@@ -57,19 +60,6 @@ namespace BoSSS.Solution.LevelSetTools.EllipticReInit {
         /// <summary>
         /// 
         /// </summary>
-        /// <param name="inp">
-        /// </param>
-        /// <param name="uIn">
-        /// ExtensionVelocity
-        /// </param>
-        /// <param name="uOut"></param>
-        /// <param name="Grad_uIn"></param>
-        /// <param name="Grad_uOut"></param>
-        /// <param name="vIn"></param>
-        /// <param name="vOut"></param>
-        /// <param name="Grad_vA"></param>
-        /// <param name="Grad_vB"></param>
-        /// <returns></returns>
         public override double InnerEdgeForm(ref CommonParams inp, double[] uIn, double[] uOut, double[,] Grad_uIn, double[,] Grad_uOut, double vIn, double vOut, double[] Grad_vA, double[] Grad_vB) {
             double Acc = 0.0;
            

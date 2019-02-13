@@ -1462,7 +1462,7 @@ namespace BoSSS.Solution {
                 }
 
 
-                // pass 1: singel phase fields
+                // pass 1: single phase fields
                 // ===========================
 
                 var Pass2_Evaluators = new Dictionary<string, Func<double[], double>>();
