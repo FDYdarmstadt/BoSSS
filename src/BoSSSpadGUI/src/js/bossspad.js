@@ -46,7 +46,7 @@ export class BoSSSpad{
             isLocked(){
                 return this.locked;
             }
-            
+
             toggleLock(){
                 this.locked = !this.locked;
             }
@@ -140,6 +140,44 @@ export class BoSSSpad{
         this.boSSS.update();
     }
 
+    //Command actions
+    //===========================================================================
+    executeFromHere(){
+        if(!this.status.isLocked()){
+            this.status.toggleLock();
+            var lineNumber = this.boSSS.getSelection().selectionStartLineNumber;
+            var boxArray = this.userGUI.getAllBoxesFromLine(lineNumber);
+            this.userGUI.executeBoxes(boxArray);
+        }
+    }
+
+    executeEntireWorksheet(){
+        if(!this.status.isLocked()){
+            var boxArray = this.userGUI.getAllBoxes();
+            this.userGUI.executeBoxes(boxArray);
+        }
+    }
+
+    executeUntilHere(){
+        if(!this.status.isLocked()){
+            this.status.toggleLock();
+            var lineNumber = this.boSSS.getSelection().selectionStartLineNumber;
+            var boxArray = this.userGUI.getAllBoxesUntilLine(lineNumber);
+            this.userGUI.executeBoxes(boxArray);
+        }
+
+    }
+
+    interruptCurrentComand(){
+
+    }
+
+    deQueueAllPendingCommands(){
+
+    }
+
+    //File actions
+    //===========================================================================
     resetFile(){
         this.userGUI.reset();
         this.boSSS.reset();

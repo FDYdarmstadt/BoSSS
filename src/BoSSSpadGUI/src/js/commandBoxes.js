@@ -98,6 +98,10 @@ class BoxWithMenu{
       });
       return calculating;
     }
+
+    toggleWaitingForWork(){
+        this.readoutLI.classList.toggle("blinkingreadoutLI");
+    }
   
     async runUntilHere(){
       var boxSubarray = this.parentBox.parentList.getAllBoxesUntil(this.parentBox, this.constructor.prototype.constructor);
