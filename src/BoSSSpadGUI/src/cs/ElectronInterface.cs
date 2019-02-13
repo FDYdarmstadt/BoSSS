@@ -26,16 +26,20 @@ namespace BoSSS.Application.BoSSSpad{
         public async Task<object> Invoke(object input){
             worksheet = new ElectronWorksheet(input.ToString());
             return new{
-                runCommand = (Func<object, Task<object>>)(async (i) => {
+                runCommand = (Func<object, Task<object>>)(async (i) => 
+                {
                     return await Task.Run(() => ElectronInterface.RunCommand(i));
                 }),
-                save = (Func<object, Task<object>>)(async (i) => {
+                save = (Func<object, Task<object>>)(async (i) => 
+                {
                     return await Task.Run(() => ElectronInterface.Save(i));
                 }),
-                load = (Func<object, Task<object>>)(async (i) => {
+                load = (Func<object, Task<object>>)(async (i) => 
+                {
                     return await Task.Run(() => ElectronInterface.Load(i));
                 }),
-                getAutoCompleteSuggestions = (Func<object, Task<object>>)(async (i) => {
+                getAutoCompleteSuggestions = (Func<object, Task<object>>)(async (i) => 
+                {
                     return await Task.Run(() => ElectronInterface.GetAutoCompleteSuggestions(i));
                 })
             };
@@ -47,7 +51,6 @@ namespace BoSSS.Application.BoSSSpad{
         }
 
         static bool Save(dynamic input){
-            Debugger.Launch();
             string path = (string)input.path;
             object[] commands = (object[])input.commands;
             object[] results = (object[])input.results;

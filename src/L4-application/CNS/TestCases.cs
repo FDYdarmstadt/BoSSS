@@ -558,12 +558,12 @@ namespace CNS {
         }
 
 
-        public static CNSControl ShockVortexInteractionHiOCFD5(string dbPath = null, int savePeriod = 100, int dgDegree = 2, double sensorLimit = 1e-3, double CFLFraction = 0.1, int explicitScheme = 3, int explicitOrder = 3, int numberOfSubGrids = 3, int reclusteringInterval = 1, int maxNumOfSubSteps = 0, double Mv = 0.9, double Ms = 1.5, int numOfCellsX = 200, int numOfCellsY = 100) {
+        public static CNSControl ShockVortexInteractionHiOCFD5(string dbPath = null, int savePeriod = 1000, int dgDegree = 2, double sensorLimit = 1e-3, double CFLFraction = 0.1, int explicitScheme = 1, int explicitOrder = 1, int numberOfSubGrids = 3, int reclusteringInterval = 1, int maxNumOfSubSteps = 0, double Mv = 0.9, double Ms = 1.5, int numOfCellsX = 200, int numOfCellsY = 100) {
             CNSControl c = new CNSControl();
 
             // ### Database ###
             //dbPath = @"c:\bosss_db";                                          // Local
-            dbPath = @"e:\bosss_db_paper_revision";                                          // Local
+            //dbPath = @"e:\bosss_db_paper_revision";                                          // Local
             //dbPath = @"\\dc1\userspace\geisenhofer\bosss_db_IBMShockTube";    // Network
 
             c.DbPath = dbPath;
@@ -628,12 +628,12 @@ namespace CNS {
             c.AddVariable(Variables.Velocity.yComponent, dgDegree);
             c.AddVariable(Variables.Pressure, dgDegree);
 
-            c.AddVariable(Variables.Entropy, dgDegree);
+            //c.AddVariable(Variables.Entropy, dgDegree);
             c.AddVariable(Variables.Temperature, dgDegree);
             c.AddVariable(Variables.LocalMachNumber, dgDegree);
             c.AddVariable(Variables.CFL, 0);
             c.AddVariable(Variables.CFLConvective, 0);
-            //c.AddVariable(Variables.Schlieren, dgDegree);
+            c.AddVariable(Variables.Schlieren, dgDegree);
 
             if (AV) {
                 c.AddVariable(Variables.CFLArtificialViscosity, 0);
@@ -700,9 +700,9 @@ namespace CNS {
             // Shock
             // #########################
             double densityLeft = 1;
-            double densityRight = ((gamma + 1) * Ms * Ms) / (2 + (gamma - 1) * Ms * Ms) * densityLeft;
+            double densityRight = (gamma + 1) * Ms * Ms / (2 + (gamma - 1) * Ms * Ms) * densityLeft;
             double pressureLeft = 1;
-            double pressureRight = (1 + (2 * gamma) / (gamma + 1) * (Ms * Ms - 1)) * pressureLeft;
+            double pressureRight = (1 + 2 * gamma / (gamma + 1) * (Ms * Ms - 1)) * pressureLeft;
             double velocityXLeft = Ms * Math.Sqrt(gamma * pressureLeft / densityLeft);
             double velocityXRight = (2 + (gamma - 1) * Ms * Ms) / ((gamma + 1) * Ms * Ms) * velocityXLeft;    // (1)
             //double velocityXRight2 = velocityXLeft * densityLeft / densityRight; // equivalent to (1)
@@ -715,7 +715,7 @@ namespace CNS {
 
             Func<double, double> SmoothJump = delegate (double distance) {
                 // smoothing should be in the range of h/p
-                double maxDistance = 4.0 * cellSize / Math.Max(dgDegree, 1);
+                double maxDistance = 2.0 * cellSize / Math.Max(dgDegree, 1);
 
                 return (Math.Tanh(distance / maxDistance) + 1.0) * 0.5;
             };
@@ -775,26 +775,38 @@ namespace CNS {
             }
 
             double DensityVortex(double[] X) {
-                return rho0 * Math.Pow(TemperatureVortex(X) / T0, 1 / (gamma - 1));
+                double result = rho0 * Math.Pow(TemperatureVortex(X) / T0, 1 / (gamma - 1));
+                return result;
             }
 
             double PressureVortex(double[] X) {
-                return p0 * Math.Pow(TemperatureVortex(X) / T0, gamma / (gamma - 1));
+                double result = p0 * Math.Pow(TemperatureVortex(X) / T0, gamma / (gamma - 1));
+                return result;
             }
 
             double VelocityXVortex(double[] X) {
                 double r = Radius(X);
-                double theta = Math.Atan2(X[1], X[0]);
-                double result = VelocityXShock(X) - vPhi(r) * Math.Sin(theta);
 
+                //double theta = Math.Atan2(X[1], X[0]);
+                //double result = VelocityXShock(X) - vPhi(r) * Math.Sin(theta);
+
+                double dy = X[1] - yc;
+                double sin_theta = dy / r;
+
+                double result = VelocityXShock(X) - vPhi(r) * sin_theta;
                 return result;
             }
 
             double VelocityYVortex(double[] X) {
                 double r = Radius(X);
-                double theta = Math.Atan2(X[1], X[0]);
-                double result = VelocityYShock(X) + vPhi(r) * Math.Cos(theta);
 
+                //double theta = Math.Atan2(X[1], X[0]);
+                //double result = VelocityYShock(X) + vPhi(r) * Math.Cos(theta);
+
+                double dx = X[0] - xc;
+                double cos_theta = dx / r;
+
+                double result = VelocityYShock(X) + vPhi(r) * cos_theta;
                 return result;
             }
 
@@ -832,10 +844,21 @@ namespace CNS {
             // ### Project and sessions name ###
             c.ProjectName = "shock_vortex_interaction";
 
-            if (c.DynamicLoadBalancing_On) {
-                c.SessionName = String.Format("SVI_p{0}_{1}x{2}cells_s0={3:0.0E-00}_CFLFrac{4}_ALTS{5}_{6}_Re{7}_Sub{8}_Part={9}_Re{10}_Thresh{11}", dgDegree, numOfCellsX, numOfCellsY, sensorLimit, c.CFLFraction, c.ExplicitOrder, c.NumberOfSubGrids, c.ReclusteringInterval, c.maxNumOfSubSteps, c.GridPartType.ToString(), c.DynamicLoadBalancing_Period, c.DynamicLoadBalancing_ImbalanceThreshold);
+            string tempSessionName;
+            if (c.ExplicitScheme == ExplicitSchemes.LTS) {
+                tempSessionName = String.Format("SVI_p{0}_xCells{1}_yCells{2}_s0={3:0.0E-00}_CFLFrac{4}_ALTS{5}_{6}_re{7}_subs{8}", dgDegree, numOfCellsX, numOfCellsY, sensorLimit, c.CFLFraction, c.ExplicitOrder, c.NumberOfSubGrids, c.ReclusteringInterval, c.maxNumOfSubSteps);
+            } else if (c.ExplicitScheme == ExplicitSchemes.RungeKutta) {
+                tempSessionName = String.Format("SVI_p{0}_xCells{1}_yCells{2}_s0={3:0.0E-00}_CFLFrac{4}_RK{5}", dgDegree, numOfCellsX, numOfCellsY, sensorLimit, c.CFLFraction, c.ExplicitOrder);
             } else {
-                c.SessionName = String.Format("SVI_p{0}_{1}x{2}cells_s0={3:0.0E-00}_CFLFrac{4}_ALTS{5}_{6}_Re{7}_Sub{8}_Part={9}", dgDegree, numOfCellsX, numOfCellsY, sensorLimit, c.CFLFraction, c.ExplicitOrder, c.NumberOfSubGrids, c.ReclusteringInterval, c.maxNumOfSubSteps, c.GridPartType.ToString());
+                throw new NotImplementedException("Session name is not available for this type of time stepper");
+            }
+
+            if (c.DynamicLoadBalancing_On) {
+                //string loadBal = String.Format("_Part={0}_Repart{1}_Thresh{2}", c.GridPartType.ToString(), c.DynamicLoadBalancing_Period, c.DynamicLoadBalancing_ImbalanceThreshold);
+                string loadBal = String.Format("_REPART", c.GridPartType.ToString(), c.DynamicLoadBalancing_Period, c.DynamicLoadBalancing_ImbalanceThreshold);
+                c.SessionName = String.Concat(tempSessionName, loadBal);
+            } else {
+                c.SessionName = tempSessionName;
             }
 
             return c;
@@ -1124,14 +1147,14 @@ namespace CNS {
 
             // ### Partitioning and load balancing ###
             c.GridPartType = GridPartType.METIS;
-            c.DynamicLoadBalancing_On = true;
-            c.DynamicLoadBalancing_CellClassifier = new IBMCellClassifier();
-            //c.DynamicLoadBalancing_CellCostEstimatorFactories.AddRange(IBMCellCostEstimator.GetMultiBalanceConstraintsBasedEstimators());
-            //c.DynamicLoadBalancing_CellCostEstimatorFactories.Add((p, i) => new StaticCellCostEstimator(new[] { 7, 7, 1 })); // HPC Cluster, 28 cores
-            c.DynamicLoadBalancing_CellCostEstimatorFactories.Add((p, i) => new StaticCellCostEstimator(new[] { 10, 10, 1 })); // Lichtenberg, 64 cores
-            c.DynamicLoadBalancing_ImbalanceThreshold = 0.1;
-            c.DynamicLoadBalancing_Period = int.MaxValue;
-            c.DynamicLoadBalancing_RedistributeAtStartup = true;
+            c.DynamicLoadBalancing_On = false;
+            //c.DynamicLoadBalancing_CellClassifier = new IBMCellClassifier();
+            ////c.DynamicLoadBalancing_CellCostEstimatorFactories.AddRange(IBMCellCostEstimator.GetMultiBalanceConstraintsBasedEstimators());
+            ////c.DynamicLoadBalancing_CellCostEstimatorFactories.Add((p, i) => new StaticCellCostEstimator(new[] { 7, 7, 1 })); // HPC Cluster, 28 cores
+            //c.DynamicLoadBalancing_CellCostEstimatorFactories.Add((p, i) => new StaticCellCostEstimator(new[] { 10, 10, 1 })); // Lichtenberg, 64 cores
+            //c.DynamicLoadBalancing_ImbalanceThreshold = 0.1;
+            //c.DynamicLoadBalancing_Period = int.MaxValue;
+            //c.DynamicLoadBalancing_RedistributeAtStartup = true;
 
             // ### Level-set ###
             c.DomainType = DomainTypes.StaticImmersedBoundary;
@@ -1294,7 +1317,7 @@ namespace CNS {
             // Function for smoothing the initial and top boundary conditions
             double SmoothJump(double distance) {
                 // smoothing should be in the range of h/p
-                double maxDistance = 4.0 * cellSize / Math.Max(dgDegree, 1);
+                double maxDistance = 2.0 * cellSize / Math.Max(dgDegree, 1);
 
                 return (Math.Tanh(distance / maxDistance) + 1.0) * 0.5;
             }
@@ -1359,7 +1382,14 @@ namespace CNS {
             // ### Project and sessions name ###
             c.ProjectName = "IBMST_Paper_Revision";
 
-            string tempSessionName = String.Format("IBMST_p{0}_xCells{1}_yCells{2}_agg{3}_s0={4:0.0E-00}_CFLFrac{5}_ALTS{6}_{7}_re{8}_subs{9}", dgDegree, numOfCellsX, numOfCellsY, c.AgglomerationThreshold, sensorLimit, c.CFLFraction, c.ExplicitOrder, c.NumberOfSubGrids, c.ReclusteringInterval, c.maxNumOfSubSteps);
+            string tempSessionName;
+            if (c.ExplicitScheme == ExplicitSchemes.LTS) {
+                tempSessionName = String.Format("IBMST_p{0}_xCells{1}_yCells{2}_agg{3}_s0={4:0.0E-00}_CFLFrac{5}_ALTS{6}_{7}_re{8}_subs{9}", dgDegree, numOfCellsX, numOfCellsY, c.AgglomerationThreshold, sensorLimit, c.CFLFraction, c.ExplicitOrder, c.NumberOfSubGrids, c.ReclusteringInterval, c.maxNumOfSubSteps);
+            } else if (c.ExplicitScheme == ExplicitSchemes.RungeKutta) {
+                tempSessionName = String.Format("IBMST_p{0}_xCells{1}_yCells{2}_agg{3}_s0={4:0.0E-00}_CFLFrac{5}_RK{6}", dgDegree, numOfCellsX, numOfCellsY, c.AgglomerationThreshold, sensorLimit, c.CFLFraction, c.ExplicitOrder);
+            } else {
+                throw new NotImplementedException("Session name is not available for this type of time stepper");
+            }
 
             if (c.DynamicLoadBalancing_On) {
                 //string loadBal = String.Format("_Part={0}_Repart{1}_Thresh{2}", c.GridPartType.ToString(), c.DynamicLoadBalancing_Period, c.DynamicLoadBalancing_ImbalanceThreshold);
