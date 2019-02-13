@@ -37,10 +37,13 @@ namespace BoSSS.Solution.LevelSetTools.EllipticReInit {
     /// a(u,v) = \alpha \int_{\Gamma} u v   \mathrm{dS}
     /// \f]
     /// </summary>
-    class EllipticReInitInterfaceForm : ILevelSetForm, ILevelSetEquationComponentCoefficient {
+    public class EllipticReInitInterfaceForm : ILevelSetForm, ILevelSetEquationComponentCoefficient {
         double PenaltyBase;
         LevelSetTracker LSTrk;
 
+        /// <summary>
+        /// old ctor
+        /// </summary>
         public EllipticReInitInterfaceForm(double PenaltyBase, LevelSetTracker LSTrk) {
             this.PenaltyBase = PenaltyBase;
             this.LSTrk = LSTrk;
@@ -55,6 +58,12 @@ namespace BoSSS.Solution.LevelSetTools.EllipticReInit {
         MultidimensionalArray NegCellLengthScaleS;
         MultidimensionalArray PosCellLengthScaleS;
 
+        /// <summary>
+        /// Called by 
+        /// <see cref="XSpatialOperator.XEvaluatorNonlin.Evaluate{Tout}(double, double, Tout, double[])"/>
+        /// resp.
+        /// <see cref="XSpatialOperator.XEvaluatorLinear.ComputeMatrix{M, V}(M, V)"/>.
+        /// </summary>
         public void CoefficientUpdate(CoefficientSet csA, CoefficientSet csB, int[] DomainDGdeg, int TestDGdeg) {
             NegCellLengthScaleS = csA.CellLengthScales;
             PosCellLengthScaleS = csB.CellLengthScales;
@@ -64,16 +73,6 @@ namespace BoSSS.Solution.LevelSetTools.EllipticReInit {
         /// <summary>
         /// The penalty at the interface enforcing phi=0 at the old position
         /// </summary>
-        /// <param name="inp"></param>
-        /// <param name="uA"></param>
-        /// <param name="uB"></param>
-        /// <param name="Grad_uA"></param>
-        /// <param name="Grad_uB"></param>
-        /// <param name="vA"></param>
-        /// <param name="vB"></param>
-        /// <param name="Grad_vA"></param>
-        /// <param name="Grad_vB"></param>
-        /// <returns></returns>
         public double LevelSetForm(ref CommonParamsLs inp, double[] uA, double[] uB, double[,] Grad_uA, double[,] Grad_uB, double vA, double vB, double[] Grad_vA, double[] Grad_vB) {
             double NegCellLengthScale = NegCellLengthScaleS[inp.jCell];
             double PosCellLengthScale = PosCellLengthScaleS[inp.jCell];

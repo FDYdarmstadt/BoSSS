@@ -249,8 +249,8 @@ namespace BoSSS.Solution.LevelSetTools.EllipticReInit {
                 OpAffine_interface.Clear();
 
 
-                /// Build the Quadrature-Scheme for the interface operator
-                /// Note: The HMF-Quadrature over a surface is formally a volume quadrature, since it uses the volume quadrature nodes.
+                // Build the Quadrature-Scheme for the interface operator
+                // Note: The HMF-Quadrature over a surface is formally a volume quadrature, since it uses the volume quadrature nodes.
                 XSpatialOperatorExtensions.ComputeMatrixEx(Operator_interface,
                 //Operator_interface.ComputeMatrixEx(
                     LevelSetTracker,
@@ -648,17 +648,16 @@ namespace BoSSS.Solution.LevelSetTools.EllipticReInit {
             
 
 
-            /// Zero at the Interface
-            /// 
-            /// Calculate Quadrature Order
+            // Zero at the Interface
+            // Calculate Quadrature Order
             Func<int[], int[], int[], int> InterfaceQuadOrder;
             InterfaceQuadOrder = QuadOrderFunc.FixedOrder(Phi.Basis.Degree * 2 + 2);
 
-            /// Generate Interface Operator
+            // Generate Interface Operator
             this.Operator_interface = (new EllipticReInitInterfaceForm(Control.PenaltyMultiplierInterface*PenaltyBase, LSTrck)).XOperator(InterfaceQuadOrder);
             
             // Nonlinear Part on the RHS
-            /// switch for the potential functions
+            // switch for the potential functions
             switch (Control.Potential) {
                 case ReInitPotential.BastingDoubleWell: {
                         myRHSForm.DiffusionRate = ((d, b) => DiffusionRates.DoubleWell(d,b));
@@ -685,17 +684,17 @@ namespace BoSSS.Solution.LevelSetTools.EllipticReInit {
             Operator_RHS = myRHSForm.Operator(QuadOrderFunc.SumOfMaxDegrees(2, RoundUp: true));
 
 
-            /// The result of the nonlinear part on the rhs is projected on a single-phase field
+            // The result of the nonlinear part on the rhs is projected on a single-phase field
             RHSField = new SinglePhaseField(Phi.Basis,"RHS");
 
             OpMatrix = new MsrMatrix(this.Phi.Mapping, this.Phi.Mapping);
             OpAffine = new double[OpMatrix.RowPartitioning.LocalLength];
 
-            /// Matrix and RHS for the Bulk component
+            // Matrix and RHS for the Bulk component
             OpMatrix_bulk = new MsrMatrix(this.Phi.Mapping, this.Phi.Mapping);
             OpAffine_bulk = new double[OpMatrix.RowPartitioning.LocalLength];
 
-            /// Matrix and RHS for the Interface Penalty
+            // Matrix and RHS for the Interface Penalty
             OpMatrix_interface = new MsrMatrix(this.Phi.Mapping, this.Phi.Mapping);
             OpAffine_interface = new double[OpMatrix.RowPartitioning.LocalLength];
 

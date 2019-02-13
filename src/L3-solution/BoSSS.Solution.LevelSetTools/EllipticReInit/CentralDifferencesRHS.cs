@@ -77,9 +77,9 @@ namespace BoSSS.Solution.LevelSetTools.EllipticReInit {
             //Central Differences
             bool eval = NearFieldBitMask[inp.jCellIn] && NearFieldBitMask[inp.jCellOut];
             for (int d = 0; d < inp.D; d++) {
-                /// Central Differences
+                // Central Differences
                 Acc += 0.5 * (DiffusionRate(AbsGrad_uIn, eval) * Grad_uIn[0, d]* inp.Normale[d] + DiffusionRate(AbsGrad_uOut, eval) * Grad_uOut[0, d]* inp.Normale[d]) * (vIn - vOut);
-                /// Inner Values
+                // Inner Values
                 //Acc += DiffusionRate(AbsGrad_uA, eval) * Grad_uA[0, d] * inp.Normale[d] * vA - DiffusionRate(AbsGrad_uB, eval) * Grad_uB[0, d] * inp.Normale[d] * vB;
 
                 // consistency term

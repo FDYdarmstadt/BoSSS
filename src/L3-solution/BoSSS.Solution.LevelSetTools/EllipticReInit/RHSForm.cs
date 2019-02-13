@@ -35,8 +35,7 @@ namespace BoSSS.Solution.LevelSetTools.EllipticReInit {
         public static double DoubleWell(double s, bool eval) {
             if (s >= 1) {
                 return 1 / s;
-            }
-            else {
+            } else {
                 return 3 * s - 2 * s * s;
             }
         }
@@ -52,8 +51,7 @@ namespace BoSSS.Solution.LevelSetTools.EllipticReInit {
         public static double DoubleWellAlternative(double s, bool eval) {
             if (s >= 1) {
                 return 1 / s;
-            }
-            else {
+            } else {
                 return 3 - (3 / 2) * s - 1 / (2 * s);
                 //(3 / 4) * s - 1 / (4 * s);
                 //1-(5 / 4) * Math.Sqrt(s) + 3 / (2 *Math.Sqrt(s)) - 1 / (4 * s.Pow(3 / 2));
@@ -62,8 +60,7 @@ namespace BoSSS.Solution.LevelSetTools.EllipticReInit {
         }
 
         public static double SingleWellNear(double x, bool eval) {
-            if (eval) { return 1 / x; }
-            else { return 0; }
+            if (eval) { return 1 / x; } else { return 0; }
         }
 
         public static double SingleWellOnCutDoubleWellElse(double x, bool eval) {
@@ -75,6 +72,9 @@ namespace BoSSS.Solution.LevelSetTools.EllipticReInit {
 
     public abstract class RHSForm : BoSSS.Foundation.IEdgeForm, BoSSS.Foundation.IVolumeForm, IObserver<LevelSetTracker.LevelSetRegions> {
 
+        /// <summary>
+        /// ctor
+        /// </summary>
         public RHSForm(double PenaltyBase, LevelSetTracker LSTrck) {
             this.LSTrck = LSTrck;
             NearFieldBitMask = LSTrck.Regions.GetNearFieldMask(1).GetBitMaskWithExternal();
@@ -85,20 +85,20 @@ namespace BoSSS.Solution.LevelSetTools.EllipticReInit {
         internal System.Collections.BitArray NearFieldBitMask;
         internal System.Collections.BitArray CutCells;
 
-        public TermActivationFlags VolTerms
-        {
-            get
-            {
+        /// <summary>
+        /// %
+        /// </summary>
+        public TermActivationFlags VolTerms {
+            get {
                 return (TermActivationFlags.GradUxGradV);
             }
         }
 
         /// <summary>
-        /// Diffusion Rate
+        /// Diffusion Rate; Arguments are:
+        /// - arg0: Abs(Grad(Phi))
+        /// - arg1: Evaluation Flag: True, if the Cell is in the Near Region
         /// </summary>
-        /// <param name="d">Abs(Grad(Phi))</param>
-        /// <param name="eval">Evaluation Flag: True, if the Cell is in the Near Region</param>
-        /// <returns></returns>
         public Func<double, bool, double> DiffusionRate;
 
 
@@ -119,33 +119,42 @@ namespace BoSSS.Solution.LevelSetTools.EllipticReInit {
 #if DEBUG
             if (Acc.IsNaN()) throw new ArithmeticException();
 #endif
-            return - Acc;
+            return -Acc;
         }
 
+        /// <summary>
+        /// nix
+        /// </summary>
+        public virtual IList<string> ParameterOrdering {
+            get {
+                return null;
+            }
+        }
 
-        public virtual IList<string> ParameterOrdering { get; }
-        
-
-        public TermActivationFlags BoundaryEdgeTerms
-        {
-            get
-            {
+        /// <summary>
+        /// %
+        /// </summary>
+        public TermActivationFlags BoundaryEdgeTerms {
+            get {
                 return TermActivationFlags.GradUxV;
             }
         }
 
-        public abstract TermActivationFlags InnerEdgeTerms { get; }
+        /// <summary>
+        /// %
+        /// </summary>
+        public abstract TermActivationFlags InnerEdgeTerms {
+            get;
+        }
 
-        public IList<string> ArgumentOrdering
-        {
-            get
-            {
+        /// <summary>
+        /// %
+        /// </summary>
+        public IList<string> ArgumentOrdering {
+            get {
                 return new string[] { VariableNames.LevelSet };
             }
         }
-
-  
-
 
         public double BoundaryEdgeForm(ref CommonParamsBnd inp, double[] uA, double[,] Grad_uA, double vA, double[] Grad_vA) {
             return 0;
