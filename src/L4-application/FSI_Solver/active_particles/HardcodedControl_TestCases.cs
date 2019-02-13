@@ -65,11 +65,11 @@ namespace BoSSS.Application.FSI_Solver
                 int q = new int(); // #Cells in x-dircetion + 1
                 int r = new int(); // #Cells in y-dircetion + 1
 
-                q = 20;
-                r = 20;
+                q = 24;
+                r = 8;
 
-                double[] Xnodes = GenericBlas.Linspace(-10 * BaseSize, 10 * BaseSize, q);
-                double[] Ynodes = GenericBlas.Linspace(-10 * BaseSize, 10 * BaseSize, r);
+                double[] Xnodes = GenericBlas.Linspace(-15 * BaseSize, 15 * BaseSize, q);
+                double[] Ynodes = GenericBlas.Linspace(-5 * BaseSize, 5 * BaseSize, r);
 
                 var grd = Grid2D.Cartesian2DGrid(Xnodes, Ynodes, periodicX: false, periodicY: false);
 
@@ -82,13 +82,13 @@ namespace BoSSS.Application.FSI_Solver
                 grd.DefineEdgeTags(delegate (double[] X)
                 {
                     byte et = 0;
-                    if (Math.Abs(X[0] - (-10 * BaseSize)) <= 1.0e-8)
+                    if (Math.Abs(X[0] - (-15 * BaseSize)) <= 1.0e-8)
                         et = 1;
-                    if (Math.Abs(X[0] + (-10 * BaseSize)) <= 1.0e-8)
+                    if (Math.Abs(X[0] + (-15 * BaseSize)) <= 1.0e-8)
                         et = 2;
-                    if (Math.Abs(X[1] - (-10 * BaseSize)) <= 1.0e-8)
+                    if (Math.Abs(X[1] - (-5 * BaseSize)) <= 1.0e-8)
                         et = 3;
-                    if (Math.Abs(X[1] + (-10 * BaseSize)) <= 1.0e-8)
+                    if (Math.Abs(X[1] + (-5 * BaseSize)) <= 1.0e-8)
                         et = 4;
 
                     Debug.Assert(et != 0);
@@ -127,10 +127,10 @@ namespace BoSSS.Application.FSI_Solver
             // =============================   
             // Defining particles
             C.Particles = new List<Particle>();
-            int numOfParticles = 2;
+            int numOfParticles = 1;
             for (int d = 0; d < numOfParticles; d++)
             {
-                C.Particles.Add(new Particle_Ellipsoid(2, 4, new double[] { -8+16*d , 0.0 }, startAngl: 180*d)
+                C.Particles.Add(new Particle_Ellipsoid(2, 4, new double[] { -10 , 0.0 }, startAngl: 10)
                 {
                     radius_P = 1,
                     rho_P = 2,//pg/(mum^3)
@@ -141,7 +141,7 @@ namespace BoSSS.Application.FSI_Solver
                     length_P = 2 * BaseSize,
                     superEllipsoidExponent = 4,
                     underrelaxationFT_constant = false,// set true if you want to define a constant underrelaxation (not recommended)
-                    underrelaxation_factor = 1,// underrelaxation with [factor * 10^exponent]
+                    underrelaxation_factor = 0.5,// underrelaxation with [factor * 10^exponent]
                     deleteSmallValues = true
                 });
             }
@@ -203,7 +203,7 @@ namespace BoSSS.Application.FSI_Solver
             C.LSunderrelax = 1;
             C.splitting_fully_coupled = true;
             C.max_iterations_fully_coupled = 1000000;
-            C.includeRotation = false;
+            C.includeRotation = true;
             C.includeTranslation = true;
 
 
