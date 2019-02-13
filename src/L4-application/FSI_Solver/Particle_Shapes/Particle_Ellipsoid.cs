@@ -26,6 +26,13 @@ namespace BoSSS.Application.FSI_Solver
     [Serializable]
     public class Particle_Ellipsoid : Particle
     {
+        /// <summary>
+        /// Empty constructor used during de-serialization
+        /// </summary>
+        private Particle_Ellipsoid() : base()
+        {
+
+        }
         public Particle_Ellipsoid(int Dim, int HistoryLength, double[] startPos = null, double startAngl = 0) : base(Dim, HistoryLength, startPos, startAngl)
         {
             #region Particle history
@@ -37,9 +44,7 @@ namespace BoSSS.Application.FSI_Solver
                 currentIterVel_P.Add(new double[Dim]);
                 currentIterRot_P.Add(new double());
                 currentIterForces_P.Add(new double[Dim]);
-                temporalForces_P.Add(new double[Dim]);
                 currentIterTorque_P.Add(new double());
-                temporalTorque_P.Add(new double());
             }
             for (int i = 0; i < 4; i++)
             {
@@ -74,17 +79,6 @@ namespace BoSSS.Application.FSI_Solver
 
             UpdateLevelSetFunction();
             #endregion
-        }
-        override public double active_stress_P
-        {
-            get
-            {
-                //Approximation formula for circumference according to Ramanujan
-                //double circumference;
-                //circumference = Math.PI * ((length_P + thickness_P) + (3 * (length_P - thickness_P).Pow2()) / (10 * (length_P + thickness_P) + Math.Sqrt(length_P.Pow2() + 14 * length_P * thickness_P + thickness_P.Pow2())));
-                //return 0.5 * circumference * stress_magnitude_P;
-                return stress_magnitude_P;
-            }
         }
 
         override public double Area_P
