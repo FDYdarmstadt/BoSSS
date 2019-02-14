@@ -34,7 +34,7 @@ using BoSSS.Foundation.IO;
 using System.Diagnostics;
 using System.IO;
 using BoSSS.Foundation.Quadrature;
-using BoSSS.Solution.Multigrid;
+using BoSSS.Solution.AdvancedSolvers;
 using ilPSP;
 using BoSSS.Solution.XdgTimestepping;
 using BoSSS.Foundation.Grid.Aggregation;
@@ -49,11 +49,12 @@ namespace BoSSS.Application.IBM_Solver {
     /// </summary>
     public class IBM_SolverMain : Application<IBM_Control> {
 
+
         /// <summary>
         /// Application entry point.
         /// </summary>
         static void Main(string[] args) {
-
+         
             BoSSS.Solution.Application<IBM_Control>._Main(args, false, delegate () {
                 var p = new IBM_SolverMain();
                 return p;
@@ -144,7 +145,7 @@ namespace BoSSS.Application.IBM_Solver {
         /// <summary>
         /// Block scaling of the mass matrix: for each species $\frakS$, a vector $(\rho_\frakS, \ldots, \rho_frakS, 0 )$.
         /// </summary>
-        protected IDictionary<SpeciesId, IEnumerable<double>> MassScale {
+        virtual protected IDictionary<SpeciesId, IEnumerable<double>> MassScale {
             get {
                 double rho = this.Control.PhysicalParameters.rho_A;
 
@@ -435,18 +436,15 @@ namespace BoSSS.Application.IBM_Solver {
                         MassScale,
                         this.MultigridOperatorConfig, base.MultigridSequence,
                         this.FluidSpecies, this.HMForder,
-                        this.Control.AdvancedDiscretizationOptions.CellAgglomerationThreshold, false);
+                        this.Control.AdvancedDiscretizationOptions.CellAgglomerationThreshold,
+                        false, this.Control.NonLinearSolver, this.Control.LinearSolver
+                        );
 
                     m_BDF_Timestepper.m_ResLogger = base.ResLogger;
                     m_BDF_Timestepper.m_ResidualNames = ArrayTools.Cat(this.ResidualMomentum.Select(f => f.Identification), this.ResidualContinuity.Identification);
-                    m_BDF_Timestepper.Config_SolverConvergenceCriterion = this.Control.Solver_ConvergenceCriterion;
-                    m_BDF_Timestepper.Config_MaxIterations = this.Control.MaxSolverIterations;
-                    m_BDF_Timestepper.Config_MinIterations = this.Control.MinSolverIterations;
+            
                     m_BDF_Timestepper.SessionPath = SessionPath;
                     m_BDF_Timestepper.Timestepper_Init = Solution.Timestepping.TimeStepperInit.MultiInit;
-
-                    SolverChooser.ChooseSolver(this.Control, ref m_BDF_Timestepper);
-
                 }
 
             } else {
@@ -642,7 +640,7 @@ namespace BoSSS.Application.IBM_Solver {
                 this.ComputeL2Error();
 
                 #region Get Drag and Lift Coefficiant
-                if (phystime == 0) {
+                if (phystime == 0 && Log_DragAndLift==null) {
                     if ((base.MPIRank == 0) && (CurrentSessionInfo.ID != Guid.Empty)) {
                         Log_DragAndLift = base.DatabaseDriver.FsDriver.GetNewLog("PhysicalData", CurrentSessionInfo.ID);
                         string firstline;
@@ -1191,20 +1189,24 @@ namespace BoSSS.Application.IBM_Solver {
         }
 
         public override void PostRestart(double time, TimestepNumber timestep) {
+
             // Find path to PhysicalData.txt
-            var fsDriver = this.DatabaseDriver.FsDriver;
-            string pathToOldSessionDir = System.IO.Path.Combine(
-                fsDriver.BasePath, "sessions", this.CurrentSessionInfo.RestartedFrom.ToString());
-            string pathToPhysicalData = System.IO.Path.Combine(pathToOldSessionDir, "PhysicalData.txt");
-            string[] records = File.ReadAllLines(pathToPhysicalData);
+            try {
+                var fsDriver = this.DatabaseDriver.FsDriver;
+                string pathToOldSessionDir = System.IO.Path.Combine(
+                    fsDriver.BasePath, "sessions", this.CurrentSessionInfo.RestartedFrom.ToString());
+                string pathToPhysicalData = System.IO.Path.Combine(pathToOldSessionDir, "PhysicalData.txt");
+                string[] records = File.ReadAllLines(pathToPhysicalData);
 
-            string line1 = File.ReadLines(pathToPhysicalData).Skip(1).Take(1).First();
-            string line2 = File.ReadLines(pathToPhysicalData).Skip(2).Take(1).First();
-            string[] fields_line1 = line1.Split('\t');
-            string[] fields_line2 = line2.Split('\t');
+                string line1 = File.ReadLines(pathToPhysicalData).Skip(1).Take(1).First();
+                string line2 = File.ReadLines(pathToPhysicalData).Skip(2).Take(1).First();
+                string[] fields_line1 = line1.Split('\t');
+                string[] fields_line2 = line2.Split('\t');
 
-            double dt = Convert.ToDouble(fields_line2[1]) - Convert.ToDouble(fields_line1[1]);
-
+                double dt = Convert.ToDouble(fields_line2[1]) - Convert.ToDouble(fields_line1[1]);
+            } catch (FileNotFoundException e) {
+                Console.WriteLine("PhysicalData.txt could not be found! Assuming we start with timestep #0 ...");
+            }
             //int idx_restartLine = Convert.ToInt32(time / dt + 1.0);
             //string restartLine = File.ReadLines(pathToPhysicalData).Skip(idx_restartLine - 1).Take(1).First();
             //double[] values = Array.ConvertAll<string, double>(restartLine.Split('\t'), double.Parse);

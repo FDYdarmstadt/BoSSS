@@ -32,7 +32,7 @@ using BoSSS.Platform;
 using System.Collections;
 using System.Diagnostics;
 using MPI.Wrappers;
-using BoSSS.Solution.Multigrid;
+using BoSSS.Solution.AdvancedSolvers;
 using ilPSP;
 using BoSSS.Foundation.XDG;
 using BoSSS.Solution.Tecplot;

@@ -72,9 +72,9 @@
       <Project>{17a60fba-20b4-451d-98e1-8d742f368569}</Project>
       <Name>BoSSS.Foundation</Name>
     </ProjectReference>
-    <ProjectReference Include="..\BoSSS.Solution.Multigrid\BoSSS.Solution.Multigrid.csproj">
+    <ProjectReference Include="..\BoSSS.Solution.AdvancedSolvers\BoSSS.Solution.AdvancedSolvers.csproj">
       <Project>{efe8c307-09bc-4f58-b991-6ef8fd6d5eff}</Project>
-      <Name>BoSSS.Solution.Multigrid</Name>
+      <Name>BoSSS.Solution.AdvancedSolvers</Name>
     </ProjectReference>
     <ProjectReference Include="..\BoSSS.Solution.Tecplot\BoSSS.Solution.Tecplot.csproj">
       <Project>{d0546422-ec92-4964-82e9-8ee819a2f786}</Project>

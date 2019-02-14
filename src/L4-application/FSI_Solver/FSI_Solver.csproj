@@ -76,6 +76,7 @@
     <Compile Include="active_particles\ActiveViscosityAtIB.cs" />
     <Compile Include="active_particles\ActiveConvectionAtIB.cs" />
     <Compile Include="active_particles\ActiveDivergenceAtIB.cs" />
+    <Compile Include="active_particles\ActivePressureAtIB.cs" />
     <Compile Include="active_particles\HardcodedControl_TestCases.cs" />
     <Compile Include="Particle_Shapes\Particle_Bean.cs" />
     <Compile Include="Particle_Shapes\Particle_superEllipsoid.cs" />
@@ -128,9 +129,9 @@
       <Project>{17a60fba-20b4-451d-98e1-8d742f368569}</Project>
       <Name>BoSSS.Foundation</Name>
     </ProjectReference>
-    <ProjectReference Include="..\..\L3-solution\BoSSS.Solution.Multigrid\BoSSS.Solution.Multigrid.csproj">
+    <ProjectReference Include="..\..\L3-solution\BoSSS.Solution.AdvancedSolvers\BoSSS.Solution.AdvancedSolvers.csproj">
       <Project>{efe8c307-09bc-4f58-b991-6ef8fd6d5eff}</Project>
-      <Name>BoSSS.Solution.Multigrid</Name>
+      <Name>BoSSS.Solution.AdvancedSolvers</Name>
     </ProjectReference>
     <ProjectReference Include="..\..\L3-solution\BoSSS.Solution.NSECommon\BoSSS.Solution.NSECommon.csproj">
       <Project>{e56b9ce4-14dc-4256-a337-46e5d298b722}</Project>

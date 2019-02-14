@@ -43,7 +43,7 @@ namespace BoSSS.Solution.NSECommon {
         /// <param name="LsTrk"></param>
         /// <param name="Mtx"></param>
         /// <param name="rhs"></param>
-        static public void SetPressureReferencePoint<T>(UnsetteledCoordinateMapping map, int iVar, LevelSetTracker LsTrk, BlockMsrMatrix Mtx, T rhs)
+        static public void SetPressureReferencePoint<T>(UnsetteledCoordinateMapping map, int iVar, LevelSetTracker LsTrk, IMutableMatrixEx Mtx, T rhs)
             where T : IList<double> {
             using (new FuncTrace()) {
                 var GridDat = map.GridDat;
@@ -58,26 +58,27 @@ namespace BoSSS.Solution.NSECommon {
 
                 long GlobalID, GlobalCellIndex;
                 bool IsInside, onthisProc;
-                GridDat.LocatePoint(new double[D], out GlobalID, out GlobalCellIndex, out IsInside, out onthisProc, LsTrk.Regions.GetCutCellSubGrid().VolumeMask.Complement());
+                GridDat.LocatePoint(new double[D], out GlobalID, out GlobalCellIndex, out IsInside, out onthisProc, 
+                    LsTrk != null ? LsTrk.Regions.GetCutCellSubGrid().VolumeMask.Complement() : null);
                 
                 int iRowGl = -111;
                 if (onthisProc) {
-                    int jCell = (int)GlobalCellIndex - GridDat.CellPartitioning.i0;
+                    //int jCell = (int)GlobalCellIndex - GridDat.CellPartitioning.i0;
 
 
-                    NodeSet CenterNode = new NodeSet(GridDat.iGeomCells.GetRefElement(jCell), new double[D]);
-                    MultidimensionalArray LevSetValues = LsTrk.DataHistories[0].Current.GetLevSetValues(CenterNode, jCell, 1); ;
+                    //NodeSet CenterNode = new NodeSet(GridDat.iGeomCells.GetRefElement(jCell), new double[D]);
+                    //MultidimensionalArray LevSetValues = LsTrk.DataHistories[0].Current.GetLevSetValues(CenterNode, jCell, 1); ;
 
 
-                    MultidimensionalArray CenterNodeGlobal = MultidimensionalArray.Create(1, D);
-                    GridDat.TransformLocal2Global(CenterNode, CenterNodeGlobal, jCell);
+                    //MultidimensionalArray CenterNodeGlobal = MultidimensionalArray.Create(1, D);
+                    //GridDat.TransformLocal2Global(CenterNode, CenterNodeGlobal, jCell);
                     //Console.WriteLine("Pressure Ref Point @( {0:0.###E-00} | {1:0.###E-00} )", CenterNodeGlobal[0,0], CenterNodeGlobal[0,1]);
 
 
-                    LevelSetSignCode scode = LevelSetSignCode.ComputeLevelSetBytecode(LevSetValues[0, 0]);
-                    ReducedRegionCode rrc;
-                    int No = LsTrk.Regions.GetNoOfSpecies(jCell, out rrc);
-                    int iSpc = LsTrk.GetSpeciesIndex(rrc, scode);
+                    //LevelSetSignCode scode = LevelSetSignCode.ComputeLevelSetBytecode(LevSetValues[0, 0]);
+                    //ReducedRegionCode rrc;
+                    //int No = LsTrk.Regions.GetNoOfSpecies(jCell, out rrc);
+                    //int iSpc = LsTrk.GetSpeciesIndex(rrc, scode);
 
                     iRowGl = (int)map.GlobalUniqueCoordinateIndex_FromGlobal(iVar, GlobalCellIndex, 0);
 
@@ -91,8 +92,8 @@ namespace BoSSS.Solution.NSECommon {
                     // ref. cell is on local MPI process
                     int jCell = (int)GlobalCellIndex - GridDat.CellPartitioning.i0;
 
-                    ReducedRegionCode rrc;
-                    int NoOfSpc = LsTrk.Regions.GetNoOfSpecies(jCell, out rrc);
+                    //ReducedRegionCode rrc;
+                    //int NoOfSpc = LsTrk.Regions.GetNoOfSpecies(jCell, out rrc);
 
                     // set matrix row to identity
                     Mtx.ClearRow(iRowGl);
@@ -859,6 +860,7 @@ namespace BoSSS.Solution.NSECommon {
 
                 var SchemeHelper = LsTrk.GetXDGSpaceMetrics(new[] { LsTrk.GetSpeciesId("A") }, RequiredOrder, 1).XQuadSchemeHelper;
 
+                //EdgeMask Mask = new EdgeMask(LsTrk.GridDat, "Wall_bottom");
                 EdgeMask Mask = new EdgeMask(LsTrk.GridDat, "Wall_cylinder");
 
                 EdgeQuadratureScheme eqs = SchemeHelper.GetEdgeQuadScheme(LsTrk.GetSpeciesId("A"), IntegrationDomain: Mask);

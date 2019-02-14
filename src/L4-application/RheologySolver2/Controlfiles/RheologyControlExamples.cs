@@ -53,14 +53,21 @@ namespace BoSSS.Application.Rheology {
             C.savetodb = true;
             C.DbPath = path;
             C.ProjectName = "Contration";
-            C.MaxIter =  50;
-            C.MinIter = 1;
-            C.ConvCrit = 1E-7;
+            C.NonLinearSolver.MaxSolverIterations = 50;
+            C.NonLinearSolver.MinSolverIterations = 1;
+            C.NonLinearSolver.ConvergenceCriterion = 1E-7;
+            C.LinearSolver.MaxSolverIterations = 50;
+            C.LinearSolver.MinSolverIterations = 1;
+            C.LinearSolver.ConvergenceCriterion = 1E-7;
+
+            //C.MaxIter =  50;
+            //C.MinIter = 1;
+            //C.ConvCrit = 1E-7;
             C.dt = 1E20;
             C.dtMax = C.dt;
             C.dtMin = C.dt;
             C.Timestepper_Scheme = RheologyControl.TimesteppingScheme.ImplicitEuler;
-            C.NonlinearMethod = NonlinearSolverMethod.NewtonGMRES;
+            C.NonLinearSolver.SolverCode = NonLinearSolverConfig.Code.NewtonGMRES;//C.NonlinearMethod = NonlinearSolverMethod.NewtonGMRES;
             C.ObjectiveParam = 1.0;
 
             //Debugging and Solver Analysis
@@ -382,15 +389,22 @@ namespace BoSSS.Application.Rheology {
             C.savetodb = true;
             C.DbPath = path;
             C.ProjectName = "Cylinder";
-            C.MaxIter = 100;
-            C.MinIter = 1;
-            C.ConvCrit = 1E-6;
+
+            C.NonLinearSolver.MaxSolverIterations = 100;
+            C.LinearSolver.MaxSolverIterations = 100;
+            C.NonLinearSolver.MinSolverIterations = 1;
+            C.LinearSolver.MinSolverIterations = 1;
+            C.NonLinearSolver.ConvergenceCriterion = 1E-6;
+            C.LinearSolver.ConvergenceCriterion = 1E-6;
+            //C.MaxIter = 100;
+            //C.MinIter = 1;
+            //C.ConvCrit = 1E-6;
             //C.UnderRelax = 1.0;
             C.dt = 0.1;
             C.dtMax = C.dt;
             C.dtMin = C.dt;
             C.Timestepper_Scheme = RheologyControl.TimesteppingScheme.ImplicitEuler;
-            C.NonlinearMethod = NonlinearSolverMethod.Newton;
+            C.NonLinearSolver.SolverCode = NonLinearSolverConfig.Code.Newton;//C.NonlinearMethod = NonlinearSolverMethod.Newton;
             C.ObjectiveParam = 1.0;
 
             C.UsePerssonSensor = true;

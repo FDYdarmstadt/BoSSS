@@ -19,7 +19,7 @@ using BoSSS.Foundation.Grid.Classic;
 using BoSSS.Foundation.Grid.RefElements;
 using BoSSS.Solution;
 using BoSSS.Solution.Control;
-using BoSSS.Solution.Multigrid;
+using BoSSS.Solution.AdvancedSolvers;
 using ilPSP;
 using ilPSP.Utils;
 using System;
@@ -181,14 +181,16 @@ namespace BoSSS.Application.IBM_Solver {
             C.AdvancedDiscretizationOptions.PenaltySafety = 4;
             C.AdvancedDiscretizationOptions.CellAgglomerationThreshold = 0.2;
             C.LevelSetSmoothing = false;
-            C.MaxKrylovDim = 1000;
-            C.MaxSolverIterations = 1;
-            C.Solver_ConvergenceCriterion = 1E-5;
+            C.LinearSolver.MaxKrylovDim = 1000;
+            C.LinearSolver.MaxSolverIterations = 1;
+            C.NonLinearSolver.MaxSolverIterations = 1;
+            C.LinearSolver.ConvergenceCriterion = 1E-5;
+            C.NonLinearSolver.ConvergenceCriterion = 1E-5;
             C.VelocityBlockPrecondMode = MultigridOperator.Mode.SymPart_DiagBlockEquilib_DropIndefinite;                    
 
             // Solver configuration
-            C.NonlinearSolve = NonlinearSolverCodes.NewtonGMRES;
-            C.LinearSolve = LinearSolverCodes.classic_mumps;
+            C.NonLinearSolver.SolverCode = NonLinearSolverConfig.Code.NewtonGMRES;
+            C.LinearSolver.SolverCode = LinearSolverConfig.Code.classic_mumps;
      
 
             // Timestepping
@@ -200,7 +202,7 @@ namespace BoSSS.Application.IBM_Solver {
             C.dtMin = dt;
             C.Endtime = 10000000;
             C.NoOfTimesteps = 1;
-            C.NoOfMultigridLevels = 7;
+            C.LinearSolver.NoOfMultigridLevels = 7;
 
             return C;
         }
@@ -210,7 +212,7 @@ namespace BoSSS.Application.IBM_Solver {
         {
             IBM_Control C = new IBM_Control();
 
-            //in SolverChooser die DoF parts ändern
+            //in SolverFactory die DoF parts ändern
 
             //Possibilities:
             //channel = 0 --> channel 3D with sphere
@@ -520,23 +522,24 @@ namespace BoSSS.Application.IBM_Solver {
             C.AdvancedDiscretizationOptions.PenaltySafety = 4;
             C.AdvancedDiscretizationOptions.CellAgglomerationThreshold = 0.2;
             C.LevelSetSmoothing = false;
-            //C.MaxKrylovDim = 1000;
-            C.MaxKrylovDim = maxKrDim;
-            C.MaxSolverIterations = 100;
-            //C.MaxSolverIterations = 1;
-            C.MinSolverIterations = 1;
-            // C.MaxSolverIterations = 10000;
-            C.Solver_ConvergenceCriterion = 1E-5;
-            //C.Solver_ConvergenceCriterion = 1E-6;
+            //C.LinearSolver.MaxKrylovDim = 1000;
+            C.LinearSolver.MaxKrylovDim = maxKrDim;
+            C.LinearSolver.MaxSolverIterations = 100;
+            C.LinearSolver.MinSolverIterations = 1;
+            C.NonLinearSolver.MaxSolverIterations = 100;
+            C.NonLinearSolver.MinSolverIterations = 1;
+            C.LinearSolver.ConvergenceCriterion = 1E-5;
+            C.NonLinearSolver.ConvergenceCriterion = 1E-5;
+            //C.LinearSolver.ConvergenceCriterion = 1E-6;
             C.VelocityBlockPrecondMode = MultigridOperator.Mode.SymPart_DiagBlockEquilib_DropIndefinite;
 
             // Choosing the Preconditioner
             ISolverSmootherTemplate Prec;
 
             if (name_newton == 1)
-                C.NonlinearSolve = NonlinearSolverCodes.NewtonGMRES;
+                C.NonLinearSolver.SolverCode = NonLinearSolverConfig.Code.NewtonGMRES;
             else
-                C.NonlinearSolve = NonlinearSolverCodes.PicardGMRES;
+                C.NonLinearSolver.SolverCode = NonLinearSolverConfig.Code.PicardGMRES;
 
 
             switch (precNo)
@@ -548,50 +551,50 @@ namespace BoSSS.Application.IBM_Solver {
                     }
                 case 1:
                     {
-                        C.LinearSolve = LinearSolverCodes.exp_Schur;
+                        C.LinearSolver.SolverCode = LinearSolverConfig.Code.exp_Schur;
                         break;
                     }
                 case 2:
                     {
 
-                        C.LinearSolve = LinearSolverCodes.exp_Simple;
+                        C.LinearSolver.SolverCode = LinearSolverConfig.Code.exp_Simple;
                         break;
                     }
                 case 3:
                     {
-                        C.LinearSolve = LinearSolverCodes.exp_AS_1000;
-                        C.NoOfMultigridLevels = MGLevels;  // 3 // --> grobes MG am Ende nochmal
+                        C.LinearSolver.SolverCode = LinearSolverConfig.Code.exp_AS_1000;
+                        C.LinearSolver.NoOfMultigridLevels = MGLevels;  // 3 // --> grobes MG am Ende nochmal
                         break;
                     }
                 case 4:
                     {
-                        C.LinearSolve = LinearSolverCodes.exp_AS_5000;
-                        C.NoOfMultigridLevels = MGLevels;
+                        C.LinearSolver.SolverCode = LinearSolverConfig.Code.exp_AS_5000;
+                        C.LinearSolver.NoOfMultigridLevels = MGLevels;
                         break;
                     }
                 case 5:
                     {
-                        C.LinearSolve = LinearSolverCodes.exp_AS_10000;
-                        C.NoOfMultigridLevels = MGLevels;
+                        C.LinearSolver.SolverCode = LinearSolverConfig.Code.exp_AS_10000;
+                        C.LinearSolver.NoOfMultigridLevels = MGLevels;
                         break;
                     }
                 case 6:
                     {
                         //depth = 2,
                         //   Depth = ASDepth,  //--> MG bei der Blockzerlegung --> Resultat ergibt die Blöcke zur Berechnung (kleine Blöcke--> schlecht)
-                        C.LinearSolve = LinearSolverCodes.exp_AS_MG;
-                        C.NoOfMultigridLevels = MGLevels;
+                        C.LinearSolver.SolverCode = LinearSolverConfig.Code.exp_AS_MG;
+                        C.LinearSolver.NoOfMultigridLevels = MGLevels;
                         break;
                     }
                 case 7:
                     {
-                        C.LinearSolve = LinearSolverCodes.exp_localPrec; ;
-                        C.NoOfMultigridLevels = MGLevels;
+                        C.LinearSolver.SolverCode = LinearSolverConfig.Code.exp_localPrec; ;
+                        C.LinearSolver.NoOfMultigridLevels = MGLevels;
                         break;
                     }
                 case 8:
                     {
-                        C.NoOfMultigridLevels = 5;
+                        C.LinearSolver.NoOfMultigridLevels = 5;
                         Prec = new Schwarz()
                         {
                             m_BlockingStrategy = new Schwarz.METISBlockingStrategy()
@@ -605,9 +608,9 @@ namespace BoSSS.Application.IBM_Solver {
                                 {
                                     CoarserLevelSolver = new ClassicMultigrid()
                                     {
-                                        CoarserLevelSolver = new DirectSolver()
+                                        CoarserLevelSolver = new SparseSolver()
                                         {
-                                            WhichSolver = DirectSolver._whichSolver.MUMPS
+                                            WhichSolver = SparseSolver._whichSolver.MUMPS
                                         },
                                     },
                                 },
@@ -628,13 +631,13 @@ namespace BoSSS.Application.IBM_Solver {
 
 
             // For Newton
-            //  C.LinearSolver = Prec;
+            //  C.LinearSolver.SolverCoder = Prec;
 
             ////For Picard
-            //C.LinearSolver = new SoftGMRES()
+            //C.LinearSolver.SolverCoder = new SoftGMRES()
             //{
-            //    MaxKrylovDim = C.MaxKrylovDim,
-            //    Precond = Prec,
+            //    MaxKrylovDim = C.LinearSolver.MaxKrylovDim,
+            //    Precond_solver = Prec,
             //    m_Tolerance = 1E-6,
             //    m_MaxIterations = 50
             //};

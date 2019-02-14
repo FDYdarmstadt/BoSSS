@@ -1,0 +1,327 @@
+% !TeX spellcheck = en_US
+
+\BoSSSopen{InitialValues/InitialValues}
+\graphicspath{{InitialValues/InitialValues.texbatch/}}
+
+\paragraph{What's new:} 
+In this tutorial you will learn to set initial values and boundary values
+\begin{itemize}
+	\item from basic formulas
+	\item from MATLAB scripts
+\end{itemize}
+
+\paragraph{Prerequisites:} 
+\begin{itemize}
+	\item basic knowledge of \BoSSSpad{}
+	\item executing runs on your local machine, e.g. the quick-start guide of the \ac{cns}, see chapter \ref{sec:CNS}
+    \item an understanding, what a \BoSSS{} database is
+\end{itemize}
+\BoSSScmd{
+/// % ====================
+/// \section{Introduction}
+/// % ====================
+ }
+\BoSSSexeSilent
+\BoSSScmd{
+restart
+ }
+\BoSSSexeSilent
+\BoSSScmd{
+/// Note: (1) Setting Boundary values and initial values is similar; 
+/// (2) For most solvers, inital and boundary values are set the same way;
+/// (3) We will use the incompressible solver as an example:
+ }
+\BoSSSexe
+\BoSSScmd{
+using BoSSS.Application.IBM\_Solver;
+ }
+\BoSSSexe
+\BoSSScmd{
+/// Create a control object:
+ }
+\BoSSSexe
+\BoSSScmd{
+var C = new IBM\_Control();
+ }
+\BoSSSexe
+\BoSSScmd{
+/// % =======================
+/// \section{From Formulas}
+/// % =======================
+ }
+\BoSSSexe
+\BoSSScmd{
+/// If the Formula is simple enougth to be represented by C\# code,
+/// it can be embedded in the control file. The most
+ }
+\BoSSSexe
+\BoSSScmd{
+/// First option: from code, e.g.:
+ }
+\BoSSSexe
+\BoSSScmd{
+static class MyInitialValue \{ // class should be static!\newline 
+ \newline 
+\btab // Warning: static constants are allowed,\newline 
+\btab // but any changes outside of the current text box in BoSSSpad\newline 
+\btab // will not be recorded for the code that is passed to the solver.\newline 
+\btab public static double alpha = 0.7;\newline 
+ \newline 
+\btab // a method, which should be used for an initial value,\newline 
+\btab // must be static!\newline 
+\btab public static double VelocityX(double[] X, double t) \{\newline 
+\btab \btab double x = X[0];\newline 
+\btab \btab double y = X[1];\newline 
+\btab \btab return Math.Sin(x*y*alpha);\newline 
+\btab \}   \newline 
+\}
+ }
+\BoSSSexe
+\BoSSScmd{
+ % 
+ }
+\BoSSSexe
+\BoSSScmd{
+/// Use the BoSSSpad-intrinsic \code{GetFormulaObject} to set tie hinital value:
+C.AddInitialValue("VelocityX", GetFormulaObject(MyInitialValue.VelocityX));
+ }
+\BoSSSexe
+\BoSSScmd{
+ % 
+ }
+\BoSSSexe
+\BoSSScmd{
+/// Note: such a declaration is very restrictive;
+/// \code{GetFormulaObject} works only for 
+/// \begin{itemize}
+/// \item use a static class
+/// \item no dependence on any external parameters
+/// \end[itemize}
+/// E.g. the following code would only change the behavior in BoSSSpad,
+/// but not the code that is passed to the solver:
+ }
+\BoSSSexe
+\BoSSScmd{
+MyInitialValue.alpha = 0.5;\newline 
+MyInitialValue.VelocityX(new double[]\{ 0.5, 0.5 \}, 0.0);
+ }
+\BoSSSexe
+\BoSSScmd{
+C.InitialValues["VelocityX"].Evaluate(new double[]\{ 0.5, 0.5 \}, 0.0);
+ }
+\BoSSSexe
+\BoSSScmd{
+/// Obviously, both values are different.
+ }
+\BoSSSexe
+\BoSSScmd{
+ % 
+ }
+\BoSSSexe
+\BoSSScmd{
+ % 
+ }
+\BoSSSexe
+\BoSSScmd{
+/// \subsection{Advanced functions}
+/// % =============================
+ }
+\BoSSSexe
+\BoSSScmd{
+/// Some more advanced mathematical funstions, e.g.
+/// Jacobian elliptic functions $\text{sn}(u|m)$, $\text{cn}(u|m)$ and $\text{dn}(u|m)$
+/// are available throug the GNU Scientific Library, for which BoSSS provides
+/// bindings, see e.g.
+/// \code{BoSSS.Platform.GSL.gsl_sf_elljac_e}.
+ }
+\BoSSSexe
+\BoSSScmd{
+/// % ========================
+/// \section{From MATLAB code}
+/// % ========================
+ }
+\BoSSSexe
+\BoSSScmd{
+/// % ========================
+/// \subsection{Conecting with MATLAB}
+/// % ========================
+ }
+\BoSSSexe
+\BoSSScmd{
+/// Asssume e.g. the following MATLAB code; obviously, this could  
+/// also be implemented in C\#, we yust use something smple for demonstration: 
+ }
+\BoSSSexe
+\BoSSScmd{
+string[] MatlabCode = new string[] \{\newline 
+@"[n,d2] =  size(X\_values);",\newline 
+@"u=zeros(2,n);",\newline 
+@"for k=1:n",\newline 
+@"X=[X\_values(k,1),X\_values(k,2)];",\newline 
+@"",\newline 
+@"u\_x\_main     = -(-sqrt(X(1).^ 2 + X(2).^ 2) / 0.3e1 + 0.4e1 / 0.3e1 * (X(1).^ 2 + X(2).^ 2) ^ (-0.1e1 / 0.2e1)) * sin(atan2(X(2), X(1)));",\newline 
+@"u\_y\_main     = (-sqrt(X(1).^ 2 + X(2).^ 2) / 0.3e1 + 0.4e1 / 0.3e1 * (X(1).^ 2 + X(2).^ 2) ^ (-0.1e1 / 0.2e1)) * cos(atan2(X(2), X(1)));",\newline 
+@"",   \newline 
+@"u(1,k)=u\_x\_main;",\newline 
+@"u(2,k)=u\_y\_main;",\newline 
+@"end" \};
+ }
+\BoSSSexe
+\BoSSScmd{
+/// We can evaluate this code in \BoSSS{} using the MATLAB connector;
+/// We encapsulate it in a \code{ScalarFunction} which allows 
+/// \emph{vectorized} evaluation 
+/// (multiple evaluatiuons in one function call) e
+/// of some function.
+/// This is much more efficient, since there will be significant overhead
+/// for calling MATLAB (starting MATLAB, checking the license, 
+/// transfering data, etc.).
+ }
+\BoSSSexe
+\BoSSScmd{
+using ilPSP.Connectors.Matlab;
+ }
+\BoSSSexe
+\BoSSScmd{
+ScalarFunction VelocityXInitial = \newline 
+delegate(MultidimensionalArray input, MultidimensionalArray output) \{\newline 
+\btab int N          = input.GetLength(0); // number of points which we evaluate \newline 
+\btab //                                      at once.\newline 
+\btab var output\_vec = MultidimensionalArray.Create(2, N); // the MATLAB code\newline 
+\btab //                        returns an entire vector.\newline 
+\btab using(var bmc = new BatchmodeConnector()) \{\newline 
+\btab    bmc.PutMatrix(input,"X\_values");\newline 
+ \newline 
+\btab    foreach(var line in MatlabCode) \{\newline 
+\btab \btab    bmc.Cmd(line);   \newline 
+\btab    \}\newline 
+ \newline 
+\btab    bmc.GetMatrix(output\_vec, "u");\newline 
+ \newline 
+\btab    bmc.Execute(); // Note: 'Execute' has to be *after* 'GetMatrix'\newline 
+   \}\newline 
+   output.Set(output\_vec.ExtractSubArrayShallow(0,-1)); // extract row 0 from \newline 
+   //                       'output\_vec' and store it in 'output'\newline 
+\}
+ }
+\BoSSSexe
+\BoSSScmd{
+/// We test our implementation:
+ }
+\BoSSSexe
+\BoSSScmd{
+var inputTest = MultidimensionalArray.Create(3,2); // set some test values for input\newline 
+inputTest.SetColumn(0, GenericBlas.Linspace(1,2,3));\newline 
+inputTest.SetColumn(1, GenericBlas.Linspace(2,3,3));\newline 
+ \newline 
+var outputTest = MultidimensionalArray.Create(3); // allocate memory for output
+ }
+\BoSSSexe
+\BoSSScmd{
+VelocityXInitial(inputTest, outputTest);
+ }
+\BoSSSexe
+\BoSSScmd{
+/// We recive the following velocity values for our input coordinates:
+outputTest.To1DArray();
+ }
+\BoSSSexe
+\BoSSScmd{
+/// % =======================================================
+/// \subsection{Projecting the MATLAB function to a DG field}
+/// % =======================================================
+ }
+\BoSSSexe
+\BoSSScmd{
+/// As for a standard calculation, we create a mesh, save it to some database
+/// and set the mesh in the control object.
+ }
+\BoSSSexe
+\BoSSScmd{
+var nodes        = GenericBlas.Linspace(1,2,11);\newline 
+GridCommons grid = Grid2D.Cartesian2DGrid(nodes,nodes);
+ }
+\BoSSSexe
+\BoSSScmd{
+var db = OpenOrCreateDefaultDatabase();
+ }
+\BoSSSexe
+\BoSSScmd{
+db.SaveGrid(ref grid);
+ }
+\BoSSSexe
+\BoSSScmd{
+C.SetGrid(grid);
+ }
+\BoSSSexe
+\BoSSScmd{
+/// We create a DG field for the $x$-velocity on our grid:
+ }
+\BoSSSexe
+\BoSSScmd{
+var gdata = new GridData(grid);
+ }
+\BoSSSexe
+\BoSSScmd{
+var b = new Basis(gdata, 3); // use DG degree 2
+ }
+\BoSSSexe
+\BoSSScmd{
+var VelX = new SinglePhaseField(b,"VelocityX"); // important: name the DG field\newline 
+//                                 equal to initial value name
+ }
+\BoSSSexe
+\BoSSScmd{
+/// Finally, we are able to project the MATLAB function onto the DG field:
+ }
+\BoSSSexe
+\BoSSScmd{
+//VelX.ProjectField(VelocityXInitial);
+ }
+\BoSSSexe
+\BoSSScmd{
+/// One might want to check the data visually, so it can be exported
+/// in the usual fashion
+ }
+\BoSSSexe
+\BoSSScmd{
+//Tecplot("initial",0.0,2,VelX);
+ }
+\BoSSSexe
+\BoSSScmd{
+ % 
+ }
+\BoSSSexe
+\BoSSScmd{
+/// % ================================================================
+/// \subsection{Storing the initial value in the database and linking
+///    it in the control object}
+/// % ================================================================
+ }
+\BoSSSexe
+\BoSSScmd{
+/// The DG field with the initial value can be stored in the database.
+/// this will create a dummy session.
+ }
+\BoSSSexe
+\BoSSScmd{
+WorkflowMgm.Init("TestProject");
+ }
+\BoSSSexe
+\BoSSScmd{
+var InitalValueTS = db.SaveTimestep(VelX); // further fields an be \newline 
+//                                                  appended
+ }
+\BoSSSexe
+\BoSSScmd{
+WorkflowMgm.Sessions;
+ }
+\BoSSSexe
+\BoSSScmd{
+/// Now, we can use this timestep as a restart-value for the simulation:
+ }
+\BoSSSexe
+\BoSSScmd{
+C.SetRestart(InitalValueTS);
+ }
+\BoSSSexe

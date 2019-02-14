@@ -34,6 +34,7 @@ namespace BoSSS.Solution.NSECommon {
         double[] MolarMasses;
         bool speciesTransportOK;
         bool energyEquationOK;
+        int mySwitch;
         /// <summary>
         /// Ctor.
         /// </summary>
@@ -41,12 +42,13 @@ namespace BoSSS.Solution.NSECommon {
         /// <param name="MatParamsMode">The selected material parameter mode.</param>
         /// <param name="MolarMasses">Array of the molar masses of the fuel, oxidizer and products.</param>
         /// <param name="speciesTransportOK"> Used for switching between a density calculated with and without species transport </param>
-        public MaterialLawCombustion(double T_ref, MaterialParamsMode MatParamsMode, double[] MolarMasses, bool speciesTransportOK, bool energyEquationOK)
+        public MaterialLawCombustion(double T_ref, MaterialParamsMode MatParamsMode, double[] MolarMasses, bool speciesTransportOK, bool energyEquationOK, int mySwitch)
             : base(T_ref, MatParamsMode) {
             this.MatParamsMode = MatParamsMode;
             this.MolarMasses = MolarMasses;
             this.speciesTransportOK = speciesTransportOK;
             this.energyEquationOK = energyEquationOK;
+            this.mySwitch = mySwitch;
         }
 
         /// <summary>
@@ -58,29 +60,44 @@ namespace BoSSS.Solution.NSECommon {
         /// Density
         /// </returns>
         public override double GetDensity(params double[] phi) {
-            if (phi.Length < 4)
-                throw new ArgumentException("Error in density computation. Number of reactants needs to be atleast 3.");
+          
             if (IsInitialized) {
-                double rho = 1.0;
-                double MassFractionsOverMolarFractions = 1.0;
+                double rho;
+                double MassFractionsOverMolarFractions;
 
+         
 
-                if (energyEquationOK) {
-                    if (speciesTransportOK) {
+                //(1) rho = 1.0
+                // (2)rho = p0/T
+                // (3)rho = p0/Tmassfractions...
+
+                switch (mySwitch) {
+                    case 1:
+                        rho = 1.0;
+                        break;
+                    case 2:
+                        rho = base.ThermodynamicPressure.Current.GetMeanValue(0) / phi[0];
+                        break;
+                    case 3:
+                        if (phi.Length < 4)
+                            throw new ArgumentException("Error in density computation. Number of reactants needs to be atleast 3.");
+
+                        MassFractionsOverMolarFractions = 0.0;
                         for (int n = 1; n < phi.Length; n++) {
                             MassFractionsOverMolarFractions += phi[n] / MolarMasses[n - 1];
                         }
-                    }
-                    rho = base.ThermodynamicPressure.Current.GetMeanValue(0) / (phi[0] * MassFractionsOverMolarFractions);
+                        rho = base.ThermodynamicPressure.Current.GetMeanValue(0) / (phi[0] * MassFractionsOverMolarFractions);
+                        break;
+                    default:
+                        throw new NotImplementedException("wrong switch");
                 }
-                
                 Debug.Assert(!(double.IsNaN(rho) || double.IsInfinity(rho)));
                 return rho;
             }
             else {
                 throw new ApplicationException("ThermodynamicPressure is not initialized.");
             }
-         }
+        }
 
         public double GetHeatConductivity(double phi) {
             switch (this.MatParamsMode) {

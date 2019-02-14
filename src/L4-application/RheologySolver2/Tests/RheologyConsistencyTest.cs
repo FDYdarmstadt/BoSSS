@@ -79,15 +79,23 @@ namespace BoSSS.Application.Rheology {
             //C.DbPath = "C:\AnnesBoSSSdb\ConsistencyConstitutive_withDiv";
             C.SessionName = "Degree" + PolyDeg + ", GridLevel" + GridRes;
             C.ProjectName = "ConsistencyStudyConstitutive";
-            C.MaxIter = 20;
-            C.MinIter = 3;
-            C.ConvCrit = 1E-20;
-            C.ConvCritGMRES = 1E-13;
+            C.NonLinearSolver.MaxSolverIterations = 20;
+            C.NonLinearSolver.MinSolverIterations = 3;
+            C.NonLinearSolver.ConvergenceCriterion = 1E-20;
+            C.LinearSolver.MaxSolverIterations = 20;
+            C.LinearSolver.MinSolverIterations = 3;
+            C.LinearSolver.ConvergenceCriterion = 1E-13;
+
+
+            //C.MaxIter = 20;
+            //C.MinIter = 3;
+            //C.ConvCrit = 1E-20;
+            //C.ConvCritGMRES = 1E-13;
             C.dt = 1E20;
             C.dtMax = C.dt;
             C.dtMin = C.dt;
             C.Timestepper_Scheme = RheologyControl.TimesteppingScheme.ImplicitEuler;
-            C.NonlinearMethod = NonlinearSolverMethod.Newton;
+            C.NonLinearSolver.SolverCode = NonLinearSolverConfig.Code.Newton;//C.NonlinearMethod = NonlinearSolverMethod.Newton;
 
             //Grid Params
             //double GridLevel = 5;

@@ -34,6 +34,7 @@ using Newtonsoft.Json;
 using Newtonsoft.Json.Bson;
 using ilPSP.Utils;
 using BoSSS.Foundation.Grid.Classic;
+using log4net;
 
 namespace BoSSS.Foundation.IO {
 
@@ -211,6 +212,7 @@ namespace BoSSS.Foundation.IO {
 
             if (tracertxt != null) {
                 TextWriterAppender fa = new TextWriterAppender();
+                fa.ImmediateFlush = true;
                 fa.Writer = tracertxt;
                 fa.Layout = new PatternLayout("%date %-5level %logger: %message%newline");
                 fa.ActivateOptions();
@@ -1016,7 +1018,11 @@ namespace BoSSS.Foundation.IO {
         /// </param>
         public Guid SaveGrid(IGrid _grd, IDatabaseInfo database) {
             using (new FuncTrace()) {
-                GridCommons grd = (GridCommons)_grd;
+                GridCommons grd = _grd as GridCommons;
+                if(grd == null)
+                {
+                    throw new InvalidCastException("Grid not supported by save method");
+                }
 
                 if (grd.ID.Equals(Guid.Empty)) {
                     throw new ApplicationException("cannot save grid with empty Guid (Grid Guid is " + Guid.Empty.ToString() + ");");

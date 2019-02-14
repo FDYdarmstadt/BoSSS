@@ -13,7 +13,7 @@
 \paragraph{Prerequisites:} 
 \begin{itemize}
 	\item basic knowledge of \BoSSSpad{}
-	\item executing runs on your local machine, e.g. the quickstart guide of the \ac{cns}, see chapter \ref{{sec:CNS}
+	\item executing runs on your local machine, e.g. the quickstart guide of the \ac{cns}, see chapter \ref{sec:CNS}
 \end{itemize}
 
 \BoSSS ~includes several tools which aid the advanced user in running simulations and organizing simulation results among multiple computers and/or compute clusters.
@@ -113,10 +113,6 @@ using BoSSS.Application.IBM\_Solver;
  }
 \BoSSSexe
 \BoSSScmd{
- % 
- }
-\BoSSSexe
-\BoSSScmd{
 /// We create a grid with boundary conditions:
  }
 \BoSSSexe
@@ -152,10 +148,6 @@ myLocalDb.SaveGrid(ref grid);
  }
 \BoSSSexe
 \BoSSScmd{
- % 
- }
-\BoSSSexe
-\BoSSScmd{
 /// Next, we create the control object for the incompressible simulation,
 /// as in chapter \ref{IBM}:
  }
@@ -182,8 +174,8 @@ c.Timestepper\_Scheme = IBM\_Control.TimesteppingScheme.ImplicitEuler; \newline
 c.dtFixed            = 1E20;  \newline 
 c.NoOfTimesteps      = 1;\newline 
 // Properties for the Picard Iterations:\newline 
-c.MaxSolverIterations = 50; \newline 
-c.MinSolverIterations = 1;
+c.NonLinearSolver.MaxSolverIterations = 50; \newline 
+c.NonLinearSolver.MinSolverIterations = 1;
  }
 \BoSSSexe
 \BoSSScmd{
@@ -343,3 +335,8 @@ Sloc;
 JobLocal.Status;
  }
 \BoSSSexe
+\BoSSScmdSilent{
+/// BoSSScmdSilent BoSSSexeSilent
+NUnit.Framework.Assert.IsTrue(JobLocal.Status == JobStatus.FinishedSuccessful);
+ }
+\BoSSSexeSilent

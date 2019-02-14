@@ -46,9 +46,9 @@ namespace BoSSS.Solution.Control {
         /// Returns the type of the solver main class;
         /// </summary>
         virtual public Type GetSolverType() {
-            throw new NotImplementedException();
+            throw new NotImplementedException("forgotten to overwrite 'GetSolverType' for " + this.GetType().FullName);
         }
-
+        
         /// <summary>
         /// The generating code as text representation, this string can be used to create the control file
         /// by <see cref="FromCode(string, Type, out AppControl, out AppControl[])"/>
@@ -77,7 +77,6 @@ namespace BoSSS.Solution.Control {
             private set;
         }
 
-
         /// <summary>
         /// ctor.
         /// </summary>
@@ -88,7 +87,7 @@ namespace BoSSS.Solution.Control {
             this.Tags = new List<string>();
             this.m_InitialValues_Evaluators = new Dictionary<string, Func<double[], double>>();
             this.m_InitialValues = new Dictionary<string, IBoundaryAndInitialData>();
-            this.NoOfMultigridLevels = 0;
+            this.LinearSolver.NoOfMultigridLevels = 0;
         }
 
         [Serializable]
@@ -462,6 +461,34 @@ namespace BoSSS.Solution.Control {
         public Tuple<Guid, TimestepNumber> RestartInfo;
 
         /// <summary>
+        /// Setting <see cref="RestartInfo"/>
+        /// </summary>
+        public void SetRestart(ITimestepInfo tsi) {
+            this.InitialValues.Clear();
+            this.InitialValues_Evaluators.Clear();
+            this.RestartInfo = Tuple.Create(tsi.Session.ID, tsi.TimeStepNumber);
+        }
+
+        /// <summary>
+        /// Setting <see cref="RestartInfo"/>
+        /// </summary>
+        public void SetRestart(ISessionInfo si) {
+            this.InitialValues.Clear();
+            this.InitialValues_Evaluators.Clear();
+            this.RestartInfo = Tuple.Create(si.ID, default(TimestepNumber));
+        }
+
+        /// <summary>
+        /// Setting <see cref="RestartInfo"/>
+        /// </summary>
+        public void SetRestart(ISessionInfo si, TimestepNumber idx) {
+            this.InitialValues.Clear();
+            this.InitialValues_Evaluators.Clear();
+            this.RestartInfo = Tuple.Create(si.ID, idx);
+        }
+
+
+        /// <summary>
         /// The GUID of the grid to load. 
         /// The use of this member is exclusive with <see cref="GridFunc"/>, i.e. 
         /// this member may only be set unequal to null if <see cref="GridFunc"/> is null.
@@ -558,6 +585,14 @@ namespace BoSSS.Solution.Control {
         /// </summary>
         [DataMember]
         public int saveperiod = 1;
+
+        /// <summary>
+        /// A number of previous timesteps which are always saved in case of a simulation crash.
+        /// </summary>
+        [DataMember]
+        public int rollingSaves = 0;
+
+
 
         /// <summary>
         /// lower threshold for the time-step
@@ -700,14 +735,27 @@ namespace BoSSS.Solution.Control {
         [DataMember]
         public bool Paramstudy_ContinueOnError = true;
 
+        ///// <summary>
+        ///// Number of aggregation multi-grid levels, <see cref="Application{T}.MultigridLevels"/>.
+        ///// </summary>
+        //[DataMember]
+        //public int NoOfMultigridLevels {
+        //    get;
+        //    set;
+        //}
+
         /// <summary>
-        /// Number of aggregation multi-grid levels, <see cref="Application{T}.MultigridLevels"/>.
+        /// Configuration of 'primary' linear solver, respectively preconditioner used for <see cref="NonLinearSolver"/>.
         /// </summary>
         [DataMember]
-        public int NoOfMultigridLevels {
-            get;
-            set;
-        }
+        public LinearSolverConfig LinearSolver = new LinearSolverConfig();
+
+        /// <summary>
+        /// Configuration of 'primary' nonlinear solver, if used in application
+        /// </summary>
+        [DataMember]
+        public NonLinearSolverConfig NonLinearSolver = new NonLinearSolverConfig();
+
 
         /// <summary>
         /// If true, a redistribution will be attempted BEFORE the first
@@ -868,6 +916,8 @@ namespace BoSSS.Solution.Control {
         /// </summary>
         /// <param name="ctrlfileContent">the script.</param>
         /// <param name="t">something derived from <see cref="AppControl"/></param>
+        /// <param name="ctrl"></param>
+        /// <param name="ctrl_ParamStudy"></param>
         static public void FromCode(string ctrlfileContent, Type t, out AppControl ctrl, out AppControl[] ctrl_ParamStudy) {
 
             // try to get type from first line comment (a hack).

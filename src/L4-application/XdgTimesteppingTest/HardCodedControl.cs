@@ -22,7 +22,7 @@ using BoSSS.Foundation.XDG;
 using BoSSS.Platform;
 using BoSSS.Platform.Utils.Geom;
 using BoSSS.Solution.Control;
-using BoSSS.Solution.Multigrid;
+using BoSSS.Solution.AdvancedSolvers;
 using System.Diagnostics;
 using System.Linq;
 using ilPSP.Utils;

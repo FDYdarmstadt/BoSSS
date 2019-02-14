@@ -38,7 +38,7 @@ namespace CNS.LinAlg {
         /// \f$  \vec{e}_2 = (-n_2, n_1, 0)^T\f$  and
         /// \f$  \vec{e}_3 = \vec{e}_1 \times \vec{e}_2\f$ ,
         /// where \f$  \vec{n} = (n_1, n_2, n_3)^T\f$ 
-        /// is given by <paramref name="edgeNormal"/>.
+        /// is given by <paramref name="_edgeNormal"/>.
         /// </summary>
         /// <param name="_edgeNormal">
         /// The normal of an edge

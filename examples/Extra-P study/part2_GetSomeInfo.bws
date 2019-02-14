@@ -1,0 +1,194 @@
+restart
+**************
+
+  BoSSSpad C# interpreter
+  _______________________
+
+Databases loaded:
+List of 8 instances of IDatabaseInfo {
+  0: { Session Count = 0; Grid Count = 34; Path = C:\BoSSS_DB }
+  1: { Session Count = 144; Grid Count = 6; Path = C:\tmp\fk_temp_db }
+  2: { Session Count = 0; Grid Count = 6; Path = P:\Performance_DB }
+  3: { Session Count = 12; Grid Count = 31; Path = P:\testDB }
+  4: { Session Count = 112; Grid Count = 6; Path = E:\Performance_oldLibs_DB }
+  5: { Session Count = 0; Grid Count = 2; Path = E:\db_2delete }
+  6: { Session Count = 112; Grid Count = 136; Path = E:\bosss_db_performance }
+  7: { Session Count = 144; Grid Count = 139; Path = Z:\weber\Performance_Kram\bosss_db_performance }
+}
+
+ Console ready for input. Type 'help' for help.
+
+==============
+var tmpDB = OpenOrCreateDatabase(@"E:\bosss_db_performance");
+**************
+Opening existing database 'E:\bosss_db_performance'.
+
+==============
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.IO;
+**************
+(1,2): warning CS0105: The using directive for `System' appeared previously in this namespace
+(2,1): warning CS0105: The using directive for `System.Collections.Generic' appeared previously in this namespace
+(3,1): warning CS0105: The using directive for `System.Linq' appeared previously in this namespace
+No. of errors|warnings: 0|3.
+
+==============
+using (StreamWriter sw = new StreamWriter("sessioninfo.txt"))
+{
+foreach(KeyValuePair<String,IEnumerable<ISessionInfo>> prj in tmpDB.Projects){
+    foreach(ISessionInfo session in prj.Value){
+        if(session.SuccessfulTermination==false)
+            continue;
+    string txt = String.Format("{0}:cores{1},cells{2}:project{3}",session.ID,session.NumberOfCores(),session.GetGrids().Pick(0).NumberOfCells,session.ProjectName);
+    sw.WriteLine(txt);
+    System.Console.WriteLine(txt);
+    }
+    }
+}
+**************
+d0f5639f-c1b4-4323-83bd-7b564fb9084d:cores64,cells2500,projectdmr_cube_run4
+9e79d152-05f9-4ffe-bb30-cb6aa6e57d59:cores64,cells160000,projectdmr_cube_run4
+aeb2550c-e5fa-407e-ac9b-fa1240c30b9a:cores1,cells160000,projectdmr_cube_run4
+171eda3d-c1a5-4f22-9ea0-66870771fb63:cores64,cells40000,projectdmr_cube_run4
+22e3ecb4-c859-4806-be8d-6118b197d122:cores64,cells10000,projectdmr_cube_run4
+2445ea3d-3730-4192-94ae-4fdf8dc487bb:cores32,cells160000,projectdmr_cube_run4
+572c1b31-3965-4510-a0e0-c9f3f1a9471b:cores32,cells40000,projectdmr_cube_run4
+bed12746-8986-432d-ad9a-706aabe448b4:cores32,cells10000,projectdmr_cube_run4
+a6a933b5-5a34-442c-88b2-18bbb15e1b15:cores2,cells160000,projectdmr_cube_run4
+6225ccc9-dbb0-43ac-85b6-0292516dec17:cores16,cells160000,projectdmr_cube_run4
+6931384b-2620-4702-9609-d6129b95b3b7:cores32,cells2500,projectdmr_cube_run4
+d53b4472-0767-403c-857b-c2550f82c265:cores4,cells160000,projectdmr_cube_run4
+7d6654e8-6c6b-4ba7-821f-ecd8bfa1ac01:cores16,cells40000,projectdmr_cube_run4
+2f03e3c5-7e21-4cb6-9aaa-a6913340968f:cores8,cells160000,projectdmr_cube_run4
+8005144e-3199-4c84-9b02-6b6f2d01c004:cores16,cells10000,projectdmr_cube_run4
+f1f8dfc6-97a7-4b5e-b584-df24c922cb0f:cores16,cells2500,projectdmr_cube_run4
+97ecab36-eaee-4cfc-aa82-1034e924d287:cores8,cells40000,projectdmr_cube_run4
+4d70bea0-4e6b-46f6-818f-31fa52884aeb:cores8,cells10000,projectdmr_cube_run4
+ed50238f-6150-4fda-ba62-a5098a4b3dec:cores1,cells40000,projectdmr_cube_run4
+03ab44de-9376-4ead-ba78-2b4d75dcf2c9:cores4,cells40000,projectdmr_cube_run4
+dcfa2655-ffac-4366-bf47-9afe2b67d762:cores8,cells2500,projectdmr_cube_run4
+161ffc10-3c34-44fd-85ad-6fa2825c66c2:cores4,cells10000,projectdmr_cube_run4
+79cabff1-f70b-4aa2-8445-cc85aaa928c4:cores2,cells40000,projectdmr_cube_run4
+318d7dbf-dd73-415d-a381-a338d2589f34:cores4,cells2500,projectdmr_cube_run4
+2e4793b1-fd34-42d4-bf12-99bdb4ad3115:cores2,cells10000,projectdmr_cube_run4
+dea54e6f-cc67-42fd-8aaf-455d41b32f23:cores2,cells2500,projectdmr_cube_run4
+83e1dbe1-5802-421e-a365-9a9abbe5c990:cores1,cells10000,projectdmr_cube_run4
+f4534c2b-47ff-42b5-93a8-933d2515ff1d:cores1,cells2500,projectdmr_cube_run4
+0ea0eca7-8f51-4a64-ba75-52e8e90ff8b3:cores32,cells2500,projectdmr_cube_run2
+7c4258c8-8278-47cf-ae0f-905b15b35338:cores64,cells160000,projectdmr_cube_run2
+2e9b05d5-4f55-4629-bd18-40a753c468fb:cores64,cells40000,projectdmr_cube_run2
+5a133b6a-bf68-44b8-aafb-59bb5ad90bc9:cores64,cells10000,projectdmr_cube_run2
+7306bf7b-4785-4aa5-9440-f76e89a83028:cores64,cells2500,projectdmr_cube_run2
+3bec97bb-bd12-488c-a61b-34d6396640f7:cores32,cells160000,projectdmr_cube_run2
+6ea5c865-ede8-438a-9cba-71944f2d7388:cores32,cells40000,projectdmr_cube_run2
+e346c98c-8d02-4932-9993-6a06a252a82c:cores32,cells10000,projectdmr_cube_run2
+cd0ac0a0-d6d4-48da-955d-e756d7b0ceb3:cores1,cells160000,projectdmr_cube_run2
+b5eabf95-85fe-433e-bb27-f2d23c5bcdb5:cores2,cells160000,projectdmr_cube_run2
+f1521fe5-7c8b-4652-853f-f1ffefe80ee6:cores16,cells160000,projectdmr_cube_run2
+bc3718a5-3d36-4c87-979c-3c4c82be1d11:cores4,cells160000,projectdmr_cube_run2
+6b086ef7-b77a-4d2b-9350-514a51f55f05:cores16,cells40000,projectdmr_cube_run2
+1bbc91b0-d698-49b3-af65-43e8fc10a2ad:cores16,cells10000,projectdmr_cube_run2
+c980dd98-fb7a-4a7a-a8a3-d522dd5c449b:cores8,cells160000,projectdmr_cube_run2
+5a5ccce9-6b62-4d71-ac18-1416429e82fc:cores16,cells2500,projectdmr_cube_run2
+efa86ba3-9d2c-4c67-b956-4141bb28f46e:cores8,cells40000,projectdmr_cube_run2
+3d27caf1-f0d8-4018-bc2f-217bdf877ab1:cores8,cells10000,projectdmr_cube_run2
+3c19cae6-1d72-476c-8644-ffea680697b0:cores4,cells40000,projectdmr_cube_run2
+9054b49e-ec39-4a50-b381-beb3834ce7be:cores1,cells40000,projectdmr_cube_run2
+cab4a25f-b3b2-4b5b-ac1f-0cdfac165d47:cores8,cells2500,projectdmr_cube_run2
+c5ae49aa-eac2-4b09-a4c7-7b665d45a641:cores4,cells10000,projectdmr_cube_run2
+cfadde3e-3c5f-4695-b07e-e61e2f753c23:cores2,cells40000,projectdmr_cube_run2
+f47ca978-b828-4ca8-9c5c-d38be21d3613:cores4,cells2500,projectdmr_cube_run2
+7298a356-6833-4400-8534-903402eca634:cores2,cells10000,projectdmr_cube_run2
+2cbe90bc-5757-47c3-97c7-1ac9cc64fc21:cores2,cells2500,projectdmr_cube_run2
+01d0c887-2934-441c-8e22-f04cb6262a0d:cores1,cells10000,projectdmr_cube_run2
+e27c3081-e134-4385-bb74-42521ad6b070:cores1,cells2500,projectdmr_cube_run2
+a0b8fd91-7902-4ef8-9a9b-693907d57cbd:cores64,cells160000,projectdmr_cube_run3
+683118de-dd16-4f54-8b97-2299cc796fdc:cores64,cells40000,projectdmr_cube_run3
+827a8fbe-c6fc-4bda-831f-7b99acbf81f7:cores64,cells10000,projectdmr_cube_run3
+506f0569-b632-4cf9-b426-c62212f128de:cores64,cells2500,projectdmr_cube_run3
+c1bb9b25-2b1c-4f72-b8c2-2f8f577ba98b:cores32,cells160000,projectdmr_cube_run3
+7754e449-236b-419a-adb7-6e572af65100:cores32,cells40000,projectdmr_cube_run3
+7d7a79bd-8cf0-41f3-a5f3-7b85f3213b86:cores32,cells10000,projectdmr_cube_run3
+1efa274b-f259-4886-8a39-f9b21489c348:cores16,cells160000,projectdmr_cube_run3
+e36696ec-c4fe-48f8-865e-da5ff270a645:cores32,cells2500,projectdmr_cube_run3
+4c36211f-4328-49c2-aef6-99a2ab0cebc5:cores2,cells160000,projectdmr_cube_run3
+2ba07300-449c-46fb-86e1-748b0e576858:cores4,cells160000,projectdmr_cube_run3
+b9e76f3c-d543-4391-894a-7b7c99bcbba4:cores16,cells40000,projectdmr_cube_run3
+f31154e0-1e4a-44ae-9468-2befc797861c:cores8,cells160000,projectdmr_cube_run3
+6c6de2be-6d39-43a9-a40c-d564211bb42c:cores16,cells10000,projectdmr_cube_run3
+7ddcc6af-9219-4cb3-ba63-e321700fc3e5:cores16,cells2500,projectdmr_cube_run3
+290c263f-f754-4e1c-b49f-0889424478f5:cores1,cells160000,projectdmr_cube_run3
+7ce65e7b-10fe-4097-8f3b-1f8d395ae059:cores8,cells40000,projectdmr_cube_run3
+a58c2017-e846-416c-9435-ded736f99659:cores8,cells10000,projectdmr_cube_run3
+529dbc66-d21f-4185-b34a-aaadbf6e32e8:cores4,cells40000,projectdmr_cube_run3
+9bd82703-bfa9-4dd8-98c8-d67979606f21:cores8,cells2500,projectdmr_cube_run3
+ba91e460-dabb-46dd-b3ae-98efad90e37b:cores4,cells10000,projectdmr_cube_run3
+0eae946a-7787-4b73-910f-0303e0aa243f:cores2,cells40000,projectdmr_cube_run3
+9844a63d-9f81-4bb3-8f3d-f0ea40d70865:cores4,cells2500,projectdmr_cube_run3
+5d0c5b86-d9f3-41ad-b17b-3e63ed383ab7:cores2,cells10000,projectdmr_cube_run3
+ef6adade-3a2d-4c57-a560-1ba7a40d9b99:cores1,cells40000,projectdmr_cube_run3
+c22d0bb9-f818-4094-85d1-973e35ddd68a:cores2,cells2500,projectdmr_cube_run3
+99301697-e163-4a81-9d7a-74e08eb281da:cores1,cells10000,projectdmr_cube_run3
+b2b3a87c-08a5-4b0c-820a-8efdd33a1fb2:cores1,cells2500,projectdmr_cube_run3
+e9836d5d-acb7-41c5-a93f-f156e3c36178:cores64,cells160000,projectdmr_cube
+6cd9a5ca-9c96-4497-9914-b329a909caa9:cores64,cells40000,projectdmr_cube
+17b8b33a-6f66-40df-962c-7117139d27a5:cores64,cells10000,projectdmr_cube
+cc2d30ea-acb6-49b6-96f7-6afe515b87c4:cores64,cells2500,projectdmr_cube
+962cd725-a49b-45c2-9e1c-1e6a5776c1ae:cores32,cells160000,projectdmr_cube
+5c222408-ca5c-4b29-8be2-dbbc46a647e1:cores32,cells40000,projectdmr_cube
+e2c465f5-86d8-4949-873b-51c7a0f35752:cores32,cells10000,projectdmr_cube
+68aebe92-5888-4ade-b614-8dfc046cd345:cores32,cells2500,projectdmr_cube
+61576b8c-17e4-49b2-95a1-b4ed8366d0fb:cores8,cells160000,projectdmr_cube
+64bcda31-30ad-4655-a784-d6117a34f692:cores16,cells40000,projectdmr_cube
+48e53b89-5c28-4dff-be22-fe4da3e1d8fe:cores16,cells160000,projectdmr_cube
+68432030-52c4-4532-9bd5-808bd6fe4141:cores16,cells2500,projectdmr_cube
+f1f007fd-93d5-4fc0-a629-eb57204758f1:cores16,cells10000,projectdmr_cube
+65e92fb4-683c-4bc9-ad4b-8e1b1548527d:cores8,cells40000,projectdmr_cube
+aec15499-78c6-4eea-b886-5cf74fb04cd3:cores8,cells10000,projectdmr_cube
+8fb060b3-398e-491a-8cc7-ad27149d5577:cores8,cells2500,projectdmr_cube
+6225720c-547c-43e7-a621-96cd37776dca:cores1,cells160000,projectdmr_cube
+2119bfe8-be80-4d3a-90e7-1e872a7c9efe:cores2,cells160000,projectdmr_cube
+29d84371-1568-40c0-929a-69260fcd72f6:cores4,cells160000,projectdmr_cube
+9d106746-0b90-44af-82b6-3be07e4d4e7c:cores4,cells40000,projectdmr_cube
+7450f659-f84b-4e8e-ac8d-46c73e71313b:cores1,cells40000,projectdmr_cube
+c10f4237-5558-48fb-b034-40f088f2e445:cores4,cells10000,projectdmr_cube
+69768e7a-3e54-44df-8587-08c318bef073:cores2,cells40000,projectdmr_cube
+2f7af798-1f89-4a2a-9a94-5c2f03edd487:cores4,cells2500,projectdmr_cube
+43750aa6-8ad9-4b2f-8a81-801bb71e637d:cores2,cells10000,projectdmr_cube
+f953396d-173e-4ec5-941a-3ebe3e7150bc:cores2,cells2500,projectdmr_cube
+a25302d3-ab9f-495d-9044-b7064bc486eb:cores1,cells10000,projectdmr_cube
+e40113fd-6bec-4c9e-9117-ee6528460127:cores1,cells2500,projectdmr_cube
+
+==============
+using (StreamWriter sw = new StreamWriter("projectinfo.txt"))
+{
+    foreach(var project in tmpDB.Projects){
+    string txt = String.Format("{0}",project.Key);
+    sw.WriteLine(txt);
+    System.Console.WriteLine(txt);
+    }
+}
+**************
+dmr_cube_run4
+dmr_cube_run2
+dmr_cube_run3
+dmr_cube
+
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============

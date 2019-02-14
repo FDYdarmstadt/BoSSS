@@ -75,8 +75,6 @@
   <ItemGroup>
     <Compile Include="ApproxPredictor.cs" />
     <Compile Include="PhysicalParameters.cs" />
-    <Compile Include="Solver\SolverChooser.cs" />
-    <Compile Include="Solver\SolverCodes.cs" />
     <Compile Include="HardcodedPrecTest.cs" />
     <Compile Include="HardcodedPerformance.cs" />
     <Compile Include="HarcodedControl3D.cs" />
@@ -116,9 +114,9 @@
       <Project>{17a60fba-20b4-451d-98e1-8d742f368569}</Project>
       <Name>BoSSS.Foundation</Name>
     </ProjectReference>
-    <ProjectReference Include="..\..\L3-solution\BoSSS.Solution.Multigrid\BoSSS.Solution.Multigrid.csproj">
+    <ProjectReference Include="..\..\L3-solution\BoSSS.Solution.AdvancedSolvers\BoSSS.Solution.AdvancedSolvers.csproj">
       <Project>{EFE8C307-09BC-4F58-B991-6EF8FD6D5EFF}</Project>
-      <Name>BoSSS.Solution.Multigrid</Name>
+      <Name>BoSSS.Solution.AdvancedSolvers</Name>
     </ProjectReference>
     <ProjectReference Include="..\..\L3-solution\BoSSS.Solution.XNSECommon\BoSSS.Solution.XNSECommon.csproj">
       <Project>{0D8F577E-316D-4362-816B-9F610C5EB4A5}</Project>
