@@ -9,7 +9,14 @@ namespace BoSSS.Platform
 {
     public static class PolygonTesselation
     { 
-        static double sign(Vector p1, Vector p2, Vector p3)
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="p1"></param>
+        /// <param name="p2"></param>
+        /// <param name="p3"></param>
+        /// <returns></returns>
+        static double Sign(Vector p1, Vector p2, Vector p3)
         {
             if (p1.Dim != 2)
                 throw new ArgumentException();
@@ -23,14 +30,12 @@ namespace BoSSS.Platform
 
         static bool PointInTriangle(Vector pt, Vector v1, Vector v2, Vector v3)
         {
-
-
             double d1, d2, d3;
             bool has_neg, has_pos;
 
-            d1 = sign(pt, v1, v2);
-            d2 = sign(pt, v2, v3);
-            d3 = sign(pt, v3, v1);
+            d1 = Sign(pt, v1, v2);
+            d2 = Sign(pt, v2, v3);
+            d3 = Sign(pt, v3, v1);
 
             has_neg = (d1 < 0) || (d2 < 0) || (d3 < 0);
             has_pos = (d1 > 0) || (d2 > 0) || (d3 > 0);
@@ -180,6 +185,38 @@ namespace BoSSS.Platform
             return R;
         }
 
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="_Polygon">
+        /// A positively oriented polygon
+        /// </param>
+        /// <param name="point"></param>
+        /// <returns></returns>
+        public static bool PointInConvexPolygon(IEnumerable<Vector> _Polygon, Vector point)
+        {
+            //http://demonstrations.wolfram.com/AnEfficientTestForAPointToBeInAConvexPolygon/
+            //Shift
+            Vector[] shiftedPoly = new Vector[_Polygon.Count()];
+            int i = 0;
+            foreach (Vector vtx in _Polygon)
+            {
+                shiftedPoly[i] = vtx - point;
+                ++i;
+            }
+            bool inside = true;
+            //Check signs
+            for(i = 0; i < shiftedPoly.Length - 1; ++i)
+            {
+                double a_i = shiftedPoly[i + 1].x * shiftedPoly[i].y - shiftedPoly[i].x * shiftedPoly[i + 1].y;
+                inside &= a_i <= 0;
+            }
+            double a = shiftedPoly[0].x * shiftedPoly[shiftedPoly.Length-1].y 
+                - shiftedPoly[shiftedPoly.Length-1].x * shiftedPoly[0].y;
+            inside &= a <= 0;
+            return inside;
+
+        }
     }
 
     public static class PolygonClipping
