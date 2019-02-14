@@ -68,10 +68,11 @@ namespace BoSSS.Application.XNSE_Solver {
 
         static void Main(string[] args) {
 
-            //BoSSS.Application.XNSE_Solver.Tests.UnitTest.TestFixtureSetUp();
+            BoSSS.Application.XNSE_Solver.Tests.UnitTest.TestFixtureSetUp();
+            BoSSS.Application.XNSE_Solver.Tests.ElementalTestProgramm.LineMovementTest(LevelSetEvolution.FastMarching, LevelSetHandling.Coupled_Once, XNSE_Control.TimesteppingScheme.ImplicitEuler);
             //BoSSS.Application.XNSE_Solver.Tests.UnitTest.MovingDropletTest(2, 0.01d, true, SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_Flux, 0.69711d, ViscosityMode.Standard, true, false);
-            //Debug.Assert(false);
-            
+            Debug.Assert(false);
+
 
 
             _Main(args, false, delegate () {
@@ -1968,6 +1969,21 @@ namespace BoSSS.Application.XNSE_Solver {
 
         }
 
+        public double[] ComputeBenchmarkQuantities_LineInterface()
+        {
+            
+            // interface length
+            double length = 0.0;
+            length = XNSEUtils.GetInterfaceLength(LsTrk);
+
+            // species area
+            double area = 0.0;
+            area = XNSEUtils.GetSpeciesArea(LsTrk, LsTrk.SpeciesIdS[0]);
+
+            // interface mean angle
+
+            return new double[] { length, area };
+        }
 
 
         public double[] ComputeBenchmarkQuantities_RisingBubble() {
