@@ -16,6 +16,10 @@ namespace BoSSS.Foundation.Grid.Voronoi
     {
         public Vector Position { get; set; }
         public int ID { get; set; }
+        public static explicit operator Vector(Vertex vtx)
+        {
+            return vtx.Position;
+        }
     }
 
     class Ridge
@@ -306,39 +310,18 @@ namespace BoSSS.Foundation.Grid.Voronoi
             }
         }
 
-        public IEnumerable<Cell> GetInnerCells()
-        {
-            return ConnectedCells_Iterative(Cells[3]);
-        }
-
+        /// <summary>
+        /// Enumerates the cells inside the boundary of this mesh.
+        /// Recursion produces Stack overflow, when to many cells in mesh.
+        /// </summary>
+        /// <param name="cell">
+        /// Enumeration starts with this cell and then return its neighbors and so on.
+        /// </param>
+        /// <returns></returns>
         public IEnumerable<Cell> ConnectedCells_Recursive(Cell cell)
         {
             BitArray visited = new BitArray(Cells.Count);
             return YieldConnectedCells(cell, visited);
-        }
-
-        public IEnumerable<Cell> ConnectedCells_Iterative(Cell cell)
-        {
-            BitArray visited = new BitArray(Cells.Count);
-            LinkedList<Cell> cells = new LinkedList<Cell>();
-            cells.AddFirst(cell);
-            visited[cell.ID] = true;
-            while (cells.Count > 0)
-            {
-                Cell current = cells.First.Value;
-                yield return current;
-                cells.RemoveFirst();
-
-                foreach (Ridge ridge in current.Ridges)
-                {
-                    Ridge newRidge = ridge.Twin;
-                    if (!visited[newRidge.Cell.ID] && !newRidge.IsBoundary)
-                    {
-                        cells.AddLast(newRidge.Cell);
-                        visited[newRidge.Cell.ID] = true;
-                    }
-                }
-            }
         }
 
         private IEnumerable<Cell> YieldConnectedCells(Cell cell, BitArray visited)
@@ -359,11 +342,41 @@ namespace BoSSS.Foundation.Grid.Voronoi
             }
         }
 
-        public AggregationGrid ToAggregationGrid()
+        /// <summary>
+        /// Enumerates the cells inside the boundary of this mesh.
+        /// </summary>
+        /// <param name="cell">
+        /// Enumeration starts with this cell and then return its neighbors and so on.
+        /// </param>
+        /// <returns></returns>
+        public IEnumerable<Cell> ConnectedCells_Iterative(Cell cell)
+        {
+            BitArray visited = new BitArray(Cells.Count);
+            LinkedList<Cell> cells = new LinkedList<Cell>();
+            cells.AddFirst(cell);
+            visited[cell.ID] = true;
+            while (cells.Count > 0)
+            {
+                Cell current = cells.First.Value;
+                yield return current;
+                cells.RemoveFirst();
+                foreach (Ridge ridge in current.Ridges)
+                {
+                    Ridge newRidge = ridge.Twin;
+                    if (!visited[newRidge.Cell.ID] && !newRidge.IsBoundary)
+                    {
+                        cells.AddLast(newRidge.Cell);
+                        visited[newRidge.Cell.ID] = true;
+                    }
+                }
+            }
+        }
+
+        public AggregationGrid ToAggregationGrid(Cell insideCell)
         {
             List<BoSSS.Foundation.Grid.Classic.Cell> cellsBoSSS = new List<BoSSS.Foundation.Grid.Classic.Cell>();
             List<int[]> aggregationBoSSS = new List<int[]>();
-            foreach (Cell cell in GetInnerCells())
+            foreach (Cell cell in ConnectedCells_Iterative(insideCell))
             {
                 //Convert to BoSSSCell : Triangulate
                 Vector[] VoronoiCell = cell.Vertices.Select(voVtx => voVtx.Position).ToArray();

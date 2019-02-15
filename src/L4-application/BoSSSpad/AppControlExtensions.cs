@@ -40,8 +40,6 @@ namespace BoSSS.Application.BoSSSpad {
             return S;
         }
 
-
-        
         /// <summary>
         /// Runs the solver described by the control object <paramref name="ctrl"/> on a batch system.
         /// The method returns immediately.
@@ -60,6 +58,7 @@ namespace BoSSS.Application.BoSSSpad {
 
             Type solverClass = ctrl.GetSolverType();
             Job job = new Job(JobName, solverClass);
+
             //job.ExecutionTime = executionTime;
             //job.NumberOfMPIProcs = NumberOfMPIProcs;
             //job.UseComputeNodesExclusive = UseComputeNodesExclusive;

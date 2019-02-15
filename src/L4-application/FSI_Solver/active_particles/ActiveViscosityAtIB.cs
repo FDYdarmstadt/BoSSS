@@ -130,7 +130,6 @@ namespace BoSSS.Solution.NSECommon.Operator.Viscosity {
                 return Ret * muA;
             }
 
-
             // 2D
             // ============================= 
             //Defining boundary conditions (no slip/slip)
@@ -157,13 +156,12 @@ namespace BoSSS.Solution.NSECommon.Operator.Viscosity {
                 f_xN = active_stress_visc[1] * Math.Abs(inp.n[0]);
                 //active_stress_visc = 0;
             }
-
-
+            
             //Computing flux
             Ret -= Grad_uA_xN * (vA) * muA * (1 - scale);                    // consistency term
             Ret -= Grad_vA_xN * (uA[component] - uAFict) * muA;              // symmetry term
             Ret += _penalty * (uA[component] - uAFict) * (vA) * muA;         // penalty term
-            Ret += f_xN * (vA);                                // active term (Neumann boundary condition)
+            Ret += f_xN * (vA) * scale;                                // active term (Neumann boundary condition)
 
             Debug.Assert(!(double.IsInfinity(Ret) || double.IsNaN(Ret)));
             return Ret;

@@ -121,7 +121,7 @@ namespace BoSSS.Application.FSI_Solver {
             // ==============
             // Coupling Properties
             //C.LevelSetMovement = "coupled";
-            C.Timestepper_LevelSetHandling = LevelSetHandling.LieSplitting;
+            C.Timestepper_LevelSetHandling = LevelSetHandling.Coupled_Once;
             C.includeTranslation = false;
             C.includeRotation = true;
 

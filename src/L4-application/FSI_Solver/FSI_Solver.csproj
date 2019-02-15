@@ -76,6 +76,7 @@
     <Compile Include="active_particles\ActiveViscosityAtIB.cs" />
     <Compile Include="active_particles\ActiveConvectionAtIB.cs" />
     <Compile Include="active_particles\ActiveDivergenceAtIB.cs" />
+    <Compile Include="active_particles\ActivePressureAtIB.cs" />
     <Compile Include="active_particles\HardcodedControl_TestCases.cs" />
     <Compile Include="Particle_Shapes\Particle_Bean.cs" />
     <Compile Include="Particle_Shapes\Particle_superEllipsoid.cs" />

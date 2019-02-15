@@ -35,6 +35,7 @@ HYPRE:					LGPL-V2.1
 LibCMDLine:				MIT-licence
 Log4Net:				ApacheV2-Licence
 Math.Net Numerics:		MIT/X11-Licence
+MIConvexHull:			MIT-licence
 MUMPS:					CeCILL-C license
 JSON.Net:				MIT-Licence
 Metis:					Apache V2

@@ -36,8 +36,9 @@ namespace BoSSS.Foundation.Grid.Voronoi
             int NoOfLyyodsIter,
             int noOfNodeSeed)
         {
+            //creates random nodes in bounding box of PolygonBoundary, first node ist first entry of polygon boundary
             List<Vector> nodes = CreateVoronoiNodesFromPolygon(PolygonBoundary, noOfNodeSeed);
-            return FromPolygonalDomain(nodes, PolygonBoundary, NoOfLyyodsIter);
+            return FromPolygonalDomain(nodes, PolygonBoundary, NoOfLyyodsIter, 0);
         }
 
         /// <summary>
@@ -52,11 +53,15 @@ namespace BoSSS.Foundation.Grid.Voronoi
         /// <param name="NoOfLyyodsIter">
         /// Number of smoothing iterations.
         /// </param>
+        /// <param name="FirstCellNode_indice">
+        /// Indice of node where the algorithm will start looking for the first Vector of PolygonBoundary.
+        /// </param>
         /// <returns></returns>
         public static AggregationGrid FromPolygonalDomain(
             MultidimensionalArray Nodes,
             Vector[] PolygonBoundary,
-            int NoOfLyyodsIter)
+            int NoOfLyyodsIter,
+            int FirstCellNode_indice)
         {
             //Short hack
             List<Vector> nodes = new List<Vector>(Nodes.NoOfRows);
@@ -64,7 +69,7 @@ namespace BoSSS.Foundation.Grid.Voronoi
             {
                 nodes.Add(new Vector(Nodes.GetRow(i)));
             }
-            return FromPolygonalDomain(nodes, PolygonBoundary, NoOfLyyodsIter);
+            return FromPolygonalDomain(nodes, PolygonBoundary, NoOfLyyodsIter, FirstCellNode_indice);
         }
 
         /// <summary>
@@ -79,11 +84,15 @@ namespace BoSSS.Foundation.Grid.Voronoi
         /// <param name="NoOfLyyodsIter">
         /// Number of smoothing iterations.
         /// </param>
+        /// <param name="FirstCellNode_indice">
+        /// Indice of node where the algorithm will start looking for the first Vector of PolygonBoundary.
+        /// </param>
         /// <returns></returns>
         public static AggregationGrid FromPolygonalDomain(
                 List<Vector> nodes,
                 Vector[] PolygonBoundary,
-                int NoOfLyyodsIter
+                int NoOfLyyodsIter,
+                int FirstCellNode_indice
                 )
         {
             // Create Voronoi mesh
@@ -91,39 +100,32 @@ namespace BoSSS.Foundation.Grid.Voronoi
 
             IEnumerator<Line> lines = Line.GetEnumerator(PolygonBoundary);
             IntersectionMesh voronoiMesh = null;
-            Func<List<Vector>, IntersectionMesh> CreateMesh = MIConvexHullMeshGenerator.CreateMesh;
+            Func<List<Vector>, int, IntersectionMesh> CreateMesh = MIConvexHullMeshGenerator.CreateMesh;
+            ;
 
             for (int iLloyd = 0; iLloyd <= NoOfLyyodsIter; ++iLloyd)
             {
                 // Voronoi generation
                 //-------------------------------------
-                Stopwatch stopwatch = new Stopwatch();
-                stopwatch.Start();
                 AddFarNodes(nodes, PolygonBoundary);
-                voronoiMesh = CreateMesh(nodes);
-                stopwatch.Stop();
-                Console.WriteLine(stopwatch.ElapsedMilliseconds);
+                voronoiMesh = CreateMesh(nodes, FirstCellNode_indice);
                 //Clip
                 //-------------------------------------
-                stopwatch.Restart();
                 Intersecter.Intersect(voronoiMesh, lines);
-                stopwatch.Stop();
-                Console.WriteLine(stopwatch.ElapsedMilliseconds);
                 //Console.ReadKey();
 
                 // Lloyds algorithm (Voronoi relaxation)
                 // -------------------------------------
                 if (iLloyd != NoOfLyyodsIter)
                 {
-                    nodes = RelaxVoronois(voronoiMesh.GetInnerCells());
+                    nodes = RelaxVoronois(voronoiMesh.GetInsideCells(), ref FirstCellNode_indice);
                 }
             }
             return voronoiMesh.ToAggregationGrid();
         }
 
-        static List<Vector> RelaxVoronois(IEnumerable<Cell> Cells)
+        static List<Vector> RelaxVoronois(IEnumerable<Cell> Cells, ref int FirstCellNode_indice)
         {
-            int hack = 0;
             List<Vector> nodes = new List<Vector>();
             foreach (Cell cell in Cells)
             {
@@ -135,18 +137,19 @@ namespace BoSSS.Foundation.Grid.Voronoi
                 }
                 CenterOfGravity.Scale(1.0 / cell.Vertices.Length);
                 nodes.Add(CenterOfGravity * relaxValue + new Vector(cell.VoronoiNode) * (1 - relaxValue));
-                if (cell.ID == 3)
+                if (cell.ID == FirstCellNode_indice)
                 {
-                    hack = nodes.Count - 1;
+                    FirstCellNode_indice = nodes.Count - 1;
                 }
             }
             //------------------------------Achtung Hack!--------------------------------------------------------------
-            Vector tmp = nodes[3];
-            nodes[3] = new Vector(new double[] { -1, 1 });
-            nodes[hack] = tmp;
+            //Vector tmp = nodes[3];
+            //nodes[3] = new Vector(new double[] { -1, 1 });
+            //nodes[hack] = tmp;
             return nodes;
         }
 
+        //creates random nodes in bounding box of PolygonBoundary, first node ist first entry of polygon boundary
         static List<Vector> CreateVoronoiNodesFromPolygon(Vector[] PolygonBoundary, int nSeedVoronois)
         {
             Debug.Assert(PolygonBoundary.Length > 0);
@@ -171,7 +174,7 @@ namespace BoSSS.Foundation.Grid.Voronoi
                     nodes[i][j] = center[j] - 0.5 * scl[j] + rnd.NextDouble() * scl[j];
                 }
             }
-            nodes[3] = PolygonBoundary[0];
+            nodes[0] = PolygonBoundary[0];
             return nodes.ToList();
         }
 

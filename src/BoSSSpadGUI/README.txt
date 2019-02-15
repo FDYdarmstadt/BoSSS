@@ -3,7 +3,7 @@ Run from npm:
 ############################################################################################
 Build C# Solution public/src/Public.sln in Release configuration. Then
 1, Install npm on your machine (https://www.npmjs.com/).  (package manager for Node.js)
-2, In this folder, open console and run
+2, In this folder (BoSSSpadGUI/.), open console and run
 	npm install 
 3, Then run: 
 	npm run buildAndStart
@@ -21,6 +21,7 @@ Optional:
 ############################################################################################
 Package and create Installer with InnoSetup for Windows, 64bit: 
 ############################################################################################
+Build C# Solution public/src/Public.sln in Release configuration.
 1, Install npm on your machine (https://www.npmjs.com/).  (package manager for Node.js)
 2, Install InnoSetup on your machine (http://www.jrsoftware.org/isinfo.php)
 3, In this folder, open console and run
@@ -28,4 +29,4 @@ Package and create Installer with InnoSetup for Windows, 64bit:
 	npm run build
 	npm run package
 4, Open Subfolder InnoSetup and compile BoSSSpad-setup.iss using Innosetup. 
-5, Open Subfolder InnoSetup\installer and run BoSSSpadStandalone-setup.exe .
+5, Open Subfolder InnoSetup\installer and run BoSSSpadStandalone-setup.exe.

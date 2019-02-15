@@ -5,14 +5,15 @@ var path = require('path');
 class BoSSS{
     constructor(){
         if(! this.constructor.prototype.instance ){
-            var BoSSS_DLL_path = path.join(process.env.BOSSS_INSTALL, '/bin/Release/ElectronWorksheet.dll');
+            var BoSSS_DLL_path = path.join(__dirname, '../src/cs/bin/Release/ElectronWorksheet.dll');
             var requireBoSSS = edge.func(
             {
                 assemblyFile: BoSSS_DLL_path,
                 typeName: 'BoSSS.Application.BoSSSpad.ElectronInterface',
                 methodName: 'Invoke', // This must be Func<object,Task<object>>
             });
-            this.BoSSSRuntime = requireBoSSS( null, true);
+            var BoSSS_Dir = path.join(__dirname, '../src/cs/bin/Debug/');
+            this.BoSSSRuntime = requireBoSSS( BoSSS_Dir, true);
             this.constructor.prototype.instance = this;
         }
         return this.constructor.prototype.instance;
@@ -53,6 +54,7 @@ class BoSSS{
         );
         return runPromise;
     }
+    
     save(data){
         //data {path: string, commands: string[], results: string[]}
         var that = this;
