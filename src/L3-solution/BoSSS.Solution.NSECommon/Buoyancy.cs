@@ -32,7 +32,8 @@ namespace BoSSS.Solution.NSECommon {
         int SpatialComponent;
         double Froude;
         MaterialLaw EoS;
-
+        PhysicsMode physicsMode;
+        string[] m_ParameterOrdering;
         /// <summary>
         /// Ctor.
         /// </summary>
@@ -40,7 +41,7 @@ namespace BoSSS.Solution.NSECommon {
         /// <param name="SpatialComponent">Spatial component of source.</param>
         /// <param name="Froude">Dimensionless Froude number.</param>
         /// <param name="EoS">Equation of state for calculating density.</param>
-        public Buoyancy(double[] GravityDirection, int SpatialComponent, double Froude, MaterialLaw EoS) {
+        public Buoyancy(double[] GravityDirection, int SpatialComponent, double Froude, PhysicsMode physicsMode, MaterialLaw EoS) {
             // Check direction
             double sum = 0.0;
             for (int i = 0; i < GravityDirection.Length; i++) {
@@ -55,7 +56,22 @@ namespace BoSSS.Solution.NSECommon {
             this.SpatialComponent = SpatialComponent;
             this.Froude = Froude;
             this.EoS = EoS;
-        }
+            this.physicsMode = physicsMode;
+            
+            switch (physicsMode) {
+                case PhysicsMode.LowMach:
+                    this.m_ParameterOrdering = new string[] { VariableNames.Temperature0};
+                    break;
+                case PhysicsMode.Combustion:
+                    this.m_ParameterOrdering = new string[] { VariableNames.Temperature0, VariableNames.MassFraction0_0, VariableNames.MassFraction1_0, VariableNames.MassFraction2_0, VariableNames.MassFraction3_0 };
+                    break;
+                default:
+                    throw new ApplicationException("wrong physicsmode");
+                }
+            }
+
+        
+
            
         
 
@@ -89,9 +105,7 @@ namespace BoSSS.Solution.NSECommon {
 
         public override IList<string> ParameterOrdering {
             get {               
-                return new string[] { VariableNames.Temperature0
-                    //, VariableNames.MassFraction0_0, VariableNames.MassFraction1_0, VariableNames.MassFraction2_0, VariableNames.MassFraction3_0
-                };
+                return m_ParameterOrdering;
             }
         }
 
