@@ -1024,7 +1024,7 @@ namespace BoSSS.Foundation.IO {
                     throw new InvalidCastException("Grid not supported by save method");
                 }
 
-                if (grd.ID.Equals(Guid.Empty)) {
+                if (_grd.ID.Equals(Guid.Empty)) {
                     throw new ApplicationException("cannot save grid with empty Guid (Grid Guid is " + Guid.Empty.ToString() + ");");
                 }
                 MPICollectiveWatchDog.Watch(csMPI.Raw._COMM.WORLD);
@@ -1055,8 +1055,8 @@ namespace BoSSS.Foundation.IO {
                 if (grd.BcCells != null && grd.BcCells.Length > 0)
                     grd.BcCellsStorageGuid = SaveVector(grd.BcCells);
 
-                // save header data
-                // ================
+                // save header data (save GridInfo)
+                // ==========================
                 if (MyRank == 0) {
                     using (Stream s = m_fsDriver.GetGridStream(true, grd.ID))
                     using (var writer = GetJsonWriter(s)) {
