@@ -122,6 +122,59 @@ namespace BoSSS.Solution.NSECommon {
             }
         }
 
+
+        public double GetHeatConductivity(double phi) {
+            switch (this.MatParamsMode) {
+                case MaterialParamsMode.Constant:
+                    return 1.0;
+                case MaterialParamsMode.Sutherland: {
+                        //    throw new NotImplementedException();
+                        return 1.0; // Using a constant value! 
+                    }
+                case MaterialParamsMode.PowerLaw: {
+                        throw new NotImplementedException();
+                    }
+                default:
+                    throw new NotImplementedException();
+            }
+        }
+
+        public double GetDiffusivity(double phi) {
+            switch (this.MatParamsMode) {
+                case MaterialParamsMode.Constant:
+                    return 1.0;
+                case MaterialParamsMode.Sutherland: {
+                        //    throw new NotImplementedException();
+                        return 1.0; // Using a constant value! 
+                    }
+                case MaterialParamsMode.PowerLaw: {
+                        throw new NotImplementedException();
+                    }
+                default:
+                    throw new NotImplementedException();
+            }
+        }
+
+        public double GetPartialHeatCapacity(double phi) {
+            switch (this.MatParamsMode) {
+                case MaterialParamsMode.Constant:
+                    return 1.0;
+                case MaterialParamsMode.Sutherland: {
+                        //    throw new NotImplementedException();
+                        return 1.0; // Using a constant value! 
+                    }
+                case MaterialParamsMode.PowerLaw: {
+                        throw new NotImplementedException();
+                    }
+                default:
+                    throw new NotImplementedException();
+            }
+        }
+
+        public double GetHeatCapacity(double phi) {
+            return 1.0;
+        }
+
         /// <summary>
         /// Returns thermodynamic pressure as function of inital mass and temperature.
         /// </summary>
