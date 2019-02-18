@@ -1186,5 +1186,26 @@ namespace BoSSS.Solution.XNSECommon {
 
 
 
+
+        static public void ComputeGradientForParam(DGField f, VectorField<DGField> fGrad, LevelSetTracker LsTrk) {
+            using(FuncTrace ft = new FuncTrace()) {
+
+                int D = LsTrk.GridDat.SpatialDimension;
+                for(int d = 0; d < D; d++) {
+
+                    foreach(var Spc in LsTrk.SpeciesIdS) { // loop over species...
+                        // shadow fields
+                        DGField f_Spc = ((f as XDGField).GetSpeciesShadowField(Spc));
+
+                        (fGrad[d] as XDGField).GetSpeciesShadowField(Spc).Derivative(1.0, f_Spc, d);
+                    }
+                }
+
+                fGrad.ForEach(F => F.CheckForNanOrInf(true, true, true));
+
+            }
+        }
+
+
     }
 }

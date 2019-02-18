@@ -223,12 +223,11 @@ namespace BoSSS.Solution.XheatCommon {
 
                         double g_D = this.g_Flux(inp.X, inp.time, inp.EdgeTag);
 
-                        Acc = kA * g_D * _vA;
-                        //for(int d = 0; d < inp.D; d++) {
-                        //    double nd = inp.Normale[d];
-                        //    Acc += (kA * _Grad_uA[0, d]) * (_vA) * nd;
-                        //    //Acc += (kA * _Grad_vA[d]) * (_uA[0] - g_D) * nd;
-                        //}
+                        for(int d = 0; d < inp.D; d++) {
+                            double nd = inp.Normale[d];
+                            Acc += g_D * (_vA) * nd;
+                            //Acc += (kA * _Grad_vA[d]) * (_uA[0] - g_D) * nd;
+                        }
                         Acc *= this.m_alpha;
 
                         //Acc -= kA * (_uA[0] - g_D) * (_vA - 0) * pnlty;

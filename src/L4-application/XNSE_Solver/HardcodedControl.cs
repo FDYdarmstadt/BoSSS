@@ -5187,5 +5187,188 @@ namespace BoSSS.Application.XNSE_Solver {
 
         }
 
+
+
+        public static XNSE_Control LateralAdhesionForceGrid() {
+
+            XNSE_Control C = new XNSE_Control();
+
+            AppControl._CompMode compMode = AppControl._CompMode.Steady;
+
+            // basic database options
+            // ======================
+            #region db
+
+            C.savetodb = false;
+
+            #endregion
+
+
+            // DG degrees
+            // ==========
+            #region degrees
+
+            int p = 2;
+
+            C.FieldOptions.Add("VelocityX", new FieldOpts() {
+                Degree = p,
+                SaveToDB = FieldOpts.SaveToDBOpt.TRUE
+            });
+            C.FieldOptions.Add("VelocityY", new FieldOpts() {
+                Degree = p,
+                SaveToDB = FieldOpts.SaveToDBOpt.TRUE
+            });
+            C.FieldOptions.Add("GravityY", new FieldOpts() {
+                SaveToDB = FieldOpts.SaveToDBOpt.TRUE
+            });
+            C.FieldOptions.Add("Pressure", new FieldOpts() {
+                Degree = p - 1,
+                SaveToDB = FieldOpts.SaveToDBOpt.TRUE
+            });
+            C.FieldOptions.Add("PhiDG", new FieldOpts() {
+                SaveToDB = FieldOpts.SaveToDBOpt.TRUE
+            });
+            C.FieldOptions.Add("Phi", new FieldOpts() {
+                Degree = p,
+                SaveToDB = FieldOpts.SaveToDBOpt.TRUE
+            });
+            C.FieldOptions.Add("Curvature", new FieldOpts() {
+                Degree = p,
+                SaveToDB = FieldOpts.SaveToDBOpt.TRUE
+            });
+
+            #endregion
+
+
+            // Physical Parameters
+            // ===================
+            #region physics
+
+            C.PhysicalParameters.IncludeConvection = false;
+
+            #endregion
+
+
+            // grid generation
+            // ===============
+            #region grid
+
+            double L = 1.0;
+            double H = 1.0;
+
+            double h = 0.3;
+            double b = 0.01;
+
+            C.GridFunc = delegate () {
+
+                var TestSecLeft_p1 = new double[2] { -L, 0 };
+                var TestSecLeft_p2 = new double[2] { -b/2, H };
+                var TestSecLeft = new GridCommons.GridBox(TestSecLeft_p1, TestSecLeft_p2, 10, 10);
+
+                var TestSecCenter_p1 = new double[2] { -b/2, 0 };
+                var TestSecCenter_p2 = new double[2] { b/2, h };
+                var TestSecCenter = new GridCommons.GridBox(TestSecCenter_p1, TestSecCenter_p2, 1, 6);
+
+                var TestSecRight_p1 = new double[2] { b/2, 0 };
+                var TestSecRight_p2 = new double[2] { L, H };
+                var TestSecRight = new GridCommons.GridBox(TestSecRight_p1, TestSecRight_p2, 10, 10);
+
+
+                var grd = Grid2D.HangingNodes2D(TestSecLeft, TestSecCenter, TestSecRight);
+
+                grd.EdgeTagNames.Add(1, "navierslip_linear_lower");
+                grd.EdgeTagNames.Add(2, "pressure_outlet_upper");
+                grd.EdgeTagNames.Add(3, "pressure_outlet_left");
+                grd.EdgeTagNames.Add(4, "pressure_outlet_right");
+                grd.EdgeTagNames.Add(5, "navierslip_linear_sensor");
+
+                grd.DefineEdgeTags(delegate (double[] X) {
+                    byte et = 0;
+                    if(Math.Abs(X[1] + 0) <= 1.0e-8)
+                        et = 1;
+                    if(Math.Abs(X[1] - H) <= 1.0e-8 && ((X[0] >= b/2) || (X[0] <= -b/2)) )
+                        et = 2;
+                    if(Math.Abs(X[0] + L) <= 1.0e-8)
+                        et = 3;
+                    if(Math.Abs(X[0] - L) <= 1.0e-8)
+                        et = 4;
+                    if(Math.Abs(X[1] - h) <= 1.0e-8 && (X[0] >= -b/2) && (X[0] <= b/2) )
+                        et = 5;
+                    if(Math.Abs(X[0] - b/2) <= 1.0e-8 && (X[1] >= h))
+                        et = 5;
+                    if(Math.Abs(X[0] + b/2) <= 1.0e-8 && (X[1] >= h))
+                        et = 5;
+
+                    return et;
+                });
+
+                return grd;
+            };
+
+
+            #endregion
+
+
+            // Initial Values
+            // ==============
+            #region init
+
+            Func<double[], double> PhiFunc = X => -1.0;
+
+            C.InitialValues_Evaluators.Add("Phi", PhiFunc);
+
+            #endregion
+
+
+            // boundary conditions
+            // ===================
+            #region BC
+
+            C.AddBoundaryValue("navierslip_linear_lower");
+            C.AddBoundaryValue("pressure_outlet_upper");
+            C.AddBoundaryValue("pressure_outlet_left");
+            C.AddBoundaryValue("pressure_outlet_right");
+
+            C.AddBoundaryValue("navierslip_linear_sensor");
+
+            #endregion
+
+
+            // misc. solver options
+            // ====================
+            #region solver
+
+            C.ComputeEnergy = false;
+
+            C.Option_LevelSetEvolution = LevelSetEvolution.None;
+
+            C.LSContiProjectionMethod = ContinuityProjectionOption.None;
+
+            #endregion
+
+
+            // Timestepping
+            // ============
+            #region time
+
+            C.Timestepper_Scheme = XNSE_Control.TimesteppingScheme.ImplicitEuler;
+            C.Timestepper_BDFinit = TimeStepperInit.SingleInit;
+            C.Timestepper_LevelSetHandling = LevelSetHandling.None;
+
+            C.CompMode = compMode;
+            double dt = 1.0;
+            C.dtMax = dt;
+            C.dtMin = dt;
+            C.Endtime = 1000;
+            C.NoOfTimesteps = 1000;
+            C.saveperiod = 1;
+
+            #endregion
+
+
+            return C;
+
+        }
+
     }
 }

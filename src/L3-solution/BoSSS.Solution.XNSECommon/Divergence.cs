@@ -206,22 +206,21 @@ namespace BoSSS.Solution.XNSECommon.Operator.Continuity {
             //    throw new NotImplementedException();
             //}
 
-
             double rhoJmp = rhoB - rhoA;
 
             // transform from species B to A: we call this the "A-fictitious" value
             double uAxN_fict;
-            if (!MaterialInterface)
-                uAxN_fict = (1 / rhoA) * (rhoB * uBxN + (-s) * rhoJmp);
-            else
+            //if(!MaterialInterface)
+            //    uAxN_fict = (1 / rhoA) * (rhoB * uBxN + (-s) * rhoJmp);
+            //else
                 uAxN_fict = uBxN;
 
 
             // transform from species A to B: we call this the "B-fictitious" value
             double uBxN_fict;
-            if (!MaterialInterface)
-                uBxN_fict = (1 / rhoB) * (rhoA * uAxN - (-s) * rhoJmp);
-            else
+            //if(!MaterialInterface)
+            //    uBxN_fict = (1 / rhoB) * (rhoA * uAxN - (-s) * rhoJmp);
+            //else
                 uBxN_fict = uAxN;
 
             // compute the fluxes: note that for the continuity equation, we use not a real flux,
@@ -376,7 +375,7 @@ namespace BoSSS.Solution.XNSECommon.Operator.Continuity {
         LevelSetTracker m_lsTrk;
 
         public GeneralizedDivergenceAtLevelSet(int _D, LevelSetTracker lsTrk, double _rhoA, double _rhoB,
-            double vorZeichen, bool RescaleConti, double _kA, double _kB, double _hVapA, double _Rint, double _Tsat, double _sigma) {
+            double vorZeichen, bool RescaleConti, double _kA, double _kB, double _hVapA, double _Rint, double _Tsat, double _sigma, double _pc) {
             this.D = _D;
             this.rhoA = _rhoA;
             this.rhoB = _rhoB;
@@ -398,6 +397,7 @@ namespace BoSSS.Solution.XNSECommon.Operator.Continuity {
             //this.TintMin = _TintMin;
             this.Tsat = _Tsat;
             this.sigma = _sigma;
+            this.pc = _pc;
         }
 
         int D;
@@ -414,6 +414,7 @@ namespace BoSSS.Solution.XNSECommon.Operator.Continuity {
         //double TintMin;
         double Tsat;
         double sigma;
+        double pc;
 
 
         //double M;
@@ -426,29 +427,29 @@ namespace BoSSS.Solution.XNSECommon.Operator.Continuity {
         }
 
 
-        //private double ComputeEvaporationMass(double[] GradT_A, double[] GradT_B, double[] n) {
+        private double ComputeEvaporationMass_Macro(double[] GradT_A, double[] GradT_B, double[] n) {
 
-        //    double mEvap = 0.0;
+            double hVap = 0.0;
+            double qEvap = 0.0;
+            if(hVapA > 0) {
+                hVap = hVapA;
+                for(int d = 0; d < D; d++)
+                    qEvap += (kA * GradT_A[d] - kB * GradT_B[d]) * n[d];
+            } else {
+                hVap = -hVapA;
+                for(int d = 0; d < D; d++)
+                    qEvap += (kB * GradT_B[d] - kA * GradT_A[d]) * n[d];
+            }
 
-        //    // for testing purposes
-        //    double prescribedVolumeFlux = 0.1;
-        //    if(hVapA > 0) {
-        //        mEvap = -rhoA * prescribedVolumeFlux;
-        //    } else {
-        //        mEvap = rhoB * prescribedVolumeFlux;
-        //    }
+            return qEvap / hVap;
+        }
 
-        //    // TODO 
-
-        //    return mEvap;
-        //}
-
-        private double ComputeEvaporationMass(double T_A, double T_B, double curv, double p_disp) {
+        private double ComputeEvaporationMass_Micro(double T_A, double T_B, double curv, double p_disp) {
 
             if(hVapA == 0.0)
                 return 0.0;
 
-            double pc0 = 0.0; // sigma * curv + p_disp;   // augmented capillary pressure (without nonlinear evaporative masss part)
+            double pc0 = (pc < 0.0) ? sigma * curv + p_disp : pc;      // augmented capillary pressure (without nonlinear evaporative masss part)
 
             double TintMin = 0.0;
             double hVap = 0.0;
@@ -473,21 +474,28 @@ namespace BoSSS.Solution.XNSECommon.Operator.Continuity {
             double[] U_Neg, double[] U_Pos, double[,] Grad_uA, double[,] Grad_uB,
             double vA, double vB, double[] Grad_vA, double[] Grad_vB) {
 
-            Debug.Assert(cp.ParamsPos[1] == cp.ParamsNeg[1], "curvature must be continuous across interface");
-            Debug.Assert(cp.ParamsPos[2] == cp.ParamsNeg[2], "disjoining pressure must be continuous across interface");
+            Debug.Assert(cp.ParamsPos[D + 1] == cp.ParamsNeg[D + 1], "curvature must be continuous across interface");
+            Debug.Assert(cp.ParamsPos[D + 2] == cp.ParamsNeg[D + 2], "disjoining pressure must be continuous across interface");
 
-            double M = ComputeEvaporationMass(cp.ParamsNeg[0], cp.ParamsPos[0], cp.ParamsNeg[1], cp.ParamsNeg[2]);
+            double M = ComputeEvaporationMass_Macro(cp.ParamsNeg.GetSubVector(0, D), cp.ParamsPos.GetSubVector(0, D), cp.n);
+            //double M = ComputeEvaporationMass_Micro(cp.ParamsNeg[D], cp.ParamsPos[D], cp.ParamsNeg[D + 1], cp.ParamsNeg[D + 2]);
+            if(M == 0.0)
+                return 0.0;
+
+            //Console.WriteLine("mEvap - GeneralizedDivergenceAtLevelSet: {0}", M);
 
             double uAxN = -M * (1 / rhoA);
             double uBxN = -M * (1 / rhoB);
 
             // transform from species B to A: we call this the "A-fictitious" value
             double uAxN_fict;
-            uAxN_fict = (1 / rhoA) * (rhoB * uBxN);
+            //uAxN_fict = (1 / rhoA) * (rhoB * uBxN);
+            uAxN_fict = uBxN;
 
             // transform from species A to B: we call this the "B-fictitious" value
             double uBxN_fict;
-            uBxN_fict = (1 / rhoB) * (rhoA * uAxN);
+            //uBxN_fict = (1 / rhoB) * (rhoA * uAxN);
+            uBxN_fict = uAxN;
 
 
             // compute the fluxes: note that for the continuity equation, we use not a real flux,
@@ -498,7 +506,9 @@ namespace BoSSS.Solution.XNSECommon.Operator.Continuity {
             FlxNeg *= scaleA;
             FlxPos *= scaleB;
 
-            return FlxNeg * vA - FlxPos * vB;
+            double Ret = FlxNeg * vA - FlxPos * vB;
+
+            return -Ret;
         }
 
 
@@ -519,7 +529,7 @@ namespace BoSSS.Solution.XNSECommon.Operator.Continuity {
 
         public IList<string> ParameterOrdering {
             get {
-                return new string[] { VariableNames.Temperature, "Curvature", "DisjoiningPressure" }; //{ "GradTempX", "GradTempY", "GradTempZ" }.GetSubVector(0, D);
+                return ArrayTools.Cat(new string[] { "GradTempX", "GradTempY", "GradTempZ" }.GetSubVector(0, D), VariableNames.Temperature, "Curvature", "DisjoiningPressure"); //;
             }
         }
 

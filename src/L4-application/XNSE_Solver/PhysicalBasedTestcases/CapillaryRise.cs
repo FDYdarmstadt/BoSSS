@@ -353,7 +353,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
 
                         t_end = 13.86;
                         t_startUp = 0.5204; // 0.49032;
-                        dt = 2e-5;
+                        dt = 5e-5; // dt = 1e-4; // dt = 2e-5;
                         dt_startUp = 3e-5;
 
                         //restartID = new Guid("07ca4397-8eed-4769-b795-9725fe7d3cd7");
@@ -363,7 +363,11 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
                         //ts_restart = 13010;
 
                         //restartID = new Guid("868a08d9-5b44-4462-9a2c-121cfc07e5db");
-                        restartID = new Guid("c3cef42c-f9e5-4757-a618-e9a4002e445f"); // restart with ReInit
+                        //restartID = new Guid("c3cef42c-f9e5-4757-a618-e9a4002e445f"); // restart with ReInit
+                        //restartID = new Guid("a191b8d0-1cca-431a-bf00-a1231c61dee6"); // restart2 with ReInit
+
+                        restartID = new Guid("02f7d2b1-7546-45b3-808f-d2b6f89d68bf"); // restart with Reinit highdt (1e-4)
+                        ts_restart = 186000;
 
                         //restartID = new Guid("2f9deaa6-fab9-48ac-9279-319a1efa5547");
 

@@ -407,7 +407,7 @@ namespace BoSSS.Solution.XNSECommon.Operator.Viscosity {
 
         LevelSetTracker m_LsTrk;
 
-        public GeneralizedViscosityAtLevelSet_FullySymmetric(LevelSetTracker lstrk, double _muA, double _muB, double _penalty, int _component, double _rhoA, double _rhoB, double _M) {
+        public GeneralizedViscosityAtLevelSet_FullySymmetric(LevelSetTracker lstrk, double _muA, double _muB, double _penalty, int _component, double _rhoA, double _rhoB, double _kA, double _kB, double _hVapA, double _Rint, double _Tsat, double _sigma, double _pc) {
             this.m_LsTrk = lstrk;
             this.muA = _muA;
             this.muB = _muB;
@@ -417,7 +417,15 @@ namespace BoSSS.Solution.XNSECommon.Operator.Viscosity {
 
             this.rhoA = _rhoA;
             this.rhoB = _rhoB;
-            this.M = _M;
+            //this.M = _M;
+            this.kA = _kA;
+            this.kB = _kB;
+            this.hVapA = _hVapA;
+            this.Rint = _Rint;
+            //this.TintMin = _TintMin;
+            this.Tsat = _Tsat;
+            this.sigma = _sigma;
+            this.pc = _pc;
         }
 
         double muA;
@@ -428,7 +436,62 @@ namespace BoSSS.Solution.XNSECommon.Operator.Viscosity {
 
         double rhoA;
         double rhoB;
-        double M;
+
+        double kA;
+        double kB;
+        double hVapA;   // for the identification of the liquid phase
+        double Rint;
+        //double TintMin;
+        double Tsat;
+        double sigma;
+        double pc;
+
+        //double M;
+
+
+        private double ComputeEvaporationMass_Macro(double[] GradT_A, double[] GradT_B, double[] n) {
+
+            double hVap = 0.0;
+            double qEvap = 0.0;
+            if(hVapA > 0) {
+                hVap = hVapA;
+                for(int d = 0; d < m_D; d++)
+                    qEvap += (kA * GradT_A[d] - kB * GradT_B[d]) * n[d];
+            } else {
+                hVap = -hVapA;
+                for(int d = 0; d < m_D; d++)
+                    qEvap += (kB * GradT_B[d] - kA * GradT_A[d]) * n[d];
+            }
+
+            return qEvap / hVap;
+        }
+
+        private double ComputeEvaporationMass_Micro(double T_A, double T_B, double curv, double p_disp) {
+
+            if(hVapA == 0.0)
+                return 0.0;
+
+            double pc0 = (pc < 0.0) ? sigma * curv + p_disp : pc;      // augmented capillary pressure (without nonlinear evaporative masss part)
+
+            double TintMin = 0.0;
+            double hVap = 0.0;
+            double qEvap = 0.0;
+            if(hVapA > 0) {
+                hVap = hVapA;
+                TintMin = Tsat * (1 + (pc0 / (hVap * rhoA)));
+                if(T_A > TintMin)
+                    qEvap = -(T_A - TintMin) / Rint;
+            } else if(hVapA < 0) {
+                hVap = -hVapA;
+                TintMin = Tsat * (1 + (pc0 / (hVap * rhoB)));
+                if(T_B > TintMin)
+                    qEvap = (T_B - TintMin) / Rint;
+            }
+
+            return qEvap / hVap;
+        }
+
+
 
         /// <summary>
         /// default-implementation
@@ -440,16 +503,16 @@ namespace BoSSS.Solution.XNSECommon.Operator.Viscosity {
             double hCellMin = this.m_LsTrk.GridDat.Cells.h_min[inp.jCell];
 
             int D = N.Length;
-            Debug.Assert(this.ArgumentOrdering.Count == D);
-            Debug.Assert(Grad_uA.GetLength(0) == this.ArgumentOrdering.Count);
-            Debug.Assert(Grad_uB.GetLength(0) == this.ArgumentOrdering.Count);
-            Debug.Assert(Grad_uA.GetLength(1) == D);
-            Debug.Assert(Grad_uB.GetLength(1) == D);
+            //Debug.Assert(this.ArgumentOrdering.Count == D);
+            //Debug.Assert(Grad_uA.GetLength(0) == this.ArgumentOrdering.Count);
+            //Debug.Assert(Grad_uB.GetLength(0) == this.ArgumentOrdering.Count);
+            //Debug.Assert(Grad_uA.GetLength(1) == D);
+            //Debug.Assert(Grad_uB.GetLength(1) == D);
 
             double Grad_uA_xN = 0, Grad_uB_xN = 0, Grad_vA_xN = 0, Grad_vB_xN = 0;
             for(int d = 0; d < D; d++) {
-                Grad_uA_xN += Grad_uA[component, d] * N[d];
-                Grad_uB_xN += Grad_uB[component, d] * N[d];
+                //Grad_uA_xN += Grad_uA[component, d] * N[d];
+                //Grad_uB_xN += Grad_uB[component, d] * N[d];
                 Grad_vA_xN += Grad_vA[d] * N[d];
                 Grad_vB_xN += Grad_vB[d] * N[d];
             }
@@ -463,6 +526,11 @@ namespace BoSSS.Solution.XNSECommon.Operator.Viscosity {
                 // very small cell -- clippling
                 hCutCellMin = hCellMin;
 
+            double M = ComputeEvaporationMass_Macro(inp.ParamsNeg.GetSubVector(0, m_D), inp.ParamsPos.GetSubVector(0, m_D), N);
+            //double M = ComputeEvaporationMass_Micro(cp.ParamsNeg[m_D], cp.ParamsPos[m_D], cp.ParamsNeg[m_D + 1], cp.ParamsNeg[m_D + 2]);
+            if(M == 0.0)
+                return 0.0;
+
             Debug.Assert(uA.Length == this.ArgumentOrdering.Count);
             Debug.Assert(uB.Length == this.ArgumentOrdering.Count);
             //switch (m_ViscosityImplementation) {
@@ -470,15 +538,15 @@ namespace BoSSS.Solution.XNSECommon.Operator.Viscosity {
             //    case ViscosityImplementation.H: {
             double muMax = (Math.Abs(muA) > Math.Abs(muB)) ? muA : muB;
             //Ret -= 0.5 * (muA * Grad_uA_xN + muB * Grad_uB_xN) * (vA - vB);                           // consistency term
-            Ret -= 0.5 * (muA * Grad_vA_xN + muB * Grad_vB_xN) * M * ((1/rhoA) - (1/rhoB)) * N[component];     // symmetry term
-            Ret += (penalty / hCutCellMin) * M * ((1 / rhoA) - (1 / rhoB)) * N[component] * (vA - vB) * muMax; // penalty term
+            Ret += 0.5 * (muA * Grad_vA_xN + muB * Grad_vB_xN) * M * ((1/rhoA) - (1/rhoB)) * N[component];     // symmetry term
+            Ret -= (penalty / hCutCellMin) * M * ((1 / rhoA) - (1 / rhoB)) * N[component] * (vA - vB) * muMax; // penalty term
                                                                                                                // Transpose Term
             for(int i = 0; i < D; i++) {
                 //Ret -= 0.5 * (muA * Grad_uA[i, component] + muB * Grad_uB[i, component]) * (vA - vB) * N[i];  // consistency term
-                Ret -= 0.5 * (muA * Grad_vA[i] + muB * Grad_vB[i]) * N[component] * M * ((1 / rhoA) - (1 / rhoB)) * N[i];
+                Ret += 0.5 * (muA * Grad_vA[i] + muB * Grad_vB[i]) * N[component] * M * ((1 / rhoA) - (1 / rhoB)) * N[i];
             }
 
-            return Ret;
+            return -Ret;
         }
 
 
@@ -497,7 +565,7 @@ namespace BoSSS.Solution.XNSECommon.Operator.Viscosity {
         }
 
         public IList<string> ArgumentOrdering {
-            get { return VariableNames.VelocityVector(this.m_D); }
+            get { return new string[] { }; }
         }
 
         public SpeciesId PositiveSpecies {
@@ -515,7 +583,9 @@ namespace BoSSS.Solution.XNSECommon.Operator.Viscosity {
         }
 
         public IList<string> ParameterOrdering {
-            get { return null; }
+            get {
+                return ArrayTools.Cat(new string[] { "GradTempX", "GradTempY", "GradTempZ" }.GetSubVector(0, m_D), VariableNames.Temperature, "Curvature", "DisjoiningPressure"); //;
+            }
         }
 
 

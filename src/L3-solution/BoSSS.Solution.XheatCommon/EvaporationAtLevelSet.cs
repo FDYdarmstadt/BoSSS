@@ -41,7 +41,7 @@ namespace BoSSS.Solution.XheatCommon {
         /// <param name="_D">spatial dimension</param>
         /// <param name="LsTrk"></param>
         /// <param name="_sigma">surface-tension constant</param>
-        public EvaporationAtLevelSet(LevelSetTracker LsTrk, double _hVapA, double _Rint, double _Tsat, double _rho, double _sigma) {
+        public EvaporationAtLevelSet(LevelSetTracker LsTrk, double _hVapA, double _Rint, double _Tsat, double _rho, double _sigma, double _pc, double _kA, double _kB) {
             m_LsTrk = LsTrk;
             //this.mEvap = _mEvap;
             //this.hVap = _hVap;
@@ -50,7 +50,12 @@ namespace BoSSS.Solution.XheatCommon {
             this.Tsat = _Tsat;
             this.rho = _rho;
             this.sigma = _sigma;
+            this.pc = _pc;
 
+            this.kA = _kA;
+            this.kB = _kB;
+
+            this.D = LsTrk.GridDat.SpatialDimension;
         }
 
         //double mEvap;
@@ -61,14 +66,37 @@ namespace BoSSS.Solution.XheatCommon {
         double Tsat;
         double rho;     // density of liquid phase 
         double sigma;
+        double pc;
+
+        double kA;
+        double kB;
+
+        int D;
 
 
-        private double ComputeHeatFlux(double T_A, double T_B, double curv, double p_disp) {
+        private double ComputeHeatFlux_Macro(double[] GradT_A, double[] GradT_B, double[] n) {
+
+            double hVap = 0.0;
+            double qEvap = 0.0;
+            if(hVapA > 0) {
+                hVap = hVapA;
+                for(int d = 0; d < D; d++)
+                    qEvap += (kA * GradT_A[d] - kB * GradT_B[d]) * n[d];
+            } else {
+                hVap = -hVapA;
+                for(int d = 0; d < D; d++)
+                    qEvap += (kB * GradT_B[d] - kA * GradT_A[d]) * n[d];
+            }
+
+            return qEvap;
+        }
+
+        private double ComputeHeatFlux_Micro(double T_A, double T_B, double curv, double p_disp) {
 
             if(hVapA == 0.0)
                 return 0.0;
 
-            double pc0 = 0.0; // sigma*curv + p_disp;   // augmented capillary pressure (without nonlinear evaporative masss part)
+            double pc0 = (pc < 0.0) ? sigma * curv + p_disp : pc;      // augmented capillary pressure (without nonlinear evaporative masss part)
 
             double TintMin = 0.0;
             double hVap = 0.0;
@@ -91,12 +119,15 @@ namespace BoSSS.Solution.XheatCommon {
 
         public double LevelSetForm(ref CommonParamsLs cp, double[] uA, double[] uB, double[,] Grad_uA, double[,] Grad_uB, double vA, double vB, double[] Grad_vA, double[] Grad_vB) {
 
-            Debug.Assert(cp.ParamsPos[1] == cp.ParamsNeg[1], "curvature must be continuous across interface");
-            Debug.Assert(cp.ParamsPos[2] == cp.ParamsNeg[2], "disjoining pressure must be continuous across interface");
+            Debug.Assert(cp.ParamsPos[D + 1] == cp.ParamsNeg[D + 1], "curvature must be continuous across interface");
+            Debug.Assert(cp.ParamsPos[D + 2] == cp.ParamsNeg[D + 2], "disjoining pressure must be continuous across interface");
 
-            double qEvap = ComputeHeatFlux(cp.ParamsNeg[0], cp.ParamsPos[0], cp.ParamsNeg[1], cp.ParamsNeg[2]);
+            double qEvap = ComputeHeatFlux_Macro(cp.ParamsNeg.GetSubVector(0, D), cp.ParamsPos.GetSubVector(0, D), cp.n);
+            //double qEvap = ComputeHeatFlux_Micro(cp.ParamsNeg[D], cp.ParamsPos[D], cp.ParamsNeg[D + 1], cp.ParamsNeg[D + 2]);
+            if(qEvap == 0.0)
+                return 0.0;
 
-            //double massFluxEvap = mEvap * hVap;
+            //Console.WriteLine("qEvap - EvaporationAtLevelSet: {0}", qEvap);
 
             double FlxNeg = -0.5 * qEvap;
             double FlxPos = +0.5 * qEvap;
@@ -116,7 +147,7 @@ namespace BoSSS.Solution.XheatCommon {
 
         public IList<string> ParameterOrdering {
             get {
-                return new string[] { "Temperature0", "Curvature", "DisjoiningPressure" };
+                return ArrayTools.Cat( new string[] { "GradTemp0_X", "GradTemp0_Y", "GradTemp0_Z" }.GetSubVector(0, D), "Temperature0", "Curvature", "DisjoiningPressure" );
             }
         }
 

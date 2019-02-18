@@ -2394,84 +2394,169 @@ namespace BoSSS.Application.XNSE_Solver {
                 #endregion
 
 
-                // ==================================================================
-                // compute source terms for the interface evolution, e.g. evaporation
-                // ==================================================================
+                // =============================================
+                // compute interface velocity due to evaporation
+                // =============================================
 
-                #region Compute volume flux
+                #region Compute evaporative velocity
 
                 SinglePhaseField LevSetSrc = new SinglePhaseField(meanVelocity[0].Basis, "LevelSetSource");
+
                 if(this.Control.solveCoupledHeatEquation &&
                     this.Control.ThermalParameters.hVap_A != 0.0 && this.Control.ThermalParameters.hVap_B != 0.0) {
 
-                    double f = this.Control.ThermalParameters.fc;
-                    double Tsat = this.Control.ThermalParameters.T_sat;
-                    double R = this.Control.ThermalParameters.Rc;
-                    //double pc = this.Control.ThermalParameters.pc;
+                    SinglePhaseField[] evapVelocity = new SinglePhaseField[D];
 
-                    double rho_l = 0.0;
-                    double h_Vap = 0.0;
-                    double R_int = 0.0;
-                    double dir = 0.0;   // direction of volume flow
-                    DGField Temp_Vap = new SinglePhaseField(meanVelocity[0].Basis);
-                    if(this.Control.ThermalParameters.hVap_A > 0 && this.Control.ThermalParameters.hVap_B < 0) {
-                        rho_l = this.Control.PhysicalParameters.rho_A;
-                        h_Vap = this.Control.ThermalParameters.hVap_A;
-                        Temp_Vap = Temperature.GetSpeciesShadowField("A");
-                        R_int = ((2.0 - f) / (2 * f)) * Tsat * Math.Sqrt(2 * Math.PI * R * Tsat) / (this.Control.PhysicalParameters.rho_B * h_Vap.Pow2());
-                        dir = 1.0;
-                    } else if(this.Control.ThermalParameters.hVap_A < 0 && this.Control.ThermalParameters.hVap_B > 0) {
-                        rho_l = this.Control.PhysicalParameters.rho_B;
-                        h_Vap = this.Control.ThermalParameters.hVap_B;
-                        Temp_Vap = Temperature.GetSpeciesShadowField("B");
-                        R_int = ((2.0 - f) / (2 * f)) * Tsat * Math.Sqrt(2 * Math.PI * R * Tsat) / (this.Control.PhysicalParameters.rho_A * h_Vap.Pow2());
-                        dir = -1.0;
+                    // evaporation for macro region
+                    #region macro evaporation
+
+                    double kA = this.Control.ThermalParameters.k_A;
+                    double kB = this.Control.ThermalParameters.k_B;
+
+                    for(int d = 0; d < D; d++) {
+                        evapVelocity[d] = new SinglePhaseField(meanVelocity[0].Basis, "evapVelocity_d" + d);
+
+                        evapVelocity[d].ProjectField(1.0,
+                           delegate (int j0, int Len, NodeSet NS, MultidimensionalArray result) {
+                               int K = result.GetLength(1); // No nof Nodes
+
+                               MultidimensionalArray GradTempA_Res = MultidimensionalArray.Create(Len, K, D);
+                               MultidimensionalArray GradTempB_Res = MultidimensionalArray.Create(Len, K, D);
+
+                               this.Temperature.GetSpeciesShadowField("A").EvaluateGradient(j0, Len, NS, GradTempA_Res);
+                               this.Temperature.GetSpeciesShadowField("B").EvaluateGradient(j0, Len, NS, GradTempB_Res);
+
+                               var Normals = LsTrk.DataHistories[0].Current.GetLevelSetNormals(NS, j0, Len);
+
+                               for(int j = 0; j < Len; j++) {
+                                   for(int k = 0; k < K; k++) {
+
+                                       double hVap = 0.0;
+                                       double rho_l = 0.0;
+                                       double rho_v = 0.0;
+                                       double qEvap = 0.0;
+                                       if(this.Control.ThermalParameters.hVap_A > 0) {
+                                           hVap = this.Control.ThermalParameters.hVap_A;
+                                           rho_l = this.Control.PhysicalParameters.rho_A;
+                                           rho_v = this.Control.PhysicalParameters.rho_B;
+                                           for(int dd = 0; dd < D; dd++)
+                                               qEvap += (kA * GradTempA_Res[j, k, dd] - kB * GradTempB_Res[j, k, dd]) * Normals[j, k, dd];
+                                       } else {
+                                           hVap = -this.Control.ThermalParameters.hVap_A;
+                                           rho_l = this.Control.PhysicalParameters.rho_B;
+                                           rho_v = this.Control.PhysicalParameters.rho_A;
+                                           for(int dd = 0; dd < D; dd++)
+                                               qEvap += (kB * GradTempB_Res[j, k, dd] - kA * GradTempA_Res[j, k, dd]) * Normals[j, k, dd];
+                                       }
+
+                                       double mEvap = qEvap / hVap; // mass flux
+                                       //result[j, k] = mEvap * ((1 / rho_v) - (1 / rho_l)) * Normals[j, k, d];   //
+                                       result[j, k] = mEvap * (1 / rho_v)* Normals[j, k, d];   //
+                                       //result[j, k] = - Normals[j, k, d];   //
+                                   }
+                               }
+                           }, new Foundation.Quadrature.CellQuadratureScheme(true, LsTrk.Regions.GetCutCellMask()));
+
                     }
-                    //double R_int = ((2.0 - f) / (2 * f)) * Tsat * Math.Sqrt(2 * Math.PI * R * Tsat) / (rho_l * h_Vap.Pow2());
-                    //double T_intMin = Tsat * (1 + (pc / (rho * h_Vap)));
 
-                    //var SchemeHelper = LsTrk.GetXDGSpaceMetrics(new[] { LsTrk.GetSpeciesId("A") }, this.m_HMForder, 1).XQuadSchemeHelper;
-                    //CellQuadratureScheme cqs = SchemeHelper.GetLevelSetquadScheme(0, LsTrk.Regions.GetCutCellMask());
+                    #endregion
 
-                    LevSetSrc.ProjectField(1.0,
-                    delegate (int j0, int Len, NodeSet NS, MultidimensionalArray result) {
-                        int K = result.GetLength(1); // No nof Nodes
+                    // evaporation for micro region 
+                    #region micro evaporation
 
-                        //BitArray sbba = new BitArray(this.Grid.NoOfUpdateCells);
-                        //for(int j = j0; j < j0 + Len; j++)
-                        //    sbba[j] = true;
-                        //SubGrid sbgrd = new SubGrid(new CellMask(this.GridData, sbba));
-                        //var cp = new BoSSS.Solution.LevelSetTools.ClosestPointFinder(this.LsTrk, 0, sbgrd, new NodeSet[] { NS });
+                    //double f = this.Control.ThermalParameters.fc;
+                    //double Tsat = this.Control.ThermalParameters.T_sat;
+                    //double R = this.Control.ThermalParameters.Rc;
 
-                        //MultidimensionalArray CurvIntRes = cp.EvaluateAtCp(this.Curvature);
-                        //MultidimensionalArray pDisIntRes = cp.EvaluateAtCp(this.DisjoiningPressure);
-                        //MultidimensionalArray TempIntRes = cp.EvaluateAtCp(Temp_Vap);
+                    //double rho_l = 0.0;
+                    //double h_Vap = 0.0;
+                    //double R_int = 0.0;
+                    //double dir = 0.0;   // direction of volume flow
+                    //DGField Temp_Vap = new SinglePhaseField(meanVelocity[0].Basis);
+                    //if(this.Control.ThermalParameters.hVap_A > 0 && this.Control.ThermalParameters.hVap_B < 0) {
+                    //    rho_l = this.Control.PhysicalParameters.rho_A;
+                    //    h_Vap = this.Control.ThermalParameters.hVap_A;
+                    //    Temp_Vap = Temperature.GetSpeciesShadowField("A");
+                    //    R_int = ((2.0 - f) / (2 * f)) * Tsat * Math.Sqrt(2 * Math.PI * R * Tsat) / (this.Control.PhysicalParameters.rho_B * h_Vap.Pow2());
+                    //    dir = 1.0;
+                    //} else if(this.Control.ThermalParameters.hVap_A < 0 && this.Control.ThermalParameters.hVap_B > 0) {
+                    //    rho_l = this.Control.PhysicalParameters.rho_B;
+                    //    h_Vap = this.Control.ThermalParameters.hVap_B;
+                    //    Temp_Vap = Temperature.GetSpeciesShadowField("B");
+                    //    R_int = ((2.0 - f) / (2 * f)) * Tsat * Math.Sqrt(2 * Math.PI * R * Tsat) / (this.Control.PhysicalParameters.rho_A * h_Vap.Pow2());
+                    //    dir = -1.0;
+                    //}
+                    //double p_c = this.Control.ThermalParameters.pc;
 
-                        MultidimensionalArray CurvIntRes = MultidimensionalArray.Create(Len, K);
-                        MultidimensionalArray pDisIntRes = MultidimensionalArray.Create(Len, K);
-                        MultidimensionalArray TempIntRes = MultidimensionalArray.Create(Len, K);
+                    //LevSetSrc.ProjectField(1.0,
+                    //delegate (int j0, int Len, NodeSet NS, MultidimensionalArray result) {
+                    //    int K = result.GetLength(1); // No nof Nodes
 
-                        this.Curvature.Evaluate(j0, Len, NS, CurvIntRes);
-                        this.DisjoiningPressure.Evaluate(j0, Len, NS, pDisIntRes);
-                        Temp_Vap.Evaluate(j0, Len, NS, TempIntRes);
+                    //    //BitArray sbba = new BitArray(this.Grid.NoOfUpdateCells);
+                    //    //for(int j = j0; j < j0 + Len; j++)
+                    //    //    sbba[j] = true;
+                    //    //SubGrid sbgrd = new SubGrid(new CellMask(this.GridData, sbba));
+                    //    //var cp = new BoSSS.Solution.LevelSetTools.ClosestPointFinder(this.LsTrk, 0, sbgrd, new NodeSet[] { NS });
 
-                        for(int j = 0; j < Len; j++) {
-                            for(int k = 0; k < K; k++) {
+                    //    //MultidimensionalArray CurvIntRes = cp.EvaluateAtCp(this.Curvature);
+                    //    //MultidimensionalArray pDisIntRes = cp.EvaluateAtCp(this.DisjoiningPressure);
+                    //    //MultidimensionalArray TempIntRes = cp.EvaluateAtCp(Temp_Vap);
 
-                                double pc0 = 0.0; // this.Control.PhysicalParameters.Sigma * CurvIntRes[j,k] + pDisIntRes[j,k];   // augmented capillary pressure (without nonlinear evaporative masss part)
-                                double T_intMin = Tsat * (1 + (pc0 / (rho_l * h_Vap)));
+                    //    MultidimensionalArray CurvIntRes = MultidimensionalArray.Create(Len, K);
+                    //    MultidimensionalArray pDisIntRes = MultidimensionalArray.Create(Len, K);
+                    //    MultidimensionalArray TempIntRes = MultidimensionalArray.Create(Len, K);
 
-                                double qEvap = 0.0;
-                                double T_int = TempIntRes[j, k];
-                                if(T_int > T_intMin)
-                                    qEvap = dir * (T_int - T_intMin) / R_int;
+                    //    this.Curvature.Evaluate(j0, Len, NS, CurvIntRes);
+                    //    this.DisjoiningPressure.Evaluate(j0, Len, NS, pDisIntRes);
+                    //    Temp_Vap.Evaluate(j0, Len, NS, TempIntRes);
 
-                                result[j, k] = qEvap * (h_Vap / rho_l); // volume flux
-                            }
-                        }
-                    }, new Foundation.Quadrature.CellQuadratureScheme(true, LsTrk.Regions.GetNearFieldMask(1)));
+                    //    for(int j = 0; j < Len; j++) {
+                    //        for(int k = 0; k < K; k++) {
 
-                    Tecplot.PlotFields(new DGField[] { LevSetSrc }, "LevelSetSource" + hack_TimestepIndex, hack_Phystime, 2);
+                    //            double pc0 = (p_c < 0.0) ? this.Control.PhysicalParameters.Sigma * CurvIntRes[j, k] + pDisIntRes[j, k] : p_c;      // augmented capillary pressure (without nonlinear evaporative masss part)
+
+                    //            double T_intMin = Tsat * (1 + (pc0 / (rho_l * h_Vap)));
+
+                    //            double qEvap = 0.0;
+                    //            double T_int = TempIntRes[j, k];
+                    //            if(T_int > T_intMin)
+                    //                qEvap = dir * (T_int - T_intMin) / R_int;
+
+                    //            result[j, k] = qEvap * (h_Vap / rho_l); // volume flux
+                    //        }
+                    //    }
+                    //}, new Foundation.Quadrature.CellQuadratureScheme(true, LsTrk.Regions.GetNearFieldMask(1)));
+
+                    #endregion
+
+
+                    // check interface velocity
+                    int p = evapVelocity[0].Basis.Degree;
+                    SubGrid sgrd = LsTrk.Regions.GetCutCellSubgrid4LevSet(0);
+                    NodeSet[] Nodes = LsTrk.GridDat.Grid.RefElements.Select(Kref => Kref.GetQuadratureRule(p * 2).Nodes).ToArray();
+
+                    var cp = new ClosestPointFinder(LsTrk, 0, sgrd, Nodes);
+
+                    MultidimensionalArray[] VelocityEval = evapVelocity.Select(sf => cp.EvaluateAtCp(sf)).ToArray();
+
+                    double nNodes = VelocityEval[0].Length;
+                    double evapVelX = VelocityEval[0].Sum() / nNodes;
+                    double evapVelY = VelocityEval[1].Sum() / nNodes;
+                    Console.WriteLine("EvapVelocity: ({0},{1})", evapVelX, evapVelY);
+
+                    // plot
+                    Tecplot.PlotFields(evapVelocity.ToArray(), "EvapVelocity" + hack_TimestepIndex, hack_Phystime, 2);
+
+                    for(int d = 0; d < D; d++) {
+                        //SinglePhaseField FiltEvapVeloc = new SinglePhaseField(evapVelocity[d].Basis);
+                        //FiltEvapVeloc.AccLaidBack(1.0, evapVelocity[d]);
+                        //Filter(FiltEvapVeloc, 2, LsTrk.Regions.GetCutCellMask());
+                        //evapVelocity[d].Clear();
+                        //evapVelocity[d].Acc(1.0, FiltEvapVeloc);
+
+                        meanVelocity[d].Clear();
+                        meanVelocity[d].Acc(1.0, evapVelocity[d]);
+                    }
                 }
 
                 #endregion
@@ -4338,6 +4423,7 @@ namespace BoSSS.Application.XNSE_Solver {
                  VariableNames.VelocityVector(D),
                  (new string[] { "VelocityX_Mean", "VelocityY_Mean", "VelocityZ_Mean" }).GetSubVector(0, D),
                  (new string[] { "NX", "NY", "NZ" }).GetSubVector(0, D),
+                 (new string[] { "GradTemp0_X", "GradTemp0_Y", "GradTemp0_Z" }.GetSubVector(0, D)),
                  "Temperature0", "Curvature", "DisjoiningPressure");
             string[] DomName = new string[] { VariableNames.Temperature };
 
@@ -4351,6 +4437,8 @@ namespace BoSSS.Application.XNSE_Solver {
 
             double hVapA = this.Control.ThermalParameters.hVap_A;
             double hVapB = this.Control.ThermalParameters.hVap_B;
+
+            double Tsat = this.Control.ThermalParameters.T_sat;
 
             var dntParams = this.Control.AdvancedDiscretizationOptions;
 
@@ -4366,7 +4454,7 @@ namespace BoSSS.Application.XNSE_Solver {
                 // convective part
                 // ================
                 {
-                    if(this.Control.PhysicalParameters.IncludeConvection) {
+                    if(this.Control.ThermalParameters.IncludeConvection) {
 
                         var comps = Xheat_Operator.EquationComponents[CodName[0]];
 
@@ -4419,7 +4507,7 @@ namespace BoSSS.Application.XNSE_Solver {
                     }
 
                     // Level-Set operator:
-                    comps.Add(new ConductivityAtLevelSet(LsTrk, kA, kB, penalty * 1.0));
+                    comps.Add(new ConductivityAtLevelSet(LsTrk, kA, kB, penalty * 1.0, Tsat));
                 }
 
                 // mass flux at interface
@@ -4437,7 +4525,6 @@ namespace BoSSS.Application.XNSE_Solver {
                         //    mEvap = this.Control.ThermalParameters.rho_B * prescribedVolumeFlux;
                         //}
 
-                        double Tsat = this.Control.ThermalParameters.T_sat;
                         double f = this.Control.ThermalParameters.fc;
                         double R = this.Control.ThermalParameters.Rc;
 
@@ -4451,7 +4538,8 @@ namespace BoSSS.Application.XNSE_Solver {
                             R_int = ((2.0 - f) / (2 * f)) * Tsat * Math.Sqrt(2 * Math.PI * R * Tsat) / (rhoA * hVapB.Pow2());
                         }
 
-                        Xheat_Operator.EquationComponents[CodName[0]].Add(new EvaporationAtLevelSet(LsTrk, hVapA, R_int, Tsat, rho_l, this.Control.PhysicalParameters.Sigma));
+                        Xheat_Operator.EquationComponents[CodName[0]].Add(new EvaporationAtLevelSet(LsTrk, hVapA, R_int, Tsat, rho_l, 
+                            this.Control.PhysicalParameters.Sigma, this.Control.ThermalParameters.pc, this.Control.ThermalParameters.k_A, this.Control.ThermalParameters.k_B));
                     }
 
                 }
@@ -4494,6 +4582,10 @@ namespace BoSSS.Application.XNSE_Solver {
             var TempMap = new CoordinateMapping(this.Temperature);
             DGField[] TempParam = TempMap.Fields.ToArray();
 
+            // Temperature gradient for evaporation
+            VectorField<DGField> GradTempParam = new VectorField<DGField>(D, TempParam[0].Basis, XDGField.Factory);
+            GradTempParam = new VectorField<DGField>(D, TempParam[0].Basis, "GradTemp0_", XDGField.Factory);
+            XNSEUtils.ComputeGradientForParam(TempParam[0], GradTempParam, this.LsTrk);
 
 
             // concatenate everything
@@ -4501,6 +4593,7 @@ namespace BoSSS.Application.XNSE_Solver {
                 VelParam,
                 VelMeanParam,
                 Normals,
+                GradTempParam,
                 TempParam,
                 this.Curvature,
                 this.DisjoiningPressure);

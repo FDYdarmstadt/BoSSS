@@ -127,7 +127,8 @@ namespace BoSSS.Solution.XNSECommon {
                 "Curvature",
                 (new string[] { "surfForceX", "surfForceY", "surfForceZ" }).GetSubVector(0, D),
                 (new string[] { "NX", "NY", "NZ" }).GetSubVector(0, D),
-                VariableNames.Temperature, //"(new string[] { "GradTempX", "GradTempY", "GradTempZ" }.GetSubVector(0, D))
+                (new string[] { "GradTempX", "GradTempY", "GradTempZ" }.GetSubVector(0, D)),
+                VariableNames.Temperature,
                 "DisjoiningPressure");
             DomName = ArrayTools.Cat(VariableNames.VelocityVector(D), VariableNames.Pressure);
 
@@ -172,6 +173,7 @@ namespace BoSSS.Solution.XNSECommon {
                 }
                 this.CurvatureRequired = true;
             }
+            double p_c = config.thermParams.pc;
 
             //double mEvap = 0.0;
             //if(this.evaporation) {
@@ -213,7 +215,7 @@ namespace BoSSS.Solution.XNSECommon {
                         comps.Add(new Operator.Convection.ConvectionAtLevelSet_LLF(d, D, LsTrk, rhoA, rhoB, LFFA, LFFB, config.physParams.Material, BcMap, movingmesh));       // LevelSet component
 
                         if(evaporation) {
-                            comps.Add(new Operator.Convection.GeneralizedConvectionAtLevelSet_DissipativePart(d, D, LsTrk, rhoA, rhoB, LFFA, LFFB, BcMap, kA, kB, hVapA, hVapB, R_int, Tsat, sigma));
+                            comps.Add(new Operator.Convection.GeneralizedConvectionAtLevelSet_DissipativePart(d, D, LsTrk, rhoA, rhoB, LFFA, LFFB, BcMap, kA, kB, hVapA, hVapB, R_int, Tsat, sigma, p_c));
                         }
 
                         // variante 3:
@@ -348,9 +350,8 @@ namespace BoSSS.Solution.XNSECommon {
                                     // Level-Set operator
                                     comps.Add(new Operator.Viscosity.ViscosityAtLevelSet_FullySymmetric(LsTrk, muA, muB, penalty, d, dntParams.UseWeightedAverages));
 
-                                    //if(this.evaporation) {
-                                    //    comps.Add(new Operator.Viscosity.GeneralizedViscosityAtLevelSet_FullySymmetric(LsTrk, muA, muB, penalty, d, rhoA, rhoB, mEvap));
-                                    //}
+                                    if(this.evaporation)
+                                        comps.Add(new Operator.Viscosity.GeneralizedViscosityAtLevelSet_FullySymmetric(LsTrk, muA, muB, penalty, d, rhoA, rhoB, kA, kB, hVapA, R_int, Tsat, sigma, p_c));
 
                                     break;
                                 }
@@ -378,7 +379,7 @@ namespace BoSSS.Solution.XNSECommon {
                     m_OP.EquationComponents["div"].Add(divPen);
 
                     if(evaporation) {
-                        var divPenGen = new Operator.Continuity.GeneralizedDivergenceAtLevelSet(D, LsTrk, rhoA, rhoB, config.dntParams.ContiSign, config.dntParams.RescaleConti, kA, kB, hVapA, R_int, Tsat, sigma);
+                        var divPenGen = new Operator.Continuity.GeneralizedDivergenceAtLevelSet(D, LsTrk, rhoA, rhoB, config.dntParams.ContiSign, config.dntParams.RescaleConti, kA, kB, hVapA, R_int, Tsat, sigma, p_c);
                         m_OP.EquationComponents["div"].Add(divPenGen);
                     }
 
@@ -522,7 +523,7 @@ namespace BoSSS.Solution.XNSECommon {
 
                 if(evaporation) {
                     for(int d = 0; d < D; d++) {
-                        m_OP.EquationComponents[CodName[d]].Add(new Operator.DynamicInterfaceConditions.PrescribedMassFlux(d, D, LsTrk, rhoA, rhoB, kA, kB, hVapA, R_int, Tsat, sigma));
+                        m_OP.EquationComponents[CodName[d]].Add(new Operator.DynamicInterfaceConditions.MassFluxAtInterface(d, D, LsTrk, rhoA, rhoB, kA, kB, hVapA, R_int, Tsat, sigma, p_c));
                     }
                 }
 
@@ -691,12 +692,12 @@ namespace BoSSS.Solution.XNSECommon {
             }
 
             // Temperature gradient for evaporation
-            //VectorField<DGField> GradTemp = new VectorField<DGField>(D, U0[0].Basis, XDGField.Factory);
-            //if(CoupledCurrentState != null) {
-            //    DGField Temp = CoupledCurrentState.ToArray()[0];
-            //    GradTemp = new VectorField<DGField>(D, Temp.Basis, "GradTemp", XDGField.Factory);
-            //    ComputeGradient(Temp, GradTemp);
-            //}
+            VectorField<DGField> GradTemp = new VectorField<DGField>(D, U0[0].Basis, XDGField.Factory);
+            if(CoupledCurrentState != null) {
+                DGField Temp = CoupledCurrentState.ToArray()[0];
+                GradTemp = new VectorField<DGField>(D, Temp.Basis, "GradTemp", XDGField.Factory);
+                XNSEUtils.ComputeGradientForParam(Temp, GradTemp, this.LsTrk);
+            }
 
 
             // concatenate everything
@@ -705,6 +706,7 @@ namespace BoSSS.Solution.XNSECommon {
                 Curvature,
                 ((SurfaceForce != null) ? SurfaceForce.ToArray() : new SinglePhaseField[D]),
                 Normals,
+                ((evaporation) ? GradTemp.ToArray() : new SinglePhaseField[D]),
                 ((evaporation) ? CoupledCurrentState.ToArray<DGField>() : new SinglePhaseField[1]),
                 ((evaporation) ? CoupledParams.ToArray<DGField>() : new SinglePhaseField[1]));  //((evaporation) ? GradTemp.ToArray() : new SinglePhaseField[D]));
 
@@ -924,25 +926,25 @@ namespace BoSSS.Solution.XNSECommon {
             }
         }
 
+        
+        //private void ComputeGradient(DGField f, VectorField<DGField> fGrad) {
+        //    using(FuncTrace ft = new FuncTrace()) {
 
-        private void ComputeGradient(DGField f, VectorField<DGField> fGrad) {
-            using(FuncTrace ft = new FuncTrace()) {
+        //        int D = this.LsTrk.GridDat.SpatialDimension;
+        //        for(int d = 0; d < D; d++) {
 
-                int D = this.LsTrk.GridDat.SpatialDimension;
-                for(int d = 0; d < D; d++) {
+        //            foreach(var Spc in this.LsTrk.SpeciesIdS) { // loop over species...
+        //                // shadow fields
+        //                DGField f_Spc = ((f as XDGField).GetSpeciesShadowField(Spc));
 
-                    foreach(var Spc in this.LsTrk.SpeciesIdS) { // loop over species...
-                        // shadow fields
-                        DGField f_Spc = ((f as XDGField).GetSpeciesShadowField(Spc));
+        //                (fGrad[d] as XDGField).GetSpeciesShadowField(Spc).Derivative(1.0, f_Spc, d);
+        //            }
+        //        }
 
-                        (fGrad[d] as XDGField).GetSpeciesShadowField(Spc).Derivative(1.0, f_Spc, d);
-                    }
-                }
+        //        fGrad.ForEach(F => F.CheckForNanOrInf(true, true, true));
 
-                fGrad.ForEach(F => F.CheckForNanOrInf(true, true, true));
-
-            }
-        }
+        //    }
+        //}
 
     }
 }

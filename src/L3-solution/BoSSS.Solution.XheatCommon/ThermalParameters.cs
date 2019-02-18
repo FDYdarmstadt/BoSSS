@@ -34,6 +34,13 @@ namespace BoSSS.Solution.XheatCommon {
     public class ThermalParameters : ICloneable {
 
         /// <summary>
+        /// Include nonlinear terms?
+        /// Resp.: \f$ Peclet-number \ll 1 \f$ for vanishing convective term
+        /// </summary>
+        [DataMember]
+        public bool IncludeConvection;
+
+        /// <summary>
         /// density of fluid A
         /// </summary>
         [DataMember]
@@ -94,6 +101,9 @@ namespace BoSSS.Solution.XheatCommon {
         [DataMember]
         public double T_sat = 0.0;
 
+        [DataMember]
+        public double p_sat = 0.0;
+
         /// <summary>
         /// condensation coefficient
         /// </summary>
@@ -116,8 +126,8 @@ namespace BoSSS.Solution.XheatCommon {
         /// augmented capillary pressure (for testing purpose)
         /// if negativ, the augmented capillary pressure will be calculated
         /// </summary>
-        //[DataMember]
-        //public double pc = -1.0;
+        [DataMember]
+        public double pc = -1.0;
 
         /// <summary>
         /// prescribed volume flux for testing. 
@@ -146,10 +156,11 @@ namespace BoSSS.Solution.XheatCommon {
             cl.hVap_A = this.hVap_A;
             cl.hVap_B = this.hVap_B;
             cl.T_sat = this.T_sat;
+            cl.p_sat = this.p_sat;
             cl.fc = this.fc;
             cl.Rc = this.Rc;
             //cl.Ac = this.Ac;
-            //cl.pc = this.pc;
+            cl.pc = this.pc;
             //cl.prescribedVolumeFlux = this.prescribedVolumeFlux;
             //cl.Material = this.Material;
             return cl;
