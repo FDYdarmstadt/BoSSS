@@ -671,7 +671,7 @@ namespace BoSSS.Application.FSI_Solver
             for (int d = 0; d < D; d++) {
                 ScalarFunctionEx ErrFunc = delegate (int j0, int Len, NodeSet Ns, MultidimensionalArray result) {
                     int K = result.GetLength(1); // No of Nodes
-                    MultidimensionalArray Grad_UARes = MultidimensionalArray.Create(Len, K, D, D); 
+                    MultidimensionalArray Grad_UARes = MultidimensionalArray.Create(Len, K, D, D);
                     MultidimensionalArray pARes = MultidimensionalArray.Create(Len, K);
 
                     // Evaluate tangential velocity to level-set surface
@@ -1038,7 +1038,7 @@ namespace BoSSS.Application.FSI_Solver
                 }
                 else
                 {
-                    forces[0] = 0.125 * Circumference_P * active_stress_P.Pow2() * Math.Cos(currentIterAng_P[0]) / (muA);
+                    forces[0] = 0.0125 * Circumference_P * active_stress_P.Pow2() * Math.Cos(currentIterAng_P[0]) / (muA);
                 }
                 if (Math.Abs(0.125 * Circumference_P * active_stress_P.Pow2() * Math.Sin(currentIterAng_P[0]) / muA) > Math.Abs(currentTimeForces_P[1][1]) && currentTimeForces_P[1][1] != 0)
                 {
@@ -1046,7 +1046,7 @@ namespace BoSSS.Application.FSI_Solver
                 }
                 else
                 {
-                    forces[1] = 0.125 * Circumference_P * active_stress_P.Pow2() * Math.Sin(currentIterAng_P[0]) / muA;
+                    forces[1] = 0.0125 * Circumference_P * active_stress_P.Pow2() * Math.Sin(currentIterAng_P[0]) / muA;
                 }
                 torque = 0;
             }
@@ -1064,6 +1064,14 @@ namespace BoSSS.Application.FSI_Solver
                     }
                 }
                 temp_underR[D] = 1;
+            }
+            // restart iteration
+            // =============================
+            else if ((iteration_counter_P - 1) / 100 % 2 == 1 && Math.Sqrt((forces[0] - currentIterForces_P[1][0]).Pow2()+ (forces[1] - currentIterForces_P[1][1]).Pow2()+ (torque-currentIterTorque_P[1]).Pow2()) > 100 * forceAndTorque_convergence)
+            {
+                forces[0] = 0.00125 * Circumference_P * active_stress_P.Pow2() * Math.Cos(currentIterAng_P[0]) / (muA);
+                forces[1] = 0.00125 * Circumference_P * active_stress_P.Pow2() * Math.Sin(currentIterAng_P[0]) / muA;
+                torque = 0;
             }
             // constant predefined URF
             // =============================
