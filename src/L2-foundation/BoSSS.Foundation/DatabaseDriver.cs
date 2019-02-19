@@ -649,6 +649,17 @@ namespace BoSSS.Foundation.IO {
             if (!grid.BcCellsStorageGuid.Equals(Guid.Empty))
                 grid.BcCells = LoadVector<BCElement>(grid.BcCellsStorageGuid, ref p).ToArray();
 
+            foreach (var s in grid.m_PredefinedGridPartitioning)
+            {
+                int[] cellToRankMap = s.Value.CellToRankMap;
+                if (cellToRankMap == null)
+                {
+                    // Partitioning has not been loaded; do it now
+                    Partitioning currentPartitioning = grid.CellPartitioning;
+                    cellToRankMap = LoadVector<int>(s.Value.Guid, ref currentPartitioning).ToArray();
+                }
+            }
+
             grid.InitNumberOfCells();
 
             // return
@@ -1041,16 +1052,17 @@ namespace BoSSS.Foundation.IO {
 
                 // save opt. data
                 // ==============
+                
                 foreach (var s in grd.m_PredefinedGridPartitioning) {
                     int[] cellToRankMap = s.Value.CellToRankMap;
                     if (cellToRankMap == null) {
                         // Partitioning has not been loaded; do it now
-                        Partitioning currentPartitioning = grd.CellPartitioning;
-                        cellToRankMap = LoadVector<int>(s.Value.Guid, ref currentPartitioning).ToArray();
+                        throw new Exception("Should have been already loaded ");
                     }
 
                     SaveVector(cellToRankMap, s.Value.Guid);
                 }
+                
 
                 if (grd.BcCells != null && grd.BcCells.Length > 0)
                     grd.BcCellsStorageGuid = SaveVector(grd.BcCells);
