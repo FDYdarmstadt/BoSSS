@@ -240,7 +240,7 @@ namespace CNS.Tests.MovingIBMTests {
                 Tuple.Create("L2ErrorDensity", 5.4e-4),
                 Tuple.Create("L2ErrorXMomentum", 2.5e-4),
                 Tuple.Create("L2ErrorYMomentum", 3.0e-5),
-                Tuple.Create("L2ErrorPressure", 4.0e-4));
+                Tuple.Create("L2ErrorPressure", 6.0e-4));
         }
 
         public static IBMControl PistonControl(int dgDegree, int rkDegree, ConvectiveFluxTypes convectiveFlux, TimesteppingStrategies timeSteppingStrategy, double agglomerationThreshold) {

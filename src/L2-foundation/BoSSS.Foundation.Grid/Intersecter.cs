@@ -87,14 +87,6 @@ namespace BoSSS.Foundation.Grid.Voronoi
                     {
                         //First cut ever
                         //-----------------------------------------------------------
-                        firstCut = false;
-                        firstCellCutRidge = activeRidge;
-                        //Information needed for the last cell, when boundary is closed
-                        linesFirstCell = new List<TLine>(lines);
-                        if (linesFirstCell.Count == 0)
-                        {
-                            linesFirstCell.Add(boundary.Current);
-                        }
                         switch (intersectionCase)
                         {
                             case IntersectionCase.NotIntersecting:
@@ -138,7 +130,18 @@ namespace BoSSS.Foundation.Grid.Voronoi
                                 throw new Exception();
                         }
                         //Start with empty line set
-                        lines.Clear();
+                        if (intersectionCase != IntersectionCase.NotIntersecting)
+                        {
+                            firstCut = false;
+                            lines.Clear();
+                            firstCellCutRidge = activeRidge;
+                            //Information needed for the last cell, when boundary is closed
+                            linesFirstCell = new List<TLine>(lines);
+                            if (linesFirstCell.Count == 0)
+                            {
+                                linesFirstCell.Add(boundary.Current);
+                            }
+                        }
                     }
                     else
                     {
@@ -186,7 +189,10 @@ namespace BoSSS.Foundation.Grid.Voronoi
                             default:
                                 throw new NotImplementedException();
                         }
-                        lines.Clear();
+                        if (intersectionCase != IntersectionCase.NotIntersecting)
+                        {
+                            lines.Clear();
+                        }
                     }
                 }
                 lines.Add(activeLine);
