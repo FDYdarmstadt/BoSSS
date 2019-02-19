@@ -66,7 +66,17 @@ namespace BoSSS.Solution.NSECommon {
 
         protected bool IsInitialized = false;
         protected ScalarFieldHistory<SinglePhaseField> ThermodynamicPressure;
+        /// <summary>
+        /// 
+        /// </summary>
+        public override IList<string> ParameterOrdering {
+            get {
+                return new string[] { VariableNames.Temperature0 }; 
+            }
+        }
 
+
+      
         /// <summary>
         /// Hack to initalize ThermodynamicPressure - called by NSE_SIMPLE.VariableSet.Initialize()
         /// </summary>
