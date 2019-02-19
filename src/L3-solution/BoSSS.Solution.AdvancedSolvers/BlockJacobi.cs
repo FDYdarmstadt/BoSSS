@@ -62,8 +62,6 @@ namespace BoSSS.Solution.AdvancedSolvers {
             //    // 'BlockDiagonalMatrix' should be completely replaced by 'BlockMsrMatrix'
             //    throw new NotImplementedException("todo - Block Jacobi for variable block Sizes");
 
-
-
             Diag = new BlockMsrMatrix(M._RowPartitioning, M._ColPartitioning);
             invDiag = new BlockMsrMatrix(M._RowPartitioning, M._ColPartitioning);
             int Jloc = MgMap.LocalNoOfBlocks;

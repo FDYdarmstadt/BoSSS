@@ -99,5 +99,11 @@ namespace BoSSS.Application.SipPoisson {
         /// </summary>
         [DataMember]
         public bool ExactSolution_provided = false;
+
+        /// <summary>
+        /// Suppresses exception prompt, which disturbes local batch run with MiniBatchprocessor.
+        /// </summary>
+        [DataMember]
+        public bool SuppressExceptionPrompt = false;
     }
 }

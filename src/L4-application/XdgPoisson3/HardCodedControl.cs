@@ -523,7 +523,7 @@ namespace BoSSS.Application.XdgPoisson3 {
             C.savetodb = false;
             //C.DbPath = @"E:\\XdgPerformance";
 
-            int Res = 16;
+            int Res = 4;
 
             C.GridFunc = delegate () {
                 double[] xNodes = GenericBlas.Linspace(-1, +1, Res + 1);
@@ -539,9 +539,11 @@ namespace BoSSS.Application.XdgPoisson3 {
                 return grid;
             };
 
-            //we want to test performance nothing else. Write true for power!
+            //these are parameters for batchprocessing. They are here for testing ...
             C.PerformanceModeON = true;
+            //C.SuppressExceptionPrompt = true;
 
+            C.LinearSolver.TargetBlockSize = 300;
             C.SetDGdegree(2);
             C.LinearSolver.SolverCode = LinearSolverConfig.Code.exp_softpcg_mg;
             C.LinearSolver.NoOfMultigridLevels = 10;

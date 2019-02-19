@@ -5,17 +5,18 @@ restart
   _______________________
 
 Databases loaded:
-List of 10 instances of IDatabaseInfo {
+List of 11 instances of IDatabaseInfo {
   0: { Session Count = 0; Grid Count = 34; Path = C:\BoSSS_DB }
   1: { Session Count = 144; Grid Count = 6; Path = C:\tmp\fk_temp_db }
   2: { Session Count = 0; Grid Count = 6; Path = P:\Performance_DB }
   3: { Session Count = 12; Grid Count = 31; Path = P:\testDB }
   4: { Session Count = 112; Grid Count = 6; Path = E:\Performance_oldLibs_DB }
   5: { Session Count = 0; Grid Count = 3; Path = E:\db_2delete }
-  6: { Session Count = 34; Grid Count = 9; Path = E:\XdgPerformance }
+  6: { Session Count = 0; Grid Count = 9; Path = E:\XdgPerformance }
   7: { Session Count = 112; Grid Count = 136; Path = E:\bosss_db_performance }
-  8: { Session Count = 3; Grid Count = 2; Path = F:\test_db }
+  8: { Session Count = 19; Grid Count = 3; Path = F:\test_db }
   9: { Session Count = 144; Grid Count = 139; Path = Z:\weber\Performance_Kram\bosss_db_performance }
+  10: { Session Count = 152; Grid Count = 6; Path = E:\Performance_newLibs_DB }
 }
 
  Console ready for input. Type 'help' for help.
@@ -46,7 +47,8 @@ var myBatch = new MiniBatchProcessorClient(@"G:\deploy-Mini");
 ==============
 MiniBatchProcessor.Server.StartIfNotRunning();
 **************
-Mini batch processor is already running.
+Starting mini batch processor in external process...
+Started mini batch processor on local machine, process id is 13728.
 
 ==============
 // ===================
@@ -105,9 +107,16 @@ for(int cnt = 0; cnt < Resolutions_3D.Length; cnt++) {
     
     string GridName = string.Format(WorkflowMgm.CurrentProject + "_J" + J);
     
-    grids[cnt] = tempDB.Grids.SingleOrDefault(grd => grd.Name == GridName);
-    
-    if(grids[cnt] == null){
+    grids[cnt]=null;
+    foreach(IGridInfo grd in tempDB.Grids){
+        bool check = grd.Name.Contains(string.Format("_J"+ J));
+        if(check){
+          grids[cnt]=grd;
+        }
+    }
+  
+    //grids[cnt] = tempDB.Grids.SingleOrDefault(grd => grd.Name.Contains(string.Format("_J"+ J));
+    if(grids[cnt]==null){
         Console.WriteLine("Creating grid with " + J + " cells.");
         
         GridCommons g;
@@ -118,10 +127,10 @@ for(int cnt = 0; cnt < Resolutions_3D.Length; cnt++) {
         g.EdgeTagNames.Add(2, BoundaryType.Neumann.ToString());
     
         g.DefineEdgeTags(delegate (double[] X) {
-            byte ret;
-            if(Math.Abs(X[0] - 0.0) <= 1.0e-6)
-                ret = 1;
-            else
+           byte ret;
+             if(Math.Abs(X[0] - 0.0) <= 1.0e-6)
+               ret = 1;
+           else
                 ret = 2;
             return ret;
         });
@@ -139,18 +148,12 @@ for(int cnt = 0; cnt < Resolutions_3D.Length; cnt++) {
     
 }
 **************
-Creating grid with 40 cells.
-An equivalent grid is already present in the database -- the grid will not be saved.
-Creating grid with 320 cells.
-An equivalent grid is already present in the database -- the grid will not be saved.
-Creating grid with 2560 cells.
-An equivalent grid is already present in the database -- the grid will not be saved.
-Creating grid with 20480 cells.
-An equivalent grid is already present in the database -- the grid will not be saved.
-Creating grid with 163840 cells.
-An equivalent grid is already present in the database -- the grid will not be saved.
-Creating grid with 1310720 cells.
-An equivalent grid is already present in the database -- the grid will not be saved.
+Found Grid: { Guid = 9a10788a-a2e8-4291-8a90-33f9fd225e19; Name = PoissonSolverPerformance_J40; Cell Count = 40; Dim = 3 }
+Found Grid: { Guid = ee16a351-cbeb-4ca1-842b-d8d4bbcdad85; Name = PoissonSolverPerformance_J320; Cell Count = 320; Dim = 3 }
+Found Grid: { Guid = 91edad8e-70d8-46a5-b853-b5a8c01b77aa; Name = PoissonSolverPerformance_J2560; Cell Count = 2560; Dim = 3 }
+Found Grid: { Guid = c8debc1e-16e7-4332-b69b-ba16266690cd; Name = PoissonSolverPerformance_J20480; Cell Count = 20480; Dim = 3 }
+Found Grid: { Guid = cff05621-aa69-4853-b4dc-88d70da2a27f; Name = PoissonSolverPerformance_J163840; Cell Count = 163840; Dim = 3 }
+Found Grid: { Guid = bb01590c-e20a-418d-9ddc-75dea56cc790; Name = PoissonSolverPerformance_J1310720; Cell Count = 1310720; Dim = 3 }
 
 ==============
 grids;
@@ -164,7 +167,12 @@ List of 6 instances of IGridInfo {
   5: { Guid = bb01590c-e20a-418d-9ddc-75dea56cc790; Name = PoissonSolverPerformance_J1310720; Cell Count = 1310720; Dim = 3 }
 }
 ==============
+LastError;
 **************
+System.NullReferenceException: Der Objektverweis wurde nicht auf eine Objektinstanz festgelegt.
+   bei <InteractiveExpressionClass>.Host(Object& $retval)
+   bei Mono.CSharp.Evaluator.Evaluate(String input, Object& result, Boolean& result_set)
+   bei BoSSS.Application.BoSSSpad.ReadEvalPrintLoop.EvalPrint(String line, Assembly& AssemblyProduced) in C:\BoSSS\BoSSS-SolverPerformance\public\src\L4-application\BoSSSpad\ReadEvalPrintLoop.cs:Zeile 322.
 ==============
 // =====================================
 // setup control object for a solver run
@@ -229,7 +237,7 @@ using BoSSS.Solution.AdvancedSolvers;
 // Solvers which we want to instrument:
 LinearSolverConfig.Code[] solver_nameS = new LinearSolverConfig.Code[] {
     //SolverCodes.classic_pardiso, 
-    LinearSolverConfig.Code.classic_mumps, 
+    //LinearSolverConfig.Code.classic_mumps, 
     LinearSolverConfig.Code.classic_cg,
     LinearSolverConfig.Code.exp_softpcg_schwarz_directcoarse,
     //SolverCodes.exp_direct,
@@ -267,6 +275,8 @@ foreach(IGridInfo grd in grids) {
     var ctrl = new SipControl();
     controls.Add(ctrl);
     
+    ctrl.SuppressExceptionPrompt = true;//set true if you are using MiniBatchprocessor
+    
     //ctrl.SessionName = caseName;
     ctrl.SetDatabase(tempDB);
     ctrl.SetGrid(grd);
@@ -285,11 +295,48 @@ foreach(IGridInfo grd in grids) {
 }
 
 **************
-(29,10): error CS1061: Type `BoSSS.Application.SipPoisson.SipControl' does not contain a definition for `solver_name' and no extension method `solver_name' of type `BoSSS.Application.SipPoisson.SipControl' could be found. Are you missing an assembly reference?
-C:\BoSSS\BoSSS-SolverPerformance\public\src\L4-application\BoSSSpad\bin\Release\ipPoisson.exe (Location of the symbol related to previous error)
-(30,10): error CS1061: Type `BoSSS.Application.SipPoisson.SipControl' does not contain a definition for `NoOfMultigridLevels' and no extension method `NoOfMultigridLevels' of type `BoSSS.Application.SipPoisson.SipControl' could be found. Are you missing an assembly reference?
-C:\BoSSS\BoSSS-SolverPerformance\public\src\L4-application\BoSSSpad\bin\Release\ipPoisson.exe (Location of the symbol related to previous error)
-No. of errors|warnings: 2|0.
+setting up: J40_k2_classic_cg
+setting up: J320_k2_classic_cg
+setting up: J2560_k2_classic_cg
+setting up: J20480_k2_classic_cg
+setting up: J163840_k2_classic_cg
+setting up: J40_k3_classic_cg
+setting up: J320_k3_classic_cg
+setting up: J2560_k3_classic_cg
+setting up: J20480_k3_classic_cg
+setting up: J163840_k3_classic_cg
+setting up: J40_k5_classic_cg
+setting up: J320_k5_classic_cg
+setting up: J2560_k5_classic_cg
+setting up: J20480_k5_classic_cg
+setting up: J40_k2_exp_softpcg_schwarz_directcoarse
+setting up: J320_k2_exp_softpcg_schwarz_directcoarse
+setting up: J2560_k2_exp_softpcg_schwarz_directcoarse
+setting up: J20480_k2_exp_softpcg_schwarz_directcoarse
+setting up: J163840_k2_exp_softpcg_schwarz_directcoarse
+setting up: J40_k3_exp_softpcg_schwarz_directcoarse
+setting up: J320_k3_exp_softpcg_schwarz_directcoarse
+setting up: J2560_k3_exp_softpcg_schwarz_directcoarse
+setting up: J20480_k3_exp_softpcg_schwarz_directcoarse
+setting up: J163840_k3_exp_softpcg_schwarz_directcoarse
+setting up: J40_k5_exp_softpcg_schwarz_directcoarse
+setting up: J320_k5_exp_softpcg_schwarz_directcoarse
+setting up: J2560_k5_exp_softpcg_schwarz_directcoarse
+setting up: J20480_k5_exp_softpcg_schwarz_directcoarse
+setting up: J40_k2_exp_softpcg_mg
+setting up: J320_k2_exp_softpcg_mg
+setting up: J2560_k2_exp_softpcg_mg
+setting up: J20480_k2_exp_softpcg_mg
+setting up: J163840_k2_exp_softpcg_mg
+setting up: J40_k3_exp_softpcg_mg
+setting up: J320_k3_exp_softpcg_mg
+setting up: J2560_k3_exp_softpcg_mg
+setting up: J20480_k3_exp_softpcg_mg
+setting up: J163840_k3_exp_softpcg_mg
+setting up: J40_k5_exp_softpcg_mg
+setting up: J320_k5_exp_softpcg_mg
+setting up: J2560_k5_exp_softpcg_mg
+setting up: J20480_k5_exp_softpcg_mg
 
 ==============
 // ==========
@@ -319,6 +366,265 @@ foreach(var ctrl in controls) {
     ctrl.RunBatch(myBatch); 
 }
 **************
+ Submitting: PoissonConstCoeff_J40_k2_classic_cg
+Job was successful (according to job manager), latest session related to job is:
+SIP_SingleNodePerformance_1	PoissonConstCoeff_J40_k2_classic_cg	02/12/2019 09:05:26	6c634cbd...
+No further action.
+ Submitting: PoissonConstCoeff_J320_k2_classic_cg
+Job was successful (according to job manager), latest session related to job is:
+SIP_SingleNodePerformance_1	PoissonConstCoeff_J320_k2_classic_cg	02/12/2019 09:05:56	e62835af...
+No further action.
+ Submitting: PoissonConstCoeff_J2560_k2_classic_cg
+Job was successful (according to job manager), latest session related to job is:
+SIP_SingleNodePerformance_1	PoissonConstCoeff_J2560_k2_classic_cg	02/12/2019 09:06:26	27469b7e...
+No further action.
+ Submitting: PoissonConstCoeff_J20480_k2_classic_cg
+Job was successful (according to job manager), latest session related to job is:
+SIP_SingleNodePerformance_1	PoissonConstCoeff_J20480_k2_classic_cg	02/12/2019 09:07:06	affb0c24...
+No further action.
+ Submitting: PoissonConstCoeff_J163840_k2_classic_cg
+Job was successful (according to job manager), latest session related to job is:
+SIP_SingleNodePerformance_1	PoissonConstCoeff_J163840_k2_classic_cg	02/12/2019 09:08:46	54407f08...
+No further action.
+ Submitting: PoissonConstCoeff_J40_k3_classic_cg
+Job was successful (according to job manager), latest session related to job is:
+SIP_SingleNodePerformance_1	PoissonConstCoeff_J40_k3_classic_cg	02/12/2019 09:27:36	287e6ec5...
+No further action.
+ Submitting: PoissonConstCoeff_J320_k3_classic_cg
+Job was successful (according to job manager), latest session related to job is:
+SIP_SingleNodePerformance_1	PoissonConstCoeff_J320_k3_classic_cg	02/12/2019 09:28:06	06a0885d...
+No further action.
+ Submitting: PoissonConstCoeff_J2560_k3_classic_cg
+Job was successful (according to job manager), latest session related to job is:
+SIP_SingleNodePerformance_1	PoissonConstCoeff_J2560_k3_classic_cg	02/12/2019 09:28:36	f0a09028...
+No further action.
+ Submitting: PoissonConstCoeff_J20480_k3_classic_cg
+Job was successful (according to job manager), latest session related to job is:
+SIP_SingleNodePerformance_1	PoissonConstCoeff_J20480_k3_classic_cg	02/12/2019 09:29:26	b34fe286...
+No further action.
+ Submitting: PoissonConstCoeff_J163840_k3_classic_cg
+Job is failed, retrying (Submitted 0 times so far); performing new deployment and submission.
+Deploying executables and additional files ...
+Deployment directory: G:\deploy-Mini\ipPoisson2019Feb12_14-24-18
+Source directory: C:\BoSSS\BoSSS-SolverPerformance\public\src\L4-application\BoSSSpad\bin\Release
+   copied: ipPoisson.exe BoSSS.Solution.dll CommandLine.dll BoSSS.Foundation.dll ilPSP.dll MPI.Wrappers.dll log4net.dll nunit.framework.dll Newtonsoft.Json.dll ilPSP.LinSolvers.MUMPS.dll BoSSS.Platform.dll Renci.SshNet.dll ilPSP.LinSolvers.monkey.dll ilPSP.Connectors.Matlab.dll BoSSS.Foundation.XDG.dll Mono.CSharp.dll BoSSS.Foundation.Grid.dll MIConvexHull.dll MathNet.Numerics.dll BoSSS.Solution.AdvancedSolvers.dll BoSSS.Solution.Gnuplot.dll BoSSS.Solution.Tecplot.dll ilPSP.LinSolvers.PARDISO.dll BoSSS.Solution.NSECommon.dll    writing file: control.obj
+deployment finished.
+ Submitting: PoissonConstCoeff_J40_k5_classic_cg
+Job not submitted yet, or no result session is known - starting submission.
+Deploying executables and additional files ...
+Deployment directory: G:\deploy-Mini\ipPoisson2019Feb12_14-24-25
+Source directory: C:\BoSSS\BoSSS-SolverPerformance\public\src\L4-application\BoSSSpad\bin\Release
+   copied: ipPoisson.exe BoSSS.Solution.dll CommandLine.dll BoSSS.Foundation.dll ilPSP.dll MPI.Wrappers.dll log4net.dll nunit.framework.dll Newtonsoft.Json.dll ilPSP.LinSolvers.MUMPS.dll BoSSS.Platform.dll Renci.SshNet.dll ilPSP.LinSolvers.monkey.dll ilPSP.Connectors.Matlab.dll BoSSS.Foundation.XDG.dll Mono.CSharp.dll BoSSS.Foundation.Grid.dll MIConvexHull.dll MathNet.Numerics.dll BoSSS.Solution.AdvancedSolvers.dll BoSSS.Solution.Gnuplot.dll BoSSS.Solution.Tecplot.dll ilPSP.LinSolvers.PARDISO.dll BoSSS.Solution.NSECommon.dll    writing file: control.obj
+deployment finished.
+ Submitting: PoissonConstCoeff_J320_k5_classic_cg
+Job not submitted yet, or no result session is known - starting submission.
+Deploying executables and additional files ...
+Deployment directory: G:\deploy-Mini\ipPoisson2019Feb12_14-24-25-1
+Source directory: C:\BoSSS\BoSSS-SolverPerformance\public\src\L4-application\BoSSSpad\bin\Release
+   copied: ipPoisson.exe BoSSS.Solution.dll CommandLine.dll BoSSS.Foundation.dll ilPSP.dll MPI.Wrappers.dll log4net.dll nunit.framework.dll Newtonsoft.Json.dll ilPSP.LinSolvers.MUMPS.dll BoSSS.Platform.dll Renci.SshNet.dll ilPSP.LinSolvers.monkey.dll ilPSP.Connectors.Matlab.dll BoSSS.Foundation.XDG.dll Mono.CSharp.dll BoSSS.Foundation.Grid.dll MIConvexHull.dll MathNet.Numerics.dll BoSSS.Solution.AdvancedSolvers.dll BoSSS.Solution.Gnuplot.dll BoSSS.Solution.Tecplot.dll ilPSP.LinSolvers.PARDISO.dll BoSSS.Solution.NSECommon.dll    writing file: control.obj
+deployment finished.
+ Submitting: PoissonConstCoeff_J2560_k5_classic_cg
+Job not submitted yet, or no result session is known - starting submission.
+Deploying executables and additional files ...
+Deployment directory: G:\deploy-Mini\ipPoisson2019Feb12_14-24-25-2
+Source directory: C:\BoSSS\BoSSS-SolverPerformance\public\src\L4-application\BoSSSpad\bin\Release
+   copied: ipPoisson.exe BoSSS.Solution.dll CommandLine.dll BoSSS.Foundation.dll ilPSP.dll MPI.Wrappers.dll log4net.dll nunit.framework.dll Newtonsoft.Json.dll ilPSP.LinSolvers.MUMPS.dll BoSSS.Platform.dll Renci.SshNet.dll ilPSP.LinSolvers.monkey.dll ilPSP.Connectors.Matlab.dll BoSSS.Foundation.XDG.dll Mono.CSharp.dll BoSSS.Foundation.Grid.dll MIConvexHull.dll MathNet.Numerics.dll BoSSS.Solution.AdvancedSolvers.dll BoSSS.Solution.Gnuplot.dll BoSSS.Solution.Tecplot.dll ilPSP.LinSolvers.PARDISO.dll BoSSS.Solution.NSECommon.dll    writing file: control.obj
+deployment finished.
+ Submitting: PoissonConstCoeff_J20480_k5_classic_cg
+Job not submitted yet, or no result session is known - starting submission.
+Deploying executables and additional files ...
+Deployment directory: G:\deploy-Mini\ipPoisson2019Feb12_14-24-25-3
+Source directory: C:\BoSSS\BoSSS-SolverPerformance\public\src\L4-application\BoSSSpad\bin\Release
+   copied: ipPoisson.exe BoSSS.Solution.dll CommandLine.dll BoSSS.Foundation.dll ilPSP.dll MPI.Wrappers.dll log4net.dll nunit.framework.dll Newtonsoft.Json.dll ilPSP.LinSolvers.MUMPS.dll BoSSS.Platform.dll Renci.SshNet.dll ilPSP.LinSolvers.monkey.dll ilPSP.Connectors.Matlab.dll BoSSS.Foundation.XDG.dll Mono.CSharp.dll BoSSS.Foundation.Grid.dll MIConvexHull.dll MathNet.Numerics.dll BoSSS.Solution.AdvancedSolvers.dll BoSSS.Solution.Gnuplot.dll BoSSS.Solution.Tecplot.dll ilPSP.LinSolvers.PARDISO.dll BoSSS.Solution.NSECommon.dll    writing file: control.obj
+deployment finished.
+ Submitting: PoissonConstCoeff_J40_k2_exp_softpcg_schwarz_directcoarse
+Job is failed, retrying (Submitted 0 times so far); performing new deployment and submission.
+Deploying executables and additional files ...
+Deployment directory: G:\deploy-Mini\ipPoisson2019Feb12_14-24-25-4
+Source directory: C:\BoSSS\BoSSS-SolverPerformance\public\src\L4-application\BoSSSpad\bin\Release
+   copied: ipPoisson.exe BoSSS.Solution.dll CommandLine.dll BoSSS.Foundation.dll ilPSP.dll MPI.Wrappers.dll log4net.dll nunit.framework.dll Newtonsoft.Json.dll ilPSP.LinSolvers.MUMPS.dll BoSSS.Platform.dll Renci.SshNet.dll ilPSP.LinSolvers.monkey.dll ilPSP.Connectors.Matlab.dll BoSSS.Foundation.XDG.dll Mono.CSharp.dll BoSSS.Foundation.Grid.dll MIConvexHull.dll MathNet.Numerics.dll BoSSS.Solution.AdvancedSolvers.dll BoSSS.Solution.Gnuplot.dll BoSSS.Solution.Tecplot.dll ilPSP.LinSolvers.PARDISO.dll BoSSS.Solution.NSECommon.dll    writing file: control.obj
+deployment finished.
+ Submitting: PoissonConstCoeff_J320_k2_exp_softpcg_schwarz_directcoarse
+Job was successful (according to job manager), latest session related to job is:
+SIP_SingleNodePerformance_1	PoissonConstCoeff_J320_k2_exp_softpcg_schwarz_directcoarse	02/12/2019 12:35:28	97926c3e...
+No further action.
+ Submitting: PoissonConstCoeff_J2560_k2_exp_softpcg_schwarz_directcoarse
+Job was successful (according to job manager), latest session related to job is:
+SIP_SingleNodePerformance_1	PoissonConstCoeff_J2560_k2_exp_softpcg_schwarz_directcoarse	02/12/2019 12:35:58	965aa504...
+No further action.
+ Submitting: PoissonConstCoeff_J20480_k2_exp_softpcg_schwarz_directcoarse
+Job is failed, retrying (Submitted 0 times so far); performing new deployment and submission.
+Deploying executables and additional files ...
+Deployment directory: G:\deploy-Mini\ipPoisson2019Feb12_14-24-25-5
+Source directory: C:\BoSSS\BoSSS-SolverPerformance\public\src\L4-application\BoSSSpad\bin\Release
+   copied: ipPoisson.exe BoSSS.Solution.dll CommandLine.dll BoSSS.Foundation.dll ilPSP.dll MPI.Wrappers.dll log4net.dll nunit.framework.dll Newtonsoft.Json.dll ilPSP.LinSolvers.MUMPS.dll BoSSS.Platform.dll Renci.SshNet.dll ilPSP.LinSolvers.monkey.dll ilPSP.Connectors.Matlab.dll BoSSS.Foundation.XDG.dll Mono.CSharp.dll BoSSS.Foundation.Grid.dll MIConvexHull.dll MathNet.Numerics.dll BoSSS.Solution.AdvancedSolvers.dll BoSSS.Solution.Gnuplot.dll BoSSS.Solution.Tecplot.dll ilPSP.LinSolvers.PARDISO.dll BoSSS.Solution.NSECommon.dll    writing file: control.obj
+deployment finished.
+ Submitting: PoissonConstCoeff_J163840_k2_exp_softpcg_schwarz_directcoarse
+Job is failed, retrying (Submitted 0 times so far); performing new deployment and submission.
+Deploying executables and additional files ...
+Deployment directory: G:\deploy-Mini\ipPoisson2019Feb12_14-24-25-6
+Source directory: C:\BoSSS\BoSSS-SolverPerformance\public\src\L4-application\BoSSSpad\bin\Release
+   copied: ipPoisson.exe BoSSS.Solution.dll CommandLine.dll BoSSS.Foundation.dll ilPSP.dll MPI.Wrappers.dll log4net.dll nunit.framework.dll Newtonsoft.Json.dll ilPSP.LinSolvers.MUMPS.dll BoSSS.Platform.dll Renci.SshNet.dll ilPSP.LinSolvers.monkey.dll ilPSP.Connectors.Matlab.dll BoSSS.Foundation.XDG.dll Mono.CSharp.dll BoSSS.Foundation.Grid.dll MIConvexHull.dll MathNet.Numerics.dll BoSSS.Solution.AdvancedSolvers.dll BoSSS.Solution.Gnuplot.dll BoSSS.Solution.Tecplot.dll ilPSP.LinSolvers.PARDISO.dll BoSSS.Solution.NSECommon.dll    writing file: control.obj
+deployment finished.
+ Submitting: PoissonConstCoeff_J40_k3_exp_softpcg_schwarz_directcoarse
+Job is failed, retrying (Submitted 0 times so far); performing new deployment and submission.
+Deploying executables and additional files ...
+Deployment directory: G:\deploy-Mini\ipPoisson2019Feb12_14-24-25-7
+Source directory: C:\BoSSS\BoSSS-SolverPerformance\public\src\L4-application\BoSSSpad\bin\Release
+   copied: ipPoisson.exe BoSSS.Solution.dll CommandLine.dll BoSSS.Foundation.dll ilPSP.dll MPI.Wrappers.dll log4net.dll nunit.framework.dll Newtonsoft.Json.dll ilPSP.LinSolvers.MUMPS.dll BoSSS.Platform.dll Renci.SshNet.dll ilPSP.LinSolvers.monkey.dll ilPSP.Connectors.Matlab.dll BoSSS.Foundation.XDG.dll Mono.CSharp.dll BoSSS.Foundation.Grid.dll MIConvexHull.dll MathNet.Numerics.dll BoSSS.Solution.AdvancedSolvers.dll BoSSS.Solution.Gnuplot.dll BoSSS.Solution.Tecplot.dll ilPSP.LinSolvers.PARDISO.dll BoSSS.Solution.NSECommon.dll    writing file: control.obj
+deployment finished.
+ Submitting: PoissonConstCoeff_J320_k3_exp_softpcg_schwarz_directcoarse
+Job is failed, retrying (Submitted 0 times so far); performing new deployment and submission.
+Deploying executables and additional files ...
+Deployment directory: G:\deploy-Mini\ipPoisson2019Feb12_14-24-25-8
+Source directory: C:\BoSSS\BoSSS-SolverPerformance\public\src\L4-application\BoSSSpad\bin\Release
+   copied: ipPoisson.exe BoSSS.Solution.dll CommandLine.dll BoSSS.Foundation.dll ilPSP.dll MPI.Wrappers.dll log4net.dll nunit.framework.dll Newtonsoft.Json.dll ilPSP.LinSolvers.MUMPS.dll BoSSS.Platform.dll Renci.SshNet.dll ilPSP.LinSolvers.monkey.dll ilPSP.Connectors.Matlab.dll BoSSS.Foundation.XDG.dll Mono.CSharp.dll BoSSS.Foundation.Grid.dll MIConvexHull.dll MathNet.Numerics.dll BoSSS.Solution.AdvancedSolvers.dll BoSSS.Solution.Gnuplot.dll BoSSS.Solution.Tecplot.dll ilPSP.LinSolvers.PARDISO.dll BoSSS.Solution.NSECommon.dll    writing file: control.obj
+deployment finished.
+ Submitting: PoissonConstCoeff_J2560_k3_exp_softpcg_schwarz_directcoarse
+Job was successful (according to job manager), latest session related to job is:
+SIP_SingleNodePerformance_1	PoissonConstCoeff_J2560_k3_exp_softpcg_schwarz_directcoarse	02/12/2019 12:36:48	895fd953...
+No further action.
+ Submitting: PoissonConstCoeff_J20480_k3_exp_softpcg_schwarz_directcoarse
+Job is failed, retrying (Submitted 0 times so far); performing new deployment and submission.
+Deploying executables and additional files ...
+Deployment directory: G:\deploy-Mini\ipPoisson2019Feb12_14-24-26
+Source directory: C:\BoSSS\BoSSS-SolverPerformance\public\src\L4-application\BoSSSpad\bin\Release
+   copied: ipPoisson.exe BoSSS.Solution.dll CommandLine.dll BoSSS.Foundation.dll ilPSP.dll MPI.Wrappers.dll log4net.dll nunit.framework.dll Newtonsoft.Json.dll ilPSP.LinSolvers.MUMPS.dll BoSSS.Platform.dll Renci.SshNet.dll ilPSP.LinSolvers.monkey.dll ilPSP.Connectors.Matlab.dll BoSSS.Foundation.XDG.dll Mono.CSharp.dll BoSSS.Foundation.Grid.dll MIConvexHull.dll MathNet.Numerics.dll BoSSS.Solution.AdvancedSolvers.dll BoSSS.Solution.Gnuplot.dll BoSSS.Solution.Tecplot.dll ilPSP.LinSolvers.PARDISO.dll BoSSS.Solution.NSECommon.dll    writing file: control.obj
+deployment finished.
+ Submitting: PoissonConstCoeff_J163840_k3_exp_softpcg_schwarz_directcoarse
+Job is failed, retrying (Submitted 0 times so far); performing new deployment and submission.
+Deploying executables and additional files ...
+Deployment directory: G:\deploy-Mini\ipPoisson2019Feb12_14-24-26-1
+Source directory: C:\BoSSS\BoSSS-SolverPerformance\public\src\L4-application\BoSSSpad\bin\Release
+   copied: ipPoisson.exe BoSSS.Solution.dll CommandLine.dll BoSSS.Foundation.dll ilPSP.dll MPI.Wrappers.dll log4net.dll nunit.framework.dll Newtonsoft.Json.dll ilPSP.LinSolvers.MUMPS.dll BoSSS.Platform.dll Renci.SshNet.dll ilPSP.LinSolvers.monkey.dll ilPSP.Connectors.Matlab.dll BoSSS.Foundation.XDG.dll Mono.CSharp.dll BoSSS.Foundation.Grid.dll MIConvexHull.dll MathNet.Numerics.dll BoSSS.Solution.AdvancedSolvers.dll BoSSS.Solution.Gnuplot.dll BoSSS.Solution.Tecplot.dll ilPSP.LinSolvers.PARDISO.dll BoSSS.Solution.NSECommon.dll    writing file: control.obj
+deployment finished.
+ Submitting: PoissonConstCoeff_J40_k5_exp_softpcg_schwarz_directcoarse
+Job is failed, retrying (Submitted 0 times so far); performing new deployment and submission.
+Deploying executables and additional files ...
+Deployment directory: G:\deploy-Mini\ipPoisson2019Feb12_14-24-26-2
+Source directory: C:\BoSSS\BoSSS-SolverPerformance\public\src\L4-application\BoSSSpad\bin\Release
+   copied: ipPoisson.exe BoSSS.Solution.dll CommandLine.dll BoSSS.Foundation.dll ilPSP.dll MPI.Wrappers.dll log4net.dll nunit.framework.dll Newtonsoft.Json.dll ilPSP.LinSolvers.MUMPS.dll BoSSS.Platform.dll Renci.SshNet.dll ilPSP.LinSolvers.monkey.dll ilPSP.Connectors.Matlab.dll BoSSS.Foundation.XDG.dll Mono.CSharp.dll BoSSS.Foundation.Grid.dll MIConvexHull.dll MathNet.Numerics.dll BoSSS.Solution.AdvancedSolvers.dll BoSSS.Solution.Gnuplot.dll BoSSS.Solution.Tecplot.dll ilPSP.LinSolvers.PARDISO.dll BoSSS.Solution.NSECommon.dll    writing file: control.obj
+deployment finished.
+ Submitting: PoissonConstCoeff_J320_k5_exp_softpcg_schwarz_directcoarse
+Job is failed, retrying (Submitted 0 times so far); performing new deployment and submission.
+Deploying executables and additional files ...
+Deployment directory: G:\deploy-Mini\ipPoisson2019Feb12_14-24-26-3
+Source directory: C:\BoSSS\BoSSS-SolverPerformance\public\src\L4-application\BoSSSpad\bin\Release
+   copied: ipPoisson.exe BoSSS.Solution.dll CommandLine.dll BoSSS.Foundation.dll ilPSP.dll MPI.Wrappers.dll log4net.dll nunit.framework.dll Newtonsoft.Json.dll ilPSP.LinSolvers.MUMPS.dll BoSSS.Platform.dll Renci.SshNet.dll ilPSP.LinSolvers.monkey.dll ilPSP.Connectors.Matlab.dll BoSSS.Foundation.XDG.dll Mono.CSharp.dll BoSSS.Foundation.Grid.dll MIConvexHull.dll MathNet.Numerics.dll BoSSS.Solution.AdvancedSolvers.dll BoSSS.Solution.Gnuplot.dll BoSSS.Solution.Tecplot.dll ilPSP.LinSolvers.PARDISO.dll BoSSS.Solution.NSECommon.dll    writing file: control.obj
+deployment finished.
+ Submitting: PoissonConstCoeff_J2560_k5_exp_softpcg_schwarz_directcoarse
+Job is failed, retrying (Submitted 0 times so far); performing new deployment and submission.
+Deploying executables and additional files ...
+Deployment directory: G:\deploy-Mini\ipPoisson2019Feb12_14-24-26-4
+Source directory: C:\BoSSS\BoSSS-SolverPerformance\public\src\L4-application\BoSSSpad\bin\Release
+   copied: ipPoisson.exe BoSSS.Solution.dll CommandLine.dll BoSSS.Foundation.dll ilPSP.dll MPI.Wrappers.dll log4net.dll nunit.framework.dll Newtonsoft.Json.dll ilPSP.LinSolvers.MUMPS.dll BoSSS.Platform.dll Renci.SshNet.dll ilPSP.LinSolvers.monkey.dll ilPSP.Connectors.Matlab.dll BoSSS.Foundation.XDG.dll Mono.CSharp.dll BoSSS.Foundation.Grid.dll MIConvexHull.dll MathNet.Numerics.dll BoSSS.Solution.AdvancedSolvers.dll BoSSS.Solution.Gnuplot.dll BoSSS.Solution.Tecplot.dll ilPSP.LinSolvers.PARDISO.dll BoSSS.Solution.NSECommon.dll    writing file: control.obj
+deployment finished.
+ Submitting: PoissonConstCoeff_J20480_k5_exp_softpcg_schwarz_directcoarse
+Job is failed, retrying (Submitted 0 times so far); performing new deployment and submission.
+Deploying executables and additional files ...
+Deployment directory: G:\deploy-Mini\ipPoisson2019Feb12_14-24-26-5
+Source directory: C:\BoSSS\BoSSS-SolverPerformance\public\src\L4-application\BoSSSpad\bin\Release
+   copied: ipPoisson.exe BoSSS.Solution.dll CommandLine.dll BoSSS.Foundation.dll ilPSP.dll MPI.Wrappers.dll log4net.dll nunit.framework.dll Newtonsoft.Json.dll ilPSP.LinSolvers.MUMPS.dll BoSSS.Platform.dll Renci.SshNet.dll ilPSP.LinSolvers.monkey.dll ilPSP.Connectors.Matlab.dll BoSSS.Foundation.XDG.dll Mono.CSharp.dll BoSSS.Foundation.Grid.dll MIConvexHull.dll MathNet.Numerics.dll BoSSS.Solution.AdvancedSolvers.dll BoSSS.Solution.Gnuplot.dll BoSSS.Solution.Tecplot.dll ilPSP.LinSolvers.PARDISO.dll BoSSS.Solution.NSECommon.dll    writing file: control.obj
+deployment finished.
+ Submitting: PoissonConstCoeff_J40_k2_exp_softpcg_mg
+Job is failed, retrying (Submitted 0 times so far); performing new deployment and submission.
+Deploying executables and additional files ...
+Deployment directory: G:\deploy-Mini\ipPoisson2019Feb12_14-24-26-6
+Source directory: C:\BoSSS\BoSSS-SolverPerformance\public\src\L4-application\BoSSSpad\bin\Release
+   copied: ipPoisson.exe BoSSS.Solution.dll CommandLine.dll BoSSS.Foundation.dll ilPSP.dll MPI.Wrappers.dll log4net.dll nunit.framework.dll Newtonsoft.Json.dll ilPSP.LinSolvers.MUMPS.dll BoSSS.Platform.dll Renci.SshNet.dll ilPSP.LinSolvers.monkey.dll ilPSP.Connectors.Matlab.dll BoSSS.Foundation.XDG.dll Mono.CSharp.dll BoSSS.Foundation.Grid.dll MIConvexHull.dll MathNet.Numerics.dll BoSSS.Solution.AdvancedSolvers.dll BoSSS.Solution.Gnuplot.dll BoSSS.Solution.Tecplot.dll ilPSP.LinSolvers.PARDISO.dll BoSSS.Solution.NSECommon.dll    writing file: control.obj
+deployment finished.
+ Submitting: PoissonConstCoeff_J320_k2_exp_softpcg_mg
+Job is failed, retrying (Submitted 0 times so far); performing new deployment and submission.
+Deploying executables and additional files ...
+Deployment directory: G:\deploy-Mini\ipPoisson2019Feb12_14-24-26-7
+Source directory: C:\BoSSS\BoSSS-SolverPerformance\public\src\L4-application\BoSSSpad\bin\Release
+   copied: ipPoisson.exe BoSSS.Solution.dll CommandLine.dll BoSSS.Foundation.dll ilPSP.dll MPI.Wrappers.dll log4net.dll nunit.framework.dll Newtonsoft.Json.dll ilPSP.LinSolvers.MUMPS.dll BoSSS.Platform.dll Renci.SshNet.dll ilPSP.LinSolvers.monkey.dll ilPSP.Connectors.Matlab.dll BoSSS.Foundation.XDG.dll Mono.CSharp.dll BoSSS.Foundation.Grid.dll MIConvexHull.dll MathNet.Numerics.dll BoSSS.Solution.AdvancedSolvers.dll BoSSS.Solution.Gnuplot.dll BoSSS.Solution.Tecplot.dll ilPSP.LinSolvers.PARDISO.dll BoSSS.Solution.NSECommon.dll    writing file: control.obj
+deployment finished.
+ Submitting: PoissonConstCoeff_J2560_k2_exp_softpcg_mg
+Job is failed, retrying (Submitted 0 times so far); performing new deployment and submission.
+Deploying executables and additional files ...
+Deployment directory: G:\deploy-Mini\ipPoisson2019Feb12_14-24-26-8
+Source directory: C:\BoSSS\BoSSS-SolverPerformance\public\src\L4-application\BoSSSpad\bin\Release
+   copied: ipPoisson.exe BoSSS.Solution.dll CommandLine.dll BoSSS.Foundation.dll ilPSP.dll MPI.Wrappers.dll log4net.dll nunit.framework.dll Newtonsoft.Json.dll ilPSP.LinSolvers.MUMPS.dll BoSSS.Platform.dll Renci.SshNet.dll ilPSP.LinSolvers.monkey.dll ilPSP.Connectors.Matlab.dll BoSSS.Foundation.XDG.dll Mono.CSharp.dll BoSSS.Foundation.Grid.dll MIConvexHull.dll MathNet.Numerics.dll BoSSS.Solution.AdvancedSolvers.dll BoSSS.Solution.Gnuplot.dll BoSSS.Solution.Tecplot.dll ilPSP.LinSolvers.PARDISO.dll BoSSS.Solution.NSECommon.dll    writing file: control.obj
+deployment finished.
+ Submitting: PoissonConstCoeff_J20480_k2_exp_softpcg_mg
+Job is failed, retrying (Submitted 0 times so far); performing new deployment and submission.
+Deploying executables and additional files ...
+Deployment directory: G:\deploy-Mini\ipPoisson2019Feb12_14-24-26-9
+Source directory: C:\BoSSS\BoSSS-SolverPerformance\public\src\L4-application\BoSSSpad\bin\Release
+   copied: ipPoisson.exe BoSSS.Solution.dll CommandLine.dll BoSSS.Foundation.dll ilPSP.dll MPI.Wrappers.dll log4net.dll nunit.framework.dll Newtonsoft.Json.dll ilPSP.LinSolvers.MUMPS.dll BoSSS.Platform.dll Renci.SshNet.dll ilPSP.LinSolvers.monkey.dll ilPSP.Connectors.Matlab.dll BoSSS.Foundation.XDG.dll Mono.CSharp.dll BoSSS.Foundation.Grid.dll MIConvexHull.dll MathNet.Numerics.dll BoSSS.Solution.AdvancedSolvers.dll BoSSS.Solution.Gnuplot.dll BoSSS.Solution.Tecplot.dll ilPSP.LinSolvers.PARDISO.dll BoSSS.Solution.NSECommon.dll    writing file: control.obj
+deployment finished.
+ Submitting: PoissonConstCoeff_J163840_k2_exp_softpcg_mg
+Job is failed, retrying (Submitted 0 times so far); performing new deployment and submission.
+Deploying executables and additional files ...
+Deployment directory: G:\deploy-Mini\ipPoisson2019Feb12_14-24-26-10
+Source directory: C:\BoSSS\BoSSS-SolverPerformance\public\src\L4-application\BoSSSpad\bin\Release
+   copied: ipPoisson.exe BoSSS.Solution.dll CommandLine.dll BoSSS.Foundation.dll ilPSP.dll MPI.Wrappers.dll log4net.dll nunit.framework.dll Newtonsoft.Json.dll ilPSP.LinSolvers.MUMPS.dll BoSSS.Platform.dll Renci.SshNet.dll ilPSP.LinSolvers.monkey.dll ilPSP.Connectors.Matlab.dll BoSSS.Foundation.XDG.dll Mono.CSharp.dll BoSSS.Foundation.Grid.dll MIConvexHull.dll MathNet.Numerics.dll BoSSS.Solution.AdvancedSolvers.dll BoSSS.Solution.Gnuplot.dll BoSSS.Solution.Tecplot.dll ilPSP.LinSolvers.PARDISO.dll BoSSS.Solution.NSECommon.dll    writing file: control.obj
+deployment finished.
+ Submitting: PoissonConstCoeff_J40_k3_exp_softpcg_mg
+Job is failed, retrying (Submitted 0 times so far); performing new deployment and submission.
+Deploying executables and additional files ...
+Deployment directory: G:\deploy-Mini\ipPoisson2019Feb12_14-24-26-11
+Source directory: C:\BoSSS\BoSSS-SolverPerformance\public\src\L4-application\BoSSSpad\bin\Release
+   copied: ipPoisson.exe BoSSS.Solution.dll CommandLine.dll BoSSS.Foundation.dll ilPSP.dll MPI.Wrappers.dll log4net.dll nunit.framework.dll Newtonsoft.Json.dll ilPSP.LinSolvers.MUMPS.dll BoSSS.Platform.dll Renci.SshNet.dll ilPSP.LinSolvers.monkey.dll ilPSP.Connectors.Matlab.dll BoSSS.Foundation.XDG.dll Mono.CSharp.dll BoSSS.Foundation.Grid.dll MIConvexHull.dll MathNet.Numerics.dll BoSSS.Solution.AdvancedSolvers.dll BoSSS.Solution.Gnuplot.dll BoSSS.Solution.Tecplot.dll ilPSP.LinSolvers.PARDISO.dll BoSSS.Solution.NSECommon.dll    writing file: control.obj
+deployment finished.
+ Submitting: PoissonConstCoeff_J320_k3_exp_softpcg_mg
+Job is failed, retrying (Submitted 0 times so far); performing new deployment and submission.
+Deploying executables and additional files ...
+Deployment directory: G:\deploy-Mini\ipPoisson2019Feb12_14-24-26-12
+Source directory: C:\BoSSS\BoSSS-SolverPerformance\public\src\L4-application\BoSSSpad\bin\Release
+   copied: ipPoisson.exe BoSSS.Solution.dll CommandLine.dll BoSSS.Foundation.dll ilPSP.dll MPI.Wrappers.dll log4net.dll nunit.framework.dll Newtonsoft.Json.dll ilPSP.LinSolvers.MUMPS.dll BoSSS.Platform.dll Renci.SshNet.dll ilPSP.LinSolvers.monkey.dll ilPSP.Connectors.Matlab.dll BoSSS.Foundation.XDG.dll Mono.CSharp.dll BoSSS.Foundation.Grid.dll MIConvexHull.dll MathNet.Numerics.dll BoSSS.Solution.AdvancedSolvers.dll BoSSS.Solution.Gnuplot.dll BoSSS.Solution.Tecplot.dll ilPSP.LinSolvers.PARDISO.dll BoSSS.Solution.NSECommon.dll    writing file: control.obj
+deployment finished.
+ Submitting: PoissonConstCoeff_J2560_k3_exp_softpcg_mg
+Job is failed, retrying (Submitted 0 times so far); performing new deployment and submission.
+Deploying executables and additional files ...
+Deployment directory: G:\deploy-Mini\ipPoisson2019Feb12_14-24-26-13
+Source directory: C:\BoSSS\BoSSS-SolverPerformance\public\src\L4-application\BoSSSpad\bin\Release
+   copied: ipPoisson.exe BoSSS.Solution.dll CommandLine.dll BoSSS.Foundation.dll ilPSP.dll MPI.Wrappers.dll log4net.dll nunit.framework.dll Newtonsoft.Json.dll ilPSP.LinSolvers.MUMPS.dll BoSSS.Platform.dll Renci.SshNet.dll ilPSP.LinSolvers.monkey.dll ilPSP.Connectors.Matlab.dll BoSSS.Foundation.XDG.dll Mono.CSharp.dll BoSSS.Foundation.Grid.dll MIConvexHull.dll MathNet.Numerics.dll BoSSS.Solution.AdvancedSolvers.dll BoSSS.Solution.Gnuplot.dll BoSSS.Solution.Tecplot.dll ilPSP.LinSolvers.PARDISO.dll BoSSS.Solution.NSECommon.dll    writing file: control.obj
+deployment finished.
+ Submitting: PoissonConstCoeff_J20480_k3_exp_softpcg_mg
+Job is failed, retrying (Submitted 0 times so far); performing new deployment and submission.
+Deploying executables and additional files ...
+Deployment directory: G:\deploy-Mini\ipPoisson2019Feb12_14-24-26-14
+Source directory: C:\BoSSS\BoSSS-SolverPerformance\public\src\L4-application\BoSSSpad\bin\Release
+   copied: ipPoisson.exe BoSSS.Solution.dll CommandLine.dll BoSSS.Foundation.dll ilPSP.dll MPI.Wrappers.dll log4net.dll nunit.framework.dll Newtonsoft.Json.dll ilPSP.LinSolvers.MUMPS.dll BoSSS.Platform.dll Renci.SshNet.dll ilPSP.LinSolvers.monkey.dll ilPSP.Connectors.Matlab.dll BoSSS.Foundation.XDG.dll Mono.CSharp.dll BoSSS.Foundation.Grid.dll MIConvexHull.dll MathNet.Numerics.dll BoSSS.Solution.AdvancedSolvers.dll BoSSS.Solution.Gnuplot.dll BoSSS.Solution.Tecplot.dll ilPSP.LinSolvers.PARDISO.dll BoSSS.Solution.NSECommon.dll    writing file: control.obj
+deployment finished.
+ Submitting: PoissonConstCoeff_J163840_k3_exp_softpcg_mg
+Job is failed, retrying (Submitted 0 times so far); performing new deployment and submission.
+Deploying executables and additional files ...
+Deployment directory: G:\deploy-Mini\ipPoisson2019Feb12_14-24-27
+Source directory: C:\BoSSS\BoSSS-SolverPerformance\public\src\L4-application\BoSSSpad\bin\Release
+   copied: ipPoisson.exe BoSSS.Solution.dll CommandLine.dll BoSSS.Foundation.dll ilPSP.dll MPI.Wrappers.dll log4net.dll nunit.framework.dll Newtonsoft.Json.dll ilPSP.LinSolvers.MUMPS.dll BoSSS.Platform.dll Renci.SshNet.dll ilPSP.LinSolvers.monkey.dll ilPSP.Connectors.Matlab.dll BoSSS.Foundation.XDG.dll Mono.CSharp.dll BoSSS.Foundation.Grid.dll MIConvexHull.dll MathNet.Numerics.dll BoSSS.Solution.AdvancedSolvers.dll BoSSS.Solution.Gnuplot.dll BoSSS.Solution.Tecplot.dll ilPSP.LinSolvers.PARDISO.dll BoSSS.Solution.NSECommon.dll    writing file: control.obj
+deployment finished.
+ Submitting: PoissonConstCoeff_J40_k5_exp_softpcg_mg
+Job is failed, retrying (Submitted 0 times so far); performing new deployment and submission.
+Deploying executables and additional files ...
+Deployment directory: G:\deploy-Mini\ipPoisson2019Feb12_14-24-27-1
+Source directory: C:\BoSSS\BoSSS-SolverPerformance\public\src\L4-application\BoSSSpad\bin\Release
+   copied: ipPoisson.exe BoSSS.Solution.dll CommandLine.dll BoSSS.Foundation.dll ilPSP.dll MPI.Wrappers.dll log4net.dll nunit.framework.dll Newtonsoft.Json.dll ilPSP.LinSolvers.MUMPS.dll BoSSS.Platform.dll Renci.SshNet.dll ilPSP.LinSolvers.monkey.dll ilPSP.Connectors.Matlab.dll BoSSS.Foundation.XDG.dll Mono.CSharp.dll BoSSS.Foundation.Grid.dll MIConvexHull.dll MathNet.Numerics.dll BoSSS.Solution.AdvancedSolvers.dll BoSSS.Solution.Gnuplot.dll BoSSS.Solution.Tecplot.dll ilPSP.LinSolvers.PARDISO.dll BoSSS.Solution.NSECommon.dll    writing file: control.obj
+deployment finished.
+ Submitting: PoissonConstCoeff_J320_k5_exp_softpcg_mg
+Job is failed, retrying (Submitted 0 times so far); performing new deployment and submission.
+Deploying executables and additional files ...
+Deployment directory: G:\deploy-Mini\ipPoisson2019Feb12_14-24-27-2
+Source directory: C:\BoSSS\BoSSS-SolverPerformance\public\src\L4-application\BoSSSpad\bin\Release
+   copied: ipPoisson.exe BoSSS.Solution.dll CommandLine.dll BoSSS.Foundation.dll ilPSP.dll MPI.Wrappers.dll log4net.dll nunit.framework.dll Newtonsoft.Json.dll ilPSP.LinSolvers.MUMPS.dll BoSSS.Platform.dll Renci.SshNet.dll ilPSP.LinSolvers.monkey.dll ilPSP.Connectors.Matlab.dll BoSSS.Foundation.XDG.dll Mono.CSharp.dll BoSSS.Foundation.Grid.dll MIConvexHull.dll MathNet.Numerics.dll BoSSS.Solution.AdvancedSolvers.dll BoSSS.Solution.Gnuplot.dll BoSSS.Solution.Tecplot.dll ilPSP.LinSolvers.PARDISO.dll BoSSS.Solution.NSECommon.dll    writing file: control.obj
+deployment finished.
+ Submitting: PoissonConstCoeff_J2560_k5_exp_softpcg_mg
+Job is failed, retrying (Submitted 0 times so far); performing new deployment and submission.
+Deploying executables and additional files ...
+Deployment directory: G:\deploy-Mini\ipPoisson2019Feb12_14-24-27-3
+Source directory: C:\BoSSS\BoSSS-SolverPerformance\public\src\L4-application\BoSSSpad\bin\Release
+   copied: ipPoisson.exe BoSSS.Solution.dll CommandLine.dll BoSSS.Foundation.dll ilPSP.dll MPI.Wrappers.dll log4net.dll nunit.framework.dll Newtonsoft.Json.dll ilPSP.LinSolvers.MUMPS.dll BoSSS.Platform.dll Renci.SshNet.dll ilPSP.LinSolvers.monkey.dll ilPSP.Connectors.Matlab.dll BoSSS.Foundation.XDG.dll Mono.CSharp.dll BoSSS.Foundation.Grid.dll MIConvexHull.dll MathNet.Numerics.dll BoSSS.Solution.AdvancedSolvers.dll BoSSS.Solution.Gnuplot.dll BoSSS.Solution.Tecplot.dll ilPSP.LinSolvers.PARDISO.dll BoSSS.Solution.NSECommon.dll    writing file: control.obj
+deployment finished.
+ Submitting: PoissonConstCoeff_J20480_k5_exp_softpcg_mg
+Job is failed, retrying (Submitted 0 times so far); performing new deployment and submission.
+Deploying executables and additional files ...
+Deployment directory: G:\deploy-Mini\ipPoisson2019Feb12_14-24-27-4
+Source directory: C:\BoSSS\BoSSS-SolverPerformance\public\src\L4-application\BoSSSpad\bin\Release
+   copied: ipPoisson.exe BoSSS.Solution.dll CommandLine.dll BoSSS.Foundation.dll ilPSP.dll MPI.Wrappers.dll log4net.dll nunit.framework.dll Newtonsoft.Json.dll ilPSP.LinSolvers.MUMPS.dll BoSSS.Platform.dll Renci.SshNet.dll ilPSP.LinSolvers.monkey.dll ilPSP.Connectors.Matlab.dll BoSSS.Foundation.XDG.dll Mono.CSharp.dll BoSSS.Foundation.Grid.dll MIConvexHull.dll MathNet.Numerics.dll BoSSS.Solution.AdvancedSolvers.dll BoSSS.Solution.Gnuplot.dll BoSSS.Solution.Tecplot.dll ilPSP.LinSolvers.PARDISO.dll BoSSS.Solution.NSECommon.dll    writing file: control.obj
+deployment finished.
+
 ==============
 **************
 ==============
@@ -362,124 +668,18 @@ List of 33 instances of ISessionInfo {
   32: PoissonSolverPerformance_beforeNewLibs	PoissonConstCoeff_J40_k2_classic_pardiso	12/04/2018 14:45:56	b92f62db...
 }
 ==============
+tempDB.Projects.Pick(0).Value.RunningOrCrashed()
 **************
+List of 4 instances of ISessionInfo {
+  0: SIP_SingleNodePerformance_1	PoissonConstCoeff_J163840_k2_exp_softpcg_schwarz_directcoarse*	02/13/2019 09:35:20	b8beacd4...
+  1: SIP_SingleNodePerformance_1	PoissonConstCoeff_J20480_k5_classic_cg*	02/13/2019 09:27:20	17e01e82...
+  2: SIP_SingleNodePerformance_1	PoissonConstCoeff_J2560_k5_classic_cg*	02/12/2019 23:02:04	29505dfa...
+  3: SIP_SingleNodePerformance_1	PoissonConstCoeff_J163840_k3_classic_cg*	02/12/2019 20:33:36	49e2bc6a...
+}
 ==============
 WorkflowMgm.AllJobs.Select(kv => kv.Key + ": \t" + kv.Value.Status);
 **************
-Loading session 03bbcb6c-89aa-4c92-b1f6-dd479bf3baa1 failed with message 'Der Objektverweis wurde nicht auf eine Objektinstanz festgelegt.'
-List of 112 instances of String {
-  0: PoissonConstCoeff_J40_k2_classic_pardiso: 	FinishedSuccessful
-  1: PoissonConstCoeff_J320_k2_classic_pardiso: 	FinishedSuccessful
-  2: PoissonConstCoeff_J2560_k2_classic_pardiso: 	FinishedSuccessful
-  3: PoissonConstCoeff_J20480_k2_classic_pardiso: 	FinishedSuccessful
-  4: PoissonConstCoeff_J163840_k2_classic_pardiso: 	FinishedSuccessful
-  5: PoissonConstCoeff_J40_k3_classic_pardiso: 	FinishedSuccessful
-  6: PoissonConstCoeff_J320_k3_classic_pardiso: 	FinishedSuccessful
-  7: PoissonConstCoeff_J2560_k3_classic_pardiso: 	FinishedSuccessful
-  8: PoissonConstCoeff_J20480_k3_classic_pardiso: 	FinishedSuccessful
-  9: PoissonConstCoeff_J163840_k3_classic_pardiso: 	Failed
-  10: PoissonConstCoeff_J40_k5_classic_pardiso: 	FinishedSuccessful
-  11: PoissonConstCoeff_J320_k5_classic_pardiso: 	FinishedSuccessful
-  12: PoissonConstCoeff_J2560_k5_classic_pardiso: 	FinishedSuccessful
-  13: PoissonConstCoeff_J20480_k5_classic_pardiso: 	Failed
-  14: PoissonConstCoeff_J40_k2_classic_mumps: 	FinishedSuccessful
-  15: PoissonConstCoeff_J320_k2_classic_mumps: 	FinishedSuccessful
-  16: PoissonConstCoeff_J2560_k2_classic_mumps: 	FinishedSuccessful
-  17: PoissonConstCoeff_J20480_k2_classic_mumps: 	FinishedSuccessful
-  18: PoissonConstCoeff_J163840_k2_classic_mumps: 	Failed
-  19: PoissonConstCoeff_J40_k3_classic_mumps: 	FinishedSuccessful
-  20: PoissonConstCoeff_J320_k3_classic_mumps: 	FinishedSuccessful
-  21: PoissonConstCoeff_J2560_k3_classic_mumps: 	FinishedSuccessful
-  22: PoissonConstCoeff_J20480_k3_classic_mumps: 	Failed
-  23: PoissonConstCoeff_J163840_k3_classic_mumps: 	Failed
-  24: PoissonConstCoeff_J40_k5_classic_mumps: 	FinishedSuccessful
-  25: PoissonConstCoeff_J320_k5_classic_mumps: 	FinishedSuccessful
-  26: PoissonConstCoeff_J2560_k5_classic_mumps: 	FinishedSuccessful
-  27: PoissonConstCoeff_J20480_k5_classic_mumps: 	Failed
-  28: PoissonConstCoeff_J40_k2_classic_cg: 	FinishedSuccessful
-  29: PoissonConstCoeff_J320_k2_classic_cg: 	FinishedSuccessful
-  30: PoissonConstCoeff_J2560_k2_classic_cg: 	FinishedSuccessful
-  31: PoissonConstCoeff_J20480_k2_classic_cg: 	FinishedSuccessful
-  32: PoissonConstCoeff_J163840_k2_classic_cg: 	FinishedSuccessful
-  33: PoissonConstCoeff_J40_k3_classic_cg: 	FinishedSuccessful
-  34: PoissonConstCoeff_J320_k3_classic_cg: 	FinishedSuccessful
-  35: PoissonConstCoeff_J2560_k3_classic_cg: 	FinishedSuccessful
-  36: PoissonConstCoeff_J20480_k3_classic_cg: 	FinishedSuccessful
-  37: PoissonConstCoeff_J163840_k3_classic_cg: 	Failed
-  38: PoissonConstCoeff_J40_k5_classic_cg: 	FinishedSuccessful
-  39: PoissonConstCoeff_J320_k5_classic_cg: 	FinishedSuccessful
-  40: PoissonConstCoeff_J2560_k5_classic_cg: 	FinishedSuccessful
-  41: PoissonConstCoeff_J20480_k5_classic_cg: 	Failed
-  42: PoissonConstCoeff_J40_k2_exp_softpcg_schwarz_directcoarse: 	FinishedSuccessful
-  43: PoissonConstCoeff_J320_k2_exp_softpcg_schwarz_directcoarse: 	FinishedSuccessful
-  44: PoissonConstCoeff_J2560_k2_exp_softpcg_schwarz_directcoarse: 	FinishedSuccessful
-  45: PoissonConstCoeff_J20480_k2_exp_softpcg_schwarz_directcoarse: 	FinishedSuccessful
-  46: PoissonConstCoeff_J163840_k2_exp_softpcg_schwarz_directcoarse: 	FinishedSuccessful
-  47: PoissonConstCoeff_J40_k3_exp_softpcg_schwarz_directcoarse: 	FinishedSuccessful
-  48: PoissonConstCoeff_J320_k3_exp_softpcg_schwarz_directcoarse: 	FinishedSuccessful
-  49: PoissonConstCoeff_J2560_k3_exp_softpcg_schwarz_directcoarse: 	FinishedSuccessful
-  50: PoissonConstCoeff_J20480_k3_exp_softpcg_schwarz_directcoarse: 	FinishedSuccessful
-  51: PoissonConstCoeff_J163840_k3_exp_softpcg_schwarz_directcoarse: 	Failed
-  52: PoissonConstCoeff_J40_k5_exp_softpcg_schwarz_directcoarse: 	FinishedSuccessful
-  53: PoissonConstCoeff_J320_k5_exp_softpcg_schwarz_directcoarse: 	FinishedSuccessful
-  54: PoissonConstCoeff_J2560_k5_exp_softpcg_schwarz_directcoarse: 	FinishedSuccessful
-  55: PoissonConstCoeff_J20480_k5_exp_softpcg_schwarz_directcoarse: 	Failed
-  56: PoissonConstCoeff_J40_k2_exp_direct: 	FinishedSuccessful
-  57: PoissonConstCoeff_J320_k2_exp_direct: 	FinishedSuccessful
-  58: PoissonConstCoeff_J2560_k2_exp_direct: 	FinishedSuccessful
-  59: PoissonConstCoeff_J20480_k2_exp_direct: 	FinishedSuccessful
-  60: PoissonConstCoeff_J163840_k2_exp_direct: 	FinishedSuccessful
-  61: PoissonConstCoeff_J40_k3_exp_direct: 	FinishedSuccessful
-  62: PoissonConstCoeff_J320_k3_exp_direct: 	FinishedSuccessful
-  63: PoissonConstCoeff_J2560_k3_exp_direct: 	FinishedSuccessful
-  64: PoissonConstCoeff_J20480_k3_exp_direct: 	FinishedSuccessful
-  65: PoissonConstCoeff_J163840_k3_exp_direct: 	Failed
-  66: PoissonConstCoeff_J40_k5_exp_direct: 	FinishedSuccessful
-  67: PoissonConstCoeff_J320_k5_exp_direct: 	FinishedSuccessful
-  68: PoissonConstCoeff_J2560_k5_exp_direct: 	FinishedSuccessful
-  69: PoissonConstCoeff_J20480_k5_exp_direct: 	Failed
-  70: PoissonConstCoeff_J40_k2_exp_softpcg_schwarz: 	FinishedSuccessful
-  71: PoissonConstCoeff_J320_k2_exp_softpcg_schwarz: 	FinishedSuccessful
-  72: PoissonConstCoeff_J2560_k2_exp_softpcg_schwarz: 	FinishedSuccessful
-  73: PoissonConstCoeff_J20480_k2_exp_softpcg_schwarz: 	FinishedSuccessful
-  74: PoissonConstCoeff_J163840_k2_exp_softpcg_schwarz: 	FinishedSuccessful
-  75: PoissonConstCoeff_J40_k3_exp_softpcg_schwarz: 	FinishedSuccessful
-  76: PoissonConstCoeff_J320_k3_exp_softpcg_schwarz: 	FinishedSuccessful
-  77: PoissonConstCoeff_J2560_k3_exp_softpcg_schwarz: 	FinishedSuccessful
-  78: PoissonConstCoeff_J20480_k3_exp_softpcg_schwarz: 	FinishedSuccessful
-  79: PoissonConstCoeff_J163840_k3_exp_softpcg_schwarz: 	Failed
-  80: PoissonConstCoeff_J40_k5_exp_softpcg_schwarz: 	FinishedSuccessful
-  81: PoissonConstCoeff_J320_k5_exp_softpcg_schwarz: 	FinishedSuccessful
-  82: PoissonConstCoeff_J2560_k5_exp_softpcg_schwarz: 	FinishedSuccessful
-  83: PoissonConstCoeff_J20480_k5_exp_softpcg_schwarz: 	Failed
-  84: PoissonConstCoeff_J40_k2_exp_direct_lapack: 	FinishedSuccessful
-  85: PoissonConstCoeff_J320_k2_exp_direct_lapack: 	FinishedSuccessful
-  86: PoissonConstCoeff_J2560_k2_exp_direct_lapack: 	Failed
-  87: PoissonConstCoeff_J20480_k2_exp_direct_lapack: 	Failed
-  88: PoissonConstCoeff_J163840_k2_exp_direct_lapack: 	Failed
-  89: PoissonConstCoeff_J40_k3_exp_direct_lapack: 	FinishedSuccessful
-  90: PoissonConstCoeff_J320_k3_exp_direct_lapack: 	FinishedSuccessful
-  91: PoissonConstCoeff_J2560_k3_exp_direct_lapack: 	Failed
-  92: PoissonConstCoeff_J20480_k3_exp_direct_lapack: 	Failed
-  93: PoissonConstCoeff_J163840_k3_exp_direct_lapack: 	Failed
-  94: PoissonConstCoeff_J40_k5_exp_direct_lapack: 	FinishedSuccessful
-  95: PoissonConstCoeff_J320_k5_exp_direct_lapack: 	Failed
-  96: PoissonConstCoeff_J2560_k5_exp_direct_lapack: 	Failed
-  97: PoissonConstCoeff_J20480_k5_exp_direct_lapack: 	Failed
-  98: PoissonConstCoeff_J40_k2_exp_softpcg_mg: 	FinishedSuccessful
-  99: PoissonConstCoeff_J320_k2_exp_softpcg_mg: 	FinishedSuccessful
-  100: PoissonConstCoeff_J2560_k2_exp_softpcg_mg: 	FinishedSuccessful
-  101: PoissonConstCoeff_J20480_k2_exp_softpcg_mg: 	FinishedSuccessful
-  102: PoissonConstCoeff_J163840_k2_exp_softpcg_mg: 	FinishedSuccessful
-  103: PoissonConstCoeff_J40_k3_exp_softpcg_mg: 	FinishedSuccessful
-  104: PoissonConstCoeff_J320_k3_exp_softpcg_mg: 	FinishedSuccessful
-  105: PoissonConstCoeff_J2560_k3_exp_softpcg_mg: 	FinishedSuccessful
-  106: PoissonConstCoeff_J20480_k3_exp_softpcg_mg: 	FinishedSuccessful
-  107: PoissonConstCoeff_J163840_k3_exp_softpcg_mg: 	Failed
-  108: PoissonConstCoeff_J40_k5_exp_softpcg_mg: 	FinishedSuccessful
-  109: PoissonConstCoeff_J320_k5_exp_softpcg_mg: 	FinishedSuccessful
-  110: PoissonConstCoeff_J2560_k5_exp_softpcg_mg: 	FinishedSuccessful
-  111: PoissonConstCoeff_J20480_k5_exp_softpcg_mg: 	Failed
+List of 0 instances of String {
 }
 ==============
 //WorkflowMgm.AllJobs.ElementAt(9).Value.Stdout;
@@ -490,8 +690,7 @@ List of 112 instances of String {
 ==============
 WorkflowMgm.SessionTable.Rows.Count;
 **************
-Loading session 03bbcb6c-89aa-4c92-b1f6-dd479bf3baa1 failed with message 'Der Objektverweis wurde nicht auf eine Objektinstanz festgelegt.'
-224
+16
 ==============
 **************
 ==============
@@ -584,6 +783,18 @@ SessTab.SaveToFile(docpath);
 **************
 ==============
 LastError;
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
 **************
 ==============
 **************

@@ -99,7 +99,21 @@ namespace BoSSS.Application.XdgPoisson3 {
         MultiphaseCellAgglomerator Op_Agglomeration;
         MassMatrixFactory Op_mass;
 
+        static void MyHandler(object sender, UnhandledExceptionEventArgs args) {
+            Exception e = (Exception)args.ExceptionObject;
+            Console.WriteLine("MyHandler caught : " + e.Message);
+            Console.WriteLine("Runtime terminating: {0}", args.IsTerminating);
+            System.Environment.Exit(-1234);
+        }
+
         protected override void SetInitial() {
+            //this will suppress exception prompts
+            //Workaround to prevent distrubance while executing batchclient
+            if (this.Control.SuppressExceptionPrompt) {
+                AppDomain currentDomain = AppDomain.CurrentDomain;
+                currentDomain.UnhandledException += new UnhandledExceptionEventHandler(MyHandler);
+            }
+
             base.SetInitial();
             this.LsTrk.UpdateTracker();
             if (!this.Control.PerformanceModeON) {

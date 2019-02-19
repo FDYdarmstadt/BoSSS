@@ -128,5 +128,11 @@ namespace BoSSS.Application.XdgPoisson3 {
 
         [DataMember]
         public int pOff = 2;
+
+        /// <summary>
+        /// Suppresses exception prompt, which disturbes local batch run with MiniBatchprocessor.
+        /// </summary>
+        [DataMember]
+        public bool SuppressExceptionPrompt = false;
     }
 }

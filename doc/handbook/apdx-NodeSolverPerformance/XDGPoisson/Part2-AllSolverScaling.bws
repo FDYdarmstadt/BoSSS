@@ -360,6 +360,10 @@ for(int iCol = 0; iCol < columns; iCol++) {
                return;
                }
            }
+		   
+		   // ===!!!=== CAUTION ===!!!===
+		   // Solverframework (SolverEnum numbers) have changed! Please check LinearSolver and NonLinearSolver for details
+		   
            //process the other solvers
            Fmt = new PlotFormat();
            switch(solver_name) {
