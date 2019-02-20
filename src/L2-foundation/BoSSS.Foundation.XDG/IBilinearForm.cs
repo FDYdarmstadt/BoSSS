@@ -105,6 +105,16 @@ namespace BoSSS.Foundation.XDG {
         public double[] n;
 
         /// <summary>
+        /// Guess what?
+        /// </summary>
+        public int SpatialDim {
+            get {
+                Debug.Assert(x.Length == n.Length);
+                return n.Length;
+            }
+        }
+
+        /// <summary>
         /// Values of parameter variables on negative side, i.e. where the level-set function is negative.
         /// </summary>
         public double[] ParamsNeg;
