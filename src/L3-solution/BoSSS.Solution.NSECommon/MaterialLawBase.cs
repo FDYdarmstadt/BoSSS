@@ -88,6 +88,13 @@ namespace BoSSS.Solution.NSECommon {
         /// <returns></returns>
         public abstract double DiffRho_Temp(double phi);
 
-        #endregion         
+        #endregion
+
+        /// <summary>
+        /// Paramaters for <see cref="BoSSS.Foundation.IEquationComponent.ParameterOrdering"/>
+        /// </summary>
+        public abstract IList<string> ParameterOrdering {
+            get;
+        }
     }
 }
