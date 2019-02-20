@@ -38,8 +38,9 @@ namespace BoSSS.Solution.LevelSetTools.EllipticReInit {
     /// \f]
     /// </summary>
     public class EllipticReInitInterfaceForm : ILevelSetForm, ILevelSetEquationComponentCoefficient {
-        double PenaltyBase;
-        LevelSetTracker LSTrk;
+        readonly double PenaltyBase;
+
+        readonly LevelSetTracker LSTrk;
 
         /// <summary>
         /// old ctor
@@ -49,6 +50,9 @@ namespace BoSSS.Solution.LevelSetTools.EllipticReInit {
             this.LSTrk = LSTrk;
         }
 
+        /// <summary>
+        /// %
+        /// </summary>
         public TermActivationFlags LevelSetTerms {
             get {
                 return (TermActivationFlags.UxV);
@@ -90,26 +94,41 @@ namespace BoSSS.Solution.LevelSetTools.EllipticReInit {
 
         }
 
+        /// <summary>
+        /// Only depends on the level-set
+        /// </summary>
         public IList<string> ArgumentOrdering {
             get {
                 return new string[] { VariableNames.LevelSet };
             }
         }
 
+        /// <summary>
+        /// empty
+        /// </summary>
         public IList<string> ParameterOrdering {
             get {
                 return new string[] { };
             }
         }
 
+        /// <summary>
+        /// 0
+        /// </summary>
         public int LevelSetIndex {
             get { return 0; }
         }
 
+        /// <summary>
+        /// B
+        /// </summary>
         public SpeciesId PositiveSpecies {
             get { return this.LSTrk.GetSpeciesId("B"); }
         }
 
+        /// <summary>
+        /// A
+        /// </summary>
         public SpeciesId NegativeSpecies {
             get { return this.LSTrk.GetSpeciesId("A"); }
         }

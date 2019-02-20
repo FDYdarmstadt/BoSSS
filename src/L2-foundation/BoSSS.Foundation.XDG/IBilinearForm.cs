@@ -60,19 +60,7 @@ namespace BoSSS.Foundation.XDG {
         /// Values of parameter fields at quadrature nodes on negative side, i.e. where the level-set function is negative.
         /// </summary>
         public MultidimensionalArray[] ParamsNeg;
-
-
-        ///// <summary>
-        ///// A characteristic length scale for the negative parts of the cut cells, i.e. the respective part of a cut cell where the level-set field is negative.
-        ///// </summary>
-        //public MultidimensionalArray NegCellLengthScale;
-
-
-        ///// <summary>
-        ///// A characteristic length scale for the positive parts of the cut cells, i.e. the respective part of a cut cell where the level-set field is positive.
-        ///// </summary>
-        //public MultidimensionalArray PosCellLengthScale;
-        
+      
 
         /// <summary>
         /// 1st item to integrate, i.e. cell/edge offset;
@@ -188,6 +176,7 @@ namespace BoSSS.Foundation.XDG {
     /// Interface for equation components which require e.g. grid and/or problem-dependent coefficients,
     /// e.g. cell length scales
     /// </summary>
+    /// <seealso cref="XSpatialOperator.XEvaluatorBase.OperatorCoefficients"/>
     public interface ILevelSetEquationComponentCoefficient : IEquationComponent {
 
         /// <summary>
@@ -209,12 +198,17 @@ namespace BoSSS.Foundation.XDG {
 
     }
 
-
+    /// <summary>
+    /// The XDG-counterpart of <see cref="BoSSS.Foundation.IEdgeform_UxV"/>
+    /// </summary>
     public interface ILevelSetForm_UxV : ILevelSetForm {
        
         void LevelSetForm_UxV(LevSetIntParams inp, MultidimensionalArray Koeff_UxV);
     }
 
+    /// <summary>
+    /// The XDG-counterpart of <see cref="BoSSS.Foundation.IEdgeform_UxV"/>
+    /// </summary>
     public interface ILevelSetForm_GradUxV : ILevelSetForm {
         void LevelSetForm_GradUxV(LevSetIntParams inp, MultidimensionalArray Koeff_GradUxV);
 
