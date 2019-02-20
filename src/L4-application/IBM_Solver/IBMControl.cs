@@ -243,7 +243,7 @@ namespace BoSSS.Application.IBM_Solver {
         /// See <see cref="TimesteppingScheme"/>
         /// </summary>
         [DataMember]
-        public TimesteppingScheme Timestepper_Scheme;
+        public TimesteppingScheme Timestepper_Scheme = TimesteppingScheme.BDF2;
 
         /// <summary>
         /// Set true if periodic boundary conditions in streamwise direction are applied
