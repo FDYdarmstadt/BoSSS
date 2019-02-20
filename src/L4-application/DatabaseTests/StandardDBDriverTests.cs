@@ -184,7 +184,7 @@ namespace BoSSS.Application.DatabaseTests {
             }
 
             Assert.IsTrue(
-                CountAllFiles(m_DB2.Path) == 52,
+                CountAllFiles(m_DB2.Path) == 63,
                 "Database should be non-empty after copying");
 
             m_DB2.Controller.ClearDatabase();

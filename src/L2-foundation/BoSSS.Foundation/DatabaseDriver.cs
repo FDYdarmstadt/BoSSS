@@ -649,14 +649,15 @@ namespace BoSSS.Foundation.IO {
             if (!grid.BcCellsStorageGuid.Equals(Guid.Empty))
                 grid.BcCells = LoadVector<BCElement>(grid.BcCellsStorageGuid, ref p).ToArray();
 
-            foreach (var s in grid.m_PredefinedGridPartitioning)
+            for(int i = 0; i < grid.m_PredefinedGridPartitioning.Count; ++i)
             {
-                int[] cellToRankMap = s.Value.CellToRankMap;
-                if (cellToRankMap == null)
+                var s = grid.m_PredefinedGridPartitioning.ElementAt(i);
+                if (s.Value.CellToRankMap == null)
                 {
                     // Partitioning has not been loaded; do it now
                     Partitioning currentPartitioning = grid.CellPartitioning;
-                    cellToRankMap = LoadVector<int>(s.Value.Guid, ref currentPartitioning).ToArray();
+                    int[] cellToRankMap = LoadVector<int>(s.Value.Guid, ref currentPartitioning).ToArray();
+                    grid.m_PredefinedGridPartitioning[s.Key] = new GridCommons.GridPartitioningVector{ Guid = s.Value.Guid, CellToRankMap = cellToRankMap };
                 }
             }
 
