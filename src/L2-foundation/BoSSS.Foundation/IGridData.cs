@@ -50,6 +50,13 @@ namespace BoSSS.Foundation.Grid {
         }
 
         /// <summary>
+        /// return the grid
+        /// </summary>
+        IGrid Grid {
+            get;
+        }
+
+        /// <summary>
         /// This is a mapping from each used <em>EdgeTag</em>, (see <see cref="IGeometricalEdgeData.EdgeTags"/>) to a string that
         /// provides a name and additional information about the EdgeTag. The
         /// intention for this member is to provide both, a name (e.g.
@@ -325,6 +332,10 @@ namespace BoSSS.Foundation.Grid {
 
     }
 
+    /// <summary>
+    /// Geometrical properties of cells; in the case of an aggregation grids (<see cref="Aggregation.AggregationGridData"/>), 
+    /// the geometrical properties of the cell parts.
+    /// </summary>
     public interface IGeometricalCellsData {
 
         /// <summary>

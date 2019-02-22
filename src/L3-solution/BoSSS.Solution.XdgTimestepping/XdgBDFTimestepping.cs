@@ -1084,8 +1084,6 @@ namespace BoSSS.Solution.XdgTimestepping {
                 Debug.Assert(object.ReferenceEquals(this.m_CurrentAgglomeration.Tracker, this.m_LsTrk));
                 this.ComputeOperatorMatrix(m_Stack_OpMatrix[0], m_Stack_OpAffine[0], CurrentStateMapping, locCurSt, base.GetAgglomeratedLengthScales(), m_CurrentPhystime + m_CurrentDt);
 
-                
-
 
                 // assemble system
                 // ---------------
@@ -1632,7 +1630,7 @@ namespace BoSSS.Solution.XdgTimestepping {
                             mg.Gamma = 1;
                             mg.m_MaxIterations = 1;
                         },
-                        () => new DirectSolver() { WhichSolver = DirectSolver._whichSolver.MUMPS }) },
+                        () => new SparseSolver() { WhichSolver = SparseSolver._whichSolver.MUMPS }) },
                 Tolerance = 1.0e-10
             };
 

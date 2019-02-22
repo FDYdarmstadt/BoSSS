@@ -99,19 +99,19 @@ export class Editor{
 
     addDecoration(myRange, decorationClassName, overviewRulerColor){
   
-      var newDecorationId = this.monaco.deltaDecorations([], [
-          {
-              range: myRange,
-              options: {
-                  isWholeLine: true,
-                  className: decorationClassName,
-            overviewRuler: {
-              color: overviewRulerColor
-            } 
-              }
-          }
-      ]);
-      return newDecorationId;
+        var newDecorationId = this.monaco.deltaDecorations([], [
+            {
+                range: myRange,
+                options: {
+                    isWholeLine: true,
+                    className: decorationClassName,
+                    overviewRuler: {
+                        color: overviewRulerColor
+                    } 
+                }
+            }
+        ]);
+        return newDecorationId;
     }
     
     removeDecoration(id){
@@ -139,22 +139,22 @@ export class Editor{
     }
 
     setValue(myRange, myText){
-      var id = { major: 1, minor: 1 }; 
-      var IIdentifiedSingleEditOperation ={ 
-        identifier: id,
-        forceMoveMakers: true,
-        range: myRange,
-        text: myText
-      };
-      this.monaco.executeEdits("bla", [IIdentifiedSingleEditOperation]);
+        var id = { major: 1, minor: 1 }; 
+        var IIdentifiedSingleEditOperation ={ 
+            identifier: id,
+            forceMoveMakers: true,
+            range: myRange,
+            text: myText
+        };
+        this.monaco.executeEdits("bla", [IIdentifiedSingleEditOperation]);
     }
 
     reset(){
-      this.monaco.setValue("");
+        this.monaco.setValue("");
     }
 
     getSelection(){
-      return this.monaco.getSelection();
+        return this.monaco.getSelection();
     }
 }
 
@@ -177,16 +177,16 @@ self.MonacoEnvironment = {
 }
 
 function attachEditor( element, myValue, myLanguage, myLineNumbers){
-  var promise = new Promise(function(resolve, reject) {
-    var editor =  monaco.editor.create(element, {
-      value: myValue,
-      language: myLanguage,
-      lineNumbers: myLineNumbers,
-      minimap: {
-        enabled: false
-      }
+    var promise = new Promise(function(resolve, reject) {
+        var editor =  monaco.editor.create(element, {
+        value: myValue,
+        language: myLanguage,
+        lineNumbers: myLineNumbers,
+        minimap: {
+            enabled: false
+        }
+        });
+        resolve(editor);
     });
-    resolve(editor);
-  });
-  return promise;
+    return promise;
 }

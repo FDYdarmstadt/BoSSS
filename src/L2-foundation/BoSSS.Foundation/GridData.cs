@@ -55,6 +55,15 @@ namespace BoSSS.Foundation.Grid.Classic {
         }
 
         /// <summary>
+        /// The grid for which information is provided
+        /// </summary>
+        IGrid IGridData.Grid {
+            get {
+                return m_Grid;
+            }
+        }
+
+        /// <summary>
         /// Identification of the grid in the BoSSS database, 
         /// equal to the <see cref="BoSSS.Foundation.IO.IDatabaseEntityInfo{T}.ID"/>.
         /// </summary>

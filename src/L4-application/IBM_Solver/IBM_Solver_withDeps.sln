@@ -47,7 +47,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ilPSP.LinSolvers.ALMOND", "
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "XNSE_Solver", "XNSE_Solver.csproj", "{3D867374-BF9A-475E-8F5C-E1C067605B9C}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BoSSS.Solution.Multigrid", "..\..\L3-solution\BoSSS.Solution.Multigrid\BoSSS.Solution.Multigrid.csproj", "{EFE8C307-09BC-4F58-B991-6EF8FD6D5EFF}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BoSSS.Solution.AdvancedSolvers", "..\..\L3-solution\BoSSS.Solution.AdvancedSolvers\BoSSS.Solution.AdvancedSolvers.csproj", "{EFE8C307-09BC-4F58-B991-6EF8FD6D5EFF}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BoSSS.Solution.Gnuplot", "..\..\L3-solution\BoSSS.Solution.Gnuplot\BoSSS.Solution.Gnuplot.csproj", "{D4FADB7C-0B11-4F41-A97A-146DC1F7034E}"
 EndProject

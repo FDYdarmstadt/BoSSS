@@ -860,6 +860,7 @@ namespace BoSSS.Solution.NSECommon {
 
                 var SchemeHelper = LsTrk.GetXDGSpaceMetrics(new[] { LsTrk.GetSpeciesId("A") }, RequiredOrder, 1).XQuadSchemeHelper;
 
+                //EdgeMask Mask = new EdgeMask(LsTrk.GridDat, "Wall_bottom");
                 EdgeMask Mask = new EdgeMask(LsTrk.GridDat, "Wall_cylinder");
 
                 EdgeQuadratureScheme eqs = SchemeHelper.GetEdgeQuadScheme(LsTrk.GetSpeciesId("A"), IntegrationDomain: Mask);

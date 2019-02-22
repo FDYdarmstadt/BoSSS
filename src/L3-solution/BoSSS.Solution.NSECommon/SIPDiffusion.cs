@@ -54,6 +54,7 @@ namespace BoSSS.Solution.NSECommon {
         string Argument;
 
         double PenaltyBase;
+        string[] m_ParameterOrdering;
         IncompressibleBoundaryCondMap BcMap;
         Func<double[], double, double>[] ArgumentFunction;
 
@@ -80,6 +81,16 @@ namespace BoSSS.Solution.NSECommon {
             this.Mode = Mode;
             this.Argument = Argument;
             this.cj = PenaltyLengthScales;
+            switch (BcMap.PhysMode) {
+                case PhysicsMode.LowMach:
+                    this.m_ParameterOrdering = new string[] { VariableNames.Temperature0};
+                    break;
+                case PhysicsMode.Combustion:
+                    this.m_ParameterOrdering = new string[] { VariableNames.Temperature0, VariableNames.MassFraction0_0, VariableNames.MassFraction1_0, VariableNames.MassFraction2_0, VariableNames.MassFraction3_0 };
+                    break;
+                default:
+                    throw new ApplicationException("Wrong physicsMode");
+            }
         }
 
         public TermActivationFlags BoundaryEdgeTerms {
@@ -130,8 +141,8 @@ namespace BoSSS.Solution.NSECommon {
             double rhoMax;
             switch (Mode) {
                 case DiffusionMode.Temperature:
-                    DiffusivityA = ((MaterialLawCombustion)EoS).GetHeatConductivity(inp.Parameters_IN[0]);
-                    DiffusivityB = ((MaterialLawCombustion)EoS).GetHeatConductivity(inp.Parameters_OUT[0]);
+                    DiffusivityA = ((MaterialLawLowMach)EoS).GetHeatConductivity(inp.Parameters_IN[0]);
+                    DiffusivityB = ((MaterialLawLowMach)EoS).GetHeatConductivity(inp.Parameters_OUT[0]);
 
                     for (int d = 0; d < inp.D; d++) {
                         // consistency term
@@ -148,8 +159,8 @@ namespace BoSSS.Solution.NSECommon {
                     double rhoB = 0.0;
                     rhoA = EoS.GetDensity(inp.Parameters_IN);
                     rhoB = EoS.GetDensity(inp.Parameters_OUT);
-                    DiffusivityA = ((MaterialLawCombustion)EoS).GetDiffusivity(inp.Parameters_IN[0]);
-                    DiffusivityB = ((MaterialLawCombustion)EoS).GetDiffusivity(inp.Parameters_OUT[0]);
+                    DiffusivityA = ((MaterialLawLowMach)EoS).GetDiffusivity(inp.Parameters_IN[0]);
+                    DiffusivityB = ((MaterialLawLowMach)EoS).GetDiffusivity(inp.Parameters_OUT[0]);
 
                     for (int d = 0; d < inp.D; d++) {
                         // consistency term
@@ -177,10 +188,10 @@ namespace BoSSS.Solution.NSECommon {
             double DiffusivityA;
             switch (Mode) {
                 case DiffusionMode.Temperature:
-                    DiffusivityA = ((MaterialLawCombustion)EoS).GetHeatConductivity(inp.Parameters_IN[0]);
+                    DiffusivityA = ((MaterialLawLowMach)EoS).GetHeatConductivity(inp.Parameters_IN[0]);
                     break;
                 case DiffusionMode.MassFraction:
-                    DiffusivityA = ((MaterialLawCombustion)EoS).GetDiffusivity(inp.Parameters_IN[0]);
+                    DiffusivityA = ((MaterialLawLowMach)EoS).GetDiffusivity(inp.Parameters_IN[0]);
                     break;
                 default:
                     throw new NotImplementedException();
@@ -264,12 +275,12 @@ namespace BoSSS.Solution.NSECommon {
             rho = EoS.GetDensity(cpv.Parameters);
             switch (Mode) {
                 case DiffusionMode.Temperature:
-                    Diffusivity = ((MaterialLawCombustion)EoS).GetHeatConductivity(cpv.Parameters[0]);
+                    Diffusivity = ((MaterialLawLowMach)EoS).GetHeatConductivity(cpv.Parameters[0]);
                     for (int d = 0; d < cpv.D; d++)
                         Acc -= Diffusivity * GradU[0, d] * GradV[d];
                     break;
                 case DiffusionMode.MassFraction:
-                    Diffusivity = ((MaterialLawCombustion)EoS).GetDiffusivity(cpv.Parameters[0]);
+                    Diffusivity = ((MaterialLawLowMach)EoS).GetDiffusivity(cpv.Parameters[0]);
                     for (int d = 0; d < cpv.D; d++)
                         Acc -= Diffusivity * rho * GradU[0, d] * GradV[d];
                     break;
@@ -291,7 +302,7 @@ namespace BoSSS.Solution.NSECommon {
         /// Parameters at linearization point to calculate material properties.
         /// </summary>
         public IList<string> ParameterOrdering {
-            get { return new string[] { VariableNames.Temperature0, VariableNames.MassFraction0_0, VariableNames.MassFraction1_0, VariableNames.MassFraction2_0, VariableNames.MassFraction3_0 }; }
+            get { return m_ParameterOrdering; }
         }
     }
 }

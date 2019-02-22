@@ -170,6 +170,10 @@
       <Project>{2bc5598f-fbdb-4064-a26d-30acfd982a09}</Project>
       <Name>PoissonScalar2CylinderCoords</Name>
     </ProjectReference>
+    <ProjectReference Include="..\..\..\..\public\src\L4-application\XdgPoisson3\XdgPoisson3.csproj">
+      <Project>{efbeff7a-e40d-4808-be79-536040c0fadc}</Project>
+      <Name>XdgPoisson3</Name>
+    </ProjectReference>
     <ProjectReference Include="..\..\..\..\internal\src\private-die\L4-application\StokesHelical\StokesHelical.csproj">
       <Project>{af092a39-7916-4a59-a2b4-5820fbd33b63}</Project>
       <Name>StokesHelical</Name>
@@ -258,7 +262,7 @@
       <Project>{28E4A331-ECA2-43A6-A11F-6D6A5E410434}</Project>
       <Name>BoSSS.Solution.GridImport</Name>
     </ProjectReference>
-    <ProjectReference Include="..\..\L3-solution\BoSSS.Solution.Multigrid\BoSSS.Solution.AdvancedSolvers.csproj">
+    <ProjectReference Include="..\..\L3-solution\BoSSS.Solution.AdvancedSolvers\BoSSS.Solution.AdvancedSolvers.csproj">
       <Project>{efe8c307-09bc-4f58-b991-6ef8fd6d5eff}</Project>
       <Name>BoSSS.Solution.AdvancedSolvers</Name>
     </ProjectReference>
