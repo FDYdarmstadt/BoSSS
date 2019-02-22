@@ -39,13 +39,13 @@ namespace CNS {
 
     public static class TestCases {
 
-        public static CNSControl ShockTube(string dbPath = null, int savePeriod = 5, int dgDegree = 4, int numOfCellsX = 50, int numOfCellsY = 50, double sensorLimit = 1e-3, double dtFixed = 0.0, double CFLFraction = 0.1, int explicitScheme = 3, int explicitOrder = 3, int numberOfSubGrids = 3, int reclusteringInterval = 1, int maxNumOfSubSteps = 0, int refinementLevel = 0) {
+        public static CNSControl ShockTube(string dbPath = null, int savePeriod = 100, int dgDegree = 2, int numOfCellsX = 50, int numOfCellsY = 50, double sensorLimit = 1e-3, double dtFixed = 0.0, double CFLFraction = 0.17, int explicitScheme = 2, int explicitOrder = 3, int numberOfSubGrids = 3, int reclusteringInterval = 1, int maxNumOfSubSteps = 0, int refinementLevel = 0) {
             CNSControl c = new CNSControl();
 
             // ### Database ###
             //dbPath = @"/work/scratch/ws35kire/work_db";                       // Lichtenberg
             //dbPath = @"/home/ws35kire/test_db";                               // Lichtenberg
-            //dbPath = @"c:\bosss_db";                                          // Local
+            dbPath = @"c:\bosss_db";                                          // Local
             //dbPath = @"\\dc1\userspace\geisenhofer\bosss_db_IBMShockTube";    // Network
 
             c.DbPath = dbPath;
@@ -53,7 +53,7 @@ namespace CNS {
             c.saveperiod = savePeriod;
             c.PrintInterval = 1;
 
-            c.WriteLTSLog = false;
+            c.WriteLTSLog = true;
 
             // ### Partitioning and load balancing ###
             c.GridPartType = GridPartType.METIS;
@@ -571,7 +571,7 @@ namespace CNS {
             c.saveperiod = savePeriod;
             c.PrintInterval = 1;
 
-            c.WriteLTSLog = false;
+            c.WriteLTSLog = true;
             c.WriteLTSConsoleOutput = false;
 
             // ### Partitioning and load balancing ###
@@ -842,13 +842,15 @@ namespace CNS {
             c.NoOfTimesteps = int.MaxValue;
 
             // ### Project and sessions name ###
-            c.ProjectName = "shock_vortex_interaction";
+            c.ProjectName = "svi";
 
             string tempSessionName;
             if (c.ExplicitScheme == ExplicitSchemes.LTS) {
                 tempSessionName = String.Format("SVI_p{0}_xCells{1}_yCells{2}_s0={3:0.0E-00}_CFLFrac{4}_ALTS{5}_{6}_re{7}_subs{8}", dgDegree, numOfCellsX, numOfCellsY, sensorLimit, c.CFLFraction, c.ExplicitOrder, c.NumberOfSubGrids, c.ReclusteringInterval, c.maxNumOfSubSteps);
             } else if (c.ExplicitScheme == ExplicitSchemes.RungeKutta) {
                 tempSessionName = String.Format("SVI_p{0}_xCells{1}_yCells{2}_s0={3:0.0E-00}_CFLFrac{4}_RK{5}", dgDegree, numOfCellsX, numOfCellsY, sensorLimit, c.CFLFraction, c.ExplicitOrder);
+            } else if (c.ExplicitScheme == ExplicitSchemes.AdamsBashforth) {
+                tempSessionName = String.Format("SVI_p{0}_xCells{1}_yCells{2}_s0={3:0.0E-00}_CFLFrac{4}_AB{5}", dgDegree, numOfCellsX, numOfCellsY, sensorLimit, c.CFLFraction, c.ExplicitOrder);
             } else {
                 throw new NotImplementedException("Session name is not available for this type of time stepper");
             }
@@ -864,7 +866,26 @@ namespace CNS {
             return c;
         }
 
-        public static CNSControl DoubleMachReflection(string dbPath = null, int savePeriod = 1, int dgDegree = 3, double xMax = 8.0, double yMax = 2.0, int numOfCellsX = 1600, int numOfCellsY = 400, double sensorLimit = 1e-3, double CFLFraction = 0.1, int explicitScheme = 3, int explicitOrder = 3, int numberOfSubGrids = 3, int reclusteringInterval = 1, int maxNumOfSubSteps = 0, double endTime = 0.25, string restart = "False", int cores = int.MaxValue) {
+        /// <summary>
+        /// Version to be submitted on the TU Darmstadt HHLR Lichtenberg cluster
+        /// </summary>
+        public static CNSControl ShockVortexInteractionHiOCFD5HLLR(int savePeriod = 1000, int dgDegree = 2, double sensorLimit = 1e-3, double CFLFraction = 0.1, int explicitScheme = 1, int explicitOrder = 1, int numberOfSubGrids = 3, int reclusteringInterval = 1, int maxNumOfSubSteps = 0, double Mv = 0.9, double Ms = 1.5, int numOfCellsX = 200, int numOfCellsY = 100) {
+
+            // Lichtenberg
+            string dbPath = @"/work/scratch/yp19ysog/bosss_db_paper_revision_svi";
+            //string restart = "False";
+
+            CNSControl c = ShockVortexInteractionHiOCFD5(dbPath, savePeriod, dgDegree, sensorLimit, CFLFraction, explicitScheme, explicitOrder, numberOfSubGrids, reclusteringInterval, maxNumOfSubSteps, Mv, Ms, numOfCellsX, numOfCellsY);
+
+            c.ProjectName = "paper_revision_svi_hllr_savePeriod1000";
+            //c.Endtime = 0.3;
+            //c.NoOfTimesteps = 10;
+
+            return c;
+        }
+
+
+        public static CNSControl DoubleMachReflection(string dbPath = null, int savePeriod = 1, int dgDegree = 3, double xMax = 4.0, double yMax = 1.0, int numOfCellsX = 400, int numOfCellsY = 100, double sensorLimit = 1e-3, double CFLFraction = 0.1, int explicitScheme = 1, int explicitOrder = 1, int numberOfSubGrids = 3, int reclusteringInterval = 1, int maxNumOfSubSteps = 0, double endTime = 0.2, string restart = "False", int cores = int.MaxValue) {
             CNSControl c = new CNSControl();
 
             //dbPath = @"/work/scratch/yp19ysog/bosss_db_dmr_video";          // Lichtenberg
@@ -892,7 +913,7 @@ namespace CNS {
             c.FluxCorrection = false;
 
             // Dynamic load balacing
-            c.GridPartType = GridPartType.ParMETIS;
+            c.GridPartType = GridPartType.METIS;
             c.DynamicLoadBalancing_On = false;
             //c.DynamicLoadBalancing_CellClassifier = new LTSCellClassifier();
             //c.DynamicLoadBalancing_CellCostEstimatorFactories.AddRange(LTSCellCostEstimator.Factory(c.NumberOfSubGrids));
@@ -1128,13 +1149,13 @@ namespace CNS {
             return c;
         }
 
-        public static IBMControl IBMShockTube(string dbPath = null, int savePeriod = 1, int dgDegree = 3, int numOfCellsX = 75, int numOfCellsY = 55, double sensorLimit = 1e-3, double dtFixed = 0.0, double CFLFraction = 0.1, int explicitScheme = 3, int explicitOrder = 3, int numberOfSubGrids = 3, int reclusteringInterval = 1, int maxNumOfSubSteps = 0, double agg = 0.3, string restart = "False") {
+        public static IBMControl IBMShockTube(string dbPath = null, int savePeriod = 100, int dgDegree = 2, int numOfCellsX = 75, int numOfCellsY = 55, double sensorLimit = 1e-3, double dtFixed = 0.0, double CFLFraction = 0.1, int explicitScheme = 3, int explicitOrder = 1, int numberOfSubGrids = 2, int reclusteringInterval = 1, int maxNumOfSubSteps = 10, double agg = 0.3, string restart = "False", double smoothing = 4.0) {
             IBMControl c = new IBMControl();
 
             // ### Database ###
             //dbPath = @"/work/scratch/ws35kire/work_db";                       // Lichtenberg
             //dbPath = @"/home/ws35kire/test_db";                               // Lichtenberg
-            //dbPath = @"c:\bosss_db";                                          // Local
+            dbPath = @"c:\bosss_db";                                          // Local
             //dbPath = @"\\dc1\userspace\geisenhofer\bosss_db_IBMShockTube";    // Network
 
             c.DbPath = dbPath;
@@ -1143,7 +1164,7 @@ namespace CNS {
             c.PrintInterval = 1;
 
             c.WriteLTSLog = false;
-            c.WriteLTSConsoleOutput = true;
+            c.WriteLTSConsoleOutput = false;
 
             // ### Partitioning and load balancing ###
             c.GridPartType = GridPartType.METIS;
@@ -1192,7 +1213,10 @@ namespace CNS {
             //c.AddVariable(IBMVariables.SourceCells, 1);
 
             // ### Shock-Capturing ###
-            bool AV = true;
+            bool AV = false;
+            if (dgDegree >= 1) {
+                AV = true;
+            }
             if (AV) {
                 c.ActiveOperators = Operators.Convection | Operators.ArtificialViscosity;
             } else {
@@ -1258,8 +1282,8 @@ namespace CNS {
             double yMax = 1.1;
 
             if (restart == "True") {
-                c.RestartInfo = new Tuple<Guid, TimestepNumber>(new Guid("96aa97cf-d719-443c-9eba-67d889d344fa"), -1);
-                c.GridGuid = new Guid("d3c971ab-c4e4-4ae3-9f70-25ad1caff551");
+                c.RestartInfo = new Tuple<Guid, TimestepNumber>(new Guid("23033126-3fab-4e3e-ad55-be025358ae71"), -1);
+                c.GridGuid = new Guid("f0f9dff0-8f9b-4d54-a45c-f22c1516d3e7");
             } else {
                 c.GridFunc = delegate {
                     double[] xNodes = GenericBlas.Linspace(xMin, xMax, numOfCellsX + 1);
@@ -1317,7 +1341,7 @@ namespace CNS {
             // Function for smoothing the initial and top boundary conditions
             double SmoothJump(double distance) {
                 // smoothing should be in the range of h/p
-                double maxDistance = 2.0 * cellSize / Math.Max(dgDegree, 1);
+                double maxDistance = smoothing * cellSize / Math.Max(dgDegree, 1);
 
                 return (Math.Tanh(distance / maxDistance) + 1.0) * 0.5;
             }
@@ -1384,9 +1408,11 @@ namespace CNS {
 
             string tempSessionName;
             if (c.ExplicitScheme == ExplicitSchemes.LTS) {
-                tempSessionName = String.Format("IBMST_p{0}_xCells{1}_yCells{2}_agg{3}_s0={4:0.0E-00}_CFLFrac{5}_ALTS{6}_{7}_re{8}_subs{9}", dgDegree, numOfCellsX, numOfCellsY, c.AgglomerationThreshold, sensorLimit, c.CFLFraction, c.ExplicitOrder, c.NumberOfSubGrids, c.ReclusteringInterval, c.maxNumOfSubSteps);
+                tempSessionName = String.Format("IBMST_p{0}_xCells{1}_yCells{2}_agg{3}_s0={4:0.0E-00}_CFLFrac{5}_ALTS{6}_{7}_re{8}_subs{9}_smooth{10}", dgDegree, numOfCellsX, numOfCellsY, c.AgglomerationThreshold, sensorLimit, c.CFLFraction, c.ExplicitOrder, c.NumberOfSubGrids, c.ReclusteringInterval, c.maxNumOfSubSteps, smoothing);
             } else if (c.ExplicitScheme == ExplicitSchemes.RungeKutta) {
-                tempSessionName = String.Format("IBMST_p{0}_xCells{1}_yCells{2}_agg{3}_s0={4:0.0E-00}_CFLFrac{5}_RK{6}", dgDegree, numOfCellsX, numOfCellsY, c.AgglomerationThreshold, sensorLimit, c.CFLFraction, c.ExplicitOrder);
+                tempSessionName = String.Format("IBMST_p{0}_xCells{1}_yCells{2}_agg{3}_s0={4:0.0E-00}_CFLFrac{5}_RK{6}_smooth{7}", dgDegree, numOfCellsX, numOfCellsY, c.AgglomerationThreshold, sensorLimit, c.CFLFraction, c.ExplicitOrder, smoothing);
+            } else if (c.ExplicitScheme == ExplicitSchemes.AdamsBashforth) {
+                tempSessionName = String.Format("IBMST_p{0}_xCells{1}_yCells{2}_agg{3}_s0={4:0.0E-00}_CFLFrac{5}_AB{6}_smooth{7}", dgDegree, numOfCellsX, numOfCellsY, c.AgglomerationThreshold, sensorLimit, c.CFLFraction, c.ExplicitOrder, smoothing);
             } else {
                 throw new NotImplementedException("Session name is not available for this type of time stepper");
             }
@@ -1416,7 +1442,7 @@ namespace CNS {
 
             IBMControl c = IBMShockTube(dbPath, savePeriod, dgDegree, numOfCellsX, numOfCellsY, sensorLimit, dtFixed, CFLFraction, explicitScheme, explicitOrder, numberOfSubGrids, reclusteringInterval, maxNumOfSubSteps, agg, restart);
 
-            c.ProjectName = "ibmst_paper_revision_30deg";
+            c.ProjectName = "ibmst_paper_revision_30deg_PLOTS";
             //c.NoOfTimesteps = 10;
 
             return c;
