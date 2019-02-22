@@ -32,6 +32,8 @@ namespace BoSSS.Solution.NSECommon {
         double mu1;
         double mu2;
 
+        public override IList<string> ParameterOrdering => throw new NotImplementedException();
+
         /// <summary>
         /// Ctor.
         /// </summary>
