@@ -238,7 +238,7 @@ namespace CNS.Tests.MovingIBMTests {
             CheckErrorThresholds(
                 solver.QueryHandler.QueryResults,
                 Tuple.Create("L2ErrorDensity", 5.4e-4),
-                Tuple.Create("L2ErrorXMomentum", 2.5e-4),
+                Tuple.Create("L2ErrorXMomentum", 3.0e-4),
                 Tuple.Create("L2ErrorYMomentum", 3.0e-5),
                 Tuple.Create("L2ErrorPressure", 6.0e-4));
         }
