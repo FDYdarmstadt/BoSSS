@@ -423,7 +423,7 @@ namespace BoSSS.Application.FSI_Solver
             C.includeRotation = true;
 
             // Particle Properties
-            double particleDensity = 1;
+            //double particleDensity = 1;
             //C.particleRho = 1;
             C.particleRadius = particleRadius;
             //C.particleMass = Math.PI * C.particleRadius * C.particleRadius * C.particleRho;

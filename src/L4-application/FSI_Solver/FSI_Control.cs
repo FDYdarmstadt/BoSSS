@@ -94,18 +94,7 @@ namespace BoSSS.Application.FSI_Solver {
         /// </summary>
         public double LSunderrelax = 1.0;
 
-        /// <summary>
-        /// desired minimum refinement level, 2 is minimum
-        /// </summary>
-        [DataMember]
-        public int RefinementLevel = 2;
-
-
-        /// <summary>
-        /// reciprocal of the ratio between curvature and hmin
-        /// </summary>
-        [DataMember]
-        public int maxCurvature = 2;
+ 
 
         public override void SetDGdegree(int k)
         {
@@ -115,9 +104,9 @@ namespace BoSSS.Application.FSI_Solver {
             base.FieldOptions.Clear();
             this.AddFieldOption("Velocity*", k);
             this.AddFieldOption("Pressure", k - 1);
-            this.AddFieldOption("PhiDG", k);
-            this.AddFieldOption("Phi", k);
-            this.AddFieldOption("Curvature", k);
+            this.AddFieldOption("PhiDG", 2);
+            this.AddFieldOption("Phi", 2);
+            this.AddFieldOption("Curvature", 2);
         }
 
         ///// <summary>
@@ -150,8 +139,11 @@ namespace BoSSS.Application.FSI_Solver {
         /// </summary>
         public Func<double, double>[] BoundaryFunc;
 
+        /// <summary>
+        /// All particles in the FSI
+        /// </summary>
         [DataMember]
-        public List<Particle> Particles;
+        public List<Particle> Particles = new List<Particle>();
        
         public enum CollisionModel {
             RepulsiveForce = 0,

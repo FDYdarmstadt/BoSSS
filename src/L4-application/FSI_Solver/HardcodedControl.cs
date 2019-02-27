@@ -119,7 +119,7 @@ namespace BoSSS.Application.FSI_Solver {
             C.includeRotation = true;
 
             // Particle Properties
-            double particleDensity = 1;
+            //double particleDensity = 1;
             C.particleRadius = 0.4;
 
             Func<double, double> yLevSet = t => (t * t);
@@ -810,8 +810,7 @@ namespace BoSSS.Application.FSI_Solver {
             C.Particles = new List<Particle>();
 
 
-            C.Particles.Add(new Particle_Ellipsoid(2, 4, new double[] { 0.4, 1.0 }) {
-                radius_P = 0.2,
+            C.Particles.Add(new Particle_Ellipsoid(4, new double[] { 0.4, 1.0 }) {
                 rho_P = 1.0
             });
 
@@ -1048,8 +1047,7 @@ namespace BoSSS.Application.FSI_Solver {
             C.Particles = new List<Particle>();
 
 
-            C.Particles.Add(new Particle_Ellipsoid(2, 4, new double[] { -1.2, 0.9 }, startAngl: 90.0) {
-                radius_P = 0.2,
+            C.Particles.Add(new Particle_Ellipsoid(4, new double[] { -1.2, 0.9 }, startAngl: 90.0) {
                 rho_P = 1.0,
             });
             C.Particles[0].currentIterVel_P[0][0] = -5.0;
@@ -1305,8 +1303,7 @@ namespace BoSSS.Application.FSI_Solver {
                 rho_P = 3.0,
             });
 
-            C.Particles.Add(new Particle_Ellipsoid(2, 4, new double[] { 0.2, 7.3 }, startAngl: 30.0) {
-                radius_P = 0.07,
+            C.Particles.Add(new Particle_Ellipsoid(4, new double[] { 0.2, 7.3 }, startAngl: 30.0) {
                 rho_P = 3.0,
             });
 
@@ -1419,9 +1416,8 @@ namespace BoSSS.Application.FSI_Solver {
             // basic database options
             // ======================
 
-            C.DbPath = @"\\hpccluster\hpccluster-scratch\krause\FallingEllipse_db";
-            //C.DbPath = @"\\dc1\userspace\krause\BoSSS_DBs\FallingEllipse";
-            C.savetodb = true;
+            C.DbPath = _DbPath;
+            C.savetodb = _DbPath != null;
             C.saveperiod = 100;
             C.ProjectName = "ParticleCollisionTest";
             C.ProjectDescription = "Gravity";
@@ -1433,26 +1429,27 @@ namespace BoSSS.Application.FSI_Solver {
             // DG degrees
             // ==========
 
-            C.FieldOptions.Add("VelocityX", new FieldOpts() {
-                Degree = k,
-                SaveToDB = FieldOpts.SaveToDBOpt.TRUE
-            });
-            C.FieldOptions.Add("VelocityY", new FieldOpts() {
-                Degree = k,
-                SaveToDB = FieldOpts.SaveToDBOpt.TRUE
-            });
-            C.FieldOptions.Add("Pressure", new FieldOpts() {
-                Degree = k - 1,
-                SaveToDB = FieldOpts.SaveToDBOpt.TRUE
-            });
-            C.FieldOptions.Add("PhiDG", new FieldOpts() {
-                Degree = 2,
-                SaveToDB = FieldOpts.SaveToDBOpt.TRUE
-            });
-            C.FieldOptions.Add("Phi", new FieldOpts() {
-                Degree = 2,
-                SaveToDB = FieldOpts.SaveToDBOpt.TRUE
-            });
+            //C.FieldOptions.Add("VelocityX", new FieldOpts() {
+            //    Degree = k,
+            //    SaveToDB = FieldOpts.SaveToDBOpt.TRUE
+            //});
+            //C.FieldOptions.Add("VelocityY", new FieldOpts() {
+            //    Degree = k,
+            //    SaveToDB = FieldOpts.SaveToDBOpt.TRUE
+            //});
+            //C.FieldOptions.Add("Pressure", new FieldOpts() {
+            //    Degree = k - 1,
+            //    SaveToDB = FieldOpts.SaveToDBOpt.TRUE
+            //});
+            //C.FieldOptions.Add("PhiDG", new FieldOpts() {
+            //    Degree = 2,
+            //    SaveToDB = FieldOpts.SaveToDBOpt.TRUE
+            //});
+            //C.FieldOptions.Add("Phi", new FieldOpts() {
+            //    Degree = 2,
+            //    SaveToDB = FieldOpts.SaveToDBOpt.TRUE
+            //});
+            C.SetDGdegree(k);
 
             // grid and boundary conditions
             // ============================
@@ -1555,16 +1552,20 @@ namespace BoSSS.Application.FSI_Solver {
             C.Particles = new List<Particle>();
 
 
-            C.Particles.Add(new Particle_Ellipsoid(2, 4, new double[] { 0.0*BaseSize, 1.0*BaseSize }, startAngl: angle) {
-                radius_P = 0.1*BaseSize,
-                rho_P = 10.0,
+            C.Particles.Add(new Particle_Ellipsoid(4, new double[] { 0.0*BaseSize, 1.0*BaseSize }, startAngl: angle) {
+                rho_P = 10.0
             });
 
             //C.Particles[0].currentIterRot_P[0] = 10;
 
             C.CutCellQuadratureType = Foundation.XDG.XQuadFactoryHelper.MomentFittingVariants.Classic;
 
-            Func<double[], double, double> phiComplete = (X, t) => 1 * (C.Particles[0].phi_P(X, t));
+            Func<double[], double, double> phiComplete = delegate (double[] X, double t) {
+                double r = 1 * (C.Particles[0].phi_P(X, t));
+                if (double.IsNaN(r) || double.IsInfinity(r))
+                    throw new ArithmeticException();
+                return r;
+            };
 
             //for (int i = 0;i<C.Particles.Count; i++) {
             //    phiComplete = (X,t) => phiComplete(X,t)*C.Particles[i].phi_P(X,t);
@@ -1889,8 +1890,9 @@ namespace BoSSS.Application.FSI_Solver {
 
                 int q = new int();
                 int r = new int();
+                int iCase = 99; // this construction prevents compile warning 
 
-                switch (99) {
+                switch (iCase) {
                     case 1:
                         q = 60;
                         r = 178;
@@ -1905,7 +1907,7 @@ namespace BoSSS.Application.FSI_Solver {
                         q = 31;
                         r = 91;
                         break;
-
+                        
                     case 99:
                         q = 31; //61 //31
                         r = 31; //81 //41

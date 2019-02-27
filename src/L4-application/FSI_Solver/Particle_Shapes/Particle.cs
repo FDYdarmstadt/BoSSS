@@ -27,6 +27,7 @@ using ilPSP;
 using ilPSP.Utils;
 using BoSSS.Foundation;
 using BoSSS.Foundation.Grid;
+using System.Diagnostics;
 
 namespace BoSSS.Application.FSI_Solver
 {
@@ -152,34 +153,13 @@ namespace BoSSS.Application.FSI_Solver
         #endregion
 
         #region Geometric parameters
+
         /// <summary>
-        /// Dimension
+        /// Spatial Dimension of the particle 
         /// </summary>
         int m_Dim;
 
-        /// <summary>
-        /// Radius of the particle. Not necessary for particles defined by their length and thickness
-        /// </summary>
-        [DataMember]
-        public double radius_P;
 
-        /// <summary>
-        /// Lenght of an elliptic particle.
-        /// </summary>
-        [DataMember]
-        public double length_P;
-
-        /// <summary>
-        /// Thickness of an elliptic particle.
-        /// </summary>
-        [DataMember]
-        public double thickness_P;
-
-        /// <summary>
-        /// Exponent of the super ellipsoid. Higher exponent leads to a more "squary" appearence.
-        /// </summary>
-        [DataMember]
-        public int superEllipsoidExponent;
         #endregion
 
         #region Virtual force model parameter
@@ -292,11 +272,11 @@ namespace BoSSS.Application.FSI_Solver
         public bool active_P = false;
 
         /// <summary>
-        /// Sets the gravity in vertical direction, default is 9.81
+        /// Sets the gravity in vertical direction, default is 0.0
         /// </summary>
         [DataMember]
-        public double gravityVertical;
-        
+        public double gravityVertical = 0.0;
+
         /// <summary>
         /// Convergence criterion for the calculation of the forces and torque
         /// </summary>
@@ -310,20 +290,18 @@ namespace BoSSS.Application.FSI_Solver
         /// <summary>
         /// Area of the current particle.
         /// </summary>
-        [DataMember]
-        abstract public double Area_P
-        {
+        abstract public double Area_P {
             get;
         }
 
         /// <summary>
         /// Mass of the current particle.
         /// </summary>
-        [DataMember]
-        public double Mass_P
-        {
-            get
-            {
+        public double Mass_P {
+            get {
+                double a = Area_P;
+                if (a <= 0.0 || double.IsNaN(a) || double.IsInfinity(a))
+                    throw new ArithmeticException("Particle volume/area is " + a);
                 return Area_P * rho_P;
             }
         }
@@ -626,10 +604,16 @@ namespace BoSSS.Application.FSI_Solver
         /// <summary>
         /// clone
         /// </summary>
-        public object Clone() {
+        virtual public object Clone() {
             throw new NotImplementedException("Currently cloning of a particle is not available");
         }
         #endregion
+
+        /// <summary>
+        /// some length scale 
+        /// </summary>
+        abstract protected double averageDistance { get; }
+
 
         #region Update forces and torque
         /// <summary>
@@ -1009,7 +993,7 @@ namespace BoSSS.Application.FSI_Solver
             // determine underrelaxation factor (URF)
             // =============================
             double[] temp_underR = new double[D + 1];
-            double averageDistance = (length_P + thickness_P) / 2;
+            
             double averageForce = (Math.Abs(forces[0]) + Math.Abs(forces[1]) + Math.Abs(torque) / averageDistance) / 3;
             for (int k = 0; k < D + 1; k++)
             {
