@@ -76,8 +76,8 @@ namespace BoSSS.Solution.LevelSetTools.TestCases {
         /// <param name="X">Spatial Coordinate</param>
         /// <param name="initialFunction">Function to extend</param>
         /// <returns>
-        /// index[0]: Signed-distance level-set value
-        /// index[1]: Extension, based on signed distance field
+        /// - index[0]: Signed-distance level-set value
+        /// - index[1]: Extension, based on signed distance field
         /// </returns>
         public double[] SignedDistance(double[] X, Func<double[], double> initialFunction) {
 

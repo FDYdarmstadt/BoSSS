@@ -34,7 +34,8 @@
     <CodeAnalysisRuleSet>AllRules.ruleset</CodeAnalysisRuleSet>
     <UseVSHostingProcess>true</UseVSHostingProcess>
     <Prefer32Bit>false</Prefer32Bit>
-    <DocumentationFile>bin\Release\BoSSS.Solution.LevelSetTools.XML</DocumentationFile>
+    <DocumentationFile>
+    </DocumentationFile>
     <LangVersion>latest</LangVersion>
   </PropertyGroup>
   <ItemGroup>
