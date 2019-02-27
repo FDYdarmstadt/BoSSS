@@ -75,43 +75,32 @@ namespace BoSSS.Application.FSI_Solver {
 
         #region Create equations and solvers
         // =============================
+
+        bool UseMovingMesh {
+            get {
+                switch (((FSI_Control)this.Control).Timestepper_LevelSetHandling) {
+                    case LevelSetHandling.Coupled_Once:
+                    case LevelSetHandling.Coupled_Iterative:
+                        return true;
+
+                    case LevelSetHandling.LieSplitting:
+                    case LevelSetHandling.StrangSplitting:
+                    case LevelSetHandling.None:
+                        return false;
+
+                    default:
+                        throw new ApplicationException("unknown 'LevelSetMovement': " + ((FSI_Control)this.Control).Timestepper_LevelSetHandling);
+                }
+            }
+        }
+
+
         protected override void CreateEquationsAndSolvers(GridUpdateDataVaultBase L) {
 
             #region Misc
             if (IBM_Op != null)
                 return;
 
-            bool UseMovingMesh = false;
-            switch (((FSI_Control)this.Control).Timestepper_LevelSetHandling) {
-                case LevelSetHandling.Coupled_Once:
-                    ((FSI_Control)this.Control).Timestepper_Mode = TimesteppingMode.MovingMesh;
-                    UseMovingMesh = true;
-                    break;
-
-                case LevelSetHandling.Coupled_Iterative:
-                    ((FSI_Control)this.Control).Timestepper_Mode = TimesteppingMode.MovingMesh;
-                    UseMovingMesh = true;
-                    break;
-
-                case LevelSetHandling.LieSplitting:
-                    ((FSI_Control)this.Control).Timestepper_Mode = TimesteppingMode.Splitting;
-                    break;
-
-                case LevelSetHandling.StrangSplitting:
-                    ((FSI_Control)this.Control).Timestepper_Mode = TimesteppingMode.Splitting;
-                    break;
-
-                case LevelSetHandling.None:
-                    ((FSI_Control)this.Control).Timestepper_Mode = TimesteppingMode.None;
-                    break;
-
-                default:
-                    throw new ApplicationException("unknown 'LevelSetMovement': " + ((FSI_Control)this.Control).Timestepper_LevelSetHandling);
-            }
-
-            if (((FSI_Control)this.Control).Timestepper_Mode == FSI_Control.TimesteppingMode.MovingMesh) {
-                UseMovingMesh = true;
-            }
 
             string[] CodNameSelected = new string[0];
             string[] DomNameSelected = new string[0];

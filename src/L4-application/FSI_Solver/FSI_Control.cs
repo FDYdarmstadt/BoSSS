@@ -77,11 +77,7 @@ namespace BoSSS.Application.FSI_Solver {
         [DataMember]
         public Func<double, double>[] anglVelocityFunc;
 
-        /// <summary>
-        /// See <see cref="LevelSetHandling"/>
-        /// </summary>
-        [DataMember]
-        public LevelSetHandling Timestepper_LevelSetHandling = LevelSetHandling.LieSplitting;
+      
 
         /// <summary>
         /// The termination criterion for fully coupled/implicit level-set evolution.
@@ -114,25 +110,32 @@ namespace BoSSS.Application.FSI_Solver {
         ///// </summary>
         //public string LevelSetMovement = "none";
 
+        ///// <summary>
+        ///// 
+        ///// </summary>
+        //public enum TimesteppingMode {
+
+        //    None = 0,
+
+        //    /// <summary>
+        //    /// 
+        //    /// </summary>
+        //    Splitting = 1,
+
+        //    /// <summary>
+        //    /// 
+        //    /// </summary>
+        //    MovingMesh = 2
+        //}
+        //[DataMember]
+        //public TimesteppingMode Timestepper_Mode = TimesteppingMode.Splitting;
+
         /// <summary>
-        /// 
+        /// See <see cref="LevelSetHandling"/>
         /// </summary>
-        public enum TimesteppingMode {
-
-            None = 0,
-
-            /// <summary>
-            /// 
-            /// </summary>
-            Splitting = 1,
-
-            /// <summary>
-            /// 
-            /// </summary>
-            MovingMesh = 2
-        }
         [DataMember]
-        public TimesteppingMode Timestepper_Mode = TimesteppingMode.Splitting;
+        public LevelSetHandling Timestepper_LevelSetHandling = LevelSetHandling.LieSplitting;
+
 
         /// <summary>
         /// Function describing the boundary values at the level-set (VelocityX, VelocityY)

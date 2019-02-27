@@ -385,6 +385,9 @@ namespace BoSSS.Application.FSI_Solver
                 double massDifference = (rho_P - rho_Fluid) * (Area_P);
                 double tempForces = (currentIterForces_P[0][d] + currentTimeForces_P[1][d]) / 2;
                 tempPos[d] = currentTimePos_P[1][d] + currentTimeVel_P[1][d] * dt + 0.5 * dt * dt * (tempForces + massDifference * gravity[d]) / Mass_P;
+
+                if (double.IsNaN(tempPos[d]) || double.IsInfinity(tempPos[d]))
+                    throw new ArithmeticException("Error trying to update particle position");
             }
             currentIterPos_P[0] = tempPos;
 

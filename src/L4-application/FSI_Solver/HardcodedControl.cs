@@ -434,7 +434,7 @@ namespace BoSSS.Application.FSI_Solver {
             // Timestepping
             // ============
 
-            C.Timestepper_Mode = FSI_Control.TimesteppingMode.Splitting;
+            //C.Timestepper_Mode = FSI_Control.TimesteppingMode.Splitting;
             C.Timestepper_Scheme = IBM_Solver.IBM_Control.TimesteppingScheme.BDF2;
             double dt = 0.1;
             C.dtFixed = dt;
@@ -642,7 +642,7 @@ namespace BoSSS.Application.FSI_Solver {
             // Timestepping
             // ============
 
-            C.Timestepper_Mode = FSI_Control.TimesteppingMode.Splitting;
+            //C.Timestepper_Mode = FSI_Control.TimesteppingMode.Splitting;
             C.Timestepper_Scheme = IBM_Solver.IBM_Control.TimesteppingScheme.BDF2;
             double dt = 0.0005;
             C.dtMax = dt;
@@ -881,7 +881,7 @@ namespace BoSSS.Application.FSI_Solver {
             // Timestepping
             // ============
 
-            C.Timestepper_Mode = FSI_Control.TimesteppingMode.Splitting;
+            //C.Timestepper_Mode = FSI_Control.TimesteppingMode.Splitting;
             C.Timestepper_Scheme = FSI_Solver.FSI_Control.TimesteppingScheme.BDF2;
             double dt = 0.001;
             C.dtMax = dt;
@@ -1130,7 +1130,7 @@ namespace BoSSS.Application.FSI_Solver {
             // Timestepping
             // ============
 
-            C.Timestepper_Mode = FSI_Control.TimesteppingMode.Splitting;
+            //C.Timestepper_Mode = FSI_Control.TimesteppingMode.Splitting;
             C.Timestepper_Scheme = FSI_Solver.FSI_Control.TimesteppingScheme.BDF2;
             double dt = 0.001;
             C.dtMax = dt;
@@ -1391,7 +1391,7 @@ namespace BoSSS.Application.FSI_Solver {
             // Timestepping
             // ============
 
-            C.Timestepper_Mode = FSI_Control.TimesteppingMode.Splitting;
+            //C.Timestepper_Mode = FSI_Control.TimesteppingMode.Splitting;
             C.Timestepper_Scheme = FSI_Solver.FSI_Control.TimesteppingScheme.BDF2;
             //double dt = 0.001;
             C.dtMax = dt;
@@ -1536,7 +1536,7 @@ namespace BoSSS.Application.FSI_Solver {
             // ==============
 
             // Coupling Properties
-            C.Timestepper_LevelSetHandling = LevelSetHandling.Coupled_Once;
+            C.Timestepper_LevelSetHandling = LevelSetHandling.LieSplitting;
             C.includeRotation = true;
             C.includeTranslation = true;
 
@@ -1553,7 +1553,9 @@ namespace BoSSS.Application.FSI_Solver {
 
 
             C.Particles.Add(new Particle_Ellipsoid(4, new double[] { 0.0*BaseSize, 1.0*BaseSize }, startAngl: angle) {
-                rho_P = 10.0
+                rho_P = 10.0,
+                length_P = 0.1*BaseSize,
+                thickness_P = 0.2*BaseSize
             });
 
             //C.Particles[0].currentIterRot_P[0] = 10;
@@ -1607,7 +1609,7 @@ namespace BoSSS.Application.FSI_Solver {
             // Timestepping
             // ============
 
-            C.Timestepper_Mode = FSI_Control.TimesteppingMode.Splitting;
+            //C.Timestepper_Mode = FSI_Control.TimesteppingMode.Splitting;
             C.Timestepper_Scheme = FSI_Solver.FSI_Control.TimesteppingScheme.BDF2;
             double dt = 0.001;
             C.dtMax = dt;
@@ -1821,7 +1823,7 @@ namespace BoSSS.Application.FSI_Solver {
             // Timestepping
             // ============
             C.CutCellQuadratureType = Foundation.XDG.XQuadFactoryHelper.MomentFittingVariants.Classic;
-            C.Timestepper_Mode = FSI_Control.TimesteppingMode.Splitting;
+            //C.Timestepper_Mode = FSI_Control.TimesteppingMode.Splitting;
             C.Timestepper_Scheme = FSI_Solver.FSI_Control.TimesteppingScheme.BDF2;
             double dt = 0.001;
             C.dtMax = dt;
@@ -2041,7 +2043,7 @@ namespace BoSSS.Application.FSI_Solver {
             // Timestepping
             // ============
 
-            C.Timestepper_Mode = FSI_Control.TimesteppingMode.Splitting;
+            //C.Timestepper_Mode = FSI_Control.TimesteppingMode.Splitting;
             C.Timestepper_Scheme = FSI_Solver.FSI_Control.TimesteppingScheme.BDF2;
             double dt = 0.001;
             C.dtMax = dt;
