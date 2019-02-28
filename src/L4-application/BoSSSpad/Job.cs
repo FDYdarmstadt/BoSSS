@@ -20,6 +20,7 @@ using ilPSP;
 using ilPSP.Utils;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Reflection;
@@ -463,6 +464,27 @@ namespace BoSSS.Application.BoSSSpad {
                     return "";
                 }
             }
+        }
+
+        /// <summary>
+        /// Should open a separate console window showing the rolling output text of the job.
+        /// </summary>
+        public void ShowOutput() {
+            if (AssignedBatchProc == null)
+                throw new NotSupportedException("Job is not activated.");
+
+            string StderrFile = AssignedBatchProc.GetStderrFile(this);
+            string StdoutFile = AssignedBatchProc.GetStdoutFile(this);
+
+            ProcessStartInfo psi = new ProcessStartInfo();
+            psi.FileName = typeof(btail.TailMain).Assembly.Location;
+            psi.UseShellExecute = false;
+            btail.TailMain.SetArgs(psi, StdoutFile, StderrFile);
+                       
+            Console.WriteLine("Starting console...");
+            Console.WriteLine("(You may close the new window at any time, the job will continue.)");
+
+            Process p = Process.Start(psi);
         }
 
         /// <summary>

@@ -256,19 +256,9 @@ namespace BoSSS.Solution {
         /// </summary>
         /// <param name="args">command line arguments</param>
         /// <param name="noControlFile"></param>
-        /// <param name="TracingNamespaces">
-        /// All namespaces, separated by ',', for which tracing should be
-        /// activated. if 'null', a default choice is made. This value can be
-        /// overridden by the control file, if used.
-        /// </param>
         /// <param name="ApplicationFactory">
         /// A factory that returns the application to be run.
         /// </param>
-        /// <remarks>
-        /// The application has to be given as a factory in order to ensure
-        /// that it gets initialized in the correct order, and especially in
-        /// order to enable the usage of <see cref="ParameterStudyMode"/>
-        /// </remarks>
         public static void _Main(
             string[] args,
             bool noControlFile,
