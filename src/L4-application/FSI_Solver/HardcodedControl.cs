@@ -1555,7 +1555,8 @@ namespace BoSSS.Application.FSI_Solver {
             C.Particles.Add(new Particle_Ellipsoid(4, new double[] { 0.0*BaseSize, 1.0*BaseSize }, startAngl: angle) {
                 rho_P = 10.0,
                 length_P = 0.1*BaseSize,
-                thickness_P = 0.2*BaseSize
+                thickness_P = 0.2*BaseSize,
+                gravityVertical = 9.81
             });
 
             //C.Particles[0].currentIterRot_P[0] = 10;
