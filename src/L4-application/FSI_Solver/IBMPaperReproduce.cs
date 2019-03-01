@@ -309,8 +309,10 @@ namespace BoSSS.Application.FSI_Solver
             else throw new ApplicationException();
 
             C.Timestepper_Scheme = FSI_Control.TimesteppingScheme.BDF2;
-            C.Timestepper_Mode = FSI_Control.TimesteppingMode.None;
-           
+            //C.Timestepper_Mode = FSI_Control.TimesteppingMode.None;
+            C.Timestepper_LevelSetHandling = LevelSetHandling.None;
+
+
             C.dtMax = dt;
             C.dtMin = dt;
             C.Endtime = 70;
@@ -423,7 +425,7 @@ namespace BoSSS.Application.FSI_Solver
             C.includeRotation = true;
 
             // Particle Properties
-            double particleDensity = 1;
+            //double particleDensity = 1;
             //C.particleRho = 1;
             C.particleRadius = particleRadius;
             //C.particleMass = Math.PI * C.particleRadius * C.particleRadius * C.particleRho;
@@ -467,7 +469,8 @@ namespace BoSSS.Application.FSI_Solver
             // ============
 
             C.Timestepper_Scheme = IBM_Solver.IBM_Control.TimesteppingScheme.BDF2;
-            C.Timestepper_Mode = FSI_Control.TimesteppingMode.None;
+            //C.Timestepper_Mode = FSI_Control.TimesteppingMode.None;
+            C.Timestepper_LevelSetHandling = LevelSetHandling.None;
             C.dtMax = dt;
             C.dtMin = dt;
             C.Endtime = 500;
@@ -794,11 +797,12 @@ namespace BoSSS.Application.FSI_Solver
             // Timestepping
             // ============
 
-            if(movingMesh) {
-                C.Timestepper_Mode = FSI_Control.TimesteppingMode.MovingMesh;
-            } else
-            {
-                C.Timestepper_Mode = FSI_Control.TimesteppingMode.Splitting;
+            if (movingMesh) {
+                //C.Timestepper_Mode = FSI_Control.TimesteppingMode.MovingMesh;
+                C.Timestepper_LevelSetHandling = LevelSetHandling.Coupled_Once;
+            } else {
+                //C.Timestepper_Mode = FSI_Control.TimesteppingMode.Splitting;
+                C.Timestepper_LevelSetHandling = LevelSetHandling.LieSplitting;
             }
             C.Timestepper_Scheme = IBM_Solver.IBM_Control.TimesteppingScheme.BDF2;
             double dt = 0.1;
@@ -1033,13 +1037,12 @@ namespace BoSSS.Application.FSI_Solver
             // Timestepping
             // ============
 
-            if (movingMesh)
-            {
-                C.Timestepper_Mode = FSI_Control.TimesteppingMode.MovingMesh;
-            }
-            else
-            {
-                C.Timestepper_Mode = FSI_Control.TimesteppingMode.Splitting;
+            if (movingMesh) {
+                //C.Timestepper_Mode = FSI_Control.TimesteppingMode.MovingMesh;
+                C.Timestepper_LevelSetHandling = LevelSetHandling.Coupled_Iterative;
+            } else {
+                //C.Timestepper_Mode = FSI_Control.TimesteppingMode.Splitting;
+                C.Timestepper_LevelSetHandling = LevelSetHandling.LieSplitting;
             }
 
             C.NonLinearSolver.SolverCode = NonLinearSolverConfig.Code.Picard;

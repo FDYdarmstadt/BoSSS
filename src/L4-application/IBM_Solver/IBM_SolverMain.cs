@@ -1205,7 +1205,7 @@ namespace BoSSS.Application.IBM_Solver {
                 string[] fields_line2 = line2.Split('\t');
 
                 double dt = Convert.ToDouble(fields_line2[1]) - Convert.ToDouble(fields_line1[1]);
-            } catch (FileNotFoundException e) {
+            } catch (FileNotFoundException) {
                 Console.WriteLine("PhysicalData.txt could not be found! Assuming we start with timestep #0 ...");
             }
             //int idx_restartLine = Convert.ToInt32(time / dt + 1.0);
