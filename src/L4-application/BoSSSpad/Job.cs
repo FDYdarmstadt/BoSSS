@@ -397,6 +397,7 @@ namespace BoSSS.Application.BoSSSpad {
             get {
                 //string ProjectName = InteractiveShell.WorkflowMgm.CurrentProject;
 
+                InteractiveShell.WorkflowMgm.ResetSessionsCache();
                 var AllCandidates = InteractiveShell.WorkflowMgm.Sessions.Where(
                     sinf => sinf.KeysAndQueries.ContainsKey(BoSSS.Solution.Application.SESSIONNAME_KEY)
                          && Convert.ToString(sinf.KeysAndQueries[BoSSS.Solution.Application.SESSIONNAME_KEY]).Equals(this.Name)
@@ -433,7 +434,7 @@ namespace BoSSS.Application.BoSSSpad {
                     throw new NotSupportedException("Job is not activated.");
 
                 string StdoutFile = AssignedBatchProc.GetStdoutFile(this);
-                if (StdoutFile != null) {
+                if (StdoutFile != null && File.Exists(StdoutFile)) {
                     using (FileStream stream = File.Open(StdoutFile, FileMode.Open, FileAccess.Read, FileShare.ReadWrite)) {
                         using (StreamReader reader = new StreamReader(stream)) {
                             return reader.ReadToEnd();
@@ -454,7 +455,7 @@ namespace BoSSS.Application.BoSSSpad {
                     throw new NotSupportedException("Job is not activated.");
 
                 string StderrFile = AssignedBatchProc.GetStderrFile(this);
-                if (StderrFile != null) {
+                if (StderrFile != null && File.Exists(StderrFile)) {
                     using (FileStream stream = File.Open(StderrFile, FileMode.Open, FileAccess.Read, FileShare.ReadWrite)) {
                         using (StreamReader reader = new StreamReader(stream)) {
                             return reader.ReadToEnd();
@@ -476,15 +477,18 @@ namespace BoSSS.Application.BoSSSpad {
             string StderrFile = AssignedBatchProc.GetStderrFile(this);
             string StdoutFile = AssignedBatchProc.GetStdoutFile(this);
 
-            ProcessStartInfo psi = new ProcessStartInfo();
-            psi.FileName = typeof(btail.TailMain).Assembly.Location;
-            psi.UseShellExecute = false;
-            btail.TailMain.SetArgs(psi, StdoutFile, StderrFile);
-                       
-            Console.WriteLine("Starting console...");
-            Console.WriteLine("(You may close the new window at any time, the job will continue.)");
+            if (StdoutFile != null && StderrFile != null) {
+                ProcessStartInfo psi = new ProcessStartInfo();
+                psi.FileName = typeof(btail.TailMain).Assembly.Location;
+                btail.TailMain.SetArgs(psi, StdoutFile, StderrFile);
 
-            Process p = Process.Start(psi);
+                Console.WriteLine("Starting console...");
+                Console.WriteLine("(You may close the new window at any time, the job will continue.)");
+
+                Process p = Process.Start(psi);
+            } else {
+                Console.WriteLine("No known standard output/error path yet - try again later.");
+            }
         }
 
         /// <summary>

@@ -67,32 +67,7 @@ namespace BoSSS.Application.BoSSSpad {
         /// </summary>
         [STAThread]
         public static int Main(string[] args) { 
-
-            string StderrFile = @"C:\tmp\msmpi.txt";
-            string StdoutFile = @"C:\tmp\Nudes.txt";
-
-
             
-
-            var psi = new System.Diagnostics.ProcessStartInfo();
-            psi.FileName = typeof(btail.TailMain).Assembly.Location;
-            //psi.UseShellExecute = false;
-            //psi.CreateNoWindow = true;
-            btail.TailMain.SetArgs(psi, StdoutFile, StderrFile);
-                       
-            Console.WriteLine("Starting console...");
-            Console.WriteLine("(You may close the new window at any time, the job will continue.)");
-
-            var p = System.Diagnostics.Process.Start(psi);
-            
-
-            while(true) {
-                //p.WaitForExit()
-            }
-
-            return 0;
-
-
             
             int errCount = 0;
 

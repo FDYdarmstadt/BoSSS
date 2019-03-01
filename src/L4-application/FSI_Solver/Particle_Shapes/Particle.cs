@@ -115,6 +115,7 @@ namespace BoSSS.Application.FSI_Solver
         /// <summary>
         /// Skip calculation of hydrodynamic force and torque if particles are too close
         /// </summary>
+        [DataMember]
         public bool skipForceIntegration = false;
         #endregion
 
@@ -122,26 +123,31 @@ namespace BoSSS.Application.FSI_Solver
         /// <summary>
         /// Number of iterations
         /// </summary>
+        [DataMember]
         public int iteration_counter_P = 1;
 
         /// <summary>
         /// Constant forces and torque underrelaxation?
         /// </summary>
+        [DataMember]
         public bool underrelaxationFT_constant = true;
 
         /// <summary>
         /// Defines the order of the underrelaxation factor
         /// </summary>
+        [DataMember]
         public int underrelaxationFT_exponent = 0;
 
         /// <summary>
         /// Underrelaxation factor
         /// </summary>
+        [DataMember]
         public double underrelaxation_factor = 1;
 
         /// <summary>
         /// Set true if you want to delete all values of the forces anf torque smaller than convergenceCriterion*1e-2
         /// </summary>
+        [DataMember]
         public bool deleteSmallValues = false;
         #endregion
 
@@ -157,6 +163,7 @@ namespace BoSSS.Application.FSI_Solver
         /// <summary>
         /// Spatial Dimension of the particle 
         /// </summary>
+        [DataMember]
         int m_Dim;
 
 
@@ -280,6 +287,7 @@ namespace BoSSS.Application.FSI_Solver
         /// <summary>
         /// Convergence criterion for the calculation of the forces and torque
         /// </summary>
+        [DataMember]
         public double forceAndTorque_convergence = 1e-8;
 
         /// <summary>
@@ -373,6 +381,9 @@ namespace BoSSS.Application.FSI_Solver
         /// </summary>
         /// <param name="dt"></param>
         public void UpdateParticlePosition(double dt, double rho_Fluid) {
+
+            if (m_Dim != 2 && m_Dim != 3)
+                throw new NotSupportedException("Unknown particle dimension: m_Dim = " + m_Dim);
 
             // Position
             // =============================

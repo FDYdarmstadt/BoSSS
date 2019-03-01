@@ -79,7 +79,6 @@ namespace btail {
             StreamReader StdOut = null;
             StreamReader StdErr = null;
 
-            Debugger.Launch();
 
             int i = 0;
             State s = State.WaitingForFile;

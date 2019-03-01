@@ -172,27 +172,19 @@ namespace BoSSS.Application.BoSSSpad {
 
 
         /// <summary>
-        /// Path to standard error file, if present - otherwise null.
+        /// Path to standard error file.
         /// </summary>
         public override string GetStderrFile(Job myJob) {
             string fp = Path.Combine(myJob.DeploymentDirectory, "stderr.txt");
-            if(File.Exists(fp)) {
-                return fp;
-            } else {
-                return null;
-            }
-
+            return fp;
         }
         /// <summary>
-        /// Path to standard output file, if present - otherwise null.
+        /// Path to standard output file.
         /// </summary>
         public override string GetStdoutFile(Job myJob) {
             string fp = Path.Combine(myJob.DeploymentDirectory, "stdout.txt");
-            if (File.Exists(fp)) {
-                return fp;
-            } else {
-                return null;
-            }
+            return fp;
+            
         }
 
         /// <summary>

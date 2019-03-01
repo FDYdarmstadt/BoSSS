@@ -91,6 +91,14 @@ namespace BoSSS.Application.BoSSSpad {
         ISessionInfo[] m_Sessions;
 
         /// <summary>
+        /// Clears the cache for <see cref="Sessions"/> and enforces to re-read the database.
+        /// </summary>
+        public void ResetSessionsCache() {
+            m_Sessions = null;
+        }
+
+
+        /// <summary>
         /// A list of all sessions in the current project.
         /// </summary>
         public ISessionInfo[] Sessions {

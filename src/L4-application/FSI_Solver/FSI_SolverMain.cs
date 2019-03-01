@@ -687,6 +687,8 @@ namespace BoSSS.Application.FSI_Solver {
 
         protected override double RunSolverOneStep(int TimestepInt, double phystime, double dt) {
             using (new FuncTrace()) {
+                Debugger.Launch();
+
                 TimestepNumber TimestepNo = new TimestepNumber(TimestepInt, 0);
                 int D = this.GridData.SpatialDimension;
 
