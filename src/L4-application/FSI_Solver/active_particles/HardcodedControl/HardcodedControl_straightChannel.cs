@@ -30,7 +30,7 @@ namespace BoSSS.Application.FSI_Solver
 {
     public class HardcodedControl_straightChannel : IBM_Solver.HardcodedTestExamples
     {
-        public static FSI_Control activeRod_noBackroundFlow(string _DbPath = null, int k = 2, double VelXBase = 0.0, double stressM = 1e5, double cellAgg = 0.2, double muA = 1e4, double timestepX = 1e-3)
+        public static FSI_Control activeRod_noBackroundFlow(string _DbPath = null, int k = 2, double VelXBase = 0.0, double stressM = 1e0, double cellAgg = 0.2, double muA = 1e6, double timestepX = 1e-3)
         {
             FSI_Control C = new FSI_Control();
 
@@ -42,8 +42,8 @@ namespace BoSSS.Application.FSI_Solver
 
             // basic database options
             // =============================
-            C.DbPath = @"\\hpccluster\hpccluster-scratch\deussen\cluster_db\straightChannel"; 
-            C.savetodb = true;
+            //C.DbPath = @"\\hpccluster\hpccluster-scratch\deussen\cluster_db\straightChannel"; 
+            C.savetodb = false;
             C.saveperiod = 1;
             C.ProjectName = "activeRod_noBackroundFlow";
             C.ProjectDescription = "Active";
@@ -65,10 +65,10 @@ namespace BoSSS.Application.FSI_Solver
                 int q = new int(); // #Cells in x-dircetion + 1
                 int r = new int(); // #Cells in y-dircetion + 1
 
-                q = 8*4;
-                r = 8*4;
+                q = 16*2;
+                r = 8*2;
 
-                double[] Xnodes = GenericBlas.Linspace(-4 * BaseSize, 4 * BaseSize, q);
+                double[] Xnodes = GenericBlas.Linspace(-8 * BaseSize, 8 * BaseSize, q);
                 double[] Ynodes = GenericBlas.Linspace(-4 * BaseSize, 4 * BaseSize, r);
 
                 var grd = Grid2D.Cartesian2DGrid(Xnodes, Ynodes, periodicX: false, periodicY: false);
@@ -82,9 +82,9 @@ namespace BoSSS.Application.FSI_Solver
                 grd.DefineEdgeTags(delegate (double[] X)
                 {
                     byte et = 0;
-                    if (Math.Abs(X[0] - (-4 * BaseSize)) <= 1.0e-8)
+                    if (Math.Abs(X[0] - (-8 * BaseSize)) <= 1.0e-8)
                         et = 1;
-                    if (Math.Abs(X[0] + (-4 * BaseSize)) <= 1.0e-8)
+                    if (Math.Abs(X[0] + (-8 * BaseSize)) <= 1.0e-8)
                         et = 2;
                     if (Math.Abs(X[1] - (-4 * BaseSize)) <= 1.0e-8)
                         et = 3;
@@ -130,10 +130,10 @@ namespace BoSSS.Application.FSI_Solver
             int numOfParticles = 1;
             for (int d = 0; d < numOfParticles; d++)
             {
-                C.Particles.Add(new Particle_Ellipsoid(2, 4, new double[] { -10 , 0.0 }, startAngl: 0)
+                C.Particles.Add(new Particle_Ellipsoid(2, 4, new double[] { -0 , 0.0 }, startAngl: 0)
                 {
                     radius_P = 1,
-                    rho_P = 2,//pg/(mum^3)
+                    rho_P = 1e-15,//pg/(mum^3)
                     gravityVertical = 0,
                     active_P = true,
                     active_stress_P = stressM,
@@ -141,9 +141,10 @@ namespace BoSSS.Application.FSI_Solver
                     length_P = 2 * BaseSize,
                     superEllipsoidExponent = 4,
                     underrelaxationFT_constant = false,// set true if you want to define a constant underrelaxation (not recommended)
-                    underrelaxation_factor = 0.5,// underrelaxation with [factor * 10^exponent]
-                    deleteSmallValues = true
-                });
+                    underrelaxation_factor = 1,// underrelaxation with [factor * 10^exponent]
+                    deleteSmallValues = true,
+                    neglectAddedDamping = false
+            });
             }
             //Define level-set
             Func<double[], double, double> phiComplete = delegate (double[] X, double t)
@@ -193,7 +194,7 @@ namespace BoSSS.Application.FSI_Solver
             C.LinearSolver.NoOfMultigridLevels = 1;
             C.LinearSolver.MaxSolverIterations = 1000;
             C.LinearSolver.MinSolverIterations = 1;
-            C.ForceAndTorque_ConvergenceCriterion = 1e-1;
+            C.ForceAndTorque_ConvergenceCriterion = 1e-10;
             C.LSunderrelax = 1.0;
             
 
@@ -203,7 +204,7 @@ namespace BoSSS.Application.FSI_Solver
             C.LSunderrelax = 1;
             C.splitting_fully_coupled = true;
             C.max_iterations_fully_coupled = 1000000;
-            C.includeRotation = true;
+            C.includeRotation = false;
             C.includeTranslation = true;
 
 

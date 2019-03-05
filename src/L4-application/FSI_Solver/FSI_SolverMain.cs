@@ -45,7 +45,7 @@ using static BoSSS.Application.FSI_Solver.FSI_Control;
 
 namespace BoSSS.Application.FSI_Solver {
     public class FSI_SolverMain : IBM_Solver.IBM_SolverMain {
-        
+        double fasndgln;
         #region start
         // =============================
         /// <summary>
@@ -486,6 +486,14 @@ namespace BoSSS.Application.FSI_Solver {
 
                 case LevelSetHandling.LieSplitting:
                     MassMatrixShape = MassMatrixShapeandDependence.IsTimeAndSolutionDependent;
+                    if (fasndgln == 0)
+                    {
+                        foreach (Particle p in m_Particles)
+                        {
+                            p.CalculateDampingTensors(LsTrk, ((FSI_Control)this.Control).PhysicalParameters.mu_A, ((FSI_Control)this.Control).PhysicalParameters.rho_A, ((FSI_Control)this.Control).dtMax);
+                        }
+                        fasndgln = 1;
+                    }
                     break;
 
                 case LevelSetHandling.StrangSplitting:
@@ -619,11 +627,20 @@ namespace BoSSS.Application.FSI_Solver {
             // Call update methods
             foreach (Particle p in m_Particles)
             {
-                p.ResetParticlePosition();
-                p.UpdateAngularVelocity(dt, ((FSI_Control)this.Control).includeRotation);
-                p.UpdateTransVelocity(dt, this.Control.PhysicalParameters.rho_A, ((FSI_Control)this.Control).includeTranslation);
-                p.ComputeParticleRe(this.Control.PhysicalParameters.mu_A);
-                p.UpdateParticlePosition(dt, this.Control.PhysicalParameters.rho_A);
+                if(p.iteration_counter_P == 0)
+                {
+                    p.ResetParticlePosition();
+                    p.PredictCurrentVelocity();
+                }
+                else
+                {
+                    p.UpdateDampingTensors();
+                    p.UpdateAngularVelocity(dt, ((FSI_Control)this.Control).includeRotation);
+                    p.UpdateTransVelocity(dt, this.Control.PhysicalParameters.rho_A, ((FSI_Control)this.Control).includeTranslation);
+                    p.ComputeParticleRe(this.Control.PhysicalParameters.mu_A);
+                    p.UpdateParticlePosition(dt, this.Control.PhysicalParameters.rho_A);
+                }
+                
             }
 
             // Update phi complete
@@ -811,7 +828,7 @@ namespace BoSSS.Application.FSI_Solver {
                             }
                             if (iteration_counter > ((FSI_Control)this.Control).max_iterations_fully_coupled)
                             {
-                                throw new ApplicationException("no convergence in coupled iterative solver, number of iterations: " + iteration_counter);
+                                break;// throw new ApplicationException("no convergence in coupled iterative solver, number of iterations: " + iteration_counter);
                             }
                         }
                         if (phystime == 0)
