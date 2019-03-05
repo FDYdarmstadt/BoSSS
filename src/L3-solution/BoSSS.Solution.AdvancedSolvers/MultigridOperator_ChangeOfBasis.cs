@@ -153,11 +153,6 @@ namespace BoSSS.Solution.AdvancedSolvers {
         /// (passed in the constructor)
         /// and returns the pre-conditioned matrix
         /// </summary>
-        /// <param name="PCndOpMatrix">
-        /// on exit,
-        /// <paramref name="LeftPreCond"/>*M*<paramref name="RightPreCond"/>,
-        /// where M denotes the operator matrix passed in the constructor.
-        /// </param>
         /// <param name="LeftPreCond">
         /// left pre-conditioning matrix
         /// </param>
@@ -166,6 +161,12 @@ namespace BoSSS.Solution.AdvancedSolvers {
         /// </param>
         /// <param name="RightPreCondInv">
         /// the inverse of <paramref name="RightPreCond"/> -- usually required to transform an initial guess.
+        /// </param>
+        /// <param name="LeftPreCondInv"></param>
+        /// <param name="MassMatrix">
+        /// on entry the mass matrix w.r.t. the XDG basis
+        /// </param>
+        /// <param name="OpMatrix">
         /// </param>
         /// <returns>
         /// List of indefinite row indices.

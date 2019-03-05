@@ -32,6 +32,8 @@ Those pieces of Free and Open Source have helped to bring BoSSS to where it is t
 
 [Monaco-Editor](Monaco-Editor.txt)          MIT-Licence
 
+[MIConvexHull] (MIConvexHull_Licence.txt)	MIT-Licence
+
 [MUMPS](http://www.cecill.info/licences/Licence_CeCILL-C_V1-en.html) CeCILL-C license
 
 [JSON.Net](JSON_Net.txt)			MIT-Licence

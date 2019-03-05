@@ -1,0 +1,352 @@
+restart;
+**************
+
+  BoSSSpad C# interpreter
+  _______________________
+
+
+System.ArgumentException occurred with message 'Database Error: grid directory (P:\bosss-db\grids) does not exist.' while loading the databases. Type 'LastError' for details.
+
+ Console ready for input. Type 'help' for help.
+
+==============
+using BoSSS.Application.XNSE_Solver;
+using BoSSS.Solution.XNSECommon;
+using BoSSS.Solution.Timestepping;
+using BoSSS.Solution.Multigrid;
+using BoSSS.Solution.XdgTimestepping;
+using BoSSS.Solution.LevelSetTools;
+using BoSSS.Foundation.Grid.RefElements;
+using BoSSS.Solution.LevelSetTools.FourierLevelSet;
+**************
+==============
+WorkflowMgm.Init("OscillatingDroplet");
+**************
+Project name is set to 'OscillatingDroplet'.
+
+==============
+//Control object
+Type solver = typeof(XNSE_SolverMain);
+var C       = new XNSE_Control();
+//solver.Assembly.Location;
+**************
+==============
+//Database options
+var myDb    = OpenOrCreateDatabase(@"\\dc1\userspace\yotov\bosss-db\OscillatingDroplet");
+C.LogValues = XNSE_Control.LoggingValues.RisingBubble;
+**************
+Opening existing database '\\dc1\userspace\yotov\bosss-db\OscillatingDroplet'.
+
+==============
+// Initialize Processors. myBatch: local processor, myHPC: network cluster
+// TASK: Create a folder "cluster" in "P" and set HPC-path to that folder. 
+var myBatch = new MiniBatchProcessorClient(@"C:\tmp");
+var myHPC   = new MsHPC2012Client(@"\\dc1\userspace\yotov\cluster","hpccluster",ComputeNodes : new[] {"hpccluster"});
+**************
+==============
+MiniBatchProcessor.Server.StartIfNotRunning();
+**************
+Starting mini batch processor in external process...
+Started mini batch processor on local machine, process id is 65608.
+
+==============
+// Init grids and save to database
+**************
+==============
+double xSize = 1.0;
+double ySize = 1.0;
+int kelem    = 15;
+int p        = 2;
+
+GridCommons grd;
+
+
+double[] xNodes = GenericBlas.Linspace(0, xSize, kelem + 1);
+double[] yNodes = GenericBlas.Linspace(0, ySize, kelem + 1);
+    
+    grd = Grid2D.Cartesian2DGrid(xNodes, yNodes);
+    
+    grd.EdgeTagNames.Add(1, "wall_lower");
+    grd.EdgeTagNames.Add(2, "wall_upper");
+    grd.EdgeTagNames.Add(3, "wall_left");
+    grd.EdgeTagNames.Add(4, "wall_right");
+    
+   // grd.EdgeTagNames.Add(1, "freeslip_lower");
+   // grd.EdgeTagNames.Add(2, "freeslip_upper");
+   // grd.EdgeTagNames.Add(3, "freeslip_left");
+   // grd.EdgeTagNames.Add(4, "freeslip_right");
+
+    grd.DefineEdgeTags(delegate (double[] X) {
+        byte et = 0;      
+        if (Math.Abs(X[1]) <= 1.0e-8)
+            et = 1;
+        if (Math.Abs(X[1] - ySize) <= 1.0e-8)
+            et = 2;
+        if (Math.Abs(X[0]) <= 1.0e-8)
+            et = 3;
+        if (Math.Abs(X[0] - xSize) <= 1.0e-8)
+            et = 4;
+
+        return et;
+    });
+
+
+    
+myDb.SaveGrid(ref grd); 
+C.SetGrid(grd);  
+**************
+An equivalent grid is already present in the database -- the grid will not be saved.
+Info: setting database path to: \\dc1\userspace\yotov\bosss-db\OscillatingDroplet
+1f3c4e2c-74a6-4d3e-bbdb-92084d93ec13
+==============
+LastError
+**************
+==============
+//DG Degrees
+            C.FieldOptions.Add("VelocityX", new FieldOpts() {
+                Degree = p,
+                SaveToDB = FieldOpts.SaveToDBOpt.TRUE
+            });
+            C.FieldOptions.Add("VelocityY", new FieldOpts() {
+                Degree = p,
+                SaveToDB = FieldOpts.SaveToDBOpt.TRUE
+            });
+            C.FieldOptions.Add("GravityY", new FieldOpts() {
+                SaveToDB = FieldOpts.SaveToDBOpt.TRUE
+            });
+            C.FieldOptions.Add("Pressure", new FieldOpts() {
+                Degree = p - 1,
+                SaveToDB = FieldOpts.SaveToDBOpt.TRUE
+            });
+            C.FieldOptions.Add("PhiDG", new FieldOpts() {
+                SaveToDB = FieldOpts.SaveToDBOpt.TRUE
+            });
+            C.FieldOptions.Add("Phi", new FieldOpts() {
+                Degree = p,
+                SaveToDB = FieldOpts.SaveToDBOpt.TRUE
+            });
+            C.FieldOptions.Add("Curvature", new FieldOpts() {
+                Degree = p,
+                SaveToDB = FieldOpts.SaveToDBOpt.TRUE
+            });
+**************
+System.ArgumentException occurred: An item with the same key has already been added.. Type 'LastError' for details.
+
+==============
+// Physical parameters Air/Water
+            
+        //    C.PhysicalParameters.rho_A = 1e-3;      // kg / cm^3
+        //    C.PhysicalParameters.rho_B = 1.2e-6;    // kg / cm^3
+        //    C.PhysicalParameters.mu_A  = 1e-5;       // kg / cm * sec
+        //    C.PhysicalParameters.mu_B  = 17.1e-8;    // kg / cm * sec
+        //    double sigma               = 72.75e-3;   // kg / sec^2 
+        //    C.PhysicalParameters.Sigma = sigma;
+            
+ // Physical parameters
+            C.PhysicalParameters.rho_A             = 1e5;
+            C.PhysicalParameters.rho_B             = 100;
+            C.PhysicalParameters.mu_A              = 100;
+            C.PhysicalParameters.mu_B              = 10;
+            double sigma                           = 10;
+            C.PhysicalParameters.Sigma             = sigma;
+            C.PhysicalParameters.IncludeConvection = true;
+            C.PhysicalParameters.Material          = true; 
+**************
+==============
+static class InitialValues {
+
+    public static double ZERO(double[] X) {
+        return 0.0;
+    }
+
+    public static double GRAVITY(double[] X) {
+        
+        return -9.81e-1;
+    }
+
+    public static double Phi(double[] X) {
+        double radius = 0.25;
+        double a      = 1.25*radius;
+      double b = 0.8*radius;
+       
+        //elipse
+        return  ((X[0] - (1.0 / 2.0)).Pow2() / a.Pow2() + (X[1] - (1.0 / 2.0)).Pow2() / b.Pow2()) - 1;
+        //signed distance
+       // return ((X[0] - 0.5).Pow2() + (X[1] - 0.5).Pow2()).Sqrt() - radius;
+       
+    }
+}
+**************
+==============
+//Fourier level set options
+double radius = 0.25;
+double a      = 1.25*radius;
+double b      = 0.8*radius;
+int numSp     = 640;
+double[] FourierP = new double[numSp];
+double[] samplP = new double[numSp];
+for (int sp=0; sp< numSp; sp++) {
+    FourierP[sp]=sp*(2*Math.PI/ (double)numSp);
+   // samplP[sp]=radius;
+    samplP[sp]=(a*b)/((b*Math.Cos(sp*(2*Math.PI/(double)numSp))).Pow2()+(a*Math.Sin(sp*(2*Math.PI/(double)numSp))).Pow2()).Sqrt();
+}
+//Use only with Fourier level set
+//C.FourierLevSetControl = new FourierLevSetControl(FourierType.Polar, 2 * Math.PI, FourierP, samplP, 1.0 / (double)kelem) {
+  //                  center = new double[] { 0.5, 0.5 },
+  //                  FourierEvolve = Fourier_Evolution.MaterialPoints,
+  //                  centerMove = CenterMovement.Reconstructed,
+  //             };
+
+**************
+==============
+//Initial values
+C.InitialValues.Add("VelocityX#A", GetFormulaObject(InitialValues.ZERO));
+C.InitialValues.Add("VelocityX#B", GetFormulaObject(InitialValues.ZERO));
+C.InitialValues.Add("GravityY#A", GetFormulaObject(InitialValues.ZERO));
+C.InitialValues.Add("GravityY#B", GetFormulaObject(InitialValues.ZERO));    
+C.InitialValues.Add("Phi", GetFormulaObject(InitialValues.Phi));
+
+**************
+==============
+//Boundary values
+            C.AddBoundaryValue("wall_lower");
+            C.AddBoundaryValue("wall_upper");
+            C.AddBoundaryValue("wall_left");
+            C.AddBoundaryValue("wall_right");
+            
+           // C.AddBoundaryValue("freeslip_lower");
+           // C.AddBoundaryValue("freeslip_upper");
+           // C.AddBoundaryValue("freeslip_left");
+           // C.AddBoundaryValue("freeslip_right");
+**************
+==============
+**************
+==============
+// basic database options
+C.DbPath            = myDb.Path;
+C.savetodb          = true;
+C.ContinueOnIoError = false;
+**************
+==============
+//misc. solver options
+C.ComputeEnergy          = false;
+C.ComputeInterfaceEnergy = false;
+C.CheckJumpConditions    = false;
+
+C.NoOfMultigridLevels           = 1;
+C.Solver_MaxIterations          = 80;
+C.Solver_MinIterations          = 1;
+C.Solver_ConvergenceCriterion   = 1e-8;
+C.LevelSet_ConvergenceCriterion = 1e-6;
+
+C.VelocityBlockPrecondMode = MultigridOperator.Mode.SymPart_DiagBlockEquilib;   
+
+C.Option_LevelSetEvolution                          = LevelSetEvolution.FastMarching;
+C.AdvancedDiscretizationOptions.FilterConfiguration = CurvatureAlgorithms.FilterConfiguration.NoFilter;
+C.AdvancedDiscretizationOptions.SST_isotropicMode   = SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_ContactLine;
+C.AdvancedDiscretizationOptions.SurfStressTensor    = SurfaceSressTensor.Isotropic;
+C.LSContiProjectionMethod                           = ContinuityProjectionOption.ContinuousDG;
+C.CutCellQuadratureType                             = BoSSS.Foundation.XDG.XQuadFactoryHelper.MomentFittingVariants.Saye;
+//C.VelocityBlockPrecondMode                          = MultigridOperator.Mode.SymPart_DiagBlockEquilib; 
+C.AdvancedDiscretizationOptions.ViscosityMode       = ViscosityMode.FullySymmetric; //
+//C.PhysicalParameters.mu_I                           = 1 * sigma;
+//C.PhysicalParameters.lambda_I                       = 2 * sigma;
+
+**************
+==============
+// Timestepping
+
+C.Timestepper_Scheme           = XNSE_Control.TimesteppingScheme.BDF2;
+C.Timestepper_BDFinit          = TimeStepperInit.SingleInit;
+C.Timestepper_LevelSetHandling = LevelSetHandling.Coupled_Once;
+//C.LinearSolver                 = DirectSolver._whichSolver.PARDISO;
+
+C.CompMode      = AppControl._CompMode.Transient;
+double dt       = 1.0e-2;
+C.dtMax         = dt;
+C.dtMin         = dt;
+C.Endtime       = 100;
+C.NoOfTimesteps = 10000; // (int)(3 / dt);
+C.saveperiod    = 1;
+
+
+C.AdaptiveMeshRefinement = true;
+C.RefinementLevel        = 1;
+**************
+==============
+// TASK: Adjust session name
+string sessionName   = "Oscillating Droplet/FastMarching/Saye/Ellipse/10000";
+C.ProjectName        = sessionName;
+C.ProjectDescription = sessionName;
+**************
+==============
+**************
+==============
+// Create a new job 
+var oneJob_Network = new Job(sessionName,solver);
+oneJob_Network.SetControlObject(C);
+
+// TASK: Select either local (myBatch) or network (myHPC) processor to start the simulations by removing the comment below. 
+// If you choose local, make sure "MiniBatchProcessor.exe" is running. If it is not running yet, go to "P:\BoSSS\bin\Release" and start "MiniBatchProcessor.exe". Output and error files can be found in "C:\Users\YOURNAME\.BoSSS\batch".
+// If you choose network, open "HPCJobManager" to see the status of your job. Your output and error files can be found in "P:\cluster". 
+
+oneJob_Network.Activate(myHPC);
+//oneJob_Network.Activate(myBatch);
+**************
+Job not submitted yet, or no result session is known - starting submission.
+Deploying executables and additional files ...
+Deployment directory: \\dc1\userspace\yotov\cluster\XNSE_Solver2019Jan25_15-46-09
+Source directory: d:\Users\yotov\AppData\Local\BoSSS-code\public\src\L4-application\BoSSSpad\bin\Release
+   copied: XNSE_Solver.exe BoSSS.Solution.dll CommandLine.dll BoSSS.Foundation.dll ilPSP.dll MPI.Wrappers.dll log4net.dll nunit.framework.dll Newtonsoft.Json.dll ilPSP.LinSolvers.MUMPS.dll BoSSS.Platform.dll Renci.SshNet.dll ilPSP.LinSolvers.monkey.dll ilPSP.Connectors.Matlab.dll BoSSS.Foundation.XDG.dll Mono.CSharp.dll BoSSS.Foundation.Grid.dll MathNet.Numerics.dll BoSSS.Solution.XNSECommon.dll BoSSS.Solution.NSECommon.dll BoSSS.Solution.LevelSetTools.dll BoSSS.Foundation.SpecFEM.dll ilPSP.LinSolvers.PARDISO.dll BoSSS.Solution.Statistic.dll BoSSS.Solution.Multigrid.dll BoSSS.Solution.Gnuplot.dll BoSSS.Solution.Tecplot.dll BoSSS.Solution.XdgTimestepping.dll BoSSS.Solution.XheatCommon.dll    writing file: control.obj
+   copied 'amd64' runtime.
+deployment finished.
+
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+Starting export process... Data will be written to the following directory:
+d:\Users\yotov\AppData\Local\BoSSS\plots\sessions\OscillatingDroplet__Oscillating Droplet_FastMarching_Ellipse__0aac3ada-da23-4ee6-965c-0c28d04c8856
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============

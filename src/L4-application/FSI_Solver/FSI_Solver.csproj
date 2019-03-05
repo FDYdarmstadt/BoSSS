@@ -39,6 +39,7 @@
     <Prefer32Bit>false</Prefer32Bit>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <UseVSHostingProcess>true</UseVSHostingProcess>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <DebugType>pdbonly</DebugType>
@@ -49,6 +50,7 @@
     <WarningLevel>4</WarningLevel>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <Prefer32Bit>false</Prefer32Bit>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
   </PropertyGroup>
   <PropertyGroup>
     <StartupObject>BoSSS.Application.FSI_Solver.FSI_SolverMain</StartupObject>
@@ -76,7 +78,9 @@
     <Compile Include="active_particles\ActiveViscosityAtIB.cs" />
     <Compile Include="active_particles\ActiveConvectionAtIB.cs" />
     <Compile Include="active_particles\ActiveDivergenceAtIB.cs" />
-    <Compile Include="active_particles\HardcodedControl_TestCases.cs" />
+    <Compile Include="active_particles\ActivePressureAtIB.cs" />
+    <Compile Include="active_particles\HardcodedControl\HardcodedControl_tiltedChannel.cs" />
+    <Compile Include="active_particles\HardcodedControl\HardcodedControl_straightChannel.cs" />
     <Compile Include="Particle_Shapes\Particle_Bean.cs" />
     <Compile Include="Particle_Shapes\Particle_superEllipsoid.cs" />
     <Compile Include="Particle_Shapes\Particle_Sphere.cs" />
@@ -128,8 +132,8 @@
       <Project>{17a60fba-20b4-451d-98e1-8d742f368569}</Project>
       <Name>BoSSS.Foundation</Name>
     </ProjectReference>
-    <ProjectReference Include="..\..\L3-solution\BoSSS.Solution.Multigrid\BoSSS.Solution.AdvancedSolvers.csproj">
-      <Project>{37748982-6cf5-424b-ab39-146a8143ba71}</Project>
+    <ProjectReference Include="..\..\L3-solution\BoSSS.Solution.AdvancedSolvers\BoSSS.Solution.AdvancedSolvers.csproj">
+      <Project>{efe8c307-09bc-4f58-b991-6ef8fd6d5eff}</Project>
       <Name>BoSSS.Solution.AdvancedSolvers</Name>
     </ProjectReference>
     <ProjectReference Include="..\..\L3-solution\BoSSS.Solution.NSECommon\BoSSS.Solution.NSECommon.csproj">

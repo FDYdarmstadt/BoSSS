@@ -46,17 +46,17 @@ namespace NSE_SIMPLE {
         /// Ctor.
         /// </summary>
         /// <param name="solverConf"></param>
-        /// <param name="sparseSolver"></param>
+        /// <param name="_sparseSolver"></param>
         /// <param name="MatAsmblyPredictor"></param>
         /// <param name="MatAsmblyPredictorApprox"></param>
         /// <param name="PressureGradient"></param>
         /// <param name="BDF"></param>
         /// <param name="Velocity"></param>
         /// <param name="Pressure"></param>
-        public SolverPredictor(SolverConfiguration solverConf, ISparseSolver sparseSolver,
+        public SolverPredictor(SolverConfiguration solverConf, ISparseSolver _sparseSolver,
             SIMPLEMatrixAssembly[] MatAsmblyPredictor, SIMPLEMatrixAssembly MatAsmblyPredictorApprox, SIMPLEOperator[] PressureGradient, BDFScheme BDF,
             VectorFieldHistory<SinglePhaseField> Velocity, SinglePhaseField Pressure)
-            : base(solverConf, sparseSolver) {
+            : base(solverConf, _sparseSolver) {
 
             m_SolverConf = solverConf;
 

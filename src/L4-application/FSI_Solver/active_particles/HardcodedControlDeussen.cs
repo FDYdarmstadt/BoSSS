@@ -134,12 +134,12 @@ namespace BoSSS.Application.FSI_Solver
                 {
                     radius_P = 1,
                     rho_P = 1.5,//pg/(mum^3)
-                    includeGravity = false,
+                    gravityVertical = 0,
                     active_P = true,
-                    stress_magnitude_P = stressM,
-                    thickness_P = 0.1 * BaseSize,
-                    length_P = 2 * BaseSize,
-                    superEllipsoidExponent = 4, // only even numbers are supported
+                    active_stress_P = stressM,
+                    //thickness_P = 0.1 * BaseSize,  Sphere kann nur einen radius haben! fk.
+                    //length_P = 2 * BaseSize,       Sphere kann nur einen radius haben! fk.
+                    //superEllipsoidExponent = 4, // only even numbers are supported
                     underrelaxationFT_constant = false,// set true if you want to define a constant underrelaxation (not recommended)
                     underrelaxation_factor = 9,// underrelaxation with [factor * 10^exponent]
                 });

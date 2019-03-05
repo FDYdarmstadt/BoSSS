@@ -20,6 +20,7 @@ using BoSSS.Foundation.XDG;
 using ilPSP;
 using BoSSS.Foundation.Grid;
 using MathNet.Numerics;
+using System.Diagnostics;
 
 namespace BoSSS.Application.FSI_Solver
 {
@@ -27,6 +28,14 @@ namespace BoSSS.Application.FSI_Solver
     [Serializable]
     public class Particle_superEllipsoid : Particle
     {
+        /// <summary>
+        /// Empty constructor used during de-serialization
+        /// </summary>
+        private Particle_superEllipsoid() : base()
+        {
+
+        }
+
         public Particle_superEllipsoid(int Dim, int HistoryLength, double[] startPos = null, double startAngl = 0) : base(Dim, HistoryLength, startPos, startAngl)
         {
             #region Particle history
@@ -38,9 +47,7 @@ namespace BoSSS.Application.FSI_Solver
                 currentIterVel_P.Add(new double[Dim]);
                 currentIterRot_P.Add(new double());
                 currentIterForces_P.Add(new double[Dim]);
-                temporalForces_P.Add(new double[Dim]);
                 currentIterTorque_P.Add(new double());
-                temporalTorque_P.Add(new double());
             }
             for (int i = 0; i < 4; i++)
             {
@@ -76,13 +83,42 @@ namespace BoSSS.Application.FSI_Solver
             UpdateLevelSetFunction();
             #endregion
         }
-        override public double active_stress_P
+
+        /// <summary>
+        /// Length of an elliptic particle.
+        /// </summary>
+        [DataMember]
+        public double length_P;
+
+        /// <summary>
+        /// Thickness of an elliptic particle.
+        /// </summary>
+        [DataMember]
+        public double thickness_P;
+
+        /// <summary>
+        /// Exponent of the super ellipsoid. Higher exponent leads to a more "squary" appearance.
+        /// </summary>
+        [DataMember]
+        public int superEllipsoidExponent;
+
+        /// <summary>
+        /// %
+        /// </summary>
+        protected override double averageDistance {
+            get {
+                throw new NotImplementedException("todo");
+            }
+        }
+
+        public override double Circumference_P 
         {
             get
             {
-                return stress_magnitude_P;
+                return (2 * length_P + 2 * thickness_P + 2 * Math.PI * thickness_P) / 2;
             }
         }
+
         override public double Area_P
         {
             get
@@ -101,12 +137,19 @@ namespace BoSSS.Application.FSI_Solver
         override public void UpdateLevelSetFunction()
         {
             double alpha = -(currentIterAng_P[0]);
-            phi_P = (X, t) => -Math.Pow(((X[0] - currentIterPos_P[0][0]) * Math.Cos(alpha) - (X[1] - currentIterPos_P[0][1]) * Math.Sin(alpha)) / length_P, superEllipsoidExponent) + -Math.Pow(((X[0] - currentIterPos_P[0][0]) * Math.Sin(alpha) + (X[1] - currentIterPos_P[0][1]) * Math.Cos(alpha))/ thickness_P,superEllipsoidExponent) + 1;
+            phi_P = delegate (double[] X, double t) {
+                double r;
+                r = -Math.Pow(((X[0] - currentIterPos_P[0][0]) * Math.Cos(alpha) - (X[1] - currentIterPos_P[0][1]) * Math.Sin(alpha)) / length_P, superEllipsoidExponent) + -Math.Pow(((X[0] - currentIterPos_P[0][0]) * Math.Sin(alpha) + (X[1] - currentIterPos_P[0][1]) * Math.Cos(alpha)) / thickness_P, 
+                    superEllipsoidExponent) + 1;
+                if (double.IsNaN(r) || double.IsInfinity(r))
+                    throw new ArithmeticException();
+                return r;
+            };
         }
         override public CellMask cutCells_P(LevelSetTracker LsTrk)
         {
             // tolerance is very important
-            var radiusTolerance = radius_P + LsTrk.GridDat.Cells.h_minGlobal;// +2.0*Math.Sqrt(2*LsTrk.GridDat.Cells.h_minGlobal.Pow2());
+            var radiusTolerance = Math.Min(length_P, thickness_P) + LsTrk.GridDat.Cells.h_minGlobal;// +2.0*Math.Sqrt(2*LsTrk.GridDat.Cells.h_minGlobal.Pow2());
 
             CellMask cellCollection;
             CellMask cells = null;
@@ -120,7 +163,7 @@ namespace BoSSS.Application.FSI_Solver
         override public bool Contains(double[] point, LevelSetTracker LsTrk)
         {
             // only for squared cells
-            double radiusTolerance = radius_P + 2.0 * Math.Sqrt(2 * LsTrk.GridDat.Cells.h_minGlobal.Pow2());
+            double radiusTolerance = Math.Min(length_P, thickness_P) + 2.0 * Math.Sqrt(2 * LsTrk.GridDat.Cells.h_minGlobal.Pow2());
             if (-Math.Pow(((point[0] - currentIterPos_P[0][0]) * Math.Cos(currentIterAng_P[0]) - (point[1] - currentIterPos_P[0][1]) * Math.Sin(currentIterAng_P[0])) / length_P,superEllipsoidExponent) + -Math.Pow(((point[0] - currentIterPos_P[0][0]) * Math.Sin(currentIterAng_P[0]) + (point[1] - currentIterPos_P[0][1]) * Math.Cos(currentIterAng_P[0])) / thickness_P,superEllipsoidExponent) + radiusTolerance.Pow(superEllipsoidExponent) > 0)
             {
                 return true;

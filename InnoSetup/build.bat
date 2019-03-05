@@ -9,7 +9,6 @@ bcl deploy-at ..\src\Utils\MatrixVisualizer\MatrixVisualizerVS15\bin\Debug\Matri
 bcl deploy-at ..\src\Utils\MatrixVisualizer\MatrixVisualizerVS15\bin\Release\MatrixVisualizerVS15.dll  .\bin\Release  1
 bcl deploy-at ..\src\L4-application\BoSSSpad\bin\Debug\BoSSSpad.exe                   .\bin\Debug    1
 bcl deploy-at ..\src\L4-application\BoSSSpad\bin\Release\BoSSSpad.exe                 .\bin\Release  1
-bcl deploy-at ..\src\BoSSSpadGUI\src\cs\bin\Release\ElectronWorksheet.dll                 .\bin\Release  1
 ::Include xml files for 'Describe' feature in BoSSSpad
 xcopy ..\src\L4-application\BoSSSpad\bin\Debug\*.xml           .\bin\Debug /Y
 xcopy ..\src\L4-application\BoSSSpad\bin\Release\*.xml         .\bin\Release /Y

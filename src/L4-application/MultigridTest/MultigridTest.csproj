@@ -128,6 +128,10 @@
       <Project>{9A8CDC1F-64F7-441E-849D-66F2C56600F2}</Project>
       <Name>BoSSS.Foundation.XDG</Name>
     </ProjectReference>
+    <ProjectReference Include="..\..\L3-solution\BoSSS.Solution.AdvancedSolvers\BoSSS.Solution.AdvancedSolvers.csproj">
+      <Project>{EFE8C307-09BC-4F58-B991-6EF8FD6D5EFF}</Project>
+      <Name>BoSSS.Solution.AdvancedSolvers</Name>
+    </ProjectReference>
     <ProjectReference Include="..\..\L1-platform\BoSSS.Platform\BoSSS.Platform.csproj">
       <Project>{B7D5F7C7-EA9F-4506-AB69-C3CD2AA8C938}</Project>
       <Name>BoSSS.Platform</Name>
@@ -143,10 +147,6 @@
     <ProjectReference Include="..\..\L3-solution\BoSSS.Solution.Gnuplot\BoSSS.Solution.Gnuplot.csproj">
       <Project>{D4FADB7C-0B11-4F41-A97A-146DC1F7034E}</Project>
       <Name>BoSSS.Solution.Gnuplot</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\..\L3-solution\BoSSS.Solution.Multigrid\BoSSS.Solution.AdvancedSolvers.csproj">
-      <Project>{37748982-6cf5-424b-ab39-146a8143ba71}</Project>
-      <Name>BoSSS.Solution.AdvancedSolvers</Name>
     </ProjectReference>
     <ProjectReference Include="..\..\L3-solution\BoSSS.Solution.Statistic\BoSSS.Solution.Statistic.csproj">
       <Project>{45BCA5F9-27E7-43C0-B021-4312BF442C7D}</Project>

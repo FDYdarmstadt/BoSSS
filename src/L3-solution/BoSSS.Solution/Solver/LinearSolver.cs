@@ -193,5 +193,13 @@ namespace BoSSS.Solution.Control {
         /// </summary>
         [DataMember]
         public int exp_localPrec_Min_dt = 0;
+
+        /// <summary>
+        /// If any blocking is used (Schwarz, block Jacobi), a target for the block size.
+        /// Tests show that the ideal block size may be around 10000, but this may depend on computer, DG polynomial order, etc.
+        /// </summary>
+        [DataMember]
+        [BoSSS.Solution.Control.ExclusiveLowerBound(99.0)]
+        public int TargetBlockSize = 10000;
     }
 }

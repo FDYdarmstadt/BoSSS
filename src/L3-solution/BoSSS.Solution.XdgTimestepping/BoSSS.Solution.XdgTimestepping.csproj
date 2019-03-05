@@ -42,7 +42,6 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="SolverChooser.cs" />
     <Compile Include="TimeSteppingUtils.cs" />
     <Compile Include="XdgBDFTimestepping.cs" />
     <Compile Include="XdgRKTimestepping.cs" />
@@ -73,7 +72,7 @@
       <Project>{17a60fba-20b4-451d-98e1-8d742f368569}</Project>
       <Name>BoSSS.Foundation</Name>
     </ProjectReference>
-    <ProjectReference Include="..\BoSSS.Solution.Multigrid\BoSSS.Solution.AdvancedSolvers.csproj">
+    <ProjectReference Include="..\BoSSS.Solution.AdvancedSolvers\BoSSS.Solution.AdvancedSolvers.csproj">
       <Project>{37748982-6cf5-424b-ab39-146a8143ba71}</Project>
       <Name>BoSSS.Solution.AdvancedSolvers</Name>
     </ProjectReference>

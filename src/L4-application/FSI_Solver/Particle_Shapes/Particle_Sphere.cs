@@ -26,6 +26,14 @@ namespace BoSSS.Application.FSI_Solver
     [Serializable]
     public class Particle_Sphere : Particle
     {
+        /// <summary>
+        /// Empty constructor used during de-serialization
+        /// </summary>
+        private Particle_Sphere() : base()
+        {
+
+        }
+
         public Particle_Sphere(int Dim, int HistoryLength, double[] startPos = null, double startAngl = 0) : base(Dim, HistoryLength, startPos, startAngl)
         {
             #region Particle history
@@ -37,9 +45,7 @@ namespace BoSSS.Application.FSI_Solver
                 currentIterVel_P.Add(new double[Dim]);
                 currentIterRot_P.Add(new double());
                 currentIterForces_P.Add(new double[Dim]);
-                temporalForces_P.Add(new double[Dim]);
                 currentIterTorque_P.Add(new double());
-                temporalTorque_P.Add(new double());
             }
             for (int i = 0; i < 4; i++)
             {
@@ -75,18 +81,34 @@ namespace BoSSS.Application.FSI_Solver
             UpdateLevelSetFunction();
             #endregion
         }
-        override public double active_stress_P
-        {
-            get
-            {
-                return 2 * Math.PI * radius_P * stress_magnitude_P;
+
+        /// <summary>
+        /// Radius of the particle. Not necessary for particles defined by their length and thickness
+        /// </summary>
+        [DataMember]
+        public double radius_P;
+
+        /// <summary>
+        /// %
+        /// </summary>
+        protected override double averageDistance {
+            get {
+                return radius_P;
             }
         }
+
         override public double Area_P
         {
             get
             {
                 return Math.PI * radius_P * radius_P;
+            }
+        }
+        public override double Circumference_P
+        {
+            get
+            {
+                return 2 * Math.PI * radius_P;
             }
         }
         override public double MomentOfInertia_P
