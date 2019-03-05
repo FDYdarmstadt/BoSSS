@@ -115,7 +115,7 @@
       <Name>BoSSS.Foundation</Name>
     </ProjectReference>
     <ProjectReference Include="..\..\L3-solution\BoSSS.Solution.Multigrid\BoSSS.Solution.AdvancedSolvers.csproj">
-      <Project>{EFE8C307-09BC-4F58-B991-6EF8FD6D5EFF}</Project>
+      <Project>{37748982-6cf5-424b-ab39-146a8143ba71}</Project>
       <Name>BoSSS.Solution.AdvancedSolvers</Name>
     </ProjectReference>
     <ProjectReference Include="..\..\L3-solution\BoSSS.Solution.XNSECommon\BoSSS.Solution.XNSECommon.csproj">
