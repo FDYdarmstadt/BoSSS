@@ -334,8 +334,19 @@ namespace BoSSS.Solution.NSECommon {
         /// </summary>
         public const string LevelSet = "LevelSet";
 
+        /// <summary>
+        /// x - component of the Level-Set gradient
+        /// </summary>
         public static string LevelSetGradient0 = "LevelSetGradient[0]";
+
+        /// <summary>
+        /// y - component of the Level-Set gradient
+        /// </summary>
         public static string LevelSetGradient1 = "LevelSetGradient[1]";
+
+        /// <summary>
+        /// z - component of the Level-Set gradient
+        /// </summary>
         public static string LevelSetGradient2 = "LevelSetGradient[2]";
 
         /// <summary>
@@ -349,6 +360,10 @@ namespace BoSSS.Solution.NSECommon {
                 default: throw new NotSupportedException("unsupported number of species.");
             }
         }
+
+        /// <summary>
+        /// Components of the Level-Set gradient
+        /// </summary>
         static public string LevelSetGradientComponent(int i) {
             switch (i) {
                 case 0: return LevelSetGradient0;
@@ -358,14 +373,24 @@ namespace BoSSS.Solution.NSECommon {
             }
         }
 
-
+        /// <summary>
+        ///  x - component of cell-wise mean value of the Level-Set gradient
+        /// </summary>
         public static string MeanLevelSetGradient0 = "LevelSetGradient[0]Mean";
+
+        /// <summary>
+        ///  y - component of cell-wise mean value of the Level-Set gradient
+        /// </summary>
         public static string MeanLevelSetGradient1 = "LevelSetGradient[1]Mean";
+        
+        /// <summary>
+        ///  z - component of cell-wise mean value of the Level-Set gradient
+        /// </summary>
         public static string MeanLevelSetGradient2 = "LevelSetGradient[2]Mean";
 
 
         /// <summary>
-        /// variable name for the Gradient of a Level-Set
+        /// variable name for the cell-wise mean value of the Level-Set gradient
         /// </summary>
         static public string[] MeanLevelSetGradient(int D) {
             switch (D) {
@@ -377,7 +402,7 @@ namespace BoSSS.Solution.NSECommon {
         }        
 
         /// <summary>
-        /// variable name for the Gradient of a Level-Set
+        /// components of cell-wise mean value of the Level-Set gradient
         /// </summary>
         static public string MeanLevelSetGradientComponent(int i) {
             switch (i) {

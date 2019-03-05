@@ -56,13 +56,6 @@ namespace BoSSS.Application.IBM_Solver {
             return typeof(IBM_SolverMain);
         }
 
-        ///// <summary>
-        ///// Expert options regarding the level set solver.
-        ///// </summary>
-        //public XVelocityProjection.Configuration LevelSetOptions = new XVelocityProjection.Configuration() {
-        //};
-        //public int LS_TrackerWidth = 1;
-
         /// <summary>
         /// Expert options regarding the spatial discretization.
         /// </summary>
@@ -95,33 +88,6 @@ namespace BoSSS.Application.IBM_Solver {
             this.AddFieldOption("PhiDG", 2);
             this.AddFieldOption("Phi", 2);
         }
-
-        
-
-        ///// <summary>
-        ///// If iterative saddle-point solvers like GMRES or Orthonormalization are used, the maximum number of basis vectors
-        ///// that are used to construct the accelerated solution.
-        ///// </summary>
-        //[DataMember]
-        //public int MaxKrylovDim = 30;
-
-        ///// <summary>
-        ///// If iterative solvers are used, the maximum number of iterations.
-        ///// </summary>
-        //[DataMember]
-        //public int MaxSolverIterations = 2000;
-
-        ///// <summary>
-        ///// If iterative solvers are used, the maximum number of iterations.
-        ///// </summary>
-        //[DataMember]
-        //public int MinSolverIterations = 2;
-
-        ///// <summary>
-        ///// Convergence criterion for linear/nonlinear solver.
-        ///// </summary>
-        //[DataMember]
-        //public double Solver_ConvergenceCriterion = 1.0e-8;
 
         /// <summary>
         /// Block-Preconditiond for the velocity-components of the saddel-point system
@@ -243,7 +209,7 @@ namespace BoSSS.Application.IBM_Solver {
         /// See <see cref="TimesteppingScheme"/>
         /// </summary>
         [DataMember]
-        public TimesteppingScheme Timestepper_Scheme;
+        public TimesteppingScheme Timestepper_Scheme = TimesteppingScheme.BDF2;
 
         /// <summary>
         /// Set true if periodic boundary conditions in streamwise direction are applied
@@ -267,12 +233,5 @@ namespace BoSSS.Application.IBM_Solver {
 
         [DataMember]
         public BoSSS.Solution.Timestepping.TimeStepperInit TimeStepper_Init = Solution.Timestepping.TimeStepperInit.SingleInit;
-
-        //[DataMember]
-        //public NonlinearSolverCodes NonlinearSolve = NonlinearSolverCodes.Picard;
-
-        //[DataMember]
-        //public LinearSolverCodes LinearSolve = LinearSolverCodes.classic_mumps;
-
     }
 }

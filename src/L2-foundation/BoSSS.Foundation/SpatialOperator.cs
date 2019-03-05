@@ -2235,19 +2235,28 @@ namespace BoSSS.Foundation {
                 U0.SetV(U0backup);
                 DelParamUpdate(domFields, Eval.Parameters.ToArray());
                 //Console.WriteLine("Total number of evaluations: " + NoOfEvals);
+
+                // correct the affine offset
+                // =========================
+
+                // actually, the jacobian is the approx M*(U-U0) + b
+                // we want                              M*U + (b - M*U0)
+                Matrix.SpMV(-1.0, U0, 1.0, AffineOffset);
             }
 
             /// <summary>
             /// Evaluation at the linearization point
             /// </summary>
             public void ComputeAffine<V>(V AffineOffset) where V : IList<double> {
-                int Lout = Eval.CodomainMapping.LocalLength;
-               
-                double[] F0 = new double[Lout];
-                DelParamUpdate(Eval.DomainFields.Fields.ToArray(), Eval.Parameters.ToArray());
-                Eval.Evaluate(1.0, 0.0, F0);
-                AffineOffset.AccV(1.0, F0);
-               
+                //int Lout = Eval.CodomainMapping.LocalLength;
+
+                //double[] F0 = new double[Lout];
+                //DelParamUpdate(Eval.DomainFields.Fields.ToArray(), Eval.Parameters.ToArray());
+                //Eval.Evaluate(1.0, 0.0, F0);
+                //AffineOffset.AccV(1.0, F0);
+
+                BlockMsrMatrix dummy = new BlockMsrMatrix(this.CodomainMapping, this.DomainMapping);
+                this.ComputeMatrix(dummy, AffineOffset);
             }
 
             /// <summary>

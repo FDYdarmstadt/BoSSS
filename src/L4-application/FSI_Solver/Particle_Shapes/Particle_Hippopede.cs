@@ -20,25 +20,23 @@ using BoSSS.Foundation.XDG;
 using ilPSP;
 using BoSSS.Foundation.Grid;
 
-namespace BoSSS.Application.FSI_Solver
-{
+namespace BoSSS.Application.FSI_Solver {
     [DataContract]
     [Serializable]
-    public class Particle_Hippopede : Particle
-    {
+    public class Particle_Hippopede : Particle {
         /// <summary>
         /// Empty constructor used during de-serialization
         /// </summary>
-        private Particle_Hippopede() : base()
-        {
+        private Particle_Hippopede() : base() {
 
         }
-        public Particle_Hippopede(int Dim, int HistoryLength, double[] startPos = null, double startAngl = 0) : base(Dim, HistoryLength, startPos, startAngl)
+
+        public Particle_Hippopede(int Dim, int HistoryLength, double[] startPos = null, double startAngl = 0) : 
+            base(Dim, HistoryLength, startPos, startAngl) //
         {
             #region Particle history
             // =============================   
-            for (int i = 0; i < HistoryLength; i++)
-            {
+            for (int i = 0; i < HistoryLength; i++) {
                 currentIterPos_P.Add(new double[Dim]);
                 currentIterAng_P.Add(new double());
                 currentIterVel_P.Add(new double[Dim]);
@@ -46,8 +44,7 @@ namespace BoSSS.Application.FSI_Solver
                 currentIterForces_P.Add(new double[Dim]);
                 currentIterTorque_P.Add(new double());
             }
-            for (int i = 0; i < 4; i++)
-            {
+            for (int i = 0; i < 4; i++) {
                 currentTimePos_P.Add(new double[Dim]);
                 currentTimeAng_P.Add(new double());
                 currentTimeVel_P.Add(new double[Dim]);
@@ -59,14 +56,10 @@ namespace BoSSS.Application.FSI_Solver
 
             #region Initial values
             // ============================= 
-            if (startPos == null)
-            {
-                if (Dim == 2)
-                {
+            if (startPos == null) {
+                if (Dim == 2) {
                     startPos = new double[] { 0.0, 0.0 };
-                }
-                else
-                {
+                } else {
                     startPos = new double[] { 0.0, 0.0, 0.0 };
                 }
             }
@@ -80,38 +73,30 @@ namespace BoSSS.Application.FSI_Solver
             UpdateLevelSetFunction();
             #endregion
         }
-        public override double Circumference_P
-        {
-            get
-            {
+        public override double Circumference_P {
+            get {
                 return 2 * Math.PI * radius_P;
             }
         }
-        override public double Area_P
-        {
-            get
-            {
+        override public double Area_P {
+            get {
                 // not correct area
                 return Math.PI * radius_P * radius_P;
             }
         }
-        override public double MomentOfInertia_P
-        {
-            get
-            {
+        override public double MomentOfInertia_P {
+            get {
                 // not correct moment of inertia
                 return (1 / 2.0) * (Mass_P * radius_P * radius_P);
             }
         }
-        override public void UpdateLevelSetFunction()
-        {
+        override public void UpdateLevelSetFunction() {
             double a = 4.0 * radius_P.Pow2();
             double b = 1.0 * radius_P.Pow2();
             double alpha = -(currentIterAng_P[0]);
             phi_P = (X, t) => -((((X[0] - currentIterPos_P[0][0]) * Math.Cos(alpha) - (X[1] - currentIterPos_P[0][1]) * Math.Sin(alpha)).Pow(2) + ((X[0] - currentIterPos_P[0][0]) * Math.Sin(alpha) + (X[1] - currentIterPos_P[0][1]) * Math.Cos(alpha)).Pow(2)).Pow2() - a * ((X[0] - currentIterPos_P[0][0]) * Math.Cos(alpha) - (X[1] - currentIterPos_P[0][1]) * Math.Sin(alpha)).Pow2() - b * ((X[0] - currentIterPos_P[0][0]) * Math.Sin(alpha) + (X[1] - currentIterPos_P[0][1]) * Math.Cos(alpha)).Pow2());
         }
-        override public CellMask cutCells_P(LevelSetTracker LsTrk)
-        {
+        override public CellMask cutCells_P(LevelSetTracker LsTrk) {
             // tolerance is very important
             var radiusTolerance = radius_P + LsTrk.GridDat.Cells.h_minGlobal;// +2.0*Math.Sqrt(2*LsTrk.GridDat.Cells.h_minGlobal.Pow2());
 
@@ -126,20 +111,48 @@ namespace BoSSS.Application.FSI_Solver
             cellCollection = cells.Intersect(allCutCells);
             return cellCollection;
         }
-        override public bool Contains(double[] point, LevelSetTracker LsTrk)
-        {
+
+        /// <summary>
+        /// Radius of the particle. Not necessary for particles defined by their length and thickness
+        /// </summary>
+        [DataMember]
+        public double radius_P;
+
+
+        /// <summary>
+        /// Length of an elliptic particle.
+        /// </summary>
+        [DataMember]
+        public double length_P;
+
+        /// <summary>
+        /// Thickness of an elliptic particle.
+        /// </summary>
+        [DataMember]
+        public double thickness_P;
+
+        /// <summary>
+        /// %
+        /// </summary>
+        protected override double averageDistance {
+            get {
+                throw new NotImplementedException("todo");
+            }
+        }
+
+
+        override public bool Contains(double[] point, LevelSetTracker LsTrk) {
             // only for squared cells
             double radiusTolerance = radius_P + 2.0 * Math.Sqrt(2 * LsTrk.GridDat.Cells.h_minGlobal.Pow2());
             double a = 4.0 * radiusTolerance.Pow2();
             double b = 1.0 * radiusTolerance.Pow2();
-            if (-((((point[0] - currentIterPos_P[0][0]) * Math.Cos(currentIterAng_P[0]) - (point[1] - currentIterPos_P[0][1]) * Math.Sin(currentIterAng_P[0])).Pow(2) + ((point[0] - currentIterPos_P[0][0]) * Math.Sin(currentIterAng_P[0]) + (point[1] - currentIterPos_P[0][1]) * Math.Cos(currentIterAng_P[0])).Pow(2)).Pow2() - length_P * ((point[0] - currentIterPos_P[0][0]) * Math.Cos(currentIterAng_P[0]) - (point[1] - currentIterPos_P[0][1]) * Math.Sin(currentIterAng_P[0])).Pow2() - thickness_P * ((point[0] - currentIterPos_P[0][0]) * Math.Sin(currentIterAng_P[0]) + (point[1] - currentIterPos_P[0][1]) * Math.Cos(currentIterAng_P[0])).Pow2()) > 0)
-            {
+            if (-((((point[0] - currentIterPos_P[0][0]) * Math.Cos(currentIterAng_P[0]) - (point[1] - currentIterPos_P[0][1]) * Math.Sin(currentIterAng_P[0])).Pow(2) + ((point[0] - currentIterPos_P[0][0]) * Math.Sin(currentIterAng_P[0]) + (point[1] - currentIterPos_P[0][1]) * Math.Cos(currentIterAng_P[0])).Pow(2)).Pow2() - length_P * ((point[0] - currentIterPos_P[0][0]) * Math.Cos(currentIterAng_P[0]) - (point[1] - currentIterPos_P[0][1]) * Math.Sin(currentIterAng_P[0])).Pow2() - thickness_P * ((point[0] - currentIterPos_P[0][0]) * Math.Sin(currentIterAng_P[0]) + (point[1] - currentIterPos_P[0][1]) * Math.Cos(currentIterAng_P[0])).Pow2()) > 0) {
                 return true;
             }
             return false;
         }
-        override public double ComputeParticleRe(double mu_Fluid)
-        {
+
+        override public double ComputeParticleRe(double mu_Fluid) {
             double particleReynolds = 0;
             particleReynolds = Math.Sqrt(currentIterVel_P[0][0] * currentIterVel_P[0][0] + currentIterVel_P[0][1] * currentIterVel_P[0][1]) * 2 * 4.0 * rho_P / mu_Fluid;
             Console.WriteLine("Particle Reynolds number:  " + particleReynolds);

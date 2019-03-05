@@ -95,7 +95,7 @@ namespace BoSSS.Foundation {
         void ComputeMatrix<M, V>(M Matrix, V AffineOffset) where M : IMutableMatrixEx where V : IList<double>;
 
         /// <summary>
-        /// Equal to <see cref=""/>
+        /// only the affine part of <see cref="ComputeMatrix{M, V}(M, V)"/>
         /// </summary>
         void ComputeAffine<V>(V AffineOffset) where V : IList<double>;
     }
