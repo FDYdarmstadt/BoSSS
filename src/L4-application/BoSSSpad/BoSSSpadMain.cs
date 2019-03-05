@@ -68,6 +68,7 @@ namespace BoSSS.Application.BoSSSpad {
         [STAThread]
         public static int Main(string[] args) { 
             
+            
             int errCount = 0;
 
             Thread.CurrentThread.CurrentCulture = CultureInfo.InvariantCulture;

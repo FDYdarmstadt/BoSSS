@@ -105,23 +105,20 @@ namespace BoSSS.Application.BoSSSpad {
             SubmitCount = 0;
         }
 
+        /// <summary>
+        /// Returns path to text-file for standard error stream
+        /// </summary>
         public override string GetStderrFile(Job myJob) {
             string fp = Path.Combine(myJob.DeploymentDirectory, "stderr.txt");
-            if (File.Exists(fp)) {
-                return fp;
-            } else {
-                return null;
-            }
-
+            return fp;
         }
 
+        /// <summary>
+        /// Returns path to text-file for standard output stream
+        /// </summary>
         public override string GetStdoutFile(Job myJob) {
             string fp = Path.Combine(myJob.DeploymentDirectory, "stdout.txt");
-            if (File.Exists(fp)) {
-                return fp;
-            } else {
-                return null;
-            }
+            return fp;
         }
 
         public override object Submit(Job myJob) {
