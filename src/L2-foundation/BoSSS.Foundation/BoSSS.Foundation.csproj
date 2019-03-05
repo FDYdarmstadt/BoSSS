@@ -80,6 +80,7 @@
     <Compile Include="Cube.cs" />
     <Compile Include="DatabaseController.cs" />
     <Compile Include="DatabaseDriver.cs" />
+    <Compile Include="DatabaseDriver_Grid.cs" />
     <Compile Include="DGFieldExtensions.cs" />
     <Compile Include="EdgeInfo.cs" />
     <Compile Include="FileManager.cs" />
