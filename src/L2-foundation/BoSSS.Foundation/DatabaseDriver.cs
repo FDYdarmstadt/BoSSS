@@ -148,7 +148,6 @@ namespace BoSSS.Foundation.IO {
         TextWriter m_stdout = null;
         TextWriter m_stderr = null;
 
-
         /// <summary>
         /// Returns a write-stream for some new log file.
         /// </summary>
@@ -170,8 +169,6 @@ namespace BoSSS.Foundation.IO {
 
             return file;
         }
-
-
 
         /// <summary>
         /// some fucking fake.
@@ -270,7 +267,6 @@ namespace BoSSS.Foundation.IO {
             }
 
         }
-
 
         /// <summary>
         /// 
@@ -388,7 +384,6 @@ namespace BoSSS.Foundation.IO {
                 e.ExceptionBcast();
             }
         }
-
 
         /// <summary>
         /// Loads a vector from the database

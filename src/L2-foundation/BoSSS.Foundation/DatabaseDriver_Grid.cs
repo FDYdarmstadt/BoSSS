@@ -92,87 +92,93 @@ namespace BoSSS.Foundation.IO
         /// the Guid of the <see cref="IGrid"/>-object that was saved
         /// (equal to the <see cref="IDatabaseEntityInfo{T}.ID"/>-property).
         /// </returns>
-        /// <param name="_grd">
+        /// <param name="grid">
         /// The grid to save.
         /// </param>
         /// <param name="database">
         /// chaos
         /// </param>
-        public Guid SaveGrid(IGrid _grd, IDatabaseInfo database)
+        public Guid SaveGrid(IGrid grid, IDatabaseInfo database)
         {
             using (new FuncTrace())
             {
-                GridCommons grd = _grd as GridCommons;
-                if (grd == null)
-                {
-                    throw new InvalidCastException("Grid not supported by save method");
-                }
-
-                if (_grd.ID.Equals(Guid.Empty))
-                {
-                    throw new ApplicationException("cannot save grid with empty Guid (Grid Guid is " + Guid.Empty.ToString() + ");");
-                }
-                MPICollectiveWatchDog.Watch(csMPI.Raw._COMM.WORLD);
-
-                // save required grid data
-                // =======================
-                if (grd.StorageGuid != null && grd.StorageGuid != Guid.Empty)
-                {
-                    SaveVector(grd.Cells, grd.StorageGuid);
-                }
-                else
-                {
-                    grd.StorageGuid = SaveVector(grd.Cells);
-                }
-
-                grd.InitNumberOfCells();
-
-                // save opt. data
-                // ==============
-
-                foreach (var s in grd.m_PredefinedGridPartitioning)
-                {
-                    int[] cellToRankMap = s.Value.CellToRankMap;
-                    if (cellToRankMap == null)
-                    {
-                        // Partitioning has not been loaded; do it now
-                        throw new Exception("Should have been already loaded ");
-                    }
-
-                    SaveVector(cellToRankMap, s.Value.Guid);
-                }
-
-
-                if (grd.BcCells != null && grd.BcCells.Length > 0)
-                    grd.BcCellsStorageGuid = SaveVector(grd.BcCells);
-
-                // save header data (save GridInfo)
-                // ==========================
-                if (MyRank == 0)
-                {
-                    using (Stream s = m_fsDriver.GetGridStream(true, grd.ID))
-                    using (var writer = GetJsonWriter(s))
-                    {
-                        m_Formatter.Serialize(writer, grd);
-                        writer.Close();
-                        s.Close();
-                    }
-                }
-
-                // return
-                // ======
-
-                grd.Database = database;
-
-                return grd.ID;
+                Guid id = SaveGridData(grid, database);
+                SaveGridInfo(grid);
+                return id;
             }
         }
 
-        public void SaveGridInfo(IGrid grid)
+        Guid SaveGridData(IGrid _grd, IDatabaseInfo database)
         {
+            GridCommons grd = _grd as GridCommons;
+            if (grd == null)
+            {
+                throw new InvalidCastException("Grid not supported by save method");
+            }
 
+            if (_grd.ID.Equals(Guid.Empty))
+            {
+                throw new ApplicationException("cannot save grid with empty Guid (Grid Guid is " + Guid.Empty.ToString() + ");");
+            }
+            MPICollectiveWatchDog.Watch(csMPI.Raw._COMM.WORLD);
+
+            // save required grid data
+            // =======================
+            if (grd.StorageGuid != null && grd.StorageGuid != Guid.Empty)
+            {
+                SaveVector(grd.Cells, grd.StorageGuid);
+            }
+            else
+            {
+                grd.StorageGuid = SaveVector(grd.Cells);
+            }
+
+            grd.InitNumberOfCells();
+
+            // save opt. data
+            // ==============
+
+            foreach (var s in grd.m_PredefinedGridPartitioning)
+            {
+                int[] cellToRankMap = s.Value.CellToRankMap;
+                if (cellToRankMap == null)
+                {
+                    // Partitioning has not been loaded; do it now
+                    throw new Exception("Should have been already loaded ");
+                }
+
+                SaveVector(cellToRankMap, s.Value.Guid);
+            }
+
+
+            if (grd.BcCells != null && grd.BcCells.Length > 0)
+                grd.BcCellsStorageGuid = SaveVector(grd.BcCells);
+
+            // save header data (save GridInfo)
+            // ==========================
+
+
+            // return
+            // ======
+
+            grd.Database = database;
+
+            return grd.ID;
         }
 
+        void SaveGridInfo(IGrid grid)
+        {
+            if (MyRank == 0)
+            {
+                using (Stream s = m_fsDriver.GetGridStream(true, grid.ID))
+                using (var writer = GetJsonWriter(s))
+                {
+                    m_Formatter.Serialize(writer, grid);
+                    writer.Close();
+                    s.Close();
+                }
+            }
+        }
 
         /// <summary>
         /// Loads the grid info object for the given
@@ -253,7 +259,8 @@ namespace BoSSS.Foundation.IO
         /// </returns>
         public IGrid LoadGrid(Guid uid, IDatabaseInfo database)
         {
-            return LoadGridData((Grid.Classic.GridCommons)LoadGridInfo(uid, database));
+            IGridInfo grid = LoadGridInfo(uid, database);
+            return LoadGridData((Grid.Classic.GridCommons)grid);
         }
     }
 }
