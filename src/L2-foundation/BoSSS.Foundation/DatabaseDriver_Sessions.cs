@@ -18,7 +18,7 @@ namespace BoSSS.Foundation.IO
             Driver = driver;
         }
 
-        public new void Dispose()
+        public void Dispose()
         {
             Driver.Dispose();
             if (m_stdout != null)
@@ -89,9 +89,9 @@ namespace BoSSS.Foundation.IO
         public void SaveSessionInfo(ISessionInfo session)
         {
             using (Stream s = Driver.FsDriver.GetSessionInfoStream(true, session.ID))
-            using (var writer = VectorDataSerializer.GetJsonWriter(s))
+            using (var writer = Driver.GetJsonWriter(s))
             {
-                Driver.m_Formatter.Serialize(writer, session);
+                Driver.JsonFormatter.Serialize(writer, session);
                 writer.Close();
                 s.Close();
             }
@@ -111,9 +111,9 @@ namespace BoSSS.Foundation.IO
                 tr.Info("Loading session " + sessionId);
 
                 using (Stream s = Driver.FsDriver.GetSessionInfoStream(false, sessionId))
-                using (var reader = VectorDataSerializer.GetJsonReader(s))
+                using (var reader = Driver.GetJsonReader(s))
                 {
-                    SessionInfo loadedSession = Driver.m_Formatter.Deserialize<SessionInfo>(reader);
+                    SessionInfo loadedSession = Driver.JsonFormatter.Deserialize<SessionInfo>(reader);
                     loadedSession.Database = database;
                     loadedSession.WriteTime = Utils.GetSessionFileWriteTime(loadedSession);
 

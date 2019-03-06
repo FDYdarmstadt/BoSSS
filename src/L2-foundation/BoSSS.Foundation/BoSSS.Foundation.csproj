@@ -85,6 +85,7 @@
     <Compile Include="DatabaseDriver_Sessions.cs" />
     <Compile Include="DatabaseDriver_TimeStep.cs" />
     <Compile Include="DatabaseDriver_VectorData.cs" />
+    <Compile Include="DatabaseDriver_VersionedSerializer.cs" />
     <Compile Include="DGFieldExtensions.cs" />
     <Compile Include="EdgeInfo.cs" />
     <Compile Include="FileManager.cs" />

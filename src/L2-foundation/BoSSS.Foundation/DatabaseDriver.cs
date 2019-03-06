@@ -59,7 +59,8 @@ namespace BoSSS.Foundation.IO {
         public DatabaseDriver(IFileSystemDriver driver)
         {
             serializer = new VectorDataSerializer(driver);
-            gridDatabaseDriver = new GridDatabaseDriver(serializer);
+            VersionedSerializer serializerWithVersioning = new VersionedSerializer(driver);
+            gridDatabaseDriver = new GridDatabaseDriver(serializerWithVersioning);
             sessionsDatabaseDriver = new SessionDatabaseDriver(serializer);
             timestepDatabaseDriver = new TimeStepDatabaseDriver(serializer);
         }
@@ -281,6 +282,20 @@ namespace BoSSS.Foundation.IO {
         public SessionInfo LoadSession(Guid sessionId, IDatabaseInfo database)
         {
             return sessionsDatabaseDriver.LoadSession(sessionId, database);
+        }
+
+        /// <summary>
+        /// Retrieves the directory where the files for the selected
+        /// <paramref name="session"/> are stored.
+        /// </summary>
+        /// <param name="session">
+        /// The selected session.
+        /// </param>
+        /// <remarks>
+        /// Should work on any System.
+        /// </remarks>
+        public static string GetSessionDirectory(ISessionInfo session) {
+            return SessionDatabaseDriver.GetSessionDirectory(session);
         }
 
         /// <summary>

@@ -56,7 +56,7 @@ namespace BoSSS.Foundation.IO
         /// <summary>
         /// serialization formatter used for all bigger (data) objects
         /// </summary>
-        public JsonSerializer m_Formatter = new JsonSerializer()
+        JsonSerializer jsonFormatter = new JsonSerializer()
         {
             NullValueHandling = NullValueHandling.Ignore,
             TypeNameHandling = TypeNameHandling.Auto,
@@ -65,7 +65,11 @@ namespace BoSSS.Foundation.IO
             Binder = new MySerializationBinder()
         };
 
-        public static JsonReader GetJsonReader(Stream s)
+        public virtual JsonSerializer JsonFormatter {
+            get { return jsonFormatter; }
+        }
+
+        public JsonReader GetJsonReader(Stream s)
         {
             if (DebugSerialization)
             {
@@ -77,7 +81,7 @@ namespace BoSSS.Foundation.IO
             }
         }
 
-        public static JsonWriter GetJsonWriter(Stream s)
+        public JsonWriter GetJsonWriter(Stream s)
         {
             if (DebugSerialization)
             {

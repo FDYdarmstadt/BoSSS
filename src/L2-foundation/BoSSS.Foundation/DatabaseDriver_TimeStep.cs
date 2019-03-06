@@ -111,9 +111,9 @@ namespace BoSSS.Foundation.IO
                     {
                         tsi = new TimestepInfo(physTime, currentSession, TimestepNo, fields, VectorGuid);
                         using (var s = Driver.FsDriver.GetTimestepStream(true, tsi.ID))
-                        using (var writer = VectorDataSerializer.GetJsonWriter(s))
+                        using (var writer = Driver.GetJsonWriter(s))
                         {
-                            Driver.m_Formatter.Serialize(writer, tsi);
+                            Driver.JsonFormatter.Serialize(writer, tsi);
                             writer.Close();
                             s.Close();
                         }
@@ -163,9 +163,9 @@ namespace BoSSS.Foundation.IO
                 if (Driver.MyRank == 0)
                 {
                     using (Stream s = Driver.FsDriver.GetTimestepStream(false, timestepGuid))
-                    using (var reader = VectorDataSerializer.GetJsonReader(s))
+                    using (var reader = Driver.GetJsonReader(s))
                     {
-                        tsi = Driver.m_Formatter.Deserialize<TimestepInfo>(reader);
+                        tsi = Driver.JsonFormatter.Deserialize<TimestepInfo>(reader);
                         tsi.Session = session;
                         reader.Close();
                         s.Close();

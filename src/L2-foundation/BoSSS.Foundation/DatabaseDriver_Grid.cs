@@ -165,9 +165,9 @@ namespace BoSSS.Foundation.IO
             if (Driver.MyRank == 0)
             {
                 using (Stream s = Driver.FsDriver.GetGridStream(true, grid.ID))
-                using (var writer = VectorDataSerializer.GetJsonWriter(s))
+                using (var writer = Driver.GetJsonWriter(s))
                 {
-                    Driver.m_Formatter.Serialize(writer, grid);
+                    Driver.JsonFormatter.Serialize(writer, grid);
                     writer.Close();
                     s.Close();
                 }
@@ -192,9 +192,9 @@ namespace BoSSS.Foundation.IO
                 if (Driver.MyRank == 0)
                 {
                     using (Stream s = Driver.FsDriver.GetGridStream(false, gridGuid))
-                    using (var reader = VectorDataSerializer.GetJsonReader(s))
+                    using (var reader = Driver.GetJsonReader(s))
                     {
-                        grid = Driver.m_Formatter.Deserialize<Grid.Classic.GridCommons>(reader);
+                        grid = Driver.JsonFormatter.Deserialize<Grid.Classic.GridCommons>(reader);
                     }
                 }
 

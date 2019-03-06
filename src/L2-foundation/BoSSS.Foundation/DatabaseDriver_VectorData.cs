@@ -122,7 +122,7 @@ namespace BoSSS.Foundation.IO
 
                             csMPI.Raw.Barrier(csMPI.Raw._COMM.WORLD);
 
-                            m_Formatter.Serialize(s2, tuple);
+                            JsonFormatter.Serialize(s2, tuple);
 
                             s2.Close();
                             s.Close();
@@ -167,7 +167,7 @@ namespace BoSSS.Foundation.IO
                         using (var s = m_fsDriver.GetDistVectorDataStream(false, id, 0))
                         using (var reader = GetJsonReader(new GZipStream(s, CompressionMode.Decompress)))
                         {
-                            header = m_Formatter.Deserialize<Tuple<DistributedVectorHeader, IList<T>>>(reader).Item1;
+                            header = JsonFormatter.Deserialize<Tuple<DistributedVectorHeader, IList<T>>>(reader).Item1;
                             reader.Close();
                             s.Close();
                         }
@@ -225,7 +225,7 @@ namespace BoSSS.Foundation.IO
                         using (var s = m_fsDriver.GetDistVectorDataStream(false, id, p))
                         using (var reader = GetJsonReader(new GZipStream(s, CompressionMode.Decompress)))
                         {
-                            vecP = m_Formatter.Deserialize<Tuple<DistributedVectorHeader, IList<T>>>(reader).Item2;
+                            vecP = JsonFormatter.Deserialize<Tuple<DistributedVectorHeader, IList<T>>>(reader).Item2;
                             reader.Close();
                             s.Close();
                         }
@@ -282,7 +282,7 @@ namespace BoSSS.Foundation.IO
                         using (var s = m_fsDriver.GetDistVectorDataStream(false, id, 0))
                         using (var reader = GetJsonReader(new GZipStream(s, CompressionMode.Decompress)))
                         {
-                            header = m_Formatter.Deserialize<Tuple<DistributedVectorHeader, IList<T>>>(reader).Item1;
+                            header = JsonFormatter.Deserialize<Tuple<DistributedVectorHeader, IList<T>>>(reader).Item1;
                             reader.Close();
                             s.Close();
                         }
@@ -341,7 +341,7 @@ namespace BoSSS.Foundation.IO
                         using (var s = m_fsDriver.GetDistVectorDataStream(false, id, p))
                         using (var reader = GetJsonReader(new GZipStream(s, CompressionMode.Decompress)))
                         {
-                            vecP = m_Formatter.Deserialize<Tuple<DistributedVectorHeader, IList<T>>>(reader).Item2;
+                            vecP = JsonFormatter.Deserialize<Tuple<DistributedVectorHeader, IList<T>>>(reader).Item2;
                             reader.Close();
                             s.Close();
                         }
