@@ -435,11 +435,11 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             #region grid
 
             double R = 1.0;
-            double H = 1.0;
+            double H = 3.0;
 
             C.GridFunc = delegate () {
                 double[] Xnodes = GenericBlas.Linspace(0, R, kelemR + 1);
-                double[] Ynodes = GenericBlas.Linspace(0, H, (kelemR) + 1);
+                double[] Ynodes = GenericBlas.Linspace(-H/2, H/2, (3*kelemR) + 1);
                 var grd = Grid2D.Cartesian2DGrid(Xnodes, Ynodes);
 
                 if(solveHeat) {
@@ -459,9 +459,9 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
 
                 grd.DefineEdgeTags(delegate (double[] X) {
                     byte et = 0;
-                    if(Math.Abs(X[1]) <= 1.0e-8)
+                    if(Math.Abs(X[1] + H/2) <= 1.0e-8)
                         et = 1;
-                    if(Math.Abs(X[1] - H) <= 1.0e-8)
+                    if(Math.Abs(X[1] - H/2) <= 1.0e-8)
                         et = 2;
                     if(Math.Abs(X[0]) <= 1.0e-8)
                         et = 3;
@@ -773,7 +773,8 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             //C.AddBoundaryValue("wall_ConstantHeatFlux_lower", "HeatFlux#A", (X, t) => HeatFlux);
             C.AddBoundaryValue("wall_ConstantHeatFlux_lower", "HeatFlux#B", (X, t) => -qv);
 
-            C.AddBoundaryValue("pressure_Dirichlet_ZeroGradient_upper");
+            double p0 = 10;
+            C.AddBoundaryValue("pressure_Dirichlet_ZeroGradient_upper", "Pressure#A", (X,t) => p0);
 
 
             #endregion

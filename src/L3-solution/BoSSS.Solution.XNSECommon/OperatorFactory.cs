@@ -699,7 +699,6 @@ namespace BoSSS.Solution.XNSECommon {
                 XNSEUtils.ComputeGradientForParam(Temp, GradTemp, this.LsTrk);
             }
 
-
             // concatenate everything
             var Params = ArrayTools.Cat<DGField>(
                 U0_U0mean,

@@ -2547,14 +2547,20 @@ namespace BoSSS.Application.XNSE_Solver {
                     // plot
                     Tecplot.PlotFields(evapVelocity.ToArray(), "EvapVelocity" + hack_TimestepIndex, hack_Phystime, 2);
 
+                    // construct evolution velocity
                     for(int d = 0; d < D; d++) {
-                        //SinglePhaseField FiltEvapVeloc = new SinglePhaseField(evapVelocity[d].Basis);
-                        //FiltEvapVeloc.AccLaidBack(1.0, evapVelocity[d]);
-                        //Filter(FiltEvapVeloc, 2, LsTrk.Regions.GetCutCellMask());
-                        //evapVelocity[d].Clear();
-                        //evapVelocity[d].Acc(1.0, FiltEvapVeloc);
+                        SinglePhaseField FiltEvapVeloc = new SinglePhaseField(evapVelocity[d].Basis);
+                        FiltEvapVeloc.AccLaidBack(1.0, evapVelocity[d]);
+                        Filter(FiltEvapVeloc, 2, LsTrk.Regions.GetCutCellMask());
+                        evapVelocity[d].Clear();
+                        evapVelocity[d].Acc(1.0, FiltEvapVeloc);
 
                         meanVelocity[d].Clear();
+                        if(this.Control.ThermalParameters.hVap_A < 0.0)
+                            meanVelocity[d].Acc(1.0, ((XDGField)EvoVelocity[d]).GetSpeciesShadowField("B"), this.LsTrk.Regions.GetCutCellMask());
+                        else
+                            meanVelocity[d].Acc(1.0, ((XDGField)EvoVelocity[d]).GetSpeciesShadowField("A"), this.LsTrk.Regions.GetCutCellMask());
+
                         meanVelocity[d].Acc(1.0, evapVelocity[d]);
                     }
                 }
