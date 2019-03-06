@@ -56,21 +56,21 @@ namespace BoSSS.Application.FSI_Solver
             #region Particle history
             // =============================   
             for (int i = 0; i < HistoryLength; i++) {
-                currentIterPos_P.Add(new double[Dim]);
-                currentIterAng_P.Add(new double());
-                currentIterVel_P.Add(new double[Dim]);
-                currentIterRot_P.Add(new double());
-                currentIterForces_P.Add(new double[Dim]);
-                currentIterTorque_P.Add(new double());
+                positionAtIteration.Add(new double[Dim]);
+                angleAtIteration.Add(new double());
+                transVelocityAtIteration.Add(new double[Dim]);
+                rotationalVelocityAtIteration.Add(new double());
+                hydrodynForcesAtIteration.Add(new double[Dim]);
+                hydrodynTorqueAtIteration.Add(new double());
             }
             for (int i = 0; i < 4; i++)
             {
-                currentTimePos_P.Add(new double[Dim]);
-                currentTimeAng_P.Add(new double());
-                currentTimeVel_P.Add(new double[Dim]);
-                currentTimeRot_P.Add(new double());
-                currentTimeForces_P.Add(new double[Dim]);
-                currentTimeTorque_P.Add(new double());
+                positionAtTimestep.Add(new double[Dim]);
+                angleAtTimestep.Add(new double());
+                transVelocityAtTimestep.Add(new double[Dim]);
+                rotationalVelocityAtTimestep.Add(new double());
+                hydrodynForcesAtTimestep.Add(new double[Dim]);
+                hydrodynTorqueAtTimestep.Add(new double());
             }
             #endregion
 
@@ -87,11 +87,11 @@ namespace BoSSS.Application.FSI_Solver
                     startPos = new double[] { 0.0, 0.0, 0.0 };
                 }
             }
-            currentTimePos_P[0] = startPos;
-            currentTimePos_P[1] = startPos;
+            positionAtTimestep[0] = startPos;
+            positionAtTimestep[1] = startPos;
             //From degree to radiant
-            currentTimeAng_P[0] = startAngl * 2 * Math.PI / 360;
-            currentTimeAng_P[1] = startAngl * 2 * Math.PI / 360;
+            angleAtTimestep[0] = startAngl * 2 * Math.PI / 360;
+            angleAtTimestep[1] = startAngl * 2 * Math.PI / 360;
 
             UpdateLevelSetFunction();
             #endregion
@@ -156,7 +156,7 @@ namespace BoSSS.Application.FSI_Solver
         /// Length of history for time, velocity, position etc.
         /// </summary>
         int m_HistoryLength;
-        #endregion
+        
 
         /// <summary>
         /// Length of history for time, velocity, position etc.
@@ -168,16 +168,14 @@ namespace BoSSS.Application.FSI_Solver
         public double[,] Dvw = new double[2, 2];
         public double[,] Dwv = new double[2, 2];
         public double[,] Dww = new double[2, 2];
+        #endregion
 
         #region Geometric parameters
-
         /// <summary>
         /// Spatial Dimension of the particle 
         /// </summary>
         [DataMember]
         int m_Dim;
-
-
         #endregion
 
         #region Virtual force model parameter
@@ -210,73 +208,73 @@ namespace BoSSS.Application.FSI_Solver
         /// The position (center of mass) of the particle in the current iteration.
         /// </summary>
         [DataMember]
-        public List<double[]> currentIterPos_P = new List<double[]>();
+        public List<double[]> positionAtIteration = new List<double[]>();
 
         /// <summary>
         /// The position (center of mass) of the particle in the current time step.
         /// </summary>
         [DataMember]
-        public List<double[]> currentTimePos_P = new List<double[]>();
+        public List<double[]> positionAtTimestep = new List<double[]>();
 
         /// <summary>
         /// The angle (center of mass) of the particle in the current iteration.
         /// </summary>
         [DataMember]
-        public List<double> currentIterAng_P = new List<double>();
+        public List<double> angleAtIteration = new List<double>();
 
         /// <summary>
         /// The angle (center of mass) of the particle in the current time step.
         /// </summary>
         [DataMember]
-        public List<double> currentTimeAng_P = new List<double>();
+        public List<double> angleAtTimestep = new List<double>();
 
         /// <summary>
         /// The translational velocity of the particle in the current iteration.
         /// </summary>
         [DataMember]
-        public List<double[]> currentIterVel_P = new List<double[]>();
+        public List<double[]> transVelocityAtIteration = new List<double[]>();
 
         /// <summary>
         /// The translational velocity of the particle in the current time step.
         /// </summary>
         [DataMember]
-        public List<double[]> currentTimeVel_P = new List<double[]>();
+        public List<double[]> transVelocityAtTimestep = new List<double[]>();
 
         /// <summary>
         /// The angular velocity of the particle in the current iteration.
         /// </summary>
         [DataMember]
-        public List<double> currentIterRot_P = new List<double>();
+        public List<double> rotationalVelocityAtIteration = new List<double>();
 
         /// <summary>
         /// The angular velocity of the particle in the current time step.
         /// </summary>
         [DataMember]
-        public List<double> currentTimeRot_P = new List<double>();
+        public List<double> rotationalVelocityAtTimestep = new List<double>();
 
         /// <summary>
         /// The force acting on the particle in the current iteration.
         /// </summary>
         [DataMember]
-        public List<double[]> currentIterForces_P = new List<double[]>();
+        public List<double[]> hydrodynForcesAtIteration = new List<double[]>();
 
         /// <summary>
         /// The force acting on the particle in the current time step.
         /// </summary>
         [DataMember]
-        public List<double[]> currentTimeForces_P = new List<double[]>();
+        public List<double[]> hydrodynForcesAtTimestep = new List<double[]>();
         
         /// <summary>
         /// The torque acting on the particle in the current iteration.
         /// </summary>
         [DataMember]
-        public List<double> currentIterTorque_P = new List<double>();
+        public List<double> hydrodynTorqueAtIteration = new List<double>();
 
         /// <summary>
         /// The torque acting on the particle in the current time step.
         /// </summary>
         [DataMember]
-        public List<double> currentTimeTorque_P = new List<double>();
+        public List<double> hydrodynTorqueAtTimestep = new List<double>();
 
         /// <summary>
         /// Level set function describing the particle.
@@ -287,7 +285,7 @@ namespace BoSSS.Application.FSI_Solver
         /// Set true if the particle should be an active particle, i.e. self driven
         /// </summary>
         [DataMember]
-        public bool active_P = false;
+        public bool activeParticle = false;
 
         /// <summary>
         /// Sets the gravity in vertical direction, default is 0.0
@@ -346,21 +344,31 @@ namespace BoSSS.Application.FSI_Solver
         #endregion
 
         #region Particle history
+        public void saveValue(List<double> variable, double value, int listPosition = 0)
+        {
+            variable.Insert(listPosition, value);
+            variable.Remove(variable.Last());
+        }
+        public void saveMultidimensionalValue(List<double[]> variable, double[] value, int listPosition = 0)
+        {
+            variable.Insert(listPosition, value);
+            variable.Remove(variable.Last());
+        }
         /// <summary>
         /// Clean all Particle iteration histories until a certain length
         /// </summary>
         /// <param name="length"></param>
         public void CleanHistoryIter() {
-            if (currentIterPos_P.Count > m_HistoryLength)
+            if (positionAtIteration.Count > m_HistoryLength)
             {
-                for (int j = currentIterPos_P.Count; j > m_HistoryLength; j--)
+                for (int j = positionAtIteration.Count; j > m_HistoryLength; j--)
                 {
                     int tempPos = j - 1;
-                    currentIterPos_P.RemoveAt(tempPos);
-                    currentIterVel_P.RemoveAt(tempPos);
-                    currentIterForces_P.RemoveAt(tempPos);
-                    currentIterRot_P.RemoveAt(tempPos);
-                    currentIterTorque_P.RemoveAt(tempPos);
+                    positionAtIteration.RemoveAt(tempPos);
+                    transVelocityAtIteration.RemoveAt(tempPos);
+                    hydrodynForcesAtIteration.RemoveAt(tempPos);
+                    rotationalVelocityAtIteration.RemoveAt(tempPos);
+                    hydrodynTorqueAtIteration.RemoveAt(tempPos);
                 }
             }
         }
@@ -370,17 +378,17 @@ namespace BoSSS.Application.FSI_Solver
         /// <param name="length"></param>
         public void CleanHistory()
         {
-            if (currentTimePos_P.Count > 4)
+            if (positionAtTimestep.Count > 4)
             {
-                for (int j = currentTimePos_P.Count; j > 4; j--)
+                for (int j = positionAtTimestep.Count; j > 4; j--)
                 {
                     int tempPos = j - 1;
-                    currentTimePos_P.RemoveAt(tempPos);
-                    currentTimeAng_P.RemoveAt(tempPos);
-                    currentTimeVel_P.RemoveAt(tempPos);
-                    currentTimeForces_P.RemoveAt(tempPos);
-                    currentTimeRot_P.RemoveAt(tempPos);
-                    currentTimeTorque_P.RemoveAt(tempPos);
+                    positionAtTimestep.RemoveAt(tempPos);
+                    angleAtTimestep.RemoveAt(tempPos);
+                    transVelocityAtTimestep.RemoveAt(tempPos);
+                    hydrodynForcesAtTimestep.RemoveAt(tempPos);
+                    rotationalVelocityAtTimestep.RemoveAt(tempPos);
+                    hydrodynTorqueAtTimestep.RemoveAt(tempPos);
                 }
             }
         }
@@ -398,15 +406,15 @@ namespace BoSSS.Application.FSI_Solver
 
             // Position
             // =============================
-            var tempPos = currentIterPos_P[0].CloneAs();
+            var tempPos = positionAtIteration[0].CloneAs();
             double[] gravity = new double[2];
             //for (int d = 0; d < m_Dim; d++)
             //{
             //    gravity[d] = 0;
             //    gravity[1] = gravityVertical;
             //    double massDifference = (rho_P - rho_Fluid) * (Area_P);
-            //    double tempForces = (currentIterForces_P[0][d] + currentTimeForces_P[1][d]) / 2;
-            //    tempPos[d] = currentTimePos_P[1][d] + currentTimeVel_P[1][d] * dt + 0.5 * dt * dt * (tempForces + massDifference * gravity[d]) / Mass_P;
+            //    double tempForces = (hydrodynForcesAtIteration[0][d] + hydrodynForcesAtTimestep[1][d]) / 2;
+            //    tempPos[d] = particlePositionPerTimestep[1][d] + transVelocityAtTimestep[1][d] * dt + 0.5 * dt * dt * (tempForces + massDifference * gravity[d]) / Mass_P;
 
                // if (double.IsNaN(tempPos[d]) || double.IsInfinity(tempPos[d]))
                  //   throw new ArithmeticException("Error trying to update particle position");
@@ -425,30 +433,30 @@ namespace BoSSS.Application.FSI_Solver
             predictAcc[1] = 2 * acc[1] - oldAcc[1];
             oldAcc = acc;
             double[] tempForces = new double[2];
-            tempForces[0] = (currentIterForces_P[0][0] + currentTimeForces_P[1][0]) / 2 + Dvv[0, 0] * beta * predictAcc[0] * dt + Dvv[1, 0] * beta * predictAcc[1] * dt;
-            tempForces[1] = (currentIterForces_P[0][1] + currentTimeForces_P[1][1]) / 2 + Dvv[0, 1] * beta * predictAcc[0] * dt + Dvv[1, 1] * beta * predictAcc[1] * dt;
+            tempForces[0] = (hydrodynForcesAtIteration[0][0] + hydrodynForcesAtTimestep[1][0]) / 2 + Dvv[0, 0] * beta * predictAcc[0] * dt + Dvv[1, 0] * beta * predictAcc[1] * dt;
+            tempForces[1] = (hydrodynForcesAtIteration[0][1] + hydrodynForcesAtTimestep[1][1]) / 2 + Dvv[0, 1] * beta * predictAcc[0] * dt + Dvv[1, 1] * beta * predictAcc[1] * dt;
             acc[0] = (tempForces[0] - D4 * (D3 * tempForces[0] - D1 * tempForces[1]) / (D3 * D4 - D1 * D2)) / D1;
             acc[1] = (D3 * tempForces[0] - D1 * tempForces[1]) / (D3 * D4 - D1 * D2);
-            tempPos[0] = currentTimePos_P[1][0] + currentTimeVel_P[1][0] * dt + (predictAcc[0] + acc[0]) * dt.Pow2() / 4;
-            tempPos[1] = currentTimePos_P[1][1] + currentTimeVel_P[1][1] * dt + (predictAcc[1] + acc[1]) * dt.Pow2() / 4;
-            currentIterPos_P[0] = tempPos;
+            tempPos[0] = positionAtTimestep[1][0] + transVelocityAtTimestep[1][0] * dt + (predictAcc[0] + acc[0]) * dt.Pow2() / 4;
+            tempPos[1] = positionAtTimestep[1][1] + transVelocityAtTimestep[1][1] * dt + (predictAcc[1] + acc[1]) * dt.Pow2() / 4;
+            positionAtIteration[0] = tempPos;
 
             // Angle
             // =============================
-            //double tempTorque = (currentTimeTorque_P[1] + currentIterTorque_P[0]) / 2;
-            //currentIterAng_P[0] = currentTimeAng_P[1] + dt * currentTimeRot_P[1] + (dt * dt / MomentOfInertia_P) * tempTorque / 2;
+            //double tempTorque = (hydrodynTorqueAtTimestep[1] + hydrodynTorqueAtIteration[0]) / 2;
+            //particleAnglePerIteration[0] = AnglePerTimestep[1] + dt * rotationalVelocityAtTimestep[1] + (dt * dt / MomentOfInertia_P) * tempTorque / 2;
 
             double AccRot = new double();
             double oldAccRot = new double();
             double predictAccRot = 2 * AccRot - oldAccRot;
             oldAccRot = AccRot;
-            double tempTorque = (currentTimeTorque_P[1] + currentIterTorque_P[0]) / 2 + beta * dt * Dww[0, 0] * predictAccRot;
+            double tempTorque = (hydrodynTorqueAtTimestep[1] + hydrodynTorqueAtIteration[0]) / 2 + beta * dt * Dww[0, 0] * predictAccRot;
             double MomentofInertia_m = MomentOfInertia_P + beta * dt * Dvv[0, 0];
             AccRot = tempTorque / MomentofInertia_m;
-            currentIterAng_P[0] = currentTimeAng_P[1] + currentTimeRot_P[1] * dt + dt.Pow2() * (predictAccRot + AccRot) / 4;
+            angleAtIteration[0] = angleAtTimestep[1] + rotationalVelocityAtTimestep[1] * dt + dt.Pow2() * (predictAccRot + AccRot) / 4;
 
-            currentTimePos_P[0] = currentIterPos_P[0];
-            currentTimeAng_P[0] = currentIterAng_P[0];
+            positionAtTimestep[0] = positionAtIteration[0];
+            angleAtTimestep[0] = angleAtIteration[0];
 
             UpdateLevelSetFunction();
         }
@@ -459,23 +467,23 @@ namespace BoSSS.Application.FSI_Solver
             // =============================
             if (iteration_counter_P == 0)
             {
-                currentTimePos_P.Insert(1, currentTimePos_P[0]);
-                currentTimePos_P.Remove(currentTimePos_P.Last());
-                currentTimeAng_P.Insert(1, currentTimeAng_P[0]);
-                currentTimeAng_P.Remove(currentTimeAng_P.Last());
+                positionAtTimestep.Insert(1, positionAtTimestep[0]);
+                positionAtTimestep.Remove(positionAtTimestep.Last());
+                angleAtTimestep.Insert(1, angleAtTimestep[0]);
+                angleAtTimestep.Remove(angleAtTimestep.Last());
             }
 
             // Position
             // =============================
-            currentIterPos_P.Insert(1, currentIterPos_P[0]);
-            currentIterPos_P.Remove(currentIterPos_P.Last());
-            currentIterPos_P[0] = currentTimePos_P[1];
+            positionAtIteration.Insert(1, positionAtIteration[0]);
+            positionAtIteration.Remove(positionAtIteration.Last());
+            positionAtIteration[0] = positionAtTimestep[1];
 
             // Angle
             // =============================
-            currentIterAng_P.Insert(1, currentTimeAng_P[0]);
-            currentIterAng_P.Remove(currentIterAng_P.Last());
-            currentIterAng_P[0] = currentTimeAng_P[1];
+            angleAtIteration.Insert(1, angleAtTimestep[0]);
+            angleAtIteration.Remove(angleAtIteration.Last());
+            angleAtIteration[0] = angleAtTimestep[1];
 
             UpdateLevelSetFunction();
         }
@@ -485,23 +493,25 @@ namespace BoSSS.Application.FSI_Solver
         abstract public void UpdateLevelSetFunction();
         #endregion
 
-        public void PredictCurrentVelocity()
+        
+
+        public void PredictTranslationalVelocity()
         {
-            double[] temp = new double[3];
-            temp[0] = 2 * currentTimeVel_P[0][0] - currentTimeVel_P[1][0];
-            temp[1] = 2 * currentTimeVel_P[0][1] - currentTimeVel_P[1][1];
-            double temp2 = 2 * currentTimeRot_P[0] - currentTimeRot_P[1];
+            double[] temp = new double[m_Dim];
+            for (int d = 0; d < m_Dim; d++)
+            {
+                temp[d] = 2 * transVelocityAtTimestep[0][d] - transVelocityAtTimestep[1][d];
+                
+            }
+            saveMultidimensionalValue(transVelocityAtIteration, temp);
+            transVelocityAtTimestep[0] = transVelocityAtIteration[0];
+        }
 
-            // Save new velocity
-            // =============================
-            currentIterVel_P.Insert(0, temp);
-            currentIterVel_P.Remove(currentIterVel_P.Last());
-            currentTimeVel_P[0] = currentIterVel_P[0];
-            currentIterRot_P.Insert(0, temp2);
-            currentIterRot_P.Remove(currentIterRot_P.Last());
-            currentTimeRot_P[0] = currentIterRot_P[0];
-
-
+        public void PredictAngularVelocity()
+        {
+            double temp = 2 * rotationalVelocityAtTimestep[0] - rotationalVelocityAtTimestep[1];
+            saveValue(rotationalVelocityAtIteration, temp);
+            rotationalVelocityAtTimestep[0] = rotationalVelocityAtIteration[0];
         }
 
         #region Update translational velocity
@@ -514,21 +524,17 @@ namespace BoSSS.Application.FSI_Solver
         /// <param name="particleMass"></param>
         /// <param name="force"></param>
         /// <returns></returns>
-        public void UpdateTransVelocity(double dt, double rho_Fluid, bool includeTranslation = true, bool LiftAndDrag = true) {
+        public void UpdateTranslationalVelocity(double dt, double rho_Fluid, bool includeTranslation = true, bool LiftAndDrag = true) {
 
             // save velocity of the last timestep
             if (iteration_counter_P == 0)
             {
-                currentTimeVel_P.Insert(1, currentTimeVel_P[0]);
-                currentTimeVel_P.Remove(currentTimeVel_P.Last());
+                saveMultidimensionalValue(transVelocityAtTimestep, transVelocityAtTimestep[0], 1);
             }
-
-            // no translation
-            // =============================
+            
             if (includeTranslation == false)
             {
-                currentIterVel_P[0][0] = 0.0;
-                currentIterVel_P[0][1] = 0.0;
+                transVelocityAtIteration[0] = null;
                 return;
             }
 
@@ -563,11 +569,11 @@ namespace BoSSS.Application.FSI_Solver
             //    C_v_mod[i] = 0.1;
             //    c_a[i] = (C_v_mod[i] * rho_Fluid) / (rho_P + C_v_mod[i] * rho_Fluid);
             //    c_u[i] = 1 / (Area_P * (rho_P + C_v_mod[i] * rho_P));
-            //    f_vNew[i] = c_a[i] * (3 * currentIterVel_P[0][i] - 4 * currentIterVel_P[1][i] + currentIterVel_P[2][i]) / (2 * dt);
-            //    f_vOld[i] = c_a[i] * (3 * currentIterVel_P[1][i] - 4 * currentIterVel_P[2][i] + currentIterVel_P[3][i]) / (2 * dt);
-            //    tempForceNew[i] = (currentIterForces_P[0][i] + massDifference * gravity[i]) * (c_u[i]) + f_vNew[i];
-            //    tempForceOld[i] = (currentIterForces_P[1][i] + massDifference * gravity[i]) * (c_u[i]) + f_vOld[i];
-            //    temp[i] = currentIterVel_P[0][i] + (3 * tempForceNew[i] - tempForceOld[i]) * dt / 2;
+            //    f_vNew[i] = c_a[i] * (3 * transVelocityAtIteration[0][i] - 4 * transVelocityAtIteration[1][i] + transVelocityAtIteration[2][i]) / (2 * dt);
+            //    f_vOld[i] = c_a[i] * (3 * transVelocityAtIteration[1][i] - 4 * transVelocityAtIteration[2][i] + transVelocityAtIteration[3][i]) / (2 * dt);
+            //    tempForceNew[i] = (hydrodynForcesAtIteration[0][i] + massDifference * gravity[i]) * (c_u[i]) + f_vNew[i];
+            //    tempForceOld[i] = (hydrodynForcesAtIteration[1][i] + massDifference * gravity[i]) * (c_u[i]) + f_vOld[i];
+            //    temp[i] = transVelocityAtIteration[0][i] + (3 * tempForceNew[i] - tempForceOld[i]) * dt / 2;
             //}
 
             // implicit Adams Moulton (modified)
@@ -584,12 +590,12 @@ namespace BoSSS.Application.FSI_Solver
             //        C_v_mod[i] = 300;// * Math.Abs(forces_P[0][i] / (forces_P[0][i] + forces_P[1][i] + 1e-30));
             //        c_a[i] = (C_v_mod[i] * rho_Fluid) / (rho_P + C_v_mod[i] * rho_Fluid);
             //        c_u[i] = 1 / (Area_P * (rho_P + C_v_mod[i] * rho_P));
-            //        f_vTemp[i] = (C_v_mod[i]) / (1 + C_v_mod[i]) * (11 * temp[i] - 18 * currentIterVel_P[0][i] + 9 * currentIterVel_P[1][i] - 2 * currentIterVel_P[2][i]) / (8 * dt);
-            //        f_vNew[i] = (C_v_mod[i]) / (1 + C_v_mod[i]) * (11 * currentIterVel_P[0][i] - 18 * currentIterVel_P[1][i] + 9 * currentIterVel_P[2][i] - 2 * currentIterVel_P[3][i]) / (6 * dt);
-            //        f_vOld[i] = (C_v_mod[i]) / (1 + C_v_mod[i]) * (11 * currentIterVel_P[1][i] - 18 * currentIterVel_P[2][i] + 9 * currentIterVel_P[3][i] - 2 * currentIterVel_P[4][i]) / (6 * dt);
-            //        tempForces[i] = (currentIterForces_P[0][i] + massDifference * gravity[i]) * (c_u[i]) + f_vTemp[i];
-            //        tempForceNew[i] = (currentIterForces_P[1][i] + massDifference * gravity[i]) * (c_u[i]) + f_vNew[i];
-            //        tempForceOld[i] = (currentIterForces_P[2][i] + massDifference * gravity[i]) * (c_u[i]) + f_vOld[i];
+            //        f_vTemp[i] = (C_v_mod[i]) / (1 + C_v_mod[i]) * (11 * temp[i] - 18 * transVelocityAtIteration[0][i] + 9 * transVelocityAtIteration[1][i] - 2 * transVelocityAtIteration[2][i]) / (8 * dt);
+            //        f_vNew[i] = (C_v_mod[i]) / (1 + C_v_mod[i]) * (11 * transVelocityAtIteration[0][i] - 18 * transVelocityAtIteration[1][i] + 9 * transVelocityAtIteration[2][i] - 2 * transVelocityAtIteration[3][i]) / (6 * dt);
+            //        f_vOld[i] = (C_v_mod[i]) / (1 + C_v_mod[i]) * (11 * transVelocityAtIteration[1][i] - 18 * transVelocityAtIteration[2][i] + 9 * transVelocityAtIteration[3][i] - 2 * transVelocityAtIteration[4][i]) / (6 * dt);
+            //        tempForces[i] = (hydrodynForcesAtIteration[0][i] + massDifference * gravity[i]) * (c_u[i]) + f_vTemp[i];
+            //        tempForceNew[i] = (hydrodynForcesAtIteration[1][i] + massDifference * gravity[i]) * (c_u[i]) + f_vNew[i];
+            //        tempForceOld[i] = (hydrodynForcesAtIteration[2][i] + massDifference * gravity[i]) * (c_u[i]) + f_vOld[i];
             //        old_temp[i] = temp[i];
             //        temp[i] = previous_vel[i] + (1 * tempForces[i] + 4 * tempForceNew[i] + 1 * tempForceOld[i]) * dt / 6;
             //    }
@@ -612,8 +618,8 @@ namespace BoSSS.Application.FSI_Solver
             //{
             //    gravity[d] = 0;
             //    gravity[1] = gravityVertical;
-            //    double tempForces = (currentIterForces_P[0][d] + currentTimeForces_P[1][d]) / 2;
-            //    temp[d] = currentTimeVel_P[1][d] * Mass_P + dt * (tempForces + massDifference * gravity[d]);
+            //    double tempForces = (hydrodynForcesAtIteration[0][d] + hydrodynForcesAtTimestep[1][d]) / 2;
+            //    temp[d] = transVelocityAtTimestep[1][d] * Mass_P + dt * (tempForces + massDifference * gravity[d]);
             //    temp[d] = temp[d] / Mass_P;
             //}
 
@@ -631,19 +637,19 @@ namespace BoSSS.Application.FSI_Solver
             predictAcc[0] = 2 * acc[0] - oldAcc[0];
             predictAcc[1] = 2 * acc[1] - oldAcc[1];
             oldAcc = acc;
-            tempForces[0] = (currentIterForces_P[0][0] + currentTimeForces_P[1][0]) / 2 + Dvv[0, 0] * beta * predictAcc[0] * dt + Dvv[1, 0] * beta * predictAcc[1] * dt + massDifference * gravity[0];
-            tempForces[1] = (currentIterForces_P[0][1] + currentTimeForces_P[1][1]) / 2 + Dvv[0, 1] * beta * predictAcc[0] * dt + Dvv[1, 1] * beta * predictAcc[1] * dt + massDifference * gravity[1];
+            tempForces[0] = (hydrodynForcesAtIteration[0][0] + hydrodynForcesAtTimestep[1][0]) / 2 + Dvv[0, 0] * beta * predictAcc[0] * dt + Dvv[1, 0] * beta * predictAcc[1] * dt + massDifference * gravity[0];
+            tempForces[1] = (hydrodynForcesAtIteration[0][1] + hydrodynForcesAtTimestep[1][1]) / 2 + Dvv[0, 1] * beta * predictAcc[0] * dt + Dvv[1, 1] * beta * predictAcc[1] * dt + massDifference * gravity[1];
             acc[0] = (tempForces[0] - D4 * (D3 * tempForces[0] - D1 * tempForces[1]) / (D3 * D4 - D1 * D2)) / D1;
             acc[1] = (D3 * tempForces[0] - D1 * tempForces[1]) / (D3 * D4 - D1 * D2);
-            temp[0] = currentTimeVel_P[1][0] + (predictAcc[0] + acc[0]) * dt / 2;
-            temp[1] = currentTimeVel_P[1][1] + (predictAcc[1] + acc[1]) * dt / 2;
+            temp[0] = transVelocityAtTimestep[1][0] + (predictAcc[0] + acc[0]) * dt / 2;
+            temp[1] = transVelocityAtTimestep[1][1] + (predictAcc[1] + acc[1]) * dt / 2;
 
 
             // Save new velocity
             // =============================
-            currentIterVel_P.Insert(0, temp);
-            currentIterVel_P.Remove(currentIterVel_P.Last());
-            currentTimeVel_P[0] = currentIterVel_P[0];
+            transVelocityAtIteration.Insert(0, temp);
+            transVelocityAtIteration.Remove(transVelocityAtIteration.Last());
+            transVelocityAtTimestep[0] = transVelocityAtIteration[0];
 
             return;
         }
@@ -665,15 +671,15 @@ namespace BoSSS.Application.FSI_Solver
             // save rotation of the last timestep
             if (iteration_counter_P == 0)
             {
-                currentTimeRot_P.Insert(1, currentTimeRot_P[0]);
-                currentTimeRot_P.Remove(currentTimeRot_P.Last());
+                rotationalVelocityAtTimestep.Insert(1, rotationalVelocityAtTimestep[0]);
+                rotationalVelocityAtTimestep.Remove(rotationalVelocityAtTimestep.Last());
             }
 
             // no rotation
             // =============================
             if (includeRotation == false) {
-                currentIterRot_P.Insert(0, 0.0);
-                currentIterRot_P.Remove(currentIterRot_P.Last());
+                rotationalVelocityAtIteration.Insert(0, 0.0);
+                rotationalVelocityAtIteration.Remove(rotationalVelocityAtIteration.Last());
                 return;
             }
 
@@ -684,8 +690,8 @@ namespace BoSSS.Application.FSI_Solver
             subtimestep = dt / noOfSubtimesteps;
 
             //for (int i = 1; i <= noOfSubtimesteps; i++) {
-            //    double tempTorque = (currentTimeTorque_P[1] + currentIterTorque_P[0]) / 2;
-            //    newAngularVelocity = currentTimeRot_P[1] + (dt / MomentOfInertia_P) * (tempTorque); // for 2D
+            //    double tempTorque = (hydrodynTorqueAtTimestep[1] + hydrodynTorqueAtIteration[0]) / 2;
+            //    newAngularVelocity = rotationalVelocityAtTimestep[1] + (dt / MomentOfInertia_P) * (tempTorque); // for 2D
 
             //    oldAngularVelocity = newAngularVelocity;
 
@@ -697,15 +703,15 @@ namespace BoSSS.Application.FSI_Solver
             oldAccRot = AccRot;
             for (int i = 1; i <= noOfSubtimesteps; i++)
             {
-                double tempTorque = (currentTimeTorque_P[1] + currentIterTorque_P[0]) / 2 + beta * dt * Dww[0, 0] * predictAccRot;
+                double tempTorque = (hydrodynTorqueAtTimestep[1] + hydrodynTorqueAtIteration[0]) / 2 + beta * dt * Dww[0, 0] * predictAccRot;
                 double MomentofInertia_m = MomentOfInertia_P + beta * dt * Dvv[0, 0];
                 AccRot = tempTorque / MomentofInertia_m;
-                newAngularVelocity = currentTimeRot_P[1] + dt * (predictAccRot + AccRot) / 2;
+                newAngularVelocity = rotationalVelocityAtTimestep[1] + dt * (predictAccRot + AccRot) / 2;
 
             }
-            currentIterRot_P.Insert(0, newAngularVelocity);
-            currentIterRot_P.Remove(currentIterRot_P.Last());
-            currentTimeRot_P[0] = currentIterRot_P[0];
+            rotationalVelocityAtIteration.Insert(0, newAngularVelocity);
+            rotationalVelocityAtIteration.Remove(rotationalVelocityAtIteration.Last());
+            rotationalVelocityAtTimestep[0] = rotationalVelocityAtIteration[0];
         }
         #endregion
         
@@ -757,8 +763,8 @@ namespace BoSSS.Application.FSI_Solver
                                     for (int k = 0; k < K; k++)
                                     {
                                         double[] R = new double[D];
-                                        R[0] = 1;// Ns[0] - currentTimePos_P[0][0];
-                                        R[1] = 1;//Ns[1] - currentTimePos_P[0][1];
+                                        R[0] = 1;// Ns[0] - particlePositionPerTimestep[0][0];
+                                        R[1] = 1;//Ns[1] - particlePositionPerTimestep[0][1];
                                         switch (i)
                                         {
                                             case 0:
@@ -823,10 +829,10 @@ namespace BoSSS.Application.FSI_Solver
             // form rotation matrix R=EpEp^T, where Ep is the matrix of the principle axis of inertia
             // symmetry axis are always axis of inertia:
             double[,] Ep = new double[2, 2];
-            Ep[0, 0] = Math.Cos(currentIterAng_P[0]);
-            Ep[1, 0] = Math.Sin(currentIterAng_P[0]);
-            Ep[0, 1] = -Math.Sin(currentIterAng_P[0]);
-            Ep[1, 1] = Math.Cos(currentIterAng_P[0]);
+            Ep[0, 0] = Math.Cos(angleAtIteration[0]);
+            Ep[1, 0] = Math.Sin(angleAtIteration[0]);
+            Ep[0, 1] = -Math.Sin(angleAtIteration[0]);
+            Ep[1, 1] = Math.Cos(angleAtIteration[0]);
 
             double[,] R = new double[2, 2];
             R[0, 0] = Ep[0, 0].Pow2() + Ep[0, 1] * Ep[1, 0];
@@ -875,10 +881,10 @@ namespace BoSSS.Application.FSI_Solver
             // =============================
             if (iteration_counter_P == 0)
             {
-                currentTimeForces_P.Insert(1, currentTimeForces_P[0]);
-                currentTimeForces_P.Remove(currentTimeForces_P.Last());
-                currentTimeTorque_P.Insert(1, currentTimeTorque_P[0]);
-                currentTimeTorque_P.Remove(currentTimeTorque_P.Last());
+                hydrodynForcesAtTimestep.Insert(1, hydrodynForcesAtTimestep[0]);
+                hydrodynForcesAtTimestep.Remove(hydrodynForcesAtTimestep.Last());
+                hydrodynTorqueAtTimestep.Insert(1, hydrodynTorqueAtTimestep[0]);
+                hydrodynTorqueAtTimestep.Remove(hydrodynTorqueAtTimestep.Last());
             }
 
             int D = LsTrk.GridDat.SpatialDimension;
@@ -1154,8 +1160,8 @@ namespace BoSSS.Application.FSI_Solver
                         {
                             c += (integrand[3] - naiveSum) + sum;
                         }
-                        sum *= -Normals[j, k, 1] * (this.currentIterPos_P[0][1] - tempArray[k, 1]).Abs();
-                        c *= -Normals[j, k, 1] * (this.currentIterPos_P[0][1] - tempArray[k, 1]).Abs();
+                        sum *= -Normals[j, k, 1] * (this.positionAtIteration[0][1] - tempArray[k, 1]).Abs();
+                        c *= -Normals[j, k, 1] * (this.positionAtIteration[0][1] - tempArray[k, 1]).Abs();
 
                         integrand2[0] = -2 * Grad_UARes[j, k, 1, 1] * Normals[j, k, 1];
                         integrand2[1] = -Grad_UARes[j, k, 1, 0] * Normals[j, k, 0];
@@ -1186,8 +1192,8 @@ namespace BoSSS.Application.FSI_Solver
                         {
                             c2 += (integrand2[3] - naiveSum2) + sum2;
                         }
-                        sum2 *= Normals[j, k, 0] * (this.currentIterPos_P[0][0] - tempArray[k, 0]).Abs();
-                        c2 *= Normals[j, k, 0] * (this.currentIterPos_P[0][0] - tempArray[k, 0]).Abs();
+                        sum2 *= Normals[j, k, 0] * (this.positionAtIteration[0][0] - tempArray[k, 0]).Abs();
+                        c2 *= Normals[j, k, 0] * (this.positionAtIteration[0][0] - tempArray[k, 0]).Abs();
                         sum += sum2;
                         c += c2;
 
@@ -1249,29 +1255,29 @@ namespace BoSSS.Application.FSI_Solver
                     temp_underR[k] = 1;
                     for (int t = 0; t < m_HistoryLength; t++)
                     {
-                        currentIterForces_P[t][k] = currentTimeForces_P[1][k];
-                        currentIterTorque_P[t] = currentTimeTorque_P[1];
+                        hydrodynForcesAtIteration[t][k] = hydrodynForcesAtTimestep[1][k];
+                        hydrodynTorqueAtIteration[t] = hydrodynTorqueAtTimestep[1];
                     }
                 }
                 temp_underR[D] = 1;
 
                 // approximate active force to improve convergence (only in first iteration)
                 // =============================
-                //if (Math.Abs(0.125 * Circumference_P * active_stress_P.Pow2() * Math.Cos(currentIterAng_P[0]) / muA) > Math.Abs(currentTimeForces_P[1][0]) && currentTimeForces_P[1][0] != 0)
+                //if (Math.Abs(0.125 * Circumference_P * active_stress_P.Pow2() * Math.Cos(particleAnglePerIteration[0]) / muA) > Math.Abs(hydrodynForcesAtTimestep[1][0]) && hydrodynForcesAtTimestep[1][0] != 0)
                 //{
-                //    forces[0] = 0.5 * currentTimeForces_P[1][0];
+                //    forces[0] = 0.5 * hydrodynForcesAtTimestep[1][0];
                 //}
                 //else
                 //{
-                //    forces[0] = 0.0125 * Circumference_P * active_stress_P.Pow2() * Math.Cos(currentIterAng_P[0]) / (muA);
+                //    forces[0] = 0.0125 * Circumference_P * active_stress_P.Pow2() * Math.Cos(particleAnglePerIteration[0]) / (muA);
                 //}
-                //if (Math.Abs(0.125 * Circumference_P * active_stress_P.Pow2() * Math.Sin(currentIterAng_P[0]) / muA) > Math.Abs(currentTimeForces_P[1][1]) && currentTimeForces_P[1][1] != 0)
+                //if (Math.Abs(0.125 * Circumference_P * active_stress_P.Pow2() * Math.Sin(particleAnglePerIteration[0]) / muA) > Math.Abs(hydrodynForcesAtTimestep[1][1]) && hydrodynForcesAtTimestep[1][1] != 0)
                 //{
-                //    forces[1] = 0.5 * currentTimeForces_P[1][1];
+                //    forces[1] = 0.5 * hydrodynForcesAtTimestep[1][1];
                 //}
                 //else
                 //{
-                //    forces[1] = 0.0125 * Circumference_P * active_stress_P.Pow2() * Math.Sin(currentIterAng_P[0]) / muA;
+                //    forces[1] = 0.0125 * Circumference_P * active_stress_P.Pow2() * Math.Sin(particleAnglePerIteration[0]) / muA;
                 //}
                 //torque = 0;
             }
@@ -1284,18 +1290,18 @@ namespace BoSSS.Application.FSI_Solver
                     temp_underR[k] = 1;
                     for (int t = 0; t < m_HistoryLength; t++)
                     {
-                        currentIterForces_P[t][k] = currentTimeForces_P[1][k];
-                        currentIterTorque_P[t] = currentTimeTorque_P[1];
+                        hydrodynForcesAtIteration[t][k] = hydrodynForcesAtTimestep[1][k];
+                        hydrodynTorqueAtIteration[t] = hydrodynTorqueAtTimestep[1];
                     }
                 }
                 temp_underR[D] = 1;
             }
             // restart iteration
             // =============================
-            else if ((iteration_counter_P - 1) / 100 % 2 == 1 && Math.Sqrt((forces[0] - currentIterForces_P[1][0]).Pow2()+ (forces[1] - currentIterForces_P[1][1]).Pow2()+ (torque-currentIterTorque_P[1]).Pow2()) > 100 * forceAndTorque_convergence)
+            else if ((iteration_counter_P - 1) / 100 % 2 == 1 && Math.Sqrt((forces[0] - hydrodynForcesAtIteration[1][0]).Pow2()+ (forces[1] - hydrodynForcesAtIteration[1][1]).Pow2()+ (torque-hydrodynTorqueAtIteration[1]).Pow2()) > 100 * forceAndTorque_convergence)
             {
-                forces[0] = 0.00125 * Circumference_P * active_stress_P.Pow2() * Math.Cos(currentIterAng_P[0]) / (muA);
-                forces[1] = 0.00125 * Circumference_P * active_stress_P.Pow2() * Math.Sin(currentIterAng_P[0]) / muA;
+                forces[0] = 0.00125 * Circumference_P * active_stress_P.Pow2() * Math.Cos(angleAtIteration[0]) / (muA);
+                forces[1] = 0.00125 * Circumference_P * active_stress_P.Pow2() * Math.Sin(angleAtIteration[0]) / muA;
                 torque = 0;
             }
             // constant predefined URF
@@ -1320,7 +1326,7 @@ namespace BoSSS.Application.FSI_Solver
                     underrelaxationFT_exponent = 0;
                     for (int i = 0; underrelaxation_ok == false; i++)
                     {
-                        if (Math.Abs(temp_underR[j] * forces[j]) > 0.75 * Math.Abs(currentIterForces_P[0][j]))
+                        if (Math.Abs(temp_underR[j] * forces[j]) > 0.75 * Math.Abs(hydrodynForcesAtIteration[0][j]))
                         {
                             underrelaxationFT_exponent -= 1;
                             temp_underR[j] = underrelaxation_factor * Math.Pow(10, underrelaxationFT_exponent);
@@ -1345,7 +1351,7 @@ namespace BoSSS.Application.FSI_Solver
                 underrelaxationFT_exponent = 0;
                 for (int i = 0; underrelaxation_ok == false; i++)
                 {
-                    if (Math.Abs(temp_underR[D] * torque) > 0.75 * Math.Abs(currentIterTorque_P[0]))
+                    if (Math.Abs(temp_underR[D] * torque) > 0.75 * Math.Abs(hydrodynTorqueAtIteration[0]))
                     {
                         underrelaxationFT_exponent -= 1;
                         temp_underR[D] = underrelaxation_factor * Math.Pow(10, underrelaxationFT_exponent);
@@ -1373,7 +1379,7 @@ namespace BoSSS.Application.FSI_Solver
             double[] forces_underR = new double[D];
             for (int i = 0; i < D; i++)
             {
-                forces_underR[i] = temp_underR[i] * forces[i] + (1 - temp_underR[i]) * currentIterForces_P[0][i];
+                forces_underR[i] = temp_underR[i] * forces[i] + (1 - temp_underR[i]) * hydrodynForcesAtIteration[0][i];
                 // kill all forces smaller than a certain value (increases stability)
                 if (Math.Abs(forces_underR[i]) < forceAndTorque_convergence * 1e-2 && deleteSmallValues == true)
                 {
@@ -1381,19 +1387,19 @@ namespace BoSSS.Application.FSI_Solver
                 }
             }
             // torque
-            double torque_underR = temp_underR[D] * torque + (1 - temp_underR[D]) * currentIterTorque_P[0];
+            double torque_underR = temp_underR[D] * torque + (1 - temp_underR[D]) * hydrodynTorqueAtIteration[0];
             // kill all values smaller than a certain value (increases stability)
             if (Math.Abs(torque_underR) < forceAndTorque_convergence * 1e-2 && deleteSmallValues == true)
             {
                 torque_underR = 0;
             }
             // update forces and torque
-            this.currentIterForces_P.Insert(0, forces_underR);
-            currentIterForces_P.Remove(currentIterForces_P.Last());
-            this.currentIterTorque_P.Remove(currentIterTorque_P.Last());
-            this.currentIterTorque_P.Insert(0, torque_underR);
-            currentTimeForces_P[0] = currentIterForces_P[0];
-            currentTimeTorque_P[0] = currentIterTorque_P[0];
+            this.hydrodynForcesAtIteration.Insert(0, forces_underR);
+            hydrodynForcesAtIteration.Remove(hydrodynForcesAtIteration.Last());
+            this.hydrodynTorqueAtIteration.Remove(hydrodynTorqueAtIteration.Last());
+            this.hydrodynTorqueAtIteration.Insert(0, torque_underR);
+            hydrodynForcesAtTimestep[0] = hydrodynForcesAtIteration[0];
+            hydrodynTorqueAtTimestep[0] = hydrodynTorqueAtIteration[0];
 
             #endregion
         }

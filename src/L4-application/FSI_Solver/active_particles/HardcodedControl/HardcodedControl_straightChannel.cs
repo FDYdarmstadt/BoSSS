@@ -134,7 +134,7 @@ namespace BoSSS.Application.FSI_Solver
                 {
                     rho_P = 1e-15,
                     gravityVertical = 0,
-                    active_P = true,
+                    activeParticle = true,
                     active_stress_P = stressM,
                     thickness_P = 0.4 * BaseSize,
                     length_P = 4 * BaseSize,
@@ -326,7 +326,7 @@ namespace BoSSS.Application.FSI_Solver
                 {
                     rho_P = 2,//pg/(mum^3)
                     gravityVertical = 0,
-                    active_P = true,
+                    activeParticle = true,
                     active_stress_P = stressM,
                     thickness_P = 0.4 * BaseSize,
                     length_P = 2 * BaseSize,
