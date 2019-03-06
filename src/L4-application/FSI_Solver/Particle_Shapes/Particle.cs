@@ -678,7 +678,7 @@ namespace BoSSS.Application.FSI_Solver
             }
 
             double newAngularVelocity = 0;
-            double oldAngularVelocity = new double();
+            //double oldAngularVelocity = new double();
             double subtimestep;
             noOfSubtimesteps = 1;
             subtimestep = dt / noOfSubtimesteps;

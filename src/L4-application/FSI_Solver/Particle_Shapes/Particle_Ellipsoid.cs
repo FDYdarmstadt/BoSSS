@@ -124,7 +124,7 @@ namespace BoSSS.Application.FSI_Solver {
         }
         override public CellMask cutCells_P(LevelSetTracker LsTrk) {
             // tolerance is very important
-            var radiusTolerance = Math.Min(length_P, thickness_P) + LsTrk.GridDat.Cells.h_minGlobal;// +2.0*Math.Sqrt(2*LsTrk.GridDat.Cells.h_minGlobal.Pow2());
+            var radiusTolerance = Math.Max(length_P, thickness_P) + LsTrk.GridDat.Cells.h_minGlobal;// +2.0*Math.Sqrt(2*LsTrk.GridDat.Cells.h_minGlobal.Pow2());
 
             CellMask cellCollection;
             CellMask cells = null;
