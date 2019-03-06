@@ -25,6 +25,7 @@ using System.Diagnostics;
 using System.Linq;
 using ilPSP;
 using System.Collections.Generic;
+using ilPSP.Utils;
 
 namespace CNS.IBM {
 
@@ -60,9 +61,11 @@ namespace CNS.IBM {
                 Mapping.Fields.ForEach(f => f.Clear(speciesMap.SubGrid.VolumeMask.Complement()));
                 levelSetHasMoved = true;
             }
-
+            //double dist2 = Environment.CompareTo(CurrentState);
             if (levelSetHasMoved) {
+                //double dist22 = Environment.CompareTo(CurrentState);
                 UpdateEvaluatorsAndMasks();
+                //double dist23 = Environment.CompareTo(CurrentState);
 
                 if (!speciesMap.Agglomerator.AggInfo.Equals(oldAgglomerationInfo)) {
                     // Agglomeration pattern has changed, redo agglomeration
@@ -72,7 +75,7 @@ namespace CNS.IBM {
 
                 levelSetHasMoved = false;
             }
-            
+            //double dist3 = Environment.CompareTo(CurrentState);
             dt = base.Perform(dt);  // eq. (42)
             
             speciesMap.Agglomerator.Extrapolate(CurrentState.Mapping); // eq. (43)
@@ -106,17 +109,27 @@ namespace CNS.IBM {
             using (new ilPSP.Tracing.FuncTrace()) {
                 RaiseOnBeforeComputechangeRate(AbsTime, RelTime);
 
+                var CV = new CoordinateVector(Evaluator.DomainFields);
+                //double dist = Environment.CompareTo(CV);
+
+                //(new CoordinateVector(Evaluator.DomainFields)).SaveToTextFile("inp-rk.txt");
+                (new CoordinateVector(Evaluator.Parameters.ToArray())).SaveToTextFile("para-rk.txt");
+
                 Evaluator.time = AbsTime + RelTime;
                 Evaluator.Evaluate(1.0, 0.0, k);
                 Debug.Assert(
                     !k.Any(f => double.IsNaN(f)),
                     "Unphysical flux in standard terms");
 
+                //k.SaveToTextFile("k-rk-bulk.txt");
+
                 boundaryEvaluator.Value.time = AbsTime + RelTime;
                 boundaryEvaluator.Value.Evaluate(1.0, 1.0, k);
                 Debug.Assert(
                     !k.Any(f => double.IsNaN(f)),
                     "Unphysical flux in boundary terms");
+
+                //k.SaveToTextFile("k-rk-bndy.txt");
 
                 // Agglomerate fluxes
                 speciesMap.Agglomerator.ManipulateRHS(k, Mapping);
