@@ -35,7 +35,7 @@ using System.Diagnostics;
 namespace BoSSS.Foundation {
 
     /// <summary>
-    /// Delegate to trigger the update of parameter fields (e.g. when computing finite difference Jacobian, see e.g. <see cref="SpatialOperator.GetFDJacobianBuilder(IList{DGField}, IList{DGField}, UnsetteledCoordinateMapping, EdgeQuadratureScheme, CellQuadratureScheme)"/>).
+    /// Delegate to trigger the update of parameter fields (e.g. when computing finite difference Jacobian, see e.g. <see cref="SpatialOperator.GetFDJacobianBuilder"/>).
     /// </summary>
     /// <param name="DomainVar">
     /// Input fields, current state of domain variables
@@ -2239,8 +2239,9 @@ namespace BoSSS.Foundation {
                 // correct the affine offset
                 // =========================
 
-                // actually, the jacobian is the approx M*(U-U0) + b
-                // we want                              M*U + (b - M*U0)
+                // actually, the Jacobian is the approx M*(U-U0) + b
+                // but we want                          M*U + (b - M*U0)
+                // (in this fashion, this approximation also works with BDF schemes *in the same fashion* as other linearizations
                 Matrix.SpMV(-1.0, U0, 1.0, AffineOffset);
             }
 
