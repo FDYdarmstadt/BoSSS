@@ -421,25 +421,40 @@ namespace BoSSS.Application.FSI_Solver
             //}
             gravity[0] = 0;
             gravity[1] = 0;
-            double[] predictVel = new double[2];
+            double[] predictAcc = new double[2];
+            double[] acc = new double[2];
+            double[] oldAcc = new double[2];
             double beta = 1;
-            double D1 = Mass_P + beta * dt * Dvv[0, 0] + 1e-15;
-            double D2 = Mass_P + beta * dt * Dvv[1, 1] + 1e-15;
-            double D3 = -beta * dt * Dvv[1, 0] + 1e-15;
-            double D4 = D1 * D2 - beta.Pow2() * dt.Pow2() * Dvv[1, 0] * Dvv[0, 1] + 1e-15;
-            predictVel[0] = 2 * currentTimeVel_P[1][0] - currentTimeVel_P[2][0];
-            predictVel[1] = 2 * currentTimeVel_P[1][1] - currentTimeVel_P[2][1];
+            double D1 = Mass_P + beta * dt * Dvv[0, 0];
+            double D2 = Mass_P + beta * dt * Dvv[1, 1];
+            double D3 = beta * dt * Dvv[1, 0];
+            double D4 = beta * dt * Dvv[0, 1];
+            predictAcc[0] = 2 * acc[0] - oldAcc[0];
+            predictAcc[1] = 2 * acc[1] - oldAcc[1];
+            oldAcc = acc;
             double[] tempForces = new double[2];
-            tempForces[0] = (currentIterForces_P[0][0] + currentTimeForces_P[1][0]) / 2 + Dvv[0, 0] * beta * predictVel[0] + Dvv[1, 0] * beta * predictVel[1];
-            tempForces[1] = (currentIterForces_P[0][1] + currentTimeForces_P[1][1]) / 2 + Dvv[0, 1] * beta * predictVel[0] + Dvv[1, 1] * beta * predictVel[1];
-            tempPos[0] = 0;// currentTimePos_P[1][0] + currentTimeVel_P[1][0] * dt + dt.Pow2() * (D2 * tempForces[0] + D3 * tempForces[1]) / (2 * D4);
-            tempPos[1] = 0;// currentTimePos_P[1][0] + currentTimeVel_P[1][1] * dt + dt.Pow2() * ((D1 * D2 - D1) * tempForces[0] / D3 + D1 * tempForces[1]) / D4;
+            tempForces[0] = (currentIterForces_P[0][0] + currentTimeForces_P[1][0]) / 2 + Dvv[0, 0] * beta * predictAcc[0] * dt + Dvv[1, 0] * beta * predictAcc[1] * dt;
+            tempForces[1] = (currentIterForces_P[0][1] + currentTimeForces_P[1][1]) / 2 + Dvv[0, 1] * beta * predictAcc[0] * dt + Dvv[1, 1] * beta * predictAcc[1] * dt;
+            acc[0] = (tempForces[0] - D4 * (D3 * tempForces[0] - D1 * tempForces[1]) / (D3 * D4 - D1 * D2)) / D1;
+            acc[1] = (D3 * tempForces[0] - D1 * tempForces[1]) / (D3 * D4 - D1 * D2);
+            tempPos[0] = currentTimePos_P[1][0] + currentTimeVel_P[1][0] * dt + (predictAcc[0] + acc[0]) * dt.Pow2() / 4;
+            tempPos[1] = currentTimePos_P[1][1] + currentTimeVel_P[1][1] * dt + (predictAcc[1] + acc[1]) * dt.Pow2() / 4;
             currentIterPos_P[0] = tempPos;
 
             // Angle
             // =============================
-            double tempTorque = (currentTimeTorque_P[1] + currentIterTorque_P[0]) / 2;
-            currentIterAng_P[0] = currentTimeAng_P[1] + dt * currentTimeRot_P[1] + (dt * dt / MomentOfInertia_P) * tempTorque / 2;
+            //double tempTorque = (currentTimeTorque_P[1] + currentIterTorque_P[0]) / 2;
+            //currentIterAng_P[0] = currentTimeAng_P[1] + dt * currentTimeRot_P[1] + (dt * dt / MomentOfInertia_P) * tempTorque / 2;
+
+            double AccRot = new double();
+            double oldAccRot = new double();
+            double predictAccRot = 2 * AccRot - oldAccRot;
+            oldAccRot = AccRot;
+            double tempTorque = (currentTimeTorque_P[1] + currentIterTorque_P[0]) / 2 + beta * dt * Dww[0, 0] * predictAccRot;
+            double MomentofInertia_m = MomentOfInertia_P + beta * dt * Dvv[0, 0];
+            AccRot = tempTorque / MomentofInertia_m;
+            currentIterAng_P[0] = currentTimeAng_P[1] + currentTimeRot_P[1] * dt + dt.Pow2() * (predictAccRot + AccRot) / 4;
+
             currentTimePos_P[0] = currentIterPos_P[0];
             currentTimeAng_P[0] = currentIterAng_P[0];
 
@@ -480,15 +495,21 @@ namespace BoSSS.Application.FSI_Solver
 
         public void PredictCurrentVelocity()
         {
-            double[] temp = new double[2];
+            double[] temp = new double[3];
             temp[0] = 2 * currentTimeVel_P[0][0] - currentTimeVel_P[1][0];
             temp[1] = 2 * currentTimeVel_P[0][1] - currentTimeVel_P[1][1];
+            double temp2 = 2 * currentTimeRot_P[0] - currentTimeRot_P[1];
 
             // Save new velocity
             // =============================
             currentIterVel_P.Insert(0, temp);
             currentIterVel_P.Remove(currentIterVel_P.Last());
             currentTimeVel_P[0] = currentIterVel_P[0];
+            currentIterRot_P.Insert(0, temp2);
+            currentIterRot_P.Remove(currentIterRot_P.Last());
+            currentTimeRot_P[0] = currentIterRot_P[0];
+
+
         }
 
         #region Update translational velocity
@@ -669,12 +690,25 @@ namespace BoSSS.Application.FSI_Solver
             double subtimestep;
             noOfSubtimesteps = 1;
             subtimestep = dt / noOfSubtimesteps;
-            
-            for (int i = 1; i <= noOfSubtimesteps; i++) {
-                double tempTorque = (currentTimeTorque_P[1] + currentIterTorque_P[0]) / 2;
-                newAngularVelocity = currentTimeRot_P[1] + (dt / MomentOfInertia_P) * (tempTorque); // for 2D
 
-                oldAngularVelocity = newAngularVelocity;
+            //for (int i = 1; i <= noOfSubtimesteps; i++) {
+            //    double tempTorque = (currentTimeTorque_P[1] + currentIterTorque_P[0]) / 2;
+            //    newAngularVelocity = currentTimeRot_P[1] + (dt / MomentOfInertia_P) * (tempTorque); // for 2D
+
+            //    oldAngularVelocity = newAngularVelocity;
+
+            //}
+            double beta = 1;
+            double AccRot = new double();
+            double oldAccRot = new double();
+            double predictAccRot = 2 * AccRot - oldAccRot;
+            oldAccRot = AccRot;
+            for (int i = 1; i <= noOfSubtimesteps; i++)
+            {
+                double tempTorque = (currentTimeTorque_P[1] + currentIterTorque_P[0]) / 2 + beta * dt * Dww[0, 0] * predictAccRot;
+                double MomentofInertia_m = MomentOfInertia_P + beta * dt * Dvv[0, 0];
+                AccRot = tempTorque / MomentofInertia_m;
+                newAngularVelocity = currentTimeRot_P[1] + dt * (predictAccRot + AccRot) / 2;
 
             }
             currentIterRot_P.Insert(0, newAngularVelocity);
