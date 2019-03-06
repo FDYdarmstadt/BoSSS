@@ -1,28 +1,27 @@
 ﻿using System;
-using System.Collections;
-using System.Collections.Generic;
-using System.Diagnostics;
 using System.IO;
-using System.IO.Compression;
 using System.Linq;
-using BoSSS.Foundation.Comm;
 using BoSSS.Foundation.Grid;
-using BoSSS.Platform;
 using ilPSP;
 using ilPSP.Tracing;
-using log4net.Appender;
-using log4net.Config;
-using log4net.Layout;
 using MPI.Wrappers;
-using Newtonsoft.Json;
-using Newtonsoft.Json.Bson;
-using ilPSP.Utils;
 using BoSSS.Foundation.Grid.Classic;
 
 namespace BoSSS.Foundation.IO
 {
-    public partial class DatabaseDriver
+    class GridDatabaseDriver : IDisposable
     {
+        readonly VectorDataSerializer Driver;
+        public GridDatabaseDriver(VectorDataSerializer driver)
+        {
+            Driver = driver;
+        }
+
+        public void Dispose()
+        {
+            Driver.Dispose();
+        }
+
         /// <summary>
         /// tests whether a grid with GUID <paramref name="g"/> exists in database, or not;
         /// </summary>
@@ -30,7 +29,7 @@ namespace BoSSS.Foundation.IO
         {
             try
             {
-                Stream strm = m_fsDriver.GetGridStream(false, g);
+                Stream strm = Driver.FsDriver.GetGridStream(false, g);
                 strm.Close();
             }
             catch (Exception)
@@ -121,11 +120,11 @@ namespace BoSSS.Foundation.IO
             // =======================
             if (grd.StorageGuid != null && grd.StorageGuid != Guid.Empty)
             {
-                SaveVector(grd.Cells, grd.StorageGuid);
+                Driver.SaveVector(grd.Cells, grd.StorageGuid);
             }
             else
             {
-                grd.StorageGuid = SaveVector(grd.Cells);
+                grd.StorageGuid = Driver.SaveVector(grd.Cells);
             }
 
             grd.InitNumberOfCells();
@@ -142,12 +141,12 @@ namespace BoSSS.Foundation.IO
                     throw new Exception("Should have been already loaded ");
                 }
 
-                SaveVector(cellToRankMap, s.Value.Guid);
+                Driver.SaveVector(cellToRankMap, s.Value.Guid);
             }
 
 
             if (grd.BcCells != null && grd.BcCells.Length > 0)
-                grd.BcCellsStorageGuid = SaveVector(grd.BcCells);
+                grd.BcCellsStorageGuid = Driver.SaveVector(grd.BcCells);
 
             // save header data (save GridInfo)
             // ==========================
@@ -163,12 +162,12 @@ namespace BoSSS.Foundation.IO
 
         void SaveGridInfo(IGrid grid)
         {
-            if (MyRank == 0)
+            if (Driver.MyRank == 0)
             {
-                using (Stream s = m_fsDriver.GetGridStream(true, grid.ID))
-                using (var writer = GetJsonWriter(s))
+                using (Stream s = Driver.FsDriver.GetGridStream(true, grid.ID))
+                using (var writer = VectorDataSerializer.GetJsonWriter(s))
                 {
-                    m_Formatter.Serialize(writer, grid);
+                    Driver.m_Formatter.Serialize(writer, grid);
                     writer.Close();
                     s.Close();
                 }
@@ -190,12 +189,12 @@ namespace BoSSS.Foundation.IO
                 tr.Info("Loading grid " + gridGuid);
 
                 Grid.Classic.GridCommons grid = null;
-                if (MyRank == 0)
+                if (Driver.MyRank == 0)
                 {
-                    using (Stream s = FsDriver.GetGridStream(false, gridGuid))
-                    using (var reader = GetJsonReader(s))
+                    using (Stream s = Driver.FsDriver.GetGridStream(false, gridGuid))
+                    using (var reader = VectorDataSerializer.GetJsonReader(s))
                     {
-                        grid = m_Formatter.Deserialize<Grid.Classic.GridCommons>(reader);
+                        grid = Driver.m_Formatter.Deserialize<Grid.Classic.GridCommons>(reader);
                     }
                 }
 
@@ -216,11 +215,11 @@ namespace BoSSS.Foundation.IO
         {
             // load grid data
             Partitioning p = null;
-            grid.Cells = LoadVector<Cell>(grid.StorageGuid, ref p).ToArray();
+            grid.Cells = Driver.LoadVector<Cell>(grid.StorageGuid, ref p).ToArray();
 
             p = null;
             if (!grid.BcCellsStorageGuid.Equals(Guid.Empty))
-                grid.BcCells = LoadVector<BCElement>(grid.BcCellsStorageGuid, ref p).ToArray();
+                grid.BcCells = Driver.LoadVector<BCElement>(grid.BcCellsStorageGuid, ref p).ToArray();
 
             for (int i = 0; i < grid.m_PredefinedGridPartitioning.Count; ++i)
             {
@@ -229,7 +228,7 @@ namespace BoSSS.Foundation.IO
                 {
                     // Partitioning has not been loaded; do it now
                     Partitioning currentPartitioning = grid.CellPartitioning;
-                    int[] cellToRankMap = LoadVector<int>(s.Value.Guid, ref currentPartitioning).ToArray();
+                    int[] cellToRankMap = Driver.LoadVector<int>(s.Value.Guid, ref currentPartitioning).ToArray();
                     grid.m_PredefinedGridPartitioning[s.Key] = new GridCommons.GridPartitioningVector { Guid = s.Value.Guid, CellToRankMap = cellToRankMap };
                 }
             }
