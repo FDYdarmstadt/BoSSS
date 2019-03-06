@@ -63,24 +63,19 @@ namespace BoSSS.Foundation.IO
                 {
                     GridCommons GrdInDatabase = (Grid.Classic.GridCommons)this.LoadGridInfo(GrdInf.ID, database);
 
-                    if (GrdInDatabase.HasEqualReferences(grd) == false)
-                        continue;
-
-                    GrdInDatabase = (GridCommons)LoadGridData(GrdInDatabase);
-                    if (grd.HasEqualCells(GrdInDatabase))
+                    if (GrdInDatabase.HasEqualReferences(grd) == true)
                     {
-                        _grd = GrdInDatabase;
-                        EquivalentGridFound = true;
-                        //Console.WriteLine("Found equivalent grid: " + grd.GridGuid);
-                        return grd.ID;
+                        GrdInDatabase = (GridCommons)LoadGridData(GrdInDatabase);
+                        if (grd.HasEqualCells(GrdInDatabase))
+                        {
+                            _grd = GrdInDatabase;
+                            EquivalentGridFound = true;
+                            return grd.ID;
+                        }
                     }
                 }
-
-                //Console.WriteLine("Grid is unique - saving...");
-
                 EquivalentGridFound = false;
                 var g = SaveGrid(grd, database);
-                //Console.WriteLine("done: " + g.ToString());
                 return g;
             }
         }
