@@ -109,11 +109,11 @@ namespace CNS.IBM {
             using (new ilPSP.Tracing.FuncTrace()) {
                 RaiseOnBeforeComputechangeRate(AbsTime, RelTime);
 
-                var CV = new CoordinateVector(Evaluator.DomainFields);
+                //var CV = new CoordinateVector(Evaluator.DomainFields);
                 //double dist = Environment.CompareTo(CV);
 
                 //(new CoordinateVector(Evaluator.DomainFields)).SaveToTextFile("inp-rk.txt");
-                (new CoordinateVector(Evaluator.Parameters.ToArray())).SaveToTextFile("para-rk.txt");
+                //(new CoordinateVector(Evaluator.Parameters.ToArray())).SaveToTextFile("para-rk.txt");
 
                 Evaluator.time = AbsTime + RelTime;
                 Evaluator.Evaluate(1.0, 0.0, k);
