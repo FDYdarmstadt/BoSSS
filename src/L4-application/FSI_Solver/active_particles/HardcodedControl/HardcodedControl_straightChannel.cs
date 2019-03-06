@@ -30,7 +30,7 @@ namespace BoSSS.Application.FSI_Solver
 {
     public class HardcodedControl_straightChannel : IBM_Solver.HardcodedTestExamples
     {
-        public static FSI_Control activeRod_noBackroundFlow(string _DbPath = null, int k = 2, double VelXBase = 0.0, double stressM = 1e0, double cellAgg = 0.2, double muA = 1e6, double timestepX = 1e-3)
+        public static FSI_Control activeRod_noBackroundFlow(string _DbPath = null, int k = 2, double VelXBase = 0.0, double stressM = 1e0, double cellAgg = 0.2, double muA = 1e3, double timestepX = 1e-3)
         {
             FSI_Control C = new FSI_Control();
 
@@ -133,15 +133,15 @@ namespace BoSSS.Application.FSI_Solver
                 C.Particles.Add(new Particle_Ellipsoid(2, 4, new double[] { -0 , 0.0 }, startAngl: 0)
                 {
                     radius_P = 1,
-                    rho_P = 1e-15,//pg/(mum^3)
+                    rho_P = 1.1e-15,//pg/(mum^3)
                     gravityVertical = 0,
                     active_P = true,
                     active_stress_P = stressM,
-                    thickness_P = 0.4 * BaseSize,
+                    thickness_P = 1 * BaseSize,
                     length_P = 2 * BaseSize,
                     superEllipsoidExponent = 4,
-                    underrelaxationFT_constant = false,// set true if you want to define a constant underrelaxation (not recommended)
-                    underrelaxation_factor = 1,// underrelaxation with [factor * 10^exponent]
+                    underrelaxationFT_constant = true,// set true if you want to define a constant underrelaxation (not recommended)
+                    underrelaxation_factor = 0.5,// underrelaxation with [factor * 10^exponent]
                     deleteSmallValues = true,
                     neglectAddedDamping = false
             });
@@ -203,7 +203,7 @@ namespace BoSSS.Application.FSI_Solver
             C.Timestepper_LevelSetHandling = LevelSetHandling.LieSplitting;
             C.LSunderrelax = 1;
             C.splitting_fully_coupled = true;
-            C.max_iterations_fully_coupled = 1000000;
+            C.max_iterations_fully_coupled = 10;
             C.includeRotation = false;
             C.includeTranslation = true;
 

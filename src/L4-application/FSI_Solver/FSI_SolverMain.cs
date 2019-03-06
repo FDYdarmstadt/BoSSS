@@ -627,14 +627,14 @@ namespace BoSSS.Application.FSI_Solver {
             // Call update methods
             foreach (Particle p in m_Particles)
             {
-                if(p.iteration_counter_P == 0)
+                p.ResetParticlePosition();
+                p.UpdateDampingTensors();
+                if (p.iteration_counter_P == 0)
                 {
-                    p.ResetParticlePosition();
                     p.PredictCurrentVelocity();
                 }
                 else
                 {
-                    p.UpdateDampingTensors();
                     p.UpdateAngularVelocity(dt, ((FSI_Control)this.Control).includeRotation);
                     p.UpdateTransVelocity(dt, this.Control.PhysicalParameters.rho_A, ((FSI_Control)this.Control).includeTranslation);
                     p.ComputeParticleRe(this.Control.PhysicalParameters.mu_A);

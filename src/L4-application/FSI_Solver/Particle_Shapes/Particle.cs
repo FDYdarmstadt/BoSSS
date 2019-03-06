@@ -121,7 +121,7 @@ namespace BoSSS.Application.FSI_Solver
         /// <summary>
         /// Number of iterations
         /// </summary>
-        public int iteration_counter_P = 1;
+        public int iteration_counter_P = 0;
 
         /// <summary>
         /// Constant forces and torque underrelaxation?
@@ -432,7 +432,8 @@ namespace BoSSS.Application.FSI_Solver
             double[] tempForces = new double[2];
             tempForces[0] = (currentIterForces_P[0][0] + currentTimeForces_P[1][0]) / 2 + Dvv[0, 0] * beta * predictVel[0] + Dvv[1, 0] * beta * predictVel[1];
             tempForces[1] = (currentIterForces_P[0][1] + currentTimeForces_P[1][1]) / 2 + Dvv[0, 1] * beta * predictVel[0] + Dvv[1, 1] * beta * predictVel[1];
-            tempPos[0] = currentTimePos_P[1][0] + currentTimeVel_P[1][0] * dt + dt.Pow2() * (D2 * tempForces[0] + D3 * tempForces[1]) / (2 * D4);
+            tempPos[0] = 0;// currentTimePos_P[1][0] + currentTimeVel_P[1][0] * dt + dt.Pow2() * (D2 * tempForces[0] + D3 * tempForces[1]) / (2 * D4);
+            tempPos[1] = 0;// currentTimePos_P[1][0] + currentTimeVel_P[1][1] * dt + dt.Pow2() * ((D1 * D2 - D1) * tempForces[0] / D3 + D1 * tempForces[1]) / D4;
             currentIterPos_P[0] = tempPos;
 
             // Angle
@@ -479,8 +480,15 @@ namespace BoSSS.Application.FSI_Solver
 
         public void PredictCurrentVelocity()
         {
-            currentIterVel_P[0][0] = 2 * currentTimeVel_P[2][0] - currentTimeVel_P[1][0];
-            currentIterVel_P[0][1] = 2 * currentTimeVel_P[2][1] - currentTimeVel_P[1][1];
+            double[] temp = new double[2];
+            temp[0] = 2 * currentTimeVel_P[0][0] - currentTimeVel_P[1][0];
+            temp[1] = 2 * currentTimeVel_P[0][1] - currentTimeVel_P[1][1];
+
+            // Save new velocity
+            // =============================
+            currentIterVel_P.Insert(0, temp);
+            currentIterVel_P.Remove(currentIterVel_P.Last());
+            currentTimeVel_P[0] = currentIterVel_P[0];
         }
 
         #region Update translational velocity
@@ -599,18 +607,24 @@ namespace BoSSS.Application.FSI_Solver
             // Added Mass and added Damping
             gravity[0] = 0;
             gravity[1] = 0;
-            double[] predictVel = new double[2];
+            double[] predictAcc = new double[2];
+            double[] acc = new double[2];
+            double[] oldAcc = new double[2];
             double beta = 1;
             double D1 = Mass_P + beta * dt * Dvv[0, 0];
             double D2 = Mass_P + beta * dt * Dvv[1, 1];
-            double D3 = -beta * dt * Dvv[1, 0];
-            double D4 = D1 * D2 - beta.Pow2() * dt.Pow2() * Dvv[1, 0] * Dvv[0, 1] + 1e-15;
-            predictVel[0] = 2 * currentTimeVel_P[1][0] - currentTimeVel_P[2][0];
-            predictVel[1] = 2 * currentTimeVel_P[1][1] - currentTimeVel_P[2][1];
-            tempForces[0] = (currentIterForces_P[0][0] + currentTimeForces_P[1][0]) / 2 + Dvv[0, 0] * beta * predictVel[0] + Dvv[1, 0] * beta * predictVel[1];
-            tempForces[1] = (currentIterForces_P[0][1] + currentTimeForces_P[1][1]) / 2 + Dvv[0, 1] * beta * predictVel[0] + Dvv[1, 1] * beta * predictVel[1];
-            temp[0] = currentTimeVel_P[1][0] + dt * (D2 * tempForces[0] + D3 * tempForces[1]) / D4;
-            temp[1] = 0;// currentTimeVel_P[1][1] + dt * ((D1 * D2 - D1) * tempForces[0] / D3 + D1 * tempForces[1]) / D4;
+            double D3 = beta * dt * Dvv[1, 0];
+            double D4 = beta * dt * Dvv[0, 1];
+            predictAcc[0] = 2 * acc[0] - oldAcc[0];
+            predictAcc[1] = 2 * acc[1] - oldAcc[1];
+            oldAcc = acc;
+            tempForces[0] = (currentIterForces_P[0][0] + currentTimeForces_P[1][0]) / 2 + Dvv[0, 0] * beta * predictAcc[0] * dt + Dvv[1, 0] * beta * predictAcc[1] * dt + massDifference * gravity[0];
+            tempForces[1] = (currentIterForces_P[0][1] + currentTimeForces_P[1][1]) / 2 + Dvv[0, 1] * beta * predictAcc[0] * dt + Dvv[1, 1] * beta * predictAcc[1] * dt + massDifference * gravity[1];
+            acc[0] = (tempForces[0] - D4 * (D3 * tempForces[0] - D1 * tempForces[1]) / (D3 * D4 - D1 * D2)) / D1;
+            acc[1] = (D3 * tempForces[0] - D1 * tempForces[1]) / (D3 * D4 - D1 * D2);
+            temp[0] = currentTimeVel_P[1][0] + (predictAcc[0] + acc[0]) * dt / 2;
+            temp[1] = currentTimeVel_P[1][1] + (predictAcc[1] + acc[1]) * dt / 2;
+
 
             // Save new velocity
             // =============================
@@ -684,13 +698,9 @@ namespace BoSSS.Application.FSI_Solver
             {
                 return;
             }
-
             int D = LsTrk.GridDat.SpatialDimension;
             double alpha = 0.5;
             int RequiredOrder = 2;
-
-           
-
             for (int i = 0; i < 4; i++)
             {
                 for (int d1 = 0; d1 < D; d1++)
