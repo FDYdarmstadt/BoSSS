@@ -65,8 +65,8 @@ namespace BoSSS.Application.FSI_Solver
                 int q = new int(); // #Cells in x-dircetion + 1
                 int r = new int(); // #Cells in y-dircetion + 1
 
-                q = 16;
-                r = 16;
+                q = 16*2;
+                r = 16*2;
 
                 double[] Xnodes = GenericBlas.Linspace(-8 * BaseSize, 8 * BaseSize, q);
                 double[] Ynodes = GenericBlas.Linspace(-8 * BaseSize, 8 * BaseSize, r);
@@ -132,7 +132,7 @@ namespace BoSSS.Application.FSI_Solver
             {
                 C.Particles.Add(new Particle_Ellipsoid(4, new double[] { 0 , 0.0 }, startAngl: 10)
                 {
-                    rho_P = 1e-15,
+                    particleDensity = 1e-15,
                     gravityVertical = 0,
                     activeParticle = true,
                     active_stress_P = stressM,
@@ -324,7 +324,7 @@ namespace BoSSS.Application.FSI_Solver
             {
                 C.Particles.Add(new Particle_Ellipsoid(4, new double[] { -10, 0.0 }, startAngl: 0)
                 {
-                    rho_P = 2,//pg/(mum^3)
+                    particleDensity = 2,//pg/(mum^3)
                     gravityVertical = 0,
                     activeParticle = true,
                     active_stress_P = stressM,

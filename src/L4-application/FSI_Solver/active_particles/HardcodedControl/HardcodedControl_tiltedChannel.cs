@@ -132,7 +132,7 @@ namespace BoSSS.Application.FSI_Solver
             {
                 C.Particles.Add(new Particle_Ellipsoid(4, new double[] { -10, 0.0 }, startAngl: 10)
                 {
-                    rho_P = 2,//pg/(mum^3)
+                    particleDensity = 2,//pg/(mum^3)
                     gravityVertical = 0,
                     activeParticle = true,
                     active_stress_P = stressM,
@@ -323,7 +323,7 @@ namespace BoSSS.Application.FSI_Solver
             {
                 C.Particles.Add(new Particle_Ellipsoid(4, new double[] { -10, 0.0 }, startAngl: 10)
                 {
-                    rho_P = 2,//pg/(mum^3)
+                    particleDensity = 2,//pg/(mum^3)
                     gravityVertical = 0,
                     activeParticle = true,
                     active_stress_P = stressM,

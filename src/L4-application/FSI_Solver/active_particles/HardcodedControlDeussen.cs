@@ -133,7 +133,7 @@ namespace BoSSS.Application.FSI_Solver
                 C.Particles.Add(new Particle_Sphere(2, 4, new double[] { 0 + 14 * d, 0.0 }, startAngl: 180 * d)
                 {
                     radius_P = 1,
-                    rho_P = 1.5,//pg/(mum^3)
+                    particleDensity = 1.5,//pg/(mum^3)
                     gravityVertical = 0,
                     activeParticle = true,
                     active_stress_P = stressM,

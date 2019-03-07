@@ -578,13 +578,19 @@ namespace BoSSS.Application.FSI_Solver {
                 p.UpdateDampingTensors();
                 if (p.iteration_counter_P == 0 && ((FSI_Control)this.Control).splitting_fully_coupled == true)
                 {
+                    p.PredictTranslationalAccelaration();
+                    p.PredictAngularAccelaration();
                     p.PredictTranslationalVelocity();
                     p.PredictAngularVelocity();
                 }
                 else
                 {
                     p.UpdateAngularVelocity(dt, ((FSI_Control)this.Control).includeRotation);
-                    p.UpdateTranslationalVelocity(dt, this.Control.PhysicalParameters.rho_A, ((FSI_Control)this.Control).includeTranslation);
+                    if (((FSI_Control)this.Control).includeTranslation == true)
+                    {
+                        p.CalculateTranslationalAccelaration(dt, this.Control.PhysicalParameters.rho_A);
+                        p.CalculateTranslationalVelocity(dt, this.Control.PhysicalParameters.rho_A);
+                    }
                     p.ComputeParticleRe(this.Control.PhysicalParameters.mu_A);
                     p.UpdateParticlePosition(dt, this.Control.PhysicalParameters.rho_A);
                 }
@@ -977,7 +983,7 @@ namespace BoSSS.Application.FSI_Solver {
 
                         double[] collisionForce;
 
-                        var massDifference = Math.Abs(this.Control.PhysicalParameters.rho_A - particle0.rho_P);
+                        var massDifference = Math.Abs(this.Control.PhysicalParameters.rho_A - particle0.particleDensity);
 
                         Console.WriteLine("realDistance: " + realDistance);
                         Console.WriteLine("Threshold: " + threshold);

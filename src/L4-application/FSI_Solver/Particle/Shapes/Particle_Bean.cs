@@ -24,17 +24,16 @@ namespace BoSSS.Application.FSI_Solver
 {
     [DataContract]
     [Serializable]
-    public class Particle_Sphere : Particle
+    public class Particle_Bean : Particle
     {
         /// <summary>
         /// Empty constructor used during de-serialization
         /// </summary>
-        private Particle_Sphere() : base()
+        private Particle_Bean() : base()
         {
 
         }
-
-        public Particle_Sphere(int Dim, int HistoryLength, double[] startPos = null, double startAngl = 0) : base(Dim, HistoryLength, startPos, startAngl)
+        public Particle_Bean(int Dim, int HistoryLength, double[] startPos = null, double startAngl = 0) : base(Dim, HistoryLength, startPos, startAngl)
         {
             #region Particle history
             // =============================   
@@ -89,7 +88,7 @@ namespace BoSSS.Application.FSI_Solver
         public double radius_P;
 
         /// <summary>
-        /// %
+        /// equal to radius
         /// </summary>
         protected override double averageDistance {
             get {
@@ -97,13 +96,6 @@ namespace BoSSS.Application.FSI_Solver
             }
         }
 
-        override public double Area_P
-        {
-            get
-            {
-                return Math.PI * radius_P * radius_P;
-            }
-        }
         public override double Circumference_P
         {
             get
@@ -111,17 +103,28 @@ namespace BoSSS.Application.FSI_Solver
                 return 2 * Math.PI * radius_P;
             }
         }
+        override public double Area_P
+        {
+            get
+            {
+                // not correct area
+                return Math.PI * radius_P * radius_P;
+            }
+        }
         override public double MomentOfInertia_P
         {
             get
             {
+                // not correct moment of inertia
                 return (1 / 2.0) * (Mass_P * radius_P * radius_P);
             }
         }
         override public void UpdateLevelSetFunction()
         {
+            double a = 3.0 * radius_P.Pow2();
+            double b = 1.0 * radius_P.Pow2();
             double alpha = -(angleAtIteration[0]);
-            phi_P = (X, t) => -(X[0] - positionAtIteration[0][0]).Pow2() + -(X[1] - positionAtIteration[0][1]).Pow2() + radius_P.Pow2();
+            phi_P = (X, t) => -((((X[0] - positionAtIteration[0][0]) * Math.Cos(alpha) - (X[1] - positionAtIteration[0][1]) * Math.Sin(alpha)).Pow(2) + ((X[0] - positionAtIteration[0][0]) * Math.Sin(alpha) + (X[1] - positionAtIteration[0][1]) * Math.Cos(alpha)).Pow(2)).Pow2() - a * ((X[0] - positionAtIteration[0][0]) * Math.Cos(alpha) - (X[1] - positionAtIteration[0][1]) * Math.Sin(alpha)).Pow(3) - b * ((X[0] - positionAtIteration[0][0]) * Math.Sin(alpha) + (X[1] - positionAtIteration[0][1]) * Math.Cos(alpha)).Pow2());
         }
         override public CellMask cutCells_P(LevelSetTracker LsTrk)
         {
@@ -131,7 +134,9 @@ namespace BoSSS.Application.FSI_Solver
             CellMask cellCollection;
             CellMask cells = null;
             double alpha = -(angleAtIteration[0]);
-            cells = CellMask.GetCellMask(LsTrk.GridDat, X => (-(X[0] - positionAtIteration[0][0]).Pow2() + -(X[1] - positionAtIteration[0][1]).Pow2() + radiusTolerance.Pow2()) > 0);
+            double a = 4.0 * radiusTolerance.Pow2();
+            double b = 1.0 * radiusTolerance.Pow2();
+            cells = CellMask.GetCellMask(LsTrk.GridDat, X => -((((X[0] - positionAtIteration[0][0]) * Math.Cos(alpha) - (X[1] - positionAtIteration[0][1]) * Math.Sin(alpha)).Pow(2) + ((X[0] - positionAtIteration[0][0]) * Math.Sin(alpha) + (X[1] - positionAtIteration[0][1]) * Math.Cos(alpha)).Pow(2)).Pow2() - a * ((X[0] - positionAtIteration[0][0]) * Math.Cos(alpha) - (X[1] - positionAtIteration[0][1]) * Math.Sin(alpha)).Pow(3) - b * ((X[0] - positionAtIteration[0][0]) * Math.Sin(alpha) + (X[1] - positionAtIteration[0][1]) * Math.Cos(alpha)).Pow2()) > 0);
 
             CellMask allCutCells = LsTrk.Regions.GetCutCellMask();
             cellCollection = cells.Intersect(allCutCells);
@@ -141,8 +146,9 @@ namespace BoSSS.Application.FSI_Solver
         {
             // only for squared cells
             double radiusTolerance = radius_P + 2.0 * Math.Sqrt(2 * LsTrk.GridDat.Cells.h_minGlobal.Pow2());
-            var distance = point.L2Distance(positionAtIteration[0]);
-            if (distance < (radiusTolerance))
+            double a = 4.0 * radiusTolerance.Pow2();
+            double b = 1.0 * radiusTolerance.Pow2();
+            if (-((((point[0] - positionAtIteration[0][0]) * Math.Cos(angleAtIteration[0]) - (point[1] - positionAtIteration[0][1]) * Math.Sin(angleAtIteration[0])).Pow(2) + ((point[0] - positionAtIteration[0][0]) * Math.Sin(angleAtIteration[0]) + (point[1] - positionAtIteration[0][1]) * Math.Cos(angleAtIteration[0])).Pow(2)).Pow2() - a * ((point[0] - positionAtIteration[0][0]) * Math.Cos(angleAtIteration[0]) - (point[1] - positionAtIteration[0][1]) * Math.Sin(angleAtIteration[0])).Pow(3) - b * ((point[0] - positionAtIteration[0][0]) * Math.Sin(angleAtIteration[0]) + (point[1] - positionAtIteration[0][1]) * Math.Cos(angleAtIteration[0])).Pow2()) > 0)
             {
                 return true;
             }
@@ -151,7 +157,7 @@ namespace BoSSS.Application.FSI_Solver
         override public double ComputeParticleRe(double mu_Fluid)
         {
             double particleReynolds = 0;
-            particleReynolds = Math.Sqrt(transVelocityAtIteration[0][0] * transVelocityAtIteration[0][0] + transVelocityAtIteration[0][1] * transVelocityAtIteration[0][1]) * 2 * radius_P * rho_P / mu_Fluid;
+            particleReynolds = Math.Sqrt(transVelocityAtIteration[0][0] * transVelocityAtIteration[0][0] + transVelocityAtIteration[0][1] * transVelocityAtIteration[0][1]) * 2 * 4.0 * particleDensity / mu_Fluid;
             Console.WriteLine("Particle Reynolds number:  " + particleReynolds);
             return particleReynolds;
         }

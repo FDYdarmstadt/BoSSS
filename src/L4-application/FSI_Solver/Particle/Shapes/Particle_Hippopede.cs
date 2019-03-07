@@ -154,7 +154,7 @@ namespace BoSSS.Application.FSI_Solver {
 
         override public double ComputeParticleRe(double mu_Fluid) {
             double particleReynolds = 0;
-            particleReynolds = Math.Sqrt(transVelocityAtIteration[0][0] * transVelocityAtIteration[0][0] + transVelocityAtIteration[0][1] * transVelocityAtIteration[0][1]) * 2 * 4.0 * rho_P / mu_Fluid;
+            particleReynolds = Math.Sqrt(transVelocityAtIteration[0][0] * transVelocityAtIteration[0][0] + transVelocityAtIteration[0][1] * transVelocityAtIteration[0][1]) * 2 * 4.0 * particleDensity / mu_Fluid;
             Console.WriteLine("Particle Reynolds number:  " + particleReynolds);
             return particleReynolds;
         }
