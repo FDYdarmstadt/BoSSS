@@ -275,6 +275,7 @@ namespace CNS.Tests.IBMTests {
             return solver.QueryHandler.QueryResults;
         }
 
+        // Explicit order 1
         [Test]
         public static void IBMAVTimeStepperTest_RK1() {
             CheckErrorThresholds(
@@ -294,6 +295,36 @@ namespace CNS.Tests.IBMTests {
             CheckErrorThresholds(
                 Setup_IBMAVTimeStepperTest(explicitScheme: 3, explicitOrder: 1),
                 Tuple.Create("L2NormDensity", 0.488419017555324 + 1e-14));
+        }
+
+        // Explicit order 2
+        [Test]
+        public static void IBMAVTimeStepperTest_AB2() {
+            CheckErrorThresholds(
+                Setup_IBMAVTimeStepperTest(explicitScheme: 2, explicitOrder: 2),
+                Tuple.Create("L2NormDensity", 0.488419017763754 + 1e-14));
+        }
+
+        [Test]
+        public static void IBMAVTimeStepperTest_LTS2() {
+            CheckErrorThresholds(
+                Setup_IBMAVTimeStepperTest(explicitScheme: 3, explicitOrder: 2),
+                Tuple.Create("L2NormDensity", 0.488419017763754 + 1e-14));
+        }
+
+        // Explicit order 3
+        [Test]
+        public static void IBMAVTimeStepperTest_AB3() {
+            CheckErrorThresholds(
+                Setup_IBMAVTimeStepperTest(explicitScheme: 2, explicitOrder: 3),
+                Tuple.Create("L2NormDensity", 0.488419017764017 + 1e-14));
+        }
+
+        [Test]
+        public static void IBMAVTimeStepperTest_LTS3() {
+            CheckErrorThresholds(
+                Setup_IBMAVTimeStepperTest(explicitScheme: 3, explicitOrder: 3),
+                Tuple.Create("L2NormDensity", 0.488419017764017 + 1e-14));
         }
     }
 }
