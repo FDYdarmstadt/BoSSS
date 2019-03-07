@@ -43,7 +43,9 @@ namespace BoSSS.Application.FSI_Solver
                 positionAtIteration.Add(new double[Dim]);
                 angleAtIteration.Add(new double());
                 transVelocityAtIteration.Add(new double[Dim]);
+                transAccelerationAtIteration.Add(new double[Dim]);
                 rotationalVelocityAtIteration.Add(new double());
+                rotationalAccelarationAtIteration.Add(new double());
                 hydrodynForcesAtIteration.Add(new double[Dim]);
                 hydrodynTorqueAtIteration.Add(new double());
             }
@@ -52,7 +54,9 @@ namespace BoSSS.Application.FSI_Solver
                 positionAtTimestep.Add(new double[Dim]);
                 angleAtTimestep.Add(new double());
                 transVelocityAtTimestep.Add(new double[Dim]);
+                transAccelerationAtTimestep.Add(new double[Dim]);
                 rotationalVelocityAtTimestep.Add(new double());
+                rotationalAccelarationAtTimestep.Add(new double());
                 hydrodynForcesAtTimestep.Add(new double[Dim]);
                 hydrodynTorqueAtTimestep.Add(new double());
             }
