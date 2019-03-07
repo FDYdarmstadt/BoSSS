@@ -579,20 +579,25 @@ namespace BoSSS.Application.FSI_Solver {
                 if (p.iteration_counter_P == 0 && ((FSI_Control)this.Control).splitting_fully_coupled == true)
                 {
                     p.PredictTranslationalAccelaration();
-                    p.PredictAngularAccelaration();
+                    p.PredictAngularAcceleration();
                     p.PredictTranslationalVelocity();
                     p.PredictAngularVelocity();
                 }
                 else
                 {
-                    p.UpdateAngularVelocity(dt, ((FSI_Control)this.Control).includeRotation);
+                    if (((FSI_Control)this.Control).includeRotation == true)
+                    {
+                        
+                        p.UpdateAngularVelocity(dt);
+                    }
+                    
                     if (((FSI_Control)this.Control).includeTranslation == true)
                     {
-                        p.CalculateTranslationalAccelaration(dt, this.Control.PhysicalParameters.rho_A);
+                        p.CalculateTranslationalAcceleration(dt, this.Control.PhysicalParameters.rho_A);
                         p.CalculateTranslationalVelocity(dt, this.Control.PhysicalParameters.rho_A);
                     }
                     p.ComputeParticleRe(this.Control.PhysicalParameters.mu_A);
-                    p.UpdateParticlePosition(dt, this.Control.PhysicalParameters.rho_A);
+                    p.CalculateParticlePosition(dt, this.Control.PhysicalParameters.rho_A);
                 }
                 
             }
@@ -618,7 +623,7 @@ namespace BoSSS.Application.FSI_Solver {
         void UpdateForcesAndTorque(double dt, double phystime) {
             foreach (Particle p in m_Particles) {
                 if (!((FSI_Control)this.Control).pureDryCollisions) {
-                    p.UpdateForcesAndTorque(Velocity, Pressure, LsTrk, this.Control.PhysicalParameters.mu_A);
+                    p.UpdateForcesAndTorque(Velocity, Pressure, LsTrk, this.Control.PhysicalParameters.mu_A, dt, this.Control.PhysicalParameters.rho_A);
                 }
                 WallCollisionForces(p, LsTrk.GridDat.Cells.h_minGlobal);
             }
