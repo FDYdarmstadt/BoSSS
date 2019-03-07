@@ -81,6 +81,22 @@ namespace BoSSS.Application.FSI_Solver
             UpdateLevelSetFunction();
             #endregion
         }
+
+        /// <summary>
+        /// Radius of the particle. Not necessary for particles defined by their length and thickness
+        /// </summary>
+        [DataMember]
+        public double radius_P;
+
+        /// <summary>
+        /// %
+        /// </summary>
+        protected override double averageDistance {
+            get {
+                return radius_P;
+            }
+        }
+
         override public double Area_P
         {
             get

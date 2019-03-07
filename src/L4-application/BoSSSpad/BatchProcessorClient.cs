@@ -152,11 +152,12 @@ namespace BoSSS.Application.BoSSSpad {
                         Console.WriteLine();
                     OriginDir = Path.GetDirectoryName(fOrg);
                     Console.WriteLine("Source directory: " + OriginDir);
-                    Console.Write("   copied: ");
+                    //Console.Write("   copied: ");
                 }
 
-                Console.Write(Path.GetFileName(fOrg) + " ");
+                //Console.Write(Path.GetFileName(fOrg) + " ");
             }
+            Console.WriteLine("copied " + files.Count + " files.");
 
             // additional files
             if(AdditionalFiles != null) {

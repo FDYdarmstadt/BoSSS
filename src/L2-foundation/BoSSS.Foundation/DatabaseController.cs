@@ -724,7 +724,7 @@ namespace BoSSS.Foundation.IO {
         /// An IGridInfo object referring to the grid in the target database
         /// </returns>
         public IGridInfo CopyGrid(IGridInfo gridInfo, IDatabaseInfo dest) {
-            Grid.Classic.GridCommons grid;
+            IGrid grid;
             if (gridInfo is GridProxy) {
                 grid = gridInfo.As<GridProxy>().RealGrid;
             } else if (gridInfo is Grid.Classic.GridCommons) {
