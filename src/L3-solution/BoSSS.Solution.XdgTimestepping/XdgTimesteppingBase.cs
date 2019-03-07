@@ -154,7 +154,7 @@ namespace BoSSS.Solution.XdgTimestepping {
         Coupled_Once = 3,
 
         /// <summary>
-        /// Level-Set is updated in very iteration, until convergence is reached.
+        /// Level-Set is updated in every iteration, until convergence is reached.
         /// </summary>
         Coupled_Iterative = 4
     }
