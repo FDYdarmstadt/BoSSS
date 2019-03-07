@@ -54,7 +54,7 @@ namespace CNS.IBM {
             ISpeciesMap ibmSpeciesMap,
             IBMControl control,
             IList<TimeStepConstraint> timeStepConstraints)
-            : base(standardOperator, fieldsMap, null, control.ExplicitOrder, timeStepConstraints, ibmSpeciesMap.SubGrid) {  // TO DO: I SIMPLY REMOVED PARAMETERMAP HERE; MAKE THIS MORE PRETTY
+            : base(standardOperator, fieldsMap, parametersMap, control.ExplicitOrder, timeStepConstraints, ibmSpeciesMap.SubGrid) {  // TO DO: I SIMPLY REMOVED PARAMETERMAP HERE; MAKE THIS MORE PRETTY
 
             speciesMap = ibmSpeciesMap as ImmersedSpeciesMap;
             if (this.speciesMap == null) {
@@ -96,11 +96,13 @@ namespace CNS.IBM {
             this.m_Evaluator = new Lazy<IEvaluatorNonLin>(delegate () {
                 var opi = this.Operator.GetEvaluatorEx(
                     Mapping,
-                    null, 
+                    //null,
+                    this.boundaryParameterMap,
                     Mapping,
                     edgeScheme,
                     volumeScheme);
-                opi.ActivateSubgridBoundary(volumeScheme.Domain, subGridBoundaryTreatment: SpatialOperator.SubGridBoundaryModes.InnerEdgeLTS);
+                //opi.ActivateSubgridBoundary(volumeScheme.Domain, subGridBoundaryTreatment: SpatialOperator.SubGridBoundaryModes.InnerEdgeLTS);
+                opi.ActivateSubgridBoundary(fluidCells, subGridBoundaryTreatment: SpatialOperator.SubGridBoundaryModes.InnerEdgeLTS);
                 return opi;
             });
 

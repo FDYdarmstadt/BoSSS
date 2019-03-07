@@ -26,7 +26,7 @@ using System.Runtime.Serialization;
 namespace BoSSS.Application.Rheology {
 
     /// <summary>
-    /// Control File For calculation with extra stress tensor
+    /// Control File For calculation with viscoelastic extra stress tensor
     /// </summary>
     [Serializable]
     [DataContract]
@@ -45,7 +45,7 @@ namespace BoSSS.Application.Rheology {
             base.NonLinearSolver.MaxSolverIterations = 10; //MaxIter
             base.NonLinearSolver.MinSolverIterations = 1; //MinIter
             base.NonLinearSolver.ConvergenceCriterion = 1.0e-10; //ConvCrit
-            base.NonLinearSolver.SolverCode = NonLinearSolverConfig.Code.Picard; //NonLinearSolver
+            base.NonLinearSolver.SolverCode = NonLinearSolverConfig.Code.Newton; //NonLinearSolver
             base.NonLinearSolver.UnderRelax = 1.0; //UnderRelax
         }
 
@@ -72,116 +72,167 @@ namespace BoSSS.Application.Rheology {
         [DataMember]
         public double Weissenberg = 0.5;
 
-        //Retardation vs Relaxation ratio (beta = lambda_2 / lambda_1 = eta_s / eta_0)
+        /// <summary>
+        /// Retardation vs Relaxation ratio (beta = lambda_2 / lambda_1 = eta_s / eta_0)
+        /// </summary>
         [DataMember]
         public double beta = 0.11;
 
-        // Relaxation factor for convective part in constitutive equation
+        /// <summary>
+        /// Relaxation factor for convective part in constitutive equation
+        /// </summary>
         [DataMember]
         public double alpha = 0.5;
 
-        //determines which implementation of objective Term should be used:
-        // =1 only velocity gradient as param
-        // =0 only stress tensor as param
+        /// <summary>
+        /// determines which implementation of objective Term should be used:
+        /// =1 only velocity gradient as param
+        /// =0 only stress tensor as param
+        /// </summary>
         [DataMember]
-        public double ObjectiveParam = 0;
+        public double ObjectiveParam = 1.0;
 
         //_____________________________________________________________________________________________
 
         //SOLVING SYSTEM
         //_____________________________________________________________________________________________
-        // Stokes (true) or Navier-Stokes (false) flow?
-        [DataMember]
-        public bool Stokes = true;
 
-        //insert initial conditions
+        /// <summary>
+        /// Stokes (true) or Navier-Stokes (false) flow?
+        /// </summary>
+        [DataMember]
+        public bool Stokes = false;
+
+        /// <summary>
+        /// insert initial conditions
+        /// </summary>
         [DataMember]
         public bool SetInitialConditions = true;
 
-        //adds a gravity source to the RHS
+        /// <summary>
+        /// adds a gravity source to the RHS
+        /// </summary>
         [DataMember]
         public bool GravitySource = false;
 
-        //updating algorithm for u 
+        /// <summary>
+        /// updating algorithm for u
+        /// </summary>
         [DataMember]
         public bool UpdateUAlg = false;
+
+        /// <summary>
+        /// Convergence criterion stresses
+        /// </summary>
         [DataMember]
         public double ConvCritStress = 1E-10;
 
-        // Raise Weissenberg Number? which increment?
+        /// <summary>
+        /// Raise Weissenberg Number?
+        /// </summary>
         [DataMember]
         public bool RaiseWeissenberg = false;
+
+        /// <summary>
+        /// which increment?
+        /// </summary>
         [DataMember]
         public double WeissenbergIncrement = 0.1;
 
-        //Use Persson Sensor to detect high energy modes of singularities
+        /// <summary>
+        /// Use Persson Sensor to detect high energy modes of singularities
+        /// </summary>
         [DataMember]
         public bool UsePerssonSensor = false;
-        //bound for perssonsensor should be around 1e-7 - 1e-8 that there is refinement or art. diffusion behind the cylinder!
+
+        /// <summary>
+        /// bound for perssonsensor should be around 1e-7 - 1e-8 that there is refinement or art. diffusion behind the cylinder!
+        /// </summary>
         [DataMember]
         public double SensorLimit = 1e-7;
 
-        //Use artificial Diffusion for smoothing singularities in stresses
+        /// <summary>
+        /// Use artificial Diffusion for smoothing singularities in stresses
+        /// </summary>
         [DataMember]
         public bool UseArtificialDiffusion = false;
 
-        // Fixed SrcPressureGradient which should be used if periodic BC are applied
+        /// <summary>
+        /// periodic BC?
+        /// </summary>
         [DataMember]
         public bool FixedStreamwisePeriodicBC = true;
+
+        /// <summary>
+        /// Fixed SrcPressureGradient which should be used if periodic BC are applied
+        /// </summary>
         [DataMember]
         public double[] SrcPressureGrad = new double[] { -1, 0 };
 
-        // penalty factor in viscous part (SIP)
+        /// <summary>
+        /// penalty factor in viscous part (SIP)
+        /// </summary>
         [DataMember]
-        public double ViscousPenaltyScaling = 10;
+        public double ViscousPenaltyScaling = 1;
 
-        // Penalty Values LDG (alpha, beta; Lit. e.g. Arnold et al. Unified Analysis of DG methods)
+        /// <summary>
+        /// Penalty Values LDG (alpha, beta; Lit. Cockburn (2002) Local DG Methods for the Stokes system)
+        /// Penalty in Stress Divergence (beta)
+        /// </summary>
         [DataMember]
-        public double[] Penalty1 = { 1.0, 1.0 }; //Penalty in Stress Divergence (beta)
-        [DataMember]
-        public double Penalty2 = 1.0; //Penalty in Constitutive Viscosity (alpha)
-        [DataMember]
-        public double[] PresPenalty1 = { 1.0, 1.0 }; //Penalty for pressure/conti (beta)
-        [DataMember]
-        public double PresPenalty2 = 1.0; //Penalty for pressure (alpha)
-        [DataMember]
-        public double StressPenalty = 1.0; //penalty for stress in objective term
+        public double[] Penalty1 = { 0, 0 };
 
-        ////Iterations for nonlinear solver (NS)
-        //public int MaxIter = 10;
-        //public int MinIter = 1;
-        //public double ConvCrit = 1E-10;
-        //public double ConvCritGMRES = 1E-6;
-        //public double UnderRelax = 1.0;
+        /// <summary>
+        /// Penalty in Constitutive Viscosity (alpha)
+        /// </summary>
+        [DataMember]
+        public double Penalty2 = 1.0;
 
-        ///// <summary>
-        ///// Which linear solver should be used.
-        ///// </summary>
-        //public ISolverSmootherTemplate LinearSolver = new DirectSolver() { WhichSolver = DirectSolver._whichSolver.MUMPS };
+        /// <summary>
+        /// Penalty for pressure/conti (beta)
+        /// </summary>
+        [DataMember]
+        public double[] PresPenalty1 = { 0, 0 };
 
-        ////Which nonliner Solver Method in iteration (Fixpunkt = Picard or Newton)
-        //public NonlinearSolverMethod NonlinearMethod = NonlinearSolverMethod.Picard;
+        /// <summary>
+        /// Penalty for pressure (alpha)
+        /// </summary>
+        [DataMember]
+        public double PresPenalty2 = 1.0;
 
-        // Block-Preconditiond for the velocity/momentum-block of the saddle-point system
+        /// <summary>
+        /// penalty for stress in objective term
+        /// </summary>
+        [DataMember]
+        public double StressPenalty = 1.0;
+
+        /// <summary>
+        /// Block-Preconditiond for the velocity/momentum-block of the saddle-point system
+        /// </summary>
         [DataMember]
         public MultigridOperator.Mode VelocityBlockPrecondMode = MultigridOperator.Mode.SymPart_DiagBlockEquilib_DropIndefinite; //.LeftInverse_DiagBlock; // SymPart_DiagBlockEquilib;
 
-        //Block-Preconditiond for the pressure/continuity-block of the saddle-point system
+        /// <summary>
+        /// Block-Preconditiond for the pressure/continuity-block of the saddle-point system
+        /// </summary>
         [DataMember]
         public MultigridOperator.Mode PressureBlockPrecondMode = MultigridOperator.Mode.Eye; // no SymPart_Diag-Präcon, because there may be no zero on the diagonal!!!
 
-        // Block-Preconditiond for the stresses/constitutive-block of the system
+        /// <summary>
+        /// Block-Preconditiond for the stresses/constitutive-block of the system
+        /// </summary>
         [DataMember]
         public MultigridOperator.Mode StressBlockPrecondMode = MultigridOperator.Mode.Eye;
 
-        // Block-Preconditiond for the stresses/constitutive-block of the system
+        /// <summary>
+        /// Block-Preconditiond for the stresses/constitutive-block of the system
+        /// </summary>
         [DataMember]
         public MultigridOperator.Mode VelocityGradientBlockPrecondMode = MultigridOperator.Mode.Eye;
 
-        ////Aggregation levels for multigrid
-        //public int MultigridNoOfLevels = 0; wird nicht verwendet und ist obsolet, siehe Konstruktor ...
-
-        //Refinement level for adaptive mesh refinement
+        /// <summary>
+        /// Refinement level for adaptive mesh refinement
+        /// </summary>
         [DataMember]
         public int RefinementLevel = 0;
         //_____________________________________________________________________________________________
@@ -190,29 +241,51 @@ namespace BoSSS.Application.Rheology {
         // TIMESTEPPING
         //_____________________________________________________________________________________________
 
-        // Timestep (default is large for steady calculation)
+        /// <summary>
+        /// Timestep (default is large for steady calculation)
+        /// </summary>
         [DataMember]
         public double dt = 1E20;
 
+        /// <summary>
+        /// Timestepping scheme
+        /// </summary>
         public enum TimesteppingScheme {
 
-
+            /// <summary>
+            /// ImplicitEuler
+            /// </summary>
             ImplicitEuler = 1,
-
+            /// <summary>
+            /// CrankNicolson
+            /// </summary>
             CrankNicolson = 2,
-
+            /// <summary>
+            /// BDF2
+            /// </summary>
             BDF2 = 3,
-
+            /// <summary>
+            /// BDF3
+            /// </summary>
             BDF3 = 4,
-
+            /// <summary>
+            /// BDF4
+            /// </summary>
             BDF4 = 5,
-
+            /// <summary>
+            /// BDF5
+            /// </summary>
             BDF5 = 6,
-
+            /// <summary>
+            /// BDF6
+            /// </summary>
             BDF6 = 7
 
 
         }
+        /// <summary>
+        /// Timestepper scheme
+        /// </summary>
         [DataMember]
         public TimesteppingScheme Timestepper_Scheme;
         //_____________________________________________________________________________________________
@@ -220,38 +293,62 @@ namespace BoSSS.Application.Rheology {
         //DEBUGGING PARAMETERS
         //_____________________________________________________________________________________________
 
-        // Analysis of Operator Matrix (rank, cond...)
+        /// <summary>
+        /// Analysis of Operator Matrix (rank, cond...)?
+        /// </summary>
         [DataMember]
         public bool OperatorMatrixAnalysis = false;
 
-        //Compute L2 Error of exact solution
+        /// <summary>
+        /// Compute L2 Error of exact solution?
+        /// </summary>
         [DataMember]
         public bool ComputeL2Error = false;
 
-        //Compute body forces on wall
+        /// <summary>
+        /// Compute body forces on wall?
+        /// </summary>
         [DataMember]
         public bool Bodyforces = false;
 
-        //Analysis Level Operator Matrix
+        /// <summary>
+        /// Analysis Level Operator Matrix
+        /// </summary>
         [DataMember]
         public int AnalysisLevel = 2;
 
-        // solver is turned off and residual of initial value/exact solution is evaluated, used to 
-        // test the consistency of the implementation. We need an initial condition for pressure.
+        /// <summary>
+        /// solver is turned off and residual of initial value/exact solution is evaluated, used to test the consistency of the implementation. We need an initial condition for pressure.
+        /// </summary>
         [DataMember]
         public bool SkipSolveAndEvaluateResidual = false;
+
+        /// <summary>
+        /// Initial pressure?
+        /// </summary>
         [DataMember]
         public bool SetInitialPressure = false;
 
-        //Analytical solution for linearized problem A(u_ex) * u_new = b(u_ex)
+        /// <summary>
+        /// Analytical solution for linearized problem A(u_ex) * u_new = b(u_ex)?
+        /// </summary>
         public bool SetParamsAnalyticalSol = false;
 
+        /// <summary>
+        /// default velocity U function
+        /// </summary>
         [NonSerialized]
         public Func<double[], double> VelFunctionU = X => 0;
 
+        /// <summary>
+        /// default velocity V function
+        /// </summary>
         [NonSerialized]
         public Func<double[], double> VelFunctionV = X => 0;
 
+        /// <summary>
+        /// default pressure function
+        /// </summary>
         [NonSerialized]
         public Func<double[], double> PresFunction = X => 0;
 
@@ -275,26 +372,44 @@ namespace BoSSS.Application.Rheology {
         public Func<double[], double, double>[] ExSol_Stress;
 
         /// <summary>
-        /// Exact solution for Gravity source.
+        /// Exact solution for GravityX source.
         /// </summary>
         [NonSerialized]
         public Func<double[], double, double> GravityX;
+        /// <summary>
+        /// Exact solution for GravityY source.
+        /// </summary>
         [NonSerialized]
         public Func<double[], double, double> GravityY;
+        /// <summary>
+        /// Exact solution for GravityXX source.
+        /// </summary>
         [NonSerialized]
         public Func<double[], double, double> GravityXX;
+        /// <summary>
+        /// Exact solution for GravityXY source.
+        /// </summary>
         [NonSerialized]
         public Func<double[], double, double> GravityXY;
+        /// <summary>
+        /// Exact solution for GravityYY source.
+        /// </summary>
         [NonSerialized]
         public Func<double[], double, double> GravityYY;
+        /// <summary>
+        /// Exact solution for GravityDiv source.
+        /// </summary>
         [NonSerialized]
         public Func<double[], double, double> GravityDiv;
 
         /// <summary>
-        /// Grid resolution and polynomial degree for Unit Testing
+        /// polynomial degree for Unit Testing
         /// </summary>
         [DataMember]
         public int deg;
+        /// <summary>
+        /// Grid resolution
+        /// </summary>
         [DataMember]
         public int grd;
 

@@ -154,6 +154,12 @@ namespace MPI.Wrappers {
         /// </remarks>
         static public void ExceptionBcast(this Exception e, MPI_Comm comm) {
             int ExcSrc = int.MaxValue;
+            ////Console.WriteLine("Reminder: test code in exception broadcast");
+            //if (e != null)
+            //    throw e;
+            //else
+            //    return;
+
             if (e != null)
                 csMPI.Raw.Comm_Rank(comm, out ExcSrc);
 
