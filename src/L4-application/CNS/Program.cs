@@ -39,6 +39,7 @@ using System.Threading;
 using BoSSS.Solution.CompressibleFlowCommon.MaterialProperty;
 using CNS.Convection;
 using BoSSS.Foundation.Grid;
+using ilPSP.Utils;
 
 namespace CNS {
 
@@ -270,6 +271,9 @@ namespace CNS {
                 using (new BlockTrace("TimeStepper.Perform", ht)) {
                     Exception e = null;
                     try {
+                        //TimeStepper.CurrentState.SaveToTextFile("tsinp-lts.txt");
+                        //ilPSP.Environment.GlobalVec =  TimeStepper.CurrentState.ToArray();
+                        //double dist = ilPSP.Environment.CompareTo(TimeStepper.CurrentState);
                         dt = TimeStepper.Perform(dt);
                     } catch (Exception ee) {
                         e = ee;

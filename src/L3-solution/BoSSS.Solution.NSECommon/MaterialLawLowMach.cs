@@ -71,17 +71,17 @@ namespace BoSSS.Solution.NSECommon {
         /// </summary>
         public override IList<string> ParameterOrdering {
             get {
-                return new string[] { VariableNames.Temperature0 }; 
+                return new string[] { VariableNames.Temperature0 };
+                //, VariableNames.MassFraction0_0, VariableNames.MassFraction1_0, VariableNames.MassFraction2_0, VariableNames.MassFraction3_0}; 
             }
         }
+         
 
-
-      
-        /// <summary>
-        /// Hack to initalize ThermodynamicPressure - called by NSE_SIMPLE.VariableSet.Initialize()
-        /// </summary>
-        /// <param name="ThermodynamicPressure"></param>
-        public void Initialize(ScalarFieldHistory<SinglePhaseField> ThermodynamicPressure) {
+    /// <summary>
+    /// Hack to initalize ThermodynamicPressure - called by NSE_SIMPLE.VariableSet.Initialize()
+    /// </summary>
+    /// <param name="ThermodynamicPressure"></param>
+    public void Initialize(ScalarFieldHistory<SinglePhaseField> ThermodynamicPressure) {
             if (!IsInitialized) {
                 this.ThermodynamicPressure = ThermodynamicPressure;
                 IsInitialized = true;
@@ -101,6 +101,7 @@ namespace BoSSS.Solution.NSECommon {
         public override double GetDensity(params double[] phi) {
             if (IsInitialized) {
                 double rho = this.ThermodynamicPressure.Current.GetMeanValue(0) / phi[0];
+              // rho = 1.0;
                 return rho;
             } else {
                 throw new ApplicationException("ThermodynamicPressure is not initialized.");

@@ -73,13 +73,19 @@ namespace BoSSS.Solution.NSECommon {
                 rho = base.ThermodynamicPressure.Current.GetMeanValue(0) / (phi[0] * MassFractionsOverMolarFractions);
                 
                 Debug.Assert(!(double.IsNaN(rho) || double.IsInfinity(rho)));
+               // rho = 1.0;
                 return rho;
             }
             else {
                 throw new ApplicationException("ThermodynamicPressure is not initialized.");
             }
         }
-
+        
+        public override IList<string> ParameterOrdering {
+            get {
+                return new string[] { VariableNames.Temperature0 , VariableNames.MassFraction0_0, VariableNames.MassFraction1_0, VariableNames.MassFraction2_0, VariableNames.MassFraction3_0}; 
+            }
+        }
         //public double GetHeatConductivity(double phi) {
         //    switch (this.MatParamsMode) {
         //        case MaterialParamsMode.Constant:
