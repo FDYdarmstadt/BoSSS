@@ -52,7 +52,7 @@ namespace BoSSS.Application.FSI_Solver
             
             m_HistoryLength = HistoryLength;
             m_Dim = Dim;
-            
+
             #region Particle history
             // =============================   
             for (int i = 0; i < HistoryLength; i++) {
@@ -168,10 +168,10 @@ namespace BoSSS.Application.FSI_Solver
         [DataMember]
         public bool neglectAddedDamping = true;
 
-        public double[,] Dvv = new double[2, 2];
-        public double[,] Dvw = new double[2, 2];
-        public double[,] Dwv = new double[2, 2];
-        public double[,] Dww = new double[2, 2];
+        double[,] addedDampingTensorVV = new double[2, 2];
+        double[,] addedDampingTensorVW = new double[2, 2];
+        double[,] addedDampingTensorWV = new double[2, 2];
+        double[,] addedDampingTensorWW = new double[2, 2];
         #endregion
 
         #region Geometric parameters
@@ -310,16 +310,16 @@ namespace BoSSS.Application.FSI_Solver
         public Func<double[], double, double> phi_P;
 
         /// <summary>
+        /// Sets the gravity in vertical direction, default is 0.0
+        /// </summary>
+        [DataMember]
+        public double gravityVertical = 0.0;
+
+        /// <summary>
         /// Set true if the particle should be an active particle, i.e. self driven
         /// </summary>
         [DataMember]
         public bool activeParticle = false;
-
-        /// <summary>
-        /// Sets the gravity in vertical direction, default is 0.0
-        /// </summary>
-        [DataMember]
-        public double[] gravity = new double[3];
 
         /// <summary>
         /// Convergence criterion for the calculation of the forces and torque
@@ -433,10 +433,6 @@ namespace BoSSS.Application.FSI_Solver
 
             if (m_Dim != 2 && m_Dim != 3)
                 throw new NotSupportedException("Unknown particle dimension: m_Dim = " + m_Dim);
-
-            // Position
-            // =============================
-            var tempPos = positionAtIteration[0].CloneAs();
             for (int d = 0; d < m_Dim; d++)
             {
                 //gravity[d] = 0;
@@ -449,24 +445,14 @@ namespace BoSSS.Application.FSI_Solver
                     throw new ArithmeticException("Error trying to update particle position");
             }
             positionAtTimestep[0] = positionAtIteration[0];
+        }
 
-            // Angle
-            // =============================
-            //double tempTorque = (hydrodynTorqueAtTimestep[1] + hydrodynTorqueAtIteration[0]) / 2;
-            //particleAnglePerIteration[0] = AnglePerTimestep[1] + dt * rotationalVelocityAtTimestep[1] + (dt * dt / MomentOfInertia_P) * tempTorque / 2;
-
-            double beta = 1;
-            double AccRot = new double();
-            double oldAccRot = new double();
-            double predictAccRot = 2 * AccRot - oldAccRot;
-            oldAccRot = AccRot;
-            double tempTorque = (hydrodynTorqueAtTimestep[1] + hydrodynTorqueAtIteration[0]) / 2 + beta * dt * Dww[0, 0] * predictAccRot;
-            double MomentofInertia_m = MomentOfInertia_P + beta * dt * Dvv[0, 0];
-            AccRot = tempTorque / MomentofInertia_m;
-            angleAtIteration[0] = angleAtTimestep[1] + rotationalVelocityAtTimestep[1] * dt + dt.Pow2() * (predictAccRot + AccRot) / 4;
+        public void CalculateParticleAngle(double dt)
+        {
+            angleAtIteration[0] = angleAtTimestep[1] + rotationalVelocityAtTimestep[1] + dt * (rotationalAccelarationAtTimestep[1] + rotationalAccelarationAtIteration[0]) / 2;
+            if (double.IsNaN(angleAtIteration[0]) || double.IsInfinity(angleAtIteration[0]))
+                throw new ArithmeticException("Error trying to update particle angle");
             angleAtTimestep[0] = angleAtIteration[0];
-
-            UpdateLevelSetFunction();
         }
 
         public void ResetParticlePosition()
@@ -506,10 +492,10 @@ namespace BoSSS.Application.FSI_Solver
 
         public void CalculateTranslationalAcceleration(double dt, double fluidDensity, double addedDampingCoeff = 1)
         {
-            double D1 = Mass_P + addedDampingCoeff * dt * Dvv[0, 0];
-            double D2 = Mass_P + addedDampingCoeff * dt * Dvv[1, 1];
-            double D3 = addedDampingCoeff * dt * Dvv[1, 0];
-            double D4 = addedDampingCoeff * dt * Dvv[0, 1];
+            double D1 = Mass_P + addedDampingCoeff * dt * addedDampingTensorVV[0, 0];
+            double D2 = Mass_P + addedDampingCoeff * dt * addedDampingTensorVV[1, 1];
+            double D3 = addedDampingCoeff * dt * addedDampingTensorVV[1, 0];
+            double D4 = addedDampingCoeff * dt * addedDampingTensorVV[0, 1];
             double[] tempAcc = new double[2];
 
             tempAcc[0] = (hydrodynForcesAtIteration[0][0] - D4 * (D3 * hydrodynForcesAtIteration[0][0] - D1 * hydrodynForcesAtIteration[0][1]) / (D3 * D4 - D1 * D2)) / D1;
@@ -650,7 +636,7 @@ namespace BoSSS.Application.FSI_Solver
 
         public void CalculateAngularAcceleration(double dt, double addedDampingCoeff = 1)
         {
-            double MomentofInertia_m = MomentOfInertia_P + addedDampingCoeff * dt * Dvv[0, 0];
+            double MomentofInertia_m = MomentOfInertia_P + addedDampingCoeff * dt * addedDampingTensorVV[0, 0];
             saveValueToList(rotationalAccelarationAtIteration, hydrodynTorqueAtIteration[0] / MomentofInertia_m);
         }
 
@@ -662,8 +648,7 @@ namespace BoSSS.Application.FSI_Solver
             saveValueToList(rotationalVelocityAtIteration, temp);
             rotationalVelocityAtTimestep[0] = rotationalVelocityAtIteration[0];
         }
-
-        #region Update angular velocity
+        
         /// <summary>
         /// Calculate the new angular velocity of the particle using explicit Euler scheme.
         /// </summary>
@@ -700,7 +685,6 @@ namespace BoSSS.Application.FSI_Solver
             saveValueToList(rotationalVelocityAtIteration, newAngularVelocity);
             rotationalVelocityAtTimestep[0] = rotationalVelocityAtIteration[0];
         }
-        #endregion
         
         #region Cloning
         /// <summary>
@@ -790,16 +774,16 @@ namespace BoSSS.Application.FSI_Solver
                                     switch (i)
                                     {
                                         case 0:
-                                            Dvv[d1, d2] += ResultsOfIntegration[l, 0];
+                                            addedDampingTensorVV[d1, d2] += ResultsOfIntegration[l, 0];
                                             break;
                                         case 1:
-                                            Dvw[d1, d2] += ResultsOfIntegration[l, 0];
+                                            addedDampingTensorVW[d1, d2] += ResultsOfIntegration[l, 0];
                                             break;
                                         case 2:
-                                            Dwv[d1, d2] += ResultsOfIntegration[l, 0];
+                                            addedDampingTensorWV[d1, d2] += ResultsOfIntegration[l, 0];
                                             break;
                                         case 3:
-                                            Dww[d1, d2] += ResultsOfIntegration[l, 0];
+                                            addedDampingTensorWW[d1, d2] += ResultsOfIntegration[l, 0];
                                             break;
                                     }
                                 }
@@ -826,25 +810,25 @@ namespace BoSSS.Application.FSI_Solver
             R[0, 1] = Ep[1, 0] * Ep[0, 0] + Ep[1, 1] * Ep[1, 0];
             R[1, 1] = Ep[1, 0] * Ep[0, 1] + Ep[1, 1].Pow2();
 
-            Dvv[0, 0] = R[0, 0].Pow2() * Dvv[0, 0] + R[1, 0] * R[0, 0] * Dvv[0, 1] + R[0, 0] * R[1, 0] * Dvv[1, 0] + R[1, 0].Pow2() * Dvv[1, 1];
-            Dvv[1, 0] = R[0, 0] * R[0, 1] * Dvv[0, 0] + R[1, 0] * R[0, 1] * Dvv[0, 1] + R[0, 0] * R[1, 1] * Dvv[1, 0] + R[1, 0] * R[1, 1] * Dvv[1, 1];
-            Dvv[0, 1] = R[0, 0] * R[0, 1] * Dvv[0, 0] + R[0, 0] * R[1, 1] * Dvv[0, 1] + R[0, 0] * R[0, 1] * Dvv[1, 0] + R[1, 0] * R[1, 1] * Dvv[1, 1];
-            Dvv[1, 1] = R[0, 1].Pow2() * Dvv[0, 0] + R[1, 1] * R[0, 1] * Dvv[0, 1] + R[0, 1] * R[1, 1] * Dvv[1, 0] + R[1, 1].Pow2() * Dvv[1, 1];
+            addedDampingTensorVV[0, 0] = R[0, 0].Pow2() * addedDampingTensorVV[0, 0] + R[1, 0] * R[0, 0] * addedDampingTensorVV[0, 1] + R[0, 0] * R[1, 0] * addedDampingTensorVV[1, 0] + R[1, 0].Pow2() * addedDampingTensorVV[1, 1];
+            addedDampingTensorVV[1, 0] = R[0, 0] * R[0, 1] * addedDampingTensorVV[0, 0] + R[1, 0] * R[0, 1] * addedDampingTensorVV[0, 1] + R[0, 0] * R[1, 1] * addedDampingTensorVV[1, 0] + R[1, 0] * R[1, 1] * addedDampingTensorVV[1, 1];
+            addedDampingTensorVV[0, 1] = R[0, 0] * R[0, 1] * addedDampingTensorVV[0, 0] + R[0, 0] * R[1, 1] * addedDampingTensorVV[0, 1] + R[0, 0] * R[0, 1] * addedDampingTensorVV[1, 0] + R[1, 0] * R[1, 1] * addedDampingTensorVV[1, 1];
+            addedDampingTensorVV[1, 1] = R[0, 1].Pow2() * addedDampingTensorVV[0, 0] + R[1, 1] * R[0, 1] * addedDampingTensorVV[0, 1] + R[0, 1] * R[1, 1] * addedDampingTensorVV[1, 0] + R[1, 1].Pow2() * addedDampingTensorVV[1, 1];
 
-            Dvw[0, 0] = R[0, 0].Pow2() * Dvw[0, 0] + R[1, 0] * R[0, 0] * Dvw[0, 1] + R[0, 0] * R[1, 0] * Dvw[1, 0] + R[1, 0].Pow2() * Dvw[1, 1];
-            Dvw[1, 0] = R[0, 0] * R[0, 1] * Dvw[0, 0] + R[1, 0] * R[0, 1] * Dvw[0, 1] + R[0, 0] * R[1, 1] * Dvw[1, 0] + R[1, 0] * R[1, 1] * Dvw[1, 1];
-            Dvw[0, 1] = R[0, 0] * R[0, 1] * Dvw[0, 0] + R[0, 0] * R[1, 1] * Dvw[0, 1] + R[0, 0] * R[0, 1] * Dvw[1, 0] + R[1, 0] * R[1, 1] * Dvw[1, 1];
-            Dvw[1, 1] = R[0, 1].Pow2() * Dvw[0, 0] + R[1, 1] * R[0, 1] * Dvw[0, 1] + R[0, 1] * R[1, 1] * Dvw[1, 0] + R[1, 1].Pow2() * Dvw[1, 1];
+            addedDampingTensorVW[0, 0] = R[0, 0].Pow2() * addedDampingTensorVW[0, 0] + R[1, 0] * R[0, 0] * addedDampingTensorVW[0, 1] + R[0, 0] * R[1, 0] * addedDampingTensorVW[1, 0] + R[1, 0].Pow2() * addedDampingTensorVW[1, 1];
+            addedDampingTensorVW[1, 0] = R[0, 0] * R[0, 1] * addedDampingTensorVW[0, 0] + R[1, 0] * R[0, 1] * addedDampingTensorVW[0, 1] + R[0, 0] * R[1, 1] * addedDampingTensorVW[1, 0] + R[1, 0] * R[1, 1] * addedDampingTensorVW[1, 1];
+            addedDampingTensorVW[0, 1] = R[0, 0] * R[0, 1] * addedDampingTensorVW[0, 0] + R[0, 0] * R[1, 1] * addedDampingTensorVW[0, 1] + R[0, 0] * R[0, 1] * addedDampingTensorVW[1, 0] + R[1, 0] * R[1, 1] * addedDampingTensorVW[1, 1];
+            addedDampingTensorVW[1, 1] = R[0, 1].Pow2() * addedDampingTensorVW[0, 0] + R[1, 1] * R[0, 1] * addedDampingTensorVW[0, 1] + R[0, 1] * R[1, 1] * addedDampingTensorVW[1, 0] + R[1, 1].Pow2() * addedDampingTensorVW[1, 1];
 
-            Dwv[0, 0] = R[0, 0].Pow2() * Dwv[0, 0] + R[1, 0] * R[0, 0] * Dwv[0, 1] + R[0, 0] * R[1, 0] * Dwv[1, 0] + R[1, 0].Pow2() * Dwv[1, 1];
-            Dwv[1, 0] = R[0, 0] * R[0, 1] * Dwv[0, 0] + R[1, 0] * R[0, 1] * Dwv[0, 1] + R[0, 0] * R[1, 1] * Dwv[1, 0] + R[1, 0] * R[1, 1] * Dwv[1, 1];
-            Dwv[0, 1] = R[0, 0] * R[0, 1] * Dwv[0, 0] + R[0, 0] * R[1, 1] * Dwv[0, 1] + R[0, 0] * R[0, 1] * Dwv[1, 0] + R[1, 0] * R[1, 1] * Dwv[1, 1];
-            Dwv[1, 1] = R[0, 1].Pow2() * Dwv[0, 0] + R[1, 1] * R[0, 1] * Dwv[0, 1] + R[0, 1] * R[1, 1] * Dwv[1, 0] + R[1, 1].Pow2() * Dwv[1, 1];
+            addedDampingTensorWV[0, 0] = R[0, 0].Pow2() * addedDampingTensorWV[0, 0] + R[1, 0] * R[0, 0] * addedDampingTensorWV[0, 1] + R[0, 0] * R[1, 0] * addedDampingTensorWV[1, 0] + R[1, 0].Pow2() * addedDampingTensorWV[1, 1];
+            addedDampingTensorWV[1, 0] = R[0, 0] * R[0, 1] * addedDampingTensorWV[0, 0] + R[1, 0] * R[0, 1] * addedDampingTensorWV[0, 1] + R[0, 0] * R[1, 1] * addedDampingTensorWV[1, 0] + R[1, 0] * R[1, 1] * addedDampingTensorWV[1, 1];
+            addedDampingTensorWV[0, 1] = R[0, 0] * R[0, 1] * addedDampingTensorWV[0, 0] + R[0, 0] * R[1, 1] * addedDampingTensorWV[0, 1] + R[0, 0] * R[0, 1] * addedDampingTensorWV[1, 0] + R[1, 0] * R[1, 1] * addedDampingTensorWV[1, 1];
+            addedDampingTensorWV[1, 1] = R[0, 1].Pow2() * addedDampingTensorWV[0, 0] + R[1, 1] * R[0, 1] * addedDampingTensorWV[0, 1] + R[0, 1] * R[1, 1] * addedDampingTensorWV[1, 0] + R[1, 1].Pow2() * addedDampingTensorWV[1, 1];
 
-            Dww[0, 0] = R[0, 0].Pow2() * Dww[0, 0] + R[1, 0] * R[0, 0] * Dww[0, 1] + R[0, 0] * R[1, 0] * Dww[1, 0] + R[1, 0].Pow2() * Dww[1, 1];
-            Dww[1, 0] = R[0, 0] * R[0, 1] * Dww[0, 0] + R[1, 0] * R[0, 1] * Dww[0, 1] + R[0, 0] * R[1, 1] * Dww[1, 0] + R[1, 0] * R[1, 1] * Dww[1, 1];
-            Dww[0, 1] = R[0, 0] * R[0, 1] * Dww[0, 0] + R[0, 0] * R[1, 1] * Dww[0, 1] + R[0, 0] * R[0, 1] * Dww[1, 0] + R[1, 0] * R[1, 1] * Dww[1, 1];
-            Dww[1, 1] = R[0, 1].Pow2() * Dww[0, 0] + R[1, 1] * R[0, 1] * Dww[0, 1] + R[0, 1] * R[1, 1] * Dww[1, 0] + R[1, 1].Pow2() * Dww[1, 1];
+            addedDampingTensorWW[0, 0] = R[0, 0].Pow2() * addedDampingTensorWW[0, 0] + R[1, 0] * R[0, 0] * addedDampingTensorWW[0, 1] + R[0, 0] * R[1, 0] * addedDampingTensorWW[1, 0] + R[1, 0].Pow2() * addedDampingTensorWW[1, 1];
+            addedDampingTensorWW[1, 0] = R[0, 0] * R[0, 1] * addedDampingTensorWW[0, 0] + R[1, 0] * R[0, 1] * addedDampingTensorWW[0, 1] + R[0, 0] * R[1, 1] * addedDampingTensorWW[1, 0] + R[1, 0] * R[1, 1] * addedDampingTensorWW[1, 1];
+            addedDampingTensorWW[0, 1] = R[0, 0] * R[0, 1] * addedDampingTensorWW[0, 0] + R[0, 0] * R[1, 1] * addedDampingTensorWW[0, 1] + R[0, 0] * R[0, 1] * addedDampingTensorWW[1, 0] + R[1, 0] * R[1, 1] * addedDampingTensorWW[1, 1];
+            addedDampingTensorWW[1, 1] = R[0, 1].Pow2() * addedDampingTensorWW[0, 0] + R[1, 1] * R[0, 1] * addedDampingTensorWW[0, 1] + R[0, 1] * R[1, 1] * addedDampingTensorWW[1, 0] + R[1, 1].Pow2() * addedDampingTensorWW[1, 1];
 
         }
 
@@ -1379,9 +1363,9 @@ namespace BoSSS.Application.FSI_Solver
             }
             // update forces and torque
             int beta = 1;
-            forces_underR[0] = forces_underR[0] + Dvv[0, 0] * beta * transAccelerationAtIteration[0][0] * dt + Dvv[1, 0] * beta * transAccelerationAtIteration[0][1] * dt + (particleDensity - fluidDensity) * Area_P * gravity[0];
-            forces_underR[1] = forces_underR[1] + Dvv[0, 1] * beta * transAccelerationAtIteration[0][0] * dt + Dvv[1, 1] * beta * transAccelerationAtIteration[0][1] * dt + (particleDensity - fluidDensity) * Area_P * gravity[1];
-            torque_underR = torque_underR + beta * dt * Dww[0, 0] * rotationalAccelarationAtIteration[0];
+            forces_underR[0] = forces_underR[0] + addedDampingTensorVV[0, 0] * beta * transAccelerationAtIteration[0][0] * dt + addedDampingTensorVV[1, 0] * beta * transAccelerationAtIteration[0][1] * dt;
+            forces_underR[1] = forces_underR[1] + addedDampingTensorVV[0, 1] * beta * transAccelerationAtIteration[0][0] * dt + addedDampingTensorVV[1, 1] * beta * transAccelerationAtIteration[0][1] * dt + (particleDensity - fluidDensity) * Area_P * gravityVertical;
+            torque_underR = torque_underR + beta * dt * addedDampingTensorWW[0, 0] * rotationalAccelarationAtIteration[0];
             saveMultidimValueToList(hydrodynForcesAtIteration, forces_underR);
             saveValueToList(hydrodynTorqueAtIteration, torque_underR);
             hydrodynForcesAtTimestep[0] = hydrodynForcesAtIteration[0];

@@ -597,6 +597,7 @@ namespace BoSSS.Application.FSI_Solver {
                     }
                     p.ComputeParticleRe(this.Control.PhysicalParameters.mu_A);
                     p.CalculateParticlePosition(dt, this.Control.PhysicalParameters.rho_A);
+                    p.CalculateParticleAngle(dt);
                 }
                 
             }

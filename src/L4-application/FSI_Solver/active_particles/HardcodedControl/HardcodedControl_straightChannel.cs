@@ -133,7 +133,6 @@ namespace BoSSS.Application.FSI_Solver
                 C.Particles.Add(new Particle_Ellipsoid(4, new double[] { 0 , 0.0 }, startAngl: 10)
                 {
                     particleDensity = 1e-15,
-                    gravityVertical = 0,
                     activeParticle = true,
                     active_stress_P = stressM,
                     thickness_P = 0.4 * BaseSize,
@@ -325,7 +324,6 @@ namespace BoSSS.Application.FSI_Solver
                 C.Particles.Add(new Particle_Ellipsoid(4, new double[] { -10, 0.0 }, startAngl: 0)
                 {
                     particleDensity = 2,//pg/(mum^3)
-                    gravityVertical = 0,
                     activeParticle = true,
                     active_stress_P = stressM,
                     thickness_P = 0.4 * BaseSize,
