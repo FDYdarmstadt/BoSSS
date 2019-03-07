@@ -642,9 +642,12 @@ namespace BoSSS.Application.FSI_Solver
             rotationalAccelarationAtTimestep[0] = rotationalAccelarationAtIteration[0];
         }
 
-        public void CalculateAngularAcceleration()
+        public void CalculateAngularAcceleration(double dt)
         {
-
+            double beta = 1;
+            double tempTorque = (hydrodynTorqueAtTimestep[1] + hydrodynTorqueAtIteration[0]) / 2 + beta * dt * Dww[0, 0] * rotationalAccelarationAtIteration[0];
+            double MomentofInertia_m = MomentOfInertia_P + beta * dt * Dvv[0, 0];
+            saveValueToList(rotationalAccelarationAtIteration, tempTorque / MomentofInertia_m);
         }
 
         public void PredictAngularVelocity()
@@ -667,7 +670,7 @@ namespace BoSSS.Application.FSI_Solver
         /// <param name="ParticleMass"></param>
         /// <param name="Torque"></param>
         /// <returns></returns>
-        public void UpdateAngularVelocity(double dt, int noOfSubtimesteps = 1) {
+        public void CalculateAngularVelocity(double dt, int noOfSubtimesteps = 1) {
 
             // save rotation of the last timestep
             if (iteration_counter_P == 0)
@@ -697,18 +700,15 @@ namespace BoSSS.Application.FSI_Solver
             //    oldAngularVelocity = newAngularVelocity;
 
             //}
-            double beta = 1;
-            double AccRot = new double();
-            double oldAccRot = new double();
-            double predictAccRot = 2 * AccRot - oldAccRot;
-            oldAccRot = AccRot;
             for (int i = 1; i <= noOfSubtimesteps; i++)
             {
-                double tempTorque = (hydrodynTorqueAtTimestep[1] + hydrodynTorqueAtIteration[0]) / 2 + beta * dt * Dww[0, 0] * predictAccRot;
-                double MomentofInertia_m = MomentOfInertia_P + beta * dt * Dvv[0, 0];
-                AccRot = tempTorque / MomentofInertia_m;
-                newAngularVelocity = rotationalVelocityAtTimestep[1] + dt * (predictAccRot + AccRot) / 2;
+                //double tempTorque = (hydrodynTorqueAtTimestep[1] + hydrodynTorqueAtIteration[0]) / 2 + beta * dt * Dww[0, 0] * predictAccRot;
+                //double MomentofInertia_m = MomentOfInertia_P + beta * dt * Dvv[0, 0];
+                //AccRot = tempTorque / MomentofInertia_m;
+                newAngularVelocity = rotationalVelocityAtTimestep[1] + dt * (rotationalAccelarationAtIteration[1] + rotationalAccelarationAtIteration[0]) / 2;
             }
+            if (double.IsNaN(newAngularVelocity) || double.IsInfinity(newAngularVelocity))
+                throw new ArithmeticException("Error trying to calculate particle angluar velocity");
             saveValueToList(rotationalVelocityAtIteration, newAngularVelocity);
             rotationalVelocityAtTimestep[0] = rotationalVelocityAtIteration[0];
         }

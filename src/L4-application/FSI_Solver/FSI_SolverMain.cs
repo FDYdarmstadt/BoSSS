@@ -587,8 +587,8 @@ namespace BoSSS.Application.FSI_Solver {
                 {
                     if (((FSI_Control)this.Control).includeRotation == true)
                     {
-                        
-                        p.UpdateAngularVelocity(dt);
+                        p.CalculateAngularAcceleration
+                        p.CalculateAngularVelocity(dt);
                     }
                     
                     if (((FSI_Control)this.Control).includeTranslation == true)
