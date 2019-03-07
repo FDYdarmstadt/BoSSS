@@ -9,11 +9,26 @@ using MPI.Wrappers;
 
 namespace BoSSS.Foundation.IO
 {
-    class VectorDataSerializer : Serializer
+    interface IVectorDataSerializer
     {
-        public VectorDataSerializer(IFileSystemDriver driver) : base(driver)
-        {
+        T Deserialize<T>(Stream stream);
 
+        void Serialize<T>(Stream stream,T obj);
+
+        Guid SaveVector<T>(IList<T> vector);
+
+        void SaveVector<T>(IList<T> vector, Guid id);
+
+        IList<T> LoadVector<T>(Guid id, ref Partitioning part);
+    }
+
+
+    class NoInterfaceSupportSerializer : Serializer, IVectorDataSerializer
+    {
+        IFileSystemDriver m_fsDriver; 
+        public NoInterfaceSupportSerializer(IFileSystemDriver driver)
+        {
+            m_fsDriver = driver;
         }
 
         /// <summary>
@@ -370,7 +385,13 @@ namespace BoSSS.Foundation.IO
                 return ret;
             }
         }
+    }
 
+    class InterfaceSupportSerializer : NoInterfaceSupportSerializer, IVectorDataSerializer
+    {
+        public InterfaceSupportSerializer(IFileSystemDriver FsDriver) : base(FsDriver)
+        {
 
+        }
     }
 }

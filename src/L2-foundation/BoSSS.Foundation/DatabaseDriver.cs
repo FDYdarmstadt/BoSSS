@@ -46,23 +46,26 @@ namespace BoSSS.Foundation.IO {
     /// </summary>
     public partial class DatabaseDriver : MPIProcess, IDatabaseDriver {
 
-        VectorDataSerializer serializer;
+        NoInterfaceSupportSerializer serializer;
         GridDatabaseDriver gridDatabaseDriver;
         SessionDatabaseDriver sessionsDatabaseDriver;
         TimeStepDatabaseDriver timestepDatabaseDriver;
+        IFileSystemDriver fsDriver; 
 
         /// <summary>
         /// </summary>
-        /// <param name="driver">
+        /// <param name="fsDriver">
         /// the IO Driver; can be null;
         /// </param>
-        public DatabaseDriver(IFileSystemDriver driver)
+        public DatabaseDriver(IFileSystemDriver fsDriver)
         {
-            serializer = new VectorDataSerializer(driver);
-            GridSerializer typeNameSerializer = new GridSerializer(serializer);
-            gridDatabaseDriver = new GridDatabaseDriver(typeNameSerializer);
-            sessionsDatabaseDriver = new SessionDatabaseDriver(serializer);
-            timestepDatabaseDriver = new TimeStepDatabaseDriver(serializer);
+            this.fsDriver = fsDriver;
+            serializer = new NoInterfaceSupportSerializer(fsDriver);
+            var interfaceSerializer = new InterfaceSupportSerializer(fsDriver);
+            var versionedSerializer = new VersionedSerializer(serializer, interfaceSerializer);
+            gridDatabaseDriver = new GridDatabaseDriver(versionedSerializer, fsDriver);
+            sessionsDatabaseDriver = new SessionDatabaseDriver(serializer, fsDriver);
+            timestepDatabaseDriver = new TimeStepDatabaseDriver(serializer, fsDriver);
         }
 
         /// <summary>
@@ -72,10 +75,12 @@ namespace BoSSS.Foundation.IO {
 
         public void Dispose()
         {
-            serializer.Dispose();
-            gridDatabaseDriver.Dispose();
+            if (this.FsDriver is IDisposable)
+            {
+                ((IDisposable)this.FsDriver).Dispose();
+
+            }
             sessionsDatabaseDriver.Dispose();
-            timestepDatabaseDriver.Dispose();
 
             if (logger_output != null)
                 logger_output.Close();
@@ -90,7 +95,7 @@ namespace BoSSS.Foundation.IO {
             int Rank = MyRank;
 
             Stream file = null;
-            if (serializer.FsDriver != null && id != Guid.Empty)
+            if (fsDriver != null && id != Guid.Empty)
                 file = this.FsDriver.GetNewLogStream(name + "." + Rank, id);
 
             if (file == null) {
@@ -111,7 +116,7 @@ namespace BoSSS.Foundation.IO {
         /// <summary>
         /// the file system driver
         /// </summary>
-        public IFileSystemDriver FsDriver => serializer.FsDriver;
+        public IFileSystemDriver FsDriver => fsDriver;
 
         /// <summary>
         /// Tracing setup.
@@ -129,7 +134,7 @@ namespace BoSSS.Foundation.IO {
             int Rank = MyRank;
 
             Stream tracerfile = null;
-            if (serializer.FsDriver != null && id != Guid.Empty)
+            if (fsDriver != null && id != Guid.Empty)
                 tracerfile = this.FsDriver.GetNewLogStream("trace." + Rank, id);
 
             TextWriter tracertxt = null;

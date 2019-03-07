@@ -12,32 +12,26 @@ using ilPSP;
 
 namespace BoSSS.Foundation.IO
 {
-    class GridSerializer: IDisposable
+    class VersionedSerializer : IVectorDataSerializer
     {
-        VectorDataSerializer activeSerializer;
-        readonly VectorDataSerializer[] serializer;
+        IVectorDataSerializer activeSerializer;
+        readonly IVectorDataSerializer[] serializer;
 
-        public GridSerializer(params VectorDataSerializer[] dataSerializers) 
+        public VersionedSerializer(params IVectorDataSerializer[] dataSerializers) 
         {
             serializer = dataSerializers;
             activeSerializer = dataSerializers[0];
         }
 
-        public T DeserializeGrid<T>(Guid gridGuid)
+        public T Deserialize<T>(Stream stream)
         {
-            using (Stream s = GetGridStream(false, gridGuid))
-            {
-                T grid = activeSerializer.Deserialize<T>(s);
-                return grid;
-            }
+            T grid = activeSerializer.Deserialize<T>(stream);
+            return grid;
         }
 
-        public void SerializeGrid(IGrid grid)
+        public void Serialize<T>(Stream stream, T obj)
         {
-            using (Stream stream = GetGridStream(true, grid.ID))
-            {
-                activeSerializer.Serialize(stream, grid);
-            }
+            activeSerializer.Serialize(stream, obj);
         }
 
         public Guid SaveVector<T>(IList<T> vector)
@@ -55,17 +49,6 @@ namespace BoSSS.Foundation.IO
             return activeSerializer.LoadVector<T>(id, ref part);
         }
 
-        public Stream GetGridStream(bool create,Guid gID)
-        {
-            return activeSerializer.GetGridStream(create, gID);
-        }
-
-        public void Dispose()
-        {
-            foreach (var singleSerializer in serializer)
-            {
-                singleSerializer.Dispose();
-            }
-        }
     }
+
 }

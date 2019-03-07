@@ -39,7 +39,7 @@ namespace BoSSS.Application.DatabaseTests {
             var tst = new StandardDBDriverTests();
             tst.Init();
            // tst.TestCopySession();
-            tst.TestCopyGrid();
+            tst.TestRenameGrid();
             //tst.TestClearDatabase();
             tst.CleanUp();
         }

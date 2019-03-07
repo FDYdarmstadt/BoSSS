@@ -12,15 +12,16 @@ namespace BoSSS.Foundation.IO
 {
     class SessionDatabaseDriver : MPIProcess, IDisposable
     {
-        readonly VectorDataSerializer Driver;
-        public SessionDatabaseDriver(VectorDataSerializer driver)
+        readonly IVectorDataSerializer Driver;
+        IFileSystemDriver fsDriver;
+        public SessionDatabaseDriver(IVectorDataSerializer driver, IFileSystemDriver FsDriver)
         {
+            fsDriver = FsDriver;
             Driver = driver;
         }
 
         public void Dispose()
         {
-            Driver.Dispose();
             if (m_stdout != null)
             {
                 Debug.Assert(ilPSP.Environment.StdOut.WriterS.Contains(m_stdout));
@@ -49,17 +50,17 @@ namespace BoSSS.Foundation.IO
         {
 
             Guid id = Guid.NewGuid();
-            if (Driver.FsDriver == null)
+            if (fsDriver == null)
                 id = Guid.Empty;
             id = id.MPIBroadcast(0);
 
             // init driver
             // ===========
-            if (Driver.FsDriver != null)
+            if (fsDriver != null)
             {
 
                 if (MyRank == 0)
-                    Driver.FsDriver.CreateSessionDirectory(id);
+                    fsDriver.CreateSessionDirectory(id);
 
                 // ensure that the session directory is available, before ANY mpi process continues.
                 csMPI.Raw.Barrier(csMPI.Raw._COMM.WORLD);
@@ -71,10 +72,10 @@ namespace BoSSS.Foundation.IO
 
             // create copy of stdout and stderr
             // ================================
-            if (this.Driver.FsDriver != null)
+            if (this.fsDriver != null)
             {
-                m_stdout = this.Driver.FsDriver.GetNewLog("stdout." + MyRank, id);
-                m_stderr = this.Driver.FsDriver.GetNewLog("stderr." + MyRank, id);
+                m_stdout = this.fsDriver.GetNewLog("stdout." + MyRank, id);
+                m_stderr = this.fsDriver.GetNewLog("stderr." + MyRank, id);
 
                 ilPSP.Environment.StdOut.WriterS.Add(m_stdout);
                 ilPSP.Environment.StdErr.WriterS.Add(m_stderr);
@@ -88,7 +89,7 @@ namespace BoSSS.Foundation.IO
         /// <param name="session">The session to be saved.</param>
         public void SaveSessionInfo(ISessionInfo session)
         {
-            using (Stream s = Driver.FsDriver.GetSessionInfoStream(true, session.ID))
+            using (Stream s = fsDriver.GetSessionInfoStream(true, session.ID))
             {
                 Driver.Serialize(s, session);
                 s.Close();
@@ -108,7 +109,7 @@ namespace BoSSS.Foundation.IO
             {
                 tr.Info("Loading session " + sessionId);
 
-                using (Stream s = Driver.FsDriver.GetSessionInfoStream(false, sessionId))
+                using (Stream s = fsDriver.GetSessionInfoStream(false, sessionId))
                 {
                     SessionInfo loadedSession = Driver.Deserialize<SessionInfo>(s);
                     loadedSession.Database = database;

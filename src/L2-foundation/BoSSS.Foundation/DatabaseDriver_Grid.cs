@@ -9,17 +9,36 @@ using BoSSS.Foundation.Grid.Classic;
 
 namespace BoSSS.Foundation.IO
 {
-    class GridDatabaseDriver : MPIProcess, IDisposable
+    class GridDatabaseDriver : MPIProcess
     {
-        readonly GridSerializer Driver;
-        public GridDatabaseDriver(GridSerializer driver)
+        readonly IVectorDataSerializer Driver;
+        IFileSystemDriver fsDriver;
+        public GridDatabaseDriver(IVectorDataSerializer driver, IFileSystemDriver FsDriver)
         {
+            fsDriver = FsDriver;
             Driver = driver;
         }
 
-        public void Dispose()
+        Stream GetGridStream(bool create, Guid id)
         {
-            Driver.Dispose();
+            return fsDriver.GetGridStream(create, id);
+        }
+
+        public T DeserializeGrid<T>(Guid gridGuid)
+        {
+            using (Stream s = GetGridStream(false, gridGuid))
+            {
+                T grid = Driver.Deserialize<T>(s);
+                return grid;
+            }
+        }
+
+        public void SerializeGrid(IGrid grid)
+        {
+            using (Stream stream = GetGridStream(true, grid.ID))
+            {
+                Driver.Serialize(stream, grid);
+            }
         }
 
         /// <summary>
@@ -29,7 +48,7 @@ namespace BoSSS.Foundation.IO
         {
             try
             {
-                Stream strm = Driver.GetGridStream(false, g);
+                Stream strm = fsDriver.GetGridStream(false, g);
                 strm.Close();
             }
             catch (Exception)
@@ -164,7 +183,7 @@ namespace BoSSS.Foundation.IO
         {
             if (MyRank == 0)
             {
-                Driver.SerializeGrid(grid);
+                SerializeGrid(grid);
             }
         }
 
@@ -185,7 +204,7 @@ namespace BoSSS.Foundation.IO
                 Grid.Classic.GridCommons grid = null;
                 if (MyRank == 0)
                 {
-                    grid = Driver.DeserializeGrid<Grid.Classic.GridCommons>(gridGuid);
+                    grid = DeserializeGrid<Grid.Classic.GridCommons>(gridGuid);
                 }
 
                 grid = grid.MPIBroadcast(0);

@@ -6,26 +6,11 @@ using Newtonsoft.Json.Bson;
 
 namespace BoSSS.Foundation.IO
 {
-    class Serializer : MPIProcess, IDisposable
+    class Serializer : MPIProcess
     {
-        public Serializer(IFileSystemDriver driver)
+        public Serializer()
         {
-            m_fsDriver = driver;
         }
-
-        /// <summary>
-        /// the file system driver
-        /// </summary>
-        public IFileSystemDriver FsDriver {
-            get {
-                return m_fsDriver;
-            }
-        }
-
-        /// <summary>
-        /// 
-        /// </summary>
-        protected IFileSystemDriver m_fsDriver;
 
         class MySerializationBinder : Newtonsoft.Json.Serialization.DefaultSerializationBinder
         {
@@ -87,11 +72,6 @@ namespace BoSSS.Foundation.IO
             }
         }
 
-        public Stream GetGridStream(bool create, Guid gID)
-        {
-            return FsDriver.GetGridStream(create, gID);
-        }
-
         protected JsonReader GetJsonReader(Stream s)
         {
             if (DebugSerialization)
@@ -113,18 +93,6 @@ namespace BoSSS.Foundation.IO
             else
             {
                 return new BsonWriter(s);
-            }
-        }
-
-        /// <summary>
-        /// finalize
-        /// </summary>
-        public void Dispose()
-        {
-            if (this.FsDriver is IDisposable)
-            {
-                ((IDisposable)this.FsDriver).Dispose();
-
             }
         }
 

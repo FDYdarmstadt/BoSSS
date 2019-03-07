@@ -13,18 +13,15 @@ using ilPSP.Utils;
 
 namespace BoSSS.Foundation.IO
 {
-    class TimeStepDatabaseDriver : MPIProcess, IDisposable
+    class TimeStepDatabaseDriver : MPIProcess
     {
 
-        readonly VectorDataSerializer Driver;
-        public TimeStepDatabaseDriver(VectorDataSerializer driver)
+        readonly IVectorDataSerializer Driver;
+        IFileSystemDriver fsDriver;
+        public TimeStepDatabaseDriver(IVectorDataSerializer driver, IFileSystemDriver FsDriver)
         {
+            fsDriver = FsDriver;
             Driver = driver;
-        }
-
-        public void Dispose()
-        {
-            Driver.Dispose();
         }
 
         /// <summary>
@@ -110,7 +107,7 @@ namespace BoSSS.Foundation.IO
                     try
                     {
                         tsi = new TimestepInfo(physTime, currentSession, TimestepNo, fields, VectorGuid);
-                        using (var s = Driver.FsDriver.GetTimestepStream(true, tsi.ID))
+                        using (var s = fsDriver.GetTimestepStream(true, tsi.ID))
                         {
                             Driver.Serialize(s, tsi);
                             s.Close();
@@ -160,7 +157,7 @@ namespace BoSSS.Foundation.IO
                 TimestepInfo tsi = null;
                 if (MyRank == 0)
                 {
-                    using (Stream s = Driver.FsDriver.GetTimestepStream(false, timestepGuid))
+                    using (Stream s = fsDriver.GetTimestepStream(false, timestepGuid))
                     {
                         tsi = Driver.Deserialize<TimestepInfo>(s);
                         tsi.Session = session;
@@ -187,7 +184,7 @@ namespace BoSSS.Foundation.IO
             try
             {
                 using (StreamReader timestepLogReader =
-                new StreamReader(Driver.FsDriver.GetTimestepLogStream(sessionGuid)))
+                new StreamReader(fsDriver.GetTimestepLogStream(sessionGuid)))
                 {
 
                     while (!timestepLogReader.EndOfStream)
@@ -212,7 +209,7 @@ namespace BoSSS.Foundation.IO
         /// <param name="timestepGuid"></param>
         public void RemoveTimestepGuid(Guid sessionGuid, Guid timestepGuid)
         {
-            string logPath = Driver.FsDriver.GetTimestepLogPath(sessionGuid);
+            string logPath = fsDriver.GetTimestepLogPath(sessionGuid);
             string[] lines = File.ReadAllLines(logPath);
 
             bool match = false;
