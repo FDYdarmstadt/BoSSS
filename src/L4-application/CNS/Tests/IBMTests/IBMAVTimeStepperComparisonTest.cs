@@ -35,10 +35,11 @@ namespace CNS.Tests.IBMTests {
     /// This test compares the L2-norm of the density fields in an rotated shock tube case
     /// after five time steps for the follwing timesteppers:
     /// - Runge-Kutta, order 1
-    /// - Adams-Bashforth, order 1
-    /// - Local time stepping, order 1 (no adaptive reclustering, only 1 cluster)
+    /// - Adams-Bashforth, order 1-3
+    /// - Local time stepping, order 1-3 (reclustering forced in every time step, only 1 cluster)
     /// For an explicit order of 1, all the time steppers equal the explicit Euler scheme
     /// and should therefore produce the same results.
+    /// For explicit orders greater or equal than 2, AB nud ALTS should behave the same way.
     /// </summary>
 
     [TestFixture]
@@ -54,7 +55,7 @@ namespace CNS.Tests.IBMTests {
             //c.saveperiod = 1;
             //c.PrintInterval = 1;
             //c.WriteLTSLog = false;
-            //c.WriteLTSConsoleOutput = false;
+            //c.WriteLTSConsoleOutput = true;
 
             // ### Partitioning and load balancing ###
             int dgDegree = 2;
@@ -64,7 +65,7 @@ namespace CNS.Tests.IBMTests {
             double dtFixed = 0.0;
             double CFLFraction = 0.1;
             int numberOfSubGrids = 1;
-            int reclusteringInterval = int.MaxValue;
+            int reclusteringInterval = 1;
             int maxNumOfSubSteps = 10;
             double agg = 0.3;
             double smoothing = 4.0;
@@ -135,6 +136,7 @@ namespace CNS.Tests.IBMTests {
             c.ExplicitOrder = explicitOrder;
             c.NumberOfSubGrids = numberOfSubGrids;
             c.ReclusteringInterval = reclusteringInterval;
+            c.forceReclustering = true;
             c.maxNumOfSubSteps = maxNumOfSubSteps;
             c.FluxCorrection = false;
 
@@ -243,7 +245,7 @@ namespace CNS.Tests.IBMTests {
                 c.CFLFraction = CFLFraction;
             }
             c.Endtime = 0.25;
-            c.NoOfTimesteps = 5;
+            c.NoOfTimesteps = 10;
 
             // ### Project and sessions name ###
             c.ProjectName = "IBM_AV_LTS_Test";
@@ -291,7 +293,7 @@ namespace CNS.Tests.IBMTests {
         }
 
         [Test]
-        public static void IBMAVTimeStepperTest_LTS1() {
+        public static void IBMAVTimeStepperTest_ALTS1() {
             CheckErrorThresholds(
                 Setup_IBMAVTimeStepperTest(explicitScheme: 3, explicitOrder: 1),
                 Tuple.Create("L2NormDensity", 0.488419017555324 + 1e-14));
@@ -306,7 +308,7 @@ namespace CNS.Tests.IBMTests {
         }
 
         [Test]
-        public static void IBMAVTimeStepperTest_LTS2() {
+        public static void IBMAVTimeStepperTest_ALTS2() {
             CheckErrorThresholds(
                 Setup_IBMAVTimeStepperTest(explicitScheme: 3, explicitOrder: 2),
                 Tuple.Create("L2NormDensity", 0.488419017763754 + 1e-14));
@@ -321,7 +323,7 @@ namespace CNS.Tests.IBMTests {
         }
 
         [Test]
-        public static void IBMAVTimeStepperTest_LTS3() {
+        public static void IBMAVTimeStepperTest_ALTS3() {
             CheckErrorThresholds(
                 Setup_IBMAVTimeStepperTest(explicitScheme: 3, explicitOrder: 3),
                 Tuple.Create("L2NormDensity", 0.488419017764017 + 1e-14));
