@@ -199,6 +199,7 @@
       <Name>BoSSS.Foundation</Name>
     </ProjectReference>
     <ProjectReference Include="..\..\L3-solution\BoSSS.Solution.AdvancedSolvers\BoSSS.Solution.AdvancedSolvers.csproj">
+    </ProjectReference>
     <ProjectReference Include="..\..\L3-solution\BoSSS.Solution.NSECommon\BoSSS.Solution.NSECommon.csproj">
       <Project>{E56B9CE4-14DC-4256-A337-46E5D298B722}</Project>
       <Name>BoSSS.Solution.NSECommon</Name>
@@ -213,7 +214,7 @@
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
-    <None Include="app.config" />
+    <None Include="app.config"/>
   </ItemGroup>
   <ItemGroup>
     <Folder Include="Incompressible\01_VariableSet\" />
