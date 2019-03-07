@@ -6,7 +6,7 @@ using Newtonsoft.Json.Bson;
 
 namespace BoSSS.Foundation.IO
 {
-    class Serializer : IDisposable
+    class Serializer : MPIProcess, IDisposable
     {
         public Serializer(IFileSystemDriver driver)
         {
@@ -65,11 +65,34 @@ namespace BoSSS.Foundation.IO
             Binder = new MySerializationBinder()
         };
 
-        public virtual JsonSerializer JsonFormatter {
+        protected virtual JsonSerializer JsonFormatter {
             get { return jsonFormatter; }
         }
 
-        public JsonReader GetJsonReader(Stream s)
+        public T Deserialize<T>(Stream stream)
+        {
+            using (var reader = GetJsonReader(stream))
+            {
+                return JsonFormatter.Deserialize<T>(reader);
+            }
+        }
+        
+        public void Serialize<T>(Stream s, T obj )
+        {
+            using (var writer = GetJsonWriter(s))
+            {
+                JsonFormatter.Serialize(writer, obj);
+                writer.Close();
+                s.Close();
+            }
+        }
+
+        public Stream GetGridStream(bool create, Guid gID)
+        {
+            return FsDriver.GetGridStream(create, gID);
+        }
+
+        protected JsonReader GetJsonReader(Stream s)
         {
             if (DebugSerialization)
             {
@@ -81,7 +104,7 @@ namespace BoSSS.Foundation.IO
             }
         }
 
-        public JsonWriter GetJsonWriter(Stream s)
+        protected JsonWriter GetJsonWriter(Stream s)
         {
             if (DebugSerialization)
             {
@@ -93,6 +116,22 @@ namespace BoSSS.Foundation.IO
             }
         }
 
+        /// <summary>
+        /// finalize
+        /// </summary>
+        public void Dispose()
+        {
+            if (this.FsDriver is IDisposable)
+            {
+                ((IDisposable)this.FsDriver).Dispose();
+
+            }
+        }
+
+    }
+
+    public class MPIProcess
+    {
         /// <summary>
         /// MPI rank of actual process within the MPI world communicator
         /// </summary>
@@ -114,18 +153,5 @@ namespace BoSSS.Foundation.IO
                 return size;
             }
         }
-
-        /// <summary>
-        /// finalize
-        /// </summary>
-        public void Dispose()
-        {
-            if (this.FsDriver is IDisposable)
-            {
-                ((IDisposable)this.FsDriver).Dispose();
-
-            }
-        }
-
     }
 }

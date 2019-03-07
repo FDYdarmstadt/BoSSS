@@ -13,7 +13,7 @@ using ilPSP.Utils;
 
 namespace BoSSS.Foundation.IO
 {
-    class TimeStepDatabaseDriver : IDisposable
+    class TimeStepDatabaseDriver : MPIProcess, IDisposable
     {
 
         readonly VectorDataSerializer Driver;
@@ -105,23 +105,21 @@ namespace BoSSS.Foundation.IO
                 // =================
                 TimestepInfo tsi = null;
                 Exception e = null;
-                if (Driver.MyRank == 0)
+                if (MyRank == 0)
                 {
                     try
                     {
                         tsi = new TimestepInfo(physTime, currentSession, TimestepNo, fields, VectorGuid);
                         using (var s = Driver.FsDriver.GetTimestepStream(true, tsi.ID))
-                        using (var writer = Driver.GetJsonWriter(s))
                         {
-                            Driver.JsonFormatter.Serialize(writer, tsi);
-                            writer.Close();
+                            Driver.Serialize(s, tsi);
                             s.Close();
                         }
                     }
                     catch (Exception ee)
                     {
                         e = ee;
-                        Console.Error.WriteLine(ee.GetType().Name + " on rank " + Driver.MyRank + " saving time-step " + TimestepNo + ": " + ee.Message);
+                        Console.Error.WriteLine(ee.GetType().Name + " on rank " + MyRank + " saving time-step " + TimestepNo + ": " + ee.Message);
                         Console.Error.WriteLine(ee.StackTrace);
                     }
                 }
@@ -130,7 +128,7 @@ namespace BoSSS.Foundation.IO
 
                 // return
                 // ======
-                if (Driver.MyRank == 0)
+                if (MyRank == 0)
                 {
                     try
                     {
@@ -139,7 +137,7 @@ namespace BoSSS.Foundation.IO
                     catch (Exception ee)
                     {
                         e = ee;
-                        Console.Error.WriteLine(ee.GetType().Name + " on rank " + Driver.MyRank + " saving time-step " + TimestepNo + ": " + ee.Message);
+                        Console.Error.WriteLine(ee.GetType().Name + " on rank " + MyRank + " saving time-step " + TimestepNo + ": " + ee.Message);
                         Console.Error.WriteLine(ee.StackTrace);
                     }
                 }
@@ -160,14 +158,12 @@ namespace BoSSS.Foundation.IO
                 tr.Info("Loading time-step " + timestepGuid);
 
                 TimestepInfo tsi = null;
-                if (Driver.MyRank == 0)
+                if (MyRank == 0)
                 {
                     using (Stream s = Driver.FsDriver.GetTimestepStream(false, timestepGuid))
-                    using (var reader = Driver.GetJsonReader(s))
                     {
-                        tsi = Driver.JsonFormatter.Deserialize<TimestepInfo>(reader);
+                        tsi = Driver.Deserialize<TimestepInfo>(s);
                         tsi.Session = session;
-                        reader.Close();
                         s.Close();
                     }
                     tsi.ID = timestepGuid;

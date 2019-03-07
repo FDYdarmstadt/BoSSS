@@ -44,7 +44,7 @@ namespace BoSSS.Foundation.IO {
     /// implementations provide IO on a stream-level), mainly by using
     /// serialization.
     /// </summary>
-    public partial class DatabaseDriver : IDatabaseDriver {
+    public partial class DatabaseDriver : MPIProcess, IDatabaseDriver {
 
         VectorDataSerializer serializer;
         GridDatabaseDriver gridDatabaseDriver;
@@ -59,8 +59,8 @@ namespace BoSSS.Foundation.IO {
         public DatabaseDriver(IFileSystemDriver driver)
         {
             serializer = new VectorDataSerializer(driver);
-            VersionedSerializer serializerWithVersioning = new VersionedSerializer(driver);
-            gridDatabaseDriver = new GridDatabaseDriver(serializerWithVersioning);
+            GridSerializer typeNameSerializer = new GridSerializer(serializer);
+            gridDatabaseDriver = new GridDatabaseDriver(typeNameSerializer);
             sessionsDatabaseDriver = new SessionDatabaseDriver(serializer);
             timestepDatabaseDriver = new TimeStepDatabaseDriver(serializer);
         }
@@ -112,16 +112,6 @@ namespace BoSSS.Foundation.IO {
         /// the file system driver
         /// </summary>
         public IFileSystemDriver FsDriver => serializer.FsDriver;
-
-        /// <summary>
-        /// MPI rank of actual process within the MPI world communicator
-        /// </summary>
-        public int MyRank => serializer.MyRank;
-
-        /// <summary>
-        /// Number of MPI processes within the MPI world communicator
-        /// </summary>
-        public int Size => serializer.Size;
 
         /// <summary>
         /// Tracing setup.
@@ -409,5 +399,6 @@ namespace BoSSS.Foundation.IO {
         {
             return timestepDatabaseDriver.LoadFields(info, grdDat, NameFilter);
         }
+
     }
 }

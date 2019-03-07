@@ -10,7 +10,7 @@ using System.Diagnostics;
 
 namespace BoSSS.Foundation.IO
 {
-    class SessionDatabaseDriver : IDisposable
+    class SessionDatabaseDriver : MPIProcess, IDisposable
     {
         readonly VectorDataSerializer Driver;
         public SessionDatabaseDriver(VectorDataSerializer driver)
@@ -58,7 +58,7 @@ namespace BoSSS.Foundation.IO
             if (Driver.FsDriver != null)
             {
 
-                if (Driver.MyRank == 0)
+                if (MyRank == 0)
                     Driver.FsDriver.CreateSessionDirectory(id);
 
                 // ensure that the session directory is available, before ANY mpi process continues.
@@ -73,8 +73,8 @@ namespace BoSSS.Foundation.IO
             // ================================
             if (this.Driver.FsDriver != null)
             {
-                m_stdout = this.Driver.FsDriver.GetNewLog("stdout." + Driver.MyRank, id);
-                m_stderr = this.Driver.FsDriver.GetNewLog("stderr." + Driver.MyRank, id);
+                m_stdout = this.Driver.FsDriver.GetNewLog("stdout." + MyRank, id);
+                m_stderr = this.Driver.FsDriver.GetNewLog("stderr." + MyRank, id);
 
                 ilPSP.Environment.StdOut.WriterS.Add(m_stdout);
                 ilPSP.Environment.StdErr.WriterS.Add(m_stderr);
@@ -89,10 +89,8 @@ namespace BoSSS.Foundation.IO
         public void SaveSessionInfo(ISessionInfo session)
         {
             using (Stream s = Driver.FsDriver.GetSessionInfoStream(true, session.ID))
-            using (var writer = Driver.GetJsonWriter(s))
             {
-                Driver.JsonFormatter.Serialize(writer, session);
-                writer.Close();
+                Driver.Serialize(s, session);
                 s.Close();
             }
         }
@@ -111,13 +109,10 @@ namespace BoSSS.Foundation.IO
                 tr.Info("Loading session " + sessionId);
 
                 using (Stream s = Driver.FsDriver.GetSessionInfoStream(false, sessionId))
-                using (var reader = Driver.GetJsonReader(s))
                 {
-                    SessionInfo loadedSession = Driver.JsonFormatter.Deserialize<SessionInfo>(reader);
+                    SessionInfo loadedSession = Driver.Deserialize<SessionInfo>(s);
                     loadedSession.Database = database;
                     loadedSession.WriteTime = Utils.GetSessionFileWriteTime(loadedSession);
-
-                    reader.Close();
                     s.Close();
 
                     return loadedSession;

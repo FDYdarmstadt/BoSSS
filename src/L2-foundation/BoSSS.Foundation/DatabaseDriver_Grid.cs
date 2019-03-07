@@ -9,10 +9,10 @@ using BoSSS.Foundation.Grid.Classic;
 
 namespace BoSSS.Foundation.IO
 {
-    class GridDatabaseDriver : IDisposable
+    class GridDatabaseDriver : MPIProcess, IDisposable
     {
-        readonly VectorDataSerializer Driver;
-        public GridDatabaseDriver(VectorDataSerializer driver)
+        readonly GridSerializer Driver;
+        public GridDatabaseDriver(GridSerializer driver)
         {
             Driver = driver;
         }
@@ -29,7 +29,7 @@ namespace BoSSS.Foundation.IO
         {
             try
             {
-                Stream strm = Driver.FsDriver.GetGridStream(false, g);
+                Stream strm = Driver.GetGridStream(false, g);
                 strm.Close();
             }
             catch (Exception)
@@ -162,15 +162,9 @@ namespace BoSSS.Foundation.IO
 
         void SaveGridInfo(IGrid grid)
         {
-            if (Driver.MyRank == 0)
+            if (MyRank == 0)
             {
-                using (Stream s = Driver.FsDriver.GetGridStream(true, grid.ID))
-                using (var writer = Driver.GetJsonWriter(s))
-                {
-                    Driver.JsonFormatter.Serialize(writer, grid);
-                    writer.Close();
-                    s.Close();
-                }
+                Driver.SerializeGrid(grid);
             }
         }
 
@@ -189,13 +183,9 @@ namespace BoSSS.Foundation.IO
                 tr.Info("Loading grid " + gridGuid);
 
                 Grid.Classic.GridCommons grid = null;
-                if (Driver.MyRank == 0)
+                if (MyRank == 0)
                 {
-                    using (Stream s = Driver.FsDriver.GetGridStream(false, gridGuid))
-                    using (var reader = Driver.GetJsonReader(s))
-                    {
-                        grid = Driver.JsonFormatter.Deserialize<Grid.Classic.GridCommons>(reader);
-                    }
+                    grid = Driver.DeserializeGrid<Grid.Classic.GridCommons>(gridGuid);
                 }
 
                 grid = grid.MPIBroadcast(0);
