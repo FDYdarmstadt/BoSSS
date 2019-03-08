@@ -14,9 +14,9 @@ namespace BoSSS.Foundation.IO
     {
         string Name { get; }
 
-        T Deserialize<T>(Stream stream);
+        object Deserialize(Stream stream, Type objectType);
 
-        void Serialize<T>(Stream stream, T obj);
+        void Serialize(Stream stream, object obj, Type objectType);
     }
 
     interface IVectorDataSerializer : ISerializer
@@ -28,12 +28,16 @@ namespace BoSSS.Foundation.IO
         IList<T> LoadVector<T>(Guid id, ref Partitioning part);
     }
 
-
-    abstract class VectorDataSerializer : Serializer, IVectorDataSerializer
+    class VectorDataSerializer: MPIProcess, IVectorDataSerializer
     {
-        IFileSystemDriver m_fsDriver; 
-        public VectorDataSerializer(IFileSystemDriver driver)
+        IFileSystemDriver m_fsDriver;
+        ISerializer serializer;
+
+        public string Name => serializer.Name;
+
+        public VectorDataSerializer(IFileSystemDriver driver, ISerializer serializer)
         {
+            this.serializer = serializer;
             m_fsDriver = driver;
         }
 
@@ -83,6 +87,8 @@ namespace BoSSS.Foundation.IO
             return id;
         }
 
+        bool DebugSerialization = false;
+
         /// <summary>
         /// saves a vector to the database, under a specified Guid
         /// </summary>
@@ -117,7 +123,7 @@ namespace BoSSS.Foundation.IO
                     // save parts
                     using (Stream s = m_fsDriver.GetDistVectorDataStream(true, id, MyRank))
                     {
-                        using (var s2 = GetJsonWriter(new GZipStream(s, CompressionMode.Compress)))
+                        using (var s2 = new GZipStream(s, CompressionMode.Compress))
                         {
                             // Use a tuple since the Json format expects one object per
                             // file (with some tricks, we could avoid this, but it's
@@ -143,7 +149,7 @@ namespace BoSSS.Foundation.IO
 
                             csMPI.Raw.Barrier(csMPI.Raw._COMM.WORLD);
 
-                            JsonFormatter.Serialize(s2, tuple);
+                            serializer.Serialize(s2, tuple, typeof(Tuple<DistributedVectorHeader, IList<T>>));
 
                             s2.Close();
                             s.Close();
@@ -186,9 +192,9 @@ namespace BoSSS.Foundation.IO
                     {
                         // load header
                         using (var s = m_fsDriver.GetDistVectorDataStream(false, id, 0))
-                        using (var reader = GetJsonReader(new GZipStream(s, CompressionMode.Decompress)))
+                        using (var reader = new GZipStream(s, CompressionMode.Decompress))
                         {
-                            header = JsonFormatter.Deserialize<Tuple<DistributedVectorHeader, IList<T>>>(reader).Item1;
+                            header = ((Tuple<DistributedVectorHeader, IList<T>>)serializer.Deserialize(reader, typeof(Tuple<DistributedVectorHeader, IList<T>>))).Item1;
                             reader.Close();
                             s.Close();
                         }
@@ -244,9 +250,9 @@ namespace BoSSS.Foundation.IO
                     {
                         IList<T> vecP;
                         using (var s = m_fsDriver.GetDistVectorDataStream(false, id, p))
-                        using (var reader = GetJsonReader(new GZipStream(s, CompressionMode.Decompress)))
+                        using (var reader = new GZipStream(s, CompressionMode.Decompress))
                         {
-                            vecP = JsonFormatter.Deserialize<Tuple<DistributedVectorHeader, IList<T>>>(reader).Item2;
+                            vecP = ((Tuple<DistributedVectorHeader, IList<T>>)serializer.Deserialize(reader, typeof(Tuple<DistributedVectorHeader, IList<T>>))).Item2;
                             reader.Close();
                             s.Close();
                         }
@@ -301,9 +307,9 @@ namespace BoSSS.Foundation.IO
                     {
                         // load header
                         using (var s = m_fsDriver.GetDistVectorDataStream(false, id, 0))
-                        using (var reader = GetJsonReader(new GZipStream(s, CompressionMode.Decompress)))
+                        using (var reader = new GZipStream(s, CompressionMode.Decompress))
                         {
-                            header = JsonFormatter.Deserialize<Tuple<DistributedVectorHeader, IList<T>>>(reader).Item1;
+                            header = ((Tuple<DistributedVectorHeader, IList<T>>)serializer.Deserialize(reader, typeof(Tuple<DistributedVectorHeader, IList<T>>))).Item1;
                             reader.Close();
                             s.Close();
                         }
@@ -360,9 +366,9 @@ namespace BoSSS.Foundation.IO
                     {
                         IList<T> vecP;
                         using (var s = m_fsDriver.GetDistVectorDataStream(false, id, p))
-                        using (var reader = GetJsonReader(new GZipStream(s, CompressionMode.Decompress)))
+                        using (var reader = new GZipStream(s, CompressionMode.Decompress))
                         {
-                            vecP = JsonFormatter.Deserialize<Tuple<DistributedVectorHeader, IList<T>>>(reader).Item2;
+                            vecP = ((Tuple<DistributedVectorHeader, IList<T>>)serializer.Deserialize(reader, typeof(Tuple<DistributedVectorHeader, IList<T>>))).Item2;
                             reader.Close();
                             s.Close();
                         }
@@ -391,65 +397,17 @@ namespace BoSSS.Foundation.IO
                 return ret;
             }
         }
-    }
 
-    class SerializerVersion0 : VectorDataSerializer
-    {
-        public SerializerVersion0(IFileSystemDriver FsDriver) : base(FsDriver)
+        public object Deserialize(Stream stream, Type objectType)
         {
-
+            return serializer.Deserialize(stream, objectType);
         }
 
-        public override string Name => "Version 0";
-
-        protected override JsonSerializer JsonFormatter => jsonFormatter;
-
-        JsonSerializer jsonFormatter = new JsonSerializer()
+        public void Serialize(Stream stream, object obj, Type objectType)
         {
-            NullValueHandling = NullValueHandling.Ignore,
-            TypeNameHandling = TypeNameHandling.Auto,
-            ConstructorHandling = ConstructorHandling.AllowNonPublicDefaultConstructor,
-            ReferenceLoopHandling = ReferenceLoopHandling.Serialize,
-            Binder = new MySerializationBinder()
-        };
-
-        class MySerializationBinder : Newtonsoft.Json.Serialization.DefaultSerializationBinder
-        {
-
-            public override Type BindToType(string assemblyName, string typeName)
-            {
-                if (assemblyName.Equals("BoSSS.Foundation") && typeName.Equals("BoSSS.Foundation.Grid.Cell[]"))
-                {
-                    typeName = "BoSSS.Foundation.Grid.Classic.Cell[]";
-                }
-
-                if (assemblyName.Equals("BoSSS.Foundation") && typeName.Equals("BoSSS.Foundation.Grid.BCElement[]"))
-                {
-                    typeName = "BoSSS.Foundation.Grid.Classic.BCElement[]";
-                }
-                Type T = base.BindToType(assemblyName, typeName);
-                return T;
-            }
+            serializer.Serialize(stream, obj, objectType);
         }
     }
 
-    class SerializerVersion1 : VectorDataSerializer
-    {
-        public SerializerVersion1(IFileSystemDriver FsDriver) : base(FsDriver)
-        {
-
-        }
-
-        public override string Name => "Version 1";
-
-        protected override JsonSerializer JsonFormatter => jsonFormatter;
-
-        JsonSerializer jsonFormatter = new JsonSerializer()
-        {
-            NullValueHandling = NullValueHandling.Ignore,
-            TypeNameHandling = TypeNameHandling.Objects,
-            ConstructorHandling = ConstructorHandling.AllowNonPublicDefaultConstructor,
-            ReferenceLoopHandling = ReferenceLoopHandling.Serialize,
-        };
-    }
+    
 }

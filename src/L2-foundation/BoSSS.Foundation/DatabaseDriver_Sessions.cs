@@ -91,7 +91,7 @@ namespace BoSSS.Foundation.IO
         {
             using (Stream s = fsDriver.GetSessionInfoStream(true, session.ID))
             {
-                Driver.Serialize(s, session);
+                Driver.Serialize(s, session, typeof(SessionInfo));
                 s.Close();
             }
         }
@@ -111,7 +111,7 @@ namespace BoSSS.Foundation.IO
 
                 using (Stream s = fsDriver.GetSessionInfoStream(false, sessionId))
                 {
-                    SessionInfo loadedSession = Driver.Deserialize<SessionInfo>(s);
+                    SessionInfo loadedSession = (SessionInfo)Driver.Deserialize(s, typeof(SessionInfo));
                     loadedSession.Database = database;
                     loadedSession.WriteTime = Utils.GetSessionFileWriteTime(loadedSession);
                     s.Close();

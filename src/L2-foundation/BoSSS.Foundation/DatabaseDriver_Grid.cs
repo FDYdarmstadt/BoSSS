@@ -24,22 +24,9 @@ namespace BoSSS.Foundation.IO
             return fsDriver.GetGridStream(create, id);
         }
 
-        public T DeserializeGrid<T>(Guid gridGuid)
-        {
-            using (Stream s = GetGridStream(false, gridGuid))
-            {
-                T grid = Driver.Deserialize<T>(s);
-                return grid;
-            }
-        }
+        
 
-        public void SerializeGrid(IGrid grid)
-        {
-            using (Stream stream = GetGridStream(true, grid.ID))
-            {
-                Driver.Serialize(stream, grid);
-            }
-        }
+        
 
         /// <summary>
         /// tests whether a grid with GUID <paramref name="g"/> exists in database, or not;
@@ -179,11 +166,28 @@ namespace BoSSS.Foundation.IO
             return grd.ID;
         }
 
+        public void SerializeGrid(IGrid grid)
+        {
+            using (Stream stream = GetGridStream(true, grid.ID))
+            {
+                Driver.Serialize(stream, grid, typeof(IGrid));
+            }
+        }
+
         void SaveGridInfo(IGrid grid)
         {
             if (MyRank == 0)
             {
                 SerializeGrid(grid);
+            }
+        }
+
+        public IGrid DeserializeGrid(Guid gridGuid)
+        {
+            using (Stream s = GetGridStream(false, gridGuid))
+            {
+                IGrid grid = (IGrid)Driver.Deserialize(s, typeof(GridCommons));
+                return grid;
             }
         }
 
@@ -204,7 +208,7 @@ namespace BoSSS.Foundation.IO
                 IGrid grid = null;
                 if (MyRank == 0)
                 {
-                    grid = DeserializeGrid<GridCommons>(gridGuid);
+                    grid = (GridCommons)DeserializeGrid(gridGuid);
                 }
 
                 grid = grid.MPIBroadcast(0);
@@ -213,6 +217,7 @@ namespace BoSSS.Foundation.IO
                 return grid;
             }
         }
+
 
         /// <summary>
         /// Loads the actual grid data for the given <paramref name="grid"/>.

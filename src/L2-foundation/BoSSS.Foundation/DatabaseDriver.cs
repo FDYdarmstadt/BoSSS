@@ -46,7 +46,7 @@ namespace BoSSS.Foundation.IO {
     /// </summary>
     public partial class DatabaseDriver : MPIProcess, IDatabaseDriver {
 
-        IVectorDataSerializer serializer;
+        IVectorDataSerializer standardVectorSerializer;
         GridDatabaseDriver gridDatabaseDriver;
         SessionDatabaseDriver sessionsDatabaseDriver;
         TimeStepDatabaseDriver timestepDatabaseDriver;
@@ -60,13 +60,15 @@ namespace BoSSS.Foundation.IO {
         public DatabaseDriver(IFileSystemDriver fsDriver)
         {
             this.fsDriver = fsDriver;
-            serializer = new SerializerVersion0( fsDriver);
-            IVectorDataSerializer interfaceSerializer = new SerializerVersion1(fsDriver);
-            IVectorDataSerializer versionedSerializer = new VersionedSerializer(interfaceSerializer, serializer);
+            ISerializer standardSerializer = new SerializerVersion0();
+            ISerializer objectTypeSerializer = new SerializerVersion1();
+            standardVectorSerializer = new VectorDataSerializer(fsDriver, standardSerializer);
+            IVectorDataSerializer objectTypeVectorSerializer = new VectorDataSerializer(fsDriver, objectTypeSerializer);
+            IVectorDataSerializer versionedVectorSerializer = new VersionManager(objectTypeVectorSerializer, standardVectorSerializer);
 
-            gridDatabaseDriver = new GridDatabaseDriver(versionedSerializer, fsDriver);
-            sessionsDatabaseDriver = new SessionDatabaseDriver(serializer, fsDriver);
-            timestepDatabaseDriver = new TimeStepDatabaseDriver(serializer, fsDriver);
+            gridDatabaseDriver = new GridDatabaseDriver(versionedVectorSerializer, fsDriver);
+            sessionsDatabaseDriver = new SessionDatabaseDriver(standardSerializer, fsDriver);
+            timestepDatabaseDriver = new TimeStepDatabaseDriver(standardVectorSerializer, fsDriver);
         }
 
         /// <summary>
@@ -189,7 +191,7 @@ namespace BoSSS.Foundation.IO {
         /// </returns>
         public Guid SaveVector<T>(IList<T> vector)
         {
-            return serializer.SaveVector(vector);
+            return standardVectorSerializer.SaveVector(vector);
         }
 
         /// <summary>
@@ -204,7 +206,7 @@ namespace BoSSS.Foundation.IO {
         /// </param>
         public void SaveVector<T>(IList<T> vector, Guid id)
         {
-            serializer.SaveVector(vector,id);
+            standardVectorSerializer.SaveVector(vector,id);
         }
 
         /// <summary>
@@ -217,7 +219,7 @@ namespace BoSSS.Foundation.IO {
         /// </param>
         public IList<T> LoadVector<T>(Guid id, ref Partitioning part)
         {
-            return serializer.LoadVector<T>(id, ref part);
+            return standardVectorSerializer.LoadVector<T>(id, ref part);
         }
 
         /// <summary>

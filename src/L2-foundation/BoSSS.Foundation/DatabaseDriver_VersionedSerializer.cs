@@ -53,13 +53,13 @@ namespace BoSSS.Foundation.IO
 
     }
 
-    class VersionedSerializer : IVectorDataSerializer
+    class VersionManager : IVectorDataSerializer
     {
         IVectorDataSerializer preferedSerializer;
         IVectorDataSerializer standardSerializer;
         readonly Dictionary<string, IVectorDataSerializer> allSerializers;
         
-        public VersionedSerializer(
+        public VersionManager(
             IVectorDataSerializer prefered, 
             IVectorDataSerializer standard, 
             params IVectorDataSerializer[] additionalSerializers) 
@@ -109,15 +109,15 @@ namespace BoSSS.Foundation.IO
             return preferedSerializer;
         }
 
-        public T Deserialize<T>(Stream stream)
+        public object Deserialize(Stream stream, Type objectType)
         {
-            T grid = GetDeserializer(stream).Deserialize<T>(stream);
+            object grid = GetDeserializer(stream).Deserialize(stream, objectType);
             return grid;
         }
 
-        public void Serialize<T>(Stream stream, T obj)
+        public void Serialize(Stream stream,object obj, Type objectType)
         {
-            GetSerializer(stream).Serialize(stream, obj);
+            GetSerializer(stream).Serialize(stream, obj, objectType);
         }
 
         public Guid SaveVector<T>(IList<T> vector)

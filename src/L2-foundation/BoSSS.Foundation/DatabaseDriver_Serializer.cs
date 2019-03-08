@@ -3,12 +3,41 @@ using MPI.Wrappers;
 using System.IO;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Bson;
+using BoSSS.Foundation.Grid;
 
 namespace BoSSS.Foundation.IO
 {
-    abstract class Serializer : MPIProcess, ISerializer
+    class SerializerVersion0 : ISerializer
     {
-        public abstract string Name { get;}
+        public string Name => "Version 0";
+
+        JsonSerializer jsonFormatter = new JsonSerializer()
+        {
+            NullValueHandling = NullValueHandling.Ignore,
+            TypeNameHandling = TypeNameHandling.Auto,
+            ConstructorHandling = ConstructorHandling.AllowNonPublicDefaultConstructor,
+            ReferenceLoopHandling = ReferenceLoopHandling.Serialize,
+            Binder = new MySerializationBinder()
+        };
+
+        class MySerializationBinder : Newtonsoft.Json.Serialization.DefaultSerializationBinder
+        {
+
+            public override Type BindToType(string assemblyName, string typeName)
+            {
+                if (assemblyName.Equals("BoSSS.Foundation") && typeName.Equals("BoSSS.Foundation.Grid.Cell[]"))
+                {
+                    typeName = "BoSSS.Foundation.Grid.Classic.Cell[]";
+                }
+
+                if (assemblyName.Equals("BoSSS.Foundation") && typeName.Equals("BoSSS.Foundation.Grid.BCElement[]"))
+                {
+                    typeName = "BoSSS.Foundation.Grid.Classic.BCElement[]";
+                }
+                Type T = base.BindToType(assemblyName, typeName);
+                return T;
+            }
+        }
 
         /// <summary>
         /// Indicates whether the content of the database should be serialized
@@ -17,26 +46,100 @@ namespace BoSSS.Foundation.IO
         /// </summary>
         protected static readonly bool DebugSerialization = false;
 
-        protected abstract JsonSerializer JsonFormatter { get ;}
+        public object Deserialize(Stream stream, Type objectType)
+        {
+            if(typeof(IGrid).Equals( objectType))
+            {
+                objectType = typeof(Grid.Classic.GridCommons);
+            }
+            return JsonDeserialize(stream, objectType);
+        }
 
-        public T Deserialize<T>(Stream stream)
+        object JsonDeserialize(Stream stream, Type objectType)
         {
             using (var reader = GetJsonReader(stream))
             {
-                T obj = JsonFormatter.Deserialize<T>(reader);
-                if(obj == null)
+                object obj = jsonFormatter.Deserialize(reader, objectType);
+                if (obj == null)
                 {
                     throw new Exception("Deserializing failed.");
                 }
                 return obj;
             }
         }
-        
-        public void Serialize<T>(Stream s, T obj )
+
+        public void Serialize(Stream s, object obj, Type objectType)
         {
             using (var writer = GetJsonWriter(s))
             {
-                JsonFormatter.Serialize(writer, obj);
+                jsonFormatter.Serialize(writer, obj, objectType);
+                writer.Close();
+                s.Close();
+            }
+        }
+
+        protected JsonReader GetJsonReader(Stream s)
+        {
+            if (DebugSerialization)
+            {
+                return new JsonTextReader(new StreamReader(s));
+            }
+            else
+            {
+                return new BsonReader(s);
+            }
+        }
+
+        protected JsonWriter GetJsonWriter(Stream s)
+        {
+            if (DebugSerialization)
+            {
+                return new JsonTextWriter(new StreamWriter(s));
+            }
+            else
+            {
+                return new BsonWriter(s);
+            }
+        }
+    }
+
+    class SerializerVersion1 : ISerializer
+    {
+        public  string Name => "Version 1";
+
+        JsonSerializer jsonFormatter = new JsonSerializer()
+        {
+            NullValueHandling = NullValueHandling.Ignore,
+            TypeNameHandling = TypeNameHandling.Objects,
+            ConstructorHandling = ConstructorHandling.AllowNonPublicDefaultConstructor,
+            ReferenceLoopHandling = ReferenceLoopHandling.Serialize,
+        };
+
+        /// <summary>
+        /// Indicates whether the content of the database should be serialized
+        /// in a human-readable (debugging) format, or in a significantly
+        /// smaller binary format
+        /// </summary>
+        protected static readonly bool DebugSerialization = false;
+
+        public object Deserialize(Stream stream, Type objectType)
+        {
+            using (var reader = GetJsonReader(stream))
+            {
+                object obj = jsonFormatter.Deserialize(reader, objectType);
+                if (obj == null)
+                {
+                    throw new Exception("Deserializing failed.");
+                }
+                return obj;
+            }
+        }
+
+        public void Serialize(Stream s, object obj, Type objectType)
+        {
+            using (var writer = GetJsonWriter(s))
+            {
+                jsonFormatter.Serialize(writer, obj, objectType);
                 writer.Close();
                 s.Close();
             }

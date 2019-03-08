@@ -109,7 +109,7 @@ namespace BoSSS.Foundation.IO
                         tsi = new TimestepInfo(physTime, currentSession, TimestepNo, fields, VectorGuid);
                         using (var s = fsDriver.GetTimestepStream(true, tsi.ID))
                         {
-                            Driver.Serialize(s, tsi);
+                            Driver.Serialize(s, tsi, typeof(TimestepInfo));
                             s.Close();
                         }
                     }
@@ -159,7 +159,7 @@ namespace BoSSS.Foundation.IO
                 {
                     using (Stream s = fsDriver.GetTimestepStream(false, timestepGuid))
                     {
-                        tsi = Driver.Deserialize<TimestepInfo>(s);
+                        tsi = (TimestepInfo)Driver.Deserialize(s, typeof(TimestepInfo));
                         tsi.Session = session;
                         s.Close();
                     }
