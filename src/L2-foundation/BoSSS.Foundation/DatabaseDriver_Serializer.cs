@@ -6,10 +6,15 @@ using Newtonsoft.Json.Bson;
 
 namespace BoSSS.Foundation.IO
 {
-    class Serializer : MPIProcess
+    class Serializer : MPIProcess, ISerializer
     {
         public Serializer()
         {
+        }
+
+        public virtual string Name 
+        {
+            get { return "Version 0";}
         }
 
         class MySerializationBinder : Newtonsoft.Json.Serialization.DefaultSerializationBinder

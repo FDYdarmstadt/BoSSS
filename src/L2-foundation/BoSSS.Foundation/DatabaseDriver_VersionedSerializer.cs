@@ -14,40 +14,86 @@ namespace BoSSS.Foundation.IO
 {
     class VersionedSerializer : IVectorDataSerializer
     {
-        IVectorDataSerializer activeSerializer;
-        readonly IVectorDataSerializer[] serializer;
-
-        public VersionedSerializer(params IVectorDataSerializer[] dataSerializers) 
+        IVectorDataSerializer preferedSerializer;
+        IVectorDataSerializer standardSerializer;
+        readonly Dictionary<string, IVectorDataSerializer> allSerializers;
+        
+        public VersionedSerializer(
+            IVectorDataSerializer prefered, 
+            IVectorDataSerializer standard, 
+            params IVectorDataSerializer[] additionalSerializers) 
         {
-            serializer = dataSerializers;
-            activeSerializer = dataSerializers[0];
+            this.preferedSerializer = prefered;
+            this.standardSerializer = standard;
+            allSerializers = new Dictionary<string, IVectorDataSerializer>(additionalSerializers.Length + 2);
+            AddToAllSerializers(prefered);
+            AddToAllSerializers(standard);  
+            foreach(IVectorDataSerializer additionalSerializer in additionalSerializers)
+            {
+                AddToAllSerializers(additionalSerializer);
+            }
+        }
+
+        void AddToAllSerializers( IVectorDataSerializer serializer)
+        {
+            if (!allSerializers.ContainsKey(serializer.Name))
+            {
+                allSerializers.Add(serializer.Name, serializer);
+            }
+        }
+
+        IVectorDataSerializer GetDeserializer(Stream stream)
+        {
+            IVectorDataSerializer dataSerializer;
+            var reader = new StreamReader(stream); //No Using, stream will be disposed elsewhere
+            {
+                string firstLine = reader.ReadLine();
+                bool found = allSerializers.TryGetValue(firstLine, out dataSerializer);
+                if (!found)
+                {
+                    stream.Position = 0;
+                    dataSerializer = standardSerializer;
+                }
+            }
+            return dataSerializer;
+        }
+
+        IVectorDataSerializer GetSerializer(Stream stream)
+        {
+            var writer = new StreamWriter(stream);
+            {
+                writer.WriteLine(preferedSerializer.Name);
+            }
+            return preferedSerializer;
         }
 
         public T Deserialize<T>(Stream stream)
         {
-            T grid = activeSerializer.Deserialize<T>(stream);
+            T grid = GetDeserializer(stream).Deserialize<T>(stream);
             return grid;
         }
 
         public void Serialize<T>(Stream stream, T obj)
         {
-            activeSerializer.Serialize(stream, obj);
+            GetSerializer(stream).Serialize(stream, obj);
         }
 
         public Guid SaveVector<T>(IList<T> vector)
         {
-            return activeSerializer.SaveVector(vector);
+            return standardSerializer.SaveVector(vector);
         }
 
         public void SaveVector<T>(IList<T> vector, Guid id)
         {
-            activeSerializer.SaveVector(vector, id);
+            standardSerializer.SaveVector(vector, id);
         }
 
         public IList<T> LoadVector<T>(Guid id, ref Partitioning part)
         {
-            return activeSerializer.LoadVector<T>(id, ref part);
+            return standardSerializer.LoadVector<T>(id, ref part);
         }
+
+        public string Name => throw new Exception("Does not have a Name");
 
     }
 

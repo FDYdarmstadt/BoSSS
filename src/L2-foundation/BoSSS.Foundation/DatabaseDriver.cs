@@ -62,7 +62,7 @@ namespace BoSSS.Foundation.IO {
             this.fsDriver = fsDriver;
             serializer = new NoInterfaceSupportSerializer(fsDriver);
             var interfaceSerializer = new InterfaceSupportSerializer(fsDriver);
-            var versionedSerializer = new VersionedSerializer(serializer, interfaceSerializer);
+            var versionedSerializer = new VersionedSerializer( interfaceSerializer, serializer);
             gridDatabaseDriver = new GridDatabaseDriver(versionedSerializer, fsDriver);
             sessionsDatabaseDriver = new SessionDatabaseDriver(serializer, fsDriver);
             timestepDatabaseDriver = new TimeStepDatabaseDriver(serializer, fsDriver);

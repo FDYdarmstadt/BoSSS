@@ -9,12 +9,17 @@ using MPI.Wrappers;
 
 namespace BoSSS.Foundation.IO
 {
-    interface IVectorDataSerializer
+    interface ISerializer
     {
+        string Name { get; }
+
         T Deserialize<T>(Stream stream);
 
-        void Serialize<T>(Stream stream,T obj);
+        void Serialize<T>(Stream stream, T obj);
+    }
 
+    interface IVectorDataSerializer : ISerializer
+    {
         Guid SaveVector<T>(IList<T> vector);
 
         void SaveVector<T>(IList<T> vector, Guid id);
