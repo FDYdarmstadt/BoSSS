@@ -59,8 +59,12 @@ namespace BoSSS.Application.FSI_Solver
             double temp2;
             temp1 = CalculateStressTensorX(Grad_UARes, pARes, NormalVector, muA, k, j);
             temp1 *= -NormalVector[j, k, 1] * (currentPosition[1] - NodeSetClone[k, 1]).Abs();
+            if (double.IsNaN(temp1) || double.IsInfinity(temp1))
+                throw new ArithmeticException("Error trying to calculate the particle torque");
             temp2 = CalculateStressTensorY(Grad_UARes, pARes, NormalVector, muA, k, j);
             temp2 *= NormalVector[j, k, 0] * (currentPosition[0] - NodeSetClone[k, 0]).Abs();
+            if (double.IsNaN(temp2) || double.IsInfinity(temp2))
+                throw new ArithmeticException("Error trying to calculate the particle torque");
             return temp1 + temp2;
         }
 
@@ -103,6 +107,25 @@ namespace BoSSS.Application.FSI_Solver
                     throw new NotImplementedException();
             }
             return acc;
+        }
+
+        public double CalculateStressTensor(MultidimensionalArray Grad_UARes, MultidimensionalArray pARes, MultidimensionalArray NormalVector, double muA, int k, int j, int Dimensionality)
+        {
+            double temp;
+            switch (Dimensionality)
+            {
+                case 2:
+                    temp = CalculateStressTensor2D(Grad_UARes, pARes, NormalVector, muA, k, j);
+                    break;
+                case 3:
+                    temp = CalculateStressTensor3D(Grad_UARes, pARes, NormalVector, muA, k, j);
+                    break;
+                default:
+                    throw new NotSupportedException("Unknown particle dimension: m_Dim = " + Dimensionality);
+            }
+            if (double.IsNaN(temp) || double.IsInfinity(temp))
+                throw new ArithmeticException("Error trying to calculate the particle stress tensor");
+            return temp;
         }
     }
 }
