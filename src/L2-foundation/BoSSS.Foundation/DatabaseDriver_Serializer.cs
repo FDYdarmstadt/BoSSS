@@ -63,7 +63,12 @@ namespace BoSSS.Foundation.IO
         {
             using (var reader = GetJsonReader(stream))
             {
-                return JsonFormatter.Deserialize<T>(reader);
+                T obj = JsonFormatter.Deserialize<T>(reader);
+                if(obj == null)
+                {
+                    throw new Exception("Deserializing failed.");
+                }
+                return obj;
             }
         }
         

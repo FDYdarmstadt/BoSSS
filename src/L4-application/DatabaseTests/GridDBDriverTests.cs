@@ -11,20 +11,7 @@ namespace BoSSS.Application.DatabaseTests
 {
     class GridDBDriverTests : TestDatabase
     {
-        [Test]
-        public void TestSaveGridIfUnique()
-        {
-            (IGrid grid , IGridInfo gridInfo) = LoadGrid();
-            bool isNotUnique;
-            databaseWithFiles.Controller.DBDriver.SaveGridIfUnique(ref grid, out isNotUnique, databaseWithFiles);
-            Assert.IsTrue(isNotUnique == true, "Same grid was not recognized.");
-
-            var grid2 = databaseWithFiles.Controller.CopyGrid(gridInfo, emptyDatabase);
-            databaseWithFiles.Controller.DBDriver.SaveGridIfUnique(ref grid, out isNotUnique, emptyDatabase);
-            Assert.IsTrue(isNotUnique == true, "Copied grid was not recognized.");
-        }
-
-        public (IGrid, IGridInfo) LoadGrid()
+        (IGrid, IGridInfo) LoadGrid()
         {
             var gridInfo = databaseWithFiles.Controller.Grids.First();
             Assert.IsNotNull(gridInfo);
@@ -45,33 +32,26 @@ namespace BoSSS.Application.DatabaseTests
         }
 
         [Test]
-        void LoadGridInfo()
+        public void TestSaveGridIfUnique()
         {
+            (IGrid grid , IGridInfo gridInfo) = LoadGrid();
+            bool isNotUnique;
+            databaseWithFiles.Controller.DBDriver.SaveGridIfUnique(ref grid, out isNotUnique, databaseWithFiles);
+            Assert.IsTrue(isNotUnique == true, "Same grid was not recognized.");
 
-        }
-
-        [Test]
-        void LoadGridData()
-        {
-
+            var grid2 = databaseWithFiles.Controller.CopyGrid(gridInfo, emptyDatabase);
+            databaseWithFiles.Controller.DBDriver.SaveGridIfUnique(ref grid, out isNotUnique, emptyDatabase);
+            Assert.IsTrue(isNotUnique == true, "Copied grid was not recognized.");
         }
 
         [Test]
         public void SaveGrid()
         {
+            (IGrid grid, IGridInfo gridInfo) = LoadGrid();
 
-        }
-
-        [Test]
-        void SaveGridInfo()
-        {
-
-        }
-
-        [Test]
-        public void SaveGridData()
-        {
-
+            Guid id = emptyDatabase.Controller.DBDriver.SaveGrid(grid, emptyDatabase);
+            IGrid newGrid = emptyDatabase.Controller.DBDriver.LoadGrid(id, emptyDatabase);
+            Assert.IsTrue(newGrid.Equals(grid));
         }
     }
 }

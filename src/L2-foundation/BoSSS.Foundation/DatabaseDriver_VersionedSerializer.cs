@@ -12,6 +12,47 @@ using ilPSP;
 
 namespace BoSSS.Foundation.IO
 {
+    class UnbufferedStreamReader
+    {
+        Stream stream;
+        long streamPositionBeforeReadLine;
+
+        public UnbufferedStreamReader(Stream stream)
+        {
+            this.stream = stream;
+        }
+
+        public string ReadLine()
+        {
+            streamPositionBeforeReadLine = stream.Position;
+            Queue<byte> line = new Queue<byte>();
+            int current = ReadByte();
+            while ( current != -1 && current != (int)'\n')
+            {
+                byte b = (byte)current;
+                line.Enqueue(b);
+                current = ReadByte();
+                if(current == (int)'\r')
+                {
+                    current = ReadByte();
+                }
+            }
+            byte[] lineArray = line.ToArray();
+            return Encoding.ASCII.GetString(lineArray);
+        }
+
+        public int ReadByte()
+        {
+            return stream.ReadByte();
+        }
+
+        public void UndoLastReadLine()
+        {
+            stream.Position = streamPositionBeforeReadLine;
+        }
+
+    }
+
     class VersionedSerializer : IVectorDataSerializer
     {
         IVectorDataSerializer preferedSerializer;
@@ -45,13 +86,13 @@ namespace BoSSS.Foundation.IO
         IVectorDataSerializer GetDeserializer(Stream stream)
         {
             IVectorDataSerializer dataSerializer;
-            var reader = new StreamReader(stream); //No Using, stream will be disposed elsewhere
+            var reader = new UnbufferedStreamReader(stream); //No Using, stream will be disposed elsewhere
             {
                 string firstLine = reader.ReadLine();
                 bool found = allSerializers.TryGetValue(firstLine, out dataSerializer);
                 if (!found)
                 {
-                    stream.Position = 0;
+                    reader.UndoLastReadLine();
                     dataSerializer = standardSerializer;
                 }
             }
@@ -63,6 +104,7 @@ namespace BoSSS.Foundation.IO
             var writer = new StreamWriter(stream);
             {
                 writer.WriteLine(preferedSerializer.Name);
+                writer.Flush();
             }
             return preferedSerializer;
         }
