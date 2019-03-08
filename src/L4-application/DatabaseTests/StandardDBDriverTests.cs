@@ -19,7 +19,9 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using BoSSS.Foundation.IO;
+using BoSSS.Foundation.Grid;
 using NUnit.Framework;
+using BoSSS.Platform;
 
 namespace BoSSS.Application.DatabaseTests {
 
@@ -87,6 +89,33 @@ namespace BoSSS.Application.DatabaseTests {
 
             var grid3 = m_DB2.Controller.Grids.First();
             Assert.IsTrue(grid1.Equals(grid3), "Copied grid has been saved improperly.");
+        }
+
+        [Test]
+        public void TestSaveGridIfUnique()
+        {
+            var gridInfo = m_DB1.Controller.Grids.First();
+            IGrid grid;
+            if (gridInfo is GridProxy)
+            {
+                grid = gridInfo.As<GridProxy>().RealGrid;
+            }
+            else if (gridInfo is Foundation.Grid.Classic.GridCommons)
+            {
+                grid = (Foundation.Grid.Classic.GridCommons)gridInfo;
+            }
+            else
+            {
+                throw new NotSupportedException();
+            }
+
+            bool isNotUnique;
+            m_DB1.Controller.DBDriver.SaveGridIfUnique(ref grid, out isNotUnique,  m_DB1);
+            Assert.IsTrue(isNotUnique == true, "Same grid was not recognized.");
+
+            var grid2 = m_DB1.Controller.CopyGrid(gridInfo, m_DB2);
+            m_DB1.Controller.DBDriver.SaveGridIfUnique(ref grid, out isNotUnique, m_DB2);
+            Assert.IsTrue(isNotUnique == true, "Copied grid was not recognized.");
         }
 
         [Test]

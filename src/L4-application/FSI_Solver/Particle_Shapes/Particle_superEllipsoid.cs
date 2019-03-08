@@ -163,7 +163,7 @@ namespace BoSSS.Application.FSI_Solver
         override public bool Contains(double[] point, LevelSetTracker LsTrk)
         {
             // only for squared cells
-            double radiusTolerance = Math.Min(length_P, thickness_P) + 2.0 * Math.Sqrt(2 * LsTrk.GridDat.Cells.h_minGlobal.Pow2());
+            double radiusTolerance = Math.Max(length_P, thickness_P) + 2.0 * Math.Sqrt(2 * LsTrk.GridDat.Cells.h_minGlobal.Pow2());
             if (-Math.Pow(((point[0] - currentIterPos_P[0][0]) * Math.Cos(currentIterAng_P[0]) - (point[1] - currentIterPos_P[0][1]) * Math.Sin(currentIterAng_P[0])) / length_P,superEllipsoidExponent) + -Math.Pow(((point[0] - currentIterPos_P[0][0]) * Math.Sin(currentIterAng_P[0]) + (point[1] - currentIterPos_P[0][1]) * Math.Cos(currentIterAng_P[0])) / thickness_P,superEllipsoidExponent) + radiusTolerance.Pow(superEllipsoidExponent) > 0)
             {
                 return true;
