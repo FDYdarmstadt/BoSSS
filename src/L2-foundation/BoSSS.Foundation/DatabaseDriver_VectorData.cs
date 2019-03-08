@@ -447,29 +447,9 @@ namespace BoSSS.Foundation.IO
         JsonSerializer jsonFormatter = new JsonSerializer()
         {
             NullValueHandling = NullValueHandling.Ignore,
-            TypeNameHandling = TypeNameHandling.Auto,
+            TypeNameHandling = TypeNameHandling.Objects,
             ConstructorHandling = ConstructorHandling.AllowNonPublicDefaultConstructor,
             ReferenceLoopHandling = ReferenceLoopHandling.Serialize,
-            Binder = new MySerializationBinder()
         };
-
-        class MySerializationBinder : Newtonsoft.Json.Serialization.DefaultSerializationBinder
-        {
-
-            public override Type BindToType(string assemblyName, string typeName)
-            {
-                if (assemblyName.Equals("BoSSS.Foundation") && typeName.Equals("BoSSS.Foundation.Grid.Cell[]"))
-                {
-                    typeName = "BoSSS.Foundation.Grid.Classic.Cell[]";
-                }
-
-                if (assemblyName.Equals("BoSSS.Foundation") && typeName.Equals("BoSSS.Foundation.Grid.BCElement[]"))
-                {
-                    typeName = "BoSSS.Foundation.Grid.Classic.BCElement[]";
-                }
-                Type T = base.BindToType(assemblyName, typeName);
-                return T;
-            }
-        }
     }
 }

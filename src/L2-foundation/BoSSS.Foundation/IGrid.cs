@@ -27,7 +27,7 @@ namespace BoSSS.Foundation.Grid {
     /// <summary>
     /// Common interface for all grids
     /// </summary>
-    public interface IGrid : IGridInfo {
+    public interface IGrid : Grid.Classic.ISerializableGrid {
 
         /// <summary>
         /// Access to grid metrics

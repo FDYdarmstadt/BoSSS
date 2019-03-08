@@ -13,14 +13,22 @@ using System.Diagnostics;
 
 namespace BoSSS.Foundation.Grid.Classic
 {
-    interface IVectorDataGrid 
+    public interface ISerializableGrid : IVectorDataGrid, IComparableGrid, IGridInfo
     {
-        object[,] GetVectorData();
-        void SetData(object[] data);
-        Type[] GetDataTypes();
+        IDatabaseInfo Database {
+            get;
+            set;
+        }
     }
 
-    interface IComparableGrid
+    public interface IVectorDataGrid 
+    {
+        object[,] GetVectorData();
+        void SetVectorData(object[] data);
+        Type[] GetDataTypes();
+    }
+    
+    public interface IComparableGrid
     {
         bool HasEqualCells(IGrid grid);
         bool HasEqualReferences(IGrid grid);
@@ -72,7 +80,7 @@ namespace BoSSS.Foundation.Grid.Classic
             return types;
         }
 
-        public void SetData(object[] data)
+        public void SetVectorData(object[] data)
         {
             Cells = (Cell[])data[0];
             for (int i = 0; i < m_PredefinedGridPartitioning.Count; ++i)

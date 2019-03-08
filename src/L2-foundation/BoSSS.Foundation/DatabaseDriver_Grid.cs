@@ -201,10 +201,10 @@ namespace BoSSS.Foundation.IO
             {
                 tr.Info("Loading grid " + gridGuid);
 
-                Grid.Classic.GridCommons grid = null;
+                IGrid grid = null;
                 if (MyRank == 0)
                 {
-                    grid = DeserializeGrid<Grid.Classic.GridCommons>(gridGuid);
+                    grid = DeserializeGrid<GridCommons>(gridGuid);
                 }
 
                 grid = grid.MPIBroadcast(0);

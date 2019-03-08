@@ -17,7 +17,7 @@ namespace BoSSS.Foundation.Grid.Aggregation {
     /// </summary>
     [Serializable]
     [DataContract]
-    public class AggregationGrid : IGridInfo, ICloneable, IGrid {
+    public partial class AggregationGrid : IGridInfo, ICloneable, IGrid {
 
         /// <summary>
         /// Constructor.

@@ -64,6 +64,7 @@
     <Compile Include="AggregationGridData_EdgeData.cs" />
     <Compile Include="AggregationGridData_Parallelization.cs" />
     <Compile Include="AggregationGridData_VertexData.cs" />
+    <Compile Include="AggregationGrid_Serialization.cs" />
     <Compile Include="Basis.cs" />
     <Compile Include="Basis_Extrapolation.cs" />
     <Compile Include="Cache.cs" />
