@@ -114,8 +114,6 @@
     <Compile Include="BatchProcessorClient.cs" />
     <Compile Include="DatabaseUtils.cs" />
     <Compile Include="DGFieldExtensions.cs" />
-    <Compile Include="DGField_Arithmetic.cs" />
-    <Compile Include="DGField_Norms.cs" />
     <Compile Include="Document.cs" />
     <Compile Include="ElectronWorksheet.cs" />
     <Compile Include="ExportInstruction.cs" />

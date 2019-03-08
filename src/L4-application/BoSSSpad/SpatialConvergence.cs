@@ -9,6 +9,23 @@ using System.Text;
 using System.Threading.Tasks;
 
 namespace BoSSS.Application.BoSSSpad {
+
+    /// <summary>
+    /// Encodes in which norms convergence is tested (<see cref="WorkflowMgm.SpatialConvergence"/>)
+    /// </summary>
+    public enum NormType {
+
+        /// <summary>
+        /// Norm by <see cref="DGFieldComparison.ComputeErrors"/>; very accurate, but requires geometrically embedded meshes
+        /// </summary>
+        L2_embedded,
+
+        L2_approximate,
+
+        H1_approximate
+    }
+
+
     /// <summary>
     /// Workflow management.
     /// </summary>
@@ -40,6 +57,15 @@ namespace BoSSS.Application.BoSSSpad {
 
             internal SpatialConvergence(WorkflowMgm __owner) {
                 owner = __owner;
+                FieldsNormTypes = new Dictionary<string, NormType>();
+            }
+
+            /// <summary>
+            /// Indicates for which fields the error should be computed in which norm
+            /// </summary>
+            public Dictionary<string, NormType> FieldsNormTypes {
+                get;
+                private set;
             }
 
 
@@ -97,10 +123,13 @@ namespace BoSSS.Application.BoSSSpad {
                         }
                     }
 
-                    string[] fieldIds = commonFieldIds.ToArray();
+                    string[] fieldIds = commonFieldIds.Intersect()
 
                     // compute L2-errors
                     DGFieldComparison.ComputeErrors(fieldIds, tsiS, out double[] hS, out var DOFs, out var ERRs, out var tsiIdS);
+
+
+
 
 
                     // record errors

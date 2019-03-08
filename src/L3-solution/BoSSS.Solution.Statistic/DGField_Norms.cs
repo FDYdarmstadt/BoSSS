@@ -11,7 +11,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace BoSSS.Application.BoSSSpad {
+namespace BoSSS.Solution.Statistic {
 
     /// <summary>
     /// L2 and H1 distances for DG fields on different meshes
@@ -20,7 +20,7 @@ namespace BoSSS.Application.BoSSSpad {
 
 
         /// <summary>
-        /// L2 distance between two DG fields; this also supports DG fields on different meshes, 
+        /// Approximate L2 distance between two DG fields; this also supports DG fields on different meshes, 
         /// it could be used for convergence studies.
         /// </summary>
         /// <param name="A"></param>
@@ -119,7 +119,7 @@ namespace BoSSS.Application.BoSSSpad {
         }
 
         /// <summary>
-        /// H1 distance (difference in the H1 norm) between two DG fields; this also supports DG fields on different meshes, 
+        /// Approximate H1 distance (difference in the H1 norm) between two DG fields; this also supports DG fields on different meshes, 
         /// it could be used for convergence studies.
         /// </summary>
         /// <param name="A"></param>

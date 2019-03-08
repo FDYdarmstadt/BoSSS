@@ -101,8 +101,6 @@ namespace BoSSS.Solution.Statistic {
                         int idx = orgfields.IndexOf(fields[z], (f1, f2) => object.ReferenceEquals(f1, f2));
                         timestepIds[z] = timestepS.ElementAt(idx).ID;
                     }
-
-                    
                 }
 
 
