@@ -1149,7 +1149,7 @@ namespace CNS {
             return c;
         }
 
-        public static IBMControl IBMShockTube(string dbPath = null, int savePeriod = 100, int dgDegree = 2, int numOfCellsX = 75, int numOfCellsY = 55, double sensorLimit = 1e-3, double dtFixed = 0.0, double CFLFraction = 0.1, int explicitScheme = 3, int explicitOrder = 1, int numberOfSubGrids = 2, int reclusteringInterval = 1, int maxNumOfSubSteps = 10, double agg = 0.3, string restart = "False", double smoothing = 4.0) {
+        public static IBMControl IBMShockTube(string dbPath = null, int savePeriod = 1000, int dgDegree = 2, int numOfCellsX = 50, int numOfCellsY = 50, double sensorLimit = 1e-3, double dtFixed = 0.0, double CFLFraction = 0.1, int explicitScheme = 3, int explicitOrder = 1, int numberOfSubGrids = 1, int reclusteringInterval = 1000, int maxNumOfSubSteps = 10, double agg = 0.3, string restart = "False", double smoothing = 4.0) {
             IBMControl c = new IBMControl();
 
             // ### Database ###
@@ -1180,26 +1180,59 @@ namespace CNS {
             // ### Level-set ###
             c.DomainType = DomainTypes.StaticImmersedBoundary;
 
-            double angle = Math.PI / 6;
+            double xMin;
+            double xMax;
+            double yMin;
+            double yMax;
+
+            double angle;
+
             double[] startOfRamp = new double[] { 0.2, 0.0 };
             double[] startOfRamp2 = new double[] { 0.0, 0.2 };
 
-            Func<double, double> Ramp = delegate (double x) {
-                return Math.Tan(angle) * (x - startOfRamp[0]) + startOfRamp[1];
+            Func<double, double, double> Ramp = delegate (double x, double ang) {
+                return Math.Tan(ang) * (x - startOfRamp[0]) + startOfRamp[1];
             };
-            Func<double, double> Ramp2 = delegate (double x) {
-                return Math.Tan(angle) * (x - startOfRamp2[0]) + startOfRamp2[1];
+            Func<double, double, double> Ramp2 = delegate (double x, double ang) {
+                return Math.Tan(ang) * (x - startOfRamp2[0]) + startOfRamp2[1];
             };
 
             bool rotatedGrid = true;
 
             if (rotatedGrid) {
-                c.LevelSetFunction = (X, t) => -(X[1] - Ramp(X[0])) * (X[1] - Ramp2(X[0]));
+                angle = Math.PI / 6;
+                c.LevelSetFunction = (X, t) => -(X[1] - Ramp(X[0], angle)) * (X[1] - Ramp2(X[0], angle));
                 c.AddVariable(IBMVariables.LevelSet, 2);
+
+                //c.LevelSetFunction = (X, t) => X[1] - Ramp(X[0], angle);
+                //c.AddVariable(IBMVariables.LevelSet, 1);
                 //c.ContinuousLevelSet = true;
+                //xMin = 0;
+                //xMax = 1.5;
+                //yMin = 0;
+                //yMax = 1.1;
+                //numOfCellsX = 75;
+                //numOfCellsY = 55;
+
+                xMin = 0.5;
+                xMax = 1.0;
+                yMin = 0.2;
+                yMax = 0.7;
+                numOfCellsX = 25;
+                numOfCellsY = 25;
             } else {
                 c.LevelSetFunction = (X, t) => X[1] - 0.056;
                 c.AddVariable(IBMVariables.LevelSet, 1);
+
+                xMin = 0.0;
+                xMax = 1.0;
+                yMin = 0.0;
+                yMax = 1.0;
+
+                numOfCellsX = 50;
+                numOfCellsY = 50;
+
+                angle = 0.0;
             }
 
             c.LevelSetBoundaryTag = "AdiabaticSlipWall";
@@ -1276,11 +1309,6 @@ namespace CNS {
             c.AddVariable(Variables.Rank, 0);
 
             // ### Grid ###
-            double xMin = 0;
-            double xMax = 1.5;
-            double yMin = 0;
-            double yMax = 1.1;
-
             if (restart == "True") {
                 c.RestartInfo = new Tuple<Guid, TimestepNumber>(new Guid("23033126-3fab-4e3e-ad55-be025358ae71"), -1);
                 c.GridGuid = new Guid("f0f9dff0-8f9b-4d54-a45c-f22c1516d3e7");
@@ -1301,7 +1329,8 @@ namespace CNS {
             // ### Initial smoothing ###
             double shockAngle = angle + Math.PI / 2;
             double lengthMiddleLine = (xMax - xMin) / Math.Cos(angle);
-            double shockPosX = 0.5 * lengthMiddleLine * Math.Cos(angle);
+            //double shockPosX = 0.5 * lengthMiddleLine * Math.Cos(angle);
+            double shockPosX = 0.5 * lengthMiddleLine * Math.Cos(angle) + xMin;
 
             //double temp = shockPosX / ((xMax - xMin) / numOfCellsX);
             //bool resolutionOk = (temp == Math.Truncate(temp));
@@ -1313,7 +1342,7 @@ namespace CNS {
 
             double DistanceToInitialShock(double[] X, double t) {
                 // direction vector
-                Vector p1 = new Vector(shockPosX, Ramp(shockPosX));
+                Vector p1 = new Vector(shockPosX, Ramp(shockPosX, angle));
                 Vector p2 = new Vector(p1.x - 0.1, p1.y + 0.1 / Math.Tan(angle));
                 Vector p = p2 - p1;
 
@@ -1333,7 +1362,7 @@ namespace CNS {
 
                 // distance to line
                 //double distance = nDotX - (Math.Sin(alpha) * p1.x + vs * t);
-                double distance = nDotX - 0.5 * lengthMiddleLine;
+                double distance = nDotX - (0.5 * lengthMiddleLine + xMin / Math.Cos(angle));
 
                 return distance;
             }
@@ -1401,7 +1430,7 @@ namespace CNS {
                 c.CFLFraction = CFLFraction;
             }
             c.Endtime = 0.25;
-            c.NoOfTimesteps = int.MaxValue;
+            c.NoOfTimesteps = 1;
 
             // ### Project and sessions name ###
             c.ProjectName = "IBMST_Paper_Revision";
@@ -2259,8 +2288,8 @@ namespace CNS {
             // Grid
             if (restart == "True") {
                 // Restart Lichtenberg
-                c.RestartInfo = new Tuple<Guid, TimestepNumber>(new Guid("0f005d61-039d-4603-90fb-953f0a779b93"), -1);
-                c.GridGuid = new Guid("c26db7b6-b291-411e-8424-cb3c2395500e");
+                c.RestartInfo = new Tuple<Guid, TimestepNumber>(new Guid("1abf3683-2390-48e5-be51-a7752526102a"), -1);
+                c.GridGuid = new Guid("b1de3801-a54d-4083-8af2-e400947e626a");
             } else {
                 c.GridFunc = delegate {
                     GridCommons grid = GridImporter.Import(gridPath);

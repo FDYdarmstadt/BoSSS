@@ -36,21 +36,27 @@ namespace BoSSS.Application.FSI_Solver {
 
             int Dim = 2; // spatial dimension of ellipse is always 2
 
-            for (int i = 0; i < HistoryLength; i++) {
-                currentIterPos_P.Add(new double[Dim]);
-                currentIterAng_P.Add(new double());
-                currentIterVel_P.Add(new double[Dim]);
-                currentIterRot_P.Add(new double());
-                currentIterForces_P.Add(new double[Dim]);
-                currentIterTorque_P.Add(new double());
+            for (int i = 0; i < HistoryLength; i++)
+            {
+                positionAtIteration.Add(new double[Dim]);
+                angleAtIteration.Add(new double());
+                transVelocityAtIteration.Add(new double[Dim]);
+                transAccelerationAtIteration.Add(new double[Dim]);
+                rotationalVelocityAtIteration.Add(new double());
+                rotationalAccelarationAtIteration.Add(new double());
+                hydrodynForcesAtIteration.Add(new double[Dim]);
+                hydrodynTorqueAtIteration.Add(new double());
             }
-            for (int i = 0; i < 4; i++) {
-                currentTimePos_P.Add(new double[Dim]);
-                currentTimeAng_P.Add(new double());
-                currentTimeVel_P.Add(new double[Dim]);
-                currentTimeRot_P.Add(new double());
-                currentTimeForces_P.Add(new double[Dim]);
-                currentTimeTorque_P.Add(new double());
+            for (int i = 0; i < 4; i++)
+            {
+                positionAtTimestep.Add(new double[Dim]);
+                angleAtTimestep.Add(new double());
+                transVelocityAtTimestep.Add(new double[Dim]);
+                transAccelerationAtTimestep.Add(new double[Dim]);
+                rotationalVelocityAtTimestep.Add(new double());
+                rotationalAccelarationAtTimestep.Add(new double());
+                hydrodynForcesAtTimestep.Add(new double[Dim]);
+                hydrodynTorqueAtTimestep.Add(new double());
             }
             #endregion
 
@@ -59,12 +65,12 @@ namespace BoSSS.Application.FSI_Solver {
             if (startPos == null) {
                 startPos = new double[Dim];
             }
-            currentTimePos_P[0] = startPos;
-            currentTimePos_P[1] = startPos;
+            positionAtTimestep[0] = startPos;
+            positionAtTimestep[1] = startPos;
             //From degree to radiant
-            currentTimeAng_P[0] = startAngl * 2 * Math.PI / 360;
-            currentTimeAng_P[1] = startAngl * 2 * Math.PI / 360;
-            //currentIterVel_P[0][0] = 2e-8;
+            angleAtTimestep[0] = startAngl * 2 * Math.PI / 360;
+            angleAtTimestep[1] = startAngl * 2 * Math.PI / 360;
+            //transVelocityAtIteration[0][0] = 2e-8;
 
             UpdateLevelSetFunction();
             #endregion
@@ -114,9 +120,9 @@ namespace BoSSS.Application.FSI_Solver {
             }
         }
         override public void UpdateLevelSetFunction() {
-            double alpha = -(currentIterAng_P[0]);
+            double alpha = -(angleAtIteration[0]);
             phi_P = delegate (double[] X, double t) {
-                var r = -((((X[0] - currentIterPos_P[0][0]) * Math.Cos(alpha) - (X[1] - currentIterPos_P[0][1]) * Math.Sin(alpha)).Pow2()) / length_P.Pow2()) + -(((X[0] - currentIterPos_P[0][0]) * Math.Sin(alpha) + (X[1] - currentIterPos_P[0][1]) * Math.Cos(alpha)).Pow2() / thickness_P.Pow2()) + 1.0;
+                var r = -((((X[0] - positionAtIteration[0][0]) * Math.Cos(alpha) - (X[1] - positionAtIteration[0][1]) * Math.Sin(alpha)).Pow2()) / length_P.Pow2()) + -(((X[0] - positionAtIteration[0][0]) * Math.Sin(alpha) + (X[1] - positionAtIteration[0][1]) * Math.Cos(alpha)).Pow2() / thickness_P.Pow2()) + 1.0;
                 if (double.IsNaN(r) || double.IsInfinity(r))
                     throw new ArithmeticException();
                 return r;
@@ -124,12 +130,12 @@ namespace BoSSS.Application.FSI_Solver {
         }
         override public CellMask cutCells_P(LevelSetTracker LsTrk) {
             // tolerance is very important
-            var radiusTolerance = Math.Min(length_P, thickness_P) + LsTrk.GridDat.Cells.h_minGlobal;// +2.0*Math.Sqrt(2*LsTrk.GridDat.Cells.h_minGlobal.Pow2());
+            var radiusTolerance = Math.Max(length_P, thickness_P) + LsTrk.GridDat.Cells.h_minGlobal;// +2.0*Math.Sqrt(2*LsTrk.GridDat.Cells.h_minGlobal.Pow2());
 
             CellMask cellCollection;
             CellMask cells = null;
-            double alpha = -(currentIterAng_P[0]);
-            cells = CellMask.GetCellMask(LsTrk.GridDat, X => -((((X[0] - currentIterPos_P[0][0]) * Math.Cos(alpha) - (X[1] - currentIterPos_P[0][1]) * Math.Sin(alpha)).Pow2()) / length_P.Pow2()) + -(((X[0] - currentIterPos_P[0][0]) * Math.Sin(alpha) + (X[1] - currentIterPos_P[0][1]) * Math.Cos(alpha)).Pow2() / thickness_P.Pow2()) + radiusTolerance.Pow2() > 0);
+            double alpha = -(angleAtIteration[0]);
+            cells = CellMask.GetCellMask(LsTrk.GridDat, X => -((((X[0] - positionAtIteration[0][0]) * Math.Cos(alpha) - (X[1] - positionAtIteration[0][1]) * Math.Sin(alpha)).Pow2()) / length_P.Pow2()) + -(((X[0] - positionAtIteration[0][0]) * Math.Sin(alpha) + (X[1] - positionAtIteration[0][1]) * Math.Cos(alpha)).Pow2() / thickness_P.Pow2()) + radiusTolerance.Pow2() > 0);
 
             CellMask allCutCells = LsTrk.Regions.GetCutCellMask();
             cellCollection = cells.Intersect(allCutCells);
@@ -138,7 +144,7 @@ namespace BoSSS.Application.FSI_Solver {
         override public bool Contains(double[] point, LevelSetTracker LsTrk) {
             // only for squared cells
             double radiusTolerance = 1.0 + 2.0 * Math.Sqrt(2 * LsTrk.GridDat.Cells.h_minGlobal.Pow2());
-            if (-((((point[0] - currentIterPos_P[0][0]) * Math.Cos(currentIterAng_P[0]) - (point[1] - currentIterPos_P[0][1]) * Math.Sin(currentIterAng_P[0])).Pow2()) / length_P.Pow2()) + -(((point[0] - currentIterPos_P[0][0]) * Math.Sin(currentIterAng_P[0]) + (point[1] - currentIterPos_P[0][1]) * Math.Cos(currentIterAng_P[0])).Pow2() / thickness_P.Pow2()) + radiusTolerance.Pow2() > 0) {
+            if (-((((point[0] - positionAtIteration[0][0]) * Math.Cos(angleAtIteration[0]) - (point[1] - positionAtIteration[0][1]) * Math.Sin(angleAtIteration[0])).Pow2()) / length_P.Pow2()) + -(((point[0] - positionAtIteration[0][0]) * Math.Sin(angleAtIteration[0]) + (point[1] - positionAtIteration[0][1]) * Math.Cos(angleAtIteration[0])).Pow2() / thickness_P.Pow2()) + radiusTolerance.Pow2() > 0) {
                 return true;
             }
             return false;
@@ -146,7 +152,7 @@ namespace BoSSS.Application.FSI_Solver {
 
         override public double ComputeParticleRe(double mu_Fluid) {
             double particleReynolds = 0;
-            particleReynolds = Math.Sqrt(currentIterVel_P[0][0] * currentIterVel_P[0][0] + currentIterVel_P[0][1] * currentIterVel_P[0][1]) * 2 * length_P * rho_P / mu_Fluid;
+            particleReynolds = Math.Sqrt(transVelocityAtIteration[0][0] * transVelocityAtIteration[0][0] + transVelocityAtIteration[0][1] * transVelocityAtIteration[0][1]) * 2 * length_P * 1 / mu_Fluid;
             Console.WriteLine("Particle Reynolds number:  " + particleReynolds);
             return particleReynolds;
         }
