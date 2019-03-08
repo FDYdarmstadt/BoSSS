@@ -117,7 +117,7 @@ namespace BoSSS.Application.FSI_Solver
         public double[][] m_closeInterfacePointTo;
 
         /// <summary>
-        /// Skip calculation of hydrodynamic force and torque if particles are too close
+        /// Skip calculation of hydrodynamic force and Torque if particles are too close
         /// </summary>
         [DataMember]
         public bool skipForceIntegration = false;
@@ -131,7 +131,7 @@ namespace BoSSS.Application.FSI_Solver
         public int iteration_counter_P = 0;
 
         /// <summary>
-        /// Constant forces and torque underrelaxation?
+        /// Constant Forces and Torque underrelaxation?
         /// </summary>
         [DataMember]
         public bool underrelaxationFT_constant = true;
@@ -149,10 +149,10 @@ namespace BoSSS.Application.FSI_Solver
         public int underrelaxation_factor = 1;
 
         /// <summary>
-        /// Set true if you want to delete all values of the forces anf torque smaller than convergenceCriterion*1e-2
+        /// Set true if you want to delete all values of the Forces anf Torque smaller than convergenceCriterion*1e-2
         /// </summary>
         [DataMember]
-        public bool deleteSmallValues = false;
+        public bool ClearSmallValues = false;
         #endregion
 
         #region Misc parameters
@@ -295,13 +295,13 @@ namespace BoSSS.Application.FSI_Solver
         public List<double[]> hydrodynForcesAtTimestep = new List<double[]>();
         
         /// <summary>
-        /// The torque acting on the particle in the current iteration.
+        /// The Torque acting on the particle in the current iteration.
         /// </summary>
         [DataMember]
         public List<double> hydrodynTorqueAtIteration = new List<double>();
 
         /// <summary>
-        /// The torque acting on the particle in the current time step.
+        /// The Torque acting on the particle in the current time step.
         /// </summary>
         [DataMember]
         public List<double> hydrodynTorqueAtTimestep = new List<double>();
@@ -324,7 +324,7 @@ namespace BoSSS.Application.FSI_Solver
         public bool activeParticle = false;
 
         /// <summary>
-        /// Convergence criterion for the calculation of the forces and torque
+        /// Convergence criterion for the calculation of the Forces and Torque
         /// </summary>
         [DataMember]
         public double forceAndTorque_convergence = 1e-8;
@@ -821,7 +821,7 @@ namespace BoSSS.Application.FSI_Solver
 
         #region Update forces and torque
         /// <summary>
-        /// Update forces and torque acting from fluid onto the particle
+        /// Update Forces and Torque acting from fluid onto the particle
         /// </summary>
         /// <param name="U"></param>
         /// <param name="P"></param>
@@ -840,7 +840,7 @@ namespace BoSSS.Application.FSI_Solver
                 aux.SaveValueOfLastTimestep(hydrodynTorqueAtTimestep);
             }
 
-            int D = LsTrk.GridDat.SpatialDimension;
+            int spatialDim = LsTrk.GridDat.SpatialDimension;
 
             var UA = U.ToArray();
 
@@ -851,11 +851,11 @@ namespace BoSSS.Application.FSI_Solver
             pA = P;
 
             #region Force
-            double[] forces = new double[D];
-            for (int d = 0; d < D; d++) {
+            double[] Forces = new double[spatialDim];
+            for (int d = 0; d < spatialDim; d++) {
                 ScalarFunctionEx ErrFunc = delegate (int j0, int Len, NodeSet Ns, MultidimensionalArray result) {
                     int K = result.GetLength(1); // No of Nodes
-                    MultidimensionalArray Grad_UARes = MultidimensionalArray.Create(Len, K, D, D);
+                    MultidimensionalArray Grad_UARes = MultidimensionalArray.Create(Len, K, spatialDim, spatialDim);
                     MultidimensionalArray pARes = MultidimensionalArray.Create(Len, K);
 
                     // Evaluate tangential velocity to level-set surface
@@ -863,7 +863,7 @@ namespace BoSSS.Application.FSI_Solver
                     // Normal vector
                     var Normals = LsTrk.DataHistories[0].Current.GetLevelSetNormals(Ns, j0, Len);
                     // Velocity
-                    for (int i = 0; i < D; i++) {
+                    for (int i = 0; i < spatialDim; i++) {
                         UA[i].EvaluateGradient(j0, Len, Ns, Grad_UARes.ExtractSubArrayShallow(-1, -1, i, -1), 0, 1);
                     }
                     // Pressure
@@ -874,95 +874,27 @@ namespace BoSSS.Application.FSI_Solver
                             for (int k = 0; k < K; k++) {
                                 // Defining variables
                                 double acc = 0.0;
-                                double c = 0.0;
-                                double[] integrand = new double[4];
-                                double sum = 0;
-                                double naiveSum = 0;
-                                // Choosing dircetion
+                                double[] SummandsVelGradient = new double[3];
+                                double SummandsPressure;
                                 switch (d) {
                                     case 0:
-                                        c = 0.0;
-                                        naiveSum = 0;
-
-                                        // integration with Neumaier algorithm, Neumaier is used to prevent rounding errors
-                                        integrand[0] = -2 * Grad_UARes[j, k, 0, 0] * Normals[j, k, 0];
-                                        integrand[1] = -Grad_UARes[j, k, 0, 1] * Normals[j, k, 1];
-                                        integrand[2] = -Grad_UARes[j, k, 1, 0] * Normals[j, k, 1];
-                                        integrand[3] = pARes[j, k] * Normals[j, k, 0];
-
-                                        // Neumaier velocity gradient
-                                        sum = integrand[0];
-                                        for (int i = 1; i < integrand.Length - 2; i++)
-                                        {
-                                            naiveSum = sum + integrand[i];
-                                            if (Math.Abs(sum) >= integrand[i])
-                                            {
-                                                c += (sum - naiveSum) + integrand[i];
-                                            }
-                                            else
-                                            {
-                                                c += (integrand[i] - naiveSum) + sum;
-                                            }
-                                            sum = naiveSum;
-                                        }
-                                        sum *= muA;
-                                        c *= muA;
-                                        // Neumaier pressure term
-                                        naiveSum = sum + integrand[3];
-                                        if (Math.Abs(sum) >= integrand[3])
-                                        {
-                                            c += (sum - naiveSum) + integrand[3];
-                                        }
-                                        else
-                                        {
-                                            c += (integrand[3] - naiveSum) + sum;
-                                        }
-                                        sum = naiveSum;
-                                        acc += sum + c;
+                                        SummandsVelGradient[0] = -2 * Grad_UARes[j, k, 0, 0] * Normals[j, k, 0];
+                                        SummandsVelGradient[1] = -Grad_UARes[j, k, 0, 1] * Normals[j, k, 1];
+                                        SummandsVelGradient[2] = -Grad_UARes[j, k, 1, 0] * Normals[j, k, 1];
+                                        SummandsPressure = pARes[j, k] * Normals[j, k, 0];
+                                        acc += aux.SummationWithNeumaier(SummandsVelGradient, SummandsPressure, muA);
                                         break;
 
                                     case 1:
-                                        c = 0.0;
-                                        naiveSum = 0;
-                                        // integration with Neumaier algorithm
-                                        integrand[0] = -2 * Grad_UARes[j, k, 1, 1] * Normals[j, k, 1];
-                                        integrand[1] = -Grad_UARes[j, k, 1, 0] * Normals[j, k, 0];
-                                        integrand[2] = -Grad_UARes[j, k, 0, 1] * Normals[j, k, 0];
-                                        integrand[3] = pARes[j, k] * Normals[j, k, 1];
-                                        // Neumaier velocity gradient
-                                        sum = integrand[0];
-                                        for (int i = 1; i < integrand.Length - 2; i++)
-                                        {
-                                            naiveSum = sum + integrand[i];
-                                            if (Math.Abs(sum) >= integrand[i])
-                                            {
-                                                c += (sum - naiveSum) + integrand[i];
-                                            }
-                                            else
-                                            {
-                                                c += (integrand[i] - naiveSum) + sum;
-                                            }
-                                            sum = naiveSum;
-                                        }
-                                        sum *= muA;
-                                        c *= muA;
-                                        // Neumaier pressure term
-                                        naiveSum = sum + integrand[3];
-                                        if (Math.Abs(sum) >= integrand[3])
-                                        {
-                                            c += (sum - naiveSum) + integrand[3];
-                                        }
-                                        else
-                                        {
-                                            c += (integrand[3] - naiveSum) + sum;
-                                        }
-                                        sum = naiveSum;
-                                        acc += sum + c;
+                                        SummandsVelGradient[0] = -2 * Grad_UARes[j, k, 1, 1] * Normals[j, k, 1];
+                                        SummandsVelGradient[1] = -Grad_UARes[j, k, 1, 0] * Normals[j, k, 0];
+                                        SummandsVelGradient[2] = -Grad_UARes[j, k, 0, 1] * Normals[j, k, 0];
+                                        SummandsPressure = pARes[j, k] * Normals[j, k, 1];
+                                        acc += aux.SummationWithNeumaier(SummandsVelGradient, SummandsPressure, muA);
                                         break;
                                     default:
                                         throw new NotImplementedException();
                                 }
-
                                 result[j, k] = acc;
                             }
                         }
@@ -971,32 +903,35 @@ namespace BoSSS.Application.FSI_Solver
                         for (int j = 0; j < Len; j++) {
                             for (int k = 0; k < K; k++) {
                                 double acc = 0.0;
-
-                                // pressure
+                                double[] SummandsVelGradient = new double[5];
+                                double SummandsPressure;
                                 switch (d) {
                                     case 0:
-                                        acc += pARes[j, k] * Normals[j, k, 0];
-                                        acc -= (2 * muA) * Grad_UARes[j, k, 0, 0] * Normals[j, k, 0];
-                                        acc -= (muA) * Grad_UARes[j, k, 0, 2] * Normals[j, k, 2];
-                                        acc -= (muA) * Grad_UARes[j, k, 0, 1] * Normals[j, k, 1];
-                                        acc -= (muA) * Grad_UARes[j, k, 1, 0] * Normals[j, k, 1];
-                                        acc -= (muA) * Grad_UARes[j, k, 2, 0] * Normals[j, k, 2];
+                                        SummandsPressure = pARes[j, k] * Normals[j, k, 0];
+                                        SummandsVelGradient[0] = -2 * Grad_UARes[j, k, 0, 0] * Normals[j, k, 0];
+                                        SummandsVelGradient[1] = -Grad_UARes[j, k, 0, 2] * Normals[j, k, 2];
+                                        SummandsVelGradient[2] = -Grad_UARes[j, k, 0, 1] * Normals[j, k, 1];
+                                        SummandsVelGradient[3] = -Grad_UARes[j, k, 1, 0] * Normals[j, k, 1];
+                                        SummandsVelGradient[4] = -Grad_UARes[j, k, 2, 0] * Normals[j, k, 2];
+                                        acc += aux.SummationWithNeumaier(SummandsVelGradient, SummandsPressure, muA);
                                         break;
                                     case 1:
-                                        acc += pARes[j, k] * Normals[j, k, 1];
-                                        acc -= (2 * muA) * Grad_UARes[j, k, 1, 1] * Normals[j, k, 1];
-                                        acc -= (muA) * Grad_UARes[j, k, 1, 2] * Normals[j, k, 2];
-                                        acc -= (muA) * Grad_UARes[j, k, 1, 0] * Normals[j, k, 0];
-                                        acc -= (muA) * Grad_UARes[j, k, 0, 1] * Normals[j, k, 0];
-                                        acc -= (muA) * Grad_UARes[j, k, 2, 1] * Normals[j, k, 2];
+                                        SummandsPressure = pARes[j, k] * Normals[j, k, 1];
+                                        SummandsVelGradient[0] = -2 * Grad_UARes[j, k, 1, 1] * Normals[j, k, 1];
+                                        SummandsVelGradient[1] = -Grad_UARes[j, k, 1, 2] * Normals[j, k, 2];
+                                        SummandsVelGradient[2] = -Grad_UARes[j, k, 1, 0] * Normals[j, k, 0];
+                                        SummandsVelGradient[3] = -Grad_UARes[j, k, 0, 1] * Normals[j, k, 0];
+                                        SummandsVelGradient[4] = -Grad_UARes[j, k, 2, 1] * Normals[j, k, 2];
+                                        acc += aux.SummationWithNeumaier(SummandsVelGradient, SummandsPressure, muA);
                                         break;
                                     case 2:
-                                        acc += pARes[j, k] * Normals[j, k, 2];
-                                        acc -= (2 * muA) * Grad_UARes[j, k, 2, 2] * Normals[j, k, 2];
-                                        acc -= (muA) * Grad_UARes[j, k, 2, 0] * Normals[j, k, 0];
-                                        acc -= (muA) * Grad_UARes[j, k, 2, 1] * Normals[j, k, 1];
-                                        acc -= (muA) * Grad_UARes[j, k, 0, 2] * Normals[j, k, 0];
-                                        acc -= (muA) * Grad_UARes[j, k, 1, 2] * Normals[j, k, 1];
+                                        SummandsPressure = pARes[j, k] * Normals[j, k, 2];
+                                        SummandsVelGradient[0] = -2 * Grad_UARes[j, k, 2, 2] * Normals[j, k, 2];
+                                        SummandsVelGradient[1] = -Grad_UARes[j, k, 2, 0] * Normals[j, k, 0];
+                                        SummandsVelGradient[2] = -Grad_UARes[j, k, 2, 1] * Normals[j, k, 1];
+                                        SummandsVelGradient[3] = -Grad_UARes[j, k, 0, 2] * Normals[j, k, 0];
+                                        SummandsVelGradient[4] = -Grad_UARes[j, k, 1, 2] * Normals[j, k, 1];
+                                        acc += aux.SummationWithNeumaier(SummandsVelGradient, SummandsPressure, muA);
                                         break;
                                     default:
                                         throw new NotImplementedException();
@@ -1026,7 +961,7 @@ namespace BoSSS.Application.FSI_Solver
                     delegate (int i0, int Length, MultidimensionalArray ResultsOfIntegration) {
                         for (int i = 0; i < Length; i++)
                         {
-                            //forces[d] += ResultsOfIntegration[i, 0];
+                            //Forces[d] += ResultsOfIntegration[i, 0];
                             forceNaiveSum = forceSum + ResultsOfIntegration[i, 0];
                             if (Math.Abs(forceSum) >= Math.Abs(ResultsOfIntegration[i, 0]))
                             {
@@ -1038,23 +973,23 @@ namespace BoSSS.Application.FSI_Solver
                             }
                             forceSum = forceNaiveSum;
                         }
-                        forces[d] = forceSum + forceC;
+                        Forces[d] = forceSum + forceC;
                     }
                 ).Execute();
             }
             #endregion
 
             #region Torque
-            double torque = 0;
+            double Torque = 0;
             ScalarFunctionEx ErrFunc2 = delegate (int j0, int Len, NodeSet Ns, MultidimensionalArray result) {
                 int K = result.GetLength(1); // No nof Nodes
-                MultidimensionalArray Grad_UARes = MultidimensionalArray.Create(Len, K, D, D); ;
+                MultidimensionalArray Grad_UARes = MultidimensionalArray.Create(Len, K, spatialDim, spatialDim); ;
                 MultidimensionalArray pARes = MultidimensionalArray.Create(Len, K);
 
                 // Evaluate tangential velocity to level-set surface
                 var Normals = LsTrk.DataHistories[0].Current.GetLevelSetNormals(Ns, j0, Len);
 
-                for (int i = 0; i < D; i++) {
+                for (int i = 0; i < spatialDim; i++) {
                     UA[i].EvaluateGradient(j0, Len, Ns, Grad_UARes.ExtractSubArrayShallow(-1, -1, i, -1), 0, 1);
                 }
 
@@ -1083,7 +1018,7 @@ namespace BoSSS.Application.FSI_Solver
                         double naiveSum2 = 0.0;
                         double c2 = 0.0;
 
-                        // Calculate the torque around a circular particle with a given radius (Paper Wan and Turek 2005)
+                        // Calculate the Torque around a circular particle with a given radius (Paper Wan and Turek 2005)
                         integrand[0] = -2 * Grad_UARes[j, k, 0, 0] * Normals[j, k, 0];
                         integrand[1] = -Grad_UARes[j, k, 0, 1] * Normals[j, k, 1];
                         integrand[2] = -Grad_UARes[j, k, 1, 0] * Normals[j, k, 1];
@@ -1170,7 +1105,7 @@ namespace BoSSS.Application.FSI_Solver
                 delegate (int i0, int Length, MultidimensionalArray ResultsOfIntegration) {
                     //for (int i = 0; i < Length; i++)
                     //{
-                    //    torque += ResultsOfIntegration[i, 0];
+                    //    Torque += ResultsOfIntegration[i, 0];
                     //}
                     for (int i = 0; i < Length; i++)
                     {
@@ -1185,62 +1120,20 @@ namespace BoSSS.Application.FSI_Solver
                         }
                         torqueSum = torqueNaiveSum;
                     }
-                    torque = torqueSum + torqueC;
+                    Torque = torqueSum + torqueC;
                 }
 
             ).Execute();
 
             // determine underrelaxation factor (URF)
             // =============================
-            double[] ForcesUnderrelaxation = new double[D];
+            double[] ForcesUnderrelaxation = new double[spatialDim];
             double TorqueUnderrelaxation;
 
-            double averageForce = aux.CalculateAverageForces(forces, torque, averageDistance);
-            for (int k = 0; k < D; k++)
+            double averageForce = aux.CalculateAverageForces(Forces, Torque, averageDistance);
+            if (iteration_counter_P == 0)
             {
-                ForcesUnderrelaxation[k] = underrelaxation_factor;
-            }
-            TorqueUnderrelaxation = underrelaxation_factor;
-            // first iteration, set URF to 1 (non-constant URF)
-            // =============================
-            if (iteration_counter_P == 0 && underrelaxationFT_constant == false && active_stress_P != 0)
-            {
-                for (int k = 0; k < D; k++)
-                {
-                    ForcesUnderrelaxation[k] = 1;
-                    for (int t = 0; t < m_HistoryLength; t++)
-                    {
-                        hydrodynForcesAtIteration[t][k] = hydrodynForcesAtTimestep[1][k];
-                        hydrodynTorqueAtIteration[t] = hydrodynTorqueAtTimestep[1];
-                    }
-                }
-                TorqueUnderrelaxation = 1;
-
-                // approximate active force to improve convergence (only in first iteration)
-                // =============================
-                //if (Math.Abs(0.125 * Circumference_P * active_stress_P.Pow2() * Math.Cos(particleAnglePerIteration[0]) / muA) > Math.Abs(hydrodynForcesAtTimestep[1][0]) && hydrodynForcesAtTimestep[1][0] != 0)
-                //{
-                //    forces[0] = 0.5 * hydrodynForcesAtTimestep[1][0];
-                //}
-                //else
-                //{
-                //    forces[0] = 0.0125 * Circumference_P * active_stress_P.Pow2() * Math.Cos(particleAnglePerIteration[0]) / (muA);
-                //}
-                //if (Math.Abs(0.125 * Circumference_P * active_stress_P.Pow2() * Math.Sin(particleAnglePerIteration[0]) / muA) > Math.Abs(hydrodynForcesAtTimestep[1][1]) && hydrodynForcesAtTimestep[1][1] != 0)
-                //{
-                //    forces[1] = 0.5 * hydrodynForcesAtTimestep[1][1];
-                //}
-                //else
-                //{
-                //    forces[1] = 0.0125 * Circumference_P * active_stress_P.Pow2() * Math.Sin(particleAnglePerIteration[0]) / muA;
-                //}
-                //torque = 0;
-            }
-            // first iteration, set URF to 1 (constant URF or no iterative process)
-            // =============================
-            else if (iteration_counter_P == 0)
-            {
-                for (int k = 0; k < D; k++)
+                for (int k = 0; k < spatialDim; k++)
                 {
                     ForcesUnderrelaxation[k] = 1;
                     for (int t = 0; t < m_HistoryLength; t++)
@@ -1251,19 +1144,19 @@ namespace BoSSS.Application.FSI_Solver
                 }
                 TorqueUnderrelaxation = 1;
             }
-            // restart iteration
-            // =============================
-            else if ((iteration_counter_P - 1) / 100 % 2 == 1 && Math.Sqrt((forces[0] - hydrodynForcesAtIteration[1][0]).Pow2()+ (forces[1] - hydrodynForcesAtIteration[1][1]).Pow2()+ (torque-hydrodynTorqueAtIteration[1]).Pow2()) > 100 * forceAndTorque_convergence)
-            {
-                forces[0] = 0.00125 * Circumference_P * active_stress_P.Pow2() * Math.Cos(angleAtIteration[0]) / (muA);
-                forces[1] = 0.00125 * Circumference_P * active_stress_P.Pow2() * Math.Sin(angleAtIteration[0]) / muA;
-                torque = 0;
-            }
+            //// restart iteration
+            //// =============================
+            //else if ((iteration_counter_P - 1) / 100 % 2 == 1 && Math.Sqrt((Forces[0] - hydrodynForcesAtIteration[1][0]).Pow2()+ (Forces[1] - hydrodynForcesAtIteration[1][1]).Pow2()+ (Torque-hydrodynTorqueAtIteration[1]).Pow2()) > 100 * forceAndTorque_convergence)
+            //{
+            //    Forces[0] = 0.00125 * Circumference_P * active_stress_P.Pow2() * Math.Cos(angleAtIteration[0]) / (muA);
+            //    Forces[1] = 0.00125 * Circumference_P * active_stress_P.Pow2() * Math.Sin(angleAtIteration[0]) / muA;
+            //    Torque = 0;
+            //}
             // constant predefined URF
             // =============================
             else if (underrelaxationFT_constant == true)
             {
-                for (int k = 0; k < D; k++)
+                for (int k = 0; k < spatialDim; k++)
                 {
                     ForcesUnderrelaxation[k] = underrelaxation_factor * Math.Pow(10, underrelaxationFT_exponent);
                 }
@@ -1271,45 +1164,24 @@ namespace BoSSS.Application.FSI_Solver
             }
             // calculation of URF for adaptive underrelaxation
             // =============================
-            else if (underrelaxationFT_constant == false)
+            else 
             {
-                ForcesUnderrelaxation = aux.CalculateAdaptiveForceUnderrelaxation(forces, hydrodynForcesAtIteration[0], averageForce, forceAndTorque_convergence, underrelaxation_factor);
-                TorqueUnderrelaxation = aux.CalculateAdaptiveTorqueUnderrelaxation(torque, hydrodynTorqueAtIteration[0], averageForce, forceAndTorque_convergence, underrelaxation_factor);
+                ForcesUnderrelaxation = aux.CalculateAdaptiveForceUnderrelaxation(Forces, hydrodynForcesAtIteration[0], averageForce, forceAndTorque_convergence, underrelaxation_factor);
+                TorqueUnderrelaxation = aux.CalculateAdaptiveTorqueUnderrelaxation(Torque, hydrodynTorqueAtIteration[0], averageForce, forceAndTorque_convergence, underrelaxation_factor);
             }
             Console.WriteLine("ForcesUnderrelaxation[0]  " + ForcesUnderrelaxation[0] + ", ForcesUnderrelaxation[1]: " + ForcesUnderrelaxation[1] + ", TorqueUnderrelaxation " + TorqueUnderrelaxation);
-            Console.WriteLine("tempfForces[0]  " + forces[0] + ", temp_Forces[1]: " + forces[1] + ", tempTorque " + torque);
+            Console.WriteLine("tempfForces[0]  " + Forces[0] + ", temp_Forces[1]: " + Forces[1] + ", tempTorque " + Torque);
 
-            // calculation of forces and torque with underrelaxation
+            // calculation of Forces and Torque with underrelaxation
             // =============================
-            // forces
             int beta = 1;
-            forces[0] = forces[0] - addedDampingTensorVV[0, 0] * beta * transAccelerationAtIteration[0][0] * dt - addedDampingTensorVV[1, 0] * beta * transAccelerationAtIteration[0][1] * dt;
-            forces[1] = forces[1] - addedDampingTensorVV[0, 1] * beta * transAccelerationAtIteration[0][0] * dt - addedDampingTensorVV[1, 1] * beta * transAccelerationAtIteration[0][1] * dt + (particleDensity - fluidDensity) * Area_P * gravityVertical;
-            torque = torque - beta * dt * addedDampingTensorWW[0, 0] * rotationalAccelarationAtIteration[0];
-            double[] forces_underR = new double[D];
-            for (int i = 0; i < D; i++)
-            {
-                forces_underR[i] = ForcesUnderrelaxation[i] * forces[i] + (1 - ForcesUnderrelaxation[i]) * hydrodynForcesAtIteration[0][i];
-                // kill all forces smaller than a certain value (increases stability)
-                if (Math.Abs(forces_underR[i]) < forceAndTorque_convergence * 1e-2 && deleteSmallValues == true)
-                {
-                    forces_underR[i] = 0;
-                }
-            }
-            // torque
-            double torque_underR = ForcesUnderrelaxation[D] * torque + (1 - ForcesUnderrelaxation[D]) * hydrodynTorqueAtIteration[0];
-            // kill all values smaller than a certain value (increases stability)
-            if (Math.Abs(torque_underR) < forceAndTorque_convergence * 1e-2 && deleteSmallValues == true)
-            {
-                torque_underR = 0;
-            }
-            // update forces and torque
-
-            //forces_underR[0] = forces_underR[0] - addedDampingTensorVV[0, 0] * beta * transAccelerationAtIteration[0][0] * dt - addedDampingTensorVV[1, 0] * beta * transAccelerationAtIteration[0][1] * dt;
-            //forces_underR[1] = forces_underR[1] + addedDampingTensorVV[0, 1] * beta * transAccelerationAtIteration[0][0] * dt + addedDampingTensorVV[1, 1] * beta * transAccelerationAtIteration[0][1] * dt + (particleDensity - fluidDensity) * Area_P * gravityVertical;
-            //torque_underR = torque_underR + beta * dt * addedDampingTensorWW[0, 0] * rotationalAccelarationAtIteration[0];
-            aux.SaveMultidimValueToList(hydrodynForcesAtIteration, forces_underR);
-            aux.SaveValueToList(hydrodynTorqueAtIteration, torque_underR);
+            Forces[0] = Forces[0] - addedDampingTensorVV[0, 0] * beta * transAccelerationAtIteration[0][0] * dt - addedDampingTensorVV[1, 0] * beta * transAccelerationAtIteration[0][1] * dt;
+            Forces[1] = Forces[1] - addedDampingTensorVV[0, 1] * beta * transAccelerationAtIteration[0][0] * dt - addedDampingTensorVV[1, 1] * beta * transAccelerationAtIteration[0][1] * dt + (particleDensity - fluidDensity) * Area_P * gravityVertical;
+            Torque = Torque - beta * dt * addedDampingTensorWW[0, 0] * rotationalAccelarationAtIteration[0];
+            Forces = aux.RelaxatedForce(ForcesUnderrelaxation, Forces, hydrodynForcesAtIteration[0], ClearSmallValues, forceAndTorque_convergence);
+            Torque = aux.RelaxatedTorque(TorqueUnderrelaxation, Torque, hydrodynTorqueAtIteration[0], ClearSmallValues, forceAndTorque_convergence);
+            aux.SaveMultidimValueToList(hydrodynForcesAtIteration, Forces);
+            aux.SaveValueToList(hydrodynTorqueAtIteration, Torque);
             hydrodynForcesAtTimestep[0] = hydrodynForcesAtIteration[0];
             hydrodynTorqueAtTimestep[0] = hydrodynTorqueAtIteration[0];
 

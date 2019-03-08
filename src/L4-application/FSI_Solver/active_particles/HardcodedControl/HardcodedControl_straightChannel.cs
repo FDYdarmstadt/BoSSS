@@ -139,7 +139,7 @@ namespace BoSSS.Application.FSI_Solver
                     length_P = 4 * BaseSize,
                     underrelaxationFT_constant = false,// set true if you want to define a constant underrelaxation (not recommended)
                     underrelaxation_factor = 7.5,// underrelaxation with [factor * 10^exponent]
-                    deleteSmallValues = true,
+                    ClearSmallValues = true,
                     neglectAddedDamping = false
             });
             }
@@ -330,7 +330,7 @@ namespace BoSSS.Application.FSI_Solver
                     length_P = 2 * BaseSize,
                     underrelaxationFT_constant = false,// set true if you want to define a constant underrelaxation (not recommended)
                     underrelaxation_factor = 0.5,// underrelaxation with [factor * 10^exponent]
-                    deleteSmallValues = true
+                    ClearSmallValues = true
                 });
             }
             //Define level-set

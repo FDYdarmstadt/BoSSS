@@ -90,28 +90,39 @@ namespace BoSSS.Application.FSI_Solver
             return UnderrelaxationCoeff;
         }
 
-        internal double[] CalculateAdaptiveTorqueUnderrelaxation(double[] forces, double[] forcesAtPrevIteration, double averageForce, double convergenceLimit, int predefinedFactor = 1)
+        internal double CalculateAdaptiveTorqueUnderrelaxation(double torque, double torqueAtPrevIteration, double averageForce, double convergenceLimit, int predefinedFactor = 1)
         {
-            double[] UnderrelaxationCoeff = new double[forces.Length];
+            double UnderrelaxationCoeff = predefinedFactor * 1e-1;
             double UnderrelaxationExponent = 0;
+            while (Math.Abs(UnderrelaxationCoeff * torque) > 0.75 * Math.Abs(torqueAtPrevIteration))
+            {
+                UnderrelaxationExponent -= 1;
+                UnderrelaxationCoeff = predefinedFactor * Math.Pow(10, UnderrelaxationExponent);
+            }
+            if (Math.Abs(UnderrelaxationCoeff * torque) < convergenceLimit * 1000 && 100 * Math.Abs(torque) > averageForce)
+            {
+                UnderrelaxationCoeff = convergenceLimit * 1000;
+            }
+            if (UnderrelaxationCoeff >= predefinedFactor * 1e-1)
+            {
+                UnderrelaxationCoeff = predefinedFactor * 1e-1;
+            }
+            return UnderrelaxationCoeff;
+        }
+
+        internal double RelaxatedForce(double[] underrelaxationCoeff, double[] forces, double[] forcesAtPrevIteration, bool clearSmallValues = false)
+        {
             int spatialDim = forces.Length;
             for (int d = 0; d < spatialDim; d++)
             {
-                while (Math.Abs(UnderrelaxationCoeff[d] * forces[d]) > 0.75 * Math.Abs(forcesAtPrevIteration[d]))
+                forces_underR[d] = ForcesUnderrelaxation[d] * forces[d] + (1 - ForcesUnderrelaxation[d]) * hydrodynForcesAtIteration[0][d];
+                // kill all forces smaller than a certain value (increases stability)
+                if (Math.Abs(forces_underR[d]) < forceAndTorque_convergence * 1e-2 && deleteSmallValues == true)
                 {
-                    UnderrelaxationExponent -= 1;
-                    UnderrelaxationCoeff[d] = predefinedFactor * Math.Pow(10, UnderrelaxationExponent);
-                }
-                if (Math.Abs(UnderrelaxationCoeff[d] * forces[d]) < convergenceLimit * 1000 && 100 * Math.Abs(forces[d]) > averageForce)
-                {
-                    UnderrelaxationCoeff[d] = convergenceLimit * 1000;
-                }
-                if (UnderrelaxationCoeff[d] >= predefinedFactor * 1e-1)
-                {
-                    UnderrelaxationCoeff[d] = predefinedFactor * 1e-1;
+                    forces_underR[d] = 0;
                 }
             }
-            return UnderrelaxationCoeff;
+            return;
         }
 
     }
