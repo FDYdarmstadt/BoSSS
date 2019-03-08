@@ -60,6 +60,7 @@
   <ItemGroup>
     <Compile Include="CellLocalization.cs" />
     <Compile Include="DGFieldComparison.cs" />
+    <Compile Include="DGFieldComparisonNonEmb.cs" />
     <Compile Include="FieldEvaluation.cs" />
     <Compile Include="Integrator.cs" />
     <Compile Include="ISurfaceEvaluation.cs" />
