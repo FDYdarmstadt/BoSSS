@@ -139,7 +139,7 @@ namespace BoSSS.Application.FSI_Solver
             double sum = SummandsVelGradient[0];
             double naiveSum;
             double c = 0;
-            for (int i = 1; i < SummandsVelGradient.Length - 1; i++)
+            for (int i = 1; i < SummandsVelGradient.Length; i++)
             {
                 naiveSum = sum + SummandsVelGradient[i];
                 if (Math.Abs(sum) >= SummandsVelGradient[i])
@@ -165,6 +165,27 @@ namespace BoSSS.Application.FSI_Solver
                 c += (SummandsPressure - naiveSum) + sum;
             }
             sum = naiveSum;
+            return sum + c;
+        }
+
+        internal double SummationWithNeumaierArray(MultidimensionalArray Summands, double Length)
+        {
+            double sum = Summands[0, 0];
+            double naiveSum;
+            double c = 0.0;
+            for (int i = 1; i < Length; i++)
+            {
+                naiveSum = sum + Summands[i, 0];
+                if (Math.Abs(sum) >= Math.Abs(Summands[i, 0]))
+                {
+                    c += (sum - naiveSum) + Summands[i, 0];
+                }
+                else
+                {
+                    c += (Summands[i, 0] - naiveSum) + sum;
+                }
+                sum = naiveSum;
+            }
             return sum + c;
         }
 

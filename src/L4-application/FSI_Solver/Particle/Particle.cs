@@ -373,6 +373,7 @@ namespace BoSSS.Application.FSI_Solver
 
         #region Administrative tasks
         ParticleAuxillary aux = new ParticleAuxillary();
+        ParticlePhysics physics = new ParticlePhysics();
         #region obsolete
         ///// <summary>
         ///// Clean all Particle iteration histories until a certain length, obsolete?
@@ -872,108 +873,27 @@ namespace BoSSS.Application.FSI_Solver
                     if (LsTrk.GridDat.SpatialDimension == 2) {
                         for (int j = 0; j < Len; j++) {
                             for (int k = 0; k < K; k++) {
-                                // Defining variables
-                                double acc = 0.0;
-                                double[] SummandsVelGradient = new double[3];
-                                double SummandsPressure;
-                                switch (d) {
-                                    case 0:
-                                        SummandsVelGradient[0] = -2 * Grad_UARes[j, k, 0, 0] * Normals[j, k, 0];
-                                        SummandsVelGradient[1] = -Grad_UARes[j, k, 0, 1] * Normals[j, k, 1];
-                                        SummandsVelGradient[2] = -Grad_UARes[j, k, 1, 0] * Normals[j, k, 1];
-                                        SummandsPressure = pARes[j, k] * Normals[j, k, 0];
-                                        acc += aux.SummationWithNeumaier(SummandsVelGradient, SummandsPressure, muA);
-                                        break;
-
-                                    case 1:
-                                        SummandsVelGradient[0] = -2 * Grad_UARes[j, k, 1, 1] * Normals[j, k, 1];
-                                        SummandsVelGradient[1] = -Grad_UARes[j, k, 1, 0] * Normals[j, k, 0];
-                                        SummandsVelGradient[2] = -Grad_UARes[j, k, 0, 1] * Normals[j, k, 0];
-                                        SummandsPressure = pARes[j, k] * Normals[j, k, 1];
-                                        acc += aux.SummationWithNeumaier(SummandsVelGradient, SummandsPressure, muA);
-                                        break;
-                                    default:
-                                        throw new NotImplementedException();
-                                }
-                                result[j, k] = acc;
+                                result[j, k] = physics.CalculateStressTensor2D(Grad_UARes, pARes, Normals, muA, k, j);
                             }
                         }
                     }
                     else {
                         for (int j = 0; j < Len; j++) {
                             for (int k = 0; k < K; k++) {
-                                double acc = 0.0;
-                                double[] SummandsVelGradient = new double[5];
-                                double SummandsPressure;
-                                switch (d) {
-                                    case 0:
-                                        SummandsPressure = pARes[j, k] * Normals[j, k, 0];
-                                        SummandsVelGradient[0] = -2 * Grad_UARes[j, k, 0, 0] * Normals[j, k, 0];
-                                        SummandsVelGradient[1] = -Grad_UARes[j, k, 0, 2] * Normals[j, k, 2];
-                                        SummandsVelGradient[2] = -Grad_UARes[j, k, 0, 1] * Normals[j, k, 1];
-                                        SummandsVelGradient[3] = -Grad_UARes[j, k, 1, 0] * Normals[j, k, 1];
-                                        SummandsVelGradient[4] = -Grad_UARes[j, k, 2, 0] * Normals[j, k, 2];
-                                        acc += aux.SummationWithNeumaier(SummandsVelGradient, SummandsPressure, muA);
-                                        break;
-                                    case 1:
-                                        SummandsPressure = pARes[j, k] * Normals[j, k, 1];
-                                        SummandsVelGradient[0] = -2 * Grad_UARes[j, k, 1, 1] * Normals[j, k, 1];
-                                        SummandsVelGradient[1] = -Grad_UARes[j, k, 1, 2] * Normals[j, k, 2];
-                                        SummandsVelGradient[2] = -Grad_UARes[j, k, 1, 0] * Normals[j, k, 0];
-                                        SummandsVelGradient[3] = -Grad_UARes[j, k, 0, 1] * Normals[j, k, 0];
-                                        SummandsVelGradient[4] = -Grad_UARes[j, k, 2, 1] * Normals[j, k, 2];
-                                        acc += aux.SummationWithNeumaier(SummandsVelGradient, SummandsPressure, muA);
-                                        break;
-                                    case 2:
-                                        SummandsPressure = pARes[j, k] * Normals[j, k, 2];
-                                        SummandsVelGradient[0] = -2 * Grad_UARes[j, k, 2, 2] * Normals[j, k, 2];
-                                        SummandsVelGradient[1] = -Grad_UARes[j, k, 2, 0] * Normals[j, k, 0];
-                                        SummandsVelGradient[2] = -Grad_UARes[j, k, 2, 1] * Normals[j, k, 1];
-                                        SummandsVelGradient[3] = -Grad_UARes[j, k, 0, 2] * Normals[j, k, 0];
-                                        SummandsVelGradient[4] = -Grad_UARes[j, k, 1, 2] * Normals[j, k, 1];
-                                        acc += aux.SummationWithNeumaier(SummandsVelGradient, SummandsPressure, muA);
-                                        break;
-                                    default:
-                                        throw new NotImplementedException();
-                                }
-
-                                result[j, k] = acc;
+                                result[j, k] = physics.CalculateStressTensor3D(Grad_UARes, pARes, Normals, muA, k, j);
                             }
                         }
                     }
-
                 };
-
                 var SchemeHelper = LsTrk.GetXDGSpaceMetrics(new[] { LsTrk.GetSpeciesId("A") }, RequiredOrder, 1).XQuadSchemeHelper;
-                //var SchemeHelper = new XQuadSchemeHelper(LsTrk, momentFittingVariant, );
-
-                //CellQuadratureScheme cqs = SchemeHelper.GetLevelSetquadScheme(0, LsTrk.Regions.GetCutCellMask());
                 CellQuadratureScheme cqs = SchemeHelper.GetLevelSetquadScheme(0, this.cutCells_P(LsTrk));
-
-                double forceNaiveSum = 0.0;
-                double forceSum = 0.0;
-                double forceC = 0.0;
                 CellQuadrature.GetQuadrature(new int[] { 1 }, LsTrk.GridDat,
                     cqs.Compile(LsTrk.GridDat, RequiredOrder), //  agg.HMForder),
                     delegate (int i0, int Length, QuadRule QR, MultidimensionalArray EvalResult) {
                         ErrFunc(i0, Length, QR.Nodes, EvalResult.ExtractSubArrayShallow(-1, -1, 0));
                     },
                     delegate (int i0, int Length, MultidimensionalArray ResultsOfIntegration) {
-                        for (int i = 0; i < Length; i++)
-                        {
-                            //Forces[d] += ResultsOfIntegration[i, 0];
-                            forceNaiveSum = forceSum + ResultsOfIntegration[i, 0];
-                            if (Math.Abs(forceSum) >= Math.Abs(ResultsOfIntegration[i, 0]))
-                            {
-                                forceC += (forceSum - forceNaiveSum) + ResultsOfIntegration[i, 0];
-                            }
-                            else
-                            {
-                                forceC += (ResultsOfIntegration[i, 0] - forceNaiveSum) + forceSum;
-                            }
-                            forceSum = forceNaiveSum;
-                        }
-                        Forces[d] = forceSum + forceC;
+                        Forces[d] = aux.SummationWithNeumaierArray(ResultsOfIntegration, Length);
                     }
                 ).Execute();
             }
@@ -985,142 +905,29 @@ namespace BoSSS.Application.FSI_Solver
                 int K = result.GetLength(1); // No nof Nodes
                 MultidimensionalArray Grad_UARes = MultidimensionalArray.Create(Len, K, spatialDim, spatialDim); ;
                 MultidimensionalArray pARes = MultidimensionalArray.Create(Len, K);
-
                 // Evaluate tangential velocity to level-set surface
                 var Normals = LsTrk.DataHistories[0].Current.GetLevelSetNormals(Ns, j0, Len);
-
                 for (int i = 0; i < spatialDim; i++) {
                     UA[i].EvaluateGradient(j0, Len, Ns, Grad_UARes.ExtractSubArrayShallow(-1, -1, i, -1), 0, 1);
                 }
-
-                //var trafo = LsTrk.GridDat.Edges.Edge2CellTrafos;
-                //var trafoIdx = LsTrk.GridDat.TransformLocal2Global(Ns)
-                //var transFormed = trafo[trafoIdx].Transform(Nodes);
-                //var newVertices = transFormed.CloneAs();
-                //GridData.TransformLocal2Global(transFormed, newVertices, jCell);
-
-
                 MultidimensionalArray tempArray = Ns.CloneAs();
-
                 LsTrk.GridDat.TransformLocal2Global(Ns, tempArray, j0);
-
                 pA.Evaluate(j0, Len, Ns, pARes);
-
                 for (int j = 0; j < Len; j++) {
                     for (int k = 0; k < K; k++) {
-
-                        double[] integrand = new double[4];
-                        double[] integrand2 = new double[4];
-                        double naiveSum = 0.0;
-                        double c = 0.0;
-                        double sum = 0.0;
-                        double sum2 = 0.0;
-                        double naiveSum2 = 0.0;
-                        double c2 = 0.0;
-
-                        // Calculate the Torque around a circular particle with a given radius (Paper Wan and Turek 2005)
-                        integrand[0] = -2 * Grad_UARes[j, k, 0, 0] * Normals[j, k, 0];
-                        integrand[1] = -Grad_UARes[j, k, 0, 1] * Normals[j, k, 1];
-                        integrand[2] = -Grad_UARes[j, k, 1, 0] * Normals[j, k, 1];
-                        integrand[3] = (pARes[j, k] * Normals[j, k, 0]);
-                        sum = integrand[0];
-                        for (int i = 1; i < integrand.Length - 1; i++)
-                        {
-                            naiveSum = sum + integrand[i];
-                            if (Math.Abs(sum) >= integrand[i])
-                            {
-                                c += (sum - naiveSum) + integrand[i];
-                            }
-                            else
-                            {
-                                c += (integrand[i] - naiveSum) + sum;
-                            }
-                            sum = naiveSum;
-                        }
-                        sum *= muA;
-                        c *= muA;
-                        naiveSum = sum + integrand[3];
-                        if (Math.Abs(sum) >= integrand[3])
-                        {
-                            c += (sum - naiveSum) + integrand[3];
-                        }
-                        else
-                        {
-                            c += (integrand[3] - naiveSum) + sum;
-                        }
-                        sum *= -Normals[j, k, 1] * (this.positionAtIteration[0][1] - tempArray[k, 1]).Abs();
-                        c *= -Normals[j, k, 1] * (this.positionAtIteration[0][1] - tempArray[k, 1]).Abs();
-
-                        integrand2[0] = -2 * Grad_UARes[j, k, 1, 1] * Normals[j, k, 1];
-                        integrand2[1] = -Grad_UARes[j, k, 1, 0] * Normals[j, k, 0];
-                        integrand2[2] = -Grad_UARes[j, k, 0, 1] * Normals[j, k, 0];
-                        integrand2[3] = pARes[j, k] * Normals[j, k, 1];
-                        sum2 = integrand2[0];
-                        for (int i = 1; i < integrand2.Length - 1; i++)
-                        {
-                            naiveSum2 = sum2 + integrand2[i];
-                            if (Math.Abs(sum2) >= integrand2[i])
-                            {
-                                c2 += (sum2 - naiveSum2) + integrand2[i];
-                            }
-                            else
-                            {
-                                c2 += (integrand2[i] - naiveSum2) + sum2;
-                            }
-                            sum2 = naiveSum2;
-                        }
-                        sum2 *= muA;
-                        c2 *= muA;
-                        naiveSum2 = sum2 + integrand2[3];
-                        if (Math.Abs(sum2) >= integrand2[3])
-                        {
-                            c2 += (sum2 - naiveSum2) + integrand2[3];
-                        }
-                        else
-                        {
-                            c2 += (integrand2[3] - naiveSum2) + sum2;
-                        }
-                        sum2 *= Normals[j, k, 0] * (this.positionAtIteration[0][0] - tempArray[k, 0]).Abs();
-                        c2 *= Normals[j, k, 0] * (this.positionAtIteration[0][0] - tempArray[k, 0]).Abs();
-                        sum += sum2;
-                        c += c2;
-
-                        result[j, k] = sum + c;
+                        result[j, k] = physics.CalculateTorqueFromStressTensor2D(Grad_UARes, pARes, Normals, tempArray, muA, k, j, positionAtIteration[0]);
                     }
                 }
             };
-
             var SchemeHelper2 = LsTrk.GetXDGSpaceMetrics(new[] { LsTrk.GetSpeciesId("A") }, RequiredOrder, 1).XQuadSchemeHelper;
-            //var SchemeHelper = new XQuadSchemeHelper(LsTrk, momentFittingVariant, );
-            //CellQuadratureScheme cqs2 = SchemeHelper2.GetLevelSetquadScheme(0, LsTrk.Regions.GetCutCellMask());
             CellQuadratureScheme cqs2 = SchemeHelper2.GetLevelSetquadScheme(0, this.cutCells_P(LsTrk));
-            double torqueNaiveSum = 0.0;
-            double torqueSum = 0.0;
-            double torqueC = 0.0;
             CellQuadrature.GetQuadrature(new int[] { 1 }, LsTrk.GridDat,
                 cqs2.Compile(LsTrk.GridDat, RequiredOrder),
                 delegate (int i0, int Length, QuadRule QR, MultidimensionalArray EvalResult) {
                     ErrFunc2(i0, Length, QR.Nodes, EvalResult.ExtractSubArrayShallow(-1, -1, 0));
                 },
                 delegate (int i0, int Length, MultidimensionalArray ResultsOfIntegration) {
-                    //for (int i = 0; i < Length; i++)
-                    //{
-                    //    Torque += ResultsOfIntegration[i, 0];
-                    //}
-                    for (int i = 0; i < Length; i++)
-                    {
-                        torqueNaiveSum = torqueSum + ResultsOfIntegration[i, 0];
-                        if (Math.Abs(torqueSum) >= Math.Abs(ResultsOfIntegration[i, 0]))
-                        {
-                            torqueC += (torqueSum - torqueNaiveSum) + ResultsOfIntegration[i, 0];
-                        }
-                        else
-                        {
-                            torqueC += (ResultsOfIntegration[i, 0] - torqueNaiveSum) + torqueSum;
-                        }
-                        torqueSum = torqueNaiveSum;
-                    }
-                    Torque = torqueSum + torqueC;
+                    Torque = aux.SummationWithNeumaierArray(ResultsOfIntegration, Length);
                 }
 
             ).Execute();
