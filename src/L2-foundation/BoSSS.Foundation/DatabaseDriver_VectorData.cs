@@ -6,6 +6,7 @@ using System.Linq;
 using ilPSP;
 using ilPSP.Tracing;
 using MPI.Wrappers;
+using Newtonsoft.Json;
 
 namespace BoSSS.Foundation.IO
 {
@@ -28,10 +29,10 @@ namespace BoSSS.Foundation.IO
     }
 
 
-    class NoInterfaceSupportSerializer : Serializer, IVectorDataSerializer
+    abstract class VectorDataSerializer : Serializer, IVectorDataSerializer
     {
         IFileSystemDriver m_fsDriver; 
-        public NoInterfaceSupportSerializer(IFileSystemDriver driver)
+        public VectorDataSerializer(IFileSystemDriver driver)
         {
             m_fsDriver = driver;
         }
@@ -392,11 +393,83 @@ namespace BoSSS.Foundation.IO
         }
     }
 
-    class InterfaceSupportSerializer : NoInterfaceSupportSerializer, IVectorDataSerializer
+    class SerializerVersion0 : VectorDataSerializer
     {
-        public InterfaceSupportSerializer(IFileSystemDriver FsDriver) : base(FsDriver)
+        public SerializerVersion0(IFileSystemDriver FsDriver) : base(FsDriver)
         {
 
+        }
+
+        public override string Name => "Version 0";
+
+        protected override JsonSerializer JsonFormatter => jsonFormatter;
+
+        JsonSerializer jsonFormatter = new JsonSerializer()
+        {
+            NullValueHandling = NullValueHandling.Ignore,
+            TypeNameHandling = TypeNameHandling.Auto,
+            ConstructorHandling = ConstructorHandling.AllowNonPublicDefaultConstructor,
+            ReferenceLoopHandling = ReferenceLoopHandling.Serialize,
+            Binder = new MySerializationBinder()
+        };
+
+        class MySerializationBinder : Newtonsoft.Json.Serialization.DefaultSerializationBinder
+        {
+
+            public override Type BindToType(string assemblyName, string typeName)
+            {
+                if (assemblyName.Equals("BoSSS.Foundation") && typeName.Equals("BoSSS.Foundation.Grid.Cell[]"))
+                {
+                    typeName = "BoSSS.Foundation.Grid.Classic.Cell[]";
+                }
+
+                if (assemblyName.Equals("BoSSS.Foundation") && typeName.Equals("BoSSS.Foundation.Grid.BCElement[]"))
+                {
+                    typeName = "BoSSS.Foundation.Grid.Classic.BCElement[]";
+                }
+                Type T = base.BindToType(assemblyName, typeName);
+                return T;
+            }
+        }
+    }
+
+    class SerializerVersion1 : VectorDataSerializer
+    {
+        public SerializerVersion1(IFileSystemDriver FsDriver) : base(FsDriver)
+        {
+
+        }
+
+        public override string Name => "Version 1";
+
+        protected override JsonSerializer JsonFormatter => jsonFormatter;
+
+        JsonSerializer jsonFormatter = new JsonSerializer()
+        {
+            NullValueHandling = NullValueHandling.Ignore,
+            TypeNameHandling = TypeNameHandling.Auto,
+            ConstructorHandling = ConstructorHandling.AllowNonPublicDefaultConstructor,
+            ReferenceLoopHandling = ReferenceLoopHandling.Serialize,
+            Binder = new MySerializationBinder()
+        };
+
+        class MySerializationBinder : Newtonsoft.Json.Serialization.DefaultSerializationBinder
+        {
+
+            public override Type BindToType(string assemblyName, string typeName)
+            {
+                if (assemblyName.Equals("BoSSS.Foundation") && typeName.Equals("BoSSS.Foundation.Grid.Cell[]"))
+                {
+                    typeName = "BoSSS.Foundation.Grid.Classic.Cell[]";
+                }
+
+                if (assemblyName.Equals("BoSSS.Foundation") && typeName.Equals("BoSSS.Foundation.Grid.BCElement[]"))
+                {
+                    typeName = "BoSSS.Foundation.Grid.Classic.BCElement[]";
+                }
+                Type T = base.BindToType(assemblyName, typeName);
+                return T;
+            }
         }
     }
 }

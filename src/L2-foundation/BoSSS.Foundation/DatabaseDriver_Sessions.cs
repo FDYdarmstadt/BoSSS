@@ -12,9 +12,9 @@ namespace BoSSS.Foundation.IO
 {
     class SessionDatabaseDriver : MPIProcess, IDisposable
     {
-        readonly IVectorDataSerializer Driver;
+        readonly ISerializer Driver;
         IFileSystemDriver fsDriver;
-        public SessionDatabaseDriver(IVectorDataSerializer driver, IFileSystemDriver FsDriver)
+        public SessionDatabaseDriver(ISerializer driver, IFileSystemDriver FsDriver)
         {
             fsDriver = FsDriver;
             Driver = driver;

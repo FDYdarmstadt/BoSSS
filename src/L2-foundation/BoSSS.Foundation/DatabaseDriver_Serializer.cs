@@ -6,35 +6,9 @@ using Newtonsoft.Json.Bson;
 
 namespace BoSSS.Foundation.IO
 {
-    class Serializer : MPIProcess, ISerializer
+    abstract class Serializer : MPIProcess, ISerializer
     {
-        public Serializer()
-        {
-        }
-
-        public virtual string Name 
-        {
-            get { return "Version 0";}
-        }
-
-        class MySerializationBinder : Newtonsoft.Json.Serialization.DefaultSerializationBinder
-        {
-
-            public override Type BindToType(string assemblyName, string typeName)
-            {
-                if (assemblyName.Equals("BoSSS.Foundation") && typeName.Equals("BoSSS.Foundation.Grid.Cell[]"))
-                {
-                    typeName = "BoSSS.Foundation.Grid.Classic.Cell[]";
-                }
-
-                if (assemblyName.Equals("BoSSS.Foundation") && typeName.Equals("BoSSS.Foundation.Grid.BCElement[]"))
-                {
-                    typeName = "BoSSS.Foundation.Grid.Classic.BCElement[]";
-                }
-                Type T = base.BindToType(assemblyName, typeName);
-                return T;
-            }
-        }
+        public abstract string Name { get;}
 
         /// <summary>
         /// Indicates whether the content of the database should be serialized
@@ -43,21 +17,7 @@ namespace BoSSS.Foundation.IO
         /// </summary>
         protected static readonly bool DebugSerialization = false;
 
-        /// <summary>
-        /// serialization formatter used for all bigger (data) objects
-        /// </summary>
-        JsonSerializer jsonFormatter = new JsonSerializer()
-        {
-            NullValueHandling = NullValueHandling.Ignore,
-            TypeNameHandling = TypeNameHandling.Auto,
-            ConstructorHandling = ConstructorHandling.AllowNonPublicDefaultConstructor,
-            ReferenceLoopHandling = ReferenceLoopHandling.Serialize,
-            Binder = new MySerializationBinder()
-        };
-
-        protected virtual JsonSerializer JsonFormatter {
-            get { return jsonFormatter; }
-        }
+        protected abstract JsonSerializer JsonFormatter { get ;}
 
         public T Deserialize<T>(Stream stream)
         {

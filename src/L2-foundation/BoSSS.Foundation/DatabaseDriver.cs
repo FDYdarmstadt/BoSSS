@@ -46,7 +46,7 @@ namespace BoSSS.Foundation.IO {
     /// </summary>
     public partial class DatabaseDriver : MPIProcess, IDatabaseDriver {
 
-        NoInterfaceSupportSerializer serializer;
+        IVectorDataSerializer serializer;
         GridDatabaseDriver gridDatabaseDriver;
         SessionDatabaseDriver sessionsDatabaseDriver;
         TimeStepDatabaseDriver timestepDatabaseDriver;
@@ -60,9 +60,10 @@ namespace BoSSS.Foundation.IO {
         public DatabaseDriver(IFileSystemDriver fsDriver)
         {
             this.fsDriver = fsDriver;
-            serializer = new NoInterfaceSupportSerializer(fsDriver);
-            var interfaceSerializer = new InterfaceSupportSerializer(fsDriver);
-            var versionedSerializer = new VersionedSerializer( interfaceSerializer, serializer);
+            serializer = new SerializerVersion0( fsDriver);
+            IVectorDataSerializer interfaceSerializer = new SerializerVersion1(fsDriver);
+            IVectorDataSerializer versionedSerializer = new VersionedSerializer(interfaceSerializer, serializer);
+
             gridDatabaseDriver = new GridDatabaseDriver(versionedSerializer, fsDriver);
             sessionsDatabaseDriver = new SessionDatabaseDriver(serializer, fsDriver);
             timestepDatabaseDriver = new TimeStepDatabaseDriver(serializer, fsDriver);
@@ -102,7 +103,7 @@ namespace BoSSS.Foundation.IO {
                 // create trace file in local directory
 
                 string tracefilename = name + "." + Rank + ".txt";
-                file = new FileStream(tracefilename, FileMode.Create, FileAccess.Write, FileShare.Read);
+                file = new FileStream( tracefilename, FileMode.Create, FileAccess.Write, FileShare.Read);
             }
 
             return file;
