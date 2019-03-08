@@ -123,17 +123,24 @@ namespace BoSSS.Application.BoSSSpad {
                         }
                     }
 
-                    string[] fieldIds = commonFieldIds.Intersect()
+                    // check for which fields which norm should be computed
+                    string[] Fields_L2emb, Fields_L2aprx, Fields_H1aprx;
+                    {
+                        string[] Fields_L2_embedded_tmp = this.FieldsNormTypes.Where(kv => kv.Value == NormType.L2_embedded).Select(kv => kv.Key).ToArray();
+                        Fields_L2emb = commonFieldIds.Intersect(Fields_L2_embedded_tmp).ToArray();
+
+                        string[] Fields_L2_approximate_tmp = this.FieldsNormTypes.Where(kv => kv.Value == NormType.L2_approximate).Select(kv => kv.Key).ToArray();
+                        Fields_L2aprx = commonFieldIds.Intersect(Fields_L2_approximate_tmp).ToArray();
+
+                        string[] Fields_H1_approximate_tmp = this.FieldsNormTypes.Where(kv => kv.Value == NormType.H1_approximate).Select(kv => kv.Key).ToArray();
+                        Fields_H1aprx = commonFieldIds.Intersect(Fields_H1_approximate_tmp).ToArray();
+                    }
 
                     // compute L2-errors
-                    DGFieldComparison.ComputeErrors(fieldIds, tsiS, out double[] hS, out var DOFs, out var ERRs, out var tsiIdS);
-
-
-
-
+                    DGFieldComparison.ComputeErrors(Fields_L2emb, tsiS, out double[] hS_L2emb, out var DOFs_L2emb, out var ERRs_L2emb, out var tsiIdS_L2emb);
 
                     // record errors
-                    foreach(var id in fieldIds) {
+                    foreach(var id in Fields_L2emb) {
 
                         Dictionary<Guid, double> err_id;
                         if(!Errors.TryGetValue(id, out err_id)) {
@@ -141,19 +148,16 @@ namespace BoSSS.Application.BoSSSpad {
                             Errors.Add(id, err_id);
                         }
 
-                        for(int iGrd = 0; iGrd < hS.Length; iGrd++) {
+                        for(int iGrd = 0; iGrd < hS_L2emb.Length; iGrd++) {
 
-                            ITimestepInfo tsi = tsiS.Single(t => t.ID == tsiIdS[iGrd]);
+                            ITimestepInfo tsi = tsiS.Single(t => t.ID == tsiIdS_L2emb[iGrd]);
                             ISessionInfo sess = tsi.Session;
 
-                            err_id.Add(sess.ID, ERRs[id][iGrd]);
+                            err_id.Add(sess.ID, ERRs_L2emb[id][iGrd]);
 
                         }
                     }
                 }
-
-
-
 
                 // Set L2 error columns in session table
                 // =====================================

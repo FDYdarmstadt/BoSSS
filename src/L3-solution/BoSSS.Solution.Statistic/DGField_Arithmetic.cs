@@ -7,7 +7,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace BoSSS.Application.BoSSSpad {
+namespace BoSSS.Solution.Statistic {
     /// <summary>
     /// Arithmetic operation for DG fields on different meshes
     /// </summary>

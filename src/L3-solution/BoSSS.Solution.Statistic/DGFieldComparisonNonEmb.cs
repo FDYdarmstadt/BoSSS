@@ -9,12 +9,12 @@ using ilPSP;
 
 
 namespace BoSSS.Solution.Statistic {
-    /*
+    
     /// <summary>
     /// Utility functions to compare DG fields from different, non-embedded, grids.
     /// </summary>
     public static class DGFieldComparisonNonEmb {
-
+        
         /// <summary>
         /// Computes L2 norms between DG fields on different grid resolutions, i.e. for a 
         /// convergence study, where the solution on the finest grid is assumed to be exact.
@@ -51,7 +51,7 @@ namespace BoSSS.Solution.Statistic {
                     throw new ArgumentException("requiring at least two different solutions.");
 
                 // load the DG-Fields
-                List<IEnumerable<DGField>> fields = new List<IEnumerable<DGField>>();
+                List<IEnumerable<DGField>> fields = new List<IEnumerable<DGField>>(); // 1st index: grid / 2nd index: enumeration
                 int i = 1;
                 foreach (var timestep in timestepS) {
                     //Console.WriteLine("Loading timestep {0} of {1}, ({2})...", i, timestepS.Count(), timestep.ID);
@@ -82,18 +82,40 @@ namespace BoSSS.Solution.Statistic {
                         int idx = orgfields.IndexOf(fields[z], (f1, f2) => object.ReferenceEquals(f1, f2));
                         timestepIds[z] = timestepS.ElementAt(idx).ID;
                     }
-
-                    
                 }
 
-
-                // Grids 
+                // grids and resolution
                 GridData[] gDataS = fields.Select(fc => (GridData)(fc.First().GridDat)).ToArray();
+                GridRes = gDataS.Take(gDataS.Length - 1).Select(gd => gd.Cells.h_minGlobal).ToArray();
 
+                // compute the errors
+                L2Errors = new Dictionary<string, double[]>();
+                __DOFs = new Dictionary<string, int[]>();
+                foreach (string Identification in FieldsToCompare) {
 
-                
+                    double[] L2Error = new double[gDataS.Length - 1];
+                    int[] dof = new int[gDataS.Length - 1];
+
+                    for (int iLevel = 0; iLevel < gDataS.Length - 1; iLevel++) {
+                        //Console.WriteLine("Computing L2 error of '{0}' on level {1} ...", Identification, iLevel);
+                        tr.Info(string.Format("Computing L2 error of '{0}' on level {1} ...", Identification, iLevel));
+
+                        ConventionalDGField fine = (ConventionalDGField)(fields.Last().Single(fi => fi.Identification == Identification));
+                        ConventionalDGField coarse = (ConventionalDGField)(fields.ElementAt(iLevel).Single(fi => fi.Identification == Identification));
+
+                        L2Error[iLevel] = coarse.L2Distance(fine);
+                        dof[iLevel] = coarse.Mapping.TotalLength;
+
+                        //Console.WriteLine("done (Error is {0:0.####E-00}).", L2Error[iLevel]);
+                        tr.Info(string.Format("done (Error is {0:0.####E-00}).", L2Error[iLevel]));
+                    }
+
+                    L2Errors.Add(Identification, L2Error);
+                }
+
             }
         }
         
-    }*/
+    //*/
+    }
 }
