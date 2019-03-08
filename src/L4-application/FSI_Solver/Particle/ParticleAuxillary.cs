@@ -110,19 +110,62 @@ namespace BoSSS.Application.FSI_Solver
             return UnderrelaxationCoeff;
         }
 
-        internal double RelaxatedForce(double[] underrelaxationCoeff, double[] forces, double[] forcesAtPrevIteration, bool clearSmallValues = false)
+        internal double[] RelaxatedForce(double[] underrelaxationCoeff, double[] forces, double[] forcesAtPrevIteration, bool clearSmallValues = false, double convergenceLimit = 1)
         {
             int spatialDim = forces.Length;
             for (int d = 0; d < spatialDim; d++)
             {
-                forces_underR[d] = ForcesUnderrelaxation[d] * forces[d] + (1 - ForcesUnderrelaxation[d]) * hydrodynForcesAtIteration[0][d];
-                // kill all forces smaller than a certain value (increases stability)
-                if (Math.Abs(forces_underR[d]) < forceAndTorque_convergence * 1e-2 && deleteSmallValues == true)
+                forces[d] = underrelaxationCoeff[d] * forces[d] + (1 - underrelaxationCoeff[d]) * forcesAtPrevIteration[d];
+                if (Math.Abs(forces[d]) < convergenceLimit * 1e-2 && clearSmallValues == true)
                 {
-                    forces_underR[d] = 0;
+                    forces[d] = 0;
                 }
             }
-            return;
+            return forces;
+        }
+
+        internal double RelaxatedTorque(double underrelaxationCoeff, double torque, double torqueAtPrevIteration, bool clearSmallValues = false, double convergenceLimit = 1)
+        {
+            torque = underrelaxationCoeff * torque + (1 - underrelaxationCoeff) * torqueAtPrevIteration;
+            if (Math.Abs(torque) < convergenceLimit * 1e-2 && clearSmallValues == true)
+            {
+                torque = 0;
+            }
+            return torque;
+        }
+
+        internal double SummationWithNeumaier(double[] SummandsVelGradient, double SummandsPressure, double muA)
+        {
+            double sum = SummandsVelGradient[0];
+            double naiveSum;
+            double c = 0;
+            for (int i = 1; i < SummandsVelGradient.Length - 1; i++)
+            {
+                naiveSum = sum + SummandsVelGradient[i];
+                if (Math.Abs(sum) >= SummandsVelGradient[i])
+                {
+                    c += (sum - naiveSum) + SummandsVelGradient[i];
+                }
+                else
+                {
+                    c += (SummandsVelGradient[i] - naiveSum) + sum;
+                }
+                sum = naiveSum;
+            }
+            sum *= muA;
+            c *= muA;
+            // Neumaier pressure term
+            naiveSum = sum + SummandsPressure;
+            if (Math.Abs(sum) >= SummandsPressure)
+            {
+                c += (sum - naiveSum) + SummandsPressure;
+            }
+            else
+            {
+                c += (SummandsPressure - naiveSum) + sum;
+            }
+            sum = naiveSum;
+            return sum + c;
         }
 
     }
