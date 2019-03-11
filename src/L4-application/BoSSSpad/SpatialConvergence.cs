@@ -20,8 +20,20 @@ namespace BoSSS.Application.BoSSSpad {
         /// </summary>
         L2_embedded,
 
+        /// <summary>
+        /// Norm computed by <see cref="DGFieldComparisonNonEmb.ComputeErrors_L2"/>; less accurate than <see cref="L2_embedded"/>, but provides results on arbitrary meshes
+        /// </summary>
         L2_approximate,
 
+        /// <summary>
+        /// Norm computed by <see cref="DGFieldComparisonNonEmb.ComputeErrors_L2noMean"/>.
+        /// </summary>
+        L2noMean_approximate,
+
+
+        /// <summary>
+        /// Norm computed by <see cref="DGFieldComparisonNonEmb.ComputeErrors_H1"/>
+        /// </summary>
         H1_approximate
     }
 
@@ -57,9 +69,10 @@ namespace BoSSS.Application.BoSSSpad {
 
             internal SpatialConvergence(WorkflowMgm __owner) {
                 owner = __owner;
-                FieldsNormTypes = new Dictionary<string, NormType>();
+                //FieldsNormTypes = new Dictionary<string, NormType>();
             }
 
+            /*
             /// <summary>
             /// Indicates for which fields the error should be computed in which norm
             /// </summary>
@@ -67,7 +80,7 @@ namespace BoSSS.Application.BoSSSpad {
                 get;
                 private set;
             }
-
+            */
 
             
             static int[] GetDGDegreeKey(ISessionInfo sess) {
@@ -124,16 +137,17 @@ namespace BoSSS.Application.BoSSSpad {
                     }
 
                     // check for which fields which norm should be computed
-                    string[] Fields_L2emb, Fields_L2aprx, Fields_H1aprx;
+                    string[] Fields_L2emb;//, Fields_L2aprx, Fields_H1aprx;
                     {
-                        string[] Fields_L2_embedded_tmp = this.FieldsNormTypes.Where(kv => kv.Value == NormType.L2_embedded).Select(kv => kv.Key).ToArray();
-                        Fields_L2emb = commonFieldIds.Intersect(Fields_L2_embedded_tmp).ToArray();
+                        //string[] Fields_L2_embedded_tmp = this.FieldsNormTypes.Where(kv => kv.Value == NormType.L2_embedded).Select(kv => kv.Key).ToArray();
+                        //Fields_L2emb = commonFieldIds.Intersect(Fields_L2_embedded_tmp).ToArray();
+                        Fields_L2emb = commonFieldIds.ToArray();
 
-                        string[] Fields_L2_approximate_tmp = this.FieldsNormTypes.Where(kv => kv.Value == NormType.L2_approximate).Select(kv => kv.Key).ToArray();
-                        Fields_L2aprx = commonFieldIds.Intersect(Fields_L2_approximate_tmp).ToArray();
+                        //string[] Fields_L2_approximate_tmp = this.FieldsNormTypes.Where(kv => kv.Value == NormType.L2_approximate).Select(kv => kv.Key).ToArray();
+                        //Fields_L2aprx = commonFieldIds.Intersect(Fields_L2_approximate_tmp).ToArray();
 
-                        string[] Fields_H1_approximate_tmp = this.FieldsNormTypes.Where(kv => kv.Value == NormType.H1_approximate).Select(kv => kv.Key).ToArray();
-                        Fields_H1aprx = commonFieldIds.Intersect(Fields_H1_approximate_tmp).ToArray();
+                        //string[] Fields_H1_approximate_tmp = this.FieldsNormTypes.Where(kv => kv.Value == NormType.H1_approximate).Select(kv => kv.Key).ToArray();
+                        //Fields_H1aprx = commonFieldIds.Intersect(Fields_H1_approximate_tmp).ToArray();
                     }
 
                     // compute L2-errors

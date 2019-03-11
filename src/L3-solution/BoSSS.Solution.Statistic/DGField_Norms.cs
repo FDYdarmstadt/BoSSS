@@ -1,4 +1,5 @@
 ﻿using BoSSS.Foundation;
+using BoSSS.Foundation.Grid;
 using BoSSS.Foundation.Grid.Classic;
 using BoSSS.Foundation.Quadrature;
 using BoSSS.Solution.Statistic;
@@ -43,8 +44,9 @@ namespace BoSSS.Solution.Statistic {
                 // ++++++++++++++
                 // equal meshes
                 // ++++++++++++++
+                CellMask domain = scheme != null ? scheme.Domain : null;
 
-                double errPow2 = A.L2Error(B, scheme.Domain).Pow2();
+                double errPow2 = A.L2Error(B, domain).Pow2();
 
                 if (IgnoreMeanValue) {
                     // domain volume
@@ -56,7 +58,7 @@ namespace BoSSS.Solution.Statistic {
                     Vol = Vol.MPISum();
                     
                     // mean value
-                    double mean = A.GetMeanValueTotal(scheme.Domain) - B.GetMeanValueTotal(scheme.Domain);
+                    double mean = A.GetMeanValueTotal(domain) - B.GetMeanValueTotal(domain);
 
                     // Note: for a field p, we have 
                     // || p - <p> ||^2 = ||p||^2 - <p>^2*vol
@@ -88,7 +90,7 @@ namespace BoSSS.Solution.Statistic {
                     int L = input.GetLength(0);
                     Debug.Assert(output.GetLength(0) == L);
 
-                    eval.Evaluate(1.0, new DGField[] { fine }, input, 0.0, output.ResizeShallow(1, L));
+                    eval.Evaluate(1.0, new DGField[] { fine }, input, 0.0, output.ResizeShallow(L, 1));
                 }
 
 
@@ -138,10 +140,10 @@ namespace BoSSS.Solution.Statistic {
             Acc += L2Distance(A, B, false, scheme).Pow2();
             for(int d = 0; d < D; d++) {
                 ConventionalDGField dA_dd = new SinglePhaseField(A.Basis);
-                dA_dd.Derivative(1.0, A, d, scheme.Domain);
+                dA_dd.Derivative(1.0, A, d, scheme != null ? scheme.Domain : null);
 
                 ConventionalDGField dB_dd = new SinglePhaseField(B.Basis);
-                dB_dd.Derivative(1.0, B, d, scheme.Domain);
+                dB_dd.Derivative(1.0, B, d, scheme != null ? scheme.Domain : null);
 
                 Acc += L2Distance(dA_dd, dB_dd, false, scheme).Pow2();
             }
