@@ -12,7 +12,7 @@ namespace BoSSS.Application.FSI_Solver
         internal void SaveValueToList(List<double> variable, double value, int listPosition = 0)
         {
             variable.Insert(listPosition, value);
-            variable.Remove(variable.Last());
+            variable.RemoveAt(7);
         }
 
         internal void SaveValueOfLastTimestep(List<double> variable)

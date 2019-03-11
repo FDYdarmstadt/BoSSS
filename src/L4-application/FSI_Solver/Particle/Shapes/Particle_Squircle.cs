@@ -34,10 +34,11 @@ namespace BoSSS.Application.FSI_Solver
         {
 
         }
-        public Particle_Squircle(int Dim, int HistoryLength, double[] startPos = null, double startAngl = 0) : base(Dim, HistoryLength, startPos, startAngl)
+        public Particle_Squircle(int Dim, double[] startPos = null, double startAngl = 0) : base(Dim, startPos, startAngl)
         {
             #region Particle history
-            // =============================   
+            // =============================  
+            int HistoryLength = 4;
             for (int i = 0; i < HistoryLength; i++)
             {
                 positionAtIteration.Add(new double[Dim]);

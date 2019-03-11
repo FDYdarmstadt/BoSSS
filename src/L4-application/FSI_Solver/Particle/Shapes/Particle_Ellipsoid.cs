@@ -30,12 +30,12 @@ namespace BoSSS.Application.FSI_Solver {
         private Particle_Ellipsoid() : base() {
 
         }
-        public Particle_Ellipsoid(int HistoryLength, double[] startPos = null, double startAngl = 0) : base(2, HistoryLength, startPos, startAngl) {
+        public Particle_Ellipsoid(, double[] startPos = null, double startAngl = 0) : base(2, startPos, startAngl) {
             #region Particle history
             // ============================= 
 
             int Dim = 2; // spatial dimension of ellipse is always 2
-
+            int HistoryLength = 4;
             for (int i = 0; i < HistoryLength; i++)
             {
                 positionAtIteration.Add(new double[Dim]);

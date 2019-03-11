@@ -38,14 +38,14 @@ namespace BoSSS.Application.FSI_Solver
             return UnderrelaxationCoeff;
         }
 
-        internal double[] RelaxatedForcesAndTorque(double[] forces, double torque , double[] forcesAtPrevIteration, double torqueAtPrevIteration, double convergenceLimit = 1, int RelaxationFactor = 1, bool clearSmallValues = false, bool UseAdaptiveUnderrelaxation = true)
+        internal double[] RelaxatedForcesAndTorque(double[] forces, double torque , double[] forcesAtPrevIteration, double torqueAtPrevIteration, double convergenceLimit, int RelaxationFactor, bool clearSmallValues, bool UseAdaptiveUnderrelaxation)
         {
             int spatialDim = forces.Length;
             double[] ForcesAndTorque = new double[spatialDim + 1];
             double[] underrelaxationCoeff = new double[spatialDim + 1];
             double averageForce = CalculateAverageForces(forces, torque);
 
-            for (int d = 0; d < spatialDim + 1; d++)
+            for (int d = 0; d < spatialDim; d++)
             {
                 if (UseAdaptiveUnderrelaxation == true)
                 {
@@ -56,7 +56,15 @@ namespace BoSSS.Application.FSI_Solver
                     underrelaxationCoeff[d] = RelaxationFactor;
                 }
             }
-            Console.WriteLine("ForcesUnderrelaxation[0]  " + underrelaxationCoeff[0] + ", ForcesUnderrelaxation[1]: " + underrelaxationCoeff[1] + ", TorqueUnderrelaxation " + underrelaxationCoeff);
+            if (UseAdaptiveUnderrelaxation == true)
+            {
+                underrelaxationCoeff[spatialDim] = CalculateAdaptiveUnderrelaxation(torque, torqueAtPrevIteration, averageForce, convergenceLimit, RelaxationFactor);
+            }
+            else
+            {
+                underrelaxationCoeff[spatialDim] = RelaxationFactor;
+            }
+            Console.WriteLine("ForcesUnderrelaxation[0]  " + underrelaxationCoeff[0] + ", ForcesUnderrelaxation[1]: " + underrelaxationCoeff[1] + ", TorqueUnderrelaxation " + underrelaxationCoeff[spatialDim]);
             Console.WriteLine("tempfForces[0]  " + forces[0] + ", temp_Forces[1]: " + forces[1] + ", tempTorque " + torque);
             for (int d = 0; d < spatialDim; d++)
             {

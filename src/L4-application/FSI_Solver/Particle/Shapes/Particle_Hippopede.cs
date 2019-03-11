@@ -31,9 +31,10 @@ namespace BoSSS.Application.FSI_Solver {
 
         }
 
-        public Particle_Hippopede(int Dim, int HistoryLength, double[] startPos = null, double startAngl = 0) : 
-            base(Dim, HistoryLength, startPos, startAngl) //
+        public Particle_Hippopede(int Dim, double[] startPos = null, double startAngl = 0) : 
+            base(Dim, startPos, startAngl) //
         {
+            int HistoryLength = 4;
             #region Particle history
             // =============================   
             for (int i = 0; i < HistoryLength; i++)
