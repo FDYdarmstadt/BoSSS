@@ -764,7 +764,7 @@ namespace BoSSS.Application.FSI_Solver
                         ErrFunc(i0, Length, QR.Nodes, EvalResult.ExtractSubArrayShallow(-1, -1, 0));
                     },
                     delegate (int i0, int Length, MultidimensionalArray ResultsOfIntegration) {
-                        Forces[d] += Aux.SummationWithNeumaierArray(ResultsOfIntegration, Length);
+                        Forces[d] = Aux.ForceTorqueSummationWithNeumaierArray(Forces[d], ResultsOfIntegration, Length);
                     }
                 ).Execute();
             }
@@ -798,7 +798,7 @@ namespace BoSSS.Application.FSI_Solver
                     ErrFunc2(i0, Length, QR.Nodes, EvalResult.ExtractSubArrayShallow(-1, -1, 0));
                 },
                 delegate (int i0, int Length, MultidimensionalArray ResultsOfIntegration) {
-                    Torque += Aux.SummationWithNeumaierArray(ResultsOfIntegration, Length);
+                    Torque = Aux.ForceTorqueSummationWithNeumaierArray(Torque, ResultsOfIntegration, Length);
                 }
 
             ).Execute();

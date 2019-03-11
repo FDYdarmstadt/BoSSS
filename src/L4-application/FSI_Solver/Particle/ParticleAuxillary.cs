@@ -136,12 +136,12 @@ namespace BoSSS.Application.FSI_Solver
 
         
 
-        internal double SummationWithNeumaierArray(MultidimensionalArray Summands, double Length)
+        internal double ForceTorqueSummationWithNeumaierArray(double ForcesTorque, MultidimensionalArray Summands, double Length)
         {
-            double sum = Summands[0, 0];
+            double sum = ForcesTorque;
             double naiveSum;
             double c = 0.0;
-            for (int i = 1; i < Length; i++)
+            for (int i = 0; i < Length; i++)
             {
                 naiveSum = sum + Summands[i, 0];
                 if (Math.Abs(sum) >= Math.Abs(Summands[i, 0]))
