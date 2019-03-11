@@ -424,9 +424,13 @@ namespace BoSSS.Application.FSI_Solver
         /// </summary>
         /// <param name="dt"></param>
         public void CalculateParticlePosition(double dt, double rho_Fluid) {
-
+            if (iteration_counter_P == 0)
+            {
+                Aux.SaveMultidimValueOfLastTimestep(positionAtTimestep);
+            }
             if (m_Dim != 2 && m_Dim != 3)
                 throw new NotSupportedException("Unknown particle dimension: m_Dim = " + m_Dim);
+            double[] tempPos = new double[m_Dim];
             for (int d = 0; d < m_Dim; d++)
             {
                 //gravity[d] = 0;
@@ -434,36 +438,25 @@ namespace BoSSS.Application.FSI_Solver
                 //double massDifference = (particleDensity - fluidDensity) * (Area_P);
                 //double tempForces = (hydrodynForcesAtIteration[0][d] + hydrodynForcesAtTimestep[1][d]) / 2;
                 //tempPos[d] = particlePositionPerTimestep[1][d] + transVelocityAtTimestep[1][d] * dt + 0.5 * dt * dt * (tempForces + massDifference * gravity[d]) / Mass_P;
-                positionAtIteration[0][d] = positionAtTimestep[1][d] + transVelocityAtTimestep[1][d] * dt + (transAccelerationAtTimestep[1][d] + transAccelerationAtIteration[0][d]) * dt.Pow2() / 4;
+                tempPos[d] = positionAtTimestep[1][d] + transVelocityAtTimestep[1][d] * dt + (transAccelerationAtTimestep[1][d] + transAccelerationAtIteration[0][d]) * dt.Pow2() / 4;
                 if (double.IsNaN(positionAtIteration[0][d]) || double.IsInfinity(positionAtIteration[0][d]))
                     throw new ArithmeticException("Error trying to update particle position");
             }
+            Aux.SaveMultidimValueToList(positionAtIteration, tempPos);
             positionAtTimestep[0] = positionAtIteration[0];
         }
 
         public void CalculateParticleAngle(double dt)
         {
-            angleAtIteration[0] = angleAtTimestep[1] + rotationalVelocityAtTimestep[1] + dt * (rotationalAccelarationAtTimestep[1] + rotationalAccelarationAtIteration[0]) / 2;
-            if (double.IsNaN(angleAtIteration[0]) || double.IsInfinity(angleAtIteration[0]))
-                throw new ArithmeticException("Error trying to update particle angle");
-            angleAtTimestep[0] = angleAtIteration[0];
-        }
-
-        public void ResetParticlePosition()
-        {
             if (iteration_counter_P == 0)
             {
-                Aux.SaveMultidimValueOfLastTimestep(positionAtTimestep);
                 Aux.SaveValueOfLastTimestep(angleAtTimestep);
             }
-
-            Aux.SaveMultidimValueToList(positionAtIteration, positionAtIteration[0], 1);
-            positionAtIteration[0] = positionAtTimestep[1];
-
-            Aux.SaveValueToList(angleAtIteration, angleAtIteration[0], 1);
-            angleAtIteration[0] = angleAtTimestep[1];
-
-            UpdateLevelSetFunction();
+            double tempAngle = angleAtTimestep[1] + rotationalVelocityAtTimestep[1] + dt * (rotationalAccelarationAtTimestep[1] + rotationalAccelarationAtIteration[0]) / 2;
+            if (double.IsNaN(angleAtIteration[0]) || double.IsInfinity(angleAtIteration[0]))
+                throw new ArithmeticException("Error trying to update particle angle");
+            Aux.SaveValueToList(angleAtIteration, tempAngle);
+            angleAtTimestep[0] = angleAtIteration[0];
         }
         #endregion
         

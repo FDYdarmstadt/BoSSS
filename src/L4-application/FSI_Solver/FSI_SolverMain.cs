@@ -574,7 +574,6 @@ namespace BoSSS.Application.FSI_Solver {
         void UpdateLevelSetParticles(double dt) {
             // Call update methods
             foreach (Particle p in m_Particles) {
-                p.ResetParticlePosition();
                 p.UpdateDampingTensors();
                 if (p.iteration_counter_P == 0 && ((FSI_Control)this.Control).splitting_fully_coupled == true)
                 {
@@ -598,6 +597,7 @@ namespace BoSSS.Application.FSI_Solver {
                     p.ComputeParticleRe(this.Control.PhysicalParameters.mu_A);
                     p.CalculateParticlePosition(dt, this.Control.PhysicalParameters.rho_A);
                     p.CalculateParticleAngle(dt);
+                    p.UpdateLevelSetFunction();
                 }
                 
             }
