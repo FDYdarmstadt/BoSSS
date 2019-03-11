@@ -34,11 +34,10 @@ namespace BoSSS.Application.FSI_Solver
             return aux.SummationWithNeumaier(SummandsVelGradient, SummandsPressure, muA);
         }
 
-        public double CalculateStressTensor2D(MultidimensionalArray Grad_UARes, MultidimensionalArray pARes, MultidimensionalArray NormalVector, double muA, int k, int j)
+        public double CalculateStressTensor2D(MultidimensionalArray Grad_UARes, MultidimensionalArray pARes, MultidimensionalArray NormalVector, double muA, int k, int j, int currentDimension)
         {
-            int spatialDim = 2;
             double acc;
-            switch (spatialDim)
+            switch (currentDimension)
             {
                 case 0:
                     acc = CalculateStressTensorX(Grad_UARes, pARes, NormalVector, muA, k, j);
@@ -68,13 +67,12 @@ namespace BoSSS.Application.FSI_Solver
             return temp1 + temp2;
         }
 
-        public double CalculateStressTensor3D(MultidimensionalArray Grad_UARes, MultidimensionalArray pARes, MultidimensionalArray NormalVector, double muA, int k, int j)
+        public double CalculateStressTensor3D(MultidimensionalArray Grad_UARes, MultidimensionalArray pARes, MultidimensionalArray NormalVector, double muA, int k, int j, int currentDimension)
         {
-            int spatialDim = 3;
             double acc = 0.0;
             double[] SummandsVelGradient = new double[5];
             double SummandsPressure;
-            switch (spatialDim)
+            switch (currentDimension)
             {
                 case 0:
                     SummandsPressure = pARes[j, k] * NormalVector[j, k, 0];
@@ -109,16 +107,16 @@ namespace BoSSS.Application.FSI_Solver
             return acc;
         }
 
-        public double CalculateStressTensor(MultidimensionalArray Grad_UARes, MultidimensionalArray pARes, MultidimensionalArray NormalVector, double muA, int k, int j, int Dimensionality)
+        public double CalculateStressTensor(MultidimensionalArray Grad_UARes, MultidimensionalArray pARes, MultidimensionalArray NormalVector, double muA, int k, int j, int Dimensionality, int currentDimension)
         {
             double temp;
             switch (Dimensionality)
             {
                 case 2:
-                    temp = CalculateStressTensor2D(Grad_UARes, pARes, NormalVector, muA, k, j);
+                    temp = CalculateStressTensor2D(Grad_UARes, pARes, NormalVector, muA, k, j, currentDimension);
                     break;
                 case 3:
-                    temp = CalculateStressTensor3D(Grad_UARes, pARes, NormalVector, muA, k, j);
+                    temp = CalculateStressTensor3D(Grad_UARes, pARes, NormalVector, muA, k, j, currentDimension);
                     break;
                 default:
                     throw new NotSupportedException("Unknown particle dimension: m_Dim = " + Dimensionality);

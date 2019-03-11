@@ -138,7 +138,7 @@ namespace BoSSS.Application.FSI_Solver
                     thickness_P = 1 * BaseSize,
                     length_P = 4 * BaseSize,
                     underrelaxationFT_constant = false,// set true if you want to define a constant underrelaxation (not recommended)
-                    underrelaxation_factor = 7.5,// underrelaxation with [factor * 10^exponent]
+                    underrelaxation_factor = 7,// underrelaxation with [factor * 10^exponent]
                     ClearSmallValues = true,
                     neglectAddedDamping = false
             });
@@ -329,7 +329,7 @@ namespace BoSSS.Application.FSI_Solver
                     thickness_P = 0.4 * BaseSize,
                     length_P = 2 * BaseSize,
                     underrelaxationFT_constant = false,// set true if you want to define a constant underrelaxation (not recommended)
-                    underrelaxation_factor = 0.5,// underrelaxation with [factor * 10^exponent]
+                    underrelaxation_factor = 5,// underrelaxation with [factor * 10^exponent]
                     ClearSmallValues = true
                 });
             }

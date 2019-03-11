@@ -752,7 +752,7 @@ namespace BoSSS.Application.FSI_Solver
                     {
                         for (int k = 0; k < NumberOfNodes; k++)
                         {
-                            result[j, k] = Physics.CalculateStressTensor(Grad_UARes, pARes, Normals, muA, k, j, d);
+                            result[j, k] = Physics.CalculateStressTensor(Grad_UARes, pARes, Normals, muA, k, j, m_Dim, d);
                         }
                     }
                 };
@@ -764,7 +764,7 @@ namespace BoSSS.Application.FSI_Solver
                         ErrFunc(i0, Length, QR.Nodes, EvalResult.ExtractSubArrayShallow(-1, -1, 0));
                     },
                     delegate (int i0, int Length, MultidimensionalArray ResultsOfIntegration) {
-                        Forces[d] = Aux.SummationWithNeumaierArray(ResultsOfIntegration, Length);
+                        Forces[d] += Aux.SummationWithNeumaierArray(ResultsOfIntegration, Length);
                     }
                 ).Execute();
             }
@@ -798,7 +798,7 @@ namespace BoSSS.Application.FSI_Solver
                     ErrFunc2(i0, Length, QR.Nodes, EvalResult.ExtractSubArrayShallow(-1, -1, 0));
                 },
                 delegate (int i0, int Length, MultidimensionalArray ResultsOfIntegration) {
-                    Torque = Aux.SummationWithNeumaierArray(ResultsOfIntegration, Length);
+                    Torque += Aux.SummationWithNeumaierArray(ResultsOfIntegration, Length);
                 }
 
             ).Execute();
