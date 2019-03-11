@@ -15,9 +15,9 @@ namespace BoSSS.Foundation.Grid.Aggregation
             throw new NotImplementedException();
         }
 
-        public Guid[] GetVectorGuids()
-        {
-            throw new NotImplementedException();
+        public Guid[] VectorGuids {
+            get { throw new NotImplementedException(); }
+            set { throw new NotImplementedException(); }
         }
 
         public Type[] GetVectorTypes()
@@ -41,6 +41,11 @@ namespace BoSSS.Foundation.Grid.Aggregation
         }
 
         public void SetVectorGuids(Guid[] guids)
+        {
+            throw new NotImplementedException();
+        }
+
+        public void Initialize()
         {
             throw new NotImplementedException();
         }

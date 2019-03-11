@@ -23,11 +23,11 @@ namespace BoSSS.Foundation.Grid.Classic
 
     public interface IVectorDataGrid 
     {
-        Guid[] GetVectorGuids();
+        Guid[] VectorGuids { get; set; }
         object[][] GetVectorData();
-        void SetVectorGuids(Guid[] guids);
         void SetVectorData (object[][] vectorDatas);
         Type[] GetVectorTypes();
+        void Initialize();
     }
     
     public interface IComparableGrid
@@ -59,18 +59,17 @@ namespace BoSSS.Foundation.Grid.Classic
             return data;
         }
 
-        public Guid[] GetVectorGuids()
+        public void SetVectorData(object[][] data)
         {
-            int numberOfObjects = m_PredefinedGridPartitioning.Count + 2;
-            Guid[] guids = new Guid[numberOfObjects];
-            guids[0] = StorageGuid;
+            Cells = data[0].Cast<Cell>().ToArray();
+
             for (int i = 0; i < m_PredefinedGridPartitioning.Count; ++i)
             {
                 var s = m_PredefinedGridPartitioning.ElementAt(i);
-                guids[i + 1] = s.Value.Guid;
+                m_PredefinedGridPartitioning[s.Key] = new GridPartitioningVector { Guid = VectorGuids[i + 1], CellToRankMap = data[i + 1].Cast<int>().ToArray() };
             }
-            guids[numberOfObjects - 1] = Guid.Empty;
-            return guids;
+            if (data.Last() != null)
+                BcCells = data.Last().Cast<BCElement>().ToArray();
         }
 
         Type[] types;
@@ -92,22 +91,40 @@ namespace BoSSS.Foundation.Grid.Classic
             return types;
         }
 
-        public void SetVectorGuids(Guid[] guids)
-        {
-            StorageGuid = guids[0];
-            BcCellsStorageGuid = guids.Last();
+        Guid[] guids;
+
+        public Guid[] VectorGuids {
+            get {
+                if(guids == null)
+                {
+                    guids = InitializeVectorGuids();
+                }
+                return guids;
+            }
+            set {
+                guids = value;
+                //StorageGuid = guids[0];
+                //BcCellsStorageGuid = guids.Last();
+            }
         }
 
-        public void SetVectorData(object[][] data)
+        Guid[] InitializeVectorGuids()
         {
-            Cells = (Cell[])data[0];
-
+            int numberOfObjects = m_PredefinedGridPartitioning.Count + 2;
+            Guid[] guids = new Guid[numberOfObjects];
+            guids[0] = StorageGuid;
             for (int i = 0; i < m_PredefinedGridPartitioning.Count; ++i)
             {
                 var s = m_PredefinedGridPartitioning.ElementAt(i);
-                m_PredefinedGridPartitioning[s.Key] = new GridPartitioningVector { Guid = GetVectorGuids()[i + 1], CellToRankMap = data[i+1].Cast<int>().ToArray() };
+                guids[i + 1] = s.Value.Guid;
             }
-            BcCells = (BCElement[])data.Last();
+            guids[numberOfObjects - 1] = Guid.Empty;
+            return guids;
+        }
+
+        public void Initialize()
+        {
+            InitNumberOfCells();
         }
 
         public bool HasEqualReferences(IGrid gridB)

@@ -11,8 +11,8 @@ namespace BoSSS.Foundation.IO
 {
     class GridDatabaseDriver : MPIProcess
     {
-        readonly IVectorDataSerializer Driver;
         IFileSystemDriver fsDriver;
+        readonly IVectorDataSerializer Driver;
         readonly ReflectionVectorDataSerializer dynamicDriver;
 
         public GridDatabaseDriver(IVectorDataSerializer driver, IFileSystemDriver FsDriver)
@@ -123,7 +123,7 @@ namespace BoSSS.Foundation.IO
         void SaveVectorData(IVectorDataGrid grid)
         {
             object[][] vectorData = grid.GetVectorData();
-            Guid[] vectorGuids = grid.GetVectorGuids();
+            Guid[] vectorGuids = grid.VectorGuids;
             Type[] vectorTypes = grid.GetVectorTypes();
 
             int numberOfVectors = vectorData.Length;
@@ -144,7 +144,6 @@ namespace BoSSS.Foundation.IO
                     }
                 }
             }
-            grid.SetVectorGuids(vectorGuids);
         }
 
         public void SerializeGrid(IGrid grid)
@@ -206,32 +205,25 @@ namespace BoSSS.Foundation.IO
         /// </summary>
         /// <param name="grid"></param>
         /// <returns></returns>
-        public IGrid LoadGridData(GridCommons grid)
+        public IGrid LoadGridData(IGrid grid)
         {
-            // load grid data
+            Type[] vectorTypes = grid.GetVectorTypes();
+            Guid[] guids = grid.VectorGuids;
             Partitioning p = null;
-            grid.Cells = Driver.LoadVector<Cell>(grid.StorageGuid, ref p).ToArray();
 
-            p = null;
-            if (!grid.BcCellsStorageGuid.Equals(Guid.Empty))
-                grid.BcCells = Driver.LoadVector<BCElement>(grid.BcCellsStorageGuid, ref p).ToArray();
-
-            for (int i = 0; i < grid.m_PredefinedGridPartitioning.Count; ++i)
+            int numberOfVectors = vectorTypes.Length;
+            object[][] vectors = new object[numberOfVectors][];
+            for (int i = 0; i < numberOfVectors; ++i)
             {
-                var s = grid.m_PredefinedGridPartitioning.ElementAt(i);
-                if (s.Value.CellToRankMap == null)
+                Guid guid = guids[i];
+                if(guid != Guid.Empty)
                 {
-                    // Partitioning has not been loaded; do it now
-                    Partitioning currentPartitioning = grid.CellPartitioning;
-                    int[] cellToRankMap = Driver.LoadVector<int>(s.Value.Guid, ref currentPartitioning).ToArray();
-                    grid.m_PredefinedGridPartitioning[s.Key] = new GridCommons.GridPartitioningVector { Guid = s.Value.Guid, CellToRankMap = cellToRankMap };
+                    Type vectorType = vectorTypes[i];
+                    vectors[i] = (object[])dynamicDriver.LoadVector(guid, vectorType, ref p);
                 }
             }
-
-            grid.InitNumberOfCells();
-
-            // return
-            // ------
+            grid.SetVectorData(vectors);
+            grid.Initialize();
             return grid;
         }
 

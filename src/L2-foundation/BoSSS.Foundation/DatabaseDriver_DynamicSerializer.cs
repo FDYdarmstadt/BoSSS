@@ -2,6 +2,7 @@
 using System.Reflection;
 using System.Collections.Generic;
 using System.Linq;
+using ilPSP;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -50,23 +51,43 @@ namespace BoSSS.Foundation.IO
             vectorSerializer.SaveVector(vector.Cast<T>().ToArray(), id);
         }
 
+        public IList<object> LoadVector(Guid id, Type vectorType, ref Partitioning part)
+        {
+            MethodInfo method = GetGenericMethod(
+                typeof(ReflectionVectorDataSerializer),
+                "LoadVector_ValueTypeCapable",
+                new Type[] { vectorType },
+                new Type[] { typeof(Guid), typeof( Partitioning) }
+                );
+            IList<object> data = (IList<object>)method.Invoke(this, new object[] { id, part });
+            return data;
+        }
+
+        public IList<object> LoadVector_ValueTypeCapable<T>(Guid id, ref Partitioning part)
+        {
+            IList<T> data = vectorSerializer.LoadVector<T>(id, ref part);
+            IList<object> objectData = data.Cast<object>().ToArray();
+            return objectData;
+        }
+
         //https://stackoverflow.com/questions/588149/referencing-desired-overloaded-generic-method
         static MethodInfo GetGenericMethod(Type className, string methodName, Type[] genericArgTypes, Type[] argTypes)
         {
-            MethodInfo method = ( from m in className.GetMethods()
-                where m.Name == methodName &&
-                m.GetGenericArguments().Length == genericArgTypes.Length &&
-                ParametersAreEqual(m.GetParameters(), argTypes)
-                select m
+            var methods = className.GetMethods();
+            MethodInfo method = (from m in className.GetMethods()
+                                 where m.Name == methodName &&
+                                 m.GetGenericArguments().Length == genericArgTypes.Length &&
+                                 ParametersAreEqual(m.GetParameters(), argTypes)
+                                 select m
                 ).Single();
 
             MethodInfo genericMethod = method.MakeGenericMethod(genericArgTypes);
             return genericMethod;
         }
 
-        static bool ParametersAreEqual(ParameterInfo[] genericMethodParameters, Type[] methodParameters)
+        unsafe static bool ParametersAreEqual(ParameterInfo[] genericMethodParameters, Type[] methodParameters)
         {
-            if(genericMethodParameters.Length != methodParameters.Length)
+            if (genericMethodParameters.Length != methodParameters.Length)
             {
                 return false;
             }
@@ -77,7 +98,14 @@ namespace BoSSS.Foundation.IO
                 bool equal = true;
                 if (!genericMethodParameter.IsGenericType)
                 {
-                    equal = genericMethodParameter.Equals(methodParameter);
+                    if (genericMethodParameter.IsByRef)
+                    {
+                        equal = methodParameter.Equals(genericMethodParameter.GetElementType());
+                    }
+                    else
+                    {
+                        equal = methodParameter.Equals(genericMethodParameter);
+                    }
                 }
                 if (!equal)
                 {
