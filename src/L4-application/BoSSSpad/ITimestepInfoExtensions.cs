@@ -665,6 +665,9 @@ namespace BoSSS.Application.BoSSSpad {
         /// - true: the x-axis (<see cref="Plot2Ddata.XYvalues.Abscissas"/>) is the grid resolution \f$ h \f$
         /// - false: the x-axis (<see cref="Plot2Ddata.XYvalues.Abscissas"/>) is the number of degrees-of-freedom
         /// </param>
+        /// <param name="normType">
+        /// H1, L2, etc.
+        /// </param>
         /// <returns>
         /// A data set containing information about the grid resolution and the
         /// corresponding errors with respect to the finest corresponding grid,
@@ -673,17 +676,50 @@ namespace BoSSS.Application.BoSSSpad {
         /// estimated error of zero (by definition) and is thus excluded from
         /// the result.
         /// </returns>
-        public static Plot2Ddata ToEstimatedGridConvergenceData(this IEnumerable<ITimestepInfo> timesteps, string fieldName, bool xAxis_Is_hOrDof = true) {
+        public static Plot2Ddata ToEstimatedGridConvergenceData(this IEnumerable<ITimestepInfo> timesteps, string fieldName, bool xAxis_Is_hOrDof = true, NormType normType = NormType.L2_approximate) {
             Dictionary<string, double[][]> dataGroups = new Dictionary<string, double[][]>();
             foreach (var group in timesteps.GroupBy(t => t.Fields.Find(fieldName).Basis.Degree)) {
-        
-                DGFieldComparison.ComputeErrors(
-                    new string[] { fieldName },
-                    group.ToArray(),
-                    out double[] resolution,
-                    out Dictionary<string, int[]> DOFs,
-                    out Dictionary<string, double[]> errors,
-                    out Guid[] tsiIds);
+
+                Dictionary<string, int[]> DOFs;
+                Dictionary<string, double[]> errors;
+                double[] resolution;
+                Guid[] tsiIds;
+
+                if (normType == NormType.L2_embedded) {
+                    DGFieldComparison.ComputeErrors(
+                        new string[] { fieldName },
+                        group.ToArray(),
+                        out resolution,
+                        out DOFs,
+                        out errors,
+                        out tsiIds);
+                } else if(normType == NormType.L2_approximate ) {
+                    DGFieldComparisonNonEmb.ComputeErrors_L2(
+                        new string[] { fieldName },
+                        group.ToArray(),
+                        out resolution,
+                        out DOFs,
+                        out errors,
+                        out tsiIds);
+                } else if(normType == NormType.L2noMean_approximate ) {
+                    DGFieldComparisonNonEmb.ComputeErrors_L2noMean(
+                        new string[] { fieldName },
+                        group.ToArray(),
+                        out resolution,
+                        out DOFs,
+                        out errors,
+                        out tsiIds);
+                }else if(normType == NormType.H1_approximate ) {
+                    DGFieldComparisonNonEmb.ComputeErrors_H1(
+                        new string[] { fieldName },
+                        group.ToArray(),
+                        out resolution,
+                        out DOFs,
+                        out errors,
+                        out tsiIds);
+                } else {
+                    throw new NotImplementedException();
+                }
 
                 double dim = timesteps.First().Grid.SpatialDimension;
 
