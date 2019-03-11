@@ -23,9 +23,11 @@ namespace BoSSS.Foundation.Grid.Classic
 
     public interface IVectorDataGrid 
     {
-        object[,] GetVectorData();
-        void SetVectorData(object[] data);
-        Type[] GetDataTypes();
+        Guid[] GetVectorGuids();
+        object[][] GetVectorData();
+        void SetVectorGuids(Guid[] guids);
+        void SetVectorData (object[][] vectorDatas);
+        Type[] GetVectorTypes();
     }
     
     public interface IComparableGrid
@@ -37,56 +39,73 @@ namespace BoSSS.Foundation.Grid.Classic
     public partial class GridCommons : IVectorDataGrid, IComparableGrid
     {
         [JsonIgnore]
-        object[,] data;
+        object[][] data;
 
-        public object[,] GetVectorData()
+        public object[][] GetVectorData()
         {
             if (data == null)
             {
                 int numberOfObjects = m_PredefinedGridPartitioning.Count + 2;
-                data = new object[numberOfObjects,2];
-                data[0, 1] = StorageGuid;
-                data[0, 0] = Cells;
-                for(int i = 0; i < m_PredefinedGridPartitioning.Count ; ++i)
+                data = new object[numberOfObjects][];
+                data[0] = Cells;
+                for (int i = 0; i < m_PredefinedGridPartitioning.Count; ++i)
                 {
                     var s = m_PredefinedGridPartitioning.ElementAt(i);
                     int[] cellToRankMap = s.Value.CellToRankMap;
-                    data[i + 1, 0] = cellToRankMap;
+                    data[i + 1] = cellToRankMap.Cast<object>().ToArray();
                 }
-                data[numberOfObjects - 1, 0] = BcCells;
-                data[numberOfObjects - 1, 1] = BcCellsStorageGuid;
-                
+                data[numberOfObjects - 1] = BcCells;
             }
             return data;
         }
 
+        public Guid[] GetVectorGuids()
+        {
+            int numberOfObjects = m_PredefinedGridPartitioning.Count + 2;
+            Guid[] guids = new Guid[numberOfObjects];
+            guids[0] = StorageGuid;
+            for (int i = 0; i < m_PredefinedGridPartitioning.Count; ++i)
+            {
+                var s = m_PredefinedGridPartitioning.ElementAt(i);
+                guids[i + 1] = s.Value.Guid;
+            }
+            guids[numberOfObjects - 1] = Guid.Empty;
+            return guids;
+        }
+
         Type[] types;
 
-        public Type[] GetDataTypes()
+        public Type[] GetVectorTypes()
         {
             if(types == null)
             {
                 int numberOfObjects = m_PredefinedGridPartitioning.Count + 2;
                 types = new Type[numberOfObjects];
-                types[0] = typeof(Cell[]);
+                types[0] = typeof(Cell);
 
                 for (int i = 0; i < m_PredefinedGridPartitioning.Count; ++i)
                 {
-                    var s = m_PredefinedGridPartitioning.ElementAt(i);
-                    types[i + 1] = typeof(KeyValuePair<string,GridPartitioningVector>);
+                    types[i + 1] = typeof(int);
                 }
-                types[numberOfObjects - 1] = typeof(BCElement[]);
+                types[numberOfObjects - 1] = typeof(BCElement);
             }
             return types;
         }
 
-        public void SetVectorData(object[] data)
+        public void SetVectorGuids(Guid[] guids)
+        {
+            StorageGuid = guids[0];
+            BcCellsStorageGuid = guids.Last();
+        }
+
+        public void SetVectorData(object[][] data)
         {
             Cells = (Cell[])data[0];
+
             for (int i = 0; i < m_PredefinedGridPartitioning.Count; ++i)
             {
-                KeyValuePair<string, GridPartitioningVector> pair = (KeyValuePair<string, GridPartitioningVector>)data[i + 1];
-                m_PredefinedGridPartitioning.Add(pair.Key, pair.Value);
+                var s = m_PredefinedGridPartitioning.ElementAt(i);
+                m_PredefinedGridPartitioning[s.Key] = new GridPartitioningVector { Guid = GetVectorGuids()[i + 1], CellToRankMap = data[i+1].Cast<int>().ToArray() };
             }
             BcCells = (BCElement[])data.Last();
         }

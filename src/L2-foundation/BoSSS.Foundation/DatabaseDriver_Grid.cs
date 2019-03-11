@@ -13,20 +13,19 @@ namespace BoSSS.Foundation.IO
     {
         readonly IVectorDataSerializer Driver;
         IFileSystemDriver fsDriver;
+        readonly ReflectionVectorDataSerializer dynamicDriver;
+
         public GridDatabaseDriver(IVectorDataSerializer driver, IFileSystemDriver FsDriver)
         {
             fsDriver = FsDriver;
             Driver = driver;
+            dynamicDriver = new ReflectionVectorDataSerializer(driver);
         }
 
         Stream GetGridStream(bool create, Guid id)
         {
             return fsDriver.GetGridStream(create, id);
         }
-
-        
-
-        
 
         /// <summary>
         /// tests whether a grid with GUID <paramref name="g"/> exists in database, or not;
@@ -108,62 +107,44 @@ namespace BoSSS.Foundation.IO
             }
         }
 
-        Guid SaveGridData(IGrid _grd, IDatabaseInfo database)
+        Guid SaveGridData(IGrid grd, IDatabaseInfo database)
         {
-            GridCommons grd = _grd as GridCommons;
-            if (grd == null)
-            {
-                throw new InvalidCastException("Grid not supported by save method");
-            }
-
-            if (_grd.ID.Equals(Guid.Empty))
+            if (grd.ID.Equals(Guid.Empty))
             {
                 throw new ApplicationException("cannot save grid with empty Guid (Grid Guid is " + Guid.Empty.ToString() + ");");
             }
             MPICollectiveWatchDog.Watch(csMPI.Raw._COMM.WORLD);
 
-            // save required grid data
-            // =======================
-            if (grd.StorageGuid != null && grd.StorageGuid != Guid.Empty)
-            {
-                Driver.SaveVector(grd.Cells, grd.StorageGuid);
-            }
-            else
-            {
-                grd.StorageGuid = Driver.SaveVector(grd.Cells);
-            }
-
-            grd.InitNumberOfCells();
-
-            // save opt. data
-            // ==============
-
-            foreach (var s in grd.m_PredefinedGridPartitioning)
-            {
-                int[] cellToRankMap = s.Value.CellToRankMap;
-                if (cellToRankMap == null)
-                {
-                    // Partitioning has not been loaded; do it now
-                    throw new Exception("Should have been already loaded ");
-                }
-
-                Driver.SaveVector(cellToRankMap, s.Value.Guid);
-            }
-
-
-            if (grd.BcCells != null && grd.BcCells.Length > 0)
-                grd.BcCellsStorageGuid = Driver.SaveVector(grd.BcCells);
-
-            // save header data (save GridInfo)
-            // ==========================
-
-
-            // return
-            // ======
-
+            SaveVectorData(grd);
             grd.Database = database;
-
             return grd.ID;
+        }
+
+        void SaveVectorData(IVectorDataGrid grid)
+        {
+            object[][] vectorData = grid.GetVectorData();
+            Guid[] vectorGuids = grid.GetVectorGuids();
+            Type[] vectorTypes = grid.GetVectorTypes();
+
+            int numberOfVectors = vectorData.Length;
+            for(int i = 0; i < numberOfVectors; ++i)
+            {
+                Guid guid = vectorGuids[i];
+                Type vectorType = vectorTypes[i];
+                object[] vector = vectorData[i];
+                if(vector != null)
+                {
+                    if (guid != Guid.Empty)
+                    {
+                        dynamicDriver.SaveVector(vectorData[i], vectorType, guid);
+                    }
+                    else
+                    {
+                        guid = dynamicDriver.SaveVector(vectorData[i], vectorType);
+                    }
+                }
+            }
+            grid.SetVectorGuids(vectorGuids);
         }
 
         public void SerializeGrid(IGrid grid)
@@ -186,7 +167,7 @@ namespace BoSSS.Foundation.IO
         {
             using (Stream s = GetGridStream(false, gridGuid))
             {
-                IGrid grid = (IGrid)Driver.Deserialize(s, typeof(GridCommons));
+                IGrid grid = (IGrid)Driver.Deserialize(s, typeof(IGrid));
                 return grid;
             }
         }

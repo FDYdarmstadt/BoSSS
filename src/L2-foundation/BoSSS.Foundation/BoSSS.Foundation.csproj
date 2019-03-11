@@ -81,6 +81,7 @@
     <Compile Include="Cube.cs" />
     <Compile Include="DatabaseController.cs" />
     <Compile Include="DatabaseDriver.cs" />
+    <Compile Include="DatabaseDriver_DynamicSerializer.cs" />
     <Compile Include="DatabaseDriver_Grid.cs" />
     <Compile Include="DatabaseDriver_Serializer.cs" />
     <Compile Include="DatabaseDriver_Sessions.cs" />

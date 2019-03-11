@@ -10,12 +10,17 @@ namespace BoSSS.Foundation.Grid.Aggregation
 {
     public partial class AggregationGrid : Grid.Classic.ISerializableGrid
     {
-        public Type[] GetDataTypes()
+        public object[][] GetVectorData()
         {
             throw new NotImplementedException();
         }
 
-        public object[,] GetVectorData()
+        public Guid[] GetVectorGuids()
+        {
+            throw new NotImplementedException();
+        }
+
+        public Type[] GetVectorTypes()
         {
             throw new NotImplementedException();
         }
@@ -30,7 +35,12 @@ namespace BoSSS.Foundation.Grid.Aggregation
             throw new NotImplementedException();
         }
 
-        public void SetVectorData(object[] data)
+        public void SetVectorData(object[][] vectorDatas)
+        {
+            throw new NotImplementedException();
+        }
+
+        public void SetVectorGuids(Guid[] guids)
         {
             throw new NotImplementedException();
         }
