@@ -101,7 +101,7 @@ namespace BoSSS.Solution.NSECommon {
         public override double GetDensity(params double[] phi) {
             if (IsInitialized) {
                 double rho = this.ThermodynamicPressure.Current.GetMeanValue(0) / phi[0];
-               rho = 1.0;
+              // rho = 1.0;
                 return rho;
             } else {
                 throw new ApplicationException("ThermodynamicPressure is not initialized.");

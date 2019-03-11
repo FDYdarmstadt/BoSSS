@@ -132,15 +132,14 @@ namespace BoSSS.Application.FSI_Solver
             {
                 C.Particles.Add(new Particle_Ellipsoid(4, new double[] { -10, 0.0 }, startAngl: 10)
                 {
-                    rho_P = 2,//pg/(mum^3)
-                    gravityVertical = 0,
-                    active_P = true,
+                    particleDensity = 2,//pg/(mum^3)
+                    activeParticle = true,
                     active_stress_P = stressM,
                     thickness_P = 0.4 * BaseSize,
                     length_P = 2 * BaseSize,
                     underrelaxationFT_constant = false,// set true if you want to define a constant underrelaxation (not recommended)
                     underrelaxation_factor = 0.5,// underrelaxation with [factor * 10^exponent]
-                    deleteSmallValues = true
+                    ClearSmallValues = true
                 });
             }
             //Define level-set
@@ -323,15 +322,14 @@ namespace BoSSS.Application.FSI_Solver
             {
                 C.Particles.Add(new Particle_Ellipsoid(4, new double[] { -10, 0.0 }, startAngl: 10)
                 {
-                    rho_P = 2,//pg/(mum^3)
-                    gravityVertical = 0,
-                    active_P = true,
+                    particleDensity = 2,//pg/(mum^3)
+                    activeParticle = true,
                     active_stress_P = stressM,
                     thickness_P = 0.4 * BaseSize,
                     length_P = 2 * BaseSize,
                     underrelaxationFT_constant = false,// set true if you want to define a constant underrelaxation (not recommended)
                     underrelaxation_factor = 0.5,// underrelaxation with [factor * 10^exponent]
-                    deleteSmallValues = true
+                    ClearSmallValues = true
                 });
             }
             //Define level-set

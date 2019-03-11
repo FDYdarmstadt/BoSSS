@@ -65,8 +65,8 @@ namespace BoSSS.Application.FSI_Solver
                 int q = new int(); // #Cells in x-dircetion + 1
                 int r = new int(); // #Cells in y-dircetion + 1
 
-                q = 16;
-                r = 16;
+                q = 16*2;
+                r = 16*2;
 
                 double[] Xnodes = GenericBlas.Linspace(-8 * BaseSize, 8 * BaseSize, q);
                 double[] Ynodes = GenericBlas.Linspace(-8 * BaseSize, 8 * BaseSize, r);
@@ -130,17 +130,16 @@ namespace BoSSS.Application.FSI_Solver
             int numOfParticles = 1;
             for (int d = 0; d < numOfParticles; d++)
             {
-                C.Particles.Add(new Particle_Ellipsoid(4, new double[] { 0 , 0.0 }, startAngl: 10)
+                C.Particles.Add(new Particle_Ellipsoid(4, new double[] { 0 , 0.0 }, startAngl: 0)
                 {
-                    rho_P = 1e-15,
-                    gravityVertical = 0,
-                    active_P = true,
+                    particleDensity = 1e-15,
+                    activeParticle = true,
                     active_stress_P = stressM,
-                    thickness_P = 0.4 * BaseSize,
+                    thickness_P = 1 * BaseSize,
                     length_P = 4 * BaseSize,
                     underrelaxationFT_constant = false,// set true if you want to define a constant underrelaxation (not recommended)
-                    underrelaxation_factor = 0.9,// underrelaxation with [factor * 10^exponent]
-                    deleteSmallValues = true,
+                    underrelaxation_factor = 7.5,// underrelaxation with [factor * 10^exponent]
+                    ClearSmallValues = true,
                     neglectAddedDamping = false
             });
             }
@@ -324,15 +323,14 @@ namespace BoSSS.Application.FSI_Solver
             {
                 C.Particles.Add(new Particle_Ellipsoid(4, new double[] { -10, 0.0 }, startAngl: 0)
                 {
-                    rho_P = 2,//pg/(mum^3)
-                    gravityVertical = 0,
-                    active_P = true,
+                    particleDensity = 2,//pg/(mum^3)
+                    activeParticle = true,
                     active_stress_P = stressM,
                     thickness_P = 0.4 * BaseSize,
                     length_P = 2 * BaseSize,
                     underrelaxationFT_constant = false,// set true if you want to define a constant underrelaxation (not recommended)
                     underrelaxation_factor = 0.5,// underrelaxation with [factor * 10^exponent]
-                    deleteSmallValues = true
+                    ClearSmallValues = true
                 });
             }
             //Define level-set

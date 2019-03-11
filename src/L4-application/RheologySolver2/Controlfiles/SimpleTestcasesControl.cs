@@ -36,9 +36,14 @@ using BoSSS.Solution.XdgTimestepping;
 
 namespace BoSSS.Application.Rheology
 {
+    /// <summary>
+    /// Control file of all simple testcases for debugging purpose, e.g. channel or cnsistency checks
+    /// </summary>
     static public class SimpleTestcasesControl
     {
-        // Channel Flow
+        /// <summary>
+        /// Channel Flow
+        /// </summary>
         static public RheologyControl Channel(string path = @"C:\AnnesBoSSSdb\Channel", int degree = 2, int GridLevel = 5)
         {
             RheologyControl C = new RheologyControl();
@@ -48,9 +53,6 @@ namespace BoSSS.Application.Rheology
             C.savetodb = false;
             C.DbPath = path;
             C.ProjectName = "Channel";
-            //C.MaxIter = 30;
-            //C.MinIter = 3;
-            //C.ConvCrit = 1E-10;
             C.NonLinearSolver.MaxSolverIterations = 30;
             C.NonLinearSolver.MinSolverIterations = 3;
             C.NonLinearSolver.ConvergenceCriterion = 1E-10;
@@ -61,7 +63,6 @@ namespace BoSSS.Application.Rheology
             C.dtMax = C.dt;
             C.dtMin = C.dt;
             C.Timestepper_Scheme = RheologyControl.TimesteppingScheme.ImplicitEuler;
-            //C.NonlinearMethod = NonlinearSolverMethod.Newton;
             C.NonLinearSolver.SolverCode = NonLinearSolverConfig.Code.Newton;
             C.ObjectiveParam = 1.0;
 
@@ -234,7 +235,9 @@ namespace BoSSS.Application.Rheology
             return C;
         }
         //__________________________________________________________________________________________________________________
-        // ConsistencyConstitutive
+        /// <summary>
+        /// Consistency Constitutive equation
+        /// </summary>
         static public RheologyControl ConsistencyConstitutive(string path = @"C:\AnnesBoSSSdb\ConsistencyConstitutive_withDiv", int degree = 1, int GridLevel = 5)
         {
 
@@ -247,9 +250,6 @@ namespace BoSSS.Application.Rheology
             C.DbPath = path;
             C.SessionName = "Degree" + degree + ", GridLevel" + GridLevel;
             C.ProjectName = "ConsistencyStudyConstitutive";
-            //C.MaxIter = 30;
-            //C.MinIter = 1;
-            //C.ConvCrit = 1E-7;
             C.NonLinearSolver.MaxSolverIterations = 30;
             C.NonLinearSolver.MinSolverIterations = 1;
             C.NonLinearSolver.ConvergenceCriterion= 1E-7;
@@ -261,7 +261,6 @@ namespace BoSSS.Application.Rheology
             C.dtMax = C.dt;
             C.dtMin = C.dt;
             C.Timestepper_Scheme = RheologyControl.TimesteppingScheme.ImplicitEuler;
-            //C.NonlinearMethod = NonlinearSolverMethod.NewtonGMRES;
             C.NonLinearSolver.SolverCode = NonLinearSolverConfig.Code.NewtonGMRES;
             C.ObjectiveParam = 1.0;
 
@@ -475,9 +474,11 @@ namespace BoSSS.Application.Rheology
             }
             return C;
         }
-        
+
         //__________________________________________________________________________________________________________________     
-        // Staupunktströmung (Test der Wall-RB für Constitutive Part)
+        /// <summary>
+        /// Stagnation point flow (test of the wall BC for constitutive equations
+        /// </summary>
         static public RheologyControl Staupunkt(string path = @"C:\AnnesBoSSSdb\Staupunkt", int degree = 2, int GridLevel = 5)
         {
 
@@ -667,8 +668,9 @@ namespace BoSSS.Application.Rheology
             return C;
         }
         //__________________________________________________________________________________________________________________     
-
-        // Convergence Stokes LDG
+        /// <summary>
+        /// Convergence of the Stokes system with LDG
+        /// </summary>
         static public RheologyControl ConvergenceStokesLDG(string path = @"C:\AnnesBoSSSdb\ConvergenceStokesLDG_Paper", int degree = 2, int GridLevel = 2)
         {
             // Path wenn lokal gerechnet wird: C:\AnnesBoSSSdb\ConvergenceStokesLDG 
@@ -893,8 +895,9 @@ namespace BoSSS.Application.Rheology
             return C;
         }
         //__________________________________________________________________________________________________________________       
-
-        // Channel Flow with moving wall
+        /// <summary>
+        /// Channel Flow with moving wall
+        /// </summary>
         static public RheologyControl MovingWallChannel()
         {
             RheologyControl C = new RheologyControl();
@@ -1037,8 +1040,9 @@ namespace BoSSS.Application.Rheology
             return C;
         }
         //__________________________________________________________________________________________________________________
-
-        // Parameter Study
+        /// <summary>
+        /// Parameter Study of Channel Flow
+        /// </summary>
         static public RheologyControl[] ChannelParameterStudy()
         {
 
@@ -1180,8 +1184,9 @@ namespace BoSSS.Application.Rheology
             return All.ToArray();
         }
         //__________________________________________________________________________________________________________________
-
-        // Channel test LDG
+        /// <summary>
+        /// Channel test for Flow
+        /// </summary>
         static public RheologyControl ChannelLDG(string path = @"\\dc1\userspace\kikker\cluster\cluster_db\ConvergenceStudyLDG", int degree = 2, int GridLevel = 5)
         {
             // Path wenn lokal gerechnet wird: C:\AnnesBoSSSdb\ConvergenceStokesLDG 
