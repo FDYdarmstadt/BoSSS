@@ -134,7 +134,7 @@ namespace BoSSS.Application.FSI_Solver
         /// Constant Forces and Torque underrelaxation?
         /// </summary>
         [DataMember]
-        public bool underrelaxationFT_constant = true;
+        public bool AddaptiveUnderrelaxation = false;
 
         /// <summary>
         /// Defines the order of the underrelaxation factor
@@ -375,6 +375,7 @@ namespace BoSSS.Application.FSI_Solver
         ParticleAuxillary Aux = new ParticleAuxillary();
         ParticlePhysics Physics = new ParticlePhysics();
         ParticleAddedDamping AddedDamping = new ParticleAddedDamping();
+        ParticleUnderrelaxation Underrelaxation = new ParticleUnderrelaxation();
         #region obsolete
         ///// <summary>
         ///// Clean all Particle iteration histories until a certain length, obsolete?
@@ -803,67 +804,35 @@ namespace BoSSS.Application.FSI_Solver
 
             ).Execute();
             #endregion
-            // determine underrelaxation factor (URF)
-            // =============================
-            double[] ForcesUnderrelaxation = new double[spatialDim];
-            double TorqueUnderrelaxation;
-
-            double averageForce = Aux.CalculateAverageForces(Forces, Torque, averageDistance);
-            if (iteration_counter_P == 0)
-            {
-                for (int k = 0; k < spatialDim; k++)
-                {
-                    ForcesUnderrelaxation[k] = 1;
-                    for (int t = 0; t < m_HistoryLength; t++)
-                    {
-                        hydrodynForcesAtIteration[t][k] = hydrodynForcesAtTimestep[1][k];
-                        hydrodynTorqueAtIteration[t] = hydrodynTorqueAtTimestep[1];
-                    }
-                }
-                TorqueUnderrelaxation = 1;
-            }
-            //// restart iteration
-            //// =============================
-            //else if ((iteration_counter_P - 1) / 100 % 2 == 1 && Math.Sqrt((Forces[0] - hydrodynForcesAtIteration[1][0]).Pow2()+ (Forces[1] - hydrodynForcesAtIteration[1][1]).Pow2()+ (Torque-hydrodynTorqueAtIteration[1]).Pow2()) > 100 * forceAndTorque_convergence)
-            //{
-            //    Forces[0] = 0.00125 * Circumference_P * active_stress_P.Pow2() * Math.Cos(angleAtIteration[0]) / (muA);
-            //    Forces[1] = 0.00125 * Circumference_P * active_stress_P.Pow2() * Math.Sin(angleAtIteration[0]) / muA;
-            //    Torque = 0;
-            //}
-            // constant predefined URF
-            // =============================
-            else if (underrelaxationFT_constant == true)
-            {
-                for (int k = 0; k < spatialDim; k++)
-                {
-                    ForcesUnderrelaxation[k] = underrelaxation_factor * Math.Pow(10, underrelaxationFT_exponent);
-                }
-                TorqueUnderrelaxation = underrelaxation_factor * Math.Pow(10, underrelaxationFT_exponent);
-            }
-            // calculation of URF for adaptive underrelaxation
-            // =============================
-            else 
-            {
-                ForcesUnderrelaxation = Aux.CalculateAdaptiveForceUnderrelaxation(Forces, hydrodynForcesAtIteration[0], averageForce, forceAndTorque_convergence, underrelaxation_factor);
-                TorqueUnderrelaxation = Aux.CalculateAdaptiveTorqueUnderrelaxation(Torque, hydrodynTorqueAtIteration[0], averageForce, forceAndTorque_convergence, underrelaxation_factor);
-            }
-            Console.WriteLine("ForcesUnderrelaxation[0]  " + ForcesUnderrelaxation[0] + ", ForcesUnderrelaxation[1]: " + ForcesUnderrelaxation[1] + ", TorqueUnderrelaxation " + TorqueUnderrelaxation);
-            Console.WriteLine("tempfForces[0]  " + Forces[0] + ", temp_Forces[1]: " + Forces[1] + ", tempTorque " + Torque);
-
-            // calculation of Forces and Torque with underrelaxation
-            // =============================
             int beta = 1;
             Forces[0] = Forces[0] - addedDampingTensorVV[0, 0] * beta * transAccelerationAtIteration[0][0] * dt - addedDampingTensorVV[1, 0] * beta * transAccelerationAtIteration[0][1] * dt;
             Forces[1] = Forces[1] - addedDampingTensorVV[0, 1] * beta * transAccelerationAtIteration[0][0] * dt - addedDampingTensorVV[1, 1] * beta * transAccelerationAtIteration[0][1] * dt + (particleDensity - fluidDensity) * Area_P * gravityVertical;
             Torque = Torque - beta * dt * addedDampingTensorWW[0, 0] * rotationalAccelarationAtIteration[0];
-            Forces = Aux.RelaxatedForce(ForcesUnderrelaxation, Forces, hydrodynForcesAtIteration[0], ClearSmallValues, forceAndTorque_convergence);
-            Torque = Aux.RelaxatedTorque(TorqueUnderrelaxation, Torque, hydrodynTorqueAtIteration[0], ClearSmallValues, forceAndTorque_convergence);
+            if (iteration_counter_P == 0)
+            {
+                Console.WriteLine("First iteration of the current timestep, all relaxation factors are set to 1");
+                for (int d = 0; d < spatialDim; d++)
+                {
+                    for (int t = 0; t < m_HistoryLength; t++)
+                    {
+                        hydrodynForcesAtIteration[t][d] = hydrodynForcesAtTimestep[1][d];
+                        hydrodynTorqueAtIteration[t] = hydrodynTorqueAtTimestep[1];
+                    }
+                }
+            }
+            else
+            {
+                double[] RelaxatedForceAndTorque = Underrelaxation.RelaxatedForcesAndTorque(Forces, Torque, hydrodynForcesAtIteration[0], hydrodynTorqueAtIteration[0], forceAndTorque_convergence, underrelaxation_factor, ClearSmallValues, AddaptiveUnderrelaxation);
+                for (int d = 0; d < m_Dim; d++)
+                {
+                    Forces[d] = RelaxatedForceAndTorque[d];
+                }
+                Torque = RelaxatedForceAndTorque[m_Dim];
+            }
             Aux.SaveMultidimValueToList(hydrodynForcesAtIteration, Forces);
             Aux.SaveValueToList(hydrodynTorqueAtIteration, Torque);
             hydrodynForcesAtTimestep[0] = hydrodynForcesAtIteration[0];
             hydrodynTorqueAtTimestep[0] = hydrodynTorqueAtIteration[0];
-
-            
         }
         #endregion
 
