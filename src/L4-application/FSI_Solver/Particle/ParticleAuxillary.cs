@@ -23,7 +23,7 @@ namespace BoSSS.Application.FSI_Solver
         internal void SaveMultidimValueToList(List<double[]> variable, double[] value, int listPosition = 0)
         {
             variable.Insert(listPosition, value);
-            variable.Remove(variable.Last());
+            variable.RemoveAt(7);
         }
 
         internal void SaveMultidimValueOfLastTimestep(List<double[]> variable)

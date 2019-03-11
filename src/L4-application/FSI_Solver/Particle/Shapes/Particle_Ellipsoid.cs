@@ -30,7 +30,7 @@ namespace BoSSS.Application.FSI_Solver {
         private Particle_Ellipsoid() : base() {
 
         }
-        public Particle_Ellipsoid(, double[] startPos = null, double startAngl = 0) : base(2, startPos, startAngl) {
+        public Particle_Ellipsoid(double[] startPos = null, double startAngl = 0) : base(2, startPos, startAngl) {
             #region Particle history
             // ============================= 
 
