@@ -92,8 +92,6 @@ namespace BoSSS.Solution.AdvancedSolvers {
         /// <summary>
         /// Jacobi iteration
         /// </summary>
-        /// <param name="l">muligrid level</param>
-        /// <param name="NoOfIter">number of Jacobi-Iterations</param>
         public void Solve<U, V>(U xl, V bl)
             where U : IList<double>
             where V : IList<double> {

@@ -5,14 +5,23 @@ using BoSSS.Foundation.Quadrature;
 
 namespace BoSSS.Application.Rheology {
 
+    /// <summary>
+    /// Sensor for shock capturing after Persson and Peraire (2006)
+    /// </summary>
     public class PerssonSensor {
 
         private string sensorVariable;
 
         private ConventionalDGField sensorField;
 
+        /// <summary>
+        /// The field which should be tested for high energy modes
+        /// </summary>
         public ConventionalDGField fieldToTestRestricted;
 
+        /// <summary>
+        /// Sensor field
+        /// </summary>
         public PerssonSensor(DGField fieldToTest) {
             sensorVariable = fieldToTest.Identification;
             sensorField = new SinglePhaseField(
@@ -21,14 +30,23 @@ namespace BoSSS.Application.Rheology {
                 new Basis(fieldToTest.GridDat, fieldToTest.Basis.Degree - 1));
         }
 
+        /// <summary>
+        /// Get the mean value of sensor filed
+        /// </summary>
         public double GetValue(int cellIndex) {
             return sensorField.GetMeanValue(cellIndex);
         }
 
+        /// <summary>
+        /// Get the actual sensor field
+        /// </summary>
         public DGField GetField() {
             return sensorField;
         }
 
+        /// <summary>
+        /// Update the actual sensor field
+        /// </summary>
         public void Update(DGField fieldToTest) {
             sensorField.Clear();
             fieldToTestRestricted.Clear();

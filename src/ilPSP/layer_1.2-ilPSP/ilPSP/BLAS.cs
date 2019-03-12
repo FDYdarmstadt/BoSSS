@@ -898,8 +898,7 @@ namespace ilPSP.Utils {
 
                 do {
                     machEps /= 2.0d;
-                }
-                while((double)(1.0 + machEps) != 1.0);
+                } while((1.0 + machEps) != 1.0);
 
                 return 2 * machEps;
             }

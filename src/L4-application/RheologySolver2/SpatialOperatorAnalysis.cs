@@ -12,8 +12,14 @@ using ilPSP.Connectors.Matlab;
 
 namespace BoSSS.Application.Rheology {
 
+    /// <summary>
+    /// Spatial operator matrix analysis
+    /// </summary>
     public class SpatialOperatorAnalysis {
 
+        /// <summary>
+        /// Spatial operator matrix analysis method
+        /// </summary>
         public void SpatialOperatorMatrixAnalysis(bool CheckAssertions, int AnalysisLevel) {
             using (var solver = new Rheology()) {
                 int D = solver.Grid.SpatialDimension;

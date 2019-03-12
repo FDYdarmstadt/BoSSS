@@ -130,7 +130,7 @@ namespace BoSSS.Application.FSI_Solver {
 
             C.Particles.Add(new Particle_Sphere(2, 4, new double[] { 0.0 , 0.0 }) {
                 radius_P = 0.4,
-                rho_P = 1.0,
+                particleDensity = 1.0,
             });
 
             //Define level-set
