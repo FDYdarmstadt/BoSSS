@@ -275,7 +275,7 @@ namespace CNS_MPITests.Tests.LoadBalancing {
             CheckRunsProduceSameResults(control);
         }
 
-        //[Test]
+        [Test]
         public static void TestRebalancingForDG2WithLTS1AndAV_IBM_AggOff() {
             int dgDegree = 2;
             ExplicitSchemes explicitScheme = ExplicitSchemes.LTS;
