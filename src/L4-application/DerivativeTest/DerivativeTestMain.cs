@@ -175,7 +175,7 @@ namespace BoSSS.Application.DerivativeTest {
         /// <summary>
         /// Switch for the test-case, see implementation of <see cref="CreateOrLoadGrid"/>.
         /// </summary>
-        public static int GRID_CASE = 50;
+        public static int GRID_CASE = 3;
 
         /// <summary>
         /// Testing <see cref="SpatialOperator.GetFDJacobianBuilder(IList{DGField}, IList{DGField}, UnsetteledCoordinateMapping, DelParameterUpdate, EdgeQuadratureScheme, CellQuadratureScheme)"/>;
@@ -200,7 +200,7 @@ namespace BoSSS.Application.DerivativeTest {
             // Build-In Grids
             // ==============
 
-            Quadrature_Bulksize.CHUNK_DATA_LIMIT = 1;
+            //Quadrature_Bulksize.CHUNK_DATA_LIMIT = 1;
             //BoSSS.Foundation.Caching.Cache.MaxMem = 1024;
             for (int i = 18; i <= 18; i++) {
                 BoSSS.Solution.Application._Main(args, true,  delegate () {
@@ -977,9 +977,10 @@ namespace BoSSS.Application.DerivativeTest {
 
                 // comparison of finite difference Jacobian and Operator matrix
                 if (TestFDJacobian) {
+
                    
                     //this.f1.Clear();
-                    var NullField = new SinglePhaseField(this.f1.Basis);
+                    //var NullField = new SinglePhaseField(this.f1.Basis);
 
                     var FDJbuilder = Laplace.GetFDJacobianBuilder(this.f1.Mapping.Fields, null, this.f1.Mapping,
                         delegate (IEnumerable<DGField> U0, IEnumerable<DGField> Params) {
@@ -989,14 +990,21 @@ namespace BoSSS.Application.DerivativeTest {
                     var CheckAffine = new double[FDJbuilder.CodomainMapping.LocalLength];
                     FDJbuilder.ComputeMatrix(CheckMatrix, CheckAffine);
 
+                    double RelTol = BLAS.MachineEps.Sqrt().Sqrt(); // be generous...
+                    if (RelTol <= 0.0)
+                        throw new ArithmeticException();
+
+                    double MtxTol = Math.Max(CheckMatrix.InfNorm(), LaplaceMtx.InfNorm());
+                    double AffTol = Math.Max(Math.Max(CheckAffine.MPI_L2Norm(), LaplaceAffine.MPI_L2Norm()), MtxTol);
+
                     var ErrMatrix = LaplaceMtx.CloneAs();
                     var ErrAffine = LaplaceAffine.CloneAs();
                     ErrMatrix.Acc(-1.0, CheckMatrix);
                     ErrAffine.AccV(-1.0, CheckAffine);
                     double LinfMtx = ErrMatrix.InfNorm();
                     double L2Aff = ErrAffine.L2NormPow2().MPISum().Sqrt();
-                    bool passed1 = (LinfMtx < 1.0e-3);
-                    bool passed2 = (L2Aff < Treshold);
+                    bool passed1 = (LinfMtx < MtxTol*RelTol);
+                    bool passed2 = (L2Aff < AffTol*RelTol);
                     Console.WriteLine("Finite Difference Jacobian: Matrix/Affine delta norm {0} {1}, passed? {2} {3}", LinfMtx, L2Aff, passed1, passed2);
                     m_passed = m_passed && passed1;
                     m_passed = m_passed && passed2;

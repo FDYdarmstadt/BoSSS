@@ -36,8 +36,12 @@ namespace BoSSS.Solution.LevelSetTools.EllipticReInit {
     /// \f$ \operatorname{div}(\operatorname{grad} \varphi) \f$
     /// No Boundary Conditions are set -> Boundary Conditions are determined by Interface only
     /// </summary>
-    public class CentralDifferencesLHSForm : SIPLaplace{
-        public CentralDifferencesLHSForm(double PenaltyBase,MultidimensionalArray PenaltyLengthScales ) : base(PenaltyBase, PenaltyLengthScales, VariableNames.LevelSet) {
+    public class CentralDifferencesLHSForm : SIPLaplace {
+
+        /// <summary>
+        /// ctor
+        /// </summary>
+        public CentralDifferencesLHSForm(double PenaltyBase, MultidimensionalArray PenaltyLengthScales) : base(PenaltyBase, PenaltyLengthScales, VariableNames.LevelSet) {
             //Do nothing
         }
 
@@ -45,18 +49,22 @@ namespace BoSSS.Solution.LevelSetTools.EllipticReInit {
         /// Here is some more Code doing nothing for performance reasons
         /// like this, the boundary terms are not even evaluated
         /// </summary>
-        public new TermActivationFlags BoundaryEdgeTerms
-        {
-            get
-            {
+        public new TermActivationFlags BoundaryEdgeTerms {
+            get {
                 return (TermActivationFlags.None);
             }
         }
 
+        /// <summary>
+        /// nix
+        /// </summary>
         public new double BoundaryEdgeForm(ref CommonParamsBnd inp, double[] uA, double[,] Grad_uA, double vA, double[] Grad_vA) {
             return 0;
         }
 
+        /// <summary>
+        /// All boundaries are Neumann; this returns false
+        /// </summary>
         protected override bool IsDirichlet(ref CommonParamsBnd inp) {
             return false;
         }

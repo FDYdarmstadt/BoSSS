@@ -535,30 +535,57 @@ namespace CNS {
 
         /// <summary>
         /// The so-called Schlieren variables is based on the magnitude of the density gradient
+        /// The implementation is based on the definition for the shock-vortex interaction test case
+        /// of the HiOCFD5 workshop
         /// </summary>
         public static readonly DerivedVariable Schlieren = new DerivedVariable(
             "schlieren",
             VariableTypes.Other,
             delegate (DGField schlierenField, CellMask cellMask, IProgram<CNSControl> program) {
                 schlierenField.Clear();
+                int D = program.GridData.SpatialDimension;
 
+                // Old version by Björn
+                /*
                 // Calculate the magnitude of the density gradient
                 SinglePhaseField derivative = new SinglePhaseField(schlierenField.Basis, "derivative");
-                int D = program.GridData.SpatialDimension;
 
                 for (int d = 0; d < D; d++) {
                     derivative.Derivative(1.0, program.WorkingSet.Density, d);
-                    foreach (Chunk chunk in cellMask) {
-                        foreach (int cell in chunk.Elements) {
-                            double updateValue = schlierenField.GetMeanValue(cell) + Math.Pow(derivative.GetMeanValue(cell), 2);
-                            if (d == (D - 1)) {
-                                schlierenField.SetMeanValue(cell, Math.Sqrt(updateValue));
-                            } else {
-                                schlierenField.SetMeanValue(cell, updateValue);
-                            }
+                    foreach (int cell in cellMask.ItemEnum) {
+                        double updateValue = schlierenField.GetMeanValue(cell) + Math.Pow(derivative.GetMeanValue(cell), 2);
+                        if (d == (D - 1)) {
+                            schlierenField.SetMeanValue(cell, Math.Sqrt(updateValue));
+                        } else {
+                            schlierenField.SetMeanValue(cell, updateValue);
                         }
+
                     }
                 }
+                */
+
+                // New version by Florian
+                DGField Density = program.WorkingSet.Density;
+                VectorField<SinglePhaseField> DensityGradient = new VectorField<SinglePhaseField>(D, Density.Basis, (b, S) => new SinglePhaseField(b, S));
+                DensityGradient.Gradient(1.0, Density, cellMask);
+
+                schlierenField.ProjectFunction(1.0,
+                    delegate (double[] X, double[] U, int jCell) {
+                        double R;
+                        R = 1.0;
+                        if (D == 2) {
+                            R += Math.Sqrt(U[0] * U[0] + U[1] * U[1]);
+                        } else if (D == 3) {
+                            R += Math.Sqrt(U[0] * U[0] + U[1] * U[1] + U[2] * U[2]);
+                        } else {
+                            throw new NotSupportedException();
+                        }
+                        R = Math.Log(R) / Math.Log(10);
+                        return R;
+                    },
+                    new CellQuadratureScheme(true, cellMask),
+                    DensityGradient.ToArray());
+
             });
 
         public static readonly DerivedVariable EmptyField = new DerivedVariable(

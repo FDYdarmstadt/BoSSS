@@ -31,7 +31,7 @@ using ilPSP.Tracing;
 namespace BoSSS.Solution.Statistic {
     
     /// <summary>
-    /// Utility functions to compare DG fields from different grids.
+    /// Utility functions to compare DG fields from different, but geometrically embedded, grids.
     /// </summary>
     public static class DGFieldComparison {
 
@@ -101,8 +101,6 @@ namespace BoSSS.Solution.Statistic {
                         int idx = orgfields.IndexOf(fields[z], (f1, f2) => object.ReferenceEquals(f1, f2));
                         timestepIds[z] = timestepS.ElementAt(idx).ID;
                     }
-
-                    
                 }
 
 
@@ -200,7 +198,7 @@ namespace BoSSS.Solution.Statistic {
         }
 
         /// <summary>
-        /// Injects an XDG field from a coarsr grid to a fine grid.
+        /// Injects an XDG field from a coarse grid to a fine grid.
         /// </summary>
         public static XDGField InjectXDGField(int[] Fine2Coarse, XDGField injected, XDGField cors_field, CellMask subGrd = null) {
             

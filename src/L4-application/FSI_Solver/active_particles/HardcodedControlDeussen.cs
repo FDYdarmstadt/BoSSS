@@ -133,13 +133,13 @@ namespace BoSSS.Application.FSI_Solver
                 C.Particles.Add(new Particle_Sphere(2, 4, new double[] { 0 + 14 * d, 0.0 }, startAngl: 180 * d)
                 {
                     radius_P = 1,
-                    rho_P = 1.5,//pg/(mum^3)
-                    includeGravity = false,
-                    active_P = true,
-                    stress_magnitude_P = stressM,
-                    thickness_P = 0.1 * BaseSize,
-                    length_P = 2 * BaseSize,
-                    superEllipsoidExponent = 4, // only even numbers are supported
+                    particleDensity = 1.5,//pg/(mum^3)
+                    gravityVertical = 0,
+                    activeParticle = true,
+                    active_stress_P = stressM,
+                    //thickness_P = 0.1 * BaseSize,  Sphere kann nur einen radius haben! fk.
+                    //length_P = 2 * BaseSize,       Sphere kann nur einen radius haben! fk.
+                    //superEllipsoidExponent = 4, // only even numbers are supported
                     underrelaxationFT_constant = false,// set true if you want to define a constant underrelaxation (not recommended)
                     underrelaxation_factor = 9,// underrelaxation with [factor * 10^exponent]
                 });

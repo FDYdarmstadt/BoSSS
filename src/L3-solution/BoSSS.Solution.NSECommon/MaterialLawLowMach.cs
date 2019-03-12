@@ -66,12 +66,22 @@ namespace BoSSS.Solution.NSECommon {
 
         protected bool IsInitialized = false;
         protected ScalarFieldHistory<SinglePhaseField> ThermodynamicPressure;
-
         /// <summary>
-        /// Hack to initalize ThermodynamicPressure - called by NSE_SIMPLE.VariableSet.Initialize()
+        /// 
         /// </summary>
-        /// <param name="ThermodynamicPressure"></param>
-        public void Initialize(ScalarFieldHistory<SinglePhaseField> ThermodynamicPressure) {
+        public override IList<string> ParameterOrdering {
+            get {
+                return new string[] { VariableNames.Temperature0 };
+                //, VariableNames.MassFraction0_0, VariableNames.MassFraction1_0, VariableNames.MassFraction2_0, VariableNames.MassFraction3_0}; 
+            }
+        }
+         
+
+    /// <summary>
+    /// Hack to initalize ThermodynamicPressure - called by NSE_SIMPLE.VariableSet.Initialize()
+    /// </summary>
+    /// <param name="ThermodynamicPressure"></param>
+    public void Initialize(ScalarFieldHistory<SinglePhaseField> ThermodynamicPressure) {
             if (!IsInitialized) {
                 this.ThermodynamicPressure = ThermodynamicPressure;
                 IsInitialized = true;
@@ -91,6 +101,7 @@ namespace BoSSS.Solution.NSECommon {
         public override double GetDensity(params double[] phi) {
             if (IsInitialized) {
                 double rho = this.ThermodynamicPressure.Current.GetMeanValue(0) / phi[0];
+              // rho = 1.0;
                 return rho;
             } else {
                 throw new ApplicationException("ThermodynamicPressure is not initialized.");
@@ -120,6 +131,59 @@ namespace BoSSS.Solution.NSECommon {
                 default:
                     throw new NotImplementedException();
             }
+        }
+
+
+        public double GetHeatConductivity(double phi) {
+            switch (this.MatParamsMode) {
+                case MaterialParamsMode.Constant:
+                    return 1.0;
+                case MaterialParamsMode.Sutherland: {
+                        //    throw new NotImplementedException();
+                        return 1.0; // Using a constant value! 
+                    }
+                case MaterialParamsMode.PowerLaw: {
+                        throw new NotImplementedException();
+                    }
+                default:
+                    throw new NotImplementedException();
+            }
+        }
+
+        public double GetDiffusivity(double phi) {
+            switch (this.MatParamsMode) {
+                case MaterialParamsMode.Constant:
+                    return 1.0;
+                case MaterialParamsMode.Sutherland: {
+                        //    throw new NotImplementedException();
+                        return 1.0; // Using a constant value! 
+                    }
+                case MaterialParamsMode.PowerLaw: {
+                        throw new NotImplementedException();
+                    }
+                default:
+                    throw new NotImplementedException();
+            }
+        }
+
+        public double GetPartialHeatCapacity(double phi) {
+            switch (this.MatParamsMode) {
+                case MaterialParamsMode.Constant:
+                    return 1.0;
+                case MaterialParamsMode.Sutherland: {
+                        //    throw new NotImplementedException();
+                        return 1.0; // Using a constant value! 
+                    }
+                case MaterialParamsMode.PowerLaw: {
+                        throw new NotImplementedException();
+                    }
+                default:
+                    throw new NotImplementedException();
+            }
+        }
+
+        public double GetHeatCapacity(double phi) {
+            return 1.0;
         }
 
         /// <summary>

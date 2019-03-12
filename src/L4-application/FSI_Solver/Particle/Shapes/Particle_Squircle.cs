@@ -27,29 +27,38 @@ namespace BoSSS.Application.FSI_Solver
     [Serializable]
     public class Particle_Squircle : Particle
     {
+        /// <summary>
+        /// Empty constructor used during de-serialization
+        /// </summary>
+        private Particle_Squircle() : base()
+        {
+
+        }
         public Particle_Squircle(int Dim, int HistoryLength, double[] startPos = null, double startAngl = 0) : base(Dim, HistoryLength, startPos, startAngl)
         {
             #region Particle history
             // =============================   
             for (int i = 0; i < HistoryLength; i++)
             {
-                currentIterPos_P.Add(new double[Dim]);
-                currentIterAng_P.Add(new double());
-                currentIterVel_P.Add(new double[Dim]);
-                currentIterRot_P.Add(new double());
-                currentIterForces_P.Add(new double[Dim]);
-                temporalForces_P.Add(new double[Dim]);
-                currentIterTorque_P.Add(new double());
-                temporalTorque_P.Add(new double());
+                positionAtIteration.Add(new double[Dim]);
+                angleAtIteration.Add(new double());
+                transVelocityAtIteration.Add(new double[Dim]);
+                transAccelerationAtIteration.Add(new double[Dim]);
+                rotationalVelocityAtIteration.Add(new double());
+                rotationalAccelarationAtIteration.Add(new double());
+                hydrodynForcesAtIteration.Add(new double[Dim]);
+                hydrodynTorqueAtIteration.Add(new double());
             }
             for (int i = 0; i < 4; i++)
             {
-                currentTimePos_P.Add(new double[Dim]);
-                currentTimeAng_P.Add(new double());
-                currentTimeVel_P.Add(new double[Dim]);
-                currentTimeRot_P.Add(new double());
-                currentTimeForces_P.Add(new double[Dim]);
-                currentTimeTorque_P.Add(new double());
+                positionAtTimestep.Add(new double[Dim]);
+                angleAtTimestep.Add(new double());
+                transVelocityAtTimestep.Add(new double[Dim]);
+                transAccelerationAtTimestep.Add(new double[Dim]);
+                rotationalVelocityAtTimestep.Add(new double());
+                rotationalAccelarationAtTimestep.Add(new double());
+                hydrodynForcesAtTimestep.Add(new double[Dim]);
+                hydrodynTorqueAtTimestep.Add(new double());
             }
             #endregion
 
@@ -66,23 +75,46 @@ namespace BoSSS.Application.FSI_Solver
                     startPos = new double[] { 0.0, 0.0, 0.0 };
                 }
             }
-            currentTimePos_P[0] = startPos;
-            currentTimePos_P[1] = startPos;
+            positionAtTimestep[0] = startPos;
+            positionAtTimestep[1] = startPos;
             //From degree to radiant
-            currentTimeAng_P[0] = startAngl * 2 * Math.PI / 360;
-            currentTimeAng_P[1] = startAngl * 2 * Math.PI / 360;
-            //currentIterVel_P[0][0] = 2e-8;
+            angleAtTimestep[0] = startAngl * 2 * Math.PI / 360;
+            angleAtTimestep[1] = startAngl * 2 * Math.PI / 360;
+            //transVelocityAtIteration[0][0] = 2e-8;
 
             UpdateLevelSetFunction();
             #endregion
         }
-        override public double active_stress_P
+
+        /// <summary>
+        /// Radius of the particle. Not necessary for particles defined by their length and thickness
+        /// </summary>
+        [DataMember]
+        public double radius_P;
+
+        /// <summary>
+        /// %
+        /// </summary>
+        protected override double averageDistance {
+            get {
+                return radius_P;
+            }
+        }
+
+        public override double Circumference_P
         {
             get
             {
-                return 2 * Math.PI * 3.708 * stress_magnitude_P;
+                return 4 * radius_P;
             }
         }
+
+        /// <summary>
+        /// Exponent of the super ellipsoid. Higher exponent leads to a more "squary" appearance.
+        /// </summary>
+        [DataMember]
+        public int superEllipsoidExponent;
+
         override public double Area_P
         {
             get
@@ -99,8 +131,8 @@ namespace BoSSS.Application.FSI_Solver
         }
         override public void UpdateLevelSetFunction()
         {
-            double alpha = -(currentIterAng_P[0]);
-            phi_P = (X, t) => -((((X[0] - currentIterPos_P[0][0]) * Math.Cos(alpha) - (X[1] - currentIterPos_P[0][1]) * Math.Sin(alpha)).Pow(4) + ((X[0] - currentIterPos_P[0][0]) * Math.Sin(alpha) + (X[1] - currentIterPos_P[0][1]) * Math.Cos(alpha)).Pow(4)) - radius_P.Pow(4));
+            double alpha = -(angleAtIteration[0]);
+            phi_P = (X, t) => -((((X[0] - positionAtIteration[0][0]) * Math.Cos(alpha) - (X[1] - positionAtIteration[0][1]) * Math.Sin(alpha)).Pow(4) + ((X[0] - positionAtIteration[0][0]) * Math.Sin(alpha) + (X[1] - positionAtIteration[0][1]) * Math.Cos(alpha)).Pow(4)) - radius_P.Pow(4));
         }
         override public CellMask cutCells_P(LevelSetTracker LsTrk)
         {
@@ -109,8 +141,8 @@ namespace BoSSS.Application.FSI_Solver
 
             CellMask cellCollection;
             CellMask cells = null;
-            double alpha = -(currentIterAng_P[0]);
-            cells = CellMask.GetCellMask(LsTrk.GridDat, X => -((((X[0] - currentIterPos_P[0][0]) * Math.Cos(alpha) - (X[1] - currentIterPos_P[0][1]) * Math.Sin(alpha)).Pow(4) + ((X[0] - currentIterPos_P[0][0]) * Math.Sin(alpha) + (X[1] - currentIterPos_P[0][1]) * Math.Cos(alpha)).Pow(4)) - radiusTolerance.Pow(4)) > 0);
+            double alpha = -(angleAtIteration[0]);
+            cells = CellMask.GetCellMask(LsTrk.GridDat, X => -((((X[0] - positionAtIteration[0][0]) * Math.Cos(alpha) - (X[1] - positionAtIteration[0][1]) * Math.Sin(alpha)).Pow(4) + ((X[0] - positionAtIteration[0][0]) * Math.Sin(alpha) + (X[1] - positionAtIteration[0][1]) * Math.Cos(alpha)).Pow(4)) - radiusTolerance.Pow(4)) > 0);
 
             CellMask allCutCells = LsTrk.Regions.GetCutCellMask();
             cellCollection = cells.Intersect(allCutCells);
@@ -120,7 +152,7 @@ namespace BoSSS.Application.FSI_Solver
         {
             // only for squared cells
             double radiusTolerance = radius_P + 2.0 * Math.Sqrt(2 * LsTrk.GridDat.Cells.h_minGlobal.Pow2());
-            if (-((((point[0] - currentIterPos_P[0][0]) * Math.Cos(currentIterAng_P[0]) - (point[1] - currentIterPos_P[0][1]) * Math.Sin(currentIterAng_P[0])).Pow(4) + ((point[0] - currentIterPos_P[0][0]) * Math.Sin(currentIterAng_P[0]) + (point[1] - currentIterPos_P[0][1]) * Math.Cos(currentIterAng_P[0])).Pow(4)) - radiusTolerance.Pow(4)) > 0)
+            if (-((((point[0] - positionAtIteration[0][0]) * Math.Cos(angleAtIteration[0]) - (point[1] - positionAtIteration[0][1]) * Math.Sin(angleAtIteration[0])).Pow(4) + ((point[0] - positionAtIteration[0][0]) * Math.Sin(angleAtIteration[0]) + (point[1] - positionAtIteration[0][1]) * Math.Cos(angleAtIteration[0])).Pow(4)) - radiusTolerance.Pow(4)) > 0)
             {
                 return true;
             }     
@@ -129,7 +161,7 @@ namespace BoSSS.Application.FSI_Solver
         override public double ComputeParticleRe(double mu_Fluid)
         {
             double particleReynolds = 0;
-            particleReynolds = Math.Sqrt(currentIterVel_P[0][0] * currentIterVel_P[0][0] + currentIterVel_P[0][1] * currentIterVel_P[0][1]) * 2 * radius_P * rho_P / mu_Fluid;
+            particleReynolds = Math.Sqrt(transVelocityAtIteration[0][0] * transVelocityAtIteration[0][0] + transVelocityAtIteration[0][1] * transVelocityAtIteration[0][1]) * 2 * radius_P * particleDensity / mu_Fluid;
             Console.WriteLine("Particle Reynolds number:  " + particleReynolds);
             return particleReynolds;
         }

@@ -144,6 +144,16 @@ namespace BoSSS.Foundation.Grid.Voronoi
                     Ridges = GetRidges();
                     Vertices = GetVertices();
                 }
+                else
+                {
+                    //Empty Ridges
+                    Ridges = ridgeList.ToArray();
+                    for(int i = 0; i < Ridges.Length; ++i)
+                    {
+                        Ridges[i].IsBoundary = true;
+                    }
+                }
+                
             }
 
             //This should be possible in nlogn time!!111
@@ -316,7 +326,6 @@ namespace BoSSS.Foundation.Grid.Voronoi
                 }
                 return (cells, vertices);
             }
-
         }
 
         static IntersectionMesh CreateMesh(IList<MICHVertex> startNodes)
@@ -332,6 +341,21 @@ namespace BoSSS.Foundation.Grid.Voronoi
             MICHDelaunayCell.Clear();
 
             return new IntersectionMesh(new MICHIdMesh(delaunayCells, delaunayEdges, startNodes.Count));
+        }
+
+        static IntersectionMesh CreateMesh(IList<MICHVertex> startNodes, int startCell_NodeIndice)
+        {
+            var mICHMesh = MIConvexHull.VoronoiMesh.Create<
+                MICHVertex,
+                MICHDelaunayCell,
+                MIConvexHull.VoronoiEdge<MICHVertex, MICHDelaunayCell>
+                >(startNodes);
+            var delaunayCells = mICHMesh.Vertices;
+            var delaunayEdges = mICHMesh.Edges;
+            MICHVertex.Clear();
+            MICHDelaunayCell.Clear();
+
+            return new IntersectionMesh(new MICHIdMesh(delaunayCells, delaunayEdges, startNodes.Count), startCell_NodeIndice);
         }
 
         public static IntersectionMesh CreateMesh(MultidimensionalArray nodes)
@@ -352,6 +376,16 @@ namespace BoSSS.Foundation.Grid.Voronoi
                 startNodes[i] = new MICHVertex { Position = nodes[i] };
             }
             return CreateMesh(startNodes);
+        }
+
+        public static IntersectionMesh CreateMesh(IList<Vector> nodes, int startCell_NodeIndice)
+        {
+            MICHVertex[] startNodes = new MICHVertex[nodes.Count];
+            for (int i = 0; i < nodes.Count; ++i)
+            {
+                startNodes[i] = new MICHVertex { Position = nodes[i] };
+            }
+            return CreateMesh(startNodes, startCell_NodeIndice);
         }
 
     }

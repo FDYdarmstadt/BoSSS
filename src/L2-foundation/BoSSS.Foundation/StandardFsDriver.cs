@@ -230,10 +230,10 @@ namespace BoSSS.Foundation.IO {
                     // create new file
                     string fullpath = Path.Combine(BasePath, RelPath);
                     if (ForceOverride == true) {
-                        FileStream fs = new FileStream(fullpath, FileMode.Create); // overwrites existing file
+                        FileStream fs = new FileStream(fullpath, FileMode.Create); //, FileAccess.ReadWrite, FileShare.Read); // overwrites existing file
                         return fs;
                     } else {
-                        FileStream fs = new FileStream(fullpath, FileMode.CreateNew); // throws exception if file exists
+                        FileStream fs = new FileStream(fullpath, FileMode.CreateNew);//, FileAccess.ReadWrite, FileShare.Read); // throws exception if file exists
                         return fs;
                     }
 
@@ -334,8 +334,12 @@ namespace BoSSS.Foundation.IO {
         /// <param name="sessionGuid"></param>
         /// <returns></returns>
         public Stream GetSessionInfoStream(bool create, Guid sessionGuid) {
-            string filename = Path.Combine(
-                SessionsDir, sessionGuid.ToString(), "Session.info");
+            string dirname = Path.Combine(SessionsDir, sessionGuid.ToString());
+            string fullDirName = Path.Combine(BasePath, dirname);
+            if (!Directory.Exists(fullDirName))
+                Directory.CreateDirectory(fullDirName);
+
+            string filename = Path.Combine(dirname, "Session.info");
 
             return OpenFile(create, filename, true);
         }

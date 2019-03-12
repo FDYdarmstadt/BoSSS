@@ -34,7 +34,8 @@
     <CodeAnalysisRuleSet>AllRules.ruleset</CodeAnalysisRuleSet>
     <UseVSHostingProcess>true</UseVSHostingProcess>
     <Prefer32Bit>false</Prefer32Bit>
-    <DocumentationFile>bin\Release\BoSSS.Solution.LevelSetTools.XML</DocumentationFile>
+    <DocumentationFile>
+    </DocumentationFile>
     <LangVersion>latest</LangVersion>
   </PropertyGroup>
   <ItemGroup>
@@ -179,6 +180,10 @@
     <ProjectReference Include="..\..\L2-foundation\BoSSS.Foundation\BoSSS.Foundation.csproj">
       <Project>{17A60FBA-20B4-451D-98E1-8D742F368569}</Project>
       <Name>BoSSS.Foundation</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\BoSSS.Solution.Multigrid\BoSSS.Solution.AdvancedSolvers.csproj">
+      <Project>{37748982-6cf5-424b-ab39-146a8143ba71}</Project>
+      <Name>BoSSS.Solution.AdvancedSolvers</Name>
     </ProjectReference>
   </ItemGroup>
   <ItemGroup />

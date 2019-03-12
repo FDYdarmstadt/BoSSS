@@ -38,25 +38,19 @@ namespace MiniBatchProcessor {
         }
 
         /// <summary>
-        /// Path to a jobs standard output file, if existent - otherwise null.
+        /// Path to a jobs standard output file.
         /// </summary>
         static public string GetStdoutFile(int JobId) {
             string f = Path.Combine(ClientAndServer.config.BatchInstructionDir, ClientAndServer.WORK_FINISHED_DIR, JobId.ToString() + "_out.txt");
-            if (File.Exists(f))
-                return f;
-            else
-                return null;
+            return f;
         }
 
         /// <summary>
-        /// Path to a jobs standard error file, if existent - otherwise null.
+        /// Path to a jobs standard error file.
         /// </summary>
         static public string GetStderrFile(int JobId) {
             string f = Path.Combine(ClientAndServer.config.BatchInstructionDir, ClientAndServer.WORK_FINISHED_DIR, JobId.ToString() + "_err.txt");
-            if (File.Exists(f))
-                return f;
-            else
-                return null;
+            return f;
         }
     }
 }

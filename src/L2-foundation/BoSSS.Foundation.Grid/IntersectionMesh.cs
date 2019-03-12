@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using BoSSS.Platform.LinAlg;
 using BoSSS.Platform;
+using BoSSS.Foundation.Grid.Aggregation;
 
 namespace BoSSS.Foundation.Grid.Voronoi
 {
@@ -56,6 +57,7 @@ namespace BoSSS.Foundation.Grid.Voronoi
 
             return lines;
         }
+
         public static IEnumerator<Line> GetEnumerator(Vector[] polygon)
         {
             Line[] lines = ToLines(polygon);
@@ -68,20 +70,65 @@ namespace BoSSS.Foundation.Grid.Voronoi
 
     class IntersectionMesh : Mesh, IIntersectableMesh<Cell, Ridge, Line>
     {
+        public IntersectionMesh(IIdMesh Mesh, int firstCell_NodeIndice) : base(Mesh)
+        {
+            FirstCell = Cells[firstCell_NodeIndice];
+        }
+
         public IntersectionMesh(IIdMesh Mesh) : base(Mesh)
         {
+            FirstCell = null;
         }
 
         static RidgeComparer ridgeComparer = new RidgeComparer();
 
+        Cell FirstCell;
+
         public (Cell, IEnumerator<Ridge>) getFirst(Line boundaryLine)
         {
             //Find cell that contains boundaryLine.Start;
-            Cell firstCell = Cells[3];
-            AfterCutRidgeEnumerator enumerator = new AfterCutRidgeEnumerator(firstCell.Ridges, firstCell.Ridges[1]);
-            enumerator.Reset();
+            bool foundFirstCell = false;
+            if(FirstCell == null)
+            {
+                //SetFirst Cell: any random cell. Influences runtime, though
+                FirstCell = Cells[0];
+            }
+            else
+            {
+                //Check if boundaryLine.Start is still in cell, else search neighborhood
+                foreach(Cell cell in ConnectedCells_Iterative(FirstCell))
+                {
+                    Vector[] verts = Array.ConvertAll(FirstCell.Vertices, item => (Vector)item);
+                    //At this point, every cell is convex!
+                    bool isInside = PolygonTesselation.PointInConvexPolygon(verts, (Vector)boundaryLine.start);
+                    if (isInside)
+                    {
+                        foundFirstCell = true;
+                        FirstCell = cell;
+                        break;
+                    }
+                }
+            }
+            if (foundFirstCell)
+            {
+                AfterCutRidgeEnumerator enumerator = new AfterCutRidgeEnumerator(FirstCell.Ridges, FirstCell.Ridges[1]);
+                enumerator.Reset();
+                return (FirstCell, enumerator);
+            }
+            else
+            {
+                throw new Exception("First cell could not be found: boundaryLine.start not inside a cell");
+            }
+        }
 
-            return (firstCell, enumerator);
+        public IEnumerable<Cell> GetInsideCells()
+        {
+            return ConnectedCells_Iterative(FirstCell);
+        }
+
+        public AggregationGrid ToAggregationGrid()
+        {
+            return ToAggregationGrid(FirstCell);
         }
 
         static double accuracy = 1e-10;
