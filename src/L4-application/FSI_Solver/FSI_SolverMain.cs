@@ -515,6 +515,7 @@ namespace BoSSS.Application.FSI_Solver {
                     break;
 
                 case LevelSetHandling.LieSplitting:
+                    UpdateForcesAndTorque(dt, phystime);
                     UpdateLevelSetParticles(dt);
                     break;
 
@@ -764,7 +765,7 @@ namespace BoSSS.Application.FSI_Solver {
                             }
                             m_BDF_Timestepper.Solve(phystime, dt, false);
                             #region Get Drag and Lift Coefficiant
-                            UpdateForcesAndTorque(dt, phystime);
+                            //UpdateForcesAndTorque(dt, phystime);
                             double acc = 0;
                             foreach (Particle p in m_Particles) {
                                 acc += (p.hydrodynForcesAtIteration[0][0] - p.hydrodynForcesAtIteration[1][0]).Pow2() + (p.hydrodynForcesAtIteration[0][1] - p.hydrodynForcesAtIteration[1][1]).Pow2() + (p.hydrodynTorqueAtIteration[0] - p.hydrodynTorqueAtIteration[1]).Pow2();

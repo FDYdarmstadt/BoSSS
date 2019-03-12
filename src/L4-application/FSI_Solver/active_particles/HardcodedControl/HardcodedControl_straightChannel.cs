@@ -30,7 +30,7 @@ namespace BoSSS.Application.FSI_Solver
 {
     public class HardcodedControl_straightChannel : IBM_Solver.HardcodedTestExamples
     {
-        public static FSI_Control activeRod_noBackroundFlow(string _DbPath = null, int k = 2, double VelXBase = 0.0, double stressM = 1e7, double cellAgg = 0.2, double muA = 1e6, double timestepX = 1e-3)
+        public static FSI_Control activeRod_noBackroundFlow(string _DbPath = null, int k = 2, double VelXBase = 0.0, double stressM = 1e6, double cellAgg = 0.2, double muA = 1e5, double timestepX = 1e-3)
         {
             FSI_Control C = new FSI_Control();
 
@@ -66,10 +66,10 @@ namespace BoSSS.Application.FSI_Solver
                 int r = new int(); // #Cells in y-dircetion + 1
 
                 q = 16;
-                r = 16;
+                r = 8;
 
                 double[] Xnodes = GenericBlas.Linspace(-8 * BaseSize, 8 * BaseSize, q);
-                double[] Ynodes = GenericBlas.Linspace(-8 * BaseSize, 8 * BaseSize, r);
+                double[] Ynodes = GenericBlas.Linspace(-4 * BaseSize, 4 * BaseSize, r);
 
                 var grd = Grid2D.Cartesian2DGrid(Xnodes, Ynodes, periodicX: false, periodicY: false);
 
@@ -86,9 +86,9 @@ namespace BoSSS.Application.FSI_Solver
                         et = 1;
                     if (Math.Abs(X[0] + (-8 * BaseSize)) <= 1.0e-8)
                         et = 2;
-                    if (Math.Abs(X[1] - (-8 * BaseSize)) <= 1.0e-8)
+                    if (Math.Abs(X[1] - (-4 * BaseSize)) <= 1.0e-8)
                         et = 3;
-                    if (Math.Abs(X[1] + (-8 * BaseSize)) <= 1.0e-8)
+                    if (Math.Abs(X[1] + (-4 * BaseSize)) <= 1.0e-8)
                         et = 4;
 
                     Debug.Assert(et != 0);
@@ -138,7 +138,7 @@ namespace BoSSS.Application.FSI_Solver
                     thickness_P = 1 * BaseSize,
                     length_P = 4 * BaseSize,
                     AddaptiveUnderrelaxation = true,// set true if you want to define a constant underrelaxation (not recommended)
-                    underrelaxation_factor = 1,// underrelaxation with [factor * 10^exponent]
+                    underrelaxation_factor = 3,// underrelaxation with [factor * 10^exponent]
                     ClearSmallValues = true,
                     neglectAddedDamping = false
             });
@@ -191,7 +191,7 @@ namespace BoSSS.Application.FSI_Solver
             C.LinearSolver.NoOfMultigridLevels = 1;
             C.LinearSolver.MaxSolverIterations = 1000;
             C.LinearSolver.MinSolverIterations = 1;
-            C.ForceAndTorque_ConvergenceCriterion = stressM * 1e-2;
+            C.ForceAndTorque_ConvergenceCriterion = 10;
             C.LSunderrelax = 1.0;
             
 
@@ -200,7 +200,7 @@ namespace BoSSS.Application.FSI_Solver
             C.Timestepper_LevelSetHandling = LevelSetHandling.LieSplitting;
             C.LSunderrelax = 1;
             C.splitting_fully_coupled = true;
-            C.max_iterations_fully_coupled = 2;
+            C.max_iterations_fully_coupled = 10000;
             C.includeRotation = true;
             C.includeTranslation = true;
 
