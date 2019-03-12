@@ -115,9 +115,9 @@ namespace BoSSS.Solution.GridImport {
 
     /// <summary>
     /// Importer of msh format.
-    ///  - First index is circularity, 0 clockwise, 1 counterclockwise
-    ///  - second index is node reordering
-    ///  - third index is element type.
+    ///  - 1st index is element type.
+    ///  - 2nd index is node reordering
+    ///  - 3rd index is circularity, 0 clockwise, 1 counterclockwise
     /// </summary>
     public class Gmsh : IGridImporter {
 
@@ -126,6 +126,7 @@ namespace BoSSS.Solution.GridImport {
             new int[,] {{ 0, 1 }},
             // <summary>3-node triangle</summary>
             new int[,] {{ 0, 1, 2 },{ 2, 1, 0 }},
+            
             // <summary>4-node quadrangle</summary>
             new int[,] {{ 0, 1, 3, 2 },{ 0, 3, 1, 2 }},
             // <summary>4-node tetrahedron</summary>
