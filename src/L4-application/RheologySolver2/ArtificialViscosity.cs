@@ -6,8 +6,14 @@ using ilPSP;
 
 namespace BoSSS.Application.Rheology {
 
+    /// <summary>
+    /// Artificial viscosity for shock capturing
+    /// </summary>
     public static class ArtificialViscosity {
 
+        /// <summary>
+        /// calculating the value of the artificial viscosity
+        /// </summary>
         public static double GetViscosity(int jCell, double cellSize, int dgDegree, double perssonSensor, double sensorLimit, double maxViscosity) {
 
             double sensorValue = Math.Log10(perssonSensor + 1e-15);
@@ -30,7 +36,9 @@ namespace BoSSS.Application.Rheology {
             return epsilonE;
         }
 
-
+        /// <summary>
+        /// project the value of the artificial viscosity onto a DG field
+        /// </summary>
         public static void ProjectArtificalViscosityToDGField(SinglePhaseField avField, PerssonSensor sensor, double sensorLimit, double maxViscosity, CellMask cellMask = null) {
 
             MultidimensionalArray h_min = avField.GridDat.iGeomCells.h_min;

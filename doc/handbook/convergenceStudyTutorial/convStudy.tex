@@ -398,7 +398,6 @@ Assert.IsTrue(Math.Abs(conv4 - (+5)) < 0.7, "experimental convergence failed on 
  }
 \BoSSSexe
 \BoSSScmd{
-///
 /// We can augment the current session table with experimental errors:
 WorkflowMgm.hConvergence.Update();
  }
@@ -469,8 +468,9 @@ foreach(int pDeg in Degrees) \{ // loop over polynomial degrees\newline
 \btab // now, create a plot from the selected sessions:\newline 
 \btab // (we could also do other things)\newline 
 \btab Plot2Ddata pDegPlot = \newline 
-\btab \btab pDegSessions.ToEstimatedGridConvergenceData("T", false);\newline 
-\btab \btab // false secelsts DOFs instead of resolution h for x-axis\newline 
+\btab \btab pDegSessions.ToEstimatedGridConvergenceData("T", \newline 
+\btab \btab \btab  xAxis\_Is\_hOrDof:false, // false selects DOFs for x-axis\newline 
+\btab \btab \btab  normType:NormType.H1\_approximate); // use the H1-Sobolev norm \newline 
  \newline 
 \btab // remember the freshly created plot object in a list:\newline 
 \btab ExpPlotS.Add(pDegPlot);\newline 
@@ -507,7 +507,9 @@ ExpPlot.PlotNow();
  }
 \BoSSSexe
 \BoSSScmd{
-/// and we can also verify the slope of the error curves:
+/// and we can also verify the slope of the error curves. 
+/// Note that convergence order by using the H1 norm is one degree lower 
+/// compared to the L2 norm..
 ExpPlot.Regression();
  }
 \BoSSSexe
@@ -518,10 +520,10 @@ double conv1 = regExp.Single(kv => kv.Key.Contains("1")).Value;\newline
 double conv2 = regExp.Single(kv => kv.Key.Contains("2")).Value;\newline 
 double conv3 = regExp.Single(kv => kv.Key.Contains("3")).Value;\newline 
 double conv4 = regExp.Single(kv => kv.Key.Contains("4")).Value;\newline 
-Assert.IsTrue(Math.Abs(conv1 - (-2)) < 0.7, "experimental convergence failed on k = 1");\newline 
-Assert.IsTrue(Math.Abs(conv2 - (-3)) < 0.7, "experimental convergence failed on k = 2");\newline 
-Assert.IsTrue(Math.Abs(conv3 - (-4)) < 0.7, "experimental convergence failed on k = 3");\newline 
-Assert.IsTrue(Math.Abs(conv4 - (-5)) < 0.7, "experimental convergence failed on k = 4");
+Assert.IsTrue(Math.Abs(conv1 - (-1)) < 0.7, "experimental convergence failed on k = 1");\newline 
+Assert.IsTrue(Math.Abs(conv2 - (-2)) < 0.7, "experimental convergence failed on k = 2");\newline 
+Assert.IsTrue(Math.Abs(conv3 - (-3)) < 0.7, "experimental convergence failed on k = 3");\newline 
+Assert.IsTrue(Math.Abs(conv4 - (-4)) < 0.7, "experimental convergence failed on k = 4");
  }
 \BoSSSexe
 \BoSSScmd{

@@ -36,9 +36,15 @@ using System.Configuration;
 using BoSSS.Solution.XdgTimestepping;
 
 namespace BoSSS.Application.Rheology {
+
+    /// <summary>
+    /// Control File for specified examples for calculation with viscoelastic fluid
+    /// </summary>
     static public class RheologyControlExamples {
 
-        // 4:1 Contraction Flow
+        /// <summary>
+        /// 4:1 Contraction Flow
+        /// </summary>
         static public RheologyControl Contraction(string path = @"\\dc1\userspace\kikker\cluster\cluster_db\ContractionNYC", int degree = 1, int GridLevel = 3) { //int kelem = 4
             RheologyControl C = new RheologyControl();
 
@@ -60,14 +66,11 @@ namespace BoSSS.Application.Rheology {
             C.LinearSolver.MinSolverIterations = 1;
             C.LinearSolver.ConvergenceCriterion = 1E-7;
 
-            //C.MaxIter =  50;
-            //C.MinIter = 1;
-            //C.ConvCrit = 1E-7;
             C.dt = 1E20;
             C.dtMax = C.dt;
             C.dtMin = C.dt;
             C.Timestepper_Scheme = RheologyControl.TimesteppingScheme.ImplicitEuler;
-            C.NonLinearSolver.SolverCode = NonLinearSolverConfig.Code.NewtonGMRES;//C.NonlinearMethod = NonlinearSolverMethod.NewtonGMRES;
+            C.NonLinearSolver.SolverCode = NonLinearSolverConfig.Code.NewtonGMRES;
             C.ObjectiveParam = 1.0;
 
             //Debugging and Solver Analysis
@@ -374,7 +377,9 @@ namespace BoSSS.Application.Rheology {
         }
         //__________________________________________________________________________________________________________________
 
-        // Confined cylinder in a channel flow
+        /// <summary>
+        /// Confined cylinder in a channel flow
+        /// </summary>
         static public RheologyControl ConfinedCylinder(string path = @"\\dc1\userspace\kikker\cluster\cluster_db\ConfinedCylinder", int degree = 3) {
             RheologyControl C = new RheologyControl();
 
@@ -385,26 +390,25 @@ namespace BoSSS.Application.Rheology {
             //C:\AnnesBoSSSdb\ConfinedCylinder
 
             //Solver Options
-            C.NoOfTimesteps = 1000;
+            C.NoOfTimesteps = 1;
             C.savetodb = true;
             C.DbPath = path;
             C.ProjectName = "Cylinder";
 
             C.NonLinearSolver.MaxSolverIterations = 100;
-            C.LinearSolver.MaxSolverIterations = 100;
             C.NonLinearSolver.MinSolverIterations = 1;
-            C.LinearSolver.MinSolverIterations = 1;
             C.NonLinearSolver.ConvergenceCriterion = 1E-6;
+
+            C.LinearSolver.MaxSolverIterations = 100;
+            C.LinearSolver.MinSolverIterations = 1;          
             C.LinearSolver.ConvergenceCriterion = 1E-6;
-            //C.MaxIter = 100;
-            //C.MinIter = 1;
-            //C.ConvCrit = 1E-6;
+
             //C.UnderRelax = 1.0;
-            C.dt = 0.1;
+            C.dt = 1e6;
             C.dtMax = C.dt;
             C.dtMin = C.dt;
             C.Timestepper_Scheme = RheologyControl.TimesteppingScheme.ImplicitEuler;
-            C.NonLinearSolver.SolverCode = NonLinearSolverConfig.Code.Newton;//C.NonlinearMethod = NonlinearSolverMethod.Newton;
+            C.NonLinearSolver.SolverCode = NonLinearSolverConfig.Code.Newton;
             C.ObjectiveParam = 1.0;
 
             C.UsePerssonSensor = true;

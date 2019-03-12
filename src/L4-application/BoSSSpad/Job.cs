@@ -397,7 +397,7 @@ namespace BoSSS.Application.BoSSSpad {
             get {
                 //string ProjectName = InteractiveShell.WorkflowMgm.CurrentProject;
 
-                InteractiveShell.WorkflowMgm.ResetSessionsCache();
+                //InteractiveShell.WorkflowMgm.ResetSessionsCache();
                 var AllCandidates = InteractiveShell.WorkflowMgm.Sessions.Where(
                     sinf => sinf.KeysAndQueries.ContainsKey(BoSSS.Solution.Application.SESSIONNAME_KEY)
                          && Convert.ToString(sinf.KeysAndQueries[BoSSS.Solution.Application.SESSIONNAME_KEY]).Equals(this.Name)
