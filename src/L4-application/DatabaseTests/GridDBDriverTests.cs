@@ -20,19 +20,16 @@ namespace BoSSS.Application.DatabaseTests
             {
                 grid = gridInfo.As<GridProxy>().RealGrid;
             }
-            else if (gridInfo is Foundation.Grid.Classic.GridCommons)
-            {
-                grid = (Foundation.Grid.Classic.GridCommons)gridInfo;
-            }
             else
             {
-                throw new NotSupportedException();
+                grid = (IGrid)gridInfo;              
             }
+
             return (grid, gridInfo);
         }
 
         [Test]
-        public void TestSaveGridIfUnique()
+        public void SaveGridIfUnique()
         {
             (IGrid grid , IGridInfo gridInfo) = LoadGrid();
             bool isNotUnique;
@@ -45,7 +42,7 @@ namespace BoSSS.Application.DatabaseTests
         }
 
         [Test]
-        public void SaveGrid()
+        public void LoadAndSaveGrid()
         {
             (IGrid grid, IGridInfo gridInfo) = LoadGrid();
 
