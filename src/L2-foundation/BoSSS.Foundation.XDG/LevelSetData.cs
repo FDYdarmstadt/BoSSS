@@ -542,9 +542,6 @@ namespace BoSSS.Foundation.XDG {
             /// <summary>
             /// this function is the inverse to <see cref="GetSpeciesIndex(SpeciesId,int)"/>;
             /// </summary>
-            /// <param name="_ReducedRegionCode">
-            /// the value returned by the 2nd parameter of <see cref="GetNoOfSpecies"/>;
-            /// </param>
             /// <param name="SpeciesIndex"></param>
             /// <returns></returns>
             /// <remarks>

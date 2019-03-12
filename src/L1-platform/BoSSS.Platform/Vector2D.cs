@@ -102,6 +102,32 @@ namespace BoSSS.Platform.LinAlg {
         }
 
         /// <summary>
+        /// initializes a vector some part of an array
+        /// </summary>
+        /// <param name="X"></param>
+        /// <param name="D">spatial dimension (<see cref="Dim"/>), number of entries to take form <paramref name="X"/></param>
+        /// <param name="offset">offset into <paramref name="X"/></param>
+        public Vector(double[] X, int offset, int D) {
+            if (D < 1 || D > 3) {
+                throw new ArgumentException();
+            }
+
+            this.Dim = D;
+            x = X[offset + 0];
+            if (this.Dim > 1)
+                y = X[offset + 1];
+            else
+                y = 0;
+
+            if (this.Dim > 2)
+                z = X[offset + 2];
+            else
+                z = 0;
+
+            Dummy_256bitAlign = 0;
+        }
+
+        /// <summary>
         /// x - component
         /// </summary>
         public double x;

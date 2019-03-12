@@ -20,6 +20,7 @@ using ilPSP;
 using ilPSP.Utils;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Reflection;
@@ -396,6 +397,7 @@ namespace BoSSS.Application.BoSSSpad {
             get {
                 //string ProjectName = InteractiveShell.WorkflowMgm.CurrentProject;
 
+                InteractiveShell.WorkflowMgm.ResetSessionsCache();
                 var AllCandidates = InteractiveShell.WorkflowMgm.Sessions.Where(
                     sinf => sinf.KeysAndQueries.ContainsKey(BoSSS.Solution.Application.SESSIONNAME_KEY)
                          && Convert.ToString(sinf.KeysAndQueries[BoSSS.Solution.Application.SESSIONNAME_KEY]).Equals(this.Name)
@@ -432,7 +434,7 @@ namespace BoSSS.Application.BoSSSpad {
                     throw new NotSupportedException("Job is not activated.");
 
                 string StdoutFile = AssignedBatchProc.GetStdoutFile(this);
-                if (StdoutFile != null) {
+                if (StdoutFile != null && File.Exists(StdoutFile)) {
                     using (FileStream stream = File.Open(StdoutFile, FileMode.Open, FileAccess.Read, FileShare.ReadWrite)) {
                         using (StreamReader reader = new StreamReader(stream)) {
                             return reader.ReadToEnd();
@@ -453,7 +455,7 @@ namespace BoSSS.Application.BoSSSpad {
                     throw new NotSupportedException("Job is not activated.");
 
                 string StderrFile = AssignedBatchProc.GetStderrFile(this);
-                if (StderrFile != null) {
+                if (StderrFile != null && File.Exists(StderrFile)) {
                     using (FileStream stream = File.Open(StderrFile, FileMode.Open, FileAccess.Read, FileShare.ReadWrite)) {
                         using (StreamReader reader = new StreamReader(stream)) {
                             return reader.ReadToEnd();
@@ -462,6 +464,30 @@ namespace BoSSS.Application.BoSSSpad {
                 } else {
                     return "";
                 }
+            }
+        }
+
+        /// <summary>
+        /// Should open a separate console window showing the rolling output text of the job.
+        /// </summary>
+        public void ShowOutput() {
+            if (AssignedBatchProc == null)
+                throw new NotSupportedException("Job is not activated.");
+
+            string StderrFile = AssignedBatchProc.GetStderrFile(this);
+            string StdoutFile = AssignedBatchProc.GetStdoutFile(this);
+
+            if (StdoutFile != null && StderrFile != null) {
+                ProcessStartInfo psi = new ProcessStartInfo();
+                psi.FileName = typeof(btail.TailMain).Assembly.Location;
+                btail.TailMain.SetArgs(psi, StdoutFile, StderrFile);
+
+                Console.WriteLine("Starting console...");
+                Console.WriteLine("(You may close the new window at any time, the job will continue.)");
+
+                Process p = Process.Start(psi);
+            } else {
+                Console.WriteLine("No known standard output/error path yet - try again later.");
             }
         }
 

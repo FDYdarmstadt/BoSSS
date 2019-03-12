@@ -220,7 +220,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
         /// <param name="CurrentState">linearization point</param>
         protected void UpdateLinearization(IEnumerable<DGField> CurrentState) {
             if(!(this.ProblemMapping.BasisS.Count == CurrentState.Count()))
-                throw new ArgumentException("missmatch in number of fields.");
+                throw new ArgumentException("mismatch in number of fields.");
 
             BlockMsrMatrix OpMtxRaw, MassMtxRaw;
             double[] OpAffineRaw;

@@ -182,6 +182,10 @@
       <Project>{9d01688e-9372-4185-adcf-d64d47f3a44a}</Project>
       <Name>BoSSS.Foundation.SpecFEM</Name>
     </ProjectReference>
+    <ProjectReference Include="..\..\Utils\btail\btail.csproj">
+      <Project>{dfafe1d1-0235-4125-9364-e8de47546cc6}</Project>
+      <Name>btail</Name>
+    </ProjectReference>
     <ProjectReference Include="..\..\L3-solution\BoSSS.Solution.LevelSetTools\BoSSS.Solution.LevelSetTools.csproj">
       <Project>{9ee2fcad-e8a4-4f14-b932-d1a4904d715d}</Project>
       <Name>BoSSS.Solution.LevelSetTools</Name>
