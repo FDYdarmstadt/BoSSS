@@ -103,7 +103,7 @@ namespace BoSSS.Application.FSI_Solver {
             double alpha = -(angleAtIteration[0]);
             phi_P = (X, t) => -((((X[0] - positionAtIteration[0][0]) * Math.Cos(alpha) - (X[1] - positionAtIteration[0][1]) * Math.Sin(alpha)).Pow(2) + ((X[0] - positionAtIteration[0][0]) * Math.Sin(alpha) + (X[1] - positionAtIteration[0][1]) * Math.Cos(alpha)).Pow(2)).Pow2() - a * ((X[0] - positionAtIteration[0][0]) * Math.Cos(alpha) - (X[1] - positionAtIteration[0][1]) * Math.Sin(alpha)).Pow2() - b * ((X[0] - positionAtIteration[0][0]) * Math.Sin(alpha) + (X[1] - positionAtIteration[0][1]) * Math.Cos(alpha)).Pow2());
         }
-        override public CellMask cutCells_P(LevelSetTracker LsTrk) {
+        override public CellMask CutCells_P(LevelSetTracker LsTrk) {
             // tolerance is very important
             var radiusTolerance = radius_P + LsTrk.GridDat.Cells.h_minGlobal;// +2.0*Math.Sqrt(2*LsTrk.GridDat.Cells.h_minGlobal.Pow2());
 
@@ -141,7 +141,7 @@ namespace BoSSS.Application.FSI_Solver {
         /// <summary>
         /// %
         /// </summary>
-        protected override double averageDistance {
+        protected override double AverageDistance {
             get {
                 throw new NotImplementedException("todo");
             }

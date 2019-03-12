@@ -30,7 +30,7 @@ namespace BoSSS.Application.FSI_Solver
 {
     public class HardcodedControl_straightChannel : IBM_Solver.HardcodedTestExamples
     {
-        public static FSI_Control activeRod_noBackroundFlow(string _DbPath = null, int k = 2, double VelXBase = 0.0, double stressM = 1e6, double cellAgg = 0.2, double muA = 1e5, double timestepX = 1e-3)
+        public static FSI_Control ActiveRod_noBackroundFlow(string _DbPath = null, int k = 2, double VelXBase = 0.0, double stressM = 1e6, double cellAgg = 0.2, double muA = 1e5, double timestepX = 1e-3)
         {
             FSI_Control C = new FSI_Control();
 
@@ -138,13 +138,13 @@ namespace BoSSS.Application.FSI_Solver
                     thickness_P = 1 * BaseSize,
                     length_P = 4 * BaseSize,
                     AddaptiveUnderrelaxation = true,// set true if you want to define a constant underrelaxation (not recommended)
-                    underrelaxation_factor = 3,// underrelaxation with [factor * 10^exponent]
+                    underrelaxation_factor = 5,// underrelaxation with [factor * 10^exponent]
                     ClearSmallValues = true,
                     neglectAddedDamping = false
             });
             }
             //Define level-set
-            Func<double[], double, double> phiComplete = delegate (double[] X, double t)
+            double phiComplete(double[] X, double t)
             {
                 //Generating the correct sign
                 int exp = C.Particles.Count - 1;
@@ -155,7 +155,7 @@ namespace BoSSS.Application.FSI_Solver
                     ret *= C.Particles[i].phi_P(X, t);
                 }
                 return ret;
-            };
+            }
 
 
             // Quadrature rules
@@ -221,7 +221,7 @@ namespace BoSSS.Application.FSI_Solver
             return C;
         }
 
-        public static FSI_Control activeRod_withBackroundFlow(string _DbPath = null, int k = 2, double VelXBase = 0.0, double stressM = 1e5, double cellAgg = 0.2, double muA = 1e4, double timestepX = 1e-3)
+        public static FSI_Control ActiveRod_withBackroundFlow(string _DbPath = null, int k = 2, double VelXBase = 0.0, double stressM = 1e5, double cellAgg = 0.2, double muA = 1e4, double timestepX = 1e-3)
         {
             FSI_Control C = new FSI_Control();
 
@@ -334,7 +334,7 @@ namespace BoSSS.Application.FSI_Solver
                 });
             }
             //Define level-set
-            Func<double[], double, double> phiComplete = delegate (double[] X, double t)
+            double phiComplete(double[] X, double t)
             {
                 //Generating the correct sign
                 int exp = C.Particles.Count - 1;
@@ -345,7 +345,7 @@ namespace BoSSS.Application.FSI_Solver
                     ret *= C.Particles[i].phi_P(X, t);
                 }
                 return ret;
-            };
+            }
 
 
             // Quadrature rules

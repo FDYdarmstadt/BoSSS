@@ -697,14 +697,14 @@ namespace BoSSS.Application.FSI_Solver
         /// <summary>
         /// some length scale 
         /// </summary>
-        abstract protected double averageDistance { get; }
+        abstract protected double AverageDistance { get; }
         
         public void CalculateDampingTensors(LevelSetTracker LsTrk, double muA, double rhoA, double dt)
         {
-            addedDampingTensorVV = AddedDamping.IntegrationOverLevelSet(0, LsTrk, muA, rhoA, dt, positionAtIteration[0], cutCells_P(LsTrk), neglectAddedDamping);
-            addedDampingTensorVW = AddedDamping.IntegrationOverLevelSet(1, LsTrk, muA, rhoA, dt, positionAtIteration[0], cutCells_P(LsTrk), neglectAddedDamping);
-            addedDampingTensorWV = AddedDamping.IntegrationOverLevelSet(2, LsTrk, muA, rhoA, dt, positionAtIteration[0], cutCells_P(LsTrk), neglectAddedDamping);
-            addedDampingTensorWW = AddedDamping.IntegrationOverLevelSet(3, LsTrk, muA, rhoA, dt, positionAtIteration[0], cutCells_P(LsTrk), neglectAddedDamping);
+            addedDampingTensorVV = AddedDamping.IntegrationOverLevelSet(0, LsTrk, muA, rhoA, dt, positionAtIteration[0], CutCells_P(LsTrk), neglectAddedDamping);
+            addedDampingTensorVW = AddedDamping.IntegrationOverLevelSet(1, LsTrk, muA, rhoA, dt, positionAtIteration[0], CutCells_P(LsTrk), neglectAddedDamping);
+            addedDampingTensorWV = AddedDamping.IntegrationOverLevelSet(2, LsTrk, muA, rhoA, dt, positionAtIteration[0], CutCells_P(LsTrk), neglectAddedDamping);
+            addedDampingTensorWW = AddedDamping.IntegrationOverLevelSet(3, LsTrk, muA, rhoA, dt, positionAtIteration[0], CutCells_P(LsTrk), neglectAddedDamping);
         }
 
         public void UpdateDampingTensors()
@@ -736,25 +736,25 @@ namespace BoSSS.Application.FSI_Solver
                 Aux.SaveValueOfLastTimestep(hydrodynTorqueAtTimestep);
             }
 
-            int spatialDim = LsTrk.GridDat.SpatialDimension;
-
-            var UA = U.ToArray();
-
             int RequiredOrder = U[0].Basis.Degree * 3 + 2;
             Console.WriteLine("Forces coeff: {0}, order = {1}", LsTrk.CutCellQuadratureType, RequiredOrder);
-
-            ConventionalDGField pA = null;
-            pA = P;
-
+            
+            int spatialDim = LsTrk.GridDat.SpatialDimension;
             #region Force
             double[] Forces = new double[spatialDim];
-            for (int d = 0; d < spatialDim; d++) {
-                ScalarFunctionEx ErrFunc = delegate (int j0, int NumberOfCells, NodeSet Ns, MultidimensionalArray result) {
-                    int NumberOfNodes = result.GetLength(1); 
+            SinglePhaseField[] UA = U.ToArray();
+            ConventionalDGField pA = null;
+            pA = P;
+            for (int d = 0; d < spatialDim; d++)
+            {
+                void ErrFunc(int j0, int NumberOfCells, NodeSet Ns, MultidimensionalArray result)
+                {
+                    int NumberOfNodes = result.GetLength(1);
                     MultidimensionalArray Grad_UARes = MultidimensionalArray.Create(NumberOfCells, NumberOfNodes, spatialDim, spatialDim);
                     MultidimensionalArray pARes = MultidimensionalArray.Create(NumberOfCells, NumberOfNodes);
                     var Normals = LsTrk.DataHistories[0].Current.GetLevelSetNormals(Ns, j0, NumberOfCells);
-                    for (int i = 0; i < spatialDim; i++) {
+                    for (int i = 0; i < spatialDim; i++)
+                    {
                         UA[i].EvaluateGradient(j0, NumberOfCells, Ns, Grad_UARes.ExtractSubArrayShallow(-1, -1, i, -1), 0, 1);
                     }
                     pA.Evaluate(j0, NumberOfCells, Ns, pARes);
@@ -765,15 +765,17 @@ namespace BoSSS.Application.FSI_Solver
                             result[j, k] = Physics.CalculateStressTensor(Grad_UARes, pARes, Normals, muA, k, j, m_Dim, d);
                         }
                     }
-                };
+                }
                 var SchemeHelper = LsTrk.GetXDGSpaceMetrics(new[] { LsTrk.GetSpeciesId("A") }, RequiredOrder, 1).XQuadSchemeHelper;
-                CellQuadratureScheme cqs = SchemeHelper.GetLevelSetquadScheme(0, this.cutCells_P(LsTrk));
+                CellQuadratureScheme cqs = SchemeHelper.GetLevelSetquadScheme(0, this.CutCells_P(LsTrk));
                 CellQuadrature.GetQuadrature(new int[] { 1 }, LsTrk.GridDat,
-                    cqs.Compile(LsTrk.GridDat, RequiredOrder), 
-                    delegate (int i0, int Length, QuadRule QR, MultidimensionalArray EvalResult) {
+                    cqs.Compile(LsTrk.GridDat, RequiredOrder),
+                    delegate (int i0, int Length, QuadRule QR, MultidimensionalArray EvalResult)
+                    {
                         ErrFunc(i0, Length, QR.Nodes, EvalResult.ExtractSubArrayShallow(-1, -1, 0));
                     },
-                    delegate (int i0, int Length, MultidimensionalArray ResultsOfIntegration) {
+                    delegate (int i0, int Length, MultidimensionalArray ResultsOfIntegration)
+                    {
                         Forces[d] = Aux.ForceTorqueSummationWithNeumaierArray(Forces[d], ResultsOfIntegration, Length);
                     }
                 ).Execute();
@@ -782,26 +784,30 @@ namespace BoSSS.Application.FSI_Solver
 
             #region Torque
             double Torque = 0;
-            ScalarFunctionEx ErrFunc2 = delegate (int j0, int Len, NodeSet Ns, MultidimensionalArray result) {
+            void ErrFunc2(int j0, int Len, NodeSet Ns, MultidimensionalArray result)
+            {
                 int K = result.GetLength(1); // No nof Nodes
                 MultidimensionalArray Grad_UARes = MultidimensionalArray.Create(Len, K, spatialDim, spatialDim); ;
                 MultidimensionalArray pARes = MultidimensionalArray.Create(Len, K);
                 // Evaluate tangential velocity to level-set surface
                 var Normals = LsTrk.DataHistories[0].Current.GetLevelSetNormals(Ns, j0, Len);
-                for (int i = 0; i < spatialDim; i++) {
+                for (int i = 0; i < spatialDim; i++)
+                {
                     UA[i].EvaluateGradient(j0, Len, Ns, Grad_UARes.ExtractSubArrayShallow(-1, -1, i, -1), 0, 1);
                 }
                 MultidimensionalArray tempArray = Ns.CloneAs();
                 LsTrk.GridDat.TransformLocal2Global(Ns, tempArray, j0);
                 pA.Evaluate(j0, Len, Ns, pARes);
-                for (int j = 0; j < Len; j++) {
-                    for (int k = 0; k < K; k++) {
+                for (int j = 0; j < Len; j++)
+                {
+                    for (int k = 0; k < K; k++)
+                    {
                         result[j, k] = Physics.CalculateTorqueFromStressTensor2D(Grad_UARes, pARes, Normals, tempArray, muA, k, j, positionAtIteration[0]);
                     }
                 }
-            };
+            }
             var SchemeHelper2 = LsTrk.GetXDGSpaceMetrics(new[] { LsTrk.GetSpeciesId("A") }, RequiredOrder, 1).XQuadSchemeHelper;
-            CellQuadratureScheme cqs2 = SchemeHelper2.GetLevelSetquadScheme(0, this.cutCells_P(LsTrk));
+            CellQuadratureScheme cqs2 = SchemeHelper2.GetLevelSetquadScheme(0, this.CutCells_P(LsTrk));
             CellQuadrature.GetQuadrature(new int[] { 1 }, LsTrk.GridDat,
                 cqs2.Compile(LsTrk.GridDat, RequiredOrder),
                 delegate (int i0, int Length, QuadRule QR, MultidimensionalArray EvalResult) {
@@ -837,6 +843,18 @@ namespace BoSSS.Application.FSI_Solver
                     Torque = 0;
                 }
             }
+            else if (iteration_counter_P == 100)
+            {
+                Console.WriteLine("No convergence after 100 iterations, I will try to restart");
+                double ForceSummation = 0;
+                for (int d = 0; d < spatialDim; d++)
+                {
+                    ForceSummation += hydrodynForcesAtTimestep[1][d]; 
+                }
+                hydrodynForcesAtIteration[0][0] = ForceSummation * Math.Cos(angleAtTimestep[1]);
+                hydrodynForcesAtIteration[0][1] = ForceSummation * Math.Sin(angleAtTimestep[1]);
+                hydrodynTorqueAtIteration[0] = 0;
+            }
             else
             {
                 double[] RelaxatedForceAndTorque = Underrelaxation.RelaxatedForcesAndTorque(Forces, Torque, hydrodynForcesAtIteration[0], hydrodynTorqueAtIteration[0], forceAndTorque_convergence, underrelaxation_factor, ClearSmallValues, AddaptiveUnderrelaxation);
@@ -866,7 +884,7 @@ namespace BoSSS.Application.FSI_Solver
         /// </summary>
         /// <param name="LsTrk"></param>
         /// <returns></returns>
-        abstract public CellMask cutCells_P(LevelSetTracker LsTrk); 
+        abstract public CellMask CutCells_P(LevelSetTracker LsTrk); 
 
         /// <summary>
         /// Gives a bool whether the particle contains a certain point or not

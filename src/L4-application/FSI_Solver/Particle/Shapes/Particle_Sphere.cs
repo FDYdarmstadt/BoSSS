@@ -96,7 +96,7 @@ namespace BoSSS.Application.FSI_Solver
         /// <summary>
         /// %
         /// </summary>
-        protected override double averageDistance {
+        protected override double AverageDistance {
             get {
                 return radius_P;
             }
@@ -128,7 +128,7 @@ namespace BoSSS.Application.FSI_Solver
             double alpha = -(angleAtIteration[0]);
             phi_P = (X, t) => -(X[0] - positionAtIteration[0][0]).Pow2() + -(X[1] - positionAtIteration[0][1]).Pow2() + radius_P.Pow2();
         }
-        override public CellMask cutCells_P(LevelSetTracker LsTrk)
+        override public CellMask CutCells_P(LevelSetTracker LsTrk)
         {
             // tolerance is very important
             var radiusTolerance = radius_P + LsTrk.GridDat.Cells.h_minGlobal;// +2.0*Math.Sqrt(2*LsTrk.GridDat.Cells.h_minGlobal.Pow2());
