@@ -116,10 +116,9 @@ namespace BoSSS.Application.XdgPoisson3 {
 
             base.SetInitial();
             this.LsTrk.UpdateTracker();
-            if (!this.Control.PerformanceModeON) {
-                base.SetInitial();
-                this.LsTrk.UpdateTracker();
-            }
+            base.SetInitial();
+            this.LsTrk.UpdateTracker();
+
             this.MGColoring = new SinglePhaseField[base.MultigridSequence.Length];
             for (int iLevel = 0; iLevel < base.MultigridSequence.Length; iLevel++) {
                 this.MGColoring[iLevel] = new SinglePhaseField(new Basis(this.GridData, 0), "MGColoring_level_" + iLevel);
@@ -138,10 +137,8 @@ namespace BoSSS.Application.XdgPoisson3 {
 
         protected override void CreateEquationsAndSolvers(GridUpdateDataVaultBase L) {
             AssembleMatrix(this.Control.MU_A, this.Control.MU_B, out Op_Matrix, out Op_Affine, out Op_Agglomeration, out Op_mass);
-            if (!this.Control.PerformanceModeON) {
-                Console.WriteLine("Matrix norm: {0}", Op_Matrix.InfNorm());
-                Console.WriteLine("Symm. diff: {0}", Op_Matrix.SymmetryDeviation());
-            }
+            Console.WriteLine("Matrix norm: {0}", Op_Matrix.InfNorm());
+            Console.WriteLine("Symm. diff: {0}", Op_Matrix.SymmetryDeviation());
         }
 
         protected void BlockTest() {
@@ -193,64 +190,63 @@ namespace BoSSS.Application.XdgPoisson3 {
         }
 
         private void AssembleMatrix(double MU_A, double MU_B, out BlockMsrMatrix M, out double[] b, out MultiphaseCellAgglomerator agg, out MassMatrixFactory massFact) {
+            using (var tr = new FuncTrace()) {
+                // create operator
+                // ===============
 
-            // create operator
-            // ===============
+                if (this.Control.SetDefaultDiriBndCnd) {
+                    this.Control.xLaplaceBCs.g_Diri = ((CommonParamsBnd inp) => 0.0);
+                    this.Control.xLaplaceBCs.IsDirichlet = (inp => true);
+                }
 
-            if (this.Control.SetDefaultDiriBndCnd) {
-                this.Control.xLaplaceBCs.g_Diri = ((CommonParamsBnd inp) => 0.0);
-                this.Control.xLaplaceBCs.IsDirichlet = (inp => true);
-            }
+                double D = this.GridData.SpatialDimension;
+                int p = u.Basis.Degree;
+                double penalty_base = (p + 1) * (p + D) / D;
+                double penalty_multiplyer = base.Control.penalty_multiplyer;
 
-            double D = this.GridData.SpatialDimension;
-            int p = u.Basis.Degree;
-            double penalty_base = (p + 1) * (p + D) / D;
-            double penalty_multiplyer = base.Control.penalty_multiplyer;
+                XQuadFactoryHelper.MomentFittingVariants momentFittingVariant;
+                if (D == 3)
+                    momentFittingVariant = XQuadFactoryHelper.MomentFittingVariants.Classic;
 
-            XQuadFactoryHelper.MomentFittingVariants momentFittingVariant;
-            if (D == 3)
-                momentFittingVariant = XQuadFactoryHelper.MomentFittingVariants.Classic;
+                momentFittingVariant = this.Control.CutCellQuadratureType;
 
-            momentFittingVariant = this.Control.CutCellQuadratureType;
+                int order = this.u.Basis.Degree * 2;
 
-            int order = this.u.Basis.Degree * 2;
+                XSpatialOperator Op = new XSpatialOperator(1, 1, (A, B, C) => order, "u", "c1");
+                var lengthScales = ((BoSSS.Foundation.Grid.Classic.GridData)GridData).Cells.PenaltyLengthScales;
+                var lap = new XLaplace_Bulk(this.LsTrk, penalty_multiplyer * penalty_base, "u", this.Control.xLaplaceBCs, 1.0, MU_A, MU_B, lengthScales, this.Control.ViscosityMode);
+                Op.EquationComponents["c1"].Add(lap);      // Bulk form
+                Op.EquationComponents["c1"].Add(new XLaplace_Interface(this.LsTrk, MU_A, MU_B, penalty_base * 2, this.Control.ViscosityMode));   // coupling form
 
-            XSpatialOperator Op = new XSpatialOperator(1, 1, (A, B, C) => order, "u", "c1");
-            var lengthScales = ((BoSSS.Foundation.Grid.Classic.GridData)GridData).Cells.PenaltyLengthScales;
-            var lap = new XLaplace_Bulk(this.LsTrk, penalty_multiplyer * penalty_base, "u", this.Control.xLaplaceBCs, 1.0, MU_A, MU_B, lengthScales, this.Control.ViscosityMode);
-            Op.EquationComponents["c1"].Add(lap);      // Bulk form
-            Op.EquationComponents["c1"].Add(new XLaplace_Interface(this.LsTrk, MU_A, MU_B, penalty_base * 2, this.Control.ViscosityMode));   // coupling form
+                Op.Commit();
 
-            Op.Commit();
+                // create agglomeration
+                // ====================
 
-            // create agglomeration
-            // ====================
+                var map = new UnsetteledCoordinateMapping(u.Basis);
 
-            var map = new UnsetteledCoordinateMapping(u.Basis);
+                //agg = new MultiphaseCellAgglomerator(
+                //    new CutCellMetrics(momentFittingVariant,
+                //        QuadOrderFunc.SumOfMaxDegrees(RoundUp: true)(map.BasisS.Select(bs => bs.Degree).ToArray(), new int[0], map.BasisS.Select(bs => bs.Degree).ToArray()),
+                //        //this.HMFDegree,
+                //        LsTrk, this.LsTrk.SpeciesIdS.ToArray()),
+                //    this.Control.AgglomerationThreshold, false);
+                agg = LsTrk.GetAgglomerator(this.LsTrk.SpeciesIdS.ToArray(), order, this.Control.AgglomerationThreshold);
 
-            //agg = new MultiphaseCellAgglomerator(
-            //    new CutCellMetrics(momentFittingVariant,
-            //        QuadOrderFunc.SumOfMaxDegrees(RoundUp: true)(map.BasisS.Select(bs => bs.Degree).ToArray(), new int[0], map.BasisS.Select(bs => bs.Degree).ToArray()),
-            //        //this.HMFDegree,
-            //        LsTrk, this.LsTrk.SpeciesIdS.ToArray()),
-            //    this.Control.AgglomerationThreshold, false);
-            agg = LsTrk.GetAgglomerator(this.LsTrk.SpeciesIdS.ToArray(), order, this.Control.AgglomerationThreshold);
+                // compute matrix
+                // =============
+                using (new BlockTrace("XdgMatrixAssembly", tr)) {
+                    M = new BlockMsrMatrix(map, map);
+                    b = new double[M.RowPartitioning.LocalLength];
 
-            // compute matrix
-            // =============
-
-            M = new BlockMsrMatrix(map, map);
-            b = new double[M.RowPartitioning.LocalLength];
-
-            Op.ComputeMatrixEx(LsTrk,
-                map, null, map,
-                M, b, false, 0.0, true,
-                agg.CellLengthScales, null, null, //out massFact,
-                this.LsTrk.SpeciesIdS.ToArray());
-
-            // compare with linear evaluation
-            // ==============================
-            if (!this.Control.PerformanceModeON) {
+                    Op.ComputeMatrixEx(LsTrk,
+                        map, null, map,
+                        M, b, false, 0.0, true,
+                        agg.CellLengthScales, null, null, //out massFact,
+                        this.LsTrk.SpeciesIdS.ToArray());
+                }
+                // compare with linear evaluation
+                // ==============================
                 DGField[] testDomainFieldS = map.BasisS.Select(bb => new XDGField(bb as XDGBasis)).ToArray();
                 CoordinateVector test = new CoordinateVector(testDomainFieldS);
 
@@ -287,33 +283,25 @@ namespace BoSSS.Application.XdgPoisson3 {
                 double Ref = test.L2NormPow2().MPISum().Sqrt();
 
                 Assert.LessOrEqual(ErrDist, Ref * 1.0e-5, "Mismatch between explicit evaluation of XDG operator and matrix.");
-            }
-
-            // agglomeration wahnsinn
-            // ======================
-
-            agg.ManipulateMatrixAndRHS(M, b, map, map);
-
-            foreach (var S in this.LsTrk.SpeciesNames) {
-                Console.WriteLine("  Species {0}: no of agglomerated cells: {1}",
-                    S, agg.GetAgglomerator(this.LsTrk.GetSpeciesId(S)).AggInfo.SourceCells.NoOfItemsLocally);
-            }
 
 
-            // mass matrix factory
-            // ===================
+                // agglomeration wahnsinn
+                // ======================
 
-            Basis maxB = map.BasisS.ElementAtMax(bss => bss.Degree);
-            //massFact = new MassMatrixFactory(maxB, agg);
-            massFact = LsTrk.GetXDGSpaceMetrics(this.LsTrk.SpeciesIdS.ToArray(), order).MassMatrixFactory;
+                agg.ManipulateMatrixAndRHS(M, b, map, map);
+
+                foreach (var S in this.LsTrk.SpeciesNames) {
+                    Console.WriteLine("  Species {0}: no of agglomerated cells: {1}",
+                        S, agg.GetAgglomerator(this.LsTrk.GetSpeciesId(S)).AggInfo.SourceCells.NoOfItemsLocally);
+                }
 
 
+                // mass matrix factory
+                // ===================
 
-            if (this.Control.timeDependent) {
-                double dt = base.GetFixedTimestep();
-
-                var oodt = LsTrk.SpeciesIdS.ToDictionary(spcId => new KeyValuePair<SpeciesId, IEnumerable<double>>(spcId, new double[] { 1.0 / dt }));
-                massFact.AccMassMatrix(M, map, oodt, false);
+                Basis maxB = map.BasisS.ElementAtMax(bss => bss.Degree);
+                //massFact = new MassMatrixFactory(maxB, agg);
+                massFact = LsTrk.GetXDGSpaceMetrics(this.LsTrk.SpeciesIdS.ToArray(), order).MassMatrixFactory;
             }
         }
 
@@ -321,25 +309,68 @@ namespace BoSSS.Application.XdgPoisson3 {
         SinglePhaseField[] MGColoring;
 
         protected override double RunSolverOneStep(int TimestepNo, double phystime, double dt) {
-            if (base.Control.timeDependent) {
-                dt = base.GetFixedTimestep();
-                Console.WriteLine("Timestep {0}, dt = {1} ...", TimestepNo, dt);
-            } else {
-                base.TerminationKey = true;
-                dt = 1.0;
-                Console.WriteLine("Steady solve ...");
-            }
+            //if (base.Control.timeDependent) {
+            //    dt = base.GetFixedTimestep();
+            //    Console.WriteLine("Timestep {0}, dt = {1} ...", TimestepNo, dt);
+            //} else {
+            base.TerminationKey = true;
+            dt = 1.0;
+            Console.WriteLine("Steady solve ...");
+            //}
 
-            if (!this.Control.PerformanceModeON) {
-                // direct solver 
-                this.ReferenceSolve();
-                //this.ConsistencyTest();
-            }
+            double mintime, maxtime;
+            bool converged;
+            int NoOfIterations, DOFs;
+
+
+            // direct solver 
+            this.ReferenceSolve();
+            //this.ConsistencyTest();
+
 
             // new solver framework: multigrid, blablablah ...
-            ExperimentalSolver();
+
+            ExperimentalSolver(out mintime, out maxtime, out converged, out NoOfIterations, out DOFs);
             this.Op_Agglomeration.Extrapolate(this.u.Mapping);
 
+            //Stats:
+            {
+                int BlkSize_min = u.Mapping.MinTotalNoOfCoordinatesPerCell;
+                int BlkSize_max = u.Mapping.MaxTotalNoOfCoordinatesPerCell;
+                int NoOfMtxBlocks = 0;
+                foreach (int[] Neigs in this.GridData.iLogicalCells.CellNeighbours) {
+                    NoOfMtxBlocks++; //               diagonal block
+                    NoOfMtxBlocks += Neigs.Length; // off-diagonal block
+                }
+                NoOfMtxBlocks = NoOfMtxBlocks.MPISum();
+
+                int MtxBlockSize = BlkSize_max * BlkSize_max;
+                int MtxSize = MtxBlockSize * NoOfMtxBlocks;
+
+                double MtxStorage = MtxSize * (8.0 + 4.0) / (1024 * 1024); // 12 bytes (double+int) per entry
+
+                Console.WriteLine("   System size:                 {0}", u.Mapping.TotalLength);
+                Console.WriteLine("   No of blocks:                {0}", u.Mapping.TotalNoOfBlocks);
+                Console.WriteLine("   No of blocks in matrix:      {0}", NoOfMtxBlocks);
+                Console.WriteLine("   DG coordinates per cell:     {0}", BlkSize_max);
+                Console.WriteLine("   Non-zeros per matrix block:  {0}", MtxBlockSize);
+                Console.WriteLine("   Total non-zeros in matrix:   {0}", MtxSize);
+                Console.WriteLine("   maximal matrix storage (MB): {0}", MtxStorage);
+
+                Console.WriteLine("DOF: {0}", DOFs);
+                Console.WriteLine("min Blocksize: {0}", u.Mapping.MinTotalNoOfCoordinatesPerCell);
+                Console.WriteLine("max Blocksize: {0}", u.Mapping.MaxTotalNoOfCoordinatesPerCell);
+
+                base.QueryHandler.ValueQuery("maxBlkSize", u.Mapping.MaxTotalNoOfCoordinatesPerCell, true);
+                base.QueryHandler.ValueQuery("minBlkSize", u.Mapping.MinTotalNoOfCoordinatesPerCell, true);
+                base.QueryHandler.ValueQuery("NumberOfMatrixBlox", NoOfMtxBlocks, true);
+                base.QueryHandler.ValueQuery("DOFs", DOFs, true);
+            }
+
+            base.QueryHandler.ValueQuery("minSolRunT", mintime, true);
+            base.QueryHandler.ValueQuery("maxSolRunT", maxtime, true);
+            base.QueryHandler.ValueQuery("Conv", converged ? 1.0 : 0.0, true);
+            base.QueryHandler.ValueQuery("NoIter", NoOfIterations, true);
 
             Console.WriteLine("done.");
 
@@ -385,17 +416,13 @@ namespace BoSSS.Application.XdgPoisson3 {
                 Console.WriteLine("Error norm (HMF):            " + L2_ERR_HMF);
             }
 
-            //ComputeError();
-
-            // return
-            // ------
-
             return dt;
         }
 
 
         private void OperatorAnalysis() {
             AggregationGridBasis[][] XAggB = AggregationGridBasis.CreateSequence(base.MultigridSequence, u.Mapping.BasisS);
+
             XAggB.UpdateXdgAggregationBasis(this.Op_Agglomeration);
 
             var MultigridOp = new MultigridOperator(XAggB, this.u.Mapping,
@@ -432,10 +459,10 @@ namespace BoSSS.Application.XdgPoisson3 {
             if (posDef == 0.0)
                 Console.WriteLine("WARNING: Operator matrix is not positive definite.");
 
-            base.QueryHandler.ValueQuery("condNo", condNo, base.Control.timeDependent);
-            base.QueryHandler.ValueQuery("eigMaxi", eigMaxi, base.Control.timeDependent);
-            base.QueryHandler.ValueQuery("eigMini", eigMini, base.Control.timeDependent);
-            base.QueryHandler.ValueQuery("posDef", posDef, base.Control.timeDependent);
+            base.QueryHandler.ValueQuery("condNo", condNo, false);
+            base.QueryHandler.ValueQuery("eigMaxi", eigMaxi, false);
+            base.QueryHandler.ValueQuery("eigMini", eigMini, false);
+            base.QueryHandler.ValueQuery("posDef", posDef, false);
         }
 
         MultigridOperator.ChangeOfBasisConfig[][] OpConfig {
@@ -449,17 +476,49 @@ namespace BoSSS.Application.XdgPoisson3 {
             }
         }
 
-        private void ExperimentalSolver() {
+        protected void CustomItCallback(int iterIndex, double[] currentSol, double[] currentRes, MultigridOperator Mgop) {
+            //noch nix ...
+            MaxMlevel=Mgop.LevelIndex;
+            Console.WriteLine("maximal Multigridlevel: {0}",MaxMlevel);
+            base.QueryHandler.ValueQuery("maxMultigridlvl", MaxMlevel, true);
+        }
+
+        private int m_maxMlevel;
+
+        public int MaxMlevel {
+            get{
+                return m_maxMlevel;
+            }
+            set{
+                if (value > m_maxMlevel)
+                    m_maxMlevel = value;
+            }
+        }
+
+        private void ExperimentalSolver(out double mintime, out double maxtime, out bool Converged, out int NoOfIter, out int DOFs) {
             using (var tr = new FuncTrace()) {
+                mintime = double.MaxValue;
+                maxtime = 0;
+                Converged = false;
+                NoOfIter = int.MaxValue;
+                DOFs = 0;
 
-                AggregationGridBasis[][] XAggB = AggregationGridBasis.CreateSequence(base.MultigridSequence, u.Mapping.BasisS);
+                AggregationGridBasis[][] XAggB;
+                using (new BlockTrace("Aggregation_basis_init", tr)) {
+                    XAggB = AggregationGridBasis.CreateSequence(base.MultigridSequence, u.Mapping.BasisS);
+                }
                 XAggB.UpdateXdgAggregationBasis(this.Op_Agglomeration);
-                //AggregationGridBasis[][] XAggB = base.MultigridSequence.Select(agGrd => new AggregationGridBasis[] { new XdgAggregationBasis(u.Basis, null, agGrd) }).ToArray();
-                //XAggB.ForEach(xab => ((XdgAggregationBasis)(xab[0])).Update(this.Op_Agglomeration));
-
-
+  
                 var MassMatrix = this.Op_mass.GetMassMatrix(this.u.Mapping, new double[] { 1.0 }, false, this.LsTrk.SpeciesIdS.ToArray());
                 double[] _RHSvec = this.GetRHS();
+
+                
+
+                Stopwatch stw = new Stopwatch();
+                stw.Reset();
+                stw.Start();
+
+                Console.WriteLine("Setting up multigrid operator...");
 
                 int p = this.u.Basis.Degree;
                 var MultigridOp = new MultigridOperator(XAggB, this.u.Mapping,
@@ -468,6 +527,8 @@ namespace BoSSS.Application.XdgPoisson3 {
                     OpConfig);
 
                 int L = MultigridOp.Mapping.LocalLength;
+                DOFs = MultigridOp.Mapping.TotalLength;
+
                 double[] RHSvec = new double[L];
                 MultigridOp.TransformRhsInto(_RHSvec, RHSvec);
 
@@ -475,9 +536,12 @@ namespace BoSSS.Application.XdgPoisson3 {
                 ISolverSmootherTemplate exsolver;
 
                 SolverFactory SF = new SolverFactory(this.Control.NonLinearSolver, this.Control.LinearSolver);
+                SF.CustomizedCallback += CustomItCallback;
                 SF.GenerateLinear(out exsolver, MultigridSequence, OpConfig);
-                exsolver.Init(MultigridOp);
 
+                using (new BlockTrace("Solver_Init", tr)) {
+                    exsolver.Init(MultigridOp);
+                }
                 /*
                 string filename = "XdgPoisson" + this.Grid.SpatialDimension + "p" + this.u.Basis.Degree + "R" + this.Grid.CellPartitioning.TotalLength;
                 MultigridOp.OperatorMatrix.SaveToTextFileSparse(filename + ".txt");
@@ -494,178 +558,30 @@ namespace BoSSS.Application.XdgPoisson3 {
                     ((ISolverWithCallback)exsolver).IterationCallback = CO.IterationCallback;
                 }
                 //*/
-                if (this.Control.PerformanceModeON) {
-                    u.Clear();
-                    MultigridOp.UseSolver(exsolver, u.CoordinateVector, _RHSvec);
-                    Console.WriteLine("Solver: {0}, converged? {1}, {2} iterations.", exsolver.GetType().Name, exsolver.Converged, exsolver.ThisLevelIterations);
-                    this.Op_Agglomeration.Extrapolate(u.Mapping);
-                } else {
+                XDGField u2 = u.CloneAs();
+                using (new BlockTrace("Solver_Run", tr)) {
                     // use solver (on XDG-field 'u2').
-                    XDGField u2 = u.CloneAs();
                     u2.Clear();
                     MultigridOp.UseSolver(exsolver, u2.CoordinateVector, _RHSvec);
                     Console.WriteLine("Solver: {0}, converged? {1}, {2} iterations.", exsolver.GetType().Name, exsolver.Converged, exsolver.ThisLevelIterations);
                     this.Op_Agglomeration.Extrapolate(u2.Mapping);
-
-                    // compute error between reference solution and multigrid solver
                     Assert.IsTrue(exsolver.Converged, "Iterative solver did not converge.");
-                    XDGField ErrField = u2.CloneAs();
-                    ErrField.Acc(-1.0, u);
-                    double ERR = ErrField.L2Norm();
-                    double RelERR = ERR / u.L2Norm();
-                    Assert.LessOrEqual(RelERR, 1.0e-6, "Result from iterative solver above threshold.");
                 }
+                stw.Stop();
+                mintime = Math.Min(stw.Elapsed.TotalSeconds, mintime);
+                maxtime = Math.Max(stw.Elapsed.TotalSeconds, maxtime);
+                Converged = exsolver.Converged;
+                NoOfIter = exsolver.ThisLevelIterations;
+
+                // compute error between reference solution and multigrid solver
+                XDGField ErrField = u2.CloneAs();
+                ErrField.Acc(-1.0, u);
+                double ERR = ErrField.L2Norm();
+                double RelERR = ERR / u.L2Norm();
+                Assert.LessOrEqual(RelERR, 1.0e-6, "Result from iterative solver above threshold.");
+           
             }
         }
-
-        //Is not needed anymore ... see AdvancedSolvers.SolverChooser
-
-        //private ISolverSmootherTemplate CreateSolver() {
-
-        //    //int NoOfLevels = 0;
-        //    //{
-        //    //    MultigridOperator Lop = MultigridOp;
-        //    //    NoOfLevels++;
-        //    //    while (Lop.CoarserLevel != null) {
-        //    //        Lop = Lop.CoarserLevel;
-        //    //        NoOfLevels++;
-        //    //    }
-        //    //}
-
-        //    SolverFactory SF = new SolverFactory(this.Control.NonLinearSolver, this.Control.LinearSolver);
-        //    SF.GenerateLinear(out SolverFactory,);
-
-        //    switch (this.Control.solverName.ToLower()) {
-        //        case "pcg+mg+jacobi":
-        //            return new SoftPCG() {
-        //                m_MaxIterations = 500,
-        //                Precond = new ClassicMultigrid() {
-        //                    m_MaxIterations = 1,
-        //                    PreSmoother = new Jacobi() {
-        //                        NoOfIterations = 1,
-        //                        omega = 0.2
-        //                    },
-        //                    PostSmoother = new Jacobi() {
-        //                        NoOfIterations = 1,
-        //                        omega = 0.2
-        //                    },
-        //                    CoarserLevelSolver = new SparseSolver()
-        //                }
-        //            };
-
-        //        case "pcg":
-        //            return new SoftPCG() {
-        //                m_MaxIterations = 50000,
-        //                Precond = new Jacobi() {
-        //                    NoOfIterations = 5,
-        //                    omega = 1
-        //                }
-        //            };
-
-        //        case "pcg+schwarz":
-        //            return new SoftPCG() {
-        //                m_MaxIterations = 50000,
-        //                Precond = new Schwarz() {
-        //                    m_MaxIterations = 1,
-        //                    m_BlockingStrategy = new Schwarz.MultigridBlocks() {
-        //                        Depth = 1
-        //                    },
-        //                    Overlap = 2,
-        //                    CoarseSolverIsMultiplicative = true,
-        //                    CoarseSolver = new SparseSolver() {
-        //                        WhichSolver = SparseSolver._whichSolver.PARDISO
-        //                    }
-        //                }
-        //            };//*/
-
-        //        case "pcg+mg+schwarz":
-        //            return new SoftPCG() {
-        //                m_MaxIterations = 50000,
-        //                Precond = ClassicMultigrid.InitMultigridChain(MultigridOp,
-        //                    iLevel => new Schwarz() {
-        //                        // this creates the pre-smoother for each level
-        //                        m_BlockingStrategy = new Schwarz.MultigridBlocks() {
-        //                            Depth = Math.Min(2, NoOfLevels - iLevel - 1)
-        //                        },
-        //                        Overlap = 0
-        //                    },
-        //                    iLevel => new Schwarz() {
-        //                        // this creates the post-smoother for each level
-        //                        m_BlockingStrategy = new Schwarz.MultigridBlocks() {
-        //                            Depth = Math.Min(1, NoOfLevels - iLevel - 1)
-        //                        },
-        //                        Overlap = 0
-        //                    },
-        //                    (iLevel, mg) => {
-        //                        mg.Gamma = 1;
-        //                        mg.m_MaxIterations = 1;
-        //                    },
-        //                    () => new SparseSolver()),
-        //                m_Tolerance = 1.0e-10
-        //            };
-
-        //        case "gmres+mg+schwarz":
-        //        return new SoftGMRES() {
-        //            m_MaxIterations = 50000,
-        //            Precond = ClassicMultigrid.InitMultigridChain(MultigridOp,
-        //                iLevel => new Schwarz() {
-        //                    // this creates the pre-smoother for each level
-        //                    m_BlockingStrategy = new Schwarz.MultigridBlocks() {
-        //                        Depth = Math.Min(2, NoOfLevels - iLevel - 1)
-        //                    },
-        //                    Overlap = 0
-        //                },
-        //                iLevel => new Schwarz() {
-        //                    // this creates the post-smoother for each level
-        //                    m_BlockingStrategy = new Schwarz.MultigridBlocks() {
-        //                        Depth = Math.Min(2, NoOfLevels - iLevel - 1)
-        //                    },
-        //                    Overlap = 0
-        //                },
-        //                (iLevel, mg) => {
-        //                    mg.Gamma = 1;
-        //                    mg.m_MaxIterations = 1;
-        //                },
-        //                () => new SparseSolver()),
-        //            m_Tolerance = 1.0e-10
-        //        };
-
-        //        case "ono+mg+schwarz":
-        //        return new OrthonormalizationScheme() {
-        //            MaxIter = 50000,
-        //            PrecondS = new ISolverSmootherTemplate[] {
-        //                ClassicMultigrid.InitMultigridChain(MultigridOp,
-        //                iLevel => new Schwarz() {
-        //                    // this creates the pre-smoother for each level
-        //                    m_BlockingStrategy = new Schwarz.MultigridBlocks() {
-        //                        Depth = Math.Min( 2, NoOfLevels - iLevel - 1)
-        //                    },
-        //                    Overlap = 0
-        //                },
-        //                iLevel => new Schwarz() {
-        //                    // this creates the post-smoother for each level
-        //                    m_BlockingStrategy = new Schwarz.MultigridBlocks() {
-        //                        Depth = Math.Min( 2, NoOfLevels - iLevel - 1)
-        //                    },
-        //                    Overlap = 0
-        //                },
-        //                (iLevel, mg) => {
-        //                    mg.Gamma = 1;
-        //                    mg.m_MaxIterations = 1;
-        //                },
-        //                () => new SparseSolver()) },
-        //            Tolerance = 1.0e-10
-        //        };
-
-        //        case "direct":
-        //            return new SparseSolver();
-
-        //    default:
-        //            throw new ArgumentException("unknownSolver");
-        //}
-        //}
-
-
 
         ISparseSolver ReferenceSolver;
         private void ReferenceSolve() {
@@ -696,10 +612,6 @@ namespace BoSSS.Application.XdgPoisson3 {
             RHSvec.ScaleV(-1.0);
             MassMatrix = this.Op_mass.GetMassMatrix(this.u.Mapping, new double[] { 1.0 }, false, this.LsTrk.SpeciesIdS.ToArray());
             MassMatrix.SpMV(1.0, this.rhs.CoordinateVector, 1.0, RHSvec);
-            if (this.Control.timeDependent) {
-                double dt = base.GetFixedTimestep();
-                MassMatrix.SpMV(1.0 / dt, this.u.CoordinateVector, 1.0, RHSvec);
-            }
             return RHSvec;
         }
 

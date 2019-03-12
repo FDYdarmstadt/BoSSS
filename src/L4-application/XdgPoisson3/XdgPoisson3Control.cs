@@ -36,6 +36,7 @@ namespace BoSSS.Application.XdgPoisson3 {
             base.CutCellQuadratureType = XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes;
             base.LinearSolver.NoOfMultigridLevels = 1;
             base.LinearSolver.SolverCode = LinearSolverConfig.Code.classic_mumps; //public string solverName = "direct";
+            base.LinearSolver.verbose = true;
         }
 
         /// <summary>
@@ -74,12 +75,6 @@ namespace BoSSS.Application.XdgPoisson3 {
         /// </summary>
         [DataMember]
         public bool SetDefaultDiriBndCnd = false;
-
-        /// <summary>
-        /// Ignore all costly unnecessary stuff ...
-        /// </summary>
-        [DataMember]
-        public bool PerformanceModeON = false;
 
         [DataMember]
         public XLaplaceBCs xLaplaceBCs = new XLaplaceBCs();
@@ -120,11 +115,11 @@ namespace BoSSS.Application.XdgPoisson3 {
         [DataMember]
         public double penalty_multiplyer = 2.0;
 
-        /// <summary>
-        /// Steady-State (false) or transient solution (true)?
-        /// </summary>
-        [DataMember]
-        public bool timeDependent = false;
+        ///// <summary>
+        ///// Steady-State (false) or transient solution (true)?
+        ///// </summary>
+        //[DataMember]
+        //public bool timeDependent = false;
 
         [DataMember]
         public int pOff = 2;

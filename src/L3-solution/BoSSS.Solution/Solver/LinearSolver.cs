@@ -33,19 +33,19 @@ namespace BoSSS.Solution.Control {
             /// <summary>
             /// Automatic choose of linear solver depending on nonlinear solver, problem size, etc.
             /// </summary>
-            automatic = 666,
+            automatic = 0,
 
             //direct solvers
-
-            /// <summary>
-            /// Direct solver (<see cref="ilPSP.LinSolvers.PARDISO.PARDISOSolver"/>) without any pre-processing of the matrix.
-            /// </summary>
-            classic_pardiso = 0,
 
             /// <summary>
             /// Direct solver (<see cref="ilPSP.LinSolvers.MUMPS"/>) without any pre-processing of the matrix.
             /// </summary>
             classic_mumps = 1,
+
+            /// <summary>
+            /// Direct solver (<see cref="ilPSP.LinSolvers.PARDISO.PARDISOSolver"/>) without any pre-processing of the matrix.
+            /// </summary>
+            classic_pardiso = 2,
 
             /// <summary>
             /// Classic Multigrid approach, especially useful for predoncitioning
@@ -143,7 +143,14 @@ namespace BoSSS.Solution.Control {
             /// </summary>
             exp_softpcg_schwarz_directcoarse = 44,
 
+
+            selfmade = 999,
         }
+
+        /// <summary>
+        /// This will print out more information about iterations.
+        /// </summary>
+        public bool verbose=false;
 
         /// <summary>
         /// If iterative saddle-point solvers like GMRES or Orthonormalization are used, the maximum number of basis vectors

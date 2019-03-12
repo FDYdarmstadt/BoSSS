@@ -39,6 +39,7 @@ namespace BoSSS.Application.SipPoisson {
             base.LinearSolver.NoOfMultigridLevels = 1;
             base.CompMode = _CompMode.Steady;
             base.NoOfTimesteps = 1;
+            base.LinearSolver.verbose = true;
         }
 
         /// <summary>

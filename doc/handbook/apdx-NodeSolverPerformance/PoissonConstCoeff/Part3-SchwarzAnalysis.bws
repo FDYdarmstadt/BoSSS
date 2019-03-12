@@ -1,30 +1,38 @@
 restart
 **************
-
   BoSSSpad C# interpreter
   _______________________
 
 Databases loaded:
-List of 4 instances of IDatabaseInfo {
+List of 11 instances of IDatabaseInfo {
   0: { Session Count = 0; Grid Count = 34; Path = C:\BoSSS_DB }
-  1: { Session Count = 224; Grid Count = 6; Path = C:\tmp\fk_temp_db }
-  2: { Session Count = 197; Grid Count = 6; Path = P:\Performance_DB }
-  3: { Session Count = 112; Grid Count = 6; Path = E:\Performance_oldLibs_DB }
+  1: { Session Count = 144; Grid Count = 6; Path = C:\tmp\fk_temp_db }
+  2: { Session Count = 0; Grid Count = 6; Path = P:\Performance_DB }
+  3: { Session Count = 12; Grid Count = 31; Path = P:\testDB }
+  4: { Session Count = 112; Grid Count = 6; Path = E:\Performance_oldLibs_DB }
+  5: { Session Count = 0; Grid Count = 3; Path = E:\db_2delete }
+  6: { Session Count = 32; Grid Count = 12; Path = E:\XdgPerformance }
+  7: { Session Count = 112; Grid Count = 136; Path = E:\bosss_db_performance }
+  8: { Session Count = 19; Grid Count = 3; Path = F:\test_db }
+  9: { Session Count = 144; Grid Count = 139; Path = Z:\weber\Performance_Kram\bosss_db_performance }
+  10: { Session Count = 165; Grid Count = 6; Path = E:\Performance_newLibs_DB }
 }
 
  Console ready for input. Type 'help' for help.
 
 ==============
-WorkflowMgm.Init("PoissonSolverPerformance_0_1");
+WorkflowMgm.Init("SIP_SingleNodePerformance_0");
 **************
-Project name is set to 'PoissonSolverPerformance_0_1'.
+Project name is set to 'SIP_SingleNodePerformance_0'.
 
 ==============
 using System.IO;
 using BoSSS.Application.SipPoisson;
 **************
+No. of errors|warnings: 0|2.
+
 ==============
-string dateString = "2018-11-27";
+string dateString = "2019-3-7";
 string File       = "SolverRuns--" + dateString + ".json";
 string FilePath   = Path.Combine(CurrentDocDir, File);
 var SessTab       = TableExtensions.LoadFromFile(FilePath);
@@ -33,13 +41,13 @@ var SessTab       = TableExtensions.LoadFromFile(FilePath);
 //SessTab.Print();
 **************
 ==============
-((int) SolverCodes.exp_softpcg_schwarz_directcoarse);
+((int) LinearSolverConfig.Code.exp_softpcg_schwarz_directcoarse);
 **************
-6
+44
 ==============
-((int) SolverCodes.exp_softpcg_mg);
+((int) LinearSolverConfig.Code.exp_softpcg_mg);
 **************
-4
+42
 ==============
 // ====================
 // Evaluation, plotting
@@ -48,7 +56,7 @@ var SessTab       = TableExtensions.LoadFromFile(FilePath);
 ==============
 SessTab.GetColumnNames();
 **************
-List of 50 instances of String {
+List of 76 instances of String {
   0: SessionName
   1: DGdegree:T
   2: DGdegree:Tex
@@ -57,92 +65,142 @@ List of 50 instances of String {
   5: GeneratedFromCode
   6: ControlFileText_Index
   7: dtFixed
-  8: NoOfMultigridLevels
-  9: penalty_poisson
-  10: solver_name
-  11: TargetBlockSize
-  12: NoOfSolverRuns
-  13: ExactSolution_provided
-  14: GridPartType
-  15: ProjectName
-  16: NoOfTimesteps
-  17: Endtime
-  18: saveperiod
-  19: dtMin
-  20: dtMax
-  21: CompMode
-  22: ImmediatePlotPeriod
-  23: SuperSampling
-  24: savetodb
-  25: logFileDirectory
-  26: Paramstudy_ContinueOnError
-  27: DynamicLoadBalancing_RedistributeAtStartup
-  28: DynamicLoadBalancing_Period
-  29: DynamicLoadBalancing_ImbalanceThreshold
-  30: DynamicLoadBalancing_On
-  31: AdaptiveMeshRefinement
-  32: CutCellQuadratureType
-  33: ContinueOnIoError
-  34: Grid:NoOfCells
-  35: Grid:hMax
-  36: Grid:hMin
-  37: RegularTerminated
-  38: SipMatrixAssembly_time
-  39: Aggregation_basis_init_time
-  40: Solver_Init_time
-  41: Solver_Run_time
-  42: UsedNoOfMultigridLevels
-  43: minSolRunT
-  44: maxSolRunT
-  45: Conv
-  46: NoIter
-  47: NoOfCells
-  48: DOFs
-  49: BlockSize
+  8: penalty_poisson
+  9: NoOfSolverRuns
+  10: ExactSolution_provided
+  11: SuppressExceptionPrompt
+  12: GridPartType
+  13: ProjectName
+  14: NoOfTimesteps
+  15: Endtime
+  16: saveperiod
+  17: rollingSaves
+  18: dtMin
+  19: dtMax
+  20: CompMode
+  21: ImmediatePlotPeriod
+  22: SuperSampling
+  23: savetodb
+  24: logFileDirectory
+  25: Paramstudy_ContinueOnError
+  26: LinearSolver.MaxKrylovDim
+  27: LinearSolver.MaxSolverIterations
+  28: LinearSolver.MinSolverIterations
+  29: LinearSolver.ConvergenceCriterion
+  30: LinearSolver.SolverCode
+  31: LinearSolver.NoOfMultigridLevels
+  32: LinearSolver.exp_localPrec_muA
+  33: LinearSolver.exp_localPrec_Min_dt
+  34: LinearSolver.TargetBlockSize
+  35: NonLinearSolver.PrecondSolver.MaxKrylovDim
+  36: NonLinearSolver.PrecondSolver.MaxSolverIterations
+  37: NonLinearSolver.PrecondSolver.MinSolverIterations
+  38: NonLinearSolver.PrecondSolver.ConvergenceCriterion
+  39: NonLinearSolver.PrecondSolver.SolverCode
+  40: NonLinearSolver.PrecondSolver.NoOfMultigridLevels
+  41: NonLinearSolver.PrecondSolver.exp_localPrec_muA
+  42: NonLinearSolver.PrecondSolver.exp_localPrec_Min_dt
+  43: NonLinearSolver.PrecondSolver.TargetBlockSize
+  44: NonLinearSolver.MaxSolverIterations
+  45: NonLinearSolver.MinSolverIterations
+  46: NonLinearSolver.ConvergenceCriterion
+  47: NonLinearSolver.UnderRelax
+  48: NonLinearSolver.SolverCode
+  49: DynamicLoadBalancing_RedistributeAtStartup
+  50: DynamicLoadBalancing_Period
+  51: DynamicLoadBalancing_ImbalanceThreshold
+  52: DynamicLoadBalancing_On
+  53: AdaptiveMeshRefinement
+  54: CutCellQuadratureType
+  55: ContinueOnIoError
+  56: Grid:NoOfCells
+  57: Grid:hMax
+  58: Grid:hMin
+  59: UsedNoOfMultigridLevels
+  60: MtxBlkSz
+  61: NNZMtx
+  62: NNZblk
+  63: MtxMB
+  64: minSolRunT
+  65: maxSolRunT
+  66: Conv
+  67: NoIter
+  68: NoOfCells
+  69: DOFs
+  70: BlockSize
+  71: RegularTerminated
+  72: SipMatrixAssembly_time
+  73: Aggregation_basis_init_time
+  74: Solver_Init_time
+  75: Solver_Run_time
 }
 ==============
-//var SubTab_1 = SessTab.ExtractColumns("DGdegree:T", "Grid:NoOfCells", "solver_name", "DOFs", "minSolRunT", "maxSolRunT", "NoIter", "RegularTerminated", "Conv");
+//var SubTab_1 = SessTab.ExtractColumns("DGdegree:T", "Grid:NoOfCells", "LinearSolver.SolverCode", "DOFs", "minSolRunT", "maxSolRunT", "NoIter", "RegularTerminated", "Conv");
 **************
 ==============
 var SubTab_1 = SessTab.ExtractRows(delegate(int i, IDictionary<string,object> row) {
-    return (  (Convert.ToInt32(row["solver_name"]) ==  ((int) SolverCodes.exp_softpcg_schwarz_directcoarse))
-          || (Convert.ToInt32(row["solver_name"]) ==  ((int) SolverCodes.exp_softpcg_mg)))
+    return (  (Convert.ToInt32(row["LinearSolver.SolverCode"]) ==  ((int) LinearSolverConfig.Code.exp_softpcg_schwarz_directcoarse))
+          || (Convert.ToInt32(row["LinearSolver.SolverCode"]) ==  ((int) LinearSolverConfig.Code.exp_softpcg_mg)))
           && (Convert.ToInt32(row["Conv"]) != 0);
     });
 **************
 ==============
-var SubTab = SubTab_1.ExtractColumns("DGdegree:T", "Grid:NoOfCells", "solver_name", "DOFs", 
+var SubTab = SubTab_1.ExtractColumns("DGdegree:T", "Grid:NoOfCells", "LinearSolver.SolverCode", "DOFs", 
               "minSolRunT", "maxSolRunT", "UsedNoOfMultigridLevels",
               "SipMatrixAssembly_time", "Aggregation_basis_init_time", "Solver_Init_time", "Solver_Run_time");
 **************
 ==============
 SubTab.Print();
 **************
-    DGdegree:T Grid:NoOfCells solver_name DOFs    minSolRunT   maxSolRunT   UsedNoOfMultigridLevels SipMatrixAssembly_time Aggregation_basis_init_time Solver_Init_time Solver_Run_time 
-0:  5          2560           4           143360  497.1330584  497.1330584  5                       16.7298691             14.0356003                  43.0682371       454.0343456     
-1:  5          320            4           17920   28.3973134   28.3973134   4                       2.426101               1.8252537                   4.6311497        23.7402641      
-2:  5          40             4           2240    1.1212961    1.1212961    3                       0.6543525              0.282564                    0.4274076        0.6688036       
-3:  3          20480          4           409600  704.9570708  704.9570708  7                       12.9115116             11.3176181                  34.3530146       670.5629089     
-4:  3          2560           4           51200   31.6771171   31.6771171   5                       1.9476166              1.0471178                   3.8097454        27.8396438      
-5:  3          320            4           6400    1.557986     1.557986     4                       0.5831198              0.1652818                   0.3579663        1.1750633       
-6:  3          40             4           800     0.4036891    0.4036891    3                       0.4129103              0.052442                    0.1335032        0.24494         
-7:  2          163840         4           1638400 951.588482   951.588482   7                       37.5235688             242.7597558                 79.6920794       871.807734      
-8:  2          20480          4           204800  103.7714009  103.7714009  7                       5.0056401              5.8112875                   8.9437361        94.794033       
-9:  2          2560           4           25600   9.908968     9.908968     5                       0.9746563              0.3718167                   1.0590948        8.8231086       
-10: 2          320            4           3200    0.6306171    0.6306171    4                       0.4704671              0.0771852                   0.1624043        0.4428931       
-11: 2          40             4           400     0.3780025    0.3780025    3                       0.3938432              0.0405479                   0.1180742        0.2349079       
-12: 5          2560           6           143360  935.7729459  935.7729459  5                       16.5087015             13.9688942                  32.216042        903.5287137     
-13: 5          320            6           17920   41.5323656   41.5323656   4                       2.4090213              1.7911133                   3.8261885        37.682652       
-14: 5          40             6           2240    1.9254439    1.9254439    3                       0.6524113              0.2785621                   0.5674528        1.3351335       
-15: 3          20480          6           409600  1421.0780502 1421.0780502 7                       12.8999762             10.5674858                  28.6763605       1392.3640335    
-16: 3          2560           6           51200   78.0868387   78.0868387   5                       1.954605               1.0328634                   3.1537011        74.9106666      
-17: 3          320            6           6400    2.2752466    2.2752466    4                       0.5880044              0.1622375                   0.4985092        1.7553133       
-18: 3          40             6           800     0.578944     0.578944     3                       0.4102341              0.0540802                   0.2002866        0.3584104       
-19: 2          163840         6           1638400 4494.0690912 4494.0690912 7                       36.9717805             202.2463584                 153.9420908      4340.0410768    
-20: 2          20480          6           204800  434.8776575  434.8776575  7                       4.9913418              5.1588303                   9.3340327        425.5150515     
-21: 2          2560           6           25600   23.7388973   23.7388973   5                       0.976203               0.3616897                   1.0065361        22.7107868      
-22: 2          320            6           3200    0.8816629    0.8816629    4                       0.4562033              0.0772112                   0.2564623        0.6045317       
-23: 2          40             6           400     0.5294159    0.5294159    3                       0.3879074              0.0422406                   0.1835803        0.3248682       
+    DGdegree:T Grid:NoOfCells LinearSolver.SolverCode DOFs    minSolRunT   maxSolRunT   UsedNoOfMultigridLevels SipMatrixAssembly_time Aggregation_basis_init_time Solver_Init_time Solver_Run_time 
+0:  5          2560           42                      143360  344.121727   344.121727   5                       16.3820991             13.8949742                  33.7317858       310.3542833     
+1:  5          320            42                      17920   20.578554    20.578554    4                       2.4053354              1.7961679                   3.5245473        17.0215154      
+2:  5          40             42                      2240    1.0420923    1.0420923    3                       0.6504721              0.2757243                   0.4186568        0.5912829       
+3:  3          20480          42                      409600  383.3659385  383.3659385  7                       12.9468412             11.1578929                  25.2254906       358.0953793     
+4:  3          2560           42                      51200   22.1801145   22.1801145   5                       1.9512177              1.0467363                   2.6781933        19.4687105      
+5:  3          320            42                      6400    1.2762808    1.2762808    4                       0.6353381              0.1634087                   0.3449009        0.8978198       
+6:  3          40             42                      800     0.4121277    0.4121277    3                       0.4149924              0.054085                    0.1332778        0.2472013       
+7:  2          163840         42                      1638400 662.836025   662.836025   7                       37.5061714             228.0619783                 61.0394517       601.7025743     
+8:  2          20480          42                      204800  74.7504545   74.7504545   7                       5.1045992              5.6209702                   6.7831655        67.9263287      
+9:  2          2560           42                      25600   7.8007765    7.8007765    5                       0.9984881              0.3675128                   0.7831576        6.9836862       
+10: 2          320            42                      3200    0.603772     0.603772     4                       0.472968               0.0737205                   0.1762594        0.3960691       
+11: 2          40             42                      400     0.3909079    0.3909079    3                       0.3942099              0.0395395                   0.1128329        0.2472105       
+12: 5          2560           44                      143360  883.4780154  883.4780154  5                       16.315704              13.8476845                  31.4741018       851.9706625     
+13: 5          320            44                      17920   36.8502552   36.8502552   4                       2.393585               1.7954887                   3.6849217        33.1350118      
+14: 5          40             44                      2240    1.7592764    1.7592764    3                       0.6590793              0.274193                    0.5487256        1.1808412       
+15: 3          20480          44                      409600  1173.8560738 1173.8560738 7                       12.8388631             11.0822117                  27.8834068       1145.9292784    
+16: 3          2560           44                      51200   65.455485    65.455485    5                       1.9643965              1.0386793                   3.124231         62.2988662      
+17: 3          320            44                      6400    2.3520518    2.3520518    4                       0.5903971              0.1629514                   0.5078994        1.8139949       
+18: 3          40             44                      800     0.6258266    0.6258266    3                       0.4142662              0.0541845                   0.2079315        0.3884084       
+19: 2          163840         44                      1638400 3695.0171414 3695.0171414 7                       37.8321342             228.1394993                 157.4524467      3537.4696214    
+20: 2          20480          44                      204800  369.6726581  369.6726581  7                       5.0194096              5.6443998                   9.0248841        360.6097087     
+21: 2          2560           44                      25600   20.6302302   20.6302302   5                       0.9710374              0.3699786                   1.0122379        19.586441       
+22: 2          320            44                      3200    0.8978939    0.8978939    4                       0.4628072              0.0765573                   0.2604887        0.607273        
+23: 2          40             44                      400     0.4721976    0.4721976    3                       0.396249               0.0401236                   0.1758981        0.2669047       
+24: 5          2560           42                      143360  344.121727   344.121727   5                       16.3820991             13.8949742                  33.7317858       310.3542833     
+25: 5          320            42                      17920   20.578554    20.578554    4                       2.4053354              1.7961679                   3.5245473        17.0215154      
+26: 5          40             42                      2240    1.0420923    1.0420923    3                       0.6504721              0.2757243                   0.4186568        0.5912829       
+27: 3          20480          42                      409600  383.3659385  383.3659385  7                       12.9468412             11.1578929                  25.2254906       358.0953793     
+28: 3          2560           42                      51200   22.1801145   22.1801145   5                       1.9512177              1.0467363                   2.6781933        19.4687105      
+29: 3          320            42                      6400    1.2762808    1.2762808    4                       0.6353381              0.1634087                   0.3449009        0.8978198       
+30: 3          40             42                      800     0.4121277    0.4121277    3                       0.4149924              0.054085                    0.1332778        0.2472013       
+31: 2          163840         42                      1638400 662.836025   662.836025   7                       37.5061714             228.0619783                 61.0394517       601.7025743     
+32: 2          20480          42                      204800  74.7504545   74.7504545   7                       5.1045992              5.6209702                   6.7831655        67.9263287      
+33: 2          2560           42                      25600   7.8007765    7.8007765    5                       0.9984881              0.3675128                   0.7831576        6.9836862       
+34: 2          320            42                      3200    0.603772     0.603772     4                       0.472968               0.0737205                   0.1762594        0.3960691       
+35: 2          40             42                      400     0.3909079    0.3909079    3                       0.3942099              0.0395395                   0.1128329        0.2472105       
+36: 5          2560           44                      143360  883.4780154  883.4780154  5                       16.315704              13.8476845                  31.4741018       851.9706625     
+37: 5          320            44                      17920   36.8502552   36.8502552   4                       2.393585               1.7954887                   3.6849217        33.1350118      
+38: 5          40             44                      2240    1.7592764    1.7592764    3                       0.6590793              0.274193                    0.5487256        1.1808412       
+39: 3          20480          44                      409600  1173.8560738 1173.8560738 7                       12.8388631             11.0822117                  27.8834068       1145.9292784    
+40: 3          2560           44                      51200   65.455485    65.455485    5                       1.9643965              1.0386793                   3.124231         62.2988662      
+41: 3          320            44                      6400    2.3520518    2.3520518    4                       0.5903971              0.1629514                   0.5078994        1.8139949       
+42: 3          40             44                      800     0.6258266    0.6258266    3                       0.4142662              0.0541845                   0.2079315        0.3884084       
+43: 2          163840         44                      1638400 3695.0171414 3695.0171414 7                       37.8321342             228.1394993                 157.4524467      3537.4696214    
+44: 2          20480          44                      204800  369.6726581  369.6726581  7                       5.0194096              5.6443998                   9.0248841        360.6097087     
+45: 2          2560           44                      25600   20.6302302   20.6302302   5                       0.9710374              0.3699786                   1.0122379        19.586441       
+46: 2          320            44                      3200    0.8978939    0.8978939    4                       0.4628072              0.0765573                   0.2604887        0.607273        
+47: 2          40             44                      400     0.4721976    0.4721976    3                       0.396249               0.0401236                   0.1758981        0.2669047       
 ==============
 **************
 ==============
@@ -178,9 +236,9 @@ List of 3 instances of Int32 {
 ==============
 **************
 ==============
-var Solvers = new SolverCodes[] {
-SolverCodes.exp_softpcg_schwarz_directcoarse,
-SolverCodes.exp_softpcg_mg
+LinearSolverConfig.Code[] Solvers = new LinearSolverConfig.Code[] {
+LinearSolverConfig.Code.exp_softpcg_schwarz_directcoarse,
+LinearSolverConfig.Code.exp_softpcg_mg
 };
 **************
 ==============
@@ -211,12 +269,12 @@ int iCol = 0;
            // selects, which table row goes to which graph,
            // and the respective color  
            // - - - - - - - - - - - - - - - - - - - - - - - - 
-           int k = Convert.ToInt32(Row["DGdegree:T"]);
-           SolverCodes solver_name = (SolverCodes) Convert.ToInt32(Row["solver_name"]);
+           int k                   = Convert.ToInt32(Row["DGdegree:T"]);
+           LinearSolverConfig.Code solver_name = (LinearSolverConfig.Code) Convert.ToInt32(Row["LinearSolver.SolverCode"]);
            
-		   // ===!!!=== CAUTION ===!!!===
-		   // Solverframework (SolverEnum numbers) have changed! Please check LinearSolver and NonLinearSolver for details
-		   
+           // ===!!!=== CAUTION ===!!!===
+           // Solverframework (SolverEnum numbers) have changed! Please check LinearSolver and NonLinearSolver for details
+           
            if(    k != DGdegrees[pDegree] 
                || solver_name != Solvers[iPlot]) {
                 // degree does not match -> not in this plot
@@ -326,11 +384,7 @@ int iCol = 0;
 }
 }
 ;
-AllMultiplots[0].PlotNow()
 **************
-Using gnuplot: C:\Program Files (x86)\FDY\BoSSS\bin\native\win\gnuplot-gp510-20160418-win32-mingw\gnuplot\bin\gnuplot.exe
-set key inside top left Left reverse 
-System.Drawing.Bitmap
 ==============
 var CL = AllMultiplots[0].ToGnuplot().PlotCairolatex(xSize:14, ySize:12);
 CL.PlotNow();
@@ -367,11 +421,19 @@ System.ComponentModel.Win32Exception (0x80004005): Das System kann die angegeben
    bei BoSSS.Application.BoSSSpad.GnuplotExtensions.CairolatexContainer.Preview(Boolean trimPage, Int32 dpi) in C:\BoSSS\BoSSS-SolverPerformance\public\src\L4-application\BoSSSpad\GnuplotExtensions.cs:Zeile 325.
    bei <InteractiveExpressionClass>.Host(Object& $retval)
    bei Mono.CSharp.Evaluator.Evaluate(String input, Object& result, Boolean& result_set)
-   bei BoSSS.Application.BoSSSpad.ReadEvalPrintLoop.EvalPrint(String line, Assembly& AssemblyProduced) in C:\BoSSS\BoSSS-SolverPerformance\public\src\L4-application\BoSSSpad\ReadEvalPrintLoop.cs:Zeile 318.
+   bei BoSSS.Application.BoSSSpad.ReadEvalPrintLoop.EvalPrint(String line, Assembly& AssemblyProduced) in C:\BoSSS\BoSSS-SolverPerformance\public\src\L4-application\BoSSSpad\ReadEvalPrintLoop.cs:Zeile 322.
 ==============
 CL.WriteMinimalCompileableExample(
     Path.Combine(CurrentDocDir, "plots", "MainConstCoeffPoisson_MG.tex"),
     "ConstCoeffPoisson_MG.tex");
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
 **************
 ==============
 **************

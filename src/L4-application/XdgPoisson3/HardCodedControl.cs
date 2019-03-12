@@ -140,7 +140,6 @@ namespace BoSSS.Application.XdgPoisson3 {
             R.dtMin = 0.1;
             R.NoOfTimesteps = 10;
             R.Endtime = 100000.0;
-            R.timeDependent = false;
 
             R.AgglomerationThreshold = 0.1;
             R.PrePreCond = MultigridOperator.Mode.SymPart_DiagBlockEquilib_DropIndefinite;
@@ -523,7 +522,7 @@ namespace BoSSS.Application.XdgPoisson3 {
             C.savetodb = false;
             //C.DbPath = @"E:\\XdgPerformance";
 
-            int Res = 4;
+            int Res = 2;
 
             C.GridFunc = delegate () {
                 double[] xNodes = GenericBlas.Linspace(-1, +1, Res + 1);
@@ -540,22 +539,32 @@ namespace BoSSS.Application.XdgPoisson3 {
             };
 
             //these are parameters for batchprocessing. They are here for testing ...
-            C.PerformanceModeON = true;
+            //C.PerformanceModeON = true;
             //C.SuppressExceptionPrompt = true;
 
-            C.LinearSolver.TargetBlockSize = 300;
+            C.LinearSolver.TargetBlockSize = 20;
             C.SetDGdegree(2);
+            //C.LinearSolver.SolverCode = LinearSolverConfig.Code.exp_softpcg_mg;
             C.LinearSolver.SolverCode = LinearSolverConfig.Code.exp_softpcg_mg;
             C.LinearSolver.NoOfMultigridLevels = 10;
+            C.LinearSolver.ConvergenceCriterion = 1e-6;
             C.ExcactSolSupported = false;
-            C.InitialValues_Evaluators.Add("Phi", X => X[1] + 0.001);
+            double radius = 0.7;
+            C.InitialValues_Evaluators.Add("Phi", X=>X[0].Pow2() + X[1].Pow2() + X[2].Pow2() - radius.Pow2());
             C.MU_A = -1;
-            C.MU_B = -1;
+            C.MU_B = -1000;
             C.InitialValues_Evaluators.Add("rhs#A", X => 1.0);
             C.InitialValues_Evaluators.Add("rhs#B", X => 1.0);
+            C.InitialValues_Evaluators.Add("u#A", X => 0);
+            C.InitialValues_Evaluators.Add("u#B", X => 0);
             C.CutCellQuadratureType = XQuadFactoryHelper.MomentFittingVariants.Classic;
             C.SetDefaultDiriBndCnd = true;
+            //C.xLaplaceBCs.g_Diri = ((CommonParamsBnd inp) => 0.0);
+            //C.xLaplaceBCs.IsDirichlet = (inp => true);
             C.ViscosityMode = XLaplace_Interface.Mode.SIP;
+
+            C.AgglomerationThreshold = 0.1;
+
             return C;
         }
 

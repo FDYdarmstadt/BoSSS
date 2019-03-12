@@ -765,7 +765,9 @@ Iterative Algorithms with \ac{dg}-specific preconditioners, such as aggregation 
 and multi-level additive Schwarz
 \end{itemize}
 
-\subsection{Problems with Constant Diffusion Coefficient}
+\newpage
+
+\subsection{Constant Diffusion Coefficient test problem}
 \label{sec:ConstantDiffusionCoefficient}
 The problem
 \begin{equation}
@@ -790,6 +792,17 @@ iterative methods. See Figure \ref{fig:ConstantCoeffRuntimes} for results.
 
 \graphicspath{{./apdx-NodeSolverPerformance/PoissonConstCoeff/plots/}}
 
+Subsequent the performance of some code parts are investigated for the block Jacobian and the Schwarz multigrid preconditioned conjugate gradient method (PCG):
+\begin{itemize}
+	\item MatrixAssembly: assemble Block matrix
+	\item Aggregation basis init: create multigrid sequence, contains information about the transformation at the multigrid levels
+	\item Solver Init: hand over/assemble relevant data for the chosen solver, e.g. operator matrix etc.
+	\item Solver Run: solves the equation system: operator matrix, vector of dg coordinates and given RHS 
+\end{itemize}
+Both variants are using pre and post smoothing solvers (5 runs at each multigrid level).
+
+
+
 \begin{figure}[!h]
 \begin{center}
 \input{./apdx-NodeSolverPerformance/PoissonConstCoeff/plots/ConstCoeffPoissonScaling.tex}
@@ -800,7 +813,121 @@ for problem/Equation (\ref{eq:ContantCoeffPoissonBenchmark}).
 }
 \label{fig:ConstantCoeffRuntimes}
 \end{figure}
+
 \newpage
+
+\subsubsection{Block Jacobian and Schwarz-Multigrid Preconditioning}
+
+\begin{figure}[!h]
+	\begin{center}
+	    \input{./apdx-NodeSolverPerformance/zeug/jacobischwarz-scheme.pdf_tex}
+	\end{center}
+	\caption{
+		schematic of the Multigrid Schwarz \& Block Jacobian Preconditioning (for a CG solver).
+	}
+	\label{fig:schema_BlockPCG}
+\end{figure}
+
+\begin{figure}[!h]
+	\begin{center}
+		\input{./apdx-NodeSolverPerformance/PoissonConstCoeff/plots/ConstCoeffPoisson_MG.tex}
+	\end{center}
+	\caption{
+		Investigation of runtime of different code parts of the block Jacobian PCG. Solver runtime vs. degrees-of-freedom, for different polynomial degrees $k$,
+		for problem/Equation (\ref{eq:ContantCoeffPoissonBenchmark}).
+	}
+	\label{fig:SIP_blockJacobianPCG}
+\end{figure}
+\newpage
+
+\subsubsection{Schwarz-Multigrid Preconditioning}
+
+\begin{figure}[!h]
+	\begin{center}
+		\input{./apdx-NodeSolverPerformance/zeug/schwarz-scheme.pdf_tex}
+	\end{center}
+	\caption{
+		schematic of the Multigrid Schwarz \& Block Jacobian Preconditioning (for a CG solver).
+	}
+	\label{fig:schema_SchwarzPCG}
+\end{figure}
+
+\begin{figure}[!h]
+	\begin{center}
+		\input{./apdx-NodeSolverPerformance/PoissonConstCoeff/plots/ConstCoeffPoisson_Schwarz.tex}
+	\end{center}
+	\caption{
+		Investigation of runtime of different code parts of the Schwarz PCG. Solver runtime vs. degrees-of-freedom, for different polynomial degrees $k$,
+		for problem/Equation (\ref{eq:ContantCoeffPoissonBenchmark}).
+	}
+	\label{fig:SIP_SchwarzPGC}
+\end{figure}
+\newpage
+
+\subsection{velocity test problem with levelset and Xdg}
+\label{sec:XdgPoisson}
+The problem
+\begin{equation}
+\left\{ \begin{array} {rclll}
+- \nabla \cdot (\mu \nabla \vec{u})   & = & g_{\domain}=(1, 1, 1)^T                       
+& \text{in}\ \Omega \setminus \varphi, \text{with}\ \Omega= [-1,1]^3  &  \\
+% ----
+ \vec{u_D} & = & (0, 0, 0)^T                             
+& \text{on}\ \Gamma_D = \partial \Omega
+& \text{Dirichlet-boundary} \\
+% ----
+\jump{\mu \nabla \vec{u}} \cdot \vec{n} & = & (0, 0, 0)^T  & \text{on}\ \varphi = \{\vec{X}=(x,y,z); \ |\vec{X}|_2=0.7\} & \text{levelset}
+\end{array} \right.
+\label{eq:XdgPoissonBenchmark}
+\end{equation}
+where $\mu_1=1$ (inner) and $\mu_2=1000$ (outer) characterize the two phases. is investigated on a uniform, equidistant Cartesian grid. See \ref{fig:XdgRuntimes} for results.
+
+\graphicspath{{./apdx-NodeSolverPerformance/XDGPoisson/plots/}}
+
+\begin{figure}[!h]
+	\begin{center}
+		\input{./apdx-NodeSolverPerformance/XDGPoisson/plots/XdgPoissonScaling.tex}
+	\end{center}
+	\caption{
+		Solver runtime vs. degrees-of-freedom, for different polynomial degrees $k$,
+		for problem/Equation (\ref{eq:XdgPoissonBenchmark}).
+	}
+	\label{fig:XdgRuntimes}
+\end{figure}
+\newpage
+Subsequent the performance of some code parts are investigated for the block Jacobian and the Schwarz multigrid preconditioned conjugate gradient method (PCG):
+\begin{itemize}
+	\item MatrixAssembly: assemble Block matrix
+	\item Aggregation basis init: create multigrid sequence, contains information about the transformation at the multigrid levels
+	\item Solver Init: hand over/assemble relevant data for the chosen solver, e.g. operator matrix etc.
+	\item Solver Run: solves the equation system: operator matrix, vector of dg coordinates and given RHS 
+\end{itemize}
+Both variants are using pre and post smoothing solvers (5 runs at each multigrid level).
+\begin{figure}[!h]
+	\begin{center}
+		\input{./apdx-NodeSolverPerformance/XDGPoisson/plots/XdgPoisson_MG.tex}
+	\end{center}
+	\caption{
+		Investigation of runtime of different code parts of the block Jacobian PCG. Solver runtime vs. degrees-of-freedom, for different polynomial degrees $k$,
+		for problem/Equation (\ref{eq:XdgPoissonBenchmark}).
+	}
+	\label{fig:Xdg_blockJacobianPCG}
+\end{figure}
+\newpage
+\begin{figure}[!h]
+	\begin{center}
+		\input{./apdx-NodeSolverPerformance/XdgPoisson/plots/XdgPoisson_Schwarz.tex}
+	\end{center}
+	\caption{
+		Investigation of runtime of different code parts of the Schwarz PCG. Solver runtime vs. degrees-of-freedom, for different polynomial degrees $k$,
+		for problem/Equation (\ref{eq:XdgPoissonBenchmark}).
+	}
+	\label{fig:Xdg_SchwarzPGC}
+\end{figure}
+\newpage
+
+
+
 \section{Solver Performance - Navier-Stokes problems}
 \label{sec:SolverPerformanceNSE}
 Different solver strategies are conducted to solve the fully coupled incompressible Navier-Stokes equations. At the moment the following strategies can be examined:
