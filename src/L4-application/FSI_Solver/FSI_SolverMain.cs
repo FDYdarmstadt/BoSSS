@@ -575,31 +575,38 @@ namespace BoSSS.Application.FSI_Solver {
             // Call update methods
             foreach (Particle p in m_Particles) {
                 p.UpdateDampingTensors();
-                if (p.iteration_counter_P == 0 && ((FSI_Control)this.Control).splitting_fully_coupled == true)
+                switch (p.iteration_counter_P)
                 {
-                    p.PredictTranslationalAccelaration();
-                    p.PredictAngularAcceleration();
-                    p.PredictTranslationalVelocity();
-                    p.PredictAngularVelocity();
+                    case 0 when ((FSI_Control)this.Control).splitting_fully_coupled == true:
+                        if (((FSI_Control)Control).includeTranslation == true)
+                        {
+                            p.PredictTranslationalAccelaration();
+                            p.PredictTranslationalVelocity();
+                        }
+                        if (((FSI_Control)Control).includeRotation == true)
+                        {
+                            p.PredictAngularAcceleration();
+                            p.PredictAngularVelocity();
+                        }
+                        break;
+
+                    default:
+                        if (((FSI_Control)Control).includeRotation == true)
+                        {
+                            p.CalculateAngularAcceleration(dt);
+                            p.CalculateAngularVelocity(dt);
+                        }
+                        if (((FSI_Control)Control).includeTranslation == true)
+                        {
+                            p.CalculateTranslationalAcceleration(dt, this.Control.PhysicalParameters.rho_A);
+                            p.CalculateTranslationalVelocity(dt, this.Control.PhysicalParameters.rho_A);
+                        }
+                        break;
                 }
-                else
-                {
-                    if (((FSI_Control)this.Control).includeRotation == true)
-                    {
-                        p.CalculateAngularAcceleration(dt);
-                        p.CalculateAngularVelocity(dt);
-                    }
-                    if (((FSI_Control)this.Control).includeTranslation == true)
-                    {
-                        p.CalculateTranslationalAcceleration(dt, this.Control.PhysicalParameters.rho_A);
-                        p.CalculateTranslationalVelocity(dt, this.Control.PhysicalParameters.rho_A);
-                    }
-                    p.ComputeParticleRe(this.Control.PhysicalParameters.mu_A);
-                    p.CalculateParticlePosition(dt, this.Control.PhysicalParameters.rho_A);
-                    p.CalculateParticleAngle(dt);
-                    p.UpdateLevelSetFunction();
-                }
-                
+                p.ComputeParticleRe(this.Control.PhysicalParameters.mu_A);
+                p.CalculateParticlePosition(dt, this.Control.PhysicalParameters.rho_A);
+                p.CalculateParticleAngle(dt);
+                p.UpdateLevelSetFunction();
             }
 
             // Update phi complete
