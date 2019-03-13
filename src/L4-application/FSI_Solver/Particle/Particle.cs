@@ -708,10 +708,10 @@ namespace BoSSS.Application.FSI_Solver
         
         public void CalculateDampingTensors(LevelSetTracker LsTrk, double muA, double rhoA, double dt)
         {
-            addedDampingTensorVV = AddedDamping.IntegrationOverLevelSet(0, LsTrk, muA, rhoA, dt, positionAtIteration[0], CutCells_P(LsTrk), neglectAddedDamping);
-            addedDampingTensorVW = AddedDamping.IntegrationOverLevelSet(1, LsTrk, muA, rhoA, dt, positionAtIteration[0], CutCells_P(LsTrk), neglectAddedDamping);
-            addedDampingTensorWV = AddedDamping.IntegrationOverLevelSet(2, LsTrk, muA, rhoA, dt, positionAtIteration[0], CutCells_P(LsTrk), neglectAddedDamping);
-            addedDampingTensorWW = AddedDamping.IntegrationOverLevelSet(3, LsTrk, muA, rhoA, dt, positionAtIteration[0], CutCells_P(LsTrk), neglectAddedDamping);
+            addedDampingTensorVV = AddedDamping.IntegrationOverLevelSet(0, LsTrk, muA, rhoA, dt, positionAtIteration[0], CutCells_P(LsTrk));
+            addedDampingTensorVW = AddedDamping.IntegrationOverLevelSet(1, LsTrk, muA, rhoA, dt, positionAtIteration[0], CutCells_P(LsTrk));
+            addedDampingTensorWV = AddedDamping.IntegrationOverLevelSet(2, LsTrk, muA, rhoA, dt, positionAtIteration[0], CutCells_P(LsTrk));
+            addedDampingTensorWW = AddedDamping.IntegrationOverLevelSet(3, LsTrk, muA, rhoA, dt, positionAtIteration[0], CutCells_P(LsTrk));
         }
 
         public void UpdateDampingTensors()

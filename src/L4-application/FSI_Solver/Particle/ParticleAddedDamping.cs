@@ -13,13 +13,8 @@ namespace BoSSS.Application.FSI_Solver
 {
     class ParticleAddedDamping
     {
-        public double[,] IntegrationOverLevelSet(int DampingTensorID, LevelSetTracker LsTrk, double muA, double rhoA, double dt, double[] currentPosition, CellMask ParticleCutCells, bool neglectAddedDamping = true)
+        public double[,] IntegrationOverLevelSet(int DampingTensorID, LevelSetTracker LsTrk, double muA, double rhoA, double dt, double[] currentPosition, CellMask ParticleCutCells)
         {
-            
-            if (neglectAddedDamping == true)
-            {
-                return null;
-            }
             int D = LsTrk.GridDat.SpatialDimension;
             double[,] addedDampingTensor = new double[D, D];
             double alpha = 0.5;
