@@ -410,12 +410,12 @@ namespace BoSSS.Application.SipPoisson {
             LinearSolverConfig.Code solver_name = LinearSolverConfig.Code.classic_pardiso,
             Foundation.IO.IDatabaseInfo db = null)
         {
+            var R = new SipControl
+            {
+                ProjectName = "SipPoisson-Voronoi",
+                SessionName = "testrun"
+            };
 
-            var R = new SipControl();
-            R.ProjectName = "SipPoisson-Voronoi";
-            R.SessionName = "testrun";
-            
-            
             if (db != null)
             {
                 R.savetodb = true;
