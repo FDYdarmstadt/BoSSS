@@ -39,13 +39,11 @@ namespace BoSSS.Application.FSI_Solver
                         {
                             for (int j = 0; j < Len; j++)
                             {
-                                double dh = Math.Sqrt(LsTrk.GridDat.iGeomCells.GetCellVolume(j)); //just an approx, needs to be revisited
-                                double delta = dh * Math.Sqrt(rhoA) / (Math.Sqrt(alpha * muA * dt));
-                                double dn = dh / (1 - Math.Exp(-delta));
-
                                 for (int k = 0; k < K; k++)
                                 {
-
+                                    double dh = CalculateNormalMeshSpacing(LsTrk, Ns, Normals, j, k);
+                                    double delta = dh * Math.Sqrt(rhoA) / (Math.Sqrt(alpha * muA * dt));
+                                    double dn = dh / (1 - Math.Exp(-delta));
                                     double[] R = new double[D];
                                     R[0] = Math.Abs(NodeSetClone[k, 0] - currentPosition[0]);
                                     R[1] = Math.Abs(NodeSetClone[k, 1] - currentPosition[1]);
@@ -116,6 +114,12 @@ namespace BoSSS.Application.FSI_Solver
             addedDampingTensor[1, 1] = R[0, 1].Pow2() * addedDampingTensor[0, 0] + R[1, 1] * R[0, 1] * addedDampingTensor[0, 1] + R[0, 1] * R[1, 1] * addedDampingTensor[1, 0] + R[1, 1].Pow2() * addedDampingTensor[1, 1];
 
             return addedDampingTensor;
+        }
+
+        private double CalculateNormalMeshSpacing(LevelSetTracker LsTrk, NodeSet Ns, MultidimensionalArray Normals, int CellID, int NodeID)
+        {
+            double CellLength = Math.Sqrt(LsTrk.GridDat.iGeomCells.GetCellVolume(CellID));
+            return Math.Abs((1 - Ns[NodeID, 0]) * Normals[CellID, NodeID, 0] * CellLength);
         }
     }
 }

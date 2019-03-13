@@ -445,7 +445,10 @@ namespace BoSSS.Application.FSI_Solver {
                     {
                         foreach (Particle p in m_Particles)
                         {
-                            p.CalculateDampingTensors(LsTrk, ((FSI_Control)this.Control).PhysicalParameters.mu_A, ((FSI_Control)this.Control).PhysicalParameters.rho_A, ((FSI_Control)this.Control).dtMax);
+                            if (p.neglectAddedDamping == false)
+                            {
+                                p.CalculateDampingTensors(LsTrk, ((FSI_Control)this.Control).PhysicalParameters.mu_A, ((FSI_Control)this.Control).PhysicalParameters.rho_A, ((FSI_Control)this.Control).dtMax);
+                            }
                         }
                         calculatedDampingTensors = 1;
                     }
@@ -648,8 +651,9 @@ namespace BoSSS.Application.FSI_Solver {
             base.QueryHandler.ValueQuery("C_Lift", 2 * force[1], true); // Only for Diameter 1 (TestCase NSE stationary)
             base.QueryHandler.ValueQuery("Angular_Velocity", MPIangularVelocity, true); // (TestCase FlowRotationalCoupling)
             
-            Console.WriteLine("Drag Force:   {0}", force[0]);
-            Console.WriteLine("Lift Force:   {0}", force[1]);
+
+            Console.WriteLine("Drag Force:   {0}", m_Particles[0].hydrodynForcesAtIteration[0][0]);
+            Console.WriteLine("Lift Force:   {0}", m_Particles[0].hydrodynForcesAtIteration[0][1]);
             Console.WriteLine("Torqe:   {0}", torque);
             Console.WriteLine("Transl VelocityX:   {0}", MPItransVelocity[0]);
             Console.WriteLine("Transl VelocityY:   {0}", MPItransVelocity[1]);
@@ -668,16 +672,11 @@ namespace BoSSS.Application.FSI_Solver {
         /// Variables for FSI coupling
         /// </summary>
         double MPIangularVelocity;
-        double[] TransVelocityN4 = new double[2];
-        double[] TransVelocityN3 = new double[2];
-        double[] TransVelocityN2 = new double[2];
-        double[] oldTransVelocity = new double[2];
-        double[] newTransVelocity = new double[2];
-        double[] oldPosition = new double[2];
-        double[] newPosition = new double[2];
-        double[] oldforce = new double[2];
+        readonly double[] newTransVelocity = new double[2];
+        readonly double[] oldPosition = new double[2];
+        readonly double[] newPosition = new double[2];
+        readonly double[] oldforce = new double[2];
         double[] MPItransVelocity = new double[2];
-        double[] MPIpos = new double[2];
 
         protected override double RunSolverOneStep(int TimestepInt, double phystime, double dt) {
             using (new FuncTrace()) {
@@ -724,7 +723,10 @@ namespace BoSSS.Application.FSI_Solver {
                             UpdateForcesAndTorque(dt, phystime);
                             foreach (Particle p in m_Particles)
                             {
-                                p.UpdateDampingTensors();
+                                if  (p.neglectAddedDamping == false)
+                                {
+                                    p.UpdateDampingTensors();
+                                }
                                 switch (p.iteration_counter_P)
                                 {
                                     case 0 when ((FSI_Control)this.Control).splitting_fully_coupled == true:

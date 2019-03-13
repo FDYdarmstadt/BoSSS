@@ -159,7 +159,7 @@ namespace BoSSS.Application.FSI_Solver
         /// <summary>
         /// Length of history for time, velocity, position etc.
         /// </summary>
-        int m_HistoryLength;
+        readonly int m_HistoryLength;
         
 
         /// <summary>
@@ -181,7 +181,7 @@ namespace BoSSS.Application.FSI_Solver
         /// Spatial Dimension of the particle 
         /// </summary>
         [DataMember]
-        int m_Dim;
+        readonly int m_Dim;
         #endregion
 
         #region Virtual force model parameter
@@ -487,6 +487,13 @@ namespace BoSSS.Application.FSI_Solver
             double D4 = addedDampingCoeff * dt * addedDampingTensorVV[0, 1];
             double[] tempAcc = new double[2];
 
+            //if (neglectAddedDamping == true)
+            //{
+            //    for (int d = 0; d < m_Dim; d++)
+            //    {
+            //        tempAcc[d] = hy
+            //    }
+            //}
             tempAcc[0] = (hydrodynForcesAtIteration[0][0] - (D3 * D4 * hydrodynForcesAtIteration[0][0] - D1 * D2 * hydrodynForcesAtIteration[0][1]) / (D3 * D4 - D1 * D2)) / D1;
             if (double.IsNaN(tempAcc[0]) || double.IsInfinity(tempAcc[0]))
                 throw new ArithmeticException("Error trying to calculate particle acceleration");
@@ -820,9 +827,12 @@ namespace BoSSS.Application.FSI_Solver
             ).Execute();
             #endregion
             double beta = 1;
-            Forces[0] = Forces[0] + addedDampingTensorVV[0, 0] * beta * transAccelerationAtIteration[0][0] * dt + addedDampingTensorVV[1, 0] * beta * transAccelerationAtIteration[0][1] * dt;
-            Forces[1] = Forces[1] + addedDampingTensorVV[0, 1] * beta * transAccelerationAtIteration[0][0] * dt + addedDampingTensorVV[1, 1] * beta * transAccelerationAtIteration[0][1] * dt + (particleDensity - fluidDensity) * Area_P * gravityVertical;
-            Torque = Torque - beta * dt * addedDampingTensorWW[0, 0] * rotationalAccelarationAtIteration[0];
+            if (neglectAddedDamping == false)
+            {
+                Forces[0] = Forces[0] + addedDampingTensorVV[0, 0] * beta * transAccelerationAtIteration[0][0] * dt + addedDampingTensorVV[1, 0] * beta * transAccelerationAtIteration[0][1] * dt;
+                Forces[1] = Forces[1] + addedDampingTensorVV[0, 1] * beta * transAccelerationAtIteration[0][0] * dt + addedDampingTensorVV[1, 1] * beta * transAccelerationAtIteration[0][1] * dt + (particleDensity - fluidDensity) * Area_P * gravityVertical;
+                Torque = Torque - beta * dt * addedDampingTensorWW[0, 0] * rotationalAccelarationAtIteration[0];
+            }
             if (iteration_counter_P == 0)
             {
                 Console.WriteLine("First iteration of the current timestep, all relaxation factors are set to 1");
