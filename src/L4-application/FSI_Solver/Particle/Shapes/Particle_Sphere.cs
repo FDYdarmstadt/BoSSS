@@ -34,10 +34,11 @@ namespace BoSSS.Application.FSI_Solver
 
         }
 
-        public Particle_Sphere(int Dim, int HistoryLength, double[] startPos = null, double startAngl = 0) : base(Dim, HistoryLength, startPos, startAngl)
+        public Particle_Sphere(int Dim, double[] startPos = null, double startAngl = 0) : base(Dim, startPos, startAngl)
         {
             #region Particle history
             // =============================   
+            int HistoryLength = 4;
             for (int i = 0; i < HistoryLength; i++)
             {
                 positionAtIteration.Add(new double[Dim]);
@@ -95,7 +96,7 @@ namespace BoSSS.Application.FSI_Solver
         /// <summary>
         /// %
         /// </summary>
-        protected override double averageDistance {
+        protected override double AverageDistance {
             get {
                 return radius_P;
             }
@@ -127,7 +128,7 @@ namespace BoSSS.Application.FSI_Solver
             double alpha = -(angleAtIteration[0]);
             phi_P = (X, t) => -(X[0] - positionAtIteration[0][0]).Pow2() + -(X[1] - positionAtIteration[0][1]).Pow2() + radius_P.Pow2();
         }
-        override public CellMask cutCells_P(LevelSetTracker LsTrk)
+        override public CellMask CutCells_P(LevelSetTracker LsTrk)
         {
             // tolerance is very important
             var radiusTolerance = radius_P + LsTrk.GridDat.Cells.h_minGlobal;// +2.0*Math.Sqrt(2*LsTrk.GridDat.Cells.h_minGlobal.Pow2());

@@ -30,12 +30,12 @@ namespace BoSSS.Application.FSI_Solver {
         private Particle_Ellipsoid() : base() {
 
         }
-        public Particle_Ellipsoid(int HistoryLength, double[] startPos = null, double startAngl = 0) : base(2, HistoryLength, startPos, startAngl) {
+        public Particle_Ellipsoid(double[] startPos = null, double startAngl = 0) : base(2, startPos, startAngl) {
             #region Particle history
             // ============================= 
 
             int Dim = 2; // spatial dimension of ellipse is always 2
-
+            int HistoryLength = 4;
             for (int i = 0; i < HistoryLength; i++)
             {
                 positionAtIteration.Add(new double[Dim]);
@@ -92,7 +92,7 @@ namespace BoSSS.Application.FSI_Solver {
         /// <summary>
         /// %
         /// </summary>
-        protected override double averageDistance {
+        protected override double AverageDistance {
             get {
                 return 0.5*(length_P + thickness_P);
             }
@@ -128,7 +128,7 @@ namespace BoSSS.Application.FSI_Solver {
                 return r;
             };
         }
-        override public CellMask cutCells_P(LevelSetTracker LsTrk) {
+        override public CellMask CutCells_P(LevelSetTracker LsTrk) {
             // tolerance is very important
             var radiusTolerance = Math.Max(length_P, thickness_P) + LsTrk.GridDat.Cells.h_minGlobal;// +2.0*Math.Sqrt(2*LsTrk.GridDat.Cells.h_minGlobal.Pow2());
 

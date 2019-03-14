@@ -44,7 +44,13 @@ namespace BoSSS.Solution.Control {
 
             PicardGMRES = 3,
 
+            selfmade = 999,
         }
+
+        /// <summary>
+        /// This will print out more information about iterations.
+        /// </summary>
+        public bool verbose = false;
 
         /// <summary>
         /// preconditioner class derived from LinearSolver class.

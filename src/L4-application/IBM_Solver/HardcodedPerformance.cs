@@ -42,6 +42,7 @@ namespace BoSSS.Application.IBM_Solver {
             C.savetodb = true;
             //C.savetodb = false;
 
+            C.DbPath = @"F:\test_db";
             //C.DbPath = @"\\dc1\userspace\krause\BoSSS_DBs\Bug";
             //C.DbPath = @"/home/ws35kire/test_db/";
 

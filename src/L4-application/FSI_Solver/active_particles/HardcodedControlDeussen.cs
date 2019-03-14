@@ -130,7 +130,7 @@ namespace BoSSS.Application.FSI_Solver
             int numOfParticles = 1;
             for (int d = 0; d < numOfParticles; d++)
             {
-                C.Particles.Add(new Particle_Sphere(2, 4, new double[] { 0 + 14 * d, 0.0 }, startAngl: 180 * d)
+                C.Particles.Add(new Particle_Sphere(2, new double[] { 0 + 14 * d, 0.0 }, startAngl: 180 * d)
                 {
                     radius_P = 1,
                     particleDensity = 1.5,//pg/(mum^3)
@@ -140,7 +140,7 @@ namespace BoSSS.Application.FSI_Solver
                     //thickness_P = 0.1 * BaseSize,  Sphere kann nur einen radius haben! fk.
                     //length_P = 2 * BaseSize,       Sphere kann nur einen radius haben! fk.
                     //superEllipsoidExponent = 4, // only even numbers are supported
-                    underrelaxationFT_constant = false,// set true if you want to define a constant underrelaxation (not recommended)
+                    AddaptiveUnderrelaxation = true,// set true if you want to define a constant underrelaxation (not recommended)
                     underrelaxation_factor = 9,// underrelaxation with [factor * 10^exponent]
                 });
             }

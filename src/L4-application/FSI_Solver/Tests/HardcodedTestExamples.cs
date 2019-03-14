@@ -128,7 +128,7 @@ namespace BoSSS.Application.FSI_Solver {
             // Particle Properties
             C.Particles = new List<Particle>();
 
-            C.Particles.Add(new Particle_Sphere(2, 4, new double[] { 0.0 , 0.0 }) {
+            C.Particles.Add(new Particle_Sphere(2, new double[] { 0.0 , 0.0 }) {
                 radius_P = 0.4,
                 particleDensity = 1.0,
             });

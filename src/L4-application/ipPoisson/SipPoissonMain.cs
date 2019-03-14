@@ -114,6 +114,13 @@ namespace BoSSS.Application.SipPoisson {
         }
         */
 
+        static void MyHandler(object sender, UnhandledExceptionEventArgs args) {
+            Exception e = (Exception)args.ExceptionObject;
+            Console.WriteLine("MyHandler caught : " + e.Message);
+            Console.WriteLine("Runtime terminating: {0}", args.IsTerminating);
+            System.Environment.Exit(-1234);
+        }
+
         /// <summary>
         /// Main routine
         /// </summary>
@@ -128,10 +135,8 @@ namespace BoSSS.Application.SipPoisson {
                 BatchmodeConnector.Flav = BatchmodeConnector.Flavor.Octave;
                 //BatchmodeConnector.MatlabExecuteable = "C:\\cygwin64\\bin\\bash.exe";
             }
-
             
-
-
+            
 
             /*
             //Some performance testing - don't delete, I still need this!
@@ -238,7 +243,13 @@ namespace BoSSS.Application.SipPoisson {
         /// Sets the multigrid coloring
         /// </summary>
         protected override void SetInitial() {
-                       
+            //this will suppress exception prompts
+            //Workaround to prevent distrubance while executing batchclient
+            if (this.Control.SuppressExceptionPrompt) {
+                AppDomain currentDomain = AppDomain.CurrentDomain;
+                currentDomain.UnhandledException += new UnhandledExceptionEventHandler(MyHandler);
+            }
+
             base.SetInitial();
 
             // mg coloring

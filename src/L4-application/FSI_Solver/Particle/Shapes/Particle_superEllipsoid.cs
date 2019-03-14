@@ -36,8 +36,9 @@ namespace BoSSS.Application.FSI_Solver
 
         }
 
-        public Particle_superEllipsoid(int Dim, int HistoryLength, double[] startPos = null, double startAngl = 0) : base(Dim, HistoryLength, startPos, startAngl)
+        public Particle_superEllipsoid(int Dim, double[] startPos = null, double startAngl = 0) : base(Dim, startPos, startAngl)
         {
+            int HistoryLength = 4;
             #region Particle history
             // =============================   
             for (int i = 0; i < HistoryLength; i++)
@@ -109,7 +110,7 @@ namespace BoSSS.Application.FSI_Solver
         /// <summary>
         /// %
         /// </summary>
-        protected override double averageDistance {
+        protected override double AverageDistance {
             get {
                 throw new NotImplementedException("todo");
             }
@@ -150,7 +151,7 @@ namespace BoSSS.Application.FSI_Solver
                 return r;
             };
         }
-        override public CellMask cutCells_P(LevelSetTracker LsTrk)
+        override public CellMask CutCells_P(LevelSetTracker LsTrk)
         {
             // tolerance is very important
             var radiusTolerance = Math.Min(length_P, thickness_P) + LsTrk.GridDat.Cells.h_minGlobal;// +2.0*Math.Sqrt(2*LsTrk.GridDat.Cells.h_minGlobal.Pow2());
