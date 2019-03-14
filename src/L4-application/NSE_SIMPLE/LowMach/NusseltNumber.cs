@@ -30,7 +30,7 @@ namespace NSE_SIMPLE {
     /// Calculation of NusseltNumber.
     /// In fact, \int lambda * dT/dn ds is calculated.
     /// </summary>
-    class NusseltNumber {
+   public class NusseltNumber {
 
         IGridData GridDat;
 
@@ -96,7 +96,7 @@ namespace NSE_SIMPLE {
                     MPI.Wrappers.csMPI.Raw.Allreduce((IntPtr)(&LocalNusselt), (IntPtr)(&GlobalNusselt), 1, MPI.Wrappers.csMPI.Raw._DATATYPE.DOUBLE, MPI.Wrappers.csMPI.Raw._OP.SUM, MPI.Wrappers.csMPI.Raw._COMM.WORLD);
                 }
 
-                Nusselt[bc] = GlobalNusselt;
+                Nusselt[bc] = GlobalNusselt; 
             }
         }
     }
