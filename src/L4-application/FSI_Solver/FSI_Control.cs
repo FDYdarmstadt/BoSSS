@@ -136,7 +136,9 @@ namespace BoSSS.Application.FSI_Solver {
         [DataMember]
         public CollisionModel collisionModel = CollisionModel.MomentumConservation;
 
-
+        /// <summary>
+        /// if true the flow solver is turned off
+        /// </summary>
         [DataMember]
         public bool pureDryCollisions = false;
 

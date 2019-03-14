@@ -151,7 +151,7 @@ namespace BoSSS.Application.FSI_Solver
                 //Level-set function depending on # of particles
                 for (int i = 0; i < C.Particles.Count; i++)
                 {
-                    ret *= C.Particles[i].phi_P(X, t);
+                    ret *= C.Particles[i].phi_P(X);
                 }
                 return ret;
             };
@@ -341,7 +341,7 @@ namespace BoSSS.Application.FSI_Solver
                 //Level-set function depending on # of particles
                 for (int i = 0; i < C.Particles.Count; i++)
                 {
-                    ret *= C.Particles[i].phi_P(X, t);
+                    ret *= C.Particles[i].phi_P(X);
                 }
                 return ret;
             };

@@ -603,7 +603,7 @@ namespace BoSSS.Application.FSI_Solver {
                 particleDensity = 1.25
             });
 
-            Func<double[], double, double> phiComplete = (X, t) => -1 * (C.Particles[0].phi_P(X, t));
+            //Func<double[], double, double> phiComplete = (X, t) => -1 * (C.Particles[0].phi_P(X, t));
 
             //Func<double, double> yLevSet = t => (t * t);
             //C.initialPos[0] = new double[] { 0.0, 4.0 };
@@ -818,20 +818,20 @@ namespace BoSSS.Application.FSI_Solver {
                 radius_P = 0.2,
                 particleDensity = 1.0,        
             });
-            C.Particles[1].transVelocityAtIteration[0][0] = 0.5;
-            C.Particles[1].transVelocityAtIteration[0][1] = 1.0;
+            C.Particles[1].transVelocityAtTimestep[0][0] = 0.5;
+            C.Particles[1].transVelocityAtTimestep[0][1] = 1.0;
 
             C.Particles.Add(new Particle_Sphere(2, new double[] { 0.5, 2.0 }) {
                 radius_P = 0.2,
                 particleDensity = 1.0,
             });
-            //C.Particles[2].transVelocityAtIteration[0][0] = -1.5;
-            //C.Particles[2].transVelocityAtIteration[0][1] = -0.5;
+            //C.Particles[2].transVelocityAtTimestep[0][0] = -1.5;
+            //C.Particles[2].transVelocityAtTimestep[0][1] = -0.5;
 
 
 
-            //C.Particles[1].transVelocityAtIteration[1][1] = 1.0;
-            //C.Particles[1].transVelocityAtIteration[2][1] = 1.0;
+            //C.Particles[1].transVelocityAtTimestep[1][1] = 1.0;
+            //C.Particles[1].transVelocityAtTimestep[2][1] = 1.0;
 
             //C.Particles.Add(new Particle(2, 4, new double[] { -0.25, 1.0 }) {
             //    radius_P = 0.25,
@@ -839,7 +839,7 @@ namespace BoSSS.Application.FSI_Solver {
             //});
 
 
-            Func<double[], double, double> phiComplete = (X, t) => 1 * (C.Particles[0].phi_P(X, t)* C.Particles[1].phi_P(X, t)* C.Particles[2].phi_P(X, t));
+            //Func<double[], double, double> phiComplete = (X, t) => 1 * (C.Particles[0].phi_P(X, t)* C.Particles[1].phi_P(X, t)* C.Particles[2].phi_P(X, t));
 
             //for (int i = 0;i<C.Particles.Count; i++) {
             //    phiComplete = (X,t) => phiComplete(X,t)*C.Particles[i].phi_P(X,t);
@@ -849,7 +849,7 @@ namespace BoSSS.Application.FSI_Solver {
             //Func<double[], double, double> phi = (X, t) => -(X[0] - t+X[1]);
             //C.MovementFunc = phi;         
 
-            C.InitialValues_Evaluators.Add("Phi", X => phiComplete(X, 0));
+            //C.InitialValues_Evaluators.Add("Phi", X => phiComplete(X, 0));
             //C.InitialValues_Evaluators.Add("Phi", X => -1);
             //C.InitialValues.Add("VelocityX#B", X => 1);
             C.InitialValues_Evaluators.Add("VelocityX", X => 0);
@@ -1050,8 +1050,8 @@ namespace BoSSS.Application.FSI_Solver {
             C.Particles.Add(new Particle_Ellipsoid(new double[] { -1.2, 0.9 }, startAngl: 90.0) {
                 particleDensity = 1.0,
             });
-            C.Particles[0].transVelocityAtIteration[0][0] = -5.0;
-            C.Particles[0].rotationalVelocityAtIteration[0] = -10;
+            C.Particles[0].transVelocityAtTimestep[0][0] = -5.0;
+            C.Particles[0].rotationalVelocityAtTimestep[0] = -10;
 
             C.Particles.Add(new Particle_Sphere(2, new double[] { -0.6, 0.3},startAngl:-90.0) {
                 radius_P = 0.25,
@@ -1063,22 +1063,22 @@ namespace BoSSS.Application.FSI_Solver {
                 particleDensity = 1.0,
             });
 
-            C.Particles[2].transVelocityAtIteration[0] = new double[2] { -5.0,0.0};
+            C.Particles[2].transVelocityAtTimestep[0] = new double[2] { -5.0,0.0};
 
             C.Particles.Add(new Particle_Squircle(2, new double[] { 1.0, 1.0 }, startAngl: -20.0) {
                 radius_P = 0.25,
                 particleDensity = 1.0,
             });
-            C.Particles[3].transVelocityAtIteration[0] = new double[2] { -5.0, -5.0 };
+            C.Particles[3].transVelocityAtTimestep[0] = new double[2] { -5.0, -5.0 };
 
             C.Particles.Add(new Particle_Bean(2, new double[] { 1.0, -1.0 }, startAngl: -20.0) {
                 radius_P = 0.25,
                 particleDensity = 1.0,
             });
 
-            C.Particles[4].transVelocityAtIteration[0] = new double[2] { -5.0, 5.0 };
+            C.Particles[4].transVelocityAtTimestep[0] = new double[2] { -5.0, 5.0 };
 
-            C.Particles[4].rotationalVelocityAtIteration[0] = -10;
+            C.Particles[4].rotationalVelocityAtTimestep[0] = -10;
 
             C.pureDryCollisions = true;
             C.collisionModel = FSI_Control.CollisionModel.MomentumConservation;
@@ -1087,7 +1087,7 @@ namespace BoSSS.Application.FSI_Solver {
 
             C.CutCellQuadratureType = Foundation.XDG.XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes;
 
-            Func<double[], double, double> phiComplete = (X, t) => (1 * (C.Particles[0].phi_P(X, t) * C.Particles[1].phi_P(X, t)) * (C.Particles[2].phi_P(X, t) * C.Particles[3].phi_P(X, t))* C.Particles[4].phi_P(X, t));
+            //Func<double[], double, double> phiComplete = (X, t) => (1 * (C.Particles[0].phi_P(X, t) * C.Particles[1].phi_P(X, t)) * (C.Particles[2].phi_P(X, t) * C.Particles[3].phi_P(X, t))* C.Particles[4].phi_P(X, t));
 
             //for (int i = 0;i<C.Particles.Count; i++) {
             //    phiComplete = (X,t) => phiComplete(X,t)*C.Particles[i].phi_P(X,t);
@@ -1097,7 +1097,7 @@ namespace BoSSS.Application.FSI_Solver {
             //Func<double[], double, double> phi = (X, t) => -(X[0] - t+X[1]);
             //C.MovementFunc = phi;         
 
-            C.InitialValues_Evaluators.Add("Phi", X => phiComplete(X, 0));
+            //C.InitialValues_Evaluators.Add("Phi", X => phiComplete(X, 0));
             //C.InitialValues_Evaluators.Add("Phi", X => -1);
             //C.InitialValues.Add("VelocityX#B", X => 1);
             C.InitialValues_Evaluators.Add("VelocityX", X => 0);
@@ -1336,15 +1336,15 @@ namespace BoSSS.Application.FSI_Solver {
 
             //C.CutCellQuadratureType = Foundation.XDG.XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes;
 
-            //Define level-set
-            Func<double[], double, double> phiComplete = delegate (double[] X, double t) {
-                int exp = C.Particles.Count - 1;
-                double ret = Math.Pow(-1, exp);
-                for (int i = 0; i < C.Particles.Count; i++) {
-                    ret *= C.Particles[i].phi_P(X, t);
-                }
-                return ret;
-            };
+            ////Define level-set
+            //Func<double[], double, double> phiComplete = delegate (double[] X, double t) {
+            //    int exp = C.Particles.Count - 1;
+            //    double ret = Math.Pow(-1, exp);
+            //    for (int i = 0; i < C.Particles.Count; i++) {
+            //        ret *= C.Particles[i].phi_P(X, t);
+            //    }
+            //    return ret;
+            //};
 
 
             //Func<double[], double, double> phiComplete = (X, t) => (1 * (C.Particles[0].phi_P(X, t) * C.Particles[1].phi_P(X, t) * C.Particles[2].phi_P(X, t)* C.Particles[3].phi_P(X, t) * C.Particles[4].phi_P(X, t)));
@@ -1357,7 +1357,7 @@ namespace BoSSS.Application.FSI_Solver {
             //Func<double[], double, double> phi = (X, t) => -(X[0] - t+X[1]);
             //C.MovementFunc = phi;         
 
-            C.InitialValues_Evaluators.Add("Phi", X => phiComplete(X, 0));
+            //C.InitialValues_Evaluators.Add("Phi", X => phiComplete(X, 0));
             //C.InitialValues_Evaluators.Add("Phi", X => -1);
             //C.InitialValues.Add("VelocityX#B", X => 1);
             C.InitialValues_Evaluators.Add("VelocityX", X => 0);
@@ -1559,16 +1559,16 @@ namespace BoSSS.Application.FSI_Solver {
                 gravityVertical = 9.81
             });
 
-            //C.Particles[0].rotationalVelocityAtIteration[0] = 10;
+            //C.Particles[0].rotationalVelocityAtTimestep[0] = 10;
 
             C.CutCellQuadratureType = Foundation.XDG.XQuadFactoryHelper.MomentFittingVariants.Classic;
 
-            Func<double[], double, double> phiComplete = delegate (double[] X, double t) {
-                double r = 1 * (C.Particles[0].phi_P(X, t));
-                if (double.IsNaN(r) || double.IsInfinity(r))
-                    throw new ArithmeticException();
-                return r;
-            };
+            //Func<double[], double, double> phiComplete = delegate (double[] X, double t) {
+            //    double r = 1 * (C.Particles[0].phi_P(X, t));
+            //    if (double.IsNaN(r) || double.IsInfinity(r))
+            //        throw new ArithmeticException();
+            //    return r;
+            //};
 
             //for (int i = 0;i<C.Particles.Count; i++) {
             //    phiComplete = (X,t) => phiComplete(X,t)*C.Particles[i].phi_P(X,t);
@@ -1578,7 +1578,7 @@ namespace BoSSS.Application.FSI_Solver {
             //Func<double[], double, double> phi = (X, t) => -(X[0] - t+X[1]);
             //C.MovementFunc = phi;         
 
-            C.InitialValues_Evaluators.Add("Phi", X => phiComplete(X, 0));
+            //C.InitialValues_Evaluators.Add("Phi", X => phiComplete(X, 0));
             //C.InitialValues_Evaluators.Add("Phi", X => -1);
             //C.InitialValues.Add("VelocityX#B", X => 1);
             C.InitialValues_Evaluators.Add("VelocityX", X => 0);
@@ -1783,14 +1783,14 @@ namespace BoSSS.Application.FSI_Solver {
                 particleDensity = 1.01
             });
 
-            //C.Particles[0].transVelocityAtIteration[0][1] = -0.5;
+            //C.Particles[0].transVelocityAtTimestep[0][1] = -0.5;
 
             C.Particles.Add(new Particle_Sphere(2, new double[] { 0.0, 6.8 }) {
                 radius_P = 0.1,
                 particleDensity = 1.01,
             });
 
-            //C.Particles[1].transVelocityAtIteration[0][1] = -0.5;
+            //C.Particles[1].transVelocityAtTimestep[0][1] = -0.5;
 
             //Func<double[], double, double> phiComplete = (X, t) => -1 * (C.Particles[0].phi_P(X, t) * C.Particles[1].phi_P(X, t));
       
@@ -1998,11 +1998,11 @@ namespace BoSSS.Application.FSI_Solver {
                 particleDensity = 1.25,
             });
 
-            //C.Particles[0].rotationalVelocityAtIteration[0] = 10;
+            //C.Particles[0].rotationalVelocityAtTimestep[0] = 10;
 
             C.CutCellQuadratureType = Foundation.XDG.XQuadFactoryHelper.MomentFittingVariants.Classic;
 
-            Func<double[], double, double> phiComplete = (X, t) => -1 * (C.Particles[0].phi_P(X, t)* C.Particles[1].phi_P(X, t));
+            //Func<double[], double, double> phiComplete = (X, t) => -1 * (C.Particles[0].phi_P(X, t)* C.Particles[1].phi_P(X, t));
 
             //for (int i = 0;i<C.Particles.Count; i++) {
             //    phiComplete = (X,t) => phiComplete(X,t)*C.Particles[i].phi_P(X,t);
@@ -2012,7 +2012,7 @@ namespace BoSSS.Application.FSI_Solver {
             //Func<double[], double, double> phi = (X, t) => -(X[0] - t+X[1]);
             //C.MovementFunc = phi;         
 
-            C.InitialValues_Evaluators.Add("Phi", X => phiComplete(X, 0));
+            //C.InitialValues_Evaluators.Add("Phi", X => phiComplete(X, 0));
             //C.InitialValues_Evaluators.Add("Phi", X => -1);
             //C.InitialValues.Add("VelocityX#B", X => 1);
             C.InitialValues_Evaluators.Add("VelocityX", X => 0);
