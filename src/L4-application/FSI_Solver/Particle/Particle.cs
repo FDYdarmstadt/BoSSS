@@ -45,6 +45,7 @@ namespace BoSSS.Application.FSI_Solver
         /// </summary>
         protected Particle()
         {
+            // noop
 
         }
         
@@ -80,16 +81,8 @@ namespace BoSSS.Application.FSI_Solver
 
             #region Initial values
             // ============================= 
-            if (startPos == null)
-            {
-                if (Dim == 2)
-                {
-                    startPos = new double[] { 0.0, 0.0 };
-                }
-                else
-                {
-                    startPos = new double[] { 0.0, 0.0, 0.0 };
-                }
+            if (startPos == null) {
+                startPos = new double[Dim];
             }
             positionAtTimestep[0] = startPos;
             positionAtTimestep[1] = startPos;
@@ -102,7 +95,7 @@ namespace BoSSS.Application.FSI_Solver
         }
         #endregion
 
-        #region Particle parameter
+
         #region Collision parameters
         /// <summary>
         /// Check whether any particles is collided with another particle
@@ -311,9 +304,6 @@ namespace BoSSS.Application.FSI_Solver
         /// </summary>       
         public abstract double phi_P(double[] X, double time);
 
-
-        //public Func<double[], double, double> phi_P;
-
         /// <summary>
         /// Sets the gravity in vertical direction, default is 0.0
         /// </summary>
@@ -359,7 +349,6 @@ namespace BoSSS.Application.FSI_Solver
         /// <summary>
         /// Circumference of the current particle.
         /// </summary>
-        [DataMember]
         abstract public double Circumference_P {
             get;
         }
@@ -367,11 +356,9 @@ namespace BoSSS.Application.FSI_Solver
         /// <summary>
         /// Moment of inertia of the current particle.
         /// </summary>
-        [DataMember]
         abstract public double MomentOfInertia_P {
             get;
         }
-        #endregion
         #endregion
 
         #region Administrative tasks
@@ -379,46 +366,6 @@ namespace BoSSS.Application.FSI_Solver
         ParticlePhysics Physics = new ParticlePhysics();
         ParticleAddedDamping AddedDamping = new ParticleAddedDamping();
         ParticleUnderrelaxation Underrelaxation = new ParticleUnderrelaxation();
-        #region obsolete
-        ///// <summary>
-        ///// Clean all Particle iteration histories until a certain length, obsolete?
-        ///// </summary>
-        ///// <param name="length"></param>
-        //public void CleanHistoryIter() {
-        //    if (positionAtIteration.Count > m_HistoryLength)
-        //    {
-        //        for (int j = positionAtIteration.Count; j > m_HistoryLength; j--)
-        //        {
-        //            int tempPos = j - 1;
-        //            positionAtIteration.RemoveAt(tempPos);
-        //            transVelocityAtIteration.RemoveAt(tempPos);
-        //            hydrodynForcesAtIteration.RemoveAt(tempPos);
-        //            rotationalVelocityAtIteration.RemoveAt(tempPos);
-        //            hydrodynTorqueAtIteration.RemoveAt(tempPos);
-        //        }
-        //    }
-        //}
-        ///// <summary>
-        ///// Clean all Particle histories until a certain length, obsolete?
-        ///// </summary>
-        ///// <param name="length"></param>
-        //public void CleanHistory()
-        //{
-        //    if (positionAtTimestep.Count > 4)
-        //    {
-        //        for (int j = positionAtTimestep.Count; j > 4; j--)
-        //        {
-        //            int tempPos = j - 1;
-        //            positionAtTimestep.RemoveAt(tempPos);
-        //            angleAtTimestep.RemoveAt(tempPos);
-        //            transVelocityAtTimestep.RemoveAt(tempPos);
-        //            hydrodynForcesAtTimestep.RemoveAt(tempPos);
-        //            rotationalVelocityAtTimestep.RemoveAt(tempPos);
-        //            hydrodynTorqueAtTimestep.RemoveAt(tempPos);
-        //        }
-        //    }
-        //}
-        #endregion
         #endregion
 
         #region Move particle with current velocity

@@ -1989,7 +1989,7 @@ namespace BoSSS.Foundation.XDG {
         /// </param>
         /// <remarks>
         /// The reference to the subscribed will be "weak" (see
-        /// <see cref="WeakReference{T}"/>) so that garbage collection will not
+        /// <see cref="BoSSS.Platform.WeakReference{T}"/>) so that garbage collection will not
         /// be affected by the subscription.
         /// </remarks>
         public IDisposable Subscribe(IObserver<LevelSetRegions> observer) {

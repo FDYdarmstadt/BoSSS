@@ -53,7 +53,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
             /// <returns>
             /// - outer enumeration: correcponts to domain-decomposition blocks
             /// - inner index: indices within the sub-blocks
-            /// - content: local cell indices which form the respective additive-Schwarz block (<see cref="MultigridOperator."/>
+            /// - content: local cell indices which form the respective additive-Schwarz block (<see cref="MultigridOperator"/>
             /// </returns>
             abstract internal IEnumerable<List<int>> GetBlocking(MultigridOperator op);
 

@@ -128,8 +128,17 @@ namespace BoSSS.Application.FSI_Solver
         //    double alpha = -(angleAtIteration[0]);
         //    phi_P = (X, t) => -(X[0] - positionAtIteration[0][0]).Pow2() + -(X[1] - positionAtIteration[0][1]).Pow2() + radius_P.Pow2();
         //}
+
+        public static int PlotPos_debug;
+
         public override double phi_P(double[] X, double time) {
-            return -(X[0] - positionAtIteration[0][0]).Pow2() + -(X[1] - positionAtIteration[0][1]).Pow2() + radius_P.Pow2();
+            double x0 = positionAtIteration[0][0];
+            double y0 = positionAtIteration[0][1];
+            if(PlotPos_debug > 0) {
+                Console.WriteLine("Particel Pos: " + (new BoSSS.Platform.LinAlg.Vector(x0,y0)).ToString());
+            }
+
+            return -(X[0] - x0).Pow2() + -(X[1] - y0).Pow2() + radius_P.Pow2();
         }
 
         override public CellMask CutCells_P(LevelSetTracker LsTrk)

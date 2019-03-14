@@ -574,21 +574,20 @@ namespace BoSSS.Application.FSI_Solver {
         }
 
         void UpdateLevelSetParticles(double dt) {
-            double phiComplete(double[] X, double t)
-            {
+            double phiComplete(double[] X, double t) {
                 int exp = m_Particles.Count - 1;
                 double temp = Math.Pow(-1, exp);
-                for (int i = 0; i < m_Particles.Count; i++)
-                {
+                for (int i = 0; i < m_Particles.Count; i++) {
                     double phi_P_val = m_Particles[i].phi_P(X, t);
                     if (double.IsNaN(phi_P_val) || double.IsInfinity(phi_P_val))
                         throw new ArithmeticException("Failed level-set formula for particle " + i + ", " + m_Particles[i].GetType().Name);
 
                     temp *= phi_P_val;
-                        
+
                 }
                 return temp;
             }
+            Particle_Sphere.PlotPos_debug = 2;
 
             ScalarFunction function = NonVectorizedScalarFunction.Vectorize(phiComplete, hack_phystime);
             LevSet.ProjectField(function);
@@ -766,7 +765,7 @@ namespace BoSSS.Application.FSI_Solver {
                                 //p.UpdateLevelSetFunction();
                             }
                             PrintResultToConsole(phystime);
-                            #region Get Drag and Lift Coefficiant
+                            
                             //UpdateForcesAndTorque(dt, phystime);
                             double acc = 0;
                             foreach (Particle p in m_Particles) {
@@ -1496,4 +1495,3 @@ namespace BoSSS.Application.FSI_Solver {
 
 
 
-#endregion
