@@ -67,9 +67,11 @@ namespace BoSSS.Application.FSI_Solver {
             }
             positionAtTimestep[0] = startPos;
             positionAtTimestep[1] = startPos;
+            positionAtIteration = positionAtTimestep;
             //From degree to radiant
             angleAtTimestep[0] = startAngl * 2 * Math.PI / 360;
             angleAtTimestep[1] = startAngl * 2 * Math.PI / 360;
+            angleAtIteration = angleAtTimestep;
             //transVelocityAtIteration[0][0] = 2e-8;
 
             UpdateLevelSetFunction();

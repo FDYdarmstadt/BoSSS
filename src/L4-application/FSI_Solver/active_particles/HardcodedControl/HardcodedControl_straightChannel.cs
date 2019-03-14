@@ -30,7 +30,7 @@ namespace BoSSS.Application.FSI_Solver
 {
     public class HardcodedControl_straightChannel : IBM_Solver.HardcodedTestExamples
     {
-        public static FSI_Control ActiveRod_noBackroundFlow(string _DbPath = null, int k = 2, double VelXBase = 0.0, double stressM = 1e6, double cellAgg = 0.2, double muA = 1e5, double timestepX = 1e-3)
+        public static FSI_Control ActiveRod_noBackroundFlow(string _DbPath = null, int k = 2, double VelXBase = 0.0, double stressM = 1e5, double cellAgg = 0.2, double muA = 1e4, double timestepX = 1e-3)
         {
             FSI_Control C = new FSI_Control();
 
@@ -65,11 +65,11 @@ namespace BoSSS.Application.FSI_Solver
                 int q = new int(); // #Cells in x-dircetion + 1
                 int r = new int(); // #Cells in y-dircetion + 1
 
-                q = 16;
-                r = 8;
+                q = 75;
+                r = 20;
 
-                double[] Xnodes = GenericBlas.Linspace(-8 * BaseSize, 8 * BaseSize, q);
-                double[] Ynodes = GenericBlas.Linspace(-4 * BaseSize, 4 * BaseSize, r);
+                double[] Xnodes = GenericBlas.Linspace(-2 * BaseSize, 13 * BaseSize, q);
+                double[] Ynodes = GenericBlas.Linspace(-2 * BaseSize, 2 * BaseSize, r);
 
                 var grd = Grid2D.Cartesian2DGrid(Xnodes, Ynodes, periodicX: false, periodicY: false);
 
@@ -82,13 +82,13 @@ namespace BoSSS.Application.FSI_Solver
                 grd.DefineEdgeTags(delegate (double[] X)
                 {
                     byte et = 0;
-                    if (Math.Abs(X[0] - (-8 * BaseSize)) <= 1.0e-8)
+                    if (Math.Abs(X[0] - (-2 * BaseSize)) <= 1.0e-8)
                         et = 1;
-                    if (Math.Abs(X[0] + (-8 * BaseSize)) <= 1.0e-8)
+                    if (Math.Abs(X[0] + (-13 * BaseSize)) <= 1.0e-8)
                         et = 2;
-                    if (Math.Abs(X[1] - (-4 * BaseSize)) <= 1.0e-8)
+                    if (Math.Abs(X[1] - (-2 * BaseSize)) <= 1.0e-8)
                         et = 3;
-                    if (Math.Abs(X[1] + (-4 * BaseSize)) <= 1.0e-8)
+                    if (Math.Abs(X[1] + (-2 * BaseSize)) <= 1.0e-8)
                         et = 4;
 
                     Debug.Assert(et != 0);
@@ -118,7 +118,7 @@ namespace BoSSS.Application.FSI_Solver
 
             // Fluid Properties
             // =============================
-            C.PhysicalParameters.rho_A = 0.9982e0;//pg/(mum^3)
+            C.PhysicalParameters.rho_A = 1;//pg/(mum^3)
             C.PhysicalParameters.mu_A = muA;//pg(mum*s)
             C.PhysicalParameters.Material = true;
 
@@ -130,15 +130,15 @@ namespace BoSSS.Application.FSI_Solver
             int numOfParticles = 1;
             for (int d = 0; d < numOfParticles; d++)
             {
-                C.Particles.Add(new Particle_Ellipsoid(new double[] { 0 , 0.0 }, startAngl: 0)
+                C.Particles.Add(new Particle_Ellipsoid(new double[] { 1.0 , 0.0 }, startAngl: 0)
                 {
                     particleDensity = 0,
                     activeParticle = true,
                     active_stress_P = stressM,
-                    thickness_P = 1 * BaseSize,
-                    length_P = 4 * BaseSize,
+                    thickness_P = 0.2 * BaseSize,
+                    length_P = 1 * BaseSize,
                     AddaptiveUnderrelaxation = true,// set true if you want to define a constant underrelaxation (not recommended)
-                    underrelaxation_factor = 4,// underrelaxation with [factor * 10^exponent]
+                    underrelaxation_factor = 1,// underrelaxation with [factor * 10^exponent]
                     ClearSmallValues = true,
                     neglectAddedDamping = false
             });
@@ -191,7 +191,7 @@ namespace BoSSS.Application.FSI_Solver
             C.LinearSolver.NoOfMultigridLevels = 1;
             C.LinearSolver.MaxSolverIterations = 1000;
             C.LinearSolver.MinSolverIterations = 1;
-            C.ForceAndTorque_ConvergenceCriterion = 10;
+            C.ForceAndTorque_ConvergenceCriterion = 1;
             C.LSunderrelax = 1.0;
             
 

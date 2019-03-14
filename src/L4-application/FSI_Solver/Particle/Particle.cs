@@ -146,7 +146,7 @@ namespace BoSSS.Application.FSI_Solver
         /// Underrelaxation factor
         /// </summary>
         [DataMember]
-        public int underrelaxation_factor = 1;
+        public double underrelaxation_factor = 1;
 
         /// <summary>
         /// Set true if you want to delete all values of the Forces anf Torque smaller than convergenceCriterion*1e-2
