@@ -97,7 +97,7 @@ namespace BoSSS.Application.FSI_Solver
             angleAtTimestep[0] = startAngl * 2 * Math.PI / 360;
             angleAtTimestep[1] = startAngl * 2 * Math.PI / 360;
 
-            UpdateLevelSetFunction();
+            //UpdateLevelSetFunction();
             #endregion
         }
         #endregion
@@ -309,7 +309,10 @@ namespace BoSSS.Application.FSI_Solver
         /// <summary>
         /// Level set function describing the particle.
         /// </summary>       
-        public Func<double[], double, double> phi_P;
+        public abstract double phi_P(double[] X, double time);
+
+
+        //public Func<double[], double, double> phi_P;
 
         /// <summary>
         /// Sets the gravity in vertical direction, default is 0.0
@@ -460,7 +463,7 @@ namespace BoSSS.Application.FSI_Solver
         }
         #endregion
         
-        abstract public void UpdateLevelSetFunction();
+        //abstract public void UpdateLevelSetFunction();
 
         public void PredictTranslationalAccelaration()
         {

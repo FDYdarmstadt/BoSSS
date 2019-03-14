@@ -580,7 +580,12 @@ namespace BoSSS.Application.FSI_Solver {
                 double temp = Math.Pow(-1, exp);
                 for (int i = 0; i < m_Particles.Count; i++)
                 {
-                    temp *= m_Particles[i].phi_P(X, t);
+                    double phi_P_val = m_Particles[i].phi_P(X, t);
+                    if (double.IsNaN(phi_P_val) || double.IsInfinity(phi_P_val))
+                        throw new ArithmeticException("Failed level-set formula for particle " + i + ", " + m_Particles[i].GetType().Name);
+
+                    temp *= phi_P_val;
+                        
                 }
                 return temp;
             }
@@ -758,7 +763,7 @@ namespace BoSSS.Application.FSI_Solver {
                                 p.ComputeParticleRe(this.Control.PhysicalParameters.mu_A);
                                 p.CalculateParticlePosition(dt, this.Control.PhysicalParameters.rho_A);
                                 p.CalculateParticleAngle(dt);
-                                p.UpdateLevelSetFunction();
+                                //p.UpdateLevelSetFunction();
                             }
                             PrintResultToConsole(phystime);
                             #region Get Drag and Lift Coefficiant

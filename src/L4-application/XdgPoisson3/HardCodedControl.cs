@@ -590,7 +590,7 @@ namespace BoSSS.Application.XdgPoisson3 {
             C.InitialValues_Evaluators.Add("rhs#B", X => Math.Sin((X[0] + 1.0) * 3));
 
 
-            /// Problem Definition
+            // Problem Definition
             C.FieldOptions.Add("Phi", new FieldOpts() {
                 Degree = 3,
                 SaveToDB = FieldOpts.SaveToDBOpt.TRUE

@@ -83,7 +83,7 @@ namespace BoSSS.Application.FSI_Solver
             angleAtTimestep[1] = startAngl * 2 * Math.PI / 360;
             //transVelocityAtIteration[0][0] = 2e-8;
 
-            UpdateLevelSetFunction();
+            //UpdateLevelSetFunction();
             #endregion
         }
 
@@ -123,11 +123,15 @@ namespace BoSSS.Application.FSI_Solver
                 return (1 / 2.0) * (Mass_P * radius_P * radius_P);
             }
         }
-        override public void UpdateLevelSetFunction()
-        {
-            double alpha = -(angleAtIteration[0]);
-            phi_P = (X, t) => -(X[0] - positionAtIteration[0][0]).Pow2() + -(X[1] - positionAtIteration[0][1]).Pow2() + radius_P.Pow2();
+        //override public void UpdateLevelSetFunction()
+        //{
+        //    double alpha = -(angleAtIteration[0]);
+        //    phi_P = (X, t) => -(X[0] - positionAtIteration[0][0]).Pow2() + -(X[1] - positionAtIteration[0][1]).Pow2() + radius_P.Pow2();
+        //}
+        public override double phi_P(double[] X, double time) {
+            return -(X[0] - positionAtIteration[0][0]).Pow2() + -(X[1] - positionAtIteration[0][1]).Pow2() + radius_P.Pow2();
         }
+
         override public CellMask CutCells_P(LevelSetTracker LsTrk)
         {
             // tolerance is very important
