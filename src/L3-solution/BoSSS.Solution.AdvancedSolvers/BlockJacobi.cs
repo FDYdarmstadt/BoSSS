@@ -58,15 +58,33 @@ namespace BoSSS.Solution.AdvancedSolvers {
             }
              */
 
-            if (op.Mapping.MaximalLength != op.Mapping.MinimalLength)
-                // 'BlockDiagonalMatrix' should be completely replaced by 'BlockMsrMatrix'
-                throw new NotImplementedException("todo - Block Jacobi for variable block Sizes");
+            //if (op.Mapping.MaximalLength != op.Mapping.MinimalLength)
+            //    // 'BlockDiagonalMatrix' should be completely replaced by 'BlockMsrMatrix'
+            //    throw new NotImplementedException("todo - Block Jacobi for variable block Sizes");
 
-            
-            int Nblk = op.Mapping.MaximalLength;
-            Diag = new BlockDiagonalMatrix(M.ToMsrMatrix(), Nblk, Nblk);
-            invDiag = Diag.Invert();
+            Diag = new BlockMsrMatrix(M._RowPartitioning, M._ColPartitioning);
+            invDiag = new BlockMsrMatrix(M._RowPartitioning, M._ColPartitioning);
+            int Jloc = MgMap.LocalNoOfBlocks;
+            int j0 = MgMap.FirstBlock;
+            MultidimensionalArray temp = null;
+            for (int j = 0; j < Jloc; j++) {
+                int jBlock = j + j0;
+                int Nblk = MgMap.GetBlockLen(jBlock);
+                int i0 = MgMap.GetBlockI0(jBlock);
+
+                if (temp == null || temp.NoOfCols != Nblk)
+                    temp = MultidimensionalArray.Create(Nblk, Nblk);
+
+                M.ReadBlock(i0, i0, temp);
+                Diag.AccBlock(i0, i0, 1.0, temp, 0.0);
+
+                temp.Invert();
+
+                invDiag.AccBlock(i0, i0, 1.0, temp, 0.0);
+            }
+#if DEBUG
             invDiag.CheckForNanOrInfM();
+#endif
         }
 
         public Action<int, double[], double[], MultigridOperator> IterationCallback {
@@ -75,8 +93,8 @@ namespace BoSSS.Solution.AdvancedSolvers {
         }
 
         BlockMsrMatrix Mtx;
-        BlockDiagonalMatrix Diag;
-        BlockDiagonalMatrix invDiag;
+        BlockMsrMatrix Diag;
+        BlockMsrMatrix invDiag;
         //double[] diag;
 
         /// <summary>
@@ -92,8 +110,6 @@ namespace BoSSS.Solution.AdvancedSolvers {
         /// <summary>
         /// Jacobi iteration
         /// </summary>
-        /// <param name="l">muligrid level</param>
-        /// <param name="NoOfIter">number of Jacobi-Iterations</param>
         public void Solve<U, V>(U xl, V bl)
             where U : IList<double>
             where V : IList<double> {

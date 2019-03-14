@@ -34,10 +34,11 @@ namespace BoSSS.Application.FSI_Solver
         {
 
         }
-        public Particle_Squircle(int Dim, int HistoryLength, double[] startPos = null, double startAngl = 0) : base(Dim, HistoryLength, startPos, startAngl)
+        public Particle_Squircle(int Dim, double[] startPos = null, double startAngl = 0) : base(Dim, startPos, startAngl)
         {
             #region Particle history
-            // =============================   
+            // =============================  
+            int HistoryLength = 4;
             for (int i = 0; i < HistoryLength; i++)
             {
                 positionAtIteration.Add(new double[Dim]);
@@ -82,7 +83,7 @@ namespace BoSSS.Application.FSI_Solver
             angleAtTimestep[1] = startAngl * 2 * Math.PI / 360;
             //transVelocityAtIteration[0][0] = 2e-8;
 
-            UpdateLevelSetFunction();
+            //UpdateLevelSetFunction();
             #endregion
         }
 
@@ -95,7 +96,7 @@ namespace BoSSS.Application.FSI_Solver
         /// <summary>
         /// %
         /// </summary>
-        protected override double averageDistance {
+        protected override double AverageDistance {
             get {
                 return radius_P;
             }
@@ -129,12 +130,16 @@ namespace BoSSS.Application.FSI_Solver
                 return (1 / 2.0) * (Mass_P * radius_P * radius_P);
             }
         }
-        override public void UpdateLevelSetFunction()
-        {
+        //override public void UpdateLevelSetFunction()
+        //{
+        //    double alpha = -(angleAtIteration[0]);
+        //    phi_P = (X, t) => -((((X[0] - positionAtIteration[0][0]) * Math.Cos(alpha) - (X[1] - positionAtIteration[0][1]) * Math.Sin(alpha)).Pow(4) + ((X[0] - positionAtIteration[0][0]) * Math.Sin(alpha) + (X[1] - positionAtIteration[0][1]) * Math.Cos(alpha)).Pow(4)) - radius_P.Pow(4));
+        //}
+        public override double phi_P(double[] X, double time) {
             double alpha = -(angleAtIteration[0]);
-            phi_P = (X, t) => -((((X[0] - positionAtIteration[0][0]) * Math.Cos(alpha) - (X[1] - positionAtIteration[0][1]) * Math.Sin(alpha)).Pow(4) + ((X[0] - positionAtIteration[0][0]) * Math.Sin(alpha) + (X[1] - positionAtIteration[0][1]) * Math.Cos(alpha)).Pow(4)) - radius_P.Pow(4));
+            return -((((X[0] - positionAtIteration[0][0]) * Math.Cos(alpha) - (X[1] - positionAtIteration[0][1]) * Math.Sin(alpha)).Pow(4) + ((X[0] - positionAtIteration[0][0]) * Math.Sin(alpha) + (X[1] - positionAtIteration[0][1]) * Math.Cos(alpha)).Pow(4)) - radius_P.Pow(4));
         }
-        override public CellMask cutCells_P(LevelSetTracker LsTrk)
+        override public CellMask CutCells_P(LevelSetTracker LsTrk)
         {
             // tolerance is very important
             var radiusTolerance = radius_P + LsTrk.GridDat.Cells.h_minGlobal;// +2.0*Math.Sqrt(2*LsTrk.GridDat.Cells.h_minGlobal.Pow2());

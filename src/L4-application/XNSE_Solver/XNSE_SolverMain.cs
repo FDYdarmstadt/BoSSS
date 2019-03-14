@@ -1181,9 +1181,9 @@ namespace BoSSS.Application.XNSE_Solver {
                     }
 
 
-                /// +++++++++++++++++++++++++++++++++++++
-                /// compute/check time step restrictions
-                /// +++++++++++++++++++++++++++++++++++++
+                // +++++++++++++++++++++++++++++++++++++
+                // compute/check time step restrictions
+                // +++++++++++++++++++++++++++++++++++++
 
                 dt = base.Control.dtFixed;
 

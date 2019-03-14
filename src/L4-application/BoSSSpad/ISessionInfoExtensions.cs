@@ -997,7 +997,10 @@ namespace BoSSS.Foundation.IO {
         /// <param name="xAxis_Is_hOrDof">
         /// - true: the x-axis (<see cref="Plot2Ddata.XYvalues.Abscissas"/>) is the grid resolution \f$ h \f$
         /// - false: the x-axis (<see cref="Plot2Ddata.XYvalues.Abscissas"/>) is the number of degrees-of-freedom
-        /// </param>        
+        /// </param>     
+        /// <param name="normType">
+        /// H1, L2, etc.
+        /// </param>
         /// <returns>
         /// A data set containing information about the grid resolution and the
         /// corresponding errors with respect to the finest corresponding grid,
@@ -1006,10 +1009,10 @@ namespace BoSSS.Foundation.IO {
         /// estimated error of zero (by definition) and is thus excluded from
         /// the result.
         /// </returns>
-        public static Plot2Ddata ToEstimatedGridConvergenceData(this IEnumerable<ISessionInfo> sessions, string fieldName, bool xAxis_Is_hOrDof = true) {
+        public static Plot2Ddata ToEstimatedGridConvergenceData(this IEnumerable<ISessionInfo> sessions, string fieldName, bool xAxis_Is_hOrDof = true, NormType normType = NormType.L2_approximate) {
             ISessionInfo[] _session = sessions.ToArray();
             ITimestepInfo[] _timesteps = sessions.Select(s => s.Timesteps.Last()).ToArray();
-            return _timesteps.ToEstimatedGridConvergenceData(fieldName, xAxis_Is_hOrDof);
+            return _timesteps.ToEstimatedGridConvergenceData(fieldName, xAxis_Is_hOrDof, normType);
         }
 
         /// <summary>

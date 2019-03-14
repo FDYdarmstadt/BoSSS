@@ -330,6 +330,15 @@ namespace BoSSS.Foundation.Quadrature {
 
         int[] m_CustomTimers_RootPointer = new int[0];
 
+        /// <summary>
+        /// - if smaller or equal 0, ignored; (default) 
+        /// - otherwise, an override to the global variable <see cref="Quadrature_Bulksize.CHUNK_DATA_LIMIT"/>
+        /// </summary>
+        public int ChunkDataLimitOverride {
+            get;
+            set;
+        }
+
         
         /// <summary>
         /// performs an integration over cells or edges in the composite rule provided to the constructor;
@@ -379,7 +388,10 @@ namespace BoSSS.Foundation.Quadrature {
                     int ItemSize = m_TotalNoOfIntegralsPerItem * NoOfNodes;
                     if(ItemSize <= 0)
                         continue;
-                    int MaxChunkLength =  Quadrature_Bulksize.CHUNK_DATA_LIMIT / ItemSize;
+                    int cdl = Quadrature_Bulksize.CHUNK_DATA_LIMIT;
+                    if (ChunkDataLimitOverride > 0)
+                        cdl = ChunkDataLimitOverride;
+                    int MaxChunkLength = Quadrature_Bulksize.CHUNK_DATA_LIMIT / ItemSize;
                     if(MaxChunkLength < 1)
                         MaxChunkLength = 1;
 

@@ -161,6 +161,10 @@
       <Project>{e56b9ce4-14dc-4256-a337-46e5d298b722}</Project>
       <Name>BoSSS.Solution.NSECommon</Name>
     </ProjectReference>
+    <ProjectReference Include="..\..\L3-solution\BoSSS.Solution.Statistic\BoSSS.Solution.Statistic.csproj">
+      <Project>{45bca5f9-27e7-43c0-b021-4312bf442c7d}</Project>
+      <Name>BoSSS.Solution.Statistic</Name>
+    </ProjectReference>
     <ProjectReference Include="..\..\L3-solution\BoSSS.Solution.Tecplot\BoSSS.Solution.Tecplot.csproj">
       <Project>{D0546422-EC92-4964-82E9-8EE819A2F786}</Project>
       <Name>BoSSS.Solution.Tecplot</Name>
