@@ -41,6 +41,7 @@ using BoSSS.Foundation.Grid.Aggregation;
 using BoSSS.Platform.LinAlg;
 using BoSSS.Solution.Gnuplot;
 using BoSSS.Solution.Control;
+using BoSSS.Solution.Statistic;
 
 namespace BoSSS.Application.SipPoisson {
 
@@ -75,6 +76,11 @@ namespace BoSSS.Application.SipPoisson {
         private SinglePhaseField ResiualKP1;
 
         /// <summary>
+        /// error of the numerical solution
+        /// </summary>
+        private SinglePhaseField Error;
+
+        /// <summary>
         /// DG field instantiation
         /// </summary>
         protected override void CreateFields() {
@@ -82,6 +88,9 @@ namespace BoSSS.Application.SipPoisson {
 
             ResiualKP1 = new SinglePhaseField(new Basis(this.GridData, T.Basis.Degree + 1), "ResidualKP1");
             base.IOFields.Add(ResiualKP1);
+
+            Error = new SinglePhaseField(T.Basis, "Error");
+            base.m_IOFields.Add(Error);
         }
 
         /*
@@ -252,8 +261,14 @@ namespace BoSSS.Application.SipPoisson {
                 base.IOFields.Add(c);
                 iLevel++;
             }
-         
+
+            TexactFine = (SinglePhaseField)(GetDatabase().Sessions.First().Timesteps.Last().Fields.Where(fi => fi.Identification == "T"));
         }
+
+        /// <summary>
+        /// Hack - some precise solution on a finer grid.
+        /// </summary>
+        SinglePhaseField TexactFine;
 
         /// <summary>
         /// LHS of the equation <see cref="LaplaceMtx"/>*<see cref="T"/> + <see cref="LaplaceAffine"/> = <see cref="RHS"/>.
@@ -507,6 +522,23 @@ namespace BoSSS.Application.SipPoisson {
         /// </summary>
         protected override void AdaptMesh(int TimestepNo, out GridCommons newGrid, out GridCorrelation old2NewGrid) {
             if (this.Control.AdaptiveMeshRefinement && TimestepNo > 1) {
+
+                // compute error against fine solution
+                {
+                    Error.Clear();
+                    Error.Acc(1.0, T);
+
+                    var eval = new FieldEvaluation((GridData)(TexactFine.GridDat));
+
+                    void FineEval(MultidimensionalArray input, MultidimensionalArray output) {
+                        int L = input.GetLength(0);
+                        Debug.Assert(output.GetLength(0) == L);
+
+                        eval.Evaluate(1.0, new DGField[] { TexactFine }, input, 0.0, output.ResizeShallow(L, 1));
+                    }
+
+                    Error.ProjectField(-1.0, FineEval);
+                }
 
                 int oldJ = this.GridData.CellPartitioning.TotalLength;
 
@@ -1226,7 +1258,7 @@ namespace BoSSS.Application.SipPoisson {
                 }
             }
 
-            DGField[] Fields = new DGField[] { T, Tex, RHS, ResiualKP1 };
+            DGField[] Fields = new DGField[] { T, Tex, RHS, ResiualKP1, Error };
             Fields = Fields.Cat(this.MGColoring);
             BoSSS.Solution.Tecplot.Tecplot.PlotFields(Fields, "poisson" + timestepNo + caseStr, phystime, superSampling);
         }

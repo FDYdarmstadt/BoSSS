@@ -74,7 +74,7 @@ namespace BoSSS.Application.FSI_Solver {
             angleAtIteration = angleAtTimestep;
             //transVelocityAtIteration[0][0] = 2e-8;
 
-            UpdateLevelSetFunction();
+            //UpdateLevelSetFunction();
             #endregion
         }
 
@@ -121,14 +121,21 @@ namespace BoSSS.Application.FSI_Solver {
                 return (1 / 4.0) * (Mass_P * (length_P * length_P + thickness_P * thickness_P));
             }
         }
-        override public void UpdateLevelSetFunction() {
+        //override public void UpdateLevelSetFunction() {
+        //    double alpha = -(angleAtIteration[0]);
+        //    phi_P = delegate (double[] X, double t) {
+        //        var r = -((((X[0] - positionAtIteration[0][0]) * Math.Cos(alpha) - (X[1] - positionAtIteration[0][1]) * Math.Sin(alpha)).Pow2()) / length_P.Pow2()) + -(((X[0] - positionAtIteration[0][0]) * Math.Sin(alpha) + (X[1] - positionAtIteration[0][1]) * Math.Cos(alpha)).Pow2() / thickness_P.Pow2()) + 1.0;
+        //        if (double.IsNaN(r) || double.IsInfinity(r))
+        //            throw new ArithmeticException();
+        //        return r;
+        //    };
+        //}
+        public override double phi_P(double[] X, double time) {
             double alpha = -(angleAtIteration[0]);
-            phi_P = delegate (double[] X, double t) {
-                var r = -((((X[0] - positionAtIteration[0][0]) * Math.Cos(alpha) - (X[1] - positionAtIteration[0][1]) * Math.Sin(alpha)).Pow2()) / length_P.Pow2()) + -(((X[0] - positionAtIteration[0][0]) * Math.Sin(alpha) + (X[1] - positionAtIteration[0][1]) * Math.Cos(alpha)).Pow2() / thickness_P.Pow2()) + 1.0;
-                if (double.IsNaN(r) || double.IsInfinity(r))
-                    throw new ArithmeticException();
-                return r;
-            };
+            var r = -((((X[0] - positionAtIteration[0][0]) * Math.Cos(alpha) - (X[1] - positionAtIteration[0][1]) * Math.Sin(alpha)).Pow2()) / length_P.Pow2()) + -(((X[0] - positionAtIteration[0][0]) * Math.Sin(alpha) + (X[1] - positionAtIteration[0][1]) * Math.Cos(alpha)).Pow2() / thickness_P.Pow2()) + 1.0;
+            if (double.IsNaN(r) || double.IsInfinity(r))
+                throw new ArithmeticException();
+            return r;
         }
         override public CellMask CutCells_P(LevelSetTracker LsTrk) {
             // tolerance is very important

@@ -85,7 +85,7 @@ namespace BoSSS.Application.FSI_Solver
             angleAtTimestep[1] = startAngl * 2 * Math.PI / 360;
             //transVelocityAtIteration[0][0] = 2e-8;
 
-            UpdateLevelSetFunction();
+            //UpdateLevelSetFunction();
             #endregion
         }
 
@@ -139,17 +139,26 @@ namespace BoSSS.Application.FSI_Solver
                 return (1 / 4.0) * Mass_P * (length_P * length_P + thickness_P * thickness_P);
             }
         }
-        override public void UpdateLevelSetFunction()
-        {
+        //override public void UpdateLevelSetFunction()
+        //{
+        //    double alpha = -(angleAtIteration[0]);
+        //    phi_P = delegate (double[] X, double t) {
+        //        double r;
+        //        r = -Math.Pow(((X[0] - positionAtIteration[0][0]) * Math.Cos(alpha) - (X[1] - positionAtIteration[0][1]) * Math.Sin(alpha)) / length_P, superEllipsoidExponent) + -Math.Pow(((X[0] - positionAtIteration[0][0]) * Math.Sin(alpha) + (X[1] - positionAtIteration[0][1]) * Math.Cos(alpha)) / thickness_P, 
+        //            superEllipsoidExponent) + 1;
+        //        if (double.IsNaN(r) || double.IsInfinity(r))
+        //            throw new ArithmeticException();
+        //        return r;
+        //    };
+        //}
+        public override double phi_P(double[] X, double time) {
             double alpha = -(angleAtIteration[0]);
-            phi_P = delegate (double[] X, double t) {
-                double r;
-                r = -Math.Pow(((X[0] - positionAtIteration[0][0]) * Math.Cos(alpha) - (X[1] - positionAtIteration[0][1]) * Math.Sin(alpha)) / length_P, superEllipsoidExponent) + -Math.Pow(((X[0] - positionAtIteration[0][0]) * Math.Sin(alpha) + (X[1] - positionAtIteration[0][1]) * Math.Cos(alpha)) / thickness_P, 
-                    superEllipsoidExponent) + 1;
-                if (double.IsNaN(r) || double.IsInfinity(r))
-                    throw new ArithmeticException();
-                return r;
-            };
+            double r;
+            r = -Math.Pow(((X[0] - positionAtIteration[0][0]) * Math.Cos(alpha) - (X[1] - positionAtIteration[0][1]) * Math.Sin(alpha)) / length_P, superEllipsoidExponent) + -Math.Pow(((X[0] - positionAtIteration[0][0]) * Math.Sin(alpha) + (X[1] - positionAtIteration[0][1]) * Math.Cos(alpha)) / thickness_P,
+                superEllipsoidExponent) + 1;
+            if (double.IsNaN(r) || double.IsInfinity(r))
+                throw new ArithmeticException();
+            return r;
         }
         override public CellMask CutCells_P(LevelSetTracker LsTrk)
         {

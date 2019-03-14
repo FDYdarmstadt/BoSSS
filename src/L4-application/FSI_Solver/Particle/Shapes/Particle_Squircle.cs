@@ -83,7 +83,7 @@ namespace BoSSS.Application.FSI_Solver
             angleAtTimestep[1] = startAngl * 2 * Math.PI / 360;
             //transVelocityAtIteration[0][0] = 2e-8;
 
-            UpdateLevelSetFunction();
+            //UpdateLevelSetFunction();
             #endregion
         }
 
@@ -130,10 +130,14 @@ namespace BoSSS.Application.FSI_Solver
                 return (1 / 2.0) * (Mass_P * radius_P * radius_P);
             }
         }
-        override public void UpdateLevelSetFunction()
-        {
+        //override public void UpdateLevelSetFunction()
+        //{
+        //    double alpha = -(angleAtIteration[0]);
+        //    phi_P = (X, t) => -((((X[0] - positionAtIteration[0][0]) * Math.Cos(alpha) - (X[1] - positionAtIteration[0][1]) * Math.Sin(alpha)).Pow(4) + ((X[0] - positionAtIteration[0][0]) * Math.Sin(alpha) + (X[1] - positionAtIteration[0][1]) * Math.Cos(alpha)).Pow(4)) - radius_P.Pow(4));
+        //}
+        public override double phi_P(double[] X, double time) {
             double alpha = -(angleAtIteration[0]);
-            phi_P = (X, t) => -((((X[0] - positionAtIteration[0][0]) * Math.Cos(alpha) - (X[1] - positionAtIteration[0][1]) * Math.Sin(alpha)).Pow(4) + ((X[0] - positionAtIteration[0][0]) * Math.Sin(alpha) + (X[1] - positionAtIteration[0][1]) * Math.Cos(alpha)).Pow(4)) - radius_P.Pow(4));
+            return -((((X[0] - positionAtIteration[0][0]) * Math.Cos(alpha) - (X[1] - positionAtIteration[0][1]) * Math.Sin(alpha)).Pow(4) + ((X[0] - positionAtIteration[0][0]) * Math.Sin(alpha) + (X[1] - positionAtIteration[0][1]) * Math.Cos(alpha)).Pow(4)) - radius_P.Pow(4));
         }
         override public CellMask CutCells_P(LevelSetTracker LsTrk)
         {
