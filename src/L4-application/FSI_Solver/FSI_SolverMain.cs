@@ -547,12 +547,12 @@ namespace BoSSS.Application.FSI_Solver {
                     // forces and torque of the previous iteration
                     acc_force_P_x_old += p.hydrodynForcesAtTimestep[1][0];
                     acc_force_P_y_old += p.hydrodynForcesAtTimestep[1][1];
-                    acc_torque_P_old += p.hydrodynTorqueAtIteration[1];
+                    acc_torque_P_old += p.hydrodynTorqueAtTimestep[1];
 
                     // forces and torque of the current iteration
                     acc_force_P_x += p.hydrodynForcesAtTimestep[0][0];
                     acc_force_P_y += p.hydrodynForcesAtTimestep[0][1];
-                    acc_torque_P += p.hydrodynTorqueAtIteration[0];
+                    acc_torque_P += p.hydrodynTorqueAtTimestep[0];
                     iterationCounter = p.iteration_counter_P;
                 }
                 // first iteration, to ensure at least two iterations per timestep
@@ -630,7 +630,7 @@ namespace BoSSS.Application.FSI_Solver {
             Console.WriteLine("Total-KineticEnergy in System:  " + (totalKE[0] + totalKE[1] + totalKE[2]));
 
             force = m_Particles[0].hydrodynForcesAtTimestep[0];
-            torque = m_Particles[0].hydrodynTorqueAtIteration[0];
+            torque = m_Particles[0].hydrodynTorqueAtTimestep[0];
             xPos = m_Particles[0].positionAtTimestep[0][0];
             yPos = m_Particles[0].positionAtTimestep[0][1];
             ang = m_Particles[0].angleAtTimestep[0];
@@ -761,7 +761,7 @@ namespace BoSSS.Application.FSI_Solver {
                             //UpdateForcesAndTorque(dt, phystime);
                             double acc = 0;
                             foreach (Particle p in m_Particles) {
-                                acc += (p.hydrodynForcesAtTimestep[0][0] - p.hydrodynForcesAtTimestep[1][0]).Pow2() + (p.hydrodynForcesAtTimestep[0][1] - p.hydrodynForcesAtTimestep[1][1]).Pow2() + (p.hydrodynTorqueAtIteration[0] - p.hydrodynTorqueAtIteration[1]).Pow2();
+                                acc += (p.hydrodynForcesAtTimestep[0][0] - p.hydrodynForcesAtTimestep[1][0]).Pow2() + (p.hydrodynForcesAtTimestep[0][1] - p.hydrodynForcesAtTimestep[1][1]).Pow2() + (p.hydrodynTorqueAtTimestep[0] - p.hydrodynTorqueAtTimestep[1]).Pow2();
                             }
                             posResidual_splitting = Math.Sqrt(acc);
                             Console.WriteLine("Fully coupled system, number of iterations:  " + iteration_counter);
@@ -1012,11 +1012,11 @@ namespace BoSSS.Application.FSI_Solver {
                                     collisionForce.ScaleV(-100.0);
                                     collisionForceP1.ScaleV(-100.0);
                                     particle0.hydrodynForcesAtTimestep[0].AccV(-1, collisionForce);
-                                    //particle0.hydrodynTorqueAtIteration[0] += 100 * (collisionForce[0] * (tempPoint_P0[0] - particle0.positionAtTimestep[0][0]) + collisionForce[1] * (tempPoint_P0[1] - particle0.positionAtTimestep[0][1]));
+                                    //particle0.hydrodynTorqueAtTimestep[0] += 100 * (collisionForce[0] * (tempPoint_P0[0] - particle0.positionAtTimestep[0][0]) + collisionForce[1] * (tempPoint_P0[1] - particle0.positionAtTimestep[0][1]));
                                     particle1.hydrodynForcesAtTimestep[0].AccV(1, collisionForceP1);
-                                    //particle1.hydrodynTorqueAtIteration[0] += -100 * (collisionForceP1[0] * (tempPoint_P1[0] - particle1.positionAtTimestep[0][0]) + collisionForceP1[1] * (tempPoint_P1[1] - particle1.positionAtTimestep[0][1]));
+                                    //particle1.hydrodynTorqueAtTimestep[0] += -100 * (collisionForceP1[0] * (tempPoint_P1[0] - particle1.positionAtTimestep[0][0]) + collisionForceP1[1] * (tempPoint_P1[1] - particle1.positionAtTimestep[0][1]));
                                     Console.WriteLine("Collision information: Particles coming close, force " + collisionForce.L2Norm());
-                                    Console.WriteLine("Collision information: Particles coming close, torque " + particle1.hydrodynTorqueAtIteration[0]);
+                                    Console.WriteLine("Collision information: Particles coming close, torque " + particle1.hydrodynTorqueAtTimestep[0]);
 
                                     if (realDistance <= 1.5 * hmin) {
                                         Console.WriteLine("Entering overlapping loop....");
@@ -1249,7 +1249,7 @@ namespace BoSSS.Application.FSI_Solver {
 
                         collisionForce.ScaleV(100.0);
                         particle.hydrodynForcesAtTimestep[0].AccV(1, collisionForce);
-                        particle.hydrodynTorqueAtIteration[0] -= (collisionForce[0] * (tempPoint[0] - particle.positionAtTimestep[0][0]) + collisionForce[1] * (tempPoint[1] - particle.positionAtTimestep[0][1]));
+                        particle.hydrodynTorqueAtTimestep[0] -= (collisionForce[0] * (tempPoint[0] - particle.positionAtTimestep[0][0]) + collisionForce[1] * (tempPoint[1] - particle.positionAtTimestep[0][1]));
                         Console.WriteLine("Collision information: Wall overlapping, force X " + collisionForce[0]);
                         Console.WriteLine("Collision information: Wall overlapping, force Y " + collisionForce[1]);
 
