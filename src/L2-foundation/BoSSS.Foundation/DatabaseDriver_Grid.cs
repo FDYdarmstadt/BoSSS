@@ -1,5 +1,6 @@
 ﻿using System;
 using System.IO;
+using System.Collections.Generic;
 using System.Linq;
 using BoSSS.Foundation.Grid;
 using ilPSP;
@@ -56,30 +57,31 @@ namespace BoSSS.Foundation.IO
         /// Inidicates that an equivalent grid was found.
         /// </param>
         /// <param name="database"></param>
-        public Guid SaveGridIfUnique(ref IGrid _grd, out bool EquivalentGridFound, IDatabaseInfo database)
+        public Guid SaveGridIfUnique(ref IGrid grid, out bool EquivalentGridFound, IDatabaseInfo database)
         {
             using (new FuncTrace())
             {
-                GridCommons grd = (GridCommons)_grd;
-
                 var Grids = database.Grids;
                 foreach (var GrdInf in Grids)
                 {
-                    GridCommons GrdInDatabase = (Grid.Classic.GridCommons)this.LoadGridInfo(GrdInf.ID, database);
+                    IGrid gridInDatabase =(IGrid) this.LoadGridInfo(GrdInf.ID, database);
 
-                    if (GrdInDatabase.HasEqualReferences(grd) == true)
+                    IEqualityComparer<IGrid> cellComparer = grid.GridSerializationHandler.CellComparer;
+                    IEqualityComparer<IGrid> referenceComparer = grid.GridSerializationHandler.ReferenceComparer;
+
+                    if (referenceComparer.Equals(grid, gridInDatabase))
                     {
-                        GrdInDatabase = (GridCommons)LoadGridData(GrdInDatabase);
-                        if (grd.HasEqualCells(GrdInDatabase))
+                        gridInDatabase = LoadGridData(gridInDatabase);
+                        if (cellComparer.Equals(grid, gridInDatabase))
                         {
-                            _grd = GrdInDatabase;
+                            grid = gridInDatabase;
                             EquivalentGridFound = true;
-                            return grd.ID;
+                            return grid.ID;
                         }
                     }
                 }
                 EquivalentGridFound = false;
-                var g = SaveGrid(grd, database);
+                var g = SaveGrid(grid, database);
                 return g;
             }
         }
@@ -115,15 +117,15 @@ namespace BoSSS.Foundation.IO
             }
             MPICollectiveWatchDog.Watch(csMPI.Raw._COMM.WORLD);
 
-            SaveVectorData(grd);
-            grd.Database = database;
+            SaveVectorData(grd.GridSerializationHandler);
+            grd.GridSerializationHandler.Database = database;
             return grd.ID;
         }
 
-        void SaveVectorData(IVectorDataGrid grid)
+        void SaveVectorData(IGridSerializationHandler grid)
         {
             object[][] vectorData = grid.GetVectorData();
-            Guid[] vectorGuids = grid.VectorGuids;
+            Guid[] vectorGuids = grid.GetVectorGuids();
             Type[] vectorTypes = grid.GetVectorTypes();
 
             int numberOfVectors = vectorData.Length;
@@ -140,10 +142,11 @@ namespace BoSSS.Foundation.IO
                     }
                     else
                     {
-                        guid = dynamicDriver.SaveVector(vectorData[i], vectorType);
+                        vectorGuids[i] = dynamicDriver.SaveVector(vectorData[i], vectorType);
                     }
                 }
             }
+            grid.SetVectorGuids(vectorGuids);
         }
 
         public void SerializeGrid(IGrid grid)
@@ -188,16 +191,15 @@ namespace BoSSS.Foundation.IO
                 IGrid grid = null;
                 if (MyRank == 0)
                 {
-                    grid = (GridCommons)DeserializeGrid(gridGuid);
+                    grid = DeserializeGrid(gridGuid);
                 }
 
                 grid = grid.MPIBroadcast(0);
-                grid.Database = database;
+                grid.GridSerializationHandler.Database = database;
                 grid.WriteTime = Utils.GetGridFileWriteTime(grid);
                 return grid;
             }
         }
-
 
         /// <summary>
         /// Loads the actual grid data for the given <paramref name="grid"/>.
@@ -207,8 +209,14 @@ namespace BoSSS.Foundation.IO
         /// <returns></returns>
         public IGrid LoadGridData(IGrid grid)
         {
-            Type[] vectorTypes = grid.GetVectorTypes();
-            Guid[] guids = grid.VectorGuids;
+            LoadGridData(grid.GridSerializationHandler);
+            return grid;
+        }
+
+        public void LoadGridData(IGridSerializationHandler gridSerializationHandler)
+        {
+            Type[] vectorTypes = gridSerializationHandler.GetVectorTypes();
+            Guid[] guids = gridSerializationHandler.GetVectorGuids();
             Partitioning p = null;
 
             int numberOfVectors = vectorTypes.Length;
@@ -216,15 +224,14 @@ namespace BoSSS.Foundation.IO
             for (int i = 0; i < numberOfVectors; ++i)
             {
                 Guid guid = guids[i];
-                if(guid != Guid.Empty)
+                if (guid != Guid.Empty)
                 {
                     Type vectorType = vectorTypes[i];
                     vectors[i] = (object[])dynamicDriver.LoadVector(guid, vectorType, ref p);
                 }
             }
-            grid.SetVectorData(vectors);
-            grid.Initialize();
-            return grid;
+            gridSerializationHandler.SetVectorData(vectors);
+            gridSerializationHandler.Initialize();
         }
 
         /// <summary>
@@ -240,8 +247,9 @@ namespace BoSSS.Foundation.IO
         /// </returns>
         public IGrid LoadGrid(Guid uid, IDatabaseInfo database)
         {
-            IGridInfo grid = LoadGridInfo(uid, database);
-            return LoadGridData((Grid.Classic.GridCommons)grid);
+            IGridInfo gridInfo = LoadGridInfo(uid, database);
+            IGrid grid = LoadGridData((IGrid)gridInfo);
+            return grid;
         }
     }
 }

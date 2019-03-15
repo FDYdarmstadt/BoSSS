@@ -74,6 +74,11 @@ namespace BoSSS.Foundation.Grid.Aggregation {
             m_GridData = gdat;
         }
 
+        private AggregationGrid()
+        {
+
+        }
+
         /// <summary>
         /// sets values for <see cref="Cell.CellFaceTags"/> by using a
         /// <paramref name="EdgeTagFunc"/>-function; also adds entries with empty names
@@ -177,10 +182,9 @@ namespace BoSSS.Foundation.Grid.Aggregation {
             get {
                 return m_ParentGrid;
             }
-
         }
 
-        [NonSerialized]
+        [DataMember]
         IGrid m_ParentGrid;
 
         [DataMember]
@@ -227,7 +231,6 @@ namespace BoSSS.Foundation.Grid.Aggregation {
                 return this.m_GridGuid;
             }
         }
-
 
         public DateTime CreationTime => throw new NotImplementedException();
 

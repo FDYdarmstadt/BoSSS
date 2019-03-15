@@ -911,7 +911,7 @@ namespace BoSSS.Foundation.Grid.Classic {
         }
 
         /// <summary>
-        /// Returns the current GlobalID - permutation of this gird,
+        /// Returns the current GlobalID - permutation of this grid,
         /// i.e. a mapping from the global index to the global ID.
         /// </summary>
         public Permutation GetGlobalIDPermutation(bool IncludeBcCells) {

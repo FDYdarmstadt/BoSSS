@@ -138,8 +138,8 @@ namespace BoSSS.Foundation.IO
             TypeNameHandling = TypeNameHandling.Objects,
             ConstructorHandling = ConstructorHandling.AllowNonPublicDefaultConstructor,
             ReferenceLoopHandling = ReferenceLoopHandling.Serialize,
-        };
 
+        };
     }
 
     public class MPIProcess

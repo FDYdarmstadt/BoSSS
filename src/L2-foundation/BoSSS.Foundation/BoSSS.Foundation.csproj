@@ -102,6 +102,7 @@
     <Compile Include="IGrid.cs" />
     <Compile Include="IGridData.cs" />
     <Compile Include="IGridData_Extensions.cs" />
+    <Compile Include="IGridSerializationHandler.cs" />
     <Compile Include="Line.cs" />
     <Compile Include="LinearFormVectorizer.cs" />
     <Compile Include="NodeCoordinateSystem.cs" />

@@ -1004,10 +1004,17 @@ namespace BoSSS.Solution {
                 if (DoDbLogging) {
                     if (!this.CurrentSessionInfo.KeysAndQueries.ContainsKey("Grid:NoOfCells"))
                         this.CurrentSessionInfo.KeysAndQueries.Add("Grid:NoOfCells", Grid.NumberOfCells);
-                    if (!this.CurrentSessionInfo.KeysAndQueries.ContainsKey("Grid:hMax"))
-                        this.CurrentSessionInfo.KeysAndQueries.Add("Grid:hMax", ((GridData)GridData).Cells.h_maxGlobal);
-                    if (!this.CurrentSessionInfo.KeysAndQueries.ContainsKey("Grid:hMin"))
-                        this.CurrentSessionInfo.KeysAndQueries.Add("Grid:hMin", ((GridData)GridData).Cells.h_minGlobal);
+                    try //ToDo
+                    { 
+                        if (!this.CurrentSessionInfo.KeysAndQueries.ContainsKey("Grid:hMax"))
+                            this.CurrentSessionInfo.KeysAndQueries.Add("Grid:hMax", ((GridData)GridData).Cells.h_maxGlobal);
+                        if (!this.CurrentSessionInfo.KeysAndQueries.ContainsKey("Grid:hMin"))
+                            this.CurrentSessionInfo.KeysAndQueries.Add("Grid:hMin", ((GridData)GridData).Cells.h_minGlobal);
+                    }
+                    catch (InvalidCastException e)
+                    {
+                        Console.WriteLine("Error: Could not log everything.\n {0}", e);
+                    }
                 }
 
 
@@ -1331,7 +1338,7 @@ namespace BoSSS.Solution {
                         t,
                         timestepno,
                         this.CurrentSessionInfo,
-                        ((GridData)(this.GridData)),
+                        this.GridData,
                         this.IOFields);
                 } catch (Exception ee) {
                     Console.Error.WriteLine(ee.GetType().Name + " on rank " + this.MPIRank + " saving time-step " + timestepno + ": " + ee.Message);

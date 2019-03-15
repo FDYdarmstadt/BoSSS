@@ -13,31 +13,38 @@ using System.Diagnostics;
 
 namespace BoSSS.Foundation.Grid.Classic
 {
-    public interface ISerializableGrid : IVectorDataGrid, IComparableGrid, IGridInfo
+    public partial class GridCommons
     {
-        IDatabaseInfo Database {
-            get;
-            set;
+        [NonSerialized]
+        [JsonIgnore]
+        GridCommonsDatabaseMethods dataBaseMethods;
+
+        public IGridSerializationHandler GridSerializationHandler {
+            get {
+                if (dataBaseMethods == null)
+                    dataBaseMethods = new GridCommonsDatabaseMethods(this);
+                return dataBaseMethods;
+            }
         }
     }
 
-    public interface IVectorDataGrid 
+    class GridCommonsDatabaseMethods : IGridSerializationHandler
     {
-        Guid[] VectorGuids { get; set; }
-        object[][] GetVectorData();
-        void SetVectorData (object[][] vectorDatas);
-        Type[] GetVectorTypes();
-        void Initialize();
-    }
-    
-    public interface IComparableGrid
-    {
-        bool HasEqualCells(IGrid grid);
-        bool HasEqualReferences(IGrid grid);
-    }
+        readonly GridCommons grid; 
+        public GridCommonsDatabaseMethods(GridCommons grid)
+        {
+            this.grid = grid;
+        }
 
-    public partial class GridCommons : IVectorDataGrid, IComparableGrid
-    {
+        public IDatabaseInfo Database {
+            get {
+                return grid.Database;
+            }
+            set {
+                grid.Database = value;
+            }
+        }
+
         [JsonIgnore]
         object[][] data;
 
@@ -45,44 +52,44 @@ namespace BoSSS.Foundation.Grid.Classic
         {
             if (data == null)
             {
-                int numberOfObjects = m_PredefinedGridPartitioning.Count + 2;
+                int numberOfObjects = grid.m_PredefinedGridPartitioning.Count + 2;
                 data = new object[numberOfObjects][];
-                data[0] = Cells;
-                for (int i = 0; i < m_PredefinedGridPartitioning.Count; ++i)
+                data[0] = grid.Cells;
+                for (int i = 0; i < grid.m_PredefinedGridPartitioning.Count; ++i)
                 {
-                    var s = m_PredefinedGridPartitioning.ElementAt(i);
+                    var s = grid.m_PredefinedGridPartitioning.ElementAt(i);
                     int[] cellToRankMap = s.Value.CellToRankMap;
                     data[i + 1] = cellToRankMap.Cast<object>().ToArray();
                 }
-                data[numberOfObjects - 1] = BcCells;
+                data[numberOfObjects - 1] = grid.BcCells;
             }
             return data;
         }
 
         public void SetVectorData(object[][] data)
         {
-            Cells = data[0].Cast<Cell>().ToArray();
+            grid.Cells = data[0].Cast<Cell>().ToArray();
 
-            for (int i = 0; i < m_PredefinedGridPartitioning.Count; ++i)
+            for (int i = 0; i < grid.m_PredefinedGridPartitioning.Count; ++i)
             {
-                var s = m_PredefinedGridPartitioning.ElementAt(i);
-                m_PredefinedGridPartitioning[s.Key] = new GridPartitioningVector { Guid = VectorGuids[i + 1], CellToRankMap = data[i + 1].Cast<int>().ToArray() };
+                var s = grid.m_PredefinedGridPartitioning.ElementAt(i);
+                grid.m_PredefinedGridPartitioning[s.Key] = new GridCommons.GridPartitioningVector { Guid = guids[i + 1], CellToRankMap = data[i + 1].Cast<int>().ToArray() };
             }
             if (data.Last() != null)
-                BcCells = data.Last().Cast<BCElement>().ToArray();
+                grid.BcCells = data.Last().Cast<BCElement>().ToArray();
         }
 
         Type[] types;
 
         public Type[] GetVectorTypes()
         {
-            if(types == null)
+            if (types == null)
             {
-                int numberOfObjects = m_PredefinedGridPartitioning.Count + 2;
+                int numberOfObjects = grid.m_PredefinedGridPartitioning.Count + 2;
                 types = new Type[numberOfObjects];
                 types[0] = typeof(Cell);
 
-                for (int i = 0; i < m_PredefinedGridPartitioning.Count; ++i)
+                for (int i = 0; i < grid.m_PredefinedGridPartitioning.Count; ++i)
                 {
                     types[i + 1] = typeof(int);
                 }
@@ -93,99 +100,100 @@ namespace BoSSS.Foundation.Grid.Classic
 
         Guid[] guids;
 
-        public Guid[] VectorGuids {
-            get {
-                if(guids == null)
-                {
-                    guids = InitializeVectorGuids();
-                }
-                return guids;
+        public Guid[] GetVectorGuids()
+        {
+            if (guids == null)
+            {
+                guids = InitializeVectorGuids();
             }
-            set {
-                guids = value;
-                //StorageGuid = guids[0];
-                //BcCellsStorageGuid = guids.Last();
-            }
+            return guids;
         }
 
         Guid[] InitializeVectorGuids()
         {
-            int numberOfObjects = m_PredefinedGridPartitioning.Count + 2;
+            int numberOfObjects = grid.m_PredefinedGridPartitioning.Count + 2;
             Guid[] guids = new Guid[numberOfObjects];
-            guids[0] = StorageGuid;
-            for (int i = 0; i < m_PredefinedGridPartitioning.Count; ++i)
+            guids[0] = grid.StorageGuid;
+            for (int i = 0; i < grid.m_PredefinedGridPartitioning.Count; ++i)
             {
-                var s = m_PredefinedGridPartitioning.ElementAt(i);
+                var s = grid.m_PredefinedGridPartitioning.ElementAt(i);
                 guids[i + 1] = s.Value.Guid;
             }
             guids[numberOfObjects - 1] = Guid.Empty;
             return guids;
         }
 
+        public void SetVectorGuids(Guid[] guids)
+        {
+            this.guids = guids;
+            grid.StorageGuid = guids[0];
+            grid.BcCellsStorageGuid = guids.Last();
+        }
+
         public void Initialize()
         {
-            InitNumberOfCells();
+            grid.InitNumberOfCells();
         }
 
-        public bool HasEqualReferences(IGrid gridB)
+        public IEqualityComparer<IGrid> ReferenceComparer {
+            get {
+                return GridCommonsComparer.ReferenceComparer;
+            }
+        }
+
+        public IEqualityComparer<IGrid> CellComparer {
+            get {
+                return GridCommonsComparer.CellComparer;
+            }
+        }
+
+    }
+
+    static class GridCommonsComparer
+    {
+        public static IEqualityComparer<IGrid> ReferenceComparer {
+            get {
+                return new EqualityComparer(AreReferencesEqual);
+            }
+        }
+
+        public static IEqualityComparer<IGrid> CellComparer {
+            get {
+                return new EqualityComparer(AreCellsEqual);
+            }
+        }
+
+        class EqualityComparer : IEqualityComparer<IGrid>
         {
-            if (gridB is GridCommons B)
+            Func<GridCommons, GridCommons, bool> CheckEquality;
+
+            public EqualityComparer(Func<GridCommons, GridCommons, bool> CheckEquality)
             {
-                return ReferencesAreEqual(this, B);
+                this.CheckEquality = CheckEquality;
             }
-            else
+
+            public bool Equals(IGrid x, IGrid y)
             {
-                return false;
+                bool isEqual;
+                if (x is GridCommons X && y is GridCommons Y)
+                {
+                    isEqual = CheckEquality(X, Y);
+                }
+                else
+                {
+                    isEqual = false;
+                }
+                return isEqual;
+            }
+
+            public int GetHashCode(IGrid obj)
+            {
+                throw new NotImplementedException();
             }
         }
 
-        bool ReferencesAreEqual(GridCommons A, GridCommons B)
-        { 
-            
-            if (object.ReferenceEquals(A, B))
-                return true;
-            if ((A == null) != (B == null))
-                return false;
-
-            ilPSP.MPICollectiveWatchDog.Watch(MPI.Wrappers.csMPI.Raw._COMM.WORLD);
-
-            int glbNoOfCells_A = A.NumberOfCells;
-            int glbNoOfCells_B = B.NumberOfCells;
-            int glbNoOfBcCells_A = A.NumberOfBcCells;
-            int glbNoOfBcCells_B = B.NumberOfBcCells;
-
-            if (glbNoOfCells_A != glbNoOfCells_B)
-                return false;
-
-            if (glbNoOfBcCells_A != glbNoOfBcCells_B)
-                return false;
-
-            if (!ArrayTools.ListEquals(A.RefElements, B.RefElements, (a, b) => object.ReferenceEquals(a, b)))
-                return false;
-            if (!ArrayTools.ListEquals(A.EdgeRefElements, B.EdgeRefElements, (a, b) => object.ReferenceEquals(a, b)))
-                return false;
-            if (!ArrayTools.ListEquals(A.EdgeTagNames, B.EdgeTagNames, (a, b) => (a.Key == b.Key && a.Value.Equals(b.Value))))
-                return false;
-            if (!ArrayTools.ListEquals(A.PeriodicTrafo, B.PeriodicTrafo, (a, b) => a.ApproximateEquals(b)))
-                return false;
-
-            return true;
-        }
-
-        public bool HasEqualCells(IGrid gridB)
+        static bool AreCellsEqual(GridCommons A, GridCommons B)
         {
-            if (gridB is GridCommons B)
-            {
-                return CellsAreEqual(this, B);
-            }
-            else
-            {
-                return false;
-            }
-        }
-
-        bool CellsAreEqual(GridCommons A, GridCommons B)
-        { 
             if (object.ReferenceEquals(A, B))
                 return true;
             if ((A == null) != (B == null))
@@ -446,5 +454,39 @@ namespace BoSSS.Foundation.Grid.Classic
             return (match > 0);
         }
 
+        static bool AreReferencesEqual(GridCommons A, GridCommons B)
+        {
+
+            if (object.ReferenceEquals(A, B))
+                return true;
+            if ((A == null) != (B == null))
+                return false;
+
+            ilPSP.MPICollectiveWatchDog.Watch(MPI.Wrappers.csMPI.Raw._COMM.WORLD);
+
+            int glbNoOfCells_A = A.NumberOfCells;
+            int glbNoOfCells_B = B.NumberOfCells;
+            int glbNoOfBcCells_A = A.NumberOfBcCells;
+            int glbNoOfBcCells_B = B.NumberOfBcCells;
+
+            if (glbNoOfCells_A != glbNoOfCells_B)
+                return false;
+
+            if (glbNoOfBcCells_A != glbNoOfBcCells_B)
+                return false;
+
+            if (!ArrayTools.ListEquals(A.RefElements, B.RefElements, (a, b) => object.ReferenceEquals(a, b)))
+                return false;
+            if (!ArrayTools.ListEquals(A.EdgeRefElements, B.EdgeRefElements, (a, b) => object.ReferenceEquals(a, b)))
+                return false;
+            if (!ArrayTools.ListEquals(A.EdgeTagNames, B.EdgeTagNames, (a, b) => (a.Key == b.Key && a.Value.Equals(b.Value))))
+                return false;
+            if (!ArrayTools.ListEquals(A.PeriodicTrafo, B.PeriodicTrafo, (a, b) => a.ApproximateEquals(b)))
+                return false;
+
+            return true;
+        }
+
     }
+    
 }
