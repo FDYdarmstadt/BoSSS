@@ -376,7 +376,7 @@ namespace BoSSS.Solution {
                     //}
 
                     ctrlV2 = controlObj as T;
-
+                    //Debugger.Launch();
                     //if (controlObj is T) {
                     //    ctrlV2 = (T)controlObj;
 

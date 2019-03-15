@@ -104,31 +104,7 @@ namespace BoSSS.Application.FSI_Solver {
             this.AddFieldOption("Phi", 2);
             this.AddFieldOption("Curvature", 2);
         }
-
-        ///// <summary>
-        ///// How should the level set be moved? Options: none, fixed, coupled
-        ///// </summary>
-        //public string LevelSetMovement = "none";
-
-        ///// <summary>
-        ///// 
-        ///// </summary>
-        //public enum TimesteppingMode {
-
-        //    None = 0,
-
-        //    /// <summary>
-        //    /// 
-        //    /// </summary>
-        //    Splitting = 1,
-
-        //    /// <summary>
-        //    /// 
-        //    /// </summary>
-        //    MovingMesh = 2
-        //}
-        //[DataMember]
-        //public TimesteppingMode Timestepper_Mode = TimesteppingMode.Splitting;
+        
 
         /// <summary>
         /// See <see cref="LevelSetHandling"/>
@@ -160,10 +136,9 @@ namespace BoSSS.Application.FSI_Solver {
         [DataMember]
         public CollisionModel collisionModel = CollisionModel.MomentumConservation;
 
-        //public double particleMass;
-
-        //public double particleRho;
-
+        /// <summary>
+        /// if true the flow solver is turned off
+        /// </summary>
         [DataMember]
         public bool pureDryCollisions = false;
 

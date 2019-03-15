@@ -55,7 +55,7 @@ namespace BoSSS.Solution {
             /// Immediate plot period: This variable controls immediate
             /// plotting, i.e. plotting during the solver run.<br/>
             /// A positive value indicates that
-            /// <see cref="Application{T}.PlotCurrentState(double, TimestepNumber, int)"/>"/> will be called every
+            /// <see cref="Application{T}.PlotCurrentState"/>"/> will be called every
             /// <see cref="ImmediatePlotPeriod"/>-th time-step;<br/>
             /// A negative value turns immediate plotting off;
             /// </summary>

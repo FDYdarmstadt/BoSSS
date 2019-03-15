@@ -1,0 +1,11 @@
+{
+  "$type": "System.Tuple`2[[System.String[], mscorlib],[System.Array[], mscorlib]], mscorlib",
+  "Item1": {
+    "$type": "System.String[], mscorlib",
+    "$values": []
+  },
+  "Item2": {
+    "$type": "System.Array[], mscorlib",
+    "$values": []
+  }
+}
