@@ -89,7 +89,7 @@ namespace BoSSS.Application.SipPoisson {
             ResiualKP1 = new SinglePhaseField(new Basis(this.GridData, T.Basis.Degree + 1), "ResidualKP1");
             base.IOFields.Add(ResiualKP1);
 
-            Error = new SinglePhaseField(T.Basis, "Error");
+            Error = new SinglePhaseField(new Basis(this.GridData, Math.Max(T.Basis.Degree + 1, Tex.Basis.Degree)), "Error");
             base.m_IOFields.Add(Error);
         }
 
@@ -126,6 +126,11 @@ namespace BoSSS.Application.SipPoisson {
         /// </summary>
         /// <param name="args"></param>
         static void Main(string[] args) {
+            BoSSS.Application.SipPoisson.Tests.TestProgram.Init();
+            BoSSS.Application.SipPoisson.Tests.TestProgram.TestCartesian();
+            BoSSS.Application.SipPoisson.Tests.TestProgram.Cleanup();
+            return;
+
 
             if (System.Environment.MachineName.ToLowerInvariant().EndsWith("terminal03")
                 //|| System.Environment.MachineName.ToLowerInvariant().Contains("jenkins")
@@ -262,13 +267,13 @@ namespace BoSSS.Application.SipPoisson {
                 iLevel++;
             }
 
-            TexactFine = (SinglePhaseField)(GetDatabase().Sessions.First().Timesteps.Last().Fields.Where(fi => fi.Identification == "T"));
+            //TexactFine = (SinglePhaseField)(GetDatabase().Sessions.First().Timesteps.Last().Fields.Where(fi => fi.Identification == "T"));
         }
 
-        /// <summary>
-        /// Hack - some precise solution on a finer grid.
-        /// </summary>
-        SinglePhaseField TexactFine;
+        ///// <summary>
+        ///// Hack - some precise solution on a finer grid.
+        ///// </summary>
+        //SinglePhaseField TexactFine;
 
         /// <summary>
         /// LHS of the equation <see cref="LaplaceMtx"/>*<see cref="T"/> + <see cref="LaplaceAffine"/> = <see cref="RHS"/>.
@@ -524,10 +529,11 @@ namespace BoSSS.Application.SipPoisson {
             if (this.Control.AdaptiveMeshRefinement && TimestepNo > 1) {
 
                 // compute error against fine solution
-                {
+                if(Control.ExactSolution_provided) {
                     Error.Clear();
-                    Error.Acc(1.0, T);
+                    Error.AccLaidBack(1.0, T);
 
+                    /*
                     var eval = new FieldEvaluation((GridData)(TexactFine.GridDat));
 
                     void FineEval(MultidimensionalArray input, MultidimensionalArray output) {
@@ -538,6 +544,8 @@ namespace BoSSS.Application.SipPoisson {
                     }
 
                     Error.ProjectField(-1.0, FineEval);
+                    */
+                    Error.AccLaidBack(-1.0, Tex);
                 }
 
                 int oldJ = this.GridData.CellPartitioning.TotalLength;
