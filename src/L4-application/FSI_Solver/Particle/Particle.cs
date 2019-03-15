@@ -209,7 +209,9 @@ namespace BoSSS.Application.FSI_Solver
         /// </summary>
         [DataMember]
         public double particleDensity;
-        
+
+        double asdf = 0;
+
         /// <summary>
         /// The position (center of mass) of the particle in the current iteration.
         /// </summary>
@@ -836,7 +838,7 @@ namespace BoSSS.Application.FSI_Solver
                 Forces[1] = Forces[1] + addedDampingTensorVV[0, 1] * beta * transAccelerationAtIteration[0][0] * dt + addedDampingTensorVV[1, 1] * beta * transAccelerationAtIteration[0][1] * dt + (particleDensity - fluidDensity) * Area_P * gravityVertical;
                 Torque = Torque - beta * dt * addedDampingTensorWW[0, 0] * rotationalAccelarationAtIteration[0];
             }
-            if (iteration_counter_P == 0)
+            if (iteration_counter_P == 0 && asdf == 0)
             {
                 Console.WriteLine("First iteration of the current timestep, all relaxation factors are set to 1");
                 for (int d = 0; d < spatialDim; d++)
@@ -855,6 +857,7 @@ namespace BoSSS.Application.FSI_Solver
                 {
                     Torque = 0;
                 }
+                asdf = 100;
             }
             else if (iteration_counter_P == 100)
             {

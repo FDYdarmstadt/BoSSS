@@ -15,7 +15,7 @@ namespace BoSSS.Application.FSI_Solver
     {
         public double[,] IntegrationOverLevelSet(int DampingTensorID, LevelSetTracker LsTrk, double muA, double rhoA, double dt, double[] currentPosition, CellMask ParticleCutCells)
         {
-            int D = LsTrk.GridDat.SpatialDimension;
+            int D = 3;
             double[,] addedDampingTensor = new double[D, D];
             double alpha = 0.5;
             int RequiredOrder = 2;
