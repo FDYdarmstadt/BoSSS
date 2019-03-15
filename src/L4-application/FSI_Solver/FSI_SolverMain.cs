@@ -414,7 +414,7 @@ namespace BoSSS.Application.FSI_Solver {
             }
             #endregion
 
-            #region create timestepper, update level-set
+            #region create timestepper
             // ------------------
             int bdfOrder;
             if (this.Control.Timestepper_Scheme == FSI_Control.TimesteppingScheme.CrankNicolson)
@@ -490,6 +490,7 @@ namespace BoSSS.Application.FSI_Solver {
             m_BDF_Timestepper.Config_LevelSetConvergenceCriterion = ((FSI_Control)this.Control).ForceAndTorque_ConvergenceCriterion;
             m_BDF_Timestepper.SessionPath = SessionPath;
             m_BDF_Timestepper.Timestepper_Init = Solution.Timestepping.TimeStepperInit.SingleInit;
+        #endregion
 
         }
 
@@ -593,7 +594,6 @@ namespace BoSSS.Application.FSI_Solver {
             DGLevSet.Current.ProjectField(function);
             LsTrk.UpdateTracker(__NearRegionWith: 2);
         }
-        #endregion
 
         void UpdateForcesAndTorque(double dt, double phystime) {
             foreach (Particle p in m_Particles)

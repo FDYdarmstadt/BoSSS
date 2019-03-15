@@ -706,6 +706,12 @@ namespace BoSSS.Application.FSI_Solver
                     }
                 ).Execute();
             }
+
+            // add gravity
+            {
+                 Forces[1] =+ (particleDensity - fluidDensity) * Area_P * gravityVertical;
+            }
+
             #endregion
 
             #region Torque
@@ -744,7 +750,7 @@ namespace BoSSS.Application.FSI_Solver
             double beta = 1;
             if (neglectAddedDamping == false) {
                 Forces[0] = Forces[0] + addedDampingTensorVV[0, 0] * beta * transAccelerationAtTimestep[0][0] * dt + addedDampingTensorVV[1, 0] * beta * transAccelerationAtTimestep[0][1] * dt;
-                Forces[1] = Forces[1] + addedDampingTensorVV[0, 1] * beta * transAccelerationAtTimestep[0][0] * dt + addedDampingTensorVV[1, 1] * beta * transAccelerationAtTimestep[0][1] * dt + (particleDensity - fluidDensity) * Area_P * gravityVertical;
+                Forces[1] = Forces[1] + addedDampingTensorVV[0, 1] * beta * transAccelerationAtTimestep[0][0] * dt + addedDampingTensorVV[1, 1] * beta * transAccelerationAtTimestep[0][1] * dt;
                 Torque = Torque - beta * dt * addedDampingTensorWW[0, 0] * rotationalAccelarationAtTimestep[0];
             }
             if (iteration_counter_P == 0) {

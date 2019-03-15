@@ -45,10 +45,6 @@ namespace BoSSS.Application.FSI_Solver {
             return forces;
         }
 
-
-
-
-
         internal double ForceTorqueSummationWithNeumaierArray(double ForcesTorque, MultidimensionalArray Summands, double Length) {
             double sum = ForcesTorque;
             double naiveSum;
