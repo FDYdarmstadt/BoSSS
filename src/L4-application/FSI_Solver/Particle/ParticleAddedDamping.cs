@@ -15,13 +15,13 @@ namespace BoSSS.Application.FSI_Solver
     {
         public double[,] IntegrationOverLevelSet(int DampingTensorID, LevelSetTracker LsTrk, double muA, double rhoA, double dt, double[] currentPosition, CellMask ParticleCutCells)
         {
-            int D = 3;
+            int D = 2;
             double[,] addedDampingTensor = new double[D, D];
             double alpha = 0.5;
             int RequiredOrder = 2;
-            for (int d1 = 0; d1 < D; d1++)
+            for (int d1 = 0; d1 < 3; d1++)
             {
-                for (int d2 = 0; d2 < D; d2++)
+                for (int d2 = 0; d2 < 3; d2++)
                 {
                     ScalarFunctionEx evalfD = delegate (int j0, int Len, NodeSet Ns, MultidimensionalArray result)
                     {
@@ -39,26 +39,52 @@ namespace BoSSS.Application.FSI_Solver
                                     double dh = CalculateNormalMeshSpacing(LsTrk, Ns, Normals, j, k);
                                     double delta = dh * Math.Sqrt(rhoA) / (Math.Sqrt(alpha * muA * dt));
                                     double dn = dh / (1 - Math.Exp(-delta));
-                                    double[] R = new double[D];
+                                    double[] R = new double[3];
                                     R[0] = Math.Abs(NodeSetClone[k, 0] - currentPosition[0]);
                                     R[1] = Math.Abs(NodeSetClone[k, 1] - currentPosition[1]);
+                                    R[2] = 0;
+                                    double[] NormalComponent = new double[3];
+                                    NormalComponent[0] = Normals[j, k, 0];
+                                    NormalComponent[1] = Normals[j, k, 1];
+                                    NormalComponent[2] = 0;
                                     switch (DampingTensorID)
                                     {
                                         case 0:
-                                            result[j, k] = d1 == d2 ? (1 - Normals[j, k, d1] * Normals[j, k, d2]) * muA / dn : (0 - Normals[j, k, d1] * Normals[j, k, d2]) * muA / dn;
+                                            result[j, k] = d1 == d2 ? (1 - NormalComponent[d1] * NormalComponent[d2]) * muA / dn : -NormalComponent[d1] * NormalComponent[d2] * muA / dn;
                                             break;
                                         case 1:
-                                            result[j, k] = 0;
+                                            if (d1 == 2 && d2 != 2)
+                                            {
+                                                result[j, k] = R[1 - d2] * Math.Pow(-1, d2);
+                                            }
+                                            else if (d1 != 2 && d2 == 2)
+                                            {
+                                                result[j, k] = ((1 - NormalComponent[d1] * NormalComponent[d1]) * (-R[1 - d1]) - NormalComponent[d1] * NormalComponent[1 - d1] * R[d1]) * Math.Pow(-1, d1);
+                                            }
+                                            else result[j, k] = 0;
                                             break;
                                         case 2:
-                                            result[j, k] = 0;
+                                            if (d2 == 2 && d1 != 2)
+                                            {
+                                                result[j, k] = R[1 - d1] * Math.Pow(-1, d1);
+                                            }
+                                            else if (d2 != 2 && d1 == 2)
+                                            {
+                                                result[j, k] = ((1 - NormalComponent[d2] * NormalComponent[d2]) * (-R[1 - d2]) - NormalComponent[d2] * NormalComponent[1 - d2] * R[d2]) * Math.Pow(-1, d2);
+                                            }
+                                            else result[j, k] = 0;
                                             break;
                                         case 3:
-                                            result[j, k] = d1 == d2 ? -(R[1 - d1] * R[1 - d2]) * muA / dn : R[1 - d1] * R[1 - d2] * muA / dn;
+                                            result[j, k] = 0;
+                                            //result[j, k] = d1 == d2 ? -(R[1 - d1] * R[1 - d2]) * muA / dn : R[1 - d1] * R[1 - d2] * muA / dn;
                                             break;
                                     }
                                 }
                             }
+                        }
+                        else
+                        {
+                            throw new NotImplementedException("Currently the calculation of the Damping tensors is only available for 2D");
                         }
                     };
 
