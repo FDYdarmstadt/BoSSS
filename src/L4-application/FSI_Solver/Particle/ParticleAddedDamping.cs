@@ -117,23 +117,48 @@ namespace BoSSS.Application.FSI_Solver
         {
             // form rotation matrix R=EpEp^T, where Ep is the matrix of the principle axis of inertia
             // symmetry axis are always axis of inertia:
-            double[,] Ep = new double[2, 2];
+            double[,] Ep = new double[3, 3];
             Ep[0, 0] = Math.Cos(currentAngle);
             Ep[1, 0] = Math.Sin(currentAngle);
+            Ep[2, 0] = 0;
             Ep[0, 1] = -Math.Sin(currentAngle);
             Ep[1, 1] = Math.Cos(currentAngle);
-
-            double[,] R = new double[2, 2];
-            R[0, 0] = Ep[0, 0].Pow2() + Ep[0, 1] * Ep[1, 0];
-            R[1, 0] = Ep[0, 0] * Ep[0, 1] + Ep[0, 1] * Ep[1, 1];
-            R[0, 1] = Ep[1, 0] * Ep[0, 0] + Ep[1, 1] * Ep[1, 0];
-            R[1, 1] = Ep[1, 0] * Ep[0, 1] + Ep[1, 1].Pow2();
-
-            addedDampingTensor[0, 0] = R[0, 0].Pow2() * addedDampingTensor[0, 0] + R[1, 0] * R[0, 0] * addedDampingTensor[0, 1] + R[0, 0] * R[1, 0] * addedDampingTensor[1, 0] + R[1, 0].Pow2() * addedDampingTensor[1, 1];
-            addedDampingTensor[1, 0] = R[0, 0] * R[0, 1] * addedDampingTensor[0, 0] + R[1, 0] * R[0, 1] * addedDampingTensor[0, 1] + R[0, 0] * R[1, 1] * addedDampingTensor[1, 0] + R[1, 0] * R[1, 1] * addedDampingTensor[1, 1];
-            addedDampingTensor[0, 1] = R[0, 0] * R[0, 1] * addedDampingTensor[0, 0] + R[0, 0] * R[1, 1] * addedDampingTensor[0, 1] + R[0, 0] * R[0, 1] * addedDampingTensor[1, 0] + R[1, 0] * R[1, 1] * addedDampingTensor[1, 1];
-            addedDampingTensor[1, 1] = R[0, 1].Pow2() * addedDampingTensor[0, 0] + R[1, 1] * R[0, 1] * addedDampingTensor[0, 1] + R[0, 1] * R[1, 1] * addedDampingTensor[1, 0] + R[1, 1].Pow2() * addedDampingTensor[1, 1];
-
+            Ep[2, 1] = 0;
+            Ep[0, 2] = 0;
+            Ep[1, 2] = 0;
+            Ep[2, 2] = 1;
+            double[,] R = new double[3, 3];
+            for (int i = 0; i < 3; i++)
+            {
+                for (int j = 0; j < 3; j++)
+                {
+                    for (int k = 0; k < 3; k++)
+                    {
+                        R[i, j] += Ep[i, k] * Ep[j, k];
+                    }
+                }
+            }
+            double[,] temp = new double[3, 3];
+            for (int i = 0; i < 3; i++)
+            {
+                for (int j = 0; j < 3; j++)
+                {
+                    for (int k = 0; k < 3; k++)
+                    {
+                        temp[i, j] += R[i, k] * addedDampingTensor[k , j];
+                    }
+                }
+            }
+            for (int i = 0; i < 3; i++)
+            {
+                for (int j = 0; j < 3; j++)
+                {
+                    for (int k = 0; k < 3; k++)
+                    {
+                        addedDampingTensor[i, j] += temp[i, k] * R[j, k];
+                    }
+                }
+            }
             return addedDampingTensor;
         }
 

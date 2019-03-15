@@ -168,10 +168,10 @@ namespace BoSSS.Application.FSI_Solver
         [DataMember]
         public bool neglectAddedDamping = true;
 
-        double[,] addedDampingTensorVV = new double[2, 2];
-        double[,] addedDampingTensorVW = new double[2, 2];
-        double[,] addedDampingTensorWV = new double[2, 2];
-        double[,] addedDampingTensorWW = new double[2, 2];
+        double[,] addedDampingTensorVV = new double[3, 3];
+        double[,] addedDampingTensorVW = new double[3, 3];
+        double[,] addedDampingTensorWV = new double[3, 3];
+        double[,] addedDampingTensorWW = new double[3, 3];
 
         
         #endregion
