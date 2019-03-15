@@ -645,7 +645,7 @@ namespace BoSSS.Application.FSI_Solver
 
         public void CalculateAngularAcceleration(double dt, double addedDampingCoeff = 1)
         {
-            double MomentofInertia_m = MomentOfInertia_P + addedDampingCoeff * dt * addedDampingTensorVV[0, 0];
+            double MomentofInertia_m = MomentOfInertia_P;// + addedDampingCoeff * dt * addedDampingTensorVV[0, 0];
             Aux.SaveValueToList(rotationalAccelarationAtIteration, hydrodynTorqueAtIteration[0] / MomentofInertia_m);
         }
 
@@ -834,9 +834,9 @@ namespace BoSSS.Application.FSI_Solver
             double beta = 1;
             if (neglectAddedDamping == false)
             {
-                Forces[0] = Forces[0] + addedDampingTensorVV[0, 0] * beta * transAccelerationAtIteration[0][0] * dt + addedDampingTensorVV[1, 0] * beta * transAccelerationAtIteration[0][1] * dt;
-                Forces[1] = Forces[1] + addedDampingTensorVV[0, 1] * beta * transAccelerationAtIteration[0][0] * dt + addedDampingTensorVV[1, 1] * beta * transAccelerationAtIteration[0][1] * dt + (particleDensity - fluidDensity) * Area_P * gravityVertical;
-                Torque = Torque - beta * dt * addedDampingTensorWW[0, 0] * rotationalAccelarationAtIteration[0];
+                Forces[0] = Forces[0] + beta * dt * (addedDampingTensorVV[0, 0] * transAccelerationAtIteration[0][0] + addedDampingTensorVV[1, 0] * transAccelerationAtIteration[0][1] + addedDampingTensorVW[0, 2] * rotationalAccelarationAtIteration[0]);
+                Forces[1] = Forces[1] + beta * dt * (addedDampingTensorVV[0, 1] * transAccelerationAtIteration[0][0] + addedDampingTensorVV[1, 1] * transAccelerationAtIteration[0][1] + addedDampingTensorWW[1, 2] * rotationalAccelarationAtIteration[0]) + (particleDensity - fluidDensity) * Area_P * gravityVertical;
+                Torque = Torque + beta * dt * (addedDampingTensorWV[2, 0] * transAccelerationAtIteration[0][0] + addedDampingTensorWV[2, 1] * transAccelerationAtIteration[0][1] + addedDampingTensorWW[2, 2] * rotationalAccelarationAtIteration[0]);
             }
             if (iteration_counter_P == 0 && asdf == 0)
             {
