@@ -474,7 +474,7 @@ namespace BoSSS.Application.FSI_Solver
             double[] temp = new double[m_Dim];
             for (int d = 0; d < m_Dim; d++)
             {
-                temp[d] = (transAccelerationAtTimestep[1][d] + transAccelerationAtTimestep[2][d]) / 2;
+                temp[d] = (0.8 * transAccelerationAtTimestep[1][d] + 0.2 * transAccelerationAtTimestep[2][d]);
                 if (double.IsNaN(temp[d]) || double.IsInfinity(temp[d]))
                     throw new ArithmeticException("Error trying to predict particle acceleration");
             }
@@ -518,7 +518,7 @@ namespace BoSSS.Application.FSI_Solver
             double[] temp = new double[m_Dim];
             for (int d = 0; d < m_Dim; d++)
             {
-                temp[d] = (transVelocityAtTimestep[1][d] + transVelocityAtTimestep[2][d]) / 2;
+                temp[d] = (0.8 * transVelocityAtTimestep[1][d] + 0.2 * transVelocityAtTimestep[2][d]);
                 if (double.IsNaN(temp[d]) || double.IsInfinity(temp[d]))
                     throw new ArithmeticException("Error trying to predict particle velocity");
             }
@@ -634,7 +634,7 @@ namespace BoSSS.Application.FSI_Solver
             {
                 Aux.SaveValueOfLastTimestep(rotationalAccelarationAtTimestep);
             }
-            double temp = (rotationalAccelarationAtTimestep[1] + rotationalAccelarationAtTimestep[2]) / 2;
+            double temp = (0.8 * rotationalAccelarationAtTimestep[1] + 0.2 * rotationalAccelarationAtTimestep[2]);
             if (double.IsNaN(temp) || double.IsInfinity(temp))
                 throw new ArithmeticException("Error trying to predict particle angluar acceleration");
             Aux.SaveValueToList(rotationalAccelarationAtIteration, temp);
@@ -653,7 +653,7 @@ namespace BoSSS.Application.FSI_Solver
             {
                 Aux.SaveValueOfLastTimestep(rotationalVelocityAtTimestep);
             }
-            double temp = (rotationalVelocityAtTimestep[1] + rotationalVelocityAtTimestep[2]) / 2;
+            double temp = (0.8 * rotationalVelocityAtTimestep[1] + 0.2 * rotationalVelocityAtTimestep[2]);
             if (double.IsNaN(temp) || double.IsInfinity(temp))
                 throw new ArithmeticException("Error trying to predict particle angluar velocity");
             Aux.SaveValueToList(rotationalVelocityAtIteration, temp);
