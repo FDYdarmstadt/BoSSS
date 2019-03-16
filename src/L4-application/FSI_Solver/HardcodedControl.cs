@@ -595,8 +595,7 @@ namespace BoSSS.Application.FSI_Solver {
             //C.particleRadius = 0.125;
             //C.particleMass = 1;
 
-            C.Particles = new List<Particle>();
-
+            
 
             C.Particles.Add(new Particle_Sphere(2, new double[] { 0.0, 1.0 }) {
                 radius_P = (0.125/2.0),
@@ -807,9 +806,7 @@ namespace BoSSS.Application.FSI_Solver {
             //C.particleMass = 1;
 
 
-            C.Particles = new List<Particle>();
-
-
+            
             C.Particles.Add(new Particle_Ellipsoid(new double[] { 0.4, 1.0 }) {
                 particleDensity = 1.0
             });
@@ -1044,9 +1041,7 @@ namespace BoSSS.Application.FSI_Solver {
             //C.particleMass = 1;
 
 
-            C.Particles = new List<Particle>();
-
-
+            
             C.Particles.Add(new Particle_Ellipsoid(new double[] { -1.2, 0.9 }, startAngl: 90.0) {
                 particleDensity = 1.0,
             });
@@ -1293,9 +1288,6 @@ namespace BoSSS.Application.FSI_Solver {
             //C.PhysicalParameters.mu_B = 0.1;
             //C.particleRadius = 0.25;
             //C.particleMass = 1;
-
-
-            C.Particles = new List<Particle>();
 
 
             C.Particles.Add(new Particle_Sphere(2, new double[] { -0.2, 7.5 }, startAngl: 45.0) {
@@ -1549,9 +1541,6 @@ namespace BoSSS.Application.FSI_Solver {
             //C.particleMass = 1;
 
 
-            C.Particles = new List<Particle>();
-
-
             C.Particles.Add(new Particle_Ellipsoid(new double[] { 0.0*BaseSize, 1.0*BaseSize }, startAngl: angle) {
                 particleDensity = 10.0,
                 length_P = 0.1*BaseSize,
@@ -1775,9 +1764,6 @@ namespace BoSSS.Application.FSI_Solver {
             //C.particleMass = 1;
 
 
-            C.Particles = new List<Particle>();
-
-
             C.Particles.Add(new Particle_Sphere(2, new double[] { 0.0, 7.2 }) {
                 radius_P = 0.1,
                 particleDensity = 1.01
@@ -1983,10 +1969,6 @@ namespace BoSSS.Application.FSI_Solver {
             // Particle Properties
             //C.PhysicalParameters.mu_B = 0.1;
             //C.particleMass = 1;
-
-
-            C.Particles = new List<Particle>();
-
 
             C.Particles.Add(new Particle_Sphere(2, new double[] { -0.5, -1.35 }, startAngl: 0.0) {
                 radius_P = 0.1,

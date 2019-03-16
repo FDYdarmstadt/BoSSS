@@ -126,7 +126,6 @@ namespace BoSSS.Application.FSI_Solver
             // Particle Properties
             // =============================   
             // Defining particles
-            C.Particles = new List<Particle>();
             int numOfParticles = 1;
             for (int d = 0; d < numOfParticles; d++)
             {
@@ -317,7 +316,6 @@ namespace BoSSS.Application.FSI_Solver
             // Particle Properties
             // =============================   
             // Defining particles
-            C.Particles = new List<Particle>();
             int numOfParticles = 1;
             for (int d = 0; d < numOfParticles; d++)
             {

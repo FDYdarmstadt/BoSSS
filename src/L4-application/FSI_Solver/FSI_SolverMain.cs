@@ -865,7 +865,7 @@ namespace BoSSS.Application.FSI_Solver {
         #region Initialize particles
         protected override void SetInitial() {
             // Setup particles
-            m_Particles = ((FSI_Control)this.Control).Particles;
+            m_Particles = ((FSI_Control)this.Control).Particles.ToList();
             hack_phystime = 0.0;
             UpdateLevelSetParticles(0.0);
 
