@@ -806,22 +806,51 @@ namespace BoSSS.Application.FSI_Solver {
         }
         #endregion
 
-        /// <summary>
-        /// over-ridden in oder to save the particles (<see cref="m_Particles"/>) to the database
-        /// </summary>
-        protected override ITimestepInfo SaveToDatabase(TimestepNumber timestepno, double t) {
-            return base.SaveToDatabase(timestepno, t);
-        }
-
-        /// <summary>
-        /// over-ridden in oder to save the particles (<see cref="m_Particles"/>) to the database
-        /// </summary>
-        protected override TimestepNumber RestartFromDatabase(Guid sessionToLoad, TimestepNumber timestep, out double time) {
-            return base.RestartFromDatabase(sessionToLoad, timestep, out time);
-        }
-
-
         #region restart
+
+        /// <summary>
+        /// over-ridden in oder to save the particles (<see cref="m_Particles"/>) to the database
+        /// </summary>
+        protected override TimestepInfo GetCurrentTimestepInfo(TimestepNumber timestepno, double t) {
+            return new FSI_TimestepInfo(t, this.CurrentSessionInfo, timestepno, base.IOFields, m_Particles);
+        }
+
+        /// <summary>
+        /// over-ridden in oder to save the particles (<see cref="m_Particles"/>) to the database
+        /// </summary>
+        protected override TimestepNumber RestartFromDatabase(out double time) {
+
+            // this sux, because the database API is totally fucked up
+            var db = GetDatabase();
+            Guid Rst_Tsid = base.GetRestartTimestepID();
+            Guid Rst_SessionId = Control.RestartInfo.Item1;
+            ISessionInfo session = db.Controller.GetSessionInfo(Rst_SessionId);
+
+            var ArschInfo = ((DatabaseDriver)(base.DatabaseDriver)).LoadTimestepInfo<FSI_TimestepInfo>(Rst_Tsid, session, db);
+
+            // init particles
+            m_Particles = ArschInfo.Particles.ToList();
+            hack_phystime = ArschInfo.PhysicalTime;
+            UpdateLevelSetParticles(0.0);
+            
+            // call base shit
+            var R = base.RestartFromDatabase(out time);
+
+
+            // Setup Collision Model
+            m_collisionModel = ((FSI_Control)this.Control).collisionModel;
+            
+            foreach (Particle p in m_Particles) {
+                p.m_collidedWithParticle = new bool[m_Particles.Count];
+                p.m_collidedWithWall = new bool[4];
+                p.m_closeInterfacePointTo = new double[m_Particles.Count][];
+
+            }
+
+            // return
+            return R;
+        }
+
         /// <summary>
         /// For restarting calculations, its important to reload old solutions if one uses a higher order method in time
         /// </summary>

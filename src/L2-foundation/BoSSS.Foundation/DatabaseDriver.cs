@@ -765,14 +765,23 @@ namespace BoSSS.Foundation.IO {
         /// loads a single <see cref="TimestepInfo"/>-object from the database.
         /// </summary>
         public TimestepInfo LoadTimestepInfo(Guid timestepGuid, ISessionInfo session, IDatabaseInfo database) {
+            return LoadTimestepInfo<TimestepInfo>(timestepGuid, session, database);
+        }
+
+        /// <summary>
+        /// loads a single <see cref="TimestepInfo"/>-object from the database.
+        /// </summary>
+        public T LoadTimestepInfo<T>(Guid timestepGuid, ISessionInfo session, IDatabaseInfo database) 
+            where T : TimestepInfo //
+        {
             using (var tr = new FuncTrace()) {
                 tr.Info("Loading time-step " + timestepGuid);
 
-                TimestepInfo tsi = null;
+                T tsi = null;
                 if (MyRank == 0) {
                     using (Stream s = FsDriver.GetTimestepStream(false, timestepGuid))
                     using (var reader = GetJsonReader(s)) {
-                        tsi = m_Formatter.Deserialize<TimestepInfo>(reader);
+                        tsi = m_Formatter.Deserialize<T>(reader);
                         tsi.Session = session;
                         reader.Close();
                         s.Close();

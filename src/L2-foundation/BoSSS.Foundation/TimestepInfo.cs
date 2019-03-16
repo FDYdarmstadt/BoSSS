@@ -33,7 +33,10 @@ namespace BoSSS.Foundation.IO {
 
         #region Constructors
 
-        private TimestepInfo() {
+        /// <summary>
+        /// empty constructor for serialization
+        /// </summary>
+        protected TimestepInfo() {
         }
 
         /// <summary>

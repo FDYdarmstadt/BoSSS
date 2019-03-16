@@ -1396,24 +1396,42 @@ namespace BoSSS.Solution {
         /// Returns the actual time-step loaded (which may not be known in
         /// advance if <paramref name="timestep"/> is negative)
         /// </returns>
-        protected virtual TimestepNumber RestartFromDatabase(Guid sessionToLoad, TimestepNumber timestep, out double time) {
+        protected virtual TimestepNumber RestartFromDatabase(out double time) {
             using (var tr = new FuncTrace()) {
-                tr.Info("Loading session " + sessionToLoad);
-
+                
+                var sessionToLoad = this.Control.RestartInfo.Item1;
                 ISessionInfo session = m_Database.Controller.GetSessionInfo(sessionToLoad);
                 var all_ts = session.Timesteps;
+                
+                Guid tsi_toLoad_ID;
+                tsi_toLoad_ID = GetRestartTimestepID();
+                ITimestepInfo tsi_toLoad = all_ts.Single(t => t.ID.Equals(tsi_toLoad_ID));
 
-                ITimestepInfo tsi_toLoad;
-                if (timestep == null || timestep.MajorNumber < 0) {
-                    tsi_toLoad = all_ts.OrderBy(tsi => tsi.PhysicalTime).Last();
-                } else {
-                    tsi_toLoad = all_ts.Single(t => t.TimeStepNumber.Equals(timestep));
-                }
                 time = tsi_toLoad.PhysicalTime;
 
                 DatabaseDriver.LoadFieldData(tsi_toLoad, ((GridData)(this.GridData)), this.IOFields);
                 return tsi_toLoad.TimeStepNumber;
             }
+        }
+
+        /// <summary>
+        /// Returns, in the case of a restart (<see cref="AppControl.RestartInfo"/>), the ID of the time-step to restart.
+        /// </summary>
+        protected Guid GetRestartTimestepID() {
+            var sessionToLoad = this.Control.RestartInfo.Item1;
+            var timestep = this.Control.RestartInfo.Item2;
+
+            ISessionInfo session = m_Database.Controller.GetSessionInfo(sessionToLoad);
+            var all_ts = session.Timesteps;
+
+            Guid tsi_toLoad_ID;
+            if (timestep == null || timestep.MajorNumber < 0) {
+                tsi_toLoad_ID = all_ts.OrderBy(tsi => tsi.PhysicalTime).Last().ID;
+            } else {
+                tsi_toLoad_ID = all_ts.Single(t => t.TimeStepNumber.Equals(timestep)).ID;
+            }
+
+            return tsi_toLoad_ID;
         }
 
         /// <summary>
@@ -2670,7 +2688,7 @@ namespace BoSSS.Solution {
                 if (!this.Control.InitialValues_Evaluators.IsNullOrEmpty())
                     throw new ApplicationException("control object error: initial values ('AppControl.InitialValues') and restart info ('AppControl.RestartInfo') cannot be specified at the same time.");
 
-                TimestepNo = RestartFromDatabase(this.Control.RestartInfo.Item1, this.Control.RestartInfo.Item2, out Time);
+                TimestepNo = RestartFromDatabase(out Time);
                 this.CurrentSessionInfo.RestartedFrom = this.Control.RestartInfo.Item1;
                 this.CurrentSessionInfo.Save();
 
