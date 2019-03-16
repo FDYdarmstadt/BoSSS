@@ -954,7 +954,6 @@ namespace BoSSS.Application.IBM_Solver {
             CreateEquationsAndSolvers(null);
             After_SetInitialOrLoadRestart();
             m_BDF_Timestepper.SingleInit();
-
         }
 
         /// <summary>

@@ -28,6 +28,13 @@ namespace BoSSS.Application.FSI_Solver {
     [DataContract]
     [Serializable]
     public class FSI_Control : IBM_Solver.IBM_Control {
+
+        /// <summary>
+        /// ctor
+        /// </summary>
+        public FSI_Control() : base() {
+            this.Particles = new List<Particle>();
+        }
         
         /// <summary>
         /// Set true if the coupling between fluid and particle should be calculated iterative, while using Lie-Splitting.
@@ -86,14 +93,13 @@ namespace BoSSS.Application.FSI_Solver {
         public double ForceAndTorque_ConvergenceCriterion = 1.0e-6;
 
         /// <summary>
-        /// underrelaxation of the level set movement in case of coupled iterative
+        /// under-relaxation of the level set movement in case of coupled iterative
         /// </summary>
         public double LSunderrelax = 1.0;
 
- 
 
-        public override void SetDGdegree(int k)
-        {
+
+        public override void SetDGdegree(int k) {
             if (k < 1)
                 throw new ArgumentOutOfRangeException("DG polynomial degree must be at least 1.");
 
@@ -122,8 +128,11 @@ namespace BoSSS.Application.FSI_Solver {
         /// All particles in the FSI
         /// </summary>
         [DataMember]
-        public List<Particle> Particles = new List<Particle>();
-       
+        public IList<Particle> Particles {
+            get;
+            private set;
+        }
+
         public enum CollisionModel {
             RepulsiveForce = 0,
 
