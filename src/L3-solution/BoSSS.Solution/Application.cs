@@ -1309,6 +1309,18 @@ namespace BoSSS.Solution {
         }
 
         /// <summary>
+        /// creates the <see cref="TimestepInfo"/> object that will be saved during <see cref="SaveToDatabase"/>;
+        /// override this method to add user-data to a time-step
+        /// </summary>
+        /// <param name="t">
+        /// time value which will be associated with the field
+        /// </param>
+        /// <param name="timestepno">time-step number</param>
+        protected virtual TimestepInfo GetCurrentTimestepInfo(TimestepNumber timestepno, double t) {
+            return new TimestepInfo(t, this.CurrentSessionInfo, timestepno, this.IOFields);
+        }
+
+        /// <summary>
         /// If data logging is turned on, saves all fields in
         /// <see cref="m_IOFields"/> to the database 
         /// </summary>
@@ -1324,15 +1336,10 @@ namespace BoSSS.Solution {
                 if (this.CurrentSessionInfo.ID.Equals(Guid.Empty))
                     return null;
 
-                ITimestepInfo tsi;
+                TimestepInfo tsi = GetCurrentTimestepInfo(timestepno, t);
                 //Exception e = null;
                 try {
-                    tsi = this.DatabaseDriver.SaveTimestep(
-                        t,
-                        timestepno,
-                        this.CurrentSessionInfo,
-                        ((GridData)(this.GridData)),
-                        this.IOFields);
+                    this.DatabaseDriver.SaveTimestep(tsi);
                 } catch (Exception ee) {
                     Console.Error.WriteLine(ee.GetType().Name + " on rank " + this.MPIRank + " saving time-step " + timestepno + ": " + ee.Message);
                     Console.Error.WriteLine(ee.StackTrace);

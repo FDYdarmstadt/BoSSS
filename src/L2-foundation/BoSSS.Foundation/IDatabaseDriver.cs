@@ -183,14 +183,7 @@ namespace BoSSS.Foundation.IO {
         /// <summary>
         /// Saves a time-step to the database's persistent memory.
         /// </summary>
-        /// <param name="physTime">Physical time of the time-step.</param>
-        /// <param name="TimestepNo">Time-step number.</param>
-        /// <param name="currentSession">The session associated with the time-step.</param>
-        /// <param name="fields">The fields of the time-step.</param>
-        /// <param name="g">grid data object (required if <paramref name="fields"/> is empty)</param>
-        /// <returns>An object containing information about the time-step.</returns>
-        TimestepInfo SaveTimestep(double physTime, TimestepNumber TimestepNo,
-            SessionInfo currentSession, IGridData g, IEnumerable<DGField> fields);
+        void SaveTimestep(TimestepInfo _tsi);
 
         /// <summary>
         /// loads a single <see cref="TimestepInfo"/>-object from the database.

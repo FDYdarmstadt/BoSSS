@@ -806,6 +806,21 @@ namespace BoSSS.Application.FSI_Solver {
         }
         #endregion
 
+        /// <summary>
+        /// over-ridden in oder to save the particles (<see cref="m_Particles"/>) to the database
+        /// </summary>
+        protected override ITimestepInfo SaveToDatabase(TimestepNumber timestepno, double t) {
+            return base.SaveToDatabase(timestepno, t);
+        }
+
+        /// <summary>
+        /// over-ridden in oder to save the particles (<see cref="m_Particles"/>) to the database
+        /// </summary>
+        protected override TimestepNumber RestartFromDatabase(Guid sessionToLoad, TimestepNumber timestep, out double time) {
+            return base.RestartFromDatabase(sessionToLoad, timestep, out time);
+        }
+
+
         #region restart
         /// <summary>
         /// For restarting calculations, its important to reload old solutions if one uses a higher order method in time
