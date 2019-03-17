@@ -88,12 +88,14 @@ namespace BoSSS.Foundation.IO {
 
             // set members:
             ID = Guid.Empty;
+            this.m_StorageID = Guid.Empty;
+            DGField[] _fields = fields.ToArray();
+            m_Fields = new Lazy<IEnumerable<DGField>>(() => _fields);
             this.m_TimestepNumber = TimestepNo;
             this.PhysicalTime = physTime;
             this.Session = session;
             this.m_FieldInitializers = fields.Select(f => f.Initializer).ToArray();
             CreationTime = DateTime.Now;
-            this.m_StorageID = Guid.Empty;
         }
 
         /// <summary>

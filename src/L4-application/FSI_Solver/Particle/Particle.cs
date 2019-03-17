@@ -351,9 +351,14 @@ namespace BoSSS.Application.FSI_Solver
         #endregion
 
         #region Administrative tasks
+
+        [NonSerialized]
         ParticleAuxillary Aux = new ParticleAuxillary();
+        [NonSerialized]
         ParticlePhysics Physics = new ParticlePhysics();
+        [NonSerialized]
         ParticleAddedDamping AddedDamping = new ParticleAddedDamping();
+        [NonSerialized]
         ParticleUnderrelaxation Underrelaxation = new ParticleUnderrelaxation();
         #endregion
 

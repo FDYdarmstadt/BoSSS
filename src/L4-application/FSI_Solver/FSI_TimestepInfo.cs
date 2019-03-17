@@ -4,12 +4,15 @@ using ilPSP;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.Serialization;
 
 namespace BoSSS.Application.FSI_Solver {
 
     /// <summary>
     /// Time-step data which contains additional particle information
     /// </summary>
+    [Serializable]
+    [DataContract]
     public class FSI_TimestepInfo : TimestepInfo {
 
         /// <summary>
@@ -30,6 +33,7 @@ namespace BoSSS.Application.FSI_Solver {
         /// <summary>
         /// particle state (<see cref="FSI_SolverMain.m_Particles"/>)
         /// </summary>
+        [DataMember]
         public Particle[] Particles;
     }
 }

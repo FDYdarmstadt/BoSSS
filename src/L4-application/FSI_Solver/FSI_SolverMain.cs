@@ -42,6 +42,8 @@ using BoSSS.Foundation.Grid.RefElements;
 using BoSSS.Solution.XNSECommon;
 using BoSSS.Foundation.Grid.Classic;
 using static BoSSS.Application.FSI_Solver.FSI_Control;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Bson;
 
 namespace BoSSS.Application.FSI_Solver {
     public class FSI_SolverMain : IBM_Solver.IBM_SolverMain {
@@ -812,13 +814,77 @@ namespace BoSSS.Application.FSI_Solver {
         /// over-ridden in oder to save the particles (<see cref="m_Particles"/>) to the database
         /// </summary>
         protected override TimestepInfo GetCurrentTimestepInfo(TimestepNumber timestepno, double t) {
-            return new FSI_TimestepInfo(t, this.CurrentSessionInfo, timestepno, base.IOFields, m_Particles);
+            var tsi = new FSI_TimestepInfo(t, this.CurrentSessionInfo, timestepno, base.IOFields, m_Particles);
+
+            SerialzeTester(tsi);
+
+            return tsi;
+        }
+
+        /// <summary>
+        /// Test the serialization of <see cref="FSI_TimestepInfo.Particles"/>
+        /// </summary>
+        [Conditional("DEBUG")]
+        private static void SerialzeTester(FSI_TimestepInfo b) {
+            JsonSerializer formatter = new JsonSerializer() {
+                NullValueHandling = NullValueHandling.Ignore,
+                TypeNameHandling = TypeNameHandling.Auto,
+                ConstructorHandling = ConstructorHandling.AllowNonPublicDefaultConstructor,
+                ReferenceLoopHandling = ReferenceLoopHandling.Serialize
+            };
+
+            bool DebugSerialization = false;
+
+            JsonReader GetJsonReader(Stream s) {
+                if (DebugSerialization) {
+                    return new JsonTextReader(new StreamReader(s));
+                } else {
+                    return new BsonReader(s);
+                }
+            }
+
+            JsonWriter GetJsonWriter(Stream s) {
+                if (DebugSerialization) {
+                    return new JsonTextWriter(new StreamWriter(s));
+                } else {
+                    return new BsonWriter(s);
+                }
+            }
+
+
+            byte[] buffer = null;
+            using (var ms1 = new MemoryStream()) {
+                using (var writer = GetJsonWriter(ms1)) {
+                    formatter.Serialize(writer, b);
+                    writer.Flush();
+                    buffer = ms1.GetBuffer();
+                    //writer.Close();
+                }
+            }
+
+            FSI_TimestepInfo o;
+            using (var ms2 = new MemoryStream(buffer)) {
+                using (var reader = GetJsonReader(ms2)) {
+                    o = formatter.Deserialize<FSI_TimestepInfo>(reader);
+                    reader.Close();
+                }
+            }
+
+            //Console.WriteLine(o.ToString());
+
+            Debug.Assert(b.Particles.Length == o.Particles.Length);
+            int L = b.Particles.Length;
+            for(int l =0; l < L; l++) { // loop over particles
+                Debug.Assert(GenericBlas.L2Dist(b.Particles[l].positionAtTimestep[0], o.Particles[l].positionAtTimestep[0]) < 1e-13);
+            }
+
         }
 
         /// <summary>
         /// over-ridden in oder to save the particles (<see cref="m_Particles"/>) to the database
         /// </summary>
         protected override TimestepNumber RestartFromDatabase(out double time) {
+            Debugger.Launch();
 
             // this sux, because the database API is totally fucked up
             var db = GetDatabase();
