@@ -140,6 +140,5 @@ namespace BoSSS.Foundation.Grid.Aggregation
             }
             return slicedArray;
         }
-
     }
 }

@@ -10,15 +10,6 @@ using Newtonsoft.Json;
 
 namespace BoSSS.Foundation.IO
 {
-    interface ISerializer
-    {
-        string Name { get; }
-
-        object Deserialize(Stream stream, Type objectType);
-
-        void Serialize(Stream stream, object obj, Type objectType);
-    }
-
     interface IVectorDataSerializer : ISerializer
     {
         Guid SaveVector<T>(IList<T> vector);

@@ -1,5 +1,4 @@
 ﻿using System;
-using MPI.Wrappers;
 using System.IO;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Bson;
@@ -7,6 +6,14 @@ using BoSSS.Foundation.Grid;
 
 namespace BoSSS.Foundation.IO
 {
+    interface ISerializer
+    {
+        string Name { get; }
+
+        object Deserialize(Stream stream, Type objectType);
+
+        void Serialize(Stream stream, object obj, Type objectType);
+    }
 
     abstract class Serializer : ISerializer
     {
@@ -140,30 +147,5 @@ namespace BoSSS.Foundation.IO
             ReferenceLoopHandling = ReferenceLoopHandling.Serialize,
 
         };
-    }
-
-    public class MPIProcess
-    {
-        /// <summary>
-        /// MPI rank of actual process within the MPI world communicator
-        /// </summary>
-        public int MyRank {
-            get {
-                int rank;
-                csMPI.Raw.Comm_Rank(csMPI.Raw._COMM.WORLD, out rank);
-                return rank;
-            }
-        }
-
-        /// <summary>
-        /// Number of MPI processes within the MPI world communicator
-        /// </summary>
-        public int Size {
-            get {
-                int size;
-                csMPI.Raw.Comm_Size(csMPI.Raw._COMM.WORLD, out size);
-                return size;
-            }
-        }
     }
 }

@@ -83,6 +83,7 @@
     <Compile Include="DatabaseDriver.cs" />
     <Compile Include="DatabaseDriver_DynamicSerializer.cs" />
     <Compile Include="DatabaseDriver_Grid.cs" />
+    <Compile Include="DatabaseDriver_MPIProcess.cs" />
     <Compile Include="DatabaseDriver_Serializer.cs" />
     <Compile Include="DatabaseDriver_Sessions.cs" />
     <Compile Include="DatabaseDriver_TimeStep.cs" />
