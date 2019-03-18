@@ -265,7 +265,7 @@ namespace BoSSS.Foundation.IO {
         /// </summary>
         /// <param name="grid"></param>
         /// <returns></returns>
-        public IGrid LoadGridData(GridCommons grid)
+        public IGrid LoadGridData(IGrid grid)
         {
             return gridDatabaseDriver.LoadGridData(grid);
         }
