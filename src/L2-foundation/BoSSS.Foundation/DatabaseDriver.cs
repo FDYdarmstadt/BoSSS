@@ -630,18 +630,18 @@ namespace BoSSS.Foundation.IO {
         /// <summary>
         /// Saves a time-step to the database's persistent memory.
         /// </summary>
-        /// <param name="physTime">Physical time of the time-step.</param>
-        /// <param name="TimestepNo">Time-step number.</param>
-        /// <param name="currentSession">
-        /// The session associated with the time-step.
+        /// <param name="_tsi">
+        /// (input/output)
+        /// A time-step-info object that has not yet been saved in the database;
+        /// object state (e.g. <see cref="ITimestepInfo.StorageID"/>) will be modified on output;
         /// </param>
-        /// <param name="fields">The fields of the time-step.</param>
-        /// <param name="GridDat">grid data object (required if <paramref name="fields"/> is empty)</param>
-        /// <returns>
-        /// An object containing information about the time-step.
-        /// </returns>
-        public TimestepInfo SaveTimestep(double physTime, TimestepNumber TimestepNo, SessionInfo currentSession, IGridData GridDat, IEnumerable<DGField> fields) {
+        public void SaveTimestep(TimestepInfo _tsi) {
             using (var tr = new FuncTrace()) {
+
+                if (!(_tsi.ID.Equals(Guid.Empty) && _tsi.StorageID.Equals(Guid.Empty)))
+                    throw new ArgumentException("Timestep is already saved in database");
+                var fields = _tsi.Fields.ToArray();
+                var GridDat = fields[0].GridDat;
 
                 {
                     List<DGField> FieldsFlatten = new List<DGField>();
@@ -659,7 +659,7 @@ namespace BoSSS.Foundation.IO {
                                     + "', which is required by at least one of the"
                                     + " given fields, must also be contained in the"
                                     + " given list of fields.",
-                                "fields");
+                                "_tsi");
                         }
                     }
                 }
@@ -693,44 +693,46 @@ namespace BoSSS.Foundation.IO {
                 // Save dg coordinates
                 // ===================
                 Guid VectorGuid = SaveVector(vec);
+                _tsi.StorageID = VectorGuid;
+                
 
                 // Save state object 
                 // =================
-                TimestepInfo tsi = null;
+                _tsi.ID = Guid.NewGuid().MPIBroadcast(0);
                 Exception e = null;
                 if (MyRank == 0) {
                     try {
-                        tsi = new TimestepInfo(physTime, currentSession, TimestepNo, fields, VectorGuid);
-                        using(var s = FsDriver.GetTimestepStream(true, tsi.ID))
+                        //tsi = new TimestepInfo(physTime, currentSession, TimestepNo, fields, VectorGuid);
+                        using(var s = FsDriver.GetTimestepStream(true, _tsi.ID))
                         using(var writer = GetJsonWriter(s)) {
-                            m_Formatter.Serialize(writer, tsi);
+                            m_Formatter.Serialize(writer, _tsi);
                             writer.Close();
                             s.Close();
                         }
                     } catch (Exception ee) {
                         e = ee;
-                        Console.Error.WriteLine(ee.GetType().Name + " on rank " + MyRank + " saving time-step " + TimestepNo + ": " + ee.Message);
+                        Console.Error.WriteLine(ee.GetType().Name + " on rank " + MyRank + " saving time-step " + _tsi.TimeStepNumber + ": " + ee.Message);
                         Console.Error.WriteLine(ee.StackTrace);
                     }
                 }
                 e.ExceptionBcast();
-                tsi = tsi.MPIBroadcast(0);
 
-                // return
-                // ======
+                // log session
+                // ===========
+                SessionInfo currentSession = (SessionInfo)( _tsi.Session); // hack
                 if (MyRank == 0) {
+
                     try {
-                        currentSession.LogTimeStep(tsi.ID);
+                        currentSession.LogTimeStep(_tsi.ID);
                     } catch (Exception ee) {
                         e = ee;
-                        Console.Error.WriteLine(ee.GetType().Name + " on rank " + MyRank + " saving time-step " + TimestepNo + ": " + ee.Message);
+                        Console.Error.WriteLine(ee.GetType().Name + " on rank " + MyRank + " saving time-step " + _tsi.TimeStepNumber + ": " + ee.Message);
                         Console.Error.WriteLine(ee.StackTrace);
                     }
                 }
                 e.ExceptionBcast();
 
-                tsi.Database = currentSession.Database;
-                return tsi;
+                _tsi.Database = currentSession.Database;
             }
         }
 
@@ -763,14 +765,23 @@ namespace BoSSS.Foundation.IO {
         /// loads a single <see cref="TimestepInfo"/>-object from the database.
         /// </summary>
         public TimestepInfo LoadTimestepInfo(Guid timestepGuid, ISessionInfo session, IDatabaseInfo database) {
+            return LoadTimestepInfo<TimestepInfo>(timestepGuid, session, database);
+        }
+
+        /// <summary>
+        /// loads a single <see cref="TimestepInfo"/>-object from the database.
+        /// </summary>
+        public T LoadTimestepInfo<T>(Guid timestepGuid, ISessionInfo session, IDatabaseInfo database) 
+            where T : TimestepInfo //
+        {
             using (var tr = new FuncTrace()) {
                 tr.Info("Loading time-step " + timestepGuid);
 
-                TimestepInfo tsi = null;
+                T tsi = null;
                 if (MyRank == 0) {
                     using (Stream s = FsDriver.GetTimestepStream(false, timestepGuid))
                     using (var reader = GetJsonReader(s)) {
-                        tsi = m_Formatter.Deserialize<TimestepInfo>(reader);
+                        tsi = m_Formatter.Deserialize<T>(reader);
                         tsi.Session = session;
                         reader.Close();
                         s.Close();

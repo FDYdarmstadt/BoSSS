@@ -39,6 +39,7 @@ namespace BoSSS.Application.SipPoisson {
             base.LinearSolver.NoOfMultigridLevels = 1;
             base.CompMode = _CompMode.Steady;
             base.NoOfTimesteps = 1;
+            base.LinearSolver.verbose = true;
         }
 
         /// <summary>
@@ -99,5 +100,11 @@ namespace BoSSS.Application.SipPoisson {
         /// </summary>
         [DataMember]
         public bool ExactSolution_provided = false;
+
+        /// <summary>
+        /// Suppresses exception prompt, which disturbes local batch run with MiniBatchprocessor.
+        /// </summary>
+        [DataMember]
+        public bool SuppressExceptionPrompt = false;
     }
 }

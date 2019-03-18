@@ -247,7 +247,7 @@ namespace BoSSS.Application.IBM_Solver {
             //// Write out Multigrid Levels
             //this.MGColoring = new SinglePhaseField[base.MultigridSequence.Length];
             //for (int iLevel = 0; iLevel < base.MultigridSequence.Length; iLevel++) {
-            //    this.MGColoring[iLevel] = new SinglePhaseField(new Basis(this.GridData, 0), "MGColoring_level_" + iLevel);
+            //    this.MGColoring[iLevel] = new SinglePhaseField(new Basis(this.GridData, 0), "MGColoring_level_f" + iLevel);
             //    base.MultigridSequence[iLevel].ColorDGField(this.MGColoring[iLevel]);
             //}
             //Tecplot.PlotFields(MGColoring, "MultigridLevels", 0, 0);
@@ -954,7 +954,6 @@ namespace BoSSS.Application.IBM_Solver {
             CreateEquationsAndSolvers(null);
             After_SetInitialOrLoadRestart();
             m_BDF_Timestepper.SingleInit();
-
         }
 
         /// <summary>

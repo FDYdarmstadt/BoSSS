@@ -172,15 +172,6 @@ namespace BoSSS.Application.IBM_Solver {
         [DataMember]
         public double particleRadius;
 
-        public double MeshFactor;
-
-        /// <summary>
-        /// Exponent of time step 
-        /// </summary>
-        [DataMember]
-        public int dtLevel;
-
-
 
         /// <summary>
         /// 

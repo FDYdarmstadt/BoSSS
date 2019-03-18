@@ -216,7 +216,7 @@ namespace BoSSS.Foundation.IO {
         #region IEquatable<IGridInfo> Members
 
         /// <summary>
-        /// See <see cref="GridCommons.Equals"/>
+        /// See <see cref="GridCommons.Equals(IGridInfo)"/>
         /// </summary>
         /// <param name="other"></param>
         /// <returns></returns>
