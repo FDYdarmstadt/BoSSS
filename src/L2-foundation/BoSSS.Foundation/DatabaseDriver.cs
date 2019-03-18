@@ -62,6 +62,7 @@ namespace BoSSS.Foundation.IO {
             this.fsDriver = fsDriver;
             ISerializer standardSerializer = new SerializerVersion0();
             ISerializer objectTypeSerializer = new SerializerVersion1();
+
             standardVectorSerializer = new VectorDataSerializer(fsDriver, standardSerializer);
             IVectorDataSerializer objectTypeVectorSerializer = new VectorDataSerializer(fsDriver, objectTypeSerializer);
             IVectorDataSerializer versionedVectorSerializer = new VersionManager(objectTypeVectorSerializer, standardVectorSerializer);
@@ -232,10 +233,7 @@ namespace BoSSS.Foundation.IO {
 
         /// <summary>
         /// Loads the grid info object for the given
-        /// <paramref name="gridGuid"/> from the given
-        /// <paramref name="database"/>
-        /// </summary>
-        /// <param name="gridGuid"></param>
+        /// <paramref name="gridId"/> from the given
         /// <param name="database"></param>
         /// <returns></returns>
         public IGridInfo LoadGridInfo(Guid gridId, IDatabaseInfo database)
@@ -247,7 +245,7 @@ namespace BoSSS.Foundation.IO {
         /// loads the grid identified by <paramref name="uid"/> from the
         /// given <paramref name="database"/>
         /// </summary>
-        /// <param name="uid">The unique identifier of the grid.</param>
+        /// <param name="gridId">The unique identifier of the grid.</param>
         /// <param name="database">
         /// The database that is associated with the grid.
         /// </param>
@@ -309,7 +307,7 @@ namespace BoSSS.Foundation.IO {
         /// Searches for an equivalent grid in the database and, if none is found
         /// saves a grid object to the database.
         /// </summary>
-        /// <param name="_grd">
+        /// <param name="grid">
         /// On entry, the grid which should be saved to the database.
         /// On exit, either unchanged, or the equivalent grid.
         /// </param>
@@ -317,9 +315,9 @@ namespace BoSSS.Foundation.IO {
         /// Inidicates that an equivalent grid was found.
         /// </param>
         /// <param name="database"></param>
-        public Guid SaveGridIfUnique(ref IGrid grd, out bool EquivalentGridFound, IDatabaseInfo database)
+        public Guid SaveGridIfUnique(ref IGrid grid, out bool EquivalentGridFound, IDatabaseInfo database)
         {
-            return gridDatabaseDriver.SaveGridIfUnique(ref grd, out EquivalentGridFound, database);
+            return gridDatabaseDriver.SaveGridIfUnique(ref grid, out EquivalentGridFound, database);
         }
 
         /// <summary>
@@ -335,9 +333,9 @@ namespace BoSSS.Foundation.IO {
         /// <param name="database">
         /// chaos
         /// </param>
-        public Guid SaveGrid(IGrid grd, IDatabaseInfo database)
+        public Guid SaveGrid(IGrid grid, IDatabaseInfo database)
         {
-            return gridDatabaseDriver.SaveGrid(grd, database);
+            return gridDatabaseDriver.SaveGrid(grid, database);
         }
 
         /// <summary>
@@ -347,6 +345,9 @@ namespace BoSSS.Foundation.IO {
             return timestepDatabaseDriver.LoadTimestepInfo<TimestepInfo>(timestepGuid, session, database);
         }
 
+        /// <summary>
+        /// loads a single <see cref="TimestepInfo"/>-object from the database.
+        /// </summary>
         public T LoadTimestepInfo<T>(Guid timestepGuid, ISessionInfo session, IDatabaseInfo database)
             where T : TimestepInfo
         {
