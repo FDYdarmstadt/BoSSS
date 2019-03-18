@@ -10,21 +10,6 @@ using BoSSS.Foundation.Grid.Classic;
 
 namespace BoSSS.Foundation.Grid.Aggregation
 {
-    public partial class AggregationGrid
-    {
-        [NonSerialized]
-        [JsonIgnore]
-        AggregationGridDatabaseMethods dataBaseMethods;
-
-        public IGridSerializationHandler GridSerializationHandler {
-            get {
-                if (dataBaseMethods == null)
-                    dataBaseMethods = new AggregationGridDatabaseMethods(this);
-                return dataBaseMethods;
-            }
-        }
-    }
-
     class AggregationGridDatabaseMethods : IGridSerializationHandler
     {
         readonly AggregationGrid grid;

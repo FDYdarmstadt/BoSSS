@@ -8,21 +8,6 @@ using BoSSS.Foundation.IO;
 
 namespace BoSSS.Foundation.Grid.Classic
 {
-    public partial class GridCommons
-    {
-        [NonSerialized]
-        [JsonIgnore]
-        GridCommonsDatabaseMethods dataBaseMethods;
-
-        public IGridSerializationHandler GridSerializationHandler {
-            get {
-                if (dataBaseMethods == null)
-                    dataBaseMethods = new GridCommonsDatabaseMethods(this);
-                return dataBaseMethods;
-            }
-        }
-    }
-
     class GridCommonsDatabaseMethods : IGridSerializationHandler
     {
         readonly GridCommons grid; 
@@ -143,7 +128,4 @@ namespace BoSSS.Foundation.Grid.Classic
         }
 
     }
-
-    
-    
 }
