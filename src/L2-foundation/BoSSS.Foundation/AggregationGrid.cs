@@ -426,8 +426,18 @@ namespace BoSSS.Foundation.Grid.Aggregation {
             throw new NotImplementedException();
         }
 
+        /// <summary>
+        /// Equality.
+        /// </summary>
         public bool Equals(IGridInfo other) {
-            throw new NotImplementedException();
+            if (other == null)
+            {
+                return false;
+            }
+            else
+            {
+                return this.ID == other.ID;
+            }
         }
 
         public void Redistribute(IDatabaseDriver iom, GridPartType method, string PartOptions) {
