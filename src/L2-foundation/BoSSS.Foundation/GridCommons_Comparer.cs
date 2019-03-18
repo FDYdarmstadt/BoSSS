@@ -10,46 +10,46 @@ using MPI.Wrappers;
 using System.Diagnostics;
 namespace BoSSS.Foundation.Grid.Classic
 {
+    class EqualityComparer<T> : IEqualityComparer<IGrid>
+    {
+        readonly Func<T, T, bool> CheckEquality;
+
+        public EqualityComparer(Func<T, T, bool> CheckEquality)
+        {
+            this.CheckEquality = CheckEquality;
+        }
+
+        public bool Equals(IGrid x, IGrid y)
+        {
+            bool isEqual;
+            if (x is T X && y is T Y)
+            {
+                isEqual = CheckEquality(X, Y);
+            }
+            else
+            {
+                isEqual = false;
+            }
+            return isEqual;
+        }
+
+        public int GetHashCode(IGrid obj)
+        {
+            throw new NotImplementedException();
+        }
+    }
+
     static class GridCommonsComparer
     {
         public static IEqualityComparer<IGrid> ReferenceComparer {
             get {
-                return new EqualityComparer(AreReferencesEqual);
+                return new EqualityComparer<GridCommons>(AreReferencesEqual);
             }
         }
 
         public static IEqualityComparer<IGrid> CellComparer {
             get {
-                return new EqualityComparer(AreCellsEqual);
-            }
-        }
-
-        class EqualityComparer : IEqualityComparer<IGrid>
-        {
-            Func<GridCommons, GridCommons, bool> CheckEquality;
-
-            public EqualityComparer(Func<GridCommons, GridCommons, bool> CheckEquality)
-            {
-                this.CheckEquality = CheckEquality;
-            }
-
-            public bool Equals(IGrid x, IGrid y)
-            {
-                bool isEqual;
-                if (x is GridCommons X && y is GridCommons Y)
-                {
-                    isEqual = CheckEquality(X, Y);
-                }
-                else
-                {
-                    isEqual = false;
-                }
-                return isEqual;
-            }
-
-            public int GetHashCode(IGrid obj)
-            {
-                throw new NotImplementedException();
+                return new EqualityComparer<GridCommons>(AreCellsEqual);
             }
         }
 
