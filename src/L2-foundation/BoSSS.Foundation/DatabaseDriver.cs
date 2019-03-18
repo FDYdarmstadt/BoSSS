@@ -341,29 +341,16 @@ namespace BoSSS.Foundation.IO {
         }
 
         /// <summary>
-        /// Saves a time-step to the database's persistent memory.
-        /// </summary>
-        /// <param name="physTime">Physical time of the time-step.</param>
-        /// <param name="TimestepNo">Time-step number.</param>
-        /// <param name="currentSession">
-        /// The session associated with the time-step.
-        /// </param>
-        /// <param name="fields">The fields of the time-step.</param>
-        /// <param name="GridDat">grid data object (required if <paramref name="fields"/> is empty)</param>
-        /// <returns>
-        /// An object containing information about the time-step.
-        /// </returns>
-        public TimestepInfo SaveTimestep(double physTime, TimestepNumber TimestepNo, SessionInfo currentSession, IGridData g, IEnumerable<DGField> fields)
-        {
-            return timestepDatabaseDriver.SaveTimestep(physTime, TimestepNo, currentSession, g, fields);
-        }
-
-        /// <summary>
         /// loads a single <see cref="TimestepInfo"/>-object from the database.
         /// </summary>
-        public TimestepInfo LoadTimestepInfo(Guid timestepGuid, ISessionInfo session, IDatabaseInfo database)
+        public TimestepInfo LoadTimestepInfo(Guid timestepGuid, ISessionInfo session, IDatabaseInfo database) {
+            return timestepDatabaseDriver.LoadTimestepInfo<TimestepInfo>(timestepGuid, session, database);
+        }
+
+        public T LoadTimestepInfo<T>(Guid timestepGuid, ISessionInfo session, IDatabaseInfo database)
+            where T : TimestepInfo
         {
-            return timestepDatabaseDriver.LoadTimestepInfo(timestepGuid, session, database);
+            return timestepDatabaseDriver.LoadTimestepInfo<T>(timestepGuid, session, database);
         }
 
         /// <summary>
@@ -408,5 +395,13 @@ namespace BoSSS.Foundation.IO {
             return timestepDatabaseDriver.LoadFields(info, grdDat, NameFilter);
         }
 
+        /// <summary>
+        /// Saves a time-step to the database's persistent memory.
+        /// </summary>
+        /// <param name="_tsi">Contains Id etc.</param>
+        public void SaveTimestep(TimestepInfo _tsi)
+        {
+            timestepDatabaseDriver.SaveTimestep( _tsi);
+        }
     }
 }

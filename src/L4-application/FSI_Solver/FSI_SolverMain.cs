@@ -42,6 +42,8 @@ using BoSSS.Foundation.Grid.RefElements;
 using BoSSS.Solution.XNSECommon;
 using BoSSS.Foundation.Grid.Classic;
 using static BoSSS.Application.FSI_Solver.FSI_Control;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Bson;
 
 namespace BoSSS.Application.FSI_Solver {
     public class FSI_SolverMain : IBM_Solver.IBM_SolverMain {
@@ -807,6 +809,114 @@ namespace BoSSS.Application.FSI_Solver {
         #endregion
 
         #region restart
+
+        /// <summary>
+        /// over-ridden in oder to save the particles (<see cref="m_Particles"/>) to the database
+        /// </summary>
+        protected override TimestepInfo GetCurrentTimestepInfo(TimestepNumber timestepno, double t) {
+            var tsi = new FSI_TimestepInfo(t, this.CurrentSessionInfo, timestepno, base.IOFields, m_Particles);
+
+            SerialzeTester(tsi);
+
+            return tsi;
+        }
+
+        /// <summary>
+        /// Test the serialization of <see cref="FSI_TimestepInfo.Particles"/>
+        /// </summary>
+        [Conditional("DEBUG")]
+        private static void SerialzeTester(FSI_TimestepInfo b) {
+            JsonSerializer formatter = new JsonSerializer() {
+                NullValueHandling = NullValueHandling.Ignore,
+                TypeNameHandling = TypeNameHandling.Auto,
+                ConstructorHandling = ConstructorHandling.AllowNonPublicDefaultConstructor,
+                ReferenceLoopHandling = ReferenceLoopHandling.Serialize
+            };
+
+            bool DebugSerialization = false;
+
+            JsonReader GetJsonReader(Stream s) {
+                if (DebugSerialization) {
+                    return new JsonTextReader(new StreamReader(s));
+                } else {
+                    return new BsonReader(s);
+                }
+            }
+
+            JsonWriter GetJsonWriter(Stream s) {
+                if (DebugSerialization) {
+                    return new JsonTextWriter(new StreamWriter(s));
+                } else {
+                    return new BsonWriter(s);
+                }
+            }
+
+
+            byte[] buffer = null;
+            using (var ms1 = new MemoryStream()) {
+                using (var writer = GetJsonWriter(ms1)) {
+                    formatter.Serialize(writer, b);
+                    writer.Flush();
+                    buffer = ms1.GetBuffer();
+                    //writer.Close();
+                }
+            }
+
+            FSI_TimestepInfo o;
+            using (var ms2 = new MemoryStream(buffer)) {
+                using (var reader = GetJsonReader(ms2)) {
+                    o = formatter.Deserialize<FSI_TimestepInfo>(reader);
+                    reader.Close();
+                }
+            }
+
+            //Console.WriteLine(o.ToString());
+
+            Debug.Assert(b.Particles.Length == o.Particles.Length);
+            int L = b.Particles.Length;
+            for(int l =0; l < L; l++) { // loop over particles
+                Debug.Assert(GenericBlas.L2Dist(b.Particles[l].positionAtTimestep[0], o.Particles[l].positionAtTimestep[0]) < 1e-13);
+            }
+
+        }
+
+        /// <summary>
+        /// over-ridden in oder to save the particles (<see cref="m_Particles"/>) to the database
+        /// </summary>
+        protected override TimestepNumber RestartFromDatabase(out double time) {
+            Debugger.Launch();
+
+            // this sux, because the database API is totally fucked up
+            var db = GetDatabase();
+            Guid Rst_Tsid = base.GetRestartTimestepID();
+            Guid Rst_SessionId = Control.RestartInfo.Item1;
+            ISessionInfo session = db.Controller.GetSessionInfo(Rst_SessionId);
+
+            var ArschInfo = ((DatabaseDriver)(base.DatabaseDriver)).LoadTimestepInfo<FSI_TimestepInfo>(Rst_Tsid, session, db);
+
+            // init particles
+            m_Particles = ArschInfo.Particles.ToList();
+            hack_phystime = ArschInfo.PhysicalTime;
+            UpdateLevelSetParticles(0.0);
+            
+            // call base shit
+            var R = base.RestartFromDatabase(out time);
+
+
+            // Setup Collision Model
+            m_collisionModel = ((FSI_Control)this.Control).collisionModel;
+            
+            foreach (Particle p in m_Particles) {
+                p.m_collidedWithParticle = new bool[m_Particles.Count];
+                p.m_collidedWithWall = new bool[4];
+                p.m_closeInterfacePointTo = new double[m_Particles.Count][];
+
+            }
+
+            // return
+            return R;
+        }
+
         /// <summary>
         /// For restarting calculations, its important to reload old solutions if one uses a higher order method in time
         /// </summary>
@@ -865,7 +975,7 @@ namespace BoSSS.Application.FSI_Solver {
         #region Initialize particles
         protected override void SetInitial() {
             // Setup particles
-            m_Particles = ((FSI_Control)this.Control).Particles;
+            m_Particles = ((FSI_Control)this.Control).Particles.ToList();
             hack_phystime = 0.0;
             UpdateLevelSetParticles(0.0);
 

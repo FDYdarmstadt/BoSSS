@@ -126,10 +126,10 @@ namespace BoSSS.Application.SipPoisson {
         /// </summary>
         /// <param name="args"></param>
         static void Main(string[] args) {
-            BoSSS.Application.SipPoisson.Tests.TestProgram.Init();
-            BoSSS.Application.SipPoisson.Tests.TestProgram.TestCartesian();
-            BoSSS.Application.SipPoisson.Tests.TestProgram.Cleanup();
-            return;
+            //BoSSS.Application.SipPoisson.Tests.TestProgram.Init();
+            //BoSSS.Application.SipPoisson.Tests.TestProgram.TestIterativeSolver(3, 8, 3, LinearSolverConfig.Code.exp_softpcg_schwarz_directcoarse);
+            //BoSSS.Application.SipPoisson.Tests.TestProgram.Cleanup();
+            //return;
 
 
             if (System.Environment.MachineName.ToLowerInvariant().EndsWith("terminal03")

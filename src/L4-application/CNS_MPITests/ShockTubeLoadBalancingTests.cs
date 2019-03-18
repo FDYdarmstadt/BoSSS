@@ -616,7 +616,7 @@ namespace CNS_MPITests.Tests.LoadBalancing {
             return c;
         }
 
-        private static void CheckRunsProduceSameResults(CNSControl refControl, double differenceThreshold = 1e-15, bool hilbert = true) {
+        private static void CheckRunsProduceSameResults(CNSControl refControl, double differenceThreshold = 1e-13, bool hilbert = true) {
             Debug.Assert(refControl.DynamicLoadBalancing_Period <= 0);
             Debug.Assert(refControl.DynamicLoadBalancing_CellCostEstimatorFactories.Count == 0);
 
