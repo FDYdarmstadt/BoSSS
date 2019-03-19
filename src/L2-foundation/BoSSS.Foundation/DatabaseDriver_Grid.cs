@@ -103,23 +103,31 @@ namespace BoSSS.Foundation.IO
         {
             using (new FuncTrace())
             {
-                Guid id = SaveGridData(grid, database);
-                SaveGridInfo(grid);
+                CheckIfSuitableForSaving(grid);
+                SaveGridData(grid.GridSerializationHandler, database);
+                if (MyRank == 0)
+                {
+                    SaveGridInfo(grid);
+                }
+                Guid id = grid.ID;
                 return id;
             }
         }
 
-        Guid SaveGridData(IGrid grd, IDatabaseInfo database)
+        void CheckIfSuitableForSaving(IGrid grid)
         {
-            if (grd.ID.Equals(Guid.Empty))
+            if (grid.ID.Equals(Guid.Empty))
             {
                 throw new ApplicationException("cannot save grid with empty Guid (Grid Guid is " + Guid.Empty.ToString() + ");");
             }
             MPICollectiveWatchDog.Watch(csMPI.Raw._COMM.WORLD);
+        }
 
-            SaveVectorData(grd.GridSerializationHandler);
-            grd.GridSerializationHandler.Database = database;
-            return grd.ID;
+        void SaveGridData(IGridSerializationHandler grdHandler, IDatabaseInfo database)
+        {
+            SaveVectorData(grdHandler);
+            grdHandler.Update();
+            grdHandler.Database = database;
         }
 
         void SaveVectorData(IGridSerializationHandler grid)
@@ -149,19 +157,11 @@ namespace BoSSS.Foundation.IO
             grid.SetVectorGuids(vectorGuids);
         }
 
-        public void SerializeGrid(IGrid grid)
+        void SaveGridInfo(IGrid grid)
         {
             using (Stream stream = GetGridStream(true, grid.ID))
             {
                 Driver.Serialize(stream, grid, typeof(IGrid));
-            }
-        }
-
-        void SaveGridInfo(IGrid grid)
-        {
-            if (MyRank == 0)
-            {
-                SerializeGrid(grid);
             }
         }
 
@@ -231,7 +231,7 @@ namespace BoSSS.Foundation.IO
                 }
             }
             gridSerializationHandler.SetVectorData(vectors);
-            gridSerializationHandler.Initialize();
+            gridSerializationHandler.Update();
         }
 
         /// <summary>

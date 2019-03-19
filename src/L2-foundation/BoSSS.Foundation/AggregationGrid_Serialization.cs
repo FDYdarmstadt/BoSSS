@@ -87,9 +87,9 @@ namespace BoSSS.Foundation.Grid.Aggregation
             return types;
         }
 
-        public void Initialize()
+        public void Update()
         {
-            parentGridHandler.Initialize();
+            parentGridHandler.Update();
         }
 
         T[] CombineArrays<T>(T[] first, params T[] second)

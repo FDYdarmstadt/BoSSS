@@ -110,7 +110,7 @@ namespace BoSSS.Foundation.Grid.Classic
             grid.BcCellsStorageGuid = guids.Last();
         }
 
-        public void Initialize()
+        public void Update()
         {
             grid.InitNumberOfCells();
         }

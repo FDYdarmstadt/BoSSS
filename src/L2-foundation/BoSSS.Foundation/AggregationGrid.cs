@@ -74,7 +74,7 @@ namespace BoSSS.Foundation.Grid.Aggregation {
             m_GridData = gdat;
         }
 
-        private AggregationGrid()
+        protected AggregationGrid()
         {
 
         }

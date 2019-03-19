@@ -22,7 +22,7 @@ namespace BoSSS.Foundation.Grid
         object[][] GetVectorData();
         void SetVectorData(object[][] vectorDatas);
         Type[] GetVectorTypes();
-        void Initialize();
+        void Update();
     }
 
     public interface IComparableGrid
