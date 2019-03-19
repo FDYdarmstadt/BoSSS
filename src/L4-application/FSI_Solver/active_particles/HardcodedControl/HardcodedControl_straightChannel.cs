@@ -30,7 +30,7 @@ namespace BoSSS.Application.FSI_Solver
 {
     public class HardcodedControl_straightChannel : IBM_Solver.HardcodedTestExamples
     {
-        public static FSI_Control ActiveRod_noBackroundFlow(string _DbPath = null, int k = 3, double VelXBase = 0.0, double stressM = 1e5, double cellAgg = 0.2, double muA = 1e4, double timestepX = 1e-3)
+        public static FSI_Control ActiveRod_noBackroundFlow(string _DbPath = null, int k = 3, double VelXBase = 0.0, double stressM = 1e4, double cellAgg = 0.2, double muA = 1e4, double timestepX = 1e-3)
         {
             FSI_Control C = new FSI_Control();
 
@@ -43,7 +43,7 @@ namespace BoSSS.Application.FSI_Solver
             // basic database options
             // =============================
             C.DbPath = @"\\hpccluster\hpccluster-scratch\deussen\cluster_db\straightChannel";
-            C.savetodb = true;
+            C.savetodb = false;
             C.saveperiod = 1;
             C.ProjectName = "activeRod_noBackroundFlow";
             C.ProjectDescription = "Active";
@@ -135,10 +135,10 @@ namespace BoSSS.Application.FSI_Solver
                     particleDensity = 0,
                     activeParticle = true,
                     active_stress_P = stressM,
-                    thickness_P = 0.3 * BaseSize,
-                    length_P = 1.5 * BaseSize,
+                    thickness_P = 0.2 * BaseSize,
+                    length_P = 1 * BaseSize,
                     AddaptiveUnderrelaxation = true,// set true if you want to define a constant underrelaxation (not recommended)
-                    underrelaxation_factor = 1,// underrelaxation with [factor * 10^exponent]
+                    underrelaxation_factor = 0.5,// underrelaxation with [factor * 10^exponent]
                     ClearSmallValues = true,
                     neglectAddedDamping = false
             });
@@ -191,7 +191,7 @@ namespace BoSSS.Application.FSI_Solver
             C.LinearSolver.NoOfMultigridLevels = 1;
             C.LinearSolver.MaxSolverIterations = 1000;
             C.LinearSolver.MinSolverIterations = 1;
-            C.ForceAndTorque_ConvergenceCriterion = 100e-8;
+            C.ForceAndTorque_ConvergenceCriterion = 1e-8;
             C.LSunderrelax = 1.0;
             
 

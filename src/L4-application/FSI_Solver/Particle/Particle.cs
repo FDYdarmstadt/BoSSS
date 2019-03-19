@@ -168,11 +168,7 @@ namespace BoSSS.Application.FSI_Solver
         [DataMember]
         public bool neglectAddedDamping = true;
 
-        double[,] addedDampingTensorVV = new double[3, 3];
-        double[,] addedDampingTensorVW = new double[3, 3];
-        double[,] addedDampingTensorWV = new double[3, 3];
-        double[,] addedDampingTensorWW = new double[3, 3];
-
+        double[,] AddedDampingTensor = new double[6, 6];
         
         #endregion
 
@@ -381,6 +377,7 @@ namespace BoSSS.Application.FSI_Solver
         ParticlePhysics Physics = new ParticlePhysics();
         ParticleAddedDamping AddedDamping = new ParticleAddedDamping();
         ParticleUnderrelaxation Underrelaxation = new ParticleUnderrelaxation();
+        ParticleAcceleration Acceleration = new ParticleAcceleration();
         #region obsolete
         ///// <summary>
         ///// Clean all Particle iteration histories until a certain length, obsolete?
@@ -457,7 +454,7 @@ namespace BoSSS.Application.FSI_Solver
             {
                 Aux.SaveValueOfLastTimestep(angleAtTimestep);
             }
-            double tempAngle = angleAtTimestep[1] + rotationalVelocityAtTimestep[1] + dt * (rotationalAccelarationAtTimestep[1] + rotationalAccelarationAtIteration[0]) / 2;
+            double tempAngle = angleAtTimestep[1] + rotationalVelocityAtTimestep[1] + dt.Pow2() * (rotationalAccelarationAtTimestep[1] + rotationalAccelarationAtIteration[0]) / 4;
             if (double.IsNaN(angleAtIteration[0]) || double.IsInfinity(angleAtIteration[0]))
                 throw new ArithmeticException("Error trying to update particle angle");
             Aux.SaveValueToList(angleAtIteration, tempAngle);
@@ -484,14 +481,26 @@ namespace BoSSS.Application.FSI_Solver
             transAccelerationAtTimestep[0] = transAccelerationAtIteration[0];
         }
 
-        public void CalculateTranslationalAcceleration(double dt, double fluidDensity, double addedDampingCoeff = 1)
+        public void CalculateAcceleration(double dt, double fluidDensity, double addedDampingCoeff = 1)
         {
-            double D1 = Mass_P + addedDampingCoeff * dt * addedDampingTensorVV[0, 0];
-            double D2 = Mass_P + addedDampingCoeff * dt * addedDampingTensorVV[1, 1];
-            double D3 = addedDampingCoeff * dt * addedDampingTensorVV[1, 0];
-            double D4 = addedDampingCoeff * dt * addedDampingTensorVV[0, 1];
-            double[] tempAcc = new double[2];
+            //double D1 = Mass_P + addedDampingCoeff * dt * AddedDampingTensor[0, 0];
+            //double D2 = Mass_P + addedDampingCoeff * dt * AddedDampingTensor[1, 1];
+            //double D3 = addedDampingCoeff * dt * AddedDampingTensor[1, 0];
+            //double D4 = addedDampingCoeff * dt * AddedDampingTensor[0, 1];
+            double[] tempAccTrans = new double[2];
+            double[,] CoefficientMatrix = Acceleration.CalculateCoefficients(AddedDampingTensor, Mass_P, MomentOfInertia_P, dt);
+            double Denominator = Acceleration.CalculateDenominator(CoefficientMatrix);
+            tempAccTrans = Acceleration.Translational(CoefficientMatrix, Denominator, hydrodynForcesAtIteration[0], hydrodynTorqueAtIteration[0]);
+            for (int i = 0; i< m_Dim; i++)
+            {
+                if (double.IsNaN(tempAccTrans[i]) || double.IsInfinity(tempAccTrans[i]))
+                    throw new ArithmeticException("Error trying to calculate particle acceleration");
+            }
+            Aux.SaveMultidimValueToList(transAccelerationAtIteration, tempAccTrans);
+            transAccelerationAtTimestep[0] = transAccelerationAtIteration[0];
 
+            double tempAccRot = Acceleration.Rotational(CoefficientMatrix, Denominator, hydrodynForcesAtIteration[0], hydrodynTorqueAtIteration[0]);
+            Aux.SaveValueToList(rotationalAccelarationAtIteration, tempAccRot);
             //if (neglectAddedDamping == true)
             //{
             //    for (int d = 0; d < m_Dim; d++)
@@ -499,16 +508,15 @@ namespace BoSSS.Application.FSI_Solver
             //        tempAcc[d] = hy
             //    }
             //}
-            tempAcc[0] = (hydrodynForcesAtIteration[0][0] - (D3 * D4 * hydrodynForcesAtIteration[0][0] - D1 * D2 * hydrodynForcesAtIteration[0][1]) / (D3 * D4 - D1 * D2)) / D1;
-            if (double.IsNaN(tempAcc[0]) || double.IsInfinity(tempAcc[0]))
-                throw new ArithmeticException("Error trying to calculate particle acceleration");
+            //tempAcc[0] = (hydrodynForcesAtIteration[0][0] - (D3 * D4 * hydrodynForcesAtIteration[0][0] - D1 * D2 * hydrodynForcesAtIteration[0][1]) / (D3 * D4 - D1 * D2)) / D1;
+            //if (double.IsNaN(tempAcc[0]) || double.IsInfinity(tempAcc[0]))
+            //    throw new ArithmeticException("Error trying to calculate particle acceleration");
 
-            tempAcc[1] = (D3 * hydrodynForcesAtIteration[0][0] - D1 * hydrodynForcesAtIteration[0][1]) / (D3 * D4 - D1 * D2);
-            if (double.IsNaN(tempAcc[1]) || double.IsInfinity(tempAcc[1]))
-                throw new ArithmeticException("Error trying to calculate particle acceleration");
+            //tempAcc[1] = (D3 * hydrodynForcesAtIteration[0][0] - D1 * hydrodynForcesAtIteration[0][1]) / (D3 * D4 - D1 * D2);
+            //if (double.IsNaN(tempAcc[1]) || double.IsInfinity(tempAcc[1]))
+            //    throw new ArithmeticException("Error trying to calculate particle acceleration");
 
-            Aux.SaveMultidimValueToList(transAccelerationAtIteration, tempAcc);
-            transAccelerationAtTimestep[0] = transAccelerationAtIteration[0];
+
         }
 
         public void PredictTranslationalVelocity()
@@ -643,11 +651,11 @@ namespace BoSSS.Application.FSI_Solver
             rotationalAccelarationAtTimestep[0] = rotationalAccelarationAtIteration[0];
         }
 
-        public void CalculateAngularAcceleration(double dt, double addedDampingCoeff = 1)
-        {
-            double MomentofInertia_m = MomentOfInertia_P;// + addedDampingCoeff * dt * addedDampingTensorVV[0, 0];
-            Aux.SaveValueToList(rotationalAccelarationAtIteration, hydrodynTorqueAtIteration[0] / MomentofInertia_m);
-        }
+        //public void CalculateAngularAcceleration(double dt, double addedDampingCoeff = 1)
+        //{
+        //    double MomentofInertia_m = MomentOfInertia_P;// + addedDampingCoeff * dt * AddedDampingTensor[0, 0];
+        //    Aux.SaveValueToList(rotationalAccelarationAtIteration, hydrodynTorqueAtIteration[0] / MomentofInertia_m);
+        //}
 
         public void PredictAngularVelocity()
         {
@@ -711,20 +719,14 @@ namespace BoSSS.Application.FSI_Solver
         /// </summary>
         abstract protected double AverageDistance { get; }
         
-        public void CalculateDampingTensors(LevelSetTracker LsTrk, double muA, double rhoA, double dt)
+        public void CalculateDampingTensor(LevelSetTracker LsTrk, double muA, double rhoA, double dt)
         {
-            addedDampingTensorVV = AddedDamping.IntegrationOverLevelSet(0, LsTrk, muA, rhoA, dt, positionAtIteration[0], CutCells_P(LsTrk));
-            addedDampingTensorVW = AddedDamping.IntegrationOverLevelSet(1, LsTrk, muA, rhoA, dt, positionAtIteration[0], CutCells_P(LsTrk));
-            addedDampingTensorWV = AddedDamping.IntegrationOverLevelSet(2, LsTrk, muA, rhoA, dt, positionAtIteration[0], CutCells_P(LsTrk));
-            addedDampingTensorWW = AddedDamping.IntegrationOverLevelSet(3, LsTrk, muA, rhoA, dt, positionAtIteration[0], CutCells_P(LsTrk));
+            AddedDampingTensor = AddedDamping.IntegrationOverLevelSet(LsTrk, muA, rhoA, dt, positionAtIteration[0], CutCells_P(LsTrk));
         }
 
         public void UpdateDampingTensors()
         {
-            addedDampingTensorVV = AddedDamping.RotateTensor(angleAtIteration[0], addedDampingTensorVV);
-            addedDampingTensorVW = AddedDamping.RotateTensor(angleAtIteration[0], addedDampingTensorVW);
-            addedDampingTensorWV = AddedDamping.RotateTensor(angleAtIteration[0], addedDampingTensorWV);
-            addedDampingTensorWW = AddedDamping.RotateTensor(angleAtIteration[0], addedDampingTensorWW);
+            AddedDampingTensor = AddedDamping.RotateTensor(angleAtIteration[0], AddedDampingTensor);
         }
 
         #region Update forces and torque
@@ -832,11 +834,13 @@ namespace BoSSS.Application.FSI_Solver
             ).Execute();
             #endregion
             double beta = 1;
+            Forces[1] = 0;
+            Torque = 0;
             if (neglectAddedDamping == false)
             {
-                Forces[0] = Forces[0] + beta * dt * (addedDampingTensorVV[0, 0] * transAccelerationAtIteration[0][0] + addedDampingTensorVV[1, 0] * transAccelerationAtIteration[0][1] + addedDampingTensorVW[0, 2] * rotationalAccelarationAtIteration[0]);
-                Forces[1] = Forces[1] + beta * dt * (addedDampingTensorVV[0, 1] * transAccelerationAtIteration[0][0] + addedDampingTensorVV[1, 1] * transAccelerationAtIteration[0][1] + addedDampingTensorWW[1, 2] * rotationalAccelarationAtIteration[0]) + (particleDensity - fluidDensity) * Area_P * gravityVertical;
-                Torque = Torque + beta * dt * (addedDampingTensorWV[2, 0] * transAccelerationAtIteration[0][0] + addedDampingTensorWV[2, 1] * transAccelerationAtIteration[0][1] + addedDampingTensorWW[2, 2] * rotationalAccelarationAtIteration[0]);
+                Forces[0] = Forces[0] + beta * dt * (AddedDampingTensor[0, 0] * transAccelerationAtIteration[0][0] + AddedDampingTensor[1, 0] * transAccelerationAtIteration[0][1] + AddedDampingTensor[0, 2] * rotationalAccelarationAtIteration[0]);
+                Forces[1] = Forces[1] + beta * dt * (AddedDampingTensor[0, 1] * transAccelerationAtIteration[0][0] + AddedDampingTensor[1, 1] * transAccelerationAtIteration[0][1] + AddedDampingTensor[1, 2] * rotationalAccelarationAtIteration[0]) + (particleDensity - fluidDensity) * Area_P * gravityVertical;
+                Torque = Torque + beta * dt * (AddedDampingTensor[2, 0] * transAccelerationAtIteration[0][0] + AddedDampingTensor[2, 1] * transAccelerationAtIteration[0][1] + AddedDampingTensor[2, 2] * rotationalAccelarationAtIteration[0]);
             }
             if (iteration_counter_P == 0 && asdf == 0)
             {
