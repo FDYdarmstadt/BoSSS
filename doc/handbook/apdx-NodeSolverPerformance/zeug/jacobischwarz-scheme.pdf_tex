@@ -67,6 +67,6 @@
     \put(0.75313961,0.09164163){\color[rgb]{0,0,0}\makebox(0,0)[lt]{\lineheight{1.25}\smash{\begin{tabular}[t]{l}Schwarz \& CG\end{tabular}}}}%
     \put(0.21943109,0.39431383){\color[rgb]{0,0,0}\makebox(0,0)[lt]{\lineheight{1.25}\smash{\begin{tabular}[t]{l}restriction\\\end{tabular}}}}%
     \put(0.78244217,0.40107422){\color[rgb]{0,0,0}\makebox(0,0)[lt]{\lineheight{1.25}\smash{\begin{tabular}[t]{l}prolongation\end{tabular}}}}%
-    \put(0,0){\includegraphics[width=\unitlength,page=1]{./apdx-NodeSolverPerformance/zeug/MG-scheme.pdf}}%
+    \put(0,0){\includegraphics[width=\unitlength,page=1]{./apdx-NodeSolverPerformance/zeug/MG-scheme.png}}%
   \end{picture}%
 \endgroup%

@@ -126,7 +126,6 @@ namespace BoSSS.Application.FSI_Solver
             // Particle Properties
             // =============================   
             // Defining particles
-            C.Particles = new List<Particle>();
             int numOfParticles = 1;
             for (int d = 0; d < numOfParticles; d++)
             {
@@ -145,18 +144,18 @@ namespace BoSSS.Application.FSI_Solver
                 });
             }
             //Define level-set
-            Func<double[], double, double> phiComplete = delegate (double[] X, double t)
-            {
-                //Generating the correct sign
-                int exp = C.Particles.Count - 1;
-                double ret = Math.Pow(-1, exp);
-                //Level-set function depending on #particles
-                for (int i = 0; i < C.Particles.Count; i++)
-                {
-                    ret *= C.Particles[i].phi_P(X, t);
-                }
-                return ret;
-            };
+            //Func<double[], double, double> phiComplete = delegate (double[] X, double t)
+            //{
+            //    //Generating the correct sign
+            //    int exp = C.Particles.Count - 1;
+            //    double ret = Math.Pow(-1, exp);
+            //    //Level-set function depending on #particles
+            //    for (int i = 0; i < C.Particles.Count; i++)
+            //    {
+            //        ret *= C.Particles[i].phi_P(X);
+            //    }
+            //    return ret;
+            //};
 
 
             // Quadrature rules
@@ -166,7 +165,7 @@ namespace BoSSS.Application.FSI_Solver
 
             //Initial Values
             // =============================   
-            C.InitialValues_Evaluators.Add("Phi", X => phiComplete(X, 0));
+            //C.InitialValues_Evaluators.Add("Phi", X => phiComplete(X, 0));
             C.InitialValues_Evaluators.Add("VelocityX", X => 0);
             C.InitialValues_Evaluators.Add("VelocityY", X => 0);
 

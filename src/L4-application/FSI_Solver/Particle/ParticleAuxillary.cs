@@ -5,52 +5,41 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace BoSSS.Application.FSI_Solver
-{
-    class ParticleAuxillary
-    {
-        internal void SaveValueToList(List<double> variable, double value, int listPosition = 0)
-        {
+namespace BoSSS.Application.FSI_Solver {
+    class ParticleAuxillary {
+        internal void SaveValueToList(List<double> variable, double value, int listPosition = 0) {
             variable.Insert(listPosition, value);
-            variable.RemoveAt(7);
+            variable.RemoveAt(variable.Count - 1);
         }
 
-        internal void SaveValueOfLastTimestep(List<double> variable)
-        {
+        internal void SaveValueOfLastTimestep(List<double> variable) {
             SaveValueToList(variable, variable[0], 1);
         }
 
-        internal void SaveMultidimValueToList(List<double[]> variable, double[] value, int listPosition = 0)
-        {
+        internal void SaveMultidimValueToList(List<double[]> variable, double[] value, int listPosition = 0) {
             variable.Insert(listPosition, value);
-            variable.RemoveAt(7);
+            variable.RemoveAt(variable.Count - 1);
         }
 
-        internal void SaveMultidimValueOfLastTimestep(List<double[]> variable)
-        {
+        internal void SaveMultidimValueOfLastTimestep(List<double[]> variable) {
             SaveMultidimValueToList(variable, variable[0], 1);
         }
 
-        internal double ApproxTorqueForActiveParticles()
-        {
+        internal double ApproxTorqueForActiveParticles() {
             return 0;
         }
 
-        internal double[] ApproxForcesFromActiveStress(double Circumference_P, double active_stress_P, int spatialDim, double particleAngle, double muA)
-        {
+        internal double[] ApproxForcesFromActiveStress(double Circumference_P, double active_stress_P, int spatialDim, double particleAngle, double muA) {
             double[] forces = new double[spatialDim];
-            for (int d = 0; d < spatialDim; d++)
-            {
+            for (int d = 0; d < spatialDim; d++) {
                 forces[d] = 0.0125 * Circumference_P * active_stress_P.Pow2() * Math.Cos(particleAngle) / muA;
             }
             return forces;
         }
 
-        internal double[] ApproxForcesFromPreviousTimestep(double[] hydrodynForcesAtTimestep)
-        {
+        internal double[] ApproxForcesFromPreviousTimestep(double[] hydrodynForcesAtTimestep) {
             double[] forces = new double[hydrodynForcesAtTimestep.Length];
-            for (int d = 0; d < hydrodynForcesAtTimestep.Length; d++)
-            {
+            for (int d = 0; d < hydrodynForcesAtTimestep.Length; d++) {
                 forces[d] = 0.5 * hydrodynForcesAtTimestep[d];
             }
             return forces;

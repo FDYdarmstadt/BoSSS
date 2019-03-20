@@ -642,21 +642,21 @@ namespace BoSSS.Solution{
                 double max=Math.Max(currentRes.Max(),Math.Abs(currentRes.Min()));
                 Console.WriteLine("NonLinear {3}: #{0} Residual @MgLevel {1}: {2}", iterIndex, Mgop.LevelIndex, max,m_nc.SolverCode.ToString());
             }
-            CustomizedCallback(iterIndex,currentSol,currentRes,Mgop);
+            CustomizedCallback?.Invoke(iterIndex,currentSol,currentRes,Mgop);
         }
         protected void LinPrecItCallback(int iterIndex, double[] currentSol, double[] currentRes, MultigridOperator Mgop) {
             if (m_lc.verbose) {
                 double max = Math.Max(currentRes.Max(), Math.Abs(currentRes.Min()));
                 Console.WriteLine("LinPrecond {3}: #{0} Residual @MgLevel {1}: {2}", iterIndex, Mgop.LevelIndex, max, m_nc.PrecondSolver.SolverCode.ToString());
             }
-            CustomizedCallback(iterIndex, currentSol, currentRes, Mgop);
+            CustomizedCallback?.Invoke(iterIndex, currentSol, currentRes, Mgop);
         }
         protected void LinItCallback(int iterIndex, double[] currentSol, double[] currentRes, MultigridOperator Mgop) {
             if (m_lc.verbose) {
                 double max = Math.Max(currentRes.Max(), Math.Abs(currentRes.Min()));
                 Console.WriteLine("LinSolver {3}: #{0} Residual @MgLevel {1}: {2}", iterIndex, Mgop.LevelIndex, max, m_lc.SolverCode.ToString());
             }
-            CustomizedCallback(iterIndex, currentSol, currentRes, Mgop);
+            CustomizedCallback?.Invoke(iterIndex, currentSol, currentRes, Mgop);
         }
 
         /// <summary>

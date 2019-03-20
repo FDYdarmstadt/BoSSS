@@ -23,15 +23,15 @@ using BoSSS.Foundation.Grid;
 using NUnit.Framework;
 using BoSSS.Platform;
 
-namespace BoSSS.Application.DatabaseTests {
+namespace BoSSS.Application.DatabaseTests  {
 
     /// <summary>
     /// Tests for the "standard" Windows file-system.
     /// </summary>
-    [TestFixture]
-    public class StandardDBDriverTests {
+    /// 
+    class StandardDBDriverTests : TestDatabase
+    {
 
-        
         public static void Main() {
             Console.WriteLine("Hello World.");
             InitOnce();
@@ -39,227 +39,163 @@ namespace BoSSS.Application.DatabaseTests {
             var tst = new StandardDBDriverTests();
             tst.Init();
            // tst.TestCopySession();
-            tst.TestCopyGrid();
+            tst.TestRenameGrid();
             //tst.TestClearDatabase();
             tst.CleanUp();
-        }
-        
-
-        private IDatabaseInfo m_DB1;
-
-        private IDatabaseInfo m_DB2;
-
-        [TestFixtureSetUp]
-        public static void InitOnce() {
-            bool dummy;
-            ilPSP.Environment.Bootstrap(
-                new string[0],
-                BoSSS.Solution.Application.GetBoSSSInstallDir(),
-                out dummy);
-        }
-
-        [SetUp]
-        public void Init() {
-            string templateDatabasePath = "..\\..\\bosss_db_test_template.zip";
-
-            // Temporary filesystem driver to unzip the test database.
-            var tmpFsDriver = new StandardFsDriver(templateDatabasePath);
-
-            // database with files in it
-            m_DB1 = CreateTestDatabase(Path.Combine(
-                Path.GetTempPath(), "BoSSS_DB_" + Path.GetRandomFileName()),
-                tmpFsDriver.BasePath);
-
-            // empty database
-            m_DB2 = CreateTestDatabase(Path.Combine(
-                Path.GetTempPath(), "BoSSS_DB_" + Path.GetRandomFileName()));
-        }
-
-        [TearDown]
-        public void CleanUp() {
-            RemoveTestDatabase(m_DB1);
-            RemoveTestDatabase(m_DB2);
         }
 
         [Test]
         public void TestCopyGrid() {
-            var grid1 = m_DB1.Controller.Grids.First();
-            var grid2 = m_DB1.Controller.CopyGrid(grid1, m_DB2);
+            var grid1 = databaseWithFiles.Controller.Grids.First();
+            var grid2 = databaseWithFiles.Controller.CopyGrid(grid1, emptyDatabase);
             Assert.IsTrue(grid1.Equals(grid2), "Copied grid is different from its original.");
 
-            var grid3 = m_DB2.Controller.Grids.First();
+            var grid3 = emptyDatabase.Controller.Grids.First();
             Assert.IsTrue(grid1.Equals(grid3), "Copied grid has been saved improperly.");
         }
 
         [Test]
-        public void TestSaveGridIfUnique()
-        {
-            var gridInfo = m_DB1.Controller.Grids.First();
-            IGrid grid;
-            if (gridInfo is GridProxy)
-            {
-                grid = gridInfo.As<GridProxy>().RealGrid;
-            }
-            else if (gridInfo is Foundation.Grid.Classic.GridCommons)
-            {
-                grid = (Foundation.Grid.Classic.GridCommons)gridInfo;
-            }
-            else
-            {
-                throw new NotSupportedException();
-            }
-
-            bool isNotUnique;
-            m_DB1.Controller.DBDriver.SaveGridIfUnique(ref grid, out isNotUnique,  m_DB1);
-            Assert.IsTrue(isNotUnique == true, "Same grid was not recognized.");
-
-            var grid2 = m_DB1.Controller.CopyGrid(gridInfo, m_DB2);
-            m_DB1.Controller.DBDriver.SaveGridIfUnique(ref grid, out isNotUnique, m_DB2);
-            Assert.IsTrue(isNotUnique == true, "Copied grid was not recognized.");
-        }
-
-        [Test]
         public void TestUnsafelyDeleteGrid() {
-            var grid1 = m_DB1.Controller.Grids.First();
-            var grid2 = m_DB1.Controller.CopyGrid(grid1, m_DB2);
+            var grid1 = databaseWithFiles.Controller.Grids.First();
+            var grid2 = databaseWithFiles.Controller.CopyGrid(grid1, emptyDatabase);
 
-            m_DB2.Controller.DeleteGrid(grid2, false);
+            emptyDatabase.Controller.DeleteGrid(grid2, false);
 
-            Assert.IsTrue(m_DB2.Controller.Grids.Count() == 0,
+            Assert.IsTrue(emptyDatabase.Controller.Grids.Count() == 0,
                 "Deleted grid still exists in target database.");
         }
 
         [Test]
         public void TestCopySession() {
-            foreach (ISessionInfo session in m_DB1.Controller.Sessions) {
-                m_DB1.Controller.CopySession(session, m_DB2);
+            foreach (ISessionInfo session in databaseWithFiles.Controller.Sessions) {
+                databaseWithFiles.Controller.CopySession(session, emptyDatabase);
             }
-            IEnumerable<ISessionInfo> db2Sessions = m_DB2.Controller.Sessions;
+            IEnumerable<ISessionInfo> db2Sessions = emptyDatabase.Controller.Sessions;
 
             Assert.IsTrue(
-                db2Sessions.Count() == m_DB1.Controller.Sessions.Count(),
+                db2Sessions.Count() == databaseWithFiles.Controller.Sessions.Count(),
                 "Not all sessions copied");
             Assert.IsTrue(
-                CountAllFiles(m_DB1.Path) == CountAllFiles(m_DB2.Path),
+                CountAllFiles(databaseWithFiles.Path) == CountAllFiles(emptyDatabase.Path),
                 "Not all files copied");
         }
 
         [Test]
         public void TestMoveSession() {
-            int preMoveFileCount = CountAllFiles(m_DB1.Path);
-            int preMoveSessCount = m_DB1.Controller.Sessions.Count();
+            int preMoveFileCount = CountAllFiles(databaseWithFiles.Path);
+            int preMoveSessCount = databaseWithFiles.Controller.Sessions.Count();
 
             // The number of grids in the original database DB1 determines
             // the number of files left behind in that database.
-            int gridCount = m_DB1.Controller.Sessions
+            int gridCount = databaseWithFiles.Controller.Sessions
                 .SelectMany(si => si.GetGrids())
                 .Distinct().Count();
 
             // move all sessions to the other database
-            foreach (ISessionInfo session in m_DB1.Controller.Sessions) {
-                m_DB1.Controller.MoveSession(session, m_DB2);
+            foreach (ISessionInfo session in databaseWithFiles.Controller.Sessions) {
+                databaseWithFiles.Controller.MoveSession(session, emptyDatabase);
             }
 
             Assert.IsTrue(
-                m_DB1.Controller.Sessions.Count() == 0,
+                databaseWithFiles.Controller.Sessions.Count() == 0,
                 "Not all sessions moved from source database");
             Assert.IsTrue(
-                m_DB2.Controller.Sessions.Count() == preMoveSessCount,
+                emptyDatabase.Controller.Sessions.Count() == preMoveSessCount,
                 "Not all sessions moved to destination database");
             Assert.IsTrue(
-                 CountAllFiles(m_DB1.Path) == CountGridFiles(m_DB2),
+                 CountAllFiles(databaseWithFiles.Path) == CountGridFiles(emptyDatabase),
                 "More than just the grids remaining in source database");
             Assert.IsTrue(
-                CountAllFiles(m_DB2.Path) == preMoveFileCount,
+                CountAllFiles(emptyDatabase.Path) == preMoveFileCount,
                 "Not all files moved to destination database");
 
             // move the sessions back
-            foreach (ISessionInfo session in m_DB2.Controller.Sessions) {
-                m_DB2.Controller.MoveSession(session, m_DB1);
+            foreach (ISessionInfo session in emptyDatabase.Controller.Sessions) {
+                emptyDatabase.Controller.MoveSession(session, databaseWithFiles);
             }
         }
 
         [Test]
         public void TestDeleteSession() {
             // copy everything...
-            foreach (ISessionInfo session in m_DB1.Controller.Sessions) {
-                m_DB1.Controller.CopySession(session, m_DB2);
+            foreach (ISessionInfo session in databaseWithFiles.Controller.Sessions) {
+                databaseWithFiles.Controller.CopySession(session, emptyDatabase);
             }
 
             // ... and delete it afterwards
-            foreach (ISessionInfo session in m_DB2.Controller.Sessions) {
-                m_DB2.Controller.DeleteSession(session);
+            foreach (ISessionInfo session in emptyDatabase.Controller.Sessions) {
+                emptyDatabase.Controller.DeleteSession(session);
             }
 
 
             Assert.IsTrue(
-                m_DB2.Controller.Sessions.Count() == 0,
+                emptyDatabase.Controller.Sessions.Count() == 0,
                 "Not all sessions deleted.");
 
             // Only the files associated with grids should remain in the database.
             Assert.IsTrue(
-                CountGridFiles(m_DB1) == CountAllFiles(m_DB2.Path),
+                CountGridFiles(databaseWithFiles) == CountAllFiles(emptyDatabase.Path),
                 "More than just the grids remaining in source database");
         }
 
         [Test]
         public void TestClearDatabase() {
             Assert.IsTrue(
-                CountAllFiles(m_DB2.Path) == 0,
+                CountAllFiles(emptyDatabase.Path) == 0,
                 "Database should be empty in the beginning");
 
-            foreach (ISessionInfo session in m_DB1.Controller.Sessions) {
-                m_DB1.Controller.CopySession(session, m_DB2);
+            foreach (ISessionInfo session in databaseWithFiles.Controller.Sessions) {
+                databaseWithFiles.Controller.CopySession(session, emptyDatabase);
             }
 
             Assert.IsTrue(
-                CountAllFiles(m_DB2.Path) == 63,
+                CountAllFiles(emptyDatabase.Path) == 63,
                 "Database should be non-empty after copying");
 
-            m_DB2.Controller.ClearDatabase();
+            emptyDatabase.Controller.ClearDatabase();
             Assert.IsTrue(
-                CountAllFiles(m_DB2.Path) == 0,
+                CountAllFiles(emptyDatabase.Path) == 0,
                 "Files remain in a database that should be empty");
         }
 
         [Test]
         public void TestSafelyDeleteGrid() {
-            m_DB1.Controller.CopySession(m_DB1.Controller.Sessions.First(), m_DB2);
+            databaseWithFiles.Controller.CopySession(databaseWithFiles.Controller.Sessions.First(), emptyDatabase);
 
-            IGridInfo grd = m_DB2.Controller.Sessions.First().GetGrids().First();
+            IGridInfo grd = emptyDatabase.Controller.Sessions.First().GetGrids().First();
             Assert.IsFalse(
-                m_DB2.Controller.DeleteGrid(grd), // Delete operation fails: no files will be changed
+                emptyDatabase.Controller.DeleteGrid(grd), // Delete operation fails: no files will be changed
                 "Deleted grid in use by at least one session.");
 
-            m_DB2.Controller.DeleteSession(m_DB2.Controller.Sessions.First());
+            emptyDatabase.Controller.DeleteSession(emptyDatabase.Controller.Sessions.First());
 
             // after the session is deleted, the grid should be successfully removed
             Assert.IsTrue(
-                m_DB2.Controller.DeleteGrid(grd),
+                emptyDatabase.Controller.DeleteGrid(grd),
                 "Removal of unused grid unsuccessful.");
             Assert.IsTrue(
-                CountAllFiles(m_DB2.Path) == 0,
+                CountAllFiles(emptyDatabase.Path) == 0,
                 "Files remain in a database that should be empty");
         }
 
         [Test]
         public void TestCleanUpDatabase() {
-            ISessionInfo sess = m_DB1.Controller.CopySession(m_DB1.Controller.Sessions.First(), m_DB2);
+            ISessionInfo sess = databaseWithFiles.Controller.CopySession(databaseWithFiles.Controller.Sessions.First(), emptyDatabase);
 
-            int fileCountBefore = CountAllFiles(m_DB2.Path);
+            int fileCountBefore = CountAllFiles(emptyDatabase.Path);
 
             // create a bunch of files in the data subdirectory and clean up the database afterwards
             for (int i = 0; i < 10; i++) {
-                string rndFile = Path.Combine(m_DB2.Path, "data", Guid.NewGuid().ToString() + ".1.data");
+                string rndFile = Path.Combine(emptyDatabase.Path, "data", Guid.NewGuid().ToString() + ".1.data");
 
                 if (!File.Exists(rndFile)) {
                     FileStream fs = File.Create(rndFile);
                     fs.Close();
                 }
             }
-            m_DB2.Controller.CleanDatabase();
+            emptyDatabase.Controller.CleanDatabase();
 
-            int fileCountAfter = CountAllFiles(m_DB2.Path);
+            int fileCountAfter = CountAllFiles(emptyDatabase.Path);
 
             Assert.IsTrue(
                 fileCountBefore == fileCountAfter,
@@ -273,15 +209,15 @@ namespace BoSSS.Application.DatabaseTests {
             MatchType = MessageMatch.Contains,
             UserMessage = "Copying the same session twice should not succeed")]
         public void TestCopyFail() {
-            foreach (ISessionInfo session in m_DB1.Controller.Sessions) {
-                m_DB1.Controller.CopySession(session, m_DB2);
+            foreach (ISessionInfo session in databaseWithFiles.Controller.Sessions) {
+                databaseWithFiles.Controller.CopySession(session, emptyDatabase);
             }
 
             Random rnd = new Random();
 
             // this should cause an IOException
-            m_DB1.Controller.CopySession(m_DB1.Controller.Sessions.OrderBy(
-                (item) => rnd.Next()).First<ISessionInfo>(), m_DB2);
+            databaseWithFiles.Controller.CopySession(databaseWithFiles.Controller.Sessions.OrderBy(
+                (item) => rnd.Next()).First<ISessionInfo>(), emptyDatabase);
         }
 
         [Test]
@@ -290,7 +226,7 @@ namespace BoSSS.Application.DatabaseTests {
             string newDescription = @"No one will ever read this description.
             Unless this test fails and someone has to debug it.";
 
-            foreach (ISessionInfo session in m_DB1.Controller.Sessions) {
+            foreach (ISessionInfo session in databaseWithFiles.Controller.Sessions) {
                 session.Name = newName;
                 session.Description = newDescription;
                 Assert.AreEqual(session.Name, newName,
@@ -305,7 +241,7 @@ namespace BoSSS.Application.DatabaseTests {
         public void TestRenameGrid() {
             string newName = "Some-dimensional somehow-ordered grid of order something.";
 
-            foreach (IGridInfo grid in m_DB1.Controller.Grids) {
+            foreach (IGridInfo grid in databaseWithFiles.Controller.Grids) {
                 grid.Name = newName;
                 Assert.AreEqual(grid.Name, newName,
                     "Grid name does not match desired value.");
@@ -335,47 +271,6 @@ namespace BoSSS.Application.DatabaseTests {
                 .SelectMany(grd => db.Controller.GetGridFiles(grd))
                 .Count();
             return fileCount;
-        }
-
-        /// <summary>
-        /// Creates an empty test database from scratch.
-        /// </summary>
-        private IDatabaseInfo CreateTestDatabase(string basePath) {
-            if (Directory.Exists(basePath)) {
-                throw new Exception("Database folder already exists");
-            }
-
-            Directory.CreateDirectory(basePath);
-            Directory.CreateDirectory(Path.Combine(basePath, StandardFsDriver.DistVectorDataDir));
-            Directory.CreateDirectory(Path.Combine(basePath, StandardFsDriver.GridsDir));
-            Directory.CreateDirectory(Path.Combine(basePath, StandardFsDriver.SessionsDir));
-            Directory.CreateDirectory(Path.Combine(basePath, StandardFsDriver.TimestepDir));
-
-            return new DatabaseInfo(basePath);
-        }
-
-        /// <summary>
-        /// Creates a test database which is the copy of an already existing template.
-        /// </summary>
-        private IDatabaseInfo CreateTestDatabase(string newBasePath, string templateBasePath) {
-            CreateTestDatabase(newBasePath);
-            IDatabaseInfo templateDB = new DatabaseInfo(templateBasePath);
-
-            foreach (Guid sessionID in templateDB.Controller.DBDriver.FsDriver.GetAllSessionGUIDs()) {
-                Directory.CreateDirectory(Path.Combine(newBasePath,
-                    StandardFsDriver.SessionsDir, sessionID.ToString()));
-            }
-
-            foreach (string filePath in Directory.GetFiles(templateBasePath, "*",
-                SearchOption.AllDirectories)) {
-                File.Copy(filePath, filePath.Replace(templateBasePath, newBasePath));
-            }
-
-            return new DatabaseInfo(newBasePath);
-        }
-
-        private void RemoveTestDatabase(IDatabaseInfo database) {
-            Directory.Delete(database.Path, true);
         }
     }
 }
