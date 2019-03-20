@@ -94,7 +94,7 @@ namespace BoSSS.Application.FSI_Solver
             positionAtTimestep[0] = startPos;
             positionAtTimestep[1] = startPos;
             //From degree to radiant
-            angleAtTimestep[0] = startAngl * 2 * Math.PI / 360;
+            angleAtTimestep[0] = StartingAngle = startAngl * 2 * Math.PI / 360;
             angleAtTimestep[1] = startAngl * 2 * Math.PI / 360;
 
             //UpdateLevelSetFunction();
@@ -231,6 +231,12 @@ namespace BoSSS.Application.FSI_Solver
         /// </summary>
         [DataMember]
         public List<double> angleAtTimestep = new List<double>();
+
+        /// <summary>
+        /// The angle (center of mass) of the particle in the current time step.
+        /// </summary>
+        [DataMember]
+        public double StartingAngle = new double();
 
         /// <summary>
         /// The translational velocity of the particle in the current iteration.
@@ -374,7 +380,7 @@ namespace BoSSS.Application.FSI_Solver
 
         #region Administrative tasks
         ParticleAuxillary Aux = new ParticleAuxillary();
-        ParticlePhysics Physics = new ParticlePhysics();
+        ParticleForceIntegration Physics = new ParticleForceIntegration();
         ParticleAddedDamping AddedDamping = new ParticleAddedDamping();
         ParticleUnderrelaxation Underrelaxation = new ParticleUnderrelaxation();
         ParticleAcceleration Acceleration = new ParticleAcceleration();
@@ -726,7 +732,7 @@ namespace BoSSS.Application.FSI_Solver
 
         public void UpdateDampingTensors()
         {
-            AddedDampingTensor = AddedDamping.RotateTensor(angleAtIteration[0], AddedDampingTensor);
+            AddedDampingTensor = AddedDamping.RotateTensor(angleAtIteration[0], StartingAngle, AddedDampingTensor);
         }
 
         #region Update forces and torque
@@ -763,6 +769,7 @@ namespace BoSSS.Application.FSI_Solver
             {
                 void ErrFunc(int j0, int NumberOfCells, NodeSet Ns, MultidimensionalArray result)
                 {
+                    
                     int NumberOfNodes = result.GetLength(1);
                     MultidimensionalArray Grad_UARes = MultidimensionalArray.Create(NumberOfCells, NumberOfNodes, spatialDim, spatialDim);
                     MultidimensionalArray pARes = MultidimensionalArray.Create(NumberOfCells, NumberOfNodes);
@@ -834,14 +841,13 @@ namespace BoSSS.Application.FSI_Solver
             ).Execute();
             #endregion
             double beta = 1;
-            Forces[1] = 0;
-            Torque = 0;
             if (neglectAddedDamping == false)
             {
                 Forces[0] = Forces[0] + beta * dt * (AddedDampingTensor[0, 0] * transAccelerationAtIteration[0][0] + AddedDampingTensor[1, 0] * transAccelerationAtIteration[0][1] + AddedDampingTensor[0, 2] * rotationalAccelarationAtIteration[0]);
                 Forces[1] = Forces[1] + beta * dt * (AddedDampingTensor[0, 1] * transAccelerationAtIteration[0][0] + AddedDampingTensor[1, 1] * transAccelerationAtIteration[0][1] + AddedDampingTensor[1, 2] * rotationalAccelarationAtIteration[0]) + (particleDensity - fluidDensity) * Area_P * gravityVertical;
                 Torque = Torque + beta * dt * (AddedDampingTensor[2, 0] * transAccelerationAtIteration[0][0] + AddedDampingTensor[2, 1] * transAccelerationAtIteration[0][1] + AddedDampingTensor[2, 2] * rotationalAccelarationAtIteration[0]);
             }
+            double test = beta * dt * (AddedDampingTensor[2, 0] * transAccelerationAtIteration[0][0] + AddedDampingTensor[2, 1] * transAccelerationAtIteration[0][1] + AddedDampingTensor[2, 2] * rotationalAccelarationAtIteration[0]);
             if (iteration_counter_P == 0 && asdf == 0)
             {
                 Console.WriteLine("First iteration of the current timestep, all relaxation factors are set to 1");

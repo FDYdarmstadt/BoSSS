@@ -13,6 +13,7 @@ namespace BoSSS.Application.FSI_Solver
 {
     class ParticleAddedDamping
     {
+        ParticleAuxillary Aux = new ParticleAuxillary();
         public double[,] IntegrationOverLevelSet(LevelSetTracker LsTrk, double muA, double rhoA, double dt, double[] currentPosition, CellMask ParticleCutCells)
         {
             double[,] addedDampingTensor = new double[6, 6];
@@ -29,7 +30,7 @@ namespace BoSSS.Application.FSI_Solver
                             int K = result.GetLength(1);
                             // Normal vector
                             var Normals = LsTrk.DataHistories[0].Current.GetLevelSetNormals(Ns, j0, Len);
-                            MultidimensionalArray NodeSetClone = Ns.CloneAs();
+                            MultidimensionalArray NodeSetGlobal = Ns.CloneAs();
 
                             if (LsTrk.GridDat.SpatialDimension == 2)
                             {
@@ -37,14 +38,17 @@ namespace BoSSS.Application.FSI_Solver
                                 {
                                     for (int k = 0; k < K; k++)
                                     {
+                                        LsTrk.GridDat.TransformLocal2Global(Ns, NodeSetGlobal, j0);
                                         double dh = CalculateNormalMeshSpacing(LsTrk, Ns, Normals, j, k);
                                         double delta = dh * Math.Sqrt(rhoA) / (Math.Sqrt(alpha * muA * dt));
                                         double dn = dh / (1 - Math.Exp(-delta));
                                         double[] R = new double[3];
-                                        R[0] = Math.Abs(NodeSetClone[k, 0] - currentPosition[0]);
-                                        R[1] = Math.Abs(NodeSetClone[k, 1] - currentPosition[1]);
+                                        R[0] = NodeSetGlobal[k, 0] - currentPosition[0];
+                                        R[1] = NodeSetGlobal[k, 1] - currentPosition[1];
                                         R[2] = 0;
                                         double[] NormalComponent = new double[3];
+                                        double test = NodeSetGlobal[k, 0];
+                                        double test2 = NodeSetGlobal[k, 1];
                                         NormalComponent[0] = Normals[j, k, 0];
                                         NormalComponent[1] = Normals[j, k, 1];
                                         NormalComponent[2] = 0;
@@ -86,7 +90,7 @@ namespace BoSSS.Application.FSI_Solver
                                                 }
                                                 else if (d1 == 2 && d2 == 2)
                                                 {
-                                                    result[j, k] = -R[1].Pow2() - R[0].Pow2();
+                                                    result[j, k] = ((1 - NormalComponent[0] * NormalComponent[0]) * R[1] + NormalComponent[0] * NormalComponent[1] * R[0]) * R[1] + ((1 - NormalComponent[1] * NormalComponent[1]) * R[0] + NormalComponent[0] * NormalComponent[1] * R[1]) * R[0];
                                                 }
                                                 else
                                                 {
@@ -106,8 +110,8 @@ namespace BoSSS.Application.FSI_Solver
                         var SchemeHelper = LsTrk.GetXDGSpaceMetrics(new[] { LsTrk.GetSpeciesId("A") }, RequiredOrder, 1).XQuadSchemeHelper;
                         //var SchemeHelper = new XQuadSchemeHelper(LsTrk, momentFittingVariant, );
 
-                        //CellQuadratureScheme cqs = SchemeHelper.GetLevelSetquadScheme(0, LsTrk.Regions.GetCutCellMask());
-                        CellQuadratureScheme cqs = SchemeHelper.GetLevelSetquadScheme(0, ParticleCutCells);
+                        CellQuadratureScheme cqs = SchemeHelper.GetLevelSetquadScheme(0, LsTrk.Regions.GetCutCellMask());
+                        //CellQuadratureScheme cqs = SchemeHelper.GetLevelSetquadScheme(0, ParticleCutCells);
 
                         CellQuadrature.GetQuadrature(new int[] { 1 }, LsTrk.GridDat,
                             cqs.Compile(LsTrk.GridDat, RequiredOrder), //  agg.HMForder),
@@ -168,16 +172,22 @@ namespace BoSSS.Application.FSI_Solver
             return temp;
         }
 
-        internal double[,] RotateTensor(double currentAngle, double[,] addedDampingTensor)
+        internal double[,] RotateTensor(double CurrentAngle, double StartingAngle, double[,] AddedDampingTensor)
         {
             // form rotation matrix R=EpEp^T, where Ep is the matrix of the principle axis of inertia
             // symmetry axis are always axis of inertia:
-            double[,] Ep = new double[3, 3];
-            Ep[0, 0] = Math.Cos(currentAngle);
-            Ep[1, 0] = Math.Sin(currentAngle);
-            Ep[0, 1] = -Math.Sin(currentAngle);
-            Ep[1, 1] = Math.Cos(currentAngle);
-            Ep[2, 2] = 1;
+            double[,,] Ep = new double[2, 3, 3];
+            double[] angle = new double[2];
+            angle[0] = StartingAngle;
+            angle[1] = CurrentAngle;
+            for (int i = 0; i < 2; i++)
+            {
+                Ep[i, 0, 0] = Math.Cos(angle[i]);
+                Ep[i, 1, 0] = Math.Sin(angle[i]);
+                Ep[i, 0, 1] = -Math.Sin(angle[i]);
+                Ep[i, 1, 1] = Math.Cos(angle[i]);
+                Ep[i, 2, 2] = 1;
+            }
             double[,] R = new double[3, 3];
             for (int i = 0; i < 3; i++)
             {
@@ -185,7 +195,7 @@ namespace BoSSS.Application.FSI_Solver
                 {
                     for (int k = 0; k < 3; k++)
                     {
-                        R[i, j] += Ep[i, k] * Ep[j, k];
+                        R[i, j] += Ep[1, i, k] * Ep[0, j, k];
                     }
                 }
             }
@@ -196,7 +206,7 @@ namespace BoSSS.Application.FSI_Solver
                 {
                     for (int m = 0; m < 3; m++)
                     {
-                        temp[i, k] += R[i, m] * addedDampingTensor[m, k];
+                        temp[i, k] += R[i, m] * AddedDampingTensor[m, k];
                     }
                 }
             }
@@ -206,11 +216,11 @@ namespace BoSSS.Application.FSI_Solver
                 {
                     for (int k = 0; k < 3; k++)
                     {
-                        addedDampingTensor[i, j] += temp[i, k] * R[j, k];
+                        AddedDampingTensor[i, j] += temp[i, k] * R[j, k];
                     }
                 }
             }
-            return addedDampingTensor;
+            return AddedDampingTensor;
         }
 
         private double CalculateNormalMeshSpacing(LevelSetTracker LsTrk, NodeSet Ns, MultidimensionalArray Normals, int CellID, int NodeID)

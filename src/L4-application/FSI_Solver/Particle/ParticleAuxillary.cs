@@ -56,10 +56,6 @@ namespace BoSSS.Application.FSI_Solver
             return forces;
         }
 
-        
-
-        
-
         internal double ForceTorqueSummationWithNeumaierArray(double ForcesTorque, MultidimensionalArray Summands, double Length)
         {
             double sum = ForcesTorque;
@@ -80,6 +76,38 @@ namespace BoSSS.Application.FSI_Solver
             }
             return sum + c;
         }
-
+        internal double SummationWithNeumaier(double[] SummandsVelGradient, double SummandsPressure, double muA)
+        {
+            double sum = SummandsVelGradient[0];
+            double naiveSum;
+            double c = 0;
+            for (int i = 1; i < SummandsVelGradient.Length; i++)
+            {
+                naiveSum = sum + SummandsVelGradient[i];
+                if (Math.Abs(sum) >= SummandsVelGradient[i])
+                {
+                    c += (sum - naiveSum) + SummandsVelGradient[i];
+                }
+                else
+                {
+                    c += (SummandsVelGradient[i] - naiveSum) + sum;
+                }
+                sum = naiveSum;
+            }
+            sum *= muA;
+            c *= muA;
+            // Neumaier pressure term
+            naiveSum = sum + SummandsPressure;
+            if (Math.Abs(sum) >= SummandsPressure)
+            {
+                c += (sum - naiveSum) + SummandsPressure;
+            }
+            else
+            {
+                c += (SummandsPressure - naiveSum) + sum;
+            }
+            sum = naiveSum;
+            return sum + c;
+        }
     }
 }
