@@ -165,13 +165,22 @@ namespace BoSSS.Foundation.IO
             }
         }
 
-        public IGrid DeserializeGrid(Guid gridGuid)
+        /// <summary>
+        /// loads the grid identified by <paramref name="uid"/> from the
+        /// given <paramref name="database"/>
+        /// </summary>
+        /// <param name="uid">The unique identifier of the grid.</param>
+        /// <param name="database">
+        /// The database that is associated with the grid.
+        /// </param>
+        /// <returns>
+        /// The loaded grid
+        /// </returns>
+        public IGrid LoadGrid(Guid uid, IDatabaseInfo database)
         {
-            using (Stream s = GetGridStream(false, gridGuid))
-            {
-                IGrid grid = (IGrid)Driver.Deserialize(s, typeof(IGrid));
-                return grid;
-            }
+            IGridInfo gridInfo = LoadGridInfo(uid, database);
+            IGrid grid = LoadGridData((IGrid)gridInfo);
+            return grid;
         }
 
         /// <summary>
@@ -197,6 +206,15 @@ namespace BoSSS.Foundation.IO
                 grid = grid.MPIBroadcast(0);
                 grid.GridSerializationHandler.Database = database;
                 grid.WriteTime = Utils.GetGridFileWriteTime(grid);
+                return grid;
+            }
+        }
+
+        public IGrid DeserializeGrid(Guid gridGuid)
+        {
+            using (Stream s = GetGridStream(false, gridGuid))
+            {
+                IGrid grid = (IGrid)Driver.Deserialize(s, typeof(IGrid));
                 return grid;
             }
         }
@@ -234,22 +252,6 @@ namespace BoSSS.Foundation.IO
             gridSerializationHandler.Update();
         }
 
-        /// <summary>
-        /// loads the grid identified by <paramref name="uid"/> from the
-        /// given <paramref name="database"/>
-        /// </summary>
-        /// <param name="uid">The unique identifier of the grid.</param>
-        /// <param name="database">
-        /// The database that is associated with the grid.
-        /// </param>
-        /// <returns>
-        /// The loaded grid
-        /// </returns>
-        public IGrid LoadGrid(Guid uid, IDatabaseInfo database)
-        {
-            IGridInfo gridInfo = LoadGridInfo(uid, database);
-            IGrid grid = LoadGridData((IGrid)gridInfo);
-            return grid;
-        }
+        
     }
 }
