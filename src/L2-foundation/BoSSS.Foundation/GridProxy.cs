@@ -31,7 +31,7 @@ namespace BoSSS.Foundation.IO {
         /// <summary>
         /// The real grid reflected by this object.
         /// </summary>
-        private ExpirableLazy<Grid.Classic.GridCommons> realGrid;
+        private ExpirableLazy<IGrid> realGrid;
 
         /// <summary>
         /// Indicates whether the grid data associated with
@@ -50,8 +50,8 @@ namespace BoSSS.Foundation.IO {
         public GridProxy(Guid gridGuid, IDatabaseInfo database) {
             this.ID = gridGuid;
             this.Database = database;
-            realGrid = new ExpirableLazy<GridCommons>(
-                () => database.Controller.DBDriver.LoadGridInfo(gridGuid, database).Cast<GridCommons>(),
+            realGrid = new ExpirableLazy<IGrid>(
+                () => database.Controller.DBDriver.LoadGridInfo(gridGuid, database).Cast<IGrid>(),
                 g => Utils.GetGridFileWriteTime(g) == g.WriteTime);
         }
 
@@ -61,7 +61,7 @@ namespace BoSSS.Foundation.IO {
         /// <remarks>
         /// Induces a call to <see cref="EnsureGridDataIsLoaded"/>
         /// </remarks>
-        public Grid.Classic.GridCommons RealGrid {
+        public IGrid RealGrid {
             get {
                 EnsureGridDataIsLoaded();
                 return realGrid.Value;
@@ -69,7 +69,7 @@ namespace BoSSS.Foundation.IO {
         }
 
         /// <summary>
-        /// See <see cref="GridCommons.ToString"/>
+        /// See <see cref="IGrid.ToString"/>
         /// </summary>
         /// <returns></returns>
         public override string ToString() {
@@ -91,7 +91,7 @@ namespace BoSSS.Foundation.IO {
         #region IGridInfo Members
 
         /// <summary>
-        /// See <see cref="GridCommons.NumberOfCells"/>
+        /// See <see cref="IGrid.NumberOfCells"/>
         /// </summary>
         public int NumberOfCells {
             get {
@@ -100,7 +100,7 @@ namespace BoSSS.Foundation.IO {
         }
 
         /// <summary>
-        /// See <see cref="GridCommons.SpatialDimension"/>
+        /// See <see cref="IGrid.SpatialDimension"/>
         /// </summary>
         public int SpatialDimension {
             get {
@@ -121,7 +121,7 @@ namespace BoSSS.Foundation.IO {
         }
 
         /// <summary>
-        /// See <see cref="GridCommons.CreationTime"/>
+        /// See <see cref="IGrid.CreationTime"/>
         /// </summary>
         public DateTime CreationTime {
             get {
@@ -130,7 +130,7 @@ namespace BoSSS.Foundation.IO {
         }
 
         /// <summary>
-        /// See <see cref="GridCommons.WriteTime"/>.
+        /// See <see cref="IGrid.WriteTime"/>.
         /// </summary>
         /// <remarks>
         /// Note that writing to this property induces a call to
@@ -147,7 +147,7 @@ namespace BoSSS.Foundation.IO {
         }
 
         /// <summary>
-        /// See <see cref="GridCommons.Name"/>.
+        /// See <see cref="IGrid.Name"/>.
         /// </summary>
         /// <remarks>
         /// Note that writing to this property induces a call to
@@ -216,7 +216,7 @@ namespace BoSSS.Foundation.IO {
         #region IEquatable<IGridInfo> Members
 
         /// <summary>
-        /// See <see cref="GridCommons.Equals(IGridInfo)"/>
+        /// See <see cref="IGrid.Equals(IGridInfo)"/>
         /// </summary>
         /// <param name="other"></param>
         /// <returns></returns>
