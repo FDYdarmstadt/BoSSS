@@ -17,6 +17,7 @@ limitations under the License.
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.Serialization;
 using System.Text;
 using BoSSS.Foundation;
 
@@ -47,6 +48,8 @@ namespace BoSSS.Solution.NSECommon {
     /// <summary>
     /// Material law for low Mach number flows.
     /// </summary>
+    [DataContract]
+    [Serializable]
     public class MaterialLawLowMach : MaterialLaw {
 
         double T_ref;
@@ -77,11 +80,18 @@ namespace BoSSS.Solution.NSECommon {
         /// <summary>
         /// true if the ThermodynamicPressure is already initialized
         /// </summary>
-        protected bool IsInitialized = false;
+        protected bool IsInitialized {
+            get {
+                return ThermodynamicPressure != null;
+            }
+        }
+       
         /// <summary>
         /// 
         /// </summary>
+        [NonSerialized]
         protected ScalarFieldHistory<SinglePhaseField> ThermodynamicPressure;
+        
         /// <summary>
         /// Hack to initalize ThermodynamicPressure - called by NSE_SIMPLE.VariableSet.Initialize()
         /// </summary>
@@ -89,7 +99,6 @@ namespace BoSSS.Solution.NSECommon {
         public void Initialize(ScalarFieldHistory<SinglePhaseField> ThermodynamicPressure) {
             if (!IsInitialized) {
                 this.ThermodynamicPressure = ThermodynamicPressure;
-                IsInitialized = true;
             } else {
                 throw new ApplicationException("Initialize() can be called only once.");
             }
@@ -146,14 +155,13 @@ namespace BoSSS.Solution.NSECommon {
                 case MaterialParamsMode.Sutherland: {
                         double S = 110.5;
                         double viscosity = Math.Pow(phi, 1.5) * (1 + S / T_ref) / (phi + S / T_ref);
-                        double gamma = 1.4;
-                        double cp = gamma / (gamma - 1);
-                        return viscosity;// *cp/0.71; // using viscosity = lambda for Pr = cte...
-                        //    throw new NotImplementedException();
-                        //                       return 1.0; // Using a constant value! 
+                        double lambda = viscosity; //// using viscosity = lambda for Pr = cte...
+                        return lambda;
                     }
                 case MaterialParamsMode.PowerLaw: {
-                        throw new NotImplementedException();
+                        double viscosity = Math.Pow(phi, 2.0 / 3.0);
+                        double lambda = viscosity;
+                        return lambda; // using viscosity = lambda for Pr = cte...
                     }
                 default:
                     throw new NotImplementedException();
