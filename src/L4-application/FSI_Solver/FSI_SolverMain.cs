@@ -732,17 +732,17 @@ namespace BoSSS.Application.FSI_Solver {
                                 {
                                     //p.UpdateDampingTensors();
                                 }
-                                switch (p.iteration_counter_P)
-                                {
-                                    case 0 when ((FSI_Control)this.Control).splitting_fully_coupled == true:
-                                        p.PredictTranslationalAccelaration();
-                                        p.PredictAngularAcceleration();
-                                        break;
+                                //switch (p.iteration_counter_P)
+                                //{
+                                //    case 0 when ((FSI_Control)this.Control).splitting_fully_coupled == true:
+                                //        p.PredictTranslationalAccelaration();
+                                //        p.PredictAngularAcceleration();
+                                //        break;
 
-                                    default:
+                                //    default:
                                         p.CalculateAcceleration(dt, Control.PhysicalParameters.rho_A);
-                                        break;
-                                }
+                                //        break;
+                                //}
                                 if (((FSI_Control)Control).includeRotation == true)
                                 {
                                     p.CalculateAngularVelocity(dt);

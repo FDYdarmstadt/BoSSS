@@ -65,8 +65,8 @@ namespace BoSSS.Application.FSI_Solver
                 int q = new int(); // #Cells in x-dircetion + 1
                 int r = new int(); // #Cells in y-dircetion + 1
 
-                q = 75;
-                r = 20;
+                q = 75/3;
+                r = 20/3;
 
                 double[] Xnodes = GenericBlas.Linspace(-7.5 * BaseSize, 7.5 * BaseSize, q);
                 double[] Ynodes = GenericBlas.Linspace(-2 * BaseSize, 2 * BaseSize, r);
