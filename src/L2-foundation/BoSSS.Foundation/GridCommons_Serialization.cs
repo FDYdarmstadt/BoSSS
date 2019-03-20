@@ -99,7 +99,7 @@ namespace BoSSS.Foundation.Grid.Classic
                 var s = grid.m_PredefinedGridPartitioning.ElementAt(i);
                 guids[i + 1] = s.Value.Guid;
             }
-            guids[numberOfObjects - 1] = Guid.Empty;
+            guids[numberOfObjects - 1] = grid.BcCellsStorageGuid;
             return guids;
         }
 
