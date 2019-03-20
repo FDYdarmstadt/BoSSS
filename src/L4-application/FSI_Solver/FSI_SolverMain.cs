@@ -67,16 +67,25 @@ namespace BoSSS.Application.FSI_Solver {
         }
         #endregion
         #region field instantiation
-        // =============================
         /// <summary>
         /// Curvature; DG-polynomial degree should be 2 times the polynomial degree of <see cref="LevSet"/>.
         /// </summary>
         [InstantiateFromControlFile("Curvature", "Curvature", IOListOption.ControlFileDetermined)]
         public SinglePhaseField Curvature;
+
+        public SinglePhaseField ParticleColor;
+
+        protected override void CreateFields() {
+            base.CreateFields();
+
+            ParticleColor = new SinglePhaseField(new Basis(this.GridData, 0), "ParticleColor");
+            m_RegisteredFields.Add(ParticleColor);
+            m_IOFields.Add(ParticleColor);
+        }
+
         #endregion
 
         #region Create equations and solvers
-        // =============================
 
         bool UseMovingMesh {
             get {
@@ -576,6 +585,9 @@ namespace BoSSS.Application.FSI_Solver {
             #endregion
         }
 
+        /// <summary>
+        /// Particle to Level-Set-Field 
+        /// </summary>
         void UpdateLevelSetParticles(double dt) {
             double phiComplete(double[] X, double t) {
                 int exp = m_Particles.Count - 1;
@@ -594,34 +606,41 @@ namespace BoSSS.Application.FSI_Solver {
             ScalarFunction function = NonVectorizedScalarFunction.Vectorize(phiComplete, hack_phystime);
             LevSet.ProjectField(function);
             DGLevSet.Current.ProjectField(function);
-            LsTrk.UpdateTracker(__NearRegionWith: 2);
+            try {
+                LsTrk.UpdateTracker(__NearRegionWith: 2);
+            } catch(LevelSetCFLException lscfl) {
+                PlotCurrentState(0.0, 999, 2);
+                throw lscfl;
+            }
+            {
+                int J = GridData.iLogicalCells.NoOfLocalUpdatedCells;
+                int[] PartCol = LsTrk.Regions.ColorMap4Spc[LsTrk.GetSpeciesId("B")];
+                for(int j = 0; j < J; j++) {
+                    ParticleColor.SetMeanValue(j, PartCol[j]);
+                }
+            }
         }
 
         void UpdateForcesAndTorque(double dt, double phystime) {
-            foreach (Particle p in m_Particles)
-            {
-                if (!((FSI_Control)Control).pureDryCollisions)
-                {
+            foreach (Particle p in m_Particles) {
+                if (!((FSI_Control)Control).pureDryCollisions) {
                     p.UpdateForcesAndTorque(Velocity, Pressure, LsTrk, Control.PhysicalParameters.mu_A, dt, Control.PhysicalParameters.rho_A);
                 }
                 WallCollisionForces(p, LsTrk.GridDat.Cells.h_minGlobal);
             }
-            if (m_Particles.Count > 1)
-            {
+            if (m_Particles.Count > 1) {
                 UpdateCollisionForces(m_Particles, LsTrk.GridDat.Cells.h_minGlobal);
             }
         }
 
-        void PrintResultToConsole(double phystime)
-        {
+        void PrintResultToConsole(double phystime) {
             double[] totalMomentum = new double[2] { 0, 0 };
             double[] totalKE = new double[3] { 0, 0, 0 };
             double xPos;
             double yPos;
             double ang;
 
-            foreach (Particle p in m_Particles)
-            {
+            foreach (Particle p in m_Particles) {
                 totalMomentum[0] += p.Mass_P * p.transVelocityAtTimestep[0][0];
                 totalMomentum[1] += p.Mass_P * p.transVelocityAtTimestep[0][1];
                 totalKE[0] += 0.5 * p.Mass_P * p.transVelocityAtTimestep[0][0].Pow2();
@@ -638,11 +657,11 @@ namespace BoSSS.Application.FSI_Solver {
             ang = m_Particles[0].angleAtTimestep[0];
             MPItransVelocity = m_Particles[0].transVelocityAtTimestep[0];
             MPIangularVelocity = m_Particles[0].rotationalVelocityAtTimestep[0];
-            
+
             Console.WriteLine(newPosition[1].MPIMax());
 
-            if ((base.MPIRank == 0) && (Log_DragAndLift != null))
-            {
+            /*
+            if ((base.MPIRank == 0) && (Log_DragAndLift != null)) {
                 double drag = force[0];
                 double lift = force[1];
                 //string line = String.Format("{0}\t{1}\t{2}\t{3}\t{4}\t{5}\t{6}\t{7}\t{8}\t{9}", TimestepNo, phystime, m_Particles[0].positionAtTimestep[0][0], m_Particles[0].positionAtTimestep[0][1], m_Particles[0].particleAnglePerIteration[0], m_Particles[0].transVelocityAtTimestep[0][0], m_Particles[0].transVelocityAtTimestep[0][1], 0.0, (totalKE[0] + totalKE[1] + totalKE[2]), Math.Sqrt(totalMomentum[0].Pow2() + totalMomentum[1].Pow2()));
@@ -650,12 +669,13 @@ namespace BoSSS.Application.FSI_Solver {
                 Log_DragAndLift.WriteLine(line);
                 Log_DragAndLift.Flush();
             }
+            */
 
             // Save for NUnit Test
             base.QueryHandler.ValueQuery("C_Drag", 2 * force[0], true); // Only for Diameter 1 (TestCase NSE stationary)
             base.QueryHandler.ValueQuery("C_Lift", 2 * force[1], true); // Only for Diameter 1 (TestCase NSE stationary)
             base.QueryHandler.ValueQuery("Angular_Velocity", MPIangularVelocity, true); // (TestCase FlowRotationalCoupling)
-            
+
 
             Console.WriteLine("Drag Force:   {0}", m_Particles[0].hydrodynForcesAtTimestep[0][0]);
             Console.WriteLine("Lift Force:   {0}", m_Particles[0].hydrodynForcesAtTimestep[0][1]);
@@ -695,11 +715,24 @@ namespace BoSSS.Application.FSI_Solver {
                 dt = base.GetFixedTimestep();
 
                 if (((FSI_Control)this.Control).pureDryCollisions) {
+                    UpdateForcesAndTorque(dt, phystime);
+                    foreach (var p in m_Particles) {
+
+                        p.CalculateTranslationalAcceleration(dt, Control.PhysicalParameters.rho_A);
+                        p.CalculateAngularAcceleration(dt);
+
+                        p.CalculateTranslationalVelocity(dt, Control.PhysicalParameters.rho_A);
+                        p.CalculateAngularVelocity(dt);
+
+                        p.CalculateParticlePosition(dt, Control.PhysicalParameters.rho_A);
+                        p.CalculateParticleAngle(dt);
+                    }
                     UpdateLevelSetParticles(dt);
                 } else {
                     if (triggerOnlyCollisionProcedure) {
                         UpdateLevelSetParticles(dt);
                         triggerOnlyCollisionProcedure = false;
+                        /*
                         if (phystime == 0) {
                             if ((base.MPIRank == 0) && (CurrentSessionInfo.ID != Guid.Empty)) {
                                 Log_DragAndLift = base.DatabaseDriver.FsDriver.GetNewLog("PhysicalData", CurrentSessionInfo.ID);
@@ -711,9 +744,8 @@ namespace BoSSS.Application.FSI_Solver {
                                     Log_DragAndLift_P1.WriteLine(firstline_P1);
                                 }
                             }
-
-
                         }
+                        */
 
                         return dt;
                     } else if (((FSI_Control)this.Control).Timestepper_LevelSetHandling != LevelSetHandling.Coupled_Iterative) {
@@ -777,6 +809,7 @@ namespace BoSSS.Application.FSI_Solver {
                                 break;// throw new ApplicationException("no convergence in coupled iterative solver, number of iterations: " + iteration_counter);
                             }
                         }
+                        /*
                         if (phystime == 0) {
                             if ((base.MPIRank == 0) && (CurrentSessionInfo.ID != Guid.Empty) && iteration_counter == 0) {
                                 Log_DragAndLift = base.DatabaseDriver.FsDriver.GetNewLog("PhysicalData", CurrentSessionInfo.ID);
@@ -790,6 +823,7 @@ namespace BoSSS.Application.FSI_Solver {
                                 }
                             }
                         }
+                        */
                     } else {
                         foreach (Particle p in m_Particles) {
                             p.iteration_counter_P = -1;

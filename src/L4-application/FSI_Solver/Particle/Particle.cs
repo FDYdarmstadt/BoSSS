@@ -368,15 +368,13 @@ namespace BoSSS.Application.FSI_Solver
         /// </summary>
         /// <param name="dt"></param>
         public void CalculateParticlePosition(double dt, double rho_Fluid) {
-            if (iteration_counter_P == 0)
-            {
+            if (iteration_counter_P == 0) {
                 Aux.SaveMultidimValueOfLastTimestep(positionAtTimestep);
             }
             if (m_Dim != 2 && m_Dim != 3)
                 throw new NotSupportedException("Unknown particle dimension: m_Dim = " + m_Dim);
             double[] tempPos = new double[m_Dim];
-            for (int d = 0; d < m_Dim; d++)
-            {
+            for (int d = 0; d < m_Dim; d++) {
                 //gravity[d] = 0;
                 //gravity[1] = gravityVertical;
                 //double massDifference = (particleDensity - fluidDensity) * (Area_P);

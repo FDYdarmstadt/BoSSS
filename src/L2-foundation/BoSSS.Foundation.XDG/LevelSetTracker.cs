@@ -1323,6 +1323,8 @@ namespace BoSSS.Foundation.XDG {
         /// 
         /// Furthermore, it speeds up the detection of cut cells: the detection of cut cells is limited to the near-region,
         /// which drastically reduces the amount of level-set evaluations.
+        /// 
+        /// Also, detection of topology changes/collisions *require* incremental update set to true.
         /// </param>
         public void UpdateTracker(int __NearRegionWith = -1, bool incremental = false, params int[] __LevSetAllowedMovement) {
             using (var tr = new FuncTrace()) {
@@ -1363,17 +1365,21 @@ namespace BoSSS.Foundation.XDG {
                 var Krefs = m_gDat.Grid.RefElements;
                 int[] NoOfSmplxVertice = Krefs.Select(Kref => Kref.NoOfVertices).ToArray();
                 int NoOfLevSets = this.NoOfLevelSets;
-                
+                int[][] VerticeInd = m_gDat.Cells.CellVertices;
+
                 Regions.Version = m_VersionCnt;
 
                 ushort[] VertexMarker, LevSetRegions, LevSetRegionsUnsigned;
                 BitArray[] LevSetNeg;
                 ushort[,] VertexMarkerExternal;
+
+                // init & first time calls
+                // =======================
                 #region UpdateTracker_INIT
                 using (new BlockTrace("INIT", tr)) {
 
                     // init memory
-                    // ===========
+                    // -----------
                     Regions.m_LevSetRegions = new ushort[JA];
                     LevSetRegions = Regions.m_LevSetRegions;
                     Regions.InvalidateCaches();
@@ -1400,10 +1406,8 @@ namespace BoSSS.Foundation.XDG {
                         LevSetNeg[i] = new BitArray(J);
 
                     // define test vertices
-                    // ====================
-
-
-                    if (TestNodes == null) {
+                    // --------------------
+                    if (TestNodes == null) { // only the first time in app lifetime ...
                         TestNodes = new NodeSet[Krefs.Length];
                         TestNodesPerFace = new int[Krefs.Length][];
 
@@ -1456,10 +1460,10 @@ namespace BoSSS.Foundation.XDG {
 
 
                     // clear cached level set values (level set may has changed)
-                    foreach(var lsdh in DataHistories) {
+                    foreach (var lsdh in DataHistories) {
                         lsdh.Current.ClearCaches();
                     }
-                    
+
                 }
                 #endregion
 
@@ -1467,233 +1471,233 @@ namespace BoSSS.Foundation.XDG {
                 // ====================================
                 #region UpdateTracker_FIND_CUT_CELLS
                 using (new BlockTrace("FIND_CUT_CELLS", tr)) {
-                    
-                    int[][] VerticeInd = m_gDat.Cells.CellVertices;
-                    {
-                        // 1st sweep: find cut cells
-                        // =========================
 
-                        CellMask SearchMask;
-                        if (incremental) {
-                            
 
-                            ushort[] __PrevLevSetRegions = RegionsHistory[0].m_LevSetRegions;
 
-                            for (int levSetind = 0; levSetind < NoOfLevSets; levSetind++) {
-                                BitArray _LevSetNeg = LevSetNeg[levSetind];
-                                for (int j = 0; j < J; j++) {
-                                    int dist = DecodeLevelSetDist(__PrevLevSetRegions[j], levSetind);
-                                    _LevSetNeg[j] = dist < 0;
-                                }
+                    // 1st sweep: find cut cells
+                    // =========================
+
+                    CellMask SearchMask;
+                    if (incremental) {
+
+
+                        ushort[] __PrevLevSetRegions = RegionsHistory[0].m_LevSetRegions;
+
+                        for (int levSetind = 0; levSetind < NoOfLevSets; levSetind++) {
+                            BitArray _LevSetNeg = LevSetNeg[levSetind];
+                            for (int j = 0; j < J; j++) {
+                                int dist = DecodeLevelSetDist(__PrevLevSetRegions[j], levSetind);
+                                _LevSetNeg[j] = dist < 0;
                             }
-
-                            SearchMask = oldNearMask;
-                        } else {
-                            SearchMask = CellMask.GetFullMask(m_gDat);
                         }
 
-                        int MaxVecLen = (int)Math.Ceiling(16000.0 / ((double)TestNodes.Max(ns => ns.NoOfNodes)));
-                        MaxVecLen = Math.Max(1, MaxVecLen);
-                        
-
-                        foreach(var t_j0_Len in SearchMask.GetGeometricCellChunks(MaxVecLen, CellInfo.RefElementIndex_Mask | CellInfo.CellType_Mask)) { // loop over all cells in the search mask...
-                            int j = t_j0_Len.Item1;
-                            int VecLen = t_j0_Len.Item2;
-
-
-                            int iKref = m_gDat.Cells.GetRefElementIndex(j);
-                            var Kref = Krefs[iKref];
-                            int noOfEdges = Kref.NoOfFaces;
-                            int[] _TestNodesPerFace = this.TestNodesPerFace[iKref];
-
-                            // loop over level sets ...
-                            for (int levSetind = NoOfLevSets - 1; levSetind >= 0; levSetind--) {
-                                var data = this.m_DataHistories[levSetind].Current;
-                                MultidimensionalArray levSetVal = data.GetLevSetValues(this.TestNodes[iKref], j, VecLen);
-
-                                for (int jj = 0; jj < VecLen; jj++) {
-                                    bool Pos = false;
-                                    bool Neg = false;
-
-                                    int nodeIndex = 0;
-                                    for (int e = 0; e < noOfEdges; e++) {
-                                        bool PosEdge = false;
-                                        bool NegEdge = false;
-
-                                        for (int k = 0; k < _TestNodesPerFace[e]; k++) {
-                                            double v = levSetVal[jj, nodeIndex];
-
-                                            if (v < 0) {
-                                                NegEdge = true;
-                                            } else if (v > 0) {
-                                                PosEdge = true;
-                                            }
-
-                                            nodeIndex++;
-                                        }
-
-                                        Pos |= PosEdge;
-                                        Neg |= NegEdge;
-
-                                        // Save sign of the edge
-                                        {
-                                            int edge = -1;
-                                            for (int ee = 0; ee < GridDat.Cells.Cells2Edges[j + jj].Length; ee++) {
-                                                int signedEdgeIndex = GridDat.Cells.Cells2Edges[j + jj][ee];
-                                                int edgeIndex = Math.Abs(signedEdgeIndex) - 1;
-                                                int inOut = signedEdgeIndex > 0 ? 0 : 1;
-                                                if (GridDat.Edges.FaceIndices[edgeIndex, inOut] == e) {
-                                                    edge = edgeIndex;
-                                                }
-                                            }
-
-                                            if (edge < 0) {
-                                                throw new Exception(
-                                                    "Could not determine edge index; This should not have happened");
-                                            }
-                                        }
-                                    }
-
-                                    if ((Pos && Neg) || (!Pos && !Neg)) {
-                                        // cell j+jj is cut by level set
-
-                                        // code cell:
-                                        EncodeLevelSetDist(ref LevSetRegionsUnsigned[j + jj], 0, levSetind);
-
-                                    }
-
-                                    if (Neg == true && Pos == false) {
-                                        LevSetNeg[levSetind][j + jj] = true;
-                                    } else {
-                                        LevSetNeg[levSetind][j + jj] = false;
-                                    }
-                                }
-                            }
-                            j += VecLen;
-                        }
+                        SearchMask = oldNearMask;
+                    } else {
+                        SearchMask = CellMask.GetFullMask(m_gDat);
                     }
-                    #endregion
 
-                    using (new BlockTrace("CELL_SWEEPS", tr)) {
+                    int MaxVecLen = (int)Math.Ceiling(16000.0 / ((double)TestNodes.Max(ns => ns.NoOfNodes)));
+                    MaxVecLen = Math.Max(1, MaxVecLen);
 
-                        // MPI update (cells)
-                        // ==================
 
-                        MPIUpdate(LevSetRegionsUnsigned, m_gDat);
+                    foreach (var t_j0_Len in SearchMask.GetGeometricCellChunks(MaxVecLen, CellInfo.RefElementIndex_Mask | CellInfo.CellType_Mask)) { // loop over all cells in the search mask...
+                        int j = t_j0_Len.Item1;
+                        int VecLen = t_j0_Len.Item2;
 
-                        // 2nd sweep: mark vertices
-                        // ========================
+
+                        int iKref = m_gDat.Cells.GetRefElementIndex(j);
+                        var Kref = Krefs[iKref];
+                        int noOfEdges = Kref.NoOfFaces;
+                        int[] _TestNodesPerFace = this.TestNodesPerFace[iKref];
 
                         // loop over level sets ...
                         for (int levSetind = NoOfLevSets - 1; levSetind >= 0; levSetind--) {
-                            for (int _j = 0; _j < JA; _j++) {
-                                int[] _VerticeInd = VerticeInd[_j];
-                                int _NoOfSmplxVertice = _VerticeInd.Length;
-                                Debug.Assert(_NoOfSmplxVertice == m_gDat.Cells.GetRefElement(_j).NoOfVertices);
+                            var data = this.m_DataHistories[levSetind].Current;
+                            MultidimensionalArray levSetVal = data.GetLevSetValues(this.TestNodes[iKref], j, VecLen);
 
-                                if (DecodeLevelSetDist(LevSetRegionsUnsigned[_j], levSetind) == 0) {
+                            for (int jj = 0; jj < VecLen; jj++) {
+                                bool Pos = false;
+                                bool Neg = false;
 
-                                    // code vertices:
-                                    for (int k = 0; k < _NoOfSmplxVertice; k++) {
-                                        int iVtx = _VerticeInd[k];
-                                        EncodeLevelSetDist(ref VertexMarker[iVtx], 0, levSetind);
-                                    }
-                                }
-                            }
-                        }
+                                int nodeIndex = 0;
+                                for (int e = 0; e < noOfEdges; e++) {
+                                    bool PosEdge = false;
+                                    bool NegEdge = false;
 
-                        // MPI Update (vertex markers)
-                        // ===========================
-                        MPIUpdateVertex(VertexMarker, VertexMarkerExternal, m_gDat, NoOfLevSets);
-                    }
+                                    for (int k = 0; k < _TestNodesPerFace[e]; k++) {
+                                        double v = levSetVal[jj, nodeIndex];
 
-
-                    // find near and far regions
-                    // =========================
-                    {
-                        ushort[] vtxMarkers = new ushort[NoOfSmplxVertice.Max()];
-                        int[] vtsInd = new int[NoOfSmplxVertice.Max()];
-
-                        for (int dist = 1; dist <= m_NearRegionWidth; dist++) {
-
-                            // For every cell
-                            for (int j = 0; j < J; j++) {
-                                int[] _VerticeInd = VerticeInd[j];
-                                int _NoOfSmplxVertice = _VerticeInd.Length;
-                                Debug.Assert(_NoOfSmplxVertice == m_gDat.Cells.GetRefElement(j).NoOfVertices);
-
-                                //for (int k = 0; k < NoOfSmplxVertice; k++)
-                                //    vtxMarkers[k] = VertexMarker[VerticeInd[j, k]];
-                                ushort[] __PrevLevSetRegions = null;
-                                if (incremental)
-                                    __PrevLevSetRegions = RegionsHistory[0].m_LevSetRegions;
-
-                                for (int levSetInd = 0; levSetInd < NoOfLevSets; levSetInd++) {
-
-                                    int dJ = DecodeLevelSetDist(LevSetRegionsUnsigned[j], levSetInd);
-                                    if (dJ >= dist) {
-
-                                        int mindv = int.MaxValue;
-                                        for (int k = 0; k < _NoOfSmplxVertice; k++)
-                                            mindv = Math.Min(mindv, DecodeLevelSetDist(VertexMarker[_VerticeInd[k]], levSetInd));
-                                        if (incremental) {
-                                            // The following line ensures that when the level-set is leaving the computational domain,
-                                            // we still have a near-cell on the boundary.
-                                            int prevDist = Math.Abs(DecodeLevelSetDist(__PrevLevSetRegions[j], levSetInd));
-                                            mindv = Math.Min(mindv, prevDist);
+                                        if (v < 0) {
+                                            NegEdge = true;
+                                        } else if (v > 0) {
+                                            PosEdge = true;
                                         }
-                                        mindv++;
 
-                                        if (mindv == dist) {
-                                            EncodeLevelSetDist(ref LevSetRegionsUnsigned[j], mindv, levSetInd);
+                                        nodeIndex++;
+                                    }
 
-                                            for (int k = 0; k < _NoOfSmplxVertice; k++) {
-                                                int dVk = DecodeLevelSetDist(VertexMarker[_VerticeInd[k]], levSetInd);
-                                                dVk = Math.Min(dVk, mindv);
-                                                EncodeLevelSetDist(ref VertexMarker[_VerticeInd[k]], dVk, levSetInd);
+                                    Pos |= PosEdge;
+                                    Neg |= NegEdge;
+
+                                    // Save sign of the edge
+                                    {
+                                        int edge = -1;
+                                        for (int ee = 0; ee < GridDat.Cells.Cells2Edges[j + jj].Length; ee++) {
+                                            int signedEdgeIndex = GridDat.Cells.Cells2Edges[j + jj][ee];
+                                            int edgeIndex = Math.Abs(signedEdgeIndex) - 1;
+                                            int inOut = signedEdgeIndex > 0 ? 0 : 1;
+                                            if (GridDat.Edges.FaceIndices[edgeIndex, inOut] == e) {
+                                                edge = edgeIndex;
                                             }
                                         }
+
+                                        if (edge < 0) {
+                                            throw new Exception(
+                                                "Could not determine edge index; This should not have happened");
+                                        }
+                                    }
+                                }
+
+                                if ((Pos && Neg) || (!Pos && !Neg)) {
+                                    // cell j+jj is cut by level set
+
+                                    // code cell:
+                                    EncodeLevelSetDist(ref LevSetRegionsUnsigned[j + jj], 0, levSetind);
+
+                                }
+
+                                if (Neg == true && Pos == false) {
+                                    LevSetNeg[levSetind][j + jj] = true;
+                                } else {
+                                    LevSetNeg[levSetind][j + jj] = false;
+                                }
+                            }
+                        }
+                        j += VecLen;
+                    }
+
+                }
+
+                using (new BlockTrace("CELL_SWEEPS", tr)) {
+
+                    // MPI update (cells)
+                    // ==================
+
+                    MPIUpdate(LevSetRegionsUnsigned, m_gDat);
+
+                    // 2nd sweep: mark vertices
+                    // ========================
+
+                    // loop over level sets ...
+                    for (int levSetind = NoOfLevSets - 1; levSetind >= 0; levSetind--) {
+                        for (int _j = 0; _j < JA; _j++) {
+                            int[] _VerticeInd = VerticeInd[_j];
+                            int _NoOfSmplxVertice = _VerticeInd.Length;
+                            Debug.Assert(_NoOfSmplxVertice == m_gDat.Cells.GetRefElement(_j).NoOfVertices);
+
+                            if (DecodeLevelSetDist(LevSetRegionsUnsigned[_j], levSetind) == 0) {
+
+                                // code vertices:
+                                for (int k = 0; k < _NoOfSmplxVertice; k++) {
+                                    int iVtx = _VerticeInd[k];
+                                    EncodeLevelSetDist(ref VertexMarker[iVtx], 0, levSetind);
+                                }
+                            }
+                        }
+                    }
+
+                    // MPI Update (vertex markers)
+                    // ===========================
+                    MPIUpdateVertex(VertexMarker, VertexMarkerExternal, m_gDat, NoOfLevSets);
+                }
+                #endregion
+
+                // find near and far regions
+                // =========================
+                {
+                    ushort[] vtxMarkers = new ushort[NoOfSmplxVertice.Max()];
+                    int[] vtsInd = new int[NoOfSmplxVertice.Max()];
+
+                    for (int dist = 1; dist <= m_NearRegionWidth; dist++) {
+
+                        // For every cell
+                        for (int j = 0; j < J; j++) {
+                            int[] _VerticeInd = VerticeInd[j];
+                            int _NoOfSmplxVertice = _VerticeInd.Length;
+                            Debug.Assert(_NoOfSmplxVertice == m_gDat.Cells.GetRefElement(j).NoOfVertices);
+
+                            //for (int k = 0; k < NoOfSmplxVertice; k++)
+                            //    vtxMarkers[k] = VertexMarker[VerticeInd[j, k]];
+                            ushort[] __PrevLevSetRegions = null;
+                            if (incremental)
+                                __PrevLevSetRegions = RegionsHistory[0].m_LevSetRegions;
+
+                            for (int levSetInd = 0; levSetInd < NoOfLevSets; levSetInd++) {
+
+                                int dJ = DecodeLevelSetDist(LevSetRegionsUnsigned[j], levSetInd);
+                                if (dJ >= dist) {
+
+                                    int mindv = int.MaxValue;
+                                    for (int k = 0; k < _NoOfSmplxVertice; k++)
+                                        mindv = Math.Min(mindv, DecodeLevelSetDist(VertexMarker[_VerticeInd[k]], levSetInd));
+                                    if (incremental) {
+                                        // The following line ensures that when the level-set is leaving the computational domain,
+                                        // we still have a near-cell on the boundary.
+                                        int prevDist = Math.Abs(DecodeLevelSetDist(__PrevLevSetRegions[j], levSetInd));
+                                        mindv = Math.Min(mindv, prevDist);
+                                    }
+                                    mindv++;
+
+                                    if (mindv == dist) {
+                                        EncodeLevelSetDist(ref LevSetRegionsUnsigned[j], mindv, levSetInd);
+
+                                        for (int k = 0; k < _NoOfSmplxVertice; k++) {
+                                            int dVk = DecodeLevelSetDist(VertexMarker[_VerticeInd[k]], levSetInd);
+                                            dVk = Math.Min(dVk, mindv);
+                                            EncodeLevelSetDist(ref VertexMarker[_VerticeInd[k]], dVk, levSetInd);
+                                        }
                                     }
                                 }
                             }
-
-                            // MPI update
-                            // ----------
-                            MPIUpdate(LevSetRegionsUnsigned, m_gDat);
-                            MPIUpdateVertex(VertexMarker, VertexMarkerExternal, m_gDat, NoOfLevSets);
-                        }
-                    }
-
-                    // set the sign
-                    // ============
-                    {
-                        Array.Copy(LevSetRegionsUnsigned, LevSetRegions, J);
-
-                        for (int levSetInd = 0; levSetInd < NoOfLevSets; levSetInd++) {
-                            for (int j = 0; j < J; j++) {
-
-                                if (LevSetNeg[levSetInd][j]) {
-                                    int dist = DecodeLevelSetDist(LevSetRegions[j], levSetInd);
-                                    dist *= -1;
-                                    EncodeLevelSetDist(ref LevSetRegions[j], dist, levSetInd);
-                                }
-                            }
                         }
 
-                        MPIUpdate(LevSetRegions, m_gDat);
+                        // MPI update
+                        // ----------
+                        MPIUpdate(LevSetRegionsUnsigned, m_gDat);
+                        MPIUpdateVertex(VertexMarker, VertexMarkerExternal, m_gDat, NoOfLevSets);
                     }
-
-                    // recalculate m_LenToNextChange
-                    // =============================
-                    RegionsHistory.Current.Recalc_LenToNextchange();
                 }
 
-               
+                // set the sign
+                // ============
+                {
+                    Array.Copy(LevSetRegionsUnsigned, LevSetRegions, J);
+
+                    for (int levSetInd = 0; levSetInd < NoOfLevSets; levSetInd++) {
+                        for (int j = 0; j < J; j++) {
+
+                            if (LevSetNeg[levSetInd][j]) {
+                                int dist = DecodeLevelSetDist(LevSetRegions[j], levSetInd);
+                                dist *= -1;
+                                EncodeLevelSetDist(ref LevSetRegions[j], dist, levSetInd);
+                            }
+                        }
+                    }
+
+                    MPIUpdate(LevSetRegions, m_gDat);
+                }
+
+                // recalculate m_LenToNextChange
+                // =============================
+                RegionsHistory.Current.Recalc_LenToNextchange();
+
+
+
                 // forget values that are not correct anymore
                 // ==========================================
                 this.m_QuadFactoryHelpersHistory.Current.Clear();
                 this.m_XDGSpaceMetricsHistory.Current.Clear();
-                
+
                 // check the LevelSet CFL
                 // ======================
 
@@ -1702,16 +1706,16 @@ namespace BoSSS.Foundation.XDG {
                 using (new BlockTrace("CFL_CHECK", tr)) {
 
                     fail = new int[NoOfLevSets];
-                    if(this.PopulatedHistoryLength > 0) {
+                    if (this.PopulatedHistoryLength > 0) {
                         m_LevSetAllowedMovement = __LevSetAllowedMovement;
 
                         // cannot be moved down because we need the OLD subgrid
                         throwCFL = false;
-                        for(int levSetInd = 0; levSetInd < NoOfLevSets; levSetInd++) {
+                        for (int levSetInd = 0; levSetInd < NoOfLevSets; levSetInd++) {
 
-                            if(m_LevSetAllowedMovement[levSetInd] <= m_NearRegionWidth)
+                            if (m_LevSetAllowedMovement[levSetInd] <= m_NearRegionWidth)
                                 fail[levSetInd] = CheckLevelSetCFL(levSetInd);
-                            if(fail[levSetInd] > 0)
+                            if (fail[levSetInd] > 0)
                                 throwCFL = true;
 
                         }
@@ -1720,12 +1724,12 @@ namespace BoSSS.Foundation.XDG {
                     }
                 }
 
-                //throwCFL = false;
 
                 // update memory of XDG fields, etc.
                 // =================================
-
-                ObserverUpdate();
+                using (new BlockTrace("ObserverUpdate", tr)) {
+                    ObserverUpdate();
+                }
 
                 // throw exception, if levelset CFL violated
                 // =========================================
@@ -1743,6 +1747,9 @@ namespace BoSSS.Foundation.XDG {
 
             }
         }
+
+        
+
 
 
         /// <summary>
@@ -1772,34 +1779,34 @@ namespace BoSSS.Foundation.XDG {
         /// Calls the <see cref="IObserver{LevelSetRegions}.OnNext(LevelSetRegions)"/> for all observers.
         /// </summary>
         private void ObserverUpdate() {
-            using (new FuncTrace()) {
 
-                // Remove obsolete observers from list...
-                // ======================================
-                for (int i = 0; i < m_Observers.Count; i++) {
-                    if (!m_Observers[i].IsAlive) {
-                        m_Observers.RemoveAt(i);
-                        i--;
-                    }
-                }
 
-                // update memory of all registered fields
-                // =====================================
-                // a disadvantage of this notification-by-weak-ref -- approach
-                // is that the 'UpdateMemory' may be called also for
-                // objects that are already unused but not yet collected...
-                // A solution would be to call GC.Collect(), but it is not known
-                // whether a GC run or update of unused memory is more expensive.
-
-                
-                // call the update method of all active fields
-                foreach (var reference in m_Observers) {
-                    IObserver<LevelSetRegions> observer = reference.Target;
-                    if (observer != null) {
-                        reference.Target.OnNext(Regions);
-                    }
+            // Remove obsolete observers from list...
+            // ======================================
+            for (int i = 0; i < m_Observers.Count; i++) {
+                if (!m_Observers[i].IsAlive) {
+                    m_Observers.RemoveAt(i);
+                    i--;
                 }
             }
+
+            // update memory of all registered fields
+            // =====================================
+            // a disadvantage of this notification-by-weak-ref -- approach
+            // is that the 'UpdateMemory' may be called also for
+            // objects that are already unused but not yet collected...
+            // A solution would be to call GC.Collect(), but it is not known
+            // whether a GC run or update of unused memory is more expensive.
+
+
+            // call the update method of all active fields
+            foreach (var reference in m_Observers) {
+                IObserver<LevelSetRegions> observer = reference.Target;
+                if (observer != null) {
+                    reference.Target.OnNext(Regions);
+                }
+            }
+
         }
 
         /// <summary>

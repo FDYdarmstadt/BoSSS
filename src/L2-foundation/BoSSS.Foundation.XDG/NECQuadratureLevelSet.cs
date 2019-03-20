@@ -251,7 +251,7 @@ namespace BoSSS.Foundation.XDG {
         Stopwatch[][] m_NonlinLsForm_GradV_Watches;
 
         /// <summary>
-        /// values of domain & parameter fields, positive side of level Set 
+        /// values of domain and parameter fields, positive side of level Set 
         /// <list type="bullet">
         ///   <item>1st index: parameter index, correlates with <see cref="m_DomainAndParamFields"/></item>
         ///   <item>2nd index: cell index, plus some offset</item>
@@ -261,7 +261,7 @@ namespace BoSSS.Foundation.XDG {
         MultidimensionalArray[] m_FieldValuesPos;
         
         /// <summary>
-        /// values of domain & parameter fields, positive side of level Set
+        /// values of domain and parameter fields, positive side of level Set
         /// <list type="bullet">
         ///   <item>1st index: parameter index, correlates with <see cref="m_DomainAndParamFields"/></item>
         ///   <item>2nd index: cell index, plus some offset</item>
@@ -272,7 +272,7 @@ namespace BoSSS.Foundation.XDG {
 
 
         /// <summary>
-        /// values of domain & parameter fields, positive side of level Set 
+        /// values of domain and parameter fields, positive side of level Set 
         /// <list type="bullet">
         ///   <item>1st index: parameter index, correlates with <see cref="m_DomainAndParamFields"/></item>
         ///   <item>2nd index: cell index, plus some offset</item>
@@ -283,7 +283,7 @@ namespace BoSSS.Foundation.XDG {
         MultidimensionalArray[] m_FieldGradientValuesPos;
         
         /// <summary>
-        /// values of domain & parameter fields, positive side of level Set
+        /// values of domain and parameter fields, positive side of level Set
         /// <list type="bullet">
         ///   <item>1st index: parameter index, correlates with <see cref="m_DomainAndParamFields"/></item>
         ///   <item>2nd index: cell index, plus some offset</item>

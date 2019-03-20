@@ -893,7 +893,10 @@ namespace BoSSS.Application.FSI_Solver {
 
         }
 
-        public static FSI_Control CollisionDiss(string _DbPath = null, int k = 2, double VelXBase = 0.0) {
+        /// <summary>
+        /// Dry Collisions between particles of different shape
+        /// </summary>
+        public static FSI_Control CollisionDiss(string _DbPath = null, double VelXBase = 0.0) {
             FSI_Control C = new FSI_Control();
 
 
@@ -908,39 +911,22 @@ namespace BoSSS.Application.FSI_Solver {
             // basic database options
             // ======================
 
-            C.DbPath = @"\\hpccluster\hpccluster-scratch\krause\cluster_db";
-            C.savetodb = true;
+            C.DbPath = _DbPath;
+            C.savetodb = _DbPath != null;
             C.saveperiod = 1;
             C.ProjectName = "ParticleCollisionTest";
             C.ProjectDescription = "Gravity";
             C.SessionName = C.ProjectName;
             C.Tags.Add("with immersed boundary method");
             C.AdaptiveMeshRefinement = true;
-            
+
 
             // DG degrees
             // ==========
 
-            C.FieldOptions.Add("VelocityX", new FieldOpts() {
-                Degree = k,
-                SaveToDB = FieldOpts.SaveToDBOpt.TRUE
-            });
-            C.FieldOptions.Add("VelocityY", new FieldOpts() {
-                Degree = k,
-                SaveToDB = FieldOpts.SaveToDBOpt.TRUE
-            });
-            C.FieldOptions.Add("Pressure", new FieldOpts() {
-                Degree = k - 1,
-                SaveToDB = FieldOpts.SaveToDBOpt.TRUE
-            });
-            C.FieldOptions.Add("PhiDG", new FieldOpts() {
-                Degree = 4,
-                SaveToDB = FieldOpts.SaveToDBOpt.TRUE
-            });
-            C.FieldOptions.Add("Phi", new FieldOpts() {
-                Degree = 4,
-                SaveToDB = FieldOpts.SaveToDBOpt.TRUE
-            });
+            C.SetDGdegree(1);
+            C.FieldOptions["PhiDG"].Degree = 4;
+            C.FieldOptions["Phi"].Degree = 4;
 
             // grid and boundary conditions
             // ============================
@@ -1044,15 +1030,21 @@ namespace BoSSS.Application.FSI_Solver {
             
             C.Particles.Add(new Particle_Ellipsoid(new double[] { -1.2, 0.9 }, startAngl: 90.0) {
                 particleDensity = 1.0,
+                thickness_P = 0.05,
+                length_P = 0.1
             });
             C.Particles[0].transVelocityAtTimestep[0][0] = -5.0;
-            C.Particles[0].rotationalVelocityAtTimestep[0] = -10;
+            C.Particles[0].rotationalVelocityAtTimestep[0] = -0.1;
 
             C.Particles.Add(new Particle_Sphere(2, new double[] { -0.6, 0.3},startAngl:-90.0) {
                 radius_P = 0.25,
                 particleDensity = 1.0,
             });
+            C.Particles[1].transVelocityAtTimestep[0] = new double[2] { -5.0, 5.0 };
+            C.Particles[1].rotationalVelocityAtTimestep[0] = -10;
+
  
+            /*
             C.Particles.Add(new Particle_Hippopede(2, new double[] { -0.2, -0.5 }, startAngl:-45) {
                 radius_P = 0.15,
                 particleDensity = 1.0,
@@ -1070,11 +1062,8 @@ namespace BoSSS.Application.FSI_Solver {
                 radius_P = 0.25,
                 particleDensity = 1.0,
             });
-
-            C.Particles[4].transVelocityAtTimestep[0] = new double[2] { -5.0, 5.0 };
-
-            C.Particles[4].rotationalVelocityAtTimestep[0] = -10;
-
+            
+*/
             C.pureDryCollisions = true;
             C.collisionModel = FSI_Control.CollisionModel.MomentumConservation;
 
@@ -1127,7 +1116,7 @@ namespace BoSSS.Application.FSI_Solver {
 
             //C.Timestepper_Mode = FSI_Control.TimesteppingMode.Splitting;
             C.Timestepper_Scheme = FSI_Solver.FSI_Control.TimesteppingScheme.BDF2;
-            double dt = 0.001;
+            double dt = 0.000005;
             C.dtMax = dt;
             C.dtMin = dt;
             C.Endtime = 1.2;
@@ -1292,19 +1281,14 @@ namespace BoSSS.Application.FSI_Solver {
 
             C.Particles.Add(new Particle_Sphere(2, new double[] { -0.2, 7.5 }, startAngl: 45.0) {
                 radius_P = 0.1,
-                particleDensity = 3.0,
+                particleDensity = 3.0
             });
 
             C.Particles.Add(new Particle_Ellipsoid(new double[] { 0.2, 7.3 }, startAngl: 30.0) {
                 particleDensity = 3.0,
+                thickness_P = 0.05,
+                length_P = 0.1
             });
-
-            // hippopede kritisch for agglomeration
-            //C.Particles.Add(new Particle_Ellipsoid(2, 4, new double[] { 0.5, 6.9 }, startAngl: -30.0) {
-            //    radius_P = 0.07,
-            //    particleDensity = 3.0,
-            //});
-
 
             C.Particles.Add(new Particle_Squircle(2, new double[] { -0.2, 6.95 }, startAngl: -20.0) {
                 radius_P = 0.1,

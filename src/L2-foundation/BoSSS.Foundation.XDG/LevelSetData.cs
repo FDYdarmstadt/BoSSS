@@ -22,6 +22,7 @@ using BoSSS.Platform;
 using System.Collections;
 using ilPSP;
 using BoSSS.Foundation.Grid.Classic;
+using System.Linq;
 
 namespace BoSSS.Foundation.XDG {
 
@@ -40,11 +41,12 @@ namespace BoSSS.Foundation.XDG {
             /// </summary>
             internal LevelSetRegions(LevelSetTracker owner) {
                 m_owner = owner;
+                m_ColorMap4Spc = new Dict_ColorMap4Spc(this);
             }
 
             /// <summary>
             /// The 'version' of the data, i.e. a number that is always increased
-            /// when the data changes (see <see cref="Update"/>).
+            /// when the data changes (see <see cref="LevelSetTracker.UpdateTracker"/>).
             /// </summary>
             public int Version {
                 get;
@@ -59,6 +61,237 @@ namespace BoSSS.Foundation.XDG {
                     return m_LevSetRegions;
                 }
             }
+
+            /// <summary>
+            /// A color map for each species; a color is a positive integer. Each topologically, simply connected part
+            /// of a species is painted in a unique color. 
+            /// - key: species ID
+            /// - index into value: local cell index
+            /// - each entry value: the unique color of the respective cell; 0 if the species is not present in the respective cell
+            /// </summary>
+            public IReadOnlyDictionary<SpeciesId,int[]> ColorMap4Spc {
+                get {
+                    return m_ColorMap4Spc;
+                }
+            }
+
+            Dict_ColorMap4Spc m_ColorMap4Spc;
+
+            class Dict_ColorMap4Spc : IReadOnlyDictionary<SpeciesId, int[]> {
+                public Dict_ColorMap4Spc(LevelSetRegions __owner) {
+                    m_owner = __owner;
+                }
+
+                LevelSetRegions m_owner;
+
+                public int[] this[SpeciesId key] {
+                    get {
+                        if (!ContainsKey(key))
+                            throw new KeyNotFoundException("Unknown Species");
+
+                        if(!m_internal.TryGetValue(key, out int[] R)) {
+                            R = m_owner.UpdateColoring(key);
+                            m_internal.Add(key, R);
+                        }
+
+                        return R;
+                    }
+
+                }
+
+                Dictionary<SpeciesId, int[]> m_internal = new Dictionary<SpeciesId, int[]>();
+
+                internal Dict_ColorMap4Spc CloneNonShallow(LevelSetRegions __owner) {
+                    var R = new Dict_ColorMap4Spc(__owner);
+                    foreach(var kv in m_internal) {
+                        R.m_internal.Add(kv.Key, kv.Value.CloneAs());
+                    }
+                    return R;
+                }
+
+
+                public IEnumerable<SpeciesId> Keys {
+                    get {
+                        return m_owner.m_owner.SpeciesIdS;
+                    }
+                }
+
+                public IEnumerable<int[]> Values {
+                    get {
+                        var R = new List<int[]>();
+                        foreach(var s in this.Keys) {
+                            R.Add(this[s]);
+                        }
+                        return R;
+                    }
+                }
+
+                public int Count {
+                    get {
+                        return this.Keys.Count();
+                    }
+                }
+
+                public bool ContainsKey(SpeciesId key) {
+                    return m_owner.SpeciesIdS.Contains(key);
+                }
+
+                IEnumerator<KeyValuePair<SpeciesId, int[]>> _GetEnumerator() {
+                    var R = new List<KeyValuePair<SpeciesId, int[]>>();//[NoSpc];
+                    foreach(var key in this.Keys) {
+                        R.Add( new KeyValuePair<SpeciesId, int[]>(key, this[key]));
+                    }
+                    return R.GetEnumerator();
+                }
+
+                public IEnumerator<KeyValuePair<SpeciesId, int[]>> GetEnumerator() {
+                    return this._GetEnumerator();
+                }
+
+                public bool TryGetValue(SpeciesId key, out int[] value) {
+                    if (ContainsKey(key)) {
+                        value = this[key];
+                        return true;
+                    } else {
+                        value = null;
+                        return false;
+                    }
+
+                }
+
+                IEnumerator IEnumerable.GetEnumerator() {
+                    return this._GetEnumerator();
+                }
+            }
+
+
+            LevelSetRegions GetPreviousRegion() {
+                int L = 1 - m_owner.RegionsHistory.GetPopulatedLength();
+                
+                for(int i = 1; i >= L; i--) {
+                    if(object.ReferenceEquals(this, m_owner.RegionsHistory[i])) {
+                        if (i > L)
+                            return m_owner.RegionsHistory[i - 1];
+                        else
+                            return null;
+                    } 
+                }
+                throw new ApplicationException();
+            }
+
+            private int[] UpdateColoring(SpeciesId SpId) {
+                int J = this.GridDat.iLogicalCells.NoOfLocalUpdatedCells;
+                int Je = this.GridDat.iLogicalCells.NoOfExternalCells + J;
+
+
+                int[] ColorMap = new int[J];
+                //if (!Regions.ColorMap4Spc.TryGetValue(SpId, out ColorMap)) {
+                //    ColorMap = new int[J];
+                //    Regions.ColorMap4Spc.Add(SpId, ColorMap);
+                //} else {
+                //    ColorMap.Clear();
+                //}
+
+
+                int[] oldColorMap = GetPreviousRegion()?.ColorMap4Spc[SpId];
+                bool Incremental = oldColorMap != null;
+
+                //if (Incremental) {
+                //    if (!RegionsHistory[0].ColorMap4Spc.ContainsKey(SpId))
+                //        throw new NotSupportedException("unable to perform incremental coloring update");
+                //    oldColorMap = RegionsHistory[0].ColorMap4Spc[SpId];
+                //} else {
+                //    oldColorMap = null;
+                //}
+
+                CellMask SpMask = this.GetSpeciesMask(SpId);
+                BitArray SpBitMask = SpMask.GetBitMask();
+
+                int ColorCounter = 1;
+                var Part = new List<int>(); // all cells which form one part.
+                var UsedColors = new HashSet<int>();
+                for (int j = 0; j < J; j++) { // sweep over cells...
+                    if (SpBitMask[j] && ColorMap[j] == 0) {
+                        Part.Clear();
+                        int CurrentColor = ColorCounter;
+                        bool ColorNegogiable = true;
+                        ColorCounter = RecursiveColoring(this.GridDat, SpBitMask, j, ref CurrentColor, ColorMap, oldColorMap, ref ColorNegogiable, Part, UsedColors);
+                        UsedColors.Add(CurrentColor);
+                        Debug.Assert(ColorCounter > CurrentColor);
+                    }
+                }
+
+                return ColorMap;
+            }
+
+            private static int RecursiveColoring(IGridData g, BitArray Msk, int j, ref int Color, int[] ColorMap, int[] oldColorMap, ref bool ColorNegotiable, List<int> Part, HashSet<int> UsedColors) {
+                Debug.Assert(Msk[j] == true, "illegal to call on non-occupied cells");
+                int J = g.iLogicalCells.NoOfLocalUpdatedCells;
+                bool incremental = oldColorMap != null;
+
+                int NextColor = Color + 1;
+
+                if (incremental) {
+                    int oldColor_j = oldColorMap[j];
+
+                    // we care about the old colors
+                    if (oldColor_j != 0) {
+
+                        if (oldColor_j != Color) {
+                            if (ColorNegotiable) {
+                                // colors in previous map should match old colors
+                                // we are still not fixed in terms of color - we can re-paint the cells painted so far
+
+                                if (!UsedColors.Contains(oldColor_j)) {
+                                    // repainting is allowed, the old color (from previous time-step) is not yet used in this time-step
+                                    Color = oldColor_j;
+                                    foreach (int jk in Part) {
+                                        ColorMap[jk] = oldColor_j;
+                                    }
+                                }
+
+                                NextColor = Math.Max(NextColor, Color + 1);
+
+                                ColorNegotiable = false;
+                            } else {
+                                // this is a topology change 
+
+                                NextColor = Math.Max(NextColor, oldColorMap[j] + 1);
+                            }
+                        }
+                    }
+                }
+
+                ColorMap[j] = Color;
+                Part.Add(j);
+
+
+                int[] jNeigh = g.iLogicalCells.CellNeighbours[j];
+
+
+                foreach (int jN in jNeigh) {
+                    if (Msk[jN] == false)
+                        // Neighbor cell does not contain species -> end of recursion
+                        continue;
+
+                    if (j > J)
+                        // external cell -> attention
+                        continue;
+
+                    if (ColorMap[jN] > 0) {
+                        // already colored -> end of recursion
+                        if (ColorMap[jN] != Color)
+                            throw new ApplicationException("error in Algorithm.");
+                        continue;
+                    }
+
+                    int recNextColor = RecursiveColoring(g, Msk, jN, ref Color, ColorMap, oldColorMap, ref ColorNegotiable, Part, UsedColors);
+                    NextColor = Math.Max(NextColor, recNextColor);
+                }
+
+                return NextColor;
+            }
+
 
             /// <summary>
             /// For each species: The sub-grid of cells populated with this species
@@ -107,6 +340,7 @@ namespace BoSSS.Foundation.XDG {
                 this.m_NearMask4LevelSet = null;
                 this.m_SpeciesMask = null;
                 this.m_SpeciesSubGrids = null;
+                this.m_ColorMap4Spc = new Dict_ColorMap4Spc(this);
             }
 
 
@@ -610,14 +844,14 @@ namespace BoSSS.Foundation.XDG {
             }
 
             /// <summary>
-            /// Equal to <see cref="LevelSetTracker.GetSpeciesName(SpeciesId)"/>.
+            /// Equal to <see cref="LevelSetTracker.GetSpeciesName"/>.
             /// </summary>
             public String GetSpeciesName(SpeciesId id) {
                 return m_owner.GetSpeciesName(id);
             }
 
             /// <summary>
-            /// Equal to <see cref="LevelSetTracker.GetSpeciesName(string)"/>.
+            /// Equal to <see cref="LevelSetTracker.GetSpeciesName"/>.
             /// </summary>
             public SpeciesId GetSpeciesId(string SpeciesName) {
                 return m_owner.GetSpeciesId(SpeciesName);
@@ -628,11 +862,14 @@ namespace BoSSS.Foundation.XDG {
             /// </summary>
             /// <returns></returns>
             public object Clone() {
-                return new LevelSetRegions(this.m_owner) {
-                    m_LenToNextChange = this.m_LenToNextChange.CloneAs(),
-                    m_LevSetRegions = this.m_LevSetRegions.CloneAs(),
-                    Version = this.Version
-                };
+                var L = new LevelSetRegions(this.m_owner);
+
+                L.m_LenToNextChange = this.m_LenToNextChange.CloneAs();
+                L.m_LevSetRegions = this.m_LevSetRegions.CloneAs();
+                L.Version = this.Version;
+                L.m_ColorMap4Spc = this.m_ColorMap4Spc.CloneNonShallow(L);
+                
+                return L;
             }
 
 
