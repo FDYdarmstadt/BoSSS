@@ -47,8 +47,10 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="GridDBDriverTests.cs" />
     <Compile Include="StandardDBDriverTests.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="TestDatabase.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\ilPSP\layer_1.2-ilPSP\ilPSP\ilPSP.csproj">

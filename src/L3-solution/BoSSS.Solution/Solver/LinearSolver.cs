@@ -29,10 +29,13 @@ namespace BoSSS.Solution.Control {
 
 
         public enum Code {
+            
             /// <summary>
             /// Automatic choose of linear solver depending on nonlinear solver, problem size, etc.
             /// </summary>
             automatic = 0,
+
+            //direct solvers
 
             /// <summary>
             /// Direct solver (<see cref="ilPSP.LinSolvers.MUMPS"/>) without any pre-processing of the matrix.
@@ -45,102 +48,109 @@ namespace BoSSS.Solution.Control {
             classic_pardiso = 2,
 
             /// <summary>
-            /// Schwarz method with METIS blocking and direct solver for coarse solve
-            /// </summary>
-            exp_schwarz_directcoarse = 3,
-
-            /// <summary>
-            /// Schwarz method with METIS blocking and direct solver for coarse solve with an overlap of 1
-            /// </summary>
-            exp_schwarz_directcoarse_overlap = 4,
-
-            /// <summary>
-            /// Schwarz method with Multigridblocking on the coarsest level and coarse solve
-            /// </summary>
-            exp_schwarz_Kcycle_directcoarse = 5,
-
-            /// <summary>
-            /// Schwarz method with Multigridblocking on the coarsest level and coarse solve with an overlap of 1
-            /// </summary>
-            exp_schwarz_Kcycle_directcoarse_overlap = 6,
-
-            /// <summary>
-            /// GMRES without any preconditioning
-            /// </summary>
-            exp_softgmres = 7,
-
-            /// <summary>
-            /// GMRES with schwarz precoditioning using METIS blocking without overlap
-            /// </summary>
-            exp_softgmres_schwarz_directcoarse = 8,
-
-            /// <summary>
-            /// GMRES with schwarz precoditioning using MG blocking with overlap
-            /// </summary>
-            exp_softgmres_schwarz_Kcycle_directcoarse_overlap = 9,
-
-            /// <summary>
-            /// GMRES with schwarz precoditioning using METIS blocking with overlap
-            /// </summary>
-            exp_softgmres_schwarz_directcoarse_overlap = 10,
-
-            /// <summary>
             /// Classic Multigrid approach, especially useful for predoncitioning
             /// </summary>
-            exp_multigrid = 11,
+            exp_multigrid = 3,
 
             /// <summary>
             /// ILU decomposition with modification for saddle-point (highly experimental)
             /// </summary>
-            exp_ILU = 12,
-
-            exp_Schur = 13,
-            exp_localPrec = 14,
-            exp_Simple = 15,
-            exp_AS_1000 = 16,
-            exp_AS_5000 = 17,
-            exp_AS_10000 = 18,
-            exp_AS_MG = 19,
-
-            //overtaken from SipPoisson
-
-            /// <summary>
-            /// Conjugate gradient (<see cref="ilPSP.LinSolvers.monkey.CG"/>) without any preconditioning.
-            /// </summary>
-            classic_cg = 20,
-
-            /// <summary>
-            /// Conjugate gradient, with multi-grid preconditioner.
-            /// </summary>
-            exp_softpcg_mg = 21,
-
-
-            /// <summary>
-            /// Conjugate gradient, with additive Schwarz preconditioner.
-            /// </summary>
-            exp_softpcg_schwarz = 22,
-
-            /// <summary>
-            /// Conjugate gradient, with additive Schwarz preconditioner, including a coarse-grid solver.
-            /// </summary>
-            exp_softpcg_schwarz_directcoarse = 23,
-
-            /// <summary>
-            /// Multiple levels of additive Schwarz, in a Krylov multi-grid cycle.
-            /// </summary>
-            exp_Kcycle_schwarz = 24,
-
-            /// <summary>
-            /// Direct solver from new solver framework (causes some overhead in comparison to <see cref="classic_pardiso"/>).
-            /// </summary>
-            exp_direct = 30,
+            exp_ILU = 4,
 
             /// <summary>
             /// Direct solver from new solver framework, using a dense LU decomposition from Lapack.
             /// </summary>
-            exp_direct_lapack = 31,
+            exp_direct_lapack = 7,
 
+            //Schwarz: Domain decomposition (direct Solver)
+
+            /// <summary>
+            /// Schwarz method with METIS blocking and direct solver for coarse solve
+            /// </summary>
+            exp_schwarz_directcoarse = 10,
+
+            /// <summary>
+            /// Schwarz method with METIS blocking and direct solver for coarse solve with an overlap of 1
+            /// </summary>
+            exp_schwarz_directcoarse_overlap = 11,
+
+            /// <summary>
+            /// Schwarz method with Multigridblocking on the coarsest level and coarse solve
+            /// </summary>
+            exp_schwarz_Kcycle_directcoarse = 12,
+
+            /// <summary>
+            /// Schwarz method with Multigridblocking on the coarsest level and coarse solve with an overlap of 1
+            /// </summary>
+            exp_schwarz_Kcycle_directcoarse_overlap = 13,
+
+            //GMRES (iterative Solver)
+
+            /// <summary>
+            /// GMRES without any preconditioning
+            /// </summary>
+            exp_softgmres = 20,
+
+            /// <summary>
+            /// GMRES with schwarz precoditioning using METIS blocking without overlap
+            /// </summary>
+            exp_softgmres_schwarz_directcoarse = 21,
+
+            /// <summary>
+            /// GMRES with schwarz precoditioning using METIS blocking with overlap
+            /// </summary>
+            exp_softgmres_schwarz_directcoarse_overlap = 22,
+
+            /// <summary>
+            /// GMRES with schwarz precoditioning using MG blocking with overlap
+            /// </summary>
+            exp_softgmres_schwarz_Kcycle_directcoarse_overlap = 23,
+
+            //GMRES Solver with different experimental Preconditioner
+
+            exp_Schur = 24,
+            exp_localPrec = 25,
+            exp_Simple = 26,
+            exp_AS_1000 = 27,
+            exp_AS_5000 = 28,
+            exp_AS_10000 = 29,
+            exp_AS_MG = 30,
+
+            //CG versions
+
+            /// <summary>
+            /// Conjugate gradient (<see cref="ilPSP.LinSolvers.monkey.CG"/>) without any preconditioning.
+            /// </summary>
+            classic_cg = 40,
+
+            /// <summary>
+            /// Multiple levels of additive Schwarz, in a Krylov multi-grid cycle.
+            /// </summary>
+            exp_Kcycle_schwarz = 41,
+
+            /// <summary>
+            /// Conjugate gradient, with multi-grid preconditioner.
+            /// </summary>
+            exp_softpcg_mg = 42,
+
+            /// <summary>
+            /// Conjugate gradient, with additive Schwarz preconditioner.
+            /// </summary>
+            exp_softpcg_schwarz = 43,
+
+            /// <summary>
+            /// Conjugate gradient, with additive Schwarz preconditioner, including a coarse-grid solver.
+            /// </summary>
+            exp_softpcg_schwarz_directcoarse = 44,
+
+
+            selfmade = 999,
         }
+
+        /// <summary>
+        /// This will print out more information about iterations.
+        /// </summary>
+        public bool verbose=false;
 
         /// <summary>
         /// If iterative saddle-point solvers like GMRES or Orthonormalization are used, the maximum number of basis vectors

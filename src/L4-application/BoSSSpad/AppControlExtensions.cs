@@ -90,6 +90,68 @@ namespace BoSSS.Application.BoSSSpad {
 
 
         /// <summary>
+        /// Creates a restart-job from the latest session (<see cref="Job.LatestSession"/>) in a given job
+        /// </summary>
+        public static Job CreateRestartJob(this Job job2rest) {
+            var stat = job2rest.Status;
+            if (stat == JobStatus.InProgress)
+                throw new NotSupportedException("Unable to restart: job is currently in progress");
+            if (stat == JobStatus.PreActivation)
+                throw new NotSupportedException("Unable to restart: job is not activated yet");
+            if (stat == JobStatus.InProgress)
+                throw new NotSupportedException("Unable to restart: job is currently in progress");
+
+            var job = job2rest.LatestSession.CreateRestartJob();
+            job.NumberOfMPIProcs = job2rest.NumberOfMPIProcs;
+            job.RetryCount = job2rest.RetryCount;
+            job.MemPerCPU = job2rest.MemPerCPU;
+            job.ExecutionTime = job2rest.ExecutionTime;
+            return job;
+        }
+
+        /// <summary>
+        /// Creates a restart-job from the latest session (<see cref="Job.LatestSession"/>) in a given job
+        /// </summary>
+        public static Job Restart(this Job job2rest) {
+            var newJob = job2rest.CreateRestartJob();
+            newJob.Activate(job2rest.AssignedBatchProc);
+            return newJob;
+        }
+
+        /// <summary>
+        /// Creates a restart-job control object from a given session.
+        /// </summary>
+        /// <param name="sess"></param>
+        /// <returns></returns>
+        public static AppControl CreateRestartControl(this ISessionInfo sess) {
+            var ctrl = sess.GetControl();
+
+            Guid rst_ID = sess.ID;
+            TimestepNumber rst_ts = sess.Timesteps.Last().TimeStepNumber;
+
+            ctrl.InitialValues.Clear();
+            ctrl.InitialValues_Evaluators.Clear();
+
+            ctrl.RestartInfo = Tuple.Create(rst_ID, rst_ts);
+
+            ctrl.SessionName = ctrl.SessionName + "_Restart";
+
+            return ctrl;
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="sess"></param>
+        /// <returns></returns>
+        public static Job CreateRestartJob(this ISessionInfo sess) {
+            var ctrl = sess.CreateRestartControl();
+            var job = ctrl.CreateJob();
+            return job;
+        }
+
+
+        /// <summary>
         /// Verifies a control object, especially if it is suitable for serialization.
         /// </summary>
         /// <param name="ctrl"></param>

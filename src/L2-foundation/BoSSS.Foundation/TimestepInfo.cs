@@ -33,7 +33,10 @@ namespace BoSSS.Foundation.IO {
 
         #region Constructors
 
-        private TimestepInfo() {
+        /// <summary>
+        /// empty constructor for serialization
+        /// </summary>
+        protected TimestepInfo() {
         }
 
         /// <summary>
@@ -56,8 +59,8 @@ namespace BoSSS.Foundation.IO {
         /// <see cref="Guid"/> of the storage vector containing the serialized
         /// information stored in this object.
         /// </param>
-        internal TimestepInfo(
-            double physTime, ISessionInfo session, TimestepNumber TimestepNo, IEnumerable<DGField> fields, Guid storageID) {
+        public TimestepInfo(
+            double physTime, ISessionInfo session, TimestepNumber TimestepNo, IEnumerable<DGField> fields) {
 
             // check & set grid
             this.m_GridGuid = fields.Count() > 0 ? fields.First().Basis.GridDat.GridID : Guid.Empty;
@@ -84,13 +87,15 @@ namespace BoSSS.Foundation.IO {
             }
 
             // set members:
-            ID = Guid.NewGuid();
+            ID = Guid.Empty;
+            this.m_StorageID = Guid.Empty;
+            DGField[] _fields = fields.ToArray();
+            m_Fields = new Lazy<IEnumerable<DGField>>(() => _fields);
             this.m_TimestepNumber = TimestepNo;
             this.PhysicalTime = physTime;
             this.Session = session;
             this.m_FieldInitializers = fields.Select(f => f.Initializer).ToArray();
             CreationTime = DateTime.Now;
-            this.m_StorageID = storageID;
         }
 
         /// <summary>
@@ -135,10 +140,15 @@ namespace BoSSS.Foundation.IO {
 
         /// <summary>
         /// Guid of the vector which contains all the data of the time-step
+        /// - empty after construction
+        /// - set through <see cref="DatabaseDriver.SaveTimestep"/>
         /// </summary>
         public Guid StorageID {
             get {
                 return m_StorageID;
+            }
+            internal set {
+                m_StorageID = value;
             }
         }
 
@@ -256,6 +266,8 @@ namespace BoSSS.Foundation.IO {
 
         /// <summary>
         /// Unique identifier of the TimestepInfo object.
+        /// - empty after construction
+        /// - set through <see cref="DatabaseDriver.SaveTimestep"/>
         /// </summary>
         public Guid ID {
             get {

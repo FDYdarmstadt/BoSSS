@@ -64,8 +64,6 @@ namespace BoSSS.Solution.NSECommon {
             this.MatParamsMode = MatParamsMode;
         }
 
-        protected bool IsInitialized = false;
-        protected ScalarFieldHistory<SinglePhaseField> ThermodynamicPressure;
         /// <summary>
         /// 
         /// </summary>
@@ -75,13 +73,20 @@ namespace BoSSS.Solution.NSECommon {
                 //, VariableNames.MassFraction0_0, VariableNames.MassFraction1_0, VariableNames.MassFraction2_0, VariableNames.MassFraction3_0}; 
             }
         }
-         
 
-    /// <summary>
-    /// Hack to initalize ThermodynamicPressure - called by NSE_SIMPLE.VariableSet.Initialize()
-    /// </summary>
-    /// <param name="ThermodynamicPressure"></param>
-    public void Initialize(ScalarFieldHistory<SinglePhaseField> ThermodynamicPressure) {
+        /// <summary>
+        /// true if the ThermodynamicPressure is already initialized
+        /// </summary>
+        protected bool IsInitialized = false;
+        /// <summary>
+        /// 
+        /// </summary>
+        protected ScalarFieldHistory<SinglePhaseField> ThermodynamicPressure;
+        /// <summary>
+        /// Hack to initalize ThermodynamicPressure - called by NSE_SIMPLE.VariableSet.Initialize()
+        /// </summary>
+        /// <param name="ThermodynamicPressure"></param>
+        public void Initialize(ScalarFieldHistory<SinglePhaseField> ThermodynamicPressure) {
             if (!IsInitialized) {
                 this.ThermodynamicPressure = ThermodynamicPressure;
                 IsInitialized = true;
@@ -139,8 +144,13 @@ namespace BoSSS.Solution.NSECommon {
                 case MaterialParamsMode.Constant:
                     return 1.0;
                 case MaterialParamsMode.Sutherland: {
+                        double S = 110.5;
+                        double viscosity = Math.Pow(phi, 1.5) * (1 + S / T_ref) / (phi + S / T_ref);
+                        double gamma = 1.4;
+                        double cp = gamma / (gamma - 1);
+                        return viscosity;// *cp/0.71; // using viscosity = lambda for Pr = cte...
                         //    throw new NotImplementedException();
-                        return 1.0; // Using a constant value! 
+                        //                       return 1.0; // Using a constant value! 
                     }
                 case MaterialParamsMode.PowerLaw: {
                         throw new NotImplementedException();
@@ -183,6 +193,8 @@ namespace BoSSS.Solution.NSECommon {
         }
 
         public double GetHeatCapacity(double phi) {
+            double gamma = 1.4;
+            double cp = gamma / (gamma - 1);
             return 1.0;
         }
 

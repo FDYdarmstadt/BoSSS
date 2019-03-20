@@ -375,7 +375,7 @@ namespace BoSSS.Solution {
             /// <param name="__mask">
             /// </param>
             /// <param name="iKref">
-            /// reference element index, <see cref="GridCommons.GetRefElement"/>;
+            /// reference element index, <see cref="GridCommons.GetRefElement(int)"/>;
             /// </param>
             protected ZoneDriver(IGridData context, int iKref, bool showJumps, bool showGhostCells, uint superSampling, CellMask __mask) {
                 using (new FuncTrace()) {

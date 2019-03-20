@@ -126,11 +126,10 @@ namespace BoSSS.Application.FSI_Solver
             // Particle Properties
             // =============================   
             // Defining particles
-            C.Particles = new List<Particle>();
             int numOfParticles = 1;
             for (int d = 0; d < numOfParticles; d++)
             {
-                C.Particles.Add(new Particle_Sphere(2, 4, new double[] { 0 + 14 * d, 0.0 }, startAngl: 180 * d)
+                C.Particles.Add(new Particle_Sphere(2, new double[] { 0 + 14 * d, 0.0 }, startAngl: 180 * d)
                 {
                     radius_P = 1,
                     particleDensity = 1.5,//pg/(mum^3)
@@ -140,23 +139,23 @@ namespace BoSSS.Application.FSI_Solver
                     //thickness_P = 0.1 * BaseSize,  Sphere kann nur einen radius haben! fk.
                     //length_P = 2 * BaseSize,       Sphere kann nur einen radius haben! fk.
                     //superEllipsoidExponent = 4, // only even numbers are supported
-                    underrelaxationFT_constant = false,// set true if you want to define a constant underrelaxation (not recommended)
+                    AddaptiveUnderrelaxation = true,// set true if you want to define a constant underrelaxation (not recommended)
                     underrelaxation_factor = 9,// underrelaxation with [factor * 10^exponent]
                 });
             }
             //Define level-set
-            Func<double[], double, double> phiComplete = delegate (double[] X, double t)
-            {
-                //Generating the correct sign
-                int exp = C.Particles.Count - 1;
-                double ret = Math.Pow(-1, exp);
-                //Level-set function depending on #particles
-                for (int i = 0; i < C.Particles.Count; i++)
-                {
-                    ret *= C.Particles[i].phi_P(X, t);
-                }
-                return ret;
-            };
+            //Func<double[], double, double> phiComplete = delegate (double[] X, double t)
+            //{
+            //    //Generating the correct sign
+            //    int exp = C.Particles.Count - 1;
+            //    double ret = Math.Pow(-1, exp);
+            //    //Level-set function depending on #particles
+            //    for (int i = 0; i < C.Particles.Count; i++)
+            //    {
+            //        ret *= C.Particles[i].phi_P(X);
+            //    }
+            //    return ret;
+            //};
 
 
             // Quadrature rules
@@ -166,7 +165,7 @@ namespace BoSSS.Application.FSI_Solver
 
             //Initial Values
             // =============================   
-            C.InitialValues_Evaluators.Add("Phi", X => phiComplete(X, 0));
+            //C.InitialValues_Evaluators.Add("Phi", X => phiComplete(X, 0));
             C.InitialValues_Evaluators.Add("VelocityX", X => 0);
             C.InitialValues_Evaluators.Add("VelocityY", X => 0);
 

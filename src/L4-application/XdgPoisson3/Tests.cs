@@ -49,14 +49,15 @@ namespace BoSSS.Application.XdgPoisson3 {
         public static void SolverTest([Values(Code.exp_softpcg_mg
             //, "pcg+schwarz", "pcg+mg+schwarz", "gmres+mg+schwarz", "ono+mg+schwarz"
             )] Code SolverName) {
-            using(var solver = new XdgPoisson3Main()) {
-                var C = HardCodedControl.Circle(solver:SolverName);
+        using (var solver = new XdgPoisson3Main()) {
+            var C = HardCodedControl.Circle(solver: SolverName);
 
 
-                solver.Init(C);
-                solver.RunSolverMode();
-            }
+            solver.Init(C);
+            solver.RunSolverMode();
         }
+    }
+
 
     }
 }

@@ -238,6 +238,9 @@ foreach(IGridInfo grd in grids) {
     if(J*Np > MaxDof)
         continue;
     
+	// ===!!!=== CAUTION ===!!!===
+    // Solverframework (SolverEnum numbers) have changed! Please check LinearSolver and NonLinearSolver for details
+	
     string caseName = string.Format("J{0}_k{1}_{2}", J, k, solver_name);
     Console.WriteLine("setting up: " + caseName);
 
