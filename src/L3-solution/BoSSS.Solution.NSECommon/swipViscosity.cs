@@ -727,10 +727,11 @@ namespace BoSSS.Solution.NSECommon {
 
         public override double VolumeForm(ref Foundation.CommonParamsVol cpv, double[] U, double[,] GradU, double V, double[] GradV) {
             double acc = 0;
+            double visc = Viscosity(cpv.Parameters);
             for (int d = 0; d < cpv.D; d++)
                 // we want to:
                 //    sum(  \partial_{m_iComp} u_d  * \partial_{d} v, d=0..D-1)
-                acc += GradU[d, base.m_iComp] * GradV[d] * Viscosity(cpv.Parameters) * base.m_alpha;
+                acc += GradU[d, base.m_iComp] * GradV[d] *visc * base.m_alpha;
             return acc;
         }
 
@@ -922,9 +923,10 @@ namespace BoSSS.Solution.NSECommon {
         }
 
         public override double VolumeForm(ref Foundation.CommonParamsVol cpv, double[] U, double[,] GradU, double V, double[] GradV) {
+            double visc = Viscosity(cpv.Parameters);
             double acc = 0;
             for (int d = 0; d < cpv.D; d++)
-                acc -= GradU[d, d] * GradV[base.m_iComp] * Viscosity(cpv.Parameters) * base.m_alpha;
+                acc -= GradU[d, d] * GradV[base.m_iComp] * visc * base.m_alpha;
             return acc * (2.0 / 3.0);
         }
 
