@@ -136,7 +136,7 @@ namespace BoSSS.Application.FSI_Solver {
             //    int exp = C.Particles.Count - 1;
             //    double ret = Math.Pow(-1, exp);
             //    for (int i = 0; i < C.Particles.Count; i++) {
-            //        ret *= C.Particles[i].phi_P(X, t);
+            //        ret *= C.Particles[i].Phi_P(X, t);
             //    }
             //    return ret;
             //};
