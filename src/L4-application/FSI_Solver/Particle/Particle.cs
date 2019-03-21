@@ -50,7 +50,7 @@ namespace BoSSS.Application.FSI_Solver
         
         public Particle(int Dim, double[] startPos = null, double startAngl = 0.0) {
             
-            m_HistoryLength = 4;
+            //int m_HistoryLength = 4;
             m_Dim = Dim;
 
             #region Particle history
@@ -140,7 +140,7 @@ namespace BoSSS.Application.FSI_Solver
         /// <summary>
         /// Length of history for time, velocity, position etc.
         /// </summary>
-        readonly int m_HistoryLength;
+        //readonly int m_HistoryLength = 4;
         #endregion
 
         #region Added dampig parameters
@@ -666,14 +666,12 @@ namespace BoSSS.Application.FSI_Solver
             if (iteration_counter_P == 0 && testVar == 0) {
                 Console.WriteLine("First iteration of the current timestep, all relaxation factors are set to 1");
                 for (int d = 0; d < spatialDim; d++) {
-                    for (int t = 0; t < m_HistoryLength; t++) {
-                        HydrodynamicForces[t][d] = HydrodynamicForces[1][d];
-                        HydrodynamicTorque[t] = HydrodynamicTorque[1];
-                    }
+                    HydrodynamicForces[0][d] = Forces[d];
                     if (Math.Abs(Forces[d]) < ForceAndTorque_convergence * 1e-2 && ClearSmallValues == true) {
                         Forces[d] = 0;
                     }
                 }
+                HydrodynamicTorque[0] = Torque;
                 if (Math.Abs(Torque) < ForceAndTorque_convergence * 1e-2 && ClearSmallValues == true) {
                     Torque = 0;
                 }

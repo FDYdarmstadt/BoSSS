@@ -13,7 +13,9 @@ namespace BoSSS.Application.FSI_Solver {
         }
 
         internal void SaveValueOfLastTimestep(List<double> variable) {
-            SaveValueToList(variable, variable[0], 1);
+            variable.Insert(0, new double());
+            variable.RemoveAt(variable.Count - 1);
+            //SaveValueToList(variable, variable[0], 1);
         }
 
         internal void SaveMultidimValueToList(List<double[]> variable, double[] value, int listPosition = 0) {
@@ -22,7 +24,10 @@ namespace BoSSS.Application.FSI_Solver {
         }
 
         internal void SaveMultidimValueOfLastTimestep(List<double[]> variable) {
-            SaveMultidimValueToList(variable, variable[0], 1);
+            int Dim = variable[0].Length;
+            variable.Insert(0, new double[Dim]);
+            variable.RemoveAt(variable.Count - 1);
+            //SaveMultidimValueToList(variable, variable[0], 1);
         }
 
         internal double ApproxTorqueForActiveParticles() {
