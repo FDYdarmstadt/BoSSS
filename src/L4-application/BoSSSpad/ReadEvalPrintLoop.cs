@@ -121,6 +121,7 @@ namespace BoSSS.Application.BoSSSpad {
             eval.ReferenceAssembly(typeof(FSI_Solver.FSI_SolverMain).Assembly);
             eval.ReferenceAssembly(typeof(BoSSS.Foundation.SpecFEM.SpecFemField).Assembly);
             eval.ReferenceAssembly(typeof(BoSSS.Application.XdgPoisson3.XdgPoisson3Main).Assembly);
+          //  eval.ReferenceAssembly(typeof(BoSSS.Application.LowMachCombustionNSE.LowMachCombustionNSE).Assembly);
 
             //eval.ReferenceAssembly(typeof(FSI_Solver.FSI_SolverMain).Assembly);
             //eval.ReferenceAssembly(typeof(FuelCell.FuelCellMain).Assembly);

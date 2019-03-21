@@ -17,7 +17,7 @@ namespace BoSSS.Foundation.Grid.Aggregation {
     /// </summary>
     [Serializable]
     [DataContract]
-    public class AggregationGrid : IGridInfo, ICloneable, IGrid {
+    public partial class AggregationGrid : IGridInfo, ICloneable, IGrid {
 
         /// <summary>
         /// Constructor.
@@ -46,11 +46,11 @@ namespace BoSSS.Foundation.Grid.Aggregation {
             }
 
             m_CellPartitioning = new Partitioning(AggregationCells.Length);
-            
-            var gdat = new AggregationGridData(pGrid.iGridData, AggregationCells);
+
+            var gdat = new AggregationGridData(this, AggregationCells);
 
             int J = AggregationCells.Length;
-            if(AggregationCellGids == null) {
+            if (AggregationCellGids == null) {
                 AggregationCellGids = new long[J];
                 int i0 = m_CellPartitioning.i0;
                 for (int j = 0; j < J; j++)
@@ -72,6 +72,11 @@ namespace BoSSS.Foundation.Grid.Aggregation {
 
 
             m_GridData = gdat;
+        }
+
+        protected AggregationGrid()
+        {
+
         }
 
         /// <summary>
@@ -124,11 +129,31 @@ namespace BoSSS.Foundation.Grid.Aggregation {
             public long[] PartGlobalId;
         }
 
+        /// <summary>
+        /// returns the Guid of the vector in which
+        /// <see cref="AggCells"/> is stored in the database. (see <see cref="BoSSS.Foundation.IO.DatabaseDriver.SaveGrid"/>);
+        /// </summary>
+        public Guid AggCellStorageGuid {
+            get {
+                return m_StorageGuid;
+            }
+            internal set {
+                m_StorageGuid = value;
+            }
+        }
+
+        /// <summary>
+        /// see <see cref="AggCellStorageGuid"/>.
+        /// </summary>
+        [DataMember]
+        private Guid m_StorageGuid;
+
 
         [NonSerialized]
+        [JsonIgnore]
         AggCell[] AggCells;
 
-
+        public AggCell[] AggregationCells{ get => AggCells; set => AggCells = value; }
 
         /// <summary>
         /// a string to store some user-information about the grid;
@@ -146,7 +171,7 @@ namespace BoSSS.Foundation.Grid.Aggregation {
             }
         }
 
-        [JsonProperty(PropertyName = "Description")]
+        [JsonProperty(PropertyName = "Aggregation_Description")]
         [DataMember]
         string m_Description;
 
@@ -157,10 +182,9 @@ namespace BoSSS.Foundation.Grid.Aggregation {
             get {
                 return m_ParentGrid;
             }
-
         }
 
-        [NonSerialized]
+        [DataMember]
         IGrid m_ParentGrid;
 
         [DataMember]
@@ -207,7 +231,6 @@ namespace BoSSS.Foundation.Grid.Aggregation {
                 return this.m_GridGuid;
             }
         }
-
 
         public DateTime CreationTime => throw new NotImplementedException();
 
@@ -340,7 +363,7 @@ namespace BoSSS.Foundation.Grid.Aggregation {
 
             // create grid data
             // ===================
-            m_GridData = new AggregationGridData(ParentGrid.iGridData, AggIdx);
+            m_GridData = new AggregationGridData(this, AggIdx);
 
         }
 
@@ -403,8 +426,18 @@ namespace BoSSS.Foundation.Grid.Aggregation {
             throw new NotImplementedException();
         }
 
+        /// <summary>
+        /// Equality.
+        /// </summary>
         public bool Equals(IGridInfo other) {
-            throw new NotImplementedException();
+            if (other == null)
+            {
+                return false;
+            }
+            else
+            {
+                return this.ID == other.ID;
+            }
         }
 
         public void Redistribute(IDatabaseDriver iom, GridPartType method, string PartOptions) {
@@ -416,6 +449,30 @@ namespace BoSSS.Foundation.Grid.Aggregation {
 
         public void RedistributeGrid(int[] part) {
             throw new NotImplementedException();
+        }
+
+        /// <summary>
+        /// Returns the current GlobalID - permutation of this grid,
+        /// i.e. a mapping from the global index to the global ID.
+        /// </summary>
+        public Foundation.Comm.Permutation CurrentGlobalIdPermutation()
+        {
+            ilPSP.MPICollectiveWatchDog.Watch();
+            int NumberOfLocalMPICells = AggCells.Length;
+
+            long NoOfCells = this.NumberOfCells;
+
+            long[] gid = new long[NumberOfLocalMPICells];
+
+            for (int j = 0; j < NumberOfLocalMPICells; j++)
+            {
+                if (AggCells[j].GlobalID < 0 || AggCells[j].GlobalID >= NoOfCells)
+                    throw new NotSupportedException("Found illegal GlobalID for cell;");
+
+                gid[j] = AggCells[j].GlobalID;
+            }
+
+            return new Foundation.Comm.Permutation(gid, MPI.Wrappers.csMPI.Raw._COMM.WORLD);
         }
     }
 }

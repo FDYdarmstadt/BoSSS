@@ -65,14 +65,11 @@
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="BoundaryType.cs" />
-    <Compile Include="PolygonClipping.cs" />
-    <Compile Include="PolygonTesselation.cs" />
     <Compile Include="SipHardcodedControl.cs" />
     <Compile Include="SipControl.cs" />
     <Compile Include="Tests\TestProgram.cs" />
     <Compile Include="SipPoissonMain.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="VoronoiMeshGen.cs" />
   </ItemGroup>
   <ItemGroup>
     <BootstrapperPackage Include="Microsoft.Net.Client.3.5">
