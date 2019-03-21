@@ -56,9 +56,9 @@ namespace BoSSS.Application.FSI_Solver {
         static void Main(string[] args) {
 
             //            System.Threading.Thread.Sleep(5000);
-            BoSSS.Application.FSI_Solver.TestProgram.Init();
-            BoSSS.Application.FSI_Solver.TestProgram.SingleDryParticleAgainstWall(true);
-            Debug.Assert(false);
+            //BoSSS.Application.FSI_Solver.TestProgram.Init();
+            //BoSSS.Application.FSI_Solver.TestProgram.SingleDryParticleAgainstWall(true);
+            //Debug.Assert(false);
 
             _Main(args, false, delegate () {
                 var p = new FSI_SolverMain();
