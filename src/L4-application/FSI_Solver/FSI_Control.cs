@@ -128,7 +128,7 @@ namespace BoSSS.Application.FSI_Solver {
         /// All particles in the FSI
         /// </summary>
         [DataMember]
-        public IList<Particle> Particles {
+        public List<Particle> Particles {
             get;
             set;
         }
