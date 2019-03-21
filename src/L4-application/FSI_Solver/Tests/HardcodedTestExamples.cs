@@ -31,11 +31,10 @@ using BoSSS.Foundation.Grid.Classic;
 using BoSSS.Solution.XdgTimestepping;
 
 namespace BoSSS.Application.FSI_Solver {
-     public class HardcodedTestExamples {
-     
+    public class HardcodedTestExamples {
 
-        public static FSI_Control ParticleInShearFlow(string _DbPath = null, int k = 2, double VelXBase = 0.0)
-        {
+
+        public static FSI_Control ParticleInShearFlow(string _DbPath = null, int k = 2, double VelXBase = 0.0) {
             FSI_Control C = new FSI_Control();
 
             const double BaseSize = 1.0;
@@ -51,33 +50,27 @@ namespace BoSSS.Application.FSI_Solver {
             // DG degrees
             // ==========
 
-            C.FieldOptions.Add("VelocityX", new FieldOpts()
-            {
+            C.FieldOptions.Add("VelocityX", new FieldOpts() {
                 Degree = k,
                 SaveToDB = FieldOpts.SaveToDBOpt.TRUE
             });
-            C.FieldOptions.Add("VelocityY", new FieldOpts()
-            {
+            C.FieldOptions.Add("VelocityY", new FieldOpts() {
                 Degree = k,
                 SaveToDB = FieldOpts.SaveToDBOpt.TRUE
             });
-            C.FieldOptions.Add("Pressure", new FieldOpts()
-            {
+            C.FieldOptions.Add("Pressure", new FieldOpts() {
                 Degree = k - 1,
                 SaveToDB = FieldOpts.SaveToDBOpt.TRUE
             });
-            C.FieldOptions.Add("PhiDG", new FieldOpts()
-            {
+            C.FieldOptions.Add("PhiDG", new FieldOpts() {
                 Degree = 2,
                 SaveToDB = FieldOpts.SaveToDBOpt.TRUE
             });
-            C.FieldOptions.Add("Phi", new FieldOpts()
-            {
+            C.FieldOptions.Add("Phi", new FieldOpts() {
                 Degree = 2,
                 SaveToDB = FieldOpts.SaveToDBOpt.TRUE
             });
-            C.FieldOptions.Add("Curvature", new FieldOpts()
-            {
+            C.FieldOptions.Add("Curvature", new FieldOpts() {
                 Degree = 2,
                 SaveToDB = FieldOpts.SaveToDBOpt.TRUE
             });
@@ -85,8 +78,7 @@ namespace BoSSS.Application.FSI_Solver {
             // grid and boundary conditions
             // ============================
 
-            C.GridFunc = delegate
-            {
+            C.GridFunc = delegate {
                 double[] Xnodes = GenericBlas.Linspace(-2 * BaseSize, 2 * BaseSize, 21);
                 double[] Ynodes = GenericBlas.Linspace(-3 * BaseSize, 3 * BaseSize, 31);
                 var grd = Grid2D.Cartesian2DGrid(Xnodes, Ynodes, periodicX: false, periodicY: true);
@@ -95,8 +87,7 @@ namespace BoSSS.Application.FSI_Solver {
                 grd.EdgeTagNames.Add(2, "Velocity_Inlet_right");
 
 
-                grd.DefineEdgeTags(delegate (double[] X)
-                {
+                grd.DefineEdgeTags(delegate (double[] X) {
                     byte et = 0;
                     if (Math.Abs(X[0] - (-2 * BaseSize)) <= 1.0e-8)
                         et = 1;
@@ -126,7 +117,7 @@ namespace BoSSS.Application.FSI_Solver {
             C.includeRotation = true;
 
             // Particle Properties
-            C.Particles.Add(new Particle_Sphere(new double[] { 0.0 , 0.0 }) {
+            C.Particles.Add(new Particle_Sphere(new double[] { 0.0, 0.0 }) {
                 radius_P = 0.4,
                 particleDensity = 1.0,
             });
@@ -191,5 +182,129 @@ namespace BoSSS.Application.FSI_Solver {
 
             return C;
         }
+
+        /// <summary>
+        /// Testing of particle/wall interactions using a single particle
+        /// </summary>
+        public static FSI_Control SingleDryParticleAgainstWall(string _DbPath = null, bool MeshRefine = true) {
+            FSI_Control C = new FSI_Control();
+
+            // basic database options
+            // ======================
+
+            C.DbPath = _DbPath;
+            C.savetodb = _DbPath != null;
+            C.saveperiod = 1;
+            C.ProjectName = "ParticleCollisionTest";
+            C.ProjectDescription = "Gravity";
+            C.SessionName = C.ProjectName;
+            C.Tags.Add("with immersed boundary method");
+            C.AdaptiveMeshRefinement = true;
+
+
+            // DG degrees
+            // ==========
+
+            C.SetDGdegree(1);
+
+            // grid and boundary conditions
+            // ============================
+
+            double[] Xnodes = GenericBlas.Linspace(-1, 1, 21);
+            double[] Ynodes = GenericBlas.Linspace(-1, 1, 21);
+            double h = Math.Min((Xnodes[1] - Xnodes[0]), (Ynodes[1] - Ynodes[0]));
+
+            C.GridFunc = delegate {
+                var grd = Grid2D.Cartesian2DGrid(Xnodes, Ynodes, periodicX: false, periodicY: false);
+                grd.EdgeTagNames.Add(1, "Wall");
+                grd.DefineEdgeTags(delegate (double[] X) {
+                    byte et = 1;
+                    return et;
+                });
+
+                return grd;
+            };
+
+            C.AddBoundaryValue("Wall");
+
+            // Boundary values for level-set
+            //C.BoundaryFunc = new Func<double, double>[] { (t) => 0.1 * 2 * Math.PI * -Math.Sin(Math.PI * 2 * 1 * t), (t) =>  0};
+            //C.BoundaryFunc = new Func<double, double>[] { (t) => 0, (t) => 0 };
+
+            // Initial Values
+            // ==============
+
+            // Coupling Properties
+            C.Timestepper_LevelSetHandling = LevelSetHandling.Coupled_Once;
+            C.includeRotation = true;
+            C.includeTranslation = true;
+
+            // Fluid Properties
+            C.PhysicalParameters.rho_A = 1;
+            C.PhysicalParameters.mu_A = 0.1;
+
+
+            // Particles
+            // =========
+
+            C.Particles.Add(new Particle_Sphere(new double[] { -0.5, -0.5 }, startAngl: 90.0) {
+                particleDensity = 1.0,
+                radius_P = 0.1
+            });
+            C.Particles[0].transVelocityAtTimestep[0][0] = +1;
+            C.Particles[0].transVelocityAtTimestep[0][1] = -1;
+            C.Particles[0].rotationalVelocityAtTimestep[0] = 0;
+
+            C.pureDryCollisions = true;
+            C.collisionModel = FSI_Control.CollisionModel.MomentumConservation;
+
+            double V = 0;
+            foreach (var p in C.Particles) {
+                V = Math.Max(V, p.transVelocityAtTimestep[0].L2Norm());
+            }
+
+            if (V <= 0)
+                throw new ArithmeticException();
+
+
+            // Physical Parameters
+            // ===================
+
+            C.PhysicalParameters.IncludeConvection = true;
+
+
+            // misc. solver options
+            // ====================
+
+            C.AdvancedDiscretizationOptions.PenaltySafety = 4;
+            C.AdvancedDiscretizationOptions.CellAgglomerationThreshold = 0.2;
+            C.LevelSetSmoothing = false;
+            C.LinearSolver.MaxSolverIterations = 10;
+            C.NonLinearSolver.MaxSolverIterations = 10;
+            C.LinearSolver.NoOfMultigridLevels = 1;
+            C.AdaptiveMeshRefinement = MeshRefine;
+
+            // Timestepping
+            // ============
+
+            //C.Timestepper_Mode = FSI_Control.TimesteppingMode.Splitting;
+            C.Timestepper_Scheme = FSI_Solver.FSI_Control.TimesteppingScheme.BDF2;
+
+            double dt = (h / V) * (MeshRefine ? 0.5 * 0.5 * 0.5 * 0.2 : 0.1);
+            C.dtMax = dt;
+            C.dtMin = dt;
+
+            C.Endtime = 100.0 / V;
+            C.NoOfTimesteps = 500;
+
+            // haben fertig...
+            // ===============
+
+            return C;
+
+        }
+
+
+
     }
 }

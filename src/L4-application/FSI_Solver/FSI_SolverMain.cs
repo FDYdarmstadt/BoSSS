@@ -56,9 +56,9 @@ namespace BoSSS.Application.FSI_Solver {
         static void Main(string[] args) {
 
             //            System.Threading.Thread.Sleep(5000);
-            //            BoSSS.Application.FSI_Solver.TestProgram.Init();
-            //            BoSSS.Application.FSI_Solver.TestProgram.TestFlowRotationalCoupling();
-            //Debug.Assert(false);
+            BoSSS.Application.FSI_Solver.TestProgram.Init();
+            BoSSS.Application.FSI_Solver.TestProgram.SingleDryParticleAgainstWall(true);
+            Debug.Assert(false);
 
             _Main(args, false, delegate () {
                 var p = new FSI_SolverMain();
@@ -98,15 +98,15 @@ namespace BoSSS.Application.FSI_Solver {
                 switch (((FSI_Control)this.Control).Timestepper_LevelSetHandling) {
                     case LevelSetHandling.Coupled_Once:
                     case LevelSetHandling.Coupled_Iterative:
-                        return true;
+                    return true;
 
                     case LevelSetHandling.LieSplitting:
                     case LevelSetHandling.StrangSplitting:
                     case LevelSetHandling.None:
-                        return false;
+                    return false;
 
                     default:
-                        throw new ApplicationException("unknown 'LevelSetMovement': " + ((FSI_Control)this.Control).Timestepper_LevelSetHandling);
+                    throw new ApplicationException("unknown 'LevelSetMovement': " + ((FSI_Control)this.Control).Timestepper_LevelSetHandling);
                 }
             }
         }
@@ -449,38 +449,35 @@ namespace BoSSS.Application.FSI_Solver {
             MassMatrixShapeandDependence MassMatrixShape;
             switch (((FSI_Control)this.Control).Timestepper_LevelSetHandling) {
                 case LevelSetHandling.Coupled_Once:
-                    MassMatrixShape = MassMatrixShapeandDependence.IsTimeDependent;
-                    break;
+                MassMatrixShape = MassMatrixShapeandDependence.IsTimeDependent;
+                break;
 
                 case LevelSetHandling.Coupled_Iterative:
-                    MassMatrixShape = MassMatrixShapeandDependence.IsTimeAndSolutionDependent;
-                    break;
+                MassMatrixShape = MassMatrixShapeandDependence.IsTimeAndSolutionDependent;
+                break;
 
                 case LevelSetHandling.LieSplitting:
-                    MassMatrixShape = MassMatrixShapeandDependence.IsTimeAndSolutionDependent;
-                    if (calculatedDampingTensors == 0)
-                    {
-                        foreach (Particle p in m_Particles)
-                        {
-                            if (p.neglectAddedDamping == false)
-                            {
-                                p.CalculateDampingTensors(LsTrk, ((FSI_Control)this.Control).PhysicalParameters.mu_A, ((FSI_Control)this.Control).PhysicalParameters.rho_A, ((FSI_Control)this.Control).dtMax);
-                            }
+                MassMatrixShape = MassMatrixShapeandDependence.IsTimeAndSolutionDependent;
+                if (calculatedDampingTensors == 0) {
+                    foreach (Particle p in m_Particles) {
+                        if (p.neglectAddedDamping == false) {
+                            p.CalculateDampingTensors(LsTrk, ((FSI_Control)this.Control).PhysicalParameters.mu_A, ((FSI_Control)this.Control).PhysicalParameters.rho_A, ((FSI_Control)this.Control).dtMax);
                         }
-                        calculatedDampingTensors = 1;
                     }
-                    break;
+                    calculatedDampingTensors = 1;
+                }
+                break;
 
                 case LevelSetHandling.StrangSplitting:
-                    MassMatrixShape = MassMatrixShapeandDependence.IsTimeDependent;
-                    break;
+                MassMatrixShape = MassMatrixShapeandDependence.IsTimeDependent;
+                break;
 
                 case LevelSetHandling.None:
-                    MassMatrixShape = MassMatrixShapeandDependence.IsTimeDependent;
-                    break;
+                MassMatrixShape = MassMatrixShapeandDependence.IsTimeDependent;
+                break;
 
                 default:
-                    throw new ApplicationException("unknown 'LevelSetMovement': " + ((FSI_Control)this.Control).Timestepper_LevelSetHandling);
+                throw new ApplicationException("unknown 'LevelSetMovement': " + ((FSI_Control)this.Control).Timestepper_LevelSetHandling);
             }
 
 
@@ -507,7 +504,7 @@ namespace BoSSS.Application.FSI_Solver {
             m_BDF_Timestepper.Config_LevelSetConvergenceCriterion = ((FSI_Control)this.Control).ForceAndTorque_ConvergenceCriterion;
             m_BDF_Timestepper.SessionPath = SessionPath;
             m_BDF_Timestepper.Timestepper_Init = Solution.Timestepping.TimeStepperInit.SingleInit;
-        #endregion
+            #endregion
 
         }
 
@@ -515,37 +512,37 @@ namespace BoSSS.Application.FSI_Solver {
             #region Level-set handling
             switch (((FSI_Control)this.Control).Timestepper_LevelSetHandling) {
                 case LevelSetHandling.None:
-                    ScalarFunction Posfunction = NonVectorizedScalarFunction.Vectorize(((FSI_Control)Control).MovementFunc, phystime);
-                    newTransVelocity[0] = (((FSI_Control)this.Control).transVelocityFunc[0])(phystime);
-                    newTransVelocity[1] = (((FSI_Control)this.Control).transVelocityFunc[1])(phystime);
-                    LevSet.ProjectField(Posfunction);
-                    LsTrk.UpdateTracker();
-                    break;
+                ScalarFunction Posfunction = NonVectorizedScalarFunction.Vectorize(((FSI_Control)Control).MovementFunc, phystime);
+                newTransVelocity[0] = (((FSI_Control)this.Control).transVelocityFunc[0])(phystime);
+                newTransVelocity[1] = (((FSI_Control)this.Control).transVelocityFunc[1])(phystime);
+                LevSet.ProjectField(Posfunction);
+                LsTrk.UpdateTracker();
+                break;
 
                 case LevelSetHandling.Coupled_Once:
-                    UpdateLevelSetParticles(dt);
-                    break;
+                UpdateLevelSetParticles(dt);
+                break;
 
                 case LevelSetHandling.Coupled_Iterative:
-                    UpdateForcesAndTorque(dt, phystime);
-                    UpdateLevelSetParticles(dt);
-                    foreach (Particle p in m_Particles) {
-                        p.iteration_counter_P += 1;
-                        p.forceAndTorque_convergence = ((FSI_Control)this.Control).ForceAndTorque_ConvergenceCriterion;
-                    }
-                    break;
+                UpdateForcesAndTorque(dt, phystime);
+                UpdateLevelSetParticles(dt);
+                foreach (Particle p in m_Particles) {
+                    p.iteration_counter_P += 1;
+                    p.forceAndTorque_convergence = ((FSI_Control)this.Control).ForceAndTorque_ConvergenceCriterion;
+                }
+                break;
 
                 case LevelSetHandling.LieSplitting:
-                    
-                    UpdateLevelSetParticles(dt);
-                    break;
+
+                UpdateLevelSetParticles(dt);
+                break;
 
                 case LevelSetHandling.StrangSplitting:
-                    UpdateLevelSetParticles(dt);
-                    break;
+                UpdateLevelSetParticles(dt);
+                break;
 
                 default:
-                    throw new ApplicationException("unknown 'LevelSetMovement': " + ((FSI_Control)Control).Timestepper_LevelSetHandling);
+                throw new ApplicationException("unknown 'LevelSetMovement': " + ((FSI_Control)Control).Timestepper_LevelSetHandling);
             }
             #endregion
             #region Forces and Torque residual
@@ -591,12 +588,12 @@ namespace BoSSS.Application.FSI_Solver {
             #endregion
         }
 
-       
+
         /// <summary>
         /// Particle to Level-Set-Field 
         /// </summary>
         void UpdateLevelSetParticles(double dt) {
-          
+
             double phiComplete(double[] X, double t) {
                 int exp = m_Particles.Count - 1;
                 double temp = Math.Pow(-1, exp);
@@ -796,26 +793,26 @@ namespace BoSSS.Application.FSI_Solver {
                                 }
                                 switch (p.iteration_counter_P) {
                                     case 0 when ((FSI_Control)this.Control).splitting_fully_coupled == true:
-                                        if (((FSI_Control)Control).includeTranslation == true) {
-                                            p.PredictTranslationalAccelaration();
-                                            p.PredictTranslationalVelocity();
-                                        }
-                                        if (((FSI_Control)Control).includeRotation == true) {
-                                            p.PredictAngularAcceleration();
-                                            p.PredictAngularVelocity();
-                                        }
-                                        break;
+                                    if (((FSI_Control)Control).includeTranslation == true) {
+                                        p.PredictTranslationalAccelaration();
+                                        p.PredictTranslationalVelocity();
+                                    }
+                                    if (((FSI_Control)Control).includeRotation == true) {
+                                        p.PredictAngularAcceleration();
+                                        p.PredictAngularVelocity();
+                                    }
+                                    break;
 
                                     default:
-                                        if (((FSI_Control)Control).includeRotation == true) {
-                                            p.CalculateAngularAcceleration(dt);
-                                            p.CalculateAngularVelocity(dt);
-                                        }
-                                        if (((FSI_Control)Control).includeTranslation == true) {
-                                            p.CalculateTranslationalAcceleration(dt, this.Control.PhysicalParameters.rho_A);
-                                            p.CalculateTranslationalVelocity(dt, this.Control.PhysicalParameters.rho_A);
-                                        }
-                                        break;
+                                    if (((FSI_Control)Control).includeRotation == true) {
+                                        p.CalculateAngularAcceleration(dt);
+                                        p.CalculateAngularVelocity(dt);
+                                    }
+                                    if (((FSI_Control)Control).includeTranslation == true) {
+                                        p.CalculateTranslationalAcceleration(dt, this.Control.PhysicalParameters.rho_A);
+                                        p.CalculateTranslationalVelocity(dt, this.Control.PhysicalParameters.rho_A);
+                                    }
+                                    break;
                                 }
                                 p.ComputeParticleRe(this.Control.PhysicalParameters.mu_A);
                                 p.CalculateParticlePosition(dt, this.Control.PhysicalParameters.rho_A);
@@ -867,12 +864,16 @@ namespace BoSSS.Application.FSI_Solver {
 
                 // finalize
                 // ========
-                if(LsTrk.PushCount - OldPushCount != 1) {
+                if (LsTrk.PushCount - OldPushCount != 1) {
+                    // To whom it concerns / who stumbles across this exception:
+                    // It is important that LevelSetTracker.PushStacks() is called *exactly once per time-step*, at the beginning.
+                    // Do not remove this check! Instead, remove any calls to 'PushStacks()' in subroutines of this method.
+                    // Fk.
                     throw new ApplicationException("Illegal number of level-set push actions in time-step.");
                 }
-                
+
                 this.ResLogger.NextTimestep(false);
-                
+
                 Console.WriteLine("done with time-step.");
                 return dt;
             }
@@ -945,7 +946,7 @@ namespace BoSSS.Application.FSI_Solver {
 
             Debug.Assert(b.Particles.Length == o.Particles.Length);
             int L = b.Particles.Length;
-            for(int l =0; l < L; l++) { // loop over particles
+            for (int l = 0; l < L; l++) { // loop over particles
                 Debug.Assert(GenericBlas.L2Dist(b.Particles[l].positionAtTimestep[0], o.Particles[l].positionAtTimestep[0]) < 1e-13);
             }
 
@@ -969,14 +970,14 @@ namespace BoSSS.Application.FSI_Solver {
             m_Particles = ArschInfo.Particles.ToList();
             hack_phystime = ArschInfo.PhysicalTime;
             UpdateLevelSetParticles(0.0);
-            
+
             // call base shit
             var R = base.RestartFromDatabase(out time);
 
 
             // Setup Collision Model
             m_collisionModel = ((FSI_Control)this.Control).collisionModel;
-            
+
             foreach (Particle p in m_Particles) {
                 p.m_collidedWithParticle = new bool[m_Particles.Count];
                 p.m_collidedWithWall = new bool[4];
@@ -1062,6 +1063,12 @@ namespace BoSSS.Application.FSI_Solver {
                 p.m_collidedWithWall = new bool[4];
                 p.m_closeInterfacePointTo = new double[m_Particles.Count][];
 
+            }
+        }
+
+        public IList<Particle> Particles {
+            get {
+                return m_Particles;
             }
         }
 
