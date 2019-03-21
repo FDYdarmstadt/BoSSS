@@ -130,7 +130,7 @@ namespace BoSSS.Application.FSI_Solver {
         [DataMember]
         public IList<Particle> Particles {
             get;
-            private set;
+            set;
         }
 
         public enum CollisionModel {

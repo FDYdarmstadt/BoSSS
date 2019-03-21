@@ -42,8 +42,6 @@ using BoSSS.Foundation.Grid.RefElements;
 using BoSSS.Solution.XNSECommon;
 using BoSSS.Foundation.Grid.Classic;
 using static BoSSS.Application.FSI_Solver.FSI_Control;
-using Newtonsoft.Json;
-using Newtonsoft.Json.Bson;
 
 namespace BoSSS.Application.FSI_Solver {
     public class FSI_SolverMain : IBM_Solver.IBM_SolverMain {
@@ -187,7 +185,7 @@ namespace BoSSS.Application.FSI_Solver {
                                         // Separating different boundary regions (for active particles)
                                         double cos_theta;
                                         // The posterior side of the particle (Neumann boundary)
-                                        if (Math.Cos(p.angleAtTimestep[0]) * (X[0] - p.positionAtTimestep[0][0]) + Math.Sin(p.angleAtTimestep[0]) * (X[1] - p.positionAtTimestep[0][1]) < 1e-8)// && Math.Cos(p.particleAnglePerIteration[0]) * (X[0] - p.positionAtTimestep[0][0]) + Math.Sin(p.particleAnglePerIteration[0]) * (X[1] - p.positionAtTimestep[0][1]) > -0.25)
+                                        if (Math.Cos(p.angleAtTimestep[0]) * (X[0] - p.positionAtTimestep[0][0]) + Math.Sin(p.angleAtTimestep[0]) * (X[1] - p.positionAtTimestep[0][1]) < 1e-8)// && Math.Cos(p.particleAnglePerIteration[0]) * (X[0] - p.positionAtIteration[0][0]) + Math.Sin(p.particleAnglePerIteration[0]) * (X[1] - p.positionAtIteration[0][1]) > -0.25)
                                         {
                                             cos_theta = (Math.Cos(p.angleAtTimestep[0]) * (X[0] - p.positionAtTimestep[0][0]) + Math.Sin(p.angleAtTimestep[0]) * (X[1] - p.positionAtTimestep[0][1])) / (Math.Sqrt((X[0] - p.positionAtTimestep[0][0]).Pow2() + (X[1] - p.positionAtTimestep[0][1]).Pow2()));
                                         }
@@ -307,7 +305,7 @@ namespace BoSSS.Application.FSI_Solver {
                                         // Separating different boundary regions (for active particles)
                                         double cos_theta;
                                         // The posterior side of the particle (Neumann boundary)
-                                        if (Math.Cos(p.angleAtTimestep[0]) * (X[0] - p.positionAtTimestep[0][0]) + Math.Sin(p.angleAtTimestep[0]) * (X[1] - p.positionAtTimestep[0][1]) < 1e-8)// && Math.Cos(p.particleAnglePerIteration[0]) * (X[0] - p.positionAtTimestep[0][0]) + Math.Sin(p.particleAnglePerIteration[0]) * (X[1] - p.positionAtTimestep[0][1]) > -0.25)
+                                        if (Math.Cos(p.angleAtTimestep[0]) * (X[0] - p.positionAtTimestep[0][0]) + Math.Sin(p.angleAtTimestep[0]) * (X[1] - p.positionAtTimestep[0][1]) < 1e-8)// && Math.Cos(p.particleAnglePerIteration[0]) * (X[0] - p.positionAtIteration[0][0]) + Math.Sin(p.particleAnglePerIteration[0]) * (X[1] - p.positionAtIteration[0][1]) > -0.25)
                                         {
                                             cos_theta = (Math.Cos(p.angleAtTimestep[0]) * (X[0] - p.positionAtTimestep[0][0]) + Math.Sin(p.angleAtTimestep[0]) * (X[1] - p.positionAtTimestep[0][1])) / (Math.Sqrt((X[0] - p.positionAtTimestep[0][0]).Pow2() + (X[1] - p.positionAtTimestep[0][1]).Pow2()));
                                         }
@@ -416,7 +414,7 @@ namespace BoSSS.Application.FSI_Solver {
             }
             #endregion
 
-            #region create timestepper
+            #region create timestepper, update level-set
             // ------------------
             int bdfOrder;
             if (this.Control.Timestepper_Scheme == FSI_Control.TimesteppingScheme.CrankNicolson)
@@ -492,7 +490,6 @@ namespace BoSSS.Application.FSI_Solver {
             m_BDF_Timestepper.Config_LevelSetConvergenceCriterion = ((FSI_Control)this.Control).ForceAndTorque_ConvergenceCriterion;
             m_BDF_Timestepper.SessionPath = SessionPath;
             m_BDF_Timestepper.Timestepper_Init = Solution.Timestepping.TimeStepperInit.SingleInit;
-        #endregion
 
         }
 
@@ -577,16 +574,18 @@ namespace BoSSS.Application.FSI_Solver {
         }
 
         void UpdateLevelSetParticles(double dt) {
-            double phiComplete(double[] X, double t) {
+            double phiComplete(double[] X, double t)
+            {
                 int exp = m_Particles.Count - 1;
                 double temp = Math.Pow(-1, exp);
-                for (int i = 0; i < m_Particles.Count; i++) {
+                for (int i = 0; i < m_Particles.Count; i++)
+                {
                     double phi_P_val = m_Particles[i].phi_P(X);
                     if (double.IsNaN(phi_P_val) || double.IsInfinity(phi_P_val))
                         throw new ArithmeticException("Failed level-set formula for particle " + i + ", " + m_Particles[i].GetType().Name);
 
                     temp *= phi_P_val;
-
+                        
                 }
                 return temp;
             }
@@ -596,6 +595,7 @@ namespace BoSSS.Application.FSI_Solver {
             DGLevSet.Current.ProjectField(function);
             LsTrk.UpdateTracker(__NearRegionWith: 2);
         }
+        #endregion
 
         void UpdateForcesAndTorque(double dt, double phystime) {
             foreach (Particle p in m_Particles)
@@ -645,7 +645,7 @@ namespace BoSSS.Application.FSI_Solver {
             {
                 double drag = force[0];
                 double lift = force[1];
-                //string line = String.Format("{0}\t{1}\t{2}\t{3}\t{4}\t{5}\t{6}\t{7}\t{8}\t{9}", TimestepNo, phystime, m_Particles[0].positionAtTimestep[0][0], m_Particles[0].positionAtTimestep[0][1], m_Particles[0].particleAnglePerIteration[0], m_Particles[0].transVelocityAtTimestep[0][0], m_Particles[0].transVelocityAtTimestep[0][1], 0.0, (totalKE[0] + totalKE[1] + totalKE[2]), Math.Sqrt(totalMomentum[0].Pow2() + totalMomentum[1].Pow2()));
+                //string line = String.Format("{0}\t{1}\t{2}\t{3}\t{4}\t{5}\t{6}\t{7}\t{8}\t{9}", TimestepNo, phystime, m_Particles[0].positionAtIteration[0][0], m_Particles[0].positionAtIteration[0][1], m_Particles[0].particleAnglePerIteration[0], m_Particles[0].transVelocityAtIteration[0][0], m_Particles[0].transVelocityAtIteration[0][1], 0.0, (totalKE[0] + totalKE[1] + totalKE[2]), Math.Sqrt(totalMomentum[0].Pow2() + totalMomentum[1].Pow2()));
                 string line = String.Format("{0}\t{1}\t{2}\t{3}\t{4}\t{5}\t{6}\t{7}\t{8}", phystime, m_Particles[0].positionAtTimestep[0][0], m_Particles[0].positionAtTimestep[0][1], m_Particles[0].angleAtTimestep[0], m_Particles[0].transVelocityAtTimestep[0][0], m_Particles[0].transVelocityAtTimestep[0][1], 0.0, (totalKE[0] + totalKE[1] + totalKE[2]), Math.Sqrt(totalMomentum[0].Pow2() + totalMomentum[1].Pow2()));
                 Log_DragAndLift.WriteLine(line);
                 Log_DragAndLift.Flush();
@@ -685,7 +685,7 @@ namespace BoSSS.Application.FSI_Solver {
 
         protected override double RunSolverOneStep(int TimestepInt, double phystime, double dt) {
             using (new FuncTrace()) {
-
+                
                 TimestepNumber TimestepNo = new TimestepNumber(TimestepInt, 0);
                 int D = this.GridData.SpatialDimension;
 
@@ -726,8 +726,10 @@ namespace BoSSS.Application.FSI_Solver {
                             }
                             m_BDF_Timestepper.Solve(phystime, dt, false);
                             UpdateForcesAndTorque(dt, phystime);
-                            foreach (Particle p in m_Particles) {
-                                if (p.neglectAddedDamping == false) {
+                            foreach (Particle p in m_Particles)
+                            {
+                                if  (p.neglectAddedDamping == false)
+                                {
                                     //p.UpdateDampingTensors();
                                 }
                                 //switch (p.iteration_counter_P)
@@ -755,7 +757,7 @@ namespace BoSSS.Application.FSI_Solver {
                                 //p.UpdateLevelSetFunction();
                             }
                             PrintResultToConsole(phystime);
-
+                            #region Get Drag and Lift Coefficiant
                             //UpdateForcesAndTorque(dt, phystime);
                             double acc = 0;
                             foreach (Particle p in m_Particles) {
@@ -805,114 +807,6 @@ namespace BoSSS.Application.FSI_Solver {
         #endregion
 
         #region restart
-
-        /// <summary>
-        /// over-ridden in oder to save the particles (<see cref="m_Particles"/>) to the database
-        /// </summary>
-        protected override TimestepInfo GetCurrentTimestepInfo(TimestepNumber timestepno, double t) {
-            var tsi = new FSI_TimestepInfo(t, this.CurrentSessionInfo, timestepno, base.IOFields, m_Particles);
-
-            SerialzeTester(tsi);
-
-            return tsi;
-        }
-
-        /// <summary>
-        /// Test the serialization of <see cref="FSI_TimestepInfo.Particles"/>
-        /// </summary>
-        [Conditional("DEBUG")]
-        private static void SerialzeTester(FSI_TimestepInfo b) {
-            JsonSerializer formatter = new JsonSerializer() {
-                NullValueHandling = NullValueHandling.Ignore,
-                TypeNameHandling = TypeNameHandling.Auto,
-                ConstructorHandling = ConstructorHandling.AllowNonPublicDefaultConstructor,
-                ReferenceLoopHandling = ReferenceLoopHandling.Serialize
-            };
-
-            bool DebugSerialization = false;
-
-            JsonReader GetJsonReader(Stream s) {
-                if (DebugSerialization) {
-                    return new JsonTextReader(new StreamReader(s));
-                } else {
-                    return new BsonReader(s);
-                }
-            }
-
-            JsonWriter GetJsonWriter(Stream s) {
-                if (DebugSerialization) {
-                    return new JsonTextWriter(new StreamWriter(s));
-                } else {
-                    return new BsonWriter(s);
-                }
-            }
-
-
-            byte[] buffer = null;
-            using (var ms1 = new MemoryStream()) {
-                using (var writer = GetJsonWriter(ms1)) {
-                    formatter.Serialize(writer, b);
-                    writer.Flush();
-                    buffer = ms1.GetBuffer();
-                    //writer.Close();
-                }
-            }
-
-            FSI_TimestepInfo o;
-            using (var ms2 = new MemoryStream(buffer)) {
-                using (var reader = GetJsonReader(ms2)) {
-                    o = formatter.Deserialize<FSI_TimestepInfo>(reader);
-                    reader.Close();
-                }
-            }
-
-            //Console.WriteLine(o.ToString());
-
-            Debug.Assert(b.Particles.Length == o.Particles.Length);
-            int L = b.Particles.Length;
-            for(int l =0; l < L; l++) { // loop over particles
-                Debug.Assert(GenericBlas.L2Dist(b.Particles[l].positionAtTimestep[0], o.Particles[l].positionAtTimestep[0]) < 1e-13);
-            }
-
-        }
-
-        /// <summary>
-        /// over-ridden in oder to save the particles (<see cref="m_Particles"/>) to the database
-        /// </summary>
-        protected override TimestepNumber RestartFromDatabase(out double time) {
-            Debugger.Launch();
-
-            // this sux, because the database API is totally fucked up
-            var db = GetDatabase();
-            Guid Rst_Tsid = base.GetRestartTimestepID();
-            Guid Rst_SessionId = Control.RestartInfo.Item1;
-            ISessionInfo session = db.Controller.GetSessionInfo(Rst_SessionId);
-
-            var ArschInfo = ((DatabaseDriver)(base.DatabaseDriver)).LoadTimestepInfo<FSI_TimestepInfo>(Rst_Tsid, session, db);
-
-            // init particles
-            m_Particles = ArschInfo.Particles.ToList();
-            hack_phystime = ArschInfo.PhysicalTime;
-            UpdateLevelSetParticles(0.0);
-            
-            // call base shit
-            var R = base.RestartFromDatabase(out time);
-
-
-            // Setup Collision Model
-            m_collisionModel = ((FSI_Control)this.Control).collisionModel;
-            
-            foreach (Particle p in m_Particles) {
-                p.m_collidedWithParticle = new bool[m_Particles.Count];
-                p.m_collidedWithWall = new bool[4];
-                p.m_closeInterfacePointTo = new double[m_Particles.Count][];
-
-            }
-
-            // return
-            return R;
-        }
-
         /// <summary>
         /// For restarting calculations, its important to reload old solutions if one uses a higher order method in time
         /// </summary>
@@ -971,7 +865,7 @@ namespace BoSSS.Application.FSI_Solver {
         #region Initialize particles
         protected override void SetInitial() {
             // Setup particles
-            m_Particles = ((FSI_Control)this.Control).Particles.ToList();
+            m_Particles = ((FSI_Control)Control).Particles;
             hack_phystime = 0.0;
             UpdateLevelSetParticles(0.0);
 
@@ -1118,9 +1012,9 @@ namespace BoSSS.Application.FSI_Solver {
                                     collisionForce.ScaleV(-100.0);
                                     collisionForceP1.ScaleV(-100.0);
                                     particle0.hydrodynForcesAtTimestep[0].AccV(-1, collisionForce);
-                                    //particle0.hydrodynTorqueAtTimestep[0] += 100 * (collisionForce[0] * (tempPoint_P0[0] - particle0.positionAtTimestep[0][0]) + collisionForce[1] * (tempPoint_P0[1] - particle0.positionAtTimestep[0][1]));
+                                    //particle0.hydrodynTorqueAtIteration[0] += 100 * (collisionForce[0] * (tempPoint_P0[0] - particle0.positionAtIteration[0][0]) + collisionForce[1] * (tempPoint_P0[1] - particle0.positionAtIteration[0][1]));
                                     particle1.hydrodynForcesAtTimestep[0].AccV(1, collisionForceP1);
-                                    //particle1.hydrodynTorqueAtTimestep[0] += -100 * (collisionForceP1[0] * (tempPoint_P1[0] - particle1.positionAtTimestep[0][0]) + collisionForceP1[1] * (tempPoint_P1[1] - particle1.positionAtTimestep[0][1]));
+                                    //particle1.hydrodynTorqueAtIteration[0] += -100 * (collisionForceP1[0] * (tempPoint_P1[0] - particle1.positionAtIteration[0][0]) + collisionForceP1[1] * (tempPoint_P1[1] - particle1.positionAtIteration[0][1]));
                                     Console.WriteLine("Collision information: Particles coming close, force " + collisionForce.L2Norm());
                                     Console.WriteLine("Collision information: Particles coming close, torque " + particle1.hydrodynTorqueAtTimestep[0]);
 
@@ -1204,13 +1098,13 @@ namespace BoSSS.Application.FSI_Solver {
                                     particle1.transVelocityAtTimestep[0] = new double[] { normal[0] * tempCollisionVn_P1 + tempCollisionVt_P1 * tangential[0], normal[1] * tempCollisionVn_P1 + tempCollisionVt_P1 * tangential[1] };
                                     //collided = true;
 
-                                    //double contactForce = (1 + e)*(particle0.transVelocityAtTimestep[0][0] - particle0.radius_P * particle0.rotationalVelocityAtTimestep[0] - (particle1.transVelocityAtTimestep[0][0] - particle1.radius_P * particle1.rotationalVelocityAtTimestep[0])) / (1/particle0.mass_P+1/particle1.mass_P+particle0.radius_P.Pow2()/particle0.MomentOfInertia_P+particle1.radius_P.Pow2()/particle1.MomentOfInertia_P);
-                                    //particle0.transVelocityAtTimestep[0][0] -= contactForce / particle0.mass_P;
-                                    //particle0.rotationalVelocityAtTimestep[0] = particle0.rotationalVelocityAtTimestep[0];
-                                    //particle0.rotationalVelocityAtTimestep[0] += particle0.radius_P * contactForce / particle0.MomentOfInertia_P;
-                                    //particle1.transVelocityAtTimestep[0][0] -= contactForce / particle1.mass_P;
-                                    //particle1.rotationalVelocityAtTimestep[0] = particle1.rotationalVelocityAtTimestep[0];
-                                    //particle1.rotationalVelocityAtTimestep[0] += particle1.radius_P * contactForce / particle1.MomentOfInertia_P;
+                                    //double contactForce = (1 + e)*(particle0.transVelocityAtIteration[0][0] - particle0.radius_P * particle0.rotationalVelocityAtIteration[0] - (particle1.transVelocityAtIteration[0][0] - particle1.radius_P * particle1.rotationalVelocityAtIteration[0])) / (1/particle0.mass_P+1/particle1.mass_P+particle0.radius_P.Pow2()/particle0.MomentOfInertia_P+particle1.radius_P.Pow2()/particle1.MomentOfInertia_P);
+                                    //particle0.transVelocityAtIteration[0][0] -= contactForce / particle0.mass_P;
+                                    //particle0.rotationalVelocityAtIteration[0] = particle0.rotationalVelocityAtIteration[0];
+                                    //particle0.rotationalVelocityAtIteration[0] += particle0.radius_P * contactForce / particle0.MomentOfInertia_P;
+                                    //particle1.transVelocityAtIteration[0][0] -= contactForce / particle1.mass_P;
+                                    //particle1.rotationalVelocityAtIteration[0] = particle1.rotationalVelocityAtIteration[0];
+                                    //particle1.rotationalVelocityAtIteration[0] += particle1.radius_P * contactForce / particle1.MomentOfInertia_P;
 
                                     if (realDistance <= 1.5 * hmin) {
                                         Console.WriteLine("Entering overlapping loop....");
@@ -1593,3 +1487,4 @@ namespace BoSSS.Application.FSI_Solver {
 
 
 
+#endregion
