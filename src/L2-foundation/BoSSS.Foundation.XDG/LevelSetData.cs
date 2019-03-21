@@ -231,7 +231,7 @@ namespace BoSSS.Foundation.XDG {
 
                         if(Color0 != 0 && Color1 != 0 && Color0 != Color1) {
                             // need to do something...
-
+                            hhiuhi
                         }
                     }
                 }
@@ -256,7 +256,7 @@ namespace BoSSS.Foundation.XDG {
                         if (oldColor_j != Color) {
                             if (ColorNegotiable) {
                                 // colors in previous map should match old colors
-                                // we are still not fixed in terms of color - we can re-paint the cells painted so far
+                                // for the current part, we are still not fixed in terms of color - we can re-paint the cells painted so far
 
                                 if (!UsedColors.Contains(oldColor_j)) {
                                     // repainting is allowed, the old color (from previous time-step) is not yet used in this time-step
@@ -265,7 +265,8 @@ namespace BoSSS.Foundation.XDG {
                                         ColorMap[jk] = oldColor_j;
                                     }
                                 } else {
-                                    // this is a topolgy change/a split
+                                    // this is a topology change/a split
+                                    jsdklsdjakldjk
                                 }
 
                                 NextColor = Math.Max(NextColor, Color + 1);
@@ -273,8 +274,8 @@ namespace BoSSS.Foundation.XDG {
                                 ColorNegotiable = false;
                             } else {
                                 // this is a topology change/a merge
-
                                 NextColor = Math.Max(NextColor, oldColorMap[j] + 1);
+                                nklansxnakjxnjk
                             }
                         }
                     }

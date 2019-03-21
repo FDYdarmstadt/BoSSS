@@ -983,8 +983,6 @@ namespace BoSSS.Application.FSI_Solver {
             var R = base.RestartFromDatabase(out time);
 
 
-            // Setup Collision Model
-            m_collisionModel = ((FSI_Control)this.Control).collisionModel;
 
             foreach (Particle p in m_Particles) {
                 p.m_collidedWithParticle = new bool[m_Particles.Count];
@@ -1062,10 +1060,6 @@ namespace BoSSS.Application.FSI_Solver {
             // call base implementation
             base.SetInitial();
 
-            // Setup Collision Model
-            m_collisionModel = ((FSI_Control)this.Control).collisionModel;
-
-
             foreach (Particle p in m_Particles) {
                 p.m_collidedWithParticle = new bool[m_Particles.Count];
                 p.m_collidedWithWall = new bool[4];
@@ -1138,6 +1132,9 @@ namespace BoSSS.Application.FSI_Solver {
             }
         }
 
+        /// <summary>
+        /// Update of particle state (velocity, force, etc.) for two particles where a collision is detected
+        /// </summary>
         private void ComputeCollissionModel(double hmin, Particle particle0, Particle particle1, CellMask particle0CutCells, CellMask particle1CutCells, ref double distance, ref double[] distanceVec) {
             // All interface points at a specific subgrid containing all cut cells of one particle
             var interfacePoints_P0 = BoSSS.Solution.XNSECommon.XNSEUtils.GetInterfacePoints(LsTrk, LevSet, new SubGrid(particle0CutCells));
@@ -1330,7 +1327,11 @@ namespace BoSSS.Application.FSI_Solver {
             }
         }
 
-        private FSI_Solver.FSI_Control.CollisionModel m_collisionModel;
+        private FSI_Solver.FSI_Control.CollisionModel m_collisionModel {
+            get {
+                return ((FSI_Control)Control).collisionModel;
+            }
+        }
 
         /// <summary>
         /// Calculation of collision forces between particle and wall
