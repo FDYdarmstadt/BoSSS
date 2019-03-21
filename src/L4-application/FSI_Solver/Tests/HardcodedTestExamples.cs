@@ -307,7 +307,7 @@ namespace BoSSS.Application.FSI_Solver {
         /// <summary>
         /// Testing of particle/wall interactions using a single particle
         /// </summary>
-        public static FSI_Control DryParticleCollision(string _DbPath = null, bool MeshRefine = true) {
+        public static FSI_Control DryParticleCollision(string _DbPath = null, bool MeshRefine = false) {
             FSI_Control C = new FSI_Control();
 
             // basic database options
@@ -368,17 +368,17 @@ namespace BoSSS.Application.FSI_Solver {
             // Particles
             // =========
 
-            C.Particles.Add(new Particle_Sphere(new double[] { -0.8, +0.1 }, startAngl: 90.0) {
+            C.Particles.Add(new Particle_Sphere(new double[] { -0.6, +0.1 }, startAngl: 90.0) {
                 particleDensity = 1.0,
-                radius_P = 0.2
+                radius_P = 0.15
             });
             C.Particles[0].transVelocityAtTimestep[0][0] = +1;
             C.Particles[0].transVelocityAtTimestep[0][1] = 0;
             C.Particles[0].rotationalVelocityAtTimestep[0] = 0;
 
-            C.Particles.Add(new Particle_Sphere(new double[] { +0.8, -0.1 }, startAngl: 90.0) {
+            C.Particles.Add(new Particle_Sphere(new double[] { +0.6, -0.1 }, startAngl: 90.0) {
                 particleDensity = 1.0,
-                radius_P = 0.2
+                radius_P = 0.15
             });
             C.Particles[1].transVelocityAtTimestep[0][0] = -1;
             C.Particles[1].transVelocityAtTimestep[0][1] = 0;
@@ -424,7 +424,7 @@ namespace BoSSS.Application.FSI_Solver {
             C.dtMin = dt;
 
             C.Endtime = 100.0 / V;
-            C.NoOfTimesteps = 500;
+            C.NoOfTimesteps = 200;
 
             // haben fertig...
             // ===============

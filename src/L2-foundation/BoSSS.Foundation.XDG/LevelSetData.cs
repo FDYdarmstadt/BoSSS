@@ -23,6 +23,7 @@ using System.Collections;
 using ilPSP;
 using BoSSS.Foundation.Grid.Classic;
 using System.Linq;
+using BoSSS.Foundation.Comm;
 
 namespace BoSSS.Foundation.XDG {
 
@@ -183,43 +184,58 @@ namespace BoSSS.Foundation.XDG {
                 int J = this.GridDat.iLogicalCells.NoOfLocalUpdatedCells;
                 int Je = this.GridDat.iLogicalCells.NoOfExternalCells + J;
 
-
+                // paint on local processor
+                // ========================
                 int[] ColorMap = new int[J];
-                //if (!Regions.ColorMap4Spc.TryGetValue(SpId, out ColorMap)) {
-                //    ColorMap = new int[J];
-                //    Regions.ColorMap4Spc.Add(SpId, ColorMap);
-                //} else {
-                //    ColorMap.Clear();
-                //}
-
-
-                int[] oldColorMap = GetPreviousRegion()?.ColorMap4Spc[SpId];
-                bool Incremental = oldColorMap != null;
-
-                //if (Incremental) {
-                //    if (!RegionsHistory[0].ColorMap4Spc.ContainsKey(SpId))
-                //        throw new NotSupportedException("unable to perform incremental coloring update");
-                //    oldColorMap = RegionsHistory[0].ColorMap4Spc[SpId];
-                //} else {
-                //    oldColorMap = null;
-                //}
-
-                CellMask SpMask = this.GetSpeciesMask(SpId);
-                BitArray SpBitMask = SpMask.GetBitMask();
-
-                int ColorCounter = 1;
-                var Part = new List<int>(); // all cells which form one part.
                 var UsedColors = new HashSet<int>();
-                for (int j = 0; j < J; j++) { // sweep over cells...
-                    if (SpBitMask[j] && ColorMap[j] == 0) {
-                        Part.Clear();
-                        int CurrentColor = ColorCounter;
-                        bool ColorNegogiable = true;
-                        ColorCounter = RecursiveColoring(this.GridDat, SpBitMask, j, ref CurrentColor, ColorMap, oldColorMap, ref ColorNegogiable, Part, UsedColors);
-                        UsedColors.Add(CurrentColor);
-                        Debug.Assert(ColorCounter > CurrentColor);
+                {
+                    int[] oldColorMap = GetPreviousRegion()?.ColorMap4Spc[SpId];
+                    bool Incremental = oldColorMap != null;
+
+                    CellMask SpMask = this.GetSpeciesMask(SpId);
+                    BitArray SpBitMask = SpMask.GetBitMask();
+
+                    int ColorCounter = 1;
+                    var Part = new List<int>(); // all cells which form one part.
+                    for (int j = 0; j < J; j++) { // sweep over cells...
+                        if (SpBitMask[j] && ColorMap[j] == 0) {
+                            Part.Clear();
+                            int CurrentColor = ColorCounter;
+                            bool ColorNegogiable = true;
+                            ColorCounter = RecursiveColoring(this.GridDat, SpBitMask, j, ref CurrentColor, ColorMap, oldColorMap, ref ColorNegogiable, Part, UsedColors);
+                            UsedColors.Add(CurrentColor);
+                            Debug.Assert(ColorCounter > CurrentColor);
+                        }
                     }
                 }
+
+                // parallelization
+                // ===============
+                int LocColors = UsedColors.Max();
+                var ColorPart = new Partitioning(LocColors);
+                int ColorOffset = ColorPart.i0;
+
+                ColorMap.MPIExchange(GridDat);
+                
+                int[,] Edge2Cell = GridDat.iLogicalEdges.CellIndices;
+                int NoEdg = Edge2Cell.GetLength(0);
+                for(int iEdge = 0; iEdge < NoEdg; iEdge++) {
+                    Debug.Assert(Edge2Cell[iEdge, 0] < J, "The external/ghost cell is expected to be the OUT-cell.");
+                    int Cell1 = Edge2Cell[iEdge, 1];
+                    if (Cell1 >= J) {
+                        // reached an MPI boundary
+                        int Cell0 = Edge2Cell[iEdge, 0];
+
+                        int Color0 = ColorMap[Cell0];
+                        int Color1 = ColorMap[Cell1];
+
+                        if(Color0 != 0 && Color1 != 0 && Color0 != Color1) {
+                            // need to do something...
+
+                        }
+                    }
+                }
+
 
                 return ColorMap;
             }
@@ -248,13 +264,15 @@ namespace BoSSS.Foundation.XDG {
                                     foreach (int jk in Part) {
                                         ColorMap[jk] = oldColor_j;
                                     }
+                                } else {
+                                    // this is a topolgy change/a split
                                 }
 
                                 NextColor = Math.Max(NextColor, Color + 1);
 
                                 ColorNegotiable = false;
                             } else {
-                                // this is a topology change 
+                                // this is a topology change/a merge
 
                                 NextColor = Math.Max(NextColor, oldColorMap[j] + 1);
                             }
