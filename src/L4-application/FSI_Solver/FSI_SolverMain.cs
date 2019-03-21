@@ -591,14 +591,12 @@ namespace BoSSS.Application.FSI_Solver {
             #endregion
         }
 
-        int Facke = 0;
-
+       
         /// <summary>
         /// Particle to Level-Set-Field 
         /// </summary>
         void UpdateLevelSetParticles(double dt) {
-            Facke++;
-
+          
             double phiComplete(double[] X, double t) {
                 int exp = m_Particles.Count - 1;
                 double temp = Math.Pow(-1, exp);
@@ -616,26 +614,10 @@ namespace BoSSS.Application.FSI_Solver {
             ScalarFunction function = NonVectorizedScalarFunction.Vectorize(phiComplete, hack_phystime);
             DGLevSet.Current.ProjectField(function);
 
-            if(Facke == 15) {
-                UpdateColoring();
-                PlotCurrentState(0.0, 998, 3);
-            }
 
-            try {
-                //if (Facke <= 0) {
-                    LevSet.Clear();
-                    LevSet.AccLaidBack(1.0, DGLevSet.Current);
-                    LsTrk.UpdateTracker(__NearRegionWith: 2);
-                    //Facke++;
-                //} else {
-                //    Console.WriteLine("Deact fucked tracker update.");
-                //}
-            } catch(LevelSetCFLException lscfl) {
-                UpdateColoring();
-                PlotCurrentState(0.0, 999, 3);
-                throw lscfl;
-            }
-
+            LevSet.Clear();
+            LevSet.AccLaidBack(1.0, DGLevSet.Current);
+            LsTrk.UpdateTracker(__NearRegionWith: 2);
             UpdateColoring();
         }
 
