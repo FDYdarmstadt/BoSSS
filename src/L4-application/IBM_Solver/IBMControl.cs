@@ -36,7 +36,6 @@ namespace BoSSS.Application.IBM_Solver {
         /// </summary>
         public IBM_Control() {
             base.LinearSolver.NoOfMultigridLevels = 1;
-            base.CutCellQuadratureType = Foundation.XDG.XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes;
             //shift of Solver Information
             base.LinearSolver.MaxKrylovDim = 30; //MaxKrylovDim
             base.LinearSolver.MaxSolverIterations = 2000; //MaxSolverIterations

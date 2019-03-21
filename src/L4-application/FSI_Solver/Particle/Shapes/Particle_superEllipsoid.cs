@@ -33,7 +33,7 @@ namespace BoSSS.Application.FSI_Solver {
 
         }
 
-        public Particle_superEllipsoid(int Dim, double[] startPos = null, double startAngl = 0) : base(Dim, startPos, startAngl) {
+        public Particle_superEllipsoid(double[] startPos = null, double startAngl = 0) : base(2, startPos, startAngl) {
 
 
         }

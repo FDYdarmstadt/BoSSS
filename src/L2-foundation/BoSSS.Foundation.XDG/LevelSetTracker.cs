@@ -1155,6 +1155,8 @@ namespace BoSSS.Foundation.XDG {
         /// </summary>
         int CheckLevelSetCFL(int LevSetIdx) {
             ushort[] oldCode = this.RegionsHistory[0].m_LevSetRegions;
+            int J = this.GridDat.iLogicalCells.NoOfLocalUpdatedCells;
+            var msk = new BitArray(J);
 
             CellMask newCut = this.RegionsHistory[1].GetCutCellSubgrid4LevSet(LevSetIdx).VolumeMask;
 
@@ -1162,21 +1164,21 @@ namespace BoSSS.Foundation.XDG {
 
             // for all cells that are cut by the levelset,
             // check whether they are in Near - region of the previous state;
-            foreach (var chunk in newCut) {
-                for (int i = 0; i < chunk.Len; i++) {
-                    int j = i + chunk.i0;
 
-                    int old_dist = LevelSetTracker.DecodeLevelSetDist(oldCode[j], LevSetIdx);
-                    if (Math.Abs(old_dist) > 1)
-                        fail_count++;
+            foreach (int j in newCut.ItemEnum) {
+
+                int old_dist = LevelSetTracker.DecodeLevelSetDist(oldCode[j], LevSetIdx);
+                if (Math.Abs(old_dist) > 1) {
+                    fail_count++;
+                    msk[j] = true;
                 }
             }
 
-            int failCountGlobal = int.MaxValue;
-            unsafe
-            {
-                MPI.Wrappers.csMPI.Raw.Allreduce((IntPtr)(&fail_count), (IntPtr)(&failCountGlobal), 1, MPI.Wrappers.csMPI.Raw._DATATYPE.INT, MPI.Wrappers.csMPI.Raw._OP.SUM, MPI.Wrappers.csMPI.Raw._COMM.WORLD);
-            }
+
+            int failCountGlobal = fail_count.MPISum();
+
+            if (failCountGlobal > 0)
+                (new CellMask(this.GridDat, msk)).SaveToTextFile("fail.csv", WriteHeader: false);
 
             return failCountGlobal;
         }
