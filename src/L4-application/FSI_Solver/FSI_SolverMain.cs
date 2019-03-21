@@ -720,9 +720,14 @@ namespace BoSSS.Application.FSI_Solver {
                         int iteration_counter = 0;
                         for (double posResidual_splitting = 1e12; posResidual_splitting > ((FSI_Control)this.Control).ForceAndTorque_ConvergenceCriterion;)// && iteration_counter <= (this.Control).max_iterations_fully_coupled;)
                         {
+                            double[] ForcesOldSquared = new double[2];
+                            double TorqueOldSquared = new double();
                             foreach (Particle p in m_Particles) {
                                 p.iteration_counter_P = iteration_counter;
                                 p.ForceAndTorque_convergence = ((FSI_Control)this.Control).ForceAndTorque_ConvergenceCriterion;
+                                ForcesOldSquared[0] += p.HydrodynamicForces[0][0].Pow2();
+                                ForcesOldSquared[1] += p.HydrodynamicForces[0][1].Pow2();
+                                TorqueOldSquared += p.HydrodynamicTorque[0].Pow2();
                             }
                             m_BDF_Timestepper.Solve(phystime, dt, false);
                             UpdateForcesAndTorque(dt, phystime);
@@ -758,12 +763,14 @@ namespace BoSSS.Application.FSI_Solver {
                             }
                             PrintResultToConsole(phystime);
                             #region Get Drag and Lift Coefficiant
-                            //UpdateForcesAndTorque(dt, phystime);
-                            double acc = 0;
+                            double[] ForcesNewSquared = new double[2];
+                            double TorqueNewSquared = new double();
                             foreach (Particle p in m_Particles) {
-                                acc += (p.HydrodynamicForces[0][0] - p.HydrodynamicForces[1][0]).Pow2() + (p.HydrodynamicForces[0][1] - p.HydrodynamicForces[1][1]).Pow2() + (p.HydrodynamicTorque[0] - p.HydrodynamicTorque[1]).Pow2();
+                                ForcesNewSquared[0] += p.HydrodynamicForces[0][0].Pow2();
+                                ForcesNewSquared[1] += p.HydrodynamicForces[0][1].Pow2();
+                                TorqueNewSquared += p.HydrodynamicTorque[0].Pow2();
                             }
-                            posResidual_splitting = Math.Sqrt(acc);
+                            posResidual_splitting = Math.Sqrt((Math.Sqrt(ForcesNewSquared[0]) - Math.Sqrt(ForcesOldSquared[0])).Pow2() + (Math.Sqrt(ForcesNewSquared[0]) - Math.Sqrt(ForcesOldSquared[1])).Pow2() + (Math.Sqrt(TorqueNewSquared) - Math.Sqrt(TorqueOldSquared)).Pow2());
                             Console.WriteLine("Fully coupled system, number of iterations:  " + iteration_counter);
                             Console.WriteLine("Forces and torque residual: " + posResidual_splitting);
                             Console.WriteLine();
