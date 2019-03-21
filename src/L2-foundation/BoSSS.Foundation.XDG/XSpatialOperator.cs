@@ -1556,7 +1556,7 @@ namespace BoSSS.Foundation.XDG {
             /// <param name="j0">Column index offset.</param>
             /// <param name="alpha">Scaling factor for the accumulation.</param>
             /// <param name="Block">Block to add.</param>
-            /// <param param name="beta">pre-scaling</param>
+            /// <param name="beta">pre-scaling</param>
             public void AccBlock(int i0, int j0, double alpha, MultidimensionalArray Block, double beta) {
                 if (Block.Dimension != 2)
                     throw new ArgumentException();

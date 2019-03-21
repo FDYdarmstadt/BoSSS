@@ -1095,7 +1095,7 @@ namespace BoSSS.Foundation.XDG {
                             FailedViz.SetMeanValue(j, 1);
                         }
 
-                        MegaArschKakke(CellVolumesViz.Cat(AgglomCellsViz, FailedViz, Tracker.LevelSets));
+                        Katastrophenplot(CellVolumesViz.Cat(AgglomCellsViz, FailedViz, Tracker.LevelSets));
 
                         string message = ("Agglomeration failed - no candidate for agglomeration found");
                         if (ExceptionOnFailedAgglomeration)
@@ -1113,6 +1113,10 @@ namespace BoSSS.Foundation.XDG {
             }
         }
 
-        public static Action<DGField[]> MegaArschKakke;
+        /// <summary>
+        /// Temporary feature; will be removed in future;
+        /// Plotting if agglomeration fails.
+        /// </summary>
+        public static Action<DGField[]> Katastrophenplot;
     }
 }
