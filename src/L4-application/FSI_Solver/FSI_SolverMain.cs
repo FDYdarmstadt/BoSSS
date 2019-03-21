@@ -47,6 +47,12 @@ using Newtonsoft.Json.Bson;
 
 namespace BoSSS.Application.FSI_Solver {
     public class FSI_SolverMain : IBM_Solver.IBM_SolverMain {
+
+        public static void MegaArschKakke2(DGField[] f) {
+            Tecplot.PlotFields(f, "MegaArschKakke", 0.0, 2);
+        }
+
+
         double calculatedDampingTensors;
         #region start
         // =============================
@@ -59,6 +65,8 @@ namespace BoSSS.Application.FSI_Solver {
             //            BoSSS.Application.FSI_Solver.TestProgram.Init();
             //            BoSSS.Application.FSI_Solver.TestProgram.TestFlowRotationalCoupling();
             //Debug.Assert(false);
+
+            MultiphaseCellAgglomerator.MegaArschKakke = MegaArschKakke2;
 
             _Main(args, false, delegate () {
                 var p = new FSI_SolverMain();
@@ -498,39 +506,45 @@ namespace BoSSS.Application.FSI_Solver {
 
         public override double DelUpdateLevelset(DGField[] CurrentState, double phystime, double dt, double UnderRelax, bool incremental) {
             #region Level-set handling
-            switch (((FSI_Control)this.Control).Timestepper_LevelSetHandling) {
-                case LevelSetHandling.None:
-                    ScalarFunction Posfunction = NonVectorizedScalarFunction.Vectorize(((FSI_Control)Control).MovementFunc, phystime);
-                    newTransVelocity[0] = (((FSI_Control)this.Control).transVelocityFunc[0])(phystime);
-                    newTransVelocity[1] = (((FSI_Control)this.Control).transVelocityFunc[1])(phystime);
-                    LevSet.ProjectField(Posfunction);
-                    LsTrk.UpdateTracker();
-                    break;
+            try {
+                switch (((FSI_Control)this.Control).Timestepper_LevelSetHandling) {
+                    case LevelSetHandling.None:
+                        ScalarFunction Posfunction = NonVectorizedScalarFunction.Vectorize(((FSI_Control)Control).MovementFunc, phystime);
+                        newTransVelocity[0] = (((FSI_Control)this.Control).transVelocityFunc[0])(phystime);
+                        newTransVelocity[1] = (((FSI_Control)this.Control).transVelocityFunc[1])(phystime);
+                        LevSet.ProjectField(Posfunction);
+                        LsTrk.UpdateTracker();
+                        break;
 
-                case LevelSetHandling.Coupled_Once:
-                    UpdateLevelSetParticles(dt);
-                    break;
+                    case LevelSetHandling.Coupled_Once:
+                        UpdateLevelSetParticles(dt);
+                        break;
 
-                case LevelSetHandling.Coupled_Iterative:
-                    UpdateForcesAndTorque(dt, phystime);
-                    UpdateLevelSetParticles(dt);
-                    foreach (Particle p in m_Particles) {
-                        p.iteration_counter_P += 1;
-                        p.forceAndTorque_convergence = ((FSI_Control)this.Control).ForceAndTorque_ConvergenceCriterion;
-                    }
-                    break;
+                    case LevelSetHandling.Coupled_Iterative:
+                        UpdateForcesAndTorque(dt, phystime);
+                        UpdateLevelSetParticles(dt);
+                        foreach (Particle p in m_Particles) {
+                            p.iteration_counter_P += 1;
+                            p.forceAndTorque_convergence = ((FSI_Control)this.Control).ForceAndTorque_ConvergenceCriterion;
+                        }
+                        break;
 
-                case LevelSetHandling.LieSplitting:
-                    
-                    UpdateLevelSetParticles(dt);
-                    break;
+                    case LevelSetHandling.LieSplitting:
 
-                case LevelSetHandling.StrangSplitting:
-                    UpdateLevelSetParticles(dt);
-                    break;
+                        UpdateLevelSetParticles(dt);
+                        break;
 
-                default:
-                    throw new ApplicationException("unknown 'LevelSetMovement': " + ((FSI_Control)Control).Timestepper_LevelSetHandling);
+                    case LevelSetHandling.StrangSplitting:
+                        UpdateLevelSetParticles(dt);
+                        break;
+
+                    default:
+                        throw new ApplicationException("unknown 'LevelSetMovement': " + ((FSI_Control)Control).Timestepper_LevelSetHandling);
+                }
+            } catch (LevelSetCFLException lscfle) {
+                PlotCurrentState(phystime + dt, 999, 3);
+
+                throw lscfle;
             }
             #endregion
             #region Forces and Torque residual
@@ -824,7 +838,6 @@ namespace BoSSS.Application.FSI_Solver {
         /// <summary>
         /// Test the serialization of <see cref="FSI_TimestepInfo.Particles"/>
         /// </summary>
-        [Conditional("DEBUG")]
         private static void SerialzeTester(FSI_TimestepInfo b) {
             JsonSerializer formatter = new JsonSerializer() {
                 NullValueHandling = NullValueHandling.Ignore,
@@ -884,8 +897,7 @@ namespace BoSSS.Application.FSI_Solver {
         /// over-ridden in oder to save the particles (<see cref="m_Particles"/>) to the database
         /// </summary>
         protected override TimestepNumber RestartFromDatabase(out double time) {
-            Debugger.Launch();
-
+            
             // this sux, because the database API is totally fucked up
             var db = GetDatabase();
             Guid Rst_Tsid = base.GetRestartTimestepID();

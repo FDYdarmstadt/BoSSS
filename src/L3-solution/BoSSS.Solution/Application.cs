@@ -79,9 +79,8 @@ namespace BoSSS.Solution {
     /// <summary>
     /// Base class for BoSSS applications that helps with the organization of
     /// the general work-flow and offers a simple control file handling. The
-    /// standard mode of execution is defined by <see cref="RunSolverMode"/>,
-    /// but useful specializations are also given by
-    /// <see cref="ParameterStudyMode"/>. The <see cref="_Main"/> method
+    /// standard mode of execution is defined by <see cref="RunSolverMode"/>. 
+    /// The <see cref="_Main"/> method
     /// offers a convenient way to start a BoSSS application with minimal
     /// effort.
     /// </summary>

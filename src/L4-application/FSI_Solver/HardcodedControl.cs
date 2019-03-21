@@ -2038,8 +2038,18 @@ namespace BoSSS.Application.FSI_Solver {
             // ===============
 
             return C;
-
         }
+
+        public static FSI_Control A() {
+            string path = @"d:\Users\kummer\AppData\Local\BoSSS-LocalJobs\FSI_Solver2019Mar19_06-37-09\control.obj";
+            string JSON = System.IO.File.ReadAllText(path);
+            var C = (FSI_Control) AppControl.Deserialize(JSON);
+            C.NonLinearSolver.MaxSolverIterations = 40;
+            C.NonLinearSolver.SolverCode = NonLinearSolverConfig.Code.Newton;
+            
+            return C;
+        }
+
     }
 
 
