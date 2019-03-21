@@ -722,6 +722,9 @@ namespace BoSSS.Application.FSI_Solver {
                         {
                             double[] ForcesOldSquared = new double[2];
                             double TorqueOldSquared = new double();
+                            ForcesOldSquared[0] = 0;
+                            ForcesOldSquared[1] = 0;
+                            TorqueOldSquared = 0;
                             foreach (Particle p in m_Particles) {
                                 p.iteration_counter_P = iteration_counter;
                                 p.ForceAndTorque_convergence = ((FSI_Control)this.Control).ForceAndTorque_ConvergenceCriterion;
@@ -770,7 +773,7 @@ namespace BoSSS.Application.FSI_Solver {
                                 ForcesNewSquared[1] += p.HydrodynamicForces[0][1].Pow2();
                                 TorqueNewSquared += p.HydrodynamicTorque[0].Pow2();
                             }
-                            posResidual_splitting = Math.Sqrt((Math.Sqrt(ForcesNewSquared[0]) - Math.Sqrt(ForcesOldSquared[0])).Pow2() + (Math.Sqrt(ForcesNewSquared[0]) - Math.Sqrt(ForcesOldSquared[1])).Pow2() + (Math.Sqrt(TorqueNewSquared) - Math.Sqrt(TorqueOldSquared)).Pow2());
+                            posResidual_splitting = Math.Sqrt((Math.Sqrt(ForcesNewSquared[0]) - Math.Sqrt(ForcesOldSquared[0])).Pow2() + (Math.Sqrt(ForcesNewSquared[1]) - Math.Sqrt(ForcesOldSquared[1])).Pow2() + (Math.Sqrt(TorqueNewSquared) - Math.Sqrt(TorqueOldSquared)).Pow2());
                             Console.WriteLine("Fully coupled system, number of iterations:  " + iteration_counter);
                             Console.WriteLine("Forces and torque residual: " + posResidual_splitting);
                             Console.WriteLine();

@@ -677,7 +677,7 @@ namespace BoSSS.Application.FSI_Solver
                 }
                 testVar = 0;
             }
-            else if (iteration_counter_P == 100)
+            else if (iteration_counter_P == 1000)
             {
                 Console.WriteLine("No convergence after 100 iterations, I will try to restart");
                 double ForceSummation = 0;
