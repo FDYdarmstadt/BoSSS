@@ -90,7 +90,6 @@
     <Compile Include="DatabaseDriver_TimeStep.cs" />
     <Compile Include="DatabaseDriver_VectorData.cs" />
     <Compile Include="DatabaseDriver_VersionedSerializer.cs" />
-    <Compile Include="DatabaseInfo.cs" />
     <Compile Include="DGFieldExtensions.cs" />
     <Compile Include="EdgeInfo.cs" />
     <Compile Include="FileManager.cs" />
@@ -201,6 +200,7 @@
     <Compile Include="ScalarFunction.cs" />
     <Compile Include="RefElement.cs" />
     <Compile Include="SpatialOperator.cs" />
+    <Compile Include="DatabaseInfo.cs" />
     <Compile Include="Square.cs" />
     <Compile Include="StandardDoubleEdgeRuleFactory.cs" />
     <Compile Include="StandardFsDriver.cs" />

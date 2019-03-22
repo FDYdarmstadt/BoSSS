@@ -133,9 +133,9 @@ namespace BoSSS.Application.FSI_Solver
                 {
                     radius_P = 1,
                     particleDensity = 1.5,//pg/(mum^3)
-                    gravityVertical = 0,
-                    activeParticle = true,
-                    active_stress_P = stressM,
+                    GravityVertical = 0,
+                    ActiveParticle = true,
+                    ActiveStress = stressM,
                     //thickness_P = 0.1 * BaseSize,  Sphere kann nur einen radius haben! fk.
                     //length_P = 2 * BaseSize,       Sphere kann nur einen radius haben! fk.
                     //superEllipsoidExponent = 4, // only even numbers are supported
@@ -152,7 +152,7 @@ namespace BoSSS.Application.FSI_Solver
             //    //Level-set function depending on #particles
             //    for (int i = 0; i < C.Particles.Count; i++)
             //    {
-            //        ret *= C.Particles[i].phi_P(X);
+            //        ret *= C.Particles[i].Phi_P(X);
             //    }
             //    return ret;
             //};

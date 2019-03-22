@@ -43,6 +43,7 @@ namespace BoSSS.Foundation.Grid.Classic
                 }
                 data[numberOfObjects - 1] = grid.BcCells;
             }
+            grid.InitNumberOfCells();
             return data;
         }
 
@@ -57,6 +58,8 @@ namespace BoSSS.Foundation.Grid.Classic
             }
             if (data.Last() != null)
                 grid.BcCells = data.Last().Cast<BCElement>().ToArray();
+
+            grid.InitNumberOfCells();
         }
 
         Type[] types;
@@ -108,11 +111,6 @@ namespace BoSSS.Foundation.Grid.Classic
             this.guids = guids;
             grid.StorageGuid = guids[0];
             grid.BcCellsStorageGuid = guids.Last();
-        }
-
-        public void Update()
-        {
-            grid.InitNumberOfCells();
         }
 
         public IEqualityComparer<IGrid> ReferenceComparer {
