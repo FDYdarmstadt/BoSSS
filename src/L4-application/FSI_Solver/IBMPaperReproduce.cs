@@ -974,7 +974,7 @@ namespace BoSSS.Application.FSI_Solver
                 //Func<double[], double, double> phi = (X, t) => -(X[0] - t+X[1]);
                 //C.MovementFunc = phi;
 
-                //C.InitialValues_Evaluators.Add("Phi", X => C.Particles[0].phi_P(X, 0));
+                //C.InitialValues_Evaluators.Add("Phi", X => C.Particles[0].Phi_P(X, 0));
                 //C.InitialValues.Add("VelocityX#B", X => 1);
                 C.InitialValues_Evaluators.Add("VelocityX", X => 0);
                 C.InitialValues_Evaluators.Add("VelocityY", X => 0);

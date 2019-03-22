@@ -147,6 +147,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "XdgPoisson3", "L4-applicati
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "btail", "Utils\btail\btail.csproj", "{DFAFE1D1-0235-4125-9364-E8DE47546CC6}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "VoronoiTests", "L4-application\VoronoiTests\VoronoiTests.csproj", "{B8E3E969-8763-4EA7-82AA-4CA3DB8C3134}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -381,6 +383,10 @@ Global
 		{DFAFE1D1-0235-4125-9364-E8DE47546CC6}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{DFAFE1D1-0235-4125-9364-E8DE47546CC6}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{DFAFE1D1-0235-4125-9364-E8DE47546CC6}.Release|Any CPU.Build.0 = Release|Any CPU
+		{B8E3E969-8763-4EA7-82AA-4CA3DB8C3134}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{B8E3E969-8763-4EA7-82AA-4CA3DB8C3134}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{B8E3E969-8763-4EA7-82AA-4CA3DB8C3134}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{B8E3E969-8763-4EA7-82AA-4CA3DB8C3134}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -450,6 +456,7 @@ Global
 		{5C52E2F7-A6DD-4E3E-A31E-1B0FF34C0CC2} = {92405EB8-3356-435E-9969-26756C41A843}
 		{EFBEFF7A-E40D-4808-BE79-536040C0FADC} = {D9C6B595-1F33-48F4-A87F-13C7D35F5199}
 		{DFAFE1D1-0235-4125-9364-E8DE47546CC6} = {3A4009EF-FAE4-4514-BC3A-2161437194CE}
+		{B8E3E969-8763-4EA7-82AA-4CA3DB8C3134} = {0AF02196-DCBF-4066-AC5A-CC14525B390C}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {B302C86E-A207-460C-8E9F-13EA258F7D8B}

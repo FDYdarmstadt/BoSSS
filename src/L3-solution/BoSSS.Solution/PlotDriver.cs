@@ -789,6 +789,7 @@ namespace BoSSS.Solution {
                 return result;
             }
 
+
             /// <summary>
             /// Evaluation of a function <paramref name="field"/> on the plotting grid
             /// and optional averaging.

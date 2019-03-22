@@ -126,7 +126,6 @@ namespace BoSSS.Foundation.IO
         void SaveGridData(IGridSerializationHandler grdHandler, IDatabaseInfo database)
         {
             SaveVectorData(grdHandler);
-            grdHandler.Update();
             grdHandler.Database = database;
         }
 
@@ -249,7 +248,6 @@ namespace BoSSS.Foundation.IO
                 }
             }
             gridSerializationHandler.SetVectorData(vectors);
-            gridSerializationHandler.Update();
         }
 
         
