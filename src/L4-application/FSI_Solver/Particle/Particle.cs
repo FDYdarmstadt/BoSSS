@@ -619,7 +619,7 @@ namespace BoSSS.Application.FSI_Solver
 
             // add gravity
             {
-                 Forces[1] =+ (particleDensity - fluidDensity) * Area_P * GravityVertical;
+                 Forces[1] += (particleDensity - fluidDensity) * Area_P * GravityVertical;
             }
 
             #endregion
