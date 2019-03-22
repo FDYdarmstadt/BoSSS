@@ -193,7 +193,7 @@ namespace BoSSS.Foundation.XDG {
                 
                 //ColorMap.MPIExchange(gdat);
 
-                yx<y
+                //yx<y
 
             }
 
@@ -305,7 +305,7 @@ namespace BoSSS.Foundation.XDG {
                                     }
                                 } else {
                                     // this is a topology change/a split
-                                    jsdklsdjakldjk
+                                    //7jsdklsdjakldjk
                                 }
 
                                 NextColor = Math.Max(NextColor, Color + 1);
@@ -314,7 +314,7 @@ namespace BoSSS.Foundation.XDG {
                             } else {
                                 // this is a topology change/a merge
                                 NextColor = Math.Max(NextColor, oldColorMap[j] + 1);
-                                nklansxnakjxnjk
+                                //nklansxnakjxnjk
                             }
                         }
                     }

@@ -269,6 +269,72 @@ namespace BoSSS.Application.SipPoisson {
             return R;
         }
 
+        /// <summary>
+        /// Adaptive mesh refinement on a manufactured solution
+        /// </summary>
+        public static SipControl RefinementManufactured(int xRes = 2, int yRes = 2, int deg = 3) {
+
+            double RHS(double[] X) {
+                double x = X[0];
+                double y = X[1];
+                return (0.001 * Math.Pow(y, 2) * Math.Pow(y - 1, 2) * Math.Exp(10 * Math.Pow(x, 2) + 10 * y) * (200 * Math.Pow(x, 6) 
+                    - 400 * Math.Pow(x, 5) + 290 * Math.Pow(x, 4) - 140 * Math.Pow(x, 3) + 56 * Math.Pow(x, 2) - 6 * x + 1) 
+                    + 0.001 * Math.Pow(x, 2) * Math.Pow(x - 1, 2) * Math.Exp(10 * Math.Pow(x, 2) + 10 * y) * (50 * Math.Pow(y, 4) 
+                    - 60 * Math.Pow(y, 3) 
+                    - 4 * Math.Pow(y, 2) + 14 * y + 1));
+            }
+            double Tex(double[] X) {
+                double x = X[0];
+                double y = X[1];
+                return (0.0005 * Math.Pow(x, 2) * Math.Pow(x - 1, 2) * Math.Pow(y, 2) * Math.Pow(y - 1, 2) * Math.Exp( 10 * Math.Pow(x, 2) 
+                    + 10 * y));
+            }
+            
+            Func<double[], double> exSol = Tex;
+            Func<double[], double> exRhs = RHS;
+
+
+            var R = new SipControl();
+            R.ProjectName = "ipPoison/hRefinementManufactured";
+            R.savetodb = false;
+            //R.DbPath = "D:\\BoSSS-db";
+
+            R.FieldOptions.Add("T", new FieldOpts() { Degree = deg, SaveToDB = FieldOpts.SaveToDBOpt.TRUE });
+            R.FieldOptions.Add("Tex", new FieldOpts() { Degree = deg + 1 });
+            R.InitialValues_Evaluators.Add("RHS", exRhs);
+            R.InitialValues_Evaluators.Add("Tex", exSol);
+            R.ExactSolution_provided = true;
+            //R.LinearSolver.NoOfMultigridLevels = 2;
+            //R.LinearSolver.SolverCode = LinearSolverConfig.Code.exp_softpcg_mg;
+            R.LinearSolver.SolverCode = LinearSolverConfig.Code.classic_pardiso;
+            R.SuppressExceptionPrompt = true;
+            //R.LinearSolver.SolverCode = LinearSolverConfig.Code.classic_mumps;
+
+            R.GridFunc = delegate () {
+                double[] xNodes = GenericBlas.Linspace(0, 1, xRes + 1);
+                double[] yNodes = GenericBlas.Linspace(0, 1, yRes + 1);
+                var grd = Grid2D.Cartesian2DGrid(xNodes, yNodes);
+
+                grd.EdgeTagNames.Add(1, BoundaryType.Dirichlet.ToString());
+                grd.DefineEdgeTags(delegate (double[] X) {
+                    byte ret = 1;
+                    return ret;
+                });
+
+
+                return grd;
+            };
+
+            R.AddBoundaryValue(BoundaryType.Dirichlet.ToString(), "T", exSol);
+
+            R.NoOfSolverRuns = 1;
+
+            R.AdaptiveMeshRefinement = true;
+            R.NoOfTimesteps = 100;
+
+            return R;
+        }
+
 
         /// <summary>
         /// Poisson Equation on a (-1,1)x(-1,1), Dirichlet everywhere
