@@ -82,7 +82,7 @@ namespace BoSSS.Application.FSI_Solver {
                 else
                     Dest_Should = new Vector(0.748512025578859, -0.578342794422653);
 
-                Vector Dest_Is = new Vector(p.Particles[0].positionAtTimestep[0]);
+                Vector Dest_Is = new Vector(p.Particles[0].Position[0]);
 
                 double dist = (Dest_Should - Dest_Is).L2Norm();
 

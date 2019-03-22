@@ -80,14 +80,14 @@ namespace BoSSS.Application.FSI_Solver
         //{
         //    double a = 3.0 * radius_P.Pow2();
         //    double b = 1.0 * radius_P.Pow2();
-        //    double alpha = -(angleAtTimestep[0]);
-        //    phi_P = (X, t) => -((((X[0] - positionAtTimestep[0][0]) * Math.Cos(alpha) - (X[1] - positionAtTimestep[0][1]) * Math.Sin(alpha)).Pow(2) + ((X[0] - positionAtTimestep[0][0]) * Math.Sin(alpha) + (X[1] - positionAtTimestep[0][1]) * Math.Cos(alpha)).Pow(2)).Pow2() - a * ((X[0] - positionAtTimestep[0][0]) * Math.Cos(alpha) - (X[1] - positionAtTimestep[0][1]) * Math.Sin(alpha)).Pow(3) - b * ((X[0] - positionAtTimestep[0][0]) * Math.Sin(alpha) + (X[1] - positionAtTimestep[0][1]) * Math.Cos(alpha)).Pow2());
+        //    double alpha = -(Angle[0]);
+        //    Phi_P = (X, t) => -((((X[0] - Position[0][0]) * Math.Cos(alpha) - (X[1] - Position[0][1]) * Math.Sin(alpha)).Pow(2) + ((X[0] - Position[0][0]) * Math.Sin(alpha) + (X[1] - Position[0][1]) * Math.Cos(alpha)).Pow(2)).Pow2() - a * ((X[0] - Position[0][0]) * Math.Cos(alpha) - (X[1] - Position[0][1]) * Math.Sin(alpha)).Pow(3) - b * ((X[0] - Position[0][0]) * Math.Sin(alpha) + (X[1] - Position[0][1]) * Math.Cos(alpha)).Pow2());
         //}
-        public override double phi_P(double[] X) {
-            double alpha = -(angleAtTimestep[0]);
+        public override double Phi_P(double[] X) {
+            double alpha = -(Angle[0]);
             double a = 3.0 * radius_P.Pow2();
             double b = 1.0 * radius_P.Pow2();
-            return -((((X[0] - positionAtTimestep[0][0]) * Math.Cos(alpha) - (X[1] - positionAtTimestep[0][1]) * Math.Sin(alpha)).Pow(2) + ((X[0] - positionAtTimestep[0][0]) * Math.Sin(alpha) + (X[1] - positionAtTimestep[0][1]) * Math.Cos(alpha)).Pow(2)).Pow2() - a * ((X[0] - positionAtTimestep[0][0]) * Math.Cos(alpha) - (X[1] - positionAtTimestep[0][1]) * Math.Sin(alpha)).Pow(3) - b * ((X[0] - positionAtTimestep[0][0]) * Math.Sin(alpha) + (X[1] - positionAtTimestep[0][1]) * Math.Cos(alpha)).Pow2());
+            return -((((X[0] - Position[0][0]) * Math.Cos(alpha) - (X[1] - Position[0][1]) * Math.Sin(alpha)).Pow(2) + ((X[0] - Position[0][0]) * Math.Sin(alpha) + (X[1] - Position[0][1]) * Math.Cos(alpha)).Pow(2)).Pow2() - a * ((X[0] - Position[0][0]) * Math.Cos(alpha) - (X[1] - Position[0][1]) * Math.Sin(alpha)).Pow(3) - b * ((X[0] - Position[0][0]) * Math.Sin(alpha) + (X[1] - Position[0][1]) * Math.Cos(alpha)).Pow2());
         }
 
         override public CellMask CutCells_P(LevelSetTracker LsTrk)
@@ -97,10 +97,10 @@ namespace BoSSS.Application.FSI_Solver
 
             CellMask cellCollection;
             CellMask cells = null;
-            double alpha = -(angleAtTimestep[0]);
+            double alpha = -(Angle[0]);
             double a = 4.0 * radiusTolerance.Pow2();
             double b = 1.0 * radiusTolerance.Pow2();
-            cells = CellMask.GetCellMask(LsTrk.GridDat, X => -((((X[0] - positionAtTimestep[0][0]) * Math.Cos(alpha) - (X[1] - positionAtTimestep[0][1]) * Math.Sin(alpha)).Pow(2) + ((X[0] - positionAtTimestep[0][0]) * Math.Sin(alpha) + (X[1] - positionAtTimestep[0][1]) * Math.Cos(alpha)).Pow(2)).Pow2() - a * ((X[0] - positionAtTimestep[0][0]) * Math.Cos(alpha) - (X[1] - positionAtTimestep[0][1]) * Math.Sin(alpha)).Pow(3) - b * ((X[0] - positionAtTimestep[0][0]) * Math.Sin(alpha) + (X[1] - positionAtTimestep[0][1]) * Math.Cos(alpha)).Pow2()) > 0);
+            cells = CellMask.GetCellMask(LsTrk.GridDat, X => -((((X[0] - Position[0][0]) * Math.Cos(alpha) - (X[1] - Position[0][1]) * Math.Sin(alpha)).Pow(2) + ((X[0] - Position[0][0]) * Math.Sin(alpha) + (X[1] - Position[0][1]) * Math.Cos(alpha)).Pow(2)).Pow2() - a * ((X[0] - Position[0][0]) * Math.Cos(alpha) - (X[1] - Position[0][1]) * Math.Sin(alpha)).Pow(3) - b * ((X[0] - Position[0][0]) * Math.Sin(alpha) + (X[1] - Position[0][1]) * Math.Cos(alpha)).Pow2()) > 0);
 
             CellMask allCutCells = LsTrk.Regions.GetCutCellMask();
             cellCollection = cells.Intersect(allCutCells);
@@ -112,7 +112,7 @@ namespace BoSSS.Application.FSI_Solver
             double radiusTolerance = radius_P + 2.0 * Math.Sqrt(2 * LsTrk.GridDat.Cells.h_minGlobal.Pow2());
             double a = 4.0 * radiusTolerance.Pow2();
             double b = 1.0 * radiusTolerance.Pow2();
-            if (-((((point[0] - positionAtTimestep[0][0]) * Math.Cos(angleAtTimestep[0]) - (point[1] - positionAtTimestep[0][1]) * Math.Sin(angleAtTimestep[0])).Pow(2) + ((point[0] - positionAtTimestep[0][0]) * Math.Sin(angleAtTimestep[0]) + (point[1] - positionAtTimestep[0][1]) * Math.Cos(angleAtTimestep[0])).Pow(2)).Pow2() - a * ((point[0] - positionAtTimestep[0][0]) * Math.Cos(angleAtTimestep[0]) - (point[1] - positionAtTimestep[0][1]) * Math.Sin(angleAtTimestep[0])).Pow(3) - b * ((point[0] - positionAtTimestep[0][0]) * Math.Sin(angleAtTimestep[0]) + (point[1] - positionAtTimestep[0][1]) * Math.Cos(angleAtTimestep[0])).Pow2()) > 0)
+            if (-((((point[0] - Position[0][0]) * Math.Cos(Angle[0]) - (point[1] - Position[0][1]) * Math.Sin(Angle[0])).Pow(2) + ((point[0] - Position[0][0]) * Math.Sin(Angle[0]) + (point[1] - Position[0][1]) * Math.Cos(Angle[0])).Pow(2)).Pow2() - a * ((point[0] - Position[0][0]) * Math.Cos(Angle[0]) - (point[1] - Position[0][1]) * Math.Sin(Angle[0])).Pow(3) - b * ((point[0] - Position[0][0]) * Math.Sin(Angle[0]) + (point[1] - Position[0][1]) * Math.Cos(Angle[0])).Pow2()) > 0)
             {
                 return true;
             }
@@ -121,7 +121,7 @@ namespace BoSSS.Application.FSI_Solver
         override public double ComputeParticleRe(double mu_Fluid)
         {
             double particleReynolds = 0;
-            particleReynolds = Math.Sqrt(transVelocityAtTimestep[0][0] * transVelocityAtTimestep[0][0] + transVelocityAtTimestep[0][1] * transVelocityAtTimestep[0][1]) * 2 * 4.0 * particleDensity / mu_Fluid;
+            particleReynolds = Math.Sqrt(TranslationalVelocity[0][0] * TranslationalVelocity[0][0] + TranslationalVelocity[0][1] * TranslationalVelocity[0][1]) * 2 * 4.0 * particleDensity / mu_Fluid;
             Console.WriteLine("Particle Reynolds number:  " + particleReynolds);
             return particleReynolds;
         }

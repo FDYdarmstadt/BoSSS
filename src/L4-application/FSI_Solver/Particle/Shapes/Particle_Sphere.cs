@@ -77,12 +77,12 @@ namespace BoSSS.Application.FSI_Solver
         }
         //override public void UpdateLevelSetFunction()
         //{
-        //    double alpha = -(angleAtTimestep[0]);
-        //    phi_P = (X, t) => -(X[0] - positionAtTimestep[0][0]).Pow2() + -(X[1] - positionAtTimestep[0][1]).Pow2() + radius_P.Pow2();
+        //    double alpha = -(Angle[0]);
+        //    Phi_P = (X, t) => -(X[0] - Position[0][0]).Pow2() + -(X[1] - Position[0][1]).Pow2() + radius_P.Pow2();
         //}
-        public override double phi_P(double[] X) {
-            double x0 = positionAtTimestep[0][0];
-            double y0 = positionAtTimestep[0][1];
+        public override double Phi_P(double[] X) {
+            double x0 = Position[0][0];
+            double y0 = Position[0][1];
             return -(X[0] - x0).Pow2() + -(X[1] - y0).Pow2() + radius_P.Pow2();
         }
 
@@ -93,8 +93,8 @@ namespace BoSSS.Application.FSI_Solver
 
             CellMask cellCollection;
             CellMask cells = null;
-            double alpha = -(angleAtTimestep[0]);
-            cells = CellMask.GetCellMask(LsTrk.GridDat, X => (-(X[0] - positionAtTimestep[0][0]).Pow2() + -(X[1] - positionAtTimestep[0][1]).Pow2() + radiusTolerance.Pow2()) > 0);
+            double alpha = -(Angle[0]);
+            cells = CellMask.GetCellMask(LsTrk.GridDat, X => (-(X[0] - Position[0][0]).Pow2() + -(X[1] - Position[0][1]).Pow2() + radiusTolerance.Pow2()) > 0);
 
             CellMask allCutCells = LsTrk.Regions.GetCutCellMask();
             cellCollection = cells.Intersect(allCutCells);
@@ -104,7 +104,7 @@ namespace BoSSS.Application.FSI_Solver
         {
             // only for squared cells
             double radiusTolerance = radius_P + 2.0 * Math.Sqrt(2 * LsTrk.GridDat.Cells.h_minGlobal.Pow2());
-            var distance = point.L2Distance(positionAtTimestep[0]);
+            var distance = point.L2Distance(Position[0]);
             if (distance < (radiusTolerance))
             {
                 return true;
@@ -114,7 +114,7 @@ namespace BoSSS.Application.FSI_Solver
         override public double ComputeParticleRe(double mu_Fluid)
         {
             double particleReynolds = 0;
-            particleReynolds = Math.Sqrt(transVelocityAtTimestep[0][0] * transVelocityAtTimestep[0][0] + transVelocityAtTimestep[0][1] * transVelocityAtTimestep[0][1]) * 2 * radius_P * particleDensity / mu_Fluid;
+            particleReynolds = Math.Sqrt(TranslationalVelocity[0][0] * TranslationalVelocity[0][0] + TranslationalVelocity[0][1] * TranslationalVelocity[0][1]) * 2 * radius_P * particleDensity / mu_Fluid;
             Console.WriteLine("Particle Reynolds number:  " + particleReynolds);
             return particleReynolds;
         }
