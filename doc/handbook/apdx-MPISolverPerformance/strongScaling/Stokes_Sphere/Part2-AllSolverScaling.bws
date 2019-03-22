@@ -202,6 +202,9 @@ static public void getFormat(int iTabRow,IDictionary<string, object> Row,
            
            Nmn = "";
           
+		   // ===!!!=== CAUTION ===!!!===
+		   // Solverframework (SolverEnum numbers) have changed! Please check LinearSolver and NonLinearSolver for details
+		  
            switch(solver_name) {
            case LinearSolverCodes.automatic: 
                Nmn           = Nmn+"Automatic"; 

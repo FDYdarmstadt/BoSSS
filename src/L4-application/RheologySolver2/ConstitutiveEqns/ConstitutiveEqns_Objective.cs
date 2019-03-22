@@ -24,12 +24,11 @@ using BoSSS.Solution.NSECommon;
 using ilPSP.Utils;
 
 namespace BoSSS.Application.Rheology {
-    public class ConstitutiveEqns_Objective : IVolumeForm, IEquationComponent, IEquationComponentCoefficient {
 
-        /// <summary>
-        /// Volume integral of objective part of constitutive equations.
-        /// </summary>
-        ///
+    /// <summary>
+    /// Volume integral of objective part of constitutive equations.
+    /// </summary>
+    public class ConstitutiveEqns_Objective : IVolumeForm, IEquationComponent, IEquationComponentCoefficient {
 
         int Component;           // equation index (0: xx, 1: xy, 2: yy)
         BoundaryCondMap<IncompressibleBcType> m_BcMap;
@@ -37,7 +36,9 @@ namespace BoSSS.Application.Rheology {
         double m_ObjectiveParam;
         double m_StressPenalty;
 
-
+        /// <summary>
+        /// Initialize objective
+        /// </summary>
         public ConstitutiveEqns_Objective(int Component, BoundaryCondMap<IncompressibleBcType> _BcMap, double Weissenberg, double ObjectiveParam, double Penalty)
         {
             this.Component = Component;
@@ -48,23 +49,31 @@ namespace BoSSS.Application.Rheology {
 
         }
 
-        // Choosing the required terms (These Flags control, whether certain terms are evaluated during quadrature of the forms)
+        /// <summary>
+        /// Choosing the required terms for volume form (These Flags control, whether certain terms are evaluated during quadrature of the forms)
+        /// </summary>
         public TermActivationFlags VolTerms
         {
             get { return TermActivationFlags.V | TermActivationFlags.UxV; }
         }
 
-
+        /// <summary>
+        /// Choosing the required terms for boundary edge form (These Flags control, whether certain terms are evaluated during quadrature of the forms)
+        /// </summary>
         public TermActivationFlags BoundaryEdgeTerms {
             get { return TermActivationFlags.UxV; }
         }
 
+        /// <summary>
+        /// Choosing the required terms for inner edge form (These Flags control, whether certain terms are evaluated during quadrature of the forms)
+        /// </summary>
         public TermActivationFlags InnerEdgeTerms {
             get { return TermActivationFlags.UxV; }
         }
 
-
-        // Ordering the dependencies
+        /// <summary>
+        /// Ordering of the dependencies
+        /// </summary>
         public IList<string> ArgumentOrdering
         {
             get
@@ -82,6 +91,9 @@ namespace BoSSS.Application.Rheology {
             }
         }
 
+        /// <summary>
+        /// Ordering of the parameters
+        /// </summary>
         public IList<string> ParameterOrdering
         {
             get {
@@ -98,8 +110,9 @@ namespace BoSSS.Application.Rheology {
             }
         }
 
-
-        // Calculating the fluxes
+        /// <summary>
+        /// Calculating the integral of the volume part
+        /// </summary>
         public double VolumeForm(ref CommonParamsVol cpv, double[] T, double[,] Grad_T, double V, double[] GradV) {
             double Grad1 = cpv.Parameters[0];
             double Grad2 = cpv.Parameters[1];
@@ -119,7 +132,9 @@ namespace BoSSS.Application.Rheology {
             return m_ObjectiveParam * -m_Weissenberg * res * V;
         }
 
-
+        /// <summary>
+        /// Calculating the integral of the inner edge part
+        /// </summary>
         public double InnerEdgeForm(ref CommonParams inp, double[] Tin, double[] Tout, double[,] Grad_Tin, double[,] Grad_Tout,
             double Vin, double Vout, double[] Grad_Vin, double[] Grad_Vout) {
 
@@ -128,10 +143,16 @@ namespace BoSSS.Application.Rheology {
             return res * (Vin - Vout);
         }
 
+        /// <summary>
+        /// Calculating the integral of the boundary edge part
+        /// </summary>
         public double BoundaryEdgeForm(ref CommonParamsBnd inp, double[] Tin, double[,] Grad_Tin, double Vin, double[] Grad_Vin) {
             return 0.0;
         }
 
+        /// <summary>
+        /// update the coefficient such as the current Weissenberg number
+        /// </summary>
         public void CoefficientUpdate(CoefficientSet cs, int[] DomainDGdeg, int TestDGdeg) {
             if (cs.UserDefinedValues.Keys.Contains("Weissenbergnumber")) {           
                 m_Weissenberg = (double)cs.UserDefinedValues["Weissenbergnumber"];

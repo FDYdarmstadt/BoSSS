@@ -24,37 +24,50 @@ using BoSSS.Solution.NSECommon;
 using ilPSP.Utils;
 
 namespace BoSSS.Application.Rheology {
-    public class ConstitutiveEqns_Identity : IVolumeForm, IEquationComponent {
 
-        /// <summary>
-        /// Volume integral of identity part of constitutive equations.
-        /// </summary>
-        ///
+    /// <summary>
+    /// Volume integral of identity part of constitutive equations.
+    /// </summary>
+    public class ConstitutiveEqns_Identity : IVolumeForm, IEquationComponent {
 
         private int component; // equation index (0: xx, 1: xy, 2: yy)
 
+        /// <summary>
+        /// Initialize identity
+        /// </summary>
         public ConstitutiveEqns_Identity(int component) {
             this.component = component;
         }
 
-        // Choosing the required terms (These Flags control, whether certain terms are evaluated during quadrature of the forms)
+        /// <summary>
+        /// Choosing the required terms (These Flags control, whether certain terms are evaluated during quadrature of the forms)
+        /// </summary>
         public TermActivationFlags VolTerms
         {
             get { return TermActivationFlags.V | TermActivationFlags.UxV; }
         }
 
-        // Ordering the dependencies
+        /// <summary>
+        /// Ordering of the dependencies as whole string
+        /// </summary>
         static string[] allArg = new string[] { VariableNames.StressXX, VariableNames.StressXY, VariableNames.StressYY };
+
+        /// <summary>
+        /// Ordering of the dependencies
+        /// </summary>
         public IList<string> ArgumentOrdering
         {
             get { return new string[] { allArg[component] }; }
         }
 
-
+        /// <summary>
+        /// Ordering of the parameters - null at identity part
+        /// </summary>
         public IList<string> ParameterOrdering {get;}
-
-
-        // Calculating the integral
+ 
+        /// <summary>
+        /// Calculating the integral of the volume part
+        /// </summary>
         public double VolumeForm(ref CommonParamsVol cpv, double[] T, double[,] Grad_T, double V, double[] GradV) {
 
             double res = 0.0;

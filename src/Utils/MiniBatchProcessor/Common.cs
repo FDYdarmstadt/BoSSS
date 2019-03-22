@@ -178,7 +178,7 @@ namespace MiniBatchProcessor {
         /// <summary>
         /// Exactly what it says.
         /// </summary>
-        public static IEnumerable<JobData> AllJobs {
+        public static IList<JobData> AllJobs {
             get {
                 UpdateLists();
                 return m_AllJobs.Select(job => job.Item1).ToList().AsReadOnly();
@@ -189,7 +189,7 @@ namespace MiniBatchProcessor {
         /// <summary>
         /// Jobs which are in the waiting queue.
         /// </summary>
-        public static IEnumerable<JobData> Queue {
+        public static IList<JobData> Queue {
             get {
                 UpdateLists();
                 return m_AllJobs.Where(job => job.Item2 == JobStatus.Queued)
@@ -202,7 +202,7 @@ namespace MiniBatchProcessor {
         /// <summary>
         /// Jobs which are currently being executed.
         /// </summary>
-        public static IEnumerable<JobData> Working {
+        public static IList<JobData> Working {
             get {
                 UpdateLists();
                 return m_AllJobs.Where(job => job.Item2 == JobStatus.Working)
@@ -215,7 +215,7 @@ namespace MiniBatchProcessor {
         /// <summary>
         /// Jobs which are Finnish.
         /// </summary>
-        public static IEnumerable<JobData> Finished {
+        public static IList<JobData> Finished {
             get {
                 UpdateLists();
                 return m_AllJobs.Where(job => job.Item2 == JobStatus.Finished)

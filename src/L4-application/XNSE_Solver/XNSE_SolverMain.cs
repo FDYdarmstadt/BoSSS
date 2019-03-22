@@ -1000,11 +1000,10 @@ namespace BoSSS.Application.XNSE_Solver {
 
                         //Exception e = null;
                         try {
-                            rtsi = this.DatabaseDriver.SaveTimestep(
+                            rtsi = new TimestepInfo(
                                 t - ti * this.Control.GetFixedTimestep(),
-                                tsn,
                                 this.CurrentSessionInfo,
-                                this.GridData,
+                                tsn,
                                 restartIOFields);
                         } catch(Exception ee) {
                             Console.Error.WriteLine(ee.GetType().Name + " on rank " + this.MPIRank + " saving time-step " + tsn + ": " + ee.Message);
@@ -1182,9 +1181,9 @@ namespace BoSSS.Application.XNSE_Solver {
                     }
 
 
-                /// +++++++++++++++++++++++++++++++++++++
-                /// compute/check time step restrictions
-                /// +++++++++++++++++++++++++++++++++++++
+                // +++++++++++++++++++++++++++++++++++++
+                // compute/check time step restrictions
+                // +++++++++++++++++++++++++++++++++++++
 
                 dt = base.Control.dtFixed;
 

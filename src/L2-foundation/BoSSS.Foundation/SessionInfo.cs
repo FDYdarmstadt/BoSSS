@@ -376,13 +376,17 @@ namespace BoSSS.Foundation.IO {
                     .GetNewLog("TimestepLog", this.ID);
             }
 
+            if (m_Loggedtimesteps.Contains(g))
+                throw new NotSupportedException("time-step is already logged");
+
             m_Loggedtimesteps.Add(g);
             m_TimeStepLog.WriteLine(g.ToString());
             m_TimeStepLog.Flush();
         }
 
         /// <summary>
-        /// don't ask
+        /// added to support deleting time-steps form a session during computation
+        /// (e.g. one wants to save only every 10000th time-step, but still have the latest 3 available for BDF-restart)
         /// </summary>
         public void RemoveTimestep(Guid g) {
             if (m_TimeStepLog != null) {

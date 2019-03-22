@@ -48,6 +48,7 @@ using MPI.Wrappers;
 using NUnit.Framework;
 using BoSSS.Foundation.SpecFEM;
 
+
 namespace BoSSS.Application.Rheology {
 
     /// <summary>
@@ -221,6 +222,9 @@ namespace BoSSS.Application.Rheology {
         //============================================
         IncompressibleBoundaryCondMap BcMap;
         int D; // Spatial Dimension
+        /// <summary>
+        /// current Weissenberg number
+        /// </summary>
         public double currentWeissenberg;
         bool ChangeMesh = true;
         SpatialOperator XOP;
@@ -458,7 +462,6 @@ namespace BoSSS.Application.Rheology {
 
                     //Objective Part
 
-                    // Objective PARAM ÜBERPRÜFEN!!!!!!
                     // GradU as params
                     XOP.EquationComponents["constitutiveXX"].Add(new ConstitutiveEqns_Objective(0, BcMap, this.Control.Weissenberg, this.Control.ObjectiveParam, this.Control.StressPenalty));
                     XOP.EquationComponents["constitutiveXY"].Add(new ConstitutiveEqns_Objective(1, BcMap, this.Control.Weissenberg, this.Control.ObjectiveParam, this.Control.StressPenalty));
@@ -501,7 +504,7 @@ namespace BoSSS.Application.Rheology {
                     int bdfOrder;
                     if (this.Control.Timestepper_Scheme == RheologyControl.TimesteppingScheme.CrankNicolson)
                         bdfOrder = -1;
-                    //else if (this.Control.Timestepper_Scheme == IBM_Control.TimesteppingScheme.ExplicitEuler)
+                    //else if (this.Control.Timestepper_Scheme == RheologyControl.TimesteppingScheme.ExplicitEuler)
                     //    bdfOrder = 0;
                     else if (this.Control.Timestepper_Scheme == RheologyControl.TimesteppingScheme.ImplicitEuler)
                         bdfOrder = 1;
@@ -517,7 +520,7 @@ namespace BoSSS.Application.Rheology {
                         DelComputeOperatorMatrix, DelUpdateLevelset,
                         bdfOrder,
                         lsh,
-                        MassMatrixShapeandDependence.IsNonIdentity,
+                        MassMatrixShapeandDependence.IsTimeDependent,
                         SpatialOp,
                         MassScale,
                         this.MultigridOperatorConfig, base.MultigridSequence,
@@ -528,9 +531,8 @@ namespace BoSSS.Application.Rheology {
                     m_BDF_Timestepper.m_ResidualNames = ArrayTools.Cat(this.ResidualMomentum.Select(f => f.Identification),
                         ResidualConti.Identification, ResidualStressXX.Identification, ResidualStressXY.Identification, ResidualStressYY.Identification);
                 }
-                //m_BDF_Timestepper.Config_linearSolver = this.Control.LinearSolver;
+
                 //m_BDF_Timestepper.Config_UnderRelax = this.Control.UnderRelax;
-                //m_BDF_Timestepper.Config_NonlinearSolver = this.Control.NonlinearMethod;
                 //m_BDF_Timestepper.CustomIterationCallback += this.PlotOnIterationCallback;
                 //m_BDF_Timestepper.CustomIterationCallback += this.CoupledIterationCallback;
 
@@ -579,8 +581,6 @@ namespace BoSSS.Application.Rheology {
             }
 
         }
-
-
 
         /// <summary>
         /// Computation of operator matrix used by the timestepper (<see cref="m_BDF_Timestepper"/>).
@@ -684,9 +684,6 @@ namespace BoSSS.Application.Rheology {
 
                 Console.WriteLine("Instationary solve, timestep #{0}, dt = {1} ...", TimestepNo, dt);
                 bool m_SkipSolveAndEvaluateResidual = this.Control.SkipSolveAndEvaluateResidual;
-                //m_BDF_Timestepper.Config_SolverConvergenceCriterion = Control.ConvCrit;
-                //m_BDF_Timestepper.Config_MaxIterations = Control.MaxIter;
-                //m_BDF_Timestepper.Config_MinIterations = Control.MinIter;
 
                 if (Control.RaiseWeissenberg == true) {
 
@@ -989,7 +986,6 @@ namespace BoSSS.Application.Rheology {
                             this.GridData.SpatialDimension,
                             this.LsTrk,
                             OpMatrix, OpAffine);
-                        //OpMatrix.SaveToTextFileSparse("OpMatrix_3D");
                     } else {
                         IBMSolverUtils.SetPressureReferencePointResidual(
                             new CoordinateVector(CurrentState),

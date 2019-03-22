@@ -57,6 +57,7 @@ namespace BoSSS.Foundation.Grid.Voronoi
 
             return lines;
         }
+
         public static IEnumerator<Line> GetEnumerator(Vector[] polygon)
         {
             Line[] lines = ToLines(polygon);

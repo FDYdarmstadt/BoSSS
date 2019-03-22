@@ -52,18 +52,19 @@ namespace BoSSS.Application.FSI_Solver
             C.ProjectName = "IBMCylinder_k"+k+"_Re"+Re;
             C.SessionName = "IBMCylinder_k" + k + "_Re" + Re;
 
+            double MeshFactor;
             switch (k)
             {
                 case 1:
-                    C.MeshFactor = 1.33; // was 1.33
+                    MeshFactor = 1.33; // was 1.33
                     break;
 
                 case 2:
-                    C.MeshFactor = 0.92;
+                    MeshFactor = 0.92;
                     break;
 
                 case 3:
-                    C.MeshFactor = 0.7; // was 07
+                    MeshFactor = 0.7; // was 07
                     break;
 
                 default:
@@ -111,20 +112,20 @@ namespace BoSSS.Application.FSI_Solver
             C.GridFunc = delegate
             {
 
-                var _xNodes1 = Grid1D.TanhSpacing(-2, -1, Convert.ToInt32(10 * C.MeshFactor), 0.5, false); //10
+                var _xNodes1 = Grid1D.TanhSpacing(-2, -1, Convert.ToInt32(10 * MeshFactor), 0.5, false); //10
                 _xNodes1 = _xNodes1.GetSubVector(0, (_xNodes1.Length - 1));
-                var _xNodes2 = GenericBlas.Linspace(-1, 2, Convert.ToInt32(35 * C.MeshFactor)); //35
+                var _xNodes2 = GenericBlas.Linspace(-1, 2, Convert.ToInt32(35 * MeshFactor)); //35
                 _xNodes2 = _xNodes2.GetSubVector(0, (_xNodes2.Length - 1));
-                var _xNodes3 = Grid1D.TanhSpacing(2, 20, Convert.ToInt32(60 * C.MeshFactor), 1.5, true); //60
+                var _xNodes3 = Grid1D.TanhSpacing(2, 20, Convert.ToInt32(60 * MeshFactor), 1.5, true); //60
 
                 var xNodes = ArrayTools.Cat(_xNodes1, _xNodes2, _xNodes3);
 
 
-                var _yNodes1 = Grid1D.TanhSpacing(-2, -1, Convert.ToInt32(7 * C.MeshFactor), 0.9, false); //7
+                var _yNodes1 = Grid1D.TanhSpacing(-2, -1, Convert.ToInt32(7 * MeshFactor), 0.9, false); //7
                 _yNodes1 = _yNodes1.GetSubVector(0, (_yNodes1.Length - 1));
-                var _yNodes2 = GenericBlas.Linspace(-1, 1, Convert.ToInt32(25 * C.MeshFactor)); //25
+                var _yNodes2 = GenericBlas.Linspace(-1, 1, Convert.ToInt32(25 * MeshFactor)); //25
                 _yNodes2 = _yNodes2.GetSubVector(0, (_yNodes2.Length - 1));
-                var _yNodes3 = Grid1D.TanhSpacing(1, 2.1, Convert.ToInt32(7 * C.MeshFactor), 1.1, true); //7
+                var _yNodes3 = Grid1D.TanhSpacing(1, 2.1, Convert.ToInt32(7 * MeshFactor), 1.1, true); //7
                 var yNodes = ArrayTools.Cat(_yNodes1, _yNodes2, _yNodes3);
 
 
@@ -963,11 +964,9 @@ namespace BoSSS.Application.FSI_Solver
 
                 return grd;
             };
-                C.Particles = new List<Particle>();
-
-                C.Particles.Add(new Particle_Sphere(2, 4, new double[] { 0.0, 4.0 }) {
+                C.Particles.Add(new Particle_Sphere(2, new double[] { 0.0, 4.0 }) {
                     radius_P = 0.125,
-                    rho_P = 1.25,
+                    particleDensity = 1.25,
                 
                 });
 
@@ -975,7 +974,7 @@ namespace BoSSS.Application.FSI_Solver
                 //Func<double[], double, double> phi = (X, t) => -(X[0] - t+X[1]);
                 //C.MovementFunc = phi;
 
-                C.InitialValues_Evaluators.Add("Phi", X => C.Particles[0].phi_P(X, 0));
+                //C.InitialValues_Evaluators.Add("Phi", X => C.Particles[0].Phi_P(X, 0));
                 //C.InitialValues.Add("VelocityX#B", X => 1);
                 C.InitialValues_Evaluators.Add("VelocityX", X => 0);
                 C.InitialValues_Evaluators.Add("VelocityY", X => 0);

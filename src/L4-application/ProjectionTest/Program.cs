@@ -116,7 +116,7 @@ namespace ProjectionTest {
             session.Save();
 
             database.Controller.DBDriver.SaveTimestep(
-                0.0, 0, session, gridData, fields);
+                new TimestepInfo(0.0, session, 0, fields));
 
             return grid;
         }

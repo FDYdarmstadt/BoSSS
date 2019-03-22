@@ -17,6 +17,7 @@ limitations under the License.
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.Serialization;
 using System.Text;
 using BoSSS.Foundation;
 
@@ -47,6 +48,8 @@ namespace BoSSS.Solution.NSECommon {
     /// <summary>
     /// Material law for low Mach number flows.
     /// </summary>
+    [DataContract]
+    [Serializable]
     public class MaterialLawLowMach : MaterialLaw {
 
         double T_ref;
@@ -64,19 +67,31 @@ namespace BoSSS.Solution.NSECommon {
             this.MatParamsMode = MatParamsMode;
         }
 
-        protected bool IsInitialized = false;
-        protected ScalarFieldHistory<SinglePhaseField> ThermodynamicPressure;
         /// <summary>
         /// 
         /// </summary>
         public override IList<string> ParameterOrdering {
             get {
-                return new string[] { VariableNames.Temperature0 }; 
+                return new string[] { VariableNames.Temperature0 };
+                //, VariableNames.MassFraction0_0, VariableNames.MassFraction1_0, VariableNames.MassFraction2_0, VariableNames.MassFraction3_0}; 
             }
         }
 
-
-      
+        /// <summary>
+        /// true if the ThermodynamicPressure is already initialized
+        /// </summary>
+        protected bool IsInitialized {
+            get {
+                return ThermodynamicPressure != null;
+            }
+        }
+       
+        /// <summary>
+        /// 
+        /// </summary>
+        [NonSerialized]
+        protected ScalarFieldHistory<SinglePhaseField> ThermodynamicPressure;
+        
         /// <summary>
         /// Hack to initalize ThermodynamicPressure - called by NSE_SIMPLE.VariableSet.Initialize()
         /// </summary>
@@ -84,7 +99,6 @@ namespace BoSSS.Solution.NSECommon {
         public void Initialize(ScalarFieldHistory<SinglePhaseField> ThermodynamicPressure) {
             if (!IsInitialized) {
                 this.ThermodynamicPressure = ThermodynamicPressure;
-                IsInitialized = true;
             } else {
                 throw new ApplicationException("Initialize() can be called only once.");
             }
@@ -101,6 +115,7 @@ namespace BoSSS.Solution.NSECommon {
         public override double GetDensity(params double[] phi) {
             if (IsInitialized) {
                 double rho = this.ThermodynamicPressure.Current.GetMeanValue(0) / phi[0];
+              // rho = 1.0;
                 return rho;
             } else {
                 throw new ApplicationException("ThermodynamicPressure is not initialized.");
@@ -138,11 +153,15 @@ namespace BoSSS.Solution.NSECommon {
                 case MaterialParamsMode.Constant:
                     return 1.0;
                 case MaterialParamsMode.Sutherland: {
-                        //    throw new NotImplementedException();
-                        return 1.0; // Using a constant value! 
+                        double S = 110.5;
+                        double viscosity = Math.Pow(phi, 1.5) * (1 + S / T_ref) / (phi + S / T_ref);
+                        double lambda = viscosity; //// using viscosity = lambda for Pr = cte...
+                        return lambda;
                     }
                 case MaterialParamsMode.PowerLaw: {
-                        throw new NotImplementedException();
+                        double viscosity = Math.Pow(phi, 2.0 / 3.0);
+                        double lambda = viscosity;
+                        return lambda; // using viscosity = lambda for Pr = cte...
                     }
                 default:
                     throw new NotImplementedException();
@@ -182,6 +201,8 @@ namespace BoSSS.Solution.NSECommon {
         }
 
         public double GetHeatCapacity(double phi) {
+            double gamma = 1.4;
+            double cp = gamma / (gamma - 1);
             return 1.0;
         }
 

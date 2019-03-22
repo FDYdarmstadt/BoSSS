@@ -64,6 +64,8 @@
     <Compile Include="AggregationGridData_EdgeData.cs" />
     <Compile Include="AggregationGridData_Parallelization.cs" />
     <Compile Include="AggregationGridData_VertexData.cs" />
+    <Compile Include="AggregationGrid_IO.cs" />
+    <Compile Include="AggregationGrid_Serialization.cs" />
     <Compile Include="Basis.cs" />
     <Compile Include="Basis_Extrapolation.cs" />
     <Compile Include="Cache.cs" />
@@ -80,10 +82,20 @@
     <Compile Include="Cube.cs" />
     <Compile Include="DatabaseController.cs" />
     <Compile Include="DatabaseDriver.cs" />
+    <Compile Include="DatabaseDriver_DynamicSerializer.cs" />
+    <Compile Include="DatabaseDriver_Grid.cs" />
+    <Compile Include="DatabaseDriver_MPIProcess.cs" />
+    <Compile Include="DatabaseDriver_Serializer.cs" />
+    <Compile Include="DatabaseDriver_Sessions.cs" />
+    <Compile Include="DatabaseDriver_TimeStep.cs" />
+    <Compile Include="DatabaseDriver_VectorData.cs" />
+    <Compile Include="DatabaseDriver_VersionedSerializer.cs" />
     <Compile Include="DGFieldExtensions.cs" />
     <Compile Include="EdgeInfo.cs" />
     <Compile Include="FileManager.cs" />
+    <Compile Include="GridCommons_Comparer.cs" />
     <Compile Include="GridCommons_Merge.cs" />
+    <Compile Include="GridCommons_Serialization.cs" />
     <Compile Include="GridCorrelation.cs" />
     <Compile Include="GridData_BasisData.cs" />
     <Compile Include="GridData_Refine.cs" />
@@ -92,6 +104,7 @@
     <Compile Include="IGrid.cs" />
     <Compile Include="IGridData.cs" />
     <Compile Include="IGridData_Extensions.cs" />
+    <Compile Include="IGridSerializationHandler.cs" />
     <Compile Include="Line.cs" />
     <Compile Include="LinearFormVectorizer.cs" />
     <Compile Include="NodeCoordinateSystem.cs" />
@@ -210,9 +223,6 @@
     <Compile Include="IQuadRuleFactory.cs" />
     <Compile Include="StandardQuadRuleFactory.cs" />
     <Compile Include="VoronoiGrid.cs" />
-    <Compile Include="VoronoiGrid_CellData.cs" />
-    <Compile Include="VoronoiGrid_EdgeData.cs" />
-    <Compile Include="VoronoiGrid_VertexData.cs" />
     <Compile Include="ZipStorer.cs" />
   </ItemGroup>
   <ItemGroup>

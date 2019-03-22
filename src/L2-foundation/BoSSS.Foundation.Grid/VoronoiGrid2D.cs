@@ -101,7 +101,6 @@ namespace BoSSS.Foundation.Grid.Voronoi
             IEnumerator<Line> lines = Line.GetEnumerator(PolygonBoundary);
             IntersectionMesh voronoiMesh = null;
             Func<List<Vector>, int, IntersectionMesh> CreateMesh = MIConvexHullMeshGenerator.CreateMesh;
-            ;
 
             for (int iLloyd = 0; iLloyd <= NoOfLyyodsIter; ++iLloyd)
             {
@@ -112,7 +111,6 @@ namespace BoSSS.Foundation.Grid.Voronoi
                 //Clip
                 //-------------------------------------
                 Intersecter.Intersect(voronoiMesh, lines);
-                //Console.ReadKey();
 
                 // Lloyds algorithm (Voronoi relaxation)
                 // -------------------------------------
@@ -142,10 +140,6 @@ namespace BoSSS.Foundation.Grid.Voronoi
                     FirstCellNode_indice = nodes.Count - 1;
                 }
             }
-            //------------------------------Achtung Hack!--------------------------------------------------------------
-            //Vector tmp = nodes[3];
-            //nodes[3] = new Vector(new double[] { -1, 1 });
-            //nodes[hack] = tmp;
             return nodes;
         }
 

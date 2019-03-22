@@ -38,7 +38,13 @@ namespace BoSSS.Application.Rheology {
         double InverseReynolds;
         double[] pen1;
         double pen2;
+        /// <summary>
+        /// Velocity Function for Dirichlet BC
+        /// </summary>
         protected Func<double[], double, double>[,] VelFunction;
+        /// <summary>
+        /// Stress Function for Dirichlet BC
+        /// </summary>
         protected Func<double[], double, double>[,] StressFunction;
         
         
@@ -48,7 +54,6 @@ namespace BoSSS.Application.Rheology {
         /// 1st index: edge tag;<br/>
         /// 2nd index: spatial direction
         /// </summary>
-
         public override IList<string> ArgumentOrdering {
             get {
                 switch (Component) {
@@ -62,6 +67,9 @@ namespace BoSSS.Application.Rheology {
             }
         }
 
+        /// <summary>
+        /// Calculating the stress divergence term in the momentum equations following the local DG ansatz by Cockburn (2002)
+        /// </summary>
         public StressDivergence_Cockburn(int Component, BoundaryCondMap<IncompressibleBcType> _BcMap, double Reynolds, double[] Penalty1, double Penalty2) {
             this.Component = Component;
             this.m_BcMap = _BcMap;
@@ -81,6 +89,9 @@ namespace BoSSS.Application.Rheology {
             VelFunction.SetColumn(m_BcMap.bndFunction[VariableNames.VelocityY], 1);
         }
 
+        /// <summary>
+        /// Stress divergence volume term
+        /// </summary>
         protected override void Flux(ref CommonParamsVol inp, double[] T, double[] output) {
             int D = output.Length;
             Array.Clear(output, 0, D);
@@ -90,6 +101,9 @@ namespace BoSSS.Application.Rheology {
 
         }
 
+        /// <summary>
+        /// Stress divergence inner edge term
+        /// </summary>
         protected override double InnerEdgeFlux(ref CommonParams inp, double[] Tin, double[] Tout) {
 
             double res = 0;
@@ -125,7 +139,9 @@ namespace BoSSS.Application.Rheology {
             return InverseReynolds * res;
         }
 
-
+        /// <summary>
+        /// Stress divergence border edge term
+        /// </summary>
         protected override double BorderEdgeFlux(ref CommonParamsBnd inp, double[] Tin) {
             double res = 0;
 

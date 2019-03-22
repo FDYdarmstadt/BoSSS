@@ -26,6 +26,8 @@ using BoSSS.Solution;
 using BoSSS.Solution.CompressibleFlowCommon;
 using BoSSS.Solution.Timestepping;
 using BoSSS.Solution.Utils;
+using ilPSP.LinSolvers;
+using ilPSP.Utils;
 
 namespace CNS.IBM {
 
@@ -111,10 +113,12 @@ namespace CNS.IBM {
                 var opi = this.Operator.GetEvaluatorEx(
                     Mapping,
                     null, // TO DO: I SIMPLY REMOVE PARAMETERMAP HERE; MAKE THIS MORE PRETTY
+                          //this.boundaryParameterMap, // TO DO: I SIMPLY REMOVE PARAMETERMAP HERE; MAKE THIS MORE PRETTY
                     Mapping,
                     edgeScheme,
                     volumeScheme);
                 opi.ActivateSubgridBoundary(volumeScheme.Domain, subGridBoundaryTreatment: SpatialOperator.SubGridBoundaryModes.InnerEdgeLTS);
+                //opi.ActivateSubgridBoundary(fluidCells, subGridBoundaryTreatment: SpatialOperator.SubGridBoundaryModes.InnerEdgeLTS);
                 return opi;
             });
 
@@ -140,6 +144,8 @@ namespace CNS.IBM {
                 Debug.Assert(
                     !k.Any(f => double.IsNaN(f)),
                     "Unphysical flux in standard terms");
+
+                //k.SaveToTextFile("k-lts-bulk.txt");
 
                 boundaryEvaluator.Value.time = AbsTime;
                 boundaryEvaluator.Value.Evaluate(1.0, 1.0, k);
@@ -181,6 +187,8 @@ namespace CNS.IBM {
                 //IBMUtility.SubMatrixSpMV(massMatrixFactory.InverseMassMatrix, 1.0, DGCoordinates, 0.0, DGCoordinates, cutAndTargetCells);
                 //speciesMap.Agglomerator.Extrapolate(DGCoordinates.Mapping);
 
+                AgglomerateAndExtrapolateDGCoordinates();
+
                 agglomerationPatternHasChanged = false;
 
                 //Broadcast to RungeKutta and ABevolve ???
@@ -194,6 +202,16 @@ namespace CNS.IBM {
 
             speciesMap.Agglomerator.Extrapolate(CurrentState.Mapping);
             return dt;
+        }
+
+        protected void AgglomerateAndExtrapolateDGCoordinates() {
+            IBMMassMatrixFactory massMatrixFactory = speciesMap.GetMassMatrixFactory(Mapping);
+            BlockMsrMatrix nonAgglomeratedMassMatrix = massMatrixFactory.NonAgglomeratedMassMatrix;
+
+            IBMUtility.SubMatrixSpMV(nonAgglomeratedMassMatrix, 1.0, CurrentState, 0.0, CurrentState, cutCells);  // eq. (39)
+            speciesMap.Agglomerator.ManipulateRHS(CurrentState, Mapping);  // eq. (39)
+            IBMUtility.SubMatrixSpMV(massMatrixFactory.InverseMassMatrix, 1.0, CurrentState, 0.0, CurrentState, cutAndTargetCells);   // eq. (39)
+            speciesMap.Agglomerator.Extrapolate(CurrentState.Mapping); // eq. (41)
         }
 
         protected override void CreateNewABevolver() {
