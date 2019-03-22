@@ -530,8 +530,8 @@ namespace BoSSS.Application.SipPoisson {
 
                 // compute error against fine solution
                 if(Control.ExactSolution_provided) {
-                    Error.Clear();
-                    Error.AccLaidBack(1.0, T);
+                    //Error.Clear();
+                    //Error.AccLaidBack(1.0, T);
 
                     /*
                     var eval = new FieldEvaluation((GridData)(TexactFine.GridDat));
@@ -545,7 +545,7 @@ namespace BoSSS.Application.SipPoisson {
 
                     Error.ProjectField(-1.0, FineEval);
                     */
-                    Error.AccLaidBack(-1.0, Tex);
+                    //Error.AccLaidBack(-1.0, Tex);
                 }
 
                 int oldJ = this.GridData.CellPartitioning.TotalLength;
@@ -554,21 +554,35 @@ namespace BoSSS.Application.SipPoisson {
                 double TotNormPow2 = LocNormPow2.MPISum(); //                          norm of residual over all processors
                 double MeanNormPow2PerCell = TotNormPow2 / oldJ; //                    mean norm per cell
 
+                double maxSoFar = 0;
+                int jMax = -1;
+                for(int j = 0; j < oldJ; j++) {
+                    double CellNorm = Error.Coordinates.GetRow(j).L2NormPow2();
+
+                    if(CellNorm > maxSoFar) {
+                        jMax = j;
+                        maxSoFar = CellNorm;
+                    }
+                }
+
 
                 int MyLevelIndicator(int j, int CurrentLevel) {
                     double CellNorm = this.ResiualKP1.Coordinates.GetRow(j).L2NormPow2();
 
 
-                    if (j == 0)
-                        CurrentLevel = CurrentLevel + 1;
+                    //if (j == 0)
+                    //    CurrentLevel = CurrentLevel + 1;
 
-                    if (CellNorm > MeanNormPow2PerCell * 1.1)
+                    //if (CellNorm > MeanNormPow2PerCell * 1.1)
+                    //    return CurrentLevel + 1;
+                    //else
+                    //    return CurrentLevel;
+                    if (j == jMax)
                         return CurrentLevel + 1;
                     else
                         return CurrentLevel;
                 }
-
-
+                
                 
                 bool AnyChange = GridRefinementController.ComputeGridChange((GridData)(this.GridData), null, MyLevelIndicator, out List<int> CellsToRefineList, out List<int[]> Coarsening);
                 int NoOfCellsToRefine = 0;
@@ -616,6 +630,14 @@ namespace BoSSS.Application.SipPoisson {
         protected override double RunSolverOneStep(int TimestepNo, double phystime, double dt) {
             using (new FuncTrace()) {
                 //this.WriteSEMMatrices();
+
+                if (Control.ExactSolution_provided) {
+                    Tex.Clear();
+                    Tex.ProjectField(this.Control.InitialValues_Evaluators["Tex"]);
+
+                    RHS.Clear();
+                    RHS.ProjectField(this.Control.InitialValues_Evaluators["RHS"]);
+                }
 
                 if (Control.AdaptiveMeshRefinement == false) {
                     base.NoOfTimesteps = -1;
@@ -672,17 +694,12 @@ namespace BoSSS.Application.SipPoisson {
 
 
                 if (base.Control.ExactSolution_provided) {
-                    SinglePhaseField ERR;
-                    if (Tex.Basis.Degree >= T.Basis.Degree) {
-                        ERR = this.Tex.CloneAs();
-                        ERR.AccLaidBack(-1.0, T);
-                    } else {
-                        ERR = this.T.CloneAs();
-                        ERR.AccLaidBack(-1.0, Tex);
-                    }
-
-                    double L2_ERR = ERR.L2Norm();
-
+                    Error.Clear();
+                    Error.AccLaidBack(1.0, Tex);
+                    Error.AccLaidBack(-1.0, T);
+                         
+                    double L2_ERR = Error.L2Norm();
+                    Console.WriteLine("\t\tL2 error on " + this.Grid.NumberOfCells + ": " + L2_ERR);
                     base.QueryHandler.ValueQuery("SolL2err", L2_ERR, true);
 
                 }
@@ -1267,7 +1284,7 @@ namespace BoSSS.Application.SipPoisson {
             }
 
             DGField[] Fields = new DGField[] { T, Tex, RHS, ResiualKP1, Error };
-            Fields = Fields.Cat(this.MGColoring);
+            //Fields = Fields.Cat(this.MGColoring);
             BoSSS.Solution.Tecplot.Tecplot.PlotFields(Fields, "poisson" + timestepNo + caseStr, phystime, superSampling);
         }
 
