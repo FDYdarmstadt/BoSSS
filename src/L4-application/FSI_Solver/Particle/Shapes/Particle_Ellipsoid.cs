@@ -34,7 +34,6 @@ namespace BoSSS.Application.FSI_Solver {
             
         }
 
-        
         /// <summary>
         /// Length of an elliptic particle.
         /// </summary>
@@ -56,22 +55,21 @@ namespace BoSSS.Application.FSI_Solver {
             }
         }
 
-
-
-        override public double Area_P {
+        protected override double Area_P {
             get {
                 double a = length_P * thickness_P * Math.PI;
                 if (a <= 0.0 || double.IsNaN(a) || double.IsInfinity(a))
                     throw new ArithmeticException("Ellipsoid volume/area is " + a);
                 return a;
             }
-
         }
-        public override double Circumference_P {
+
+        protected override double Circumference_P {
             get {
                 return Math.PI * ((length_P + thickness_P) + (3 * (length_P - thickness_P).Pow2()) / (10 * (length_P + thickness_P) + Math.Sqrt(length_P.Pow2() + 14 * length_P * thickness_P + thickness_P.Pow2())));
             }
         }
+
         override public double MomentOfInertia_P {
             get {
                 return (1 / 4.0) * (Mass_P * (length_P * length_P + thickness_P * thickness_P));
@@ -122,6 +120,5 @@ namespace BoSSS.Application.FSI_Solver {
             return particleReynolds;
         }
     }
-
 }
 

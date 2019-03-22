@@ -483,13 +483,15 @@ namespace BoSSS.Application.FSI_Solver {
                 this.FluidSpecies, base.HMForder,
                 this.Control.AdvancedDiscretizationOptions.CellAgglomerationThreshold, true,
                 this.Control.NonLinearSolver, this.Control.LinearSolver
-                );
-            m_BDF_Timestepper.m_ResLogger = base.ResLogger;
-            m_BDF_Timestepper.m_ResidualNames = ArrayTools.Cat(this.ResidualMomentum.Select(f => f.Identification), this.ResidualContinuity.Identification);
-            m_BDF_Timestepper.IterUnderrelax = ((FSI_Control)this.Control).Timestepper_LevelSetHandling == LevelSetHandling.Coupled_Iterative ? ((FSI_Control)this.Control).LSunderrelax : 1.0;
-            m_BDF_Timestepper.Config_LevelSetConvergenceCriterion = ((FSI_Control)this.Control).ForceAndTorque_ConvergenceCriterion;
-            m_BDF_Timestepper.SessionPath = SessionPath;
-            m_BDF_Timestepper.Timestepper_Init = Solution.Timestepping.TimeStepperInit.SingleInit;
+                )
+            {
+                m_ResLogger = base.ResLogger,
+                m_ResidualNames = ArrayTools.Cat(this.ResidualMomentum.Select(f => f.Identification), this.ResidualContinuity.Identification),
+                IterUnderrelax = ((FSI_Control)this.Control).Timestepper_LevelSetHandling == LevelSetHandling.Coupled_Iterative ? ((FSI_Control)this.Control).LSunderrelax : 1.0,
+                Config_LevelSetConvergenceCriterion = ((FSI_Control)this.Control).ForceAndTorque_ConvergenceCriterion,
+                SessionPath = SessionPath,
+                Timestepper_Init = Solution.Timestepping.TimeStepperInit.SingleInit
+            };
 
         }
 
@@ -612,9 +614,10 @@ namespace BoSSS.Application.FSI_Solver {
             }
         }
 
-        void PrintResultToConsole(double phystime)
+        void PrintResultToConsole(double phystime, double dt)
         {
-            double[] totalMomentum = new double[2] { 0, 0 };
+            double[] TranslationalMomentum = new double[2] { 0, 0 };
+            double RotationalMomentum = 0;
             double[] totalKE = new double[3] { 0, 0, 0 };
             double xPos;
             double yPos;
@@ -622,14 +625,17 @@ namespace BoSSS.Application.FSI_Solver {
 
             foreach (Particle p in m_Particles)
             {
-                totalMomentum[0] += p.Mass_P * p.TranslationalVelocity[0][0];
-                totalMomentum[1] += p.Mass_P * p.TranslationalVelocity[0][1];
-                totalKE[0] += 0.5 * p.Mass_P * p.TranslationalVelocity[0][0].Pow2();
-                totalKE[1] += 0.5 * p.Mass_P * p.TranslationalVelocity[0][1].Pow2();
-                totalKE[2] += 0.5 * p.MomentOfInertia_P * p.RotationalVelocity[0].Pow2();
+                double[] SingleParticleMomentum = p.CalculateParticleMomentum(dt);
+                double[] SingleParticleKineticEnergy = p.CalculateParticleKineticEnergy(dt);
+                TranslationalMomentum[0] += SingleParticleMomentum[0];
+                TranslationalMomentum[1] += SingleParticleMomentum[1];
+                RotationalMomentum += SingleParticleMomentum[SingleParticleMomentum.Length - 1];
+                totalKE[0] += SingleParticleKineticEnergy[0];
+                totalKE[1] += SingleParticleKineticEnergy[1];
+                totalKE[2] += SingleParticleKineticEnergy[SingleParticleMomentum.Length - 1];
             }
-            Console.WriteLine("Total-Momentum in System:  " + Math.Sqrt(totalMomentum[0].Pow2() + totalMomentum[1].Pow2()));
-            Console.WriteLine("Total-KineticEnergy in System:  " + (totalKE[0] + totalKE[1] + totalKE[2]));
+            Console.WriteLine("Total momentum in system:  " + Math.Sqrt(TranslationalMomentum[0].Pow2() + TranslationalMomentum[1].Pow2()));
+            Console.WriteLine("Total kinetic energy in system:  " + (totalKE[0] + totalKE[1] + totalKE[2]));
 
             force = m_Particles[0].HydrodynamicForces[0];
             torque = m_Particles[0].HydrodynamicTorque[0];
@@ -645,8 +651,8 @@ namespace BoSSS.Application.FSI_Solver {
             {
                 double drag = force[0];
                 double lift = force[1];
-                //string line = String.Format("{0}\t{1}\t{2}\t{3}\t{4}\t{5}\t{6}\t{7}\t{8}\t{9}", TimestepNo, phystime, m_Particles[0].positionAtIteration[0][0], m_Particles[0].positionAtIteration[0][1], m_Particles[0].particleAnglePerIteration[0], m_Particles[0].transVelocityAtIteration[0][0], m_Particles[0].transVelocityAtIteration[0][1], 0.0, (totalKE[0] + totalKE[1] + totalKE[2]), Math.Sqrt(totalMomentum[0].Pow2() + totalMomentum[1].Pow2()));
-                string line = String.Format("{0}\t{1}\t{2}\t{3}\t{4}\t{5}\t{6}\t{7}\t{8}", phystime, m_Particles[0].Position[0][0], m_Particles[0].Position[0][1], m_Particles[0].Angle[0], m_Particles[0].TranslationalVelocity[0][0], m_Particles[0].TranslationalVelocity[0][1], 0.0, (totalKE[0] + totalKE[1] + totalKE[2]), Math.Sqrt(totalMomentum[0].Pow2() + totalMomentum[1].Pow2()));
+                //string line = String.Format("{0}\t{1}\t{2}\t{3}\t{4}\t{5}\t{6}\t{7}\t{8}\t{9}", TimestepNo, phystime, m_Particles[0].positionAtIteration[0][0], m_Particles[0].positionAtIteration[0][1], m_Particles[0].particleAnglePerIteration[0], m_Particles[0].transVelocityAtIteration[0][0], m_Particles[0].transVelocityAtIteration[0][1], 0.0, (totalKE[0] + totalKE[1] + totalKE[2]), Math.Sqrt(TranslationalMomentum[0].Pow2() + TranslationalMomentum[1].Pow2()));
+                string line = String.Format("{0}\t{1}\t{2}\t{3}\t{4}\t{5}\t{6}\t{7}\t{8}", phystime, m_Particles[0].Position[0][0], m_Particles[0].Position[0][1], m_Particles[0].Angle[0], m_Particles[0].TranslationalVelocity[0][0], m_Particles[0].TranslationalVelocity[0][1], 0.0, (totalKE[0] + totalKE[1] + totalKE[2]), Math.Sqrt(TranslationalMomentum[0].Pow2() + TranslationalMomentum[1].Pow2()));
                 Log_DragAndLift.WriteLine(line);
                 Log_DragAndLift.Flush();
             }
@@ -736,35 +742,18 @@ namespace BoSSS.Application.FSI_Solver {
                             UpdateForcesAndTorque(dt, phystime);
                             foreach (Particle p in m_Particles)
                             {
-                                if  (p.neglectAddedDamping == false)
+                                if  (p.neglectAddedDamping == false && p.iteration_counter_P == 0)
                                 {
-                                    //p.UpdateDampingTensors();
+                                    p.UpdateDampingTensors();
                                 }
-                                //switch (p.iteration_counter_P)
-                                //{
-                                //    case 0 when ((FSI_Control)this.Control).splitting_fully_coupled == true:
-                                //        p.PredictTranslationalAccelaration();
-                                //        p.PredictAngularAcceleration();
-                                //        break;
-
-                                //    default:
-                                        p.CalculateAcceleration(dt, Control.PhysicalParameters.rho_A);
-                                //        break;
-                                //}
-                                if (((FSI_Control)Control).includeRotation == true)
-                                {
-                                    p.CalculateAngularVelocity(dt);
-                                }
-                                if (((FSI_Control)Control).includeTranslation == true)
-                                {
-                                    p.CalculateTranslationalVelocity(dt, this.Control.PhysicalParameters.rho_A);
-                                }
-                                p.ComputeParticleRe(this.Control.PhysicalParameters.mu_A);
+                                p.CalculateAcceleration(dt, Control.PhysicalParameters.rho_A);
+                                p.CalculateAngularVelocity(dt, ((FSI_Control)this.Control).includeRotation);
+                                p.CalculateTranslationalVelocity(dt, this.Control.PhysicalParameters.rho_A, ((FSI_Control)this.Control).includeTranslation);
                                 p.CalculateParticlePosition(dt, this.Control.PhysicalParameters.rho_A);
                                 p.CalculateParticleAngle(dt);
-                                //p.UpdateLevelSetFunction();
+                                p.ComputeParticleRe(this.Control.PhysicalParameters.mu_A);
                             }
-                            PrintResultToConsole(phystime);
+                            PrintResultToConsole(phystime, dt);
                             #region Get Drag and Lift Coefficiant
                             double[] ForcesNewSquared = new double[2];
                             double TorqueNewSquared = new double();

@@ -54,14 +54,14 @@ namespace BoSSS.Application.FSI_Solver
             }
         }
 
-        override public double Area_P
+        protected override double Area_P
         {
             get
             {
                 return Math.PI * radius_P * radius_P;
             }
         }
-        public override double Circumference_P
+        protected override double Circumference_P
         {
             get
             {

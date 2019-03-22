@@ -44,24 +44,20 @@ namespace BoSSS.Solution.NSECommon.Operator.Viscosity {
             this.m_D = _D;
         }
 
-        int component;
-        int m_D;
+        readonly int component;
+        readonly int m_D;
 
         /// <summary>
         /// Describes: 0: velX, 1: velY, 2: rotVel, 3: particleradius, 4: active_stress, 5: first scaling parameter, 6: second scaling parameter, 7: current angle
         /// </summary>
-        Func<double[], double, double[]> m_getParticleParams;
+        readonly Func<double[], double, double[]> m_getParticleParams;
 
         /// <summary>
         /// Viscosity in species A
         /// </summary>
-        double muA;
-
-        double m_penalty;
-
-        
-
-        Func<double, int, double> m_PenaltyFunc;
+        readonly double muA;
+        readonly double m_penalty;
+        readonly Func<double, int, double> m_PenaltyFunc;
 
         /// <summary>
         /// default-implementation

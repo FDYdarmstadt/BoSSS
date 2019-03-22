@@ -8,10 +8,10 @@ using System.Threading.Tasks;
 
 namespace BoSSS.Application.FSI_Solver
 {
-    class ParticleForceIntegration
+    internal class ParticleForceIntegration
     {
-        ParticleAuxillary Aux = new ParticleAuxillary();
-        public double CalculateStressTensorX(MultidimensionalArray Grad_UARes, MultidimensionalArray pARes, MultidimensionalArray NormalVector, double muA, int k, int j)
+        private ParticleAuxillary Aux = new ParticleAuxillary();
+        private double CalculateStressTensorX(MultidimensionalArray Grad_UARes, MultidimensionalArray pARes, MultidimensionalArray NormalVector, double muA, int k, int j)
         {
             double[] SummandsVelGradient = new double[3];
             double SummandsPressure;
@@ -22,7 +22,7 @@ namespace BoSSS.Application.FSI_Solver
             return Aux.SummationWithNeumaier(SummandsVelGradient, SummandsPressure, muA);
         }
 
-        public double CalculateStressTensorY(MultidimensionalArray Grad_UARes, MultidimensionalArray pARes, MultidimensionalArray NormalVector, double muA, int k, int j)
+        private double CalculateStressTensorY(MultidimensionalArray Grad_UARes, MultidimensionalArray pARes, MultidimensionalArray NormalVector, double muA, int k, int j)
         {
             double[] SummandsVelGradient = new double[3];
             double SummandsPressure;
@@ -33,7 +33,7 @@ namespace BoSSS.Application.FSI_Solver
             return Aux.SummationWithNeumaier(SummandsVelGradient, SummandsPressure, muA);
         }
 
-        public double CalculateStressTensor2D(MultidimensionalArray Grad_UARes, MultidimensionalArray pARes, MultidimensionalArray NormalVector, double muA, int k, int j, int currentDimension)
+        private double CalculateStressTensor2D(MultidimensionalArray Grad_UARes, MultidimensionalArray pARes, MultidimensionalArray NormalVector, double muA, int k, int j, int currentDimension)
         {
             double acc;
             switch (currentDimension)
@@ -51,22 +51,7 @@ namespace BoSSS.Application.FSI_Solver
             return acc;
         }
 
-        public double CalculateTorqueFromStressTensor2D(MultidimensionalArray Grad_UARes, MultidimensionalArray pARes, MultidimensionalArray NormalVector, MultidimensionalArray NodeSetClone, double muA, int k, int j, double[] currentPosition)
-        {
-            double temp1;
-            double temp2;
-            temp1 = CalculateStressTensorX(Grad_UARes, pARes, NormalVector, muA, k, j);
-            temp1 *= -NormalVector[j, k, 1] * (currentPosition[1] - NodeSetClone[k, 1]).Abs();
-            if (double.IsNaN(temp1) || double.IsInfinity(temp1))
-                throw new ArithmeticException("Error trying to calculate the particle torque");
-            temp2 = CalculateStressTensorY(Grad_UARes, pARes, NormalVector, muA, k, j);
-            temp2 *= NormalVector[j, k, 0] * (currentPosition[0] - NodeSetClone[k, 0]).Abs();
-            if (double.IsNaN(temp2) || double.IsInfinity(temp2))
-                throw new ArithmeticException("Error trying to calculate the particle torque");
-            return temp1 + temp2;
-        }
-
-        public double CalculateStressTensor3D(MultidimensionalArray Grad_UARes, MultidimensionalArray pARes, MultidimensionalArray NormalVector, double muA, int k, int j, int currentDimension)
+        private double CalculateStressTensor3D(MultidimensionalArray Grad_UARes, MultidimensionalArray pARes, MultidimensionalArray NormalVector, double muA, int k, int j, int currentDimension)
         {
             double acc = 0.0;
             double[] SummandsVelGradient = new double[5];
@@ -118,13 +103,26 @@ namespace BoSSS.Application.FSI_Solver
                     temp = CalculateStressTensor3D(Grad_UARes, pARes, NormalVector, muA, k, j, currentDimension);
                     break;
                 default:
-                    throw new NotSupportedException("Unknown particle dimension: m_Dim = " + Dimensionality);
+                    throw new NotSupportedException("Unknown particle dimension: SpatialDim = " + Dimensionality);
             }
             if (double.IsNaN(temp) || double.IsInfinity(temp))
                 throw new ArithmeticException("Error trying to calculate the particle stress tensor");
             return temp;
         }
 
-        
+        public double CalculateTorqueFromStressTensor2D(MultidimensionalArray Grad_UARes, MultidimensionalArray pARes, MultidimensionalArray NormalVector, MultidimensionalArray NodeSetClone, double muA, int k, int j, double[] currentPosition)
+        {
+            double temp1;
+            double temp2;
+            temp1 = CalculateStressTensorX(Grad_UARes, pARes, NormalVector, muA, k, j);
+            temp1 *= -NormalVector[j, k, 1] * (currentPosition[1] - NodeSetClone[k, 1]).Abs();
+            if (double.IsNaN(temp1) || double.IsInfinity(temp1))
+                throw new ArithmeticException("Error trying to calculate the particle torque");
+            temp2 = CalculateStressTensorY(Grad_UARes, pARes, NormalVector, muA, k, j);
+            temp2 *= NormalVector[j, k, 0] * (currentPosition[0] - NodeSetClone[k, 0]).Abs();
+            if (double.IsNaN(temp2) || double.IsInfinity(temp2))
+                throw new ArithmeticException("Error trying to calculate the particle torque");
+            return temp1 + temp2;
+        }
     }
 }
