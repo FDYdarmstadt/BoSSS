@@ -180,6 +180,23 @@ namespace BoSSS.Foundation.XDG {
                 throw new ApplicationException();
             }
 
+            /// <summary>
+            /// - verifies the consistency of a color map among MPI processors
+            /// - in future versions, it may be DEBUG-only
+            /// </summary>
+            private static void VerifyColoring(IGridData gdat, int[] ColorMap) {
+                int J = gdat.iLogicalCells.NoOfLocalUpdatedCells;
+                int Je = gdat.iLogicalCells.NoOfExternalCells + J;
+
+                if (ColorMap.Length != Je)
+                    throw new ArgumentException();
+                
+                //ColorMap.MPIExchange(gdat);
+
+                yx<y
+
+            }
+
             private int[] UpdateColoring(SpeciesId SpId) {
                 int J = this.GridDat.iLogicalCells.NoOfLocalUpdatedCells;
                 int Je = this.GridDat.iLogicalCells.NoOfExternalCells + J;
@@ -191,6 +208,9 @@ namespace BoSSS.Foundation.XDG {
                 {
                     int[] oldColorMap = GetPreviousRegion()?.ColorMap4Spc[SpId];
                     bool Incremental = oldColorMap != null;
+                    if(Incremental) {
+                        VerifyColoring(this.GridDat, oldColorMap);
+                    }
 
                     CellMask SpMask = this.GetSpeciesMask(SpId);
                     BitArray SpBitMask = SpMask.GetBitMask();
@@ -231,7 +251,26 @@ namespace BoSSS.Foundation.XDG {
 
                         if(Color0 != 0 && Color1 != 0 && Color0 != Color1) {
                             // need to do something...
-                            hhiuhi
+                            
+                            if(Color0 < 0 && Color1 > 0) {
+                                // external color is fixed, internal color can be re-painted
+
+
+                            } else if(Color0 > 0 && Color1 < 0) {
+                                // internal color is fixed, but external color can be re-painted -> do nothing
+
+                            } else if(Color0 < 0 && Color1 < 0) {
+                                // both colors can be re-painted -> pick the minimum
+
+                            } else if(Color0 > 0 && Color1 > 0) {
+                                // no color can be re-painted -> this is a collision, but repaint in minimum color
+
+
+                            } else {
+                                Debug.Assert(false, "should never reach this point.");
+                            }
+                            
+
                         }
                     }
                 }
