@@ -91,6 +91,17 @@ namespace BoSSS.Application.SipPoisson {
 
             Error = new SinglePhaseField(new Basis(this.GridData, Math.Max(T.Basis.Degree + 1, Tex.Basis.Degree)), "Error");
             base.m_IOFields.Add(Error);
+
+            // mg coloring
+            int iLevel = 0;
+            this.MGColoring.Clear();
+            foreach (var MgL in this.MultigridSequence) {
+                SinglePhaseField c = new SinglePhaseField(new Basis(this.GridData, 0), "MgLevel_" + iLevel);
+                Foundation.Grid.Aggregation.CoarseningAlgorithms.ColorDGField(MgL, c);
+                this.MGColoring.Add(c);
+                base.IOFields.Add(c);
+                iLevel++;
+            }
         }
 
         /*
@@ -114,12 +125,14 @@ namespace BoSSS.Application.SipPoisson {
         }
         */
 
+#if !DEBUG
         static void MyHandler(object sender, UnhandledExceptionEventArgs args) {
             Exception e = (Exception)args.ExceptionObject;
             Console.WriteLine("MyHandler caught : " + e.Message);
             Console.WriteLine("Runtime terminating: {0}", args.IsTerminating);
             System.Environment.Exit(-1234);
         }
+#endif
 
         /// <summary>
         /// Main routine
@@ -248,24 +261,18 @@ namespace BoSSS.Application.SipPoisson {
         /// Sets the multigrid coloring
         /// </summary>
         protected override void SetInitial() {
+#if !DEBUG
             //this will suppress exception prompts
-            //Workaround to prevent distrubance while executing batchclient
+            //Workaround to prevent disturbance while executing batch-client
             if (this.Control.SuppressExceptionPrompt) {
                 AppDomain currentDomain = AppDomain.CurrentDomain;
                 currentDomain.UnhandledException += new UnhandledExceptionEventHandler(MyHandler);
             }
+#endif
 
             base.SetInitial();
 
-            // mg coloring
-            int iLevel = 0;
-            foreach (var MgL in this.MultigridSequence) {
-                SinglePhaseField c = new SinglePhaseField(new Basis(this.GridData, 0), "MgLevel_" + iLevel);
-                Foundation.Grid.Aggregation.CoarseningAlgorithms.ColorDGField(MgL, c);
-                this.MGColoring.Add(c);
-                base.IOFields.Add(c);
-                iLevel++;
-            }
+            
 
             //TexactFine = (SinglePhaseField)(GetDatabase().Sessions.First().Timesteps.Last().Fields.Where(fi => fi.Identification == "T"));
         }
@@ -1284,7 +1291,7 @@ namespace BoSSS.Application.SipPoisson {
             }
 
             DGField[] Fields = new DGField[] { T, Tex, RHS, ResiualKP1, Error };
-            //Fields = Fields.Cat(this.MGColoring);
+            Fields = Fields.Cat(this.MGColoring);
             BoSSS.Solution.Tecplot.Tecplot.PlotFields(Fields, "poisson" + timestepNo + caseStr, phystime, superSampling);
         }
 
