@@ -24,6 +24,8 @@ using ilPSP;
 using BoSSS.Foundation.Grid.Classic;
 using System.Linq;
 using BoSSS.Foundation.Comm;
+using ilPSP.Utils;
+using MPI.Wrappers;
 
 namespace BoSSS.Foundation.XDG {
 
@@ -87,6 +89,7 @@ namespace BoSSS.Foundation.XDG {
 
                 public int[] this[SpeciesId key] {
                     get {
+                        MPICollectiveWatchDog.Watch();
                         if (!ContainsKey(key))
                             throw new KeyNotFoundException("Unknown Species");
 
@@ -190,21 +193,124 @@ namespace BoSSS.Foundation.XDG {
 
                 if (ColorMap.Length != Je)
                     throw new ArgumentException();
-                
-                //ColorMap.MPIExchange(gdat);
 
-                yx<y
+                //  check if color map has been correctly MPI exchanged
+                //  ====================================================
+                {
+                    var ColorMapClone = ColorMap.CloneAs();
+                    ColorMapClone.MPIExchange(gdat);
 
+                    for(int j = J; j < Je; j++) {
+                        if (ColorMapClone[j] != ColorMap[j])
+                            throw new ApplicationException("ColorMap has not been synchronized correctly.");
+                    }
+                }
+
+                //  Local Checks:
+                //  * connected domains are painted in the same color
+                //  * locally used colors are unique
+                //  ====================================================
+
+                var ColorsOfIsolatedPars = new HashSet<int>(); // all colors of parts that are isolated on this processor, i.e. they *do not* extend into the external cells.
+                var ColorsOfAllParts = new HashSet<int>();
+
+                BitArray CheckedCells = new BitArray(Je);
+                for( int j = 0; j < Je; j++) {
+                    int Color = ColorMap[j];
+                    if (Color < 0)
+                        throw new ApplicationException("Negative color - color has not been fixed.");
+                    if(CheckedCells[j] == false && Color != 0) {
+                        bool NonIsolated = CheckColorRecursive(ColorMap, j, Color, CheckedCells, gdat);
+
+                        if (!ColorsOfAllParts.Add(Color))
+                            throw new ApplicationException("color " + Color + " is non-unique on processor " + gdat.MpiRank + ", cell #" + j);
+
+                        if(!NonIsolated) {
+                            // isolated part
+                            ColorsOfIsolatedPars.Add(Color);
+                        }
+                    }
+                }
+                Debug.Assert(ColorsOfIsolatedPars.IsSubsetOf(ColorsOfAllParts));
+
+                for(int j = 0; j < Je; j++) {
+                    // further algorithm check: are all colored cells checked?
+                    Debug.Assert((CheckedCells[j] == true) || (ColorMap[j] == 0));
+                    Debug.Assert((CheckedCells[j] == true) == (ColorMap[j] != 0));
+                }
+
+                // check global uniqueness
+                // =======================
+
+                //
+                // Assumption: (a) AND (b)  equal (c), where:
+                //  (a) colors of isolated parts are globally (over all MPI processors) unique
+                //  (b) colors of all parts are locally (only on current MPI processor) unique (must be checked also for external cells)
+                //  (c) all parts are globally unique
+                //
+
+                {
+                    var SendData = new Dictionary<int, int[]>();
+                    if (gdat.MpiRank != 0)
+                        SendData.Add(0, ColorsOfIsolatedPars.ToArray());
+                    var CollectedData = SerialisationMessenger.ExchangeData(SendData);
+
+                    if(gdat.MpiRank == 0) {
+                        var ColorsOfIsolatedPars_globally = new HashSet<int>();
+                        ColorsOfIsolatedPars_globally.AddRange(ColorsOfIsolatedPars);
+
+                        for(int iRnk = 1; iRnk < gdat.MpiSize; iRnk++) {
+                            int[] UsedColors = CollectedData[iRnk];
+                            foreach(int Color in UsedColors) {
+                                if (!ColorsOfIsolatedPars_globally.Add(Color))
+                                    throw new ApplicationException("color " + Color + " is globally non-unique; found a second time on processor " + iRnk);
+                            }
+                        }
+                    }
+                }
             }
 
+            private static bool CheckColorRecursive(int[] ColorMap, int j, int Color, BitArray CheckedCells, IGridData gdat) {
+                Debug.Assert(ColorMap[j] != 0, "Recursion error.");  // an error in this algorithm -> debug assertion 
+                Debug.Assert(CheckedCells[j] == false); // detto
+                if (ColorMap[j] != Color) { // error in the data to check -> 
+                    throw new ApplicationException("Color mismatch/ color change within one connected part.");
+                }
+                int J = gdat.iLogicalCells.NoOfLocalUpdatedCells;
+                CheckedCells[j] = true;
+
+                if(j >= J) {
+                    // external cell - no further recursion
+                    return true;
+                }
+
+                bool R = false;
+
+                int[] Neighs_j = gdat.iLogicalCells.CellNeighbours[j];
+                foreach(int jN in Neighs_j) {
+                    if (ColorMap[jN] == 0)
+                        continue;
+                    if (CheckedCells[jN] == true)
+                        continue;
+                    R |= CheckColorRecursive(ColorMap, jN, Color, CheckedCells, gdat);
+                }
+
+                return R;
+            }
+
+
+
             private int[] UpdateColoring(SpeciesId SpId) {
+
                 int J = this.GridDat.iLogicalCells.NoOfLocalUpdatedCells;
                 int Je = this.GridDat.iLogicalCells.NoOfExternalCells + J;
+                MPICollectiveWatchDog.Watch();
 
                 // paint on local processor
                 // ========================
                 int[] ColorMap = new int[J];
                 var UsedColors = new HashSet<int>();
+                int NonIsolatedParts = 0;
                 {
                     int[] oldColorMap = GetPreviousRegion()?.ColorMap4Spc[SpId];
                     bool Incremental = oldColorMap != null;
@@ -213,18 +319,34 @@ namespace BoSSS.Foundation.XDG {
                     }
 
                     CellMask SpMask = this.GetSpeciesMask(SpId);
-                    BitArray SpBitMask = SpMask.GetBitMask();
+                    BitArray SpBitMask = SpMask.GetBitMaskWithExternal();
 
                     int ColorCounter = 1;
                     var Part = new List<int>(); // all cells which form one part.
-                    for (int j = 0; j < J; j++) { // sweep over cells...
+                    for (int j = 0; j < J; j++) { // sweep over local cells...
                         if (SpBitMask[j] && ColorMap[j] == 0) {
                             Part.Clear();
                             int CurrentColor = ColorCounter;
                             bool ColorNegogiable = true;
-                            ColorCounter = RecursiveColoring(this.GridDat, SpBitMask, j, ref CurrentColor, ColorMap, oldColorMap, ref ColorNegogiable, Part, UsedColors);
+                            bool IsIsolated = true;
+                            ColorCounter = RecursiveColoring(this.GridDat, SpBitMask, j, ref CurrentColor, ColorMap, oldColorMap, ref ColorNegogiable, Part, UsedColors, ref IsIsolated);
                             UsedColors.Add(CurrentColor);
                             Debug.Assert(ColorCounter > CurrentColor);
+
+                            if(!IsIsolated) {
+                                NonIsolatedParts++;
+
+                                // part overlaps multiple MPI processors
+                                Debug.Assert(Part.Where(jCell => jCell >= J).Count() > 0);
+
+                                if(ColorNegogiable) {
+                                    // mark color as allowed-to-change
+                                    foreach(int jPrt in Part) {
+                                        Debug.Assert(ColorMap[jPrt] > 0);
+                                        ColorMap[jPrt] *= -1;
+                                    }
+                                }
+                            }
                         }
                     }
                 }
@@ -236,52 +358,105 @@ namespace BoSSS.Foundation.XDG {
                 int ColorOffset = ColorPart.i0;
 
                 ColorMap.MPIExchange(GridDat);
-                
-                int[,] Edge2Cell = GridDat.iLogicalEdges.CellIndices;
-                int NoEdg = Edge2Cell.GetLength(0);
-                for(int iEdge = 0; iEdge < NoEdg; iEdge++) {
-                    Debug.Assert(Edge2Cell[iEdge, 0] < J, "The external/ghost cell is expected to be the OUT-cell.");
-                    int Cell1 = Edge2Cell[iEdge, 1];
-                    if (Cell1 >= J) {
-                        // reached an MPI boundary
-                        int Cell0 = Edge2Cell[iEdge, 0];
 
-                        int Color0 = ColorMap[Cell0];
-                        int Color1 = ColorMap[Cell1];
+                if (NonIsolatedParts.MPISum() <= 0) {
+                    // some synchronization is required
 
-                        if(Color0 != 0 && Color1 != 0 && Color0 != Color1) {
-                            // need to do something...
-                            
-                            if(Color0 < 0 && Color1 > 0) {
-                                // external color is fixed, internal color can be re-painted
+                    int NoOfConflicts;
+                    do {
+                        NoOfConflicts = 0;
+
+                        int[,] Edge2Cell = GridDat.iLogicalEdges.CellIndices;
+                        int NoEdg = Edge2Cell.GetLength(0);
+                        for (int iEdge = 0; iEdge < NoEdg; iEdge++) {
+                            Debug.Assert(Edge2Cell[iEdge, 0] < J, "The external/ghost cell is expected to be the OUT-cell.");
+                            int Cell1 = Edge2Cell[iEdge, 1];
+                            if (Cell1 >= J) {
+                                // reached an MPI boundary
+                                int Cell0 = Edge2Cell[iEdge, 0];
+
+                                int Color0 = ColorMap[Cell0];
+                                int Color1 = ColorMap[Cell1];
+
+                                if (Color0 != 0 && Color1 != 0 && Color0 != Color1) {
+                                    // need to do something...
+                                    NoOfConflicts++;
+
+                                    if (Color0 < 0 && Color1 > 0) {
+                                        // external color is fixed, internal color can be re-painted
+
+                                        Debug.Assert(Cell0 < J);
+                                        RepaintRecursive(Color1, ColorMap, Cell0, this.GridDat);
+
+                                    } else if (Color0 > 0 && Color1 < 0) {
+                                        // internal color is fixed, but external color can be re-painted -> do nothing
+                                        // (the other processor should fix this issue)
+
+                                    } else if (Color0 < 0 && Color1 < 0) {
+                                        // both colors can be re-painted -> pick the minimum
+
+                                        if (Color0 > Color1) {
+                                            // re-paint my stuff int 'Color1'
+                                            Debug.Assert(Cell0 < J);
+                                            RepaintRecursive(Color1, ColorMap, Cell0, this.GridDat);
+                                        }
+
+                                    } else if (Color0 > 0 && Color1 > 0) {
+                                        // no color can be re-painted -> this is a collision, but repaint in minimum color
 
 
-                            } else if(Color0 > 0 && Color1 < 0) {
-                                // internal color is fixed, but external color can be re-painted -> do nothing
+                                        if (Color0 > Color1) {
+                                            // re-paint my stuff int 'Color1'
+                                            Debug.Assert(Cell0 < J);
+                                            RepaintRecursive(Color1, ColorMap, Cell0, this.GridDat);
+                                        }
 
-                            } else if(Color0 < 0 && Color1 < 0) {
-                                // both colors can be re-painted -> pick the minimum
-
-                            } else if(Color0 > 0 && Color1 > 0) {
-                                // no color can be re-painted -> this is a collision, but repaint in minimum color
-
-
-                            } else {
-                                Debug.Assert(false, "should never reach this point.");
+                                    } else {
+                                        Debug.Assert(false, "should never reach this point.");
+                                    }
+                                }
                             }
-                            
-
                         }
-                    }
+
+                        NoOfConflicts = NoOfConflicts.MPISum();
+                    } while (NoOfConflicts > 0); // if a part is shared by more than 2 processors, multiple iterations might be necessary
                 }
 
-
+                // check & return
+                // ===============
+                VerifyColoring(this.GridDat, ColorMap);
                 return ColorMap;
             }
 
-            private static int RecursiveColoring(IGridData g, BitArray Msk, int j, ref int Color, int[] ColorMap, int[] oldColorMap, ref bool ColorNegotiable, List<int> Part, HashSet<int> UsedColors) {
+            private static void RepaintRecursive(int NewColor, int[] ColorMap, int j, IGridData gdat) {
+                int J = gdat.iLogicalCells.NoOfLocalUpdatedCells;
+                int JE = gdat.iLogicalCells.NoOfExternalCells + J;
+                Debug.Assert(ColorMap.Length == JE);
+
+                Debug.Assert(ColorMap[j] != 0);
+                Debug.Assert(ColorMap[j] != NewColor);
+                Debug.Assert(NewColor != 0);
+                ColorMap[j] = NewColor;
+
+                if (j >= J)
+                    return; // end of recursion
+
+                foreach(int jN in gdat.iLogicalCells.CellNeighbours[j]) {
+                    if (ColorMap[jN] == NewColor)
+                        continue;
+                    if (ColorMap[jN] == 0)
+                        continue;
+                    RepaintRecursive(NewColor, ColorMap, jN, gdat);
+                }
+            }
+
+            private static int RecursiveColoring(IGridData g, BitArray Msk, int j, ref int Color, int[] ColorMap, int[] oldColorMap, ref bool ColorNegotiable, List<int> Part, HashSet<int> UsedColors, ref bool IsIsolated) {
                 Debug.Assert(Msk[j] == true, "illegal to call on non-occupied cells");
                 int J = g.iLogicalCells.NoOfLocalUpdatedCells;
+                int JE = g.iLogicalCells.NoOfExternalCells + J;
+                Debug.Assert(Msk.Length == JE);
+                Debug.Assert(ColorMap.Length == JE);
+                Debug.Assert(oldColorMap == null || oldColorMap.Length == JE);
                 bool incremental = oldColorMap != null;
 
                 int NextColor = Color + 1;
@@ -305,7 +480,7 @@ namespace BoSSS.Foundation.XDG {
                                     }
                                 } else {
                                     // this is a topology change/a split
-                                    jsdklsdjakldjk
+                                    
                                 }
 
                                 NextColor = Math.Max(NextColor, Color + 1);
@@ -314,7 +489,7 @@ namespace BoSSS.Foundation.XDG {
                             } else {
                                 // this is a topology change/a merge
                                 NextColor = Math.Max(NextColor, oldColorMap[j] + 1);
-                                nklansxnakjxnjk
+                                
                             }
                         }
                     }
@@ -332,18 +507,20 @@ namespace BoSSS.Foundation.XDG {
                         // Neighbor cell does not contain species -> end of recursion
                         continue;
 
-                    if (j > J)
-                        // external cell -> attention
+                    if (jN > J) {
+                        // external cell -> no further recursion
+                        IsIsolated = false;
                         continue;
+                    }
 
                     if (ColorMap[jN] > 0) {
                         // already colored -> end of recursion
                         if (ColorMap[jN] != Color)
-                            throw new ApplicationException("error in Algorithm.");
+                            throw new ApplicationException("error in Algorithm."); // Debug.Assert would also be fine, *if* our homies would ever run DEBUG
                         continue;
                     }
 
-                    int recNextColor = RecursiveColoring(g, Msk, jN, ref Color, ColorMap, oldColorMap, ref ColorNegotiable, Part, UsedColors);
+                    int recNextColor = RecursiveColoring(g, Msk, jN, ref Color, ColorMap, oldColorMap, ref ColorNegotiable, Part, UsedColors, ref IsIsolated);
                     NextColor = Math.Max(NextColor, recNextColor);
                 }
 
