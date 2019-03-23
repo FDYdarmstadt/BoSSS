@@ -523,8 +523,8 @@ namespace BoSSS.Application.FSI_Solver {
             switch (((FSI_Control)this.Control).Timestepper_LevelSetHandling) {
                 case LevelSetHandling.None:
                     ScalarFunction Posfunction = NonVectorizedScalarFunction.Vectorize(((FSI_Control)Control).MovementFunc, phystime);
-                    newTransVelocity[0] = (((FSI_Control)this.Control).transVelocityFunc[0])(phystime);
-                    newTransVelocity[1] = (((FSI_Control)this.Control).transVelocityFunc[1])(phystime);
+                    //newTransVelocity[0] = (((FSI_Control)this.Control).transVelocityFunc[0])(phystime);
+                    //newTransVelocity[1] = (((FSI_Control)this.Control).transVelocityFunc[1])(phystime);
                     LevSet.ProjectField(Posfunction);
                     LsTrk.UpdateTracker();
                     break;
@@ -648,17 +648,138 @@ namespace BoSSS.Application.FSI_Solver {
 
 
         }
-        
+
 
         void UpdateForcesAndTorque(double dt, double phystime) {
+            //
+            // Note on MPI parallelization of particle solver:
+            // ===============================================
+            //
+            // - hydrodynamic forces are computed for each domain and added together;
+            //   e.g. in the case of particles at MPI-boundaries each processor computes his part of the integral
+            // - collisions are detected globally / collision forces are thus only computed on MPI rank 0
+            // - finally, the forces on all particles are summed over all MPI processors and the result is stored on all processors (MPI_Allreduce)
+            // - particle motion is computed for all particles simultaneously on all processors; every processor knows every particle
+            // - since the particle solver is much cheaper than the flow solver, this "not-really parallel" approach may work up to a few hundreds of particles
+            //
+
+            // Initial check: is the motion state of the particles equal on all MPI processors?
+            // ================================================================================
+
+            int D = GridData.SpatialDimension;
+            int NoOfParticles = m_Particles.Count;
+
+            {
+                // verify that we have the same number of particles on each processor
+                int NoOfParticles_min = NoOfParticles.MPIMin();
+                int NoOfParticles_max = NoOfParticles.MPIMax();
+                if (NoOfParticles_max != NoOfParticles || NoOfParticles_max != NoOfParticles)
+                    throw new ApplicationException("mismatch in number of MPI particles");
+
+                // nor, compare those particles:
+                int NoOfVars = (10 + D * 10); // variables per particle; size can be increased if more values should be compared
+                double[] CheckSend = new double[NoOfParticles * NoOfVars]; 
+
+                for (int iP = 0; iP < NoOfParticles; iP++) {
+                    var P = m_Particles[iP];
+
+                    // scalar values
+                    CheckSend[iP*NoOfVars + 0] = P.Angle[0];
+                    CheckSend[iP*NoOfVars + 1] = P.Angle[1];
+                    CheckSend[iP*NoOfVars + 2] = P.Area_P;
+                    CheckSend[iP*NoOfVars + 3] = P.ClearSmallValues ? 1.0 : 0.0;
+                    CheckSend[iP*NoOfVars + 4] = P.ForceAndTorque_convergence;
+                    CheckSend[iP*NoOfVars + 5] = P.Mass_P;
+                    CheckSend[iP*NoOfVars + 6] = P.particleDensity;
+                    // todo: add more values here that might be relevant for the particle state;
+
+                    // vector values
+                    for (int d = 0; d < D; d++) {
+                        int Offset = 10;
+                        CheckSend[iP*NoOfVars + Offset + 0 * D + d] = P.Position[0][d];
+                        CheckSend[iP*NoOfVars + Offset + 1 * D + d] = P.Position[1][d];
+                        CheckSend[iP*NoOfVars + Offset + 2 * D + d] = P.TranslationalAcceleration[0][d];
+                        CheckSend[iP*NoOfVars + Offset + 3 * D + d] = P.TranslationalAcceleration[1][d];
+                        CheckSend[iP*NoOfVars + Offset + 4 * D + d] = P.TranslationalVelocity[0][d];
+                        CheckSend[iP*NoOfVars + Offset + 5 * D + d] = P.TranslationalVelocity[1][d];
+                        // todo: add more vector values here that might be relevant for the particle state;
+                    }
+                }
+
+                int MPIsz = MPISize;
+                double[] CheckReceive = new double[NoOfVars * MPIsz];
+                unsafe {
+                    fixed(double* pCheckSend = CheckSend, pCheckReceive = CheckReceive) {
+                        csMPI.Raw.Allgather((IntPtr)pCheckSend, CheckSend.Length, csMPI.Raw._DATATYPE.DOUBLE, (IntPtr)pCheckReceive, CheckSend.Length, csMPI.Raw._DATATYPE.DOUBLE, csMPI.Raw._COMM.WORLD);
+                    }
+                }
+
+                for (int iP = 0; iP < NoOfParticles; iP++) {
+                    for (int iVar = 0; iVar < NoOfVars; iVar++) {
+                        // determine a tolerance...
+                        double VarTol = Math.Abs(CheckSend[iP*NoOfVars + iVar]) * 1.0e-10;
+
+                        // compare
+                        for (int r = 0; r < MPIsz; r++) {
+                            int idx = CheckSend.Length * r // MPI index offset
+                                + iP * NoOfVars // particle index offset
+                                + iVar; // variable index offset
+
+                            if (Math.Abs(CheckReceive[idx] - CheckSend[iVar]) > VarTol)
+                                throw new ApplicationException("Mismatch in particle state among MPI ranks.");
+                        }
+                        VarTol *= 1.0e-10;
+                    }
+                }
+            }
+
+            // Update forces
+            // =============
             foreach (Particle p in m_Particles) {
+
                 if (!((FSI_Control)Control).pureDryCollisions) {
                     p.UpdateForcesAndTorque(Velocity, Pressure, LsTrk, Control.PhysicalParameters.mu_A, dt, Control.PhysicalParameters.rho_A);
                 }
+
+                // wall collisions are computed on each processor
                 WallCollisionForces(p, LsTrk.GridDat.Cells.h_minGlobal);
             }
-            if (m_Particles.Count > 1) {
+            if (MPIRank == 0 && m_Particles.Count > 1) {
+                // inter-particle collisions are computed only on rank 0
                 UpdateCollisionForces(m_Particles, LsTrk.GridDat.Cells.h_minGlobal);
+            }
+
+            // Sum forces and moments over all MPI processors
+            // ==============================================
+            {
+                // step 1: collect all variables that we need to sum up
+                int NoOfVars = 1 + D * 1;
+                double[] StateBuffer = new double[NoOfParticles*NoOfVars];
+
+                for (int iP = 0; iP < NoOfParticles; iP++) {
+                    var P = m_Particles[iP];
+
+                    StateBuffer[NoOfVars * iP + 0] = P.HydrodynamicTorque[0];
+                    for(int d = 0; d < D; d++) {
+                        int Offset = 1;
+                        StateBuffer[NoOfVars * iP + Offset + 0*D + d] = P.HydrodynamicForces[0][d];
+                    }
+                }
+
+                // step 2: sum over MPI processors
+                // note: we want to sum all variables by a single MPI call, which is way more efficient
+                double[] GlobalStateBuffer = StateBuffer.MPISum();
+
+                // step 3: write sum variables back 
+                for (int iP = 0; iP < NoOfParticles; iP++) {
+                    var P = m_Particles[iP];
+
+                    P.HydrodynamicTorque[0] = GlobalStateBuffer[NoOfVars * iP + 0];
+                    for(int d = 0; d < D; d++) {
+                        int Offset = 1;
+                        P.HydrodynamicForces[0][d] = GlobalStateBuffer[NoOfVars * iP + Offset + 0 * D + d];
+                    }
+                }
             }
         }
 
@@ -686,11 +807,11 @@ namespace BoSSS.Application.FSI_Solver {
             xPos = m_Particles[0].Position[0][0];
             yPos = m_Particles[0].Position[0][1];
             ang = m_Particles[0].Angle[0];
-            MPItransVelocity = m_Particles[0].TranslationalVelocity[0];
-            MPIangularVelocity = m_Particles[0].RotationalVelocity[0];
+            var MPItransVelocity = m_Particles[0].TranslationalVelocity[0];
+            var MPIangularVelocity = m_Particles[0].RotationalVelocity[0];
             
 
-            Console.WriteLine(newPosition[1].MPIMax());
+            //Console.WriteLine(newPosition[1].MPIMax());
 
             /*
             if ((base.MPIRank == 0) && (Log_DragAndLift != null)) {
@@ -725,15 +846,15 @@ namespace BoSSS.Application.FSI_Solver {
         
 
         #region Run solver one step
-        /// <summary>
-        /// Variables for FSI coupling
-        /// </summary>
-        double MPIangularVelocity;
-        readonly double[] newTransVelocity = new double[2];
-        readonly double[] oldPosition = new double[2];
-        readonly double[] newPosition = new double[2];
-        readonly double[] oldforce = new double[2];
-        double[] MPItransVelocity = new double[2];
+        // <summary>
+        // Variables for FSI coupling
+        // </summary>
+        //double MPIangularVelocity;
+        //readonly double[] newTransVelocity = new double[2];
+        //readonly double[] oldPosition = new double[2];
+        //readonly double[] newPosition = new double[2];
+        //readonly double[] oldforce = new double[2];
+        //double[] MPItransVelocity = new double[2];
 
         protected override double RunSolverOneStep(int TimestepInt, double phystime, double dt) {
             using (new FuncTrace()) {
@@ -748,18 +869,18 @@ namespace BoSSS.Application.FSI_Solver {
 
                 Console.WriteLine("Starting time-step " + TimestepInt + "...");
 
-                int OldPushCount = LsTrk.PushCount; // used later to check if there is exactly one push per timestep
+                int OldPushCount = LsTrk.PushCount; // used later to check if there is exactly one push per time-step
 
 
                 if (((FSI_Control)this.Control).pureDryCollisions) {
                     // +++++++++++++++++++++++++++++++++++++++++++++++++
-                    // only particle motion & colissions, no flow solver
+                    // only particle motion & collisions, no flow solver
                     // +++++++++++++++++++++++++++++++++++++++++++++++++
 
+                    // in other branches, called by the BDF timestepper
                     LsTrk.PushStacks();
                     DGLevSet.Push();
-
-
+                    
                     UpdateForcesAndTorque(dt, phystime);
                     foreach (var p in m_Particles) {
 
