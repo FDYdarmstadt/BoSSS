@@ -61,10 +61,9 @@ namespace BoSSS.Application.FSI_Solver {
         /// </summary>
         static void Main(string[] args) {
 
-            //            System.Threading.Thread.Sleep(5000);
-            //BoSSS.Application.FSI_Solver.TestProgram.Init();
-            //BoSSS.Application.FSI_Solver.TestProgram.SingleDryParticleAgainstWall(true);
-            //Debug.Assert(false);
+            BoSSS.Application.FSI_Solver.TestProgram.Init();
+            BoSSS.Application.FSI_Solver.TestProgram.TestFlowRotationalCoupling();
+            Debug.Assert(false);
 
             MultiphaseCellAgglomerator.Katastrophenplot = MegaArschKakke2;
 
@@ -749,15 +748,16 @@ namespace BoSSS.Application.FSI_Solver {
 
                 Console.WriteLine("Starting time-step " + TimestepInt + "...");
 
-                int OldPushCount = LsTrk.PushCount;
-                LsTrk.PushStacks();
-                DGLevSet.Push();
+                int OldPushCount = LsTrk.PushCount; // used later to check if there is exactly one push per timestep
 
 
                 if (((FSI_Control)this.Control).pureDryCollisions) {
                     // +++++++++++++++++++++++++++++++++++++++++++++++++
                     // only particle motion & colissions, no flow solver
                     // +++++++++++++++++++++++++++++++++++++++++++++++++
+
+                    LsTrk.PushStacks();
+                    DGLevSet.Push();
 
 
                     UpdateForcesAndTorque(dt, phystime);
