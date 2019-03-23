@@ -45,13 +45,6 @@ namespace BoSSS.Solution{
         /// <summary>
         /// This will return <code>linear</code> and <code>nonlinear</code> solver objects, which are configured according to <see cref="LinearSolverConfig"/> and <see cref="NonLinearSolverConfig"/>, which can be adjusted from Controlfile (defined in <see cref="AppControl"/>).
         /// </summary>
-        /// <param name="nonlinSolver"></param>
-        /// <param name="linsolver"></param>
-        /// <param name="Timestepper"></param>
-        /// <param name="ts_AssembleMatrixCallback"></param>
-        /// <param name="ts_MultigridBasis"></param>
-        /// <param name="LevelSetConvergenceReached"></param>
-        /// <param name="PseudoNonlinear"></param>
         public void GenerateNonLin(out NonlinearSolver nonlinSolver, out ISolverSmootherTemplate linsolver, OperatorEvalOrLin ts_AssembleMatrixCallback, IEnumerable<AggregationGridBasis[]> ts_MultigridBasis, FixpointIterator.CoupledConvergenceReached LevelSetConvergenceReached, bool PseudoNonlinear, MultigridOperator.ChangeOfBasisConfig[][] ts_MultigridOperatorConfig, string ts_SessionPath, AggregationGridData[] ts_MGS) {
 
             if (m_nonlinsolver != null && (m_linsolver == null || m_precond == null))
@@ -82,18 +75,8 @@ namespace BoSSS.Solution{
         }
 
         /// <summary>
-        /// This one is the method-body of <see cref="GenerateNonLinear"/> and shall not be called from the outside. The parameters are mainly handed over to the NonLinearSolver object, which lives in <see cref="AdvancedSolvers.NonlinearSolver"/>.
+        /// This one is the method-body of <see cref="GenerateNonLin"/> and shall not be called from the outside. The parameters are mainly handed over to the NonLinearSolver object, which lives in <see cref="AdvancedSolvers.NonlinearSolver"/>.
         /// </summary>
-        /// <param name="Timestepper"></param>
-        /// <param name="ts_AssembleMatrixCallback"></param>
-        /// <param name="ts_MultigridBasis"></param>
-        /// <param name="LevelSetConvergenceReached"></param>
-        /// <param name="PseudoNonlinear"></param>
-        /// <param name="nc"></param>
-        /// <param name="lc"></param>
-        /// <param name="LinSolver"></param>
-        /// <param name="PrecondSolver"></param>
-        /// <returns></returns>
         private NonlinearSolver GenerateNonLin_body(OperatorEvalOrLin ts_AssembleMatrixCallback, IEnumerable<AggregationGridBasis[]> ts_MultigridBasis, FixpointIterator.CoupledConvergenceReached LevelSetConvergenceReached, bool PseudoNonlinear, NonLinearSolverConfig nc, LinearSolverConfig lc, ISolverSmootherTemplate LinSolver, ISolverSmootherTemplate PrecondSolver, MultigridOperator.ChangeOfBasisConfig[][] MultigridOperatorConfig, string SessionPath) {
 
             //Timestepper.Config_MultigridOperator;
@@ -199,8 +182,6 @@ namespace BoSSS.Solution{
         /// <summary>
         /// This will return a <code>linear</code> solver object, which is configured according to <see cref="LinearSolverConfig"/>, which can be adjusted from Controlfile (defined in <see cref="AppControl"/>). 
         /// </summary>
-        /// <param name="templinearSolve"></param>
-        /// <param name="Timestepper"></param>
         public void GenerateLinear(out ISolverSmootherTemplate templinearSolve, AggregationGridData[] ts_MultigridSequence, MultigridOperator.ChangeOfBasisConfig[][] ts_MultigridOperatorConfig) {
             if (m_linsolver != null) {
                 templinearSolve = m_linsolver;
@@ -214,9 +195,6 @@ namespace BoSSS.Solution{
         /// <summary>
         /// This one is the method-body of <see cref="GenerateLinear"/> and shall not be called from the outside. Some Solver aquire additional information, thus the timestepper is overgiven as well.
         /// </summary>
-        /// <param name="Timestepper"></param>
-        /// <param name="lc"></param>
-        /// <returns></returns>
         private ISolverSmootherTemplate GenerateLinear_body(LinearSolverConfig lc, NonLinearSolverConfig nc, AggregationGridData[] MultigridSequence, MultigridOperator.ChangeOfBasisConfig[][] MultigridOperatorConfig, bool isNonLinPrecond=false) {
 
             // +++++++++++++++++++++++++++++++++++++++++++++
@@ -665,7 +643,7 @@ namespace BoSSS.Solution{
         private ISolverSmootherTemplate m_linsolver;
         
         /// <summary>
-        /// Is get and set by <see cref="Selfmade_nonlinsolver"/> and used by <see cref="GenerateNonLinear"/>.
+        /// Is get and set by <see cref="Selfmade_nonlinsolver"/> and used by <see cref="GenerateNonLin"/>.
         /// </summary>
         private NonlinearSolver m_nonlinsolver;
 

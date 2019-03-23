@@ -609,7 +609,7 @@ namespace BoSSS.Application.IBM_Solver {
         //    return new CutCellMetrics(momentFittingVariant, this.HMForder, LsTrk, this.FluidSpecies);
         //}
 
-        protected TextWriter Log_DragAndLift,Log_DragAndLift_P1;
+        //protected TextWriter Log_DragAndLift,Log_DragAndLift_P1;
         protected double[] force = new double[3];
         protected double torque = new double();
         protected double oldtorque = new double();
@@ -641,6 +641,7 @@ namespace BoSSS.Application.IBM_Solver {
                 this.ComputeL2Error();
 
                 #region Get Drag and Lift Coefficiant
+                /*
                 if (phystime == 0 && Log_DragAndLift==null) {
                     if ((base.MPIRank == 0) && (CurrentSessionInfo.ID != Guid.Empty)) {
                         Log_DragAndLift = base.DatabaseDriver.FsDriver.GetNewLog("PhysicalData", CurrentSessionInfo.ID);
@@ -653,11 +654,13 @@ namespace BoSSS.Application.IBM_Solver {
                         Log_DragAndLift.WriteLine(firstline);
                     }
                 }
+                */
 
                 force = IBMSolverUtils.GetForces(Velocity, Pressure, this.LsTrk, this.Control.PhysicalParameters.mu_A/this.Control.PhysicalParameters.rho_A);
                 //oldtorque = torque;
                 torque = IBMSolverUtils.GetTorque(Velocity, Pressure, this.LsTrk, this.Control.PhysicalParameters.mu_A / this.Control.PhysicalParameters.rho_A, this.Control.particleRadius);
 
+                /*
                 if ((base.MPIRank == 0) && (Log_DragAndLift != null)) {
                     string line;
                     if (this.GridData.SpatialDimension == 3) {
@@ -668,6 +671,7 @@ namespace BoSSS.Application.IBM_Solver {
                     Log_DragAndLift.WriteLine(line);
                     Log_DragAndLift.Flush();
                 }
+                */
                 
                 Console.WriteLine("x-Force:   {0}", force[0]);
                 Console.WriteLine("y-Force:   {0}", force[1]);
@@ -858,7 +862,7 @@ namespace BoSSS.Application.IBM_Solver {
         /// Tecplot output.
         /// </summary>
         protected override void PlotCurrentState(double physTime, TimestepNumber timestepNo, int superSampling) {
-            Tecplot.PlotFields(ArrayTools.Cat<DGField>(this.Velocity, this.Pressure, this.LevSet, this.DGLevSet.Current, this.ResidualMomentum, this.ResidualContinuity), "IBM_Solver" + timestepNo, physTime, superSampling);
+            Tecplot.PlotFields(m_RegisteredFields, "IBM_Solver" + timestepNo, physTime, superSampling);
         }
 
         /// <summary>
@@ -1237,6 +1241,7 @@ namespace BoSSS.Application.IBM_Solver {
              double[] values = Array.ConvertAll<string, double>(restartLine.Split('\t'), double.Parse);*/
 
             //Adding PhysicalData.txt
+            /*
             if ((base.MPIRank == 0) && (CurrentSessionInfo.ID != Guid.Empty)) {
                 Log_DragAndLift = base.DatabaseDriver.FsDriver.GetNewLog("PhysicalData", CurrentSessionInfo.ID);
                 string firstline;
@@ -1248,10 +1253,12 @@ namespace BoSSS.Application.IBM_Solver {
                 Log_DragAndLift.WriteLine(firstline);
                 //Log_DragAndLift.WriteLine(restartLine);
             }
+            */
         }
 
         protected override void Bye() {
-            if(Log_DragAndLift != null) {
+            /*
+            if (Log_DragAndLift != null) {
                 try {
                     Log_DragAndLift.Flush();
                     Log_DragAndLift.Close();
@@ -1268,6 +1275,7 @@ namespace BoSSS.Application.IBM_Solver {
                 } catch (Exception) { }
                 Log_DragAndLift_P1 = null;
             }
+            */
         }
 
         /// <summary>
