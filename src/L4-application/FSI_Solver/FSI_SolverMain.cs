@@ -61,10 +61,6 @@ namespace BoSSS.Application.FSI_Solver {
         /// </summary>
         static void Main(string[] args) {
 
-            BoSSS.Application.FSI_Solver.TestProgram.Init();
-            BoSSS.Application.FSI_Solver.TestProgram.TestFlowRotationalCoupling();
-            Debug.Assert(false);
-
             MultiphaseCellAgglomerator.Katastrophenplot = MegaArschKakke2;
 
             _Main(args, false, delegate () {
@@ -717,15 +713,18 @@ namespace BoSSS.Application.FSI_Solver {
                 for (int iP = 0; iP < NoOfParticles; iP++) {
                     for (int iVar = 0; iVar < NoOfVars; iVar++) {
                         // determine a tolerance...
-                        double VarTol = Math.Abs(CheckSend[iP*NoOfVars + iVar]) * 1.0e-10;
+                        int idx_l = 
+                            iP * NoOfVars // particle index offset
+                           + iVar; // variable index offset
+                        double VarTol = Math.Abs(CheckSend[idx_l]) * 1.0e-10;
 
                         // compare
                         for (int r = 0; r < MPIsz; r++) {
-                            int idx = CheckSend.Length * r // MPI index offset
-                                + iP * NoOfVars // particle index offset
-                                + iVar; // variable index offset
 
-                            if (Math.Abs(CheckReceive[idx] - CheckSend[iVar]) > VarTol)
+                            int idx_g = CheckSend.Length * r // MPI index offset
+                                + idx_l;
+
+                            if (Math.Abs(CheckReceive[idx_g] - CheckSend[idx_l]) > VarTol)
                                 throw new ApplicationException("Mismatch in particle state among MPI ranks.");
                         }
                         VarTol *= 1.0e-10;
