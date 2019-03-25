@@ -19,7 +19,7 @@ namespace BoSSS.Application.FSI_Solver
             SummandsVelGradient[1] = -Grad_UARes[j, k, 0, 1] * NormalVector[j, k, 1];
             SummandsVelGradient[2] = -Grad_UARes[j, k, 1, 0] * NormalVector[j, k, 1];
             SummandsPressure = pARes[j, k] * NormalVector[j, k, 0];
-            return Aux.SummationWithNeumaier(SummandsVelGradient, SummandsPressure, muA);
+            return ParticleAuxillary.SummationWithNeumaier(SummandsVelGradient, SummandsPressure, muA);
         }
 
         private double CalculateStressTensorY(MultidimensionalArray Grad_UARes, MultidimensionalArray pARes, MultidimensionalArray NormalVector, double muA, int k, int j)
@@ -30,7 +30,7 @@ namespace BoSSS.Application.FSI_Solver
             SummandsVelGradient[1] = -Grad_UARes[j, k, 1, 0] * NormalVector[j, k, 0];
             SummandsVelGradient[2] = -Grad_UARes[j, k, 0, 1] * NormalVector[j, k, 0];
             SummandsPressure = pARes[j, k] * NormalVector[j, k, 1];
-            return Aux.SummationWithNeumaier(SummandsVelGradient, SummandsPressure, muA);
+            return ParticleAuxillary.SummationWithNeumaier(SummandsVelGradient, SummandsPressure, muA);
         }
 
         private double CalculateStressTensor2D(MultidimensionalArray Grad_UARes, MultidimensionalArray pARes, MultidimensionalArray NormalVector, double muA, int k, int j, int currentDimension)
@@ -65,7 +65,7 @@ namespace BoSSS.Application.FSI_Solver
                     SummandsVelGradient[2] = -Grad_UARes[j, k, 0, 1] * NormalVector[j, k, 1];
                     SummandsVelGradient[3] = -Grad_UARes[j, k, 1, 0] * NormalVector[j, k, 1];
                     SummandsVelGradient[4] = -Grad_UARes[j, k, 2, 0] * NormalVector[j, k, 2];
-                    acc += Aux.SummationWithNeumaier(SummandsVelGradient, SummandsPressure, muA);
+                    acc += ParticleAuxillary.SummationWithNeumaier(SummandsVelGradient, SummandsPressure, muA);
                     break;
                 case 1:
                     SummandsPressure = pARes[j, k] * NormalVector[j, k, 1];
@@ -74,7 +74,7 @@ namespace BoSSS.Application.FSI_Solver
                     SummandsVelGradient[2] = -Grad_UARes[j, k, 1, 0] * NormalVector[j, k, 0];
                     SummandsVelGradient[3] = -Grad_UARes[j, k, 0, 1] * NormalVector[j, k, 0];
                     SummandsVelGradient[4] = -Grad_UARes[j, k, 2, 1] * NormalVector[j, k, 2];
-                    acc += Aux.SummationWithNeumaier(SummandsVelGradient, SummandsPressure, muA);
+                    acc += ParticleAuxillary.SummationWithNeumaier(SummandsVelGradient, SummandsPressure, muA);
                     break;
                 case 2:
                     SummandsPressure = pARes[j, k] * NormalVector[j, k, 2];
@@ -83,7 +83,7 @@ namespace BoSSS.Application.FSI_Solver
                     SummandsVelGradient[2] = -Grad_UARes[j, k, 2, 1] * NormalVector[j, k, 1];
                     SummandsVelGradient[3] = -Grad_UARes[j, k, 0, 2] * NormalVector[j, k, 0];
                     SummandsVelGradient[4] = -Grad_UARes[j, k, 1, 2] * NormalVector[j, k, 1];
-                    acc += Aux.SummationWithNeumaier(SummandsVelGradient, SummandsPressure, muA);
+                    acc += ParticleAuxillary.SummationWithNeumaier(SummandsVelGradient, SummandsPressure, muA);
                     break;
                 default:
                     throw new NotImplementedException();

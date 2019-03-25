@@ -19,7 +19,7 @@ namespace BoSSS.Application.FSI_Solver {
             variable.RemoveAt(variable.Count - 1);
         }
 
-        internal double ForceTorqueSummationWithNeumaierArray(double ForcesTorque, MultidimensionalArray Summands, double Length)
+        static internal double ForceTorqueSummationWithNeumaierArray(double ForcesTorque, MultidimensionalArray Summands, double Length)
         {
             double sum = ForcesTorque;
             double naiveSum;
@@ -39,8 +39,7 @@ namespace BoSSS.Application.FSI_Solver {
             }
             return sum + c;
         }
-
-        internal double SummationWithNeumaier(double[] SummandsVelGradient, double SummandsPressure, double muA)
+        static internal double SummationWithNeumaier(double[] SummandsVelGradient, double SummandsPressure, double muA)
         {
             double sum = SummandsVelGradient[0];
             double naiveSum;

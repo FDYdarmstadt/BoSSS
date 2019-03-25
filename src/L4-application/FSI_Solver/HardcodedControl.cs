@@ -597,7 +597,7 @@ namespace BoSSS.Application.FSI_Solver {
 
             
 
-            C.Particles.Add(new Particle_Sphere(2, new double[] { 0.0, 1.0 }) {
+            C.Particles.Add(new Particle_Sphere(new double[] { 0.0, 1.0 }) {
                 radius_P = (0.125/2.0),
                 particleDensity = 1.25
             });
@@ -811,14 +811,14 @@ namespace BoSSS.Application.FSI_Solver {
                 particleDensity = 1.0
             });
 
-            C.Particles.Add(new Particle_Sphere(2, new double[] { 0.2, 0.5 }) {
+            C.Particles.Add(new Particle_Sphere(new double[] { 0.2, 0.5 }) {
                 radius_P = 0.2,
                 particleDensity = 1.0,        
             });
             C.Particles[1].TranslationalVelocity[0][0] = 0.5;
             C.Particles[1].TranslationalVelocity[0][1] = 1.0;
 
-            C.Particles.Add(new Particle_Sphere(2, new double[] { 0.5, 2.0 }) {
+            C.Particles.Add(new Particle_Sphere(new double[] { 0.5, 2.0 }) {
                 radius_P = 0.2,
                 particleDensity = 1.0,
             });
@@ -893,7 +893,10 @@ namespace BoSSS.Application.FSI_Solver {
 
         }
 
-        public static FSI_Control CollisionDiss(string _DbPath = null, int k = 2, double VelXBase = 0.0) {
+        /// <summary>
+        /// Dry Collisions between particles of different shape
+        /// </summary>
+        public static FSI_Control CollisionDiss(string _DbPath = null, double VelXBase = 0.0) {
             FSI_Control C = new FSI_Control();
 
 
@@ -908,39 +911,22 @@ namespace BoSSS.Application.FSI_Solver {
             // basic database options
             // ======================
 
-            C.DbPath = @"\\hpccluster\hpccluster-scratch\krause\cluster_db";
-            C.savetodb = true;
+            C.DbPath = _DbPath;
+            C.savetodb = _DbPath != null;
             C.saveperiod = 1;
             C.ProjectName = "ParticleCollisionTest";
             C.ProjectDescription = "Gravity";
             C.SessionName = C.ProjectName;
             C.Tags.Add("with immersed boundary method");
             C.AdaptiveMeshRefinement = true;
-            
+
 
             // DG degrees
             // ==========
 
-            C.FieldOptions.Add("VelocityX", new FieldOpts() {
-                Degree = k,
-                SaveToDB = FieldOpts.SaveToDBOpt.TRUE
-            });
-            C.FieldOptions.Add("VelocityY", new FieldOpts() {
-                Degree = k,
-                SaveToDB = FieldOpts.SaveToDBOpt.TRUE
-            });
-            C.FieldOptions.Add("Pressure", new FieldOpts() {
-                Degree = k - 1,
-                SaveToDB = FieldOpts.SaveToDBOpt.TRUE
-            });
-            C.FieldOptions.Add("PhiDG", new FieldOpts() {
-                Degree = 4,
-                SaveToDB = FieldOpts.SaveToDBOpt.TRUE
-            });
-            C.FieldOptions.Add("Phi", new FieldOpts() {
-                Degree = 4,
-                SaveToDB = FieldOpts.SaveToDBOpt.TRUE
-            });
+            C.SetDGdegree(1);
+            C.FieldOptions["PhiDG"].Degree = 4;
+            C.FieldOptions["Phi"].Degree = 4;
 
             // grid and boundary conditions
             // ============================
@@ -1044,14 +1030,17 @@ namespace BoSSS.Application.FSI_Solver {
             
             C.Particles.Add(new Particle_Ellipsoid(new double[] { -1.2, 0.9 }, startAngl: 90.0) {
                 particleDensity = 1.0,
+                thickness_P = 0.05,
+                length_P = 0.1
             });
             C.Particles[0].TranslationalVelocity[0][0] = -5.0;
             C.Particles[0].RotationalVelocity[0] = -10;
 
-            C.Particles.Add(new Particle_Sphere(2, new double[] { -0.6, 0.3},startAngl:-90.0) {
+            C.Particles.Add(new Particle_Sphere(new double[] { -0.6, 0.3},startAngl:-90.0) {
                 radius_P = 0.25,
                 particleDensity = 1.0,
             });
+
  
             C.Particles.Add(new Particle_Hippopede(2, new double[] { -0.2, -0.5 }, startAngl:-45) {
                 radius_P = 0.15,
@@ -1060,21 +1049,19 @@ namespace BoSSS.Application.FSI_Solver {
 
             C.Particles[2].TranslationalVelocity[0] = new double[2] { -5.0,0.0};
 
-            C.Particles.Add(new Particle_Squircle(2, new double[] { 1.0, 1.0 }, startAngl: -20.0) {
+            C.Particles.Add(new Particle_Squircle(new double[] { 1.0, 1.0 }, startAngl: -20.0) {
                 radius_P = 0.25,
                 particleDensity = 1.0,
             });
             C.Particles[3].TranslationalVelocity[0] = new double[2] { -5.0, -5.0 };
 
-            C.Particles.Add(new Particle_Bean(2, new double[] { 1.0, -1.0 }, startAngl: -20.0) {
+            C.Particles.Add(new Particle_Bean(new double[] { 1.0, -1.0 }, startAngl: -20.0) {
                 radius_P = 0.25,
                 particleDensity = 1.0,
             });
-
             C.Particles[4].TranslationalVelocity[0] = new double[2] { -5.0, 5.0 };
 
             C.Particles[4].RotationalVelocity[0] = -10;
-
             C.pureDryCollisions = true;
             C.collisionModel = FSI_Control.CollisionModel.MomentumConservation;
 
@@ -1127,7 +1114,7 @@ namespace BoSSS.Application.FSI_Solver {
 
             //C.Timestepper_Mode = FSI_Control.TimesteppingMode.Splitting;
             C.Timestepper_Scheme = FSI_Solver.FSI_Control.TimesteppingScheme.BDF2;
-            double dt = 0.001;
+            double dt = 0.000005;
             C.dtMax = dt;
             C.dtMin = dt;
             C.Endtime = 1.2;
@@ -1140,6 +1127,8 @@ namespace BoSSS.Application.FSI_Solver {
 
         }
 
+
+     
         public static FSI_Control FiveRandomParticles(string _DbPath = null, int k = 2, double dt = 0.001, double VelXBase = 0.0, int collisionModelInt = 1) {
             FSI_Control C = new FSI_Control();
 
@@ -1290,33 +1279,28 @@ namespace BoSSS.Application.FSI_Solver {
             //C.particleMass = 1;
 
 
-            C.Particles.Add(new Particle_Sphere(2, new double[] { -0.2, 7.5 }, startAngl: 45.0) {
+            C.Particles.Add(new Particle_Sphere(new double[] { -0.2, 7.5 }, startAngl: 45.0) {
                 radius_P = 0.1,
-                particleDensity = 3.0,
+                particleDensity = 3.0
             });
 
             C.Particles.Add(new Particle_Ellipsoid(new double[] { 0.2, 7.3 }, startAngl: 30.0) {
                 particleDensity = 3.0,
+                thickness_P = 0.05,
+                length_P = 0.1
             });
 
-            // hippopede kritisch for agglomeration
-            //C.Particles.Add(new Particle_Ellipsoid(2, 4, new double[] { 0.5, 6.9 }, startAngl: -30.0) {
-            //    radius_P = 0.07,
-            //    particleDensity = 3.0,
-            //});
-
-
-            C.Particles.Add(new Particle_Squircle(2, new double[] { -0.2, 6.95 }, startAngl: -20.0) {
+            C.Particles.Add(new Particle_Squircle(new double[] { -0.2, 6.95 }, startAngl: -20.0) {
                 radius_P = 0.1,
                 particleDensity = 3.0,
             });
 
-            C.Particles.Add(new Particle_Sphere(2, new double[] { -0.5, 7.2 }, startAngl: -45.0) {
+            C.Particles.Add(new Particle_Sphere(new double[] { -0.5, 7.2 }, startAngl: -45.0) {
                 radius_P = 0.15,
                 particleDensity = 3.0,
             });
 
-            C.Particles.Add(new Particle_Squircle(2, new double[] { 0.2, 6.5 }, startAngl: -45.0) {
+            C.Particles.Add(new Particle_Squircle(new double[] { 0.2, 6.5 }, startAngl: -45.0) {
                 radius_P = 0.15,
                 particleDensity = 3.0,
             });
@@ -1764,14 +1748,14 @@ namespace BoSSS.Application.FSI_Solver {
             //C.particleMass = 1;
 
 
-            C.Particles.Add(new Particle_Sphere(2, new double[] { 0.0, 7.2 }) {
+            C.Particles.Add(new Particle_Sphere(new double[] { 0.0, 7.2 }) {
                 radius_P = 0.1,
                 particleDensity = 1.01
             });
 
             //C.Particles[0].TranslationalVelocity[0][1] = -0.5;
 
-            C.Particles.Add(new Particle_Sphere(2, new double[] { 0.0, 6.8 }) {
+            C.Particles.Add(new Particle_Sphere(new double[] { 0.0, 6.8 }) {
                 radius_P = 0.1,
                 particleDensity = 1.01,
             });
@@ -1970,21 +1954,19 @@ namespace BoSSS.Application.FSI_Solver {
             //C.PhysicalParameters.mu_B = 0.1;
             //C.particleMass = 1;
 
-            C.Particles.Add(new Particle_Sphere(2, new double[] { -0.5, -1.35 }, startAngl: 0.0) {
+            C.Particles.Add(new Particle_Sphere(new double[] { -0.5, -1.35 }, startAngl: 0.0) {
                 radius_P = 0.1,
                 particleDensity = 1.25,
             });
 
-            C.Particles.Add(new Particle_Sphere(2, new double[] { 0.8, -1.35 }, startAngl: 0.0) {
+            C.Particles.Add(new Particle_Sphere(new double[] { 0.8, -1.35 }, startAngl: 0.0) {
                 radius_P = 0.1,
                 particleDensity = 1.25,
             });
 
-            //C.Particles[0].RotationalVelocity[0] = 10;
 
             C.CutCellQuadratureType = Foundation.XDG.XQuadFactoryHelper.MomentFittingVariants.Classic;
 
-            //Func<double[], double, double> phiComplete = (X, t) => -1 * (C.Particles[0].Phi_P(X, t)* C.Particles[1].Phi_P(X, t));
 
             //for (int i = 0;i<C.Particles.Count; i++) {
             //    phiComplete = (X,t) => phiComplete(X,t)*C.Particles[i].Phi_P(X,t);
@@ -2038,8 +2020,18 @@ namespace BoSSS.Application.FSI_Solver {
             // ===============
 
             return C;
-
         }
+
+        public static FSI_Control A() {
+            string path = @"d:\Users\kummer\AppData\Local\BoSSS-LocalJobs\FSI_Solver2019Mar19_06-37-09\control.obj";
+            string JSON = System.IO.File.ReadAllText(path);
+            var C = (FSI_Control) AppControl.Deserialize(JSON);
+            C.NonLinearSolver.MaxSolverIterations = 40;
+            C.NonLinearSolver.SolverCode = NonLinearSolverConfig.Code.Newton;
+            
+            return C;
+        }
+
     }
 
 

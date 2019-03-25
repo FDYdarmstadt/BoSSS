@@ -33,7 +33,7 @@ namespace BoSSS.Application.FSI_Solver
         {
 
         }
-        public Particle_Bean(int Dim, double[] startPos = null, double startAngl = 0) : base(Dim, startPos, startAngl) {
+        public Particle_Bean(double[] startPos = null, double startAngl = 0) : base(2, startPos, startAngl) {
 
             
         }

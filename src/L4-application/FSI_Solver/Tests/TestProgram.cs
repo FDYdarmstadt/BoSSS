@@ -23,6 +23,7 @@ using BoSSS.Foundation;
 using BoSSS.Solution;
 using MPI.Wrappers;
 using NUnit.Framework;
+using BoSSS.Platform.LinAlg;
 
 namespace BoSSS.Application.FSI_Solver {
 
@@ -62,6 +63,35 @@ namespace BoSSS.Application.FSI_Solver {
 
             }
         }
+
+        /// <summary>
+        /// Note: this test is fucked; the results are nowhere near where you would expext.
+        /// </summary>
+        [Test]
+        public static void SingleDryParticleAgainstWall([Values(false, true)]  bool MeshRefine) {
+            using (FSI_SolverMain p = new FSI_SolverMain()) {
+
+                var ctrl = BoSSS.Application.FSI_Solver.HardcodedTestExamples.SingleDryParticleAgainstWall(MeshRefine:MeshRefine);
+                p.Init(ctrl);
+                p.RunSolverMode();
+
+
+                Vector Dest_Should;
+                if (MeshRefine)
+                    Dest_Should = new Vector(0.420719299693095, -0.907165088781989);
+                else
+                    Dest_Should = new Vector(0.748512025578859, -0.578342794422653);
+
+                Vector Dest_Is = new Vector(p.Particles[0].Position[0]);
+
+                double dist = (Dest_Should - Dest_Is).L2Norm();
+
+                Console.WriteLine("Particle reached position " + Dest_Is + ", expected at " + Dest_Should + ", distance is " + dist);
+
+                Assert.Less(dist, 0.1, "Particle to far from expected position");
+            }
+        }
+
 
 
     }

@@ -956,10 +956,12 @@ namespace BoSSS.Solution.XdgTimestepping {
 
                 if (this.Config_LevelSetHandling == LevelSetHandling.LieSplitting || this.Config_LevelSetHandling == LevelSetHandling.StrangSplitting) {
                     if (m_IterationCounter == 0) {
-                        Debug.Assert(m_CurrentAgglomeration == null);
+                        if(m_CurrentAgglomeration != null)
+                            throw new ApplicationException();
                         updateAgglom = true;
                     } else {
-                        Debug.Assert(m_CurrentAgglomeration != null);
+                        if (m_CurrentAgglomeration == null)
+                            throw new ApplicationException();
                     }
                     // ensure, that, when splitting is used we update the agglomerator in the very first iteration.
                 }
