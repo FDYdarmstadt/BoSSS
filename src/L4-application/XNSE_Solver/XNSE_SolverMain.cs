@@ -69,7 +69,7 @@ namespace BoSSS.Application.XNSE_Solver {
         static void Main(string[] args) {
 
             BoSSS.Application.XNSE_Solver.Tests.UnitTest.TestFixtureSetUp();
-            BoSSS.Application.XNSE_Solver.Tests.ElementalTestProgramm.LineMovementTest(LevelSetEvolution.FastMarching, LevelSetHandling.Coupled_Once, XNSE_Control.TimesteppingScheme.ImplicitEuler, 0.5);
+            BoSSS.Application.XNSE_Solver.Tests.ElementalTestProgramm.LineMovementTest(LevelSetEvolution.ScalarConvection, LevelSetHandling.Coupled_Once, XNSE_Control.TimesteppingScheme.ImplicitEuler, 0.5);
             //BoSSS.Application.XNSE_Solver.Tests.UnitTest.MovingDropletTest(2, 0.01d, true, SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_Flux, 0.69711d, ViscosityMode.Standard, true, false);
             Debug.Assert(false);
 
