@@ -28,6 +28,8 @@ using ilPSP.Utils;
 using BoSSS.Foundation;
 using BoSSS.Foundation.Grid;
 using System.Diagnostics;
+using BoSSS.Foundation.Grid.Classic;
+using BoSSS.Foundation.Grid.RefElements;
 
 namespace BoSSS.Application.FSI_Solver
 {
@@ -39,7 +41,6 @@ namespace BoSSS.Application.FSI_Solver
     [Serializable]
     abstract public class Particle : ICloneable {
 
-        #region particle init
         /// <summary>
         /// Empty constructor used during de-serialization
         /// </summary>
@@ -52,7 +53,7 @@ namespace BoSSS.Application.FSI_Solver
             
             SpatialDim = Dim;
 
-            #region Particle history
+            // Particle history
             // =============================   
             for (int i = 0; i < m_HistoryLength; i++) {
                 Position.Add(new double[Dim]);
@@ -64,7 +65,6 @@ namespace BoSSS.Application.FSI_Solver
                 HydrodynamicForces.Add(new double[Dim]);
                 HydrodynamicTorque.Add(new double());
             }
-            #endregion
 
             #region Initial values
             // ============================= 
@@ -80,7 +80,6 @@ namespace BoSSS.Application.FSI_Solver
             //UpdateLevelSetFunction();
             #endregion
         }
-        #endregion
 
 
         #region Collision parameters
@@ -592,7 +591,7 @@ namespace BoSSS.Application.FSI_Solver
                     }
                 }
                 var SchemeHelper = LsTrk.GetXDGSpaceMetrics(new[] { LsTrk.GetSpeciesId("A") }, RequiredOrder, 1).XQuadSchemeHelper;
-                CellQuadratureScheme cqs = SchemeHelper.GetLevelSetquadScheme(0, this.CutCells_P(LsTrk));
+                CellQuadratureScheme cqs = SchemeHelper.GetLevelSetquadScheme(0, CutCells_P(LsTrk));
                 CellQuadrature.GetQuadrature(new int[] { 1 }, LsTrk.GridDat,
                     cqs.Compile(LsTrk.GridDat, RequiredOrder),
                     delegate (int i0, int Length, QuadRule QR, MultidimensionalArray EvalResult) {
@@ -705,15 +704,12 @@ namespace BoSSS.Application.FSI_Solver
             temp[SpatialDim] = 0.5 * ((MomentOfInertia_P + beta * dt * AddedDampingTensor[2, 2] * RotationalVelocity[0].Pow2()) + beta * dt * AddedDampingTensor[2, 1] * TranslationalVelocity[0][1].Pow2() + beta * dt * AddedDampingTensor[2, 0] * TranslationalVelocity[0][0].Pow2());
             return temp;
         }
-
-        #region Particle reynolds number
+        
         /// <summary>
         /// Calculating the particle reynolds number according to paper Turek and testcase ParticleUnderGravity
         /// </summary>
         abstract public double ComputeParticleRe(double ViscosityFluid);
-        #endregion
-
-        #region Cut cells
+        
         /// <summary>
         /// get cut cells describing the boundary of this particle
         /// </summary>
@@ -726,9 +722,12 @@ namespace BoSSS.Application.FSI_Solver
         /// </summary>
         /// <param name="point"></param>
         /// <returns></returns>
-        abstract public bool Contains(double[] point, LevelSetTracker LsTrk); 
-        #endregion
-        
+        abstract public bool Contains(double[] point, LevelSetTracker LsTrk);
+
+        virtual public MultidimensionalArray GetSurfacePoints(LevelSetTracker lsTrk, LevelSet levelSet)
+        {
+            throw new NotImplementedException();
+        }
     }
 }
 

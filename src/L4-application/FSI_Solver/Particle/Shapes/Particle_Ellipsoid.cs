@@ -19,6 +19,10 @@ using System.Runtime.Serialization;
 using BoSSS.Foundation.XDG;
 using ilPSP;
 using BoSSS.Foundation.Grid;
+using BoSSS.Foundation;
+using System.Linq;
+using System.Collections.Generic;
+using ilPSP.Utils;
 
 namespace BoSSS.Application.FSI_Solver {
     [DataContract]
@@ -51,7 +55,7 @@ namespace BoSSS.Application.FSI_Solver {
         /// </summary>
         protected override double AverageDistance {
             get {
-                return 0.5*(length_P + thickness_P);
+                return 0.5 * (length_P + thickness_P);
             }
         }
 
@@ -106,10 +110,12 @@ namespace BoSSS.Application.FSI_Solver {
             cellCollection = cells.Intersect(allCutCells);
             return cellCollection;
         }
-        override public bool Contains(double[] point, LevelSetTracker LsTrk) {
+        public override bool Contains(double[] point, LevelSetTracker LsTrk) {
             // only for squared cells
             double radiusTolerance = 1.0 + 2.0 * Math.Sqrt(2 * LsTrk.GridDat.Cells.h_minGlobal.Pow2());
-            if (-((((point[0] - Position[0][0]) * Math.Cos(Angle[0]) - (point[1] - Position[0][1]) * Math.Sin(Angle[0])).Pow2()) / length_P.Pow2()) + -(((point[0] - Position[0][0]) * Math.Sin(Angle[0]) + (point[1] - Position[0][1]) * Math.Cos(Angle[0])).Pow2() / thickness_P.Pow2()) + radiusTolerance.Pow2() > 0) {
+            double test = -((((point[0] - Position[0][0]) * Math.Cos(Angle[0]) - (point[1] - Position[0][1]) * Math.Sin(Angle[0])).Pow2()) / length_P.Pow2()) + -(((point[0] - Position[0][0]) * Math.Sin(Angle[0]) + (point[1] - Position[0][1]) * Math.Cos(Angle[0])).Pow2() / thickness_P.Pow2()) + radiusTolerance.Pow2();
+            if (-((((point[0] - Position[0][0]) * Math.Cos(Angle[0]) - (point[1] - Position[0][1]) * Math.Sin(Angle[0])).Pow2()) / length_P.Pow2()) + -(((point[0] - Position[0][0]) * Math.Sin(Angle[0]) + (point[1] - Position[0][1]) * Math.Cos(Angle[0])).Pow2() / thickness_P.Pow2()) + radiusTolerance.Pow2() > 0)
+            {
                 return true;
             }
             return false;
@@ -120,6 +126,28 @@ namespace BoSSS.Application.FSI_Solver {
             particleReynolds = Math.Sqrt(TranslationalVelocity[0][0] * TranslationalVelocity[0][0] + TranslationalVelocity[0][1] * TranslationalVelocity[0][1]) * 2 * length_P * 1 / mu_Fluid;
             Console.WriteLine("Particle Reynolds number:  " + particleReynolds);
             return particleReynolds;
+        }
+
+        override public MultidimensionalArray GetSurfacePoints(LevelSetTracker lsTrk, LevelSet levelSet)
+        {
+            int SpatialDim = lsTrk.GridDat.SpatialDimension;
+            if (SpatialDim != 2)
+                throw new NotImplementedException("Only two dimensions are supported at the moment");
+
+            double hMin = lsTrk.GridDat.iGeomCells.h_min.Min();
+            int NoOfSurfacePoints = Convert.ToInt32(10 * Circumference_P / hMin) + 1;
+            MultidimensionalArray SurfacePoints = new MultidimensionalArray(2);
+            SurfacePoints.Allocate(NoOfSurfacePoints, SpatialDim);
+            double[] InfinitisemalAngle = GenericBlas.Linspace(0, 2 * Math.PI, NoOfSurfacePoints + 1);
+            if (Math.Abs(10 * Circumference_P / hMin + 1) >= int.MaxValue)
+                throw new ArithmeticException("Error trying to calculate the number of surface points, overflow");
+
+            for (int j = 0; j < NoOfSurfacePoints; j++)
+            {
+                SurfacePoints[j, 0] = Math.Cos(InfinitisemalAngle[j]) * length_P + Position[0][0];
+                SurfacePoints[j, 1] = Math.Sin(InfinitisemalAngle[j]) * thickness_P + Position[0][1];
+            }
+            return SurfacePoints;
         }
     }
 }

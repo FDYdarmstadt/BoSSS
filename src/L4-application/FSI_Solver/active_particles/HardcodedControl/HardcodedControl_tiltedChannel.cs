@@ -33,8 +33,6 @@ namespace BoSSS.Application.FSI_Solver
         public static FSI_Control ActiveRod_noBackroundFlow(string _DbPath = null, int k = 2, double VelXBase = 0.0, double stressM = 1e3, double cellAgg = 0.2, double muA = 1e4, double timestepX = 1e-3)
         {
             FSI_Control C = new FSI_Control();
-
-
             // General scaling parameter
             // =============================
             const double BaseSize = 1.0;

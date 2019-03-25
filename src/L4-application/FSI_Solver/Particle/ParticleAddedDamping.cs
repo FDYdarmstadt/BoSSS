@@ -38,7 +38,7 @@ namespace BoSSS.Application.FSI_Solver
                                 {
                                     for (int k = 0; k < K; k++)
                                     {
-                                        LsTrk.GridDat.TransformLocal2Global(Ns, NodeSetGlobal, j0);
+                                        LsTrk.GridDat.TransformLocal2Global(Ns, NodeSetGlobal, j0 + j);
                                         double dh = CalculateNormalMeshSpacing(LsTrk, Ns, Normals, j, k);
                                         double delta = dh * Math.Sqrt(rhoA) / (Math.Sqrt(alpha * muA * dt));
                                         double dn = dh / (1 - Math.Exp(-delta));
