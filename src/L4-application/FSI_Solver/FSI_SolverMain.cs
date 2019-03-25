@@ -707,7 +707,7 @@ namespace BoSSS.Application.FSI_Solver {
                 }
 
                 int MPIsz = MPISize;
-                double[] CheckReceive = new double[NoOfVars * MPIsz];
+                double[] CheckReceive = new double[NoOfParticles * NoOfVars * MPIsz];
                 unsafe {
                     fixed(double* pCheckSend = CheckSend, pCheckReceive = CheckReceive) {
                         csMPI.Raw.Allgather((IntPtr)pCheckSend, CheckSend.Length, csMPI.Raw._DATATYPE.DOUBLE, (IntPtr)pCheckReceive, CheckSend.Length, csMPI.Raw._DATATYPE.DOUBLE, csMPI.Raw._COMM.WORLD);
