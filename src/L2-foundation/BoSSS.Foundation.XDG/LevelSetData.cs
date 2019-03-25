@@ -218,7 +218,7 @@ namespace BoSSS.Foundation.XDG {
                 for( int j = 0; j < Je; j++) {
                     int Color = ColorMap[j];
                     if (Color < 0)
-                        throw new ApplicationException("Negative color - color has not been fixed.");
+                        throw new ApplicationException("Negative color in cell " + j + " (number of cells " + J + ", excluding external, MPI rank " + gdat.MpiRank + ") - color has not been fixed.");
                     if(CheckedCells[j] == false && Color != 0) {
                         bool NonIsolated = CheckColorRecursive(ColorMap, j, Color, CheckedCells, gdat);
 
@@ -243,7 +243,7 @@ namespace BoSSS.Foundation.XDG {
                 // =======================
 
                 //
-                // Assumption: (a) AND (b)  equal (c), where:
+                // Assumption: (a) AND (b) equal (c), where:
                 //  (a) colors of isolated parts are globally (over all MPI processors) unique
                 //  (b) colors of all parts are locally (only on current MPI processor) unique (must be checked also for external cells)
                 //  (c) all parts are globally unique
@@ -306,22 +306,32 @@ namespace BoSSS.Foundation.XDG {
                 int Je = this.GridDat.iLogicalCells.NoOfExternalCells + J;
                 MPICollectiveWatchDog.Watch();
 
+                if (this.GridDat.MpiRank == 0)
+                    Debugger.Launch();
+
                 // paint on local processor
                 // ========================
-                int[] ColorMap = new int[J];
+                int[] ColorMap = new int[Je];
                 var UsedColors = new HashSet<int>();
                 int NonIsolatedParts = 0;
+                int MaxColorSoFar, ColorCounter;
+                BitArray IsolatedMarker = new BitArray(Je);
                 {
                     int[] oldColorMap = GetPreviousRegion()?.ColorMap4Spc[SpId];
                     bool Incremental = oldColorMap != null;
                     if(Incremental) {
                         VerifyColoring(this.GridDat, oldColorMap);
+
+                        MaxColorSoFar = oldColorMap.Max().MPIMax();
+                    } else {
+                        MaxColorSoFar = 0;
                     }
 
                     CellMask SpMask = this.GetSpeciesMask(SpId);
                     BitArray SpBitMask = SpMask.GetBitMaskWithExternal();
 
-                    int ColorCounter = 1;
+                    //int ColorCounter = this.GridDat.CellPartitioning.i0; // (more-than) worst case estimation of used colors on previous processors
+                    ColorCounter = MaxColorSoFar + 1;
                     var Part = new List<int>(); // all cells which form one part.
                     for (int j = 0; j < J; j++) { // sweep over local cells...
                         if (SpBitMask[j] && ColorMap[j] == 0) {
@@ -333,33 +343,61 @@ namespace BoSSS.Foundation.XDG {
                             UsedColors.Add(CurrentColor);
                             Debug.Assert(ColorCounter > CurrentColor);
 
-                            if(!IsIsolated) {
+                            if (!IsIsolated) {
                                 NonIsolatedParts++;
 
                                 // part overlaps multiple MPI processors
                                 Debug.Assert(Part.Where(jCell => jCell >= J).Count() > 0);
+                            } else {
+                                foreach (int jPrt in Part) {
+                                    IsolatedMarker[jPrt] = true;
+                                }
+                            }
 
-                                if(ColorNegogiable) {
-                                    // mark color as allowed-to-change
-                                    foreach(int jPrt in Part) {
-                                        Debug.Assert(ColorMap[jPrt] > 0);
-                                        ColorMap[jPrt] *= -1;
-                                    }
+                            if (ColorNegogiable) {
+                                // mark color as allowed-to-change
+                                foreach (int jPrt in Part) {
+                                    Debug.Assert(ColorMap[jPrt] > 0);
+                                    ColorMap[jPrt] *= -1;
                                 }
                             }
                         }
                     }
                 }
 
-                // parallelization
-                // ===============
-                int LocColors = UsedColors.Max();
-                var ColorPart = new Partitioning(LocColors);
-                int ColorOffset = ColorPart.i0;
+                // parallelization, pt 1, make new colors *globally* unique
+                // ========================================================
+                {
+                    int LocColors = ColorCounter - 1;
+                    var ColorPart = new Partitioning(LocColors);
+                    int ColorOffset = ColorPart.i0;
+
+                    for (int j = 0; j < J; j++) {
+                        if (ColorMap[j] < 0) {
+                            int Color_j = -ColorMap[j];
+                            Color_j += ColorOffset;
+
+                            if (IsolatedMarker[j]) {
+                                Color_j *= -1;
+                            }
+
+                            ColorMap[j] = Color_j;
+                        }
+                        Debug.Assert(ColorMap[j] > 0 || IsolatedMarker[j] == false);
+
+                    }
+                }
+                // at this point, only shared parts should have negative color values
+
+
+                // parallelization, pt 2, synchronize shared parts
+                // ===============================================
 
                 ColorMap.MPIExchange(GridDat);
 
-                if (NonIsolatedParts.MPISum() <= 0) {
+     
+
+                if (NonIsolatedParts.MPISum() > 0) {
                     // some synchronization is required
 
                     int NoOfConflicts;
@@ -419,8 +457,27 @@ namespace BoSSS.Foundation.XDG {
                         }
 
                         NoOfConflicts = NoOfConflicts.MPISum();
+
+                        if(NoOfConflicts > 0)
+                            ColorMap.MPIExchange(GridDat);
+
                     } while (NoOfConflicts > 0); // if a part is shared by more than 2 processors, multiple iterations might be necessary
+
+                    // ensure positive sign
+                    for (int j = 0; j < Je; j++) {
+                        if (ColorMap[j] < 0) {
+                            ColorMap[j] *= -1;
+                        }
+                    }
                 }
+
+                SinglePhaseField farbe = new SinglePhaseField(new Basis(this.GridDat, 0), "Arschfarbe");
+                for(int j = 0; j < J; j++) {
+                    farbe.SetMeanValue(j, ColorMap[j]);
+                }
+
+                MultiphaseCellAgglomerator.Katastrophenplot(new DGField[] { farbe });
+
 
                 // check & return
                 // ===============
@@ -498,6 +555,9 @@ namespace BoSSS.Foundation.XDG {
                 ColorMap[j] = Color;
                 Part.Add(j);
 
+                if (j >= J)
+                    // external cell -> no further recursion
+                    return NextColor;
 
                 int[] jNeigh = g.iLogicalCells.CellNeighbours[j];
 
@@ -507,10 +567,9 @@ namespace BoSSS.Foundation.XDG {
                         // Neighbor cell does not contain species -> end of recursion
                         continue;
 
-                    if (jN > J) {
+                    if (jN >= J) {
                         // external cell -> no further recursion
                         IsIsolated = false;
-                        continue;
                     }
 
                     if (ColorMap[jN] > 0) {

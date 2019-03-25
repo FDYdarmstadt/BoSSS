@@ -49,7 +49,11 @@ namespace BoSSS.Application.FSI_Solver {
     public class FSI_SolverMain : IBM_Solver.IBM_SolverMain {
 
         public static void MegaArschKakke2(DGField[] f) {
-            Tecplot.PlotFields(f, "MegaArschKakke", 0.0, 2);
+            int rank;
+            csMPI.Raw.Comm_Rank(csMPI.Raw._COMM.WORLD, out rank);
+            
+
+            Tecplot.PlotFields(f, "MegaArschKakke" + rank, 0.0, 2);
         }
 
 
