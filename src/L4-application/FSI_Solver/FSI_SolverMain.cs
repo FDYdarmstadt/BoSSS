@@ -718,8 +718,7 @@ namespace BoSSS.Application.FSI_Solver {
                 Console.WriteLine("Starting time-step " + TimestepInt + "...");
 
                 int OldPushCount = LsTrk.PushCount; // used later to check if there is exactly one push per timestep
-
-
+                
                 if (((FSI_Control)this.Control).pureDryCollisions) {
                     // +++++++++++++++++++++++++++++++++++++++++++++++++
                     // only particle motion & colissions, no flow solver
@@ -767,6 +766,7 @@ namespace BoSSS.Application.FSI_Solver {
                         int iteration_counter = 0;
                         for (double posResidual_splitting = 1e12; posResidual_splitting > ((FSI_Control)this.Control).ForceAndTorque_ConvergenceCriterion;)// && iteration_counter <= (this.Control).max_iterations_fully_coupled;)
                         {
+                            OldPushCount = LsTrk.PushCount; // HACKHACKHACK
                             double[] ForcesOldSquared = new double[2];
                             double TorqueOldSquared = new double();
                             ForcesOldSquared[0] = 0;
@@ -780,6 +780,7 @@ namespace BoSSS.Application.FSI_Solver {
                                 TorqueOldSquared += p.HydrodynamicTorque[0].Pow2();
                             }
                             m_BDF_Timestepper.Solve(phystime, dt, false);
+                            
                             UpdateForcesAndTorque(dt, phystime);
                             foreach (Particle p in m_Particles)
                             {
@@ -813,7 +814,7 @@ namespace BoSSS.Application.FSI_Solver {
                                 break;
                             }
                             if (iteration_counter > ((FSI_Control)this.Control).max_iterations_fully_coupled) {
-                                break;// throw new ApplicationException("no convergence in coupled iterative solver, number of iterations: " + iteration_counter);
+                                 throw new ApplicationException("no convergence in coupled iterative solver, number of iterations: " + iteration_counter);
                             }
                         }
                         /*

@@ -1318,7 +1318,6 @@ namespace BoSSS.Solution.XdgTimestepping {
                 Solve_Increment(i, phystime, incTimestepSize, ComputeOnlyResidual);
                 phystime += incTimestepSize;
             }
-
         }
 
         double m_CurrentDt_Timestep = -1;
