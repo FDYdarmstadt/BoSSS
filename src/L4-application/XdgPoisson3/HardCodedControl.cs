@@ -515,14 +515,30 @@ namespace BoSSS.Application.XdgPoisson3 {
             return R;
         }
 
-
-        public static XdgPoisson3Control TestOrTreat(string myDB = null) {
+        /// <summary>
+        /// This is a testrun similar to the one in \public\doc\handbook\apdx-NodeSolverPerformance\XDGPoisson\Part1-Calculations.bws
+        /// phase A: 3D sphere, pahse B: [-1,1]^3\sphere
+        /// </summary>
+        /// <param name="myDB"></param>
+        /// <returns></returns>
+        public static XdgPoisson3Control TestOrTreat(int solver=1, int blocksize=10000, string myDB = null) {
             XdgPoisson3Control C = new XdgPoisson3Control();
+
+            switch (solver) {
+                case 1:
+                    C.LinearSolver.SolverCode = LinearSolverConfig.Code.exp_softpcg_mg;
+                    break;
+                case 2:
+                    C.LinearSolver.SolverCode = LinearSolverConfig.Code.exp_softpcg_schwarz_directcoarse;
+                    break;
+                default:
+                    throw new NotImplementedException("guess again");
+            }
 
             C.savetodb = false;
             //C.DbPath = @"E:\\XdgPerformance";
 
-            int Res = 2;
+            int Res = 8;
 
             C.GridFunc = delegate () {
                 double[] xNodes = GenericBlas.Linspace(-1, +1, Res + 1);
@@ -542,10 +558,13 @@ namespace BoSSS.Application.XdgPoisson3 {
             //C.PerformanceModeON = true;
             //C.SuppressExceptionPrompt = true;
 
-            C.LinearSolver.TargetBlockSize = 20;
+            C.LinearSolver.TargetBlockSize = blocksize;
             C.SetDGdegree(2);
+
             //C.LinearSolver.SolverCode = LinearSolverConfig.Code.exp_softpcg_mg;
-            C.LinearSolver.SolverCode = LinearSolverConfig.Code.exp_softpcg_mg;
+            //C.LinearSolver.SolverCode = LinearSolverConfig.Code.exp_softpcg_schwarz_directcoarse;
+            //C.LinearSolver.SolverCode = LinearSolverConfig.Code.exp_softpcg_jacobi_mg;
+
             C.LinearSolver.NoOfMultigridLevels = 10;
             C.LinearSolver.ConvergenceCriterion = 1e-6;
             C.ExcactSolSupported = false;
