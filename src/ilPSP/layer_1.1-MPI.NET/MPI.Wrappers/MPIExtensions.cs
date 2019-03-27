@@ -488,10 +488,16 @@ namespace MPI.Wrappers {
             }
         }
 
+        /// <summary>
+        /// Gathers single numbers form each MPI rank in an array
+        /// </summary>
         static public int[] MPIAllGather(this int i) {
             return i.MPIAllGather(csMPI.Raw._COMM.WORLD);
         }
 
+        /// <summary>
+        /// Gathers single numbers form each MPI rank in an array
+        /// </summary>
         static public int[] MPIAllGather(this int i, MPI_Comm comm) {
             csMPI.Raw.Comm_Size(csMPI.Raw._COMM.WORLD, out int size);
 
@@ -513,10 +519,56 @@ namespace MPI.Wrappers {
             return result;
         }
 
+        /// <summary>
+        /// Gathers single numbers form each MPI rank in an array at the <paramref name="root"/> rank
+        /// </summary>
+        static public int[] MPIGather(this int i, int root) {
+            return i.MPIGather(root, csMPI.Raw._COMM.WORLD);
+        }
+        
+        /// <summary>
+        /// Gathers single numbers form each MPI rank in an array at the <paramref name="root"/> rank
+        /// </summary>
+        static public int[] MPIGather(this int i, int root, MPI_Comm comm) {
+            csMPI.Raw.Comm_Size(csMPI.Raw._COMM.WORLD, out int size);
+            csMPI.Raw.Comm_Rank(csMPI.Raw._COMM.WORLD, out int rank);
+
+            int[] result;
+            if (rank == root)
+                result = new int[size];
+            else
+                result = null;
+
+            unsafe {
+                int sendBuffer = i;
+                fixed (int* pResult = &result[0]) {
+                    csMPI.Raw.Gather(
+                        (IntPtr)(&i),
+                        1,
+                        csMPI.Raw._DATATYPE.INT,
+                        (IntPtr)pResult,
+                        1,
+                        csMPI.Raw._DATATYPE.INT,
+                        root,
+                        comm);
+                }
+            }
+
+            return result;
+        }
+
+
+
+        /// <summary>
+        /// Gathers single numbers form each MPI rank in an array
+        /// </summary>
         static public double[] MPIAllGather(this double d) {
             return d.MPIAllGather(csMPI.Raw._COMM.WORLD);
         }
 
+        /// <summary>
+        /// Gathers single numbers form each MPI rank in an array
+        /// </summary>
         static public double[] MPIAllGather(this double d, MPI_Comm comm) {
             csMPI.Raw.Comm_Size(csMPI.Raw._COMM.WORLD, out int size);
 
