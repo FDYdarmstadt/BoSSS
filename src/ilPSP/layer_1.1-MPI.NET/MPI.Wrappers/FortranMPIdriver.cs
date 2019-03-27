@@ -115,7 +115,7 @@ namespace MPI.Wrappers {
         }
 
         /// <summary>
-        /// Stange name mangling convention on MacOS; seems to suit OpenMPI from homebrew.
+        /// Strange name mangling convention on MacOS; seems to suit OpenMPI from homebrew.
         /// </summary>
         internal static string MacOsMangling (string Name) {
             if(Name.ToUpperInvariant () == Name) {
@@ -509,6 +509,22 @@ namespace MPI.Wrappers {
                                      MPI_Comm comm) {
             int ierr;
             MPI_ALLGATHER(sendbuf, ref sendcount, ref sendtype, recvbuf, ref recvcount, ref recvtype, ref comm, out ierr);
+            MPIException.CheckReturnCode(ierr);
+        }
+
+#pragma warning disable 649
+        delegate void _MPI_GATHER(IntPtr sendbuf, ref int sendcount, ref MPI_Datatype sendtype,
+                                     IntPtr recvbuf, ref int recvcount, ref MPI_Datatype recvtype, 
+                                     int root, ref MPI_Comm comm, out int ierr);
+        _MPI_GATHER MPI_GATHER;
+#pragma warning restore 649
+
+        /// <summary>
+        /// 
+        /// </summary>
+        public void Gather(IntPtr sendbuf, int sendcount, MPI_Datatype sendtype, IntPtr recvbuf, int recvcount, MPI_Datatype recvtype, int root, MPI_Comm comm) {
+            int ierr;
+            MPI_GATHER(sendbuf, ref sendcount, ref sendtype, recvbuf, ref recvcount, ref recvtype, root,ref comm, out ierr);
             MPIException.CheckReturnCode(ierr);
         }
 
