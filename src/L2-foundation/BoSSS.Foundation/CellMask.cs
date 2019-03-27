@@ -411,7 +411,7 @@ namespace BoSSS.Foundation.Grid {
             if(base.MaskType != MaskType.Logical)
                 throw new NotSupportedException();
 
-            int J = this.GridData.iLogicalCells.Count;
+            int J = this.GridData.iLogicalCells.NoOfLocalUpdatedCells;
             BitArray retMask = new BitArray(J);
 
             var C2E = this.GridData.iLogicalCells.Cells2Edges;
@@ -436,7 +436,7 @@ namespace BoSSS.Foundation.Grid {
                     }
                     Debug.Assert(E2C[iEdge, ii] == jCell);
                     
-                    if(jOtherCell >= 0) // boundary edge !
+                    if(jOtherCell >= 0 && jOtherCell < J) // boundary edge OR external cell
                         retMask[jOtherCell] = true;
                 }
             }

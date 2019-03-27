@@ -524,11 +524,13 @@ namespace BoSSS.Foundation.XDG {
                     }
                 }
 
+                // correlate with old colors
+                // =========================
 
                
                 //if(counter == 2)
                 //    Debugger.Launch();
-
+                /*
                 {
                     SinglePhaseField farbe1 = new SinglePhaseField(new Basis(this.GridDat, 0), "farbe1");
                     SinglePhaseField farbe0 = new SinglePhaseField(new Basis(this.GridDat, 0), "farbe0");
@@ -543,7 +545,7 @@ namespace BoSSS.Foundation.XDG {
 
                     MultiphaseCellAgglomerator.Katastrophenplot(new DGField[] { (SinglePhaseField)(this.m_owner.LevelSets[0]), farbe1, farbe0 });
                 }
-                
+                */
 
                
                 // check & return

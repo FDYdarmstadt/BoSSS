@@ -1508,7 +1508,7 @@ namespace BoSSS.Application.FSI_Solver {
             // All interface points at a specific subgrid containing all cut cells of one particle
             MultidimensionalArray interfacePoints = null;
 
-            Console.WriteLine("ParticleCutCellCount:   " + particleCutCells.Count());
+            //Console.WriteLine("ParticleCutCellCount:   " + particleCutCells.Count());
 
             var trafo = GridData.iGeomEdges.Edge2CellTrafos;
 
