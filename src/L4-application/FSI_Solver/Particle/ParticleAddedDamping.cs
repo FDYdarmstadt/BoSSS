@@ -13,7 +13,7 @@ namespace BoSSS.Application.FSI_Solver
 {
     class ParticleAddedDamping
     {
-        ParticleAuxillary Aux = new ParticleAuxillary();
+        readonly ParticleAuxillary Aux = new ParticleAuxillary();
         public double[,] IntegrationOverLevelSet(LevelSetTracker LsTrk, double muA, double rhoA, double dt, double[] currentPosition, CellMask ParticleCutCells)
         {
             double[,] addedDampingTensor = new double[6, 6];
@@ -38,7 +38,7 @@ namespace BoSSS.Application.FSI_Solver
                                 {
                                     for (int k = 0; k < K; k++)
                                     {
-                                        LsTrk.GridDat.TransformLocal2Global(Ns, NodeSetGlobal, j0);
+                                        LsTrk.GridDat.TransformLocal2Global(Ns, NodeSetGlobal, j0 + j);
                                         double dh = CalculateNormalMeshSpacing(LsTrk, Ns, Normals, j, k);
                                         double delta = dh * Math.Sqrt(rhoA) / (Math.Sqrt(alpha * muA * dt));
                                         double dn = dh / (1 - Math.Exp(-delta));
@@ -210,17 +210,18 @@ namespace BoSSS.Application.FSI_Solver
                     }
                 }
             }
+            double[,] temp2 = new double[3, 3];
             for (int i = 0; i < 3; i++)
             {
                 for (int j = 0; j < 3; j++)
                 {
                     for (int k = 0; k < 3; k++)
                     {
-                        AddedDampingTensor[i, j] += temp[i, k] * R[j, k];
+                        temp2[i, j] += temp[i, k] * R[j, k];
                     }
                 }
             }
-            return AddedDampingTensor;
+            return temp2;
         }
 
         private double CalculateNormalMeshSpacing(LevelSetTracker LsTrk, NodeSet Ns, MultidimensionalArray Normals, int CellID, int NodeID)

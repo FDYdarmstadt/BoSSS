@@ -25,23 +25,15 @@ using BoSSS.Foundation.Grid;
 using BoSSS.Solution.Tecplot;
 using ilPSP.Utils;
 using ilPSP.Tracing;
-using BoSSS.Platform;
-using ilPSP.LinSolvers;
 using BoSSS.Solution.Utils;
-using BoSSS.Solution.LevelSetTools.Smoothing;
-using BoSSS.Foundation.SpecFEM;
 using MPI.Wrappers;
 using BoSSS.Foundation.IO;
 using System.Diagnostics;
 using System.IO;
-using BoSSS.Foundation.Quadrature;
-using BoSSS.Solution.AdvancedSolvers;
 using ilPSP;
 using BoSSS.Solution.XdgTimestepping;
-using BoSSS.Foundation.Grid.RefElements;
 using BoSSS.Solution.XNSECommon;
 using BoSSS.Foundation.Grid.Classic;
-using static BoSSS.Application.FSI_Solver.FSI_Control;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Bson;
 
@@ -61,13 +53,11 @@ namespace BoSSS.Application.FSI_Solver {
 
 
         double calculatedDampingTensors;
-        #region start
         // =============================
         /// <summary>
         /// Application entry point.
         /// </summary>
         static void Main(string[] args) {
-
             MultiphaseCellAgglomerator.Katastrophenplot = MegaArschKakke2;
 
             _Main(args, false, delegate () {
@@ -75,8 +65,7 @@ namespace BoSSS.Application.FSI_Solver {
                 return p;
             });
         }
-        #endregion
-        #region field instantiation
+
         /// <summary>
         /// Curvature; DG-polynomial degree should be 2 times the polynomial degree of <see cref="LevSet"/>.
         /// </summary>
@@ -99,10 +88,7 @@ namespace BoSSS.Application.FSI_Solver {
             m_IOFields.Add(LevelSetDistance);
         }
 
-        #endregion
-
-        #region Create equations and solvers
-
+        // Create equations and solvers
         bool UseMovingMesh {
             get {
                 switch (((FSI_Control)this.Control).Timestepper_LevelSetHandling) {
@@ -120,26 +106,18 @@ namespace BoSSS.Application.FSI_Solver {
                 }
             }
         }
-
-
+        
         protected override void CreateEquationsAndSolvers(GridUpdateDataVaultBase L) {
-
-            #region Misc
+            
             if (IBM_Op != null)
                 return;
-
-
             string[] CodNameSelected = new string[0];
             string[] DomNameSelected = new string[0];
 
             int D = this.GridData.SpatialDimension;
-
-
+            
             BcMap = new IncompressibleBoundaryCondMap(this.GridData, this.Control.BoundaryValues, PhysicsMode.Incompressible);
-            #endregion
-
-            #region operator
-            #region Config
+            
             int degU = this.Velocity[0].Basis.Degree;
             var IBM_Op_config = new NSEOperatorConfiguration {
                 convection = this.Control.PhysicalParameters.IncludeConvection,
@@ -171,12 +149,11 @@ namespace BoSSS.Application.FSI_Solver {
             IBM_Op = new XSpatialOperator(DomNameSelected, Params, CodNameSelected,
                 (A, B, C) => this.HMForder
                 );
-            #endregion
 
-            #region Momentum equation
+            // Momentum equation
             // =============================
 
-            #region Convective part
+            // Convective part
             // =============================
             if (IBM_Op_config.convection) {
                 for (int d = 0; d < D; d++) {
@@ -256,9 +233,8 @@ namespace BoSSS.Application.FSI_Solver {
                 }
                 this.U0MeanRequired = true;
             }
-            #endregion
 
-            #region Pressure part
+            // Pressure part
             // =============================
             if (IBM_Op_config.PressureGradient) {
                 for (int d = 0; d < D; d++) {
@@ -278,9 +254,8 @@ namespace BoSSS.Application.FSI_Solver {
                     }
                 }
             }
-            #endregion
 
-            #region Viscous part
+            // Viscous part
             // =============================
             if (IBM_Op_config.Viscous) {
                 for (int d = 0; d < D; d++) {
@@ -375,10 +350,8 @@ namespace BoSSS.Application.FSI_Solver {
                     }
                 }
             }
-            #endregion
-            #endregion
 
-            #region Continuum equation
+            // Continuum equation
             // ==================
             if (IBM_Op_config.continuity) {
                 for (int d = 0; d < D; d++) {
@@ -429,19 +402,16 @@ namespace BoSSS.Application.FSI_Solver {
                     IBM_Op.EquationComponents["div"].Add(divPen); // immersed boundary component 
                 }
             }
-            #endregion
             IBM_Op.Commit();
-            #endregion
 
-            #region NSE or pure Stokes
+            // NSE or pure Stokes
             // ------------------
             SpatialOperatorType SpatialOp = SpatialOperatorType.LinearTimeDependent;
             if (this.Control.PhysicalParameters.IncludeConvection) {
                 SpatialOp = SpatialOperatorType.Nonlinear;
             }
-            #endregion
 
-            #region create timestepper, update level-set
+            // create timestepper, update level-set
             // ------------------
             int bdfOrder;
             if (this.Control.Timestepper_Scheme == FSI_Control.TimesteppingScheme.CrankNicolson)
@@ -509,20 +479,19 @@ namespace BoSSS.Application.FSI_Solver {
                 this.FluidSpecies, base.HMForder,
                 this.Control.AdvancedDiscretizationOptions.CellAgglomerationThreshold, true,
                 this.Control.NonLinearSolver, this.Control.LinearSolver
-                );
-            m_BDF_Timestepper.m_ResLogger = base.ResLogger;
-            m_BDF_Timestepper.m_ResidualNames = ArrayTools.Cat(this.ResidualMomentum.Select(f => f.Identification), this.ResidualContinuity.Identification);
-            m_BDF_Timestepper.IterUnderrelax = ((FSI_Control)this.Control).Timestepper_LevelSetHandling == LevelSetHandling.Coupled_Iterative ? ((FSI_Control)this.Control).LSunderrelax : 1.0;
-            m_BDF_Timestepper.Config_LevelSetConvergenceCriterion = ((FSI_Control)this.Control).ForceAndTorque_ConvergenceCriterion;
-            m_BDF_Timestepper.SessionPath = SessionPath;
-            m_BDF_Timestepper.Timestepper_Init = Solution.Timestepping.TimeStepperInit.SingleInit;
-            #endregion
+                )
+            {
+                m_ResLogger = base.ResLogger,
+                m_ResidualNames = ArrayTools.Cat(this.ResidualMomentum.Select(f => f.Identification), this.ResidualContinuity.Identification),
+                IterUnderrelax = ((FSI_Control)this.Control).Timestepper_LevelSetHandling == LevelSetHandling.Coupled_Iterative ? ((FSI_Control)this.Control).LSunderrelax : 1.0,
+                Config_LevelSetConvergenceCriterion = ((FSI_Control)this.Control).ForceAndTorque_ConvergenceCriterion,
+                SessionPath = SessionPath,
+                Timestepper_Init = Solution.Timestepping.TimeStepperInit.SingleInit
+            };
         }
-        #endregion
 
         public override double DelUpdateLevelset(DGField[] CurrentState, double phystime, double dt, double UnderRelax, bool incremental) {
-            #region Level-set handling
-
+            
             switch (((FSI_Control)this.Control).Timestepper_LevelSetHandling) {
                 case LevelSetHandling.None:
                     ScalarFunction Posfunction = NonVectorizedScalarFunction.Vectorize(((FSI_Control)Control).MovementFunc, phystime);
@@ -558,8 +527,7 @@ namespace BoSSS.Application.FSI_Solver {
                     throw new ApplicationException("unknown 'LevelSetMovement': " + ((FSI_Control)Control).Timestepper_LevelSetHandling);
             }
         
-            #endregion
-            #region Forces and Torque residual
+            // Forces and Torque residual
             /// <summary>
             /// Computes the Residual of the forces and torque acting from to fluid to the particle.
             /// </summary>
@@ -599,7 +567,6 @@ namespace BoSSS.Application.FSI_Solver {
                 forces_PResidual = 0;
             }
             return forces_PResidual;
-            #endregion
         }
 
 
@@ -647,11 +614,7 @@ namespace BoSSS.Application.FSI_Solver {
 
                 LevelSetDistance.SetMeanValue(j, LevelSetTracker.DecodeLevelSetDist(rCode[j], 0));
             }
-
-
-
         }
-
 
         void UpdateForcesAndTorque(double dt, double phystime) {
             //
@@ -689,7 +652,7 @@ namespace BoSSS.Application.FSI_Solver {
                     // scalar values
                     CheckSend[iP*NoOfVars + 0] = P.Angle[0];
                     CheckSend[iP*NoOfVars + 1] = P.Angle[1];
-                    CheckSend[iP*NoOfVars + 2] = P.Area_P;
+                    //CheckSend[iP*NoOfVars + 2] = P.Area_P;
                     CheckSend[iP*NoOfVars + 3] = P.ClearSmallValues ? 1.0 : 0.0;
                     CheckSend[iP*NoOfVars + 4] = P.ForceAndTorque_convergence;
                     CheckSend[iP*NoOfVars + 5] = P.Mass_P;
@@ -745,6 +708,7 @@ namespace BoSSS.Application.FSI_Solver {
 
                 if (!((FSI_Control)Control).pureDryCollisions) {
                     p.UpdateForcesAndTorque(Velocity, Pressure, LsTrk, Control.PhysicalParameters.mu_A, dt, Control.PhysicalParameters.rho_A);
+                    
                 }
 
                 // wall collisions are computed on each processor
@@ -789,24 +753,28 @@ namespace BoSSS.Application.FSI_Solver {
             }
         }
 
-        void PrintResultToConsole(double phystime) {
-            double[] totalMomentum = new double[2] { 0, 0 };
+        void PrintResultToConsole(double phystime, double dt)
+        {
+            double[] TranslationalMomentum = new double[2] { 0, 0 };
+            double RotationalMomentum = 0;
             double[] totalKE = new double[3] { 0, 0, 0 };
             double xPos;
             double yPos;
             double ang;
 
-
             foreach (Particle p in m_Particles)
             {
-                totalMomentum[0] += p.Mass_P * p.TranslationalVelocity[0][0];
-                totalMomentum[1] += p.Mass_P * p.TranslationalVelocity[0][1];
-                totalKE[0] += 0.5 * p.Mass_P * p.TranslationalVelocity[0][0].Pow2();
-                totalKE[1] += 0.5 * p.Mass_P * p.TranslationalVelocity[0][1].Pow2();
-                totalKE[2] += 0.5 * p.MomentOfInertia_P * p.RotationalVelocity[0].Pow2();
+                double[] SingleParticleMomentum = p.CalculateParticleMomentum(dt);
+                double[] SingleParticleKineticEnergy = p.CalculateParticleKineticEnergy(dt);
+                TranslationalMomentum[0] += SingleParticleMomentum[0];
+                TranslationalMomentum[1] += SingleParticleMomentum[1];
+                RotationalMomentum += SingleParticleMomentum[SingleParticleMomentum.Length - 1];
+                totalKE[0] += SingleParticleKineticEnergy[0];
+                totalKE[1] += SingleParticleKineticEnergy[1];
+                totalKE[2] += SingleParticleKineticEnergy[SingleParticleMomentum.Length - 1];
             }
-            Console.WriteLine("Total-Momentum in System:  " + Math.Sqrt(totalMomentum[0].Pow2() + totalMomentum[1].Pow2()));
-            Console.WriteLine("Total-KineticEnergy in System:  " + (totalKE[0] + totalKE[1] + totalKE[2]));
+            Console.WriteLine("Total momentum in system:  " + Math.Sqrt(TranslationalMomentum[0].Pow2() + TranslationalMomentum[1].Pow2()));
+            Console.WriteLine("Total kinetic energy in system:  " + (totalKE[0] + totalKE[1] + totalKE[2]));
 
             force = m_Particles[0].HydrodynamicForces[0];
             torque = m_Particles[0].HydrodynamicTorque[0];
@@ -823,8 +791,8 @@ namespace BoSSS.Application.FSI_Solver {
             if ((base.MPIRank == 0) && (Log_DragAndLift != null)) {
                 double drag = force[0];
                 double lift = force[1];
-                //string line = String.Format("{0}\t{1}\t{2}\t{3}\t{4}\t{5}\t{6}\t{7}\t{8}\t{9}", TimestepNo, phystime, m_Particles[0].positionAtIteration[0][0], m_Particles[0].positionAtIteration[0][1], m_Particles[0].particleAnglePerIteration[0], m_Particles[0].transVelocityAtIteration[0][0], m_Particles[0].transVelocityAtIteration[0][1], 0.0, (totalKE[0] + totalKE[1] + totalKE[2]), Math.Sqrt(totalMomentum[0].Pow2() + totalMomentum[1].Pow2()));
-                string line = String.Format("{0}\t{1}\t{2}\t{3}\t{4}\t{5}\t{6}\t{7}\t{8}", phystime, m_Particles[0].Position[0][0], m_Particles[0].Position[0][1], m_Particles[0].Angle[0], m_Particles[0].TranslationalVelocity[0][0], m_Particles[0].TranslationalVelocity[0][1], 0.0, (totalKE[0] + totalKE[1] + totalKE[2]), Math.Sqrt(totalMomentum[0].Pow2() + totalMomentum[1].Pow2()));
+                //string line = String.Format("{0}\t{1}\t{2}\t{3}\t{4}\t{5}\t{6}\t{7}\t{8}\t{9}", TimestepNo, phystime, m_Particles[0].positionAtIteration[0][0], m_Particles[0].positionAtIteration[0][1], m_Particles[0].particleAnglePerIteration[0], m_Particles[0].transVelocityAtIteration[0][0], m_Particles[0].transVelocityAtIteration[0][1], 0.0, (totalKE[0] + totalKE[1] + totalKE[2]), Math.Sqrt(TranslationalMomentum[0].Pow2() + TranslationalMomentum[1].Pow2()));
+                string line = String.Format("{0}\t{1}\t{2}\t{3}\t{4}\t{5}\t{6}\t{7}\t{8}", phystime, m_Particles[0].Position[0][0], m_Particles[0].Position[0][1], m_Particles[0].Angle[0], m_Particles[0].TranslationalVelocity[0][0], m_Particles[0].TranslationalVelocity[0][1], 0.0, (totalKE[0] + totalKE[1] + totalKE[2]), Math.Sqrt(TranslationalMomentum[0].Pow2() + TranslationalMomentum[1].Pow2()));
                 Log_DragAndLift.WriteLine(line);
                 Log_DragAndLift.Flush();
             }
@@ -850,8 +818,6 @@ namespace BoSSS.Application.FSI_Solver {
             Console.WriteLine();
         }
         
-
-        #region Run solver one step
         // <summary>
         // Variables for FSI coupling
         // </summary>
@@ -875,8 +841,8 @@ namespace BoSSS.Application.FSI_Solver {
 
                 Console.WriteLine("Starting time-step " + TimestepInt + "...");
 
-                int OldPushCount = LsTrk.PushCount; // used later to check if there is exactly one push per time-step
-
+                int OldPushCount = LsTrk.PushCount; // used later to check if there is exactly one push per timestep
+               
 
                 if (((FSI_Control)this.Control).pureDryCollisions) {
                     // +++++++++++++++++++++++++++++++++++++++++++++++++
@@ -892,8 +858,8 @@ namespace BoSSS.Application.FSI_Solver {
 
                         p.CalculateAcceleration(dt, Control.PhysicalParameters.rho_A);
 
-                        p.CalculateTranslationalVelocity(dt, Control.PhysicalParameters.rho_A);
-                        p.CalculateAngularVelocity(dt);
+                        p.CalculateTranslationalVelocity(dt, Control.PhysicalParameters.rho_A, ((FSI_Control)this.Control).includeTranslation);
+                        p.CalculateAngularVelocity(dt, ((FSI_Control)this.Control).includeRotation);
 
                         p.CalculateParticlePosition(dt, Control.PhysicalParameters.rho_A);
                         p.CalculateParticleAngle(dt);
@@ -925,6 +891,7 @@ namespace BoSSS.Application.FSI_Solver {
                         int iteration_counter = 0;
                         for (double posResidual_splitting = 1e12; posResidual_splitting > ((FSI_Control)this.Control).ForceAndTorque_ConvergenceCriterion;)// && iteration_counter <= (this.Control).max_iterations_fully_coupled;)
                         {
+                            OldPushCount = LsTrk.PushCount; // HACKHACKHACK
                             double[] ForcesOldSquared = new double[2];
                             double TorqueOldSquared = new double();
                             ForcesOldSquared[0] = 0;
@@ -938,39 +905,23 @@ namespace BoSSS.Application.FSI_Solver {
                                 TorqueOldSquared += p.HydrodynamicTorque[0].Pow2();
                             }
                             m_BDF_Timestepper.Solve(phystime, dt, false);
+                            
                             UpdateForcesAndTorque(dt, phystime);
                             foreach (Particle p in m_Particles)
                             {
-                                if  (p.neglectAddedDamping == false)
+                                if  (p.neglectAddedDamping == false && p.iteration_counter_P == 0)
                                 {
-                                    //p.UpdateDampingTensors();
+                                    p.UpdateDampingTensors();
                                 }
 
-                                //switch (p.iteration_counter_P)
-                                //{
-                                //    case 0 when ((FSI_Control)this.Control).splitting_fully_coupled == true:
-                                //        p.PredictTranslationalAccelaration();
-                                //        p.PredictAngularAcceleration();
-                                //        break;
-
-                                //    default:
-                                        p.CalculateAcceleration(dt, Control.PhysicalParameters.rho_A);
-                                //        break;
-                                //}
-                                if (((FSI_Control)Control).includeRotation == true)
-                                {
-                                    p.CalculateAngularVelocity(dt);
-                                }
-                                if (((FSI_Control)Control).includeTranslation == true)
-                                {
-                                    p.CalculateTranslationalVelocity(dt, this.Control.PhysicalParameters.rho_A);
-                                }
-                                p.ComputeParticleRe(this.Control.PhysicalParameters.mu_A);
+                                p.CalculateAcceleration(dt, Control.PhysicalParameters.rho_A);
+                                p.CalculateAngularVelocity(dt, ((FSI_Control)this.Control).includeRotation);
+                                p.CalculateTranslationalVelocity(dt, this.Control.PhysicalParameters.rho_A, ((FSI_Control)this.Control).includeTranslation);
                                 p.CalculateParticlePosition(dt, this.Control.PhysicalParameters.rho_A);
                                 p.CalculateParticleAngle(dt);
-                                //p.UpdateLevelSetFunction();
+                                p.ComputeParticleRe(this.Control.PhysicalParameters.mu_A);
                             }
-                            PrintResultToConsole(phystime);
+                            PrintResultToConsole(phystime, dt);
                             //#region Get Drag and Lift Coefficiant
                             double[] ForcesNewSquared = new double[2];
                             double TorqueNewSquared = new double();
@@ -988,7 +939,7 @@ namespace BoSSS.Application.FSI_Solver {
                                 break;
                             }
                             if (iteration_counter > ((FSI_Control)this.Control).max_iterations_fully_coupled) {
-                                break;// throw new ApplicationException("no convergence in coupled iterative solver, number of iterations: " + iteration_counter);
+                                 throw new ApplicationException("no convergence in coupled iterative solver, number of iterations: " + iteration_counter);
                             }
                         }
                         /*
@@ -1032,11 +983,7 @@ namespace BoSSS.Application.FSI_Solver {
             }
         }
         
-
-        #endregion
-
-        #region restart
-
+        // restart
         /// <summary>
         /// over-ridden in oder to save the particles (<see cref="m_Particles"/>) to the database
         /// </summary>
@@ -1194,12 +1141,11 @@ namespace BoSSS.Application.FSI_Solver {
             //    Log_DragAndLift.WriteLine(restartLine);
             //}
         }
-        #endregion
 
-        #region Initialize particles
+        // Initialize particles
         protected override void SetInitial() {
             // Setup particles
-            m_Particles = ((FSI_Control)Control).Particles;
+            m_Particles = ((FSI_Control)this.Control).Particles;
             hack_phystime = 0.0;
             UpdateLevelSetParticles(0.0);
 
@@ -1224,9 +1170,8 @@ namespace BoSSS.Application.FSI_Solver {
         bool collision = false;
 
         bool triggerOnlyCollisionProcedure = false;
-        #endregion
 
-        #region Collision models
+        // Collision models
         /// <summary>
         /// Update collision forces between two arbitrary particles and add them to forces acting on the corresponding particle
         /// </summary>
@@ -1248,18 +1193,14 @@ namespace BoSSS.Application.FSI_Solver {
                 for (int j = i + 1; j < particles.Count; j++) {
                     var particle0 = particles[i];
                     var particle1 = particles[j];
-
+                    
                     var particle0CutCells = particle0.CutCells_P(LsTrk);
                     var particle1CutCells = particle1.CutCells_P(LsTrk);
-
-                    var particleCutCellArray_P0 = particle0CutCells.ItemEnum.ToArray();
+                    
                     var neighborCellsArray_P0 = particle0CutCells.AllNeighbourCells().ItemEnum.ToArray();
-                    var allCellsArray_P0 = particleCutCellArray_P0.Concat(neighborCellsArray_P0).ToArray();
                     var allCells_P0 = new CellMask(GridData, neighborCellsArray_P0);
-
-                    var particleCutCellArray_P1 = particle1CutCells.ItemEnum.ToArray();
+                    
                     var neighborCellsArray_P1 = particle1CutCells.AllNeighbourCells().ItemEnum.ToArray();
-                    var allCellsArray_P1 = particleCutCellArray_P1.Concat(neighborCellsArray_P1).ToArray();
                     var allCells_P1 = new CellMask(GridData, neighborCellsArray_P1);
 
                     double distance = 1E20;
@@ -1272,7 +1213,7 @@ namespace BoSSS.Application.FSI_Solver {
 
                     // If there is no element neighbour of both particle cut cells return
                     if (!interSecMask.IsEmpty) {
-                        ComputeCollissionModel(hmin, particle0, particle1, particle0CutCells, particle1CutCells, ref distance, ref distanceVec);
+                        ComputeCollissionModel(hmin, particle0, particle1, ref distance, ref distanceVec);
                     }
                 }
             }
@@ -1281,10 +1222,12 @@ namespace BoSSS.Application.FSI_Solver {
         /// <summary>
         /// Update of particle state (velocity, force, etc.) for two particles where a collision is detected
         /// </summary>
-        private void ComputeCollissionModel(double hmin, Particle particle0, Particle particle1, CellMask particle0CutCells, CellMask particle1CutCells, ref double distance, ref double[] distanceVec) {
+        private void ComputeCollissionModel(double hmin, Particle particle0, Particle particle1, ref double distance, ref double[] distanceVec) {
             // All interface points at a specific subgrid containing all cut cells of one particle
-            var interfacePoints_P0 = BoSSS.Solution.XNSECommon.XNSEUtils.GetInterfacePoints(LsTrk, LevSet, new SubGrid(particle0CutCells));
-            var interfacePoints_P1 = BoSSS.Solution.XNSECommon.XNSEUtils.GetInterfacePoints(LsTrk, LevSet, new SubGrid(particle1CutCells));
+            //var interfacePoints_P0 = XNSEUtils.GetInterfacePoints(LsTrk, LevSet, new SubGrid(particle0CutCells));
+            //var interfacePoints_P1 = XNSEUtils.GetInterfacePoints(LsTrk, LevSet, new SubGrid(particle1CutCells));
+            MultidimensionalArray interfacePoints_P0 = particle0.GetSurfacePoints(LsTrk, LevSet);
+            MultidimensionalArray interfacePoints_P1 = particle1.GetSurfacePoints(LsTrk, LevSet);
 
             var tempDistance = 0.0;
             double[] tempPoint_P0 = new double[2] { 0.0, 0.0 };
@@ -1672,9 +1615,8 @@ namespace BoSSS.Application.FSI_Solver {
                     throw new NotImplementedException("Collision model not available");
             }
         }
-        #endregion
 
-        #region Mesh refinement
+        // Mesh refinement
         /// <summary>
         /// Very primitive refinement indicator, works on a LevelSet criterion.
         /// </summary>
@@ -1828,10 +1770,5 @@ namespace BoSSS.Application.FSI_Solver {
                 old2NewGrid = null;
             }
         }
-        #endregion
     }
 }
-
-
-
-

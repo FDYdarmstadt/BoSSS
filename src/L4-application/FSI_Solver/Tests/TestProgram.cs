@@ -24,6 +24,7 @@ using BoSSS.Solution;
 using MPI.Wrappers;
 using NUnit.Framework;
 using BoSSS.Platform.LinAlg;
+using ilPSP;
 
 namespace BoSSS.Application.FSI_Solver {
 
@@ -92,7 +93,23 @@ namespace BoSSS.Application.FSI_Solver {
             }
         }
 
+        [Test]
+        public static void ActiveParticle_ForceTest()
+        {
+            using (FSI_SolverMain p = new FSI_SolverMain())
+            {
+                var ctrl = HardcodedTestExamples.ActiveParticle_ForceTest();
+                p.Init(ctrl);
+                p.RunSolverMode();
 
+                double ForcesSoll = 9791.34127492679;
 
+                double Forces = p.Particles[0].HydrodynamicForces[0][0];
+
+                double DiffForces = Math.Abs(ForcesSoll - Forces); 
+
+                Assert.LessOrEqual(DiffForces, 20);
+            }
+        }
     }
 }
