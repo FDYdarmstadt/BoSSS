@@ -575,7 +575,7 @@ namespace MPI.Wrappers {
             double[] result = new double[size];
             unsafe {
                 double sendBuffer = d;
-                fixed (double* pResult = &result[0]) {
+                fixed (double* pResult = result) {
                     csMPI.Raw.Allgather(
                         (IntPtr)(&d),
                         1,
@@ -609,8 +609,8 @@ namespace MPI.Wrappers {
                 for (int i = 1; i < size; i++) {
                     displs[i] = displs[i - 1] + m_recvcounts[i - 1];
                 }
-                fixed (int* pResult = &result[0], pSend = &send[0]) {
-                    fixed (int* pRcvcounts = &m_recvcounts[0]) {
+                fixed (int* pResult = result, pSend = send) {
+                    fixed (int* pRcvcounts = m_recvcounts) {
                         csMPI.Raw.Allgatherv(
                             (IntPtr)pSend,
                             send.Length,
@@ -645,8 +645,8 @@ namespace MPI.Wrappers {
                 for (int i = 1; i < size; i++) {
                     displs[i] = displs[i - 1] + m_recvcounts[i - 1];
                 }
-                fixed (ulong* pResult = &result[0], pSend = &send[0]) {
-                    fixed (int* pRcvcounts = &m_recvcounts[0]) {
+                fixed (ulong* pResult = result, pSend = send) {
+                    fixed (int* pRcvcounts = m_recvcounts) {
                         csMPI.Raw.Allgatherv(
                             (IntPtr)pSend,
                             send.Length,
@@ -736,16 +736,18 @@ namespace MPI.Wrappers {
         /// </param>
         static public ulong[] MPIGatherv(this ulong[] send, int[] recvcount, int root, MPI_Comm comm) {
             csMPI.Raw.Comm_Size(comm, out int size);
+            csMPI.Raw.Comm_Rank(comm, out int rank);
             ulong[] result = new ulong[recvcount.Sum()];
 
             unsafe {
                 int* displs = stackalloc int[size];
-                for (int i = 1; i < size; i++) {
-                    displs[i] = displs[i - 1] + recvcount[i - 1];
-                }
+                if(rank == root)
+                    for (int i = 1; i < size; i++) {
+                        displs[i] = displs[i - 1] + recvcount[i - 1];
+                    }
                 //LONG_LONG for long of 64 bits in size
-                fixed (ulong* pSend = &send[0], pResult = &result[0]) {
-                    fixed (int* pRcvcounts = &recvcount[0]) {
+                fixed (ulong* pSend = send, pResult = result) {
+                    fixed (int* pRcvcounts = recvcount) {
                         csMPI.Raw.Gatherv(
                             (IntPtr)pSend,
                             send.Length,
@@ -784,12 +786,13 @@ namespace MPI.Wrappers {
 
             unsafe {
                 int* displs = stackalloc int[size];
-                for (int i = 1; i < size; i++) {
-                    displs[i] = displs[i - 1] + recvcounts[i - 1];
-                }
+                if(rank == root)
+                    for (int i = 1; i < size; i++) {
+                        displs[i] = displs[i - 1] + recvcounts[i - 1];
+                    }
 
-                fixed (int*  pRcvcounts = &recvcounts[0]) {
-                    fixed (double* pSend = &send[0], pResult = result) {
+                fixed (int*  pRcvcounts = recvcounts) {
+                    fixed (double* pSend = send, pResult = result) {
                         Debug.Assert((rank == root) != (pResult == null));
 
                         csMPI.Raw.Gatherv(
@@ -830,11 +833,11 @@ namespace MPI.Wrappers {
 
             unsafe {
                 int* displs = stackalloc int[size];
-                for (int i = 1; i < size; i++) {
-                    displs[i] = displs[i - 1] + sendcounts[i - 1];
-                }
-                if(rank == root) {
-                    if(send.Length < displs[size - 1] + sendcounts[size - 1])
+                if (rank == root) {
+                    for (int i = 1; i < size; i++) {
+                        displs[i] = displs[i - 1] + sendcounts[i - 1];
+                    }
+                    if (send.Length < displs[size - 1] + sendcounts[size - 1])
                         throw new ArgumentException("Mismatch between send counts and send buffer size.");
                 }
 
@@ -844,7 +847,7 @@ namespace MPI.Wrappers {
                 //    send = new int[1];
                 //}
 
-                fixed (int* pSend = send, pSendcounts = &sendcounts[0], pResult = &result[0]) {
+                fixed (int* pSend = send, pSendcounts = sendcounts, pResult = result) {
                     csMPI.Raw.Scatterv(
                         (IntPtr)pSend,
                         (IntPtr)pSendcounts,
@@ -902,8 +905,8 @@ namespace MPI.Wrappers {
                 //    send = new double[1];
                 //}
 
-                fixed (int* pSendcounts = &sendcounts[0]) {
-                    fixed (double* pSend = send, pResult = &result[0]) {
+                fixed (int* pSendcounts = sendcounts) {
+                    fixed (double* pSend = send, pResult = result) {
                         csMPI.Raw.Scatterv(
                             (IntPtr)pSend,
                             (IntPtr)pSendcounts,
