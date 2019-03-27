@@ -775,7 +775,7 @@ namespace BoSSS.Foundation.XDG {
                         */
 
                 ColorMap[j] = Color;
-                Part.Add(j);
+                //Part.Add(j);
 
                 if (j >= J)
                     // external cell -> no further recursion
@@ -802,7 +802,7 @@ namespace BoSSS.Foundation.XDG {
                         continue;
                     }
 
-                    RecursiveColoring(g, Msk, jN, Color, ColorMap, oldColorMap, Part, OldColors, ref IsIsolated);
+                    RecursiveColoring(g, Msk, jN, Color, ColorMap, ref IsIsolated);
                     //int recNextColor = RecursiveColoring(g, Msk, jN, ref Color, ColorMap, oldColorMap, ref ColorNegotiable, Part, UsedColors, ref IsIsolated);
                     //NextColor = Math.Max(NextColor, recNextColor);
                 }
