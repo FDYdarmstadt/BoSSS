@@ -655,12 +655,10 @@ namespace BoSSS.Foundation.IO {
         /// </summary>
         /// <param name="grid">The grid to be saved.</param>
         public void SaveGridInfo(IGridInfo grid) {
-            if (grid is Grid.Classic.GridCommons) {
-                DBDriver.SaveGrid((Grid.Classic.GridCommons)grid, this.Database);
-            } else if (grid is GridProxy) {
-                DBDriver.SaveGrid(grid.Cast<GridProxy>().RealGrid.Cast<Grid.Classic.GridCommons>(), this.Database);
-            } else {
-                throw new NotSupportedException("As of now, only GridCommons objects can be saved.");
+            if (grid is GridProxy) {
+                DBDriver.SaveGrid(grid.Cast<GridProxy>().RealGrid, this.Database);
+            } else{
+                DBDriver.SaveGrid((IGrid)grid, this.Database);
             }
         }
 
