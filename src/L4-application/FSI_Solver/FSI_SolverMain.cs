@@ -1465,7 +1465,7 @@ namespace BoSSS.Application.FSI_Solver {
                 if (GridData.iGeomEdges.IsEdgeBoundaryEdge(iEdge)) {
 
                     if (interfacePoints == null)
-                        interfacePoints = BoSSS.Solution.XNSECommon.XNSEUtils.GetInterfacePoints(LsTrk, LevSet, new SubGrid(particleCutCells));
+                        interfacePoints = particle.GetSurfacePoints(LsTrk, LevSet);
 
                     collision = true;
                     var jCell = GridData.iGeomEdges.CellIndices[iEdge, 0];
@@ -1616,8 +1616,9 @@ namespace BoSSS.Application.FSI_Solver {
             }
         }
 
-        // Mesh refinement
+
         /// <summary>
+        /// Mesh refinement
         /// Very primitive refinement indicator, works on a LevelSet criterion.
         /// </summary>
         /// 

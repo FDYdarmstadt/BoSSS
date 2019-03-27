@@ -222,8 +222,13 @@ namespace BoSSS.Foundation.XDG {
                     if (CheckedCells[j] == false && Color != 0) {
                         bool NonIsolated = CheckColorRecursive(ColorMap, j, Color, CheckedCells, gdat);
 
-                        if (!ColorsOfAllParts.Add(Color))
-                            throw new ApplicationException("color " + Color + " is non-unique on processor " + gdat.MpiRank + ", cell #" + j);
+                        if (!ColorsOfAllParts.Add(Color)) {
+                            Debugger.Launch();
+                            var cen = gdat.GlobalNodes.GetValue_Cell(Grid.RefElements.Square.Instance.Center, j, 1);
+                            double x = cen[0, 0, 0];
+                            double y = cen[0, 0, 1];
+                            throw new ApplicationException("color " + Color + " is non-unique, cell #" + j + " (number of cells " + J + ", excluding external, MPI rank " + gdat.MpiRank + ")");
+                        }
 
                         if (!NonIsolated) {
                             // isolated part
@@ -312,8 +317,8 @@ namespace BoSSS.Foundation.XDG {
                 // paint on local processor
                 // ========================
                 int[] ColorMap = new int[Je];
-                var UsedColors = new HashSet<int>();
-                var OldColors = new HashSet<int>();
+                //var UsedColors = new HashSet<int>();
+                //var OldColors = new HashSet<int>();
                 //int NonIsolatedParts = 0;
                 int ColorCounter;
                 //BitArray IsolatedMarker = new BitArray(Je);
@@ -333,7 +338,7 @@ namespace BoSSS.Foundation.XDG {
                             //bool ColorNegogiable = true;
                             bool IsIsolated = true;
                             //ColorCounter = RecursiveColoring(this.GridDat, SpBitMask, j, ref CurrentColor, ColorMap, oldColorMap, ref ColorNegogiable, Part, UsedColors, ref IsIsolated);
-                            OldColors.Clear();
+                            //OldColors.Clear();
                             RecursiveColoring(this.GridDat, SpBitMask, j, CurrentColor, ColorMap, ref IsIsolated);
 
 
@@ -392,31 +397,35 @@ namespace BoSSS.Foundation.XDG {
 
                 // parallelization, pt 1, make new colors *globally* unique
                 // ========================================================
+                //if (GridDat.MpiRank == 1 && counter == 9)
+                //    Debugger.Launch();
+
                 {
                     int LocColors = ColorCounter - 1;
                     var ColorPart = new Partitioning(LocColors);
                     int ColorOffset = ColorPart.i0;
 
                     for (int j = 0; j < J; j++) {
-                        if (ColorMap[j] < 0) {
+                        if (ColorMap[j] != 0) {
                             int Color_j = ColorMap[j];
                             Color_j += ColorOffset;
-
-
                             ColorMap[j] = Color_j;
                         }
 
-                        Debug.Assert(ColorMap[j] >= 0);
+                        Debug.Assert((ColorMap[j] == 0) || (ColorMap[j] > ColorPart.i0));
+                        Debug.Assert((ColorMap[j] == 0) || (ColorMap[j] <= ColorPart.iE));
                     }
                 }
 
 
-                //if (GridDat.MpiRank == 1)
+                //if (GridDat.MpiRank == 0 && counter == 9)
                 //    Debugger.Launch();
 
 
                 // parallelization, pt 2, synchronize shared parts
                 // ===============================================
+
+
 
                 ColorMap.MPIExchange(GridDat);
 
@@ -501,14 +510,9 @@ namespace BoSSS.Foundation.XDG {
                             ColorMap.MPIExchange(GridDat);
 
                     } while (NoOfConflicts > 0); // if a part is shared by more than 2 processors, multiple iterations might be necessary
-
-                    // ensure positive sign
-                    for (int j = 0; j < Je; j++) {
-                        if (ColorMap[j] < 0) {
-                            ColorMap[j] *= -1;
-                        }
-                    }
                 }
+                VerifyColoring(this.GridDat, ColorMap);
+
 
                 // correlate with old colors
                 // =========================
@@ -656,15 +660,20 @@ namespace BoSSS.Foundation.XDG {
                             }
                         }
                     }
+
+                    //if (counter == 9 && GridDat.MpiRank == 0)
+                    //    Debugger.Launch();
+
+                    ColorMap.MPIExchange(GridDat);
                 }
 
                 // check & return
                 // ===============
 
-                //if(counter == 2)
-                //    Debugger.Launch();
-                /*
+                if(counter == 9)
                 {
+                    int[] oldColorMap = GetPreviousRegion()?.ColorMap4Spc[SpId];
+
                     SinglePhaseField farbe1 = new SinglePhaseField(new Basis(this.GridDat, 0), "farbe1");
                     SinglePhaseField farbe0 = new SinglePhaseField(new Basis(this.GridDat, 0), "farbe0");
                     for (int j = 0; j < J; j++) {
@@ -678,9 +687,33 @@ namespace BoSSS.Foundation.XDG {
 
                     MultiphaseCellAgglomerator.Katastrophenplot(new DGField[] { (SinglePhaseField)(this.m_owner.LevelSets[0]), farbe1, farbe0 });
                 }
-                */
+                
+                //Console.WriteLine("counter ======== " + counter);
 
                 VerifyColoring(this.GridDat, ColorMap);
+                
+ /*
+                if(NoOfE > 0) { 
+                    SinglePhaseField farbe1 = new SinglePhaseField(new Basis(this.GridDat, 0), "farbe1");
+                    SinglePhaseField farbe0 = new SinglePhaseField(new Basis(this.GridDat, 0), "farbe0");
+                    int[] oldColorMap = GetPreviousRegion()?.ColorMap4Spc[SpId];
+                    for (int j = 0; j < J; j++) {
+                        farbe1.SetMeanValue(j, ColorMap[j]);
+
+
+                        if(oldColorMap != null)
+                            farbe0.SetMeanValue(j, oldColorMap[j]);
+                    }
+
+
+                    MultiphaseCellAgglomerator.Katastrophenplot(new DGField[] { (SinglePhaseField)(this.m_owner.LevelSets[0]), farbe1, farbe0 });
+
+                    if(NoOfE > 0)
+                        Debugger.Launch();
+
+                }
+                csMPI.Raw.Barrier(csMPI.Raw._COMM.WORLD);
+                */
                 return ColorMap;
             }
 
