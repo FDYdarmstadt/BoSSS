@@ -48,12 +48,15 @@ using Newtonsoft.Json.Bson;
 namespace BoSSS.Application.FSI_Solver {
     public class FSI_SolverMain : IBM_Solver.IBM_SolverMain {
 
+        static int counter = 0;
+
         public static void MegaArschKakke2(DGField[] f) {
             int rank;
             csMPI.Raw.Comm_Rank(csMPI.Raw._COMM.WORLD, out rank);
             
 
-            Tecplot.PlotFields(f, "MegaArschKakke" + rank, 0.0, 2);
+            Tecplot.PlotFields(f, "MegaArschKakke-" + counter, 0.0, 2);
+            counter++;
         }
 
 

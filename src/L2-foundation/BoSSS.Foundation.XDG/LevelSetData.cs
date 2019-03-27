@@ -301,23 +301,26 @@ namespace BoSSS.Foundation.XDG {
 
 
             private int[] UpdateColoring(SpeciesId SpId) {
+                counter++;
 
                 int J = this.GridDat.iLogicalCells.NoOfLocalUpdatedCells;
                 int Je = this.GridDat.iLogicalCells.NoOfExternalCells + J;
                 MPICollectiveWatchDog.Watch();
 
-                if (this.GridDat.MpiRank == 0)
-                    Debugger.Launch();
+                //if (this.GridDat.MpiRank == 0)
+                //    Debugger.Launch();
 
                 // paint on local processor
                 // ========================
                 int[] ColorMap = new int[Je];
                 var UsedColors = new HashSet<int>();
+                var OldColors = new HashSet<int>();
                 int NonIsolatedParts = 0;
                 int MaxColorSoFar, ColorCounter;
+                int[] oldColorMap;
                 BitArray IsolatedMarker = new BitArray(Je);
                 {
-                    int[] oldColorMap = GetPreviousRegion()?.ColorMap4Spc[SpId];
+                    oldColorMap = null;// GetPreviousRegion()?.ColorMap4Spc[SpId];
                     bool Incremental = oldColorMap != null;
                     if(Incremental) {
                         VerifyColoring(this.GridDat, oldColorMap);
@@ -331,18 +334,19 @@ namespace BoSSS.Foundation.XDG {
                     BitArray SpBitMask = SpMask.GetBitMaskWithExternal();
 
                     //int ColorCounter = this.GridDat.CellPartitioning.i0; // (more-than) worst case estimation of used colors on previous processors
-                    ColorCounter = MaxColorSoFar + 1;
+                    ColorCounter = 1;
                     var Part = new List<int>(); // all cells which form one part.
                     for (int j = 0; j < J; j++) { // sweep over local cells...
                         if (SpBitMask[j] && ColorMap[j] == 0) {
                             Part.Clear();
                             int CurrentColor = ColorCounter;
-                            bool ColorNegogiable = true;
+                            //bool ColorNegogiable = true;
                             bool IsIsolated = true;
-                            ColorCounter = RecursiveColoring(this.GridDat, SpBitMask, j, ref CurrentColor, ColorMap, oldColorMap, ref ColorNegogiable, Part, UsedColors, ref IsIsolated);
-                            UsedColors.Add(CurrentColor);
-                            Debug.Assert(ColorCounter > CurrentColor);
+                            //ColorCounter = RecursiveColoring(this.GridDat, SpBitMask, j, ref CurrentColor, ColorMap, oldColorMap, ref ColorNegogiable, Part, UsedColors, ref IsIsolated);
+                            OldColors.Clear();
+                            RecursiveColoring(this.GridDat, SpBitMask, j, CurrentColor, ColorMap, oldColorMap, Part, OldColors, ref IsIsolated);
 
+                            /*
                             if (!IsIsolated) {
                                 NonIsolatedParts++;
 
@@ -354,6 +358,34 @@ namespace BoSSS.Foundation.XDG {
                                 }
                             }
 
+
+                            if(OldColors.Count == 0) {
+                                // this is a "newborn" part
+                                // keep the newly assigned color
+
+                            } else {
+                                foreach(int oldCol in OldColors) {
+                                    if(UsedColors.Contains(oldCol) == false) {
+                                        // re-paint in old color
+
+                                        foreach(int jPart in Part) {
+                                            ColorMap[jPart] = oldCol;
+                                        }
+
+                                        CurrentColor = oldCol;
+                                        break;
+                                    }
+                                }
+                            }
+
+                            UsedColors.Add(CurrentColor);
+                            */
+
+                            ColorCounter++;
+                            Debug.Assert(ColorCounter > CurrentColor);
+
+                            
+                            /*
                             if (ColorNegogiable) {
                                 // mark color as allowed-to-change
                                 foreach (int jPrt in Part) {
@@ -361,10 +393,12 @@ namespace BoSSS.Foundation.XDG {
                                     ColorMap[jPrt] *= -1;
                                 }
                             }
+                            */
                         }
                     }
                 }
 
+               
                 // parallelization, pt 1, make new colors *globally* unique
                 // ========================================================
                 {
@@ -377,17 +411,22 @@ namespace BoSSS.Foundation.XDG {
                             int Color_j = -ColorMap[j];
                             Color_j += ColorOffset;
 
-                            if (IsolatedMarker[j]) {
+                            if (!IsolatedMarker[j]) {
                                 Color_j *= -1;
                             }
 
                             ColorMap[j] = Color_j;
                         }
-                        Debug.Assert(ColorMap[j] > 0 || IsolatedMarker[j] == false);
 
+                        if (IsolatedMarker[j] == true)
+                            Debug.Assert(ColorMap[j] >= 0);
                     }
                 }
                 // at this point, only shared parts should have negative color values
+
+
+                if (GridDat.MpiRank == 1)
+                    Debugger.Launch();
 
 
                 // parallelization, pt 2, synchronize shared parts
@@ -395,10 +434,11 @@ namespace BoSSS.Foundation.XDG {
 
                 ColorMap.MPIExchange(GridDat);
 
-     
-
-                if (NonIsolatedParts.MPISum() > 0) {
+                {
                     // some synchronization is required
+
+                    long[] extCells = GridDat.iParallel.GlobalIndicesExternalCells;
+                    var CellPart = GridDat.CellPartitioning;
 
                     int NoOfConflicts;
                     do {
@@ -420,6 +460,18 @@ namespace BoSSS.Foundation.XDG {
                                     // need to do something...
                                     NoOfConflicts++;
 
+
+                                    // Rule: the lower MPI rank determines the color
+                                    long GlobIdx = extCells[Cell1 - J];
+                                    Debug.Assert(GlobIdx < CellPart.i0 || GlobIdx >= CellPart.iE);
+                                    bool ChangeColor = GlobIdx < CellPart.i0;
+
+                                    if (ChangeColor) {
+                                        // re-paint my stuff int 'Color1'
+                                        RepaintRecursive(Color1, ColorMap, Cell0, this.GridDat);
+                                    }
+
+                                    /*
                                     if (Color0 < 0 && Color1 > 0) {
                                         // external color is fixed, internal color can be re-painted
 
@@ -452,6 +504,7 @@ namespace BoSSS.Foundation.XDG {
                                     } else {
                                         Debug.Assert(false, "should never reach this point.");
                                     }
+                                    */
                                 }
                             }
                         }
@@ -471,19 +524,35 @@ namespace BoSSS.Foundation.XDG {
                     }
                 }
 
-                SinglePhaseField farbe = new SinglePhaseField(new Basis(this.GridDat, 0), "Arschfarbe");
-                for(int j = 0; j < J; j++) {
-                    farbe.SetMeanValue(j, ColorMap[j]);
+
+               
+                //if(counter == 2)
+                //    Debugger.Launch();
+
+                {
+                    SinglePhaseField farbe1 = new SinglePhaseField(new Basis(this.GridDat, 0), "farbe1");
+                    SinglePhaseField farbe0 = new SinglePhaseField(new Basis(this.GridDat, 0), "farbe0");
+                    for (int j = 0; j < J; j++) {
+                        farbe1.SetMeanValue(j, ColorMap[j]);
+
+
+                        if(oldColorMap != null)
+                            farbe0.SetMeanValue(j, oldColorMap[j]);
+                    }
+
+
+                    MultiphaseCellAgglomerator.Katastrophenplot(new DGField[] { (SinglePhaseField)(this.m_owner.LevelSets[0]), farbe1, farbe0 });
                 }
+                
 
-                MultiphaseCellAgglomerator.Katastrophenplot(new DGField[] { farbe });
-
-
+               
                 // check & return
                 // ===============
                 VerifyColoring(this.GridDat, ColorMap);
                 return ColorMap;
             }
+
+            static int counter = 0;
 
             private static void RepaintRecursive(int NewColor, int[] ColorMap, int j, IGridData gdat) {
                 int J = gdat.iLogicalCells.NoOfLocalUpdatedCells;
@@ -507,7 +576,7 @@ namespace BoSSS.Foundation.XDG {
                 }
             }
 
-            private static int RecursiveColoring(IGridData g, BitArray Msk, int j, ref int Color, int[] ColorMap, int[] oldColorMap, ref bool ColorNegotiable, List<int> Part, HashSet<int> UsedColors, ref bool IsIsolated) {
+            private static void RecursiveColoring(IGridData g, BitArray Msk, int j, int Color, int[] ColorMap, int[] oldColorMap, List<int> Part, HashSet<int> OldColors, ref bool IsIsolated) {
                 Debug.Assert(Msk[j] == true, "illegal to call on non-occupied cells");
                 int J = g.iLogicalCells.NoOfLocalUpdatedCells;
                 int JE = g.iLogicalCells.NoOfExternalCells + J;
@@ -516,14 +585,16 @@ namespace BoSSS.Foundation.XDG {
                 Debug.Assert(oldColorMap == null || oldColorMap.Length == JE);
                 bool incremental = oldColorMap != null;
 
-                int NextColor = Color + 1;
+                //int NextColor = Color + 1;
 
                 if (incremental) {
                     int oldColor_j = oldColorMap[j];
 
                     // we care about the old colors
                     if (oldColor_j != 0) {
+                        OldColors.Add(oldColor_j);
 
+                        /*
                         if (oldColor_j != Color) {
                             if (ColorNegotiable) {
                                 // colors in previous map should match old colors
@@ -549,6 +620,7 @@ namespace BoSSS.Foundation.XDG {
 
                             }
                         }
+                        */
                     }
                 }
 
@@ -557,7 +629,8 @@ namespace BoSSS.Foundation.XDG {
 
                 if (j >= J)
                     // external cell -> no further recursion
-                    return NextColor;
+                    //return NextColor;
+                    return;
 
                 int[] jNeigh = g.iLogicalCells.CellNeighbours[j];
 
@@ -579,11 +652,13 @@ namespace BoSSS.Foundation.XDG {
                         continue;
                     }
 
-                    int recNextColor = RecursiveColoring(g, Msk, jN, ref Color, ColorMap, oldColorMap, ref ColorNegotiable, Part, UsedColors, ref IsIsolated);
-                    NextColor = Math.Max(NextColor, recNextColor);
+                    RecursiveColoring(g, Msk, jN, Color, ColorMap, oldColorMap, Part, OldColors, ref IsIsolated);
+                    //int recNextColor = RecursiveColoring(g, Msk, jN, ref Color, ColorMap, oldColorMap, ref ColorNegotiable, Part, UsedColors, ref IsIsolated);
+                    //NextColor = Math.Max(NextColor, recNextColor);
                 }
 
-                return NextColor;
+                //return NextColor;
+                return;
             }
 
 
