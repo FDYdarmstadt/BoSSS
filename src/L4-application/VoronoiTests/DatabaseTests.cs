@@ -19,28 +19,39 @@ namespace VoronoiTests
         static void Main(string[] args)
         {
             SetUp();
-            GridProxy();
+            LoadGridProxy();
         }
         
-        public static IGrid SaveAndLoad()
+        static IDatabaseInfo GetDatabase()
         {
             string dataBasePath = @"C:\Users\beck\Documents\VoronoiVersuche";
             IDatabaseInfo database = new DatabaseInfo(dataBasePath);
+            return database;
+        }
+
+        public static IGrid SaveAndLoad()
+        {
+            IDatabaseInfo database = GetDatabase();
             IGrid grid = GetVoronoiGrid();
             Guid gridId = SaveGrid(grid, database);
             IGrid databaseGrid = LoadGrid(gridId, database);
             return databaseGrid;
         }
 
+        static IGrid InitializeGridWithDatabase()
+        {
+            return SaveAndLoad();
+        }
+
         static IGrid GetVoronoiGrid()
         {
             AppControl VoronoiTest = SipHardcodedControl.TestVoronoi_LDomain(200);
             IApplication application = new SipPoissonMain();
-            Run(application, VoronoiTest);
+            RunApplication(application, VoronoiTest);
             return application.Grid;
         }
 
-        static void Run(IApplication app, AppControl ctrl)
+        static void RunApplication(IApplication app, AppControl ctrl)
         {
             app.Init(ctrl);
             app.RunSolverMode();
@@ -58,32 +69,42 @@ namespace VoronoiTests
             return grid;
         }
 
-        public static void GridProxy()
+        static IGridInfo LoadGridInfo(Guid gridId, IDatabaseInfo database)
         {
-            IGrid grid = SaveAndLoad();
+            IGridInfo gridInfo = database.Controller.DBDriver.LoadGridInfo(gridId, database);
+            return gridInfo;
+        }
+
+        static GridProxy InitializeGridProxy()
+        {
+            IGrid grid = GetVoronoiGrid();
+            IDatabaseInfo database = GetDatabase();
+            Guid gridId = SaveGrid(grid, database);
             GridProxy proxyGrid = new GridProxy(grid.ID, grid.Database);
+            return proxyGrid;
+        }
+
+        [Test]
+        public static void LoadGridProxy()
+        {
+            GridProxy proxyGrid = InitializeGridProxy(); 
             IGrid gridFromProxy = proxyGrid.RealGrid;
         }
-    }
 
-    /// <summary>
-    /// Abstract base class for tests.
-    /// </summary>
-    [TestFixture]
-    public abstract class TestProgram
-    {
-        /// <summary>
-        /// Performs bootstrapping.
-        /// </summary>
-        [TestFixtureSetUp]
-        public static void SetUp()
+        [Test]
+        public static void ProxyToString()
         {
-            bool dummy;
-            ilPSP.Environment.Bootstrap(
-                new string[0],
-                Application.GetBoSSSInstallDir(),
-                out dummy);
-            Thread.CurrentThread.CurrentCulture = System.Globalization.CultureInfo.CurrentCulture;
+            GridProxy proxyGrid = InitializeGridProxy();
+            string proxyName = proxyGrid.ToString();
         }
+
+        [Test]
+        public static void TestLoadGrids()
+        {
+            IGrid grid = InitializeGridWithDatabase();
+            IDatabaseInfo database = grid.Database;
+            IEnumerable<IGridInfo> grids = database.Grids;
+        }
+
     }
 }
