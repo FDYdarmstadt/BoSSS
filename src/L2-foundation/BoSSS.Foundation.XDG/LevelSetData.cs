@@ -513,7 +513,7 @@ namespace BoSSS.Foundation.XDG {
                 // correlate with old colors
                 // =========================
 
-                {
+                if(GetPreviousRegion() != null) {
                     
                     // build dictionary: (new color --> old color(s)) which can be send across MPI boundaries
                     // --------------------------------------------------------------------------------------
@@ -527,18 +527,16 @@ namespace BoSSS.Foundation.XDG {
                         ColorRecord.AddRange(oldColors);
                     }
 
-                    int[] oldColorMap = null;// GetPreviousRegion()?.ColorMap4Spc[SpId];
-                    bool Incremental = oldColorMap != null;
-                    if (Incremental) {
-                        VerifyColoring(this.GridDat, oldColorMap);
-                    }
-
+                    int[] oldColorMap = GetPreviousRegion().ColorMap4Spc[SpId];
+                    VerifyColoring(this.GridDat, oldColorMap);
+                    
                     BitArray marker = new BitArray(Je);
                     for (int j = 0; j < J; j++) {
                         int newColor = ColorMap[j];
                         if (newColor != 0 && marker[j] == false) {
                             oldColors.Clear();
                             FindColorsRecursive(oldColors, marker, j, newColor, ColorMap, oldColorMap, this.GridDat);
+                            Debug.Assert(oldColors.Contains(0) == false);
                             AddColorRecord(newColor);
                         }
                     }
@@ -581,7 +579,6 @@ namespace BoSSS.Foundation.XDG {
                                 for (int kkk = 0; kkk < NoOfOldColors; kkk++) {
                                     int OldColor = CollectedColorRecord[cnt + kkk];
                                     if (!finallyNewColors.Contains(OldColor)) {
-                                        new2finallyNewColor.Add(NewColor, finallyNewCounter);
                                         PickedColor = OldColor;
                                         break;
                                     }
@@ -589,8 +586,6 @@ namespace BoSSS.Foundation.XDG {
 
                                 bool newAssigned = false;
                                 if (PickedColor < 0) {
-                                    new2finallyNewColor.Add(NewColor, finallyNewCounter);
-
                                     PickedColor = finallyNewCounter;
                                     finallyNewCounter++;
                                     newAssigned = true;
@@ -614,6 +609,7 @@ namespace BoSSS.Foundation.XDG {
                                 bool bAdd = finallyNewColors.Add(PickedColor);
                                 if (bAdd == false)
                                     throw new ApplicationException("error in algorithm; should never happen.");
+                                new2finallyNewColor.Add(NewColor, PickedColor);
                             }
 
                             cnt += NoOfOldColors;
@@ -624,7 +620,18 @@ namespace BoSSS.Foundation.XDG {
                         new2finallyNewColor = null;
                         new2finallyNewColor = new2finallyNewColor.MPIBroadcast(0); // this could be done with a more efficient bcast, but for the moment, just fuck it!
                     }
+#if DEBUG
+                    {
+                        int[] FinalColors = new2finallyNewColor.Values.ToArray();
+                        for(int i = 0; i < FinalColors.Length; i++) {
+                            for(int j =  i + 1; j < FinalColors.Length; j++) {
+                                if (FinalColors[i] == FinalColors[j])
+                                    throw new ApplicationException();
+                            }
+                        }
 
+                    }
+#endif
 
                     // now, re-paint all new colors in the final new color
                     // ---------------------------------------------------
@@ -688,7 +695,10 @@ namespace BoSSS.Foundation.XDG {
                 Debug.Assert(marker[j] == false);
 
                 marker[j] = true;
-                OldColors.Add(OldColorMap[j]);
+                int OldColor = OldColorMap[j];
+                Debug.Assert(OldColor >= 0);
+                if(OldColor > 0)
+                    OldColors.Add(OldColorMap[j]);
                 
                 if (j >= J)
                     return; // end of recursion

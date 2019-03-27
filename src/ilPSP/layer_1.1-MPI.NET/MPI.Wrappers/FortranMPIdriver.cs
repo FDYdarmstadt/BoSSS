@@ -515,7 +515,7 @@ namespace MPI.Wrappers {
 #pragma warning disable 649
         delegate void _MPI_GATHER(IntPtr sendbuf, ref int sendcount, ref MPI_Datatype sendtype,
                                      IntPtr recvbuf, ref int recvcount, ref MPI_Datatype recvtype, 
-                                     int root, ref MPI_Comm comm, out int ierr);
+                                     ref int root, ref MPI_Comm comm, out int ierr);
         _MPI_GATHER MPI_GATHER;
 #pragma warning restore 649
 
@@ -524,7 +524,7 @@ namespace MPI.Wrappers {
         /// </summary>
         public void Gather(IntPtr sendbuf, int sendcount, MPI_Datatype sendtype, IntPtr recvbuf, int recvcount, MPI_Datatype recvtype, int root, MPI_Comm comm) {
             int ierr;
-            MPI_GATHER(sendbuf, ref sendcount, ref sendtype, recvbuf, ref recvcount, ref recvtype, root,ref comm, out ierr);
+            MPI_GATHER(sendbuf, ref sendcount, ref sendtype, recvbuf, ref recvcount, ref recvtype, ref root, ref comm, out ierr);
             MPIException.CheckReturnCode(ierr);
         }
 
