@@ -541,7 +541,7 @@ namespace MPI.Wrappers {
 
             unsafe {
                 int sendBuffer = i;
-                fixed (int* pResult = &result[0]) {
+                fixed (int* pResult = result) {
                     csMPI.Raw.Gather(
                         (IntPtr)(&i),
                         1,
@@ -690,11 +690,13 @@ namespace MPI.Wrappers {
 
             unsafe {
                 int* displs = stackalloc int[size];
-                for (int i = 1; i < size; i++) {
-                    displs[i] = displs[i - 1] + recvcounts[i - 1];
+                if (rank == root) {
+                    for (int i = 1; i < size; i++) {
+                        displs[i] = displs[i - 1] + recvcounts[i - 1];
+                    }
                 }
 
-                fixed (int* pSend = &send[0], pRcvcounts = &recvcounts[0], pResult = result) {
+                fixed (int* pSend = send, pRcvcounts = recvcounts, pResult = result) {
                     Debug.Assert((rank == root) != (pResult == null));
 
                     csMPI.Raw.Gatherv(
