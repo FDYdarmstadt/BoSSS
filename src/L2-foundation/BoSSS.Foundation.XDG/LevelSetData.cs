@@ -215,7 +215,9 @@ namespace BoSSS.Foundation.XDG {
                 var ColorsOfAllParts = new HashSet<int>();
 
                 BitArray CheckedCells = new BitArray(Je);
-                for (int j = 0; j < Je; j++) {
+                for (int j = 0; j < J; j++) { 
+                    // we only check local cells, because for external we don't have all neighborship info,
+                    // e.g. we don't know which external cells are neighbors to which other cells
                     int Color = ColorMap[j];
                     if (Color < 0)
                         throw new ApplicationException("Negative color in cell " + j + " (number of cells " + J + ", excluding external, MPI rank " + gdat.MpiRank + ") - color has not been fixed.");
@@ -223,10 +225,18 @@ namespace BoSSS.Foundation.XDG {
                         bool NonIsolated = CheckColorRecursive(ColorMap, j, Color, CheckedCells, gdat);
 
                         if (!ColorsOfAllParts.Add(Color)) {
+                            /*
                             Debugger.Launch();
-                            var cen = gdat.GlobalNodes.GetValue_Cell(Grid.RefElements.Square.Instance.Center, j, 1);
-                            double x = cen[0, 0, 0];
-                            double y = cen[0, 0, 1];
+
+                            using (var stw = new System.IO.StreamWriter("megafut.csv")) {
+                                for (int i = 0; i < Je; i++) {
+                                    var cen = gdat.GlobalNodes.GetValue_Cell(Grid.RefElements.Square.Instance.Center, i, 1);
+                                    double x = cen[0, 0, 0];
+                                    double y = cen[0, 0, 1];
+                                    stw.WriteLine("{0}\t{1}\t{2}", x, y, ColorMap[i]);
+                                }
+                            }
+                            */
                             throw new ApplicationException("color " + Color + " is non-unique, cell #" + j + " (number of cells " + J + ", excluding external, MPI rank " + gdat.MpiRank + ")");
                         }
 
@@ -238,7 +248,7 @@ namespace BoSSS.Foundation.XDG {
                 }
                 Debug.Assert(ColorsOfIsolatedPars.IsSubsetOf(ColorsOfAllParts));
 
-                for (int j = 0; j < Je; j++) {
+                for (int j = 0; j < J; j++) {
                     // further algorithm check: are all colored cells checked?
                     Debug.Assert((CheckedCells[j] == true) || (ColorMap[j] == 0));
                     Debug.Assert((CheckedCells[j] == true) == (ColorMap[j] != 0));
@@ -841,7 +851,7 @@ namespace BoSSS.Foundation.XDG {
                     if (ColorMap[jN] > 0) {
                         // already colored -> end of recursion
                         if (ColorMap[jN] != Color)
-                            throw new ApplicationException("error in Algorithm."); // Debug.Assert would also be fine, *if* our homies would ever run DEBUG
+                            throw new ApplicationException("error in Algorithm, cell " + jN); // Debug.Assert would also be fine, *if* our homies would ever run DEBUG
                         continue;
                     }
 
