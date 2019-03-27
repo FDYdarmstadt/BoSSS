@@ -84,21 +84,21 @@ namespace VoronoiTests
             return proxyGrid;
         }
 
-        [Test]
+        
         public static void LoadGridProxy()
         {
             GridProxy proxyGrid = InitializeGridProxy(); 
             IGrid gridFromProxy = proxyGrid.RealGrid;
         }
 
-        [Test]
+        
         public static void ProxyToString()
         {
             GridProxy proxyGrid = InitializeGridProxy();
             string proxyName = proxyGrid.ToString();
         }
 
-        [Test]
+        
         public static void TestLoadGrids()
         {
             IGrid grid = InitializeGridWithDatabase();
