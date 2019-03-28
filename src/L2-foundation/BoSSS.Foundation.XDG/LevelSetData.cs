@@ -188,6 +188,8 @@ namespace BoSSS.Foundation.XDG {
             /// - in future versions, it may be DEBUG-only
             /// </summary>
             private static void VerifyColoring(IGridData gdat, int[] ColorMap) {
+                return;
+
                 int J = gdat.iLogicalCells.NoOfLocalUpdatedCells;
                 int Je = gdat.iLogicalCells.NoOfExternalCells + J;
 
@@ -328,22 +330,7 @@ namespace BoSSS.Foundation.XDG {
                 // ========================
                 int[] ColorMap = new int[Je];
 
-                if (counter == 26) {
-                    int[] oldColorMap = GetPreviousRegion()?.ColorMap4Spc[SpId];
-
-                    SinglePhaseField farbe1 = new SinglePhaseField(new Basis(this.GridDat, 0), "farbe1");
-                    SinglePhaseField farbe0 = new SinglePhaseField(new Basis(this.GridDat, 0), "farbe0");
-                    for (int j = 0; j < J; j++) {
-                        farbe1.SetMeanValue(j, ColorMap[j]);
-
-
-                        if (oldColorMap != null)
-                            farbe0.SetMeanValue(j, oldColorMap[j]);
-                    }
-
-
-                    MultiphaseCellAgglomerator.Katastrophenplot(new DGField[] { (SinglePhaseField)(this.m_owner.LevelSets[0]), farbe1, farbe0 });
-                }
+                
 
                 //var UsedColors = new HashSet<int>();
                 //var OldColors = new HashSet<int>();
@@ -526,6 +513,10 @@ namespace BoSSS.Foundation.XDG {
                                 locColEq.Add(Color1, equalCols);
                             }
                             locColEq.Add(Color0, equalCols);
+                        } else {
+                            if(!locColEq.ContainsKey(Color1)) {
+                                locColEq.Add(Color1, equalCols);
+                            }
                         }
                         equalCols.Add(Color0);
                         equalCols.Add(Color1);
@@ -648,6 +639,8 @@ namespace BoSSS.Foundation.XDG {
 
                 }
                 VerifyColoring(this.GridDat, ColorMap);
+
+                
 
 
                 // correlate with old colors
@@ -772,9 +765,30 @@ namespace BoSSS.Foundation.XDG {
 
                     }
 #endif
+                    /*
+                    if (counter >= 26) {
+                        //int[] oldColorMap = GetPreviousRegion()?.ColorMap4Spc[SpId];
+
+                        var allLocalCol = new HashSet<int>();
+                        SinglePhaseField farbe1 = new SinglePhaseField(new Basis(this.GridDat, 0), "farbe1");
+                        SinglePhaseField farbe0 = new SinglePhaseField(new Basis(this.GridDat, 0), "farbe0");
+                        for (int j = 0; j < J; j++) {
+                            farbe1.SetMeanValue(j, ColorMap[j]);
+                            allLocalCol.Add(ColorMap[j]);
+
+                            if (oldColorMap != null)
+                                farbe0.SetMeanValue(j, oldColorMap[j]);
+                        }
+
+
+                        MultiphaseCellAgglomerator.Katastrophenplot(new DGField[] { (SinglePhaseField)(this.m_owner.LevelSets[0]), farbe1, farbe0 });
+                        Debugger.Launch();
+                    }
+                    */
 
                     // now, re-paint all new colors in the final new color
                     // ---------------------------------------------------
+
                     int PrevNewColor = -1, PrevFinalColor = -1;
                     for (int j = 0; j < J; j++) {
                         int NewColor = ColorMap[j];
@@ -783,6 +797,9 @@ namespace BoSSS.Foundation.XDG {
                             int FinalColor;
                             // just a very primitive cache to save lookups in the dict
                             if (NewColor != PrevNewColor) {
+                                if (!new2finallyNewColor.ContainsKey(NewColor))
+                                    continue;
+
                                 FinalColor = new2finallyNewColor[NewColor];
                                 PrevFinalColor = FinalColor;
                                 PrevNewColor = NewColor;
@@ -958,9 +975,14 @@ namespace BoSSS.Foundation.XDG {
                         IsIsolated = false;
                     }
 
-                    if (ColorMap[jN] > 0) {
+                    if (ColorMap[jN] > 0 && jN < J) {
+                        // note: there may be the case that a part splits in two on the local MPI processor,
+                        //       but the part is connected through another processor; 
+                        //       thats why we can't test external cells.
+
                         // already colored -> end of recursion
                         if (ColorMap[jN] != Color) {
+                            /*
                             using (var stw = new System.IO.StreamWriter("megafut.csv")) {
                                 //foreach (int i in new[] { j, jN }) {
                                 for(int i = 0; i < JE; i++) {
@@ -971,6 +993,7 @@ namespace BoSSS.Foundation.XDG {
                                 }
 
                             }
+                            */
 
                             throw new ApplicationException("error in Algorithm, cell " + jN); // Debug.Assert would also be fine, *if* our homies would ever run DEBUG
                         }

@@ -1196,12 +1196,14 @@ namespace BoSSS.Application.FSI_Solver {
                     
                     var particle0CutCells = particle0.CutCells_P(LsTrk);
                     var particle1CutCells = particle1.CutCells_P(LsTrk);
-                    
-                    var neighborCellsArray_P0 = particle0CutCells.AllNeighbourCells().ItemEnum.ToArray();
-                    var allCells_P0 = new CellMask(GridData, neighborCellsArray_P0);
-                    
-                    var neighborCellsArray_P1 = particle1CutCells.AllNeighbourCells().ItemEnum.ToArray();
-                    var allCells_P1 = new CellMask(GridData, neighborCellsArray_P1);
+
+                    //var neighborCellsArray_P0 = particle0CutCells.AllNeighbourCells().ItemEnum.ToArray();
+                    //var allCells_P0 = new CellMask(GridData, neighborCellsArray_P0);
+                    var allCells_P0 = particle0CutCells.AllNeighbourCells();
+
+                    //var neighborCellsArray_P1 = particle1CutCells.AllNeighbourCells().ItemEnum.ToArray();
+                    //var allCells_P1 = new CellMask(GridData, neighborCellsArray_P1);
+                    var allCells_P1 = particle1CutCells.AllNeighbourCells();
 
                     double distance = 1E20;
                     double[] distanceVec = new double[Grid.SpatialDimension];
@@ -1211,7 +1213,7 @@ namespace BoSSS.Application.FSI_Solver {
                     var p0intersect = interSecMask.AllNeighbourCells().Intersect(particle0CutCells);
                     var p1intersect = interSecMask.AllNeighbourCells().Intersect(particle1CutCells);
 
-                    // If there is no element neighbour of both particle cut cells return
+                    // If there is no element neighbor of both particle cut cells return
                     if (!interSecMask.IsEmpty) {
                         ComputeCollissionModel(hmin, particle0, particle1, ref distance, ref distanceVec);
                     }
@@ -1438,10 +1440,11 @@ namespace BoSSS.Application.FSI_Solver {
 
             var particleCutCells = particle.CutCells_P(LsTrk);
 
-            var particleCutCellArray = particleCutCells.ItemEnum.ToArray();
-            var neighborCellsArray = particleCutCells.AllNeighbourCells().ItemEnum.ToArray();
-            var allCellsArray = particleCutCellArray.Concat(neighborCellsArray).ToArray();
-            var allCells = new CellMask(GridData, neighborCellsArray);
+            //var particleCutCellArray = particleCutCells.ItemEnum.ToArray();
+            //var neighborCellsArray = particleCutCells.AllNeighbourCells().ItemEnum.ToArray();
+            //var allCellsArray = particleCutCellArray.Concat(neighborCellsArray).ToArray();
+            //var allCells = new CellMask(GridData, neighborCellsArray);
+            var allCells = particleCutCells;
 
             collision = false;
 
@@ -1721,10 +1724,11 @@ namespace BoSSS.Application.FSI_Solver {
 
                 CellMask CutCells = LsTrk.Regions.GetCutCellMask();
                 CellMask CutCellNeighbors = LsTrk.Regions.GetNearFieldMask(1);
-                var CutCellArray = CutCells.ItemEnum.ToArray();
-                var CutCellNeighborsArray = CutCellNeighbors.ItemEnum.ToArray();
-                var AllCells = CutCellArray.Concat(CutCellNeighborsArray).ToArray();
-                var NoCoarseningcells = new CellMask(this.GridData, AllCells);
+                //var CutCellArray = CutCells.ItemEnum.ToArray();
+                //var CutCellNeighborsArray = CutCellNeighbors.ItemEnum.ToArray();
+                //var AllCells = CutCellArray.Concat(CutCellNeighborsArray).ToArray();
+                //var NoCoarseningcells = new CellMask(this.GridData, AllCells);
+                //var AllCells = CutCells.Union(CutCellNeighbors).ItemEnum.ToArray();
 
                 // Only CutCells are NoCoarseningCells 
                 bool AnyChange = GridRefinementController.ComputeGridChange((GridData)(this.GridData), CutCells, LevelIndicator, out List<int> CellsToRefineList, out List<int[]> Coarsening);

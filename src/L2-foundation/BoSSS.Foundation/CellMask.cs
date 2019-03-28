@@ -57,7 +57,7 @@ namespace BoSSS.Foundation.Grid {
         /// <summary>
         /// ctor
         /// </summary>
-        public CellMask(IGridData grddat, int[] Sequence, MaskType mt = MaskType.Logical) :
+        protected CellMask(IGridData grddat, int[] Sequence, MaskType mt = MaskType.Logical) :
             base(grddat, Sequence, mt) 
         { }
 
@@ -240,10 +240,8 @@ namespace BoSSS.Foundation.Grid {
                     m_BitMaskWithExternal = new BitArray(JE, false);
 
                     // inner cells
-                    foreach (Chunk c in this) {
-                        for (int i = 0; i < c.Len; i++) {
-                            m_BitMaskWithExternal[i + c.i0] = true;
-                        }
+                    foreach (int j in this.ItemEnum) {
+                        m_BitMaskWithExternal[j] = true;
                     }
 
                     m_BitMaskWithExternal.MPIExchange(this.GridData);
