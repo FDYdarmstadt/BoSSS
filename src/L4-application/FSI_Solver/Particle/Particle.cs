@@ -370,6 +370,47 @@ namespace BoSSS.Application.FSI_Solver
         /// Calculate the new acceleration (translational and rotational)
         /// </summary>
         /// <param name="dt"></param>
+        public void PredictAcceleration()
+        {
+            if (iteration_counter_P == 0)
+            {
+                Aux.SaveMultidimValueOfLastTimestep(TranslationalAcceleration);
+                Aux.SaveValueOfLastTimestep(RotationalAcceleration);
+            }
+            for (int d = 0; d < SpatialDim; d++)
+            {
+                TranslationalAcceleration[0][d] = 2 * TranslationalAcceleration[1][d] - TranslationalAcceleration[2][d];
+                if (double.IsNaN(TranslationalAcceleration[0][d]) || double.IsInfinity(TranslationalAcceleration[0][d]))
+                    throw new ArithmeticException("Error trying to calculate particle acceleration");
+            }
+
+            RotationalAcceleration[0] = 2 * RotationalAcceleration[1] - RotationalAcceleration[2];
+            if (double.IsNaN(RotationalAcceleration[0]) || double.IsInfinity(RotationalAcceleration[0]))
+                throw new ArithmeticException("Error trying to calculate particle rotational acceleration");
+        }
+
+        /// <summary>
+        /// Calculate the new acceleration (translational and rotational)
+        /// </summary>
+        /// <param name="dt"></param>
+        public void PredictAccelerationWithinIteration()
+        {
+            for (int d = 0; d < SpatialDim; d++)
+            {
+                TranslationalAcceleration[0][d] = 2 * TranslationalAcceleration[0][d] - TranslationalAcceleration[1][d];
+                if (double.IsNaN(TranslationalAcceleration[0][d]) || double.IsInfinity(TranslationalAcceleration[0][d]))
+                    throw new ArithmeticException("Error trying to calculate particle acceleration");
+            }
+
+            RotationalAcceleration[0] = 2 * RotationalAcceleration[0] - RotationalAcceleration[1];
+            if (double.IsNaN(RotationalAcceleration[0]) || double.IsInfinity(RotationalAcceleration[0]))
+                throw new ArithmeticException("Error trying to calculate particle rotational acceleration");
+        }
+
+        /// <summary>
+        /// Calculate the new acceleration (translational and rotational)
+        /// </summary>
+        /// <param name="dt"></param>
         public void CalculateAcceleration(double dt, double fluidDensity, double addedDampingCoeff = 1)
         {
             if (iteration_counter_P == 0)
@@ -682,7 +723,7 @@ namespace BoSSS.Application.FSI_Solver
 
             else
             {
-                double[] RelaxatedForceAndTorque = Underrelaxation.RelaxatedForcesAndTorque(Forces, Torque, HydrodynamicForces[0], HydrodynamicTorque[0], ForceAndTorque_convergence, underrelaxation_factor, ClearSmallValues, AddaptiveUnderrelaxation, AverageDistance);
+                double[] RelaxatedForceAndTorque = Underrelaxation.RelaxatedForcesAndTorque(Forces, Torque, HydrodynamicForces[0], HydrodynamicTorque[0], ForceAndTorque_convergence, underrelaxation_factor, ClearSmallValues, AddaptiveUnderrelaxation, AverageDistance, iteration_counter_P);
                 for (int d = 0; d < this.SpatialDim; d++) {
                     HydrodynamicForces[0][d] = RelaxatedForceAndTorque[d];
                 }
