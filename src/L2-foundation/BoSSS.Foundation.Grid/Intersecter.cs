@@ -21,7 +21,7 @@ namespace BoSSS.Foundation.Grid.Voronoi
 
         bool intersect(TRidge ridge, TLine line, ref IntersectionCase intersectionCase, out double alphaCut);
 
-        (TCell, IEnumerator<TRidge>) getNeighborFromRidgeNeighbor(TRidge ridge);
+        (TCell, IEnumerator<TRidge>) getNeighborFromEdgeNeighbor(TRidge ridge);
 
         TRidge Subdivide(TRidge ridge, List<TLine> lines, double alphaCut);
 
@@ -95,7 +95,7 @@ namespace BoSSS.Foundation.Grid.Voronoi
                             case IntersectionCase.IntersectionInMiddle:
                                 //if intersection was successfull, select next cell
                                 activeRidge = vMesh.FirstCut(activeRidge, alphaCut);
-                                (activeCell, ridgeEnum) = vMesh.getNeighborFromRidgeNeighbor(activeRidge);
+                                (activeCell, ridgeEnum) = vMesh.getNeighborFromEdgeNeighbor(activeRidge);
                                 break;
                             case IntersectionCase.IntersectionIsEndOfLine:
                                 activeRidge = vMesh.FirstCut(activeRidge, alphaCut);
@@ -155,7 +155,7 @@ namespace BoSSS.Foundation.Grid.Voronoi
                             case IntersectionCase.IntersectionInMiddle:
                                 //if intersection was successfull, select next cell
                                 activeRidge = vMesh.Subdivide(activeRidge, lines, alphaCut);
-                                (activeCell, ridgeEnum) = vMesh.getNeighborFromRidgeNeighbor(activeRidge);
+                                (activeCell, ridgeEnum) = vMesh.getNeighborFromEdgeNeighbor(activeRidge);
                                 break;
                             case IntersectionCase.IntersectionIsEndOfLine:
                                 activeRidge = vMesh.Subdivide(activeRidge, lines, alphaCut);

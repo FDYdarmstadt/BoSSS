@@ -31,8 +31,18 @@ using BoSSS.Foundation.Caching;
 namespace BoSSS.Foundation.Grid.Voronoi {
     public class VoronoiGrid : Aggregation.AggregationGrid
     {
-        private VoronoiGrid() { }
+        MultidimensionalArray voronoiNodes;
 
+        int[] voronoiNodeToCellMap;
 
+        public VoronoiGrid(IGrid pGrid,
+            int[][] AggregationCells,
+            MultidimensionalArray voronoiNodes)
+            : base(pGrid, AggregationCells)
+        {
+            this.voronoiNodes = voronoiNodes;
+        }
+
+        VoronoiGrid() { }
     }
 }

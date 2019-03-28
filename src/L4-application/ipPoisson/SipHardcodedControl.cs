@@ -489,12 +489,12 @@ namespace BoSSS.Application.SipPoisson {
                 SessionName = "testrun"
             };
 
+            R.ImmediatePlotPeriod = 1;
             if (db != null)
             {
                 R.savetodb = true;
                 R.SetDatabase(db);
             }
-            R.ImmediatePlotPeriod = 1;
 
             R.FieldOptions.Add("T", new FieldOpts() { Degree = deg, SaveToDB = FieldOpts.SaveToDBOpt.TRUE });
             R.FieldOptions.Add("Tex", new FieldOpts() { Degree = deg * 2 });
