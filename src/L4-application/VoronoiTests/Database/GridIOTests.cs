@@ -4,12 +4,10 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using BoSSS.Application.SipPoisson;
-using BoSSS.Solution;
-using BoSSS.Solution.Control;
+using BoSSS.Platform.LinAlg;
 using BoSSS.Foundation.IO;
 using BoSSS.Foundation.Grid;
-using BoSSS.Platform;
+using BoSSS.Foundation.Grid.Voronoi;
 using NUnit.Framework;
 
 namespace VoronoiTests.Database
@@ -24,12 +22,16 @@ namespace VoronoiTests.Database
             }
         }
 
-        static IGrid CreateVoronoiGrid()
+        static VoronoiGrid CreateVoronoiGrid()
         {
-            AppControl VoronoiTest = SipHardcodedControl.TestVoronoi_LDomain(200);
-            IApplication application = new SipPoissonMain();
-            RunApplication(application, VoronoiTest);
-            return application.Grid;
+            Vector[] DomainBndyPolygon = new[] {
+                        new Vector(-1,1),
+                        new Vector(1,1),
+                        new Vector(1,-1),
+                        new Vector(-1,-1)
+                    };
+            VoronoiGrid grid = VoronoiGrid2D.FromPolygonalDomain(DomainBndyPolygon, 0, 400);
+            return grid;
         }
 
         [Test]
