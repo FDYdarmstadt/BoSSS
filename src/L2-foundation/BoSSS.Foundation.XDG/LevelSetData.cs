@@ -327,12 +327,32 @@ namespace BoSSS.Foundation.XDG {
                 // paint on local processor
                 // ========================
                 int[] ColorMap = new int[Je];
+
+                if (counter == 26) {
+                    int[] oldColorMap = GetPreviousRegion()?.ColorMap4Spc[SpId];
+
+                    SinglePhaseField farbe1 = new SinglePhaseField(new Basis(this.GridDat, 0), "farbe1");
+                    SinglePhaseField farbe0 = new SinglePhaseField(new Basis(this.GridDat, 0), "farbe0");
+                    for (int j = 0; j < J; j++) {
+                        farbe1.SetMeanValue(j, ColorMap[j]);
+
+
+                        if (oldColorMap != null)
+                            farbe0.SetMeanValue(j, oldColorMap[j]);
+                    }
+
+
+                    MultiphaseCellAgglomerator.Katastrophenplot(new DGField[] { (SinglePhaseField)(this.m_owner.LevelSets[0]), farbe1, farbe0 });
+                }
+
                 //var UsedColors = new HashSet<int>();
                 //var OldColors = new HashSet<int>();
                 //int NonIsolatedParts = 0;
                 int ColorCounter;
                 //BitArray IsolatedMarker = new BitArray(Je);
                 {
+
+                    Console.WriteLine("counter ======== " + counter);
 
 
                     CellMask SpMask = this.GetSpeciesMask(SpId);
@@ -352,6 +372,12 @@ namespace BoSSS.Foundation.XDG {
                             RecursiveColoring(this.GridDat, SpBitMask, j, CurrentColor, ColorMap, ref IsIsolated);
 
 
+                            if(IsIsolated) {
+                                //foreach (int jPrt in Part) {
+                                //    IsolatedMarker[jPrt] = true;
+                                //}
+                            }
+
                             /*
                             if (!IsIsolated) {
                                 NonIsolatedParts++;
@@ -359,9 +385,7 @@ namespace BoSSS.Foundation.XDG {
                                 // part overlaps multiple MPI processors
                                 Debug.Assert(Part.Where(jCell => jCell >= J).Count() > 0);
                             } else {
-                                foreach (int jPrt in Part) {
-                                    IsolatedMarker[jPrt] = true;
-                                }
+                                
                             }
 
 
@@ -440,7 +464,7 @@ namespace BoSSS.Foundation.XDG {
                 ColorMap.MPIExchange(GridDat);
 
                 {
-                    // some synchronization is required
+                    /*
 
                     long[] extCells = GridDat.iParallel.GlobalIndicesExternalCells;
                     var CellPart = GridDat.CellPartitioning;
@@ -476,40 +500,7 @@ namespace BoSSS.Foundation.XDG {
                                         RepaintRecursive(Color1, ColorMap, Cell0, this.GridDat);
                                     }
 
-                                    /*
-                                    if (Color0 < 0 && Color1 > 0) {
-                                        // external color is fixed, internal color can be re-painted
-
-                                        Debug.Assert(Cell0 < J);
-                                        RepaintRecursive(Color1, ColorMap, Cell0, this.GridDat);
-
-                                    } else if (Color0 > 0 && Color1 < 0) {
-                                        // internal color is fixed, but external color can be re-painted -> do nothing
-                                        // (the other processor should fix this issue)
-
-                                    } else if (Color0 < 0 && Color1 < 0) {
-                                        // both colors can be re-painted -> pick the minimum
-
-                                        if (Color0 > Color1) {
-                                            // re-paint my stuff int 'Color1'
-                                            Debug.Assert(Cell0 < J);
-                                            RepaintRecursive(Color1, ColorMap, Cell0, this.GridDat);
-                                        }
-
-                                    } else if (Color0 > 0 && Color1 > 0) {
-                                        // no color can be re-painted -> this is a collision, but repaint in minimum color
-
-
-                                        if (Color0 > Color1) {
-                                            // re-paint my stuff int 'Color1'
-                                            Debug.Assert(Cell0 < J);
-                                            RepaintRecursive(Color1, ColorMap, Cell0, this.GridDat);
-                                        }
-
-                                    } else {
-                                        Debug.Assert(false, "should never reach this point.");
-                                    }
-                                    */
+                                   
                                 }
                             }
                         }
@@ -520,6 +511,141 @@ namespace BoSSS.Foundation.XDG {
                             ColorMap.MPIExchange(GridDat);
 
                     } while (NoOfConflicts > 0); // if a part is shared by more than 2 processors, multiple iterations might be necessary
+                    */
+
+                    // data structure to store color equality
+                    // --------------------------------------
+
+                    var locColEq = new Dictionary<int, HashSet<int>>(); // key: some locally used color value; value: all colors that should be equal (includes also the key)
+                    void AddEqPairing(int Color0, int Color1) { // add some color pair to 'locColEq'
+
+                        HashSet<int> equalCols;
+                        if (!locColEq.TryGetValue(Color0, out equalCols)) {
+                            if (!locColEq.TryGetValue(Color1, out equalCols)) {
+                                equalCols = new HashSet<int>();
+                                locColEq.Add(Color1, equalCols);
+                            }
+                            locColEq.Add(Color0, equalCols);
+                        }
+                        equalCols.Add(Color0);
+                        equalCols.Add(Color1);
+
+                        Debug.Assert(object.ReferenceEquals(locColEq[Color0], equalCols));
+                        Debug.Assert(object.ReferenceEquals(locColEq[Color1], equalCols));
+
+#if DEBUG
+                        // check data integrity:
+                        foreach (var kv in locColEq) { // for each color in 'locColEq'
+                            int col = kv.Key;
+                            var _equalCols = kv.Value;
+
+                            Debug.Assert(_equalCols.Contains(col)); // equal colors must contain key value itself
+                            foreach (var pairCol in _equalCols) { // all equal colors...
+                                if (pairCol != col) {
+                                    Debug.Assert(locColEq.ContainsKey(pairCol)); // must also be in the dictionary...
+                                    Debug.Assert(object.ReferenceEquals(locColEq[pairCol], _equalCols)); // ...and the equality set must be tha same.
+                                }
+                            }
+                        }
+#endif
+                    }
+
+
+                    // collect all colors that should be locally equal
+                    // -----------------------------------------------
+                    int[,] Edge2Cell = GridDat.iLogicalEdges.CellIndices;
+                    int NoEdg = Edge2Cell.GetLength(0);
+                    {
+                        //long[] extCells = GridDat.iParallel.GlobalIndicesExternalCells;
+
+                        for (int iEdge = 0; iEdge < NoEdg; iEdge++) {
+                            Debug.Assert(Edge2Cell[iEdge, 0] < J, "The external/ghost cell is expected to be the OUT-cell.");
+                            int Cell1 = Edge2Cell[iEdge, 1];
+                            if (Cell1 >= J) {
+                                // reached an MPI boundary
+                                int Cell0 = Edge2Cell[iEdge, 0];
+
+                                int Color0 = ColorMap[Cell0];
+                                int Color1 = ColorMap[Cell1];
+
+                                if (Color0 != 0 && Color1 != 0 && Color0 != Color1) {
+                                    // Color0 should be equal to color1
+
+                                    Debug.Assert(Color0 > 0);
+                                    Debug.Assert(Color1 > 0);
+
+                                    AddEqPairing(Color0, Color1);
+                                }
+                            }
+                        }
+                    }
+
+                    // synchronize equalities
+                    // ----------------------
+                    var globColEqArr = locColEq.MPIGatherO(0);
+                    Dictionary<int, int> Remappings;
+                    if (GridDat.MpiRank == 0) {
+                        var globColEq = globColEqArr[0];
+                        Debug.Assert(object.ReferenceEquals(globColEq, locColEq));
+
+                        for (int rnk = 1; rnk < GridDat.MpiSize; rnk++) {
+                            var rnkColEq = globColEqArr[rnk];
+
+                            foreach (var kv in rnkColEq) {
+                                var col = kv.Key;
+                                var eqCols = kv.Value;
+                                foreach (int eqCol in eqCols) {
+                                    if (eqCol != col)
+                                        AddEqPairing(col, eqCol);
+                                }
+                            }
+                        }
+
+                        Remappings = new Dictionary<int, int>();
+                        foreach (var EqSet in globColEq.Values) {
+                            int Cnew = EqSet.Min(); // from equal colors, we pick the minimum
+                            foreach (int otherCol in EqSet) {
+                                if (otherCol != Cnew) {
+                                    if (Remappings.ContainsKey(otherCol)) {
+                                        Debug.Assert(Remappings[otherCol] == Cnew);
+                                    } else {
+                                        Remappings.Add(otherCol, Cnew);
+                                    }
+                                }
+                            }
+                        }
+
+                    } else {
+                        Remappings = null;
+                    }
+                    Remappings = Remappings.MPIBroadcast(0);
+
+                    // re-paint shared parts
+                    // ---------------------
+
+                    if (Remappings.Count > 0) {
+                        for (int iEdge = 0; iEdge < NoEdg; iEdge++) {
+                            Debug.Assert(Edge2Cell[iEdge, 0] < J, "The external/ghost cell is expected to be the OUT-cell.");
+                            int Cell1 = Edge2Cell[iEdge, 1];
+                            if (Cell1 >= J) {
+                                // reached an MPI boundary
+                                int Cell0 = Edge2Cell[iEdge, 0];
+                                int Color0 = ColorMap[Cell0];
+
+
+                                if (Color0 != 0 && Remappings.ContainsKey(Color0)) {
+                                    int cSoll = Remappings[Color0];
+                                    if (cSoll != Color0) {
+                                        // part has to be re-painted
+
+                                        RepaintRecursive(cSoll, ColorMap, Cell0, this.GridDat);
+                                    }
+                                }
+                            }
+                        }
+                        ColorMap.MPIExchange(GridDat);
+                    }
+
                 }
                 VerifyColoring(this.GridDat, ColorMap);
 
@@ -680,25 +806,9 @@ namespace BoSSS.Foundation.XDG {
                 // check & return
                 // ===============
 
-                if(counter == 9)
-                {
-                    int[] oldColorMap = GetPreviousRegion()?.ColorMap4Spc[SpId];
-
-                    SinglePhaseField farbe1 = new SinglePhaseField(new Basis(this.GridDat, 0), "farbe1");
-                    SinglePhaseField farbe0 = new SinglePhaseField(new Basis(this.GridDat, 0), "farbe0");
-                    for (int j = 0; j < J; j++) {
-                        farbe1.SetMeanValue(j, ColorMap[j]);
-
-
-                        if(oldColorMap != null)
-                            farbe0.SetMeanValue(j, oldColorMap[j]);
-                    }
-
-
-                    MultiphaseCellAgglomerator.Katastrophenplot(new DGField[] { (SinglePhaseField)(this.m_owner.LevelSets[0]), farbe1, farbe0 });
-                }
+              
                 
-                //Console.WriteLine("counter ======== " + counter);
+                //
 
                 VerifyColoring(this.GridDat, ColorMap);
                 
@@ -850,8 +960,20 @@ namespace BoSSS.Foundation.XDG {
 
                     if (ColorMap[jN] > 0) {
                         // already colored -> end of recursion
-                        if (ColorMap[jN] != Color)
+                        if (ColorMap[jN] != Color) {
+                            using (var stw = new System.IO.StreamWriter("megafut.csv")) {
+                                //foreach (int i in new[] { j, jN }) {
+                                for(int i = 0; i < JE; i++) {
+                                    var cen = g.GlobalNodes.GetValue_Cell(Grid.RefElements.Square.Instance.Center, i, 1);
+                                    double x = cen[0, 0, 0];
+                                    double y = cen[0, 0, 1];
+                                    stw.WriteLine("{0}\t{1}\t{2}", x, y, ColorMap[i]);
+                                }
+
+                            }
+
                             throw new ApplicationException("error in Algorithm, cell " + jN); // Debug.Assert would also be fine, *if* our homies would ever run DEBUG
+                        }
                         continue;
                     }
 
