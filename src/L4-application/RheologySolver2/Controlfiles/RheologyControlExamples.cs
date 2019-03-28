@@ -422,8 +422,8 @@ namespace BoSSS.Application.Rheology {
             C.Bodyforces = true;
 
             //Debugging and Solver Analysis
-            C.OperatorMatrixAnalysis = true;
-            C.SkipSolveAndEvaluateResidual = true;
+            C.OperatorMatrixAnalysis = false;
+            C.SkipSolveAndEvaluateResidual = false;
             C.SetInitialConditions = true;
             C.SetInitialPressure = false;
             C.SetParamsAnalyticalSol = false;

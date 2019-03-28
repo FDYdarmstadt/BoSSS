@@ -220,10 +220,24 @@ namespace BoSSS.Solution.Statistic {
 
                 // transform points to cell-local coordinates
                 vertGlobalSupect.Allocate(Len, D);
-                vertLocalSuspect.Allocate(1, Len, D);
+                double[] tempPt = new double[D];
+                int tempLen = 0;
                 for (int n = 0; n < Len; n++)
+                {
                     for (int d = 0; d < D; d++)
-                        vertGlobalSupect[n, d] = pl.Points[n + iP0, d];
+                        tempPt[d] = pl.Points[n + iP0, d];
+
+                    if (CellBB.Contains(tempPt)) {
+                        for (int d = 0; d < D; d++)
+                            vertGlobalSupect[tempLen, d] = tempPt[d];
+                    }
+                }
+                Len = tempLen;
+                if (Len <= 0)
+                    // no points in cell j
+                    continue;
+
+                vertLocalSuspect.Allocate(1, Len, D);
                 CellLoc.GrdDat.TransformGlobal2Local(vertGlobalSupect, vertLocalSuspect, j, 1, 0);
 
                 // test
