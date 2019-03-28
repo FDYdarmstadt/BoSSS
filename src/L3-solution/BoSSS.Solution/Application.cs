@@ -79,9 +79,8 @@ namespace BoSSS.Solution {
     /// <summary>
     /// Base class for BoSSS applications that helps with the organization of
     /// the general work-flow and offers a simple control file handling. The
-    /// standard mode of execution is defined by <see cref="RunSolverMode"/>,
-    /// but useful specializations are also given by
-    /// <see cref="ParameterStudyMode"/>. The <see cref="_Main"/> method
+    /// standard mode of execution is defined by <see cref="RunSolverMode"/>. 
+    /// The <see cref="_Main"/> method
     /// offers a convenient way to start a BoSSS application with minimal
     /// effort.
     /// </summary>
@@ -376,7 +375,7 @@ namespace BoSSS.Solution {
                     //}
 
                     ctrlV2 = controlObj as T;
-
+                    //Debugger.Launch();
                     //if (controlObj is T) {
                     //    ctrlV2 = (T)controlObj;
 
@@ -1004,10 +1003,17 @@ namespace BoSSS.Solution {
                 if (DoDbLogging) {
                     if (!this.CurrentSessionInfo.KeysAndQueries.ContainsKey("Grid:NoOfCells"))
                         this.CurrentSessionInfo.KeysAndQueries.Add("Grid:NoOfCells", Grid.NumberOfCells);
-                    if (!this.CurrentSessionInfo.KeysAndQueries.ContainsKey("Grid:hMax"))
-                        this.CurrentSessionInfo.KeysAndQueries.Add("Grid:hMax", ((GridData)GridData).Cells.h_maxGlobal);
-                    if (!this.CurrentSessionInfo.KeysAndQueries.ContainsKey("Grid:hMin"))
-                        this.CurrentSessionInfo.KeysAndQueries.Add("Grid:hMin", ((GridData)GridData).Cells.h_minGlobal);
+                    try //ToDo
+                    { 
+                        if (!this.CurrentSessionInfo.KeysAndQueries.ContainsKey("Grid:hMax"))
+                            this.CurrentSessionInfo.KeysAndQueries.Add("Grid:hMax", ((GridData)GridData).Cells.h_maxGlobal);
+                        if (!this.CurrentSessionInfo.KeysAndQueries.ContainsKey("Grid:hMin"))
+                            this.CurrentSessionInfo.KeysAndQueries.Add("Grid:hMin", ((GridData)GridData).Cells.h_minGlobal);
+                    }
+                    catch (InvalidCastException e)
+                    {
+                        Console.WriteLine("Error: Could not log everything.\n {0}", e);
+                    }
                 }
 
 
@@ -1309,6 +1315,18 @@ namespace BoSSS.Solution {
         }
 
         /// <summary>
+        /// creates the <see cref="TimestepInfo"/> object that will be saved during <see cref="SaveToDatabase"/>;
+        /// override this method to add user-data to a time-step
+        /// </summary>
+        /// <param name="t">
+        /// time value which will be associated with the field
+        /// </param>
+        /// <param name="timestepno">time-step number</param>
+        protected virtual TimestepInfo GetCurrentTimestepInfo(TimestepNumber timestepno, double t) {
+            return new TimestepInfo(t, this.CurrentSessionInfo, timestepno, this.IOFields);
+        }
+
+        /// <summary>
         /// If data logging is turned on, saves all fields in
         /// <see cref="m_IOFields"/> to the database 
         /// </summary>
@@ -1324,15 +1342,10 @@ namespace BoSSS.Solution {
                 if (this.CurrentSessionInfo.ID.Equals(Guid.Empty))
                     return null;
 
-                ITimestepInfo tsi;
+                TimestepInfo tsi = GetCurrentTimestepInfo(timestepno, t);
                 //Exception e = null;
                 try {
-                    tsi = this.DatabaseDriver.SaveTimestep(
-                        t,
-                        timestepno,
-                        this.CurrentSessionInfo,
-                        ((GridData)(this.GridData)),
-                        this.IOFields);
+                    this.DatabaseDriver.SaveTimestep(tsi);
                 } catch (Exception ee) {
                     Console.Error.WriteLine(ee.GetType().Name + " on rank " + this.MPIRank + " saving time-step " + timestepno + ": " + ee.Message);
                     Console.Error.WriteLine(ee.StackTrace);
@@ -1389,24 +1402,42 @@ namespace BoSSS.Solution {
         /// Returns the actual time-step loaded (which may not be known in
         /// advance if <paramref name="timestep"/> is negative)
         /// </returns>
-        protected virtual TimestepNumber RestartFromDatabase(Guid sessionToLoad, TimestepNumber timestep, out double time) {
+        protected virtual TimestepNumber RestartFromDatabase(out double time) {
             using (var tr = new FuncTrace()) {
-                tr.Info("Loading session " + sessionToLoad);
-
+                
+                var sessionToLoad = this.Control.RestartInfo.Item1;
                 ISessionInfo session = m_Database.Controller.GetSessionInfo(sessionToLoad);
                 var all_ts = session.Timesteps;
+                
+                Guid tsi_toLoad_ID;
+                tsi_toLoad_ID = GetRestartTimestepID();
+                ITimestepInfo tsi_toLoad = all_ts.Single(t => t.ID.Equals(tsi_toLoad_ID));
 
-                ITimestepInfo tsi_toLoad;
-                if (timestep == null || timestep.MajorNumber < 0) {
-                    tsi_toLoad = all_ts.OrderBy(tsi => tsi.PhysicalTime).Last();
-                } else {
-                    tsi_toLoad = all_ts.Single(t => t.TimeStepNumber.Equals(timestep));
-                }
                 time = tsi_toLoad.PhysicalTime;
 
                 DatabaseDriver.LoadFieldData(tsi_toLoad, ((GridData)(this.GridData)), this.IOFields);
                 return tsi_toLoad.TimeStepNumber;
             }
+        }
+
+        /// <summary>
+        /// Returns, in the case of a restart (<see cref="AppControl.RestartInfo"/>), the ID of the time-step to restart.
+        /// </summary>
+        protected Guid GetRestartTimestepID() {
+            var sessionToLoad = this.Control.RestartInfo.Item1;
+            var timestep = this.Control.RestartInfo.Item2;
+
+            ISessionInfo session = m_Database.Controller.GetSessionInfo(sessionToLoad);
+            var all_ts = session.Timesteps;
+
+            Guid tsi_toLoad_ID;
+            if (timestep == null || timestep.MajorNumber < 0) {
+                tsi_toLoad_ID = all_ts.OrderBy(tsi => tsi.PhysicalTime).Last().ID;
+            } else {
+                tsi_toLoad_ID = all_ts.Single(t => t.TimeStepNumber.Equals(timestep)).ID;
+            }
+
+            return tsi_toLoad_ID;
         }
 
         /// <summary>
@@ -1918,7 +1949,7 @@ namespace BoSSS.Solution {
 
                     //}
 
-                    // set dg coördinates
+                    // set dg coï¿½rdinates
                     foreach (var f in m_RegisteredFields) {
                         if (f is XDGField) {
                             XDGBasis xb = ((XDGField)f).Basis;
@@ -2058,7 +2089,7 @@ namespace BoSSS.Solution {
                         //    }
                         //}
 
-                        //set dg coördinates
+                        //set dg coï¿½rdinates
                         foreach (var f in m_RegisteredFields) {
                             if (f is XDGField) {
                                 XDGBasis xb = ((XDGField)f).Basis;
@@ -2663,7 +2694,7 @@ namespace BoSSS.Solution {
                 if (!this.Control.InitialValues_Evaluators.IsNullOrEmpty())
                     throw new ApplicationException("control object error: initial values ('AppControl.InitialValues') and restart info ('AppControl.RestartInfo') cannot be specified at the same time.");
 
-                TimestepNo = RestartFromDatabase(this.Control.RestartInfo.Item1, this.Control.RestartInfo.Item2, out Time);
+                TimestepNo = RestartFromDatabase(out Time);
                 this.CurrentSessionInfo.RestartedFrom = this.Control.RestartInfo.Item1;
                 this.CurrentSessionInfo.Save();
 

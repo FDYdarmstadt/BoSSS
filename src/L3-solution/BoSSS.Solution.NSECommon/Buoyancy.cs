@@ -40,6 +40,7 @@ namespace BoSSS.Solution.NSECommon {
         /// <param name="GravityDirection">Unit vector for spatial direction of gravity.</param>
         /// <param name="SpatialComponent">Spatial component of source.</param>
         /// <param name="Froude">Dimensionless Froude number.</param>
+        /// <param name="physicsMode"></param>
         /// <param name="EoS">Equation of state for calculating density.</param>
         public Buoyancy(double[] GravityDirection, int SpatialComponent, double Froude, PhysicsMode physicsMode, MaterialLaw EoS) {
             // Check direction
@@ -74,14 +75,20 @@ namespace BoSSS.Solution.NSECommon {
 
            
         
-
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="x"></param>
+        /// <param name="parameters"></param>
+        /// <param name="U"></param>
+        /// <returns></returns>
         protected override double Source(double[] x, double[] parameters, double[] U) {
             double src = 0.0;
 
             //double rho = EoS.GetDensity(U[0]);
             double rho = EoS.GetDensity(parameters);
 
-            src =  1.0 / (Froude * Froude) * rho * GravityDirection[SpatialComponent]; // minus sign because it is in the RHS... or plus???
+            src =  1.0 / (Froude * Froude) * rho * GravityDirection[SpatialComponent]; 
 
             return src;
         }
@@ -96,13 +103,17 @@ namespace BoSSS.Solution.NSECommon {
                 };
             }
         }
-
+        /// <summary>
+        /// 
+        /// </summary>
         public override TermActivationFlags VolTerms {
             get {
                 return TermActivationFlags.UxV | TermActivationFlags.V;
             }
         }
-
+        /// <summary>
+        /// 
+        /// </summary>
         public override IList<string> ParameterOrdering {
             get {               
                 return m_ParameterOrdering;

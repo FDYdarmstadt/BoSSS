@@ -153,6 +153,9 @@ for(int iRow = 0; iRow < 2; iRow++) {
            int k = Convert.ToInt32(Row["DGdegree:T"]);
            SolverCodes solver_name = (SolverCodes) Convert.ToInt32(Row["solver_name"]);
            
+		   // ===!!!=== CAUTION ===!!!===
+		   // Solverframework (SolverEnum numbers) have changed! Please check LinearSolver and NonLinearSolver for details
+		   
            if(k != pDegree || solver_name != SolverCodes.exp_softpcg_schwarz_directcoarse) {
                 // degree does not match -> not in this plot
                 Nmn    = null;

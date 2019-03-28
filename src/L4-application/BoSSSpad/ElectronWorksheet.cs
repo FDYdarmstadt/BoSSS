@@ -64,12 +64,9 @@ namespace BoSSS.Application.BoSSSpad{
 
             string asmFile = System.IO.Path.Combine(path, filename);
 
-            try
-            {
+            try {
                 return System.Reflection.Assembly.LoadFrom(asmFile);
-            }
-            catch (Exception ex)
-            {
+            } catch (Exception) {
                 return null;
             }
         }

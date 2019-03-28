@@ -36,7 +36,6 @@ namespace BoSSS.Application.IBM_Solver {
         /// </summary>
         public IBM_Control() {
             base.LinearSolver.NoOfMultigridLevels = 1;
-            base.CutCellQuadratureType = Foundation.XDG.XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes;
             //shift of Solver Information
             base.LinearSolver.MaxKrylovDim = 30; //MaxKrylovDim
             base.LinearSolver.MaxSolverIterations = 2000; //MaxSolverIterations
@@ -171,15 +170,6 @@ namespace BoSSS.Application.IBM_Solver {
         /// </summary>
         [DataMember]
         public double particleRadius;
-
-        public double MeshFactor;
-
-        /// <summary>
-        /// Exponent of time step 
-        /// </summary>
-        [DataMember]
-        public int dtLevel;
-
 
 
         /// <summary>

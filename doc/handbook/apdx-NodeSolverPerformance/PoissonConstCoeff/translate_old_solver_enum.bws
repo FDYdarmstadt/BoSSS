@@ -1,0 +1,558 @@
+restart
+**************
+
+  BoSSSpad C# interpreter
+  _______________________
+
+Databases loaded:
+List of 11 instances of IDatabaseInfo {
+  0: { Session Count = 0; Grid Count = 34; Path = C:\BoSSS_DB }
+  1: { Session Count = 144; Grid Count = 6; Path = C:\tmp\fk_temp_db }
+  2: { Session Count = 0; Grid Count = 6; Path = P:\Performance_DB }
+  3: { Session Count = 12; Grid Count = 31; Path = P:\testDB }
+  4: { Session Count = 112; Grid Count = 6; Path = E:\Performance_oldLibs_DB }
+  5: { Session Count = 0; Grid Count = 3; Path = E:\db_2delete }
+  6: { Session Count = 32; Grid Count = 12; Path = E:\XdgPerformance }
+  7: { Session Count = 112; Grid Count = 136; Path = E:\bosss_db_performance }
+  8: { Session Count = 19; Grid Count = 3; Path = F:\test_db }
+  9: { Session Count = 144; Grid Count = 139; Path = Z:\weber\Performance_Kram\bosss_db_performance }
+  10: { Session Count = 165; Grid Count = 6; Path = E:\Performance_newLibs_DB }
+}
+
+ Console ready for input. Type 'help' for help.
+
+==============
+using System.IO;
+**************
+==============
+string dateString = "2018-3-26";
+string File       = "SolverRuns--" + dateString + ".json";
+//string File       = "test.json";
+string FilePath   = Path.Combine(CurrentDocDir, File);
+var SessTab       = TableExtensions.LoadFromFile(FilePath);
+string TargetName = "SolverRuns--" + dateString+"_ac" +".json";
+**************
+==============
+//This bws-sheet translates old solver integer based identification (ENUM) to new solver_id. It probably requires some manual editing, plz be aware of that. Some old ID are e.g.:
+//Solver_Name                              SipPoisson          IBM
+//NewtonGmres                                       -            0
+//Picard                                            -            1
+//Newton                                            -            2
+//PicardGmres                                       -            3
+//automatic                                         -            0
+//mumps                                             1            1
+//pardiso                                           0            2
+//schwarz_directcoarse                              -            3
+//schwarz_directcoarse_overlap                      -            4
+//schwarz_Kcycle_directcoarse                       -            5
+//schwarz_Kcycle_directcoarse_overlap               -            6
+//softgmres                                         -            7
+//softgmres_schwarz_directcoarse                    -            8
+//softgmres_schwarz_Kcycle_directcoarse_overlap     -            9
+//softgmres_schwarz_directcoarse_overlap            -           10
+//exp_multigrid                                     -           11
+//exp_ILU                                           -           12
+//exp_Schur                                         -           13
+//exp_localPrec                                     -           14
+//exp_Simple                                        -           15
+//exp_AS_1000                                       -           16
+//exp_AS_5000                                       -           17
+//exp_AS_10000                                      -           18
+//exp_AS_MG                                         -           19
+//cg                                                2            -
+//exp_direct                                        3            -
+//exp_direct_lapack                                 7            -
+//exp_softpcg_mg                                    4            -
+//exp_softpcg_schwarz                               5            -
+//exp_softpcg_schwarz_directcoarse                  6            -
+//exp_Kcycle_schwarz                                8            -
+**************
+==============
+//This might help, if no information was stored for used solvers ...
+Dictionary<string, int> SipPoisson_Dict=new Dictionary<string, int>();
+SipPoisson_Dict.Add("classic_pardiso",0);
+SipPoisson_Dict.Add("classic_mumps",1);
+SipPoisson_Dict.Add("classic_cg",2);
+SipPoisson_Dict.Add("exp_direct",3);
+SipPoisson_Dict.Add("exp_softpcg_mg",4);
+SipPoisson_Dict.Add("exp_softpcg_schwarz",5);
+SipPoisson_Dict.Add("exp_softpcg_schwarz_directcoarse",6);
+SipPoisson_Dict.Add("exp_direct_lapack",7);
+SipPoisson_Dict.Add("exp_Kcycle_schwarz",8);
+Dictionary<string, int> IBM_Dict_NonLin=new Dictionary<string, int>();
+IBM_Dict_NonLin.Add("NewtonGmres",0);
+IBM_Dict_NonLin.Add("Picard",1);
+IBM_Dict_NonLin.Add("Newton",2);
+IBM_Dict_NonLin.Add("PicardGMRES",3);
+Dictionary<string, int> IBM_Dict_Lin=new Dictionary<string, int>();
+IBM_Dict_Lin.Add("automatic",0);
+IBM_Dict_Lin.Add("classic_mumps",1);
+IBM_Dict_Lin.Add("classic_pardiso",2);
+IBM_Dict_Lin.Add("exp_schwarz_directcoarse",3);
+IBM_Dict_Lin.Add("exp_schwarz_directcoarse_overlap",4);
+IBM_Dict_Lin.Add("exp_schwarz_Kcycle_directcoarse",5);
+IBM_Dict_Lin.Add("exp_schwarz_Kcycle_directcoarse_overlap",6);
+IBM_Dict_Lin.Add("exp_softgmres",7);
+IBM_Dict_Lin.Add("exp_softgmres_schwarz_directcoarse",8);
+IBM_Dict_Lin.Add("exp_softgmres_schwarz_Kcycle_directcoarse_overlap",9);
+IBM_Dict_Lin.Add("exp_softgmres_schwarz_directcoarse_overlap",10);
+IBM_Dict_Lin.Add("exp_multigrid",11);
+IBM_Dict_Lin.Add("exp_ILU",12);
+IBM_Dict_Lin.Add("exp_Schur",13);
+IBM_Dict_Lin.Add("exp_localPrec",14);
+IBM_Dict_Lin.Add("exp_Simple",15);
+IBM_Dict_Lin.Add("exp_AS_1000",16);
+IBM_Dict_Lin.Add("exp_AS_5000",17);
+IBM_Dict_Lin.Add("exp_AS_10000",18);
+IBM_Dict_Lin.Add("exp_AS_MG",19);
+**************
+==============
+**************
+==============
+**************
+==============
+SessTab.GetColumnNames();
+**************
+List of 49 instances of String {
+  0: SessionName
+  1: DGdegree:T
+  2: DGdegree:Tex
+  3: Bndtype:Dirichlet
+  4: Bndtype:Neumann
+  5: GeneratedFromCode
+  6: ControlFileText_Index
+  7: dtFixed
+  8: NoOfMultigridLevels
+  9: penalty_poisson
+  10: solver_name
+  11: TargetBlockSize
+  12: NoOfSolverRuns
+  13: ExactSolution_provided
+  14: GridPartType
+  15: ProjectName
+  16: NoOfTimesteps
+  17: Endtime
+  18: saveperiod
+  19: dtMin
+  20: dtMax
+  21: CompMode
+  22: ImmediatePlotPeriod
+  23: SuperSampling
+  24: savetodb
+  25: logFileDirectory
+  26: Paramstudy_ContinueOnError
+  27: DynamicLoadBalancing_RedistributeAtStartup
+  28: DynamicLoadBalancing_Period
+  29: DynamicLoadBalancing_ImbalanceThreshold
+  30: AdaptiveMeshRefinement
+  31: CutCellQuadratureType
+  32: ContinueOnIoError
+  33: Grid:NoOfCells
+  34: Grid:hMax
+  35: Grid:hMin
+  36: UsedNoOfMultigridLevels
+  37: minSolRunT
+  38: maxSolRunT
+  39: Conv
+  40: NoIter
+  41: NoOfCells
+  42: DOFs
+  43: BlockSize
+  44: RegularTerminated
+  45: SipMatrixAssembly_time
+  46: Aggregation_basis_init_time
+  47: Solver_Init_time
+  48: Solver_Run_time
+}
+==============
+string NameOfSessionColumn = "SessionName";
+//string NameOfSolverColumn  = "LinearSolver.SolverCode";
+string NameOfSolverColumn = "solver_name";
+SessTab.ExtractColumns(NameOfSessionColumn,NameOfSolverColumn).Print();
+**************
+    SessionName                                 solver_name 
+0:  J20480_k2_exp_softpcg_mg                    4           
+1:  J2560_k2_exp_softpcg_mg                     4           
+2:  J163840_k3_exp_softpcg_mg                   4           
+3:  J163840_k2_exp_softpcg_mg                   4           
+4:  J163840_k3_exp_softpcg_schwarz_directcoarse 6           
+5:  J20480_k3_exp_softpcg_schwarz_directcoarse  6           
+6:  J2560_k3_exp_softpcg_schwarz_directcoarse   6           
+7:  J320_k3_exp_softpcg_schwarz_directcoarse    6           
+8:  J40_k3_exp_softpcg_schwarz_directcoarse     6           
+9:  J163840_k2_exp_softpcg_schwarz_directcoarse 6           
+10: J20480_k2_exp_softpcg_schwarz_directcoarse  6           
+11: J2560_k2_exp_softpcg_schwarz_directcoarse   6           
+12: J320_k2_exp_softpcg_schwarz_directcoarse    6           
+13: J40_k2_exp_softpcg_schwarz_directcoarse     6           
+14: J20480_k3_exp_softpcg_mg                    4           
+15: J2560_k3_exp_softpcg_mg                     4           
+16: J320_k3_exp_softpcg_mg                      4           
+17: J40_k3_exp_softpcg_mg                       4           
+18: J320_k2_exp_softpcg_mg                      4           
+19: J40_k2_exp_softpcg_mg                       4           
+20: J163840_k3_exp_direct                       3           
+21: J163840_k2_exp_direct                       3           
+22: J20480_k3_exp_direct                        0           
+23: J2560_k3_exp_direct                         0           
+24: J320_k3_exp_direct                          0           
+25: J40_k3_exp_direct                           0           
+26: J20480_k2_exp_direct                        0           
+27: J2560_k2_exp_direct                         0           
+28: J320_k2_exp_direct                          0           
+29: J40_k2_exp_direct                           0           
+30: J320_k6_classic_pardiso                     0           
+31: J320_k5_classic_pardiso                     0           
+32: J320_k4_classic_pardiso                     0           
+33: J320_k3_classic_pardiso                     0           
+34: J320_k2_classic_pardiso                     0           
+35: J163840_k3_classic_cg                       2           
+36: J163840_k2_classic_cg                       2           
+37: J163840_k3_classic_mumps                    1           
+38: J163840_k2_classic_mumps                    1           
+39: J163840_k3_classic_pardiso                  0           
+40: J163840_k2_classic_pardiso                  0           
+41: J20480_k6_classic_cg                        2           
+42: J2560_k6_classic_cg                         2           
+43: J320_k6_classic_cg                          2           
+44: J40_k6_classic_cg                           2           
+45: J20480_k5_classic_cg                        2           
+46: J2560_k5_classic_cg                         2           
+47: J320_k5_classic_cg                          2           
+48: J40_k5_classic_cg                           2           
+49: J20480_k4_classic_cg                        2           
+50: J2560_k4_classic_cg                         2           
+51: J320_k4_classic_cg                          2           
+52: J40_k4_classic_cg                           2           
+53: J20480_k3_classic_cg                        2           
+54: J2560_k3_classic_cg                         2           
+55: J320_k3_classic_cg                          2           
+56: J40_k3_classic_cg                           2           
+57: J20480_k2_classic_cg                        2           
+58: J2560_k2_classic_cg                         2           
+59: J320_k2_classic_cg                          2           
+60: J40_k2_classic_cg                           2           
+61: J20480_k6_classic_mumps                     1           
+62: J2560_k6_classic_mumps                      1           
+63: J320_k6_classic_mumps                       1           
+64: J40_k6_classic_mumps                        1           
+65: J20480_k5_classic_mumps                     1           
+66: J2560_k5_classic_mumps                      1           
+67: J320_k5_classic_mumps                       1           
+68: J40_k5_classic_mumps                        1           
+69: J20480_k4_classic_mumps                     1           
+70: J2560_k4_classic_mumps                      1           
+71: J320_k4_classic_mumps                       1           
+72: J40_k4_classic_mumps                        1           
+73: J20480_k3_classic_mumps                     1           
+74: J2560_k3_classic_mumps                      1           
+75: J320_k3_classic_mumps                       1           
+76: J40_k3_classic_mumps                        1           
+77: J20480_k2_classic_mumps                     1           
+78: J2560_k2_classic_mumps                      1           
+79: J320_k2_classic_mumps                       1           
+80: J40_k2_classic_mumps                        1           
+81: J20480_k6_classic_pardiso                   0           
+82: J2560_k6_classic_pardiso                    0           
+83: J40_k6_classic_pardiso                      0           
+84: J20480_k5_classic_pardiso                   0           
+85: J2560_k5_classic_pardiso                    0           
+86: J40_k5_classic_pardiso                      0           
+87: J20480_k4_classic_pardiso                   0           
+88: J2560_k4_classic_pardiso                    0           
+89: J40_k4_classic_pardiso                      0           
+90: J20480_k3_classic_pardiso                   0           
+91: J2560_k3_classic_pardiso                    0           
+92: J40_k3_classic_pardiso                      0           
+93: J20480_k2_classic_pardiso                   0           
+94: J2560_k2_classic_pardiso                    0           
+95: J40_k2_classic_pardiso                      0           
+==============
+**************
+==============
+//build a dictionary of all LinearSolverConfig.Code
+Dictionary<string,int> helper = new Dictionary<string,int>();
+int[] solver_int = (int[])System.Enum.GetValues(typeof(LinearSolverConfig.Code)).Cast<int>();
+string[] solver_str = System.Enum.GetNames(typeof(LinearSolverConfig.Code));
+if(solver_int.Length!=solver_str.Length)
+    throw new Exception("hier stimmt was nicht");
+for(int j=0;j<solver_str.Length;j++){
+    helper.Add(solver_str[j], solver_int[j]);
+    }
+helper;
+**************
+List of 26 instances of KeyValuePair{String,Int32} {
+  0: [automatic, 0]
+  1: [classic_mumps, 1]
+  2: [classic_pardiso, 2]
+  3: [exp_multigrid, 3]
+  4: [exp_ILU, 4]
+  5: [exp_direct_lapack, 7]
+  6: [exp_schwarz_directcoarse, 10]
+  7: [exp_schwarz_directcoarse_overlap, 11]
+  8: [exp_schwarz_Kcycle_directcoarse, 12]
+  9: [exp_schwarz_Kcycle_directcoarse_overlap, 13]
+  10: [exp_softgmres, 20]
+  11: [exp_softgmres_schwarz_directcoarse, 21]
+  12: [exp_softgmres_schwarz_directcoarse_overlap, 22]
+  13: [exp_softgmres_schwarz_Kcycle_directcoarse_overlap, 23]
+  14: [exp_Schur, 24]
+  15: [exp_localPrec, 25]
+  16: [exp_Simple, 26]
+  17: [exp_AS_1000, 27]
+  18: [exp_AS_5000, 28]
+  19: [exp_AS_10000, 29]
+  20: [exp_AS_MG, 30]
+  21: [classic_cg, 40]
+  22: [exp_Kcycle_schwarz, 41]
+  23: [exp_softpcg_mg, 42]
+  24: [exp_softpcg_schwarz, 43]
+  25: [exp_softpcg_schwarz_directcoarse, 44]
+}
+==============
+//assign probably renamed solvers ...
+helper.Add("exp_direct",999);
+**************
+==============
+//Correct table
+string SolverCodeRowName = NameOfSolverColumn;
+int rowcount             = SessTab.Rows.Count;
+for(int iRow=0;iRow<rowcount;iRow++){
+System.Data.DataRow row = (System.Data.DataRow)SessTab.Rows[iRow];
+int bla                 = Convert.ToInt32(row[SolverCodeRowName]);
+string bla_str          = Convert.ToString(row[NameOfSessionColumn]);
+//Console.WriteLine(bla_str);
+string[] str_array = bla_str.Split('_');
+string aux = "";
+for(int j=3;j<str_array.Length;j++){
+    string temp = "_";
+    if(j==str_array.Length-1)
+        temp = "";
+    aux+=str_array[j]+temp;
+    }
+//Console.WriteLine(aux);
+
+int bitte = helper.FirstOrDefault(x => x.Key == aux).Value;
+//Console.WriteLine(bittsch);
+row[SolverCodeRowName]=bitte;
+//Console.WriteLine(row[10]);
+Console.WriteLine("{2}:{0} --> {1}",bla,bitte,aux);
+}
+**************
+exp_softpcg_mg:0 --> 42
+exp_softpcg_mg:0 --> 42
+exp_softpcg_mg:0 --> 42
+exp_softpcg_mg:0 --> 42
+exp_softpcg_schwarz_directcoarse:0 --> 44
+exp_softpcg_schwarz_directcoarse:0 --> 44
+exp_softpcg_schwarz_directcoarse:0 --> 44
+exp_softpcg_schwarz_directcoarse:0 --> 44
+exp_softpcg_schwarz_directcoarse:0 --> 44
+exp_softpcg_schwarz_directcoarse:0 --> 44
+exp_softpcg_schwarz_directcoarse:0 --> 44
+exp_softpcg_schwarz_directcoarse:0 --> 44
+exp_softpcg_schwarz_directcoarse:0 --> 44
+exp_softpcg_schwarz_directcoarse:0 --> 44
+exp_softpcg_mg:0 --> 42
+exp_softpcg_mg:0 --> 42
+exp_softpcg_mg:0 --> 42
+exp_softpcg_mg:0 --> 42
+exp_softpcg_mg:0 --> 42
+exp_softpcg_mg:0 --> 42
+exp_direct:0 --> 999
+exp_direct:0 --> 999
+exp_direct:0 --> 999
+exp_direct:0 --> 999
+exp_direct:0 --> 999
+exp_direct:0 --> 999
+exp_direct:0 --> 999
+exp_direct:0 --> 999
+exp_direct:0 --> 999
+exp_direct:0 --> 999
+classic_pardiso:0 --> 2
+classic_pardiso:0 --> 2
+classic_pardiso:0 --> 2
+classic_pardiso:0 --> 2
+classic_pardiso:0 --> 2
+classic_cg:0 --> 40
+classic_cg:0 --> 40
+classic_mumps:0 --> 1
+classic_mumps:0 --> 1
+classic_pardiso:0 --> 2
+classic_pardiso:0 --> 2
+classic_cg:0 --> 40
+classic_cg:0 --> 40
+classic_cg:0 --> 40
+classic_cg:0 --> 40
+classic_cg:0 --> 40
+classic_cg:0 --> 40
+classic_cg:0 --> 40
+classic_cg:0 --> 40
+classic_cg:0 --> 40
+classic_cg:0 --> 40
+classic_cg:0 --> 40
+classic_cg:0 --> 40
+classic_cg:0 --> 40
+classic_cg:0 --> 40
+classic_cg:0 --> 40
+classic_cg:0 --> 40
+classic_cg:0 --> 40
+classic_cg:0 --> 40
+classic_cg:0 --> 40
+classic_cg:0 --> 40
+classic_mumps:0 --> 1
+classic_mumps:0 --> 1
+classic_mumps:0 --> 1
+classic_mumps:0 --> 1
+classic_mumps:0 --> 1
+classic_mumps:0 --> 1
+classic_mumps:0 --> 1
+classic_mumps:0 --> 1
+classic_mumps:0 --> 1
+classic_mumps:0 --> 1
+classic_mumps:0 --> 1
+classic_mumps:0 --> 1
+classic_mumps:0 --> 1
+classic_mumps:0 --> 1
+classic_mumps:0 --> 1
+classic_mumps:0 --> 1
+classic_mumps:0 --> 1
+classic_mumps:0 --> 1
+classic_mumps:0 --> 1
+classic_mumps:0 --> 1
+classic_pardiso:0 --> 2
+classic_pardiso:0 --> 2
+classic_pardiso:0 --> 2
+classic_pardiso:0 --> 2
+classic_pardiso:0 --> 2
+classic_pardiso:0 --> 2
+classic_pardiso:0 --> 2
+classic_pardiso:0 --> 2
+classic_pardiso:0 --> 2
+classic_pardiso:0 --> 2
+classic_pardiso:0 --> 2
+classic_pardiso:0 --> 2
+classic_pardiso:0 --> 2
+classic_pardiso:0 --> 2
+classic_pardiso:0 --> 2
+
+==============
+//Check if everything is fine ...
+SessTab.ExtractColumns(NameOfSessionColumn,NameOfSolverColumn).Print();
+**************
+    SessionName                                 solver_name 
+0:  J20480_k2_exp_softpcg_mg                    42          
+1:  J2560_k2_exp_softpcg_mg                     42          
+2:  J163840_k3_exp_softpcg_mg                   42          
+3:  J163840_k2_exp_softpcg_mg                   42          
+4:  J163840_k3_exp_softpcg_schwarz_directcoarse 44          
+5:  J20480_k3_exp_softpcg_schwarz_directcoarse  44          
+6:  J2560_k3_exp_softpcg_schwarz_directcoarse   44          
+7:  J320_k3_exp_softpcg_schwarz_directcoarse    44          
+8:  J40_k3_exp_softpcg_schwarz_directcoarse     44          
+9:  J163840_k2_exp_softpcg_schwarz_directcoarse 44          
+10: J20480_k2_exp_softpcg_schwarz_directcoarse  44          
+11: J2560_k2_exp_softpcg_schwarz_directcoarse   44          
+12: J320_k2_exp_softpcg_schwarz_directcoarse    44          
+13: J40_k2_exp_softpcg_schwarz_directcoarse     44          
+14: J20480_k3_exp_softpcg_mg                    42          
+15: J2560_k3_exp_softpcg_mg                     42          
+16: J320_k3_exp_softpcg_mg                      42          
+17: J40_k3_exp_softpcg_mg                       42          
+18: J320_k2_exp_softpcg_mg                      42          
+19: J40_k2_exp_softpcg_mg                       42          
+20: J163840_k3_exp_direct                       999         
+21: J163840_k2_exp_direct                       999         
+22: J20480_k3_exp_direct                        999         
+23: J2560_k3_exp_direct                         999         
+24: J320_k3_exp_direct                          999         
+25: J40_k3_exp_direct                           999         
+26: J20480_k2_exp_direct                        999         
+27: J2560_k2_exp_direct                         999         
+28: J320_k2_exp_direct                          999         
+29: J40_k2_exp_direct                           999         
+30: J320_k6_classic_pardiso                     2           
+31: J320_k5_classic_pardiso                     2           
+32: J320_k4_classic_pardiso                     2           
+33: J320_k3_classic_pardiso                     2           
+34: J320_k2_classic_pardiso                     2           
+35: J163840_k3_classic_cg                       40          
+36: J163840_k2_classic_cg                       40          
+37: J163840_k3_classic_mumps                    1           
+38: J163840_k2_classic_mumps                    1           
+39: J163840_k3_classic_pardiso                  2           
+40: J163840_k2_classic_pardiso                  2           
+41: J20480_k6_classic_cg                        40          
+42: J2560_k6_classic_cg                         40          
+43: J320_k6_classic_cg                          40          
+44: J40_k6_classic_cg                           40          
+45: J20480_k5_classic_cg                        40          
+46: J2560_k5_classic_cg                         40          
+47: J320_k5_classic_cg                          40          
+48: J40_k5_classic_cg                           40          
+49: J20480_k4_classic_cg                        40          
+50: J2560_k4_classic_cg                         40          
+51: J320_k4_classic_cg                          40          
+52: J40_k4_classic_cg                           40          
+53: J20480_k3_classic_cg                        40          
+54: J2560_k3_classic_cg                         40          
+55: J320_k3_classic_cg                          40          
+56: J40_k3_classic_cg                           40          
+57: J20480_k2_classic_cg                        40          
+58: J2560_k2_classic_cg                         40          
+59: J320_k2_classic_cg                          40          
+60: J40_k2_classic_cg                           40          
+61: J20480_k6_classic_mumps                     1           
+62: J2560_k6_classic_mumps                      1           
+63: J320_k6_classic_mumps                       1           
+64: J40_k6_classic_mumps                        1           
+65: J20480_k5_classic_mumps                     1           
+66: J2560_k5_classic_mumps                      1           
+67: J320_k5_classic_mumps                       1           
+68: J40_k5_classic_mumps                        1           
+69: J20480_k4_classic_mumps                     1           
+70: J2560_k4_classic_mumps                      1           
+71: J320_k4_classic_mumps                       1           
+72: J40_k4_classic_mumps                        1           
+73: J20480_k3_classic_mumps                     1           
+74: J2560_k3_classic_mumps                      1           
+75: J320_k3_classic_mumps                       1           
+76: J40_k3_classic_mumps                        1           
+77: J20480_k2_classic_mumps                     1           
+78: J2560_k2_classic_mumps                      1           
+79: J320_k2_classic_mumps                       1           
+80: J40_k2_classic_mumps                        1           
+81: J20480_k6_classic_pardiso                   2           
+82: J2560_k6_classic_pardiso                    2           
+83: J40_k6_classic_pardiso                      2           
+84: J20480_k5_classic_pardiso                   2           
+85: J2560_k5_classic_pardiso                    2           
+86: J40_k5_classic_pardiso                      2           
+87: J20480_k4_classic_pardiso                   2           
+88: J2560_k4_classic_pardiso                    2           
+89: J40_k4_classic_pardiso                      2           
+90: J20480_k3_classic_pardiso                   2           
+91: J2560_k3_classic_pardiso                    2           
+92: J40_k3_classic_pardiso                      2           
+93: J20480_k2_classic_pardiso                   2           
+94: J2560_k2_classic_pardiso                    2           
+95: J40_k2_classic_pardiso                      2           
+==============
+//Write to .json file
+TableExtensions.SaveToFile(SessTab,TargetName);
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============

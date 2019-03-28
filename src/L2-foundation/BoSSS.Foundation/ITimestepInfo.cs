@@ -19,6 +19,7 @@ using System.Collections.Generic;
 
 namespace BoSSS.Foundation.IO {
 
+    
     /// <summary>
     /// Information about a single time-step
     /// </summary>
@@ -86,4 +87,5 @@ namespace BoSSS.Foundation.IO {
             get;
         }
     }
+    
 }

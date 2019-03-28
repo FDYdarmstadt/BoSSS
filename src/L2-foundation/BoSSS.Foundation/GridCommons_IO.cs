@@ -18,6 +18,7 @@ using System;
 using System.Reflection;
 using System.Runtime.Serialization;
 using BoSSS.Foundation.IO;
+using Newtonsoft.Json;
 
 namespace BoSSS.Foundation.Grid.Classic {
 
@@ -140,6 +141,18 @@ namespace BoSSS.Foundation.Grid.Classic {
             copy.m_Database = targetDatabase;
 
             return copy;
+        }
+
+        [NonSerialized]
+        [JsonIgnore]
+        GridCommonsDatabaseMethods dataBaseMethods;
+
+        public IGridSerializationHandler GridSerializationHandler {
+            get {
+                if (dataBaseMethods == null)
+                    dataBaseMethods = new GridCommonsDatabaseMethods(this);
+                return dataBaseMethods;
+            }
         }
 
         #endregion

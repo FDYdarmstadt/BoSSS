@@ -107,10 +107,30 @@ namespace BoSSS.Foundation.Grid.Aggregation {
         /// </summary>
         public Permutation CurrentGlobalIdPermutation {
             get {
-                throw new NotImplementedException();
+                return aggregationGrid.CurrentGlobalIdPermutation();
             }
         }
 
+        AggregationGrid aggregationGrid;
+
+        /// <summary>
+        /// Constructor.
+        /// </summary>
+        /// <param name="aggregationGrid">
+        /// Aggregation grid.
+        /// </param>
+        /// <param name="AggregationCells">
+        /// Coarse cells which build up the fine cells.
+        /// - 1st index: coarse (i.e. this) grid cell index
+        /// - 2nd index: enumeration
+        /// - content: local cell index into the parent grid <paramref name="pGrid"/>.
+        /// </param>
+        public AggregationGridData(AggregationGrid aggregationGrid, int[][]AggregationCells) {
+
+            this.aggregationGrid = aggregationGrid;
+            IGridData pGrid = aggregationGrid.ParentGrid.iGridData;
+            InitializeGridData(pGrid, AggregationCells);
+        }
 
         /// <summary>
         /// Constructor.
@@ -124,7 +144,14 @@ namespace BoSSS.Foundation.Grid.Aggregation {
         /// - 2nd index: enumeration
         /// - content: local cell index into the parent grid <paramref name="pGrid"/>.
         /// </param>
-        public AggregationGridData(IGridData pGrid, int[][] AggregationCells) {
+        public AggregationGridData(IGridData pGrid, int[][] AggregationCells)
+        {
+            InitializeGridData(pGrid, AggregationCells);
+            aggregationGrid = null;
+        }
+
+        void InitializeGridData(IGridData pGrid, int[][] AggregationCells)
+        {
             ParentGrid = pGrid;
 
             int JlocFine = pGrid.iLogicalCells.NoOfLocalUpdatedCells;
@@ -136,9 +163,9 @@ namespace BoSSS.Foundation.Grid.Aggregation {
             m_LogEdgeData = new LogEdgeData(this);
             m_VertexData = new VertexData();
             m_Parallel = new Parallelization() { m_owner = this };
-            
+
             CellPartitioning = new Partitioning(AggregationCells.Length, pGrid.CellPartitioning.MPI_Comm);
-            
+
             int j0Coarse = CellPartitioning.i0;
 
             BuildNeighborship(AggregationCells);
@@ -148,7 +175,6 @@ namespace BoSSS.Foundation.Grid.Aggregation {
 
             m_ChefBasis = new _BasisData(this);
         }
-
 
         private void CollectEdges() {
 
@@ -307,10 +333,7 @@ namespace BoSSS.Foundation.Grid.Aggregation {
 #endif
         }
 
-
         
-
-
         /// <summary>
         /// helper data structure
         /// </summary>
@@ -680,15 +703,26 @@ namespace BoSSS.Foundation.Grid.Aggregation {
             }
         }
 
+        /// <summary>
+        /// Identification of the grid in the BoSSS database, 
+        /// equal to the <see cref="BoSSS.Foundation.IO.IDatabaseEntityInfo{T}.ID"/>.
+        /// </summary>
         public Guid GridID {
             get {
-                throw new NotImplementedException();
+                return Grid.ID;
             }
         }
 
+        /// <summary>
+        /// The grid for which information is provided
+        /// </summary>
         public IGrid Grid {
             get {
-                throw new NotImplementedException("todo");
+                if(aggregationGrid == null)
+                {
+                    throw new Exception("Grid was never set.");
+                }
+                return aggregationGrid;
             }
         }
 

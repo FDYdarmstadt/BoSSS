@@ -185,7 +185,10 @@ namespace BoSSS.Foundation.IO {
             dummySession.Name = "InitialValueSession";
             dummySession.ProjectName = InteractiveShell.WorkflowMgm.CurrentProject;
             dummySession.Save();
-            return database.Controller.DBDriver.SaveTimestep(0.0, 0, dummySession, gDat , _fields);
+
+            var tsi = new TimestepInfo(0.0, dummySession, 0, _fields);
+            database.Controller.DBDriver.SaveTimestep(tsi);
+            return tsi;
         }
     }
 }

@@ -225,6 +225,9 @@ static public void getFormat(int iTabRow,IDictionary<string, object> Row,
            int MGLevels                  = Convert.ToInt32(Row["NoOfMultigridLevels"]);
            Fmt                           = new PlotFormat();
            
+		   // ===!!!=== CAUTION ===!!!===
+		   // Solverframework (SolverEnum numbers) have changed! Please check LinearSolver and NonLinearSolver for details
+		   
            switch(Nonlin_solver_name) {
            case NonlinearSolverCodes.Picard: 
                Nmn = "Picard "; 

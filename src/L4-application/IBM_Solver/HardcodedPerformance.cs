@@ -42,6 +42,7 @@ namespace BoSSS.Application.IBM_Solver {
             C.savetodb = true;
             //C.savetodb = false;
 
+            C.DbPath = @"F:\test_db";
             //C.DbPath = @"\\dc1\userspace\krause\BoSSS_DBs\Bug";
             //C.DbPath = @"/home/ws35kire/test_db/";
 
@@ -444,18 +445,19 @@ namespace BoSSS.Application.IBM_Solver {
             string restartGrid = "42e1ede0-40fc-4267-9d48-94c0397ac9a5";
             bool startFromGivenGrid = true;
             string startGrid = "42e1ede0-40fc-4267-9d48-94c0397ac9a5";
+            double MeshFactor;
             switch (i)
             {
                 case 1:
-                    C.MeshFactor = 1.258; // was 1.33
+                    MeshFactor = 1.258; // was 1.33
                     break;
 
                 case 2:
-                    C.MeshFactor = 3.0; //1.77; //0.92;
+                    MeshFactor = 3.0; //1.77; //0.92;
                     break;
 
                 case 3:
-                    C.MeshFactor = 0.7; // was 07
+                    MeshFactor = 0.7; // was 07
                     break;
 
                 default:
@@ -467,23 +469,23 @@ namespace BoSSS.Application.IBM_Solver {
             {
                 if (only_channel)
                 {
-                    C.SessionName = "2DChannel_Pardiso_k" + k + "_MeshFactor" + C.MeshFactor + "_no_p" + no_p + "_run" + no_it;
+                    C.SessionName = "2DChannel_Pardiso_k" + k + "_MeshFactor" + MeshFactor + "_no_p" + no_p + "_run" + no_it;
 
                 }
                 else
                 {
-                    C.SessionName = "Cylinder_Pardiso_k" + k + "_MeshFactor" + C.MeshFactor + "_no_p" + no_p + "_run" + no_it;
+                    C.SessionName = "Cylinder_Pardiso_k" + k + "_MeshFactor" + MeshFactor + "_no_p" + no_p + "_run" + no_it;
                 }
             }
             else
             {
                 if (only_channel)
                 {
-                    C.SessionName = "2DChannel_Mumps_k" + k + "_MeshFactor" + C.MeshFactor + "_no_p" + no_p + "_run" + no_it;
+                    C.SessionName = "2DChannel_Mumps_k" + k + "_MeshFactor" + MeshFactor + "_no_p" + no_p + "_run" + no_it;
                 }
                 else
                 {
-                    C.SessionName = "Cylinder_Mumps_k" + k + "_MeshFactor" + C.MeshFactor + "_no_p" + no_p + "_run" + no_it;
+                    C.SessionName = "Cylinder_Mumps_k" + k + "_MeshFactor" + MeshFactor + "_no_p" + no_p + "_run" + no_it;
                 }
             }
             C.saveperiod = 1;
@@ -495,7 +497,7 @@ namespace BoSSS.Application.IBM_Solver {
             C.Tags.Add("k " + k);
             C.Tags.Add("no_p" + no_p);
             C.Tags.Add("run " + no_it);
-            C.Tags.Add("MeshFactor " + C.MeshFactor);
+            C.Tags.Add("MeshFactor " + MeshFactor);
 
             C.ProjectName = "FixedCylinderRe100_k" + i + "_CellAgglo02_penalty4_newMesh2";
 
@@ -556,20 +558,20 @@ namespace BoSSS.Application.IBM_Solver {
                     C.GridFunc = delegate
                     {
 
-                        var _xNodes1 = Grid1D.TanhSpacing(-2.0, -1.0, Convert.ToInt32(10.0 * C.MeshFactor), 0.5, false); //10
+                        var _xNodes1 = Grid1D.TanhSpacing(-2.0, -1.0, Convert.ToInt32(10.0 * MeshFactor), 0.5, false); //10
                         _xNodes1 = _xNodes1.GetSubVector(0, (_xNodes1.Length - 1));
-                        var _xNodes2 = GenericBlas.Linspace(-1.0, 2.0, Convert.ToInt32(35.0 * C.MeshFactor)); //35
+                        var _xNodes2 = GenericBlas.Linspace(-1.0, 2.0, Convert.ToInt32(35.0 * MeshFactor)); //35
                         _xNodes2 = _xNodes2.GetSubVector(0, (_xNodes2.Length - 1));
-                        var _xNodes3 = Grid1D.TanhSpacing(2.0, 20.0, Convert.ToInt32(60.0 * C.MeshFactor), 1.5, true); //60
+                        var _xNodes3 = Grid1D.TanhSpacing(2.0, 20.0, Convert.ToInt32(60.0 * MeshFactor), 1.5, true); //60
 
                         var xNodes = ArrayTools.Cat(_xNodes1, _xNodes2, _xNodes3);
 
 
-                        var _yNodes1 = Grid1D.TanhSpacing(-2.0, -1.0, Convert.ToInt32(7.0 * C.MeshFactor), 0.9, false); //7
+                        var _yNodes1 = Grid1D.TanhSpacing(-2.0, -1.0, Convert.ToInt32(7.0 * MeshFactor), 0.9, false); //7
                         _yNodes1 = _yNodes1.GetSubVector(0, (_yNodes1.Length - 1));
-                        var _yNodes2 = GenericBlas.Linspace(-1.0, 1.0, Convert.ToInt32(25.0 * C.MeshFactor)); //25
+                        var _yNodes2 = GenericBlas.Linspace(-1.0, 1.0, Convert.ToInt32(25.0 * MeshFactor)); //25
                         _yNodes2 = _yNodes2.GetSubVector(0, (_yNodes2.Length - 1));
-                        var _yNodes3 = Grid1D.TanhSpacing(1.0, 2.1, Convert.ToInt32(7.0 * C.MeshFactor), 1.1, true); //7
+                        var _yNodes3 = Grid1D.TanhSpacing(1.0, 2.1, Convert.ToInt32(7.0 * MeshFactor), 1.1, true); //7
                         var yNodes = ArrayTools.Cat(_yNodes1, _yNodes2, _yNodes3);
 
 
