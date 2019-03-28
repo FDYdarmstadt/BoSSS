@@ -1,5 +1,6 @@
 restart
 **************
+
   BoSSSpad C# interpreter
   _______________________
 
@@ -10,12 +11,12 @@ List of 11 instances of IDatabaseInfo {
   2: { Session Count = 0; Grid Count = 6; Path = P:\Performance_DB }
   3: { Session Count = 12; Grid Count = 31; Path = P:\testDB }
   4: { Session Count = 112; Grid Count = 6; Path = E:\Performance_oldLibs_DB }
-  5: { Session Count = 0; Grid Count = 3; Path = E:\db_2delete }
-  6: { Session Count = 163; Grid Count = 12; Path = E:\XdgPerformance }
+  5: { Session Count = 0; Grid Count = 4; Path = E:\db_2delete }
+  6: { Session Count = 193; Grid Count = 12; Path = E:\XdgPerformance }
   7: { Session Count = 112; Grid Count = 136; Path = E:\bosss_db_performance }
   8: { Session Count = 19; Grid Count = 3; Path = F:\test_db }
   9: { Session Count = 144; Grid Count = 139; Path = Z:\weber\Performance_Kram\bosss_db_performance }
-  10: { Session Count = 165; Grid Count = 6; Path = E:\Performance_newLibs_DB }
+  10: { Session Count = 200; Grid Count = 6; Path = E:\Performance_newLibs_DB }
 }
 
  Console ready for input. Type 'help' for help.
@@ -23,7 +24,7 @@ List of 11 instances of IDatabaseInfo {
 ==============
 WorkflowMgm.Init("Xdg_SingleNodePerformance_0_1");
 **************
-Project name is set to 'PoissonSolverPerformance_3_2'.
+Project name is set to 'Xdg_SingleNodePerformance_0_1'.
 
 ==============
 using System.IO;

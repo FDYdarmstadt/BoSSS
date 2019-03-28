@@ -1,0 +1,591 @@
+restart
+**************
+  BoSSSpad C# interpreter
+  _______________________
+
+Databases loaded:
+List of 12 instances of IDatabaseInfo {
+  0: { Session Count = 0; Grid Count = 34; Path = C:\BoSSS_DB }
+  1: { Session Count = 144; Grid Count = 6; Path = C:\tmp\fk_temp_db }
+  2: { Session Count = 0; Grid Count = 6; Path = P:\Performance_DB }
+  3: { Session Count = 12; Grid Count = 31; Path = P:\testDB }
+  4: { Session Count = 112; Grid Count = 6; Path = E:\Performance_oldLibs_DB }
+  5: { Session Count = 0; Grid Count = 4; Path = E:\db_2delete }
+  6: { Session Count = 220; Grid Count = 12; Path = E:\XdgPerformance }
+  7: { Session Count = 112; Grid Count = 136; Path = E:\bosss_db_performance }
+  8: { Session Count = 19; Grid Count = 3; Path = F:\test_db }
+  9: { Session Count = 144; Grid Count = 139; Path = Z:\weber\Performance_Kram\bosss_db_performance }
+  10: { Session Count = 200; Grid Count = 6; Path = E:\Performance_newLibs_DB }
+  11: { Session Count = 14; Grid Count = 6; Path = P:\SIPCC_Performance }
+}
+
+ Console ready for input. Type 'help' for help.
+
+==============
+**************
+==============
+string WFlowName = "SIP_SingleNodePerformance_study_0";
+WorkflowMgm.Init(WFlowName);
+**************
+Project name is set to 'SIP_SingleNodePerformance_study_0'.
+
+==============
+using System.IO;
+using BoSSS.Application.SipPoisson;
+**************
+==============
+string dateString = "2019-3-19";
+string File       = "SolverRuns--" + dateString + ".json";
+string FilePath   = Path.Combine(CurrentDocDir, File);
+var SessTab       = TableExtensions.LoadFromFile(FilePath);
+**************
+==============
+//SessTab.Print();
+**************
+==============
+// ====================
+// Evaluation, plotting
+// ====================
+**************
+==============
+SessTab.GetColumnNames();
+**************
+List of 80 instances of String {
+  0: SessionName
+  1: DGdegree:T
+  2: DGdegree:Tex
+  3: Bndtype:Dirichlet
+  4: Bndtype:Neumann
+  5: GeneratedFromCode
+  6: ControlFileText_Index
+  7: dtFixed
+  8: penalty_poisson
+  9: NoOfSolverRuns
+  10: ExactSolution_provided
+  11: SuppressExceptionPrompt
+  12: GridPartType
+  13: ProjectName
+  14: NoOfTimesteps
+  15: Endtime
+  16: saveperiod
+  17: rollingSaves
+  18: dtMin
+  19: dtMax
+  20: CompMode
+  21: ImmediatePlotPeriod
+  22: SuperSampling
+  23: savetodb
+  24: logFileDirectory
+  25: Paramstudy_ContinueOnError
+  26: LinearSolver.verbose
+  27: LinearSolver.MaxKrylovDim
+  28: LinearSolver.MaxSolverIterations
+  29: LinearSolver.MinSolverIterations
+  30: LinearSolver.ConvergenceCriterion
+  31: LinearSolver.SolverCode
+  32: LinearSolver.NoOfMultigridLevels
+  33: LinearSolver.exp_localPrec_muA
+  34: LinearSolver.exp_localPrec_Min_dt
+  35: LinearSolver.TargetBlockSize
+  36: NonLinearSolver.verbose
+  37: NonLinearSolver.PrecondSolver.verbose
+  38: NonLinearSolver.PrecondSolver.MaxKrylovDim
+  39: NonLinearSolver.PrecondSolver.MaxSolverIterations
+  40: NonLinearSolver.PrecondSolver.MinSolverIterations
+  41: NonLinearSolver.PrecondSolver.ConvergenceCriterion
+  42: NonLinearSolver.PrecondSolver.SolverCode
+  43: NonLinearSolver.PrecondSolver.NoOfMultigridLevels
+  44: NonLinearSolver.PrecondSolver.exp_localPrec_muA
+  45: NonLinearSolver.PrecondSolver.exp_localPrec_Min_dt
+  46: NonLinearSolver.PrecondSolver.TargetBlockSize
+  47: NonLinearSolver.MaxSolverIterations
+  48: NonLinearSolver.MinSolverIterations
+  49: NonLinearSolver.ConvergenceCriterion
+  50: NonLinearSolver.UnderRelax
+  51: NonLinearSolver.SolverCode
+  52: DynamicLoadBalancing_RedistributeAtStartup
+  53: DynamicLoadBalancing_Period
+  54: DynamicLoadBalancing_ImbalanceThreshold
+  55: DynamicLoadBalancing_On
+  56: AdaptiveMeshRefinement
+  57: CutCellQuadratureType
+  58: ContinueOnIoError
+  59: Grid:NoOfCells
+  60: Grid:hMax
+  61: Grid:hMin
+  62: UsedNoOfMultigridLevels
+  63: MtxBlkSz
+  64: NNZMtx
+  65: NNZblk
+  66: MtxMB
+  67: minSolRunT
+  68: maxSolRunT
+  69: Conv
+  70: NoIter
+  71: NoOfCells
+  72: DOFs
+  73: BlockSize
+  74: maxMultigridlvl
+  75: RegularTerminated
+  76: SipMatrixAssembly_time
+  77: Aggregation_basis_init_time
+  78: Solver_Init_time
+  79: Solver_Run_time
+}
+==============
+var SubTab_1 = SessTab.ExtractColumns("SessionName","DGdegree:T", "Grid:NoOfCells", "LinearSolver.SolverCode", "DOFs", "minSolRunT", "maxSolRunT", "NoIter", "RegularTerminated", "Conv","SipMatrixAssembly_time","Aggregation_basis_init_time","Solver_Init_time","Solver_Run_time","NonLinearSolver.PrecondSolver.TargetBlockSize","maxMultigridlvl","UsedNoOfMultigridLevels");
+**************
+==============
+var SubTab_2 = SubTab_1.ExtractRows(delegate(int i, IDictionary<string,object> row) {
+    return (Convert.ToBoolean(row["RegularTerminated"]) == true)
+          && (Convert.ToInt32(row["Conv"]) != 0);
+    });
+**************
+==============
+var SubTab = SubTab_2.ExtractColumns("SessionName","DGdegree:T", "Grid:NoOfCells", "LinearSolver.SolverCode", "DOFs", "minSolRunT", "maxSolRunT", "NoIter","maxMultigridlvl","UsedNoOfMultigridLevels","NonLinearSolver.PrecondSolver.TargetBlockSize");
+**************
+==============
+SubTab.Print();
+**************
+    SessionName                                                     DGdegree:T Grid:NoOfCells LinearSolver.SolverCode DOFs    minSolRunT    maxSolRunT    NoIter maxMultigridlvl UsedNoOfMultigridLevels NonLinearSolver.PrecondSolver.TargetBlockSize 
+0:  PoissonConstCoeff_J20480_k2_classic_mumps_1                     2          20480          1                       204800  122.4512579   122.4512579   1      0               7                       10000                                         
+1:  PoissonConstCoeff_J20480_k2_exp_softpcg_mg_2                    2          20480          42                      204800  124.9530279   124.9530279   44     0               7                       10000                                         
+2:  PoissonConstCoeff_J20480_k2_exp_softpcg_schwarz_directcoarse_1  2          20480          44                      204800  286.9949845   286.9949845   5      0               7                       10000                                         
+3:  PoissonConstCoeff_J20480_k2_exp_softpcg_mg_4                    2          20480          42                      204800  121.6572022   121.6572022   44     0               7                       10000                                         
+4:  PoissonConstCoeff_J20480_k2_exp_softpcg_schwarz_directcoarse_4  2          20480          44                      204800  807.7566881   807.7566881   17     0               7                       10000                                         
+5:  PoissonConstCoeff_J20480_k2_exp_softpcg_mg_1                    2          20480          42                      204800  289.3189869   289.3189869   5      0               7                       10000                                         
+6:  PoissonConstCoeff_J20480_k2_exp_softpcg_schwarz_directcoarse_2  2          20480          44                      204800  1007.1664985  1007.1664985  17     0               7                       10000                                         
+7:  PoissonConstCoeff_J163840_k2_exp_softpcg_mg_1                   2          163840         42                      1638400 1267.7870369  1267.7870369  40     0               7                       10000                                         
+8:  PoissonConstCoeff_J163840_k2_exp_softpcg_mg_2                   2          163840         42                      1638400 1441.2931192  1441.2931192  41     0               7                       10000                                         
+9:  PoissonConstCoeff_J163840_k2_exp_softpcg_mg_4                   2          163840         42                      1638400 2001.520484   2001.520484   87     0               7                       10000                                         
+10: PoissonConstCoeff_J163840_k2_classic_mumps_1                    2          163840         1                       1638400 4980.6094286  4980.6094286  1      0               7                       10000                                         
+11: PoissonConstCoeff_J163840_k2_exp_softpcg_schwarz_directcoarse_4 2          163840         44                      1638400 43836.3262862 43836.3262862 16     0               7                       10000                                         
+12: PoissonConstCoeff_J163840_k2_exp_softpcg_schwarz_directcoarse_1 2          163840         44                      1638400 18001.6300445 18001.6300445 5      0               7                       10000                                         
+13: PoissonConstCoeff_J163840_k2_exp_softpcg_schwarz_directcoarse_2 2          163840         44                      1638400 48037.9727554 48037.9727554 16     0               7                       10000                                         
+==============
+var TabSelection = SubTab.ExtractRows(delegate (int i, IDictionary<string,object> row){
+    return (Convert.ToInt32(row["LinearSolver.SolverCode"])==44)&&(Convert.ToInt32(row["Grid:NoOfCells"])==163840);
+});
+var _TabSelection = TabSelection.ExtractColumns("SessionName","DGdegree:T", "DOFs", "maxSolRunT", "NoIter","maxMultigridlvl","NonLinearSolver.PrecondSolver.TargetBlockSize");
+**************
+==============
+_TabSelection.Print();
+**************
+   SessionName                                                     DGdegree:T DOFs    maxSolRunT    NoIter maxMultigridlvl NonLinearSolver.PrecondSolver.TargetBlockSize 
+0: PoissonConstCoeff_J163840_k2_exp_softpcg_schwarz_directcoarse_4 2          1638400 43836.3262862 16     0               10000                                         
+1: PoissonConstCoeff_J163840_k2_exp_softpcg_schwarz_directcoarse_1 2          1638400 18001.6300445 5      0               10000                                         
+2: PoissonConstCoeff_J163840_k2_exp_softpcg_schwarz_directcoarse_2 2          1638400 48037.9727554 16     0               10000                                         
+==============
+//Extract to excel-File
+//SubTab_2.Print();
+//SubTab_2.ToCSVFile(WFlowName);
+**************
+    SessionName                                                     DGdegree:T Grid:NoOfCells LinearSolver.SolverCode DOFs    minSolRunT    maxSolRunT    NoIter RegularTerminated Conv SipMatrixAssembly_time Aggregation_basis_init_time Solver_Init_time Solver_Run_time BlockSize maxMultigridlvl 
+0:  PoissonConstCoeff_J20480_k2_classic_mumps_1                     2          20480          1                       204800  122.4512579   122.4512579   1      True              1    6.8362271              0                           0                0               10        0               
+1:  PoissonConstCoeff_J20480_k2_exp_softpcg_mg_2                    2          20480          42                      204800  124.9530279   124.9530279   44     True              1    6.6608439              7.3651153                   7.9440229        116.9464938     10        0               
+2:  PoissonConstCoeff_J20480_k2_exp_softpcg_schwarz_directcoarse_1  2          20480          44                      204800  286.9949845   286.9949845   5      True              1    6.5561406              7.3536124                   9.3780112        277.563788      10        0               
+3:  PoissonConstCoeff_J20480_k2_exp_softpcg_mg_4                    2          20480          42                      204800  121.6572022   121.6572022   44     True              1    6.4858247              7.6626303                   7.7239278        113.8742572     10        0               
+4:  PoissonConstCoeff_J20480_k2_exp_softpcg_schwarz_directcoarse_4  2          20480          44                      204800  807.7566881   807.7566881   17     True              1    6.604177               7.5238936                   10.0274906       797.6751184     10        0               
+5:  PoissonConstCoeff_J20480_k2_exp_softpcg_mg_1                    2          20480          42                      204800  289.3189869   289.3189869   5      True              1    6.7597073              7.576242                    5.7083606        283.5534869     10        0               
+6:  PoissonConstCoeff_J20480_k2_exp_softpcg_schwarz_directcoarse_2  2          20480          44                      204800  1007.1664985  1007.1664985  17     True              1    6.5989105              7.5233729                   9.5165341        997.5970053     10        0               
+7:  PoissonConstCoeff_J163840_k2_exp_softpcg_mg_1                   2          163840         42                      1638400 1267.7870369  1267.7870369  40     True              1    49.6727601             288.2250338                 67.0538018       1199.4053846    10        0               
+8:  PoissonConstCoeff_J163840_k2_exp_softpcg_mg_2                   2          163840         42                      1638400 1441.2931192  1441.2931192  41     True              1    50.2203389             288.4573184                 80.4183891       1360.7280741    10        0               
+9:  PoissonConstCoeff_J163840_k2_exp_softpcg_mg_4                   2          163840         42                      1638400 2001.520484   2001.520484   87     True              1    49.8803472             290.4047376                 271.0598766      1730.3228567    10        0               
+10: PoissonConstCoeff_J163840_k2_classic_mumps_1                    2          163840         1                       1638400 4980.6094286  4980.6094286  1      True              1    49.0142183             0                           0                0               10        0               
+11: PoissonConstCoeff_J163840_k2_exp_softpcg_schwarz_directcoarse_4 2          163840         44                      1638400 43836.3262862 43836.3262862 16     True              1    50.8881373             287.9263483                 80.9390832       43755.2488802   10        0               
+12: PoissonConstCoeff_J163840_k2_exp_softpcg_schwarz_directcoarse_1 2          163840         44                      1638400 18001.6300445 18001.6300445 5      True              1    49.5131832             291.4273491                 74.4080811       17927.1075112   10        0               
+13: PoissonConstCoeff_J163840_k2_exp_softpcg_schwarz_directcoarse_2 2          163840         44                      1638400 48037.9727554 48037.9727554 16     True              1    49.7568652             287.7882896                 79.8335668       47957.981779    10        0               
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+//extract all Degrees and put them into array
+int rowcount          = SubTab.Rows.Count;
+string selectedcolumn = "DGdegree:T";
+int[] tmp= new int[20];
+
+int count = 0;
+for(int r=0;r<rowcount;r++){
+System.Data.DataRow row = (System.Data.DataRow)SubTab.Rows[r];
+int bla                 = Convert.ToInt32(row[selectedcolumn]);
+if (tmp[bla]==0){
+  tmp[bla]=1;
+  count++;
+}
+}
+int[] DGdegrees = new int[count];
+int count2 = 0;
+for(int i=0;i<tmp.Length;i++){
+   if(tmp[i]==1){
+      DGdegrees[count2]=i;
+      count2++; 
+   }
+}
+DGdegrees;
+**************
+List of 1 instances of Int32 {
+  0: 2
+}
+==============
+**************
+==============
+**************
+==============
+//RuntimePlot.PlotNow();
+**************
+==============
+//var cl = RuntimePlot.ToGnuplot().PlotCairolatex();
+//cl.Preview(trimPage:true);
+**************
+==============
+//cl.WriteMinimalCompileableExample("C:\\tmp\\mini.tex");
+**************
+==============
+//using SolverCodes = BoSSS.Solution.Control.LinearSolverConfig.Code;
+**************
+==============
+int[] DGdegrees = new int[]{1,2,4};
+int rows    = 3;
+int columns = 1;
+LinearSolverConfig.Code[] ignore_solvers = {LinearSolverConfig.Code.classic_pardiso, LinearSolverConfig.Code.classic_cg, LinearSolverConfig.Code.exp_softpcg_schwarz, LinearSolverConfig.Code.exp_direct_lapack};
+
+Plot2Ddata[,] multiplots = new Plot2Ddata[rows,columns];
+int pDegree = 0;
+for(int iRow = 0; iRow < rows; iRow++) {
+for(int iCol = 0; iCol < columns; iCol++) {
+    
+    if(pDegree > rows*columns-1)
+        continue;
+    int tmpDG = -1;
+    if(pDegree < DGdegrees.Length)
+        tmpDG = DGdegrees[pDegree];
+    
+    //Create Graphs
+    multiplots[iRow,iCol] = SubTab.ToPlot("DOFs", "NoIter", // column for x- and y
+       delegate (int iTabRow, 
+                 IDictionary<string, object> Row, 
+                 out string Nmn, 
+                 out PlotFormat Fmt) { 
+           // - - - - - - - - - - - - - - - - - - - - - - - - 
+           // PlotRowSelector:
+           // selects, which table row goes to which graph,
+           // and the respective color  
+           // - - - - - - - - - - - - - - - - - - - - - - - - 
+           int k = Convert.ToInt32(Row["DGdegree:T"]);
+           if(k != tmpDG) {
+                // degree does not match -> not in this plot
+                Nmn = null;
+                Fmt = null;
+                return;
+           }
+ 
+           LinearSolverConfig.Code solver_name = (LinearSolverConfig.Code)Convert.ToInt32(Row["LinearSolver.SolverCode"]);
+           //ignore the solvers specified in ingore_solvers
+           foreach(LinearSolverConfig.Code sc in ignore_solvers){
+               if(solver_name==sc){
+                   System.Console.WriteLine("skipped");
+                   Nmn = null;
+                   Fmt = null;
+               return;
+               }
+           }
+           
+           // ===!!!=== CAUTION ===!!!===
+           // Solverframework (SolverEnum numbers) have changed! Please check LinearSolver and NonLinearSolver for details
+           
+           //process the other solvers
+           Fmt = new PlotFormat();
+           switch(solver_name) {
+           case LinearSolverConfig.Code.classic_pardiso: 
+               Nmn           = "Pardiso"; 
+               Fmt.PointType = PointTypes.OpenCircle;
+               Fmt.DashType  = DashTypes.Dotted;
+               break;
+           case LinearSolverConfig.Code.classic_mumps: 
+               Nmn           = "Mumps"; 
+               Fmt.PointType = PointTypes.OpenUpperTriangle;
+               Fmt.DashType  = DashTypes.Dotted;
+               break;
+           case LinearSolverConfig.Code.classic_cg: 
+               Nmn           = "CG"; 
+               Fmt.PointType = PointTypes.Asterisk;
+               break;
+           //case LinearSolverConfig.Code.exp_direct: 
+           //    Fmt.PointType = PointTypes.OpenBox;
+           //    Nmn           = "Pardiso w Blk PC"; 
+           //    break;
+           case LinearSolverConfig.Code.exp_softpcg_schwarz: 
+               Nmn           = "Add Swz"; 
+               Fmt.PointType = PointTypes.LowerTriangle;
+               break;
+           case LinearSolverConfig.Code.exp_softpcg_schwarz_directcoarse: 
+               Nmn           = "Add Swz w Coarse";
+               Fmt.PointType = PointTypes.UpperTriangle;
+               break;
+           case LinearSolverConfig.Code.exp_softpcg_mg:
+               Nmn           = "Mult Gr w Blk Jac";
+               Fmt.PointType = PointTypes.Box;
+               break;
+           case LinearSolverConfig.Code.exp_direct_lapack: 
+               Nmn           = "LAPACK"; 
+               Fmt.PointType = PointTypes.Plus;
+               break;
+           default:
+               Console.WriteLine("unknown: " + solver_name); 
+               Nmn = "unknown";
+               break;
+           } 
+           Console.WriteLine("name is: " + solver_name); 
+           Fmt.PointSize = 0.5;
+           Fmt.Style     = Styles.LinesPoints;
+           Fmt.LineColor = LineColors.Black;
+           Fmt.LineWidth = 3;
+       });
+    double[] dof = new[]{1e3,1e6};
+    double[] linT = dof.Select(x => x*0.001).ToArray();
+    var linP = new Plot2Ddata.XYvalues("linear", dof, linT);
+    linP.Format.FromString("- black");
+    ArrayTools.AddToArray(linP, ref multiplots[iRow,iCol].dataGroups);
+ 
+    //all about axis
+    string Title = string.Format("$k = {0}$", tmpDG);
+    multiplots[iRow,iCol].Ylabel = Title;
+    multiplots[iRow,iCol].LogX = true;
+    multiplots[iRow,iCol].LogY = true;
+    //specify range of axis
+    multiplots[iRow,iCol].YrangeMin = 1e-2;
+    multiplots[iRow,iCol].YrangeMax = 1e+4;
+    multiplots[iRow,iCol].XrangeMin = 1e1;
+    multiplots[iRow,iCol].XrangeMax = 1e7;
+    //multiplots[iRow,iCol].Y2rangeMin = 1e-3;
+    //multiplots[iRow,iCol].Y2rangeMax = 1e+4;
+    //multiplots[iRow,iCol].X2rangeMin = 1e2;
+    //multiplots[iRow,iCol].X2rangeMax = 1e7;
+    
+    //spacing around plots
+    multiplots[iRow,iCol].ShowLegend = false;
+    multiplots[iRow,iCol].tmargin = 0;
+    multiplots[iRow,iCol].bmargin = 1;
+    multiplots[iRow,iCol].lmargin = 10;
+    multiplots[iRow,iCol].rmargin = 5;
+    multiplots[iRow,iCol].ShowXtics=false;
+
+    //I am legend ...
+    if(iRow == 0){
+    multiplots[iRow,iCol].ShowLegend = true;
+    multiplots[iRow,iCol].LegendAlignment=new string[]{"i","t","l"};
+    multiplots[iRow,iCol].LegendSwap=true;
+    }
+
+    //and i am special ...
+    if(iRow == rows-1)
+        multiplots[iRow,iCol].ShowXtics=true;
+    pDegree++;
+}                        
+}
+
+//multiplots.AddDummyPlotsForLegend(3,0);
+multiplots.PlotNow()
+**************
+name is: exp_softpcg_mg
+name is: exp_softpcg_mg
+name is: exp_softpcg_mg
+name is: exp_softpcg_mg
+name is: exp_softpcg_mg
+name is: exp_softpcg_schwarz_directcoarse
+name is: exp_softpcg_schwarz_directcoarse
+name is: exp_softpcg_schwarz_directcoarse
+name is: exp_softpcg_schwarz_directcoarse
+name is: exp_softpcg_schwarz_directcoarse
+name is: classic_mumps
+name is: classic_mumps
+name is: classic_mumps
+name is: classic_mumps
+name is: exp_softpcg_mg
+name is: exp_softpcg_mg
+name is: exp_softpcg_mg
+name is: exp_softpcg_mg
+name is: exp_softpcg_mg
+name is: exp_softpcg_schwarz_directcoarse
+name is: exp_softpcg_schwarz_directcoarse
+name is: exp_softpcg_schwarz_directcoarse
+name is: exp_softpcg_schwarz_directcoarse
+name is: exp_softpcg_schwarz_directcoarse
+name is: classic_mumps
+name is: classic_mumps
+name is: classic_mumps
+name is: classic_mumps
+name is: exp_softpcg_mg
+name is: exp_softpcg_mg
+name is: exp_softpcg_mg
+name is: exp_softpcg_mg
+name is: exp_softpcg_schwarz_directcoarse
+name is: exp_softpcg_schwarz_directcoarse
+name is: exp_softpcg_schwarz_directcoarse
+name is: exp_softpcg_schwarz_directcoarse
+name is: classic_mumps
+name is: classic_mumps
+name is: classic_mumps
+name is: classic_mumps
+name is: exp_softpcg_mg
+name is: exp_softpcg_mg
+name is: exp_softpcg_mg
+name is: exp_softpcg_mg
+name is: exp_softpcg_schwarz_directcoarse
+name is: exp_softpcg_schwarz_directcoarse
+name is: exp_softpcg_schwarz_directcoarse
+name is: exp_softpcg_schwarz_directcoarse
+name is: classic_mumps
+name is: classic_mumps
+name is: classic_mumps
+name is: classic_mumps
+name is: exp_softpcg_mg
+name is: exp_softpcg_mg
+name is: exp_softpcg_mg
+name is: exp_softpcg_schwarz_directcoarse
+name is: exp_softpcg_schwarz_directcoarse
+name is: exp_softpcg_schwarz_directcoarse
+name is: classic_mumps
+name is: classic_mumps
+name is: classic_mumps
+name is: exp_softpcg_mg
+name is: exp_softpcg_mg
+name is: exp_softpcg_mg
+name is: exp_softpcg_schwarz_directcoarse
+name is: exp_softpcg_schwarz_directcoarse
+name is: exp_softpcg_schwarz_directcoarse
+name is: classic_mumps
+name is: classic_mumps
+name is: classic_mumps
+Using gnuplot: C:\Program Files (x86)\FDY\BoSSS\bin\native\win\gnuplot-gp510-20160418-win32-mingw\gnuplot\bin\gnuplot.exe
+set key inside top left Left reverse 
+System.Drawing.Bitmap
+==============
+LastError;
+**************
+==============
+**************
+==============
+**************
+==============
+var CL = multiplots.ToGnuplot().PlotCairolatex(xSize:14,ySize:12);
+**************
+Using gnuplot: C:\Program Files (x86)\FDY\BoSSS\bin\native\win\gnuplot-gp510-20160418-win32-mingw\gnuplot\bin\gnuplot.exe
+set key inside top left Left reverse 
+
+==============
+//CL.SaveTo(Path.Combine(CurrentDocDir, "ConstCoeffPoissonScaling.tex"));
+**************
+==============
+CL.PlotNow();
+**************
+System.ComponentModel.Win32Exception occurred: Das System kann die angegebene Datei nicht finden. Type 'LastError' for details.
+
+==============
+LastError
+**************
+System.ComponentModel.Win32Exception (0x80004005): Das System kann die angegebene Datei nicht finden
+   bei System.Diagnostics.Process.StartWithShellExecuteEx(ProcessStartInfo startInfo)
+   bei BoSSS.Application.BoSSSpad.GnuplotExtensions.CairolatexContainer.Preview(Boolean trimPage, Int32 dpi) in C:\BoSSS\BoSSS-SolverPerformance\public\src\L4-application\BoSSSpad\GnuplotExtensions.cs:Zeile 325.
+   bei <InteractiveExpressionClass>.Host(Object& $retval)
+   bei Mono.CSharp.Evaluator.Evaluate(String input, Object& result, Boolean& result_set)
+   bei BoSSS.Application.BoSSSpad.ReadEvalPrintLoop.EvalPrint(String line, Assembly& AssemblyProduced) in C:\BoSSS\BoSSS-SolverPerformance\public\src\L4-application\BoSSSpad\ReadEvalPrintLoop.cs:Zeile 322.
+==============
+CL.WriteMinimalCompileableExample(
+   Path.Combine(CurrentDocDir, "plots", "MainConstCoeffPoissonScaling.tex"),
+   "ConstCoeffPoissonScaling.tex");
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============

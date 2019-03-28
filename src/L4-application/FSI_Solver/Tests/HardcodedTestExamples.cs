@@ -382,7 +382,6 @@ namespace BoSSS.Application.FSI_Solver {
             C.Particles[1].TranslationalVelocity[0][1] = 0;
             C.Particles[1].RotationalVelocity[0] = 0;
             
-            C.pureDryCollisions = true;
             C.collisionModel = FSI_Control.CollisionModel.MomentumConservation;
 
             double V = 0;
@@ -397,6 +396,7 @@ namespace BoSSS.Application.FSI_Solver {
             // Physical Parameters
             // ===================
 
+            C.pureDryCollisions = true;
             C.PhysicalParameters.IncludeConvection = true;
 
 
