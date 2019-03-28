@@ -33,9 +33,10 @@ namespace BoSSS.Application.FSI_Solver {
 
         }
 
-        public Particle_superEllipsoid(int Dim, double[] startPos = null, double startAngl = 0) : base(Dim, startPos, startAngl) {
-
-
+        /// <summary>
+        /// ctor
+        /// </summary>
+        public Particle_superEllipsoid(double[] startPos = null, double startAngl = 0) : base(2, startPos, startAngl) {
         }
 
         /// <summary>
@@ -65,13 +66,13 @@ namespace BoSSS.Application.FSI_Solver {
             }
         }
 
-        public override double Circumference_P {
+        protected override double Circumference_P {
             get {
                 return (2 * length_P + 2 * thickness_P + 2 * Math.PI * thickness_P) / 2;
             }
         }
 
-        override public double Area_P {
+        protected override double Area_P {
             get {
                 return 4 * length_P * thickness_P * (SpecialFunctions.Gamma(1 + 1 / superEllipsoidExponent)).Pow2() / SpecialFunctions.Gamma(1 + 2 / superEllipsoidExponent);
             }

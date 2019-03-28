@@ -7,19 +7,9 @@ using System.Threading.Tasks;
 
 namespace BoSSS.Application.FSI_Solver {
     class ParticleAuxillary {
-        internal void SaveValueToList(List<double> variable, double value, int listPosition = 0) {
-            variable.Insert(listPosition, value);
-            variable.RemoveAt(variable.Count - 1);
-        }
 
         internal void SaveValueOfLastTimestep(List<double> variable) {
             variable.Insert(0, new double());
-            variable.RemoveAt(variable.Count - 1);
-            //SaveValueToList(variable, variable[0], 1);
-        }
-
-        internal void SaveMultidimValueToList(List<double[]> variable, double[] value, int listPosition = 0) {
-            variable.Insert(listPosition, value);
             variable.RemoveAt(variable.Count - 1);
         }
 
@@ -27,30 +17,9 @@ namespace BoSSS.Application.FSI_Solver {
             int Dim = variable[0].Length;
             variable.Insert(0, new double[Dim]);
             variable.RemoveAt(variable.Count - 1);
-            //SaveMultidimValueToList(variable, variable[0], 1);
         }
 
-        internal double ApproxTorqueForActiveParticles() {
-            return 0;
-        }
-
-        internal double[] ApproxForcesFromActiveStress(double Circumference_P, double active_stress_P, int spatialDim, double particleAngle, double muA) {
-            double[] forces = new double[spatialDim];
-            for (int d = 0; d < spatialDim; d++) {
-                forces[d] = 0.0125 * Circumference_P * active_stress_P.Pow2() * Math.Cos(particleAngle) / muA;
-            }
-            return forces;
-        }
-
-        internal double[] ApproxForcesFromPreviousTimestep(double[] hydrodynForcesAtTimestep) {
-            double[] forces = new double[hydrodynForcesAtTimestep.Length];
-            for (int d = 0; d < hydrodynForcesAtTimestep.Length; d++) {
-                forces[d] = 0.5 * hydrodynForcesAtTimestep[d];
-            }
-            return forces;
-        }
-
-        internal double ForceTorqueSummationWithNeumaierArray(double ForcesTorque, MultidimensionalArray Summands, double Length)
+        static internal double ForceTorqueSummationWithNeumaierArray(double ForcesTorque, MultidimensionalArray Summands, double Length)
         {
             double sum = ForcesTorque;
             double naiveSum;
@@ -70,7 +39,7 @@ namespace BoSSS.Application.FSI_Solver {
             }
             return sum + c;
         }
-        internal double SummationWithNeumaier(double[] SummandsVelGradient, double SummandsPressure, double muA)
+        static internal double SummationWithNeumaier(double[] SummandsVelGradient, double SummandsPressure, double muA)
         {
             double sum = SummandsVelGradient[0];
             double naiveSum;
@@ -90,7 +59,6 @@ namespace BoSSS.Application.FSI_Solver {
             }
             sum *= muA;
             c *= muA;
-            // Neumaier pressure term
             naiveSum = sum + SummandsPressure;
             if (Math.Abs(sum) >= SummandsPressure)
             {

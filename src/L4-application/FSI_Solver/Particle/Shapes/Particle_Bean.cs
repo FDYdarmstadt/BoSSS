@@ -33,7 +33,7 @@ namespace BoSSS.Application.FSI_Solver
         {
 
         }
-        public Particle_Bean(int Dim, double[] startPos = null, double startAngl = 0) : base(Dim, startPos, startAngl) {
+        public Particle_Bean(double[] startPos = null, double startAngl = 0) : base(2, startPos, startAngl) {
 
             
         }
@@ -53,14 +53,14 @@ namespace BoSSS.Application.FSI_Solver
             }
         }
 
-        public override double Circumference_P
+        protected override double Circumference_P
         {
             get
             {
                 return 2 * Math.PI * radius_P;
             }
         }
-        override public double Area_P
+        protected override double Area_P
         {
             get
             {
