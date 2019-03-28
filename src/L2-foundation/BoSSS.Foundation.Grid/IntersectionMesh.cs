@@ -92,6 +92,7 @@ namespace BoSSS.Foundation.Grid.Voronoi
             {
                 //SetFirst Cell: any random cell. Influences runtime, though
                 FirstCell = Cells[0];
+                foundFirstCell = true;
             }
             else
             {
