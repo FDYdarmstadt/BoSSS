@@ -40,7 +40,7 @@ namespace BoSSS.Solution.Statistic {
             if (A.GridDat.SpatialDimension != B.GridDat.SpatialDimension)
                 throw new ArgumentException("Both fields must have the same spatial dimension.");
 
-            if(object.ReferenceEquals(A.GridDat, B.GridDat)) {
+            if(object.ReferenceEquals(A.GridDat, B.GridDat) && false) {
                 // ++++++++++++++
                 // equal meshes
                 // ++++++++++++++
@@ -91,6 +91,7 @@ namespace BoSSS.Solution.Statistic {
                     Debug.Assert(output.GetLength(0) == L);
 
                     eval.Evaluate(1.0, new DGField[] { fine }, input, 0.0, output.ResizeShallow(L, 1));
+                   
                 }
 
 
