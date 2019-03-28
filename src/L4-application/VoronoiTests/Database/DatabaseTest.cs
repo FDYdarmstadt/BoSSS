@@ -13,22 +13,17 @@ namespace VoronoiTests.Database
     {
         public static IDatabaseInfo Database {
             get {
-                if (database == null)
-                {
-                    InitializeDatabase();
-                }
-                return database;
+                return database ?? (database = InitializeDatabase());
             }
         }
 
         static IDatabaseInfo database;
 
-        [TestFixtureSetUp]
-        public static void InitializeDatabase()
+        public static IDatabaseInfo InitializeDatabase()
         {
             string databasePath = "..\\..\\bosss_TestDatabase_Voronoi";
             IDatabaseInfo emptyDatabase = CreateEmptyDatabase(databasePath);
-            database = emptyDatabase;
+            return emptyDatabase;
         }
 
         static IDatabaseInfo CreateEmptyDatabase(string basePath)

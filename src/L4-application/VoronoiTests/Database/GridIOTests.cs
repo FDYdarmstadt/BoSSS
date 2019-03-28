@@ -16,15 +16,11 @@ namespace VoronoiTests.Database
 {
     class GridIOTests : DatabaseTest
     {       
-        static GridDatabaseMethods gridMethods;
+        static GridMethods gridMethods;
 
-        static GridDatabaseMethods GridMethods {
+        static GridMethods GridMethods {
             get {
-                if(gridMethods == null)
-                {
-                    gridMethods = new GridDatabaseMethods(Database);
-                }
-                return gridMethods;
+                return gridMethods ?? (gridMethods = new GridMethods(Database)); 
             }
         }
 
@@ -39,9 +35,12 @@ namespace VoronoiTests.Database
         [Test]
         public static void SaveAndLoad()
         {
-            IGrid grid = CreateVoronoiGrid();
-            Guid gridId = GridMethods.SaveGrid(grid);
-            IGrid databaseGrid = GridMethods.LoadGrid(gridId);
+            IGrid originalGrid = CreateVoronoiGrid();
+            Guid gridId = GridMethods.SaveGrid(originalGrid);
+            IGrid gridFromDatabase = GridMethods.LoadGrid(gridId);
+
+            bool gridsAreEqual = GridMethods.AreEqual(originalGrid, gridFromDatabase);
+            Assert.IsTrue(gridsAreEqual);
         }
         
         [Test]

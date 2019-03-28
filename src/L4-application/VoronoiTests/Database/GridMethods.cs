@@ -11,11 +11,11 @@ using BoSSS.Foundation.Grid;
 
 namespace VoronoiTests.Database
 {
-    class GridDatabaseMethods
+    class GridMethods
     {
         readonly IDatabaseInfo database;
 
-        public GridDatabaseMethods(IDatabaseInfo database)
+        public GridMethods(IDatabaseInfo database)
         {
             this.database = database;
         }      
@@ -43,6 +43,15 @@ namespace VoronoiTests.Database
             Guid gridId = SaveGrid(grid);
             GridProxy proxyGrid = new GridProxy(grid.ID, grid.Database);
             return proxyGrid;
+        }
+
+        public bool AreEqual(IGrid gridA, IGrid gridB)
+        {
+            IEqualityComparer<IGrid> cellComparer = gridA.GridSerializationHandler.CellComparer;
+            IEqualityComparer<IGrid> referenceComparer = gridA.GridSerializationHandler.ReferenceComparer;
+            bool areEqual = cellComparer.Equals(gridA, gridB);
+            areEqual = areEqual && referenceComparer.Equals(gridA, gridB);
+            return areEqual;
         }
     }
 }
