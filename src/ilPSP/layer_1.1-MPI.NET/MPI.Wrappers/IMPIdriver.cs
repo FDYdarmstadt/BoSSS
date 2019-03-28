@@ -71,6 +71,12 @@ namespace MPI.Wrappers {
         void Allgather(IntPtr sendbuf, int sendcount, MPI_Datatype sendtype, IntPtr recvbuf, int recvcount, MPI_Datatype recvtype, MPI_Comm comm);
 
         /// <summary>
+        /// MPI_Gather takes elements from many processes and gathers them to one single process.
+        /// </summary>
+        void Gather(IntPtr sendbuf, int sendcount, MPI_Datatype sendtype, IntPtr recvbuf, int recvcount, MPI_Datatype recvtype, int root, MPI_Comm comm);
+
+
+        /// <summary>
         /// MPI_ALLGATHERV can be thought of as MPI_GATHERV, but where all
         /// processes receive the result, instead of just the root. The block of
         /// data sent from the j-th process is received by every process and

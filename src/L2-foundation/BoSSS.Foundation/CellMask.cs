@@ -57,7 +57,7 @@ namespace BoSSS.Foundation.Grid {
         /// <summary>
         /// ctor
         /// </summary>
-        public CellMask(IGridData grddat, int[] Sequence, MaskType mt = MaskType.Logical) :
+        protected CellMask(IGridData grddat, int[] Sequence, MaskType mt = MaskType.Logical) :
             base(grddat, Sequence, mt) 
         { }
 
@@ -240,10 +240,8 @@ namespace BoSSS.Foundation.Grid {
                     m_BitMaskWithExternal = new BitArray(JE, false);
 
                     // inner cells
-                    foreach (Chunk c in this) {
-                        for (int i = 0; i < c.Len; i++) {
-                            m_BitMaskWithExternal[i + c.i0] = true;
-                        }
+                    foreach (int j in this.ItemEnum) {
+                        m_BitMaskWithExternal[j] = true;
                     }
 
                     m_BitMaskWithExternal.MPIExchange(this.GridData);
@@ -411,7 +409,7 @@ namespace BoSSS.Foundation.Grid {
             if(base.MaskType != MaskType.Logical)
                 throw new NotSupportedException();
 
-            int J = this.GridData.iLogicalCells.Count;
+            int J = this.GridData.iLogicalCells.NoOfLocalUpdatedCells;
             BitArray retMask = new BitArray(J);
 
             var C2E = this.GridData.iLogicalCells.Cells2Edges;
@@ -436,7 +434,7 @@ namespace BoSSS.Foundation.Grid {
                     }
                     Debug.Assert(E2C[iEdge, ii] == jCell);
                     
-                    if(jOtherCell >= 0) // boundary edge !
+                    if(jOtherCell >= 0 && jOtherCell < J) // boundary edge OR external cell
                         retMask[jOtherCell] = true;
                 }
             }
