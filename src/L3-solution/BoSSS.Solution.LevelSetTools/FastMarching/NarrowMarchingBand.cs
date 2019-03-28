@@ -214,7 +214,7 @@ namespace BoSSS.Solution.LevelSetTools.Advection {
         /// Level-Set evolution using a scalar or vector extension velocity (mark 2).
         /// </summary>
         /// <param name="Velocity">Input: velocity field to compute the extension velocity.</param>
-        /// <param name="OldLevSet">Input: level set fied at current time-step.</param>
+        /// <param name="OldLevSet">Input: level set field at current time-step.</param>
         /// <param name="NewLevelSet">New level set.</param>
         /// <param name="ExtVel">
         /// Output, the computed extension velocity;
