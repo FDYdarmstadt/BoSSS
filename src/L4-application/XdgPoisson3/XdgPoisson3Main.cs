@@ -372,6 +372,9 @@ namespace BoSSS.Application.XdgPoisson3 {
             base.QueryHandler.ValueQuery("Conv", converged ? 1.0 : 0.0, true);
             base.QueryHandler.ValueQuery("NoIter", NoOfIterations, true);
 
+            Console.WriteLine("maximal Multigridlevel: {0}", MaxMlevel);
+            base.QueryHandler.ValueQuery("maxMultigridlvl", MaxMlevel, true);
+
             Console.WriteLine("done.");
 
             if (this.Control.ExcactSolSupported) {
@@ -479,8 +482,6 @@ namespace BoSSS.Application.XdgPoisson3 {
         protected void CustomItCallback(int iterIndex, double[] currentSol, double[] currentRes, MultigridOperator Mgop) {
             //noch nix ...
             MaxMlevel=Mgop.LevelIndex;
-            Console.WriteLine("maximal Multigridlevel: {0}",MaxMlevel);
-            base.QueryHandler.ValueQuery("maxMultigridlvl", MaxMlevel, true);
         }
 
         private int m_maxMlevel;
@@ -525,6 +526,7 @@ namespace BoSSS.Application.XdgPoisson3 {
                     this.Op_Matrix,
                     this.Op_mass.GetMassMatrix(new UnsetteledCoordinateMapping(this.u.Basis), false),
                     OpConfig);
+                Assert.True(MultigridOp!=null);
 
                 int L = MultigridOp.Mapping.LocalLength;
                 DOFs = MultigridOp.Mapping.TotalLength;
@@ -538,6 +540,8 @@ namespace BoSSS.Application.XdgPoisson3 {
                 SolverFactory SF = new SolverFactory(this.Control.NonLinearSolver, this.Control.LinearSolver);
                 SF.CustomizedCallback += CustomItCallback;
                 SF.GenerateLinear(out exsolver, MultigridSequence, OpConfig);
+
+
 
                 using (new BlockTrace("Solver_Init", tr)) {
                     exsolver.Init(MultigridOp);
