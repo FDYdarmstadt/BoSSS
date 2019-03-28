@@ -143,6 +143,16 @@ namespace BoSSS.Solution.Control {
             /// </summary>
             exp_softpcg_schwarz_directcoarse = 44,
 
+            /// <summary>
+            /// Congjugate gradient with Block Jacobi and multigrid.
+            /// </summary>
+            exp_softpcg_jacobi_mg = 45,
+
+            /// <summary>
+            /// Congjugate gradient with Schwarz and multigrid.
+            /// </summary>
+            exp_softpcg_schwarz_mg = 46,
+
 
             selfmade = 999,
         }
