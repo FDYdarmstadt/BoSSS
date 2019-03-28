@@ -28,6 +28,7 @@ Iterative Algorithms with \ac{dg}-specific preconditioners, such as aggregation 
 and multi-level additive Schwarz
 \end{itemize}
 
+
 \subsection{Constant Diffusion Coefficient test problem}
 \label{sec:ConstantDiffusionCoefficient}
 The problem
@@ -164,6 +165,19 @@ Subsequent the performance of some code parts are investigated for the block Jac
 	\item Solver Run: solves the equation system: operator matrix, vector of dg coordinates and given RHS 
 \end{itemize}
 Both variants are using pre and post smoothing solvers (5 runs at each multigrid level).
+
+\subsubsection{Block Jacobian and Schwarz-Multigrid Preconditioning}
+
+\begin{figure}[!h]
+	\begin{center}
+		\input{./apdx-NodeSolverPerformance/zeug/jacobischwarz-scheme.pdf_tex}
+	\end{center}
+	\caption{
+		schematic of the Multigrid Schwarz \& Block Jacobian Preconditioning (for a CG solver).
+	}
+	\label{fig:schema_BlockPCG_2}
+\end{figure}
+
 \begin{figure}[!h]
 	\begin{center}
 		\input{./apdx-NodeSolverPerformance/XDGPoisson/plots/XdgPoisson_MG.tex}
@@ -174,6 +188,19 @@ Both variants are using pre and post smoothing solvers (5 runs at each multigrid
 	}
 	\label{fig:Xdg_blockJacobianPCG}
 \end{figure}
+
+\subsubsection{Schwarz-Multigrid Preconditioning}
+
+\begin{figure}[!h]
+	\begin{center}
+		\input{./apdx-NodeSolverPerformance/zeug/schwarz-scheme.pdf_tex}
+	\end{center}
+	\caption{
+		schematic of the Multigrid Schwarz \& Block Jacobian Preconditioning (for a CG solver).
+	}
+	\label{fig:schema_SchwarzPCG_2}
+\end{figure}
+
 \newpage
 \begin{figure}[!h]
 	\begin{center}
@@ -186,6 +213,8 @@ Both variants are using pre and post smoothing solvers (5 runs at each multigrid
 	\label{fig:Xdg_SchwarzPGC}
 \end{figure}
 \newpage
+
+
 \section{Solver Performance - Navier-Stokes problems}
 \label{sec:SolverPerformanceNSE}
 Different solver strategies are conducted to solve the fully coupled incompressible Navier-Stokes equations. At the moment the following strategies can be examined:

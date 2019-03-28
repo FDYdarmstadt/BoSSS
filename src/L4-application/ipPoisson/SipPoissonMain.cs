@@ -41,6 +41,7 @@ using BoSSS.Foundation.Grid.Aggregation;
 using BoSSS.Platform.LinAlg;
 using BoSSS.Solution.Gnuplot;
 using BoSSS.Solution.Control;
+using BoSSS.Solution.Statistic;
 
 namespace BoSSS.Application.SipPoisson {
 
@@ -75,6 +76,11 @@ namespace BoSSS.Application.SipPoisson {
         private SinglePhaseField ResiualKP1;
 
         /// <summary>
+        /// error of the numerical solution
+        /// </summary>
+        private SinglePhaseField Error;
+
+        /// <summary>
         /// DG field instantiation
         /// </summary>
         protected override void CreateFields() {
@@ -82,6 +88,20 @@ namespace BoSSS.Application.SipPoisson {
 
             ResiualKP1 = new SinglePhaseField(new Basis(this.GridData, T.Basis.Degree + 1), "ResidualKP1");
             base.IOFields.Add(ResiualKP1);
+
+            Error = new SinglePhaseField(new Basis(this.GridData, Math.Max(T.Basis.Degree + 1, Tex.Basis.Degree)), "Error");
+            base.m_IOFields.Add(Error);
+
+            // mg coloring
+            int iLevel = 0;
+            this.MGColoring.Clear();
+            foreach (var MgL in this.MultigridSequence) {
+                SinglePhaseField c = new SinglePhaseField(new Basis(this.GridData, 0), "MgLevel_" + iLevel);
+                Foundation.Grid.Aggregation.CoarseningAlgorithms.ColorDGField(MgL, c);
+                this.MGColoring.Add(c);
+                base.IOFields.Add(c);
+                iLevel++;
+            }
         }
 
         /*
@@ -105,18 +125,25 @@ namespace BoSSS.Application.SipPoisson {
         }
         */
 
+#if !DEBUG
         static void MyHandler(object sender, UnhandledExceptionEventArgs args) {
             Exception e = (Exception)args.ExceptionObject;
             Console.WriteLine("MyHandler caught : " + e.Message);
             Console.WriteLine("Runtime terminating: {0}", args.IsTerminating);
             System.Environment.Exit(-1234);
         }
+#endif
 
         /// <summary>
         /// Main routine
         /// </summary>
         /// <param name="args"></param>
         static void Main(string[] args) {
+            //BoSSS.Application.SipPoisson.Tests.TestProgram.Init();
+            //BoSSS.Application.SipPoisson.Tests.TestProgram.TestIterativeSolver(3, 8, 3, LinearSolverConfig.Code.exp_softpcg_schwarz_directcoarse);
+            //BoSSS.Application.SipPoisson.Tests.TestProgram.Cleanup();
+            //return;
+
 
             if (System.Environment.MachineName.ToLowerInvariant().EndsWith("terminal03")
                 //|| System.Environment.MachineName.ToLowerInvariant().Contains("jenkins")
@@ -234,26 +261,26 @@ namespace BoSSS.Application.SipPoisson {
         /// Sets the multigrid coloring
         /// </summary>
         protected override void SetInitial() {
+#if !DEBUG
             //this will suppress exception prompts
-            //Workaround to prevent distrubance while executing batchclient
+            //Workaround to prevent disturbance while executing batch-client
             if (this.Control.SuppressExceptionPrompt) {
                 AppDomain currentDomain = AppDomain.CurrentDomain;
                 currentDomain.UnhandledException += new UnhandledExceptionEventHandler(MyHandler);
             }
+#endif
 
             base.SetInitial();
 
-            // mg coloring
-            int iLevel = 0;
-            foreach (var MgL in this.MultigridSequence) {
-                SinglePhaseField c = new SinglePhaseField(new Basis(this.GridData, 0), "MgLevel_" + iLevel);
-                Foundation.Grid.Aggregation.CoarseningAlgorithms.ColorDGField(MgL, c);
-                this.MGColoring.Add(c);
-                base.IOFields.Add(c);
-                iLevel++;
-            }
-         
+            
+
+            //TexactFine = (SinglePhaseField)(GetDatabase().Sessions.First().Timesteps.Last().Fields.Where(fi => fi.Identification == "T"));
         }
+
+        ///// <summary>
+        ///// Hack - some precise solution on a finer grid.
+        ///// </summary>
+        //SinglePhaseField TexactFine;
 
         /// <summary>
         /// LHS of the equation <see cref="LaplaceMtx"/>*<see cref="T"/> + <see cref="LaplaceAffine"/> = <see cref="RHS"/>.
@@ -508,27 +535,61 @@ namespace BoSSS.Application.SipPoisson {
         protected override void AdaptMesh(int TimestepNo, out GridCommons newGrid, out GridCorrelation old2NewGrid) {
             if (this.Control.AdaptiveMeshRefinement && TimestepNo > 1) {
 
+                // compute error against fine solution
+                if(Control.ExactSolution_provided) {
+                    //Error.Clear();
+                    //Error.AccLaidBack(1.0, T);
+
+                    /*
+                    var eval = new FieldEvaluation((GridData)(TexactFine.GridDat));
+
+                    void FineEval(MultidimensionalArray input, MultidimensionalArray output) {
+                        int L = input.GetLength(0);
+                        Debug.Assert(output.GetLength(0) == L);
+
+                        eval.Evaluate(1.0, new DGField[] { TexactFine }, input, 0.0, output.ResizeShallow(L, 1));
+                    }
+
+                    Error.ProjectField(-1.0, FineEval);
+                    */
+                    //Error.AccLaidBack(-1.0, Tex);
+                }
+
                 int oldJ = this.GridData.CellPartitioning.TotalLength;
 
                 double LocNormPow2 = this.ResiualKP1.CoordinateVector.L2NormPow2(); // norm of residual on this processor
                 double TotNormPow2 = LocNormPow2.MPISum(); //                          norm of residual over all processors
                 double MeanNormPow2PerCell = TotNormPow2 / oldJ; //                    mean norm per cell
 
+                double maxSoFar = 0;
+                int jMax = -1;
+                for(int j = 0; j < oldJ; j++) {
+                    double CellNorm = Error.Coordinates.GetRow(j).L2NormPow2();
+
+                    if(CellNorm > maxSoFar) {
+                        jMax = j;
+                        maxSoFar = CellNorm;
+                    }
+                }
+
 
                 int MyLevelIndicator(int j, int CurrentLevel) {
                     double CellNorm = this.ResiualKP1.Coordinates.GetRow(j).L2NormPow2();
 
 
-                    if (j == 0)
-                        CurrentLevel = CurrentLevel + 1;
+                    //if (j == 0)
+                    //    CurrentLevel = CurrentLevel + 1;
 
-                    if (CellNorm > MeanNormPow2PerCell * 1.1)
+                    //if (CellNorm > MeanNormPow2PerCell * 1.1)
+                    //    return CurrentLevel + 1;
+                    //else
+                    //    return CurrentLevel;
+                    if (j == jMax)
                         return CurrentLevel + 1;
                     else
                         return CurrentLevel;
                 }
-
-
+                
                 
                 bool AnyChange = GridRefinementController.ComputeGridChange((GridData)(this.GridData), null, MyLevelIndicator, out List<int> CellsToRefineList, out List<int[]> Coarsening);
                 int NoOfCellsToRefine = 0;
@@ -593,6 +654,14 @@ namespace BoSSS.Application.SipPoisson {
             using (new FuncTrace()) {
                 //this.WriteSEMMatrices();
 
+                if (Control.ExactSolution_provided) {
+                    Tex.Clear();
+                    Tex.ProjectField(this.Control.InitialValues_Evaluators["Tex"]);
+
+                    RHS.Clear();
+                    RHS.ProjectField(this.Control.InitialValues_Evaluators["RHS"]);
+                }
+
                 if (Control.AdaptiveMeshRefinement == false) {
                     base.NoOfTimesteps = -1;
                     if (TimestepNo > 1)
@@ -650,17 +719,12 @@ namespace BoSSS.Application.SipPoisson {
                 base.QueryHandler.ValueQuery("maxMultigridlvl", MaxMlevel, true);
 
                 if (base.Control.ExactSolution_provided) {
-                    SinglePhaseField ERR;
-                    if (Tex.Basis.Degree >= T.Basis.Degree) {
-                        ERR = this.Tex.CloneAs();
-                        ERR.AccLaidBack(-1.0, T);
-                    } else {
-                        ERR = this.T.CloneAs();
-                        ERR.AccLaidBack(-1.0, Tex);
-                    }
-
-                    double L2_ERR = ERR.L2Norm();
-
+                    Error.Clear();
+                    Error.AccLaidBack(1.0, Tex);
+                    Error.AccLaidBack(-1.0, T);
+                         
+                    double L2_ERR = Error.L2Norm();
+                    Console.WriteLine("\t\tL2 error on " + this.Grid.NumberOfCells + ": " + L2_ERR);
                     base.QueryHandler.ValueQuery("SolL2err", L2_ERR, true);
 
                 }
@@ -1244,7 +1308,7 @@ namespace BoSSS.Application.SipPoisson {
                 }
             }
 
-            DGField[] Fields = new DGField[] { T, Tex, RHS, ResiualKP1 };
+            DGField[] Fields = new DGField[] { T, Tex, RHS, ResiualKP1, Error };
             Fields = Fields.Cat(this.MGColoring);
             BoSSS.Solution.Tecplot.Tecplot.PlotFields(Fields, "poisson" + timestepNo + caseStr, phystime, superSampling);
         }

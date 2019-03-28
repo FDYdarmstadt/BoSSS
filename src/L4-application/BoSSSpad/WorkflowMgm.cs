@@ -243,7 +243,7 @@ namespace BoSSS.Application.BoSSSpad {
         /// <param name="PollingIntervallSeconds">
         /// Seconds to wait before checking the jobs status again; should be in the order of seconds, not to overload the IO.
         /// </param>
-        public void BlockUntilAllJobsTerminate(double TimeOutSeconds = -1, double PollingIntervallSeconds = 2) {
+        public void BlockUntilAllJobsTerminate(double TimeOutSeconds = -1, double PollingIntervallSeconds = 10) {
             DateTime start = DateTime.Now;
             while(true) {
                 Thread.Sleep((int)PollingIntervallSeconds);

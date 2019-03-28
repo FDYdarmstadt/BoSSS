@@ -69,9 +69,9 @@ namespace BoSSS.Application.XNSE_Solver {
         static void Main(string[] args) {
 
             //BoSSS.Application.XNSE_Solver.Tests.UnitTest.TestFixtureSetUp();
-            //BoSSS.Application.XNSE_Solver.Tests.UnitTest.MovingDropletTest(2, 0.01d, true, SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_Flux, 0.69711d, ViscosityMode.Standard, true, false);
+            //BoSSS.Application.XNSE_Solver.Tests.UnitTest.ChannelTest(3, 0.1, ViscosityMode.FullySymmetric, 0.0);
             //Debug.Assert(false);
-            
+
 
 
             _Main(args, false, delegate () {
@@ -999,11 +999,10 @@ namespace BoSSS.Application.XNSE_Solver {
 
                         //Exception e = null;
                         try {
-                            rtsi = this.DatabaseDriver.SaveTimestep(
+                            rtsi = new TimestepInfo(
                                 t - ti * this.Control.GetFixedTimestep(),
-                                tsn,
                                 this.CurrentSessionInfo,
-                                this.GridData,
+                                tsn,
                                 restartIOFields);
                         } catch(Exception ee) {
                             Console.Error.WriteLine(ee.GetType().Name + " on rank " + this.MPIRank + " saving time-step " + tsn + ": " + ee.Message);
@@ -1181,9 +1180,9 @@ namespace BoSSS.Application.XNSE_Solver {
                     }
 
 
-                /// +++++++++++++++++++++++++++++++++++++
-                /// compute/check time step restrictions
-                /// +++++++++++++++++++++++++++++++++++++
+                // +++++++++++++++++++++++++++++++++++++
+                // compute/check time step restrictions
+                // +++++++++++++++++++++++++++++++++++++
 
                 dt = base.Control.dtFixed;
 

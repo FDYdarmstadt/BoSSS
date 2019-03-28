@@ -60,6 +60,10 @@
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\..\..\libs\MathNet.Numerics-2.6.0.29\MathNet.Numerics.dll</HintPath>
     </Reference>
+    <Reference Include="Newtonsoft.Json, Version=6.0.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\..\..\libs\Newtonsoft.Json60r4\Newtonsoft.Json.dll</HintPath>
+    </Reference>
     <Reference Include="nunit.framework, Version=2.6.4.14350, Culture=neutral, PublicKeyToken=96d09a1eb7f44a77, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\..\..\libs\NUnit-2.6.0.12051\bin\framework\nunit.framework.dll</HintPath>
@@ -81,9 +85,12 @@
     <Compile Include="active_particles\ActivePressureAtIB.cs" />
     <Compile Include="active_particles\HardcodedControl\HardcodedControl_tiltedChannel.cs" />
     <Compile Include="active_particles\HardcodedControl\HardcodedControl_straightChannel.cs" />
+    <Compile Include="FSI_TimestepInfo.cs" />
+    <Compile Include="Particle\ParticleAcceleration.cs" />
     <Compile Include="Particle\ParticleAddedDamping.cs" />
     <Compile Include="Particle\ParticleAuxillary.cs" />
-    <Compile Include="Particle\ParticlePhysics.cs" />
+    <Compile Include="Particle\ParticleForceIntegration.cs" />
+    <Compile Include="Particle\ParticleUnderrelaxation.cs" />
     <Compile Include="Particle\Shapes\Particle_Bean.cs" />
     <Compile Include="Particle\Shapes\Particle_superEllipsoid.cs" />
     <Compile Include="Particle\Shapes\Particle_Sphere.cs" />
@@ -92,7 +99,6 @@
     <Compile Include="Particle\Shapes\Particle_Ellipsoid.cs" />
     <Compile Include="FSI_Movement.cs" />
     <Compile Include="active_particles\HardcodedControlDeussen.cs" />
-    <Compile Include="FSI_GeometricalObject.cs" />
     <Compile Include="IBMPaperReproduce.cs" />
     <Compile Include="HardcodedControl.cs" />
     <Compile Include="FSI_Control.cs" />
