@@ -143,7 +143,7 @@ namespace BoSSS.Application.FSI_Solver
 
             double hMin = lsTrk.GridDat.iGeomCells.h_min.Min();
             int NoOfSurfacePoints = Convert.ToInt32(10 * Circumference_P / hMin) + 1;
-            MultidimensionalArray SurfacePoints = null;
+            MultidimensionalArray SurfacePoints = MultidimensionalArray.Create(NoOfSurfacePoints, 2);
             double[] InfinitisemalAngle = GenericBlas.Linspace(0, 2 * Math.PI, NoOfSurfacePoints + 1);
             if (Math.Abs(10 * Circumference_P / hMin + 1) >= int.MaxValue)
                 throw new ArithmeticException("Error trying to calculate the number of surface points, overflow");

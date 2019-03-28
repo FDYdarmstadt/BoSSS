@@ -65,6 +65,7 @@ namespace BoSSS.Foundation.Grid.Aggregation
                 object[][] parentData = parentGridHandler.GetVectorData();
                 data = CombineArrays (aggCells, parentData);
             }
+            grid.InitNumberOfCells();
             return data;
         }
 
@@ -73,6 +74,7 @@ namespace BoSSS.Foundation.Grid.Aggregation
             grid.AggregationCells = vectorDatas[0].Cast<AggregationGrid.AggCell>().ToArray();
             object[][] parentGridVectorData = Slice(vectorDatas, 1, vectorDatas.Length);
             parentGridHandler.SetVectorData(parentGridVectorData);
+            grid.InitNumberOfCells();
         }
 
         Type[] types;
