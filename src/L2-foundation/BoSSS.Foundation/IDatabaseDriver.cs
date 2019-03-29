@@ -137,7 +137,7 @@ namespace BoSSS.Foundation.IO {
         /// </summary>
         /// <param name="grid"></param>
         /// <returns></returns>
-        IGrid LoadGridData(Grid.Classic.GridCommons grid);
+        IGrid LoadGridData(IGrid grid);
 
         /// <summary>
         /// Loads the given <paramref name="sessionId"/> from the given

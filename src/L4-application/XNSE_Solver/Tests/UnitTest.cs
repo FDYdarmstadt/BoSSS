@@ -197,7 +197,10 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
 
         private static void GenericTest(ITest Tst, XNSE_Control C) {
             using (var solver = new XNSE_SolverMain()) {
-                
+
+                //C.ImmediatePlotPeriod = 1;
+                //C.SuperSampling = 4;
+
                 solver.Init(C);
                 solver.RunSolverMode();
 

@@ -33,9 +33,10 @@ namespace BoSSS.Application.FSI_Solver {
 
         }
 
-        public Particle_superEllipsoid(int Dim, double[] startPos = null, double startAngl = 0) : base(Dim, startPos, startAngl) {
-
-
+        /// <summary>
+        /// ctor
+        /// </summary>
+        public Particle_superEllipsoid(double[] startPos = null, double startAngl = 0) : base(2, startPos, startAngl) {
         }
 
         /// <summary>
@@ -65,13 +66,13 @@ namespace BoSSS.Application.FSI_Solver {
             }
         }
 
-        public override double Circumference_P {
+        protected override double Circumference_P {
             get {
                 return (2 * length_P + 2 * thickness_P + 2 * Math.PI * thickness_P) / 2;
             }
         }
 
-        override public double Area_P {
+        protected override double Area_P {
             get {
                 return 4 * length_P * thickness_P * (SpecialFunctions.Gamma(1 + 1 / superEllipsoidExponent)).Pow2() / SpecialFunctions.Gamma(1 + 2 / superEllipsoidExponent);
             }
@@ -84,24 +85,24 @@ namespace BoSSS.Application.FSI_Solver {
         }
         //override public void UpdateLevelSetFunction()
         //{
-        //    double alpha = -(angleAtTimestep[0]);
-        //    phi_P = delegate (double[] X, double t) {
+        //    double alpha = -(Angle[0]);
+        //    Phi_P = delegate (double[] X, double t) {
         //        double r;
-        //        r = -Math.Pow(((X[0] - positionAtTimestep[0][0]) * Math.Cos(alpha) - (X[1] - positionAtTimestep[0][1]) * Math.Sin(alpha)) / length_P, superEllipsoidExponent) + -Math.Pow(((X[0] - positionAtTimestep[0][0]) * Math.Sin(alpha) + (X[1] - positionAtTimestep[0][1]) * Math.Cos(alpha)) / thickness_P, 
+        //        r = -Math.Pow(((X[0] - Position[0][0]) * Math.Cos(alpha) - (X[1] - Position[0][1]) * Math.Sin(alpha)) / length_P, superEllipsoidExponent) + -Math.Pow(((X[0] - Position[0][0]) * Math.Sin(alpha) + (X[1] - Position[0][1]) * Math.Cos(alpha)) / thickness_P, 
         //            superEllipsoidExponent) + 1;
         //        if (double.IsNaN(r) || double.IsInfinity(r))
         //            throw new ArithmeticException();
         //        return r;
         //    };
         //}
-        public override double phi_P(double[] X) {
-            double alpha = -(angleAtTimestep[0]);
+        public override double Phi_P(double[] X) {
+            double alpha = -(Angle[0]);
             double r;
             r = -Math.Pow(
-                        ((X[0] - positionAtTimestep[0][0]) * Math.Cos(alpha) - (X[1] - positionAtTimestep[0][1]) * Math.Sin(alpha)) / length_P,
+                        ((X[0] - Position[0][0]) * Math.Cos(alpha) - (X[1] - Position[0][1]) * Math.Sin(alpha)) / length_P,
                         superEllipsoidExponent)
                 - Math.Pow(
-                    ((X[0] - positionAtTimestep[0][0]) * Math.Sin(alpha) + (X[1] - positionAtTimestep[0][1]) * Math.Cos(alpha)) / thickness_P,
+                    ((X[0] - Position[0][0]) * Math.Sin(alpha) + (X[1] - Position[0][1]) * Math.Cos(alpha)) / thickness_P,
                     superEllipsoidExponent)
                 + 1;
             if (double.IsNaN(r) || double.IsInfinity(r))
@@ -116,9 +117,9 @@ namespace BoSSS.Application.FSI_Solver {
 
             CellMask cellCollection;
             CellMask cells = null;
-            double alpha = -(angleAtTimestep[0]);
+            double alpha = -(Angle[0]);
             cells = CellMask.GetCellMask(LsTrk.GridDat, 
-                X => -(((((X[0] - positionAtTimestep[0][0]) * Math.Cos(alpha) - (X[1] - positionAtTimestep[0][1]) * Math.Sin(alpha)) / length_P).Pow(superEllipsoidExponent) + (((X[0] - positionAtTimestep[0][0]) * Math.Sin(alpha) + (X[1] - positionAtTimestep[0][1]) * Math.Cos(alpha)) / thickness_P).Pow(superEllipsoidExponent)) - radiusTolerance.Pow(superEllipsoidExponent)) > 0);
+                X => -(((((X[0] - Position[0][0]) * Math.Cos(alpha) - (X[1] - Position[0][1]) * Math.Sin(alpha)) / length_P).Pow(superEllipsoidExponent) + (((X[0] - Position[0][0]) * Math.Sin(alpha) + (X[1] - Position[0][1]) * Math.Cos(alpha)) / thickness_P).Pow(superEllipsoidExponent)) - radiusTolerance.Pow(superEllipsoidExponent)) > 0);
 
             CellMask allCutCells = LsTrk.Regions.GetCutCellMask();
             cellCollection = cells.Intersect(allCutCells);
@@ -127,7 +128,7 @@ namespace BoSSS.Application.FSI_Solver {
         override public bool Contains(double[] point, LevelSetTracker LsTrk) {
             // only for squared cells
             double radiusTolerance = Math.Max(length_P, thickness_P) + 2.0 * Math.Sqrt(2 * LsTrk.GridDat.Cells.h_minGlobal.Pow2());
-            if (-Math.Pow(((point[0] - positionAtTimestep[0][0]) * Math.Cos(angleAtTimestep[0]) - (point[1] - positionAtTimestep[0][1]) * Math.Sin(angleAtTimestep[0])) / length_P, superEllipsoidExponent) + -Math.Pow(((point[0] - positionAtTimestep[0][0]) * Math.Sin(angleAtTimestep[0]) + (point[1] - positionAtTimestep[0][1]) * Math.Cos(angleAtTimestep[0])) / thickness_P, superEllipsoidExponent) + radiusTolerance.Pow(superEllipsoidExponent) > 0) {
+            if (-Math.Pow(((point[0] - Position[0][0]) * Math.Cos(Angle[0]) - (point[1] - Position[0][1]) * Math.Sin(Angle[0])) / length_P, superEllipsoidExponent) + -Math.Pow(((point[0] - Position[0][0]) * Math.Sin(Angle[0]) + (point[1] - Position[0][1]) * Math.Cos(Angle[0])) / thickness_P, superEllipsoidExponent) + radiusTolerance.Pow(superEllipsoidExponent) > 0) {
                 return true;
             }
             return false;
@@ -135,7 +136,7 @@ namespace BoSSS.Application.FSI_Solver {
 
         override public double ComputeParticleRe(double mu_Fluid) {
             double particleReynolds = 0;
-            particleReynolds = Math.Sqrt(transVelocityAtTimestep[0][0] * transVelocityAtTimestep[0][0] + transVelocityAtTimestep[0][1] * transVelocityAtTimestep[0][1]) * 2 * length_P * particleDensity / mu_Fluid;
+            particleReynolds = Math.Sqrt(TranslationalVelocity[0][0] * TranslationalVelocity[0][0] + TranslationalVelocity[0][1] * TranslationalVelocity[0][1]) * 2 * length_P * particleDensity / mu_Fluid;
             Console.WriteLine("Particle Reynolds number:  " + particleReynolds);
             return particleReynolds;
         }

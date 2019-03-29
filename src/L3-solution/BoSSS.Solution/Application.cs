@@ -79,9 +79,8 @@ namespace BoSSS.Solution {
     /// <summary>
     /// Base class for BoSSS applications that helps with the organization of
     /// the general work-flow and offers a simple control file handling. The
-    /// standard mode of execution is defined by <see cref="RunSolverMode"/>,
-    /// but useful specializations are also given by
-    /// <see cref="ParameterStudyMode"/>. The <see cref="_Main"/> method
+    /// standard mode of execution is defined by <see cref="RunSolverMode"/>. 
+    /// The <see cref="_Main"/> method
     /// offers a convenient way to start a BoSSS application with minimal
     /// effort.
     /// </summary>
@@ -1004,10 +1003,17 @@ namespace BoSSS.Solution {
                 if (DoDbLogging) {
                     if (!this.CurrentSessionInfo.KeysAndQueries.ContainsKey("Grid:NoOfCells"))
                         this.CurrentSessionInfo.KeysAndQueries.Add("Grid:NoOfCells", Grid.NumberOfCells);
-                    if (!this.CurrentSessionInfo.KeysAndQueries.ContainsKey("Grid:hMax"))
-                        this.CurrentSessionInfo.KeysAndQueries.Add("Grid:hMax", ((GridData)GridData).Cells.h_maxGlobal);
-                    if (!this.CurrentSessionInfo.KeysAndQueries.ContainsKey("Grid:hMin"))
-                        this.CurrentSessionInfo.KeysAndQueries.Add("Grid:hMin", ((GridData)GridData).Cells.h_minGlobal);
+                    try //ToDo
+                    { 
+                        if (!this.CurrentSessionInfo.KeysAndQueries.ContainsKey("Grid:hMax"))
+                            this.CurrentSessionInfo.KeysAndQueries.Add("Grid:hMax", ((GridData)GridData).Cells.h_maxGlobal);
+                        if (!this.CurrentSessionInfo.KeysAndQueries.ContainsKey("Grid:hMin"))
+                            this.CurrentSessionInfo.KeysAndQueries.Add("Grid:hMin", ((GridData)GridData).Cells.h_minGlobal);
+                    }
+                    catch (InvalidCastException e)
+                    {
+                        Console.WriteLine("Error: Could not log everything.\n {0}", e);
+                    }
                 }
 
 
@@ -1943,7 +1949,7 @@ namespace BoSSS.Solution {
 
                     //}
 
-                    // set dg coördinates
+                    // set dg coï¿½rdinates
                     foreach (var f in m_RegisteredFields) {
                         if (f is XDGField) {
                             XDGBasis xb = ((XDGField)f).Basis;
@@ -2083,7 +2089,7 @@ namespace BoSSS.Solution {
                         //    }
                         //}
 
-                        //set dg coördinates
+                        //set dg coï¿½rdinates
                         foreach (var f in m_RegisteredFields) {
                             if (f is XDGField) {
                                 XDGBasis xb = ((XDGField)f).Basis;

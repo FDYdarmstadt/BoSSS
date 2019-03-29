@@ -34,7 +34,7 @@ namespace BoSSS.Application.FSI_Solver
 
         }
 
-        public Particle_Squircle(int Dim, double[] startPos = null, double startAngl = 0) : base(Dim, startPos, startAngl) {
+        public Particle_Squircle(double[] startPos = null, double startAngl = 0) : base(2, startPos, startAngl) {
 
         }
 
@@ -53,7 +53,7 @@ namespace BoSSS.Application.FSI_Solver
             }
         }
 
-        public override double Circumference_P
+        protected override double Circumference_P
         {
             get
             {
@@ -67,7 +67,7 @@ namespace BoSSS.Application.FSI_Solver
         [DataMember]
         public int superEllipsoidExponent;
 
-        override public double Area_P
+        protected override double Area_P
         {
             get
             {
@@ -83,12 +83,12 @@ namespace BoSSS.Application.FSI_Solver
         }
         //override public void UpdateLevelSetFunction()
         //{
-        //    double alpha = -(angleAtTimestep[0]);
-        //    phi_P = (X, t) => -((((X[0] - positionAtTimestep[0][0]) * Math.Cos(alpha) - (X[1] - positionAtTimestep[0][1]) * Math.Sin(alpha)).Pow(4) + ((X[0] - positionAtTimestep[0][0]) * Math.Sin(alpha) + (X[1] - positionAtTimestep[0][1]) * Math.Cos(alpha)).Pow(4)) - radius_P.Pow(4));
+        //    double alpha = -(Angle[0]);
+        //    Phi_P = (X, t) => -((((X[0] - Position[0][0]) * Math.Cos(alpha) - (X[1] - Position[0][1]) * Math.Sin(alpha)).Pow(4) + ((X[0] - Position[0][0]) * Math.Sin(alpha) + (X[1] - Position[0][1]) * Math.Cos(alpha)).Pow(4)) - radius_P.Pow(4));
         //}
-        public override double phi_P(double[] X) {
-            double alpha = -(angleAtTimestep[0]);
-            return -((((X[0] - positionAtTimestep[0][0]) * Math.Cos(alpha) - (X[1] - positionAtTimestep[0][1]) * Math.Sin(alpha)).Pow(4) + ((X[0] - positionAtTimestep[0][0]) * Math.Sin(alpha) + (X[1] - positionAtTimestep[0][1]) * Math.Cos(alpha)).Pow(4)) - radius_P.Pow(4));
+        public override double Phi_P(double[] X) {
+            double alpha = -(Angle[0]);
+            return -((((X[0] - Position[0][0]) * Math.Cos(alpha) - (X[1] - Position[0][1]) * Math.Sin(alpha)).Pow(4) + ((X[0] - Position[0][0]) * Math.Sin(alpha) + (X[1] - Position[0][1]) * Math.Cos(alpha)).Pow(4)) - radius_P.Pow(4));
         }
         override public CellMask CutCells_P(LevelSetTracker LsTrk)
         {
@@ -97,8 +97,8 @@ namespace BoSSS.Application.FSI_Solver
 
             CellMask cellCollection;
             CellMask cells = null;
-            double alpha = -(angleAtTimestep[0]);
-            cells = CellMask.GetCellMask(LsTrk.GridDat, X => -((((X[0] - positionAtTimestep[0][0]) * Math.Cos(alpha) - (X[1] - positionAtTimestep[0][1]) * Math.Sin(alpha)).Pow(4) + ((X[0] - positionAtTimestep[0][0]) * Math.Sin(alpha) + (X[1] - positionAtTimestep[0][1]) * Math.Cos(alpha)).Pow(4)) - radiusTolerance.Pow(4)) > 0);
+            double alpha = -(Angle[0]);
+            cells = CellMask.GetCellMask(LsTrk.GridDat, X => -((((X[0] - Position[0][0]) * Math.Cos(alpha) - (X[1] - Position[0][1]) * Math.Sin(alpha)).Pow(4) + ((X[0] - Position[0][0]) * Math.Sin(alpha) + (X[1] - Position[0][1]) * Math.Cos(alpha)).Pow(4)) - radiusTolerance.Pow(4)) > 0);
 
             CellMask allCutCells = LsTrk.Regions.GetCutCellMask();
             cellCollection = cells.Intersect(allCutCells);
@@ -108,7 +108,7 @@ namespace BoSSS.Application.FSI_Solver
         {
             // only for squared cells
             double radiusTolerance = radius_P + 2.0 * Math.Sqrt(2 * LsTrk.GridDat.Cells.h_minGlobal.Pow2());
-            if (-((((point[0] - positionAtTimestep[0][0]) * Math.Cos(angleAtTimestep[0]) - (point[1] - positionAtTimestep[0][1]) * Math.Sin(angleAtTimestep[0])).Pow(4) + ((point[0] - positionAtTimestep[0][0]) * Math.Sin(angleAtTimestep[0]) + (point[1] - positionAtTimestep[0][1]) * Math.Cos(angleAtTimestep[0])).Pow(4)) - radiusTolerance.Pow(4)) > 0)
+            if (-((((point[0] - Position[0][0]) * Math.Cos(Angle[0]) - (point[1] - Position[0][1]) * Math.Sin(Angle[0])).Pow(4) + ((point[0] - Position[0][0]) * Math.Sin(Angle[0]) + (point[1] - Position[0][1]) * Math.Cos(Angle[0])).Pow(4)) - radiusTolerance.Pow(4)) > 0)
             {
                 return true;
             }     
@@ -117,7 +117,7 @@ namespace BoSSS.Application.FSI_Solver
         override public double ComputeParticleRe(double mu_Fluid)
         {
             double particleReynolds = 0;
-            particleReynolds = Math.Sqrt(transVelocityAtTimestep[0][0] * transVelocityAtTimestep[0][0] + transVelocityAtTimestep[0][1] * transVelocityAtTimestep[0][1]) * 2 * radius_P * particleDensity / mu_Fluid;
+            particleReynolds = Math.Sqrt(TranslationalVelocity[0][0] * TranslationalVelocity[0][0] + TranslationalVelocity[0][1] * TranslationalVelocity[0][1]) * 2 * radius_P * particleDensity / mu_Fluid;
             Console.WriteLine("Particle Reynolds number:  " + particleReynolds);
             return particleReynolds;
         }

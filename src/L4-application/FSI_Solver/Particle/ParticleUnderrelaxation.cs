@@ -18,7 +18,7 @@ namespace BoSSS.Application.FSI_Solver
             return averageForces / 3;
         }
 
-        private double CalculateAdaptiveUnderrelaxation(double torque, double torqueAtPrevIteration, double averageForce, double convergenceLimit, int predefinedFactor = 1)
+        private double CalculateAdaptiveUnderrelaxation(double torque, double torqueAtPrevIteration, double averageForce, double convergenceLimit, double predefinedFactor = 1)
         {
             double UnderrelaxationCoeff = predefinedFactor * 1e-1;
             double UnderrelaxationExponent = 0;
@@ -38,12 +38,12 @@ namespace BoSSS.Application.FSI_Solver
             return UnderrelaxationCoeff;
         }
 
-        internal double[] RelaxatedForcesAndTorque(double[] forces, double torque , double[] forcesAtPrevIteration, double torqueAtPrevIteration, double convergenceLimit, int RelaxationFactor, bool clearSmallValues, bool UseAdaptiveUnderrelaxation)
+        internal double[] RelaxatedForcesAndTorque(double[] forces, double torque , double[] forcesAtPrevIteration, double torqueAtPrevIteration, double convergenceLimit, double RelaxationFactor, bool clearSmallValues, bool UseAdaptiveUnderrelaxation, double averageDistance)
         {
             int spatialDim = forces.Length;
             double[] ForcesAndTorque = new double[spatialDim + 1];
             double[] underrelaxationCoeff = new double[spatialDim + 1];
-            double averageForce = CalculateAverageForces(forces, torque);
+            double averageForce = CalculateAverageForces(forces, torque, averageDistance);
 
             for (int d = 0; d < spatialDim; d++)
             {

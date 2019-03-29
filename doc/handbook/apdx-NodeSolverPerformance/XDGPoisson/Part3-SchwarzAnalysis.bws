@@ -21,7 +21,7 @@ List of 11 instances of IDatabaseInfo {
  Console ready for input. Type 'help' for help.
 
 ==============
-WorkflowMgm.Init("PoissonSolverPerformance_3_2");
+WorkflowMgm.Init("Xdg_SingleNodePerformance_0_1");
 **************
 Project name is set to 'PoissonSolverPerformance_3_2'.
 
@@ -432,6 +432,8 @@ System.ComponentModel.Win32Exception (0x80004005): Das System kann die angegeben
 CL.WriteMinimalCompileableExample(
     Path.Combine(CurrentDocDir, "plots", "MainXdgPoisson_MG.tex"),
     "XdgPoisson_MG.tex");
+**************
+==============
 **************
 ==============
 **************

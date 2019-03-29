@@ -44,63 +44,32 @@ namespace BoSSS.Foundation.IO {
     /// implementations provide IO on a stream-level), mainly by using
     /// serialization.
     /// </summary>
-    public partial class DatabaseDriver : IDatabaseDriver {
+    public partial class DatabaseDriver : MPIProcess, IDatabaseDriver {
+
+        IVectorDataSerializer standardVectorSerializer;
+        GridDatabaseDriver gridDatabaseDriver;
+        SessionDatabaseDriver sessionsDatabaseDriver;
+        TimeStepDatabaseDriver timestepDatabaseDriver;
+        IFileSystemDriver fsDriver; 
 
         /// <summary>
-        /// Indicates whether the content of the database should be serialized
-        /// in a human-readable (debugging) format, or in a significantly
-        /// smaller binary format
         /// </summary>
-        private static readonly bool DebugSerialization = false;
-
-        /// <summary>
-        /// the file system driver
-        /// </summary>
-        public IFileSystemDriver FsDriver {
-            get {
-                return m_fsDriver;
-            }
-        }
-
-        /// <summary>
-        /// Retrieves the directory where the files for the selected
-        /// <paramref name="session"/> are stored.
-        /// </summary>
-        /// <param name="session">
-        /// The selected session.
+        /// <param name="fsDriver">
+        /// the IO Driver; can be null;
         /// </param>
-        /// <remarks>
-        /// Should work on any System.
-        /// </remarks>
-        public static string GetSessionDirectory(ISessionInfo session) {
-            string path = Path.Combine(
-                session.Database.Path,
-                StandardFsDriver.SessionsDir,
-                session.ID.ToString());
-            return path;
-        }
+        public DatabaseDriver(IFileSystemDriver fsDriver)
+        {
+            this.fsDriver = fsDriver;
+            ISerializer standardSerializer = new SerializerVersion0();
+            ISerializer objectTypeSerializer = new SerializerVersion1();
 
+            standardVectorSerializer = new VectorDataSerializer(fsDriver, standardSerializer);
+            IVectorDataSerializer objectTypeVectorSerializer = new VectorDataSerializer(fsDriver, objectTypeSerializer);
+            IVectorDataSerializer versionedVectorSerializer = new VersionManager(objectTypeVectorSerializer, standardVectorSerializer);
 
-        /// <summary>
-        /// MPI rank of actual process within the MPI world communicator
-        /// </summary>
-        public int MyRank {
-            get {
-                int rank;
-                csMPI.Raw.Comm_Rank(csMPI.Raw._COMM.WORLD, out rank);
-                return rank;
-            }
-        }
-
-        /// <summary>
-        /// Number of MPI processes within the MPI world communicator
-        /// </summary>
-        public int Size {
-            get {
-                int size;
-                csMPI.Raw.Comm_Size(csMPI.Raw._COMM.WORLD, out size);
-                return size;
-            }
+            gridDatabaseDriver = new GridDatabaseDriver(versionedVectorSerializer, fsDriver);
+            sessionsDatabaseDriver = new SessionDatabaseDriver(standardSerializer, fsDriver);
+            timestepDatabaseDriver = new TimeStepDatabaseDriver(standardVectorSerializer, fsDriver);
         }
 
         /// <summary>
@@ -108,45 +77,18 @@ namespace BoSSS.Foundation.IO {
         /// </summary>
         TextWriterAppender logger_output = null;
 
-        /// <summary>
-        /// Creates a new session;
-        /// </summary>
-        public SessionInfo CreateNewSession(IDatabaseInfo database) {
+        public void Dispose()
+        {
+            if (this.FsDriver is IDisposable)
+            {
+                ((IDisposable)this.FsDriver).Dispose();
 
-            Guid id = Guid.NewGuid();
-            if (m_fsDriver == null)
-                id = Guid.Empty;
-            id = id.MPIBroadcast(0);
-
-            // init driver
-            // ===========
-            if (m_fsDriver != null) {
-
-                if (MyRank == 0)
-                    m_fsDriver.CreateSessionDirectory(id);
-
-                // ensure that the session directory is available, before ANY mpi process continues.
-                csMPI.Raw.Barrier(csMPI.Raw._COMM.WORLD);
-                System.Threading.Thread.Sleep(1000);
-                csMPI.Raw.Barrier(csMPI.Raw._COMM.WORLD);
             }
+            sessionsDatabaseDriver.Dispose();
 
-            SessionInfo si = new SessionInfo(id, database);
-
-            // create copy of stdout and stderr
-            // ================================
-            if (this.FsDriver != null) {
-                m_stdout = this.FsDriver.GetNewLog("stdout." + MyRank, id);
-                m_stderr = this.FsDriver.GetNewLog("stderr." + MyRank, id);
-
-                ilPSP.Environment.StdOut.WriterS.Add(m_stdout);
-                ilPSP.Environment.StdErr.WriterS.Add(m_stderr);
-            }
-            return si;
+            if (logger_output != null)
+                logger_output.Close();
         }
-
-        TextWriter m_stdout = null;
-        TextWriter m_stderr = null;
 
         /// <summary>
         /// Returns a write-stream for some new log file.
@@ -157,14 +99,14 @@ namespace BoSSS.Foundation.IO {
             int Rank = MyRank;
 
             Stream file = null;
-            if (m_fsDriver != null && id != Guid.Empty)
+            if (fsDriver != null && id != Guid.Empty)
                 file = this.FsDriver.GetNewLogStream(name + "." + Rank, id);
 
             if (file == null) {
                 // create trace file in local directory
 
                 string tracefilename = name + "." + Rank + ".txt";
-                file = new FileStream(tracefilename, FileMode.Create, FileAccess.Write, FileShare.Read);
+                file = new FileStream( tracefilename, FileMode.Create, FileAccess.Write, FileShare.Read);
             }
 
             return file;
@@ -174,6 +116,11 @@ namespace BoSSS.Foundation.IO {
         /// some fucking fake.
         /// </summary>
         static bool configAllreadyDone = false;
+
+        /// <summary>
+        /// the file system driver
+        /// </summary>
+        public IFileSystemDriver FsDriver => fsDriver;
 
         /// <summary>
         /// Tracing setup.
@@ -191,7 +138,7 @@ namespace BoSSS.Foundation.IO {
             int Rank = MyRank;
 
             Stream tracerfile = null;
-            if (m_fsDriver != null && id != Guid.Empty)
+            if (fsDriver != null && id != Guid.Empty)
                 tracerfile = this.FsDriver.GetNewLogStream("trace." + Rank, id);
 
             TextWriter tracertxt = null;
@@ -229,73 +176,11 @@ namespace BoSSS.Foundation.IO {
         }
 
         /// <summary>
-        /// 
+        /// Creates a new session;
         /// </summary>
-        /// <param name="driver">
-        /// the IO Driver; can be null;
-        /// </param>
-        public DatabaseDriver(IFileSystemDriver driver) {
-            m_fsDriver = driver;
-        }
-
-        /// <summary>
-        /// serialization formatter used for all bigger (data) objects
-        /// </summary>
-        JsonSerializer m_Formatter = new JsonSerializer() {
-            NullValueHandling = NullValueHandling.Ignore,
-            TypeNameHandling = TypeNameHandling.Auto,
-            ConstructorHandling = ConstructorHandling.AllowNonPublicDefaultConstructor,
-            ReferenceLoopHandling = ReferenceLoopHandling.Serialize,
-            Binder = new MySerializationBinder()
-        };
-
-        class MySerializationBinder : Newtonsoft.Json.Serialization.DefaultSerializationBinder {
-
-            public override Type BindToType(string assemblyName, string typeName) {
-
-                if (assemblyName.Equals("BoSSS.Foundation") && typeName.Equals("BoSSS.Foundation.Grid.Cell[]")) {
-                    typeName = "BoSSS.Foundation.Grid.Classic.Cell[]";
-                }
-
-                if (assemblyName.Equals("BoSSS.Foundation") && typeName.Equals("BoSSS.Foundation.Grid.BCElement[]")) {
-                    typeName = "BoSSS.Foundation.Grid.Classic.BCElement[]";
-                }
-
-
-                Type T = base.BindToType(assemblyName, typeName);
-                return T;
-            }
-
-        }
-
-        /// <summary>
-        /// 
-        /// </summary>
-        IFileSystemDriver m_fsDriver;
-
-        /// <summary>
-        /// header file for distributed stored vectors
-        /// </summary>
-        [Serializable]
-        public class DistributedVectorHeader {
-
-            /// <summary>
-            /// GUID to identify the vector in the storage system.
-            /// </summary>
-            public Guid m_Guid;
-
-            /// <summary>
-            /// partition of the vector;
-            /// the i-th entry is the first index of the vector that is stored in the i-th part.
-            /// the length of this array is equal to the number of parts plus 1, the last entry
-            /// is the total length of the vector.
-            /// </summary>
-            public long[] Partitioning;
-
-            /// <summary>
-            /// A hack, which indicates that we are using the most modern version.
-            /// </summary>
-            public bool UseGzip;
+        public SessionInfo CreateNewSession(IDatabaseInfo database)
+        {
+            return sessionsDatabaseDriver.CreateNewSession(database);
         }
 
         /// <summary>
@@ -305,16 +190,9 @@ namespace BoSSS.Foundation.IO {
         /// <returns>
         /// The GUID that was allocated to identify the vector within the storage system.
         /// </returns>
-        public Guid SaveVector<T>(IList<T> vector) {
-            // allocate GUID
-            // =============
-            Guid id;
-            id = Guid.NewGuid();
-            id = id.MPIBroadcast(0);
-
-            SaveVector(vector, id);
-
-            return id;
+        public Guid SaveVector<T>(IList<T> vector)
+        {
+            return standardVectorSerializer.SaveVector(vector);
         }
 
         /// <summary>
@@ -327,62 +205,9 @@ namespace BoSSS.Foundation.IO {
         /// the Guid under which the vector should be stored; must be the same
         /// on all MPI processes.
         /// </param>
-        public void SaveVector<T>(IList<T> vector, Guid id) {
-            using(new FuncTrace()) {
-                if(m_fsDriver == null)
-                    throw new NotSupportedException("Can't save data when not connected to database.");
-
-#if DEBUG
-                // never trust the user
-                Guid id0 = id.MPIBroadcast(0);
-                if(id0 != id) {
-                    throw new ArgumentException(
-                        "Guid differs at least on one MPI process.",
-                        nameof(id));
-                }
-#endif
-                Exception e = null;
-                try {
-
-                    // save parts
-                    using(Stream s = m_fsDriver.GetDistVectorDataStream(true, id, MyRank)) {
-                        using(var s2 = GetJsonWriter(new GZipStream(s, CompressionMode.Compress))) {
-                            // Use a tuple since the Json format expects one object per
-                            // file (with some tricks, we could avoid this, but it's
-                            // not really worth the effort)
-                            var tuple = new Tuple<DistributedVectorHeader, IList<T>>(null, vector);
-
-                            // save header (only proc 0)
-                            // =========================
-                            var _part = (new Partitioning(vector.Count));
-                            if(MyRank == 0) {
-                                DistributedVectorHeader header = new DistributedVectorHeader();
-                                header.m_Guid = id;
-                                header.UseGzip = !DebugSerialization;
-                                long[] part = new long[_part.MpiSize + 1];
-                                for(int i = 0; i < _part.MpiSize; i++) {
-                                    part[i + 1] = part[i] + _part.GetLocalLength(i);
-                                }
-                                header.Partitioning = part;
-                                tuple = new Tuple<DistributedVectorHeader, IList<T>>(header, vector);
-                            }
-
-                            csMPI.Raw.Barrier(csMPI.Raw._COMM.WORLD);
-
-                            m_Formatter.Serialize(s2, tuple);
-
-                            s2.Close();
-                            s.Close();
-                        }
-                    }
-                } catch(Exception ee) {
-                    Console.Error.WriteLine(ee.GetType().Name + " on rank " + this.MyRank + " saving vector " + id + ": " + ee.Message);
-                    Console.Error.WriteLine(ee.StackTrace);
-                    e = ee;
-                }
-
-                e.ExceptionBcast();
-            }
+        public void SaveVector<T>(IList<T> vector, Guid id)
+        {
+            standardVectorSerializer.SaveVector(vector,id);
         }
 
         /// <summary>
@@ -393,347 +218,54 @@ namespace BoSSS.Foundation.IO {
         /// Optional partition of the vector among MPI processors: if null, a
         /// partition is defined by the loader logic.
         /// </param>
-        public IList<T> LoadVector<T>(Guid id, ref Partitioning part) {
-            using (new FuncTrace()) {
-
-                // load header
-                // -----------
-                DistributedVectorHeader header = null;
-
-                // load on p0
-                Exception e = null;
-                try {
-                    if (MyRank == 0) {
-                        // load header
-                        using (var s = m_fsDriver.GetDistVectorDataStream(false, id, 0))
-                        using (var reader = GetJsonReader(new GZipStream(s, CompressionMode.Decompress))) {
-                            header = m_Formatter.Deserialize<Tuple<DistributedVectorHeader, IList<T>>>(reader).Item1;
-                            reader.Close();
-                            s.Close();
-                        }
-
-                    }
-                } catch (Exception ee) {
-                    e = ee;
-                }
-                e.ExceptionBcast();
-
-                // broadcast
-                header = header.MPIBroadcast(0);
-
-                // define partition, if necessary
-                if (part == null) {
-                    int L = (int)header.Partitioning.Last();
-                    int i0 = (L * this.MyRank) / this.Size;
-                    int ie = (L * (this.MyRank + 1)) / this.Size;
-                    part = new Partitioning(ie - i0);
-                }
-
-
-                // check size
-                if (part.TotalLength != header.Partitioning.Last())
-                    throw new ArgumentException("IO error: length of vector to load differs from total length of list.");
-
-
-                // find first part
-                // ===============
-
-                long myI0;
-                int myLen;
-                myI0 = part.i0;
-                myLen = part.LocalLength;
-
-                int p = 0;
-                while (header.Partitioning[p] <= myI0) {
-                    p++;
-                }
-                p--; // now p is the index of the first vector part
-
-                // load parts
-                // ==========
-                List<T> ret = new List<T>(part.LocalLength);
-                try {
-                    int d = 0;
-                    do {
-                        IList<T> vecP;
-                        using (var s = m_fsDriver.GetDistVectorDataStream(false, id, p))
-                        using (var reader = GetJsonReader(new GZipStream(s, CompressionMode.Decompress))) {
-                            vecP = m_Formatter.Deserialize<Tuple<DistributedVectorHeader, IList<T>>>(reader).Item2;
-                            reader.Close();
-                            s.Close();
-                        }
-
-                        int srdInd = (int)((myI0 + d) - header.Partitioning[p]);
-                        int CopyLen = Math.Min(vecP.Count - srdInd, myLen - d);
-
-                        for (int i = 0; i < CopyLen; i++) {
-                            ret.Add(vecP[srdInd + i]);
-                            d++;
-                        }
-
-                        p++; // next part;
-
-                    } while (d < myLen);
-                } catch (Exception ee) {
-                    e = ee;
-                }
-                e.ExceptionBcast();
-
-                // return
-                // ======
-                return ret;
-            }
+        public IList<T> LoadVector<T>(Guid id, ref Partitioning part)
+        {
+            return standardVectorSerializer.LoadVector<T>(id, ref part);
         }
 
         /// <summary>
-        /// Loads a vector from the database
+        /// tests whether a grid with GUID <paramref name="g"/> exists in database, or not;
         /// </summary>
-        /// <param name="id"></param>
-        /// <param name="part">
-        /// Optional partition of the vector among MPI processors: if null, a
-        /// partition is defined by the loader logic.
+        public bool GridExists(Guid g)
+        {
+            return gridDatabaseDriver.GridExists(g);
+        }
+
+        /// <summary>
+        /// Loads the grid info object for the given
+        /// <paramref name="gridId"/> from the given
+        /// <param name="database"></param>
+        /// <returns></returns>
+        public IGridInfo LoadGridInfo(Guid gridId, IDatabaseInfo database)
+        {
+            return gridDatabaseDriver.LoadGridInfo(gridId, database);
+        }
+
+        /// <summary>
+        /// loads the grid identified by <paramref name="uid"/> from the
+        /// given <paramref name="database"/>
+        /// </summary>
+        /// <param name="gridId">The unique identifier of the grid.</param>
+        /// <param name="database">
+        /// The database that is associated with the grid.
         /// </param>
-        public IList<T> LoadVectorSpeziale<T>(Guid id, ref Partitioning part, out Partitioning verySpecial) {
-            using (new FuncTrace()) {
-
-                // load header
-                // -----------
-                DistributedVectorHeader header = null;
-
-                // load on p0
-                Exception e = null;
-                try {
-                    if (MyRank == 0) {
-                        // load header
-                        using (var s = m_fsDriver.GetDistVectorDataStream(false, id, 0))
-                        using (var reader = GetJsonReader(new GZipStream(s, CompressionMode.Decompress))) {
-                            header = m_Formatter.Deserialize<Tuple<DistributedVectorHeader, IList<T>>>(reader).Item1;
-                            reader.Close();
-                            s.Close();
-                        }
-
-                    }
-                } catch (Exception ee) {
-                    e = ee;
-                }
-                e.ExceptionBcast();
-
-                // broadcast
-                header = header.MPIBroadcast(0);
-
-                // define partition, if necessary
-                if (part == null) {
-                    int L = (int)header.Partitioning.Last();
-                    int i0 = (L * this.MyRank) / this.Size;
-                    int ie = (L * (this.MyRank + 1)) / this.Size;
-                    part = new Partitioning(ie - i0);
-                }
-
-                verySpecial = new Partitioning((int)(header.Partitioning[this.MyRank + 1] - header.Partitioning[this.MyRank]));
-
-                // check size
-                if (part.TotalLength != header.Partitioning.Last())
-                    throw new ArgumentException("IO error: length of vector to load differs from total length of list.");
-
-
-                // find first part
-                // ===============
-
-                long myI0;
-                int myLen;
-                myI0 = 0;
-                myLen = (int)header.Partitioning.Last();
-
-                int p = 0;
-                while (header.Partitioning[p] <= myI0) {
-                    p++;
-                }
-                p--; // now p is the index of the first vector part
-
-                // load parts
-                // ==========
-                List<T> ret = new List<T>(part.LocalLength);
-                try {
-                    int d = 0;
-                    do {
-                        IList<T> vecP;
-                        using (var s = m_fsDriver.GetDistVectorDataStream(false, id, p))
-                        using (var reader = GetJsonReader(new GZipStream(s, CompressionMode.Decompress))) {
-                            vecP = m_Formatter.Deserialize<Tuple<DistributedVectorHeader, IList<T>>>(reader).Item2;
-                            reader.Close();
-                            s.Close();
-                        }
-
-                        int srdInd = (int)((myI0 + d) - header.Partitioning[p]);
-                        int CopyLen = Math.Min(vecP.Count - srdInd, myLen - d);
-
-                        for (int i = 0; i < CopyLen; i++) {
-                            ret.Add(vecP[srdInd + i]);
-                            d++;
-                        }
-
-                        p++; // next part;
-
-                    } while (d < myLen);
-                } catch (Exception ee) {
-                    e = ee;
-                }
-                e.ExceptionBcast();
-
-                // return
-                // ======
-                return ret;
-            }
+        /// <returns>
+        /// The loaded grid
+        /// </returns>
+        public IGrid LoadGrid(Guid gridId, IDatabaseInfo database)
+        {
+            return gridDatabaseDriver.LoadGrid(gridId, database);
         }
 
         /// <summary>
-        /// Saves a session info object to a file on the disk.
+        /// Loads the actual grid data for the given <paramref name="grid"/>.
+        /// That is, loads the actual cell data.
         /// </summary>
-        /// <param name="session">The session to be saved.</param>
-        public void SaveSessionInfo(ISessionInfo session) {
-            using (Stream s = FsDriver.GetSessionInfoStream(true, session.ID))
-            using (var writer = GetJsonWriter(s)) {
-                m_Formatter.Serialize(writer, session);
-                writer.Close();
-                s.Close();
-            }
-        }
-
-        /// <summary>
-        /// finalize
-        /// </summary>
-        public void Dispose() {
-            if (this.FsDriver is IDisposable) {
-                ((IDisposable)this.FsDriver).Dispose();
-
-                if (m_stdout != null) {
-                    Debug.Assert(ilPSP.Environment.StdOut.WriterS.Contains(m_stdout));
-                    Debug.Assert(ilPSP.Environment.StdErr.WriterS.Contains(m_stderr));
-
-                    Console.Out.Flush();
-                    Console.Error.Flush();
-
-                    ilPSP.Environment.StdOut.WriterS.Remove(m_stdout);
-                    ilPSP.Environment.StdErr.WriterS.Remove(m_stderr);
-
-                    m_stderr.Close();
-                    m_stdout.Close();
-                    m_stderr.Dispose();
-                    m_stdout.Dispose();
-                }
-
-                if (logger_output != null)
-                    logger_output.Close();
-            }
-        }
-
-        /// <summary>
-        /// Saves a time-step to the database's persistent memory.
-        /// </summary>
-        /// <param name="_tsi">
-        /// (input/output)
-        /// A time-step-info object that has not yet been saved in the database;
-        /// object state (e.g. <see cref="ITimestepInfo.StorageID"/>) will be modified on output;
-        /// </param>
-        public void SaveTimestep(TimestepInfo _tsi) {
-            using (var tr = new FuncTrace()) {
-
-                if (!(_tsi.ID.Equals(Guid.Empty) && _tsi.StorageID.Equals(Guid.Empty)))
-                    throw new ArgumentException("Timestep is already saved in database");
-                var fields = _tsi.Fields.ToArray();
-                var GridDat = fields[0].GridDat;
-
-                {
-                    List<DGField> FieldsFlatten = new List<DGField>();
-                    TimestepInfo.FlattenHierarchy(FieldsFlatten, fields);
-                    foreach (var f in FieldsFlatten) {
-                        if (!object.ReferenceEquals(f.GridDat, GridDat))
-                            throw new ArgumentException("mismatch in GridData object.");
-
-                        if (!fields.Contains(f, (a, b) => object.ReferenceEquals(a, b))) {
-                            // here, we ensure that the 'fields' -- list is complete, i.e.
-                            // that the flatten hierarchy contains no field which is not already a memeber of 'fields'.
-                            // The purpose is e.g. to prevent saving an XDG field without the required level-set field.
-                            throw new ArgumentException(
-                                "Unable to save timestep: field '" + f.Identification
-                                    + "', which is required by at least one of the"
-                                    + " given fields, must also be contained in the"
-                                    + " given list of fields.",
-                                "_tsi");
-                        }
-                    }
-                }
-
-                // build vector
-                // ============
-                int J = GridDat.iLogicalCells.NoOfLocalUpdatedCells;
-                var vec = new CellFieldDataSet[J];
-                var _fields = fields.ToArray();
-                int NF = _fields.Length;
-                var Permutation = GridDat.CurrentGlobalIdPermutation.Values;
-                for (int j = 0; j < J; j++) { // loop over cells
-                    vec[j] = new CellFieldDataSet();
-                    vec[j].GlobalID = Permutation[j];
-                    //vec[j].DGCoordinateData = new CellFieldDataSet.CellFieldData[NF];
-                    for (int idxF = 0; idxF < NF; idxF++) { // loop over fields
-                        var field = _fields[idxF];
-                        int N = field.Basis.GetLength(j);
-                        double[] Coords = new double[N];
-                        for (int n = 0; n < N; n++) {
-                            Coords[n] = field.Coordinates[j, n];
-                        }
-                        //vec[j].DGCoordinateData[idxF] = new CellFieldDataSet.CellFieldData() {
-                        //    Data = Coords
-                        //};
-                        vec[j].AppendDGCoordinates(Coords);
-                        Debug.Assert(ArrayTools.ListEquals(Coords, vec[j].GetDGCoordinates(idxF)));
-                    }
-                }
-
-                // Save dg coordinates
-                // ===================
-                Guid VectorGuid = SaveVector(vec);
-                _tsi.StorageID = VectorGuid;
-                
-
-                // Save state object 
-                // =================
-                _tsi.ID = Guid.NewGuid().MPIBroadcast(0);
-                Exception e = null;
-                if (MyRank == 0) {
-                    try {
-                        //tsi = new TimestepInfo(physTime, currentSession, TimestepNo, fields, VectorGuid);
-                        using(var s = FsDriver.GetTimestepStream(true, _tsi.ID))
-                        using(var writer = GetJsonWriter(s)) {
-                            m_Formatter.Serialize(writer, _tsi);
-                            writer.Close();
-                            s.Close();
-                        }
-                    } catch (Exception ee) {
-                        e = ee;
-                        Console.Error.WriteLine(ee.GetType().Name + " on rank " + MyRank + " saving time-step " + _tsi.TimeStepNumber + ": " + ee.Message);
-                        Console.Error.WriteLine(ee.StackTrace);
-                    }
-                }
-                e.ExceptionBcast();
-
-                // log session
-                // ===========
-                SessionInfo currentSession = (SessionInfo)( _tsi.Session); // hack
-                if (MyRank == 0) {
-
-                    try {
-                        currentSession.LogTimeStep(_tsi.ID);
-                    } catch (Exception ee) {
-                        e = ee;
-                        Console.Error.WriteLine(ee.GetType().Name + " on rank " + MyRank + " saving time-step " + _tsi.TimeStepNumber + ": " + ee.Message);
-                        Console.Error.WriteLine(ee.StackTrace);
-                    }
-                }
-                e.ExceptionBcast();
-
-                _tsi.Database = currentSession.Database;
-            }
+        /// <param name="grid"></param>
+        /// <returns></returns>
+        public IGrid LoadGridData(IGrid grid)
+        {
+            return gridDatabaseDriver.LoadGridData(grid);
         }
 
         /// <summary>
@@ -743,56 +275,83 @@ namespace BoSSS.Foundation.IO {
         /// <param name="sessionId"></param>
         /// <param name="database"></param>
         /// <returns></returns>
-        public SessionInfo LoadSession(Guid sessionId, IDatabaseInfo database) {
-            using (var tr = new FuncTrace()) {
-                tr.Info("Loading session " + sessionId);
+        public SessionInfo LoadSession(Guid sessionId, IDatabaseInfo database)
+        {
+            return sessionsDatabaseDriver.LoadSession(sessionId, database);
+        }
 
-                using (Stream s = FsDriver.GetSessionInfoStream(false, sessionId))
-                using (var reader = GetJsonReader(s)) {
-                    SessionInfo loadedSession = m_Formatter.Deserialize<SessionInfo>(reader);
-                    loadedSession.Database = database;
-                    loadedSession.WriteTime = Utils.GetSessionFileWriteTime(loadedSession);
+        /// <summary>
+        /// Retrieves the directory where the files for the selected
+        /// <paramref name="session"/> are stored.
+        /// </summary>
+        /// <param name="session">
+        /// The selected session.
+        /// </param>
+        /// <remarks>
+        /// Should work on any System.
+        /// </remarks>
+        public static string GetSessionDirectory(ISessionInfo session) {
+            return SessionDatabaseDriver.GetSessionDirectory(session);
+        }
 
-                    reader.Close();
-                    s.Close();
+        /// <summary>
+        /// Saves a session info object to a file on the disk.
+        /// </summary>
+        /// <param name="session">The session to be saved.</param>
+        public void SaveSessionInfo(ISessionInfo session)
+        {
+            sessionsDatabaseDriver.SaveSessionInfo(session);
+        }
 
-                    return loadedSession;
-                }
-            }
+        /// <summary>
+        /// Searches for an equivalent grid in the database and, if none is found
+        /// saves a grid object to the database.
+        /// </summary>
+        /// <param name="grid">
+        /// On entry, the grid which should be saved to the database.
+        /// On exit, either unchanged, or the equivalent grid.
+        /// </param>
+        /// <param name="EquivalentGridFound">
+        /// Inidicates that an equivalent grid was found.
+        /// </param>
+        /// <param name="database"></param>
+        public Guid SaveGridIfUnique(ref IGrid grid, out bool EquivalentGridFound, IDatabaseInfo database)
+        {
+            return gridDatabaseDriver.SaveGridIfUnique(ref grid, out EquivalentGridFound, database);
+        }
+
+        /// <summary>
+        /// Saves the given grid object to the database;
+        /// </summary>
+        /// <returns>
+        /// the Guid of the <see cref="IGrid"/>-object that was saved
+        /// (equal to the <see cref="IDatabaseEntityInfo{T}.ID"/>-property).
+        /// </returns>
+        /// <param name="grid">
+        /// The grid to save.
+        /// </param>
+        /// <param name="database">
+        /// chaos
+        /// </param>
+        public Guid SaveGrid(IGrid grid, IDatabaseInfo database)
+        {
+            return gridDatabaseDriver.SaveGrid(grid, database);
         }
 
         /// <summary>
         /// loads a single <see cref="TimestepInfo"/>-object from the database.
         /// </summary>
         public TimestepInfo LoadTimestepInfo(Guid timestepGuid, ISessionInfo session, IDatabaseInfo database) {
-            return LoadTimestepInfo<TimestepInfo>(timestepGuid, session, database);
+            return timestepDatabaseDriver.LoadTimestepInfo<TimestepInfo>(timestepGuid, session, database);
         }
 
         /// <summary>
         /// loads a single <see cref="TimestepInfo"/>-object from the database.
         /// </summary>
-        public T LoadTimestepInfo<T>(Guid timestepGuid, ISessionInfo session, IDatabaseInfo database) 
-            where T : TimestepInfo //
+        public T LoadTimestepInfo<T>(Guid timestepGuid, ISessionInfo session, IDatabaseInfo database)
+            where T : TimestepInfo
         {
-            using (var tr = new FuncTrace()) {
-                tr.Info("Loading time-step " + timestepGuid);
-
-                T tsi = null;
-                if (MyRank == 0) {
-                    using (Stream s = FsDriver.GetTimestepStream(false, timestepGuid))
-                    using (var reader = GetJsonReader(s)) {
-                        tsi = m_Formatter.Deserialize<T>(reader);
-                        tsi.Session = session;
-                        reader.Close();
-                        s.Close();
-                    }
-                    tsi.ID = timestepGuid;
-                }
-                tsi = tsi.MPIBroadcast(0);
-                tsi.Database = database;
-                tsi.WriteTime = Utils.GetTimestepFileWriteTime(tsi);
-                return tsi;
-            }
+            return timestepDatabaseDriver.LoadTimestepInfo<T>(timestepGuid, session, database);
         }
 
         /// <summary>
@@ -800,22 +359,9 @@ namespace BoSSS.Foundation.IO {
         /// </summary>
         /// <param name="sessionGuid">ID of the session.</param>
         /// <returns>A collection of th session's timestep IDs.</returns>
-        public IEnumerable<Guid> GetTimestepGuids(Guid sessionGuid) {
-            IList<Guid> timestepUids = new List<Guid>();
-
-            try {
-                using (StreamReader timestepLogReader =
-                new StreamReader(FsDriver.GetTimestepLogStream(sessionGuid))) {
-
-                    while (!timestepLogReader.EndOfStream) {
-                        timestepUids.Add(Guid.Parse(timestepLogReader.ReadLine()));
-                    }
-                }
-            } catch (FileNotFoundException) {
-                return new Guid[0];
-            }
-
-            return timestepUids;
+        public IEnumerable<Guid> GetTimestepGuids(Guid sessionGuid)
+        {
+            return timestepDatabaseDriver.GetTimestepGuids(sessionGuid);
         }
 
         /// <summary>
@@ -824,81 +370,18 @@ namespace BoSSS.Foundation.IO {
         /// </summary>
         /// <param name="sessionGuid"></param>
         /// <param name="timestepGuid"></param>
-        public void RemoveTimestepGuid(Guid sessionGuid, Guid timestepGuid) {
-            string logPath = FsDriver.GetTimestepLogPath(sessionGuid);
-            string[] lines = File.ReadAllLines(logPath);
-
-            bool match = false;
-            List<string> reducedLines = new List<string>();
-            foreach (string line in lines) {
-                Guid guid = Guid.Parse(line);
-                if (guid.Equals(timestepGuid)) {
-                    match = true;
-                } else {
-                    reducedLines.Add(line);
-                }
-            }
-
-            if (!match) {
-                throw new IOException(String.Format(
-                    "Time-step guid {0} was not present in the time-step log for session {1}",
-                    timestepGuid,
-                    sessionGuid));
-            }
-
-            File.WriteAllLines(logPath, reducedLines);
+        public void RemoveTimestepGuid(Guid sessionGuid, Guid timestepGuid)
+        {
+            timestepDatabaseDriver.RemoveTimestepGuid(sessionGuid, timestepGuid);
         }
 
         /// <summary>
         /// Loads a time-step from the database into previously allocated
         /// DG-fields (<paramref name="PreAllocatedFields"/>).
         /// </summary>
-        public void LoadFieldData(ITimestepInfo info, IGridData grdDat, IEnumerable<DGField> PreAllocatedFields) {
-            using (var tr = new FuncTrace()) {
-                DGField[] Fields = PreAllocatedFields.ToArray(); // enforce 'evaluation' of the enum (in the case it is some delayed linq-expr).
-                List<DGField> FieldsFlatten = new List<DGField>();
-                TimestepInfo.FlattenHierarchy(FieldsFlatten, Fields);
-                foreach (var f in FieldsFlatten) {
-                    if (!Fields.Contains(f, (a, b) => object.ReferenceEquals(a, b)))
-                        throw new ArgumentException("Unable to load timestep: field '" + f.Identification + "', which is required by at least one of the given fields, must also be contained in the given list of fields.", "PreAllocatedFields");
-                }
-
-                // Load data vector
-                // ================
-                var partition = grdDat.CellPartitioning;
-                var DataVec = this.LoadVector<CellFieldDataSet>(info.StorageID, ref partition);
-
-                // Permute data vector
-                // ===================
-
-
-                var SortedDataVec = new CellFieldDataSet[DataVec.Count];
-
-                {
-                    // tau   is the GlobalID-permutation that we have for the loaded vector
-                    // sigma is the current GlobalID-permutation of the grid
-                    var sigma = grdDat.CurrentGlobalIdPermutation;
-                    var tau = new Permutation(DataVec.Select(cd => cd.GlobalID).ToArray(), csMPI.Raw._COMM.WORLD);
-
-                    // compute resorting permutation
-                    Permutation invSigma = sigma.Invert();
-                    Permutation Resorting = invSigma * tau;
-                    tau = null;
-                    invSigma = null;
-
-                    // put dg coordinates into right order
-                    Resorting.ApplyToVector(DataVec, SortedDataVec);
-                }
-
-
-                // Load the fields
-                // ===============
-                HashSet<object> loadedObjects = new HashSet<object>(ReferenceComparer.Instance);
-
-                foreach (var Field in Fields) {
-                    Field.LoadData(info, SortedDataVec, loadedObjects);
-                }
-            }
+        public void LoadFieldData(ITimestepInfo info, IGridData grdDat, IEnumerable<DGField> PreAllocatedFields)
+        {
+            timestepDatabaseDriver.LoadFieldData(info, grdDat, PreAllocatedFields);
         }
 
         /// <summary>
@@ -908,47 +391,18 @@ namespace BoSSS.Foundation.IO {
         /// By using this method, it is ensured that the loaded/returned fields
         /// have the same DG polynomial degree as in the database.
         /// </remarks>
-        public IEnumerable<DGField> LoadFields(ITimestepInfo info, IGridData grdDat, IEnumerable<string> NameFilter = null) {
-            using (var tr = new FuncTrace()) {
-                // check
-                // =====
-                if (!info.Grid.ID.Equals(grdDat.GridID))
-                    throw new ArgumentException("Mismatch in Grid.");
-
-                // Instantiate
-                // ==========
-                IEnumerable<DGField.FieldInitializer> F2LoadInfo;
-                if (NameFilter != null) {
-                    F2LoadInfo = info.FieldInitializers.Where(fi => NameFilter.Contains(fi.Identification, (a, b) => a.Equals(b)));
-                } else {
-                    F2LoadInfo = info.FieldInitializers;
-                }
-
-                IInitializationContext ic = info.Database.Controller.GetInitializationContext(info);
-                var fields = F2LoadInfo.Select(fi => fi.Initialize(ic)).ToArray();
-                List<DGField> fieldsFlattened = new List<DGField>();
-                TimestepInfo.FlattenHierarchy(fieldsFlattened, fields);
-
-                this.LoadFieldData(info, grdDat, fieldsFlattened);
-
-                return fieldsFlattened;
-            }
+        public IEnumerable<DGField> LoadFields(ITimestepInfo info, IGridData grdDat, IEnumerable<string> NameFilter = null)
+        {
+            return timestepDatabaseDriver.LoadFields(info, grdDat, NameFilter);
         }
 
-        private static JsonReader GetJsonReader(Stream s) {
-            if (DebugSerialization) {
-                return new JsonTextReader(new StreamReader(s));
-            } else {
-                return new BsonReader(s);
-            }
-        }
-
-        private static JsonWriter GetJsonWriter(Stream s) {
-            if (DebugSerialization) {
-                return new JsonTextWriter(new StreamWriter(s));
-            } else {
-                return new BsonWriter(s);
-            }
+        /// <summary>
+        /// Saves a time-step to the database's persistent memory.
+        /// </summary>
+        /// <param name="_tsi">Contains Id etc.</param>
+        public void SaveTimestep(TimestepInfo _tsi)
+        {
+            timestepDatabaseDriver.SaveTimestep( _tsi);
         }
     }
 }

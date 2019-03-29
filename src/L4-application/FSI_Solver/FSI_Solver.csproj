@@ -86,13 +86,16 @@
     <Compile Include="active_particles\HardcodedControl\HardcodedControl_tiltedChannel.cs" />
     <Compile Include="active_particles\HardcodedControl\HardcodedControl_straightChannel.cs" />
     <Compile Include="FSI_TimestepInfo.cs" />
+    <Compile Include="Particle\ParticleAcceleration.cs" />
     <Compile Include="Particle\ParticleAddedDamping.cs" />
     <Compile Include="Particle\ParticleAuxillary.cs" />
-    <Compile Include="Particle\ParticlePhysics.cs" />
+    <Compile Include="Particle\ParticleForceIntegration.cs" />
     <Compile Include="Particle\ParticleUnderrelaxation.cs" />
     <Compile Include="Particle\Shapes\Particle_Bean.cs" />
-    <Compile Include="Particle\Shapes\Particle_Hippopede.cs" />
+    <Compile Include="Particle\Shapes\Particle_superEllipsoid.cs" />
     <Compile Include="Particle\Shapes\Particle_Sphere.cs" />
+    <Compile Include="Particle\Shapes\Particle_Hippopede.cs" />
+    <Compile Include="Particle\Shapes\Particle_Squircle.cs" />
     <Compile Include="Particle\Shapes\Particle_Ellipsoid.cs" />
     <Compile Include="FSI_Movement.cs" />
     <Compile Include="active_particles\HardcodedControlDeussen.cs" />
@@ -101,8 +104,6 @@
     <Compile Include="FSI_Control.cs" />
     <Compile Include="FSI_SolverMain.cs" />
     <Compile Include="Particle\Particle.cs" />
-    <Compile Include="Particle\Shapes\Particle_Squircle.cs" />
-    <Compile Include="Particle\Shapes\Particle_superEllipsoid.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Tests\HardcodedTestExamples.cs" />
     <Compile Include="Tests\TestProgram.cs" />

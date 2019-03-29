@@ -964,7 +964,7 @@ namespace BoSSS.Application.FSI_Solver
 
                 return grd;
             };
-                C.Particles.Add(new Particle_Sphere(2, new double[] { 0.0, 4.0 }) {
+                C.Particles.Add(new Particle_Sphere(new double[] { 0.0, 4.0 }) {
                     radius_P = 0.125,
                     particleDensity = 1.25,
                 
@@ -974,7 +974,7 @@ namespace BoSSS.Application.FSI_Solver
                 //Func<double[], double, double> phi = (X, t) => -(X[0] - t+X[1]);
                 //C.MovementFunc = phi;
 
-                //C.InitialValues_Evaluators.Add("Phi", X => C.Particles[0].phi_P(X, 0));
+                //C.InitialValues_Evaluators.Add("Phi", X => C.Particles[0].Phi_P(X, 0));
                 //C.InitialValues.Add("VelocityX#B", X => 1);
                 C.InitialValues_Evaluators.Add("VelocityX", X => 0);
                 C.InitialValues_Evaluators.Add("VelocityY", X => 0);
