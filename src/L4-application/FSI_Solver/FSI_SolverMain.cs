@@ -804,6 +804,7 @@ namespace BoSSS.Application.FSI_Solver {
 
                 // step 2: sum over MPI processors
                 // note: we want to sum all variables by a single MPI call, which is way more efficient
+                // B. Deußen: a single call of MPISum() would only consider the first entry of StateBuffer, thus I implemented the loop over all entries
                 double[] GlobalStateBuffer = new double[StateBuffer.Length];
                 for (int i = 0; i < StateBuffer.Length; i++)
                 {
