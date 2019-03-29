@@ -67,7 +67,13 @@ namespace BoSSS.Solution.NSECommon {
         }
 
 
-
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="x"></param>
+        /// <param name="parameters"></param>
+        /// <param name="U"></param>
+        /// <returns></returns>
         protected override double Source(double[] x, double[] parameters, double[] U) {
             rho = EoS.GetDensity(parameters);
             if (m_conti)
