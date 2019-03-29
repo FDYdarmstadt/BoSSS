@@ -395,11 +395,11 @@ namespace BoSSS.Application.Rheology {
             C.DbPath = path;
             C.ProjectName = "Cylinder";
 
-            C.NonLinearSolver.MaxSolverIterations = 100;
+            C.NonLinearSolver.MaxSolverIterations = 3;
             C.NonLinearSolver.MinSolverIterations = 1;
             C.NonLinearSolver.ConvergenceCriterion = 1E-6;
 
-            C.LinearSolver.MaxSolverIterations = 100;
+            C.LinearSolver.MaxSolverIterations = 3;
             C.LinearSolver.MinSolverIterations = 1;          
             C.LinearSolver.ConvergenceCriterion = 1E-6;
 

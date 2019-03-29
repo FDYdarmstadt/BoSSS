@@ -108,26 +108,7 @@ namespace BoSSS.Solution.XdgTimestepping {
         /// </summary>
         IsTimeAndSolutionDependent = 3
     }
-
-    /// <summary>
-    /// Which nonlinear solver should be used
-    /// </summary>
-    //public enum NonlinearSolverMethod {
-    //    /// <summary>
-    //    /// Standard Fixpoint-Iteration. Convergence only linear.
-    //    /// </summary>
-    //    Picard = 0,
-
-    //    /// <summary>
-    //    /// Newtons method. For approximation of the inverse of the jacobian the inverse of the operator matrix is used.
-    //    /// </summary>
-    //    Newton = 1,
-
-    //    /// <summary>
-    //    /// Newtons method coupled with GMRES as default. Convergeces quadratically but needs a good approximation. Preconditioning of the Newton-GMRES is set to LinearSolver.
-    //    /// </summary>
-    //    NewtonGMRES = 2
-    //}
+    
 
     /// <summary>
     /// Treatment of the level-set.
@@ -154,9 +135,14 @@ namespace BoSSS.Solution.XdgTimestepping {
         Coupled_Once = 3,
 
         /// <summary>
-        /// Level-Set is updated in very iteration, until convergence is reached.
+        /// Level-Set is updated in every iteration, until convergence is reached.
         /// </summary>
-        Coupled_Iterative = 4
+        Coupled_Iterative = 4,
+
+        /// <summary>
+        /// Level-Set is handled using Lie-Splitting. Use this for the fully coupled FSI-Solver
+        /// </summary>
+        FSI_LieSplittingFullyCoupled = 5,
     }
 
     public enum SpatialOperatorType {
@@ -471,10 +457,10 @@ namespace BoSSS.Solution.XdgTimestepping {
             // ----------------------------------
             if (nonlinSolver != null) {
                 nonlinSolver.IterationCallback += this.LogResis;
-            }
-
-            if (linearSolver != null && linearSolver is ISolverWithCallback) {
-                ((ISolverWithCallback)linearSolver).IterationCallback = this.LogResis;
+            } else {
+                if (linearSolver != null && linearSolver is ISolverWithCallback) {
+                    ((ISolverWithCallback)linearSolver).IterationCallback = this.LogResis;
+                }
             }
 
             return String.Format("nonlinear Solver: {0}, linear Solver: {1}", nls_strg, ls_strg);

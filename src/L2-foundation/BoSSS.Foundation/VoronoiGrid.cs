@@ -17,20 +17,27 @@ limitations under the License.
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using ilPSP.Connectors.Matlab;
+using System.Runtime.Serialization;
 using ilPSP;
-using ilPSP.Utils;
-using BoSSS.Platform.LinAlg;
-using System.Diagnostics;
-using BoSSS.Platform.Utils.Geom;
-using BoSSS.Foundation.Grid.RefElements;
-using BoSSS.Platform;
-using BoSSS.Foundation.Grid.Classic;
-using BoSSS.Foundation.Caching;
+
 
 namespace BoSSS.Foundation.Grid.Voronoi {
+
+    [Serializable]
     public class VoronoiGrid : Aggregation.AggregationGrid
     {
+        MultidimensionalArray voronoiNodes;
 
+        int[] voronoiNodeToCellMap;
+
+        public VoronoiGrid(IGrid pGrid,
+            int[][] AggregationCells,
+            MultidimensionalArray voronoiNodes)
+            : base(pGrid, AggregationCells)
+        {
+            this.voronoiNodes = voronoiNodes;
+        }
+
+        VoronoiGrid() { }
     }
 }

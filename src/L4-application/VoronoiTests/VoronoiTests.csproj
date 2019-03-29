@@ -46,8 +46,12 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="DatabaseTests.cs" />
+    <Compile Include="Database\DatabaseTest.cs" />
+    <Compile Include="Database\GridIOTests.cs" />
+    <Compile Include="Database\GridMethods.cs" />
+    <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="RunnableTest.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />
@@ -61,6 +65,10 @@
       <Project>{b7d5f7c7-ea9f-4506-ab69-c3cd2aa8c938}</Project>
       <Name>BoSSS.Platform</Name>
     </ProjectReference>
+    <ProjectReference Include="..\..\L2-foundation\BoSSS.Foundation.Grid\BoSSS.Foundation.Grid.csproj">
+      <Project>{13585226-5046-494d-947c-b97479566081}</Project>
+      <Name>BoSSS.Foundation.Grid</Name>
+    </ProjectReference>
     <ProjectReference Include="..\..\L2-foundation\BoSSS.Foundation\BoSSS.Foundation.csproj">
       <Project>{17a60fba-20b4-451d-98e1-8d742f368569}</Project>
       <Name>BoSSS.Foundation</Name>
@@ -73,6 +81,10 @@
       <Project>{09cce864-9bae-4660-aff9-f3f3414b6173}</Project>
       <Name>ipPoisson</Name>
     </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <Folder Include="GridCreation\" />
+    <Folder Include="ScalarTransport\" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

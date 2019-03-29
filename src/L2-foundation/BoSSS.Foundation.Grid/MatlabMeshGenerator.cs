@@ -53,14 +53,14 @@ namespace BoSSS.Foundation.Grid.Voronoi
 
             static List<Cell> CreateCells(int[][] vertIndex, List<Vertex> vertCoords)
             {
-                Dictionary<MatlabRidge, Ridge> ridgeMap = new Dictionary<MatlabRidge, Ridge>(vertCoords.Count,
+                Dictionary<MatlabRidge, Edge> ridgeMap = new Dictionary<MatlabRidge, Edge>(vertCoords.Count,
                                                                                              new MatlabRidgeComparer());
                 List<Cell> cells = new List<Cell>(vertIndex.Length);
                 for (int i = 0; i < vertIndex.Length; ++i)
                 {
                     int[] cell = vertIndex[i];
                     Cell voronoiCell = new Cell { ID = i };
-                    Ridge[] Ridges = new Ridge[cell.Length];
+                    Edge[] Ridges = new Edge[cell.Length];
                     Vertex[] Vertices = new Vertex[cell.Length];
 
 
@@ -102,13 +102,13 @@ namespace BoSSS.Foundation.Grid.Voronoi
                     {
                         int j_plus_1 = (j + 1) % cell.Length;
                         MatlabRidge matlabRidge = new MatlabRidge(cell[j], cell[j_plus_1]);
-                        Ridge voronoiRidge = new Ridge
+                        Edge voronoiRidge = new Edge
                         {
                             Cell = voronoiCell,
                             Start = vertCoords[cell[j]],
                             End = vertCoords[cell[j_plus_1]]
                         };
-                        Ridge twinRidge;
+                        Edge twinRidge;
                         if (ridgeMap.TryGetValue(matlabRidge, out twinRidge))
                         {
                             voronoiRidge.Twin = twinRidge;
@@ -124,7 +124,7 @@ namespace BoSSS.Foundation.Grid.Voronoi
 
                     //Assemble Cell
                     voronoiCell.Vertices = Vertices;
-                    voronoiCell.Ridges = Ridges;
+                    voronoiCell.Edges = Ridges;
                     cells.Add(voronoiCell);
                 }
                 return cells;

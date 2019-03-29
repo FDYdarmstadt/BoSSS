@@ -322,7 +322,7 @@ namespace ilPSP.Utils {
                 InitTransmission();
 
             // ---------------
-            // serialze object
+            // serialize object
             // ---------------
 
             MemoryStream ms = m_SendBuffers[TargetProc];

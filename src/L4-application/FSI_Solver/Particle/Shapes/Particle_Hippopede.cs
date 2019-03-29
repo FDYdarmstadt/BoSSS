@@ -36,12 +36,12 @@ namespace BoSSS.Application.FSI_Solver {
         {
             
         }
-        public override double Circumference_P {
+        protected override double Circumference_P {
             get {
                 return 2 * Math.PI * radius_P;
             }
         }
-        override public double Area_P {
+        protected override double Area_P {
             get {
                 // not correct area
                 return Math.PI * radius_P * radius_P;

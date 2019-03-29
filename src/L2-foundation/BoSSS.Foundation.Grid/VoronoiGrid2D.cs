@@ -31,7 +31,7 @@ namespace BoSSS.Foundation.Grid.Voronoi
         /// Number of random nodes that are placed in the bounding box of the PolygonBoundary.
         /// </param>
         /// <returns></returns>
-        public static AggregationGrid FromPolygonalDomain(
+        public static VoronoiGrid FromPolygonalDomain(
             Vector[] PolygonBoundary,
             int NoOfLyyodsIter,
             int noOfNodeSeed)
@@ -57,7 +57,7 @@ namespace BoSSS.Foundation.Grid.Voronoi
         /// Indice of node where the algorithm will start looking for the first Vector of PolygonBoundary.
         /// </param>
         /// <returns></returns>
-        public static AggregationGrid FromPolygonalDomain(
+        public static VoronoiGrid FromPolygonalDomain(
             MultidimensionalArray Nodes,
             Vector[] PolygonBoundary,
             int NoOfLyyodsIter,
@@ -88,7 +88,7 @@ namespace BoSSS.Foundation.Grid.Voronoi
         /// Indice of node where the algorithm will start looking for the first Vector of PolygonBoundary.
         /// </param>
         /// <returns></returns>
-        public static AggregationGrid FromPolygonalDomain(
+        public static VoronoiGrid FromPolygonalDomain(
                 List<Vector> nodes,
                 Vector[] PolygonBoundary,
                 int NoOfLyyodsIter,
@@ -119,7 +119,8 @@ namespace BoSSS.Foundation.Grid.Voronoi
                     nodes = RelaxVoronois(voronoiMesh.GetInsideCells(), ref FirstCellNode_indice);
                 }
             }
-            return voronoiMesh.ToAggregationGrid();
+
+            return voronoiMesh.ToVoronoiGrid();
         }
 
         static List<Vector> RelaxVoronois(IEnumerable<Cell> Cells, ref int FirstCellNode_indice)

@@ -219,7 +219,6 @@ namespace BoSSS.Foundation.Grid {
                 throw new ArgumentNullException();
 
             List<int> _Sequence = new List<int>();
-            //            m_qtype = type;
             m_GridData = grddat;
             this.MaskType = __MaskType;
 
@@ -258,6 +257,7 @@ namespace BoSSS.Foundation.Grid {
             m_BitMask = Mask;
 
             CompIMax();
+            Verify();
         }
 
         /// <summary>
@@ -293,6 +293,7 @@ namespace BoSSS.Foundation.Grid {
             this.MaskType = __MaskType;
             Sequence = _Sequence;
             CompIMax();
+            Verify();
         }
 
         /// <summary>
@@ -309,6 +310,19 @@ namespace BoSSS.Foundation.Grid {
         /// </param>
         protected ExecutionMask(IGridData grddat, IEnumerable<int> Indices, MaskType __MaskType)
             : this(grddat, FromIndEnum(Indices), __MaskType) {
+            Verify();
+        }
+
+        void Verify() {
+            int IMax =  GetUpperIndexBound(this.m_GridData);
+            foreach(var c in this) {
+                for(int i = c.i0; i < c.JE; i++) {
+                    if (i < 0)
+                        throw new IndexOutOfRangeException("negative index");
+                    if (i >= IMax)
+                        throw new IndexOutOfRangeException("index exceeds maximum");
+                }
+            }
         }
 
         /// <summary>

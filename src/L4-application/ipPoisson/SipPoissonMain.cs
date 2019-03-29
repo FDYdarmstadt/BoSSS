@@ -91,6 +91,17 @@ namespace BoSSS.Application.SipPoisson {
 
             Error = new SinglePhaseField(new Basis(this.GridData, Math.Max(T.Basis.Degree + 1, Tex.Basis.Degree)), "Error");
             base.m_IOFields.Add(Error);
+
+            // mg coloring
+            int iLevel = 0;
+            this.MGColoring.Clear();
+            foreach (var MgL in this.MultigridSequence) {
+                SinglePhaseField c = new SinglePhaseField(new Basis(this.GridData, 0), "MgLevel_" + iLevel);
+                Foundation.Grid.Aggregation.CoarseningAlgorithms.ColorDGField(MgL, c);
+                this.MGColoring.Add(c);
+                base.IOFields.Add(c);
+                iLevel++;
+            }
         }
 
         /*
@@ -114,12 +125,14 @@ namespace BoSSS.Application.SipPoisson {
         }
         */
 
+#if !DEBUG
         static void MyHandler(object sender, UnhandledExceptionEventArgs args) {
             Exception e = (Exception)args.ExceptionObject;
             Console.WriteLine("MyHandler caught : " + e.Message);
             Console.WriteLine("Runtime terminating: {0}", args.IsTerminating);
             System.Environment.Exit(-1234);
         }
+#endif
 
         /// <summary>
         /// Main routine
@@ -248,24 +261,18 @@ namespace BoSSS.Application.SipPoisson {
         /// Sets the multigrid coloring
         /// </summary>
         protected override void SetInitial() {
+#if !DEBUG
             //this will suppress exception prompts
-            //Workaround to prevent distrubance while executing batchclient
+            //Workaround to prevent disturbance while executing batch-client
             if (this.Control.SuppressExceptionPrompt) {
                 AppDomain currentDomain = AppDomain.CurrentDomain;
                 currentDomain.UnhandledException += new UnhandledExceptionEventHandler(MyHandler);
             }
+#endif
 
             base.SetInitial();
 
-            // mg coloring
-            int iLevel = 0;
-            foreach (var MgL in this.MultigridSequence) {
-                SinglePhaseField c = new SinglePhaseField(new Basis(this.GridData, 0), "MgLevel_" + iLevel);
-                Foundation.Grid.Aggregation.CoarseningAlgorithms.ColorDGField(MgL, c);
-                this.MGColoring.Add(c);
-                base.IOFields.Add(c);
-                iLevel++;
-            }
+            
 
             //TexactFine = (SinglePhaseField)(GetDatabase().Sessions.First().Timesteps.Last().Fields.Where(fi => fi.Identification == "T"));
         }
@@ -623,6 +630,22 @@ namespace BoSSS.Application.SipPoisson {
             }
         }
 
+        private int m_maxMlevel;
+
+        public int MaxMlevel {
+            get {
+                return m_maxMlevel;
+            }
+            set {
+                if (value > m_maxMlevel)
+                    m_maxMlevel = value;
+            }
+        }
+
+        protected void CustomItCallback(int iterIndex, double[] currentSol, double[] currentRes, MultigridOperator Mgop) {
+            //noch nix ...
+            MaxMlevel = Mgop.LevelIndex;
+        }
 
         /// <summary>
         /// Single run of the solver
@@ -692,6 +715,8 @@ namespace BoSSS.Application.SipPoisson {
                 base.QueryHandler.ValueQuery("DOFs", T.Mapping.TotalLength, true);
                 base.QueryHandler.ValueQuery("BlockSize", T.Basis.Length, true);
 
+                Console.WriteLine("maximal Multigridlevel: {0}", MaxMlevel);
+                base.QueryHandler.ValueQuery("maxMultigridlvl", MaxMlevel, true);
 
                 if (base.Control.ExactSolution_provided) {
                     Error.Clear();
@@ -872,9 +897,9 @@ namespace BoSSS.Application.SipPoisson {
                     ISolverSmootherTemplate solver;
                     
                     SolverFactory SF = new SolverFactory(this.Control.NonLinearSolver,this.Control.LinearSolver);
-
+                    SF.CustomizedCallback += CustomItCallback;
                     SF.GenerateLinear(out solver, MgSeq, MgConfig);
-                    
+
                     //switch (base.Control.solver_name) {
                     //    case LinearSolverConfig.Code.exp_direct:
                     //        solver = new SparseSolver() {
@@ -952,25 +977,25 @@ namespace BoSSS.Application.SipPoisson {
                     ConvergenceObserver CO = null;
                     //CO = new ConvergenceObserver(MultigridOp, null, T.CoordinateVector.ToArray());
                     //CO.TecplotOut = "oasch";
-                    if (solver is ISolverWithCallback) {
+                    //if (solver is ISolverWithCallback) {
 
-                        if (CO == null) {
-                            ((ISolverWithCallback)solver).IterationCallback = delegate (int iter, double[] xI, double[] rI, MultigridOperator mgOp) {
-                                double l2_RES = rI.L2NormPow2().MPISum().Sqrt();
+                    //    if (CO == null) {
+                    //        ((ISolverWithCallback)solver).IterationCallback = delegate (int iter, double[] xI, double[] rI, MultigridOperator mgOp) {
+                    //            double l2_RES = rI.L2NormPow2().MPISum().Sqrt();
 
-                                double[] xRef = new double[xI.Length];
-                                MultigridOp.TransformSolInto(T.CoordinateVector, xRef);
+                    //            double[] xRef = new double[xI.Length];
+                    //            MultigridOp.TransformSolInto(T.CoordinateVector, xRef);
 
-                                double l2_ERR = GenericBlas.L2DistPow2(xI, xRef).MPISum().Sqrt();
-                                Console.WriteLine("Iter: {0}\tRes: {1:0.##E-00}\tErr: {2:0.##E-00}\tRunt: {3:0.##E-00}", iter, l2_RES, l2_ERR, stw.Elapsed.TotalSeconds);
-                                //Tjac.CoordinatesAsVector.SetV(xI);
-                                //Residual.CoordinatesAsVector.SetV(rI);
-                                //PlotCurrentState(iter, new TimestepNumber(iter), 3);
-                            };
-                        } else {
-                            ((ISolverWithCallback)solver).IterationCallback = CO.IterationCallback;
-                        }
-                    }
+                    //            double l2_ERR = GenericBlas.L2DistPow2(xI, xRef).MPISum().Sqrt();
+                    //            Console.WriteLine("Iter: {0}\tRes: {1:0.##E-00}\tErr: {2:0.##E-00}\tRunt: {3:0.##E-00}", iter, l2_RES, l2_ERR, stw.Elapsed.TotalSeconds);
+                    //            //Tjac.CoordinatesAsVector.SetV(xI);
+                    //            //Residual.CoordinatesAsVector.SetV(rI);
+                    //            //PlotCurrentState(iter, new TimestepNumber(iter), 3);
+                    //        };
+                    //    } else {
+                    //        ((ISolverWithCallback)solver).IterationCallback = CO.IterationCallback;
+                    //    }
+                    //}
 
 
                     using (new BlockTrace("Solver_Init", tr)) {
@@ -1284,7 +1309,7 @@ namespace BoSSS.Application.SipPoisson {
             }
 
             DGField[] Fields = new DGField[] { T, Tex, RHS, ResiualKP1, Error };
-            //Fields = Fields.Cat(this.MGColoring);
+            Fields = Fields.Cat(this.MGColoring);
             BoSSS.Solution.Tecplot.Tecplot.PlotFields(Fields, "poisson" + timestepNo + caseStr, phystime, superSampling);
         }
 

@@ -18,38 +18,54 @@ namespace BoSSS.Application.FSI_Solver
             return averageForces / 3;
         }
 
-        private double CalculateAdaptiveUnderrelaxation(double torque, double torqueAtPrevIteration, double averageForce, double convergenceLimit, double predefinedFactor = 1)
+        private int IterationHelper = 1;
+        private double ConvergenceHelperFactor = 1;
+
+        private double CalculateAdaptiveUnderrelaxation(double variable, double variableAtPrevIteration, double averageForce, double convergenceLimit, int iterationCounter, double predefinedFactor = 1)
         {
             double UnderrelaxationCoeff = predefinedFactor * 1e-1;
             double UnderrelaxationExponent = 0;
-            while (Math.Abs(UnderrelaxationCoeff * torque) > 0.75 * Math.Abs(torqueAtPrevIteration))
+            if (iterationCounter < 10)
+            {
+                IterationHelper = 1;
+                ConvergenceHelperFactor = 1;
+            }
+            if (iterationCounter / IterationHelper == 60 * IterationHelper)
+            {
+                IterationHelper += 1;
+                ConvergenceHelperFactor *= 1e-1;
+                if (ConvergenceHelperFactor < 1e-5)
+                    throw new ArithmeticException("I can not reach convergence even with very small underrelaxation factors");
+                
+            }
+            while (Math.Abs(UnderrelaxationCoeff * variable) > 0.75 * Math.Abs(variableAtPrevIteration))
             {
                 UnderrelaxationExponent -= 1;
                 UnderrelaxationCoeff = predefinedFactor * Math.Pow(10, UnderrelaxationExponent);
             }
-            if (Math.Abs(UnderrelaxationCoeff * torque) < convergenceLimit * 1000 && 100 * Math.Abs(torque) > averageForce)
+            if (Math.Abs(UnderrelaxationCoeff * variable) < convergenceLimit * 100 && 100 * Math.Abs(variable) > averageForce)
             {
-                UnderrelaxationCoeff = convergenceLimit * 1000;
+                UnderrelaxationCoeff = convergenceLimit * 100;
             }
             if (UnderrelaxationCoeff >= predefinedFactor * 1e-1)
             {
                 UnderrelaxationCoeff = predefinedFactor * 1e-1;
             }
-            return UnderrelaxationCoeff;
+            return UnderrelaxationCoeff * ConvergenceHelperFactor;
         }
 
-        internal double[] RelaxatedForcesAndTorque(double[] forces, double torque , double[] forcesAtPrevIteration, double torqueAtPrevIteration, double convergenceLimit, double RelaxationFactor, bool clearSmallValues, bool UseAdaptiveUnderrelaxation)
+        internal double[] RelaxatedForcesAndTorque(double[] forces, double torque , double[] forcesAtPrevIteration, double torqueAtPrevIteration, double convergenceLimit, double RelaxationFactor, bool clearSmallValues, bool UseAdaptiveUnderrelaxation, double averageDistance, int iterationCounter)
         {
             int spatialDim = forces.Length;
             double[] ForcesAndTorque = new double[spatialDim + 1];
             double[] underrelaxationCoeff = new double[spatialDim + 1];
-            double averageForce = CalculateAverageForces(forces, torque);
+            double averageForce = CalculateAverageForces(forces, torque, averageDistance);
 
             for (int d = 0; d < spatialDim; d++)
             {
                 if (UseAdaptiveUnderrelaxation == true)
                 {
-                    underrelaxationCoeff[d] = CalculateAdaptiveUnderrelaxation(forces[d], forcesAtPrevIteration[d], averageForce, convergenceLimit, RelaxationFactor);
+                    underrelaxationCoeff[d] = CalculateAdaptiveUnderrelaxation(forces[d], forcesAtPrevIteration[d], averageForce, convergenceLimit, iterationCounter, RelaxationFactor);
                 }
                 else
                 {
@@ -58,7 +74,7 @@ namespace BoSSS.Application.FSI_Solver
             }
             if (UseAdaptiveUnderrelaxation == true)
             {
-                underrelaxationCoeff[spatialDim] = CalculateAdaptiveUnderrelaxation(torque, torqueAtPrevIteration, averageForce, convergenceLimit, RelaxationFactor);
+                underrelaxationCoeff[spatialDim] = CalculateAdaptiveUnderrelaxation(torque, torqueAtPrevIteration, averageForce, convergenceLimit, iterationCounter, RelaxationFactor);
             }
             else
             {

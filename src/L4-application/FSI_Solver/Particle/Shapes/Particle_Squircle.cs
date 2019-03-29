@@ -34,7 +34,7 @@ namespace BoSSS.Application.FSI_Solver
 
         }
 
-        public Particle_Squircle(int Dim, double[] startPos = null, double startAngl = 0) : base(Dim, startPos, startAngl) {
+        public Particle_Squircle(double[] startPos = null, double startAngl = 0) : base(2, startPos, startAngl) {
 
         }
 
@@ -53,7 +53,7 @@ namespace BoSSS.Application.FSI_Solver
             }
         }
 
-        public override double Circumference_P
+        protected override double Circumference_P
         {
             get
             {
@@ -67,7 +67,7 @@ namespace BoSSS.Application.FSI_Solver
         [DataMember]
         public int superEllipsoidExponent;
 
-        override public double Area_P
+        protected override double Area_P
         {
             get
             {

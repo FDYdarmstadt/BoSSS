@@ -68,7 +68,7 @@ namespace BoSSS.Foundation.Grid.Voronoi
         public Vertex end { get; set; }
     }
 
-    class IntersectionMesh : Mesh, IIntersectableMesh<Cell, Ridge, Line>
+    class IntersectionMesh : Mesh, IIntersectableMesh<Cell, Edge, Line>
     {
         public IntersectionMesh(IIdMesh Mesh, int firstCell_NodeIndice) : base(Mesh)
         {
@@ -80,11 +80,11 @@ namespace BoSSS.Foundation.Grid.Voronoi
             FirstCell = null;
         }
 
-        static RidgeComparer ridgeComparer = new RidgeComparer();
+        static EdgeComparer ridgeComparer = new EdgeComparer();
 
         Cell FirstCell;
 
-        public (Cell, IEnumerator<Ridge>) getFirst(Line boundaryLine)
+        public (Cell, IEnumerator<Edge>) getFirst(Line boundaryLine)
         {
             //Find cell that contains boundaryLine.Start;
             bool foundFirstCell = false;
@@ -92,6 +92,7 @@ namespace BoSSS.Foundation.Grid.Voronoi
             {
                 //SetFirst Cell: any random cell. Influences runtime, though
                 FirstCell = Cells[0];
+                foundFirstCell = true;
             }
             else
             {
@@ -111,7 +112,7 @@ namespace BoSSS.Foundation.Grid.Voronoi
             }
             if (foundFirstCell)
             {
-                AfterCutRidgeEnumerator enumerator = new AfterCutRidgeEnumerator(FirstCell.Ridges, FirstCell.Ridges[1]);
+                AfterCutRidgeEnumerator enumerator = new AfterCutRidgeEnumerator(FirstCell.Edges, FirstCell.Edges[1]);
                 enumerator.Reset();
                 return (FirstCell, enumerator);
             }
@@ -126,21 +127,21 @@ namespace BoSSS.Foundation.Grid.Voronoi
             return ConnectedCells_Iterative(FirstCell);
         }
 
-        public AggregationGrid ToAggregationGrid()
+        public VoronoiGrid ToVoronoiGrid()
         {
-            return ToAggregationGrid(FirstCell);
+            return ToVoronoiGrid(FirstCell);
         }
 
         static double accuracy = 1e-10;
 
         //Return end of ridge if parallel and overlapping.
-        public bool intersect(Ridge ridge, Line line, ref IntersectionCase intersectionCase, out double alpha)
+        public bool intersect(Edge edge, Line line, ref IntersectionCase intersectionCase, out double alpha)
         {
             double alpha2;
             Vector vector;
             bool notParallel = PolygonClipping.ComputeIntersection(
-                ridge.Start.Position,
-                ridge.End.Position,
+                edge.Start.Position,
+                edge.End.Position,
                 line.start.Position,
                 line.end.Position,
                 out alpha,
@@ -182,10 +183,10 @@ namespace BoSSS.Foundation.Grid.Voronoi
             {
                 if (Math.Abs(alpha) <= accuracy)
                 {
-                    double absRidge = (ridge.Start.Position - ridge.End.Position).L2Norm();
-                    double absLine = (ridge.Start.Position - line.end.Position).L2Norm();
+                    double absRidge = (edge.Start.Position - edge.End.Position).L2Norm();
+                    double absLine = (edge.Start.Position - line.end.Position).L2Norm();
                     //Only when in same direction!
-                    double add = (ridge.Start.Position - ridge.End.Position + ridge.Start.Position - line.end.Position).L2Norm();
+                    double add = (edge.Start.Position - edge.End.Position + edge.Start.Position - line.end.Position).L2Norm();
                     if (add < absLine + absRidge)
                     {
                         return false;
@@ -211,21 +212,21 @@ namespace BoSSS.Foundation.Grid.Voronoi
             }
         }
 
-        public (Cell, IEnumerator<Ridge>) getNeighborFromRidgeNeighbor(Ridge ridge)
+        public (Cell, IEnumerator<Edge>) getNeighborFromEdgeNeighbor(Edge edge)
         {
-            Cell newCell = getNeighbour(ridge);
-            AfterCutRidgeEnumerator ridgeEnum = new AfterCutRidgeEnumerator(newCell.Ridges, ridge);
+            Cell newCell = getNeighbour(edge);
+            AfterCutRidgeEnumerator ridgeEnum = new AfterCutRidgeEnumerator(newCell.Edges, edge);
 
             return (newCell, ridgeEnum);
         }
 
-        public Ridge Subdivide(Ridge ridge, List<Line> lines, double alpha)
+        public Edge Subdivide(Edge edge, List<Line> lines, double alpha)
         {
-            Cell cell = ridge.Cell;
+            Cell cell = edge.Cell;
             //Divide Ridge and update Ridge Arrays
             //-------------------------------------
-            Vertex newVertex = DivideRidge(ridge, alpha, out Ridge newRidge);
-            ridge.Twin.Cell.IntersectionVertex = newVertex.ID;
+            Vertex newVertex = DivideEdge(edge, alpha, out Edge newRidge);
+            edge.Twin.Cell.IntersectionVertex = newVertex.ID;
             //cell.IntersectionVertex = newVertex.ID;
 
             //Divide this cell
@@ -241,37 +242,37 @@ namespace BoSSS.Foundation.Grid.Voronoi
                 int ID = AddVertex(verticesOfNewRidgeBoundary[verticesOfNewRidgeBoundary.Length - 1 - i]);
             }
             //New Ridges
-            Ridge[] newRidges;
-            Ridge[] newNeighborRidges;
+            Edge[] newEdges;
+            Edge[] newNeighborEdges;
             Cell newCell = new Cell { VoronoiNode = cell.VoronoiNode };
             AddCell(newCell);
-            CreateRidges(verticesOfNewRidgeBoundary, cell, newCell, out newRidges, out newNeighborRidges);
+            CreateEdge(verticesOfNewRidgeBoundary, cell, newCell, out newEdges, out newNeighborEdges);
             //Link Ridges to old neighbors
-            InsertRidgesAndVertices(newRidges, newNeighborRidges);
+            InsertEdgesAndVertices(newEdges, newNeighborEdges);
 
 
             //dOnE, DoNe!
-            return ridge;
+            return edge;
         }
 
-        class AfterCutRidgeEnumerator : IEnumerator<Ridge>
+        class AfterCutRidgeEnumerator : IEnumerator<Edge>
         {
-            Ridge[] ridges;
-            Ridge current;
+            Edge[] edges;
+            Edge current;
             int startIndex;
             int currentIndex;
             int counter;
 
             int length; //Changes after Reset
 
-            public AfterCutRidgeEnumerator(Ridge[] Ridges, Ridge StartRidge)
+            public AfterCutRidgeEnumerator(Edge[] Edges, Edge StartEdge)
             {
-                ridges = Ridges;
+                edges = Edges;
                 counter = -1;
-                length = Ridges.Length - 2;
-                for (int i = 0; i < Ridges.Length; ++i)
+                length = Edges.Length - 2;
+                for (int i = 0; i < Edges.Length; ++i)
                 {
-                    if (ridgeComparer.Equals(StartRidge, Ridges[i]))
+                    if (ridgeComparer.Equals(StartEdge, Edges[i]))
                     {
                         startIndex = i;
                         currentIndex = i;
@@ -280,7 +281,7 @@ namespace BoSSS.Foundation.Grid.Voronoi
                 }
             }
 
-            public Ridge Current => current;
+            public Edge Current => current;
 
             object IEnumerator.Current => Current;
 
@@ -295,8 +296,8 @@ namespace BoSSS.Foundation.Grid.Voronoi
                 }
                 else
                 {
-                    currentIndex = (currentIndex + 1) % ridges.Length;
-                    current = ridges[currentIndex];
+                    currentIndex = (currentIndex + 1) % edges.Length;
+                    current = edges[currentIndex];
                     return true;
                 }
             }
@@ -304,32 +305,32 @@ namespace BoSSS.Foundation.Grid.Voronoi
             public void Reset()
             {
                 counter = -1;
-                length = ridges.Length;
+                length = edges.Length;
                 currentIndex = startIndex;
             }
         }
 
-        public Ridge FirstCut(Ridge ridge, double alpha)
+        public Edge FirstCut(Edge edge, double alpha)
         {
             //Divide Ridge and update Ridge Arrays
             //-------------------------------------
-            Vertex newVertex = DivideRidge(ridge, alpha, out Ridge newRidge);
-            ridge.Twin.Cell.IntersectionVertex = newVertex.ID;
+            Vertex newVertex = DivideEdge(edge, alpha, out Edge newRidge);
+            edge.Twin.Cell.IntersectionVertex = newVertex.ID;
 
             //Find Intersection and insert Ridge
-            ridge.Cell.IntersectionVertex = newVertex.ID;
+            edge.Cell.IntersectionVertex = newVertex.ID;
 
-            return ridge;
+            return edge;
         }
 
-        public void CloseMesh(List<Line> lines, Ridge firstCutRidge)
+        public void CloseMesh(List<Line> lines, Edge firstCutEdge)
         {
-            Cell cell = firstCutRidge.Cell;
+            Cell cell = firstCutEdge.Cell;
             //Divide this cell
             //================================================================
             //NewVertices
             Vertex[] verticesOfNewRidgeBoundary = new Vertex[lines.Count + 2];
-            verticesOfNewRidgeBoundary[0] = firstCutRidge.End;
+            verticesOfNewRidgeBoundary[0] = firstCutEdge.End;
             verticesOfNewRidgeBoundary[verticesOfNewRidgeBoundary.Length - 1] = Vertices[cell.IntersectionVertex];
             verticesOfNewRidgeBoundary[verticesOfNewRidgeBoundary.Length - 2] = lines[0].start;
             int ID = AddVertex(lines[0].start);
@@ -341,23 +342,23 @@ namespace BoSSS.Foundation.Grid.Voronoi
                 ID = AddVertex(verticesOfNewRidgeBoundary[verticesOfNewRidgeBoundary.Length - 1 - i]);
             }
             //New Ridges
-            Ridge[] newRidges;
-            Ridge[] newNeighborRidges;
+            Edge[] newRidges;
+            Edge[] newNeighborRidges;
             Cell newCell = new Cell();
             AddCell(newCell);
-            CreateRidges(verticesOfNewRidgeBoundary, cell, newCell, out newRidges, out newNeighborRidges);
-            InsertRidgesAndVertices(newRidges, newNeighborRidges);
+            CreateEdge(verticesOfNewRidgeBoundary, cell, newCell, out newRidges, out newNeighborRidges);
+            InsertEdgesAndVertices(newRidges, newNeighborRidges);
         }
 
-        public IEnumerator<Ridge> getConnectedRidgeEnum(Ridge ridge)
+        public IEnumerator<Edge> getConnectedRidgeEnum(Edge edge)
         {
-            List<Ridge> outgoingEdges = new List<Ridge>();
+            List<Edge> outgoingEdges = new List<Edge>();
             bool newNeighbor = true;
-            Ridge worker = ridge;
+            Edge worker = edge;
             while (newNeighbor)
             {
                 worker = worker.Twin;
-                Ridge[] workerRidges = worker.Cell.Ridges;
+                Edge[] workerRidges = worker.Cell.Edges;
                 outgoingEdges.Add(worker);
                 for (int i = 0; i < workerRidges.Length; ++i)
                 {
@@ -367,7 +368,7 @@ namespace BoSSS.Foundation.Grid.Voronoi
                             worker = workerRidges.Last();
                         else
                             worker = workerRidges[i - 1];
-                        if (ridgeComparer.Equals(worker, ridge))
+                        if (ridgeComparer.Equals(worker, edge))
                         {
                             newNeighbor = false;
                         }
@@ -375,35 +376,35 @@ namespace BoSSS.Foundation.Grid.Voronoi
                     }
                 }
             }
-            return new ArrayEnum<Ridge>(outgoingEdges);
+            return new ArrayEnum<Edge>(outgoingEdges);
         }
 
-        public void VertexCut(Ridge ridge, double alphaCut)
+        public void VertexCut(Edge edge, double alphaCut)
         {
-            Cell cell = ridge.Cell;
-            Vertex newOldVertex = ridge.End;
+            Cell cell = edge.Cell;
+            Vertex newOldVertex = edge.End;
             cell.IntersectionVertex = newOldVertex.ID;
-            cell = ridge.Twin.Cell;
+            cell = edge.Twin.Cell;
             cell.IntersectionVertex = newOldVertex.ID;
         }
 
-        public IEnumerator<Ridge> getNeighborFromLineDirection(Ridge ridge, Line line)
+        public IEnumerator<Edge> getNeighborFromLineDirection(Edge edge, Line line)
         {
-            IEnumerator<Ridge> outgoingRidges = getConnectedRidgeEnum(ridge);
-            Ridge A = null;
-            Ridge B = null;
-            if (outgoingRidges.MoveNext())
+            IEnumerator<Edge> outgoingEdges = getConnectedRidgeEnum(edge);
+            Edge A = null;
+            Edge B = null;
+            if (outgoingEdges.MoveNext())
             {
-                A = outgoingRidges.Current;
+                A = outgoingEdges.Current;
             }
             else
             {
                 throw new Exception();
             }
             bool found = false;
-            while (!found && outgoingRidges.MoveNext())
+            while (!found && outgoingEdges.MoveNext())
             {
-                B = outgoingRidges.Current;
+                B = outgoingEdges.Current;
                 if (IsBetween(A, line, B))
                 {
                     found = true;
@@ -414,10 +415,10 @@ namespace BoSSS.Foundation.Grid.Voronoi
                 }
             }
 
-            return new AfterCutRidgeEnumerator(A.Cell.Ridges, A);
+            return new AfterCutRidgeEnumerator(A.Cell.Edges, A);
 
             //Check if in positive rotation a, c, b order
-            bool IsBetween(Ridge a, Line b, Ridge c)
+            bool IsBetween(Edge a, Line b, Edge c)
             {
                 Vector A1 = a.End.Position - a.Start.Position;
                 Vector C1 = b.end.Position - a.Start.Position;
@@ -445,22 +446,22 @@ namespace BoSSS.Foundation.Grid.Voronoi
             }
         }
 
-        class MultiNeighRidgesAfterCutEnum : IEnumerator<Ridge>
+        class MultiNeighRidgesAfterCutEnum : IEnumerator<Edge>
         {
-            IList<Ridge> enumRidges;
+            IList<Edge> enumEdges;
             IList<int> block;
             int pointer;
             int blockPointer;
             bool filter;
-            public MultiNeighRidgesAfterCutEnum(IList<Ridge> ridges, IList<int> blockInFirstRun)
+            public MultiNeighRidgesAfterCutEnum(IList<Edge> edges, IList<int> blockInFirstRun)
             {
-                enumRidges = ridges;
+                enumEdges = edges;
                 block = blockInFirstRun;
                 pointer = -1;
                 blockPointer = 0;
                 filter = true;
             }
-            public Ridge Current => enumRidges[pointer];
+            public Edge Current => enumEdges[pointer];
 
             object IEnumerator.Current => Current;
 
@@ -480,7 +481,7 @@ namespace BoSSS.Foundation.Grid.Voronoi
                         ++blockPointer;
                     }
                 }
-                return (pointer < enumRidges.Count);
+                return (pointer < enumEdges.Count);
             }
 
             public void Reset()
@@ -490,58 +491,58 @@ namespace BoSSS.Foundation.Grid.Voronoi
             }
         }
 
-        public Ridge AddLineSegment(Ridge ridge, double alpha)
+        public Edge AddLineSegment(Edge edge, double alpha)
         {
-            DivideRidge(ridge, alpha, out Ridge newRidge);
-            ridge.IsBoundary = true;
-            ridge.Twin.IsBoundary = true;
-            ridge.Cell.IntersectionVertex = ridge.End.ID;
-            ridge.Twin.Cell.IntersectionVertex = ridge.End.ID;
-            return ridge;
+            DivideEdge(edge, alpha, out Edge newRidge);
+            edge.IsBoundary = true;
+            edge.Twin.IsBoundary = true;
+            edge.Cell.IntersectionVertex = edge.End.ID;
+            edge.Twin.Cell.IntersectionVertex = edge.End.ID;
+            return edge;
         }
 
-        public Ridge SubdivideWithoutNewVertex(Ridge ridge, List<Line> lines)
+        public Edge SubdivideWithoutNewVertex(Edge edge, List<Line> lines)
         {
-            Cell cell = ridge.Cell;
-            Vertex cutVertex = ridge.End;
-            IEnumerator<Ridge> neighRidges = getConnectedRidgeEnum(ridge);
-            while (neighRidges.MoveNext())
+            Cell cell = edge.Cell;
+            Vertex cutVertex = edge.End;
+            IEnumerator<Edge> neighEdges = getConnectedRidgeEnum(edge);
+            while (neighEdges.MoveNext())
             {
-                Cell neighbor = neighRidges.Current.Cell;
+                Cell neighbor = neighEdges.Current.Cell;
                 if (neighbor.ID != cell.ID)
                     neighbor.IntersectionVertex = cutVertex.ID;
             }
             //Divide this cell
             //================================================================
-            Vertex[] verticesOfNewRidgeBoundary = new Vertex[lines.Count + 2];
-            verticesOfNewRidgeBoundary[0] = cutVertex;
-            verticesOfNewRidgeBoundary[verticesOfNewRidgeBoundary.Length - 1] = Vertices[cell.IntersectionVertex];
+            Vertex[] verticesOfNewEdgeBoundary = new Vertex[lines.Count + 2];
+            verticesOfNewEdgeBoundary[0] = cutVertex;
+            verticesOfNewEdgeBoundary[verticesOfNewEdgeBoundary.Length - 1] = Vertices[cell.IntersectionVertex];
             //Add Vertices of lines
-            for (int i = 1; i < verticesOfNewRidgeBoundary.Length - 1; ++i)
+            for (int i = 1; i < verticesOfNewEdgeBoundary.Length - 1; ++i)
             {
-                verticesOfNewRidgeBoundary[verticesOfNewRidgeBoundary.Length - 1 - i] = lines[i - 1].end;
-                AddVertex(verticesOfNewRidgeBoundary[verticesOfNewRidgeBoundary.Length - 1 - i]);
+                verticesOfNewEdgeBoundary[verticesOfNewEdgeBoundary.Length - 1 - i] = lines[i - 1].end;
+                AddVertex(verticesOfNewEdgeBoundary[verticesOfNewEdgeBoundary.Length - 1 - i]);
             }
             //New Ridges
-            Ridge[] newRidges;
-            Ridge[] newNeighborRidges;
+            Edge[] newEdges;
+            Edge[] newNeighborEdges;
             Cell newCell = new Cell();
             AddCell(newCell);
-            CreateRidges(verticesOfNewRidgeBoundary, cell, newCell, out newRidges, out newNeighborRidges);
+            CreateEdge(verticesOfNewEdgeBoundary, cell, newCell, out newEdges, out newNeighborEdges);
             //Link Ridges to old neighbors
-            InsertRidgesAndVertices(newRidges, newNeighborRidges);
+            InsertEdgesAndVertices(newEdges, newNeighborEdges);
 
 
             //dOnE, DoNe!
-            return ridge;
+            return edge;
         }
 
-        public void AddRidge(Ridge ridge)
+        public void AddRidge(Edge edge)
         {
-            ridge.IsBoundary = true;
-            ridge.Twin.IsBoundary = true;
-            ridge.Cell.IntersectionVertex = ridge.End.ID;
-            ridge.Twin.Cell.IntersectionVertex = ridge.End.ID;
+            edge.IsBoundary = true;
+            edge.Twin.IsBoundary = true;
+            edge.Cell.IntersectionVertex = edge.End.ID;
+            edge.Twin.Cell.IntersectionVertex = edge.End.ID;
         }
     }
 }

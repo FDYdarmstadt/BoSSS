@@ -32,21 +32,25 @@ namespace BoSSS.Application.FSI_Solver
         internal double[] Translational(double[,] CoefficientMatrix, double Denominator, double[] Forces, double Torque)
         {
             double[] temp = new double[2];
-            temp[0] = (CoefficientMatrix[0, 1] * CoefficientMatrix[1, 2] * Torque - CoefficientMatrix[0, 1] * CoefficientMatrix[2, 2] * Forces[1] - CoefficientMatrix[0, 2] * CoefficientMatrix[1, 1] * Torque + CoefficientMatrix[0, 2] * CoefficientMatrix[2, 1] * Forces[1] + CoefficientMatrix[1, 1] * CoefficientMatrix[2, 2] * Forces[0] - CoefficientMatrix[1, 2] * CoefficientMatrix[2, 1] * Forces[0]) / Denominator;
-            temp[1] = -(CoefficientMatrix[0, 0] * CoefficientMatrix[1, 2] * Torque - CoefficientMatrix[0, 2] * CoefficientMatrix[1, 0] * Torque);
-            temp[1] -= -CoefficientMatrix[0, 0] * CoefficientMatrix[2, 2] * Forces[1] + CoefficientMatrix[0, 2] * CoefficientMatrix[2, 0] * Forces[1];
-            temp[1] -= CoefficientMatrix[1, 0] * CoefficientMatrix[2, 2] * Forces[0] - CoefficientMatrix[1, 2] * CoefficientMatrix[2, 0] * Forces[0];
+            temp[0] = Forces[0] * (CoefficientMatrix[1, 1] * CoefficientMatrix[2, 2] - CoefficientMatrix[1, 2] * CoefficientMatrix[2, 1]);
+            temp[0] += Forces[1] * (-CoefficientMatrix[0, 1] * CoefficientMatrix[2, 2] + CoefficientMatrix[0, 2] * CoefficientMatrix[2, 1]);
+            temp[0] += Torque * (CoefficientMatrix[0, 1] * CoefficientMatrix[1, 2] - CoefficientMatrix[0, 2] * CoefficientMatrix[1, 1]);
+            temp[0] = temp[0] / Denominator;
+
+            temp[1] = Forces[0] * (-CoefficientMatrix[1, 0] * CoefficientMatrix[2, 2] + CoefficientMatrix[1, 2] * CoefficientMatrix[2, 0]);
+            temp[1] += Forces[1] * (CoefficientMatrix[0, 0] * CoefficientMatrix[2, 2] - CoefficientMatrix[0, 2] * CoefficientMatrix[2, 0]);
+            temp[1] += Torque * (-CoefficientMatrix[0, 0] * CoefficientMatrix[1, 2] + CoefficientMatrix[0, 2] * CoefficientMatrix[1, 0]);
             temp[1] = temp[1] / Denominator;
             return temp;
         }
 
         internal double Rotational(double[,] CoefficientMatrix, double Denominator, double[] Forces, double Torque)
         {
-            double ret = 0;
-            ret += CoefficientMatrix[0, 0] * CoefficientMatrix[1, 1] * Torque - CoefficientMatrix[0, 1] * CoefficientMatrix[1, 0] * Torque;
-            ret += CoefficientMatrix[0, 1] * CoefficientMatrix[2, 0] * Forces[1] - CoefficientMatrix[0, 0] * CoefficientMatrix[2, 1] * Forces[1];
-            ret += CoefficientMatrix[1, 0] * CoefficientMatrix[2, 1] * Forces[0] - CoefficientMatrix[1, 1] * CoefficientMatrix[2, 0] * Forces[0];
-            return    ret / Denominator;
+            double temp = 0;
+            temp += CoefficientMatrix[0, 0] * CoefficientMatrix[1, 1] * Torque - CoefficientMatrix[0, 1] * CoefficientMatrix[1, 0] * Torque;
+            temp += CoefficientMatrix[0, 1] * CoefficientMatrix[2, 0] * Forces[1] - CoefficientMatrix[0, 0] * CoefficientMatrix[2, 1] * Forces[1];
+            temp += CoefficientMatrix[1, 0] * CoefficientMatrix[2, 1] * Forces[0] - CoefficientMatrix[1, 1] * CoefficientMatrix[2, 0] * Forces[0];
+            return temp / Denominator;
         }
     }
 }
