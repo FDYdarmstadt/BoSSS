@@ -135,8 +135,8 @@ namespace BoSSS.Application.FSI_Solver {
 
             //C.InitialValues_Evaluators.Add("Phi", X => phiComplete(X, 0));
             //C.InitialValues.Add("VelocityX#B", X => 1);
-            C.InitialValues_Evaluators.Add("VelocityX", X => 0);
-            C.InitialValues_Evaluators.Add("VelocityY", X => 0);
+            //C.InitialValues_Evaluators.Add("VelocityX", X => 0);
+            //C.InitialValues_Evaluators.Add("VelocityY", X => 0);
             //C.InitialValues.Add("Phi", X => -1);
             //C.InitialValues.Add("Phi", X => (X[0] - 0.41));
 

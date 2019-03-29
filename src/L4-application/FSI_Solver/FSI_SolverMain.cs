@@ -1023,7 +1023,7 @@ namespace BoSSS.Application.FSI_Solver {
                             ForcesOldSquared[1] = 0;
                             TorqueOldSquared = 0;
 
-                            if (iteration_counter == 0)
+                            if (iteration_counter == 0 && ((FSI_Control)this.Control).splitting_fully_coupled == true)
                             {
                                 foreach (Particle p in m_Particles)
                                 {
@@ -1100,8 +1100,11 @@ namespace BoSSS.Application.FSI_Solver {
                                 break;// throw new ApplicationException("no convergence in coupled iterative solver, number of iterations: " + iteration_counter);
                             }
                         }
-                        LsTrk.IncreaseHistoryLength(1);
-                        LsTrk.PushStacks();
+                        if (((FSI_Control)this.Control).Timestepper_LevelSetHandling == LevelSetHandling.FSI_LieSplittingFullyCoupled)
+                        {
+                            LsTrk.IncreaseHistoryLength(1);
+                            LsTrk.PushStacks();
+                        }
                         /*
                         if (phystime == 0) {
                             if ((base.MPIRank == 0) && (CurrentSessionInfo.ID != Guid.Empty) && iteration_counter == 0) {
