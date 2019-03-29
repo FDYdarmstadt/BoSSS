@@ -65,8 +65,8 @@ namespace BoSSS.Application.FSI_Solver
                 int q = new int(); // #Cells in x-dircetion + 1
                 int r = new int(); // #Cells in y-dircetion + 1
 
-                q = 60/2;
-                r = 30/2;
+                q = 60;
+                r = 30;
 
                 double[] Xnodes = GenericBlas.Linspace(-6 * BaseSize, 6 * BaseSize, q);
                 double[] Ynodes = GenericBlas.Linspace(-3 * BaseSize, 3 * BaseSize, r);
@@ -130,7 +130,7 @@ namespace BoSSS.Application.FSI_Solver
             int numOfParticles = 1;
             for (int d = 0; d < numOfParticles; d++)
             {
-                C.Particles.Add(new Particle_Ellipsoid(new double[] { -4.0, 0.0 }, startAngl: 12)
+                C.Particles.Add(new Particle_Ellipsoid(new double[] { -3.0, 0.0 }, startAngl: 12)
                 {
                     particleDensity = 1,
                     ActiveParticle = true,
@@ -191,7 +191,7 @@ namespace BoSSS.Application.FSI_Solver
             C.LinearSolver.NoOfMultigridLevels = 1;
             C.LinearSolver.MaxSolverIterations = 1000;
             C.LinearSolver.MinSolverIterations = 1;
-            C.ForceAndTorque_ConvergenceCriterion = 100;
+            C.ForceAndTorque_ConvergenceCriterion = 1e-1;
             C.LSunderrelax = 1.0;
             
 
@@ -200,7 +200,7 @@ namespace BoSSS.Application.FSI_Solver
             C.Timestepper_LevelSetHandling = LevelSetHandling.FSI_LieSplittingFullyCoupled;
             C.LSunderrelax = 1;
             C.splitting_fully_coupled = true;
-            C.max_iterations_fully_coupled = 10000;
+            C.max_iterations_fully_coupled = 100000;
             C.includeRotation = true;
             C.includeTranslation = true;
 
