@@ -152,7 +152,7 @@ namespace BoSSS.Application.FSI_Solver
         /// Complete added damping tensor, for reference: Banks et.al. 2017
         /// </summary>
         [DataMember]
-        private double[,] AddedDampingTensor = new double[6, 6];
+        public double[,] AddedDampingTensor = new double[6, 6];
 
         /// <summary>
         /// Scaling parameter for added damping.

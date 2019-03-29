@@ -697,7 +697,7 @@ namespace BoSSS.Application.FSI_Solver {
 
             // Initial check: is the motion state of the particles equal on all MPI processors?
             // ================================================================================
-
+            //Debugger.Launch();
             int D = GridData.SpatialDimension;
             int NoOfParticles = m_Particles.Count;
 
@@ -716,24 +716,31 @@ namespace BoSSS.Application.FSI_Solver {
                     var P = m_Particles[iP];
 
                     // scalar values
-                    CheckSend[iP*NoOfVars + 0] = P.Angle[0];
-                    CheckSend[iP*NoOfVars + 1] = P.Angle[1];
+                    CheckSend[iP * NoOfVars + 0] = P.Angle[0];
+                    CheckSend[iP * NoOfVars + 1] = P.Angle[1];
                     //CheckSend[iP*NoOfVars + 2] = P.Area_P;
-                    CheckSend[iP*NoOfVars + 3] = P.ClearSmallValues ? 1.0 : 0.0;
-                    CheckSend[iP*NoOfVars + 4] = P.ForceAndTorque_convergence;
-                    CheckSend[iP*NoOfVars + 5] = P.Mass_P;
-                    CheckSend[iP*NoOfVars + 6] = P.particleDensity;
+                    //CheckSend[iP * NoOfVars + 3] = P.ClearSmallValues ? 1.0 : 0.0;
+                    //CheckSend[iP * NoOfVars + 4] = P.ForceAndTorque_convergence;
+                    //CheckSend[iP * NoOfVars + 5] = P.Mass_P;
+                    //CheckSend[iP * NoOfVars + 6] = P.particleDensity;
+                    CheckSend[iP * NoOfVars + 2] = P.AddedDampingTensor[0, 0];
+                    CheckSend[iP * NoOfVars + 3] = P.AddedDampingTensor[0, 1];
+                    CheckSend[iP * NoOfVars + 4] = P.AddedDampingTensor[0, 2];
+                    CheckSend[iP * NoOfVars + 5] = P.AddedDampingTensor[1, 1];
+                    CheckSend[iP * NoOfVars + 6] = P.AddedDampingTensor[2, 2];
                     // todo: add more values here that might be relevant for the particle state;
 
                     // vector values
                     for (int d = 0; d < D; d++) {
                         int Offset = 10;
-                        CheckSend[iP*NoOfVars + Offset + 0 * D + d] = P.Position[0][d];
-                        CheckSend[iP*NoOfVars + Offset + 1 * D + d] = P.Position[1][d];
-                        CheckSend[iP*NoOfVars + Offset + 2 * D + d] = P.TranslationalAcceleration[0][d];
-                        CheckSend[iP*NoOfVars + Offset + 3 * D + d] = P.TranslationalAcceleration[1][d];
-                        CheckSend[iP*NoOfVars + Offset + 4 * D + d] = P.TranslationalVelocity[0][d];
-                        CheckSend[iP*NoOfVars + Offset + 5 * D + d] = P.TranslationalVelocity[1][d];
+                        CheckSend[iP * NoOfVars + Offset + 0 * D + d] = P.Position[0][d];
+                        CheckSend[iP * NoOfVars + Offset + 1 * D + d] = P.Position[1][d];
+                        CheckSend[iP * NoOfVars + Offset + 2 * D + d] = P.TranslationalAcceleration[0][d];
+                        CheckSend[iP * NoOfVars + Offset + 3 * D + d] = P.TranslationalAcceleration[1][d];
+                        CheckSend[iP * NoOfVars + Offset + 4 * D + d] = P.TranslationalVelocity[0][d];
+                        CheckSend[iP * NoOfVars + Offset + 5 * D + d] = P.TranslationalVelocity[1][d];
+                        CheckSend[iP * NoOfVars + Offset + 6 * D + d] = P.HydrodynamicForces[0][d];
+                        CheckSend[iP * NoOfVars + Offset + 7 * D + d] = P.HydrodynamicForces[1][d];
                         // todo: add more vector values here that might be relevant for the particle state;
                     }
                 }
@@ -761,7 +768,7 @@ namespace BoSSS.Application.FSI_Solver {
                                 + idx_l;
 
                             if (Math.Abs(CheckReceive[idx_g] - CheckSend[idx_l]) > VarTol)
-                                throw new ApplicationException("Mismatch in particle state among MPI ranks.");
+                                throw new ApplicationException("Mismatch in particle state among MPI ranks. Index:  " + idx_l);
                         }
                         VarTol *= 1.0e-10;
                     }
@@ -976,8 +983,56 @@ namespace BoSSS.Application.FSI_Solver {
                                     if (p.neglectAddedDamping == false && p.iteration_counter_P == 0)
                                     {
                                         p.UpdateDampingTensors();
+                                        // Sum forces and moments over all MPI processors
+                                        // ==============================================
+                                        {
+                                            // step 1: collect all variables that we need to sum up
+                                            int NoOfParticles = m_Particles.Count;
+                                            int NoOfVars = 3; //only for 2D at the moment
+                                            double[,] StateBuffer = new double[NoOfParticles * NoOfVars, NoOfParticles * NoOfVars];
+                                            for (int iP = 0; iP < NoOfParticles; iP++)
+                                            {
+                                                var P = m_Particles[iP];
+                                                for (int i = 0; i < 3; i++)
+                                                {
+                                                    for (int j = 0; j < 3; j++)
+                                                    {
+                                                        StateBuffer[NoOfVars * iP + i, NoOfVars * iP + j] = P.AddedDampingTensor[i, j];
+                                                    }
+                                                }
+                                                
+                                            }
+
+                                            
+
+                                            // step 2: sum over MPI processors
+                                            // note: we want to sum all variables by a single MPI call, which is way more efficient
+                                            // B. Deußen: a single call of MPISum() would only consider the first entry of StateBuffer, thus I implemented the loop over all entries
+                                            double[,] GlobalStateBuffer = new double[NoOfParticles * NoOfVars, NoOfParticles * NoOfVars];
+                                            for (int i = 0; i < NoOfParticles * NoOfVars; i++)
+                                            {
+                                                for (int j = 0; j < NoOfParticles * NoOfVars; j++)
+                                                {
+                                                    GlobalStateBuffer[i,j] = StateBuffer[i,j].MPISum();
+                                                }
+                                                
+                                            }
+
+                                            // step 3: write sum variables back 
+                                            for (int iP = 0; iP < NoOfParticles; iP++)
+                                            {
+                                                var P = m_Particles[iP];
+                                                for (int i = 0; i < 3; i++)
+                                                {
+                                                    for (int j = 0; j < 3; j++)
+                                                    {
+                                                        StateBuffer[NoOfVars * iP + i, NoOfVars * iP + j] = P.AddedDampingTensor[i, j];
+                                                        P.AddedDampingTensor[i, j] = GlobalStateBuffer[NoOfVars * iP + i, NoOfVars * iP + j];
+                                                    }
+                                                }
+                                            }
+                                        }
                                     }
-                                    UpdateForcesAndTorque(dt, phystime);
                                     p.PredictAcceleration();
                                     p.CalculateAngularVelocity(dt, ((FSI_Control)this.Control).includeRotation);
                                     p.CalculateTranslationalVelocity(dt, this.Control.PhysicalParameters.rho_A, ((FSI_Control)this.Control).includeTranslation);
