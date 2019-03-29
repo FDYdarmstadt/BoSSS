@@ -457,8 +457,8 @@ namespace BoSSS.Application.FSI_Solver {
                 int q = new int(); // #Cells in x-dircetion + 1
                 int r = new int(); // #Cells in y-dircetion + 1
 
-                q = 40/3;
-                r = 30/3;
+                q = 40;
+                r = 30;
 
                 double[] Xnodes = GenericBlas.Linspace(-4, 4, q);
                 double[] Ynodes = GenericBlas.Linspace(-3, 3, r);
@@ -495,7 +495,7 @@ namespace BoSSS.Application.FSI_Solver {
 
             // Mesh refinement
             // =============================
-            C.AdaptiveMeshRefinement = true;
+            C.AdaptiveMeshRefinement = false;
             C.RefinementLevel = 2;
             C.maxCurvature = 2;
 
@@ -572,7 +572,7 @@ namespace BoSSS.Application.FSI_Solver {
             C.LinearSolver.NoOfMultigridLevels = 1;
             C.LinearSolver.MaxSolverIterations = 1000;
             C.LinearSolver.MinSolverIterations = 1;
-            C.ForceAndTorque_ConvergenceCriterion = 1e2;
+            C.ForceAndTorque_ConvergenceCriterion = 1e-2;
             C.LSunderrelax = 1.0;
             
             // Coupling Properties
