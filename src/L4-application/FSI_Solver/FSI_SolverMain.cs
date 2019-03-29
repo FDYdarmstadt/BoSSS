@@ -36,6 +36,7 @@ using BoSSS.Solution.XNSECommon;
 using BoSSS.Foundation.Grid.Classic;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Bson;
+using BoSSS.Foundation.Grid.RefElements;
 
 namespace BoSSS.Application.FSI_Solver {
     public class FSI_SolverMain : IBM_Solver.IBM_SolverMain {
@@ -621,8 +622,8 @@ namespace BoSSS.Application.FSI_Solver {
         /// <summary>
         /// Update of <see cref="ParticleColor"/> and <see cref="LevelSetDistance"/>
         /// </summary>
-        void UpdateColoring() {
-
+        void UpdateColoring()
+        {
             int J = GridData.iLogicalCells.NoOfLocalUpdatedCells;
             int[] PartCol = LsTrk.Regions.ColorMap4Spc[LsTrk.GetSpeciesId("B")];
             var rCode = LsTrk.Regions.RegionsCode;
@@ -631,6 +632,54 @@ namespace BoSSS.Application.FSI_Solver {
 
                 LevelSetDistance.SetMeanValue(j, LevelSetTracker.DecodeLevelSetDist(rCode[j], 0));
             }
+            ColorToParticle();
+        }
+
+        void ColorToParticle()
+        {
+            // Step 1
+            // Find all colored cells and sort them
+            // ====================================
+            int[] PartCol = LsTrk.Regions.ColorMap4Spc[LsTrk.GetSpeciesId("B")];
+            int ColorMaximum = PartCol.Max();
+            int SpatialDim = LsTrk.GridDat.SpatialDimension;
+            GridData _GridData = LsTrk.GridDat;
+            List<double[]> SortedColoredCells = new List<double[]>();
+            int ListIndex = 0;
+            for (int CellID = 0; CellID < PartCol.Length; CellID++)
+            {
+                if (PartCol[CellID] != 0)
+                {
+                    ListIndex = 0;
+                    if (SortedColoredCells.Count != 0)
+                    {
+                        while (ListIndex < SortedColoredCells.Count && PartCol[CellID] >= SortedColoredCells[ListIndex][1])
+                        {
+                            ListIndex += 1;
+                        }
+                    }
+                    double[] temp = new double[4];
+                    temp[0] = CellID;
+                    temp[1] = PartCol[CellID];
+                    SortedColoredCells.Insert(ListIndex, temp);
+                }
+            }
+            
+            for (int i = 0; i < SortedColoredCells.Count; i++) 
+            {
+                for (int p = m_Particles.Count - 1; p > 0; p--)
+                {
+                    bool IsInCell = LsTrk.GridDat.Cells.IsInCell(m_Particles[p].Position[0], i);
+                }
+                // ToDo remove all Cells with the color which was identified!
+            }
+            
+                
+        }
+        
+        void ParticleToColor()
+        {
+
         }
 
         void UpdateForcesAndTorque(double dt, double phystime) {
@@ -755,7 +804,11 @@ namespace BoSSS.Application.FSI_Solver {
 
                 // step 2: sum over MPI processors
                 // note: we want to sum all variables by a single MPI call, which is way more efficient
-                double[] GlobalStateBuffer = StateBuffer.MPISum();
+                double[] GlobalStateBuffer = new double[StateBuffer.Length];
+                for (int i = 0; i < StateBuffer.Length; i++)
+                {
+                    GlobalStateBuffer[i] = StateBuffer[i].MPISum();
+                }
 
                 // step 3: write sum variables back 
                 for (int iP = 0; iP < NoOfParticles; iP++) {
@@ -923,6 +976,7 @@ namespace BoSSS.Application.FSI_Solver {
                                     {
                                         p.UpdateDampingTensors();
                                     }
+                                    UpdateForcesAndTorque(dt, phystime);
                                     p.PredictAcceleration();
                                     p.CalculateAngularVelocity(dt, ((FSI_Control)this.Control).includeRotation);
                                     p.CalculateTranslationalVelocity(dt, this.Control.PhysicalParameters.rho_A, ((FSI_Control)this.Control).includeTranslation);
