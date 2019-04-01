@@ -136,6 +136,11 @@ namespace BoSSS.Application.FSI_Solver
 
         #region Misc parameters
         /// <summary>
+        /// Particle Color
+        /// </summary>
+        public int ParticleColor = 1;
+
+        /// <summary>
         /// Length of history for time, velocity, position etc.
         /// </summary>
         readonly int m_HistoryLength = 4;
@@ -383,7 +388,7 @@ namespace BoSSS.Application.FSI_Solver
             {
                 TranslationalAcceleration[0][d] = 2 * TranslationalAcceleration[1][d] - TranslationalAcceleration[2][d];
                 if (double.IsNaN(TranslationalAcceleration[0][d]) || double.IsInfinity(TranslationalAcceleration[0][d]))
-                    throw new ArithmeticException("Error trying to calculate particle acceleration");
+                    throw new ArithmeticException("Error trying to calculate particle acceleration" + TranslationalAcceleration[0][d]);
             }
 
             RotationalAcceleration[0] = 2 * RotationalAcceleration[1] - RotationalAcceleration[2];

@@ -633,55 +633,10 @@ namespace BoSSS.Application.FSI_Solver {
 
                 LevelSetDistance.SetMeanValue(j, LevelSetTracker.DecodeLevelSetDist(rCode[j], 0));
             }
-            ColorToParticle();
         }
 
-        void ColorToParticle()
-        {
-            // Step 1
-            // Find all colored cells and sort them
-            // ====================================
-            int[] PartCol = LsTrk.Regions.ColorMap4Spc[LsTrk.GetSpeciesId("B")];
-            int ColorMaximum = PartCol.Max();
-            int SpatialDim = LsTrk.GridDat.SpatialDimension;
-            GridData _GridData = LsTrk.GridDat;
-            List<double[]> SortedColoredCells = new List<double[]>();
-            int ListIndex = 0;
-            for (int CellID = 0; CellID < PartCol.Length; CellID++)
-            {
-                if (PartCol[CellID] != 0)
-                {
-                    ListIndex = 0;
-                    if (SortedColoredCells.Count != 0)
-                    {
-                        while (ListIndex < SortedColoredCells.Count && PartCol[CellID] >= SortedColoredCells[ListIndex][1])
-                        {
-                            ListIndex += 1;
-                        }
-                    }
-                    double[] temp = new double[4];
-                    temp[0] = CellID;
-                    temp[1] = PartCol[CellID];
-                    SortedColoredCells.Insert(ListIndex, temp);
-                }
-            }
-            
-            for (int i = 0; i < SortedColoredCells.Count; i++) 
-            {
-                for (int p = m_Particles.Count - 1; p > 0; p--)
-                {
-                    bool IsInCell = LsTrk.GridDat.Cells.IsInCell(m_Particles[p].Position[0], i);
-                }
-                // ToDo remove all Cells with the color which was identified!
-            }
-            
-                
-        }
         
-        void ParticleToColor()
-        {
-
-        }
+        
 
         void UpdateForcesAndTorque(double dt, double phystime) {
             //
