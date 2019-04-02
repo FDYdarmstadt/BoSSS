@@ -1,96 +1,45 @@
-﻿using BoSSS.Application.FSI_Solver;
-using BoSSS.Foundation.XDG;
-using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using BoSSS.Foundation.XDG;
+using BoSSS.Foundation;
+using ilPSP;
+using BoSSS.Foundation.Grid.Classic;
+using BoSSS.Application.FSI_Solver;
+using BoSSS.Foundation.Grid;
+using System;
 
 namespace FSI_Solver
 {
     class ColorToParticle
-    {        
-        // Compare the number of particles with the number of colors
-        // =========================================================
-        static bool CheckForSameNumber(int MaxColor, int NoOfParticles)
-        {
-            if (NoOfParticles - MaxColor == 0)
-            {
-                return true;
-            }
-            else
-                return false;
-        }
-
-        static List<int[]> RemoveCellsWithCurrentColor(List<int[]> ColoredCells, int CurrentColor)
-        {
-            int ListID = ColoredCells.Count() - 1;
-            while (ColoredCells.Count() > 0 && ColoredCells[ListID][1] == CurrentColor)
-            {
-                ColoredCells.RemoveAt(ListID);
-                ListID -= 1;
-            }
-            return ColoredCells;
-        }
-
-        List<int[]> AddToList(List<int[]> ColorsWithMultipleParticles, int CurrentColor, int CurrentParticle)
-        {
-            int[] temp = new int[2];
-            temp[0] = CurrentColor;
-            temp[1] = CurrentParticle;
-            ColorsWithMultipleParticles.Add(temp);
-            return ColorsWithMultipleParticles;
-        }
-
-        List<int[]> CheckForMultipleParticlesPerColor(List<int[]> ColorsWithMultipleParticles, int CurrentColor, int CurrentParticle, bool SameNoOfColorParticles = true)
-        {
-            int Length = ColorsWithMultipleParticles.Count();
-            if(SameNoOfColorParticles == false || Length == 0 || CurrentColor == ColorsWithMultipleParticles[Length - 1][0])
-            {
-                ColorsWithMultipleParticles = AddToList(ColorsWithMultipleParticles, CurrentColor, CurrentParticle);
-            }
-            else if(ColorsWithMultipleParticles[Length - 1][0] != ColorsWithMultipleParticles[Length - 2][0])
-            {
-                ColorsWithMultipleParticles.RemoveAt(Length - 1);
-            }
-            return ColorsWithMultipleParticles;
-        }
-
-        void ColoredCellsToParticle(LevelSetTracker LsTrk, List<Particle> Particles)
+    {
+        // The main method to assign the color to the particle
+        // ===================================================
+        public void AssignToParticle(LevelSetTracker LsTrk, List<Particle> Particles, int[] CellColor)
         {
             // Step 1
             // Define variables
             // ================
-            int[] ParticleColor = LsTrk.Regions.ColorMap4Spc[LsTrk.GetSpeciesId("B")];
-            int MaxColor = ParticleColor.Max();
+            int MaxColor = CellColor.Max();
             int NoOfParticles = Particles.Count();
             List<int[]> ColoredCellsSorted = new List<int[]>();
-            int ListIndex = 0;
             List<int[]> ColorsWithMultipleParticles = new List<int[]>();
 
             // Step 2 
             // Find all colored cells and sort them
             // ====================================
-            for (int CellID = 0; CellID < ParticleColor.Length; CellID++)
-            {
-                if (ParticleColor[CellID] != 0)
-                {
-                    ListIndex = 0;
-                    if (ColoredCellsSorted.Count != 0)
-                    {
-                        while (ListIndex < ColoredCellsSorted.Count && ParticleColor[CellID] >= ColoredCellsSorted[ListIndex][1])
-                        {
-                            ListIndex += 1;
-                        }
-                    }
-                    int[] temp = new int[2];
-                    temp[0] = CellID;
-                    temp[1] = ParticleColor[CellID];
-                    ColoredCellsSorted.Insert(ListIndex, temp);
-                }
-            }
+            ColoredCellsSorted = ColoredCellsFindAndSort(CellColor, RemoveUncoloredCells: true);
 
             // Step 3
+            // Save all colored cells for later usage
+            // ======================================
+            // int[,] ColoredCells = new int[2, ColoredCellsSorted.Count()];
+            // for (int i = 0; i < ColoredCellsSorted.Count(); i++)
+            // {
+            //    ColoredCells[0, i] = ColoredCellsSorted[i][0];
+            //    ColoredCells[1, i] = ColoredCellsSorted[i][1];
+            // }
+
+            // Step 4
             // Assign all colors to a particle
             // ===============================
             for (int i = ColoredCellsSorted.Count - 1; i >= 0; i--)
@@ -99,21 +48,115 @@ namespace FSI_Solver
                 {
                     if (LsTrk.GridDat.Cells.IsInCell(Particles[p].Position[0], i))
                     {
-                        bool SameNoOfColorParticles = Sa
+                        bool SameNoOfColorParticles = CheckForSameNumber(MaxColor, NoOfParticles);
                         int CurrentColor = ColoredCellsSorted[i][1];
-                        Particles[p].ParticleColor = CurrentColor;
 
-                        if (CheckForSameNumber(MaxColor, NoOfParticles))
+                        // Assign color and cells to particle
+                        // ========================
+                        int ListPos = ColoredCellsSorted.Count - 1;
+                        while (ListPos >= 0 && CurrentColor == ColoredCellsSorted[ListPos][1])
                         {
-                            ColoredCellsSorted = RemoveCellsWithCurrentColor(ColoredCellsSorted, CurrentColor);
-                            MaxColor -= 1;
-                            
+                            Particles[p].ParticleColoredCells.Add(ColoredCellsSorted[ListPos]);
+
+                            // Remove all cells with current colors if there are no other particles with the same color left (saves some operations)
+                            // =====================================================================================================================
+                            if (SameNoOfColorParticles)
+                            {
+                                ColoredCellsSorted.RemoveAt(ListPos);
+                                MaxColor -= 1;
+                            }
+                            ListPos -= 1;
                         }
-                        ColorsWithMultipleParticles = CheckForMultipleParticlesPerColor(ColorsWithMultipleParticles, CurrentColor, p, );
+
+                        // Save colors with more than one particle in a seperate list
+                        // ==========================================================
+                        ColorsWithMultipleParticles = CheckForMultipleParticlesPerColor(ColorsWithMultipleParticles, CurrentColor, p, SameNoOfColorParticles);
                         NoOfParticles -= 1;
                     }
                 }
             }
+        }
+
+        internal int[] FindNeighborCells(List<int[]> ParticleColoredCells, LevelSetTracker LsTrk)
+        {
+            List<int> ColoredAndNeighborCells = new List<int>();
+            for (int i = 0; i < ParticleColoredCells.Count; i++)
+            {
+                ColoredAndNeighborCells.Add(ParticleColoredCells[i][0]);
+            }
+            
+            for (int i = 0; i < ParticleColoredCells.Count(); i++)
+            {
+                LsTrk.GridDat.GetCellNeighbours(ParticleColoredCells[i][0], GetCellNeighbours_Mode.ViaEdges, out int[] NeighborsOfCurrentCell, out int[] ConectingEntities);
+                for (int j = NeighborsOfCurrentCell.Length - 1; j >= 0; j--)
+                {
+                    int ListIndex = ParticleColoredCells.Count();
+                    while (ListIndex > 0 && NeighborsOfCurrentCell[j] < ParticleColoredCells[ListIndex - 1][0])
+                    {
+                        ListIndex -= 1;
+                    }
+                    if (ListIndex == 0 || ParticleColoredCells[ListIndex - 1][0] != NeighborsOfCurrentCell[j])
+                    {
+                        int[] temp = new int[2];
+                        temp[0] = NeighborsOfCurrentCell[0];
+                        temp[1] = ParticleColoredCells[i][1];
+                        ColoredAndNeighborCells.Insert(ListIndex, NeighborsOfCurrentCell[0]);
+                    }
+                }
+            }
+            return ColoredAndNeighborCells.ToArray();
+        }
+
+        internal List<int[]> ColoredCellsFindAndSort(int[] CellColor, bool RemoveUncoloredCells)
+        {
+            List<int[]> ColoredCellsSorted = new List<int[]>();
+            int ListIndex = 0;
+            for (int CellID = 0; CellID < CellColor.Length; CellID++)
+            {
+                if (RemoveUncoloredCells == false || (CellColor[CellID] != 0 && RemoveUncoloredCells == true))
+                {
+                    ListIndex = 0;
+                    if (ColoredCellsSorted.Count != 0)
+                    {
+                        while (ListIndex < ColoredCellsSorted.Count && CellColor[CellID] >= ColoredCellsSorted[ListIndex][1])
+                        {
+                            ListIndex += 1;
+                        }
+                    }
+                    int[] temp = new int[2];
+                    temp[0] = CellID;
+                    temp[1] = CellColor[CellID];
+                    ColoredCellsSorted.Insert(ListIndex, temp);
+                }
+            }
+            return ColoredCellsSorted;
+        }
+
+        // Compare the number of particles with the number of colors
+        // =========================================================
+        private static bool CheckForSameNumber(int MaxColor, int NoOfParticles)
+        {
+            return NoOfParticles - MaxColor == 0 ? true : false;
+        }
+
+        // There may be cases where multiple particles have the same color and need a special treatment.
+        // With this method we save those particles in a seperate list
+        // =============================================================================================
+        private static List<int[]> CheckForMultipleParticlesPerColor(List<int[]> ColorsWithMultipleParticles, int CurrentColor, int CurrentParticle, bool SameNoOfColorParticles = true)
+        {
+            int Length = ColorsWithMultipleParticles.Count();
+            if(SameNoOfColorParticles == false || Length == 0 || CurrentColor == ColorsWithMultipleParticles[Length - 1][0])
+            {
+                int[] temp = new int[2];
+                temp[0] = CurrentColor;
+                temp[1] = CurrentParticle;
+                ColorsWithMultipleParticles.Add(temp);
+            }
+            else if(ColorsWithMultipleParticles[Length - 1][0] != ColorsWithMultipleParticles[Length - 2][0])
+            {
+                ColorsWithMultipleParticles.RemoveAt(Length - 1);
+            }
+            return ColorsWithMultipleParticles;
         }
 
         void ParticleToColor()

@@ -37,6 +37,8 @@ using BoSSS.Foundation.Grid.Classic;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Bson;
 using BoSSS.Foundation.Grid.RefElements;
+using FSI_Solver;
+using System.Collections;
 
 namespace BoSSS.Application.FSI_Solver {
     public class FSI_SolverMain : IBM_Solver.IBM_SolverMain {
@@ -52,6 +54,7 @@ namespace BoSSS.Application.FSI_Solver {
             counter++;
         }
 
+        bool asjgbjdaf = true;
 
         double calculatedDampingTensors;
         // =============================
@@ -76,6 +79,8 @@ namespace BoSSS.Application.FSI_Solver {
         SinglePhaseField ParticleColor;
 
         SinglePhaseField LevelSetDistance;
+
+        ColorToParticle ColorHandling = new ColorToParticle();
 
         protected override void CreateFields() {
             base.CreateFields();
@@ -592,31 +597,76 @@ namespace BoSSS.Application.FSI_Solver {
         /// <summary>
         /// Particle to Level-Set-Field 
         /// </summary>
-        void UpdateLevelSetParticles(double dt) {
-
-            double phiComplete(double[] X, double t)
+        void UpdateLevelSetParticles(double dt)
+        {
+            int[] CellColor;
+            if (asjgbjdaf)
             {
-                int exp = m_Particles.Count - 1;
-                double temp = Math.Pow(-1, exp);
-                for (int i = 0; i < m_Particles.Count; i++)
-                {
-                    double phi_P_val = m_Particles[i].Phi_P(X);
-                    if (double.IsNaN(phi_P_val) || double.IsInfinity(phi_P_val))
-                        throw new ArithmeticException("Failed level-set formula for particle " + i + ", " + m_Particles[i].GetType().Name);
-
-                    temp *= phi_P_val;
-                        
-                }
-                return temp;
+                InitializeColoring();
+                CellColor = LsTrk.Regions.ColorMap4Spc[LsTrk.GetSpeciesId("B")];
+                asjgbjdaf = false;
             }
+            else
+            {
+                CellColor = LsTrk.Regions.ColorMap4Spc[LsTrk.GetSpeciesId("B")];
+                ColorHandling.AssignToParticle(LevsetTracker, m_Particles, CellColor);
+                ColorHandling.ColoredCellsFindAndSort(CellColor, false);
+            }
+            int J = GridData.iLogicalCells.NoOfLocalUpdatedCells;
+            //double phiComplete(double[] X, double t)
+            //{
+            //    int exp = m_Particles.Count - 1;
+            //    double temp = Math.Pow(-1, exp);
+            //    for (int i = 0; i < m_Particles.Count; i++)
+            //    {
+            //        double phi_P_val = m_Particles[i].Phi_P(X);
+            //        if (double.IsNaN(phi_P_val) || double.IsInfinity(phi_P_val))
+            //            throw new ArithmeticException("Failed level-set formula for particle " + i + ", " + m_Particles[i].GetType().Name);
 
-            ScalarFunction function = NonVectorizedScalarFunction.Vectorize(phiComplete, hack_phystime);
-            DGLevSet.Current.ProjectField(function);
+            //        temp *= phi_P_val;
 
-
+            //    }
+            //    return temp;
+            //}
             LevSet.Clear();
-            LevSet.AccLaidBack(1.0, DGLevSet.Current);
+            CellMask AgglParticleMasks = null;
+            for (int p = 0; p < m_Particles.Count(); p++)
+            {
+                int ParticleColor = m_Particles[p].ParticleColoredCells[0][1];
+                int[] ParticleCells = new int[m_Particles[p].ParticleColoredCells.Count];
+                BitArray ColoredCells = new BitArray(CellColor.Length);
+                for (int i = 0; i < m_Particles[p].ParticleColoredCells.Count; i++)
+                {
+                    ColoredCells[m_Particles[p].ParticleColoredCells[i][0]] = true;
+                }
+                CellMask ColoredCellMask = new CellMask(GridData, ColoredCells);
+                CellMask ColoredCellMaskNeighbour = ColoredCellMask.AllNeighbourCells();
+                ColoredCellMask = ColoredCellMask.Union(ColoredCellMaskNeighbour);
+                if (AgglParticleMasks == null)
+                    AgglParticleMasks = ColoredCellMask;
+                else
+                    AgglParticleMasks = AgglParticleMasks.Union(ColoredCellMask);
+                double phiParticle(double[] X, double t)
+                {
+                    return m_Particles[p].Phi_P(X);
+                }
+                ScalarFunction functionParticle = NonVectorizedScalarFunction.Vectorize(phiParticle, hack_phystime);
+                DGLevSet.Current.ProjectField(functionParticle);
+                LevSet.AccLaidBack(1.0, DGLevSet.Current, ColoredCellMask);
+            }
+            CellMask FluidCells = AgglParticleMasks.Complement();
+            double phiFluid(double[] X, double t)
+            {
+                return -1;
+            }
+            ScalarFunction functionFluid = NonVectorizedScalarFunction.Vectorize(phiFluid, hack_phystime);
+            DGLevSet.Current.ProjectField(functionFluid);
+            LevSet.AccLaidBack(1.0, DGLevSet.Current, FluidCells);
+            //ScalarFunction function = NonVectorizedScalarFunction.Vectorize(phiComplete, hack_phystime);
+            //DGLevSet.Current.ProjectField(function);
+            //LevSet.AccLaidBack(1.0, DGLevSet.Current);
             LsTrk.UpdateTracker(__NearRegionWith: 2);
+            m_Particles[0].CutCells_P(LsTrk);
             UpdateColoring();
         }
 
@@ -628,15 +678,39 @@ namespace BoSSS.Application.FSI_Solver {
             int J = GridData.iLogicalCells.NoOfLocalUpdatedCells;
             int[] PartCol = LsTrk.Regions.ColorMap4Spc[LsTrk.GetSpeciesId("B")];
             var rCode = LsTrk.Regions.RegionsCode;
-            for (int j = 0; j < J; j++) {
+            for (int j = 0; j < J; j++)
+            {
                 ParticleColor.SetMeanValue(j, PartCol[j]);
 
                 LevelSetDistance.SetMeanValue(j, LevelSetTracker.DecodeLevelSetDist(rCode[j], 0));
             }
         }
 
-        
-        
+        void InitializeColoring()
+        {
+            for (int p = 0; p < m_Particles.Count; p++)
+            {
+                int J = GridData.iLogicalCells.NoOfLocalUpdatedCells;
+                double Hmin = Math.Sqrt(GridData.iGeomCells.GetCellVolume(0));
+                double[] ParticlePos = m_Particles[p].Position[0];
+                double ParticleAngle = m_Particles[p].Angle[0];
+                double[] ParticleScales = m_Particles[p].GetLengthScales();
+                double Upperedge = ParticlePos[1] + ParticleScales[1] * Math.Cos(ParticleAngle) + ParticleScales[0] * Math.Sin(ParticleAngle) + Hmin / 2;
+                double Loweredge = ParticlePos[1] - ParticleScales[1] * Math.Cos(ParticleAngle) - ParticleScales[0] * Math.Sin(ParticleAngle) - Hmin / 2;
+                double Leftedge = ParticlePos[0] - ParticleScales[0] * Math.Cos(ParticleAngle) - ParticleScales[1] * Math.Sin(ParticleAngle) - Hmin / 2;
+                double Rightedge = ParticlePos[0] + ParticleScales[0] * Math.Cos(ParticleAngle) + ParticleScales[1] * Math.Sin(ParticleAngle) + Hmin / 2;
+                for (int j = 0; j < J; j++)
+                {
+                    double[] center = GridData.iLogicalCells.GetCenter(j);
+                    if (center[0] > Leftedge && center[0] < Rightedge && center[1] > Loweredge && center [1] < Upperedge)
+                    {
+                        ParticleColor.SetMeanValue(j, p + 1);
+                        m_Particles[p].ParticleColoredCells.Add(new int[2] { j, p + 1 });
+                    }
+                        
+                }
+            }
+        }
 
         void UpdateForcesAndTorque(double dt, double phystime) {
             //
