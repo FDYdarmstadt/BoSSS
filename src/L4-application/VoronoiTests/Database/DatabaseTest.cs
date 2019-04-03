@@ -19,9 +19,10 @@ namespace VoronoiTests.Database
 
         static IDatabaseInfo database;
 
+        static string databasePath = "..\\..\\bosss_TestDatabase_Voronoi";
+
         public static IDatabaseInfo InitializeDatabase()
         {
-            string databasePath = "..\\..\\bosss_TestDatabase_Voronoi";
             IDatabaseInfo emptyDatabase = CreateEmptyDatabase(databasePath);
             return emptyDatabase;
         }
@@ -45,7 +46,8 @@ namespace VoronoiTests.Database
         [TestFixtureTearDown]
         public static void DeleteDatabase()
         {
-            Directory.Delete(database.Path, true);
+            if(Directory.Exists(databasePath))
+                Directory.Delete(databasePath, true);
         } 
     }
 }

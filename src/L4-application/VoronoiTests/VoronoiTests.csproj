@@ -49,6 +49,8 @@
     <Compile Include="Database\DatabaseTest.cs" />
     <Compile Include="Database\GridIOTests.cs" />
     <Compile Include="Database\GridMethods.cs" />
+    <Compile Include="Database\SessionMethods.cs" />
+    <Compile Include="Database\SessionIOTests.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="RunnableTest.cs" />
