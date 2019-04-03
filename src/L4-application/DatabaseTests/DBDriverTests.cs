@@ -29,21 +29,8 @@ namespace BoSSS.Application.DatabaseTests  {
     /// Tests for the "standard" Windows file-system.
     /// </summary>
     /// 
-    class StandardDBDriverTests : TestDatabase
+    class DBDriverTests : DatabaseTest
     {
-
-        public static void Main() {
-            Console.WriteLine("Hello World.");
-            InitOnce();
-
-            var tst = new StandardDBDriverTests();
-            tst.Init();
-           // tst.TestCopySession();
-            tst.TestRenameGrid();
-            //tst.TestClearDatabase();
-            tst.CleanUp();
-        }
-
         [Test]
         public void TestCopyGrid() {
             var grid1 = databaseWithFiles.Controller.Grids.First();

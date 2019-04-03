@@ -3,29 +3,16 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using BoSSS.Foundation.IO;
-using BoSSS.Foundation.Grid;
 using NUnit.Framework;
-using BoSSS.Platform;
 
 namespace BoSSS.Application.DatabaseTests
 {
-    [TestFixture]
-    class TestDatabase
+    class DatabaseTest : MPITest
     {
         protected IDatabaseInfo databaseWithFiles;
 
         protected IDatabaseInfo emptyDatabase;
-
-        [TestFixtureSetUp]
-        public static void InitOnce()
-        {
-            bool dummy;
-            ilPSP.Environment.Bootstrap(
-                new string[0],
-                BoSSS.Solution.Application.GetBoSSSInstallDir(),
-                out dummy);
-        }
-
+        
         [SetUp]
         public void Init()
         {
