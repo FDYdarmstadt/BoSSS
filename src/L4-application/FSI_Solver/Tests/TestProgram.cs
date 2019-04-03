@@ -102,7 +102,7 @@ namespace BoSSS.Application.FSI_Solver {
                 p.Init(ctrl);
                 p.RunSolverMode();
 
-                double ForcesSoll = 9791.34127492679;
+                double ForcesSoll = 1481.4254921133;
 
                 double Forces = p.Particles[0].HydrodynamicForces[0][0];
 

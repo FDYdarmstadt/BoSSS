@@ -36,6 +36,7 @@ using BoSSS.Solution.XNSECommon;
 using BoSSS.Foundation.Grid.Classic;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Bson;
+using BoSSS.Foundation.Grid.RefElements;
 
 namespace BoSSS.Application.FSI_Solver {
     public class FSI_SolverMain : IBM_Solver.IBM_SolverMain {
@@ -98,6 +99,7 @@ namespace BoSSS.Application.FSI_Solver {
 
                     case LevelSetHandling.LieSplitting:
                     case LevelSetHandling.StrangSplitting:
+                    case LevelSetHandling.FSI_LieSplittingFullyCoupled:
                     case LevelSetHandling.None:
                     return false;
 
@@ -437,17 +439,31 @@ namespace BoSSS.Application.FSI_Solver {
                     break;
 
                 case LevelSetHandling.LieSplitting:
-
                     MassMatrixShape = MassMatrixShapeandDependence.IsTimeAndSolutionDependent;
                     if (calculatedDampingTensors == 0) {
                         foreach (Particle p in m_Particles) {
                             if (p.neglectAddedDamping == false) {
                                 p.CalculateDampingTensor(LsTrk, ((FSI_Control)this.Control).PhysicalParameters.mu_A, ((FSI_Control)this.Control).PhysicalParameters.rho_A, ((FSI_Control)this.Control).dtMax);
+                                ExchangeDampingTensors();
                             }
                         }
                     }
                     calculatedDampingTensors = 1;
+                    break;
 
+                case LevelSetHandling.FSI_LieSplittingFullyCoupled:
+                    MassMatrixShape = MassMatrixShapeandDependence.IsTimeAndSolutionDependent;
+                    if (calculatedDampingTensors == 0)
+                    {
+                        foreach (Particle p in m_Particles)
+                        {
+                            if (p.neglectAddedDamping == false)
+                            {
+                                p.CalculateDampingTensor(LsTrk, ((FSI_Control)this.Control).PhysicalParameters.mu_A, ((FSI_Control)this.Control).PhysicalParameters.rho_A, ((FSI_Control)this.Control).dtMax);
+                            }
+                        }
+                    }
+                    calculatedDampingTensors = 1;
                     break;
 
                 case LevelSetHandling.StrangSplitting:
@@ -515,7 +531,10 @@ namespace BoSSS.Application.FSI_Solver {
                     break;
 
                 case LevelSetHandling.LieSplitting:
+                    UpdateLevelSetParticles(dt);
+                    break;
 
+                case LevelSetHandling.FSI_LieSplittingFullyCoupled:
                     UpdateLevelSetParticles(dt);
                     break;
 
@@ -604,8 +623,8 @@ namespace BoSSS.Application.FSI_Solver {
         /// <summary>
         /// Update of <see cref="ParticleColor"/> and <see cref="LevelSetDistance"/>
         /// </summary>
-        void UpdateColoring() {
-
+        void UpdateColoring()
+        {
             int J = GridData.iLogicalCells.NoOfLocalUpdatedCells;
             int[] PartCol = LsTrk.Regions.ColorMap4Spc[LsTrk.GetSpeciesId("B")];
             var rCode = LsTrk.Regions.RegionsCode;
@@ -614,6 +633,54 @@ namespace BoSSS.Application.FSI_Solver {
 
                 LevelSetDistance.SetMeanValue(j, LevelSetTracker.DecodeLevelSetDist(rCode[j], 0));
             }
+            ColorToParticle();
+        }
+
+        void ColorToParticle()
+        {
+            // Step 1
+            // Find all colored cells and sort them
+            // ====================================
+            int[] PartCol = LsTrk.Regions.ColorMap4Spc[LsTrk.GetSpeciesId("B")];
+            int ColorMaximum = PartCol.Max();
+            int SpatialDim = LsTrk.GridDat.SpatialDimension;
+            GridData _GridData = LsTrk.GridDat;
+            List<double[]> SortedColoredCells = new List<double[]>();
+            int ListIndex = 0;
+            for (int CellID = 0; CellID < PartCol.Length; CellID++)
+            {
+                if (PartCol[CellID] != 0)
+                {
+                    ListIndex = 0;
+                    if (SortedColoredCells.Count != 0)
+                    {
+                        while (ListIndex < SortedColoredCells.Count && PartCol[CellID] >= SortedColoredCells[ListIndex][1])
+                        {
+                            ListIndex += 1;
+                        }
+                    }
+                    double[] temp = new double[4];
+                    temp[0] = CellID;
+                    temp[1] = PartCol[CellID];
+                    SortedColoredCells.Insert(ListIndex, temp);
+                }
+            }
+            
+            for (int i = 0; i < SortedColoredCells.Count; i++) 
+            {
+                for (int p = m_Particles.Count - 1; p > 0; p--)
+                {
+                    bool IsInCell = LsTrk.GridDat.Cells.IsInCell(m_Particles[p].Position[0], i);
+                }
+                // ToDo remove all Cells with the color which was identified!
+            }
+            
+                
+        }
+        
+        void ParticleToColor()
+        {
+
         }
 
         void UpdateForcesAndTorque(double dt, double phystime) {
@@ -631,7 +698,7 @@ namespace BoSSS.Application.FSI_Solver {
 
             // Initial check: is the motion state of the particles equal on all MPI processors?
             // ================================================================================
-
+            //Debugger.Launch();
             int D = GridData.SpatialDimension;
             int NoOfParticles = m_Particles.Count;
 
@@ -650,24 +717,26 @@ namespace BoSSS.Application.FSI_Solver {
                     var P = m_Particles[iP];
 
                     // scalar values
-                    CheckSend[iP*NoOfVars + 0] = P.Angle[0];
-                    CheckSend[iP*NoOfVars + 1] = P.Angle[1];
+                    CheckSend[iP * NoOfVars + 0] = P.Angle[0];
+                    CheckSend[iP * NoOfVars + 1] = P.Angle[1];
                     //CheckSend[iP*NoOfVars + 2] = P.Area_P;
-                    CheckSend[iP*NoOfVars + 3] = P.ClearSmallValues ? 1.0 : 0.0;
-                    CheckSend[iP*NoOfVars + 4] = P.ForceAndTorque_convergence;
-                    CheckSend[iP*NoOfVars + 5] = P.Mass_P;
-                    CheckSend[iP*NoOfVars + 6] = P.particleDensity;
+                    CheckSend[iP * NoOfVars + 3] = P.ClearSmallValues ? 1.0 : 0.0;
+                    CheckSend[iP * NoOfVars + 4] = P.ForceAndTorque_convergence;
+                    CheckSend[iP * NoOfVars + 5] = P.Mass_P;
+                    CheckSend[iP * NoOfVars + 6] = P.particleDensity;
                     // todo: add more values here that might be relevant for the particle state;
 
                     // vector values
                     for (int d = 0; d < D; d++) {
                         int Offset = 10;
-                        CheckSend[iP*NoOfVars + Offset + 0 * D + d] = P.Position[0][d];
-                        CheckSend[iP*NoOfVars + Offset + 1 * D + d] = P.Position[1][d];
-                        CheckSend[iP*NoOfVars + Offset + 2 * D + d] = P.TranslationalAcceleration[0][d];
-                        CheckSend[iP*NoOfVars + Offset + 3 * D + d] = P.TranslationalAcceleration[1][d];
-                        CheckSend[iP*NoOfVars + Offset + 4 * D + d] = P.TranslationalVelocity[0][d];
-                        CheckSend[iP*NoOfVars + Offset + 5 * D + d] = P.TranslationalVelocity[1][d];
+                        CheckSend[iP * NoOfVars + Offset + 0 * D + d] = P.Position[0][d];
+                        CheckSend[iP * NoOfVars + Offset + 1 * D + d] = P.Position[1][d];
+                        CheckSend[iP * NoOfVars + Offset + 2 * D + d] = P.TranslationalAcceleration[0][d];
+                        CheckSend[iP * NoOfVars + Offset + 3 * D + d] = P.TranslationalAcceleration[1][d];
+                        CheckSend[iP * NoOfVars + Offset + 4 * D + d] = P.TranslationalVelocity[0][d];
+                        CheckSend[iP * NoOfVars + Offset + 5 * D + d] = P.TranslationalVelocity[1][d];
+                        CheckSend[iP * NoOfVars + Offset + 6 * D + d] = P.HydrodynamicForces[0][d];
+                        CheckSend[iP * NoOfVars + Offset + 7 * D + d] = P.HydrodynamicForces[1][d];
                         // todo: add more vector values here that might be relevant for the particle state;
                     }
                 }
@@ -695,7 +764,7 @@ namespace BoSSS.Application.FSI_Solver {
                                 + idx_l;
 
                             if (Math.Abs(CheckReceive[idx_g] - CheckSend[idx_l]) > VarTol)
-                                throw new ApplicationException("Mismatch in particle state among MPI ranks.");
+                                throw new ApplicationException("Mismatch in particle state among MPI ranks. Index:  " + idx_l);
                         }
                         VarTol *= 1.0e-10;
                     }
@@ -708,7 +777,6 @@ namespace BoSSS.Application.FSI_Solver {
 
                 if (!((FSI_Control)Control).pureDryCollisions) {
                     p.UpdateForcesAndTorque(Velocity, Pressure, LsTrk, Control.PhysicalParameters.mu_A, dt, Control.PhysicalParameters.rho_A);
-                    
                 }
 
                 // wall collisions are computed on each processor
@@ -722,32 +790,90 @@ namespace BoSSS.Application.FSI_Solver {
             // Sum forces and moments over all MPI processors
             // ==============================================
             {
+                //Debugger.Launch();
                 // step 1: collect all variables that we need to sum up
                 int NoOfVars = 1 + D * 1;
-                double[] StateBuffer = new double[NoOfParticles*NoOfVars];
+                double[] StateBuffer = new double[NoOfParticles * NoOfVars];
 
                 for (int iP = 0; iP < NoOfParticles; iP++) {
                     var P = m_Particles[iP];
-
+                    StateBuffer[NoOfVars * iP + 0] = 0;
                     StateBuffer[NoOfVars * iP + 0] = P.HydrodynamicTorque[0];
                     for(int d = 0; d < D; d++) {
                         int Offset = 1;
+                        StateBuffer[NoOfVars * iP + Offset + 0 * D + d] = 0;
                         StateBuffer[NoOfVars * iP + Offset + 0*D + d] = P.HydrodynamicForces[0][d];
                     }
                 }
 
                 // step 2: sum over MPI processors
                 // note: we want to sum all variables by a single MPI call, which is way more efficient
-                double[] GlobalStateBuffer = StateBuffer.MPISum();
+                // B. Deußen: a single call of MPISum() would only consider the first entry of StateBuffer, thus I implemented the loop over all entries
+                double[] GlobalStateBuffer = new double[StateBuffer.Length];
+                for (int i = 0; i < StateBuffer.Length; i++)
+                {
+                    GlobalStateBuffer[i] = 0;
+                    GlobalStateBuffer[i] = StateBuffer[i].MPISum();
+                }
 
                 // step 3: write sum variables back 
                 for (int iP = 0; iP < NoOfParticles; iP++) {
                     var P = m_Particles[iP];
-
+                    P.HydrodynamicTorque[0] = 0;
                     P.HydrodynamicTorque[0] = GlobalStateBuffer[NoOfVars * iP + 0];
                     for(int d = 0; d < D; d++) {
                         int Offset = 1;
+                        P.HydrodynamicForces[0][d] = 0;
                         P.HydrodynamicForces[0][d] = GlobalStateBuffer[NoOfVars * iP + Offset + 0 * D + d];
+                    }
+                }
+            }
+        }
+
+        void ExchangeDampingTensors()
+        {
+            // Sum forces and moments over all MPI processors
+            // ==============================================
+            {
+                // step 1: collect all variables that we need to sum up
+                int NoOfParticles = m_Particles.Count;
+                int NoOfVars = 3; //only for 2D at the moment
+                double[,] StateBuffer = new double[NoOfParticles * NoOfVars, NoOfParticles * NoOfVars];
+                for (int iP = 0; iP < NoOfParticles; iP++)
+                {
+                    var P = m_Particles[iP];
+                    for (int i = 0; i < 3; i++)
+                    {
+                        for (int j = 0; j < 3; j++)
+                        {
+                            StateBuffer[NoOfVars * iP + i, NoOfVars * iP + j] = P.AddedDampingTensor[i, j];
+                        }
+                    }
+
+                }
+                // step 2: sum over MPI processors
+                // note: we want to sum all variables by a single MPI call, which is way more efficient
+                // B. Deußen: a single call of MPISum() would only consider the first entry of StateBuffer, thus I implemented the loop over all entries
+                double[,] GlobalStateBuffer = new double[NoOfParticles * NoOfVars, NoOfParticles * NoOfVars];
+                for (int i = 0; i < NoOfParticles * NoOfVars; i++)
+                {
+                    for (int j = 0; j < NoOfParticles * NoOfVars; j++)
+                    {
+                        GlobalStateBuffer[i, j] = StateBuffer[i, j].MPISum();
+                    }
+
+                }
+                // step 3: write sum variables back 
+                for (int iP = 0; iP < NoOfParticles; iP++)
+                {
+                    var P = m_Particles[iP];
+                    for (int i = 0; i < 3; i++)
+                    {
+                        for (int j = 0; j < 3; j++)
+                        {
+                            StateBuffer[NoOfVars * iP + i, NoOfVars * iP + j] = P.AddedDampingTensor[i, j];
+                            P.AddedDampingTensor[i, j] = GlobalStateBuffer[NoOfVars * iP + i, NoOfVars * iP + j];
+                        }
                     }
                 }
             }
@@ -891,46 +1017,78 @@ namespace BoSSS.Application.FSI_Solver {
                         int iteration_counter = 0;
                         for (double posResidual_splitting = 1e12; posResidual_splitting > ((FSI_Control)this.Control).ForceAndTorque_ConvergenceCriterion;)// && iteration_counter <= (this.Control).max_iterations_fully_coupled;)
                         {
-                            OldPushCount = LsTrk.PushCount; // HACKHACKHACK
                             double[] ForcesOldSquared = new double[2];
                             double TorqueOldSquared = new double();
                             ForcesOldSquared[0] = 0;
                             ForcesOldSquared[1] = 0;
                             TorqueOldSquared = 0;
-                            foreach (Particle p in m_Particles) {
-                                p.iteration_counter_P = iteration_counter;
-                                p.ForceAndTorque_convergence = ((FSI_Control)this.Control).ForceAndTorque_ConvergenceCriterion;
-                                ForcesOldSquared[0] += p.HydrodynamicForces[0][0].Pow2();
-                                ForcesOldSquared[1] += p.HydrodynamicForces[0][1].Pow2();
-                                TorqueOldSquared += p.HydrodynamicTorque[0].Pow2();
-                            }
-                            m_BDF_Timestepper.Solve(phystime, dt, false);
-                            
-                            UpdateForcesAndTorque(dt, phystime);
-                            foreach (Particle p in m_Particles)
+
+                            if (iteration_counter == 0 && ((FSI_Control)this.Control).splitting_fully_coupled == true)
                             {
-                                if  (p.neglectAddedDamping == false && p.iteration_counter_P == 0)
+                                foreach (Particle p in m_Particles)
                                 {
-                                    p.UpdateDampingTensors();
+                                    p.iteration_counter_P = iteration_counter;
+                                    if (p.neglectAddedDamping == false && p.iteration_counter_P == 0)
+                                    {
+                                        p.UpdateDampingTensors();
+                                        ExchangeDampingTensors();
+                                    }
+                                    p.PredictAcceleration();
+                                    p.CalculateAngularVelocity(dt, ((FSI_Control)this.Control).includeRotation);
+                                    p.CalculateTranslationalVelocity(dt, this.Control.PhysicalParameters.rho_A, ((FSI_Control)this.Control).includeTranslation);
+                                    p.CalculateParticlePosition(dt, this.Control.PhysicalParameters.rho_A);
+                                    p.CalculateParticleAngle(dt);
+                                    p.ComputeParticleRe(this.Control.PhysicalParameters.mu_A);
+                                }
+                                posResidual_splitting = 1e12;
+                            }
+                            else
+                            {
+                                foreach (Particle p in m_Particles)
+                                {
+                                    p.iteration_counter_P = iteration_counter;
+                                    p.ForceAndTorque_convergence = ((FSI_Control)this.Control).ForceAndTorque_ConvergenceCriterion;
+                                    ForcesOldSquared[0] += p.HydrodynamicForces[0][0].Pow2();
+                                    ForcesOldSquared[1] += p.HydrodynamicForces[0][1].Pow2();
+                                    TorqueOldSquared += p.HydrodynamicTorque[0].Pow2();
+                                    p.HydrodynamicForces[0][0] = 0;
+                                    p.HydrodynamicForces[0][1] = 0;
+                                    p.HydrodynamicTorque[0] = 0;
                                 }
 
-                                p.CalculateAcceleration(dt, Control.PhysicalParameters.rho_A);
-                                p.CalculateAngularVelocity(dt, ((FSI_Control)this.Control).includeRotation);
-                                p.CalculateTranslationalVelocity(dt, this.Control.PhysicalParameters.rho_A, ((FSI_Control)this.Control).includeTranslation);
-                                p.CalculateParticlePosition(dt, this.Control.PhysicalParameters.rho_A);
-                                p.CalculateParticleAngle(dt);
-                                p.ComputeParticleRe(this.Control.PhysicalParameters.mu_A);
+                                m_BDF_Timestepper.Solve(phystime, dt, false);
+
+                                UpdateForcesAndTorque(dt, phystime);
+
+                                foreach (Particle p in m_Particles)
+                                {
+                                    if (iteration_counter == 100)
+                                    {
+                                        p.PredictAccelerationWithinIteration();
+                                    }
+                                    else
+                                    {
+                                        p.CalculateAcceleration(dt, Control.PhysicalParameters.rho_A);
+                                    }
+                                    p.CalculateAngularVelocity(dt, ((FSI_Control)this.Control).includeRotation);
+                                    p.CalculateTranslationalVelocity(dt, this.Control.PhysicalParameters.rho_A, ((FSI_Control)this.Control).includeTranslation);
+                                    p.CalculateParticlePosition(dt, this.Control.PhysicalParameters.rho_A);
+                                    p.CalculateParticleAngle(dt);
+                                    p.ComputeParticleRe(this.Control.PhysicalParameters.mu_A);
+                                }
+                                double[] ForcesNewSquared = new double[2];
+                                double TorqueNewSquared = new double();
+                                foreach (Particle p in m_Particles)
+                                {
+                                    ForcesNewSquared[0] += p.HydrodynamicForces[0][0].Pow2();
+                                    ForcesNewSquared[1] += p.HydrodynamicForces[0][1].Pow2();
+                                    TorqueNewSquared += p.HydrodynamicTorque[0].Pow2();
+                                }
+                                posResidual_splitting = Math.Sqrt((Math.Sqrt(ForcesNewSquared[0]) - Math.Sqrt(ForcesOldSquared[0])).Pow2() + (Math.Sqrt(ForcesNewSquared[1]) - Math.Sqrt(ForcesOldSquared[1])).Pow2() + (Math.Sqrt(TorqueNewSquared) - Math.Sqrt(TorqueOldSquared)).Pow2());
                             }
                             PrintResultToConsole(phystime, dt);
                             //#region Get Drag and Lift Coefficiant
-                            double[] ForcesNewSquared = new double[2];
-                            double TorqueNewSquared = new double();
-                            foreach (Particle p in m_Particles) {
-                                ForcesNewSquared[0] += p.HydrodynamicForces[0][0].Pow2();
-                                ForcesNewSquared[1] += p.HydrodynamicForces[0][1].Pow2();
-                                TorqueNewSquared += p.HydrodynamicTorque[0].Pow2();
-                            }
-                            posResidual_splitting = Math.Sqrt((Math.Sqrt(ForcesNewSquared[0]) - Math.Sqrt(ForcesOldSquared[0])).Pow2() + (Math.Sqrt(ForcesNewSquared[1]) - Math.Sqrt(ForcesOldSquared[1])).Pow2() + (Math.Sqrt(TorqueNewSquared) - Math.Sqrt(TorqueOldSquared)).Pow2());
+                            
                             Console.WriteLine("Fully coupled system, number of iterations:  " + iteration_counter);
                             Console.WriteLine("Forces and torque residual: " + posResidual_splitting);
                             Console.WriteLine();
@@ -939,8 +1097,13 @@ namespace BoSSS.Application.FSI_Solver {
                                 break;
                             }
                             if (iteration_counter > ((FSI_Control)this.Control).max_iterations_fully_coupled) {
-                                 throw new ApplicationException("no convergence in coupled iterative solver, number of iterations: " + iteration_counter);
+                                break;// throw new ApplicationException("no convergence in coupled iterative solver, number of iterations: " + iteration_counter);
                             }
+                        }
+                        if (((FSI_Control)this.Control).Timestepper_LevelSetHandling == LevelSetHandling.FSI_LieSplittingFullyCoupled)
+                        {
+                            LsTrk.IncreaseHistoryLength(1);
+                            LsTrk.PushStacks();
                         }
                         /*
                         if (phystime == 0) {
@@ -957,7 +1120,8 @@ namespace BoSSS.Application.FSI_Solver {
                             }
                         }
                         */
-                    } else {
+                    }
+                    else {
                         foreach (Particle p in m_Particles) {
                             p.iteration_counter_P = -1;
                             p.ForceAndTorque_convergence = ((FSI_Control)this.Control).ForceAndTorque_ConvergenceCriterion;
@@ -973,7 +1137,7 @@ namespace BoSSS.Application.FSI_Solver {
                     // It is important that LevelSetTracker.PushStacks() is called *exactly once per time-step*, at the beginning.
                     // Do not remove this check! Instead, remove any calls to 'PushStacks()' in subroutines of this method.
                     // Fk.
-                    throw new ApplicationException("Illegal number of level-set push actions in time-step.");
+                    throw new ApplicationException("Illegal number of level-set push actions in time-step." + (LsTrk.PushCount - OldPushCount));
                 }
 
                 this.ResLogger.NextTimestep(false);

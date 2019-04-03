@@ -152,7 +152,7 @@ namespace BoSSS.Application.FSI_Solver
         /// Complete added damping tensor, for reference: Banks et.al. 2017
         /// </summary>
         [DataMember]
-        private double[,] AddedDampingTensor = new double[6, 6];
+        public double[,] AddedDampingTensor = new double[6, 6];
 
         /// <summary>
         /// Scaling parameter for added damping.
@@ -364,6 +364,49 @@ namespace BoSSS.Application.FSI_Solver
             Angle[0] = Angle[1] + RotationalVelocity[1] * dt + dt.Pow2() * (RotationalAcceleration[1] + RotationalAcceleration[0]) / 4;
             if (double.IsNaN(Angle[0]) || double.IsInfinity(Angle[0]))
                 throw new ArithmeticException("Error trying to update particle angle");
+        }
+
+        /// <summary>
+        /// Calculate the new acceleration (translational and rotational)
+        /// </summary>
+        /// <param name="dt"></param>
+        public void PredictAcceleration()
+        {
+            if (iteration_counter_P == 0)
+            {
+                Aux.SaveMultidimValueOfLastTimestep(TranslationalAcceleration);
+                Aux.SaveValueOfLastTimestep(RotationalAcceleration);
+                Aux.SaveMultidimValueOfLastTimestep(HydrodynamicForces);
+                Aux.SaveValueOfLastTimestep(HydrodynamicTorque);
+            }
+            for (int d = 0; d < SpatialDim; d++)
+            {
+                TranslationalAcceleration[0][d] = 2 * TranslationalAcceleration[1][d] - TranslationalAcceleration[2][d];
+                if (double.IsNaN(TranslationalAcceleration[0][d]) || double.IsInfinity(TranslationalAcceleration[0][d]))
+                    throw new ArithmeticException("Error trying to calculate particle acceleration");
+            }
+
+            RotationalAcceleration[0] = 2 * RotationalAcceleration[1] - RotationalAcceleration[2];
+            if (double.IsNaN(RotationalAcceleration[0]) || double.IsInfinity(RotationalAcceleration[0]))
+                throw new ArithmeticException("Error trying to calculate particle rotational acceleration");
+        }
+
+        /// <summary>
+        /// Calculate the new acceleration (translational and rotational)
+        /// </summary>
+        /// <param name="dt"></param>
+        public void PredictAccelerationWithinIteration()
+        {
+            for (int d = 0; d < SpatialDim; d++)
+            {
+                TranslationalAcceleration[0][d] = 2 * TranslationalAcceleration[0][d] - TranslationalAcceleration[1][d];
+                if (double.IsNaN(TranslationalAcceleration[0][d]) || double.IsInfinity(TranslationalAcceleration[0][d]))
+                    throw new ArithmeticException("Error trying to calculate particle acceleration");
+            }
+
+            RotationalAcceleration[0] = 2 * RotationalAcceleration[0] - RotationalAcceleration[1];
+            if (double.IsNaN(RotationalAcceleration[0]) || double.IsInfinity(RotationalAcceleration[0]))
+                throw new ArithmeticException("Error trying to calculate particle rotational acceleration");
         }
 
         /// <summary>
@@ -652,14 +695,16 @@ namespace BoSSS.Application.FSI_Solver
                 Torque = Torque + beta * dt * (AddedDampingTensor[2, 0] * TranslationalAcceleration[0][0] + AddedDampingTensor[2, 1] * TranslationalAcceleration[0][1] + AddedDampingTensor[2, 2] * RotationalAcceleration[0]);
             }
 
-            if (iteration_counter_P == 0) {
+            if (iteration_counter_P == 1) {
                 Console.WriteLine("First iteration of the current timestep, all relaxation factors are set to 1");
                 for (int d = 0; d < SpatialDim; d++) {
+                    HydrodynamicForces[0][d] = 0;
                     HydrodynamicForces[0][d] = Forces[d];
                     if (Math.Abs(Forces[d]) < ForceAndTorque_convergence * 1e-2 && ClearSmallValues == true) {
                         Forces[d] = 0;
                     }
                 }
+                HydrodynamicTorque[0] = 0;
                 HydrodynamicTorque[0] = Torque;
                 if (Math.Abs(Torque) < ForceAndTorque_convergence * 1e-2 && ClearSmallValues == true) {
                     Torque = 0;
@@ -682,8 +727,9 @@ namespace BoSSS.Application.FSI_Solver
 
             else
             {
-                double[] RelaxatedForceAndTorque = Underrelaxation.RelaxatedForcesAndTorque(Forces, Torque, HydrodynamicForces[0], HydrodynamicTorque[0], ForceAndTorque_convergence, underrelaxation_factor, ClearSmallValues, AddaptiveUnderrelaxation, AverageDistance);
-                for (int d = 0; d < this.SpatialDim; d++) {
+                double[] RelaxatedForceAndTorque = Underrelaxation.RelaxatedForcesAndTorque(Forces, Torque, HydrodynamicForces[0], HydrodynamicTorque[0], ForceAndTorque_convergence, underrelaxation_factor, ClearSmallValues, AddaptiveUnderrelaxation, AverageDistance, iteration_counter_P);
+                for (int d = 0; d < this.SpatialDim; d++)
+                {
                     HydrodynamicForces[0][d] = RelaxatedForceAndTorque[d];
                 }
                 HydrodynamicTorque[0] = RelaxatedForceAndTorque[SpatialDim];

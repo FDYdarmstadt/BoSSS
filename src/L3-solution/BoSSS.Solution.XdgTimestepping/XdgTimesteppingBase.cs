@@ -137,7 +137,12 @@ namespace BoSSS.Solution.XdgTimestepping {
         /// <summary>
         /// Level-Set is updated in every iteration, until convergence is reached.
         /// </summary>
-        Coupled_Iterative = 4
+        Coupled_Iterative = 4,
+
+        /// <summary>
+        /// Level-Set is handled using Lie-Splitting. Use this for the fully coupled FSI-Solver
+        /// </summary>
+        FSI_LieSplittingFullyCoupled = 5,
     }
 
     public enum SpatialOperatorType {
