@@ -77,6 +77,46 @@ namespace FSI_Solver
             }
         }
 
+        // Method to find the Color of a specific particle
+        // ===================================================
+        public int[] FindParticleColor(IGridData GrdDat, List<Particle> Particles, List<int[]> ColoredCellsSorted)
+        {
+            int[] CurrentColor = new int[Particles.Count];
+            for (int p = 0; p < Particles.Count; p++)
+            {
+                double[] ParticleScales = Particles[p].GetLengthScales();
+                double Lengthscale = ParticleScales.Min();
+                double[] ParticlePos = Particles[p].Position[0];
+                double Upperedge = ParticlePos[1] + Lengthscale;
+                double Loweredge = ParticlePos[1] - Lengthscale;
+                double Leftedge = ParticlePos[0] - Lengthscale;
+                double Rightedge = ParticlePos[0] + Lengthscale;
+                for (int i = 0; i < ColoredCellsSorted.Count; i++)
+                {
+                    if (Math.Sqrt(GrdDat.iGeomCells.GetCellVolume(ColoredCellsSorted[i][0])) > Lengthscale)
+                        throw new ArithmeticException("Hmin of the cells is larger than the particles. Please use a finer grid (or grid refinement).");
+
+                    double[] center = GrdDat.iLogicalCells.GetCenter(ColoredCellsSorted[i][0]);
+                    if (center[0] > Leftedge && center[0] < Rightedge && center[1] > Loweredge && center[1] < Upperedge)
+                        CurrentColor[p] = ColoredCellsSorted[i][1];
+                }
+            }
+            return CurrentColor;
+        }
+
+        // Method to find all Cells of a specific color
+        // ===================================================
+        public int[] FindCellsWithColor(int Color, List<int[]> ColoredCellsSorted)
+        {
+            List<int> Cells = new List<int>();
+            for (int i = 0; i < ColoredCellsSorted.Count; i++)
+            {
+                if (ColoredCellsSorted[i][1] == Color)
+                    Cells.Add(ColoredCellsSorted[i][0]);
+            }
+            return Cells.ToArray();
+        }
+
         internal int[] FindNeighborCells(List<int[]> ParticleColoredCells, LevelSetTracker LsTrk)
         {
             List<int> ColoredAndNeighborCells = new List<int>();
