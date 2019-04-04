@@ -251,7 +251,7 @@ namespace BoSSS.Foundation.Grid.Aggregation {
             }
 
             public long GetGlobalID(int j) {
-                throw new NotImplementedException();
+                return m_Owner.aggregationGrid.AggregationCells[j].GlobalID;
             }
 
             public int GetInterpolationDegree(int j) {
