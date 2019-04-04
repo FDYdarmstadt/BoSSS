@@ -85,6 +85,7 @@
     <Compile Include="active_particles\ActivePressureAtIB.cs" />
     <Compile Include="active_particles\HardcodedControl\HardcodedControl_tiltedChannel.cs" />
     <Compile Include="active_particles\HardcodedControl\HardcodedControl_straightChannel.cs" />
+    <Compile Include="ColorToParticle.cs" />
     <Compile Include="FSI_TimestepInfo.cs" />
     <Compile Include="Particle\ParticleAcceleration.cs" />
     <Compile Include="Particle\ParticleAddedDamping.cs" />

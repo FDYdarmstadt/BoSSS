@@ -135,6 +135,12 @@ namespace BoSSS.Application.FSI_Solver
         #endregion
 
         #region Misc parameters
+
+        /// <summary>
+        /// Colored cells of this particle. 0: CellID, 1: Color
+        /// </summary>
+        public List<int[]> ParticleColoredCells = new List<int[]>();
+
         /// <summary>
         /// Length of history for time, velocity, position etc.
         /// </summary>
@@ -383,7 +389,7 @@ namespace BoSSS.Application.FSI_Solver
             {
                 TranslationalAcceleration[0][d] = 2 * TranslationalAcceleration[1][d] - TranslationalAcceleration[2][d];
                 if (double.IsNaN(TranslationalAcceleration[0][d]) || double.IsInfinity(TranslationalAcceleration[0][d]))
-                    throw new ArithmeticException("Error trying to calculate particle acceleration");
+                    throw new ArithmeticException("Error trying to calculate particle acceleration" + TranslationalAcceleration[0][d]);
             }
 
             RotationalAcceleration[0] = 2 * RotationalAcceleration[1] - RotationalAcceleration[2];
@@ -427,8 +433,9 @@ namespace BoSSS.Application.FSI_Solver
             TranslationalAcceleration[0] = Acceleration.Translational(CoefficientMatrix, Denominator, HydrodynamicForces[0], HydrodynamicTorque[0]);
             for (int i = 0; i< SpatialDim; i++)
             {
+                Console.WriteLine("Acc" +i + "   " + TranslationalAcceleration[0][i]);
                 if (double.IsNaN(TranslationalAcceleration[0][i]) || double.IsInfinity(TranslationalAcceleration[0][i]))
-                    throw new ArithmeticException("Error trying to calculate particle acceleration");
+                    throw new ArithmeticException("Error trying to calculate particle acceleration" + TranslationalAcceleration[0][i]);
             }
 
             RotationalAcceleration[0] = Acceleration.Rotational(CoefficientMatrix, Denominator, HydrodynamicForces[0], HydrodynamicTorque[0]);
@@ -776,6 +783,8 @@ namespace BoSSS.Application.FSI_Solver
         /// <param name="point"></param>
         /// <returns></returns>
         abstract public bool Contains(double[] point, LevelSetTracker LsTrk);
+
+        abstract public double[] GetLengthScales();
 
         virtual public MultidimensionalArray GetSurfacePoints(LevelSetTracker lsTrk, LevelSet levelSet)
         {
