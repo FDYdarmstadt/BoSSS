@@ -672,7 +672,7 @@ namespace BoSSS.Application.FSI_Solver {
             // Delete the old level set
             // ========================
             LevSet.Clear();
-
+            Debugger.Launch();
             // Step 3
             // Define level set per particle
             // =============================
