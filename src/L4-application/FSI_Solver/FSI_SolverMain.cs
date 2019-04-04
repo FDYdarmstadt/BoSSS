@@ -1098,7 +1098,7 @@ namespace BoSSS.Application.FSI_Solver {
                         p.CalculateParticleAngle(dt);
                     }
                     UpdateLevelSetParticles(dt);
-
+                    PrintResultToConsole(phystime, dt);
 
                 } else {
                     if (triggerOnlyCollisionProcedure) {
