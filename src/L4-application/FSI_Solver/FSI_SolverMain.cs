@@ -653,7 +653,7 @@ namespace BoSSS.Application.FSI_Solver {
         /// <summary>
         /// Particle to Level-Set-Field 
         /// </summary>
-        void UpdateLevelSetParticles(double dt)
+        private void UpdateLevelSetParticles(double dt)
         {
             // Step 1
             // Define an array with the respective cell colors
@@ -672,7 +672,6 @@ namespace BoSSS.Application.FSI_Solver {
             // Delete the old level set
             // ========================
             LevSet.Clear();
-            Debugger.Launch();
             // Step 3
             // Define level set per particle
             // =============================
@@ -719,14 +718,23 @@ namespace BoSSS.Application.FSI_Solver {
             // Step 4
             // Define level set of the remaining cells ("Fluid-Cells")
             // =======================================================
-            CellMask FluidCells = AgglParticleMasks.Complement();
             double phiFluid(double[] X, double t)
             {
                 return -1;
             }
-            ScalarFunction functionFluid = NonVectorizedScalarFunction.Vectorize(phiFluid, hack_phystime);
-            DGLevSet.Current.ProjectField(functionFluid);
-            LevSet.AccLaidBack(1.0, DGLevSet.Current, FluidCells);
+            if (AgglParticleMasks == null)
+            {
+                ScalarFunction functionFluid1 = NonVectorizedScalarFunction.Vectorize(phiFluid, hack_phystime);
+                DGLevSet.Current.ProjectField(functionFluid1);
+                LevSet.AccLaidBack(1.0, DGLevSet.Current);
+            }
+            else
+            {
+                CellMask FluidCells = AgglParticleMasks.Complement();
+                ScalarFunction functionFluid = NonVectorizedScalarFunction.Vectorize(phiFluid, hack_phystime);
+                DGLevSet.Current.ProjectField(functionFluid);
+                LevSet.AccLaidBack(1.0, DGLevSet.Current, FluidCells);
+            }
 
             // Step 5
             // Update level set tracker
@@ -742,7 +750,7 @@ namespace BoSSS.Application.FSI_Solver {
         /// <summary>
         /// Update of <see cref="ParticleColor"/> and <see cref="LevelSetDistance"/>
         /// </summary>
-        void UpdateColoring()
+        private void UpdateColoring()
         {
             int J = GridData.iLogicalCells.NoOfLocalUpdatedCells;
             int[] PartCol = LsTrk.Regions.ColorMap4Spc[LsTrk.GetSpeciesId("B")];
@@ -755,7 +763,7 @@ namespace BoSSS.Application.FSI_Solver {
             }
         }
 
-        int[] InitializeColoring()
+        private int[] InitializeColoring()
         {
             int J = GridData.iLogicalCells.NoOfLocalUpdatedCells;
             int[] Cells = new int[J];
@@ -784,7 +792,7 @@ namespace BoSSS.Application.FSI_Solver {
             return Cells;
         }
 
-        void UpdateForcesAndTorque(double dt, double phystime) {
+        private void UpdateForcesAndTorque(double dt, double phystime) {
             //
             // Note on MPI parallelization of particle solver:
             // ===============================================
@@ -799,7 +807,6 @@ namespace BoSSS.Application.FSI_Solver {
 
             // Initial check: is the motion state of the particles equal on all MPI processors?
             // ================================================================================
-            //Debugger.Launch();
             int D = GridData.SpatialDimension;
             int NoOfParticles = m_Particles.Count;
 
@@ -891,7 +898,6 @@ namespace BoSSS.Application.FSI_Solver {
             // Sum forces and moments over all MPI processors
             // ==============================================
             {
-                //Debugger.Launch();
                 // step 1: collect all variables that we need to sum up
                 int NoOfVars = 1 + D * 1;
                 double[] StateBuffer = new double[NoOfParticles * NoOfVars];
