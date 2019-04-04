@@ -12,13 +12,16 @@ namespace FSI_Solver
 {
     class ColorToParticle
     {
+        private Quicksort Quicksort = new Quicksort();
+
         // The main method to assign the color to the particle
         // ===================================================
-        public void AssignToParticle(LevelSetTracker LsTrk, List<Particle> Particles, int[] CellColor)
+        public int[,] AssignToParticle(LevelSetTracker LsTrk, List<Particle> Particles, int[] CellColor)
         {
             // Step 1
             // Define variables
             // ================
+            int[,] ParticlesWithColor = new int[Particles.Count, 2];
             int MaxColor = CellColor.Max();
             int NoOfParticles = Particles.Count();
             List<int[]> ColoredCellsSorted = new List<int[]>();
@@ -30,16 +33,6 @@ namespace FSI_Solver
             ColoredCellsSorted = ColoredCellsFindAndSort(CellColor, RemoveUncoloredCells: true);
 
             // Step 3
-            // Save all colored cells for later usage
-            // ======================================
-            // int[,] ColoredCells = new int[2, ColoredCellsSorted.Count()];
-            // for (int i = 0; i < ColoredCellsSorted.Count(); i++)
-            // {
-            //    ColoredCells[0, i] = ColoredCellsSorted[i][0];
-            //    ColoredCells[1, i] = ColoredCellsSorted[i][1];
-            // }
-
-            // Step 4
             // Assign all colors to a particle
             // ===============================
             for (int i = ColoredCellsSorted.Count - 1; i >= 0; i--)
@@ -57,6 +50,8 @@ namespace FSI_Solver
                         while (ListPos >= 0 && CurrentColor == ColoredCellsSorted[ListPos][1])
                         {
                             Particles[p].ParticleColoredCells.Add(ColoredCellsSorted[ListPos]);
+                            ParticlesWithColor[p, 0] = p;
+                            ParticlesWithColor[p, 1] = CurrentColor;
 
                             // Remove all cells with current colors if there are no other particles with the same color left (saves some operations)
                             // =====================================================================================================================
@@ -75,6 +70,7 @@ namespace FSI_Solver
                     }
                 }
             }
+            return ParticlesWithColor;
         }
 
         // Method to find the Color of a specific particle
@@ -197,6 +193,23 @@ namespace FSI_Solver
                 ColorsWithMultipleParticles.RemoveAt(Length - 1);
             }
             return ColorsWithMultipleParticles;
+        }
+
+        internal int[] FindMulitpleParticlesInColor(int[] ParticleColors, int CurrentColor)
+        {
+            int[] NumberOfParticlesInColor = new int[2];
+            int[] _particleColors = ParticleColors;
+            Quicksort.Main(0, ParticleColors.Length - 1, ref _particleColors);
+            for (int i = 0; i < ParticleColors.Length; i++)
+            {
+                while (ParticleColors[i] == CurrentColor)
+                    NumberOfParticlesInColor[0] += 1;
+
+                if (NumberOfParticlesInColor[0] != 0 && ParticleColors[i] > CurrentColor)
+                    break;
+            }
+            NumberOfParticlesInColor[1] = CurrentColor;
+            return NumberOfParticlesInColor;
         }
 
         void ParticleToColor()

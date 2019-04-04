@@ -666,19 +666,23 @@ namespace BoSSS.Application.FSI_Solver {
                 InitializedColor = false;
             }
             else
+            {
                 CellColor = LsTrk.Regions.ColorMap4Spc[LsTrk.GetSpeciesId("B")];
+            }
 
             // Step 2
             // Delete the old level set
             // ========================
             LevSet.Clear();
+
             // Step 3
             // Define level set per particle
             // =============================
-            CellMask AgglParticleMasks = null;
+            CellMask AgglParticleMask = null;
             List<int[]> ColoredCellsSorted = ColorHandling.ColoredCellsFindAndSort(CellColor, false);
             int J = GridData.iLogicalCells.NoOfLocalUpdatedCells;
             int[] ParticleColor = ColorHandling.FindParticleColor(GridData, m_Particles, ColoredCellsSorted);
+            List<int[,]> JustARandomName = new List<int[,]>();
             for (int p = 0; p < m_Particles.Count(); p++)
             {
                 // This condition checks whether the particle is on the current process, as otherwise its color is zero
@@ -686,7 +690,36 @@ namespace BoSSS.Application.FSI_Solver {
                 {
                     // Find the cells colored by the color of the particle
                     int[] ParticleCells = ColorHandling.FindCellsWithColor(ParticleColor[p], ColoredCellsSorted);
-
+                    int[] NoOfParticlesSameColor = ColorHandling.FindMulitpleParticlesInColor(ParticleColor, ParticleColor[p]);
+                    if (NoOfParticlesSameColor[0] > 1)
+                    {
+                        if (JustARandomName.IsNullOrEmpty())
+                        {
+                            JustARandomName.Add(new int[NoOfParticlesSameColor[0], 2]);
+                            JustARandomName[0][0, 0] = p;
+                            JustARandomName[0][0, 0] = ParticleColor[p];
+                        }
+                        else
+                        {
+                            int Index1 = 0;
+                            do
+                            {
+                                Index1 += 1;
+                                if (Index1 == JustARandomName.Count())
+                                {
+                                    JustARandomName.Add(new int[NoOfParticlesSameColor[0], 2]);
+                                    JustARandomName[Index1][0, 0] = p;
+                                    JustARandomName[Index1][0, 0] = ParticleColor[p];
+                                    break;
+                                }
+                            } while (ParticleColor[p] != JustARandomName[Index1][0, 1]);
+                            int Index2 = 0;
+                            while (JustARandomName[Index1][Index2, 0] != 0)
+                                Index2 += 1;
+                            JustARandomName[Index1][Index2, 0] = p;
+                            JustARandomName[Index1][Index2, 1] = ParticleColor[p];
+                        }
+                    }
                     // Define CellMask
                     BitArray ColoredCells = new BitArray(J);
                     for (int i = 0; i < ParticleCells.Length; i++)
@@ -699,16 +732,17 @@ namespace BoSSS.Application.FSI_Solver {
                     ColoredCellMask = ColoredCellMask.Union(ColoredCellMaskNeighbour);
 
                     // Safe all "Particle-Cells" into one CellMask
-                    if (AgglParticleMasks == null)
-                        AgglParticleMasks = ColoredCellMask;
+                    if (AgglParticleMask == null)
+                        AgglParticleMask = ColoredCellMask;
                     else
-                        AgglParticleMasks = AgglParticleMasks.Union(ColoredCellMask);
+                        AgglParticleMask = AgglParticleMask.Union(ColoredCellMask);
 
                     // Define level set of the current particle
                     double phiParticle(double[] X, double t)
                     {
                         return m_Particles[p].Phi_P(X);
                     }
+
                     ScalarFunction functionParticle = NonVectorizedScalarFunction.Vectorize(phiParticle, hack_phystime);
                     DGLevSet.Current.ProjectField(functionParticle);
                     LevSet.AccLaidBack(1.0, DGLevSet.Current, ColoredCellMask);
@@ -722,7 +756,7 @@ namespace BoSSS.Application.FSI_Solver {
             {
                 return -1;
             }
-            if (AgglParticleMasks == null)
+            if (AgglParticleMask == null)
             {
                 ScalarFunction functionFluid1 = NonVectorizedScalarFunction.Vectorize(phiFluid, hack_phystime);
                 DGLevSet.Current.ProjectField(functionFluid1);
@@ -730,7 +764,7 @@ namespace BoSSS.Application.FSI_Solver {
             }
             else
             {
-                CellMask FluidCells = AgglParticleMasks.Complement();
+                CellMask FluidCells = AgglParticleMask.Complement();
                 ScalarFunction functionFluid = NonVectorizedScalarFunction.Vectorize(phiFluid, hack_phystime);
                 DGLevSet.Current.ProjectField(functionFluid);
                 LevSet.AccLaidBack(1.0, DGLevSet.Current, FluidCells);
@@ -745,6 +779,11 @@ namespace BoSSS.Application.FSI_Solver {
             // Update coloring based on current level set
             // ==========================================
             UpdateColoring();
+        }
+
+        private void LevelSetParticle(Particle _particle, CellMask ColoredCellMask)
+        {
+            
         }
 
         /// <summary>

@@ -68,7 +68,7 @@ namespace BoSSS.Application.FSI_Solver {
         /// <summary>
         /// Note: this test is fucked; the results are nowhere near where you would expext.
         /// </summary>
-        //[Test]
+        [Test]
         public static void SingleDryParticleAgainstWall([Values(false, true)]  bool MeshRefine) {
             using (FSI_SolverMain p = new FSI_SolverMain()) {
 
