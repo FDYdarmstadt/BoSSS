@@ -30,6 +30,10 @@ namespace FSI_Solver
     class LevelSetUpdate
     {
         private Auxillary Auxillary = new Auxillary();
+
+        /// <summary>
+        /// Cell Mask of all cells with a specific color "CurrentColor"
+        /// </summary>
         internal CellMask CellsOneColor(IGridData gridData, List<int[]> ColoredCellsSorted, int CurrentColor, int J)
         {
             int[] CellIDCurrentColor = FindCellIDs(ColoredCellsSorted, CurrentColor);

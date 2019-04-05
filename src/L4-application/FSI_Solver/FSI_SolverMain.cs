@@ -714,30 +714,6 @@ namespace BoSSS.Application.FSI_Solver {
                     LevSet.AccLaidBack(1.0, DGLevSet.Current, ColoredCellMask);
                 }
             }
-            //for (int p = 0; p < m_Particles.Count(); p++)
-            //{
-            //    // This condition checks whether the particle is on the current process, as otherwise its color is zero
-            //    if (ParticleColor[p] != 0)
-            //    {
-            //        CellMask ColoredCellMask = levelSetUpdate.CellsOneColor(GridData, ColoredCellsSorted, ParticleColor[p], J);
-
-            //        // Safe all "Particle-Cells" into one CellMask
-            //        if (AgglParticleMask == null)
-            //            AgglParticleMask = ColoredCellMask;
-            //        else
-            //            AgglParticleMask = AgglParticleMask.Union(ColoredCellMask);
-
-            //        // Define level set of the current particle
-            //        double phiParticle(double[] X, double t)
-            //        {
-            //            return m_Particles[p].Phi_P(X);
-            //        }
-
-            //        ScalarFunction functionParticle = NonVectorizedScalarFunction.Vectorize(phiParticle, hack_phystime);
-            //        DGLevSet.Current.ProjectField(functionParticle);
-            //        LevSet.AccLaidBack(1.0, DGLevSet.Current, ColoredCellMask);
-            //    }
-            //}
 
             // Step 4
             // Define level set of the remaining cells ("Fluid-Cells")
@@ -809,8 +785,7 @@ namespace BoSSS.Application.FSI_Solver {
                         ParticleColor.SetMeanValue(j, p + 1);
                         m_Particles[p].ParticleColoredCells.Add(new int[2] { j, p + 1 });
                         Cells[j] = p + 1;
-                    }
-                        
+                    } 
                 }
             }
             return Cells;
@@ -1103,8 +1078,9 @@ namespace BoSSS.Application.FSI_Solver {
             Console.WriteLine();
             Console.WriteLine("=======================================================");
             Console.WriteLine();
+
         }
-        
+
         // <summary>
         // Variables for FSI coupling
         // </summary>
@@ -1176,7 +1152,8 @@ namespace BoSSS.Application.FSI_Solver {
                         return dt;
                     } else if (((FSI_Control)this.Control).Timestepper_LevelSetHandling != LevelSetHandling.Coupled_Iterative) {
                         int iteration_counter = 0;
-                        for (double posResidual_splitting = 1e12; posResidual_splitting > ((FSI_Control)this.Control).ForceAndTorque_ConvergenceCriterion;)// && iteration_counter <= (this.Control).max_iterations_fully_coupled;)
+                        double posResidual_splitting = 1e12;
+                        while (posResidual_splitting > ((FSI_Control)this.Control).ForceAndTorque_ConvergenceCriterion)
                         {
                             double[] ForcesOldSquared = new double[2];
                             double TorqueOldSquared = new double();
@@ -1249,8 +1226,8 @@ namespace BoSSS.Application.FSI_Solver {
                             }
                             PrintResultToConsole(phystime, dt);
                             //#region Get Drag and Lift Coefficiant
-                            
-                            Console.WriteLine("Fully coupled system, number of iterations:  " + iteration_counter);
+                            int PrintIteration = iteration_counter + 1;
+                            Console.WriteLine("Fully coupled system, number of iterations:  " + PrintIteration);
                             Console.WriteLine("Forces and torque residual: " + posResidual_splitting);
                             Console.WriteLine();
                             iteration_counter += 1;
@@ -1258,7 +1235,7 @@ namespace BoSSS.Application.FSI_Solver {
                                 break;
                             }
                             if (iteration_counter > ((FSI_Control)this.Control).max_iterations_fully_coupled) {
-                                break;// throw new ApplicationException("no convergence in coupled iterative solver, number of iterations: " + iteration_counter);
+                                throw new ApplicationException("no convergence in coupled iterative solver, number of iterations: " + iteration_counter);
                             }
                         }
                         if (((FSI_Control)this.Control).Timestepper_LevelSetHandling == LevelSetHandling.FSI_LieSplittingFullyCoupled)

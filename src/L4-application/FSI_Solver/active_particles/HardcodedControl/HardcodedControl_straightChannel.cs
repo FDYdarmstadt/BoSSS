@@ -30,7 +30,7 @@ namespace BoSSS.Application.FSI_Solver
 {
     public class HardcodedControl_straightChannel : IBM_Solver.HardcodedTestExamples
     {
-        public static FSI_Control ActiveRod_noBackroundFlow(string _DbPath = null, int k = 2, double VelXBase = 0.0, double stressM = 1e6, double cellAgg = 0.2, double muA = 1e5, double timestepX = 1e-3)
+        public static FSI_Control ActiveRod_noBackroundFlow(string _DbPath = null, int k = 2, double VelXBase = 0.0, double stressM = 1e6, double cellAgg = 0.2, double muA = 1e3, double timestepX = 1e-3)
         {
             FSI_Control C = new FSI_Control();
 
@@ -65,8 +65,8 @@ namespace BoSSS.Application.FSI_Solver
                 int q = new int(); // #Cells in x-dircetion + 1
                 int r = new int(); // #Cells in y-dircetion + 1
 
-                q = 80;
-                r = 40;
+                q = 81;
+                r = 41;
 
                 double[] Xnodes = GenericBlas.Linspace(-4 * BaseSize, 4 * BaseSize, q);
                 double[] Ynodes = GenericBlas.Linspace(-2 * BaseSize, 2 * BaseSize, r);
@@ -132,7 +132,7 @@ namespace BoSSS.Application.FSI_Solver
             {
                 for (int d = 0; d < numOfParticles; d++)
                 {
-                    C.Particles.Add(new Particle_Ellipsoid(new double[] { -2 - 4 * i, 0 - 2 * d }, startAngl: 5 * d * i)
+                    C.Particles.Add(new Particle_Ellipsoid(new double[] { -2 - 4 * i, -0.5 - 2 * d }, startAngl: 12)
                     {
                         particleDensity = 1,
                         ActiveParticle = true,
@@ -168,7 +168,7 @@ namespace BoSSS.Application.FSI_Solver
 
             // Physical Parameters
             // =============================  
-            C.PhysicalParameters.IncludeConvection = true;
+            C.PhysicalParameters.IncludeConvection = false;
 
 
             // misc. solver options
