@@ -84,7 +84,7 @@ namespace BoSSS.Solution.Statistic {
                 
                 var CompQuadRule = scheme.SaveCompile(coarse.GridDat, maxDeg * 3 + 3); // use over-integration
 
-                var eval = new FieldEvaluation((GridData)(fine.GridDat));
+                var eval = new FieldEvaluation(GridHelper.ExtractGridData(fine.GridDat));
 
                 void FineEval(MultidimensionalArray input, MultidimensionalArray output) {
                     int L = input.GetLength(0);

@@ -13,14 +13,12 @@ namespace VoronoiTests
     /// <summary>
     ///  Base class for tests that run an BoSSS application.
     /// </summary>
-    [TestFixture]
-    class RunnableTest
+    class RunnableTest : Test
     {
         /// <summary>
         /// Performs bootstrapping.
         /// </summary>
-        [TestFixtureSetUp]
-        public static void SetUp()
+        public override void SetUp()
         {
             ilPSP.Environment.Bootstrap(
                 new string[0],
@@ -29,10 +27,15 @@ namespace VoronoiTests
             Thread.CurrentThread.CurrentCulture = System.Globalization.CultureInfo.CurrentCulture;
         }
 
-        public static void RunApplication(IApplication app, AppControl ctrl)
+        protected static void RunApplication(IApplication app, AppControl ctrl)
         {
             app.Init(ctrl);
             app.RunSolverMode();
+            app.Dispose();
         }
+
+        public override void Run(){}
+
+        public override void TearDown(){}
     }
 }

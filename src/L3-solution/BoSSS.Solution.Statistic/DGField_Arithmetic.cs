@@ -67,8 +67,8 @@ namespace BoSSS.Solution.Statistic {
                     aF = scaleB;
                 }
 
-                Foundation.Grid.Classic.GridData fineGridData = ExtractGridData(fine.GridDat);
-                Foundation.Grid.Classic.GridData coarseGridData = ExtractGridData(coarse.GridDat);
+                Foundation.Grid.Classic.GridData fineGridData = GridHelper.ExtractGridData(fine.GridDat);
+                Foundation.Grid.Classic.GridData coarseGridData = GridHelper.ExtractGridData(coarse.GridDat);
 
                 DGFieldComparison.ComputeFine2CoarseMap(
                         fineGridData,
@@ -98,22 +98,6 @@ namespace BoSSS.Solution.Statistic {
             }
         }
 
-        static Foundation.Grid.Classic.GridData ExtractGridData(Foundation.Grid.IGridData gridData)
-        {
-            if(gridData is Foundation.Grid.Classic.GridData classicGridData)
-            {
-                return classicGridData;
-            }
-            else if (gridData is Foundation.Grid.Aggregation.AggregationGridData aggGridData)
-            {
-                Foundation.Grid.Classic.GridData data = aggGridData.AncestorGrid;
-                return aggGridData.AncestorGrid;
-            }
-            else
-            {
-                throw new NotImplementedException("ToDo: Grid Type not yet implemented");
-            }
-        }
-
+        
     }
 }
