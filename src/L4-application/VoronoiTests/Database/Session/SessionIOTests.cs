@@ -10,9 +10,9 @@ using BoSSS.Application.SipPoisson;
 using BoSSS.Foundation.IO;
 using BoSSS.Foundation;
 
-namespace VoronoiTests.Database
+namespace VoronoiTests.Database.Session
 {
-    class SessionIOTests : DatabaseTest
+    class SessionIOTests : SessionTest
     {
         static SessionMethods sessionMethods;
 
@@ -22,18 +22,15 @@ namespace VoronoiTests.Database
             }
         }
 
-        static ISessionInfo CreateSession()
+        public override void Run()
         {
-            AppControl lShape = SipHardcodedControl.TestVoronoi_LDomain(500,db: Database);
-            IApplication poisson = new SipPoissonMain();
-            RunApplication(poisson, lShape);
-            return poisson.CurrentSessionInfo;
+            AccessTimestepFields();
         }
 
         [Test]
         public void AccessTimestepFields()
         {
-            ISessionInfo session = CreateSession();
+            ISessionInfo session = GetSession();
             IEnumerable<DGField> fields = session.Timesteps.Last().Fields;
             DGField field = fields.ElementAt(0);
         }

@@ -5,7 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 using BoSSS.Foundation.IO;
 
-namespace VoronoiTests.Database
+namespace VoronoiTests.Database.Session
 {
     class SessionMethods
     {

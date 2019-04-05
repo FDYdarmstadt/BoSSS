@@ -128,8 +128,12 @@ namespace BoSSS.Solution.Statistic {
 
 
         static void ComputeErrors(Func<ConventionalDGField,ConventionalDGField,double> distFunc,
-          IEnumerable<string> FieldsToCompare, IEnumerable<ITimestepInfo> timestepS,
-          out double[] GridRes, out Dictionary<string, int[]> __DOFs, out Dictionary<string, double[]> Errors, out Guid[] timestepIds) {
+          IEnumerable<string> FieldsToCompare, 
+          IEnumerable<ITimestepInfo> timestepS,
+          out double[] GridRes, 
+          out Dictionary<string, int[]> __DOFs, 
+          out Dictionary<string, double[]> Errors, 
+          out Guid[] timestepIds) {
             using (var tr = new FuncTrace()) {
                 
                 if (FieldsToCompare == null || FieldsToCompare.Count() <= 0)
@@ -172,7 +176,7 @@ namespace BoSSS.Solution.Statistic {
                 }
 
                 // grids and resolution
-                GridData[] gDataS = fields.Select(fc => (GridData)(fc.First().GridDat)).ToArray();
+                GridData[] gDataS = fields.Select(fc => GridHelper.ExtractGridData(fc.First().GridDat)).ToArray();
                 GridRes = gDataS.Take(gDataS.Length - 1).Select(gd => gd.Cells.h_minGlobal).ToArray();
 
                 // compute the errors
