@@ -11,18 +11,18 @@ namespace VoronoiTests
     class Program
     {
         public static void Main() {
-            Test selectedTest = availableTests[3];
+            TestBench selectedTest = availableTests[3];
             RunTest(selectedTest);
         }
 
-        static void RunTest(Test test)
+        static void RunTest(TestBench test)
         {
             test.SetUp();
             test.Run();
             test.TearDown();
         }
 
-        static readonly List< Test> availableTests = new List<Test>
+        static readonly List< TestBench> availableTests = new List<TestBench>
         {
             {new DGFieldArithmeticTests() },
             {new SessionIOTests() },

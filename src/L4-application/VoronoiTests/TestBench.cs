@@ -8,7 +8,7 @@ using NUnit.Framework;
 namespace VoronoiTests
 {
     [TestFixture]
-    abstract class Test
+    abstract class TestBench
     {
         [TestFixtureSetUp]
         public abstract void SetUp();
