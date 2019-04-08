@@ -113,7 +113,10 @@ export class BoxWithMenu{
         var boxSubarray = this.parentBox.parentList.getAllBoxesUntil(this.parentBox, this.constructor.prototype.constructor);
         //Change Backgroundcolor
         for(var i = 1; i < boxSubarray.length; ++i){
-            await boxSubarray[i].boxContent.readoutLI.classList.toggle("blinkingreadoutLI");
+            var box = boxSubarray[i].boxContent;
+            if(box.IsSelectedToRun){
+                await box.readoutLI.classList.toggle("blinkingreadoutLI");
+            }
         }
         //Start calculation in respective order
         for(var i = 0; i < boxSubarray.length; ++i){
