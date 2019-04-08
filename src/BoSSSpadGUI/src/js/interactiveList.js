@@ -372,6 +372,14 @@ class Box{
     setHeight(height){
       this.LI.style.height = height +"px"; 
     }
+
+    getHeight(){
+        //Convert string to int
+        var height = this.LI.style.height;
+        height = height.substring(0, height.length - 2);
+        var heightInt = parseInt(height);
+        return heightInt;
+    }
     
     setRange(range){
       this.range = range;

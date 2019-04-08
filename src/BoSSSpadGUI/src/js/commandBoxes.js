@@ -8,13 +8,13 @@ import boSSSRuntime from './bosssInterface';
 class BoxWithMenu{
     constructor(element, parentBox){
       this.parentBox = parentBox;
-      var div = document.createElement("DIV");
-      div.className = "runBox";
-      element.appendChild(div);
+      this.div = document.createElement("DIV");
+      this.div.className = "runBox";
+      element.appendChild(this.div);
       
       var UL = document.createElement("UL");
       UL.className ="runUL";
-      div.appendChild(UL);
+      this.div.appendChild(UL);
   
       this.readoutLI = document.createElement("LI");
       this.readoutLI.className = "readoutLI";
@@ -25,10 +25,38 @@ class BoxWithMenu{
       this.buildButtons(buttonsLI);
   
       this.registerButtons(parentBox);
+      this.registerSizeChange();
       this.readOutInterval;
       
       this.decorationClass = 'runDecoration';
       this.overviewRulerColor = 'rgba(196, 223, 231, 0.5)';
+      this.readoutLIIsSmall = true;
+    }
+
+    registerSizeChange(){
+        var that = this;
+        this.readoutLI.addEventListener("click", () => that.changeSize());
+    }  
+
+    changeSize(){
+        if(this.readoutLIIsSmall){
+            this.div.classList.add("enlargedRunBox");
+            this.div.style.zIndex = 10;
+            this.div.style.backgroundColor = "#f2e6ff";
+            this.readoutLI.style.overflow = "hidden";
+            var height = this.readoutLI.scrollHeight + 29;
+            var parentHeight = this.parentBox.getHeight();
+            if(height > parentHeight){
+                this.div.style.height = height  + "px";
+            }
+        }else{
+            this.div.classList.remove("enlargedRunBox");
+            this.div.style.zIndex = 1;
+            this.readoutLI.style.overflow = "auto";
+            this.div.style.height = "";
+            this.div.style.backgroundColor = "";
+        }
+        this.readoutLIIsSmall = !this.readoutLIIsSmall;        
     }
   
     //------------------------------abstract funcs ------------------------------------
@@ -171,8 +199,7 @@ export class RunBox extends BoxWithMenu {
 
     setValue( ReadOutValue){
       //ReadoutContent
-      var text = document.createElement("PRE");
-      text.innerHTML = ReadOutValue;
+      var text = document.createTextNode(ReadOutValue);
       if(this.hasReadoutContent){
         this.readoutLI.replaceChild(text, readoutNode.firstChild);
       }
@@ -186,8 +213,7 @@ export class RunBox extends BoxWithMenu {
         var result = await boSSSRuntime.runCommand(value);
         
         //Write readout into HTML Element
-        var text = document.createElement("PRE");
-        text.innerHTML = result.Item1;
+        var text = document.createTextNode(result.Item1);
         if(this.hasReadoutContent){
           readoutNode.replaceChild(text, readoutNode.firstChild);
         }
@@ -205,7 +231,6 @@ export class RunBox extends BoxWithMenu {
           this.img.src = 'data:image/gif;base64,'+ result.Item2;
           readoutNode.appendChild(this.img);
         }
-        
     }
 }
 
