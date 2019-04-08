@@ -1,5 +1,7 @@
-import {RunBox, CommentBox} from './commandBoxes.js'
+import {RunBox} from './runBox.js'
+import { CommentBox} from './commentBox.js'
 import * as monaco from 'monaco-editor';
+import{Box} from './box.js'
 
 export class InteractiveList{
     constructor(element, status){
@@ -352,31 +354,3 @@ export class InteractiveList{
       }
     }
 }
-  
-class Box{
-    constructor(range, BoxType, parentList){
-      this.LI = document.createElement("LI");
-      this.LI.style="position:relative";
-      this.bottomHeight;
-      this.id;
-      this.range = range;
-      this.BoxType = BoxType; 
-      this.parentList = parentList;
-      this.boxContent = new BoxType(this.LI, this);
-    }
-  
-    getDomNode(){
-      return this.LI;
-    }
-
-    setHeight(height){
-      this.LI.style.height = height +"px"; 
-    }
-    
-    setRange(range){
-      this.range = range;
-    }
-
-
-}
-  
