@@ -141,10 +141,10 @@ namespace FSI_Solver
                 double[] ParticleScales = Particles[p].GetLengthScales();
                 double Lengthscale = ParticleScales.Min();
                 double[] ParticlePos = Particles[p].Position[0];
-                double Upperedge = ParticlePos[1] + Lengthscale;
-                double Loweredge = ParticlePos[1] - Lengthscale;
-                double Leftedge = ParticlePos[0] - Lengthscale;
-                double Rightedge = ParticlePos[0] + Lengthscale;
+                double Upperedge = ParticlePos[1] + ParticleScales[1];
+                double Loweredge = ParticlePos[1] - ParticleScales[1];
+                double Leftedge = ParticlePos[0] - ParticleScales[0];
+                double Rightedge = ParticlePos[0] + ParticleScales[0];
                 int temp = 0;
                 for (int i = 0; i < ColoredCellsSorted.Count; i++)
                 {

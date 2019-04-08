@@ -1920,6 +1920,7 @@ namespace BoSSS.Application.FSI_Solver {
         int LevelIndicator(int j, int CurrentLevel) {
             CellMask LevSetCells = LsTrk.Regions.GetCutCellMask();
             CellMask LevSetNeighbours = LsTrk.Regions.GetNearFieldMask(1);
+
             //    var LevSetNeighboursNeighbours = LevSetNeighbours.AllNeighbourCells();
             ////    var LevSetNeighboursNeighboursNeighbours = LevSetNeighbours.AllNeighbourCells();
 
@@ -2016,7 +2017,7 @@ namespace BoSSS.Application.FSI_Solver {
 
                 CellMask CutCells = LsTrk.Regions.GetCutCellMask();
                 CellMask CutCellNeighbors = LsTrk.Regions.GetNearFieldMask(1);
-                //CellMask CuttCells = null;
+                //CellMask CutCells = null;
                 //int J = GridData.iLogicalCells.NoOfLocalUpdatedCells;
                 //int[] CellColor = LsTrk.Regions.ColorMap4Spc[LsTrk.GetSpeciesId("B")];
                 //FSI_LevelSetUpdate levelSetUpdate = new FSI_LevelSetUpdate();
@@ -2027,12 +2028,12 @@ namespace BoSSS.Application.FSI_Solver {
                 //    if (ParticleColor[p] != 0)
                 //    {
                 //        CellMask ColoredCellMask = levelSetUpdate.CellsOneColor(GridData, ColoredCellsSorted, ParticleColor[p], J, FindNeighbours: false);
-                //        CuttCells = CuttCells == null ? ColoredCellMask : CuttCells.Union(ColoredCellMask);
+                //        CutCells = CutCells == null ? ColoredCellMask : CutCells.Union(ColoredCellMask);
                 //    }
                 //}
 
-                        // Only CutCells are NoCoarseningCells 
-                        bool AnyChange = GridRefinementController.ComputeGridChange((GridData)(this.GridData), CutCells, LevelIndicator, out List<int> CellsToRefineList, out List<int[]> Coarsening);
+                // Only CutCells are NoCoarseningCells 
+                bool AnyChange = GridRefinementController.ComputeGridChange((GridData)(GridData), CutCells, LevelIndicator, out List<int> CellsToRefineList, out List<int[]> Coarsening);
                 int NoOfCellsToRefine = 0;
                 int NoOfCellsToCoarsen = 0;
                 if (AnyChange) {
