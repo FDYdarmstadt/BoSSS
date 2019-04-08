@@ -54,7 +54,7 @@ namespace BoSSS.Application.FSI_Solver {
             counter++;
         }
 
-        bool InitializedColor = true;
+        bool InitializedColor = false;
 
         double calculatedDampingTensors;
         // =============================
@@ -656,17 +656,8 @@ namespace BoSSS.Application.FSI_Solver {
             // Step 1
             // Define an array with the respective cell colors
             // ===============================================
-            int[] CellColor;
             int J = GridData.iLogicalCells.NoOfLocalUpdatedCells;
-            if (InitializedColor)
-            {
-                // Used only once to initialize the colors
-                CellColor = InitializeColoring();
-                CheckForNeighborColorsInit(CellColor);
-                InitializedColor = false;
-            }
-            else
-                CellColor = LsTrk.Regions.ColorMap4Spc[LsTrk.GetSpeciesId("B")];
+            int[] CellColor = InitializedColor ? LsTrk.Regions.ColorMap4Spc[LsTrk.GetSpeciesId("B")] : InitializeColoring(J);
 
             // Step 2
             // Delete the old level set
@@ -758,9 +749,8 @@ namespace BoSSS.Application.FSI_Solver {
         /// <summary>
         /// Initialization of <see cref="ParticleColor"/> 
         /// </summary>
-        private int[] InitializeColoring()
+        private int[] InitializeColoring(int J)
         {
-            int J = GridData.iLogicalCells.NoOfLocalUpdatedCells;
             int[] Cells = new int[J];
             for (int p = 0; p < m_Particles.Count; p++)
             {
@@ -783,6 +773,8 @@ namespace BoSSS.Application.FSI_Solver {
                     } 
                 }
             }
+            CheckForNeighborColorsInit(Cells);
+            InitializedColor = true;
             return Cells;
         }
 
