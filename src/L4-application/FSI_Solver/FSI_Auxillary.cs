@@ -22,7 +22,7 @@ using System.Threading.Tasks;
 
 namespace FSI_Solver
 {
-    class Auxillary 
+    class FSI_Auxillary 
     {
         internal static void Main(int Leftelement, int RightElement, ref int[] Data)
         {

@@ -14,21 +14,68 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-using System.Collections.Generic;
-using System.Linq;
-using BoSSS.Foundation.XDG;
 using BoSSS.Foundation;
-using ilPSP;
-using BoSSS.Foundation.Grid.Classic;
-using BoSSS.Application.FSI_Solver;
 using BoSSS.Foundation.Grid;
+using BoSSS.Solution.Utils;
 using System;
+using System.Collections;
+using System.Collections.Generic;
+using System.Diagnostics;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
 
 namespace FSI_Solver
 {
-    class ColorToParticle
+    class FSI_LevelSetUpdate
     {
-        private Auxillary Quicksort = new Auxillary();
+        private FSI_Auxillary Auxillary = new FSI_Auxillary();
+
+        /// <summary>
+        /// Cell Mask of all cells with a specific color "CurrentColor"
+        /// </summary>
+        internal CellMask CellsOneColor(IGridData gridData, List<int[]> ColoredCellsSorted, int CurrentColor, int J)
+        {
+            int[] CellIDCurrentColor = FindCellIDs(ColoredCellsSorted, CurrentColor);
+            BitArray ColoredCells = new BitArray(J);
+            for (int i = 0; i < CellIDCurrentColor.Length; i++)
+            {
+                if (CellIDCurrentColor[i] < J)
+                    ColoredCells[CellIDCurrentColor[i]] = true;
+            }
+            CellMask ColoredCellMask = new CellMask(gridData, ColoredCells);
+            CellMask ColoredCellMaskNeighbour = ColoredCellMask.AllNeighbourCells();
+            return ColoredCellMask.Union(ColoredCellMaskNeighbour);
+        }
+
+        private int[] FindCellIDs(List<int[]> ColoredCellsSorted, int CurrentColor)
+        {
+            List<int> ColorList = new List<int>();
+            for (int i = 0; i < ColoredCellsSorted.Count(); i++)
+            {
+                ColorList.Add(ColoredCellsSorted[i][1]);
+            }
+            int[] ListID = Auxillary.BinarySearchWithNeighbors(ColorList, CurrentColor);
+            int[] CellID = new int[ListID.Length];
+            for (int i = 0; i < ListID.Length; i++)
+            {
+                CellID[i] = ColoredCellsSorted[ListID[i]][0];
+            }
+            return CellID;
+        }
+
+        internal int[] FindParticlesOneColor(int[] ParticleColor, int CurrentColor)
+        {
+            List<int> temp = new List<int>();
+            for (int i = 0; i < ParticleColor.Length; i++)
+            {
+                if (ParticleColor[i] == CurrentColor)
+                {
+                    temp.Add(i);
+                }
+            }
+            return temp.ToArray();
+        }
 
         // Method to find the Color of a specific particle
         // ===================================================
@@ -62,19 +109,6 @@ namespace FSI_Solver
             return CurrentColor.ToArray();
         }
 
-        // Method to find all Cells of a specific color
-        // ===================================================
-        public int[] FindCellsWithColor(int Color, List<int[]> ColoredCellsSorted)
-        {
-            List<int> Cells = new List<int>();
-            for (int i = 0; i < ColoredCellsSorted.Count; i++)
-            {
-                if (ColoredCellsSorted[i][1] == Color)
-                    Cells.Add(ColoredCellsSorted[i][0]);
-            }
-            return Cells.ToArray();
-        }
-
         internal List<int[]> ColoredCellsFindAndSort(int[] CellColor, bool RemoveUncoloredCells)
         {
             List<int[]> ColoredCellsSorted = new List<int[]>();
@@ -98,23 +132,6 @@ namespace FSI_Solver
                 }
             }
             return ColoredCellsSorted;
-        }
-
-        internal int[] FindMulitpleParticlesInColor(int[] ParticleColors, int CurrentColor)
-        {
-            int[] NumberOfParticlesInColor = new int[2];
-            int[] _particleColors = ParticleColors;
-            Auxillary.Main(0, ParticleColors.Length - 1, ref _particleColors);
-            for (int i = 0; i < ParticleColors.Length; i++)
-            {
-                while (ParticleColors[i] == CurrentColor)
-                    NumberOfParticlesInColor[0] += 1;
-
-                if (NumberOfParticlesInColor[0] != 0 && ParticleColors[i] > CurrentColor)
-                    break;
-            }
-            NumberOfParticlesInColor[1] = CurrentColor;
-            return NumberOfParticlesInColor;
         }
     }
 }

@@ -680,10 +680,10 @@ namespace BoSSS.Application.FSI_Solver {
             // Step 3
             // Define level set per particle
             // =============================
-            LevelSetUpdate levelSetUpdate = new LevelSetUpdate();
+            FSI_LevelSetUpdate levelSetUpdate = new FSI_LevelSetUpdate();
             CellMask AgglParticleMask = null;
-            List<int[]> ColoredCellsSorted = ColorHandling.ColoredCellsFindAndSort(CellColor, false);
-            int[] ParticleColor = ColorHandling.FindParticleColor(GridData, m_Particles, ColoredCellsSorted);
+            List<int[]> ColoredCellsSorted = levelSetUpdate.ColoredCellsFindAndSort(CellColor, false);
+            int[] ParticleColor = levelSetUpdate.FindParticleColor(GridData, m_Particles, ColoredCellsSorted);
             for (int p = 0; p < m_Particles.Count(); p++)
             {
                 if (ParticleColor[p] != 0)
