@@ -80,8 +80,6 @@ namespace BoSSS.Application.FSI_Solver {
 
         SinglePhaseField LevelSetDistance;
 
-        ColorToParticle ColorHandling = new ColorToParticle();
-
         protected override void CreateFields() {
             base.CreateFields();
 
@@ -668,9 +666,7 @@ namespace BoSSS.Application.FSI_Solver {
                 InitializedColor = false;
             }
             else
-            {
                 CellColor = LsTrk.Regions.ColorMap4Spc[LsTrk.GetSpeciesId("B")];
-            }
 
             // Step 2
             // Delete the old level set
@@ -678,43 +674,43 @@ namespace BoSSS.Application.FSI_Solver {
             LevSet.Clear();
 
             // Step 3
-            // Define level set per particle
-            // =============================
+            // Define level set per color
+            // ==========================
             FSI_LevelSetUpdate levelSetUpdate = new FSI_LevelSetUpdate();
             CellMask AgglParticleMask = null;
-            List<int[]> ColoredCellsSorted = levelSetUpdate.ColoredCellsFindAndSort(CellColor, false);
+            List<int[]> ColoredCellsSorted = levelSetUpdate.ColoredCellsFindAndSort(CellColor);
             int[] ParticleColor = levelSetUpdate.FindParticleColor(GridData, m_Particles, ColoredCellsSorted);
             for (int p = 0; p < m_Particles.Count(); p++)
             {
                 if (ParticleColor[p] != 0)
                 {
                     int[] ParticlesOfCurrentColor = levelSetUpdate.FindParticlesOneColor(ParticleColor, ParticleColor[p]);
-                    CellMask ColoredCellMask = null;
-                    ColoredCellMask = levelSetUpdate.CellsOneColor(GridData, ColoredCellsSorted, ParticleColor[p], J);
-                    if (AgglParticleMask == null)
-                        AgglParticleMask = ColoredCellMask;
-                    else
-                        AgglParticleMask = AgglParticleMask.Union(ColoredCellMask);
+                    CellMask ColoredCellMask = levelSetUpdate.CellsOneColor(GridData, ColoredCellsSorted, ParticleColor[p], J);
+                    AgglParticleMask = AgglParticleMask == null ? ColoredCellMask : AgglParticleMask.Union(ColoredCellMask);
 
                     double phiComplete(double[] X, double t)
                     {
-                        //Generating the correct sign
-                        int exp = ParticlesOfCurrentColor.Length - 1;
-                        double ret = Math.Pow(-1, exp);
+                        // Generating the correct sign
+                        // ===========================
+                        double phi = Math.Pow(-1, ParticlesOfCurrentColor.Length - 1);
+
+                        // Multiplication over all particle-level-sets within the current color
+                        // ====================================================================
                         for (int pc = 0; pc < ParticlesOfCurrentColor.Length; pc++)
                         {
-                            ret *= m_Particles[ParticlesOfCurrentColor[pc]].Phi_P(X);
+                            phi *= m_Particles[ParticlesOfCurrentColor[pc]].Phi_P(X);
+
+                            // Delete all particles within the current color from the particle color array
+                            // ===========================================================================
                             ParticleColor[ParticlesOfCurrentColor[pc]] = 0;
                         }
-                        return ret;
+                        return phi;
                     }
-
-                    ScalarFunction functionParticle = NonVectorizedScalarFunction.Vectorize(phiComplete, hack_phystime);
-                    DGLevSet.Current.ProjectField(functionParticle);
-                    LevSet.AccLaidBack(1.0, DGLevSet.Current, ColoredCellMask);
+                    SetLevelSet(phiComplete, ColoredCellMask, hack_phystime);
                 }
             }
 
+            // =======================================================
             // Step 4
             // Define level set of the remaining cells ("Fluid-Cells")
             // =======================================================
@@ -722,29 +718,25 @@ namespace BoSSS.Application.FSI_Solver {
             {
                 return -1;
             }
-            if (AgglParticleMask == null)
-            {
-                ScalarFunction functionFluid1 = NonVectorizedScalarFunction.Vectorize(phiFluid, hack_phystime);
-                DGLevSet.Current.ProjectField(functionFluid1);
-                LevSet.AccLaidBack(1.0, DGLevSet.Current);
-            }
-            else
-            {
-                CellMask FluidCells = AgglParticleMask.Complement();
-                ScalarFunction functionFluid = NonVectorizedScalarFunction.Vectorize(phiFluid, hack_phystime);
-                DGLevSet.Current.ProjectField(functionFluid);
-                LevSet.AccLaidBack(1.0, DGLevSet.Current, FluidCells);
-            }
+            CellMask FluidCells = AgglParticleMask != null ? AgglParticleMask.Complement() : CellMask.GetFullMask(GridData);
+            SetLevelSet(phiFluid, FluidCells, hack_phystime);
 
+            // =======================================================
             // Step 5
-            // Update level set tracker
-            // ========================
+            // Update level set tracker and coloring
+            // =======================================================
             LsTrk.UpdateTracker(__NearRegionWith: 2);
-
-            // Step 6
-            // Update coloring based on current level set
-            // ==========================================
             UpdateColoring();
+        }
+
+        /// <summary>
+        /// Set level set based on the function phi and the current cells
+        /// </summary>
+        private void SetLevelSet(Func<double[], double, double> phi, CellMask CurrentCells, double phystime)
+        {
+            ScalarFunction Function = NonVectorizedScalarFunction.Vectorize(phi, phystime);
+            DGLevSet.Current.ProjectField(Function);
+            LevSet.AccLaidBack(1.0, DGLevSet.Current, CurrentCells);
         }
 
         /// <summary>
@@ -763,6 +755,9 @@ namespace BoSSS.Application.FSI_Solver {
             }
         }
 
+        /// <summary>
+        /// Initialization of <see cref="ParticleColor"/> 
+        /// </summary>
         private int[] InitializeColoring()
         {
             int J = GridData.iLogicalCells.NoOfLocalUpdatedCells;

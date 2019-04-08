@@ -24,17 +24,17 @@ namespace FSI_Solver
 {
     class FSI_Auxillary 
     {
-        internal static void Main(int Leftelement, int RightElement, ref int[] Data)
+        internal void Quicksort(int Leftelement, int RightElement, ref int[] Data)
         {
             if (Leftelement < RightElement)
             {
                 int division = Divide(Leftelement, RightElement, ref Data);
-                Main(Leftelement, division - 1, ref Data);
-                Main(division + 1, RightElement, ref Data);
+                Quicksort(Leftelement, division - 1, ref Data);
+                Quicksort(division + 1, RightElement, ref Data);
             }
         }
 
-        private static int Divide(int Leftelement, int RightElement, ref int[] Data)
+        private int Divide(int Leftelement, int RightElement, ref int[] Data)
         {
             int i = Leftelement;
             int j = RightElement - 1;

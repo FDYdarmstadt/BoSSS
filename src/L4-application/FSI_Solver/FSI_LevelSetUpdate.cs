@@ -14,6 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+using BoSSS.Application.FSI_Solver;
 using BoSSS.Foundation;
 using BoSSS.Foundation.Grid;
 using BoSSS.Solution.Utils;
@@ -31,9 +32,23 @@ namespace FSI_Solver
     {
         private FSI_Auxillary Auxillary = new FSI_Auxillary();
 
+        /// ====================================================================================
         /// <summary>
-        /// Cell Mask of all cells with a specific color "CurrentColor"
+        /// compiles a cell mask from all cells with a specific color and their direct neighbors
         /// </summary>
+        /// <param name="gridData">
+        /// the grid that this mask will be associated with
+        /// </param>
+        /// <param name="ColoredCellsSorted">
+        /// a list of all cells sorted by color
+        /// </param>
+        /// <param name="CurrentColor">
+        /// the color which is associated with the Cell Mask
+        /// </param>
+        /// /// <param name="J">
+        /// the number of locally updated cells
+        /// </param>
+        /// ====================================================================================
         internal CellMask CellsOneColor(IGridData gridData, List<int[]> ColoredCellsSorted, int CurrentColor, int J)
         {
             int[] CellIDCurrentColor = FindCellIDs(ColoredCellsSorted, CurrentColor);
@@ -48,6 +63,17 @@ namespace FSI_Solver
             return ColoredCellMask.Union(ColoredCellMaskNeighbour);
         }
 
+        /// ====================================================================================
+        /// <summary>
+        /// searchs for all cell ID with the current color
+        /// </summary>
+        /// <param name="ColoredCellsSorted">
+        /// a list of all cells sorted by color
+        /// </param>
+        /// <param name="CurrentColor">
+        /// the color which is associated with the Cell Mask
+        /// </param>
+        /// ====================================================================================
         private int[] FindCellIDs(List<int[]> ColoredCellsSorted, int CurrentColor)
         {
             List<int> ColorList = new List<int>();
@@ -64,6 +90,17 @@ namespace FSI_Solver
             return CellID;
         }
 
+        /// ====================================================================================
+        /// <summary>
+        /// searchs for all particles with the same color
+        /// </summary>
+        /// <param name="ParticleColor">
+        /// a list of all particles with their specific color
+        /// </param>
+        /// <param name="CurrentColor">
+        /// the color which is associated with the Cell Mask
+        /// </param
+        /// ====================================================================================
         internal int[] FindParticlesOneColor(int[] ParticleColor, int CurrentColor)
         {
             List<int> temp = new List<int>();
@@ -77,9 +114,21 @@ namespace FSI_Solver
             return temp.ToArray();
         }
 
-        // Method to find the Color of a specific particle
-        // ===================================================
-        public int[] FindParticleColor(IGridData GrdDat, List<Particle> Particles, List<int[]> ColoredCellsSorted)
+        /// ====================================================================================
+        /// <summary>
+        /// method to find the color of a specific particle
+        /// </summary>
+        /// <param name="gridData">
+        /// the grid that this mask will be associated with
+        /// </param>
+        /// <param name="ColoredCellsSorted">
+        /// a list of all cells sorted by color
+        /// </param>
+        /// <param name="Particles">
+        /// a list of all particles
+        /// </param>
+        /// ====================================================================================
+        public int[] FindParticleColor(IGridData gridData, List<Particle> Particles, List<int[]> ColoredCellsSorted)
         {
             List<int> CurrentColor = new List<int>();
             for (int p = 0; p < Particles.Count; p++)
@@ -94,10 +143,10 @@ namespace FSI_Solver
                 int temp = 0;
                 for (int i = 0; i < ColoredCellsSorted.Count; i++)
                 {
-                    if (Math.Sqrt(GrdDat.iGeomCells.GetCellVolume(ColoredCellsSorted[i][0])) > Lengthscale)
+                    if (Math.Sqrt(gridData.iGeomCells.GetCellVolume(ColoredCellsSorted[i][0])) > Lengthscale)
                         throw new ArithmeticException("Hmin of the cells is larger than the particles. Please use a finer grid (or grid refinement).");
 
-                    double[] center = GrdDat.iLogicalCells.GetCenter(ColoredCellsSorted[i][0]);
+                    double[] center = gridData.iLogicalCells.GetCenter(ColoredCellsSorted[i][0]);
                     if (center[0] > Leftedge && center[0] < Rightedge && center[1] > Loweredge && center[1] < Upperedge)
                     {
                         temp = ColoredCellsSorted[i][1];
@@ -109,27 +158,32 @@ namespace FSI_Solver
             return CurrentColor.ToArray();
         }
 
-        internal List<int[]> ColoredCellsFindAndSort(int[] CellColor, bool RemoveUncoloredCells)
+        /// ====================================================================================
+        /// <summary>
+        /// method to sort all cells by their color
+        /// </summary>
+        /// <param name="CellColor">
+        /// all cells with their color
+        /// </param>
+        /// ====================================================================================
+        internal List<int[]> ColoredCellsFindAndSort(int[] CellColor)
         {
             List<int[]> ColoredCellsSorted = new List<int[]>();
             int ListIndex = 0;
             for (int CellID = 0; CellID < CellColor.Length; CellID++)
             {
-                if (RemoveUncoloredCells == false || (CellColor[CellID] != 0 && RemoveUncoloredCells == true))
+                ListIndex = 0;
+                if (ColoredCellsSorted.Count != 0)
                 {
-                    ListIndex = 0;
-                    if (ColoredCellsSorted.Count != 0)
+                    while (ListIndex < ColoredCellsSorted.Count && CellColor[CellID] >= ColoredCellsSorted[ListIndex][1])
                     {
-                        while (ListIndex < ColoredCellsSorted.Count && CellColor[CellID] >= ColoredCellsSorted[ListIndex][1])
-                        {
-                            ListIndex += 1;
-                        }
+                        ListIndex += 1;
                     }
-                    int[] temp = new int[2];
-                    temp[0] = CellID;
-                    temp[1] = CellColor[CellID];
-                    ColoredCellsSorted.Insert(ListIndex, temp);
                 }
+                int[] temp = new int[2];
+                temp[0] = CellID;
+                temp[1] = CellColor[CellID];
+                ColoredCellsSorted.Insert(ListIndex, temp);
             }
             return ColoredCellsSorted;
         }
