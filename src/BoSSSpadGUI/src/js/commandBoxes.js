@@ -27,6 +27,7 @@ export class BoxWithMenu{
         this.overviewRulerColor = 'rgba(196, 223, 231, 0.5)';
         
         BoxWithMenu.zIndex = 2;
+        this.IsSelectedToRun = true;
     }
 
     
@@ -116,7 +117,10 @@ export class BoxWithMenu{
         }
         //Start calculation in respective order
         for(var i = 0; i < boxSubarray.length; ++i){
-            await boxSubarray[i].boxContent.run();
+            var box = boxSubarray[i].boxContent;
+            if(box.IsSelectedToRun){
+                await box.run();
+            }
         }
     }
   

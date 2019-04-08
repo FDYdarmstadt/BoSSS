@@ -11,7 +11,7 @@ export class Box{
       this.BoxType = BoxType; 
       this.parentList = parentList;
       this.boxContent = new BoxType(this.box, this);
-      this.Selection = new Selection(this.selectionDiv);
+      this.Selection = new Selection(this.selectionDiv, this.boxContent);
       this.IsSmall = true;
     }
 

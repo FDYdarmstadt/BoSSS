@@ -57,6 +57,7 @@ html{
     }
 
     .userInputRegion{
+        box-sizing: border-box;
         position: relative;
         border-width: 1px;
         border-color: #bbb;
@@ -127,6 +128,7 @@ html{
         overflow:auto;
         white-space: pre-wrap;
     }
+    
     /* width */
     .readoutLI::-webkit-scrollbar {
         width: 11px;
