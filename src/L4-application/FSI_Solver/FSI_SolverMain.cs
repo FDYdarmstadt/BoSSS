@@ -54,8 +54,6 @@ namespace BoSSS.Application.FSI_Solver {
             counter++;
         }
 
-        bool InitializedColor = false;
-
         double calculatedDampingTensors;
         // =============================
         /// <summary>
@@ -647,6 +645,7 @@ namespace BoSSS.Application.FSI_Solver {
             return forces_PResidual;
         }
 
+        private int[] CellColor = null;
 
         /// <summary>
         /// Particle to Level-Set-Field 
@@ -657,7 +656,7 @@ namespace BoSSS.Application.FSI_Solver {
             // Define an array with the respective cell colors
             // ===============================================
             int J = GridData.iLogicalCells.NoOfLocalUpdatedCells;
-            int[] CellColor = InitializedColor ? LsTrk.Regions.ColorMap4Spc[LsTrk.GetSpeciesId("B")] : InitializeColoring(J);
+            CellColor = CellColor ?? InitializeColoring(J);
 
             // Step 2
             // Delete the old level set
@@ -670,13 +669,13 @@ namespace BoSSS.Application.FSI_Solver {
             FSI_LevelSetUpdate levelSetUpdate = new FSI_LevelSetUpdate();
             CellMask AgglParticleMask = null;
             List<int[]> ColoredCellsSorted = levelSetUpdate.ColoredCellsFindAndSort(CellColor);
-            int[] ParticleColor = levelSetUpdate.FindParticleColor(GridData, m_Particles, ColoredCellsSorted);
+            int[] ParticleColorArray = levelSetUpdate.FindParticleColor(GridData, m_Particles, ColoredCellsSorted);
             for (int p = 0; p < m_Particles.Count(); p++)
             {
-                if (ParticleColor[p] != 0)
+                if (ParticleColorArray[p] != 0)
                 {
-                    int[] ParticlesOfCurrentColor = levelSetUpdate.FindParticlesOneColor(ParticleColor, ParticleColor[p]);
-                    CellMask ColoredCellMask = levelSetUpdate.CellsOneColor(GridData, ColoredCellsSorted, ParticleColor[p], J);
+                    int[] ParticlesOfCurrentColor = levelSetUpdate.FindParticlesOneColor(ParticleColorArray, ParticleColorArray[p]);
+                    CellMask ColoredCellMask = levelSetUpdate.CellsOneColor(GridData, ColoredCellsSorted, ParticleColorArray[p], J);
                     AgglParticleMask = AgglParticleMask == null ? ColoredCellMask : AgglParticleMask.Union(ColoredCellMask);
 
                     double phiComplete(double[] X, double t)
@@ -693,7 +692,7 @@ namespace BoSSS.Application.FSI_Solver {
 
                             // Delete all particles within the current color from the particle color array
                             // ===========================================================================
-                            ParticleColor[ParticlesOfCurrentColor[pc]] = 0;
+                            ParticleColorArray[ParticlesOfCurrentColor[pc]] = 0;
                         }
                         return phi;
                     }
@@ -717,7 +716,7 @@ namespace BoSSS.Application.FSI_Solver {
             // Update level set tracker and coloring
             // =======================================================
             LsTrk.UpdateTracker(__NearRegionWith: 2);
-            UpdateColoring();
+            CellColor = UpdateColoring();
         }
 
         /// <summary>
@@ -733,7 +732,7 @@ namespace BoSSS.Application.FSI_Solver {
         /// <summary>
         /// Update of <see cref="ParticleColor"/> and <see cref="LevelSetDistance"/>
         /// </summary>
-        private void UpdateColoring()
+        private int[] UpdateColoring()
         {
             int J = GridData.iLogicalCells.NoOfLocalUpdatedCells;
             int[] PartCol = LsTrk.Regions.ColorMap4Spc[LsTrk.GetSpeciesId("B")];
@@ -744,7 +743,9 @@ namespace BoSSS.Application.FSI_Solver {
 
                 LevelSetDistance.SetMeanValue(j, LevelSetTracker.DecodeLevelSetDist(rCode[j], 0));
             }
+            return PartCol;
         }
+
 
         /// <summary>
         /// Initialization of <see cref="ParticleColor"/> 
@@ -752,6 +753,7 @@ namespace BoSSS.Application.FSI_Solver {
         private int[] InitializeColoring(int J)
         {
             int[] Cells = new int[J];
+            var rCode = LsTrk.Regions.RegionsCode;
             for (int p = 0; p < m_Particles.Count; p++)
             {
                 double Hmin = Math.Sqrt(GridData.iGeomCells.GetCellVolume(0));
@@ -764,17 +766,18 @@ namespace BoSSS.Application.FSI_Solver {
                 double Rightedge = ParticlePos[0] + ParticleScales[0] * Math.Cos(ParticleAngle) + ParticleScales[1] * Math.Sin(ParticleAngle) + Hmin / 4;
                 for (int j = 0; j < J; j++)
                 {
+                    ParticleColor.SetMeanValue(j, 0);
                     double[] center = GridData.iLogicalCells.GetCenter(j);
                     if (center[0] > Leftedge && center[0] < Rightedge && center[1] > Loweredge && center [1] < Upperedge)
                     {
                         ParticleColor.SetMeanValue(j, p + 1);
                         m_Particles[p].ParticleColoredCells.Add(new int[2] { j, p + 1 });
                         Cells[j] = p + 1;
-                    } 
+                    }
+                    LevelSetDistance.SetMeanValue(j, LevelSetTracker.DecodeLevelSetDist(rCode[j], 0));
                 }
             }
             CheckForNeighborColorsInit(Cells);
-            InitializedColor = true;
             return Cells;
         }
 
@@ -1915,8 +1918,8 @@ namespace BoSSS.Application.FSI_Solver {
         /// </summary>
         /// 
         int LevelIndicator(int j, int CurrentLevel) {
-            var LevSetCells = LsTrk.Regions.GetCutCellMask();
-            var LevSetNeighbours = LsTrk.Regions.GetNearFieldMask(1);
+            CellMask LevSetCells = LsTrk.Regions.GetCutCellMask();
+            CellMask LevSetNeighbours = LsTrk.Regions.GetNearFieldMask(1);
             //    var LevSetNeighboursNeighbours = LevSetNeighbours.AllNeighbourCells();
             ////    var LevSetNeighboursNeighboursNeighbours = LevSetNeighbours.AllNeighbourCells();
 
@@ -2013,14 +2016,23 @@ namespace BoSSS.Application.FSI_Solver {
 
                 CellMask CutCells = LsTrk.Regions.GetCutCellMask();
                 CellMask CutCellNeighbors = LsTrk.Regions.GetNearFieldMask(1);
-                //var CutCellArray = CutCells.ItemEnum.ToArray();
-                //var CutCellNeighborsArray = CutCellNeighbors.ItemEnum.ToArray();
-                //var AllCells = CutCellArray.Concat(CutCellNeighborsArray).ToArray();
-                //var NoCoarseningcells = new CellMask(this.GridData, AllCells);
-                //var AllCells = CutCells.Union(CutCellNeighbors).ItemEnum.ToArray();
+                //CellMask CuttCells = null;
+                //int J = GridData.iLogicalCells.NoOfLocalUpdatedCells;
+                //int[] CellColor = LsTrk.Regions.ColorMap4Spc[LsTrk.GetSpeciesId("B")];
+                //FSI_LevelSetUpdate levelSetUpdate = new FSI_LevelSetUpdate();
+                //List<int[]> ColoredCellsSorted = levelSetUpdate.ColoredCellsFindAndSort(CellColor);
+                //int[] ParticleColor = levelSetUpdate.FindParticleColor(GridData, m_Particles, ColoredCellsSorted);
+                //for (int p = 0; p < m_Particles.Count(); p++)
+                //{
+                //    if (ParticleColor[p] != 0)
+                //    {
+                //        CellMask ColoredCellMask = levelSetUpdate.CellsOneColor(GridData, ColoredCellsSorted, ParticleColor[p], J, FindNeighbours: false);
+                //        CuttCells = CuttCells == null ? ColoredCellMask : CuttCells.Union(ColoredCellMask);
+                //    }
+                //}
 
-                // Only CutCells are NoCoarseningCells 
-                bool AnyChange = GridRefinementController.ComputeGridChange((GridData)(this.GridData), CutCells, LevelIndicator, out List<int> CellsToRefineList, out List<int[]> Coarsening);
+                        // Only CutCells are NoCoarseningCells 
+                        bool AnyChange = GridRefinementController.ComputeGridChange((GridData)(this.GridData), CutCells, LevelIndicator, out List<int> CellsToRefineList, out List<int[]> Coarsening);
                 int NoOfCellsToRefine = 0;
                 int NoOfCellsToCoarsen = 0;
                 if (AnyChange) {

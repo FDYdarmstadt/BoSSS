@@ -49,7 +49,7 @@ namespace FSI_Solver
         /// the number of locally updated cells
         /// </param>
         /// ====================================================================================
-        internal CellMask CellsOneColor(IGridData gridData, List<int[]> ColoredCellsSorted, int CurrentColor, int J)
+        internal CellMask CellsOneColor(IGridData gridData, List<int[]> ColoredCellsSorted, int CurrentColor, int J, bool FindNeighbours = true)
         {
             int[] CellIDCurrentColor = FindCellIDs(ColoredCellsSorted, CurrentColor);
             BitArray ColoredCells = new BitArray(J);
@@ -59,8 +59,13 @@ namespace FSI_Solver
                     ColoredCells[CellIDCurrentColor[i]] = true;
             }
             CellMask ColoredCellMask = new CellMask(gridData, ColoredCells);
-            CellMask ColoredCellMaskNeighbour = ColoredCellMask.AllNeighbourCells();
-            return ColoredCellMask.Union(ColoredCellMaskNeighbour);
+            
+            if (FindNeighbours)
+            {
+                CellMask ColoredCellMaskNeighbour = ColoredCellMask.AllNeighbourCells();
+                ColoredCellMask = ColoredCellMask.Union(ColoredCellMaskNeighbour);
+            }
+            return ColoredCellMask;
         }
 
         /// ====================================================================================
@@ -147,7 +152,7 @@ namespace FSI_Solver
                         throw new ArithmeticException("Hmin of the cells is larger than the particles. Please use a finer grid (or grid refinement).");
 
                     double[] center = gridData.iLogicalCells.GetCenter(ColoredCellsSorted[i][0]);
-                    if (center[0] > Leftedge && center[0] < Rightedge && center[1] > Loweredge && center[1] < Upperedge)
+                    if (center[0] > Leftedge && center[0] < Rightedge && center[1] > Loweredge && center[1] < Upperedge && ColoredCellsSorted[i][1] != 0)
                     {
                         temp = ColoredCellsSorted[i][1];
                         break;
