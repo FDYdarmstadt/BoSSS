@@ -122,13 +122,21 @@ class BoSSSMenu{
                         label: 'Save File',
                         accelerator: 'CmdOrCtrl+S',
 						click() {
-							that.saveFile();
+                            try{
+                                that.saveFile();
+                            }catch(e){
+                                console.log(e);
+                            }
 						}
 					},
 					{
 						label: 'Save File As...',
 						click() {
-							that.saveFileAs();
+                            try{
+                                that.saveFileAs();
+                            }catch(e){
+                                console.log(e);
+                            }
 						}
 					}
 				]

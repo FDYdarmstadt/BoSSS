@@ -162,4 +162,6 @@ export class BoxWithMenu{
             }
         };
     }
+    
+    update(){};
 }

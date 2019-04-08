@@ -33,11 +33,13 @@ export class RunBox extends BoxWithMenu {
     }
 
     adaptHeightToContent(){
-        var height = this.readoutLI.scrollHeight + 29;
+        var innerHeight = this.readoutLI.scrollHeight;
+        var height = innerHeight + 27;
         var parentHeight = this.parentBox.getHeight();
         if(height > parentHeight){
             this.div.style.height = height  + "px";
         }
+
     }
 
     reduce(){
@@ -135,5 +137,13 @@ export class RunBox extends BoxWithMenu {
         this.error = await boSSSRuntime.runCommand("LastError");
         this.ErrorIsOnDisplay = false;
         this.display(this.result);
+    }
+
+    getResultString(){
+        if(this.result != null){
+            return this.result.Item1
+        }else{
+            return "";
+        }
     }
 }

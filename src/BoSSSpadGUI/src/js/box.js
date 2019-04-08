@@ -2,17 +2,21 @@ import {Selection} from './selection.js';
 
 export class Box{
     constructor(range, BoxType, parentList){
-      this.LI = document.createElement("LI");
-      this.LI.classList.add("userInputRegion");
-      this.createDivisionsForSelectAndBox();
-      this.bottomHeight;
-      this.id;
-      this.range = range;
-      this.BoxType = BoxType; 
-      this.parentList = parentList;
-      this.boxContent = new BoxType(this.box, this);
-      this.Selection = new Selection(this.selectionDiv, this.boxContent);
-      this.IsSmall = true;
+        this.LI = document.createElement("LI");
+        this.LI.classList.add("userInputRegion");
+        this.createDivisionsForSelectAndBox();
+        this.bottomHeight;
+        this.id;
+        this.range = range;
+        this.BoxType = BoxType; 
+        this.parentList = parentList;
+        this.boxContent = new BoxType(this.box, this);
+        this.Selection = new Selection(this.selectionDiv, this.boxContent);
+        this.IsSmall = true;
+    }
+
+    update(){
+        this.boxContent.update();
     }
 
     createDivisionsForSelectAndBox(){

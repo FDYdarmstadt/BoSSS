@@ -138,6 +138,7 @@ export class BoSSSpad{
 
     update(){
         this.boSSS.update();
+        this.userGUI.updateBoxesInternal();
     }
 
     //Command actions
