@@ -198,7 +198,6 @@ namespace BoSSS.Application.FSI_Solver
         //private int vel_iteration_counter;
         #endregion
 
-        #region Physical parameters
         /// <summary>
         /// Density of the particle.
         /// </summary>
@@ -319,9 +318,7 @@ namespace BoSSS.Application.FSI_Solver
         abstract public double MomentOfInertia_P {
             get;
         }
-        #endregion
 
-        #region Include additional classes
         [NonSerialized]
         private ParticleAuxillary Aux = new ParticleAuxillary();
         [NonSerialized]
@@ -332,7 +329,6 @@ namespace BoSSS.Application.FSI_Solver
         private ParticleUnderrelaxation Underrelaxation = new ParticleUnderrelaxation();
         [NonSerialized]
         private ParticleAcceleration Acceleration = new ParticleAcceleration();
-        #endregion
         
         /// <summary>
         /// Calculate the new particle position
@@ -352,7 +348,7 @@ namespace BoSSS.Application.FSI_Solver
             {
                 Position[0][d] = Position[1][d] + TranslationalVelocity[1][d] * dt + (TranslationalAcceleration[1][d] + TranslationalAcceleration[0][d]) * dt.Pow2() / 4;
                 if (double.IsNaN(Position[0][d]) || double.IsInfinity(Position[0][d]))
-                    throw new ArithmeticException("Error trying to update particle position");
+                    throw new ArithmeticException("Error trying to update particle position. Value:  " + Position[0][d]);
             }
         }
 
@@ -369,7 +365,7 @@ namespace BoSSS.Application.FSI_Solver
 
             Angle[0] = Angle[1] + RotationalVelocity[1] * dt + dt.Pow2() * (RotationalAcceleration[1] + RotationalAcceleration[0]) / 4;
             if (double.IsNaN(Angle[0]) || double.IsInfinity(Angle[0]))
-                throw new ArithmeticException("Error trying to update particle angle");
+                throw new ArithmeticException("Error trying to update particle angle. Value:  " + Angle[0]);
         }
 
         /// <summary>
@@ -388,13 +384,13 @@ namespace BoSSS.Application.FSI_Solver
             for (int d = 0; d < SpatialDim; d++)
             {
                 TranslationalAcceleration[0][d] = 2 * TranslationalAcceleration[1][d] - TranslationalAcceleration[2][d];
-                if (double.IsNaN(TranslationalAcceleration[0][d]) || double.IsInfinity(TranslationalAcceleration[0][d]))
-                    throw new ArithmeticException("Error trying to calculate particle acceleration" + TranslationalAcceleration[0][d]);
+                Console.WriteLine("Translational Acceleration[" + d + "] is:    " + TranslationalAcceleration[0][d]);
+                HydrodynamicForces[0][d] = 2 * HydrodynamicForces[1][d] - HydrodynamicForces[2][d];
             }
 
             RotationalAcceleration[0] = 2 * RotationalAcceleration[1] - RotationalAcceleration[2];
-            if (double.IsNaN(RotationalAcceleration[0]) || double.IsInfinity(RotationalAcceleration[0]))
-                throw new ArithmeticException("Error trying to calculate particle rotational acceleration");
+            Console.WriteLine("Rotational Acceleration is:    " + RotationalAcceleration[0]);
+            HydrodynamicTorque[0] = 2 * HydrodynamicTorque[1] - HydrodynamicTorque[2];
         }
 
         /// <summary>
@@ -406,13 +402,11 @@ namespace BoSSS.Application.FSI_Solver
             for (int d = 0; d < SpatialDim; d++)
             {
                 TranslationalAcceleration[0][d] = 2 * TranslationalAcceleration[0][d] - TranslationalAcceleration[1][d];
-                if (double.IsNaN(TranslationalAcceleration[0][d]) || double.IsInfinity(TranslationalAcceleration[0][d]))
-                    throw new ArithmeticException("Error trying to calculate particle acceleration");
+                HydrodynamicForces[0][d] = 2 * HydrodynamicForces[1][d] - HydrodynamicForces[2][d];
             }
 
             RotationalAcceleration[0] = 2 * RotationalAcceleration[0] - RotationalAcceleration[1];
-            if (double.IsNaN(RotationalAcceleration[0]) || double.IsInfinity(RotationalAcceleration[0]))
-                throw new ArithmeticException("Error trying to calculate particle rotational acceleration");
+            HydrodynamicTorque[0] = 2 * HydrodynamicTorque[1] - HydrodynamicTorque[2];
         }
 
         /// <summary>
@@ -431,16 +425,17 @@ namespace BoSSS.Application.FSI_Solver
             double Denominator = Acceleration.CalculateDenominator(CoefficientMatrix);
 
             TranslationalAcceleration[0] = Acceleration.Translational(CoefficientMatrix, Denominator, HydrodynamicForces[0], HydrodynamicTorque[0]);
-            for (int i = 0; i< SpatialDim; i++)
+            for (int d = 0; d< SpatialDim; d++)
             {
-                Console.WriteLine("Acc" +i + "   " + TranslationalAcceleration[0][i]);
-                if (double.IsNaN(TranslationalAcceleration[0][i]) || double.IsInfinity(TranslationalAcceleration[0][i]))
-                    throw new ArithmeticException("Error trying to calculate particle acceleration" + TranslationalAcceleration[0][i]);
+                Console.WriteLine("Translational Acceleration[" + d + "] is:    " + TranslationalAcceleration[0][d]);
+                if (Math.Abs(TranslationalAcceleration[0][d]) < 1e-15 || double.IsNaN(TranslationalAcceleration[0][d]))
+                    TranslationalAcceleration[0][d] = 0;
             }
 
             RotationalAcceleration[0] = Acceleration.Rotational(CoefficientMatrix, Denominator, HydrodynamicForces[0], HydrodynamicTorque[0]);
-            if (double.IsNaN(RotationalAcceleration[0]) || double.IsInfinity(RotationalAcceleration[0]))
-                throw new ArithmeticException("Error trying to calculate particle rotational acceleration");
+            Console.WriteLine("Rotational Acceleration is:    " + RotationalAcceleration[0]);
+            if (Math.Abs(RotationalAcceleration[0]) < 1e-15 || double.IsNaN(RotationalAcceleration[0]))
+                RotationalAcceleration[0] = 0;
         }
 
         /// <summary>
@@ -467,7 +462,7 @@ namespace BoSSS.Application.FSI_Solver
             {
                 TranslationalVelocity[0][d] = TranslationalVelocity[1][d] + (TranslationalAcceleration[1][d] + TranslationalAcceleration[0][d]) * dt / 2;
                 if (double.IsNaN(TranslationalVelocity[0][d]) || double.IsInfinity(TranslationalVelocity[0][d]))
-                    throw new ArithmeticException("Error trying to calculate particle velocity");
+                    throw new ArithmeticException("Error trying to calculate particle velocity Value:  " + TranslationalVelocity[0][d]);
             }
         }
 
@@ -569,7 +564,7 @@ namespace BoSSS.Application.FSI_Solver
             
             RotationalVelocity[0] = RotationalVelocity[1] + dt * (RotationalAcceleration[1] + RotationalAcceleration[0]) / 2;
             if (double.IsNaN(RotationalVelocity[0]) || double.IsInfinity(RotationalVelocity[0]))
-                throw new ArithmeticException("Error trying to calculate particle angluar velocity");
+                throw new ArithmeticException("Error trying to calculate particle angluar velocity. Value:  " + RotationalVelocity[0]);
         }
         
         /// <summary>
@@ -690,11 +685,11 @@ namespace BoSSS.Application.FSI_Solver
             }
 
             if (double.IsNaN(Forces[0]) || double.IsInfinity(Forces[0]))
-                throw new ArithmeticException("Error trying to calculate hydrodynamic forces (x)");
+                throw new ArithmeticException("Error trying to calculate hydrodynamic forces (x). Value:  " + Forces[0]);
             if (double.IsNaN(Forces[1]) || double.IsInfinity(Forces[1]))
-                throw new ArithmeticException("Error trying to calculate hydrodynamic forces (y)");
+                throw new ArithmeticException("Error trying to calculate hydrodynamic forces (y). Value:  " + Forces[1]);
             if (double.IsNaN(Torque) || double.IsInfinity(Torque))
-                throw new ArithmeticException("Error trying to calculate hydrodynamic torque");
+                throw new ArithmeticException("Error trying to calculate hydrodynamic torque. Value:  " + Torque);
 
             if (neglectAddedDamping == false) {
                 Forces[0] = Forces[0] + beta * dt * (AddedDampingTensor[0, 0] * TranslationalAcceleration[0][0] + AddedDampingTensor[1, 0] * TranslationalAcceleration[0][1] + AddedDampingTensor[0, 2] * RotationalAcceleration[0]);
@@ -741,6 +736,12 @@ namespace BoSSS.Application.FSI_Solver
                 }
                 HydrodynamicTorque[0] = RelaxatedForceAndTorque[SpatialDim];
             }
+            if (double.IsNaN(HydrodynamicForces[0][0]) || double.IsInfinity(HydrodynamicForces[0][0]))
+                throw new ArithmeticException("Error trying to calculate hydrodynamic forces (x). Value:  " + HydrodynamicForces[0][0]);
+            if (double.IsNaN(HydrodynamicForces[0][1]) || double.IsInfinity(HydrodynamicForces[0][1]))
+                throw new ArithmeticException("Error trying to calculate hydrodynamic forces (y). Value:  " + HydrodynamicForces[0][1]);
+            if (double.IsNaN(HydrodynamicTorque[0]) || double.IsInfinity(HydrodynamicTorque[0]))
+                throw new ArithmeticException("Error trying to calculate hydrodynamic torque. Value:  " + HydrodynamicTorque[0]);
         }
 
         public double[] CalculateParticleMomentum(double dt)

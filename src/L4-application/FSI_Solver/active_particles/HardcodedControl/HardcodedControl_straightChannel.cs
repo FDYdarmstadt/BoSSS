@@ -30,7 +30,7 @@ namespace BoSSS.Application.FSI_Solver
 {
     public class HardcodedControl_straightChannel : IBM_Solver.HardcodedTestExamples
     {
-        public static FSI_Control ActiveRod_noBackroundFlow(string _DbPath = null, int k = 2, double VelXBase = 0.0, double stressM = 1e6, double cellAgg = 0.2, double muA = 1e4, double timestepX = 1e-3)
+        public static FSI_Control ActiveRod_noBackroundFlow(int k = 2, double stressM = 1e6, double cellAgg = 0.2, double muA = 1e4, double timestepX = 1e-3)
         {
             FSI_Control C = new FSI_Control();
 
@@ -65,8 +65,8 @@ namespace BoSSS.Application.FSI_Solver
                 int q = new int(); // #Cells in x-dircetion + 1
                 int r = new int(); // #Cells in y-dircetion + 1
 
-                q = 75 / 2;
-                r = 30 / 2;
+                q = 75;
+                r = 30;
 
                 double[] Xnodes = GenericBlas.Linspace(-2 * BaseSize, 13 * BaseSize, q);
                 double[] Ynodes = GenericBlas.Linspace(-3 * BaseSize, 3 * BaseSize, r);
@@ -103,7 +103,7 @@ namespace BoSSS.Application.FSI_Solver
 
             // Mesh refinement
             // =============================
-            C.AdaptiveMeshRefinement = false;
+            C.AdaptiveMeshRefinement = true;
             C.RefinementLevel = 1;
             C.maxCurvature = 2;
 
@@ -128,23 +128,20 @@ namespace BoSSS.Application.FSI_Solver
             // Defining particles
             C.Particles = new List<Particle>();
             int numOfParticles = 1;
-            for (int i = 0; i < numOfParticles; i++)
+            for (int d = 0; d < numOfParticles; d++)
             {
-                for (int d = 0; d < numOfParticles; d++)
+                C.Particles.Add(new Particle_Ellipsoid(new double[] { 1 + 9 * d, -1.5 + 3 * d }, startAngl: 180 * d)
                 {
-                    C.Particles.Add(new Particle_Ellipsoid(new double[] { 1 + 2 * d, 0 }, startAngl: 0)
-                    {
-                        particleDensity = 1,
-                        ActiveParticle = true,
-                        ActiveStress = stressM,
-                        thickness_P = 0.5 * BaseSize,
-                        length_P = 2.5 * BaseSize,
-                        AddaptiveUnderrelaxation = true,// set true if you want to define a constant underrelaxation (not recommended)
-                        underrelaxation_factor = 0.1,// underrelaxation with [factor * 10^exponent]
-                        ClearSmallValues = true,
-                        neglectAddedDamping = false
-                    });
-                }
+                    particleDensity = 1,
+                    ActiveParticle = true,
+                    ActiveStress = stressM,
+                    thickness_P = 0.5 * BaseSize,
+                    length_P = 2.5 * BaseSize,
+                    AddaptiveUnderrelaxation = true,// set true if you want to define a constant underrelaxation (not recommended)
+                    underrelaxation_factor = 0.1,// underrelaxation with [factor * 10^exponent]
+                    ClearSmallValues = true,
+                    neglectAddedDamping = false
+                });
             }
 
 
@@ -189,7 +186,6 @@ namespace BoSSS.Application.FSI_Solver
             // =============================
             C.Timestepper_LevelSetHandling = LevelSetHandling.FSI_LieSplittingFullyCoupled;
             C.LSunderrelax = 1;
-            C.splitting_fully_coupled = true;
             C.max_iterations_fully_coupled = 100000;
             C.includeRotation = true;
             C.includeTranslation = true;
@@ -246,8 +242,8 @@ namespace BoSSS.Application.FSI_Solver
                 int q = new int(); // #Cells in x-dircetion + 1
                 int r = new int(); // #Cells in y-dircetion + 1
 
-                q = 75/4;
-                r = 30/4;
+                q = 75;
+                r = 30;
 
                 double[] Xnodes = GenericBlas.Linspace(-2 * BaseSize, 13 * BaseSize, q);
                 double[] Ynodes = GenericBlas.Linspace(-3 * BaseSize, 3 * BaseSize, r);
@@ -311,13 +307,13 @@ namespace BoSSS.Application.FSI_Solver
             int numOfParticles = 1;
             for (int d = 0; d < numOfParticles; d++)
             {
-                C.Particles.Add(new Particle_Ellipsoid(new double[] { 1 + 2 * d, 0 }, startAngl: -8 + 12 * d)
+                C.Particles.Add(new Particle_Ellipsoid(new double[] { 1 + 2 * d, 0.25 }, startAngl: -8 + 12 * d)
                 {
                     particleDensity = 1,
                     ActiveParticle = false,
                     ActiveStress = stressM,
-                    thickness_P = 0.4 * BaseSize,
-                    length_P = 2 * BaseSize,
+                    thickness_P = 0.5 * BaseSize,
+                    length_P = 2.5 * BaseSize,
                     AddaptiveUnderrelaxation = true,// set true if you want to define a constant underrelaxation (not recommended)
                     underrelaxation_factor = 0.2,// underrelaxation with [factor * 10^exponent]
                     ClearSmallValues = true,
@@ -380,7 +376,6 @@ namespace BoSSS.Application.FSI_Solver
             // =============================
             C.Timestepper_LevelSetHandling = LevelSetHandling.LieSplitting;
             C.LSunderrelax = 1;
-            C.splitting_fully_coupled = true;
             C.max_iterations_fully_coupled = 10000;
             C.includeRotation = true;
             C.includeTranslation = true;

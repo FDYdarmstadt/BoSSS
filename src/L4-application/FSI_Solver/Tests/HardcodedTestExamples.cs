@@ -578,7 +578,6 @@ namespace BoSSS.Application.FSI_Solver {
             // =============================
             C.Timestepper_LevelSetHandling = LevelSetHandling.FSI_LieSplittingFullyCoupled;
             C.LSunderrelax = 1;
-            C.splitting_fully_coupled = true;
             C.max_iterations_fully_coupled = 250;
             C.includeRotation = false;
             C.includeTranslation = false;

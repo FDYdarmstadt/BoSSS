@@ -202,7 +202,6 @@ namespace BoSSS.Application.FSI_Solver
             // Coupling Properties
             // =============================
             C.Timestepper_LevelSetHandling = LevelSetHandling.Coupled_Once;
-            C.splitting_fully_coupled = true;
             C.max_iterations_fully_coupled = 10000;
             C.includeRotation = true;
             C.includeTranslation = true;
