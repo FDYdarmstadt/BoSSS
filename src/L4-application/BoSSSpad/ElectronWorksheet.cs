@@ -11,9 +11,10 @@ using BoSSS.Foundation.IO;
 namespace BoSSS.Application.BoSSSpad{
 
     /// <summary>
-    /// Entrypoint used by <see cref="ElectronWorksheet"/> project to communicate between electron BoSSSpad and C# BoSSSpad   
+    /// Entrypoint used by <see cref="ElectronWorksheet"/> project. 
+    /// Realizes communication between electron BoSSSpad and C# BoSSSpad.
     /// </summary>
-    public sealed class ElectronWorksheet {
+    public sealed class ElectronWorksheet : ResolvableAssembly {
 
         /// <summary>
         /// Will only work for one instance
@@ -21,58 +22,18 @@ namespace BoSSS.Application.BoSSSpad{
         /// <param name="BoSSSpath">
         /// Path to the ElectronWorksheet.dll, ElectronBoSSSpad.exe and affiliated DLLs
         /// </param>
-        public ElectronWorksheet(string BoSSSpath) {
-            path = BoSSSpath;
+        public ElectronWorksheet(string BoSSSpath) : base(BoSSSpath){
             Thread.CurrentThread.CurrentCulture = CultureInfo.InvariantCulture;
 
-            // launch the app
-            // ==============
+            //Setup Environment
             ilPSP.Environment.Bootstrap(
                 new string[0],
                 Utils.GetBoSSSInstallDir(),
                 out bool mpiInitialized
             );
-            //Find dlls in own folder if called from ElectronBoSSSpad
-            AppDomain.CurrentDomain.AssemblyResolve += CurrentDomain_AssemblyResolve;
-        }
-
-        string path = null;
-
-        /// <summary>
-        /// Resolve assembly not found exceptions. 
-        /// In this case it happens when electron looks for dlls of BoSSSpad.exe in the folder of electron.exe
-        /// </summary>
-        /// <param name="sender"></param>
-        /// <param name="args"></param>
-        /// <returns></returns>
-        private System.Reflection.Assembly CurrentDomain_AssemblyResolve(object sender, ResolveEventArgs args)
-        {
-            // Ignore missing resources
-            if (args.Name.Contains(".resources"))
-                return null;
-
-            // check for assemblies already loaded
-            
-            System.Reflection.Assembly assembly = AppDomain.CurrentDomain.GetAssemblies().
-                FirstOrDefault(a => a.FullName == args.Name);
-            if (assembly != null)
-                return assembly;
-            
-            // Try to load by filename - split out the filename of the full assembly name
-            // and append the base path of the original assembly (ie. look in the same dir)
-            string filename = args.Name.Split(',')[0] + ".dll".ToLower();
-
-            string asmFile = System.IO.Path.Combine(path, filename);
-
-            try {
-                return System.Reflection.Assembly.LoadFrom(asmFile);
-            } catch (Exception) {
-                return null;
-            }
         }
 
         public Tuple<string, string> RunCommand(string command) {
-
             
             Document.Tuple singleCommandAndResult = new Document.Tuple {
                 Command = command
