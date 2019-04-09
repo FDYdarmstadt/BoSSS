@@ -115,7 +115,8 @@ namespace BoSSS.Solution.NSECommon {
         public override double GetDensity(params double[] phi) {
             if (IsInitialized) {
                 double rho = this.ThermodynamicPressure.Current.GetMeanValue(0) / phi[0];
-              // rho = 1.0;
+              //rho = 1.0;
+                //Console.WriteLine("USING RHO = 1!!!!!!!!!");
                 return rho;
             } else {
                 throw new ApplicationException("ThermodynamicPressure is not initialized.");
@@ -228,7 +229,7 @@ namespace BoSSS.Solution.NSECommon {
         /// <param name="InitialMass"></param>
         /// <param name="Temperature"></param>
         /// <returns></returns>
-        public double GetMassDeterminedThermodynamicPressure(double InitialMass, SinglePhaseField Temperature) {
+        public override double GetMassDeterminedThermodynamicPressure(double InitialMass, SinglePhaseField Temperature) {
             SinglePhaseField OneOverTemperature = new SinglePhaseField(Temperature.Basis);
             OneOverTemperature.ProjectPow(1.0, Temperature, -1.0);
             return (InitialMass / OneOverTemperature.IntegralOver(null));

@@ -14,6 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+using BoSSS.Foundation;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -68,6 +69,16 @@ namespace BoSSS.Solution.NSECommon {
 
             return this.GetViscosity(phi[0]);
         }
+
+
+        /// <summary>
+        /// Returns thermodynamic pressure as function of inital mass and temperature.
+        /// </summary>
+        /// <param name="InitialMass"></param>
+        /// <param name="Temperature"></param>
+        /// <returns></returns>
+        public abstract double GetMassDeterminedThermodynamicPressure(double InitialMass, SinglePhaseField Temperature);
+
 
         #region CoupledLaxFriedrichs
 
