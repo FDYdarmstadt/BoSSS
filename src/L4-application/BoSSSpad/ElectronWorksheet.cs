@@ -34,29 +34,32 @@ namespace BoSSS.Application.BoSSSpad{
         }
 
         public Tuple<string, string> RunCommand(string command) {
-            
             Document.Tuple singleCommandAndResult = new Document.Tuple {
                 Command = command
             };
             singleCommandAndResult.Evaluate();
-            String base64Result = null;
-            
-            if (singleCommandAndResult.Result != null 
-                && singleCommandAndResult.Result as System.Drawing.Image != null)
-            {
-                Byte[] result = null;
-                System.Drawing.Image img = (System.Drawing.Image)singleCommandAndResult.Result;
-                using (System.IO.MemoryStream ms = new System.IO.MemoryStream())
-                {
-                    img.Save(ms, System.Drawing.Imaging.ImageFormat.Png);
-                    result = ms.ToArray();
-                    base64Result = Convert.ToBase64String(result);
-                };
-            }
+            String base64Result = TryConvertToBase64ImageString(singleCommandAndResult.Result);
             
             return new Tuple<string, string>(
                 singleCommandAndResult.InterpreterTextOutput,
                 base64Result);
+        }
+
+        string TryConvertToBase64ImageString(object result)
+        {
+            String base64Result = null;
+            if (result != null
+                && result is System.Drawing.Image img)
+            {
+                Byte[] resultAsByte = null;
+                using (System.IO.MemoryStream ms = new System.IO.MemoryStream())
+                {
+                    img.Save(ms, System.Drawing.Imaging.ImageFormat.Png);
+                    resultAsByte = ms.ToArray();
+                    base64Result = Convert.ToBase64String(resultAsByte);
+                };
+            }
+            return base64Result;
         }
 
         public void Save(string path, string[] commands, string[] results) {

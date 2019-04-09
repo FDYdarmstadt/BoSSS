@@ -169,7 +169,7 @@ class BoSSSMenu{
                     {
                         label: 'Interrupt current command',
                         click(){
-                            that.interruptCurrentComand();
+                            that.interruptCurrentCommand();
                         }
                     },
                     {
@@ -226,8 +226,8 @@ class BoSSSMenu{
         this.mainWindow.webContents.executeJavaScript( command );
     }
 
-    interruptCurrentComand(){
-        var command = 'BoSSSpad.interruptCurrentComand();';
+    interruptCurrentCommand(){
+        var command = 'BoSSSpad.interruptCurrentCommand();';
         this.mainWindow.webContents.executeJavaScript( command );
     }
 
