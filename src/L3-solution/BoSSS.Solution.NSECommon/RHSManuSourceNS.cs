@@ -39,6 +39,7 @@ namespace BoSSS.Solution.NSECommon {
         PhysicsMode physMode;
         double phystime;
         bool unsteady;
+        SinglePhaseField ThermodynamicPressure;
         /// <summary>
         /// <param name="Reynolds"></param>
         /// <param name="Froude"></param>
@@ -47,7 +48,7 @@ namespace BoSSS.Solution.NSECommon {
         /// <param name="direction">Can be "x" or "y".</param>
         /// <param name="physMode"></param>        
         /// </summary>
-        public RHSManuSourceNS(double Reynolds, double Froude, double[] MolarMasses, string direction, PhysicsMode physMode, double phystime, bool unsteady) {
+        public RHSManuSourceNS(double Reynolds, double Froude, double[] MolarMasses, string direction, PhysicsMode physMode, double phystime, bool unsteady, SinglePhaseField ThermodynamicPressure) {
             this.MolarMasses = MolarMasses;
             this.direction = direction;
             this.Reynolds = Reynolds;
@@ -57,6 +58,7 @@ namespace BoSSS.Solution.NSECommon {
 
             this.unsteady = unsteady;
             this.phystime = phystime;
+            this.ThermodynamicPressure = ThermodynamicPressure;
         }
 
 
@@ -77,7 +79,7 @@ namespace BoSSS.Solution.NSECommon {
         //Manufactured solution for T = cos(x*y), Y0 = 0.3 cos(x*y), Y1 = 0.6 cos(x*y), Y2 = 0.1 cos(x*y), u = cos(x*y), v = cos(x*y), p = sin(x*y).
         protected override double Source(double[] x, double[] parameters, double[] U) {
 
-            double p0 = 1.0;
+            double p0 = ThermodynamicPressure.GetMeanValue(3);
             double M1 = MolarMasses[0]; double M2 = MolarMasses[1]; double M3 = MolarMasses[2]; double M4 = MolarMasses[3];
             double x_ = x[0];
             double y_ = x[1];
