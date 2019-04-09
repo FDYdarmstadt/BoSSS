@@ -43,7 +43,7 @@ export class BoxWithMenu{
         return buttonNode;
     }
   
-    async createReadoutContent( readoutNode, value){
+    async createReadoutContent( value){
         throw "Not Implemented";
         return;
     }
@@ -95,7 +95,7 @@ export class BoxWithMenu{
         var calculating = new Promise(async function(resolve, reject){
             
             //Testdelay
-            await that.createReadoutContent(that.readoutLI, value);
+            await that.createReadoutContent( value);
             
             //Stop Blinking
             clearInterval(that.readOutInterval, value);
@@ -162,4 +162,6 @@ export class BoxWithMenu{
             }
         };
     }
+    
+    update(){};
 }

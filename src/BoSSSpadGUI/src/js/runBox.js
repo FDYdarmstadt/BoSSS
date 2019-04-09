@@ -9,12 +9,19 @@ export class RunBox extends BoxWithMenu {
         this.createRunBoxButtons();
         this.registerRunBoxButtons();
         this.registerSizeChange();
+        this.ErrorIsOnDisplay = false;
     }
 
     registerSizeChange(){
         var that = this;
         this.readoutLI.addEventListener("click", () => that.parentBox.toggleEnlarged());
-    }  
+    } 
+
+    update(){
+        if(!this.parentBox.IsSmall){
+            this.adaptHeightToContent();
+        }
+    }
 
     enlarge(){
         this.div.classList.add("enlargedRunBox");
@@ -22,12 +29,17 @@ export class RunBox extends BoxWithMenu {
         BoxWithMenu.zIndex = BoxWithMenu.zIndex + 1;
 
         this.readoutLI.style.overflow = "hidden";
+        this.adaptHeightToContent();
+    }
 
-        var height = this.readoutLI.scrollHeight + 29;
+    adaptHeightToContent(){
+        var innerHeight = this.readoutLI.scrollHeight;
+        var height = innerHeight + 27;
         var parentHeight = this.parentBox.getHeight();
         if(height > parentHeight){
             this.div.style.height = height  + "px";
         }
+
     }
 
     reduce(){
@@ -48,15 +60,15 @@ export class RunBox extends BoxWithMenu {
     }
 
     registerRunBoxButtons(){
-        var that = this;
         var status = this.parentBox.parentList.status; 
-        this.lastErrorButton.onclick = async function(){
+        var that = this;
+        this.lastErrorButton.onclick = function(){
             if (!status.isLocked()){
-              status.toggleLock();
-              await that.executeCommand("LastError");
-              status.toggleLock();
+                status.toggleLock();
+                that.toggleDisplayError(); 
+                status.toggleLock();
             }      
-        };
+        }
     }
 
     lastErrorSymbol(){
@@ -86,27 +98,52 @@ export class RunBox extends BoxWithMenu {
       }
     }
 
-    async createReadoutContent( readoutNode, command){
-        var result = await boSSSRuntime.runCommand(command);
-        
-        //Write readout into HTML Element
-        var text = document.createTextNode(result.Item1);
-        if(this.hasReadoutContent){
-          readoutNode.replaceChild(text, readoutNode.firstChild);
+    toggleDisplayError(){
+        if(!this.ErrorIsOnDisplay){
+            this.display(this.error);
+        }else{
+            this.display(this.result);
         }
-        else{
-          this.hasReadoutContent = true;
-          readoutNode.appendChild(text);
+        this.ErrorIsOnDisplay = !this.ErrorIsOnDisplay;
+    }
+
+    display(boSSSobject){
+        if(boSSSobject != null){
+            var readoutNode = this.readoutLI;
+            var text = document.createTextNode(boSSSobject.Item1);
+            if(this.hasReadoutContent){
+              readoutNode.replaceChild(text, readoutNode.firstChild);
+            }
+            else{
+              this.hasReadoutContent = true;
+              readoutNode.appendChild(text);
+            }
+            if(this.img != null){
+              readoutNode.removeChild(this.img);
+              this.img = null;
+            }
+            if (boSSSobject.Item2 != null){
+               
+              this.img = new Image();
+              this.img.src = 'data:image/gif;base64,'+ boSSSobject.Item2;
+              readoutNode.appendChild(this.img);
+            }
         }
-        if(this.img != null){
-          readoutNode.removeChild(this.img);
-          this.img = null;
-        }
-        if (result.Item2 != null){
-           
-          this.img = new Image();
-          this.img.src = 'data:image/gif;base64,'+ result.Item2;
-          readoutNode.appendChild(this.img);
+        this.update();
+    }
+
+    async createReadoutContent(command){
+        this.result = await boSSSRuntime.runCommand(command);
+        this.error = await boSSSRuntime.runCommand("LastError");
+        this.ErrorIsOnDisplay = false;
+        this.display(this.result);
+    }
+
+    getResultString(){
+        if(this.result != null){
+            return this.result.Item1
+        }else{
+            return "";
         }
     }
 }

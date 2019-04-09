@@ -37,7 +37,7 @@ html{
         float: left;
         height: 100%;
     }
-    
+
     .gutter {
         background: #bbb;
         background-repeat: no-repeat;
@@ -94,7 +94,7 @@ html{
 
     .enlargedRunBox{
         background-color: #f2e6ff;
-        border: 5px solid #cc99ff;
+        border: 4px solid #cc99ff;
     }
 
     .enlargedSelection{
