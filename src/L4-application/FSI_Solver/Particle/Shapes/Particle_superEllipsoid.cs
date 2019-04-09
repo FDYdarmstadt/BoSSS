@@ -140,6 +140,11 @@ namespace BoSSS.Application.FSI_Solver {
             Console.WriteLine("Particle Reynolds number:  " + particleReynolds);
             return particleReynolds;
         }
+
+        override public double[] GetLengthScales()
+        {
+            return new double[] { length_P, thickness_P };
+        }
     }
 }
 

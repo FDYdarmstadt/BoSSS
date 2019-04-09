@@ -11,41 +11,35 @@ namespace VoronoiTests.Database
 {
     class DatabaseTest : RunnableTest
     {
+        static Database database;
+
         public static IDatabaseInfo Database {
             get {
-                return database ?? (database = InitializeDatabase());
+                if(database == null)
+                {
+                    database = InitializeDatabase();
+                }
+                return database.DatabaseInfo;
             }
         }
 
-        static IDatabaseInfo database;
-
-        public static IDatabaseInfo InitializeDatabase()
+        static Database InitializeDatabase()
         {
-            string databasePath = "..\\..\\bosss_TestDatabase_Voronoi";
-            IDatabaseInfo emptyDatabase = CreateEmptyDatabase(databasePath);
+            Database emptyDatabase = new Database("..\\..\\bosss_TestDatabase_Voronoi");
             return emptyDatabase;
         }
 
-        static IDatabaseInfo CreateEmptyDatabase(string basePath)
+        public override void SetUp()
         {
-            if (Directory.Exists(basePath))
-            {
-                throw new Exception("Database folder already exists");
-            }
-
-            Directory.CreateDirectory(basePath);
-            Directory.CreateDirectory(Path.Combine(basePath, StandardFsDriver.DistVectorDataDir));
-            Directory.CreateDirectory(Path.Combine(basePath, StandardFsDriver.GridsDir));
-            Directory.CreateDirectory(Path.Combine(basePath, StandardFsDriver.SessionsDir));
-            Directory.CreateDirectory(Path.Combine(basePath, StandardFsDriver.TimestepDir));
-            IDatabaseInfo emptyDatabase = new DatabaseInfo(basePath);
-            return emptyDatabase;
+            base.SetUp();
+            database = InitializeDatabase();
         }
 
-        [TestFixtureTearDown]
-        public static void DeleteDatabase()
+        public override void TearDown()
         {
-            Directory.Delete(database.Path, true);
+            if(database != null)
+                database.DeleteDatabase();
+            base.TearDown();
         } 
     }
 }

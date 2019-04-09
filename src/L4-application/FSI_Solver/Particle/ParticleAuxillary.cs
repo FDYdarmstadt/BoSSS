@@ -10,12 +10,17 @@ namespace BoSSS.Application.FSI_Solver {
 
         internal void SaveValueOfLastTimestep(List<double> variable) {
             variable.Insert(0, new double());
+            variable[0] = 0;
             variable.RemoveAt(variable.Count - 1);
         }
 
         internal void SaveMultidimValueOfLastTimestep(List<double[]> variable) {
             int Dim = variable[0].Length;
             variable.Insert(0, new double[Dim]);
+            for (int d = 0; d < Dim; d++)
+            {
+                variable[0][d] = 0;
+            }
             variable.RemoveAt(variable.Count - 1);
         }
 

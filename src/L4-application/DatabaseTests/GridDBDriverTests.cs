@@ -9,7 +9,7 @@ using BoSSS.Platform;
 
 namespace BoSSS.Application.DatabaseTests
 {
-    class GridDBDriverTests : TestDatabase
+    class GridDBDriverTests : DatabaseTest
     {
         (IGrid, IGridInfo) LoadGrid()
         {
