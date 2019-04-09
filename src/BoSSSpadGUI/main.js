@@ -56,7 +56,7 @@ function AreYouSure_Save(func){
                     buttons: ["save", "discard"],
                     message: "Do you want to save the changes you have made?",
                     defaultId: 0,
-                    cancelId: 1
+                    cancelId: 2
                 });
                 //Save changes
                 if(response == 0)
@@ -70,6 +70,7 @@ function AreYouSure_Save(func){
                 }
                 //cancel: keep open
                 else if(response == 2){
+                    //Do nothing
                 }
             }else{
                 func();
