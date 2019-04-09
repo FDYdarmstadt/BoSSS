@@ -644,7 +644,7 @@ namespace BoSSS.Application.SipPoisson {
 
         protected void CustomItCallback(int iterIndex, double[] currentSol, double[] currentRes, MultigridOperator Mgop) {
             //noch nix ...
-            MaxMlevel = Mgop.LevelIndex;
+            MaxMlevel = Mgop.LevelIndex+1;
         }
 
         /// <summary>

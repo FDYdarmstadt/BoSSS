@@ -410,5 +410,16 @@ namespace BoSSS.Solution.AdvancedSolvers
             if (this.Precond != null)
                 this.Precond.ResetStat();
         }
+        public ISolverSmootherTemplate Clone() {
+            SoftGMRES Clone = new SoftGMRES();
+            Clone.IterationCallback = this.IterationCallback;
+            Clone.MaxKrylovDim = this.MaxKrylovDim;
+            Clone.m_MaxIterations = this.m_MaxIterations;
+                if (this.Precond != null)
+                    Clone.Precond = this.Precond.Clone();
+            Clone.m_Tolerance = this.m_Tolerance;
+            return Clone;
+        }
+
     }
 }

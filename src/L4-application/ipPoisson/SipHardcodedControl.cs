@@ -136,7 +136,7 @@ namespace BoSSS.Application.SipPoisson {
         /// <summary>
         /// Test on a Cartesian grid, with an exact polynomial solution.
         /// </summary>
-        public static SipControl TestCartesian3D(int xRes = 8, double xStretch = 1.0, int yRes = 16, double yStretch = 1.0, int zRes = 16, double zStretch = 1.0) {
+        public static SipControl TestCartesian3D(int xRes = 8, double xStretch = 1.0, int yRes = 8, double yStretch = 1.0, int zRes = 8, double zStretch = 1.0) {
             var R = new SipControl();
             R.ProjectName = "ipPoison/cartesian";
             R.savetodb = false;
@@ -167,9 +167,9 @@ namespace BoSSS.Application.SipPoisson {
                 return grd;
             };
 
-            R.LinearSolver.SolverCode = LinearSolverConfig.Code.exp_softpcg_mg;
-            R.LinearSolver.NoOfMultigridLevels = 5;
-            R.LinearSolver.TargetBlockSize = 1;
+            R.LinearSolver.SolverCode = LinearSolverConfig.Code.exp_softpcg_jacobi_mg;
+            R.LinearSolver.NoOfMultigridLevels = 10;
+            R.LinearSolver.TargetBlockSize = 8;
 
             R.AddBoundaryValue(BoundaryType.Dirichlet.ToString());
             R.AddBoundaryValue(BoundaryType.Neumann.ToString());
