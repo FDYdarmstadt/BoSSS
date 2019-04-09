@@ -140,7 +140,8 @@ namespace BoSSS.Solution.XdgTimestepping {
             if (Config_LevelSetHandling == LevelSetHandling.None) {
                 m_LsTrk.IncreaseHistoryLength(0);
             } else if (Config_LevelSetHandling == LevelSetHandling.LieSplitting
-                  || Config_LevelSetHandling == LevelSetHandling.StrangSplitting) {
+                  || Config_LevelSetHandling == LevelSetHandling.StrangSplitting
+                  || Config_LevelSetHandling == LevelSetHandling.FSI_LieSplittingFullyCoupled) {
                 m_LsTrk.IncreaseHistoryLength(1);
             } else {
                 m_LsTrk.IncreaseHistoryLength(S + 1);
@@ -155,7 +156,8 @@ namespace BoSSS.Solution.XdgTimestepping {
                 m_Stack_MassMatrix = new BlockMsrMatrix[1];
             } else {
                 if (Config_LevelSetHandling == LevelSetHandling.LieSplitting
-                    || Config_LevelSetHandling == LevelSetHandling.StrangSplitting) {
+                    || Config_LevelSetHandling == LevelSetHandling.StrangSplitting
+                    || Config_LevelSetHandling == LevelSetHandling.FSI_LieSplittingFullyCoupled) {
                     m_Stack_MassMatrix = new BlockMsrMatrix[1];
                 } else {
                     m_Stack_MassMatrix = new BlockMsrMatrix[S + 1];
@@ -305,6 +307,7 @@ namespace BoSSS.Solution.XdgTimestepping {
 
                 case LevelSetHandling.LieSplitting:
                 case LevelSetHandling.StrangSplitting:
+                case LevelSetHandling.FSI_LieSplittingFullyCoupled:
                     // noop.
                     break;
 
@@ -868,7 +871,8 @@ namespace BoSSS.Solution.XdgTimestepping {
             // ----------------------
             if (Config_LevelSetHandling == LevelSetHandling.None
                 || Config_LevelSetHandling == LevelSetHandling.LieSplitting
-                || Config_LevelSetHandling == LevelSetHandling.StrangSplitting)
+                || Config_LevelSetHandling == LevelSetHandling.StrangSplitting
+                || Config_LevelSetHandling == LevelSetHandling.FSI_LieSplittingFullyCoupled)
                 m_Stack_CutCellMetrics_incHist = null;
             else {
                 m_Stack_CutCellMetrics_incHist = new CutCellMetrics[S - 1];
@@ -883,7 +887,8 @@ namespace BoSSS.Solution.XdgTimestepping {
                 m_Stack_MassMatrix_incHist = null;
             } else {
                 if (Config_LevelSetHandling == LevelSetHandling.LieSplitting
-                    || Config_LevelSetHandling == LevelSetHandling.StrangSplitting) {
+                    || Config_LevelSetHandling == LevelSetHandling.StrangSplitting
+                    || Config_LevelSetHandling == LevelSetHandling.FSI_LieSplittingFullyCoupled) {
                     m_Stack_MassMatrix_incHist = null;
                 } else {
                     m_Stack_MassMatrix_incHist = new BlockMsrMatrix[S - 1];
@@ -954,7 +959,8 @@ namespace BoSSS.Solution.XdgTimestepping {
                     updateAgglom = true;
                 }
 
-                if (this.Config_LevelSetHandling == LevelSetHandling.LieSplitting || this.Config_LevelSetHandling == LevelSetHandling.StrangSplitting) {
+                if (this.Config_LevelSetHandling == LevelSetHandling.LieSplitting || this.Config_LevelSetHandling == LevelSetHandling.StrangSplitting
+                    || Config_LevelSetHandling == LevelSetHandling.FSI_LieSplittingFullyCoupled) {
                     if (m_IterationCounter == 0) {
                         if(m_CurrentAgglomeration != null)
                             throw new ApplicationException();
@@ -972,7 +978,8 @@ namespace BoSSS.Solution.XdgTimestepping {
 
                 if (updateAgglom || m_CurrentAgglomeration == null) {
 
-                    if (this.Config_LevelSetHandling == LevelSetHandling.LieSplitting || this.Config_LevelSetHandling == LevelSetHandling.StrangSplitting) {
+                    if (this.Config_LevelSetHandling == LevelSetHandling.LieSplitting || this.Config_LevelSetHandling == LevelSetHandling.StrangSplitting
+                        || Config_LevelSetHandling == LevelSetHandling.FSI_LieSplittingFullyCoupled) {
                         // Agglomeration update in the case of splitting - agglomeration does **NOT** depend on previous time-steps
 
                         Debug.Assert(m_IterationCounter == 0);
@@ -1132,6 +1139,7 @@ namespace BoSSS.Solution.XdgTimestepping {
 
                 } else if (this.Config_LevelSetHandling == LevelSetHandling.LieSplitting
                     || this.Config_LevelSetHandling == LevelSetHandling.StrangSplitting
+                    || Config_LevelSetHandling == LevelSetHandling.FSI_LieSplittingFullyCoupled
                     || this.Config_LevelSetHandling == LevelSetHandling.None) {
                     // +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
                     // Splitting:
@@ -1362,7 +1370,8 @@ namespace BoSSS.Solution.XdgTimestepping {
             // update level-set (in the case of splitting)
             // ===========================================
             if (this.Config_LevelSetHandling == LevelSetHandling.LieSplitting
-                || this.Config_LevelSetHandling == LevelSetHandling.StrangSplitting) {
+                || this.Config_LevelSetHandling == LevelSetHandling.StrangSplitting
+                || Config_LevelSetHandling == LevelSetHandling.FSI_LieSplittingFullyCoupled) {
 
                 Debug.Assert(m_CurrentAgglomeration == null);
 
@@ -1374,9 +1383,12 @@ namespace BoSSS.Solution.XdgTimestepping {
                 //var oldCCM = this.UpdateCutCellMetrics();
 
                 // evolve the level set
-                m_LsTrk.IncreaseHistoryLength(1);
-                m_LsTrk.PushStacks();
-
+                if (Config_LevelSetHandling != LevelSetHandling.FSI_LieSplittingFullyCoupled)
+                {
+                    m_LsTrk.IncreaseHistoryLength(1);
+                    m_LsTrk.PushStacks();
+                }
+                
                 int oldPushCount = m_LsTrk.PushCount;
                 int oldVersion = m_LsTrk.VersionCnt;
 

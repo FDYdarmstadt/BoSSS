@@ -379,7 +379,7 @@ namespace BoSSS.Foundation.Grid.Aggregation {
         public IGridData iGridData {
             get {
                 if(m_GridData ==  null) {
-
+                    InitGridData();
                 }
                 return m_GridData;
             }

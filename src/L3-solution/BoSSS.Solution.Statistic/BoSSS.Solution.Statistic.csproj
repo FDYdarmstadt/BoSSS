@@ -64,6 +64,7 @@
     <Compile Include="DGField_Arithmetic.cs" />
     <Compile Include="DGField_Norms.cs" />
     <Compile Include="FieldEvaluation.cs" />
+    <Compile Include="GridHelper.cs" />
     <Compile Include="Integrator.cs" />
     <Compile Include="ISurfaceEvaluation.cs" />
     <Compile Include="Plane.cs" />

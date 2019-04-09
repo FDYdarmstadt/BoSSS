@@ -1,5 +1,7 @@
-import {RunBox, CommentBox} from './commandBoxes.js'
+import {RunBox} from './runBox.js'
+import { CommentBox} from './commentBox.js'
 import * as monaco from 'monaco-editor';
+import{Box} from './box.js'
 
 export class InteractiveList{
     constructor(element, status){
@@ -22,7 +24,13 @@ export class InteractiveList{
       }); 
       return isLoading;
     }
-  
+
+    updateBoxesInternal(){
+        for(var i = 0; i < this.boxes.length; ++i){
+            this.boxes[i].update();
+        }
+    }
+
     update(){
       if(this.boxes.length > 0){
         this.updateRange();   
@@ -299,84 +307,52 @@ export class InteractiveList{
   
     //indice Array must be sorted
     deleteBoxIndiceRange(indiceArray){
-      for(var i = 0; i < indiceArray.length; ++i){
-        this.deleteBox(indiceArray[i]-i);
-      }
+        for(var i = 0; i < indiceArray.length; ++i){
+            this.deleteBox(indiceArray[i]-i);
+        }
     }
     
     deleteBox(indice){
-      //Remove from editor
-      this.editor.removeDecoration(this.boxes[indice].id);
-  
-      //Remove from DOM
-      this.UL.removeChild(this.boxes[indice].getDomNode());
-  
-      //Remove from boxArray
-      this.boxes.splice(indice , 1);  
+        //Remove from editor
+        this.editor.removeDecoration(this.boxes[indice].id);
+    
+        //Remove from DOM
+        this.UL.removeChild(this.boxes[indice].getDomNode());
+    
+        //Remove from boxArray
+        this.boxes.splice(indice , 1);  
     }
 
     getCommandBoxValues(){
-      var myCommands = [];
-      var myResults = [];
-      for(var i = 0; i < this.boxes.length; ++i){
-        var box = this.boxes[i];
-        if(box.BoxType  === RunBox ){
-          myCommands.push(this.getSelectionValue(box));
-          try{
-            myResults.push(box.boxContent.readoutLI.firstChild.innerHTML);
-          }catch(err){
-            console.log("Did not get result: " + err );
-            myResults.push("");
-          }
+        var myCommands = [];
+        var myResults = [];
+        for(var i = 0; i < this.boxes.length; ++i){
+            var box = this.boxes[i];
+            if(box.BoxType  === RunBox ){
+                myCommands.push(this.getSelectionValue(box));
+                myResults.push(box.boxContent.getResultString());
+
+            }
         }
-      }
-      return{
-        commands : myCommands,
-        results : myResults
-      }
+        return{
+            commands : myCommands,
+            results : myResults
+        }
     }
 
     setCommandBoxValues(data){
-      var myCommands = data.Item1;
-      var myResults = data.Item2;
-      for(var i = 0; i < myCommands.length; ++i){
-        var commandBox = this.appendBox(RunBox);
-        commandBox.boxContent.setValue(myResults[i]);
-        this.editor.setValue(commandBox.range, myCommands[i]);
-      }
+        var myCommands = data.Item1;
+        var myResults = data.Item2;
+        for(var i = 0; i < myCommands.length; ++i){
+            var commandBox = this.appendBox(RunBox);
+            commandBox.boxContent.setValue(myResults[i]);
+            this.editor.setValue(commandBox.range, myCommands[i]);
+        }
     }
 
     reset(){
-      for(var i = this.boxes.length - 1; i >= 0; --i){
-        this.deleteBox(i);
-      }
+        for(var i = this.boxes.length - 1; i >= 0; --i){
+            this.deleteBox(i);
+        }
     }
 }
-  
-class Box{
-    constructor(range, BoxType, parentList){
-      this.LI = document.createElement("LI");
-      this.LI.style="position:relative";
-      this.bottomHeight;
-      this.id;
-      this.range = range;
-      this.BoxType = BoxType; 
-      this.parentList = parentList;
-      this.boxContent = new BoxType(this.LI, this);
-    }
-  
-    getDomNode(){
-      return this.LI;
-    }
-
-    setHeight(height){
-      this.LI.style.height = height +"px"; 
-    }
-    
-    setRange(range){
-      this.range = range;
-    }
-
-
-}
-  

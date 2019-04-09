@@ -83,9 +83,7 @@ namespace BoSSS.Application.FSI_Solver {
         /// </summary>
         [DataMember]
         public Func<double, double>[] anglVelocityFunc;
-
-      
-
+        
         /// <summary>
         /// The termination criterion for fully coupled/implicit level-set evolution.
         /// </summary>
