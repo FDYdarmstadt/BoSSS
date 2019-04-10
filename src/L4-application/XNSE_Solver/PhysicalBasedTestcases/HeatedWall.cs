@@ -755,9 +755,12 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             C.InitialValues_Evaluators.Add("Phi", PhiFunc);
 
             double qv = 10.0;
-
             C.InitialValues_Evaluators.Add("Temperature#A", X => Tsat);
             C.InitialValues_Evaluators.Add("Temperature#B", X => Tsat + (qv/kv)*(zi0 - X[1]));
+
+            double p0 = 10;
+            C.InitialValues_Evaluators.Add("Pressure#A", X => p0);
+            C.InitialValues_Evaluators.Add("Pressure#B", X => p0 - (0.01)*(10 - 1));
 
 
             //C.RestartInfo = new Tuple<Guid, TimestepNumber>(restartID, null);
@@ -773,7 +776,6 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             //C.AddBoundaryValue("wall_ConstantHeatFlux_lower", "HeatFlux#A", (X, t) => HeatFlux);
             C.AddBoundaryValue("wall_ConstantHeatFlux_lower", "HeatFlux#B", (X, t) => -qv);
 
-            double p0 = 10;
             C.AddBoundaryValue("pressure_Dirichlet_ZeroGradient_upper", "Pressure#A", (X,t) => p0);
 
 

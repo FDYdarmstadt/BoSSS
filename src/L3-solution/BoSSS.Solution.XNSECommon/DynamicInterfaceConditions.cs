@@ -137,7 +137,13 @@ namespace BoSSS.Solution.XNSECommon.Operator.DynamicInterfaceConditions {
 
             //Console.WriteLine("mEvap - MassFluxAtInterface: {0}", M);
 
-            double massFlux = M.Pow2() * ((1/rhoA) - (1/rhoB)) * Normal[m_d];
+            double massFlux = M.Pow2() * ((1 / rhoA) - (1 / rhoB)) * Normal[m_d];
+            //if(hVapA > 0) {
+            //    massFlux *= ((1 / rhoB) - (1 / rhoA)) * Normal[m_d];
+            //} else {
+            //    massFlux *= ((1 / rhoA) - (1 / rhoB)) * Normal[m_d];
+            //}
+
 
             double p_disp = cp.ParamsNeg[1];
 
