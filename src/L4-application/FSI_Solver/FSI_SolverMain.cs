@@ -1624,7 +1624,6 @@ namespace BoSSS.Application.FSI_Solver {
         /// Mesh refinement
         /// Very primitive refinement indicator, works on a LevelSet criterion.
         /// </summary>
-        /// 
         int LevelIndicator(int j, int CurrentLevel) {
             var LevSetCells = LsTrk.Regions.GetCutCellMask();
             var LevSetNeighbours = LsTrk.Regions.GetNearFieldMask(1);
