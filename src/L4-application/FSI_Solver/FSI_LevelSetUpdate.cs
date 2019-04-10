@@ -139,16 +139,16 @@ namespace FSI_Solver
             for (int p = 0; p < Particles.Count; p++)
             {
                 double[] ParticleScales = Particles[p].GetLengthScales();
-                double Lengthscale = ParticleScales.Min();
+                double Lengthscale = ParticleScales.Max();
                 double[] ParticlePos = Particles[p].Position[0];
-                double Upperedge = ParticlePos[1] + ParticleScales[1];
-                double Loweredge = ParticlePos[1] - ParticleScales[1];
-                double Leftedge = ParticlePos[0] - ParticleScales[0];
-                double Rightedge = ParticlePos[0] + ParticleScales[0];
+                double Upperedge = ParticlePos[1] + Lengthscale;
+                double Loweredge = ParticlePos[1] - Lengthscale;
+                double Leftedge = ParticlePos[0] - Lengthscale;
+                double Rightedge = ParticlePos[0] + Lengthscale;
                 int temp = 0;
                 for (int i = 0; i < ColoredCellsSorted.Count; i++)
                 {
-                    if (Math.Sqrt(gridData.iGeomCells.GetCellVolume(ColoredCellsSorted[i][0])) > Lengthscale)
+                    if (Math.Sqrt(gridData.iGeomCells.GetCellVolume(ColoredCellsSorted[i][0])) > ParticleScales.Min())
                         throw new ArithmeticException("Hmin of the cells is larger than the particles. Please use a finer grid (or grid refinement).");
 
                     double[] center = gridData.iLogicalCells.GetCenter(ColoredCellsSorted[i][0]);

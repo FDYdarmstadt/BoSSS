@@ -763,7 +763,6 @@ namespace BoSSS.Application.FSI_Solver {
             int[] Cells = new int[J];
             for (int p = 0; p < m_Particles.Count; p++)
             {
-                Console.WriteLine("Init Color");
                 double Hmin = Math.Sqrt(GridData.iGeomCells.GetCellVolume(0));
                 double[] ParticlePos = m_Particles[p].Position[0];
                 double ParticleAngle = m_Particles[p].Angle[0];
@@ -1007,25 +1006,17 @@ namespace BoSSS.Application.FSI_Solver {
             }
         }
 
-        private void UpdateParticleAccelerationAndDamping(Particle p, int IterationCounter, double dt, double FluidDensity)
-        {
-            if (((FSI_Control)(base.Control)).UseBenjaminsExperimentalMotionUpdate == false) {
-                p.CalculateAcceleration(dt, FluidDensity);
-
-
-            } else {
-                if (IterationCounter == 0) {
-                    if (p.neglectAddedDamping == false && p.iteration_counter_P == 0) {
-                        p.UpdateDampingTensors();
-                        ExchangeDampingTensors();
-                    }
-                    p.PredictAcceleration();
-                } else if (IterationCounter == 100) // ????????
-                  {
-                    p.PredictAccelerationWithinIteration();
-                } else {
-                    p.CalculateAcceleration(dt, FluidDensity);
+        private void UpdateParticleAccelerationAndDamping(Particle p, int IterationCounter, double dt, double FluidDensity) {
+            if (IterationCounter == 0 && ((FSI_Control)Control).Timestepper_LevelSetHandling == LevelSetHandling.FSI_LieSplittingFullyCoupled) {
+                if (p.neglectAddedDamping == false && p.iteration_counter_P == 0) {
+                    p.UpdateDampingTensors();
+                    ExchangeDampingTensors();
                 }
+                p.PredictAcceleration();
+            } else if (IterationCounter == 100 && ((FSI_Control)Control).Timestepper_LevelSetHandling == LevelSetHandling.FSI_LieSplittingFullyCoupled) {
+                p.PredictAccelerationWithinIteration();
+            } else {
+                p.CalculateAcceleration(dt, FluidDensity);
             }
         }
 
@@ -1953,15 +1944,13 @@ namespace BoSSS.Application.FSI_Solver {
                 if (ParticleColorArray[p] != 0)
                 {
                     ColoredCellMask = levelSetUpdate.CellsOneColor(GridData, ColoredCellsSorted, ParticleColorArray[p], J);
-                    CellMask Neighbors = ColoredCellMask.AllNeighbourCells();
-                    ColoredCellMask = ColoredCellMask.Union(Neighbors);
                 }
             }
             //CellMask LevSetCells = LsTrk.Regions.GetCutCellMask();
             //CellMask LevSetNeighbours = LsTrk.Regions.GetNearFieldMask(1);
             int DesiredLevel_j = 0;
             if (ColoredCellMask != null && ColoredCellMask.Contains(j)) {
-                DesiredLevel_j = 2;
+                DesiredLevel_j = 1;
             }
             //else if (LevSetNeighbours.Contains(j))
             //{

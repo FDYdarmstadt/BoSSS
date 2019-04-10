@@ -98,12 +98,7 @@ namespace BoSSS.Application.FSI_Solver {
         [DataMember]
         public double LSunderrelax = 1.0;
 
-        /// <summary>
-        /// for iterative coupling, use prediction methods for acceleration.
-        /// Introduces because the new, experimental code crashes some tests - should be removed in future.
-        /// </summary>
-        [DataMember]
-        public bool UseBenjaminsExperimentalMotionUpdate = false;
+     
 
         /// <summary>
         /// Setting <see cref="Solution.Control.AppControl.FieldOptions"/>

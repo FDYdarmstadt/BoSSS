@@ -428,13 +428,13 @@ namespace BoSSS.Application.FSI_Solver
             for (int d = 0; d< SpatialDim; d++)
             {
                 Console.WriteLine("Translational Acceleration[" + d + "] is:    " + TranslationalAcceleration[0][d]);
-                if (Math.Abs(TranslationalAcceleration[0][d]) < 1e-15 || double.IsNaN(TranslationalAcceleration[0][d]))
+                if (Math.Abs(TranslationalAcceleration[0][d]) < 1e-20 || double.IsNaN(TranslationalAcceleration[0][d]))
                     TranslationalAcceleration[0][d] = 0;
             }
 
             RotationalAcceleration[0] = Acceleration.Rotational(CoefficientMatrix, Denominator, HydrodynamicForces[0], HydrodynamicTorque[0]);
             Console.WriteLine("Rotational Acceleration is:    " + RotationalAcceleration[0]);
-            if (Math.Abs(RotationalAcceleration[0]) < 1e-15 || double.IsNaN(RotationalAcceleration[0]))
+            if (Math.Abs(RotationalAcceleration[0]) < 1e-20 || double.IsNaN(RotationalAcceleration[0]))
                 RotationalAcceleration[0] = 0;
         }
 
@@ -684,12 +684,12 @@ namespace BoSSS.Application.FSI_Solver
                 Forces[1] += (particleDensity - fluidDensity) * Area_P * GravityVertical;
             }
 
-            if (double.IsNaN(Forces[0]) || double.IsInfinity(Forces[0]))
-                throw new ArithmeticException("Error trying to calculate hydrodynamic forces (x). Value:  " + Forces[0]);
-            if (double.IsNaN(Forces[1]) || double.IsInfinity(Forces[1]))
-                throw new ArithmeticException("Error trying to calculate hydrodynamic forces (y). Value:  " + Forces[1]);
-            if (double.IsNaN(Torque) || double.IsInfinity(Torque))
-                throw new ArithmeticException("Error trying to calculate hydrodynamic torque. Value:  " + Torque);
+            //if (double.IsNaN(Forces[0]) || double.IsInfinity(Forces[0]))
+            //    throw new ArithmeticException("Error trying to calculate hydrodynamic forces (x). Value:  " + Forces[0]);
+            //if (double.IsNaN(Forces[1]) || double.IsInfinity(Forces[1]))
+            //    throw new ArithmeticException("Error trying to calculate hydrodynamic forces (y). Value:  " + Forces[1]);
+            //if (double.IsNaN(Torque) || double.IsInfinity(Torque))
+            //    throw new ArithmeticException("Error trying to calculate hydrodynamic torque. Value:  " + Torque);
 
             if (neglectAddedDamping == false) {
                 Forces[0] = Forces[0] + beta * dt * (AddedDampingTensor[0, 0] * TranslationalAcceleration[0][0] + AddedDampingTensor[1, 0] * TranslationalAcceleration[0][1] + AddedDampingTensor[0, 2] * RotationalAcceleration[0]);
