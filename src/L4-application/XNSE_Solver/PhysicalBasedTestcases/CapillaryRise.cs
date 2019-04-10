@@ -369,7 +369,9 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
                         //restartID = new Guid("02f7d2b1-7546-45b3-808f-d2b6f89d68bf"); // restart with Reinit highdt (1e-4)
                         //ts_restart = 186000;
                         //restartID = new Guid("34c3ee0e-9244-497b-9382-58b458f7b873");   // restart with Reinit highdt (5e-5)
-                        restartID = new Guid("1d31b648-d19f-4a5a-b374-cde08f8106a9");
+                        //restartID = new Guid("1d31b648-d19f-4a5a-b374-cde08f8106a9");
+
+                        restartID = new Guid("a32df5ae-393d-416a-bdd0-24a4437136fb");   //restart with sigma dt (2.5E-5)
 
                         //restartID = new Guid("2f9deaa6-fab9-48ac-9279-319a1efa5547");
 
