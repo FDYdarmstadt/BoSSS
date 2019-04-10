@@ -6,27 +6,36 @@ using System.Threading.Tasks;
 using System.Threading;
 using BoSSS.Solution;
 using NUnit.Framework;
+using BoSSS.Solution.Control;
 
 namespace VoronoiTests
 {
     /// <summary>
-    /// Abstract base class for tests.
+    ///  Base class for tests that run an BoSSS application.
     /// </summary>
-    [TestFixture]
-    public abstract class TestProgram
+    class RunnableTest : TestBench
     {
         /// <summary>
         /// Performs bootstrapping.
         /// </summary>
-        [TestFixtureSetUp]
-        public static void SetUp()
+        public override void SetUp()
         {
-            bool dummy;
             ilPSP.Environment.Bootstrap(
                 new string[0],
                 Application.GetBoSSSInstallDir(),
-                out dummy);
+                out bool dummy);
             Thread.CurrentThread.CurrentCulture = System.Globalization.CultureInfo.CurrentCulture;
         }
+
+        protected static void RunApplication(IApplication app, AppControl ctrl)
+        {
+            app.Init(ctrl);
+            app.RunSolverMode();
+            app.Dispose();
+        }
+
+        public override void Run(){}
+
+        public override void TearDown(){}
     }
 }

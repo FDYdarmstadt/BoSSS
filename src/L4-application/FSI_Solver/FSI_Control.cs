@@ -39,8 +39,10 @@ namespace BoSSS.Application.FSI_Solver {
         /// <summary>
         /// Set true if the coupling between fluid and particle should be calculated iterative, while using Lie-Splitting.
         /// </summary>
-        [DataMember]
-        public bool splitting_fully_coupled = false;
+        public bool splitting_fully_coupled()
+        {
+            return Timestepper_LevelSetHandling == LevelSetHandling.FSI_LieSplittingFullyCoupled;
+        }
 
         /// <summary>
         /// Set true if the coupling between fluid and particle should be calculated iterative, while using Lie-Splitting.
@@ -83,9 +85,7 @@ namespace BoSSS.Application.FSI_Solver {
         /// </summary>
         [DataMember]
         public Func<double, double>[] anglVelocityFunc;
-
-      
-
+        
         /// <summary>
         /// The termination criterion for fully coupled/implicit level-set evolution.
         /// </summary>

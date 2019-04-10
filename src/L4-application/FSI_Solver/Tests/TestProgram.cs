@@ -79,9 +79,9 @@ namespace BoSSS.Application.FSI_Solver {
 
                 Vector Dest_Should;
                 if (MeshRefine)
-                    Dest_Should = new Vector(0.420719299693095, -0.907165088781989);
+                    Dest_Should = new Vector(0.089255650988794, -1.08925565098877); //new Vector(0.420719299693095, -0.907165088781989);
                 else
-                    Dest_Should = new Vector(0.748512025578859, -0.578342794422653);
+                    Dest_Should = new Vector(1.80535999455424, -0.785548829055413); //new Vector(0.748512025578859, -0.578342794422653);
 
                 Vector Dest_Is = new Vector(p.Particles[0].Position[0]);
 
@@ -102,7 +102,7 @@ namespace BoSSS.Application.FSI_Solver {
                 p.Init(ctrl);
                 p.RunSolverMode();
 
-                double ForcesSoll = 9791.34127492679;
+                double ForcesSoll = 1481.4254921133;
 
                 double Forces = p.Particles[0].HydrodynamicForces[0][0];
 

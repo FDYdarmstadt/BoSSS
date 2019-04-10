@@ -176,6 +176,7 @@ namespace BoSSS.Solution.Statistic {
             // localize Points / evaluate at
             // =============================
 
+            MultidimensionalArray vertGlobalSupect1 = new MultidimensionalArray(2);
             MultidimensionalArray vertGlobalSupect = new MultidimensionalArray(2);
             MultidimensionalArray vertLocalSuspect = new MultidimensionalArray(3);
             NodeSet vertLocal = null;
@@ -193,7 +194,6 @@ namespace BoSSS.Solution.Statistic {
 
             // loop over cells ...
             for (int j = 0; j < J; j++) {
-
 
                 // code of the cell: all bounding boxes in the tree that 
                 // share a point with the cell
@@ -219,23 +219,33 @@ namespace BoSSS.Solution.Statistic {
                     continue;
 
                 // transform points to cell-local coordinates
-                vertGlobalSupect.Allocate(Len, D);
+                vertGlobalSupect1.Allocate(Len, D);
                 double[] tempPt = new double[D];
                 int tempLen = 0;
-                for (int n = 0; n < Len; n++)
-                {
+                int[] nPts = new int[Len];
+
+                for (int n = 0; n < Len; n++) {
+                    int nPt = Perm2[Perm[n + iP0]];
+                    if (!UnlocatedPoints[nPt])
+                        continue;
+
                     for (int d = 0; d < D; d++)
                         tempPt[d] = pl.Points[n + iP0, d];
 
                     if (CellBB.Contains(tempPt)) {
                         for (int d = 0; d < D; d++)
-                            vertGlobalSupect[tempLen, d] = tempPt[d];
+                            vertGlobalSupect1[tempLen, d] = tempPt[d];
+                        nPts[tempLen] = nPt;
+                        tempLen++;
                     }
                 }
                 Len = tempLen;
                 if (Len <= 0)
                     // no points in cell j
                     continue;
+
+                vertGlobalSupect.Allocate(Len, D);
+                vertGlobalSupect.Set(vertGlobalSupect1.ExtractSubArrayShallow(new int[] { 0, 0 }, new int[] { Len - 1, D - 1 }));
 
                 vertLocalSuspect.Allocate(1, Len, D);
                 CellLoc.GrdDat.TransformGlobal2Local(vertGlobalSupect, vertLocalSuspect, j, 1, 0);
@@ -256,7 +266,7 @@ namespace BoSSS.Solution.Statistic {
                 bool[] tatsaechlich = new bool[Len];
                 int Z = 0;
                 for (int n = 0; n < Len; n++) {
-                    int nPt = Perm2[Perm[n + iP0]];
+                    int nPt = nPts[n];
 
                     if (!UnlocatedPoints[nPt]) {
                         // point was already located in/assigned to another cell
@@ -312,7 +322,8 @@ namespace BoSSS.Solution.Statistic {
                 // store result of evaluation
                 z = 0;
                 for (int n = 0; n < Len; n++) {
-                    int nPt = Perm2[Perm[n + iP0]];
+                    //int nPt = Perm2[Perm[n + iP0]];
+                    int nPt = nPts[n];
 
                     if (!tatsaechlich[n])
                         continue;

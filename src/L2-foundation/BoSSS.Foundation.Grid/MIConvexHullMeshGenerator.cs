@@ -125,14 +125,14 @@ namespace BoSSS.Foundation.Grid.Voronoi
         {
             public VariableCell()
             {
-                ridgeList = new List<Ridge>();
+                ridgeList = new List<Edge>();
             }
 
             public bool boundary = false;
 
-            List<Ridge> ridgeList;
+            List<Edge> ridgeList;
 
-            public void Insert(Ridge a)
+            public void Insert(Edge a)
             {
                 ridgeList.Add(a);
             }
@@ -141,28 +141,28 @@ namespace BoSSS.Foundation.Grid.Voronoi
             {
                 if (!boundary)
                 {
-                    Ridges = GetRidges();
+                    Edges = GetRidges();
                     Vertices = GetVertices();
                 }
                 else
                 {
                     //Empty Ridges
-                    Ridges = ridgeList.ToArray();
-                    for(int i = 0; i < Ridges.Length; ++i)
+                    Edges = ridgeList.ToArray();
+                    for(int i = 0; i < Edges.Length; ++i)
                     {
-                        Ridges[i].IsBoundary = true;
+                        Edges[i].IsBoundary = true;
                     }
                 }
                 
             }
 
             //This should be possible in nlogn time!!111
-            Ridge[] GetRidges()
+            Edge[] GetRidges()
             {
                 //Remove zero Ridges
                 for (int i = 0; i < ridgeList.Count(); ++i)
                 {
-                    Ridge c_i = ridgeList[i];
+                    Edge c_i = ridgeList[i];
                     if (c_i.End.ID == c_i.Start.ID)
                     {
                         ridgeList.RemoveAt(i);
@@ -170,16 +170,16 @@ namespace BoSSS.Foundation.Grid.Voronoi
                 }
                 for (int i = 0; i < ridgeList.Count() - 2; ++i)
                 {
-                    Ridge c_i = ridgeList[i];
+                    Edge c_i = ridgeList[i];
                     for ( int j = i + 1; j < ridgeList.Count(); ++j)
                     {
-                        Ridge c_j = ridgeList[j];
+                        Edge c_j = ridgeList[j];
                         if (c_i.End.ID == c_j.Start.ID)
                         {
                             //Ridge is in order
                             if(j != i + 1)
                             {
-                                Ridge tmp = ridgeList[i + 1];
+                                Edge tmp = ridgeList[i + 1];
                                 ridgeList[i + 1] = c_j;
                                 ridgeList[j] = tmp;
                             }
@@ -192,10 +192,10 @@ namespace BoSSS.Foundation.Grid.Voronoi
 
             Vertex[] GetVertices()
             {
-                Vertex[] verts = new Vertex[Ridges.Length]; 
-                for(int i = 0; i < Ridges.Length ; ++i)
+                Vertex[] verts = new Vertex[Edges.Length]; 
+                for(int i = 0; i < Edges.Length ; ++i)
                 {
-                    verts[i] = Ridges[i].Start;
+                    verts[i] = Edges[i].Start;
                 }
                 return verts;
             }
@@ -296,13 +296,13 @@ namespace BoSSS.Foundation.Grid.Voronoi
                             {
                                 (int k, int j) = OpposingIndices(i);
                                 //Create Ridges
-                                Ridge ridgeOutwards = new Ridge
+                                Edge ridgeOutwards = new Edge
                                 {
                                     Start = delaCell.Circumcenter,
                                     End = neighbor.Circumcenter,
                                     Cell = voronoiCells[k]
                                 };
-                                Ridge ridgeInwards = new Ridge
+                                Edge ridgeInwards = new Edge
                                 {
                                     Start = neighbor.Circumcenter,
                                     End = delaCell.Circumcenter,

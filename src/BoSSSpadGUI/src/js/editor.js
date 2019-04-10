@@ -156,6 +156,14 @@ export class Editor{
     getSelection(){
         return this.monaco.getSelection();
     }
+
+    setReadonly(){
+        this.monaco.updateOptions({ readOnly: true });
+    }
+
+    unsetReadonly(){
+        this.monaco.updateOptions({ readOnly: false });
+    }
 }
 
 self.MonacoEnvironment = {

@@ -53,7 +53,7 @@ namespace BoSSS.Solution.NSECommon {
         PhysicsMode physicsMode;
         double phystime;
         bool unsteady;
-
+        SinglePhaseField ThermodynamicPressure;
         /// <summary>
         /// Ctor.
         /// <param name="HeatReleaseFactor">Heat release computed from the sum of the product of the stoichiometric coefficient, partial heat capacity and molar mass of species alpha for all species. I.e.: sum(alpha = 1.. ns)[v_\alpha cp_alpha M_alpha]. Must be computed locally for non-constant partial heat capacities in later iterations of the code.</param>
@@ -66,9 +66,12 @@ namespace BoSSS.Solution.NSECommon {
         /// <param name="OneOverMolarMass0MolarMass1"> 1/(M_infty^(a + b -1) * MolarMassFuel^a * MolarMassOxidizer^b). M_infty is the reference for the molar mass steming from non-dimensionalisation of the governing equations.</param>
         /// <param name="EoS">Material law</param>
         /// <param name="EqType">Temperature" for temperature equation. "MassFraction" for a MassFraction balance</param>
+        /// <param name="physicsMode"></param>
+        /// <param name="phystime"></param>
+        /// <param name="unsteady"></param>
         /// <param name="SpeciesIndex">(optional). Necessary for "MassFraction" EqType. Species index: 0 for fuel, 1 for oxidizer, 2 for CO2 and 3 for H2O.</param>
         /// </summary>
-        public RHSManuSourceTransportEq(double HeatReleaseFactor, double Reynolds, double Prandtl, double Schmidt, double[] StoichiometricCoefficients, double[] ReactionRateConstants, double[] MolarMasses, double OneOverMolarMass0MolarMass1, MaterialLaw EoS, String EqType, PhysicsMode physicsMode,double phystime, bool unsteady,  int SpeciesIndex = -1) {
+        public RHSManuSourceTransportEq(double HeatReleaseFactor, double Reynolds, double Prandtl, double Schmidt, double[] StoichiometricCoefficients, double[] ReactionRateConstants, double[] MolarMasses, double OneOverMolarMass0MolarMass1, MaterialLaw EoS, String EqType, PhysicsMode physicsMode,double phystime, bool unsteady, SinglePhaseField ThermodynamicPressure, int SpeciesIndex = -1) {
             this.HeatReleaseFactor = HeatReleaseFactor;
             this.ReynoldsNumber = Reynolds;
             this.PrandtlNumber = Prandtl;
@@ -91,7 +94,7 @@ namespace BoSSS.Solution.NSECommon {
 
             this.MolarMasses = MolarMasses;
             this.OneOverMolarMass0MolarMass1 = OneOverMolarMass0MolarMass1;
-
+            this.ThermodynamicPressure = ThermodynamicPressure;
 
         }
 
@@ -117,7 +120,8 @@ namespace BoSSS.Solution.NSECommon {
             double x_ = x[0];
             double y_ = x[1];
             double t_ = 0.0;
-            double p0 = 1.0;
+            double p0 = ThermodynamicPressure.GetMeanValue(3);
+
             double M1 = MolarMasses[0]; double M2 = MolarMasses[1]; double M3 = MolarMasses[2]; double M4 = MolarMasses[3];
             double alpha1 = 0.3;
             double alpha2 = 0.6;

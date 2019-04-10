@@ -56,7 +56,7 @@ function AreYouSure_Save(func){
                     buttons: ["save", "discard"],
                     message: "Do you want to save the changes you have made?",
                     defaultId: 0,
-                    cancelId: 1
+                    cancelId: 2
                 });
                 //Save changes
                 if(response == 0)
@@ -70,6 +70,7 @@ function AreYouSure_Save(func){
                 }
                 //cancel: keep open
                 else if(response == 2){
+                    //Do nothing
                 }
             }else{
                 func();
@@ -122,13 +123,21 @@ class BoSSSMenu{
                         label: 'Save File',
                         accelerator: 'CmdOrCtrl+S',
 						click() {
-							that.saveFile();
+                            try{
+                                that.saveFile();
+                            }catch(e){
+                                console.log(e);
+                            }
 						}
 					},
 					{
 						label: 'Save File As...',
 						click() {
-							that.saveFileAs();
+                            try{
+                                that.saveFileAs();
+                            }catch(e){
+                                console.log(e);
+                            }
 						}
 					}
 				]
@@ -160,7 +169,7 @@ class BoSSSMenu{
                     {
                         label: 'Interrupt current command',
                         click(){
-                            that.interruptCurrentComand();
+                            that.interruptCurrentCommand();
                         }
                     },
                     {
@@ -217,8 +226,8 @@ class BoSSSMenu{
         this.mainWindow.webContents.executeJavaScript( command );
     }
 
-    interruptCurrentComand(){
-        var command = 'BoSSSpad.interruptCurrentComand();';
+    interruptCurrentCommand(){
+        var command = 'BoSSSpad.interruptCurrentCommand();';
         this.mainWindow.webContents.executeJavaScript( command );
     }
 

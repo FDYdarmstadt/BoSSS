@@ -22,23 +22,23 @@ namespace BoSSS.Foundation.Grid.Voronoi
         }
     }
 
-    class Ridge
+    class Edge
     {
         public bool IsBoundary = false;
-        public Ridge Twin { get; set; }
+        public Edge Twin { get; set; }
         public Cell Cell { get; set; }
         public Vertex Start { get; set; }
         public Vertex End { get; set; }
     }
 
-    class RidgeComparer : EqualityComparer<Ridge>
+    class EdgeComparer : EqualityComparer<Edge>
     {
-        public override bool Equals(Ridge x, Ridge y)
+        public override bool Equals(Edge x, Edge y)
         {
             return ((x.Start.ID == y.Start.ID && x.End.ID == y.End.ID) || (x.Start.ID == y.End.ID && x.End.ID == y.Start.ID));
         }
 
-        public override int GetHashCode(Ridge obj)
+        public override int GetHashCode(Edge obj)
         {
             //http://eternallyconfuzzled.com/tuts/algorithms/jsw_tut_hashing.aspx 
             //If x == y hash must be hash(x) = hash(y)
@@ -57,7 +57,7 @@ namespace BoSSS.Foundation.Grid.Voronoi
     {
         public int ID { get; set; }
         public Vertex[] Vertices { get; set; }
-        public Ridge[] Ridges { get; set; }
+        public Edge[] Edges { get; set; }
         public int IntersectionVertex { get; set; }
         public Vector VoronoiNode { get; set; }
     }
@@ -135,80 +135,80 @@ namespace BoSSS.Foundation.Grid.Voronoi
             mesh = Mesh;
         }
 
-        public Cell getNeighbour(Ridge ridge)
+        public Cell getNeighbour(Edge ridge)
         {
             return ridge.Twin.Cell;
         }
 
-        public void InsertRidgesAndVertices(params Ridge[] additionalRidges)
+        public void InsertEdgesAndVertices(params Edge[] additionalEdges)
         {
-            Cell cell = additionalRidges[0].Cell;
-            int countAdditionalRidges = additionalRidges.Length;
-            Ridge[] newRidges = new Ridge[cell.Ridges.Length + countAdditionalRidges];
+            Cell cell = additionalEdges[0].Cell;
+            int countAdditionalRidges = additionalEdges.Length;
+            Edge[] newRidges = new Edge[cell.Edges.Length + countAdditionalRidges];
             bool notInsertedYet = true;
-            for (int i = 0; i < cell.Ridges.Length; ++i)
+            for (int i = 0; i < cell.Edges.Length; ++i)
             {
                 if (notInsertedYet)
                 {
-                    newRidges[i] = cell.Ridges[i];
+                    newRidges[i] = cell.Edges[i];
                 }
                 else
                 {
-                    newRidges[i + countAdditionalRidges] = cell.Ridges[i];
+                    newRidges[i + countAdditionalRidges] = cell.Edges[i];
                 }
-                if (notInsertedYet && (additionalRidges[0].Start.ID == cell.Ridges[i].End.ID))
+                if (notInsertedYet && (additionalEdges[0].Start.ID == cell.Edges[i].End.ID))
                 {
                     for (int k = 0; k < countAdditionalRidges; ++k)
                     {
-                        newRidges[i + k + 1] = additionalRidges[k];
+                        newRidges[i + k + 1] = additionalEdges[k];
                     }
 
                     notInsertedYet = false;
                 }
             }
-            cell.Ridges = newRidges;
+            cell.Edges = newRidges;
 
             Vertex[] newVertices = new Vertex[cell.Vertices.Length + countAdditionalRidges];
-            for (int i = 0; i < cell.Ridges.Length; ++i)
+            for (int i = 0; i < cell.Edges.Length; ++i)
             {
                 newVertices[i] = newRidges[i].Start;
             }
             cell.Vertices = newVertices;
         }
 
-        public void InsertRidgesAndVertices(Ridge[] newRidges, Ridge[] newNeighborRidges)
+        public void InsertEdgesAndVertices(Edge[] newEdge, Edge[] newNeighborEdges)
         {
-            Cell cell = newRidges[0].Cell;
-            Cell emptyNeighCell = newNeighborRidges[0].Cell;
-            Ridge[] oldRidges = cell.Ridges;
+            Cell cell = newEdge[0].Cell;
+            Cell emptyNeighCell = newNeighborEdges[0].Cell;
+            Edge[] oldRidges = cell.Edges;
 
-            List<Ridge> cellRidges = null;
-            List<Ridge> emptyNeighCellRidges = null;
-            List<Ridge> workerA = new List<Ridge>(newRidges.Length);
-            List<Ridge> workerB = new List<Ridge>(newRidges.Length);
+            List<Edge> cellRidges = null;
+            List<Edge> emptyNeighCellRidges = null;
+            List<Edge> workerA = new List<Edge>(newEdge.Length);
+            List<Edge> workerB = new List<Edge>(newEdge.Length);
             bool workerAIsActive = true;
-            List<Ridge> tmp = workerA;
+            List<Edge> tmp = workerA;
 
             //Add new Ridges
             for (int i = 0; i < oldRidges.Length; ++i)
             {
-                Ridge activeR = oldRidges[i];
-                if (activeR.Start.ID == newRidges[0].Start.ID)
+                Edge activeR = oldRidges[i];
+                if (activeR.Start.ID == newEdge[0].Start.ID)
                 {
                     cellRidges = tmp;
-                    for (int j = 0; j < newRidges.Length; ++j)
+                    for (int j = 0; j < newEdge.Length; ++j)
                     {
-                        cellRidges.Add(newRidges[j]);
+                        cellRidges.Add(newEdge[j]);
                     }
                     tmp = workerAIsActive ? workerB : workerA;
                     workerAIsActive = !workerAIsActive;
                 }
-                if (activeR.Start.ID == newNeighborRidges[0].Start.ID)
+                if (activeR.Start.ID == newNeighborEdges[0].Start.ID)
                 {
                     emptyNeighCellRidges = tmp;
-                    for (int j = 0; j < newNeighborRidges.Length; ++j)
+                    for (int j = 0; j < newNeighborEdges.Length; ++j)
                     {
-                        emptyNeighCellRidges.Add(newNeighborRidges[j]);
+                        emptyNeighCellRidges.Add(newNeighborEdges[j]);
                     }
 
                     tmp = workerAIsActive ? workerB : workerA;
@@ -217,40 +217,40 @@ namespace BoSSS.Foundation.Grid.Voronoi
                 tmp.Add(activeR);
             }
 
-            cell.Ridges = cellRidges.ToArray();
-            emptyNeighCell.Ridges = emptyNeighCellRidges.ToArray();
+            cell.Edges = cellRidges.ToArray();
+            emptyNeighCell.Edges = emptyNeighCellRidges.ToArray();
 
             //Update AllRidges
-            for (int i = 0; i < cell.Ridges.Length; ++i)
+            for (int i = 0; i < cell.Edges.Length; ++i)
             {
-                cell.Ridges[i].Cell = cell;
+                cell.Edges[i].Cell = cell;
             }
-            for (int i = 0; i < emptyNeighCell.Ridges.Length; ++i)
+            for (int i = 0; i < emptyNeighCell.Edges.Length; ++i)
             {
-                emptyNeighCell.Ridges[i].Cell = emptyNeighCell;
+                emptyNeighCell.Edges[i].Cell = emptyNeighCell;
             }
 
             //Vertices
-            Vertex[] newVertices = new Vertex[cell.Ridges.Length];
-            for (int i = 0; i < cell.Ridges.Length; ++i)
+            Vertex[] newVertices = new Vertex[cell.Edges.Length];
+            for (int i = 0; i < cell.Edges.Length; ++i)
             {
-                newVertices[i] = cell.Ridges[i].Start;
+                newVertices[i] = cell.Edges[i].Start;
             }
             cell.Vertices = newVertices;
 
-            Vertex[] newNeighVertices = new Vertex[emptyNeighCell.Ridges.Length];
-            for (int i = 0; i < emptyNeighCell.Ridges.Length; ++i)
+            Vertex[] newNeighVertices = new Vertex[emptyNeighCell.Edges.Length];
+            for (int i = 0; i < emptyNeighCell.Edges.Length; ++i)
             {
-                newNeighVertices[i] = emptyNeighCell.Ridges[i].Start;
+                newNeighVertices[i] = emptyNeighCell.Edges[i].Start;
             }
             emptyNeighCell.Vertices = newNeighVertices;
 
         }
 
-        public Vertex DivideRidge(Ridge ridge, double alpha, out Ridge newRidge)
+        public Vertex DivideEdge(Edge edge, double alpha, out Edge newEdge)
         {
-            Vector start = ridge.Start.Position;
-            Vector end = ridge.End.Position;
+            Vector start = edge.Start.Position;
+            Vector end = edge.End.Position;
 
             Vector intersection = start * (1 - alpha) + end * alpha;
             Vertex newVertex = new Vertex
@@ -259,44 +259,44 @@ namespace BoSSS.Foundation.Grid.Voronoi
             };
             AddVertex(newVertex);
 
-            newRidge = new Ridge
+            newEdge = new Edge
             {
                 Start = newVertex,
-                End = ridge.End,
-                Cell = ridge.Cell
+                End = edge.End,
+                Cell = edge.Cell
             };
-            Ridge newRidgeTwin = new Ridge
+            Edge newRidgeTwin = new Edge
             {
                 End = newVertex,
-                Start = ridge.End,
-                Cell = ridge.Twin.Cell,
-                Twin = newRidge
+                Start = edge.End,
+                Cell = edge.Twin.Cell,
+                Twin = newEdge
             };
-            newRidge.Twin = newRidgeTwin;
+            newEdge.Twin = newRidgeTwin;
 
-            ridge.End = newVertex;
-            ridge.Twin.Start = newVertex;
+            edge.End = newVertex;
+            edge.Twin.Start = newVertex;
 
-            InsertRidgesAndVertices(newRidge);
-            InsertRidgesAndVertices(newRidgeTwin);
+            InsertEdgesAndVertices(newEdge);
+            InsertEdgesAndVertices(newRidgeTwin);
 
             return newVertex;
         }
 
-        public void CreateRidges(Vertex[] vertices, Cell cell, Cell neighborCell, out Ridge[] ridges, out Ridge[] twinRidges)
+        public void CreateEdge(Vertex[] vertices, Cell cell, Cell neighborCell, out Edge[] ridges, out Edge[] twinEdges)
         {
             int count = vertices.Length - 1;
-            ridges = new Ridge[count];
-            twinRidges = new Ridge[count];
+            ridges = new Edge[count];
+            twinEdges = new Edge[count];
             for (int i = 0; i < count; ++i)
             {
-                Ridge ridge = new Ridge
+                Edge ridge = new Edge
                 {
                     Start = vertices[i],
                     End = vertices[i + 1],
                     Cell = cell
                 };
-                Ridge twinRidge = new Ridge
+                Edge twinRidge = new Edge
                 {
                     Start = vertices[i + 1],
                     End = vertices[i],
@@ -306,7 +306,7 @@ namespace BoSSS.Foundation.Grid.Voronoi
                 };
                 ridge.Twin = twinRidge;
                 ridges[i] = ridge;
-                twinRidges[count - 1 - i] = twinRidge;
+                twinEdges[count - 1 - i] = twinRidge;
             }
         }
 
@@ -329,9 +329,9 @@ namespace BoSSS.Foundation.Grid.Voronoi
             visited[cell.ID] = true;
             yield return cell;
 
-            foreach (Ridge ridge in cell.Ridges)
+            foreach (Edge edge in cell.Edges)
             {
-                Ridge newRidge = ridge.Twin;
+                Edge newRidge = edge.Twin;
                 if (!visited[newRidge.Cell.ID] && !newRidge.IsBoundary)
                 {
                     foreach (Cell neighbor in YieldConnectedCells(newRidge.Cell, visited))
@@ -360,22 +360,23 @@ namespace BoSSS.Foundation.Grid.Voronoi
                 Cell current = cells.First.Value;
                 yield return current;
                 cells.RemoveFirst();
-                foreach (Ridge ridge in current.Ridges)
+                foreach (Edge edge in current.Edges)
                 {
-                    Ridge newRidge = ridge.Twin;
-                    if (!visited[newRidge.Cell.ID] && !newRidge.IsBoundary)
+                    Edge newEdge = edge.Twin;
+                    if (!visited[newEdge.Cell.ID] && !newEdge.IsBoundary)
                     {
-                        cells.AddLast(newRidge.Cell);
-                        visited[newRidge.Cell.ID] = true;
+                        cells.AddLast(newEdge.Cell);
+                        visited[newEdge.Cell.ID] = true;
                     }
                 }
             }
         }
 
-        public AggregationGrid ToAggregationGrid(Cell insideCell)
+        (GridCommons grid, int[][] aggregation, MultidimensionalArray nodes) GetVoronoiData(Cell insideCell)
         {
             List<BoSSS.Foundation.Grid.Classic.Cell> cellsBoSSS = new List<BoSSS.Foundation.Grid.Classic.Cell>();
-            List<int[]> aggregationBoSSS = new List<int[]>();
+            List<int[]> aggregation = new List<int[]>();
+            MultidimensionalArray nodes = MultidimensionalArray.Create(Cells.Count, 2);
             foreach (Cell cell in ConnectedCells_Iterative(insideCell))
             {
                 //Convert to BoSSSCell : Triangulate
@@ -425,19 +426,20 @@ namespace BoSSS.Foundation.Grid.Voronoi
                     Agg2Pt[iTri] = cellsBoSSS.Count;
                     cellsBoSSS.Add(Cj);
                 }
-                aggregationBoSSS.Add(Agg2Pt);
+                aggregation.Add(Agg2Pt);
             }
 
             GridCommons grd;
             grd = new Grid2D(Triangle.Instance);
             grd.Cells = cellsBoSSS.ToArray();
-            //grd.EdgeTagNames.Add(1, BoundaryType.Dirichlet.ToString());
-            //grd.Plot2DGrid();
-            //grd.DefineEdgeTags(X => (byte)1);
+            return (grd, aggregation.ToArray(), nodes);
+        } 
 
-            // aggregation grid
-            var agrd = new AggregationGrid(grd, aggregationBoSSS.ToArray());
-            return agrd;
+        public VoronoiGrid ToVoronoiGrid(Cell insideCell)
+        {
+            (GridCommons grid, int[][] aggregation, MultidimensionalArray nodes) = GetVoronoiData(insideCell);
+            VoronoiGrid voronoiGrid = new VoronoiGrid(grid, aggregation, nodes);
+            return voronoiGrid;
         }
 
         #region IIdMesh
