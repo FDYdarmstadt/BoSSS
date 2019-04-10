@@ -6,7 +6,7 @@ import Split from "split.js";
 import {Range as monacoRange} from 'monaco-editor';
 import {BoxWithMenu} from './commandBoxes.js'
 import Status from './status.js'
-require('../css/bossspad.css');
+require('./css/bossspad.css');
 
 export class BoSSSpad{
     constructor(element){
