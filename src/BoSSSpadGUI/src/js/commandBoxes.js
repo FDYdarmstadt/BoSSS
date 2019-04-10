@@ -132,6 +132,34 @@ export class BoxWithMenu{
         return this.executeCommand(value);
     }
 
+    async runUntilHere(){
+        var boxSubarray = this.parentBox.parentList.getAllBoxesUntil(this.parentBox, this.constructor.prototype.constructor);
+        //Change Backgroundcolor
+        await BoxWithMenu.runBoxes(boxSubarray);
+    }
+
+    static async runBoxes(boxArray){
+        for(var i = 1; i < boxArray.length; ++i){
+            var box = boxArray[i].boxContent;
+            if(box.IsSelectedToRun){
+                BoxWithMenu.AddToBoxesWaitingForWorkList(box);
+            }
+        }
+        //Start calculation in respective order
+        for(var i = 0; i < boxArray.length; ++i){
+            if(BoxWithMenu.abort == true){
+                BoxWithMenu.abort = false;
+                break; 
+            }
+            var box = boxArray[i].boxContent;
+
+            if(box.IsSelectedToRun){
+                await box.run();
+                BoxWithMenu.RemoveFromBoxesWaitingForWorkList(box);
+            }
+        }
+    }
+
     executeCommand(value){
         var that = this;
         //Start Blinking
@@ -170,35 +198,6 @@ export class BoxWithMenu{
             box.readoutLI.classList.toggle("blinkingreadoutLI");
             workBoxes.splice(index,1);
         }
-    }
-
-    static async runBoxes(boxArray){
-        
-        for(var i = 1; i < boxArray.length; ++i){
-            var box = boxArray[i].boxContent;
-            if(box.IsSelectedToRun){
-                BoxWithMenu.AddToBoxesWaitingForWorkList(box);
-            }
-        }
-        //Start calculation in respective order
-        for(var i = 0; i < boxArray.length; ++i){
-            if(BoxWithMenu.abort == true){
-                BoxWithMenu.abort = false;
-                break; 
-            }
-            var box = boxArray[i].boxContent;
-
-            if(box.IsSelectedToRun){
-                await box.run();
-                BoxWithMenu.RemoveFromBoxesWaitingForWorkList(box);
-            }
-        }
-    }
-  
-    async runUntilHere(){
-        var boxSubarray = this.parentBox.parentList.getAllBoxesUntil(this.parentBox, this.constructor.prototype.constructor);
-        //Change Backgroundcolor
-        BoxWithMenu.runBoxes(boxSubarray);
     }
 
     static deQueue(){
