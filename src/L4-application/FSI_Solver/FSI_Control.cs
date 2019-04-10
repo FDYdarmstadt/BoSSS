@@ -95,10 +95,14 @@ namespace BoSSS.Application.FSI_Solver {
         /// <summary>
         /// under-relaxation of the level set movement in case of coupled iterative
         /// </summary>
+        [DataMember]
         public double LSunderrelax = 1.0;
 
+     
 
-
+        /// <summary>
+        /// Setting <see cref="Solution.Control.AppControl.FieldOptions"/>
+        /// </summary>
         public override void SetDGdegree(int k) {
             if (k < 1)
                 throw new ArgumentOutOfRangeException("DG polynomial degree must be at least 1.");
