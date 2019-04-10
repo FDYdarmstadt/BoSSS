@@ -492,16 +492,20 @@ namespace BoSSS.Foundation {
         /// where \f$ a \f$ is the value of this field at some point \f$ \vec{x} \f$ and
         /// \f$ b \f$ is the value of <paramref name="function"/> at \f$ \vec{x} \f$.
         /// </param>
+        /// <param name="Quadrature_ChunkDataLimitOverride">
+        /// see <see cref="Foundation.Quadrature.Quadrature{TQuadRule, TDomain}.ChunkDataLimitOverride"/>
+        /// </param>
         /// <returns>
         /// on all invoking MPI processes, the L2 norm of
         /// this field minus <paramref name="function"/>, approximated by the
         /// quadrature rule <paramref name="rule"/>
         /// </returns>
-        public double LxError(ScalarFunction function, Func<double[], double, double, double> Map, ICompositeQuadRule<QuadRule> rule) {
+        public double LxError(ScalarFunction function, Func<double[], double, double, double> Map, ICompositeQuadRule<QuadRule> rule, int Quadrature_ChunkDataLimitOverride = 0) {
             MPICollectiveWatchDog.Watch(csMPI.Raw._COMM.WORLD);
 
             using (new FuncTrace()) {
                 LxNormQuadrature l2nq = new LxNormQuadrature(this, function, Map, rule);
+                l2nq.ChunkDataLimitOverride = Quadrature_ChunkDataLimitOverride;
                 l2nq.Execute();
 
                 double nrmtot = l2nq.LxNorm.MPISum();
@@ -796,7 +800,7 @@ namespace BoSSS.Foundation {
 
         /// <summary>
         /// Quadrature for
-        /// <see cref="LocalLxError(ScalarFunction, Func{double, double, double}, ICompositeQuadRule{QuadRule})"/>
+        /// <see cref="LocalLxError"/>
         /// </summary>
         class LocalLxNormQuadrature : LxNormQuadrature {
 

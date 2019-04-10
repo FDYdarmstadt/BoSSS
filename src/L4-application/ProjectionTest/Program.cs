@@ -49,7 +49,7 @@ namespace ProjectionTest {
             BoSSS.Solution.Application._Main(args, true, () => new Program());
         }
 
-        protected override GridCommons CreateOrLoadGrid() {
+        protected override IGrid CreateOrLoadGrid() {
             // Options
             string dataPath = @"\\fdyprime\userspace\mueller\Jan\waves\";
             string databasePath = @"e:\bosss_db\GridOfTomorrow\";
@@ -116,7 +116,7 @@ namespace ProjectionTest {
             session.Save();
 
             database.Controller.DBDriver.SaveTimestep(
-                0.0, 0, session, gridData, fields);
+                new TimestepInfo(0.0, session, 0, fields));
 
             return grid;
         }

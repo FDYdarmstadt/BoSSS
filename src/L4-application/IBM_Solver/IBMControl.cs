@@ -17,7 +17,7 @@ limitations under the License.
 using System;
 using System.Collections.Generic;
 using BoSSS.Solution.Control;
-using BoSSS.Solution.Multigrid;
+using BoSSS.Solution.AdvancedSolvers;
 using BoSSS.Solution.XdgTimestepping;
 using System.Linq;
 using System.Runtime.Serialization;
@@ -35,8 +35,17 @@ namespace BoSSS.Application.IBM_Solver {
         /// Ctor.
         /// </summary>
         public IBM_Control() {
-            base.NoOfMultigridLevels = 1;
-            base.CutCellQuadratureType = Foundation.XDG.XQuadFactoryHelper.MomentFittingVariants.Classic;
+            base.LinearSolver.NoOfMultigridLevels = 1;
+            //shift of Solver Information
+            base.LinearSolver.MaxKrylovDim = 30; //MaxKrylovDim
+            base.LinearSolver.MaxSolverIterations = 2000; //MaxSolverIterations
+            base.LinearSolver.MinSolverIterations = 2; //MinSolverIterations
+            base.LinearSolver.ConvergenceCriterion = 1.0e-8; //Solver_ConvergenceCriterion
+            base.LinearSolver.SolverCode = LinearSolverConfig.Code.classic_mumps; //public LinearSolverCodes LinearSolve = LinearSolverCodes.classic_mumps;
+            base.NonLinearSolver.MaxSolverIterations = 2000; //MaxSolverIterations
+            base.NonLinearSolver.MinSolverIterations = 2; //MinSolverIterations
+            base.NonLinearSolver.ConvergenceCriterion = 1.0e-8; //Solver_ConvergenceCriterion
+            base.NonLinearSolver.SolverCode = NonLinearSolverConfig.Code.Picard; //public NonlinearSolverCodes NonlinearSolve = NonlinearSolverCodes.Picard;
         }
 
         /// <summary>
@@ -46,18 +55,23 @@ namespace BoSSS.Application.IBM_Solver {
             return typeof(IBM_SolverMain);
         }
 
-        ///// <summary>
-        ///// Expert options regarding the level set solver.
-        ///// </summary>
-        //public XVelocityProjection.Configuration LevelSetOptions = new XVelocityProjection.Configuration() {
-        //};
-        //public int LS_TrackerWidth = 1;
-
         /// <summary>
         /// Expert options regarding the spatial discretization.
         /// </summary>
         [DataMember]
         public DoNotTouchParameters AdvancedDiscretizationOptions = new DoNotTouchParameters();
+
+        /// <summary>
+        /// desired minimum refinement level, 2 is minimum
+        /// </summary>
+        [DataMember]
+        public int RefinementLevel = 2;
+
+        /// <summary>
+        /// reciprocal of the ratio between curvature and hmin
+        /// </summary>
+        [DataMember]
+        public int maxCurvature = 2;
 
         /// <summary>
         /// Sets the DG polynomial degree 
@@ -73,31 +87,6 @@ namespace BoSSS.Application.IBM_Solver {
             this.AddFieldOption("PhiDG", 2);
             this.AddFieldOption("Phi", 2);
         }
-
-        /// <summary>
-        /// If iterative saddle-point solvers like GMRES or Orthonormalization are used, the maximum number of basis vectors
-        /// that are used to construct the accelerated solution.
-        /// </summary>
-        [DataMember]
-        public int MaxKrylovDim = 30;
-
-        /// <summary>
-        /// If iterative solvers are used, the maximum number of iterations.
-        /// </summary>
-        [DataMember]
-        public int MaxSolverIterations = 2000;
-
-        /// <summary>
-        /// If iterative solvers are used, the maximum number of iterations.
-        /// </summary>
-        [DataMember]
-        public int MinSolverIterations = 2;
-
-        /// <summary>
-        /// Convergence criterion for linear/nonlinear solver.
-        /// </summary>
-        [DataMember]
-        public double Solver_ConvergenceCriterion = 1.0e-8;
 
         /// <summary>
         /// Block-Preconditiond for the velocity-components of the saddel-point system
@@ -182,9 +171,6 @@ namespace BoSSS.Application.IBM_Solver {
         [DataMember]
         public double particleRadius;
 
-        public double MeshFactor;
-
-
 
         /// <summary>
         /// 
@@ -213,7 +199,7 @@ namespace BoSSS.Application.IBM_Solver {
         /// See <see cref="TimesteppingScheme"/>
         /// </summary>
         [DataMember]
-        public TimesteppingScheme Timestepper_Scheme;
+        public TimesteppingScheme Timestepper_Scheme = TimesteppingScheme.BDF2;
 
         /// <summary>
         /// Set true if periodic boundary conditions in streamwise direction are applied
@@ -237,12 +223,5 @@ namespace BoSSS.Application.IBM_Solver {
 
         [DataMember]
         public BoSSS.Solution.Timestepping.TimeStepperInit TimeStepper_Init = Solution.Timestepping.TimeStepperInit.SingleInit;
-
-        [DataMember]
-        public NonlinearSolverCodes NonlinearSolve = NonlinearSolverCodes.Picard;
-
-        [DataMember]
-        public LinearSolverCodes LinearSolve = LinearSolverCodes.classic_mumps;
-
     }
 }

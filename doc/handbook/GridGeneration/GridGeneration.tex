@@ -6,11 +6,20 @@ restart
  }
 \BoSSSexeSilent
 \BoSSScmd{
-/// \section{Grid Generation}
-///Firstly, we need to determine the boundaries of our grid/control volume. Is it important to know that the number of nodes needed are equal to the number of cells $+1$. For instance, for $10$ cells we need $11$ nodes. In this example we will use the Cartesian $2D$ grid from the database which requires $x$- and $y$-Nodes. The J term in the code is for doing a check if the desired resolution of the volume is correctly typed.
+/// This tutorial demostrates the creation, resp. the import of grids/meshes  
+/// into \BoSSS.
  }
 \BoSSSexe
 \BoSSScmd{
+/// \section{Cartesian 2D grids}
+/// A 2D Cartesian mesh can be created form an array of $x$- and $y$-nodes
+/// via the method \code{Grid2D.Cartesian2DGrid}. 
+/// Note that the number of nodes needes to be equal to the 
+/// number of cells $+1$. For instance, for $10$ cells we need $11$ nodes.
+ }
+\BoSSSexe
+\BoSSScmd{
+int Res = 10;\newline 
 double[] xNodes = GenericBlas.Linspace(0, 1, Res + 1);\newline 
 double[] yNodes = GenericBlas.Linspace(0, 1, Res + 1);\newline 
 int J           = (xNodes.Length - 1)*(yNodes.Length - 1);\newline 

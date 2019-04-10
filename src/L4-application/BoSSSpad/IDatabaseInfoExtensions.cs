@@ -14,10 +14,14 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+using BoSSS.Application.BoSSSpad;
+using BoSSS.Foundation.Grid;
 using BoSSS.Foundation.Grid.Classic;
 using BoSSS.Solution.GridImport;
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
+using System.Linq;
 
 namespace BoSSS.Foundation.IO {
 
@@ -94,12 +98,97 @@ namespace BoSSS.Foundation.IO {
         /// <param name="database"></param>
         /// <param name="grd"></param>
         /// <returns></returns>
-        public static Guid SaveGrid(this IDatabaseInfo database, ref Grid.Classic.GridCommons grd) {
+        public static Guid SaveGrid<TG>(this IDatabaseInfo database, ref TG grd) where TG : IGrid //
+        {
             bool found;
-            Guid GridGuid = database.Controller.DBDriver.SaveGridIfUnique(ref grd, out found, database);
-            if (found)
+            IGrid grid = grd;
+
+            Guid GridGuid = database.Controller.DBDriver.SaveGridIfUnique(ref grid, out found, database);
+            if (found) {
                 Console.WriteLine("An equivalent grid is already present in the database -- the grid will not be saved.");
+                grd = ((TG)grid);
+            }
             return GridGuid;
+        }
+
+
+        /// <summary>
+        /// Stores a grid in the database.
+        /// </summary>
+        /// <param name="database"></param>
+        /// <param name="grd"></param>
+        /// <returns></returns>
+        public static IGrid SaveGrid(this IDatabaseInfo database, IGrid grd) {
+            bool found;
+            IGrid grid = grd;
+
+            Guid GridGuid = database.Controller.DBDriver.SaveGridIfUnique(ref grid, out found, database);
+            if (found) {
+                Console.WriteLine("An equivalent grid is already present in the database -- the grid will not be saved.");
+                grd = (GridCommons)grid;
+            }
+            return grid;
+        }
+
+        /// <summary>
+        /// Save a list of DG fields (all defined on the same grid) into the database.
+        /// </summary>
+        /// <param name="database"></param>
+        /// <param name="fields"></param>
+        /// <returns></returns>
+        public static ITimestepInfo SaveTimestep(this IDatabaseInfo database, params DGField[] fields) {
+            return SaveTimestep<DGField>(database, fields);
+        }
+
+        /// <summary>
+        /// Save a list of DG fields (all defined on the same grid) into the database.
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="database"></param>
+        /// <param name="fields"></param>
+        /// <returns></returns>
+        public static ITimestepInfo SaveTimestep<T>(this IDatabaseInfo database, IEnumerable<T> fields) where T : DGField {
+            if (fields.Count() < 1)
+                throw new ArgumentException("empty list");
+            DGField[] _fields = fields.Select(f => (DGField)f).ToArray<DGField>();
+
+            IGridData gDat = _fields[0].GridDat;
+            for(int i = 0; i < _fields.Length; i++) {
+                if (!object.ReferenceEquals(gDat, _fields[i].GridDat))
+                    throw new ArgumentException("Mismatch of grids: DG field #" + i + " is defined on a different grid than the previous ones.");
+            }
+
+            var grid = gDat.Grid;
+            if(grid.ID.Equals(Guid.Empty) || database.Grids.Where(g => g.ID.Equals(grid.ID)).Count() < 1) {
+                // its necessary to save the grid to the database first
+
+                /*
+                var gridNew = SaveGrid(database, grid);
+                if(!object.ReferenceEquals(gridNew, grid)) {
+                    for (int i = 0; i < _fields.Length; i++) {
+                        DGField fOld = _fields[i];
+                        if(fOld.GetType() != typeof(SinglePhaseField)) {
+                            throw
+                        }
+                    }
+                }
+                */
+
+                // note: calling save grid would be easy,
+                // but that would require re-creation of the DG fields on the new grid,
+                // if 'SaveGrid' returns some *other* grid object that is already present in the database.
+
+                throw new ArgumentException("Grid is not stored in database; Save the grid to database in order to use this method.");
+            }
+
+            SessionInfo dummySession = new SessionInfo(Guid.NewGuid(), database);
+            dummySession.Name = "InitialValueSession";
+            dummySession.ProjectName = InteractiveShell.WorkflowMgm.CurrentProject;
+            dummySession.Save();
+
+            var tsi = new TimestepInfo(0.0, dummySession, 0, _fields);
+            database.Controller.DBDriver.SaveTimestep(tsi);
+            return tsi;
         }
     }
 }

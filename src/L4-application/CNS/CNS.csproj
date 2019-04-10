@@ -124,6 +124,7 @@
     <Compile Include="Tests\ConvectiveFlux\ShockTubeTests.cs" />
     <Compile Include="Tests\IBMTests\IBMArtificialViscosityTest.cs" />
     <Compile Include="Tests\IBMTests\IBMALTSTest.cs" />
+    <Compile Include="Tests\IBMTests\IBMAVTimeStepperComparisonTest.cs" />
     <Compile Include="Tests\IBMTests\IBMIsentropicVortexTest.cs" />
     <Compile Include="Tests\MMS\MMS_steady.cs" />
     <Compile Include="Tests\MMS\MMS_Test.cs" />
@@ -274,6 +275,10 @@
     <ProjectReference Include="..\..\L3-solution\BoSSS.Solution.GridImport\BoSSS.Solution.GridImport.csproj">
       <Project>{28E4A331-ECA2-43A6-A11F-6D6A5E410434}</Project>
       <Name>BoSSS.Solution.GridImport</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\..\L3-solution\BoSSS.Solution.LevelSetTools\BoSSS.Solution.LevelSetTools.csproj">
+      <Project>{9EE2FCAD-E8A4-4F14-B932-D1A4904D715D}</Project>
+      <Name>BoSSS.Solution.LevelSetTools</Name>
     </ProjectReference>
     <ProjectReference Include="..\..\L3-solution\BoSSS.Solution.NSECommon\BoSSS.Solution.NSECommon.csproj">
       <Project>{E56B9CE4-14DC-4256-A337-46E5D298B722}</Project>

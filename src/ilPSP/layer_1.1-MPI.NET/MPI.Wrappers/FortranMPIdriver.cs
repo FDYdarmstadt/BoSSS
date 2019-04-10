@@ -115,7 +115,7 @@ namespace MPI.Wrappers {
         }
 
         /// <summary>
-        /// Stange name mangling convention on MacOS; seems to suit OpenMPI from homebrew.
+        /// Strange name mangling convention on MacOS; seems to suit OpenMPI from homebrew.
         /// </summary>
         internal static string MacOsMangling (string Name) {
             if(Name.ToUpperInvariant () == Name) {
@@ -512,6 +512,22 @@ namespace MPI.Wrappers {
             MPIException.CheckReturnCode(ierr);
         }
 
+#pragma warning disable 649
+        delegate void _MPI_GATHER(IntPtr sendbuf, ref int sendcount, ref MPI_Datatype sendtype,
+                                     IntPtr recvbuf, ref int recvcount, ref MPI_Datatype recvtype, 
+                                     ref int root, ref MPI_Comm comm, out int ierr);
+        _MPI_GATHER MPI_GATHER;
+#pragma warning restore 649
+
+        /// <summary>
+        /// 
+        /// </summary>
+        public void Gather(IntPtr sendbuf, int sendcount, MPI_Datatype sendtype, IntPtr recvbuf, int recvcount, MPI_Datatype recvtype, int root, MPI_Comm comm) {
+            int ierr;
+            MPI_GATHER(sendbuf, ref sendcount, ref sendtype, recvbuf, ref recvcount, ref recvtype, ref root, ref comm, out ierr);
+            MPIException.CheckReturnCode(ierr);
+        }
+
 
 
 #pragma warning disable 649
@@ -669,6 +685,21 @@ namespace MPI.Wrappers {
             MPI_ALLREDUCE(sndbuf, rcvbuf, ref count, ref datatype, ref op, ref comm, out ierr);
             MPIException.CheckReturnCode(ierr);
         }
+
+#pragma warning disable 649
+        delegate void _COMM_GET_PARENT(out MPI_Comm parent, out int ierr);
+        _COMM_GET_PARENT MPI_COMM_GET_PARENT;
+#pragma warning restore 649
+
+        /// <summary>
+        /// 
+        /// </summary>
+        public void Comm_get_parent(out MPI_Comm parent) { 
+            int ierr;
+            MPI_COMM_GET_PARENT(out parent, out ierr);
+            MPIException.CheckReturnCode(ierr);
+        }
+
 
         int m_MPI_Status_Size = -1;
 

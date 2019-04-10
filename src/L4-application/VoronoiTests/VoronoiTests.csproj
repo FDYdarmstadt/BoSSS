@@ -1,0 +1,105 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+    <ProjectGuid>{B8E3E969-8763-4EA7-82AA-4CA3DB8C3134}</ProjectGuid>
+    <OutputType>Exe</OutputType>
+    <RootNamespace>VoronoiTests</RootNamespace>
+    <AssemblyName>VoronoiTests</AssemblyName>
+    <TargetFrameworkVersion>v4.7</TargetFrameworkVersion>
+    <FileAlignment>512</FileAlignment>
+    <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
+    <Deterministic>true</Deterministic>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <PlatformTarget>x64</PlatformTarget>
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>full</DebugType>
+    <Optimize>false</Optimize>
+    <OutputPath>bin\Debug\</OutputPath>
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <PlatformTarget>x64</PlatformTarget>
+    <DebugType>pdbonly</DebugType>
+    <Optimize>true</Optimize>
+    <OutputPath>bin\Release\</OutputPath>
+    <DefineConstants>TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="nunit.framework">
+      <HintPath>..\..\..\libs\NUnit-2.6.0.12051\bin\framework\nunit.framework.dll</HintPath>
+    </Reference>
+    <Reference Include="System" />
+    <Reference Include="System.Core" />
+    <Reference Include="System.Xml.Linq" />
+    <Reference Include="System.Data.DataSetExtensions" />
+    <Reference Include="Microsoft.CSharp" />
+    <Reference Include="System.Data" />
+    <Reference Include="System.Net.Http" />
+    <Reference Include="System.Xml" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="Database\Database.cs" />
+    <Compile Include="Database\DatabaseTest.cs" />
+    <Compile Include="Database\GridIOTests.cs" />
+    <Compile Include="Database\GridMethods.cs" />
+    <Compile Include="Database\Session\BoSSSpadTests.cs" />
+    <Compile Include="Database\Session\SessionMethods.cs" />
+    <Compile Include="Database\Session\SessionIOTests.cs" />
+    <Compile Include="Database\Session\DGFieldArithmeticTests.cs" />
+    <Compile Include="Database\Session\SessionTest.cs" />
+    <Compile Include="Program.cs" />
+    <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="RunnableTest.cs" />
+    <Compile Include="TestBench.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="App.config" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\ilPSP\layer_1.2-ilPSP\ilPSP\ilPSP.csproj">
+      <Project>{8e6d8f23-623f-4204-b4ab-a088c0cd83aa}</Project>
+      <Name>ilPSP</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\..\L1-platform\BoSSS.Platform\BoSSS.Platform.csproj">
+      <Project>{b7d5f7c7-ea9f-4506-ab69-c3cd2aa8c938}</Project>
+      <Name>BoSSS.Platform</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\..\L2-foundation\BoSSS.Foundation.Grid\BoSSS.Foundation.Grid.csproj">
+      <Project>{13585226-5046-494d-947c-b97479566081}</Project>
+      <Name>BoSSS.Foundation.Grid</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\..\L2-foundation\BoSSS.Foundation\BoSSS.Foundation.csproj">
+      <Project>{17a60fba-20b4-451d-98e1-8d742f368569}</Project>
+      <Name>BoSSS.Foundation</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\..\L3-solution\BoSSS.Solution.Statistic\BoSSS.Solution.Statistic.csproj">
+      <Project>{45bca5f9-27e7-43c0-b021-4312bf442c7d}</Project>
+      <Name>BoSSS.Solution.Statistic</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\..\L3-solution\BoSSS.Solution\BoSSS.Solution.csproj">
+      <Project>{df7f5abd-e606-41cd-beef-31a95d136dea}</Project>
+      <Name>BoSSS.Solution</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\BoSSSpad\BoSSSpad.csproj">
+      <Project>{e1351588-3bc0-418a-bfa2-7ce3391aa167}</Project>
+      <Name>BoSSSpad</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\ipPoisson\ipPoisson.csproj">
+      <Project>{09cce864-9bae-4660-aff9-f3f3414b6173}</Project>
+      <Name>ipPoisson</Name>
+    </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <Folder Include="GridCreation\" />
+    <Folder Include="ScalarTransport\" />
+  </ItemGroup>
+  <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
+</Project>

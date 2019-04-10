@@ -24,7 +24,7 @@ using BoSSS.Solution.LevelSetTools.FourierLevelSet;
 using BoSSS.Solution.LevelSetTools.Advection;
 using BoSSS.Solution.XheatCommon;
 using BoSSS.Solution.XNSECommon;
-using BoSSS.Solution.Multigrid;
+using BoSSS.Solution.AdvancedSolvers;
 using BoSSS.Solution.XdgTimestepping;
 using BoSSS.Solution.NSECommon;
 
@@ -48,8 +48,18 @@ namespace BoSSS.Application.XNSE_Solver {
         /// Ctor.
         /// </summary>
         public XNSE_Control() {
-            base.NoOfMultigridLevels = 1;
+            base.LinearSolver.NoOfMultigridLevels = 1;
             base.CutCellQuadratureType = XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes;
+            //shift of Solver Information
+            base.LinearSolver.MaxKrylovDim = 100; //Solver_MaxKrylovDim;
+            base.LinearSolver.MaxSolverIterations = 2000; //Solver_MaxIterations
+            base.LinearSolver.MinSolverIterations = 4; //Solver_MinIterations
+            base.LinearSolver.ConvergenceCriterion = 1.0e-10; //Solver_ConvergenceCriterion
+            base.LinearSolver.SolverCode = LinearSolverConfig.Code.classic_mumps; //LinearSolver
+            base.NonLinearSolver.MaxSolverIterations = 2000; //Solver_MaxIterations
+            base.NonLinearSolver.MinSolverIterations = 4; //Solver_MinIterations
+            base.NonLinearSolver.ConvergenceCriterion = 1.0e-10; //Solver_ConvergenceCriterion
+            base.NonLinearSolver.SolverCode = NonLinearSolverConfig.Code.Picard; //NonLinearSolver
         }
 
         /// <summary>
@@ -335,6 +345,7 @@ namespace BoSSS.Application.XNSE_Solver {
         /// <summary>
         /// Options for the initialization of the Fourier Level-set
         /// </summary>
+        [DataMember]
         public FourierLevSetControl FourierLevSetControl;
 
         /// <summary>
@@ -342,17 +353,17 @@ namespace BoSSS.Application.XNSE_Solver {
         /// </summary>
         public double[] AdditionalParameters;
 
-        /// <summary>
-        /// If iterative saddle-point solvers like GMRES or Orthonormalization are used, the maximum number of basis vectors
-        /// that are used to construct the accelerated solution.
-        /// </summary>
-        public int Solver_MaxKrylovDim = 100;
+        ///// <summary>
+        ///// If iterative saddle-point solvers like GMRES or Orthonormalization are used, the maximum number of basis vectors
+        ///// that are used to construct the accelerated solution.
+        ///// </summary>
+        //public int Solver_MaxKrylovDim = 100;
 
-        /// <summary>
-        /// If iterative saddle-point solvers are used, the termination criterion. 
-        /// </summary>
-        [DataMember]
-        public double Solver_ConvergenceCriterion = 1.0e-10;
+        ///// <summary>
+        ///// If iterative saddle-point solvers are used, the termination criterion. 
+        ///// </summary>
+        //[DataMember]
+        //public double Solver_ConvergenceCriterion = 1.0e-10;
 
         /// <summary>
         /// The termination criterion for fully coupled/implicit level-set evolution.
@@ -360,17 +371,17 @@ namespace BoSSS.Application.XNSE_Solver {
         [DataMember]
         public double LevelSet_ConvergenceCriterion = 1.0e-6;
 
-        /// <summary>
-        /// If iterative solvers are used, the maximum number of iterations.
-        /// </summary>
-        [DataMember]
-        public int Solver_MaxIterations = 2000;
+        ///// <summary>
+        ///// If iterative solvers are used, the maximum number of iterations.
+        ///// </summary>
+        //[DataMember]
+        //public int Solver_MaxIterations = 2000;
 
-        /// <summary>
-        /// If iterative solvers are used, the minimum number of iterations.
-        /// </summary>
-        [DataMember]
-        public int Solver_MinIterations = 4;
+        ///// <summary>
+        ///// If iterative solvers are used, the minimum number of iterations.
+        ///// </summary>
+        //[DataMember]
+        //public int Solver_MinIterations = 4;
 
         /// <summary>
         /// Block-Preconditiond for the velocity/momentum-block of the saddle-point system
@@ -395,37 +406,41 @@ namespace BoSSS.Application.XNSE_Solver {
         public bool EnforceLevelSetConservation = false;
 
 
-        /// <summary>
-        /// Switch for selection of linear Solvers library
-        /// </summary>
-        [DataMember]
-        public DirectSolver._whichSolver LinearSolver = DirectSolver._whichSolver.MUMPS;
+        ///// <summary>
+        ///// Switch for selection of linear Solvers library
+        ///// </summary>
+        //[DataMember]
+        //public DirectSolver._whichSolver LinearSolver = DirectSolver._whichSolver.MUMPS;
 
-        /// <summary>
-        /// Switch for selection of linear Solvers library
-        /// </summary>
-        [DataMember]
-        public NonlinearSolverMethod NonLinearSolver = NonlinearSolverMethod.Picard;
+        ///// <summary>
+        ///// Switch for selection of linear Solvers library
+        ///// </summary>
+        //[DataMember]
+        //public NonlinearSolverMethod NonLinearSolver = NonlinearSolverMethod.Picard;
 
 
         /// <summary>
         /// If true, kinetic and surface energy will be evaluated in every cycle.
         /// </summary>
+        [DataMember]
         public bool ComputeEnergy = false;
 
         /// <summary>
         /// If true, energy balance at the interface will be evaluated in every cycle.
         /// </summary>
+        [DataMember]
         public bool ComputeInterfaceEnergy = false;
 
         /// <summary>
         /// if true, the jump condition for mass, momentum and energy will be checked
         /// </summary>
+        [DataMember]
         public bool CheckJumpConditions = false;
 
         /// <summary>
         /// if true, the mass conservation and the surface changerate is checked
         /// </summary>
+        [DataMember]
         public bool CheckInterfaceProps = false;
 
         /// <summary>

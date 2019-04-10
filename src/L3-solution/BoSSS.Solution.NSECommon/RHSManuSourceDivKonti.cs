@@ -21,7 +21,6 @@ using System.Text;
 using BoSSS.Foundation;
 using BoSSS.Solution.Utils;
 
-
 namespace BoSSS.Solution.NSECommon {
 
 
@@ -35,30 +34,36 @@ namespace BoSSS.Solution.NSECommon {
 
         double ReynoldsNumber;
         double[] MolarMasses;
-        bool energyOK;
-        bool speciesOK;
+        PhysicsMode physicsMode;
+        double phystime;
+        bool unsteady;
+        SinglePhaseField ThermodynamicPressure;
+
+
         /// <summary>
         /// Ctor.
         /// </summary>
-        public RHSManuSourceDivKonti(double Reynolds, double[] MolarMasses, bool energyOK, bool speciesOK) {
+        public RHSManuSourceDivKonti(double Reynolds, double[] MolarMasses, PhysicsMode physicsMode, double phystime, bool unsteady, SinglePhaseField ThermodynamicPressure) {
             this.ReynoldsNumber = Reynolds;
             this.MolarMasses = MolarMasses;
-            this.energyOK = energyOK;
-            this.speciesOK = speciesOK;
+            this.physicsMode = physicsMode;
+            this.phystime = phystime;
+            this.unsteady = unsteady;
+            this.ThermodynamicPressure = ThermodynamicPressure;
         }
 
         /// <summary>
         /// None
         /// </summary>
         public override IList<string> ArgumentOrdering {
-            get { return new string[0]; } 
+            get { return new string[0]; }
         }
 
         /// <summary>
         /// None
         /// </summary>
         public override IList<string> ParameterOrdering {
-            get { return null; } 
+            get { return null; }
         }
 
         //Manufactured solution for T = cos(x*y), Y0 = 0.3 cos(x*y), Y1 = 0.6 cos(x*y), Y2 = 0.1 cos(x*y), u = -cos(x), v = -cos(y), p = sin(x*y).
@@ -66,25 +71,42 @@ namespace BoSSS.Solution.NSECommon {
 
             double x_ = x[0];
             double y_ = x[1];
-            double p0 = 1.0;
+            double t_ = phystime;
+            double p0 = ThermodynamicPressure.GetMeanValue(3);
+            //Console.WriteLine(p0);
             double M1 = MolarMasses[0]; double M2 = MolarMasses[1]; double M3 = MolarMasses[2]; double M4 = MolarMasses[3];
             double alpha1 = 0.3;
             double alpha2 = 0.6;
             double alpha3 = 0.1;
-            double[] Coefficients = new double[] { alpha1, alpha2, alpha3 };
+            double man1;
 
-            double man1 =  -1*( -p0 * Math.Pow(Math.Cos(x_ * y_), -0.2e1) / (alpha1 * Math.Cos(x_ * y_) / M1 + alpha2 * Math.Cos(x_ * y_) / M2 + alpha3 * Math.Cos(x_ * y_) / M3 + (0.1e1 - alpha1 * Math.Cos(x_ * y_) - alpha2 * Math.Cos(x_ * y_) - alpha3 * Math.Cos(x_ * y_)) / M4) * Math.Cos(x_) * Math.Sin(x_ * y_) * y_ + p0 / Math.Cos(x_ * y_) * Math.Pow(alpha1 * Math.Cos(x_ * y_) / M1 + alpha2 * Math.Cos(x_ * y_) / M2 + alpha3 * Math.Cos(x_ * y_) / M3 + (0.1e1 - alpha1 * Math.Cos(x_ * y_) - alpha2 * Math.Cos(x_ * y_) - alpha3 * Math.Cos(x_ * y_)) / M4, -0.2e1) * Math.Cos(x_) * (-alpha1 * Math.Sin(x_ * y_) * y_ / M1 - alpha2 * Math.Sin(x_ * y_) * y_ / M2 - alpha3 * Math.Sin(x_ * y_) * y_ / M3 + (alpha1 * Math.Sin(x_ * y_) * y_ + alpha2 * Math.Sin(x_ * y_) * y_ + alpha3 * Math.Sin(x_ * y_) * y_) / M4) + p0 / Math.Cos(x_ * y_) / (alpha1 * Math.Cos(x_ * y_) / M1 + alpha2 * Math.Cos(x_ * y_) / M2 + alpha3 * Math.Cos(x_ * y_) / M3 + (0.1e1 - alpha1 * Math.Cos(x_ * y_) - alpha2 * Math.Cos(x_ * y_) - alpha3 * Math.Cos(x_ * y_)) / M4) * Math.Sin(x_) - p0 * Math.Pow(Math.Cos(x_ * y_), -0.2e1) / (alpha1 * Math.Cos(x_ * y_) / M1 + alpha2 * Math.Cos(x_ * y_) / M2 + alpha3 * Math.Cos(x_ * y_) / M3 + (0.1e1 - alpha1 * Math.Cos(x_ * y_) - alpha2 * Math.Cos(x_ * y_) - alpha3 * Math.Cos(x_ * y_)) / M4) * Math.Cos(y_) * Math.Sin(x_ * y_) * x_ + p0 / Math.Cos(x_ * y_) * Math.Pow(alpha1 * Math.Cos(x_ * y_) / M1 + alpha2 * Math.Cos(x_ * y_) / M2 + alpha3 * Math.Cos(x_ * y_) / M3 + (0.1e1 - alpha1 * Math.Cos(x_ * y_) - alpha2 * Math.Cos(x_ * y_) - alpha3 * Math.Cos(x_ * y_)) / M4, -0.2e1) * Math.Cos(y_) * (-alpha1 * Math.Sin(x_ * y_) * x_ / M1 - alpha2 * Math.Sin(x_ * y_) * x_ / M2 - alpha3 * Math.Sin(x_ * y_) * x_ / M3 + (alpha1 * Math.Sin(x_ * y_) * x_ + alpha2 * Math.Sin(x_ * y_) * x_ + alpha3 * Math.Sin(x_ * y_) * x_) / M4) + p0 / Math.Cos(x_ * y_) / (alpha1 * Math.Cos(x_ * y_) / M1 + alpha2 * Math.Cos(x_ * y_) / M2 + alpha3 * Math.Cos(x_ * y_) / M3 + (0.1e1 - alpha1 * Math.Cos(x_ * y_) - alpha2 * Math.Cos(x_ * y_) - alpha3 * Math.Cos(x_ * y_)) / M4) * Math.Sin(y_) );
-           
-        
-            if (!speciesOK) { // conti, mom  and energy equations
-                man1 = -1*(-p0 * Math.Pow(Math.Cos(x_ * y_), -0.2e1) * Math.Cos(x_) * y_ * Math.Sin(x_ * y_) + p0 / Math.Cos(x_ * y_) * Math.Sin(x_) - p0 * Math.Pow(Math.Cos(x_ * y_), -0.2e1) * Math.Cos(y_) * x_ * Math.Sin(x_ * y_) + p0 / Math.Cos(x_ * y_) * Math.Sin(y_));
-            }
-            if (!energyOK && !speciesOK) { // conti and mom equations
-                man1 = -1 * (Math.Sin(x_) + Math.Sin(y_));
-            }
 
+
+            if (unsteady) {
+                switch (physicsMode) {
+                    case PhysicsMode.LowMach:
+                        man1 = -1 * (p0 * Math.Pow(Math.Cos(x_ * y_ * t_), -0.2e1) * x_ * y_ * Math.Sin(x_ * y_ * t_) - p0 * Math.Pow(Math.Cos(x_ * y_ * t_), -0.2e1) * Math.Cos(x_ * t_) * y_ * t_ * Math.Sin(x_ * y_ * t_) + p0 / Math.Cos(x_ * y_ * t_) * t_ * Math.Sin(x_ * t_) - p0 * Math.Pow(Math.Cos(x_ * y_ * t_), -0.2e1) * Math.Cos(y_ * t_) * x_ * t_ * Math.Sin(x_ * y_ * t_) + p0 / Math.Cos(x_ * y_ * t_) * t_ * Math.Sin(y_ * t_));
+                        break;
+                    case PhysicsMode.Combustion:
+                        man1 = 0.0; //TODO
+                        break;
+                    default:
+                        throw new NotImplementedException("should not happen");
+                }
+            }
+            else {
+                switch (physicsMode) {
+                    case PhysicsMode.LowMach:
+                        man1 = -1 * (-p0 * Math.Pow(Math.Cos(x_ * y_), -0.2e1) * Math.Cos(x_) * y_ * Math.Sin(x_ * y_) + p0 / Math.Cos(x_ * y_) * Math.Sin(x_) - p0 * Math.Pow(Math.Cos(x_ * y_), -0.2e1) * Math.Cos(y_) * x_ * Math.Sin(x_ * y_) + p0 / Math.Cos(x_ * y_) * Math.Sin(y_));// conti, momentum and energy
+                        break;
+                    case PhysicsMode.Combustion:
+                        man1 = -1 * (-p0 * Math.Pow(Math.Cos(x_ * y_), -0.2e1) / (alpha1 * Math.Cos(x_ * y_) / M1 + alpha2 * Math.Cos(x_ * y_) / M2 + alpha3 * Math.Cos(x_ * y_) / M3 + (0.10e1 - alpha1 * Math.Cos(x_ * y_) - alpha2 * Math.Cos(x_ * y_) - alpha3 * Math.Cos(x_ * y_)) / M4) * Math.Cos(x_) * y_ * Math.Sin(x_ * y_) + p0 / Math.Cos(x_ * y_) * Math.Pow(alpha1 * Math.Cos(x_ * y_) / M1 + alpha2 * Math.Cos(x_ * y_) / M2 + alpha3 * Math.Cos(x_ * y_) / M3 + (0.10e1 - alpha1 * Math.Cos(x_ * y_) - alpha2 * Math.Cos(x_ * y_) - alpha3 * Math.Cos(x_ * y_)) / M4, -0.2e1) * Math.Cos(x_) * (-alpha1 * y_ * Math.Sin(x_ * y_) / M1 - alpha2 * y_ * Math.Sin(x_ * y_) / M2 - alpha3 * y_ * Math.Sin(x_ * y_) / M3 + (alpha1 * y_ * Math.Sin(x_ * y_) + alpha2 * y_ * Math.Sin(x_ * y_) + alpha3 * y_ * Math.Sin(x_ * y_)) / M4) + p0 / Math.Cos(x_ * y_) / (alpha1 * Math.Cos(x_ * y_) / M1 + alpha2 * Math.Cos(x_ * y_) / M2 + alpha3 * Math.Cos(x_ * y_) / M3 + (0.10e1 - alpha1 * Math.Cos(x_ * y_) - alpha2 * Math.Cos(x_ * y_) - alpha3 * Math.Cos(x_ * y_)) / M4) * Math.Sin(x_) - p0 * Math.Pow(Math.Cos(x_ * y_), -0.2e1) / (alpha1 * Math.Cos(x_ * y_) / M1 + alpha2 * Math.Cos(x_ * y_) / M2 + alpha3 * Math.Cos(x_ * y_) / M3 + (0.10e1 - alpha1 * Math.Cos(x_ * y_) - alpha2 * Math.Cos(x_ * y_) - alpha3 * Math.Cos(x_ * y_)) / M4) * Math.Cos(y_) * x_ * Math.Sin(x_ * y_) + p0 / Math.Cos(x_ * y_) * Math.Pow(alpha1 * Math.Cos(x_ * y_) / M1 + alpha2 * Math.Cos(x_ * y_) / M2 + alpha3 * Math.Cos(x_ * y_) / M3 + (0.10e1 - alpha1 * Math.Cos(x_ * y_) - alpha2 * Math.Cos(x_ * y_) - alpha3 * Math.Cos(x_ * y_)) / M4, -0.2e1) * Math.Cos(y_) * (-alpha1 * x_ * Math.Sin(x_ * y_) / M1 - alpha2 * x_ * Math.Sin(x_ * y_) / M2 - alpha3 * x_ * Math.Sin(x_ * y_) / M3 + (alpha1 * x_ * Math.Sin(x_ * y_) + alpha2 * x_ * Math.Sin(x_ * y_) + alpha3 * x_ * Math.Sin(x_ * y_)) / M4) + p0 / Math.Cos(x_ * y_) / (alpha1 * Math.Cos(x_ * y_) / M1 + alpha2 * Math.Cos(x_ * y_) / M2 + alpha3 * Math.Cos(x_ * y_) / M3 + (0.10e1 - alpha1 * Math.Cos(x_ * y_) - alpha2 * Math.Cos(x_ * y_) - alpha3 * Math.Cos(x_ * y_)) / M4) * Math.Sin(y_)); // conti, momentum, energy and species   
+                        break;
+                    default:
+                        throw new NotImplementedException("should not happen");
+                }
+            }
             return man1;
-
         }
     }
 }

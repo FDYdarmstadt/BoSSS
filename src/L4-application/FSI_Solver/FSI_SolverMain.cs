@@ -25,24 +25,43 @@ using BoSSS.Foundation.Grid;
 using BoSSS.Solution.Tecplot;
 using ilPSP.Utils;
 using ilPSP.Tracing;
-using BoSSS.Platform;
-using ilPSP.LinSolvers;
 using BoSSS.Solution.Utils;
-using BoSSS.Solution.LevelSetTools.Smoothing;
-using BoSSS.Foundation.SpecFEM;
 using MPI.Wrappers;
 using BoSSS.Foundation.IO;
 using System.Diagnostics;
 using System.IO;
-using BoSSS.Foundation.Quadrature;
-using BoSSS.Solution.Multigrid;
 using ilPSP;
 using BoSSS.Solution.XdgTimestepping;
+using BoSSS.Solution.XNSECommon;
+using BoSSS.Foundation.Grid.Classic;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Bson;
 using BoSSS.Foundation.Grid.RefElements;
+using FSI_Solver;
+using System.Collections;
+using BoSSS.Solution.LevelSetTools;
 
 namespace BoSSS.Application.FSI_Solver {
     public class FSI_SolverMain : IBM_Solver.IBM_SolverMain {
+
+        static int counter = 0;
+
+        public static void MegaArschKakke2(DGField[] f) {
+            int rank;
+            csMPI.Raw.Comm_Rank(csMPI.Raw._COMM.WORLD, out rank);
+            
+
+            Tecplot.PlotFields(f, "MegaArschKakke-" + counter, 0.0, 2);
+            counter++;
+        }
+
+        double calculatedDampingTensors;
+        // =============================
+        /// <summary>
+        /// Application entry point.
+        /// </summary>
         static void Main(string[] args) {
+            MultiphaseCellAgglomerator.Katastrophenplot = MegaArschKakke2;
 
             _Main(args, false, delegate () {
                 var p = new FSI_SolverMain();
@@ -50,25 +69,60 @@ namespace BoSSS.Application.FSI_Solver {
             });
         }
 
-        protected override void CreateEquationsAndSolvers(GridUpdateDataVaultBase L) {
+        /// <summary>
+        /// Curvature; DG-polynomial degree should be 2 times the polynomial degree of <see cref="LevSet"/>.
+        /// </summary>
+        [InstantiateFromControlFile("Curvature", "Curvature", IOListOption.ControlFileDetermined)]
+        public SinglePhaseField Curvature;
 
+        SinglePhaseField ParticleColor;
+
+        SinglePhaseField LevelSetDistance;
+
+        private int iteration_counter = 0;
+
+        protected override void CreateFields() {
+            base.CreateFields();
+
+            ParticleColor = new SinglePhaseField(new Basis(this.GridData, 0), "ParticleColor");
+            m_RegisteredFields.Add(ParticleColor);
+            m_IOFields.Add(ParticleColor);
+
+            LevelSetDistance = new SinglePhaseField(new Basis(this.GridData, 0), "LevelSetDistance");
+            m_RegisteredFields.Add(LevelSetDistance);
+            m_IOFields.Add(LevelSetDistance);
+        }
+
+        // Create equations and solvers
+        bool UseMovingMesh {
+            get {
+                switch (((FSI_Control)this.Control).Timestepper_LevelSetHandling) {
+                    case LevelSetHandling.Coupled_Once:
+                    case LevelSetHandling.Coupled_Iterative:
+                    return true;
+
+                    case LevelSetHandling.LieSplitting:
+                    case LevelSetHandling.StrangSplitting:
+                    case LevelSetHandling.FSI_LieSplittingFullyCoupled:
+                    case LevelSetHandling.None:
+                    return false;
+
+                    default:
+                    throw new ApplicationException("unknown 'LevelSetMovement': " + ((FSI_Control)this.Control).Timestepper_LevelSetHandling);
+                }
+            }
+        }
+
+        protected override void CreateEquationsAndSolvers(GridUpdateDataVaultBase L) {
 
             if (IBM_Op != null)
                 return;
-
-            bool UseMovingMesh = false;
-
-            if (((FSI_Control)this.Control).Timestepper_Mode == FSI_Control.TimesteppingMode.MovingMesh)
-                UseMovingMesh = true;
-
             string[] CodNameSelected = new string[0];
             string[] DomNameSelected = new string[0];
 
             int D = this.GridData.SpatialDimension;
 
-
             BcMap = new IncompressibleBoundaryCondMap(this.GridData, this.Control.BoundaryValues, PhysicsMode.Incompressible);
-            // BcMap = new IncompressibleMultiphaseBoundaryCondMap(this.GridData, this.Control.BoundaryValues, LsTrk.SpeciesNames.ToArray());
 
             int degU = this.Velocity[0].Basis.Degree;
             var IBM_Op_config = new NSEOperatorConfiguration {
@@ -81,7 +135,6 @@ namespace BoSSS.Application.FSI_Solver {
                 DomBlocks = new bool[] { true, true },
             };
 
-            // full operator:
             var CodName = ((new string[] { "momX", "momY", "momZ" }).GetSubVector(0, D)).Cat("div");
             var Params = ArrayTools.Cat(
                  VariableNames.Velocity0Vector(D),
@@ -103,228 +156,315 @@ namespace BoSSS.Application.FSI_Solver {
                 (A, B, C) => this.HMForder
                 );
 
-
             // Momentum equation
-            // =================
+            // =============================
+            // Convective part
+            // =============================
+            {
+                if (IBM_Op_config.convection)
+                {
+                    for (int d = 0; d < D; d++)
+                    {
 
-            // convective part:
-            if (IBM_Op_config.convection) {
-                for (int d = 0; d < D; d++) {
+                        var comps = IBM_Op.EquationComponents[CodName[d]];
 
-                    var comps = IBM_Op.EquationComponents[CodName[d]];
+                        //var ConvBulk = new Solution.XNSECommon.Operator.Convection.ConvectionInBulk_LLF(D, BcMap, d, this.Control.PhysicalParameters.rho_A, 0, this.Control.AdvancedDiscretizationOptions.LFFA, this.Control.AdvancedDiscretizationOptions.LFFB, LsTrk);
+                        var ConvBulk = new Solution.NSECommon.LinearizedConvection(D, BcMap, d);
+                        //IBM_Op.OnIntegratingBulk += ConvBulk.SetParameter;
+                        comps.Add(ConvBulk); // bulk component
 
-                    //var ConvBulk = new Solution.XNSECommon.Operator.Convection.ConvectionInBulk_LLF(D, BcMap, d, this.Control.PhysicalParameters.rho_A, 0, this.Control.AdvancedDiscretizationOptions.LFFA, this.Control.AdvancedDiscretizationOptions.LFFB, LsTrk);
-                    var ConvBulk = new Solution.NSECommon.LinearizedConvection(D, BcMap, d);
-                    //IBM_Op.OnIntegratingBulk += ConvBulk.SetParameter;
-                    comps.Add(ConvBulk); // bulk component
+                        //var ConvIB = new BoSSS.Solution.XNSECommon.Operator.Convection.ConvectionAtIB(d, D, LsTrk, IBM_Op_config.dntParams.LFFA, BcMap, uIBM, wIBM);
 
-                    //var ConvIB = new BoSSS.Solution.XNSECommon.Operator.Convection.ConvectionAtIB(d, D, LsTrk, IBM_Op_config.dntParams.LFFA, BcMap, uIBM, wIBM);
+                        if (((FSI_Control)this.Control).Timestepper_LevelSetHandling == LevelSetHandling.None)
+                        {
 
-                    if (((FSI_Control)this.Control).LevelSetMovement.ToLowerInvariant() == "fixed") {
-
-                        var ConvIB = new BoSSS.Solution.NSECommon.Operator.Convection.ConvectionAtIB(d, D, LsTrk,
-                            this.Control.AdvancedDiscretizationOptions.LFFA, BcMap,
-                            delegate (double[] X, double time) {
-                                throw new NotImplementedException("Currently not implemented for fixed motion");
+                            var ConvIB = new BoSSS.Solution.NSECommon.Operator.Convection.ActiveConvectionAtIB(d, D, LsTrk,
+                                this.Control.AdvancedDiscretizationOptions.LFFA, BcMap,
+                                delegate (double[] X, double time)
+                                {
+                                    throw new NotImplementedException("Currently not implemented for fixed motion");
                                 //return new double[] { 0.0, 0.0 };
                             },
-                            this.Control.PhysicalParameters.rho_A,
-                            UseMovingMesh);
-                        comps.Add(ConvIB); // immersed boundary component
-                    } else {
-                        var ConvIB = new BoSSS.Solution.NSECommon.Operator.Convection.ConvectionAtIB(d, D, LsTrk,
-                            this.Control.AdvancedDiscretizationOptions.LFFA, BcMap,
-                                delegate (double[] X, double time) {
+                                this.Control.PhysicalParameters.rho_A,
+                                UseMovingMesh);
+                            comps.Add(ConvIB); // immersed boundary component
+                        }
+                        else
+                        {
+                            var ConvIB = new BoSSS.Solution.NSECommon.Operator.Convection.ActiveConvectionAtIB(d, D, LsTrk,
+                                this.Control.AdvancedDiscretizationOptions.LFFA, BcMap,
+                                    delegate (double[] X, double time)
+                                    {
 
-                                    double[] result = new double[X.Length + 2];
+                                        double[] result = new double[X.Length + 3];
 
-                                    foreach (Particle p in m_Particles) {
+                                        foreach (Particle p in m_Particles)
+                                        {
+                                        // Separating different boundary regions (for active particles)
+                                        double cos_theta;
+                                        // The posterior side of the particle (Neumann boundary)
+                                        if (Math.Cos(p.Angle[0]) * (X[0] - p.Position[0][0]) + Math.Sin(p.Angle[0]) * (X[1] - p.Position[0][1]) < 1e-8)// && Math.Cos(p.particleAnglePerIteration[0]) * (X[0] - p.positionAtIteration[0][0]) + Math.Sin(p.particleAnglePerIteration[0]) * (X[1] - p.positionAtIteration[0][1]) > -0.25)
+                                        {
+                                                cos_theta = (Math.Cos(p.Angle[0]) * (X[0] - p.Position[0][0]) + Math.Sin(p.Angle[0]) * (X[1] - p.Position[0][1])) / (Math.Sqrt((X[0] - p.Position[0][0]).Pow2() + (X[1] - p.Position[0][1]).Pow2()));
+                                            }
+                                        // The anterior side of the particle (Dirichlet boundary)
+                                        else
+                                            {
+                                                cos_theta = 0;
+                                            }
+
+                                        // which particle?
                                         bool containsParticle;
-                                        if (m_Particles.Count == 1) {
+                                            if (m_Particles.Count == 1)
+                                            {
+                                                containsParticle = true;
+                                            }
+                                            else { containsParticle = p.Contains(X, LsTrk); }
+
+                                        // active particles
+                                        if (containsParticle && p.ActiveParticle == true)
+                                            {
+                                                result[0] = p.TranslationalVelocity[0][0];
+                                                result[1] = p.TranslationalVelocity[0][1];
+                                                result[2] = p.RotationalVelocity[0];
+                                                result[3] = p.Position[0].L2Distance(X);
+                                                result[4] = -cos_theta;
+                                                return result;
+                                            }
+
+                                        // passive particles
+                                        else if (containsParticle && p.ActiveParticle == false)
+                                            {
+                                                result[0] = p.TranslationalVelocity[0][0];
+                                                result[1] = p.TranslationalVelocity[0][1];
+                                                result[2] = p.RotationalVelocity[0];
+                                                result[3] = p.Position[0].L2Distance(X);
+                                                result[4] = 0;
+                                                return result;
+                                            }
+                                        }
+                                        return result;
+                                    },
+                                this.Control.PhysicalParameters.rho_A,
+                                UseMovingMesh);
+                            comps.Add(ConvIB); // immersed boundary component
+                        }
+                    }
+                    this.U0MeanRequired = true;
+                }
+            }
+
+            // Pressure part
+            // =============================
+            {
+                if (IBM_Op_config.PressureGradient)
+                {
+                    for (int d = 0; d < D; d++)
+                    {
+                        var comps = IBM_Op.EquationComponents[CodName[d]];
+                        //var pres = new Solution.XNSECommon.Operator.Pressure.PressureInBulk(d, BcMap, 1, 0);
+                        var pres = new PressureGradientLin_d(d, BcMap);
+                        //IBM_Op.OnIntegratingBulk += pres.SetParameter;
+                        comps.Add(pres); // bulk component
+
+                        var presLs = new BoSSS.Solution.NSECommon.Operator.Pressure.ActivePressureAtIB(d, D, LsTrk);//no changes necessary for impl. of active particles
+                        comps.Add(presLs); // immersed boundary component
+
+                        // if periodic boundary conditions are applied a fixed pressure gradient drives the flow
+                        if (this.Control.FixedStreamwisePeriodicBC)
+                        {
+                            var presSource = new SrcPressureGradientLin_d(this.Control.SrcPressureGrad[d]);
+                            comps.Add(presSource);
+                        }
+                    }
+                }
+            }
+
+            // Viscous part
+            // =============================
+            {
+                if (IBM_Op_config.Viscous)
+                {
+                    for (int d = 0; d < D; d++)
+                    {
+                        var comps = IBM_Op.EquationComponents[CodName[d]];
+                        double penalty = this.Control.AdvancedDiscretizationOptions.PenaltySafety;
+
+
+                        var Visc = new swipViscosity_Term1(penalty, d, D, BcMap, ViscosityOption.ConstantViscosity, this.Control.PhysicalParameters.mu_A / this.Control.PhysicalParameters.rho_A, double.NaN, null);
+
+                        comps.Add(Visc);
+
+
+                        //var Visc = new Solution.XNSECommon.Operator.Viscosity.ViscosityInBulk_GradUTerm(penalty, 1.0, BcMap, d, D, this.Control.PhysicalParameters.mu_A, 0, ViscosityImplementation.H);
+                        //IBM_Op.OnIntegratingBulk += Visc.SetParameter;
+                        //comps.Add(Visc); // bulk component GradUTerm
+
+                        //delegate (double p, int i, int j, double[] cell) { return ComputePenalty(p, i, j, cell); });
+                        //delegate (double p, int i, int j, double[] cell) { return ComputePenalty(p, i, j, cell); });
+                        //FSI_Op.OnIntegratingBulk += Visc.SetParameter;                
+
+                        if (((FSI_Control)this.Control).Timestepper_LevelSetHandling == LevelSetHandling.None)
+                        {
+
+                            var ViscLs = new BoSSS.Solution.NSECommon.Operator.Viscosity.ActiveViscosityAtIB(d, D, LsTrk,
+                                penalty, this.ComputePenaltyIB,
+                                this.Control.PhysicalParameters.mu_A / this.Control.PhysicalParameters.rho_A,
+                                delegate (double[] X, double time)
+                                {
+                                    throw new NotImplementedException("Currently not implemented for fixed motion");
+                                //return new double[] { 0.0, 0.0 };
+                            });
+                            comps.Add(ViscLs); // immersed boundary component
+
+                        }
+                        else
+                        {
+                            var ViscLs = new BoSSS.Solution.NSECommon.Operator.Viscosity.ActiveViscosityAtIB(d, D, LsTrk,
+                                penalty, this.ComputePenaltyIB,
+                                this.Control.PhysicalParameters.mu_A / this.Control.PhysicalParameters.rho_A,
+                                delegate (double[] X, double time)
+                                {
+
+                                    double[] result = new double[X.Length + 5];
+
+                                    foreach (Particle p in m_Particles)
+                                    {
+                                    // which particle?
+                                    bool containsParticle;
+                                        if (m_Particles.Count == 1)
+                                        {
                                             containsParticle = true;
-                                        } else { containsParticle = p.Contains(X); }
+                                        }
+                                        else { containsParticle = p.Contains(X, LsTrk); }
 
+                                    // active particles
+                                    if (containsParticle && p.ActiveParticle == true)
+                                        {
+                                        // Separating different boundary regions (for active particles)
+                                        double cos_theta;
+                                        // The posterior side of the particle (Neumann boundary)
+                                        if (Math.Cos(p.Angle[0]) * (X[0] - p.Position[0][0]) + Math.Sin(p.Angle[0]) * (X[1] - p.Position[0][1]) < 1e-8)// && Math.Cos(p.particleAnglePerIteration[0]) * (X[0] - p.positionAtIteration[0][0]) + Math.Sin(p.particleAnglePerIteration[0]) * (X[1] - p.positionAtIteration[0][1]) > -0.25)
+                                        {
+                                                cos_theta = (Math.Cos(p.Angle[0]) * (X[0] - p.Position[0][0]) + Math.Sin(p.Angle[0]) * (X[1] - p.Position[0][1])) / (Math.Sqrt((X[0] - p.Position[0][0]).Pow2() + (X[1] - p.Position[0][1]).Pow2()));
+                                            }
+                                        // The anterior side of the particle (Dirichlet boundary)
+                                        else
+                                            {
+                                                cos_theta = 0;
+                                            }
+                                            result[0] = p.TranslationalVelocity[0][0];
+                                            result[1] = p.TranslationalVelocity[0][1];
+                                            result[2] = p.RotationalVelocity[0];
+                                            if (p is Particle_Sphere)
+                                            {
+                                                result[3] = ((Particle_Sphere)p).radius_P;
+                                            }
+                                            else
+                                            {
+                                                result[3] = p.Position[0].L2Distance(X);
+                                            }
+                                            result[4] = p.ActiveStress;
+                                            result[5] = -cos_theta;
+                                            result[6] = p.Angle[0];
+                                        }
 
-                                        if (containsParticle) {
-                                            result[0] = p.vel_P[0][0];
-                                            result[1] = p.vel_P[0][1];
-                                            result[2] = p.rot_P[0];
-                                            result[3] = p.currentPos_P[0].L2Distance(X);
-                                            return result;
+                                    // passive particles
+                                    else if (containsParticle && p.ActiveParticle == false)
+                                        {
+                                            result[0] = p.TranslationalVelocity[0][0];
+                                            result[1] = p.TranslationalVelocity[0][1];
+                                            result[2] = p.RotationalVelocity[0];
+                                            if (p is Particle_Sphere)
+                                            {
+                                                result[3] = ((Particle_Sphere)p).radius_P;
+                                            }
+                                            else
+                                            {
+                                                result[3] = p.Position[0].L2Distance(X);
+                                            }
+                                            result[4] = 0;
+                                            result[5] = 0;
+                                            result[6] = p.Angle[0];
                                         }
                                     }
                                     return result;
-                                },
-                            this.Control.PhysicalParameters.rho_A,
-                            UseMovingMesh);
-                        comps.Add(ConvIB); // immersed boundary component
-                    }
-
-                }
-                this.U0MeanRequired = true;
-            }
-
-            // pressure part:
-            if (IBM_Op_config.PressureGradient) {
-                for (int d = 0; d < D; d++) {
-                    var comps = IBM_Op.EquationComponents[CodName[d]];
-                    //var pres = new Solution.XNSECommon.Operator.Pressure.PressureInBulk(d, BcMap, 1, 0);
-                    var pres = new PressureGradientLin_d(d, BcMap);
-                    //IBM_Op.OnIntegratingBulk += pres.SetParameter;
-                    comps.Add(pres); // bulk component
-
-                    var presLs = new BoSSS.Solution.NSECommon.Operator.Pressure.PressureFormAtIB(d, D, LsTrk);
-                    comps.Add(presLs); // immersed boundary component
-
-                    // if periodic boundary conditions are applied a fixed pressure gradient drives the flow
-                    if (this.Control.FixedStreamwisePeriodicBC) {
-                        var presSource = new SrcPressureGradientLin_d(this.Control.SrcPressureGrad[d]);
-                        comps.Add(presSource);
-                    }
-                }
-            }
-
-            // viscous part:
-            if (IBM_Op_config.Viscous) {
-                for (int d = 0; d < D; d++) {
-                    var comps = IBM_Op.EquationComponents[CodName[d]];
-                    //double _D = D;
-                    //double penalty_mul = this.Control.AdvancedDiscretizationOptions.PenaltySafety;
-                    //double _p = degU;
-                    //double penalty_base = (_p + 1) * (_p + _D) / D;
-                    //double penalty = penalty_base * penalty_mul;
-                    double penalty = this.Control.AdvancedDiscretizationOptions.PenaltySafety;
-
-
-                    var Visc = new swipViscosity_Term1(penalty, d, D, BcMap, ViscosityOption.ConstantViscosity, this.Control.PhysicalParameters.mu_A / this.Control.PhysicalParameters.rho_A, double.NaN, null);
-
-                    comps.Add(Visc);
-
-
-                    //var Visc = new Solution.XNSECommon.Operator.Viscosity.ViscosityInBulk_GradUTerm(penalty, 1.0, BcMap, d, D, this.Control.PhysicalParameters.mu_A, 0, ViscosityImplementation.H);
-                    //IBM_Op.OnIntegratingBulk += Visc.SetParameter;
-                    //comps.Add(Visc); // bulk component GradUTerm
-
-                    //delegate (double p, int i, int j, double[] cell) { return ComputePenalty(p, i, j, cell); });
-                    //delegate (double p, int i, int j, double[] cell) { return ComputePenalty(p, i, j, cell); });
-                    //FSI_Op.OnIntegratingBulk += Visc.SetParameter;                
-
-                    if (((FSI_Control)this.Control).LevelSetMovement.ToLowerInvariant() == "fixed") {
-
-                        var ViscLs = new BoSSS.Solution.NSECommon.Operator.Viscosity.ViscosityAtIB(d, D, LsTrk,
-                            penalty, this.ComputePenaltyIB,
-                            this.Control.PhysicalParameters.mu_A / this.Control.PhysicalParameters.rho_A,
-                            delegate (double[] X, double time) {
-                                throw new NotImplementedException("Currently not implemented for fixed motion");
-                                //return new double[] { 0.0, 0.0 };
-                            });
-                        comps.Add(ViscLs); // immersed boundary component
-                    } else {
-
-                        var ViscLs = new BoSSS.Solution.NSECommon.Operator.Viscosity.ViscosityAtIB(d, D, LsTrk,
-                            penalty, this.ComputePenaltyIB,
-                            this.Control.PhysicalParameters.mu_A / this.Control.PhysicalParameters.rho_A,
-                            delegate (double[] X, double time) {
-
-                                double[] result = new double[X.Length + 2];
-
-                                foreach (Particle p in m_Particles) {
-                                    bool containsParticle;
-                                    if (m_Particles.Count == 1) {
-                                        containsParticle = true;
-                                    } else { containsParticle = p.Contains(X); }
-
-
-                                    if (containsParticle) {
-                                        result[0] = p.vel_P[0][0];
-                                        result[1] = p.vel_P[0][1];
-                                        result[2] = p.rot_P[0];
-                                        result[3] = p.currentPos_P[0].L2Distance(X);
-                                        return result;
-                                    }
                                 }
-                                return result;
-                            });
-                        comps.Add(ViscLs); // immersed boundary component
+                             );
+                            comps.Add(ViscLs); // immersed boundary component
+                        }
                     }
                 }
             }
 
             // Continuum equation
             // ==================
-            if (IBM_Op_config.continuity) {
-                for (int d = 0; d < D; d++) {
-                    //var src = new Solution.XNSECommon.Operator.Continuity.DivergenceInBulk_Volume(d, D, 1, 0, 1, false);
-                    //IBM_Op.OnIntegratingBulk += src.SetParameter;
-                    //var flx = new Solution.XNSECommon.Operator.Continuity.DivergenceInBulk_Edge(d, BcMap, 1, 0, 1, false);
-                    //IBM_Op.OnIntegratingBulk += flx.SetParameter;
-                    var src = new Divergence_DerivativeSource(d, D);
-                    //IBM_Op.OnIntegratingBulk += src.SetParameter;
-                    var flx = new Divergence_DerivativeSource_Flux(d, BcMap);
-                    IBM_Op.EquationComponents["div"].Add(src);
-                    IBM_Op.EquationComponents["div"].Add(flx);
+            {
+                if (IBM_Op_config.continuity)
+                {
+                    for (int d = 0; d < D; d++)
+                    {
+                        //var src = new Solution.XNSECommon.Operator.Continuity.DivergenceInBulk_Volume(d, D, 1, 0, 1, false);
+                        //IBM_Op.OnIntegratingBulk += src.SetParameter;
+                        //var flx = new Solution.XNSECommon.Operator.Continuity.DivergenceInBulk_Edge(d, BcMap, 1, 0, 1, false);
+                        //IBM_Op.OnIntegratingBulk += flx.SetParameter;
+                        var src = new Divergence_DerivativeSource(d, D);
+                        //IBM_Op.OnIntegratingBulk += src.SetParameter;
+                        var flx = new Divergence_DerivativeSource_Flux(d, BcMap);
+                        IBM_Op.EquationComponents["div"].Add(src);
+                        IBM_Op.EquationComponents["div"].Add(flx);
 
-                }
+                    }
 
-                if (((FSI_Control)this.Control).LevelSetMovement.ToLowerInvariant() == "fixed") {
+                    if (((FSI_Control)this.Control).Timestepper_LevelSetHandling == LevelSetHandling.None)
+                    {
 
-                    var divPen = new BoSSS.Solution.NSECommon.Operator.Continuity.DivergenceAtIB(D, LsTrk, 1, delegate (double[] X, double time) {
-                        throw new NotImplementedException("Currently not implemented for fixed motion");
-                        //return new double[] { 0.0, 0.0 };
-                    });
-                    IBM_Op.EquationComponents["div"].Add(divPen);  // immersed boundary component
-                } else {
+                        var divPen = new BoSSS.Solution.NSECommon.Operator.Continuity.DivergenceAtIB(D, LsTrk, 1, delegate (double[] X, double time)
+                        {
+                            throw new NotImplementedException("Currently not implemented for fixed motion");
+                            //return new double[] { 0.0, 0.0 };
+                        });
+                        IBM_Op.EquationComponents["div"].Add(divPen);  // immersed boundary component
+                    }
+                    else
+                    {
+                        var divPen = new BoSSS.Solution.NSECommon.Operator.Continuity.DivergenceAtIB(D, LsTrk, 1,
+                           delegate (double[] X, double time)
+                           {
 
-                    var divPen = new BoSSS.Solution.NSECommon.Operator.Continuity.DivergenceAtIB(D, LsTrk, 1,
-                       delegate (double[] X, double time) {
+                               double[] result = new double[X.Length + 2];
 
-                           double[] result = new double[X.Length + 2];
-
-                           foreach (Particle p in m_Particles) {
-                               bool containsParticle;
-                               if (m_Particles.Count == 1) {
-                                   containsParticle = true;
-                               } else { containsParticle = p.Contains(X); }
-
-
-                               if (containsParticle) {
-                                   result[0] = p.vel_P[0][0];
-                                   result[1] = p.vel_P[0][1];
-                                   result[2] = p.rot_P[0];
-                                   result[3] = p.currentPos_P[0].L2Distance(X);
-                                   return result;
+                               foreach (Particle p in m_Particles)
+                               {
+                                   bool containsParticle;
+                                   if (m_Particles.Count == 1)
+                                   {
+                                       containsParticle = true;
+                                   }
+                                   else { containsParticle = p.Contains(X, LsTrk); }
+                                   if (containsParticle)
+                                   {
+                                       result[0] = p.TranslationalVelocity[0][0];
+                                       result[1] = p.TranslationalVelocity[0][1];
+                                       result[2] = p.RotationalVelocity[0];
+                                       if (p is Particle_Sphere)
+                                       {
+                                           result[3] = ((Particle_Sphere)p).radius_P;
+                                       }
+                                       else
+                                       {
+                                           result[3] = p.Position[0].L2Distance(X);
+                                       }
+                                       return result;
+                                   }
                                }
-                           }
-                           return result;
-                       });
-                    IBM_Op.EquationComponents["div"].Add(divPen); // immersed boundary component 
+                               return result;
+                           });
+                        IBM_Op.EquationComponents["div"].Add(divPen); // immersed boundary component 
+                    }
                 }
-                //IBM_Op.EquationComponents["div"].Add(new PressureStabilization(1, 1.0 / this.Control.PhysicalParameters.mu_A));
             }
             IBM_Op.Commit();
-
-            LevelSetHandling lsh;
-
-            // create coupling
-            // ------------------
-            switch (((FSI_Control)this.Control).Timestepper_Mode) {
-                case FSI_Control.TimesteppingMode.MovingMesh:
-                    lsh = LevelSetHandling.Coupled_Once;
-                    break;
-
-                case FSI_Control.TimesteppingMode.Splitting:
-                    lsh = LevelSetHandling.LieSplitting;
-                    break;
-
-                case FSI_Control.TimesteppingMode.None:
-                    lsh = LevelSetHandling.None;
-                    break;
-
-                default:
-                    throw new NotImplementedException();
-            }
-
-
 
             // NSE or pure Stokes
             // ------------------
@@ -333,8 +473,7 @@ namespace BoSSS.Application.FSI_Solver {
                 SpatialOp = SpatialOperatorType.Nonlinear;
             }
 
-
-            // create timestepper
+            // create timestepper, update level-set
             // ------------------
             int bdfOrder;
             if (this.Control.Timestepper_Scheme == FSI_Control.TimesteppingScheme.CrankNicolson)
@@ -348,183 +487,685 @@ namespace BoSSS.Application.FSI_Solver {
             else
                 throw new NotImplementedException("todo");
 
-            var MassMatrixShape = MassMatrixShapeandDependence.IsTimeDependent;
 
-            //if (((FSI_Control)this.Control).LevelSetMovement.ToLowerInvariant() == "coupled" && ((FSI_Control)this.Control).includeTranslation == false)
-            //    MassMatrixShape = MassMatrixShapeandDependence.IsNonIdentity;
+            MassMatrixShapeandDependence MassMatrixShape;
+            switch (((FSI_Control)this.Control).Timestepper_LevelSetHandling) {
+                case LevelSetHandling.Coupled_Once:
+                    MassMatrixShape = MassMatrixShapeandDependence.IsTimeDependent;
+                    break;
+
+                case LevelSetHandling.Coupled_Iterative:
+                    MassMatrixShape = MassMatrixShapeandDependence.IsTimeAndSolutionDependent;
+                    break;
+
+                case LevelSetHandling.LieSplitting:
+                    MassMatrixShape = MassMatrixShapeandDependence.IsTimeAndSolutionDependent;
+                    if (calculatedDampingTensors == 0) {
+                        foreach (Particle p in m_Particles) {
+                            if (p.neglectAddedDamping == false) {
+                                p.CalculateDampingTensor(LsTrk, ((FSI_Control)this.Control).PhysicalParameters.mu_A, ((FSI_Control)this.Control).PhysicalParameters.rho_A, ((FSI_Control)this.Control).dtMax);
+                                ExchangeDampingTensors();
+                            }
+                        }
+                    }
+                    calculatedDampingTensors = 1;
+                    break;
+
+                case LevelSetHandling.FSI_LieSplittingFullyCoupled:
+                    MassMatrixShape = MassMatrixShapeandDependence.IsTimeAndSolutionDependent;
+                    if (calculatedDampingTensors == 0)
+                    {
+                        foreach (Particle p in m_Particles)
+                        {
+                            if (p.neglectAddedDamping == false)
+                            {
+                                p.CalculateDampingTensor(LsTrk, ((FSI_Control)this.Control).PhysicalParameters.mu_A, ((FSI_Control)this.Control).PhysicalParameters.rho_A, ((FSI_Control)this.Control).dtMax);
+                            }
+                        }
+                    }
+                    calculatedDampingTensors = 1;
+                    break;
+
+                case LevelSetHandling.StrangSplitting:
+                    MassMatrixShape = MassMatrixShapeandDependence.IsTimeDependent;
+                    break;
+
+                case LevelSetHandling.None:
+                    MassMatrixShape = MassMatrixShapeandDependence.IsTimeDependent;
+                    break;
+
+                default:
+                    throw new ApplicationException("unknown 'LevelSetMovement': " + ((FSI_Control)this.Control).Timestepper_LevelSetHandling);
+            }
+
+
 
             m_BDF_Timestepper = new XdgBDFTimestepping(
                 ArrayTools.Cat(this.Velocity, this.Pressure),
                 ArrayTools.Cat(this.ResidualMomentum, this.ResidualContinuity),
-                LsTrk, true,
+                LsTrk,
+                true,
                 DelComputeOperatorMatrix, DelUpdateLevelset,
                 bdfOrder,
-                lsh,
+                ((FSI_Control)this.Control).Timestepper_LevelSetHandling,
                 MassMatrixShape,
                 SpatialOp,
                 MassScale,
                 this.MultigridOperatorConfig, base.MultigridSequence,
                 this.FluidSpecies, base.HMForder,
-                this.Control.AdvancedDiscretizationOptions.CellAgglomerationThreshold, true);
-            m_BDF_Timestepper.m_ResLogger = base.ResLogger;
-            m_BDF_Timestepper.m_ResidualNames = ArrayTools.Cat(this.ResidualMomentum.Select(f => f.Identification), this.ResidualContinuity.Identification);
-            m_BDF_Timestepper.Config_SolverConvergenceCriterion = this.Control.Solver_ConvergenceCriterion;
-            m_BDF_Timestepper.Config_MaxIterations = this.Control.MaxSolverIterations;
-            m_BDF_Timestepper.Config_MinIterations = this.Control.MinSolverIterations;
-            m_BDF_Timestepper.SessionPath = SessionPath;
-            m_BDF_Timestepper.Timestepper_Init = Solution.Timestepping.TimeStepperInit.SingleInit;
-
+                this.Control.AdvancedDiscretizationOptions.CellAgglomerationThreshold, true,
+                this.Control.NonLinearSolver, this.Control.LinearSolver
+                )
+            {
+                m_ResLogger = base.ResLogger,
+                m_ResidualNames = ArrayTools.Cat(this.ResidualMomentum.Select(f => f.Identification), this.ResidualContinuity.Identification),
+                IterUnderrelax = ((FSI_Control)this.Control).Timestepper_LevelSetHandling == LevelSetHandling.Coupled_Iterative ? ((FSI_Control)this.Control).LSunderrelax : 1.0,
+                Config_LevelSetConvergenceCriterion = ((FSI_Control)this.Control).ForceAndTorque_ConvergenceCriterion,
+                SessionPath = SessionPath,
+                Timestepper_Init = Solution.Timestepping.TimeStepperInit.SingleInit
+            };
         }
 
         public override double DelUpdateLevelset(DGField[] CurrentState, double phystime, double dt, double UnderRelax, bool incremental) {
-
-            /// FOR FIXED MOTION
-            /// 
-            switch (((FSI_Control)this.Control).LevelSetMovement.ToLowerInvariant()) {
-                case "fixed":
+            
+            switch (((FSI_Control)this.Control).Timestepper_LevelSetHandling) {
+                case LevelSetHandling.None:
                     ScalarFunction Posfunction = NonVectorizedScalarFunction.Vectorize(((FSI_Control)Control).MovementFunc, phystime);
-                    newTransVelocity[0] = (((FSI_Control)this.Control).transVelocityFunc[0])(phystime);
-                    newTransVelocity[1] = (((FSI_Control)this.Control).transVelocityFunc[1])(phystime);
+                    //newTransVelocity[0] = (((FSI_Control)this.Control).transVelocityFunc[0])(phystime);
+                    //newTransVelocity[1] = (((FSI_Control)this.Control).transVelocityFunc[1])(phystime);
                     LevSet.ProjectField(Posfunction);
                     LsTrk.UpdateTracker();
                     break;
 
-                case "coupled":
-                    //if (phystime == 0) {
-                    //    oldPosition[0] = ((FSI_Control)this.Control).initialPos[0][0];
-                    //    oldPosition[1] = ((FSI_Control)this.Control).initialPos[0][1];
-                    //    newTransVelocity[0] = 0;
-                    //    newTransVelocity[1] = 0;
-                    //    oldTransVelocity[0] = 0;
-                    //    oldTransVelocity[1] = 0;
-                    //    TransVelocityN2[0] = 0;
-                    //    TransVelocityN2[1] = 0;
-                    //    TransVelocityN3[0] = 0;
-                    //    TransVelocityN3[1] = 0;
-                    //    TransVelocityN4[0] = 0;
-                    //    TransVelocityN4[1] = 0;
-                    //    force[0] = 0;
-                    //    force[1] = 0;
-                    //}
+                case LevelSetHandling.Coupled_Once:
+                    UpdateLevelSetParticles(dt);
+                    break;
 
+                case LevelSetHandling.Coupled_Iterative:
+                    UpdateForcesAndTorque(dt, phystime);
+                    UpdateLevelSetParticles(dt);
+                    foreach (Particle p in m_Particles) {
+                        p.iteration_counter_P += 1;
+                        p.ForceAndTorque_convergence = ((FSI_Control)this.Control).ForceAndTorque_ConvergenceCriterion;
+                    }
+                    break;
 
+                case LevelSetHandling.LieSplitting:
+                    UpdateLevelSetParticles(dt);
+                    break;
 
-                    // Console.WriteLine("Particle Reynoldsnumber:   {0}", IBMMover.ComputeParticleRe(newTransVelocity, this.Control.particleRadius, ((FSI_Control)this.Control).particleRho));
-                    //Func<double[], double, double> phiComplete;
+                case LevelSetHandling.FSI_LieSplittingFullyCoupled:
+                    UpdateLevelSetParticles(dt);
+                    break;
 
-
-
-                    //foreach (Particle p in m_Particles) {
-
-                    //    p.UpdateParticlePosition(dt);
-
-
-                    //    p.UpdateAngularVelocity(dt);
-                    //    p.UpdateTransVelocity(dt);
-                    //    //p.CleanHistory();
-                    //    //phiComplete = phiComplete* p.phi_P;
-                    //}
-
-
-                    ////newPosition = IBMMover.MoveCircularParticle(dt, newTransVelocity, oldPosition);
-                    ////TransVelocityN4 = TransVelocityN3;
-                    ////TransVelocityN3 = TransVelocityN2;
-                    ////TransVelocityN2 = oldTransVelocity;
-                    ////oldTransVelocity = newTransVelocity;
-                    ////oldPosition = newPosition;
-
-
-                    //if (m_Particles.Count > 3)
-                    //    throw new NotImplementedException("Currently the solver is only working for up to 2 particles");
-                    //Func<double[], double, double> phiComplete;
-
-                    //if (m_Particles.Count == 1) {
-                    //    phiComplete = (X, t) => -1 * m_Particles[0].phi_P(X, t);
-                    //} else if (m_Particles.Count == 2) { phiComplete = (X, t) => -1 * (m_Particles[0].phi_P(X, t) * m_Particles[1].phi_P(X, t)); } else {
-                    //    phiComplete = (X, t) => -1 * (m_Particles[0].phi_P(X, t) * m_Particles[1].phi_P(X, t) * m_Particles[2].phi_P(X, t));
-                    //}
-
-
-                    //ScalarFunction function = NonVectorizedScalarFunction.Vectorize(phiComplete, phystime);
-                    //LevSet.ProjectField(function);
-                    //DGLevSet.Current.ProjectField(function);
-                    //LsTrk.UpdateTracker(__NearRegionWith: 2);
+                case LevelSetHandling.StrangSplitting:
                     UpdateLevelSetParticles(dt);
                     break;
 
                 default:
-                    throw new ApplicationException("unknown 'LevelSetMovement': " + ((FSI_Control)Control).LevelSetMovement);
+                    throw new ApplicationException("unknown 'LevelSetMovement': " + ((FSI_Control)Control).Timestepper_LevelSetHandling);
             }
+        
+            // Forces and Torque residual
+            /// <summary>
+            /// Computes the Residual of the forces and torque acting from to fluid to the particle.
+            /// </summary>
+            double forces_PResidual = 0;
+            if (((FSI_Control)this.Control).Timestepper_LevelSetHandling == LevelSetHandling.Coupled_Iterative) {
+                double acc_force_P_x = 0;
+                double acc_force_P_y = 0;
+                double acc_torque_P = 0;
+                double acc_force_P_x_old = 0;
+                double acc_force_P_y_old = 0;
+                double acc_torque_P_old = 0;
+                double iterationCounter = -1;
+                foreach (Particle p in m_Particles) {
+                    // forces and torque of the previous iteration
+                    acc_force_P_x_old += p.HydrodynamicForces[1][0];
+                    acc_force_P_y_old += p.HydrodynamicForces[1][1];
+                    acc_torque_P_old += p.HydrodynamicTorque[1];
 
-            return 0.0;
+                    // forces and torque of the current iteration
+                    acc_force_P_x += p.HydrodynamicForces[0][0];
+                    acc_force_P_y += p.HydrodynamicForces[0][1];
+                    acc_torque_P += p.HydrodynamicTorque[0];
+                    iterationCounter = p.iteration_counter_P;
+                }
+                // first iteration, to ensure at least two iterations per timestep
+                if (iterationCounter == 0) {
+                    forces_PResidual = 1;
+                }
+                // compute residual
+                else {
+                    forces_PResidual = Math.Sqrt((acc_force_P_x_old - acc_force_P_x).Pow2() + (acc_force_P_y_old - acc_force_P_y).Pow2() + (acc_torque_P_old - acc_torque_P).Pow2());
+                }
+                Console.WriteLine("Current forces_PResidual:   " + forces_PResidual);
+            }
+            // no iterative solver, no residual
+            else {
+                forces_PResidual = 0;
+            }
+            return forces_PResidual;
         }
 
-        void UpdateLevelSetParticles(double dt) {
-            foreach (Particle p in m_Particles) {
+        private int[] CellColor = null;
 
-                p.UpdateParticlePosition(dt);
+        /// <summary>
+        /// Particle to Level-Set-Field 
+        /// </summary>
+        private void UpdateLevelSetParticles(double dt)
+        {
+            // Step 1
+            // Define an array with the respective cell colors
+            // ===============================================
+            int J = GridData.iLogicalCells.NoOfLocalUpdatedCells;
+            CellColor = CellColor ?? InitializeColoring(J);
 
-                Console.WriteLine("Current Velocites are:   " + p.vel_P[0][0] + "        " + p.vel_P[0][1] + "       " + p.rot_P[0]);
-                p.UpdateAngularVelocity(dt);
-                p.UpdateTransVelocity(dt, this.Control.PhysicalParameters.rho_A);
-                //p.CleanHistory();
-                //phiComplete = phiComplete* p.phi_P;
+            // Step 2
+            // Delete the old level set
+            // ========================
+            LevSet.Clear();
+
+            // Step 3
+            // Define level set per color
+            // ==========================
+            FSI_LevelSetUpdate levelSetUpdate = new FSI_LevelSetUpdate();
+            CellMask AgglParticleMask = null;
+            List<int[]> ColoredCellsSorted = levelSetUpdate.ColoredCellsFindAndSort(CellColor);
+            int[] ParticleColorArray = levelSetUpdate.FindParticleColor(GridData, m_Particles, ColoredCellsSorted);
+            for (int p = 0; p < m_Particles.Count(); p++)
+            {
+                if (ParticleColorArray[p] != 0)
+                {
+                    int[] ParticlesOfCurrentColor = levelSetUpdate.FindParticlesOneColor(ParticleColorArray, ParticleColorArray[p]);
+                    CellMask ColoredCellMask = levelSetUpdate.CellsOneColor(GridData, ColoredCellsSorted, ParticleColorArray[p], J);
+                    AgglParticleMask = AgglParticleMask == null ? ColoredCellMask : AgglParticleMask.Union(ColoredCellMask);
+
+                    double phiComplete(double[] X, double t)
+                    {
+                        // Generating the correct sign
+                        // ===========================
+                        double phi = Math.Pow(-1, ParticlesOfCurrentColor.Length - 1);
+
+                        // Multiplication over all particle-level-sets within the current color
+                        // ====================================================================
+                        for (int pc = 0; pc < ParticlesOfCurrentColor.Length; pc++)
+                        {
+                            phi *= m_Particles[ParticlesOfCurrentColor[pc]].Phi_P(X);
+
+                            // Delete all particles within the current color from the particle color array
+                            // ===========================================================================
+                            ParticleColorArray[ParticlesOfCurrentColor[pc]] = 0;
+                        }
+                        return phi;
+                    }
+                    SetLevelSet(phiComplete, ColoredCellMask, hack_phystime);
+                }
             }
 
-
-            //newPosition = IBMMover.MoveCircularParticle(dt, newTransVelocity, oldPosition);
-            //TransVelocityN4 = TransVelocityN3;
-            //TransVelocityN3 = TransVelocityN2;
-            //TransVelocityN2 = oldTransVelocity;
-            //oldTransVelocity = newTransVelocity;
-            //oldPosition = newPosition;
-
-
-            if (m_Particles.Count > 5)
-                throw new NotImplementedException("Currently the solver is only working for up to 2 particles");
-            Func<double[], double, double> phiComplete = null;
-
-            if (m_Particles.Count == 1) {
-                phiComplete = (X, t) => 1 * m_Particles[0].phi_P(X, t);
-            } else if (m_Particles.Count == 2) {
-                phiComplete = (X, t) => -1 * (m_Particles[0].phi_P(X, t) * m_Particles[1].phi_P(X, t));
-            } else if (m_Particles.Count == 3) {
-                phiComplete = (X, t) => -1 * (m_Particles[0].phi_P(X, t) * m_Particles[1].phi_P(X, t) * m_Particles[2].phi_P(X, t));
-            } else if (m_Particles.Count == 4) {
-                phiComplete = (X, t) => -1 * (m_Particles[0].phi_P(X, t) * m_Particles[1].phi_P(X, t) * m_Particles[2].phi_P(X, t) * m_Particles[3].phi_P(X, t));
-            } else if (m_Particles.Count == 5) {
-                phiComplete = (X, t) => 1 * (m_Particles[0].phi_P(X, t) * m_Particles[1].phi_P(X, t) * (m_Particles[2].phi_P(X, t) * m_Particles[3].phi_P(X, t)) * m_Particles[4].phi_P(X, t));
+            // =======================================================
+            // Step 4
+            // Define level set of the remaining cells ("Fluid-Cells")
+            // =======================================================
+            double phiFluid(double[] X, double t)
+            {
+                return -1;
             }
+            CellMask FluidCells = AgglParticleMask != null ? AgglParticleMask.Complement() : CellMask.GetFullMask(GridData);
+            SetLevelSet(phiFluid, FluidCells, hack_phystime);
 
-
-
-            ScalarFunction function = NonVectorizedScalarFunction.Vectorize(phiComplete, hack_phystime);
-            LevSet.ProjectField(function);
-            DGLevSet.Current.ProjectField(function);
+            // =======================================================
+            // Step 5
+            // Update level set tracker and coloring
+            // =======================================================
             LsTrk.UpdateTracker(__NearRegionWith: 2);
+            CellColor = UpdateColoring();
         }
 
         /// <summary>
-        /// Variables for FSI coupling
+        /// Set level set based on the function phi and the current cells
         /// </summary>
-        double oldAngularVelocity, newAngularVelocity, MPIangularVelocity;
-        double[] TransVelocityN4 = new double[2];
-        double[] TransVelocityN3 = new double[2];
-        double[] TransVelocityN2 = new double[2];
-        double[] oldTransVelocity = new double[2];
-        double[] newTransVelocity = new double[2];
-        double[] oldPosition = new double[2];
-        double[] newPosition = new double[2];
-        //double[] force = new double[2];
-        double[] oldforce = new double[2];
-        //double torque = new double();
-        //double oldtorque = new double();
-        double[] MPItransVelocity = new double[2];
-        double[] MPIpos = new double[2];
-        double totalMomentumOld = 0;
+        private void SetLevelSet(Func<double[], double, double> phi, CellMask CurrentCells, double phystime)
+        {
+            ScalarFunction Function = NonVectorizedScalarFunction.Vectorize(phi, phystime);
+            DGLevSet.Current.ProjectField(Function);
+            LevSet.AccLaidBack(1.0, DGLevSet.Current, CurrentCells);
+        }
+
+        /// <summary>
+        /// Update of <see cref="ParticleColor"/> and <see cref="LevelSetDistance"/>
+        /// </summary>
+        private int[] UpdateColoring()
+        {
+            int J = GridData.iLogicalCells.NoOfLocalUpdatedCells;
+            int[] PartCol = LsTrk.Regions.ColorMap4Spc[LsTrk.GetSpeciesId("B")];
+            var rCode = LsTrk.Regions.RegionsCode;
+            for (int j = 0; j < J; j++)
+            {
+                ParticleColor.SetMeanValue(j, PartCol[j]);
+
+                LevelSetDistance.SetMeanValue(j, LevelSetTracker.DecodeLevelSetDist(rCode[j], 0));
+            }
+            return PartCol;
+        }
+
+
+        /// <summary>
+        /// Initialization of <see cref="ParticleColor"/> 
+        /// </summary>
+        private int[] InitializeColoring(int J)
+        {
+            int[] Cells = new int[J];
+            for (int p = 0; p < m_Particles.Count; p++)
+            {
+                Console.WriteLine("Init Color");
+                double Hmin = Math.Sqrt(GridData.iGeomCells.GetCellVolume(0));
+                double[] ParticlePos = m_Particles[p].Position[0];
+                double ParticleAngle = m_Particles[p].Angle[0];
+                double[] ParticleScales = m_Particles[p].GetLengthScales();
+                double Upperedge = ParticlePos[1] + ParticleScales[1] * Math.Abs(Math.Cos(ParticleAngle)) + ParticleScales[0] * Math.Abs(Math.Sin(ParticleAngle)) + Hmin / 4;
+                double Loweredge = ParticlePos[1] - ParticleScales[1] * Math.Abs(Math.Cos(ParticleAngle)) - ParticleScales[0] * Math.Abs(Math.Sin(ParticleAngle)) - Hmin / 4;
+                double Leftedge = ParticlePos[0] - ParticleScales[0] * Math.Abs(Math.Cos(ParticleAngle)) - ParticleScales[1] * Math.Abs(Math.Sin(ParticleAngle)) - Hmin / 4;
+                double Rightedge = ParticlePos[0] + ParticleScales[0] * Math.Abs(Math.Cos(ParticleAngle)) + ParticleScales[1] * Math.Abs(Math.Sin(ParticleAngle)) + Hmin / 4;
+                for (int j = 0; j < J; j++)
+                {
+                    double[] center = GridData.iLogicalCells.GetCenter(j);
+                    if (center[0] > Leftedge && center[0] < Rightedge && center[1] > Loweredge && center [1] < Upperedge)
+                    {
+                        ParticleColor.SetMeanValue(j, p + 1);
+                        m_Particles[p].ParticleColoredCells.Add(new int[2] { j, p + 1 });
+                        Cells[j] = p + 1;
+                    }
+                }
+            }
+            CheckForNeighborColorsInit(Cells);
+            return Cells;
+        }
+
+        private void CheckForNeighborColorsInit(int[] ColoredCells)
+        {
+            for (int i = 0; i < ColoredCells.Length; i++)
+            {
+                if (ColoredCells[i] != 0)
+                {
+                    GridData.GetCellNeighbours(i, GetCellNeighbours_Mode.ViaEdges, out int[] CellNeighbors, out int[] ConnectingEntities);
+                    for (int j = 0; j < CellNeighbors.Length; j++)
+                    {
+                        if (CellNeighbors[j] < ColoredCells.Max() && ColoredCells[i] != ColoredCells[j] && ColoredCells[CellNeighbors[j]] != 0)
+                        {
+                            RecolorCellsInit(ColoredCells, ColoredCells[i], ColoredCells[CellNeighbors[j]]);
+                        }
+                    }
+                }
+            }
+        }
+
+        private void RecolorCellsInit(int[] ColoredCells, int NewColor, int OldColor)
+        {
+            for (int i = 0; i < ColoredCells.Length; i++)
+            {
+                if(ColoredCells[i] == OldColor)
+                {
+                    ColoredCells[i] = NewColor;
+                    ParticleColor.SetMeanValue(i, NewColor);
+                }
+            }
+        }
+
+        private void UpdateForcesAndTorque(double dt, double phystime) {
+            //
+            // Note on MPI parallelization of particle solver:
+            // ===============================================
+            //
+            // - hydrodynamic forces are computed for each domain and added together;
+            //   e.g. in the case of particles at MPI-boundaries each processor computes his part of the integral
+            // - collisions are detected globally / collision forces are thus only computed on MPI rank 0
+            // - finally, the forces on all particles are summed over all MPI processors and the result is stored on all processors (MPI_Allreduce)
+            // - particle motion is computed for all particles simultaneously on all processors; every processor knows every particle
+            // - since the particle solver is much cheaper than the flow solver, this "not-really parallel" approach may work up to a few hundreds of particles
+            //
+
+            // Initial check: is the motion state of the particles equal on all MPI processors?
+            // ================================================================================
+            int D = GridData.SpatialDimension;
+            int NoOfParticles = m_Particles.Count;
+
+            {
+                // verify that we have the same number of particles on each processor
+                int NoOfParticles_min = NoOfParticles.MPIMin();
+                int NoOfParticles_max = NoOfParticles.MPIMax();
+                if (NoOfParticles_max != NoOfParticles || NoOfParticles_max != NoOfParticles)
+                    throw new ApplicationException("mismatch in number of MPI particles");
+
+                // nor, compare those particles:
+                int NoOfVars = (10 + D * 10); // variables per particle; size can be increased if more values should be compared
+                double[] CheckSend = new double[NoOfParticles * NoOfVars]; 
+
+                for (int iP = 0; iP < NoOfParticles; iP++) {
+                    var P = m_Particles[iP];
+
+                    // scalar values
+                    CheckSend[iP * NoOfVars + 0] = P.Angle[0];
+                    CheckSend[iP * NoOfVars + 1] = P.Angle[1];
+                    //CheckSend[iP*NoOfVars + 2] = P.Area_P;
+                    CheckSend[iP * NoOfVars + 3] = P.ClearSmallValues ? 1.0 : 0.0;
+                    CheckSend[iP * NoOfVars + 4] = P.ForceAndTorque_convergence;
+                    CheckSend[iP * NoOfVars + 5] = P.Mass_P;
+                    CheckSend[iP * NoOfVars + 6] = P.particleDensity;
+                    // todo: add more values here that might be relevant for the particle state;
+
+                    // vector values
+                    for (int d = 0; d < D; d++) {
+                        int Offset = 10;
+                        CheckSend[iP * NoOfVars + Offset + 0 * D + d] = P.Position[0][d];
+                        CheckSend[iP * NoOfVars + Offset + 1 * D + d] = P.Position[1][d];
+                        CheckSend[iP * NoOfVars + Offset + 2 * D + d] = P.TranslationalAcceleration[0][d];
+                        CheckSend[iP * NoOfVars + Offset + 3 * D + d] = P.TranslationalAcceleration[1][d];
+                        CheckSend[iP * NoOfVars + Offset + 4 * D + d] = P.TranslationalVelocity[0][d];
+                        CheckSend[iP * NoOfVars + Offset + 5 * D + d] = P.TranslationalVelocity[1][d];
+                        CheckSend[iP * NoOfVars + Offset + 6 * D + d] = P.HydrodynamicForces[0][d];
+                        CheckSend[iP * NoOfVars + Offset + 7 * D + d] = P.HydrodynamicForces[1][d];
+                        // todo: add more vector values here that might be relevant for the particle state;
+                    }
+                }
+
+                int MPIsz = MPISize;
+                double[] CheckReceive = new double[NoOfParticles * NoOfVars * MPIsz];
+                unsafe {
+                    fixed(double* pCheckSend = CheckSend, pCheckReceive = CheckReceive) {
+                        csMPI.Raw.Allgather((IntPtr)pCheckSend, CheckSend.Length, csMPI.Raw._DATATYPE.DOUBLE, (IntPtr)pCheckReceive, CheckSend.Length, csMPI.Raw._DATATYPE.DOUBLE, csMPI.Raw._COMM.WORLD);
+                    }
+                }
+
+                for (int iP = 0; iP < NoOfParticles; iP++) {
+                    for (int iVar = 0; iVar < NoOfVars; iVar++) {
+                        // determine a tolerance...
+                        int idx_l = 
+                            iP * NoOfVars // particle index offset
+                           + iVar; // variable index offset
+                        double VarTol = Math.Abs(CheckSend[idx_l]) * 1.0e-10;
+
+                        // compare
+                        for (int r = 0; r < MPIsz; r++) {
+
+                            int idx_g = CheckSend.Length * r // MPI index offset
+                                + idx_l;
+
+                            if (Math.Abs(CheckReceive[idx_g] - CheckSend[idx_l]) > VarTol)
+                                throw new ApplicationException("Mismatch in particle state among MPI ranks. Index:  " + idx_l);
+                        }
+                        VarTol *= 1.0e-10;
+                    }
+                }
+            }
+
+            // Update forces
+            // =============
+            foreach (Particle p in m_Particles) {
+
+                if (!((FSI_Control)Control).pureDryCollisions) {
+                    p.UpdateForcesAndTorque(Velocity, Pressure, LsTrk, Control.PhysicalParameters.mu_A, dt, Control.PhysicalParameters.rho_A);
+                }
+
+                // wall collisions are computed on each processor
+                WallCollisionForces(p, LsTrk.GridDat.Cells.h_minGlobal);
+            }
+            if (MPIRank == 0 && m_Particles.Count > 1) {
+                // inter-particle collisions are computed only on rank 0
+                UpdateCollisionForces(m_Particles, LsTrk.GridDat.Cells.h_minGlobal);
+            }
+
+            // Sum forces and moments over all MPI processors
+            // ==============================================
+            {
+                // step 1: collect all variables that we need to sum up
+                int NoOfVars = 1 + D * 1;
+                double[] StateBuffer = new double[NoOfParticles * NoOfVars];
+
+                for (int iP = 0; iP < NoOfParticles; iP++) {
+                    var P = m_Particles[iP];
+                    StateBuffer[NoOfVars * iP + 0] = 0;
+                    StateBuffer[NoOfVars * iP + 0] = P.HydrodynamicTorque[0];
+                    for(int d = 0; d < D; d++) {
+                        int Offset = 1;
+                        StateBuffer[NoOfVars * iP + Offset + 0 * D + d] = 0;
+                        StateBuffer[NoOfVars * iP + Offset + 0*D + d] = P.HydrodynamicForces[0][d];
+                    }
+                }
+
+                // step 2: sum over MPI processors
+                // note: we want to sum all variables by a single MPI call, which is way more efficient
+                // B. Deußen: a single call of MPISum() would only consider the first entry of StateBuffer, thus I implemented the loop over all entries
+                double[] GlobalStateBuffer = new double[StateBuffer.Length];
+                for (int i = 0; i < StateBuffer.Length; i++)
+                {
+                    GlobalStateBuffer[i] = 0;
+                    GlobalStateBuffer[i] = StateBuffer[i].MPISum();
+                }
+
+                // step 3: write sum variables back 
+                for (int iP = 0; iP < NoOfParticles; iP++) {
+                    var P = m_Particles[iP];
+                    P.HydrodynamicTorque[0] = 0;
+                    P.HydrodynamicTorque[0] = GlobalStateBuffer[NoOfVars * iP + 0];
+                    for(int d = 0; d < D; d++) {
+                        int Offset = 1;
+                        P.HydrodynamicForces[0][d] = 0;
+                        P.HydrodynamicForces[0][d] = GlobalStateBuffer[NoOfVars * iP + Offset + 0 * D + d];
+                    }
+                }
+            }
+        }
+
+        void ExchangeDampingTensors()
+        {
+            // Sum forces and moments over all MPI processors
+            // ==============================================
+            {
+                // step 1: collect all variables that we need to sum up
+                int NoOfParticles = m_Particles.Count;
+                int NoOfVars = 3; //only for 2D at the moment
+                double[,] StateBuffer = new double[NoOfParticles * NoOfVars, NoOfParticles * NoOfVars];
+                for (int iP = 0; iP < NoOfParticles; iP++)
+                {
+                    var P = m_Particles[iP];
+                    for (int i = 0; i < 3; i++)
+                    {
+                        for (int j = 0; j < 3; j++)
+                        {
+                            StateBuffer[NoOfVars * iP + i, NoOfVars * iP + j] = P.AddedDampingTensor[i, j];
+                        }
+                    }
+
+                }
+                // step 2: sum over MPI processors
+                // note: we want to sum all variables by a single MPI call, which is way more efficient
+                // B. Deußen: a single call of MPISum() would only consider the first entry of StateBuffer, thus I implemented the loop over all entries
+                double[,] GlobalStateBuffer = new double[NoOfParticles * NoOfVars, NoOfParticles * NoOfVars];
+                for (int i = 0; i < NoOfParticles * NoOfVars; i++)
+                {
+                    for (int j = 0; j < NoOfParticles * NoOfVars; j++)
+                    {
+                        GlobalStateBuffer[i, j] = StateBuffer[i, j].MPISum();
+                    }
+
+                }
+                // step 3: write sum variables back 
+                for (int iP = 0; iP < NoOfParticles; iP++)
+                {
+                    var P = m_Particles[iP];
+                    for (int i = 0; i < 3; i++)
+                    {
+                        for (int j = 0; j < 3; j++)
+                        {
+                            StateBuffer[NoOfVars * iP + i, NoOfVars * iP + j] = P.AddedDampingTensor[i, j];
+                            P.AddedDampingTensor[i, j] = GlobalStateBuffer[NoOfVars * iP + i, NoOfVars * iP + j];
+                        }
+                    }
+                }
+            }
+        }
+
+        private void UpdateParticleAccelerationAndDamping(Particle p, int IterationCounter, double dt, double FluidDensity)
+        {
+            if (IterationCounter == 0)
+            {
+                if (p.neglectAddedDamping == false && p.iteration_counter_P == 0)
+                {
+                    p.UpdateDampingTensors();
+                    ExchangeDampingTensors();
+                }
+                p.PredictAcceleration();
+            }
+            else if (IterationCounter == 100)
+            {
+                p.PredictAccelerationWithinIteration();
+            }
+            else
+            {
+                p.CalculateAcceleration(dt, FluidDensity);
+            }
+        }
+
+        private void UpdateParticleState(Particle p, double dt, double FluidDensity, double FluidViscosity, bool IncludeTranslation, bool IncludeRotation)
+        {
+            p.CalculateAngularVelocity(dt, IncludeRotation);
+            p.CalculateTranslationalVelocity(dt, FluidDensity, IncludeTranslation);
+            p.CalculateParticlePosition(dt, FluidDensity);
+            p.CalculateParticleAngle(dt);
+            p.ComputeParticleRe(FluidViscosity);
+        }
+
+        private void SaveOldParticleState(int IterationCounter, int SpatialDim, out double[] ForcesOldSquared, out double TorqueOldSquared)
+        {
+            ForcesOldSquared = new double[SpatialDim];
+            TorqueOldSquared = 0;
+            foreach (Particle p in m_Particles)
+            {
+                p.iteration_counter_P = IterationCounter;
+                p.ForceAndTorque_convergence = ((FSI_Control)this.Control).ForceAndTorque_ConvergenceCriterion;
+                ForcesOldSquared[0] += p.HydrodynamicForces[0][0].Pow2();
+                ForcesOldSquared[1] += p.HydrodynamicForces[0][1].Pow2();
+                TorqueOldSquared += p.HydrodynamicTorque[0].Pow2();
+                p.HydrodynamicForces[0][0] = 0;
+                p.HydrodynamicForces[0][1] = 0;
+                p.HydrodynamicTorque[0] = 0;
+            }
+        }
+
+        private void CalculateParticleResidual(double[] ForcesOldSquared, double TorqueOldSquared, int IterationCounter, out double Residual, out int _IterationCounter)
+        {
+            if (IterationCounter == 0)
+            {
+                Residual = 1e12;
+            }
+            else
+            {
+                double[] ForcesNewSquared = new double[2];
+                double TorqueNewSquared = new double();
+                foreach (Particle p in m_Particles)
+                {
+                    ForcesNewSquared[0] += p.HydrodynamicForces[0][0].Pow2();
+                    ForcesNewSquared[1] += p.HydrodynamicForces[0][1].Pow2();
+                    TorqueNewSquared += p.HydrodynamicTorque[0].Pow2();
+                }
+                Residual = Math.Sqrt((Math.Sqrt(ForcesNewSquared[0]) - Math.Sqrt(ForcesOldSquared[0])).Pow2() + (Math.Sqrt(ForcesNewSquared[1]) - Math.Sqrt(ForcesOldSquared[1])).Pow2() + (Math.Sqrt(TorqueNewSquared) - Math.Sqrt(TorqueOldSquared)).Pow2());
+            }
+            int PrintIteration = IterationCounter + 1;
+            Console.WriteLine("Fully coupled system, number of iterations:  " + PrintIteration);
+            Console.WriteLine("Forces and torque residual: " + Residual);
+            Console.WriteLine();
+            if (iteration_counter > ((FSI_Control)Control).max_iterations_fully_coupled)
+                throw new ApplicationException("no convergence in coupled iterative solver, number of iterations: " + iteration_counter);
+            _IterationCounter = IterationCounter + 1;
+        }
+
+        void PrintResultToConsole(double phystime, double dt)
+        {
+            double[] TranslationalMomentum = new double[2] { 0, 0 };
+            double RotationalMomentum = 0;
+            double[] totalKE = new double[3] { 0, 0, 0 };
+            double xPos;
+            double yPos;
+            double ang;
+
+            TranslationalMomentum[0] = 0;
+            TranslationalMomentum[1] = 0;
+            RotationalMomentum = 0;
+            totalKE[0] = 0;
+            totalKE[1] = 0;
+            totalKE[2] = 0;
+
+            foreach (Particle p in m_Particles)
+            {
+                double[] SingleParticleMomentum = p.CalculateParticleMomentum(dt);
+                double[] SingleParticleKineticEnergy = p.CalculateParticleKineticEnergy(dt);
+                TranslationalMomentum[0] += SingleParticleMomentum[0];
+                TranslationalMomentum[1] += SingleParticleMomentum[1];
+                RotationalMomentum += SingleParticleMomentum[SingleParticleMomentum.Length - 1];
+                totalKE[0] += SingleParticleKineticEnergy[0];
+                totalKE[1] += SingleParticleKineticEnergy[1];
+                totalKE[2] += SingleParticleKineticEnergy[SingleParticleMomentum.Length - 1];
+            }
+            Console.WriteLine("Total momentum in system:  " + Math.Sqrt(TranslationalMomentum[0].Pow2() + TranslationalMomentum[1].Pow2()));
+            Console.WriteLine("Total kinetic energy in system:  " + (totalKE[0] + totalKE[1] + totalKE[2]));
+
+            force = m_Particles[0].HydrodynamicForces[0];
+            torque = m_Particles[0].HydrodynamicTorque[0];
+            xPos = m_Particles[0].Position[0][0];
+            yPos = m_Particles[0].Position[0][1];
+            ang = m_Particles[0].Angle[0];
+            var MPItransVelocity = m_Particles[0].TranslationalVelocity[0];
+            var MPIangularVelocity = m_Particles[0].RotationalVelocity[0];
+            
+
+            //Console.WriteLine(newPosition[1].MPIMax());
+
+            /*
+            if ((base.MPIRank == 0) && (Log_DragAndLift != null)) {
+                double drag = force[0];
+                double lift = force[1];
+                //string line = String.Format("{0}\t{1}\t{2}\t{3}\t{4}\t{5}\t{6}\t{7}\t{8}\t{9}", TimestepNo, phystime, m_Particles[0].positionAtIteration[0][0], m_Particles[0].positionAtIteration[0][1], m_Particles[0].particleAnglePerIteration[0], m_Particles[0].transVelocityAtIteration[0][0], m_Particles[0].transVelocityAtIteration[0][1], 0.0, (totalKE[0] + totalKE[1] + totalKE[2]), Math.Sqrt(TranslationalMomentum[0].Pow2() + TranslationalMomentum[1].Pow2()));
+                string line = String.Format("{0}\t{1}\t{2}\t{3}\t{4}\t{5}\t{6}\t{7}\t{8}", phystime, m_Particles[0].Position[0][0], m_Particles[0].Position[0][1], m_Particles[0].Angle[0], m_Particles[0].TranslationalVelocity[0][0], m_Particles[0].TranslationalVelocity[0][1], 0.0, (totalKE[0] + totalKE[1] + totalKE[2]), Math.Sqrt(TranslationalMomentum[0].Pow2() + TranslationalMomentum[1].Pow2()));
+                Log_DragAndLift.WriteLine(line);
+                Log_DragAndLift.Flush();
+            }
+            */
+
+            // Save for NUnit Test
+            base.QueryHandler.ValueQuery("C_Drag", 2 * force[0], true); // Only for Diameter 1 (TestCase NSE stationary)
+            base.QueryHandler.ValueQuery("C_Lift", 2 * force[1], true); // Only for Diameter 1 (TestCase NSE stationary)
+            base.QueryHandler.ValueQuery("Angular_Velocity", MPIangularVelocity, true); // (TestCase FlowRotationalCoupling)
+
+
+            Console.WriteLine("Drag Force:   {0}", m_Particles[0].HydrodynamicForces[0][0]);
+            Console.WriteLine("Lift Force:   {0}", m_Particles[0].HydrodynamicForces[0][1]);
+            Console.WriteLine("Torqe:   {0}", torque);
+            Console.WriteLine("Transl VelocityX:   {0}", MPItransVelocity[0]);
+            Console.WriteLine("Transl VelocityY:   {0}", MPItransVelocity[1]);
+            Console.WriteLine("Angular Velocity:   {0}", MPIangularVelocity);
+            Console.WriteLine("X-position:   {0}", xPos);
+            Console.WriteLine("Y-position:   {0}", yPos);
+            Console.WriteLine("Angle:   {0}", ang);
+            Console.WriteLine();
+            Console.WriteLine("=======================================================");
+            Console.WriteLine();
+
+        }
+
+        // <summary>
+        // Variables for FSI coupling
+        // </summary>
+        //double MPIangularVelocity;
+        //readonly double[] newTransVelocity = new double[2];
+        //readonly double[] oldPosition = new double[2];
+        //readonly double[] newPosition = new double[2];
+        //readonly double[] oldforce = new double[2];
+        //double[] MPItransVelocity = new double[2];
 
         protected override double RunSolverOneStep(int TimestepInt, double phystime, double dt) {
             using (new FuncTrace()) {
+                
                 TimestepNumber TimestepNo = new TimestepNumber(TimestepInt, 0);
                 int D = this.GridData.SpatialDimension;
 
@@ -533,134 +1174,241 @@ namespace BoSSS.Application.FSI_Solver {
                 hack_phystime = phystime;
                 dt = base.GetFixedTimestep();
 
-                if (((FSI_Control)this.Control).pureDryCollisions) {
-                    UpdateLevelSetParticles(dt);
-                } else {
+                Console.WriteLine("Starting time-step " + TimestepInt + "...");
 
+                int OldPushCount = LsTrk.PushCount; // used later to check if there is exactly one push per timestep
+               
+
+                if (((FSI_Control)this.Control).pureDryCollisions) {
+                    // +++++++++++++++++++++++++++++++++++++++++++++++++
+                    // only particle motion & collisions, no flow solver
+                    // +++++++++++++++++++++++++++++++++++++++++++++++++
+
+                    // in other branches, called by the BDF timestepper
+                    LsTrk.PushStacks();
+                    DGLevSet.Push();
+                    
+                    UpdateForcesAndTorque(dt, phystime);
+                    foreach (var p in m_Particles) {
+
+                        p.CalculateAcceleration(dt, Control.PhysicalParameters.rho_A);
+                        p.CalculateTranslationalVelocity(dt, Control.PhysicalParameters.rho_A, ((FSI_Control)this.Control).includeTranslation);
+                        p.CalculateAngularVelocity(dt, ((FSI_Control)this.Control).includeRotation);
+                        p.CalculateParticlePosition(dt, Control.PhysicalParameters.rho_A);
+                        p.CalculateParticleAngle(dt);
+                    }
+                    UpdateLevelSetParticles(dt);
+                    PrintResultToConsole(phystime, dt);
+
+                }
+                else {
                     if (triggerOnlyCollisionProcedure) {
                         UpdateLevelSetParticles(dt);
                         triggerOnlyCollisionProcedure = false;
+                        return dt;
+                        /*
                         if (phystime == 0) {
                             if ((base.MPIRank == 0) && (CurrentSessionInfo.ID != Guid.Empty)) {
                                 Log_DragAndLift = base.DatabaseDriver.FsDriver.GetNewLog("PhysicalData", CurrentSessionInfo.ID);
                                 string firstline = String.Format("{0}\t{1}\t{2}\t{3}\t{4}\t{5}\t{6}\t{7}\t{8}\t{9}", "#Timestep", "#Time", "P0_PosX", "P0_PosY", "P0_angle", "P0_VelX", "P0_VelY", "xPosition", "TotalKineticEnergy", "TotalMomentum");
                                 Log_DragAndLift.WriteLine(firstline);
+                                if (m_Particles.Count > 1) {
+                                    Log_DragAndLift_P1 = base.DatabaseDriver.FsDriver.GetNewLog("PhysicalData_P1", CurrentSessionInfo.ID);
+                                    string firstline_P1 = String.Format("{0}\t{1}\t{2}\t{3}\t{4}\t{5}\t{6}\t{7}\t{8}\t{9}", "#Timestep", "#Time", "P1_PosX", "P1_PosY", "P1_angle", "P1_VelX", "P1_VelY", "xPosition", "TotalKineticEnergy", "TotalMomentum");
+                                    Log_DragAndLift_P1.WriteLine(firstline_P1);
+                                }
                             }
                         }
-                        return dt;
-                    } else {
+                        */
+                    }
+                    else if (((FSI_Control)this.Control).Timestepper_LevelSetHandling != LevelSetHandling.Coupled_Iterative)
+                    {
+                        iteration_counter = 0;
+                        double posResidual_splitting = 1e12;
+                        while (posResidual_splitting > ((FSI_Control)this.Control).ForceAndTorque_ConvergenceCriterion)
+                        {
+                            double[] ForcesOldSquared = new double[2];
+                            double TorqueOldSquared = new double();
+
+                            if (iteration_counter != 0 || ((FSI_Control)this.Control).Timestepper_LevelSetHandling != LevelSetHandling.FSI_LieSplittingFullyCoupled)
+                            {
+                                SaveOldParticleState(iteration_counter, 2, out ForcesOldSquared, out TorqueOldSquared);
+                                m_BDF_Timestepper.Solve(phystime, dt, false);
+                                UpdateForcesAndTorque(dt, phystime);
+                            }
+
+                            foreach (Particle p in m_Particles)
+                            {
+                                p.iteration_counter_P = iteration_counter;
+                                UpdateParticleAccelerationAndDamping(p, iteration_counter, dt, Control.PhysicalParameters.rho_A);
+                                UpdateParticleState(p, dt, Control.PhysicalParameters.rho_A, Control.PhysicalParameters.mu_A, ((FSI_Control)Control).includeTranslation, ((FSI_Control)Control).includeRotation);
+                            }
+
+                            PrintResultToConsole(phystime, dt);
+
+                            if (((FSI_Control)this.Control).Timestepper_LevelSetHandling != LevelSetHandling.FSI_LieSplittingFullyCoupled)
+                                break;
+
+                            CalculateParticleResidual(ForcesOldSquared, TorqueOldSquared, iteration_counter, out posResidual_splitting, out iteration_counter);
+                        }
+
+                        if (((FSI_Control)this.Control).Timestepper_LevelSetHandling == LevelSetHandling.FSI_LieSplittingFullyCoupled)
+                        {
+                            LsTrk.IncreaseHistoryLength(1);
+                            LsTrk.PushStacks();
+                        }
+                        /*
+                        if (phystime == 0) {
+                            if ((base.MPIRank == 0) && (CurrentSessionInfo.ID != Guid.Empty) && iteration_counter == 0) {
+                                Log_DragAndLift = base.DatabaseDriver.FsDriver.GetNewLog("PhysicalData", CurrentSessionInfo.ID);
+                                string firstline = String.Format("{0}\t{1}\t{2}\t{3}\t{4}\t{5}\t{6}\t{7}\t{8}\t{9}", "#Timestep", "#Time", "P0_PosX", "P0_PosY", "P0_angle", "P0_VelX", "P0_VelY", "xPosition", "TotalKineticEnergy", "TotalMomentum");
+                                Log_DragAndLift.WriteLine(firstline);
+
+                                if (m_Particles.Count > 1) {
+                                    Log_DragAndLift_P1 = base.DatabaseDriver.FsDriver.GetNewLog("PhysicalData_P1", CurrentSessionInfo.ID);
+                                    string firstline_P1 = String.Format("{0}\t{1}\t{2}\t{3}\t{4}\t{5}\t{6}\t{7}\t{8}\t{9}", "#Timestep", "#Time", "P1_PosX", "P1_PosY", "P1_angle", "P1_VelX", "P1_VelY", "xPosition", "TotalKineticEnergy", "TotalMomentum");
+                                    Log_DragAndLift_P1.WriteLine(firstline_P1);
+                                }
+                            }
+                        }
+                        */
+                    }
+                    else {
+                        foreach (Particle p in m_Particles) {
+                            p.iteration_counter_P = -1;
+                            p.ForceAndTorque_convergence = ((FSI_Control)this.Control).ForceAndTorque_ConvergenceCriterion;
+                        }
                         m_BDF_Timestepper.Solve(phystime, dt, false);
                     }
                 }
 
+                // finalize
+                // ========
+                if (LsTrk.PushCount - OldPushCount != 1) {
+                    // To whom it concerns / who stumbles across this exception:
+                    // It is important that LevelSetTracker.PushStacks() is called *exactly once per time-step*, at the beginning.
+                    // Do not remove this check! Instead, remove any calls to 'PushStacks()' in subroutines of this method.
+                    // Fk.
+                    throw new ApplicationException("Illegal number of level-set push actions in time-step." + (LsTrk.PushCount - OldPushCount));
+                }
 
                 this.ResLogger.NextTimestep(false);
 
-                // L2 error against exact solution
-                // ===============================
-                //this.ComputeL2Error();
-
-                //oldMassMatrix = MassFact.GetMassMatrix(CurrentSolution.Mapping, MassScale);
-
-                #region Get Drag and Lift Coefficiant
-                if (phystime == 0) {
-                    if ((base.MPIRank == 0) && (CurrentSessionInfo.ID != Guid.Empty)) {
-                        Log_DragAndLift = base.DatabaseDriver.FsDriver.GetNewLog("PhysicalData", CurrentSessionInfo.ID);
-                        string firstline = String.Format("{0}\t{1}\t{2}\t{3}\t{4}\t{5}\t{6}\t{7}\t{8}\t{9}", "#Timestep", "#Time", "P0_PosX", "P0_PosY", "P0_angle", "P0_VelX", "P0_VelY", "xPosition", "TotalKineticEnergy", "TotalMomentum");
-                        Log_DragAndLift.WriteLine(firstline);
-                    }
-                }
-
-                foreach (Particle p in m_Particles) {
-                    if (!((FSI_Control)this.Control).pureDryCollisions) {
-                        p.UpdateForcesAndTorque(Velocity, Pressure, LsTrk, this.Control.PhysicalParameters.mu_A);
-                    }
-                    WallCollisionForces(p, LsTrk.GridDat.Cells.h_minGlobal);
-                }
-
-                double[] totalMomentum = new double[2] { 0, 0 };
-                double[] totalKE = new double[3] { 0, 0, 0 };
-
-                foreach (Particle p in m_Particles) {
-                    totalMomentum[0] += p.mass_P * p.vel_P[0][0];
-                    totalMomentum[1] += p.mass_P * p.vel_P[0][1];
-                    totalKE[0] += 0.5 * p.mass_P * p.vel_P[0][0].Pow2();
-                    totalKE[1] += 0.5 * p.mass_P * p.vel_P[0][1].Pow2();
-                    totalKE[2] += 0.5 * p.MomentOfInertia_P * p.rot_P[0].Pow2();
-                }
-
-                Console.WriteLine("Total-Momentum in System:  " + Math.Sqrt(totalMomentum[0].Pow2() + totalMomentum[1].Pow2()));
-                Console.WriteLine("Total-KineticEnergy in System:  " + (totalKE[0] + totalKE[1] + totalKE[2]));
-
-                totalMomentumOld = Math.Sqrt(totalMomentum[0].Pow2() + totalMomentum[1].Pow2());
-
-                if (m_Particles.Count > 1)
-                    UpdateCollisionForces(m_Particles, LsTrk.GridDat.Cells.h_minGlobal);
-
-                force = m_Particles[0].forces_P[0];
-                torque = m_Particles[0].torque_P[0];
-
-
-                MPItransVelocity = m_Particles[0].vel_P[0];
-                MPIangularVelocity = m_Particles[0].rot_P[0];
-
-                // It always gets quick and dirty before a conference
-                //if (newTransVelocity[0].MPIMax() != 0) { MPItransVelocity[0] = newTransVelocity[0].MPIMax(); } else { MPItransVelocity[0] = newTransVelocity[0].MPIMin(); }
-                //if (newTransVelocity[1].MPIMax() != 0) { MPItransVelocity[1] = newTransVelocity[1].MPIMax(); } else { MPItransVelocity[1] = newTransVelocity[1].MPIMin(); }
-                //if (newAngularVelocity.MPIMax() != 0) { MPIangularVelocity = newAngularVelocity.MPIMax(); } else { MPIangularVelocity = newAngularVelocity.MPIMin(); }
-                //if (newPosition[0].MPIMax() != 0) { MPIpos[0] = newPosition[0].MPIMax(); } else { MPIpos[0] = newPosition[0].MPIMin(); }
-                //if (newPosition[1].MPIMax() != 0) { MPIpos[1] = newPosition[1].MPIMax(); } else { MPIpos[1] = newPosition[1].MPIMin(); }
-
-                Console.WriteLine(newPosition[1].MPIMax());
-
-                if ((base.MPIRank == 0) && (Log_DragAndLift != null)) {
-                    double drag = force[0];
-                    double lift = force[1];
-                    //string line = String.Format("{0}\t{1}\t{2}\t{3}\t{4}\t{5}\t{6}\t{7}\t{8}\t{9}", TimestepNo, phystime, drag, lift, newTransVelocity[0], newTransVelocity[1], newAngularVelocity, newPosition[0], newPosition[1], IBMMover.ComputeParticleRe(newTransVelocity, this.Control.particleRadius, ((FSI_Control)this.Control).particleRho));
-                    string line = String.Format("{0}\t{1}\t{2}\t{3}\t{4}\t{5}\t{6}\t{7}\t{8}\t{9}", TimestepNo, phystime, m_Particles[0].currentPos_P[0][0], m_Particles[0].currentPos_P[0][1], m_Particles[0].currentAng_P[0], m_Particles[0].vel_P[0][0], m_Particles[0].vel_P[0][1], 0.0, (totalKE[0] + totalKE[1] + totalKE[2]), Math.Sqrt(totalMomentum[0].Pow2() + totalMomentum[1].Pow2()));
-                    Log_DragAndLift.WriteLine(line);
-                    Log_DragAndLift.Flush();
-                }
-
-
-                // if ((newAngularVelocity - oldAngularVelocity) < 0) TerminationKey = true;
-
-                oldAngularVelocity = newAngularVelocity;
-
-                //newAngularVelocity = IBMMover.GetAngularVelocity(dt, oldAngularVelocity, Control.particleRadius, ((FSI_Control)this.Control).particleMass, torque, oldtorque, ((FSI_Control)Control).includeRotation);
-
-                Console.WriteLine("Drag Force:   {0}", force[0]);
-                Console.WriteLine("Lift Force:   {0}", force[1]);
-                Console.WriteLine("Torqe:   {0}", torque);
-                Console.WriteLine("Transl VelocityX:   {0}", MPItransVelocity[0]);
-                Console.WriteLine("Transl VelocityY:   {0}", MPItransVelocity[1]);
-                Console.WriteLine("Angular Velocity:   {0}", MPIangularVelocity);
-                Console.WriteLine();
-
-
-                // Save for NUnit Test
-                base.QueryHandler.ValueQuery("C_Drag", 2 * force[0], true); // Only for Diameter 1 (TestCase NSE stationary)
-                base.QueryHandler.ValueQuery("C_Lift", 2 * force[1], true); // Only for Diameter 1 (TestCase NSE stationary)
-                base.QueryHandler.ValueQuery("Angular_Velocity", MPIangularVelocity, true); // (TestCase FlowRotationalCoupling)
-                #endregion
-
-
-                // Which Quadratur is beeing used? 
-
-                //foreach (var Variant in this.LsTrk.m_QuadFactoryHelpers.Keys) {
-                //    Console.WriteLine("Variant: " + Variant + " ################################################  ");
-
-                //    foreach (int order in this.LsTrk.GetXQuadFactoryHelper(Variant).GetCachedSurfaceOrders(0))
-                //        Console.WriteLine("    ---- used surface order :" + order);
-                //    foreach (int order in this.LsTrk.GetXQuadFactoryHelper(Variant).GetCachedVolumeOrders(0))
-                //        Console.WriteLine("    ---- used volume order :" + order);
-                //}
-
-
+                Console.WriteLine("done with time-step.");
                 return dt;
             }
         }
+        
+        // restart
+        /// <summary>
+        /// over-ridden in oder to save the particles (<see cref="m_Particles"/>) to the database
+        /// </summary>
+        protected override TimestepInfo GetCurrentTimestepInfo(TimestepNumber timestepno, double t) {
+            var tsi = new FSI_TimestepInfo(t, this.CurrentSessionInfo, timestepno, base.IOFields, m_Particles);
 
+            SerialzeTester(tsi);
+
+            return tsi;
+        }
+
+        /// <summary>
+        /// Test the serialization of <see cref="FSI_TimestepInfo.Particles"/>
+        /// </summary>
+        private static void SerialzeTester(FSI_TimestepInfo b) {
+            JsonSerializer formatter = new JsonSerializer() {
+                NullValueHandling = NullValueHandling.Ignore,
+                TypeNameHandling = TypeNameHandling.Auto,
+                ConstructorHandling = ConstructorHandling.AllowNonPublicDefaultConstructor,
+                ReferenceLoopHandling = ReferenceLoopHandling.Serialize
+            };
+
+            bool DebugSerialization = false;
+
+            JsonReader GetJsonReader(Stream s) {
+                if (DebugSerialization) {
+                    return new JsonTextReader(new StreamReader(s));
+                } else {
+                    return new BsonReader(s);
+                }
+            }
+
+            JsonWriter GetJsonWriter(Stream s) {
+                if (DebugSerialization) {
+                    return new JsonTextWriter(new StreamWriter(s));
+                } else {
+                    return new BsonWriter(s);
+                }
+            }
+
+
+            byte[] buffer = null;
+            using (var ms1 = new MemoryStream()) {
+                using (var writer = GetJsonWriter(ms1)) {
+                    formatter.Serialize(writer, b);
+                    writer.Flush();
+                    buffer = ms1.GetBuffer();
+                    //writer.Close();
+                }
+            }
+
+            FSI_TimestepInfo o;
+            using (var ms2 = new MemoryStream(buffer)) {
+                using (var reader = GetJsonReader(ms2)) {
+                    o = formatter.Deserialize<FSI_TimestepInfo>(reader);
+                    reader.Close();
+                }
+            }
+
+            //Console.WriteLine(o.ToString());
+
+            Debug.Assert(b.Particles.Length == o.Particles.Length);
+            int L = b.Particles.Length;
+            for (int l = 0; l < L; l++) { // loop over particles
+                Debug.Assert(GenericBlas.L2Dist(b.Particles[l].Position[0], o.Particles[l].Position[0]) < 1e-13);
+            }
+
+        }
+
+        /// <summary>
+        /// over-ridden in oder to save the particles (<see cref="m_Particles"/>) to the database
+        /// </summary>
+        protected override TimestepNumber RestartFromDatabase(out double time) {
+            
+            // this sux, because the database API is totally fucked up
+            var db = GetDatabase();
+            Guid Rst_Tsid = base.GetRestartTimestepID();
+            Guid Rst_SessionId = Control.RestartInfo.Item1;
+            ISessionInfo session = db.Controller.GetSessionInfo(Rst_SessionId);
+
+            var ArschInfo = ((DatabaseDriver)(base.DatabaseDriver)).LoadTimestepInfo<FSI_TimestepInfo>(Rst_Tsid, session, db);
+
+            // init particles
+            m_Particles = ArschInfo.Particles.ToList();
+            hack_phystime = ArschInfo.PhysicalTime;
+            UpdateLevelSetParticles(0.0);
+
+            // call base shit
+            var R = base.RestartFromDatabase(out time);
+
+
+
+            foreach (Particle p in m_Particles) {
+                p.m_collidedWithParticle = new bool[m_Particles.Count];
+                p.m_collidedWithWall = new bool[4];
+                p.m_closeInterfacePointTo = new double[m_Particles.Count][];
+
+            }
+
+            // return
+            return R;
+        }
+
+
+        /// <summary>
+        /// For restarting calculations, its important to reload old solutions if one uses a higher order method in time
+        /// </summary>
+        /// <param name="time"></param>
+        /// <param name="timestep"></param>
         public override void PostRestart(double time, TimestepNumber timestep) {
             //var fsDriver = this.DatabaseDriver.FsDriver;
             //string pathToOldSessionDir = System.IO.Path.Combine(
@@ -708,41 +1456,50 @@ namespace BoSSS.Application.FSI_Solver {
             //    Log_DragAndLift.WriteLine(firstline);
             //    Log_DragAndLift.WriteLine(restartLine);
             //}
-
-
         }
 
+        // Initialize particles
         protected override void SetInitial() {
-            base.SetInitial();
-
             // Setup particles
             m_Particles = ((FSI_Control)this.Control).Particles;
+            hack_phystime = 0.0;
+            UpdateLevelSetParticles(0.0);
 
-            // Setup Collision Model
-            m_collisionModel = ((FSI_Control)this.Control).collisionModel;
-
+            // call base implementation
+            base.SetInitial();
 
             foreach (Particle p in m_Particles) {
                 p.m_collidedWithParticle = new bool[m_Particles.Count];
                 p.m_collidedWithWall = new bool[4];
                 p.m_closeInterfacePointTo = new double[m_Particles.Count][];
+
             }
+        }
 
-
+        public IList<Particle> Particles {
+            get {
+                return m_Particles;
+            }
         }
 
         List<Particle> m_Particles;
-
         bool collision = false;
 
-        bool triggerOnlyCollisionProcedure = true;
+        bool triggerOnlyCollisionProcedure = false;
 
+        // Collision models
         /// <summary>
-        /// Update collisionforces between two arbitrary particles and add them to forces acting on the corresponding particle
+        /// Update collision forces between two arbitrary particles and add them to forces acting on the corresponding particle
         /// </summary>
         /// <param name="particle0"></param>
         /// <param name="particle1"></param>
         public void UpdateCollisionForces(List<Particle> particles, double hmin) {
+
+
+            if (m_collisionModel == FSI_Control.CollisionModel.NoCollisionModel) {
+                return;
+            }
+
 
             if (particles.Count < 2)
                 return;
@@ -752,19 +1509,17 @@ namespace BoSSS.Application.FSI_Solver {
                 for (int j = i + 1; j < particles.Count; j++) {
                     var particle0 = particles[i];
                     var particle1 = particles[j];
+                    
+                    var particle0CutCells = particle0.CutCells_P(LsTrk);
+                    var particle1CutCells = particle1.CutCells_P(LsTrk);
 
-                    var particle0CutCells = particle0.cutCells_P(LsTrk);
-                    var particle1CutCells = particle1.cutCells_P(LsTrk);
+                    //var neighborCellsArray_P0 = particle0CutCells.AllNeighbourCells().ItemEnum.ToArray();
+                    //var allCells_P0 = new CellMask(GridData, neighborCellsArray_P0);
+                    var allCells_P0 = particle0CutCells.AllNeighbourCells();
 
-                    var particleCutCellArray_P0 = particle0CutCells.ItemEnum.ToArray();
-                    var neighborCellsArray_P0 = particle0CutCells.AllNeighbourCells().ItemEnum.ToArray();
-                    var allCellsArray_P0 = particleCutCellArray_P0.Concat(neighborCellsArray_P0).ToArray();
-                    var allCells_P0 = new CellMask(GridData, neighborCellsArray_P0);
-
-                    var particleCutCellArray_P1 = particle1CutCells.ItemEnum.ToArray();
-                    var neighborCellsArray_P1 = particle1CutCells.AllNeighbourCells().ItemEnum.ToArray();
-                    var allCellsArray_P1 = particleCutCellArray_P1.Concat(neighborCellsArray_P1).ToArray();
-                    var allCells_P1 = new CellMask(GridData, neighborCellsArray_P1);
+                    //var neighborCellsArray_P1 = particle1CutCells.AllNeighbourCells().ItemEnum.ToArray();
+                    //var allCells_P1 = new CellMask(GridData, neighborCellsArray_P1);
+                    var allCells_P1 = particle1CutCells.AllNeighbourCells();
 
                     double distance = 1E20;
                     double[] distanceVec = new double[Grid.SpatialDimension];
@@ -773,452 +1528,239 @@ namespace BoSSS.Application.FSI_Solver {
 
                     var p0intersect = interSecMask.AllNeighbourCells().Intersect(particle0CutCells);
                     var p1intersect = interSecMask.AllNeighbourCells().Intersect(particle1CutCells);
-                    
-                    // If there is no element neighbour of both particle cut cells return
+
+                    // If there is no element neighbor of both particle cut cells return
                     if (!interSecMask.IsEmpty) {
-
-                        // All interface points at a specific subgrid containing all cut cells of one particle
-                        var interfacePoints_P0 = BoSSS.Solution.XNSECommon.XNSEUtils.GetInterfacePoints(LsTrk, LevSet, new SubGrid(particle0CutCells));
-                        var interfacePoints_P1 = BoSSS.Solution.XNSECommon.XNSEUtils.GetInterfacePoints(LsTrk, LevSet, new SubGrid(particle1CutCells));
-
-                        var tempDistance = 0.0;
-                        double[] tempPoint_P0 = new double[2] { 0.0, 0.0 };
-                        double[] tempPoint_P1 = new double[2] { 0.0, 0.0 };
-
-                        if (interfacePoints_P0 != null && interfacePoints_P1 !=null) {
-
-                            for (int f = 0; f < interfacePoints_P0.NoOfRows; f++) {
-                                for (int g = 0; g < interfacePoints_P1.NoOfRows; g++) {
-                                    tempDistance = Math.Sqrt((interfacePoints_P0.GetRow(f)[0] - interfacePoints_P1.GetRow(g)[0]).Pow2() + (interfacePoints_P0.GetRow(f)[1] - interfacePoints_P1.GetRow(g)[1]).Pow2());
-                                    if (tempDistance < distance) {
-                                        //distanceVec.ClearEntries();
-                                        //distanceVec.AccV(1, interfacePoints_P0.GetRow(f));
-                                        distanceVec = interfacePoints_P0.GetRow(f).CloneAs();
-                                        distanceVec.AccV(-1, interfacePoints_P1.GetRow(g));
-                                        tempPoint_P0 = interfacePoints_P0.GetRow(f);
-                                        tempPoint_P1 = interfacePoints_P1.GetRow(g);
-                                        distance = tempDistance;
-                                    }
-                                }
-                            }
-                        }
-
-                        double realDistance = distance;
-                        bool ForceCollision = false;
-
-                        // Important to get normal vector if distance is overlapping in the next timestep
-                        if (realDistance <= 0.0) {
-                            tempPoint_P0 = particle0.m_closeInterfacePointTo[m_Particles.IndexOf(particle1)];
-                            tempPoint_P1 = particle1.m_closeInterfacePointTo[m_Particles.IndexOf(particle0)];
-                            distanceVec = tempPoint_P0.CloneAs();
-                            distanceVec.AccV(-1, tempPoint_P1);
-                            ForceCollision = true;
-                        }
-                        particle0.m_closeInterfacePointTo[m_Particles.IndexOf(particle1)] = tempPoint_P0;
-                        particle1.m_closeInterfacePointTo[m_Particles.IndexOf(particle0)] = tempPoint_P1;
-
-
-
-                        double eps = hmin.Pow2();
-                        double epsPrime = hmin;
-                        //distanceVec.AccV(-1.0, particle1.currentPos_P[0]);
-                        double threshold = 2.5 * hmin;
-
-                        double[] collisionForce;
-
-                        var massDifference = Math.Abs(this.Control.PhysicalParameters.rho_A - particle0.rho_P);
-
-                        Console.WriteLine("realDistance: " + realDistance);
-                        Console.WriteLine("Threshold: " + threshold);
-                        Console.WriteLine("hmin: " + hmin);
-
-
-
-
-                        //if ((realDistance <= threshold) && (realDistance >= (particle0.radius_P + particle1.radius_P))) {
-
-                        //distanceVec.ScaleV((threshold - realDistance).Abs
-
-                        // test of Modell 2
-
-                        switch (m_collisionModel) {
-
-                            case (FSI_Solver.FSI_Control.CollisionModel.RepulsiveForce_v1):
-                                if ((realDistance <= threshold)) {
-                                    distanceVec.ScaleV((threshold - realDistance).Pow2());
-                                    distanceVec.ScaleV(1 / eps);
-
-                                    Console.WriteLine("!!!!!!!!!!!!!!!!!!!!!!!!!!!!realDistance: " + realDistance);
-
-                                    collisionForce = distanceVec;
-                                    var collisionForceP1 = collisionForce.CloneAs();
-                                    collisionForce.ScaleV(-100.0);
-                                    collisionForceP1.ScaleV(-100.0);
-                                    particle0.forces_P[0].AccV(-1, collisionForce);
-                                    //particle0.torque_P[0] += 100 * (collisionForce[0] * (tempPoint_P0[0] - particle0.currentPos_P[0][0]) + collisionForce[1] * (tempPoint_P0[1] - particle0.currentPos_P[0][1]));
-                                    particle1.forces_P[0].AccV(1, collisionForceP1);
-                                    //particle1.torque_P[0] += -100 * (collisionForceP1[0] * (tempPoint_P1[0] - particle1.currentPos_P[0][0]) + collisionForceP1[1] * (tempPoint_P1[1] - particle1.currentPos_P[0][1]));
-                                    Console.WriteLine("Collision information: Particles coming close, force " + collisionForce.L2Norm());
-                                    Console.WriteLine("Collision information: Particles coming close, torque " + particle1.torque_P[0]);
-
-                                    if (realDistance <= 1.5 * hmin) {
-                                        Console.WriteLine("Entering overlapping loop....");
-                                        triggerOnlyCollisionProcedure = true;
-                                    }
-
-                                }
-                                break;
-
-
-
-                            //case (FSI_Solver.FSI_Control.CollisionModel.RepulsiveForce_v2):
-                            //distanceVec.ScaleV(1 / realDistance);
-
-                            //double relVelocityX = particle0.vel_P[0][0] - particle1.vel_P[0][0];
-                            //double relVelocityY = particle0.vel_P[0][1] - particle1.vel_P[0][1];
-
-                            //double velocityAbs = Math.Sqrt(relVelocityX * relVelocityX + relVelocityY * relVelocityY);
-
-                            //double muT = this.Control.PhysicalParameters.mu_A;
-
-                            //distanceVec.ScaleV((muT * velocityAbs) / realDistance);
-
-                            //collisionForce = distanceVec;
-                            //var collisionForceP1 = collisionForce.CloneAs();
-                            //collisionForce.ScaleV(-100.0);
-                            //collisionForceP1.ScaleV(-100.0);
-                            //particle0.forces_P[0].AccV(-1, collisionForce);
-                            //particle0.torque_P[0] += 100 * (collisionForce[0] * (tempPoint_P0[0] - particle0.currentPos_P[0][0]) + collisionForce[1] * (tempPoint_P0[1] - particle0.currentPos_P[0][1]));
-                            //particle1.forces_P[0].AccV(1, collisionForceP1);
-                            //particle1.torque_P[0] += -100 * (collisionForceP1[0] * (tempPoint_P1[0] - particle1.currentPos_P[0][0]) + collisionForceP1[1] * (tempPoint_P1[1] - particle1.currentPos_P[0][1]));
-                            //Console.WriteLine("Collision information: Particles coming close, force " + collisionForce.L2Norm());
-                            //Console.WriteLine("Collision information: Particles coming close, torque " + particle1.torque_P[0]);
-                            //break;
-
-                            case (FSI_Solver.FSI_Control.CollisionModel.MomentumConservation):
-
-                                if (((realDistance <= threshold) || ForceCollision) && !particle0.m_collidedWithParticle[m_Particles.IndexOf(particle1)] && !particle1.m_collidedWithParticle[m_Particles.IndexOf(particle0)]) {
-
-
-                                    particle0.m_collidedWithParticle[m_Particles.IndexOf(particle1)] = true;
-                                    particle1.m_collidedWithParticle[m_Particles.IndexOf(particle0)] = true;
-
-                                    Console.WriteLine("!!!!!!!!!!!!!!!!!!!!!!!!!!!!realDistance: " + realDistance);
-
-                                    //coefficient of restitution (e=0 pastic; e=1 elastic)
-                                    double e = 1;
-
-                                    //collision Nomal
-                                    var normal = distanceVec.CloneAs();
-                                    normal.ScaleV(1 / Math.Sqrt(distanceVec[0].Pow2() + distanceVec[1].Pow2()));
-
-                                    double[] tangential = new double[] { -normal[1], normal[0] };
-
-
-                                    //general definitions of normal and tangential components
-                                    double collisionVn_P0 = particle0.vel_P[0][0] * normal[0] + particle0.vel_P[0][1] * normal[1];
-                                    double collisionVt_P0 = particle0.vel_P[0][0] * tangential[0] + particle0.vel_P[0][1] * tangential[1];
-                                    double collisionVn_P1 = particle1.vel_P[0][0] * normal[0] + particle1.vel_P[0][1] * normal[1];
-                                    double collisionVt_P1 = particle1.vel_P[0][0] * tangential[0] + particle1.vel_P[0][1] * tangential[1];
-
-                                    // exzentric collision
-                                    // ----------------------------------------                                                                  
-                                    tempPoint_P0.AccV(-1, particle0.currentPos_P[0]);
-                                    double a0 = (tempPoint_P0[0] * tangential[0] + tempPoint_P0[1] * tangential[1]);
-                                    tempPoint_P1.AccV(-1, particle1.currentPos_P[0]);
-                                    double a1 = (tempPoint_P1[0] * tangential[0] + tempPoint_P1[1] * tangential[1]);
-
-                                    // Fix for Sphere
-                                    // ----------------------------------------  
-                                    if (particle0.m_shape == Particle.ParticleShape.spherical)
-                                        a0 = 0.0;
-                                    if (particle1.m_shape == Particle.ParticleShape.spherical)
-                                        a1 = 0.0;
-
-
-                                    double Fx = (1 + e) * ((collisionVn_P0 - collisionVn_P1) / (1 / particle0.mass_P + 1 / particle1.mass_P + a0.Pow2() / particle0.MomentOfInertia_P + a1.Pow2() / particle1.MomentOfInertia_P));
-                                    double Fxrot = (1 + e) * ((-a0 * particle0.rot_P[0] + a1 * particle1.rot_P[0]) / (1 / particle0.mass_P + 1 / particle1.mass_P + a0.Pow2() / particle0.MomentOfInertia_P + a1.Pow2() / particle1.MomentOfInertia_P));
-
-                                    double tempCollisionVn_P0 = collisionVn_P0 - (Fx + Fxrot) / particle0.mass_P;
-                                    double tempCollisionVn_P1 = collisionVn_P1 + (Fx + Fxrot) / particle1.mass_P;
-                                    double tempCollisionVt_P0 = collisionVt_P0;
-                                    double tempCollisionVt_P1 = collisionVt_P1;
-                                    Console.WriteLine("a0:    " + a0 + "   Fx:    " + (-Fx) + "      Fxrot:    " + (-Fxrot));
-                                    Console.WriteLine("a1:    " + a1 + "   Fx:    " + Fx + "      Fxrot:    " + Fxrot);
-                                    particle0.rot_P[0] = particle0.rot_P[0] + a0 * (Fx + Fxrot) / particle0.MomentOfInertia_P;
-                                    particle1.rot_P[0] = particle1.rot_P[0] - a1 * (Fx + Fxrot) / particle1.MomentOfInertia_P;
-                                    // ----------------------------------------
-
-                                    //double tempCollisionVn_P0 = collisionVn_P0 - Math.Sign(collisionVn_P0) * (Fx.Abs() + Fxrot.Abs()) / particle0.mass_P;
-                                    //double tempCollisionVn_P1 = collisionVn_P0 - Math.Sign(collisionVn_P1) * (Fx.Abs() + Fxrot.Abs()) / particle1.mass_P;                                 
-                                    //particle.rot_P[0] -= tempCollisionVn_P0/a0;
-                                    //particle0.rot_P[0] -= a0 * Math.Sign(particle0.rot_P[0]) * (Fx + Fxrot) / particle0.MomentOfInertia_P;
-                                    //particle1.rot_P[0] += a0 * Math.Sign(particle1.rot_P[0]) * (Fx + Fxrot) / particle1.MomentOfInertia_P;
-
-
-                                    // zentric collision
-                                    // ----------------------------------------
-                                    //double tempCollisionVn_P0 = (particle0.mass_P * collisionVn_P0 + particle1.mass_P * collisionVn_P1 + e * particle1.mass_P * (collisionVn_P1 - collisionVn_P0)) / (particle0.mass_P + particle1.mass_P);
-                                    //double tempCollisionVt_P0 = collisionVt_P0;
-                                    //double tempCollisionVn_P1 = (particle0.mass_P * collisionVn_P0 + particle1.mass_P * collisionVn_P1 + e * particle0.mass_P * (collisionVn_P0 - collisionVn_P1)) / (particle0.mass_P + particle1.mass_P);
-                                    //double tempCollisionVt_P1 = collisionVt_P1;
-                                    // ----------------------------------------
-
-
-                                    particle0.vel_P[0] = new double[] { normal[0] * tempCollisionVn_P0 + tempCollisionVt_P0 * tangential[0], normal[1] * tempCollisionVn_P0 + tempCollisionVt_P0 * tangential[1] };
-                                    particle1.vel_P[0] = new double[] { normal[0] * tempCollisionVn_P1 + tempCollisionVt_P1 * tangential[0], normal[1] * tempCollisionVn_P1 + tempCollisionVt_P1 * tangential[1] };
-                                    //collided = true;
-
-                                    // exzentrischer stoß
-                                    //double contactForce = (1 + e)*(particle0.vel_P[0][0] - particle0.radius_P * particle0.rot_P[0] - (particle1.vel_P[0][0] - particle1.radius_P * particle1.rot_P[0])) / (1/particle0.mass_P+1/particle1.mass_P+particle0.radius_P.Pow2()/particle0.MomentOfInertia_P+particle1.radius_P.Pow2()/particle1.MomentOfInertia_P);
-                                    //particle0.vel_P[0][0] -= contactForce / particle0.mass_P;
-                                    //particle0.rot_P[0] = particle0.rot_P[0];
-                                    //particle0.rot_P[0] += particle0.radius_P * contactForce / particle0.MomentOfInertia_P;
-                                    //particle1.vel_P[0][0] -= contactForce / particle1.mass_P;
-                                    //particle1.rot_P[0] = particle1.rot_P[0];
-                                    //particle1.rot_P[0] += particle1.radius_P * contactForce / particle1.MomentOfInertia_P;
-
-                                    if ((realDistance <= 1.5 * hmin) /*|| ForceCollision*/) {
-                                        Console.WriteLine("Entering overlapping loop....");
-                                        triggerOnlyCollisionProcedure = true;
-                                    }
-                                }
-
-                                if (realDistance > threshold && particle0.m_collidedWithParticle[m_Particles.IndexOf(particle1)] && particle1.m_collidedWithParticle[m_Particles.IndexOf(particle0)]) {
-                                    particle0.m_collidedWithParticle[m_Particles.IndexOf(particle1)] = false;
-                                    particle1.m_collidedWithParticle[m_Particles.IndexOf(particle0)] = false;
-                                    particle0.m_closeInterfacePointTo[m_Particles.IndexOf(particle1)] = null;
-                                    particle1.m_closeInterfacePointTo[m_Particles.IndexOf(particle0)] = null;
-                                }
-
-                                ForceCollision = false;
-                                break;
-
-                            case (FSI_Solver.FSI_Control.CollisionModel.MomentumConservation_NoCollisionBool):
-
-                                if (((realDistance <= threshold) || ForceCollision) && !particle0.m_collidedWithParticle[m_Particles.IndexOf(particle1)] && !particle1.m_collidedWithParticle[m_Particles.IndexOf(particle0)]) {
-
-
-                                    //particle0.m_collidedWithParticle[m_Particles.IndexOf(particle1)] = true;
-                                    //particle1.m_collidedWithParticle[m_Particles.IndexOf(particle0)] = true;
-
-                                    Console.WriteLine("!!!!!!!!!!!!!!!!!!!!!!!!!!!!realDistance: " + realDistance);
-
-                                    //coefficient of restitution (e=0 pastic; e=1 elastic)
-                                    double e = 1;
-
-                                    //collision Nomal
-                                    var normal = distanceVec.CloneAs();
-                                    normal.ScaleV(1 / Math.Sqrt(distanceVec[0].Pow2() + distanceVec[1].Pow2()));
-
-                                    double[] tangential = new double[] { -normal[1], normal[0] };
-
-
-                                    //general definitions of normal and tangential components
-                                    double collisionVn_P0 = particle0.vel_P[0][0] * normal[0] + particle0.vel_P[0][1] * normal[1];
-                                    double collisionVt_P0 = particle0.vel_P[0][0] * tangential[0] + particle0.vel_P[0][1] * tangential[1];
-                                    double collisionVn_P1 = particle1.vel_P[0][0] * normal[0] + particle1.vel_P[0][1] * normal[1];
-                                    double collisionVt_P1 = particle1.vel_P[0][0] * tangential[0] + particle1.vel_P[0][1] * tangential[1];
-
-                                    // exzentric collision
-                                    // ----------------------------------------                                                                  
-                                    tempPoint_P0.AccV(-1, particle0.currentPos_P[0]);
-                                    double a0 = (tempPoint_P0[0] * tangential[0] + tempPoint_P0[1] * tangential[1]);
-                                    tempPoint_P1.AccV(-1, particle1.currentPos_P[0]);
-                                    double a1 = (tempPoint_P1[0] * tangential[0] + tempPoint_P1[1] * tangential[1]);
-
-                                    // Fix for Sphere
-                                    // ----------------------------------------  
-                                    if (particle0.m_shape == Particle.ParticleShape.spherical)
-                                        a0 = 0.0;
-                                    if (particle1.m_shape == Particle.ParticleShape.spherical)
-                                        a1 = 0.0;
-
-
-                                    double Fx = (1 + e) * ((collisionVn_P0 - collisionVn_P1) / (1 / particle0.mass_P + 1 / particle1.mass_P + a0.Pow2() / particle0.MomentOfInertia_P + a1.Pow2() / particle1.MomentOfInertia_P));
-                                    double Fxrot = (1 + e) * ((-a0 * particle0.rot_P[0] + a1 * particle1.rot_P[0]) / (1 / particle0.mass_P + 1 / particle1.mass_P + a0.Pow2() / particle0.MomentOfInertia_P + a1.Pow2() / particle1.MomentOfInertia_P));
-
-                                    double tempCollisionVn_P0 = collisionVn_P0 - (Fx + Fxrot) / particle0.mass_P;
-                                    double tempCollisionVn_P1 = collisionVn_P1 + (Fx + Fxrot) / particle1.mass_P;
-                                    double tempCollisionVt_P0 = collisionVt_P0;
-                                    double tempCollisionVt_P1 = collisionVt_P1;
-                                    Console.WriteLine("a0:    " + a0 + "   Fx:    " + (-Fx) + "      Fxrot:    " + (-Fxrot));
-                                    Console.WriteLine("a1:    " + a1 + "   Fx:    " + Fx + "      Fxrot:    " + Fxrot);
-                                    particle0.rot_P[0] = particle0.rot_P[0] + a0 * (Fx + Fxrot) / particle0.MomentOfInertia_P;
-                                    particle1.rot_P[0] = particle1.rot_P[0] - a1 * (Fx + Fxrot) / particle1.MomentOfInertia_P;
-                                    // ----------------------------------------
-
-                                    //double tempCollisionVn_P0 = collisionVn_P0 - Math.Sign(collisionVn_P0) * (Fx.Abs() + Fxrot.Abs()) / particle0.mass_P;
-                                    //double tempCollisionVn_P1 = collisionVn_P0 - Math.Sign(collisionVn_P1) * (Fx.Abs() + Fxrot.Abs()) / particle1.mass_P;                                 
-                                    //particle.rot_P[0] -= tempCollisionVn_P0/a0;
-                                    //particle0.rot_P[0] -= a0 * Math.Sign(particle0.rot_P[0]) * (Fx + Fxrot) / particle0.MomentOfInertia_P;
-                                    //particle1.rot_P[0] += a0 * Math.Sign(particle1.rot_P[0]) * (Fx + Fxrot) / particle1.MomentOfInertia_P;
-
-
-                                    // zentric collision
-                                    // ----------------------------------------
-                                    //double tempCollisionVn_P0 = (particle0.mass_P * collisionVn_P0 + particle1.mass_P * collisionVn_P1 + e * particle1.mass_P * (collisionVn_P1 - collisionVn_P0)) / (particle0.mass_P + particle1.mass_P);
-                                    //double tempCollisionVt_P0 = collisionVt_P0;
-                                    //double tempCollisionVn_P1 = (particle0.mass_P * collisionVn_P0 + particle1.mass_P * collisionVn_P1 + e * particle0.mass_P * (collisionVn_P0 - collisionVn_P1)) / (particle0.mass_P + particle1.mass_P);
-                                    //double tempCollisionVt_P1 = collisionVt_P1;
-                                    // ----------------------------------------
-
-
-                                    particle0.vel_P[0] = new double[] { normal[0] * tempCollisionVn_P0 + tempCollisionVt_P0 * tangential[0], normal[1] * tempCollisionVn_P0 + tempCollisionVt_P0 * tangential[1] };
-                                    particle1.vel_P[0] = new double[] { normal[0] * tempCollisionVn_P1 + tempCollisionVt_P1 * tangential[0], normal[1] * tempCollisionVn_P1 + tempCollisionVt_P1 * tangential[1] };
-                                    //collided = true;
-
-                                    // exzentrischer stoß
-                                    //double contactForce = (1 + e)*(particle0.vel_P[0][0] - particle0.radius_P * particle0.rot_P[0] - (particle1.vel_P[0][0] - particle1.radius_P * particle1.rot_P[0])) / (1/particle0.mass_P+1/particle1.mass_P+particle0.radius_P.Pow2()/particle0.MomentOfInertia_P+particle1.radius_P.Pow2()/particle1.MomentOfInertia_P);
-                                    //particle0.vel_P[0][0] -= contactForce / particle0.mass_P;
-                                    //particle0.rot_P[0] = particle0.rot_P[0];
-                                    //particle0.rot_P[0] += particle0.radius_P * contactForce / particle0.MomentOfInertia_P;
-                                    //particle1.vel_P[0][0] -= contactForce / particle1.mass_P;
-                                    //particle1.rot_P[0] = particle1.rot_P[0];
-                                    //particle1.rot_P[0] += particle1.radius_P * contactForce / particle1.MomentOfInertia_P;
-
-                                    if ((realDistance <= 1.5 * hmin) /*|| ForceCollision*/) {
-                                        Console.WriteLine("Entering overlapping loop....");
-                                        triggerOnlyCollisionProcedure = true;
-                                    }
-                                }
-
-                                if (realDistance > 1.5 * hmin && particle0.m_collidedWithParticle[m_Particles.IndexOf(particle1)] && particle1.m_collidedWithParticle[m_Particles.IndexOf(particle0)]) {
-                                    particle0.m_collidedWithParticle[m_Particles.IndexOf(particle1)] = false;
-                                    particle1.m_collidedWithParticle[m_Particles.IndexOf(particle0)] = false;
-                                    particle0.m_closeInterfacePointTo[m_Particles.IndexOf(particle1)] = null;
-                                    particle1.m_closeInterfacePointTo[m_Particles.IndexOf(particle0)] = null;
-                                }
-
-                                ForceCollision = false;
-                                break;
-
-                            case (FSI_Solver.FSI_Control.CollisionModel.MomentumConservation_ModifiedCollisionBool):
-
-                                if (((realDistance <= threshold) || ForceCollision) && !particle0.m_collidedWithParticle[m_Particles.IndexOf(particle1)] && !particle1.m_collidedWithParticle[m_Particles.IndexOf(particle0)]) {
-
-
-                                    particle0.m_collidedWithParticle[m_Particles.IndexOf(particle1)] = true;
-                                    particle1.m_collidedWithParticle[m_Particles.IndexOf(particle0)] = true;
-
-                                    Console.WriteLine("!!!!!!!!!!!!!!!!!!!!!!!!!!!!realDistance: " + realDistance);
-
-                                    //coefficient of restitution (e=0 pastic; e=1 elastic)
-                                    double e = 1;
-
-                                    //collision Nomal
-                                    var normal = distanceVec.CloneAs();
-                                    normal.ScaleV(1 / Math.Sqrt(distanceVec[0].Pow2() + distanceVec[1].Pow2()));
-
-                                    double[] tangential = new double[] { -normal[1], normal[0] };
-
-
-                                    //general definitions of normal and tangential components
-                                    double collisionVn_P0 = particle0.vel_P[0][0] * normal[0] + particle0.vel_P[0][1] * normal[1];
-                                    double collisionVt_P0 = particle0.vel_P[0][0] * tangential[0] + particle0.vel_P[0][1] * tangential[1];
-                                    double collisionVn_P1 = particle1.vel_P[0][0] * normal[0] + particle1.vel_P[0][1] * normal[1];
-                                    double collisionVt_P1 = particle1.vel_P[0][0] * tangential[0] + particle1.vel_P[0][1] * tangential[1];
-
-                                    // exzentric collision
-                                    // ----------------------------------------                                                                  
-                                    tempPoint_P0.AccV(-1, particle0.currentPos_P[0]);
-                                    double a0 = (tempPoint_P0[0] * tangential[0] + tempPoint_P0[1] * tangential[1]);
-                                    tempPoint_P1.AccV(-1, particle1.currentPos_P[0]);
-                                    double a1 = (tempPoint_P1[0] * tangential[0] + tempPoint_P1[1] * tangential[1]);
-
-                                    // Fix for Sphere
-                                    // ----------------------------------------  
-                                    if (particle0.m_shape == Particle.ParticleShape.spherical)
-                                        a0 = 0.0;
-                                    if (particle1.m_shape == Particle.ParticleShape.spherical)
-                                        a1 = 0.0;
-
-
-                                    double Fx = (1 + e) * ((collisionVn_P0 - collisionVn_P1) / (1 / particle0.mass_P + 1 / particle1.mass_P + a0.Pow2() / particle0.MomentOfInertia_P + a1.Pow2() / particle1.MomentOfInertia_P));
-                                    double Fxrot = (1 + e) * ((-a0 * particle0.rot_P[0] + a1 * particle1.rot_P[0]) / (1 / particle0.mass_P + 1 / particle1.mass_P + a0.Pow2() / particle0.MomentOfInertia_P + a1.Pow2() / particle1.MomentOfInertia_P));
-
-                                    double tempCollisionVn_P0 = collisionVn_P0 - (Fx + Fxrot) / particle0.mass_P;
-                                    double tempCollisionVn_P1 = collisionVn_P1 + (Fx + Fxrot) / particle1.mass_P;
-                                    double tempCollisionVt_P0 = collisionVt_P0;
-                                    double tempCollisionVt_P1 = collisionVt_P1;
-                                    Console.WriteLine("a0:    " + a0 + "   Fx:    " + (-Fx) + "      Fxrot:    " + (-Fxrot));
-                                    Console.WriteLine("a1:    " + a1 + "   Fx:    " + Fx + "      Fxrot:    " + Fxrot);
-                                    particle0.rot_P[0] = particle0.rot_P[0] + a0 * (Fx + Fxrot) / particle0.MomentOfInertia_P;
-                                    particle1.rot_P[0] = particle1.rot_P[0] - a1 * (Fx + Fxrot) / particle1.MomentOfInertia_P;
-                                    // ----------------------------------------
-
-                                    //double tempCollisionVn_P0 = collisionVn_P0 - Math.Sign(collisionVn_P0) * (Fx.Abs() + Fxrot.Abs()) / particle0.mass_P;
-                                    //double tempCollisionVn_P1 = collisionVn_P0 - Math.Sign(collisionVn_P1) * (Fx.Abs() + Fxrot.Abs()) / particle1.mass_P;                                 
-                                    //particle.rot_P[0] -= tempCollisionVn_P0/a0;
-                                    //particle0.rot_P[0] -= a0 * Math.Sign(particle0.rot_P[0]) * (Fx + Fxrot) / particle0.MomentOfInertia_P;
-                                    //particle1.rot_P[0] += a0 * Math.Sign(particle1.rot_P[0]) * (Fx + Fxrot) / particle1.MomentOfInertia_P;
-
-
-                                    // zentric collision
-                                    // ----------------------------------------
-                                    //double tempCollisionVn_P0 = (particle0.mass_P * collisionVn_P0 + particle1.mass_P * collisionVn_P1 + e * particle1.mass_P * (collisionVn_P1 - collisionVn_P0)) / (particle0.mass_P + particle1.mass_P);
-                                    //double tempCollisionVt_P0 = collisionVt_P0;
-                                    //double tempCollisionVn_P1 = (particle0.mass_P * collisionVn_P0 + particle1.mass_P * collisionVn_P1 + e * particle0.mass_P * (collisionVn_P0 - collisionVn_P1)) / (particle0.mass_P + particle1.mass_P);
-                                    //double tempCollisionVt_P1 = collisionVt_P1;
-                                    // ----------------------------------------
-
-
-                                    particle0.vel_P[0] = new double[] { normal[0] * tempCollisionVn_P0 + tempCollisionVt_P0 * tangential[0], normal[1] * tempCollisionVn_P0 + tempCollisionVt_P0 * tangential[1] };
-                                    particle1.vel_P[0] = new double[] { normal[0] * tempCollisionVn_P1 + tempCollisionVt_P1 * tangential[0], normal[1] * tempCollisionVn_P1 + tempCollisionVt_P1 * tangential[1] };
-                                    //collided = true;
-
-                                    // exzentrischer stoß
-                                    //double contactForce = (1 + e)*(particle0.vel_P[0][0] - particle0.radius_P * particle0.rot_P[0] - (particle1.vel_P[0][0] - particle1.radius_P * particle1.rot_P[0])) / (1/particle0.mass_P+1/particle1.mass_P+particle0.radius_P.Pow2()/particle0.MomentOfInertia_P+particle1.radius_P.Pow2()/particle1.MomentOfInertia_P);
-                                    //particle0.vel_P[0][0] -= contactForce / particle0.mass_P;
-                                    //particle0.rot_P[0] = particle0.rot_P[0];
-                                    //particle0.rot_P[0] += particle0.radius_P * contactForce / particle0.MomentOfInertia_P;
-                                    //particle1.vel_P[0][0] -= contactForce / particle1.mass_P;
-                                    //particle1.rot_P[0] = particle1.rot_P[0];
-                                    //particle1.rot_P[0] += particle1.radius_P * contactForce / particle1.MomentOfInertia_P;
-
-                                    if ((realDistance <= 1.5 * hmin) /*|| ForceCollision*/) {
-                                        Console.WriteLine("Entering overlapping loop....");
-                                        triggerOnlyCollisionProcedure = true;
-                                    }
-                                }
-
-                                if (realDistance > 1.5 * hmin && particle0.m_collidedWithParticle[m_Particles.IndexOf(particle1)] && particle1.m_collidedWithParticle[m_Particles.IndexOf(particle0)]) {
-                                    particle0.m_collidedWithParticle[m_Particles.IndexOf(particle1)] = false;
-                                    particle1.m_collidedWithParticle[m_Particles.IndexOf(particle0)] = false;
-                                    particle0.m_closeInterfacePointTo[m_Particles.IndexOf(particle1)] = null;
-                                    particle1.m_closeInterfacePointTo[m_Particles.IndexOf(particle0)] = null;
-                                }
-
-                                ForceCollision = false;
-                                break;
-
-                            default:
-                                throw new NotImplementedException("Collision model not available");
-                        }
+                        ComputeCollissionModel(hmin, particle0, particle1, ref distance, ref distanceVec);
                     }
                 }
             }
         }
 
+        /// <summary>
+        /// Update of particle state (velocity, force, etc.) for two particles where a collision is detected
+        /// </summary>
+        private void ComputeCollissionModel(double hmin, Particle particle0, Particle particle1, ref double distance, ref double[] distanceVec) {
+            // All interface points at a specific subgrid containing all cut cells of one particle
+            //var interfacePoints_P0 = XNSEUtils.GetInterfacePoints(LsTrk, LevSet, new SubGrid(particle0CutCells));
+            //var interfacePoints_P1 = XNSEUtils.GetInterfacePoints(LsTrk, LevSet, new SubGrid(particle1CutCells));
+            MultidimensionalArray interfacePoints_P0 = particle0.GetSurfacePoints(LsTrk, LevSet);
+            MultidimensionalArray interfacePoints_P1 = particle1.GetSurfacePoints(LsTrk, LevSet);
+
+            var tempDistance = 0.0;
+            double[] tempPoint_P0 = new double[2] { 0.0, 0.0 };
+            double[] tempPoint_P1 = new double[2] { 0.0, 0.0 };
+
+            if (interfacePoints_P0 != null && interfacePoints_P1 != null) {
+
+                for (int f = 0; f < interfacePoints_P0.NoOfRows; f++) {
+                    for (int g = 0; g < interfacePoints_P1.NoOfRows; g++) {
+                        tempDistance = Math.Sqrt((interfacePoints_P0.GetRow(f)[0] - interfacePoints_P1.GetRow(g)[0]).Pow2() + (interfacePoints_P0.GetRow(f)[1] - interfacePoints_P1.GetRow(g)[1]).Pow2());
+                        if (tempDistance < distance) {
+
+                            distanceVec = interfacePoints_P0.GetRow(f).CloneAs();
+                            distanceVec.AccV(-1, interfacePoints_P1.GetRow(g));
+                            tempPoint_P0 = interfacePoints_P0.GetRow(f);
+                            tempPoint_P1 = interfacePoints_P1.GetRow(g);
+                            distance = tempDistance;
+                        }
+                    }
+                }
+            }
+
+            double realDistance = distance;
+            bool ForceCollision = false;
+
+            // Important to get normal vector if distance is overlapping in the next timestep
+            if (realDistance <= 0.0 && particle0.m_closeInterfacePointTo[m_Particles.IndexOf(particle1)] != null && particle1.m_closeInterfacePointTo[m_Particles.IndexOf(particle0)] != null) {
+                tempPoint_P0 = particle0.m_closeInterfacePointTo[m_Particles.IndexOf(particle1)];
+                tempPoint_P1 = particle1.m_closeInterfacePointTo[m_Particles.IndexOf(particle0)];
+                if (tempPoint_P0 == null || tempPoint_P1 == null)
+                    Console.WriteLine("Overlap of particles which were not close in the previous timestep due to one timestep - this is just an output without assertion");
+                //    throw new ApplicationException("Overlap of particles which were not close in the previous timestep due to in one timestep");
+                distanceVec = tempPoint_P0.CloneAs();
+                distanceVec.AccV(-1, tempPoint_P1);
+                //ForceCollision = true;
+            }
 
 
-        bool collided = false;
+            particle0.m_closeInterfacePointTo[m_Particles.IndexOf(particle1)] = tempPoint_P0;
+            particle1.m_closeInterfacePointTo[m_Particles.IndexOf(particle0)] = tempPoint_P1;
 
-        private FSI_Solver.FSI_Control.CollisionModel m_collisionModel;
+
+            double threshold = 2.5 * hmin;
+
+            double eps = threshold.Pow2() / 2; // Turek paper
+            double epsPrime = threshold / 2; // Turek paper
+
+            double[] collisionForce;
+
+            var massDifference = Math.Abs(this.Control.PhysicalParameters.rho_A - particle0.particleDensity);
+
+            Console.WriteLine("realDistance: " + realDistance);
+            Console.WriteLine("Threshold: " + threshold);
+            Console.WriteLine("hmin: " + hmin);
+
+
+            // test of Modell 2
+
+            switch (m_collisionModel) {
+
+                case (FSI_Solver.FSI_Control.CollisionModel.RepulsiveForce):
+                    if ((realDistance <= threshold)) {
+                        distanceVec.ScaleV((threshold - realDistance).Pow2());
+                        distanceVec.ScaleV(1 / eps);
+
+
+                        collisionForce = distanceVec;
+                        var collisionForceP1 = collisionForce.CloneAs();
+                        collisionForce.ScaleV(-100.0);
+                        collisionForceP1.ScaleV(-100.0);
+                        particle0.HydrodynamicForces[0].AccV(-1, collisionForce);
+                        //particle0.hydrodynTorqueAtIteration[0] += 100 * (collisionForce[0] * (tempPoint_P0[0] - particle0.positionAtIteration[0][0]) + collisionForce[1] * (tempPoint_P0[1] - particle0.positionAtIteration[0][1]));
+                        particle1.HydrodynamicForces[0].AccV(1, collisionForceP1);
+                        //particle1.hydrodynTorqueAtIteration[0] += -100 * (collisionForceP1[0] * (tempPoint_P1[0] - particle1.positionAtIteration[0][0]) + collisionForceP1[1] * (tempPoint_P1[1] - particle1.positionAtIteration[0][1]));
+                        Console.WriteLine("Collision information: Particles coming close, force " + collisionForce.L2Norm());
+                        Console.WriteLine("Collision information: Particles coming close, torque " + particle1.HydrodynamicTorque[0]);
+
+                        if (realDistance <= 1.5 * hmin) {
+                            Console.WriteLine("Entering overlapping loop....");
+                            triggerOnlyCollisionProcedure = true;
+                        }
+
+                    }
+                    break;
+
+
+                case (FSI_Solver.FSI_Control.CollisionModel.MomentumConservation):
+
+                    if (((realDistance <= threshold) || ForceCollision) && !particle0.m_collidedWithParticle[m_Particles.IndexOf(particle1)] && !particle1.m_collidedWithParticle[m_Particles.IndexOf(particle0)]) {
+
+
+
+                        // Bool if collided
+                        particle0.m_collidedWithParticle[m_Particles.IndexOf(particle1)] = true;
+                        particle1.m_collidedWithParticle[m_Particles.IndexOf(particle0)] = true;
+
+                        // Bool if force integration should be skipped
+                        particle0.skipForceIntegration = true;
+                        particle1.skipForceIntegration = true;
+
+                        //coefficient of restitution (e=0 pastic; e=1 elastic)
+                        double e = 1.0;
+
+                        //collision Nomal
+                        var normal = distanceVec.CloneAs();
+                        normal.ScaleV(1 / Math.Sqrt(distanceVec[0].Pow2() + distanceVec[1].Pow2()));
+
+                        double[] tangential = new double[] { -normal[1], normal[0] };
+
+                        //general definitions of normal and tangential components
+                        double collisionVn_P0 = particle0.TranslationalVelocity[0][0] * normal[0] + particle0.TranslationalVelocity[0][1] * normal[1];
+                        double collisionVt_P0 = particle0.TranslationalVelocity[0][0] * tangential[0] + particle0.TranslationalVelocity[0][1] * tangential[1];
+                        double collisionVn_P1 = particle1.TranslationalVelocity[0][0] * normal[0] + particle1.TranslationalVelocity[0][1] * normal[1];
+                        double collisionVt_P1 = particle1.TranslationalVelocity[0][0] * tangential[0] + particle1.TranslationalVelocity[0][1] * tangential[1];
+
+                        // exzentric collision
+                        // ----------------------------------------                                                                  
+                        tempPoint_P0.AccV(-1, particle0.Position[0]);
+                        double a0 = (tempPoint_P0[0] * tangential[0] + tempPoint_P0[1] * tangential[1]);
+                        tempPoint_P1.AccV(-1, particle1.Position[0]);
+                        double a1 = (tempPoint_P1[0] * tangential[0] + tempPoint_P1[1] * tangential[1]);
+
+
+
+
+                        // Fix for Sphere
+                        // ----------------------------------------  
+                        if (particle0 is Particle_Sphere)
+                            a0 = 0.0;
+                        if (particle1 is Particle_Sphere)
+                            a1 = 0.0;
+
+
+
+                        double Fx = (1 + e) * ((collisionVn_P0 - collisionVn_P1) / (1 / particle0.Mass_P + 1 / particle1.Mass_P + a0.Pow2() / particle0.MomentOfInertia_P + a1.Pow2() / particle1.MomentOfInertia_P));
+                        double Fxrot = (1 + e) * ((-a0 * particle0.RotationalVelocity[0] + a1 * particle1.RotationalVelocity[0]) / (1 / particle0.Mass_P + 1 / particle1.Mass_P + a0.Pow2() / particle0.MomentOfInertia_P + a1.Pow2() / particle1.MomentOfInertia_P));
+
+                        double tempCollisionVn_P0 = collisionVn_P0 - (Fx + Fxrot) / particle0.Mass_P;
+                        double tempCollisionVn_P1 = collisionVn_P1 + (Fx + Fxrot) / particle1.Mass_P;
+                        double tempCollisionVt_P0 = collisionVt_P0;
+                        double tempCollisionVt_P1 = collisionVt_P1;
+                        Console.WriteLine("a0:    " + a0 + "   Fx:    " + (-Fx) + "      Fxrot:    " + (-Fxrot));
+                        Console.WriteLine("a1:    " + a1 + "   Fx:    " + Fx + "      Fxrot:    " + Fxrot);
+                        particle0.RotationalVelocity[0] = particle0.RotationalVelocity[0] + a0 * (Fx + Fxrot) / particle0.MomentOfInertia_P;
+                        particle1.RotationalVelocity[0] = particle1.RotationalVelocity[0] - a1 * (Fx + Fxrot) / particle1.MomentOfInertia_P;
+
+
+
+                        // zentric collision
+                        // ----------------------------------------
+                        //double tempCollisionVn_P0 = (particle0.mass_P * collisionVn_P0 + particle1.mass_P * collisionVn_P1 + e * particle1.mass_P * (collisionVn_P1 - collisionVn_P0)) / (particle0.mass_P + particle1.mass_P);
+                        //double tempCollisionVt_P0 = collisionVt_P0;
+                        //double tempCollisionVn_P1 = (particle0.mass_P * collisionVn_P0 + particle1.mass_P * collisionVn_P1 + e * particle0.mass_P * (collisionVn_P0 - collisionVn_P1)) / (particle0.mass_P + particle1.mass_P);
+                        //double tempCollisionVt_P1 = collisionVt_P1;
+                        // ----------------------------------------
+
+
+
+                        particle0.TranslationalVelocity[0] = new double[] { normal[0] * tempCollisionVn_P0 + tempCollisionVt_P0 * tangential[0], normal[1] * tempCollisionVn_P0 + tempCollisionVt_P0 * tangential[1] };
+                        particle1.TranslationalVelocity[0] = new double[] { normal[0] * tempCollisionVn_P1 + tempCollisionVt_P1 * tangential[0], normal[1] * tempCollisionVn_P1 + tempCollisionVt_P1 * tangential[1] };
+                        //collided = true;
+
+                        //double contactForce = (1 + e)*(particle0.transVelocityAtIteration[0][0] - particle0.radius_P * particle0.rotationalVelocityAtIteration[0] - (particle1.transVelocityAtIteration[0][0] - particle1.radius_P * particle1.rotationalVelocityAtIteration[0])) / (1/particle0.mass_P+1/particle1.mass_P+particle0.radius_P.Pow2()/particle0.MomentOfInertia_P+particle1.radius_P.Pow2()/particle1.MomentOfInertia_P);
+                        //particle0.transVelocityAtIteration[0][0] -= contactForce / particle0.mass_P;
+                        //particle0.rotationalVelocityAtIteration[0] = particle0.rotationalVelocityAtIteration[0];
+                        //particle0.rotationalVelocityAtIteration[0] += particle0.radius_P * contactForce / particle0.MomentOfInertia_P;
+                        //particle1.transVelocityAtIteration[0][0] -= contactForce / particle1.mass_P;
+                        //particle1.rotationalVelocityAtIteration[0] = particle1.rotationalVelocityAtIteration[0];
+                        //particle1.rotationalVelocityAtIteration[0] += particle1.radius_P * contactForce / particle1.MomentOfInertia_P;
+
+
+                        if (realDistance <= 1.5 * hmin) {
+                            Console.WriteLine("Entering overlapping loop....");
+                            triggerOnlyCollisionProcedure = true;
+                        }
+                    }
+
+                    if (realDistance > 1.5 * hmin && particle0.m_collidedWithParticle[m_Particles.IndexOf(particle1)] && particle1.m_collidedWithParticle[m_Particles.IndexOf(particle0)]) {
+                        particle0.m_collidedWithParticle[m_Particles.IndexOf(particle1)] = false;
+                        particle1.m_collidedWithParticle[m_Particles.IndexOf(particle0)] = false;
+                        particle0.m_closeInterfacePointTo[m_Particles.IndexOf(particle1)] = null;
+                        particle1.m_closeInterfacePointTo[m_Particles.IndexOf(particle0)] = null;
+                    }
+
+                    ForceCollision = false;
+                    break;
+
+
+                default:
+                    throw new NotImplementedException("Collision model not available");
+            }
+        }
+
+        private FSI_Solver.FSI_Control.CollisionModel m_collisionModel {
+            get {
+                return ((FSI_Control)Control).collisionModel;
+            }
+        }
 
         /// <summary>
         /// Calculation of collision forces between particle and wall
         /// </summary>
-        /// <param name="particles"></param>
-        /// <param name="hmin"></param>
         public void WallCollisionForces(Particle particle, double hmin) {
 
-            var particleCutCells = particle.cutCells_P(LsTrk);
+            if (m_collisionModel == FSI_Control.CollisionModel.NoCollisionModel) {
+                return;
+            }
 
-            var particleCutCellArray = particleCutCells.ItemEnum.ToArray();
-            var neighborCellsArray = particleCutCells.AllNeighbourCells().ItemEnum.ToArray();
-            var allCellsArray = particleCutCellArray.Concat(neighborCellsArray).ToArray();
-            var allCells = new CellMask(GridData, neighborCellsArray);
+            var particleCutCells = particle.CutCells_P(LsTrk);
+
+            //var particleCutCellArray = particleCutCells.ItemEnum.ToArray();
+            //var neighborCellsArray = particleCutCells.AllNeighbourCells().ItemEnum.ToArray();
+            //var allCellsArray = particleCutCellArray.Concat(neighborCellsArray).ToArray();
+            //var allCells = new CellMask(GridData, neighborCellsArray);
+            var allCells = particleCutCells;
 
             collision = false;
 
@@ -1228,7 +1770,7 @@ namespace BoSSS.Application.FSI_Solver {
             // All interface points at a specific subgrid containing all cut cells of one particle
             MultidimensionalArray interfacePoints = null;
 
-            Console.WriteLine("ParticleCutCellCount:   " + particleCutCells.Count());
+            //Console.WriteLine("ParticleCutCellCount:   " + particleCutCells.Count());
 
             var trafo = GridData.iGeomEdges.Edge2CellTrafos;
 
@@ -1242,27 +1784,15 @@ namespace BoSSS.Application.FSI_Solver {
                 if (GridData.iGeomEdges.IsEdgeBoundaryEdge(iEdge)) {
 
                     if (interfacePoints == null)
-                        interfacePoints = BoSSS.Solution.XNSECommon.XNSEUtils.GetInterfacePoints(LsTrk, LevSet, new SubGrid(particleCutCells));
+                        interfacePoints = particle.GetSurfacePoints(LsTrk, LevSet);
 
                     collision = true;
                     var jCell = GridData.iGeomEdges.CellIndices[iEdge, 0];
                     int iKref = GridData.iGeomEdges.GetRefElementIndex(jCell);
-                    //int iKref = GridData.Cells.GetRefElementIndex(jCell);
+
                     NodeSet[] refNodes = GridData.iGeomEdges.EdgeRefElements.Select(Kref2 => Kref2.GetQuadratureRule(5 * 2).Nodes).ToArray();
                     NodeSet Nodes = refNodes.ElementAt(iKref);
 
-                    //SubGrid oneCellSubGrid = new SubGrid(new CellMask(GridData, new int[] { jCell + 1 }));
-                    //SubGrid _oneCellSubGrid = new SubGrid(new CellMask(GridData, Chunk.GetSingleElementChunk(jCell)));
-                    //Debug.Assert(oneCellSubGrid.VolumeMask.NoOfItemsLocally == 1);
-                    //Debug.Assert(oneCellSubGrid.VolumeMask.ItemEnum.First() == jCell);
-                    //Debug.Assert(_oneCellSubGrid.VolumeMask.NoOfItemsLocally == 1);
-                    //Debug.Assert(_oneCellSubGrid.VolumeMask.ItemEnum.First() == jCell);
-
-                    //var allEdges = oneCellSubGrid.BoundaryEdgesMask;
-
-
-
-                    //Debug.Assert(GridData.Edges.CellIndices[iEdge, 0] == jCell);
                     var trafoIdx = GridData.iGeomEdges.Edge2CellTrafoIndex[iEdge, 0];
                     var transFormed = trafo[trafoIdx].Transform(Nodes);
                     var newVertices = transFormed.CloneAs();
@@ -1292,60 +1822,30 @@ namespace BoSSS.Application.FSI_Solver {
                 return;
 
 
-            Console.WriteLine("Closes Distance to wall is: " + distance);
+            Console.WriteLine("Closest Distance to wall is: " + distance);
 
-            //GridData.Cells.ClosestPointInCell()
-            //double[] distanceVec = particle0.currentPos_P[0].CloneAs();
-            //double eps = hmin.Pow2() / 2; // Turek paper
-            //double epsPrime = hmin / 2; // Turek paper
-            double eps = hmin.Pow2() / 2; // Turek paper
-            double epsPrime = hmin / 2; // Turek paper
-                                        //distanceVec.AccV(-1.0, particle.currentPos_P[0]);
-                                        //double distance = Math.Sqrt(distanceVec[0] * distanceVec[0] + distanceVec[1] * distanceVec[1]);
-            double threshold = 2 * hmin;
+            double threshold = 1.5 * hmin;
 
+            double eps = threshold.Pow2() / 2; // Turek paper
+            double epsPrime = threshold / 2; // Turek paper
 
             double[] collisionForce;
-
-            //Console.WriteLine("Distance to wall: " + distance);
-            //Console.WriteLine("Threshold: " + threshold);
-
-            //if (distance < (2*hmin)) {
-            //    //distanceVec.ScaleV((threshold - distance).Pow2());
-            //    distanceVec.ScaleV(1/hmin);
-            //    //Console.WriteLine("Scaling factor:   " + (2 * hmin / distance));
-            //    collisionForce = distanceVec;
-            //    collisionForce[0] = collisionForce[0];// .ScaleV(-981 * massDifference);
-            //    collisionForce[1] = collisionForce[1] * 981 * massDifference;
-            //    particle.forces_P[0].AccV(1, collisionForce);
-            //    Console.WriteLine("Collision information: Wall test model, force " + collisionForce.L2Norm());
-            //    return;
-            //}
-
-
-
-            //if (distance > threshold) {
-            //    Console.WriteLine("Collision information: No collision");
-            //    return;
-            //}
-
 
 
             switch (m_collisionModel) {
 
-                case (FSI_Solver.FSI_Control.CollisionModel.RepulsiveForce_v1):
-                    if ((realDistance <= threshold) && (realDistance > 1.5 * hmin)) {
+                case (FSI_Solver.FSI_Control.CollisionModel.RepulsiveForce):
+                    if ((realDistance <= threshold)) {
+                        Console.WriteLine("Strongly recommended to use conservation of momentum collision model. This one is highly experimental!!!!");
                         // Modell 1
                         distanceVec.ScaleV(1 / eps);
-                        distanceVec.ScaleV(((threshold - realDistance).Pow2()));
-
+                        distanceVec.ScaleV(((threshold - realDistance).Abs()));
 
                         collisionForce = distanceVec;
                         collisionForce.ScaleV(100.0);
-                        particle.forces_P[0].AccV(1, collisionForce);
-                        particle.torque_P[0] -= 100 * (collisionForce[0] * (tempPoint[0] - particle.currentPos_P[0][0]) + collisionForce[1] * (tempPoint[1] - particle.currentPos_P[0][1]));
-                        Console.WriteLine("Collision information: Wall coming close, force X " + collisionForce[0]);
-                        Console.WriteLine("Collision information: Wall coming close, force Y " + collisionForce[1]);
+
+                        particle.HydrodynamicForces[0] = collisionForce;
+
 
                         return;
                     }
@@ -1356,37 +1856,42 @@ namespace BoSSS.Application.FSI_Solver {
                         distanceVec.ScaleV((threshold - realDistance).Abs());
                         distanceVec.ScaleV(1 / epsPrime);
                         collisionForce = distanceVec;
-                        //collisionForce[0] = collisionForce[0];// .ScaleV(-981 * massDifference);
-                        //collisionForce[1] = collisionForce[1];
+
                         collisionForce.ScaleV(100.0);
-                        particle.forces_P[0].AccV(1, collisionForce);
+                        particle.HydrodynamicForces[0].AccV(1, collisionForce);
+                        particle.HydrodynamicTorque[0] -= (collisionForce[0] * (tempPoint[0] - particle.Position[0][0]) + collisionForce[1] * (tempPoint[1] - particle.Position[0][1]));
                         Console.WriteLine("Collision information: Wall overlapping, force X " + collisionForce[0]);
                         Console.WriteLine("Collision information: Wall overlapping, force Y " + collisionForce[1]);
 
                         if (realDistance <= 1.5 * hmin) {
                             Console.WriteLine("Entering wall overlapping loop....");
                             triggerOnlyCollisionProcedure = true;
-                            //double dt = GetFixedTimestep();
-                            //hack_phystime += dt;
-                            //particle0.UpdateTransVelocity(dt);
-                            //particle1.UpdateTransVelocity(dt);
-                            //particle0.UpdateParticlePosition(dt);
-                            //particle1.UpdateParticlePosition(dt);
-                            //UpdateLevelSetParticles(dt);
-                            //UpdateCollisionForces(particles, hmin);
+
                         }
                         return;
                     }
                     break;
-                case (FSI_Solver.FSI_Control.CollisionModel.MomentumConservation_NoCollisionBool):
-                case (FSI_Solver.FSI_Control.CollisionModel.MomentumConservation_ModifiedCollisionBool):
+
                 case (FSI_Solver.FSI_Control.CollisionModel.MomentumConservation):
-                    // ONLY FOR DISKS AT THE MOMENT
+
+
                     if (realDistance <= (threshold) && !particle.m_collidedWithWall[0]) {
 
-                        particle.m_collidedWithWall[0] = true;
                         //coefficient of restitution (e=0 pastic; e=1 elastic)
-                        double e = 1;
+
+
+                        double e = 1.0;
+
+                        // Fully plastic for bottom wall
+                        if (particle.Position[0][1] < 0.5)
+                            e = 0.0;
+
+
+                        // if particle already collided with wall
+                        particle.m_collidedWithWall[0] = true;
+
+                        // Skip force integration for next timestep
+                        particle.skipForceIntegration = false;
 
                         //collision Nomal
                         var normal = distanceVec.CloneAs();
@@ -1394,44 +1899,30 @@ namespace BoSSS.Application.FSI_Solver {
                         double[] tangential = new double[] { -normal[1], normal[0] };
 
 
-                        double collisionVn_P0 = particle.vel_P[0][0] * normal[0] + particle.vel_P[0][1] * normal[1];
-                        double collisionVt_P0 = particle.vel_P[0][0] * tangential[0] + particle.vel_P[0][1] * tangential[1];
+                        double collisionVn_P0 = particle.TranslationalVelocity[0][0] * normal[0] + particle.TranslationalVelocity[0][1] * normal[1];
+                        double collisionVt_P0 = particle.TranslationalVelocity[0][0] * tangential[0] + particle.TranslationalVelocity[0][1] * tangential[1];
 
 
                         // exzentric collision
                         // ----------------------------------------
-                        tempPoint.AccV(-1, particle.currentPos_P[0]);
+                        tempPoint.AccV(-1, particle.Position[0]);
                         double a0 = (tempPoint[0] * tangential[0] + tempPoint[1] * tangential[1]);
 
-                        if (particle.m_shape == Particle.ParticleShape.spherical)
+                        if (particle is Particle_Sphere)
                             a0 = 0.0;
 
 
-                        double Fx = (1 + e) * (collisionVn_P0) / (1 / particle.mass_P + a0.Pow2() / particle.MomentOfInertia_P);
-                        double Fxrot = (1 + e) * (-a0 * particle.rot_P[0]) / (1 / particle.mass_P + a0.Pow2() / particle.MomentOfInertia_P);
+                        double Fx = (1 + e) * (collisionVn_P0) / (1 / particle.Mass_P + a0.Pow2() / particle.MomentOfInertia_P);
+                        double Fxrot = (1 + e) * (-a0 * particle.RotationalVelocity[0]) / (1 / particle.Mass_P + a0.Pow2() / particle.MomentOfInertia_P);
 
-                        double tempCollisionVn_P0 = collisionVn_P0 - (Fx + Fxrot) / particle.mass_P;
+                        double tempCollisionVn_P0 = collisionVn_P0 - (Fx + Fxrot) / particle.Mass_P;
                         double tempCollisionVt_P0 = collisionVt_P0;
-                        //particle.rot_P[0] -= tempCollisionVn_P0/a0;
-                        particle.rot_P[0] = particle.rot_P[0] + a0 * (Fx + Fxrot) / particle.MomentOfInertia_P;
-                        // ----------------------------------------
+
+                        particle.RotationalVelocity[0] = particle.RotationalVelocity[0] + a0 * (Fx + Fxrot) / particle.MomentOfInertia_P;
 
 
+                        particle.TranslationalVelocity[0] = new double[] { normal[0] * tempCollisionVn_P0 + tempCollisionVt_P0 * tangential[0], normal[1] * tempCollisionVn_P0 + tempCollisionVt_P0 * tangential[1] };
 
-                        // zentrischer Stoß
-                        //double tempCollisionVn_P0 = -e * collisionVn_P0;
-                        //double tempCollisionVt_P0 = collisionVt_P0;
-
-
-
-                        particle.vel_P[0] = new double[] { normal[0] * tempCollisionVn_P0 + tempCollisionVt_P0 * tangential[0], normal[1] * tempCollisionVn_P0 + tempCollisionVt_P0 * tangential[1] };
-
-
-                        //collided = true;
-                        if ((realDistance <= 1.5 * hmin) /*|| ForceCollision*/) {
-                            Console.WriteLine("Entering overlapping loop....");
-                            triggerOnlyCollisionProcedure = true;
-                        }
                     }
                     if (realDistance > threshold && particle.m_collidedWithWall[0]) {
                         Console.WriteLine("Reset Wall");
@@ -1442,18 +1933,101 @@ namespace BoSSS.Application.FSI_Solver {
                 default:
                     throw new NotImplementedException("Collision model not available");
             }
-
-
-
         }
 
 
+        /// <summary>
+        /// Mesh refinement
+        /// Very primitive refinement indicator, works on a LevelSet criterion.
+        /// </summary>
+        /// 
+        int LevelIndicator(int j, int CurrentLevel) {
+            int J = GridData.iLogicalCells.NoOfLocalUpdatedCells;
+            FSI_LevelSetUpdate levelSetUpdate = new FSI_LevelSetUpdate();
+            CellMask ColoredCellMask = null;
+            List<int[]> ColoredCellsSorted = levelSetUpdate.ColoredCellsFindAndSort(CellColor);
+            int[] ParticleColorArray = levelSetUpdate.FindParticleColor(GridData, m_Particles, ColoredCellsSorted);
+            for (int p = 0; p < m_Particles.Count(); p++)
+            {
+                if (ParticleColorArray[p] != 0)
+                {
+                    ColoredCellMask = levelSetUpdate.CellsOneColor(GridData, ColoredCellsSorted, ParticleColorArray[p], J);
+                    CellMask Neighbors = ColoredCellMask.AllNeighbourCells();
+                    ColoredCellMask = ColoredCellMask.Union(Neighbors);
+                }
+            }
+            //CellMask LevSetCells = LsTrk.Regions.GetCutCellMask();
+            //CellMask LevSetNeighbours = LsTrk.Regions.GetNearFieldMask(1);
+            int DesiredLevel_j = 0;
+            if (ColoredCellMask != null && ColoredCellMask.Contains(j)) {
+                DesiredLevel_j = 2;
+            }
+            //else if (LevSetNeighbours.Contains(j))
+            //{
+            //    DesiredLevel_j = 1;
+            //}
+
+            return DesiredLevel_j;
+        }
+
+
+        protected override void AdaptMesh(int TimestepNo, out GridCommons newGrid, out GridCorrelation old2NewGrid) {
+
+            if (((FSI_Control)Control).AdaptiveMeshRefinement && iteration_counter == 0)
+            {
+                if (TimestepNo > 3 && TimestepNo % 3 != 0)
+                {
+                    newGrid = null;
+                    old2NewGrid = null;
+                    return;
+                }
+
+                // Check grid changes
+                // ==================
+
+                // compute curvature for levelindicator 
+                //CurvatureAlgorithms.CurvatureDriver(
+                //SurfaceStressTensor_IsotropicMode.Curvature_Projected,
+                //CurvatureAlgorithms.FilterConfiguration.Default,
+                //this.Curvature, out VectorField<SinglePhaseField> LevSetGradient, this.LsTrk,
+                //this.HMForder, this.DGLevSet.Current);
+
+                CellMask CutCells = LsTrk.Regions.GetCutCellMask();
+                CellMask CutCellNeighbors = LsTrk.Regions.GetNearFieldMask(1);
+                CutCells = CutCells.Union(CutCellNeighbors);
+
+                bool AnyChange = GridRefinementController.ComputeGridChange((GridData)GridData, CutCells, LevelIndicator, out List<int> CellsToRefineList, out List<int[]> Coarsening);
+                int NoOfCellsToRefine = 0;
+                int NoOfCellsToCoarsen = 0;
+                if (AnyChange)
+                {
+                    int[] glb = (new int[] {
+
+                    CellsToRefineList.Count,
+                    Coarsening.Sum(L => L.Length),
+                }).MPISum();
+                    NoOfCellsToRefine = glb[0];
+                    NoOfCellsToCoarsen = glb[1];
+                }
+                int oldJ = this.GridData.CellPartitioning.TotalLength;
+
+                if (AnyChange)
+                {
+                    Console.WriteLine("       Refining " + NoOfCellsToRefine + " of " + oldJ + " cells");
+                    Console.WriteLine("       Coarsening " + NoOfCellsToCoarsen + " of " + oldJ + " cells");
+                    newGrid = ((GridData)this.GridData).Adapt(CellsToRefineList, Coarsening, out old2NewGrid);
+                }
+                else
+                {
+                    newGrid = null;
+                    old2NewGrid = null;
+                }
+            }
+            else
+            {
+                newGrid = null;
+                old2NewGrid = null;
+            }
+        }
     }
-
-    //throw new ApplicationException(realDistance);
-
 }
-
-
-
-

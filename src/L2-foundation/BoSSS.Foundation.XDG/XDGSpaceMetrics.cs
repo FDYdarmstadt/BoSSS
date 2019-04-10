@@ -22,8 +22,6 @@ namespace BoSSS.Foundation.XDG {
 
         XQuadFactoryHelper m_qfHelper;
 
-
-
         /// <summary>
         /// ctor.
         /// </summary>
@@ -121,7 +119,9 @@ namespace BoSSS.Foundation.XDG {
         ReadOnlyCollection<LevelSetTracker.LevelSetData> m_LevelSetData;
 
         /// <summary>
-        /// Constant during object lifetime. 
+        /// Data, e.g. level set gradients, 
+        /// constant during object lifetime. 
+        /// - index: lecel set index
         /// </summary>
         public IList<LevelSetTracker.LevelSetData> LevelSetData {
             get {

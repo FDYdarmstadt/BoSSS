@@ -1,116 +1,23 @@
-﻿/* =======================================================================
-Copyright 2017 Technische Universitaet Darmstadt, Fachgebiet fuer Stroemungsdynamik (chair of fluid dynamics)
-
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at
-
-    http://www.apache.org/licenses/LICENSE-2.0
-
-Unless required by applicable law or agreed to in writing, software
-distributed under the License is distributed on an "AS IS" BASIS,
-WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-See the License for the specific language governing permissions and
-limitations under the License.
-*/
-
+﻿using BoSSS.Foundation.IO;
+using ilPSP;
+using MPI.Wrappers;
+using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
-using System.Linq;
-using BoSSS.Foundation.Grid;
-using BoSSS.Foundation.Grid.Classic;
-using ilPSP;
-using ilPSP.Utils;
-using BoSSS.Foundation.Comm;
-using BoSSS.Platform;
 using System.Diagnostics;
-using BoSSS.Foundation.Caching;
-using System.Collections;
+using System.Linq;
+using System.Runtime.Serialization;
+using System.Text;
+using System.Threading.Tasks;
 
 namespace BoSSS.Foundation.Grid.Aggregation {
-    public partial class AggregationGrid : IGridData {
 
-        /// <summary>
-        /// The grid from which this was coarsened.
-        /// </summary>
-        public IGridData ParentGrid {
-            get;
-            private set;
-        }
-
-        /// <summary>
-        /// MPI process rank (within world communicator)
-        /// </summary>
-        public int MpiRank {
-            get {
-                return this.CellPartitioning.MpiRank;
-            }
-        }
-
-        /// <summary>
-        /// MPI world communicator size 
-        /// </summary>
-        public int MpiSize {
-            get {
-                return this.CellPartitioning.MpiSize;
-            }
-        }
-
-        /// <summary>
-        /// The ancestor grid, from which the aggregation sequence was derived.
-        /// </summary>
-        public GridData AncestorGrid {
-            get {
-                if(ParentGrid is AggregationGrid) {
-                    GridData Ancestor = ((AggregationGrid)ParentGrid).AncestorGrid;
-                    Debug.Assert(this.iGeomCells.Count == Ancestor.iGeomCells.Count);
-                    return Ancestor;
-                } else {
-                    return (GridData) ParentGrid;
-                }
-            }
-        }
-
-        /// <summary>
-        /// Multi-grid level index.
-        /// </summary>
-        public int MgLevel {
-            get {
-                if(ParentGrid is AggregationGrid) {
-                    return ((AggregationGrid)ParentGrid).MgLevel + 1;
-                } else {
-                    return 0;
-                }
-            }
-        }
-
-        /// <summary>
-        /// The spatial dimension, induced from the parent grid (<see cref="ParentGrid"/>).
-        /// </summary>
-        public int SpatialDimension {
-            get {
-                return ParentGrid.SpatialDimension;
-            }
-        }
-
-
-        /// <summary>
-        /// Gets the partitioning of cells over the MPI processes.
-        /// </summary>
-        public Partitioning CellPartitioning {
-            get;
-            private set;
-        }
-
-        /// <summary>
-        /// The global ID for each cell
-        /// </summary>
-        public Permutation CurrentGlobalIdPermutation {
-            get {
-                throw new NotImplementedException();
-            }
-        }
-
+    /// <summary>
+    /// A grid, which is composed throug the aggregation of cells in a parent grid (<see cref="ParentGrid"/>).
+    /// </summary>
+    [Serializable]
+    [DataContract]
+    public partial class AggregationGrid : IGridInfo, ICloneable, IGrid {
 
         /// <summary>
         /// Constructor.
@@ -124,572 +31,453 @@ namespace BoSSS.Foundation.Grid.Aggregation {
         /// - 2nd index: enumeration
         /// - content: local cell index into the parent grid <paramref name="pGrid"/>.
         /// </param>
-        public AggregationGrid(IGridData pGrid, int[][] AggregationCells) {
-            ParentGrid = pGrid;
-
-            int JlocFine = pGrid.iLogicalCells.NoOfLocalUpdatedCells;
-            int JElocFine = pGrid.iLogicalCells.Count;
-
-            m_GeomCellData = new GeomCellData() { m_Owner = this };
-            m_LogicalCellData = new LogicalCellData() { m_Owner = this };
-            m_GeomEdgeData = new GeomEdgeData() { m_Owner = this };
-            m_LogEdgeData = new LogEdgeData(this);
-            m_VertexData = new VertexData();
-            m_Parallel = new Parallelization() { m_owner = this };
-            
-            CellPartitioning = new Partitioning(AggregationCells.Length, pGrid.CellPartitioning.MPI_Comm);
-            
-            int j0Coarse = CellPartitioning.i0;
-
-            BuildNeighborship(AggregationCells);
-            DefineCellParts();
-            CollectEdges();
-            m_GeomEdgeData.CollectGeomEdges2logCells();
-
-            m_ChefBasis = new _BasisData(this);
-        }
-
-
-        private void CollectEdges() {
-
-            int[] F2C = this.jCellFine2jCellCoarse;
-            
-            int JlocCoarse = iLogicalCells.NoOfLocalUpdatedCells;
-            int JElocCoarse = iLogicalCells.Count;
-
-            // collect edges
-            // =========================
-
-
-            // temporary cells-to-edge map
-            List<int>[] tmpC2E = new List<int>[JElocCoarse];
-            for (int jC = 0; jC < JElocCoarse; jC++) {
-                tmpC2E[jC] = new List<int>();
+        /// <param name="AggregationCellGids">
+        /// GlobalID's for each of the <paramref name="AggregationCells"/>;  
+        /// Optional, can be null - in this case, GlobalID's are chosen automatically;
+        /// If not null, length must be equal to 1st length of <paramref name="AggregationCells"/>.
+        /// </param>
+        public AggregationGrid(IGrid pGrid, int[][] AggregationCells, long[] AggregationCellGids = null) {
+            m_ParentGrid = pGrid;
+            m_ParentGridID = pGrid.ID;
+            m_GridGuid = Guid.NewGuid();
+            if (AggregationCellGids != null) {
+                if (AggregationCellGids.Length != AggregationCells.Length)
+                    throw new ArgumentException("array length mismatch");
             }
 
-            // temporary edges map
-            var tmpEdges = new List<EdgeTmp>();
+            m_CellPartitioning = new Partitioning(AggregationCells.Length);
 
+            var gdat = new AggregationGridData(this, AggregationCells);
 
-            int[,] E2Cfine = ParentGrid.iLogicalEdges.CellIndices;
-            int NoOfEdgesFine = ParentGrid.iLogicalEdges.Count;
-            int[][] FineLogicalToGeom = ParentGrid.iLogicalEdges.EdgeToParts;
-            for (int iEdgeFine = 0; iEdgeFine < NoOfEdgesFine; iEdgeFine++) { // loop over all logical edges in the fine grid.
-                int jCellFine1 = E2Cfine[iEdgeFine, 0];
-                int jCellFine2 = E2Cfine[iEdgeFine, 1];
+            int J = AggregationCells.Length;
+            if (AggregationCellGids == null) {
+                AggregationCellGids = new long[J];
+                int i0 = m_CellPartitioning.i0;
+                for (int j = 0; j < J; j++)
+                    AggregationCellGids[j] = j + i0;
+            }
 
-                int jCellCoarse1 = F2C[jCellFine1];
-                int jCellCoarse2 = jCellFine2 >= 0 ? F2C[jCellFine2] : -7544890;
-
-                if (jCellCoarse1 != jCellCoarse2) {
-
-
-                    if (jCellCoarse2 >= 0) {
-                        // +++++++++++++
-                        // internal edge
-                        // +++++++++++++
-
-                        // does the edge exists already?
-                        EdgeTmp edgTmp = null;
-                        foreach (int i in tmpC2E[jCellCoarse1]) {
-                            int iEdge = Math.Abs(i) - 1;
-                            EdgeTmp _edgTmp = tmpEdges[iEdge];
-                            if ((_edgTmp.jCell1 == jCellCoarse1 && _edgTmp.jCell2 == jCellCoarse2)
-                                || (_edgTmp.jCell2 == jCellCoarse1 && _edgTmp.jCell1 == jCellCoarse2)) {
-                                edgTmp = _edgTmp;
-                                break;
-                            }
-                        }
-
-                        // allocate edge structure 
-                        if (edgTmp == null) {
-                            edgTmp = new EdgeTmp();
-                            edgTmp.jCell1 = jCellCoarse1;
-                            edgTmp.jCell2 = jCellCoarse2;
-
-                            Debug.Assert(edgTmp.jCell1 != edgTmp.jCell2);
-
-                            tmpEdges.Add(edgTmp);
-                            tmpC2E[jCellCoarse1].Add(+tmpEdges.Count); // rem.: edge index shifted by 1, 
-                            tmpC2E[jCellCoarse2].Add(-tmpEdges.Count); // sign denotes in resp. out - cell.
-                        }
-
-                        // add edge parts
-                        int[] FineL2G = null; // logical-to-geometrical edge translation on the fine grid.
-                        if (FineLogicalToGeom != null) {
-                            FineL2G = FineLogicalToGeom[iEdgeFine];
-                        }
-                        if (FineL2G == null) {
-                            FineL2G = new int[] { iEdgeFine };
-                        }
-                        edgTmp.LogicalToGeometricalMap.AddRange(FineL2G);
-
-                    } else {
-                        // +++++++++++++
-                        // boundary edge
-                        // +++++++++++++
-
-
-                        // does the edge exists already?
-                        EdgeTmp edgTmp = null;
-                        foreach (int i in tmpC2E[jCellCoarse1]) {
-                            int iEdge = Math.Abs(i) - 1;
-                            EdgeTmp _edgTmp = tmpEdges[iEdge];
-                            if (_edgTmp.jCell1 == jCellCoarse1 && _edgTmp.jCell2 < 0) {
-                                edgTmp = _edgTmp;
-                                break;
-                            }
-                        }
-
-                        // allocate edge structure 
-                        if (edgTmp == null) {
-                            edgTmp = new EdgeTmp();
-                            edgTmp.jCell1 = jCellCoarse1;
-                            edgTmp.jCell2 = jCellCoarse2;
-                            tmpEdges.Add(edgTmp);
-                            tmpC2E[jCellCoarse1].Add(+tmpEdges.Count); // rem.: edge index shifted by 1, 
-                        }
-
-                        // add edge parts
-                        int[] FineL2G = null; // logical-to-geometrical edge translation on the fine grid.
-                        if (FineLogicalToGeom != null) {
-                            FineL2G = FineLogicalToGeom[iEdgeFine];
-                        }
-                        if (FineL2G == null) {
-                            FineL2G = new int[] { iEdgeFine };
-                        }
-                        edgTmp.LogicalToGeometricalMap.AddRange(FineL2G);
-                    }
+            long[] parentGid = pGrid.iGridData.CurrentGlobalIdPermutation.Values;
+            AggCells = new AggCell[J];
+            for (int j = 0; j < J; j++) {
+                int[] AggCell = AggregationCells[j];
+                int L = AggCell.Length;
+                AggCells[j].GlobalID = AggregationCellGids[j];
+                AggCells[j].PartGlobalId = new long[L];
+                long[] _PartGlobalId = AggCells[j].PartGlobalId;
+                for (int iPart = 0; iPart < L; iPart++) {
+                    _PartGlobalId[iPart] = parentGid[AggCell[iPart]];
                 }
             }
 
-            // convert temporary data structures to final ones
-            // ===============================================
 
-            int NoOfEdg = tmpEdges.Count;
-            m_LogEdgeData.CellIndices = new int[NoOfEdg,2];
-            m_LogicalCellData.Cells2Edges = new int[JElocCoarse][];
-            m_LogEdgeData.EdgeToParts = new int[NoOfEdg][];
-
-            int[,] E2C =  m_LogEdgeData.CellIndices;
-            int[][] C2E = m_LogicalCellData.Cells2Edges;
-            int[][] L2G = m_LogEdgeData.EdgeToParts;
-
-            for(int j = 0; j < JElocCoarse; j++) {
-                C2E[j] = tmpC2E[j].ToArray();
-            }
-
-            
-            for(int e = 0; e < NoOfEdg; e++) {
-                EdgeTmp eTmp = tmpEdges[e];
-                L2G[e] = eTmp.LogicalToGeometricalMap.ToArray();
-                Array.Sort<int>(L2G[e]);
-                E2C[e, 0] = eTmp.jCell1;
-                E2C[e, 1] = eTmp.jCell2;
-            }
-
-
-#if DEBUG
-            {
-                // test if the logical edges match the geometrical ones 
-
-                bool[] geomMarker = new bool[iGeomEdges.Count];
-                for (int iEdge = 0; iEdge < iLogicalEdges.Count; iEdge++) {
-                    foreach (int iGE in iLogicalEdges.EdgeToParts[iEdge]) {
-                        Debug.Assert(geomMarker[iGE] == false, "geometrical edge referenced by two different logical edges");
-                        geomMarker[iGE] = true;
-                    }
-                }
-                //for (int iGE = 0; iGE < iGeomEdges.Count; iGE++) {
-                //    Debug.Assert(geomMarker[iGE] == true, "unreferenced geometrical edge");
-                //}
-            }
-#endif
+            m_GridData = gdat;
         }
 
+        protected AggregationGrid()
+        {
 
-        
-
-
-        /// <summary>
-        /// helper data structure
-        /// </summary>
-        class EdgeTmp {
-            public int jCell1;
-            public int jCell2;
-            public List<int> LogicalToGeometricalMap = new List<int>();
         }
 
         /// <summary>
-        /// Mapping from parent grid cell index to cell index within this aggregation grid.
-        /// - index: local cell index within this aggregation grid.
-        /// - content: local cell index within the parent grid (<see cref="ParentGrid"/>)
+        /// sets values for <see cref="Cell.CellFaceTags"/> by using a
+        /// <paramref name="EdgeTagFunc"/>-function; also adds entries with empty names
+        /// to the <see cref="EdgeTagNames"/>-dictionary, if the edge tag
+        /// returned by the <paramref name="EdgeTagFunc"/>-function is not in
+        /// the dictionary
         /// </summary>
-        public int[][] jCellCoarse2jCellFine {
-            get;
-            private set;
+        /// <param name="EdgeTagFunc"></param>
+        public void DefineEdgeTags(Func<double[], byte> EdgeTagFunc)
+        {
+            int D = SpatialDimension;
+            double[] x = new double[D];
+            MultidimensionalArray GlobalVerticesOut = MultidimensionalArray.CreateWrapper(x, 1, D);
+            for (int iEdge = 0; iEdge < m_GridData.iGeomEdges.Count; ++iEdge)
+            {
+                if (m_GridData.iGeomEdges.IsEdgeBoundaryEdge(iEdge))
+                {
+                    int jCell = m_GridData.iGeomEdges.CellIndices[iEdge, 0];
+                    int iFace = m_GridData.iGeomEdges.FaceIndices[iEdge, 0];
+                    var KRef = m_GridData.iGeomCells.GetRefElement(jCell);
+
+                    m_GridData.TransformLocal2Global(KRef.GetFaceCenter(iFace), GlobalVerticesOut, jCell);
+                    byte et = EdgeTagFunc(x);
+
+                    if (!EdgeTagNames.ContainsKey(et))
+                        throw new ArgumentException("unable to find EdgeTagName for EdgeTag = " + et);
+                    m_GridData.iGeomEdges.EdgeTags[iEdge] = et;
+                }
+            }
         }
-        
 
         /// <summary>
-        /// Mapping from parent grid cell index to cell index within this aggregation grid.
-        /// - index: local cell index within the parent grid (<see cref="ParentGrid"/>)
-        /// - content: local cell index within this aggregation grid.
+        /// Structure to store one Aggregation cell
         /// </summary>
-        public int[] jCellFine2jCellCoarse {
-            get;
-            private set;
+        [Serializable]
+        [DataContract]
+        public struct AggCell {
+            /// <summary>
+            /// ID of this cell
+            /// </summary>
+            [DataMember]
+            public long GlobalID;
+
+            /// <summary>
+            /// ID's of cells in the parent grid (<see cref="ParentGrid"/>) which make this aggregate cell.
+            /// </summary>
+            [DataMember]
+            public long[] PartGlobalId;
         }
 
         /// <summary>
-        /// Sets up the decomposition of the aggregate cell into elementary parts, which can be mapped to reference elements.
+        /// returns the Guid of the vector in which
+        /// <see cref="AggCells"/> is stored in the database. (see <see cref="BoSSS.Foundation.IO.DatabaseDriver.SaveGrid"/>);
         /// </summary>
-        private void DefineCellParts() {
-            IGridData pGrid = ParentGrid;
-            int J = this.iLogicalCells.NoOfLocalUpdatedCells;
-            int JE = this.iLogicalCells.Count;
-
-            m_LogicalCellData.AggregateCellToParts = new int[JE][];
-            m_GeomCellData.GeomCell2LogicalCell = new int[pGrid.iGeomCells.Count];
-
-            int[][] AggPartC = m_LogicalCellData.AggregateCellToParts;
-            int[][] AggPartF = pGrid.iLogicalCells.AggregateCellToParts; // aggregate-to-geometric on parent grid
-            int[] Geom2Agg = m_GeomCellData.GeomCell2LogicalCell;
-#if DEBUG
-            ArrayTools.SetAll(Geom2Agg, -1);
-#endif
-
-            List<int> tmp = new List<int>();
-            for (int j = 0; j < JE; j++) { // loop over coarse/this cells
-                tmp.Clear();
-
-                foreach(int jFine in jCellCoarse2jCellFine[j]) { // loop over all fine cells aggregated in 'j' ...
-                    if(AggPartF == null) {
-                        tmp.Add(jFine);
-                    } else {
-                        int[] FinePart = AggPartF[jFine];
-                        if(FinePart == null) {
-                            tmp.Add(jFine);
-                        } else {
-                            tmp.AddRange(FinePart);
-                        }
-                    }
-                }
-
-                AggPartC[j] = tmp.ToArray();
-                foreach(int jGeom in AggPartC[j]) {
-#if DEBUG
-                    Debug.Assert(Geom2Agg[jGeom] < 0);
-#endif
-                    Geom2Agg[jGeom] = j;
-                }
-            }
-
-#if DEBUG
-            Debug.Assert(Geom2Agg.Where(i => i < 0).Count() == 0);
-#endif
-        }
-
-        private void BuildNeighborship(int[][] AggregationCells) {
-            IGridData pGrid = ParentGrid;
-            int j0Coarse = CellPartitioning.i0;
-            int JlocCoarse = CellPartitioning.LocalLength;
-            int JElocFine = pGrid.iLogicalCells.Count;
-            int JlocFine = pGrid.iLogicalCells.NoOfLocalUpdatedCells;
-
-            // compute fine-to-coarse mapping
-            // ==============================
-
-            int[] Fine2CoarseGlobal = new int[JElocFine]; // index: local cell index on fine grid; maps to _global_ cell index on coarse grid.
-            {
-                ArrayTools.SetAll(Fine2CoarseGlobal, -111);
-                for (int jCellCoarse = 0; jCellCoarse < JlocCoarse; jCellCoarse++) {
-                    foreach (int jCellFine in AggregationCells[jCellCoarse]) {
-                        if (jCellFine < 0 || jCellFine >= JlocFine)
-                            throw new ArgumentOutOfRangeException();
-                        Fine2CoarseGlobal[jCellFine] = jCellCoarse + j0Coarse;
-                    }
-                }
-
-
-                Fine2CoarseGlobal.MPIExchange<int[], int>(pGrid);
-            }
-
-            // define external coarse cells
-            // ============================
-            int JElocCoarse;
-            {
-                HashSet<long> tmpCoarseExternal = new HashSet<long>();
-                for (int jF = JlocFine; jF < JElocFine; jF++) {
-                    tmpCoarseExternal.Add(Fine2CoarseGlobal[jF]);
-                }
-
-                long[] ExtGlbIdx = tmpCoarseExternal.ToArray();
-                Array.Sort(ExtGlbIdx); // since the send lists are ascending, the external cells also should be ascending;
-                //                        since the MPI rank only increases with the global cell index, this sort-operation also guarantees 
-                //                        that the external cells are sorted according to MPI rank.
-                m_Parallel.GlobalIndicesExternalCells = ExtGlbIdx;
-                JElocCoarse = JlocCoarse + ExtGlbIdx.Length;
-
-                // global-to-local index mapping:
-                Dictionary<long, int> GlobalIdx2Local = new Dictionary<long, int>();
-                for(int jC = JlocCoarse; jC < JElocCoarse; jC++) {
-                    GlobalIdx2Local.Add(ExtGlbIdx[jC - JlocCoarse], jC);
-                }
-                m_Parallel.Global2LocalIdx = GlobalIdx2Local;
-            }
-
-            // fine-to-coarse, coarse-to-fine mapping in local indices
-            // ========================================================
-            {
-                // fine-to-coarse
-                this.jCellFine2jCellCoarse = new int[JElocFine];
-                var F2C = jCellFine2jCellCoarse;
-
-                for (int jF = 0; jF < JElocFine; jF++) { // loop over fine cells...
-                    int jCoarse;
-                    if (jF < JlocFine) {
-                        jCoarse = Fine2CoarseGlobal[jF] - j0Coarse;
-                        Debug.Assert(jCoarse >= 0);
-                        Debug.Assert(jCoarse < JlocCoarse);
-                    } else {
-                        jCoarse = m_Parallel.Global2LocalIdx[Fine2CoarseGlobal[jF]];
-                        Debug.Assert(jCoarse >= JlocCoarse);
-                        Debug.Assert(jCoarse < JElocCoarse);
-                    }
-
-                    F2C[jF] = jCoarse;
-                }
-
-                // coarse-to-fine mapping
-                this.jCellCoarse2jCellFine = new int[JElocCoarse][];
-                var C2F = jCellCoarse2jCellFine;
-                var tmpC2F = new List<int>[JElocCoarse];
-                for (int jC = 0; jC < JElocCoarse; jC++)
-                    tmpC2F[jC] = new List<int>();
-                for (int jFine = 0; jFine < JElocFine; jFine++) {
-                    int jCoarse = F2C[jFine];
-                    Debug.Assert(!tmpC2F[jCoarse].Contains(jFine));
-                    tmpC2F[jCoarse].Add(jFine);
-                }
-                for (int jC = 0; jC < JElocCoarse; jC++)
-                    C2F[jC] = tmpC2F[jC].ToArray();
-            }
-
-            // define neighborship
-            // ===================
-            {
-                int[][] FineClNeigh = pGrid.iLogicalCells.CellNeighbours;
-
-                HashSet<int>[] tmpClNeig = new HashSet<int>[JlocCoarse];
-                Dictionary<long, int> ExtCells_GlobalIdx2Local = m_Parallel.Global2LocalIdx;
-
-
-                for (int jCellCoarse = 0; jCellCoarse < JlocCoarse; jCellCoarse++) { // loop over all coarse grid cells...
-                    foreach (int jCellFine in AggregationCells[jCellCoarse]) {
-                        int[] FineNeighs = FineClNeigh[jCellFine];
-                        foreach (int jCellFineNeigh in FineNeighs) { // loop over all neighbor cells in the fine grid...
-                            int jCellCoarseNeighGlob = Fine2CoarseGlobal[jCellFineNeigh]; // map index of fine grid neighbor to coarse cell index
-
-                            // convert global cell index to local 
-                            int jCellCoarseNeighLoc;
-                            if (jCellCoarseNeighGlob >= j0Coarse && jCellCoarseNeighGlob <= (j0Coarse + JlocCoarse)) {
-                                // Neighbor is a locally updated cell
-                                jCellCoarseNeighLoc = jCellCoarseNeighGlob - j0Coarse;
-
-                            } else {
-                                // Neighbor is an external cell
-
-                                jCellCoarseNeighLoc = ExtCells_GlobalIdx2Local[jCellCoarseNeighGlob];
-                            }
-
-                            // add neighbor cell
-                            if (jCellCoarse != jCellCoarseNeighLoc) {
-                                if (tmpClNeig[jCellCoarse] == null)
-                                    tmpClNeig[jCellCoarse] = new HashSet<int>();
-                                tmpClNeig[jCellCoarse].Add(jCellCoarseNeighLoc);
-                            }
-                        }
-                    }
-                }
-
-                m_LogicalCellData.CellNeighbours = new int[JlocCoarse][];
-                var CN = m_LogicalCellData.CellNeighbours;
-                for (int jCellCoarse = 0; jCellCoarse < JlocCoarse; jCellCoarse++) {
-                    var hs = tmpClNeig[jCellCoarse];
-                    Debug.Assert(hs == null || hs.Contains(jCellCoarse) == false);
-                    if (hs != null) {
-                        int[] xx = new int[hs.Count];
-                        CN[jCellCoarse] = xx;
-                        int i = 0;
-                        foreach(int x in hs) {
-                            xx[i] = x;
-                            i++;
-                        }
-                    } else {
-                        CN[jCellCoarse] = new int[0];
-                    }
-                    Debug.Assert(CN[jCellCoarse].Contains(jCellCoarse) == false);
-                }
-            }
-
-            // MPI send lists
-            // ==============
-            int mpiSize = CellPartitioning.MpiSize;
-            {
-                
-
-                m_Parallel.ProcessesToSendTo = ParentGrid.iParallel.ProcessesToSendTo.CloneAs();
-                m_Parallel.ProcessesToReceiveFrom = ParentGrid.iParallel.ProcessesToReceiveFrom.CloneAs();
-
-                int[] F2C = this.jCellFine2jCellCoarse;
-
-                m_Parallel.SendCommLists = new int[mpiSize][];
-                var tmpSendList = new HashSet<int>();
-                for(int rnk = 0; rnk < mpiSize; rnk++) {
-                    int[] ParrentSendList = ParentGrid.iParallel.SendCommLists[rnk];
-                    if (ParrentSendList != null && ParrentSendList.Length > 0) {
-                        tmpSendList.Clear();
-
-                        foreach(int jFine in ParrentSendList) {
-                            Debug.Assert(jFine >= 0);
-                            Debug.Assert(jFine < ParentGrid.iLogicalCells.NoOfLocalUpdatedCells);
-
-                            int jCoarse = F2C[jFine];
-                            Debug.Assert(jCoarse >= 0);
-                            Debug.Assert(jCoarse < this.iLogicalCells.NoOfLocalUpdatedCells);
-
-                            tmpSendList.Add(jCoarse);
-                        }
-
-                        m_Parallel.SendCommLists[rnk] = tmpSendList.ToArray();
-                        Array.Sort(m_Parallel.SendCommLists[rnk]);
-                    }
-                }
-            }
-
-            // MPI receive lists
-            // =================
-            {
-                //ParentGrid.iParallel.ProcessesToReceiveFrom
-                var GlobalIdx = this.m_Parallel.GlobalIndicesExternalCells;
-
-                this.m_Parallel.RcvCommListsNoOfItems = new int[mpiSize];
-                this.m_Parallel.RcvCommListsInsertIndex = new int[mpiSize];
-                int[] NoOfItems = this.m_Parallel.RcvCommListsNoOfItems;
-                int[] InsertIdx = this.m_Parallel.RcvCommListsInsertIndex;
-                ArrayTools.SetAll(InsertIdx, -1);
-
-#if DEBUG
-                HashSet<int> ProcCheck = new HashSet<int>();
-#endif
-
-                for(int jC = JlocCoarse; jC < JElocCoarse; jC++) {
-                    int jGlob = (int) GlobalIdx[jC - JlocCoarse];
-                    int iProc = this.CellPartitioning.FindProcess(jGlob);
-#if DEBUG
-                    ProcCheck.Add(iProc);
-#endif
-                    if(InsertIdx[iProc] < 0) {
-                        InsertIdx[iProc] = jC;
-                    } else {
-                        Debug.Assert(jC > InsertIdx[iProc]);
-                    }
-                    NoOfItems[iProc]++;
-                }
-
-#if DEBUG
-                Debug.Assert(this.iParallel.ProcessesToReceiveFrom.SetEquals(ProcCheck));
-#endif
-            }
-            
-            // MPI check
-            // =========
-#if DEBUG
-            {
-                int[] TestData = new int[JElocCoarse];
-                for (int jC = 0; jC < JlocCoarse; jC++) {
-                    int GlobalIdx;
-                    GlobalIdx = jC + j0Coarse;
-                    TestData[jC] = GlobalIdx;
-                }
-
-                TestData.MPIExchange<int[], int>(this);
-
-                for (int jC = 0; jC < JElocCoarse; jC++) {
-                    int GlobalIdx;
-                    if(jC < JlocCoarse)
-                        GlobalIdx = jC + j0Coarse;
-                    else 
-                        GlobalIdx = (int)(m_Parallel.GlobalIndicesExternalCells[jC - JlocCoarse]);
-
-                    Debug.Assert(TestData[jC] == GlobalIdx);
-                }
-            }
-#endif
-        }
-
-        public void TransformLocal2Global(MultidimensionalArray LocalVerticesIn, MultidimensionalArray GlobalVerticesOut, int jCell) {
-            ParentGrid.TransformLocal2Global(LocalVerticesIn, GlobalVerticesOut, jCell);
-        }
-
-        public void TransformLocal2Global(MultidimensionalArray LocalVerticesIn, int j0, int Len, MultidimensionalArray GlobalVerticesOut, int OutArrayOffset) {
-            ParentGrid.TransformLocal2Global(LocalVerticesIn, j0, Len, GlobalVerticesOut, OutArrayOffset);
-        }
-
-        public void TransformLocal2Global(MultidimensionalArray NS, int j0, int Len, MultidimensionalArray Nodesglob) {
-            ParentGrid.TransformLocal2Global(NS, j0, Len, Nodesglob);
-        }
-
-        public void TransformGlobal2Local(MultidimensionalArray GlobalVerticesIn, MultidimensionalArray LocalVerticesOut, int j0, int Len, int OutArrayOffset) {
-            ParentGrid.TransformGlobal2Local(GlobalVerticesIn, LocalVerticesOut, j0, Len, OutArrayOffset);
-        }
-
-        public void TransformGlobal2Local(MultidimensionalArray GlobalVerticesIn, MultidimensionalArray LocalVerticesOut, int jCell, bool[] NewtonConvergence) {
-            ParentGrid.TransformGlobal2Local(GlobalVerticesIn, LocalVerticesOut, jCell, NewtonConvergence);
-        }
-
-        
-        public CacheLogicImplBy_CNs InverseJacobian {
+        public Guid AggCellStorageGuid {
             get {
-                return ParentGrid.InverseJacobian;
+                return m_StorageGuid;
+            }
+            internal set {
+                m_StorageGuid = value;
             }
         }
 
-        public CacheLogicImplBy_CNs JacobianDeterminat {
+        /// <summary>
+        /// see <see cref="AggCellStorageGuid"/>.
+        /// </summary>
+        [DataMember]
+        private Guid m_StorageGuid;
+
+
+        [NonSerialized]
+        [JsonIgnore]
+        AggCell[] AggCells;
+
+        public AggCell[] AggregationCells{ get => AggCells; set => AggCells = value; }
+
+        /// <summary>
+        /// a string to store some user-information about the grid;
+        /// </summary>
+        [DataMember]
+        public string Description {
             get {
-                return ParentGrid.JacobianDeterminat;
+                return m_Description;
+            }
+            set {
+                m_Description = value;
+                if (Database != null) {
+                    Database.Controller.SaveGridInfo(this);
+                }
             }
         }
 
-        public CacheLogic_CNs GlobalNodes {
+        [JsonProperty(PropertyName = "Aggregation_Description")]
+        [DataMember]
+        string m_Description;
+
+        /// <summary>
+        /// parent grid object
+        /// </summary>
+        public IGrid ParentGrid {
             get {
-                return ParentGrid.GlobalNodes;
+                return m_ParentGrid;
             }
         }
 
-        public CacheLogicImplBy_CNs Jacobian {
+        [DataMember]
+        IGrid m_ParentGrid;
+
+        [DataMember]
+        Guid m_ParentGridID;
+
+        /// <summary>
+        /// Guid (<see cref="IDatabaseEntityInfo{T}.ID"/> of parent grid <see cref="ParentGrid"/>
+        /// </summary>
+        public Guid ParentGridID {
             get {
-                return ParentGrid.Jacobian;
+                return m_ParentGridID;
             }
         }
 
-        public CacheLogicImplBy_CNs AdjungateJacobian {
+
+        /// <summary>
+        /// Either 1 for 1D, 2 for 2D or 3 for 3D.
+        /// </summary>
+        public int SpatialDimension {
             get {
-                return ParentGrid.AdjungateJacobian;
+                return m_ParentGrid.SpatialDimension;
             }
         }
 
-        public Guid GridID {
-            get {
-                throw new NotImplementedException();
-            }
-        }
+        public IReadOnlyCollection<Guid> AllDataVectorIDs => throw new NotImplementedException();
 
         public IDictionary<byte, string> EdgeTagNames {
             get {
-                return ParentGrid.EdgeTagNames;
+                return m_ParentGrid.EdgeTagNames;
             }
+        }
+
+        /// <summary>
+        /// see <see cref="ID"/>;
+        /// </summary>
+        [DataMember]
+        Guid m_GridGuid;
+
+        /// <summary>
+        /// Guid/Identification of this grid object in the database <see cref="Database"/>
+        /// </summary>
+        public Guid ID {
+            get {
+                return this.m_GridGuid;
+            }
+        }
+
+        public DateTime CreationTime => throw new NotImplementedException();
+
+        public DateTime WriteTime {
+            get;
+            set;
+        }
+
+
+        /// <summary>
+        /// grid name: implementation of <see cref="IDatabaseEntityInfo{T}.Name"/>
+        /// </summary>
+        public string Name {
+            get {
+                return m_Name;
+            }
+            set {
+                if (String.IsNullOrWhiteSpace(value) == false) {
+                    m_Name = value.Trim();
+                    if (Database != null) {
+                        Database.Controller.SaveGridInfo(this);
+                    }
+                } else {
+                    throw new Exception("New name of grid is invalid.");
+                }
+            }
+        }
+
+        [DataMember]
+        private string m_Name;
+
+        [DataMember]
+        int m_NumberOfCells = -1;
+
+        internal void InitNumberOfCells()
+        {
+            m_NumberOfCells = this.AggCells.Length.MPISum();
+        }
+
+        /// <summary>
+        /// number of cells in the grid: implementation of <see cref="IGridInfo.NumberOfCells"/>
+        /// </summary>
+        public int NumberOfCells {
+            get {
+                if (m_NumberOfCells < 0) {
+                    if (this.AggCells == null)
+                        throw new ApplicationException("non-initialized member.");
+                    else
+                        m_NumberOfCells = this.AggCells.Length.MPISum();
+                }
+
+                return m_NumberOfCells; ;
+            }
+        }
+
+        [NonSerialized]
+        internal IO.IDatabaseInfo m_Database = null;
+
+        /// <summary>
+        /// Database which de-serialized this grid; implementation of <see cref="IDatabaseEntityInfo{t}.Database"/>
+        /// </summary>
+        public IDatabaseInfo Database {
+            get {
+                return m_Database;
+            }
+            set {
+                if (value != null) {
+                    m_Database = value;
+                } else {
+                    throw new ArgumentNullException();
+                }
+            }
+        }
+
+        [NonSerialized]
+        AggregationGridData m_GridData;
+
+        void InitGridData() {
+            if (m_GridData != null)
+                return;
+
+            if(this.Size > 1) {
+                Console.WriteLine("Warning: will probably not work in parallel");
+            }
+
+            // compute mapping: 
+            // globalID -> Global Index for parent grid
+            // =================================================
+            var ParentGids = this.ParentGrid.iGridData.CurrentGlobalIdPermutation;
+            var ParentIdx = ParentGids.Invert();
+
+            // get parent grid indices for aggregation cells
+            // =================================================
+            int[][] AggIdx;
+            {
+                int J = this.AggCells.Length;
+                AggIdx = new int[J][];
+
+                int L = 0;
+                for (int j = 0; j < J; j++) {
+                    L += this.AggCells[j].PartGlobalId.Length;
+                }
+
+                long[] InputBuffer = new long[L];
+                int l = 0;
+                for (int j = 0; j < J; j++) {
+                    long[] src = this.AggCells[j].PartGlobalId;
+                    Array.Copy(src, 0, InputBuffer, l, src.Length);
+                    l += src.Length;
+                }
+
+                long[] EvalBuffer = new long[L];
+                ParentIdx.EvaluatePermutation(InputBuffer, EvalBuffer);
+
+                int i0_Parent = ParentGrid.CellPartitioning.i0;
+                int J_Parent = ParentGrid.iGridData.iLogicalCells.NoOfLocalUpdatedCells;
+
+                l = 0;
+                for (int j = 0; j < J; j++) {
+                    int AG = this.AggCells[j].PartGlobalId.Length;
+                    int[] AggIdx_j = new int[AG];
+                    AggIdx[j] = AggIdx_j;
+
+                    for (int k = 0; k < AG; k++) { // loop over parts of aggregation cell
+                        Debug.Assert(EvalBuffer[l] >= 0);
+                        Debug.Assert(EvalBuffer[l] < ParentGrid.NumberOfCells);
+                        AggIdx_j[k] = (int)EvalBuffer[l] - i0_Parent;
+                        Debug.Assert(AggIdx_j[k] >= 0);
+                        Debug.Assert(AggIdx_j[k] < J_Parent);
+
+                        l++;
+                    }
+                }
+            }
+
+            // create grid data
+            // ===================
+            m_GridData = new AggregationGridData(this, AggIdx);
+
+        }
+
+
+        /// <summary>
+        /// returns the grid metrics, of type <see cref="AggregationGridData"/>
+        /// </summary>
+        public IGridData iGridData {
+            get {
+                if(m_GridData ==  null) {
+                    InitGridData();
+                }
+                return m_GridData;
+            }
+        }
+
+        /// <summary>
+        /// MPI process rank (within world communicator)
+        /// </summary>
+        public int MyRank {
+            get {
+                int rank;
+                MPI.Wrappers.csMPI.Raw.Comm_Rank(MPI.Wrappers.csMPI.Raw._COMM.WORLD, out rank);
+                return rank;
+            }
+        }
+
+        /// <summary>
+        /// MPI world communicator size 
+        /// </summary>
+        public int Size {
+            get {
+                int size;
+                MPI.Wrappers.csMPI.Raw.Comm_Size(MPI.Wrappers.csMPI.Raw._COMM.WORLD, out size);
+                return size;
+            }
+        }
+
+        /// <summary>
+        /// Gets the partition of cells over the MPI processes;
+        /// </summary>
+        public Partitioning CellPartitioning {
+            get {
+                if (m_CellPartitioning == null) {
+                    m_CellPartitioning = new Partitioning(this.AggCells.Length);
+                }
+                return m_CellPartitioning;
+            }
+        }
+
+        [NonSerialized]
+        Partitioning m_CellPartitioning;
+
+
+        public object Clone() {
+            throw new NotImplementedException();
+        }
+
+        public IGridInfo CopyFor(IDatabaseInfo targetDatabase) {
+            throw new NotImplementedException();
+        }
+
+        /// <summary>
+        /// Equality.
+        /// </summary>
+        public bool Equals(IGridInfo other) {
+            if (other == null)
+            {
+                return false;
+            }
+            else
+            {
+                return this.ID == other.ID;
+            }
+        }
+
+        public void Redistribute(IDatabaseDriver iom, GridPartType method, string PartOptions) {
+            if (Size <= 1)
+                return; // nothing to do
+
+            throw new NotImplementedException();
+        }
+
+        public void RedistributeGrid(int[] part) {
+            throw new NotImplementedException();
+        }
+
+        /// <summary>
+        /// Returns the current GlobalID - permutation of this grid,
+        /// i.e. a mapping from the global index to the global ID.
+        /// </summary>
+        public Foundation.Comm.Permutation CurrentGlobalIdPermutation()
+        {
+            ilPSP.MPICollectiveWatchDog.Watch();
+            int NumberOfLocalMPICells = AggCells.Length;
+
+            long NoOfCells = this.NumberOfCells;
+
+            long[] gid = new long[NumberOfLocalMPICells];
+
+            for (int j = 0; j < NumberOfLocalMPICells; j++)
+            {
+                if (AggCells[j].GlobalID < 0 || AggCells[j].GlobalID >= NoOfCells)
+                    throw new NotSupportedException("Found illegal GlobalID for cell;");
+
+                gid[j] = AggCells[j].GlobalID;
+            }
+
+            return new Foundation.Comm.Permutation(gid, MPI.Wrappers.csMPI.Raw._COMM.WORLD);
         }
     }
 }

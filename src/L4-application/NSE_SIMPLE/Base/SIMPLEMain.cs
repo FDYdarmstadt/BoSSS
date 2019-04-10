@@ -37,9 +37,9 @@ namespace NSE_SIMPLE {
     public partial class NSE_SIMPLEMain : BoSSS.Solution.Application<SIMPLEControl> {
 
         static void Main(string[] args) {
-            //NSE_SIMPLE.NUnitTest.Init();
-            //NSE_SIMPLE.NUnitTest.IncompressibleSteadyPoiseuilleFlowTest();
-            //Assert.AreEqual(true, false, "remove me");
+            NSE_SIMPLE.NUnitTest.Init();
+            NSE_SIMPLE.NUnitTest.LowMachSteadyCouetteWithTemperatureGradientTest();
+            Assert.AreEqual(true, false, "remove me");
 
             _Main(args, false, delegate () {
                 NSE_SIMPLEMain p = new NSE_SIMPLEMain();

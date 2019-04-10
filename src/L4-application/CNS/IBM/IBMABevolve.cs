@@ -119,17 +119,24 @@ namespace CNS.IBM {
             using (new ilPSP.Tracing.FuncTrace()) {
                 RaiseOnBeforeComputechangeRate(AbsTime, RelTime);
 
+                //(new CoordinateVector(Evaluator.DomainFields)).SaveToTextFile("inp-lts.txt");
+                //(new CoordinateVector(Evaluator.Parameters.ToArray())).SaveToTextFile("para-lts.txt");
+
                 Evaluator.time = AbsTime;
                 Evaluator.Evaluate(1.0, 0.0, k, outputBndEdge: edgeFluxes);
                 Debug.Assert(
                     !k.Any(f => double.IsNaN(f)),
                     "Unphysical flux in standard terms");
 
+                //k.SaveToTextFile("k-lts-bulk.txt");
+
                 boundaryEvaluator.Value.time = AbsTime;
                 boundaryEvaluator.Value.Evaluate(1.0, 1.0, k);
                 Debug.Assert(
                     !k.Any(f => double.IsNaN(f)),
                     "Unphysical flux in boundary terms");
+
+                //k.SaveToTextFile("k-lts-bndy.txt");
 
                 // Agglomerate fluxes
                 speciesMap.Agglomerator.ManipulateRHS(k, Mapping);

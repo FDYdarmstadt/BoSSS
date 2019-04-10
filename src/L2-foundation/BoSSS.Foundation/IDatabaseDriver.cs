@@ -129,7 +129,7 @@ namespace BoSSS.Foundation.IO {
         /// <returns>
         /// The loaded grid
         /// </returns>
-        Grid.Classic.GridCommons LoadGrid(Guid gridId, IDatabaseInfo database);
+        IGrid LoadGrid(Guid gridId, IDatabaseInfo database);
 
         /// <summary>
         /// Loads the actual grid data for the given <paramref name="grid"/>.
@@ -137,7 +137,7 @@ namespace BoSSS.Foundation.IO {
         /// </summary>
         /// <param name="grid"></param>
         /// <returns></returns>
-        Grid.Classic.GridCommons LoadGridData(Grid.Classic.GridCommons grid);
+        IGrid LoadGridData(IGrid grid);
 
         /// <summary>
         /// Loads the given <paramref name="sessionId"/> from the given
@@ -166,7 +166,7 @@ namespace BoSSS.Foundation.IO {
         /// Inidicates that an equivalent grid was found.
         /// </param>
         /// <param name="database"></param>
-        Guid SaveGridIfUnique(ref Grid.Classic.GridCommons grd, out bool EquivalentGridFound, IDatabaseInfo database);
+        Guid SaveGridIfUnique(ref IGrid grd, out bool EquivalentGridFound, IDatabaseInfo database);
 
         /// <summary>
         /// saves the grid object to the database;
@@ -178,19 +178,12 @@ namespace BoSSS.Foundation.IO {
         /// the grid to save
         /// </param>
         /// <param name="database"></param>
-        Guid SaveGrid(Grid.Classic.GridCommons grd, IDatabaseInfo database);
+        Guid SaveGrid(IGrid grd, IDatabaseInfo database);
 
         /// <summary>
         /// Saves a time-step to the database's persistent memory.
         /// </summary>
-        /// <param name="physTime">Physical time of the time-step.</param>
-        /// <param name="TimestepNo">Time-step number.</param>
-        /// <param name="currentSession">The session associated with the time-step.</param>
-        /// <param name="fields">The fields of the time-step.</param>
-        /// <param name="g">grid data object (required if <paramref name="fields"/> is empty)</param>
-        /// <returns>An object containing information about the time-step.</returns>
-        TimestepInfo SaveTimestep(double physTime, TimestepNumber TimestepNo,
-            SessionInfo currentSession, IGridData g, IEnumerable<DGField> fields);
+        void SaveTimestep(TimestepInfo _tsi);
 
         /// <summary>
         /// loads a single <see cref="TimestepInfo"/>-object from the database.

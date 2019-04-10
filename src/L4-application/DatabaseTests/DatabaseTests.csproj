@@ -4,7 +4,7 @@
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
     <ProjectGuid>{19EF28E0-A4F1-40C7-AFFC-9AC1968295A2}</ProjectGuid>
-    <OutputType>Library</OutputType>
+    <OutputType>Exe</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
     <RootNamespace>BoSSS.Application.DatabaseTests</RootNamespace>
     <AssemblyName>DatabaseTests</AssemblyName>
@@ -38,7 +38,7 @@
     <StartupObject />
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="nunit.framework, Version=2.6.0.12051, Culture=neutral, PublicKeyToken=96d09a1eb7f44a77, processorArchitecture=MSIL">
+    <Reference Include="nunit.framework, Version=3.11.0.0, Culture=neutral, PublicKeyToken=2638cd05610744eb, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\..\..\libs\NUnit-2.6.0.12051\bin\framework\nunit.framework.dll</HintPath>
     </Reference>
@@ -47,13 +47,25 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="StandardDBDriverTests.cs" />
+    <Compile Include="GridDBDriverTests.cs" />
+    <Compile Include="MPITest.cs" />
+    <Compile Include="Program.cs" />
+    <Compile Include="DBDriverTests.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="DatabaseTest.cs" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\..\ilPSP\layer_1.1-MPI.NET\MPI.Wrappers\MPI.Wrappers.csproj">
+      <Project>{dd9bf776-38ca-4fc9-8f42-5ed700bde7ad}</Project>
+      <Name>MPI.Wrappers</Name>
+    </ProjectReference>
     <ProjectReference Include="..\..\ilPSP\layer_1.2-ilPSP\ilPSP\ilPSP.csproj">
       <Project>{8E6D8F23-623F-4204-B4AB-A088C0CD83AA}</Project>
       <Name>ilPSP</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\..\L1-platform\BoSSS.Platform\BoSSS.Platform.csproj">
+      <Project>{b7d5f7c7-ea9f-4506-ab69-c3cd2aa8c938}</Project>
+      <Name>BoSSS.Platform</Name>
     </ProjectReference>
     <ProjectReference Include="..\..\L2-foundation\BoSSS.Foundation\BoSSS.Foundation.csproj">
       <Project>{17A60FBA-20B4-451D-98E1-8D742F368569}</Project>
@@ -66,6 +78,9 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="bosss_db_test_template.zip" />
+  </ItemGroup>
+  <ItemGroup>
+    <Service Include="{82A7F48D-3B50-4B1E-B82E-3ADA8210C358}" />
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

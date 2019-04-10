@@ -6,7 +6,7 @@ using BoSSS.Foundation.XDG;
 using BoSSS.Platform.Utils.Geom;
 using BoSSS.Solution;
 using BoSSS.Solution.Utils;
-using BoSSS.Solution.Multigrid;
+using BoSSS.Solution.AdvancedSolvers;
 using BoSSS.Solution.Tecplot;
 using BoSSS.Solution.XdgTimestepping;
 using ilPSP;
@@ -41,7 +41,7 @@ namespace BoSSS.Application.AdaptiveMeshRefinementTest {
 
         public int TestCase = 2;
 
-        protected override GridCommons CreateOrLoadGrid() {
+        protected override IGrid CreateOrLoadGrid() {
             GridCommons grd;
             switch (TestCase) {
                 case 1: {
@@ -73,7 +73,7 @@ namespace BoSSS.Application.AdaptiveMeshRefinementTest {
 
         public override void Init(BoSSS.Solution.Control.AppControl control) {
             control.GridPartType = BoSSS.Foundation.Grid.GridPartType.none;
-            control.NoOfMultigridLevels = 1;
+            control.LinearSolver.NoOfMultigridLevels = 1;
             base.Init(control);
         }
 

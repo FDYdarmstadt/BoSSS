@@ -36,9 +36,14 @@ using BoSSS.Solution.XdgTimestepping;
 
 namespace BoSSS.Application.Rheology
 {
+    /// <summary>
+    /// Control file of all simple testcases for debugging purpose, e.g. channel or cnsistency checks
+    /// </summary>
     static public class SimpleTestcasesControl
     {
-        // Channel Flow
+        /// <summary>
+        /// Channel Flow
+        /// </summary>
         static public RheologyControl Channel(string path = @"C:\AnnesBoSSSdb\Channel", int degree = 2, int GridLevel = 5)
         {
             RheologyControl C = new RheologyControl();
@@ -48,43 +53,48 @@ namespace BoSSS.Application.Rheology
             C.savetodb = false;
             C.DbPath = path;
             C.ProjectName = "Channel";
-            C.MaxIter = 10;
-            C.MinIter = 3;
-            C.ConvCrit = 1E-10;
-            C.dt = 1E20;
+            C.NonLinearSolver.MaxSolverIterations = 30;
+            C.NonLinearSolver.MinSolverIterations = 3;
+            C.NonLinearSolver.ConvergenceCriterion = 1E-10;
+            C.LinearSolver.MaxSolverIterations = 30;
+            C.LinearSolver.MinSolverIterations = 3;
+            C.LinearSolver.ConvergenceCriterion = 1E-10;
+            C.dt = 0.1;
             C.dtMax = C.dt;
             C.dtMin = C.dt;
             C.Timestepper_Scheme = RheologyControl.TimesteppingScheme.ImplicitEuler;
-            C.NonlinearMethod = NonlinearSolverMethod.Newton;
+            C.NonLinearSolver.SolverCode = NonLinearSolverConfig.Code.Newton;
             C.ObjectiveParam = 1.0;
 
-            C.UsePerssonSensor = true;
+            C.UsePerssonSensor = false;
             C.SensorLimit = 1e-4;
 
             C.AdaptiveMeshRefinement = false;
             C.RefinementLevel = 10;
 
-            C.UseArtificialDiffusion = true;
+            C.UseArtificialDiffusion = false;
 
-            C.Bodyforces = true;
+            C.Bodyforces = false;
             //C.WhichWall = "Wall_Cylinder";
 
             //Debugging and Solver Analysis
             C.OperatorMatrixAnalysis = false;
             C.SkipSolveAndEvaluateResidual = false;
             C.SetInitialConditions = true;
-            C.SetInitialPressure = false;
+            C.SetInitialPressure = true;
             C.SetParamsAnalyticalSol = false;
-            C.ComputeL2Error = true;
+            C.ComputeL2Error = false;
+            C.GravitySource = false;
+            C.GravityX = (X, t) => 1;
+            C.GravityY = (X, t) => 0;
 
             //Physical Params
             C.Stokes = false;
             C.FixedStreamwisePeriodicBC = false;
-            C.beta = 0;
+            C.beta = 0.59;
             C.Reynolds = 1;
-            C.Weissenberg = 0.0;
-            C.Weissenberg = 0.1; //aim Weissenberg number!
-            C.RaiseWeissenberg = true;
+            C.Weissenberg = 1.0; //aim Weissenberg number!
+            C.RaiseWeissenberg = false;
             C.WeissenbergIncrement = 0.1;
 
             //Grid Params
@@ -105,10 +115,10 @@ namespace BoSSS.Application.Rheology
             C.StressPenalty = 1.0;
 
             //Exact Solution Channel
-            Func<double[], double, double> VelocityXfunction = (X, t) => 1 - X[1] * X[1];
+            Func<double[], double, double> VelocityXfunction = (X, t) => 1 - (X[1] * X[1]);
             Func<double[], double, double> VelocityYfunction = (X, t) => 0;
-            Func<double[], double, double> Pressurefunction = (X, t) => 2 / C.Reynolds * (20 - X[0]);
-            Func<double[], double, double> StressXXfunction = (X, t) => 2 * C.Weissenberg * (1 - C.beta) * (((-2 * X[1])) * ((-2 * X[1])));
+            Func<double[], double, double> Pressurefunction = (X, t) => 2* C.Reynolds * (20 - X[0]);
+            Func<double[], double, double> StressXXfunction = (X, t) => 0;// 2  * (1 - C.beta) * (((-2 * X[1])) * ((-2 * X[1])));
             Func<double[], double, double> StressXYfunction = (X, t) => (1 - C.beta) * (-2 * X[1]);
             Func<double[], double, double> StressYYfunction = (X, t) => (0.0);
 
@@ -201,8 +211,14 @@ namespace BoSSS.Application.Rheology
             C.InitialValues_Evaluators.Add("Phi", X => -1);
 
             // Set Boundary Conditions
-            C.AddBoundaryValue("Wall_bottom");
-            C.AddBoundaryValue("Wall_top");
+            C.AddBoundaryValue("Wall_bottom", "VelocityX", VelocityXfunction);
+            C.AddBoundaryValue("Wall_top", "VelocityX", VelocityXfunction);
+            //C.AddBoundaryValue("Wall_bottom", "VelocityY", VelocityYfunction);
+            //C.AddBoundaryValue("Wall_top", "VelocityY", VelocityYfunction);
+            //C.AddBoundaryValue("Wall_bottom", "VelocityX", X => 0);
+            //C.AddBoundaryValue("Wall_top", "VelocityX", X => 0);
+            //C.AddBoundaryValue("Wall_bottom", "VelocityY", X => 0);
+            //C.AddBoundaryValue("Wall_top", "VelocityY", X => 0);
             //C.AddBoundaryCondition("FreeSlip");
 
             if (!C.FixedStreamwisePeriodicBC)
@@ -219,7 +235,9 @@ namespace BoSSS.Application.Rheology
             return C;
         }
         //__________________________________________________________________________________________________________________
-        // ConsistencyConstitutive
+        /// <summary>
+        /// Consistency Constitutive equation
+        /// </summary>
         static public RheologyControl ConsistencyConstitutive(string path = @"C:\AnnesBoSSSdb\ConsistencyConstitutive_withDiv", int degree = 1, int GridLevel = 5)
         {
 
@@ -232,15 +250,18 @@ namespace BoSSS.Application.Rheology
             C.DbPath = path;
             C.SessionName = "Degree" + degree + ", GridLevel" + GridLevel;
             C.ProjectName = "ConsistencyStudyConstitutive";
-            C.MaxIter = 30;
-            C.MinIter = 1;
-            C.ConvCrit = 1E-7;
+            C.NonLinearSolver.MaxSolverIterations = 30;
+            C.NonLinearSolver.MinSolverIterations = 1;
+            C.NonLinearSolver.ConvergenceCriterion= 1E-7;
+            C.LinearSolver.MaxSolverIterations = 30;
+            C.LinearSolver.MinSolverIterations = 1;
+            C.LinearSolver.ConvergenceCriterion = 1E-7;
             //C.ConvCritGMRES = 1E-13;
             C.dt = 1E20;
             C.dtMax = C.dt;
             C.dtMin = C.dt;
             C.Timestepper_Scheme = RheologyControl.TimesteppingScheme.ImplicitEuler;
-            C.NonlinearMethod = NonlinearSolverMethod.NewtonGMRES;
+            C.NonLinearSolver.SolverCode = NonLinearSolverConfig.Code.NewtonGMRES;
             C.ObjectiveParam = 1.0;
 
             //Grid Params
@@ -453,9 +474,11 @@ namespace BoSSS.Application.Rheology
             }
             return C;
         }
-        
+
         //__________________________________________________________________________________________________________________     
-        // Staupunktströmung (Test der Wall-RB für Constitutive Part)
+        /// <summary>
+        /// Stagnation point flow (test of the wall BC for constitutive equations
+        /// </summary>
         static public RheologyControl Staupunkt(string path = @"C:\AnnesBoSSSdb\Staupunkt", int degree = 2, int GridLevel = 5)
         {
 
@@ -468,9 +491,15 @@ namespace BoSSS.Application.Rheology
             C.DbPath = path;
             C.SessionName = "Degree" + degree + ", GridLevel" + GridLevel;
             C.ProjectName = "Staupunkt";
-            C.MaxIter = 20;
-            C.MinIter = 3;
-            C.ConvCrit = 1E-14;
+            //C.MaxIter = 20;
+            //C.MinIter = 3;
+            //C.ConvCrit = 1E-14;
+            C.NonLinearSolver.MaxSolverIterations = 20;
+            C.NonLinearSolver.MinSolverIterations = 3;
+            C.NonLinearSolver.ConvergenceCriterion = 1E-14;
+            C.LinearSolver.MaxSolverIterations = 20;
+            C.LinearSolver.MinSolverIterations = 3;
+            C.LinearSolver.ConvergenceCriterion = 1E-14;
             C.dt = 1E20;
             C.dtMax = C.dt;
             C.dtMin = C.dt;
@@ -639,8 +668,9 @@ namespace BoSSS.Application.Rheology
             return C;
         }
         //__________________________________________________________________________________________________________________     
-
-        // Convergence Stokes LDG
+        /// <summary>
+        /// Convergence of the Stokes system with LDG
+        /// </summary>
         static public RheologyControl ConvergenceStokesLDG(string path = @"C:\AnnesBoSSSdb\ConvergenceStokesLDG_Paper", int degree = 2, int GridLevel = 2)
         {
             // Path wenn lokal gerechnet wird: C:\AnnesBoSSSdb\ConvergenceStokesLDG 
@@ -655,15 +685,22 @@ namespace BoSSS.Application.Rheology
             C.DbPath = path;
             C.SessionName = "Degree" + degree + ", GridLevel" + GridLevel;
             C.ProjectName = "ConvStudyLDG";
-            C.MaxIter = 3;
-            C.MinIter = 1;
-            C.ConvCrit = 5E-7;
+            //C.MaxIter = 3;
+            //C.MinIter = 1;
+            //C.ConvCrit = 5E-7;
+            C.NonLinearSolver.MaxSolverIterations = 3;
+            C.NonLinearSolver.MinSolverIterations = 1;
+            C.NonLinearSolver.ConvergenceCriterion = 5E-7;
+            C.LinearSolver.MaxSolverIterations = 3;
+            C.LinearSolver.MinSolverIterations = 1;
+            C.LinearSolver.ConvergenceCriterion = 5E-7;
             //C.ConvCritGMRES = 1E-08;
             C.dt = 1E20;
             C.dtMax = C.dt;
             C.dtMin = C.dt;
             C.Timestepper_Scheme = RheologyControl.TimesteppingScheme.ImplicitEuler;
-            C.NonlinearMethod = NonlinearSolverMethod.Newton;
+            //C.NonlinearMethod = NonlinearSolverMethod.Newton;
+            C.NonLinearSolver.SolverCode = NonLinearSolverConfig.Code.Newton;
             C.ObjectiveParam = 1.0;
             C.UsePerssonSensor = true;
             C.AdaptiveMeshRefinement = true;
@@ -858,8 +895,9 @@ namespace BoSSS.Application.Rheology
             return C;
         }
         //__________________________________________________________________________________________________________________       
-
-        // Channel Flow with moving wall
+        /// <summary>
+        /// Channel Flow with moving wall
+        /// </summary>
         static public RheologyControl MovingWallChannel()
         {
             RheologyControl C = new RheologyControl();
@@ -877,9 +915,15 @@ namespace BoSSS.Application.Rheology
             C.SetInitialConditions = true;
             C.SetInitialPressure = false;
             C.SetParamsAnalyticalSol = true;
-            C.MaxIter = 7;
-            C.MinIter = 3;
-            C.ConvCrit = 1E-13;
+            //C.MaxIter = 7;
+            //C.MinIter = 3;
+            //C.ConvCrit = 1E-13;
+            C.NonLinearSolver.MaxSolverIterations = 7;
+            C.NonLinearSolver.MinSolverIterations = 3;
+            C.NonLinearSolver.ConvergenceCriterion = 1E-13;
+            C.LinearSolver.MaxSolverIterations = 7;
+            C.LinearSolver.MinSolverIterations = 3;
+            C.LinearSolver.ConvergenceCriterion = 1E-13;
             C.dt = 1E20;
             C.dtMax = C.dt;
             C.dtMin = C.dt;
@@ -996,8 +1040,9 @@ namespace BoSSS.Application.Rheology
             return C;
         }
         //__________________________________________________________________________________________________________________
-
-        // Parameter Study
+        /// <summary>
+        /// Parameter Study of Channel Flow
+        /// </summary>
         static public RheologyControl[] ChannelParameterStudy()
         {
 
@@ -1027,9 +1072,15 @@ namespace BoSSS.Application.Rheology
                         C.ProjectName = "Channel";
                         C.Stokes = false;
                         C.FixedStreamwisePeriodicBC = true;
-                        C.MaxIter = 2;
-                        C.MinIter = 1;
-                        C.ConvCrit = 1E-10;
+                        //C.MaxIter = 2;
+                        //C.MinIter = 1;
+                        //C.ConvCrit = 1E-10;
+                        C.NonLinearSolver.MaxSolverIterations = 2;
+                        C.NonLinearSolver.MinSolverIterations = 1;
+                        C.NonLinearSolver.ConvergenceCriterion = 1E-10;
+                        C.LinearSolver.MaxSolverIterations = 2;
+                        C.LinearSolver.MinSolverIterations = 1;
+                        C.LinearSolver.ConvergenceCriterion = 1E-10;
 
 
                         // Create Fields
@@ -1133,8 +1184,9 @@ namespace BoSSS.Application.Rheology
             return All.ToArray();
         }
         //__________________________________________________________________________________________________________________
-
-        // Channel test LDG
+        /// <summary>
+        /// Channel test for Flow
+        /// </summary>
         static public RheologyControl ChannelLDG(string path = @"\\dc1\userspace\kikker\cluster\cluster_db\ConvergenceStudyLDG", int degree = 2, int GridLevel = 5)
         {
             // Path wenn lokal gerechnet wird: C:\AnnesBoSSSdb\ConvergenceStokesLDG 
@@ -1149,9 +1201,15 @@ namespace BoSSS.Application.Rheology
             C.DbPath = path;
             C.SessionName = "Degree" + degree + ", GridLevel" + GridLevel;
             C.ProjectName = "ConvStudyLDG";
-            C.MaxIter = 15;
-            C.MinIter = 3;
-            C.ConvCrit = 1E-14;
+            //C.MaxIter = 15;
+            //C.MinIter = 3;
+            //C.ConvCrit = 1E-14;
+            C.NonLinearSolver.MaxSolverIterations = 15;
+            C.NonLinearSolver.MinSolverIterations = 3;
+            C.NonLinearSolver.ConvergenceCriterion = 1E-14;
+            C.LinearSolver.MaxSolverIterations = 15;
+            C.LinearSolver.MinSolverIterations = 3;
+            C.LinearSolver.ConvergenceCriterion = 1E-14;
             C.dt = 1E20;
             C.dtMax = C.dt;
             C.dtMin = C.dt;

@@ -83,6 +83,9 @@ namespace CNS {
         /// <param name="numberOfDimensions">
         /// The number of spatial dimensions of the considered problem.
         /// </param>
+        /// <param name="_Program">
+        /// The corresponding application object
+        /// </param>
         /// <remarks>
         /// May only be called once, even though this is not checked.
         /// </remarks>

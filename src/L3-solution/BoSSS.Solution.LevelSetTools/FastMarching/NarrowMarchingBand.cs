@@ -214,7 +214,7 @@ namespace BoSSS.Solution.LevelSetTools.Advection {
         /// Level-Set evolution using a scalar or vector extension velocity (mark 2).
         /// </summary>
         /// <param name="Velocity">Input: velocity field to compute the extension velocity.</param>
-        /// <param name="OldLevSet">Input: level set fied at current time-step.</param>
+        /// <param name="OldLevSet">Input: level set field at current time-step.</param>
         /// <param name="NewLevelSet">New level set.</param>
         /// <param name="ExtVel">
         /// Output, the computed extension velocity;
@@ -230,7 +230,7 @@ namespace BoSSS.Solution.LevelSetTools.Advection {
         public static void Evolve_Mk2(
             double dt, LevelSetTracker Tracker,
             SinglePhaseField OldLevSet, SinglePhaseField NewLevelSet, VectorField<SinglePhaseField> LevelSetGrad,
-            ConventionalDGField[] Velocity, SinglePhaseField[] ExtVel, DGField[] SourceParams,
+            ConventionalDGField[] Velocity, SinglePhaseField[] ExtVel, //DGField[] SourceParams,
             int HMForder, int TimestepNo = 0, bool plotMarchingSteps = false) //
         {
             GridData gdat = Tracker.GridDat;
@@ -427,7 +427,7 @@ namespace BoSSS.Solution.LevelSetTools.Advection {
             // --------------
 
             if (ComponentMode) {
-                MoveLevelSet(dt, NewLevelSet, LevelSetGrad, ExtVel, SourceParams, NEARgrid, marcher);
+                MoveLevelSet(dt, NewLevelSet, LevelSetGrad, ExtVel, NEARgrid, marcher);
             }
             else {
                 throw new NotImplementedException("todo");
@@ -468,8 +468,8 @@ namespace BoSSS.Solution.LevelSetTools.Advection {
             //return x0;
         }
 
-        private static void MoveLevelSet(double dt, SinglePhaseField LevelSet, VectorField<SinglePhaseField> LevelSetGrad, SinglePhaseField[] ExtVel, 
-            DGField[] SourceParams, SubGrid NEARgrid, Reinit.FastMarch.FastMarchReinit marcher) {
+        private static void MoveLevelSet(double dt, SinglePhaseField LevelSet, VectorField<SinglePhaseField> LevelSetGrad, SinglePhaseField[] ExtVel, //DGField[] SourceParams, 
+            SubGrid NEARgrid, Reinit.FastMarch.FastMarchReinit marcher) {
 
             GridData gdat = (GridData)(LevelSet.GridDat);
             int D = gdat.SpatialDimension;
@@ -477,14 +477,14 @@ namespace BoSSS.Solution.LevelSetTools.Advection {
             //var TimeEvoOp = (new LevelSetEvoTerm_Vector()).Operator(2);
 
 
-            SpatialOperator TimeEvoOp = new SpatialOperator(1, 2 * D + 1, 1, QuadOrderFunc.NonLinear(2), "Phi", "dPhi_dx", "dPhi_dy", "ExtVelX", "ExtVelY", "Src", "c1");
+            SpatialOperator TimeEvoOp = new SpatialOperator(1, 2 * D + 1, 1, QuadOrderFunc.NonLinear(2), "Phi", "dPhi_dx", "dPhi_dy", "ExtVelX", "ExtVelY", "c1"); //"Src",
             TimeEvoOp.EquationComponents["c1"].Add(new LevelSetEvoTerm_Vector());
-            TimeEvoOp.EquationComponents["c1"].Add(new LevelSetEvoTerm_Source());
+            //TimeEvoOp.EquationComponents["c1"].Add(new LevelSetEvoTerm_Source());
             TimeEvoOp.EquationComponents["c1"].Add(new UpwindStabiForm());
             TimeEvoOp.Commit();
 
             RungeKutta RunschCjuda = new RungeKutta(RungeKuttaScheme.TVD3, TimeEvoOp,
-                LevelSet.Mapping, new CoordinateMapping(ArrayTools.Cat<DGField>(LevelSetGrad, ExtVel, SourceParams)), sgrd: NEARgrid);
+                LevelSet.Mapping, new CoordinateMapping(ArrayTools.Cat<DGField>(LevelSetGrad, ExtVel)), sgrd: NEARgrid);
 
             RunschCjuda.OnBeforeComputeChangeRate += delegate (double AbsTime, double RelTime) {
                 marcher.GradientUpdate(NEARgrid, LevelSet, LevelSetGrad);

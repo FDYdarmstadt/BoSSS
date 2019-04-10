@@ -14,6 +14,8 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+using BoSSS.Foundation.IO;
+using ilPSP;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -22,10 +24,59 @@ using System.Threading.Tasks;
 
 namespace BoSSS.Foundation.Grid {
 
+    /// <summary>
+    /// Common interface for all grids
+    /// </summary>
+    public interface IGrid : IGridInfo {
 
-    public interface IGrid {
+        /// <summary>
+        /// Access to grid metrics
+        /// </summary>
+        IGridData iGridData {
+            get;
+        }
+
+        /// <summary>
+        /// Driver method for grid redistribution; this includes 
+        /// - computing a new partition 
+        /// - application of the partition to this grid, i.e. invocation off <see cref="RedistributeGrid(int[])"/>
+        /// </summary>
+        void Redistribute(IDatabaseDriver iom, GridPartType method, string PartOptions);
 
 
+        /// <summary>
+        /// redistributes this grid, i.e. sends cells to different processors
+        /// </summary>
+        /// <param name="part">
+        /// MPI processor rank for each cell; index: local cell index;
+        /// </param>
+        void RedistributeGrid(int[] part);
+               
+
+        /// <summary>
+        /// MPI process rank (within world communicator)
+        /// </summary>
+        int MyRank {
+            get;
+        }
+
+        /// <summary>
+        /// MPI world communicator size 
+        /// </summary>
+        int Size {
+            get;
+        }
+
+        /// <summary>
+        /// Gets the partition of cells over the MPI processes;
+        /// </summary>
+        Partitioning CellPartitioning {
+            get;
+        }
+
+        IGridSerializationHandler GridSerializationHandler {
+            get;
+        }
 
     }
 }

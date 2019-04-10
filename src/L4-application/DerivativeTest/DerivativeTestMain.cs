@@ -175,7 +175,7 @@ namespace BoSSS.Application.DerivativeTest {
         /// <summary>
         /// Switch for the test-case, see implementation of <see cref="CreateOrLoadGrid"/>.
         /// </summary>
-        public static int GRID_CASE = 50;
+        public static int GRID_CASE = 3;
 
         /// <summary>
         /// Testing <see cref="SpatialOperator.GetFDJacobianBuilder(IList{DGField}, IList{DGField}, UnsetteledCoordinateMapping, DelParameterUpdate, EdgeQuadratureScheme, CellQuadratureScheme)"/>;
@@ -200,9 +200,9 @@ namespace BoSSS.Application.DerivativeTest {
             // Build-In Grids
             // ==============
 
-            Quadrature_Bulksize.CHUNK_DATA_LIMIT = 1;
+            //Quadrature_Bulksize.CHUNK_DATA_LIMIT = 1;
             //BoSSS.Foundation.Caching.Cache.MaxMem = 1024;
-            for (int i = 15; i <= 15; i++) {
+            for (int i = 18; i <= 18; i++) {
                 BoSSS.Solution.Application._Main(args, true,  delegate () {
                     var R = new DerivativeTestMain();
                     GRID_CASE = i;
@@ -260,12 +260,13 @@ namespace BoSSS.Application.DerivativeTest {
             int GridDeg;
             int D = this.GridData.SpatialDimension;
 
-            if (this.Grid != null) {
-                GridDeg = this.Grid.Cells.Select(cl => this.Grid.GetRefElement(cl.Type).GetInterpolationDegree(cl.Type)).Max();
+            if (this.Grid is GridCommons) {
+                GridCommons _Grid = (GridCommons)this.Grid;
+                GridDeg = _Grid.Cells.Select(cl => _Grid.GetRefElement(cl.Type).GetInterpolationDegree(cl.Type)).Max();
 
 
-                if (this.Grid.GetRefElement(this.Grid.Cells[0].Type) == Square.Instance
-                    || this.Grid.GetRefElement(this.Grid.Cells[0].Type) == Cube.Instance) {
+                if (_Grid.GetRefElement(_Grid.Cells[0].Type) == Square.Instance
+                    || _Grid.GetRefElement(_Grid.Cells[0].Type) == Cube.Instance) {
                     // hack: otherwise DG deg gets to large
                     GridDeg = (int)Math.Round(Math.Pow(GridDeg, 1.0 / D));
                 }
@@ -305,9 +306,9 @@ namespace BoSSS.Application.DerivativeTest {
         /// <summary>
         /// See also <see cref="GRID_CASE"/> and <see cref="GRID_FILE"/>.
         /// </summary>
-        protected override GridCommons CreateOrLoadGrid() {
+        protected override IGrid CreateOrLoadGrid() {
 
-            GridCommons grd;
+            IGrid grd;
             switch (GRID_CASE) {
                 case 1:
                 grd = Grid1D.LineGrid(GenericBlas.Linspace(-4, 4, 5));
@@ -479,11 +480,9 @@ namespace BoSSS.Application.DerivativeTest {
                     double[] yNodes = GenericBlas.Linspace(-1, 1, 5);
 
                     var baseGrid = Grid2D.UnstructuredTriangleGrid(xNodes, yNodes);
-                    var baseGdat = new GridData(baseGrid);
-                    var aggGrid = CoarseningAlgorithms.Coarsen(baseGdat, 2);
-                    base.AggGrid = aggGrid;
-                    grd = null;
 
+                    grd = CoarseningAlgorithms.Coarsen(baseGrid, 2);
+                    
                     double dx = xNodes[1] - xNodes[0];
                     double dy = yNodes[1] - yNodes[0];
                     this.CellVolume = dx * dy;
@@ -516,13 +515,13 @@ namespace BoSSS.Application.DerivativeTest {
                     // gmsh grid import test
 
                     Console.WriteLine("Loading file: '" + GRID_FILE + "'...");
-                    grd = GridImporter.Import(GRID_FILE);
+                    GridCommons _grd = GridImporter.Import(GRID_FILE);
                     //Console.WriteLine("done. " + grd.NoOfUpdateCells.MPISum() + " cells loaded.");
 
                     //Plot2dGridGnuplot(grd);
 
                     HashSet<CellType> cellTypes = new HashSet<CellType>();
-                    foreach (var cell in grd.Cells) {
+                    foreach (var cell in _grd.Cells) {
                         if (!cellTypes.Contains(cell.Type))
                             cellTypes.Add(cell.Type);
                     }
@@ -532,7 +531,7 @@ namespace BoSSS.Application.DerivativeTest {
                         Console.Write(" ");
                     }
                     Console.WriteLine();
-
+                    grd = _grd;
 
                     break;
                 }
@@ -653,7 +652,9 @@ namespace BoSSS.Application.DerivativeTest {
         /// </summary>
         protected override void PlotCurrentState(double physTime, TimestepNumber timestepNo, int superSampling = 0) {
             Tecplot.PlotFields(
-                ArrayTools.Cat<DGField>(f1Gradient_Analytical, f1Gradient_Numerical, f1, GridData.BoundaryMark(), Laplace_f1_Numerical, Laplace_f2_Numerical),
+                ArrayTools.Cat<DGField>(
+                    f1Gradient_Analytical, f1Gradient_Numerical, f1, 
+                    GridData.BoundaryMark(), Laplace_f1_Numerical, Laplace_f2_Numerical, f2),
                 "derivatives", 0.0, superSampling);
         }
 
@@ -976,7 +977,11 @@ namespace BoSSS.Application.DerivativeTest {
 
                 // comparison of finite difference Jacobian and Operator matrix
                 if (TestFDJacobian) {
-                    this.f1.Clear();
+
+                   
+                    //this.f1.Clear();
+                    //var NullField = new SinglePhaseField(this.f1.Basis);
+
                     var FDJbuilder = Laplace.GetFDJacobianBuilder(this.f1.Mapping.Fields, null, this.f1.Mapping,
                         delegate (IEnumerable<DGField> U0, IEnumerable<DGField> Params) {
                             return;
@@ -985,24 +990,32 @@ namespace BoSSS.Application.DerivativeTest {
                     var CheckAffine = new double[FDJbuilder.CodomainMapping.LocalLength];
                     FDJbuilder.ComputeMatrix(CheckMatrix, CheckAffine);
 
+                    double RelTol = BLAS.MachineEps.Sqrt().Sqrt(); // be generous...
+                    if (RelTol <= 0.0)
+                        throw new ArithmeticException();
+
+                    double MtxTol = Math.Max(CheckMatrix.InfNorm(), LaplaceMtx.InfNorm());
+                    double AffTol = Math.Max(Math.Max(CheckAffine.MPI_L2Norm(), LaplaceAffine.MPI_L2Norm()), MtxTol);
+
                     var ErrMatrix = LaplaceMtx.CloneAs();
                     var ErrAffine = LaplaceAffine.CloneAs();
                     ErrMatrix.Acc(-1.0, CheckMatrix);
                     ErrAffine.AccV(-1.0, CheckAffine);
                     double LinfMtx = ErrMatrix.InfNorm();
                     double L2Aff = ErrAffine.L2NormPow2().MPISum().Sqrt();
-                    bool passed1 = (LinfMtx < 1.0e-3);
-                    bool passed2 = (L2Aff < Treshold);
+                    bool passed1 = (LinfMtx < MtxTol*RelTol);
+                    bool passed2 = (L2Aff < AffTol*RelTol);
                     Console.WriteLine("Finite Difference Jacobian: Matrix/Affine delta norm {0} {1}, passed? {2} {3}", LinfMtx, L2Aff, passed1, passed2);
                     m_passed = m_passed && passed1;
                     m_passed = m_passed && passed2;
+                    
 
                 }
                 Console.WriteLine("--------------------------------------------");
             }
 
             
-
+            
 
             // finally...
             // =================

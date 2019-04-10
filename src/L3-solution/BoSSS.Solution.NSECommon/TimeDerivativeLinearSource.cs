@@ -30,7 +30,7 @@ namespace BoSSS.Solution.NSECommon {
     /// </summary>
     public class TimeDerivativeLinearSource : BoSSS.Solution.Utils.LinearSource {
         string[] m_ArgumentOrdering;
-        string[] m_ParameterOrdering;
+        //string[] m_ParameterOrdering;
         MaterialLaw EoS;
         bool m_conti;
         double rho;
@@ -38,12 +38,14 @@ namespace BoSSS.Solution.NSECommon {
 
         /// <summary>
         /// Ctor.
+        /// </summary> 
         /// <param name="EoS">The material law</param>
         /// <param name="conti">Set conti: true for the continuity equation</param>
-        /// </summary> 
-        public TimeDerivativeLinearSource(MaterialLaw EoS, double TimeStepSize, String[] ArgumentOrdering, String[] ParameterOrdering, bool conti = false) {
+        /// <param name="ArgumentOrdering"></param>
+        /// <param name="TimeStepSize"></param>
+        public TimeDerivativeLinearSource(MaterialLaw EoS, double TimeStepSize, String[] ArgumentOrdering, bool conti = false) {
             m_ArgumentOrdering = ArgumentOrdering;
-            m_ParameterOrdering = ParameterOrdering;
+            //m_ParameterOrdering = ParameterOrdering;
             this.EoS = EoS;
             dt = TimeStepSize;
             m_conti = conti;
@@ -61,11 +63,17 @@ namespace BoSSS.Solution.NSECommon {
         /// Paramaters used to compute the density
         /// </summary>
         public override IList<string> ParameterOrdering {
-            get { return m_ParameterOrdering; }
+            get { return EoS.ParameterOrdering; }
         }
 
 
-
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="x"></param>
+        /// <param name="parameters"></param>
+        /// <param name="U"></param>
+        /// <returns></returns>
         protected override double Source(double[] x, double[] parameters, double[] U) {
             rho = EoS.GetDensity(parameters);
             if (m_conti)

@@ -20,6 +20,7 @@ using BoSSS.Foundation;
 using BoSSS.Solution;
 using MPI.Wrappers;
 using NUnit.Framework;
+using SolverCodes = BoSSS.Solution.Control.LinearSolverConfig.Code;
 
 namespace BoSSS.Application.SipPoisson.Tests {
 
@@ -44,7 +45,7 @@ namespace BoSSS.Application.SipPoisson.Tests {
         [Test]
         public static void TestCartesian() {
 
-            using(SipPoisson.SipPoissonMain p = new SipPoissonMain()) {
+            using (SipPoisson.SipPoissonMain p = new SipPoissonMain()) {
                 var ctrl = SipHardcodedControl.TestCartesian1();
                 p.Init(ctrl);
                 p.RunSolverMode();
@@ -67,15 +68,15 @@ namespace BoSSS.Application.SipPoisson.Tests {
                 Console.WriteLine("L2 Error of solution: " + err + " (threshold is " + thres + ")");
                 Assert.LessOrEqual(err, thres);
             }
-         
+
         }
 
-               
+
 
         [Test]
         public static void TestCurved() {
 
-            using(SipPoissonMain p = new SipPoissonMain()) {
+            using (SipPoissonMain p = new SipPoissonMain()) {
                 var ctrl = SipHardcodedControl.TestCurved();
                 p.Init(ctrl);
                 p.RunSolverMode();
@@ -97,9 +98,10 @@ namespace BoSSS.Application.SipPoisson.Tests {
             }
         }
 
-
+        
+        
         [Test]
-        public static void TestIterativeSolver(
+    public static void TestIterativeSolver(
 #if DEBUG            
             [Values(2)]int dgDeg,
             [Values(40)]int res,
@@ -114,31 +116,32 @@ namespace BoSSS.Application.SipPoisson.Tests {
 #endif
             ) {
 
-            using(SipPoisson.SipPoissonMain p = new SipPoissonMain()) {
-                var ctrl = SipHardcodedControl.TestCartesian2(res, dim, solver, dgDeg);
-                p.Init(ctrl);
-                p.RunSolverMode();
+        using (SipPoisson.SipPoissonMain p = new SipPoissonMain()) {
+            var ctrl = SipHardcodedControl.TestCartesian2(res, dim, solver, dgDeg);
+            p.Init(ctrl);
+            p.RunSolverMode();
 
 
-                //Application<SipControl>._Main(new string[] {
-                //        "--control", "cs:ipPoisson.ippHardcodedControl.TestCartesian1()"
-                //    },
-                //    false,
-                //    "",
-                //    delegate() {
-                //        p = new SipPoissonMain();
-                //        return p;
-                //    });
+            //Application<SipControl>._Main(new string[] {
+            //        "--control", "cs:ipPoisson.ippHardcodedControl.TestCartesian1()"
+            //    },
+            //    false,
+            //    "",
+            //    delegate() {
+            //        p = new SipPoissonMain();
+            //        return p;
+            //    });
 
 
-                double err = (double)p.QueryHandler.QueryResults["SolL2err"];
-                double h = ((Foundation.Grid.Classic.GridData)(p.GridData)).Cells.h_maxGlobal;
-                double thres = 0.01*Math.Pow(h, dgDeg);
+            double err = (double)p.QueryHandler.QueryResults["SolL2err"];
+            double h = ((Foundation.Grid.Classic.GridData)(p.GridData)).Cells.h_maxGlobal;
+            double thres = 0.01 * Math.Pow(h, dgDeg);
 
-                Console.WriteLine("L2 Error of solution: " + err + " (threshold is " + thres + ")");
-                Assert.LessOrEqual(err, thres);
-            }
-         
+            Console.WriteLine("L2 Error of solution: " + err + " (threshold is " + thres + ")");
+            Assert.LessOrEqual(err, thres);
         }
+
     }
+
+}
 }

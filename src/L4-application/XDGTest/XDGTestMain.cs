@@ -63,7 +63,7 @@ namespace BoSSS.Application.XDGTest {
             Pressure = new XDGField(new XDGBasis(this.LsTrk, 2), "Pressure");
         }
 
-        protected override GridCommons CreateOrLoadGrid() {
+        protected override IGrid CreateOrLoadGrid() {
             var xNodes = GenericBlas.Linspace(-0.33333, 0.666667, 7);
             //var yNodes = GenericBlas.Linspace(-1, 1, 2);
             //var xNodes = GenericBlas.Linspace(-2, 2, 25);

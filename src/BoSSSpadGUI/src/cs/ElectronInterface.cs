@@ -15,27 +15,43 @@ namespace BoSSS.Application.BoSSSpad{
     public class ElectronInterface{
 
         static ElectronWorksheet worksheet;
+        static CancellationTokenSource runCommandManager = null;
 
+        /// <summary>
+        /// Entrypoint of Electron BoSSSpad, i.e. the electron-edge-js package
+        /// </summary>
+        /// <param name="input">
+        /// Path to the ElectronWorksheet.dll, ElectronBoSSSpad.exe and affiliated DLLs
+        /// </param>
+        /// <returns></returns>
         public async Task<object> Invoke(object input){
-            worksheet = ElectronWorksheet.Instance;
+            worksheet = new ElectronWorksheet(input.ToString());
             return new{
-                runCommand = (Func<object, Task<object>>)(async (i) => {
-                    return await Task.Run(() => ElectronInterface.RunCommand(i));
+                runCommand = (Func<object, Task<object>>)(async (i) => 
+                {
+                    runCommandManager = new CancellationTokenSource();
+                    return await Task.Run(() => ElectronInterface.RunCommand(i), runCommandManager.Token);
                 }),
-                save = (Func<object, Task<object>>)(async (i) => {
+                save = (Func<object, Task<object>>)(async (i) => 
+                {
                     return await Task.Run(() => ElectronInterface.Save(i));
                 }),
-                load = (Func<object, Task<object>>)(async (i) => {
+                load = (Func<object, Task<object>>)(async (i) => 
+                {
                     return await Task.Run(() => ElectronInterface.Load(i));
                 }),
-                getAutoCompleteSuggestions = (Func<object, Task<object>>)(async (i) => {
+                getAutoCompleteSuggestions = (Func<object, Task<object>>)(async (i) => 
+                {
                     return await Task.Run(() => ElectronInterface.GetAutoCompleteSuggestions(i));
+                }),
+                forceAbort = (Func<object, Task<object>>)(async (i) =>
+                {
+                    return await Task.Run(() => ElectronInterface.ForceAbort());
                 })
             };
         }
 
         static object RunCommand(object input){
-            System.Diagnostics.Debugger.Break();
             Tuple<string, string> output = worksheet.RunCommand(input.ToString());
             return output;
         }
@@ -64,6 +80,13 @@ namespace BoSSS.Application.BoSSSpad{
 
         static object GetAutoCompleteSuggestions(object input){
             return worksheet.GetAutoCompleteSuggestions(input.ToString());
+        }
+
+        static object ForceAbort()
+        {
+            if (runCommandManager != null)
+                runCommandManager.Cancel();
+            return null;
         }
     }
 }

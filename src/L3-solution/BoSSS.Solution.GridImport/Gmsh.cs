@@ -26,6 +26,7 @@ using ilPSP;
 using ilPSP.Utils;
 using BoSSS.Foundation.Grid.Classic;
 using BoSSS.Foundation.Grid.RefElements;
+using MPI.Wrappers;
 
 namespace BoSSS.Solution.GridImport {
 
@@ -114,9 +115,9 @@ namespace BoSSS.Solution.GridImport {
 
     /// <summary>
     /// Importer of msh format.
-    ///  - First index is circularity, 0 clockwise, 1 counterclockwise
-    ///  - second index is node reordering
-    ///  - third index is element type.
+    ///  - 1st index is element type.
+    ///  - 2nd index is node reordering
+    ///  - 3rd index is circularity, 0 clockwise, 1 counterclockwise
     /// </summary>
     public class Gmsh : IGridImporter {
 
@@ -125,6 +126,7 @@ namespace BoSSS.Solution.GridImport {
             new int[,] {{ 0, 1 }},
             // <summary>3-node triangle</summary>
             new int[,] {{ 0, 1, 2 },{ 2, 1, 0 }},
+            
             // <summary>4-node quadrangle</summary>
             new int[,] {{ 0, 1, 3, 2 },{ 0, 3, 1, 2 }},
             // <summary>4-node tetrahedron</summary>
@@ -196,7 +198,7 @@ namespace BoSSS.Solution.GridImport {
             // <summary>25-node third order quadrangle (8 nodes associated with the vertices, 4 with the edges, 9 with the face)</summary>
             new int[,] {{ 18, 21, 17, 22, 24, 20, 19, 23, 16, 13, 14, 15, 9, 8, 7, 10, 11, 12, 6, 5, 4, 0, 1, 3, 2 },{ 19, 23, 16, 22, 24, 20, 18, 21, 17, 9, 8, 7, 13, 14, 15, 12, 11, 10, 4, 5, 6, 1, 0, 2, 3 }},  
             // <summary>36-node third order quadrangle (12 nodes associated with the vertices, 4 with the edges, 16 with the face)</summary>
-            new int[,] {{ 22, 27, 26, 21, 28, 34, 33, 25, 29, 35, 32, 24, 23, 30, 31, 20, 16, 17, 18, 19, 11, 10, 9, 8, 12, 13, 14, 15, 7, 6, 5, 4, 0, 1, 3, 2 },{ 23, 30, 31, 20, 29, 35, 32, 24, 28, 34, 33, 25, 22, 27, 26, 21, 11, 10, 9, 8, 16, 17, 18, 19, 15, 14, 13, 12, 4, 5, 6, 7, 1, 0, 2, 3 }},                                
+            new int[,] {{ 22, 27, 26, 21, 28, 34, 33, 25, 29, 35, 32, 24, 23, 30, 31, 20, 16, 17, 18, 19, 11, 10, 9, 8, 12, 13, 14, 15, 7, 6, 5, 4, 0, 1, 3, 2 },{ 23, 30, 31, 20, 29, 35, 32, 24, 28, 34, 33, 25, 22, 27, 26, 21, 11, 10, 9, 8, 16, 17, 18, 19, 15, 14, 13, 12, 4, 5, 6, 7, 1, 0, 2, 3 }},
         };
 
         private List<string> physicalNameLines;
@@ -261,7 +263,11 @@ namespace BoSSS.Solution.GridImport {
         /// </summary>
         /// <param name="filePath"></param>
         public Gmsh(string filePath) {
-            ParseBinary(filePath);
+            int myrank;
+            csMPI.Raw.Comm_Rank(csMPI.Raw._COMM.WORLD, out myrank);
+
+            if (myrank == 0)
+                ParseBinary(filePath);
         }
 
         /// <summary>
@@ -510,7 +516,7 @@ namespace BoSSS.Solution.GridImport {
                 element_types = new ElementType_t[array_length];
                 bcindex_of_element = new int[array_length];
 
-                for (i = 0; i < array_length; ) {
+                for (i = 0; i < array_length;) {
                     int element_type = ReadInt();
                     int num_elm_follow = ReadInt();
                     int number_of_tags = ReadInt();
@@ -1313,7 +1319,14 @@ namespace BoSSS.Solution.GridImport {
         /// </summary>
         /// <returns>the grid commons object</returns>
         public GridCommons GenerateBoSSSGrid() {
+            int myrank;
+            int size;
+            csMPI.Raw.Comm_Rank(csMPI.Raw._COMM.WORLD, out myrank);
+            csMPI.Raw.Comm_Size(csMPI.Raw._COMM.WORLD, out size);
+
             GridCommons grd = null;
+
+            bosss_element_type = bosss_element_type.MPIBroadcast(0);
 
             if (bosss_element_type.Equals(ElementType_t.QUAD_4)) {
                 grd = new Grid2D(Square.Instance);
@@ -1327,83 +1340,90 @@ namespace BoSSS.Solution.GridImport {
                 throw new NotSupportedException("Unsupported BoSSS element type: " + bosss_element_type);
             }
 
-            int numberOfNodesPerCurvedElement = NumberOfNodesPerElement(curved_element_type);
-            int numberOfNodesPerElement = NumberOfNodesPerElement(bosss_element_type);
+            if (myrank == 0) {
+                int numberOfNodesPerCurvedElement = NumberOfNodesPerElement(curved_element_type);
+                int numberOfNodesPerElement = NumberOfNodesPerElement(bosss_element_type);
 
-            for (int j = 0; j < bosss_elements; j++) {
-                int i = bosss_element_index_to_msh_element_index[j];
-                DetermineChirality(i, numberOfNodesPerCurvedElement);
-            }
-            
-            GeneratePermutationArray(curved_element_type);
-
-            for (int j = 0; j < bosss_elements; j++) {
-                int i = bosss_element_index_to_msh_element_index[j];
-                for (int k = 0; k < base_elements[bosss_element_index_to_msh_element_index[j]].Length; k++) {
-                    // over coordinate indices per elements
-                    int l = elements[i].Length - numberOfNodesPerElement + k;
-                    base_elements[i][k] = elements[i][permutation_array[chirality_index[i], l]];
+                for (int j = 0; j < bosss_elements; j++) {
+                    int i = bosss_element_index_to_msh_element_index[j];
+                    DetermineChirality(i, numberOfNodesPerCurvedElement);
                 }
-            }
 
-            RefElement refElement = GenerateReferenceElement();
+                GeneratePermutationArray(curved_element_type);
 
-            grd.Cells = new Cell[bosss_elements];
-
-            MultidimensionalArray[] transformationParams = new MultidimensionalArray[bosss_elements];
-
-            for (int i = 0; i < bosss_elements; i++) {
-                grd.Cells[i] = new Cell();
-                bool nonLinear = false;
-                if (curved_element_type.Equals(CurvedElementType_t.QUAD_4) || curved_element_type.Equals(CurvedElementType_t.HEXA_8)) {
-                    if (CheckIfElementIsNonLinear(numberOfNodesPerCurvedElement, i)) {
-                        nonLinear = true;
+                for (int j = 0; j < bosss_elements; j++) {
+                    int i = bosss_element_index_to_msh_element_index[j];
+                    for (int k = 0; k < base_elements[bosss_element_index_to_msh_element_index[j]].Length; k++) {
+                        // over coordinate indices per elements
+                        int l = elements[i].Length - numberOfNodesPerElement + k;
+                        base_elements[i][k] = elements[i][permutation_array[chirality_index[i], l]];
                     }
                 }
-                if (curved_element_type.Equals(CurvedElementType_t.QUAD_4) || curved_element_type.Equals(CurvedElementType_t.HEXA_8)) {
-                    if (nonLinear) {
-                        transformationParams[i] = MultidimensionalArray.Create(numberOfNodesPerCurvedElement, number_of_coord_dimensions);
+
+                RefElement refElement = GenerateReferenceElement();
+
+                grd.Cells = new Cell[bosss_elements];
+
+                MultidimensionalArray[] transformationParams = new MultidimensionalArray[bosss_elements];
+                for (int i = 0; i < bosss_elements; i++) {
+
+                    grd.Cells[i] = new Cell();
+                    bool nonLinear = false;
+                    if (curved_element_type.Equals(CurvedElementType_t.QUAD_4) || curved_element_type.Equals(CurvedElementType_t.HEXA_8)) {
+                        if (CheckIfElementIsNonLinear(numberOfNodesPerCurvedElement, i)) {
+                            nonLinear = true;
+                        }
+                    }
+                    if (curved_element_type.Equals(CurvedElementType_t.QUAD_4) || curved_element_type.Equals(CurvedElementType_t.HEXA_8)) {
+                        if (nonLinear) {
+                            transformationParams[i] = MultidimensionalArray.Create(numberOfNodesPerCurvedElement, number_of_coord_dimensions);
+                        } else {
+                            transformationParams[i] = MultidimensionalArray.Create(numberOfNodesPerCurvedElement - 1, number_of_coord_dimensions);
+                        }
                     } else {
-                        transformationParams[i] = MultidimensionalArray.Create(numberOfNodesPerCurvedElement - 1, number_of_coord_dimensions);
+                        transformationParams[i] = MultidimensionalArray.Create(numberOfNodesPerCurvedElement, number_of_coord_dimensions);
                     }
-                } else {
-                    transformationParams[i] = MultidimensionalArray.Create(numberOfNodesPerCurvedElement, number_of_coord_dimensions);
-                }
-                GenerateTransformationParams(transformationParams, i);
-                grd.Cells[i].Type = ConvertToCellType(curved_element_type, nonLinear);
-            }
-
-            grd.Description = "Created from BoSSS";
-
-            for (int j = 0; j < bosss_elements; j++) {
-                grd.Cells[j].GlobalID = j;
-                grd.Cells[j].NodeIndices = base_elements[bosss_element_index_to_msh_element_index[j]];
-                grd.Cells[j].TransformationParams = transformationParams[j];
-            }
-
-            if (hasbc) {
-                for (int i = 0; i < boconames.Length; i++) {
-                    grd.EdgeTagNames.Add((byte)(i + 1), boconames[i]);
+                    GenerateTransformationParams(transformationParams, i);
+                    grd.Cells[i].Type = ConvertToCellType(curved_element_type, nonLinear);
                 }
 
-                for (int element = 0; element < bcindex_of_element.Length; element++) {
-                    int bcindex = bcindex_of_element[element];
-                    if (bcindex >= physical_index_mapping.Length) {
-                        // Not a BC element
-                        continue;
+                for (int j = 0; j < bosss_elements; j++) {
+                    grd.Cells[j].GlobalID = j;
+                    grd.Cells[j].NodeIndices = base_elements[bosss_element_index_to_msh_element_index[j]];
+                    grd.Cells[j].TransformationParams = transformationParams[j];
+                }
+
+                if (hasbc) {
+                    for (int i = 0; i < boconames.Length; i++) {
+                        grd.EdgeTagNames.Add((byte)(i + 1), boconames[i]);
                     }
 
-                    byte edgeTag = (byte)physical_index_mapping[bcindex];
-                    Tuple<int, int> cellAndFaceIndex = FindCellAndFaceIndex(element, grd, refElement);
+                    for (int element = 0; element < bcindex_of_element.Length; element++) {
+                        int bcindex = bcindex_of_element[element];
+                        if (bcindex >= physical_index_mapping.Length) {
+                            // Not a BC element
+                            continue;
+                        }
 
-                    CellFaceTag CFT = new CellFaceTag() {
-                        EdgeTag = edgeTag,
-                        FaceIndex = cellAndFaceIndex.Item2,
-                        NeighCell_GlobalID = long.MinValue
-                    };
-                    CFT.AddToArray(ref grd.Cells[cellAndFaceIndex.Item1].CellFaceTags);
+                        byte edgeTag = (byte)physical_index_mapping[bcindex];
+                        Tuple<int, int> cellAndFaceIndex = FindCellAndFaceIndex(element, grd, refElement);
+
+                        CellFaceTag CFT = new CellFaceTag() {
+                            EdgeTag = edgeTag,
+                            FaceIndex = cellAndFaceIndex.Item2,
+                            NeighCell_GlobalID = long.MinValue
+                        };
+                        CFT.AddToArray(ref grd.Cells[cellAndFaceIndex.Item1].CellFaceTags);
+                    }
                 }
+
+
+            } else {
+                grd.Cells = new Cell[0];
             }
+
+            grd.Description = "Created from Gmsh import";
+
             grd.CompressNodeIndices();
             grd.CheckAndFixJacobianDeterminat();
             return grd;

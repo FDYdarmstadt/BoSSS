@@ -35,7 +35,7 @@ using System.Diagnostics;
 namespace BoSSS.Foundation {
 
     /// <summary>
-    /// Delegate to trigger the update of parameter fields (e.g. when computing finite difference Jacobian, see e.g. <see cref="SpatialOperator.GetFDJacobianBuilder(IList{DGField}, IList{DGField}, UnsetteledCoordinateMapping, EdgeQuadratureScheme, CellQuadratureScheme)"/>).
+    /// Delegate to trigger the update of parameter fields (e.g. when computing finite difference Jacobian, see e.g. <see cref="SpatialOperator.GetFDJacobianBuilder"/>).
     /// </summary>
     /// <param name="DomainVar">
     /// Input fields, current state of domain variables
@@ -680,8 +680,6 @@ namespace BoSSS.Foundation {
                     return true;
                 if(Array.IndexOf<Type>(interfaces, typeof(INonlinearFluxEx)) >= 0)
                     return true;
-                if(Array.IndexOf<Type>(interfaces, typeof(IDualValueFlux)) >= 0)
-                    return true;
             }
 
             return false;
@@ -750,6 +748,8 @@ namespace BoSSS.Foundation {
         {
 
             using(new FuncTrace()) {
+                if (DomainFields == null)
+                    DomainFields = new DGField[0];
 
                 /// This is already done in the constructor of Evaluator
 #if DEBUG
@@ -758,7 +758,7 @@ namespace BoSSS.Foundation {
 #endif
 
 
-                var e = new EvaluatorNonLin(this, new CoordinateMapping(DomainFields), ParameterMap, CodomainVarMap, edgeQrCtx, volQrCtx);
+                var e = new EvaluatorNonLin(this, DomainFields, ParameterMap, CodomainVarMap, edgeQrCtx, volQrCtx);
 
                 return e;
             }
@@ -836,8 +836,8 @@ namespace BoSSS.Foundation {
 
 
                     m_Owner = owner;
-                    m_CodomainMapping = CodomainVarMap;
-                    m_DomainMapping = DomainVarMap;
+                    CodomainMapping = CodomainVarMap;
+                    DomainMapping = DomainVarMap;
                     m_Parameters = (ParameterMap != null) ? ParameterMap.ToArray() : new DGField[0];
 
 
@@ -856,7 +856,7 @@ namespace BoSSS.Foundation {
                     if (!m_Owner.IsCommited)
                         throw new ApplicationException("operator assembly must be finalized before by calling 'Commit' before this method can be called.");
 
-                    order = owner.GetOrderFromQuadOrderFunction(m_DomainMapping, ParameterMap, CodomainVarMap);
+                    order = owner.GetOrderFromQuadOrderFunction(DomainMapping, ParameterMap, CodomainVarMap);
 
                     m_OperatorCoefficients = new CoefficientSet() {
                         UserDefinedValues = new Dictionary<string, object>(),
@@ -964,24 +964,16 @@ namespace BoSSS.Foundation {
                 m_SubGridBoundaryTreatment = subGridBoundaryTreatment;
             }
 
-            /// <summary>
-            /// <see cref="CodomainMapping"/>
-            /// </summary>
-            UnsetteledCoordinateMapping m_CodomainMapping;
 
             /// <summary>
             /// coordinate mapping for the codomain variables;
             /// </summary>
             public UnsetteledCoordinateMapping CodomainMapping {
-                get {
-                    return m_CodomainMapping;
-                }
+                get;
+                private set;
             }
 
-            /// <summary>
-            /// <see cref="DomainMapping"/>
-            /// </summary>
-            UnsetteledCoordinateMapping m_DomainMapping;
+            
 
             /// <summary>
             /// <see cref="Parameters"/>
@@ -1001,9 +993,8 @@ namespace BoSSS.Foundation {
             /// coordinate mapping for the domain variables;
             /// </summary>
             public UnsetteledCoordinateMapping DomainMapping {
-                get {
-                    return m_DomainMapping;
-                }
+                get;
+                private set;
             }
 
             /// <summary>
@@ -1012,7 +1003,7 @@ namespace BoSSS.Foundation {
             public IGridData GridData {
                 get {
                     Debug.Assert(object.ReferenceEquals(DomainMapping.GridDat, CodomainMapping.GridDat));
-                    return m_DomainMapping.GridDat;
+                    return DomainMapping.GridDat;
                 }
             }
 
@@ -1115,21 +1106,44 @@ namespace BoSSS.Foundation {
             /// </summary>
             BoSSS.Foundation.Quadrature.NonLin.NECQuadratureVolume m_NonlinearVolume;
 
+            // helper hack to support empty domain lists
+            static UnsetteledCoordinateMapping Helper(
+                IList<DGField> DomainVarMap,
+                IList<DGField> ParameterMap) {
+                IGridData g = null;
+                if(DomainVarMap != null && DomainVarMap.Count > 0) {
+                    g = DomainVarMap[0].Basis.GridDat;
+                } else if(ParameterMap != null && ParameterMap.Count > 0) {
+                    g = ParameterMap[0].Basis.GridDat;
+                }
+
+                if(DomainVarMap != null && DomainVarMap.Count > 0) {
+                    return new UnsetteledCoordinateMapping(DomainVarMap.Select(f => f.Basis));
+                } else {
+                    return new UnsetteledCoordinateMapping(g);
+                }
+            }
+
+
             /// <summary>
             /// Not for direct user interaction
             /// </summary>
             internal protected EvaluatorNonLin(
                 SpatialOperator owner,
-                CoordinateMapping DomainVarMap,
+                IList<DGField> DomainVarMap,
                 IList<DGField> ParameterMap,
                 UnsetteledCoordinateMapping CodomainVarMap,
                 EdgeQuadratureScheme edgeQrCtx,
                 CellQuadratureScheme volQrCtx) //
-             : base(owner, DomainVarMap, ParameterMap, CodomainVarMap) //
+             : base(owner, Helper(DomainVarMap, ParameterMap), ParameterMap, CodomainVarMap) //
             {
 
                 var grdDat = base.GridData;
-                DomainFields = DomainVarMap;
+                if (DomainVarMap != null & DomainVarMap.Count > 0)
+                    DomainFields = new CoordinateMapping(DomainVarMap);
+                else
+                    DomainFields = new CoordinateMapping(grdDat);
+
 
                 if(Owner.RequiresEdgeQuadrature) {
 
@@ -1160,7 +1174,7 @@ namespace BoSSS.Foundation {
             }
 
             /// <summary>
-            /// DG filed which serve a input for the spatial operator.
+            /// DG fields which serve a input for the spatial operator.
             /// </summary>
             public CoordinateMapping DomainFields {
                 get;
@@ -1290,6 +1304,19 @@ namespace BoSSS.Foundation {
                 CellQuadratureScheme volQrCtx) //
                  : base(owner, DomainVarMap, ParameterMap, CodomainVarMap) //
             {
+                foreach(string codVarName in owner.CodomainVar) {
+                    var comps = owner.EquationComponents[codVarName];
+
+                    if (comps.Where(cmp => cmp is INonlinearFlux).Count() > 0)
+                        throw new NotSupportedException("'INonlinearFlux' is not supported for linearization; (codomain variable '" + codVarName + "')");
+                    if (comps.Where(cmp => cmp is INonlinearFluxEx).Count() > 0)
+                        throw new NotSupportedException("'INonlinearFluxEx' is not supported for linearization; (codomain variable '" + codVarName + "')");
+                    //if (comps.Where(cmp => cmp is IDualValueFlux).Count() > 0)
+                    //    throw new NotSupportedException("'IDualValueFlux' is not supported for linearization; (codomain variable '" + codVarName + "')");
+                    if (comps.Where(cmp => cmp is INonlinearSource).Count() > 0)
+                        throw new NotSupportedException("'INonlinearSource' is not supported for linearization; (codomain variable '" + codVarName + "')");
+                }
+
                 this.edgeRule = edgeQrCtx.SaveCompile(base.GridData, order);
                 this.volRule = volQrCtx.SaveCompile(base.GridData, order);
                 base.MPITtransceive = true;
@@ -2208,19 +2235,29 @@ namespace BoSSS.Foundation {
                 U0.SetV(U0backup);
                 DelParamUpdate(domFields, Eval.Parameters.ToArray());
                 //Console.WriteLine("Total number of evaluations: " + NoOfEvals);
+
+                // correct the affine offset
+                // =========================
+
+                // actually, the Jacobian is the approx M*(U-U0) + b
+                // but we want                          M*U + (b - M*U0)
+                // (in this fashion, this approximation also works with BDF schemes *in the same fashion* as other linearizations
+                Matrix.SpMV(-1.0, U0, 1.0, AffineOffset);
             }
 
             /// <summary>
             /// Evaluation at the linearization point
             /// </summary>
             public void ComputeAffine<V>(V AffineOffset) where V : IList<double> {
-                int Lout = Eval.CodomainMapping.LocalLength;
-               
-                double[] F0 = new double[Lout];
-                DelParamUpdate(Eval.DomainFields.Fields.ToArray(), Eval.Parameters.ToArray());
-                Eval.Evaluate(1.0, 0.0, F0);
-                AffineOffset.AccV(1.0, F0);
-               
+                //int Lout = Eval.CodomainMapping.LocalLength;
+
+                //double[] F0 = new double[Lout];
+                //DelParamUpdate(Eval.DomainFields.Fields.ToArray(), Eval.Parameters.ToArray());
+                //Eval.Evaluate(1.0, 0.0, F0);
+                //AffineOffset.AccV(1.0, F0);
+
+                BlockMsrMatrix dummy = new BlockMsrMatrix(this.CodomainMapping, this.DomainMapping);
+                this.ComputeMatrix(dummy, AffineOffset);
             }
 
             /// <summary>

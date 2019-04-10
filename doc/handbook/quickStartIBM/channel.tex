@@ -33,8 +33,10 @@
 ///\item a visualization tool, e.g Paraview or VisIt
 ///\item the knowledge of how to setup a database for \BoSSS{}
 ///\end{itemize}
-/// This tutorial will explain the basic features of the incompressible Navier-Stokes solver in the \BoSSS{} framework. 
-/// First, the simple testcase of a 2D channel flow will be explained. After that, there will be a short part about the immersed boundary feature of our incompressible flow solver. 
+/// This tutorial will explain the basic features of the incompressible 
+/// Navier-Stokes solver in the \BoSSS{} framework. 
+/// First, the simple testcase of a 2D channel flow will be explained. After 
+/// that, there will be a short part about the immersed boundary feature of our incompressible flow solver. 
 /// Therefore the flow around a cylinder will be investigated using the immersed boundary method.
 ///
 ///\section*{Problem statement}
@@ -67,20 +69,13 @@ restart;
 \BoSSScmd{
 /// For the interactive mode of the solver in \BoSSSpad{} we have to load several dependencies first:
 using System.Diagnostics;\newline 
-using BoSSS.Solution.Multigrid;\newline 
 using BoSSS.Foundation.Grid.RefElements;\newline 
 using BoSSS.Application.IBM\_Solver;
  }
 \BoSSSexe
 \BoSSScmd{
 /// Now, a new database has to be created or opened by the following command
-var myDb = OpenOrCreateDatabase("C:\textbackslash \textbackslash tmp\textbackslash \textbackslash IBM\_db");
- }
-\BoSSSexe
-\BoSSScmd{
-/// Initialize the solver
-Type solver = typeof(IBM\_SolverMain);\newline 
-solver.Assembly.Location;
+var myDb = OpenOrCreateDefaultDatabase();
  }
 \BoSSSexe
 \BoSSScmd{
@@ -128,10 +123,6 @@ c.SetDGdegree(2);
  }
 \BoSSSexe
 \BoSSScmd{
-c.FieldOptions;
- }
-\BoSSSexe
-\BoSSScmd{
 /// The grid is generated using the previously defined parameters.
 c.GridFunc       = null; \newline 
 var xNodes       = GenericBlas.Linspace(xMin, xMax , numberOfCellsX);\newline 
@@ -150,16 +141,15 @@ grid.EdgeTagNames.Add(3, "Pressure\_Outlet");
 /// Set the geometric location of boundary conditions by edge tags;
 /// Edges that get assigned "0" are "inner edges".
 grid.DefineEdgeTags(delegate (double[] X) \{\newline 
-byte et = 0;\newline 
-if (Math.Abs(X[1] - (-2)) <= 1.0e-8)\newline 
-et = 1;\newline 
-if (Math.Abs(X[1] - (+2.1 )) <= 1.0e-8)\newline 
-et = 1;\newline 
-if (Math.Abs(X[0] - (-2)) <= 1.0e-8)\newline 
-et = 2;\newline 
-if (Math.Abs(X[0] - (+20.0)) <= 1.0e-8)\newline 
-et = 3;\newline 
-return et;\newline 
+\btab if (Math.Abs(X[1] - (-2)) <= 1.0e-8)\newline 
+\btab \btab return (byte)1; // wall at y = -2\newline 
+\btab if (Math.Abs(X[1] - (+2.1 )) <= 1.0e-8)\newline 
+\btab \btab return (byte)1; // wall at y = +2\newline 
+\btab if (Math.Abs(X[0] - (-2)) <= 1.0e-8)\newline 
+\btab \btab return (byte)2; // velocity inlet at x = -2\newline 
+\btab if (Math.Abs(X[0] - (+20.0)) <= 1.0e-8)\newline 
+\btab \btab return (byte)3; // pressure outlet at x = +20\newline 
+\btab throw new ArgumentException("unexpected domain boundary"); \newline 
 \});
  }
 \BoSSSexe
@@ -174,20 +164,23 @@ c.SetGrid(grid);
 /// Specification of boundary conditions with a parabolic velocity profile for the inlet
 c.BoundaryValues.Clear();\newline 
 c.AddBoundaryValue("wall");\newline 
-c.AddBoundaryValue("Velocity\_Inlet", "VelocityX", X => (4.1 * 1.5 * (X[1] + 2) * (4.1 - (X[1] + 2)) / (4.1 * 4.1))); \newline 
+c.AddBoundaryValue("Velocity\_Inlet", "VelocityX", \newline 
+\btab   (X => (4.1 * 1.5 * (X[1] + 2) * (4.1 - (X[1] + 2)) / (4.1 * 4.1)))); \newline 
 c.AddBoundaryValue("Pressure\_Outlet");
  }
 \BoSSSexe
 \BoSSScmd{
 /// Fluid Properties
-/// Note: The characteristic length and fluid density are choosen to one. Therefore, the viscosity can be defined by \code{1.0/reynolds}.
+/// Note: The characteristic length and fluid density are choosen to one. 
+/// Therefore, the viscosity can be defined by \code{1.0/reynolds}.
 double reynolds            = 20;\newline 
 c.PhysicalParameters.rho\_A = 1;\newline 
 c.PhysicalParameters.mu\_A  = 1.0/reynolds;
  }
 \BoSSSexe
 \BoSSScmd{
-/// Bool parameter whether the Navier-Stokes or Stokes equations should be solved
+/// Bool parameter whether the Navier-Stokes or Stokes equations
+/// should be solved
 c.PhysicalParameters.IncludeConvection = true;
  }
 \BoSSSexe
@@ -200,19 +193,22 @@ c.InitialValues.Add("Pressure",new Formula("X => 0.0", false));
  }
 \BoSSSexe
 \BoSSScmd{
-/// Phi is a level set variable which is not used in this simulation. Therefore it has to be set to -1.
+/// Phi is a level set variable which is not used in this simulation.
+/// Therefore it has to be set to -1.
 c.InitialValues.Add("Phi", new Formula("X => -1.0", false));
  }
 \BoSSSexe
 \BoSSScmd{
 /// Properties for the Picard Iterations
-c.MaxSolverIterations = 50;\newline 
-c.MinSolverIterations = 1;
+c.NonLinearSolver.MaxSolverIterations = 50;\newline 
+c.NonLinearSolver.MinSolverIterations = 1;
  }
 \BoSSSexe
 \BoSSScmd{
 /// Timestepping properties:
-/// We will simulate the steady state solution by using just one timestep of 1E20 seconds of physical time for this instationary simulation.
+/// We will simulate the steady state solution by using just one timestep of 
+/// $10^20$ (\code{1E20}) seconds of physical time for this instationary 
+/// simulation.
 c.Timestepper\_Scheme = IBM\_Control.TimesteppingScheme.ImplicitEuler;\newline 
 double dt            = 1E20;\newline 
 c.dtMax              = dt;\newline 
@@ -226,15 +222,10 @@ c.NoOfTimesteps      = 1;
  }
 \BoSSSexe
 \BoSSScmd{
-/// Create a new job 
-var solver = new IBM\_SolverMain();
- }
-\BoSSSexe
-\BoSSScmd{
-/// Initialize the solver with the current control object, run the simulation and dispose it.
-solver.Init(c);\newline 
-solver.RunSolverMode();\newline 
-solver.Dispose();
+/// The solver can be run inline (i.e. within the \BoSSSpad process) by 
+/// executing the \code{Run} method on the control objece \code{c}.
+/// An inline run wil block \BoSSSpad until the solver exits.
+c.Run();
  }
 \BoSSSexe
 \BoSSScmd{

@@ -171,7 +171,9 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
             var Tst = new TranspiratingChannelTest(U2, periodicity);
             var C = TstObj2CtrlObj(Tst, deg, AgglomerationTreshold, vmode);
             //C.SkipSolveAndEvaluateResidual = true;
-            C.Solver_MaxIterations = 100;
+            C.NonLinearSolver.MaxSolverIterations = 100;
+            C.LinearSolver.MaxSolverIterations = 100;
+            //C.Solver_MaxIterations = 100;
             GenericTest(Tst, C);
         }
         
@@ -195,7 +197,10 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
 
         private static void GenericTest(ITest Tst, XNSE_Control C) {
             using (var solver = new XNSE_SolverMain()) {
-                
+
+                //C.ImmediatePlotPeriod = 1;
+                //C.SuperSampling = 4;
+
                 solver.Init(C);
                 solver.RunSolverMode();
 
@@ -321,9 +326,11 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
                 C.dtFixed = tst.dt;
             }
 
-            C.Solver_ConvergenceCriterion = 1e-9;
+            C.NonLinearSolver.ConvergenceCriterion = 1e-9;
+            C.LinearSolver.ConvergenceCriterion = 1e-9;
+            //C.Solver_ConvergenceCriterion = 1e-9;
 
-            C.LinearSolver = Solution.Multigrid.DirectSolver._whichSolver.PARDISO;
+            C.LinearSolver.SolverCode = LinearSolverConfig.Code.classic_pardiso;
 
             // return
             // ======

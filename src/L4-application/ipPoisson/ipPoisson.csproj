@@ -65,10 +65,8 @@
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="BoundaryType.cs" />
-    <Compile Include="PolygonItersection.cs" />
     <Compile Include="SipHardcodedControl.cs" />
     <Compile Include="SipControl.cs" />
-    <Compile Include="SolverCodes.cs" />
     <Compile Include="Tests\TestProgram.cs" />
     <Compile Include="SipPoissonMain.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
@@ -152,13 +150,17 @@
       <Project>{d4fadb7c-0b11-4f41-a97a-146dc1f7034e}</Project>
       <Name>BoSSS.Solution.Gnuplot</Name>
     </ProjectReference>
-    <ProjectReference Include="..\..\L3-solution\BoSSS.Solution.Multigrid\BoSSS.Solution.Multigrid.csproj">
+    <ProjectReference Include="..\..\L3-solution\BoSSS.Solution.AdvancedSolvers\BoSSS.Solution.AdvancedSolvers.csproj">
       <Project>{efe8c307-09bc-4f58-b991-6ef8fd6d5eff}</Project>
-      <Name>BoSSS.Solution.Multigrid</Name>
+      <Name>BoSSS.Solution.AdvancedSolvers</Name>
     </ProjectReference>
     <ProjectReference Include="..\..\L3-solution\BoSSS.Solution.NSECommon\BoSSS.Solution.NSECommon.csproj">
       <Project>{e56b9ce4-14dc-4256-a337-46e5d298b722}</Project>
       <Name>BoSSS.Solution.NSECommon</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\..\L3-solution\BoSSS.Solution.Statistic\BoSSS.Solution.Statistic.csproj">
+      <Project>{45bca5f9-27e7-43c0-b021-4312bf442c7d}</Project>
+      <Name>BoSSS.Solution.Statistic</Name>
     </ProjectReference>
     <ProjectReference Include="..\..\L3-solution\BoSSS.Solution.Tecplot\BoSSS.Solution.Tecplot.csproj">
       <Project>{D0546422-EC92-4964-82E9-8EE819A2F786}</Project>

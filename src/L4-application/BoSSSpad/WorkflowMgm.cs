@@ -28,7 +28,7 @@ using System.Data;
 using System.Reflection;
 using System.Threading;
 using ilPSP;
-
+using BoSSS.Solution.Control;
 
 namespace BoSSS.Application.BoSSSpad {
 
@@ -91,6 +91,14 @@ namespace BoSSS.Application.BoSSSpad {
         ISessionInfo[] m_Sessions;
 
         /// <summary>
+        /// Clears the cache for <see cref="Sessions"/> and enforces to re-read the database.
+        /// </summary>
+        public void ResetSessionsCache() {
+            m_Sessions = null;
+        }
+
+
+        /// <summary>
         /// A list of all sessions in the current project.
         /// </summary>
         public ISessionInfo[] Sessions {
@@ -106,7 +114,20 @@ namespace BoSSS.Application.BoSSSpad {
 
                     if (InteractiveShell.databases != null) {
                         foreach (var db in InteractiveShell.databases) {
-                            var SS = db.Sessions.Where(si => si.ProjectName.Equals(this.CurrentProject));
+                            var SS = db.Sessions.Where(delegate( ISessionInfo si) {
+#if DEBUG 
+                                return si.ProjectName.Equals(this.CurrentProject);
+#else
+                                Guid g = Guid.Empty;
+                                try {
+                                    g = si.ID;
+                                    return si.ProjectName.Equals(this.CurrentProject);
+                                } catch(Exception e) {
+                                    Console.WriteLine("Warning: " + e.Message + " reading session " + g + ".");
+                                    return false;
+                                }
+#endif
+                            });
                             ret.AddRange(SS);
                         }
                     }
@@ -222,7 +243,7 @@ namespace BoSSS.Application.BoSSSpad {
         /// <param name="PollingIntervallSeconds">
         /// Seconds to wait before checking the jobs status again; should be in the order of seconds, not to overload the IO.
         /// </param>
-        public void BlockUntilAllJobsTerminate(double TimeOutSeconds = -1, double PollingIntervallSeconds = 2) {
+        public void BlockUntilAllJobsTerminate(double TimeOutSeconds = -1, double PollingIntervallSeconds = 10) {
             DateTime start = DateTime.Now;
             while(true) {
                 Thread.Sleep((int)PollingIntervallSeconds);
@@ -255,11 +276,30 @@ namespace BoSSS.Application.BoSSSpad {
             
         }
 
+        List<Tuple<AppControl, int>> RegisteredControls = new List<Tuple<AppControl, int>>();
+
+
+        /// <summary>
+        /// Records the control object <paramref name="C"/> in an internal list, for its entire lifetime,
+        /// and provides an index for it. 
+        /// </summary>
+        public int RegisterControl(AppControl C) {
+            int max = 0;
+            foreach (var t in RegisteredControls) {
+                if (object.ReferenceEquals(t.Item1, C))
+                    return t.Item2;
+                max = Math.Max(t.Item2, max);
+            }
+
+            RegisteredControls.Add(Tuple.Create(C, max + 1));
+            return max + 1;
+        }
+
 
     }
 
 
-
+    /*
     public static class MetaJobManager {
 
         static Dictionary<string, BatchProcessorClient> m_Computers;
@@ -278,6 +318,7 @@ namespace BoSSS.Application.BoSSSpad {
         }
 
     }
+    */
 }
 
 

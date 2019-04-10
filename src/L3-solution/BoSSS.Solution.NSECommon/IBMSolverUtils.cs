@@ -43,7 +43,7 @@ namespace BoSSS.Solution.NSECommon {
         /// <param name="LsTrk"></param>
         /// <param name="Mtx"></param>
         /// <param name="rhs"></param>
-        static public void SetPressureReferencePoint<T>(UnsetteledCoordinateMapping map, int iVar, LevelSetTracker LsTrk, BlockMsrMatrix Mtx, T rhs)
+        static public void SetPressureReferencePoint<T>(UnsetteledCoordinateMapping map, int iVar, LevelSetTracker LsTrk, IMutableMatrixEx Mtx, T rhs)
             where T : IList<double> {
             using (new FuncTrace()) {
                 var GridDat = map.GridDat;
@@ -58,26 +58,27 @@ namespace BoSSS.Solution.NSECommon {
 
                 long GlobalID, GlobalCellIndex;
                 bool IsInside, onthisProc;
-                GridDat.LocatePoint(new double[D], out GlobalID, out GlobalCellIndex, out IsInside, out onthisProc, LsTrk.Regions.GetCutCellSubGrid().VolumeMask.Complement());
+                GridDat.LocatePoint(new double[D], out GlobalID, out GlobalCellIndex, out IsInside, out onthisProc, 
+                    LsTrk != null ? LsTrk.Regions.GetCutCellSubGrid().VolumeMask.Complement() : null);
                 
                 int iRowGl = -111;
                 if (onthisProc) {
-                    int jCell = (int)GlobalCellIndex - GridDat.CellPartitioning.i0;
+                    //int jCell = (int)GlobalCellIndex - GridDat.CellPartitioning.i0;
 
 
-                    NodeSet CenterNode = new NodeSet(GridDat.iGeomCells.GetRefElement(jCell), new double[D]);
-                    MultidimensionalArray LevSetValues = LsTrk.DataHistories[0].Current.GetLevSetValues(CenterNode, jCell, 1); ;
+                    //NodeSet CenterNode = new NodeSet(GridDat.iGeomCells.GetRefElement(jCell), new double[D]);
+                    //MultidimensionalArray LevSetValues = LsTrk.DataHistories[0].Current.GetLevSetValues(CenterNode, jCell, 1); ;
 
 
-                    MultidimensionalArray CenterNodeGlobal = MultidimensionalArray.Create(1, D);
-                    GridDat.TransformLocal2Global(CenterNode, CenterNodeGlobal, jCell);
+                    //MultidimensionalArray CenterNodeGlobal = MultidimensionalArray.Create(1, D);
+                    //GridDat.TransformLocal2Global(CenterNode, CenterNodeGlobal, jCell);
                     //Console.WriteLine("Pressure Ref Point @( {0:0.###E-00} | {1:0.###E-00} )", CenterNodeGlobal[0,0], CenterNodeGlobal[0,1]);
 
 
-                    LevelSetSignCode scode = LevelSetSignCode.ComputeLevelSetBytecode(LevSetValues[0, 0]);
-                    ReducedRegionCode rrc;
-                    int No = LsTrk.Regions.GetNoOfSpecies(jCell, out rrc);
-                    int iSpc = LsTrk.GetSpeciesIndex(rrc, scode);
+                    //LevelSetSignCode scode = LevelSetSignCode.ComputeLevelSetBytecode(LevSetValues[0, 0]);
+                    //ReducedRegionCode rrc;
+                    //int No = LsTrk.Regions.GetNoOfSpecies(jCell, out rrc);
+                    //int iSpc = LsTrk.GetSpeciesIndex(rrc, scode);
 
                     iRowGl = (int)map.GlobalUniqueCoordinateIndex_FromGlobal(iVar, GlobalCellIndex, 0);
 
@@ -91,8 +92,8 @@ namespace BoSSS.Solution.NSECommon {
                     // ref. cell is on local MPI process
                     int jCell = (int)GlobalCellIndex - GridDat.CellPartitioning.i0;
 
-                    ReducedRegionCode rrc;
-                    int NoOfSpc = LsTrk.Regions.GetNoOfSpecies(jCell, out rrc);
+                    //ReducedRegionCode rrc;
+                    //int NoOfSpc = LsTrk.Regions.GetNoOfSpecies(jCell, out rrc);
 
                     // set matrix row to identity
                     Mtx.ClearRow(iRowGl);
@@ -821,6 +822,7 @@ namespace BoSSS.Solution.NSECommon {
                     //if (LsTrk.GridDat.SpatialDimension == 2)
                     //{
 
+
                     for (int j = 0; j < Len; j++) {
                         for (int k = 0; k < K; k++) {
                             double acc = 0.0;
@@ -832,8 +834,9 @@ namespace BoSSS.Solution.NSECommon {
                                     acc -= (2 * muA * beta) * Grad_URes[j, k, 0] * Normals[j, k, 0];
                                     acc -= (muA * beta) * Grad_URes[j, k, 1] * Normals[j, k, 1];
                                     acc -= (muA * beta) * Grad_VRes[j, k, 0] * Normals[j, k, 1];
-                                    acc -= (muA * (1 - beta)) * StressXXRes[j, k] * Normals[j, k, 0];
-                                    acc -= (muA * (1 - beta)) * StressXYRes[j, k] * Normals[j, k, 1];
+                                    acc -= (muA) * StressXXRes[j, k] * Normals[j, k, 0];
+                                    acc -= (muA) * StressXYRes[j, k] * Normals[j, k, 1];
+
                                     break;
 
                                 case 1:
@@ -841,8 +844,8 @@ namespace BoSSS.Solution.NSECommon {
                                     acc -= (2 * muA * beta) * Grad_VRes[j, k, 1] * Normals[j, k, 1];
                                     acc -= (muA * beta) * Grad_VRes[j, k, 0] * Normals[j, k, 0];
                                     acc -= (muA * beta) * Grad_URes[j, k, 1] * Normals[j, k, 0];
-                                    acc -= (muA * (1 - beta)) * StressXYRes[j, k] * Normals[j, k, 0];
-                                    acc -= (muA * (1 - beta)) * StressYYRes[j, k] * Normals[j, k, 1];
+                                    acc -= (muA) * StressXYRes[j, k] * Normals[j, k, 0];
+                                    acc -= (muA) * StressYYRes[j, k] * Normals[j, k, 1];
                                     break;
                                 default:
                                     throw new NotImplementedException();
@@ -852,56 +855,12 @@ namespace BoSSS.Solution.NSECommon {
                         }
                     }
 
-                    //}
-                    //else
-                    //{
-                    //    for (int j = 0; j < Len; j++)
-                    //    {
-                    //        for (int k = 0; k < K; k++)
-                    //        {
-                    //            double acc = 0.0;
-
-                    //            // pressure
-                    //            switch (d)
-                    //            {
-                    //                case 0:
-                    //                    acc += pARes[j, k] * Normals[j, k, 0];
-                    //                    acc -= (2 * muA) * Grad_UARes[j, k, 0, 0] * Normals[j, k, 0];
-                    //                    acc -= (muA) * Grad_UARes[j, k, 0, 2] * Normals[j, k, 2];
-                    //                    acc -= (muA) * Grad_UARes[j, k, 0, 1] * Normals[j, k, 1];
-                    //                    acc -= (muA) * Grad_UARes[j, k, 1, 0] * Normals[j, k, 1];
-                    //                    acc -= (muA) * Grad_UARes[j, k, 2, 0] * Normals[j, k, 2];
-                    //                    break;
-                    //                case 1:
-                    //                    acc += pARes[j, k] * Normals[j, k, 1];
-                    //                    acc -= (2 * muA) * Grad_UARes[j, k, 1, 1] * Normals[j, k, 1];
-                    //                    acc -= (muA) * Grad_UARes[j, k, 1, 2] * Normals[j, k, 2];
-                    //                    acc -= (muA) * Grad_UARes[j, k, 1, 0] * Normals[j, k, 0];
-                    //                    acc -= (muA) * Grad_UARes[j, k, 0, 1] * Normals[j, k, 0];
-                    //                    acc -= (muA) * Grad_UARes[j, k, 2, 1] * Normals[j, k, 2];
-                    //                    break;
-                    //                case 2:
-                    //                    acc += pARes[j, k] * Normals[j, k, 2];
-                    //                    acc -= (2 * muA) * Grad_UARes[j, k, 2, 2] * Normals[j, k, 2];
-                    //                    acc -= (muA) * Grad_UARes[j, k, 2, 0] * Normals[j, k, 0];
-                    //                    acc -= (muA) * Grad_UARes[j, k, 2, 1] * Normals[j, k, 1];
-                    //                    acc -= (muA) * Grad_UARes[j, k, 0, 2] * Normals[j, k, 0];
-                    //                    acc -= (muA) * Grad_UARes[j, k, 1, 2] * Normals[j, k, 1];
-                    //                    break;
-                    //                default:
-                    //                    throw new NotImplementedException();
-                    //            }
-
-                            //    result[j, k] = acc;
-                            //}
-                        //}
-                    //}
-
                 };
 
 
                 var SchemeHelper = LsTrk.GetXDGSpaceMetrics(new[] { LsTrk.GetSpeciesId("A") }, RequiredOrder, 1).XQuadSchemeHelper;
 
+                //EdgeMask Mask = new EdgeMask(LsTrk.GridDat, "Wall_bottom");
                 EdgeMask Mask = new EdgeMask(LsTrk.GridDat, "Wall_cylinder");
 
                 EdgeQuadratureScheme eqs = SchemeHelper.GetEdgeQuadScheme(LsTrk.GetSpeciesId("A"), IntegrationDomain: Mask);

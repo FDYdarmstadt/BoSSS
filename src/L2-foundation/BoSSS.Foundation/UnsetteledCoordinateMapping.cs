@@ -69,6 +69,13 @@ namespace BoSSS.Foundation {
     public class UnsetteledCoordinateMapping : Partitioning, IBlockPartitioning {
 
         /// <summary>
+        /// Constructs an empty mapping.
+        /// </summary>
+        public UnsetteledCoordinateMapping(IGridData grd)
+            : this(grd, new Basis[0], grd.CellPartitioning.MPI_Comm) {
+        }
+
+        /// <summary>
         /// Constructs a new mapping from an ordered list of basis functions;
         /// </summary>
         /// <param name="_basis">the list of DG basis'es that define this mapping</param>
@@ -77,24 +84,33 @@ namespace BoSSS.Foundation {
         }
 
         static int ComputeLength(IEnumerable<Basis> _basis) {
-            return _basis.Sum(b => b.MaximalLength) * _basis.ElementAt(0).GridDat.iLogicalCells.NoOfLocalUpdatedCells;
+            if (_basis == null || _basis.Count() <= 0)
+                return 0;
+            else 
+                return _basis.Sum(b => b.MaximalLength) * _basis.ElementAt(0).GridDat.iLogicalCells.NoOfLocalUpdatedCells;
         }
 
         /// <summary>
         /// Constructs a new mapping from an ordered list of basis functions;
         /// </summary>
         /// <param name="_basis">the list of DG basis'es that define this mapping</param>
-        /// <param name="mt"></param>
         public UnsetteledCoordinateMapping(IEnumerable<Basis> _basis) :
-            base(ComputeLength(_basis), _basis.ElementAt(0).GridDat.CellPartitioning.MPI_Comm) //
-            {
+            this(_basis.ElementAt(0).GridDat, _basis, _basis.ElementAt(0).GridDat.CellPartitioning.MPI_Comm) { }
+
+        /// <summary>
+        /// Constructs a new mapping from an ordered list of basis functions;
+        /// </summary>
+        /// <param name="_basis">the list of DG basis'es that define this mapping</param>
+        private UnsetteledCoordinateMapping(IGridData g, IEnumerable<Basis> _basis, MPI_Comm _Comm) :
+            base(ComputeLength(_basis), _Comm) //
+        {
 
             // =========================
             // initial checks
             // =========================
 
             Basis[] basis = _basis.ToArray();
-            m_Context = basis[0].GridDat;
+            m_Context = g;
             for (int i = 0; i < basis.Length; i++) {
                 if (!object.ReferenceEquals(m_Context, basis[i].GridDat))
                     throw new ArgumentException("all basis-objects must be associated with the same grid.");
@@ -417,6 +433,26 @@ namespace BoSSS.Foundation {
             for (int f = m_BasisS.Length - 1; f >= 0; f--)
                 L += m_BasisS[f].GetLength(j);
             return L;
+        }
+
+        /// <summary>
+        /// Local (on this MPI process) number of degrees-of-freedom; 
+        /// this can be different than <see cref="Partitioning.LocalLength"/>, e.g. in the XDG case.
+        /// </summary>
+        public int GetLocalNoOfDOFs() {
+            int J = this.GridDat.iLogicalCells.NoOfLocalUpdatedCells;
+            int dofs = 0;
+            for (int j = 0; j < J; j++) {
+                dofs += GetTotalNoOfCoordinatesPerCell(j);
+            }
+            return dofs;
+        }
+
+        /// <summary>
+        /// the sum of <see cref="GetLocalNoOfDOFs"/> over all MPI processors in communicator <see cref="MPI_Comm"/>.
+        /// </summary>
+        public int GetTotalNoOfDOFs() {
+            return GetLocalNoOfDOFs().MPISum(this.MPI_Comm);
         }
 
 

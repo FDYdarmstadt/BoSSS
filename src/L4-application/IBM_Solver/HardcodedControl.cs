@@ -20,7 +20,7 @@ using BoSSS.Platform;
 using BoSSS.Solution.Control;
 using BoSSS.Foundation.Grid;
 using System.Diagnostics;
-using BoSSS.Solution.Multigrid;
+using BoSSS.Solution.AdvancedSolvers;
 using ilPSP.Utils;
 using BoSSS.Foundation.Grid.RefElements;
 using BoSSS.Foundation.Grid.Classic;
@@ -48,8 +48,10 @@ namespace BoSSS.Application.IBM_Solver {
 
             // Solver Options
             C.NoOfTimesteps = 100;
-            C.MaxSolverIterations = 100;
-            C.MinSolverIterations = 1;
+            C.LinearSolver.MaxSolverIterations = 100;
+            C.LinearSolver.MinSolverIterations = 1;
+            C.NonLinearSolver.MaxSolverIterations = 100;
+            C.NonLinearSolver.MinSolverIterations = 1;
             C.savetodb = false;
             C.DbPath = null;
             C.ProjectName = "ChannelFlow";
@@ -65,9 +67,9 @@ namespace BoSSS.Application.IBM_Solver {
             C.dtMin = dt;
             C.Endtime = 60;
             C.NoOfTimesteps = 1;
-            C.MaxKrylovDim = 1000;
-            C.NonlinearSolve = NonlinearSolverCodes.NewtonGMRES;
-            C.LinearSolve = LinearSolverCodes.exp_localPrec;
+            C.LinearSolver.MaxKrylovDim = 1000;
+            C.NonLinearSolver.SolverCode = NonLinearSolverConfig.Code.NewtonGMRES;
+            C.LinearSolver.SolverCode = LinearSolverConfig.Code.exp_localPrec;
             C.VelocityBlockPrecondMode = MultigridOperator.Mode.SymPart_DiagBlockEquilib_DropIndefinite;
 
             // Physical values
@@ -259,10 +261,11 @@ namespace BoSSS.Application.IBM_Solver {
             C.AdvancedDiscretizationOptions.CellAgglomerationThreshold = 0.1;
 
             C.LevelSetSmoothing = false;
-            C.MaxKrylovDim = 20;
-            C.MaxSolverIterations = 100;
+            C.LinearSolver.MaxKrylovDim = 20;
+            C.LinearSolver.MaxSolverIterations = 100;
+            C.NonLinearSolver.MaxSolverIterations = 100;
             C.VelocityBlockPrecondMode = MultigridOperator.Mode.SymPart_DiagBlockEquilib_DropIndefinite;
-            C.NoOfMultigridLevels = 0;
+            C.LinearSolver.NoOfMultigridLevels = 0;
 
             // Timestepping
             // ============
@@ -302,17 +305,18 @@ namespace BoSSS.Application.IBM_Solver {
                 C.savetodb = false;
                 C.ProjectName = "FixedCylinderRe100_k" + i + "_CellAgglo02_penalty4_newMesh2";
 
+                double MeshFactor;
                 switch (i) {
                     case 1:
-                        C.MeshFactor = 0.3; // was 1.33
+                        MeshFactor = 0.3; // was 1.33
                         break;
 
                     case 2:
-                        C.MeshFactor = 0.92;
+                        MeshFactor = 0.92;
                         break;
 
                     case 3:
-                        C.MeshFactor = 0.7; // was 07
+                        MeshFactor = 0.7; // was 07
                         break;
 
                     default:
@@ -354,20 +358,20 @@ namespace BoSSS.Application.IBM_Solver {
 
                 C.GridFunc = delegate {
 
-                    var _xNodes1 = Grid1D.TanhSpacing(-2, -1, Convert.ToInt32(10 * C.MeshFactor), 0.5, false); //10
+                    var _xNodes1 = Grid1D.TanhSpacing(-2, -1, Convert.ToInt32(10 * MeshFactor), 0.5, false); //10
                     _xNodes1 = _xNodes1.GetSubVector(0, (_xNodes1.Length - 1));
-                    var _xNodes2 = GenericBlas.Linspace(-1, 2, Convert.ToInt32(35 * C.MeshFactor)); //35
+                    var _xNodes2 = GenericBlas.Linspace(-1, 2, Convert.ToInt32(35 *MeshFactor)); //35
                     _xNodes2 = _xNodes2.GetSubVector(0, (_xNodes2.Length - 1));
-                    var _xNodes3 = Grid1D.TanhSpacing(2, 20, Convert.ToInt32(60 * C.MeshFactor), 1.5, true); //60
+                    var _xNodes3 = Grid1D.TanhSpacing(2, 20, Convert.ToInt32(60 * MeshFactor), 1.5, true); //60
 
                     var xNodes = ArrayTools.Cat(_xNodes1, _xNodes2, _xNodes3);
 
 
-                    var _yNodes1 = Grid1D.TanhSpacing(-2, -1, Convert.ToInt32(7 * C.MeshFactor), 0.9, false); //7
+                    var _yNodes1 = Grid1D.TanhSpacing(-2, -1, Convert.ToInt32(7 * MeshFactor), 0.9, false); //7
                     _yNodes1 = _yNodes1.GetSubVector(0, (_yNodes1.Length - 1));
-                    var _yNodes2 = GenericBlas.Linspace(-1, 1, Convert.ToInt32(25 * C.MeshFactor)); //25
+                    var _yNodes2 = GenericBlas.Linspace(-1, 1, Convert.ToInt32(25 * MeshFactor)); //25
                     _yNodes2 = _yNodes2.GetSubVector(0, (_yNodes2.Length - 1));
-                    var _yNodes3 = Grid1D.TanhSpacing(1, 2.1, Convert.ToInt32(7 * C.MeshFactor), 1.1, true); //7
+                    var _yNodes3 = Grid1D.TanhSpacing(1, 2.1, Convert.ToInt32(7 * MeshFactor), 1.1, true); //7
                     var yNodes = ArrayTools.Cat(_yNodes1, _yNodes2, _yNodes3);
 
 
@@ -527,12 +531,13 @@ namespace BoSSS.Application.IBM_Solver {
                 C.AdvancedDiscretizationOptions.PenaltySafety = 4;
                 C.LevelSetSmoothing = false;
                 //C.option_solver = "direct";
-                C.MaxKrylovDim = 1000;
-                C.MaxSolverIterations = 50;
+                C.LinearSolver.MaxKrylovDim = 1000;
+                C.LinearSolver.MaxSolverIterations = 50;
+                C.NonLinearSolver.MaxSolverIterations = 50;
                 C.VelocityBlockPrecondMode = MultigridOperator.Mode.SymPart_DiagBlockEquilib_DropIndefinite;
-                C.NoOfMultigridLevels = 1;
-                C.NonlinearSolve = NonlinearSolverCodes.NewtonGMRES;
-                C.LinearSolve = LinearSolverCodes.exp_Schur;
+                C.LinearSolver.NoOfMultigridLevels = 1;
+                C.NonLinearSolver.SolverCode = NonLinearSolverConfig.Code.NewtonGMRES;
+                C.LinearSolver.SolverCode = LinearSolverConfig.Code.exp_Schur;
 
                 // Timestepping
                 // ============
@@ -653,7 +658,8 @@ namespace BoSSS.Application.IBM_Solver {
             }
             // Solver Options
             C.NoOfTimesteps = 100;
-            C.MaxSolverIterations = 50;
+            C.LinearSolver.MaxSolverIterations = 50;
+            C.NonLinearSolver.MaxSolverIterations = 50;
             C.savetodb = false;
             C.DbPath = @"P:\BoSSS_DBs\ChannelFlow";
             C.ProjectName = "ChannelFlow";
@@ -831,10 +837,11 @@ namespace BoSSS.Application.IBM_Solver {
             C.AdvancedDiscretizationOptions.CellAgglomerationThreshold = 0.1;
 
             C.LevelSetSmoothing = false;
-            C.MaxKrylovDim = 20;
-            C.MaxSolverIterations = 20;
+            C.LinearSolver.MaxKrylovDim = 20;
+            C.LinearSolver.MaxSolverIterations = 20;
+            C.NonLinearSolver.MaxSolverIterations = 20;
             C.VelocityBlockPrecondMode = MultigridOperator.Mode.SymPart_DiagBlockEquilib_DropIndefinite;
-            C.NoOfMultigridLevels = 0;
+            C.LinearSolver.NoOfMultigridLevels = 0;
 
             // Timestepping
             // ============
@@ -853,7 +860,8 @@ namespace BoSSS.Application.IBM_Solver {
             IBM_Control C = new IBM_Control();
 
             // Solver options
-            C.MaxSolverIterations = 1;
+            C.LinearSolver.MaxSolverIterations = 1;
+            C.NonLinearSolver.MaxSolverIterations = 1;
             C.ProjectName = "Cylinder3D HPCCLUSTER 18/06/15";
             C.NoOfTimesteps = 1;
             C.dtMax = 0.1;
@@ -1120,7 +1128,8 @@ namespace BoSSS.Application.IBM_Solver {
             IBM_Control C = new IBM_Control();
 
             // Solver Options
-            C.MaxSolverIterations = 1000;
+            C.LinearSolver.MaxSolverIterations = 1000;
+            C.NonLinearSolver.MaxSolverIterations = 1000;
             C.savetodb = false;
             C.DbPath = @"P:\BoSSS_DBs\Kovasznay";
             C.ProjectName = "KovasnayFlow";
@@ -1222,13 +1231,15 @@ namespace BoSSS.Application.IBM_Solver {
 
 
             // Solver Options
-            C.MaxSolverIterations = 100;
-            C.MinSolverIterations = 1;
+            C.LinearSolver.MaxSolverIterations = 100;
+            C.LinearSolver.MinSolverIterations = 1;
+            C.NonLinearSolver.MaxSolverIterations = 100;
+            C.NonLinearSolver.MinSolverIterations = 1;
             C.savetodb = false;
             C.DbPath = null;
             C.ProjectName = "ChannelFlow";
             C.SessionName = "Channel";
-            C.NoOfMultigridLevels = 1;
+            C.LinearSolver.NoOfMultigridLevels = 1;
 
             // Calculate Navier-Stokes? 
             C.PhysicalParameters.IncludeConvection = true;
@@ -1316,9 +1327,9 @@ namespace BoSSS.Application.IBM_Solver {
             VelocityYex = (X, t) => (0);
             Pressure = (X, t) => (0);
 
-            C.NonlinearSolve = NonlinearSolverCodes.PicardGMRES;
+            C.NonLinearSolver.SolverCode = NonLinearSolverConfig.Code.PicardGMRES;
 
-            C.LinearSolve = LinearSolverCodes.exp_Schur;
+            C.LinearSolver.SolverCode = LinearSolverConfig.Code.exp_Schur;
 
 
 
@@ -1354,13 +1365,15 @@ namespace BoSSS.Application.IBM_Solver {
             C.DbPath = @"P:\BoSSS_DBs\Bug";
 
             // Solver Options
-            C.MaxSolverIterations = 100;
-            C.MinSolverIterations = 1;
+            C.LinearSolver.MaxSolverIterations = 100;
+            C.LinearSolver.MinSolverIterations = 1;
+            C.NonLinearSolver.MaxSolverIterations = 100;
+            C.NonLinearSolver.MinSolverIterations = 1;
             C.savetodb = false;
             C.ProjectName = "BackwardStep";
             C.SessionName = "BackwardStep";
-            C.NoOfMultigridLevels = 1;
-            C.MaxKrylovDim = 1000;
+            C.LinearSolver.NoOfMultigridLevels = 1;
+            C.LinearSolver.MaxKrylovDim = 1000;
 
             // Calculate Navier-Stokes? 
             C.PhysicalParameters.IncludeConvection = true;
@@ -1372,8 +1385,8 @@ namespace BoSSS.Application.IBM_Solver {
             C.dtMin = dt;
             C.Endtime = 60;
             C.NoOfTimesteps = 1;
-            C.NonlinearSolve = NonlinearSolverCodes.Picard;
-            C.LinearSolve = LinearSolverCodes.classic_mumps;
+            C.NonLinearSolver.SolverCode = NonLinearSolverConfig.Code.Picard;
+            C.LinearSolver.SolverCode = LinearSolverConfig.Code.classic_mumps;
 
             // Physical values
             C.PhysicalParameters.rho_A = 1;

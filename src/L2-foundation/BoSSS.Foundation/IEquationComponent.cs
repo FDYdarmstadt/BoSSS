@@ -45,13 +45,23 @@ namespace BoSSS.Foundation {
 
     /// <summary>
     /// Interface for equation components which require e.g. grid and/or problem-dependent coefficients,
-    /// e.g. cell length scales
+    /// e.g. cell length scales;
+    /// <seealso cref="IEvaluator.OperatorCoefficients"/> 
     /// </summary>
     public interface IEquationComponentCoefficient : IEquationComponent {
 
         /// <summary>
         /// Passes various coefficients to the equation component.
         /// </summary>
+        /// <param name="cs">
+        /// Set by the user through <see cref="IEvaluator.OperatorCoefficients"/>;
+        /// </param>
+        /// <param name="DomainDGdeg">
+        /// DG polynomial order of trial/domain variables/arguments; ordering corresponds with <see cref="IEquationComponent.ArgumentOrdering"/>;
+        /// </param>
+        /// <param name="TestDGdeg">
+        /// DG polynomial degree of test/codomain variable
+        /// </param>
         void CoefficientUpdate(CoefficientSet cs, int[] DomainDGdeg, int TestDGdeg);
     }
     
@@ -121,117 +131,6 @@ namespace BoSSS.Foundation {
                     int IndexOffset, int FirstCellInd, int Lenght,
                     MultidimensionalArray Output);
     }
-
-
-    /// <summary>
-    /// a special 'flux' that can have different flux values for IN-to-OUT and OUT-to-IN -- cell direction;
-    /// This is useful for some kinds of penalization
-    /// </summary>
-    public interface IDualValueFlux : IEquationComponent {
-
-        /// <summary>
-        /// flux on boundary edges -- one-valued
-        /// </summary>
-        /// <param name="time">actual time</param>
-        /// <param name="x">
-        /// Positions in physical space, at which the fluxes should be evaluated.
-        ///  - 1st index: local edge index, with some offset;
-        ///  - 2nd index: node index;
-        ///  - 3rd index: spatial dimension index
-        /// </param>
-        /// <param name="normal">
-        /// edge normals;
-        ///  - 1st index: local edge index, with some offset;
-        ///  - 2nd index: node index;
-        ///  - 3rd index: spatial dimension index
-        /// </param>
-        /// <param name="Uin">
-        /// DG field values at the IN-cell; 
-        ///  - 1st index: DF field index (sorted according to <see cref="IEquationComponent.ArgumentOrdering"/>,
-        ///    parameter values, if defined by <see cref="IEquationComponent.ParameterOrdering"/> are concatenated); 
-        ///  - 2nd index (into <see cref="MultidimensionalArray"/>): edge index, with some offset; 
-        ///  - 3rd index (into <see cref="MultidimensionalArray"/>): node index;
-        /// </param>
-        /// <param name="IndexOffset">
-        /// an index offset into the first dimension of 
-        /// <paramref name="Output_InCell"/>, <paramref name="x"/> and each <paramref name="Uin"/>-entry;
-        /// </param>
-        /// <param name="Lenght">
-        /// number of edges to process
-        /// </param>
-        /// <param name="Output_InCell">
-        /// accumulator (!) for output values (flux accumulated for IN-cell);
-        /// <list type="bullet">
-        ///   <item>1st index: local edge index, with some offset;</item>
-        ///   <item>2nd index: node index;</item>
-        /// </list>
-        /// </param>
-        /// <param name="EdgeTags"></param>
-        /// <param name="EdgeTagsOffset"></param>
-        /// <param name="flipNormal">
-        /// if true, the quadrature kernel wants the user to count all the normal's (<paramref name="normal"/>)
-        /// in opposite direction, but, of course without altering the data in <paramref name="normal"/>;
-        /// </param>
-        /// <param name="jEdge">index of first edge</param>
-        void BorderEdgeFlux(double time, int jEdge,
-                            MultidimensionalArray x,
-                            MultidimensionalArray normal, bool flipNormal,
-                            byte[] EdgeTags, int EdgeTagsOffset,
-                            MultidimensionalArray[] Uin,
-                            int IndexOffset, int Lenght,
-                            MultidimensionalArray Output_InCell);
-
-        /// <summary>
-        /// flux on inner edges -- dual-valued (one value for IN-cell, one value for OUT-cell);
-        /// </summary>
-        /// <param name="time"></param>
-        /// <param name="x">
-        /// Positions in physical space, at which the fluxes should be evaluated:
-        ///  - 1st index: local edge index, with some offset;
-        ///  - 2nd index: node index;<br/>
-        ///  - 3rd index: spatial dimension index
-        /// </param>
-        /// <param name="normal">
-        /// edge normals;
-        ///  - 1st index: edge index;
-        ///  - 2nd index: quadrature node´s index
-        ///  - 3rd index: spatial dimension index;
-        /// </param>
-        /// <param name="Uin">
-        /// DG field values at the IN-cell; <br/>
-        /// 1st index: DF field index (sorted according to <see cref="IEquationComponent.ArgumentOrdering"/>,
-        /// parameter values, if defined by <see cref="IEquationComponent.ParameterOrdering"/> are concatenated); <br/>
-        /// 2nd index (into <see cref="MultidimensionalArray"/>): edge index, with some offset; <br/>
-        /// 3rd index (into <see cref="MultidimensionalArray"/>): node index;
-        /// </param>
-        /// <param name="Uout">
-        /// analogous to <paramref name="Uout"/>, for DG field values of OUT-cell;
-        /// </param>
-        /// <param name="Offset"></param>
-        /// <param name="Lenght"></param>
-        /// <param name="Output_InCell">
-        /// accumulator (!) for output values (flux accumulated for IN-cell, see remarks);
-        ///  - 1st index: local edge index, with some offset;
-        ///  - 2nd index: node index;
-        /// </param>
-        /// <param name="Output_OutCell">
-        /// analogous to <paramref name="Output_InCell"/>, the flux accumulated for the OUT-cell, see Remarks;
-        /// </param>
-        /// <remarks>
-        /// The definition for the Out-flux is:
-        /// the flux is single-valued, if <paramref name="Output_InCell"/>[i,j] = -<paramref name="Output_OutCell"/>[i,j].
-        /// </remarks>
-        /// <param name="jEdge">index of first edge</param>
-        void InnerEdgeFlux(double time, int jEdge,
-                           MultidimensionalArray x,
-                           MultidimensionalArray normal,
-                           MultidimensionalArray[] Uin,
-                           MultidimensionalArray[] Uout,
-                           int Offset, int Lenght,
-                           MultidimensionalArray Output_InCell,
-                           MultidimensionalArray Output_OutCell);
-    }
-
 
     /// <summary>
     /// specifies a nonlinear flux function; Equations 

@@ -175,14 +175,6 @@ namespace BoSSS.Solution.XNSECommon {
             }
             double p_c = config.thermParams.pc;
 
-            //double mEvap = 0.0;
-            //if(this.evaporation) {
-            //    if(config.thermParams.hVap_A > 0) {
-            //        mEvap = -config.thermParams.rho_A * config.thermParams.prescribedVolumeFlux;
-            //    } else {
-            //        mEvap = config.thermParams.rho_B * config.thermParams.prescribedVolumeFlux;
-            //    }
-            //}
 
             //if (!MatInt)
             //    throw new NotSupportedException("Non-Material interface is NOT tested!");

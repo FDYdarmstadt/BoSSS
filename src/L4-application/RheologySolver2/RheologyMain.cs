@@ -37,7 +37,7 @@ using BoSSS.Foundation.XDG;
 using BoSSS.Foundation.Grid.Aggregation;
 
 using BoSSS.Solution;
-using BoSSS.Solution.Multigrid;
+using BoSSS.Solution.AdvancedSolvers;
 using BoSSS.Solution.NSECommon;
 using BoSSS.Solution.Tecplot;
 using BoSSS.Solution.Utils;
@@ -48,12 +48,12 @@ using MPI.Wrappers;
 using NUnit.Framework;
 using BoSSS.Foundation.SpecFEM;
 
+
 namespace BoSSS.Application.Rheology {
 
     /// <summary>
     /// Solver for calculation with viscoelastic extra stresses using the Oldroyd B model or the upper convected Maxwell model (UCM).
     /// </summary>
-
     public class Rheology : BoSSS.Solution.Application<RheologyControl> {
         static void Main(string[] args) {
             
@@ -64,180 +64,257 @@ namespace BoSSS.Application.Rheology {
                 });
         }
 
+        #region instantiation
+
         // Attributes for fields (Names), initialization of DG fields
         //==============================================================
 
-        // Velocity
+        /// <summary>
+        /// Velocity domain
+        /// </summary>
         [InstantiateFromControlFile(new string[] { VariableNames.VelocityX, VariableNames.VelocityY, VariableNames.VelocityZ },
             null,
             true, true,
             IOListOption.ControlFileDetermined)]
         public VectorFieldHistory<SinglePhaseField> Velocity;
 
-        // Residuum in momentum equation
+        /// <summary>
+        /// Velocities codomain: Residuum in momentum equation
+        /// </summary>
         [InstantiateFromControlFile(new string[] { "ResidualMomentumX", "ResidualMomentumY", "ResidualMomentumZ" },
             new string[] { VariableNames.VelocityX, VariableNames.VelocityY, VariableNames.VelocityZ },
             true, true,
             IOListOption.ControlFileDetermined)]
         public VectorField<SinglePhaseField> ResidualMomentum;
 
-        //Pressure
+        /// <summary>
+        /// Pressure domain
+        /// </summary>
         [InstantiateFromControlFile(VariableNames.Pressure, null, IOListOption.ControlFileDetermined)]
         public SinglePhaseField Pressure;
 
-        // Residuum in continuity equation
+        /// <summary>
+        /// Pressure codomain: Residuum in continuity equation
+        /// </summary>
         [InstantiateFromControlFile("ResidualConti", VariableNames.Pressure, IOListOption.ControlFileDetermined)]
         public SinglePhaseField ResidualConti;
 
-        //Extra stresses domain(2D)
+        /// <summary>
+        /// Extra stress domain (2D): StressXX
+        /// </summary>
         [InstantiateFromControlFile("StressXX", null, IOListOption.ControlFileDetermined)]
         public SinglePhaseField StressXX;
 
+        /// <summary>
+        /// Extra stress domain (2D): StressXY
+        /// </summary>
         [InstantiateFromControlFile("StressXY", null, IOListOption.ControlFileDetermined)]
         public SinglePhaseField StressXY;
 
+        /// <summary>
+        /// Extra stress domain (2D): StressYY
+        /// </summary>
         [InstantiateFromControlFile("StressYY", null, IOListOption.ControlFileDetermined)]
         public SinglePhaseField StressYY;
 
-        // Extra Stresses Codomain (2D)
+        /// <summary>
+        /// Extra stress codomain (2D): StressXX
+        /// </summary>
         [InstantiateFromControlFile("ResidualStressXX", "StressXX", IOListOption.ControlFileDetermined)]
         public SinglePhaseField ResidualStressXX;
 
+        /// <summary>
+        /// Extra stresses codomain (2D): StressXY
+        /// </summary>
         [InstantiateFromControlFile("ResidualStressXY", "StressXY", IOListOption.ControlFileDetermined)]
         public SinglePhaseField ResidualStressXY;
 
+        /// <summary>
+        /// Extra stresses codomain (2D): StressYY
+        /// </summary>
         [InstantiateFromControlFile("ResidualStressYY", "StressYY", IOListOption.ControlFileDetermined)]
         public SinglePhaseField ResidualStressYY;
 
-        //Extra Stresses Parameter
+        /// <summary>
+        /// Extra stresses parameter (2D): StressXX
+        /// </summary>
         [InstantiateFromControlFile("StressXXP", "StressXX", IOListOption.ControlFileDetermined)]
         public SinglePhaseField StressXXP;
 
+        /// <summary>
+        /// Extra stresses parameter (2D): StressXY
+        /// </summary>
         [InstantiateFromControlFile("StressXYP", "StressXY", IOListOption.ControlFileDetermined)]
         public SinglePhaseField StressXYP;
 
+        /// <summary>
+        /// Extra stresses parameter (2D): StressXY
+        /// </summary>
         [InstantiateFromControlFile("StressYYP", "StressYY", IOListOption.ControlFileDetermined)]
         public SinglePhaseField StressYYP;
 
-        ////Velocity Gradient domain(2D)
-        //[InstantiateFromControlFile("VelocityXGradientX", null, IOListOption.ControlFileDetermined)]
-        //public SinglePhaseField VelocityXGradientX;
-
-        //[InstantiateFromControlFile("VelocityXGradientY", null, IOListOption.ControlFileDetermined)]
-        //public SinglePhaseField VelocityXGradientY;
-
-        //[InstantiateFromControlFile("VelocityYGradientX", null, IOListOption.ControlFileDetermined)]
-        //public SinglePhaseField VelocityYGradientX;
-
-        //[InstantiateFromControlFile("VelocityYGradientY", null, IOListOption.ControlFileDetermined)]
-        //public SinglePhaseField VelocityYGradientY;
-
-        //// Velocity Gradient Codomain (2D)
-        //[InstantiateFromControlFile("ResidualGradXX", "VelocityXGradientX", IOListOption.ControlFileDetermined)]
-        //public SinglePhaseField ResidualGradXX;
-
-        //[InstantiateFromControlFile("ResidualGradXY", "VelocityXGradientY", IOListOption.ControlFileDetermined)]
-        //public SinglePhaseField ResidualGradXY;
-
-        //[InstantiateFromControlFile("ResidualGradYX", "VelocityYGradientX", IOListOption.ControlFileDetermined)]
-        //public SinglePhaseField ResidualGradYX;
-
-        //[InstantiateFromControlFile("ResidualGradYY", "VelocityYGradientY", IOListOption.ControlFileDetermined)]
-        //public SinglePhaseField ResidualGradYY;
-
-        // Extra Source (e.g. Gravity)
+        /// <summary>
+        /// Extra source (e.g. gravity)
+        /// </summary>
         [InstantiateFromControlFile(new string[] { VariableNames.GravityX, VariableNames.GravityY, VariableNames.GravityZ },
                     new string[] { VariableNames.VelocityX, VariableNames.VelocityY, VariableNames.VelocityZ },
                     true, true,
                     IOListOption.ControlFileDetermined)]
         public VectorField<SinglePhaseField> Gravity;
 
-        // Gravity source constitutive
-        [InstantiateFromControlFile("GravityXX", "StressXX", IOListOption.ControlFileDetermined)]
-        public SinglePhaseField GravityXX;
+        //// Gravity source constitutive
+        //[InstantiateFromControlFile("GravityXX", "StressXX", IOListOption.ControlFileDetermined)]
+        //public SinglePhaseField GravityXX;
 
-        [InstantiateFromControlFile("GravityXY", "StressXY", IOListOption.ControlFileDetermined)]
-        public SinglePhaseField GravityXY;
+        //[InstantiateFromControlFile("GravityXY", "StressXY", IOListOption.ControlFileDetermined)]
+        //public SinglePhaseField GravityXY;
 
-        [InstantiateFromControlFile("GravityYY", "StressYY", IOListOption.ControlFileDetermined)]
-        public SinglePhaseField GravityYY;
+        //[InstantiateFromControlFile("GravityYY", "StressYY", IOListOption.ControlFileDetermined)]
+        //public SinglePhaseField GravityYY;
 
-        //Gravity source for divergence of u
-        [InstantiateFromControlFile("GravityDiv", VariableNames.Pressure, IOListOption.ControlFileDetermined)]
-        public SinglePhaseField GravityDiv;
+        ////Gravity source for divergence of u
+        //[InstantiateFromControlFile("GravityDiv", VariableNames.Pressure, IOListOption.ControlFileDetermined)]
+        //public SinglePhaseField GravityDiv;
 
         // Parameters: Velocity Gradient
         VectorField<SinglePhaseField> VelocityXGradient;
         VectorField<SinglePhaseField> VelocityYGradient;
 
+
         //Parameters: external analytical velocity
         SinglePhaseField U;
         SinglePhaseField V;
 
-        // LEVEL-SET - Dummy, not needed for non-Level-set calculations
+        // LEVEL-SET - not needed for non-Level-set calculations
         //_______________________________________________________________________________________________
 
-        // Level-Set tracker
+        /// <summary>
+        /// Levelset tracker
+        /// </summary>
         [LevelSetTracker("-:A +:B", 1)]
         public LevelSetTracker LevSetTrk;
 
         /// <summary>
         /// The  continuous level set field which defines the XDG space; 
-        /// it is obtained from the projection of the discontinuous <see cref="DGLevSet"/> onto the 
+        /// it is obtained from the projection of the discontinuous DG Level set onto the 
         /// continuous element space.
         /// </summary>
         [InstantiateFromControlFile("Phi", "Phi", IOListOption.ControlFileDetermined)]
         public LevelSet LevSet;
 
+        /// <summary>
+        /// Species which represents the flow domain.
+        /// </summary>
         protected SpeciesId[] FluidSpecies {
             get {
                 return new SpeciesId[] { LsTrk.GetSpeciesId("A") }; // wir rechnen nur species A
             }
         }
 
+        /// <summary>
+        /// Actual type of cut cell quadrature to use; If no XDG is used, resp. no cut cells are present,
+        /// this setting has no effect.
+        /// </summary>
         protected XQuadFactoryHelper.MomentFittingVariants momentFittingVariant = XQuadFactoryHelper.MomentFittingVariants.OneStepGauss;
         //_______________________________________________________________________________________________
 
 
-
+        // Some initialisation of variables
+        //============================================
         IncompressibleBoundaryCondMap BcMap;
         int D; // Spatial Dimension
-        int PressureRefCellIndex; // Index of cell with reference Pressure
-        double currentWeissenberg;
+        /// <summary>
+        /// current Weissenberg number
+        /// </summary>
+        public double currentWeissenberg;
         bool ChangeMesh = true;
+        SpatialOperator XOP;
+        CoordinateVector m_CurrentSolution = null;
+        CoordinateVector m_CurrentResidual = null;
+
+        /// <summary>
+        /// initialisation of BDF Timestepper
+        /// </summary>
+        protected XdgBDFTimestepping m_BDF_Timestepper;
+
+        /// <summary>
+        /// initialisation of spatial operator matrix analysis
+        /// </summary>
+        protected SpatialOperatorAnalysis SpatialOperatorAnalysis;
 
 
+        // Persson sensor and artificial viscosity
+        //=============================================
+        /// <summary>
+        /// initialisation of Persson sensor
+        /// </summary>
+        protected PerssonSensor perssonsensor;
+
+        /// <summary>
+        /// initialisation of artificial viscosity
+        /// </summary>
+        protected SinglePhaseField artificalViscosity;
+
+        /// <summary>
+        /// initialisation of max value of artificial viscosity
+        /// </summary>
+        protected double artificialMaxViscosity;
+
+
+        // Settings for calculation
+        //===============================================
+        /// <summary>
+        /// Set true if Navier Stokes is solved, then the mean velocities as parameters for calculation of convective terms are needed
+        /// </summary>
         protected bool U0MeanRequired {
             get {
                 return (!this.Control.Stokes);
             }
         }
 
-        SpatialOperator XOP;
+        /// <summary>
+        /// Block scaling of the mass matrix: for each species $\frakS$, a vector $(\rho_\frakS, \ldots, \rho_frakS, 0 )$.
+        /// </summary>
+        protected IDictionary<SpeciesId, IEnumerable<double>> MassScale {
+            get {
+                double rho = 1; // this.Control.PhysicalParameters.rho_A;
 
-        CoordinateVector m_CurrentSolution = null;
+                int D = this.GridData.SpatialDimension;
 
+                double[] _rho = new double[D + 4];
+                _rho.SetAll(rho);
+                //No MassMatrix for the pressure
+                _rho[D] = 0;
+
+                _rho[D + 1] = 1;
+                _rho[D + 2] = 1;
+                _rho[D + 3] = 1;
+                Dictionary<SpeciesId, IEnumerable<double>> R = new Dictionary<SpeciesId, IEnumerable<double>>();
+                R.Add(this.LsTrk.GetSpeciesId("A"), _rho);
+
+                return R;
+            }
+        }
+
+        /// <summary>
+        /// Current solution vector
+        /// </summary>
         public CoordinateVector CurrentSolution {
             get {
                 if (m_CurrentSolution == null) {
-                    m_CurrentSolution = new CoordinateVector(ArrayTools.Cat(
-                                                             this.Velocity.Current,
-                                                             this.Pressure,
-                        this.StressXX, this.StressXY, this.StressYY)); //  this.VelocityXGradientX, this.VelocityXGradientY, this.VelocityYGradientX, this.VelocityYGradientY
+                    m_CurrentSolution = new CoordinateVector(ArrayTools.Cat(this.Velocity.Current, this.Pressure, this.StressXX, this.StressXY, this.StressYY));
                 }
                 return m_CurrentSolution;
             }
         }
 
-        CoordinateVector m_CurrentResidual = null;
-
+        /// <summary>
+        /// Current residual vector
+        /// </summary>
         public CoordinateVector CurrentResidual {
             get {
                 if (m_CurrentResidual == null) {
-                    m_CurrentResidual = new CoordinateVector(ArrayTools.Cat(
-                        this.ResidualMomentum,
-                        this.ResidualConti,
-                        this.ResidualStressXX, this.ResidualStressXY, this.ResidualStressYY)); // this.ResidualGradXX, this. ResidualGradXY,this.ResidualGradYX, this.ResidualGradYY
+                    m_CurrentResidual = new CoordinateVector(ArrayTools.Cat(this.ResidualMomentum, this.ResidualConti, this.ResidualStressXX, this.ResidualStressXY, this.ResidualStressYY));
                 }
                 return m_CurrentResidual;
             }
@@ -262,17 +339,17 @@ namespace BoSSS.Application.Rheology {
             }
         }
 
-        protected XdgBDFTimestepping m_BDF_Timestepper;
-        protected PerssonSensor perssonsensor;
-        protected SinglePhaseField artificalViscosity;
-        protected double artificialMaxViscosity;
 
-
+        /// <summary>
+        /// Step 1 of 2 for dynamic load balancing: creating a backup of this objects 
+        /// status in the load-balancing thing <paramref name="L"/>
+        /// </summary>
         public override void DataBackupBeforeBalancing(GridUpdateDataVaultBase L) {
             m_BDF_Timestepper.DataBackupBeforeBalancing(L);
         }
 
-
+        #endregion
+ 
         /// <summary>
         /// Initialize Calculation, Create Equations
         /// </summary>
@@ -300,14 +377,11 @@ namespace BoSSS.Application.Rheology {
                     D = this.GridData.SpatialDimension;
                     BcMap = new IncompressibleBoundaryCondMap(this.GridData, this.Control.BoundaryValues, PhysicsMode.Viscoelastic);
 
-                    string[] CodName = new string[] { "momX", "momY", "div", "constitutiveXX", "constitutiveXY", "constitutiveYY" }; //"velocitygradXX", "velocitygradXY", "velocitygradYX", "velocitygradYY"
+                    string[] CodName = new string[] { "momX", "momY", "div", "constitutiveXX", "constitutiveXY", "constitutiveYY" };
 
-                    string[] Params = ArrayTools.Cat(VariableNames.Velocity0Vector(D), VariableNames.Velocity0MeanVector(D),
-                        VariableNames.VelocityX_GradientVector(), VariableNames.VelocityY_GradientVector(),
-                        VariableNames.StressXXP, VariableNames.StressXYP, VariableNames.StressYYP, "artificialViscosity");
+                    string[] Params = ArrayTools.Cat(VariableNames.Velocity0Vector(D), VariableNames.Velocity0MeanVector(D), VariableNames.VelocityX_GradientVector(), VariableNames.VelocityY_GradientVector(), VariableNames.StressXXP, VariableNames.StressXYP, VariableNames.StressYYP, "artificialViscosity");
 
-                    string[] DomName = ArrayTools.Cat(VariableNames.VelocityVector(D), VariableNames.Pressure,
-                        VariableNames.StressXX, VariableNames.StressXY, VariableNames.StressYY); //VariableNames.VelocityXGradientX, VariableNames.VelocityXGradientY, VariableNames.VelocityYGradientX, VariableNames.VelocityYGradientY
+                    string[] DomName = ArrayTools.Cat(VariableNames.VelocityVector(D), VariableNames.Pressure, VariableNames.StressXX, VariableNames.StressXY, VariableNames.StressYY);
 
                     XOP = new SpatialOperator(DomName, Params, CodName, QuadOrderFunc.NonLinear(2));
 
@@ -324,12 +398,6 @@ namespace BoSSS.Application.Rheology {
                         // pressure part:
                         var pres = new PressureGradientLin_d(d, BcMap);
                         comps.Add(pres);
-
-
-                        //if outflow boundary conditions are applied we need a pressure ref point
-                        if (!this.BcMap.DirichletPressureBoundary) {
-                            PressureRefCellIndex = SolverUtils.GetIndexOfPressureReferencePoint(new double[D], this.CurrentSolution.Mapping, D);
-                        }
 
                         //if periodic boundary conditions are applied a fixed pressure gradient drives the flow
                         if (this.Control.FixedStreamwisePeriodicBC) {
@@ -357,7 +425,7 @@ namespace BoSSS.Application.Rheology {
                         }
                         if (this.Control.beta > 0.0) {
                             var Visc = new swipViscosity_Term1(
-                                this.Control.ViscousPenaltyScaling * PenaltyBase, //GridData.Cells.cj, // / this.Control.beta
+                                this.Control.ViscousPenaltyScaling * PenaltyBase,
                                 d,
                                 D,
                                 BcMap,
@@ -367,8 +435,6 @@ namespace BoSSS.Application.Rheology {
                         }
 
                         // extra stress divergence part:
-                        //comps.Add(new StressDivergence_CentralDifference(d, BcMap, this.Control.Reynolds, this.Control.Penalty1, this.Control.Penalty2));
-                        //comps.Add(new StressDivergence_Burman(d, BcMap, this.Control.Reynolds, this.Control.Penalty1, this.Control.Penalty2));
                         comps.Add(new StressDivergence_Cockburn(d, BcMap, this.Control.Reynolds, this.Control.Penalty1, this.Control.Penalty2));
                     }
 
@@ -379,8 +445,8 @@ namespace BoSSS.Application.Rheology {
                         XOP.EquationComponents["div"].Add(new Divergence_DerivativeSource_Flux(d, BcMap));
 
                         //Pressure stabilization for LDG
-                        var presStab = new PressureStabilization(this.Control.PresPenalty2, this.Control.Reynolds);
-                        XOP.EquationComponents["div"].Add(presStab);
+                        //var presStab = new PressureStabilization(this.Control.PresPenalty2, this.Control.Reynolds);
+                        //XOP.EquationComponents["div"].Add(presStab);
                     }
 
                     // Constitutive equations
@@ -398,7 +464,6 @@ namespace BoSSS.Application.Rheology {
 
                     //Objective Part
 
-                    // Objective PARAM ÜBERPRÜFEN!!!!!!
                     // GradU as params
                     XOP.EquationComponents["constitutiveXX"].Add(new ConstitutiveEqns_Objective(0, BcMap, this.Control.Weissenberg, this.Control.ObjectiveParam, this.Control.StressPenalty));
                     XOP.EquationComponents["constitutiveXY"].Add(new ConstitutiveEqns_Objective(1, BcMap, this.Control.Weissenberg, this.Control.ObjectiveParam, this.Control.StressPenalty));
@@ -408,16 +473,6 @@ namespace BoSSS.Application.Rheology {
                     XOP.EquationComponents["constitutiveXX"].Add(new ConstitutiveEqns_Objective_Tparam(0, BcMap, this.Control.Weissenberg, this.Control.ObjectiveParam));
                     XOP.EquationComponents["constitutiveXY"].Add(new ConstitutiveEqns_Objective_Tparam(1, BcMap, this.Control.Weissenberg, this.Control.ObjectiveParam));
                     XOP.EquationComponents["constitutiveYY"].Add(new ConstitutiveEqns_Objective_Tparam(2, BcMap, this.Control.Weissenberg, this.Control.ObjectiveParam));
-
-                    //GradU and T as params
-                    //XOP.EquationComponents["constitutiveXX"].Add(new ConstitutiveEqns_Objective_allparam(0, BcMap, this.Control.Weissenberg));
-                    //XOP.EquationComponents["constitutiveXY"].Add(new ConstitutiveEqns_Objective_allparam(1, BcMap, this.Control.Weissenberg));
-                    //XOP.EquationComponents["constitutiveYY"].Add(new ConstitutiveEqns_Objective_allparam(2, BcMap, this.Control.Weissenberg));
-
-                    //// GradU as new variable with L-GradU = 0
-                    //XOP.EquationComponents["constitutiveXX"].Add(new ConstitutiveEqns_Objective_withGrad(0, BcMap, this.Control.Weissenberg, this.Control.ObjectiveParam));
-                    //XOP.EquationComponents["constitutiveXY"].Add(new ConstitutiveEqns_Objective_withGrad(1, BcMap, this.Control.Weissenberg, this.Control.ObjectiveParam));
-                    //XOP.EquationComponents["constitutiveYY"].Add(new ConstitutiveEqns_Objective_withGrad(2, BcMap, this.Control.Weissenberg, this.Control.ObjectiveParam));
 
                     // Viscous Part
                     XOP.EquationComponents["constitutiveXX"].Add(new ConstitutiveEqns_Viscosity(0, BcMap, this.Control.beta, this.Control.Penalty1));
@@ -431,34 +486,15 @@ namespace BoSSS.Application.Rheology {
                         XOP.EquationComponents["constitutiveYY"].Add(new ConstitutiveEqns_Diffusion(this.StressYY.Basis.Degree, Grid.SpatialDimension, ((GridData)GridData).Cells.cj, VariableNames.StressYY));
                     }
 
-                    // Velocity Gradient Equations
-                    // ===============================================================================
-
-                    //XOP.EquationComponents["velocitygradXX"].Add(new VelocityGradXX(0, BcMap));
-                    //XOP.EquationComponents["velocitygradXY"].Add(new VelocityGradXX(1, BcMap));
-                    //XOP.EquationComponents["velocitygradYX"].Add(new VelocityGradXX(2, BcMap));
-                    //XOP.EquationComponents["velocitygradYY"].Add(new VelocityGradXX(3, BcMap));
-
-                    //XOP.EquationComponents["velocitygradXX"].Add(new VelocityGrad_SU(0, BcMap));
-                    //XOP.EquationComponents["velocitygradXY"].Add(new VelocityGrad_SU(1, BcMap));
-                    //XOP.EquationComponents["velocitygradYX"].Add(new VelocityGrad_SU(2, BcMap));
-                    //XOP.EquationComponents["velocitygradYY"].Add(new VelocityGrad_SU(3, BcMap));
-
                     // Build spatial operator
-                    //================================================================================
                     XOP.Commit();
-                    //XOP2.Commit();
-
-
 
 
                     // create timestepper
-                    // ------------------
+                    //===============================================================
 
-                    // LEVEL-SET - Dummy, not needed for non-Level-set calculations
-                    //_______________________________________________________________________________________________
+                    // level set - Not needed for non-Level-set calculations
                     LevelSetHandling lsh = LevelSetHandling.None;
-                    //_______________________________________________________________________________________________
 
 
                     SpatialOperatorType SpatialOp = SpatialOperatorType.LinearTimeDependent;
@@ -470,37 +506,36 @@ namespace BoSSS.Application.Rheology {
                     int bdfOrder;
                     if (this.Control.Timestepper_Scheme == RheologyControl.TimesteppingScheme.CrankNicolson)
                         bdfOrder = -1;
-                    //else if (this.Control.Timestepper_Scheme == IBM_Control.TimesteppingScheme.ExplicitEuler)
+                    //else if (this.Control.Timestepper_Scheme == RheologyControl.TimesteppingScheme.ExplicitEuler)
                     //    bdfOrder = 0;
                     else if (this.Control.Timestepper_Scheme == RheologyControl.TimesteppingScheme.ImplicitEuler)
                         bdfOrder = 1;
                     else if (this.Control.Timestepper_Scheme.ToString().StartsWith("BDF"))
                         bdfOrder = Convert.ToInt32(this.Control.Timestepper_Scheme.ToString().Substring(3));
                     else
-                        throw new NotImplementedException("todo");
+                        throw new NotImplementedException("The chosen timestepper is not implemented!");
 
-                    //PlotCurrentState(0, new TimestepNumber(new int[] { 0, 0 }), 2);
 
-                    m_BDF_Timestepper = new XdgBDFTimestepping(ArrayTools.Cat(this.Velocity.Current, this.Pressure, this.StressXX, this.StressXY, this.StressYY), //this.VelocityXGradientX, this.VelocityXGradientY, this.VelocityYGradientX, this.VelocityYGradientY
-                        ArrayTools.Cat(this.ResidualMomentum, this.ResidualConti, this.ResidualStressXX, this.ResidualStressXY, this.ResidualStressYY), //this.ResidualGradXX, this.ResidualGradXY, this.ResidualGradYX, this.ResidualGradYY
+                    m_BDF_Timestepper = new XdgBDFTimestepping(ArrayTools.Cat(this.Velocity.Current, this.Pressure, this.StressXX, this.StressXY, this.StressYY),
+                        ArrayTools.Cat(this.ResidualMomentum, this.ResidualConti, this.ResidualStressXX, this.ResidualStressXY, this.ResidualStressYY),
                         LsTrk, false,
                         DelComputeOperatorMatrix, DelUpdateLevelset,
                         bdfOrder,
                         lsh,
-                        MassMatrixShapeandDependence.IsIdentity,
+                        MassMatrixShapeandDependence.IsTimeDependent,
                         SpatialOp,
                         MassScale,
                         this.MultigridOperatorConfig, base.MultigridSequence,
                         this.FluidSpecies, 1, // no hmf order required.
-                        0, false); //HARDCODED AGGLOMERATION FACTOR -> NOT NEEDED FOR NON-LEVELSET
+                        0, false,
+                        this.Control.NonLinearSolver, this.Control.LinearSolver); //HARDCODED AGGLOMERATION FACTOR -> NOT NEEDED FOR NON-LEVELSET
                     m_BDF_Timestepper.m_ResLogger = base.ResLogger;
                     m_BDF_Timestepper.m_ResidualNames = ArrayTools.Cat(this.ResidualMomentum.Select(f => f.Identification),
-                        ResidualConti.Identification, ResidualStressXX.Identification, ResidualStressXY.Identification, ResidualStressYY.Identification); //ResidualGradXX.Identification, ResidualGradXY.Identification, ResidualGradYX.Identification, ResidualGradYY.Identification
+                        ResidualConti.Identification, ResidualStressXX.Identification, ResidualStressXY.Identification, ResidualStressYY.Identification);
                 }
-                m_BDF_Timestepper.Config_linearSolver = this.Control.LinearSolver;
-                m_BDF_Timestepper.Config_UnderRelax = this.Control.UnderRelax;
-                m_BDF_Timestepper.Config_NonlinearSolver = this.Control.NonlinearMethod;
-                m_BDF_Timestepper.CustomIterationCallback += this.PlotOnIterationCallback;
+
+                //m_BDF_Timestepper.Config_UnderRelax = this.Control.UnderRelax;
+                //m_BDF_Timestepper.CustomIterationCallback += this.PlotOnIterationCallback;
                 //m_BDF_Timestepper.CustomIterationCallback += this.CoupledIterationCallback;
 
             }
@@ -540,11 +575,6 @@ namespace BoSSS.Application.Rheology {
                 }
             }
 
-            //double ResidualNorm = currentRes.L2NormPow2().MPISum().Sqrt();
-            //if (this.Control.UsePerssonSensor == true && this.Control.UseArtificialDiffusion == true) {
-            //    perssonsensor.Update(StressXX);
-            //}
-
             if (solveVelocity && VelocityL2Res < this.VelocitySolver_ConvergenceCriterion) {
                 this.solveVelocity = false;
             }
@@ -554,29 +584,30 @@ namespace BoSSS.Application.Rheology {
 
         }
 
-
-
         /// <summary>
         /// Computation of operator matrix used by the timestepper (<see cref="m_BDF_Timestepper"/>).
         /// </summary>
         protected virtual void DelComputeOperatorMatrix(BlockMsrMatrix OpMatrix, double[] OpAffine, UnsetteledCoordinateMapping Mapping, DGField[] CurrentState, Dictionary<SpeciesId, MultidimensionalArray> AgglomeratedCellLengthScales, double phystime) {
+
             BlockMsrMatrix OutputMatrix;
             double[] OutputAffine;
 
             // parameters...
             int D = this.LsTrk.GridDat.SpatialDimension;
 
+
             AssembleMatrix(out OutputMatrix, out OutputAffine, CurrentState, OpMatrix != null);
             if (OpMatrix != null) {
                 OpMatrix.Clear();
                 OpMatrix.Acc(1.0, OutputMatrix);
             }
+
             OpAffine.Clear();
             OpAffine.AccV(1.0, OutputAffine);
 
+            // Gravity Source (default should be zero!)
             if (Control.GravitySource == true)
             {
-                // Gravity Source (default should be zero!)
                 bool test = false;
 
                 if (this.Control.GravityX != null && this.Control.GravityY != null)
@@ -588,46 +619,35 @@ namespace BoSSS.Application.Rheology {
                     test = true;
                 }
 
-                if (this.Control.GravityXX != null && this.Control.GravityXY != null && this.Control.GravityYY != null)
-                {
-                    GravityXX.ProjectField(this.Control.GravityXX.Vectorize(0.0));
-                    int[] ConstEqIdx1 = this.CurrentSolution.Mapping.GetSubvectorIndices(true, 3);
-                    OpAffine.AccV(-1.0, this.GravityXX.CoordinateVector, ConstEqIdx1, default(int[]));
+                //if (this.Control.GravityXX != null && this.Control.GravityXY != null && this.Control.GravityYY != null)
+                //{
+                //    GravityXX.ProjectField(this.Control.GravityXX.Vectorize(0.0));
+                //    int[] ConstEqIdx1 = this.CurrentSolution.Mapping.GetSubvectorIndices(true, 3);
+                //    OpAffine.AccV(-1.0, this.GravityXX.CoordinateVector, ConstEqIdx1, default(int[]));
 
-                    GravityXY.ProjectField(this.Control.GravityXY.Vectorize(0.0));
-                    int[] ConstEqIdx2 = this.CurrentSolution.Mapping.GetSubvectorIndices(true, 4);
-                    OpAffine.AccV(-1.0, this.GravityXY.CoordinateVector, ConstEqIdx2, default(int[]));
+                //    GravityXY.ProjectField(this.Control.GravityXY.Vectorize(0.0));
+                //    int[] ConstEqIdx2 = this.CurrentSolution.Mapping.GetSubvectorIndices(true, 4);
+                //    OpAffine.AccV(-1.0, this.GravityXY.CoordinateVector, ConstEqIdx2, default(int[]));
 
-                    GravityYY.ProjectField(this.Control.GravityYY.Vectorize(0.0));
-                    int[] ConstEqIdx3 = this.CurrentSolution.Mapping.GetSubvectorIndices(true, 5);
-                    OpAffine.AccV(-1.0, this.GravityYY.CoordinateVector, ConstEqIdx3, default(int[]));
-                    test = true;
-                }
+                //    GravityYY.ProjectField(this.Control.GravityYY.Vectorize(0.0));
+                //    int[] ConstEqIdx3 = this.CurrentSolution.Mapping.GetSubvectorIndices(true, 5);
+                //    OpAffine.AccV(-1.0, this.GravityYY.CoordinateVector, ConstEqIdx3, default(int[]));
+                //    test = true;
+                //}
 
-                if (this.Control.GravityDiv != null)
-                {
-                    GravityDiv.ProjectField(this.Control.GravityDiv.Vectorize(0.0));
-                    int[] ContiEqIdx = this.CurrentSolution.Mapping.GetSubvectorIndices(true, 2);
-                    OpAffine.AccV(-1.0, this.GravityDiv.CoordinateVector, ContiEqIdx, default(int[]));
-                    test = true;
-                }
+                //if (this.Control.GravityDiv != null)
+                //{
+                //    GravityDiv.ProjectField(this.Control.GravityDiv.Vectorize(0.0));
+                //    int[] ContiEqIdx = this.CurrentSolution.Mapping.GetSubvectorIndices(true, 2);
+                //    OpAffine.AccV(-1.0, this.GravityDiv.CoordinateVector, ContiEqIdx, default(int[]));
+                //    test = true;
+                //}
 
                 if (!test)
                 {
                     throw new ApplicationException("Gravity is true, but no values set!");
                 }
             }
-
-            // create mappings
-            //var codMap = this.CurrentResidual.Mapping;
-            //var domMap = this.CurrentSolution.Mapping;
-
-            //double ResidualNorm = CurrentResidual.L2NormPow2().MPISum().Sqrt();
-            //SinglePhaseField ResFieldvelX = (SinglePhaseField)codMap[0];
-
-            //PlotCurrentState(phystime, 0, m_opt.SuperSampling);
-
-
         }
 
         /// <summary>
@@ -638,23 +658,24 @@ namespace BoSSS.Application.Rheology {
         }
 
 
-        int m_iterationCounter = 0;
-
-
         // Build and solve system
         //=================================================================
         /// <summary>
-        /// Depending on settings <see cref="IBM_Control.Option_Timestepper"/>, computes either one timestep or a steady-state solution.
+        /// Depending on settings, computes either one timestep or a steady-state solution.
         /// </summary>
         protected override double RunSolverOneStep(int TimestepInt, double phystime, double dt) {
             using (new FuncTrace()) {
 
                 if (this.Control.OperatorMatrixAnalysis == true) {
-                    SpatialOperatorMatrixAnalysis(false, this.Control.AnalysisLevel);
+                    SpatialOperatorAnalysis.SpatialOperatorMatrixAnalysis(false, this.Control.AnalysisLevel);
                 }
 
                 TimestepNumber TimestepNo = new TimestepNumber(TimestepInt, 0);
                 int D = this.GridData.SpatialDimension;
+
+                if (TimestepNo[0] > 1) {
+                    this.Control.RaiseWeissenberg = false;
+                }
 
                 base.ResLogger.TimeStep = TimestepInt;
 
@@ -665,10 +686,6 @@ namespace BoSSS.Application.Rheology {
 
                 Console.WriteLine("Instationary solve, timestep #{0}, dt = {1} ...", TimestepNo, dt);
                 bool m_SkipSolveAndEvaluateResidual = this.Control.SkipSolveAndEvaluateResidual;
-                //PlotCurrentState(phystime, TimestepNo);
-                m_BDF_Timestepper.Config_SolverConvergenceCriterion = Control.ConvCrit;
-                m_BDF_Timestepper.Config_MaxIterations = Control.MaxIter;
-                m_BDF_Timestepper.Config_MinIterations = Control.MinIter;
 
                 if (Control.RaiseWeissenberg == true) {
 
@@ -688,14 +705,39 @@ namespace BoSSS.Application.Rheology {
 
                     for (int i = 0; i <= NoIncrementTimestep; i++) {
 
+                        if(Control.UseArtificialDiffusion == true){
+
+                        
                         artificialMaxViscosity = 1.0;
 
-                        for(int j = 0; j<3; j++) {
+                            for (int j = 0; j < 3; j++) {
 
-                            if (Control.UsePerssonSensor == true) {
-                                perssonsensor.Update(StressXX);
+                                if (Control.UsePerssonSensor == true) {
+                                    perssonsensor.Update(StressXX);
+                                } else {
+                                    throw new ArgumentException("artificial viscosity is turned on, but Persson sensor is turned off!");
+                                }
+
+                                m_BDF_Timestepper.Solve(phystime, dt, m_SkipSolveAndEvaluateResidual);
+
+                                //this.ResLogger.NextTimestep(false);
+
+                                // this evaluation must later out of this loop. now here for comparing resluts with  
+                                PlotCurrentState(phystime, new TimestepNumber(TimestepNo.MajorNumber, i));
+                                SaveToDatabase(new TimestepNumber(TimestepNo.MajorNumber, i), phystime);
+
+                                if (Control.Bodyforces == true) {
+
+                                    double[] force = IBMSolverUtils.GetForces_BoundaryFitted(VelocityXGradient, VelocityYGradient, StressXX, StressXY, StressYY, Pressure, LevSetTrk, 1 / Control.Reynolds, Control.beta);
+                                    Console.WriteLine();
+                                    Console.WriteLine("Force in x:" + force[0] + ", force in y:" + force[1]);
+                                    Console.WriteLine();
+
+                                }
+
+                                artificialMaxViscosity = artificialMaxViscosity - 0.5;
                             }
-
+                        } else {
                             m_BDF_Timestepper.Solve(phystime, dt, m_SkipSolveAndEvaluateResidual);
 
                             //this.ResLogger.NextTimestep(false);
@@ -706,14 +748,12 @@ namespace BoSSS.Application.Rheology {
 
                             if (Control.Bodyforces == true) {
 
-                                    double[] force = IBMSolverUtils.GetForces_BoundaryFitted(VelocityXGradient, VelocityYGradient, StressXX, StressXY, StressYY, Pressure, LevSetTrk, 1 / Control.Reynolds, Control.beta);
-                                    Console.WriteLine();
-                                    Console.WriteLine("Force in x:" + force[0] + ", force in y:" + force[1]);
-                                    Console.WriteLine();
+                                double[] force = IBMSolverUtils.GetForces_BoundaryFitted(VelocityXGradient, VelocityYGradient, StressXX, StressXY, StressYY, Pressure, LevSetTrk, 1 / Control.Reynolds, Control.beta);
+                                Console.WriteLine();
+                                Console.WriteLine("Force in x:" + force[0] + ", force in y:" + force[1]);
+                                Console.WriteLine();
 
                             }
-
-                            artificialMaxViscosity = artificialMaxViscosity - 0.5;
                         }
 
                         ChangeMesh = Control.AdaptiveMeshRefinement;
@@ -735,39 +775,81 @@ namespace BoSSS.Application.Rheology {
 
                     currentWeissenberg = Control.Weissenberg;
 
-                    if (Control.UsePerssonSensor == true) {
-                        perssonsensor.Update(StressXX);
-                    }
+                    if (Control.UseArtificialDiffusion == true) {
+                        artificialMaxViscosity = 1.0;
 
-                    m_BDF_Timestepper.Solve(phystime, dt, m_SkipSolveAndEvaluateResidual);
+                        for (int j = 0; j < 3; j++) {
 
-                    ChangeMesh = Control.AdaptiveMeshRefinement;
-                    while (ChangeMesh == true) {
-                        this.MpiRedistributeAndMeshAdapt(TimestepNo.MajorNumber, phystime);
+                            if (Control.UsePerssonSensor == true) {
+                                perssonsensor.Update(StressXX);
+                            } else {
+                                throw new ArgumentException("artificial viscosity is turned on, but Persson sensor is turned off!");
+                            }
+
+                            m_BDF_Timestepper.Solve(phystime, dt, m_SkipSolveAndEvaluateResidual);
+
+                            // this evaluation must later out of this loop. now here for comparing resluts with  
+                            //PlotCurrentState(phystime, new TimestepNumber(TimestepNo.MajorNumber, i));
+                            //SaveToDatabase(new TimestepNumber(TimestepNo.MajorNumber, i), phystime);
+
+                            if (Control.Bodyforces == true) {
+
+                                double[] force = IBMSolverUtils.GetForces_BoundaryFitted(VelocityXGradient, VelocityYGradient, StressXX, StressXY, StressYY, Pressure, LevSetTrk, 1 / Control.Reynolds, Control.beta);
+                                Console.WriteLine();
+                                Console.WriteLine("Force in x:" + force[0] + ", force in y:" + force[1]);
+                                Console.WriteLine();
+
+                            }
+
+                            artificialMaxViscosity = artificialMaxViscosity - 0.5;
+                        }
+
+                        ChangeMesh = Control.AdaptiveMeshRefinement;
+                        while (ChangeMesh == true) {
+                            this.MpiRedistributeAndMeshAdapt(TimestepNo.MajorNumber, phystime);
+                        }
+                    } else {
+
+                        m_BDF_Timestepper.Solve(phystime, dt, m_SkipSolveAndEvaluateResidual);
+
+                        // simple implicit Euler solve for debugging and excluding the bdf timestepper
+                        //____________________________________________________________________________________
+                        //Console.WriteLine("CAREFUL! Simple implicit Euler unsteady solve for Debugging!");
+                        //var map = this.CurrentSolution.Mapping;
+                        //var Mtx = new BlockMsrMatrix(map, map);
+                        //double[] b = new double[map.LocalLength];
+                        //this.DelComputeOperatorMatrix(Mtx, b, map, map.Fields.ToArray(), null, phystime + dt);
+
+                        //double[] RHS = new double[map.LocalLength];
+                        //RHS.AccV(-1, b);
+                        //int J = this.GridData.iLogicalCells.NoOfLocalUpdatedCells;
+                        //int Np = this.Velocity.Current[0].Basis.Length;
+                        //double oodt = 1.0 / dt;
+                        //for (int j = 0; j < J; j++) { // loop over cells
+                        //    for (int iVar = 0; iVar < 2; iVar++) { // loop over VelX, VelY
+                        //        for (int n = 0; n < Np; n++) {
+                        //            int iLoc = map.LocalUniqueCoordinateIndex(iVar, j, n);
+                        //            RHS[iLoc] += oodt * this.CurrentSolution[iLoc];
+
+                        //            int iGlob = map.GlobalUniqueCoordinateIndex(iVar, j, n);
+                        //            Mtx[iGlob, iGlob] += oodt;
+                        //        }
+                        //    }
+                        //}
+
+                        //Mtx.Solve_Direct(this.CurrentSolution, RHS);
+                        //____________________________________________________________________________________________
+
+                        if (Control.Bodyforces == true) {
+
+                            double[] force = IBMSolverUtils.GetForces_BoundaryFitted(VelocityXGradient, VelocityYGradient, StressXX, StressXY, StressYY, Pressure, LevSetTrk, 1 / Control.Reynolds, Control.beta);
+                            Console.WriteLine();
+                            Console.WriteLine("Force in x:" + force[0] + ", force in y:" + force[1]);
+                            Console.WriteLine();
+
+                        }
                     }
                 }
-
-
-
-                //if (Control.RaiseWeissenberg == true)
-                //{
-                //    //int timeintervall = 20;
-                //    //if (TimestepNo > timeintervall)
-                //    //{
-                //        if (Control.Weissenberg < 10)
-                //        {
-                //            var newWeissenberg = Control.Weissenberg + 0.1;
-                //            Console.WriteLine();
-                //            Console.WriteLine("Raise Weisenberg number from " + Control.Weissenberg + " to " + newWeissenberg);
-                //            Console.WriteLine();
-                //            Control.Weissenberg = newWeissenberg;
-                //            m_BDF_Timestepper = null;
-                //            CreateEquationsAndSolvers(null);
-                            
-                //       //     timeintervall += TimestepNo;
-                //        }
-                //   // }
-                //}
 
                 if (Control.ComputeL2Error == true) {
                     this.ComputeL2Error();
@@ -781,38 +863,12 @@ namespace BoSSS.Application.Rheology {
             }
         }
 
-        /// <summary>
-        /// Block scaling of the mass matrix: for each species $\frakS$, a vector $(\rho_\frakS, \ldots, \rho_frakS, 0 )$.
-        /// </summary>
-        protected IDictionary<SpeciesId, IEnumerable<double>> MassScale {
-            get {
-                double rho = 1; // this.Control.PhysicalParameters.rho_A;
-
-                int D = this.GridData.SpatialDimension;
-
-                double[] _rho = new double[D + 4];
-                _rho.SetAll(rho);
-                //No MassMatrix for the pressure
-                _rho[D] = 0;
-
-                _rho[D + 1] = 1;
-                _rho[D + 2] = 1;
-                _rho[D + 3] = 1;
-                Dictionary<SpeciesId, IEnumerable<double>> R = new Dictionary<SpeciesId, IEnumerable<double>>();
-                R.Add(this.LsTrk.GetSpeciesId("A"), _rho);
-
-                return R;
-            }
-        }
 
         void ParameterUpdate(IEnumerable<DGField> CurrentState, IEnumerable<DGField> ParameterVar) {
+
             var U0 = new VectorField<SinglePhaseField>(CurrentState.Take(D).Select(F => (SinglePhaseField)F).ToArray());
             var Stress0 = new VectorField<SinglePhaseField>(CurrentState.Skip(D+1).Take(3).Select(F => (SinglePhaseField)F).ToArray());
 
-            //var Params = ArrayTools.Cat<DGField>(U0_U0mean, VelocityXGradient, VelocityYGradient, Stress0);
-            //SinglePhaseField[] param_U0 = ParameterVar.Skip(D).Take(D).ToArray();
-
-            //SinglePhaseField[] U0_U0mean;
             if (this.U0MeanRequired) {
                 
                 SinglePhaseField[] __U0mean = ParameterVar.Skip(D).Take(D).Select(f => f as SinglePhaseField).ToArray();
@@ -846,32 +902,28 @@ namespace BoSSS.Application.Rheology {
                     throw new ApplicationException();
 
                 ArtificialViscosity.ProjectArtificalViscosityToDGField(__ArtificialViscosity, perssonsensor, this.Control.SensorLimit, artificialMaxViscosity);
-
-                //ContinuousDGField continuousField = new ContinuousDGField(artificalViscosity.Basis);
-                //continuousField.ProjectDGField(1.0, __ArtificialViscosity);
-                //__ArtificialViscosity.Clear();
-                //continuousField.AccToDGField(1.0, __ArtificialViscosity);
             }
         }
-        
 
+
+        /// <summary>
+        /// Computation of operator matrix to be used by DelComputeOperatorMatrix, the SpatialOperatorAnalysis and sone unit tests(<see cref="m_BDF_Timestepper"/>).
+        /// </summary>
         public void AssembleMatrix(out BlockMsrMatrix OpMatrix, out double[] OpAffine, DGField[] CurrentState, bool Linearization) {
 
-            // check:
             D = this.GridData.SpatialDimension;
-
             var U0 = new VectorField<SinglePhaseField>(CurrentState.Take(D).Select(F => (SinglePhaseField)F).ToArray());
             var Stress0 = new VectorField<SinglePhaseField>(CurrentState.Skip(D+1).Take(3).Select(F => (SinglePhaseField)F).ToArray());
 
             if (U0.Count != D)
-                throw new ArgumentException();
+                throw new ArgumentException("Spatial dimesion and number of velocity parameter components does not match!");
 
             if (Stress0.Count != D+1)
-                throw new ArgumentException();
+                throw new ArgumentException("Spatial dimesion and number of stress parameter components does not match!");      
 
-           
 
-            // parameters...
+            // parameters
+            //============================================================
             SinglePhaseField[] U0_U0mean;
             if (this.U0MeanRequired) {
                 Basis U0meanBasis = new Basis(GridData, 0);
@@ -885,28 +937,28 @@ namespace BoSSS.Application.Rheology {
 
             var Params = ArrayTools.Cat<DGField>(U0_U0mean, VelocityXGradient, VelocityYGradient, Stress0, artificalViscosity);
 
+
             // create mappings
+            //==========================================================
             var codMap = this.CurrentResidual.Mapping;
             var domMap = this.CurrentSolution.Mapping;
 
 
+            // provide a linearization of the operator
+            //===========================================================
             if (Linearization) {
-                // +++++++++++++++++++++++++++++++++++++++
-                // provide a linearization of the operator
-                // +++++++++++++++++++++++++++++++++++++++
 
                 bool useJacobianForOperatorMatrix = true;
 
-                if (this.Control.NonlinearMethod == NonlinearSolverMethod.Picard)
-                useJacobianForOperatorMatrix = false;
+                //if (this.Control.NonlinearMethod == NonlinearSolverMethod.Picard)
+                    useJacobianForOperatorMatrix = false;
 
                 // create matrix and affine vector:
                 OpMatrix = new BlockMsrMatrix(codMap, domMap);
                 OpAffine = new double[codMap.LocalLength];
 
-                // 'custom' Linearization 
-                // ----------------------
 
+                // 'custom' Linearization 
                 if (!useJacobianForOperatorMatrix) {
 
                     var Mbuilder = XOP.GetMatrixBuilder(domMap, Params, codMap);
@@ -916,44 +968,41 @@ namespace BoSSS.Application.Rheology {
 
                 } else {
                     // Finite Difference Linearization
-                    // -------------------------------
-
-                    //var CheckMatrix = new BlockMsrMatrix(codMap, domMap);
-                    //var CheckAffine = new double[codMap.GlobalCount];
-
-
 
                     var FDbuilder = XOP.GetFDJacobianBuilder(domMap, Params, codMap, this.ParameterUpdate);
                     FDbuilder.ComputeMatrix(OpMatrix, OpAffine);
+
+                    // FDJacobian has (Mx +b) as RHS, for unsteady calc. we must subtract Mx for real affine Vector!
+                    OpMatrix.SpMV(-1.0, new CoordinateVector(CurrentState), 1.0, OpAffine);
+
                     FDbuilder.OperatorCoefficients.UserDefinedValues.Add("Weissenbergnumber", currentWeissenberg);
                 }
 
-                //var ErrMatrix = OpMatrix.CloneAs();
-                //var ErrAffine = OpAffine.CloneAs();
-                //ErrMatrix.Acc(-1.0, CheckMatrix);
-                //ErrAffine.AccV(-1.0, CheckAffine);
-                //double LinfMtx = ErrMatrix.InfNorm();
-                //double L2Aff = ErrAffine.L2NormPow2().MPISum().Sqrt();
-                //Console.WriteLine("-----  Matrix/Affine delta norm {0} {1}", LinfMtx, L2Aff);
+                // Set Pressure Reference Point
+                //======================================================
+                if (!this.BcMap.DirichletPressureBoundary) {
+                    if (OpMatrix != null) {
 
-                //extract Matrix
-                //Mbuilder.SaveToTextFileSparse("C:\\BoSSS-code\\internal\\src\\experimental\\L4-application\\RheologySolver2\\bin\\Release\\Mbuilder.txt");
-                //FDbuilder.SaveToTextFileSparse("C:\\BoSSS-code\\internal\\src\\experimental\\L4-application\\RheologySolver2\\bin\\Release\\FDbuilder.txt");
-
-
-
-                if (!this.BcMap.DirichletPressureBoundary)
-                {
-                    SolverUtils.SetRefPtPressure_Matrix(OpMatrix, this.PressureRefCellIndex);
-                    SolverUtils.SetRefPtPressure_Rhs(OpAffine, PressureRefCellIndex, codMap.i0);
+                        IBMSolverUtils.SetPressureReferencePoint(
+                            CurrentSolution.Mapping,
+                            this.GridData.SpatialDimension,
+                            this.LsTrk,
+                            OpMatrix, OpAffine);
+                    } else {
+                        IBMSolverUtils.SetPressureReferencePointResidual(
+                            new CoordinateVector(CurrentState),
+                            this.GridData.SpatialDimension,
+                            this.LsTrk,
+                            OpAffine);
+                    }
                 }
 
                 OpMatrix.CheckForNanOrInfM();
                 OpAffine.CheckForNanOrInfV();
             } else {
-                // +++++++++++++++++++++++++++++++++++++++
+
                 // explicit evaluation of the operator
-                // +++++++++++++++++++++++++++++++++++++++
+                //========================================================
 
                 OpMatrix = null;
                 OpAffine = new double[codMap.LocalLength];
@@ -968,273 +1017,9 @@ namespace BoSSS.Application.Rheology {
         }
 
         /// <summary>
-        /// Computes condition number, etc. of the current system matrix.
-        /// </summary>
-        /// <param name="CheckAssertions"></param>
-        /// <param name="AnalysisLevel">
-        /// - equal 0: check that pressure gradient and velocity divergence are transpose
-        /// - equal 1: in addition, positive definiteness test.
-        /// - equal 2: in addition, check condition number and eigenvalues using MATLAB
-        /// </param>
-        public void SpatialOperatorMatrixAnalysis(bool CheckAssertions, int AnalysisLevel)
-        {
-            using (new FuncTrace())
-            {
-                int D = this.Grid.SpatialDimension;
-
-                if (AnalysisLevel < 0 || AnalysisLevel > 2)
-                    throw new ArgumentException();
-
-
-                BlockMsrMatrix OpMatrix;
-                double[] OpAffine;
-
-                AssembleMatrix(out OpMatrix, out OpAffine, this.CurrentSolution.Mapping.ToArray(), true);
-
-
-                // =============================
-                // AnalysisLevel 0
-                // =============================
-                {
-                    var OpMatrixT = OpMatrix.Transpose();
-
-                    CoordinateVector TestVec = new CoordinateVector(this.CurrentSolution.Mapping.Fields.Select(f => f.CloneAs()).ToArray());
-
-                    double testsumPos = 0.0;
-                    double testsumNeg = 0.0;
-                    for (int rnd_seed = 0; rnd_seed < 20; rnd_seed++)
-                    {
-
-                        // fill the pressure components of the test vector
-                        TestVec.Clear();
-                        Random rnd = new Random(rnd_seed);
-                        DGField Pressack = TestVec.Mapping.Fields[D] as DGField;
-                        int J = this.GridData.iLogicalCells.NoOfLocalUpdatedCells;
-                        for (int j = 0; j < J; j++)
-                        {
-                            int N = Pressack.Basis.GetLength(j);
-
-                            for (int n = 0; n < N; n++)
-                                Pressack.Coordinates[j, n] = rnd.NextDouble();
-                        }
-
-                        // Gradient times P:
-                        double[] R1 = new double[TestVec.Count];
-                        OpMatrix.SpMV(1.0, TestVec, 0.0, R1);       // R1 = Grad * P
-                        //Console.WriteLine("L2 of 'Grad * P': " + R1.L2Norm());
-
-                        // transpose of Divergence times P: 
-                        double[] R2 = new double[TestVec.Count];
-                        OpMatrix.SpMV(1.0, TestVec, 0.0, R2);      // R2 = divT * P
-                        //Console.WriteLine("L2 of 'divT * P': " + R2.L2Norm());
-
-                        TestVec.Clear();
-                        TestVec.Acc(1.0, R1);
-                        TestVec.Acc(1.0, R2);
-
-
-                        // analyze!
-                        testsumNeg += GenericBlas.L2Dist(R1, R2);
-
-                        R2.ScaleV(-1.0);
-                        testsumPos += GenericBlas.L2Dist(R1, R2);
-
-                    }
-
-                    Console.WriteLine("Pressure/Divergence Symmetry error in all tests (+): " + testsumPos);
-                    Console.WriteLine("Pressure/Divergence Symmetry error in all tests (-): " + testsumNeg);
-
-                    if (CheckAssertions)
-                        Assert.LessOrEqual(Math.Abs(testsumNeg), testsumPos * 1.0e-13);
-                }
-
-
-                // =============================
-                // AnalysisLevel 1 and 2
-                // =============================
-
-                if (AnalysisLevel > 0)
-                {
-                    AggregationGridBasis[][] MgBasis = AggregationGridBasis.CreateSequence(this.MultigridSequence, this.CurrentSolution.Mapping.BasisS);
-                    MultigridOperator mgOp = new MultigridOperator(MgBasis, this.CurrentSolution.Mapping,
-                        OpMatrix, null, this.MultigridOperatorConfig);
-
-                    // extract
-                    ////////////
-
-                    MsrMatrix FullMatrix = mgOp.OperatorMatrix.ToMsrMatrix();
-
-                    MsrMatrix DiffMatrix;
-                    {
-                        int[] VelVarIdx = D.ForLoop(d => d);
-
-                        int[] USubMatrixIdx_Row = mgOp.Mapping.GetSubvectorIndices(VelVarIdx);
-                        int[] USubMatrixIdx_Col = mgOp.Mapping.GetSubvectorIndices(VelVarIdx);
-                        int L = USubMatrixIdx_Row.Length;
-
-                        DiffMatrix = new MsrMatrix(L, L, 1, 1);
-                        FullMatrix.WriteSubMatrixTo(DiffMatrix, USubMatrixIdx_Row, default(int[]), USubMatrixIdx_Col, default(int[]));
-
-                        double DiffMatrix_sd = DiffMatrix.SymmetryDeviation();
-                        Console.WriteLine("Diffusion assymetry:" + DiffMatrix_sd);
-                    }
-
-                    MsrMatrix SaddlePointMatrix;
-                    {
-                        int[] VelPVarIdx = new int[] { 0, 1, 2 };
-
-                        int[] VelPSubMatrixIdx_Row = mgOp.Mapping.GetSubvectorIndices(VelPVarIdx);
-                        int[] VelPSubMatrixIdx_Col = mgOp.Mapping.GetSubvectorIndices(VelPVarIdx);
-                        int L = VelPSubMatrixIdx_Row.Length;
-
-                        SaddlePointMatrix = new MsrMatrix(L, L, 1, 1);
-                        FullMatrix.WriteSubMatrixTo(SaddlePointMatrix, VelPSubMatrixIdx_Row, default(int[]), VelPSubMatrixIdx_Col, default(int[]));
-                    }
-                    //SaddlePointMatrix.SaveToTextFileSparse("C:\\Users\\kikker\\Documents\\MATLAB\\spm.txt");
-
-                    MsrMatrix ConstitutiveMatrix;
-                    {
-                        int[] StressVarIdx = new int[] { 3, 4, 5 };
-
-                        int[] StressSubMatrixIdx_Row = mgOp.Mapping.GetSubvectorIndices(StressVarIdx);
-                        int[] StressSubMatrixIdx_Col = mgOp.Mapping.GetSubvectorIndices(StressVarIdx);
-                        int L = StressSubMatrixIdx_Row.Length;
-
-                        ConstitutiveMatrix = new MsrMatrix(L, L, 1, 1);
-                        FullMatrix.WriteSubMatrixTo(ConstitutiveMatrix, StressSubMatrixIdx_Row, default(int[]), StressSubMatrixIdx_Col, default(int[]));
-                    }
-
-                    // operator analysis
-                    //////////////////////
-
-                    bool posDef;
-                    if (AnalysisLevel > 1)
-                    {
-                        // +++++++++++++++++++++++++++++++
-                        // check condition number, etc
-                        // +++++++++++++++++++++++++++++++
-
-                        MultidimensionalArray ret = MultidimensionalArray.Create(1, 5);
-                        Console.WriteLine("Calling MATLAB/Octave...");
-                        using (BatchmodeConnector bmc = new BatchmodeConnector())
-                        {
-                            bmc.PutSparseMatrix(FullMatrix, "FullMatrix");
-                            bmc.PutSparseMatrix(SaddlePointMatrix, "SaddlePointMatrix");
-                            bmc.PutSparseMatrix(ConstitutiveMatrix, "ConstitutiveMatrix");
-                            bmc.PutSparseMatrix(DiffMatrix, "DiffMatrix");
-
-                            bmc.Cmd("DiffMatrix = 0.5*(DiffMatrix + DiffMatrix');");
-
-                            bmc.Cmd("condNoFullMatrix = condest(FullMatrix);");
-                            bmc.Cmd("condNoSaddlePointMatrix = condest(SaddlePointMatrix);");
-                            bmc.Cmd("condNoConstitutiveMatrix = condest(ConstitutiveMatrix);");
-                            bmc.Cmd("condNoDiffMatrix = condest(DiffMatrix);");
-
-                            //bmc.Cmd("eigiMaxiSaddle = 1.0; % eigs(SaddlePointMatrix,1,'lm')");
-                            //bmc.Cmd("eigiMiniSaddle = 1.0; % eigs(SaddlePointMatrix,1,'sm')");
-                            //bmc.Cmd("eigiMaxiConst = 1.0; % eigs(ConstitutiveMatrix,1,'lm')");
-                            //bmc.Cmd("eigiMiniConst = 1.0; % eigs(ConstitutiveMatrix,1,'sm')");
-                            //bmc.Cmd("eigiMaxiDiff = 1.0; % eigs(DiffMatrix,1,'lm')");
-                            //bmc.Cmd("eigiMiniDiff = 1.0; % eigs(DiffMatrix,1,'sm')");
-
-                            bmc.Cmd("lasterr");
-                            bmc.Cmd("[V,r]=chol(SaddlePointMatrix);");
-                            bmc.Cmd("[V,r]=chol(ConstitutiveMatrix);");
-                            bmc.Cmd("ret = [condNoFullMatrix, condNoSaddlePointMatrix, condNoConstitutiveMatrix, condNoDiffMatrix, r]"); //eigiMaxiSaddle, eigiMiniSaddle, eigiMaxiConst, eigiMiniConst, eigiMaxiDiff, eigiMiniDiff,
-                            bmc.GetMatrix(ret, "ret");
-
-                            bmc.Execute(false);
-                        }
-
-                        double condNoFullMatrix = ret[0, 0];
-                        double condNoSaddlePMatrix = ret[0, 1];
-                        double condNoConstitutiveMatrix = ret[0, 2];
-                        double condNoDiffMatrix = ret[0, 3];
-                        //double eigiMaxiSaddle = ret[0, 4];
-                        //double eigiMiniSaddle = ret[0, 5];
-                        //double eigiMaxiConst = ret[0, 6];
-                        //double eigiMiniConst = ret[0, 7];
-                        //double eigiMaxiDiff = ret[0, 8];
-                        //double eigiMiniDiff = ret[0, 9];
-                        posDef = ret[0, 4] == 0;
-
-                        //Console.WriteLine("Eigenvalue range of saddle point matrix: {0} to {1}", eigiMiniSaddle, eigiMaxiSaddle);
-                        //Console.WriteLine("Eigenvalue range of constitutive matrix: {0} to {1}", eigiMiniConst, eigiMaxiConst);
-                        //Console.WriteLine("Eigenvalue range of diffusion matrix: {0} to {1}", eigiMiniDiff, eigiMaxiDiff);
-
-                        Console.WriteLine("Condition number full operator: {0:0.####E-00}", condNoFullMatrix);
-                        Console.WriteLine("Condition number saddle point operator: {0:0.####E-00}", condNoSaddlePMatrix);
-                        Console.WriteLine("Condition number constitutive operator: {0:0.####E-00}", condNoConstitutiveMatrix);
-                        Console.WriteLine("Condition number diffusion operator: {0:0.####E-00}", condNoDiffMatrix);
-
-                        base.QueryHandler.ValueQuery("ConditionNumber", condNoFullMatrix);
-
-                    }
-                    else
-                    {
-                        // +++++++++++++++++++++++++++++++++++++++
-                        // test only for positive definiteness
-                        // +++++++++++++++++++++++++++++++++++++++
-
-                        var SaddlePMatrixFull = SaddlePointMatrix.ToFullMatrixOnProc0();
-                        var ConstMatrixFull = ConstitutiveMatrix.ToFullMatrixOnProc0();
-
-
-                        posDef = true;
-                        try
-                        {
-                            SaddlePMatrixFull.Cholesky();
-                        }
-                        catch (ArithmeticException)
-                        {
-                            posDef = false;
-                        }
-
-                        posDef = true;
-                        try
-                        {
-                            ConstMatrixFull.Cholesky();
-                        }
-                        catch (ArithmeticException)
-                        {
-                            posDef = false;
-                        }
-                    }
-
-
-                    double SaddlePSymm = SaddlePointMatrix.SymmetryDeviation();
-                    Console.WriteLine("Symmetry deviation of saddle point matrix: " + SaddlePSymm);
-
-                    if (posDef)
-                        Console.WriteLine("Good news: Saddle point operator matrix seems to be positive definite.");
-                    else
-                        Console.WriteLine("WARNING: Saddle point operator matrix is not positive definite.");
-
-
-                    double ConstSymm = ConstitutiveMatrix.SymmetryDeviation();
-                    Console.WriteLine("Symmetry deviation of constitutive matrix: " + ConstSymm);
-
-                    if (posDef)
-                        Console.WriteLine("Good news: constitutive operator matrix seems to be positive definite.");
-                    else
-                        Console.WriteLine("WARNING: constitutive operator matrix is not positive definite.");
-
-                    //if (CheckAssertions) {
-                    //    if (Control.AdvancedDiscretizationOptions.ViscosityMode == ViscosityMode.FullySymmetric && Control.PhysicalParameters.IncludeConvection == false) {
-                    //        Assert.IsTrue(posDef, "Positive definiteness test failed.");
-                    //        double compVal = DiffMatrix.InfNorm() * 1e-13;
-                    //        Assert.LessOrEqual(DiffSymm, compVal, "Diffusion matrix seems to be non-symmetric.");
-                    //    }
-                    //}
-                }
-            }
-        }
-
-
-        /// <summary>
         /// configuration options for <see cref="MultigridOperator"/>.
         /// </summary>
-        MultigridOperator.ChangeOfBasisConfig[][] MultigridOperatorConfig {
+        public MultigridOperator.ChangeOfBasisConfig[][] MultigridOperatorConfig {
             get {
                 int pVel = this.Velocity.Current[0].Basis.Degree;
                 int pPrs = this.Pressure.Basis.Degree;
@@ -1271,48 +1056,56 @@ namespace BoSSS.Application.Rheology {
                             VarIndex = new int[] { d }
                         };
                     }
-
-                    //// configurations for velocitygradient
-                    //for (int d = 6; d < 10; d++)
-                    //{
-                    //    configs[iLevel][d] = new MultigridOperator.ChangeOfBasisConfig()
-                    //    {
-                    //        Degree = Math.Max(1, pStr - iLevel),
-                    //        mode = this.Control.VelocityGradientBlockPrecondMode,
-                    //        VarIndex = new int[] { d }
-                    //    };
-                    //}
                 }
 
                 return configs;
             }
         }
 
+        /// <summary>
+        /// Plotting the current state
+        /// </summary>
         protected override void PlotCurrentState(double physTime, Foundation.IO.TimestepNumber timestepNo, int superSampling = 0) {
             // Standard
-            DGField[] myFields = ArrayTools.Cat<DGField>(Velocity.Current, ResidualMomentum, ResidualConti, Pressure, StressXX, StressXY, StressYY, LevSet, ResidualStressXX, ResidualStressXY, ResidualStressYY, perssonsensor.GetField(), artificalViscosity);
+            DGField[] myFields = ArrayTools.Cat<DGField>(Velocity.Current, ResidualMomentum, ResidualConti, Pressure, StressXX, StressXY, StressYY, LevSet, ResidualStressXX, ResidualStressXY, ResidualStressYY); //, VelocityXGradient, VelocityYGradient, Gravity
 
-            // Add sensor field only if Persson sensor exists
-            //if (perssonsensor != null) {
-            //    myFields.AddRange(perssonsensor.GetField());
-            //}
+            //Add sensor field only if Persson sensor exists
+            if (perssonsensor != null) {
+                myFields = ArrayTools.Cat<DGField>(myFields, perssonsensor.GetField());
+            }
 
-            Tecplot.PlotFields(
-                myFields,
-                "Rheology-" + timestepNo.ToString(),
-                physTime,
-                superSampling); //, VelocityXGradient, VelocityYGradient, Gravity
+            //Add field only if artificial viscosity is turned on
+            if (artificalViscosity != null) {
+                myFields = ArrayTools.Cat<DGField>(myFields, artificalViscosity);
+            }
+
+            Tecplot.PlotFields(myFields, "Rheology-" + timestepNo.ToString(), physTime, superSampling); 
         }
 
+
+        /// <summary>
+        /// Plotting the in interation callback
+        /// </summary>
         protected void PlotOnIterationCallback(int iterIndex, double[] currentSol, double[] currentRes, MultigridOperator Mgop) {
-            Tecplot.PlotFields(
-                ArrayTools.Cat<DGField>(Velocity.Current, ResidualMomentum, ResidualConti, Pressure, StressXX, StressXY, StressYY, LevSet, ResidualStressXX,
-                ResidualStressXY, ResidualStressYY, perssonsensor.GetField(), artificalViscosity),
-                "Rheology-" + iterIndex.ToString(),
-                0.0,
-                2); //, VelocityXGradient, VelocityYGradient, Gravity
+            // Standard
+            DGField[] myFields = ArrayTools.Cat<DGField>(Velocity.Current, ResidualMomentum, ResidualConti, Pressure, StressXX, StressXY, StressYY, LevSet, ResidualStressXX, ResidualStressXY, ResidualStressYY); //, VelocityXGradient, VelocityYGradient, Gravity,
+
+            //Add sensor field only if Persson sensor exists
+            if (perssonsensor != null) {
+                myFields = ArrayTools.Cat<DGField>(myFields, perssonsensor.GetField());
+            }
+
+            //Add field only if artificial viscosity is turned on
+            if (artificalViscosity != null) {
+                myFields = ArrayTools.Cat<DGField>(myFields, artificalViscosity);
+            }
+
+            Tecplot.PlotFields( myFields, "Rheology-" + iterIndex.ToString(), 0.0, 2); 
         }
 
+        /// <summary>
+        /// Initialising the DG fields
+        /// </summary>
         protected override void SetInitial() {
             base.SetInitial();
             this.LsTrk.UpdateTracker();
@@ -1333,34 +1126,37 @@ namespace BoSSS.Application.Rheology {
                 VelocityYGradient.Gradient(1.0, V);
             }
 
-            Console.WriteLine("Total number of cells:    {0}", Grid.Cells.Count().MPISum());
-            Console.WriteLine("Total number of DOFs:     {0}", CurrentSolution.Count().MPISum());
+            Console.WriteLine("Total number of cells:    {0}", Grid.NumberOfCells);
+            Console.WriteLine("Total number of DOFs:     {0}", CurrentSolution.Mapping.TotalLength);
 
         }
 
 
+        /// <summary>
+        /// performs restart
+        /// </summary>
+        /// <param name="Time">
+        /// on exit, the physical time associated with the field state
+        /// </param>
+        /// <param name="TimestepNo">
+        /// on exit, the physical time associated with the field state
+        /// </param>
         protected override void LoadRestart(out double Time, out TimestepNumber TimestepNo) {
             base.LoadRestart(out Time, out TimestepNo);
 
             this.LsTrk.UpdateTracker();
         }
 
-
+        /// <summary>
+        /// overriding the method to implement any user-specific tasks which
+        /// should be carried out after a restart file has been loaded (e.g.,
+        /// setting the correct time for a time-stepper)
+        /// </summary>
         public override void PostRestart(double time, TimestepNumber timestep) {
             base.PostRestart(time, timestep);
 
-            //PlotCurrentState(0, new TimestepNumber(new int[] { 0, 10 }), 2);
-
             VelocityXGradient = new VectorField<SinglePhaseField>(this.GridData.SpatialDimension, Velocity.Current[0].Basis, "VelocityX_Gradient", SinglePhaseField.Factory);
             VelocityYGradient = new VectorField<SinglePhaseField>(this.GridData.SpatialDimension, Velocity.Current[1].Basis, "VelocityY_Gradient", SinglePhaseField.Factory);
-
-
-            ////otherwise the DGfields are projected twice in refined cells!!!
-            //foreach (var f in m_RegisteredFields) {
-            //    f.Clear();
-            //}
-
-
         }
 
 
@@ -1421,17 +1217,16 @@ namespace BoSSS.Application.Rheology {
                                 }
 
                             }
-                        }).Execute();
-
+                        }
+                        ).Execute();
                 }
                 U0mean.ForEach(F => F.CheckForNanOrInf(true, true, true));
-
             }
         }
 
-
-
-
+        /// <summary>
+        /// Computes the L2 Error of all Fields compared to exact solution specified in the control file
+        /// </summary>
         protected void ComputeL2Error() {
             if (this.Control.ExSol_Velocity == null && this.Control.ExSol_Pressure == null && this.Control.ExSol_Stress == null) {
                 // nothing to do
@@ -1445,7 +1240,7 @@ namespace BoSSS.Application.Rheology {
             var SchemeHelper = LsTrk.GetXDGSpaceMetrics(this.FluidSpecies, order).XQuadSchemeHelper;
 
             // Velocity error
-            // ==============
+            // ===============================================
             if (this.Control.ExSol_Velocity != null) {
                 Dictionary<string, double[]> L2Error_Species = new Dictionary<string, double[]>();
                 double[] L2Error = new double[D];
@@ -1475,50 +1270,18 @@ namespace BoSSS.Application.Rheology {
 
 
             // pressure error
-            // ==============
+            // =============================================================
             if (this.Control.ExSol_Pressure != null) {
 
-                //// pass 1: mean value of pressure difference
-                //double DiffInt = 0;
-                //foreach (var spId in FluidSpecies) {
-
-                //    string spc = this.LsTrk.GetSpeciesName(spId);
-                //    var scheme = SchemeHelper.GetVolumeQuadScheme(spId);
-                //    var rule = scheme.Compile(this.GridData, order);
-
-                //    DiffInt += this.Pressure.LxError(this.Control.ExSol_Pressure.Vectorize(0.0), (a, b) => (a - b), rule);
-                //    //Volume +=  this.Pressure.GetSpeciesShadowField(spc).LxError(null, (a, b) => (1.0), rule);
-                //}
-                //double Volume2 = (new SubGrid(CellMask.GetFullMask(this.GridData))).Volume;
-                //double PressureDiffMean = DiffInt / Volume2;
-
-
                 double L2Error = 0;
-                //Dictionary<string, double> L2Error_Species = new Dictionary<string, double>();
 
-                //foreach (var spId in this.FluidSpecies) {
-
-                //    //SpeciesId spId = this.LsTrk.GetSpeciesId(spc);
-                //    string spc = this.LsTrk.GetSpeciesName(spId);
-                //    var scheme = SchemeHelper.GetVolumeQuadScheme(spId);
-                //    var rule = scheme.Compile(this.GridData, order);
-
-                //    double IdV = this.Pressure.LxError(this.Control.ExSol_Pressure.Vectorize(0.0), (a, b) => (a - b - PressureDiffMean).Pow2(), rule);
-                //    L2Error += IdV;
-                //    L2Error_Species.Add(spc, IdV.Sqrt());
-
-                //    base.QueryHandler.ValueQuery("L2err_" + VariableNames.Pressure + "#" + spc, L2Error_Species[spc], true);
-                //}
-
-
-                //L2Error = L2Error.Sqrt();
                 L2Error = this.Pressure.L2Error(this.Control.ExSol_Pressure.Vectorize(0.0), order-1);
                 base.QueryHandler.ValueQuery("L2err_" + VariableNames.Pressure, L2Error, true);
                 Console.WriteLine("L2err " + VariableNames.Pressure + " is " + L2Error);
             }
 
             // Stress error
-            // ==============
+            // =============================================================
             if (this.Control.ExSol_Stress != null) {
                 double[] L2Error = new double[3];
 
@@ -1533,7 +1296,6 @@ namespace BoSSS.Application.Rheology {
                 Console.WriteLine("L2err " + VariableNames.StressXX + " is " + L2Error[0]);
                 Console.WriteLine("L2err " + VariableNames.StressXY + " is " + L2Error[1]);
                 Console.WriteLine("L2err " + VariableNames.StressYY + " is " + L2Error[2]);
-
             }
         }
 
@@ -1553,22 +1315,16 @@ namespace BoSSS.Application.Rheology {
         }
 
         //ADAPTIVE MESH REFINEMENT
-        //=============================================
+        //======================================================================
 
         /// <summary>
         /// refinement indicator
         /// </summary>
         int LevelIndicator(int j, int CurrentLevel){
-            //if (j == 1) {
-            //    return 1;
 
-            //} else {
-            //    return 0;
-            //}
             if (this.Control.UsePerssonSensor) {
 
                 double maxVal = this.perssonsensor.GetValue(j);
-                //this.StressXX.GetExtremalValuesInCell(out double minVal, out double maxVal, j);
 
                 //bound for perssonsensor should be around 1e-7 - 1e-8 that there is refinement behind the cylinder!
                 double upperbound = this.Control.SensorLimit;
@@ -1592,6 +1348,9 @@ namespace BoSSS.Application.Rheology {
 
         }
 
+        /// <summary>
+        /// Adaptation of the current mesh.
+        /// </summary>
         protected override void AdaptMesh(int TimestepNo, out GridCommons newGrid, out GridCorrelation old2NewGrid) {
 
             if (this.Control.AdaptiveMeshRefinement) {

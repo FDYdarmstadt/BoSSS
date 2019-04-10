@@ -623,25 +623,21 @@ When Mono is used, the equivalent to {\tt msbuild} is {\tt xbuild}. Both tools h
 % ################################################################################
 \import{./CsharpAndBoSSSpad/}{CsharpAndBoSSSpad.tex}
 
-
 % ################################################################################
 \chapter{Creating and importing grids/meshes }
 \label{sec:GridCreation}
 % ################################################################################
 \import{./GridGeneration/}{GridGeneration.tex}
 
-
-
 % ################################################################################
 \chapter{Compressible Navier-Stokes (CNS) Solver }
-\label{CNS}
+\label{sec:CNS}
 % ################################################################################
 \import{./quickStartCNS/}{IsentropicVortex.tex}
 
-
 % ################################################################################
 \chapter{Incompressible Navier-Stokes Solver}
-\label{IBM}
+\label{sec:IBM}
 % ################################################################################
 \import{./quickStartIBM/}{channel.tex}
 
@@ -650,6 +646,12 @@ When Mono is used, the equivalent to {\tt msbuild} is {\tt xbuild}. Both tools h
 \label{sec:WorkflowMgm}
 % ################################################################################
 \import{./MetaJobManager/}{MetaJobManager.tex}
+
+% ################################################################################
+\chapter{Convergence/Parameter Study}
+\label{sec:Parameterstudy}
+% ################################################################################
+\import{./convergenceStudyTutorial/}{convStudy.tex}
 
 % ################################################################################
 % ################################################################################
@@ -671,11 +673,6 @@ When Mono is used, the equivalent to {\tt msbuild} is {\tt xbuild}. Both tools h
 \label{GridInstantiation}
 % ################################################################################
 \import{./tutorial2/}{uebung2tutorial.tex}
-
-\chapter{Parameter Study}
-\label{sec:Parameterstudy}
-% ################################################################################
-\import{./ParameterStudy/}{ParameterStudy.tex}
 
 % ################################################################################
 \chapter{Defining a Spatial Operator and using explicit time integration}
@@ -738,116 +735,7 @@ When Mono is used, the equivalent to {\tt msbuild} is {\tt xbuild}. Both tools h
 \chapter{Single Node Performance}
 \label{sec:SingleNodePerformance}
 % ################################################################################
-This section covers basic performance tests, i.e. how specific algorithms scale 
-with grid resolution or with polynomial degree, on a \emph{single compute node}.
-
-% --------------------------------------------------------------------------------
-\section{Solver Performance - Poisson problems}
-\label{sec:SolverPerformancePoisson}
-% --------------------------------------------------------------------------------
-Three different groups of solvers are compared:
-\begin{itemize}
-\item
-Direct Solvers: directs sparse methods, such as PARDISO\footnote{
-\url{http://www.pardiso-project.org/}}
-and MUMPS\footnote{
-\url{http://mumps.enseeiht.fr/}}
-are compared.
-Their performance also serves as a comparative baseline.
-
-\item
-Iterative Algorithms without preconditioning, resp. low-impact, generic preconditioning:
-This includes solver libraries such as \code{monkey} (BoSSS-specific, supports GPU)
-as well as 
-HYPRE\footnote{
-\url{https://computation.llnl.gov/projects/hypre-scalable-linear-solvers-multigrid-methods}}
-(native library, used via wrappers).
-
-\item
-Iterative Algorithms with \ac{dg}-specific preconditioners, such as aggregation multigrid
-and multi-level additive Schwarz
-\end{itemize}
-
-\subsection{Problems with Constant Diffusion Coefficient}
-\label{sec:ConstantDiffusionCoefficient}
-The problem
-\begin{equation}
-\left\{ \begin{array} {rclll}
-- \Delta T   & = & g_{\domain}                      
-             & \text{in}\ \Omega = (0,10) \times (-1,1) \times (-1,1)  &  \\
-% ----
-         T   & = & g_D = 0                             
-             & \text{on}\ \Gamma_D = \{ (x,y,z) \in \real^3; \ x = 0 \}
-             & \text{Dirichlet-boundary} \\
-% ----
-\nabla T \cdot \vec{n}_{\partial \domain} & = & g_N 
-             & \text{on}\ \Gamma_N = \partial \Omega \setminus \Gamma_D
-             & \text{Neumann-boundary}
-\end{array} \right.
-\label{eq:ContantCoeffPoissonBenchmark}
-\end{equation}
-is investigated on a non-uniform, Cartesian grid
-(equidistant in $z$, sinus-spacing in $x$ and $y$ direction).
-The large $\Gamma_N$ makes the problem harder for non-preconditioned
-iterative methods. See Figure \ref{fig:ConstantCoeffRuntimes} for results.
-
-\graphicspath{{./apdx-NodeSolverPerformance/PoissonConstCoeff/plots/}}
-
-\begin{figure}[!h]
-\begin{center}
-\input{./apdx-NodeSolverPerformance/PoissonConstCoeff/plots/ConstCoeffPoissonScaling.tex}
-\end{center}
-\caption{
-Solver runtime vs. degrees-of-freedom, for different polynomial degrees $k$,
-for problem/Equation (\ref{eq:ContantCoeffPoissonBenchmark}).
-}
-\label{fig:ConstantCoeffRuntimes}
-\end{figure}
-\newpage
-\section{Solver Performance - Navier-Stokes problems}
-\label{sec:SolverPerformanceNSE}
-Different solver strategies are conducted to solve the fully coupled incompressible Navier-Stokes equations. At the moment the following strategies can be examined:
-\begin{itemize}
-	\item Linearizsation of the NSE with: Newton(Gmres) or Picard
-	\item Solving the linear problem with a Gmres approach or the direct solver MUMPS
-	\item Preconditioning with Additive-Schwarz domain decomposition (with coarse solve on the coarsest multigrid level) and direct solver MUMPS for the Blocks (Automatic)
-	\item Preconditioning with Additive-Schwarz kcycle Blocks on the coarsest multigrid level (with coarse solve on the coarsest multigrid level) and direct solver MUMPS for the Blocks
-\end{itemize}
-\subsection{Driven Cavity 3D}
-The problem
-\begin{equation}
-\left\{ \begin{array} {rclll}
-\rho_f\Big(\frac{\partial \vec{u}}{\partial t}+ \vec{u} \cdot \nabla \vec{u}\Big) +\nabla p - \mu_f \Delta \vec{u} & = & \vec{f}                   
-& \text{and}\   &  \\
-% ----
-\nabla \cdot \vec{u} & = & 0                             
-& \text{in}\ \Omega = (-0.5,0.5) \times (-0.5,0.5) \times (-0.5,0.5)  & \\
-\vec{u}_D & = & \{1,0,0 \}                             
-& \text{on}\ \Gamma_D = \{ (x,y,0z) \in \real^3; \ z = 0.5 \} 
-& \text{Dirichlet-boundary}\\
-\vec{u}_W & = & 0  
-& \text{on}\ \Gamma_W = \partial \Omega \setminus \Gamma_D
-& \text{Dirichlet-boundary}\\
-\vec{u}_0(x,y,z) & = & \{1,0,0\}  
-& \text{in}\ \Omega = (-0.5,0.5) \times (-0.5,0.5) \times (-0.5,0.5)  
-& \text{Initial Condition}
-\end{array} \right.
-\label{eq:NavierStokesCavityBenchmark}
-\end{equation}
-is investigated on different cartesian grids. The physical parameters of the fluid are choosen to be $\rho_f=1$ and $\mu_f=0.0025$ which renders down to a Reynoldsnumber of 400.
-
-\graphicspath{{./apdx-NodeSolverPerformance/NavierStokesDrivenCavity/plots/}}
-
-\begin{figure}[h!]
-	\begin{center}
-		\input{./apdx-NodeSolverPerformance/NavierStokesDrivenCavity/plots/NodePerformance.tex}
-	\end{center}
-	\caption{
-		Solver runtime vs. DoFs, for polynomial degree $k=2/1$,
-		for problem/Equation (\ref{eq:NavierStokesCavityBenchmark}).
-	}
-	\label{fig:DrivenCavity}
-\end{figure}
+\import{./apdx-NodeSolverPerformance/}{NodeSolverPerformance.tex}
 
 
 % ################################################################################

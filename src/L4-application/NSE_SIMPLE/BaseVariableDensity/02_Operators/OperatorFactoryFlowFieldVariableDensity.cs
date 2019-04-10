@@ -92,9 +92,10 @@ namespace NSE_SIMPLE {
                 for (int d = 0; d < SolverConf.SpatialDimension; d++) {
                     SpatialOperator BuoyancyOperator = (new Buoyancy(varDensConf.GravityDirection,
                         d,
-                        varDensConf.Froude.Value,
+                        varDensConf.Froude.Value, SolverConf.Control.PhysicsMode,
                         varDensConf.EoS)).Operator();
-                    this.BuoyantForce[d] = BuoyancyOperator.GetEvaluatorEx(Phi0.Mapping, null, VelocityMapping);
+                    
+                    this.BuoyantForce[d] = BuoyancyOperator.GetEvaluatorEx(null, new DGField[] { Phi0 }, VelocityMapping);
                 }
             }
 

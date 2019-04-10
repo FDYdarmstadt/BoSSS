@@ -47,7 +47,7 @@ namespace NSE_SIMPLE {
         /// Ctor.
         /// </summary>
         /// <param name="solverConf"></param>
-        /// <param name="sparseSolver"></param>
+        /// <param name="_sparseSolver"></param>
         /// <param name="MatAsmblyCorrector"></param>
         /// <param name="VelocityDivergence"></param>
         /// <param name="Velocity_Intrmed"></param>
@@ -55,11 +55,11 @@ namespace NSE_SIMPLE {
         /// <param name="BDF"></param>
         /// <param name="Temperature"></param>
         /// <param name="EoS"></param>
-        public LowMachSolverCorrector(SolverConfiguration solverConf, ISparseSolver sparseSolver,
+        public LowMachSolverCorrector(SolverConfiguration solverConf, ISparseSolver _sparseSolver,
             SIMPLEMatrixAssembly MatAsmblyCorrector,
             SIMPLEOperator[] VelocityDivergence, VectorField<SinglePhaseField> Velocity_Intrmed, SinglePhaseField DivB4,
             BDFScheme BDF, ScalarFieldHistory<SinglePhaseField> Temperature, MaterialLaw EoS, double[] RHSManuDivKontiOperatorAffine = null)
-            : base(solverConf, sparseSolver) {
+            : base(solverConf, _sparseSolver) {
 
             this.MatAsmblyCorrector = MatAsmblyCorrector;
 

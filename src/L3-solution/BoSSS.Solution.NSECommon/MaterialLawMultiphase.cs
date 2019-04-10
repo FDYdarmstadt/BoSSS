@@ -18,6 +18,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using BoSSS.Foundation;
 
 namespace BoSSS.Solution.NSECommon {
 
@@ -31,6 +32,8 @@ namespace BoSSS.Solution.NSECommon {
         double alpha;
         double mu1;
         double mu2;
+
+        public override IList<string> ParameterOrdering => throw new NotImplementedException();
 
         /// <summary>
         /// Ctor.
@@ -129,6 +132,15 @@ namespace BoSSS.Solution.NSECommon {
             //    default:
             //        throw new ArgumentException();
             //}
+        }
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="InitialMass"></param>
+        /// <param name="Temperature"></param>
+        /// <returns></returns>
+        public override double GetMassDeterminedThermodynamicPressure(double InitialMass, SinglePhaseField Temperature) {
+            throw new NotImplementedException();
         }
     }
 }

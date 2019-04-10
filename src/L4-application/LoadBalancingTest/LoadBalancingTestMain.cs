@@ -5,7 +5,7 @@ using BoSSS.Foundation.IO;
 using BoSSS.Foundation.XDG;
 using BoSSS.Solution;
 using BoSSS.Solution.Control;
-using BoSSS.Solution.Multigrid;
+using BoSSS.Solution.AdvancedSolvers;
 using BoSSS.Solution.Tecplot;
 using BoSSS.Solution.Utils;
 using BoSSS.Solution.XdgTimestepping;
@@ -41,10 +41,10 @@ namespace BoSSS.Application.LoadBalancingTest {
             base.Init(control);
         }
 
-        protected override GridCommons CreateOrLoadGrid() {
+        protected override IGrid CreateOrLoadGrid() {
             double[] nodes = GenericBlas.Linspace(-5, 5, 21);
             var grd = Grid2D.Cartesian2DGrid(nodes, nodes);
-            this.Control.NoOfMultigridLevels = 1; // required for XDG-BDF timestepper
+            this.Control.LinearSolver.NoOfMultigridLevels = 1; // required for XDG-BDF timestepper
             return grd;
         }
               
@@ -186,7 +186,9 @@ namespace BoSSS.Application.LoadBalancingTest {
                     this.LsTrk.SpeciesIdS.ToArray(),
                     quadorder,
                     this.THRESHOLD,
-                    true);
+                    true,
+                    this.Control.NonLinearSolver,
+                    this.Control.LinearSolver);
             } else {
                 Debug.Assert(object.ReferenceEquals(this.MultigridSequence[0].ParentGrid, this.GridData));
                 TimeIntegration.DataRestoreAfterBalancing(L, new DGField[] { u }, new DGField[] { uResidual }, base.LsTrk, this.MultigridSequence);

@@ -18,6 +18,7 @@ using System;
 using System.Reflection;
 using System.Runtime.Serialization;
 using BoSSS.Foundation.IO;
+using Newtonsoft.Json;
 
 namespace BoSSS.Foundation.Grid.Classic {
 
@@ -53,11 +54,17 @@ namespace BoSSS.Foundation.Grid.Classic {
         #region IO.IGridInfo members
 
         /// <summary>
+        /// see <see cref="ID"/>;
+        /// </summary>
+        [DataMember]
+        Guid m_GridGuid;
+
+        /// <summary>
         /// Guid/Identification of this grid object in the database <see cref="Database"/>
         /// </summary>
         public Guid ID {
             get {
-                return this.GridGuid;
+                return this.m_GridGuid;
             }
         }
 
@@ -134,6 +141,18 @@ namespace BoSSS.Foundation.Grid.Classic {
             copy.m_Database = targetDatabase;
 
             return copy;
+        }
+
+        [NonSerialized]
+        [JsonIgnore]
+        GridCommonsDatabaseMethods dataBaseMethods;
+
+        public IGridSerializationHandler GridSerializationHandler {
+            get {
+                if (dataBaseMethods == null)
+                    dataBaseMethods = new GridCommonsDatabaseMethods(this);
+                return dataBaseMethods;
+            }
         }
 
         #endregion

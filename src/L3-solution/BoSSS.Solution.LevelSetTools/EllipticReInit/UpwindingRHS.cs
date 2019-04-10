@@ -31,19 +31,25 @@ using ilPSP;
 
 namespace BoSSS.Solution.LevelSetTools.EllipticReInit {
 
-       /// <summary>
+    /// <summary>
     /// The Right Hand Side of the EllipticReinitEquation:
-    /// Div(DiffusionRate(Abs(Grad Phi)) Grad(Phi)  )
+    /// \f[ \nabla \cdot ( \text{DiffusionRate}( | \nabla \varphi | )  \nabla \varphi ) \f]
     /// </summary>
     public class EllipticReInitUpwindForm_RHS : RHSForm {
+
+        /// <summary>
+        /// 
+        /// </summary>
         public EllipticReInitUpwindForm_RHS(double PenaltyBase, LevelSetTracker LSTrck): base(PenaltyBase, LSTrck) {
             this.D = LSTrck.GridDat.SpatialDimension;
             LSTrck.Subscribe(this);
         }
 
         int D;
-
-
+        
+        /// <summary>
+        /// %
+        /// </summary>
         public override IList<string> ParameterOrdering
         {
             get
@@ -58,7 +64,9 @@ namespace BoSSS.Solution.LevelSetTools.EllipticReInit {
             }
         }
 
-
+        /// <summary>
+        /// %
+        /// </summary>
         public override TermActivationFlags InnerEdgeTerms {
             get {
                 return (TermActivationFlags.GradUxV);
@@ -67,19 +75,6 @@ namespace BoSSS.Solution.LevelSetTools.EllipticReInit {
         /// <summary>
         /// 
         /// </summary>
-        /// <param name="inp">
-        /// </param>
-        /// <param name="uIn">
-        /// ExtensionVelocity
-        /// </param>
-        /// <param name="uOut"></param>
-        /// <param name="Grad_uIn"></param>
-        /// <param name="Grad_uOut"></param>
-        /// <param name="vIn"></param>
-        /// <param name="vOut"></param>
-        /// <param name="Grad_vIn"></param>
-        /// <param name="Grad_vOut"></param>
-        /// <returns></returns>
         public override double InnerEdgeForm(ref CommonParams inp, double[] uIn, double[] uOut, double[,] Grad_uIn, double[,] Grad_uOut, double vIn, double vOut, double[] Grad_vIn, double[] Grad_vOut) {
             double Acc = 0.0;
 

@@ -32,7 +32,7 @@ using ilPSP.LinSolvers;
 using System.Collections;
 using System.Diagnostics;
 using BoSSS.Solution.Utils;
-using BoSSS.Solution.Multigrid;
+using BoSSS.Solution.AdvancedSolvers;
 using BoSSS.Foundation.XDG;
 using BoSSS.Solution.Tecplot;
 using BoSSS.Foundation.Grid.Aggregation;
@@ -74,7 +74,7 @@ namespace BoSSS.Application.MultigridTest {
         /// Sequence of aggregation grids;
         /// index: grid level, coarser grids are found at higher indices.
         /// </summary>
-        internal static AggregationGrid[] MgSeq;
+        internal static AggregationGridData[] MgSeq;
 
 
         internal static GridData grid;

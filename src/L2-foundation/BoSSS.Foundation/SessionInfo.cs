@@ -367,15 +367,43 @@ namespace BoSSS.Foundation.IO {
         [NonSerialized]
         TextWriter m_TimeStepLog;
 
+        [NonSerialized]
+        List<Guid> m_Loggedtimesteps = new List<Guid>();
+
         internal void LogTimeStep(Guid g) {
             if (m_TimeStepLog == null) {
                 m_TimeStepLog = Database.Controller.DBDriver.FsDriver
                     .GetNewLog("TimestepLog", this.ID);
             }
 
+            if (m_Loggedtimesteps.Contains(g))
+                throw new NotSupportedException("time-step is already logged");
+
+            m_Loggedtimesteps.Add(g);
             m_TimeStepLog.WriteLine(g.ToString());
             m_TimeStepLog.Flush();
         }
+
+        /// <summary>
+        /// added to support deleting time-steps form a session during computation
+        /// (e.g. one wants to save only every 10000th time-step, but still have the latest 3 available for BDF-restart)
+        /// </summary>
+        public void RemoveTimestep(Guid g) {
+            if (m_TimeStepLog != null) {
+                m_TimeStepLog.Flush();
+                m_TimeStepLog.Close();
+                m_TimeStepLog.Dispose();
+            }
+
+            m_Loggedtimesteps.Remove(g);
+            m_TimeStepLog = Database.Controller.DBDriver.FsDriver.GetNewLog("TimestepLog", this.ID);
+            foreach (var gg in m_Loggedtimesteps) {
+                m_TimeStepLog.WriteLine(gg.ToString());
+            }
+            m_TimeStepLog.Flush();
+        }
+
+
 
         /// <summary>
         /// Saves the current state of this object to the associated

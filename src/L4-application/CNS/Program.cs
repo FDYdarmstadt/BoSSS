@@ -38,6 +38,8 @@ using System.Linq;
 using System.Threading;
 using BoSSS.Solution.CompressibleFlowCommon.MaterialProperty;
 using CNS.Convection;
+using BoSSS.Foundation.Grid;
+using ilPSP.Utils;
 
 namespace CNS {
 
@@ -55,6 +57,11 @@ namespace CNS {
 
             //Application.InitMPI(args);
             //CNS.Tests.ConvectiveFlux.ShockTubeTests.Toro1AllButRusanovTest(ConvectiveFluxTypes.Godunov);
+            //CNS.Tests.IBMTests.IBMCylinderTest.IBMCylinder0th();
+            //CNS.Tests.IBMTests.IBMCylinderTest.IBMCylinder1st();
+            //CNS.Tests.IBMTests.IBMCylinderTest.IBMCylinder2nd();
+            //CNS.Tests.IBMTests.IBMCylinderTest.IBMCylinder3rd();
+            //CNS.Tests.IBMTests.IBMIsentropicVortexTest.IBMVortexLocalTimeSteppingTest();
             //Debug.Assert(false);
 
             Application<CNSControl>._Main(
@@ -145,9 +152,9 @@ namespace CNS {
         /// loaded regularly via <see cref="Application{T}.CreateOrLoadGrid"/>
         /// </summary>
         /// <returns></returns>
-        protected override GridCommons CreateOrLoadGrid() {
+        protected override IGrid CreateOrLoadGrid() {
             using (var ht = new FuncTrace()) {
-                GridCommons grid = base.CreateOrLoadGrid();
+                IGrid grid = base.CreateOrLoadGrid();
                 CNSEnvironment.Initialize(grid.SpatialDimension, this);
                 return grid;
             }
@@ -264,6 +271,9 @@ namespace CNS {
                 using (new BlockTrace("TimeStepper.Perform", ht)) {
                     Exception e = null;
                     try {
+                        //TimeStepper.CurrentState.SaveToTextFile("tsinp-lts.txt");
+                        //ilPSP.Environment.GlobalVec =  TimeStepper.CurrentState.ToArray();
+                        //double dist = ilPSP.Environment.CompareTo(TimeStepper.CurrentState);
                         dt = TimeStepper.Perform(dt);
                     } catch (Exception ee) {
                         e = ee;

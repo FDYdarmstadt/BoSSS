@@ -76,8 +76,8 @@ namespace BoSSS.Solution.LevelSetTools.TestCases {
         /// <param name="X">Spatial Coordinate</param>
         /// <param name="initialFunction">Function to extend</param>
         /// <returns>
-        /// index[0]: Signed-distance level-set value
-        /// index[1]: Extension, based on signed distance field
+        /// - index[0]: Signed-distance level-set value
+        /// - index[1]: Extension, based on signed distance field
         /// </returns>
         public double[] SignedDistance(double[] X, Func<double[], double> initialFunction) {
 
@@ -208,7 +208,7 @@ namespace BoSSS.Solution.LevelSetTools.TestCases {
             double TriangleLeft = -yEdgePointFanLeft * XCutout[0] * 0.5;
             double TriangleRight = yEdgePointFanRight * XCutout[1] * 0.5;
             double LowerRectangle = YCutout * (XCutout[1] - XCutout[0]);
-            double arc = (Math.Atan2(yEdgePointFanRight, XCutout[1]) - Math.Atan2(yEdgePointFanLeft, XCutout[0])) * Radius*Radius*0.5;
+            double arc = (Math.Atan2(XCutout[1], yEdgePointFanRight ) - Math.Atan2(XCutout[0], yEdgePointFanLeft)) * Radius*Radius*0.5;
 
             return Circle - TriangleLeft - TriangleRight - arc + LowerRectangle;
         }

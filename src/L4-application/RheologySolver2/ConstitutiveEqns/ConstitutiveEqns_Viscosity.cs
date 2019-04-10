@@ -27,18 +27,24 @@ using System.Diagnostics;
 using ilPSP;
 
 namespace BoSSS.Application.Rheology {
+
     /// <summary>
     /// Volume integral of viscosity part of constitutive equations.
     /// </summary>
-    /// 
     public class ConstitutiveEqns_Viscosity : IVolumeForm, IEdgeForm {
 
         int Component;           // equation index (0: xx, 1: xy, 2: yy)
         BoundaryCondMap<IncompressibleBcType> m_BcMap;
         double m_ViscosityNonNewton; // polymeric viscosity
+        /// <summary>
+        /// Velocity function for Dirichlet value
+        /// </summary>
         protected Func<double[], double, double>[,] VelFunction;
         double[] pen1;
 
+        /// <summary>
+        /// Initialize viscosity part
+        /// </summary>
         public ConstitutiveEqns_Viscosity(int Component, BoundaryCondMap<IncompressibleBcType> _BcMap, double beta, double[] Penalty1) {
             this.Component = Component;
             this.m_BcMap = _BcMap;
@@ -51,45 +57,58 @@ namespace BoSSS.Application.Rheology {
             VelFunction.SetColumn(m_BcMap.bndFunction[VariableNames.VelocityY], 1);
         }
 
-        static string[] allArg = new string[] { VariableNames.StressXX, VariableNames.StressXY, VariableNames.StressYY };
-        public IList<string> ArgumentOrdering {
-            get {
-                //return new string[] { allArg[Component] }; 
-                switch (Component) {
-                    case 0:
-                    return new string[] { VariableNames.VelocityX, VariableNames.VelocityX };
-                    case 1:
-                    return new string[] { VariableNames.VelocityX, VariableNames.VelocityY };
-                    case 2:
-                    return new string[] { VariableNames.VelocityY, VariableNames.VelocityY };
-                    default:
-                    throw new NotImplementedException();
-                }
-            }
-        }
-
-
-        // Choosing the required terms (These Flags control, whether certain terms are evaluated during quadrature of the forms)
+        /// <summary>
+        /// Choosing the required terms for volume form (These Flags control, whether certain terms are evaluated during quadrature of the forms)
+        /// </summary>
         public TermActivationFlags VolTerms {
             get { return TermActivationFlags.AllOn; }
         }
 
+        /// <summary>
+        /// Choosing the required terms for boundary edge form (These Flags control, whether certain terms are evaluated during quadrature of the forms)
+        /// </summary>
+        public TermActivationFlags BoundaryEdgeTerms {
+            get { return TermActivationFlags.AllOn; }
+        }
+
+        /// <summary>
+        /// Choosing the required terms for inner edge form (These Flags control, whether certain terms are evaluated during quadrature of the forms)
+        /// </summary>
+        public TermActivationFlags InnerEdgeTerms {
+            get { return TermActivationFlags.AllOn; }
+        }
+
+        /// <summary>
+        /// Ordering of the dependencies
+        /// </summary>
+        public IList<string> ArgumentOrdering {
+            get {
+                switch (Component)
+                {
+                    case 0:
+                        return new string[] { VariableNames.VelocityX, VariableNames.VelocityX };
+                    case 1:
+                        return new string[] { VariableNames.VelocityX, VariableNames.VelocityY };
+                    case 2:
+                        return new string[] { VariableNames.VelocityY, VariableNames.VelocityY };
+                    default:
+                        throw new NotImplementedException();
+                }
+            }
+        }
+
+        /// <summary>
+        /// Ordering of the parameters
+        /// </summary>
         public IList<string> ParameterOrdering {
             get {
                 return null;
             }
         }
 
-        public TermActivationFlags BoundaryEdgeTerms {
-            get { return TermActivationFlags.AllOn; }
-        }
-
-        public TermActivationFlags InnerEdgeTerms {
-            get { return TermActivationFlags.AllOn; }
-        }
-
-
-        // Calculating the integral
+        /// <summary>
+        /// Calculating the integral of the volume part
+        /// </summary>
         public double VolumeForm(ref CommonParamsVol cpv, double[] U, double[,] Grad_U, double V, double[] GradV) {
             
             //-2 * (1-beta) * 0.5 * (d u_i / d x_j + d u_j / d x_i)
@@ -113,6 +132,9 @@ namespace BoSSS.Application.Rheology {
             return 2 * m_ViscosityNonNewton * 0.5 * res;
         }
 
+        /// <summary>
+        /// Calculating the integral of the inner edge part
+        /// </summary>
         public double InnerEdgeForm(ref CommonParams inp, double[] Uin, double[] Uout, double[,] GradUin, double[,] GradUout, double Vin, double Vout, double[] GradVin, double[] GradVout) {
 
             double res = 0;
@@ -144,6 +166,9 @@ namespace BoSSS.Application.Rheology {
             return -2 * m_ViscosityNonNewton * 0.5 * res * (Vin - Vout);
         }
 
+        /// <summary>
+        /// Calculating the integral of the boundary edge part
+        /// </summary>
         public double BoundaryEdgeForm(ref CommonParamsBnd inp, double[] Uin, double[,] _Grad_uA, double Vin, double[] _Grad_vA) {
             double res = 0;
             IncompressibleBcType edgType = m_BcMap.EdgeTag2Type[inp.EdgeTag];
@@ -203,10 +228,13 @@ namespace BoSSS.Application.Rheology {
                     // ============================
                     if (Component == 1)
                     {
-                        res += Vel1 * n1 + Vel2 * n2;// + Vel1 * n2 + Vel2 * n1;
+                        res += 0.5 * ((Uin[0] + Vel1) * n1 + (Uin[1] + Vel2) * n2);
+                        //res += Vel1 * n1 + Vel2 * n2;// + Vel1 * n2 + Vel2 * n1;
                     }
                     else {
-                        res += Vel1 * n1 + Vel2 * n2;
+
+                        res += 0.5 * ((Uin[0] + Vel1) * n1 + (Uin[1] + Vel2) * n2);
+                        //res += Vel1 * n1 + Vel2 * n2;
                     }
 
                     break;

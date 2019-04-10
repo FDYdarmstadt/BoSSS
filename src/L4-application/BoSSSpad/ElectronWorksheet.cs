@@ -11,57 +11,55 @@ using BoSSS.Foundation.IO;
 namespace BoSSS.Application.BoSSSpad{
 
     /// <summary>
-    /// Singleton class; 
+    /// Entrypoint used by <see cref="ElectronWorksheet"/> project. 
+    /// Realizes communication between electron BoSSSpad and C# BoSSSpad.
     /// </summary>
-    public sealed class ElectronWorksheet {
+    public sealed class ElectronWorksheet : ResolvableAssembly {
 
-        private static readonly ElectronWorksheet instance = new ElectronWorksheet();
-
-        private ElectronWorksheet() {
-
+        /// <summary>
+        /// Will only work for one instance
+        /// </summary>
+        /// <param name="BoSSSpath">
+        /// Path to the ElectronWorksheet.dll, ElectronBoSSSpad.exe and affiliated DLLs
+        /// </param>
+        public ElectronWorksheet(string BoSSSpath) : base(BoSSSpath){
             Thread.CurrentThread.CurrentCulture = CultureInfo.InvariantCulture;
 
-            // launch the app
-            // ==============
+            //Setup Environment
             ilPSP.Environment.Bootstrap(
                 new string[0],
                 Utils.GetBoSSSInstallDir(),
                 out bool mpiInitialized
             );
-
-        }
-
-        public static ElectronWorksheet Instance {
-            get {
-                return instance;
-            }
         }
 
         public Tuple<string, string> RunCommand(string command) {
-
-            
             Document.Tuple singleCommandAndResult = new Document.Tuple {
                 Command = command
             };
             singleCommandAndResult.Evaluate();
-            String base64Result = null;
-            
-            if (singleCommandAndResult.Result != null 
-                && singleCommandAndResult.Result as System.Drawing.Image != null)
-            {
-                Byte[] result = null;
-                System.Drawing.Image img = (System.Drawing.Image)singleCommandAndResult.Result;
-                using (System.IO.MemoryStream ms = new System.IO.MemoryStream())
-                {
-                    img.Save(ms, System.Drawing.Imaging.ImageFormat.Png);
-                    result = ms.ToArray();
-                    base64Result = Convert.ToBase64String(result);
-                };
-            }
+            String base64Result = TryConvertToBase64ImageString(singleCommandAndResult.Result);
             
             return new Tuple<string, string>(
                 singleCommandAndResult.InterpreterTextOutput,
                 base64Result);
+        }
+
+        string TryConvertToBase64ImageString(object result)
+        {
+            String base64Result = null;
+            if (result != null
+                && result is System.Drawing.Image img)
+            {
+                Byte[] resultAsByte = null;
+                using (System.IO.MemoryStream ms = new System.IO.MemoryStream())
+                {
+                    img.Save(ms, System.Drawing.Imaging.ImageFormat.Png);
+                    resultAsByte = ms.ToArray();
+                    base64Result = Convert.ToBase64String(resultAsByte);
+                };
+            }
+            return base64Result;
         }
 
         public void Save(string path, string[] commands, string[] results) {
@@ -116,3 +114,4 @@ namespace BoSSS.Application.BoSSSpad{
         }
     }
 }
+
