@@ -559,7 +559,7 @@ namespace BoSSS.Application.XNSE_Solver {
 
 
             // Is Moving Mesh required?
-            //-------------------------
+            //------------------------------------->>> ADD TO OPERATOR CONFIG !!!
 
             bool movingmesh;
             MassMatrixShapeandDependence mmsd;
@@ -600,7 +600,7 @@ namespace BoSSS.Application.XNSE_Solver {
                degU,
                this.BcMap,
                movingmesh,
-               (this.Control.ThermalParameters.hVap_A != 0.0 && this.Control.ThermalParameters.hVap_B != 0.0));
+               (this.Control.ThermalParameters.hVap_A != 0.0 && this.Control.ThermalParameters.hVap_B != 0.0));         // -> ADD TO OPERATOR CONFIG !!!
 
 
             // kinetic energy balance Operator
