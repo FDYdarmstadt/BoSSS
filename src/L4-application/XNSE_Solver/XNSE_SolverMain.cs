@@ -70,11 +70,9 @@ namespace BoSSS.Application.XNSE_Solver {
 
         static void Main(string[] args) {
 
-            BoSSS.Application.XNSE_Solver.Tests.UnitTest.TestFixtureSetUp();
-            BoSSS.Application.XNSE_Solver.Tests.ElementalTestProgramm.LineMovementTest(LevelSetEvolution.ScalarConvection, LevelSetHandling.Coupled_Once, XNSE_Control.TimesteppingScheme.ImplicitEuler, 0.5);
-            Debug.Assert(false);
-
-
+            //BoSSS.Application.XNSE_Solver.Tests.UnitTest.TestFixtureSetUp();
+            //BoSSS.Application.XNSE_Solver.Tests.ElementalTestProgramm.LineMovementTest(LevelSetEvolution.ScalarConvection, LevelSetHandling.Coupled_Once, XNSE_Control.TimesteppingScheme.ImplicitEuler, 0.5);
+            //Debug.Assert(false);
 
             _Main(args, false, delegate () {
                 var p = new XNSE_SolverMain();

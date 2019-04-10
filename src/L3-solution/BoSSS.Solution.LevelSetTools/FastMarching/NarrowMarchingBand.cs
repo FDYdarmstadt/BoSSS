@@ -477,7 +477,7 @@ namespace BoSSS.Solution.LevelSetTools.Advection {
             //var TimeEvoOp = (new LevelSetEvoTerm_Vector()).Operator(2);
 
 
-            SpatialOperator TimeEvoOp = new SpatialOperator(1, 2 * D + 1, 1, QuadOrderFunc.NonLinear(2), "Phi", "dPhi_dx", "dPhi_dy", "ExtVelX", "ExtVelY", "c1"); //"Src",
+            SpatialOperator TimeEvoOp = new SpatialOperator(1, 2 * D, 1, QuadOrderFunc.NonLinear(2), "Phi", "dPhi_dx", "dPhi_dy", "ExtVelX", "ExtVelY", "c1"); //"Src",
             TimeEvoOp.EquationComponents["c1"].Add(new LevelSetEvoTerm_Vector());
             //TimeEvoOp.EquationComponents["c1"].Add(new LevelSetEvoTerm_Source());
             TimeEvoOp.EquationComponents["c1"].Add(new UpwindStabiForm());
