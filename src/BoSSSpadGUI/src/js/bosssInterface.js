@@ -92,6 +92,23 @@ class BoSSS{
         return runPromise;
     }
 
+    forceAbort(){
+        var that = this;
+        var runPromise = new Promise(
+            function(resolve, reject){
+                that.BoSSSRuntime.forceAbort(
+                    null,
+                    async function(error, result) {
+                        if (error){
+                            reject(error);
+                        }
+                        resolve(result);
+                    }
+                );
+            }
+        );
+        return runPromise;
+    }
 }
 
 const instance = new BoSSS();

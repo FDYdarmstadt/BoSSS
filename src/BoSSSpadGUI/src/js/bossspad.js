@@ -4,6 +4,8 @@ import {Editor} from './editor';
 import boSSSRuntime from './bosssInterface';
 import Split from "split.js";
 import {Range as monacoRange} from 'monaco-editor';
+import {BoxWithMenu} from './commandBoxes.js'
+import Status from './status.js'
 require('../css/bossspad.css');
 
 export class BoSSSpad{
@@ -12,7 +14,7 @@ export class BoSSSpad{
         this.locked = false;
         this.userInput;
         this.createHtmlSkeleton(element);
-        this.status = new (this.status());
+        this.status = Status;
         this.boSSS = new Editor(this.editor, this.status);
         this.userGUI = new InteractiveList(this.userInput, this.status);
         
@@ -37,20 +39,7 @@ export class BoSSSpad{
     }
 
     status(){
-        return class {
-            constructor(){
-                this.locked = false;
-                this.changed = false;
-            }
-
-            isLocked(){
-                return this.locked;
-            }
-
-            toggleLock(){
-                this.locked = !this.locked;
-            }
-        }   
+        return this.status;
     } 
 
     createHtmlSkeleton(element){
@@ -91,6 +80,8 @@ export class BoSSSpad{
         this.boSSS.onDidScrollChange(this.userGUI.updateScroll.bind(this.userGUI));
         this.boSSS.registerLanguage_BoSSS(boSSSRuntime.provideAutoComplete.bind(boSSSRuntime));
         window.addEventListener("resize", this.update.bind(this));
+        this.status.registerFunctionOnLock(this.boSSS.setReadonly.bind(this.boSSS));
+        this.status.registerFunctionOnUnlock(this.boSSS.unsetReadonly.bind(this.boSSS));
     }
 
     addNewRunCommand(ed){
@@ -143,38 +134,42 @@ export class BoSSSpad{
 
     //Command actions
     //===========================================================================
-    executeFromHere(){
+    async executeFromHere(){
         if(!this.status.isLocked()){
-            this.status.toggleLock();
+            this.status.lock();
             var lineNumber = this.boSSS.getSelection().selectionStartLineNumber;
             var boxArray = this.userGUI.getAllBoxesFromLine(lineNumber);
-            this.userGUI.executeBoxes(boxArray);
+            await BoxWithMenu.runBoxes(boxArray);
+            this.status.unlock();
         }
     }
 
-    executeEntireWorksheet(){
+    async executeEntireWorksheet(){
         if(!this.status.isLocked()){
+            this.status.lock();
             var boxArray = this.userGUI.getAllBoxes();
-            this.userGUI.executeBoxes(boxArray);
+            await BoxWithMenu.runBoxes(boxArray);
+            this.status.unlock();
         }
     }
 
-    executeUntilHere(){
+    async executeUntilHere(){
         if(!this.status.isLocked()){
-            this.status.toggleLock();
+            this.status.lock();
             var lineNumber = this.boSSS.getSelection().selectionStartLineNumber;
             var boxArray = this.userGUI.getAllBoxesUntilLine(lineNumber);
-            this.userGUI.executeBoxes(boxArray);
+            await BoxWithMenu.runBoxes(boxArray);
+            this.status.unlock();
         }
     }
 
-    interruptCurrentComand(){
-        deQueueAllPendingCommands();
-        
+    async interruptCurrentCommand(){
+        this.deQueueAllPendingCommands();
+        await boSSSRuntime.forceAbort();
     }
 
     deQueueAllPendingCommands(){
-        console.log("De-Queueing ;)")
+        BoxWithMenu.deQueue(); 
     }
 
     //File actions
@@ -183,6 +178,8 @@ export class BoSSSpad{
         this.userGUI.reset();
         this.boSSS.reset();
         this.status.changed = false;
+        this.status.locked = false;
+        BoxWithMenu.reset();
     }
 
     openFile(path){
