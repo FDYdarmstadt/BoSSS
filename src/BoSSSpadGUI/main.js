@@ -1,31 +1,15 @@
 const electron = require('electron');
 const app = electron.app;
 const BrowserWindow = electron.BrowserWindow;
-const BoSSSMenu = require('./src/app/menu.js');
-const BoSSSDataMethods = require('./src/app/dataMethods.js');
-const CommandActions = require('./src/app/commandActions.js');
+const addFunctionality = require('./src/app/menu.js');
 
 let mainWindow;
-let menu;
 
 function createWindow () {
 	mainWindow = new BrowserWindow({width: 800, height: 600, icon: __dirname + '/src/app/logo/logo_fdy.ico'});
 	mainWindow.loadURL(`file://${__dirname}/boSSSpad/index.html`);
     mainWindow.on('closed', function(){ mainWindow = null}); 
-    
-    //Create Menu
-    var dataMethods = new BoSSSDataMethods(mainWindow);
-    var commandActions = new CommandActions(mainWindow);
-    menu = new BoSSSMenu(commandActions, dataMethods);
-
-    var closeBoSSSpad = false;
-    mainWindow.on('close', (event) =>{
-        if(!closeBoSSSpad)
-        {
-            event.preventDefault();
-            dataMethods.AreYouSure_Save(() => {closeBoSSSpad = true; mainWindow.close(); });
-        }
-    });   
+    addFunctionality(mainWindow);
 }
 
 app.on('ready', createWindow);

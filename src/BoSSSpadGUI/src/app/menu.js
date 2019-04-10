@@ -1,144 +1,30 @@
-const electron = require('electron');
+const BoSSSMenu = require('./boSSSMenu.js');
 const BoSSSDataMethods = require('./dataMethods.js');
+const CommandActions = require('./commandActions.js');
+const UserData = require('./commandActions.js');
 
-class BoSSSMenu{
-	constructor(commandActions, dataMethods){
-        this.Menu = electron.Menu;
-        this.dataMethods = dataMethods;
-        this.commandActions = commandActions;
-        this.createMenu();
-	}
-			
-	createMenu(){
-		const template = this.createTemplate();
-		const menu = this.Menu.buildFromTemplate(template);
-		this.Menu.setApplicationMenu(menu);
+function addFunctionality(mainWindow){
+    
+    function createMenu(dataMethods){
+        var commandActions = new CommandActions(mainWindow);
+        var userData = new UserData();
+        var menu = new BoSSSMenu(commandActions, dataMethods);
     }
 
-    createTemplate(){
-        var that = this;
-        var template = [
-			{
-				label: 'File',
-				submenu: [
-					{
-                        label: 'New File',
-                        accelerator: 'CmdOrCtrl+N',
-						click() {
-							that.dataMethods.newFile();
-						}
-					},
-					{type: 'separator'},
-					{
-                        label: 'Open File',
-                        accelerator: 'CmdOrCtrl+O',
-						click() {
-							that.dataMethods.openFile();
-						}
-					},
-					{
-						label: 'Open Recent', 
-						submenu: [
-                            {
-                                label: "Irgend/Ein/Path.bws"
-                            },
-                            {
-                                type: 'separator'
-                            },
-                            {
-                                label: 'Clear Recent',
-                            }
-						]
-					},
-					{type: 'separator'},
-					{
-                        label: 'Save File',
-                        accelerator: 'CmdOrCtrl+S',
-						click() {
-                            try{
-                                that.dataMethods.saveFile();
-                            }catch(e){
-                                console.log(e);
-                            }
-						}
-					},
-					{
-						label: 'Save File As...',
-						click() {
-                            try{
-                                that.dataMethods.saveFileAs();
-                            }catch(e){
-                                console.log(e);
-                            }
-						}
-					}
-				]
-            },
+    function addCloseAction(dataMethods){
+        mainWindow.on('close', (event) =>{
+            if(!closeBoSSSpad)
             {
-                label: 'Commands',
-                submenu:[
-                    {
-                        label: 'Execute from here...',
-                        accelerator: 'CmdOrCtrl+F5',
-                        click(){
-                            that.commandActions.executeFromHere();
-                        }
-                    },
-                    {
-                        label: 'Execute entire worksheet',
-                        accelerator: 'F5',
-                        click(){
-                            that.commandActions.executeEntireWorksheet();
-                        }
-                    },
-                    {
-                        label: 'Execute until here',
-                        accelerator: 'CmdOrCtrl+Shift+F5',
-                        click(){
-                            that.commandActions.executeUntilHere();
-                        }
-                    },
-                    {
-                        label: 'Interrupt current command',
-                        click(){
-                            that.commandActions.interruptCurrentCommand();
-                        }
-                    },
-                    {
-                        label: 'De-Queue all pending commands',
-                        click(){
-                            that.commandActions.deQueueAllPendingCommands();
-                        }
-                    },
-                ]
-            },
-            {	
-				label: 'Dev',
-				submenu:[
-					{role: 'reload'},
-					{role: 'toggledevtools'}
-				]
-			},
-			{
-				label: 'Help',
-				submenu: [
-					{
-						label: 'Documentation',
-						click () { 
-							electron.shell.openExternal('https://github.com/FDYdarmstadt/BoSSS');
-						} 
-					},
-					{
-						label: 'About',
-						click () { 
-							electron.shell.openExternal('http://www.fdy.tu-darmstadt.de/fdy/fdyresearch/bossscode/framework/framework.de.jsp');
-						} 
-					}
-				]
-			}
-		];
-        return template;
+                event.preventDefault();
+                dataMethods.AreYouSure_Save(() => {closeBoSSSpad = true; mainWindow.close(); });
+            }
+        });   
     }
+
+    var dataMethods = new BoSSSDataMethods(mainWindow);
+    createMenu(dataMethods);
+    addCloseAction(dataMethods);
+    var closeBoSSSpad = false;
 }
 
-module.exports = BoSSSMenu;
+module.exports = addFunctionality;
