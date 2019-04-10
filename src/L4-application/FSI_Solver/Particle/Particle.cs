@@ -658,10 +658,10 @@ namespace BoSSS.Application.FSI_Solver
                 for (int i = 0; i < SpatialDim; i++) {
                     UA[i].EvaluateGradient(j0, Len, Ns, Grad_UARes.ExtractSubArrayShallow(-1, -1, i, -1), 0, 1);
                 }
-                MultidimensionalArray tempArray = Ns.CloneAs();
-                LsTrk.GridDat.TransformLocal2Global(Ns, tempArray, j0);
                 pA.Evaluate(j0, Len, Ns, pARes);
                 for (int j = 0; j < Len; j++) {
+                    MultidimensionalArray tempArray = Ns.CloneAs();
+                    LsTrk.GridDat.TransformLocal2Global(Ns, tempArray, j0 + j);
                     for (int k = 0; k < K; k++) {
                         result[j, k] = ForceIntegration.CalculateTorqueFromStressTensor2D(Grad_UARes, pARes, Normals, tempArray, muA, k, j, Position[0]);
                     }

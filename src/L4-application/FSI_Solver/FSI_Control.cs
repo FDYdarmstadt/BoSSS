@@ -95,10 +95,19 @@ namespace BoSSS.Application.FSI_Solver {
         /// <summary>
         /// under-relaxation of the level set movement in case of coupled iterative
         /// </summary>
+        [DataMember]
         public double LSunderrelax = 1.0;
 
+        /// <summary>
+        /// for iterative coupling, use prediction methods for acceleration.
+        /// Introduces because the new, experimental code crashes some tests - should be removed in future.
+        /// </summary>
+        [DataMember]
+        public bool UseBenjaminsExperimentalMotionUpdate = false;
 
-
+        /// <summary>
+        /// Setting <see cref="Solution.Control.AppControl.FieldOptions"/>
+        /// </summary>
         public override void SetDGdegree(int k) {
             if (k < 1)
                 throw new ArgumentOutOfRangeException("DG polynomial degree must be at least 1.");

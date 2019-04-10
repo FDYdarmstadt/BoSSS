@@ -205,7 +205,7 @@ namespace BoSSS.Application.FSI_Solver
             C.max_iterations_fully_coupled = 10000;
             C.includeRotation = true;
             C.includeTranslation = true;
-
+            C.UseBenjaminsExperimentalMotionUpdate = true;
 
             // Timestepping
             // =============================  
