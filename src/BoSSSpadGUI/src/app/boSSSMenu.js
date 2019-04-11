@@ -1,11 +1,11 @@
 const electron = require('electron');
-const BoSSSDataMethods = require('./dataMethods.js');
 
 class BoSSSMenu{
-	constructor(commandActions, dataMethods){
+	constructor(commandActions, dataMethods, recentDocuments){
         this.Menu = electron.Menu;
         this.dataMethods = dataMethods;
         this.commandActions = commandActions;
+        this.recentDocuments = recentDocuments;
         this.createMenu();
 	}
 			

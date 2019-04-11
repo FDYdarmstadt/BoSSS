@@ -1,7 +1,7 @@
 const electron = require('electron');
 const app = electron.app;
 const BrowserWindow = electron.BrowserWindow;
-const addFunctionality = require('./src/app/menu.js');
+const addFunctionality = require('./src/app/functionality.js');
 
 let mainWindow;
 
@@ -26,12 +26,3 @@ app.on('activate', function () {
 	}
 });
 
-/* Mac Stuff
-app.on('activate', () => {
-    // Unter macOS ist es üblich ein neues Fenster der App zu erstellen, wenn
-    // das Dock Icon angeklickt wird und keine anderen Fenster offen sind.
-    if (win === null) {
-      createWindow()
-    }
-})
-*/
