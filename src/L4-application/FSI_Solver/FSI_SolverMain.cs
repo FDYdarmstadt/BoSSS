@@ -664,7 +664,8 @@ namespace BoSSS.Application.FSI_Solver {
             // Define an array with the respective cell colors
             // ===============================================
             int J = GridData.iLogicalCells.NoOfLocalUpdatedCells;
-            CellColor = CellColor ?? InitializeColoring(J);
+            //CellColor = CellColor ?? InitializeColoring(J);
+            CellColor = InitializeColoring(J);
 
             // Step 2
             // Delete the old level set
@@ -1939,18 +1940,18 @@ namespace BoSSS.Application.FSI_Solver {
             CellMask ColoredCellMask = null;
             List<int[]> ColoredCellsSorted = levelSetUpdate.ColoredCellsFindAndSort(CellColor);
             int[] ParticleColorArray = levelSetUpdate.FindParticleColor(GridData, m_Particles, ColoredCellsSorted);
-            for (int p = 0; p < m_Particles.Count(); p++)
+            for (int p = 0; p < ParticleColorArray.Length; p++)
             {
                 if (ParticleColorArray[p] != 0)
                 {
-                    ColoredCellMask = levelSetUpdate.CellsOneColor(GridData, ColoredCellsSorted, ParticleColorArray[p], J);
+                    ColoredCellMask = levelSetUpdate.CellsOneColor(GridData, ColoredCellsSorted, ParticleColorArray[p], J, false);
                 }
             }
-            //CellMask LevSetCells = LsTrk.Regions.GetCutCellMask();
+            CellMask LevSetCells = LsTrk.Regions.GetCutCellMask();
             //CellMask LevSetNeighbours = LsTrk.Regions.GetNearFieldMask(1);
             int DesiredLevel_j = 0;
-            if (ColoredCellMask != null && ColoredCellMask.Contains(j)) {
-                DesiredLevel_j = 1;
+            if (ColoredCellMask != null && LevSetCells.Contains(j)) {
+                DesiredLevel_j = 2;
             }
             //else if (LevSetNeighbours.Contains(j))
             //{

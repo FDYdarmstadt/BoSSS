@@ -139,6 +139,7 @@ namespace FSI_Solver
             for (int p = 0; p < Particles.Count; p++)
             {
                 double[] ParticleScales = Particles[p].GetLengthScales();
+                double Hmin = Math.Sqrt(gridData.iGeomCells.GetCellVolume(ColoredCellsSorted[0][0]));
                 double Lengthscale = ParticleScales.Max();
                 double[] ParticlePos = Particles[p].Position[0];
                 double Upperedge = ParticlePos[1] + Lengthscale;
