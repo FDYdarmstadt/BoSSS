@@ -59,8 +59,12 @@ namespace BoSSS.Application.FSI_Solver {
                 double angularVelocity = (double)p.QueryHandler.QueryResults["Angular_Velocity"];
 
                 double diff_Velocity = Math.Abs(angularVelocity - angularVelocity_Sol);
+                Console.WriteLine("   angular velocity is " + angularVelocity);
+                Console.WriteLine("         should be     " + angularVelocity_Sol);
+                Console.WriteLine("         difference is " + diff_Velocity);
 
-                Assert.LessOrEqual(diff_Velocity, 0.00025);
+
+                Assert.LessOrEqual(diff_Velocity, 0.00025, "Error in expected angular velocity is to high");
 
             }
         }

@@ -40,6 +40,7 @@ using BoSSS.Foundation.Grid.RefElements;
 using FSI_Solver;
 using System.Collections;
 using BoSSS.Solution.LevelSetTools;
+using NUnit.Framework;
 
 namespace BoSSS.Application.FSI_Solver {
     public class FSI_SolverMain : IBM_Solver.IBM_SolverMain {
@@ -61,6 +62,10 @@ namespace BoSSS.Application.FSI_Solver {
         /// Application entry point.
         /// </summary>
         static void Main(string[] args) {
+            //TestProgram.Init();
+            //TestProgram.TestFlowRotationalCoupling();
+            //Assert.IsTrue(false, "Remember to remove testcode!");
+
             MultiphaseCellAgglomerator.Katastrophenplot = MegaArschKakke2;
 
             _Main(args, false, delegate () {
@@ -935,12 +940,8 @@ namespace BoSSS.Application.FSI_Solver {
                 // step 2: sum over MPI processors
                 // note: we want to sum all variables by a single MPI call, which is way more efficient
                 // B. Deußen: a single call of MPISum() would only consider the first entry of StateBuffer, thus I implemented the loop over all entries
-                double[] GlobalStateBuffer = new double[StateBuffer.Length];
-                for (int i = 0; i < StateBuffer.Length; i++)
-                {
-                    GlobalStateBuffer[i] = 0;
-                    GlobalStateBuffer[i] = StateBuffer[i].MPISum();
-                }
+                // Nope, this was a bug in MPIsum, fixed now.
+                double[] GlobalStateBuffer = StateBuffer.MPISum();
 
                 // step 3: write sum variables back 
                 for (int iP = 0; iP < NoOfParticles; iP++) {
@@ -1005,23 +1006,16 @@ namespace BoSSS.Application.FSI_Solver {
             }
         }
 
-        private void UpdateParticleAccelerationAndDamping(Particle p, int IterationCounter, double dt, double FluidDensity)
-        {
-            if (IterationCounter == 0 && ((FSI_Control)Control).Timestepper_LevelSetHandling == LevelSetHandling.FSI_LieSplittingFullyCoupled)
-            {
-                if (p.neglectAddedDamping == false && p.iteration_counter_P == 0)
-                {
+        private void UpdateParticleAccelerationAndDamping(Particle p, int IterationCounter, double dt, double FluidDensity) {
+            if (IterationCounter == 0 && ((FSI_Control)Control).Timestepper_LevelSetHandling == LevelSetHandling.FSI_LieSplittingFullyCoupled) {
+                if (p.neglectAddedDamping == false && p.iteration_counter_P == 0) {
                     p.UpdateDampingTensors();
                     ExchangeDampingTensors();
                 }
                 p.PredictAcceleration();
-            }
-            else if (IterationCounter == 100 && ((FSI_Control)Control).Timestepper_LevelSetHandling == LevelSetHandling.FSI_LieSplittingFullyCoupled)
-            {
+            } else if (IterationCounter == 100 && ((FSI_Control)Control).Timestepper_LevelSetHandling == LevelSetHandling.FSI_LieSplittingFullyCoupled) {
                 p.PredictAccelerationWithinIteration();
-            }
-            else
-            {
+            } else {
                 p.CalculateAcceleration(dt, FluidDensity);
             }
         }
@@ -1115,7 +1109,7 @@ namespace BoSSS.Application.FSI_Solver {
             yPos = m_Particles[0].Position[0][1];
             ang = m_Particles[0].Angle[0];
             var MPItransVelocity = m_Particles[0].TranslationalVelocity[0];
-            var MPIangularVelocity = m_Particles[0].RotationalVelocity[0];
+            double MPIangularVelocity = m_Particles[0].RotationalVelocity[0];
             
 
             //Console.WriteLine(newPosition[1].MPIMax());
@@ -1939,7 +1933,6 @@ namespace BoSSS.Application.FSI_Solver {
         /// Mesh refinement
         /// Very primitive refinement indicator, works on a LevelSet criterion.
         /// </summary>
-        /// 
         int LevelIndicator(int j, int CurrentLevel) {
             int J = GridData.iLogicalCells.NoOfLocalUpdatedCells;
             FSI_LevelSetUpdate levelSetUpdate = new FSI_LevelSetUpdate();
