@@ -1748,13 +1748,20 @@ namespace BoSSS.Application.FSI_Solver {
                 return;
             }
 
-            var particleCutCells = particle.CutCells_P(LsTrk);
+            int J = GridData.iLogicalCells.NoOfLocalUpdatedCells;
+            FSI_LevelSetUpdate levelSetUpdate = new FSI_LevelSetUpdate();
+            List<int[]> ColoredCellsSorted = levelSetUpdate.ColoredCellsFindAndSort(CellColor);
+            List<Particle> temp = new List<Particle>();
+            temp.Add(particle);
+            int[] ParticleColorArray = levelSetUpdate.FindParticleColor(GridData, temp, ColoredCellsSorted);
+            //var particleCutCells = particle.CutCells_P(LsTrk);
+            CellMask particleCutCells = levelSetUpdate.CellsOneColor(GridData, ColoredCellsSorted, ParticleColorArray[0], J);
 
             //var particleCutCellArray = particleCutCells.ItemEnum.ToArray();
             //var neighborCellsArray = particleCutCells.AllNeighbourCells().ItemEnum.ToArray();
             //var allCellsArray = particleCutCellArray.Concat(neighborCellsArray).ToArray();
             //var allCells = new CellMask(GridData, neighborCellsArray);
-            var allCells = particleCutCells;
+            CellMask allCells = particleCutCells;
 
             collision = false;
 
@@ -1766,7 +1773,7 @@ namespace BoSSS.Application.FSI_Solver {
 
             //Console.WriteLine("ParticleCutCellCount:   " + particleCutCells.Count());
 
-            var trafo = GridData.iGeomEdges.Edge2CellTrafos;
+            IList<Platform.LinAlg.AffineTrafo> trafo = GridData.iGeomEdges.Edge2CellTrafos;
 
             SubGrid allCellsGrid = new SubGrid(allCells);
 
@@ -1781,15 +1788,15 @@ namespace BoSSS.Application.FSI_Solver {
                         interfacePoints = particle.GetSurfacePoints(LsTrk, LevSet);
 
                     collision = true;
-                    var jCell = GridData.iGeomEdges.CellIndices[iEdge, 0];
+                    int jCell = GridData.iGeomEdges.CellIndices[iEdge, 0];
                     int iKref = GridData.iGeomEdges.GetRefElementIndex(jCell);
 
                     NodeSet[] refNodes = GridData.iGeomEdges.EdgeRefElements.Select(Kref2 => Kref2.GetQuadratureRule(5 * 2).Nodes).ToArray();
                     NodeSet Nodes = refNodes.ElementAt(iKref);
 
-                    var trafoIdx = GridData.iGeomEdges.Edge2CellTrafoIndex[iEdge, 0];
-                    var transFormed = trafo[trafoIdx].Transform(Nodes);
-                    var newVertices = transFormed.CloneAs();
+                    int trafoIdx = GridData.iGeomEdges.Edge2CellTrafoIndex[iEdge, 0];
+                    MultidimensionalArray transFormed = trafo[trafoIdx].Transform(Nodes);
+                    MultidimensionalArray newVertices = transFormed.CloneAs();
                     GridData.TransformLocal2Global(transFormed, newVertices, jCell);
                     var tempDistance = 0.0;
 
@@ -1876,9 +1883,9 @@ namespace BoSSS.Application.FSI_Solver {
 
                         double e = 1.0;
 
-                        // Fully plastic for bottom wall
-                        if (particle.Position[0][1] < 0.5)
-                            e = 0.0;
+                        // Fully plastic for bottom wall, why Dennis, why?
+                        // if (particle.Position[0][1] < 0.5)
+                        //    e = 0.0;
 
 
                         // if particle already collided with wall
@@ -1951,7 +1958,7 @@ namespace BoSSS.Application.FSI_Solver {
             //CellMask LevSetNeighbours = LsTrk.Regions.GetNearFieldMask(1);
             int DesiredLevel_j = 0;
             if (ColoredCellMask != null && LevSetCells.Contains(j)) {
-                DesiredLevel_j = 2;
+                DesiredLevel_j = ((FSI_Control)this.Control).RefinementLevel;
             }
             //else if (LevSetNeighbours.Contains(j))
             //{
