@@ -275,7 +275,7 @@ namespace BoSSS.Application.FSI_Solver
         /// AddedDampingCoefficient
         /// </summary>
         [DataMember]
-        public double AddedDampingCoefficient = 0.5;
+        public double AddedDampingCoefficient = 1;
 
         /// <summary>
         /// Level set function describing the particle.
@@ -633,45 +633,32 @@ namespace BoSSS.Application.FSI_Solver
                 Forces[1] += (particleDensity - fluidDensity) * Area_P * GravityVertical;
             }
 
-
-            if (Math.Abs(Forces[0]) < 1e-20 || double.IsNaN(Forces[0]))
-                Forces[0] = 0;
-            if (Math.Abs(Forces[1]) < 1e-20 || double.IsNaN(Forces[1]))
-                Forces[1] = 0;
-            if (Math.Abs(Torque) < 1e-20 || double.IsNaN(Torque))
-                Torque = 0;
-            if (double.IsNaN(Forces[0]) || double.IsInfinity(Forces[0]))
-                throw new ArithmeticException("Error trying to calculate hydrodynamic forces (x). Value:  " + Forces[0]);
-            if (double.IsNaN(Forces[1]) || double.IsInfinity(Forces[1]))
-                throw new ArithmeticException("Error trying to calculate hydrodynamic forces (y). Value:  " + Forces[1]);
-            if (double.IsNaN(Torque) || double.IsInfinity(Torque))
-                throw new ArithmeticException("Error trying to calculate hydrodynamic torque. Value:  " + Torque);
-
             if (neglectAddedDamping == false) {
-                Forces[0] = Forces[0] + AddedDampingCoefficient * dt * (AddedDampingTensor[0, 0] * TranslationalAcceleration[0][0] + AddedDampingTensor[1, 0] * TranslationalAcceleration[0][1] + AddedDampingTensor[0, 2] * RotationalAcceleration[0]);
-                Forces[1] = Forces[1] + AddedDampingCoefficient * dt * (AddedDampingTensor[0, 1] * TranslationalAcceleration[0][0] + AddedDampingTensor[1, 1] * TranslationalAcceleration[0][1] + AddedDampingTensor[1, 2] * RotationalAcceleration[0]);
-                Torque = Torque + AddedDampingCoefficient * dt * (AddedDampingTensor[2, 0] * TranslationalAcceleration[0][0] + AddedDampingTensor[2, 1] * TranslationalAcceleration[0][1] + AddedDampingTensor[2, 2] * RotationalAcceleration[0]);
+                Forces[0] = Forces[0] - AddedDampingCoefficient * dt * (AddedDampingTensor[0, 0] * TranslationalAcceleration[0][0] + AddedDampingTensor[1, 0] * TranslationalAcceleration[0][1] + AddedDampingTensor[0, 2] * RotationalAcceleration[0]);
+                Forces[1] = Forces[1] - AddedDampingCoefficient * dt * (AddedDampingTensor[0, 1] * TranslationalAcceleration[0][0] + AddedDampingTensor[1, 1] * TranslationalAcceleration[0][1] + AddedDampingTensor[1, 2] * RotationalAcceleration[0]);
+                Torque = Torque - AddedDampingCoefficient * dt * (AddedDampingTensor[2, 0] * TranslationalAcceleration[0][0] + AddedDampingTensor[2, 1] * TranslationalAcceleration[0][1] + AddedDampingTensor[2, 2] * RotationalAcceleration[0]);
+            }
+
+            // Sum forces and moments over all MPI processors
+            // ==============================================
+            {
+                int NoOfVars = 1 + SpatialDim;
+                double[] StateBuffer = new double[NoOfVars];
+                StateBuffer[0] = Torque;
+                for (int d = 0; d < SpatialDim; d++)
+                {
+                    StateBuffer[1 + d] = Forces[d];
+                }
+                double[] GlobalStateBuffer = StateBuffer.MPISum();
+                Torque = GlobalStateBuffer[0];
+                for (int d = 0; d < SpatialDim; d++)
+                {
+                    Forces[d] = GlobalStateBuffer[1 + d];
+                }
             }
 
             if (iteration_counter_P == 1)
             {
-                // Sum forces and moments over all MPI processors
-                // ==============================================
-                {
-                    int NoOfVars = 1 + SpatialDim;
-                    double[] StateBuffer = new double[NoOfVars];
-                    StateBuffer[0] = Torque;
-                    for (int d = 0; d < SpatialDim; d++)
-                    {
-                        StateBuffer[1 + d] = Forces[d];
-                    }
-                    double[] GlobalStateBuffer = StateBuffer.MPISum();
-                    Torque = GlobalStateBuffer[0];
-                    for (int d = 0; d < SpatialDim; d++)
-                    {
-                        Forces[d] = GlobalStateBuffer[1 + d];
-                    }
-                }
                 Console.WriteLine("First iteration of the current timestep, all relaxation factors are set to 1");
                 for (int d = 0; d < SpatialDim; d++)
                 {

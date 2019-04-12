@@ -30,7 +30,7 @@ namespace BoSSS.Application.FSI_Solver
 {
     public class HardcodedControl_straightChannel : IBM_Solver.HardcodedTestExamples
     {
-        public static FSI_Control ActiveRod_noBackroundFlow(int k = 2, double stressM = 1e5, double cellAgg = 0.2, double muA = 1e5, double timestepX = 1e-3)
+        public static FSI_Control ActiveRod_noBackroundFlow(int k = 2, double stressM = 1e4, double cellAgg = 0.2, double muA = 1e3, double timestepX = 1e-3)
         {
             FSI_Control C = new FSI_Control();
 
@@ -65,16 +65,16 @@ namespace BoSSS.Application.FSI_Solver
                 int q = new int(); // #Cells in x-dircetion + 1
                 int r = new int(); // #Cells in y-dircetion + 1
 
-                q = 60;
-                r = 30;
+                q = 80;
+                r = 40;
 
                 double[] Xnodes = GenericBlas.Linspace(-2.5 * BaseSize, 12.5 * BaseSize, q);
                 double[] Ynodes = GenericBlas.Linspace(-3.75 * BaseSize, 3.75 * BaseSize, r);
 
-                var grd = Grid2D.Cartesian2DGrid(Xnodes, Ynodes, periodicX: true, periodicY: false);
+                var grd = Grid2D.Cartesian2DGrid(Xnodes, Ynodes, periodicX: false, periodicY: false);
 
-                grd.EdgeTagNames.Add(1, "Wall_left");
-                grd.EdgeTagNames.Add(2, "Wall_right");
+                grd.EdgeTagNames.Add(1, "Pressure_Outlet_left");
+                grd.EdgeTagNames.Add(2, "Pressure_Outlet_right");
                 grd.EdgeTagNames.Add(3, "Wall_lower");
                 grd.EdgeTagNames.Add(4, "Wall_upper");
 
@@ -110,8 +110,8 @@ namespace BoSSS.Application.FSI_Solver
 
             // Boundary conditions
             // =============================
-            C.AddBoundaryValue("Wall_left");//, "VelocityX", X => 0.0);
-            C.AddBoundaryValue("Wall_right");//, "VelocityX", X => 0.0);
+            C.AddBoundaryValue("Pressure_Outlet_left");//, "VelocityX", X => 0.0);
+            C.AddBoundaryValue("Pressure_Outlet_right");//, "VelocityX", X => 0.0);
             C.AddBoundaryValue("Wall_lower");
             C.AddBoundaryValue("Wall_upper");
             
@@ -130,15 +130,15 @@ namespace BoSSS.Application.FSI_Solver
             int numOfParticles = 1;
             for (int d = 0; d < numOfParticles; d++)
             {
-                C.Particles.Add(new Particle_Ellipsoid(new double[] { 1 + 8 * d, 0 }, startAngl: 45 - 180 * d)
+                C.Particles.Add(new Particle_Ellipsoid(new double[] { 1 + 8 * d, 0 }, startAngl: 0 - 180 * d)
                 {
-                    particleDensity = 1,
+                    particleDensity = 0,
                     ActiveParticle = true,
                     ActiveStress = stressM,
                     thickness_P = 0.4 * BaseSize,
                     length_P = 2 * BaseSize,
                     AddaptiveUnderrelaxation = true,
-                    underrelaxation_factor = 0.01,
+                    underrelaxation_factor = 0.5,
                     ClearSmallValues = true,
                     neglectAddedDamping = false
                 });
@@ -178,7 +178,7 @@ namespace BoSSS.Application.FSI_Solver
             C.LinearSolver.NoOfMultigridLevels = 1;
             C.LinearSolver.MaxSolverIterations = 1000;
             C.LinearSolver.MinSolverIterations = 1;
-            C.ForceAndTorque_ConvergenceCriterion = 1e2;
+            C.ForceAndTorque_ConvergenceCriterion = 1e0;
             C.LSunderrelax = 1.0;
             
 
