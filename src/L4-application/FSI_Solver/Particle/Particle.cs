@@ -384,13 +384,19 @@ namespace BoSSS.Application.FSI_Solver
             for (int d = 0; d < SpatialDim; d++)
             {
                 TranslationalAcceleration[0][d] = 2 * TranslationalAcceleration[1][d] - TranslationalAcceleration[2][d];
-                Console.WriteLine("Translational Acceleration[" + d + "] is:    " + TranslationalAcceleration[0][d]);
+                
                 HydrodynamicForces[0][d] = 2 * HydrodynamicForces[1][d] - HydrodynamicForces[2][d];
+                if (Math.Abs(TranslationalAcceleration[0][d]) < 1e-20 || double.IsNaN(TranslationalAcceleration[0][d]))
+                    TranslationalAcceleration[0][d] = 0;
+                Console.WriteLine("Translational Acceleration[" + d + "] is:    " + TranslationalAcceleration[0][d]);
             }
 
             RotationalAcceleration[0] = 2 * RotationalAcceleration[1] - RotationalAcceleration[2];
-            Console.WriteLine("Rotational Acceleration is:    " + RotationalAcceleration[0]);
+            
             HydrodynamicTorque[0] = 2 * HydrodynamicTorque[1] - HydrodynamicTorque[2];
+            if (Math.Abs(RotationalAcceleration[0]) < 1e-20 || double.IsNaN(RotationalAcceleration[0]))
+                RotationalAcceleration[0] = 0;
+            Console.WriteLine("Rotational Acceleration is:    " + RotationalAcceleration[0]);
         }
 
         /// <summary>
@@ -684,6 +690,13 @@ namespace BoSSS.Application.FSI_Solver
                 Forces[1] += (particleDensity - fluidDensity) * Area_P * GravityVertical;
             }
 
+
+            if (Math.Abs(Forces[0]) < 1e-20 || double.IsNaN(Forces[0]))
+                Forces[0] = 0;
+            if (Math.Abs(Forces[1]) < 1e-20 || double.IsNaN(Forces[1]))
+                Forces[1] = 0;
+            if (Math.Abs(Torque) < 1e-20 || double.IsNaN(Torque))
+                Torque = 0;
             //if (double.IsNaN(Forces[0]) || double.IsInfinity(Forces[0]))
             //    throw new ArithmeticException("Error trying to calculate hydrodynamic forces (x). Value:  " + Forces[0]);
             //if (double.IsNaN(Forces[1]) || double.IsInfinity(Forces[1]))

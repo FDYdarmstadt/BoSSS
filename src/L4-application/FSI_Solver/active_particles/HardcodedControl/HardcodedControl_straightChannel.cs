@@ -30,7 +30,7 @@ namespace BoSSS.Application.FSI_Solver
 {
     public class HardcodedControl_straightChannel : IBM_Solver.HardcodedTestExamples
     {
-        public static FSI_Control ActiveRod_noBackroundFlow(int k = 2, double stressM = 1e10, double cellAgg = 0.2, double muA = 1e5, double timestepX = 1e-3)
+        public static FSI_Control ActiveRod_noBackroundFlow(int k = 2, double stressM = 1e8, double cellAgg = 0.2, double muA = 1e4, double timestepX = 1e-3)
         {
             FSI_Control C = new FSI_Control();
 
@@ -65,11 +65,11 @@ namespace BoSSS.Application.FSI_Solver
                 int q = new int(); // #Cells in x-dircetion + 1
                 int r = new int(); // #Cells in y-dircetion + 1
 
-                q = 151;
-                r = 151;
+                q = 71;
+                r = 51;
 
-                double[] Xnodes = GenericBlas.Linspace(-0 * BaseSize, 15 * BaseSize, q);
-                double[] Ynodes = GenericBlas.Linspace(-0 * BaseSize, 15 * BaseSize, r);
+                double[] Xnodes = GenericBlas.Linspace(-2 * BaseSize, 12 * BaseSize, q);
+                double[] Ynodes = GenericBlas.Linspace(-5 * BaseSize, 5 * BaseSize, r);
 
                 var grd = Grid2D.Cartesian2DGrid(Xnodes, Ynodes, periodicX: false, periodicY: false);
 
@@ -82,13 +82,13 @@ namespace BoSSS.Application.FSI_Solver
                 grd.DefineEdgeTags(delegate (double[] X)
                 {
                     byte et = 0;
-                    if (Math.Abs(X[0] - (-0 * BaseSize)) <= 1.0e-8)
+                    if (Math.Abs(X[0] - (-2 * BaseSize)) <= 1.0e-8)
                         et = 1;
-                    if (Math.Abs(X[0] + (-15 * BaseSize)) <= 1.0e-8)
+                    if (Math.Abs(X[0] + (-12 * BaseSize)) <= 1.0e-8)
                         et = 2;
-                    if (Math.Abs(X[1] - (-0 * BaseSize)) <= 1.0e-8)
+                    if (Math.Abs(X[1] - (-5 * BaseSize)) <= 1.0e-8)
                         et = 3;
-                    if (Math.Abs(X[1] + (-15 * BaseSize)) <= 1.0e-8)
+                    if (Math.Abs(X[1] + (-5 * BaseSize)) <= 1.0e-8)
                         et = 4;
 
                     Debug.Assert(et != 0);
@@ -128,23 +128,20 @@ namespace BoSSS.Application.FSI_Solver
             // Defining particles
             C.Particles = new List<Particle>();
             int numOfParticles = 2;
-            for (int i = 0; i < numOfParticles; i++)
+            for (int d = 0; d < numOfParticles; d++)
             {
-                for (int d = 0; d < numOfParticles; d++)
+                C.Particles.Add(new Particle_Ellipsoid(new double[] { 1 + 8 * d, 0 }, startAngl: 180 * d)
                 {
-                    C.Particles.Add(new Particle_Ellipsoid(new double[] { 3.5 + 8 * i, 3.5 + 8 * d }, startAngl: -135 - 45 * d  + 45 * i)
-                    {
-                        particleDensity = 1,
-                        ActiveParticle = true,
-                        ActiveStress = stressM,
-                        thickness_P = 0.2 * BaseSize,
-                        length_P = 1 * BaseSize,
-                        AddaptiveUnderrelaxation = true,// set true if you want to define a constant underrelaxation (not recommended)
-                        underrelaxation_factor = 0.1,// underrelaxation with [factor * 10^exponent]
-                        ClearSmallValues = true,
-                        neglectAddedDamping = false
-                    });
-                }
+                    particleDensity = 1,
+                    ActiveParticle = true,
+                    ActiveStress = stressM,
+                    thickness_P = 0.4 * BaseSize,
+                    length_P = 2 * BaseSize,
+                    AddaptiveUnderrelaxation = true,// set true if you want to define a constant underrelaxation (not recommended)
+                    underrelaxation_factor = 0.1,// underrelaxation with [factor * 10^exponent]
+                    ClearSmallValues = true,
+                    neglectAddedDamping = false
+                });
             }
 
 
