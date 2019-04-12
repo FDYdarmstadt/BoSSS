@@ -30,7 +30,7 @@ namespace BoSSS.Application.FSI_Solver
 {
     public class HardcodedControl_straightChannel : IBM_Solver.HardcodedTestExamples
     {
-        public static FSI_Control ActiveRod_noBackroundFlow(int k = 2, double stressM = 1e8, double cellAgg = 0.2, double muA = 1e4, double timestepX = 1e-3)
+        public static FSI_Control ActiveRod_noBackroundFlow(int k = 2, double stressM = 1e5, double cellAgg = 0.2, double muA = 1e5, double timestepX = 1e-3)
         {
             FSI_Control C = new FSI_Control();
 
@@ -65,16 +65,16 @@ namespace BoSSS.Application.FSI_Solver
                 int q = new int(); // #Cells in x-dircetion + 1
                 int r = new int(); // #Cells in y-dircetion + 1
 
-                q = 71;
-                r = 51;
+                q = 60;
+                r = 30;
 
-                double[] Xnodes = GenericBlas.Linspace(-2 * BaseSize, 12 * BaseSize, q);
-                double[] Ynodes = GenericBlas.Linspace(-5 * BaseSize, 5 * BaseSize, r);
+                double[] Xnodes = GenericBlas.Linspace(-2.5 * BaseSize, 12.5 * BaseSize, q);
+                double[] Ynodes = GenericBlas.Linspace(-3.75 * BaseSize, 3.75 * BaseSize, r);
 
-                var grd = Grid2D.Cartesian2DGrid(Xnodes, Ynodes, periodicX: false, periodicY: false);
+                var grd = Grid2D.Cartesian2DGrid(Xnodes, Ynodes, periodicX: true, periodicY: false);
 
-                grd.EdgeTagNames.Add(1, "Pressure_Outlet_left");
-                grd.EdgeTagNames.Add(2, "Pressure_Outlet_right");
+                grd.EdgeTagNames.Add(1, "Wall_left");
+                grd.EdgeTagNames.Add(2, "Wall_right");
                 grd.EdgeTagNames.Add(3, "Wall_lower");
                 grd.EdgeTagNames.Add(4, "Wall_upper");
 
@@ -82,13 +82,13 @@ namespace BoSSS.Application.FSI_Solver
                 grd.DefineEdgeTags(delegate (double[] X)
                 {
                     byte et = 0;
-                    if (Math.Abs(X[0] - (-2 * BaseSize)) <= 1.0e-8)
+                    if (Math.Abs(X[0] - (-2.5 * BaseSize)) <= 1.0e-8)
                         et = 1;
-                    if (Math.Abs(X[0] + (-12 * BaseSize)) <= 1.0e-8)
+                    if (Math.Abs(X[0] + (-12.5 * BaseSize)) <= 1.0e-8)
                         et = 2;
-                    if (Math.Abs(X[1] - (-5 * BaseSize)) <= 1.0e-8)
+                    if (Math.Abs(X[1] - (-3.75 * BaseSize)) <= 1.0e-8)
                         et = 3;
-                    if (Math.Abs(X[1] + (-5 * BaseSize)) <= 1.0e-8)
+                    if (Math.Abs(X[1] + (-3.75 * BaseSize)) <= 1.0e-8)
                         et = 4;
 
                     Debug.Assert(et != 0);
@@ -110,8 +110,8 @@ namespace BoSSS.Application.FSI_Solver
 
             // Boundary conditions
             // =============================
-            C.AddBoundaryValue("Pressure_Outlet_left");//, "VelocityX", X => 0.0);
-            C.AddBoundaryValue("Pressure_Outlet_right");//, "VelocityX", X => 0.0);
+            C.AddBoundaryValue("Wall_left");//, "VelocityX", X => 0.0);
+            C.AddBoundaryValue("Wall_right");//, "VelocityX", X => 0.0);
             C.AddBoundaryValue("Wall_lower");
             C.AddBoundaryValue("Wall_upper");
             
@@ -127,18 +127,18 @@ namespace BoSSS.Application.FSI_Solver
             // =============================   
             // Defining particles
             C.Particles = new List<Particle>();
-            int numOfParticles = 2;
+            int numOfParticles = 1;
             for (int d = 0; d < numOfParticles; d++)
             {
-                C.Particles.Add(new Particle_Ellipsoid(new double[] { 1 + 8 * d, 0 }, startAngl: 180 * d)
+                C.Particles.Add(new Particle_Ellipsoid(new double[] { 1 + 8 * d, 0 }, startAngl: 45 - 180 * d)
                 {
                     particleDensity = 1,
                     ActiveParticle = true,
                     ActiveStress = stressM,
                     thickness_P = 0.4 * BaseSize,
                     length_P = 2 * BaseSize,
-                    AddaptiveUnderrelaxation = true,// set true if you want to define a constant underrelaxation (not recommended)
-                    underrelaxation_factor = 0.1,// underrelaxation with [factor * 10^exponent]
+                    AddaptiveUnderrelaxation = true,
+                    underrelaxation_factor = 0.01,
                     ClearSmallValues = true,
                     neglectAddedDamping = false
                 });
@@ -178,7 +178,7 @@ namespace BoSSS.Application.FSI_Solver
             C.LinearSolver.NoOfMultigridLevels = 1;
             C.LinearSolver.MaxSolverIterations = 1000;
             C.LinearSolver.MinSolverIterations = 1;
-            C.ForceAndTorque_ConvergenceCriterion = 1e-2;
+            C.ForceAndTorque_ConvergenceCriterion = 1e2;
             C.LSunderrelax = 1.0;
             
 
@@ -194,7 +194,7 @@ namespace BoSSS.Application.FSI_Solver
             // Timestepping
             // =============================  
             C.instationarySolver = true;
-            C.Timestepper_Scheme = FSI_Solver.FSI_Control.TimesteppingScheme.BDF2;
+            C.Timestepper_Scheme = IBM_Solver.IBM_Control.TimesteppingScheme.BDF2;
             double dt = timestepX;
             C.dtMax = dt;
             C.dtMin = dt;
@@ -207,7 +207,7 @@ namespace BoSSS.Application.FSI_Solver
             return C;
         }
 
-        public static FSI_Control ActiveRod_withBackroundFlow(string _DbPath = null, int k = 2, double VelXBase = 0.0, double stressM = 1e5, double cellAgg = 0.2, double muA = 1e4, double timestepX = 1e-3)
+        public static FSI_Control ActiveRod_withBackroundFlow(int k = 2, double stressM = 1e5, double cellAgg = 0.2, double muA = 1e4, double timestepX = 1e-3)
         {
             FSI_Control C = new FSI_Control();
 

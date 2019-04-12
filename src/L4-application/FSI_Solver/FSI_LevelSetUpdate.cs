@@ -30,7 +30,7 @@ namespace FSI_Solver
 {
     class FSI_LevelSetUpdate
     {
-        private FSI_Auxillary Auxillary = new FSI_Auxillary();
+        readonly private FSI_Auxillary Auxillary = new FSI_Auxillary();
 
         /// ====================================================================================
         /// <summary>
@@ -151,7 +151,7 @@ namespace FSI_Solver
                 {
                     if (ColoredCellsSorted[i][0] < J)
                     {
-                        if (Math.Sqrt(gridData.iGeomCells.GetCellVolume(ColoredCellsSorted[i][0])) > ParticleScales.Min())
+                        if (Math.Sqrt(gridData.iGeomCells.GetCellVolume(ColoredCellsSorted[i][0])) > 2 * ParticleScales.Min())
                             throw new ArithmeticException("Hmin of the cells is larger than the particles. Please use a finer grid (or grid refinement).");
 
                         double[] center = gridData.iLogicalCells.GetCenter(ColoredCellsSorted[i][0]);
