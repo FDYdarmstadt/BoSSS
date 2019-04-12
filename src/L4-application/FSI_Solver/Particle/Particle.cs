@@ -30,6 +30,7 @@ using BoSSS.Foundation.Grid;
 using System.Diagnostics;
 using BoSSS.Foundation.Grid.Classic;
 using BoSSS.Foundation.Grid.RefElements;
+using MPI.Wrappers;
 
 namespace BoSSS.Application.FSI_Solver
 {
@@ -251,7 +252,13 @@ namespace BoSSS.Application.FSI_Solver
         /// </summary>
         [DataMember]
         public List<double[]> HydrodynamicForces = new List<double[]>();
-        
+
+        /// <summary>
+        /// The force acting on the particle in the current time step.
+        /// </summary>
+        [DataMember]
+        public double[] ForcesPrevIteration = new double[2];
+
         /// <summary>
         /// The Torque acting on the particle in the current time step.
         /// </summary>
@@ -259,10 +266,16 @@ namespace BoSSS.Application.FSI_Solver
         public List<double> HydrodynamicTorque = new List<double>();
 
         /// <summary>
+        /// The force acting on the particle in the current time step.
+        /// </summary>
+        [DataMember]
+        public double TorquePrevIteration = new double();
+
+        /// <summary>
         /// AddedDampingCoefficient
         /// </summary>
         [DataMember]
-        public int AddedDampingCoefficient = 1;
+        public double AddedDampingCoefficient = 0.5;
 
         /// <summary>
         /// Level set function describing the particle.
@@ -543,6 +556,9 @@ namespace BoSSS.Application.FSI_Solver
                 skipForceIntegration = false;
                 return;
             }
+            HydrodynamicForces[0][0] = 0;
+            HydrodynamicForces[0][1] = 0;
+            HydrodynamicTorque[0] = 0;
             int RequiredOrder = U[0].Basis.Degree * 3 + 2;
             Console.WriteLine("Forces coeff: {0}, order = {1}", LsTrk.CutCellQuadratureType, RequiredOrder);
             double[] Forces = new double[SpatialDim];
@@ -637,39 +653,47 @@ namespace BoSSS.Application.FSI_Solver
                 Torque = Torque + AddedDampingCoefficient * dt * (AddedDampingTensor[2, 0] * TranslationalAcceleration[0][0] + AddedDampingTensor[2, 1] * TranslationalAcceleration[0][1] + AddedDampingTensor[2, 2] * RotationalAcceleration[0]);
             }
 
-            if (iteration_counter_P == 0) {
-                Console.WriteLine("First iteration of the current timestep, all relaxation factors are set to 1");
-                for (int d = 0; d < SpatialDim; d++) {
-                    HydrodynamicForces[0][d] = 0;
-                    HydrodynamicForces[0][d] = Forces[d];
-                    if (Math.Abs(Forces[d]) < ForceAndTorque_convergence * 1e-2 && ClearSmallValues == true) {
-                        Forces[d] = 0;
+            if (iteration_counter_P == 1)
+            {
+                // Sum forces and moments over all MPI processors
+                // ==============================================
+                {
+                    int NoOfVars = 1 + SpatialDim;
+                    double[] StateBuffer = new double[NoOfVars];
+                    StateBuffer[0] = Torque;
+                    for (int d = 0; d < SpatialDim; d++)
+                    {
+                        StateBuffer[1 + d] = Forces[d];
+                    }
+                    double[] GlobalStateBuffer = StateBuffer.MPISum();
+                    Torque = GlobalStateBuffer[0];
+                    for (int d = 0; d < SpatialDim; d++)
+                    {
+                        Forces[d] = GlobalStateBuffer[1 + d];
                     }
                 }
-                HydrodynamicTorque[0] = 0;
-                HydrodynamicTorque[0] = Torque;
-                if (Math.Abs(Torque) < ForceAndTorque_convergence * 1e-2 && ClearSmallValues == true) {
-                    Torque = 0;
-                }
-            }
-
-            else if (iteration_counter_P == 100)
-            {
-                Console.WriteLine("No convergence after 100 iterations, I will try to restart");
-                double ForceSummation = 0;
+                Console.WriteLine("First iteration of the current timestep, all relaxation factors are set to 1");
                 for (int d = 0; d < SpatialDim; d++)
                 {
-                    ForceSummation += HydrodynamicForces[1][d].Pow2(); 
+                    HydrodynamicForces[0][d] = 0;
+                    if (Math.Abs(Forces[d]) < ForceAndTorque_convergence * 1e-2 && ClearSmallValues == true)
+                    {
+                        Forces[d] = 0;
+                    }
+                    HydrodynamicForces[0][d] = Forces[d];
                 }
-                ForceSummation = Math.Sqrt(ForceSummation);
-                HydrodynamicForces[0][0] = ForceSummation * Math.Cos(Angle[1]);
-                HydrodynamicForces[0][1] = ForceSummation * Math.Sin(Angle[1]);
                 HydrodynamicTorque[0] = 0;
-            }
+                if (Math.Abs(Torque) < ForceAndTorque_convergence * 1e-2 && ClearSmallValues == true)
+                {
+                    Torque = 0;
+                }
+                HydrodynamicTorque[0] = Torque;
 
+                
+            }
             else
             {
-                double[] RelaxatedForceAndTorque = Underrelaxation.RelaxatedForcesAndTorque(Forces, Torque, HydrodynamicForces[0], HydrodynamicTorque[0], ForceAndTorque_convergence, underrelaxation_factor, ClearSmallValues, AddaptiveUnderrelaxation, AverageDistance, iteration_counter_P);
+                double[] RelaxatedForceAndTorque = Underrelaxation.RelaxatedForcesAndTorque(Forces, Torque, ForcesPrevIteration, TorquePrevIteration, ForceAndTorque_convergence, underrelaxation_factor, ClearSmallValues, AddaptiveUnderrelaxation, AverageDistance, iteration_counter_P);
                 for (int d = 0; d < SpatialDim; d++)
                 {
                     HydrodynamicForces[0][d] = RelaxatedForceAndTorque[d];

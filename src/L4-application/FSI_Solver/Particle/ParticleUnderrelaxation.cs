@@ -89,6 +89,23 @@ namespace BoSSS.Application.FSI_Solver
             {
                 underrelaxationCoeff[spatialDim] = RelaxationFactor;
             }
+            // Sum forces and moments over all MPI processors
+            // ==============================================
+            {
+                int NoOfVars = 1 + spatialDim;
+                double[] StateBuffer = new double[NoOfVars];
+                StateBuffer[0] = torque;
+                for (int d = 0; d < spatialDim; d++)
+                {
+                    StateBuffer[1 + d] = forces[d];
+                }
+                double[] GlobalStateBuffer = StateBuffer.MPISum();
+                torque = GlobalStateBuffer[0];
+                for (int d = 0; d < spatialDim; d++)
+                {
+                    forces[d] = GlobalStateBuffer[1 + d];
+                }
+            }
             Console.WriteLine("ForcesUnderrelaxation[0]  " + underrelaxationCoeff[0] + ", ForcesUnderrelaxation[1]: " + underrelaxationCoeff[1] + ", TorqueUnderrelaxation " + underrelaxationCoeff[spatialDim]);
             Console.WriteLine("tempfForces[0]  " + forces[0] + ", temp_Forces[1]: " + forces[1] + ", tempTorque " + torque);
             for (int d = 0; d < spatialDim; d++)

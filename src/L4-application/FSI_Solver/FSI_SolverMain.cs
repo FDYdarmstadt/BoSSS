@@ -925,40 +925,40 @@ namespace BoSSS.Application.FSI_Solver {
 
             // Sum forces and moments over all MPI processors
             // ==============================================
-            {
-                // step 1: collect all variables that we need to sum up
-                int NoOfVars = 1 + D * 1;
-                double[] StateBuffer = new double[NoOfParticles * NoOfVars];
+            //{
+            //    // step 1: collect all variables that we need to sum up
+            //    int NoOfVars = 1 + D * 1;
+            //    double[] StateBuffer = new double[NoOfParticles * NoOfVars];
 
-                for (int iP = 0; iP < NoOfParticles; iP++) {
-                    var P = m_Particles[iP];
-                    StateBuffer[NoOfVars * iP + 0] = 0;
-                    StateBuffer[NoOfVars * iP + 0] = P.HydrodynamicTorque[0];
-                    for(int d = 0; d < D; d++) {
-                        int Offset = 1;
-                        StateBuffer[NoOfVars * iP + Offset + 0 * D + d] = 0;
-                        StateBuffer[NoOfVars * iP + Offset + 0*D + d] = P.HydrodynamicForces[0][d];
-                    }
-                }
+            //    for (int iP = 0; iP < NoOfParticles; iP++) {
+            //        var P = m_Particles[iP];
+            //        StateBuffer[NoOfVars * iP + 0] = 0;
+            //        StateBuffer[NoOfVars * iP + 0] = P.HydrodynamicTorque[0];
+            //        for(int d = 0; d < D; d++) {
+            //            int Offset = 1;
+            //            StateBuffer[NoOfVars * iP + Offset + 0 * D + d] = 0;
+            //            StateBuffer[NoOfVars * iP + Offset + 0*D + d] = P.HydrodynamicForces[0][d];
+            //        }
+            //    }
 
-                // step 2: sum over MPI processors
-                // note: we want to sum all variables by a single MPI call, which is way more efficient
-                // B. Deußen: a single call of MPISum() would only consider the first entry of StateBuffer, thus I implemented the loop over all entries
-                // Nope, this was a bug in MPIsum, fixed now.
-                double[] GlobalStateBuffer = StateBuffer.MPISum();
+            //    // step 2: sum over MPI processors
+            //    // note: we want to sum all variables by a single MPI call, which is way more efficient
+            //    // B. Deußen: a single call of MPISum() would only consider the first entry of StateBuffer, thus I implemented the loop over all entries
+            //    // Nope, this was a bug in MPIsum, fixed now.
+            //    double[] GlobalStateBuffer = StateBuffer.MPISum();
 
-                // step 3: write sum variables back 
-                for (int iP = 0; iP < NoOfParticles; iP++) {
-                    var P = m_Particles[iP];
-                    P.HydrodynamicTorque[0] = 0;
-                    P.HydrodynamicTorque[0] = GlobalStateBuffer[NoOfVars * iP + 0];
-                    for(int d = 0; d < D; d++) {
-                        int Offset = 1;
-                        P.HydrodynamicForces[0][d] = 0;
-                        P.HydrodynamicForces[0][d] = GlobalStateBuffer[NoOfVars * iP + Offset + 0 * D + d];
-                    }
-                }
-            }
+            //    // step 3: write sum variables back 
+            //    for (int iP = 0; iP < NoOfParticles; iP++) {
+            //        var P = m_Particles[iP];
+            //        P.HydrodynamicTorque[0] = 0;
+            //        P.HydrodynamicTorque[0] = GlobalStateBuffer[NoOfVars * iP + 0];
+            //        for(int d = 0; d < D; d++) {
+            //            int Offset = 1;
+            //            P.HydrodynamicForces[0][d] = 0;
+            //            P.HydrodynamicForces[0][d] = GlobalStateBuffer[NoOfVars * iP + Offset + 0 * D + d];
+            //        }
+            //    }
+            //}
         }
 
         private void SaveOldParticleState(List<Particle> Particles, int IterationCounter, int SpatialDim, double ForceTorqueConvergenceCriterion, out double[] ForcesOldSquared, out double TorqueOldSquared)
@@ -970,7 +970,7 @@ namespace BoSSS.Application.FSI_Solver {
                 p.iteration_counter_P = IterationCounter;
                 // Save the old hydrondynamic forces, only necessary if no iteration is applied
                 // ============================================================================
-                if (IterationCounter == 0)
+                if (IterationCounter == 0 && ((FSI_Control)this.Control).Timestepper_LevelSetHandling != LevelSetHandling.FSI_LieSplittingFullyCoupled)
                 {
                     p.Aux.SaveMultidimValueOfLastTimestep(p.HydrodynamicForces);
                     p.Aux.SaveValueOfLastTimestep(p.HydrodynamicTorque);
@@ -981,6 +981,9 @@ namespace BoSSS.Application.FSI_Solver {
                 ForcesOldSquared[0] += p.HydrodynamicForces[0][0].Pow2();
                 ForcesOldSquared[1] += p.HydrodynamicForces[0][1].Pow2();
                 TorqueOldSquared += p.HydrodynamicTorque[0].Pow2();
+                p.ForcesPrevIteration[0] = p.HydrodynamicForces[0][0];
+                p.ForcesPrevIteration[1] = p.HydrodynamicForces[0][1];
+                p.TorquePrevIteration = p.HydrodynamicTorque[0];
                 p.HydrodynamicForces[0][0] = 0;
                 p.HydrodynamicForces[0][1] = 0;
                 p.HydrodynamicTorque[0] = 0;
