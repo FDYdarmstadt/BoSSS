@@ -86,6 +86,9 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
             }
         }
 
+        /// <summary>
+        /// 
+        /// </summary>
         [Test]
         public static void CircleMovementTest(
             [Values(LevelSetEvolution.FastMarching, LevelSetEvolution.ExtensionVelocity, LevelSetEvolution.ScalarConvection, LevelSetEvolution.Fourier)]  LevelSetEvolution lsEvo,
@@ -139,6 +142,9 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
 
         }
 
+        /// <summary>
+        /// 
+        /// </summary>
         [Test]
         public static void ElliptoidRotationTest(
             [Values(LevelSetEvolution.FastMarching, LevelSetEvolution.ExtensionVelocity, LevelSetEvolution.ScalarConvection, LevelSetEvolution.Fourier)]  LevelSetEvolution lsEvo,
