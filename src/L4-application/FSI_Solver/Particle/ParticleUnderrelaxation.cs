@@ -44,7 +44,7 @@ namespace BoSSS.Application.FSI_Solver
                 UnderrelaxationExponent -= 1;
                 UnderrelaxationCoeff = predefinedFactor * Math.Pow(10, UnderrelaxationExponent);
             }
-            if (Math.Abs(UnderrelaxationCoeff * variable) < convergenceLimit * 100 && 100 * Math.Abs(variable) > Math.Abs(averageForce))
+            if (Math.Abs(UnderrelaxationCoeff * variable) < convergenceLimit * 100 && 10000 * Math.Abs(variable) > Math.Abs(averageForce))
             {
                 UnderrelaxationCoeff = convergenceLimit * 100;
             }

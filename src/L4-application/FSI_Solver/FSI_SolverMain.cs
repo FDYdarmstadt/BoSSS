@@ -1049,17 +1049,20 @@ namespace BoSSS.Application.FSI_Solver {
                 Log_DragAndLift.Flush();
             }
             */
-            foreach (Particle p in Particles)
+            for (int p = 0; p < Particles.Count(); p++)
             {
-                Console.WriteLine("Drag Force:   {0}", p.HydrodynamicForces[0][0]);
-                Console.WriteLine("Lift Force:   {0}", p.HydrodynamicForces[0][1]);
-                Console.WriteLine("Torqe:   {0}", p.HydrodynamicTorque[0]);
-                Console.WriteLine("Transl VelocityX:   {0}", p.TranslationalVelocity[0][0]);
-                Console.WriteLine("Transl VelocityY:   {0}", p.TranslationalVelocity[0][1]);
-                Console.WriteLine("Angular Velocity:   {0}", p.RotationalVelocity[0]);
-                Console.WriteLine("X-position:   {0}", p.Position[0][0]);
-                Console.WriteLine("Y-position:   {0}", p.Position[0][1]);
-                Console.WriteLine("Angle:   {0}", p. Angle[0]);
+                Particle CurrentP = Particles[p];
+                int PrintP = p + 1;
+                Console.WriteLine("Status report particle #" + PrintP + ",Time: " + phystime);
+                Console.WriteLine("Drag Force:   {0}", CurrentP.HydrodynamicForces[0][0]);
+                Console.WriteLine("Lift Force:   {0}", CurrentP.HydrodynamicForces[0][1]);
+                Console.WriteLine("Torqe:   {0}", CurrentP.HydrodynamicTorque[0]);
+                Console.WriteLine("Transl VelocityX:   {0}", CurrentP.TranslationalVelocity[0][0]);
+                Console.WriteLine("Transl VelocityY:   {0}", CurrentP.TranslationalVelocity[0][1]);
+                Console.WriteLine("Angular Velocity:   {0}", CurrentP.RotationalVelocity[0]);
+                Console.WriteLine("X-position:   {0}", CurrentP.Position[0][0]);
+                Console.WriteLine("Y-position:   {0}", CurrentP.Position[0][1]);
+                Console.WriteLine("Angle:   {0}", CurrentP.Angle[0]);
                 Console.WriteLine();
                 Console.WriteLine("=======================================================");
                 Console.WriteLine();

@@ -30,7 +30,7 @@ namespace FSI_Solver
 {
     class FSI_LevelSetUpdate
     {
-        private FSI_Auxillary Auxillary = new FSI_Auxillary();
+        readonly private FSI_Auxillary Auxillary = new FSI_Auxillary();
 
         /// ====================================================================================
         /// <summary>

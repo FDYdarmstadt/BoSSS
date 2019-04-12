@@ -107,8 +107,7 @@ namespace FSI_Solver
 
         int[] LeftSearch(List<int> SortedList, int StartIndex)
         {
-            List<int> temp = new List<int>();
-            temp.Add(StartIndex);
+            List<int> temp = new List<int> { StartIndex };
             while (temp.Last() + 1 < SortedList.Count() && SortedList[temp.Last() + 1] == SortedList[temp.Last()])
             {
                 temp.Add(temp.Last() + 1);
@@ -118,8 +117,7 @@ namespace FSI_Solver
 
         int[] RightSearch(List<int> SortedList, int StartIndex)
         {
-            List<int> temp = new List<int>();
-            temp.Add(StartIndex);
+            List<int> temp = new List<int> { StartIndex };
             while (temp.Last() - 1 > 0 && SortedList[temp.Last() - 1] == SortedList[temp.Last()])
             {
                 temp.Add(temp.Last() - 1);
@@ -176,7 +174,7 @@ namespace FSI_Solver
             }
         }
 
-        internal void UpdateParticleAccelerationAndDamping(List<Particle> Particles, int IterationCounter, double dt, bool LieSplittingFullyCoupled, int MPIRank)
+        internal void UpdateParticleAccelerationAndDamping(List<Particle> Particles, int IterationCounter, double dt, bool LieSplittingFullyCoupled)
         {
             for (int p = 0; p < Particles.Count(); p++)
             {
