@@ -130,15 +130,15 @@ namespace BoSSS.Application.FSI_Solver
             int numOfParticles = 1;
             for (int d = 0; d < numOfParticles; d++)
             {
-                C.Particles.Add(new Particle_Ellipsoid(new double[] { 1 + 8 * d, 0 }, startAngl: 0 - 180 * d)
+                C.Particles.Add(new Particle_Ellipsoid(new double[] { 1 + 8 * d, 0 }, startAngl: 21 - 180 * d)
                 {
-                    particleDensity = 0,
+                    particleDensity = 1,
                     ActiveParticle = true,
                     ActiveStress = stressM,
                     thickness_P = 0.4 * BaseSize,
                     length_P = 2 * BaseSize,
                     AddaptiveUnderrelaxation = true,
-                    underrelaxation_factor = 0.5,
+                    underrelaxation_factor = 0.25,
                     ClearSmallValues = true,
                     neglectAddedDamping = false
                 });
@@ -178,7 +178,7 @@ namespace BoSSS.Application.FSI_Solver
             C.LinearSolver.NoOfMultigridLevels = 1;
             C.LinearSolver.MaxSolverIterations = 1000;
             C.LinearSolver.MinSolverIterations = 1;
-            C.ForceAndTorque_ConvergenceCriterion = 1e0;
+            C.ForceAndTorque_ConvergenceCriterion = 1e1;
             C.LSunderrelax = 1.0;
             
 

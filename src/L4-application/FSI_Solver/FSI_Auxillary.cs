@@ -16,6 +16,8 @@ limitations under the License.
 
 using BoSSS.Application.FSI_Solver;
 using BoSSS.Application.IBM_Solver;
+using BoSSS.Foundation.Grid;
+using BoSSS.Solution.XdgTimestepping;
 using ilPSP;
 using MPI.Wrappers;
 using System;
@@ -220,7 +222,7 @@ namespace FSI_Solver
             _IterationCounter = IterationCounter + 1;
         }
 
-        void PrintResultToConsole(List<Particle> Particles, double phystime, double dt, out double MPIangularVelocity, out double[] force)
+        internal void PrintResultToConsole(List<Particle> Particles, double phystime, double dt, out double MPIangularVelocity, out double[] force)
         {
             double[] TranslationalMomentum = new double[2] { 0, 0 };
             double RotationalMomentum = 0;
@@ -273,6 +275,117 @@ namespace FSI_Solver
                 Console.WriteLine();
                 Console.WriteLine("=======================================================");
                 Console.WriteLine();
+            }
+        }
+
+        internal void SaveOldParticleState(List<Particle> Particles, int IterationCounter, int SpatialDim, double ForceTorqueConvergenceCriterion, bool IsFullyCoupled, out double[] ForcesOldSquared, out double TorqueOldSquared)
+        {
+            ForcesOldSquared = new double[SpatialDim];
+            TorqueOldSquared = 0;
+            foreach (Particle p in Particles)
+            {
+                p.iteration_counter_P = IterationCounter;
+                // Save the old hydrondynamic forces, only necessary if no iteration is applied
+                // ============================================================================
+                if (IterationCounter == 0 && IsFullyCoupled == false)
+                {
+                    p.Aux.SaveMultidimValueOfLastTimestep(p.HydrodynamicForces);
+                    p.Aux.SaveValueOfLastTimestep(p.HydrodynamicTorque);
+                }
+                // Save status for residual
+                // ========================
+                p.ForceAndTorque_convergence = ForceTorqueConvergenceCriterion;
+                ForcesOldSquared[0] += p.HydrodynamicForces[0][0].Pow2();
+                ForcesOldSquared[1] += p.HydrodynamicForces[0][1].Pow2();
+                TorqueOldSquared += p.HydrodynamicTorque[0].Pow2();
+                p.ForcesPrevIteration[0] = p.HydrodynamicForces[0][0];
+                p.ForcesPrevIteration[1] = p.HydrodynamicForces[0][1];
+                p.TorquePrevIteration = p.HydrodynamicTorque[0];
+                p.HydrodynamicForces[0][0] = 0;
+                p.HydrodynamicForces[0][1] = 0;
+                p.HydrodynamicTorque[0] = 0;
+            }
+        }
+
+        // Initial check: is the motion state of the particles equal on all MPI processors?
+        // ================================================================================
+        internal void MPICheckParticleState(List<Particle> Particles, IGridData GridData, int MPISize)
+        {
+            int D = GridData.SpatialDimension;
+            int NoOfParticles = Particles.Count;
+
+            {
+                // verify that we have the same number of particles on each processor
+                int NoOfParticles_min = NoOfParticles.MPIMin();
+                int NoOfParticles_max = NoOfParticles.MPIMax();
+                if (NoOfParticles_min != NoOfParticles || NoOfParticles_max != NoOfParticles)
+                    throw new ApplicationException("mismatch in number of MPI particles");
+
+                // nor, compare those particles:
+                int NoOfVars = (10 + D * 10); // variables per particle; size can be increased if more values should be compared
+                double[] CheckSend = new double[NoOfParticles * NoOfVars];
+
+                for (int p = 0; p < NoOfParticles; p++)
+                {
+                    var P = Particles[p];
+
+                    // scalar values
+                    CheckSend[p * NoOfVars + 0] = P.Angle[0];
+                    CheckSend[p * NoOfVars + 1] = P.Angle[1];
+                    //CheckSend[iP*NoOfVars + 2] = P.Area_P;
+                    CheckSend[p * NoOfVars + 3] = P.ClearSmallValues ? 1.0 : 0.0;
+                    CheckSend[p * NoOfVars + 4] = P.ForceAndTorque_convergence;
+                    CheckSend[p * NoOfVars + 5] = P.Mass_P;
+                    CheckSend[p * NoOfVars + 6] = P.particleDensity;
+                    // todo: add more values here that might be relevant for the particle state;
+
+                    // vector values
+                    for (int d = 0; d < D; d++)
+                    {
+                        int Offset = 10;
+                        CheckSend[p * NoOfVars + Offset + 0 * D + d] = P.Position[0][d];
+                        CheckSend[p * NoOfVars + Offset + 1 * D + d] = P.Position[1][d];
+                        CheckSend[p * NoOfVars + Offset + 2 * D + d] = P.TranslationalAcceleration[0][d];
+                        CheckSend[p * NoOfVars + Offset + 3 * D + d] = P.TranslationalAcceleration[1][d];
+                        CheckSend[p * NoOfVars + Offset + 4 * D + d] = P.TranslationalVelocity[0][d];
+                        CheckSend[p * NoOfVars + Offset + 5 * D + d] = P.TranslationalVelocity[1][d];
+                        CheckSend[p * NoOfVars + Offset + 6 * D + d] = P.HydrodynamicForces[0][d];
+                        CheckSend[p * NoOfVars + Offset + 7 * D + d] = P.HydrodynamicForces[1][d];
+                        // todo: add more vector values here that might be relevant for the particle state;
+                    }
+                }
+
+                double[] CheckReceive = new double[NoOfParticles * NoOfVars * MPISize];
+                unsafe
+                {
+                    fixed (double* pCheckSend = CheckSend, pCheckReceive = CheckReceive)
+                    {
+                        csMPI.Raw.Allgather((IntPtr)pCheckSend, CheckSend.Length, csMPI.Raw._DATATYPE.DOUBLE, (IntPtr)pCheckReceive, CheckSend.Length, csMPI.Raw._DATATYPE.DOUBLE, csMPI.Raw._COMM.WORLD);
+                    }
+                }
+
+                for (int iP = 0; iP < NoOfParticles; iP++)
+                {
+                    for (int iVar = 0; iVar < NoOfVars; iVar++)
+                    {
+                        // determine a tolerance...
+                        int idx_l =
+                            iP * NoOfVars // particle index offset
+                           + iVar; // variable index offset
+                        double VarTol = Math.Abs(CheckSend[idx_l]) * 1.0e-10;
+
+                        // compare
+                        for (int r = 0; r < MPISize; r++)
+                        {
+
+                            int idx_g = CheckSend.Length * r // MPI index offset
+                                + idx_l;
+
+                            if (Math.Abs(CheckReceive[idx_g] - CheckSend[idx_l]) > VarTol)
+                                throw new ApplicationException("Mismatch in particle state among MPI ranks. Index:  " + idx_l);
+                        }
+                    }
+                }
             }
         }
     }

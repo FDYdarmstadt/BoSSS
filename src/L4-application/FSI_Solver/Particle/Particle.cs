@@ -675,8 +675,6 @@ namespace BoSSS.Application.FSI_Solver
                     Torque = 0;
                 }
                 HydrodynamicTorque[0] = Torque;
-
-                
             }
             else
             {
