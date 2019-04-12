@@ -30,7 +30,7 @@ namespace BoSSS.Application.FSI_Solver
 {
     public class HardcodedControl_straightChannel : IBM_Solver.HardcodedTestExamples
     {
-        public static FSI_Control ActiveRod_noBackroundFlow(int k = 2, double stressM = 1e8, double cellAgg = 0.2, double muA = 1e4, double timestepX = 1e-3)
+        public static FSI_Control ActiveRod_noBackroundFlow(int k = 2, double stressM = 1e8, double cellAgg = 0.2, double muA = 1e5, double timestepX = 1e-3)
         {
             FSI_Control C = new FSI_Control();
 
@@ -65,10 +65,10 @@ namespace BoSSS.Application.FSI_Solver
                 int q = new int(); // #Cells in x-dircetion + 1
                 int r = new int(); // #Cells in y-dircetion + 1
 
-                q = 71;
-                r = 51;
+                q = 60;
+                r = 40;
 
-                double[] Xnodes = GenericBlas.Linspace(-2 * BaseSize, 12 * BaseSize, q);
+                double[] Xnodes = GenericBlas.Linspace(-2.5 * BaseSize, 12.5 * BaseSize, q);
                 double[] Ynodes = GenericBlas.Linspace(-5 * BaseSize, 5 * BaseSize, r);
 
                 var grd = Grid2D.Cartesian2DGrid(Xnodes, Ynodes, periodicX: false, periodicY: false);
@@ -82,9 +82,9 @@ namespace BoSSS.Application.FSI_Solver
                 grd.DefineEdgeTags(delegate (double[] X)
                 {
                     byte et = 0;
-                    if (Math.Abs(X[0] - (-2 * BaseSize)) <= 1.0e-8)
+                    if (Math.Abs(X[0] - (-2.5 * BaseSize)) <= 1.0e-8)
                         et = 1;
-                    if (Math.Abs(X[0] + (-12 * BaseSize)) <= 1.0e-8)
+                    if (Math.Abs(X[0] + (-12.5 * BaseSize)) <= 1.0e-8)
                         et = 2;
                     if (Math.Abs(X[1] - (-5 * BaseSize)) <= 1.0e-8)
                         et = 3;
@@ -127,12 +127,12 @@ namespace BoSSS.Application.FSI_Solver
             // =============================   
             // Defining particles
             C.Particles = new List<Particle>();
-            int numOfParticles = 2;
+            int numOfParticles = 1;
             for (int d = 0; d < numOfParticles; d++)
             {
-                C.Particles.Add(new Particle_Ellipsoid(new double[] { 1 + 8 * d, 0 }, startAngl: 180 * d)
+                C.Particles.Add(new Particle_Ellipsoid(new double[] { 1 + 8 * d, 0 }, startAngl: 10 - 180 * d)
                 {
-                    particleDensity = 1,
+                    particleDensity = 0,
                     ActiveParticle = true,
                     ActiveStress = stressM,
                     thickness_P = 0.4 * BaseSize,

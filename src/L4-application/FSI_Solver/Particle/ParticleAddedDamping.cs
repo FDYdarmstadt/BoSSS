@@ -13,8 +13,7 @@ namespace BoSSS.Application.FSI_Solver
 {
     class ParticleAddedDamping
     {
-        readonly ParticleAuxillary Aux = new ParticleAuxillary();
-        public double[,] IntegrationOverLevelSet(LevelSetTracker LsTrk, double muA, double rhoA, double dt, double[] currentPosition, CellMask ParticleCutCells)
+        public double[,] IntegrationOverLevelSet(LevelSetTracker LsTrk, double muA, double rhoA, double dt, double[] currentPosition)
         {
             double[,] addedDampingTensor = new double[6, 6];
             double alpha = 0.5;

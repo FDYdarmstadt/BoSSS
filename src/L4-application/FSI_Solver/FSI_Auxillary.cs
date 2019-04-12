@@ -14,6 +14,9 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+using BoSSS.Application.FSI_Solver;
+using BoSSS.Application.IBM_Solver;
+using MPI.Wrappers;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -122,6 +125,75 @@ namespace FSI_Solver
                 temp.Add(temp.Last() - 1);
             }
             return temp.ToArray();
+        }
+
+        internal void ExchangeDampingTensors(List<Particle> Particles)
+        {
+            // Sum forces and moments over all MPI processors
+            // ==============================================
+            {
+                // step 1: collect all variables that we need to sum up
+                int NoOfParticles = Particles.Count;
+                int NoOfVars = 3; //only for 2D at the moment
+                double[] StateBuffer = new double[NoOfParticles * NoOfVars * NoOfParticles * NoOfVars];
+                for (int p = 0; p < NoOfParticles; p++)
+                {
+                    Particle P = Particles[p];
+                    for (int i = 0; i < 3; i++)
+                    {
+                        for (int j = 0; j < 3; j++)
+                        {
+                            StateBuffer[NoOfVars * NoOfVars * p + i + NoOfVars * j] = P.AddedDampingTensor[i, j];
+                        }
+                    }
+
+                }
+                // step 2: sum over MPI processors
+                // note: we want to sum all variables by a single MPI call, which is way more efficient
+                // B. Deußen: a single call of MPISum() would only consider the first entry of StateBuffer, thus I implemented the loop over all entries
+                //double[,] GlobalStateBuffer = new double[NoOfParticles * NoOfVars, NoOfParticles * NoOfVars];
+                //for (int i = 0; i < NoOfParticles * NoOfVars; i++)
+                //{
+                //    for (int j = 0; j < NoOfParticles * NoOfVars; j++)
+                //    {
+                //        GlobalStateBuffer[i, j] = StateBuffer[i, j].MPISum();
+                //    }
+
+                //}
+                double[] GlobalStateBuffer = StateBuffer.MPISum();
+                // step 3: write sum variables back 
+                for (int p = 0; p < NoOfParticles; p++)
+                {
+                    var P = Particles[p];
+                    for (int i = 0; i < 3; i++)
+                    {
+                        for (int j = 0; j < 3; j++)
+                        {
+                            P.AddedDampingTensor[i, j] = GlobalStateBuffer[NoOfVars * NoOfVars * p + i + NoOfVars * j];
+                        }
+                    }
+                }
+            }
+        }
+
+        internal void UpdateParticleAccelerationAndDamping(List<Particle> Particles, int IterationCounter, double dt, bool LieSplittingFullyCoupled, int MPIRank)
+        {
+            for (int p = 0; p < Particles.Count(); p++)
+            {
+                if (IterationCounter == 0 && LieSplittingFullyCoupled)
+                {
+                    if (Particles[p].neglectAddedDamping == false)
+                    {
+                        Particles[p].UpdateDampingTensors();
+                        //ExchangeDampingTensors(Particles);
+                    }
+                    Particles[p].PredictAcceleration();
+                }
+                else
+                {
+                    Particles[p].CalculateAcceleration(dt);
+                }
+            }
         }
     }
 }

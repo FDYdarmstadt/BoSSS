@@ -1,4 +1,5 @@
-﻿using System;
+﻿using MPI.Wrappers;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -38,12 +39,12 @@ namespace BoSSS.Application.FSI_Solver
                     throw new ArithmeticException("I can not reach convergence even with very small underrelaxation factors");
                 
             }
-            while (Math.Abs(UnderrelaxationCoeff * variable) > 0.75 * Math.Abs(variableAtPrevIteration))
+            while (Math.Abs(UnderrelaxationCoeff * variable) > 0.75 * Math.Abs(variableAtPrevIteration) && UnderrelaxationCoeff > 1e-20)
             {
                 UnderrelaxationExponent -= 1;
                 UnderrelaxationCoeff = predefinedFactor * Math.Pow(10, UnderrelaxationExponent);
             }
-            if (Math.Abs(UnderrelaxationCoeff * variable) < convergenceLimit * 100 && 100 * Math.Abs(variable) > averageForce)
+            if (Math.Abs(UnderrelaxationCoeff * variable) < convergenceLimit * 100 && 100 * Math.Abs(variable) > Math.Abs(averageForce))
             {
                 UnderrelaxationCoeff = convergenceLimit * 100;
             }
@@ -51,6 +52,8 @@ namespace BoSSS.Application.FSI_Solver
             {
                 UnderrelaxationCoeff = predefinedFactor * 1e-1;
             }
+            double GlobalStateBuffer = UnderrelaxationCoeff.MPIMin();
+            UnderrelaxationCoeff = GlobalStateBuffer;
             return UnderrelaxationCoeff * ConvergenceHelperFactor;
         }
 
