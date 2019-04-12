@@ -30,7 +30,7 @@ namespace BoSSS.Application.FSI_Solver
 {
     public class HardcodedControl_straightChannel : IBM_Solver.HardcodedTestExamples
     {
-        public static FSI_Control ActiveRod_noBackroundFlow(int k = 2, double stressM = 1e7, double cellAgg = 0.2, double muA = 1e5, double timestepX = 1e-3)
+        public static FSI_Control ActiveRod_noBackroundFlow(int k = 2, double stressM = 1e6, double cellAgg = 0.2, double muA = 1e5, double timestepX = 1e-3)
         {
             FSI_Control C = new FSI_Control();
 
