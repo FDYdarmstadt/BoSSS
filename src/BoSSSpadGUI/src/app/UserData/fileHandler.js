@@ -1,6 +1,6 @@
 const fs = require('fs').promises;
 
-class Database{
+class FileHandler{
 
     constructor(dataPath){
         this.dataPath = dataPath;
@@ -26,4 +26,4 @@ class Database{
     }
 }
 
-module.exports = Database;
+module.exports = FileHandler;

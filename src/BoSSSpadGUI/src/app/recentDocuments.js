@@ -1,6 +1,14 @@
 class RecentDocuments{
     constructor(userData){
-        this.userData = userData;
+        this.path = userData.paths;
+    }
+
+    getRecentPaths(){
+        return paths;
+    }
+
+    addRecentPath(path){
+        this.paths.push(path);
     }
 }
 

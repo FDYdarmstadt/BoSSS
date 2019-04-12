@@ -1,31 +1,8 @@
-const XMLFile = require('./xmlDatabase.js');
-
-class UserData{
-
-    constructor(userData){
-        this.userData = userData;
-    }
-
-    static async build(){
-        var xmlPath = `${__dirname}\\userData.xml`;
-        var userData = await XMLFile.build(xmlPath);
-        return new UserData(userData);
-    }
-
-    test(){
-        this.userData.test();
-    }
-
-    addRecentDocument(path){
-
-    }
-
-    getDocuments(){
-
-    }
-
-    async save(){
-
+const File = require('./file.js');
+class UserData {
+    constructor(){
+        this.paths = [];
+        this.BoSSSpadDLL = '../cs/bin/Release/ElectronWorksheet.dll';
     }
 }
 
