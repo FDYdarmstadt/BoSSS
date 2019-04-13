@@ -51,6 +51,8 @@ namespace BoSSS.Application.FSI_Solver {
             using (FSI_SolverMain p = new FSI_SolverMain()) {
 
                 var ctrl = BoSSS.Application.FSI_Solver.HardcodedTestExamples.ParticleInShearFlow(k: 1);
+                ctrl.ImmediatePlotPeriod = 1;
+                ctrl.SuperSampling = 2;
                 p.Init(ctrl);
                 p.RunSolverMode();
 
