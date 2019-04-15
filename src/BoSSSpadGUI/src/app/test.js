@@ -5,5 +5,5 @@ function test(userDatabase){
     userDatabase.save();
 }
 
-UserDatabase.load().then(test);
+UserDatabase.load('./userData.xml').then(test);
 

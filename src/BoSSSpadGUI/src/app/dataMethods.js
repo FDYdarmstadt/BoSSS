@@ -34,13 +34,17 @@ class BoSSSDataMethods{
         });
     }
 
-    setPathAndOpen(filePath){
+    setPathAndOpen(fileName){
         var that = this;
-        var filePath = '"' + filePath.replace(/\\/g, '/')+ '"';
+        var filePath = '"' + fileName.replace(/\\/g, '/')+ '"';
+        that.open(filePath)        
+    }
+
+    open(filePath){
+        var that = this;
         var command = 'BoSSSpad.openFile(' + filePath + ');';
         that.mainWindow.webContents.executeJavaScript( command );
         that.savePath = filePath;
-        electron.app.addRecentDocument(filePath);
     }
 
 	async saveFile(){
@@ -92,7 +96,6 @@ class BoSSSDataMethods{
     
     save(filePath){
         var that = this;
-        electron.app.addRecentDocument(filePath);
         var command = 'BoSSSpad.saveFile(' + filePath + ');';
         return that.mainWindow.webContents.executeJavaScript( command );
     }

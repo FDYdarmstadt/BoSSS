@@ -12,8 +12,6 @@ class File{
 
     constructor(fileHandler, xmlText) { 
         this.fileHandler = fileHandler;
-        this.object;
-        
         this.object = this.createFile(xmlText);
     }
 

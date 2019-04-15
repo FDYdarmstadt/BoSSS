@@ -3,8 +3,8 @@ const File = require('./file.js');
 
 class UserDatabase{
     
-    static async load(){
-        var file = await File.initialize('./userData.xml');
+    static async load(path){
+        var file = await File.initialize(path);
         return new UserDatabase(file);
     }
     

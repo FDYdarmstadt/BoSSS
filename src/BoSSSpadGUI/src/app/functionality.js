@@ -1,19 +1,18 @@
 const BoSSSMenu = require('./boSSSMenu.js');
-const BoSSSDataMethods = require('./dataMethods.js');
+const BoSSSDataMethods = require('./recentDataMethods.js');
 const CommandActions = require('./commandActions.js');
 const UserDatabase = require('./UserData/userDatabase.js');
 const RecentDocuments = require('./recentDocuments.js')
 
-function addFunctionality(mainWindow){
+async function addFunctionality(mainWindow){
     
-    function createMenu(dataMethods, userDatabase){
+    function createMenu(){
         var commandActions = new CommandActions(mainWindow);
-        var recentDocuments = new RecentDocuments(userDatabase);
         var menu = new BoSSSMenu(commandActions, dataMethods, recentDocuments);
         return menu;
     }
 
-    function addCloseAction(dataMethods){
+    function addCloseAction(){
         mainWindow.on('close', (event) =>{
             if(!closeBoSSSpad)
             {
@@ -23,11 +22,12 @@ function addFunctionality(mainWindow){
         });   
     }
 
-    var dataMethods = new BoSSSDataMethods(mainWindow);
-    var userDatabase = UserDatabase.load();
-    createMenu(dataMethods, userDatabase);
-    addCloseAction(dataMethods);
-    var closeBoSSSpad = false;
+    var userDatabase = await UserDatabase.load('./userData.xml');
+    //var recentDocuments = new RecentDocuments(userDatabase.getUserData());
+    //var dataMethods = new BoSSSDataMethods(mainWindow, recentDocuments);
+    //createMenu();
+    //addCloseAction();
+    //var closeBoSSSpad = false;
 }
 
 module.exports = addFunctionality;
