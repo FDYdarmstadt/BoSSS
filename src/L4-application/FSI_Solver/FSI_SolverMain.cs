@@ -876,7 +876,7 @@ namespace BoSSS.Application.FSI_Solver {
                     UpdateForcesAndTorque(m_Particles, GridData, dt);
                     foreach (var p in m_Particles)
                     {
-                        p.CalculateAcceleration(dt);
+                        p.CalculateAcceleration(dt, ((FSI_Control)Control).includeTranslation, ((FSI_Control)Control).includeRotation, ((FSI_Control)Control).Timestepper_LevelSetHandling == LevelSetHandling.FSI_LieSplittingFullyCoupled);
                         p.UpdateParticleState(dt, ((FSI_Control)Control).includeTranslation, ((FSI_Control)Control).includeRotation);
                     }
                     UpdateLevelSetParticles();
@@ -933,7 +933,7 @@ namespace BoSSS.Application.FSI_Solver {
                             foreach (Particle p in m_Particles)
                             {
                                 p.iteration_counter_P = iteration_counter;
-                                Auxillary.UpdateParticleAccelerationAndDamping(m_Particles, iteration_counter, dt, ((FSI_Control)Control).Timestepper_LevelSetHandling == LevelSetHandling.FSI_LieSplittingFullyCoupled);
+                                Auxillary.UpdateParticleAccelerationAndDamping(m_Particles, iteration_counter, dt, ((FSI_Control)Control).Timestepper_LevelSetHandling == LevelSetHandling.FSI_LieSplittingFullyCoupled, ((FSI_Control)Control).includeTranslation, ((FSI_Control)Control).includeRotation);
                                 p.UpdateParticleState(dt, ((FSI_Control)Control).includeTranslation, ((FSI_Control)Control).includeRotation);
                             }
 

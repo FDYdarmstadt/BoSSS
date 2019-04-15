@@ -444,9 +444,9 @@ namespace BoSSS.Application.FSI_Solver
         /// Calculate the new acceleration (translational and rotational)
         /// </summary>
         /// <param name="dt"></param>
-        public void CalculateAcceleration(double dt)
+        public void CalculateAcceleration(double dt, bool IncludeTranslation, bool IncludeRotation, bool FullyCoupled)
         {
-            if (iteration_counter_P == 0)
+            if (iteration_counter_P == 0 || FullyCoupled == false)
             {
                 Aux.SaveMultidimValueOfLastTimestep(TranslationalAcceleration);
                 Aux.SaveValueOfLastTimestep(RotationalAcceleration);
@@ -455,18 +455,20 @@ namespace BoSSS.Application.FSI_Solver
             double[,] CoefficientMatrix = Acceleration.CalculateCoefficients(AddedDampingTensor, Mass_P, MomentOfInertia_P, dt, AddedDampingCoefficient);
             double Denominator = Acceleration.CalculateDenominator(CoefficientMatrix);
 
-            TranslationalAcceleration[0] = Acceleration.Translational(CoefficientMatrix, Denominator, HydrodynamicForces[0], HydrodynamicTorque[0]);
-            for (int d = 0; d< SpatialDim; d++)
+            if (IncludeTranslation)
+                TranslationalAcceleration[0] = Acceleration.Translational(CoefficientMatrix, Denominator, HydrodynamicForces[0], HydrodynamicTorque[0]);
+
+            for (int d = 0; d < SpatialDim; d++)
             {
-                
-                if (Math.Abs(TranslationalAcceleration[0][d]) < 1e-20)// || double.IsNaN(TranslationalAcceleration[0][d]))
+                if (Math.Abs(TranslationalAcceleration[0][d]) < 1e-20 || IncludeTranslation == false)
                     TranslationalAcceleration[0][d] = 0;
             }
 
-            RotationalAcceleration[0] = Acceleration.Rotational(CoefficientMatrix, Denominator, HydrodynamicForces[0], HydrodynamicTorque[0]);
-            
-            if (Math.Abs(RotationalAcceleration[0]) < 1e-20)// || double.IsNaN(RotationalAcceleration[0]))
+            if (IncludeRotation)
+                RotationalAcceleration[0] = Acceleration.Rotational(CoefficientMatrix, Denominator, HydrodynamicForces[0], HydrodynamicTorque[0]);
+            if (Math.Abs(RotationalAcceleration[0]) < 1e-20 || IncludeRotation == false)
                 RotationalAcceleration[0] = 0;
+
         }
 
         /// <summary>

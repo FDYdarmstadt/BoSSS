@@ -177,7 +177,7 @@ namespace FSI_Solver
             }
         }
 
-        internal void UpdateParticleAccelerationAndDamping(List<Particle> Particles, int IterationCounter, double dt, bool LieSplittingFullyCoupled)
+        internal void UpdateParticleAccelerationAndDamping(List<Particle> Particles, int IterationCounter, double dt, bool LieSplittingFullyCoupled, bool IncludeTranslation, bool IncludeRotation)
         {
             for (int p = 0; p < Particles.Count(); p++)
             {
@@ -192,7 +192,7 @@ namespace FSI_Solver
                 }
                 else
                 {
-                    Particles[p].CalculateAcceleration(dt);
+                    Particles[p].CalculateAcceleration(dt, IncludeTranslation, IncludeRotation, LieSplittingFullyCoupled);
                 }
             }
         }
