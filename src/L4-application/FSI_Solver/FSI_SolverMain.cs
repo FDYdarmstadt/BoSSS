@@ -62,11 +62,11 @@ namespace BoSSS.Application.FSI_Solver {
         /// Application entry point.
         /// </summary>
         static void Main(string[] args) {
+            MultiphaseCellAgglomerator.Katastrophenplot = MegaArschKakke2;
             //TestProgram.Init();
             //TestProgram.TestFlowRotationalCoupling();
             //Assert.IsTrue(false, "Remember to remove testcode!");
             
-            MultiphaseCellAgglomerator.Katastrophenplot = MegaArschKakke2;
 
             _Main(args, false, delegate () {
                 var p = new FSI_SolverMain();
