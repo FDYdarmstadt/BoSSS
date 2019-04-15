@@ -3,7 +3,8 @@ const RecentPaths = require('./UserData/recentPaths.js');
 class RecentDocuments{
 
     constructor(userData){
-        this.recentPaths = new RecentPaths(userData, 5);
+        var numberOfRecentDocuments = 5;
+        this.recentPaths = new RecentPaths(userData, numberOfRecentDocuments);
         this.onAddRecentDocument = null;
     }
 
@@ -32,13 +33,25 @@ class RecentDocuments{
             var path = paths[i];
             recentDocument.push(
             {
-                label: path.slice(1,-1),
+                label: this.createLabel(path),
                 click(){
                     onClickFunction(path);
                 }
             });
         }
         return recentDocument;
+    }
+
+    createLabel(path){
+        var start = 1;
+        start = Math.max(start, path.length - 35);
+        var label = path.slice(start,-1);
+        if(start == 1){
+            return label;
+        }
+        else{
+            return "..." + label;
+        }
     }
 
     attachClearRecentMenu(menu){
