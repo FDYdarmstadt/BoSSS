@@ -9,7 +9,6 @@ class BoSSSDataMethods{
     }
 
     openFile(){
-        //bookmarks is mac stuff
         var that = this;
         this.AreYouSure_Save(() => 
         {
@@ -31,6 +30,19 @@ class BoSSSDataMethods{
                     {name: 'All Files', extensions: ['*']}
                 ]
             }, bosssPadOpenFile);
+        });
+    }
+
+    openFileFromPath(filePath){
+        var that = this;
+        that.AreYouSure_Save(() => 
+        {
+            try{
+                that.open(filePath);
+            }
+            catch(err) {
+                console.log(err);
+            }
         });
     }
 

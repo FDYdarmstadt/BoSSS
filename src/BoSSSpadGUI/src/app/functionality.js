@@ -1,14 +1,18 @@
 const BoSSSMenu = require('./boSSSMenu.js');
-const BoSSSDataMethods = require('./recentDataMethods.js');
-const CommandActions = require('./commandActions.js');
+const DataMethods = require('./recentDataMethods.js');
+const CommandMethods = require('./commandActions.js');
 const UserDatabase = require('./UserData/userDatabase.js');
-const RecentDocuments = require('./recentDocuments.js')
+const RecentDocuments = require('./recentDocuments.js');
 
 async function addFunctionality(mainWindow){
     
+    var userDatabase = await UserDatabase.load('./userData.txt');
+    var recentDocuments = new RecentDocuments(userDatabase.getUserData());
+    var dataMethods = new DataMethods(mainWindow, recentDocuments);
+
     function createMenu(){
-        var commandActions = new CommandActions(mainWindow);
-        var menu = new BoSSSMenu(commandActions, dataMethods, recentDocuments);
+        var commandMethods = new CommandMethods(mainWindow);
+        var menu = new BoSSSMenu(commandMethods, dataMethods, recentDocuments);
         return menu;
     }
 
@@ -26,10 +30,6 @@ async function addFunctionality(mainWindow){
             }
         });   
     }
-
-    var userDatabase = await UserDatabase.load('./userData.txt');
-    var recentDocuments = new RecentDocuments(userDatabase.getUserData());
-    var dataMethods = new BoSSSDataMethods(mainWindow, recentDocuments);
     createMenu();
     addCloseAction();
 }

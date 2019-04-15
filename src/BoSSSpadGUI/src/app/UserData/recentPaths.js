@@ -5,8 +5,12 @@ class RecentPaths{
         this.maxPathNumber = maxNumber;
     }
 
+    clearRecentPaths(){
+        this.paths.length = 0;
+    }
+
     getRecentPaths(){
-        return paths;
+        return this.paths;
     }
 
     addRecentPath(path){
