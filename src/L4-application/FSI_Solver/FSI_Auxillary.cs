@@ -287,10 +287,12 @@ namespace FSI_Solver
                 p.iteration_counter_P = IterationCounter;
                 // Save the old hydrondynamic forces, only necessary if no iteration is applied
                 // ============================================================================
-                if (IterationCounter == 0 && IsFullyCoupled == false)
+                if (IterationCounter == 1 && IsFullyCoupled == false)
                 {
                     p.Aux.SaveMultidimValueOfLastTimestep(p.HydrodynamicForces);
                     p.Aux.SaveValueOfLastTimestep(p.HydrodynamicTorque);
+                    p.Aux.SaveMultidimValueOfLastTimestep(p.TranslationalVelocity);
+                    p.Aux.SaveValueOfLastTimestep(p.RotationalVelocity);
                 }
                 // Save status for residual
                 // ========================
