@@ -97,6 +97,8 @@ namespace BoSSS.Application.FSI_Solver {
                 particleDensity = 1.0,
             });
 
+            
+
             ////Define level-set
             //Func<double[], double, double> phiComplete = delegate (double[] X, double t) {
             //    int exp = C.Particles.Count - 1;
@@ -161,7 +163,7 @@ namespace BoSSS.Application.FSI_Solver {
         /// <summary>
         /// Testing of particle/wall interactions using a single particle
         /// </summary>
-        public static FSI_Control SingleDryParticleAgainstWall(string _DbPath = null, bool MeshRefine = false) {
+        public static FSI_Control SingleDryParticleAgainstWall(string _DbPath = null, bool MeshRefine = true) {
             FSI_Control C = new FSI_Control();
 
             // basic database options
@@ -257,6 +259,7 @@ namespace BoSSS.Application.FSI_Solver {
             C.NonLinearSolver.MaxSolverIterations = 10;
             C.LinearSolver.NoOfMultigridLevels = 1;
             C.AdaptiveMeshRefinement = MeshRefine;
+            C.RefinementLevel = 1;
 
             // Timestepping
             // ============

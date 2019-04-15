@@ -30,7 +30,7 @@ namespace FSI_Solver
 {
     class FSI_LevelSetUpdate
     {
-        private FSI_Auxillary Auxillary = new FSI_Auxillary();
+        readonly private FSI_Auxillary Auxillary = new FSI_Auxillary();
 
         /// ====================================================================================
         /// <summary>
@@ -135,6 +135,7 @@ namespace FSI_Solver
         /// ====================================================================================
         public int[] FindParticleColor(IGridData gridData, List<Particle> Particles, List<int[]> ColoredCellsSorted)
         {
+            int J = gridData.iLogicalCells.NoOfLocalUpdatedCells;
             List<int> CurrentColor = new List<int>();
             for (int p = 0; p < Particles.Count; p++)
             {
@@ -148,15 +149,19 @@ namespace FSI_Solver
                 int temp = 0;
                 for (int i = 0; i < ColoredCellsSorted.Count; i++)
                 {
-                    if (Math.Sqrt(gridData.iGeomCells.GetCellVolume(ColoredCellsSorted[i][0])) > ParticleScales.Min())
-                        throw new ArithmeticException("Hmin of the cells is larger than the particles. Please use a finer grid (or grid refinement).");
-
-                    double[] center = gridData.iLogicalCells.GetCenter(ColoredCellsSorted[i][0]);
-                    if (center[0] > Leftedge && center[0] < Rightedge && center[1] > Loweredge && center[1] < Upperedge && ColoredCellsSorted[i][1] != 0)
+                    if (ColoredCellsSorted[i][0] < J)
                     {
-                        temp = ColoredCellsSorted[i][1];
-                        break;
+                        if (Math.Sqrt(gridData.iGeomCells.GetCellVolume(ColoredCellsSorted[i][0])) > 2 * ParticleScales.Min())
+                            throw new ArithmeticException("Hmin of the cells is larger than the particles. Please use a finer grid (or grid refinement).");
+
+                        double[] center = gridData.iLogicalCells.GetCenter(ColoredCellsSorted[i][0]);
+                        if (center[0] > Leftedge && center[0] < Rightedge && center[1] > Loweredge && center[1] < Upperedge && ColoredCellsSorted[i][1] != 0)
+                        {
+                            temp = ColoredCellsSorted[i][1];
+                            break;
+                        }
                     }
+                    
                 }
                 CurrentColor.Add(temp);
             }
@@ -174,7 +179,7 @@ namespace FSI_Solver
         internal List<int[]> ColoredCellsFindAndSort(int[] CellColor)
         {
             List<int[]> ColoredCellsSorted = new List<int[]>();
-            int ListIndex = 0;
+            int ListIndex;
             for (int CellID = 0; CellID < CellColor.Length; CellID++)
             {
                 ListIndex = 0;

@@ -658,12 +658,20 @@ namespace ilPSP.Utils {
                 ret.Add(erstes[i0]);
 
             for (int i = 0; i < andere.Length; i++) {
-                IEnumerable<T> ol = andere[i] as IEnumerable<T>;
 
-                if (ol != null) {
-                    foreach (object o in ol) {
-                        ret.Add((T)o);
+                if (andere[i] is IEnumerable<T>) {
+                    IEnumerable<T> ol = andere[i] as IEnumerable<T>;
+
+                    foreach (T o in ol) {
+                        ret.Add(o);
                     }
+                //} else if (andere[i] is System.Collections.IEnumerable) {
+                //    var ol = andere[i] as System.Collections.IEnumerable;
+
+                //    foreach (object o in ol) {
+                //        ret.Add((T)o);
+                //    }
+
                 } else {
                     ret.Add((T)(andere[i]));
                 }
