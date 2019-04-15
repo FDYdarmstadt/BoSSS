@@ -1,5 +1,4 @@
-const fs = require('fs').promises;
-const fs1 = require('fs');
+const fs = require('fs');
 
 class FileHandler{
 
@@ -17,25 +16,12 @@ class FileHandler{
 
     writeFile(path, data, options){
         return new Promise(function(resolve, reject){
-            fs1.writeFile(path, data, options, function(error){
+            fs.writeFile(path, data, options, function(error){
                 if(error){
-                    reject();
+                    reject(error);
                 } 
                 else{
-                    resolve(fs1);
-                }
-            });
-        });
-    }
-
-    open(path, flags){
-        return new Promise(function(resolve, reject){
-            fs1.open(path, flags, function(error, fd){
-                if(error){
-                    reject();
-                } 
-                else{
-                    resolve(fs1);
+                    resolve(fs);
                 }
             });
         });
@@ -43,13 +29,25 @@ class FileHandler{
 
     async load(){
         try{
-            var fileHandle = await fs.open(this.dataPath,  'a+');
-            var string = fileHandle.readFile('utf8');
+            var string = await this.readFile(this.dataPath);
         }
         catch(error){
             console.log(error);
         }
         return string;
+    }
+
+    readFile(path){
+        return new Promise(function(resolve, reject){
+            fs.readFile(path, {encoding: 'utf8', flag: 'a+'}, function(error, data){
+                if(error){
+                    reject(error);
+                } 
+                else{
+                    resolve(data);
+                }
+            });
+        });
     }
 }
 

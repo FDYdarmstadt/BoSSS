@@ -8,12 +8,12 @@ class RecentDataMethods extends DataMethods{
     }
 
     open(filePath){
-        this.recentDocuments.addRecentPath(filePath);
+        this.recentDocuments.addRecentDocument(filePath);
         return super.open(filePath);      
     }
 
     save(filePath){
-        this.recentDocuments.addRecentPath(filePath);
+        this.recentDocuments.addRecentDocument(filePath);
         return super.save(filePath);
     }
 }

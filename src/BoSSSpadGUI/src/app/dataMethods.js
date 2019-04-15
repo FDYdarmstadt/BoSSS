@@ -126,18 +126,18 @@ class BoSSSDataMethods{
                     if(response == 0)
                     {
                         await this.saveFile();
-                        func();
+                        await func();
                     }
                     //Discard changes
                     else if(response == 1){
-                        func();
+                        await func();
                     }
                     //cancel: keep open
                     else if(response == 2){
                         //Do nothing
                     }
                 }else{
-                    func();
+                    await func();
                 }
             }
         )

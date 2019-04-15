@@ -13,21 +13,25 @@ async function addFunctionality(mainWindow){
     }
 
     function addCloseAction(){
-        mainWindow.on('close', (event) =>{
+        var closeBoSSSpad = false;
+        mainWindow.on('close', async (event) =>{
             if(!closeBoSSSpad)
             {
+                await userDatabase.save();
                 event.preventDefault();
-                dataMethods.AreYouSure_Save(() => {closeBoSSSpad = true; mainWindow.close(); });
+                dataMethods.AreYouSure_Save(() => {
+                    closeBoSSSpad = true; 
+                    mainWindow.close();
+                });
             }
         });   
     }
 
-    var userDatabase = await UserDatabase.load('./userData.xml');
-    //var recentDocuments = new RecentDocuments(userDatabase.getUserData());
-    //var dataMethods = new BoSSSDataMethods(mainWindow, recentDocuments);
-    //createMenu();
-    //addCloseAction();
-    //var closeBoSSSpad = false;
+    var userDatabase = await UserDatabase.load('./userData.txt');
+    var recentDocuments = new RecentDocuments(userDatabase.getUserData());
+    var dataMethods = new BoSSSDataMethods(mainWindow, recentDocuments);
+    createMenu();
+    addCloseAction();
 }
 
 module.exports = addFunctionality;

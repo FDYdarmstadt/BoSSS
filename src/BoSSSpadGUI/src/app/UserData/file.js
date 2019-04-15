@@ -1,40 +1,41 @@
 const FileHandler = require('./fileHandler.js');
-const convert = require('xml-js');
+//const convert = require('xml-js');
 
 class File{
 
-    static async initialize(xmlPath){
-        var fileHandler, xmlText;
-        fileHandler = new FileHandler(xmlPath);
-        xmlText = await fileHandler.load();
-        return new File(fileHandler, xmlText);
+    static async initialize(path){
+        var fileHandler, text;
+        fileHandler = new FileHandler(path);
+        text = await fileHandler.load();
+        return new File(fileHandler, text);
     }
 
-    constructor(fileHandler, xmlText) { 
+    constructor(fileHandler, text) { 
         this.fileHandler = fileHandler;
-        this.object = this.createFile(xmlText);
+        this.object = this.createFile(text);
     }
 
-    createFile(xmlText){
+    createFile(text){
         var object;
-        if(xmlText == ""){
+        if(text == ""){
             object = null;
         }
         else{
-            object = File.objectFromText(xmlText);
+            object = File.objectFromText(text);
         }
         return object;
     }
 
-    static objectFromText(xmlText){
-        var file, settings;
-        settings = File.getConverterSettings();
-        file = convert.xml2js(xmlText, settings);
+    static objectFromText(text){
+        var file;
+        file = JSON.parse(text);
         return file;
     }
 
-    static getConverterSettings(){
-        return {compact: true, spaces: 4};
+    async save(){
+        var text;
+        text = JSON.stringify(this.object);
+        await this.fileHandler.save(text);
     }
 
     getObject(){
@@ -43,13 +44,6 @@ class File{
 
     setObject(object){
         this.object = object;
-    }
-
-    async save(){
-        var xmlText, settings;
-        settings = File.getConverterSettings();
-        xmlText = convert.js2xml(this.object, settings);
-        await this.fileHandler.save(xmlText);
     }
 }
 

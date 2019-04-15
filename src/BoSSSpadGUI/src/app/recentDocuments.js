@@ -1,24 +1,14 @@
+const RecentPaths = require('./UserData/recentPaths.js');
+
 class RecentDocuments{
 
     constructor(userData, loadFunctionFactory){
-        this.paths = userData.paths;
-        this.maxPathNumber = 5;
+        this.recentPaths = new RecentPaths(userData, 5);
         this.loadfunction;
     }
 
-    getRecentPaths(){
-        return paths;
-    }
-
-    addRecentPath(path){
-        if(path.length >= this.maxPathNumber){
-            this.paths.pop();
-        }
-        this.paths.unshift(path);
-
-    }
-
-    getMenuItem(path){
+    getRecentDocuments(){
+        var myRecentPaths = recentPaths.getRecentPaths(); 
         var item = 
         {
             label: path,
@@ -28,6 +18,10 @@ class RecentDocuments{
         }
         return item;
     }
+
+    addRecentDocument(path){
+        this.recentPaths.addRecentPath(path);
+    };
 }
 
 module.exports = RecentDocuments;
