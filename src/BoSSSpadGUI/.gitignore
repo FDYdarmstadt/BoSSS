@@ -6,3 +6,5 @@ package-lock.json
 #ignore packaged program, ignore installer files
 InnoSetup/bin/BoSSSpad-win32-x64/
 InnoSetup/installer/
+#ignore Userdata
+userData.txt
