@@ -2,6 +2,7 @@ import {RunBox} from './runBox.js'
 import { CommentBox} from './commentBox.js'
 import * as monaco from 'monaco-editor';
 import{Box} from './box.js'
+import { BoxWithMenu } from './commandBoxes.js';
 
 export class InteractiveList{
     constructor(element, status){
@@ -89,18 +90,7 @@ export class InteractiveList{
       return value;
     }
 
-    async executeBoxes(boxArray){
-        this.status.toggleLock();
-        //Change Backgroundcolor
-        for(var i = 1; i < boxArray.length; ++i){
-            boxArray[i].boxContent.toggleWaitingForWork();
-        }
-        //Start calculation in respective order
-        for(var i = 0; i < boxArray.length; ++i){
-            await boxArray[i].boxContent.run();
-        }
-        this.status.toggleLock();
-    }
+    
    
     getAllBoxes(){
         return this.boxes;

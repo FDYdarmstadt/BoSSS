@@ -48,30 +48,7 @@ namespace BoSSS.Application.FSI_Solver {
             // DG degrees
             // ==========
 
-            C.FieldOptions.Add("VelocityX", new FieldOpts() {
-                Degree = k,
-                SaveToDB = FieldOpts.SaveToDBOpt.TRUE
-            });
-            C.FieldOptions.Add("VelocityY", new FieldOpts() {
-                Degree = k,
-                SaveToDB = FieldOpts.SaveToDBOpt.TRUE
-            });
-            C.FieldOptions.Add("Pressure", new FieldOpts() {
-                Degree = k - 1,
-                SaveToDB = FieldOpts.SaveToDBOpt.TRUE
-            });
-            C.FieldOptions.Add("PhiDG", new FieldOpts() {
-                Degree = 2,
-                SaveToDB = FieldOpts.SaveToDBOpt.TRUE
-            });
-            C.FieldOptions.Add("Phi", new FieldOpts() {
-                Degree = 2,
-                SaveToDB = FieldOpts.SaveToDBOpt.TRUE
-            });
-            C.FieldOptions.Add("Curvature", new FieldOpts() {
-                Degree = 2,
-                SaveToDB = FieldOpts.SaveToDBOpt.TRUE
-            });
+            C.SetDGdegree(k);
 
             // grid and boundary conditions
             // ============================
@@ -119,6 +96,8 @@ namespace BoSSS.Application.FSI_Solver {
                 radius_P = 0.4,
                 particleDensity = 1.0,
             });
+
+            
 
             ////Define level-set
             //Func<double[], double, double> phiComplete = delegate (double[] X, double t) {
@@ -184,7 +163,7 @@ namespace BoSSS.Application.FSI_Solver {
         /// <summary>
         /// Testing of particle/wall interactions using a single particle
         /// </summary>
-        public static FSI_Control SingleDryParticleAgainstWall(string _DbPath = null, bool MeshRefine = false) {
+        public static FSI_Control SingleDryParticleAgainstWall(string _DbPath = null, bool MeshRefine = true) {
             FSI_Control C = new FSI_Control();
 
             // basic database options
@@ -280,6 +259,7 @@ namespace BoSSS.Application.FSI_Solver {
             C.NonLinearSolver.MaxSolverIterations = 10;
             C.LinearSolver.NoOfMultigridLevels = 1;
             C.AdaptiveMeshRefinement = MeshRefine;
+            C.RefinementLevel = 1;
 
             // Timestepping
             // ============
