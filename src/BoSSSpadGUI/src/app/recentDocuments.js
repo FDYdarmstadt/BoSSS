@@ -29,7 +29,7 @@ class RecentDocuments{
     createRecentDocuments(paths, onClickFunction){
         var recentDocument = [];
         for(var i = 0; i < paths.length; ++i){
-            var path = paths[i].repeat(1);
+            var path = paths[i];
             recentDocument.push(
             {
                 label: this.createLabel(path),
