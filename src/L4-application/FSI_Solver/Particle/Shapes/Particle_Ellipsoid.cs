@@ -149,6 +149,11 @@ namespace BoSSS.Application.FSI_Solver {
             }
             return SurfacePoints;
         }
+
+        override public double[] GetLengthScales()
+        {
+            return new double[] { length_P, thickness_P };
+        }
     }
 }
 

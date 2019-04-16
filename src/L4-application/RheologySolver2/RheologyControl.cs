@@ -161,7 +161,7 @@ namespace BoSSS.Application.Rheology {
         /// periodic BC?
         /// </summary>
         [DataMember]
-        public bool FixedStreamwisePeriodicBC = true;
+        public bool FixedStreamwisePeriodicBC = false;
 
         /// <summary>
         /// Fixed SrcPressureGradient which should be used if periodic BC are applied

@@ -820,9 +820,8 @@ namespace BoSSS.Foundation.XDG {
         ReadOnlyCollection<ILevelSet> m_LevelSets = null;
 
         /// <summary>
-        /// The level sets, identic to the top of the level-set stack 
+        /// The level sets, identical to the top of the level-set stack (<see cref="LevelSetHistories"/>)
         /// - 1st index: index of level-set
-        /// - 2nd index: index into stack
         /// </summary>
         public IList<ILevelSet> LevelSets {
             get {

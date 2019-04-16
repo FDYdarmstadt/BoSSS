@@ -48,11 +48,17 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="GridDBDriverTests.cs" />
-    <Compile Include="StandardDBDriverTests.cs" />
+    <Compile Include="MPITest.cs" />
+    <Compile Include="Program.cs" />
+    <Compile Include="DBDriverTests.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="TestDatabase.cs" />
+    <Compile Include="DatabaseTest.cs" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\..\ilPSP\layer_1.1-MPI.NET\MPI.Wrappers\MPI.Wrappers.csproj">
+      <Project>{dd9bf776-38ca-4fc9-8f42-5ed700bde7ad}</Project>
+      <Name>MPI.Wrappers</Name>
+    </ProjectReference>
     <ProjectReference Include="..\..\ilPSP\layer_1.2-ilPSP\ilPSP\ilPSP.csproj">
       <Project>{8E6D8F23-623F-4204-B4AB-A088C0CD83AA}</Project>
       <Name>ilPSP</Name>
@@ -72,6 +78,9 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="bosss_db_test_template.zip" />
+  </ItemGroup>
+  <ItemGroup>
+    <Service Include="{82A7F48D-3B50-4B1E-B82E-3ADA8210C358}" />
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

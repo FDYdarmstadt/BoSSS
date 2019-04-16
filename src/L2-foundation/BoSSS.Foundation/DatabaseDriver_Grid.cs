@@ -197,12 +197,15 @@ namespace BoSSS.Foundation.IO
                 tr.Info("Loading grid " + gridGuid);
 
                 IGrid grid = null;
+                grid = DeserializeGrid(gridGuid);
+                /*
                 if (MyRank == 0)
                 {
                     grid = DeserializeGrid(gridGuid);
                 }
-
+                
                 grid = grid.MPIBroadcast(0);
+                */
                 grid.GridSerializationHandler.Database = database;
                 grid.WriteTime = Utils.GetGridFileWriteTime(grid);
                 return grid;

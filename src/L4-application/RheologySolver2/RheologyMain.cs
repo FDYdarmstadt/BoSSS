@@ -180,6 +180,7 @@ namespace BoSSS.Application.Rheology {
         VectorField<SinglePhaseField> VelocityXGradient;
         VectorField<SinglePhaseField> VelocityYGradient;
 
+
         //Parameters: external analytical velocity
         SinglePhaseField U;
         SinglePhaseField V;
@@ -338,6 +339,7 @@ namespace BoSSS.Application.Rheology {
             }
         }
 
+
         /// <summary>
         /// Step 1 of 2 for dynamic load balancing: creating a backup of this objects 
         /// status in the load-balancing thing <paramref name="L"/>
@@ -347,7 +349,7 @@ namespace BoSSS.Application.Rheology {
         }
 
         #endregion
-
+ 
         /// <summary>
         /// Initialize Calculation, Create Equations
         /// </summary>
