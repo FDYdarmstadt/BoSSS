@@ -33,19 +33,6 @@ class BoSSSDataMethods{
         });
     }
 
-    openFileFromPath(filePath){
-        var that = this;
-        that.AreYouSure_Save(() => 
-        {
-            try{
-                that.open(filePath);
-            }
-            catch(err) {
-                console.log(err);
-            }
-        });
-    }
-
     setPathAndOpen(fileName){
         var that = this;
         var filePath = '"' + fileName.replace(/\\/g, '/')+ '"';
@@ -53,6 +40,7 @@ class BoSSSDataMethods{
     }
 
     open(filePath){
+        console.log("dataMethods.open("+ filePath + ")");        
         var that = this;
         var command = 'BoSSSpad.openFile(' + filePath + ');';
         that.mainWindow.webContents.executeJavaScript( command );

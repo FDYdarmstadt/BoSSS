@@ -31,6 +31,7 @@ class RecentPaths{
     }
 
     movePathToTop(path){
+        console.log("MovingPathToTop");
         var index = this.paths.indexOf(path);
         this.paths.splice(index, 1);
         this.paths.unshift(path);

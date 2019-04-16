@@ -14,8 +14,22 @@ class RecentDataMethods extends DataMethods{
 
     save(filePath){
         this.recentDocuments.addRecentDocument(filePath);
-        return super.save(filePath);
+        return super.dataMethods.save(filePath);
     }
+
+    openFileFromPath(filePath){
+        var that = this;
+        that.AreYouSure_Save(() => 
+        {
+            try{
+                that.open(filePath);
+            }
+            catch(err) {
+                console.log(err);
+            }
+        });
+    }
+
 }
 
 module.exports = RecentDataMethods;
