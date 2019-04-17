@@ -67,10 +67,13 @@ namespace BoSSS.Solution.Statistic {
                     aF = scaleB;
                 }
 
+                Foundation.Grid.Classic.GridData fineGridData = GridHelper.ExtractGridData(fine.GridDat);
+                Foundation.Grid.Classic.GridData coarseGridData = GridHelper.ExtractGridData(coarse.GridDat);
+
                 DGFieldComparison.ComputeFine2CoarseMap(
-                    (Foundation.Grid.Classic.GridData)(fine.GridDat), 
-                    (Foundation.Grid.Classic.GridData)(coarse.GridDat), 
-                    out var Fine2CoarseMapS);
+                        fineGridData,
+                        coarseGridData,
+                        out var Fine2CoarseMapS);
 
                 DGField injected;
                 if(coarse is ConventionalDGField) {
@@ -95,6 +98,6 @@ namespace BoSSS.Solution.Statistic {
             }
         }
 
-
+        
     }
 }

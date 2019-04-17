@@ -50,15 +50,15 @@ namespace BoSSS.Platform {
         /// <param name="valueFun">
         /// The function for the creation of the value upon access.
         /// </param>
-        /// <param name="isUpdateToDateFun">
+        /// <param name="isUpToDateFun">
         /// The function that determines whether the represented value is
         /// still up to date. If not, <paramref name="valueFun"/> will be
         /// called again in order to update the represented
         /// <see cref="Value"/>
         /// </param>
-        public ExpirableLazy(Func<T> valueFun, Func<T, bool> isUpdateToDateFun) {
+        public ExpirableLazy(Func<T> valueFun, Func<T, bool> isUpToDateFun) {
             this.valueFun = valueFun;
-            this.isUpToDateFun = isUpdateToDateFun;
+            this.isUpToDateFun = isUpToDateFun;
         }
 
         /// <summary>
@@ -69,9 +69,6 @@ namespace BoSSS.Platform {
                 return m_Value != null;
             }
         }
-
- 
-
 
         /// <summary>
         /// Cached access to the lazy object.
@@ -96,6 +93,4 @@ namespace BoSSS.Platform {
             }
         }
     }
-
-    
 }

@@ -48,30 +48,7 @@ namespace BoSSS.Application.FSI_Solver {
             // DG degrees
             // ==========
 
-            C.FieldOptions.Add("VelocityX", new FieldOpts() {
-                Degree = k,
-                SaveToDB = FieldOpts.SaveToDBOpt.TRUE
-            });
-            C.FieldOptions.Add("VelocityY", new FieldOpts() {
-                Degree = k,
-                SaveToDB = FieldOpts.SaveToDBOpt.TRUE
-            });
-            C.FieldOptions.Add("Pressure", new FieldOpts() {
-                Degree = k - 1,
-                SaveToDB = FieldOpts.SaveToDBOpt.TRUE
-            });
-            C.FieldOptions.Add("PhiDG", new FieldOpts() {
-                Degree = 2,
-                SaveToDB = FieldOpts.SaveToDBOpt.TRUE
-            });
-            C.FieldOptions.Add("Phi", new FieldOpts() {
-                Degree = 2,
-                SaveToDB = FieldOpts.SaveToDBOpt.TRUE
-            });
-            C.FieldOptions.Add("Curvature", new FieldOpts() {
-                Degree = 2,
-                SaveToDB = FieldOpts.SaveToDBOpt.TRUE
-            });
+            C.SetDGdegree(k);
 
             // grid and boundary conditions
             // ============================
@@ -120,6 +97,8 @@ namespace BoSSS.Application.FSI_Solver {
                 particleDensity = 1.0,
             });
 
+            
+
             ////Define level-set
             //Func<double[], double, double> phiComplete = delegate (double[] X, double t) {
             //    int exp = C.Particles.Count - 1;
@@ -135,8 +114,8 @@ namespace BoSSS.Application.FSI_Solver {
 
             //C.InitialValues_Evaluators.Add("Phi", X => phiComplete(X, 0));
             //C.InitialValues.Add("VelocityX#B", X => 1);
-            C.InitialValues_Evaluators.Add("VelocityX", X => 0);
-            C.InitialValues_Evaluators.Add("VelocityY", X => 0);
+            //C.InitialValues_Evaluators.Add("VelocityX", X => 0);
+            //C.InitialValues_Evaluators.Add("VelocityY", X => 0);
             //C.InitialValues.Add("Phi", X => -1);
             //C.InitialValues.Add("Phi", X => (X[0] - 0.41));
 
@@ -208,8 +187,8 @@ namespace BoSSS.Application.FSI_Solver {
             // grid and boundary conditions
             // ============================
 
-            double[] Xnodes = GenericBlas.Linspace(-1, 1, 21);
-            double[] Ynodes = GenericBlas.Linspace(-1, 1, 21);
+            double[] Xnodes = GenericBlas.Linspace(-1, 1, 31);
+            double[] Ynodes = GenericBlas.Linspace(-1, 1, 31);
             double h = Math.Min((Xnodes[1] - Xnodes[0]), (Ynodes[1] - Ynodes[0]));
 
             C.GridFunc = delegate {
@@ -244,7 +223,6 @@ namespace BoSSS.Application.FSI_Solver {
 
             // Particles
             // =========
-
             C.Particles.Add(new Particle_Sphere(new double[] { -0.5, -0.5 }, startAngl: 90.0) {
                 particleDensity = 1.0,
                 radius_P = 0.1
@@ -281,6 +259,7 @@ namespace BoSSS.Application.FSI_Solver {
             C.NonLinearSolver.MaxSolverIterations = 10;
             C.LinearSolver.NoOfMultigridLevels = 1;
             C.AdaptiveMeshRefinement = MeshRefine;
+            C.RefinementLevel = 1;
 
             // Timestepping
             // ============
@@ -457,8 +436,8 @@ namespace BoSSS.Application.FSI_Solver {
                 int q = new int(); // #Cells in x-dircetion + 1
                 int r = new int(); // #Cells in y-dircetion + 1
 
-                q = 40/3;
-                r = 30/3;
+                q = 40;
+                r = 30;
 
                 double[] Xnodes = GenericBlas.Linspace(-4, 4, q);
                 double[] Ynodes = GenericBlas.Linspace(-3, 3, r);
@@ -495,7 +474,7 @@ namespace BoSSS.Application.FSI_Solver {
 
             // Mesh refinement
             // =============================
-            C.AdaptiveMeshRefinement = true;
+            C.AdaptiveMeshRefinement = false;
             C.RefinementLevel = 2;
             C.maxCurvature = 2;
 
@@ -572,14 +551,13 @@ namespace BoSSS.Application.FSI_Solver {
             C.LinearSolver.NoOfMultigridLevels = 1;
             C.LinearSolver.MaxSolverIterations = 1000;
             C.LinearSolver.MinSolverIterations = 1;
-            C.ForceAndTorque_ConvergenceCriterion = 1e2;
+            C.ForceAndTorque_ConvergenceCriterion = 1e-2;
             C.LSunderrelax = 1.0;
             
             // Coupling Properties
             // =============================
             C.Timestepper_LevelSetHandling = LevelSetHandling.FSI_LieSplittingFullyCoupled;
             C.LSunderrelax = 1;
-            C.splitting_fully_coupled = true;
             C.max_iterations_fully_coupled = 250;
             C.includeRotation = false;
             C.includeTranslation = false;
