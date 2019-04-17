@@ -391,7 +391,7 @@ namespace BoSSS.Application.Rheology {
 
             //Solver Options
             C.NoOfTimesteps = 1;
-            C.savetodb = true;
+            C.savetodb = false;
             C.DbPath = path;
             C.ProjectName = "Cylinder";
 
@@ -423,7 +423,7 @@ namespace BoSSS.Application.Rheology {
 
             //Debugging and Solver Analysis
             C.OperatorMatrixAnalysis = false;
-            C.SkipSolveAndEvaluateResidual = false;
+            C.SkipSolveAndEvaluateResidual = true;
             C.SetInitialConditions = true;
             C.SetInitialPressure = false;
             C.SetParamsAnalyticalSol = false;

@@ -103,7 +103,7 @@ namespace BoSSS.Solution.GridImport {
         QUAD_16 = 36,
         /// <summary>25-node fourth order quadrangle (8 nodes associated with the vertices, 4 with the edges, 5 with the face)</summary>
         QUAD_25 = 37,
-        /// <summary>36-node fourth order quadrangle (12 nodes associated with the vertices, 4 with the edges, 16 with the face)</summary>
+        /// <summary>36-node fifth order quadrangle (12 nodes associated with the vertices, 4 with the edges, 16 with the face)</summary>
         QUAD_36 = 38,
         /// <summary>17-node fourth order quadrangle (12 nodes associated with the vertices, 4 with the edges, 1 with the face)</summary>
         QUAD_172 = 39, // Achtung!!!! Unbekannte Nummerierung!!!!!!!!!!!
@@ -195,9 +195,9 @@ namespace BoSSS.Solution.GridImport {
             new int[,] {{}},
             // <summary>16-node third order quadrangle (8 nodes associated with the vertices, 4 with the edges, 4 with the face)</summary>
             new int[,] {{ 14, 13, 15, 12, 10, 11, 7, 6, 8, 9, 5, 4, 0, 1, 3, 2 },{ 15, 12, 14, 13, 7, 6, 10, 11, 9, 8, 4, 5, 1, 0, 2, 3 }},  
-            // <summary>25-node third order quadrangle (8 nodes associated with the vertices, 4 with the edges, 9 with the face)</summary>
+            // <summary>25-node fourth order quadrangle (8 nodes associated with the vertices, 4 with the edges, 9 with the face)</summary>
             new int[,] {{ 18, 21, 17, 22, 24, 20, 19, 23, 16, 13, 14, 15, 9, 8, 7, 10, 11, 12, 6, 5, 4, 0, 1, 3, 2 },{ 19, 23, 16, 22, 24, 20, 18, 21, 17, 9, 8, 7, 13, 14, 15, 12, 11, 10, 4, 5, 6, 1, 0, 2, 3 }},  
-            // <summary>36-node third order quadrangle (12 nodes associated with the vertices, 4 with the edges, 16 with the face)</summary>
+            // <summary>36-node fifth order quadrangle (12 nodes associated with the vertices, 4 with the edges, 16 with the face)</summary>
             new int[,] {{ 22, 27, 26, 21, 28, 34, 33, 25, 29, 35, 32, 24, 23, 30, 31, 20, 16, 17, 18, 19, 11, 10, 9, 8, 12, 13, 14, 15, 7, 6, 5, 4, 0, 1, 3, 2 },{ 23, 30, 31, 20, 29, 35, 32, 24, 28, 34, 33, 25, 22, 27, 26, 21, 11, 10, 9, 8, 16, 17, 18, 19, 15, 14, 13, 12, 4, 5, 6, 7, 1, 0, 2, 3 }},
         };
 
@@ -1021,6 +1021,12 @@ namespace BoSSS.Solution.GridImport {
 
                 case CurvedElementType_t.QUAD_16:
                     return CellType.Square_16;
+
+                case CurvedElementType_t.QUAD_25:
+                    return CellType.Square_25;
+
+                case CurvedElementType_t.QUAD_36:
+                    return CellType.Square_36;
 
                 case CurvedElementType_t.HEXA_8:
                     if (nonLinear) {

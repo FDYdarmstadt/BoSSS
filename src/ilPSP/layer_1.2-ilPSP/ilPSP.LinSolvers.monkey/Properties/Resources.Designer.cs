@@ -70,7 +70,8 @@ namespace ilPSP.LinSolvers.monkey.Properties {
         ///	// Compiling C:/Users/kummer/AppData/Local/Temp/tmpxft_00001bb0_00000000-11_CudaMatrixKernelDP.cpp3.i (C:/Users/kummer/AppData/Local/Temp/ccBI#.a05632)
         ///	//-----------------------------------------------------------
         ///
-        ///	//---------------------------------------------------- [rest of string was truncated]&quot;;.
+        ///	//-----------------------------------------------------------
+        ///	 [rest of string was truncated]&quot;;.
         /// </summary>
         internal static string CudaMatrixKernelDP {
             get {
@@ -88,7 +89,8 @@ namespace ilPSP.LinSolvers.monkey.Properties {
         ///	// Compiling C:/Users/kummer/AppData/Local/Temp/tmpxft_000008d4_00000000-11_CudaVectorKernelDP.cpp3.i (C:/Users/kummer/AppData/Local/Temp/ccBI#.a05692)
         ///	//-----------------------------------------------------------
         ///
-        ///	//---------------------------------------------------- [rest of string was truncated]&quot;;.
+        ///	//-----------------------------------------------------------
+        ///	 [rest of string was truncated]&quot;;.
         /// </summary>
         internal static string CudaVectorKernelDP {
             get {
