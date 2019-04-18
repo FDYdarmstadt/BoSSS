@@ -837,7 +837,7 @@ namespace BoSSS.Application.FSI_Solver {
             foreach (Particle p in Particles)
             {
                 if (!((FSI_Control)Control).pureDryCollisions)
-                    p.UpdateForcesAndTorque(Velocity, Pressure, LsTrk, Control.PhysicalParameters.mu_A, dt, Control.PhysicalParameters.rho_A, ((FSI_Control)Control).Timestepper_LevelSetHandling == LevelSetHandling.FSI_LieSplittingFullyCoupled);
+                    p.UpdateForcesAndTorque(Velocity, Pressure, LsTrk, Control.PhysicalParameters.mu_A, dt, Control.PhysicalParameters.rho_A, ((FSI_Control)Control).Timestepper_LevelSetHandling != LevelSetHandling.FSI_LieSplittingFullyCoupled);
                 // wall collisions are computed on each processor
                 WallCollisionForces(p, LsTrk.GridDat.Cells.h_minGlobal);
             }

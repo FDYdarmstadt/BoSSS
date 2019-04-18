@@ -566,7 +566,7 @@ namespace BoSSS.Application.FSI_Solver
         /// <param name="P"></param>
         /// <param name="LsTrk"></param>
         /// <param name="muA"></param>
-        public void UpdateForcesAndTorque(VectorField<SinglePhaseField> U, SinglePhaseField P, LevelSetTracker LsTrk, double muA, double dt, double fluidDensity, bool FullyCoupled) {
+        public void UpdateForcesAndTorque(VectorField<SinglePhaseField> U, SinglePhaseField P, LevelSetTracker LsTrk, double muA, double dt, double fluidDensity, bool NotFullyCoupled) {
 
             if (skipForceIntegration) {
                 skipForceIntegration = false;
@@ -673,7 +673,7 @@ namespace BoSSS.Application.FSI_Solver
                 }
             }
 
-            if (iteration_counter_P == 1 || FullyCoupled)
+            if (iteration_counter_P == 1 || NotFullyCoupled)
             {
                 Console.WriteLine("First iteration of the current timestep, all relaxation factors are set to 1");
                 for (int d = 0; d < SpatialDim; d++)
