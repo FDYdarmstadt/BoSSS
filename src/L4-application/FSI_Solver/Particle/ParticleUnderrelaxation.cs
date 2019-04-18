@@ -25,7 +25,6 @@ namespace BoSSS.Application.FSI_Solver
 {
     class ParticleUnderrelaxation
     {
-        /// ====================================================================================
         /// <summary>
         /// This method underrelaxates the hydrodynamic forces and torque. The Underrelaxation
         /// factor is either predefined or is calculated dynamically.
@@ -62,7 +61,6 @@ namespace BoSSS.Application.FSI_Solver
         /// <param name="iterationCounter">
         /// No. of iterations.
         /// </param>
-        /// ====================================================================================
         internal double[] RelaxatedForcesAndTorque(double[] forces, double torque, double[] forcesAtPrevIteration, double torqueAtPrevIteration, double convergenceLimit, double RelaxationFactor, bool clearSmallValues, bool UseAdaptiveUnderrelaxation, double averageDistance, int iterationCounter)
         {
             int spatialDim = forces.Length;
@@ -109,7 +107,6 @@ namespace BoSSS.Application.FSI_Solver
             return ForcesAndTorque;
         }
 
-        /// ====================================================================================
         /// <summary>
         /// Does what it says.
         /// </summary>
@@ -122,7 +119,6 @@ namespace BoSSS.Application.FSI_Solver
         /// <param name="averageDistance">
         /// The average Lengthscale of the particle.
         /// </param>
-        /// ====================================================================================
         private double CalculateAverageForces(double[] forces, double torque, double averageDistance = 1)
         {
             double averageForces = Math.Abs(torque) / averageDistance;
@@ -133,7 +129,6 @@ namespace BoSSS.Application.FSI_Solver
             return averageForces / 3;
         }
 
-        /// ====================================================================================
         /// <summary>
         /// This method calculates the underrelaxation factor dynamically.
         /// </summary>
@@ -155,7 +150,6 @@ namespace BoSSS.Application.FSI_Solver
         /// <param name="iterationCounter">
         /// No. of iterations.
         /// </param>
-        /// ====================================================================================
         private double CalculateAdaptiveUnderrelaxation(double variable, double variableAtPrevIteration, double averageValueOfVar, double convergenceLimit, int iterationCounter, double predefinedFactor = 1)
         {
             int IterationHelper = 1;

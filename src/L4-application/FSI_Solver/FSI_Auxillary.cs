@@ -177,24 +177,18 @@ namespace FSI_Solver
             }
         }
 
-        internal void UpdateParticleAccelerationAndDamping(List<Particle> Particles, int IterationCounter, double dt, bool LieSplittingFullyCoupled)
-        {
-            for (int p = 0; p < Particles.Count(); p++)
-            {
-                if (IterationCounter == 0 && LieSplittingFullyCoupled)
-                {
-                    if (Particles[p].neglectAddedDamping == false)
-                    {
-                        Particles[p].UpdateDampingTensors();
-                        //ExchangeDampingTensors(Particles);
-                    }
-                    Particles[p].PredictAcceleration();
+        internal void UpdateParticleAccelerationAndDamping(Particle Particle, int IterationCounter, double dt, bool LieSplittingFullyCoupled) {
+
+            if (IterationCounter == 0 && LieSplittingFullyCoupled) {
+                if (Particle.neglectAddedDamping == false) {
+                    Particle.UpdateDampingTensors();
+                    //ExchangeDampingTensors(Particles);
                 }
-                else
-                {
-                    Particles[p].CalculateAcceleration(dt);
-                }
+                Particle.PredictAcceleration();
+            } else {
+                Particle.CalculateAcceleration(dt);
             }
+
         }
 
         internal void CalculateParticleResidual(List<Particle> Particles, double[] ForcesOldSquared, double TorqueOldSquared, int IterationCounter, int MaximumIterations, out double Residual, out int _IterationCounter)

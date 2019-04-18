@@ -931,10 +931,12 @@ namespace BoSSS.Application.FSI_Solver {
                                 UpdateForcesAndTorque(m_Particles, GridData, dt);
                             }
 
-                            foreach (Particle p in m_Particles)
-                            {
+                            foreach (Particle p in m_Particles) {
                                 p.iteration_counter_P = iteration_counter;
-                                Auxillary.UpdateParticleAccelerationAndDamping(m_Particles, iteration_counter, dt, ((FSI_Control)Control).Timestepper_LevelSetHandling == LevelSetHandling.FSI_LieSplittingFullyCoupled);
+
+                                
+                                //Auxillary.UpdateParticleAccelerationAndDamping(p, iteration_counter, dt, ((FSI_Control)Control).Timestepper_LevelSetHandling == LevelSetHandling.FSI_LieSplittingFullyCoupled);
+
                                 p.UpdateParticleState(dt);
                             }
 
