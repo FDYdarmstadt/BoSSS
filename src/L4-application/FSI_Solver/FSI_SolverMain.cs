@@ -63,10 +63,10 @@ namespace BoSSS.Application.FSI_Solver {
         /// </summary>
         static void Main(string[] args) {
             MultiphaseCellAgglomerator.Katastrophenplot = MegaArschKakke2;
-            TestProgram.Init();
-            TestProgram.TestFlowRotationalCoupling();
+            //TestProgram.Init();
+            //TestProgram.TestFlowRotationalCoupling();
             
-            Assert.IsTrue(false, "Remember to remove testcode!");
+            //Assert.IsTrue(false, "Remember to remove testcode!");
             
 
             _Main(args, false, delegate () {
