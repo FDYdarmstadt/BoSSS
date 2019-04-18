@@ -348,10 +348,10 @@ namespace BoSSS.Application.FSI_Solver
         readonly private ParticleUnderrelaxation Underrelaxation = new ParticleUnderrelaxation();
         [NonSerialized]
         readonly private ParticleAcceleration Acceleration = new ParticleAcceleration();
-        internal void UpdateParticleState(double dt, bool IncludeTranslation, bool IncludeRotation)
+        internal void UpdateParticleState(double dt)
         {
-            CalculateAngularVelocity(dt, IncludeRotation);
-            CalculateTranslationalVelocity(dt, IncludeTranslation);
+            CalculateAngularVelocity(dt);
+            CalculateTranslationalVelocity(dt);
             CalculateParticlePosition(dt);
             CalculateParticleAngle(dt);
             //ComputeParticleRe(FluidViscosity);
@@ -474,14 +474,14 @@ namespace BoSSS.Application.FSI_Solver
         /// </summary>
         /// <param name="dt">Timestep</param>
         /// <returns></returns>
-        public void CalculateTranslationalVelocity(double dt, bool includeTranslation)
+        public void CalculateTranslationalVelocity(double dt)
         {
             if (iteration_counter_P == 0)
             {
                 Aux.SaveMultidimValueOfLastTimestep(TranslationalVelocity);
             }
 
-            if (includeTranslation == false)
+            if (this.includeTranslation == false)
             {
                 for (int d = 0; d < SpatialDim; d++)
                 {
@@ -502,14 +502,14 @@ namespace BoSSS.Application.FSI_Solver
         /// </summary>
         /// <param name="dt">Timestep</param>
         /// <returns></returns>
-        public void CalculateAngularVelocity(double dt, bool includeRotation)
+        public void CalculateAngularVelocity(double dt)
         {
             if (iteration_counter_P == 0)
             {
                 Aux.SaveValueOfLastTimestep(RotationalVelocity);
             }
             
-            if (includeRotation == false)
+            if (this.includeRotation == false)
             {
                 RotationalVelocity[0] = 0;
                 return;
@@ -740,6 +740,18 @@ namespace BoSSS.Application.FSI_Solver
         {
             throw new NotImplementedException();
         }
+
+        /// <summary>
+        /// Set true if translation of the particle should be induced by hydrodynamical forces.
+        /// </summary>
+        [DataMember]
+        public bool includeTranslation = true;
+
+        /// <summary>
+        /// Set true if rotation of the particle should be induced by hydrodynamical torque.
+        /// </summary>
+        [DataMember]
+        public bool includeRotation = true;
     }
 }
 

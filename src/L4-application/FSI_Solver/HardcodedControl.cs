@@ -30,6 +30,7 @@ using BoSSS.Solution.XdgTimestepping;
 namespace BoSSS.Application.FSI_Solver {
     public class HardcodedControl : IBM_Solver.HardcodedTestExamples {
 
+        /*
         public static FSI_Control ParticleInShearFlow(string _DbPath = null, int k = 2, double VelXBase = 0.0) {
             FSI_Control C = new FSI_Control();
 
@@ -99,9 +100,7 @@ namespace BoSSS.Application.FSI_Solver {
 
                 return grd;
             };
-
-
-
+            
 
             C.AddBoundaryValue("Velocity_Inlet_left", "VelocityY", X => 0.02);
             C.AddBoundaryValue("Velocity_Inlet_right", "VelocityY", X => -0.02);
@@ -172,7 +171,8 @@ namespace BoSSS.Application.FSI_Solver {
 
             return C;
         }
-
+        */
+        /*
         public static FSI_Control IBMCylinderFlowUhlmann(string _DbPath = null, int k = 2, bool xPeriodic = false, double VelXBase = 0.0) {
             FSI_Control C = new FSI_Control();
 
@@ -448,7 +448,7 @@ namespace BoSSS.Application.FSI_Solver {
 
             return C;
         }
-
+        */
         public static FSI_Control[] ParticleUnderGravity(string _DbPath = null, int k = 2, double VelXBase = 0.0) {
             List<FSI_Control> R = new List<FSI_Control>();
 
@@ -583,8 +583,6 @@ namespace BoSSS.Application.FSI_Solver {
 
             // Coupling Properties
             C.Timestepper_LevelSetHandling = LevelSetHandling.Coupled_Once;
-            C.includeRotation = false;
-            C.includeTranslation = true;
 
             // Fluid Properties
             C.PhysicalParameters.rho_A = 1;
@@ -599,7 +597,9 @@ namespace BoSSS.Application.FSI_Solver {
 
             C.Particles.Add(new Particle_Sphere(new double[] { 0.0, 1.0 }) {
                 radius_P = (0.125/2.0),
-                particleDensity = 1.25
+                particleDensity = 1.25,
+                includeRotation = false,
+                includeTranslation = true
             });
 
             //Func<double[], double, double> phiComplete = (X, t) => -1 * (C.Particles[0].Phi_P(X, t));
@@ -793,8 +793,6 @@ namespace BoSSS.Application.FSI_Solver {
 
             // Coupling Properties
             C.Timestepper_LevelSetHandling = LevelSetHandling.Coupled_Once;
-            C.includeRotation = true;
-            C.includeTranslation = true;
 
             // Fluid Properties
             C.PhysicalParameters.rho_A = 1;
@@ -1014,8 +1012,6 @@ namespace BoSSS.Application.FSI_Solver {
 
             // Coupling Properties
             C.Timestepper_LevelSetHandling = LevelSetHandling.Coupled_Once;
-            C.includeRotation = true;
-            C.includeTranslation = true;
 
             // Fluid Properties
             C.PhysicalParameters.rho_A = 1;
@@ -1266,8 +1262,6 @@ namespace BoSSS.Application.FSI_Solver {
 
             // Coupling Properties
             C.Timestepper_LevelSetHandling = LevelSetHandling.Coupled_Once;
-            C.includeRotation = true;
-            C.includeTranslation = true;
 
             // Fluid Properties
             C.PhysicalParameters.rho_A = 1;
@@ -1513,8 +1507,6 @@ namespace BoSSS.Application.FSI_Solver {
 
             // Coupling Properties
             C.Timestepper_LevelSetHandling = LevelSetHandling.LieSplitting;
-            C.includeRotation = true;
-            C.includeTranslation = true;
 
             // Fluid Properties
             C.PhysicalParameters.rho_A = 1.0;
@@ -1736,9 +1728,7 @@ namespace BoSSS.Application.FSI_Solver {
 
             // Coupling Properties
             C.Timestepper_LevelSetHandling = LevelSetHandling.Coupled_Once;
-            C.includeRotation = true;
-            C.includeTranslation = true;
-
+          
             // Fluid Properties
             C.PhysicalParameters.rho_A = 1;
             C.PhysicalParameters.mu_A = 0.01;
@@ -1943,8 +1933,6 @@ namespace BoSSS.Application.FSI_Solver {
             // Coupling Properties
             //C.LevelSetMovement = "coupled";
             C.Timestepper_LevelSetHandling = LevelSetHandling.Coupled_Once;
-            C.includeRotation = true;
-            C.includeTranslation = true;
 
             // Fluid Properties
             C.PhysicalParameters.rho_A = 1.0;
