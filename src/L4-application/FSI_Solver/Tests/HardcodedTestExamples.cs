@@ -88,13 +88,13 @@ namespace BoSSS.Application.FSI_Solver {
             // Coupling Properties
             //C.LevelSetMovement = "coupled";
             C.Timestepper_LevelSetHandling = LevelSetHandling.Coupled_Once;
-            C.includeTranslation = false;
-            C.includeRotation = true;
 
             // Particle Properties
             C.Particles.Add(new Particle_Sphere(new double[] { 0.0, 0.0 }) {
                 radius_P = 0.4,
                 particleDensity = 1.0,
+                IncludeTranslation = false,
+                IncludeRotation = true
             });
 
             
@@ -213,8 +213,7 @@ namespace BoSSS.Application.FSI_Solver {
 
             // Coupling Properties
             C.Timestepper_LevelSetHandling = LevelSetHandling.Coupled_Once;
-            C.includeRotation = true;
-            C.includeTranslation = true;
+
 
             // Fluid Properties
             C.PhysicalParameters.rho_A = 1;
@@ -334,8 +333,7 @@ namespace BoSSS.Application.FSI_Solver {
 
             // Coupling Properties
             C.Timestepper_LevelSetHandling = LevelSetHandling.Coupled_Once;
-            C.includeRotation = true;
-            C.includeTranslation = true;
+
 
             // Fluid Properties
             C.PhysicalParameters.rho_A = 1;
@@ -510,7 +508,9 @@ namespace BoSSS.Application.FSI_Solver {
                     AddaptiveUnderrelaxation = true,// set true if you want to define a constant underrelaxation (not recommended)
                     underrelaxation_factor = 1,// underrelaxation with [factor * 10^exponent]
                     ClearSmallValues = true,
-                    neglectAddedDamping = false
+                    neglectAddedDamping = false,
+                    IncludeRotation = false,
+                    IncludeTranslation = false
                 });
             }
             //Define level-set
@@ -559,8 +559,7 @@ namespace BoSSS.Application.FSI_Solver {
             C.Timestepper_LevelSetHandling = LevelSetHandling.FSI_LieSplittingFullyCoupled;
             C.LSunderrelax = 1;
             C.max_iterations_fully_coupled = 250;
-            C.includeRotation = false;
-            C.includeTranslation = false;
+
 
 
             // Timestepping

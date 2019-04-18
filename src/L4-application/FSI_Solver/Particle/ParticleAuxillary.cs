@@ -92,7 +92,6 @@ namespace BoSSS.Application.FSI_Solver {
             }
             return sum + c;
         }
-
         /// ====================================================================================
         /// <summary>
         /// This method performs the Neumaier algorithm form the sum of the entries of an array.
@@ -105,11 +104,11 @@ namespace BoSSS.Application.FSI_Solver {
         /// <param name="SummandsPressure">
         /// The pressure.
         /// </param>
-        /// <param name="FluidViscosity">
+        /// <param name="muA">
         /// The fluid viscosity.
         /// </param>
         /// ====================================================================================
-        static internal double SummationWithNeumaier(double[] SummandsVelGradient, double SummandsPressure, double FluidViscosity)
+        static internal double SummationWithNeumaier(double[] SummandsVelGradient, double SummandsPressure, double muA)
         {
             double sum = SummandsVelGradient[0];
             double naiveSum;
@@ -127,8 +126,8 @@ namespace BoSSS.Application.FSI_Solver {
                 }
                 sum = naiveSum;
             }
-            sum *= FluidViscosity;
-            c *= FluidViscosity;
+            sum *= muA;
+            c *= muA;
             naiveSum = sum + SummandsPressure;
             if (Math.Abs(sum) >= SummandsPressure)
             {

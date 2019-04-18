@@ -65,6 +65,7 @@ namespace BoSSS.Application.FSI_Solver {
             MultiphaseCellAgglomerator.Katastrophenplot = MegaArschKakke2;
             //TestProgram.Init();
             //TestProgram.TestFlowRotationalCoupling();
+            
             //Assert.IsTrue(false, "Remember to remove testcode!");
             
 
@@ -836,7 +837,7 @@ namespace BoSSS.Application.FSI_Solver {
             foreach (Particle p in Particles)
             {
                 if (!((FSI_Control)Control).pureDryCollisions)
-                    p.UpdateForcesAndTorque(Velocity, Pressure, LsTrk, Control.PhysicalParameters.mu_A, dt, Control.PhysicalParameters.rho_A);
+                    p.UpdateForcesAndTorque(Velocity, Pressure, LsTrk, Control.PhysicalParameters.mu_A, dt, Control.PhysicalParameters.rho_A, ((FSI_Control)Control).Timestepper_LevelSetHandling != LevelSetHandling.FSI_LieSplittingFullyCoupled);
                 // wall collisions are computed on each processor
                 WallCollisionForces(p, LsTrk.GridDat.Cells.h_minGlobal);
             }
@@ -876,8 +877,8 @@ namespace BoSSS.Application.FSI_Solver {
                     UpdateForcesAndTorque(m_Particles, GridData, dt);
                     foreach (var p in m_Particles)
                     {
-                        p.CalculateAcceleration(dt);
-                        p.UpdateParticleState(dt, ((FSI_Control)Control).includeTranslation, ((FSI_Control)Control).includeRotation);
+                        p.CalculateAcceleration(dt, ((FSI_Control)Control).Timestepper_LevelSetHandling == LevelSetHandling.FSI_LieSplittingFullyCoupled);
+                        p.UpdateParticleState(dt);
                     }
                     UpdateLevelSetParticles();
                     Auxillary.PrintResultToConsole(m_Particles, phystime, dt, out double MPIangularVelocity, out force);
@@ -916,7 +917,7 @@ namespace BoSSS.Application.FSI_Solver {
                     }
                     else if (((FSI_Control)this.Control).Timestepper_LevelSetHandling != LevelSetHandling.Coupled_Iterative)
                     {
-                        iteration_counter = ((FSI_Control)Control).Timestepper_LevelSetHandling == LevelSetHandling.FSI_LieSplittingFullyCoupled ? 0 : 1;
+                        iteration_counter = 0;
                         double posResidual_splitting = 1e12;
                         while (posResidual_splitting > ((FSI_Control)Control).ForceAndTorque_ConvergenceCriterion)
                         {
@@ -930,11 +931,10 @@ namespace BoSSS.Application.FSI_Solver {
                                 UpdateForcesAndTorque(m_Particles, GridData, dt);
                             }
 
-                            foreach (Particle p in m_Particles)
-                            {
+                            foreach (Particle p in m_Particles) {
                                 p.iteration_counter_P = iteration_counter;
-                                Auxillary.UpdateParticleAccelerationAndDamping(m_Particles, iteration_counter, dt, ((FSI_Control)Control).Timestepper_LevelSetHandling == LevelSetHandling.FSI_LieSplittingFullyCoupled);
-                                p.UpdateParticleState(dt, ((FSI_Control)Control).includeTranslation, ((FSI_Control)Control).includeRotation);
+                                Auxillary.UpdateParticleAccelerationAndDamping(p, iteration_counter, dt, ((FSI_Control)Control).Timestepper_LevelSetHandling == LevelSetHandling.FSI_LieSplittingFullyCoupled);
+                                p.UpdateParticleState(dt);
                             }
 
                             Auxillary.PrintResultToConsole(m_Particles, phystime, dt, out double MPIangularVelocity, out force);

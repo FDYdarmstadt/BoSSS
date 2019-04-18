@@ -177,24 +177,18 @@ namespace FSI_Solver
             }
         }
 
-        internal void UpdateParticleAccelerationAndDamping(List<Particle> Particles, int IterationCounter, double dt, bool LieSplittingFullyCoupled)
-        {
-            for (int p = 0; p < Particles.Count(); p++)
-            {
-                if (IterationCounter == 0 && LieSplittingFullyCoupled)
-                {
-                    if (Particles[p].neglectAddedDamping == false)
-                    {
-                        Particles[p].UpdateDampingTensors();
-                        //ExchangeDampingTensors(Particles);
-                    }
-                    Particles[p].PredictAcceleration();
+        internal void UpdateParticleAccelerationAndDamping(Particle Particle, int IterationCounter, double dt, bool LieSplittingFullyCoupled) {
+
+            if (IterationCounter == 0 && LieSplittingFullyCoupled) {
+                if (Particle.neglectAddedDamping == false) {
+                    Particle.UpdateDampingTensors();
+                    //ExchangeDampingTensors(Particles);
                 }
-                else
-                {
-                    Particles[p].CalculateAcceleration(dt);
-                }
+                Particle.PredictAcceleration();
+            } else {
+                Particle.CalculateAcceleration(dt, LieSplittingFullyCoupled);
             }
+
         }
 
         internal void CalculateParticleResidual(List<Particle> Particles, double[] ForcesOldSquared, double TorqueOldSquared, int IterationCounter, int MaximumIterations, out double Residual, out int _IterationCounter)
@@ -301,9 +295,6 @@ namespace FSI_Solver
                 p.ForcesPrevIteration[0] = p.HydrodynamicForces[0][0];
                 p.ForcesPrevIteration[1] = p.HydrodynamicForces[0][1];
                 p.TorquePrevIteration = p.HydrodynamicTorque[0];
-                p.HydrodynamicForces[0][0] = 0;
-                p.HydrodynamicForces[0][1] = 0;
-                p.HydrodynamicTorque[0] = 0;
             }
         }
 

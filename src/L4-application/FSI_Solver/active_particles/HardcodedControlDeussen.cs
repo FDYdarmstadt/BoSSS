@@ -203,8 +203,6 @@ namespace BoSSS.Application.FSI_Solver
             // =============================
             C.Timestepper_LevelSetHandling = LevelSetHandling.Coupled_Once;
             C.max_iterations_fully_coupled = 10000;
-            C.includeRotation = true;
-            C.includeTranslation = true;
             
             // Timestepping
             // =============================  
@@ -293,8 +291,6 @@ namespace BoSSS.Application.FSI_Solver
 
             // Coupling Properties
             C.Timestepper_LevelSetHandling = LevelSetHandling.Coupled_Once;
-            C.includeRotation = true;
-            C.includeTranslation = true;
 
             // Fluid Properties
             C.PhysicalParameters.rho_A = 1;
