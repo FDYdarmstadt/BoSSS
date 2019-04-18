@@ -372,7 +372,7 @@ namespace BoSSS.Application.FSI_Solver
             if (SpatialDim != 2 && SpatialDim != 3)
                 throw new NotSupportedException("Unknown particle dimension: SpatialDim = " + SpatialDim);
 
-            if (includeTranslation == true) {
+            if (IncludeTranslation == true) {
                 for (int d = 0; d < SpatialDim; d++) {
                     Position[0][d] = Position[1][d] + TranslationalVelocity[1][d] * dt + (TranslationalAcceleration[1][d] + TranslationalAcceleration[0][d]) * dt.Pow2() / 4;
                     if (double.IsNaN(Position[0][d]) || double.IsInfinity(Position[0][d]))
@@ -398,7 +398,7 @@ namespace BoSSS.Application.FSI_Solver
                 Aux.SaveValueOfLastTimestep(Angle);
             }
 
-            if (includeRotation == true) {
+            if (IncludeRotation == true) {
                 if (SpatialDim != 2)
                     throw new NotSupportedException("Unknown particle dimension: SpatialDim = " + SpatialDim);
 
@@ -461,7 +461,7 @@ namespace BoSSS.Application.FSI_Solver
         /// Calculate the new acceleration (translational and rotational)
         /// </summary>
         /// <param name="dt"></param>
-        public void CalculateAcceleration(double dt, bool IncludeTranslation, bool IncludeRotation, bool FullyCoupled)
+        public void CalculateAcceleration(double dt, bool FullyCoupled)
         {
             if (iteration_counter_P == 0 || FullyCoupled == false)
             {
@@ -472,7 +472,7 @@ namespace BoSSS.Application.FSI_Solver
             double[,] CoefficientMatrix = Acceleration.CalculateCoefficients(AddedDampingTensor, Mass_P, MomentOfInertia_P, dt, AddedDampingCoefficient);
             double Denominator = Acceleration.CalculateDenominator(CoefficientMatrix);
 
-            if (IncludeTranslation)
+            if (this.IncludeTranslation)
                 TranslationalAcceleration[0] = Acceleration.Translational(CoefficientMatrix, Denominator, HydrodynamicForces[0], HydrodynamicTorque[0]);
 
             for (int d = 0; d < SpatialDim; d++)
@@ -500,7 +500,7 @@ namespace BoSSS.Application.FSI_Solver
                 Aux.SaveMultidimValueOfLastTimestep(TranslationalVelocity);
             }
 
-            if (this.includeTranslation == false) {
+            if (this.IncludeTranslation == false) {
                 for (int d = 0; d < SpatialDim; d++) {
                     TranslationalVelocity[0][d] = 0;
                 }
@@ -526,7 +526,7 @@ namespace BoSSS.Application.FSI_Solver
                 Aux.SaveValueOfLastTimestep(RotationalVelocity);
             }
 
-            if (this.includeRotation == false) {
+            if (this.IncludeRotation == false) {
                 RotationalVelocity[0] = 0;
                 return;
             } else {
@@ -566,7 +566,7 @@ namespace BoSSS.Application.FSI_Solver
         /// <param name="P"></param>
         /// <param name="LsTrk"></param>
         /// <param name="muA"></param>
-        public void UpdateForcesAndTorque(VectorField<SinglePhaseField> U, SinglePhaseField P, LevelSetTracker LsTrk, double muA, double dt, double fluidDensity) {
+        public void UpdateForcesAndTorque(VectorField<SinglePhaseField> U, SinglePhaseField P, LevelSetTracker LsTrk, double muA, double dt, double fluidDensity, bool FullyCoupled) {
 
             if (skipForceIntegration) {
                 skipForceIntegration = false;
@@ -673,7 +673,7 @@ namespace BoSSS.Application.FSI_Solver
                 }
             }
 
-            if (iteration_counter_P == 1)
+            if (iteration_counter_P == 1 || FullyCoupled)
             {
                 Console.WriteLine("First iteration of the current timestep, all relaxation factors are set to 1");
                 for (int d = 0; d < SpatialDim; d++)
@@ -761,13 +761,13 @@ namespace BoSSS.Application.FSI_Solver
         /// Set true if translation of the particle should be induced by hydrodynamical forces.
         /// </summary>
         [DataMember]
-        public bool includeTranslation = true;
+        public bool IncludeTranslation = true;
 
         /// <summary>
         /// Set true if rotation of the particle should be induced by hydrodynamical torque.
         /// </summary>
         [DataMember]
-        public bool includeRotation = true;
+        public bool IncludeRotation = true;
     }
 }
 

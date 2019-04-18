@@ -93,8 +93,8 @@ namespace BoSSS.Application.FSI_Solver {
             C.Particles.Add(new Particle_Sphere(new double[] { 0.0, 0.0 }) {
                 radius_P = 0.4,
                 particleDensity = 1.0,
-                includeTranslation = false,
-                includeRotation = true
+                IncludeTranslation = false,
+                IncludeRotation = true
             });
 
             
@@ -509,8 +509,8 @@ namespace BoSSS.Application.FSI_Solver {
                     underrelaxation_factor = 1,// underrelaxation with [factor * 10^exponent]
                     ClearSmallValues = true,
                     neglectAddedDamping = false,
-                    includeRotation = false,
-                    includeTranslation = false
+                    IncludeRotation = false,
+                    IncludeTranslation = false
                 });
             }
             //Define level-set

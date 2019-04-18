@@ -944,8 +944,8 @@ namespace BoSSS.Application.FSI_Solver
                 C.Particles.Add(new Particle_Sphere(new double[] { 0.0, 4.0 }) {
                     radius_P = 0.125,
                     particleDensity = 1.25,
-                    includeRotation = false,
-                    includeTranslation = true
+                    IncludeRotation = false,
+                    IncludeTranslation = true
                 });
 
                 //Func<double[], double, double> phi = (X, t) => -(X[0] - C.initialPos[0][0]).Pow2() + -(X[1] - C.initialPos[0][1]).Pow2() + C.particleRadius.Pow2();
