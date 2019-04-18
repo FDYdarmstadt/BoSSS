@@ -65,6 +65,7 @@ namespace BoSSS.Application.FSI_Solver {
             MultiphaseCellAgglomerator.Katastrophenplot = MegaArschKakke2;
             //TestProgram.Init();
             //TestProgram.TestFlowRotationalCoupling();
+            
             //Assert.IsTrue(false, "Remember to remove testcode!");
             
 
@@ -930,10 +931,9 @@ namespace BoSSS.Application.FSI_Solver {
                                 UpdateForcesAndTorque(m_Particles, GridData, dt);
                             }
 
-                            foreach (Particle p in m_Particles)
-                            {
+                            foreach (Particle p in m_Particles) {
                                 p.iteration_counter_P = iteration_counter;
-                                Auxillary.UpdateParticleAccelerationAndDamping(m_Particles, iteration_counter, dt, ((FSI_Control)Control).Timestepper_LevelSetHandling == LevelSetHandling.FSI_LieSplittingFullyCoupled, ((FSI_Control)Control).includeTranslation, ((FSI_Control)Control).includeRotation);
+                                Auxillary.UpdateParticleAccelerationAndDamping(p, iteration_counter, dt, ((FSI_Control)Control).Timestepper_LevelSetHandling == LevelSetHandling.FSI_LieSplittingFullyCoupled, ((FSI_Control)Control).includeTranslation, ((FSI_Control)Control).includeRotation);
                                 p.UpdateParticleState(dt, ((FSI_Control)Control).includeTranslation, ((FSI_Control)Control).includeRotation);
                             }
 

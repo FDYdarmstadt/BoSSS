@@ -21,6 +21,7 @@ class Status {
     }
     
     OnLock(){
+        console.log("Locking down...");
         for(var i = 0; i < this.functionsOnLock.length; ++i){
             this.functionsOnLock[i]();
         }
@@ -32,6 +33,7 @@ class Status {
     }
 
     OnUnlock(){
+        console.log("Unlocking...");
         for(var i = 0; i < this.functionsOnUnlock.length; ++i){
             this.functionsOnUnlock[i]();
         }

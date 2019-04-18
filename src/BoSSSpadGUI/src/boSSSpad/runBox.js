@@ -64,9 +64,9 @@ export class RunBox extends BoxWithMenu {
         var that = this;
         this.lastErrorButton.onclick = function(){
             if (!status.isLocked()){
-                status.toggleLock();
+                status.lock();
                 that.toggleDisplayError(); 
-                status.toggleLock();
+                status.unlock();
             }      
         }
     }

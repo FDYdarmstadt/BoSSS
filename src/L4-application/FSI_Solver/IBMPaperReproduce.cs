@@ -323,7 +323,7 @@ namespace BoSSS.Application.FSI_Solver
 
             return C;
         }
-
+        /*
         public static FSI_Control ParticleInShearFlow(string _DbPath = null, int k = 2, double VelXBase = 0.0, double particleRadius = 1)
         {
             FSI_Control C = new FSI_Control();
@@ -353,31 +353,7 @@ namespace BoSSS.Application.FSI_Solver
             // DG degrees
             // ==========
 
-            C.FieldOptions.Add("VelocityX", new FieldOpts()
-            {
-                Degree = k,
-                SaveToDB = FieldOpts.SaveToDBOpt.TRUE
-            });
-            C.FieldOptions.Add("VelocityY", new FieldOpts()
-            {
-                Degree = k,
-                SaveToDB = FieldOpts.SaveToDBOpt.TRUE
-            });
-            C.FieldOptions.Add("Pressure", new FieldOpts()
-            {
-                Degree = k - 1,
-                SaveToDB = FieldOpts.SaveToDBOpt.TRUE
-            });
-            C.FieldOptions.Add("PhiDG", new FieldOpts()
-            {
-                Degree = 2,
-                SaveToDB = FieldOpts.SaveToDBOpt.TRUE
-            });
-            C.FieldOptions.Add("Phi", new FieldOpts()
-            {
-                Degree = 2,
-                SaveToDB = FieldOpts.SaveToDBOpt.TRUE
-            });
+            C.SetDGdegree(k);
 
             // grid and boundary conditions
             // ============================
@@ -432,8 +408,8 @@ namespace BoSSS.Application.FSI_Solver
             //C.particleMass = Math.PI * C.particleRadius * C.particleRadius * C.particleRho;
             //C.particleMass = Math.PI * C.particleRadius * C.particleRadius * particleDensity;
 
-            Func<double, double> yLevSet = t => (t * t);
-            Func<double[], double, double> phi = (X, t) => -(X[0]).Pow2() + -(X[1]).Pow2() + C.particleRadius.Pow2();
+            //Func<double, double> yLevSet = t => (t * t);
+            //Func<double[], double, double> phi = (X, t) => -(X[0]).Pow2() + -(X[1]).Pow2() + C.particleRadius.Pow2();
             //Func<double[], double, double> phi = (X, t) => -(X[0] - t+X[1]);
             //C.MovementFunc = phi;
 
@@ -482,7 +458,8 @@ namespace BoSSS.Application.FSI_Solver
 
             return C;
         }
-
+        */
+        /*
         public static FSI_Control IBMCylinderFlowUhlmann(string _DbPath = null, int k = 2, bool xPeriodic = false, double VelXBase = 0.0, bool movingMesh = true)
         {
             FSI_Control C = new FSI_Control();
@@ -818,7 +795,7 @@ namespace BoSSS.Application.FSI_Solver
 
             return C;
         }
-
+        */
         public static FSI_Control ParticleUnderGravity(int k = 2, double VelXBase = 0.0, bool movingMesh = true, bool restart = false)
         {
             //List<FSI_Control> R = new List<FSI_Control>();
@@ -967,7 +944,8 @@ namespace BoSSS.Application.FSI_Solver
                 C.Particles.Add(new Particle_Sphere(new double[] { 0.0, 4.0 }) {
                     radius_P = 0.125,
                     particleDensity = 1.25,
-                
+                    includeRotation = false,
+                    includeTranslation = true
                 });
 
                 //Func<double[], double, double> phi = (X, t) => -(X[0] - C.initialPos[0][0]).Pow2() + -(X[1] - C.initialPos[0][1]).Pow2() + C.particleRadius.Pow2();
@@ -998,8 +976,6 @@ namespace BoSSS.Application.FSI_Solver
 
             // Coupling Properties
             C.Timestepper_LevelSetHandling = LevelSetHandling.Coupled_Once;
-            C.includeRotation = false;
-            C.includeTranslation = true;
 
             // Fluid Properties
             C.PhysicalParameters.rho_A = 1.0;
