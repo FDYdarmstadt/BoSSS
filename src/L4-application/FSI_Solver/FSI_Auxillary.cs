@@ -179,7 +179,7 @@ namespace FSI_Solver
 
         internal void UpdateParticleAccelerationAndDamping(List<Particle> Particles, int IterationCounter, double dt, bool LieSplittingFullyCoupled, bool IncludeTranslation, bool IncludeRotation)
         {
-            for (int p = 0; p < Particles.Count(); p++)
+            for (int p = 0; p < Particles.Count(); p++)//Achtung doppelte Schleife!!!!
             {
                 if (IterationCounter == 0 && LieSplittingFullyCoupled)
                 {
