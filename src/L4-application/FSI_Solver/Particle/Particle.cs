@@ -371,11 +371,12 @@ namespace BoSSS.Application.FSI_Solver
             if (SpatialDim != 2 && SpatialDim != 3)
                 throw new NotSupportedException("Unknown particle dimension: SpatialDim = " + SpatialDim);
 
-            for (int d = 0; d < SpatialDim; d++)
-            {
-                Position[0][d] = Position[1][d] + TranslationalVelocity[1][d] * dt + (TranslationalAcceleration[1][d] + TranslationalAcceleration[0][d]) * dt.Pow2() / 4;
-                if (double.IsNaN(Position[0][d]) || double.IsInfinity(Position[0][d]))
-                    throw new ArithmeticException("Error trying to update particle position. Value:  " + Position[0][d]);
+            if (includeTranslation == true) {
+                for (int d = 0; d < SpatialDim; d++) {
+                    Position[0][d] = Position[1][d] + TranslationalVelocity[1][d] * dt + (TranslationalAcceleration[1][d] + TranslationalAcceleration[0][d]) * dt.Pow2() / 4;
+                    if (double.IsNaN(Position[0][d]) || double.IsInfinity(Position[0][d]))
+                        throw new ArithmeticException("Error trying to update particle position. Value:  " + Position[0][d]);
+                }
             }
         }
 
@@ -390,9 +391,14 @@ namespace BoSSS.Application.FSI_Solver
                 Aux.SaveValueOfLastTimestep(Angle);
             }
 
-            Angle[0] = Angle[1] + RotationalVelocity[1] * dt + dt.Pow2() * (RotationalAcceleration[1] + RotationalAcceleration[0]) / 4;
-            if (double.IsNaN(Angle[0]) || double.IsInfinity(Angle[0]))
-                throw new ArithmeticException("Error trying to update particle angle. Value:  " + Angle[0]);
+            if (includeRotation == true) {
+                if (SpatialDim != 2)
+                    throw new NotSupportedException("Unknown particle dimension: SpatialDim = " + SpatialDim);
+
+                Angle[0] = Angle[1] + RotationalVelocity[1] * dt + dt.Pow2() * (RotationalAcceleration[1] + RotationalAcceleration[0]) / 4;
+                if (double.IsNaN(Angle[0]) || double.IsInfinity(Angle[0]))
+                    throw new ArithmeticException("Error trying to update particle angle. Value:  " + Angle[0]);
+            }
         }
 
         /// <summary>
@@ -481,19 +487,17 @@ namespace BoSSS.Application.FSI_Solver
                 Aux.SaveMultidimValueOfLastTimestep(TranslationalVelocity);
             }
 
-            if (this.includeTranslation == false)
-            {
-                for (int d = 0; d < SpatialDim; d++)
-                {
+            if (this.includeTranslation == false) {
+                for (int d = 0; d < SpatialDim; d++) {
                     TranslationalVelocity[0][d] = 0;
                 }
-            }
-            
-            for (int d = 0; d < SpatialDim; d++)
-            {
-                TranslationalVelocity[0][d] = TranslationalVelocity[1][d] + (TranslationalAcceleration[1][d] + TranslationalAcceleration[0][d]) * dt / 2;
-                if (double.IsNaN(TranslationalVelocity[0][d]) || double.IsInfinity(TranslationalVelocity[0][d]))
-                    throw new ArithmeticException("Error trying to calculate particle velocity Value:  " + TranslationalVelocity[0][d]);
+            } else {
+
+                for (int d = 0; d < SpatialDim; d++) {
+                    TranslationalVelocity[0][d] = TranslationalVelocity[1][d] + (TranslationalAcceleration[1][d] + TranslationalAcceleration[0][d]) * dt / 2;
+                    if (double.IsNaN(TranslationalVelocity[0][d]) || double.IsInfinity(TranslationalVelocity[0][d]))
+                        throw new ArithmeticException("Error trying to calculate particle velocity Value:  " + TranslationalVelocity[0][d]);
+                }
             }
         }
 
@@ -508,16 +512,15 @@ namespace BoSSS.Application.FSI_Solver
             {
                 Aux.SaveValueOfLastTimestep(RotationalVelocity);
             }
-            
-            if (this.includeRotation == false)
-            {
+
+            if (this.includeRotation == false) {
                 RotationalVelocity[0] = 0;
                 return;
+            } else {
+                RotationalVelocity[0] = RotationalVelocity[1] + dt * (RotationalAcceleration[1] + RotationalAcceleration[0]) / 2;
+                if (double.IsNaN(RotationalVelocity[0]) || double.IsInfinity(RotationalVelocity[0]))
+                    throw new ArithmeticException("Error trying to calculate particle angluar velocity. Value:  " + RotationalVelocity[0]);
             }
-            
-            RotationalVelocity[0] = RotationalVelocity[1] + dt * (RotationalAcceleration[1] + RotationalAcceleration[0]) / 2;
-            if (double.IsNaN(RotationalVelocity[0]) || double.IsInfinity(RotationalVelocity[0]))
-                throw new ArithmeticException("Error trying to calculate particle angluar velocity. Value:  " + RotationalVelocity[0]);
         }
         
         /// <summary>
