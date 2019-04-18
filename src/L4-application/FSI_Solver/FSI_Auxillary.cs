@@ -293,6 +293,8 @@ namespace FSI_Solver
                     p.Aux.SaveValueOfLastTimestep(p.HydrodynamicTorque);
                     p.Aux.SaveMultidimValueOfLastTimestep(p.TranslationalVelocity);
                     p.Aux.SaveValueOfLastTimestep(p.RotationalVelocity);
+                    p.Aux.SaveMultidimValueOfLastTimestep(p.Position);
+                    p.Aux.SaveValueOfLastTimestep(p.Angle);
                 }
                 // Save status for residual
                 // ========================
@@ -303,9 +305,6 @@ namespace FSI_Solver
                 p.ForcesPrevIteration[0] = p.HydrodynamicForces[0][0];
                 p.ForcesPrevIteration[1] = p.HydrodynamicForces[0][1];
                 p.TorquePrevIteration = p.HydrodynamicTorque[0];
-                p.HydrodynamicForces[0][0] = 0;
-                p.HydrodynamicForces[0][1] = 0;
-                p.HydrodynamicTorque[0] = 0;
             }
         }
 
