@@ -935,7 +935,7 @@ namespace BoSSS.Application.FSI_Solver {
                                 p.iteration_counter_P = iteration_counter;
 
                                 
-                                //Auxillary.UpdateParticleAccelerationAndDamping(p, iteration_counter, dt, ((FSI_Control)Control).Timestepper_LevelSetHandling == LevelSetHandling.FSI_LieSplittingFullyCoupled);
+                                Auxillary.UpdateParticleAccelerationAndDamping(p, iteration_counter, dt, ((FSI_Control)Control).Timestepper_LevelSetHandling == LevelSetHandling.FSI_LieSplittingFullyCoupled);
 
                                 p.UpdateParticleState(dt);
                             }

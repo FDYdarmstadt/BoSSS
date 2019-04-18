@@ -351,34 +351,8 @@ namespace BoSSS.Application.FSI_Solver
         readonly private ParticleAcceleration Acceleration = new ParticleAcceleration();
         internal void UpdateParticleState(double dt)
         {
-            if (includeTranslation == false) {
-                for (int d = 0; d < SpatialDim; d++) {
-                    Debug.Assert(TranslationalVelocity[1][d] == 0);
-                    Debug.Assert(TranslationalAcceleration[1][d] == 0);
-                    Debug.Assert(TranslationalAcceleration[0][d] == 0);
-                }
-            }
-
             CalculateAngularVelocity(dt);
-
-            if (includeTranslation == false) {
-                for (int d = 0; d < SpatialDim; d++) {
-                    Debug.Assert(TranslationalVelocity[1][d] == 0);
-                    Debug.Assert(TranslationalAcceleration[1][d] == 0);
-                    Debug.Assert(TranslationalAcceleration[0][d] == 0);
-                }
-            }
-
             CalculateTranslationalVelocity(dt);
-
-            if (includeTranslation == false) {
-                for (int d = 0; d < SpatialDim; d++) {
-                    Debug.Assert(TranslationalVelocity[1][d] == 0);
-                    Debug.Assert(TranslationalAcceleration[1][d] == 0);
-                    Debug.Assert(TranslationalAcceleration[0][d] == 0);
-                }
-            }
-
             CalculateParticlePosition(dt);
             CalculateParticleAngle(dt);
             //ComputeParticleRe(FluidViscosity);
@@ -498,18 +472,27 @@ namespace BoSSS.Application.FSI_Solver
             double[,] CoefficientMatrix = Acceleration.CalculateCoefficients(AddedDampingTensor, Mass_P, MomentOfInertia_P, dt, AddedDampingCoefficient);
             double Denominator = Acceleration.CalculateDenominator(CoefficientMatrix);
 
-            TranslationalAcceleration[0] = Acceleration.Translational(CoefficientMatrix, Denominator, HydrodynamicForces[0], HydrodynamicTorque[0]);
-            for (int d = 0; d< SpatialDim; d++)
-            {
-                
-                if (Math.Abs(TranslationalAcceleration[0][d]) < 1e-20)// || double.IsNaN(TranslationalAcceleration[0][d]))
+            if (includeTranslation == true) {
+                TranslationalAcceleration[0] = Acceleration.Translational(CoefficientMatrix, Denominator, HydrodynamicForces[0], HydrodynamicTorque[0]);
+                for (int d = 0; d < SpatialDim; d++) {
+
+                    if (Math.Abs(TranslationalAcceleration[0][d]) < 1e-20)// || double.IsNaN(TranslationalAcceleration[0][d]))
+                        TranslationalAcceleration[0][d] = 0;
+                }
+            } else {
+                for (int d = 0; d < SpatialDim; d++) {
                     TranslationalAcceleration[0][d] = 0;
+                }
             }
 
-            RotationalAcceleration[0] = Acceleration.Rotational(CoefficientMatrix, Denominator, HydrodynamicForces[0], HydrodynamicTorque[0]);
-            
-            if (Math.Abs(RotationalAcceleration[0]) < 1e-20)// || double.IsNaN(RotationalAcceleration[0]))
+            if (includeRotation == true) {
+                RotationalAcceleration[0] = Acceleration.Rotational(CoefficientMatrix, Denominator, HydrodynamicForces[0], HydrodynamicTorque[0]);
+
+                if (Math.Abs(RotationalAcceleration[0]) < 1e-20)// || double.IsNaN(RotationalAcceleration[0]))
+                    RotationalAcceleration[0] = 0;
+            } else {
                 RotationalAcceleration[0] = 0;
+            }
         }
 
         /// <summary>
