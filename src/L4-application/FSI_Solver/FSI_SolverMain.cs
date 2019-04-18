@@ -916,7 +916,7 @@ namespace BoSSS.Application.FSI_Solver {
                     }
                     else if (((FSI_Control)this.Control).Timestepper_LevelSetHandling != LevelSetHandling.Coupled_Iterative)
                     {
-                        iteration_counter = ((FSI_Control)Control).Timestepper_LevelSetHandling == LevelSetHandling.FSI_LieSplittingFullyCoupled ? 0 : 1;
+                        iteration_counter = ((FSI_Control)Control).Timestepper_LevelSetHandling == LevelSetHandling.FSI_LieSplittingFullyCoupled ? 0 : 0;
                         double posResidual_splitting = 1e12;
                         while (posResidual_splitting > ((FSI_Control)Control).ForceAndTorque_ConvergenceCriterion)
                         {
