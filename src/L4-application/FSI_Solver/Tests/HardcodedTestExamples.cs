@@ -163,7 +163,7 @@ namespace BoSSS.Application.FSI_Solver {
         /// <summary>
         /// Testing of particle/wall interactions using a single particle
         /// </summary>
-        public static FSI_Control SingleDryParticleAgainstWall(string _DbPath = null, bool MeshRefine = true) {
+        public static FSI_Control SingleDryParticleAgainstWall(string _DbPath = null, bool MeshRefine = false) {
             FSI_Control C = new FSI_Control();
 
             // basic database options

@@ -32,6 +32,7 @@ using BoSSS.Foundation.Grid.Classic;
 using BoSSS.Foundation.Grid.RefElements;
 using MPI.Wrappers;
 using NUnit.Framework;
+using FSI_Solver;
 
 namespace BoSSS.Application.FSI_Solver
 {
@@ -708,6 +709,8 @@ namespace BoSSS.Application.FSI_Solver
             if (double.IsNaN(HydrodynamicTorque[0]) || double.IsInfinity(HydrodynamicTorque[0]))
                 throw new ArithmeticException("Error trying to calculate hydrodynamic torque. Value:  " + HydrodynamicTorque[0]);
         }
+
+        
 
         public double[] CalculateParticleMomentum(double dt)
         {
