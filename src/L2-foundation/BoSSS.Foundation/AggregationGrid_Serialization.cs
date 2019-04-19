@@ -50,9 +50,9 @@ namespace BoSSS.Foundation.Grid.Aggregation
             parentGridHandler.SetVectorGuids(new Guid[] { guids[1], guids[2]});
         }
 
-        public IEqualityComparer<IGrid> CellComparer => throw new NotImplementedException();
+        public IEqualityComparer<IGrid> CellComparer => AggregationGridComparer.ReferenceComparer;
 
-        public IEqualityComparer<IGrid> ReferenceComparer => throw new NotImplementedException();
+        public IEqualityComparer<IGrid> ReferenceComparer => AggregationGridComparer.ReferenceComparer;
 
         [JsonIgnore]
         object[][] data;
@@ -65,6 +65,7 @@ namespace BoSSS.Foundation.Grid.Aggregation
                 object[][] parentData = parentGridHandler.GetVectorData();
                 data = CombineArrays (aggCells, parentData);
             }
+            grid.InitNumberOfCells();
             return data;
         }
 
@@ -73,6 +74,7 @@ namespace BoSSS.Foundation.Grid.Aggregation
             grid.AggregationCells = vectorDatas[0].Cast<AggregationGrid.AggCell>().ToArray();
             object[][] parentGridVectorData = Slice(vectorDatas, 1, vectorDatas.Length);
             parentGridHandler.SetVectorData(parentGridVectorData);
+            grid.InitNumberOfCells();
         }
 
         Type[] types;

@@ -115,7 +115,8 @@ namespace BoSSS.Solution.NSECommon {
         public override double GetDensity(params double[] phi) {
             if (IsInitialized) {
                 double rho = this.ThermodynamicPressure.Current.GetMeanValue(0) / phi[0];
-              // rho = 1.0;
+              //rho = 1.0;
+                //Console.WriteLine("USING RHO = 1!!!!!!!!!");
                 return rho;
             } else {
                 throw new ApplicationException("ThermodynamicPressure is not initialized.");
@@ -147,7 +148,11 @@ namespace BoSSS.Solution.NSECommon {
             }
         }
 
-
+        /// <summary>
+        ///  The heat conductivity $\lambda. Possibly dependent on the variable <see cref="phi"/> representing the temperature
+        /// </summary>
+        /// <param name="phi"></param>
+        /// <returns></returns>
         public double GetHeatConductivity(double phi) {
             switch (this.MatParamsMode) {
                 case MaterialParamsMode.Constant:
@@ -167,7 +172,11 @@ namespace BoSSS.Solution.NSECommon {
                     throw new NotImplementedException();
             }
         }
-
+        /// <summary>
+        /// The mass diffusivity. 
+        /// </summary>
+        /// <param name="phi"></param>
+        /// <returns></returns>
         public double GetDiffusivity(double phi) {
             switch (this.MatParamsMode) {
                 case MaterialParamsMode.Constant:
@@ -183,7 +192,11 @@ namespace BoSSS.Solution.NSECommon {
                     throw new NotImplementedException();
             }
         }
-
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="phi"></param>
+        /// <returns></returns>
         public double GetPartialHeatCapacity(double phi) {
             switch (this.MatParamsMode) {
                 case MaterialParamsMode.Constant:
@@ -199,7 +212,11 @@ namespace BoSSS.Solution.NSECommon {
                     throw new NotImplementedException();
             }
         }
-
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="phi"></param>
+        /// <returns></returns>
         public double GetHeatCapacity(double phi) {
             double gamma = 1.4;
             double cp = gamma / (gamma - 1);
@@ -212,16 +229,26 @@ namespace BoSSS.Solution.NSECommon {
         /// <param name="InitialMass"></param>
         /// <param name="Temperature"></param>
         /// <returns></returns>
-        public double GetMassDeterminedThermodynamicPressure(double InitialMass, SinglePhaseField Temperature) {
+        public override double GetMassDeterminedThermodynamicPressure(double InitialMass, SinglePhaseField Temperature) {
             SinglePhaseField OneOverTemperature = new SinglePhaseField(Temperature.Basis);
             OneOverTemperature.ProjectPow(1.0, Temperature, -1.0);
             return (InitialMass / OneOverTemperature.IntegralOver(null));
         }
-
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="VelocityMean"></param>
+        /// <param name="Normal"></param>
+        /// <param name="ScalarMean"></param>
+        /// <returns></returns>
         public override double GetLambda(double[] VelocityMean, double[] Normal, double ScalarMean) {
             throw new NotImplementedException();
         }
-
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="phi"></param>
+        /// <returns></returns>
         public override double DiffRho_Temp(double phi) {
             throw new NotImplementedException();
         }

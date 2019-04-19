@@ -109,6 +109,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="AppControlExtensions.cs" />
+    <Compile Include="ResolvableAssembly.cs" />
     <Compile Include="autonomuousPlotter.cs" />
     <Compile Include="BoSSSpadMain.cs" />
     <Compile Include="BatchProcessorClient.cs" />

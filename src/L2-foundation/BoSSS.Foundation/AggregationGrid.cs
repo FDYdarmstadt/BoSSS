@@ -265,6 +265,11 @@ namespace BoSSS.Foundation.Grid.Aggregation {
         [DataMember]
         int m_NumberOfCells = -1;
 
+        internal void InitNumberOfCells()
+        {
+            m_NumberOfCells = this.AggCells.Length.MPISum();
+        }
+
         /// <summary>
         /// number of cells in the grid: implementation of <see cref="IGridInfo.NumberOfCells"/>
         /// </summary>
@@ -374,7 +379,7 @@ namespace BoSSS.Foundation.Grid.Aggregation {
         public IGridData iGridData {
             get {
                 if(m_GridData ==  null) {
-
+                    InitGridData();
                 }
                 return m_GridData;
             }

@@ -21,7 +21,6 @@ using System.Text;
 using BoSSS.Foundation;
 using BoSSS.Solution.Utils;
 
-
 namespace BoSSS.Solution.NSECommon {
 
 
@@ -38,18 +37,19 @@ namespace BoSSS.Solution.NSECommon {
         PhysicsMode physicsMode;
         double phystime;
         bool unsteady;
-
+        SinglePhaseField ThermodynamicPressure;
 
 
         /// <summary>
         /// Ctor.
         /// </summary>
-        public RHSManuSourceDivKonti(double Reynolds, double[] MolarMasses, PhysicsMode physicsMode, double phystime, bool unsteady) {
+        public RHSManuSourceDivKonti(double Reynolds, double[] MolarMasses, PhysicsMode physicsMode, double phystime, bool unsteady, SinglePhaseField ThermodynamicPressure) {
             this.ReynoldsNumber = Reynolds;
             this.MolarMasses = MolarMasses;
             this.physicsMode = physicsMode;
             this.phystime = phystime;
             this.unsteady = unsteady;
+            this.ThermodynamicPressure = ThermodynamicPressure;
         }
 
         /// <summary>
@@ -72,7 +72,8 @@ namespace BoSSS.Solution.NSECommon {
             double x_ = x[0];
             double y_ = x[1];
             double t_ = phystime;
-            double p0 = 1.0;
+            double p0 = ThermodynamicPressure.GetMeanValue(3);
+            //Console.WriteLine(p0);
             double M1 = MolarMasses[0]; double M2 = MolarMasses[1]; double M3 = MolarMasses[2]; double M4 = MolarMasses[3];
             double alpha1 = 0.3;
             double alpha2 = 0.6;
