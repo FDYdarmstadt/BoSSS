@@ -1643,7 +1643,7 @@ namespace BoSSS.Application.FSI_Solver
 
             Console.WriteLine("Closest Distance to wall is: " + distance);
 
-            double threshold = 1.5 * hmin;
+            double threshold = 0.5 * hmin; // was 1.5 * hmin
 
             double eps = threshold.Pow2() / 2; // Turek paper
             double epsPrime = threshold / 2; // Turek paper
