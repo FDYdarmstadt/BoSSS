@@ -226,6 +226,11 @@ namespace BoSSS.Application.FSI_Solver {
                 particleDensity = 1.0,
                 radius_P = 0.1
             });
+            C.Particles.Add(new Particle_Sphere(new double[] { 0.35, -0.5 }, startAngl: 90.0)
+            {
+                particleDensity = 1.0,
+                radius_P = 0.1
+            });
             C.Particles[0].TranslationalVelocity[0][0] = +1;
             C.Particles[0].TranslationalVelocity[0][1] = -1;
             C.Particles[0].RotationalVelocity[0] = 0;

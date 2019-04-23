@@ -689,8 +689,10 @@ namespace BoSSS.Application.FSI_Solver
             // Define an array with the respective cell colors
             // ===============================================
             int J = GridData.iLogicalCells.NoOfLocalUpdatedCells;
-            //CellColor = ((FSI_Control)this.Control).AdaptiveMeshRefinement ? InitializeColoring(J) : CellColor ?? InitializeColoring(J);
-            CellColor = InitializeColoring(J);
+            CellColor = ((FSI_Control)this.Control).AdaptiveMeshRefinement ? InitializeColoring(J) : CellColor ?? InitializeColoring(J);
+
+            
+            //CellColor = InitializeColoring(J);
 
             // Step 2
             // Delete the old level set
@@ -706,10 +708,28 @@ namespace BoSSS.Application.FSI_Solver
             int[] ParticleColorArray = levelSetUpdate.FindParticleColor(GridData, m_Particles, ColoredCellsSorted);
             for (int p = 0; p < m_Particles.Count(); p++)
             {
-                if (ParticleColorArray[p] != 0)
+                double Hmin = Math.Sqrt(GridData.iGeomCells.GetCellVolume(0));
+                double[] ParticlePos = m_Particles[p].Position[0];
+                double ParticleAngle = m_Particles[p].Angle[0];
+                double[] ParticleScales = m_Particles[p].GetLengthScales();
+                double Upperedge = ParticlePos[1] + 2 * ParticleScales[1] * Math.Abs(Math.Cos(ParticleAngle)) + ParticleScales[0] * Math.Abs(Math.Sin(ParticleAngle)) + Hmin;
+                double Loweredge = ParticlePos[1] - 2 * ParticleScales[1] * Math.Abs(Math.Cos(ParticleAngle)) - ParticleScales[0] * Math.Abs(Math.Sin(ParticleAngle)) - Hmin;
+                double Leftedge = ParticlePos[0] - 2 * ParticleScales[0] * Math.Abs(Math.Cos(ParticleAngle)) - ParticleScales[1] * Math.Abs(Math.Sin(ParticleAngle)) - Hmin;
+                double Rightedge = ParticlePos[0] + 2 * ParticleScales[0] * Math.Abs(Math.Cos(ParticleAngle)) + ParticleScales[1] * Math.Abs(Math.Sin(ParticleAngle)) + Hmin;
+                bool ContainsParticle = false;
+                for (int j = 0; j < J; j++)
+                {
+                    double[] center = GridData.iLogicalCells.GetCenter(j);
+                    if (center[0] > Leftedge && center[0] < Rightedge && center[1] > Loweredge && center[1] < Upperedge)
+                    {
+                        ContainsParticle = true;
+                    }
+                }
+                if (ContainsParticle)
                 {
                     int[] ParticlesOfCurrentColor = levelSetUpdate.FindParticlesOneColor(ParticleColorArray, ParticleColorArray[p]);
                     CellMask ColoredCellMask = levelSetUpdate.CellsOneColor(GridData, ColoredCellsSorted, ParticleColorArray[p], J, false);
+                    ColoredCellMask = ColoredCellMask.Union(ColoredCellMask.AllNeighbourCells());
                     AgglParticleMask = AgglParticleMask == null ? ColoredCellMask : AgglParticleMask.Union(ColoredCellMask);
 
                     double phiComplete(double[] X, double t)
@@ -792,10 +812,10 @@ namespace BoSSS.Application.FSI_Solver
                 double[] ParticlePos = m_Particles[p].Position[0];
                 double ParticleAngle = m_Particles[p].Angle[0];
                 double[] ParticleScales = m_Particles[p].GetLengthScales();
-                double Upperedge = ParticlePos[1] + 2 * ParticleScales[1] * Math.Abs(Math.Cos(ParticleAngle)) + ParticleScales[0] * Math.Abs(Math.Sin(ParticleAngle)) + Hmin / 2;
-                double Loweredge = ParticlePos[1] - 2 * ParticleScales[1] * Math.Abs(Math.Cos(ParticleAngle)) - ParticleScales[0] * Math.Abs(Math.Sin(ParticleAngle)) - Hmin / 2;
-                double Leftedge = ParticlePos[0] - 2 * ParticleScales[0] * Math.Abs(Math.Cos(ParticleAngle)) - ParticleScales[1] * Math.Abs(Math.Sin(ParticleAngle)) - Hmin / 2;
-                double Rightedge = ParticlePos[0] + 2 * ParticleScales[0] * Math.Abs(Math.Cos(ParticleAngle)) + ParticleScales[1] * Math.Abs(Math.Sin(ParticleAngle)) + Hmin / 2;
+                double Upperedge = ParticlePos[1] + 2 * ParticleScales[1] * Math.Abs(Math.Cos(ParticleAngle)) + ParticleScales[0] * Math.Abs(Math.Sin(ParticleAngle)) + Hmin;
+                double Loweredge = ParticlePos[1] - 2 * ParticleScales[1] * Math.Abs(Math.Cos(ParticleAngle)) - ParticleScales[0] * Math.Abs(Math.Sin(ParticleAngle)) - Hmin;
+                double Leftedge = ParticlePos[0] - 2 * ParticleScales[0] * Math.Abs(Math.Cos(ParticleAngle)) - ParticleScales[1] * Math.Abs(Math.Sin(ParticleAngle)) - Hmin;
+                double Rightedge = ParticlePos[0] + 2 * ParticleScales[0] * Math.Abs(Math.Cos(ParticleAngle)) + ParticleScales[1] * Math.Abs(Math.Sin(ParticleAngle)) + Hmin;
                 for (int j = 0; j < J; j++)
                 {
                     double[] center = GridData.iLogicalCells.GetCenter(j);
@@ -1516,19 +1536,13 @@ namespace BoSSS.Application.FSI_Solver
         public void WallCollisionForces(Particle particle, int ParticleID, double hmin)
         {
             if (CollisionModel == FSI_Control.CollisionModel.NoCollisionModel)
-            {
                 return;
-            }
 
             int J = GridData.iLogicalCells.NoOfLocalUpdatedCells;
             FSI_LevelSetUpdate levelSetUpdate = new FSI_LevelSetUpdate();
             List<int[]> ColoredCellsSorted = levelSetUpdate.ColoredCellsFindAndSort(CellColor);
-            List<Particle> temp = new List<Particle>
-            {
-                particle
-            };
+            List<Particle> temp = new List<Particle> { particle };
             int[] ParticleColorArray = levelSetUpdate.FindParticleColor(GridData, temp, ColoredCellsSorted);
-            //var particleCutCells = particle.CutCells_P(LsTrk);
             CellMask particleCutCells = levelSetUpdate.CellsOneColor(GridData, ColoredCellsSorted, ParticleColorArray[0], J, false);
 
             //var particleCutCellArray = particleCutCells.ItemEnum.ToArray();
