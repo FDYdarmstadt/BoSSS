@@ -605,7 +605,8 @@ namespace BoSSS.Application.FSI_Solver
                     break;
 
                 case LevelSetHandling.Coupled_Iterative:
-                    UpdateForcesAndTorque(m_Particles, GridData, dt);
+                    Auxillary.ParticleState_MPICheck(m_Particles, GridData, MPISize);
+                    UpdateForcesAndTorque(m_Particles, dt);
                     UpdateLevelSetParticles();
                     foreach (Particle p in m_Particles)
                     {
@@ -840,7 +841,7 @@ namespace BoSSS.Application.FSI_Solver
             }
         }
 
-        private void UpdateForcesAndTorque(List<Particle> Particles, IGridData GridData, double dt)
+        private void UpdateForcesAndTorque(List<Particle> Particles, double dt)
         {
             //
             // Note on MPI parallelization of particle solver:
@@ -853,8 +854,6 @@ namespace BoSSS.Application.FSI_Solver
             // - particle motion is computed for all particles simultaneously on all processors; every processor knows every particle
             // - since the particle solver is much cheaper than the flow solver, this "not-really parallel" approach may work up to a few hundreds of particles
             // ===============================================
-            Auxillary.MPICheckParticleState(m_Particles, GridData, MPISize);
-
             // Update forces
             // =============
             for (int p = 0; p < m_Particles.Count(); p++)
@@ -864,42 +863,7 @@ namespace BoSSS.Application.FSI_Solver
                     CurrentParticle.UpdateForcesAndTorque(Velocity, Pressure, LsTrk, Control.PhysicalParameters.mu_A, dt, Control.PhysicalParameters.rho_A, ((FSI_Control)Control).Timestepper_LevelSetHandling != LevelSetHandling.FSI_LieSplittingFullyCoupled);
                 // wall collisions are computed on each processor
                 WallCollisionForces(CurrentParticle, p, LsTrk.GridDat.Cells.h_minGlobal);
-                int NoOfVars = 3;
-                double[] BoolSend = new double[1];
-                if (CurrentParticle.m_collidedWithWall[0])
-                    BoolSend[0] = 1;
-
-                double[] BoolReceive = new double[MPISize];
-                unsafe
-                {
-                    fixed (double* pCheckSend = BoolSend, pCheckReceive = BoolReceive)
-                    {
-                        csMPI.Raw.Allgather((IntPtr)pCheckSend, BoolSend.Length, csMPI.Raw._DATATYPE.DOUBLE, (IntPtr)pCheckReceive, BoolSend.Length, csMPI.Raw._DATATYPE.DOUBLE, csMPI.Raw._COMM.WORLD);
-                    }
-                }
-                for(int i = 0; i < BoolReceive.Length; i++)
-                {
-                    if (BoolReceive[i] == 1)
-                    {
-                        double[] CheckSend = new double[NoOfVars];
-                        CheckSend[0] = CurrentParticle.RotationalVelocity[0];
-                        CheckSend[1] = CurrentParticle.TranslationalVelocity[0][0];
-                        CheckSend[2] = CurrentParticle.TranslationalVelocity[0][1];
-
-                        double[] CheckReceive = new double[NoOfVars * MPISize];
-                        unsafe
-                        {
-                            fixed (double* pCheckSend = CheckSend, pCheckReceive = CheckReceive)
-                            {
-                                csMPI.Raw.Allgather((IntPtr)pCheckSend, CheckSend.Length, csMPI.Raw._DATATYPE.DOUBLE, (IntPtr)pCheckReceive, CheckSend.Length, csMPI.Raw._DATATYPE.DOUBLE, csMPI.Raw._COMM.WORLD);
-                            }
-                        }
-                        CurrentParticle.RotationalVelocity[0] = CheckReceive[0 + i * 3];
-                        CurrentParticle.TranslationalVelocity[0][0] = CheckReceive[1 + i * 3];
-                        CurrentParticle.TranslationalVelocity[0][1] = CheckReceive[2 + i * 3];
-                    }
-                }
-                
+                Auxillary.WallCollision_MPICommunication(CurrentParticle, MPISize);
             }
             if (MPIRank == 0 && m_Particles.Count > 1)
             {
@@ -936,8 +900,8 @@ namespace BoSSS.Application.FSI_Solver
                     // in other branches, called by the BDF timestepper
                     LsTrk.PushStacks();
                     DGLevSet.Push();
-
-                    UpdateForcesAndTorque(m_Particles, GridData, dt);
+                    Auxillary.ParticleState_MPICheck(m_Particles, GridData, MPISize);
+                    UpdateForcesAndTorque(m_Particles, dt);
                     foreach (var p in m_Particles)
                     {
                         p.CalculateAcceleration(dt, ((FSI_Control)Control).Timestepper_LevelSetHandling == LevelSetHandling.FSI_LieSplittingFullyCoupled);
@@ -991,7 +955,8 @@ namespace BoSSS.Application.FSI_Solver
                             {
                                 Auxillary.SaveOldParticleState(m_Particles, iteration_counter, 2, ((FSI_Control)Control).ForceAndTorque_ConvergenceCriterion, ((FSI_Control)Control).Timestepper_LevelSetHandling == LevelSetHandling.FSI_LieSplittingFullyCoupled, out ForcesOldSquared, out TorqueOldSquared);
                                 m_BDF_Timestepper.Solve(phystime, dt, false);
-                                UpdateForcesAndTorque(m_Particles, GridData, dt);
+                                Auxillary.ParticleState_MPICheck(m_Particles, GridData, MPISize);
+                                UpdateForcesAndTorque(m_Particles, dt);
                             }
 
                             foreach (Particle p in m_Particles)

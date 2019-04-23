@@ -65,13 +65,13 @@ namespace BoSSS.Application.FSI_Solver
                 int q = new int(); // #Cells in x-dircetion + 1
                 int r = new int(); // #Cells in y-dircetion + 1
 
-                q = 80;
-                r = 40;
+                q = 150;
+                r = 20;
 
-                double[] Xnodes = GenericBlas.Linspace(-2.5 * BaseSize, 12.5 * BaseSize, q);
-                double[] Ynodes = GenericBlas.Linspace(-3.75 * BaseSize, 3.75 * BaseSize, r);
+                double[] Xnodes = GenericBlas.Linspace(-30 * BaseSize, 30 * BaseSize, q);
+                double[] Ynodes = GenericBlas.Linspace(-4 * BaseSize, 4 * BaseSize, r);
 
-                var grd = Grid2D.Cartesian2DGrid(Xnodes, Ynodes, periodicX: false, periodicY: false);
+                var grd = Grid2D.Cartesian2DGrid(Xnodes, Ynodes, periodicX: true, periodicY: false);
 
                 grd.EdgeTagNames.Add(1, "Pressure_Outlet_left");
                 grd.EdgeTagNames.Add(2, "Pressure_Outlet_right");
@@ -82,13 +82,13 @@ namespace BoSSS.Application.FSI_Solver
                 grd.DefineEdgeTags(delegate (double[] X)
                 {
                     byte et = 0;
-                    if (Math.Abs(X[0] - (-2.5 * BaseSize)) <= 1.0e-8)
+                    if (Math.Abs(X[0] - (-30 * BaseSize)) <= 1.0e-8)
                         et = 1;
-                    if (Math.Abs(X[0] + (-12.5 * BaseSize)) <= 1.0e-8)
+                    if (Math.Abs(X[0] + (-30 * BaseSize)) <= 1.0e-8)
                         et = 2;
-                    if (Math.Abs(X[1] - (-3.75 * BaseSize)) <= 1.0e-8)
+                    if (Math.Abs(X[1] - (-4 * BaseSize)) <= 1.0e-8)
                         et = 3;
-                    if (Math.Abs(X[1] + (-3.75 * BaseSize)) <= 1.0e-8)
+                    if (Math.Abs(X[1] + (-4 * BaseSize)) <= 1.0e-8)
                         et = 4;
 
                     Debug.Assert(et != 0);
@@ -130,7 +130,7 @@ namespace BoSSS.Application.FSI_Solver
             int numOfParticles = 1;
             for (int d = 0; d < numOfParticles; d++)
             {
-                C.Particles.Add(new Particle_Ellipsoid(new double[] { 1 + 8 * d, 0 }, startAngl: 21 - 180 * d)
+                C.Particles.Add(new Particle_Ellipsoid(new double[] { 0 + 8 * d, 0 }, startAngl: 21 - 180 * d)
                 {
                     particleDensity = 1,
                     ActiveParticle = true,
