@@ -866,8 +866,7 @@ namespace BoSSS.Application.FSI_Solver
                 WallCollisionForces(CurrentParticle, p, LsTrk.GridDat.Cells.h_minGlobal);
                 int NoOfVars = 3;
                 double[] BoolSend = new double[1];
-                int CollidedParticle = 0;
-                if (CurrentParticle.skipForceIntegration)
+                if (CurrentParticle.m_collidedWithWall[0])
                     BoolSend[0] = 1;
 
                 double[] BoolReceive = new double[MPISize];
@@ -881,24 +880,26 @@ namespace BoSSS.Application.FSI_Solver
                 for(int i = 0; i < BoolReceive.Length; i++)
                 {
                     if (BoolReceive[i] == 1)
-                        CollidedParticle = i;
-                }
-                double[] CheckSend = new double[NoOfVars];
-                CheckSend[0] = CurrentParticle.RotationalVelocity[0];
-                CheckSend[1] = CurrentParticle.TranslationalVelocity[0][0];
-                CheckSend[2] = CurrentParticle.TranslationalVelocity[0][1];
-
-                double[] CheckReceive = new double[NoOfVars * MPISize];
-                unsafe
-                {
-                    fixed (double* pCheckSend = CheckSend, pCheckReceive = CheckReceive)
                     {
-                        csMPI.Raw.Allgather((IntPtr)pCheckSend, CheckSend.Length, csMPI.Raw._DATATYPE.DOUBLE, (IntPtr)pCheckReceive, CheckSend.Length, csMPI.Raw._DATATYPE.DOUBLE, csMPI.Raw._COMM.WORLD);
+                        double[] CheckSend = new double[NoOfVars];
+                        CheckSend[0] = CurrentParticle.RotationalVelocity[0];
+                        CheckSend[1] = CurrentParticle.TranslationalVelocity[0][0];
+                        CheckSend[2] = CurrentParticle.TranslationalVelocity[0][1];
+
+                        double[] CheckReceive = new double[NoOfVars * MPISize];
+                        unsafe
+                        {
+                            fixed (double* pCheckSend = CheckSend, pCheckReceive = CheckReceive)
+                            {
+                                csMPI.Raw.Allgather((IntPtr)pCheckSend, CheckSend.Length, csMPI.Raw._DATATYPE.DOUBLE, (IntPtr)pCheckReceive, CheckSend.Length, csMPI.Raw._DATATYPE.DOUBLE, csMPI.Raw._COMM.WORLD);
+                            }
+                        }
+                        CurrentParticle.RotationalVelocity[0] = CheckReceive[0 + i * 3];
+                        CurrentParticle.TranslationalVelocity[0][0] = CheckReceive[1 + i * 3];
+                        CurrentParticle.TranslationalVelocity[0][1] = CheckReceive[2 + i * 3];
                     }
                 }
-                CurrentParticle.RotationalVelocity[0] = CheckReceive[0 + CollidedParticle * 3];
-                CurrentParticle.TranslationalVelocity[0][0] = CheckReceive[1 + CollidedParticle * 3];
-                CurrentParticle.TranslationalVelocity[0][1] = CheckReceive[2 + CollidedParticle * 3];
+                
             }
             if (MPIRank == 0 && m_Particles.Count > 1)
             {
@@ -1633,7 +1634,11 @@ namespace BoSSS.Application.FSI_Solver
             double realDistance = distance;
 
             if (collision == false)
+            {
+                Console.WriteLine("Reset Wall");
+                particle.m_collidedWithWall[0] = false;
                 return;
+            }
 
 
             Console.WriteLine("Closest Distance to wall is: " + distance);
@@ -1648,7 +1653,6 @@ namespace BoSSS.Application.FSI_Solver
 
             switch (CollisionModel)
             {
-
                 case (FSI_Solver.FSI_Control.CollisionModel.RepulsiveForce):
                     if ((realDistance <= threshold))
                     {
@@ -1692,7 +1696,7 @@ namespace BoSSS.Application.FSI_Solver
 
                 case (FSI_Solver.FSI_Control.CollisionModel.MomentumConservation):
 
-                    if (realDistance <= (threshold) && !particle.m_collidedWithWall[0] && ParticleColorArray[ParticleID] != 0)
+                    if (realDistance <= (threshold) && !particle.m_collidedWithWall[0])
                     {
 
                         //coefficient of restitution (e=0 pastic; e=1 elastic)
@@ -1703,12 +1707,11 @@ namespace BoSSS.Application.FSI_Solver
                         // if (particle.Position[0][1] < 0.5)
                         //    e = 0.0;
 
-
                         // if particle already collided with wall
                         particle.m_collidedWithWall[0] = true;
 
                         // Skip force integration for next timestep
-                        particle.skipForceIntegration = true;
+                        particle.skipForceIntegration = false;
 
                         //collision Nomal
                         var normal = distanceVec.CloneAs();
@@ -1740,7 +1743,7 @@ namespace BoSSS.Application.FSI_Solver
                         
                     }
 
-                    if (realDistance > threshold && particle.m_collidedWithWall[0] && ParticleColorArray[ParticleID] != 0)
+                    if (realDistance > threshold && particle.m_collidedWithWall[0])
                     {
                         Console.WriteLine("Reset Wall");
                         particle.m_collidedWithWall[0] = false;
