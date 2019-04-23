@@ -799,17 +799,18 @@ namespace BoSSS.Application.FSI_Solver
             }
             List<int[]> ColoredCellsSorted = levelSetUpdate.ColoredCellsFindAndSort(PartCol);
             int[] ParticleColorArray = levelSetUpdate.FindParticleColor(GridData, m_Particles, ColoredCellsSorted);
-            for(int p = 0; p < m_Particles.Count(); p++)
+            for (int p = 0; p < m_Particles.Count(); p++)
             {
-                CellMask ColoredCellMask = levelSetUpdate.CellsOneColor(GridData, ColoredCellsSorted, ParticleColorArray[p], J, false);
-                ColoredCellMask = ColoredCellMask.Union(ColoredCellMask.AllNeighbourCells());
-                BitArray test = ColoredCellMask.GetBitMask();
-                for (int i = 0; i < test.Length; i++)
-                {
-                    if (test[i])
+                if (ParticleColorArray[p] != 0) {
+                    CellMask ColoredCellMask = levelSetUpdate.CellsOneColor(GridData, ColoredCellsSorted, ParticleColorArray[p], J, true);
+                    BitArray test = ColoredCellMask.GetBitMask();
+                    for (int i = 0; i < test.Length; i++)
                     {
-                        ParticleColor.SetMeanValue(i, ParticleColorArray[p]);
-                        PartCol[i] = ParticleColorArray[p];
+                        if (test[i])
+                        {
+                            ParticleColor.SetMeanValue(i, ParticleColorArray[p]);
+                            PartCol[i] = ParticleColorArray[p];
+                        }
                     }
                 }
             }
@@ -912,12 +913,16 @@ namespace BoSSS.Application.FSI_Solver
                     CurrentParticle.UpdateForcesAndTorque(Velocity, Pressure, LsTrk, Control.PhysicalParameters.mu_A, dt, Control.PhysicalParameters.rho_A, ((FSI_Control)Control).Timestepper_LevelSetHandling != LevelSetHandling.FSI_LieSplittingFullyCoupled);
                 // wall collisions are computed on each processor
                 WallCollisionForces(CurrentParticle, p, LsTrk.GridDat.Cells.h_minGlobal);
-                Auxillary.WallCollision_MPICommunication(CurrentParticle, MPISize);
+                Auxillary.Collision_MPICommunication(m_Particles, CurrentParticle, MPISize, true);
             }
-            if (MPIRank == 0 && m_Particles.Count > 1)
+            if (m_Particles.Count > 1)
             {
-                // inter-particle collisions are computed only on rank 0
                 UpdateCollisionForces(Particles, LsTrk.GridDat.Cells.h_minGlobal);
+                foreach(Particle p in m_Particles)
+                {
+                    Auxillary.Collision_MPICommunication(m_Particles, p, MPISize);
+                }
+                
             }
             // MPISum over Forces moved to Particle.cs 
         }
@@ -1347,13 +1352,12 @@ namespace BoSSS.Application.FSI_Solver
             MultidimensionalArray interfacePoints_P0 = particle0.GetSurfacePoints(LsTrk, LevSet);
             MultidimensionalArray interfacePoints_P1 = particle1.GetSurfacePoints(LsTrk, LevSet);
 
-            var tempDistance = 0.0;
+            double tempDistance = 0.0;
             double[] tempPoint_P0 = new double[2] { 0.0, 0.0 };
             double[] tempPoint_P1 = new double[2] { 0.0, 0.0 };
 
             if (interfacePoints_P0 != null && interfacePoints_P1 != null)
             {
-
                 for (int f = 0; f < interfacePoints_P0.NoOfRows; f++)
                 {
                     for (int g = 0; g < interfacePoints_P1.NoOfRows; g++)
@@ -1361,7 +1365,6 @@ namespace BoSSS.Application.FSI_Solver
                         tempDistance = Math.Sqrt((interfacePoints_P0.GetRow(f)[0] - interfacePoints_P1.GetRow(g)[0]).Pow2() + (interfacePoints_P0.GetRow(f)[1] - interfacePoints_P1.GetRow(g)[1]).Pow2());
                         if (tempDistance < distance)
                         {
-
                             distanceVec = interfacePoints_P0.GetRow(f).CloneAs();
                             distanceVec.AccV(-1, interfacePoints_P1.GetRow(g));
                             tempPoint_P0 = interfacePoints_P0.GetRow(f);
@@ -1388,10 +1391,8 @@ namespace BoSSS.Application.FSI_Solver
                 //ForceCollision = true;
             }
 
-
             particle0.m_closeInterfacePointTo[m_Particles.IndexOf(particle1)] = tempPoint_P0;
             particle1.m_closeInterfacePointTo[m_Particles.IndexOf(particle0)] = tempPoint_P1;
-
 
             double threshold = 1 * hmin;//was 2.5
 
@@ -1404,12 +1405,8 @@ namespace BoSSS.Application.FSI_Solver
             Console.WriteLine("Threshold: " + threshold);
             Console.WriteLine("hmin: " + hmin);
 
-
-            // test of Modell 2
-
             switch (CollisionModel)
             {
-
                 case (FSI_Solver.FSI_Control.CollisionModel.RepulsiveForce):
                     if ((realDistance <= threshold))
                     {
@@ -1438,7 +1435,7 @@ namespace BoSSS.Application.FSI_Solver
                     break;
 
 
-                case (FSI_Solver.FSI_Control.CollisionModel.MomentumConservation):
+                case FSI_Control.CollisionModel.MomentumConservation:
 
                     if (((realDistance <= threshold) || ForceCollision) && !particle0.m_collidedWithParticle[m_Particles.IndexOf(particle1)] && !particle1.m_collidedWithParticle[m_Particles.IndexOf(particle0)])
                     {
@@ -1472,17 +1469,12 @@ namespace BoSSS.Application.FSI_Solver
                         tempPoint_P1.AccV(-1, particle1.Position[0]);
                         double a1 = (tempPoint_P1[0] * tangential[0] + tempPoint_P1[1] * tangential[1]);
 
-
-
-
                         // Fix for Sphere
                         // ----------------------------------------  
                         if (particle0 is Particle_Sphere)
                             a0 = 0.0;
                         if (particle1 is Particle_Sphere)
                             a1 = 0.0;
-
-
 
                         double Fx = (1 + e) * ((collisionVn_P0 - collisionVn_P1) / (1 / particle0.Mass_P + 1 / particle1.Mass_P + a0.Pow2() / particle0.MomentOfInertia_P + a1.Pow2() / particle1.MomentOfInertia_P));
                         double Fxrot = (1 + e) * ((-a0 * particle0.RotationalVelocity[0] + a1 * particle1.RotationalVelocity[0]) / (1 / particle0.Mass_P + 1 / particle1.Mass_P + a0.Pow2() / particle0.MomentOfInertia_P + a1.Pow2() / particle1.MomentOfInertia_P));

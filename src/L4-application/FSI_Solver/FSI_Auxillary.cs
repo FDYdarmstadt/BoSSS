@@ -380,12 +380,21 @@ namespace FSI_Solver
             }
         }
 
-        internal void WallCollision_MPICommunication(Particle CurrentParticle, int MPISize)
+        internal void Collision_MPICommunication(List<Particle> Particles, Particle CurrentParticle, int MPISize, bool WallCollision = false)
         {
             int NoOfVars = 3;
             double[] BoolSend = new double[1];
-            if (CurrentParticle.m_collidedWithWall[0])
+            if (CurrentParticle.m_collidedWithWall[0] && WallCollision)
                 BoolSend[0] = 1;
+            else
+            {
+                for (int p = 0; p < Particles.Count(); p++)
+                {
+                    if (CurrentParticle.m_collidedWithParticle[0])
+                        BoolSend[0] = 1;
+                }
+            }
+                
 
             double[] BoolReceive = new double[MPISize];
             unsafe
@@ -415,6 +424,11 @@ namespace FSI_Solver
                     CurrentParticle.RotationalVelocity[0] = CheckReceive[0 + i * 3];
                     CurrentParticle.TranslationalVelocity[0][0] = CheckReceive[1 + i * 3];
                     CurrentParticle.TranslationalVelocity[0][1] = CheckReceive[2 + i * 3];
+                    if (!WallCollision)
+                    {
+                        CurrentParticle.m_collidedWithParticle[0] = true;
+                        CurrentParticle.skipForceIntegration = true;
+                    }
                 }
             }
         }
