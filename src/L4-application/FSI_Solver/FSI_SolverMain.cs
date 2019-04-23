@@ -788,6 +788,7 @@ namespace BoSSS.Application.FSI_Solver
         /// </summary>
         private int[] UpdateColoring()
         {
+            FSI_LevelSetUpdate levelSetUpdate = new FSI_LevelSetUpdate();
             int J = GridData.iLogicalCells.NoOfLocalUpdatedCells;
             int[] PartCol = LsTrk.Regions.ColorMap4Spc[LsTrk.GetSpeciesId("B")];
             var rCode = LsTrk.Regions.RegionsCode;
@@ -795,6 +796,33 @@ namespace BoSSS.Application.FSI_Solver
             {
                 ParticleColor.SetMeanValue(j, PartCol[j]);
                 LevelSetDistance.SetMeanValue(j, LevelSetTracker.DecodeLevelSetDist(rCode[j], 0));
+            }
+            List<int[]> ColoredCellsSorted = levelSetUpdate.ColoredCellsFindAndSort(PartCol);
+            int[] ParticleColorArray = levelSetUpdate.FindParticleColor(GridData, m_Particles, ColoredCellsSorted);
+            for(int p = 0; p < m_Particles.Count(); p++)
+            {
+                CellMask ColoredCellMask = levelSetUpdate.CellsOneColor(GridData, ColoredCellsSorted, ParticleColorArray[p], J, false);
+                ColoredCellMask = ColoredCellMask.Union(ColoredCellMask.AllNeighbourCells());
+                BitArray test = ColoredCellMask.GetBitMask();
+                for (int i = 0; i < test.Length; i++)
+                {
+                    if (test[i])
+                    {
+                        ParticleColor.SetMeanValue(i, ParticleColorArray[p]);
+                        PartCol[i] = ParticleColorArray[p];
+                    }
+                }
+            }
+            for (int j = 0; j < J; j++)
+            {
+                GridData.GetCellNeighbours(j, GetCellNeighbours_Mode.ViaEdges, out int[] CellNeighbors, out _);
+                for (int i = 0; i < CellNeighbors.Length; i++)
+                {
+                    if (CellNeighbors[i] < J && PartCol[j] != PartCol[CellNeighbors[i]] && PartCol[j] != 0 && PartCol[CellNeighbors[i]] != 0)
+                    {
+                        RecolorCellsInit(PartCol, PartCol[j], PartCol[CellNeighbors[i]]);
+                    }
+                }
             }
             return PartCol;
         }
@@ -851,7 +879,8 @@ namespace BoSSS.Application.FSI_Solver
 
         private void RecolorCellsInit(int[] ColoredCells, int NewColor, int OldColor)
         {
-            for (int i = 0; i < ColoredCells.Length; i++)
+            int J = GridData.iLogicalCells.NoOfLocalUpdatedCells;
+            for (int i = 0; i < J; i++)
             {
                 if (ColoredCells[i] == OldColor)
                 {
@@ -1266,48 +1295,42 @@ namespace BoSSS.Application.FSI_Solver
         /// <param name="particle1"></param>
         public void UpdateCollisionForces(List<Particle> particles, double hmin)
         {
-
-
             if (CollisionModel == FSI_Control.CollisionModel.NoCollisionModel)
-            {
-                return;
-            }
-
+                 return;
 
             if (particles.Count < 2)
                 return;
 
-            // Most of the code resulted from old one, should be simplified soon
             for (int i = 0; i < particles.Count; i++)
             {
                 for (int j = i + 1; j < particles.Count; j++)
                 {
-                    var particle0 = particles[i];
-                    var particle1 = particles[j];
+                    Particle particle0 = particles[i];
+                    Particle particle1 = particles[j];
 
-                    var particle0CutCells = particle0.CutCells_P(LsTrk);
-                    var particle1CutCells = particle1.CutCells_P(LsTrk);
+                    CellMask particle0CutCells = particle0.CutCells_P(LsTrk);
+                    CellMask particle1CutCells = particle1.CutCells_P(LsTrk);
 
                     //var neighborCellsArray_P0 = particle0CutCells.AllNeighbourCells().ItemEnum.ToArray();
                     //var allCells_P0 = new CellMask(GridData, neighborCellsArray_P0);
-                    var allCells_P0 = particle0CutCells.AllNeighbourCells();
+                    CellMask allCells_P0 = particle0CutCells.AllNeighbourCells();
 
                     //var neighborCellsArray_P1 = particle1CutCells.AllNeighbourCells().ItemEnum.ToArray();
                     //var allCells_P1 = new CellMask(GridData, neighborCellsArray_P1);
-                    var allCells_P1 = particle1CutCells.AllNeighbourCells();
+                    CellMask allCells_P1 = particle1CutCells.AllNeighbourCells();
 
                     double distance = 1E20;
                     double[] distanceVec = new double[Grid.SpatialDimension];
 
-                    var interSecMask = allCells_P0.Intersect(allCells_P1);
+                    CellMask interSecMask = allCells_P0.Intersect(allCells_P1);
 
-                    var p0intersect = interSecMask.AllNeighbourCells().Intersect(particle0CutCells);
-                    var p1intersect = interSecMask.AllNeighbourCells().Intersect(particle1CutCells);
+                    CellMask p0intersect = interSecMask.AllNeighbourCells().Intersect(particle0CutCells);
+                    CellMask p1intersect = interSecMask.AllNeighbourCells().Intersect(particle1CutCells);
 
                     // If there is no element neighbor of both particle cut cells return
                     if (!interSecMask.IsEmpty)
                     {
-                        ComputeCollissionModel(hmin, particle0, particle1, ref distance, ref distanceVec);
+                        ComputeCollisionModel(hmin, particle0, particle1, ref distance, ref distanceVec);
                     }
                 }
             }
@@ -1316,7 +1339,7 @@ namespace BoSSS.Application.FSI_Solver
         /// <summary>
         /// Update of particle state (velocity, force, etc.) for two particles where a collision is detected
         /// </summary>
-        private void ComputeCollissionModel(double hmin, Particle particle0, Particle particle1, ref double distance, ref double[] distanceVec)
+        private void ComputeCollisionModel(double hmin, Particle particle0, Particle particle1, ref double distance, ref double[] distanceVec)
         {
             // All interface points at a specific subgrid containing all cut cells of one particle
             //var interfacePoints_P0 = XNSEUtils.GetInterfacePoints(LsTrk, LevSet, new SubGrid(particle0CutCells));
@@ -1370,7 +1393,7 @@ namespace BoSSS.Application.FSI_Solver
             particle1.m_closeInterfacePointTo[m_Particles.IndexOf(particle0)] = tempPoint_P1;
 
 
-            double threshold = 2.5 * hmin;
+            double threshold = 1 * hmin;//was 2.5
 
             double eps = threshold.Pow2() / 2; // Turek paper
             double epsPrime = threshold / 2; // Turek paper
