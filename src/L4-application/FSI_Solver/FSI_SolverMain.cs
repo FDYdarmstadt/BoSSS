@@ -1657,6 +1657,7 @@ namespace BoSSS.Application.FSI_Solver
                     if ((realDistance <= threshold))
                     {
                         Console.WriteLine("Strongly recommended to use conservation of momentum collision model. This one is highly experimental!!!!");
+                        
                         // Modell 1
                         distanceVec.ScaleV(1 / eps);
                         distanceVec.ScaleV(((threshold - realDistance).Abs()));
@@ -1665,9 +1666,8 @@ namespace BoSSS.Application.FSI_Solver
                         collisionForce.ScaleV(100.0);
 
                         particle.HydrodynamicForces[0] = collisionForce;
-
-
-                        return;
+                        throw new NotImplementedException("The repulsive force model is not parallelized, please use the momentum conservation model.");
+                        //return;
                     }
 
 

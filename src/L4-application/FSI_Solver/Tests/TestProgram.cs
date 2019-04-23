@@ -86,9 +86,9 @@ namespace BoSSS.Application.FSI_Solver {
 
                 Vector Dest_Should;
                 if (MeshRefine)
-                    Dest_Should = new Vector(0.0695097474610063, -0.594908028831844); 
+                    Dest_Should = new Vector(0.114203447613564, -0.7075708783892); 
                 else
-                    Dest_Should = new Vector(-0.238381401305482, 0.341721015345088); 
+                    Dest_Should = new Vector(-0.358835789453242, 0.845819080816745); 
 
                 Vector Dest_Is = new Vector(p.Particles[0].Position[0]);
 
