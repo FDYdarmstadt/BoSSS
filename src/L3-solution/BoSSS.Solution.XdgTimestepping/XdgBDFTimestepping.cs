@@ -1467,6 +1467,9 @@ namespace BoSSS.Solution.XdgTimestepping {
                         System, MaMa,
                         this.Config_MultigridOperator);
 
+                    System.SaveToTextFileSparse("MatrixNOsplitting.txt");
+                    RHS.SaveToTextFile("rhsNOsplitting.txt ");
+
                     using (var tr = new FuncTrace()) {
                         // init linear solver
                         using (new BlockTrace("Slv Init", tr)) {
