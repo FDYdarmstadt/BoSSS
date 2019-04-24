@@ -384,17 +384,22 @@ namespace FSI_Solver
         {
             int NoOfVars = 3;
             double[] BoolSend = new double[1];
+            bool NoCurrentCollision = true;
             if (CurrentParticle.m_collidedWithWall[0] && WallCollision)
-                BoolSend[0] = 1;
+            {
+                BoolSend[0] = -1;
+            }
             else
             {
                 for (int p = 0; p < Particles.Count(); p++)
                 {
-                    if (CurrentParticle.m_collidedWithParticle[0])
-                        BoolSend[0] = 1;
+                    if (CurrentParticle.m_collidedWithParticle[p])
+                    {
+                        BoolSend[0] = p + 1;
+                    }
+
                 }
             }
-                
 
             double[] BoolReceive = new double[MPISize];
             unsafe
@@ -406,7 +411,7 @@ namespace FSI_Solver
             }
             for (int i = 0; i < BoolReceive.Length; i++)
             {
-                if (BoolReceive[i] == 1)
+                if (BoolReceive[i] != 0)
                 {
                     double[] CheckSend = new double[NoOfVars];
                     CheckSend[0] = CurrentParticle.RotationalVelocity[0];
@@ -426,9 +431,20 @@ namespace FSI_Solver
                     CurrentParticle.TranslationalVelocity[0][1] = CheckReceive[2 + i * 3];
                     if (!WallCollision)
                     {
-                        CurrentParticle.m_collidedWithParticle[0] = true;
+                        int p = Convert.ToInt32(BoolReceive[i]);
+                        CurrentParticle.m_collidedWithParticle[p - 1] = true;
                         CurrentParticle.skipForceIntegration = true;
                     }
+                    NoCurrentCollision = false;
+                }
+            }
+            if (NoCurrentCollision)
+            {
+                CurrentParticle.skipForceIntegration = false;
+                CurrentParticle.m_collidedWithWall[0] = false;
+                for (int p = 0; p < CurrentParticle.m_collidedWithParticle.Length; p++)
+                {
+                    CurrentParticle.m_collidedWithParticle[p] = false;
                 }
             }
         }

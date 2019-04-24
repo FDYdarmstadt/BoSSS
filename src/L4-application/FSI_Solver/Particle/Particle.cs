@@ -352,8 +352,8 @@ namespace BoSSS.Application.FSI_Solver
         readonly private ParticleAcceleration Acceleration = new ParticleAcceleration();
         internal void UpdateParticleState(double dt)
         {
-            CalculateAngularVelocity(dt);
             CalculateTranslationalVelocity(dt);
+            CalculateAngularVelocity(dt);
             CalculateParticlePosition(dt);
             CalculateParticleAngle(dt);
             //ComputeParticleRe(FluidViscosity);
@@ -381,6 +381,7 @@ namespace BoSSS.Application.FSI_Solver
                         if (m_collidedWithParticle[p])
                         {
                             Position[0][d] = Position[1][d] + (TranslationalVelocity[1][d] + TranslationalVelocity[0][d]) * dt / 2;
+                            
                         }
                     }
                     if (double.IsNaN(Position[0][d]) || double.IsInfinity(Position[0][d]))
@@ -414,7 +415,10 @@ namespace BoSSS.Application.FSI_Solver
                 for (int p = 0; p < m_collidedWithParticle.Length; p++)
                 {
                     if (m_collidedWithParticle[p])
+                    {
                         Angle[0] = Angle[1] + dt * (RotationalVelocity[1] + RotationalVelocity[0]) / 2;
+                        m_collidedWithParticle[p] = false;
+                    }
                 }
                 if (double.IsNaN(Angle[0]) || double.IsInfinity(Angle[0]))
                     throw new ArithmeticException("Error trying to update particle angle. Value:  " + Angle[0]);
