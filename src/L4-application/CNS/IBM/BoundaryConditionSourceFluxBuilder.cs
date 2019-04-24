@@ -24,7 +24,7 @@ namespace CNS.IBM {
     /// <summary>
     /// Flux builder for the boundary conditions at immersed interfaces which
     /// are implemented via source terms. Note that currently, the convective
-    /// fluxes are considered only.
+    /// fluxes are considered only, maybe.
     /// </summary>
     public class BoundaryConditionSourceFluxBuilder : FluxBuilder {
 

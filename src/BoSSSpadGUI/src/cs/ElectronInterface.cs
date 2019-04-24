@@ -15,9 +15,10 @@ namespace BoSSS.Application.BoSSSpad{
     public class ElectronInterface{
 
         static ElectronWorksheet worksheet;
+        static CancellationTokenSource runCommandManager = null;
 
         /// <summary>
-        /// Entrypoint of Electron BoSSSpad, in detail the electron-edge-js package
+        /// Entrypoint of Electron BoSSSpad, i.e. the electron-edge-js package
         /// </summary>
         /// <param name="input">
         /// Path to the ElectronWorksheet.dll, ElectronBoSSSpad.exe and affiliated DLLs
@@ -28,7 +29,8 @@ namespace BoSSS.Application.BoSSSpad{
             return new{
                 runCommand = (Func<object, Task<object>>)(async (i) => 
                 {
-                    return await Task.Run(() => ElectronInterface.RunCommand(i));
+                    runCommandManager = new CancellationTokenSource();
+                    return await Task.Run(() => ElectronInterface.RunCommand(i), runCommandManager.Token);
                 }),
                 save = (Func<object, Task<object>>)(async (i) => 
                 {
@@ -41,6 +43,10 @@ namespace BoSSS.Application.BoSSSpad{
                 getAutoCompleteSuggestions = (Func<object, Task<object>>)(async (i) => 
                 {
                     return await Task.Run(() => ElectronInterface.GetAutoCompleteSuggestions(i));
+                }),
+                forceAbort = (Func<object, Task<object>>)(async (i) =>
+                {
+                    return await Task.Run(() => ElectronInterface.ForceAbort());
                 })
             };
         }
@@ -74,6 +80,13 @@ namespace BoSSS.Application.BoSSSpad{
 
         static object GetAutoCompleteSuggestions(object input){
             return worksheet.GetAutoCompleteSuggestions(input.ToString());
+        }
+
+        static object ForceAbort()
+        {
+            if (runCommandManager != null)
+                runCommandManager.Cancel();
+            return null;
         }
     }
 }

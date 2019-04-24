@@ -48,30 +48,7 @@ namespace BoSSS.Application.FSI_Solver {
             // DG degrees
             // ==========
 
-            C.FieldOptions.Add("VelocityX", new FieldOpts() {
-                Degree = k,
-                SaveToDB = FieldOpts.SaveToDBOpt.TRUE
-            });
-            C.FieldOptions.Add("VelocityY", new FieldOpts() {
-                Degree = k,
-                SaveToDB = FieldOpts.SaveToDBOpt.TRUE
-            });
-            C.FieldOptions.Add("Pressure", new FieldOpts() {
-                Degree = k - 1,
-                SaveToDB = FieldOpts.SaveToDBOpt.TRUE
-            });
-            C.FieldOptions.Add("PhiDG", new FieldOpts() {
-                Degree = 2,
-                SaveToDB = FieldOpts.SaveToDBOpt.TRUE
-            });
-            C.FieldOptions.Add("Phi", new FieldOpts() {
-                Degree = 2,
-                SaveToDB = FieldOpts.SaveToDBOpt.TRUE
-            });
-            C.FieldOptions.Add("Curvature", new FieldOpts() {
-                Degree = 2,
-                SaveToDB = FieldOpts.SaveToDBOpt.TRUE
-            });
+            C.SetDGdegree(k);
 
             // grid and boundary conditions
             // ============================
@@ -111,14 +88,16 @@ namespace BoSSS.Application.FSI_Solver {
             // Coupling Properties
             //C.LevelSetMovement = "coupled";
             C.Timestepper_LevelSetHandling = LevelSetHandling.Coupled_Once;
-            C.includeTranslation = false;
-            C.includeRotation = true;
 
             // Particle Properties
             C.Particles.Add(new Particle_Sphere(new double[] { 0.0, 0.0 }) {
                 radius_P = 0.4,
                 particleDensity = 1.0,
+                IncludeTranslation = false,
+                IncludeRotation = true
             });
+
+            
 
             ////Define level-set
             //Func<double[], double, double> phiComplete = delegate (double[] X, double t) {
@@ -135,8 +114,8 @@ namespace BoSSS.Application.FSI_Solver {
 
             //C.InitialValues_Evaluators.Add("Phi", X => phiComplete(X, 0));
             //C.InitialValues.Add("VelocityX#B", X => 1);
-            C.InitialValues_Evaluators.Add("VelocityX", X => 0);
-            C.InitialValues_Evaluators.Add("VelocityY", X => 0);
+            //C.InitialValues_Evaluators.Add("VelocityX", X => 0);
+            //C.InitialValues_Evaluators.Add("VelocityY", X => 0);
             //C.InitialValues.Add("Phi", X => -1);
             //C.InitialValues.Add("Phi", X => (X[0] - 0.41));
 
@@ -208,8 +187,8 @@ namespace BoSSS.Application.FSI_Solver {
             // grid and boundary conditions
             // ============================
 
-            double[] Xnodes = GenericBlas.Linspace(-1, 1, 21);
-            double[] Ynodes = GenericBlas.Linspace(-1, 1, 21);
+            double[] Xnodes = GenericBlas.Linspace(-1, 1, 31);
+            double[] Ynodes = GenericBlas.Linspace(-1, 1, 31);
             double h = Math.Min((Xnodes[1] - Xnodes[0]), (Ynodes[1] - Ynodes[0]));
 
             C.GridFunc = delegate {
@@ -234,8 +213,7 @@ namespace BoSSS.Application.FSI_Solver {
 
             // Coupling Properties
             C.Timestepper_LevelSetHandling = LevelSetHandling.Coupled_Once;
-            C.includeRotation = true;
-            C.includeTranslation = true;
+
 
             // Fluid Properties
             C.PhysicalParameters.rho_A = 1;
@@ -244,7 +222,6 @@ namespace BoSSS.Application.FSI_Solver {
 
             // Particles
             // =========
-
             C.Particles.Add(new Particle_Sphere(new double[] { -0.5, -0.5 }, startAngl: 90.0) {
                 particleDensity = 1.0,
                 radius_P = 0.1
@@ -281,6 +258,7 @@ namespace BoSSS.Application.FSI_Solver {
             C.NonLinearSolver.MaxSolverIterations = 10;
             C.LinearSolver.NoOfMultigridLevels = 1;
             C.AdaptiveMeshRefinement = MeshRefine;
+            C.RefinementLevel = 1;
 
             // Timestepping
             // ============
@@ -355,8 +333,7 @@ namespace BoSSS.Application.FSI_Solver {
 
             // Coupling Properties
             C.Timestepper_LevelSetHandling = LevelSetHandling.Coupled_Once;
-            C.includeRotation = true;
-            C.includeTranslation = true;
+
 
             // Fluid Properties
             C.PhysicalParameters.rho_A = 1;
@@ -382,7 +359,6 @@ namespace BoSSS.Application.FSI_Solver {
             C.Particles[1].TranslationalVelocity[0][1] = 0;
             C.Particles[1].RotationalVelocity[0] = 0;
             
-            C.pureDryCollisions = true;
             C.collisionModel = FSI_Control.CollisionModel.MomentumConservation;
 
             double V = 0;
@@ -397,6 +373,7 @@ namespace BoSSS.Application.FSI_Solver {
             // Physical Parameters
             // ===================
 
+            C.pureDryCollisions = true;
             C.PhysicalParameters.IncludeConvection = true;
 
 
@@ -457,8 +434,8 @@ namespace BoSSS.Application.FSI_Solver {
                 int q = new int(); // #Cells in x-dircetion + 1
                 int r = new int(); // #Cells in y-dircetion + 1
 
-                q = 40/3;
-                r = 30/3;
+                q = 40;
+                r = 30;
 
                 double[] Xnodes = GenericBlas.Linspace(-4, 4, q);
                 double[] Ynodes = GenericBlas.Linspace(-3, 3, r);
@@ -495,7 +472,7 @@ namespace BoSSS.Application.FSI_Solver {
 
             // Mesh refinement
             // =============================
-            C.AdaptiveMeshRefinement = true;
+            C.AdaptiveMeshRefinement = false;
             C.RefinementLevel = 2;
             C.maxCurvature = 2;
 
@@ -531,7 +508,9 @@ namespace BoSSS.Application.FSI_Solver {
                     AddaptiveUnderrelaxation = true,// set true if you want to define a constant underrelaxation (not recommended)
                     underrelaxation_factor = 1,// underrelaxation with [factor * 10^exponent]
                     ClearSmallValues = true,
-                    neglectAddedDamping = false
+                    neglectAddedDamping = false,
+                    IncludeRotation = false,
+                    IncludeTranslation = false
                 });
             }
             //Define level-set
@@ -577,12 +556,10 @@ namespace BoSSS.Application.FSI_Solver {
             
             // Coupling Properties
             // =============================
-            C.Timestepper_LevelSetHandling = LevelSetHandling.LieSplitting;
+            C.Timestepper_LevelSetHandling = LevelSetHandling.FSI_LieSplittingFullyCoupled;
             C.LSunderrelax = 1;
-            C.splitting_fully_coupled = true;
             C.max_iterations_fully_coupled = 250;
-            C.includeRotation = false;
-            C.includeTranslation = false;
+
 
 
             // Timestepping

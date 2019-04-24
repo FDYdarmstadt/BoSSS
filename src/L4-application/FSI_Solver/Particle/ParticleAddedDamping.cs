@@ -1,4 +1,20 @@
-﻿using BoSSS.Foundation;
+﻿/* =======================================================================
+Copyright 2019 Technische Universitaet Darmstadt, Fachgebiet fuer Stroemungsdynamik (chair of fluid dynamics)
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+*/
+
+using BoSSS.Foundation;
 using BoSSS.Foundation.Grid;
 using BoSSS.Foundation.Quadrature;
 using BoSSS.Foundation.XDG;
@@ -13,8 +29,7 @@ namespace BoSSS.Application.FSI_Solver
 {
     class ParticleAddedDamping
     {
-        readonly ParticleAuxillary Aux = new ParticleAuxillary();
-        public double[,] IntegrationOverLevelSet(LevelSetTracker LsTrk, double muA, double rhoA, double dt, double[] currentPosition, CellMask ParticleCutCells)
+        public double[,] IntegrationOverLevelSet(LevelSetTracker LsTrk, double muA, double rhoA, double dt, double[] currentPosition)
         {
             double[,] addedDampingTensor = new double[6, 6];
             double alpha = 0.5;

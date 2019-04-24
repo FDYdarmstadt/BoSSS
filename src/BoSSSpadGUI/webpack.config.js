@@ -4,7 +4,7 @@ const webpack = require('webpack');
 module.exports = {
     mode: 'development',
 	entry: {
-		"app": './src/js/index.js',
+		"app": './src/boSSSpad/index.js',
 		"editor.worker": 'monaco-editor/esm/vs/editor/editor.worker.js',
 		"json.worker": 'monaco-editor/esm/vs/language/json/json.worker',
 		"css.worker": 'monaco-editor/esm/vs/language/css/css.worker',
@@ -13,7 +13,7 @@ module.exports = {
 	},
 	output: {
 		filename: '[name].bundle.js',
-		path: path.resolve(__dirname, 'dist')
+		path: path.resolve(__dirname, 'boSSSpad')
 	},
 	module: {
 		rules: [{

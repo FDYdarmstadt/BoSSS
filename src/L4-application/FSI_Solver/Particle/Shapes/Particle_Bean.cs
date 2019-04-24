@@ -121,9 +121,14 @@ namespace BoSSS.Application.FSI_Solver
         override public double ComputeParticleRe(double mu_Fluid)
         {
             double particleReynolds = 0;
-            particleReynolds = Math.Sqrt(TranslationalVelocity[0][0] * TranslationalVelocity[0][0] + TranslationalVelocity[0][1] * TranslationalVelocity[0][1]) * 2 * 4.0 * particleDensity / mu_Fluid;
+            particleReynolds = Math.Sqrt(TranslationalVelocity[0][0] * TranslationalVelocity[0][0] + TranslationalVelocity[0][1] * TranslationalVelocity[0][1]) * 2 * 4.0 * 1 / mu_Fluid;
             Console.WriteLine("Particle Reynolds number:  " + particleReynolds);
             return particleReynolds;
+        }
+
+        override public double[] GetLengthScales()
+        {
+            return new double[] { radius_P, radius_P };
         }
     }
 }
