@@ -69,7 +69,7 @@ namespace CNS.IBM {
                 int i0Glob = M._RowPartitioning.GetBlockI0(cell + Glob_cell0);
                 int j0Glob = M._ColPartitioning.GetBlockI0(cell + Glob_cell0);
                 int i0 = i0Glob - M._RowPartitioning.i0;
-                int j0 = j0Glob - M._RowPartitioning.i0;
+                int j0 = j0Glob - M._ColPartitioning.i0;
                 int M1 = M._RowPartitioning.GetBlockLen(cell + Glob_cell0);
                 int N1 = M._ColPartitioning.GetBlockLen(cell + Glob_cell0);
 

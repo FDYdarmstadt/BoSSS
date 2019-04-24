@@ -73,6 +73,7 @@ namespace BoSSS.Application.FSI_Solver {
 
         /// <summary>
         /// Note: this test is fucked; the results are nowhere near where you would expext.
+        /// Should be ok now.
         /// </summary>
         [Test]
         public static void SingleDryParticleAgainstWall([Values(false, true)]  bool MeshRefine) { 
@@ -108,7 +109,7 @@ namespace BoSSS.Application.FSI_Solver {
                 p.Init(ctrl);
                 p.RunSolverMode();
 
-                double ForcesSoll = 1481.4254921133;
+                double ForcesSoll = 15376.4338960998;
 
                 double Forces = p.Particles[0].HydrodynamicForces[0][0];
 
