@@ -337,8 +337,6 @@ namespace BoSSS.Foundation.XDG {
                 int ColorCounter;
                 {
                     CellMask SpMask = this.GetSpeciesMask(SpId);
-                    CellMask Neighbours = SpMask.AllNeighbourCells();
-                    SpMask = SpMask.Union(Neighbours);
                     BitArray SpBitMask = SpMask.GetBitMaskWithExternal();
 
                     //int ColorCounter = this.GridDat.CellPartitioning.i0; // (more-than) worst case estimation of used colors on previous processors

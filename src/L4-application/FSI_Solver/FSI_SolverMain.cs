@@ -679,6 +679,9 @@ namespace BoSSS.Application.FSI_Solver
             return forces_PResidual;
         }
 
+        /// <summary>
+        /// Array of all local cells with their specific color.
+        /// </summary>
         private int[] CellColor = null;
 
         /// <summary>
@@ -686,21 +689,23 @@ namespace BoSSS.Application.FSI_Solver
         /// </summary>
         private void UpdateLevelSetParticles()
         {
+            // =======================================================
             // Step 1
             // Define an array with the respective cell colors
-            // ===============================================
+            // =======================================================
             int J = GridData.iLogicalCells.NoOfLocalUpdatedCells;
             CellColor = ((FSI_Control)this.Control).AdaptiveMeshRefinement ? InitializeColoring(J) : CellColor ?? InitializeColoring(J);
 
-
+            // =======================================================
             // Step 2
             // Delete the old level set
-            // ========================
+            // =======================================================
             LevSet.Clear();
 
+            // =======================================================
             // Step 3
             // Define level set per color
-            // ==========================
+            // =======================================================
             FSI_LevelSetUpdate levelSetUpdate = new FSI_LevelSetUpdate();
             CellMask AgglParticleMask = null;
             List<int[]> ColoredCellsSorted = levelSetUpdate.ColoredCellsFindAndSort(CellColor);
@@ -734,8 +739,13 @@ namespace BoSSS.Application.FSI_Solver
                 {
                     int[] ParticlesOfCurrentColor = levelSetUpdate.FindParticlesOneColor(GlobalParticleColor, CurrentColor);
                     CellMask ColoredCellMask = levelSetUpdate.CellsOneColor(GridData, ColoredCellsSorted, CurrentColor, J, false);
-                    //ColoredCellMask = ColoredCellMask.Union(ColoredCellMask.AllNeighbourCells());
+
+                    // Save all colored cells (of any color) in one mask
+                    // =================================================
                     AgglParticleMask = AgglParticleMask == null ? ColoredCellMask : AgglParticleMask.Union(ColoredCellMask);
+
+                    // Get particle level set
+                    // ======================
                     double phiComplete(double[] X, double t)
                     {
                         // Generating the correct sign
@@ -757,54 +767,6 @@ namespace BoSSS.Application.FSI_Solver
                     SetLevelSet(phiComplete, ColoredCellMask, hack_phystime);
                 }
             }
-            //    for (int p = 0; p < m_Particles.Count(); p++)
-            //{
-            //    double Hmin = Math.Sqrt(GridData.iGeomCells.GetCellVolume(0));
-            //    double[] ParticlePos = m_Particles[p].Position[0];
-            //    double ParticleAngle = m_Particles[p].Angle[0];
-            //    double[] ParticleScales = m_Particles[p].GetLengthScales();
-            //    double Upperedge = ParticlePos[1] + ParticleScales[1] * Math.Abs(Math.Cos(ParticleAngle)) + ParticleScales[0] * Math.Abs(Math.Sin(ParticleAngle)) + Hmin / 4;
-            //    double Loweredge = ParticlePos[1] - ParticleScales[1] * Math.Abs(Math.Cos(ParticleAngle)) - ParticleScales[0] * Math.Abs(Math.Sin(ParticleAngle)) - Hmin / 4;
-            //    double Leftedge = ParticlePos[0] - ParticleScales[0] * Math.Abs(Math.Cos(ParticleAngle)) - ParticleScales[1] * Math.Abs(Math.Sin(ParticleAngle)) - Hmin / 4;
-            //    double Rightedge = ParticlePos[0] + ParticleScales[0] * Math.Abs(Math.Cos(ParticleAngle)) + ParticleScales[1] * Math.Abs(Math.Sin(ParticleAngle)) + Hmin / 4;
-            //    bool ContainsParticle = false;
-            //    for (int j = 0; j < J; j++)
-            //    {
-            //        double[] center = GridData.iLogicalCells.GetCenter(j);
-            //        if (center[0] > Leftedge && center[0] < Rightedge && center[1] > Loweredge && center[1] < Upperedge)
-            //        {
-            //            ContainsParticle = true;
-            //        }
-            //    }
-            //    if (ContainsParticle)
-            //    {
-            //        int[] ParticlesOfCurrentColor = levelSetUpdate.FindParticlesOneColor(ParticleColorArray, ParticleColorArray[p]);
-            //        CellMask ColoredCellMask = levelSetUpdate.CellsOneColor(GridData, ColoredCellsSorted, ParticleColorArray[p], J, false);
-            //        ColoredCellMask = ColoredCellMask.Union(ColoredCellMask.AllNeighbourCells());
-            //        AgglParticleMask = AgglParticleMask == null ? ColoredCellMask : AgglParticleMask.Union(ColoredCellMask);
-
-            //        double phiComplete(double[] X, double t)
-            //        {
-            //            // Generating the correct sign
-            //            // ===========================
-            //            double phi = Math.Pow(-1, ParticlesOfCurrentColor.Length - 1);
-
-            //            // Multiplication over all particle-level-sets within the current color
-            //            // ====================================================================
-            //            for (int pc = 0; pc < ParticlesOfCurrentColor.Length; pc++)
-            //            {
-
-            //                phi *= m_Particles[ParticlesOfCurrentColor[pc]].Phi_P(X);
-
-            //                // Delete all particles within the current color from the particle color array
-            //                // ===========================================================================
-            //                ParticleColorArray[ParticlesOfCurrentColor[pc]] = 0;
-            //            }
-            //            return phi;
-            //        }
-            //        SetLevelSet(phiComplete, ColoredCellMask, hack_phystime);
-            //    }
-            //}
 
             // =======================================================
             // Step 4
@@ -824,6 +786,7 @@ namespace BoSSS.Application.FSI_Solver
             LsTrk.UpdateTracker(__NearRegionWith: 2);
             CellColor = UpdateColoring();
         }
+
         /// <summary>
         /// Set level set based on the function phi and the current cells
         /// </summary>
@@ -857,7 +820,7 @@ namespace BoSSS.Application.FSI_Solver
                 GridData.GetCellNeighbours(j, GetCellNeighbours_Mode.ViaEdges, out int[] CellNeighbors, out _);
                 for (int i = 0; i < CellNeighbors.Length; i++)
                 {
-                    if (CellNeighbors[i] >= J && PartColEx[CellNeighbors[i]] != 0 && PartColEx[j] == 0)
+                    if (PartColEx[CellNeighbors[i]] != 0 && PartColEx[j] == 0)
                     {
                         ParticleColor.SetMeanValue(j, PartColEx[CellNeighbors[i]]);
                         LevelSetDistance.SetMeanValue(j, LevelSetTracker.DecodeLevelSetDist(rCode[j], 0));
