@@ -76,8 +76,8 @@ namespace CNS.IBM {
             }
 
             // Normal LTS constructor
-            clusterer = new Clusterer(this.gridData, maxNumOfSubSteps);
-            CurrentClustering = clusterer.CreateClustering(control.NumberOfSubGrids, this.TimeStepConstraints, speciesMap.SubGrid, speciesMap.Agglomerator);
+            clusterer = new Clusterer(this.gridData, maxNumOfSubSteps, cellAgglomerator: speciesMap.Agglomerator);
+            CurrentClustering = clusterer.CreateClustering(control.NumberOfSubGrids, this.TimeStepConstraints, speciesMap.SubGrid);
             CurrentClustering = clusterer.TuneClustering(CurrentClustering, Time, this.TimeStepConstraints); // Might remove sub-grids when time step sizes are too similar
 
             ABevolver = new IBMABevolve[CurrentClustering.NumberOfClusters];

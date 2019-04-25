@@ -79,17 +79,20 @@ namespace BoSSS.Solution.Utils {
 
         private bool consoleOutput;
 
+        private CellAgglomerator cellAgglomerator;
+
         /// <summary>
         /// Constructor for the grid clustering
         /// </summary>
         /// <param name="gridData">Information about the grid</param>
-        public Clusterer(IGridData gridData, int maxNumOfSubSteps, bool consoleOutput = false) {
+        public Clusterer(IGridData gridData, int maxNumOfSubSteps, bool consoleOutput = false, CellAgglomerator cellAgglomerator = null) {
             this.gridData = gridData;
             this.MaxSubSteps = maxNumOfSubSteps;
             if (this.MaxSubSteps != 0) {
                 this.Restrict = true;
             }
             this.consoleOutput = consoleOutput;
+            this.cellAgglomerator = cellAgglomerator;
         }
 
         /// <summary>
@@ -97,7 +100,7 @@ namespace BoSSS.Solution.Utils {
         /// </summary>     
         /// <param name="numOfClusters">Number of clusters</param>
         /// <returns>A list of sub-grids</returns>
-        public Clustering CreateClustering(int numOfClusters, IList<TimeStepConstraint> timeStepConstraints, SubGrid subGrid = null, CellAgglomerator cellAgglomerator = null) {
+        public Clustering CreateClustering(int numOfClusters, IList<TimeStepConstraint> timeStepConstraints, SubGrid subGrid = null) {
             if (subGrid == null) {
                 subGrid = new SubGrid(CellMask.GetFullMask(gridData));
             }
@@ -148,8 +151,8 @@ namespace BoSSS.Solution.Utils {
 
             // IBM source cells are assigned to the cluster of the corresponding target cells
             // This code is only excuted in IBM simulation runs
-            if (cellAgglomerator != null) {
-                AgglomerationPair[] aggPairs = cellAgglomerator.AggInfo.AgglomerationPairs;
+            if (this.cellAgglomerator != null) {
+                AgglomerationPair[] aggPairs = this.cellAgglomerator.AggInfo.AgglomerationPairs;
 
                 int[] sourceCellsFromPairs = new int[aggPairs.Length];
                 int[] targetCellsFromPairs = new int[aggPairs.Length];
