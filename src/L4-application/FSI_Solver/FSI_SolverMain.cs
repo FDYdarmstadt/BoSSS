@@ -602,10 +602,12 @@ namespace BoSSS.Application.FSI_Solver
                     break;
 
                 case LevelSetHandling.Coupled_Once:
+                    Console.WriteLine("WARNING: Coupled once solver is not tested!");
                     UpdateLevelSetParticles();
                     break;
 
                 case LevelSetHandling.Coupled_Iterative:
+                    Console.WriteLine("WARNING: Coupled iterative solver is not tested!");
                     Auxillary.ParticleState_MPICheck(m_Particles, GridData, MPISize);
                     UpdateForcesAndTorque(m_Particles, dt);
                     UpdateLevelSetParticles();
@@ -694,7 +696,7 @@ namespace BoSSS.Application.FSI_Solver
             // Define an array with the respective cell colors
             // =======================================================
             int J = GridData.iLogicalCells.NoOfLocalUpdatedCells;
-            CellColor = ((FSI_Control)this.Control).AdaptiveMeshRefinement ? InitializeColoring(J) : CellColor ?? InitializeColoring(J);
+            CellColor = ((FSI_Control)Control).AdaptiveMeshRefinement ? InitializeColoring(J) : CellColor ?? InitializeColoring(J);
 
             // =======================================================
             // Step 2
@@ -802,11 +804,14 @@ namespace BoSSS.Application.FSI_Solver
         /// </summary>
         private int[] UpdateColoring()
         {
-            FSI_LevelSetUpdate levelSetUpdate = new FSI_LevelSetUpdate();
+            // =======================================================
+            // Step 1
+            // Color all cells directlly related to the level set
+            // =======================================================
             int J = GridData.iLogicalCells.NoOfLocalUpdatedCells;
             int Je = J + GridData.iLogicalCells.NoOfExternalCells;
-            int[] PartColEx = new int[Je];
             int[] PartCol = LsTrk.Regions.ColorMap4Spc[LsTrk.GetSpeciesId("B")];
+            int[] PartColEx = new int[Je];
             var rCode = LsTrk.Regions.RegionsCode;
             for (int j = 0; j < J; j++)
             {
@@ -815,6 +820,11 @@ namespace BoSSS.Application.FSI_Solver
                 PartColEx[j] = PartCol[j];
             }
             PartColEx.MPIExchange(GridData);
+
+            // =======================================================
+            // Step 2
+            // Color neighbour cells
+            // =======================================================
             for (int j = 0; j < J; j++)
             {
                 GridData.GetCellNeighbours(j, GetCellNeighbours_Mode.ViaEdges, out int[] CellNeighbors, out _);
@@ -830,7 +840,6 @@ namespace BoSSS.Application.FSI_Solver
             }
             return PartCol;
         }
-
 
         /// <summary>
         /// Initialization of <see cref="ParticleColor"/> 
