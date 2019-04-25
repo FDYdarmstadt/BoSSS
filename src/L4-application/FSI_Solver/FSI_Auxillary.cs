@@ -75,7 +75,7 @@ namespace FSI_Solver
         int BinarySearch(List<int> SortedList, int Target)
         {
             int L = 0;
-            int R = SortedList.Count();
+            int R = SortedList.Count() - 1;
             int TargetIndex = 0;
 
             while (L <= R)
