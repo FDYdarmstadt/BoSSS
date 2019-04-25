@@ -155,6 +155,7 @@ namespace BoSSS.Solution.Utils {
             if (this.cellAgglomerator != null) {
                 // MPI exchange in order to get cellToClusterMap (local + external cells)
                 int JE = gridData.iLogicalCells.Count;
+                int J = gridData.iLogicalCells.NoOfLocalUpdatedCells;
                 int[] cellToClusterMap = new int[JE];
 
                 int JSub = subGrid.LocalNoOfCells;
@@ -162,12 +163,12 @@ namespace BoSSS.Solution.Utils {
                 for (int jsub = 0; jsub < JSub; jsub++) {
                     cellToClusterMap[jSub2j[jsub]] = subGridCellToClusterMap[jsub];
                 }
-                cellToClusterMap.MPIExchange(gridData);
+                cellToClusterMap.MPIExchange(gridData);               
 
                 foreach (AgglomerationPair aggPair in this.cellAgglomerator.AggInfo.AgglomerationPairs) {
                     // AgglomerationPairs can contain combinations where jCellSource is on one MPI rank
                     // and the corresponding target cell is on another MPI rank. These duplications have to be eleminated.
-                    if (subGrid.VolumeMask.Contains(aggPair.jCellSource)) { // SLOWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW!
+                    if (aggPair.jCellSource < J) {
                         // Assign source cell to the cluster of the corresponding target cell
                         int clusterOfTargetCell = cellToClusterMap[aggPair.jCellTarget];
                         baMatrix[clusterOfTargetCell][aggPair.jCellSource] = true;
