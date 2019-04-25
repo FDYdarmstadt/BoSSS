@@ -16,6 +16,7 @@ limitations under the License.
 
 using BoSSS.Foundation.Grid;
 using BoSSS.Foundation.Grid.Classic;
+using BoSSS.Foundation.XDG;
 using ilPSP;
 using MPI.Wrappers;
 using System;
@@ -23,6 +24,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using static BoSSS.Foundation.XDG.CellAgglomerator;
 
 namespace BoSSS.Solution.Utils {
 
@@ -95,7 +97,7 @@ namespace BoSSS.Solution.Utils {
         /// </summary>     
         /// <param name="numOfClusters">Number of clusters</param>
         /// <returns>A list of sub-grids</returns>
-        public Clustering CreateClustering(int numOfClusters, IList<TimeStepConstraint> timeStepConstraints, SubGrid subGrid = null) {
+        public Clustering CreateClustering(int numOfClusters, IList<TimeStepConstraint> timeStepConstraints, SubGrid subGrid = null, CellAgglomerator cellAgglomerator = null) {
             if (subGrid == null) {
                 subGrid = new SubGrid(CellMask.GetFullMask(gridData));
             }
@@ -142,6 +144,40 @@ namespace BoSSS.Solution.Utils {
             // Filling the BitArrays
             for (int i = 0; i < numOfCells; i++) {
                 baMatrix[subGridCellToClusterMap[i]][subGrid.SubgridIndex2LocalCellIndex[i]] = true;
+            }
+
+            // IBM source cells are assigned to the cluster of the corresponding target cells
+            // This code is only excuted in IBM simulation runs
+            if (cellAgglomerator != null) {
+                AgglomerationPair[] aggPairs = cellAgglomerator.AggInfo.AgglomerationPairs;
+
+                int[] sourceCellsFromPairs = new int[aggPairs.Length];
+                int[] targetCellsFromPairs = new int[aggPairs.Length];
+
+                for (int i = 0; i < aggPairs.Length; i++) {
+                    sourceCellsFromPairs[i] = aggPairs[i].jCellSource;
+                    targetCellsFromPairs[i] = aggPairs[i].jCellTarget;
+                }
+
+                for (int i = 0; i < sourceCellsFromPairs.Length; i++) {
+                    // Assign source cell to the cluster of the target cell
+                    int localSourceCell = sourceCellsFromPairs[i];
+                    int localTargetCell = targetCellsFromPairs[i];
+
+                    int subGridSourceCell = subGrid.LocalCellIndex2SubgridIndex[localSourceCell];
+                    int subGridTargetCell = subGrid.LocalCellIndex2SubgridIndex[localTargetCell];
+
+                    int clusterTargetCell = subGridCellToClusterMap[subGridTargetCell];
+
+                    baMatrix[clusterTargetCell][localSourceCell] = true;
+
+                    // Delete source cell from other clusters
+                    for (int j = 0; j < numOfClusters; j++) {
+                        if (clusterTargetCell != j) {
+                            baMatrix[j][localSourceCell] = false;
+                        }
+                    }
+                }
             }
 
             // Generating the sub-grids
@@ -244,7 +280,7 @@ namespace BoSSS.Solution.Utils {
                 foreach (TimeStepConstraint constraint in timeStepConstraints) {
                     result.Add(constraint.GetLocalStepSize(localCellIndex, 1));
                 }
-                if (result.All(c => c == double.MaxValue)) {                    // For IBM source cells: All timeStepConstraints return double.MaxValue --> No influence on clustering
+                if (result.All(c => c >= double.MaxValue)) {                    // For IBM source cells: All timeStepConstraints return double.MaxValue --> No influence on clustering FUNKTIONIERT NICHT!!!!!!!!!!
                     cellMetric[subGridCell] = double.MaxValue;
                 } else {
                     cellMetric[subGridCell] = 1.0 / result.Sum(c => 1.0 / c);  // cell metric based on harmonic sum of time step constraints
