@@ -56,7 +56,11 @@ namespace BoSSS.Application.FSI_Solver {
         [DataMember]
         public bool instationarySolver = true;
 
-        
+        /// <summary>
+        /// Set true if translation of the particle should be induced by hydrodynamical forces.
+        /// </summary>
+        [DataMember]
+        public bool LowerWallFullyPlastic = false;
 
         /// <summary>
         /// Function describing the fixed level-set movement
