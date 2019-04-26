@@ -230,13 +230,25 @@ namespace BoSSS.Application.FSI_Solver
         /// </summary>
         [DataMember]
         public List<double[]> TranslationalVelocity = new List<double[]>();
-        
+
+        /// <summary>
+        /// The translational velocity of the particle in the current time step. This list is used by the momentum conservation model.
+        /// </summary>
+        [DataMember]
+        public List<double[]> CollisionTranslationalVelocity = new List<double[]>();
+
         /// <summary>
         /// The angular velocity of the particle in the current time step.
         /// </summary>
         [DataMember]
         public List<double> RotationalVelocity = new List<double>();
-        
+
+        /// <summary>
+        /// The angular velocity of the particle in the current time step. This list is used by the momentum conservation model.
+        /// </summary>
+        [DataMember]
+        public List<double> CollisionRotationalVelocity = new List<double>();
+
         /// <summary>
         /// The translational velocity of the particle in the current time step.
         /// </summary>

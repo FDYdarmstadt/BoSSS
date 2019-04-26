@@ -157,7 +157,7 @@ namespace BoSSS.Application.FSI_Solver {
             int NoOfSurfacePoints = Convert.ToInt32(10 * Circumference_P / hMin) + 1;
             MultidimensionalArray SurfacePoints = new MultidimensionalArray(2);
             SurfacePoints.Allocate(NoOfSurfacePoints, SpatialDim);
-            double[] InfinitisemalAngle = GenericBlas.Linspace(0, 2 * Math.PI, NoOfSurfacePoints + 1);
+            double[] InfinitisemalAngle = GenericBlas.Linspace(0, 2 * Math.PI, NoOfSurfacePoints);
             if (Math.Abs(10 * Circumference_P / hMin + 1) >= int.MaxValue)
                 throw new ArithmeticException("Error trying to calculate the number of surface points, overflow");
 

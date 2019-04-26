@@ -301,23 +301,23 @@ namespace BoSSS.Application.FSI_Solver
             C.Particles[0].TranslationalVelocity[0][1] = -1;
 
 
-            C.Particles.Add(new Particle_superEllipsoid(new double[] { 0.5, 4.5 }, startAngl: 45)
+            C.Particles.Add(new Particle_Ellipsoid(new double[] { 0.5, 4.5 }, startAngl: 45)
             {
                 particleDensity = 1,
                 thickness_P = 0.2,
                 length_P = 0.4,
-                superEllipsoidExponent = 4,
+                //superEllipsoidExponent = 4,
                 GravityVertical = -9.81,
                 IncludeRotation = false,
                 IncludeTranslation = false,
             });
 
-            C.Particles.Add(new Particle_superEllipsoid(new double[] { -0.5, 4.5 }, startAngl: -45)
+            C.Particles.Add(new Particle_Ellipsoid(new double[] { -0.5, 4.5 }, startAngl: -45)
             {
                 particleDensity = 1,
                 thickness_P = 0.2,
                 length_P = 0.4,
-                superEllipsoidExponent = 4,
+                //superEllipsoidExponent = 4,
                 GravityVertical = -9.81,
                 IncludeRotation = false,
                 IncludeTranslation = false,
