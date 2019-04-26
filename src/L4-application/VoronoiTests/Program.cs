@@ -1,17 +1,11 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using VoronoiTests.Database;
-using VoronoiTests.Database.Session;
+﻿using System.Collections.Generic;
 
 namespace VoronoiTests
 {
     class Program
     {
         public static void Main() {
-            TestBench selectedTest = availableTests[3];
+            TestBench selectedTest = availableTests[4];
             RunTest(selectedTest);
         }
 
@@ -24,11 +18,11 @@ namespace VoronoiTests
 
         static readonly List< TestBench> availableTests = new List<TestBench>
         {
-            {new DGFieldArithmeticTests() },
-            {new SessionIOTests() },
-            {new GridIOTests() },
-            {new BoSSSpadTests() }
+            new Database.Session.DGFieldArithmeticTests(),
+            new Database.Session.SessionIOTests(),
+            new Database.GridIOTests(),
+            new Database.Session.BoSSSpadTests(),
+            new GridCreation.GridTests()
         };
-        
     }
 }
