@@ -100,12 +100,13 @@ namespace BoSSS.Application.FSI_Solver {
         public override void SetDGdegree(int k) {
             if (k < 1)
                 throw new ArgumentOutOfRangeException("DG polynomial degree must be at least 1.");
-
+            int k_phiDG = Math.Max(2, k);
+            int k_phi = Convert.ToInt32(Math.Pow(k_phiDG, 2));
             base.FieldOptions.Clear();
             this.AddFieldOption("Velocity*", k);
             this.AddFieldOption("Pressure", k - 1);
-            this.AddFieldOption("PhiDG", 2);
-            this.AddFieldOption("Phi", 2);
+            this.AddFieldOption("PhiDG", k_phiDG);
+            this.AddFieldOption("Phi", k_phi);
             this.AddFieldOption("Curvature", 2);
         }
         

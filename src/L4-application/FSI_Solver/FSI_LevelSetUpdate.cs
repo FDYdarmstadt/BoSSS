@@ -143,14 +143,14 @@ namespace FSI_Solver
                 double Hmin = Math.Sqrt(gridData.iGeomCells.GetCellVolume(0));
                 double ParticleAngle = Particles[p].Angle[0];
                 double[] ParticlePos = Particles[p].Position[0];
-                double Upperedge = ParticlePos[1] + ParticleScales[1] * Math.Abs(Math.Cos(ParticleAngle)) + ParticleScales[0] * Math.Abs(Math.Sin(ParticleAngle)) + Hmin / 2;
-                double Loweredge = ParticlePos[1] - ParticleScales[1] * Math.Abs(Math.Cos(ParticleAngle)) - ParticleScales[0] * Math.Abs(Math.Sin(ParticleAngle)) - Hmin / 2;
-                double Leftedge = ParticlePos[0] - ParticleScales[0] * Math.Abs(Math.Cos(ParticleAngle)) - ParticleScales[1] * Math.Abs(Math.Sin(ParticleAngle)) - Hmin / 2;
-                double Rightedge = ParticlePos[0] + ParticleScales[0] * Math.Abs(Math.Cos(ParticleAngle)) + ParticleScales[1] * Math.Abs(Math.Sin(ParticleAngle)) + Hmin / 2;
-                //double Upperedge = ParticlePos[1] + Hmin * 2;
-                //double Loweredge = ParticlePos[1] - Hmin * 2;
-                //double Leftedge = ParticlePos[0] - Hmin * 2;
-                //double Rightedge = ParticlePos[0] + Hmin * 2;
+                //double Upperedge = ParticlePos[1] + ParticleScales[1] * Math.Abs(Math.Cos(ParticleAngle)) + ParticleScales[0] * Math.Abs(Math.Sin(ParticleAngle)) + Hmin / 2;
+                //double Loweredge = ParticlePos[1] - ParticleScales[1] * Math.Abs(Math.Cos(ParticleAngle)) - ParticleScales[0] * Math.Abs(Math.Sin(ParticleAngle)) - Hmin / 2;
+                //double Leftedge = ParticlePos[0] - ParticleScales[0] * Math.Abs(Math.Cos(ParticleAngle)) - ParticleScales[1] * Math.Abs(Math.Sin(ParticleAngle)) - Hmin / 2;
+                //double Rightedge = ParticlePos[0] + ParticleScales[0] * Math.Abs(Math.Cos(ParticleAngle)) + ParticleScales[1] * Math.Abs(Math.Sin(ParticleAngle)) + Hmin / 2;
+                double Upperedge = ParticlePos[1] + Hmin * 2;
+                double Loweredge = ParticlePos[1] - Hmin * 2;
+                double Leftedge = ParticlePos[0] - Hmin * 2;
+                double Rightedge = ParticlePos[0] + Hmin * 2;
                 int temp = 0;
                 for (int i = 0; i < ColoredCellsSorted.Count; i++)
                 {

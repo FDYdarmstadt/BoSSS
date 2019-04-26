@@ -269,7 +269,6 @@ namespace BoSSS.Application.FSI_Solver
 
             C.GridPartType = GridPartType.Hilbert;
 
-
             C.AddBoundaryValue("Velocity_Inlet_left", "VelocityY", X => 0);
             C.AddBoundaryValue("Velocity_Inlet_right", "VelocityY", X => 0);
             C.AddBoundaryValue("Wall_lower");
@@ -299,7 +298,7 @@ namespace BoSSS.Application.FSI_Solver
                 particleDensity = 1.10,
                 GravityVertical = -9.81,
             });
-
+            C.Particles[0].TranslationalVelocity[0][1] = -1;
 
 
             C.Particles.Add(new Particle_superEllipsoid(new double[] { 0.5, 4.5 }, startAngl: 45)
@@ -394,7 +393,7 @@ namespace BoSSS.Application.FSI_Solver
 
             //C.Timestepper_Mode = FSI_Control.TimesteppingMode.Splitting;
             C.Timestepper_Scheme = FSI_Solver.FSI_Control.TimesteppingScheme.BDF2;
-            double dt = 0.0005;
+            double dt = 1e-2;
             C.dtMax = dt;
             C.dtMin = dt;
             C.Endtime = 8.0;
