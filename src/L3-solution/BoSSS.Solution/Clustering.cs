@@ -25,6 +25,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using static BoSSS.Foundation.XDG.CellAgglomerator;
+using BoSSS.Foundation.Comm;
 
 namespace BoSSS.Solution.Utils {
 
@@ -79,17 +80,20 @@ namespace BoSSS.Solution.Utils {
 
         private bool consoleOutput;
 
+        private CellAgglomerator cellAgglomerator;
+
         /// <summary>
         /// Constructor for the grid clustering
         /// </summary>
         /// <param name="gridData">Information about the grid</param>
-        public Clusterer(IGridData gridData, int maxNumOfSubSteps, bool consoleOutput = false) {
+        public Clusterer(IGridData gridData, int maxNumOfSubSteps, bool consoleOutput = false, CellAgglomerator cellAgglomerator = null) {
             this.gridData = gridData;
             this.MaxSubSteps = maxNumOfSubSteps;
             if (this.MaxSubSteps != 0) {
                 this.Restrict = true;
             }
             this.consoleOutput = consoleOutput;
+            this.cellAgglomerator = cellAgglomerator;
         }
 
         /// <summary>
@@ -97,7 +101,7 @@ namespace BoSSS.Solution.Utils {
         /// </summary>     
         /// <param name="numOfClusters">Number of clusters</param>
         /// <returns>A list of sub-grids</returns>
-        public Clustering CreateClustering(int numOfClusters, IList<TimeStepConstraint> timeStepConstraints, SubGrid subGrid = null, CellAgglomerator cellAgglomerator = null) {
+        public Clustering CreateClustering(int numOfClusters, IList<TimeStepConstraint> timeStepConstraints, SubGrid subGrid = null) {
             if (subGrid == null) {
                 subGrid = new SubGrid(CellMask.GetFullMask(gridData));
             }
@@ -148,33 +152,32 @@ namespace BoSSS.Solution.Utils {
 
             // IBM source cells are assigned to the cluster of the corresponding target cells
             // This code is only excuted in IBM simulation runs
-            if (cellAgglomerator != null) {
-                AgglomerationPair[] aggPairs = cellAgglomerator.AggInfo.AgglomerationPairs;
+            if (this.cellAgglomerator != null) {
+                // MPI exchange in order to get cellToClusterMap (local + external cells)
+                int JE = gridData.iLogicalCells.Count;
+                int J = gridData.iLogicalCells.NoOfLocalUpdatedCells;
+                int[] cellToClusterMap = new int[JE];
 
-                int[] sourceCellsFromPairs = new int[aggPairs.Length];
-                int[] targetCellsFromPairs = new int[aggPairs.Length];
-
-                for (int i = 0; i < aggPairs.Length; i++) {
-                    sourceCellsFromPairs[i] = aggPairs[i].jCellSource;
-                    targetCellsFromPairs[i] = aggPairs[i].jCellTarget;
+                int JSub = subGrid.LocalNoOfCells;
+                int[] jSub2j = subGrid.SubgridIndex2LocalCellIndex;
+                for (int jsub = 0; jsub < JSub; jsub++) {
+                    cellToClusterMap[jSub2j[jsub]] = subGridCellToClusterMap[jsub];
                 }
+                cellToClusterMap.MPIExchange(gridData);               
 
-                for (int i = 0; i < sourceCellsFromPairs.Length; i++) {
-                    // Assign source cell to the cluster of the target cell
-                    int localSourceCell = sourceCellsFromPairs[i];
-                    int localTargetCell = targetCellsFromPairs[i];
+                foreach (AgglomerationPair aggPair in this.cellAgglomerator.AggInfo.AgglomerationPairs) {
+                    // AgglomerationPairs can contain combinations where jCellSource is on one MPI rank
+                    // and the corresponding target cell is on another MPI rank. These duplications have to be eleminated.
+                    if (aggPair.jCellSource < J) {
+                        // Assign source cell to the cluster of the corresponding target cell
+                        int clusterOfTargetCell = cellToClusterMap[aggPair.jCellTarget];
+                        baMatrix[clusterOfTargetCell][aggPair.jCellSource] = true;
 
-                    int subGridSourceCell = subGrid.LocalCellIndex2SubgridIndex[localSourceCell];
-                    int subGridTargetCell = subGrid.LocalCellIndex2SubgridIndex[localTargetCell];
-
-                    int clusterTargetCell = subGridCellToClusterMap[subGridTargetCell];
-
-                    baMatrix[clusterTargetCell][localSourceCell] = true;
-
-                    // Delete source cell from other clusters
-                    for (int j = 0; j < numOfClusters; j++) {
-                        if (clusterTargetCell != j) {
-                            baMatrix[j][localSourceCell] = false;
+                        // Delete source cell from other clusters
+                        for (int j = 0; j < numOfClusters; j++) {
+                            if (clusterOfTargetCell != j) {
+                                baMatrix[j][aggPair.jCellSource] = false;
+                            }
                         }
                     }
                 }
