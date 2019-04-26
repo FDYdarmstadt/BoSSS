@@ -602,7 +602,6 @@ namespace BoSSS.Application.FSI_Solver
                     break;
 
                 case LevelSetHandling.Coupled_Once:
-                    Console.WriteLine("WARNING: Coupled once solver is not tested!");
                     UpdateLevelSetParticles();
                     break;
 
@@ -1416,7 +1415,6 @@ namespace BoSSS.Application.FSI_Solver
 
             if (interfacePoints_P0 != null && interfacePoints_P1 != null)
             {
-                Console.WriteLine("JUHUJIPPIDU" + interfacePoints_P0.NoOfRows + interfacePoints_P1.NoOfRows);
                 for (int i = 0; i < interfacePoints_P0.NoOfRows; i++)
                 {
                     for (int g = 0; g < interfacePoints_P1.NoOfRows; g++)
@@ -1451,11 +1449,7 @@ namespace BoSSS.Application.FSI_Solver
             }
 
             particle0.m_closeInterfacePointTo[m_Particles.IndexOf(particle1)] = tempPoint_P0;
-            Console.WriteLine("I'm tempPointP00" + tempPoint_P0[0]);
-            Console.WriteLine("I'm tempPointP01" + tempPoint_P0[1]);
             particle1.m_closeInterfacePointTo[m_Particles.IndexOf(particle0)] = tempPoint_P1;
-            Console.WriteLine("I'm tempPointP10" + tempPoint_P1[0]);
-            Console.WriteLine("I'm tempPointP11" + tempPoint_P1[1]);
 
             double threshold = 2.5 * hmin;//was 2.5
 
@@ -1512,22 +1506,17 @@ namespace BoSSS.Application.FSI_Solver
                         particle1.skipForceIntegration = true;
 
                         //coefficient of restitution (e=0 pastic; e=1 elastic)
-                        double e = 1.0;
+                        double e = ((FSI_Control)Control).CoefficientOfRestitution;
 
                         //collision Nomal
                         var normal = distanceVec.CloneAs();
-                        Console.WriteLine("I'm particle0, my normal vector0 is " + normal[0]);
-                        Console.WriteLine("I'm particle0, my normal vector1 is " + normal[1]);
                         normal.ScaleV(1 / Math.Sqrt(distanceVec[0].Pow2() + distanceVec[1].Pow2()));
 
                         double[] tangential = new double[] { -normal[1], normal[0] };
 
                         //general definitions of normal and tangential components
                         double collisionVn_P0 = particle0.TranslationalVelocity[0][0] * normal[0] + particle0.TranslationalVelocity[0][1] * normal[1];
-                        Console.WriteLine("I'm particle0, my normal velocity is " + collisionVn_P0);
                         double collisionVt_P0 = particle0.TranslationalVelocity[0][0] * tangential[0] + particle0.TranslationalVelocity[0][1] * tangential[1];
-                        Console.WriteLine("I'm particle0, my tangential velocity is " + collisionVt_P0);
-                        Console.WriteLine("I'm particle0, my velocity is " + Math.Sqrt(collisionVn_P0.Pow2()+collisionVt_P0.Pow2()));
                         double collisionVn_P1 = particle1.TranslationalVelocity[0][0] * normal[0] + particle1.TranslationalVelocity[0][1] * normal[1];
                         double collisionVt_P1 = particle1.TranslationalVelocity[0][0] * tangential[0] + particle1.TranslationalVelocity[0][1] * tangential[1];
 
@@ -1581,17 +1570,10 @@ namespace BoSSS.Application.FSI_Solver
                         //particle1.TranslationalVelocity[0] = new double[] { normal[0] * tempCollisionVn_P1 + tempCollisionVt_P1 * tangential[0], normal[1] * tempCollisionVn_P1 + tempCollisionVt_P1 * tangential[1] };
 
                         particle0.CollisionRotationalVelocity.Add(particle0.RotationalVelocity[0] + a0 * (Fx + Fxrot) / particle0.MomentOfInertia_P);
-                        
                         particle1.CollisionRotationalVelocity.Add(particle1.RotationalVelocity[0] - a1 * (Fx + Fxrot) / particle1.MomentOfInertia_P);
                         particle0.CollisionTranslationalVelocity.Add(new double[] { normal[0] * tempCollisionVn_P0 + tempCollisionVt_P0 * tangential[0], normal[1] * tempCollisionVn_P0 + tempCollisionVt_P0 * tangential[1] });
-                        Console.WriteLine("I'm particle0, my temp velocity0 is " + particle0.CollisionTranslationalVelocity.Last()[0]);
-                        Console.WriteLine("I'm particle0, my temp velocity1 is " + particle0.CollisionTranslationalVelocity.Last()[1]);
                         particle1.CollisionTranslationalVelocity.Add(new double[] { normal[0] * tempCollisionVn_P1 + tempCollisionVt_P1 * tangential[0], normal[1] * tempCollisionVn_P1 + tempCollisionVt_P1 * tangential[1] });
-                        Console.WriteLine("I'm particle1, my temp velocity0 is " + particle1.CollisionTranslationalVelocity.Last()[0]);
-                        Console.WriteLine("I'm particle1, my temp velocity1 is " + particle1.CollisionTranslationalVelocity.Last()[1]);
-
-
-
+                        
                         // zentric collision
                         // ----------------------------------------
                         //double tempCollisionVn_P0 = (particle0.mass_P * collisionVn_P0 + particle1.mass_P * collisionVn_P1 + e * particle1.mass_P * (collisionVn_P1 - collisionVn_P0)) / (particle0.mass_P + particle1.mass_P);

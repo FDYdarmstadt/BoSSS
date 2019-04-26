@@ -92,7 +92,13 @@ namespace BoSSS.Application.FSI_Solver {
         [DataMember]
         public double LSunderrelax = 1.0;
 
-     
+
+        /// <summary>
+        /// coefficient of restitution
+        /// </summary>
+        [DataMember]
+        public double CoefficientOfRestitution = 1.0;
+
 
         /// <summary>
         /// Setting <see cref="Solution.Control.AppControl.FieldOptions"/>
