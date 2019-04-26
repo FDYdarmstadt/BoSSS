@@ -838,27 +838,94 @@ namespace BoSSS.Application.FSI_Solver
                     }
                 }
             }
+
+            for (int j = 0; j < J; j++)
+            {
+                PartColEx[j] = PartCol[j];
+            }
+            PartColEx.MPIExchange(GridData);
+
+            //for (int j = 0; j < J; j++)
+            //{
+            //    GridData.GetCellNeighbours(j, GetCellNeighbours_Mode.ViaEdges, out int[] CellNeighbors, out _);
+            //    for (int i = 0; i < CellNeighbors.Length; i++)
+            //    {
+            //        if (PartColEx[CellNeighbors[i]] != PartColEx[j] && PartColEx[CellNeighbors[i]] != 0 && PartColEx[j] != 0)
+            //        {
+            //            for (int k = 0; k < J; k++)
+            //            {
+            //                if (PartColEx[k] == PartColEx[j])
+            //                ParticleColor.SetMeanValue(k, PartColEx[CellNeighbors[i]]);
+            //                LevelSetDistance.SetMeanValue(k, LevelSetTracker.DecodeLevelSetDist(rCode[j], 0));
+            //                PartCol[k] = PartColEx[CellNeighbors[i]];
+            //            }
+            //        }
+            //    }
+            //}
+            FSI_LevelSetUpdate levelSetUpdate = new FSI_LevelSetUpdate();
+            levelSetUpdate.DetermineGlobalParticleColor(GridData, PartCol, m_Particles, out int[] GlobalParticleColor);
+            int[,] ColorToRecolorWith = new int[GlobalParticleColor.Max() + 1, 2];
             for (int j = 0; j < J; j++)
             {
                 GridData.GetCellNeighbours(j, GetCellNeighbours_Mode.ViaEdges, out int[] CellNeighbors, out _);
-
                 for (int i = 0; i < CellNeighbors.Length; i++)
                 {
-                    if (PartCol[CellNeighbors[i]] != PartCol[j] && PartCol[CellNeighbors[i]] != 0 && PartCol[j] != 0)
+                    if (PartColEx[CellNeighbors[i]] != PartCol[j] && PartCol[j] != 0 && PartColEx[CellNeighbors[i]] > 0)
                     {
-                        for (int k = 0; k < J; k++)
+                        if (PartColEx[CellNeighbors[i]] < PartCol[j] || ColorToRecolorWith[PartCol[j], 1] > PartColEx[CellNeighbors[i]])
                         {
-                            if (PartCol[k] == PartCol[CellNeighbors[i]])
+                            ColorToRecolorWith[PartCol[j], 0] = PartCol[j];
+                            ColorToRecolorWith[PartCol[j], 1] = PartColEx[CellNeighbors[i]];
+                        }
+                        if (PartColEx[CellNeighbors[i]] > PartCol[j])
+                        {
+                            if(ColorToRecolorWith[PartColEx[CellNeighbors[i]], 0] == 0 || ColorToRecolorWith[PartColEx[CellNeighbors[i]], 1] > PartCol[j])
                             {
-                                PartCol[k] = PartCol[j];
-                                ParticleColor.SetMeanValue(k, PartCol[j]);
+                                ColorToRecolorWith[PartColEx[CellNeighbors[i]], 0] = PartColEx[CellNeighbors[i]];
+                                ColorToRecolorWith[PartColEx[CellNeighbors[i]], 1] = PartCol[j];
                             }
                         }
                     }
                 }
             }
+            int[][,] GlobalColorToRecolorWith = ColorToRecolorWith.MPIGatherO(0);
+            GlobalColorToRecolorWith = GlobalColorToRecolorWith.MPIBroadcast(0);
+            for (int m = 0; m < MPISize; m++)
+            {
+                for (int i = 0; i <= GlobalParticleColor.Max(); i++)
+                {
+                    if (GlobalColorToRecolorWith[0][i, 1] == 0 || GlobalColorToRecolorWith[0][i, 1] > GlobalColorToRecolorWith[m][i, 1] && GlobalColorToRecolorWith[m][i, 1] != 0)
+                    {
+                        GlobalColorToRecolorWith[0][i, 0] = GlobalColorToRecolorWith[m][i, 0];
+                        GlobalColorToRecolorWith[0][i, 1] = GlobalColorToRecolorWith[m][i, 1];
+                    }
+                }
+            }
+            ColorToRecolorWith = GlobalColorToRecolorWith[0];
+            for (int i = 0; i <= GlobalParticleColor.Max(); i++)
+            {
+                
+            }
+            for (int i = GlobalParticleColor.Max(); i >= 0; i--)
+            {
+                if (ColorToRecolorWith[i, 0] != 0)
+                {
+                    for (int j = 0; j < J; j++)
+                    {
+                        if (PartCol[j] == ColorToRecolorWith[i, 0])
+                        {
+                            ParticleColor.SetMeanValue(j, ColorToRecolorWith[i, 1]);
+                            LevelSetDistance.SetMeanValue(j, LevelSetTracker.DecodeLevelSetDist(rCode[j], 0));
+                            PartCol[j] = ColorToRecolorWith[i, 1];
+                        }
+                    }
+                }
+                
+            }
             return PartCol;
         }
+
+
 
         /// <summary>
         /// Initialization of <see cref="ParticleColor"/> 
