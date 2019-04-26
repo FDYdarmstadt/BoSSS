@@ -28,7 +28,7 @@ namespace VoronoiTests.Database.Session
 
         static ISessionInfo CreateSession(int numberOfVoronoiCells)
         {
-            AppControl lShape = SipHardcodedControl.TestVoronoi_LDomain(numberOfVoronoiCells, db: Database);
+            AppControl lShape = VoronoiControl.TestVoronoi_LDomain(numberOfVoronoiCells, db: Database);
             IApplication poisson = new SipPoissonMain();
             RunApplication(poisson, lShape);
             ISessionInfo session = poisson.CurrentSessionInfo;
