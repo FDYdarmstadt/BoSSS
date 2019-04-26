@@ -1340,20 +1340,7 @@ namespace BoSSS.Application.FSI_Solver
 
             FSI_LevelSetUpdate levelSetUpdate = new FSI_LevelSetUpdate();
 
-            List<int[]> ColoredCellsSorted = levelSetUpdate.ColoredCellsFindAndSort(CellColor);
-            int[] ParticleColorArray = levelSetUpdate.FindParticleColor(GridData, Particles, ColoredCellsSorted);
-            int NoOfParticles = ParticleColorArray.Length;
-            int[] GlobalParticleColor = new int[NoOfParticles];
-            double[] StateBuffer = new double[NoOfParticles];
-            for (int i = 0; i < NoOfParticles; i++)
-            {
-                StateBuffer[i] = Convert.ToDouble(ParticleColorArray[i]);
-            }
-            double[] GlobalStateBuffer = StateBuffer.MPIMax();
-            for (int i = 0; i < NoOfParticles; i++)
-            {
-                GlobalParticleColor[i] = Convert.ToInt32(GlobalStateBuffer[i]);
-            }
+            levelSetUpdate.DetermineGlobalParticleColor(GridData, CellColor, Particles, out int[] GlobalParticleColor);
 
             for (int i = 0; i < GlobalParticleColor.Length; i++)
             {
