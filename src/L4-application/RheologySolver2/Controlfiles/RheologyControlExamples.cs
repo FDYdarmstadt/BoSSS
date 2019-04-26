@@ -380,7 +380,7 @@ namespace BoSSS.Application.Rheology {
         /// <summary>
         /// Confined cylinder in a channel flow
         /// </summary>
-        static public RheologyControl ConfinedCylinder(string path = @"\\dc1\userspace\kikker\cluster\cluster_db\ConfinedCylinder", int degree = 3) {
+        static public RheologyControl ConfinedCylinder(string path = @"\\dc1\userspace\kikker\cluster\cluster_db\ConfinedCylinder", int degree = 2) {
             RheologyControl C = new RheologyControl();
 
             //Path für cluster
@@ -391,7 +391,7 @@ namespace BoSSS.Application.Rheology {
 
             //Solver Options
             C.NoOfTimesteps = 1;
-            C.savetodb = true;
+            C.savetodb = false;
             C.DbPath = path;
             C.ProjectName = "Cylinder";
 
@@ -423,7 +423,7 @@ namespace BoSSS.Application.Rheology {
 
             //Debugging and Solver Analysis
             C.OperatorMatrixAnalysis = false;
-            C.SkipSolveAndEvaluateResidual = false;
+            C.SkipSolveAndEvaluateResidual = true;
             C.SetInitialConditions = true;
             C.SetInitialPressure = false;
             C.SetParamsAnalyticalSol = false;
@@ -437,7 +437,7 @@ namespace BoSSS.Application.Rheology {
             C.FixedStreamwisePeriodicBC = false;
             C.beta = 0.59;
             C.Reynolds = 1;
-            C.Weissenberg = 0; //aim Weissenberg number!
+            C.Weissenberg = 0.1; //aim Weissenberg number!
             C.RaiseWeissenberg = false;
             C.WeissenbergIncrement = 0.1;
 

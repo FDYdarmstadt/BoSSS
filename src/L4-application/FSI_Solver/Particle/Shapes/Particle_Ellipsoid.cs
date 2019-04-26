@@ -128,7 +128,7 @@ namespace BoSSS.Application.FSI_Solver {
             return particleReynolds;
         }
 
-        override public MultidimensionalArray GetSurfacePoints(LevelSetTracker lsTrk, LevelSet levelSet)
+        override public MultidimensionalArray GetSurfacePoints(LevelSetTracker lsTrk)
         {
             int SpatialDim = lsTrk.GridDat.SpatialDimension;
             if (SpatialDim != 2)

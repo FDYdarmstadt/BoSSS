@@ -16,6 +16,7 @@ limitations under the License.
 
 using BoSSS.Foundation.Grid;
 using BoSSS.Foundation.Grid.Classic;
+using BoSSS.Foundation.XDG;
 using ilPSP;
 using MPI.Wrappers;
 using System;
@@ -23,6 +24,8 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using static BoSSS.Foundation.XDG.CellAgglomerator;
+using BoSSS.Foundation.Comm;
 
 namespace BoSSS.Solution.Utils {
 
@@ -77,17 +80,20 @@ namespace BoSSS.Solution.Utils {
 
         private bool consoleOutput;
 
+        private CellAgglomerator cellAgglomerator;
+
         /// <summary>
         /// Constructor for the grid clustering
         /// </summary>
         /// <param name="gridData">Information about the grid</param>
-        public Clusterer(IGridData gridData, int maxNumOfSubSteps, bool consoleOutput = false) {
+        public Clusterer(IGridData gridData, int maxNumOfSubSteps, bool consoleOutput = false, CellAgglomerator cellAgglomerator = null) {
             this.gridData = gridData;
             this.MaxSubSteps = maxNumOfSubSteps;
             if (this.MaxSubSteps != 0) {
                 this.Restrict = true;
             }
             this.consoleOutput = consoleOutput;
+            this.cellAgglomerator = cellAgglomerator;
         }
 
         /// <summary>
@@ -142,6 +148,39 @@ namespace BoSSS.Solution.Utils {
             // Filling the BitArrays
             for (int i = 0; i < numOfCells; i++) {
                 baMatrix[subGridCellToClusterMap[i]][subGrid.SubgridIndex2LocalCellIndex[i]] = true;
+            }
+
+            // IBM source cells are assigned to the cluster of the corresponding target cells
+            // This code is only excuted in IBM simulation runs
+            if (this.cellAgglomerator != null) {
+                // MPI exchange in order to get cellToClusterMap (local + external cells)
+                int JE = gridData.iLogicalCells.Count;
+                int J = gridData.iLogicalCells.NoOfLocalUpdatedCells;
+                int[] cellToClusterMap = new int[JE];
+
+                int JSub = subGrid.LocalNoOfCells;
+                int[] jSub2j = subGrid.SubgridIndex2LocalCellIndex;
+                for (int jsub = 0; jsub < JSub; jsub++) {
+                    cellToClusterMap[jSub2j[jsub]] = subGridCellToClusterMap[jsub];
+                }
+                cellToClusterMap.MPIExchange(gridData);               
+
+                foreach (AgglomerationPair aggPair in this.cellAgglomerator.AggInfo.AgglomerationPairs) {
+                    // AgglomerationPairs can contain combinations where jCellSource is on one MPI rank
+                    // and the corresponding target cell is on another MPI rank. These duplications have to be eleminated.
+                    if (aggPair.jCellSource < J) {
+                        // Assign source cell to the cluster of the corresponding target cell
+                        int clusterOfTargetCell = cellToClusterMap[aggPair.jCellTarget];
+                        baMatrix[clusterOfTargetCell][aggPair.jCellSource] = true;
+
+                        // Delete source cell from other clusters
+                        for (int j = 0; j < numOfClusters; j++) {
+                            if (clusterOfTargetCell != j) {
+                                baMatrix[j][aggPair.jCellSource] = false;
+                            }
+                        }
+                    }
+                }
             }
 
             // Generating the sub-grids
@@ -244,7 +283,7 @@ namespace BoSSS.Solution.Utils {
                 foreach (TimeStepConstraint constraint in timeStepConstraints) {
                     result.Add(constraint.GetLocalStepSize(localCellIndex, 1));
                 }
-                if (result.All(c => c == double.MaxValue)) {                    // For IBM source cells: All timeStepConstraints return double.MaxValue --> No influence on clustering
+                if (result.All(c => c >= double.MaxValue)) {                    // For IBM source cells: All timeStepConstraints return double.MaxValue --> No influence on clustering FUNKTIONIERT NICHT!!!!!!!!!!
                     cellMetric[subGridCell] = double.MaxValue;
                 } else {
                     cellMetric[subGridCell] = 1.0 / result.Sum(c => 1.0 / c);  // cell metric based on harmonic sum of time step constraints

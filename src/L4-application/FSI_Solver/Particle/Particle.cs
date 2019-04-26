@@ -32,6 +32,7 @@ using BoSSS.Foundation.Grid.Classic;
 using BoSSS.Foundation.Grid.RefElements;
 using MPI.Wrappers;
 using NUnit.Framework;
+using FSI_Solver;
 
 namespace BoSSS.Application.FSI_Solver
 {
@@ -351,8 +352,8 @@ namespace BoSSS.Application.FSI_Solver
         readonly private ParticleAcceleration Acceleration = new ParticleAcceleration();
         internal void UpdateParticleState(double dt)
         {
-            CalculateAngularVelocity(dt);
             CalculateTranslationalVelocity(dt);
+            CalculateAngularVelocity(dt);
             CalculateParticlePosition(dt);
             CalculateParticleAngle(dt);
             //ComputeParticleRe(FluidViscosity);
@@ -375,6 +376,14 @@ namespace BoSSS.Application.FSI_Solver
             if (IncludeTranslation == true) {
                 for (int d = 0; d < SpatialDim; d++) {
                     Position[0][d] = Position[1][d] + TranslationalVelocity[1][d] * dt + (TranslationalAcceleration[1][d] + TranslationalAcceleration[0][d]) * dt.Pow2() / 4;
+                    for (int p = 0; p < m_collidedWithParticle.Length; p++)
+                    {
+                        if (m_collidedWithParticle[p])
+                        {
+                            Position[0][d] = Position[1][d] + (TranslationalVelocity[1][d] + TranslationalVelocity[0][d]) * dt / 2;
+                            
+                        }
+                    }
                     if (double.IsNaN(Position[0][d]) || double.IsInfinity(Position[0][d]))
                         throw new ArithmeticException("Error trying to update particle position. Value:  " + Position[0][d]);
                 }
@@ -403,6 +412,14 @@ namespace BoSSS.Application.FSI_Solver
                     throw new NotSupportedException("Unknown particle dimension: SpatialDim = " + SpatialDim);
 
                 Angle[0] = Angle[1] + RotationalVelocity[1] * dt + dt.Pow2() * (RotationalAcceleration[1] + RotationalAcceleration[0]) / 4;
+                for (int p = 0; p < m_collidedWithParticle.Length; p++)
+                {
+                    if (m_collidedWithParticle[p])
+                    {
+                        Angle[0] = Angle[1] + dt * (RotationalVelocity[1] + RotationalVelocity[0]) / 2;
+                        m_collidedWithParticle[p] = false;
+                    }
+                }
                 if (double.IsNaN(Angle[0]) || double.IsInfinity(Angle[0]))
                     throw new ArithmeticException("Error trying to update particle angle. Value:  " + Angle[0]);
             } else {
@@ -709,6 +726,8 @@ namespace BoSSS.Application.FSI_Solver
                 throw new ArithmeticException("Error trying to calculate hydrodynamic torque. Value:  " + HydrodynamicTorque[0]);
         }
 
+        
+
         public double[] CalculateParticleMomentum(double dt)
         {
             double[] temp = new double[SpatialDim + 1];
@@ -752,7 +771,7 @@ namespace BoSSS.Application.FSI_Solver
 
         abstract public double[] GetLengthScales();
 
-        virtual public MultidimensionalArray GetSurfacePoints(LevelSetTracker lsTrk, LevelSet levelSet)
+        virtual public MultidimensionalArray GetSurfacePoints(LevelSetTracker lsTrk)
         {
             throw new NotImplementedException();
         }
