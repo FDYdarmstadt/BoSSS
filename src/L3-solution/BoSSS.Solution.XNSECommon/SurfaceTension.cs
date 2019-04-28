@@ -852,14 +852,21 @@ namespace BoSSS.Solution.XNSECommon.Operator.SurfaceTension {
 
         IncompressibleBcType[] m_edgeTag2Type;
 
+        /// <summary>
+        /// Dirichlet boundary values; <br/>
+        ///  - 2nd index: edge tag
+        /// </summary>
+        protected Func<double[], double, double>[] velFunction;
 
-        public IsotropicSurfaceTension_LaplaceBeltrami(int d, int D, double sigma, IncompressibleBcType[] edgeTag2Type, double theta_e, double beta_L) {
+
+        public IsotropicSurfaceTension_LaplaceBeltrami(int d, int D, double sigma, IncompressibleBcType[] edgeTag2Type, IncompressibleBoundaryCondMap bcmap, double theta_e, double beta_L) {
             m_comp = d;
             m_D = D;
             m_sigma = sigma;
             m_theta = theta_e;
             m_beta = beta_L;
             m_edgeTag2Type = edgeTag2Type;
+            velFunction = bcmap.bndFunction[VariableNames.Velocity_d(d)];
         }
 
 
@@ -947,7 +954,16 @@ namespace BoSSS.Solution.XNSECommon.Operator.SurfaceTension {
 
             switch (edgType) {
                 case IncompressibleBcType.Velocity_Inlet:
-                case IncompressibleBcType.Pressure_Outlet:
+                case IncompressibleBcType.Pressure_Outlet: {
+
+                        double[] EdgeNormal = inp.Normale;
+                        double[] SurfaceNormal_IN = SurfaceNormal(inp.Parameters_IN);
+                        double[] Tangente_IN = Tangent(SurfaceNormal_IN, EdgeNormal);
+
+                        Flx_InCell = -m_sigma * Tangente_IN[m_comp];
+
+                        break;
+                    }
                 case IncompressibleBcType.SlipSymmetry:
                 case IncompressibleBcType.NavierSlip_Linear: {
 
@@ -984,8 +1000,11 @@ namespace BoSSS.Solution.XNSECommon.Operator.SurfaceTension {
 
                             // dissipative contact line force
                             // beta*(u*nL)
+
+                            double g_D = this.velFunction[inp.EdgeTag](inp.X, inp.time);
+
                             for(int d = 0; d < D; d++) {
-                                Flx_InCell += m_beta * (_uA[d] * PSnINormal_IN[d]) * PSnINormal_IN[m_comp];
+                                Flx_InCell += m_beta * ((_uA[d] - g_D) * PSnINormal_IN[d]) * PSnINormal_IN[m_comp];
                             }
                         }
 

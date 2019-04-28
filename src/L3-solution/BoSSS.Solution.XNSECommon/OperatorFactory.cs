@@ -409,7 +409,7 @@ namespace BoSSS.Solution.XNSECommon {
                             } else {
                                 //G = new SurfaceTension_LaplaceBeltrami2_Surface(d, config.physParams.Sigma * 0.5);
                                 //H = new SurfaceTension_LaplaceBeltrami2_BndLine(d, config.physParams.Sigma * 0.5, config.physParams.Theta_e, config.physParams.betaL);
-                                IEquationComponent isoSurfT = new IsotropicSurfaceTension_LaplaceBeltrami(d, D, config.physParams.Sigma * 0.5, BcMap.EdgeTag2Type, config.physParams.theta_e, config.physParams.betaL);
+                                IEquationComponent isoSurfT = new IsotropicSurfaceTension_LaplaceBeltrami(d, D, config.physParams.Sigma * 0.5, BcMap.EdgeTag2Type, BcMap, config.physParams.theta_e, config.physParams.betaL);
                                 m_OP.SurfaceElementOperator.EquationComponents[CodName[d]].Add(isoSurfT);
                             }
 
