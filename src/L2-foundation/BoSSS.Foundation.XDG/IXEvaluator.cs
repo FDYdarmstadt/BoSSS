@@ -19,12 +19,12 @@ using ilPSP.LinSolvers;
 using System.Collections.Generic;
 using static BoSSS.Foundation.SpatialOperator;
 
-namespace BoSSS.Foundation {
+namespace BoSSS.Foundation.XDG {
 
     /// <summary>
-    /// Evaluation and matrix assembly of Spatial operators
+    /// Evaluation and matrix assembly of XSpatial operators
     /// </summary>
-    public interface IEvaluator {
+    public interface IXEvaluator {
 
         /// <summary>
         /// Grid, on which this evaluator operates on.
@@ -45,7 +45,7 @@ namespace BoSSS.Foundation {
         /// List of parameter fields, correlates with <see cref="SpatialOperator.ParameterVar"/>.
         /// </summary>
         IList<DGField> Parameters { get; }
-        
+
         /// <summary>
         /// Turns on  the sub-grid thing uses for local-time-stepping.
         /// </summary>
@@ -55,7 +55,7 @@ namespace BoSSS.Foundation {
         /// Actual value set by <see cref="ActivateSubgridBoundary(CellMask, SubGridBoundaryModes)"/>
         /// </summary>
         SubGridBoundaryModes SubGridBoundaryTreatment { get; }
-        
+
         /// <summary>
         /// Time passed e.g. to <see cref="CommonParams.time"/>, <see cref="CommonParamsBnd.time"/> and <see cref="CommonParamsVol.time"/>.
         /// </summary>
@@ -64,7 +64,7 @@ namespace BoSSS.Foundation {
         /// <summary>
         /// The pointer to a owner object, which totally contradicts the original idea of object-orientation. Hehe.
         /// </summary>
-        SpatialOperator Owner { get; }
+        XSpatialOperatorMk2 Owner { get; }
 
         /// <summary>
         /// Turn MPI sending/receiving of parameters and domain fields on/off.
@@ -74,22 +74,29 @@ namespace BoSSS.Foundation {
         /// <summary>
         /// Stuff passed to equation components which implement <see cref="IEquationComponentCoefficient"/>.
         /// </summary>
-        CoefficientSet OperatorCoefficients { get; set; }
+        //CoefficientSet OperatorCoefficients { get; set; }
+
+        /// <summary>
+        /// Operator coefficients for each species
+        /// </summary>
+        Dictionary<SpeciesId, CoefficientSet> SpeciesOperatorCoefficients { get; }
     }
 
-    public interface IEvaluatorNonLin : IEvaluator {
+
+    public interface IXEvaluatorNonLin : IXEvaluator {
 
         CoordinateMapping DomainFields { get; }
 
 
         void Evaluate<Tout>(double alpha, double beta, Tout output, double[] outputBndEdge = null) where Tout : IList<double>;
-        
+
     }
 
+
     /// <summary>
-    /// Evaluation of linear/linearized spatial operators, i.e. matrix assembly.
+    /// Evaluation of linear/linearized Xspatial operators, i.e. matrix assembly.
     /// </summary>
-    public interface IEvaluatorLinear : IEvaluator {
+    public interface IXEvaluatorLinear : IXEvaluator {
 
         /// <summary>
         /// Computation of matrix \f$ \mathcal{M} \f$ *and* affine offset \f$ \tilde{b} \f$; the
@@ -115,6 +122,4 @@ namespace BoSSS.Foundation {
         /// </summary>
         void ComputeAffine<V>(V AffineOffset) where V : IList<double>;
     }
-
-
 }
