@@ -1,6 +1,7 @@
-﻿using NUnit.Framework;
+﻿using BoSSS.Foundation.Grid;
 using BoSSS.Foundation.Grid.Voronoi;
 using BoSSS.Platform.LinAlg;
+using NUnit.Framework;
 
 namespace VoronoiTests.GridCreation
 {
@@ -15,23 +16,24 @@ namespace VoronoiTests.GridCreation
         public void LShapedGrid()
         {
             var LShapePolygon = LShape();
-            int[] NodeSeedsNumbers = { 100, 1000, 10000, 1000000 };
+            int[] NodeSeedsNumbers = { 100000 };
             for(int i = 0; i < NodeSeedsNumbers.Length; ++i)
             {
                 int ammountOfNodeSeeds = NodeSeedsNumbers[i];
-                VoronoiGrid2D.FromPolygonalDomain(LShapePolygon, 5, ammountOfNodeSeeds);
+                IGrid grid = VoronoiGrid2D.FromPolygonalDomain(LShapePolygon, 5, ammountOfNodeSeeds);
             }
         }
 
         Vector[] LShape()
         {
+            double a = 10000;
             Vector[] LShapedPolygon = new[] {
-                    new Vector(-1,1),
-                    new Vector(1,1),
-                    new Vector(1,-1),
-                    new Vector(0,-1),
+                    new Vector(-a,a),
+                    new Vector(a,a),
+                    new Vector(a,-a),
+                    new Vector(0,-a),
                     new Vector(0,0),
-                    new Vector(-1,0)
+                    new Vector(-a,0)
                 };
             return LShapedPolygon;
         }

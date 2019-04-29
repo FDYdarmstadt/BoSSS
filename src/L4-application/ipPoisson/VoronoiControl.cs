@@ -1,4 +1,5 @@
-﻿using System;
+﻿#define LOGGING
+using System;
 using System.Collections.Generic;
 using BoSSS.Solution.Control;
 using ilPSP.Utils;
@@ -6,6 +7,8 @@ using ilPSP;
 using BoSSS.Foundation.Grid.Aggregation;
 using BoSSS.Platform.LinAlg;
 using BoSSS.Foundation.Grid;
+
+
 
 namespace BoSSS.Application.SipPoisson{
 
@@ -67,7 +70,10 @@ namespace BoSSS.Application.SipPoisson{
             LinearSolverConfig.Code solver_name = LinearSolverConfig.Code.classic_pardiso,
             Foundation.IO.IDatabaseInfo db = null)
         {
-            return TestGrid(new VoronoiGrids.LDomain(Res, NoOfLlyodsIter), deg, solver_name, db);
+
+            VoronoiGrid grid = new VoronoiGrids.LDomain(Res, NoOfLlyodsIter);
+
+            return TestGrid(grid, deg, solver_name, db);
         }
 
         /// <summary>
@@ -184,20 +190,33 @@ namespace BoSSS.Application.SipPoisson{
                 this.noOfLlyodsIter = noOfLlyodsIter;
             }
 
+            Vector[] LShape()
+            {
+                double a = 10000;
+                Vector[] LShapedPolygon = new[] {
+                    new Vector(-a,a),
+                    new Vector(a,a),
+                    new Vector(a,-a),
+                    new Vector(0,-a),
+                    new Vector(0,0),
+                    new Vector(-a,0)
+                };
+                return LShapedPolygon;
+            }
+
             protected override IGrid GridFunc()
             {
-                Vector[] DomainBndyPolygon = new[] {
-                    new Vector(-1,1),
-                    new Vector(1,1),
-                    new Vector(1,-1),
-                    new Vector(0,-1),
-                    new Vector(0,0),
-                    new Vector(-1,0)
-                };
+#if LOGGING
+                Console.WriteLine("Calculating Grid...");
+#endif
+                Vector[] DomainBndyPolygon = LShape();
                 AggregationGrid grid;
                 grid = BoSSS.Foundation.Grid.Voronoi.VoronoiGrid2D.FromPolygonalDomain(DomainBndyPolygon, noOfLlyodsIter, res);
                 grid.EdgeTagNames.Add(1, BoundaryType.Dirichlet.ToString());
                 grid.DefineEdgeTags(X => (byte)1);
+#if LOGGING
+                Console.WriteLine("Done.");
+#endif
                 return grid;
             }
 
