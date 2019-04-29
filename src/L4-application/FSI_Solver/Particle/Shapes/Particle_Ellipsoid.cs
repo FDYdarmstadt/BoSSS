@@ -146,7 +146,7 @@ namespace BoSSS.Application.FSI_Solver {
                 double temp0 = Math.Cos(InfinitisemalAngle[j]) * length_P;
                 double temp1 = Math.Sin(InfinitisemalAngle[j]) * thickness_P;
                 SurfacePoints[j, 0] = (temp0 * Math.Cos(Angle[0]) - temp1 * Math.Sin(Angle[0])) + Position[0][0];
-                SurfacePoints[j, 1] = (temp0 * Math.Sin(Angle[0]) + temp1 * Math.Sin(Angle[0])) + Position[0][1];
+                SurfacePoints[j, 1] = (temp0 * Math.Sin(Angle[0]) + temp1 * Math.Cos(Angle[0])) + Position[0][1];
             }
             return SurfacePoints;
         }
