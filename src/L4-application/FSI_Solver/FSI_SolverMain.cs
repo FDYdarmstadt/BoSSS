@@ -1518,7 +1518,7 @@ namespace BoSSS.Application.FSI_Solver
             particle0.m_closeInterfacePointTo[m_Particles.IndexOf(particle1)] = tempPoint_P0;
             particle1.m_closeInterfacePointTo[m_Particles.IndexOf(particle0)] = tempPoint_P1;
 
-            double threshold = 2.5 * hmin;//was 2.5
+            double threshold = 2.5 * hmin;
 
             double eps = threshold.Pow2() / 2; // Turek paper
             double epsPrime = threshold / 2; // Turek paper
@@ -1786,7 +1786,7 @@ namespace BoSSS.Application.FSI_Solver
 
             Console.WriteLine("Closest Distance to wall is: " + distance);
 
-            double threshold = 0.5 * hmin; // was 1.5 * hmin
+            double threshold = 1.5 * hmin; // was 1.5 * hmin
 
             double eps = threshold.Pow2() / 2; // Turek paper
             double epsPrime = threshold / 2; // Turek paper
@@ -1839,7 +1839,7 @@ namespace BoSSS.Application.FSI_Solver
 
                 case (FSI_Solver.FSI_Control.CollisionModel.MomentumConservation):
 
-                    if (realDistance <= (threshold) && !particle.m_collidedWithWall[0])
+                    if (realDistance <= (threshold)) // && !particle.m_collidedWithWall[0])
                     {
 
                         //coefficient of restitution (e=0 pastic; e=1 elastic)
@@ -1854,7 +1854,7 @@ namespace BoSSS.Application.FSI_Solver
                         particle.m_collidedWithWall[0] = true;
 
                         // Skip force integration for next timestep
-                        particle.skipForceIntegration = false;
+                        particle.skipForceIntegration = true;
 
                         //collision Nomal
                         var normal = distanceVec.CloneAs();
@@ -1880,7 +1880,7 @@ namespace BoSSS.Application.FSI_Solver
                         double tempCollisionVn_P0 = collisionVn_P0 - (Fx + Fxrot) / particle.Mass_P;
                         double tempCollisionVt_P0 = collisionVt_P0;
 
-                        particle.RotationalVelocity[0] = particle.RotationalVelocity[0] + a0 * (Fx + Fxrot) / particle.MomentOfInertia_P;
+                        particle.RotationalVelocity[0] = particle.RotationalVelocity[0] - a0 * (Fx + Fxrot) / particle.MomentOfInertia_P;
 
                         particle.TranslationalVelocity[0] = new double[] { normal[0] * tempCollisionVn_P0 + tempCollisionVt_P0 * tangential[0], normal[1] * tempCollisionVn_P0 + tempCollisionVt_P0 * tangential[1] };
                         

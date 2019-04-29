@@ -199,6 +199,137 @@ namespace BoSSS.Application.FSI_Solver
             return C;
         }
 
+        /// <summary>
+        /// Testing of particle/wall interactions using a single particle
+        /// </summary>
+        public static FSI_Control MultipleDryParticleAgainstWall(string _DbPath = null, bool MeshRefine = false)
+        {
+            FSI_Control C = new FSI_Control();
+
+            // basic database options
+            // ======================
+
+            C.DbPath = _DbPath;
+            C.savetodb = _DbPath != null;
+            C.saveperiod = 1;
+            C.ProjectName = "ParticleCollisionTest";
+            C.ProjectDescription = "Gravity";
+            C.SessionName = C.ProjectName;
+            C.Tags.Add("with immersed boundary method");
+            C.AdaptiveMeshRefinement = true;
+
+
+            // DG degrees
+            // ==========
+
+            C.SetDGdegree(1);
+
+            // grid and boundary conditions
+            // ============================
+
+            double[] Xnodes = GenericBlas.Linspace(-10, -4, 60);
+            double[] Ynodes = GenericBlas.Linspace(4, 10, 60);
+            double h = Math.Min((Xnodes[1] - Xnodes[0]), (Ynodes[1] - Ynodes[0]));
+
+            C.GridFunc = delegate {
+                var grd = Grid2D.Cartesian2DGrid(Xnodes, Ynodes, periodicX: false, periodicY: false);
+                grd.EdgeTagNames.Add(1, "Wall");
+                grd.DefineEdgeTags(delegate (double[] X) {
+                    byte et = 1;
+                    return et;
+                });
+
+                return grd;
+            };
+
+            C.AddBoundaryValue("Wall");
+
+            // Boundary values for level-set
+            //C.BoundaryFunc = new Func<double, double>[] { (t) => 0.1 * 2 * Math.PI * -Math.Sin(Math.PI * 2 * 1 * t), (t) =>  0};
+            //C.BoundaryFunc = new Func<double, double>[] { (t) => 0, (t) => 0 };
+
+            // Initial Values
+            // ==============
+
+            // Coupling Properties
+            C.Timestepper_LevelSetHandling = LevelSetHandling.Coupled_Once;
+
+
+            // Fluid Properties
+            C.PhysicalParameters.rho_A = 1;
+            C.PhysicalParameters.mu_A = 0.1;
+
+            // Particles
+            // =========
+            for (int i = 0; i < 2; i++)
+            {
+                for (int j = 0; j < 1; j++)
+                {
+                    C.Particles.Add(new Particle_Ellipsoid(new double[] { -8 + 2 * i, 8 - 2 * j }, startAngl: 23 * i - 12 * j)
+                    {
+                        particleDensity = 1.0,
+                        
+                        length_P = 0.8,
+                        thickness_P = 0.2,
+                    });
+                    C.Particles[i + j * i].TranslationalVelocity[0][0] = Math.Cos((23 * i - 12 * j) / 2 * Math.PI);
+                    C.Particles[i + j * i].TranslationalVelocity[0][1] = Math.Sin((23 * i - 12 * j) / 2 * Math.PI);
+                    C.Particles[i + j * i].RotationalVelocity[0] = 0;
+                }
+            }
+            
+            
+            C.pureDryCollisions = true;
+            C.collisionModel = FSI_Control.CollisionModel.MomentumConservation;
+
+            double V = 0;
+            foreach (var p in C.Particles)
+            {
+                V = Math.Max(V, p.TranslationalVelocity[0].L2Norm());
+            }
+
+            if (V <= 0)
+                throw new ArithmeticException();
+
+
+            // Physical Parameters
+            // ===================
+
+            C.PhysicalParameters.IncludeConvection = true;
+
+
+            // misc. solver options
+            // ====================
+
+            C.AdvancedDiscretizationOptions.PenaltySafety = 4;
+            C.AdvancedDiscretizationOptions.CellAgglomerationThreshold = 0.2;
+            C.LevelSetSmoothing = false;
+            C.LinearSolver.MaxSolverIterations = 10;
+            C.NonLinearSolver.MaxSolverIterations = 10;
+            C.LinearSolver.NoOfMultigridLevels = 1;
+            C.AdaptiveMeshRefinement = MeshRefine;
+            C.RefinementLevel = 1;
+
+            // Timestepping
+            // ============
+
+            //C.Timestepper_Mode = FSI_Control.TimesteppingMode.Splitting;
+            C.Timestepper_Scheme = FSI_Solver.FSI_Control.TimesteppingScheme.BDF2;
+
+            double dt = (h / V) * (MeshRefine ? 0.5 * 0.5 * 0.5 * 0.2 : 0.1);
+            C.dtMax = dt;
+            C.dtMin = dt;
+
+            C.Endtime = 100000.0 / V;
+            C.NoOfTimesteps = 50000;
+
+            // haben fertig...
+            // ===============
+
+            return C;
+
+        }
+
         public static FSI_Control DeriabinaHefezelle(string _DbPath = null, int k = 2, double VelXBase = 0.0, double angle = 0.0)
         {
             FSI_Control C = new FSI_Control();
