@@ -261,11 +261,11 @@ namespace BoSSS.Application.FSI_Solver
 
             // Particles
             // =========
-            for (int i = 0; i < 2; i++)
+            for (int i = 0; i < 1; i++)
             {
                 for (int j = 0; j < 1; j++)
                 {
-                    C.Particles.Add(new Particle_Ellipsoid(new double[] { -8 + 2 * i, 8 - 2 * j }, startAngl: 23 * i - 12 * j)
+                    C.Particles.Add(new Particle_Ellipsoid(new double[] { -8 + 2 * i, 8 - 2 * j }, startAngl: 80)
                     {
                         particleDensity = 1.0,
                         

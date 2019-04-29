@@ -136,21 +136,17 @@ namespace BoSSS.Application.FSI_Solver {
 
             double hMin = lsTrk.GridDat.iGeomCells.h_min.Min();
             int NoOfSurfacePoints = Convert.ToInt32(10 * Circumference_P / hMin);
-            int HalfSurfacePoints = NoOfSurfacePoints / 2;
             MultidimensionalArray SurfacePoints = new MultidimensionalArray(2);
             SurfacePoints.Allocate(NoOfSurfacePoints, SpatialDim);
-            double[] InfinitisemalAngle = GenericBlas.Linspace(0, Math.PI / 2, HalfSurfacePoints + 1);
+            double[] InfinitisemalAngle = GenericBlas.Linspace(0, Math.PI * 2, NoOfSurfacePoints + 1);
             if (Math.Abs(10 * Circumference_P / hMin + 1) >= int.MaxValue)
                 throw new ArithmeticException("Error trying to calculate the number of surface points, overflow");
-            for (int j = 0; j < HalfSurfacePoints; j++)
+            for (int j = 0; j < NoOfSurfacePoints; j++)
             {
-                SurfacePoints[j, 0] = Math.Cos(Angle[0]) * Math.Pow(Math.Cos(InfinitisemalAngle[j]), 1) * length_P + Position[0][0];
-                SurfacePoints[j, 1] = Math.Sin(Angle[0]) * Math.Pow(Math.Sin(InfinitisemalAngle[j]), 1) * thickness_P + Position[0][1];
-            }
-            for (int j = HalfSurfacePoints; j < NoOfSurfacePoints; j++)
-            {
-                SurfacePoints[j, 0] = Math.Cos(Angle[0]) * -Math.Pow(Math.Cos(InfinitisemalAngle[j - HalfSurfacePoints]), 1) * length_P + Position[0][0];
-                SurfacePoints[j, 1] = Math.Sin(Angle[0]) * -Math.Pow(Math.Sin(InfinitisemalAngle[j - HalfSurfacePoints]), 1) * thickness_P + Position[0][1];
+                double temp0 = Math.Cos(InfinitisemalAngle[j]) * length_P;
+                double temp1 = Math.Sin(InfinitisemalAngle[j]) * thickness_P;
+                SurfacePoints[j, 0] = (temp0 * Math.Cos(Angle[0]) - temp1 * Math.Sin(Angle[0])) + Position[0][0];
+                SurfacePoints[j, 1] = (temp0 * Math.Sin(Angle[0]) + temp1 * Math.Sin(Angle[0])) + Position[0][1];
             }
             return SurfacePoints;
         }
