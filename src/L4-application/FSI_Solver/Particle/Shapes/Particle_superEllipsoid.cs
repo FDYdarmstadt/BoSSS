@@ -21,6 +21,7 @@ using ilPSP;
 using BoSSS.Foundation.Grid;
 using MathNet.Numerics;
 using System.Diagnostics;
+using ilPSP.Utils;
 
 namespace BoSSS.Application.FSI_Solver {
     [DataContract]
@@ -144,6 +145,34 @@ namespace BoSSS.Application.FSI_Solver {
         override public double[] GetLengthScales()
         {
             return new double[] { length_P, thickness_P };
+        }
+
+        override public MultidimensionalArray GetSurfacePoints(LevelSetTracker lsTrk)
+        {
+            int SpatialDim = lsTrk.GridDat.SpatialDimension;
+            if (SpatialDim != 2)
+                throw new NotImplementedException("Only two dimensions are supported at the moment");
+
+            double hMin = lsTrk.GridDat.iGeomCells.h_min.Min();
+            int NoOfSurfacePoints = Convert.ToInt32(10 * Circumference_P / hMin);
+            int HalfSurfacePoints = NoOfSurfacePoints / 2;
+            MultidimensionalArray SurfacePoints = new MultidimensionalArray(2);
+            SurfacePoints.Allocate(NoOfSurfacePoints, SpatialDim);
+            double[] InfinitisemalAngle = GenericBlas.Linspace(0, Math.PI / 2, HalfSurfacePoints + 1);
+            if (Math.Abs(10 * Circumference_P / hMin + 1) >= int.MaxValue)
+                throw new ArithmeticException("Error trying to calculate the number of surface points, overflow");
+            for (int j = 0; j < HalfSurfacePoints; j++)
+            {
+                SurfacePoints[j, 0] = Math.Cos(Angle[0]) * Math.Pow(Math.Cos(InfinitisemalAngle[j]), 2 / superEllipsoidExponent) * length_P + Position[0][0];
+                SurfacePoints[j, 1] = Math.Sin(Angle[0]) * Math.Pow(Math.Sin(InfinitisemalAngle[j]), 2 / superEllipsoidExponent) * thickness_P + Position[0][1];
+            }
+            for (int j = HalfSurfacePoints; j < NoOfSurfacePoints; j++)
+            {
+                SurfacePoints[j, 0] = Math.Cos(Angle[0]) * -Math.Pow(Math.Cos(InfinitisemalAngle[j - HalfSurfacePoints]), 2 / superEllipsoidExponent) * length_P + Position[0][0];
+                SurfacePoints[j, 1] = Math.Sin(Angle[0]) * -Math.Pow(Math.Sin(InfinitisemalAngle[j - HalfSurfacePoints]), 2 / superEllipsoidExponent) * thickness_P + Position[0][1];
+            }
+
+            return SurfacePoints;
         }
     }
 }

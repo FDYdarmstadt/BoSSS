@@ -195,13 +195,14 @@ namespace BoSSS.Application.DerivativeTest {
             //Quadrature_Bulksize.BULKSIZE_LIMIT_OVERRIDE = 1;
             BoSSS.Solution.Application.InitMPI(args);
 
- 
+
 
             // Build-In Grids
             // ==============
 
             //Quadrature_Bulksize.CHUNK_DATA_LIMIT = 1;
             //BoSSS.Foundation.Caching.Cache.MaxMem = 1024;
+            /*
             for (int i = 18; i <= 18; i++) {
                 BoSSS.Solution.Application._Main(args, true,  delegate () {
                     var R = new DerivativeTestMain();
@@ -214,14 +215,17 @@ namespace BoSSS.Application.DerivativeTest {
             // gmsh Grids
             // ==========
 
-            /*
-            string[] gmshMeshFiles = Directory.GetFiles(@"../../TestGrids/", "WallMountedCube.cgns");
+            string[] gmshMeshFiles = Directory.GetFiles(@"../../TestGrids/", "QuadTest4th.msh");
+            //string[] gmshMeshFiles = Directory.GetFiles(@"../../TestGrids/", "WallMountedCube.cgns");
             //string[] gmshMeshFiles = Directory.GetFiles(@"../../TestGrids/", "ring.cgns");
             foreach(string gmf in gmshMeshFiles) {
                 Console.Write(Path.GetFileName(gmf) + " ... ");
 
-                BoSSS.Solution.Application._Main(args, true, null, delegate() {
+                BoSSS.Solution.Application._Main(args, true, delegate() { //null,
                     var R = new DerivativeTestMain();
+                    if (gmf.Contains("3rd") || gmf.Contains("4th") || gmf.Contains("5th")) {
+                        R.AltRefSol = true;
+                    }
                     GRID_CASE = 50;
                     GRID_FILE = gmf;
                     return R;
@@ -533,7 +537,12 @@ namespace BoSSS.Application.DerivativeTest {
                     Console.WriteLine();
                     grd = _grd;
 
-                    break;
+                    if (GRID_FILE.Contains("QuadTest3rd") || GRID_FILE.Contains("QuadTest4th") || GRID_FILE.Contains("QuadTest5th"))
+                    {
+                        AltRefSol = true;
+                    }
+
+                        break;
                 }
 
                 default:
@@ -593,7 +602,7 @@ namespace BoSSS.Application.DerivativeTest {
             return grd;
         }
 
-        bool AltRefSol = false;
+        public bool AltRefSol = false;
 
 
         /// <summary>

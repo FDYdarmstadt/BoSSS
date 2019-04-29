@@ -128,7 +128,7 @@ namespace BoSSS.Application.FSI_Solver {
             return particleReynolds;
         }
 
-        override public MultidimensionalArray GetSurfacePoints(LevelSetTracker lsTrk, LevelSet levelSet)
+        override public MultidimensionalArray GetSurfacePoints(LevelSetTracker lsTrk)
         {
             int SpatialDim = lsTrk.GridDat.SpatialDimension;
             if (SpatialDim != 2)
@@ -144,8 +144,8 @@ namespace BoSSS.Application.FSI_Solver {
 
             for (int j = 0; j < NoOfSurfacePoints; j++)
             {
-                SurfacePoints[j, 0] = Math.Cos(InfinitisemalAngle[j]) * length_P + Position[0][0];
-                SurfacePoints[j, 1] = Math.Sin(InfinitisemalAngle[j]) * thickness_P + Position[0][1];
+                SurfacePoints[j, 0] = Math.Cos(Angle[0]) * Math.Cos(InfinitisemalAngle[j]) * length_P + Position[0][0];
+                SurfacePoints[j, 1] = Math.Sin(Angle[0]) * Math.Sin(InfinitisemalAngle[j]) * thickness_P + Position[0][1];
             }
             return SurfacePoints;
         }

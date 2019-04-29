@@ -75,7 +75,7 @@ namespace FSI_Solver
         int BinarySearch(List<int> SortedList, int Target)
         {
             int L = 0;
-            int R = SortedList.Count();
+            int R = SortedList.Count() - 1;
             int TargetIndex = 0;
 
             while (L <= R)
@@ -300,7 +300,7 @@ namespace FSI_Solver
 
         // Initial check: is the motion state of the particles equal on all MPI processors?
         // ================================================================================
-        internal void MPICheckParticleState(List<Particle> Particles, IGridData GridData, int MPISize)
+        internal void ParticleState_MPICheck(List<Particle> Particles, IGridData GridData, int MPISize)
         {
             int D = GridData.SpatialDimension;
             int NoOfParticles = Particles.Count;
@@ -376,6 +376,75 @@ namespace FSI_Solver
                                 throw new ApplicationException("Mismatch in particle state among MPI ranks. Index:  " + idx_l);
                         }
                     }
+                }
+            }
+        }
+
+        internal void Collision_MPICommunication(List<Particle> Particles, Particle CurrentParticle, int MPISize, bool WallCollision = false)
+        {
+            int NoOfVars = 3;
+            double[] BoolSend = new double[1];
+            bool NoCurrentCollision = true;
+            if (CurrentParticle.m_collidedWithWall[0] && WallCollision)
+            {
+                BoolSend[0] = -1;
+            }
+            else
+            {
+                for (int p = 0; p < Particles.Count(); p++)
+                {
+                    if (CurrentParticle.m_collidedWithParticle[p])
+                    {
+                        BoolSend[0] = p + 1;
+                    }
+
+                }
+            }
+
+            double[] BoolReceive = new double[MPISize];
+            unsafe
+            {
+                fixed (double* pCheckSend = BoolSend, pCheckReceive = BoolReceive)
+                {
+                    csMPI.Raw.Allgather((IntPtr)pCheckSend, BoolSend.Length, csMPI.Raw._DATATYPE.DOUBLE, (IntPtr)pCheckReceive, BoolSend.Length, csMPI.Raw._DATATYPE.DOUBLE, csMPI.Raw._COMM.WORLD);
+                }
+            }
+            for (int i = 0; i < BoolReceive.Length; i++)
+            {
+                if (BoolReceive[i] != 0)
+                {
+                    double[] CheckSend = new double[NoOfVars];
+                    CheckSend[0] = CurrentParticle.RotationalVelocity[0];
+                    CheckSend[1] = CurrentParticle.TranslationalVelocity[0][0];
+                    CheckSend[2] = CurrentParticle.TranslationalVelocity[0][1];
+
+                    double[] CheckReceive = new double[NoOfVars * MPISize];
+                    unsafe
+                    {
+                        fixed (double* pCheckSend = CheckSend, pCheckReceive = CheckReceive)
+                        {
+                            csMPI.Raw.Allgather((IntPtr)pCheckSend, CheckSend.Length, csMPI.Raw._DATATYPE.DOUBLE, (IntPtr)pCheckReceive, CheckSend.Length, csMPI.Raw._DATATYPE.DOUBLE, csMPI.Raw._COMM.WORLD);
+                        }
+                    }
+                    CurrentParticle.RotationalVelocity[0] = CheckReceive[0 + i * 3];
+                    CurrentParticle.TranslationalVelocity[0][0] = CheckReceive[1 + i * 3];
+                    CurrentParticle.TranslationalVelocity[0][1] = CheckReceive[2 + i * 3];
+                    if (!WallCollision)
+                    {
+                        int p = Convert.ToInt32(BoolReceive[i]);
+                        CurrentParticle.m_collidedWithParticle[p - 1] = true;
+                        CurrentParticle.skipForceIntegration = true;
+                    }
+                    NoCurrentCollision = false;
+                }
+            }
+            if (NoCurrentCollision)
+            {
+                CurrentParticle.skipForceIntegration = false;
+                CurrentParticle.m_collidedWithWall[0] = false;
+                for (int p = 0; p < CurrentParticle.m_collidedWithParticle.Length; p++)
+                {
+                    CurrentParticle.m_collidedWithParticle[p] = false;
                 }
             }
         }
