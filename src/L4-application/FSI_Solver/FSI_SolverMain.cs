@@ -1453,6 +1453,12 @@ namespace BoSSS.Application.FSI_Solver
             }
             if (_Particle.CollisionTranslationalVelocity.Count() >= 1)
             {
+                double tempSqrt = 0;
+                double tempBetrag = 0;
+                for (int t = 0; t < _Particle.CollisionTranslationalVelocity.Count(); t++)
+                {
+                    tempBetrag += _Particle.CollisionTranslationalVelocity[t][0].Pow2() + _Particle.CollisionTranslationalVelocity[t][1].Pow2();
+                }
                 for (int d = 0; d < SpatialDim; d++)
                 {
                     _Particle.TranslationalVelocity[0][d] = 0;
@@ -1460,6 +1466,11 @@ namespace BoSSS.Application.FSI_Solver
                     {
                         _Particle.TranslationalVelocity[0][d] += _Particle.CollisionTranslationalVelocity[t][d];
                     }
+                    tempSqrt += _Particle.TranslationalVelocity[0][d].Pow2();
+                }
+                for (int d = 0; d < SpatialDim; d++)
+                {
+                    _Particle.TranslationalVelocity[0][d] = tempBetrag * _Particle.TranslationalVelocity[0][d] / (Math.Sqrt(tempSqrt) * _Particle.CollisionTranslationalVelocity.Count());
                 }
                 _Particle.CollisionTranslationalVelocity.Clear();
             }
@@ -1573,7 +1584,7 @@ namespace BoSSS.Application.FSI_Solver
                         particle1.skipForceIntegration = true;
 
                         //coefficient of restitution (e=0 pastic; e=1 elastic)
-                        double e = ((FSI_Control)Control).CoefficientOfRestitution;
+                        double e = 1;// ((FSI_Control)Control).CoefficientOfRestitution;
 
                         //collision Nomal
                         var normal = distanceVec.CloneAs();
@@ -1604,26 +1615,34 @@ namespace BoSSS.Application.FSI_Solver
                         double Fxrot;
                         double tempCollisionVn_P0;
                         double tempCollisionVn_P1;
+                        double tempCollisionRot_P0;
+                        double tempCollisionRot_P1;
                         if (!particle0.IncludeTranslation && !particle0.IncludeRotation)
                         {
                             Fx = (1 + e) * ((collisionVn_P1) / (1 / particle1.Mass_P + a1.Pow2() / particle1.MomentOfInertia_P));
                             Fxrot = (1 + e) * ((a1 * particle1.RotationalVelocity[0]) / (1 / particle1.Mass_P + a1.Pow2() / particle1.MomentOfInertia_P));
                             tempCollisionVn_P0 = collisionVn_P0;
+                            tempCollisionRot_P0 = 0;
                             tempCollisionVn_P1 = collisionVn_P1 + (Fx + Fxrot) / particle1.Mass_P;
+                            tempCollisionRot_P1 = particle1.RotationalVelocity[0] - a1 * (Fx + Fxrot) / particle1.MomentOfInertia_P;
                         }
                         else if (!particle1.IncludeTranslation && !particle1.IncludeRotation)
                         {
                             Fx = (1 + e) * ((collisionVn_P0) / (1 / particle0.Mass_P + a0.Pow2() / particle0.MomentOfInertia_P));
                             Fxrot = (1 + e) * ((-a0 * particle0.RotationalVelocity[0]) / (1 / particle0.Mass_P + a0.Pow2() / particle0.MomentOfInertia_P));
                             tempCollisionVn_P0 = collisionVn_P0 - (Fx + Fxrot) / particle0.Mass_P;
+                            tempCollisionRot_P0 = particle0.RotationalVelocity[0] + a0 * (Fx + Fxrot) / particle0.MomentOfInertia_P;
                             tempCollisionVn_P1 = collisionVn_P1;
+                            tempCollisionRot_P1 = 0;
                         }
                         else
                         {
                             Fx = (1 + e) * ((collisionVn_P0 - collisionVn_P1) / (1 / particle0.Mass_P + 1 / particle1.Mass_P + a0.Pow2() / particle0.MomentOfInertia_P + a1.Pow2() / particle1.MomentOfInertia_P));
                             Fxrot = (1 + e) * ((-a0 * particle0.RotationalVelocity[0] + a1 * particle1.RotationalVelocity[0]) / (1 / particle0.Mass_P + 1 / particle1.Mass_P + a0.Pow2() / particle0.MomentOfInertia_P + a1.Pow2() / particle1.MomentOfInertia_P));
                             tempCollisionVn_P0 = collisionVn_P0 - (Fx + Fxrot) / particle0.Mass_P;
+                            tempCollisionRot_P0 = particle0.RotationalVelocity[0] + a0 * (Fx + Fxrot) / particle0.MomentOfInertia_P;
                             tempCollisionVn_P1 = collisionVn_P1 + (Fx + Fxrot) / particle1.Mass_P;
+                            tempCollisionRot_P1 = particle1.RotationalVelocity[0] - a1 * (Fx + Fxrot) / particle1.MomentOfInertia_P;
                         }
 
                         
@@ -1636,8 +1655,8 @@ namespace BoSSS.Application.FSI_Solver
                         //particle0.TranslationalVelocity[0] = new double[] { normal[0] * tempCollisionVn_P0 + tempCollisionVt_P0 * tangential[0], normal[1] * tempCollisionVn_P0 + tempCollisionVt_P0 * tangential[1] };
                         //particle1.TranslationalVelocity[0] = new double[] { normal[0] * tempCollisionVn_P1 + tempCollisionVt_P1 * tangential[0], normal[1] * tempCollisionVn_P1 + tempCollisionVt_P1 * tangential[1] };
 
-                        particle0.CollisionRotationalVelocity.Add(particle0.RotationalVelocity[0] + a0 * (Fx + Fxrot) / particle0.MomentOfInertia_P);
-                        particle1.CollisionRotationalVelocity.Add(particle1.RotationalVelocity[0] - a1 * (Fx + Fxrot) / particle1.MomentOfInertia_P);
+                        particle0.CollisionRotationalVelocity.Add(tempCollisionRot_P0);
+                        particle1.CollisionRotationalVelocity.Add(tempCollisionRot_P1);
                         particle0.CollisionTranslationalVelocity.Add(new double[] { normal[0] * tempCollisionVn_P0 + tempCollisionVt_P0 * tangential[0], normal[1] * tempCollisionVn_P0 + tempCollisionVt_P0 * tangential[1] });
                         particle1.CollisionTranslationalVelocity.Add(new double[] { normal[0] * tempCollisionVn_P1 + tempCollisionVt_P1 * tangential[0], normal[1] * tempCollisionVn_P1 + tempCollisionVt_P1 * tangential[1] });
                         
@@ -1669,7 +1688,7 @@ namespace BoSSS.Application.FSI_Solver
                         }
                     }
 
-                    if (realDistance > 1.5 * hmin && particle0.m_collidedWithParticle[m_Particles.IndexOf(particle1)] && particle1.m_collidedWithParticle[m_Particles.IndexOf(particle0)])
+                    if (realDistance > 2.5 * hmin && particle0.m_collidedWithParticle[m_Particles.IndexOf(particle1)] && particle1.m_collidedWithParticle[m_Particles.IndexOf(particle0)])
                     {
                         particle0.m_collidedWithParticle[m_Particles.IndexOf(particle1)] = false;
                         particle1.m_collidedWithParticle[m_Particles.IndexOf(particle0)] = false;

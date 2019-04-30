@@ -538,8 +538,8 @@ namespace BoSSS.Application.FSI_Solver
                 int q = new int();
                 int r = new int();
 
-                q = 30 * 2;
-                r = 80 * 2;
+                q = 30;
+                r = 80;
 
                 double[] Xnodes = GenericBlas.Linspace(-1.5 * BaseSize, 1.5 * BaseSize, q + 1); //k1: 71; k2:41; k3: 31
                 double[] Ynodes = GenericBlas.Linspace(-0.0 * BaseSize, 8.0 * BaseSize, r + 1); //k1: 211; k2:121; k3: 91
@@ -599,7 +599,7 @@ namespace BoSSS.Application.FSI_Solver
             //C.PhysicalParameters.mu_B = 0.1;
             //C.particleMass = 1;
 
-            C.Particles.Add(new Particle_Sphere(new double[] { 0.0, 6.0 })
+            C.Particles.Add(new Particle_Sphere(new double[] { 0.0, 5.5 })
             {
                 radius_P = 0.2,
                 particleDensity = 1.10,
