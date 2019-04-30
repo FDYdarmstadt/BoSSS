@@ -227,8 +227,8 @@ namespace BoSSS.Application.FSI_Solver
             // grid and boundary conditions
             // ============================
 
-            double[] Xnodes = GenericBlas.Linspace(-10, -4, 60);
-            double[] Ynodes = GenericBlas.Linspace(4, 10, 60);
+            double[] Xnodes = GenericBlas.Linspace(-10, 10, 200);
+            double[] Ynodes = GenericBlas.Linspace(-10, 10, 200);
             double h = Math.Min((Xnodes[1] - Xnodes[0]), (Ynodes[1] - Ynodes[0]));
 
             C.GridFunc = delegate {
@@ -261,9 +261,9 @@ namespace BoSSS.Application.FSI_Solver
 
             // Particles
             // =========
-            for (int i = 0; i < 2; i++)
+            for (int i = 0; i < 9; i++)
             {
-                for (int j = 0; j < 1; j++)
+                for (int j = 0; j < 9; j++)
                 {
                     C.Particles.Add(new Particle_Ellipsoid(new double[] { -8 + 2 * i, 8 - 2 * j }, startAngl: 23 * i - 12 * j)
                     {

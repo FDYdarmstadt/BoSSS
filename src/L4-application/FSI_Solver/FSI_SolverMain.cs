@@ -1423,7 +1423,7 @@ namespace BoSSS.Application.FSI_Solver
                             Console.WriteLine("And I'm particle " + ParticlesOfCurrentColor[p2]);
                             double distance = 1E20;
                             double[] distanceVec = new double[Grid.SpatialDimension];
-                            ComputeCollisionModel(hmin, Particles[p1], Particles[p2], ref distance, ref distanceVec);
+                            ComputeCollisionModel(hmin, Particles[ParticlesOfCurrentColor[p1]], Particles[ParticlesOfCurrentColor[p2]], ref distance, ref distanceVec);
                         }
                     }
                     for(int p = 0; p < ParticlesOfCurrentColor.Length; p++)
