@@ -503,12 +503,17 @@ namespace BoSSS.Application.FSI_Solver
                 Aux.SaveMultidimValueOfLastTimestep(TranslationalAcceleration);
                 Aux.SaveValueOfLastTimestep(RotationalAcceleration);
             }
-            
+
+            // Include Gravitiy
+            HydrodynamicForces[0][1] += GravityVertical * Mass_P;
             double[,] CoefficientMatrix = Acceleration.CalculateCoefficients(AddedDampingTensor, Mass_P, MomentOfInertia_P, dt, AddedDampingCoefficient);
             double Denominator = Acceleration.CalculateDenominator(CoefficientMatrix);
 
-            if (this.IncludeTranslation)
+            if (this.IncludeTranslation) { }
                 TranslationalAcceleration[0] = Acceleration.Translational(CoefficientMatrix, Denominator, HydrodynamicForces[0], HydrodynamicTorque[0]);
+
+
+
 
             for (int d = 0; d < SpatialDim; d++)
             {
@@ -680,9 +685,9 @@ namespace BoSSS.Application.FSI_Solver
             ).Execute();
 
             // add gravity
-            {
-                Forces[1] += (particleDensity - fluidDensity) * Area_P * GravityVertical;
-            }
+            //{
+            //    Forces[1] += (particleDensity - fluidDensity) * Area_P * GravityVertical;
+            //}
 
             if (neglectAddedDamping == false) {
                 Forces[0] = Forces[0] - AddedDampingCoefficient * dt * (AddedDampingTensor[0, 0] * TranslationalAcceleration[0][0] + AddedDampingTensor[1, 0] * TranslationalAcceleration[0][1] + AddedDampingTensor[0, 2] * RotationalAcceleration[0]);

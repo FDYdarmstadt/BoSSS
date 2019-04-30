@@ -1009,6 +1009,12 @@ namespace BoSSS.Application.FSI_Solver
                 Particle CurrentParticle = m_Particles[p];
                 if (!((FSI_Control)Control).pureDryCollisions)
                     CurrentParticle.UpdateForcesAndTorque(Velocity, Pressure, LsTrk, Control.PhysicalParameters.mu_A, dt, Control.PhysicalParameters.rho_A, ((FSI_Control)Control).Timestepper_LevelSetHandling != LevelSetHandling.FSI_LieSplittingFullyCoupled);
+                else
+                {
+                    CurrentParticle.HydrodynamicForces[0][0] = 0;
+                    CurrentParticle.HydrodynamicForces[0][1] = 0;
+                    CurrentParticle.HydrodynamicTorque[0] = 0;
+                }
                 // wall collisions are computed on each processor
                 WallCollisionForces(CurrentParticle, p, LsTrk.GridDat.Cells.h_minGlobal);
                 Auxillary.Collision_MPICommunication(m_Particles, CurrentParticle, MPISize, true);
