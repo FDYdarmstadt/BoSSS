@@ -696,7 +696,7 @@ namespace BoSSS.Application.FSI_Solver
             // Define an array with the respective cell colors
             // =======================================================
             int J = GridData.iLogicalCells.NoOfLocalUpdatedCells;
-            CellColor = ((FSI_Control)Control).AdaptiveMeshRefinement ? InitializeColoring(J) : CellColor ?? InitializeColoring(J);
+            CellColor = ((FSI_Control)Control).AdaptiveMeshRefinement ? InitializeColoring(J, ((FSI_Control)Control).AdaptiveMeshRefinement) : CellColor ?? InitializeColoring(J, ((FSI_Control)Control).AdaptiveMeshRefinement);
 
             // =======================================================
             // Step 2
@@ -930,12 +930,12 @@ namespace BoSSS.Application.FSI_Solver
         /// <summary>
         /// Initialization of <see cref="ParticleColor"/> 
         /// </summary>
-        private int[] InitializeColoring(int J)
+        private int[] InitializeColoring(int J, bool AdaptiveMeshRefinement)
         {
             int[] Cells = new int[J];
             for (int p = 0; p < m_Particles.Count; p++)
             {
-                double Hmin = Math.Sqrt(GridData.iGeomCells.GetCellVolume(0));
+                double Hmin = AdaptiveMeshRefinement ? Math.Sqrt(GridData.iGeomCells.GetCellVolume(0)) * 2 : Math.Sqrt(GridData.iGeomCells.GetCellVolume(0));
                 double[] ParticlePos = m_Particles[p].Position[0];
                 double ParticleAngle = m_Particles[p].Angle[0];
                 double[] ParticleScales = m_Particles[p].GetLengthScales();
@@ -1423,7 +1423,7 @@ namespace BoSSS.Application.FSI_Solver
                             Console.WriteLine("And I'm particle " + ParticlesOfCurrentColor[p2]);
                             double distance = 1E20;
                             double[] distanceVec = new double[Grid.SpatialDimension];
-                            ComputeCollisionModel(hmin, Particles[p1], Particles[p2], ref distance, ref distanceVec);
+                            ComputeCollisionModel(hmin, Particles[ParticlesOfCurrentColor[p1]], Particles[ParticlesOfCurrentColor[p2]], ref distance, ref distanceVec);
                         }
                     }
                     for(int p = 0; p < ParticlesOfCurrentColor.Length; p++)
@@ -1518,7 +1518,7 @@ namespace BoSSS.Application.FSI_Solver
             particle0.m_closeInterfacePointTo[m_Particles.IndexOf(particle1)] = tempPoint_P0;
             particle1.m_closeInterfacePointTo[m_Particles.IndexOf(particle0)] = tempPoint_P1;
 
-            double threshold = 2.5 * hmin;//was 2.5
+            double threshold = 2.5 * hmin;
 
             double eps = threshold.Pow2() / 2; // Turek paper
             double epsPrime = threshold / 2; // Turek paper
@@ -1786,8 +1786,8 @@ namespace BoSSS.Application.FSI_Solver
 
             Console.WriteLine("Closest Distance to wall is: " + distance);
 
-            double threshold = 0.5 * hmin; // was 1.5 * hmin
-
+            double threshold = 1.5 * hmin; // was 1.5 * hmin
+            Console.WriteLine("threshold: " + threshold);
             double eps = threshold.Pow2() / 2; // Turek paper
             double epsPrime = threshold / 2; // Turek paper
 
@@ -1841,7 +1841,7 @@ namespace BoSSS.Application.FSI_Solver
 
                     if (realDistance <= (threshold) && !particle.m_collidedWithWall[0])
                     {
-
+                        Console.WriteLine("I'm trying to calculate the wand collision.");
                         //coefficient of restitution (e=0 pastic; e=1 elastic)
 
                         double e = 1.0;
@@ -1854,7 +1854,7 @@ namespace BoSSS.Application.FSI_Solver
                         particle.m_collidedWithWall[0] = true;
 
                         // Skip force integration for next timestep
-                        particle.skipForceIntegration = false;
+                        particle.skipForceIntegration = true;
 
                         //collision Nomal
                         var normal = distanceVec.CloneAs();
@@ -1863,22 +1863,31 @@ namespace BoSSS.Application.FSI_Solver
 
 
                         double collisionVn_P0 = particle.TranslationalVelocity[0][0] * normal[0] + particle.TranslationalVelocity[0][1] * normal[1];
+                        Console.WriteLine("collisionVn_P0: " + collisionVn_P0);
                         double collisionVt_P0 = particle.TranslationalVelocity[0][0] * tangential[0] + particle.TranslationalVelocity[0][1] * tangential[1];
+                        Console.WriteLine("collisionVt_P0: " + collisionVt_P0);
 
 
                         // exzentric collision
                         // ----------------------------------------
                         tempPoint.AccV(-1, particle.Position[0]);
+                        Console.WriteLine("tempPoint: " + tempPoint[0]);
+                        Console.WriteLine("tempPoint: " + tempPoint[1]);
                         double a0 = (tempPoint[0] * tangential[0] + tempPoint[1] * tangential[1]);
+                        Console.WriteLine("a0: " + a0);
 
                         if (particle is Particle_Sphere)
                             a0 = 0.0;
 
                         double Fx = (1 + e) * (collisionVn_P0) / (1 / particle.Mass_P + a0.Pow2() / particle.MomentOfInertia_P);
+                        Console.WriteLine("Fx: " + Fx);
                         double Fxrot = (1 + e) * (-a0 * particle.RotationalVelocity[0]) / (1 / particle.Mass_P + a0.Pow2() / particle.MomentOfInertia_P);
+                        Console.WriteLine("Fxrot: " + Fxrot);
 
                         double tempCollisionVn_P0 = collisionVn_P0 - (Fx + Fxrot) / particle.Mass_P;
+                        Console.WriteLine("tempCollisionVn_P0: " + tempCollisionVn_P0);
                         double tempCollisionVt_P0 = collisionVt_P0;
+                        Console.WriteLine("tempCollisionVt_P0: " + tempCollisionVt_P0);
 
                         particle.RotationalVelocity[0] = particle.RotationalVelocity[0] + a0 * (Fx + Fxrot) / particle.MomentOfInertia_P;
 
