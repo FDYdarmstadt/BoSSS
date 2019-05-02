@@ -538,11 +538,11 @@ namespace BoSSS.Application.FSI_Solver
                 int q = new int();
                 int r = new int();
 
-                q = 30;
-                r = 160;
+                q = 30 * 3;
+                r = 80 * 3;
 
-                double[] Xnodes = GenericBlas.Linspace(-1.5 * BaseSize, 1.5 * BaseSize, q + 1); //k1: 71; k2:41; k3: 31
-                double[] Ynodes = GenericBlas.Linspace(-0.0 * BaseSize, 16 * BaseSize, r + 1); //k1: 211; k2:121; k3: 91
+                double[] Xnodes = GenericBlas.Linspace(-1.5 * BaseSize, 1.5 * BaseSize, q + 1); 
+                double[] Ynodes = GenericBlas.Linspace(-0.0 * BaseSize, 8 * BaseSize, r + 1); 
 
                 var grd = Grid2D.Cartesian2DGrid(Xnodes, Ynodes, periodicX: false, periodicY: false);
 
@@ -561,7 +561,7 @@ namespace BoSSS.Application.FSI_Solver
                         et = 2;
                     if (Math.Abs(X[1] - (-0.0 * BaseSize)) <= 1.0e-8)
                         et = 3;
-                    if (Math.Abs(X[1] + (-16.0 * BaseSize)) <= 1.0e-8)
+                    if (Math.Abs(X[1] + (-8.0 * BaseSize)) <= 1.0e-8)
                         et = 4;
 
 
@@ -602,10 +602,10 @@ namespace BoSSS.Application.FSI_Solver
             C.Particles.Add(new Particle_Sphere(new double[] { 0.0, 5.5 })
             {
                 radius_P = 0.2,
-                particleDensity = 1.10,
+                particleDensity = 1.0,
                 GravityVertical = -9.81,
             });
-            C.Particles[0].TranslationalVelocity[0][1] = 0;
+            C.Particles[0].TranslationalVelocity[0][1] = -0;
 
 
             C.Particles.Add(new Particle_Ellipsoid(new double[] { 0.4, 4.5 }, startAngl: 45)
