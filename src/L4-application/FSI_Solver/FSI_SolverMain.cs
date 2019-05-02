@@ -1669,7 +1669,7 @@ namespace BoSSS.Application.FSI_Solver
                         particle1.skipForceIntegration = true;
 
                         //coefficient of restitution (e=0 pastic; e=1 elastic)
-                        double e = 1;// ((FSI_Control)Control).CoefficientOfRestitution;
+                        double e = ((FSI_Control)Control).CoefficientOfRestitution;
 
                         //collision Nomal
                         var normal = distanceVec.CloneAs();

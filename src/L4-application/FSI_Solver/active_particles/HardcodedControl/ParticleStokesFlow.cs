@@ -539,10 +539,10 @@ namespace BoSSS.Application.FSI_Solver
                 int r = new int();
 
                 q = 30 * 3;
-                r = 80 * 3;
+                r = 40 * 3;
 
                 double[] Xnodes = GenericBlas.Linspace(-1.5 * BaseSize, 1.5 * BaseSize, q + 1); 
-                double[] Ynodes = GenericBlas.Linspace(-0.0 * BaseSize, 8 * BaseSize, r + 1); 
+                double[] Ynodes = GenericBlas.Linspace(3 * BaseSize, 7 * BaseSize, r + 1); 
 
                 var grd = Grid2D.Cartesian2DGrid(Xnodes, Ynodes, periodicX: false, periodicY: false);
 
@@ -559,9 +559,9 @@ namespace BoSSS.Application.FSI_Solver
                         et = 1;
                     if (Math.Abs(X[0] + (-1.5 * BaseSize)) <= 1.0e-8)
                         et = 2;
-                    if (Math.Abs(X[1] - (-0.0 * BaseSize)) <= 1.0e-8)
+                    if (Math.Abs(X[1] - (3 * BaseSize)) <= 1.0e-8)
                         et = 3;
-                    if (Math.Abs(X[1] + (-8.0 * BaseSize)) <= 1.0e-8)
+                    if (Math.Abs(X[1] + (-7 * BaseSize)) <= 1.0e-8)
                         et = 4;
 
 
@@ -599,7 +599,7 @@ namespace BoSSS.Application.FSI_Solver
             //C.PhysicalParameters.mu_B = 0.1;
             //C.particleMass = 1;
 
-            C.Particles.Add(new Particle_Sphere(new double[] { 0.0, 5.5 })
+            C.Particles.Add(new Particle_Sphere(new double[] { 0.0, 6 })
             {
                 radius_P = 0.2,
                 particleDensity = 1.0,
@@ -700,11 +700,11 @@ namespace BoSSS.Application.FSI_Solver
 
             //C.Timestepper_Mode = FSI_Control.TimesteppingMode.Splitting;
             C.Timestepper_Scheme = FSI_Solver.FSI_Control.TimesteppingScheme.BDF2;
-            double dt = 1e-2;
+            double dt = 1e-3;
             C.dtMax = dt;
             C.dtMin = dt;
             C.Endtime = 8.0;
-            C.NoOfTimesteps = 100000;
+            C.NoOfTimesteps = 600;
 
             // haben fertig...
             // ===============
