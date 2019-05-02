@@ -21,8 +21,8 @@ async function addFunctionality(mainWindow){
         mainWindow.on('close', async (event) =>{
             if(!closeBoSSSpad)
             {
-                await userDatabase.save();
                 event.preventDefault();
+                await userDatabase.save();
                 dataMethods.AreYouSure_Save(() => {
                     closeBoSSSpad = true; 
                     mainWindow.close();

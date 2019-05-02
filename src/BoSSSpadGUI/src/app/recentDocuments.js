@@ -17,7 +17,6 @@ class RecentDocuments{
         var recentDocuments;
         if(paths.length > 0){
             recentDocuments = this.createRecentDocuments(paths, onClickFunction);
-            
         }else{
             recentDocuments = [{
                 label: "..."
@@ -28,18 +27,21 @@ class RecentDocuments{
     }
 
     createRecentDocuments(paths, onClickFunction){
-        var recentDocument = [];
+        var recentDocuments = [];
+
+        var wrapper = function(){
+            onClickFunction(this.derp);
+        }
         for(var i = 0; i < paths.length; ++i){
             var path = paths[i];
-            recentDocument.push(
-            {
+            var click = wrapper.bind({derp: path})
+            var recentDocument = {
                 label: this.createLabel(path),
-                click(){
-                    onClickFunction(path);
-                }
-            });
+                click
+            }
+            recentDocuments.push(recentDocument);
         }
-        return recentDocument;
+        return recentDocuments;
     }
 
     createLabel(path){

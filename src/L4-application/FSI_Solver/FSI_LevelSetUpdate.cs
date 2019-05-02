@@ -18,6 +18,7 @@ using BoSSS.Application.FSI_Solver;
 using BoSSS.Foundation;
 using BoSSS.Foundation.Grid;
 using BoSSS.Solution.Utils;
+using MPI.Wrappers;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -140,12 +141,17 @@ namespace FSI_Solver
             for (int p = 0; p < Particles.Count; p++)
             {
                 double[] ParticleScales = Particles[p].GetLengthScales();
-                double Lengthscale = ParticleScales.Max();
+                double Hmin = Math.Sqrt(gridData.iGeomCells.GetCellVolume(0));
+                double ParticleAngle = Particles[p].Angle[0];
                 double[] ParticlePos = Particles[p].Position[0];
-                double Upperedge = ParticlePos[1] + Lengthscale;
-                double Loweredge = ParticlePos[1] - Lengthscale;
-                double Leftedge = ParticlePos[0] - Lengthscale;
-                double Rightedge = ParticlePos[0] + Lengthscale;
+                //double Upperedge = ParticlePos[1] + ParticleScales[1] * Math.Abs(Math.Cos(ParticleAngle)) + ParticleScales[0] * Math.Abs(Math.Sin(ParticleAngle)) + Hmin / 2;
+                //double Loweredge = ParticlePos[1] - ParticleScales[1] * Math.Abs(Math.Cos(ParticleAngle)) - ParticleScales[0] * Math.Abs(Math.Sin(ParticleAngle)) - Hmin / 2;
+                //double Leftedge = ParticlePos[0] - ParticleScales[0] * Math.Abs(Math.Cos(ParticleAngle)) - ParticleScales[1] * Math.Abs(Math.Sin(ParticleAngle)) - Hmin / 2;
+                //double Rightedge = ParticlePos[0] + ParticleScales[0] * Math.Abs(Math.Cos(ParticleAngle)) + ParticleScales[1] * Math.Abs(Math.Sin(ParticleAngle)) + Hmin / 2;
+                double Upperedge = ParticlePos[1] + Hmin * 2;
+                double Loweredge = ParticlePos[1] - Hmin * 2;
+                double Leftedge = ParticlePos[0] - Hmin * 2;
+                double Rightedge = ParticlePos[0] + Hmin * 2;
                 int temp = 0;
                 for (int i = 0; i < ColoredCellsSorted.Count; i++)
                 {
@@ -196,6 +202,24 @@ namespace FSI_Solver
                 ColoredCellsSorted.Insert(ListIndex, temp);
             }
             return ColoredCellsSorted;
+        }
+
+        internal void DetermineGlobalParticleColor(IGridData GridData, int[] CellColor, List<Particle> Particles, out int[] GlobalParticleColor)
+        {
+            List<int[]> ColoredCellsSorted = ColoredCellsFindAndSort(CellColor);
+            int[] ParticleColorArray = FindParticleColor(GridData, Particles, ColoredCellsSorted);
+            int NoOfParticles = ParticleColorArray.Length;
+            GlobalParticleColor = new int[NoOfParticles];
+            double[] StateBuffer = new double[NoOfParticles];
+            for (int i = 0; i < NoOfParticles; i++)
+            {
+                StateBuffer[i] = Convert.ToDouble(ParticleColorArray[i]);
+            }
+            double[] GlobalStateBuffer = StateBuffer.MPIMax();
+            for (int i = 0; i < NoOfParticles; i++)
+            {
+                GlobalParticleColor[i] = Convert.ToInt32(GlobalStateBuffer[i]);
+            }
         }
     }
 }

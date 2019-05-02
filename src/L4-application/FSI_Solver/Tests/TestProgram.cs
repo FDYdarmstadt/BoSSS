@@ -71,9 +71,6 @@ namespace BoSSS.Application.FSI_Solver {
             }
         }
 
-        /// <summary>
-        /// Note: this test is fucked; the results are nowhere near where you would expext.
-        /// </summary>
         [Test]
         public static void SingleDryParticleAgainstWall([Values(false, true)]  bool MeshRefine) { 
             using (FSI_SolverMain p = new FSI_SolverMain()) {
@@ -100,6 +97,52 @@ namespace BoSSS.Application.FSI_Solver {
         }
 
         [Test]
+        public static void DryParticleBounce()
+        {
+            using (FSI_SolverMain p = new FSI_SolverMain())
+            {
+
+                var ctrl = BoSSS.Application.FSI_Solver.HardcodedTestExamples.DryParticleBounce();
+                p.Init(ctrl);
+                p.RunSolverMode();
+
+                Vector Dest_Should;
+                Dest_Should = new Vector(0.263026905796573, 0.788180688520332);
+
+                Vector Dest_Is = new Vector(p.Particles[0].Position[0]);
+
+                double dist = (Dest_Should - Dest_Is).L2Norm();
+
+                Console.WriteLine("Particle reached position " + Dest_Is + ", expected at " + Dest_Should + ", distance is " + dist);
+
+                Assert.Less(dist, 0.1, "Particle to far from expected position");
+            }
+        }
+
+        [Test]
+        public static void StickyTrap()
+        {
+            using (FSI_SolverMain p = new FSI_SolverMain())
+            {
+
+                var ctrl = BoSSS.Application.FSI_Solver.HardcodedTestExamples.StickyTrap();
+                p.Init(ctrl);
+                p.RunSolverMode();
+
+                Vector Dest_Should;
+                Dest_Should = new Vector(0.0, 5.01309683250003);
+
+                Vector Dest_Is = new Vector(p.Particles[0].Position[0]);
+
+                double dist = (Dest_Should - Dest_Is).L2Norm();
+
+                Console.WriteLine("Particle reached position " + Dest_Is + ", expected at " + Dest_Should + ", distance is " + dist);
+
+                Assert.Less(dist, 0.1, "Particle to far from expected position");
+            }
+        }
+
+        [Test]
         public static void ActiveParticle_ForceTest()
         {
             using (FSI_SolverMain p = new FSI_SolverMain())
@@ -108,7 +151,7 @@ namespace BoSSS.Application.FSI_Solver {
                 p.Init(ctrl);
                 p.RunSolverMode();
 
-                double ForcesSoll = 1481.4254921133;
+                double ForcesSoll = 15376.4338960998;
 
                 double Forces = p.Particles[0].HydrodynamicForces[0][0];
 
