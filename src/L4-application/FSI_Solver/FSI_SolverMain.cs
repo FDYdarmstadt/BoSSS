@@ -1461,25 +1461,16 @@ namespace BoSSS.Application.FSI_Solver
             {
                 double[] Normal = new double[SpatialDim];
                 double[] Tangential = new double[SpatialDim];
-                double SumVelNormal = 0;
-                double SumVelTangential = 0;
                 for (int t = 0; t < _Particle.CollisionTranslationalVelocity.Count(); t++)
                 {
                     for (int d = 0; d < SpatialDim; d++)
                     {
                         Normal[d] += _Particle.CollisionNormal[t][d];
-                        SumVelNormal += _Particle.CollisionTranslationalVelocity[t][0];
-                        SumVelTangential += _Particle.CollisionTranslationalVelocity[t][1];
                         Tangential[d] += _Particle.CollisionTangential[t][d];
                     }
                 }
                 Normal.ScaleV(1 / Math.Sqrt(Normal[0].Pow2() + Normal[1].Pow2()));
                 Tangential.ScaleV(1 / Math.Sqrt(Tangential[0].Pow2() + Tangential[1].Pow2()));
-                for (int d = 0; d < SpatialDim; d++)
-                {
-                    Console.WriteLine("Normal [" + d + "]: " + Normal[d]);
-                    Console.WriteLine("Tangential [" + d + "]: " + Tangential[d]);
-                }
                 double[] Cos = new double[_Particle.CollisionTranslationalVelocity.Count()];
                 double[] Sin = new double[_Particle.CollisionTranslationalVelocity.Count()];
                 double temp_NormalVel = 0;
@@ -1490,64 +1481,17 @@ namespace BoSSS.Application.FSI_Solver
                     for (int d = 0; d < SpatialDim; d++)
                     {
                         Cos[t] += Normal[d] * _Particle.CollisionNormal[t][d];
-                        //Cos[t] += Tangential[d] * _Particle.CollisionTangential[t][d];
                     }
                     Sin[t] = _Particle.CollisionNormal[t][0] > Normal[0] ? Math.Sqrt(1 - Cos[t].Pow2()) : -Math.Sqrt(1 - Cos[t].Pow2());
                     temp_NormalVel += _Particle.CollisionTranslationalVelocity[t][0] * Cos[t] - _Particle.CollisionTranslationalVelocity[t][1] * Sin[t];
                     temp_TangentialVel += _Particle.CollisionTranslationalVelocity[t][0] * Sin[t] + _Particle.CollisionTranslationalVelocity[t][1] * Cos[t];
-                    
-
-                    Console.WriteLine("Cos: " + Cos[t]);
-                    Console.WriteLine("Sin: " + Sin[t]);
-                    Console.WriteLine("_Particle.CollisionTranslationalVelocity[t][0]: " + _Particle.CollisionTranslationalVelocity[t][0]);
-                    Console.WriteLine("_Particle.CollisionTranslationalVelocity[t][1]: " + _Particle.CollisionTranslationalVelocity[t][1]);
-                    Console.WriteLine("Gesamt: " + Math.Sqrt(_Particle.CollisionTranslationalVelocity[t][0].Pow2() + _Particle.CollisionTranslationalVelocity[t][1].Pow2()));
-                    Console.WriteLine("temp_NormalVel: " + temp_NormalVel);
-                    Console.WriteLine("temp_TangentialVel: " + temp_TangentialVel);
                 }
                 temp_NormalVel /= _Particle.CollisionTranslationalVelocity.Count();
                 temp_TangentialVel /= _Particle.CollisionTranslationalVelocity.Count();
-                Console.WriteLine("temp_NormalVel: " + temp_NormalVel);
-                Console.WriteLine("temp_TangentialVel: " + temp_TangentialVel);
-                Console.WriteLine("Gesamt: " + Math.Sqrt(temp_NormalVel.Pow2() + temp_TangentialVel.Pow2()));
-                //temp_NormalVel /= _Particle.CollisionTranslationalVelocity.Count();
-                //temp_TangentialVel /= _Particle.CollisionTranslationalVelocity.Count();
                 for (int d = 0; d < SpatialDim; d++)
                 {
                     _Particle.TranslationalVelocity[0][d] = Normal[d] * temp_NormalVel + Tangential[d] * temp_TangentialVel;
                 }
-                //double tempSqrt = 0;
-                //double tempBetrag = 0;
-                //double[] SumNormal = new double[2];
-                //double[] SumTangential = new double[2];
-                //for (int t = 0; t < _Particle.CollisionTranslationalVelocity.Count(); t++)
-                //{
-                //    tempBetrag += Math.Sqrt(_Particle.CollisionTranslationalVelocity[t][0].Pow2() + _Particle.CollisionTranslationalVelocity[t][1].Pow2());
-                //}
-                //tempBetrag /= _Particle.CollisionTranslationalVelocity.Count();
-                //for (int d = 0; d < SpatialDim; d++)
-                //{
-                //    _Particle.TranslationalVelocity[0][d] = 0;
-                //    for (int t = 0; t < _Particle.CollisionTranslationalVelocity.Count(); t++)
-                //    {
-                //        SumNormal[d] += _Particle.CollisionNormal[t][d] * _Particle.CollisionTranslationalVelocity[t][0];
-                //        SumTangential[d] += _Particle.CollisionTangential[t][d] *_Particle.CollisionTranslationalVelocity[t][1];
-                //    }
-                //    _Particle.TranslationalVelocity[0][d] = SumNormal[d] + SumTangential[d];
-                //    //tempSqrt += SumNormal[d].Pow2();
-                //}
-                //tempSqrt = Math.Sqrt(tempSqrt);
-                //SumNormal[0] = SumNormal[0] / tempSqrt;
-                //SumNormal[1] = SumNormal[1] / tempSqrt;
-                //SumTangential[0] = SumTangential[0] / tempSqrt;
-                //SumTangential[1] = SumTangential[1] / tempSqrt;
-                //for (int d = 0; d < SpatialDim; d++)
-                //{
-                //    _Particle.TranslationalVelocity[0][d] = tempBetrag * SumNormal[d] / Math.Sqrt(tempSqrt);
-                //}
-                //_Particle.CollisionTranslationalVelocity.Clear();
-                // normal[0] * tempCollisionVn_P0 + tempCollisionVt_P0 * tangential[0], normal[1] * tempCollisionVn_P0 + tempCollisionVt_P0 * tangential[1]
-                //Console.WriteLine("Impuls nach Stoss 0:  "+ _Particle.Mass_P * (Math.Sqrt(_Particle.TranslationalVelocity[0][0].Pow2() + _Particle.TranslationalVelocity[0][1].Pow2())));
             }
         }
 
