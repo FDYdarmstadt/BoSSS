@@ -32,6 +32,7 @@ using BoSSS.Foundation.Grid.Classic;
 using BoSSS.Foundation.Grid.RefElements;
 using MPI.Wrappers;
 using NUnit.Framework;
+using FSI_Solver;
 
 namespace BoSSS.Application.FSI_Solver
 {
@@ -229,13 +230,25 @@ namespace BoSSS.Application.FSI_Solver
         /// </summary>
         [DataMember]
         public List<double[]> TranslationalVelocity = new List<double[]>();
-        
+
+        /// <summary>
+        /// The translational velocity of the particle in the current time step. This list is used by the momentum conservation model.
+        /// </summary>
+        [DataMember]
+        public List<double[]> CollisionTranslationalVelocity = new List<double[]>();
+
         /// <summary>
         /// The angular velocity of the particle in the current time step.
         /// </summary>
         [DataMember]
         public List<double> RotationalVelocity = new List<double>();
-        
+
+        /// <summary>
+        /// The angular velocity of the particle in the current time step. This list is used by the momentum conservation model.
+        /// </summary>
+        [DataMember]
+        public List<double> CollisionRotationalVelocity = new List<double>();
+
         /// <summary>
         /// The translational velocity of the particle in the current time step.
         /// </summary>
@@ -351,8 +364,8 @@ namespace BoSSS.Application.FSI_Solver
         readonly private ParticleAcceleration Acceleration = new ParticleAcceleration();
         internal void UpdateParticleState(double dt)
         {
-            CalculateAngularVelocity(dt);
             CalculateTranslationalVelocity(dt);
+            CalculateAngularVelocity(dt);
             CalculateParticlePosition(dt);
             CalculateParticleAngle(dt);
             //ComputeParticleRe(FluidViscosity);
@@ -375,14 +388,25 @@ namespace BoSSS.Application.FSI_Solver
             if (IncludeTranslation == true) {
                 for (int d = 0; d < SpatialDim; d++) {
                     Position[0][d] = Position[1][d] + TranslationalVelocity[1][d] * dt + (TranslationalAcceleration[1][d] + TranslationalAcceleration[0][d]) * dt.Pow2() / 4;
+                    for (int p = 0; p < m_collidedWithParticle.Length; p++)
+                    {
+                        if (m_collidedWithParticle[p])
+                        {
+                            Position[0][d] = Position[1][d] + (TranslationalVelocity[1][d] + TranslationalVelocity[0][d]) * dt / 2;
+                            
+                        }
+                    }
                     if (double.IsNaN(Position[0][d]) || double.IsInfinity(Position[0][d]))
                         throw new ArithmeticException("Error trying to update particle position. Value:  " + Position[0][d]);
                 }
             } else {
                 for (int d = 0; d < SpatialDim; d++) {
-                    Assert.LessOrEqual(TranslationalVelocity[1][d].Abs(), 0, "Non-zero velocity for stationary particle");
-                    Assert.LessOrEqual(TranslationalAcceleration[1][d].Abs(), 0, "Non-zero acceleration for stationary particle");
-                    Assert.LessOrEqual(TranslationalAcceleration[0][d].Abs(), 0, "Non-zero acceleration for stationary particle");
+                    Position[0][d] = Position[1][d];
+                    TranslationalAcceleration[0][d] = 0;
+                    TranslationalVelocity[0][d] = 0;
+                    //Assert.LessOrEqual(TranslationalVelocity[1][d].Abs(), 0, "Non-zero velocity for stationary particle");
+                    //Assert.LessOrEqual(TranslationalAcceleration[1][d].Abs(), 0, "Non-zero acceleration for stationary particle");
+                    //Assert.LessOrEqual(TranslationalAcceleration[0][d].Abs(), 0, "Non-zero acceleration for stationary particle");// does not work together with collison models
                 }
             }
         }
@@ -403,12 +427,23 @@ namespace BoSSS.Application.FSI_Solver
                     throw new NotSupportedException("Unknown particle dimension: SpatialDim = " + SpatialDim);
 
                 Angle[0] = Angle[1] + RotationalVelocity[1] * dt + dt.Pow2() * (RotationalAcceleration[1] + RotationalAcceleration[0]) / 4;
+                for (int p = 0; p < m_collidedWithParticle.Length; p++)
+                {
+                    if (m_collidedWithParticle[p])
+                    {
+                        Angle[0] = Angle[1] + dt * (RotationalVelocity[1] + RotationalVelocity[0]) / 2;
+                        m_collidedWithParticle[p] = false;
+                    }
+                }
                 if (double.IsNaN(Angle[0]) || double.IsInfinity(Angle[0]))
                     throw new ArithmeticException("Error trying to update particle angle. Value:  " + Angle[0]);
             } else {
-                Assert.LessOrEqual(RotationalVelocity[1].Abs(), 0, "Non-zero rotational acceleration for non-rotating particle");
-                Assert.LessOrEqual(RotationalAcceleration[1].Abs(), 0, "Non-zero rotational acceleration for non-rotating particle");
-                Assert.LessOrEqual(RotationalAcceleration[0] .Abs(), 0, "Non-zero rotational acceleration for non-rotating particle");
+                Angle[0] = Angle[1];
+                RotationalAcceleration[0] = 0;
+                RotationalVelocity[0] = 0;
+                //Assert.LessOrEqual(RotationalVelocity[1].Abs(), 0, "Non-zero rotational acceleration for non-rotating particle");
+                //Assert.LessOrEqual(RotationalAcceleration[1].Abs(), 0, "Non-zero rotational acceleration for non-rotating particle");
+                //Assert.LessOrEqual(RotationalAcceleration[0] .Abs(), 0, "Non-zero rotational acceleration for non-rotating particle");
             }
         }
 
@@ -709,6 +744,8 @@ namespace BoSSS.Application.FSI_Solver
                 throw new ArithmeticException("Error trying to calculate hydrodynamic torque. Value:  " + HydrodynamicTorque[0]);
         }
 
+        
+
         public double[] CalculateParticleMomentum(double dt)
         {
             double[] temp = new double[SpatialDim + 1];
@@ -752,7 +789,7 @@ namespace BoSSS.Application.FSI_Solver
 
         abstract public double[] GetLengthScales();
 
-        virtual public MultidimensionalArray GetSurfacePoints(LevelSetTracker lsTrk, LevelSet levelSet)
+        virtual public MultidimensionalArray GetSurfacePoints(LevelSetTracker lsTrk)
         {
             throw new NotImplementedException();
         }

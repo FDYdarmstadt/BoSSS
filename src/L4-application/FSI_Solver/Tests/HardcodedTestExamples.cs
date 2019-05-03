@@ -163,7 +163,7 @@ namespace BoSSS.Application.FSI_Solver {
         /// <summary>
         /// Testing of particle/wall interactions using a single particle
         /// </summary>
-        public static FSI_Control SingleDryParticleAgainstWall(string _DbPath = null, bool MeshRefine = true) {
+        public static FSI_Control SingleDryParticleAgainstWall(string _DbPath = null, bool MeshRefine = false) {
             FSI_Control C = new FSI_Control();
 
             // basic database options
@@ -219,17 +219,16 @@ namespace BoSSS.Application.FSI_Solver {
             C.PhysicalParameters.rho_A = 1;
             C.PhysicalParameters.mu_A = 0.1;
 
-
             // Particles
             // =========
-            C.Particles.Add(new Particle_Sphere(new double[] { -0.5, -0.5 }, startAngl: 90.0) {
+            C.Particles.Add(new Particle_Sphere(new double[] { -0.5, -0.5 }, startAngl: 90.0)
+            {
                 particleDensity = 1.0,
                 radius_P = 0.1
             });
             C.Particles[0].TranslationalVelocity[0][0] = +1;
             C.Particles[0].TranslationalVelocity[0][1] = -1;
             C.Particles[0].RotationalVelocity[0] = 0;
-
             C.pureDryCollisions = true;
             C.collisionModel = FSI_Control.CollisionModel.MomentumConservation;
 
