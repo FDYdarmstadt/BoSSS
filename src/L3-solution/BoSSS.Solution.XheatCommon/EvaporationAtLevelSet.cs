@@ -26,11 +26,12 @@ using BoSSS.Platform;
 using System.Diagnostics;
 using BoSSS.Solution.NSECommon;
 using ilPSP;
+using System.Collections;
 
 namespace BoSSS.Solution.XheatCommon {
 
 
-    public class EvaporationAtLevelSet : ILevelSetForm {
+    public class EvaporationAtLevelSet : ILevelSetForm, ILevelSetEquationComponentCoefficient {
 
         LevelSetTracker m_LsTrk;
 
@@ -116,14 +117,28 @@ namespace BoSSS.Solution.XheatCommon {
             return qEvap;
         }
 
+        private double ComputeHeatFlux(double[] paramsNeg, double[] paramsPos, double[] N, bool microRegion) {
+
+            double qEvap = 0.0;
+            if(microRegion) {
+                qEvap = ComputeHeatFlux_Micro(paramsNeg[D], paramsPos[D], paramsNeg[D + 1], paramsNeg[D + 2]);
+            } else {
+                qEvap = ComputeHeatFlux_Macro(paramsNeg.GetSubVector(0, D), paramsPos.GetSubVector(0, D), N);
+            }
+
+            return qEvap;
+
+        }
+
 
         public double LevelSetForm(ref CommonParamsLs cp, double[] uA, double[] uB, double[,] Grad_uA, double[,] Grad_uB, double vA, double vB, double[] Grad_vA, double[] Grad_vB) {
 
             Debug.Assert(cp.ParamsPos[D + 1] == cp.ParamsNeg[D + 1], "curvature must be continuous across interface");
             Debug.Assert(cp.ParamsPos[D + 2] == cp.ParamsNeg[D + 2], "disjoining pressure must be continuous across interface");
 
-            double qEvap = ComputeHeatFlux_Macro(cp.ParamsNeg.GetSubVector(0, D), cp.ParamsPos.GetSubVector(0, D), cp.n);
+            //double qEvap = ComputeHeatFlux_Macro(cp.ParamsNeg.GetSubVector(0, D), cp.ParamsPos.GetSubVector(0, D), cp.n);
             //double qEvap = ComputeHeatFlux_Micro(cp.ParamsNeg[D], cp.ParamsPos[D], cp.ParamsNeg[D + 1], cp.ParamsNeg[D + 2]);
+            double qEvap = ComputeHeatFlux(cp.ParamsNeg, cp.ParamsPos, cp.n, evapMicroRegion[cp.jCell]);
             if(qEvap == 0.0)
                 return 0.0;
 
@@ -137,6 +152,17 @@ namespace BoSSS.Solution.XheatCommon {
 
             return FlxNeg * vA - FlxPos * vB;
         }
+
+
+        BitArray evapMicroRegion;
+
+        public void CoefficientUpdate(CoefficientSet csA, CoefficientSet csB, int[] DomainDGdeg, int TestDGdeg) {
+
+            if(csA.UserDefinedValues.Keys.Contains("EvapMicroRegion"))
+                evapMicroRegion = (BitArray)csA.UserDefinedValues["EvapMicroRegion"];
+
+        }
+
 
         public IList<string> ArgumentOrdering {
             get {

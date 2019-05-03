@@ -850,6 +850,11 @@ namespace BoSSS.Solution.XNSECommon.Operator.SurfaceTension {
         /// </summary>
         double m_beta;
 
+        /// <summary>
+        /// true for quasi-static computations with moving slip-wall and non-moving interface  
+        /// </summary>
+        bool m_staticInt;
+
         IncompressibleBcType[] m_edgeTag2Type;
 
         /// <summary>
@@ -859,7 +864,8 @@ namespace BoSSS.Solution.XNSECommon.Operator.SurfaceTension {
         protected Func<double[], double, double>[] velFunction;
 
 
-        public IsotropicSurfaceTension_LaplaceBeltrami(int d, int D, double sigma, IncompressibleBcType[] edgeTag2Type, IncompressibleBoundaryCondMap bcmap, double theta_e, double beta_L) {
+        public IsotropicSurfaceTension_LaplaceBeltrami(int d, int D, double sigma, IncompressibleBcType[] edgeTag2Type, IncompressibleBoundaryCondMap bcmap, 
+            double theta_e, double beta_L, bool _staticInt = false) {
             m_comp = d;
             m_D = D;
             m_sigma = sigma;
@@ -867,6 +873,7 @@ namespace BoSSS.Solution.XNSECommon.Operator.SurfaceTension {
             m_beta = beta_L;
             m_edgeTag2Type = edgeTag2Type;
             velFunction = bcmap.bndFunction[VariableNames.Velocity_d(d)];
+            m_staticInt = _staticInt;
         }
 
 
@@ -1001,7 +1008,8 @@ namespace BoSSS.Solution.XNSECommon.Operator.SurfaceTension {
                             // dissipative contact line force
                             // beta*(u*nL)
 
-                            double g_D = this.velFunction[inp.EdgeTag](inp.X, inp.time);
+                            double g_D = m_staticInt ? 0 : this.velFunction[inp.EdgeTag](inp.X, inp.time);
+                            //double g_D = this.velFunction[inp.EdgeTag](inp.X, inp.time);
 
                             for(int d = 0; d < D; d++) {
                                 Flx_InCell += m_beta * ((_uA[d] - g_D) * PSnINormal_IN[d]) * PSnINormal_IN[m_comp];

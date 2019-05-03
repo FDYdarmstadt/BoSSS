@@ -25,6 +25,7 @@ using ilPSP.Utils;
 using BoSSS.Platform;
 using ilPSP;
 using BoSSS.Foundation;
+using System.Collections;
 
 namespace BoSSS.Solution.XNSECommon.Operator.Viscosity {
 
@@ -35,13 +36,15 @@ namespace BoSSS.Solution.XNSECommon.Operator.Viscosity {
 
         LevelSetTracker m_LsTrk;
 
-        public ViscosityAtLevelSet_FullySymmetric(LevelSetTracker lstrk, double _muA, double _muB, double _penalty, int _component, bool _weighted = false) {
+        public ViscosityAtLevelSet_FullySymmetric(LevelSetTracker lstrk, double _muA, double _muB, double _penalty, int _component, 
+            bool _staticInt = false, bool _weighted = false) {
             this.m_LsTrk = lstrk;
             this.muA = _muA;
             this.muB = _muB;
             this.penalty = _penalty;
             this.component = _component;
             this.m_D = lstrk.GridDat.SpatialDimension;
+            this.staticInt = _staticInt;
             this.weighted = _weighted;
         }
 
@@ -51,6 +54,7 @@ namespace BoSSS.Solution.XNSECommon.Operator.Viscosity {
         int component;
         int m_D;
 
+        bool staticInt;
         bool weighted;
 
 
@@ -70,10 +74,13 @@ namespace BoSSS.Solution.XNSECommon.Operator.Viscosity {
             Debug.Assert(Grad_uA.GetLength(1) == D);
             Debug.Assert(Grad_uB.GetLength(1) == D);
 
-            double Grad_uA_xN = 0, Grad_uB_xN = 0, Grad_vA_xN = 0, Grad_vB_xN = 0;
+            double[] Grad_uA_xN = new double[2], Grad_uB_xN = new double[2];
+            double Grad_vA_xN = 0, Grad_vB_xN = 0;
             for (int d = 0; d < D; d++) {
-                Grad_uA_xN += Grad_uA[component, d] * N[d];
-                Grad_uB_xN += Grad_uB[component, d] * N[d];
+                for(int dd = 0; dd < D; dd++) {
+                    Grad_uA_xN[dd] += Grad_uA[dd, d] * N[d];
+                    Grad_uB_xN[dd] += Grad_uB[dd, d] * N[d];
+                }
                 Grad_vA_xN += Grad_vA[d] * N[d];
                 Grad_vB_xN += Grad_vB[d] * N[d];
             }
@@ -107,14 +114,55 @@ namespace BoSSS.Solution.XNSECommon.Operator.Viscosity {
             } 
 
             //double muMax = (Math.Abs(muA) > Math.Abs(muB)) ? muA : muB;
-            Ret -= (wA * muA * Grad_uA_xN + wB * muB * Grad_uB_xN) * (vA - vB);                           // consistency term
-            Ret -= (wA * muA * Grad_vA_xN + wB * muB * Grad_vB_xN) * (uA[component] - uB[component]);     // symmetry term
-            Ret += (penalty / hCutCellMin) * (uA[component] - uB[component]) * (vA - vB) * wPenalty; // penalty term
-                                                                                                  // Transpose Term
-            for (int i = 0; i < D; i++) {
-                Ret -= (wA * muA * Grad_uA[i, component] + wB *  muB * Grad_uB[i, component]) * (vA - vB) * N[i];  // consistency term
-                Ret -= (wA * muA * Grad_vA[i] + wB * muB * Grad_vB[i]) * (uA[i] - uB[i]) * N[component];  // symmetry term
+            if(!staticInt) {
+                Ret -= (wA * muA * Grad_uA_xN[component] + wB * muB * Grad_uB_xN[component]) * (vA - vB);                           // consistency term
+                Ret -= (wA * muA * Grad_vA_xN + wB * muB * Grad_vB_xN) * (uA[component] - uB[component]);     // symmetry term
+                Ret += (penalty / hCutCellMin) * (uA[component] - uB[component]) * (vA - vB) * wPenalty; // penalty term
+                // Transpose Term
+                for(int i = 0; i < D; i++) {
+                    Ret -= (wA * muA * Grad_uA[i, component] + wB * muB * Grad_uB[i, component]) * (vA - vB) * N[i];  // consistency term
+                    Ret -= (wA * muA * Grad_vA[i] + wB * muB * Grad_vB[i]) * (uA[i] - uB[i]) * N[component];  // symmetry term
+                }
+
+            } else {
+                ////free slip
+                //for(int d = 0; d < D; d++) {
+                //    Ret -= N[d] * (wA * muA * Grad_uA_xN[d]) * (vA) * N[component];                           // consistency term
+                //    Ret -= N[component] * (wA * muA * Grad_vA_xN) * (uA[d]) * N[d];     // symmetry term
+                //    Ret += (penalty / hCutCellMin) * (uA[d] - 0) * N[d] * (vA) * N[component] * muA; // penalty term
+
+                //    Ret += N[d] * (wB * muB * Grad_uB_xN[d]) * (vB) * N[component];                           // consistency term
+                //    Ret += N[component] * (wB * muB * Grad_vB_xN) * (uB[d]) * N[d];     // symmetry term
+                //    Ret += (penalty / hCutCellMin) * (0 - uB[d]) * N[d] * (0 - vB) * N[component] * muB; // penalty term
+                //}
+                //// Transpose Term
+                //for(int dN = 0; dN < D; dN++) {
+                //    for(int dD = 0; dD < D; dD++) {
+                //        Ret -= N[dN] * (wA * muA * Grad_uA[dD, dN]) * N[dD] * (vA) * N[component];  // consistency term
+                //        Ret -= N[dN] * (wA * muA * Grad_vA[dN]) * N[component] * (uA[dD]) * N[dD];  // symmetry term
+                //        Ret += N[dN] * (wB * muB * Grad_uB[dD, dN]) * N[dD] * (vB) * N[component];  // consistency term
+                //        Ret += N[dN] * (wB * muB * Grad_vB[dN]) * N[component] * (uB[dD]) * N[dD];  // symmetry term
+                //    }
+                //}
+
+                //wall
+                Ret -= (wA * muA * Grad_uA_xN[component]) * (vA);                           // consistency term
+                Ret -= (wA * muA * Grad_vA_xN) * (uA[component]);     // symmetry term
+                Ret += (penalty / hCutCellMin) * (uA[component] - 0) * (vA) * muA; // penalty term
+
+                Ret += (wB * muB * Grad_uB_xN[component]) * (vB);                           // consistency term
+                Ret += (wB * muB * Grad_vB_xN) * (uB[component]);     // symmetry term
+                Ret += (penalty / hCutCellMin) * (0 - uB[component]) * (0 - vB) * muB; // penalty term
+                // Transpose Term
+                for(int d = 0; d < D; d++) {
+                    Ret -= (wA * muA * Grad_uA[d, component]) * (vA) * N[d];  // consistency term
+                    Ret -= (wA * muA * Grad_vA[d]) * (uA[d]) * N[component];  // symmetry term
+                    Ret += (wB * muB * Grad_uB[d, component]) * (vB) * N[d];  // consistency term
+                    Ret += (wB * muB * Grad_vB[d]) * (uB[d]) * N[component];  // symmetry term
+                }
             }
+                        
+
 
             //break;^^
             //    }
@@ -492,6 +540,18 @@ namespace BoSSS.Solution.XNSECommon.Operator.Viscosity {
         }
 
 
+        private double ComputeEvaporationMass(double[] paramsNeg, double[] paramsPos, double[] N, bool microRegion) {
+
+            double M = 0.0;
+            if(microRegion) {
+                M = ComputeEvaporationMass_Micro(paramsNeg[m_D], paramsPos[m_D], paramsNeg[m_D + 1], paramsNeg[m_D + 2]);
+            } else {
+                M = ComputeEvaporationMass_Macro(paramsNeg.GetSubVector(0, m_D), paramsPos.GetSubVector(0, m_D), N);
+            }
+
+            return M;
+
+        }
 
         /// <summary>
         /// default-implementation
@@ -526,8 +586,9 @@ namespace BoSSS.Solution.XNSECommon.Operator.Viscosity {
                 // very small cell -- clippling
                 hCutCellMin = hCellMin;
 
-            double M = ComputeEvaporationMass_Macro(inp.ParamsNeg.GetSubVector(0, m_D), inp.ParamsPos.GetSubVector(0, m_D), N);
-            //double M = ComputeEvaporationMass_Micro(cp.ParamsNeg[m_D], cp.ParamsPos[m_D], cp.ParamsNeg[m_D + 1], cp.ParamsNeg[m_D + 2]);
+            //double M = ComputeEvaporationMass_Macro(inp.ParamsNeg.GetSubVector(0, m_D), inp.ParamsPos.GetSubVector(0, m_D), N);
+            //double M = ComputeEvaporationMass_Micro(inp.ParamsNeg[m_D], inp.ParamsPos[m_D], inp.ParamsNeg[m_D + 1], inp.ParamsNeg[m_D + 2]);
+            double M = ComputeEvaporationMass(inp.ParamsNeg, inp.ParamsPos, N, evapMicroRegion[inp.jCell]);
             if(M == 0.0)
                 return 0.0;
 
@@ -553,9 +614,15 @@ namespace BoSSS.Solution.XNSECommon.Operator.Viscosity {
         MultidimensionalArray PosLengthScaleS;
         MultidimensionalArray NegLengthScaleS;
 
+        BitArray evapMicroRegion;
+
         public void CoefficientUpdate(CoefficientSet csA, CoefficientSet csB, int[] DomainDGdeg, int TestDGdeg) {
             NegLengthScaleS = csA.CellLengthScales;
             PosLengthScaleS = csB.CellLengthScales;
+
+            if(csA.UserDefinedValues.Keys.Contains("EvapMicroRegion"))
+                evapMicroRegion = (BitArray)csA.UserDefinedValues["EvapMicroRegion"];
+
         }
 
         //private static bool rem = true;

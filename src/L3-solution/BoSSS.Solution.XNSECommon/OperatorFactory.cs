@@ -35,6 +35,7 @@ using ilPSP;
 using BoSSS.Foundation.Grid;
 using BoSSS.Solution.Utils;
 using NUnit.Framework;
+using System.Collections;
 
 namespace BoSSS.Solution.XNSECommon {
 
@@ -79,7 +80,8 @@ namespace BoSSS.Solution.XNSECommon {
             int degU,
             IncompressibleMultiphaseBoundaryCondMap BcMap,
             bool _movingmesh,
-            bool _evaporation) {
+            bool _evaporation,
+            bool _staticInt) {
 
             // variable names
             // ==============
@@ -340,7 +342,7 @@ namespace BoSSS.Solution.XNSECommon {
                                     }
 
                                     // Level-Set operator
-                                    comps.Add(new Operator.Viscosity.ViscosityAtLevelSet_FullySymmetric(LsTrk, muA, muB, penalty, d, dntParams.UseWeightedAverages));
+                                    comps.Add(new Operator.Viscosity.ViscosityAtLevelSet_FullySymmetric(LsTrk, muA, muB, penalty, d, _staticInt, dntParams.UseWeightedAverages));
 
                                     if(this.evaporation)
                                         comps.Add(new Operator.Viscosity.GeneralizedViscosityAtLevelSet_FullySymmetric(LsTrk, muA, muB, penalty, d, rhoA, rhoB, kA, kB, hVapA, R_int, Tsat, sigma, p_c));
@@ -367,7 +369,7 @@ namespace BoSSS.Solution.XNSECommon {
                         m_OP.EquationComponents["div"].Add(src);
                     }
 
-                    var divPen = new Operator.Continuity.DivergenceAtLevelSet(D, LsTrk, rhoA, rhoB, MatInt, config.dntParams.ContiSign, config.dntParams.RescaleConti); //, dntParams.UseWeightedAverages, muA, muB);
+                    var divPen = new Operator.Continuity.DivergenceAtLevelSet(D, LsTrk, rhoA, rhoB, MatInt, config.dntParams.ContiSign, config.dntParams.RescaleConti, _staticInt); //, dntParams.UseWeightedAverages, muA, muB);
                     m_OP.EquationComponents["div"].Add(divPen);
 
                     if(evaporation) {
@@ -409,7 +411,7 @@ namespace BoSSS.Solution.XNSECommon {
                             } else {
                                 //G = new SurfaceTension_LaplaceBeltrami2_Surface(d, config.physParams.Sigma * 0.5);
                                 //H = new SurfaceTension_LaplaceBeltrami2_BndLine(d, config.physParams.Sigma * 0.5, config.physParams.Theta_e, config.physParams.betaL);
-                                IEquationComponent isoSurfT = new IsotropicSurfaceTension_LaplaceBeltrami(d, D, config.physParams.Sigma * 0.5, BcMap.EdgeTag2Type, BcMap, config.physParams.theta_e, config.physParams.betaL);
+                                IEquationComponent isoSurfT = new IsotropicSurfaceTension_LaplaceBeltrami(d, D, config.physParams.Sigma * 0.5, BcMap.EdgeTag2Type, BcMap, config.physParams.theta_e, config.physParams.betaL, _staticInt);
                                 m_OP.SurfaceElementOperator.EquationComponents[CodName[d]].Add(isoSurfT);
                             }
 
@@ -649,6 +651,7 @@ namespace BoSSS.Solution.XNSECommon {
             }
 
 
+
             // parameter assembly
             // ==================
 
@@ -729,11 +732,16 @@ namespace BoSSS.Solution.XNSECommon {
                 foreach(var kv in AgglomeratedCellLengthScales) {
                     mtxBuilder.SpeciesOperatorCoefficients[kv.Key].CellLengthScales = kv.Value;
                     mtxBuilder.SpeciesOperatorCoefficients[kv.Key].UserDefinedValues.Add("SlipLengths", SlipLengths);
+                    if(evaporation) {
+                        BitArray EvapMicroRegion = this.LsTrk.GridDat.GetBoundaryCells().GetBitMask();
+                        mtxBuilder.SpeciesOperatorCoefficients[kv.Key].UserDefinedValues.Add("EvapMicroRegion", EvapMicroRegion);
+                    }
                 }
 
                 if(Op.SurfaceElementOperator.TotalNoOfComponents > 0) {
-                    foreach(var kv in InterfaceLengths)
+                    foreach(var kv in InterfaceLengths) {
                         mtxBuilder.SpeciesOperatorCoefficients[kv.Key].UserDefinedValues.Add("InterfaceLengths", kv.Value);
+                    }
                 }
 
                 mtxBuilder.time = time;
@@ -748,11 +756,16 @@ namespace BoSSS.Solution.XNSECommon {
                 foreach(var kv in AgglomeratedCellLengthScales) {
                     eval.SpeciesOperatorCoefficients[kv.Key].CellLengthScales = kv.Value;
                     eval.SpeciesOperatorCoefficients[kv.Key].UserDefinedValues.Add("SlipLengths", SlipLengths);
+                    if(evaporation) {
+                        BitArray EvapMicroRegion = this.LsTrk.GridDat.GetBoundaryCells().GetBitMask();
+                        eval.SpeciesOperatorCoefficients[kv.Key].UserDefinedValues.Add("EvapMicroRegion", EvapMicroRegion);
+                    }
                 }
 
                 if(Op.SurfaceElementOperator.TotalNoOfComponents > 0) {
-                    foreach(var kv in InterfaceLengths)
+                    foreach(var kv in InterfaceLengths) {
                         eval.SpeciesOperatorCoefficients[kv.Key].UserDefinedValues.Add("InterfaceLengths", kv.Value);
+                    }
                 }
 
                 eval.time = time;

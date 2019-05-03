@@ -21,6 +21,7 @@ using BoSSS.Solution.NSECommon;
 using ilPSP;
 using ilPSP.Utils;
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
@@ -154,7 +155,7 @@ namespace BoSSS.Solution.XNSECommon.Operator.Continuity {
         LevelSetTracker m_lsTrk;
 
         public DivergenceAtLevelSet(int _D, LevelSetTracker lsTrk, double _rhoA, double _rhoB,
-            bool _MaterialInterface, double vorZeichen, bool RescaleConti,
+            bool _MaterialInterface, double vorZeichen, bool RescaleConti, bool _staticInt = false,
             bool _weighted = false, double _wA = 1.0, double _wB = 1.0) {
             this.D = _D;
             this.rhoA = _rhoA;
@@ -170,6 +171,8 @@ namespace BoSSS.Solution.XNSECommon.Operator.Continuity {
                 scaleB /= rhoB;
             }
 
+            this.staticInt = _staticInt;
+
             this.weighted = _weighted;
             this.wA = _wA;
             this.wB = _wB;
@@ -182,6 +185,8 @@ namespace BoSSS.Solution.XNSECommon.Operator.Continuity {
 
         double scaleA;
         double scaleB;
+
+        bool staticInt;
 
         bool weighted;
         double wA;
@@ -201,10 +206,10 @@ namespace BoSSS.Solution.XNSECommon.Operator.Continuity {
             double uBxN = GenericBlas.InnerProd(U_Pos, cp.n);
 
             double s = 0;//cp.ParamsNeg[0];
-            //if (!MaterialInterface) {
-            //    Debug.Assert(cp.ParamsNeg[0] == cp.ParamsPos[0], "The interface velocity must be continuous across the level set!");
-            //    throw new NotImplementedException();
-            //}
+                         //if (!MaterialInterface) {
+                         //    Debug.Assert(cp.ParamsNeg[0] == cp.ParamsPos[0], "The interface velocity must be continuous across the level set!");
+                         //    throw new NotImplementedException();
+                         //}
 
             double rhoJmp = rhoB - rhoA;
 
@@ -237,6 +242,7 @@ namespace BoSSS.Solution.XNSECommon.Operator.Continuity {
 
             FlxNeg *= scaleA;
             FlxPos *= scaleB;
+
 
             return FlxNeg * vA - FlxPos * vB;
         }
@@ -370,7 +376,7 @@ namespace BoSSS.Solution.XNSECommon.Operator.Continuity {
     /// <summary>
     /// velocity jump penalty for the divergence operator, on the level set
     /// </summary>
-    public class GeneralizedDivergenceAtLevelSet : ILevelSetForm {
+    public class GeneralizedDivergenceAtLevelSet : ILevelSetForm, ILevelSetEquationComponentCoefficient {
 
         LevelSetTracker m_lsTrk;
 
@@ -470,6 +476,20 @@ namespace BoSSS.Solution.XNSECommon.Operator.Continuity {
         }
 
 
+        private double ComputeEvaporationMass(double[] paramsNeg, double[] paramsPos, double[] N, bool microRegion) {
+
+            double M = 0.0;
+            if(microRegion) {
+                M = ComputeEvaporationMass_Micro(paramsNeg[D], paramsPos[D], paramsNeg[D + 1], paramsNeg[D + 2]);
+            } else {
+                M = ComputeEvaporationMass_Macro(paramsNeg.GetSubVector(0, D), paramsPos.GetSubVector(0, D), N);
+            }
+
+            return M;
+
+        }
+
+
         public double LevelSetForm(ref Foundation.XDG.CommonParamsLs cp,
             double[] U_Neg, double[] U_Pos, double[,] Grad_uA, double[,] Grad_uB,
             double vA, double vB, double[] Grad_vA, double[] Grad_vB) {
@@ -477,8 +497,9 @@ namespace BoSSS.Solution.XNSECommon.Operator.Continuity {
             Debug.Assert(cp.ParamsPos[D + 1] == cp.ParamsNeg[D + 1], "curvature must be continuous across interface");
             Debug.Assert(cp.ParamsPos[D + 2] == cp.ParamsNeg[D + 2], "disjoining pressure must be continuous across interface");
 
-            double M = ComputeEvaporationMass_Macro(cp.ParamsNeg.GetSubVector(0, D), cp.ParamsPos.GetSubVector(0, D), cp.n);
+            //double M = ComputeEvaporationMass_Macro(cp.ParamsNeg.GetSubVector(0, D), cp.ParamsPos.GetSubVector(0, D), cp.n);
             //double M = ComputeEvaporationMass_Micro(cp.ParamsNeg[D], cp.ParamsPos[D], cp.ParamsNeg[D + 1], cp.ParamsNeg[D + 2]);
+            double M = ComputeEvaporationMass(cp.ParamsNeg, cp.ParamsPos, cp.n, evapMicroRegion[cp.jCell]);
             if(M == 0.0)
                 return 0.0;
 
@@ -517,6 +538,16 @@ namespace BoSSS.Solution.XNSECommon.Operator.Continuity {
         /// </summary>
         static double Flux(double UxN_in, double UxN_out) {
             return 0.5 * (UxN_in - UxN_out);
+        }
+
+
+        BitArray evapMicroRegion;
+
+        public void CoefficientUpdate(CoefficientSet csA, CoefficientSet csB, int[] DomainDGdeg, int TestDGdeg) {
+
+            if(csA.UserDefinedValues.Keys.Contains("EvapMicroRegion"))
+                evapMicroRegion = (BitArray)csA.UserDefinedValues["EvapMicroRegion"];
+
         }
 
 

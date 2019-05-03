@@ -26,12 +26,12 @@ using BoSSS.Platform;
 using System.Diagnostics;
 using BoSSS.Solution.NSECommon;
 using ilPSP;
-
+using System.Collections;
 
 namespace BoSSS.Solution.XNSECommon.Operator.DynamicInterfaceConditions {
 
 
-    public class MassFluxAtInterface : ILevelSetForm {
+    public class MassFluxAtInterface : ILevelSetForm, ILevelSetEquationComponentCoefficient {
 
 
         LevelSetTracker m_LsTrk;
@@ -123,6 +123,20 @@ namespace BoSSS.Solution.XNSECommon.Operator.DynamicInterfaceConditions {
         }
 
 
+        private double ComputeEvaporationMass(double[] paramsNeg, double[] paramsPos, double[] N, bool microRegion) {
+
+            double M = 0.0;
+            if(microRegion) {
+                M = ComputeEvaporationMass_Micro(paramsNeg[m_D], paramsPos[m_D], paramsNeg[m_D + 1], paramsNeg[m_D + 2]);
+            } else {
+                M = ComputeEvaporationMass_Macro(paramsNeg.GetSubVector(0, m_D), paramsPos.GetSubVector(0, m_D), N);
+            }
+
+            return M;
+
+        }
+
+
         public double LevelSetForm(ref CommonParamsLs cp, double[] uA, double[] uB, double[,] Grad_uA, double[,] Grad_uB, double vA, double vB, double[] Grad_vA, double[] Grad_vB) {
 
             double[] Normal = cp.n;
@@ -130,8 +144,9 @@ namespace BoSSS.Solution.XNSECommon.Operator.DynamicInterfaceConditions {
             Debug.Assert(cp.ParamsPos[m_D + 1] == cp.ParamsNeg[m_D + 1], "curvature must be continuous across interface");
             Debug.Assert(cp.ParamsPos[m_D + 2] == cp.ParamsNeg[m_D + 2], "disjoining pressure must be continuous across interface");
 
-            double M = ComputeEvaporationMass_Macro(cp.ParamsNeg.GetSubVector(0, m_D), cp.ParamsPos.GetSubVector(0, m_D), Normal);
+            //double M = ComputeEvaporationMass_Macro(cp.ParamsNeg.GetSubVector(0, m_D), cp.ParamsPos.GetSubVector(0, m_D), Normal);
             //double M = ComputeEvaporationMass_Micro(cp.ParamsNeg[m_D], cp.ParamsPos[m_D], cp.ParamsNeg[m_D + 1], cp.ParamsNeg[m_D + 2]);
+            double M = ComputeEvaporationMass(cp.ParamsNeg, cp.ParamsPos, cp.n, evapMicroRegion[cp.jCell]);
             if(M == 0.0)
                 return 0.0;
 
@@ -166,6 +181,17 @@ namespace BoSSS.Solution.XNSECommon.Operator.DynamicInterfaceConditions {
 
             return Ret;
         }
+
+
+        BitArray evapMicroRegion;
+
+        public void CoefficientUpdate(CoefficientSet csA, CoefficientSet csB, int[] DomainDGdeg, int TestDGdeg) {
+
+            if(csA.UserDefinedValues.Keys.Contains("EvapMicroRegion"))
+                evapMicroRegion = (BitArray)csA.UserDefinedValues["EvapMicroRegion"];
+
+        }
+
 
         public IList<string> ArgumentOrdering {
             get {

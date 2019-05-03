@@ -1016,21 +1016,23 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
 
 
             C.PhysicalParameters.rho_A = 1;
-            C.PhysicalParameters.rho_B = 1e-3;
+            C.PhysicalParameters.rho_B = 1;
             C.PhysicalParameters.mu_A = 1;
-            C.PhysicalParameters.mu_B = 1e-3;
+            C.PhysicalParameters.mu_B = 1;
             double sigma = 1.0;
             C.PhysicalParameters.Sigma = sigma;
 
-            //C.PhysicalParameters.betaS_A = 0.05;
-            //C.PhysicalParameters.betaS_B = 0.05;
+            double Lslip = 1e-6;
 
-            C.PhysicalParameters.betaL = 0;
-            double theta_e = Math.PI * 1.0 / 4.0;
+            //C.PhysicalParameters.betaS_A = 1 / Lslip;
+            //C.PhysicalParameters.betaS_B = 0.0;
+
+            //C.PhysicalParameters.betaL = 1 / 1e-5;
+            double theta_e = Math.PI * 3.0 / 4.0;
             C.PhysicalParameters.theta_e = theta_e;
 
 
-            C.PhysicalParameters.IncludeConvection = true;
+            C.PhysicalParameters.IncludeConvection = false;
             C.PhysicalParameters.Material = true;
 
             #endregion
@@ -1040,8 +1042,8 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             // ===============
             #region grid
 
-            double xSize = 2e-1;
-            double ySize = 1e-1;
+            double xSize = 2e-3;
+            double ySize = 1e-3;
 
             C.GridFunc = delegate () {
                 double[] Xnodes = GenericBlas.Linspace(-xSize, xSize, 2 * (2 * kelem) + 2);
@@ -1107,7 +1109,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
 
             C.AdvancedDiscretizationOptions.GNBC_Localization = NavierSlip_Localization.Bulk;
             C.AdvancedDiscretizationOptions.GNBC_SlipLength = NavierSlip_SlipLength.Prescribed_SlipLength;
-            C.PhysicalParameters.sliplength = 1e-5;
+            C.PhysicalParameters.sliplength = Lslip;
 
             #endregion
 
@@ -1157,8 +1159,8 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             C.Timestepper_BDFinit = TimeStepperInit.SingleInit;
             C.Timestepper_LevelSetHandling = LevelSetHandling.None;
 
-            C.CompMode = AppControl._CompMode.Transient;
-            double dt = 1e-5;
+            C.CompMode = AppControl._CompMode.Steady;
+            double dt = 1e-3;
             C.Endtime = 1000;
             C.NoOfTimesteps = 1000;
             C.saveperiod = 1;
