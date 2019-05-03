@@ -517,7 +517,8 @@ namespace BoSSS.Application.FSI_Solver
             }
 
             // Include Gravitiy
-            HydrodynamicForces[0][1] += GravityVertical * Mass_P;
+            if(!skipForceIntegration)
+                HydrodynamicForces[0][1] += GravityVertical * Mass_P;
             double[,] CoefficientMatrix = Acceleration.CalculateCoefficients(AddedDampingTensor, Mass_P, MomentOfInertia_P, dt, AddedDampingCoefficient);
             double Denominator = Acceleration.CalculateDenominator(CoefficientMatrix);
 

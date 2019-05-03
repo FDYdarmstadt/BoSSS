@@ -1602,7 +1602,7 @@ namespace BoSSS.Application.FSI_Solver
 
                 case FSI_Control.CollisionModel.MomentumConservation:
 
-                    if (((realDistance <= threshold) || ForceCollision) && !particle0.m_collidedWithParticle[m_Particles.IndexOf(particle1)] && !particle1.m_collidedWithParticle[m_Particles.IndexOf(particle0)])
+                    if (((realDistance <= threshold) || ForceCollision)) // && !particle0.m_collidedWithParticle[m_Particles.IndexOf(particle1)] && !particle1.m_collidedWithParticle[m_Particles.IndexOf(particle0)])
                     {
                         // Bool if collided
                         particle0.m_collidedWithParticle[m_Particles.IndexOf(particle1)] = true;
