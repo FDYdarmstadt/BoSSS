@@ -163,13 +163,17 @@ namespace BoSSS.Application.FSI_Solver {
                 throw new ArithmeticException("Error trying to calculate the number of surface points, overflow");
             for (int j = 0; j < HalfSurfacePoints; j++)
             {
-                SurfacePoints[j, 0] = Math.Cos(Angle[0]) * Math.Pow(Math.Cos(InfinitisemalAngle[j]), 2 / superEllipsoidExponent) * length_P + Position[0][0];
-                SurfacePoints[j, 1] = Math.Sin(Angle[0]) * Math.Pow(Math.Sin(InfinitisemalAngle[j]), 2 / superEllipsoidExponent) * thickness_P + Position[0][1];
+                double temp0 = Math.Pow(Math.Cos(InfinitisemalAngle[j]), 2 / superEllipsoidExponent) * length_P;
+                double temp1 = Math.Pow(Math.Sin(InfinitisemalAngle[j]), 2 / superEllipsoidExponent) * thickness_P;
+                SurfacePoints[j, 0] = (temp0 * Math.Cos(Angle[0]) - temp1 * Math.Sin(Angle[0])) + Position[0][0];
+                SurfacePoints[j, 1] = (temp0 * Math.Sin(Angle[0]) + temp1 * Math.Cos(Angle[0])) + Position[0][1];
             }
             for (int j = HalfSurfacePoints; j < NoOfSurfacePoints; j++)
             {
-                SurfacePoints[j, 0] = Math.Cos(Angle[0]) * -Math.Pow(Math.Cos(InfinitisemalAngle[j - HalfSurfacePoints]), 2 / superEllipsoidExponent) * length_P + Position[0][0];
-                SurfacePoints[j, 1] = Math.Sin(Angle[0]) * -Math.Pow(Math.Sin(InfinitisemalAngle[j - HalfSurfacePoints]), 2 / superEllipsoidExponent) * thickness_P + Position[0][1];
+                double temp0 = -Math.Pow(Math.Cos(InfinitisemalAngle[j - HalfSurfacePoints]), 2 / superEllipsoidExponent) * length_P;
+                double temp1 = -Math.Pow(Math.Sin(InfinitisemalAngle[j - HalfSurfacePoints]), 2 / superEllipsoidExponent) * thickness_P;
+                SurfacePoints[j, 0] = (temp0 * Math.Cos(Angle[0]) - temp1 * Math.Sin(Angle[0])) + Position[0][0];
+                SurfacePoints[j, 1] = (temp0 * Math.Sin(Angle[0]) + temp1 * Math.Cos(Angle[0])) + Position[0][1];
             }
 
             return SurfacePoints;

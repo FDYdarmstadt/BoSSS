@@ -238,6 +238,18 @@ namespace BoSSS.Application.FSI_Solver
         public List<double[]> CollisionTranslationalVelocity = new List<double[]>();
 
         /// <summary>
+        /// The translational velocity of the particle in the current time step. This list is used by the momentum conservation model.
+        /// </summary>
+        [DataMember]
+        public List<double[]> CollisionNormal = new List<double[]>();
+
+        /// <summary>
+        /// The translational velocity of the particle in the current time step. This list is used by the momentum conservation model.
+        /// </summary>
+        [DataMember]
+        public List<double[]> CollisionTangential = new List<double[]>();
+
+        /// <summary>
         /// The angular velocity of the particle in the current time step.
         /// </summary>
         [DataMember]
@@ -503,12 +515,17 @@ namespace BoSSS.Application.FSI_Solver
                 Aux.SaveMultidimValueOfLastTimestep(TranslationalAcceleration);
                 Aux.SaveValueOfLastTimestep(RotationalAcceleration);
             }
-            
+
+            // Include Gravitiy
+            HydrodynamicForces[0][1] += GravityVertical * Mass_P;
             double[,] CoefficientMatrix = Acceleration.CalculateCoefficients(AddedDampingTensor, Mass_P, MomentOfInertia_P, dt, AddedDampingCoefficient);
             double Denominator = Acceleration.CalculateDenominator(CoefficientMatrix);
 
-            if (this.IncludeTranslation)
+            if (this.IncludeTranslation) { }
                 TranslationalAcceleration[0] = Acceleration.Translational(CoefficientMatrix, Denominator, HydrodynamicForces[0], HydrodynamicTorque[0]);
+
+
+
 
             for (int d = 0; d < SpatialDim; d++)
             {
@@ -680,9 +697,9 @@ namespace BoSSS.Application.FSI_Solver
             ).Execute();
 
             // add gravity
-            {
-                Forces[1] += (particleDensity - fluidDensity) * Area_P * GravityVertical;
-            }
+            //{
+            //    Forces[1] += (particleDensity - fluidDensity) * Area_P * GravityVertical;
+            //}
 
             if (neglectAddedDamping == false) {
                 Forces[0] = Forces[0] - AddedDampingCoefficient * dt * (AddedDampingTensor[0, 0] * TranslationalAcceleration[0][0] + AddedDampingTensor[1, 0] * TranslationalAcceleration[0][1] + AddedDampingTensor[0, 2] * RotationalAcceleration[0]);
