@@ -551,8 +551,8 @@ namespace BoSSS.Application.FSI_Solver {
                 int q = new int();
                 int r = new int();
 
-                q = 30;
-                r = 40;
+                q = 30 * 2;
+                r = 40 * 2;
 
                 double[] Xnodes = GenericBlas.Linspace(-1.5 * BaseSize, 1.5 * BaseSize, q + 1);
                 double[] Ynodes = GenericBlas.Linspace(3 * BaseSize, 7 * BaseSize, r + 1);
@@ -606,19 +606,22 @@ namespace BoSSS.Application.FSI_Solver {
             // Fluid Properties
             C.PhysicalParameters.rho_A = 1.0;
             C.PhysicalParameters.mu_A = 0.1;
-            C.CoefficientOfRestitution = 0;
+            C.CoefficientOfRestitution = 1;
 
             // Particle Properties
             //C.PhysicalParameters.mu_B = 0.1;
             //C.particleMass = 1;
 
-            C.Particles.Add(new Particle_Sphere(new double[] { 0.0, 6 })
+            C.Particles.Add(new Particle_Ellipsoid(new double[] { 0.0, 6 })
             {
-                radius_P = 0.2,
+                //radius_P = 0.2,
+                length_P = 0.2,
+                thickness_P = 0.1,
                 particleDensity = 1.0,
-                GravityVertical = -9.81,
+                GravityVertical = -9.81 / 2,
             });
             C.Particles[0].TranslationalVelocity[0][1] = -0;
+            C.Particles[0].RotationalVelocity[0] = 1;
 
 
             C.Particles.Add(new Particle_Ellipsoid(new double[] { 0.4, 4.5 }, startAngl: 45)
@@ -662,7 +665,7 @@ namespace BoSSS.Application.FSI_Solver {
 
             //C.Timestepper_Mode = FSI_Control.TimesteppingMode.Splitting;
             C.Timestepper_Scheme = FSI_Solver.FSI_Control.TimesteppingScheme.BDF2;
-            double dt = 1e-3;
+            double dt = 1e-2;
             C.dtMax = dt;
             C.dtMin = dt;
             C.Endtime = 8.0;

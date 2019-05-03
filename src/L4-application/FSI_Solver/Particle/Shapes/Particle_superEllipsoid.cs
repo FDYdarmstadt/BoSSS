@@ -147,7 +147,7 @@ namespace BoSSS.Application.FSI_Solver {
             return new double[] { length_P, thickness_P };
         }
 
-        override public MultidimensionalArray GetSurfacePoints(LevelSetTracker lsTrk)
+        override public MultidimensionalArray GetSurfacePoints(LevelSetTracker lsTrk, double[] Position, double Angle)
         {
             int SpatialDim = lsTrk.GridDat.SpatialDimension;
             if (SpatialDim != 2)
@@ -165,15 +165,15 @@ namespace BoSSS.Application.FSI_Solver {
             {
                 double temp0 = Math.Pow(Math.Cos(InfinitisemalAngle[j]), 2 / superEllipsoidExponent) * length_P;
                 double temp1 = Math.Pow(Math.Sin(InfinitisemalAngle[j]), 2 / superEllipsoidExponent) * thickness_P;
-                SurfacePoints[j, 0] = (temp0 * Math.Cos(Angle[0]) - temp1 * Math.Sin(Angle[0])) + Position[0][0];
-                SurfacePoints[j, 1] = (temp0 * Math.Sin(Angle[0]) + temp1 * Math.Cos(Angle[0])) + Position[0][1];
+                SurfacePoints[j, 0] = (temp0 * Math.Cos(Angle) - temp1 * Math.Sin(Angle)) + Position[0];
+                SurfacePoints[j, 1] = (temp0 * Math.Sin(Angle) + temp1 * Math.Cos(Angle)) + Position[1];
             }
             for (int j = HalfSurfacePoints; j < NoOfSurfacePoints; j++)
             {
                 double temp0 = -Math.Pow(Math.Cos(InfinitisemalAngle[j - HalfSurfacePoints]), 2 / superEllipsoidExponent) * length_P;
                 double temp1 = -Math.Pow(Math.Sin(InfinitisemalAngle[j - HalfSurfacePoints]), 2 / superEllipsoidExponent) * thickness_P;
-                SurfacePoints[j, 0] = (temp0 * Math.Cos(Angle[0]) - temp1 * Math.Sin(Angle[0])) + Position[0][0];
-                SurfacePoints[j, 1] = (temp0 * Math.Sin(Angle[0]) + temp1 * Math.Cos(Angle[0])) + Position[0][1];
+                SurfacePoints[j, 0] = (temp0 * Math.Cos(Angle) - temp1 * Math.Sin(Angle)) + Position[0];
+                SurfacePoints[j, 1] = (temp0 * Math.Sin(Angle) + temp1 * Math.Cos(Angle)) + Position[1];
             }
 
             return SurfacePoints;
