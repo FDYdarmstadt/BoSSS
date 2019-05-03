@@ -120,7 +120,7 @@ namespace NSE_SIMPLE.LowMach {
             c.Reynolds = 10.0;
             c.Prandtl = 0.71;
             c.Gamma = 1.4;
-            c.EoS = new MaterialLawLowMach(600.0, MaterialParamsMode.PowerLaw);
+            c.EoS = new MaterialLawLowMach(600.0, MaterialParamsMode.PowerLaw, false);
 
             c.Froude = 0.92303846;
             c.GravityDirection = new double[] { 0.0, -1.0 };
