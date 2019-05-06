@@ -18,6 +18,7 @@ using BoSSS.Application.FSI_Solver;
 using BoSSS.Foundation;
 using BoSSS.Foundation.Grid;
 using BoSSS.Solution.Utils;
+using MPI.Wrappers;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -201,6 +202,24 @@ namespace FSI_Solver
                 ColoredCellsSorted.Insert(ListIndex, temp);
             }
             return ColoredCellsSorted;
+        }
+
+        internal void DetermineGlobalParticleColor(IGridData GridData, int[] CellColor, List<Particle> Particles, out int[] GlobalParticleColor)
+        {
+            List<int[]> ColoredCellsSorted = ColoredCellsFindAndSort(CellColor);
+            int[] ParticleColorArray = FindParticleColor(GridData, Particles, ColoredCellsSorted);
+            int NoOfParticles = ParticleColorArray.Length;
+            GlobalParticleColor = new int[NoOfParticles];
+            double[] StateBuffer = new double[NoOfParticles];
+            for (int i = 0; i < NoOfParticles; i++)
+            {
+                StateBuffer[i] = Convert.ToDouble(ParticleColorArray[i]);
+            }
+            double[] GlobalStateBuffer = StateBuffer.MPIMax();
+            for (int i = 0; i < NoOfParticles; i++)
+            {
+                GlobalParticleColor[i] = Convert.ToInt32(GlobalStateBuffer[i]);
+            }
         }
     }
 }
