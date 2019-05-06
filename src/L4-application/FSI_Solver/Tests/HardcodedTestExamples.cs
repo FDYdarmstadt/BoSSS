@@ -631,8 +631,8 @@ namespace BoSSS.Application.FSI_Solver {
                 length_P = 0.4,
                 //superEllipsoidExponent = 4,
                 GravityVertical = -9.81,
-                IncludeRotation = false,
-                IncludeTranslation = false,
+                //IncludeRotation = false,
+                //IncludeTranslation = false,
             });
 
             C.Particles.Add(new Particle_Ellipsoid(new double[] { -0.4, 4.5 }, startAngl: -45)
@@ -642,8 +642,8 @@ namespace BoSSS.Application.FSI_Solver {
                 length_P = 0.4,
                 //superEllipsoidExponent = 4,
                 GravityVertical = -9.81,
-                IncludeRotation = false,
-                IncludeTranslation = false,
+                //IncludeRotation = false,
+                //IncludeTranslation = false,
             });
             C.InitialValues_Evaluators.Add("VelocityX", X => 0);
             C.InitialValues_Evaluators.Add("VelocityY", X => 0);
@@ -669,7 +669,7 @@ namespace BoSSS.Application.FSI_Solver {
             C.dtMax = dt;
             C.dtMin = dt;
             C.Endtime = 8.0;
-            C.NoOfTimesteps = 500;
+            C.NoOfTimesteps = 1000;
 
             // haben fertig...
             // ===============

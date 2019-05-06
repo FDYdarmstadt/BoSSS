@@ -399,15 +399,24 @@ namespace BoSSS.Application.FSI_Solver
 
             if (IncludeTranslation == true) {
                 for (int d = 0; d < SpatialDim; d++) {
-                    Position[0][d] = Position[1][d] + TranslationalVelocity[1][d] * dt + (TranslationalAcceleration[1][d] + TranslationalAcceleration[0][d]) * dt.Pow2() / 4;
+                    bool AnyCollision = false;
                     for (int p = 0; p < m_collidedWithParticle.Length; p++)
                     {
                         if (m_collidedWithParticle[p])
                         {
-                            Position[0][d] = Position[1][d] + (TranslationalVelocity[1][d] + TranslationalVelocity[0][d]) * dt / 2;
-                            
+                            AnyCollision = true;
                         }
                     }
+                    if (!AnyCollision)
+                        Position[0][d] = Position[1][d] + TranslationalVelocity[1][d] * dt + (TranslationalAcceleration[1][d] + TranslationalAcceleration[0][d]) * dt.Pow2() / 4;
+                    else
+                        Position[0][d] = Position[1][d] + dt * (0 + TranslationalVelocity[0][d]) / 2;
+                    Console.WriteLine("Position[1][" + d + "]: " + Position[1][d]);
+                    Console.WriteLine("Position[0][" + d + "]: " + Position[0][d]);
+                    Console.WriteLine("TranslationalVelocity[1][" + d + "]: " + TranslationalVelocity[1][d]);
+                    Console.WriteLine("TranslationalVelocity[0][" + d + "]: " + TranslationalVelocity[0][d]);
+                    Console.WriteLine("TranslationalAcceleration[1][" + d + "]: " + TranslationalAcceleration[1][d]);
+                    Console.WriteLine("TranslationalAcceleration[0][" + d + "]: " + TranslationalAcceleration[0][d]);
                     if (double.IsNaN(Position[0][d]) || double.IsInfinity(Position[0][d]))
                         throw new ArithmeticException("Error trying to update particle position. Value:  " + Position[0][d]);
                 }
@@ -560,7 +569,18 @@ namespace BoSSS.Application.FSI_Solver
             } else {
 
                 for (int d = 0; d < SpatialDim; d++) {
-                    TranslationalVelocity[0][d] = TranslationalVelocity[1][d] + (TranslationalAcceleration[1][d] + TranslationalAcceleration[0][d]) * dt / 2;
+                    bool AnyCollision = false;
+                    for (int p = 0; p < m_collidedWithParticle.Length; p++)
+                    {
+                        if (m_collidedWithParticle[p])
+                        {
+                            AnyCollision = true;
+                        }
+                    }
+                    if (!AnyCollision)
+                        TranslationalVelocity[0][d] = TranslationalVelocity[1][d] + (TranslationalAcceleration[1][d] + TranslationalAcceleration[0][d]) * dt / 2;
+                    else
+                        TranslationalVelocity[0][d] = TranslationalVelocity[1][d];
                     if (double.IsNaN(TranslationalVelocity[0][d]) || double.IsInfinity(TranslationalVelocity[0][d]))
                         throw new ArithmeticException("Error trying to calculate particle velocity Value:  " + TranslationalVelocity[0][d]);
                 }
