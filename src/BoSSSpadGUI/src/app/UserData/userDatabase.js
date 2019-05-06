@@ -6,7 +6,6 @@ class UserDatabase{
     
     static async load(path){
         var filePath = UserDatabase.getDatabasePath(path);
-        console.log(filePath);
         var file = await File.initialize(filePath);
         return new UserDatabase(file);
     }
