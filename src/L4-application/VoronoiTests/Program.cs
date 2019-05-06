@@ -5,7 +5,7 @@ namespace VoronoiTests
     class Program
     {
         public static void Main() {
-            TestBench selectedTest = availableTests[4];
+            TestBench selectedTest = availableTests["GridTests"];
             RunTest(selectedTest);
         }
 
@@ -16,13 +16,13 @@ namespace VoronoiTests
             test.TearDown();
         }
 
-        static readonly List< TestBench> availableTests = new List<TestBench>
+        static readonly Dictionary<string, TestBench> availableTests = new Dictionary<string, TestBench>()
         {
-            new Database.Session.DGFieldArithmeticTests(),
-            new Database.Session.SessionIOTests(),
-            new Database.GridIOTests(),
-            new Database.Session.BoSSSpadTests(),
-            new GridCreation.GridTests()
+            {"ArithmeticTests", new Database.Session.DGFieldArithmeticTests() },
+            {"SessionIOTests", new Database.Session.SessionIOTests() },
+            {"GridIOTests", new Database.GridIOTests()},
+            {"BoSSSpadTests", new Database.Session.BoSSSpadTests()},
+            {"GridTests", new GridCreation.GridTests()}
         };
     }
 }

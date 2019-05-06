@@ -1,16 +1,26 @@
 const UserData = require("./userData.js");
 const File = require('./file.js');
+const Path = require('path');
 
 class UserDatabase{
     
     static async load(path){
-        var file = await File.initialize(path);
+        var filePath = UserDatabase.getDatabasePath(path);
+        console.log(filePath);
+        var file = await File.initialize(filePath);
         return new UserDatabase(file);
     }
     
     constructor(file){
         this.file = file;
         this.UserData = this.createUserData(file);
+    }
+
+    static getDatabasePath(path){
+        var userDataFolder = process.env.APPDATA || 
+            (process.platform == 'darwin' ? process.env.HOME + 'Library/Preferences' : process.env.HOME + "/.local/share");
+        var filePath = Path.join(userDataFolder, path);
+        return filePath;
     }
 
     createUserData(file){
