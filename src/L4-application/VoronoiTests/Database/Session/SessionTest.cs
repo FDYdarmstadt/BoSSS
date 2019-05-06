@@ -8,6 +8,7 @@ using BoSSS.Solution;
 using BoSSS.Solution.Control;
 using BoSSS.Application.SipPoisson;
 using BoSSS.Foundation.IO;
+using static VoronoiTests.Database.Session.ArrayMethods;
 
 namespace VoronoiTests.Database.Session
 {
@@ -28,7 +29,7 @@ namespace VoronoiTests.Database.Session
 
         static ISessionInfo CreateSession(int numberOfVoronoiCells)
         {
-            AppControl lShape = SipHardcodedControl.TestVoronoi_LDomain(numberOfVoronoiCells, db: Database);
+            AppControl lShape = VoronoiControl.TestVoronoi_LDomain(numberOfVoronoiCells, db: Database);
             IApplication poisson = new SipPoissonMain();
             RunApplication(poisson, lShape);
             ISessionInfo session = poisson.CurrentSessionInfo;
@@ -39,11 +40,11 @@ namespace VoronoiTests.Database.Session
         {
             int numberOfSessions = 5;
             ISessionInfo[] sessions = new ISessionInfo[numberOfSessions];
-            double[] numbersOfVoronoiCells = ilPSP.Utils.GenericBlas.Linspace(100, 1000, numberOfSessions);
+            int[] numbersOfVoronoiCells = ConvertArray<double, int>(ilPSP.Utils.GenericBlas.Linspace(100, 1000, numberOfSessions));
 
             for (int i = 0; i < numberOfSessions; ++i)
             {
-                int numberOfVoronoiCells = (int)numbersOfVoronoiCells[i];
+                int numberOfVoronoiCells = numbersOfVoronoiCells[i];
                 sessions[i] = CreateSession(numberOfVoronoiCells);
             }
             return sessions;
