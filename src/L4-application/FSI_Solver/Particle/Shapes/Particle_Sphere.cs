@@ -142,7 +142,7 @@ namespace BoSSS.Application.FSI_Solver
                 throw new NotImplementedException("Only two dimensions are supported at the moment");
 
             double hMin = lsTrk.GridDat.iGeomCells.h_min.Min();
-            int NoOfSurfacePoints = Convert.ToInt32(10 * Circumference_P / hMin) + 1;
+            int NoOfSurfacePoints = Convert.ToInt32(20 * Circumference_P / hMin) + 1;
             MultidimensionalArray SurfacePoints = MultidimensionalArray.Create(NoOfSurfacePoints, 2);
             double[] InfinitisemalAngle = GenericBlas.Linspace(0, 2 * Math.PI, NoOfSurfacePoints + 1);
             if (Math.Abs(10 * Circumference_P / hMin + 1) >= int.MaxValue)
