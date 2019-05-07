@@ -126,9 +126,10 @@ namespace BoSSS.Application.FSI_Solver {
             cellCollection = cells.Intersect(allCutCells);
             return cellCollection;
         }
-        override public bool Contains(double[] point, LevelSetTracker LsTrk) {
+        override public bool Contains(double[] point, LevelSetTracker LsTrk, bool WithoutTolerance = false)
+        {
             // only for squared cells
-            double radiusTolerance = Math.Max(length_P, thickness_P) + 2.0 * Math.Sqrt(2 * LsTrk.GridDat.Cells.h_minGlobal.Pow2());
+            double radiusTolerance = !WithoutTolerance ? 1.0 + 2.0 * Math.Sqrt(2 * LsTrk.GridDat.Cells.h_minGlobal.Pow2()) : 1;
             if (-Math.Pow(((point[0] - Position[0][0]) * Math.Cos(Angle[0]) - (point[1] - Position[0][1]) * Math.Sin(Angle[0])) / length_P, superEllipsoidExponent) + -Math.Pow(((point[0] - Position[0][0]) * Math.Sin(Angle[0]) + (point[1] - Position[0][1]) * Math.Cos(Angle[0])) / thickness_P, superEllipsoidExponent) + radiusTolerance.Pow(superEllipsoidExponent) > 0) {
                 return true;
             }

@@ -1421,6 +1421,9 @@ namespace BoSSS.Application.FSI_Solver
 
                 if (ParticlesOfCurrentColor.Length > 1 && CurrentColor != 0)
                 {
+                    bool[,] CollidedWith = new bool[ParticlesOfCurrentColor.Length, ParticlesOfCurrentColor.Length];
+                    bool AnyCollision = false;
+                    bool NotCollided = false;
                     for (int p1 = 0; p1 < ParticlesOfCurrentColor.Length; p1++)
                     {
                         Console.WriteLine("I'm particle " + ParticlesOfCurrentColor[p1]);
@@ -1429,7 +1432,41 @@ namespace BoSSS.Application.FSI_Solver
                             Console.WriteLine("And I'm particle " + ParticlesOfCurrentColor[p2]);
                             double distance = 1E20;
                             double[] distanceVec = new double[Grid.SpatialDimension];
-                            ComputeCollisionModel(hmin, Particles[ParticlesOfCurrentColor[p1]], Particles[ParticlesOfCurrentColor[p2]], ref distance, ref distanceVec, dt);
+                            ComputeCollisionModel(hmin, Particles[ParticlesOfCurrentColor[p1]], Particles[ParticlesOfCurrentColor[p2]], ref distance, ref distanceVec, dt, out bool Collided);
+                            CollidedWith[p1, p2] = Collided;
+                            if (Collided)
+                                AnyCollision = true;
+                            else
+                                NotCollided = true;
+                        }
+                    }
+                    for (int p = 0; p < ParticlesOfCurrentColor.Length; p++)
+                    {
+                        SumOverCollisionVelocities(Particles[ParticlesOfCurrentColor[p]], false);
+                    }
+                    if (AnyCollision && NotCollided)
+                    {
+                        Console.WriteLine("Some particles of color " + CurrentColor + " are collided, some are not. Thus, I will test whether they will collide with the new velocities");
+                        for (int p1 = 0; p1 < ParticlesOfCurrentColor.Length; p1++)
+                        {
+                            
+                            for (int p2 = p1 + 1; p2 < ParticlesOfCurrentColor.Length; p2++)
+                            {
+                                if (!CollidedWith[p1, p2])
+                                {
+                                    Console.WriteLine("I'm particle " + ParticlesOfCurrentColor[p1]);
+                                    Console.WriteLine("And I'm particle " + ParticlesOfCurrentColor[p2]);
+                                    double distance = 1E20;
+                                    double[] distanceVec = new double[Grid.SpatialDimension];
+                                    ComputeCollisionModel(hmin, Particles[ParticlesOfCurrentColor[p1]], Particles[ParticlesOfCurrentColor[p2]], ref distance, ref distanceVec, dt, out bool Collided);
+                                    CollidedWith[p1, p2] = Collided;
+                                    AnyCollision = Collided;
+                                }
+                            }
+                        }
+                        if (!AnyCollision)
+                        {
+                            Console.WriteLine("No further collision");
                         }
                     }
                     for(int p = 0; p < ParticlesOfCurrentColor.Length; p++)
@@ -1445,7 +1482,7 @@ namespace BoSSS.Application.FSI_Solver
             }
         }
 
-        private void SumOverCollisionVelocities(Particle _Particle)
+        private void SumOverCollisionVelocities(Particle _Particle, bool FinalSummation = true)
         {
             int SpatialDim = GridData.SpatialDimension;
             if (_Particle.CollisionRotationalVelocity.Count() >= 1)
@@ -1455,7 +1492,8 @@ namespace BoSSS.Application.FSI_Solver
                 {
                     _Particle.RotationalVelocity[0] += _Particle.CollisionRotationalVelocity[r];
                 }
-                _Particle.CollisionRotationalVelocity.Clear();
+                if(!FinalSummation)
+                    _Particle.CollisionRotationalVelocity.Clear();
             }
             if (_Particle.CollisionTranslationalVelocity.Count() >= 1)
             {
@@ -1483,39 +1521,28 @@ namespace BoSSS.Application.FSI_Solver
                         Cos[t] += Normal[d] * _Particle.CollisionNormal[t][d];
                     }
                     Sin[t] = Cos[t] == 1 ? 0 : _Particle.CollisionNormal[t][0] > Normal[0] ? Math.Sqrt(1 + 1e-15 - Cos[t].Pow2()) : -Math.Sqrt(1 + 1e-15 - Cos[t].Pow2());
-                    Console.WriteLine("Cos: " + Cos[t]);
-                    Console.WriteLine("Sin: " + Sin[t]);
                     temp_NormalVel += _Particle.CollisionTranslationalVelocity[t][0] * Cos[t] - _Particle.CollisionTranslationalVelocity[t][1] * Sin[t];
                     temp_TangentialVel += _Particle.CollisionTranslationalVelocity[t][0] * Sin[t] + _Particle.CollisionTranslationalVelocity[t][1] * Cos[t];
                 }
-                Console.WriteLine("_Particle.CollisionTranslationalVelocity.Count(): " + _Particle.CollisionTranslationalVelocity.Count());
                 temp_NormalVel /= _Particle.CollisionTranslationalVelocity.Count();
                 temp_TangentialVel /= _Particle.CollisionTranslationalVelocity.Count();
                 for (int d = 0; d < SpatialDim; d++)
                 {
-                    Console.WriteLine("Normal[" + d + "]: " + Normal[d]);
-                    Console.WriteLine("Tangential[" + d + "]: " + Tangential[d]);
-                    Console.WriteLine("temp_NormalVel: " + temp_NormalVel);
-                    Console.WriteLine("temp_TangentialVel: " + temp_TangentialVel);
                     _Particle.TranslationalVelocity[0][d] = Normal[d] * temp_NormalVel + Tangential[d] * temp_TangentialVel;
-                    Console.WriteLine("_Particle.TranslationalVelocity[0][" + d + "]: " + _Particle.TranslationalVelocity[0][d]);
                 }
-                _Particle.CollisionTranslationalVelocity.Clear();
-                _Particle.CollisionNormal.Clear();
-                _Particle.CollisionTangential.Clear();
+                if (!FinalSummation)
+                {
+                    _Particle.CollisionTranslationalVelocity.Clear();
+                    _Particle.CollisionNormal.Clear();
+                    _Particle.CollisionTangential.Clear();
+                }
             }
         }
 
-        private void FindClosestPoint(Particle particle0, Particle particle1, MultidimensionalArray interfacePoints_P0, MultidimensionalArray interfacePoints_P1, ref double[] distanceVec, ref double distance, out double[] tempPoint_P0, out double[] tempPoint_P1, out bool Overlapping)
+        private void FindClosestPoint(double[] Pos0, double[] Pos1, double hmin, MultidimensionalArray interfacePoints_P0, MultidimensionalArray interfacePoints_P1, ref double[] distanceVec, ref double distance, out double[] tempPoint_P0, out double[] tempPoint_P1, out bool Overlapping)
         {
-            double[] Pos0 = particle0.Position[0];
-            double[] Pos1 = particle1.Position[0];
             tempPoint_P0 = new double[2];
             tempPoint_P1 = new double[2];
-            double[] Overlapping_distanceVec = distanceVec.CloneAs();
-            double[] Overlapping_tempPoint_P0 = new double[2];
-            double[] Overlapping_tempPoint_P1 = new double[2];
-            double Overlapping_distance = distance;
             Overlapping = false;
             if (interfacePoints_P0 != null && interfacePoints_P1 != null)
             {
@@ -1532,7 +1559,18 @@ namespace BoSSS.Application.FSI_Solver
                             tempPoint_P1 = interfacePoints_P1.GetRow(g);
                             distance = tempDistance;
                         }
-                        Overlapping = particle0.Contains(tempPoint_P1, LsTrk) || particle1.Contains(tempPoint_P0, LsTrk);
+                        if(tempDistance < 0.1 * hmin)
+                        {
+                            Overlapping = true;
+                        }
+                        //double DistancePos0_P0 = Math.Sqrt((Pos0[0] - tempPoint_P0[0]).Pow2() + (Pos0[1] - tempPoint_P0[1]).Pow2());
+                        //double DistancePos0_P1 = Math.Sqrt((Pos0[0] - tempPoint_P1[0]).Pow2() + (Pos0[1] - tempPoint_P1[1]).Pow2());
+                        //double DistancePos1_P0 = Math.Sqrt((Pos1[0] - tempPoint_P0[0]).Pow2() + (Pos1[1] - tempPoint_P0[1]).Pow2());
+                        //double DistancePos1_P1 = Math.Sqrt((Pos1[0] - tempPoint_P1[0]).Pow2() + (Pos1[1] - tempPoint_P1[1]).Pow2());
+                        //if (DistancePos0_P0 > DistancePos0_P1 || DistancePos1_P0 < DistancePos1_P1)
+                        //{
+                        //    Overlapping = true;
+                        //}
                     }
                 }
             }
@@ -1552,7 +1590,11 @@ namespace BoSSS.Application.FSI_Solver
                     for (int g = 0; g < interfacePoints_P1.NoOfRows; g++)
                     {
                         double tempDistance = Math.Sqrt((interfacePoints_P0.GetRow(i)[0] - interfacePoints_P1.GetRow(g)[0]).Pow2() + (interfacePoints_P0.GetRow(i)[1] - interfacePoints_P1.GetRow(g)[1]).Pow2());
-                        if (tempDistance > distance && (particle0.Contains(tempPoint_P1, LsTrk) || particle1.Contains(tempPoint_P0, LsTrk)))
+                        double DistancePos0_P0 = Math.Sqrt((Pos0[0] - interfacePoints_P0.GetRow(i)[0]).Pow2() + (Pos0[1] - interfacePoints_P0.GetRow(i)[1]).Pow2());
+                        double DistancePos0_P1 = Math.Sqrt((Pos0[0] - interfacePoints_P1.GetRow(g)[0]).Pow2() + (Pos0[1] - interfacePoints_P1.GetRow(g)[1]).Pow2());
+                        double DistancePos1_P0 = Math.Sqrt((Pos1[0] - interfacePoints_P0.GetRow(i)[0]).Pow2() + (Pos1[1] - interfacePoints_P0.GetRow(i)[1]).Pow2());
+                        double DistancePos1_P1 = Math.Sqrt((Pos1[0] - interfacePoints_P1.GetRow(g)[0]).Pow2() + (Pos1[1] - interfacePoints_P1.GetRow(g)[1]).Pow2());
+                        if (tempDistance > distance && (DistancePos0_P0 > DistancePos0_P1 || DistancePos1_P0 < DistancePos1_P1))
                         {
                             distanceVec = interfacePoints_P0.GetRow(i).CloneAs();
                             distanceVec.AccV(-1, interfacePoints_P1.GetRow(g));
@@ -1577,6 +1619,26 @@ namespace BoSSS.Application.FSI_Solver
             Console.WriteLine("tangential1: " + tangential[1]);
         }
 
+        private void FindRadialVector(double[] ParticlePosition, double[] SurfacePoint, out double[] RadialVector, out double[] RadialNormalVector)
+        {
+            RadialVector = new double[ParticlePosition.Length];
+            for (int d = 0; d < ParticlePosition.Length; d++)
+            {
+                RadialVector[d] = SurfacePoint[d] - ParticlePosition[d];
+            }
+            RadialNormalVector = new double[] { -RadialVector[1], RadialVector[0] };
+            RadialNormalVector.ScaleV(1 / Math.Sqrt(RadialNormalVector[0].Pow2() + RadialNormalVector[1].Pow2()));
+        }
+
+        private void TransformRotationalVelocity(double RotationalVelocity, double[] RadialNormalVector, out double[] PointVelocityDueToRotation)
+        {
+            PointVelocityDueToRotation = new double[RadialNormalVector.Length];
+            for (int d = 0; d < RadialNormalVector.Length; d++)
+            {
+                PointVelocityDueToRotation[d] = RotationalVelocity * RadialNormalVector[d];
+            }
+        }
+
         private void ProjectVelocityOnVector(double[] vector, double[] VelocityVector, out double VelocityComponent)
         {
             VelocityComponent = VelocityVector[0] * vector[0] + VelocityVector[1] * vector[1];
@@ -1585,7 +1647,7 @@ namespace BoSSS.Application.FSI_Solver
         /// <summary>
         /// Update of particle state (velocity, force, etc.) for two particles where a collision is detected
         /// </summary>
-        private void ComputeCollisionModel(double hmin, Particle particle0, Particle particle1, ref double distance, ref double[] distanceVec, double dt)
+        private void ComputeCollisionModel(double hmin, Particle particle0, Particle particle1, ref double distance, ref double[] distanceVec, double dt, out bool Collided)
         {
             // All interface points at a specific subgrid containing all cut cells of one particle
             //var interfacePoints_P0 = XNSEUtils.GetInterfacePoints(LsTrk, LevSet, new SubGrid(particle0CutCells));
@@ -1596,25 +1658,143 @@ namespace BoSSS.Application.FSI_Solver
             double[] tempPoint_P0 = new double[2] { 0.0, 0.0 };
             double[] tempPoint_P1 = new double[2] { 0.0, 0.0 };
 
-            FindClosestPoint(particle0, particle1, interfacePoints_P0, interfacePoints_P1, ref distanceVec, ref distance, out tempPoint_P0, out tempPoint_P1, out bool Overlapping);
+            FindClosestPoint(particle0.Position[0], particle1.Position[0], hmin, interfacePoints_P0, interfacePoints_P1, ref distanceVec, ref distance, out tempPoint_P0, out tempPoint_P1, out bool Overlapping);
             double realDistance = distance;
             bool ForceCollision = false;
             FindNormalAndTangentialVector(distanceVec, out double[] normal, out double[] tangential);
+            FindRadialVector(particle0.Position[0], tempPoint_P0, out double[] RadialVector0, out double[] RadialNormalVector0);
+            FindRadialVector(particle1.Position[0], tempPoint_P1, out double[] RadialVector1, out double[] RadialNormalVector1);
+            TransformRotationalVelocity(particle0.RotationalVelocity[0], RadialNormalVector0, out double[] PointVelocityDueToRotation0);
+            TransformRotationalVelocity(particle1.RotationalVelocity[0], RadialNormalVector1, out double[] PointVelocityDueToRotation1);
 
             //general definitions of normal and tangential components
+            double[] PointVelocity0 = new double[2];
+            double[] PointVelocity1 = new double[2];
+            for (int d = 0; d < 2; d++)
+            {
+                PointVelocity0[d] = particle0.TranslationalVelocity[0][d] + PointVelocityDueToRotation0[d];
+                PointVelocity1[d] = particle1.TranslationalVelocity[0][d] + PointVelocityDueToRotation1[d];
+            }
+            ProjectVelocityOnVector(normal, PointVelocity0, out double DetectCollisionVn_P0);
+            ProjectVelocityOnVector(normal, PointVelocity1, out double DetectCollisionVn_P1);
             ProjectVelocityOnVector(normal, particle0.TranslationalVelocity[0], out double collisionVn_P0);
             ProjectVelocityOnVector(tangential, particle0.TranslationalVelocity[0], out double collisionVt_P0);
             ProjectVelocityOnVector(normal, particle1.TranslationalVelocity[0], out double collisionVn_P1);
             ProjectVelocityOnVector(tangential, particle1.TranslationalVelocity[0], out double collisionVt_P1);
 
-            // Important to get normal vector if distance is overlapping in the next timestep 
+            particle0.m_closeInterfacePointTo[m_Particles.IndexOf(particle1)] = tempPoint_P0;
+            particle1.m_closeInterfacePointTo[m_Particles.IndexOf(particle0)] = tempPoint_P1;
+            double threshold = 0;
+            //threshold = 0;// 1.0 * hmin; // was 2.5
+            Console.WriteLine("(-collisionVn_P0 + collisionVn_P1) * dt " + (-DetectCollisionVn_P0 + DetectCollisionVn_P1) * dt);
+            Console.WriteLine("realDistance: " + realDistance);
+            Console.WriteLine("RealAngle0: " + particle0.Angle[0]);
+            if (realDistance <= ((-DetectCollisionVn_P0 + DetectCollisionVn_P1) * dt))
+            {
+                threshold = (-DetectCollisionVn_P0 + DetectCollisionVn_P1) * dt;
+                Console.WriteLine("tempPoint_P0: " + tempPoint_P0[0] + ", " + tempPoint_P0[1]);
+                Console.WriteLine("tempPoint_P1: " + tempPoint_P1[0] + ", " + tempPoint_P1[1]);
+            }
+            else if(!Overlapping)
+            {
+                double[] VirtualPosition0 = new double[2];
+                double[] VirtualPosition1 = new double[2];
+                double[] VirtualVelocity0 = new double[2];
+                double[] VirtualVelocity1 = new double[2];
+                double VirtualAngle0 = particle0.Angle[0] + particle0.RotationalVelocity[0] * dt + (particle0.RotationalAcceleration[1] + particle0.RotationalAcceleration[0]) * dt.Pow2() / 4;
+                double VirtualRotationalVelocity0 = particle0.RotationalVelocity[0] + (particle0.RotationalAcceleration[1] + particle0.RotationalAcceleration[0]) * dt / 2;
+                double VirtualAngle1 = particle1.Angle[0] + particle1.RotationalVelocity[0] * dt + (particle1.RotationalAcceleration[1] + particle1.RotationalAcceleration[0]) * dt.Pow2() / 4;
+                double VirtualRotationalVelocity1 = particle1.RotationalVelocity[0] + (particle1.RotationalAcceleration[1] + particle1.RotationalAcceleration[0]) * dt / 2;
+                Console.WriteLine("VirtualAngle0: " + VirtualAngle0);
+                Console.WriteLine("RealAngle0: " + particle0.Angle[0]);
+                for (int d = 0; d < 2; d++)
+                {
+                    VirtualPosition0[d] = particle0.Position[0][d] + particle0.TranslationalVelocity[0][d] * dt + (particle0.TranslationalAcceleration[1][d] + particle0.TranslationalAcceleration[0][d]) * dt.Pow2() / 4;
+                    VirtualVelocity0[d] = particle0.TranslationalVelocity[0][d] + (particle0.TranslationalAcceleration[1][d] + particle0.TranslationalAcceleration[0][d]) * dt / 2;
+                    VirtualPosition1[d] = particle1.Position[0][d] + particle1.TranslationalVelocity[0][d] * dt + (particle1.TranslationalAcceleration[1][d] + particle1.TranslationalAcceleration[0][d]) * dt.Pow2() / 4;
+                    VirtualVelocity1[d] = particle1.TranslationalVelocity[0][d] + (particle1.TranslationalAcceleration[1][d] + particle1.TranslationalAcceleration[0][d]) * dt / 2;
+                }
+                interfacePoints_P0 = particle0.GetSurfacePoints(LsTrk, VirtualPosition0, VirtualAngle0);
+                interfacePoints_P1 = particle1.GetSurfacePoints(LsTrk, VirtualPosition1, VirtualAngle1);
+                tempPoint_P0 = new double[2] { 0.0, 0.0 };
+                tempPoint_P1 = new double[2] { 0.0, 0.0 };
+                FindClosestPoint(VirtualPosition0, VirtualPosition1, hmin, interfacePoints_P0, interfacePoints_P1, ref distanceVec, ref distance, out tempPoint_P0, out tempPoint_P1, out bool Overlapping_NextTimestep);
+                Console.WriteLine("tempPoint_P0: " + tempPoint_P0[0] + ", " + tempPoint_P0[1]);
+                Console.WriteLine("tempPoint_P1: " + tempPoint_P1[0] + ", " + tempPoint_P1[1]);
+                FindNormalAndTangentialVector(distanceVec, out normal, out tangential);
+                FindRadialVector(VirtualPosition0, tempPoint_P0, out RadialVector0, out RadialNormalVector0);
+                FindRadialVector(VirtualPosition1, tempPoint_P1, out RadialVector1, out RadialNormalVector1);
+                TransformRotationalVelocity(VirtualRotationalVelocity0, RadialNormalVector0, out PointVelocityDueToRotation0);
+                TransformRotationalVelocity(VirtualRotationalVelocity1, RadialNormalVector1, out PointVelocityDueToRotation1);
+                for (int d = 0; d < 2; d++)
+                {
+                    PointVelocity0[d] = VirtualVelocity0[d] + PointVelocityDueToRotation0[d];
+                    PointVelocity1[d] = VirtualVelocity1[d] + PointVelocityDueToRotation1[d];
+                }
+                ProjectVelocityOnVector(normal, VirtualVelocity0, out DetectCollisionVn_P0);
+                ProjectVelocityOnVector(normal, VirtualVelocity1, out DetectCollisionVn_P1);
+                ProjectVelocityOnVector(normal, VirtualVelocity0, out collisionVn_P0);
+                ProjectVelocityOnVector(tangential, VirtualVelocity0, out collisionVt_P0);
+                ProjectVelocityOnVector(normal, VirtualVelocity1, out collisionVn_P1);
+                ProjectVelocityOnVector(tangential, VirtualVelocity1, out collisionVt_P1);
+                particle0.RotationalVelocity[0] = VirtualRotationalVelocity0;
+                particle1.RotationalVelocity[0] = VirtualRotationalVelocity1;
+                particle0.m_closeInterfacePointTo[m_Particles.IndexOf(particle1)] = tempPoint_P0;
+                particle1.m_closeInterfacePointTo[m_Particles.IndexOf(particle0)] = tempPoint_P1;
+                realDistance = distance;
+                Console.WriteLine("(-collisionVn_P0 + collisionVn_P1) * dt " + (-DetectCollisionVn_P0 + DetectCollisionVn_P1) * dt);
+                Console.WriteLine("threshold " + threshold);
+                //if (realDistance <= ((-DetectCollisionVn_P0 + DetectCollisionVn_P1) * dt))
+                //{
+                //    threshold = ((-DetectCollisionVn_P0 + DetectCollisionVn_P1) * dt);
+                //}
+                if (Overlapping_NextTimestep)
+                {
+                    threshold = 1e20;
+                }
+            }
+            // Important to get normal vector if distance is overlapping in the next timestep
             if (Overlapping && particle0.m_closeInterfacePointTo[m_Particles.IndexOf(particle1)] != null && particle1.m_closeInterfacePointTo[m_Particles.IndexOf(particle0)] != null)
             {
+                double[] VirtualPosition0 = new double[2];
+                double[] VirtualPosition1 = new double[2];
+                double VirtualAngle0 = particle0.Angle[1];
+                double VirtualAngle1 = particle1.Angle[1];
+                for (int d = 0; d < 2; d++)
+                {
+                    VirtualPosition0[d] = particle0.Position[1][d];
+                    VirtualPosition1[d] = particle1.Position[1][d]; 
+                }
+                interfacePoints_P0 = particle0.GetSurfacePoints(LsTrk, VirtualPosition0, VirtualAngle0);
+                interfacePoints_P1 = particle1.GetSurfacePoints(LsTrk, VirtualPosition1, VirtualAngle1);
                 //tempPoint_P0 = particle0.m_closeInterfacePointTo[m_Particles.IndexOf(particle1)];
                 //tempPoint_P1 = particle1.m_closeInterfacePointTo[m_Particles.IndexOf(particle0)];
-                FindClosestPointsWhileOverlapping(particle0, particle1, interfacePoints_P0, interfacePoints_P1, ref distanceVec, ref distance, out tempPoint_P0, out tempPoint_P1);
+                FindClosestPoint(VirtualPosition0, VirtualPosition1, hmin, interfacePoints_P0, interfacePoints_P1, ref distanceVec, ref distance, out tempPoint_P0, out tempPoint_P1, out Overlapping);
+                realDistance = 0;
+                if (Overlapping)
+                {
+                    for (int d = 0; d < 2; d++)
+                    {
+                        VirtualPosition0[d] = particle0.Position[1][d] - 1.5 * distanceVec[d];
+                        particle0.Position[0][d] = VirtualPosition0[d];
+                    }
+                    interfacePoints_P0 = particle0.GetSurfacePoints(LsTrk, VirtualPosition0, VirtualAngle0);
+                    interfacePoints_P1 = particle1.GetSurfacePoints(LsTrk, VirtualPosition1, VirtualAngle1);
+                    FindClosestPoint(VirtualPosition0, VirtualPosition1, hmin, interfacePoints_P0, interfacePoints_P1, ref distanceVec, ref distance, out tempPoint_P0, out tempPoint_P1, out _);
+                    realDistance = 0;
+                }
+                threshold = 1;
                 FindNormalAndTangentialVector(distanceVec, out normal, out tangential);
-                for(int d = 0; d< 2; d++)
+                FindRadialVector(VirtualPosition0, tempPoint_P0, out RadialVector0, out RadialNormalVector0);
+                FindRadialVector(VirtualPosition1, tempPoint_P1, out RadialVector1, out RadialNormalVector1);
+                TransformRotationalVelocity(particle0.RotationalVelocity[0], RadialNormalVector0, out PointVelocityDueToRotation0);
+                TransformRotationalVelocity(particle1.RotationalVelocity[0], RadialNormalVector1, out PointVelocityDueToRotation1);
+                for (int d = 0; d < 2; d++)
+                {
+                    PointVelocity0[d] = particle0.TranslationalVelocity[0][d] + PointVelocityDueToRotation0[d];
+                    PointVelocity1[d] = particle1.TranslationalVelocity[0][d] + PointVelocityDueToRotation1[d];
+                }
+                for (int d = 0; d < 2; d++)
                 {
                     normal[d] *= -1;
                     tangential[d] *= -1;
@@ -1626,50 +1806,8 @@ namespace BoSSS.Application.FSI_Solver
                 if (tempPoint_P0 == null || tempPoint_P1 == null)
                     Console.WriteLine("Overlap of particles which were not close in the previous timestep due to one timestep - this is just an output without assertion");
                 //    throw new ApplicationException("Overlap of particles which were not close in the previous timestep due to in one timestep");
-                distanceVec = tempPoint_P0.CloneAs();
-                distanceVec.AccV(-1, tempPoint_P1);
                 ForceCollision = true;
             }
-
-            particle0.m_closeInterfacePointTo[m_Particles.IndexOf(particle1)] = tempPoint_P0;
-            particle1.m_closeInterfacePointTo[m_Particles.IndexOf(particle0)] = tempPoint_P1;
-            double threshold;
-            Console.WriteLine("(collisionVn_P0 - collisionVn_P1) * dt " + (collisionVn_P0 - collisionVn_P1) * dt);
-            if (realDistance <= Math.Abs((collisionVn_P0 - collisionVn_P1) * dt))// + 1.0 * hmin)
-            {
-                threshold = Math.Abs((collisionVn_P0 - collisionVn_P1) * dt);// + 1.0 * hmin;
-            }
-            else
-            {
-                threshold = 0;// 1.0 * hmin; // was 2.5
-            }
-            //else
-            //{
-            //    double[] VirtualPosition0 = new double[2];
-            //    double[] VirtualPosition1 = new double[2];
-            //    double VirtualAngle0 = particle0.Angle[0] + particle0.RotationalVelocity[0] * dt + (particle0.RotationalAcceleration[1] + particle0.RotationalAcceleration[0]) * dt.Pow2() / 4;
-            //    double VirtualAngle1 = particle1.Angle[0] + particle1.RotationalVelocity[0] * dt + (particle1.RotationalAcceleration[1] + particle1.RotationalAcceleration[0]) * dt.Pow2() / 4;
-            //    for (int d = 0; d< 2; d++)
-            //    {
-            //        VirtualPosition0[d] = particle0.Position[0][d] + particle0.TranslationalVelocity[0][d] * dt + (particle0.TranslationalAcceleration[1][d] + particle0.TranslationalAcceleration[0][d]) * dt.Pow2() / 4;
-            //        VirtualPosition1[d] = particle1.Position[0][d] + particle1.TranslationalVelocity[0][d] * dt + (particle1.TranslationalAcceleration[1][d] + particle1.TranslationalAcceleration[0][d]) * dt.Pow2() / 4;
-            //    }
-            //    interfacePoints_P0 = particle0.GetSurfacePoints(LsTrk, VirtualPosition0, VirtualAngle0);
-            //    interfacePoints_P1 = particle1.GetSurfacePoints(LsTrk, VirtualPosition1, VirtualAngle1);
-            //    tempPoint_P0 = new double[2] { 0.0, 0.0 };
-            //    tempPoint_P1 = new double[2] { 0.0, 0.0 };
-            //    FindClosestPoint(interfacePoints_P0, interfacePoints_P1, ref distanceVec, ref distance, out tempPoint_P0, out tempPoint_P1);
-            //    FindNormalAndTangentialVector(distanceVec, out normal, out tangential);
-            //    ProjectVelocityOnVector(normal, particle0.TranslationalVelocity[0], out collisionVn_P0);
-            //    ProjectVelocityOnVector(tangential, particle0.TranslationalVelocity[0], out collisionVt_P0);
-            //    ProjectVelocityOnVector(normal, particle1.TranslationalVelocity[0], out collisionVn_P1);
-            //    ProjectVelocityOnVector(tangential, particle1.TranslationalVelocity[0], out collisionVt_P1);
-            //    particle0.m_closeInterfacePointTo[m_Particles.IndexOf(particle1)] = tempPoint_P0;
-            //    particle1.m_closeInterfacePointTo[m_Particles.IndexOf(particle0)] = tempPoint_P1;
-            //    threshold = distance <= (collisionVn_P0 - collisionVn_P1) * dt + 1 * hmin ? (collisionVn_P0 - collisionVn_P1) * dt + 1 * hmin : 0;
-            //}
-
-            
 
             double eps = threshold.Pow2() / 2; // Turek paper
             double epsPrime = threshold / 2; // Turek paper
@@ -1679,6 +1817,7 @@ namespace BoSSS.Application.FSI_Solver
             Console.WriteLine("realDistance: " + realDistance);
             Console.WriteLine("Threshold: " + threshold);
             Console.WriteLine("hmin: " + hmin);
+            Collided = false;
 
             if (realDistance > threshold)
             {
@@ -1723,11 +1862,12 @@ namespace BoSSS.Application.FSI_Solver
 
                 case FSI_Control.CollisionModel.MomentumConservation:
 
-                    if (((realDistance <= threshold) || ForceCollision) && !particle0.m_collidedWithParticle[m_Particles.IndexOf(particle1)] && !particle1.m_collidedWithParticle[m_Particles.IndexOf(particle0)])
+                    if (((realDistance <= threshold || ForceCollision) && !particle0.m_collidedWithParticle[m_Particles.IndexOf(particle1)] && !particle1.m_collidedWithParticle[m_Particles.IndexOf(particle0)]))
                     {
                         // Bool if collided
                         particle0.m_collidedWithParticle[m_Particles.IndexOf(particle1)] = true;
                         particle1.m_collidedWithParticle[m_Particles.IndexOf(particle0)] = true;
+                        Collided = true;
 
                         // Bool if force integration should be skipped
                         particle0.skipForceIntegration = true;
@@ -1782,8 +1922,12 @@ namespace BoSSS.Application.FSI_Solver
                             Fxrot = (1 + e) * ((-a0 * particle0.RotationalVelocity[0] + a1 * particle1.RotationalVelocity[0]) / (1 / particle0.Mass_P + 1 / particle1.Mass_P + a0.Pow2() / particle0.MomentOfInertia_P + a1.Pow2() / particle1.MomentOfInertia_P));
                             tempCollisionVn_P0 = collisionVn_P0 - (Fx + Fxrot) / particle0.Mass_P;
                             tempCollisionRot_P0 = particle0.RotationalVelocity[0] + a0 * (Fx + Fxrot) / particle0.MomentOfInertia_P;
+                            Console.WriteLine("particle0.RotationalVelocity[0]" + particle0.RotationalVelocity[0]);
+                            Console.WriteLine("a0 * (Fx + Fxrot) / particle0.MomentOfInertia_P" + (a0 * (Fx + Fxrot) / particle0.MomentOfInertia_P));
                             tempCollisionVn_P1 = collisionVn_P1 + (Fx + Fxrot) / particle1.Mass_P;
                             tempCollisionRot_P1 = particle1.RotationalVelocity[0] - a1 * (Fx + Fxrot) / particle1.MomentOfInertia_P;
+                            Console.WriteLine("particle1.RotationalVelocity[0]" + particle1.RotationalVelocity[0]);
+                            Console.WriteLine("-a1 * (Fx + Fxrot) / particle1.MomentOfInertia_P" + (-a1 * (Fx + Fxrot) / particle1.MomentOfInertia_P));
                         }
 
                         

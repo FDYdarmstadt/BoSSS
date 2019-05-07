@@ -823,7 +823,7 @@ namespace BoSSS.Application.FSI_Solver
         /// </summary>
         /// <param name="point"></param>
         /// <returns></returns>
-        abstract public bool Contains(double[] point, LevelSetTracker LsTrk);
+        abstract public bool Contains(double[] point, LevelSetTracker LsTrk, bool WithoutTolerance = false);
 
         abstract public double[] GetLengthScales();
 
