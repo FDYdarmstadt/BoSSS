@@ -44,6 +44,26 @@ namespace BoSSS.Foundation.XDG {
     public class XSpatialOperatorMk2 {
 
 
+        //==========================================================================================================================
+        // new code
+        //==========================================================================================================================
+
+
+        /// <summary>
+        /// for constructing evaluators of the species terms
+        /// </summary>
+        public SpatialOperator SpeciesOperator {
+            get;
+            private set;
+        }
+
+
+
+        //==========================================================================================================================
+        // Taken from old XSpatialOperator
+        //==========================================================================================================================
+        #region XSpatialOperator
+
         /// <summary>
         /// Operator working on ghost edges, see e.g.
         /// @article{burman_ghost_2010,                                                             
@@ -73,465 +93,6 @@ namespace BoSSS.Foundation.XDG {
         public SpatialOperator SurfaceElementOperator {
             get;
             private set;
-        }
-
-        /// <summary>
-        /// for constructing evaluators of the species terms
-        /// </summary>
-        public SpatialOperator SpeciesOperator {
-            get;
-            private set;
-        }
-
-
-        //void ConstructorCommon() {
-        //    SurfaceElementOperator = new FixedOrder_SpatialOperator(base.DomainVar, base.ParameterVar, base.CodomainVar);
-        //}
-
-
-        /// <summary>
-        /// Function Mapping from Domain Variable Degrees, Parameter Degrees and CoDomain Variable Degrees to the Quadrature Order
-        /// </summary>
-        public Func<int[], int[], int[], int> QuadOrderFunction;
-
-        static string[] GetSubarray(string[] A, int i0, int len) {
-            string[] r = new string[len];
-            Array.Copy(A, i0, r, 0, len);
-            return r;
-        }
-
-
-        /// <summary>
-        /// ctor, see <see cref="SpatialOperator.SpatialOperator(int,int,int,Func{int[],int[],int[],int},string[])"/>
-        /// </summary>
-        public XSpatialOperatorMk2(int NoOfDomFields, int NoOfParameters, int NoOfCodomFields, Func<int[], int[], int[], int> QuadOrderFunc, params string[] __varnames)
-            : this(GetSubarray(__varnames, 0, NoOfDomFields), GetSubarray(__varnames, NoOfDomFields, NoOfParameters), GetSubarray(__varnames, NoOfDomFields + NoOfParameters, NoOfCodomFields), QuadOrderFunc) {
-            if(NoOfCodomFields + NoOfDomFields + NoOfParameters != __varnames.Length)
-                throw new ArgumentException("mismatch between number of provided variable names and given number of domain, parameter and codomain fields.");
-
-        }
-
-        /// <summary>
-        /// ctor, see <see cref="SpatialOperator.SpatialOperator(int,int,Func{int[],int[],int[],int},string[])"/>
-        /// </summary>
-        public XSpatialOperatorMk2(int NoOfDomFields, int NoOfCodomFields, Func<int[], int[], int[], int> QuadOrderFunc, params string[] __varnames)
-           : this(GetSubarray(__varnames, 0, NoOfDomFields), GetSubarray(__varnames, NoOfDomFields, NoOfCodomFields), QuadOrderFunc) {
-            if(NoOfCodomFields + NoOfDomFields != __varnames.Length)
-                throw new ArgumentException("mismatch between number of provided variable names and given number of domain and codomain fields.");
-        }
-
-        /// <summary>
-        /// ctor, see <see cref="SpatialOperator.SpatialOperator(IList{string},IList{string},Func{int[],int[],int[],int})"/>
-        /// </summary>
-        public XSpatialOperatorMk2(IList<string> __DomainVar, IList<string> __CoDomainVar, Func<int[], int[], int[], int> QuadOrderFunc)
-            : this(__DomainVar, null, __CoDomainVar, QuadOrderFunc) {
-        }
-
-        /// <summary>
-        /// ctor, see <see cref="SpatialOperator.SpatialOperator(IList{string},IList{string},IList{string},Func{int[],int[],int[],int})"/>
-        /// </summary>
-        public XSpatialOperatorMk2(IList<string> __DomainVar, IList<string> __ParameterVar, IList<string> __CoDomainVar, Func<int[], int[], int[], int> QuadOrderFunc) {
-            m_DomainVar = new string[__DomainVar.Count];
-            for(int i = 0; i < m_DomainVar.Length; i++) {
-                if(Array.IndexOf<string>(m_DomainVar, __DomainVar[i]) >= 0)
-                    throw new ArgumentException("error in domain variables list; identifier \"" + __DomainVar[i] + "\" appears twice.", "__DomainVar");
-                m_DomainVar[i] = __DomainVar[i];
-            }
-
-            if(__ParameterVar != null) {
-                m_ParameterVar = new string[__ParameterVar.Count];
-                for(int i = 0; i < m_ParameterVar.Length; i++) {
-                    if(Array.IndexOf<string>(m_DomainVar, __ParameterVar[i]) >= 0)
-                        throw new ArgumentException("error in parameter variables list; identifier \"" + __ParameterVar[i] + "\" is already contained in the domain variables list.", "__ParameterVar");
-
-                    if(Array.IndexOf<string>(m_ParameterVar, __ParameterVar[i]) >= 0)
-                        throw new ArgumentException("error in parameter variables list; identifier \"" + __ParameterVar[i] + "\" appears twice.", "__ParameterVar");
-
-                    m_ParameterVar[i] = __ParameterVar[i];
-                }
-            } else {
-                m_ParameterVar = new string[0];
-            }
-
-            m_CodomainVar = new string[__CoDomainVar.Count];
-            for(int i = 0; i < m_CodomainVar.Length; i++) {
-                if(Array.IndexOf<string>(m_CodomainVar, __CoDomainVar[i]) >= 0)
-                    throw new ArgumentException("error in codomain variables list; identifier \"" + __CoDomainVar[i] + "\" appears twice.", "__CoDomainVar");
-                m_CodomainVar[i] = __CoDomainVar[i];
-            }
-
-            m_EquationComonents = new SortedList<string, List<IEquationComponent>>(__CoDomainVar.Count);
-            foreach(var f in __CoDomainVar) {
-                m_EquationComonents.Add(f, new List<IEquationComponent>());
-            }
-            m_EquationComponentsHelper = new _XEquationComponents(this);
-            this.QuadOrderFunction = QuadOrderFunc;
-
-            GhostEdgesOperator = new FixedOrder_SpatialOperator(DomainVar, ParameterVar, CodomainVar); 
-            SurfaceElementOperator = new FixedOrder_SpatialOperator(DomainVar, ParameterVar, CodomainVar);
-            SpeciesOperator = new FixedOrder_SpatialOperator(DomainVar, ParameterVar, CodomainVar);
-
-        }
-
-        /// <summary>
-        /// verifies all equation components;
-        /// </summary>
-        /// <remarks>
-        /// if a component has an illegal configuration (e.g. it's arguments
-        /// (<see cref="BoSSS.Foundation.IEquationComponent.ArgumentOrdering"/>) are not contained
-        /// in the domain variable list (<see cref="DomainVar"/>)), an 
-        /// exception is thrown;
-        /// </remarks>
-        internal protected void Verify() {
-            foreach(var comps in m_EquationComonents.Values) {
-                foreach(IEquationComponent c in comps) {
-                    foreach(string varname in c.ArgumentOrdering) {
-                        if(Array.IndexOf<string>(m_DomainVar, varname) < 0)
-                            throw new ApplicationException("configuration error in spatial differential operator; some equation component depends on variable \""
-                                + varname
-                                + "\", but this name is not a member of the domain variable list.");
-                    }
-
-                    if(c.ParameterOrdering != null) {
-                        foreach(string varname in c.ParameterOrdering) {
-                            if(Array.IndexOf<string>(m_ParameterVar, varname) < 0)
-                                throw new ApplicationException("configuration error in spatial differential operator; some equation component depends on (parameter) variable \""
-                                    + varname
-                                    + "\", but this name is not a member of the parameter variable list.");
-
-                            if(c.ArgumentOrdering.Contains(varname))
-                                throw new ApplicationException("configuration error in spatial differential operator; some equation component contains variable \""
-                                    + varname
-                                    + "\" in parameter and argument list; this is not allowed.");
-                        }
-                    }
-                }
-            }
-        }
-
-
-        /// <summary>
-        /// Evaluation of the <see cref="QuadOrderFunction"/>.
-        /// </summary>
-        /// <param name="DomainMap"></param>
-        /// <param name="Parameters"></param>
-        /// <param name="CodomainMap"></param>
-        /// <returns></returns>
-        public int GetOrderFromQuadOrderFunction(UnsetteledCoordinateMapping DomainMap, IList<DGField> Parameters, UnsetteledCoordinateMapping CodomainMap) {
-            /// Compute Quadrature Order
-            int order;
-            int[] DomainDegrees = DomainMap.BasisS.Select(f => f.Degree).ToArray();
-            int[] CodomainDegrees = CodomainMap.BasisS.Select(f => f.Degree).ToArray();
-            int[] ParameterDegrees;
-            if(Parameters != null && Parameters.Count != 0) {
-                ParameterDegrees = Parameters.Select(f => f == null ? 0 : f.Basis.Degree).ToArray();
-            } else {
-                ParameterDegrees = new int[] { 0 };
-            };
-            order = QuadOrderFunction(DomainDegrees, ParameterDegrees, CodomainDegrees);
-            return order;
-        }
-
-        private static IGridData CheckArguments(UnsetteledCoordinateMapping DomainMap, IList<DGField> Parameters, UnsetteledCoordinateMapping CodomainMap) {
-            var GridDat = DomainMap.GridDat;
-            if(!object.ReferenceEquals(GridDat, CodomainMap.GridDat))
-                throw new ArgumentException("Domain and codomain map must be assigend to the same grid.");
-            if(Parameters != null)
-                foreach(var prm in Parameters)
-                    if(prm != null && (!object.ReferenceEquals(prm.GridDat, GridDat)))
-                        throw new ArgumentException(string.Format("parameter field {0} is assigned to a different grid.", prm.Identification));
-            return GridDat;
-        }
-
-        /// <summary>
-        /// for some codomain variable <paramref name="CodomVar"/>,
-        /// this method collects 
-        /// all variables in the domain (see <see cref="DomainVar"/>)
-        /// on which <paramref name="CodomVar"/> depends on.
-        /// </summary>
-        /// <param name="CodomVar"></param>
-        /// <returns>
-        /// a sub-list of <see cref="DomainVar"/>;
-        /// </returns>
-        /// <remarks>
-        /// This method invokes <see cref="Verify"/>;<br/>
-        /// the returned list is in the same order as 
-        /// </remarks>
-        public IList<string> CollectDependentVariables(string CodomVar) {
-            if(Array.IndexOf<string>(m_CodomainVar, CodomVar) < 0)
-                throw new ArgumentException("the provided variable name \""
-                    + CodomVar
-                    + "\" is not a member of the Codomain variable list of this spatial differential operator");
-            Verify();
-
-            var comps = m_EquationComonents[CodomVar];
-            List<string> ret = new List<string>();
-            for(int i = 0; i < m_DomainVar.Length; i++) {
-                string varName = m_DomainVar[i];
-
-                bool isContained = false;
-                foreach(var EqnComponent in comps) {
-                    foreach(string name in EqnComponent.ArgumentOrdering) {
-                        if(name.Equals(varName))
-                            isContained = true;
-                    }
-                }
-
-                if(isContained)
-                    ret.Add(varName);
-            }
-
-            return ret.ToArray();
-        }
-
-
-
-        /// <summary>
-        /// <see cref="EquationComponents"/>
-        /// </summary>
-        SortedList<string, List<IEquationComponent>> m_EquationComonents;
-
-        _XEquationComponents m_EquationComponentsHelper;
-
-        /// <summary>
-        /// for each variable in <see cref="CodomainVar"/>, a
-        /// collection of equation components that define the operator.
-        /// 
-        /// </summary>
-        public _XEquationComponents EquationComponents {
-            get {
-                return m_EquationComponentsHelper;
-            }
-        }
-
-        bool m_IsCommited = false;
-
-        /// <summary>
-        /// indicates whether the equation-assembly has been finished (by calling <see cref="Commit"/>)
-        /// or not.
-        /// </summary>
-        public bool IsCommited {
-            get {
-                return m_IsCommited;
-            }
-        }
-
-        /// <summary>
-        /// total number of equation components, in all codomain variables
-        /// </summary>
-        public int TotalNoOfComponents {
-            get {
-                return this.m_EquationComonents.Values.Sum(x => x.Count);
-            }
-        }
-
-
-        /// <summary>
-        /// finalizes the assembly of the operator;
-        /// Can be called only once in the lifetime of this object.
-        /// After calling this method, no adding/removing of equation components is possible.
-        /// </summary>
-        public virtual void Commit() {
-            Verify();
-
-            if(m_IsCommited)
-                throw new ApplicationException("'Commit' has already been called - it can be called only once in the lifetime of this object.");
-
-            m_IsCommited = true;
-
-            GhostEdgesOperator.Commit();
-            SurfaceElementOperator.Commit();
-
-            foreach(string comps in m_EquationComonents.Keys) {
-                foreach(IEquationComponent iec in m_EquationComonents[comps]) {
-                    SpeciesOperator.EquationComponents[comps].Add(iec);
-                }
-            }
-            SpeciesOperator.Commit();
-        }
-
-
-        /// <summary>
-        /// implementation of <see cref="EquationComponents" />;
-        /// </summary>
-        public class _XEquationComponents : IEnumerable<KeyValuePair<string, IEnumerable<IEquationComponent>>> {
-
-            internal _XEquationComponents(XSpatialOperatorMk2 owner) {
-                m_owner = owner;
-            }
-
-            XSpatialOperatorMk2 m_owner;
-
-            /// <summary>
-            /// returns the collection of equation components for one variable in the 
-            /// codomain
-            /// </summary>
-            /// <param name="EqnName">
-            /// a variable in the codomain (<see cref="SpatialOperator.CodomainVar"/>)
-            /// </param>
-            /// <returns></returns>
-            public ICollection<IEquationComponent> this[string EqnName] {
-                get {
-                    if(m_owner.m_IsCommited)
-                        return m_owner.m_EquationComonents[EqnName].AsReadOnly();
-                    else
-                        return m_owner.m_EquationComonents[EqnName];
-                }
-            }
-
-            #region IEnumerable<KeyValuePair<string,IEnumerable<IEquationComponent>> Members
-
-            /// <summary>
-            /// Gets the enumerator over the equation components of the owner
-            /// </summary>
-            /// <returns>An enumerator</returns>
-            public IEnumerator<KeyValuePair<string, IEnumerable<IEquationComponent>>> GetEnumerator() {
-                return m_owner.m_EquationComonents.Select(
-                    x => new KeyValuePair<string, IEnumerable<IEquationComponent>>(
-                        x.Key, x.Value.AsReadOnly())).GetEnumerator();
-            }
-
-            #endregion
-
-            #region IEnumerable Members
-
-            /// <summary>
-            /// <see cref="GetEnumerator"/>
-            /// </summary>
-            /// <returns>
-            /// <see cref="GetEnumerator"/>
-            /// </returns>
-            IEnumerator IEnumerable.GetEnumerator() {
-                return GetEnumerator();
-            }
-
-            #endregion
-        }
-
-
-        string[] m_DomainVar;
-
-        /// <summary>
-        /// names of (DG-) variables that represent the domain of this  differential operator;
-        /// These names/strings should not be confused with field identification strings
-        /// (<see cref="DGField.Identification"/>), they have nothing to do with that.
-        /// </summary>
-        public IList<string> DomainVar {
-            get {
-                return (string[])m_DomainVar.Clone();
-            }
-        }
-
-        string[] m_CodomainVar;
-
-        /// <summary>
-        /// names of (DG-) variables that represent the Co-Domain of this differential operator
-        /// These names/strings should not be confused with field identification strings
-        /// (<see cref="DGField.Identification"/>), they have nothing to do with that.
-        /// </summary>
-        public IList<string> CodomainVar {
-            get {
-                return (string[])m_CodomainVar.Clone();
-            }
-        }
-
-        string[] m_ParameterVar = new string[0];
-
-        /// <summary>
-        /// names of (DG-) variables which act as parameters; 
-        /// Their role is pretty similar to those of the domain variables, and for nonlinear
-        /// fluxes, there is no difference.
-        /// However, for <em>linear</em> fluxes, they can be used to provide some 
-        /// space-depended properties as DG-fields, e.g. for providing boundary conditions
-        /// or if the linear operator is some linearization of some nonlinear operator.
-        /// </summary>
-        public IList<string> ParameterVar {
-            get {
-                return (string[])m_ParameterVar.Clone();
-            }
-        }
-
-
-
-        /// <summary>
-        /// returns a collection of equation components of a certain type (<typeparamref name="T"/>)
-        /// </summary>
-        /// <typeparam name="T"></typeparam>
-        /// <param name="CatParams">
-        /// if true, parameter variables (see <see cref="IEquationComponent.ParameterOrdering"/>)
-        /// are concatenated with domain variable names (see <see cref="IEquationComponent.ArgumentOrdering"/>).
-        /// </param>
-        /// <param name="F">
-        /// optional filter;
-        /// should return true, if the component should be added, false if not; 
-        /// </param>
-        /// <param name="vectorizer">
-        /// vectorizer option: translate some equation component to another one
-        /// </param>
-        public EquationComponentArgMapping<T>[] GetArgMapping<T>(bool CatParams = false, Func<T, bool> F = null, Func<IEquationComponent, IEquationComponent> vectorizer = null) where T : IEquationComponent {
-            if(!IsCommited)
-                throw new ApplicationException("Commit() has to be called prior to this method.");
-
-            int Gamma = CodomainVar.Count;
-
-            var ret = new EquationComponentArgMapping<T>[Gamma];
-            for(int i = 0; i < Gamma; i++) {
-                var codName = this.m_CodomainVar[i];
-                ret[i] = new EquationComponentArgMapping<T>(SpeciesOperator,
-                    codName,
-                    this.m_DomainVar,
-                    CatParams ? this.ParameterVar : null,
-                    F, vectorizer);
-            }
-
-            return ret;
-        }
-
-
-
-        class FixedOrder_SpatialOperator : SpatialOperator {
-            public FixedOrder_SpatialOperator(IList<string> __DomainVar, IList<string> __ParameterVar, IList<string> __CoDomainVar)
-                : base(__DomainVar, __ParameterVar, __CoDomainVar, null) //
-            {
-                base.QuadOrderFunction = this.QOF;
-            }
-
-            int QOF(int[] A, int[] B, int[] C) {
-                return m_Order;
-            }
-
-            internal int m_Order;
-        }
-
-        /// <summary>
-        /// Returns true, if at least one of the equation components 
-        /// for codomain variable <paramref name="CodomVar"/>
-        /// is of some type in <paramref name="t"/>.
-        /// </summary>
-        public bool ContainesComponentType_PerCodomainVar(string CodomVar, params Type[] t) {
-            foreach(object o in EquationComponents[CodomVar]) {
-                Type[] interfaces = o.GetType().GetInterfaces();
-
-                for(int i = 0; i < t.Length; i++)
-                    if(Array.IndexOf<Type>(interfaces, t[i]) >= 0)
-                        return true;
-            }
-
-            return false;
-        }
-
-        /// <summary>
-        /// Returns true, if at least one of the equation components 
-        /// of this operator
-        /// is of some type in <paramref name="t"/>.
-        /// </summary>
-        public bool ContainesComponentType(params Type[] t) {
-            foreach(var s in this.CodomainVar) {
-                if(ContainesComponentType_PerCodomainVar(s, t))
-                    return true;
-            }
-
-            return false;
         }
 
 
@@ -646,8 +207,6 @@ namespace BoSSS.Foundation.XDG {
                 1,
                 SpeciesSchemes);
         }
-
-
 
 
         /// <summary>
@@ -1150,7 +709,7 @@ namespace BoSSS.Foundation.XDG {
 
 
         }
-        
+
 
         abstract public class XEvaluatorBase : IXEvaluator {
 
@@ -1734,7 +1293,7 @@ namespace BoSSS.Foundation.XDG {
 
         }
 
-        
+
         internal class SpeciesFrameVector<V> : IList<double>
             where V : IList<double> {
 
@@ -2298,6 +1857,475 @@ namespace BoSSS.Foundation.XDG {
                 return LR;
             }
         }
+
+
+
+        class FixedOrder_SpatialOperator : SpatialOperator {
+            public FixedOrder_SpatialOperator(IList<string> __DomainVar, IList<string> __ParameterVar, IList<string> __CoDomainVar)
+                : base(__DomainVar, __ParameterVar, __CoDomainVar, null) //
+            {
+                base.QuadOrderFunction = this.QOF;
+            }
+
+            int QOF(int[] A, int[] B, int[] C) {
+                return m_Order;
+            }
+
+            internal int m_Order;
+        }
+
+        #endregion
+
+
+        //==========================================================================================================================
+        // Reused from SpatialOperator with modifications
+        //==========================================================================================================================
+        #region ModSpatialOperator
+
+        /// <summary>
+        /// ctor, see <see cref="SpatialOperator.SpatialOperator(int,int,int,Func{int[],int[],int[],int},string[])"/>
+        /// </summary>
+        public XSpatialOperatorMk2(int NoOfDomFields, int NoOfParameters, int NoOfCodomFields, Func<int[], int[], int[], int> QuadOrderFunc, params string[] __varnames)
+            : this(GetSubarray(__varnames, 0, NoOfDomFields), GetSubarray(__varnames, NoOfDomFields, NoOfParameters), GetSubarray(__varnames, NoOfDomFields + NoOfParameters, NoOfCodomFields), QuadOrderFunc) {
+            if(NoOfCodomFields + NoOfDomFields + NoOfParameters != __varnames.Length)
+                throw new ArgumentException("mismatch between number of provided variable names and given number of domain, parameter and codomain fields.");
+
+        }
+
+        /// <summary>
+        /// ctor, see <see cref="SpatialOperator.SpatialOperator(int,int,Func{int[],int[],int[],int},string[])"/>
+        /// </summary>
+        public XSpatialOperatorMk2(int NoOfDomFields, int NoOfCodomFields, Func<int[], int[], int[], int> QuadOrderFunc, params string[] __varnames)
+           : this(GetSubarray(__varnames, 0, NoOfDomFields), GetSubarray(__varnames, NoOfDomFields, NoOfCodomFields), QuadOrderFunc) {
+            if(NoOfCodomFields + NoOfDomFields != __varnames.Length)
+                throw new ArgumentException("mismatch between number of provided variable names and given number of domain and codomain fields.");
+        }
+
+        /// <summary>
+        /// ctor, see <see cref="SpatialOperator.SpatialOperator(IList{string},IList{string},Func{int[],int[],int[],int})"/>
+        /// </summary>
+        public XSpatialOperatorMk2(IList<string> __DomainVar, IList<string> __CoDomainVar, Func<int[], int[], int[], int> QuadOrderFunc)
+            : this(__DomainVar, null, __CoDomainVar, QuadOrderFunc) {
+        }
+
+        /// <summary>
+        /// ctor, see <see cref="SpatialOperator.SpatialOperator(IList{string},IList{string},IList{string},Func{int[],int[],int[],int})"/>
+        /// </summary>
+        public XSpatialOperatorMk2(IList<string> __DomainVar, IList<string> __ParameterVar, IList<string> __CoDomainVar, Func<int[], int[], int[], int> QuadOrderFunc) {
+            m_DomainVar = new string[__DomainVar.Count];
+            for(int i = 0; i < m_DomainVar.Length; i++) {
+                if(Array.IndexOf<string>(m_DomainVar, __DomainVar[i]) >= 0)
+                    throw new ArgumentException("error in domain variables list; identifier \"" + __DomainVar[i] + "\" appears twice.", "__DomainVar");
+                m_DomainVar[i] = __DomainVar[i];
+            }
+
+            if(__ParameterVar != null) {
+                m_ParameterVar = new string[__ParameterVar.Count];
+                for(int i = 0; i < m_ParameterVar.Length; i++) {
+                    if(Array.IndexOf<string>(m_DomainVar, __ParameterVar[i]) >= 0)
+                        throw new ArgumentException("error in parameter variables list; identifier \"" + __ParameterVar[i] + "\" is already contained in the domain variables list.", "__ParameterVar");
+
+                    if(Array.IndexOf<string>(m_ParameterVar, __ParameterVar[i]) >= 0)
+                        throw new ArgumentException("error in parameter variables list; identifier \"" + __ParameterVar[i] + "\" appears twice.", "__ParameterVar");
+
+                    m_ParameterVar[i] = __ParameterVar[i];
+                }
+            } else {
+                m_ParameterVar = new string[0];
+            }
+
+            m_CodomainVar = new string[__CoDomainVar.Count];
+            for(int i = 0; i < m_CodomainVar.Length; i++) {
+                if(Array.IndexOf<string>(m_CodomainVar, __CoDomainVar[i]) >= 0)
+                    throw new ArgumentException("error in codomain variables list; identifier \"" + __CoDomainVar[i] + "\" appears twice.", "__CoDomainVar");
+                m_CodomainVar[i] = __CoDomainVar[i];
+            }
+
+            m_EquationComonents = new SortedList<string, List<IEquationComponent>>(__CoDomainVar.Count);
+            foreach(var f in __CoDomainVar) {
+                m_EquationComonents.Add(f, new List<IEquationComponent>());
+            }
+            m_EquationComponentsHelper = new _XEquationComponents(this);
+            this.QuadOrderFunction = QuadOrderFunc;
+
+            GhostEdgesOperator = new FixedOrder_SpatialOperator(DomainVar, ParameterVar, CodomainVar);
+            SurfaceElementOperator = new FixedOrder_SpatialOperator(DomainVar, ParameterVar, CodomainVar);
+            SpeciesOperator = new FixedOrder_SpatialOperator(DomainVar, ParameterVar, CodomainVar);
+
+        }
+
+
+
+        _XEquationComponents m_EquationComponentsHelper;
+
+        /// <summary>
+        /// for each variable in <see cref="CodomainVar"/>, a
+        /// collection of equation components that define the operator.
+        /// 
+        /// </summary>
+        public _XEquationComponents EquationComponents {
+            get {
+                return m_EquationComponentsHelper;
+            }
+        }
+
+
+        /// <summary>
+        /// implementation of <see cref="EquationComponents" />;
+        /// </summary>
+        public class _XEquationComponents : IEnumerable<KeyValuePair<string, IEnumerable<IEquationComponent>>> {
+
+            internal _XEquationComponents(XSpatialOperatorMk2 owner) {
+                m_owner = owner;
+            }
+
+            XSpatialOperatorMk2 m_owner;
+
+            /// <summary>
+            /// returns the collection of equation components for one variable in the 
+            /// codomain
+            /// </summary>
+            /// <param name="EqnName">
+            /// a variable in the codomain (<see cref="SpatialOperator.CodomainVar"/>)
+            /// </param>
+            /// <returns></returns>
+            public ICollection<IEquationComponent> this[string EqnName] {
+                get {
+                    if(m_owner.m_IsCommited)
+                        return m_owner.m_EquationComonents[EqnName].AsReadOnly();
+                    else
+                        return m_owner.m_EquationComonents[EqnName];
+                }
+            }
+
+            #region IEnumerable<KeyValuePair<string,IEnumerable<IEquationComponent>> Members
+
+            /// <summary>
+            /// Gets the enumerator over the equation components of the owner
+            /// </summary>
+            /// <returns>An enumerator</returns>
+            public IEnumerator<KeyValuePair<string, IEnumerable<IEquationComponent>>> GetEnumerator() {
+                return m_owner.m_EquationComonents.Select(
+                    x => new KeyValuePair<string, IEnumerable<IEquationComponent>>(
+                        x.Key, x.Value.AsReadOnly())).GetEnumerator();
+            }
+
+            #endregion
+
+            #region IEnumerable Members
+
+            /// <summary>
+            /// <see cref="GetEnumerator"/>
+            /// </summary>
+            /// <returns>
+            /// <see cref="GetEnumerator"/>
+            /// </returns>
+            IEnumerator IEnumerable.GetEnumerator() {
+                return GetEnumerator();
+            }
+
+            #endregion
+        }
+
+
+        /// <summary>
+        /// finalizes the assembly of the operator;
+        /// Can be called only once in the lifetime of this object.
+        /// After calling this method, no adding/removing of equation components is possible.
+        /// </summary>
+        public virtual void Commit() {
+            Verify();
+
+            if(m_IsCommited)
+                throw new ApplicationException("'Commit' has already been called - it can be called only once in the lifetime of this object.");
+
+            m_IsCommited = true;
+
+            GhostEdgesOperator.Commit();
+            SurfaceElementOperator.Commit();
+
+            foreach(string comps in m_EquationComonents.Keys) {
+                foreach(IEquationComponent iec in m_EquationComonents[comps]) {
+                    SpeciesOperator.EquationComponents[comps].Add(iec);
+                }
+            }
+            SpeciesOperator.Commit();
+        }
+
+
+        /// <summary>
+        /// returns a collection of equation components of a certain type (<typeparamref name="T"/>)
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="CatParams">
+        /// if true, parameter variables (see <see cref="IEquationComponent.ParameterOrdering"/>)
+        /// are concatenated with domain variable names (see <see cref="IEquationComponent.ArgumentOrdering"/>).
+        /// </param>
+        /// <param name="F">
+        /// optional filter;
+        /// should return true, if the component should be added, false if not; 
+        /// </param>
+        /// <param name="vectorizer">
+        /// vectorizer option: translate some equation component to another one
+        /// </param>
+        public EquationComponentArgMapping<T>[] GetArgMapping<T>(bool CatParams = false, Func<T, bool> F = null, Func<IEquationComponent, IEquationComponent> vectorizer = null) where T : IEquationComponent {
+            if(!IsCommited)
+                throw new ApplicationException("Commit() has to be called prior to this method.");
+
+            int Gamma = CodomainVar.Count;
+
+            var ret = new EquationComponentArgMapping<T>[Gamma];
+            for(int i = 0; i < Gamma; i++) {
+                var codName = this.m_CodomainVar[i];
+                ret[i] = new EquationComponentArgMapping<T>(SpeciesOperator,
+                    codName,
+                    this.m_DomainVar,
+                    CatParams ? this.ParameterVar : null,
+                    F, vectorizer);
+            }
+
+            return ret;
+        }
+
+        #endregion
+
+
+        //==========================================================================================================================
+        // Reused from SpatialOperator without modifications
+        //==========================================================================================================================
+        #region SpatialOperator
+
+        /// <summary>
+        /// Function Mapping from Domain Variable Degrees, Parameter Degrees and CoDomain Variable Degrees to the Quadrature Order
+        /// </summary>
+        public Func<int[], int[], int[], int> QuadOrderFunction;
+
+        static string[] GetSubarray(string[] A, int i0, int len) {
+            string[] r = new string[len];
+            Array.Copy(A, i0, r, 0, len);
+            return r;
+        }
+
+
+
+        /// <summary>
+        /// verifies all equation components;
+        /// </summary>
+        /// <remarks>
+        /// if a component has an illegal configuration (e.g. it's arguments
+        /// (<see cref="BoSSS.Foundation.IEquationComponent.ArgumentOrdering"/>) are not contained
+        /// in the domain variable list (<see cref="DomainVar"/>)), an 
+        /// exception is thrown;
+        /// </remarks>
+        internal protected void Verify() {
+            foreach(var comps in m_EquationComonents.Values) {
+                foreach(IEquationComponent c in comps) {
+                    foreach(string varname in c.ArgumentOrdering) {
+                        if(Array.IndexOf<string>(m_DomainVar, varname) < 0)
+                            throw new ApplicationException("configuration error in spatial differential operator; some equation component depends on variable \""
+                                + varname
+                                + "\", but this name is not a member of the domain variable list.");
+                    }
+
+                    if(c.ParameterOrdering != null) {
+                        foreach(string varname in c.ParameterOrdering) {
+                            if(Array.IndexOf<string>(m_ParameterVar, varname) < 0)
+                                throw new ApplicationException("configuration error in spatial differential operator; some equation component depends on (parameter) variable \""
+                                    + varname
+                                    + "\", but this name is not a member of the parameter variable list.");
+
+                            if(c.ArgumentOrdering.Contains(varname))
+                                throw new ApplicationException("configuration error in spatial differential operator; some equation component contains variable \""
+                                    + varname
+                                    + "\" in parameter and argument list; this is not allowed.");
+                        }
+                    }
+                }
+            }
+        }
+
+
+        /// <summary>
+        /// Evaluation of the <see cref="QuadOrderFunction"/>.
+        /// </summary>
+        /// <param name="DomainMap"></param>
+        /// <param name="Parameters"></param>
+        /// <param name="CodomainMap"></param>
+        /// <returns></returns>
+        public int GetOrderFromQuadOrderFunction(UnsetteledCoordinateMapping DomainMap, IList<DGField> Parameters, UnsetteledCoordinateMapping CodomainMap) {
+            /// Compute Quadrature Order
+            int order;
+            int[] DomainDegrees = DomainMap.BasisS.Select(f => f.Degree).ToArray();
+            int[] CodomainDegrees = CodomainMap.BasisS.Select(f => f.Degree).ToArray();
+            int[] ParameterDegrees;
+            if(Parameters != null && Parameters.Count != 0) {
+                ParameterDegrees = Parameters.Select(f => f == null ? 0 : f.Basis.Degree).ToArray();
+            } else {
+                ParameterDegrees = new int[] { 0 };
+            };
+            order = QuadOrderFunction(DomainDegrees, ParameterDegrees, CodomainDegrees);
+            return order;
+        }
+
+        private static IGridData CheckArguments(UnsetteledCoordinateMapping DomainMap, IList<DGField> Parameters, UnsetteledCoordinateMapping CodomainMap) {
+            var GridDat = DomainMap.GridDat;
+            if(!object.ReferenceEquals(GridDat, CodomainMap.GridDat))
+                throw new ArgumentException("Domain and codomain map must be assigend to the same grid.");
+            if(Parameters != null)
+                foreach(var prm in Parameters)
+                    if(prm != null && (!object.ReferenceEquals(prm.GridDat, GridDat)))
+                        throw new ArgumentException(string.Format("parameter field {0} is assigned to a different grid.", prm.Identification));
+            return GridDat;
+        }
+
+        /// <summary>
+        /// for some codomain variable <paramref name="CodomVar"/>,
+        /// this method collects 
+        /// all variables in the domain (see <see cref="DomainVar"/>)
+        /// on which <paramref name="CodomVar"/> depends on.
+        /// </summary>
+        /// <param name="CodomVar"></param>
+        /// <returns>
+        /// a sub-list of <see cref="DomainVar"/>;
+        /// </returns>
+        /// <remarks>
+        /// This method invokes <see cref="Verify"/>;<br/>
+        /// the returned list is in the same order as 
+        /// </remarks>
+        public IList<string> CollectDependentVariables(string CodomVar) {
+            if(Array.IndexOf<string>(m_CodomainVar, CodomVar) < 0)
+                throw new ArgumentException("the provided variable name \""
+                    + CodomVar
+                    + "\" is not a member of the Codomain variable list of this spatial differential operator");
+            Verify();
+
+            var comps = m_EquationComonents[CodomVar];
+            List<string> ret = new List<string>();
+            for(int i = 0; i < m_DomainVar.Length; i++) {
+                string varName = m_DomainVar[i];
+
+                bool isContained = false;
+                foreach(var EqnComponent in comps) {
+                    foreach(string name in EqnComponent.ArgumentOrdering) {
+                        if(name.Equals(varName))
+                            isContained = true;
+                    }
+                }
+
+                if(isContained)
+                    ret.Add(varName);
+            }
+
+            return ret.ToArray();
+        }
+
+        
+        /// <summary>
+        /// <see cref="EquationComponents"/>
+        /// </summary>
+        SortedList<string, List<IEquationComponent>> m_EquationComonents;
+
+
+        bool m_IsCommited = false;
+
+        /// <summary>
+        /// indicates whether the equation-assembly has been finished (by calling <see cref="Commit"/>)
+        /// or not.
+        /// </summary>
+        public bool IsCommited {
+            get {
+                return m_IsCommited;
+            }
+        }
+
+        /// <summary>
+        /// total number of equation components, in all codomain variables
+        /// </summary>
+        public int TotalNoOfComponents {
+            get {
+                return this.m_EquationComonents.Values.Sum(x => x.Count);
+            }
+        }
+
+
+
+        string[] m_DomainVar;
+
+        /// <summary>
+        /// names of (DG-) variables that represent the domain of this  differential operator;
+        /// These names/strings should not be confused with field identification strings
+        /// (<see cref="DGField.Identification"/>), they have nothing to do with that.
+        /// </summary>
+        public IList<string> DomainVar {
+            get {
+                return (string[])m_DomainVar.Clone();
+            }
+        }
+
+        string[] m_CodomainVar;
+
+        /// <summary>
+        /// names of (DG-) variables that represent the Co-Domain of this differential operator
+        /// These names/strings should not be confused with field identification strings
+        /// (<see cref="DGField.Identification"/>), they have nothing to do with that.
+        /// </summary>
+        public IList<string> CodomainVar {
+            get {
+                return (string[])m_CodomainVar.Clone();
+            }
+        }
+
+        string[] m_ParameterVar = new string[0];
+
+        /// <summary>
+        /// names of (DG-) variables which act as parameters; 
+        /// Their role is pretty similar to those of the domain variables, and for nonlinear
+        /// fluxes, there is no difference.
+        /// However, for <em>linear</em> fluxes, they can be used to provide some 
+        /// space-depended properties as DG-fields, e.g. for providing boundary conditions
+        /// or if the linear operator is some linearization of some nonlinear operator.
+        /// </summary>
+        public IList<string> ParameterVar {
+            get {
+                return (string[])m_ParameterVar.Clone();
+            }
+        }
+
+
+
+        /// <summary>
+        /// Returns true, if at least one of the equation components 
+        /// for codomain variable <paramref name="CodomVar"/>
+        /// is of some type in <paramref name="t"/>.
+        /// </summary>
+        public bool ContainesComponentType_PerCodomainVar(string CodomVar, params Type[] t) {
+            foreach(object o in EquationComponents[CodomVar]) {
+                Type[] interfaces = o.GetType().GetInterfaces();
+
+                for(int i = 0; i < t.Length; i++)
+                    if(Array.IndexOf<Type>(interfaces, t[i]) >= 0)
+                        return true;
+            }
+
+            return false;
+        }
+
+        /// <summary>
+        /// Returns true, if at least one of the equation components 
+        /// of this operator
+        /// is of some type in <paramref name="t"/>.
+        /// </summary>
+        public bool ContainesComponentType(params Type[] t) {
+            foreach(var s in this.CodomainVar) {
+                if(ContainesComponentType_PerCodomainVar(s, t))
+                    return true;
+            }
+
+            return false;
+        }
+
+        #endregion
+
 
 
     }
