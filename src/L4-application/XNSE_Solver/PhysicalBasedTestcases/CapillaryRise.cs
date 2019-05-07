@@ -375,7 +375,10 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
                         //restartID = new Guid("34c3ee0e-9244-497b-9382-58b458f7b873");   // restart with Reinit highdt (5e-5)
                         //restartID = new Guid("1d31b648-d19f-4a5a-b374-cde08f8106a9");
 
-                        restartID = new Guid("a32df5ae-393d-416a-bdd0-24a4437136fb");   //restart with sigma dt (2.5E-5)
+                        //restartID = new Guid("a32df5ae-393d-416a-bdd0-24a4437136fb");   //restart with sigma dt (2.5E-5)
+
+                        restartID = new Guid("1d679e3c-03f3-41ee-8f1e-7e80ec497926"); // restart with Reinit semi implicit
+                        ts_restart = 270000;
 
                         //restartID = new Guid("2f9deaa6-fab9-48ac-9279-319a1efa5547");
 
@@ -633,7 +636,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
 
             C.AdvancedDiscretizationOptions.FilterConfiguration = CurvatureAlgorithms.FilterConfiguration.NoFilter;
 
-            C.AdvancedDiscretizationOptions.SurfStressTensor = SurfaceSressTensor.Isotropic;
+            C.AdvancedDiscretizationOptions.SurfStressTensor = SurfaceSressTensor.SemiImplicit;
             //C.PhysicalParameters.mu_I = 1 * C.PhysicalParameters.Sigma;
             //C.PhysicalParameters.lambda_I = 2 * C.PhysicalParameters.Sigma;
             C.AdvancedDiscretizationOptions.UseLevelSetStabilization = false;
