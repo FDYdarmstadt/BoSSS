@@ -497,17 +497,17 @@ namespace BoSSS.Foundation.XDG {
                                 trx = null;
                             }
 
-                            var MtxBuilder = new LECQuadratureLevelSet<M, V>(GridDat,
-                                                             m_Xowner,
-                                                             OnlyAffine ? default(M) : Matrix, AffineOffset,
-                                                             CodomainMapping, Parameters, DomainMapping,
-                                                             lsTrk, iLevSet, new Tuple<SpeciesId, SpeciesId>(SpeciesA, SpeciesB),
-                                                             rule);
-                            MtxBuilder.time = time;
-                            this.SpeciesOperatorCoefficients.TryGetValue(SpeciesA, out var csA);
-                            this.SpeciesOperatorCoefficients.TryGetValue(SpeciesB, out var csB);
-                            UpdateLevelSetCoefficients(csA, csB);
-                            MtxBuilder.Execute();
+                            //var MtxBuilder = new LECQuadratureLevelSet<M, V>(GridDat,
+                            //                                 m_Xowner,
+                            //                                 OnlyAffine ? default(M) : Matrix, AffineOffset,
+                            //                                 CodomainMapping, Parameters, DomainMapping,
+                            //                                 lsTrk, iLevSet, new Tuple<SpeciesId, SpeciesId>(SpeciesA, SpeciesB),
+                            //                                 rule);
+                            //MtxBuilder.time = time;
+                            //this.SpeciesOperatorCoefficients.TryGetValue(SpeciesA, out var csA);
+                            //this.SpeciesOperatorCoefficients.TryGetValue(SpeciesB, out var csB);
+                            //UpdateLevelSetCoefficients(csA, csB);
+                            //MtxBuilder.Execute();
 
 #if DEBUG
                             if(Matrix != null && OnlyAffine == false)
@@ -664,17 +664,17 @@ namespace BoSSS.Foundation.XDG {
                                 trx = null;
                             }
 
-                            var LsEval = new NECQuadratureLevelSet<Tout>(GridDat,
-                                                             m_Xowner,
-                                                             output,
-                                                             this.DomainFields.Fields, Parameters, base.CodomainMapping,
-                                                             lsTrk, iLevSet, new Tuple<SpeciesId, SpeciesId>(SpeciesA, SpeciesB),
-                                                             rule);
-                            LsEval.time = time;
-                            this.SpeciesOperatorCoefficients.TryGetValue(SpeciesA, out var csA);
-                            this.SpeciesOperatorCoefficients.TryGetValue(SpeciesB, out var csB);
-                            UpdateLevelSetCoefficients(csA, csB);
-                            LsEval.Execute();
+                            //var LsEval = new NECQuadratureLevelSet<Tout>(GridDat,
+                            //                                 m_Xowner,
+                            //                                 output,
+                            //                                 this.DomainFields.Fields, Parameters, base.CodomainMapping,
+                            //                                 lsTrk, iLevSet, new Tuple<SpeciesId, SpeciesId>(SpeciesA, SpeciesB),
+                            //                                 rule);
+                            //LsEval.time = time;
+                            //this.SpeciesOperatorCoefficients.TryGetValue(SpeciesA, out var csA);
+                            //this.SpeciesOperatorCoefficients.TryGetValue(SpeciesB, out var csB);
+                            //UpdateLevelSetCoefficients(csA, csB);
+                            //LsEval.Execute();
 
 #if DEBUG
                             GenericBlas.CheckForNanOrInfV(output);

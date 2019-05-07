@@ -181,7 +181,7 @@ namespace BoSSS.Solution.XNSECommon {
 
             // create Operator
             // ===============
-            m_OP = new XSpatialOperator(DomNameSelected, Params, CodNameSelected, (A, B, C) => _HMFdegree);
+            m_OP = new XSpatialOperatorMk2(DomNameSelected, Params, CodNameSelected, (A, B, C) => _HMFdegree);
 
             // build the operator
             // ==================
@@ -532,12 +532,12 @@ namespace BoSSS.Solution.XNSECommon {
 
 
 
-        XSpatialOperator m_OP;
+        XSpatialOperatorMk2 m_OP;
 
         /// <summary>
         /// The incompressible XNSE-Operator 
         /// </summary>
-        public XSpatialOperator Op {
+        public XSpatialOperatorMk2 Op {
             get {
                 return m_OP;
             }
@@ -724,7 +724,7 @@ namespace BoSSS.Solution.XNSECommon {
                 //    InterfaceLengths, SlipLengths,
                 //    SpcToCompute);
 
-                XSpatialOperator.XEvaluatorLinear mtxBuilder = Op.GetMatrixBuilder(LsTrk, ColMapping, Params, RowMapping, SpcToCompute);
+                XSpatialOperatorMk2.XEvaluatorLinear mtxBuilder = Op.GetMatrixBuilder(LsTrk, ColMapping, Params, RowMapping, SpcToCompute);
 
                 foreach(var kv in AgglomeratedCellLengthScales) {
                     mtxBuilder.SpeciesOperatorCoefficients[kv.Key].CellLengthScales = kv.Value;
@@ -741,7 +741,7 @@ namespace BoSSS.Solution.XNSECommon {
                 mtxBuilder.ComputeMatrix(OpMatrix, OpAffine);
 
             } else {
-                XSpatialOperator.XEvaluatorNonlin eval = Op.GetEvaluatorEx(Tracker,
+                XSpatialOperatorMk2.XEvaluatorNonlin eval = Op.GetEvaluatorEx(Tracker,
                     CurrentState.ToArray(), Params, RowMapping,
                     SpcToCompute);
 
@@ -761,29 +761,29 @@ namespace BoSSS.Solution.XNSECommon {
 
 #if DEBUG
                 // remark: remove this piece in a few months from now on (09may18) if no problems occur
-                {
+                //{
 
-                    BlockMsrMatrix checkOpMatrix = new BlockMsrMatrix(RowMapping, ColMapping);
-                    double[] checkAffine = new double[OpAffine.Length];
+                //    BlockMsrMatrix checkOpMatrix = new BlockMsrMatrix(RowMapping, ColMapping);
+                //    double[] checkAffine = new double[OpAffine.Length];
 
-                    Op.ComputeMatrixEx(Tracker,
-                    ColMapping, Params, RowMapping,
-                    OpMatrix, OpAffine, false, time, true,
-                    AgglomeratedCellLengthScales,
-                    InterfaceLengths, SlipLengths,
-                    SpcToCompute);
+                //    Op.ComputeMatrixEx(Tracker,
+                //    ColMapping, Params, RowMapping,
+                //    OpMatrix, OpAffine, false, time, true,
+                //    AgglomeratedCellLengthScales,
+                //    InterfaceLengths, SlipLengths,
+                //    SpcToCompute);
 
 
-                    double[] checkResult = checkAffine.CloneAs();
-                    var currentVec = new CoordinateVector(CurrentState.ToArray());
-                    checkOpMatrix.SpMV(1.0, new CoordinateVector(CurrentState.ToArray()), 1.0, checkResult);
+                //    double[] checkResult = checkAffine.CloneAs();
+                //    var currentVec = new CoordinateVector(CurrentState.ToArray());
+                //    checkOpMatrix.SpMV(1.0, new CoordinateVector(CurrentState.ToArray()), 1.0, checkResult);
 
-                    double L2_dist = GenericBlas.L2DistPow2(checkResult, OpAffine).MPISum().Sqrt();
-                    double RefNorm = (new double[] { checkResult.L2NormPow2(), OpAffine.L2NormPow2(), currentVec.L2NormPow2() }).MPISum().Max().Sqrt();
+                //    double L2_dist = GenericBlas.L2DistPow2(checkResult, OpAffine).MPISum().Sqrt();
+                //    double RefNorm = (new double[] { checkResult.L2NormPow2(), OpAffine.L2NormPow2(), currentVec.L2NormPow2() }).MPISum().Max().Sqrt();
 
-                    Assert.LessOrEqual(L2_dist, RefNorm * 1.0e-6);
-                    Debug.Assert(L2_dist < RefNorm * 1.0e-6);
-                }
+                //    Assert.LessOrEqual(L2_dist, RefNorm * 1.0e-6);
+                //    Debug.Assert(L2_dist < RefNorm * 1.0e-6);
+                //}
 #endif
             }
 

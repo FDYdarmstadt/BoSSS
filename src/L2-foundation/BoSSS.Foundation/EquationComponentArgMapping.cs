@@ -54,7 +54,7 @@ namespace BoSSS.Foundation.Quadrature.FluxQuadCommon {
         /// <param name="vectorizer">
         /// Function for the vectorization of the evaluation of <paramref name="F"/>
         /// </param>
-        internal EquationComponentArgMapping(SpatialOperator DiffOp, string CoDomVarName,
+        public EquationComponentArgMapping(SpatialOperator DiffOp, string CoDomVarName,
             IList<string> _fieldList, IList<string> _fieldList2, Func<T, bool> F, Func<IEquationComponent, IEquationComponent> vectorizer) {
             m_CoDomVarName = CoDomVarName;
             //m_DomainFields = DomainMapping.Fields;

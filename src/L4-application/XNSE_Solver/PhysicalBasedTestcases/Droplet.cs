@@ -52,7 +52,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             //if(D == 3)
                 C.CutCellQuadratureType = Foundation.XDG.XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes;
 
-            AppControl._CompMode compMode = AppControl._CompMode.Transient;
+            AppControl._CompMode compMode = AppControl._CompMode.Steady;
 
             //_DbPath = @"\\fdyprime\userspace\smuda\cluster\cluster_db";
             //_DbPath = @"D:\local\local_test_db";
@@ -120,13 +120,13 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             #region physics
 
             //C.Tags.Add("Hysing");
-            //C.Tags.Add("La = 5000");
-            //C.PhysicalParameters.rho_A = 1e4;
-            //C.PhysicalParameters.rho_B = 1e4;
-            //C.PhysicalParameters.mu_A = 1;
-            //C.PhysicalParameters.mu_B = 1;
-            //double sigma = 1;
-            //C.PhysicalParameters.Sigma = sigma;
+            C.Tags.Add("La = 5000");
+            C.PhysicalParameters.rho_A = 1e4;
+            C.PhysicalParameters.rho_B = 1e4;
+            C.PhysicalParameters.mu_A = 1;
+            C.PhysicalParameters.mu_B = 1;
+            double sigma = 1.0;
+            C.PhysicalParameters.Sigma = sigma;
 
             //C.Tags.Add("La = 0.005");
             //C.PhysicalParameters.rho_A = 1;
@@ -137,12 +137,12 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             //C.PhysicalParameters.Sigma = sigma;
 
             //Air - Water(lenght scale == centimeters, 3D space)
-            C.PhysicalParameters.rho_A = 1e-3;      // kg / cm^3
-            C.PhysicalParameters.rho_B = 1.2e-6;    // kg / cm^3
-            C.PhysicalParameters.mu_A = 1e-5;       // kg / cm * sec
-            C.PhysicalParameters.mu_B = 17.1e-8;    // kg / cm * sec
-            double sigma = 72.75e-3;                // kg / sec^2 
-            C.PhysicalParameters.Sigma = sigma;
+            //C.PhysicalParameters.rho_A = 1e-3;      // kg / cm^3
+            //C.PhysicalParameters.rho_B = 1.2e-6;    // kg / cm^3
+            //C.PhysicalParameters.mu_A = 1e-5;       // kg / cm * sec
+            //C.PhysicalParameters.mu_B = 17.1e-8;    // kg / cm * sec
+            //double sigma = 72.75e-3;                // kg / sec^2 
+            //C.PhysicalParameters.Sigma = sigma;
 
             C.PhysicalParameters.IncludeConvection = true;
             C.PhysicalParameters.Material = true;
@@ -311,7 +311,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             // ====================
             #region solver
 
-            C.ComputeEnergy = true;
+            C.ComputeEnergy = false;
             //C.ComputeInterfaceEnergy = true;
 
             //C.CheckJumpConditions = true;
