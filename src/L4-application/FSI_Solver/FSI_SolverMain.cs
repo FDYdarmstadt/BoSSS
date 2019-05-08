@@ -608,7 +608,7 @@ namespace BoSSS.Application.FSI_Solver
                 case LevelSetHandling.Coupled_Iterative:
                     Console.WriteLine("WARNING: Coupled iterative solver is not tested!");
                     Auxillary.ParticleState_MPICheck(m_Particles, GridData, MPISize);
-                    UpdateForcesAndTorque(m_Particles, dt);
+                    UpdateForcesAndTorque(m_Particles, dt, 0);
                     UpdateLevelSetParticles();
                     foreach (Particle p in m_Particles)
                     {
@@ -989,7 +989,7 @@ namespace BoSSS.Application.FSI_Solver
             }
         }
 
-        private void UpdateForcesAndTorque(List<Particle> Particles, double dt)
+        private void UpdateForcesAndTorque(List<Particle> Particles, double dt, int iteration_counter)
         {
             //
             // Note on MPI parallelization of particle solver:
@@ -1021,7 +1021,7 @@ namespace BoSSS.Application.FSI_Solver
             }
             if (m_Particles.Count > 1)
             {
-                UpdateCollisionForces(Particles, LsTrk.GridDat.Cells.h_minGlobal, dt);
+                UpdateCollisionForces(Particles, LsTrk.GridDat.Cells.h_minGlobal, dt, iteration_counter);
                 foreach(Particle p in m_Particles)
                 {
                     Auxillary.Collision_MPICommunication(m_Particles, p, MPISize);
@@ -1059,7 +1059,7 @@ namespace BoSSS.Application.FSI_Solver
                     LsTrk.PushStacks();
                     DGLevSet.Push();
                     Auxillary.ParticleState_MPICheck(m_Particles, GridData, MPISize);
-                    UpdateForcesAndTorque(m_Particles, dt);
+                    UpdateForcesAndTorque(m_Particles, dt, 0);
                     foreach (Particle p in m_Particles)
                     {
                         p.CalculateAcceleration(dt, ((FSI_Control)Control).Timestepper_LevelSetHandling == LevelSetHandling.FSI_LieSplittingFullyCoupled);
@@ -1114,7 +1114,7 @@ namespace BoSSS.Application.FSI_Solver
                                 Auxillary.SaveOldParticleState(m_Particles, iteration_counter, 2, ((FSI_Control)Control).ForceAndTorque_ConvergenceCriterion, ((FSI_Control)Control).Timestepper_LevelSetHandling == LevelSetHandling.FSI_LieSplittingFullyCoupled, out ForcesOldSquared, out TorqueOldSquared);
                                 m_BDF_Timestepper.Solve(phystime, dt, false);
                                 Auxillary.ParticleState_MPICheck(m_Particles, GridData, MPISize);
-                                UpdateForcesAndTorque(m_Particles, dt);
+                                UpdateForcesAndTorque(m_Particles, dt, iteration_counter);
                             }
 
                             foreach (Particle p in m_Particles)
@@ -1402,7 +1402,7 @@ namespace BoSSS.Application.FSI_Solver
         /// </summary>
         /// <param name="particle0"></param>
         /// <param name="particle1"></param>
-        public void UpdateCollisionForces(List<Particle> Particles, double hmin, double dt)
+        public void UpdateCollisionForces(List<Particle> Particles, double hmin, double dt, int iteration_counter)
         {
             if (CollisionModel == FSI_Control.CollisionModel.NoCollisionModel)
                  return;
@@ -1432,7 +1432,7 @@ namespace BoSSS.Application.FSI_Solver
                             Console.WriteLine("And I'm particle " + ParticlesOfCurrentColor[p2]);
                             double distance = 1E20;
                             double[] distanceVec = new double[Grid.SpatialDimension];
-                            ComputeCollisionModel(hmin, Particles[ParticlesOfCurrentColor[p1]], Particles[ParticlesOfCurrentColor[p2]], ref distance, ref distanceVec, dt, out bool Collided);
+                            ComputeCollisionModel(hmin, Particles[ParticlesOfCurrentColor[p1]], Particles[ParticlesOfCurrentColor[p2]], ref distance, ref distanceVec, dt, iteration_counter, out bool Collided);
                             CollidedWith[p1, p2] = Collided;
                             if (Collided)
                                 AnyCollision = true;
@@ -1458,7 +1458,7 @@ namespace BoSSS.Application.FSI_Solver
                                     Console.WriteLine("And I'm particle " + ParticlesOfCurrentColor[p2]);
                                     double distance = 1E20;
                                     double[] distanceVec = new double[Grid.SpatialDimension];
-                                    ComputeCollisionModel(hmin, Particles[ParticlesOfCurrentColor[p1]], Particles[ParticlesOfCurrentColor[p2]], ref distance, ref distanceVec, dt, out bool Collided);
+                                    ComputeCollisionModel(hmin, Particles[ParticlesOfCurrentColor[p1]], Particles[ParticlesOfCurrentColor[p2]], ref distance, ref distanceVec, dt, iteration_counter, out bool Collided);
                                     CollidedWith[p1, p2] = Collided;
                                     AnyCollision = Collided;
                                 }
@@ -1541,7 +1541,7 @@ namespace BoSSS.Application.FSI_Solver
         /// <summary>
         /// Update of particle state (velocity, force, etc.) for two particles where a collision is detected
         /// </summary>
-        private void ComputeCollisionModel(double hmin, Particle particle0, Particle particle1, ref double distance, ref double[] distanceVec, double dt, out bool Collided)
+        private void ComputeCollisionModel(double hmin, Particle particle0, Particle particle1, ref double distance, ref double[] distanceVec, double dt, int iteration_counter, out bool Collided)
         {
             FSI_Collision _FSI_Collision = new FSI_Collision();
             int SpatialDim = distanceVec.Length;
@@ -1653,6 +1653,19 @@ namespace BoSSS.Application.FSI_Solver
             Console.WriteLine("hmin: " + hmin);
             Collided = false;
 
+            //if(realDistance > 2.5 * hmin)
+            //{
+            //    // Bool if force integration should be skipped
+            //    particle0.skipForceIntegration = true;
+            //    particle1.skipForceIntegration = true;
+            //}
+            //else
+            //{
+            //    // Bool if force integration should be skipped
+            //    particle0.skipForceIntegration = false;
+            //    particle1.skipForceIntegration = false;
+            //}
+
             if (realDistance > threshold)
             {
                 particle0.m_collidedWithParticle[m_Particles.IndexOf(particle1)] = false;
@@ -1696,7 +1709,7 @@ namespace BoSSS.Application.FSI_Solver
 
                 case FSI_Control.CollisionModel.MomentumConservation:
 
-                    if (((realDistance <= threshold || ForceCollision) && !particle0.m_collidedWithParticle[m_Particles.IndexOf(particle1)] && !particle1.m_collidedWithParticle[m_Particles.IndexOf(particle0)]))
+                    if (((realDistance <= threshold || ForceCollision) && (!particle0.m_collidedWithParticle[m_Particles.IndexOf(particle1)] && !particle1.m_collidedWithParticle[m_Particles.IndexOf(particle0)] || iteration_counter != 0)))
                     {
                         // Bool if collided
                         particle0.m_collidedWithParticle[m_Particles.IndexOf(particle1)] = true;
