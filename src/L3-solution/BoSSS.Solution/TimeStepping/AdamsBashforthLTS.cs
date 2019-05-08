@@ -473,7 +473,7 @@ namespace BoSSS.Solution.Timestepping {
                     int cell2 = gridData.iLogicalEdges.CellIndices[edge, 1];
 
                     if (LocalCellIdx2SubgridIdx[cell1] >= 0) { // <- check for MPI save operation
-                        //cell1 is coarse
+                                                               //cell1 is coarse
                         cellCoarse = cell1;
                         cellFine = cell2;
                     } else {
@@ -869,58 +869,61 @@ namespace BoSSS.Solution.Timestepping {
         }
 
         public bool TryNewClustering(double dt, bool calledByMPIRedist = false) {
-            bool reclustered = false;
+            //using (var tr = new ilPSP.Tracing.FuncTrace()) {
 
-            if (ABevolver[0].HistoryChangeRate.Count >= order - 1) {
-                if (adaptive) {
-                    if (TimeInfo.TimeStepNumber % reclusteringInterval == 0) {
-                        // Fix for update problem of artificial viscosity
-                        RaiseOnBeforeComputechangeRate(Time, dt);
+                bool reclustered = false;
 
-                        if (ConsoleOutput) {
-                            Console.WriteLine("\n-------------------------------------------------------------------------------------------");
-                            Console.WriteLine("### BUILD NEW CLUSTERING FOR TESTING ###");
-                        }
-
-                        // Necessary in order to use the number of sub-grids specified by the user for the reclustering in each time step
-                        // Otherwise the value could be changed by the constructor of the parent class (AdamsBashforthLTS.cs) --> CreateSubGrids()
-                        Clusterer.Clustering newClustering = clusterer.CreateClustering(NumberOfClustersInitial, this.TimeStepConstraints, this.SubGrid);
-                        newClustering = clusterer.TuneClustering(newClustering, Time, this.TimeStepConstraints); // Might remove sub-grids when their time step sizes are too similar
-
-                        if (calledByMPIRedist || forceReclustering) {
-                            reclustered = true;
-                        } else {
-                            reclustered = clusterer.CheckForNewClustering(CurrentClustering, newClustering);
-                        }
-
-                        if (ConsoleOutput) {
-                            Console.WriteLine("-------------------------------------------------------------------------------------------");
-                        }
-
-                        // After the intitial phase, activate adaptive mode for all ABevolve objects
-                        foreach (ABevolve abE in ABevolver) {
-                            abE.adaptive = true;
-                        }
-
-                        if (reclustered) {
+                if (ABevolver[0].HistoryChangeRate.Count >= order - 1) {
+                    if (adaptive) {
+                        if (TimeInfo.TimeStepNumber % reclusteringInterval == 0) {
+                            // Fix for update problem of artificial viscosity
+                            RaiseOnBeforeComputechangeRate(Time, dt);
 
                             if (ConsoleOutput) {
-                                Console.WriteLine("### RECLUSTERING ###");
+                                Console.WriteLine("\n-------------------------------------------------------------------------------------------");
+                                Console.WriteLine("### BUILD NEW CLUSTERING FOR TESTING ###");
                             }
 
-                            CurrentClustering = newClustering;
-                            ShortenHistories(ABevolver);
-                            ABevolve[] oldABevolver = ABevolver;
-                            CreateNewABevolver();
-                            CopyHistoriesOfABevolver(oldABevolver);
-                        }
+                            // Necessary in order to use the number of sub-grids specified by the user for the reclustering in each time step
+                            // Otherwise the value could be changed by the constructor of the parent class (AdamsBashforthLTS.cs) --> CreateSubGrids()
+                            Clusterer.Clustering newClustering = clusterer.CreateClustering(NumberOfClustersInitial, this.TimeStepConstraints, this.SubGrid);
+                            newClustering = clusterer.TuneClustering(newClustering, Time, this.TimeStepConstraints); // Might remove sub-grids when their time step sizes are too similar
 
-                        GetBoundaryTopology();
+                            if (calledByMPIRedist || forceReclustering) {
+                                reclustered = true;
+                            } else {
+                                reclustered = clusterer.CheckForNewClustering(CurrentClustering, newClustering);
+                            }
+
+                            if (ConsoleOutput) {
+                                Console.WriteLine("-------------------------------------------------------------------------------------------");
+                            }
+
+                            // After the intitial phase, activate adaptive mode for all ABevolve objects
+                            foreach (ABevolve abE in ABevolver) {
+                                abE.adaptive = true;
+                            }
+
+                            if (reclustered) {
+
+                                if (ConsoleOutput) {
+                                    Console.WriteLine("### RECLUSTERING ###");
+                                }
+
+                                CurrentClustering = newClustering;
+                                ShortenHistories(ABevolver);
+                                ABevolve[] oldABevolver = ABevolver;
+                                CreateNewABevolver();
+                                CopyHistoriesOfABevolver(oldABevolver);
+                            }
+
+                            GetBoundaryTopology();
+                        }
                     }
                 }
-            }
 
-            return reclustered;
+                return reclustered;
+            }
         }
     }
-}
+//}
