@@ -114,7 +114,7 @@ namespace FSI_Solver
             VelocityComponent = VelocityVector[0] * vector[0] + VelocityVector[1] * vector[1];
         }
 
-        internal void FindRadialVector(double[] ParticlePosition, double[] SurfacePoint, out double[] RadialVector, out double[] RadialNormalVector)
+        internal void FindRadialVector(double[] ParticlePosition, double[] SurfacePoint, out double[] RadialVector, out double RadialLength, out double[] RadialNormalVector)
         {
             RadialVector = new double[ParticlePosition.Length];
             for (int d = 0; d < ParticlePosition.Length; d++)
@@ -122,15 +122,16 @@ namespace FSI_Solver
                 RadialVector[d] = SurfacePoint[d] - ParticlePosition[d];
             }
             RadialNormalVector = new double[] { -RadialVector[1], RadialVector[0] };
+            RadialLength = Math.Sqrt(RadialNormalVector[0].Pow2() + RadialNormalVector[1].Pow2());
             RadialNormalVector.ScaleV(1 / Math.Sqrt(RadialNormalVector[0].Pow2() + RadialNormalVector[1].Pow2()));
         }
 
-        internal void TransformRotationalVelocity(double RotationalVelocity, double[] RadialNormalVector, out double[] PointVelocityDueToRotation)
+        internal void TransformRotationalVelocity(double RotationalVelocity, double RadialLength, double[] RadialNormalVector, out double[] PointVelocityDueToRotation)
         {
             PointVelocityDueToRotation = new double[RadialNormalVector.Length];
             for (int d = 0; d < RadialNormalVector.Length; d++)
             {
-                PointVelocityDueToRotation[d] = RotationalVelocity * RadialNormalVector[d];
+                PointVelocityDueToRotation[d] = RadialLength * RotationalVelocity * RadialNormalVector[d];
             }
         }
 

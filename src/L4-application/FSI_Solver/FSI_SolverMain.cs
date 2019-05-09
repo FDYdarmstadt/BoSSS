@@ -212,7 +212,7 @@ namespace BoSSS.Application.FSI_Solver
                                     delegate (double[] X, double time)
                                     {
 
-                                        double[] result = new double[X.Length + 3];
+                                        double[] result = new double[X.Length + 5];
 
                                         foreach (Particle p in m_Particles)
                                         {
@@ -237,14 +237,18 @@ namespace BoSSS.Application.FSI_Solver
                                             }
                                             else { containsParticle = p.Contains(X, LsTrk); }
 
+                                            FSI_Collision _FSI_Collision = new FSI_Collision();
+                                            _FSI_Collision.FindRadialVector(p.Position[0], X, out _, out double RadialLength, out double[] RadialNormalVector);
                                             // active particles
                                             if (containsParticle && p.ActiveParticle == true)
                                             {
                                                 result[0] = p.TranslationalVelocity[0][0];
                                                 result[1] = p.TranslationalVelocity[0][1];
                                                 result[2] = p.RotationalVelocity[0];
-                                                result[3] = p.Position[0].L2Distance(X);
-                                                result[4] = -cos_theta;
+                                                result[3] = RadialNormalVector[0];
+                                                result[4] = RadialNormalVector[1];
+                                                result[5] = RadialLength;
+                                                result[6] = -cos_theta;
                                                 return result;
                                             }
 
@@ -254,8 +258,10 @@ namespace BoSSS.Application.FSI_Solver
                                                 result[0] = p.TranslationalVelocity[0][0];
                                                 result[1] = p.TranslationalVelocity[0][1];
                                                 result[2] = p.RotationalVelocity[0];
-                                                result[3] = p.Position[0].L2Distance(X);
-                                                result[4] = 0;
+                                                result[3] = RadialNormalVector[0];
+                                                result[4] = RadialNormalVector[1];
+                                                result[5] = RadialLength;
+                                                result[6] = 0;
                                                 return result;
                                             }
                                         }
@@ -342,7 +348,7 @@ namespace BoSSS.Application.FSI_Solver
                                 delegate (double[] X, double time)
                                 {
 
-                                    double[] result = new double[X.Length + 5];
+                                    double[] result = new double[X.Length + 7];
 
                                     foreach (Particle p in m_Particles)
                                     {
@@ -354,6 +360,8 @@ namespace BoSSS.Application.FSI_Solver
                                         }
                                         else { containsParticle = p.Contains(X, LsTrk); }
 
+                                        FSI_Collision _FSI_Collision = new FSI_Collision();
+                                        _FSI_Collision.FindRadialVector(p.Position[0], X, out _, out double RadialLength, out double[] RadialNormalVector);
                                         // active particles
                                         if (containsParticle && p.ActiveParticle == true)
                                         {
@@ -372,17 +380,12 @@ namespace BoSSS.Application.FSI_Solver
                                             result[0] = p.TranslationalVelocity[0][0];
                                             result[1] = p.TranslationalVelocity[0][1];
                                             result[2] = p.RotationalVelocity[0];
-                                            if (p is Particle_Sphere)
-                                            {
-                                                result[3] = ((Particle_Sphere)p).radius_P;
-                                            }
-                                            else
-                                            {
-                                                result[3] = p.Position[0].L2Distance(X);
-                                            }
-                                            result[4] = p.ActiveStress;
-                                            result[5] = -cos_theta;
-                                            result[6] = p.Angle[0];
+                                            result[3] = RadialNormalVector[0];
+                                            result[4] = RadialNormalVector[1];
+                                            result[5] = RadialLength;
+                                            result[6] = p.ActiveStress;
+                                            result[7] = -cos_theta;
+                                            result[8] = p.Angle[0];
                                         }
 
                                         // passive particles
@@ -391,17 +394,12 @@ namespace BoSSS.Application.FSI_Solver
                                             result[0] = p.TranslationalVelocity[0][0];
                                             result[1] = p.TranslationalVelocity[0][1];
                                             result[2] = p.RotationalVelocity[0];
-                                            if (p is Particle_Sphere)
-                                            {
-                                                result[3] = ((Particle_Sphere)p).radius_P;
-                                            }
-                                            else
-                                            {
-                                                result[3] = p.Position[0].L2Distance(X);
-                                            }
-                                            result[4] = 0;
-                                            result[5] = 0;
-                                            result[6] = p.Angle[0];
+                                            result[3] = RadialNormalVector[0];
+                                            result[4] = RadialNormalVector[1];
+                                            result[5] = RadialLength;
+                                            result[6] = 0;
+                                            result[7] = 0;
+                                            result[8] = p.Angle[0];
                                         }
                                     }
                                     return result;
@@ -444,11 +442,11 @@ namespace BoSSS.Application.FSI_Solver
                     }
                     else
                     {
-                        var divPen = new BoSSS.Solution.NSECommon.Operator.Continuity.DivergenceAtIB(D, LsTrk, 1,
+                        var divPen = new BoSSS.Solution.NSECommon.Operator.Continuity.ActiveDivergenceAtIB(D, LsTrk, 1,
                            delegate (double[] X, double time)
                            {
 
-                               double[] result = new double[X.Length + 2];
+                               double[] result = new double[X.Length + 4];
 
                                foreach (Particle p in m_Particles)
                                {
@@ -458,19 +456,16 @@ namespace BoSSS.Application.FSI_Solver
                                        containsParticle = true;
                                    }
                                    else { containsParticle = p.Contains(X, LsTrk); }
+                                   FSI_Collision _FSI_Collision = new FSI_Collision();
+                                   _FSI_Collision.FindRadialVector(p.Position[0], X, out _, out double RadialLength, out double[] RadialNormalVector);
                                    if (containsParticle)
                                    {
                                        result[0] = p.TranslationalVelocity[0][0];
                                        result[1] = p.TranslationalVelocity[0][1];
                                        result[2] = p.RotationalVelocity[0];
-                                       if (p is Particle_Sphere)
-                                       {
-                                           result[3] = ((Particle_Sphere)p).radius_P;
-                                       }
-                                       else
-                                       {
-                                           result[3] = p.Position[0].L2Distance(X);
-                                       }
+                                       result[3] = RadialNormalVector[0];
+                                       result[4] = RadialNormalVector[1];
+                                       result[5] = RadialLength;
                                        return result;
                                    }
                                }
