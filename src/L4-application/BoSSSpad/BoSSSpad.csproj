@@ -166,17 +166,9 @@
     <None Include="app.config" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\..\..\..\internal\src\private-die\L4-application\PoissonScalar2CylinderCoords\PoissonScalar2CylinderCoords\PoissonScalar2CylinderCoords.csproj">
-      <Project>{2bc5598f-fbdb-4064-a26d-30acfd982a09}</Project>
-      <Name>PoissonScalar2CylinderCoords</Name>
-    </ProjectReference>
     <ProjectReference Include="..\..\..\..\public\src\L4-application\XdgPoisson3\XdgPoisson3.csproj">
       <Project>{efbeff7a-e40d-4808-be79-536040c0fadc}</Project>
       <Name>XdgPoisson3</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\..\..\..\internal\src\private-die\L4-application\StokesHelical\StokesHelical.csproj">
-      <Project>{af092a39-7916-4a59-a2b4-5820fbd33b63}</Project>
-      <Name>StokesHelical</Name>
     </ProjectReference>
     <ProjectReference Include="..\..\L2-foundation\BoSSS.Foundation.SpecFEM\BoSSS.Foundation.SpecFEM.csproj">
       <Project>{9d01688e-9372-4185-adcf-d64d47f3a44a}</Project>

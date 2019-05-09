@@ -127,9 +127,9 @@ namespace BoSSS.Application.BoSSSpad {
             //eval.ReferenceAssembly(typeof(FSI_Solver.FSI_SolverMain).Assembly);
             //eval.ReferenceAssembly(typeof(FuelCell.FuelCellMain).Assembly);
             // Helical shit
-            eval.ReferenceAssembly(typeof(StokesHelical.HelicalMain).Assembly);
+            // eval.ReferenceAssembly(typeof(StokesHelical.HelicalMain).Assembly);
             // eval.ReferenceAssembly(typeof(PosissonScalar3CylinderCoords.PoissonScalar3CCMain).Assembly);
-            eval.ReferenceAssembly(typeof(PoissonScalar2CylinderCoords.PoissonScalar2CCMain).Assembly);
+            // eval.ReferenceAssembly(typeof(PoissonScalar2CylinderCoords.PoissonScalar2CCMain).Assembly);
 
 
             eval.Compile(
