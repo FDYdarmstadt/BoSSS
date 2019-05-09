@@ -835,6 +835,11 @@ namespace BoSSS.Application.FSI_Solver
             throw new NotImplementedException();
         }
 
+        virtual public void GetSupportPoint(int SpatialDim, double CosT, double SinT, out double[] SupportPoint)
+        {
+            throw new NotImplementedException();
+        }
+
         /// <summary>
         /// Set true if translation of the particle should be induced by hydrodynamical forces.
         /// </summary>

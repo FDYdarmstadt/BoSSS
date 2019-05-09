@@ -448,5 +448,65 @@ namespace FSI_Solver
                 }
             }
         }
+
+        internal void GJK_DistanceAlgorithm(Particle p0, Particle p1, double[] Point0_old, double[] Point1_old, int SpatialDim)
+        {
+            Initialize_GJK(SpatialDim, Point0_old, Point1_old, out double[] v0, out List<double[]> Simplex);
+            double[] v = v0.CloneAs();
+            double[] SupportPoint = new double[SpatialDim];
+            while(v != SupportPoint)
+            {
+                double[] vt = v.CloneAs();
+                for (int d = 0; d < SpatialDim; d++)
+                {
+                    vt[d] = -v[d];
+                }
+                CalculateSupportPoint(p0, SpatialDim, vt, out double[] SupportPoint0);
+                CalculateSupportPoint(p1, SpatialDim, v, out double[] SupportPoint1);
+                for (int d = 0; d < SpatialDim; d++)
+                {
+                    SupportPoint[d] = SupportPoint0[d] - SupportPoint1[d];
+                }
+                Simplex.Add(SupportPoint);
+            }
+        }
+        private void Initialize_GJK(int SpatialDim, double[] Point0_old, double[] Point1_old, out double[] v0, out List<double[]> Simplex)
+        {
+            Simplex = new List<double[]>();
+            v0 = new double[SpatialDim];
+            for (int d = 0; d< SpatialDim; d++)
+            {
+                v0[d] = Point0_old[d] - Point1_old[d];
+            }
+        }
+        private void CalculateSupportPoint(Particle _Particle, int SpatialDim, double[] Vector, out double[] SupportPoint)
+        {
+            double VectorLength = Math.Sqrt(Vector[0].Pow2() + Vector[1].Pow2());
+            double CosT = Vector[0] / VectorLength;
+            double SinT = Vector[1] / VectorLength;
+            _Particle.GetSupportPoint(SpatialDim, CosT, SinT, out SupportPoint);
+        }
+
+        private void DistanceAlgorithm(List<double[]> Simplex, out double[] v)
+        {
+            v = new double[2];
+            double m_Abs = Simplex[0][0].Pow2() + Simplex[0][1].Pow2();
+            double k_Abs = Simplex[1][0].Pow2() + Simplex[1][1].Pow2();
+            double mk_dot = Simplex[0][0] * Simplex[1][0] + Simplex[0][1] * Simplex[1][1];
+            double a = (Simplex[1][1] - Simplex[0][1]) / (Simplex[1][0] - Simplex[0][0]);
+            double b = Simplex[1][1] - Simplex[1][0] * a;
+            if (m_Abs - mk_dot <= 0)
+                v = Simplex[0];
+            else if (k_Abs - mk_dot <= 0)
+            {
+                v = Simplex[1];
+            }
+            else
+            {
+                v[0] = -b * (2 * a);
+                v[1] = -a * v[0];
+            }
+        }
+
     }
 }

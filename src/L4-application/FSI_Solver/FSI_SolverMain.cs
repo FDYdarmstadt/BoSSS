@@ -1012,8 +1012,8 @@ namespace BoSSS.Application.FSI_Solver
                     CurrentParticle.HydrodynamicTorque[0] = 0;
                 }
                 // wall collisions are computed on each processor
-                WallCollisionForces(CurrentParticle, p, LsTrk.GridDat.Cells.h_minGlobal);
-                Auxillary.Collision_MPICommunication(m_Particles, CurrentParticle, MPISize, true);
+                //WallCollisionForces(CurrentParticle, p, LsTrk.GridDat.Cells.h_minGlobal);
+                //Auxillary.Collision_MPICommunication(m_Particles, CurrentParticle, MPISize, true);
             }
             //if (m_Particles.Count > 1)
             //{
@@ -1078,6 +1078,12 @@ namespace BoSSS.Application.FSI_Solver
                     base.QueryHandler.ValueQuery("Angular_Velocity", MPIangularVelocity, true); // (TestCase FlowRotationalCoupling)
                     if (m_Particles.Count() > 1)
                         CalculateCollision(m_Particles, LsTrk.GridDat.Cells.h_minGlobal, dt, iteration_counter);
+                    for (int p = 0; p < m_Particles.Count(); p++)
+                    {
+                        Particle CurrentParticle = m_Particles[p];
+                        WallCollisionForces(CurrentParticle, p, LsTrk.GridDat.Cells.h_minGlobal);
+                        Auxillary.Collision_MPICommunication(m_Particles, CurrentParticle, MPISize, true);
+                    }
                 }
                 // =============================================
                 // particle motion & collisions plus flow solver
@@ -1112,6 +1118,12 @@ namespace BoSSS.Application.FSI_Solver
                         double posResidual_splitting = 1e12;
                         if (m_Particles.Count() > 1)
                             CalculateCollision(m_Particles, LsTrk.GridDat.Cells.h_minGlobal, dt, iteration_counter);
+                        for (int p = 0; p< m_Particles.Count(); p++)
+                        {
+                            Particle CurrentParticle = m_Particles[p];
+                            WallCollisionForces(CurrentParticle, p, LsTrk.GridDat.Cells.h_minGlobal);
+                            Auxillary.Collision_MPICommunication(m_Particles, CurrentParticle, MPISize, true);
+                        }
                         while (posResidual_splitting > ((FSI_Control)Control).ForceAndTorque_ConvergenceCriterion)
                         {
                             double[] ForcesOldSquared = new double[2];

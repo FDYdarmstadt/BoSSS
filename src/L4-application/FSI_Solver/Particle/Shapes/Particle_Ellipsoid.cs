@@ -157,6 +157,16 @@ namespace BoSSS.Application.FSI_Solver {
             return SurfacePoints;
         }
 
+        override public void GetSupportPoint(int SpatialDim, double CosT, double SinT, out double[] SupportPoint)
+        {
+            SupportPoint = new double[SpatialDim];
+            if (SpatialDim != 2)
+                throw new NotImplementedException("Only two dimensions are supported at the moment");
+            double temp0 = CosT * length_P;
+            double temp1 = SinT * thickness_P;
+            SupportPoint[0] = (temp0 * Math.Cos(Angle[0]) - temp1 * Math.Sin(Angle[0])) + Position[0][0];
+            SupportPoint[1] = (temp0 * Math.Sin(Angle[0]) + temp1 * Math.Cos(Angle[0])) + Position[1][1];
+        }
         override public double[] GetLengthScales()
         {
             return new double[] { length_P, thickness_P };
