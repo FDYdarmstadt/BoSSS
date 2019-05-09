@@ -39,7 +39,7 @@ namespace BoSSS.Foundation.XDG {
     /// <summary>
     /// An operator which is specialized in XDG Fields, i.e.
     /// it can have components which couple the phases.
-    /// Mk2: enables the definition of different equationcomponents for each phase 
+    /// Mk2: enables the definition of different equation components for each phase 
     /// </summary>
     public class XSpatialOperatorMk2 {
 
@@ -52,11 +52,100 @@ namespace BoSSS.Foundation.XDG {
         /// <summary>
         /// for constructing evaluators of the species terms
         /// </summary>
-        public SpatialOperator SpeciesOperator {
-            get;
-            private set;
+        SpeciesOperatorHelper m_SpeciesOperator; 
+
+        SpatialOperator m_SpatialOperator {
+            get {
+                return m_SpeciesOperator.SpatialOp;
+            }
         }
 
+        class SpeciesOperatorHelper {
+
+            XSpatialOperatorMk2 m_owner;
+
+            SpatialOperator m_SpatialOperator;  // so far only needed for iLevelSet terms, may be removed
+
+            internal SpatialOperator SpatialOp {
+                get {
+                    return m_SpatialOperator;
+                }
+            }
+
+            Dictionary<SpeciesId, SpatialOperator> m_SpeciesOperator;
+
+            internal SpeciesOperatorHelper(XSpatialOperatorMk2 owner) {
+                m_owner = owner;
+
+                m_SpatialOperator = new FixedOrder_SpatialOperator(m_owner.DomainVar, m_owner.ParameterVar, m_owner.CodomainVar);
+
+                m_SpeciesOperator = new Dictionary<SpeciesId, SpatialOperator>();
+                foreach(SpeciesId spcId in m_owner.m_Species) {
+                    SpatialOperator spcOperator = new FixedOrder_SpatialOperator(m_owner.DomainVar, m_owner.ParameterVar, m_owner.CodomainVar);
+                    m_SpeciesOperator.Add(spcId, spcOperator);
+                }
+
+                //if(m_owner.m_Species == null) {
+                //    SpeciesId nullSpcId;
+                //    nullSpcId.cntnt = ___SpeciesIDOffest;
+                //    SpatialOperator spcOperator = new FixedOrder_SpatialOperator(m_owner.DomainVar, m_owner.ParameterVar, m_owner.CodomainVar);
+                //    m_SpeciesOperator.Add(nullSpcId, spcOperator);
+                //} else {
+                //    foreach(SpeciesId spcId in m_owner.m_Species) {
+                //        SpatialOperator spcOperator = new FixedOrder_SpatialOperator(m_owner.DomainVar, m_owner.ParameterVar, m_owner.CodomainVar);
+                //        m_SpeciesOperator.Add(spcId, spcOperator);
+                //    }
+                //}
+
+            }
+
+            //internal const int ___SpeciesIDOffest = 11111;  // not to be changed!!!
+
+            public SpatialOperator this[SpeciesId spcId] {
+                get {
+                    return m_SpeciesOperator[spcId];
+                }
+            }
+
+            internal void Commit() {
+
+                foreach(string comps in m_owner.m_EquationComponents.Keys) {
+                    foreach(IEquationComponent iec in m_owner.m_EquationComponents[comps]) {
+                        m_SpatialOperator.EquationComponents[comps].Add(iec);
+                        if(iec is ISpeciesFilter) {
+                            SpeciesId spcId = ((ISpeciesFilter)iec).validSpecies;
+                            //if(spcId != null) {
+                            //    if(m_owner.m_Species == null) {
+                            //        throw new ArgumentException("error in equation components for key \"" + comps + "\" ISpeciesFilter was defined but not m_Species");
+                            //    } else {
+                            //        m_SpeciesOperator[spcId].EquationComponents[comps].Add(iec);
+                            //    }
+                            //}
+                            if(!m_owner.m_Species.Contains(spcId)) {
+                                throw new ArgumentException("error in equation components for key \"" + comps + "\" SpeciesId defined in ISpeciesFilter is not given in m_Species");
+                            } else {
+                                m_SpeciesOperator[spcId].EquationComponents[comps].Add(iec);
+                            }
+                        } else {
+                            foreach(var spcOp in m_SpeciesOperator.Values) {
+                                spcOp.EquationComponents[comps].Add(iec);
+                            }
+                        }
+                    }
+                }
+
+                m_SpatialOperator.Commit();
+                foreach(var spcOp in m_SpeciesOperator.Values) {
+                    spcOp.Commit();
+                }
+            }
+
+        }
+
+
+        SpeciesId[] m_Species;
+
+        internal const int ___SpeciesIDOffest = 11111;  // not to be changed!!! -> value defined by levelSetTracker
 
 
         //==========================================================================================================================
@@ -100,16 +189,23 @@ namespace BoSSS.Foundation.XDG {
         /// hack
         /// </summary>
         IEvaluatorNonLin GetEvaluatorExBase(IList<DGField> DomainFields, IList<DGField> ParameterMap, UnsetteledCoordinateMapping CodomainVarMap, EdgeQuadratureScheme edgeQrCtx = null, CellQuadratureScheme volQrCtx = null) {
-            return SpeciesOperator.GetEvaluatorEx(DomainFields, ParameterMap, CodomainVarMap, edgeQrCtx, volQrCtx);
+            return m_SpatialOperator.GetEvaluatorEx(DomainFields, ParameterMap, CodomainVarMap, edgeQrCtx, volQrCtx);
+        }
+
+        IEvaluatorNonLin GetSpeciesEvaluatorExBase(SpeciesId spcId, IList<DGField> DomainFields, IList<DGField> ParameterMap, UnsetteledCoordinateMapping CodomainVarMap, EdgeQuadratureScheme edgeQrCtx = null, CellQuadratureScheme volQrCtx = null) {
+            return m_SpeciesOperator[spcId].GetEvaluatorEx(DomainFields, ParameterMap, CodomainVarMap, edgeQrCtx, volQrCtx);
         }
 
         /// <summary>
         /// nix für kleine Kinder (wilder hack)
         /// </summary>
         IEvaluatorLinear GetMatrixBuilderBase(UnsetteledCoordinateMapping DomainVarMap, IList<DGField> ParameterMap, UnsetteledCoordinateMapping CodomainVarMap, EdgeQuadratureScheme edgeQrCtx = null, CellQuadratureScheme volQrCtx = null) {
-            return SpeciesOperator.GetMatrixBuilder(DomainVarMap, ParameterMap, CodomainVarMap, edgeQrCtx, volQrCtx);
+            return m_SpatialOperator.GetMatrixBuilder(DomainVarMap, ParameterMap, CodomainVarMap, edgeQrCtx, volQrCtx);
         }
 
+        IEvaluatorLinear GetSpeciesMatrixBuilderBase(SpeciesId spcId, UnsetteledCoordinateMapping DomainVarMap, IList<DGField> ParameterMap, UnsetteledCoordinateMapping CodomainVarMap, EdgeQuadratureScheme edgeQrCtx = null, CellQuadratureScheme volQrCtx = null) {
+            return m_SpeciesOperator[spcId].GetMatrixBuilder(DomainVarMap, ParameterMap, CodomainVarMap, edgeQrCtx, volQrCtx);
+        }
 
         /// <summary>
         /// edge and cell scheme for a certain species
@@ -235,7 +331,7 @@ namespace BoSSS.Foundation.XDG {
             /// creates a matrix builder
             /// </summary>
             protected override void ctorSpeciesIntegrator(SpeciesId SpeciesId, CellQuadratureScheme cellScheme, EdgeQuadratureScheme edgeScheme, FrameBase DomainFrame, FrameBase CodomFrame, DGField[] Params, DGField[] DomFld) {
-                var BulkMtxBuilder = base.m_Xowner.GetMatrixBuilderBase(DomainFrame.FrameMap, Params, CodomFrame.FrameMap,
+                var BulkMtxBuilder = base.m_Xowner.GetSpeciesMatrixBuilderBase(SpeciesId, DomainFrame.FrameMap, Params, CodomFrame.FrameMap,
                                 edgeScheme, cellScheme);
                 Debug.Assert(((EvaluatorBase)BulkMtxBuilder).order == base.order);
                 BulkMtxBuilder.MPITtransceive = false;
@@ -668,7 +764,7 @@ namespace BoSSS.Foundation.XDG {
             /// creates an evaluator
             /// </summary>
             protected override void ctorSpeciesIntegrator(SpeciesId SpeciesId, CellQuadratureScheme cellScheme, EdgeQuadratureScheme edgeScheme, FrameBase DomainFrame, FrameBase CodomFrame, DGField[] Params, DGField[] DomFld) {
-                var BulkEval = base.m_Xowner.GetEvaluatorExBase(DomFld, base.SpeciesParams[SpeciesId], CodomFrame.FrameMap,
+                var BulkEval = base.m_Xowner.GetSpeciesEvaluatorExBase(SpeciesId, DomFld, base.SpeciesParams[SpeciesId], CodomFrame.FrameMap,
                                 edgeScheme, cellScheme);
                 Debug.Assert(((EvaluatorBase)BulkEval).order == base.order);
                 BulkEval.MPITtransceive = false;
@@ -807,7 +903,10 @@ namespace BoSSS.Foundation.XDG {
 
                     ((FixedOrder_SpatialOperator)(m_Xowner.GhostEdgesOperator)).m_Order = order;
                     ((FixedOrder_SpatialOperator)(m_Xowner.SurfaceElementOperator)).m_Order = order;
-                    ((FixedOrder_SpatialOperator)(m_Xowner.SpeciesOperator)).m_Order = order;
+                    foreach(SpeciesId spcid in ReqSpecies) {
+                        ((FixedOrder_SpatialOperator)m_Xowner.m_SpeciesOperator[spcid]).m_Order = order;
+                    }
+                    //((FixedOrder_SpatialOperator)(m_Xowner.SpeciesOperator)).m_Order = order;
                     tr.Info("XSpatialOperator.ComputeMatrixEx quad order: " + order);
 
 
@@ -1115,7 +1214,7 @@ namespace BoSSS.Foundation.XDG {
 
                 Debug.Assert(CodNames.Length == CodDGdeg.Length);
                 for(int iCod = 0; iCod < CodDGdeg.Length; iCod++) {
-                    var comps = m_Owner.m_EquationComonents[CodNames[iCod]];
+                    var comps = m_Owner.m_EquationComponents[CodNames[iCod]];
                     foreach(var c in comps) {
                         if(c is IEquationComponentCoefficient) {
                             var ce = c as IEquationComponentCoefficient;
@@ -1885,8 +1984,8 @@ namespace BoSSS.Foundation.XDG {
         /// <summary>
         /// ctor, see <see cref="SpatialOperator.SpatialOperator(int,int,int,Func{int[],int[],int[],int},string[])"/>
         /// </summary>
-        public XSpatialOperatorMk2(int NoOfDomFields, int NoOfParameters, int NoOfCodomFields, Func<int[], int[], int[], int> QuadOrderFunc, params string[] __varnames)
-            : this(GetSubarray(__varnames, 0, NoOfDomFields), GetSubarray(__varnames, NoOfDomFields, NoOfParameters), GetSubarray(__varnames, NoOfDomFields + NoOfParameters, NoOfCodomFields), QuadOrderFunc) {
+        public XSpatialOperatorMk2(int NoOfDomFields, int NoOfParameters, int NoOfCodomFields, Func<int[], int[], int[], int> QuadOrderFunc, SpeciesId[] __Species, params string[] __varnames)
+            : this(GetSubarray(__varnames, 0, NoOfDomFields), GetSubarray(__varnames, NoOfDomFields, NoOfParameters), GetSubarray(__varnames, NoOfDomFields + NoOfParameters, NoOfCodomFields), QuadOrderFunc, __Species) {
             if(NoOfCodomFields + NoOfDomFields + NoOfParameters != __varnames.Length)
                 throw new ArgumentException("mismatch between number of provided variable names and given number of domain, parameter and codomain fields.");
 
@@ -1905,13 +2004,13 @@ namespace BoSSS.Foundation.XDG {
         /// ctor, see <see cref="SpatialOperator.SpatialOperator(IList{string},IList{string},Func{int[],int[],int[],int})"/>
         /// </summary>
         public XSpatialOperatorMk2(IList<string> __DomainVar, IList<string> __CoDomainVar, Func<int[], int[], int[], int> QuadOrderFunc)
-            : this(__DomainVar, null, __CoDomainVar, QuadOrderFunc) {
+            : this(__DomainVar, null, __CoDomainVar, QuadOrderFunc, null) {
         }
 
         /// <summary>
         /// ctor, see <see cref="SpatialOperator.SpatialOperator(IList{string},IList{string},IList{string},Func{int[],int[],int[],int})"/>
         /// </summary>
-        public XSpatialOperatorMk2(IList<string> __DomainVar, IList<string> __ParameterVar, IList<string> __CoDomainVar, Func<int[], int[], int[], int> QuadOrderFunc) {
+        public XSpatialOperatorMk2(IList<string> __DomainVar, IList<string> __ParameterVar, IList<string> __CoDomainVar, Func<int[], int[], int[], int> QuadOrderFunc, SpeciesId[] __Species) {
             m_DomainVar = new string[__DomainVar.Count];
             for(int i = 0; i < m_DomainVar.Length; i++) {
                 if(Array.IndexOf<string>(m_DomainVar, __DomainVar[i]) >= 0)
@@ -1940,17 +2039,28 @@ namespace BoSSS.Foundation.XDG {
                     throw new ArgumentException("error in codomain variables list; identifier \"" + __CoDomainVar[i] + "\" appears twice.", "__CoDomainVar");
                 m_CodomainVar[i] = __CoDomainVar[i];
             }
-
-            m_EquationComonents = new SortedList<string, List<IEquationComponent>>(__CoDomainVar.Count);
+            
+            m_EquationComponents = new SortedList<string, List<IEquationComponent>>(__CoDomainVar.Count);
             foreach(var f in __CoDomainVar) {
-                m_EquationComonents.Add(f, new List<IEquationComponent>());
+                m_EquationComponents.Add(f, new List<IEquationComponent>());
             }
             m_EquationComponentsHelper = new _XEquationComponents(this);
             this.QuadOrderFunction = QuadOrderFunc;
 
+
+            if(__Species == null) {
+                SpeciesId nullSpcId;
+                nullSpcId.cntnt = ___SpeciesIDOffest;   // actually SpcId for "A"
+                m_Species = new SpeciesId[] { nullSpcId };
+            } else {
+                m_Species = __Species;
+            }
+
             GhostEdgesOperator = new FixedOrder_SpatialOperator(DomainVar, ParameterVar, CodomainVar);
             SurfaceElementOperator = new FixedOrder_SpatialOperator(DomainVar, ParameterVar, CodomainVar);
-            SpeciesOperator = new FixedOrder_SpatialOperator(DomainVar, ParameterVar, CodomainVar);
+            //SpeciesOperator = new FixedOrder_SpatialOperator(DomainVar, ParameterVar, CodomainVar);
+            m_SpeciesOperator = new SpeciesOperatorHelper(this);
+
 
         }
 
@@ -1992,11 +2102,38 @@ namespace BoSSS.Foundation.XDG {
             public ICollection<IEquationComponent> this[string EqnName] {
                 get {
                     if(m_owner.m_IsCommited)
-                        return m_owner.m_EquationComonents[EqnName].AsReadOnly();
+                        return m_owner.m_EquationComponents[EqnName].AsReadOnly();
                     else
-                        return m_owner.m_EquationComonents[EqnName];
+                        return m_owner.m_EquationComponents[EqnName];
                 }
             }
+
+            /// <summary>
+            /// filters the equation components for the required species
+            /// </summary>
+            /// <param name="spcId">required species</param>
+            /// <returns></returns>
+            //public SortedList<string, List<IEquationComponent>> GetSpeciesEquationComponents(SpeciesId spcId) {
+
+            //    SortedList<string, List<IEquationComponent>> SpeciesEquationComponent = new SortedList<string, List<IEquationComponent>>(m_owner.CodomainVar.Count);
+            //    foreach(var f in m_owner.CodomainVar) {
+            //        SpeciesEquationComponent.Add(f, new List<IEquationComponent>());
+            //    }
+
+            //    foreach(string comps in m_owner.m_EquationComponents.Keys) {
+            //        foreach(IEquationComponent iec in m_owner.m_EquationComponents[comps]) {
+            //            if(iec is ISpeciesFilter) {
+            //                if(((ISpeciesFilter)iec).validSpecies == spcId | ((ISpeciesFilter)iec).validSpecies == null)
+            //                    SpeciesEquationComponent[comps].Add(iec);
+            //            } else {
+            //                SpeciesEquationComponent[comps].Add(iec);
+            //            }
+            //        }
+            //    }
+
+            //    return SpeciesEquationComponent;
+            //}
+
 
             #region IEnumerable<KeyValuePair<string,IEnumerable<IEquationComponent>> Members
 
@@ -2005,7 +2142,7 @@ namespace BoSSS.Foundation.XDG {
             /// </summary>
             /// <returns>An enumerator</returns>
             public IEnumerator<KeyValuePair<string, IEnumerable<IEquationComponent>>> GetEnumerator() {
-                return m_owner.m_EquationComonents.Select(
+                return m_owner.m_EquationComponents.Select(
                     x => new KeyValuePair<string, IEnumerable<IEquationComponent>>(
                         x.Key, x.Value.AsReadOnly())).GetEnumerator();
             }
@@ -2044,12 +2181,7 @@ namespace BoSSS.Foundation.XDG {
             GhostEdgesOperator.Commit();
             SurfaceElementOperator.Commit();
 
-            foreach(string comps in m_EquationComonents.Keys) {
-                foreach(IEquationComponent iec in m_EquationComonents[comps]) {
-                    SpeciesOperator.EquationComponents[comps].Add(iec);
-                }
-            }
-            SpeciesOperator.Commit();
+            m_SpeciesOperator.Commit();
         }
 
 
@@ -2077,7 +2209,7 @@ namespace BoSSS.Foundation.XDG {
             var ret = new EquationComponentArgMapping<T>[Gamma];
             for(int i = 0; i < Gamma; i++) {
                 var codName = this.m_CodomainVar[i];
-                ret[i] = new EquationComponentArgMapping<T>(SpeciesOperator,
+                ret[i] = new EquationComponentArgMapping<T>(m_SpatialOperator,
                     codName,
                     this.m_DomainVar,
                     CatParams ? this.ParameterVar : null,
@@ -2118,7 +2250,7 @@ namespace BoSSS.Foundation.XDG {
         /// exception is thrown;
         /// </remarks>
         internal protected void Verify() {
-            foreach(var comps in m_EquationComonents.Values) {
+            foreach(var comps in m_EquationComponents.Values) {
                 foreach(IEquationComponent c in comps) {
                     foreach(string varname in c.ArgumentOrdering) {
                         if(Array.IndexOf<string>(m_DomainVar, varname) < 0)
@@ -2199,7 +2331,7 @@ namespace BoSSS.Foundation.XDG {
                     + "\" is not a member of the Codomain variable list of this spatial differential operator");
             Verify();
 
-            var comps = m_EquationComonents[CodomVar];
+            var comps = m_EquationComponents[CodomVar];
             List<string> ret = new List<string>();
             for(int i = 0; i < m_DomainVar.Length; i++) {
                 string varName = m_DomainVar[i];
@@ -2223,7 +2355,7 @@ namespace BoSSS.Foundation.XDG {
         /// <summary>
         /// <see cref="EquationComponents"/>
         /// </summary>
-        SortedList<string, List<IEquationComponent>> m_EquationComonents;
+        SortedList<string, List<IEquationComponent>> m_EquationComponents;
 
 
         bool m_IsCommited = false;
@@ -2243,7 +2375,7 @@ namespace BoSSS.Foundation.XDG {
         /// </summary>
         public int TotalNoOfComponents {
             get {
-                return this.m_EquationComonents.Values.Sum(x => x.Count);
+                return this.m_EquationComponents.Values.Sum(x => x.Count);
             }
         }
 
@@ -2325,8 +2457,7 @@ namespace BoSSS.Foundation.XDG {
         }
 
         #endregion
-
-
+        
 
     }
 

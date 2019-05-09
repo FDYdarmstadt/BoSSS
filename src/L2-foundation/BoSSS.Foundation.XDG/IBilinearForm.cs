@@ -153,6 +153,17 @@ namespace BoSSS.Foundation.XDG {
     }
 
     /// <summary>
+    /// this interface should be implemented by bulk equation components which are only valid in one species
+    /// </summary>
+    public interface ISpeciesFilter {
+
+        /// <summary>
+        /// the species in which the bulk equation component is valid
+        /// </summary>
+        SpeciesId validSpecies { get; }
+    }
+
+    /// <summary>
     /// An integrand on the level set.
     /// </summary>
     public interface ILevelSetForm : IEquationComponent {

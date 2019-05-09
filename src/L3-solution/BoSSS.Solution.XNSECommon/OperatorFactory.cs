@@ -181,7 +181,7 @@ namespace BoSSS.Solution.XNSECommon {
 
             // create Operator
             // ===============
-            m_OP = new XSpatialOperatorMk2(DomNameSelected, Params, CodNameSelected, (A, B, C) => _HMFdegree);
+            m_OP = new XSpatialOperatorMk2(DomNameSelected, Params, CodNameSelected, (A, B, C) => _HMFdegree, null);
 
             // build the operator
             // ==================
