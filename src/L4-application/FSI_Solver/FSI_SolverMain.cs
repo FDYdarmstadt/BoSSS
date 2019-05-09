@@ -1026,6 +1026,15 @@ namespace BoSSS.Application.FSI_Solver
             // MPISum over Forces moved to Particle.cs 
         }
 
+        private void CalculateCollision(List<Particle> Particles, double Hmin, double dt, int iteration_counter)
+        {
+            UpdateCollisionForces(Particles, LsTrk.GridDat.Cells.h_minGlobal, dt, iteration_counter);
+            foreach (Particle p in m_Particles)
+            {
+                Auxillary.Collision_MPICommunication(m_Particles, p, MPISize);
+            }
+        }
+
         protected override double RunSolverOneStep(int TimestepInt, double phystime, double dt)
         {
             using (new FuncTrace())
