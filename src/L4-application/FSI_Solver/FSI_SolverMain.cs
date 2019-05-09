@@ -1002,7 +1002,8 @@ namespace BoSSS.Application.FSI_Solver
             for (int p = 0; p < m_Particles.Count(); p++)
             {
                 Particle CurrentParticle = m_Particles[p];
-                if (!((FSI_Control)Control).pureDryCollisions)
+                Console.WriteLine("skipForceIntegration = " + CurrentParticle.skipForceIntegration);
+                if (!((FSI_Control)Control).pureDryCollisions && !CurrentParticle.skipForceIntegration)
                     CurrentParticle.UpdateForcesAndTorque(Velocity, Pressure, LsTrk, Control.PhysicalParameters.mu_A, dt, Control.PhysicalParameters.rho_A, ((FSI_Control)Control).Timestepper_LevelSetHandling != LevelSetHandling.FSI_LieSplittingFullyCoupled);
                 else
                 {
@@ -1014,15 +1015,15 @@ namespace BoSSS.Application.FSI_Solver
                 WallCollisionForces(CurrentParticle, p, LsTrk.GridDat.Cells.h_minGlobal);
                 Auxillary.Collision_MPICommunication(m_Particles, CurrentParticle, MPISize, true);
             }
-            if (m_Particles.Count > 1)
-            {
-                UpdateCollisionForces(Particles, LsTrk.GridDat.Cells.h_minGlobal, dt, iteration_counter);
-                foreach(Particle p in m_Particles)
-                {
-                    Auxillary.Collision_MPICommunication(m_Particles, p, MPISize);
-                }
+            //if (m_Particles.Count > 1)
+            //{
+            //    UpdateCollisionForces(Particles, LsTrk.GridDat.Cells.h_minGlobal, dt, iteration_counter);
+            //    foreach(Particle p in m_Particles)
+            //    {
+            //        Auxillary.Collision_MPICommunication(m_Particles, p, MPISize);
+            //    }
                 
-            }
+            //}
             // MPISum over Forces moved to Particle.cs 
         }
 
@@ -1075,7 +1076,8 @@ namespace BoSSS.Application.FSI_Solver
                     base.QueryHandler.ValueQuery("C_Drag", 2 * force[0], true); // Only for Diameter 1 (TestCase NSE stationary)
                     base.QueryHandler.ValueQuery("C_Lift", 2 * force[1], true); // Only for Diameter 1 (TestCase NSE stationary)
                     base.QueryHandler.ValueQuery("Angular_Velocity", MPIangularVelocity, true); // (TestCase FlowRotationalCoupling)
-
+                    if (m_Particles.Count() > 1)
+                        CalculateCollision(m_Particles, LsTrk.GridDat.Cells.h_minGlobal, dt, iteration_counter);
                 }
                 // =============================================
                 // particle motion & collisions plus flow solver
@@ -1108,6 +1110,8 @@ namespace BoSSS.Application.FSI_Solver
                     {
                         iteration_counter = 0;
                         double posResidual_splitting = 1e12;
+                        if (m_Particles.Count() > 1)
+                            CalculateCollision(m_Particles, LsTrk.GridDat.Cells.h_minGlobal, dt, iteration_counter);
                         while (posResidual_splitting > ((FSI_Control)Control).ForceAndTorque_ConvergenceCriterion)
                         {
                             double[] ForcesOldSquared = new double[2];
@@ -1138,7 +1142,11 @@ namespace BoSSS.Application.FSI_Solver
                                 break;
                             Auxillary.CalculateParticleResidual(m_Particles, ForcesOldSquared, TorqueOldSquared, iteration_counter, ((FSI_Control)Control).max_iterations_fully_coupled, out posResidual_splitting, out iteration_counter);
                         }
-
+                        foreach(Particle p in m_Particles)
+                        {
+                            if (p.skipForceIntegration)
+                                p.skipForceIntegration = false;
+                        }
                         if (((FSI_Control)Control).Timestepper_LevelSetHandling == LevelSetHandling.FSI_LieSplittingFullyCoupled)
                         {
                             LsTrk.IncreaseHistoryLength(1);
@@ -1583,10 +1591,10 @@ namespace BoSSS.Application.FSI_Solver
                 tempPoint_P1 = new double[2] { 0.0, 0.0 };
                 _FSI_Collision.FindClosestPoint(hmin, SpatialDim, interfacePoints_P0, interfacePoints_P1, ref distanceVec, ref distance, out tempPoint_P0, out tempPoint_P1, out bool Overlapping_NextTimestep);
                 _FSI_Collision.FindNormalAndTangentialVector(distanceVec, out normal, out tangential);
-                _FSI_Collision.FindRadialVector(VirtualPosition0, tempPoint_P0, out _, out RadialNormalVector0);
-                _FSI_Collision.FindRadialVector(VirtualPosition1, tempPoint_P1, out _, out RadialNormalVector1);
-                _FSI_Collision.TransformRotationalVelocity(VirtualRotationalVelocity0, RadialNormalVector0, out PointVelocityDueToRotation0);
-                _FSI_Collision.TransformRotationalVelocity(VirtualRotationalVelocity1, RadialNormalVector1, out PointVelocityDueToRotation1);
+                _FSI_Collision.FindRadialVector(VirtualPosition0, tempPoint_P0, out _, out double RadialLength0, out RadialNormalVector0);
+                _FSI_Collision.FindRadialVector(VirtualPosition1, tempPoint_P1, out _, out double RadialLength1, out RadialNormalVector1);
+                _FSI_Collision.TransformRotationalVelocity(VirtualRotationalVelocity0, RadialLength0, RadialNormalVector0, out PointVelocityDueToRotation0);
+                _FSI_Collision.TransformRotationalVelocity(VirtualRotationalVelocity1, RadialLength1, RadialNormalVector1, out PointVelocityDueToRotation1);
                 for (int d = 0; d < 2; d++)
                 {
                     PointVelocity0[d] = VirtualVelocity0[d] + PointVelocityDueToRotation0[d];
@@ -1657,12 +1665,12 @@ namespace BoSSS.Application.FSI_Solver
             Console.WriteLine("hmin: " + hmin);
             Collided = false;
 
-            //if(realDistance > 2.5 * hmin)
-            //{
-            //    // Bool if force integration should be skipped
-            //    particle0.skipForceIntegration = true;
-            //    particle1.skipForceIntegration = true;
-            //}
+            if (realDistance < 1 * hmin)
+            {
+                // Bool if force integration should be skipped
+                particle0.skipForceIntegration = true;
+                particle1.skipForceIntegration = true;
+            }
             //else
             //{
             //    // Bool if force integration should be skipped

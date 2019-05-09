@@ -376,8 +376,11 @@ namespace BoSSS.Application.FSI_Solver
         readonly private ParticleAcceleration Acceleration = new ParticleAcceleration();
         internal void UpdateParticleState(double dt)
         {
-            CalculateTranslationalVelocity(dt);
-            CalculateAngularVelocity(dt);
+            //if (!skipForceIntegration)
+            {
+                CalculateTranslationalVelocity(dt);
+                CalculateAngularVelocity(dt);
+            }
             CalculateParticlePosition(dt);
             CalculateParticleAngle(dt);
             //ComputeParticleRe(FluidViscosity);

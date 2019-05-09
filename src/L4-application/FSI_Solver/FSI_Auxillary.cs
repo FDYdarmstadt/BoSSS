@@ -440,7 +440,7 @@ namespace FSI_Solver
             }
             if (NoCurrentCollision)
             {
-                CurrentParticle.skipForceIntegration = false;
+                //CurrentParticle.skipForceIntegration = false;
                 CurrentParticle.m_collidedWithWall[0] = false;
                 for (int p = 0; p < CurrentParticle.m_collidedWithParticle.Length; p++)
                 {

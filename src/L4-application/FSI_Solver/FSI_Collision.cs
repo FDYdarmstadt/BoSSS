@@ -81,10 +81,10 @@ namespace FSI_Solver
         internal void CalculateDynamicCollisionThreshold(Particle particle0, Particle particle1, double[] tempPoint_P0, double[] tempPoint_P1, double[] NormalVector, double Distance, double dt, out double Threshold)
         {
             Threshold = 0;
-            FindRadialVector(particle0.Position[0], tempPoint_P0, out _, out double[] RadialNormalVector0);
-            FindRadialVector(particle1.Position[0], tempPoint_P1, out _, out double[] RadialNormalVector1);
-            TransformRotationalVelocity(particle0.RotationalVelocity[0], RadialNormalVector0, out double[] PointVelocityDueToRotation0);
-            TransformRotationalVelocity(particle1.RotationalVelocity[0], RadialNormalVector1, out double[] PointVelocityDueToRotation1);
+            FindRadialVector(particle0.Position[0], tempPoint_P0, out _, out double RadialLength0, out double[] RadialNormalVector0);
+            FindRadialVector(particle1.Position[0], tempPoint_P1, out _, out double RadialLength1, out double[] RadialNormalVector1);
+            TransformRotationalVelocity(particle0.RotationalVelocity[0], RadialLength0, RadialNormalVector0, out double[] PointVelocityDueToRotation0);
+            TransformRotationalVelocity(particle1.RotationalVelocity[0], RadialLength1, RadialNormalVector1, out double[] PointVelocityDueToRotation1);
 
             //general definitions of normal and tangential components
             double[] PointVelocity0 = new double[2];
