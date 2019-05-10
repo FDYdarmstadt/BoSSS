@@ -42,6 +42,7 @@ using BoSSS.Platform.LinAlg;
 using BoSSS.Solution.Gnuplot;
 using BoSSS.Solution.Control;
 using BoSSS.Solution.Statistic;
+using System.IO;
 
 namespace BoSSS.Application.SipPoisson {
 
@@ -643,8 +644,42 @@ namespace BoSSS.Application.SipPoisson {
         }
 
         protected void CustomItCallback(int iterIndex, double[] currentSol, double[] currentRes, MultigridOperator Mgop) {
-            //noch nix ...
-            MaxMlevel = Mgop.LevelIndex+1;
+            //+1 because of startindex=0 and +1 because lowest level, does not count as mlevel
+            MaxMlevel = Mgop.LevelIndex+2;
+        }
+
+        protected void GimmeKondnumber(MultigridOperator Mgop, out double[] condests, out int[] DOFs, out int[] Level) {
+            MultigridOperator Mgop_ptr= Mgop;
+
+            //List<double> _conds = new List<double>();
+            List<double> _condests = new List<double>();
+            List<int> _DOFs = new List<int>();
+            List<int> _Level = new List<int>();
+
+            while (Mgop_ptr != null) {
+                BatchmodeConnector bmc = new BatchmodeConnector();
+                //MultidimensionalArray cond = MultidimensionalArray.Create(1, 1);
+                MultidimensionalArray condest = MultidimensionalArray.Create(1, 1);
+
+                bmc.PutSparseMatrix(Mgop_ptr.OperatorMatrix.ToMsrMatrix(), "Matrix_A");
+                bmc.Cmd("m_cond=cond(Matrix_A)");
+                bmc.Cmd("m_condest=condest(Matrix_A)");
+                //bmc.GetMatrix(cond, "m_cond");
+                bmc.GetMatrix(condest, "m_condest");
+                bmc.Execute(false);
+
+                //_conds.Add(cond[0, 0]);
+                _condests.Add(condest[0, 0]);
+                _DOFs.Add(Mgop_ptr.Mapping.LocalLength.MPISum());
+                _Level.Add(Mgop_ptr.LevelIndex);
+
+                Mgop_ptr = Mgop_ptr.CoarserLevel;
+            }
+
+            //conds=_conds.ToArray();
+            condests = _condests.ToArray();
+            DOFs = _DOFs.ToArray();
+            Level = _Level.ToArray();
         }
 
         /// <summary>
@@ -829,6 +864,7 @@ namespace BoSSS.Application.SipPoisson {
 
         MultigridOperator.ChangeOfBasisConfig[][] MgConfig {
             get {
+                Console.WriteLine("Polynomgrad wird nicht mehr reduziert!!!");
                 int p = this.T.Basis.Degree;
                 int NoOfLevels = this.MultigridSequence.Length;
                 var config = new MultigridOperator.ChangeOfBasisConfig[NoOfLevels][];
@@ -839,7 +875,8 @@ namespace BoSSS.Application.SipPoisson {
                         new MultigridOperator.ChangeOfBasisConfig() {
                             VarIndex = new int[] {0},
                             mode = MultigridOperator.Mode.DiagBlockEquilib,
-                            Degree = Math.Max(1, p - iLevel)
+                            Degree = Math.Max(p, p - iLevel)
+                            //Degree = Math.Max(1, p - iLevel)
                         }
                     };
 
@@ -887,6 +924,9 @@ namespace BoSSS.Application.SipPoisson {
                     var mgsetup = new Stopwatch();
                     mgsetup.Start();
                     var MultigridOp = new MultigridOperator(AggBasis, this.T.Mapping, this.LaplaceMtx, null, MgConfig);
+                    double[] condests;
+                    int[] DOFs, Level;
+                    GimmeKondnumber(MultigridOp, out condests, out DOFs, out Level);
                     mgsetup.Stop();
                     Console.WriteLine("done. (" + mgsetup.Elapsed.TotalSeconds + " sec)");
 
@@ -895,11 +935,18 @@ namespace BoSSS.Application.SipPoisson {
                     var solverSetup = new Stopwatch();
                     solverSetup.Start();
                     ISolverSmootherTemplate solver;
-                    
-                    SolverFactory SF = new SolverFactory(this.Control.NonLinearSolver,this.Control.LinearSolver);
-                    SF.CustomizedCallback += CustomItCallback;
-                    SF.GenerateLinear(out solver, MgSeq, MgConfig);
 
+                    SolverFactory SF = new SolverFactory(this.Control.NonLinearSolver, this.Control.LinearSolver);
+
+                    T.Clear();
+                    T.AccLaidBack(1.0, Tex);
+                    ConvergenceObserver CO = null;
+                    CO = new ConvergenceObserver(MultigridOp, null, T.CoordinateVector.ToArray(), SF);
+                    CO.TecplotOut = "Poisson";
+
+                    Action<int, double[], double[], MultigridOperator>[] ItCallbacks_Kollekte = { CustomItCallback, CO.ResItCallbackAtAll }; 
+                    SF.GenerateLinear(out solver, MgSeq, MgConfig, ItCallbacks_Kollekte);
+                    //((ISolverWithCallback)solver).IterationCallback += CO.ResItCallbackAtAll;
                     //switch (base.Control.solver_name) {
                     //    case LinearSolverConfig.Code.exp_direct:
                     //        solver = new SparseSolver() {
@@ -972,11 +1019,7 @@ namespace BoSSS.Application.SipPoisson {
                     //        throw new ApplicationException("unknown solver: " + this.Control.solver_name);
                     //}
 
-                    T.Clear();
-                    T.AccLaidBack(1.0, Tex);
-                    ConvergenceObserver CO = null;
-                    //CO = new ConvergenceObserver(MultigridOp, null, T.CoordinateVector.ToArray());
-                    //CO.TecplotOut = "oasch";
+
                     //if (solver is ISolverWithCallback) {
 
                     //    if (CO == null) {
@@ -993,10 +1036,10 @@ namespace BoSSS.Application.SipPoisson {
                     //            //PlotCurrentState(iter, new TimestepNumber(iter), 3);
                     //        };
                     //    } else {
-                    //        ((ISolverWithCallback)solver).IterationCallback = CO.IterationCallback;
+                    //((ISolverWithCallback)solver).IterationCallback = CO.IterationCallback;
+                    
                     //    }
                     //}
-
 
                     using (new BlockTrace("Solver_Init", tr)) {
                         solver.Init(MultigridOp);
@@ -1030,18 +1073,37 @@ namespace BoSSS.Application.SipPoisson {
                     Converged = solver.Converged;
                     NoOfIter = solver.ThisLevelIterations;
 
-                    if (CO != null)
-                        CO.PlotTrend(true, true, true);
 
+                    //Do the Convergency Analysis plz ...
+                    string identify = String.Format("_Res{0}_p{1}_{2}", T.Mapping.TotalLength, T.Basis.Degree, this.Control.LinearSolver.SolverCode.ToString());
+                    string analysedatapath = @"E:\Analysis\CCpoisson\Study0_vary_Mlevel_n_blocks\";
+                    string bla = String.Concat(analysedatapath, "SIP", identify);
+                    Console.WriteLine("plotting convergency data ...");
+                    if (CO != null) {
+                        //CO.PlotTrend(false, false, true);
+                        //CO.PlotTrend(true, false, true);
+                        //CO.PlotDecomposition(T.CoordinateVector.ToArray(),"decomposition"+bla);
+                        //CO.WriteTrendToCSV(false, true, true, bla + "_res");
+                        //CO.WriteTrendToCSV(true, true, true, bla + "_err");
+                    }
+
+                    string condfile = String.Concat(analysedatapath, "condnum",identify, ".txt");
+
+                    using (StreamWriter CondStream = new StreamWriter(condfile)) {
+                        string header = String.Format("Level estCond total_DOFs");
+                        CondStream.WriteLine(header);
+                        for (int i = 0; i < condests.Length; i++) {
+                            string line = String.Format("{0} {1} {2}", Level[i], condests[i], DOFs[i]);
+                            Console.WriteLine(line);
+                            CondStream.WriteLine(line);
+                        }
+                    }
                 }
             }
         }
 
         // Wir sind umgezogen: neue Anschrift: AdvancedSolvers.SolverChooser
 
-        /// <summary>
-        /// 
-        /// </summary>
         //ISolverSmootherTemplate KcycleMultiSchwarz(MultigridOperator op) {
         //    var solver = new OrthonormalizationScheme() {
         //        MaxIter = 500,
