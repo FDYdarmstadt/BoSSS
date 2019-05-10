@@ -165,7 +165,7 @@ namespace BoSSS.Application.FSI_Solver {
             double temp0 = CosT * length_P;
             double temp1 = SinT * thickness_P;
             SupportPoint[0] = (temp0 * Math.Cos(Angle[0]) - temp1 * Math.Sin(Angle[0])) + Position[0][0];
-            SupportPoint[1] = (temp0 * Math.Sin(Angle[0]) + temp1 * Math.Cos(Angle[0])) + Position[1][1];
+            SupportPoint[1] = (temp0 * Math.Sin(Angle[0]) + temp1 * Math.Cos(Angle[0])) + Position[0][1];
         }
         override public double[] GetLengthScales()
         {

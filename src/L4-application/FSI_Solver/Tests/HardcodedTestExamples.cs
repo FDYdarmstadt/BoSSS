@@ -539,7 +539,7 @@ namespace BoSSS.Application.FSI_Solver {
             C.AdaptiveMeshRefinement = false;
             C.SessionName = "fjkfjksdfhjk";
 
-            C.pureDryCollisions = false;
+            C.pureDryCollisions = true;
             C.SetDGdegree(k);
 
             // grid and boundary conditions
@@ -551,8 +551,8 @@ namespace BoSSS.Application.FSI_Solver {
                 int q = new int();
                 int r = new int();
 
-                q = 30;
-                r = 30;
+                q = 50;
+                r = 50;
 
                 double[] Xnodes = GenericBlas.Linspace(-1.5 * BaseSize, 1.5 * BaseSize, q + 1);
                 double[] Ynodes = GenericBlas.Linspace(-1.5 * BaseSize, 1.5 * BaseSize, r + 1);
@@ -601,13 +601,12 @@ namespace BoSSS.Application.FSI_Solver {
             // ==============
 
             // Coupling Properties
-            C.Timestepper_LevelSetHandling = LevelSetHandling.FSI_LieSplittingFullyCoupled;
-            C.ForceAndTorque_ConvergenceCriterion = 1e0;
+            C.Timestepper_LevelSetHandling = LevelSetHandling.LieSplitting;
 
             // Fluid Properties
             C.PhysicalParameters.rho_A = 1.0;
             C.PhysicalParameters.mu_A = 0.1;
-            C.CoefficientOfRestitution = 1;
+            C.CoefficientOfRestitution = 0;
 
             // Particle Properties
             //C.PhysicalParameters.mu_B = 0.1;
@@ -620,69 +619,30 @@ namespace BoSSS.Application.FSI_Solver {
                 //thickness_P = 0.1,
                 particleDensity = 2.0,
                 GravityVertical = -9.81,
-                AddaptiveUnderrelaxation = true,
-                underrelaxation_factor = 1,
-                ClearSmallValues = true,
-                neglectAddedDamping = false
+                //AddaptiveUnderrelaxation = true,
+                //underrelaxation_factor = 1,
+                //ClearSmallValues = true,
+                //neglectAddedDamping = false,
             });
-            //C.Particles.Add(new Particle_Ellipsoid(new double[] { 0.0, 6.5 })
-            //{
-            //    //radius_P = 0.2,
-            //    length_P = 0.2,
-            //    thickness_P = 0.1,
-            //    particleDensity = 1.0,
-            //    GravityVertical = -9.81 / 6,
-            //});
-            //C.Particles.Add(new Particle_Ellipsoid(new double[] { 0.5, 6.5 })
-            //{
-            //    //radius_P = 0.2,
-            //    length_P = 0.2,
-            //    thickness_P = 0.1,
-            //    particleDensity = 1.0,
-            //    GravityVertical = -9.81 / 6,
-            //});
-            //C.Particles.Add(new Particle_Ellipsoid(new double[] { 0.5, 6.0 })
-            //{
-            //    //radius_P = 0.2,
-            //    length_P = 0.2,
-            //    thickness_P = 0.1,
-            //    particleDensity = 1.0,
-            //    GravityVertical = -9.81 / 6,
-            //});
-            //C.Particles.Add(new Particle_Ellipsoid(new double[] { -0.5, 6.0 })
-            //{
-            //    //radius_P = 0.2,
-            //    length_P = 0.2,
-            //    thickness_P = 0.1,
-            //    particleDensity = 1.0,
-            //    GravityVertical = -9.81 / 6,
-            //});
-            //C.Particles.Add(new Particle_Ellipsoid(new double[] { -0.5, 6.5 })
-            //{
-            //    //radius_P = 0.2,
-            //    length_P = 0.2,
-            //    thickness_P = 0.1,
-            //    particleDensity = 1.0,
-            //    GravityVertical = -9.81 / 6,
-            //});
 
-
-            //C.Particles.Add(new Particle_Ellipsoid(new double[] { 0.4, 5 }, startAngl: 45)
-            //{
-            //    particleDensity = 1,
-            //    thickness_P = 0.2,
-            //    length_P = 0.4,
-            //    //superEllipsoidExponent = 4,
-            //    GravityVertical = -9.81,
-            //    IncludeRotation = false,
-            //    IncludeTranslation = false,
-            //});
-
-            C.Particles.Add(new Particle_Sphere(new double[] { -0.4, 0 }, startAngl: -45)
+            C.Particles.Add(new Particle_Ellipsoid(new double[] { 0.45, 0 }, startAngl: 45)
             {
                 particleDensity = 1,
-                //thickness_P = 0.2,
-                radius_P = 0.4,
+                thickness_P = 0.2,
+                length_P = 0.4,
+                //radius_P = 0.4,
+                //superEllipsoidExponent = 4,
+                GravityVertical = -9.81,
+                IncludeRotation = false,
+                IncludeTranslation = false,
+            });
+
+            C.Particles.Add(new Particle_Ellipsoid(new double[] { -0.45, 0 }, startAngl: -45)
+            {
+                particleDensity = 1,
+                thickness_P = 0.2,
+                length_P = 0.4,
+                //radius_P = 0.4,
                 //superEllipsoidExponent = 4,
                 GravityVertical = -9.81,
                 IncludeRotation = false,
@@ -712,7 +672,7 @@ namespace BoSSS.Application.FSI_Solver {
             C.dtMax = dt;
             C.dtMin = dt;
             C.Endtime = 10.0;
-            C.NoOfTimesteps = 1000;
+            C.NoOfTimesteps = 50;
 
             // haben fertig...
             // ===============
