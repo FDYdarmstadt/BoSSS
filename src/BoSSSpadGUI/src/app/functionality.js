@@ -6,7 +6,7 @@ const RecentDocuments = require('./recentDocuments.js');
 
 async function addFunctionality(mainWindow){
     
-    var userDatabase = await UserDatabase.load('./userData.txt');
+    var userDatabase = await UserDatabase.load('BoSSSpad/userData.txt');
     var recentDocuments = new RecentDocuments(userDatabase.getUserData());
     var dataMethods = new DataMethods(mainWindow, recentDocuments);
 

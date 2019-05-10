@@ -9,7 +9,7 @@ using NUnit.Framework;
 
 namespace VoronoiTests.Database
 {
-    class DatabaseTest : RunnableTest
+    class DatabaseTest : BoSSSTestBench
     {
         static Database database;
 
