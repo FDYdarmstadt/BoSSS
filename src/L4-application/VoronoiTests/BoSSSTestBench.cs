@@ -1,19 +1,13 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using System.Threading;
-using BoSSS.Solution;
-using NUnit.Framework;
+﻿using BoSSS.Solution;
 using BoSSS.Solution.Control;
+using System.Threading;
 
 namespace VoronoiTests
 {
     /// <summary>
     ///  Base class for tests that run an BoSSS application.
     /// </summary>
-    class RunnableTest : TestBench
+    class BoSSSTestBench : TestBench
     {
         /// <summary>
         /// Performs bootstrapping.

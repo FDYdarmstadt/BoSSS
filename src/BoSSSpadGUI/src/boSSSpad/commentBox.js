@@ -32,4 +32,8 @@ export class CommentBox extends BoxWithMenu{
       readoutNode.innerHTML = markdown.toHTML(value);
       mathjax.typesetMath(readoutNode);
     }
+
+    update(){
+        //Nothing to update manually
+    };
   }

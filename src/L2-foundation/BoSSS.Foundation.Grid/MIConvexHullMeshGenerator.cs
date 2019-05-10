@@ -202,11 +202,11 @@ namespace BoSSS.Foundation.Grid.Voronoi
 
         }
 
-        class MICHIdMesh : SimpleIdMesh
+        class MIConvexHullIdMesh : SimpleIdMesh
         {
             static readonly double accuracy = 1e-20;
 
-            public MICHIdMesh(  
+            public MIConvexHullIdMesh(  
                 IEnumerable<MICHDelaunayCell> delaCells, 
                 IEnumerable<MIConvexHull.VoronoiEdge<MICHVertex, MICHDelaunayCell>> delaEdges, 
                 int numberOfVoronois)
@@ -340,7 +340,7 @@ namespace BoSSS.Foundation.Grid.Voronoi
             MICHVertex.Clear();
             MICHDelaunayCell.Clear();
 
-            return new IntersectionMesh(new MICHIdMesh(delaunayCells, delaunayEdges, startNodes.Count));
+            return new IntersectionMesh(new MIConvexHullIdMesh(delaunayCells, delaunayEdges, startNodes.Count));
         }
 
         static IntersectionMesh CreateMesh(IList<MICHVertex> startNodes, int startCell_NodeIndice)
@@ -355,7 +355,7 @@ namespace BoSSS.Foundation.Grid.Voronoi
             MICHVertex.Clear();
             MICHDelaunayCell.Clear();
 
-            return new IntersectionMesh(new MICHIdMesh(delaunayCells, delaunayEdges, startNodes.Count), startCell_NodeIndice);
+            return new IntersectionMesh(new MIConvexHullIdMesh(delaunayCells, delaunayEdges, startNodes.Count), startCell_NodeIndice);
         }
 
         public static IntersectionMesh CreateMesh(MultidimensionalArray nodes)

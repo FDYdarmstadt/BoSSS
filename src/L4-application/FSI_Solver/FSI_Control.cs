@@ -39,8 +39,10 @@ namespace BoSSS.Application.FSI_Solver {
         /// <summary>
         /// Set true if the coupling between fluid and particle should be calculated iterative, while using Lie-Splitting.
         /// </summary>
-        [DataMember]
-        public bool splitting_fully_coupled = false;
+        public bool splitting_fully_coupled()
+        {
+            return Timestepper_LevelSetHandling == LevelSetHandling.FSI_LieSplittingFullyCoupled;
+        }
 
         /// <summary>
         /// Set true if the coupling between fluid and particle should be calculated iterative, while using Lie-Splitting.
@@ -58,13 +60,7 @@ namespace BoSSS.Application.FSI_Solver {
         /// Set true if translation of the particle should be induced by hydrodynamical forces.
         /// </summary>
         [DataMember]
-        public bool includeTranslation = false;
-
-        /// <summary>
-        /// Set true if rotation of the particle should be indruced by hydrodynamical torque.
-        /// </summary>
-        [DataMember]
-        public bool includeRotation = false;
+        public bool LowerWallFullyPlastic = false;
 
         /// <summary>
         /// Function describing the fixed level-set movement
@@ -93,19 +89,30 @@ namespace BoSSS.Application.FSI_Solver {
         /// <summary>
         /// under-relaxation of the level set movement in case of coupled iterative
         /// </summary>
+        [DataMember]
         public double LSunderrelax = 1.0;
 
 
+        /// <summary>
+        /// coefficient of restitution
+        /// </summary>
+        [DataMember]
+        public double CoefficientOfRestitution = 1.0;
 
+
+        /// <summary>
+        /// Setting <see cref="Solution.Control.AppControl.FieldOptions"/>
+        /// </summary>
         public override void SetDGdegree(int k) {
             if (k < 1)
                 throw new ArgumentOutOfRangeException("DG polynomial degree must be at least 1.");
-
+            int k_phiDG = Math.Max(2, k);
+            int k_phi = Convert.ToInt32(Math.Pow(k_phiDG, 2));
             base.FieldOptions.Clear();
             this.AddFieldOption("Velocity*", k);
             this.AddFieldOption("Pressure", k - 1);
-            this.AddFieldOption("PhiDG", 2);
-            this.AddFieldOption("Phi", 2);
+            this.AddFieldOption("PhiDG", k_phiDG);
+            this.AddFieldOption("Phi", k_phi);
             this.AddFieldOption("Curvature", 2);
         }
         

@@ -99,58 +99,64 @@ namespace BoSSS.Application.Rheology {
         [InstantiateFromControlFile("ResidualConti", VariableNames.Pressure, IOListOption.ControlFileDetermined)]
         public SinglePhaseField ResidualConti;
 
+        ///// <summary>
+        ///// Extra stress domain (2D): StressXX
+        ///// </summary>
+        //[InstantiateFromControlFile("StressXX", null, IOListOption.ControlFileDetermined)]
+        //public SinglePhaseField StressXX;
+
         /// <summary>
         /// Extra stress domain (2D): StressXX
         /// </summary>
-        [InstantiateFromControlFile("StressXX", null, IOListOption.ControlFileDetermined)]
+        [InstantiateFromControlFile(VariableNames.StressXX, null, IOListOption.ControlFileDetermined)]
         public SinglePhaseField StressXX;
 
         /// <summary>
         /// Extra stress domain (2D): StressXY
         /// </summary>
-        [InstantiateFromControlFile("StressXY", null, IOListOption.ControlFileDetermined)]
+        [InstantiateFromControlFile(VariableNames.StressXY, null, IOListOption.ControlFileDetermined)]
         public SinglePhaseField StressXY;
 
         /// <summary>
         /// Extra stress domain (2D): StressYY
         /// </summary>
-        [InstantiateFromControlFile("StressYY", null, IOListOption.ControlFileDetermined)]
+        [InstantiateFromControlFile(VariableNames.StressYY, null, IOListOption.ControlFileDetermined)]
         public SinglePhaseField StressYY;
 
         /// <summary>
         /// Extra stress codomain (2D): StressXX
         /// </summary>
-        [InstantiateFromControlFile("ResidualStressXX", "StressXX", IOListOption.ControlFileDetermined)]
+        [InstantiateFromControlFile("ResidualStressXX", VariableNames.StressXX, IOListOption.ControlFileDetermined)]
         public SinglePhaseField ResidualStressXX;
 
         /// <summary>
         /// Extra stresses codomain (2D): StressXY
         /// </summary>
-        [InstantiateFromControlFile("ResidualStressXY", "StressXY", IOListOption.ControlFileDetermined)]
+        [InstantiateFromControlFile("ResidualStressXY", VariableNames.StressXY, IOListOption.ControlFileDetermined)]
         public SinglePhaseField ResidualStressXY;
 
         /// <summary>
         /// Extra stresses codomain (2D): StressYY
         /// </summary>
-        [InstantiateFromControlFile("ResidualStressYY", "StressYY", IOListOption.ControlFileDetermined)]
+        [InstantiateFromControlFile("ResidualStressYY", VariableNames.StressYY, IOListOption.ControlFileDetermined)]
         public SinglePhaseField ResidualStressYY;
 
         /// <summary>
         /// Extra stresses parameter (2D): StressXX
         /// </summary>
-        [InstantiateFromControlFile("StressXXP", "StressXX", IOListOption.ControlFileDetermined)]
+        [InstantiateFromControlFile("StressXXP", VariableNames.StressXX, IOListOption.ControlFileDetermined)]
         public SinglePhaseField StressXXP;
 
         /// <summary>
         /// Extra stresses parameter (2D): StressXY
         /// </summary>
-        [InstantiateFromControlFile("StressXYP", "StressXY", IOListOption.ControlFileDetermined)]
+        [InstantiateFromControlFile("StressXYP", VariableNames.StressXY, IOListOption.ControlFileDetermined)]
         public SinglePhaseField StressXYP;
 
         /// <summary>
         /// Extra stresses parameter (2D): StressXY
         /// </summary>
-        [InstantiateFromControlFile("StressYYP", "StressYY", IOListOption.ControlFileDetermined)]
+        [InstantiateFromControlFile("StressYYP", VariableNames.StressYY, IOListOption.ControlFileDetermined)]
         public SinglePhaseField StressYYP;
 
         /// <summary>
@@ -480,7 +486,8 @@ namespace BoSSS.Application.Rheology {
                     XOP.EquationComponents["constitutiveYY"].Add(new ConstitutiveEqns_Viscosity(2, BcMap, this.Control.beta, this.Control.Penalty1));
 
                     // artificial diffusion part
-                    if (this.Control.UseArtificialDiffusion == true) {
+                    if (this.Control.UseArtificialDiffusion == true)
+                    {
                         XOP.EquationComponents["constitutiveXX"].Add(new ConstitutiveEqns_Diffusion(this.StressXX.Basis.Degree, Grid.SpatialDimension, ((GridData)GridData).Cells.cj, VariableNames.StressXX));
                         XOP.EquationComponents["constitutiveXY"].Add(new ConstitutiveEqns_Diffusion(this.StressXY.Basis.Degree, Grid.SpatialDimension, ((GridData)GridData).Cells.cj, VariableNames.StressXY));
                         XOP.EquationComponents["constitutiveYY"].Add(new ConstitutiveEqns_Diffusion(this.StressYY.Basis.Degree, Grid.SpatialDimension, ((GridData)GridData).Cells.cj, VariableNames.StressYY));

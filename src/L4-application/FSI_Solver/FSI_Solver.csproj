@@ -85,9 +85,9 @@
     <Compile Include="active_particles\ActivePressureAtIB.cs" />
     <Compile Include="active_particles\HardcodedControl\HardcodedControl_tiltedChannel.cs" />
     <Compile Include="active_particles\HardcodedControl\HardcodedControl_straightChannel.cs" />
-    <Compile Include="ColorToParticle.cs" />
+    <Compile Include="active_particles\HardcodedControl\ParticleStokesFlow.cs" />
     <Compile Include="FSI_TimestepInfo.cs" />
-    <Compile Include="LevelSetUpdate.cs" />
+    <Compile Include="FSI_LevelSetUpdate.cs" />
     <Compile Include="Particle\ParticleAcceleration.cs" />
     <Compile Include="Particle\ParticleAddedDamping.cs" />
     <Compile Include="Particle\ParticleAuxillary.cs" />
@@ -99,7 +99,6 @@
     <Compile Include="Particle\Shapes\Particle_Hippopede.cs" />
     <Compile Include="Particle\Shapes\Particle_Squircle.cs" />
     <Compile Include="Particle\Shapes\Particle_Ellipsoid.cs" />
-    <Compile Include="FSI_Movement.cs" />
     <Compile Include="active_particles\HardcodedControlDeussen.cs" />
     <Compile Include="IBMPaperReproduce.cs" />
     <Compile Include="HardcodedControl.cs" />
@@ -107,11 +106,15 @@
     <Compile Include="FSI_SolverMain.cs" />
     <Compile Include="Particle\Particle.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="Quicksort.cs" />
+    <Compile Include="FSI_Auxillary.cs" />
     <Compile Include="Tests\HardcodedTestExamples.cs" />
     <Compile Include="Tests\TestProgram.cs" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\..\L3-solution\BoSSS.Solution.AdvancedSolvers\BoSSS.Solution.AdvancedSolvers.csproj">
+      <Project>{efe8c307-09bc-4f58-b991-6ef8fd6d5eff}</Project>
+      <Name>BoSSS.Solution.AdvancedSolvers</Name>
+    </ProjectReference>
     <ProjectReference Include="..\..\L3-solution\BoSSS.Solution.LevelSetTools\BoSSS.Solution.LevelSetTools.csproj">
       <Project>{9ee2fcad-e8a4-4f14-b932-d1a4904d715d}</Project>
       <Name>BoSSS.Solution.LevelSetTools</Name>
@@ -143,10 +146,6 @@
     <ProjectReference Include="..\..\L2-foundation\BoSSS.Foundation\BoSSS.Foundation.csproj">
       <Project>{17a60fba-20b4-451d-98e1-8d742f368569}</Project>
       <Name>BoSSS.Foundation</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\..\L3-solution\BoSSS.Solution.AdvancedSolvers\BoSSS.Solution.AdvancedSolvers.csproj">
-      <Project>{efe8c307-09bc-4f58-b991-6ef8fd6d5eff}</Project>
-      <Name>BoSSS.Solution.AdvancedSolvers</Name>
     </ProjectReference>
     <ProjectReference Include="..\..\L3-solution\BoSSS.Solution.NSECommon\BoSSS.Solution.NSECommon.csproj">
       <Project>{e56b9ce4-14dc-4256-a337-46e5d298b722}</Project>

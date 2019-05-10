@@ -51,6 +51,8 @@ namespace BoSSS.Application.FSI_Solver {
             using (FSI_SolverMain p = new FSI_SolverMain()) {
 
                 var ctrl = BoSSS.Application.FSI_Solver.HardcodedTestExamples.ParticleInShearFlow(k: 1);
+                //ctrl.ImmediatePlotPeriod = 1;
+                //ctrl.SuperSampling = 2;
                 p.Init(ctrl);
                 p.RunSolverMode();
 
@@ -59,17 +61,18 @@ namespace BoSSS.Application.FSI_Solver {
                 double angularVelocity = (double)p.QueryHandler.QueryResults["Angular_Velocity"];
 
                 double diff_Velocity = Math.Abs(angularVelocity - angularVelocity_Sol);
+                Console.WriteLine("   angular velocity is " + angularVelocity);
+                Console.WriteLine("         should be     " + angularVelocity_Sol);
+                Console.WriteLine("         difference is " + diff_Velocity);
 
-                Assert.LessOrEqual(diff_Velocity, 0.00025);
+
+                Assert.LessOrEqual(diff_Velocity, 0.00025, "Error in expected angular velocity is to high");
 
             }
         }
 
-        /// <summary>
-        /// Note: this test is fucked; the results are nowhere near where you would expext.
-        /// </summary>
         [Test]
-        public static void SingleDryParticleAgainstWall([Values(false, true)]  bool MeshRefine) {
+        public static void SingleDryParticleAgainstWall([Values(false, true)]  bool MeshRefine) { 
             using (FSI_SolverMain p = new FSI_SolverMain()) {
 
                 var ctrl = BoSSS.Application.FSI_Solver.HardcodedTestExamples.SingleDryParticleAgainstWall(MeshRefine:MeshRefine);
@@ -79,9 +82,55 @@ namespace BoSSS.Application.FSI_Solver {
 
                 Vector Dest_Should;
                 if (MeshRefine)
-                    Dest_Should = new Vector(0.089255650988794, -1.08925565098877); //new Vector(0.420719299693095, -0.907165088781989);
+                    Dest_Should = new Vector(0.0695097474610063, -0.594908028831844); 
                 else
-                    Dest_Should = new Vector(1.80535999455424, -0.785548829055413); //new Vector(0.748512025578859, -0.578342794422653);
+                    Dest_Should = new Vector(-0.238381401305482, 0.341721015345088); 
+
+                Vector Dest_Is = new Vector(p.Particles[0].Position[0]);
+
+                double dist = (Dest_Should - Dest_Is).L2Norm();
+
+                Console.WriteLine("Particle reached position " + Dest_Is + ", expected at " + Dest_Should + ", distance is " + dist);
+
+                Assert.Less(dist, 0.1, "Particle to far from expected position");
+            }
+        }
+
+        [Test]
+        public static void DryParticleBounce()
+        {
+            using (FSI_SolverMain p = new FSI_SolverMain())
+            {
+
+                var ctrl = BoSSS.Application.FSI_Solver.HardcodedTestExamples.DryParticleBounce();
+                p.Init(ctrl);
+                p.RunSolverMode();
+
+                Vector Dest_Should;
+                Dest_Should = new Vector(0.263026905796573, 0.788180688520332);
+
+                Vector Dest_Is = new Vector(p.Particles[0].Position[0]);
+
+                double dist = (Dest_Should - Dest_Is).L2Norm();
+
+                Console.WriteLine("Particle reached position " + Dest_Is + ", expected at " + Dest_Should + ", distance is " + dist);
+
+                Assert.Less(dist, 0.1, "Particle to far from expected position");
+            }
+        }
+
+        [Test]
+        public static void StickyTrap()
+        {
+            using (FSI_SolverMain p = new FSI_SolverMain())
+            {
+
+                var ctrl = BoSSS.Application.FSI_Solver.HardcodedTestExamples.StickyTrap();
+                p.Init(ctrl);
+                p.RunSolverMode();
+
+                Vector Dest_Should;
+                Dest_Should = new Vector(0.0, 5.01309683250003);
 
                 Vector Dest_Is = new Vector(p.Particles[0].Position[0]);
 
@@ -102,7 +151,7 @@ namespace BoSSS.Application.FSI_Solver {
                 p.Init(ctrl);
                 p.RunSolverMode();
 
-                double ForcesSoll = 1481.4254921133;
+                double ForcesSoll = 15376.4338960998;
 
                 double Forces = p.Particles[0].HydrodynamicForces[0][0];
 

@@ -455,7 +455,7 @@ namespace MPI.Wrappers {
             double[] S = new double[A.Length];
             unsafe {
                 fixed (double* pA = A, pS = S) {
-                    csMPI.Raw.Allreduce(((IntPtr)(pA)), ((IntPtr)(pS)), 1, csMPI.Raw._DATATYPE.DOUBLE, csMPI.Raw._OP.SUM, comm);
+                    csMPI.Raw.Allreduce(((IntPtr)(pA)), ((IntPtr)(pS)), A.Length, csMPI.Raw._DATATYPE.DOUBLE, csMPI.Raw._OP.SUM, comm);
                 }
                 return S;
             }

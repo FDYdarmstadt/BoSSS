@@ -54,15 +54,15 @@ namespace BoSSS.Solution.NSECommon {
 
         double T_ref;
         MaterialParamsMode MatParamsMode;
-
+        bool rhoOne;
         /// <summary>
         /// Ctor.
         /// </summary>
         /// <param name="T_ref">Reference temperature - used in Sutherland's law.</param>
         /// <param name="MatParamsMode"></param>
-        public MaterialLawLowMach(double T_ref, MaterialParamsMode MatParamsMode)
+        public MaterialLawLowMach(double T_ref, MaterialParamsMode MatParamsMode, bool rhoOne)
             : base() {
-
+            this.rhoOne = rhoOne;
             this.T_ref = T_ref;
             this.MatParamsMode = MatParamsMode;
         }
@@ -115,7 +115,9 @@ namespace BoSSS.Solution.NSECommon {
         public override double GetDensity(params double[] phi) {
             if (IsInitialized) {
                 double rho = this.ThermodynamicPressure.Current.GetMeanValue(0) / phi[0];
-              // rho = 1.0;
+                if (rhoOne)  
+                rho = 1.0;
+                
                 return rho;
             } else {
                 throw new ApplicationException("ThermodynamicPressure is not initialized.");
@@ -228,9 +230,12 @@ namespace BoSSS.Solution.NSECommon {
         /// <param name="InitialMass"></param>
         /// <param name="Temperature"></param>
         /// <returns></returns>
-        public double GetMassDeterminedThermodynamicPressure(double InitialMass, SinglePhaseField Temperature) {
+        public override double GetMassDeterminedThermodynamicPressure(double InitialMass, SinglePhaseField Temperature) {
+
             SinglePhaseField OneOverTemperature = new SinglePhaseField(Temperature.Basis);
+
             OneOverTemperature.ProjectPow(1.0, Temperature, -1.0);
+
             return (InitialMass / OneOverTemperature.IntegralOver(null));
         }
         /// <summary>

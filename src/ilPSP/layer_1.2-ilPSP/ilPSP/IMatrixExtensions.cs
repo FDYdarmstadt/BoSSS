@@ -1931,6 +1931,131 @@ namespace ilPSP {
         }
 
         /// <summary>
+        /// Converts an implicit subspace representation (given as the solution of a singular matrix <paramref name="Mtx"/>)
+        /// into an explicit representation.
+        /// </summary>
+        /// <param name="Mtx">
+        /// A matrix implicitly defines a subspace.
+        /// </param>
+        /// <returns>
+        /// A matrix whose columns span the solution space of the input matrix <paramref name="Mtx"/>.
+        /// </returns>
+        public static MultidimensionalArray GetSolutionSpace<T>(this T Mtx) where T : IMatrix {
+            int I = Mtx.NoOfRows;
+
+            (var RRE, var cols, int rank) = ReducedRowEchelonForm(Mtx);
+            
+
+            var S = MultidimensionalArray.Create(Mtx.NoOfCols, cols.Length);
+            int jj = 0;
+            foreach (int j in cols) {
+                for(int i = 0; i < rank; i++) {
+                    S[i, jj] = -RRE[i, j];
+                }
+                S[rank + jj, jj] = 1.0;
+                jj++;
+            }
+
+#if DEBUG
+            var Test = Mtx.GEMM(S);
+            double norm = Test.InfNorm();
+            double thresh = Mtx.InfNorm();
+            if(norm > thresh * 1.0e-8)
+                throw new ArithmeticException("Gauss elimination is fucked.");
+#endif
+
+            return S;
+        }
+
+
+        /// <summary>
+        /// Computes a reduced row echelon form
+        /// </summary>
+        /// <param name="Mtx">some matrix</param>
+        /// <returns>
+        /// A tuple, containing
+        /// - the reduced row echelon form of <paramref name="Mtx"/>
+        /// - the indices of non-identity rows
+        /// - the rank of <paramref name="Mtx"/>
+        /// </returns>
+        public static (MultidimensionalArray,int[],int) ReducedRowEchelonForm<T>(this T Mtx) where T : IMatrix {
+            var M = MultidimensionalArray.Create(Mtx.NoOfRows, Mtx.NoOfCols);
+            M.Acc(1.0, Mtx);
+            Mtx = default(T);
+            double tol = BLAS.MachineEps;
+
+            int I = M.NoOfRows;
+            int J = M.NoOfCols;
+
+            var cols = new List<int>();
+            int i = 0; // row counter
+            int rank = 0;
+            for(int j = 0; j < J; j++) {
+                // find the pivot row
+                int i_pivot;
+                double val_pivot;
+                {
+                    i_pivot = int.MinValue;
+                    val_pivot = -1.0;
+                    for (int ii = i; ii < I; ii++) {
+                        if (Math.Abs(M[ii, j]) > val_pivot) {
+                            i_pivot = ii;
+                            val_pivot = Math.Abs(M[ii, j]);
+                        }
+                    }
+                }
+
+                if(val_pivot <= tol) {
+                    // Skip column j, making sure the approximately zero terms are actually zero.
+                    for (int ii = i; ii < I; ii++)
+                        M[ii, j] = 0.0;
+
+                    cols.Add(j);
+                } else {
+                    
+
+                    // Swap current row and pivot row
+                    for(int jj = j; jj < J; jj++) {
+                        double a = M[i, jj];
+                        M[i, jj] = M[i_pivot, jj];
+                        M[i_pivot, jj] = a;
+                    }
+
+                    // normalize the pivot row
+                    double al = 1.0 / M[i, j];
+                    for(int jj = j; jj < J; jj++) {
+                        M[i, jj] *= al;
+                    }
+
+                    // eliminate the current column
+                    for(int ii = 0; ii < I; ii++) {
+                        if(ii != i) {
+                            // Row[ii] = Row[ii] - M[ii,j]*Row[i]
+                            double b = M[ii, j];
+
+                            for (int jj = j; jj < J; jj++) {
+                                M[ii, jj] = M[ii, jj] - b * M[i, jj];
+                            }
+                        }
+                    }
+
+                    i++;
+                    rank++;
+                    if (i >= I)
+                        // finished
+                        break;
+                }
+
+
+            }
+            
+
+            return (M, cols.ToArray(), rank);
+        }
+
+
+
+        /// <summary>
         /// Computes the QR factorization of <paramref name="M"/> using column
         /// pivoting, i.e. determines an orthogonal matrix
         /// <paramref name="Q"/>, an upper triangular matrix
@@ -2156,7 +2281,8 @@ namespace ilPSP {
         }
 
 
-
+        
+   
         /*
         /// <summary>
         /// extracts the <paramref name="RowNo"/>-th row from

@@ -336,8 +336,6 @@ namespace BoSSS.Foundation.XDG {
                 int[] ColorMap = new int[Je];
                 int ColorCounter;
                 {
-
-                  
                     CellMask SpMask = this.GetSpeciesMask(SpId);
                     BitArray SpBitMask = SpMask.GetBitMaskWithExternal();
 
@@ -601,7 +599,7 @@ namespace BoSSS.Foundation.XDG {
                     
                     BitArray marker = new BitArray(Je);
                     for (int j = 0; j < J; j++) {
-                        int newColor = ColorMap[j];
+                        int newColor = ColorMap[j]; // beim dritten durchgang stehen hier nur nullen 
                         if (newColor != 0 && marker[j] == false) {
                             oldColors.Clear();
                             FindColorsRecursive(oldColors, marker, j, newColor, ColorMap, oldColorMap, this.GridDat);
@@ -616,7 +614,7 @@ namespace BoSSS.Foundation.XDG {
                     // this is done "serially", i.e. only on processor 0; a parallel approach is tricky;
                     // the following part *does not* scale, but i hope it will have 
                     // no effect in the foreseeable future (fk, 27mar19)
-                    int[] rcvCounts = ColorRecord.Count.MPIGather(0);
+                    int[] rcvCounts = ColorRecord.Count.MPIGather(0); // something is wrong here!
                     int[] CollectedColorRecord = ColorRecord.ToArray().MPIGatherv(rcvCounts);
 
                     Dictionary<int, int> new2finallyNewColor; 
