@@ -107,7 +107,7 @@ namespace BoSSS.Application.FSI_Solver {
                 p.RunSolverMode();
 
                 Vector Dest_Should;
-                Dest_Should = new Vector(0.263026905796573, 0.788180688520332);
+                Dest_Should = new Vector(0.0997805269284095, 0.851065883016135);
 
                 Vector Dest_Is = new Vector(p.Particles[0].Position[0]);
 
@@ -118,6 +118,7 @@ namespace BoSSS.Application.FSI_Solver {
                 Assert.Less(dist, 0.1, "Particle to far from expected position");
             }
         }
+
 
         [Test]
         public static void StickyTrap()

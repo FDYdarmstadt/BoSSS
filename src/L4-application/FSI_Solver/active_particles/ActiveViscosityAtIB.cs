@@ -87,7 +87,7 @@ namespace BoSSS.Solution.NSECommon.Operator.Viscosity {
             double[] uLevSet = new double[] { parameters_P[0], parameters_P[1] };
             double wLevSet = parameters_P[2];
 
-            double[] RadialNormalVector = new double[] { parameters_P[3], parameters_P[4] };
+            double[] RadialNormalVector = new double[] { -inp.n[1], inp.n[0] };// { parameters_P[3], parameters_P[4] };
             double RadialLength = parameters_P[5];
             double active_stress = parameters_P[6];
             double scale = parameters_P[7];

@@ -247,7 +247,7 @@ namespace BoSSS.Application.FSI_Solver
                                                 result[2] = p.RotationalVelocity[0];
                                                 result[3] = RadialNormalVector[0];
                                                 result[4] = RadialNormalVector[1];
-                                                result[5] = RadialLength;
+                                                result[5] = p.Position[0].L2Distance(X); //RadialLength;
                                                 result[6] = -cos_theta;
                                                 return result;
                                             }
@@ -260,7 +260,7 @@ namespace BoSSS.Application.FSI_Solver
                                                 result[2] = p.RotationalVelocity[0];
                                                 result[3] = RadialNormalVector[0];
                                                 result[4] = RadialNormalVector[1];
-                                                result[5] = RadialLength;
+                                                result[5] = p.Position[0].L2Distance(X); //RadialLength;
                                                 result[6] = 0;
                                                 return result;
                                             }
@@ -382,7 +382,7 @@ namespace BoSSS.Application.FSI_Solver
                                             result[2] = p.RotationalVelocity[0];
                                             result[3] = RadialNormalVector[0];
                                             result[4] = RadialNormalVector[1];
-                                            result[5] = RadialLength;
+                                            result[5] = p.Position[0].L2Distance(X); //RadialLength;
                                             result[6] = p.ActiveStress;
                                             result[7] = -cos_theta;
                                             result[8] = p.Angle[0];
@@ -396,7 +396,7 @@ namespace BoSSS.Application.FSI_Solver
                                             result[2] = p.RotationalVelocity[0];
                                             result[3] = RadialNormalVector[0];
                                             result[4] = RadialNormalVector[1];
-                                            result[5] = RadialLength;
+                                            result[5] = p.Position[0].L2Distance(X); //RadialLength;
                                             result[6] = 0;
                                             result[7] = 0;
                                             result[8] = p.Angle[0];
@@ -465,7 +465,7 @@ namespace BoSSS.Application.FSI_Solver
                                        result[2] = p.RotationalVelocity[0];
                                        result[3] = RadialNormalVector[0];
                                        result[4] = RadialNormalVector[1];
-                                       result[5] = RadialLength;
+                                       result[5] = p.Position[0].L2Distance(X); //RadialLength;
                                        return result;
                                    }
                                }

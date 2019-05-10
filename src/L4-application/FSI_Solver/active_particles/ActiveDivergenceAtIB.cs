@@ -68,7 +68,7 @@ namespace BoSSS.Solution.NSECommon.Operator.Continuity
             var parameters_P = m_getParticleParams(cp.x, cp.time);
             double[] uLevSet = new double[] { parameters_P[0], parameters_P[1] };
             double wLevSet = parameters_P[2];
-            double[] RadialNormalVector = new double[] { parameters_P[3], parameters_P[4] };
+            double[] RadialNormalVector = new double[] { -cp.n[1], cp.n[0] };// { parameters_P[3], parameters_P[4] };
             double RadialLength = parameters_P[5];
 
             double[] _uLevSet = new double[D];
