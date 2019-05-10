@@ -257,11 +257,11 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
         /// 
         /// </summary>
         /// <returns></returns>
-        public static XNSE_Control CapillaryRise_Tube_SFB1194(int p = 2, int kelemR = 8, int omegaTc = 1, bool startUp = false, bool symmetry = true, string _DbPath = null) {
+        public static XNSE_Control CapillaryRise_Tube_SFB1194(int p = 2, int kelemR = 2, int omegaTc = 3, bool startUp = false, bool symmetry = true, string _DbPath = null) {
 
             XNSE_Control C = new XNSE_Control();
 
-            C.CutCellQuadratureType = Foundation.XDG.XQuadFactoryHelper.MomentFittingVariants.Classic;
+            C.CutCellQuadratureType = Foundation.XDG.XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes;
 
             //_DbPath = @"\\dc1\userspace\smuda\cluster\CapillaryRise\CapillaryRise_studyDB";
             _DbPath = @"\\HPCCLUSTER\hpccluster-scratch\smuda\CapillaryRise_studyDB";
@@ -378,12 +378,12 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
                         //restartID = new Guid("a32df5ae-393d-416a-bdd0-24a4437136fb");   //restart with sigma dt (2.5E-5)
 
                         restartID = new Guid("1d679e3c-03f3-41ee-8f1e-7e80ec497926"); // restart with Reinit semi implicit
-                        ts_restart = 270000;
+                        ts_restart = 270100;
 
                         //restartID = new Guid("2f9deaa6-fab9-48ac-9279-319a1efa5547");
 
                         //C.ClearVelocitiesOnRestart = true;
-                        C.ReInitPeriod = 250;
+                        //C.ReInitPeriod = 250;
 
                         break;
                     }
@@ -443,7 +443,8 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
 
                         //restartID = new Guid("f37c9194-1bfb-4250-8dc6-a4d1bbe01ed9");
 
-                        restartID = new Guid("2facee3d-9041-4212-bfeb-dc0564de0a95");
+                        restartID = new Guid("c572378f-edd9-4b96-9917-bb037ae4fdac");   //startUp2
+                        C.ClearVelocitiesOnRestart = true;
 
                         break;
                     }
@@ -590,8 +591,8 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             if(startUp) {
                 C.AddBoundaryValue("wall_lower");
             } else {
-                //C.AddBoundaryCondition("wall_lower");
-                //C.ChangeBoundaryCondition("wall_lower", "pressure_outlet_lower");
+                //C.AddBoundaryValue("wall_lower");
+                C.ChangeBoundaryCondition("wall_lower", "pressure_outlet_lower");
                 C.AddBoundaryValue("pressure_outlet_lower");
             }
             C.AddBoundaryValue("pressure_outlet_upper");
@@ -636,7 +637,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
 
             C.AdvancedDiscretizationOptions.FilterConfiguration = CurvatureAlgorithms.FilterConfiguration.NoFilter;
 
-            C.AdvancedDiscretizationOptions.SurfStressTensor = SurfaceSressTensor.SemiImplicit;
+            C.AdvancedDiscretizationOptions.SurfStressTensor = SurfaceSressTensor.Isotropic;
             //C.PhysicalParameters.mu_I = 1 * C.PhysicalParameters.Sigma;
             //C.PhysicalParameters.lambda_I = 2 * C.PhysicalParameters.Sigma;
             C.AdvancedDiscretizationOptions.UseLevelSetStabilization = false;
@@ -644,7 +645,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             C.AdvancedDiscretizationOptions.SST_isotropicMode = Solution.XNSECommon.SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_ContactLine;
 
 
-            C.AdaptiveMeshRefinement = true;
+            C.AdaptiveMeshRefinement = false;
             C.RefineStrategy = XNSE_Control.RefinementStrategy.constantInterface;
             C.RefineNavierSlipBoundary = false;
             C.BaseRefinementLevel = 1;
@@ -669,7 +670,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             // ============
             #region time
 
-            C.Timestepper_Scheme = XNSE_Control.TimesteppingScheme.ImplicitEuler;
+            C.Timestepper_Scheme = XNSE_Control.TimesteppingScheme.BDF2;
             C.Timestepper_BDFinit = TimeStepperInit.SingleInit;
             C.Timestepper_LevelSetHandling = LevelSetHandling.Coupled_Once;
 
