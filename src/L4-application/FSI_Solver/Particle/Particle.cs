@@ -451,14 +451,14 @@ namespace BoSSS.Application.FSI_Solver
                     throw new NotSupportedException("Unknown particle dimension: SpatialDim = " + SpatialDim);
 
                 Angle[0] = Angle[1] + RotationalVelocity[1] * dt + dt.Pow2() * (RotationalAcceleration[1] + RotationalAcceleration[0]) / 4;
-                for (int p = 0; p < m_collidedWithParticle.Length; p++)
-                {
-                    if (m_collidedWithParticle[p])
-                    {
-                        Angle[0] = Angle[1] + dt * (RotationalVelocity[1] + RotationalVelocity[0]) / 2;
-                        m_collidedWithParticle[p] = false;
-                    }
-                }
+                //for (int p = 0; p < m_collidedWithParticle.Length; p++)
+                //{
+                //    if (m_collidedWithParticle[p])
+                //    {
+                //        Angle[0] = Angle[1] + dt * (RotationalVelocity[1] + RotationalVelocity[0]) / 2;
+                //        m_collidedWithParticle[p] = false;
+                //    }
+                //}
                 if (double.IsNaN(Angle[0]) || double.IsInfinity(Angle[0]))
                     throw new ArithmeticException("Error trying to update particle angle. Value:  " + Angle[0]);
             } else {
@@ -536,9 +536,6 @@ namespace BoSSS.Application.FSI_Solver
 
             if (this.IncludeTranslation) { }
                 TranslationalAcceleration[0] = Acceleration.Translational(CoefficientMatrix, Denominator, HydrodynamicForces[0], HydrodynamicTorque[0]);
-
-
-
 
             for (int d = 0; d < SpatialDim; d++)
             {
