@@ -158,9 +158,14 @@ namespace BoSSS.Foundation.XDG {
     public interface ISpeciesFilter {
 
         /// <summary>
+        /// name of the valid species
+        /// </summary>
+        //string SpeciesName { get; }
+
+        /// <summary>
         /// the species in which the bulk equation component is valid
         /// </summary>
-        SpeciesId validSpecies { get; }
+        SpeciesId validSpeciesId { get; }
     }
 
     /// <summary>
