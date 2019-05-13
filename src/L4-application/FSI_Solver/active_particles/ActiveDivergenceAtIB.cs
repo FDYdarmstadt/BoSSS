@@ -26,69 +26,65 @@ using BoSSS.Platform;
 using ilPSP;
 using BoSSS.Foundation;
 
-namespace BoSSS.Solution.NSECommon.Operator.Continuity {
+namespace BoSSS.Solution.NSECommon.Operator.Continuity
+{
     /// <summary>
     /// velocity jump penalty for the divergence operator, on the level set
     /// </summary>
-    public class ActiveDivergenceAtIB : ILevelSetForm {
+    public class ActiveDivergenceAtIB : ILevelSetForm
+    {
 
         LevelSetTracker m_LsTrk;
 
         public ActiveDivergenceAtIB(int _D, LevelSetTracker lsTrk,
-            double vorZeichen, Func<double[], double, double[]> getParticleParams) {
+            double vorZeichen, Func<double[], double, double[]> getParticleParams)
+        {
             this.D = _D;
             this.m_LsTrk = lsTrk;
             this.m_getParticleParams = getParticleParams;
         }
 
         int D;
-        
-        double pRadius;
+
 
         /// <summary>
-        /// Describes: 0: velX, 1: velY, 2:rotVel,3:particleradius, 4:Heaviside function for active particles
+        /// Describes: 0: velX, 1: velY, 2:rotVel,3:particleradius
         /// </summary>
         Func<double[], double, double[]> m_getParticleParams;
 
         /// <summary>
         /// the penalty flux
         /// </summary>
-        static double DirichletFlux(double UxN_in, double UxN_out) {
+        static double DirichletFlux(double UxN_in, double UxN_out)
+        {
             return (UxN_in - UxN_out);
         }
 
-        public double LevelSetForm(ref CommonParamsLs cp, double[] U_Neg, double[] U_Pos, double[,] Grad_uA, double[,] Grad_uB, double v_Neg, double v_Pos, double[] Grad_vA, double[] Grad_vB) {
-            
+        public double LevelSetForm(ref CommonParamsLs cp, double[] U_Neg, double[] U_Pos, double[,] Grad_uA, double[,] Grad_uB, double v_Neg, double v_Pos, double[] Grad_vA, double[] Grad_vB)
+        {
+
             double uAxN = GenericBlas.InnerProd(U_Neg, cp.n);
 
             var parameters_P = m_getParticleParams(cp.x, cp.time);
             double[] uLevSet = new double[] { parameters_P[0], parameters_P[1] };
             double wLevSet = parameters_P[2];
-            pRadius = parameters_P[3];
-            double scale = parameters_P[4];
-           // double scale = parameters_P[4];
-            
+            double[] RadialNormalVector = new double[] { -cp.n[1], cp.n[0] };// { parameters_P[3], parameters_P[4] };
+            double RadialLength = parameters_P[5];
+
             double[] _uLevSet = new double[D];
 
-            _uLevSet[0] = (uLevSet[0] + pRadius * wLevSet *-cp.n[1]);
-            _uLevSet[1] = (uLevSet[1] + pRadius * wLevSet * cp.n[0]);
-
-            double[] uB_temp = new double[D];
-            uB_temp[0] = U_Neg[0] * Math.Abs(cp.n[1]);
-            uB_temp[1] = U_Neg[1] * Math.Abs(cp.n[0]);
-            double[] t = new double[D];
-            t[0] = cp.n[1];
-            t[1] = cp.n[0];
-
-            double uCxN = GenericBlas.InnerProd(uB_temp, cp.n);
+            _uLevSet[0] = uLevSet[0] + RadialLength * wLevSet * RadialNormalVector[0];
+            _uLevSet[1] = uLevSet[1] + RadialLength * wLevSet * RadialNormalVector[1];
 
             double uBxN = GenericBlas.InnerProd(_uLevSet, cp.n);
-          
+
             // transform from species B to A: we call this the "A-fictitious" value
             double uAxN_fict;
-            uAxN_fict = uBxN;// * (1 - scale) + uBxN * scale;
+            uAxN_fict = uBxN;
+
             double FlxNeg = -DirichletFlux(uAxN, uAxN_fict); // flux on A-side
             //double FlxPos = 0;
+
             return FlxNeg * v_Neg;
         }
 
@@ -109,35 +105,45 @@ namespace BoSSS.Solution.NSECommon.Operator.Continuity {
             NuPos = 1.0;
         }
         */
-        
-        public IList<string> ArgumentOrdering {
-            get {
+
+        public IList<string> ArgumentOrdering
+        {
+            get
+            {
                 return VariableNames.VelocityVector(this.D);
             }
         }
 
-        public IList<string> ParameterOrdering {
-            get {
+        public IList<string> ParameterOrdering
+        {
+            get
+            {
                 return null;
             }
         }
 
-        public int LevelSetIndex {
-            get {
+        public int LevelSetIndex
+        {
+            get
+            {
                 return 0;
             }
         }
 
-        public SpeciesId PositiveSpecies {
+        public SpeciesId PositiveSpecies
+        {
             get { return this.m_LsTrk.GetSpeciesId("B"); }
         }
 
-        public SpeciesId NegativeSpecies {
+        public SpeciesId NegativeSpecies
+        {
             get { return this.m_LsTrk.GetSpeciesId("A"); }
         }
 
-        public TermActivationFlags LevelSetTerms {
-            get {
+        public TermActivationFlags LevelSetTerms
+        {
+            get
+            {
                 return TermActivationFlags.V | TermActivationFlags.UxV;
             }
         }

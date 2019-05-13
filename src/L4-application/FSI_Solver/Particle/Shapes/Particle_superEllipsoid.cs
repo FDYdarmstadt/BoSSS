@@ -126,9 +126,10 @@ namespace BoSSS.Application.FSI_Solver {
             cellCollection = cells.Intersect(allCutCells);
             return cellCollection;
         }
-        override public bool Contains(double[] point, LevelSetTracker LsTrk) {
+        override public bool Contains(double[] point, LevelSetTracker LsTrk, bool WithoutTolerance = false)
+        {
             // only for squared cells
-            double radiusTolerance = Math.Max(length_P, thickness_P) + 2.0 * Math.Sqrt(2 * LsTrk.GridDat.Cells.h_minGlobal.Pow2());
+            double radiusTolerance = !WithoutTolerance ? 1.0 + 2.0 * Math.Sqrt(2 * LsTrk.GridDat.Cells.h_minGlobal.Pow2()) : 1;
             if (-Math.Pow(((point[0] - Position[0][0]) * Math.Cos(Angle[0]) - (point[1] - Position[0][1]) * Math.Sin(Angle[0])) / length_P, superEllipsoidExponent) + -Math.Pow(((point[0] - Position[0][0]) * Math.Sin(Angle[0]) + (point[1] - Position[0][1]) * Math.Cos(Angle[0])) / thickness_P, superEllipsoidExponent) + radiusTolerance.Pow(superEllipsoidExponent) > 0) {
                 return true;
             }
@@ -147,7 +148,7 @@ namespace BoSSS.Application.FSI_Solver {
             return new double[] { length_P, thickness_P };
         }
 
-        override public MultidimensionalArray GetSurfacePoints(LevelSetTracker lsTrk)
+        override public MultidimensionalArray GetSurfacePoints(LevelSetTracker lsTrk, double[] Position, double Angle)
         {
             int SpatialDim = lsTrk.GridDat.SpatialDimension;
             if (SpatialDim != 2)
@@ -165,15 +166,15 @@ namespace BoSSS.Application.FSI_Solver {
             {
                 double temp0 = Math.Pow(Math.Cos(InfinitisemalAngle[j]), 2 / superEllipsoidExponent) * length_P;
                 double temp1 = Math.Pow(Math.Sin(InfinitisemalAngle[j]), 2 / superEllipsoidExponent) * thickness_P;
-                SurfacePoints[j, 0] = (temp0 * Math.Cos(Angle[0]) - temp1 * Math.Sin(Angle[0])) + Position[0][0];
-                SurfacePoints[j, 1] = (temp0 * Math.Sin(Angle[0]) + temp1 * Math.Cos(Angle[0])) + Position[0][1];
+                SurfacePoints[j, 0] = (temp0 * Math.Cos(Angle) - temp1 * Math.Sin(Angle)) + Position[0];
+                SurfacePoints[j, 1] = (temp0 * Math.Sin(Angle) + temp1 * Math.Cos(Angle)) + Position[1];
             }
             for (int j = HalfSurfacePoints; j < NoOfSurfacePoints; j++)
             {
                 double temp0 = -Math.Pow(Math.Cos(InfinitisemalAngle[j - HalfSurfacePoints]), 2 / superEllipsoidExponent) * length_P;
                 double temp1 = -Math.Pow(Math.Sin(InfinitisemalAngle[j - HalfSurfacePoints]), 2 / superEllipsoidExponent) * thickness_P;
-                SurfacePoints[j, 0] = (temp0 * Math.Cos(Angle[0]) - temp1 * Math.Sin(Angle[0])) + Position[0][0];
-                SurfacePoints[j, 1] = (temp0 * Math.Sin(Angle[0]) + temp1 * Math.Cos(Angle[0])) + Position[0][1];
+                SurfacePoints[j, 0] = (temp0 * Math.Cos(Angle) - temp1 * Math.Sin(Angle)) + Position[0];
+                SurfacePoints[j, 1] = (temp0 * Math.Sin(Angle) + temp1 * Math.Cos(Angle)) + Position[1];
             }
 
             return SurfacePoints;
