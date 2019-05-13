@@ -110,15 +110,21 @@ namespace BoSSS.Application.FSI_Solver {
             cellCollection = cells.Intersect(allCutCells);
             return cellCollection;
         }
-        public override bool Contains(double[] point, LevelSetTracker LsTrk) {
+        public override bool Contains(double[] point, LevelSetTracker LsTrk, bool WithoutTolerance = false) {
             // only for squared cells
-            double radiusTolerance = 1.0 + 2.0 * Math.Sqrt(2 * LsTrk.GridDat.Cells.h_minGlobal.Pow2());
-            double test = -((((point[0] - Position[0][0]) * Math.Cos(Angle[0]) - (point[1] - Position[0][1]) * Math.Sin(Angle[0])).Pow2()) / length_P.Pow2()) + -(((point[0] - Position[0][0]) * Math.Sin(Angle[0]) + (point[1] - Position[0][1]) * Math.Cos(Angle[0])).Pow2() / thickness_P.Pow2()) + radiusTolerance.Pow2();
-            if (-((((point[0] - Position[0][0]) * Math.Cos(Angle[0]) - (point[1] - Position[0][1]) * Math.Sin(Angle[0])).Pow2()) / length_P.Pow2()) + -(((point[0] - Position[0][0]) * Math.Sin(Angle[0]) + (point[1] - Position[0][1]) * Math.Cos(Angle[0])).Pow2() / thickness_P.Pow2()) + radiusTolerance.Pow2() > 0)
+            double radiusTolerance = !WithoutTolerance ? 1.0 + 2.0 * Math.Sqrt(2 * LsTrk.GridDat.Cells.h_minGlobal.Pow2()) : 0.9;
+            //double test = -((((point[0] - Position[0][0]) * Math.Cos(Angle[0]) - (point[1] - Position[0][1]) * Math.Sin(Angle[0])).Pow2()) / length_P.Pow2()) + -(((point[0] - Position[0][0]) * Math.Sin(Angle[0]) + (point[1] - Position[0][1]) * Math.Cos(Angle[0])).Pow2() / thickness_P.Pow2()) + radiusTolerance.Pow2();
+            //if (-((((point[0] - Position[0][0]) * Math.Cos(Angle[0]) - (point[1] - Position[0][1]) * Math.Sin(Angle[0])).Pow2()) / length_P.Pow2()) + -(((point[0] - Position[0][0]) * Math.Sin(Angle[0]) + (point[1] - Position[0][1]) * Math.Cos(Angle[0])).Pow2() / thickness_P.Pow2()) + radiusTolerance.Pow2() > 0)
+            //{
+            //    return true;
+            //}
+            double Ellipse = ((point[0] - Position[0][0]) * Math.Cos(Angle[0] + (point[1] - Position[0][1]) * Math.Sin(Angle[0]))).Pow2() / length_P.Pow2() + (-(point[0] - Position[0][0]) * Math.Sin(Angle[0]) + (point[1] - Position[0][1]) * Math.Cos(Angle[0])).Pow2() / thickness_P.Pow2();
+            if (Ellipse < radiusTolerance)
             {
                 return true;
             }
-            return false;
+            else
+                return false;
         }
 
         override public double ComputeParticleRe(double mu_Fluid) {
@@ -128,14 +134,14 @@ namespace BoSSS.Application.FSI_Solver {
             return particleReynolds;
         }
 
-        override public MultidimensionalArray GetSurfacePoints(LevelSetTracker lsTrk)
+        override public MultidimensionalArray GetSurfacePoints(LevelSetTracker lsTrk, double[] PositionS, double AngleS)
         {
             int SpatialDim = lsTrk.GridDat.SpatialDimension;
             if (SpatialDim != 2)
                 throw new NotImplementedException("Only two dimensions are supported at the moment");
 
             double hMin = lsTrk.GridDat.iGeomCells.h_min.Min();
-            int NoOfSurfacePoints = Convert.ToInt32(20 * Circumference_P / hMin);
+            int NoOfSurfacePoints = Convert.ToInt32(5 * Circumference_P / hMin);
             MultidimensionalArray SurfacePoints = new MultidimensionalArray(2);
             SurfacePoints.Allocate(NoOfSurfacePoints, SpatialDim);
             double[] InfinitisemalAngle = GenericBlas.Linspace(0, Math.PI * 2, NoOfSurfacePoints + 1);
@@ -145,12 +151,22 @@ namespace BoSSS.Application.FSI_Solver {
             {
                 double temp0 = Math.Cos(InfinitisemalAngle[j]) * length_P;
                 double temp1 = Math.Sin(InfinitisemalAngle[j]) * thickness_P;
-                SurfacePoints[j, 0] = (temp0 * Math.Cos(Angle[0]) - temp1 * Math.Sin(Angle[0])) + Position[0][0];
-                SurfacePoints[j, 1] = (temp0 * Math.Sin(Angle[0]) + temp1 * Math.Cos(Angle[0])) + Position[0][1];
+                SurfacePoints[j, 0] = (temp0 * Math.Cos(AngleS) - temp1 * Math.Sin(AngleS)) + PositionS[0];
+                SurfacePoints[j, 1] = (temp0 * Math.Sin(AngleS) + temp1 * Math.Cos(AngleS)) + PositionS[1];
             }
             return SurfacePoints;
         }
 
+        override public void GetSupportPoint(int SpatialDim, double CosT, double SinT, out double[] SupportPoint)
+        {
+            SupportPoint = new double[SpatialDim];
+            if (SpatialDim != 2)
+                throw new NotImplementedException("Only two dimensions are supported at the moment");
+            double temp0 = CosT * length_P;
+            double temp1 = SinT * thickness_P;
+            SupportPoint[0] = (temp0 * Math.Cos(Angle[0]) - temp1 * Math.Sin(Angle[0])) + Position[0][0];
+            SupportPoint[1] = (temp0 * Math.Sin(Angle[0]) + temp1 * Math.Cos(Angle[0])) + Position[0][1];
+        }
         override public double[] GetLengthScales()
         {
             return new double[] { length_P, thickness_P };

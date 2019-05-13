@@ -89,7 +89,6 @@ namespace BoSSS.Solution.AdvancedSolvers {
             /// Returns the multigrid blocking.
             /// </summary>
             internal override IEnumerable<List<int>> GetBlocking(MultigridOperator op) {
-
                 AggregationGridData thisLevel = op.Mapping.AggGrid;
 
                 List<AggregationGridData> blockLevelS = new List<AggregationGridData>();
@@ -176,6 +175,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
             public int NoOfPartsPerProcess = 4;
 
             internal override IEnumerable<List<int>> GetBlocking(MultigridOperator op) {
+
                 var MgMap = op.Mapping;
 
                 //if(!M.RowPartitioning.Equals(MgMap.Partitioning))
@@ -1172,6 +1172,32 @@ namespace BoSSS.Solution.AdvancedSolvers {
             if (this.CoarseSolver != null)
                 this.CoarseSolver.ResetStat();
         }
+
+        public ISolverSmootherTemplate Clone() {
+            Schwarz Clone = new Schwarz();
+            if (this.m_BlockingStrategy is METISBlockingStrategy) {
+                Clone.m_BlockingStrategy = new METISBlockingStrategy() {
+                    NoOfPartsPerProcess = ((METISBlockingStrategy)this.m_BlockingStrategy).NoOfPartsPerProcess
+                };
+            }
+            if (this.m_BlockingStrategy is SimpleBlocking) {
+                Clone.m_BlockingStrategy = new SimpleBlocking() {
+                    NoOfPartsPerProcess = ((SimpleBlocking)this.m_BlockingStrategy).NoOfPartsPerProcess
+                };
+            }
+            if (this.m_BlockingStrategy is MultigridBlocks) {
+                Clone.m_BlockingStrategy = new MultigridBlocks() {
+                    Depth = ((MultigridBlocks)this.m_BlockingStrategy).Depth
+                };
+            }
+            Clone.m_MaxIterations = this.m_MaxIterations;
+            Clone.m_Overlap = this.m_Overlap;
+            Clone.IterationCallback = this.IterationCallback;
+            if(this.CoarseSolver!=null)
+                 Clone.CoarseSolver = this.CoarseSolver.Clone();
+            return Clone;
+        }
+
     }
 
 

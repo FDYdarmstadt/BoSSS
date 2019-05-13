@@ -468,5 +468,8 @@ namespace BoSSS.Solution.AdvancedSolvers
 
             X.SetV(temp);
         }
+        public ISolverSmootherTemplate Clone() {
+            throw new NotImplementedException("Clone of " + this.ToString() + " TODO");
+        }
     }
 }

@@ -325,5 +325,9 @@ namespace BoSSS.Application.IBM_Solver {
             get;
             set;
         }
+
+        public ISolverSmootherTemplate Clone() {
+            throw new NotImplementedException("Clone of " + this.ToString() + " TODO");
+        }
     }
 }

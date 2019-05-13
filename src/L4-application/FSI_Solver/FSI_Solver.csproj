@@ -86,6 +86,7 @@
     <Compile Include="active_particles\HardcodedControl\HardcodedControl_tiltedChannel.cs" />
     <Compile Include="active_particles\HardcodedControl\HardcodedControl_straightChannel.cs" />
     <Compile Include="active_particles\HardcodedControl\ParticleStokesFlow.cs" />
+    <Compile Include="FSI_Collision.cs" />
     <Compile Include="FSI_TimestepInfo.cs" />
     <Compile Include="FSI_LevelSetUpdate.cs" />
     <Compile Include="Particle\ParticleAcceleration.cs" />
