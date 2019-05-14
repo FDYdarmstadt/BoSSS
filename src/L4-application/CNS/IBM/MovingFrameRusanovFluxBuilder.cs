@@ -42,8 +42,8 @@ namespace CNS.IBM {
         /// <param name="speciesMap">
         /// <see cref="FluxBuilder"/>
         /// </param>
-        public MovingFrameRusanovFluxBuilder(CNSControl control, BoundaryConditionMap boundaryMap, ISpeciesMap speciesMap, double machNumber)
-            : base(control, boundaryMap, speciesMap, machNumber) {
+        public MovingFrameRusanovFluxBuilder(CNSControl control, BoundaryConditionMap boundaryMap, ISpeciesMap speciesMap)
+            : base(control, boundaryMap, speciesMap) {
             this.ibmSpeciesMap = speciesMap as ImmersedSpeciesMap;
             if (ibmSpeciesMap == null) {
                 throw new System.Exception();

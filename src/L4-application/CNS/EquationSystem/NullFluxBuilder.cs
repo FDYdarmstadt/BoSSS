@@ -32,7 +32,7 @@ namespace CNS.EquationSystem {
         /// class.
         /// </summary>
         private NullFluxBuilder()
-            : base(null, null, null, double.NaN) {
+            : base(null, null, null) {
         }
 
         /// <summary>

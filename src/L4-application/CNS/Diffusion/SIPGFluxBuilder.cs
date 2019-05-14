@@ -46,7 +46,7 @@ namespace CNS.Diffusion {
         /// <param name="speciesMap"></param>
         /// <param name="gridData"></param>
         public SIPGFluxBuilder(CNSControl control, BoundaryConditionMap boundaryMap, ISpeciesMap speciesMap, IGridData gridData)
-            : base(control, boundaryMap, speciesMap, control.MachNumber) {
+            : base(control, boundaryMap, speciesMap) {
             this.gridData = gridData;
 
             //Create Functions for calculation the cell metric, needed as Func<> because

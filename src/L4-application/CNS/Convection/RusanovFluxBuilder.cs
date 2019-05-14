@@ -38,8 +38,8 @@ namespace CNS.Convection {
         /// <param name="speciesMap">
         /// <see cref="FluxBuilder"/>
         /// </param>
-        public RusanovFluxBuilder(CNSControl control, BoundaryConditionMap boundaryMap, ISpeciesMap speciesMap, double machNumber)
-            : base(control, boundaryMap, speciesMap, machNumber) {
+        public RusanovFluxBuilder(CNSControl control, BoundaryConditionMap boundaryMap, ISpeciesMap speciesMap)
+            : base(control, boundaryMap, speciesMap) {
         }
 
         /// <summary>

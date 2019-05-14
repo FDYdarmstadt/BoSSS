@@ -44,7 +44,7 @@ namespace CNS.IBM {
         /// <param name="diffusiveBuilder"></param>
         public BoundaryConditionSourceFluxBuilder(
             IBMControl control, BoundaryConditionMap boundaryMap, ISpeciesMap speciesMap, FluxBuilder convectiveBuilder, FluxBuilder diffusiveBuilder)
-            : base(control, boundaryMap, speciesMap, control.MachNumber) {
+            : base(control, boundaryMap, speciesMap) {
             standardOperator = new Operator(control);
 
             if (convectiveBuilder != null) {

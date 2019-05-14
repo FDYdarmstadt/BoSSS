@@ -86,25 +86,25 @@ namespace CNS.Convection {
         /// An instance of a flux builder that builds fluxes
         /// corresponding to the given <paramref name="flux"/>.
         /// </returns>
-        public static FluxBuilder GetBuilder(this ConvectiveFluxTypes flux, CNSControl control, BoundaryConditionMap boundaryMap, ISpeciesMap speciesMap, IEquationOfState equationOfState, double machNumber) {
+        public static FluxBuilder GetBuilder(this ConvectiveFluxTypes flux, CNSControl control, BoundaryConditionMap boundaryMap, ISpeciesMap speciesMap) {
             switch (flux) {
                 case ConvectiveFluxTypes.Rusanov:
-                    return new RusanovFluxBuilder(control, boundaryMap, speciesMap, machNumber);
+                    return new RusanovFluxBuilder(control, boundaryMap, speciesMap);
 
                 case ConvectiveFluxTypes.HLL:
-                    return new HLLFluxBuilder(control, boundaryMap, speciesMap, machNumber);
+                    return new HLLFluxBuilder(control, boundaryMap, speciesMap);
 
                 case ConvectiveFluxTypes.HLLC:
-                    return new HLLCFluxBuilder(control, boundaryMap, speciesMap, machNumber);
+                    return new HLLCFluxBuilder(control, boundaryMap, speciesMap);
 
                 case ConvectiveFluxTypes.OptimizedHLLC:
-                    return new OptimizedHLLCFluxBuilder(control, boundaryMap, speciesMap, equationOfState, machNumber);
+                    return new OptimizedHLLCFluxBuilder(control, boundaryMap, speciesMap);
 
                 case ConvectiveFluxTypes.Godunov:
-                    return new GodunovFluxBuilder(control, boundaryMap, speciesMap, machNumber);
+                    return new GodunovFluxBuilder(control, boundaryMap, speciesMap);
 
                 case ConvectiveFluxTypes.MovingFrameRusanov:
-                    return new MovingFrameRusanovFluxBuilder(control, boundaryMap, speciesMap, machNumber); 
+                    return new MovingFrameRusanovFluxBuilder(control, boundaryMap, speciesMap); 
 
                 case ConvectiveFluxTypes.None:
                     return NullFluxBuilder.Instance;

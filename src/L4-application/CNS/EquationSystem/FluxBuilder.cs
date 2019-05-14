@@ -43,10 +43,6 @@ namespace CNS.EquationSystem {
         /// </summary>
         protected readonly ISpeciesMap speciesMap;
 
-        protected readonly IEquationOfState equationOfState;
-
-        protected readonly double machNumber;
-
         /// <summary>
         /// Constructs a new flux builder
         /// </summary>
@@ -59,12 +55,10 @@ namespace CNS.EquationSystem {
         /// The species mapping which is required to determine the active
         /// equation of state upon evaluation of the fluxes.
         /// </param>
-        protected FluxBuilder(CNSControl control, BoundaryConditionMap boundaryMap, ISpeciesMap speciesMap, double machNumber, IEquationOfState equationOfState = null) {
+        protected FluxBuilder(CNSControl control, BoundaryConditionMap boundaryMap, ISpeciesMap speciesMap) {
             this.control = control;
             this.boundaryMap = boundaryMap;
             this.speciesMap = speciesMap;
-            this.machNumber = machNumber;
-            this.equationOfState = equationOfState;
         }
 
         /// <summary>

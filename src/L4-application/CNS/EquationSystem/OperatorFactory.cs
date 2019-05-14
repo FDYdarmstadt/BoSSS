@@ -106,7 +106,7 @@ namespace CNS.EquationSystem {
 
             if (hasConvection) {
                 this.convectiveFluxBuilder = control.ConvectiveFluxType.GetBuilder(
-                    control, boundaryMap, speciesMap, control.EquationOfState, control.MachNumber);
+                    control, boundaryMap, speciesMap);
             }
 
             if (hasDiffusion) {
@@ -116,22 +116,22 @@ namespace CNS.EquationSystem {
 
             if (control.ActiveOperators.HasFlag(Operators.Gravity)) {
                 this.sourceTermBuilders.Add(
-                    new GravityFluxBuilder(control, boundaryMap, speciesMap, control.MachNumber));
+                    new GravityFluxBuilder(control, boundaryMap, speciesMap));
             }
 
             if (control.ActiveOperators.HasFlag(Operators.CustomSource)) {
                 this.sourceTermBuilders.Add(
-                    new CustomSourceBuilder(control, boundaryMap, speciesMap, control.MachNumber));
+                    new CustomSourceBuilder(control, boundaryMap, speciesMap));
             }
 
             if (control.ActiveOperators.HasFlag(Operators.SpongeLayer)) {
                 this.sourceTermBuilders.Add(
-                    new SpongeLayerFluxBuilder(control, boundaryMap, speciesMap, control.MachNumber));
+                    new SpongeLayerFluxBuilder(control, boundaryMap, speciesMap));
             }
 
             if (control.ActiveOperators.HasFlag(Operators.ArtificialViscosity)) {
                 this.sourceTermBuilders.Add(
-                    new LaplacianArtificialViscosityFluxBuilder(control, boundaryMap, speciesMap, control.MachNumber));
+                    new LaplacianArtificialViscosityFluxBuilder(control, boundaryMap, speciesMap));
             }
 
             this.control = control;

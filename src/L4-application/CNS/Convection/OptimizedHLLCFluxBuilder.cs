@@ -33,8 +33,8 @@ namespace CNS.Convection {
         /// <param name="control"></param>
         /// <param name="boundaryMap"></param>
         /// <param name="speciesMap"></param>
-        public OptimizedHLLCFluxBuilder(CNSControl control, BoundaryConditionMap boundaryMap, ISpeciesMap speciesMap, IEquationOfState equationOfState, double machNumber)
-            : base(control, boundaryMap, speciesMap, machNumber, equationOfState) {
+        public OptimizedHLLCFluxBuilder(CNSControl control, BoundaryConditionMap boundaryMap, ISpeciesMap speciesMap)
+            : base(control, boundaryMap, speciesMap) {
         }
 
         /// <summary>
@@ -48,13 +48,13 @@ namespace CNS.Convection {
         /// <see cref="FluxBuilder.BuildFluxes"/>
         /// </param>
         public override void BuildFluxes(Operator op) {
-            op.DensityComponents.Add(new OptimizedHLLCDensityFlux(speciesMap, boundaryMap, equationOfState, machNumber));
+            op.DensityComponents.Add(new OptimizedHLLCDensityFlux(speciesMap, boundaryMap, control.EquationOfState, control.MachNumber));
 
             for (int d = 0; d < CNSEnvironment.NumberOfDimensions; d++) {
-                op.MomentumComponents[d].Add(new OptimizedHLLCMomentumFlux(speciesMap, boundaryMap, d, equationOfState, machNumber));
+                op.MomentumComponents[d].Add(new OptimizedHLLCMomentumFlux(speciesMap, boundaryMap, d, control.EquationOfState, control.MachNumber));
             }
 
-            op.EnergyComponents.Add(new OptimizedHLLCEnergyFlux(speciesMap, boundaryMap, equationOfState, machNumber));
+            op.EnergyComponents.Add(new OptimizedHLLCEnergyFlux(speciesMap, boundaryMap, control.EquationOfState, control.MachNumber));
         }
     }
 }
