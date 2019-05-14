@@ -340,8 +340,8 @@ namespace CNS.Tests.ConvectiveFlux {
             c.AddVariable(Variables.Momentum.xComponent, dgDegree);
             c.AddVariable(Variables.Energy, dgDegree);
 
-            c.AddVariable(Variables.Pressure, dgDegree);
-            c.AddVariable(Variables.Velocity.xComponent, dgDegree);
+            c.AddVariable(CNSVariables.Pressure, dgDegree);
+            c.AddVariable(CNSVariables.Velocity.xComponent, dgDegree);
 
             c.GridFunc = delegate {
                 double[] xNodes = GenericBlas.Linspace(0.0, 1.0, 201);
@@ -364,10 +364,10 @@ namespace CNS.Tests.ConvectiveFlux {
                 Variables.Density,
                 X => stateLeft.Density + (stateRight.Density - stateLeft.Density) * (X[0] - discontinuityPosition).Heaviside());
             c.InitialValues_Evaluators.Add(
-                Variables.Velocity.xComponent,
+                CNSVariables.Velocity.xComponent,
                 X => stateLeft.Velocity.x + (stateRight.Velocity.x - stateLeft.Velocity.x) * (X[0] - discontinuityPosition).Heaviside());
             c.InitialValues_Evaluators.Add(
-                Variables.Pressure,
+                CNSVariables.Pressure,
                 X => stateLeft.Pressure + (stateRight.Pressure - stateLeft.Pressure) * (X[0] - discontinuityPosition).Heaviside());
 
             var riemannSolver = new ExactRiemannSolver(stateLeft, stateRight, new Vector(1.0));
@@ -378,10 +378,10 @@ namespace CNS.Tests.ConvectiveFlux {
                 Variables.Density,
                 (X, t) => riemannSolver.GetState(pStar, uStar, X[0] - discontinuityPosition, t).Density));
             c.Queries.Add("L2ErrorVelocity", QueryLibrary.L2Error(
-                Variables.Velocity.xComponent,
+                CNSVariables.Velocity.xComponent,
                 (X, t) => riemannSolver.GetState(pStar, uStar, X[0] - discontinuityPosition, t).Velocity.x));
             c.Queries.Add("L2ErrorPressure", QueryLibrary.L2Error(
-                Variables.Pressure,
+                CNSVariables.Pressure,
                 (X, t) => riemannSolver.GetState(pStar, uStar, X[0] - discontinuityPosition, t).Pressure));
 
             c.dtMin = 0.0;

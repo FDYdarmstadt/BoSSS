@@ -14,32 +14,20 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+using BoSSS.Solution.Control;
+using System;
 
-namespace CNS.EquationSystem {
-
-    /// <summary>
-    /// Implements a flux builder that doesn't do anything
-    /// </summary>
-    public class NullFluxBuilder : FluxBuilder {
+namespace BoSSS.Solution.CompressibleFlowCommon {
+    public class CompressibleControl : AppControl, ICloneable {
 
         /// <summary>
-        /// The one and only instance of this class
+        /// The configured Mach Number in the far field.
         /// </summary>
-        public static readonly NullFluxBuilder Instance = new NullFluxBuilder();
-
-        /// <summary>
-        /// Initializes a new instance of the <see cref="NullFluxBuilder"/>
-        /// class.
-        /// </summary>
-        private NullFluxBuilder()
-            : base(null, null, null, double.NaN) {
-        }
-
-        /// <summary>
-        /// Does nothing
-        /// </summary>
-        /// <param name="op">Irrelevant</param>
-        public override void BuildFluxes(Operator op) {
+        [ExclusiveLowerBound(0.0)]
+        public double MachNumber;
+        
+        public object Clone() {
+            throw new NotImplementedException();
         }
     }
 }

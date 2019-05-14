@@ -17,6 +17,7 @@ limitations under the License.
 using BoSSS.Foundation;
 using BoSSS.Solution.CompressibleFlowCommon;
 using BoSSS.Solution.CompressibleFlowCommon.Boundary;
+using BoSSS.Solution.CompressibleFlowCommon.MaterialProperty;
 
 namespace CNS.EquationSystem {
 
@@ -31,7 +32,7 @@ namespace CNS.EquationSystem {
         /// Configuration options
         /// </summary>
         protected readonly CNSControl control;
-
+        
         /// <summary>
         /// The boundary mapping which is required for the construction of the
         /// specific fluxes
@@ -41,6 +42,10 @@ namespace CNS.EquationSystem {
         /// <summary>
         /// </summary>
         protected readonly ISpeciesMap speciesMap;
+
+        protected readonly IEquationOfState equationOfState;
+
+        protected readonly double machNumber;
 
         /// <summary>
         /// Constructs a new flux builder
@@ -54,10 +59,12 @@ namespace CNS.EquationSystem {
         /// The species mapping which is required to determine the active
         /// equation of state upon evaluation of the fluxes.
         /// </param>
-        protected FluxBuilder(CNSControl control, BoundaryConditionMap boundaryMap, ISpeciesMap speciesMap) {
+        protected FluxBuilder(CNSControl control, BoundaryConditionMap boundaryMap, ISpeciesMap speciesMap, double machNumber, IEquationOfState equationOfState = null) {
             this.control = control;
             this.boundaryMap = boundaryMap;
             this.speciesMap = speciesMap;
+            this.machNumber = machNumber;
+            this.equationOfState = equationOfState;
         }
 
         /// <summary>

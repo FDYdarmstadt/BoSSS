@@ -16,6 +16,7 @@ limitations under the License.
 
 using BoSSS.Solution.CompressibleFlowCommon;
 using BoSSS.Solution.CompressibleFlowCommon.Boundary;
+using BoSSS.Solution.CompressibleFlowCommon.MaterialProperty;
 using CNS.EquationSystem;
 using CNS.IBM;
 using System;
@@ -48,7 +49,7 @@ namespace CNS.Convection {
         HLLC,
 
         /// <summary>
-        /// See <see cref="OptimizedHLLCFLuxBuilder"/>
+        /// See <see cref="OptimizedHLLCFluxBuilder"/>
         /// </summary>
         OptimizedHLLC,
 
@@ -85,25 +86,25 @@ namespace CNS.Convection {
         /// An instance of a flux builder that builds fluxes
         /// corresponding to the given <paramref name="flux"/>.
         /// </returns>
-        public static FluxBuilder GetBuilder(this ConvectiveFluxTypes flux, CNSControl control, BoundaryConditionMap boundaryMap, ISpeciesMap speciesMap) {
+        public static FluxBuilder GetBuilder(this ConvectiveFluxTypes flux, CNSControl control, BoundaryConditionMap boundaryMap, ISpeciesMap speciesMap, IEquationOfState equationOfState, double machNumber) {
             switch (flux) {
                 case ConvectiveFluxTypes.Rusanov:
-                    return new RusanovFluxBuilder(control, boundaryMap, speciesMap);
+                    return new RusanovFluxBuilder(control, boundaryMap, speciesMap, machNumber);
 
                 case ConvectiveFluxTypes.HLL:
-                    return new HLLFluxBuilder(control, boundaryMap, speciesMap);
+                    return new HLLFluxBuilder(control, boundaryMap, speciesMap, machNumber);
 
                 case ConvectiveFluxTypes.HLLC:
-                    return new HLLCFluxBuilder(control, boundaryMap, speciesMap);
+                    return new HLLCFluxBuilder(control, boundaryMap, speciesMap, machNumber);
 
                 case ConvectiveFluxTypes.OptimizedHLLC:
-                    return new OptimizedHLLCFLuxBuilder(control, boundaryMap, speciesMap);
+                    return new OptimizedHLLCFluxBuilder(control, boundaryMap, speciesMap, equationOfState, machNumber);
 
                 case ConvectiveFluxTypes.Godunov:
-                    return new GodunovFluxBuilder(control, boundaryMap, speciesMap);
+                    return new GodunovFluxBuilder(control, boundaryMap, speciesMap, machNumber);
 
                 case ConvectiveFluxTypes.MovingFrameRusanov:
-                    return new MovingFrameRusanovFluxBuilder(control, boundaryMap, speciesMap); 
+                    return new MovingFrameRusanovFluxBuilder(control, boundaryMap, speciesMap, machNumber); 
 
                 case ConvectiveFluxTypes.None:
                     return NullFluxBuilder.Instance;

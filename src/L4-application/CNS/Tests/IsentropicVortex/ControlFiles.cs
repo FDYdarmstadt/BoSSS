@@ -50,8 +50,8 @@ namespace CNS.Tests.IsentropicVortex {
             c.AddVariable(Variables.Momentum.xComponent, dgDegree);
             c.AddVariable(Variables.Momentum.yComponent, dgDegree);
             c.AddVariable(Variables.Energy, dgDegree);
-            c.AddVariable(Variables.Pressure, dgDegree);
-            c.AddVariable(Variables.Entropy, dgDegree);
+            c.AddVariable(CNSVariables.Pressure, dgDegree);
+            c.AddVariable(CNSVariables.Entropy, dgDegree);
 
             c.GridFunc = delegate {
                 int noOfCellsPerDirection = (2 << divisions) * 10;
@@ -82,13 +82,13 @@ namespace CNS.Tests.IsentropicVortex {
             IsentropicVortexExactSolution solution = new IsentropicVortexExactSolution(c, c.VortexSpeed);
 
             c.InitialValues_Evaluators.Add(Variables.Density, X => solution.rho()(X, 0.0));
-            c.InitialValues_Evaluators.Add(Variables.Velocity.xComponent, X => solution.u()(X, 0.0));
-            c.InitialValues_Evaluators.Add(Variables.Velocity.yComponent, X => solution.v()(X, 0.0));
-            c.InitialValues_Evaluators.Add(Variables.Pressure, X => solution.p()(X, 0.0));
+            c.InitialValues_Evaluators.Add(CNSVariables.Velocity.xComponent, X => solution.u()(X, 0.0));
+            c.InitialValues_Evaluators.Add(CNSVariables.Velocity.yComponent, X => solution.v()(X, 0.0));
+            c.InitialValues_Evaluators.Add(CNSVariables.Pressure, X => solution.p()(X, 0.0));
 
             c.Queries.Add("L2ErrorDensity", QueryLibrary.L2Error(Variables.Density, solution.rho()));
-            c.Queries.Add("L2ErrorPressure", QueryLibrary.L2Error(Variables.Pressure, solution.p()));
-            c.Queries.Add("L2ErrorEntropy", QueryLibrary.L2Error(Variables.Entropy, (X, t) => 1.0));
+            c.Queries.Add("L2ErrorPressure", QueryLibrary.L2Error(CNSVariables.Pressure, solution.p()));
+            c.Queries.Add("L2ErrorEntropy", QueryLibrary.L2Error(CNSVariables.Entropy, (X, t) => 1.0));
 
             return c;
         }
@@ -149,13 +149,13 @@ namespace CNS.Tests.IsentropicVortex {
             Func<double[], double, double> p = (X, t) => Math.Pow(rho(X, t), gamma) - referencePressure;
 
             c.InitialValues_Evaluators.Add(Variables.Density, X => rho(X, 0.0));
-            c.InitialValues_Evaluators.Add(Variables.Velocity.xComponent, X => c.VortexSpeed - Math.Sin(phi(X, 0.0)) * uAbs(X, 0.0));
-            c.InitialValues_Evaluators.Add(Variables.Velocity.yComponent, X => Math.Cos(phi(X, 0.0)) * uAbs(X, 0.0));
-            c.InitialValues_Evaluators.Add(Variables.Pressure, X => p(X, 0.0));
+            c.InitialValues_Evaluators.Add(CNSVariables.Velocity.xComponent, X => c.VortexSpeed - Math.Sin(phi(X, 0.0)) * uAbs(X, 0.0));
+            c.InitialValues_Evaluators.Add(CNSVariables.Velocity.yComponent, X => Math.Cos(phi(X, 0.0)) * uAbs(X, 0.0));
+            c.InitialValues_Evaluators.Add(CNSVariables.Pressure, X => p(X, 0.0));
 
             c.Queries.Add("L2ErrorDensity", QueryLibrary.L2Error(Variables.Density, rho));
-            c.Queries.Add("L2ErrorPressure", QueryLibrary.L2Error(Variables.Pressure, p));
-            c.Queries.Add("L2ErrorEntropy", QueryLibrary.L2Error(Variables.Entropy, (X, t) => 1.0));
+            c.Queries.Add("L2ErrorPressure", QueryLibrary.L2Error(CNSVariables.Pressure, p));
+            c.Queries.Add("L2ErrorEntropy", QueryLibrary.L2Error(CNSVariables.Entropy, (X, t) => 1.0));
 
             return c;
         }
@@ -178,13 +178,13 @@ namespace CNS.Tests.IsentropicVortex {
                 CovolumeVortexExactSolution.GetSolution(X[0], X[1], c.VortexSpeed, t, c, integrationConstant);
 
             c.InitialValues_Evaluators.Add(Variables.Density, X => solution(X, 0.0).Density);
-            c.InitialValues_Evaluators.Add(Variables.Velocity.xComponent, X => solution(X, 0.0).Velocity[0]);
-            c.InitialValues_Evaluators.Add(Variables.Velocity.yComponent, X => solution(X, 0.0).Velocity[1]);
-            c.InitialValues_Evaluators.Add(Variables.Pressure, X => solution(X, 0.0).Pressure);
+            c.InitialValues_Evaluators.Add(CNSVariables.Velocity.xComponent, X => solution(X, 0.0).Velocity[0]);
+            c.InitialValues_Evaluators.Add(CNSVariables.Velocity.yComponent, X => solution(X, 0.0).Velocity[1]);
+            c.InitialValues_Evaluators.Add(CNSVariables.Pressure, X => solution(X, 0.0).Pressure);
 
             c.Queries.Add("L2ErrorDensity", QueryLibrary.L2Error(Variables.Density, (X, t) => solution(X, t).Density, 10));
-            c.Queries.Add("L2ErrorPressure", QueryLibrary.L2Error(Variables.Pressure, (X, t) => solution(X, t).Pressure, 10));
-            c.Queries.Add("L2ErrorEntropy", QueryLibrary.L2Error(Variables.Entropy, (X, t) => 1.0, 10));
+            c.Queries.Add("L2ErrorPressure", QueryLibrary.L2Error(CNSVariables.Pressure, (X, t) => solution(X, t).Pressure, 10));
+            c.Queries.Add("L2ErrorEntropy", QueryLibrary.L2Error(CNSVariables.Entropy, (X, t) => 1.0, 10));
 
             return c;
         }

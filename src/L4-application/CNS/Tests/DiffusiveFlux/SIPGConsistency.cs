@@ -18,6 +18,7 @@ using BoSSS.Foundation;
 using BoSSS.Foundation.Grid.Classic;
 using BoSSS.Foundation.IO;
 using BoSSS.Solution;
+using BoSSS.Solution.CompressibleFlowCommon;
 using CNS.Diffusion;
 using CNS.EquationSystem;
 using CNS.MaterialProperty;
@@ -206,14 +207,14 @@ namespace CNS.Tests.DiffusiveFlux {
             Func<double[], double> p = X => Math.Cos(X[0]) + Math.Sin(X[0]) + 4.0;
 
             c.InitialValues_Evaluators.Add(Variables.Density, rho);
-            c.InitialValues_Evaluators.Add(Variables.Velocity[0], u0);
-            c.InitialValues_Evaluators.Add(Variables.Velocity[1], u1);
-            c.InitialValues_Evaluators.Add(Variables.Pressure, p);
+            c.InitialValues_Evaluators.Add(CNSVariables.Velocity[0], u0);
+            c.InitialValues_Evaluators.Add(CNSVariables.Velocity[1], u1);
+            c.InitialValues_Evaluators.Add(CNSVariables.Pressure, p);
 
             c.AddBoundaryValue("supersonicinlet", Variables.Density, rho);
-            c.AddBoundaryValue("supersonicinlet", Variables.Velocity[0], u0);
-            c.AddBoundaryValue("supersonicinlet", Variables.Velocity[1], u1);
-            c.AddBoundaryValue("supersonicinlet", Variables.Pressure, p);
+            c.AddBoundaryValue("supersonicinlet", CNSVariables.Velocity[0], u0);
+            c.AddBoundaryValue("supersonicinlet", CNSVariables.Velocity[1], u1);
+            c.AddBoundaryValue("supersonicinlet", CNSVariables.Pressure, p);
 
             return c;
         }

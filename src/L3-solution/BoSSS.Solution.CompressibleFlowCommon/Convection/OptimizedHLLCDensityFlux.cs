@@ -16,11 +16,11 @@ limitations under the License.
 
 using System;
 using BoSSS.Foundation;
-using BoSSS.Solution.CompressibleFlowCommon;
 using BoSSS.Solution.CompressibleFlowCommon.Boundary;
+using BoSSS.Solution.CompressibleFlowCommon.MaterialProperty;
 using ilPSP;
 
-namespace CNS.Convection {
+namespace BoSSS.Solution.CompressibleFlowCommon.Convection {
 
     /// <summary>
     /// Optimized version of the HLLC density flux for ideal gases.
@@ -30,17 +30,14 @@ namespace CNS.Convection {
         /// <summary>
         /// Constructs a new flux
         /// </summary>
-        /// <param name="config">
-        /// Configuration options
-        /// </param>
         /// <param name="speciesMap">
         /// Species map. Only support ideal gas in the entire domain.
         /// </param>
         /// <param name="boundaryMap">
         /// Mapping for boundary conditions
         /// </param>
-        public OptimizedHLLCDensityFlux(CNSControl config, ISpeciesMap speciesMap, IBoundaryConditionMap boundaryMap)
-            : base(config, speciesMap, boundaryMap) {
+        public OptimizedHLLCDensityFlux(ISpeciesMap speciesMap, IBoundaryConditionMap boundaryMap, IEquationOfState equationOfState, double machNumber)
+            : base(speciesMap, boundaryMap, equationOfState, machNumber) {
         }
 
         /// <summary>
@@ -67,9 +64,9 @@ namespace CNS.Convection {
             MultidimensionalArray Output) {
 
             int NoOfNodes = Uin[0].GetLength(1);
-            int D = CNSEnvironment.NumberOfDimensions;
-            double gamma = config.EquationOfState.HeatCapacityRatio;
-            double Mach = config.MachNumber;
+            int D = CompressibleEnvironment.NumberOfDimensions;
+            double gamma = this.equationOfState.HeatCapacityRatio;
+            double Mach = this.machNumber;
             double MachScaling = gamma * Mach * Mach;
 
             for (int e = 0; e < Lenght; e++) {
@@ -171,7 +168,7 @@ namespace CNS.Convection {
             int Length,
             MultidimensionalArray Output) {
 
-            int D = CNSEnvironment.NumberOfDimensions;
+            int D = CompressibleEnvironment.NumberOfDimensions;
             int NoOfNodes = Output.GetLength(1);
 
             for (int e = 0; e < Length; e++) {

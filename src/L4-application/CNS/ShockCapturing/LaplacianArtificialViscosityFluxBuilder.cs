@@ -22,8 +22,8 @@ namespace CNS.ShockCapturing {
 
     class LaplacianArtificialViscosityFluxBuilder : FluxBuilder {
 
-        public LaplacianArtificialViscosityFluxBuilder(CNSControl control, BoundaryConditionMap boundaryMap, ISpeciesMap speciesMap)
-            : base(control, boundaryMap, speciesMap) {
+        public LaplacianArtificialViscosityFluxBuilder(CNSControl control, BoundaryConditionMap boundaryMap, ISpeciesMap speciesMap, double machNumber)
+            : base(control, boundaryMap, speciesMap, machNumber) {
         }
 
         public override void BuildFluxes(Operator mapping) {

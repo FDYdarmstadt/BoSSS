@@ -215,15 +215,15 @@ namespace CNS.Tests.ArtificialViscosity {
             c.AddVariable(Variables.Density, dgDegree);
             c.AddVariable(Variables.Momentum.xComponent, dgDegree);
             c.AddVariable(Variables.Energy, dgDegree);
-            c.AddVariable(Variables.Velocity.xComponent, dgDegree);
-            c.AddVariable(Variables.Pressure, dgDegree);
-            c.AddVariable(Variables.Entropy, dgDegree);
-            c.AddVariable(Variables.Viscosity, dgDegree);
-            c.AddVariable(Variables.ArtificialViscosity, 1);
-            c.AddVariable(Variables.ShockSensor, 0);
-            c.AddVariable(Variables.LocalMachNumber, dgDegree);
+            c.AddVariable(CNSVariables.Velocity.xComponent, dgDegree);
+            c.AddVariable(CNSVariables.Pressure, dgDegree);
+            c.AddVariable(CNSVariables.Entropy, dgDegree);
+            c.AddVariable(CNSVariables.Viscosity, dgDegree);
+            c.AddVariable(CNSVariables.ArtificialViscosity, 1);
+            c.AddVariable(CNSVariables.ShockSensor, 0);
+            c.AddVariable(CNSVariables.LocalMachNumber, dgDegree);
             if (c.ExplicitScheme.Equals(ExplicitSchemes.LTS)) {
-                c.AddVariable(Variables.LTSClusters, 0);
+                c.AddVariable(CNSVariables.LTSClusters, 0);
             }
 
             c.GridFunc = delegate {
@@ -250,10 +250,10 @@ namespace CNS.Tests.ArtificialViscosity {
                     Variables.Density,
                     X => stateLeft.Density + (stateRight.Density - stateLeft.Density) * (X[0] - discontinuityPosition).Heaviside());
             c.InitialValues_Evaluators.Add(
-                Variables.Velocity.xComponent,
+                CNSVariables.Velocity.xComponent,
                 X => stateLeft.Velocity.x + (stateRight.Velocity.x - stateLeft.Velocity.x) * (X[0] - discontinuityPosition).Heaviside());
             c.InitialValues_Evaluators.Add(
-                Variables.Pressure,
+                CNSVariables.Pressure,
                 X => stateLeft.Pressure + (stateRight.Pressure - stateLeft.Pressure) * (X[0] - discontinuityPosition).Heaviside());
 
             var riemannSolver = new ExactRiemannSolver(stateLeft, stateRight, new Vector(1.0, 0.0, 0.0));
@@ -264,10 +264,10 @@ namespace CNS.Tests.ArtificialViscosity {
                 Variables.Density,
                 (X, t) => riemannSolver.GetState(pStar, uStar, X[0] - discontinuityPosition, t).Density));
             c.Queries.Add("L2ErrorVelocity", QueryLibrary.L2Error(
-                Variables.Velocity.xComponent,
+                CNSVariables.Velocity.xComponent,
                 (X, t) => riemannSolver.GetState(pStar, uStar, X[0] - discontinuityPosition, t).Velocity.x));
             c.Queries.Add("L2ErrorPressure", QueryLibrary.L2Error(
-                Variables.Pressure,
+                CNSVariables.Pressure,
                 (X, t) => riemannSolver.GetState(pStar, uStar, X[0] - discontinuityPosition, t).Pressure));
 
             c.dtMin = 0.0;

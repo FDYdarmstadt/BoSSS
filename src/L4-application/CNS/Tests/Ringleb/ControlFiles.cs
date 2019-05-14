@@ -14,6 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+using BoSSS.Solution.CompressibleFlowCommon;
 using BoSSS.Solution.Queries;
 using CNS.EquationSystem;
 using CNS.MaterialProperty;
@@ -50,8 +51,8 @@ namespace CNS.Tests.Ringleb {
             c.AddVariable(Variables.Momentum.xComponent, dgDegree);
             c.AddVariable(Variables.Momentum.yComponent, dgDegree);
             c.AddVariable(Variables.Energy, dgDegree);
-            c.AddVariable(Variables.Pressure, dgDegree);
-            c.AddVariable(Variables.Entropy, dgDegree);
+            c.AddVariable(CNSVariables.Pressure, dgDegree);
+            c.AddVariable(CNSVariables.Entropy, dgDegree);
 
             Func<double[], RinglebExactSolution.FlowState> solution = X => RinglebExactSolution.GetFlowState(
                 X[0],
@@ -69,7 +70,7 @@ namespace CNS.Tests.Ringleb {
             c.AddBoundaryValue("ringleb");
 
             c.Queries.Add("L2ErrorDensity", QueryLibrary.L2Error(Variables.Density, (X, t) => solution(X).Density));
-            c.Queries.Add("L2ErrorPressure", QueryLibrary.L2Error(Variables.Pressure, (X, t) => solution(X).Pressure));
+            c.Queries.Add("L2ErrorPressure", QueryLibrary.L2Error(CNSVariables.Pressure, (X, t) => solution(X).Pressure));
 
             c.dtMin = 0.0;
             c.dtMax = 1.0;
@@ -90,7 +91,7 @@ namespace CNS.Tests.Ringleb {
             c.GridGuid = new Guid("499a52ea-9a36-48c4-9c3a-a13d1414b936");
             c.ConvectiveFluxType = Convection.ConvectiveFluxTypes.Rusanov;
 
-            c.Queries.Add("L2ErrorEntropy", QueryLibrary.L2Error(Variables.Entropy, (X, t) => 0.7142857142857142));
+            c.Queries.Add("L2ErrorEntropy", QueryLibrary.L2Error(CNSVariables.Entropy, (X, t) => 0.7142857142857142));
 
             return c;
         }
@@ -107,7 +108,7 @@ namespace CNS.Tests.Ringleb {
             c.RinglebReferenceSpeedOfSound = 5.0;
             c.RinglebReferenceTotalPressure = 30.0;
 
-            c.Queries.Add("L2ErrorEntropy", QueryLibrary.L2Error(Variables.Entropy, (X, t) => 1.80939686135e-6));
+            c.Queries.Add("L2ErrorEntropy", QueryLibrary.L2Error(CNSVariables.Entropy, (X, t) => 1.80939686135e-6));
 
             return c;
         }

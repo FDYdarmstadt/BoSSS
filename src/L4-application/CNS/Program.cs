@@ -155,6 +155,7 @@ namespace CNS {
         protected override IGrid CreateOrLoadGrid() {
             using (var ht = new FuncTrace()) {
                 IGrid grid = base.CreateOrLoadGrid();
+                CompressibleEnvironment.Initialize(grid.SpatialDimension);
                 CNSEnvironment.Initialize(grid.SpatialDimension, this);
                 return grid;
             }

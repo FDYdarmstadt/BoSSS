@@ -16,6 +16,7 @@ limitations under the License.
 
 using BoSSS.Foundation.Grid.Classic;
 using BoSSS.Foundation.XDG;
+using BoSSS.Solution.CompressibleFlowCommon;
 using CNS.Convection;
 using CNS.EquationSystem;
 using CNS.IBM;
@@ -103,7 +104,7 @@ namespace CNS.Tests.IBMTests {
             c.EquationOfState = IdealGas.Air;
             c.MachNumber = 1.0 / Math.Sqrt(c.EquationOfState.HeatCapacityRatio);
 
-            // Primary Variables
+            // Primary CNSVariables
             c.AddVariable(Variables.Density, dgDegree);
             c.AddVariable(Variables.Momentum.xComponent, dgDegree);
             c.AddVariable(Variables.Momentum.yComponent, dgDegree);
@@ -211,16 +212,16 @@ namespace CNS.Tests.IBMTests {
 
             //Initial Values
             c.InitialValues_Evaluators.Add(Variables.Density, X => rho(X, 0.0));
-            c.InitialValues_Evaluators.Add(Variables.Velocity.xComponent, X => u0(X, 0.0));
-            c.InitialValues_Evaluators.Add(Variables.Velocity.yComponent, X => u1(X, 0.0));
-            c.InitialValues_Evaluators.Add(Variables.Pressure, X => pressure(X, 0.0));
+            c.InitialValues_Evaluators.Add(CNSVariables.Velocity.xComponent, X => u0(X, 0.0));
+            c.InitialValues_Evaluators.Add(CNSVariables.Velocity.yComponent, X => u1(X, 0.0));
+            c.InitialValues_Evaluators.Add(CNSVariables.Pressure, X => pressure(X, 0.0));
 
             //BoundaryConditions
             c.AddBoundaryValue("AdiabaticSlipWall");
             c.AddBoundaryValue("supersonicInlet", Variables.Density, rho);
-            c.AddBoundaryValue("supersonicInlet", Variables.Velocity.xComponent, u0);
-            c.AddBoundaryValue("supersonicInlet", Variables.Velocity.yComponent, u1);
-            c.AddBoundaryValue("supersonicInlet", Variables.Pressure, pressure);
+            c.AddBoundaryValue("supersonicInlet", CNSVariables.Velocity.xComponent, u0);
+            c.AddBoundaryValue("supersonicInlet", CNSVariables.Velocity.yComponent, u1);
+            c.AddBoundaryValue("supersonicInlet", CNSVariables.Pressure, pressure);
 
             // Queries
             //c.Queries.Add("L2ErrorEntropy", IBMQueries.L2Error(state => state.Entropy, (X, t) => 2.8571428571428));

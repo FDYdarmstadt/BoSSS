@@ -15,6 +15,7 @@ limitations under the License.
 */
 
 using BoSSS.Foundation.Grid.Classic;
+using BoSSS.Solution.CompressibleFlowCommon;
 using BoSSS.Solution.Queries;
 using CNS.Convection;
 using CNS.EquationSystem;
@@ -84,9 +85,9 @@ namespace CNS.Tests.MMS {
             c.AddVariable(Variables.Density, dgDegree);
             c.AddVariable(Variables.Momentum.xComponent, dgDegree);
             c.AddVariable(Variables.Energy, dgDegree);
-            c.AddVariable(Variables.Velocity.xComponent, dgDegree);
-            c.AddVariable(Variables.Pressure, dgDegree);
-            c.AddVariable(Variables.LocalMachNumber, dgDegree);
+            c.AddVariable(CNSVariables.Velocity.xComponent, dgDegree);
+            c.AddVariable(CNSVariables.Pressure, dgDegree);
+            c.AddVariable(CNSVariables.LocalMachNumber, dgDegree);
 
             c.GridFunc = delegate {
                 double[] nodes = GenericBlas.Linspace(0.0, 1.0, noOfCellsPerDirection + 1);
@@ -116,8 +117,8 @@ namespace CNS.Tests.MMS {
             c.InitialValues_Evaluators.Add(Variables.Energy, X => rhoE(X, 0.0));
 
             c.AddBoundaryValue("supersonicInlet", Variables.Density, rho);
-            c.AddBoundaryValue("supersonicInlet", Variables.Velocity.xComponent, u0);
-            c.AddBoundaryValue("supersonicInlet", Variables.Pressure, p);
+            c.AddBoundaryValue("supersonicInlet", CNSVariables.Velocity.xComponent, u0);
+            c.AddBoundaryValue("supersonicInlet", CNSVariables.Pressure, p);
 
             // MMS Sources
             c.CustomContinuitySources.Add(map => new AdHocSourceTerm(map,
@@ -131,8 +132,8 @@ namespace CNS.Tests.MMS {
                     ));
 
             c.Queries.Add("L2ErrorDensity", QueryLibrary.L2Error(Variables.Density, rho));
-            c.Queries.Add("L2ErrorPressure", QueryLibrary.L2Error(Variables.Pressure, p));
-            c.Queries.Add("L2ErrorVelocity", QueryLibrary.L2Error(Variables.Velocity.xComponent, u0));
+            c.Queries.Add("L2ErrorPressure", QueryLibrary.L2Error(CNSVariables.Pressure, p));
+            c.Queries.Add("L2ErrorVelocity", QueryLibrary.L2Error(CNSVariables.Velocity.xComponent, u0));
 
             c.dtMin = 0.0;
             c.dtMax = 1.0;
@@ -202,9 +203,9 @@ namespace CNS.Tests.MMS {
             c.AddVariable(Variables.Density, dgDegree);
             c.AddVariable(Variables.Momentum.xComponent, dgDegree);
             c.AddVariable(Variables.Energy, dgDegree);
-            c.AddVariable(Variables.Velocity.xComponent, dgDegree);
-            c.AddVariable(Variables.Pressure, dgDegree);
-            c.AddVariable(Variables.LocalMachNumber, dgDegree);
+            c.AddVariable(CNSVariables.Velocity.xComponent, dgDegree);
+            c.AddVariable(CNSVariables.Pressure, dgDegree);
+            c.AddVariable(CNSVariables.LocalMachNumber, dgDegree);
 
             c.GridFunc = delegate {
                 double[] nodes = GenericBlas.Linspace(0.0, Math.PI / 2, noOfCellsPerDirection + 1);
@@ -236,9 +237,9 @@ namespace CNS.Tests.MMS {
             c.InitialValues_Evaluators.Add(Variables.Energy, X => rhoE(X, 0.0));
 
             c.AddBoundaryValue("supersonicInlet", Variables.Density, rho);
-            c.AddBoundaryValue("supersonicInlet", Variables.Velocity.xComponent, u0);
-            c.AddBoundaryValue("supersonicInlet", Variables.Velocity.yComponent, u1);
-            c.AddBoundaryValue("supersonicInlet", Variables.Pressure, p);
+            c.AddBoundaryValue("supersonicInlet", CNSVariables.Velocity.xComponent, u0);
+            c.AddBoundaryValue("supersonicInlet", CNSVariables.Velocity.yComponent, u1);
+            c.AddBoundaryValue("supersonicInlet", CNSVariables.Pressure, p);
 
             // MMS Sources
             c.CustomContinuitySources.Add(map => new AdHocSourceTerm(map,

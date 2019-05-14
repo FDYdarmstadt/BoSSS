@@ -17,6 +17,7 @@ limitations under the License.
 using BoSSS.Foundation.Grid.Classic;
 using BoSSS.Foundation.XDG;
 using BoSSS.Platform.LinAlg;
+using BoSSS.Solution.CompressibleFlowCommon;
 using CNS.Convection;
 using CNS.EquationSystem;
 using CNS.IBM;
@@ -287,9 +288,9 @@ namespace CNS.Tests.MovingIBMTests {
             c.AgglomerationThreshold = agglomerationThreshold;
 
             c.InitialValues_Evaluators.Add(Variables.Density, X => 1.0);
-            c.InitialValues_Evaluators.Add(Variables.Velocity.xComponent, X => pistonVelocity);
-            c.InitialValues_Evaluators.Add(Variables.Velocity.yComponent, X => 0.0);
-            c.InitialValues_Evaluators.Add(Variables.Pressure, X => 1.0);
+            c.InitialValues_Evaluators.Add(CNSVariables.Velocity.xComponent, X => pistonVelocity);
+            c.InitialValues_Evaluators.Add(CNSVariables.Velocity.yComponent, X => 0.0);
+            c.InitialValues_Evaluators.Add(CNSVariables.Pressure, X => 1.0);
 
             c.LevelSetFunction = delegate (double[] X, double time) {
                 double newLevelSetPosition = initialLevelSetPosition + pistonVelocity * time;
@@ -297,12 +298,12 @@ namespace CNS.Tests.MovingIBMTests {
             };
             c.LevelSetVelocity = (X, t) => new Vector(pistonVelocity, 0.0);
 
-            c.AddBoundaryValue("adiabaticSlipWall", Variables.Velocity.xComponent, X => pistonVelocity);
-            c.AddBoundaryValue("adiabaticSlipWall", Variables.Velocity.yComponent, X => 0.0);
+            c.AddBoundaryValue("adiabaticSlipWall", CNSVariables.Velocity.xComponent, X => pistonVelocity);
+            c.AddBoundaryValue("adiabaticSlipWall", CNSVariables.Velocity.yComponent, X => 0.0);
             c.AddBoundaryValue("supersonicInlet", Variables.Density, X => 1.0);
-            c.AddBoundaryValue("supersonicInlet", Variables.Velocity[0], X => pistonVelocity);
-            c.AddBoundaryValue("supersonicInlet", Variables.Velocity[1], X => 0.0);
-            c.AddBoundaryValue("supersonicInlet", Variables.Pressure, X => 1.0);
+            c.AddBoundaryValue("supersonicInlet", CNSVariables.Velocity[0], X => pistonVelocity);
+            c.AddBoundaryValue("supersonicInlet", CNSVariables.Velocity[1], X => 0.0);
+            c.AddBoundaryValue("supersonicInlet", CNSVariables.Pressure, X => 1.0);
 
             c.Queries.Add("L2ErrorDensity", IBMQueries.L2Error(Variables.Density, (X, t) => 1.0));
             c.Queries.Add("L2ErrorXMomentum", IBMQueries.L2Error(Variables.Momentum.xComponent, (X, t) => 1.0));

@@ -14,32 +14,25 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+using static BoSSS.Solution.CompressibleFlowCommon.Variable;
 
-namespace CNS.EquationSystem {
-
-    /// <summary>
-    /// Implements a flux builder that doesn't do anything
-    /// </summary>
-    public class NullFluxBuilder : FluxBuilder {
+namespace BoSSS.Solution.CompressibleFlowCommon {
+    public class Variables {
 
         /// <summary>
-        /// The one and only instance of this class
+        /// <see cref="VariableTypes.Density"/>
         /// </summary>
-        public static readonly NullFluxBuilder Instance = new NullFluxBuilder();
+        public static readonly Variable Density = new Variable("rho", VariableTypes.Density);
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="NullFluxBuilder"/>
-        /// class.
+        /// <see cref="VariableTypes.Momentum"/>
         /// </summary>
-        private NullFluxBuilder()
-            : base(null, null, null, double.NaN) {
-        }
+        public static readonly Vector<Variable> Momentum = new Vector<Variable>(
+            d => new Variable("m" + d, VariableTypes.Momentum));
 
         /// <summary>
-        /// Does nothing
+        /// <see cref="VariableTypes.Energy"/>
         /// </summary>
-        /// <param name="op">Irrelevant</param>
-        public override void BuildFluxes(Operator op) {
-        }
+        public static readonly Variable Energy = new Variable("rhoE", VariableTypes.Energy);
     }
 }

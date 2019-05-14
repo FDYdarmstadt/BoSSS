@@ -17,6 +17,7 @@ limitations under the License.
 using BoSSS.Foundation;
 using BoSSS.Foundation.Grid;
 using BoSSS.Foundation.Quadrature;
+using BoSSS.Solution.CompressibleFlowCommon;
 using BoSSS.Solution.CompressibleFlowCommon.ShockCapturing;
 using System.Collections.Generic;
 using System.Linq;
@@ -46,21 +47,21 @@ namespace CNS.ShockCapturing {
         public void LimitFieldValues(IEnumerable<DGField> ConservativeVariables, IEnumerable<DGField> DerivedFields) {
 
             var GridData = ConservativeVariables.First().GridDat;
-            
+
             // Make sure primitive fields are up-to-date
             for (int d = 0; d < CNSEnvironment.NumberOfDimensions; d++) {
-                Variables.Velocity[d].UpdateFunction(
-                    DerivedFields.Single(f => f.Identification == Variables.Velocity[d].Name),
+                CNSVariables.Velocity[d].UpdateFunction(
+                    DerivedFields.Single(f => f.Identification == CNSVariables.Velocity[d].Name),
                     CellMask.GetFullMask(GridData),
                     CNSEnvironment.Program);
             }
-            Variables.Pressure.UpdateFunction(
-                DerivedFields.Single(f => f.Identification == Variables.Pressure.Name),
+            CNSVariables.Pressure.UpdateFunction(
+                DerivedFields.Single(f => f.Identification == CNSVariables.Pressure.Name),
                 CellMask.GetFullMask(GridData),
                 CNSEnvironment.Program);
 
             // Limit and store primitive fields
-            string[] primitiveFieldNames = { Variables.Density, Variables.Velocity.xComponent, Variables.Velocity.yComponent, Variables.Pressure };
+            string[] primitiveFieldNames = { Variables.Density, CNSVariables.Velocity.xComponent, CNSVariables.Velocity.yComponent, CNSVariables.Pressure };
             DGField[] primitiveFields = new DGField[primitiveFieldNames.Length];
             CellMask shockedCells = Sensor.GetShockedCellMask(GridData, sensorLimit, cellSize, dgDegree);
             int k = 0;

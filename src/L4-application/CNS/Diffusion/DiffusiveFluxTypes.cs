@@ -91,7 +91,7 @@ namespace CNS.Diffusion {
                         throw new Exception(
                             "SIPG is only valid for DG degrees greater than 0");
                     }
-                    return new OptimizedSIPGFluxBuilder(control, boundaryMap, speciesMap, gridData);
+                    return new OptimizedSIPGFluxBuilder(control, boundaryMap, speciesMap, gridData, control.MachNumber);
 
                 case DiffusiveFluxTypes.None:
                     return NullFluxBuilder.Instance;

@@ -18,6 +18,7 @@ using BoSSS.Foundation.Grid;
 using BoSSS.Foundation.Grid.Classic;
 using BoSSS.Foundation.XDG;
 using BoSSS.Platform.LinAlg;
+using BoSSS.Solution.CompressibleFlowCommon;
 using BoSSS.Solution.Queries;
 using CNS.Convection;
 using CNS.EquationSystem;
@@ -125,10 +126,10 @@ namespace CNS.Tests.IBMTests {
             if (AV) {
                 Variable sensorVariable = Variables.Density;
                 c.ShockSensor = new PerssonSensor(sensorVariable, sensorLimit);
-                c.AddVariable(Variables.ShockSensor, 0);
+                c.AddVariable(CNSVariables.ShockSensor, 0);
                 //c.ArtificialViscosityLaw = new SmoothedHeavisideArtificialViscosityLaw(c.ShockSensor, dgDegree, sensorLimit, epsilon0, kappa, lambdaMax: lambdaMax);    // fix lambdaMax
                 c.ArtificialViscosityLaw = new SmoothedHeavisideArtificialViscosityLaw(c.ShockSensor, dgDegree, sensorLimit, epsilon0, kappa);    // dynamic lambdaMax
-                c.AddVariable(Variables.ArtificialViscosity, 2);
+                c.AddVariable(CNSVariables.ArtificialViscosity, 2);
             }
 
             // ### Time-Stepping ###
@@ -152,23 +153,23 @@ namespace CNS.Tests.IBMTests {
             c.AddVariable(Variables.Momentum.yComponent, dgDegree);
             c.AddVariable(Variables.Energy, dgDegree);
 
-            //c.AddVariable(Variables.Velocity.xComponent, dgDegree);
-            //c.AddVariable(Variables.Velocity.yComponent, dgDegree);
-            //c.AddVariable(Variables.Pressure, dgDegree);
+            //c.AddVariable(CNSVariables.Velocity.xComponent, dgDegree);
+            //c.AddVariable(CNSVariables.Velocity.yComponent, dgDegree);
+            //c.AddVariable(CNSVariables.Pressure, dgDegree);
 
-            //c.AddVariable(Variables.Entropy, dgDegree);
-            //c.AddVariable(Variables.LocalMachNumber, dgDegree);
-            //c.AddVariable(Variables.CFL, 0);
-            //c.AddVariable(Variables.CFLConvective, 0);
+            //c.AddVariable(CNSVariables.Entropy, dgDegree);
+            //c.AddVariable(CNSVariables.LocalMachNumber, dgDegree);
+            //c.AddVariable(CNSVariables.CFL, 0);
+            //c.AddVariable(CNSVariables.CFLConvective, 0);
 
             //if (AV) {
-            //    c.AddVariable(Variables.CFLArtificialViscosity, 0);
+            //    c.AddVariable(CNSVariables.CFLArtificialViscosity, 0);
             //}
 
             //if (c.ExplicitScheme.Equals(ExplicitSchemes.LTS)) {
-            //    c.AddVariable(Variables.LTSClusters, 0);
+            //    c.AddVariable(CNSVariables.LTSClusters, 0);
             //}
-            //c.AddVariable(Variables.Rank, 0);
+            //c.AddVariable(CNSVariables.Rank, 0);
 
             // ### Grid ###
             c.GridFunc = delegate {
@@ -232,9 +233,9 @@ namespace CNS.Tests.IBMTests {
             Func<double, double> Jump = x => x <= discontinuityPosition ? 0 : 1;
 
             c.InitialValues_Evaluators.Add(Variables.Density, X => densityLeft - SmoothJump(DistanceToInitialShock(X, t: 0.0)) * (densityLeft - densityRight));
-            c.InitialValues_Evaluators.Add(Variables.Pressure, X => pressureLeft - SmoothJump(DistanceToInitialShock(X, t: 0.0)) * (pressureLeft - pressureRight));
-            c.InitialValues_Evaluators.Add(Variables.Velocity.xComponent, X => velocityX);
-            c.InitialValues_Evaluators.Add(Variables.Velocity.yComponent, X => velocityY);
+            c.InitialValues_Evaluators.Add(CNSVariables.Pressure, X => pressureLeft - SmoothJump(DistanceToInitialShock(X, t: 0.0)) * (pressureLeft - pressureRight));
+            c.InitialValues_Evaluators.Add(CNSVariables.Velocity.xComponent, X => velocityX);
+            c.InitialValues_Evaluators.Add(CNSVariables.Velocity.yComponent, X => velocityY);
 
             // ### Time configuration ###
             c.dtMin = 0.0;

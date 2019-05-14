@@ -247,12 +247,12 @@ namespace CNS {
                         program.SpeciesMap,
                         explicitEulerBasedTimestepper.SubGrid.VolumeMask);
                     // Note: When being called, artificial viscosity is updated in the _ENTIRE_ (fluid) domain
-                    var avField = program.WorkingSet.DerivedFields[Variables.ArtificialViscosity];
-                    Variables.ArtificialViscosity.UpdateFunction(avField, program.SpeciesMap.SubGrid.VolumeMask, program);
+                    var avField = program.WorkingSet.DerivedFields[CNSVariables.ArtificialViscosity];
+                    CNSVariables.ArtificialViscosity.UpdateFunction(avField, program.SpeciesMap.SubGrid.VolumeMask, program);
 
                     // Test
-                    //double sensorNorm = program.WorkingSet.DerivedFields[Variables.ShockSensor].L2Norm();
-                    //double avNorm = program.WorkingSet.DerivedFields[Variables.ArtificialViscosity].L2Norm();
+                    //double sensorNorm = program.WorkingSet.DerivedFields[CNSVariables.ShockSensor].L2Norm();
+                    //double avNorm = program.WorkingSet.DerivedFields[CNSVariables.ArtificialViscosity].L2Norm();
                     //Console.WriteLine("\r\nThis is OnBeforeComputeChangeRate");
                     //Console.WriteLine("SensorNeu: {0}", sensorNorm);
                     //Console.WriteLine("AVNeu: {0}", avNorm);

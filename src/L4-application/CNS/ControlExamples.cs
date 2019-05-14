@@ -102,11 +102,11 @@ namespace CNS {
             c.AddVariable(Variables.Momentum.xComponent, dgDegree);
             c.AddVariable(Variables.Momentum.yComponent, dgDegree);
             c.AddVariable(Variables.Energy, dgDegree);
-            c.AddVariable(Variables.Velocity.xComponent, dgDegree);
-            c.AddVariable(Variables.Velocity.yComponent, dgDegree);
-            c.AddVariable(Variables.Pressure, dgDegree);
-            c.AddVariable(Variables.Entropy, dgDegree);
-            c.AddVariable(Variables.LocalMachNumber, dgDegree);
+            c.AddVariable(CNSVariables.Velocity.xComponent, dgDegree);
+            c.AddVariable(CNSVariables.Velocity.yComponent, dgDegree);
+            c.AddVariable(CNSVariables.Pressure, dgDegree);
+            c.AddVariable(CNSVariables.Entropy, dgDegree);
+            c.AddVariable(CNSVariables.LocalMachNumber, dgDegree);
 
             c.GridFunc = delegate {
                 double[] nodes = GenericBlas.Linspace(-10, 10, noOfCellsPerDirection + 1);
@@ -139,15 +139,15 @@ namespace CNS {
             Func<double[], double, double> v = (X, t) => Math.Cos(phi(X, t)) * uAbs(X, t);
 
             c.InitialValues_Evaluators.Add(Variables.Density, X => rho(X, 0.0));
-            c.InitialValues_Evaluators.Add(Variables.Velocity.xComponent, X => u(X, 0.0));
-            c.InitialValues_Evaluators.Add(Variables.Velocity.yComponent, X => v(X, 0.0));
-            c.InitialValues_Evaluators.Add(Variables.Pressure, X => p(X, 0.0));
+            c.InitialValues_Evaluators.Add(CNSVariables.Velocity.xComponent, X => u(X, 0.0));
+            c.InitialValues_Evaluators.Add(CNSVariables.Velocity.yComponent, X => v(X, 0.0));
+            c.InitialValues_Evaluators.Add(CNSVariables.Pressure, X => p(X, 0.0));
 
 
             c.Queries.Add("L2ErrorDensity", QueryLibrary.L2Error(Variables.Density, rho));
-            c.Queries.Add("L2ErrorPressure", QueryLibrary.L2Error(Variables.Pressure, p));
-            c.Queries.Add("L2ErrorVelocity", QueryLibrary.L2Error(Variables.Velocity.xComponent, u));
-            c.Queries.Add("L2ErrorEntropy", QueryLibrary.L2Error(Variables.Entropy, (X, t) => 1.0));
+            c.Queries.Add("L2ErrorPressure", QueryLibrary.L2Error(CNSVariables.Pressure, p));
+            c.Queries.Add("L2ErrorVelocity", QueryLibrary.L2Error(CNSVariables.Velocity.xComponent, u));
+            c.Queries.Add("L2ErrorEntropy", QueryLibrary.L2Error(CNSVariables.Entropy, (X, t) => 1.0));
 
             c.ProjectName = "IsentropivVortex_Mach=" + c.MachNumber + "_cells=" + noOfCellsPerDirection + "_p=" + dgDegree + "_flux=" + c.ConvectiveFluxType;
 
@@ -218,9 +218,9 @@ namespace CNS {
             c.AddVariable(Variables.Momentum.xComponent, dgDegree);
             c.AddVariable(Variables.Momentum.yComponent, dgDegree);
             c.AddVariable(Variables.Energy, dgDegree);
-            c.AddVariable(Variables.Velocity.xComponent, dgDegree);
-            c.AddVariable(Variables.Velocity.yComponent, dgDegree);
-            c.AddVariable(Variables.Pressure, dgDegree);
+            c.AddVariable(CNSVariables.Velocity.xComponent, dgDegree);
+            c.AddVariable(CNSVariables.Velocity.yComponent, dgDegree);
+            c.AddVariable(CNSVariables.Pressure, dgDegree);
 
             double extent = 10.0;
             c.GridFunc = delegate {
@@ -241,11 +241,11 @@ namespace CNS {
             Func<double[], double> pulse =
                 X => (1 + 0.01 * Math.Exp(-(X[0] * X[0] + X[1] * X[1]) / 2 / 0.8 / 0.8));
             c.InitialValues_Evaluators.Add(Variables.Density, X => refState.Density * pulse(X));
-            c.InitialValues_Evaluators.Add(Variables.Velocity.xComponent, X => refState.Velocity.x);
-            c.InitialValues_Evaluators.Add(Variables.Velocity.yComponent, X => refState.Velocity.y);
-            c.InitialValues_Evaluators.Add(Variables.Pressure, X => refState.Pressure * pulse(X));
+            c.InitialValues_Evaluators.Add(CNSVariables.Velocity.xComponent, X => refState.Velocity.x);
+            c.InitialValues_Evaluators.Add(CNSVariables.Velocity.yComponent, X => refState.Velocity.y);
+            c.InitialValues_Evaluators.Add(CNSVariables.Pressure, X => refState.Pressure * pulse(X));
 
-            c.AddBoundaryValue("subsonicOutlet", Variables.Pressure, (X, t) => refState.Pressure);
+            c.AddBoundaryValue("subsonicOutlet", CNSVariables.Pressure, (X, t) => refState.Pressure);
 
             double dampingStart = extent - dampingWidth;
             Func<double[], double> quadraticDamping = delegate (double[] x) {
@@ -312,12 +312,12 @@ namespace CNS {
             c.AddVariable(Variables.Momentum.xComponent, dgDegree);
             c.AddVariable(Variables.Momentum.yComponent, dgDegree);
             c.AddVariable(Variables.Energy, dgDegree);
-            c.AddVariable(Variables.Velocity.xComponent, dgDegree);
-            c.AddVariable(Variables.Velocity.yComponent, dgDegree);
-            c.AddVariable(Variables.Pressure, dgDegree);
-            c.AddVariable(Variables.Temperature, dgDegree);
-            c.AddVariable(Variables.LocalMachNumber, dgDegree);
-            c.AddVariable(Variables.Rank, 0);
+            c.AddVariable(CNSVariables.Velocity.xComponent, dgDegree);
+            c.AddVariable(CNSVariables.Velocity.yComponent, dgDegree);
+            c.AddVariable(CNSVariables.Pressure, dgDegree);
+            c.AddVariable(CNSVariables.Temperature, dgDegree);
+            c.AddVariable(CNSVariables.LocalMachNumber, dgDegree);
+            c.AddVariable(CNSVariables.Rank, 0);
 
             //Karman_Mesh[-5,10]x[-5,5]
             //bilinear, r=48elements, total=2260:
@@ -372,15 +372,15 @@ namespace CNS {
             c.InitialValues_Evaluators.Add(Variables.Energy, X => 45.14285714);
 
             c.AddBoundaryValue("supersonicInlet", Variables.Density, (X, t) => 1.0);
-            c.AddBoundaryValue("supersonicInlet", Variables.Velocity[0], (X, t) => 1.0);
-            c.AddBoundaryValue("supersonicInlet", Variables.Velocity[1], (X, t) => 0.0);
-            c.AddBoundaryValue("supersonicInlet", Variables.Pressure, (X, t) => 17.85714286);
+            c.AddBoundaryValue("supersonicInlet", CNSVariables.Velocity[0], (X, t) => 1.0);
+            c.AddBoundaryValue("supersonicInlet", CNSVariables.Velocity[1], (X, t) => 0.0);
+            c.AddBoundaryValue("supersonicInlet", CNSVariables.Pressure, (X, t) => 17.85714286);
 
             c.AddBoundaryValue("subsonicInlet", Variables.Density, (X, t) => 1.0);
-            c.AddBoundaryValue("subsonicInlet", Variables.Velocity[0], (X, t) => 1.0);
-            c.AddBoundaryValue("subsonicInlet", Variables.Velocity[1], (X, t) => 0.0);
+            c.AddBoundaryValue("subsonicInlet", CNSVariables.Velocity[0], (X, t) => 1.0);
+            c.AddBoundaryValue("subsonicInlet", CNSVariables.Velocity[1], (X, t) => 0.0);
 
-            c.AddBoundaryValue("subsonicOutlet", Variables.Pressure, (X, t) => 17.85714286);
+            c.AddBoundaryValue("subsonicOutlet", CNSVariables.Pressure, (X, t) => 17.85714286);
 
             c.dtMin = 0.0;
             c.dtMax = 1.0;
@@ -460,17 +460,17 @@ namespace CNS {
             Func<double[], double, double> v = (X, t) => Math.Cos(phi(X, t)) * uAbs(X, t);
 
             c.InitialValues_Evaluators.Add(Variables.Density, X => rho(X, 0.0));
-            c.InitialValues_Evaluators.Add(Variables.Velocity.xComponent, X => u(X, 0.0));
-            c.InitialValues_Evaluators.Add(Variables.Velocity.yComponent, X => v(X, 0.0));
-            c.InitialValues_Evaluators.Add(Variables.Pressure, X => p(X, 0.0));
+            c.InitialValues_Evaluators.Add(CNSVariables.Velocity.xComponent, X => u(X, 0.0));
+            c.InitialValues_Evaluators.Add(CNSVariables.Velocity.yComponent, X => v(X, 0.0));
+            c.InitialValues_Evaluators.Add(CNSVariables.Pressure, X => p(X, 0.0));
 
             c.LevelSetFunction = (X, t) => X[1] - levelSetPosition;
 
             c.AddBoundaryValue("adiabaticSlipWall");
             c.AddBoundaryValue("supersonicInlet", Variables.Density, rho);
-            c.AddBoundaryValue("supersonicInlet", Variables.Velocity[0], u);
-            c.AddBoundaryValue("supersonicInlet", Variables.Velocity[1], v);
-            c.AddBoundaryValue("supersonicInlet", Variables.Pressure, p);
+            c.AddBoundaryValue("supersonicInlet", CNSVariables.Velocity[0], u);
+            c.AddBoundaryValue("supersonicInlet", CNSVariables.Velocity[1], v);
+            c.AddBoundaryValue("supersonicInlet", CNSVariables.Pressure, p);
 
             c.Queries.Add("L2ErrorDensity", IBMQueries.L2Error(Variables.Density, rho));
             c.Queries.Add("L2ErrorPressure", IBMQueries.L2Error(state => state.Pressure, p));
@@ -569,16 +569,16 @@ namespace CNS {
 
             double gamma = c.EquationOfState.HeatCapacityRatio;
             c.InitialValues_Evaluators.Add(Variables.Density, X => 1.0);
-            c.InitialValues_Evaluators.Add(Variables.Velocity[0], X => Mach * Math.Sqrt(gamma));
-            c.InitialValues_Evaluators.Add(Variables.Velocity[1], X => 0.0);
-            c.InitialValues_Evaluators.Add(Variables.Pressure, X => 1.0);
+            c.InitialValues_Evaluators.Add(CNSVariables.Velocity[0], X => Mach * Math.Sqrt(gamma));
+            c.InitialValues_Evaluators.Add(CNSVariables.Velocity[1], X => 0.0);
+            c.InitialValues_Evaluators.Add(CNSVariables.Pressure, X => 1.0);
 
             c.LevelSetFunction = (X, t) => X[0] * X[0] + X[1] * X[1] - 1.0 * 1.0;
 
             c.AddBoundaryValue("supersonicInlet", Variables.Density, (X, t) => 1.0);
-            c.AddBoundaryValue("supersonicInlet", Variables.Velocity[0], (X, t) => Mach * Math.Sqrt(gamma));
-            c.AddBoundaryValue("supersonicInlet", Variables.Velocity[1], (X, t) => 0.0);
-            c.AddBoundaryValue("supersonicInlet", Variables.Pressure, (X, t) => 1.0);
+            c.AddBoundaryValue("supersonicInlet", CNSVariables.Velocity[0], (X, t) => Mach * Math.Sqrt(gamma));
+            c.AddBoundaryValue("supersonicInlet", CNSVariables.Velocity[1], (X, t) => 0.0);
+            c.AddBoundaryValue("supersonicInlet", CNSVariables.Pressure, (X, t) => 1.0);
 
             c.AddBoundaryValue("adiabaticSlipWall");
             c.LevelSetBoundaryTag = "adiabaticSlipWall";
@@ -720,9 +720,9 @@ namespace CNS {
             c.LevelSetFunction = (X, t) => X[0] * X[0] + X[1] * X[1] - 1.0 * 1.0;
 
             c.AddBoundaryValue("supersonicInlet", Variables.Density, (X, t) => 1.0);
-            c.AddBoundaryValue("supersonicInlet", Variables.Velocity[0], (X, t) => 1.0);
-            c.AddBoundaryValue("supersonicInlet", Variables.Velocity[1], (X, t) => 0.0);
-            c.AddBoundaryValue("supersonicInlet", Variables.Pressure, (X, t) => 17.85714286);
+            c.AddBoundaryValue("supersonicInlet", CNSVariables.Velocity[0], (X, t) => 1.0);
+            c.AddBoundaryValue("supersonicInlet", CNSVariables.Velocity[1], (X, t) => 0.0);
+            c.AddBoundaryValue("supersonicInlet", CNSVariables.Pressure, (X, t) => 17.85714286);
 
             c.AddBoundaryValue("adiabaticWall");
             c.LevelSetBoundaryTag = "adiabaticWall";
@@ -809,15 +809,15 @@ namespace CNS {
 
             double gamma = c.EquationOfState.HeatCapacityRatio;
             c.InitialValues_Evaluators.Add(Variables.Density, X => 1.0);
-            c.InitialValues_Evaluators.Add(Variables.Velocity[0], X => Mach * Math.Sqrt(gamma));
-            c.InitialValues_Evaluators.Add(Variables.Velocity[1], X => 0.0);
-            c.InitialValues_Evaluators.Add(Variables.Pressure, X => 1.0);
+            c.InitialValues_Evaluators.Add(CNSVariables.Velocity[0], X => Mach * Math.Sqrt(gamma));
+            c.InitialValues_Evaluators.Add(CNSVariables.Velocity[1], X => 0.0);
+            c.InitialValues_Evaluators.Add(CNSVariables.Pressure, X => 1.0);
             c.InitialValues_Evaluators.Add(IBMVariables.LevelSet, X => X[0] * X[0] + X[1] * X[1] - 1.0 * 1.0);
 
             c.AddBoundaryValue("supersonicInlet", Variables.Density, (X, t) => 1.0);
-            c.AddBoundaryValue("supersonicInlet", Variables.Velocity[0], (X, t) => Mach * Math.Sqrt(gamma));
-            c.AddBoundaryValue("supersonicInlet", Variables.Velocity[1], (X, t) => 0.0);
-            c.AddBoundaryValue("supersonicInlet", Variables.Pressure, (X, t) => 1.0);
+            c.AddBoundaryValue("supersonicInlet", CNSVariables.Velocity[0], (X, t) => Mach * Math.Sqrt(gamma));
+            c.AddBoundaryValue("supersonicInlet", CNSVariables.Velocity[1], (X, t) => 0.0);
+            c.AddBoundaryValue("supersonicInlet", CNSVariables.Pressure, (X, t) => 1.0);
 
             c.AddBoundaryValue("adiabaticSlipWall");
             c.LevelSetBoundaryTag = "adiabaticSlipWall";
@@ -914,7 +914,7 @@ namespace CNS {
             c.EquationOfState = IdealGas.Air;
             c.MachNumber = 1.0 / Math.Sqrt(c.EquationOfState.HeatCapacityRatio);
 
-            // Primary Variables
+            // Primary CNSVariables
             c.AddVariable(Variables.Density, dgDegree);
             c.AddVariable(Variables.Momentum.xComponent, dgDegree);
             c.AddVariable(Variables.Momentum.yComponent, dgDegree);
@@ -950,16 +950,16 @@ namespace CNS {
             Func<double[], double, double> v = (X, t) => Math.Cos(phi(X, t)) * uAbs(X, t);
 
             c.InitialValues_Evaluators.Add(Variables.Density, X => rho(X, 0.0));
-            c.InitialValues_Evaluators.Add(Variables.Velocity.xComponent, X => u(X, 0.0));
-            c.InitialValues_Evaluators.Add(Variables.Velocity.yComponent, X => v(X, 0.0));
-            c.InitialValues_Evaluators.Add(Variables.Pressure, X => p(X, 0.0));
+            c.InitialValues_Evaluators.Add(CNSVariables.Velocity.xComponent, X => u(X, 0.0));
+            c.InitialValues_Evaluators.Add(CNSVariables.Velocity.yComponent, X => v(X, 0.0));
+            c.InitialValues_Evaluators.Add(CNSVariables.Pressure, X => p(X, 0.0));
             c.InitialValues_Evaluators.Add(IBMVariables.LevelSet, X => X[1] - levelSetPosition);
 
             c.AddBoundaryValue("adiabaticSlipWall");
             c.AddBoundaryValue("supersonicInlet", Variables.Density, rho);
-            c.AddBoundaryValue("supersonicInlet", Variables.Velocity[0], u);
-            c.AddBoundaryValue("supersonicInlet", Variables.Velocity[1], v);
-            c.AddBoundaryValue("supersonicInlet", Variables.Pressure, p);
+            c.AddBoundaryValue("supersonicInlet", CNSVariables.Velocity[0], u);
+            c.AddBoundaryValue("supersonicInlet", CNSVariables.Velocity[1], v);
+            c.AddBoundaryValue("supersonicInlet", CNSVariables.Pressure, p);
             c.LevelSetBoundaryTag = "supersonicInlet";
 
             c.Queries.Add("L2ErrorDensity", IBMQueries.L2Error(Variables.Density, rho));
@@ -1011,7 +1011,7 @@ namespace CNS {
                 c.ActiveOperators |= Operators.ArtificialViscosity;
                 Variable sensorVariable = Variables.Density;
                 c.ShockSensor = new PerssonSensor(sensorVariable, sensorLimit);
-                c.AddVariable(Variables.ShockSensor, 0);
+                c.AddVariable(CNSVariables.ShockSensor, 0);
                 c.ArtificialViscosityLaw = new SmoothedHeavisideArtificialViscosityLaw(c.ShockSensor, dgDegree, sensorLimit, epsilon0, kappa, lambdaMax: 2);
             }
 
@@ -1039,29 +1039,29 @@ namespace CNS {
             c.AddVariable(Variables.Density, dgDegree);
             c.AddVariable(Variables.Momentum.xComponent, dgDegree);
             c.AddVariable(Variables.Energy, dgDegree);
-            c.AddVariable(Variables.Velocity.xComponent, dgDegree);
-            c.AddVariable(Variables.Pressure, dgDegree);
-            c.AddVariable(Variables.Entropy, dgDegree);
-            c.AddVariable(Variables.LocalMachNumber, dgDegree);
-            c.AddVariable(Variables.Rank, 0);
+            c.AddVariable(CNSVariables.Velocity.xComponent, dgDegree);
+            c.AddVariable(CNSVariables.Pressure, dgDegree);
+            c.AddVariable(CNSVariables.Entropy, dgDegree);
+            c.AddVariable(CNSVariables.LocalMachNumber, dgDegree);
+            c.AddVariable(CNSVariables.Rank, 0);
             if (!true1D) {
                 c.AddVariable(Variables.Momentum.yComponent, dgDegree);
-                c.AddVariable(Variables.Velocity.yComponent, dgDegree);
+                c.AddVariable(CNSVariables.Velocity.yComponent, dgDegree);
                 if (AV) {
-                    c.AddVariable(Variables.ArtificialViscosity, 2);
+                    c.AddVariable(CNSVariables.ArtificialViscosity, 2);
                 }
             } else {
                 if (AV) {
-                    c.AddVariable(Variables.ArtificialViscosity, 1);
+                    c.AddVariable(CNSVariables.ArtificialViscosity, 1);
                 }
             }
-            c.AddVariable(Variables.CFL, 0);
-            c.AddVariable(Variables.CFLConvective, 0);
+            c.AddVariable(CNSVariables.CFL, 0);
+            c.AddVariable(CNSVariables.CFLConvective, 0);
             if (AV) {
-                c.AddVariable(Variables.CFLArtificialViscosity, 0);
+                c.AddVariable(CNSVariables.CFLArtificialViscosity, 0);
             }
             if (c.ExplicitScheme.Equals(ExplicitSchemes.LTS)) {
-                c.AddVariable(Variables.LTSClusters, 0);
+                c.AddVariable(CNSVariables.LTSClusters, 0);
             }
 
             c.GridFunc = delegate {
@@ -1127,12 +1127,12 @@ namespace CNS {
             double pressureRight = 0.1;
 
             //c.InitialValues_Evaluators.Add(Variables.Density, X => densityLeft - SmoothJump(DistanceFromPointToLine(X, point, r)) * (densityLeft - densityRight));
-            //c.InitialValues_Evaluators.Add(Variables.Pressure, X => pressureLeft - SmoothJump(DistanceFromPointToLine(X, point, r)) * (pressureLeft - pressureRight));
+            //c.InitialValues_Evaluators.Add(CNSVariables.Pressure, X => pressureLeft - SmoothJump(DistanceFromPointToLine(X, point, r)) * (pressureLeft - pressureRight));
             c.InitialValues_Evaluators.Add(Variables.Density, X => densityLeft - Jump(X[0]) * (densityLeft - densityRight));
-            c.InitialValues_Evaluators.Add(Variables.Pressure, X => pressureLeft - Jump(X[0]) * (pressureLeft - pressureRight));
-            c.InitialValues_Evaluators.Add(Variables.Velocity.xComponent, X => 0.0);
+            c.InitialValues_Evaluators.Add(CNSVariables.Pressure, X => pressureLeft - Jump(X[0]) * (pressureLeft - pressureRight));
+            c.InitialValues_Evaluators.Add(CNSVariables.Velocity.xComponent, X => 0.0);
             if (true1D == false) {
-                c.InitialValues_Evaluators.Add(Variables.Velocity.yComponent, X => 0.0);
+                c.InitialValues_Evaluators.Add(CNSVariables.Velocity.yComponent, X => 0.0);
             }
 
             // Time config
@@ -1192,9 +1192,9 @@ namespace CNS {
             c.AddVariable(Variables.Density, dgDegree);
             c.AddVariable(Variables.Momentum.xComponent, dgDegree);
             c.AddVariable(Variables.Energy, dgDegree);
-            c.AddVariable(Variables.Velocity.xComponent, dgDegree);
-            c.AddVariable(Variables.Pressure, dgDegree);
-            c.AddVariable(Variables.Rank, 0);
+            c.AddVariable(CNSVariables.Velocity.xComponent, dgDegree);
+            c.AddVariable(CNSVariables.Pressure, dgDegree);
+            c.AddVariable(CNSVariables.Rank, 0);
 
             //c.GridFunc = delegate {
             //    double xMin = 0.0;
@@ -1244,13 +1244,13 @@ namespace CNS {
                     Variables.Density,
                     X => stateLeft.Density + (stateRight.Density - stateLeft.Density) * (X[0] - discontinuityPosition).Heaviside());
             c.InitialValues_Evaluators.Add(
-                Variables.Velocity.xComponent,
+                CNSVariables.Velocity.xComponent,
                 X => stateLeft.Velocity.x + (stateRight.Velocity.x - stateLeft.Velocity.x) * (X[0] - discontinuityPosition).Heaviside());
             c.InitialValues_Evaluators.Add(
-                Variables.Pressure,
+                CNSVariables.Pressure,
                 X => stateLeft.Pressure + (stateRight.Pressure - stateLeft.Pressure) * (X[0] - discontinuityPosition).Heaviside());
             if (twoD) {
-                c.InitialValues_Evaluators.Add(Variables.Velocity.yComponent, X => 0);
+                c.InitialValues_Evaluators.Add(CNSVariables.Velocity.yComponent, X => 0);
             }
 
             c.dtMin = 0.0;
@@ -1270,9 +1270,9 @@ namespace CNS {
             double endTime = 0.1;
 
             if (twoD) {
-                c.AddVariable(Variables.ArtificialViscosity, 2);
+                c.AddVariable(CNSVariables.ArtificialViscosity, 2);
             } else {
-                c.AddVariable(Variables.ArtificialViscosity, 1);
+                c.AddVariable(CNSVariables.ArtificialViscosity, 1);
             }
             c.ActiveOperators |= Operators.ArtificialViscosity;
             c.ShockSensor = new PerssonSensor(sensorVariable, sensorLimit);
@@ -1339,7 +1339,7 @@ namespace CNS {
             if (AV) {
                 Variable sensorVariable = Variables.Density;
                 c.ShockSensor = new PerssonSensor(sensorVariable, sensorLimit);
-                c.AddVariable(Variables.ShockSensor, 0);
+                c.AddVariable(CNSVariables.ShockSensor, 0);
                 c.ArtificialViscosityLaw = new SmoothedHeavisideArtificialViscosityLaw(c.ShockSensor, dgDegree, sensorLimit, epsilon0, kappa, lambdaMax: 2);
             }
 
@@ -1370,21 +1370,21 @@ namespace CNS {
             c.AddVariable(Variables.Momentum.xComponent, dgDegree);
             c.AddVariable(Variables.Momentum.yComponent, dgDegree);
             c.AddVariable(Variables.Energy, dgDegree);
-            c.AddVariable(Variables.Velocity.xComponent, dgDegree);
-            c.AddVariable(Variables.Velocity.yComponent, dgDegree);
-            c.AddVariable(Variables.Pressure, dgDegree);
-            c.AddVariable(Variables.Entropy, dgDegree);
-            c.AddVariable(Variables.LocalMachNumber, dgDegree);
-            c.AddVariable(Variables.CFL, 0);
-            c.AddVariable(Variables.CFLConvective, 0);
+            c.AddVariable(CNSVariables.Velocity.xComponent, dgDegree);
+            c.AddVariable(CNSVariables.Velocity.yComponent, dgDegree);
+            c.AddVariable(CNSVariables.Pressure, dgDegree);
+            c.AddVariable(CNSVariables.Entropy, dgDegree);
+            c.AddVariable(CNSVariables.LocalMachNumber, dgDegree);
+            c.AddVariable(CNSVariables.CFL, 0);
+            c.AddVariable(CNSVariables.CFLConvective, 0);
             if (AV) {
-                c.AddVariable(Variables.CFLArtificialViscosity, 0);
-                c.AddVariable(Variables.ArtificialViscosity, 2);
+                c.AddVariable(CNSVariables.CFLArtificialViscosity, 0);
+                c.AddVariable(CNSVariables.ArtificialViscosity, 2);
             }
             if (c.ExplicitScheme.Equals(ExplicitSchemes.LTS)) {
-                c.AddVariable(Variables.LTSClusters, 0);
+                c.AddVariable(CNSVariables.LTSClusters, 0);
             }
-            c.AddVariable(Variables.Rank, 0);
+            c.AddVariable(CNSVariables.Rank, 0);
 
             // ### Grid ###
             double xMin = 0;
@@ -1437,11 +1437,11 @@ namespace CNS {
             double pressureRight = 0.1;
             Func<double, double> Jump = (x => x <= 0.5 ? 0 : 1);
             //c.InitialValues_Evaluators.Add(Variables.Density, X => densityLeft - SmoothJump(DistanceFromPointToLine(X, p, r)) * (densityLeft - densityRight));
-            //c.InitialValues_Evaluators.Add(Variables.Pressure, X => pressureLeft - SmoothJump(DistanceFromPointToLine(X, p, r)) * (pressureLeft - pressureRight));
+            //c.InitialValues_Evaluators.Add(CNSVariables.Pressure, X => pressureLeft - SmoothJump(DistanceFromPointToLine(X, p, r)) * (pressureLeft - pressureRight));
             c.InitialValues_Evaluators.Add(Variables.Density, X => densityLeft - Jump(X[0]) * (densityLeft - densityRight));
-            c.InitialValues_Evaluators.Add(Variables.Pressure, X => pressureLeft - Jump(X[0]) * (pressureLeft - pressureRight));
-            c.InitialValues_Evaluators.Add(Variables.Velocity.xComponent, X => 0.0);
-            c.InitialValues_Evaluators.Add(Variables.Velocity.yComponent, X => 0.0);
+            c.InitialValues_Evaluators.Add(CNSVariables.Pressure, X => pressureLeft - Jump(X[0]) * (pressureLeft - pressureRight));
+            c.InitialValues_Evaluators.Add(CNSVariables.Velocity.xComponent, X => 0.0);
+            c.InitialValues_Evaluators.Add(CNSVariables.Velocity.yComponent, X => 0.0);
 
             // ### Time configuration ###
             c.dtMin = 0.0;
@@ -1548,25 +1548,25 @@ namespace CNS {
             c.AddVariable(Variables.Density, dgDegree);
             c.AddVariable(Variables.Momentum.xComponent, dgDegree);
             c.AddVariable(Variables.Momentum.yComponent, dgDegree);
-            c.AddVariable(Variables.Velocity.xComponent, dgDegree);
-            c.AddVariable(Variables.Velocity.yComponent, dgDegree);
-            c.AddVariable(Variables.Pressure, dgDegree);
+            c.AddVariable(CNSVariables.Velocity.xComponent, dgDegree);
+            c.AddVariable(CNSVariables.Velocity.yComponent, dgDegree);
+            c.AddVariable(CNSVariables.Pressure, dgDegree);
             c.AddVariable(Variables.Energy, dgDegree);
 
-            c.AddVariable(Variables.Entropy, dgDegree);
-            c.AddVariable(Variables.LocalMachNumber, dgDegree);
-            c.AddVariable(Variables.Rank, 0);
-            c.AddVariable(Variables.ShockSensor, 0);
+            c.AddVariable(CNSVariables.Entropy, dgDegree);
+            c.AddVariable(CNSVariables.LocalMachNumber, dgDegree);
+            c.AddVariable(CNSVariables.Rank, 0);
+            c.AddVariable(CNSVariables.ShockSensor, 0);
 
             if (AV) {
-                c.AddVariable(Variables.ArtificialViscosity, 2);
+                c.AddVariable(CNSVariables.ArtificialViscosity, 2);
             }
 
-            c.AddVariable(Variables.CFL, 0);
-            c.AddVariable(Variables.CFLConvective, 0);
-            c.AddVariable(Variables.CFLArtificialViscosity, 0);
+            c.AddVariable(CNSVariables.CFL, 0);
+            c.AddVariable(CNSVariables.CFLConvective, 0);
+            c.AddVariable(CNSVariables.CFLArtificialViscosity, 0);
             if (c.ExplicitScheme.Equals(ExplicitSchemes.LTS)) {
-                c.AddVariable(Variables.LTSClusters, 0);
+                c.AddVariable(CNSVariables.LTSClusters, 0);
             }
 
             c.GridFunc = delegate {
@@ -1638,16 +1638,16 @@ namespace CNS {
             double velocityY = 0.0;
 
             c.AddBoundaryValue("SubsonicInlet", Variables.Density, (X, t) => densityLeft);
-            c.AddBoundaryValue("SubsonicInlet", Variables.Velocity.xComponent, (X, t) => velocityXLeft);
-            c.AddBoundaryValue("SubsonicInlet", Variables.Velocity.yComponent, (X, t) => velocityY);
-            c.AddBoundaryValue("SubsonicOutlet", Variables.Pressure, (X, t) => pressure);
+            c.AddBoundaryValue("SubsonicInlet", CNSVariables.Velocity.xComponent, (X, t) => velocityXLeft);
+            c.AddBoundaryValue("SubsonicInlet", CNSVariables.Velocity.yComponent, (X, t) => velocityY);
+            c.AddBoundaryValue("SubsonicOutlet", CNSVariables.Pressure, (X, t) => pressure);
             c.AddBoundaryValue("AdiabaticSlipWall");
 
             // Initial conditions
             c.InitialValues_Evaluators.Add(Variables.Density, X => densityLeft - SmoothJump(DistanceToLine(X, 0)) * (densityLeft - densityRight));
-            c.InitialValues_Evaluators.Add(Variables.Pressure, X => pressure);
-            c.InitialValues_Evaluators.Add(Variables.Velocity.xComponent, X => velocityXLeft);
-            c.InitialValues_Evaluators.Add(Variables.Velocity.yComponent, X => velocityY);
+            c.InitialValues_Evaluators.Add(CNSVariables.Pressure, X => pressure);
+            c.InitialValues_Evaluators.Add(CNSVariables.Velocity.xComponent, X => velocityXLeft);
+            c.InitialValues_Evaluators.Add(CNSVariables.Velocity.yComponent, X => velocityY);
 
             // Time config 
             c.dtMin = 0.0;
@@ -1720,23 +1720,23 @@ namespace CNS {
             c.AddVariable(Variables.Density, dgDegree);
             c.AddVariable(Variables.Momentum.xComponent, dgDegree);
             c.AddVariable(Variables.Momentum.yComponent, dgDegree);
-            c.AddVariable(Variables.Velocity.xComponent, dgDegree);
-            c.AddVariable(Variables.Velocity.yComponent, dgDegree);
-            c.AddVariable(Variables.Pressure, dgDegree);
+            c.AddVariable(CNSVariables.Velocity.xComponent, dgDegree);
+            c.AddVariable(CNSVariables.Velocity.yComponent, dgDegree);
+            c.AddVariable(CNSVariables.Pressure, dgDegree);
             c.AddVariable(Variables.Energy, dgDegree);
 
-            c.AddVariable(Variables.Entropy, dgDegree);
-            c.AddVariable(Variables.LocalMachNumber, dgDegree);
-            c.AddVariable(Variables.Rank, 0);
-            c.AddVariable(Variables.ShockSensor, 0);
+            c.AddVariable(CNSVariables.Entropy, dgDegree);
+            c.AddVariable(CNSVariables.LocalMachNumber, dgDegree);
+            c.AddVariable(CNSVariables.Rank, 0);
+            c.AddVariable(CNSVariables.ShockSensor, 0);
 
             if (AV) {
-                c.AddVariable(Variables.ArtificialViscosity, 2);
+                c.AddVariable(CNSVariables.ArtificialViscosity, 2);
             }
 
-            c.AddVariable(Variables.CFL, 0);
+            c.AddVariable(CNSVariables.CFL, 0);
             if (c.ExplicitScheme.Equals(ExplicitSchemes.LTS)) {
-                c.AddVariable(Variables.LTSClusters, 0);
+                c.AddVariable(CNSVariables.LTSClusters, 0);
             }
 
             c.GridFunc = delegate {
@@ -1808,16 +1808,16 @@ namespace CNS {
             double velocityY = 0.0;
 
             c.AddBoundaryValue("SubsonicInlet", Variables.Density, (X, t) => densityLeft);
-            c.AddBoundaryValue("SubsonicInlet", Variables.Velocity.xComponent, (X, t) => velocityXLeft);
-            c.AddBoundaryValue("SubsonicInlet", Variables.Velocity.yComponent, (X, t) => velocityY);
-            c.AddBoundaryValue("SubsonicOutlet", Variables.Pressure, (X, t) => pressure);
+            c.AddBoundaryValue("SubsonicInlet", CNSVariables.Velocity.xComponent, (X, t) => velocityXLeft);
+            c.AddBoundaryValue("SubsonicInlet", CNSVariables.Velocity.yComponent, (X, t) => velocityY);
+            c.AddBoundaryValue("SubsonicOutlet", CNSVariables.Pressure, (X, t) => pressure);
             c.AddBoundaryValue("AdiabaticSlipWall");
 
             // Initial conditions
             c.InitialValues_Evaluators.Add(Variables.Density, X => densityLeft - SmoothJump(DistanceToLine(X, 0)) * (densityLeft - densityRight));
-            c.InitialValues_Evaluators.Add(Variables.Pressure, X => pressure);
-            c.InitialValues_Evaluators.Add(Variables.Velocity.xComponent, X => velocityXLeft);
-            c.InitialValues_Evaluators.Add(Variables.Velocity.yComponent, X => velocityY);
+            c.InitialValues_Evaluators.Add(CNSVariables.Pressure, X => pressure);
+            c.InitialValues_Evaluators.Add(CNSVariables.Velocity.xComponent, X => velocityXLeft);
+            c.InitialValues_Evaluators.Add(CNSVariables.Velocity.yComponent, X => velocityY);
 
             // Time config 
             c.dtMin = 0.0;
@@ -1863,7 +1863,7 @@ namespace CNS {
             // Shock-capturing
             Variable sensorVariable = Variables.Density;
             c.ShockSensor = new PerssonSensor(sensorVariable, sensorLimit);
-            c.AddVariable(Variables.ShockSensor, 0);
+            c.AddVariable(CNSVariables.ShockSensor, 0);
 
             if (AV) {
                 double epsilon0 = 1.0;
@@ -1916,23 +1916,23 @@ namespace CNS {
             c.AddVariable(Variables.Momentum.xComponent, dgDegree);
             c.AddVariable(Variables.Momentum.yComponent, dgDegree);
             c.AddVariable(Variables.Energy, dgDegree);
-            c.AddVariable(Variables.Velocity.xComponent, dgDegree);
-            c.AddVariable(Variables.Velocity.yComponent, dgDegree);
-            c.AddVariable(Variables.Pressure, dgDegree);
+            c.AddVariable(CNSVariables.Velocity.xComponent, dgDegree);
+            c.AddVariable(CNSVariables.Velocity.yComponent, dgDegree);
+            c.AddVariable(CNSVariables.Pressure, dgDegree);
 
-            c.AddVariable(Variables.Entropy, dgDegree);
-            c.AddVariable(Variables.LocalMachNumber, dgDegree);
-            c.AddVariable(Variables.Rank, 0);
-            c.AddVariable(Variables.CFL, 0);
-            c.AddVariable(Variables.CFLConvective, 0);
+            c.AddVariable(CNSVariables.Entropy, dgDegree);
+            c.AddVariable(CNSVariables.LocalMachNumber, dgDegree);
+            c.AddVariable(CNSVariables.Rank, 0);
+            c.AddVariable(CNSVariables.CFL, 0);
+            c.AddVariable(CNSVariables.CFLConvective, 0);
 
             if (AV) {
-                c.AddVariable(Variables.ArtificialViscosity, 2);
-                c.AddVariable(Variables.CFLArtificialViscosity, 0);
+                c.AddVariable(CNSVariables.ArtificialViscosity, 2);
+                c.AddVariable(CNSVariables.CFLArtificialViscosity, 0);
             }
 
             if (c.ExplicitScheme.Equals(ExplicitSchemes.LTS)) {
-                c.AddVariable(Variables.LTSClusters, 0);
+                c.AddVariable(CNSVariables.LTSClusters, 0);
             }
 
             c.GridFunc = delegate {
@@ -1990,9 +1990,9 @@ namespace CNS {
             double pressureRight = 0.1;
 
             c.InitialValues_Evaluators.Add(Variables.Density, X => densityLeft - SmoothJump(DistanceFromPointToLine(X, p, r)) * (densityLeft - densityRight));
-            c.InitialValues_Evaluators.Add(Variables.Pressure, X => pressureLeft - SmoothJump(DistanceFromPointToLine(X, p, r)) * (pressureLeft - pressureRight));
-            c.InitialValues_Evaluators.Add(Variables.Velocity.xComponent, X => 0.0);
-            c.InitialValues_Evaluators.Add(Variables.Velocity.yComponent, X => 0.0);
+            c.InitialValues_Evaluators.Add(CNSVariables.Pressure, X => pressureLeft - SmoothJump(DistanceFromPointToLine(X, p, r)) * (pressureLeft - pressureRight));
+            c.InitialValues_Evaluators.Add(CNSVariables.Velocity.xComponent, X => 0.0);
+            c.InitialValues_Evaluators.Add(CNSVariables.Velocity.yComponent, X => 0.0);
 
             // Time config
             c.dtMin = 0.0;
@@ -2083,30 +2083,30 @@ namespace CNS {
             c.AddVariable(Variables.Momentum.xComponent, dgDegree);
             c.AddVariable(Variables.Momentum.yComponent, dgDegree);
             c.AddVariable(Variables.Energy, dgDegree);
-            c.AddVariable(Variables.Velocity.xComponent, dgDegree);
-            c.AddVariable(Variables.Velocity.yComponent, dgDegree);
-            c.AddVariable(Variables.Pressure, dgDegree);
+            c.AddVariable(CNSVariables.Velocity.xComponent, dgDegree);
+            c.AddVariable(CNSVariables.Velocity.yComponent, dgDegree);
+            c.AddVariable(CNSVariables.Pressure, dgDegree);
 
-            c.AddVariable(Variables.Entropy, dgDegree);
-            c.AddVariable(Variables.Viscosity, dgDegree);
-            c.AddVariable(Variables.LocalMachNumber, dgDegree);
-            c.AddVariable(Variables.Rank, 0);
+            c.AddVariable(CNSVariables.Entropy, dgDegree);
+            c.AddVariable(CNSVariables.Viscosity, dgDegree);
+            c.AddVariable(CNSVariables.LocalMachNumber, dgDegree);
+            c.AddVariable(CNSVariables.Rank, 0);
             if (dgDegree >= 1) {
-                c.AddVariable(Variables.Schlieren, dgDegree - 1);
+                c.AddVariable(CNSVariables.Schlieren, dgDegree - 1);
             }
             if (AV) {
-                c.AddVariable(Variables.ShockSensor, 0);
-                c.AddVariable(Variables.ArtificialViscosity, 2);
+                c.AddVariable(CNSVariables.ShockSensor, 0);
+                c.AddVariable(CNSVariables.ArtificialViscosity, 2);
             }
 
             // Time stepping variables
-            c.AddVariable(Variables.CFL, 0);
-            c.AddVariable(Variables.CFLConvective, 0);
+            c.AddVariable(CNSVariables.CFL, 0);
+            c.AddVariable(CNSVariables.CFLConvective, 0);
             if (AV) {
-                c.AddVariable(Variables.CFLArtificialViscosity, 0);
+                c.AddVariable(CNSVariables.CFLArtificialViscosity, 0);
             }
             if (c.ExplicitScheme.Equals(ExplicitSchemes.LTS)) {
-                c.AddVariable(Variables.LTSClusters, 0);
+                c.AddVariable(CNSVariables.LTSClusters, 0);
             }
             if (!restart) {
                 c.GridFunc = delegate {
@@ -2182,16 +2182,16 @@ namespace CNS {
 
             // Boundary conditions
             //c.AddBoundaryValue("SupersonicInlet", Variables.Density, (X, t) => 8.0 - Jump(X[0] - (0.1 + (X[1] + 20 * t) / 1.732)) * (8.0 - 1.4));
-            //c.AddBoundaryValue("SupersonicInlet", Variables.Velocity.xComponent, (X, t) => 7.14471 - Jump(X[0] - (0.1 + (X[1] + 20.0 * t) / 1.732)) * (7.14471 - 0.0));
-            //c.AddBoundaryValue("SupersonicInlet", Variables.Velocity.yComponent, (X, t) => -4.125 - Jump(X[0] - (0.1 + (X[1] + 20.0 * t) / 1.732)) * (-4.125 - 0.0));
-            //c.AddBoundaryValue("SupersonicInlet", Variables.Pressure, (X, t) => 116.5 - Jump(X[0] - (0.1 + (X[1] + 20.0 * t) / 1.732)) * (116.5 - 1.0));
+            //c.AddBoundaryValue("SupersonicInlet", CNSVariables.Velocity.xComponent, (X, t) => 7.14471 - Jump(X[0] - (0.1 + (X[1] + 20.0 * t) / 1.732)) * (7.14471 - 0.0));
+            //c.AddBoundaryValue("SupersonicInlet", CNSVariables.Velocity.yComponent, (X, t) => -4.125 - Jump(X[0] - (0.1 + (X[1] + 20.0 * t) / 1.732)) * (-4.125 - 0.0));
+            //c.AddBoundaryValue("SupersonicInlet", CNSVariables.Pressure, (X, t) => 116.5 - Jump(X[0] - (0.1 + (X[1] + 20.0 * t) / 1.732)) * (116.5 - 1.0));
 
             c.AddBoundaryValue("SupersonicInlet", Variables.Density, (X, t) => 8.0 - SmoothJump(DistanceToLine(X, t)) * (8.0 - 1.4));
-            c.AddBoundaryValue("SupersonicInlet", Variables.Velocity.xComponent, (X, t) => 8.25 * Math.Sin(Math.PI / 3) - SmoothJump(DistanceToLine(X, t)) * (8.25 * Math.Sin(Math.PI / 3) - 0.0));
-            c.AddBoundaryValue("SupersonicInlet", Variables.Velocity.yComponent, (X, t) => -8.25 * Math.Cos(Math.PI / 3) - SmoothJump(DistanceToLine(X, t)) * (-8.25 * Math.Cos(Math.PI / 3) - 0.0));
-            c.AddBoundaryValue("SupersonicInlet", Variables.Pressure, (X, t) => 116.5 - SmoothJump(DistanceToLine(X, t)) * (116.5 - 1.0));
+            c.AddBoundaryValue("SupersonicInlet", CNSVariables.Velocity.xComponent, (X, t) => 8.25 * Math.Sin(Math.PI / 3) - SmoothJump(DistanceToLine(X, t)) * (8.25 * Math.Sin(Math.PI / 3) - 0.0));
+            c.AddBoundaryValue("SupersonicInlet", CNSVariables.Velocity.yComponent, (X, t) => -8.25 * Math.Cos(Math.PI / 3) - SmoothJump(DistanceToLine(X, t)) * (-8.25 * Math.Cos(Math.PI / 3) - 0.0));
+            c.AddBoundaryValue("SupersonicInlet", CNSVariables.Pressure, (X, t) => 116.5 - SmoothJump(DistanceToLine(X, t)) * (116.5 - 1.0));
 
-            c.AddBoundaryValue("SupersonicOutlet", Variables.Pressure, (X, t) => 1.0);
+            c.AddBoundaryValue("SupersonicOutlet", CNSVariables.Pressure, (X, t) => 1.0);
             c.AddBoundaryValue("AdiabaticSlipWall");
 
             // Initial conditions
@@ -2201,9 +2201,9 @@ namespace CNS {
             //c.InitialValues_Evaluators.Add(Variables.Energy, X => 563.544 - Jump(X[0] - (0.1 + (X[1] / 1.732))) * (563.544 - 2.5));
             if (!restart) {
                 c.InitialValues_Evaluators.Add(Variables.Density, X => 8.0 - SmoothJump(DistanceToLine(X, 0)) * (8.0 - 1.4));
-                c.InitialValues_Evaluators.Add(Variables.Velocity.xComponent, X => 8.25 * Math.Sin(Math.PI / 3) - SmoothJump(DistanceToLine(X, 0)) * (8.25 * Math.Sin(Math.PI / 3) - 0.0));
-                c.InitialValues_Evaluators.Add(Variables.Velocity.yComponent, X => -8.25 * Math.Cos(Math.PI / 3) - SmoothJump(DistanceToLine(X, 0)) * (-8.25 * Math.Cos(Math.PI / 3) - 0.0));
-                c.InitialValues_Evaluators.Add(Variables.Pressure, X => 116.5 - SmoothJump(DistanceToLine(X, 0)) * (116.5 - 1.0));
+                c.InitialValues_Evaluators.Add(CNSVariables.Velocity.xComponent, X => 8.25 * Math.Sin(Math.PI / 3) - SmoothJump(DistanceToLine(X, 0)) * (8.25 * Math.Sin(Math.PI / 3) - 0.0));
+                c.InitialValues_Evaluators.Add(CNSVariables.Velocity.yComponent, X => -8.25 * Math.Cos(Math.PI / 3) - SmoothJump(DistanceToLine(X, 0)) * (-8.25 * Math.Cos(Math.PI / 3) - 0.0));
+                c.InitialValues_Evaluators.Add(CNSVariables.Pressure, X => 116.5 - SmoothJump(DistanceToLine(X, 0)) * (116.5 - 1.0));
             }
 
             // Time config
@@ -2351,31 +2351,31 @@ namespace CNS {
             c.AddVariable(Variables.Momentum.xComponent, dgDegree);
             c.AddVariable(Variables.Momentum.yComponent, dgDegree);
             c.AddVariable(Variables.Energy, dgDegree);
-            c.AddVariable(Variables.Velocity.xComponent, dgDegree);
-            c.AddVariable(Variables.Velocity.yComponent, dgDegree);
-            c.AddVariable(Variables.Pressure, dgDegree);
+            c.AddVariable(CNSVariables.Velocity.xComponent, dgDegree);
+            c.AddVariable(CNSVariables.Velocity.yComponent, dgDegree);
+            c.AddVariable(CNSVariables.Pressure, dgDegree);
 
-            //c.AddVariable(Variables.Entropy, dgDegree);
-            //c.AddVariable(Variables.Viscosity, dgDegree);
-            //c.AddVariable(Variables.LocalMachNumber, dgDegree);
-            c.AddVariable(Variables.Rank, 0);
+            //c.AddVariable(CNSVariables.Entropy, dgDegree);
+            //c.AddVariable(CNSVariables.Viscosity, dgDegree);
+            //c.AddVariable(CNSVariables.LocalMachNumber, dgDegree);
+            c.AddVariable(CNSVariables.Rank, 0);
             if (dgDegree >= 1) {
-                c.AddVariable(Variables.Schlieren, dgDegree - 1);
+                c.AddVariable(CNSVariables.Schlieren, dgDegree - 1);
             }
 
             if (AV) {
-                c.AddVariable(Variables.ShockSensor, 0);
-                c.AddVariable(Variables.ArtificialViscosity, 2);
+                c.AddVariable(CNSVariables.ShockSensor, 0);
+                c.AddVariable(CNSVariables.ArtificialViscosity, 2);
             }
 
             // LTS variables
-            c.AddVariable(Variables.CFL, 0);
-            c.AddVariable(Variables.CFLConvective, 0);
+            c.AddVariable(CNSVariables.CFL, 0);
+            c.AddVariable(CNSVariables.CFLConvective, 0);
             if (AV) {
-                c.AddVariable(Variables.CFLArtificialViscosity, 0);
+                c.AddVariable(CNSVariables.CFLArtificialViscosity, 0);
             }
             if (c.ExplicitScheme.Equals(ExplicitSchemes.LTS)) {
-                c.AddVariable(Variables.LTSClusters, 0);
+                c.AddVariable(CNSVariables.LTSClusters, 0);
             }
 
             c.GridFunc = delegate {
@@ -2429,17 +2429,17 @@ namespace CNS {
 
             // Boundary conditions
             c.AddBoundaryValue("SupersonicInlet", Variables.Density, (X, t) => 8.0 - SmoothJump(X[0] - getShockXPosition(t)) * (8.0 - 1.4));
-            c.AddBoundaryValue("SupersonicInlet", Variables.Velocity.xComponent, (X, t) => 8.25 - SmoothJump(X[0] - getShockXPosition(t)) * (8.25 - 0.0));
-            c.AddBoundaryValue("SupersonicInlet", Variables.Velocity.yComponent, (X, t) => 0.0);
-            c.AddBoundaryValue("SupersonicInlet", Variables.Pressure, (X, t) => 116.5 - SmoothJump(X[0] - getShockXPosition(t)) * (116.5 - 1.0));
+            c.AddBoundaryValue("SupersonicInlet", CNSVariables.Velocity.xComponent, (X, t) => 8.25 - SmoothJump(X[0] - getShockXPosition(t)) * (8.25 - 0.0));
+            c.AddBoundaryValue("SupersonicInlet", CNSVariables.Velocity.yComponent, (X, t) => 0.0);
+            c.AddBoundaryValue("SupersonicInlet", CNSVariables.Pressure, (X, t) => 116.5 - SmoothJump(X[0] - getShockXPosition(t)) * (116.5 - 1.0));
             c.AddBoundaryValue("SupersonicOutlet");
             c.AddBoundaryValue("AdiabaticSlipWall");
 
             // Initial conditions
             c.InitialValues_Evaluators.Add(Variables.Density, X => 8.0 - SmoothJump(X[0] - getShockXPosition(0)) * (8.0 - 1.4));
-            c.InitialValues_Evaluators.Add(Variables.Velocity.xComponent, X => 8.25 - SmoothJump(X[0] - getShockXPosition(0)) * (8.25 - 0.0));
-            c.InitialValues_Evaluators.Add(Variables.Velocity.yComponent, X => 0.0);
-            c.InitialValues_Evaluators.Add(Variables.Pressure, X => 116.5 - SmoothJump(X[0] - getShockXPosition(0)) * (116.5 - 1.0));
+            c.InitialValues_Evaluators.Add(CNSVariables.Velocity.xComponent, X => 8.25 - SmoothJump(X[0] - getShockXPosition(0)) * (8.25 - 0.0));
+            c.InitialValues_Evaluators.Add(CNSVariables.Velocity.yComponent, X => 0.0);
+            c.InitialValues_Evaluators.Add(CNSVariables.Pressure, X => 116.5 - SmoothJump(X[0] - getShockXPosition(0)) * (116.5 - 1.0));
 
             // Time config
             c.dtMin = 0.0;
@@ -2501,10 +2501,10 @@ namespace CNS {
             c.AddVariable(Variables.Momentum.xComponent, dgDegree);
             c.AddVariable(Variables.Momentum.yComponent, dgDegree);
             c.AddVariable(Variables.Energy, dgDegree);
-            c.AddVariable(Variables.Rank, 0);
-            c.AddVariable(Variables.Schlieren, dgDegree);
+            c.AddVariable(CNSVariables.Rank, 0);
+            c.AddVariable(CNSVariables.Schlieren, dgDegree);
             if (c.ExplicitScheme.Equals(ExplicitSchemes.LTS)) {
-                c.AddVariable(Variables.LTSClusters, 0);
+                c.AddVariable(CNSVariables.LTSClusters, 0);
             }
 
             c.GridFunc = delegate {
@@ -2574,17 +2574,17 @@ namespace CNS {
             Func<double, double> Jump = (x => x < 0 ? 0 : 1);
 
             c.AddBoundaryValue("SupersonicInlet", Variables.Density, (X, t) => 8.0 - SmoothJump(DistanceToLine(X, t)) * (8.0 - 1.4));
-            c.AddBoundaryValue("SupersonicInlet", Variables.Velocity.xComponent, (X, t) => 8.25 * Math.Sin(Math.PI / 3) - SmoothJump(DistanceToLine(X, t)) * (8.25 * Math.Sin(Math.PI / 3) - 0.0));
-            c.AddBoundaryValue("SupersonicInlet", Variables.Velocity.yComponent, (X, t) => -8.25 * Math.Cos(Math.PI / 3) - SmoothJump(DistanceToLine(X, t)) * (-8.25 * Math.Cos(Math.PI / 3) - 0.0));
-            c.AddBoundaryValue("SupersonicInlet", Variables.Pressure, (X, t) => 116.5 - SmoothJump(DistanceToLine(X, t)) * (116.5 - 1.0));
+            c.AddBoundaryValue("SupersonicInlet", CNSVariables.Velocity.xComponent, (X, t) => 8.25 * Math.Sin(Math.PI / 3) - SmoothJump(DistanceToLine(X, t)) * (8.25 * Math.Sin(Math.PI / 3) - 0.0));
+            c.AddBoundaryValue("SupersonicInlet", CNSVariables.Velocity.yComponent, (X, t) => -8.25 * Math.Cos(Math.PI / 3) - SmoothJump(DistanceToLine(X, t)) * (-8.25 * Math.Cos(Math.PI / 3) - 0.0));
+            c.AddBoundaryValue("SupersonicInlet", CNSVariables.Pressure, (X, t) => 116.5 - SmoothJump(DistanceToLine(X, t)) * (116.5 - 1.0));
 
-            c.AddBoundaryValue("SupersonicOutlet", Variables.Pressure, (X, t) => 1.0);
+            c.AddBoundaryValue("SupersonicOutlet", CNSVariables.Pressure, (X, t) => 1.0);
             c.AddBoundaryValue("AdiabaticSlipWall");
 
             c.InitialValues_Evaluators.Add(Variables.Density, X => 8.0 - SmoothJump(DistanceToLine(X, 0)) * (8.0 - 1.4));
-            c.InitialValues_Evaluators.Add(Variables.Velocity.xComponent, X => 8.25 * Math.Sin(Math.PI / 3) - SmoothJump(DistanceToLine(X, 0)) * (8.25 * Math.Sin(Math.PI / 3) - 0.0));
-            c.InitialValues_Evaluators.Add(Variables.Velocity.yComponent, X => -8.25 * Math.Cos(Math.PI / 3) - SmoothJump(DistanceToLine(X, 0)) * (-8.25 * Math.Cos(Math.PI / 3) - 0.0));
-            c.InitialValues_Evaluators.Add(Variables.Pressure, X => 116.5 - SmoothJump(DistanceToLine(X, 0)) * (116.5 - 1.0));
+            c.InitialValues_Evaluators.Add(CNSVariables.Velocity.xComponent, X => 8.25 * Math.Sin(Math.PI / 3) - SmoothJump(DistanceToLine(X, 0)) * (8.25 * Math.Sin(Math.PI / 3) - 0.0));
+            c.InitialValues_Evaluators.Add(CNSVariables.Velocity.yComponent, X => -8.25 * Math.Cos(Math.PI / 3) - SmoothJump(DistanceToLine(X, 0)) * (-8.25 * Math.Cos(Math.PI / 3) - 0.0));
+            c.InitialValues_Evaluators.Add(CNSVariables.Pressure, X => 116.5 - SmoothJump(DistanceToLine(X, 0)) * (116.5 - 1.0));
 
             // Time config
             c.dtMin = 0.0;
@@ -2663,9 +2663,9 @@ namespace CNS {
             Func<double[], double, double> v = (X, t) => Math.Cos(phi(X, t)) * uAbs(X, t);
 
             c.InitialValues_Evaluators.Add(Variables.Density, X => rho(X, 0.0));
-            c.InitialValues_Evaluators.Add(Variables.Velocity.xComponent, X => u(X, 0.0));
-            c.InitialValues_Evaluators.Add(Variables.Velocity.yComponent, X => v(X, 0.0));
-            c.InitialValues_Evaluators.Add(Variables.Pressure, X => p(X, 0.0));
+            c.InitialValues_Evaluators.Add(CNSVariables.Velocity.xComponent, X => u(X, 0.0));
+            c.InitialValues_Evaluators.Add(CNSVariables.Velocity.yComponent, X => v(X, 0.0));
+            c.InitialValues_Evaluators.Add(CNSVariables.Pressure, X => p(X, 0.0));
 
             c.LevelSetFunction = delegate (double[] X, double time) {
                 double amplitude = 0.3;
@@ -2675,9 +2675,9 @@ namespace CNS {
 
             c.AddBoundaryValue("adiabaticSlipWall");
             c.AddBoundaryValue("supersonicInlet", Variables.Density, rho);
-            c.AddBoundaryValue("supersonicInlet", Variables.Velocity[0], u);
-            c.AddBoundaryValue("supersonicInlet", Variables.Velocity[1], v);
-            c.AddBoundaryValue("supersonicInlet", Variables.Pressure, p);
+            c.AddBoundaryValue("supersonicInlet", CNSVariables.Velocity[0], u);
+            c.AddBoundaryValue("supersonicInlet", CNSVariables.Velocity[1], v);
+            c.AddBoundaryValue("supersonicInlet", CNSVariables.Pressure, p);
 
             c.dtMin = 0.0;
             c.dtMax = 1.0;
@@ -2746,9 +2746,9 @@ namespace CNS {
 
             double gamma = c.EquationOfState.HeatCapacityRatio;
             c.InitialValues_Evaluators.Add(Variables.Density, X => 1.0);
-            c.InitialValues_Evaluators.Add(Variables.Velocity[0], X => 0.0);
-            c.InitialValues_Evaluators.Add(Variables.Velocity[1], X => 0.0);
-            c.InitialValues_Evaluators.Add(Variables.Pressure, X => 1.0);
+            c.InitialValues_Evaluators.Add(CNSVariables.Velocity[0], X => 0.0);
+            c.InitialValues_Evaluators.Add(CNSVariables.Velocity[1], X => 0.0);
+            c.InitialValues_Evaluators.Add(CNSVariables.Pressure, X => 1.0);
 
             double cylinderVelocity = 1.0;
             c.LevelSetFunction = delegate (double[] X, double t) {
@@ -2758,12 +2758,12 @@ namespace CNS {
             };
 
             c.AddBoundaryValue("supersonicInlet", Variables.Density, (X, t) => 1.0);
-            c.AddBoundaryValue("supersonicInlet", Variables.Velocity[0], (X, t) => 0.0);
-            c.AddBoundaryValue("supersonicInlet", Variables.Velocity[1], (X, t) => 0.0);
-            c.AddBoundaryValue("supersonicInlet", Variables.Pressure, (X, t) => 1.0);
+            c.AddBoundaryValue("supersonicInlet", CNSVariables.Velocity[0], (X, t) => 0.0);
+            c.AddBoundaryValue("supersonicInlet", CNSVariables.Velocity[1], (X, t) => 0.0);
+            c.AddBoundaryValue("supersonicInlet", CNSVariables.Pressure, (X, t) => 1.0);
 
-            c.AddBoundaryValue("adiabaticSlipWall", Variables.Velocity[0], (X, t) => cylinderVelocity);
-            c.AddBoundaryValue("adiabaticSlipWall", Variables.Velocity[1], (X, t) => 0.0);
+            c.AddBoundaryValue("adiabaticSlipWall", CNSVariables.Velocity[0], (X, t) => cylinderVelocity);
+            c.AddBoundaryValue("adiabaticSlipWall", CNSVariables.Velocity[1], (X, t) => 0.0);
             c.LevelSetBoundaryTag = "adiabaticSlipWall";
 
             c.CutCellQuadratureType = XQuadFactoryHelper.MomentFittingVariants.Classic;
@@ -2815,10 +2815,10 @@ namespace CNS {
             c.AddVariable(Variables.Momentum.xComponent, dgDegree);
             c.AddVariable(Variables.Momentum.yComponent, dgDegree);
             c.AddVariable(Variables.Energy, dgDegree);
-            c.AddVariable(Variables.Velocity.xComponent, dgDegree);
-            c.AddVariable(Variables.Velocity.yComponent, dgDegree);
-            c.AddVariable(Variables.Pressure, dgDegree);
-            c.AddVariable(Variables.CFL, 0);
+            c.AddVariable(CNSVariables.Velocity.xComponent, dgDegree);
+            c.AddVariable(CNSVariables.Velocity.yComponent, dgDegree);
+            c.AddVariable(CNSVariables.Pressure, dgDegree);
+            c.AddVariable(CNSVariables.CFL, 0);
 
             c.GridFunc = delegate {
                 double[] nodes = GenericBlas.Linspace(-1.0, 1.0, numCells + 1);
@@ -2847,9 +2847,9 @@ namespace CNS {
             double pIn = 1.0;
             double pOut = 0.1;
             c.InitialValues_Evaluators.Add(Variables.Density, X => rhoIn - SmoothJump(levelSet(X)) * (rhoIn - rhoOut));
-            c.InitialValues_Evaluators.Add(Variables.Velocity.xComponent, X => 0.0);
-            c.InitialValues_Evaluators.Add(Variables.Velocity.yComponent, X => 0.0);
-            c.InitialValues_Evaluators.Add(Variables.Pressure, X => pIn - SmoothJump(levelSet(X)) * (pIn - pOut));
+            c.InitialValues_Evaluators.Add(CNSVariables.Velocity.xComponent, X => 0.0);
+            c.InitialValues_Evaluators.Add(CNSVariables.Velocity.yComponent, X => 0.0);
+            c.InitialValues_Evaluators.Add(CNSVariables.Pressure, X => pIn - SmoothJump(levelSet(X)) * (pIn - pOut));
 
             c.dtMin = 0.0;
             c.dtMax = 1.0;
@@ -2869,8 +2869,8 @@ namespace CNS {
                 c.ArtificialViscosityLaw = new SmoothedHeavisideArtificialViscosityLaw(
                     c.ShockSensor, dgDegree, sensorLimit, epsilon0, kappa);
 
-                c.AddVariable(Variables.ShockSensor, 0);
-                c.AddVariable(Variables.ArtificialViscosity, 2);
+                c.AddVariable(CNSVariables.ShockSensor, 0);
+                c.AddVariable(CNSVariables.ArtificialViscosity, 2);
 
                 c.Tags.Add("Artificial viscosity");
 
@@ -2918,9 +2918,9 @@ namespace CNS {
             c.AddVariable(Variables.Density, dgDegree);
             c.AddVariable(Variables.Momentum.xComponent, dgDegree);
             c.AddVariable(Variables.Energy, dgDegree);
-            c.AddVariable(Variables.Velocity.xComponent, dgDegree);
-            c.AddVariable(Variables.Pressure, dgDegree);
-            c.AddVariable(Variables.CFL, 0);
+            c.AddVariable(CNSVariables.Velocity.xComponent, dgDegree);
+            c.AddVariable(CNSVariables.Pressure, dgDegree);
+            c.AddVariable(CNSVariables.CFL, 0);
 
             c.GridFunc = delegate {
                 double[] nodes = GenericBlas.Linspace(0.0, 1.0, numCells + 1);
@@ -2943,9 +2943,9 @@ namespace CNS {
 
             Func<double, double> Jump = (x => x < 0.0 ? 0.0 : 1.0);
             c.InitialValues_Evaluators.Add(Variables.Density, X => rhoIn - Jump(X[0] - R) * (rhoIn - rhoOut));
-            c.InitialValues_Evaluators.Add(Variables.Velocity.xComponent, X => 0.0);
-            c.InitialValues_Evaluators.Add(Variables.Velocity.yComponent, X => 0.0);
-            c.InitialValues_Evaluators.Add(Variables.Pressure, X => pIn - Jump(X[0] - R) * (pIn - pOut));
+            c.InitialValues_Evaluators.Add(CNSVariables.Velocity.xComponent, X => 0.0);
+            c.InitialValues_Evaluators.Add(CNSVariables.Velocity.yComponent, X => 0.0);
+            c.InitialValues_Evaluators.Add(CNSVariables.Pressure, X => pIn - Jump(X[0] - R) * (pIn - pOut));
 
             c.dtMin = 0.0;
             c.dtMax = 1.0;
@@ -2982,10 +2982,10 @@ namespace CNS {
             c.AddVariable(Variables.Momentum.xComponent, dgDegree);
             c.AddVariable(Variables.Momentum.yComponent, dgDegree);
             c.AddVariable(Variables.Energy, dgDegree);
-            c.AddVariable(Variables.Velocity.xComponent, dgDegree);
-            c.AddVariable(Variables.Velocity.yComponent, dgDegree);
-            c.AddVariable(Variables.Pressure, dgDegree);
-            c.AddVariable(Variables.CFL, 0);
+            c.AddVariable(CNSVariables.Velocity.xComponent, dgDegree);
+            c.AddVariable(CNSVariables.Velocity.yComponent, dgDegree);
+            c.AddVariable(CNSVariables.Pressure, dgDegree);
+            c.AddVariable(CNSVariables.CFL, 0);
 
             c.GridFunc = delegate {
                 double[] nodes = GenericBlas.Linspace(-1.0, 1.0, numCells + 1);
@@ -3014,10 +3014,10 @@ namespace CNS {
             double pIn = 1.0;
             double pOut = 0.1;
             c.InitialValues_Evaluators.Add(Variables.Density, X => rhoIn - SmoothJump(levelSet(X)) * (rhoIn - rhoOut));
-            c.InitialValues_Evaluators.Add(Variables.Velocity.xComponent, X => 0.0);
-            c.InitialValues_Evaluators.Add(Variables.Velocity.yComponent, X => 0.0);
-            c.InitialValues_Evaluators.Add(Variables.Velocity.zComponent, X => 0.0);
-            c.InitialValues_Evaluators.Add(Variables.Pressure, X => pIn - SmoothJump(levelSet(X)) * (pIn - pOut));
+            c.InitialValues_Evaluators.Add(CNSVariables.Velocity.xComponent, X => 0.0);
+            c.InitialValues_Evaluators.Add(CNSVariables.Velocity.yComponent, X => 0.0);
+            c.InitialValues_Evaluators.Add(CNSVariables.Velocity.zComponent, X => 0.0);
+            c.InitialValues_Evaluators.Add(CNSVariables.Pressure, X => pIn - SmoothJump(levelSet(X)) * (pIn - pOut));
 
             c.dtMin = 0.0;
             c.dtMax = 1.0;
@@ -3037,8 +3037,8 @@ namespace CNS {
                 c.ArtificialViscosityLaw = new SmoothedHeavisideArtificialViscosityLaw(
                     c.ShockSensor, dgDegree, sensorLimit, epsilon0, kappa);
 
-                c.AddVariable(Variables.ShockSensor, 0);
-                c.AddVariable(Variables.ArtificialViscosity, 3);
+                c.AddVariable(CNSVariables.ShockSensor, 0);
+                c.AddVariable(CNSVariables.ArtificialViscosity, 3);
 
                 c.Tags.Add("Artificial viscosity");
 
@@ -3095,12 +3095,12 @@ namespace CNS {
             c.AddVariable(Variables.Momentum.yComponent, dgDegree);
             c.AddVariable(Variables.Momentum.zComponent, dgDegree);
             c.AddVariable(Variables.Energy, dgDegree);
-            c.AddVariable(Variables.Velocity.xComponent, dgDegree);
-            c.AddVariable(Variables.Velocity.yComponent, dgDegree);
-            c.AddVariable(Variables.Velocity.zComponent, dgDegree);
-            c.AddVariable(Variables.Pressure, dgDegree);
+            c.AddVariable(CNSVariables.Velocity.xComponent, dgDegree);
+            c.AddVariable(CNSVariables.Velocity.yComponent, dgDegree);
+            c.AddVariable(CNSVariables.Velocity.zComponent, dgDegree);
+            c.AddVariable(CNSVariables.Pressure, dgDegree);
 
-            c.AddVariable(Variables.KineticEnergy, dgDegree);
+            c.AddVariable(CNSVariables.KineticEnergy, dgDegree);
 
 
             //c.GridFunc = delegate () {
@@ -3140,12 +3140,12 @@ namespace CNS {
             Func<double[], double, double> rho = (X, t) => p(X, t);
 
             c.InitialValues_Evaluators.Add(Variables.Density, X => rho(X, 0.0));
-            c.InitialValues_Evaluators.Add(Variables.Velocity.xComponent, X => u(X, 0.0));
-            c.InitialValues_Evaluators.Add(Variables.Velocity.yComponent, X => v(X, 0.0));
-            c.InitialValues_Evaluators.Add(Variables.Velocity.zComponent, X => 0.0);
-            c.InitialValues_Evaluators.Add(Variables.Pressure, X => p(X, 0.0));
+            c.InitialValues_Evaluators.Add(CNSVariables.Velocity.xComponent, X => u(X, 0.0));
+            c.InitialValues_Evaluators.Add(CNSVariables.Velocity.yComponent, X => v(X, 0.0));
+            c.InitialValues_Evaluators.Add(CNSVariables.Velocity.zComponent, X => 0.0);
+            c.InitialValues_Evaluators.Add(CNSVariables.Pressure, X => p(X, 0.0));
 
-            //c.Queries.Add("IntegralKineticEnergy", QueryLibrary.Integral(Variables.KineticEnergy.Name));
+            //c.Queries.Add("IntegralKineticEnergy", QueryLibrary.Integral(CNSVariables.KineticEnergy.Name));
 
             //c.ResidualLoggerType = ResidualLoggerTypes.ChangeRate | ResidualLoggerTypes.Query;
 
@@ -3240,29 +3240,29 @@ namespace CNS {
             c.AddVariable(Variables.Density, dgDegree);
             c.AddVariable(Variables.Momentum.xComponent, dgDegree);
             c.AddVariable(Variables.Energy, dgDegree);
-            c.AddVariable(Variables.Velocity.xComponent, dgDegree);
-            c.AddVariable(Variables.Pressure, dgDegree);
-            c.AddVariable(Variables.Entropy, dgDegree);
-            c.AddVariable(Variables.LocalMachNumber, dgDegree);
-            c.AddVariable(Variables.Rank, 0);
+            c.AddVariable(CNSVariables.Velocity.xComponent, dgDegree);
+            c.AddVariable(CNSVariables.Pressure, dgDegree);
+            c.AddVariable(CNSVariables.Entropy, dgDegree);
+            c.AddVariable(CNSVariables.LocalMachNumber, dgDegree);
+            c.AddVariable(CNSVariables.Rank, 0);
             if (true1D == false) {
                 c.AddVariable(Variables.Momentum.yComponent, dgDegree);
-                c.AddVariable(Variables.Velocity.yComponent, dgDegree);
+                c.AddVariable(CNSVariables.Velocity.yComponent, dgDegree);
                 if (AV) {
-                    c.AddVariable(Variables.ArtificialViscosity, 2);
+                    c.AddVariable(CNSVariables.ArtificialViscosity, 2);
                 }
             } else {
                 if (AV) {
-                    c.AddVariable(Variables.ArtificialViscosity, 1);
+                    c.AddVariable(CNSVariables.ArtificialViscosity, 1);
                 }
             }
-            c.AddVariable(Variables.CFL, 0);
-            c.AddVariable(Variables.CFLConvective, 0);
+            c.AddVariable(CNSVariables.CFL, 0);
+            c.AddVariable(CNSVariables.CFLConvective, 0);
             if (AV) {
-                c.AddVariable(Variables.CFLArtificialViscosity, 0);
+                c.AddVariable(CNSVariables.CFLArtificialViscosity, 0);
             }
             if (c.ExplicitScheme.Equals(ExplicitSchemes.LTS)) {
-                c.AddVariable(Variables.LTSClusters, 0);
+                c.AddVariable(CNSVariables.LTSClusters, 0);
             }
 
             Func<double[], int> MakeMyPartioning = delegate (double[] X) {
@@ -3328,7 +3328,7 @@ namespace CNS {
                     return 0.125;
                 }
             });
-            c.InitialValues_Evaluators.Add(Variables.Pressure, delegate (double[] X) {
+            c.InitialValues_Evaluators.Add(CNSVariables.Pressure, delegate (double[] X) {
                 double x = X[0];
 
                 if (true1D == false) {
@@ -3341,9 +3341,9 @@ namespace CNS {
                     return 0.1;
                 }
             });
-            c.InitialValues_Evaluators.Add(Variables.Velocity.xComponent, X => 0.0);
+            c.InitialValues_Evaluators.Add(CNSVariables.Velocity.xComponent, X => 0.0);
             if (true1D == false) {
-                c.InitialValues_Evaluators.Add(Variables.Velocity.yComponent, X => 0.0);
+                c.InitialValues_Evaluators.Add(CNSVariables.Velocity.yComponent, X => 0.0);
             }
 
             // Time config
@@ -3453,7 +3453,7 @@ namespace CNS {
                 c.ActiveOperators |= Operators.ArtificialViscosity;
                 Variable sensorVariable = Variables.Density;
                 c.ShockSensor = new PerssonSensor(sensorVariable, sensorLimit);
-                c.AddVariable(Variables.ShockSensor, 0);
+                c.AddVariable(CNSVariables.ShockSensor, 0);
                 c.ArtificialViscosityLaw = new SmoothedHeavisideArtificialViscosityLaw(c.ShockSensor, dgDegree, sensorLimit, epsilon0, kappa, lambdaMax: 2);
             }
 
@@ -3465,29 +3465,29 @@ namespace CNS {
             c.AddVariable(Variables.Density, dgDegree);
             c.AddVariable(Variables.Momentum.xComponent, dgDegree);
             c.AddVariable(Variables.Energy, dgDegree);
-            c.AddVariable(Variables.Velocity.xComponent, dgDegree);
-            c.AddVariable(Variables.Pressure, dgDegree);
-            c.AddVariable(Variables.Entropy, dgDegree);
-            c.AddVariable(Variables.LocalMachNumber, dgDegree);
-            c.AddVariable(Variables.Rank, 0);
+            c.AddVariable(CNSVariables.Velocity.xComponent, dgDegree);
+            c.AddVariable(CNSVariables.Pressure, dgDegree);
+            c.AddVariable(CNSVariables.Entropy, dgDegree);
+            c.AddVariable(CNSVariables.LocalMachNumber, dgDegree);
+            c.AddVariable(CNSVariables.Rank, 0);
             if (!true1D) {
                 c.AddVariable(Variables.Momentum.yComponent, dgDegree);
-                c.AddVariable(Variables.Velocity.yComponent, dgDegree);
+                c.AddVariable(CNSVariables.Velocity.yComponent, dgDegree);
                 if (AV) {
-                    c.AddVariable(Variables.ArtificialViscosity, 2);
+                    c.AddVariable(CNSVariables.ArtificialViscosity, 2);
                 }
             } else {
                 if (AV) {
-                    c.AddVariable(Variables.ArtificialViscosity, 1);
+                    c.AddVariable(CNSVariables.ArtificialViscosity, 1);
                 }
             }
-            c.AddVariable(Variables.CFL, 0);
-            c.AddVariable(Variables.CFLConvective, 0);
+            c.AddVariable(CNSVariables.CFL, 0);
+            c.AddVariable(CNSVariables.CFLConvective, 0);
             if (AV) {
-                c.AddVariable(Variables.CFLArtificialViscosity, 0);
+                c.AddVariable(CNSVariables.CFLArtificialViscosity, 0);
             }
             if (c.ExplicitScheme.Equals(ExplicitSchemes.LTS)) {
-                c.AddVariable(Variables.LTSClusters, 0);
+                c.AddVariable(CNSVariables.LTSClusters, 0);
             }
 
             c.GridFunc = delegate {
@@ -3541,10 +3541,10 @@ namespace CNS {
             double pressureRight = 0.1;
 
             c.InitialValues_Evaluators.Add(Variables.Density, X => densityLeft - Jump(X[0]) * (densityLeft - densityRight));
-            c.InitialValues_Evaluators.Add(Variables.Pressure, X => pressureLeft - Jump(X[0]) * (pressureLeft - pressureRight));
-            c.InitialValues_Evaluators.Add(Variables.Velocity.xComponent, X => 0.0);
+            c.InitialValues_Evaluators.Add(CNSVariables.Pressure, X => pressureLeft - Jump(X[0]) * (pressureLeft - pressureRight));
+            c.InitialValues_Evaluators.Add(CNSVariables.Velocity.xComponent, X => 0.0);
             if (true1D == false) {
-                c.InitialValues_Evaluators.Add(Variables.Velocity.yComponent, X => 0.0);
+                c.InitialValues_Evaluators.Add(CNSVariables.Velocity.yComponent, X => 0.0);
             }
 
             // Time config
@@ -3686,30 +3686,30 @@ namespace CNS {
             c.AddVariable(Variables.Momentum.xComponent, dgDegree);
             c.AddVariable(Variables.Momentum.yComponent, dgDegree);
             c.AddVariable(Variables.Energy, dgDegree);
-            c.AddVariable(Variables.Velocity.xComponent, dgDegree);
-            c.AddVariable(Variables.Velocity.yComponent, dgDegree);
-            c.AddVariable(Variables.Pressure, dgDegree);
+            c.AddVariable(CNSVariables.Velocity.xComponent, dgDegree);
+            c.AddVariable(CNSVariables.Velocity.yComponent, dgDegree);
+            c.AddVariable(CNSVariables.Pressure, dgDegree);
 
-            c.AddVariable(Variables.Entropy, dgDegree);
-            c.AddVariable(Variables.Viscosity, dgDegree);
-            c.AddVariable(Variables.LocalMachNumber, dgDegree);
-            c.AddVariable(Variables.Rank, 0);
+            c.AddVariable(CNSVariables.Entropy, dgDegree);
+            c.AddVariable(CNSVariables.Viscosity, dgDegree);
+            c.AddVariable(CNSVariables.LocalMachNumber, dgDegree);
+            c.AddVariable(CNSVariables.Rank, 0);
             if (dgDegree >= 1) {
-                c.AddVariable(Variables.Schlieren, dgDegree - 1);
+                c.AddVariable(CNSVariables.Schlieren, dgDegree - 1);
             }
             if (AV) {
-                c.AddVariable(Variables.ShockSensor, 0);
-                c.AddVariable(Variables.ArtificialViscosity, 2);
+                c.AddVariable(CNSVariables.ShockSensor, 0);
+                c.AddVariable(CNSVariables.ArtificialViscosity, 2);
             }
 
             // Time stepping variables
-            c.AddVariable(Variables.CFL, 0);
-            c.AddVariable(Variables.CFLConvective, 0);
+            c.AddVariable(CNSVariables.CFL, 0);
+            c.AddVariable(CNSVariables.CFLConvective, 0);
             if (AV) {
-                c.AddVariable(Variables.CFLArtificialViscosity, 0);
+                c.AddVariable(CNSVariables.CFLArtificialViscosity, 0);
             }
             if (c.ExplicitScheme.Equals(ExplicitSchemes.LTS)) {
-                c.AddVariable(Variables.LTSClusters, 0);
+                c.AddVariable(CNSVariables.LTSClusters, 0);
             }
             if (!restart) {
                 c.GridFunc = delegate {
@@ -3780,18 +3780,18 @@ namespace CNS {
             Func<double, double> Jump = (x => x < 0 ? 0 : 1);
 
             c.AddBoundaryValue("SupersonicInlet", Variables.Density, (X, t) => 8.0 - SmoothJump(DistanceToLine(X, t)) * (8.0 - 1.4));
-            c.AddBoundaryValue("SupersonicInlet", Variables.Velocity.xComponent, (X, t) => 8.25 * Math.Sin(Math.PI / 3) - SmoothJump(DistanceToLine(X, t)) * (8.25 * Math.Sin(Math.PI / 3) - 0.0));
-            c.AddBoundaryValue("SupersonicInlet", Variables.Velocity.yComponent, (X, t) => -8.25 * Math.Cos(Math.PI / 3) - SmoothJump(DistanceToLine(X, t)) * (-8.25 * Math.Cos(Math.PI / 3) - 0.0));
-            c.AddBoundaryValue("SupersonicInlet", Variables.Pressure, (X, t) => 116.5 - SmoothJump(DistanceToLine(X, t)) * (116.5 - 1.0));
-            c.AddBoundaryValue("SupersonicOutlet", Variables.Pressure, (X, t) => 1.0);
+            c.AddBoundaryValue("SupersonicInlet", CNSVariables.Velocity.xComponent, (X, t) => 8.25 * Math.Sin(Math.PI / 3) - SmoothJump(DistanceToLine(X, t)) * (8.25 * Math.Sin(Math.PI / 3) - 0.0));
+            c.AddBoundaryValue("SupersonicInlet", CNSVariables.Velocity.yComponent, (X, t) => -8.25 * Math.Cos(Math.PI / 3) - SmoothJump(DistanceToLine(X, t)) * (-8.25 * Math.Cos(Math.PI / 3) - 0.0));
+            c.AddBoundaryValue("SupersonicInlet", CNSVariables.Pressure, (X, t) => 116.5 - SmoothJump(DistanceToLine(X, t)) * (116.5 - 1.0));
+            c.AddBoundaryValue("SupersonicOutlet", CNSVariables.Pressure, (X, t) => 1.0);
             c.AddBoundaryValue("AdiabaticSlipWall");
 
             // Initial conditions
             if (!restart) {
                 c.InitialValues_Evaluators.Add(Variables.Density, X => 8.0 - SmoothJump(DistanceToLine(X, 0)) * (8.0 - 1.4));
-                c.InitialValues_Evaluators.Add(Variables.Velocity.xComponent, X => 8.25 * Math.Sin(Math.PI / 3) - SmoothJump(DistanceToLine(X, 0)) * (8.25 * Math.Sin(Math.PI / 3) - 0.0));
-                c.InitialValues_Evaluators.Add(Variables.Velocity.yComponent, X => -8.25 * Math.Cos(Math.PI / 3) - SmoothJump(DistanceToLine(X, 0)) * (-8.25 * Math.Cos(Math.PI / 3) - 0.0));
-                c.InitialValues_Evaluators.Add(Variables.Pressure, X => 116.5 - SmoothJump(DistanceToLine(X, 0)) * (116.5 - 1.0));
+                c.InitialValues_Evaluators.Add(CNSVariables.Velocity.xComponent, X => 8.25 * Math.Sin(Math.PI / 3) - SmoothJump(DistanceToLine(X, 0)) * (8.25 * Math.Sin(Math.PI / 3) - 0.0));
+                c.InitialValues_Evaluators.Add(CNSVariables.Velocity.yComponent, X => -8.25 * Math.Cos(Math.PI / 3) - SmoothJump(DistanceToLine(X, 0)) * (-8.25 * Math.Cos(Math.PI / 3) - 0.0));
+                c.InitialValues_Evaluators.Add(CNSVariables.Pressure, X => 116.5 - SmoothJump(DistanceToLine(X, 0)) * (116.5 - 1.0));
             }
 
             // Time config

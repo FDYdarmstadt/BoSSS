@@ -18,20 +18,15 @@ using System.Collections.Generic;
 using BoSSS.Foundation;
 using BoSSS.Solution.CompressibleFlowCommon;
 using BoSSS.Solution.CompressibleFlowCommon.Boundary;
-using CNS.MaterialProperty;
+using BoSSS.Solution.CompressibleFlowCommon.MaterialProperty;
 using ilPSP;
 
-namespace CNS.Convection {
+namespace BoSSS.Solution.CompressibleFlowCommon.Convection {
 
     /// <summary>
     /// Base class for optimized versions of the HLLC flux
     /// </summary>
     public abstract class OptimizedHLLCFlux : INonlinearFlux {
-
-        /// <summary>
-        /// <see cref="OptimizedHLLCDensityFlux.OptimizedHLLCDensityFlux"/>
-        /// </summary>
-        protected readonly CNSControl config;
 
         /// <summary>
         /// <see cref="OptimizedHLLCDensityFlux.OptimizedHLLCDensityFlux"/>
@@ -42,6 +37,13 @@ namespace CNS.Convection {
         /// <see cref="OptimizedHLLCDensityFlux.OptimizedHLLCDensityFlux"/>
         /// </summary>
         protected readonly IBoundaryConditionMap boundaryMap;
+
+        /// <summary>
+        /// <see cref="OptimizedHLLCDensityFlux.OptimizedHLLCDensityFlux(ISpeciesMap, IBoundaryConditionMap, IEquationOfState)"/>
+        /// </summary>
+        protected readonly IEquationOfState equationOfState;
+
+        protected readonly double machNumber;
 
         /// <summary>
         /// Constructs a new flux
@@ -55,10 +57,11 @@ namespace CNS.Convection {
         /// <param name="boundaryMap">
         /// Mapping for boundary conditions
         /// </param>
-        public OptimizedHLLCFlux(CNSControl config, ISpeciesMap speciesMap, IBoundaryConditionMap boundaryMap) {
-            this.config = config;
+        public OptimizedHLLCFlux(ISpeciesMap speciesMap, IBoundaryConditionMap boundaryMap, IEquationOfState equationOfState, double machNumber) {
             this.speciesMap = speciesMap;
             this.boundaryMap = boundaryMap;
+            this.equationOfState = equationOfState;
+            this.machNumber = machNumber;
         }
 
         #region INonlinearFlux Members
@@ -91,7 +94,7 @@ namespace CNS.Convection {
             MultidimensionalArray Output) {
 
             int NoOfNodes = Uin[0].GetLength(1);
-            int D = CNSEnvironment.NumberOfDimensions;
+            int D = CompressibleEnvironment.NumberOfDimensions;
             double sign = normalFlipped ? -1.0 : 1.0;
 
             MultidimensionalArray[] Uout = new MultidimensionalArray[Uin.Length];
@@ -159,7 +162,7 @@ namespace CNS.Convection {
         /// </summary>
         public IList<string> ArgumentOrdering {
             get {
-                return CNSEnvironment.PrimalArgumentOrdering;
+                return CompressibleEnvironment.PrimalArgumentOrdering;
             }
         }
 

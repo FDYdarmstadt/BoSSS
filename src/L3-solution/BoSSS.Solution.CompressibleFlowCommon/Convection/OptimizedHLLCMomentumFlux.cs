@@ -14,18 +14,24 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-using System;
 using BoSSS.Foundation;
 using BoSSS.Solution.CompressibleFlowCommon;
 using BoSSS.Solution.CompressibleFlowCommon.Boundary;
+using BoSSS.Solution.CompressibleFlowCommon.MaterialProperty;
 using ilPSP;
+using System;
 
-namespace CNS.Convection {
+namespace BoSSS.Solution.CompressibleFlowCommon.Convection {
 
     /// <summary>
-    /// Optimized version of the HLLC energy flux for ideal gases.
+    /// Highly optimized version of the HLLC flux for ideal gases.
     /// </summary>
-    public class OptimizedHLLCEnergyFlux : OptimizedHLLCFlux {
+    public class OptimizedHLLCMomentumFlux : OptimizedHLLCFlux {
+
+        /// <summary>
+        /// <see cref="OptimizedHLLCMomentumFlux.OptimizedHLLCMomentumFlux"/>
+        /// </summary>
+        private int component;
 
         /// <summary>
         /// Constructs a new flux
@@ -39,8 +45,12 @@ namespace CNS.Convection {
         /// <param name="boundaryMap">
         /// Mapping for boundary conditions
         /// </param>
-        public OptimizedHLLCEnergyFlux(CNSControl config, ISpeciesMap speciesMap, IBoundaryConditionMap boundaryMap)
-            : base(config, speciesMap, boundaryMap) {
+        /// <param name="component">
+        /// The component of the momentum vector.
+        /// </param>
+        public OptimizedHLLCMomentumFlux(ISpeciesMap speciesMap, IBoundaryConditionMap boundaryMap, int component, IEquationOfState equationOfState, double machNumber)
+            : base(speciesMap, boundaryMap, equationOfState, machNumber) {
+            this.component = component;
         }
 
         /// <summary>
@@ -67,9 +77,9 @@ namespace CNS.Convection {
             MultidimensionalArray Output) {
 
             int NoOfNodes = Uin[0].GetLength(1);
-            int D = CNSEnvironment.NumberOfDimensions;
-            double gamma = config.EquationOfState.HeatCapacityRatio;
-            double Mach = config.MachNumber;
+            int D = CompressibleEnvironment.NumberOfDimensions;
+            double gamma = this.equationOfState.HeatCapacityRatio;
+            double Mach = this.machNumber;
             double MachScaling = gamma * Mach * Mach;
 
             for (int e = 0; e < Lenght; e++) {
@@ -133,26 +143,29 @@ namespace CNS.Convection {
 
                     double edgeFlux = 0.0;
                     // cf. Toro2009, equation 10.71
-                    // flux = state.Velocity * (state.Energy + state.Pressure);
+                    // flux = state.Momentum[MomentumComponent] * state.Velocity
+                    //   + state.Pressure * ComponentVector;
                     if (intermediateWaveSpeed > 0.0) {
-                        edgeFlux = normalVelocityIn * (energyIn + pIn);
+                        edgeFlux = normalVelocityIn * Uin[component + 1][e + Offset, n]
+                            + pIn/MachScaling * normal[e + Offset, n, component];
                         if (waveSpeedIn <= 0.0) {
-                            double factor = densityIn * intermediateWaveSpeed * MachScaling
-                                + pIn  / (waveSpeedIn - normalVelocityIn);
-                            double modifiedEnergy = (waveSpeedIn - normalVelocityIn) /
+                            double modifiedMomentum = densityIn *
+                                (waveSpeedIn - normalVelocityIn) /
                                 (waveSpeedIn - intermediateWaveSpeed) *
-                                (energyIn + factor * (intermediateWaveSpeed - normalVelocityIn));
-                            edgeFlux += waveSpeedIn * (modifiedEnergy - energyIn);
+                                (Uin[component + 1][e + Offset, n] / densityIn +
+                                    (intermediateWaveSpeed - normalVelocityIn) * normal[e + Offset, n, component]);
+                            edgeFlux += waveSpeedIn * (modifiedMomentum - Uin[component + 1][e + Offset, n]);
                         }
                     } else {
-                        edgeFlux = normalVelocityOut * (energyOut + pOut);
+                        edgeFlux = normalVelocityOut * Uout[component + 1][e + Offset, n]
+                            + pOut/MachScaling * normal[e + Offset, n, component];
                         if (waveSpeedOut >= 0.0) {
-                            double factor = densityOut * intermediateWaveSpeed * MachScaling
-                                + pOut / (waveSpeedOut - normalVelocityOut);
-                            double modifiedEnergy = (waveSpeedOut - normalVelocityOut) /
+                            double modifiedMomentum = densityOut *
+                                (waveSpeedOut - normalVelocityOut) /
                                 (waveSpeedOut - intermediateWaveSpeed) *
-                                (energyOut + factor * (intermediateWaveSpeed - normalVelocityOut));
-                            edgeFlux += waveSpeedOut * (modifiedEnergy - energyOut);
+                                (Uout[component + 1][e + Offset, n] / densityOut +
+                                    (intermediateWaveSpeed - normalVelocityOut) * normal[e + Offset, n, component]);
+                            edgeFlux += waveSpeedOut * (modifiedMomentum - Uout[component + 1][e + Offset, n]);
                         }
                     }
 
@@ -177,11 +190,11 @@ namespace CNS.Convection {
             int Offset,
             int Length,
             MultidimensionalArray Output) {
-
-            int D = CNSEnvironment.NumberOfDimensions;
+            int D = CompressibleEnvironment.NumberOfDimensions;
             int NoOfNodes = Output.GetLength(1);
-            double gamma = config.EquationOfState.HeatCapacityRatio;
-            double Mach = config.MachNumber;
+            int L = U.Length;
+            double gamma = this.equationOfState.HeatCapacityRatio;
+            double Mach = this.machNumber;
             double gammaMachSquared = gamma * Mach * Mach;
 
             for (int e = 0; e < Length; e++) {
@@ -189,17 +202,16 @@ namespace CNS.Convection {
                     double density = U[0][e + Offset, n];
                     double energy = U[D + 1][e + Offset, n];
 
+                    //state.Momentum[MomentumComponent] * state.Velocity
+                    //    + 1/(gamma * Mach^2) * state.Pressure * ComponentVector;
                     double momentumSquared = 0.0;
                     for (int d = 0; d < D; d++) {
+                        Output[e + Offset, n, d] += U[component + 1][e + Offset, n] *
+                            U[d + 1][e + Offset, n] / density;
                         momentumSquared += U[d + 1][e + Offset, n] * U[d + 1][e + Offset, n];
                     }
-                    double pressure = (gamma - 1.0) * (energy - gammaMachSquared *  0.5 * momentumSquared / density);
-
-                    //return state.Velocity * (state.Energy + state.Pressure);
-                    for (int d = 0; d < D; d++) {
-                        Output[e + Offset, n, d] += U[d + 1][e + Offset, n] / density *
-                            (energy + pressure);
-                    }
+                    Output[e + Offset, n, component] +=
+                        ((gamma - 1.0) * (energy - gammaMachSquared * 0.5 * momentumSquared / density)) / gammaMachSquared;
                 }
             }
         }

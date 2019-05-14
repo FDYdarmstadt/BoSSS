@@ -146,7 +146,7 @@ namespace CNS.EquationSystem {
                 case DomainTypes.StaticImmersedBoundary:
                 case DomainTypes.MovingImmersedBoundary:
                     FluxBuilder convectiveBuilder = control.ConvectiveFluxType.GetBuilder(
-                        control, boundaryMap, speciesMap);
+                        control, boundaryMap, speciesMap, control.EquationOfState, control.MachNumber);
                     return new IBMOperatorFactory(
                         (IBMControl)control,
                         gridData,
