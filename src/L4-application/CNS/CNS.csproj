@@ -81,7 +81,7 @@
     <Compile Include="Convection\GodunovFluxBuilder.cs" />
     <Compile Include="Convection\GodunovFlux.cs" />
     <Compile Include="Convection\ExactRiemannSolver.cs" />
-    <Compile Include="Convection\OptimizedHLLCFLuxBuilder.cs" />
+    <Compile Include="Convection\OptimizedHLLCFluxBuilder.cs" />
     <Compile Include="Convection\RusanovFluxBuilder.cs" />
     <Compile Include="Convection\RusanovFlux.cs" />
     <Compile Include="DerivedVariable.cs" />
