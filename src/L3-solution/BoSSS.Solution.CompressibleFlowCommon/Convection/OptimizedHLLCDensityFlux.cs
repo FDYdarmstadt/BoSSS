@@ -30,14 +30,11 @@ namespace BoSSS.Solution.CompressibleFlowCommon.Convection {
         /// <summary>
         /// Constructs a new flux
         /// </summary>
-        /// <param name="speciesMap">
-        /// Species map. Only support ideal gas in the entire domain.
-        /// </param>
         /// <param name="boundaryMap">
         /// Mapping for boundary conditions
         /// </param>
-        public OptimizedHLLCDensityFlux(ISpeciesMap speciesMap, IBoundaryConditionMap boundaryMap, IEquationOfState equationOfState, double machNumber)
-            : base(speciesMap, boundaryMap, equationOfState, machNumber) {
+        public OptimizedHLLCDensityFlux(IBoundaryConditionMap boundaryMap, Material material)
+            : base(boundaryMap, material) {
         }
 
         /// <summary>
@@ -65,8 +62,8 @@ namespace BoSSS.Solution.CompressibleFlowCommon.Convection {
 
             int NoOfNodes = Uin[0].GetLength(1);
             int D = CompressibleEnvironment.NumberOfDimensions;
-            double gamma = this.equationOfState.HeatCapacityRatio;
-            double Mach = this.machNumber;
+            double gamma = this.material.EquationOfState.HeatCapacityRatio;
+            double Mach = this.material.MachNumber;
             double MachScaling = gamma * Mach * Mach;
 
             for (int e = 0; e < Lenght; e++) {

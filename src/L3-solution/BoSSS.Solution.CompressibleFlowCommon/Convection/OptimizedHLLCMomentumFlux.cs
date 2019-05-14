@@ -36,20 +36,14 @@ namespace BoSSS.Solution.CompressibleFlowCommon.Convection {
         /// <summary>
         /// Constructs a new flux
         /// </summary>
-        /// <param name="config">
-        /// Configuration options
-        /// </param>
-        /// <param name="speciesMap">
-        /// Species map. Only support ideal gas in the entire domain.
-        /// </param>
         /// <param name="boundaryMap">
         /// Mapping for boundary conditions
         /// </param>
         /// <param name="component">
         /// The component of the momentum vector.
         /// </param>
-        public OptimizedHLLCMomentumFlux(ISpeciesMap speciesMap, IBoundaryConditionMap boundaryMap, int component, IEquationOfState equationOfState, double machNumber)
-            : base(speciesMap, boundaryMap, equationOfState, machNumber) {
+        public OptimizedHLLCMomentumFlux(IBoundaryConditionMap boundaryMap, int component, Material material)
+            : base(boundaryMap, material) {
             this.component = component;
         }
 
@@ -78,8 +72,8 @@ namespace BoSSS.Solution.CompressibleFlowCommon.Convection {
 
             int NoOfNodes = Uin[0].GetLength(1);
             int D = CompressibleEnvironment.NumberOfDimensions;
-            double gamma = this.equationOfState.HeatCapacityRatio;
-            double Mach = this.machNumber;
+            double gamma = this.material.EquationOfState.HeatCapacityRatio;
+            double Mach = this.material.MachNumber;
             double MachScaling = gamma * Mach * Mach;
 
             for (int e = 0; e < Lenght; e++) {
@@ -193,8 +187,8 @@ namespace BoSSS.Solution.CompressibleFlowCommon.Convection {
             int D = CompressibleEnvironment.NumberOfDimensions;
             int NoOfNodes = Output.GetLength(1);
             int L = U.Length;
-            double gamma = this.equationOfState.HeatCapacityRatio;
-            double Mach = this.machNumber;
+            double gamma = this.material.EquationOfState.HeatCapacityRatio;
+            double Mach = this.material.MachNumber;
             double gammaMachSquared = gamma * Mach * Mach;
 
             for (int e = 0; e < Length; e++) {

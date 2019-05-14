@@ -31,37 +31,19 @@ namespace BoSSS.Solution.CompressibleFlowCommon.Convection {
         /// <summary>
         /// <see cref="OptimizedHLLCDensityFlux.OptimizedHLLCDensityFlux"/>
         /// </summary>
-        protected readonly ISpeciesMap speciesMap;
-
-        /// <summary>
-        /// <see cref="OptimizedHLLCDensityFlux.OptimizedHLLCDensityFlux"/>
-        /// </summary>
         protected readonly IBoundaryConditionMap boundaryMap;
 
-        /// <summary>
-        /// <see cref="OptimizedHLLCDensityFlux.OptimizedHLLCDensityFlux(ISpeciesMap, IBoundaryConditionMap, IEquationOfState)"/>
-        /// </summary>
-        protected readonly IEquationOfState equationOfState;
-
-        protected readonly double machNumber;
+        protected readonly Material material;
 
         /// <summary>
         /// Constructs a new flux
         /// </summary>
-        /// <param name="config">
-        /// Configuration options
-        /// </param>
-        /// <param name="speciesMap">
-        /// Species map. Only support ideal gas in the entire domain.
-        /// </param>
         /// <param name="boundaryMap">
         /// Mapping for boundary conditions
         /// </param>
-        public OptimizedHLLCFlux(ISpeciesMap speciesMap, IBoundaryConditionMap boundaryMap, IEquationOfState equationOfState, double machNumber) {
-            this.speciesMap = speciesMap;
+        public OptimizedHLLCFlux(IBoundaryConditionMap boundaryMap, Material material) {
             this.boundaryMap = boundaryMap;
-            this.equationOfState = equationOfState;
-            this.machNumber = machNumber;
+            this.material = material;
         }
 
         #region INonlinearFlux Members
@@ -102,7 +84,6 @@ namespace BoSSS.Solution.CompressibleFlowCommon.Convection {
                 Uout[i] = MultidimensionalArray.Create(Uin[i].GetLength(0), Uin[i].GetLength(1));
             }
 
-            BoSSS.Solution.CompressibleFlowCommon.MaterialProperty.Material material = speciesMap.GetMaterial(double.NaN);
             for (int e = 0; e < Lenght; e++) {
                 int edge = e + Offset;
                 for (int n = 0; n < NoOfNodes; n++) {

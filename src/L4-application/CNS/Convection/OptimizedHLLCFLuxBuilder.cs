@@ -48,13 +48,13 @@ namespace CNS.Convection {
         /// <see cref="FluxBuilder.BuildFluxes"/>
         /// </param>
         public override void BuildFluxes(Operator op) {
-            op.DensityComponents.Add(new OptimizedHLLCDensityFlux(speciesMap, boundaryMap, control.EquationOfState, control.MachNumber));
+            op.DensityComponents.Add(new OptimizedHLLCDensityFlux(boundaryMap, speciesMap.GetMaterial(double.NaN)));
 
             for (int d = 0; d < CNSEnvironment.NumberOfDimensions; d++) {
-                op.MomentumComponents[d].Add(new OptimizedHLLCMomentumFlux(speciesMap, boundaryMap, d, control.EquationOfState, control.MachNumber));
+                op.MomentumComponents[d].Add(new OptimizedHLLCMomentumFlux(boundaryMap, d, speciesMap.GetMaterial(double.NaN)));
             }
 
-            op.EnergyComponents.Add(new OptimizedHLLCEnergyFlux(speciesMap, boundaryMap, control.EquationOfState, control.MachNumber));
+            op.EnergyComponents.Add(new OptimizedHLLCEnergyFlux(boundaryMap, speciesMap.GetMaterial(double.NaN)));
         }
     }
 }
