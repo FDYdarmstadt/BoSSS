@@ -35,8 +35,8 @@ namespace BoSSS.Solution.CompressibleFlowCommon.EquationSystem {
 
             // Map fluxes
             EulerOperator.EquationComponents[Variables.Density].Add(new OptimizedHLLCDensityFlux(boundaryMap, material));
-            EulerOperator.EquationComponents[Variables.Momentum.xComponent].Add(new OptimizedHLLCMomentumFlux(boundaryMap, component: 0, material));
-            EulerOperator.EquationComponents[Variables.Momentum.yComponent].Add(new OptimizedHLLCMomentumFlux(boundaryMap, component: 1, material));
+            EulerOperator.EquationComponents[Variables.Momentum.xComponent].Add(new OptimizedHLLCMomentumFlux(boundaryMap, 0, material));
+            EulerOperator.EquationComponents[Variables.Momentum.yComponent].Add(new OptimizedHLLCMomentumFlux(boundaryMap, 1, material));
             EulerOperator.EquationComponents[Variables.Energy].Add(new OptimizedHLLCEnergyFlux(boundaryMap, material));
 
             EulerOperator.Commit();
