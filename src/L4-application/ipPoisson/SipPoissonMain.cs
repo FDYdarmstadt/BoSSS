@@ -332,204 +332,11 @@ namespace BoSSS.Application.SipPoisson {
 
                     LapaceIp.Commit();
                 }
-
-
-
-                //double condNo = LaplaceMtx.condest(BatchmodeConnector.Flavor.Octave);
-                //Console.WriteLine("condition number: {0:0.####E-00} ",condNo);
-
             }
         }
 
-        /// <summary>
-        /// computes <see cref="LaplaceMtx"/> and <see cref="LaplaceAffine"/>
-        /// </summary>
-        private void UpdateMatrices() {
-            using (var tr = new FuncTrace()) {
-                // time measurement for matrix assembly
-                Stopwatch stw = new Stopwatch();
-                stw.Start();
+        
 
-                // Stats:
-                {
-                    int BlkSize = T.Mapping.MaxTotalNoOfCoordinatesPerCell;
-                    int NoOfMtxBlocks = 0;
-                    foreach (int[] Neigs in this.GridData.iLogicalCells.CellNeighbours) {
-                        NoOfMtxBlocks++; //               diagonal block
-                        NoOfMtxBlocks += Neigs.Length; // off-diagonal block
-                    }
-                    NoOfMtxBlocks = NoOfMtxBlocks.MPISum();
-
-                    int MtxBlockSize = BlkSize * BlkSize;
-                    int MtxSize = MtxBlockSize * NoOfMtxBlocks;
-
-                    double MtxStorage = MtxSize * (8.0 + 4.0) / (1024 * 1024); // 12 bytes (double+int) per entry
-
-                    Console.WriteLine("   System size:                 {0}", T.Mapping.TotalLength);
-                    Console.WriteLine("   No of blocks:                {0}", T.Mapping.TotalNoOfBlocks);
-                    Console.WriteLine("   No of blocks in matrix:      {0}", NoOfMtxBlocks);
-                    Console.WriteLine("   DG coordinates per cell:     {0}", BlkSize);
-                    Console.WriteLine("   Non-zeros per matrix block:  {0}", MtxBlockSize);
-                    Console.WriteLine("   Total non-zeros in matrix:   {0}", MtxSize);
-                    Console.WriteLine("   Approx. matrix storage (MB): {0}", MtxStorage);
-
-
-                    base.QueryHandler.ValueQuery("MtxBlkSz", MtxBlockSize, true);
-                    base.QueryHandler.ValueQuery("NNZMtx", MtxSize, true);
-                    base.QueryHandler.ValueQuery("NNZblk", NoOfMtxBlocks, true);
-                    base.QueryHandler.ValueQuery("MtxMB", MtxStorage, true);
-                }
-
-
-                Console.WriteLine("creating sparse system for {0} DOF's ...", T.Mapping.Ntotal);
-                
-
-                // quadrature domain
-                var volQrSch = new CellQuadratureScheme(true, CellMask.GetFullMask(this.GridData, MaskType.Geometrical));
-                var edgQrSch = new EdgeQuadratureScheme(true, EdgeMask.GetFullMask(this.GridData, MaskType.Geometrical));
-
-#if DEBUG
-                // in DEBUG mode, we compare 'MsrMatrix' (old, reference implementation) and 'BlockMsrMatrix' (new standard)
-                var RefLaplaceMtx = new MsrMatrix(T.Mapping);
-#endif
-                using (new BlockTrace("SipMatrixAssembly", tr)) {
-                    LaplaceMtx = new BlockMsrMatrix(T.Mapping);
-                    LaplaceAffine = new double[T.Mapping.LocalLength];
-
-                    LapaceIp.ComputeMatrixEx(T.Mapping, null, T.Mapping,
-                                             LaplaceMtx, LaplaceAffine,
-                                             volQuadScheme: volQrSch, edgeQuadScheme: edgQrSch);
-                }
-#if DEBUG
-                LaplaceAffine.ClearEntries();
-                LapaceIp.ComputeMatrixEx(T.Mapping, null, T.Mapping,
-                                         RefLaplaceMtx, LaplaceAffine,
-                                         volQuadScheme: volQrSch, edgeQuadScheme: edgQrSch);
-                MsrMatrix ErrMtx = RefLaplaceMtx.CloneAs();
-                ErrMtx.Acc(-1.0, LaplaceMtx);
-                double err = ErrMtx.InfNorm();
-                double infNrm = LaplaceMtx.InfNorm();
-                Console.WriteLine("Matrix comparison error: " + err + ", matrix norm is: " + infNrm);
-                Assert.Less(err, infNrm * 1e-10, "MsrMatrix2 comparison failed.");
-#endif
-                stw.Stop();
-                Console.WriteLine("done {0} sec.", stw.Elapsed.TotalSeconds);
-
-                
-
-
-                //var JB = LapaceIp.GetFDJacobianBuilder(T.Mapping.Fields, null, T.Mapping, edgQrSch, volQrSch);
-                //var JacobiMtx = new BlockMsrMatrix(T.Mapping);
-                //var JacobiAffine = new double[T.Mapping.LocalLength];
-                //JB.ComputeMatrix(JacobiMtx, JacobiAffine);
-                //double L2ErrAffine = GenericBlas.L2Dist(JacobiAffine, LaplaceAffine);
-                //var ErrMtx2 = LaplaceMtx.CloneAs();
-                //ErrMtx2.Acc(-1.0, JacobiMtx);
-                //double LinfErrMtx2 = ErrMtx2.InfNorm();
-
-                //JacobiMtx.SaveToTextFileSparse("D:\\tmp\\Jac.txt");
-                //LaplaceMtx.SaveToTextFileSparse("D:\\tmp\\Lap.txt");
-
-                //Console.WriteLine("FD Jacobi Mtx: {0:e14}, Affine: {1:e14}", LinfErrMtx2, L2ErrAffine);
-            }
-        }
-
-        /*
-        /// <summary>
-        /// Deprecated utility, writes matrices for spectral element method.
-        /// </summary>
-        public void WriteSEMMatrices() {
-            int kSEM; // nodes per edge
-
-            if (this.Grid.RefElements[0] is Triangle) {
-                kSEM = this.T.Basis.Degree + 1;
-            } else if (this.Grid.RefElements[0] is Square) {
-                switch (this.T.Basis.Degree) {
-                    case 2: kSEM = 2; break;
-                    case 3: kSEM = 2; break;
-                    case 4: kSEM = 3; break;
-                    case 5: kSEM = 3; break;
-                    case 6: kSEM = 4; break;
-                    default: throw new NotSupportedException();
-                }
-            } else {
-                throw new NotImplementedException();
-            }
-
-            SpecFemBasis SEM_basis = new SpecFemBasis((GridData)(this.GridData), kSEM);
-
-            SEM_basis.CellNodes[0].SaveToTextFile("NODES_SEM" + kSEM + ".txt");
-            SEM_basis.MassMatrix.SaveToTextFileSparse("MASS_SEM" + kSEM + ".txt");
-
-            var Mod2Nod = SEM_basis.GetModal2NodalOperator(this.T.Basis);
-            var Nod2Mod = SEM_basis.GetNodal2ModalOperator(this.T.Basis);
-
-            Mod2Nod.SaveToTextFileSparse("MODAL" + this.T.Basis.Degree + "_TO_NODAL" + kSEM + ".txt");
-            Nod2Mod.SaveToTextFileSparse("NODAL" + kSEM + "_TO_MODAL" + this.T.Basis.Degree + ".txt");
-
-            this.LaplaceMtx.SaveToTextFileSparse("OPERATOR" + this.T.Basis.Degree + ".txt");
-
-
-            {
-                var TEST = this.T.CloneAs();
-                TEST.Clear();
-                TEST.ProjectField((_2D)((x, y) => x * y));
-
-                int J = this.GridData.iGeomCells.Count;
-                int N = SEM_basis.NodesPerCell[0];
-                MultidimensionalArray TEST_at_NODES = MultidimensionalArray.Create(J, N);
-
-                TEST.Evaluate(0, J, SEM_basis.CellNodes[0], TEST_at_NODES);
-
-                double[] CompareAtNodes = new double[J * N];
-                Mod2Nod.SpMVpara(1.0, TEST.CoordinateVector, 0.0, CompareAtNodes);
-
-                double[] gretchen = TEST_at_NODES.ResizeShallow(J * N).To1DArray();
-
-                double fdist = GenericBlas.L2Dist(gretchen, CompareAtNodes);
-                Debug.Assert(fdist < 1.0e-8);
-
-                double[] bak = new double[TEST.Mapping.LocalLength];
-                Nod2Mod.SpMVpara(1.0, CompareAtNodes, 0.0, bak);
-
-                double hdist = GenericBlas.L2Dist(bak, TEST.CoordinateVector);
-                Debug.Assert(hdist < 1.0e-8);
-            }
-
-
-            var Scatter = SEM_basis.GetNodeScatterMatrix();
-
-            Scatter.SaveToTextFileSparse("SCATTER_SEM" + kSEM + ".txt");
-
-
-            {
-                var SEMTEST = new SpecFemField(SEM_basis);
-                var csem = SEMTEST.Coordinates;
-
-                Random r = new Random(666);
-                for (int i = 0; i < csem.GetLength(0); i++) {
-                    csem[i] = r.NextDouble();
-                }
-
-
-                var DG_TEST0 = new SinglePhaseField(SEMTEST.Basis.ContainingDGBasis);
-                var DG_TEST = this.T.CloneAs();
-                DG_TEST.Clear();
-                SEMTEST.AccToDGField(1.0, DG_TEST0);
-                DG_TEST.AccLaidBack(1.0, DG_TEST0);
-
-                double[] S2 = new double[Scatter.RowPartitioning.LocalLength];
-                double[] S3 = new double[DG_TEST.Mapping.LocalLength];
-
-                Scatter.SpMVpara(1.0, csem.To1DArray(), 0.0, S2);
-                Nod2Mod.SpMVpara(1.0, S2, 0.0, S3);
-
-                double gdist = GenericBlas.L2Dist(S3, DG_TEST.CoordinateVector);
-                Debug.Assert(gdist < 1.0e-8);
-            }
-        }
-
-        */
         /// <summary>
         /// control of mesh adaptation
         /// </summary>
@@ -687,7 +494,6 @@ namespace BoSSS.Application.SipPoisson {
         /// </summary>
         protected override double RunSolverOneStep(int TimestepNo, double phystime, double dt) {
             using (new FuncTrace()) {
-                //this.WriteSEMMatrices();
 
                 if (Control.ExactSolution_provided) {
                     Tex.Clear();
@@ -780,6 +586,86 @@ namespace BoSSS.Application.SipPoisson {
                 // ======
 
                 return 0.0;
+            }
+        }
+
+        /// <summary>
+        /// computes <see cref="LaplaceMtx"/> and <see cref="LaplaceAffine"/>
+        /// </summary>
+        private void UpdateMatrices()
+        {
+            using (var tr = new FuncTrace())
+            {
+                // time measurement for matrix assembly
+                Stopwatch stw = new Stopwatch();
+                stw.Start();
+
+                // Stats:
+                {
+                    int BlkSize = T.Mapping.MaxTotalNoOfCoordinatesPerCell;
+                    int NoOfMtxBlocks = 0;
+                    foreach (int[] Neigs in this.GridData.iLogicalCells.CellNeighbours)
+                    {
+                        NoOfMtxBlocks++; //               diagonal block
+                        NoOfMtxBlocks += Neigs.Length; // off-diagonal block
+                    }
+                    NoOfMtxBlocks = NoOfMtxBlocks.MPISum();
+
+                    int MtxBlockSize = BlkSize * BlkSize;
+                    int MtxSize = MtxBlockSize * NoOfMtxBlocks;
+
+                    double MtxStorage = MtxSize * (8.0 + 4.0) / (1024 * 1024); // 12 bytes (double+int) per entry
+
+                    Console.WriteLine("   System size:                 {0}", T.Mapping.TotalLength);
+                    Console.WriteLine("   No of blocks:                {0}", T.Mapping.TotalNoOfBlocks);
+                    Console.WriteLine("   No of blocks in matrix:      {0}", NoOfMtxBlocks);
+                    Console.WriteLine("   DG coordinates per cell:     {0}", BlkSize);
+                    Console.WriteLine("   Non-zeros per matrix block:  {0}", MtxBlockSize);
+                    Console.WriteLine("   Total non-zeros in matrix:   {0}", MtxSize);
+                    Console.WriteLine("   Approx. matrix storage (MB): {0}", MtxStorage);
+
+
+                    base.QueryHandler.ValueQuery("MtxBlkSz", MtxBlockSize, true);
+                    base.QueryHandler.ValueQuery("NNZMtx", MtxSize, true);
+                    base.QueryHandler.ValueQuery("NNZblk", NoOfMtxBlocks, true);
+                    base.QueryHandler.ValueQuery("MtxMB", MtxStorage, true);
+                }
+
+
+                Console.WriteLine("creating sparse system for {0} DOF's ...", T.Mapping.Ntotal);
+
+
+                // quadrature domain
+                var volQrSch = new CellQuadratureScheme(true, CellMask.GetFullMask(this.GridData, MaskType.Geometrical));
+                var edgQrSch = new EdgeQuadratureScheme(true, EdgeMask.GetFullMask(this.GridData, MaskType.Geometrical));
+
+#if DEBUG
+                // in DEBUG mode, we compare 'MsrMatrix' (old, reference implementation) and 'BlockMsrMatrix' (new standard)
+                var RefLaplaceMtx = new MsrMatrix(T.Mapping);
+#endif
+                using (new BlockTrace("SipMatrixAssembly", tr))
+                {
+                    LaplaceMtx = new BlockMsrMatrix(T.Mapping);
+                    LaplaceAffine = new double[T.Mapping.LocalLength];
+
+                    LapaceIp.ComputeMatrixEx(T.Mapping, null, T.Mapping,
+                                             LaplaceMtx, LaplaceAffine,
+                                             volQuadScheme: volQrSch, edgeQuadScheme: edgQrSch);
+                }
+#if DEBUG
+                LaplaceAffine.ClearEntries();
+                LapaceIp.ComputeMatrixEx(T.Mapping, null, T.Mapping,
+                                         RefLaplaceMtx, LaplaceAffine,
+                                         volQuadScheme: volQrSch, edgeQuadScheme: edgQrSch);
+                MsrMatrix ErrMtx = RefLaplaceMtx.CloneAs();
+                ErrMtx.Acc(-1.0, LaplaceMtx);
+                double err = ErrMtx.InfNorm();
+                double infNrm = LaplaceMtx.InfNorm();
+                Console.WriteLine("Matrix comparison error: " + err + ", matrix norm is: " + infNrm);
+                Assert.Less(err, infNrm * 1e-10, "MsrMatrix2 comparison failed.");
+#endif
+                stw.Stop();
+                Console.WriteLine("done {0} sec.", stw.Elapsed.TotalSeconds);
             }
         }
 
@@ -946,100 +832,6 @@ namespace BoSSS.Application.SipPoisson {
 
                     Action<int, double[], double[], MultigridOperator>[] ItCallbacks_Kollekte = { CustomItCallback, CO.ResItCallbackAtAll }; 
                     SF.GenerateLinear(out solver, MgSeq, MgConfig, ItCallbacks_Kollekte);
-                    //((ISolverWithCallback)solver).IterationCallback += CO.ResItCallbackAtAll;
-                    //switch (base.Control.solver_name) {
-                    //    case LinearSolverConfig.Code.exp_direct:
-                    //        solver = new SparseSolver() {
-                    //            WhichSolver = SparseSolver._whichSolver.PARDISO
-                    //        };
-                    //        break;
-
-                    //        case LinearSolverConfig.Code.exp_direct_lapack:
-                    //        solver = new SparseSolver() {
-                    //            WhichSolver = SparseSolver._whichSolver.Lapack
-                    //        };
-                    //        break;
-
-                    //    case LinearSolverConfig.Code.exp_softpcg_schwarz_directcoarse: {
-                    //            double LL = this.LaplaceMtx._RowPartitioning.LocalLength;
-                    //            int NoOfBlocks = (int)Math.Max(1, Math.Round(LL / (double)this.Control.TargetBlockSize));
-                    //            Console.WriteLine("Additive Schwarz w. direct coarse, No of blocks: " + NoOfBlocks.MPISum());
-                    //            solver = new SoftPCG() {
-                    //                m_MaxIterations = 50000,
-                    //                m_Tolerance = 1.0e-10,
-                    //                Precond = new Schwarz() {
-                    //                    m_MaxIterations = 1,
-                    //                    //CoarseSolver = new GenericRestriction() {
-                    //                    //    CoarserLevelSolver = new GenericRestriction() {
-                    //                    CoarseSolver = new SparseSolver() {
-                    //                        WhichSolver = SparseSolver._whichSolver.PARDISO
-                    //                        //            }
-                    //                        //}
-                    //                    },
-                    //                    m_BlockingStrategy = new Schwarz.METISBlockingStrategy() {
-                    //                        NoOfPartsPerProcess = NoOfBlocks
-                    //                    },
-                    //                    Overlap = 1,
-
-                    //                }
-                    //            };
-                    //            break;
-                    //        }
-
-                    //    case SolverCodes.exp_softpcg_schwarz: {
-                    //            double LL = this.LaplaceMtx._RowPartitioning.LocalLength;
-                    //            int NoOfBlocks = (int)Math.Max(1, Math.Round(LL / (double)this.Control.TargetBlockSize));
-                    //            Console.WriteLine("Additive Schwarz, No of blocks: " + NoOfBlocks.MPISum());
-
-                    //            solver = new SoftPCG() {
-                    //                m_MaxIterations = 50000,
-                    //                m_Tolerance = 1.0e-10,
-                    //                Precond = new Schwarz() {
-                    //                    m_MaxIterations = 1,
-                    //                    CoarseSolver = null,
-                    //                    m_BlockingStrategy = new Schwarz.METISBlockingStrategy {
-                    //                        NoOfPartsPerProcess = NoOfBlocks
-                    //                    },
-                    //                    Overlap = 1
-                    //                }
-                    //            };
-                    //            break;
-                    //        }
-
-                    //    case SolverCodes.exp_softpcg_mg:
-                    //        solver = MultilevelSchwarz(MultigridOp);
-                    //        break;
-
-
-                    //    case SolverCodes.exp_Kcycle_schwarz:
-                    //        solver = KcycleMultiSchwarz(MultigridOp);
-                    //        break;
-
-                    //    default:
-                    //        throw new ApplicationException("unknown solver: " + this.Control.solver_name);
-                    //}
-
-
-                    //if (solver is ISolverWithCallback) {
-
-                    //    if (CO == null) {
-                    //        ((ISolverWithCallback)solver).IterationCallback = delegate (int iter, double[] xI, double[] rI, MultigridOperator mgOp) {
-                    //            double l2_RES = rI.L2NormPow2().MPISum().Sqrt();
-
-                    //            double[] xRef = new double[xI.Length];
-                    //            MultigridOp.TransformSolInto(T.CoordinateVector, xRef);
-
-                    //            double l2_ERR = GenericBlas.L2DistPow2(xI, xRef).MPISum().Sqrt();
-                    //            Console.WriteLine("Iter: {0}\tRes: {1:0.##E-00}\tErr: {2:0.##E-00}\tRunt: {3:0.##E-00}", iter, l2_RES, l2_ERR, stw.Elapsed.TotalSeconds);
-                    //            //Tjac.CoordinatesAsVector.SetV(xI);
-                    //            //Residual.CoordinatesAsVector.SetV(rI);
-                    //            //PlotCurrentState(iter, new TimestepNumber(iter), 3);
-                    //        };
-                    //    } else {
-                    //((ISolverWithCallback)solver).IterationCallback = CO.IterationCallback;
-                    
-                    //    }
-                    //}
 
                     using (new BlockTrace("Solver_Init", tr)) {
                         solver.Init(MultigridOp);
@@ -1101,249 +893,6 @@ namespace BoSSS.Application.SipPoisson {
                 }
             }
         }
-
-        // Wir sind umgezogen: neue Anschrift: AdvancedSolvers.SolverChooser
-
-        //ISolverSmootherTemplate KcycleMultiSchwarz(MultigridOperator op) {
-        //    var solver = new OrthonormalizationScheme() {
-        //        MaxIter = 500,
-        //        Tolerance = 1.0e-10,
-
-        //    };
-
-        //    // my tests show that the ideal block size may be around 10'000
-        //    int DirectKickIn = this.Control.LinearSolver.TargetBlockSize;
-
-
-        //    MultigridOperator Current = op;
-        //    var PrecondChain = new List<ISolverSmootherTemplate>();
-        //    for (int iLevel = 0; iLevel < base.MultigridSequence.Length; iLevel++) {
-        //        int SysSize = Current.Mapping.TotalLength;
-        //        int NoOfBlocks = (int)Math.Ceiling(((double)SysSize) / ((double)DirectKickIn));
-
-        //        bool useDirect = false;
-        //        useDirect |= (SysSize < DirectKickIn);
-        //        useDirect |= iLevel == base.MultigridSequence.Length - 1;
-        //        useDirect |= NoOfBlocks.MPISum() <= 1;
-
-
-        //        ISolverSmootherTemplate levelSolver;
-        //        if (useDirect) {
-        //            levelSolver = new SparseSolver() {
-        //                WhichSolver = SparseSolver._whichSolver.PARDISO,
-        //                TestSolution = false
-        //            };
-        //        } else {
-
-        //            Schwarz swz1 = new Schwarz() {
-        //                m_MaxIterations = 1,
-        //                CoarseSolver = null,
-        //                m_BlockingStrategy = new Schwarz.METISBlockingStrategy() {
-        //                    NoOfPartsPerProcess = NoOfBlocks
-        //                },
-        //                Overlap = 2 // overlap seems to help
-        //            };
-
-        //            SoftPCG pcg1 = new SoftPCG() {
-        //                m_MinIterations = 5,
-        //                m_MaxIterations = 5
-        //            };
-
-        //            //*/
-
-        //            var pre = new SolverSquence() {
-        //                SolverChain = new ISolverSmootherTemplate[] { swz1, pcg1 }
-        //            };
-
-        //            levelSolver = swz1;
-        //        }
-
-        //        if (iLevel > 0) {
-
-        //            GenericRestriction[] R = new GenericRestriction[iLevel];
-        //            for (int ir = 0; ir < R.Length; ir++) {
-        //                R[ir] = new GenericRestriction();
-        //                if (ir >= 1)
-        //                    R[ir - 1].CoarserLevelSolver = R[ir];
-        //            }
-        //            R[iLevel - 1].CoarserLevelSolver = levelSolver;
-        //            PrecondChain.Add(R[0]);
-
-        //        } else {
-        //            PrecondChain.Add(levelSolver);
-        //        }
-
-
-        //        if (useDirect) {
-        //            Console.WriteLine("Kswz: using {0} levels, lowest level DOF is {1}, target size is {2}.", iLevel + 1, SysSize, DirectKickIn);
-        //            break;
-        //        }
-
-
-
-        //        Current = Current.CoarserLevel;
-
-        //    }
-
-
-            //if (PrecondChain.Count > 1) {
-            //    /*
-            //    // construct a V-cycle
-            //    for (int i = PrecondChain.Count - 2; i>= 0; i--) {
-            //        PrecondChain.Add(PrecondChain[i]);
-            //    }
-            //    */
-
-            //    var tmp = PrecondChain.ToArray();
-            //    for (int i = 0; i < PrecondChain.Count; i++) {
-            //        PrecondChain[i] = tmp[PrecondChain.Count - 1 - i];
-            //    }
-            //}
-
-
-
-        //    solver.PrecondS = PrecondChain.ToArray();
-        //    solver.MaxKrylovDim = solver.PrecondS.Length * 4;
-
-        //    return solver;
-        //}
-
-        /// <summary>
-        /// Ganz ok.
-        /// </summary>
-        //ISolverSmootherTemplate MultilevelSchwarz(MultigridOperator op) {
-        //    var solver = new SoftPCG() {
-        //        m_MaxIterations = 500,
-        //        m_Tolerance = 1.0e-12
-        //    };
-        //    //var solver = new OrthonormalizationScheme() {
-        //    //    MaxIter = 500,
-        //    //    Tolerance = 1.0e-10,
-        //    //};
-        //    //var solver = new SoftGMRES() {
-        //    //    m_MaxIterations = 500,
-        //    //    m_Tolerance = 1.0e-10,
-
-        //    //};
-
-        //    // my tests show that the ideal block size may be around 10'000
-        //    int DirectKickIn = base.Control.TargetBlockSize;
-
-
-        //    MultigridOperator Current = op;
-        //    ISolverSmootherTemplate[] MultigridChain = new ISolverSmootherTemplate[base.MultigridSequence.Length];
-        //    for (int iLevel = 0; iLevel < base.MultigridSequence.Length; iLevel++) {
-        //        int SysSize = Current.Mapping.TotalLength;
-        //        int NoOfBlocks = (int)Math.Ceiling(((double)SysSize) / ((double)DirectKickIn));
-
-        //        bool useDirect = false;
-        //        useDirect |= (SysSize < DirectKickIn);
-        //        useDirect |= iLevel == base.MultigridSequence.Length - 1;
-        //        useDirect |= NoOfBlocks.MPISum() <= 1;
-
-        //        if (useDirect) {
-        //            MultigridChain[iLevel] = new SparseSolver() {
-        //                WhichSolver = SparseSolver._whichSolver.PARDISO,
-        //                TestSolution = false
-        //            };
-        //        } else {
-
-        //            ClassicMultigrid MgLevel = new ClassicMultigrid() {
-        //                m_MaxIterations = 1,
-        //                m_Tolerance = 0.0 // termination controlled by top level PCG
-        //            };
-
-
-        //            MultigridChain[iLevel] = MgLevel;
-
-
-                    
-        //            ISolverSmootherTemplate pre, pst;
-        //            if (iLevel > 0) {
-
-        //                Schwarz swz1 = new Schwarz() {
-        //                    m_MaxIterations = 1,
-        //                    CoarseSolver = null,
-        //                    m_BlockingStrategy = new Schwarz.METISBlockingStrategy() {
-        //                        NoOfPartsPerProcess = NoOfBlocks
-        //                    },
-        //                    Overlap = 0 // overlap does **NOT** seem to help
-        //                };
-
-        //                SoftPCG pcg1 = new SoftPCG() {
-        //                    m_MinIterations = 5,
-        //                    m_MaxIterations = 5
-        //                };
-
-        //                SoftPCG pcg2 = new SoftPCG() {
-        //                    m_MinIterations = 5,
-        //                    m_MaxIterations = 5
-        //                };
-
-        //                var preChain = new ISolverSmootherTemplate[] { swz1, pcg1 };
-        //                var pstChain = new ISolverSmootherTemplate[] { swz1, pcg2 };
-
-        //                pre = new SolverSquence() { SolverChain = preChain };
-        //                pst = new SolverSquence() { SolverChain = pstChain };
-        //            } else {
-        //                // +++++++++++++++++++++++++++++++++++++++++++++++++++
-        //                // top level - use only iterative (non-direct) solvers
-        //                // +++++++++++++++++++++++++++++++++++++++++++++++++++
-
-        //                pre = new BlockJacobi() {
-        //                    NoOfIterations = 3,
-        //                    omega = 0.5
-        //                };
-
-        //                pst = new BlockJacobi() {
-        //                    NoOfIterations = 3,
-        //                    omega = 0.5
-        //                };
-
-        //                //preChain = new ISolverSmootherTemplate[] { pcg1 };
-        //                //pstChain = new ISolverSmootherTemplate[] { pcg2 };
-        //            }
-
-
-
-
-
-        //            //if (iLevel > 0) {
-        //            //    MgLevel.PreSmoother = pre;
-        //            //    MgLevel.PostSmoother = pst;
-        //            //} else {
-        //            //    //MgLevel.PreSmoother = pcg1;   // ganz schlechte Idee, konvergiert gegen FALSCHE lösung
-        //            //    //MgLevel.PostSmoother = pcg2;  // ganz schlechte Idee, konvergiert gegen FALSCHE lösung
-        //            //    MgLevel.PreSmoother = pre;
-        //            //    MgLevel.PostSmoother = pst;
-        //            //}
-
-        //            MgLevel.PreSmoother = pre;
-        //            MgLevel.PostSmoother = pst;
-        //        }
-
-        //        if (iLevel > 0) {
-        //            ((ClassicMultigrid)(MultigridChain[iLevel - 1])).CoarserLevelSolver = MultigridChain[iLevel];
-        //        }
-
-        //        if (useDirect) {
-        //            Console.WriteLine("MG: using {0} levels, lowest level DOF is {1}, target size is {2}.", iLevel + 1, SysSize, DirectKickIn);
-        //            break;
-        //        }
-
-
-
-        //        Current = Current.CoarserLevel;
-
-        //    } // end of level loop
-
-
-        //    solver.Precond = MultigridChain[0];
-        //    //solver.PrecondS = new[] { MultigridChain[0] };
-
-        //    return solver;
-        //}
-
 
         /// <summary>
         /// Shutdown function
