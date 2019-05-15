@@ -25,7 +25,6 @@ using BoSSS.Solution.CompressibleFlowCommon.MaterialProperty;
 using BoSSS.Solution.Control;
 using BoSSS.Solution.Queries;
 using BoSSS.Solution.Utils;
-using CNS.MaterialProperty;
 using ilPSP;
 using System;
 using System.Diagnostics;

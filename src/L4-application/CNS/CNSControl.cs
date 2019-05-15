@@ -24,7 +24,6 @@ using CNS.Convection;
 using CNS.Diffusion;
 using CNS.EquationSystem;
 using CNS.LoadBalancing;
-using CNS.MaterialProperty;
 using CNS.Residual;
 using CNS.ShockCapturing;
 using CNS.Source;
@@ -40,23 +39,23 @@ namespace CNS {
     /// Specialized control file for CNS
     /// </summary>
     [Serializable]
-    public class CNSControl : AppControl, ICloneable {
+    public class CNSControl : CompressibleControl {
 
         /// <summary>
         /// Verifies the configuration
         /// </summary>
         public override void Verify() {
             {
-                int degree = FieldOptions[Variables.Momentum.xComponent].Degree;
+                int degree = FieldOptions[BoSSS.Solution.CompressibleFlowCommon.Variables.Momentum.xComponent].Degree;
 
-                if (FieldOptions.ContainsKey(Variables.Momentum.yComponent)
-                    && FieldOptions[Variables.Momentum.yComponent].Degree != degree) {
+                if (FieldOptions.ContainsKey(BoSSS.Solution.CompressibleFlowCommon.Variables.Momentum.yComponent)
+                    && FieldOptions[BoSSS.Solution.CompressibleFlowCommon.Variables.Momentum.yComponent].Degree != degree) {
                     throw new Exception(
                         "All momentum components must have the same polynomial degree");
                 }
 
-                if (FieldOptions.ContainsKey(Variables.Momentum.zComponent)
-                    && FieldOptions[Variables.Momentum.zComponent].Degree != degree) {
+                if (FieldOptions.ContainsKey(BoSSS.Solution.CompressibleFlowCommon.Variables.Momentum.zComponent)
+                    && FieldOptions[BoSSS.Solution.CompressibleFlowCommon.Variables.Momentum.zComponent].Degree != degree) {
                     throw new Exception(
                         "All momentum components must have the same polynomial degree");
                 }
@@ -78,7 +77,7 @@ namespace CNS {
         /// </summary>
         public int DensityDegree {
             get {
-                return base.FieldOptions[Variables.Density].Degree;
+                return base.FieldOptions[BoSSS.Solution.CompressibleFlowCommon.Variables.Density].Degree;
             }
         }
 
@@ -87,7 +86,7 @@ namespace CNS {
         /// </summary>
         public int MomentumDegree {
             get {
-                return base.FieldOptions[Variables.Momentum.xComponent].Degree;
+                return base.FieldOptions[BoSSS.Solution.CompressibleFlowCommon.Variables.Momentum.xComponent].Degree;
             }
         }
 
@@ -96,7 +95,7 @@ namespace CNS {
         /// </summary>
         public int EnergyDegree {
             get {
-                return base.FieldOptions[Variables.Energy].Degree;
+                return base.FieldOptions[BoSSS.Solution.CompressibleFlowCommon.Variables.Energy].Degree;
             }
         }
 
@@ -105,20 +104,20 @@ namespace CNS {
         /// exist
         /// </summary>
         public VariableTypes GetInitialValueVariables() {
-            bool conservative = InitialValues_Evaluators.ContainsKey(Variables.Density)
-                && InitialValues_Evaluators.ContainsKey(Variables.Energy);
+            bool conservative = InitialValues_Evaluators.ContainsKey(BoSSS.Solution.CompressibleFlowCommon.Variables.Density)
+                && InitialValues_Evaluators.ContainsKey(BoSSS.Solution.CompressibleFlowCommon.Variables.Energy);
             for (int d = 0; d < CNSEnvironment.NumberOfDimensions; d++) {
-                conservative &= InitialValues_Evaluators.ContainsKey(Variables.Momentum[d]);
+                conservative &= InitialValues_Evaluators.ContainsKey(BoSSS.Solution.CompressibleFlowCommon.Variables.Momentum[d]);
             }
 
             if (conservative) {
                 return VariableTypes.ConservativeVariables;
             }
 
-            bool primitive = InitialValues_Evaluators.ContainsKey(Variables.Density)
-                && InitialValues_Evaluators.ContainsKey(Variables.Pressure);
+            bool primitive = InitialValues_Evaluators.ContainsKey(BoSSS.Solution.CompressibleFlowCommon.Variables.Density)
+                && InitialValues_Evaluators.ContainsKey(CNSVariables.Pressure);
             for (int d = 0; d < CNSEnvironment.NumberOfDimensions; d++) {
-                primitive &= InitialValues_Evaluators.ContainsKey(Variables.Velocity[d]);
+                primitive &= InitialValues_Evaluators.ContainsKey(CNSVariables.Velocity[d]);
             }
 
             if (primitive) {
@@ -247,12 +246,6 @@ namespace CNS {
         /// This option is only used if <see cref="ExplicitScheme"/> is equal to LTS.
         /// </remarks>
         public bool FluxCorrection = true;
-
-        /// <summary>
-        /// The configured Mach Number in the far field.
-        /// </summary>
-        [ExclusiveLowerBound(0.0)]
-        public double MachNumber;
 
         /// <summary>
         /// The configured Reynolds number in the far field.

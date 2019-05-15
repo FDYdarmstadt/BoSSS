@@ -16,6 +16,7 @@ limitations under the License.
 
 using System.Collections.Generic;
 using BoSSS.Foundation;
+using BoSSS.Solution.CompressibleFlowCommon;
 using ilPSP;
 
 namespace CNS.Source {

@@ -16,6 +16,7 @@ limitations under the License.
 
 using BoSSS.Foundation;
 using BoSSS.Solution;
+using BoSSS.Solution.CompressibleFlowCommon;
 using ilPSP;
 using System.Collections.Generic;
 using System.Linq;

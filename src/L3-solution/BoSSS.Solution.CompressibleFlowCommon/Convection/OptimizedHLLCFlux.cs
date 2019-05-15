@@ -18,10 +18,10 @@ using System.Collections.Generic;
 using BoSSS.Foundation;
 using BoSSS.Solution.CompressibleFlowCommon;
 using BoSSS.Solution.CompressibleFlowCommon.Boundary;
-using CNS.MaterialProperty;
+using BoSSS.Solution.CompressibleFlowCommon.MaterialProperty;
 using ilPSP;
 
-namespace CNS.Convection {
+namespace BoSSS.Solution.CompressibleFlowCommon.Convection {
 
     /// <summary>
     /// Base class for optimized versions of the HLLC flux
@@ -31,34 +31,19 @@ namespace CNS.Convection {
         /// <summary>
         /// <see cref="OptimizedHLLCDensityFlux.OptimizedHLLCDensityFlux"/>
         /// </summary>
-        protected readonly CNSControl config;
-
-        /// <summary>
-        /// <see cref="OptimizedHLLCDensityFlux.OptimizedHLLCDensityFlux"/>
-        /// </summary>
-        protected readonly ISpeciesMap speciesMap;
-
-        /// <summary>
-        /// <see cref="OptimizedHLLCDensityFlux.OptimizedHLLCDensityFlux"/>
-        /// </summary>
         protected readonly IBoundaryConditionMap boundaryMap;
+
+        protected readonly Material material;
 
         /// <summary>
         /// Constructs a new flux
         /// </summary>
-        /// <param name="config">
-        /// Configuration options
-        /// </param>
-        /// <param name="speciesMap">
-        /// Species map. Only support ideal gas in the entire domain.
-        /// </param>
         /// <param name="boundaryMap">
         /// Mapping for boundary conditions
         /// </param>
-        public OptimizedHLLCFlux(CNSControl config, ISpeciesMap speciesMap, IBoundaryConditionMap boundaryMap) {
-            this.config = config;
-            this.speciesMap = speciesMap;
+        public OptimizedHLLCFlux(IBoundaryConditionMap boundaryMap, Material material) {
             this.boundaryMap = boundaryMap;
+            this.material = material;
         }
 
         #region INonlinearFlux Members
@@ -91,7 +76,7 @@ namespace CNS.Convection {
             MultidimensionalArray Output) {
 
             int NoOfNodes = Uin[0].GetLength(1);
-            int D = CNSEnvironment.NumberOfDimensions;
+            int D = CompressibleEnvironment.NumberOfDimensions;
             double sign = normalFlipped ? -1.0 : 1.0;
 
             MultidimensionalArray[] Uout = new MultidimensionalArray[Uin.Length];
@@ -99,7 +84,6 @@ namespace CNS.Convection {
                 Uout[i] = MultidimensionalArray.Create(Uin[i].GetLength(0), Uin[i].GetLength(1));
             }
 
-            BoSSS.Solution.CompressibleFlowCommon.MaterialProperty.Material material = speciesMap.GetMaterial(double.NaN);
             for (int e = 0; e < Lenght; e++) {
                 int edge = e + Offset;
                 for (int n = 0; n < NoOfNodes; n++) {
@@ -159,7 +143,7 @@ namespace CNS.Convection {
         /// </summary>
         public IList<string> ArgumentOrdering {
             get {
-                return CNSEnvironment.PrimalArgumentOrdering;
+                return CompressibleEnvironment.PrimalArgumentOrdering;
             }
         }
 

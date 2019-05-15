@@ -44,7 +44,7 @@ namespace CNS.LoadBalancing {
             //}
 
             // new
-            DGField avField = program.WorkingSet.DerivedFields[Variables.ArtificialViscosity];
+            DGField avField = program.WorkingSet.DerivedFields[CNSVariables.ArtificialViscosity];
             foreach (Chunk chunk in program.SpeciesMap.SubGrid.VolumeMask) {
                 foreach (int cell in chunk.Elements) {
                     if (avField.GetMeanValue(cell) > 0) {

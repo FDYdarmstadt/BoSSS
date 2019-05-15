@@ -21,7 +21,6 @@ using BoSSS.Platform.LinAlg;
 using BoSSS.Solution.CompressibleFlowCommon;
 using CNS.EquationSystem;
 using CNS.IBM;
-using CNS.MaterialProperty;
 using ilPSP;
 using System;
 using System.Diagnostics;

@@ -16,11 +16,12 @@ limitations under the License.
 
 using BoSSS.Foundation.Grid;
 using BoSSS.Foundation.Grid.Classic;
+using BoSSS.Solution.CompressibleFlowCommon;
+using BoSSS.Solution.CompressibleFlowCommon.MaterialProperty;
 using BoSSS.Solution.Queries;
 using CNS.Convection;
 using CNS.Diffusion;
 using CNS.EquationSystem;
-using CNS.MaterialProperty;
 using CNS.Residual;
 using CNS.Source;
 using ilPSP.Utils;
@@ -210,16 +211,16 @@ namespace CNS.Tests.MMS {
             c.ReynoldsNumber = 1000.0;
             c.MachNumber = 0.5;
         
-            // Primary Variables
+            // Primary CNSVariables
             c.AddVariable(Variables.Density, dgDegree);
             c.AddVariable(Variables.Momentum.xComponent, dgDegree);
             c.AddVariable(Variables.Momentum.yComponent, dgDegree);
             c.AddVariable(Variables.Energy, dgDegree);
             // Parameters
-            c.AddVariable(Variables.Velocity.xComponent, dgDegree);
-            c.AddVariable(Variables.Velocity.yComponent, dgDegree);
-            c.AddVariable(Variables.Pressure, dgDegree);
-            c.AddVariable(Variables.LocalMachNumber, dgDegree);
+            c.AddVariable(CNSVariables.Velocity.xComponent, dgDegree);
+            c.AddVariable(CNSVariables.Velocity.yComponent, dgDegree);
+            c.AddVariable(CNSVariables.Pressure, dgDegree);
+            c.AddVariable(CNSVariables.LocalMachNumber, dgDegree);
 
 
             // Grid
@@ -251,9 +252,9 @@ namespace CNS.Tests.MMS {
             c.InitialValues_Evaluators.Add(Variables.Momentum.yComponent, X => m(X, 0.0));
             c.InitialValues_Evaluators.Add(Variables.Energy, X => rhoE(X, 0.0));
 
-            //c.InitialValues.Add(Variables.Velocity.xComponent, X => u0(X, 0.0));
-            //c.InitialValues.Add(Variables.Velocity.yComponent, X => u1(X, 0.0));
-            //c.InitialValues.Add(Variables.Pressure, X => pressure(X, 0.0));
+            //c.InitialValues.Add(CNSVariables.Velocity.xComponent, X => u0(X, 0.0));
+            //c.InitialValues.Add(CNSVariables.Velocity.yComponent, X => u1(X, 0.0));
+            //c.InitialValues.Add(CNSVariables.Pressure, X => pressure(X, 0.0));
 
 
             //MMS Sources
@@ -276,7 +277,7 @@ namespace CNS.Tests.MMS {
             c.Queries.Add("densityError", QueryLibrary.L2Error(Variables.Density, rho, QueryDegree));
             c.Queries.Add("momentumError", QueryLibrary.L2Error(Variables.Momentum.xComponent, m, QueryDegree));
             c.Queries.Add("energyError", QueryLibrary.L2Error(Variables.Energy, rhoE, QueryDegree));
-            c.Queries.Add("velocityError", QueryLibrary.L2Error(Variables.Velocity.xComponent, u1, QueryDegree));
+            c.Queries.Add("velocityError", QueryLibrary.L2Error(CNSVariables.Velocity.xComponent, u1, QueryDegree));
 
             c.ProjectName = "MMS-Gassner2D_Mach=" + c.MachNumber + "_Flux=" + c.DiffusiveFluxType + "_h=1/" + noOfCellsPerDirection + "_p=" + dgDegree;
 
@@ -332,16 +333,16 @@ namespace CNS.Tests.MMS {
             c.ReynoldsNumber = 1.0e6;
             c.MachNumber = 1/Math.Sqrt(1.4);
 
-            // Primary Variables
+            // Primary CNSVariables
             c.AddVariable(Variables.Density, dgDegree);
             c.AddVariable(Variables.Momentum.xComponent, dgDegree);
             c.AddVariable(Variables.Momentum.yComponent, dgDegree);
             c.AddVariable(Variables.Energy, dgDegree);
             // Parameters
-            c.AddVariable(Variables.Velocity.xComponent, dgDegree);
-            c.AddVariable(Variables.Velocity.yComponent, dgDegree);
-            c.AddVariable(Variables.Pressure, dgDegree);
-            c.AddVariable(Variables.LocalMachNumber, dgDegree);
+            c.AddVariable(CNSVariables.Velocity.xComponent, dgDegree);
+            c.AddVariable(CNSVariables.Velocity.yComponent, dgDegree);
+            c.AddVariable(CNSVariables.Pressure, dgDegree);
+            c.AddVariable(CNSVariables.LocalMachNumber, dgDegree);
 
 
             // Grid
@@ -377,9 +378,9 @@ namespace CNS.Tests.MMS {
             //c.InitialValues.Add(Variables.Momentum.yComponent, X => m1(X, 0.0));
             //c.InitialValues.Add(Variables.Energy, X => rhoE(X, 0.0));
 
-            //c.InitialValues.Add(Variables.Velocity.xComponent, X => u0(X, 0.0));
-            //c.InitialValues.Add(Variables.Velocity.yComponent, X => u1(X, 0.0));
-            //c.InitialValues.Add(Variables.Pressure, X => pressure(X, 0.0));
+            //c.InitialValues.Add(CNSVariables.Velocity.xComponent, X => u0(X, 0.0));
+            //c.InitialValues.Add(CNSVariables.Velocity.yComponent, X => u1(X, 0.0));
+            //c.InitialValues.Add(CNSVariables.Pressure, X => pressure(X, 0.0));
 
 
             //MMS Sources
@@ -402,7 +403,7 @@ namespace CNS.Tests.MMS {
             c.Queries.Add("densityError", QueryLibrary.L2Error(Variables.Density, rho, QueryDegree));
             c.Queries.Add("momentum0Error", QueryLibrary.L2Error(Variables.Momentum.xComponent, m0, QueryDegree));
             c.Queries.Add("energyError", QueryLibrary.L2Error(Variables.Energy, rhoE, QueryDegree));
-            c.Queries.Add("velocity0Error", QueryLibrary.L2Error(Variables.Velocity.xComponent, u0, QueryDegree));
+            c.Queries.Add("velocity0Error", QueryLibrary.L2Error(CNSVariables.Velocity.xComponent, u0, QueryDegree));
 
             c.ProjectName = "MMS-Gassner2D_Mach=" + c.MachNumber + "_Flux=" + c.DiffusiveFluxType + "_h=1/" + noOfCellsPerDirection + "_p=" + dgDegree;
 
@@ -461,17 +462,17 @@ namespace CNS.Tests.MMS {
 
             c.MachNumber = 1 / Math.Sqrt(c.EquationOfState.HeatCapacityRatio);
 
-            // Primary Variables
+            // Primary CNSVariables
             c.AddVariable(Variables.Density, dgDegree);
             c.AddVariable(Variables.Momentum.xComponent, dgDegree);
             c.AddVariable(Variables.Momentum.yComponent, dgDegree);
             c.AddVariable(Variables.Momentum.zComponent, dgDegree);
             c.AddVariable(Variables.Energy, dgDegree);
             // Parameters
-            c.AddVariable(Variables.Velocity.xComponent, dgDegree);
-            c.AddVariable(Variables.Velocity.yComponent, dgDegree);
-            c.AddVariable(Variables.Velocity.zComponent, dgDegree);
-            c.AddVariable(Variables.Pressure, dgDegree);
+            c.AddVariable(CNSVariables.Velocity.xComponent, dgDegree);
+            c.AddVariable(CNSVariables.Velocity.yComponent, dgDegree);
+            c.AddVariable(CNSVariables.Velocity.zComponent, dgDegree);
+            c.AddVariable(CNSVariables.Pressure, dgDegree);
 
 
             // Grid
@@ -559,7 +560,7 @@ namespace CNS.Tests.MMS {
             c.Queries.Add("densityError", QueryLibrary.L2Error(Variables.Density, rho, QueryDegree));
             c.Queries.Add("momentum0Error", QueryLibrary.L2Error(Variables.Momentum.xComponent, m, QueryDegree));
             c.Queries.Add("energyError", QueryLibrary.L2Error(Variables.Energy, rhoE, QueryDegree));
-            c.Queries.Add("velocity0Error", QueryLibrary.L2Error(Variables.Velocity.xComponent, u, QueryDegree));
+            c.Queries.Add("velocity0Error", QueryLibrary.L2Error(CNSVariables.Velocity.xComponent, u, QueryDegree));
 
 
             return c;

@@ -14,13 +14,11 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-using BoSSS.Foundation;
-using BoSSS.Foundation.Grid;
 using System;
 using System.Collections;
 using System.Collections.Generic;
 
-namespace CNS {
+namespace BoSSS.Solution.CompressibleFlowCommon {
 
     /// <summary>
     /// Some variables that are recognized in context of the flow state of the
@@ -223,29 +221,6 @@ namespace CNS {
             }
 
             #endregion
-        }
-    }
-
-    /// <summary>
-    /// Represents auxiliary variables that are updated via some user-defined
-    /// update function
-    /// </summary>
-    public class DerivedVariable : Variable {
-
-        /// <summary>
-        /// The update function to be invoked after each (sub-)time-step
-        /// </summary>
-        public Action<DGField, CellMask, IProgram<CNSControl>> UpdateFunction;
-
-        /// <summary>
-        /// See <see cref="Variable"/> and <see cref="UpdateFunction"/>
-        /// </summary>
-        /// <param name="name"></param>
-        /// <param name="type"></param>
-        /// <param name="updateFunction"></param>
-        public DerivedVariable(string name, VariableTypes type, Action<DGField, CellMask, IProgram<CNSControl>> updateFunction)
-            : base(name, type) {
-            this.UpdateFunction = updateFunction;
         }
     }
 }

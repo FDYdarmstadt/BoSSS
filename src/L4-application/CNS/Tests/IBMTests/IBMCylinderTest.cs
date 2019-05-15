@@ -17,11 +17,12 @@ limitations under the License.
 using BoSSS.Foundation.Grid;
 using BoSSS.Foundation.IO;
 using BoSSS.Foundation.XDG;
+using BoSSS.Solution.CompressibleFlowCommon;
+using BoSSS.Solution.CompressibleFlowCommon.MaterialProperty;
 using BoSSS.Solution.Queries;
 using CNS.Convection;
 using CNS.EquationSystem;
 using CNS.IBM;
-using CNS.MaterialProperty;
 using CNS.Residual;
 using ilPSP.Utils;
 using NUnit.Framework;
@@ -204,9 +205,9 @@ namespace CNS.Tests.IBMTests {
 
             double gamma = c.EquationOfState.HeatCapacityRatio;
             c.AddBoundaryValue("supersonicInlet", Variables.Density, (X, t) => 1.0);
-            c.AddBoundaryValue("supersonicInlet", Variables.Velocity[0], (X, t) => Mach * Math.Sqrt(gamma));
-            c.AddBoundaryValue("supersonicInlet", Variables.Velocity[1], (X, t) => 0.0);
-            c.AddBoundaryValue("supersonicInlet", Variables.Pressure, (X, t) => 1.0);
+            c.AddBoundaryValue("supersonicInlet", CNSVariables.Velocity[0], (X, t) => Mach * Math.Sqrt(gamma));
+            c.AddBoundaryValue("supersonicInlet", CNSVariables.Velocity[1], (X, t) => 0.0);
+            c.AddBoundaryValue("supersonicInlet", CNSVariables.Pressure, (X, t) => 1.0);
 
             c.AddBoundaryValue("adiabaticSlipWall");
             c.LevelSetBoundaryTag = "adiabaticSlipWall";

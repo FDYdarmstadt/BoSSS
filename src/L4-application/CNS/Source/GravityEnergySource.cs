@@ -18,6 +18,7 @@ using System.Linq;
 using System.Collections.Generic;
 using BoSSS.Foundation;
 using ilPSP;
+using BoSSS.Solution.CompressibleFlowCommon;
 
 namespace CNS.Source {
 

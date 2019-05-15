@@ -22,7 +22,6 @@ using BoSSS.Solution.CompressibleFlowCommon;
 using BoSSS.Solution.CompressibleFlowCommon.MaterialProperty;
 using CNS.EquationSystem;
 using CNS.IBM;
-using CNS.MaterialProperty;
 using ilPSP;
 using System;
 using System.Diagnostics;

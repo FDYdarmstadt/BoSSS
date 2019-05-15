@@ -16,10 +16,11 @@ limitations under the License.
 
 using BoSSS.Foundation.Grid.Classic;
 using BoSSS.Foundation.XDG;
+using BoSSS.Solution.CompressibleFlowCommon;
+using BoSSS.Solution.CompressibleFlowCommon.MaterialProperty;
 using CNS.Convection;
 using CNS.EquationSystem;
 using CNS.IBM;
-using CNS.MaterialProperty;
 using CNS.Tests.IsentropicVortex;
 using ilPSP.Utils;
 using NUnit.Framework;
@@ -307,16 +308,16 @@ namespace CNS.Tests.IBMTests {
             IsentropicVortexExactSolution solution = new IsentropicVortexExactSolution(c, vortexSpeed);
 
             c.InitialValues_Evaluators.Add(Variables.Density, X => solution.rho()(X, 0.0));
-            c.InitialValues_Evaluators.Add(Variables.Velocity.xComponent, X => solution.u()(X, 0.0));
-            c.InitialValues_Evaluators.Add(Variables.Velocity.yComponent, X => solution.v()(X, 0.0));
-            c.InitialValues_Evaluators.Add(Variables.Pressure, X => solution.p()(X, 0.0));
+            c.InitialValues_Evaluators.Add(CNSVariables.Velocity.xComponent, X => solution.u()(X, 0.0));
+            c.InitialValues_Evaluators.Add(CNSVariables.Velocity.yComponent, X => solution.v()(X, 0.0));
+            c.InitialValues_Evaluators.Add(CNSVariables.Pressure, X => solution.p()(X, 0.0));
 
             c.LevelSetFunction = (X, t) => X[1] - levelSetPosition;
 
             c.AddBoundaryValue("supersonicInlet", Variables.Density, solution.rho());
-            c.AddBoundaryValue("supersonicInlet", Variables.Velocity[0], solution.u());
-            c.AddBoundaryValue("supersonicInlet", Variables.Velocity[1], solution.v());
-            c.AddBoundaryValue("supersonicInlet", Variables.Pressure, solution.p());
+            c.AddBoundaryValue("supersonicInlet", CNSVariables.Velocity[0], solution.u());
+            c.AddBoundaryValue("supersonicInlet", CNSVariables.Velocity[1], solution.v());
+            c.AddBoundaryValue("supersonicInlet", CNSVariables.Pressure, solution.p());
 
             c.Queries.Add("L2ErrorDensity", IBMQueries.L2Error(Variables.Density, solution.rho()));
             c.Queries.Add("L2ErrorPressure", IBMQueries.L2Error(state => state.Pressure, solution.p()));
@@ -372,9 +373,9 @@ namespace CNS.Tests.IBMTests {
             IsentropicVortexExactSolution solution = new IsentropicVortexExactSolution(c, vortexSpeed);
 
             c.InitialValues_Evaluators.Add(Variables.Density, X => solution.rho()(X, 0.0));
-            c.InitialValues_Evaluators.Add(Variables.Velocity.xComponent, X => solution.u()(X, 0.0));
-            c.InitialValues_Evaluators.Add(Variables.Velocity.yComponent, X => solution.v()(X, 0.0));
-            c.InitialValues_Evaluators.Add(Variables.Pressure, X => solution.p()(X, 0.0));
+            c.InitialValues_Evaluators.Add(CNSVariables.Velocity.xComponent, X => solution.u()(X, 0.0));
+            c.InitialValues_Evaluators.Add(CNSVariables.Velocity.yComponent, X => solution.v()(X, 0.0));
+            c.InitialValues_Evaluators.Add(CNSVariables.Pressure, X => solution.p()(X, 0.0));
             if (agglomeration) {
                 c.LevelSetFunction = (X, t) => -((X[1] - 0.17) * (X[1] - 0.17) - 0.1);
             } else {
@@ -383,9 +384,9 @@ namespace CNS.Tests.IBMTests {
 
 
             c.AddBoundaryValue("supersonicInlet", Variables.Density, solution.rho());
-            c.AddBoundaryValue("supersonicInlet", Variables.Velocity[0], solution.u());
-            c.AddBoundaryValue("supersonicInlet", Variables.Velocity[1], solution.v());
-            c.AddBoundaryValue("supersonicInlet", Variables.Pressure, solution.p());
+            c.AddBoundaryValue("supersonicInlet", CNSVariables.Velocity[0], solution.u());
+            c.AddBoundaryValue("supersonicInlet", CNSVariables.Velocity[1], solution.v());
+            c.AddBoundaryValue("supersonicInlet", CNSVariables.Pressure, solution.p());
 
             c.Queries.Add("L2ErrorDensity", IBMQueries.L2Error(Variables.Density, solution.rho()));
             c.Queries.Add("L2ErrorPressure", IBMQueries.L2Error(state => state.Pressure, solution.p()));

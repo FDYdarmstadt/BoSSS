@@ -14,29 +14,20 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+using BoSSS.Solution.Control;
+using System;
 
-using BoSSS.Solution.CompressibleFlowCommon.MaterialProperty;
-
-namespace CNS.MaterialProperty {
-
-    /// <summary>
-    /// For materials with a constant viscosity
-    /// </summary>
-    [System.Serializable]
-    public class ConstantViscosity : IViscosityLaw {
-
-        #region IViscosityLaw Members
+namespace BoSSS.Solution.CompressibleFlowCommon {
+    public class CompressibleControl : AppControl, ICloneable {
 
         /// <summary>
-        /// Returns the constant dimensionless viscosity 1.
+        /// The configured Mach Number in the far field.
         /// </summary>
-        /// <param name="temperature">Ignored</param>
-        /// <param name="cellIndex"></param>
-        /// <returns>1</returns>
-        public double GetViscosity(double temperature, int cellIndex) {
-            return 1.0;
+        [ExclusiveLowerBound(0.0)]
+        public double MachNumber;
+        
+        public object Clone() {
+            throw new NotImplementedException();
         }
-
-        #endregion
     }
 }

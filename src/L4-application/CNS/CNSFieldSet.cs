@@ -156,7 +156,7 @@ namespace CNS {
         public virtual DGField[] ParameterFields {
             get {
                 if (this.config.ActiveOperators.HasFlag(Operators.ArtificialViscosity)) {
-                    return new DGField[] { DerivedFields[Variables.ArtificialViscosity] };
+                    return new DGField[] { DerivedFields[CNSVariables.ArtificialViscosity] };
                 } else {
                     return new DGField[0];
                 }
@@ -212,11 +212,11 @@ namespace CNS {
 
                 Func<double[], double>[] velocityFunctions = new Func<double[], double>[numberOfDimensions];
                 for (int d = 0; d < numberOfDimensions; d++) {
-                    velocityFunctions[d] = initialValues[Variables.Velocity[d]];
+                    velocityFunctions[d] = initialValues[CNSVariables.Velocity[d]];
                     Momentum[d].ProjectField(1.0, X => densityFunction(X) * velocityFunctions[d](X), scheme);
                 }
 
-                var pressureFunction = initialValues[Variables.Pressure];
+                var pressureFunction = initialValues[CNSVariables.Pressure];
                 Energy.ProjectField(
                     1.0,
                     delegate (double[] X) {
@@ -255,8 +255,8 @@ namespace CNS {
                 }
 
                 // Test
-                //double sensorNorm = program.WorkingSet.DerivedFields[Variables.ShockSensor].L2Norm();
-                //double AVNorm = program.WorkingSet.DerivedFields[Variables.ArtificialViscosity].L2Norm();
+                //double sensorNorm = program.WorkingSet.DerivedFields[CNSVariables.ShockSensor].L2Norm();
+                //double AVNorm = program.WorkingSet.DerivedFields[CNSVariables.ArtificialViscosity].L2Norm();
                 //Console.WriteLine("\r\nThis is UpdateDerivedVariables");
                 //Console.WriteLine("SensorNeu: {0}", sensorNorm);
                 //Console.WriteLine("AVNeu: {0}", AVNorm);
@@ -277,19 +277,19 @@ namespace CNS {
 
                 // Update sensor variable (not necessary as only needed for IO)
                 using (new BlockTrace("ShockSensor.UpdateFunction", tr)) {
-                    var sensorField = program.WorkingSet.DerivedFields[Variables.ShockSensor];
-                    Variables.ShockSensor.UpdateFunction(sensorField, program.SpeciesMap.SubGrid.VolumeMask, program);
+                    var sensorField = program.WorkingSet.DerivedFields[CNSVariables.ShockSensor];
+                    CNSVariables.ShockSensor.UpdateFunction(sensorField, program.SpeciesMap.SubGrid.VolumeMask, program);
                 }
 
                 // Update artificial viscosity variable
                 using (new BlockTrace("ArtificialViscosity.UpdateFunction", tr)) {
-                    var avField = program.WorkingSet.DerivedFields[Variables.ArtificialViscosity];
-                    Variables.ArtificialViscosity.UpdateFunction(avField, program.SpeciesMap.SubGrid.VolumeMask, program);
+                    var avField = program.WorkingSet.DerivedFields[CNSVariables.ArtificialViscosity];
+                    CNSVariables.ArtificialViscosity.UpdateFunction(avField, program.SpeciesMap.SubGrid.VolumeMask, program);
                 }
 
                 // Test
-                //double sensorNorm = program.WorkingSet.DerivedFields[Variables.ShockSensor].L2Norm();
-                //double AVNorm = program.WorkingSet.DerivedFields[Variables.ArtificialViscosity].L2Norm();
+                //double sensorNorm = program.WorkingSet.DerivedFields[CNSVariables.ShockSensor].L2Norm();
+                //double AVNorm = program.WorkingSet.DerivedFields[CNSVariables.ArtificialViscosity].L2Norm();
                 //Console.WriteLine("\r\nThis is UpdateShockCapturingVariables");
                 //Console.WriteLine("SensorNeu: {0}", sensorNorm);
                 //Console.WriteLine("AVNeu: {0}", AVNorm);

@@ -21,7 +21,6 @@ using BoSSS.Solution.CompressibleFlowCommon.MaterialProperty;
 using BoSSS.Solution.CompressibleFlowCommon.Boundary;
 using CNS.Convection;
 using CNS.IBM;
-using CNS.MaterialProperty;
 using System;
 
 namespace CNS.EquationSystem {
