@@ -154,8 +154,8 @@ namespace BoSSS.Application.SipPoisson {
                 BatchmodeConnector.Flav = BatchmodeConnector.Flavor.Octave;
                 //BatchmodeConnector.MatlabExecuteable = "C:\\cygwin64\\bin\\bash.exe";
             }
-            
-            
+
+
 
             /*
             //Some performance testing - don't delete, I still need this!
@@ -257,7 +257,7 @@ namespace BoSSS.Application.SipPoisson {
                 return p;
             });
         }
-        
+
         /// <summary>
         /// Sets the multigrid coloring
         /// </summary>
@@ -273,7 +273,7 @@ namespace BoSSS.Application.SipPoisson {
 
             base.SetInitial();
 
-            
+
 
             //TexactFine = (SinglePhaseField)(GetDatabase().Sessions.First().Timesteps.Last().Fields.Where(fi => fi.Identification == "T"));
         }
@@ -318,9 +318,9 @@ namespace BoSSS.Application.SipPoisson {
                     LapaceIp = new SpatialOperator(1, 1, QuadOrderFunc.SumOfMaxDegrees(), "T", "T");
 
                     MultidimensionalArray LengthScales;
-                    if(this.GridData is GridData) {
+                    if (this.GridData is GridData) {
                         LengthScales = ((GridData)GridData).Cells.cj;
-                    } else if(this.GridData is AggregationGridData) {
+                    } else if (this.GridData is AggregationGridData) {
                         LengthScales = ((AggregationGridData)GridData).AncestorGrid.Cells.cj;
                     } else {
                         throw new NotImplementedException();
@@ -382,7 +382,7 @@ namespace BoSSS.Application.SipPoisson {
 
 
                 Console.WriteLine("creating sparse system for {0} DOF's ...", T.Mapping.Ntotal);
-                
+
 
                 // quadrature domain
                 var volQrSch = new CellQuadratureScheme(true, CellMask.GetFullMask(this.GridData, MaskType.Geometrical));
@@ -415,7 +415,7 @@ namespace BoSSS.Application.SipPoisson {
                 stw.Stop();
                 Console.WriteLine("done {0} sec.", stw.Elapsed.TotalSeconds);
 
-                
+
 
 
                 //var JB = LapaceIp.GetFDJacobianBuilder(T.Mapping.Fields, null, T.Mapping, edgQrSch, volQrSch);
@@ -537,7 +537,7 @@ namespace BoSSS.Application.SipPoisson {
             if (this.Control.AdaptiveMeshRefinement && TimestepNo > 1) {
 
                 // compute error against fine solution
-                if(Control.ExactSolution_provided) {
+                if (Control.ExactSolution_provided) {
                     //Error.Clear();
                     //Error.AccLaidBack(1.0, T);
 
@@ -564,10 +564,10 @@ namespace BoSSS.Application.SipPoisson {
 
                 double maxSoFar = 0;
                 int jMax = -1;
-                for(int j = 0; j < oldJ; j++) {
+                for (int j = 0; j < oldJ; j++) {
                     double CellNorm = Error.Coordinates.GetRow(j).L2NormPow2();
 
-                    if(CellNorm > maxSoFar) {
+                    if (CellNorm > maxSoFar) {
                         jMax = j;
                         maxSoFar = CellNorm;
                     }
@@ -590,8 +590,8 @@ namespace BoSSS.Application.SipPoisson {
                     else
                         return CurrentLevel;
                 }
-                
-                
+
+
                 bool AnyChange = GridRefinementController.ComputeGridChange((GridData)(this.GridData), null, MyLevelIndicator, out List<int> CellsToRefineList, out List<int[]> Coarsening);
                 int NoOfCellsToRefine = 0;
                 int NoOfCellsToCoarsen = 0;
@@ -618,7 +618,7 @@ namespace BoSSS.Application.SipPoisson {
                     Console.WriteLine("       Coarsening " + NoOfCellsToCoarsen + " of " + oldJ + " cells");
 
                     newGrid = ((GridData)(this.GridData)).Adapt(CellsToRefineList, Coarsening, out old2NewGrid);
-                    
+
                 } else {
 
                     newGrid = null;
@@ -645,11 +645,11 @@ namespace BoSSS.Application.SipPoisson {
 
         protected void CustomItCallback(int iterIndex, double[] currentSol, double[] currentRes, MultigridOperator Mgop) {
             //+1 because of startindex=0 and +1 because lowest level, does not count as mlevel
-            MaxMlevel = Mgop.LevelIndex+2;
+            MaxMlevel = Mgop.LevelIndex + 2;
         }
 
         protected void GimmeKondnumber(MultigridOperator Mgop, out double[] condests, out int[] DOFs, out int[] Level) {
-            MultigridOperator Mgop_ptr= Mgop;
+            MultigridOperator Mgop_ptr = Mgop;
 
             //List<double> _conds = new List<double>();
             List<double> _condests = new List<double>();
@@ -708,7 +708,7 @@ namespace BoSSS.Application.SipPoisson {
                 // ---------------
 
                 UpdateMatrices();
-                
+
 
                 // call solver
                 // -----------
@@ -716,14 +716,14 @@ namespace BoSSS.Application.SipPoisson {
                 bool converged;
                 int NoOfIterations;
 
-                LinearSolverConfig.Code solvercodes =this.Control.LinearSolver.SolverCode;
+                LinearSolverConfig.Code solvercodes = this.Control.LinearSolver.SolverCode;
                 switch (solvercodes) {
 
                     case LinearSolverConfig.Code.classic_cg:
                     case LinearSolverConfig.Code.classic_mumps:
                     case LinearSolverConfig.Code.classic_pardiso:
-                    ClassicSolve(out mintime, out maxtime, out converged, out NoOfIterations);
-                    break;
+                        ClassicSolve(out mintime, out maxtime, out converged, out NoOfIterations);
+                        break;
 
                     //case SolverCodes.nix:
                     //NoOfIterations = 0;
@@ -733,8 +733,8 @@ namespace BoSSS.Application.SipPoisson {
                     //break;
 
                     default:
-                    ExperimentalSolve(out mintime, out maxtime, out converged, out NoOfIterations);
-                    break;
+                        ExperimentalSolve(out mintime, out maxtime, out converged, out NoOfIterations);
+                        break;
                 }
 
                 Console.WriteLine("finished; " + NoOfIterations + " iterations.");
@@ -757,7 +757,7 @@ namespace BoSSS.Application.SipPoisson {
                     Error.Clear();
                     Error.AccLaidBack(1.0, Tex);
                     Error.AccLaidBack(-1.0, T);
-                         
+
                     double L2_ERR = Error.L2Norm();
                     Console.WriteLine("\t\tL2 error on " + this.Grid.NumberOfCells + ": " + L2_ERR);
                     base.QueryHandler.ValueQuery("SolL2err", L2_ERR, true);
@@ -768,7 +768,7 @@ namespace BoSSS.Application.SipPoisson {
                 // =================
                 {
                     this.ResiualKP1.Clear();
-                    if(this.Control.InitialValues_Evaluators.ContainsKey("RHS")) {
+                    if (this.Control.InitialValues_Evaluators.ContainsKey("RHS")) {
                         this.ResiualKP1.ProjectField(this.Control.InitialValues_Evaluators["RHS"]);
                     }
 
@@ -944,7 +944,7 @@ namespace BoSSS.Application.SipPoisson {
                     CO = new ConvergenceObserver(MultigridOp, null, T.CoordinateVector.ToArray(), SF);
                     CO.TecplotOut = "Poisson";
 
-                    Action<int, double[], double[], MultigridOperator>[] ItCallbacks_Kollekte = { CustomItCallback, CO.ResItCallbackAtAll }; 
+                    Action<int, double[], double[], MultigridOperator>[] ItCallbacks_Kollekte = { CustomItCallback, CO.ResItCallbackAtAll };
                     SF.GenerateLinear(out solver, MgSeq, MgConfig, ItCallbacks_Kollekte);
                     //((ISolverWithCallback)solver).IterationCallback += CO.ResItCallbackAtAll;
                     //switch (base.Control.solver_name) {
@@ -1037,7 +1037,7 @@ namespace BoSSS.Application.SipPoisson {
                     //        };
                     //    } else {
                     //((ISolverWithCallback)solver).IterationCallback = CO.IterationCallback;
-                    
+
                     //    }
                     //}
 
@@ -1073,31 +1073,35 @@ namespace BoSSS.Application.SipPoisson {
                     Converged = solver.Converged;
                     NoOfIter = solver.ThisLevelIterations;
 
+                    // Lieber Jens, zerstöre bitte nie wieder den Jenkins vor deinem Urlaub --> zwecks Sympathie für/von deinen Kollegen und so
+                    //HierStimmtWasNichtJens(CO, condests, DOFs, Level);
+                }
+            }
+        }
 
-                    //Do the Convergency Analysis plz ...
-                    string identify = String.Format("_Res{0}_p{1}_{2}", T.Mapping.TotalLength, T.Basis.Degree, this.Control.LinearSolver.SolverCode.ToString());
-                    string analysedatapath = @"E:\Analysis\CCpoisson\Study0_vary_Mlevel_n_blocks\";
-                    string bla = String.Concat(analysedatapath, "SIP", identify);
-                    Console.WriteLine("plotting convergency data ...");
-                    if (CO != null) {
-                        //CO.PlotTrend(false, false, true);
-                        //CO.PlotTrend(true, false, true);
-                        //CO.PlotDecomposition(T.CoordinateVector.ToArray(),"decomposition"+bla);
-                        //CO.WriteTrendToCSV(false, true, true, bla + "_res");
-                        //CO.WriteTrendToCSV(true, true, true, bla + "_err");
-                    }
+        private void HierStimmtWasNichtJens(ConvergenceObserver CO, double[] condests, int[] DOFs, int[] Level) {
+            //Do the Convergency Analysis plz ...
+            string identify = String.Format("_Res{0}_p{1}_{2}", T.Mapping.TotalLength, T.Basis.Degree, this.Control.LinearSolver.SolverCode.ToString());
+            string analysedatapath = @"E:\Analysis\CCpoisson\Study0_vary_Mlevel_n_blocks\";
+            string bla = String.Concat(analysedatapath, "SIP", identify);
+            Console.WriteLine("plotting convergency data ...");
+            if (CO != null) {
+                //CO.PlotTrend(false, false, true);
+                //CO.PlotTrend(true, false, true);
+                //CO.PlotDecomposition(T.CoordinateVector.ToArray(),"decomposition"+bla);
+                //CO.WriteTrendToCSV(false, true, true, bla + "_res");
+                //CO.WriteTrendToCSV(true, true, true, bla + "_err");
+            }
 
-                    string condfile = String.Concat(analysedatapath, "condnum",identify, ".txt");
+            string condfile = String.Concat(analysedatapath, "condnum", identify, ".txt");
 
-                    using (StreamWriter CondStream = new StreamWriter(condfile)) {
-                        string header = String.Format("Level estCond total_DOFs");
-                        CondStream.WriteLine(header);
-                        for (int i = 0; i < condests.Length; i++) {
-                            string line = String.Format("{0} {1} {2}", Level[i], condests[i], DOFs[i]);
-                            Console.WriteLine(line);
-                            CondStream.WriteLine(line);
-                        }
-                    }
+            using (StreamWriter CondStream = new StreamWriter(condfile)) {
+                string header = String.Format("Level estCond total_DOFs");
+                CondStream.WriteLine(header);
+                for (int i = 0; i < condests.Length; i++) {
+                    string line = String.Format("{0} {1} {2}", Level[i], condests[i], DOFs[i]);
+                    Console.WriteLine(line);
+                    CondStream.WriteLine(line);
                 }
             }
         }
@@ -1186,19 +1190,19 @@ namespace BoSSS.Application.SipPoisson {
         //    }
 
 
-            //if (PrecondChain.Count > 1) {
-            //    /*
-            //    // construct a V-cycle
-            //    for (int i = PrecondChain.Count - 2; i>= 0; i--) {
-            //        PrecondChain.Add(PrecondChain[i]);
-            //    }
-            //    */
+        //if (PrecondChain.Count > 1) {
+        //    /*
+        //    // construct a V-cycle
+        //    for (int i = PrecondChain.Count - 2; i>= 0; i--) {
+        //        PrecondChain.Add(PrecondChain[i]);
+        //    }
+        //    */
 
-            //    var tmp = PrecondChain.ToArray();
-            //    for (int i = 0; i < PrecondChain.Count; i++) {
-            //        PrecondChain[i] = tmp[PrecondChain.Count - 1 - i];
-            //    }
-            //}
+        //    var tmp = PrecondChain.ToArray();
+        //    for (int i = 0; i < PrecondChain.Count; i++) {
+        //        PrecondChain[i] = tmp[PrecondChain.Count - 1 - i];
+        //    }
+        //}
 
 
 
@@ -1257,7 +1261,7 @@ namespace BoSSS.Application.SipPoisson {
         //            MultigridChain[iLevel] = MgLevel;
 
 
-                    
+
         //            ISolverSmootherTemplate pre, pst;
         //            if (iLevel > 0) {
 
