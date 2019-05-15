@@ -153,12 +153,6 @@
     <Compile Include="IBM\IBMAdamsBashforth.cs" />
     <Compile Include="IBM\IBMAdamsBashforthLTS.cs" />
     <Compile Include="IBM\IBMControl.cs" />
-    <Compile Include="MaterialProperty\ConstantViscosity.cs" />
-    <Compile Include="MaterialProperty\CovolumeGas.cs" />
-    <Compile Include="MaterialProperty\PowerLaw.cs" />
-    <Compile Include="MaterialProperty\StiffenedGas.cs" />
-    <Compile Include="MaterialProperty\SutherlandLaw.cs" />
-    <Compile Include="MaterialProperty\VanDerWaalsGas.cs" />
     <Compile Include="EquationSystem\DomainTypes.cs" />
     <Compile Include="Convection\ConvectiveFluxTypes.cs" />
     <Compile Include="EquationSystem\CFLConstraint.cs" />
@@ -202,8 +196,6 @@
     <Compile Include="Convection\EulerDensityComponent.cs" />
     <Compile Include="Convection\EulerEnergyComponent.cs" />
     <Compile Include="Convection\HLLFluxBuilder.cs" />
-    <Compile Include="MaterialProperty\IdealGas.cs" />
-    <Compile Include="MaterialProperty\TaitLaw.cs" />
     <Compile Include="Residual\ResidualLogger.cs" />
     <Compile Include="Residual\RigorousResidualLogger.cs" />
     <Compile Include="Source\CustomSourceBuilder.cs" />

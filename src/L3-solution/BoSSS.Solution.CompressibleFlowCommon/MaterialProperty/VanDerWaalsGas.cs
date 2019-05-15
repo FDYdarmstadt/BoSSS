@@ -14,12 +14,10 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-using BoSSS.Solution.CompressibleFlowCommon;
-using BoSSS.Solution.CompressibleFlowCommon.MaterialProperty;
 using System;
 using System.Diagnostics;
 
-namespace CNS.MaterialProperty {
+namespace BoSSS.Solution.CompressibleFlowCommon.MaterialProperty {
 
     /// <summary>
     /// Equation of state for a <i>real</i> gas described by the van der Waals

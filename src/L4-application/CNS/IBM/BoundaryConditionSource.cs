@@ -22,7 +22,6 @@ using BoSSS.Solution.Utils;
 using BoSSS.Solution.CompressibleFlowCommon.Boundary;
 using CNS.Convection;
 using CNS.Diffusion;
-using CNS.MaterialProperty;
 using ilPSP;
 using System;
 using System.Collections.Generic;

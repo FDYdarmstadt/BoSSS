@@ -20,7 +20,6 @@ using BoSSS.Foundation.Grid.Classic;
 using BoSSS.Solution.CompressibleFlowCommon;
 using BoSSS.Solution.CompressibleFlowCommon.MaterialProperty;
 using BoSSS.Solution.CompressibleFlowCommon.Boundary;
-using CNS.MaterialProperty;
 using ilPSP;
 using System;
 using System.Collections.Generic;

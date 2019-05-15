@@ -28,7 +28,6 @@ using CNS.Convection;
 using CNS.EquationSystem;
 using CNS.IBM;
 using CNS.LoadBalancing;
-using CNS.MaterialProperty;
 using CNS.ShockCapturing;
 using CNS.Tests;
 using ilPSP;

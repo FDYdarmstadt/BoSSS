@@ -15,9 +15,9 @@ limitations under the License.
 */
 
 using BoSSS.Solution.CompressibleFlowCommon;
+using BoSSS.Solution.CompressibleFlowCommon.MaterialProperty;
 using BoSSS.Solution.Queries;
 using CNS.EquationSystem;
-using CNS.MaterialProperty;
 using System;
 using static BoSSS.Solution.CompressibleFlowCommon.Boundary.ExactRinglebBoundaryState;
 

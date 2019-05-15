@@ -29,7 +29,6 @@ using CNS.Diffusion;
 using CNS.EquationSystem;
 using CNS.IBM;
 using CNS.LoadBalancing;
-using CNS.MaterialProperty;
 using CNS.Residual;
 using CNS.ShockCapturing;
 using CNS.Source;

@@ -16,10 +16,10 @@ limitations under the License.
 
 using BoSSS.Foundation.Grid.Classic;
 using BoSSS.Solution.CompressibleFlowCommon;
+using BoSSS.Solution.CompressibleFlowCommon.MaterialProperty;
 using BoSSS.Solution.Queries;
 using CNS.Convection;
 using CNS.EquationSystem;
-using CNS.MaterialProperty;
 using ilPSP.Utils;
 using System;
 

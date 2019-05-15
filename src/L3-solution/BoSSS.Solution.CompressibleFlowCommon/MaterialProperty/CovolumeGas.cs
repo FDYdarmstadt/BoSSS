@@ -14,44 +14,43 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-using BoSSS.Solution.CompressibleFlowCommon;
-using BoSSS.Solution.CompressibleFlowCommon.MaterialProperty;
 using System;
+using System.Diagnostics;
 
-namespace CNS.MaterialProperty {
+namespace BoSSS.Solution.CompressibleFlowCommon.MaterialProperty {
 
     /// <summary>
-    /// Ideal gas law for gases like air at moderate conditions.
+    /// An equation of state for modified ideal gases with a lower bound for
+    /// the volume of a fluid particle (a.k.a. covolume). The respective
+    /// equation of state is sometimes also called Nobel-Abel-EOS. For more
+    /// details on the subject, e.g. see Toro2009 or Johnston2005.
     /// </summary>
+    /// <remarks>
+    /// The covolume (see <see cref="Covolume"/>) is generally denoted by
+    /// \f$ b\f$  in formulas.
+    /// </remarks>
     [Serializable]
-    public class IdealGas : IEquationOfState {
+    public class CovolumeGas : IEquationOfState {
 
         /// <summary>
-        /// Constructs a new ideal gas law
+        /// A lower bound for the volume of a fluid particle; essentially
+        /// defines an upper bound for the density given by
+        /// \f$ \rho_\text{max} = \frac{1}{b}\f$ .
         /// </summary>
-        /// <param name="heatCapacityRatio">
-        /// The heat capacity ratio
+        public readonly double Covolume;
+
+        /// <summary>
+        /// Constructs a new covolume gas.
+        /// </summary>
+        /// <param name="heatCapacityRatio">Heat capacity ratio.</param>
+        /// <param name="covolume">
+        /// A lower bound for the volume of a fluid particle; essentially
+        /// defines an upper bound for the density given by
+        /// \f$ \rho_\text{max} = \frac{1}{b}\f$ .
         /// </param>
-        public IdealGas(double heatCapacityRatio) {
+        public CovolumeGas(double heatCapacityRatio, double covolume) {
             this.HeatCapacityRatio = heatCapacityRatio;
-        }
-
-        /// <summary>
-        /// Constructs an ideal gas law for standard air
-        /// </summary>
-        public static IdealGas Air {
-            get {
-                return new IdealGas(1.4);
-            }
-        }
-
-        /// <summary>
-        /// Constructs an ideal gas law for Helium
-        /// </summary>
-        public static IdealGas Helium {
-            get {
-                return new IdealGas(1.66);
-            }
+            this.Covolume = covolume;
         }
 
         #region IEquationOfState Members
@@ -65,21 +64,23 @@ namespace CNS.MaterialProperty {
         }
 
         /// <summary>
-        /// Calculate the pressure $p$ via
-        /// $p = (\kappa - 1) \rho e$
+        /// Calculates the pressure.
         /// </summary>
         /// <param name="state">
         /// <see cref="IEquationOfState.GetPressure"/>
         /// </param>
         /// <returns>
-        /// \f$ \rho e (\kappa - 1)\f$ 
-        /// where
-        /// \f$ \rho e\f$  = <see name="StateVector.InnerEnergy"/>
-        /// and \f$ \kappa\f$  is the heat capacity ratio
-        /// supplied to <see cref="IdealGas.IdealGas"/>.
+        /// \f$ 
+        /// p = (\kappa - 1) \frac{\rho}{1 - \rho b} e
+        /// \f$ 
         /// </returns>
         public double GetPressure(StateVector state) {
-            return (HeatCapacityRatio - 1.0) * state.InnerEnergy;
+            double apparentDensity = state.Density / (1.0 - Covolume * state.Density);
+            Debug.Assert(
+                apparentDensity > 0.0,
+                "Invalid density (might be bigger than 1 / covolume)");
+
+            return (HeatCapacityRatio - 1.0) * apparentDensity * state.SpecificInnerEnergy;
         }
 
         /// <summary>
@@ -100,54 +101,50 @@ namespace CNS.MaterialProperty {
         }
 
         /// <summary>
-        /// Calculates the inner energy for an ideal gas.
+        /// Calculates the inner energy for a covolume gas.
         /// </summary>
         /// <param name="density"></param>
         /// <param name="pressure"></param>
         /// <returns>
-        /// \f$ \frac{p}{(\kappa - 1)}\f$  where
-        /// \f$ \kappa\f$  is the heat capacity ratio.
+        /// \f$ \frac{p}{\kappa - 1} (1 - \rho b)\f$  where
+        /// \f$ \kappa\f$  is the heat capacity ratio
+        /// and \f$ b\f$  is the covolume.
         /// </returns>
         public double GetInnerEnergy(double density, double pressure) {
-            return pressure / (HeatCapacityRatio - 1.0);
+            return pressure / (HeatCapacityRatio - 1.0) * (1.0 - density * Covolume);
         }
 
+
         /// <summary>
-        /// Calculates the local speed of sound \f$a\f$ via
-        /// \f$a = \sqrt{\frac{p}{\rho}} / \text{Ma}\f$, where
-        /// \f$\text{Ma}\f$ is the reference Mach number
+        /// Calculates the speed of sound.
         /// </summary>
         /// <param name="state">
         /// <see cref="IEquationOfState.GetSpeedOfSound"/>
         /// </param>
         /// <returns>
-        /// \f$ \sqrt{\frac{p}{\rho}} / \text{Ma}\f$ 
-        /// where
-        /// \f$ \rho\f$  = <see name="StateVector.Density"/>
-        /// \f$ p\f$  = <see name="StateVector.Pressure"/>.
+        /// \f$ 
+        /// a = \sqrt{\kappa \frac{p}{\rho (1 - \rho b)}}
+        /// \f$ 
         /// </returns>
         public double GetSpeedOfSound(StateVector state) {
-            // Equals sqrt{\kappa \frac{p}{\rho}} for Ma = \kappa
-            return Math.Sqrt(state.Pressure / state.Density) / state.Material.MachNumber;
+            return Math.Sqrt(HeatCapacityRatio * state.Pressure / state.Density / (1.0 - state.Density * Covolume));
         }
 
         /// <summary>
-        /// Calculates the local entropy \f$ S\f$ via
-        /// \f$ S = \frac{p}{\rho^\kappa}\f$ 
+        /// Calculates the local entropy.
         /// </summary>
         /// <param name="state">
         /// <see cref="IEquationOfState.GetEntropy"/>
         /// </param>
         /// <returns>
-        /// \f$ S = \frac{p}{\rho^\kappa}\f$ 
-        /// where
-        /// \f$ \rho\f$  = <see name="StateVector.Density"/>
-        /// \f$ p\f$  = <see name="StateVector.Pressure"/>
-        /// and \f$ \kappa\f$  is the heat capacity ratio
-        /// supplied to <see cref="IdealGas.IdealGas"/>.
+        /// \f$ 
+        /// S = p \left(\frac{1 - \rho b}{\rho}\right)^\gamma
+        /// \f$ 
         /// </returns>
         public double GetEntropy(StateVector state) {
-            return state.Pressure / Math.Pow(state.Density, HeatCapacityRatio);
+            return state.Pressure * Math.Pow(
+                (1.0 - state.Density * Covolume) / state.Density,
+                HeatCapacityRatio);
         }
 
         #endregion

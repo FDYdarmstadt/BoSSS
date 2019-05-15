@@ -14,10 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-
-using BoSSS.Solution.CompressibleFlowCommon.MaterialProperty;
-
-namespace CNS.MaterialProperty {
+namespace BoSSS.Solution.CompressibleFlowCommon.MaterialProperty {
 
     /// <summary>
     /// For materials with a constant viscosity
