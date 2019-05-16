@@ -456,7 +456,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
             string plotName = TecplotOut + "Res-decomp" + "."+Iterationcounter[4] + "."+Iterationcounter[3];
 
 
-            Tecplot.Tecplot.PlotFields(DecompVec.Mapping.Fields, plotName, 0.0, 3);
+            //Tecplot.Tecplot.PlotFields(DecompVec.Mapping.Fields, plotName, 0.0, 3);
             //DecomposedDGFields.AddRange(DecompVec.Mapping.Fields);
         }
 
