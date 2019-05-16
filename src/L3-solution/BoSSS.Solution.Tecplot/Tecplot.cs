@@ -137,8 +137,11 @@ namespace BoSSS.Solution.Tecplot {
             ptrFName = Marshal.StringToHGlobalAnsi(filenameWithPath);
             ptrVariables = Marshal.StringToHGlobalAnsi(Variables);
 
-            tecini110(ptrTitle, ptrVariables, ptrFName, ptrScratchDir, ref Debug, ref VIsDouble);
-
+            int errorWhileOpening = tecini110(ptrTitle, ptrVariables, ptrFName, ptrScratchDir, ref Debug, ref VIsDouble);
+            if (errorWhileOpening == -1)
+            {
+                throw new Exception("Tecplot could not create file. Do you have writing permission?");
+            }
             Marshal.FreeHGlobal(ptrTitle);
             Marshal.FreeHGlobal(ptrScratchDir);
             Marshal.FreeHGlobal(ptrFName);
