@@ -401,7 +401,7 @@ namespace CNS {
         /// covered all cases
         /// </summary>
         /// <returns></returns>
-        public object Clone() {
+        public override object Clone() {
             var clone = (CNSControl)this.MemberwiseClone();
             clone.CustomContinuitySources = new List<Func<ISpeciesMap, INonlinearSource>>();
             clone.CustomContinuitySources.AddRange(this.CustomContinuitySources);

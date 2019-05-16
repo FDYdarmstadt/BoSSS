@@ -26,7 +26,7 @@ namespace BoSSS.Solution.CompressibleFlowCommon {
         [ExclusiveLowerBound(0.0)]
         public double MachNumber;
         
-        public object Clone() {
+        public virtual object Clone() {
             throw new NotImplementedException();
         }
     }
