@@ -106,7 +106,7 @@ namespace CNS {
         public VariableTypes GetInitialValueVariables() {
             bool conservative = InitialValues_Evaluators.ContainsKey(BoSSS.Solution.CompressibleFlowCommon.Variables.Density)
                 && InitialValues_Evaluators.ContainsKey(BoSSS.Solution.CompressibleFlowCommon.Variables.Energy);
-            for (int d = 0; d < CNSEnvironment.NumberOfDimensions; d++) {
+            for (int d = 0; d < CompressibleEnvironment.NumberOfDimensions; d++) {
                 conservative &= InitialValues_Evaluators.ContainsKey(BoSSS.Solution.CompressibleFlowCommon.Variables.Momentum[d]);
             }
 
@@ -116,7 +116,7 @@ namespace CNS {
 
             bool primitive = InitialValues_Evaluators.ContainsKey(BoSSS.Solution.CompressibleFlowCommon.Variables.Density)
                 && InitialValues_Evaluators.ContainsKey(CNSVariables.Pressure);
-            for (int d = 0; d < CNSEnvironment.NumberOfDimensions; d++) {
+            for (int d = 0; d < CompressibleEnvironment.NumberOfDimensions; d++) {
                 primitive &= InitialValues_Evaluators.ContainsKey(CNSVariables.Velocity[d]);
             }
 
@@ -125,16 +125,6 @@ namespace CNS {
             }
 
             return VariableTypes.None;
-        }
-
-        /// <summary>
-        /// Dictionary linking field variables (including derived ones) to
-        /// the desired polynomial degree
-        /// </summary>
-        public IReadOnlyDictionary<Variable, int> VariableFields {
-            get {
-                return variableFields;
-            }
         }
 
         /// <summary>

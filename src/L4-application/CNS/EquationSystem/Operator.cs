@@ -53,8 +53,8 @@ namespace CNS.EquationSystem {
 
             DensityComponents = new List<IEquationComponent>();
             MomentumComponents = new IList<IEquationComponent>[
-                CNSEnvironment.NumberOfDimensions];
-            for (int d = 0; d < CNSEnvironment.NumberOfDimensions; d++) {
+                CompressibleEnvironment.NumberOfDimensions];
+            for (int d = 0; d < CompressibleEnvironment.NumberOfDimensions; d++) {
                 MomentumComponents[d] = new List<IEquationComponent>();
             }
             EnergyComponents = new List<IEquationComponent>();
@@ -142,9 +142,9 @@ namespace CNS.EquationSystem {
         /// <returns></returns>
         public SpatialOperator ToSpatialOperator(CNSFieldSet fieldSet) {
             SpatialOperator spatialOp = new SpatialOperator(
-                CNSEnvironment.PrimalArgumentOrdering,
+                CompressibleEnvironment.PrimalArgumentOrdering,
                 GetParameterOrdering(fieldSet),
-                CNSEnvironment.PrimalArgumentOrdering,
+                CompressibleEnvironment.PrimalArgumentOrdering,
                 QuadOrderFunc.NonLinearWithoutParameters(2));
             MapComponents(spatialOp);
             spatialOp.Commit();
@@ -164,7 +164,7 @@ namespace CNS.EquationSystem {
             DensityComponents.ForEach(component =>
                 op.EquationComponents[Variables.Density].Add(component));
 
-            for (int d = 0; d < CNSEnvironment.NumberOfDimensions; d++) {
+            for (int d = 0; d < CompressibleEnvironment.NumberOfDimensions; d++) {
                 MomentumComponents[d].ForEach(component =>
                     op.EquationComponents[Variables.Momentum[d]].Add(component));
             }

@@ -74,8 +74,8 @@ namespace CNS.IBM {
                 specFemField.AccToDGField(1.0, LevelSet);
             }
 
-            LevelSetGradient = new DGField[CNSEnvironment.NumberOfDimensions];
-            for (int d = 0; d < CNSEnvironment.NumberOfDimensions; d++) {
+            LevelSetGradient = new DGField[CompressibleEnvironment.NumberOfDimensions];
+            for (int d = 0; d < CompressibleEnvironment.NumberOfDimensions; d++) {
                 LevelSetGradient[d] = DerivedFields[IBMVariables.LevelSetGradient[d]];
             }
         }

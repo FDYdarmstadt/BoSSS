@@ -15,15 +15,20 @@ limitations under the License.
 */
 
 using BoSSS.Foundation;
+using BoSSS.Foundation.Grid;
 using BoSSS.Solution.CompressibleFlowCommon.Boundary;
 using BoSSS.Solution.CompressibleFlowCommon.Convection;
 using BoSSS.Solution.CompressibleFlowCommon.MaterialProperty;
 
 namespace BoSSS.Solution.CompressibleFlowCommon.EquationSystem {
 
-    public class CompressibleOperatorFactory {
+    public static class CompressibleOperatorFactory {
 
-        public static SpatialOperator GetEulerOperator(IBoundaryConditionMap boundaryMap, Material material) {
+        public static SpatialOperator GetEulerOperator(IGridData gridData, CompressibleControl control) {
+
+            // Boundary condition map
+            Material material = control.GetMaterial();
+            IBoundaryConditionMap boundaryMap = new BoundaryConditionMap(gridData, control, material);
 
             // Initialize operator
             SpatialOperator EulerOperator = new SpatialOperator(

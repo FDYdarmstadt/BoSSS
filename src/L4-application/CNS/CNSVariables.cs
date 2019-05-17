@@ -261,7 +261,7 @@ namespace CNS {
                     //        "Currently, computing vorticity requires calculating the velocity first");
                     //}
 
-                    //switch (CNSEnvironment.NumberOfDimensions) {
+                    //switch (CompressibleEnvironment.NumberOfDimensions) {
                     //    case 1:
                     //        throw new Exception(
                     //            "The concept of vorticity does not make sense for"

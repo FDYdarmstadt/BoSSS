@@ -71,7 +71,7 @@ namespace CNS.EquationSystem {
                 case DomainTypes.StaticImmersedBoundary:
                 case DomainTypes.MovingImmersedBoundary:
                     // Make level set gradient exists in list of derived fields
-                    for (int d = 0; d < CNSEnvironment.NumberOfDimensions; d++) {
+                    for (int d = 0; d < CompressibleEnvironment.NumberOfDimensions; d++) {
                         if (!control.FieldOptions.ContainsKey(IBMVariables.LevelSetGradient[d])) {
                             control.AddVariable(
                                 IBMVariables.LevelSetGradient[d],

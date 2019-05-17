@@ -139,7 +139,7 @@ namespace BoSSS.Solution.CompressibleFlowCommon.Convection {
         #region IEquationComponent Members
 
         /// <summary>
-        /// <see cref="CNSEnvironment.PrimalArgumentOrdering"/>
+        /// <see cref="CompressibleEnvironment.PrimalArgumentOrdering"/>
         /// </summary>
         public IList<string> ArgumentOrdering {
             get {

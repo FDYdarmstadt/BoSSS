@@ -34,7 +34,7 @@ namespace CNS.ShockCapturing {
                 (BoSSS.Foundation.Grid.Classic.GridData) this.speciesMap.GridData, 
                 control.DensityDegree, this.speciesMap.GridData.SpatialDimension, Variables.Density.Name));
 
-            for (int d = 0; d < CNSEnvironment.NumberOfDimensions; d++) {
+            for (int d = 0; d < CompressibleEnvironment.NumberOfDimensions; d++) {
                 mapping.MomentumComponents[d].Add(new OptimizedLaplacianArtificialViscosityFlux(
                     (BoSSS.Foundation.Grid.Classic.GridData) this.speciesMap.GridData, 
                     control.MomentumDegree, this.speciesMap.GridData.SpatialDimension, Variables.Momentum[d].Name));
@@ -47,21 +47,21 @@ namespace CNS.ShockCapturing {
 
             //// Old artificial viscosity flux (hack for testing different AV boundary conditions)
             //mapping.DensityComponents.Add(new LaplacianArtificialViscosityFlux(
-            //    control.DensityDegree, this.speciesMap.GridData.Cells.cj, CNSEnvironment.PrimalArgumentOrdering, CNSEnvironment.PrimalArgumentToIndexMap[Variables.Density], boundaryMap, speciesMap));
+            //    control.DensityDegree, this.speciesMap.GridData.Cells.cj, CompressibleEnvironment.PrimalArgumentOrdering, CompressibleEnvironment.PrimalArgumentToIndexMap[Variables.Density], boundaryMap, speciesMap));
 
-            //for (int d = 0; d < CNSEnvironment.NumberOfDimensions; d++) {
+            //for (int d = 0; d < CompressibleEnvironment.NumberOfDimensions; d++) {
             //    mapping.MomentumComponents[d].Add(new LaplacianArtificialViscosityFlux(
-            //        control.MomentumDegree, this.speciesMap.GridData.Cells.cj, CNSEnvironment.PrimalArgumentOrdering, CNSEnvironment.PrimalArgumentToIndexMap[Variables.Momentum[d]], boundaryMap, speciesMap));
+            //        control.MomentumDegree, this.speciesMap.GridData.Cells.cj, CompressibleEnvironment.PrimalArgumentOrdering, CompressibleEnvironment.PrimalArgumentToIndexMap[Variables.Momentum[d]], boundaryMap, speciesMap));
             //}
             //mapping.EnergyComponents.Add(new LaplacianArtificialViscosityFlux(
-            //    control.EnergyDegree, this.speciesMap.GridData.Cells.cj, CNSEnvironment.PrimalArgumentOrdering, CNSEnvironment.PrimalArgumentToIndexMap[Variables.Energy], boundaryMap, speciesMap));
+            //    control.EnergyDegree, this.speciesMap.GridData.Cells.cj, CompressibleEnvironment.PrimalArgumentOrdering, CompressibleEnvironment.PrimalArgumentToIndexMap[Variables.Energy], boundaryMap, speciesMap));
 
 
             // Old artificial viscosity flux
             //mapping.DensityComponents.Add(new LaplacianArtificialViscosityFlux(
             //    control.DensityDegree, this.speciesMap.GridData.Cells.cj, Variables.Density, boundaryMap, speciesMap));
 
-            //for (int d = 0; d < CNSEnvironment.NumberOfDimensions; d++) {
+            //for (int d = 0; d < CompressibleEnvironment.NumberOfDimensions; d++) {
             //    mapping.MomentumComponents[d].Add(new LaplacianArtificialViscosityFlux(
             //        control.MomentumDegree, this.speciesMap.GridData.Cells.cj, Variables.Momentum[d], boundaryMap, speciesMap));
             //}

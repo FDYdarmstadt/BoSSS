@@ -120,6 +120,16 @@ namespace BoSSS.Solution.CompressibleFlowCommon {
         /// </summary>
         protected Dictionary<Variable, int> variableFields = new Dictionary<Variable, int>();
 
+        /// <summary>
+        /// Dictionary linking field variables (including derived ones) to
+        /// the desired polynomial degree
+        /// </summary>
+        public IReadOnlyDictionary<Variable, int> VariableFields {
+            get {
+                return variableFields;
+            }
+        }
+
         public virtual object Clone() {
             throw new NotImplementedException();
         }

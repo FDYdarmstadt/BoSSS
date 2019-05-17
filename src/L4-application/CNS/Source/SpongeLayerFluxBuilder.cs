@@ -44,15 +44,15 @@ namespace CNS.Source {
         /// <param name="mapping"></param>
         public override void BuildFluxes(Operator mapping) {
             mapping.DensityComponents.Add(new SpongeLayerSource(
-                CNSEnvironment.PrimalArgumentToIndexMap[Variables.Density],
+                CompressibleEnvironment.PrimalArgumentToIndexMap[Variables.Density],
                 config.referenceState.Density,
                 config.layerDirection,
                 config.layerStart,
                 config.layerEnd,
                 config.strength));
-            for (int d = 0; d < CNSEnvironment.NumberOfDimensions; d++) {
+            for (int d = 0; d < CompressibleEnvironment.NumberOfDimensions; d++) {
                 mapping.MomentumComponents[d].Add(new SpongeLayerSource(
-                    CNSEnvironment.PrimalArgumentToIndexMap[Variables.Momentum[d]],
+                    CompressibleEnvironment.PrimalArgumentToIndexMap[Variables.Momentum[d]],
                     config.referenceState.Momentum[d],
                     config.layerDirection,
                     config.layerStart,
@@ -60,7 +60,7 @@ namespace CNS.Source {
                     config.strength));
             }
             mapping.EnergyComponents.Add(new SpongeLayerSource(
-                CNSEnvironment.PrimalArgumentToIndexMap[Variables.Energy],
+                CompressibleEnvironment.PrimalArgumentToIndexMap[Variables.Energy],
                 config.referenceState.Energy,
                 config.layerDirection,
                 config.layerStart,
