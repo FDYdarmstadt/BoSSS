@@ -24,7 +24,7 @@ namespace BoSSS.Solution.CompressibleFlowCommon.EquationSystem {
 
     public static class CompressibleOperatorFactory {
 
-        public static SpatialOperator GetEulerOperator(IGridData gridData, CompressibleControl control) {
+        public static SpatialOperator BuildEulerOperator(IGridData gridData, CompressibleControl control) {
 
             // Boundary condition map
             Material material = control.GetMaterial();

@@ -72,32 +72,7 @@ namespace CNS {
         [ExclusiveLowerBound(0.0)]
         public double CFLFraction;
 
-        /// <summary>
-        /// The configured polynomial DG degree of the density
-        /// </summary>
-        public int DensityDegree {
-            get {
-                return base.FieldOptions[BoSSS.Solution.CompressibleFlowCommon.Variables.Density].Degree;
-            }
-        }
 
-        /// <summary>
-        /// The configured polynomial DG degree of the momentum components.
-        /// </summary>
-        public int MomentumDegree {
-            get {
-                return base.FieldOptions[BoSSS.Solution.CompressibleFlowCommon.Variables.Momentum.xComponent].Degree;
-            }
-        }
-
-        /// <summary>
-        /// The configured polynomial DG degree of the energy
-        /// </summary>
-        public int EnergyDegree {
-            get {
-                return base.FieldOptions[BoSSS.Solution.CompressibleFlowCommon.Variables.Energy].Degree;
-            }
-        }
 
         /// <summary>
         /// Or-combination of all variables for which initial value definitions
