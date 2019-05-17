@@ -16,13 +16,11 @@ limitations under the License.
 
 using BoSSS.Foundation;
 using BoSSS.Foundation.Grid;
-using BoSSS.Foundation.Grid.Classic;
 using BoSSS.Foundation.Quadrature;
 using BoSSS.Platform.LinAlg;
 using BoSSS.Solution.CompressibleFlowCommon;
 using BoSSS.Solution.Utils;
 using CNS.EquationSystem;
-using CNS.IBM;
 using ilPSP.Tracing;
 using System;
 using System.Collections.Generic;
@@ -34,12 +32,7 @@ namespace CNS {
     /// Container for all fields representing the current state of the
     /// variables of the compressible Navier-stokes equations.
     /// </summary>
-    public class CNSFieldSet : ICloneable {
-
-        /// <summary>
-        /// The omnipresent context;
-        /// </summary>
-        protected IGridData gridData;
+    public class CNSFieldSet : FieldSet, ICloneable {
 
         /// <summary>
         /// <see cref="CNSControl"/>
@@ -47,31 +40,12 @@ namespace CNS {
         protected internal CNSControl config;
 
         /// <summary>
-        /// Fields representing the derivatives of the primal variables
-        /// </summary>
-        /// <summary>
-        /// The density $\rho$
-        /// </summary>
-        public readonly DGField Density;
-
-        /// <summary>
-        /// The momentum field $\rho \vec{u}$
-        /// </summary>
-        public readonly VectorField<DGField> Momentum;
-
-        /// <summary>
-        /// The total energy per volume $\rho E$
-        /// </summary>
-        public readonly DGField Energy;
-
-        /// <summary>
         /// Private constructor for cloning purposes
         /// </summary>
         /// <param name="gridData">The omnipresent grid data</param>
         /// <param name="config">Configurations options</param>
         /// <param name="template">The object to be cloned</param>
-        protected CNSFieldSet(IGridData gridData, CNSControl config, CNSFieldSet template) {
-            this.gridData = gridData;
+        protected CNSFieldSet(IGridData gridData, CNSControl config, CNSFieldSet template) : base(gridData) {
             this.config = config;
 
             Density = template.Density.CloneAs();
@@ -90,33 +64,13 @@ namespace CNS {
 
         /// <summary>
         /// Uses information from <paramref name="config"/> to create
-        /// <see cref="SinglePhaseField"/>s for <see cref="Density"/>,
-        /// <see cref="Momentum"/> and <see cref="Energy"/>.
+        /// <see cref="SinglePhaseField"/>s for <see cref="FieldSet.Density"/>,
+        /// <see cref="FieldSet.Momentum"/> and <see cref="FieldSet.Energy"/>.
         /// </summary>
         /// <param name="gridData">The omnipresent grid data</param>
         /// <param name="config">CNS specific control options</param>
-        public CNSFieldSet(IGridData gridData, CNSControl config) {
-            this.gridData = gridData;
+        public CNSFieldSet(IGridData gridData, CNSControl config) : base(gridData, config) {
             this.config = config;
-
-            int numberOfDimensions = CompressibleEnvironment.NumberOfDimensions;
-
-            SinglePhaseField[] momentumFields = new SinglePhaseField[numberOfDimensions];
-            Basis momentumBasis = new Basis(gridData, config.MomentumDegree);
-
-            // Mandatory fields
-            Density = new SinglePhaseField(
-                new Basis(gridData, config.DensityDegree),
-                Variables.Density);
-
-            for (int d = 0; d < numberOfDimensions; d++) {
-                string variableName = Variables.Momentum[d];
-                momentumFields[d] = new SinglePhaseField(momentumBasis, variableName);
-            }
-            Momentum = new VectorField<DGField>(momentumFields);
-
-            Energy = new SinglePhaseField(
-                new Basis(gridData, config.EnergyDegree), Variables.Energy);
 
             // Derived fields
             foreach (var fieldConfig in config.VariableFields) {
@@ -128,24 +82,6 @@ namespace CNS {
                 SinglePhaseField field = new SinglePhaseField(
                     new Basis(gridData, fieldConfig.Value), key);
                 DerivedFields.Add(key, field);
-            }
-        }
-
-        /// <summary>
-        /// Vector representation of <see cref="Density"/>,
-        /// <see cref="Momentum"/> and <see cref="Energy"/>.
-        /// </summary>
-        public DGField[] ConservativeVariables {
-            get {
-                DGField[] fields = new DGField[CompressibleEnvironment.NumberOfDimensions + 2];
-
-                fields[CompressibleEnvironment.PrimalArgumentToIndexMap[Variables.Density]] = Density;
-                for (int d = 0; d < CompressibleEnvironment.NumberOfDimensions; d++) {
-                    fields[CompressibleEnvironment.PrimalArgumentToIndexMap[Variables.Momentum[d]]] = Momentum[d];
-                }
-                fields[CompressibleEnvironment.PrimalArgumentToIndexMap[Variables.Energy]] = Energy;
-
-                return fields;
             }
         }
 
@@ -170,7 +106,7 @@ namespace CNS {
         public Dictionary<DerivedVariable, DGField> DerivedFields = new Dictionary<DerivedVariable, DGField>();
 
         /// <summary>
-        /// Union of <see cref="ConservativeVariables"/> and <see cref="DerivedFields"/>
+        /// Union of <see cref="FieldSet.ConservativeVariables"/> and <see cref="DerivedFields"/>
         /// </summary>
         public virtual IEnumerable<DGField> AllFields {
             get {
@@ -178,13 +114,10 @@ namespace CNS {
             }
         }
 
-        
-
-
         /// <summary>
         /// Projects the given <paramref name="initialValues"/> onto the
-        /// conservative variable fields <see cref="Density"/>,
-        /// <see cref="Momentum"/> and <see cref="Energy"/>. Initial values
+        /// conservative variable fields <see cref="FieldSet.Density"/>,
+        /// <see cref="FieldSet.Momentum"/> and <see cref="FieldSet.Energy"/>. Initial values
         /// may either be given in conservative (see
         /// <see cref="VariableTypes.ConservativeVariables"/>) or primitive
         /// (see <see cref="VariableTypes.PrimitiveVariables"/>) variables
@@ -266,7 +199,7 @@ namespace CNS {
         /// <summary>
         /// Updates the sensor value
         /// <see cref="BoSSS.Solution.CompressibleFlowCommon.ShockCapturing.IShockSensor.UpdateSensorValues(IEnumerable{DGField}, ISpeciesMap, CellMask)"/>
-        /// and the artificial viscosity value <see cref="Variables.ArtificialViscosity"/> in every cell
+        /// and the artificial viscosity value <see cref="CNSVariables.ArtificialViscosity"/> in every cell
         /// </summary>
         /// <param name="program"></param>
         /// <param name="cellMask"></param>
