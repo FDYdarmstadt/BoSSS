@@ -32,17 +32,17 @@ namespace BoSSS.Solution.CompressibleFlowCommon.EquationSystem {
 
             // Initialize operator
             SpatialOperator EulerOperator = new SpatialOperator(
-                new string[] { Variables.Density, Variables.Momentum.xComponent, Variables.Momentum.yComponent, Variables.Energy },
+                new string[] { CompressibleVariables.Density, CompressibleVariables.Momentum.xComponent, CompressibleVariables.Momentum.yComponent, CompressibleVariables.Energy },
                 new string[] { },
-                new string[] { Variables.Density, Variables.Momentum.xComponent, Variables.Momentum.yComponent, Variables.Energy },
+                new string[] { CompressibleVariables.Density, CompressibleVariables.Momentum.xComponent, CompressibleVariables.Momentum.yComponent, CompressibleVariables.Energy },
                 QuadOrderFunc.NonLinearWithoutParameters(2)
                 );
 
             // Map fluxes
-            EulerOperator.EquationComponents[Variables.Density].Add(new OptimizedHLLCDensityFlux(boundaryMap, material));
-            EulerOperator.EquationComponents[Variables.Momentum.xComponent].Add(new OptimizedHLLCMomentumFlux(boundaryMap, 0, material));
-            EulerOperator.EquationComponents[Variables.Momentum.yComponent].Add(new OptimizedHLLCMomentumFlux(boundaryMap, 1, material));
-            EulerOperator.EquationComponents[Variables.Energy].Add(new OptimizedHLLCEnergyFlux(boundaryMap, material));
+            EulerOperator.EquationComponents[CompressibleVariables.Density].Add(new OptimizedHLLCDensityFlux(boundaryMap, material));
+            EulerOperator.EquationComponents[CompressibleVariables.Momentum.xComponent].Add(new OptimizedHLLCMomentumFlux(boundaryMap, 0, material));
+            EulerOperator.EquationComponents[CompressibleVariables.Momentum.yComponent].Add(new OptimizedHLLCMomentumFlux(boundaryMap, 1, material));
+            EulerOperator.EquationComponents[CompressibleVariables.Energy].Add(new OptimizedHLLCEnergyFlux(boundaryMap, material));
 
             EulerOperator.Commit();
 

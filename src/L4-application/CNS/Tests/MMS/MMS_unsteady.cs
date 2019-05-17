@@ -212,10 +212,10 @@ namespace CNS.Tests.MMS {
             c.MachNumber = 0.5;
         
             // Primary CNSVariables
-            c.AddVariable(Variables.Density, dgDegree);
-            c.AddVariable(Variables.Momentum.xComponent, dgDegree);
-            c.AddVariable(Variables.Momentum.yComponent, dgDegree);
-            c.AddVariable(Variables.Energy, dgDegree);
+            c.AddVariable(CompressibleVariables.Density, dgDegree);
+            c.AddVariable(CompressibleVariables.Momentum.xComponent, dgDegree);
+            c.AddVariable(CompressibleVariables.Momentum.yComponent, dgDegree);
+            c.AddVariable(CompressibleVariables.Energy, dgDegree);
             // Parameters
             c.AddVariable(CNSVariables.Velocity.xComponent, dgDegree);
             c.AddVariable(CNSVariables.Velocity.yComponent, dgDegree);
@@ -247,10 +247,10 @@ namespace CNS.Tests.MMS {
             Func<double[], double, double> pressure = (X, t) => (gamma - 1.0) * (rhoE(X, t) - 0.5 * MachScaling * rho(X, t) * (u1(X, t) * u1(X, t) + u2(X, t) * u2(X, t))); 
 
             //Initial Values
-            c.InitialValues_Evaluators.Add(Variables.Density, X => rho(X, 0.0));
-            c.InitialValues_Evaluators.Add(Variables.Momentum.xComponent, X => m(X, 0.0));
-            c.InitialValues_Evaluators.Add(Variables.Momentum.yComponent, X => m(X, 0.0));
-            c.InitialValues_Evaluators.Add(Variables.Energy, X => rhoE(X, 0.0));
+            c.InitialValues_Evaluators.Add(CompressibleVariables.Density, X => rho(X, 0.0));
+            c.InitialValues_Evaluators.Add(CompressibleVariables.Momentum.xComponent, X => m(X, 0.0));
+            c.InitialValues_Evaluators.Add(CompressibleVariables.Momentum.yComponent, X => m(X, 0.0));
+            c.InitialValues_Evaluators.Add(CompressibleVariables.Energy, X => rhoE(X, 0.0));
 
             //c.InitialValues.Add(CNSVariables.Velocity.xComponent, X => u0(X, 0.0));
             //c.InitialValues.Add(CNSVariables.Velocity.yComponent, X => u1(X, 0.0));
@@ -274,9 +274,9 @@ namespace CNS.Tests.MMS {
 
             // Queries
             int QueryDegree = 14;
-            c.Queries.Add("densityError", QueryLibrary.L2Error(Variables.Density, rho, QueryDegree));
-            c.Queries.Add("momentumError", QueryLibrary.L2Error(Variables.Momentum.xComponent, m, QueryDegree));
-            c.Queries.Add("energyError", QueryLibrary.L2Error(Variables.Energy, rhoE, QueryDegree));
+            c.Queries.Add("densityError", QueryLibrary.L2Error(CompressibleVariables.Density, rho, QueryDegree));
+            c.Queries.Add("momentumError", QueryLibrary.L2Error(CompressibleVariables.Momentum.xComponent, m, QueryDegree));
+            c.Queries.Add("energyError", QueryLibrary.L2Error(CompressibleVariables.Energy, rhoE, QueryDegree));
             c.Queries.Add("velocityError", QueryLibrary.L2Error(CNSVariables.Velocity.xComponent, u1, QueryDegree));
 
             c.ProjectName = "MMS-Gassner2D_Mach=" + c.MachNumber + "_Flux=" + c.DiffusiveFluxType + "_h=1/" + noOfCellsPerDirection + "_p=" + dgDegree;
@@ -334,10 +334,10 @@ namespace CNS.Tests.MMS {
             c.MachNumber = 1/Math.Sqrt(1.4);
 
             // Primary CNSVariables
-            c.AddVariable(Variables.Density, dgDegree);
-            c.AddVariable(Variables.Momentum.xComponent, dgDegree);
-            c.AddVariable(Variables.Momentum.yComponent, dgDegree);
-            c.AddVariable(Variables.Energy, dgDegree);
+            c.AddVariable(CompressibleVariables.Density, dgDegree);
+            c.AddVariable(CompressibleVariables.Momentum.xComponent, dgDegree);
+            c.AddVariable(CompressibleVariables.Momentum.yComponent, dgDegree);
+            c.AddVariable(CompressibleVariables.Energy, dgDegree);
             // Parameters
             c.AddVariable(CNSVariables.Velocity.xComponent, dgDegree);
             c.AddVariable(CNSVariables.Velocity.yComponent, dgDegree);
@@ -400,9 +400,9 @@ namespace CNS.Tests.MMS {
 
             // Queries
             int QueryDegree = 10;
-            c.Queries.Add("densityError", QueryLibrary.L2Error(Variables.Density, rho, QueryDegree));
-            c.Queries.Add("momentum0Error", QueryLibrary.L2Error(Variables.Momentum.xComponent, m0, QueryDegree));
-            c.Queries.Add("energyError", QueryLibrary.L2Error(Variables.Energy, rhoE, QueryDegree));
+            c.Queries.Add("densityError", QueryLibrary.L2Error(CompressibleVariables.Density, rho, QueryDegree));
+            c.Queries.Add("momentum0Error", QueryLibrary.L2Error(CompressibleVariables.Momentum.xComponent, m0, QueryDegree));
+            c.Queries.Add("energyError", QueryLibrary.L2Error(CompressibleVariables.Energy, rhoE, QueryDegree));
             c.Queries.Add("velocity0Error", QueryLibrary.L2Error(CNSVariables.Velocity.xComponent, u0, QueryDegree));
 
             c.ProjectName = "MMS-Gassner2D_Mach=" + c.MachNumber + "_Flux=" + c.DiffusiveFluxType + "_h=1/" + noOfCellsPerDirection + "_p=" + dgDegree;
@@ -463,11 +463,11 @@ namespace CNS.Tests.MMS {
             c.MachNumber = 1 / Math.Sqrt(c.EquationOfState.HeatCapacityRatio);
 
             // Primary CNSVariables
-            c.AddVariable(Variables.Density, dgDegree);
-            c.AddVariable(Variables.Momentum.xComponent, dgDegree);
-            c.AddVariable(Variables.Momentum.yComponent, dgDegree);
-            c.AddVariable(Variables.Momentum.zComponent, dgDegree);
-            c.AddVariable(Variables.Energy, dgDegree);
+            c.AddVariable(CompressibleVariables.Density, dgDegree);
+            c.AddVariable(CompressibleVariables.Momentum.xComponent, dgDegree);
+            c.AddVariable(CompressibleVariables.Momentum.yComponent, dgDegree);
+            c.AddVariable(CompressibleVariables.Momentum.zComponent, dgDegree);
+            c.AddVariable(CompressibleVariables.Energy, dgDegree);
             // Parameters
             c.AddVariable(CNSVariables.Velocity.xComponent, dgDegree);
             c.AddVariable(CNSVariables.Velocity.yComponent, dgDegree);
@@ -513,11 +513,11 @@ namespace CNS.Tests.MMS {
                                                                     - 3 / 2 * (2.0 + 0.25 * Math.Sin(2 * Math.PI * (X[0] + X[1] + X[2]) - 20 * Math.PI * t));
 
             //Initial Values
-            c.InitialValues_Evaluators.Add(Variables.Density, X => rho(X, 0.0));
-            c.InitialValues_Evaluators.Add(Variables.Momentum.xComponent, X => m(X, 0.0));
-            c.InitialValues_Evaluators.Add(Variables.Momentum.yComponent, X => m(X, 0.0));
-            c.InitialValues_Evaluators.Add(Variables.Momentum.zComponent, X => m(X, 0.0));
-            c.InitialValues_Evaluators.Add(Variables.Energy, X => rhoE(X, 0.0));
+            c.InitialValues_Evaluators.Add(CompressibleVariables.Density, X => rho(X, 0.0));
+            c.InitialValues_Evaluators.Add(CompressibleVariables.Momentum.xComponent, X => m(X, 0.0));
+            c.InitialValues_Evaluators.Add(CompressibleVariables.Momentum.yComponent, X => m(X, 0.0));
+            c.InitialValues_Evaluators.Add(CompressibleVariables.Momentum.zComponent, X => m(X, 0.0));
+            c.InitialValues_Evaluators.Add(CompressibleVariables.Energy, X => rhoE(X, 0.0));
 
             //c.InitialValues.Add(Variable.Velocity.xComponent, X => u0(X, 0.0));
             //c.InitialValues.Add(Variable.Velocity.yComponent, X => u1(X, 0.0));
@@ -557,9 +557,9 @@ namespace CNS.Tests.MMS {
 
             // Queries
             int QueryDegree = 10;
-            c.Queries.Add("densityError", QueryLibrary.L2Error(Variables.Density, rho, QueryDegree));
-            c.Queries.Add("momentum0Error", QueryLibrary.L2Error(Variables.Momentum.xComponent, m, QueryDegree));
-            c.Queries.Add("energyError", QueryLibrary.L2Error(Variables.Energy, rhoE, QueryDegree));
+            c.Queries.Add("densityError", QueryLibrary.L2Error(CompressibleVariables.Density, rho, QueryDegree));
+            c.Queries.Add("momentum0Error", QueryLibrary.L2Error(CompressibleVariables.Momentum.xComponent, m, QueryDegree));
+            c.Queries.Add("energyError", QueryLibrary.L2Error(CompressibleVariables.Energy, rhoE, QueryDegree));
             c.Queries.Add("velocity0Error", QueryLibrary.L2Error(CNSVariables.Velocity.xComponent, u, QueryDegree));
 
 

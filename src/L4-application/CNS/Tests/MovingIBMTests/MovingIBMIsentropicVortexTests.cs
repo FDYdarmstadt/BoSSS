@@ -52,10 +52,10 @@ namespace CNS.Tests.MovingIBMTests {
             c.ExplicitScheme = ExplicitSchemes.RungeKutta;
             c.ExplicitOrder = 1;
 
-            c.AddVariable(Variables.Density, dgDegree);
-            c.AddVariable(Variables.Momentum.xComponent, dgDegree);
-            c.AddVariable(Variables.Momentum.yComponent, dgDegree);
-            c.AddVariable(Variables.Energy, dgDegree);
+            c.AddVariable(CompressibleVariables.Density, dgDegree);
+            c.AddVariable(CompressibleVariables.Momentum.xComponent, dgDegree);
+            c.AddVariable(CompressibleVariables.Momentum.yComponent, dgDegree);
+            c.AddVariable(CompressibleVariables.Energy, dgDegree);
             c.AddVariable(IBMVariables.LevelSet, 1);
 
             c.GridFunc = delegate {
@@ -91,7 +91,7 @@ namespace CNS.Tests.MovingIBMTests {
             Func<double[], double, double> u = (X, t) => advectionVelocity - Math.Sin(phi(X, t)) * uAbs(X, t);
             Func<double[], double, double> v = (X, t) => Math.Cos(phi(X, t)) * uAbs(X, t);
 
-            c.InitialValues_Evaluators.Add(Variables.Density, X => rho(X, 0.0));
+            c.InitialValues_Evaluators.Add(CompressibleVariables.Density, X => rho(X, 0.0));
             c.InitialValues_Evaluators.Add(CNSVariables.Velocity.xComponent, X => u(X, 0.0));
             c.InitialValues_Evaluators.Add(CNSVariables.Velocity.yComponent, X => v(X, 0.0));
             c.InitialValues_Evaluators.Add(CNSVariables.Pressure, X => p(X, 0.0));
@@ -104,7 +104,7 @@ namespace CNS.Tests.MovingIBMTests {
             c.LevelSetVelocity = (X, t) => new Vector(0.0, 10.0 * amplitude * Math.Cos(10.0 * t));
 
             c.AddBoundaryValue("adiabaticSlipWall");
-            c.AddBoundaryValue("supersonicInlet", Variables.Density, rho);
+            c.AddBoundaryValue("supersonicInlet", CompressibleVariables.Density, rho);
             c.AddBoundaryValue("supersonicInlet", CNSVariables.Velocity[0], u);
             c.AddBoundaryValue("supersonicInlet", CNSVariables.Velocity[1], v);
             c.AddBoundaryValue("supersonicInlet", CNSVariables.Pressure, p);

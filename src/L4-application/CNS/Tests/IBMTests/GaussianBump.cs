@@ -129,10 +129,10 @@ namespace CNS.Tests.IBMTests {
 
 
             // Primary CNSVariables
-            c.AddVariable(Variables.Density, dgDegree);
-            c.AddVariable(Variables.Momentum.xComponent, dgDegree);
-            c.AddVariable(Variables.Momentum.yComponent, dgDegree);
-            c.AddVariable(Variables.Energy, dgDegree);
+            c.AddVariable(CompressibleVariables.Density, dgDegree);
+            c.AddVariable(CompressibleVariables.Momentum.xComponent, dgDegree);
+            c.AddVariable(CompressibleVariables.Momentum.yComponent, dgDegree);
+            c.AddVariable(CompressibleVariables.Energy, dgDegree);
 
             c.AddVariable(IBMVariables.LevelSet, lsDegree);
 
@@ -207,7 +207,7 @@ namespace CNS.Tests.IBMTests {
             Func<double[], double, double> pressure = (X, t) => 2.8571428571428;
 
             //Initial Values
-            c.InitialValues_Evaluators.Add(Variables.Density, X => rho(X, 0.0));
+            c.InitialValues_Evaluators.Add(CompressibleVariables.Density, X => rho(X, 0.0));
             c.InitialValues_Evaluators.Add(CNSVariables.Velocity.xComponent, X => u0(X, 0.0));
             c.InitialValues_Evaluators.Add(CNSVariables.Velocity.yComponent, X => u1(X, 0.0));
             c.InitialValues_Evaluators.Add(CNSVariables.Pressure, X => pressure(X, 0.0));
@@ -216,7 +216,7 @@ namespace CNS.Tests.IBMTests {
 
             //BoundaryConditions
             c.AddBoundaryValue("adiabaticSlipWall");
-            c.AddBoundaryValue("supersonicInlet", Variables.Density, rho);
+            c.AddBoundaryValue("supersonicInlet", CompressibleVariables.Density, rho);
             c.AddBoundaryValue("supersonicInlet", CNSVariables.Velocity.xComponent, u0);
             c.AddBoundaryValue("supersonicInlet", CNSVariables.Velocity.yComponent, u1);
             c.AddBoundaryValue("supersonicInlet", CNSVariables.Pressure, pressure);
@@ -265,10 +265,10 @@ namespace CNS.Tests.IBMTests {
 
 
             // Primary CNSVariables
-            c.AddVariable(Variables.Density, dgDegree);
-            c.AddVariable(Variables.Momentum.xComponent, dgDegree);
-            c.AddVariable(Variables.Momentum.yComponent, dgDegree);
-            c.AddVariable(Variables.Energy, dgDegree);
+            c.AddVariable(CompressibleVariables.Density, dgDegree);
+            c.AddVariable(CompressibleVariables.Momentum.xComponent, dgDegree);
+            c.AddVariable(CompressibleVariables.Momentum.yComponent, dgDegree);
+            c.AddVariable(CompressibleVariables.Energy, dgDegree);
 
             // Parameters
             c.AddVariable(CNSVariables.Entropy, dgDegree);
@@ -334,14 +334,14 @@ namespace CNS.Tests.IBMTests {
             Func<double[], double, double> pressure = (X, t) => 2.8571428571428;
 
             //Initial Values
-            c.InitialValues_Evaluators.Add(Variables.Density, X => rho(X, 0.0));
+            c.InitialValues_Evaluators.Add(CompressibleVariables.Density, X => rho(X, 0.0));
             c.InitialValues_Evaluators.Add(CNSVariables.Velocity.xComponent, X => u0(X, 0.0));
             c.InitialValues_Evaluators.Add(CNSVariables.Velocity.yComponent, X => u1(X, 0.0));
             c.InitialValues_Evaluators.Add(CNSVariables.Pressure, X => pressure(X, 0.0));
 
             //BoundaryConditions
             c.AddBoundaryValue("adiabaticSlipWall");
-            c.AddBoundaryValue("supersonicInlet", Variables.Density, rho);
+            c.AddBoundaryValue("supersonicInlet", CompressibleVariables.Density, rho);
             c.AddBoundaryValue("supersonicInlet", CNSVariables.Velocity.xComponent, u0);
             c.AddBoundaryValue("supersonicInlet", CNSVariables.Velocity.yComponent, u1);
             c.AddBoundaryValue("supersonicInlet", CNSVariables.Pressure, pressure);
@@ -402,10 +402,10 @@ namespace CNS.Tests.IBMTests {
             c.AgglomerationThreshold = 0.3;
 
             // Primary CNSVariables
-            c.AddVariable(Variables.Density, dgDegree);
-            c.AddVariable(Variables.Momentum.xComponent, dgDegree);
-            c.AddVariable(Variables.Momentum.yComponent, dgDegree);
-            c.AddVariable(Variables.Energy, dgDegree);
+            c.AddVariable(CompressibleVariables.Density, dgDegree);
+            c.AddVariable(CompressibleVariables.Momentum.xComponent, dgDegree);
+            c.AddVariable(CompressibleVariables.Momentum.yComponent, dgDegree);
+            c.AddVariable(CompressibleVariables.Energy, dgDegree);
 
             c.AddVariable(IBMVariables.LevelSet, lsDegree);
 
@@ -449,7 +449,7 @@ namespace CNS.Tests.IBMTests {
             Func<double[], double, double> pressure = (X, t) => 2.8571428571428;
 
             //Initial Values
-            c.InitialValues_Evaluators.Add(Variables.Density, X => rho(X, 0.0));
+            c.InitialValues_Evaluators.Add(CompressibleVariables.Density, X => rho(X, 0.0));
             c.InitialValues_Evaluators.Add(CNSVariables.Velocity.xComponent, X => u0(X, 0.0));
             c.InitialValues_Evaluators.Add(CNSVariables.Velocity.yComponent, X => u1(X, 0.0));
             c.InitialValues_Evaluators.Add(CNSVariables.Pressure, X => pressure(X, 0.0));
@@ -458,7 +458,7 @@ namespace CNS.Tests.IBMTests {
 
             //BoundaryConditions
             c.AddBoundaryValue("adiabaticSlipWall");
-            c.AddBoundaryValue("supersonicInlet", Variables.Density, rho);
+            c.AddBoundaryValue("supersonicInlet", CompressibleVariables.Density, rho);
             c.AddBoundaryValue("supersonicInlet", CNSVariables.Velocity.xComponent, u0);
             c.AddBoundaryValue("supersonicInlet", CNSVariables.Velocity.yComponent, u1);
             c.AddBoundaryValue("supersonicInlet", CNSVariables.Pressure, pressure);

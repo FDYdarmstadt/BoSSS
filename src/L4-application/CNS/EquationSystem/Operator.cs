@@ -162,15 +162,15 @@ namespace CNS.EquationSystem {
         /// </param>
         private void MapComponents(SpatialOperator op) {
             DensityComponents.ForEach(component =>
-                op.EquationComponents[Variables.Density].Add(component));
+                op.EquationComponents[CompressibleVariables.Density].Add(component));
 
             for (int d = 0; d < CompressibleEnvironment.NumberOfDimensions; d++) {
                 MomentumComponents[d].ForEach(component =>
-                    op.EquationComponents[Variables.Momentum[d]].Add(component));
+                    op.EquationComponents[CompressibleVariables.Momentum[d]].Add(component));
             }
 
             EnergyComponents.ForEach(component =>
-                op.EquationComponents[Variables.Energy].Add(component));
+                op.EquationComponents[CompressibleVariables.Energy].Add(component));
         }
     }
 }

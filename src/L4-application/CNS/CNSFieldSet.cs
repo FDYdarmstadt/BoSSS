@@ -132,15 +132,15 @@ namespace CNS {
             CellQuadratureScheme scheme = new CellQuadratureScheme(true, speciesMap.SubGrid.VolumeMask);
 
             if (config.GetInitialValueVariables() == VariableTypes.ConservativeVariables) {
-                Density.ProjectField(1.0, initialValues[Variables.Density], scheme);
+                Density.ProjectField(1.0, initialValues[CompressibleVariables.Density], scheme);
 
                 for (int d = 0; d < numberOfDimensions; d++) {
-                    Momentum[d].ProjectField(1.0, initialValues[Variables.Momentum[d]], scheme);
+                    Momentum[d].ProjectField(1.0, initialValues[CompressibleVariables.Momentum[d]], scheme);
                 }
 
-                Energy.ProjectField(1.0, initialValues[Variables.Energy], scheme);
+                Energy.ProjectField(1.0, initialValues[CompressibleVariables.Energy], scheme);
             } else if (config.GetInitialValueVariables() == VariableTypes.PrimitiveVariables) {
-                var densityFunction = initialValues[Variables.Density];
+                var densityFunction = initialValues[CompressibleVariables.Density];
                 Density.ProjectField(1.0, densityFunction, scheme);
 
                 Func<double[], double>[] velocityFunctions = new Func<double[], double>[numberOfDimensions];

@@ -362,9 +362,9 @@ namespace CNS_MPITests.Tests.LoadBalancing {
             c.ExplicitScheme = explicitScheme;
             c.ExplicitOrder = explicitOrder;
 
-            c.AddVariable(Variables.Density, dgDegree);
-            c.AddVariable(Variables.Momentum.xComponent, dgDegree);
-            c.AddVariable(Variables.Energy, dgDegree);
+            c.AddVariable(CompressibleVariables.Density, dgDegree);
+            c.AddVariable(CompressibleVariables.Momentum.xComponent, dgDegree);
+            c.AddVariable(CompressibleVariables.Energy, dgDegree);
             c.AddVariable(CNSVariables.Velocity.xComponent, dgDegree);
             c.AddVariable(CNSVariables.Pressure, dgDegree);
             c.AddVariable(CNSVariables.Rank, 0);
@@ -408,7 +408,7 @@ namespace CNS_MPITests.Tests.LoadBalancing {
                 material, densityRight, new Vector(velocityRight, 0.0, 0.0), pressureRight);
 
             c.InitialValues_Evaluators.Add(
-                    Variables.Density,
+                    CompressibleVariables.Density,
                     X => stateLeft.Density + (stateRight.Density - stateLeft.Density) * (X[0] - discontinuityPosition).Heaviside());
             c.InitialValues_Evaluators.Add(
                 CNSVariables.Velocity.xComponent,
@@ -425,7 +425,7 @@ namespace CNS_MPITests.Tests.LoadBalancing {
                 riemannSolver.GetStarRegionValues(out double pStar, out double uStar);
 
                 c.Queries.Add("L2ErrorDensity", QueryLibrary.L2Error(
-                    Variables.Density,
+                    CompressibleVariables.Density,
                     (X, t) => riemannSolver.GetState(pStar, uStar, X[0] - discontinuityPosition, t).Density));
                 c.Queries.Add("L2ErrorVelocity", QueryLibrary.L2Error(
                     CNSVariables.Velocity.xComponent,
@@ -449,7 +449,7 @@ namespace CNS_MPITests.Tests.LoadBalancing {
         }
 
         private static CNSControl ShockTubeToro1WithAVTemplate(int dgDegree, ExplicitSchemes explicitScheme, int explicitOrder, int noOfCells = 50, bool twoD = false) {
-            Variable sensorVariable = Variables.Density;
+            Variable sensorVariable = CompressibleVariables.Density;
             double sensorLimit = 1e-3;
             double epsilon0 = 1.0;
             double kappa = 0.5;
@@ -518,7 +518,7 @@ namespace CNS_MPITests.Tests.LoadBalancing {
             double kappa = 0.5;
 
             if (AV) {
-                Variable sensorVariable = Variables.Density;
+                Variable sensorVariable = CompressibleVariables.Density;
                 c.ShockSensor = new PerssonSensor(sensorVariable, sensorLimit);
                 c.AddVariable(CNSVariables.ShockSensor, 0);
                 c.ArtificialViscosityLaw = new SmoothedHeavisideArtificialViscosityLaw(c.ShockSensor, dgDegree, sensorLimit, epsilon0, kappa, lambdaMax: 2);
@@ -533,10 +533,10 @@ namespace CNS_MPITests.Tests.LoadBalancing {
             c.ReynoldsNumber = 1.0;
             c.PrandtlNumber = 0.71;
 
-            c.AddVariable(Variables.Density, dgDegree);
-            c.AddVariable(Variables.Momentum.xComponent, dgDegree);
-            c.AddVariable(Variables.Momentum.yComponent, dgDegree);
-            c.AddVariable(Variables.Energy, dgDegree);
+            c.AddVariable(CompressibleVariables.Density, dgDegree);
+            c.AddVariable(CompressibleVariables.Momentum.xComponent, dgDegree);
+            c.AddVariable(CompressibleVariables.Momentum.yComponent, dgDegree);
+            c.AddVariable(CompressibleVariables.Energy, dgDegree);
             c.AddVariable(CNSVariables.Velocity.xComponent, dgDegree);
             c.AddVariable(CNSVariables.Velocity.yComponent, dgDegree);
             c.AddVariable(CNSVariables.Pressure, dgDegree);
@@ -597,7 +597,7 @@ namespace CNS_MPITests.Tests.LoadBalancing {
 
             //c.InitialValues_Evaluators.Add(Variables.Density, X => densityLeft - SmoothJump(DistanceFromPointToLine(X, p, r)) * (densityLeft - densityRight));
             //c.InitialValues_Evaluators.Add(CNSVariables.Pressure, X => pressureLeft - SmoothJump(DistanceFromPointToLine(X, p, r)) * (pressureLeft - pressureRight));
-            c.InitialValues_Evaluators.Add(Variables.Density, X => densityLeft - Jump(X[0]) * (densityLeft - densityRight));
+            c.InitialValues_Evaluators.Add(CompressibleVariables.Density, X => densityLeft - Jump(X[0]) * (densityLeft - densityRight));
             c.InitialValues_Evaluators.Add(CNSVariables.Pressure, X => pressureLeft - Jump(X[0]) * (pressureLeft - pressureRight));
             c.InitialValues_Evaluators.Add(CNSVariables.Velocity.xComponent, X => 0.0);
             c.InitialValues_Evaluators.Add(CNSVariables.Velocity.yComponent, X => 0.0);

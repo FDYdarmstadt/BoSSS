@@ -64,7 +64,7 @@ namespace CNS.ShockCapturing {
                 program);
 
             // Limit and store primitive fields
-            string[] primitiveFieldNames = { Variables.Density, CNSVariables.Velocity.xComponent, CNSVariables.Velocity.yComponent, CNSVariables.Pressure };
+            string[] primitiveFieldNames = { CompressibleVariables.Density, CNSVariables.Velocity.xComponent, CNSVariables.Velocity.yComponent, CNSVariables.Pressure };
             DGField[] primitiveFields = new DGField[primitiveFieldNames.Length];
             CellMask shockedCells = Sensor.GetShockedCellMask(GridData, sensorLimit, cellSize, dgDegree);
             int k = 0;
@@ -90,7 +90,7 @@ namespace CNS.ShockCapturing {
             int D = CompressibleEnvironment.NumberOfDimensions;
 
             for (int d = 0; d < D; d++) {
-                DGField mom_d = ConservativeVariables.Single(f => f.Identification == Variables.Momentum[d].Name);
+                DGField mom_d = ConservativeVariables.Single(f => f.Identification == CompressibleVariables.Momentum[d].Name);
                 mom_d.Clear(shockedCells);
                 mom_d.ProjectFunction(
                     1.0,
@@ -100,7 +100,7 @@ namespace CNS.ShockCapturing {
             }
 
             // Update total energy
-            DGField Energy = ConservativeVariables.Single(f => f.Identification == Variables.Energy.Name);
+            DGField Energy = ConservativeVariables.Single(f => f.Identification == CompressibleVariables.Energy.Name);
             Energy.Clear(shockedCells);
             Energy.ProjectFunction(
                 1.0,

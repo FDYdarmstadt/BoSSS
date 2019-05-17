@@ -102,11 +102,11 @@ namespace BoSSS.Solution.CompressibleFlowCommon {
             }
 
             PrimalArgumentToIndexMap = new Dictionary<Variable, int>();
-            PrimalArgumentToIndexMap.Add(Variables.Density, 0);
+            PrimalArgumentToIndexMap.Add(CompressibleVariables.Density, 0);
             for (int d = 0; d < numberOfDimensions; d++) {
-                PrimalArgumentToIndexMap.Add(Variables.Momentum[d], d + 1);
+                PrimalArgumentToIndexMap.Add(CompressibleVariables.Momentum[d], d + 1);
             }
-            PrimalArgumentToIndexMap.Add(Variables.Energy, numberOfDimensions + 1);
+            PrimalArgumentToIndexMap.Add(CompressibleVariables.Energy, numberOfDimensions + 1);
 
             PrimalArgumentOrdering = PrimalArgumentToIndexMap.Keys.Select(v => v.Name).ToArray();
         }

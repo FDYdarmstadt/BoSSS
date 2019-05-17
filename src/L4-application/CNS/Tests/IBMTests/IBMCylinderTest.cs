@@ -190,10 +190,10 @@ namespace CNS.Tests.IBMTests {
             c.EquationOfState = IdealGas.Air;
             c.MachNumber = 1.0 / Math.Sqrt(c.EquationOfState.HeatCapacityRatio);
 
-            c.AddVariable(Variables.Density, dgDegree);
-            c.AddVariable(Variables.Momentum.xComponent, dgDegree);
-            c.AddVariable(Variables.Momentum.yComponent, dgDegree);
-            c.AddVariable(Variables.Energy, dgDegree);
+            c.AddVariable(CompressibleVariables.Density, dgDegree);
+            c.AddVariable(CompressibleVariables.Momentum.xComponent, dgDegree);
+            c.AddVariable(CompressibleVariables.Momentum.yComponent, dgDegree);
+            c.AddVariable(CompressibleVariables.Energy, dgDegree);
             c.AddVariable(IBMVariables.LevelSet, 2);
 
             var sessionAndGridGuid = restartData[dgDegree];
@@ -204,7 +204,7 @@ namespace CNS.Tests.IBMTests {
             c.GridPartOptions = "5";
 
             double gamma = c.EquationOfState.HeatCapacityRatio;
-            c.AddBoundaryValue("supersonicInlet", Variables.Density, (X, t) => 1.0);
+            c.AddBoundaryValue("supersonicInlet", CompressibleVariables.Density, (X, t) => 1.0);
             c.AddBoundaryValue("supersonicInlet", CNSVariables.Velocity[0], (X, t) => Mach * Math.Sqrt(gamma));
             c.AddBoundaryValue("supersonicInlet", CNSVariables.Velocity[1], (X, t) => 0.0);
             c.AddBoundaryValue("supersonicInlet", CNSVariables.Pressure, (X, t) => 1.0);
@@ -213,10 +213,10 @@ namespace CNS.Tests.IBMTests {
             c.LevelSetBoundaryTag = "adiabaticSlipWall";
 
             c.Queries.Add("L2ErrorEntropy", IBMQueries.L2Error(state => state.Entropy, (X, t) => 1.0));
-            c.Queries.Add("L2ErrorDensity", QueryLibrary.L2Error(Variables.Density, sessionAndGridGuid.Item3));
-            c.Queries.Add("L2ErrorXMomentum", QueryLibrary.L2Error(Variables.Momentum[0], sessionAndGridGuid.Item3));
-            c.Queries.Add("L2ErrorYMomentum", QueryLibrary.L2Error(Variables.Momentum[1], sessionAndGridGuid.Item3));
-            c.Queries.Add("L2ErrorEnergy", QueryLibrary.L2Error(Variables.Energy, sessionAndGridGuid.Item3));
+            c.Queries.Add("L2ErrorDensity", QueryLibrary.L2Error(CompressibleVariables.Density, sessionAndGridGuid.Item3));
+            c.Queries.Add("L2ErrorXMomentum", QueryLibrary.L2Error(CompressibleVariables.Momentum[0], sessionAndGridGuid.Item3));
+            c.Queries.Add("L2ErrorYMomentum", QueryLibrary.L2Error(CompressibleVariables.Momentum[1], sessionAndGridGuid.Item3));
+            c.Queries.Add("L2ErrorEnergy", QueryLibrary.L2Error(CompressibleVariables.Energy, sessionAndGridGuid.Item3));
 
             c.CutCellQuadratureType = XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes;
             c.SurfaceHMF_ProjectNodesToLevelSet = false;

@@ -207,13 +207,13 @@ namespace CNS.Tests.ArtificialViscosity {
             double sensorLimit = 1e-4;
             double epsilon0 = 1.0;
             double kappa = 0.5;
-            Variable sensorVariable = Variables.Density;
+            Variable sensorVariable = CompressibleVariables.Density;
             c.ShockSensor = new PerssonSensor(sensorVariable, sensorLimit);
             c.ArtificialViscosityLaw = new SmoothedHeavisideArtificialViscosityLaw(c.ShockSensor, dgDegree, sensorLimit, epsilon0, kappa);
 
-            c.AddVariable(Variables.Density, dgDegree);
-            c.AddVariable(Variables.Momentum.xComponent, dgDegree);
-            c.AddVariable(Variables.Energy, dgDegree);
+            c.AddVariable(CompressibleVariables.Density, dgDegree);
+            c.AddVariable(CompressibleVariables.Momentum.xComponent, dgDegree);
+            c.AddVariable(CompressibleVariables.Energy, dgDegree);
             c.AddVariable(CNSVariables.Velocity.xComponent, dgDegree);
             c.AddVariable(CNSVariables.Pressure, dgDegree);
             c.AddVariable(CNSVariables.Entropy, dgDegree);
@@ -246,7 +246,7 @@ namespace CNS.Tests.ArtificialViscosity {
                 material, densityRight, new Vector(velocityRight, 0.0, 0.0), pressureRight);
 
             c.InitialValues_Evaluators.Add(
-                    Variables.Density,
+                    CompressibleVariables.Density,
                     X => stateLeft.Density + (stateRight.Density - stateLeft.Density) * (X[0] - discontinuityPosition).Heaviside());
             c.InitialValues_Evaluators.Add(
                 CNSVariables.Velocity.xComponent,
@@ -260,7 +260,7 @@ namespace CNS.Tests.ArtificialViscosity {
             riemannSolver.GetStarRegionValues(out pStar, out uStar);
 
             c.Queries.Add("L2ErrorDensity", QueryLibrary.L2Error(
-                Variables.Density,
+                CompressibleVariables.Density,
                 (X, t) => riemannSolver.GetState(pStar, uStar, X[0] - discontinuityPosition, t).Density));
             c.Queries.Add("L2ErrorVelocity", QueryLibrary.L2Error(
                 CNSVariables.Velocity.xComponent,

@@ -56,11 +56,11 @@ namespace BoSSS.Solution.CompressibleFlowCommon {
             get {
                 DGField[] fields = new DGField[CompressibleEnvironment.NumberOfDimensions + 2];
 
-                fields[CompressibleEnvironment.PrimalArgumentToIndexMap[Variables.Density]] = Density;
+                fields[CompressibleEnvironment.PrimalArgumentToIndexMap[CompressibleVariables.Density]] = Density;
                 for (int d = 0; d < CompressibleEnvironment.NumberOfDimensions; d++) {
-                    fields[CompressibleEnvironment.PrimalArgumentToIndexMap[Variables.Momentum[d]]] = Momentum[d];
+                    fields[CompressibleEnvironment.PrimalArgumentToIndexMap[CompressibleVariables.Momentum[d]]] = Momentum[d];
                 }
-                fields[CompressibleEnvironment.PrimalArgumentToIndexMap[Variables.Energy]] = Energy;
+                fields[CompressibleEnvironment.PrimalArgumentToIndexMap[CompressibleVariables.Energy]] = Energy;
 
                 return fields;
             }
@@ -81,16 +81,16 @@ namespace BoSSS.Solution.CompressibleFlowCommon {
             // Mandatory fields
             Density = new SinglePhaseField(
                 new Basis(gridData, config.DensityDegree),
-                Variables.Density);
+                CompressibleVariables.Density);
 
             for (int d = 0; d < numberOfDimensions; d++) {
-                string variableName = Variables.Momentum[d];
+                string variableName = CompressibleVariables.Momentum[d];
                 momentumFields[d] = new SinglePhaseField(momentumBasis, variableName);
             }
             Momentum = new VectorField<DGField>(momentumFields);
 
             Energy = new SinglePhaseField(
-                new Basis(gridData, config.EnergyDegree), Variables.Energy);
+                new Basis(gridData, config.EnergyDegree), CompressibleVariables.Energy);
         }
 
         //public abstract void UpdateDerivedVariables() {

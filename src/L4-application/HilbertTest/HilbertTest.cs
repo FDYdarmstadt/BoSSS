@@ -455,7 +455,7 @@ namespace HilbertTest {
             double kappa = 0.5;
 
             if (AV) {
-                Variable sensorVariable = Variables.Density;
+                Variable sensorVariable = CompressibleVariables.Density;
                 c.ShockSensor = new PerssonSensor(sensorVariable, sensorLimit);
                 c.ArtificialViscosityLaw = new SmoothedHeavisideArtificialViscosityLaw(c.ShockSensor, dgDegree, sensorLimit, epsilon0, kappa);
             }
@@ -466,11 +466,11 @@ namespace HilbertTest {
             c.ReynoldsNumber = 1.0;
             c.PrandtlNumber = 0.71;
 
-            c.AddVariable(Variables.Density, dgDegree);
-            c.AddVariable(Variables.Momentum.xComponent, dgDegree);
-            c.AddVariable(Variables.Energy, dgDegree);
+            c.AddVariable(CompressibleVariables.Density, dgDegree);
+            c.AddVariable(CompressibleVariables.Momentum.xComponent, dgDegree);
+            c.AddVariable(CompressibleVariables.Energy, dgDegree);
             if (true1D == false) {
-                c.AddVariable(Variables.Momentum.yComponent, dgDegree);
+                c.AddVariable(CompressibleVariables.Momentum.yComponent, dgDegree);
                 c.AddVariable(CNSVariables.Velocity.yComponent, dgDegree);
                 if (AV) {
                     c.AddVariable(CNSVariables.ArtificialViscosity, 2);
@@ -548,7 +548,7 @@ namespace HilbertTest {
             double kappa = 0.5;
 
             if (AV) {
-                Variable sensorVariable = Variables.Density;
+                Variable sensorVariable = CompressibleVariables.Density;
                 c.ShockSensor = new PerssonSensor(sensorVariable, sensorLimit);
                 c.ArtificialViscosityLaw = new SmoothedHeavisideArtificialViscosityLaw(c.ShockSensor, dgDegree, sensorLimit, epsilon0, kappa);
             }
@@ -559,11 +559,11 @@ namespace HilbertTest {
             c.ReynoldsNumber = 1.0;
             c.PrandtlNumber = 0.71;
 
-            c.AddVariable(Variables.Density, dgDegree);
-            c.AddVariable(Variables.Momentum.xComponent, dgDegree);
-            c.AddVariable(Variables.Energy, dgDegree);
+            c.AddVariable(CompressibleVariables.Density, dgDegree);
+            c.AddVariable(CompressibleVariables.Momentum.xComponent, dgDegree);
+            c.AddVariable(CompressibleVariables.Energy, dgDegree);
             if (true1D == false) {
-                c.AddVariable(Variables.Momentum.yComponent, dgDegree);
+                c.AddVariable(CompressibleVariables.Momentum.yComponent, dgDegree);
                 c.AddVariable(CNSVariables.Velocity.yComponent, dgDegree);
                 if (AV) {
                     c.AddVariable(CNSVariables.ArtificialViscosity, 2);
@@ -677,7 +677,7 @@ namespace HilbertTest {
             c.AddBoundaryValue("AdiabaticSlipWall");
 
             // Initial conditions
-            c.InitialValues_Evaluators.Add(Variables.Density, delegate (double[] X) {
+            c.InitialValues_Evaluators.Add(CompressibleVariables.Density, delegate (double[] X) {
                 double x = X[0];
 
                 if (true1D == false) {
@@ -721,7 +721,7 @@ namespace HilbertTest {
             double kappa = 0.5;
 
             if (AV) {
-                Variable sensorVariable = Variables.Density;
+                Variable sensorVariable = CompressibleVariables.Density;
                 c.ShockSensor = new PerssonSensor(sensorVariable, sensorLimit);
                 c.ArtificialViscosityLaw = new SmoothedHeavisideArtificialViscosityLaw(c.ShockSensor, dgDegree, sensorLimit, epsilon0, kappa);
             }
@@ -732,11 +732,11 @@ namespace HilbertTest {
             c.ReynoldsNumber = 1.0;
             c.PrandtlNumber = 0.71;
 
-            c.AddVariable(Variables.Density, dgDegree);
-            c.AddVariable(Variables.Momentum.xComponent, dgDegree);
-            c.AddVariable(Variables.Energy, dgDegree);
+            c.AddVariable(CompressibleVariables.Density, dgDegree);
+            c.AddVariable(CompressibleVariables.Momentum.xComponent, dgDegree);
+            c.AddVariable(CompressibleVariables.Energy, dgDegree);
             if (true1D == false) {
-                c.AddVariable(Variables.Momentum.yComponent, dgDegree);
+                c.AddVariable(CompressibleVariables.Momentum.yComponent, dgDegree);
                 c.AddVariable(CNSVariables.Velocity.yComponent, dgDegree);
                 if (AV) {
                     c.AddVariable(CNSVariables.ArtificialViscosity, 2);

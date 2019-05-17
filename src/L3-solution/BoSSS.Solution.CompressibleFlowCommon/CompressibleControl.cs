@@ -91,7 +91,7 @@ namespace BoSSS.Solution.CompressibleFlowCommon {
         /// </summary>
         public int DensityDegree {
             get {
-                return base.FieldOptions[BoSSS.Solution.CompressibleFlowCommon.Variables.Density].Degree;
+                return base.FieldOptions[BoSSS.Solution.CompressibleFlowCommon.CompressibleVariables.Density].Degree;
             }
         }
 
@@ -100,7 +100,7 @@ namespace BoSSS.Solution.CompressibleFlowCommon {
         /// </summary>
         public int MomentumDegree {
             get {
-                return base.FieldOptions[BoSSS.Solution.CompressibleFlowCommon.Variables.Momentum.xComponent].Degree;
+                return base.FieldOptions[BoSSS.Solution.CompressibleFlowCommon.CompressibleVariables.Momentum.xComponent].Degree;
             }
         }
 
@@ -109,7 +109,7 @@ namespace BoSSS.Solution.CompressibleFlowCommon {
         /// </summary>
         public int EnergyDegree {
             get {
-                return base.FieldOptions[BoSSS.Solution.CompressibleFlowCommon.Variables.Energy].Degree;
+                return base.FieldOptions[BoSSS.Solution.CompressibleFlowCommon.CompressibleVariables.Energy].Degree;
             }
         }
 

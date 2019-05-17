@@ -17,7 +17,7 @@ limitations under the License.
 using static BoSSS.Solution.CompressibleFlowCommon.Variable;
 
 namespace BoSSS.Solution.CompressibleFlowCommon {
-    public class Variables {
+    public class CompressibleVariables {
 
         /// <summary>
         /// <see cref="VariableTypes.Density"/>

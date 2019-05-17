@@ -46,16 +46,16 @@ namespace CNS {
         /// </summary>
         public override void Verify() {
             {
-                int degree = FieldOptions[BoSSS.Solution.CompressibleFlowCommon.Variables.Momentum.xComponent].Degree;
+                int degree = FieldOptions[BoSSS.Solution.CompressibleFlowCommon.CompressibleVariables.Momentum.xComponent].Degree;
 
-                if (FieldOptions.ContainsKey(BoSSS.Solution.CompressibleFlowCommon.Variables.Momentum.yComponent)
-                    && FieldOptions[BoSSS.Solution.CompressibleFlowCommon.Variables.Momentum.yComponent].Degree != degree) {
+                if (FieldOptions.ContainsKey(BoSSS.Solution.CompressibleFlowCommon.CompressibleVariables.Momentum.yComponent)
+                    && FieldOptions[BoSSS.Solution.CompressibleFlowCommon.CompressibleVariables.Momentum.yComponent].Degree != degree) {
                     throw new Exception(
                         "All momentum components must have the same polynomial degree");
                 }
 
-                if (FieldOptions.ContainsKey(BoSSS.Solution.CompressibleFlowCommon.Variables.Momentum.zComponent)
-                    && FieldOptions[BoSSS.Solution.CompressibleFlowCommon.Variables.Momentum.zComponent].Degree != degree) {
+                if (FieldOptions.ContainsKey(BoSSS.Solution.CompressibleFlowCommon.CompressibleVariables.Momentum.zComponent)
+                    && FieldOptions[BoSSS.Solution.CompressibleFlowCommon.CompressibleVariables.Momentum.zComponent].Degree != degree) {
                     throw new Exception(
                         "All momentum components must have the same polynomial degree");
                 }
@@ -79,17 +79,17 @@ namespace CNS {
         /// exist
         /// </summary>
         public VariableTypes GetInitialValueVariables() {
-            bool conservative = InitialValues_Evaluators.ContainsKey(BoSSS.Solution.CompressibleFlowCommon.Variables.Density)
-                && InitialValues_Evaluators.ContainsKey(BoSSS.Solution.CompressibleFlowCommon.Variables.Energy);
+            bool conservative = InitialValues_Evaluators.ContainsKey(BoSSS.Solution.CompressibleFlowCommon.CompressibleVariables.Density)
+                && InitialValues_Evaluators.ContainsKey(BoSSS.Solution.CompressibleFlowCommon.CompressibleVariables.Energy);
             for (int d = 0; d < CompressibleEnvironment.NumberOfDimensions; d++) {
-                conservative &= InitialValues_Evaluators.ContainsKey(BoSSS.Solution.CompressibleFlowCommon.Variables.Momentum[d]);
+                conservative &= InitialValues_Evaluators.ContainsKey(BoSSS.Solution.CompressibleFlowCommon.CompressibleVariables.Momentum[d]);
             }
 
             if (conservative) {
                 return VariableTypes.ConservativeVariables;
             }
 
-            bool primitive = InitialValues_Evaluators.ContainsKey(BoSSS.Solution.CompressibleFlowCommon.Variables.Density)
+            bool primitive = InitialValues_Evaluators.ContainsKey(BoSSS.Solution.CompressibleFlowCommon.CompressibleVariables.Density)
                 && InitialValues_Evaluators.ContainsKey(CNSVariables.Pressure);
             for (int d = 0; d < CompressibleEnvironment.NumberOfDimensions; d++) {
                 primitive &= InitialValues_Evaluators.ContainsKey(CNSVariables.Velocity[d]);

@@ -32,17 +32,17 @@ namespace CNS.ShockCapturing {
             // Optimized artificial viscosity flux
             mapping.DensityComponents.Add(new OptimizedLaplacianArtificialViscosityFlux(
                 (BoSSS.Foundation.Grid.Classic.GridData) this.speciesMap.GridData, 
-                control.DensityDegree, this.speciesMap.GridData.SpatialDimension, Variables.Density.Name));
+                control.DensityDegree, this.speciesMap.GridData.SpatialDimension, CompressibleVariables.Density.Name));
 
             for (int d = 0; d < CompressibleEnvironment.NumberOfDimensions; d++) {
                 mapping.MomentumComponents[d].Add(new OptimizedLaplacianArtificialViscosityFlux(
                     (BoSSS.Foundation.Grid.Classic.GridData) this.speciesMap.GridData, 
-                    control.MomentumDegree, this.speciesMap.GridData.SpatialDimension, Variables.Momentum[d].Name));
+                    control.MomentumDegree, this.speciesMap.GridData.SpatialDimension, CompressibleVariables.Momentum[d].Name));
             }   
             
             mapping.EnergyComponents.Add(new OptimizedLaplacianArtificialViscosityFlux(
                  (BoSSS.Foundation.Grid.Classic.GridData) this.speciesMap.GridData, 
-                 control.EnergyDegree, this.speciesMap.GridData.SpatialDimension, Variables.Energy.Name));
+                 control.EnergyDegree, this.speciesMap.GridData.SpatialDimension, CompressibleVariables.Energy.Name));
 
 
             //// Old artificial viscosity flux (hack for testing different AV boundary conditions)

@@ -47,10 +47,10 @@ namespace CNS.Tests.Ringleb {
 
             c.MachNumber = 1 / Math.Sqrt(c.EquationOfState.HeatCapacityRatio);
 
-            c.AddVariable(Variables.Density, dgDegree);
-            c.AddVariable(Variables.Momentum.xComponent, dgDegree);
-            c.AddVariable(Variables.Momentum.yComponent, dgDegree);
-            c.AddVariable(Variables.Energy, dgDegree);
+            c.AddVariable(CompressibleVariables.Density, dgDegree);
+            c.AddVariable(CompressibleVariables.Momentum.xComponent, dgDegree);
+            c.AddVariable(CompressibleVariables.Momentum.yComponent, dgDegree);
+            c.AddVariable(CompressibleVariables.Energy, dgDegree);
             c.AddVariable(CNSVariables.Pressure, dgDegree);
             c.AddVariable(CNSVariables.Entropy, dgDegree);
 
@@ -62,14 +62,14 @@ namespace CNS.Tests.Ringleb {
                 c.RinglebReferenceSpeedOfSound,
                 c.RinglebReferenceTotalPressure);
 
-            c.InitialValues_Evaluators.Add(Variables.Density, X => solution(X).Density);
-            c.InitialValues_Evaluators.Add(Variables.Momentum.xComponent, X => solution(X).Momentum[0]);
-            c.InitialValues_Evaluators.Add(Variables.Momentum.yComponent, X => solution(X).Momentum[1]);
-            c.InitialValues_Evaluators.Add(Variables.Energy, X => solution(X).Energy);
+            c.InitialValues_Evaluators.Add(CompressibleVariables.Density, X => solution(X).Density);
+            c.InitialValues_Evaluators.Add(CompressibleVariables.Momentum.xComponent, X => solution(X).Momentum[0]);
+            c.InitialValues_Evaluators.Add(CompressibleVariables.Momentum.yComponent, X => solution(X).Momentum[1]);
+            c.InitialValues_Evaluators.Add(CompressibleVariables.Energy, X => solution(X).Energy);
 
             c.AddBoundaryValue("ringleb");
 
-            c.Queries.Add("L2ErrorDensity", QueryLibrary.L2Error(Variables.Density, (X, t) => solution(X).Density));
+            c.Queries.Add("L2ErrorDensity", QueryLibrary.L2Error(CompressibleVariables.Density, (X, t) => solution(X).Density));
             c.Queries.Add("L2ErrorPressure", QueryLibrary.L2Error(CNSVariables.Pressure, (X, t) => solution(X).Pressure));
 
             c.dtMin = 0.0;
