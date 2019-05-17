@@ -539,7 +539,7 @@ namespace BoSSS.Application.FSI_Solver {
             C.AdaptiveMeshRefinement = false;
             C.SessionName = "fjkfjksdfhjk";
 
-            C.pureDryCollisions = true;
+            C.pureDryCollisions = false;
             C.SetDGdegree(k);
 
             // grid and boundary conditions
@@ -551,11 +551,11 @@ namespace BoSSS.Application.FSI_Solver {
                 int q = new int();
                 int r = new int();
 
-                q = 30;
-                r = 40;
+                q = 20;
+                r = 80;
 
                 double[] Xnodes = GenericBlas.Linspace(-1.5 * BaseSize, 1.5 * BaseSize, q + 1);
-                double[] Ynodes = GenericBlas.Linspace(3 * BaseSize, 7 * BaseSize, r + 1);
+                double[] Ynodes = GenericBlas.Linspace(1 * BaseSize, 10 * BaseSize, r + 1);
 
                 var grd = Grid2D.Cartesian2DGrid(Xnodes, Ynodes, periodicX: false, periodicY: false);
 
@@ -572,9 +572,9 @@ namespace BoSSS.Application.FSI_Solver {
                         et = 1;
                     if (Math.Abs(X[0] + (-1.5 * BaseSize)) <= 1.0e-8)
                         et = 2;
-                    if (Math.Abs(X[1] - (3 * BaseSize)) <= 1.0e-8)
+                    if (Math.Abs(X[1] - (1 * BaseSize)) <= 1.0e-8)
                         et = 3;
-                    if (Math.Abs(X[1] + (-7 * BaseSize)) <= 1.0e-8)
+                    if (Math.Abs(X[1] + (-10 * BaseSize)) <= 1.0e-8)
                         et = 4;
 
 
@@ -618,26 +618,26 @@ namespace BoSSS.Application.FSI_Solver {
                 particleDensity = 1.0,
                 GravityVertical = -9.81,
             });
-            C.Particles[0].TranslationalVelocity[0][1] = -0;
+  //          C.Particles[0].TranslationalVelocity[0][1] = -0;
 
 
-            C.Particles.Add(new Particle_Ellipsoid(new double[] { 0.4, 4.5 }, startAngl: 45)
+            C.Particles.Add(new Particle_superEllipsoid(new double[] { 0.4, 4.5 }, startAngl: 45)
             {
                 particleDensity = 1,
                 thickness_P = 0.2,
                 length_P = 0.4,
-                //superEllipsoidExponent = 4,
+                superEllipsoidExponent = 4,
                 GravityVertical = -9.81,
                 IncludeRotation = false,
                 IncludeTranslation = false,
             });
 
-            C.Particles.Add(new Particle_Ellipsoid(new double[] { -0.4, 4.5 }, startAngl: -45)
+            C.Particles.Add(new Particle_superEllipsoid(new double[] { -0.4, 4.5 }, startAngl: -45)
             {
                 particleDensity = 1,
                 thickness_P = 0.2,
                 length_P = 0.4,
-                //superEllipsoidExponent = 4,
+                superEllipsoidExponent = 4,
                 GravityVertical = -9.81,
                 IncludeRotation = false,
                 IncludeTranslation = false,
@@ -666,7 +666,7 @@ namespace BoSSS.Application.FSI_Solver {
             C.dtMax = dt;
             C.dtMin = dt;
             C.Endtime = 8.0;
-            C.NoOfTimesteps = 500;
+            C.NoOfTimesteps = 100000;
 
             // haben fertig...
             // ===============

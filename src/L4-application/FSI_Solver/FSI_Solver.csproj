@@ -93,6 +93,9 @@
     <Compile Include="Particle\ParticleAuxillary.cs" />
     <Compile Include="Particle\ParticleForceIntegration.cs" />
     <Compile Include="Particle\ParticleUnderrelaxation.cs" />
+    <Compile Include="Particle\Shapes\Falle_Rechts.cs" />
+    <Compile Include="Particle\Shapes\Falle_Links.cs" />
+    <Compile Include="Particle\Shapes\Pentagone.cs" />
     <Compile Include="Particle\Shapes\Particle_Bean.cs" />
     <Compile Include="Particle\Shapes\Particle_superEllipsoid.cs" />
     <Compile Include="Particle\Shapes\Particle_Sphere.cs" />
