@@ -38,13 +38,13 @@ namespace CNS {
 
     public static class TestCases {
 
-        public static CNSControl ShockTube(string dbPath = null, int savePeriod = 100, int dgDegree = 2, int numOfCellsX = 50, int numOfCellsY = 50, double sensorLimit = 1e-3, double dtFixed = 0.0, double CFLFraction = 0.1, int explicitScheme = 1, int explicitOrder = 1, int numberOfSubGrids = 3, int reclusteringInterval = 1, int maxNumOfSubSteps = 0, int refinementLevel = 0) {
+        public static CNSControl ShockTube(string dbPath = null, int savePeriod = 100, int dgDegree = 0, int numOfCellsX = 50, int numOfCellsY = 50, double sensorLimit = 1e-3, double dtFixed = 1e-3, double CFLFraction = 0.1, int explicitScheme = 1, int explicitOrder = 1, int numberOfSubGrids = 3, int reclusteringInterval = 1, int maxNumOfSubSteps = 0, int refinementLevel = 0) {
             CNSControl c = new CNSControl();
 
             // ### Database ###
             //dbPath = @"/work/scratch/ws35kire/work_db";                       // Lichtenberg
             //dbPath = @"/home/ws35kire/test_db";                               // Lichtenberg
-            //dbPath = @"c:\bosss_db";                                          // Local
+            dbPath = @"c:\bosss_db";                                          // Local
             //dbPath = @"\\dc1\userspace\geisenhofer\bosss_db_IBMShockTube";    // Network
 
             c.DbPath = dbPath;
@@ -191,11 +191,11 @@ namespace CNS {
 
             Func<double, double> Jump = (x => x <= discontinuityPosition ? 0 : 1);
 
-            c.InitialValues_Evaluators.Add(CompressibleVariables.Density, X => densityLeft - SmoothJump(DistanceFromPointToLine(X, p, r)) * (densityLeft - densityRight));
-            c.InitialValues_Evaluators.Add(CNSVariables.Pressure, X => pressureLeft - SmoothJump(DistanceFromPointToLine(X, p, r)) * (pressureLeft - pressureRight));
+            //c.InitialValues_Evaluators.Add(CompressibleVariables.Density, X => densityLeft - SmoothJump(DistanceFromPointToLine(X, p, r)) * (densityLeft - densityRight));
+            //c.InitialValues_Evaluators.Add(CNSVariables.Pressure, X => pressureLeft - SmoothJump(DistanceFromPointToLine(X, p, r)) * (pressureLeft - pressureRight));
 
-            //c.InitialValues_Evaluators.Add(Variables.Density, X => densityLeft - Jump(X[0]) * (densityLeft - densityRight));
-            //c.InitialValues_Evaluators.Add(CNSVariables.Pressure, X => pressureLeft - Jump(X[0]) * (pressureLeft - pressureRight));
+            c.InitialValues_Evaluators.Add(CompressibleVariables.Density, X => densityLeft - Jump(X[0]) * (densityLeft - densityRight));
+            c.InitialValues_Evaluators.Add(CNSVariables.Pressure, X => pressureLeft - Jump(X[0]) * (pressureLeft - pressureRight));
             c.InitialValues_Evaluators.Add(CNSVariables.Velocity.xComponent, X => 0.0);
             c.InitialValues_Evaluators.Add(CNSVariables.Velocity.yComponent, X => 0.0);
 
@@ -230,10 +230,9 @@ namespace CNS {
             } else {
                 c.CFLFraction = CFLFraction;
             }
-            c.Endtime = 25;
+            c.Endtime = 0.25;
             c.NoOfTimesteps = int.MaxValue;
 
-            // ### Project and sessions name ###
             // ### Project and sessions name ###
             c.ProjectName = "Shock_tube";
 
