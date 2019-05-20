@@ -257,11 +257,11 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
         /// 
         /// </summary>
         /// <returns></returns>
-        public static XNSE_Control CapillaryRise_Tube_SFB1194(int p = 2, int kelemR = 2, int omegaTc = 3, bool startUp = false, bool symmetry = true, string _DbPath = null) {
+        public static XNSE_Control CapillaryRise_Tube_SFB1194(int p = 2, int kelemR = 8, int omegaTc = 1, bool startUp = false, bool symmetry = true, string _DbPath = null) {
 
             XNSE_Control C = new XNSE_Control();
 
-            C.CutCellQuadratureType = Foundation.XDG.XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes;
+            C.CutCellQuadratureType = Foundation.XDG.XQuadFactoryHelper.MomentFittingVariants.Classic;
 
             //_DbPath = @"\\dc1\userspace\smuda\cluster\CapillaryRise\CapillaryRise_studyDB";
             _DbPath = @"\\HPCCLUSTER\hpccluster-scratch\smuda\CapillaryRise_studyDB";
@@ -383,7 +383,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
                         //restartID = new Guid("2f9deaa6-fab9-48ac-9279-319a1efa5547");
 
                         //C.ClearVelocitiesOnRestart = true;
-                        //C.ReInitPeriod = 250;
+                        C.ReInitPeriod = 400;
 
                         break;
                     }
@@ -592,7 +592,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
                 C.AddBoundaryValue("wall_lower");
             } else {
                 //C.AddBoundaryValue("wall_lower");
-                C.ChangeBoundaryCondition("wall_lower", "pressure_outlet_lower");
+                //C.ChangeBoundaryCondition("wall_lower", "pressure_outlet_lower");
                 C.AddBoundaryValue("pressure_outlet_lower");
             }
             C.AddBoundaryValue("pressure_outlet_upper");
@@ -635,7 +635,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             C.LevelSet_ConvergenceCriterion = 1e-6;
 
 
-            C.AdvancedDiscretizationOptions.FilterConfiguration = CurvatureAlgorithms.FilterConfiguration.NoFilter;
+            C.AdvancedDiscretizationOptions.FilterConfiguration = CurvatureAlgorithms.FilterConfiguration.Default;
 
             C.AdvancedDiscretizationOptions.SurfStressTensor = SurfaceSressTensor.Isotropic;
             //C.PhysicalParameters.mu_I = 1 * C.PhysicalParameters.Sigma;
@@ -645,7 +645,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             C.AdvancedDiscretizationOptions.SST_isotropicMode = Solution.XNSECommon.SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_ContactLine;
 
 
-            C.AdaptiveMeshRefinement = false;
+            C.AdaptiveMeshRefinement = true;
             C.RefineStrategy = XNSE_Control.RefinementStrategy.constantInterface;
             C.RefineNavierSlipBoundary = false;
             C.BaseRefinementLevel = 1;
@@ -670,7 +670,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             // ============
             #region time
 
-            C.Timestepper_Scheme = XNSE_Control.TimesteppingScheme.BDF2;
+            C.Timestepper_Scheme = XNSE_Control.TimesteppingScheme.ImplicitEuler;
             C.Timestepper_BDFinit = TimeStepperInit.SingleInit;
             C.Timestepper_LevelSetHandling = LevelSetHandling.Coupled_Once;
 
