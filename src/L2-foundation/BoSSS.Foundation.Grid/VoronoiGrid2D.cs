@@ -28,10 +28,10 @@ namespace BoSSS.Foundation.Grid.Voronoi
         public static VoronoiGrid Rectangle(double width, double height, int numberOfNodes) {
             Vector[] polygonBoundary = new Vector[]
             {
-                new Vector(0,height),
-                new Vector(width,height),
-                new Vector(width,0),
-                new Vector(0,0)
+                new Vector(-width / 2, height / 2),
+                new Vector(width / 2, height / 2),
+                new Vector(width / 2, -height / 2),
+                new Vector(-width / 2, -height / 2)
             };
             return FromPolygonalDomain(polygonBoundary, 10, numberOfNodes);
         }
