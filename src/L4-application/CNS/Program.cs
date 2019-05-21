@@ -382,6 +382,8 @@ namespace CNS {
             }
         }
 
+        private int firstTimeStepToLog;
+
         /// <summary>
         /// Sets the simulation time of the restart (needed for time stepping)
         /// and recomputes all derived variables
@@ -393,6 +395,10 @@ namespace CNS {
 
                 if (SpeciesMap is ImmersedSpeciesMap ibmMap) {
                     LsTrk = ibmMap.Tracker;
+                }
+
+                if (this.Control.WriteLTSLog) {
+                    this.firstTimeStepToLog = timestep.MajorNumber + Control.ExplicitOrder - 1;
                 }
             }
         }
@@ -514,8 +520,17 @@ namespace CNS {
                     InitLTSLogFile(this.CurrentSessionInfo.ID);
                 }
 
+                // Start logging when start-up phase of LTS time stepper has been finished
+                // There is also a variant when the simulation has been restarted
+                bool logIt;
+                if (firstTimeStepToLog > 0) {
+                    logIt = TimeStepper.TimeInfo.TimeStepNumber > firstTimeStepToLog;
+                } else {
+                    logIt = TimeStepper.TimeInfo.TimeStepNumber > Control.ExplicitOrder - 1;
+                }
+
                 // Write a line
-                if (TimeStepper.TimeInfo.TimeStepNumber > Control.ExplicitOrder - 1) {
+                if (logIt) {
                     AdamsBashforthLTS LTS = TimeStepper as AdamsBashforthLTS;
                     string line = String.Format("{0}\t{1}\t{2}", LTS.TimeInfo.TimeStepNumber, LTS.TimeInfo.PhysicalTime, dt);
                     for (int i = 0; i < LTS.NumberOfClustersInitial; i++) {
