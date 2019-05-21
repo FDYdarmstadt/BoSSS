@@ -796,7 +796,7 @@ namespace CNS {
         }
 
 
-        public static CNSControl ShockVortexInteractionHiOCFD5(string dbPath = null, int savePeriod = 1000, int dgDegree = 2, double sensorLimit = 1e-3, double CFLFraction = 0.1, int explicitScheme = 1, int explicitOrder = 1, int numberOfSubGrids = 3, int reclusteringInterval = 1, int maxNumOfSubSteps = 0, double Mv = 0.9, double Ms = 1.5, int numOfCellsX = 200, int numOfCellsY = 100) {
+        public static CNSControl ShockVortexInteractionHiOCFD5(string dbPath = null, int savePeriod = 1000, int dgDegree = 2, double sensorLimit = 1e-3, double CFLFraction = 0.1, int explicitScheme = 1, int explicitOrder = 1, int numberOfSubGrids = 3, int reclusteringInterval = 1, int maxNumOfSubSteps = 0, double Mv = 0.9, double Ms = 1.5, int numOfCellsX = 200, int numOfCellsY = 100, double endTime = 0.7) {
             CNSControl c = new CNSControl();
 
             // ### Database ###
@@ -868,13 +868,13 @@ namespace CNS {
 
             //c.AddVariable(CNSVariables.Entropy, dgDegree);
             c.AddVariable(CNSVariables.Temperature, dgDegree);
-            c.AddVariable(CNSVariables.LocalMachNumber, dgDegree);
+            //c.AddVariable(CNSVariables.LocalMachNumber, dgDegree);
             c.AddVariable(CNSVariables.CFL, 0);
-            c.AddVariable(CNSVariables.CFLConvective, 0);
+            //c.AddVariable(CNSVariables.CFLConvective, 0);
             c.AddVariable(CNSVariables.Schlieren, dgDegree);
 
             if (AV) {
-                c.AddVariable(CNSVariables.CFLArtificialViscosity, 0);
+                //c.AddVariable(CNSVariables.CFLArtificialViscosity, 0);
                 c.AddVariable(CNSVariables.ArtificialViscosity, 2);
             }
 
@@ -882,7 +882,7 @@ namespace CNS {
                 c.AddVariable(CNSVariables.LTSClusters, 0);
             }
 
-            c.AddVariable(CNSVariables.Rank, 0);
+            //c.AddVariable(CNSVariables.Rank, 0);
 
             // ### Grid ###
             double xMin = 0;
@@ -1076,7 +1076,7 @@ namespace CNS {
             c.dtMin = 0.0;
             c.dtMax = 1.0;
             c.CFLFraction = CFLFraction;
-            c.Endtime = 0.7;
+            c.Endtime = endTime;
             c.NoOfTimesteps = int.MaxValue;
 
             // ### Project and sessions name ###
@@ -1107,16 +1107,16 @@ namespace CNS {
         /// <summary>
         /// Version to be submitted on the TU Darmstadt HHLR Lichtenberg cluster
         /// </summary>
-        public static CNSControl ShockVortexInteractionHiOCFD5HLLR(int savePeriod = 1000, int dgDegree = 2, double sensorLimit = 1e-3, double CFLFraction = 0.1, int explicitScheme = 1, int explicitOrder = 1, int numberOfSubGrids = 3, int reclusteringInterval = 1, int maxNumOfSubSteps = 0, double Mv = 0.9, double Ms = 1.5, int numOfCellsX = 200, int numOfCellsY = 100) {
+        public static CNSControl ShockVortexInteractionHiOCFD5HLLR(int savePeriod = 1000, int dgDegree = 4, double sensorLimit = 1e-3, double CFLFraction = 0.1, int explicitScheme = 3, int explicitOrder = 3, int numberOfSubGrids = 3, int reclusteringInterval = 1, int maxNumOfSubSteps = 0, double Mv = 0.9, double Ms = 1.5, int numOfCellsX = 600, int numOfCellsY = 300, double endTime = 0.7) {
 
             // Lichtenberg
-            string dbPath = @"/work/scratch/yp19ysog/bosss_db_paper_revision_svi";
+            string dbPath = @"/work/scratch/yp19ysog/bosss_db_svi_video";
             //string restart = "False";
 
-            CNSControl c = ShockVortexInteractionHiOCFD5(dbPath, savePeriod, dgDegree, sensorLimit, CFLFraction, explicitScheme, explicitOrder, numberOfSubGrids, reclusteringInterval, maxNumOfSubSteps, Mv, Ms, numOfCellsX, numOfCellsY);
+            CNSControl c = ShockVortexInteractionHiOCFD5(dbPath, savePeriod, dgDegree, sensorLimit, CFLFraction, explicitScheme, explicitOrder, numberOfSubGrids, reclusteringInterval, maxNumOfSubSteps, Mv, Ms, numOfCellsX, numOfCellsY, endTime);
 
-            c.ProjectName = "paper_revision_svi_hllr_savePeriod1000";
-            //c.Endtime = 0.3;
+            c.ProjectName = "svi_video";
+            //c.Endtime = endTime;
             //c.NoOfTimesteps = 10;
 
             return c;
@@ -1387,7 +1387,7 @@ namespace CNS {
             return c;
         }
 
-        public static IBMControl IBMShockTube(string dbPath = null, int savePeriod = 1, int dgDegree = 5, int numOfCellsX = 75, int numOfCellsY = 55, double sensorLimit = 1e-3, double dtFixed = 0.0, double CFLFraction = 0.1, int explicitScheme = 3, int explicitOrder = 1, int numberOfSubGrids = 2, int reclusteringInterval = 1, int maxNumOfSubSteps = 0, double agg = 0.3, string restart = "False", double smoothing = 4.0) {
+        public static IBMControl IBMShockTube(string dbPath = null, int savePeriod = 1, int dgDegree = 2, int numOfCellsX = 75, int numOfCellsY = 55, double sensorLimit = 1e-3, double dtFixed = 0.0, double CFLFraction = 0.1, int explicitScheme = 1, int explicitOrder = 1, int numberOfSubGrids = 2, int reclusteringInterval = 1, int maxNumOfSubSteps = 0, double agg = 0.3, string restart = "False", double smoothing = 4.0) {
             IBMControl c = new IBMControl();
 
             // ### Database ###
@@ -1671,7 +1671,7 @@ namespace CNS {
             c.NoOfTimesteps = int.MaxValue;
 
             // ### Project and sessions name ###
-            c.ProjectName = "IBMST_Paper_Revision";
+            c.ProjectName = "IBM_Shock_Tube";
 
             string tempSessionName;
             if (c.ExplicitScheme == ExplicitSchemes.LTS) {
@@ -2481,8 +2481,8 @@ namespace CNS {
 
             if (restart == "True") {
                 // Restart Lichtenberg "paper_ibmdmr"
-                c.RestartInfo = new Tuple<Guid, TimestepNumber>(new Guid("8c6e3af9-8f53-4de6-87e5-ba1949732119"), -1);
-                c.GridGuid = new Guid("0f4e4dad-7930-428f-80b1-a3ae28dc251c");
+                c.RestartInfo = new Tuple<Guid, TimestepNumber>(new Guid("bc2a0355-4e40-44fb-9409-4519cc3db797"), -1);
+                c.GridGuid = new Guid("3e22691f-c635-472e-bb74-dcea3729fb74");
             } else {
                 c.GridFunc = delegate {
                     double[] xNodes = GenericBlas.Linspace(xMin, xMax, numOfCellsX + 1);
