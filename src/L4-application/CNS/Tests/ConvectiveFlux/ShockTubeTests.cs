@@ -335,9 +335,9 @@ namespace CNS.Tests.ConvectiveFlux {
             c.ExplicitOrder = 1;
 
             int dgDegree = 0;
-            c.AddVariable(Variables.Density, dgDegree);
-            c.AddVariable(Variables.Momentum.xComponent, dgDegree);
-            c.AddVariable(Variables.Energy, dgDegree);
+            c.AddVariable(CompressibleVariables.Density, dgDegree);
+            c.AddVariable(CompressibleVariables.Momentum.xComponent, dgDegree);
+            c.AddVariable(CompressibleVariables.Energy, dgDegree);
 
             c.AddVariable(CNSVariables.Pressure, dgDegree);
             c.AddVariable(CNSVariables.Velocity.xComponent, dgDegree);
@@ -360,7 +360,7 @@ namespace CNS.Tests.ConvectiveFlux {
                 material, densityRight, new Vector(velocityRight), pressureRight);
 
             c.InitialValues_Evaluators.Add(
-                Variables.Density,
+                CompressibleVariables.Density,
                 X => stateLeft.Density + (stateRight.Density - stateLeft.Density) * (X[0] - discontinuityPosition).Heaviside());
             c.InitialValues_Evaluators.Add(
                 CNSVariables.Velocity.xComponent,
@@ -374,7 +374,7 @@ namespace CNS.Tests.ConvectiveFlux {
             riemannSolver.GetStarRegionValues(out pStar, out uStar);
 
             c.Queries.Add("L2ErrorDensity", QueryLibrary.L2Error(
-                Variables.Density,
+                CompressibleVariables.Density,
                 (X, t) => riemannSolver.GetState(pStar, uStar, X[0] - discontinuityPosition, t).Density));
             c.Queries.Add("L2ErrorVelocity", QueryLibrary.L2Error(
                 CNSVariables.Velocity.xComponent,

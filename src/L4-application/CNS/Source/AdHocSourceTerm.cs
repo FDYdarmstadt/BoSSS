@@ -53,7 +53,7 @@ namespace CNS.Source {
         public AdHocSourceTerm(ISpeciesMap speciesMap, Func<double[], double, StateVector, double> formula) {
             this.speciesMap = speciesMap;
             this.formula = formula;
-            this.argumentOrdering = CNSEnvironment.PrimalArgumentOrdering;
+            this.argumentOrdering = CompressibleEnvironment.PrimalArgumentOrdering;
         }
 
         /// <summary>

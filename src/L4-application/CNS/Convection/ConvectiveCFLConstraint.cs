@@ -147,8 +147,8 @@ namespace CNS.Convection {
                                     throw new Exception("Could not determine CFL number");
                                 }
 
-                                Vector momentum = new Vector(CNSEnvironment.NumberOfDimensions);
-                                for (int d = 0; d < CNSEnvironment.NumberOfDimensions; d++) {
+                                Vector momentum = new Vector(CompressibleEnvironment.NumberOfDimensions);
+                                for (int d = 0; d < CompressibleEnvironment.NumberOfDimensions; d++) {
                                     momentum[d] = momentumValues[d][i, node];
                                 }
 
@@ -199,7 +199,7 @@ namespace CNS.Convection {
                                 }
 
                                 Vector momentum = new Vector();
-                                for (int d = 0; d < CNSEnvironment.NumberOfDimensions; d++) {
+                                for (int d = 0; d < CompressibleEnvironment.NumberOfDimensions; d++) {
                                     momentum[d] = momentumValues[d][i, node];
                                 }
 
@@ -261,8 +261,8 @@ namespace CNS.Convection {
                                     throw new Exception("Could not determine CFL number");
                                 }
 
-                                Vector momentum = new Vector(CNSEnvironment.NumberOfDimensions);
-                                for (int d = 0; d < CNSEnvironment.NumberOfDimensions; d++) {
+                                Vector momentum = new Vector(CompressibleEnvironment.NumberOfDimensions);
+                                for (int d = 0; d < CompressibleEnvironment.NumberOfDimensions; d++) {
                                     momentum[d] = momentumValues[d][i, node];
                                 }
 
@@ -303,8 +303,8 @@ namespace CNS.Convection {
                             for (int node = 0; node < noOfNodesPerCell; node++) {
                                 double cflhere = double.MaxValue;
 
-                                Vector momentum = new Vector(CNSEnvironment.NumberOfDimensions);
-                                for (int d = 0; d < CNSEnvironment.NumberOfDimensions; d++) {
+                                Vector momentum = new Vector(CompressibleEnvironment.NumberOfDimensions);
+                                for (int d = 0; d < CompressibleEnvironment.NumberOfDimensions; d++) {
                                     momentum[d] = momentumValues[d][i, node];
                                 }
 

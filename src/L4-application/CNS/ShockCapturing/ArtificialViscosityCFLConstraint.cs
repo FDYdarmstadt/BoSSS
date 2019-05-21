@@ -174,7 +174,7 @@ namespace CNS.ShockCapturing {
             } else {
                 int degree = workingSet.ConservativeVariables.Max(f => f.Basis.Degree);
                 int twoNPlusOne = 2 * degree + 1;
-                return cfl * GetBetaMax(degree) / twoNPlusOne / twoNPlusOne / Math.Sqrt(CNSEnvironment.NumberOfDimensions);
+                return cfl * GetBetaMax(degree) / twoNPlusOne / twoNPlusOne / Math.Sqrt(CompressibleEnvironment.NumberOfDimensions);
             }
         }
     }

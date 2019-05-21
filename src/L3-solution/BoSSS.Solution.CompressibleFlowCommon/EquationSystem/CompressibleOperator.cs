@@ -15,29 +15,34 @@ limitations under the License.
 */
 
 using BoSSS.Foundation;
+using BoSSS.Foundation.Grid;
 using BoSSS.Solution.CompressibleFlowCommon.Boundary;
 using BoSSS.Solution.CompressibleFlowCommon.Convection;
 using BoSSS.Solution.CompressibleFlowCommon.MaterialProperty;
 
 namespace BoSSS.Solution.CompressibleFlowCommon.EquationSystem {
 
-    public class CompressibleOperatorFactory {
+    public static class CompressibleOperatorFactory {
 
-        public static SpatialOperator GetEulerOperator(IBoundaryConditionMap boundaryMap, Material material) {
+        public static SpatialOperator BuildEulerOperator(IGridData gridData, CompressibleControl control) {
+
+            // Boundary condition map
+            Material material = control.GetMaterial();
+            IBoundaryConditionMap boundaryMap = new BoundaryConditionMap(gridData, control, material);
 
             // Initialize operator
             SpatialOperator EulerOperator = new SpatialOperator(
-                new string[] { Variables.Density, Variables.Momentum.xComponent, Variables.Momentum.yComponent, Variables.Energy },
+                new string[] { CompressibleVariables.Density, CompressibleVariables.Momentum.xComponent, CompressibleVariables.Momentum.yComponent, CompressibleVariables.Energy },
                 new string[] { },
-                new string[] { Variables.Density, Variables.Momentum.xComponent, Variables.Momentum.yComponent, Variables.Energy },
+                new string[] { CompressibleVariables.Density, CompressibleVariables.Momentum.xComponent, CompressibleVariables.Momentum.yComponent, CompressibleVariables.Energy },
                 QuadOrderFunc.NonLinearWithoutParameters(2)
                 );
 
             // Map fluxes
-            EulerOperator.EquationComponents[Variables.Density].Add(new OptimizedHLLCDensityFlux(boundaryMap, material));
-            EulerOperator.EquationComponents[Variables.Momentum.xComponent].Add(new OptimizedHLLCMomentumFlux(boundaryMap, 0, material));
-            EulerOperator.EquationComponents[Variables.Momentum.yComponent].Add(new OptimizedHLLCMomentumFlux(boundaryMap, 1, material));
-            EulerOperator.EquationComponents[Variables.Energy].Add(new OptimizedHLLCEnergyFlux(boundaryMap, material));
+            EulerOperator.EquationComponents[CompressibleVariables.Density].Add(new OptimizedHLLCDensityFlux(boundaryMap, material));
+            EulerOperator.EquationComponents[CompressibleVariables.Momentum.xComponent].Add(new OptimizedHLLCMomentumFlux(boundaryMap, 0, material));
+            EulerOperator.EquationComponents[CompressibleVariables.Momentum.yComponent].Add(new OptimizedHLLCMomentumFlux(boundaryMap, 1, material));
+            EulerOperator.EquationComponents[CompressibleVariables.Energy].Add(new OptimizedHLLCEnergyFlux(boundaryMap, material));
 
             EulerOperator.Commit();
 

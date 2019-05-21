@@ -75,8 +75,8 @@ namespace CNS {
             this.config = config;
 
             Density = template.Density.CloneAs();
-            DGField[] momentumComponents = new DGField[CNSEnvironment.NumberOfDimensions];
-            for (int d = 0; d < CNSEnvironment.NumberOfDimensions; d++) {
+            DGField[] momentumComponents = new DGField[CompressibleEnvironment.NumberOfDimensions];
+            for (int d = 0; d < CompressibleEnvironment.NumberOfDimensions; d++) {
                 momentumComponents[d] = template.Momentum[d].CloneAs();
             }
             Momentum = new VectorField<DGField>(momentumComponents);
@@ -99,7 +99,7 @@ namespace CNS {
             this.gridData = gridData;
             this.config = config;
 
-            int numberOfDimensions = CNSEnvironment.NumberOfDimensions;
+            int numberOfDimensions = CompressibleEnvironment.NumberOfDimensions;
 
             SinglePhaseField[] momentumFields = new SinglePhaseField[numberOfDimensions];
             Basis momentumBasis = new Basis(gridData, config.MomentumDegree);
@@ -107,16 +107,16 @@ namespace CNS {
             // Mandatory fields
             Density = new SinglePhaseField(
                 new Basis(gridData, config.DensityDegree),
-                Variables.Density);
+                CompressibleVariables.Density);
 
             for (int d = 0; d < numberOfDimensions; d++) {
-                string variableName = Variables.Momentum[d];
+                string variableName = CompressibleVariables.Momentum[d];
                 momentumFields[d] = new SinglePhaseField(momentumBasis, variableName);
             }
             Momentum = new VectorField<DGField>(momentumFields);
 
             Energy = new SinglePhaseField(
-                new Basis(gridData, config.EnergyDegree), Variables.Energy);
+                new Basis(gridData, config.EnergyDegree), CompressibleVariables.Energy);
 
             // Derived fields
             foreach (var fieldConfig in config.VariableFields) {
@@ -137,13 +137,13 @@ namespace CNS {
         /// </summary>
         public DGField[] ConservativeVariables {
             get {
-                DGField[] fields = new DGField[CNSEnvironment.NumberOfDimensions + 2];
+                DGField[] fields = new DGField[CompressibleEnvironment.NumberOfDimensions + 2];
 
-                fields[CNSEnvironment.PrimalArgumentToIndexMap[Variables.Density]] = Density;
-                for (int d = 0; d < CNSEnvironment.NumberOfDimensions; d++) {
-                    fields[CNSEnvironment.PrimalArgumentToIndexMap[Variables.Momentum[d]]] = Momentum[d];
+                fields[CompressibleEnvironment.PrimalArgumentToIndexMap[CompressibleVariables.Density]] = Density;
+                for (int d = 0; d < CompressibleEnvironment.NumberOfDimensions; d++) {
+                    fields[CompressibleEnvironment.PrimalArgumentToIndexMap[CompressibleVariables.Momentum[d]]] = Momentum[d];
                 }
-                fields[CNSEnvironment.PrimalArgumentToIndexMap[Variables.Energy]] = Energy;
+                fields[CompressibleEnvironment.PrimalArgumentToIndexMap[CompressibleVariables.Energy]] = Energy;
 
                 return fields;
             }
@@ -178,7 +178,7 @@ namespace CNS {
             }
         }
 
-        
+
 
 
         /// <summary>
@@ -195,19 +195,19 @@ namespace CNS {
         /// represent variable names. 
         /// </param>
         public virtual void ProjectInitialValues(ISpeciesMap speciesMap, IDictionary<string, Func<double[], double>> initialValues) {
-            int numberOfDimensions = CNSEnvironment.NumberOfDimensions;
+            int numberOfDimensions = CompressibleEnvironment.NumberOfDimensions;
             CellQuadratureScheme scheme = new CellQuadratureScheme(true, speciesMap.SubGrid.VolumeMask);
 
             if (config.GetInitialValueVariables() == VariableTypes.ConservativeVariables) {
-                Density.ProjectField(1.0, initialValues[Variables.Density], scheme);
+                Density.ProjectField(1.0, initialValues[CompressibleVariables.Density], scheme);
 
                 for (int d = 0; d < numberOfDimensions; d++) {
-                    Momentum[d].ProjectField(1.0, initialValues[Variables.Momentum[d]], scheme);
+                    Momentum[d].ProjectField(1.0, initialValues[CompressibleVariables.Momentum[d]], scheme);
                 }
 
-                Energy.ProjectField(1.0, initialValues[Variables.Energy], scheme);
+                Energy.ProjectField(1.0, initialValues[CompressibleVariables.Energy], scheme);
             } else if (config.GetInitialValueVariables() == VariableTypes.PrimitiveVariables) {
-                var densityFunction = initialValues[Variables.Density];
+                var densityFunction = initialValues[CompressibleVariables.Density];
                 Density.ProjectField(1.0, densityFunction, scheme);
 
                 Func<double[], double>[] velocityFunctions = new Func<double[], double>[numberOfDimensions];

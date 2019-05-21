@@ -75,7 +75,7 @@ namespace CNS.Source {
         /// </summary>
         public IList<string> ArgumentOrdering {
             get {
-                return new string[] { Variables.Momentum.Last() };
+                return new string[] { CompressibleVariables.Momentum.Last() };
             }
         }
 

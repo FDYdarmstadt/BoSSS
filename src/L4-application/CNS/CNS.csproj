@@ -73,7 +73,6 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="CNSControl.cs" />
-    <Compile Include="CNSEnvironment.cs" />
     <Compile Include="CNSQueries.cs" />
     <Compile Include="ControlExamples.cs" />
     <Compile Include="Convection\ConvectiveCFLConstraint.cs" />

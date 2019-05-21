@@ -46,10 +46,10 @@ namespace CNS.Tests.IsentropicVortex {
 
             c.MachNumber = 1 / Math.Sqrt(c.EquationOfState.HeatCapacityRatio);
 
-            c.AddVariable(Variables.Density, dgDegree);
-            c.AddVariable(Variables.Momentum.xComponent, dgDegree);
-            c.AddVariable(Variables.Momentum.yComponent, dgDegree);
-            c.AddVariable(Variables.Energy, dgDegree);
+            c.AddVariable(CompressibleVariables.Density, dgDegree);
+            c.AddVariable(CompressibleVariables.Momentum.xComponent, dgDegree);
+            c.AddVariable(CompressibleVariables.Momentum.yComponent, dgDegree);
+            c.AddVariable(CompressibleVariables.Energy, dgDegree);
             c.AddVariable(CNSVariables.Pressure, dgDegree);
             c.AddVariable(CNSVariables.Entropy, dgDegree);
 
@@ -81,12 +81,12 @@ namespace CNS.Tests.IsentropicVortex {
 
             IsentropicVortexExactSolution solution = new IsentropicVortexExactSolution(c, c.VortexSpeed);
 
-            c.InitialValues_Evaluators.Add(Variables.Density, X => solution.rho()(X, 0.0));
+            c.InitialValues_Evaluators.Add(CompressibleVariables.Density, X => solution.rho()(X, 0.0));
             c.InitialValues_Evaluators.Add(CNSVariables.Velocity.xComponent, X => solution.u()(X, 0.0));
             c.InitialValues_Evaluators.Add(CNSVariables.Velocity.yComponent, X => solution.v()(X, 0.0));
             c.InitialValues_Evaluators.Add(CNSVariables.Pressure, X => solution.p()(X, 0.0));
 
-            c.Queries.Add("L2ErrorDensity", QueryLibrary.L2Error(Variables.Density, solution.rho()));
+            c.Queries.Add("L2ErrorDensity", QueryLibrary.L2Error(CompressibleVariables.Density, solution.rho()));
             c.Queries.Add("L2ErrorPressure", QueryLibrary.L2Error(CNSVariables.Pressure, solution.p()));
             c.Queries.Add("L2ErrorEntropy", QueryLibrary.L2Error(CNSVariables.Entropy, (X, t) => 1.0));
 
@@ -148,12 +148,12 @@ namespace CNS.Tests.IsentropicVortex {
             Func<double[], double, double> uAbs = (X, t) => r(X, t) * Math.Exp(0.5 * (1.0 - r(X, t) * r(X, t)));
             Func<double[], double, double> p = (X, t) => Math.Pow(rho(X, t), gamma) - referencePressure;
 
-            c.InitialValues_Evaluators.Add(Variables.Density, X => rho(X, 0.0));
+            c.InitialValues_Evaluators.Add(CompressibleVariables.Density, X => rho(X, 0.0));
             c.InitialValues_Evaluators.Add(CNSVariables.Velocity.xComponent, X => c.VortexSpeed - Math.Sin(phi(X, 0.0)) * uAbs(X, 0.0));
             c.InitialValues_Evaluators.Add(CNSVariables.Velocity.yComponent, X => Math.Cos(phi(X, 0.0)) * uAbs(X, 0.0));
             c.InitialValues_Evaluators.Add(CNSVariables.Pressure, X => p(X, 0.0));
 
-            c.Queries.Add("L2ErrorDensity", QueryLibrary.L2Error(Variables.Density, rho));
+            c.Queries.Add("L2ErrorDensity", QueryLibrary.L2Error(CompressibleVariables.Density, rho));
             c.Queries.Add("L2ErrorPressure", QueryLibrary.L2Error(CNSVariables.Pressure, p));
             c.Queries.Add("L2ErrorEntropy", QueryLibrary.L2Error(CNSVariables.Entropy, (X, t) => 1.0));
 
@@ -177,12 +177,12 @@ namespace CNS.Tests.IsentropicVortex {
             Func<double[], double, StateVector> solution = (X, t) =>
                 CovolumeVortexExactSolution.GetSolution(X[0], X[1], c.VortexSpeed, t, c, integrationConstant);
 
-            c.InitialValues_Evaluators.Add(Variables.Density, X => solution(X, 0.0).Density);
+            c.InitialValues_Evaluators.Add(CompressibleVariables.Density, X => solution(X, 0.0).Density);
             c.InitialValues_Evaluators.Add(CNSVariables.Velocity.xComponent, X => solution(X, 0.0).Velocity[0]);
             c.InitialValues_Evaluators.Add(CNSVariables.Velocity.yComponent, X => solution(X, 0.0).Velocity[1]);
             c.InitialValues_Evaluators.Add(CNSVariables.Pressure, X => solution(X, 0.0).Pressure);
 
-            c.Queries.Add("L2ErrorDensity", QueryLibrary.L2Error(Variables.Density, (X, t) => solution(X, t).Density, 10));
+            c.Queries.Add("L2ErrorDensity", QueryLibrary.L2Error(CompressibleVariables.Density, (X, t) => solution(X, t).Density, 10));
             c.Queries.Add("L2ErrorPressure", QueryLibrary.L2Error(CNSVariables.Pressure, (X, t) => solution(X, t).Pressure, 10));
             c.Queries.Add("L2ErrorEntropy", QueryLibrary.L2Error(CNSVariables.Entropy, (X, t) => 1.0, 10));
 

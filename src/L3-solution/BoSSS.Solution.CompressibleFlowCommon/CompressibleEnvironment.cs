@@ -19,6 +19,11 @@ using System.Collections.Generic;
 using System.Linq;
 
 namespace BoSSS.Solution.CompressibleFlowCommon {
+
+    /// <summary>
+    /// Static environment of a program run. Defines some global variables
+    /// which never change at runtime.
+    /// </summary>
     public static class CompressibleEnvironment {
 
         /// <summary>
@@ -47,7 +52,7 @@ namespace BoSSS.Solution.CompressibleFlowCommon {
 
         /// <summary>
         /// Utility method to retrieve the keys part of
-        /// <see cref="CNSEnvironment.PrimalArgumentToIndexMap"/>
+        /// <see cref="CompressibleEnvironment.PrimalArgumentToIndexMap"/>
         /// </summary>
         public static string[] PrimalArgumentOrdering {
             get;
@@ -97,11 +102,11 @@ namespace BoSSS.Solution.CompressibleFlowCommon {
             }
 
             PrimalArgumentToIndexMap = new Dictionary<Variable, int>();
-            PrimalArgumentToIndexMap.Add(Variables.Density, 0);
+            PrimalArgumentToIndexMap.Add(CompressibleVariables.Density, 0);
             for (int d = 0; d < numberOfDimensions; d++) {
-                PrimalArgumentToIndexMap.Add(Variables.Momentum[d], d + 1);
+                PrimalArgumentToIndexMap.Add(CompressibleVariables.Momentum[d], d + 1);
             }
-            PrimalArgumentToIndexMap.Add(Variables.Energy, numberOfDimensions + 1);
+            PrimalArgumentToIndexMap.Add(CompressibleVariables.Energy, numberOfDimensions + 1);
 
             PrimalArgumentOrdering = PrimalArgumentToIndexMap.Keys.Select(v => v.Name).ToArray();
         }

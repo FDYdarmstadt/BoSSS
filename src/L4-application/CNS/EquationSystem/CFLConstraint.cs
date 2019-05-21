@@ -22,6 +22,7 @@ using BoSSS.Solution;
 using ilPSP;
 using MPI.Wrappers;
 using BoSSS.Foundation.Grid.Classic;
+using BoSSS.Solution.CompressibleFlowCommon;
 
 namespace CNS.EquationSystem {
 
@@ -97,15 +98,15 @@ namespace CNS.EquationSystem {
                 int maxNoOfNodesPerCell = EvaluationPoints.Max(c => c.NoOfNodes);
 
                 densityValues = MultidimensionalArray.Create(Length, maxNoOfNodesPerCell);
-                momentumValues = new MultidimensionalArray[CNSEnvironment.NumberOfDimensions];
-                for (int d = 0; d < CNSEnvironment.NumberOfDimensions; d++) {
+                momentumValues = new MultidimensionalArray[CompressibleEnvironment.NumberOfDimensions];
+                for (int d = 0; d < CompressibleEnvironment.NumberOfDimensions; d++) {
                     momentumValues[d] = MultidimensionalArray.Create(Length, maxNoOfNodesPerCell);
                 }
                 energyValues = MultidimensionalArray.Create(Length, maxNoOfNodesPerCell);
             }
 
             workingSet.Density.Evaluate(i0, Length, evaluationPoints, densityValues, 0.0);
-            for (int d = 0; d < CNSEnvironment.NumberOfDimensions; d++) {
+            for (int d = 0; d < CompressibleEnvironment.NumberOfDimensions; d++) {
                 workingSet.Momentum[d].Evaluate(i0, Length, evaluationPoints, momentumValues[d], 0, 0.0);
             }
             workingSet.Energy.Evaluate(i0, Length, evaluationPoints, energyValues, 0.0);

@@ -66,11 +66,11 @@ namespace CNS.IBM {
         #region IEquationComponent Members
 
         /// <summary>
-        /// <see cref="CNSEnvironment.PrimalArgumentOrdering"/>
+        /// <see cref="CompressibleEnvironment.PrimalArgumentOrdering"/>
         /// </summary>
         public IList<string> ArgumentOrdering {
             get {
-                return CNSEnvironment.PrimalArgumentOrdering;
+                return CompressibleEnvironment.PrimalArgumentOrdering;
             }
         }
 
@@ -80,7 +80,7 @@ namespace CNS.IBM {
         public IList<string> ParameterOrdering {
             get {
                 return Enumerable.
-                    Range(0, CNSEnvironment.NumberOfDimensions).
+                    Range(0, CompressibleEnvironment.NumberOfDimensions).
                     Select(i => "levelSetGradient" + i).
                     ToList();
             }
@@ -175,7 +175,7 @@ namespace CNS.IBM {
         /// <param name="Lenght"></param>
         /// <param name="Output"></param>
         public void Source(double time, MultidimensionalArray x, MultidimensionalArray[] U, int IndexOffset, int FirstCellInd, int Lenght, MultidimensionalArray Output) {
-            int D = CNSEnvironment.NumberOfDimensions;
+            int D = CompressibleEnvironment.NumberOfDimensions;
             int noOfNodes = x.GetLength(1);
             int noOfVariables = D + 2;
 
@@ -189,11 +189,11 @@ namespace CNS.IBM {
             Material material = speciesMap.GetMaterial(double.NaN);
             for (int i = 0; i < Lenght; i++) {
                 for (int j = 0; j < noOfNodes; j++) {
-                    StateVector stateIn = new StateVector(material, U, i, j, CNSEnvironment.NumberOfDimensions);
+                    StateVector stateIn = new StateVector(material, U, i, j, CompressibleEnvironment.NumberOfDimensions);
 
-                    Vector levelSetNormal = new Vector(CNSEnvironment.NumberOfDimensions);
-                    int offset = CNSEnvironment.NumberOfDimensions + 2;
-                    for (int d = 0; d < CNSEnvironment.NumberOfDimensions; d++) {
+                    Vector levelSetNormal = new Vector(CompressibleEnvironment.NumberOfDimensions);
+                    int offset = CompressibleEnvironment.NumberOfDimensions + 2;
+                    for (int d = 0; d < CompressibleEnvironment.NumberOfDimensions; d++) {
                         levelSetNormal[d] = U[offset + d][i + IndexOffset, j];
                     }
                     levelSetNormal.Normalize();
@@ -264,7 +264,7 @@ namespace CNS.IBM {
         /// <param name="GradV"></param>
         /// <returns></returns>
         public double VolumeForm(ref CommonParamsVol cpv, double[] U, double[,] GradU, double V, double[] GradV) {
-            int D = CNSEnvironment.NumberOfDimensions;
+            int D = CompressibleEnvironment.NumberOfDimensions;
 
             double[] normal = new double[D];
             double abs = 0.0;
@@ -418,7 +418,7 @@ namespace CNS.IBM {
 
             // Set fBoundary to zero
             MultidimensionalArray fBoundary = MultidimensionalArray.Create(
-                U[0].GetLength(0), prm.Xglobal.GetLength(1), CNSEnvironment.NumberOfDimensions);
+                U[0].GetLength(0), prm.Xglobal.GetLength(1), CompressibleEnvironment.NumberOfDimensions);
             fluxFunction.AdiabaticWall = this.adiaWall;
             flux.InternalEdge(ref efp, U, UBoundary, GradU, GradUBoundary, f, fBoundary);
         }
@@ -451,14 +451,14 @@ namespace CNS.IBM {
             }
 
             normals = MultidimensionalArray.Create(
-                noOfCells, noOfNodesPerCell, CNSEnvironment.NumberOfDimensions);
+                noOfCells, noOfNodesPerCell, CompressibleEnvironment.NumberOfDimensions);
             Material material = speciesMap.GetMaterial(double.NaN);
             for (int j = 0; j < noOfNodesPerCell; j++) {
-                double[] x = new double[CNSEnvironment.NumberOfDimensions];
-                double[] normal = new double[CNSEnvironment.NumberOfDimensions];
+                double[] x = new double[CompressibleEnvironment.NumberOfDimensions];
+                double[] normal = new double[CompressibleEnvironment.NumberOfDimensions];
 
                 double abs = 0.0;
-                for (int d = 0; d < CNSEnvironment.NumberOfDimensions; d++) {
+                for (int d = 0; d < CompressibleEnvironment.NumberOfDimensions; d++) {
                     x[d] = prm.Xglobal[0, j, d];
                     normal[d] = prm.ParameterVars[d][0, j];
                     abs += normal[d] * normal[d];
@@ -467,11 +467,11 @@ namespace CNS.IBM {
 
                 Debug.Assert(abs > 1e-10, "Extremely flat level set gradient");
 
-                for (int d = 0; d < CNSEnvironment.NumberOfDimensions; d++) {
+                for (int d = 0; d < CompressibleEnvironment.NumberOfDimensions; d++) {
                     normal[d] /= abs;
                 }
 
-                StateVector stateIn = new StateVector(material, U, 0, j, CNSEnvironment.NumberOfDimensions);
+                StateVector stateIn = new StateVector(material, U, 0, j, CompressibleEnvironment.NumberOfDimensions);
                 StateVector stateBoundary = boundaryCondition.GetBoundaryState(
                     prm.time, x, normal, stateIn);
                 Debug.Assert(stateBoundary.IsValid, "Invalid boundary state");
@@ -481,7 +481,7 @@ namespace CNS.IBM {
                     UBoundary[k][0, j] = UBoundaryLocal[k];
                 }
 
-                for (int d = 0; d < CNSEnvironment.NumberOfDimensions; d++) {
+                for (int d = 0; d < CompressibleEnvironment.NumberOfDimensions; d++) {
                     normals[0, j, d] = normal[d];
                 }
             }

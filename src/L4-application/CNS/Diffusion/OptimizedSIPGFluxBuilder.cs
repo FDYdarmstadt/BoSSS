@@ -85,7 +85,7 @@ namespace CNS.Diffusion {
             op.DensityComponents.Add(
                 new OptimizedSIPGDensityFlux(control, boundaryMap, speciesMap, gridData, cellMetricFunc));
 
-            for (int i = 0; i < CNSEnvironment.NumberOfDimensions; i++) {
+            for (int i = 0; i < CompressibleEnvironment.NumberOfDimensions; i++) {
                 op.MomentumComponents[i].Add(
                     new OptimizedSIPGMomentumFlux(control, boundaryMap, speciesMap, gridData, i + 1, cellMetricFunc));
             }

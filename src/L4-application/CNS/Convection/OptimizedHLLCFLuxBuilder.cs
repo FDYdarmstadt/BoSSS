@@ -50,7 +50,7 @@ namespace CNS.Convection {
         public override void BuildFluxes(Operator op) {
             op.DensityComponents.Add(new OptimizedHLLCDensityFlux(boundaryMap, speciesMap.GetMaterial(double.NaN)));
 
-            for (int d = 0; d < CNSEnvironment.NumberOfDimensions; d++) {
+            for (int d = 0; d < CompressibleEnvironment.NumberOfDimensions; d++) {
                 op.MomentumComponents[d].Add(new OptimizedHLLCMomentumFlux(boundaryMap, d, speciesMap.GetMaterial(double.NaN)));
             }
 

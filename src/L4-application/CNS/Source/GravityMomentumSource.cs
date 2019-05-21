@@ -73,7 +73,7 @@ namespace CNS.Source {
         public IList<string> ArgumentOrdering {
             get {
                 // Select density
-                return new string[] { Variables.Density };
+                return new string[] { CompressibleVariables.Density };
             }
         }
 

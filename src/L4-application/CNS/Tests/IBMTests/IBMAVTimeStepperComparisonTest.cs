@@ -124,7 +124,7 @@ namespace CNS.Tests.IBMTests {
             double kappa = 0.5;
             //double lambdaMax = 2.0;
             if (AV) {
-                Variable sensorVariable = Variables.Density;
+                Variable sensorVariable = CompressibleVariables.Density;
                 c.ShockSensor = new PerssonSensor(sensorVariable, sensorLimit);
                 c.AddVariable(CNSVariables.ShockSensor, 0);
                 //c.ArtificialViscosityLaw = new SmoothedHeavisideArtificialViscosityLaw(c.ShockSensor, dgDegree, sensorLimit, epsilon0, kappa, lambdaMax: lambdaMax);    // fix lambdaMax
@@ -148,10 +148,10 @@ namespace CNS.Tests.IBMTests {
             c.PrandtlNumber = 0.71;
 
             // ### Output variables ###
-            c.AddVariable(Variables.Density, dgDegree);
-            c.AddVariable(Variables.Momentum.xComponent, dgDegree);
-            c.AddVariable(Variables.Momentum.yComponent, dgDegree);
-            c.AddVariable(Variables.Energy, dgDegree);
+            c.AddVariable(CompressibleVariables.Density, dgDegree);
+            c.AddVariable(CompressibleVariables.Momentum.xComponent, dgDegree);
+            c.AddVariable(CompressibleVariables.Momentum.yComponent, dgDegree);
+            c.AddVariable(CompressibleVariables.Energy, dgDegree);
 
             //c.AddVariable(CNSVariables.Velocity.xComponent, dgDegree);
             //c.AddVariable(CNSVariables.Velocity.yComponent, dgDegree);
@@ -232,7 +232,7 @@ namespace CNS.Tests.IBMTests {
 
             Func<double, double> Jump = x => x <= discontinuityPosition ? 0 : 1;
 
-            c.InitialValues_Evaluators.Add(Variables.Density, X => densityLeft - SmoothJump(DistanceToInitialShock(X, t: 0.0)) * (densityLeft - densityRight));
+            c.InitialValues_Evaluators.Add(CompressibleVariables.Density, X => densityLeft - SmoothJump(DistanceToInitialShock(X, t: 0.0)) * (densityLeft - densityRight));
             c.InitialValues_Evaluators.Add(CNSVariables.Pressure, X => pressureLeft - SmoothJump(DistanceToInitialShock(X, t: 0.0)) * (pressureLeft - pressureRight));
             c.InitialValues_Evaluators.Add(CNSVariables.Velocity.xComponent, X => velocityX);
             c.InitialValues_Evaluators.Add(CNSVariables.Velocity.yComponent, X => velocityY);
@@ -263,7 +263,7 @@ namespace CNS.Tests.IBMTests {
             }
 
             // Queries for comparison
-            c.Queries.Add("L2NormDensity", QueryLibrary.L2Norm(Variables.Density.Name));
+            c.Queries.Add("L2NormDensity", QueryLibrary.L2Norm(CompressibleVariables.Density.Name));
 
             return c;
         }

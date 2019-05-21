@@ -50,11 +50,11 @@ namespace CNS.Diffusion {
         #region IEquationComponent Members
 
         /// <summary>
-        /// <see cref="CNSEnvironment.PrimalArgumentOrdering"/>
+        /// <see cref="CompressibleEnvironment.PrimalArgumentOrdering"/>
         /// </summary>
         IList<string> IEquationComponent.ArgumentOrdering {
             get {
-                return CNSEnvironment.PrimalArgumentOrdering;
+                return CompressibleEnvironment.PrimalArgumentOrdering;
             }
         }
 

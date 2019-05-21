@@ -130,7 +130,7 @@ namespace CNS.Diffusion {
             this.boundaryMap = boundaryMap;
             this.speciesMap = speciesMap;
             this.gridData = gridData;
-            this.dimension = CNSEnvironment.NumberOfDimensions;
+            this.dimension = CompressibleEnvironment.NumberOfDimensions;
             this.cellMetricFunc = cellMetric;
 
             foreach (byte edgeTag in boundaryMap.EdgeTag2EdgeTagName.Keys) {
@@ -159,11 +159,11 @@ namespace CNS.Diffusion {
         }
 
         /// <summary>
-        /// <see cref="CNSEnvironment.PrimalArgumentOrdering"/>
+        /// <see cref="CompressibleEnvironment.PrimalArgumentOrdering"/>
         /// </summary>
         public virtual IList<string> ArgumentOrdering {
             get {
-                return CNSEnvironment.PrimalArgumentOrdering.ToList();
+                return CompressibleEnvironment.PrimalArgumentOrdering.ToList();
             }
         }
 
