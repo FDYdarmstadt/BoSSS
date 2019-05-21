@@ -20,6 +20,11 @@ using System;
 using System.Collections.Generic;
 
 namespace BoSSS.Solution.CompressibleFlowCommon {
+
+    /// <summary>
+    /// Control file for compressible flow simulations
+    /// </summary>
+    [Serializable]
     public class CompressibleControl : AppControl, ICloneable {
 
         /// <summary>
