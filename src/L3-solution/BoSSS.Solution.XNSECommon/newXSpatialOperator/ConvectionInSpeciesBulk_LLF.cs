@@ -49,6 +49,8 @@ namespace BoSSS.Solution.XNSECommon.Operator.Convection {
             base.velFunction = new Func<double[], double, double>[GridCommons.FIRST_PERIODIC_BC_TAG, SpatDim];
             for(int d = 0; d < SpatDim; d++)
                 base.velFunction.SetColumn(m_bcmap.bndFunction[VariableNames.Velocity_d(d) + "#" + spcName], d);
+
+            SubGrdMask = lsTrk.Regions.GetSpeciesSubGrid(spcId).VolumeMask.GetBitMaskWithExternal();
         }
 
         IncompressibleMultiphaseBoundaryCondMap m_bcmap;

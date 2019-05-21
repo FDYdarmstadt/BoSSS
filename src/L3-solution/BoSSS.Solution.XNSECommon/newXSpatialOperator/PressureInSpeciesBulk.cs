@@ -38,15 +38,11 @@ namespace BoSSS.Solution.XNSECommon.Operator.Pressure {
 
         public PressureInSpeciesBulk(int _d, IncompressibleMultiphaseBoundaryCondMap bcMap, string spcName, SpeciesId spcId)
             : base(_d, bcMap) {
-            base.pressureFunction = this.m_bcMap.bndFunction[VariableNames.Pressure + "#" + spcName];
+            base.pressureFunction = bcMap.bndFunction[VariableNames.Pressure + "#" + spcName];
             this.m_bcMap = bcMap;
             //this.m_spcName = spcName;
             this.m_spcId = spcId;
         }
-
-        //public string SpeciesName {
-        //    get { return m_spcName; }
-        //}
 
         public SpeciesId validSpeciesId {
             get { return m_spcId; }

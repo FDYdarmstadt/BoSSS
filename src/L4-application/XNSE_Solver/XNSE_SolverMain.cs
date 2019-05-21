@@ -389,12 +389,13 @@ namespace BoSSS.Application.XNSE_Solver {
         /// <summary>
         /// the spatial operator (momentum and continuity equation)
         /// </summary>
-        OperatorFactory XNSE_Operator;
+        //OperatorFactoryMk2 XNSE_Operator;
+        XNSE_OperatorFactory XNSE_Operator;
 
         /// <summary>
         /// OperatorConfiguration for the <see cref="XNSE_Operator"/>
         /// </summary>
-        //OperatorConfiguration XOpConfig;
+        //OperatorConfigurationMk2 XOpConfig;
         XNSE_OperatorConfiguration XOpConfig;
 
         /// <summary>
@@ -523,7 +524,7 @@ namespace BoSSS.Application.XNSE_Solver {
 
             int degU = this.CurrentVel[0].Basis.Degree;
 
-            //if (base.Control.FakePoisson) {
+            //if(base.Control.FakePoisson) {
             //    Console.WriteLine("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
             //    Console.WriteLine("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
             //    Console.WriteLine("ACHTUNG: Fake-Poisson aktiviert!");
@@ -532,13 +533,13 @@ namespace BoSSS.Application.XNSE_Solver {
             //}
 
             //if(this.Control.AdvancedDiscretizationOptions.SurfStressTensor == SurfaceSressTensor.SemiImplicit)
-            //    this.Control.PhysicalParameters.mu_I = this.Control.dtFixed * this.Control.PhysicalParameters.Sigma;      --> added to XNSE-operator config
-                
+            //    this.Control.PhysicalParameters.mu_I = this.Control.dtFixed * this.Control.PhysicalParameters.Sigma; //--> added to XNSE-operator config
+
             #endregion
 
             #region Config and Generate XOperator
 
-            //XOpConfig = new OperatorConfiguration() {
+            //XOpConfig = new OperatorConfigurationMk2() {
             //    continuity = true,
             //    Viscous = !base.Control.FakePoisson,
             //    PressureGradient = true,
@@ -563,44 +564,45 @@ namespace BoSSS.Application.XNSE_Solver {
 
             //bool movingmesh;
             //MassMatrixShapeandDependence mmsd;
-            //switch (this.Control.Timestepper_LevelSetHandling) {
+            //switch(this.Control.Timestepper_LevelSetHandling) {
             //    case LevelSetHandling.Coupled_Once:
-            //    movingmesh = true;
-            //    mmsd = MassMatrixShapeandDependence.IsTimeDependent;
-            //    break;
+            //        movingmesh = true;
+            //        mmsd = MassMatrixShapeandDependence.IsTimeDependent;
+            //        break;
 
             //    case LevelSetHandling.Coupled_Iterative:
-            //    movingmesh = true;
-            //    mmsd = MassMatrixShapeandDependence.IsTimeAndSolutionDependent;
-            //    break;
+            //        movingmesh = true;
+            //        mmsd = MassMatrixShapeandDependence.IsTimeAndSolutionDependent;
+            //        break;
 
             //    case LevelSetHandling.LieSplitting:
             //    case LevelSetHandling.StrangSplitting:
-            //    movingmesh = false;
-            //    mmsd = MassMatrixShapeandDependence.IsTimeDependent;
-            //    break;
+            //        movingmesh = false;
+            //        mmsd = MassMatrixShapeandDependence.IsTimeDependent;
+            //        break;
 
             //    case LevelSetHandling.None:
-            //    movingmesh = false;
-            //    mmsd = MassMatrixShapeandDependence.IsNonIdentity;
-            //    break;
+            //        movingmesh = false;
+            //        mmsd = MassMatrixShapeandDependence.IsNonIdentity;
+            //        break;
 
             //    default:
-            //    throw new NotImplementedException();
+            //        throw new NotImplementedException();
             //}
 
 
             // Create Spatial Operator
             // ======================= 
 
-            XNSE_Operator = new OperatorFactory(
-               XOpConfig,
-               this.LsTrk,
-               this.m_HMForder,
-               degU,
-               this.BcMap,
-               movingmesh,
-               (this.Control.ThermalParameters.hVap_A != 0.0 && this.Control.ThermalParameters.hVap_B != 0.0));         // -> ADD TO OPERATOR CONFIG !!!
+            //XNSE_Operator = new OperatorFactoryMk2(
+            //   XOpConfig,
+            //   this.LsTrk,
+            //   this.m_HMForder,
+            //   degU,
+            //   this.BcMap,
+            //   movingmesh,
+            //   (this.Control.ThermalParameters.hVap_A != 0.0 && this.Control.ThermalParameters.hVap_B != 0.0));         // -> ADD TO OPERATOR CONFIG !!!
+            XNSE_Operator = new XNSE_OperatorFactory(XOpConfig, this.LsTrk, this.m_HMForder, this.BcMap, degU);
 
 
             // kinetic energy balance Operator
@@ -668,7 +670,7 @@ namespace BoSSS.Application.XNSE_Solver {
                         DelComputeOperatorMatrix, DelUpdateLevelSet,
                         (this.Control.CompMode == AppControl._CompMode.Transient) ? bdfOrder : 1,
                         this.Control.Timestepper_LevelSetHandling,
-                        mmsd,
+                        this.XOpConfig.mmsd,
                         (this.Control.PhysicalParameters.IncludeConvection) ? SpatialOperatorType.Nonlinear : SpatialOperatorType.LinearTimeDependent,
                         MassScale,
                         this.MultigridOperatorConfig, base.MultigridSequence,
@@ -895,22 +897,28 @@ namespace BoSSS.Application.XNSE_Solver {
             var codMap = Mapping;
             var domMap = Mapping;
 
-            this.XNSE_Operator.AssembleMatrix_Timestepper(
-                this.m_HMForder,
-                OpMtx, OpAffine,
-                AgglomeratedCellLengthScales,
-                CurrentState,
-                SurfaceForce,
-                filtLevSetGradient,
-                this.Curvature,
-                codMap,
-                domMap,
-                phystime,
+            //this.XNSE_Operator.AssembleMatrix_Timestepper(
+            //    this.m_HMForder,
+            //    OpMtx, OpAffine,
+            //    AgglomeratedCellLengthScales,
+            //    CurrentState,
+            //    SurfaceForce,
+            //    filtLevSetGradient,
+            //    this.Curvature,
+            //    codMap,
+            //    domMap,
+            //    phystime,
+            //    (this.Control.solveCoupledHeatEquation ? this.Temperature.ToEnumerable() : null),
+            //    (this.Control.solveCoupledHeatEquation ? this.DisjoiningPressure.ToEnumerable() : null));
+            this.XNSE_Operator.AssembleMatrix(
+                OpMtx, OpAffine, codMap, domMap,
+                CurrentState, AgglomeratedCellLengthScales, phystime,
+                this.m_HMForder, SurfaceForce, filtLevSetGradient, Curvature,
                 (this.Control.solveCoupledHeatEquation ? this.Temperature.ToEnumerable() : null),
                 (this.Control.solveCoupledHeatEquation ? this.DisjoiningPressure.ToEnumerable() : null));
 
 
-            if (filtLevSetGradient != null) {
+            if(filtLevSetGradient != null) {
                 if (this.Control.AdvancedDiscretizationOptions.FilterConfiguration.LevelSetSource == CurvatureAlgorithms.LevelSetSource.fromC0) {
                     this.LevSetGradient.Clear();
                     this.LevSetGradient.Acc(1.0, filtLevSetGradient);

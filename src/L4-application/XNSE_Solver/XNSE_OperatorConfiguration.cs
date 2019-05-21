@@ -40,9 +40,9 @@ namespace BoSSS.Application.XNSE_Solver {
             }
 
             Continuity = true;
-            Viscous = control.FakePoisson;
+            Viscous = !control.FakePoisson;
             PressureGradient = true;
-            Transport = control.FakePoisson;
+            Transport = !control.FakePoisson;
             CodBlocks = new bool[] { true, true };
             DomBlocks = new bool[] { true, true };
             dntParams = control.AdvancedDiscretizationOptions;
@@ -55,6 +55,8 @@ namespace BoSSS.Application.XNSE_Solver {
 
             Heat = control.solveCoupledHeatEquation;
             Evaporation = (control.ThermalParameters.hVap_A != 0.0 && control.ThermalParameters.hVap_B != 0.0);
+            MatInt = !Evaporation;
+            
 
             switch(control.Timestepper_LevelSetHandling) {
                 case LevelSetHandling.Coupled_Once:
@@ -142,6 +144,11 @@ namespace BoSSS.Application.XNSE_Solver {
         public bool Evaporation;
 
         /// <summary>
+        /// true if the interface is a material interface
+        /// </summary>
+        public bool MatInt;
+
+        /// <summary>
         /// Switch to turn velocity extension on/off.
         /// </summary>
         public bool UseXDG4Velocity = true;
@@ -154,7 +161,7 @@ namespace BoSSS.Application.XNSE_Solver {
         /// <summary>
         /// 
         /// </summary>
-        MassMatrixShapeandDependence mmsd;
+        public MassMatrixShapeandDependence mmsd;
 
 
         // getter for interface
@@ -186,6 +193,10 @@ namespace BoSSS.Application.XNSE_Solver {
 
         public bool isMovingMesh {
             get { return MovingMesh; }
+        }
+
+        public bool isMatInt {
+            get { return MatInt; }
         }
     }
 

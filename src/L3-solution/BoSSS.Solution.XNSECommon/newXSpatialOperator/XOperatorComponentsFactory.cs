@@ -49,7 +49,7 @@ namespace BoSSS.Solution.XNSECommon.newXSpatialOperator {
         /// <param name="config"></param>
         /// <param name="LsTrk"></param>
         public static void AddSpeciesNSE_component(XSpatialOperatorMk2 XOp, string CodName, int d, int D, string spcName, SpeciesId spcId, 
-            IncompressibleMultiphaseBoundaryCondMap BcMap, IXNSE_Configuration config, LevelSetTracker LsTrk) {
+            IncompressibleMultiphaseBoundaryCondMap BcMap, IXNSE_Configuration config, LevelSetTracker LsTrk, out bool U0meanrequired) {
 
             // check input
             if(XOp.IsCommited)
@@ -73,9 +73,11 @@ namespace BoSSS.Solution.XNSECommon.newXSpatialOperator {
 
             // convective operator
             // ===================
+            U0meanrequired = false;
             if(physParams.IncludeConvection && config.isTransport) {
                 var conv = new Operator.Convection.ConvectionInSpeciesBulk_LLF(D, BcMap, spcName, spcId, d, rhoSpc, LFFSpc, LsTrk);
                 comps.Add(conv);
+                U0meanrequired = true;
             }
 
             // pressure gradient
@@ -157,11 +159,13 @@ namespace BoSSS.Solution.XNSECommon.newXSpatialOperator {
         /// <param name="config"></param>
         /// <param name="LsTrk"></param>
         public static void AddSpeciesNSE(XSpatialOperatorMk2 XOp, string[] CodName, string spcName, SpeciesId spcId,
-            IncompressibleMultiphaseBoundaryCondMap BcMap, IXNSE_Configuration config, LevelSetTracker LsTrk) {
+            IncompressibleMultiphaseBoundaryCondMap BcMap, IXNSE_Configuration config, LevelSetTracker LsTrk, out bool U0meanrequired) {
+
+            U0meanrequired = false;
 
             int D = CodName.Length;
             for(int d = 0; d < D; d++) {
-                AddSpeciesNSE_component(XOp, CodName[d], d, D, spcName, spcId, BcMap, config, LsTrk);
+                AddSpeciesNSE_component(XOp, CodName[d], d, D, spcName, spcId, BcMap, config, LsTrk, out U0meanrequired);
             }
 
         }
@@ -267,7 +271,8 @@ namespace BoSSS.Solution.XNSECommon.newXSpatialOperator {
         /// <param name="config"></param>
         /// <param name="LsTrk"></param>
         public static void AddSurfaceTensionForce_component(XSpatialOperatorMk2 XOp, string CodName, int d, int D,
-            IncompressibleMultiphaseBoundaryCondMap BcMap, IXNSE_Configuration config, LevelSetTracker LsTrk) {
+            IncompressibleMultiphaseBoundaryCondMap BcMap, IXNSE_Configuration config, LevelSetTracker LsTrk, int degU,
+            out bool NormalsRequired, out bool CurvatureRequired) {
 
             // check input
             if(XOp.IsCommited)
@@ -282,10 +287,12 @@ namespace BoSSS.Solution.XNSECommon.newXSpatialOperator {
             double sigma = physParams.Sigma;
 
             // set components
-            var comps = XOp.SurfaceElementOperator.EquationComponents[CodName];
+            //var comps = XOp.SurfaceElementOperator.EquationComponents[CodName];
 
             // surface stress tensor
             // =====================
+            NormalsRequired = false;
+            CurvatureRequired = false;
             if(config.isPressureGradient && physParams.Sigma != 0.0) {
 
                 // isotropic part of the surface stress tensor
@@ -297,23 +304,23 @@ namespace BoSSS.Solution.XNSECommon.newXSpatialOperator {
 
                     if(dntParams.SST_isotropicMode != SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_ContactLine) {
                         IEquationComponent G = new SurfaceTension_LaplaceBeltrami_Surface(d, sigma * 0.5);
-                        comps.Add(G);
+                        XOp.SurfaceElementOperator.EquationComponents[CodName].Add(G);
                         IEquationComponent H = new SurfaceTension_LaplaceBeltrami_BndLine(d, sigma * 0.5, dntParams.SST_isotropicMode == SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_Flux);
-                        comps.Add(H);
+                        XOp.SurfaceElementOperator.EquationComponents[CodName].Add(H);
                     } else {
                         IEquationComponent isoSurfT = new IsotropicSurfaceTension_LaplaceBeltrami(d, D, sigma * 0.5, BcMap.EdgeTag2Type, physParams.theta_e, physParams.betaL);
-                        comps.Add(isoSurfT);
+                        XOp.SurfaceElementOperator.EquationComponents[CodName].Add(isoSurfT);
                     }
-                    //this.NormalsRequired = true;
+                    NormalsRequired = true;
 
                 } else if(dntParams.SST_isotropicMode == SurfaceStressTensor_IsotropicMode.Curvature_Projected
                         || dntParams.SST_isotropicMode == SurfaceStressTensor_IsotropicMode.Curvature_ClosestPoint
                         || dntParams.SST_isotropicMode == SurfaceStressTensor_IsotropicMode.Curvature_LaplaceBeltramiMean
                         || dntParams.SST_isotropicMode == SurfaceStressTensor_IsotropicMode.Curvature_Fourier) {
 
-                    comps.Add(new CurvatureBasedSurfaceTension(d, D, LsTrk, sigma));
+                    XOp.EquationComponents[CodName].Add(new CurvatureBasedSurfaceTension(d, D, LsTrk, sigma));
 
-                    //this.CurvatureRequired = true;
+                    CurvatureRequired = true;
 
                 } else {
                     throw new NotImplementedException("Not implemented.");
@@ -337,11 +344,11 @@ namespace BoSSS.Solution.XNSECommon.newXSpatialOperator {
                         dntParams.SurfStressTensor == SurfaceSressTensor.FullBoussinesqScriven) {
 
                         var surfDeformRate = new BoussinesqScriven_SurfaceDeformationRate_GradU(d, muI * 0.5, penalty);
-                        comps.Add(surfDeformRate);
+                        XOp.SurfaceElementOperator.EquationComponents[CodName].Add(surfDeformRate);
 
                         if(dntParams.SurfStressTensor != SurfaceSressTensor.SemiImplicit) {
                             var surfDeformRateT = new BoussinesqScriven_SurfaceDeformationRate_GradUTranspose(d, muI * 0.5, penalty);
-                            comps.Add(surfDeformRateT);
+                            XOp.SurfaceElementOperator.EquationComponents[CodName].Add(surfDeformRateT);
                         }
 
                     }
@@ -350,7 +357,7 @@ namespace BoSSS.Solution.XNSECommon.newXSpatialOperator {
                         dntParams.SurfStressTensor == SurfaceSressTensor.FullBoussinesqScriven) {
 
                         var surfVelocDiv = new BoussinesqScriven_SurfaceVelocityDivergence(d, muI * 0.5, lamI * 0.5, penalty, BcMap.EdgeTag2Type);
-                        comps.Add(surfVelocDiv);
+                        XOp.SurfaceElementOperator.EquationComponents[CodName].Add(surfVelocDiv);
 
                     }
                 }
@@ -361,7 +368,7 @@ namespace BoSSS.Solution.XNSECommon.newXSpatialOperator {
 
                 if(dntParams.UseLevelSetStabilization) {
 
-                    comps.Add(new LevelSetStabilization(d, D, LsTrk));
+                    XOp.EquationComponents[CodName].Add(new LevelSetStabilization(d, D, LsTrk));
                 }
 
             }
@@ -372,7 +379,7 @@ namespace BoSSS.Solution.XNSECommon.newXSpatialOperator {
 
             if(config.isPressureGradient && physParams.useArtificialSurfaceForce) {
 
-                comps.Add(new SurfaceTension_ArfForceSrc(d, D, LsTrk));
+                XOp.EquationComponents[CodName].Add(new SurfaceTension_ArfForceSrc(d, D, LsTrk));
             }
 
         }
@@ -389,12 +396,18 @@ namespace BoSSS.Solution.XNSECommon.newXSpatialOperator {
         /// <param name="config"></param>
         /// <param name="LsTrk"></param>
         public static void AddSurfaceTensionForce(XSpatialOperatorMk2 XOp, string[] CodName,
-            IncompressibleMultiphaseBoundaryCondMap BcMap, IXNSE_Configuration config, LevelSetTracker LsTrk) {
+            IncompressibleMultiphaseBoundaryCondMap BcMap, IXNSE_Configuration config, LevelSetTracker LsTrk, int degU,
+            out bool NormalsRequired, out bool CurvatureRequired) {
+
+            NormalsRequired = false;
+            CurvatureRequired = false;
 
             int D = CodName.Length;
             for(int d = 0; d < D; d++) {
-                AddSurfaceTensionForce_component(XOp, CodName[d], d, D, BcMap, config, LsTrk);
+                AddSurfaceTensionForce_component(XOp, CodName[d], d, D, BcMap, config, LsTrk, degU, out NormalsRequired, out CurvatureRequired);
             }
+
+
 
         }
 
@@ -475,7 +488,7 @@ namespace BoSSS.Solution.XNSECommon.newXSpatialOperator {
             // set components
             var comps = XOp.EquationComponents[CodName];
 
-            var divPen = new Operator.Continuity.DivergenceAtLevelSet(D, LsTrk, rhoA, rhoB, MatInt, dntParams.ContiSign, dntParams.RescaleConti);
+            var divPen = new Operator.Continuity.DivergenceAtLevelSet(D, LsTrk, rhoA, rhoB, config.isMatInt, dntParams.ContiSign, dntParams.RescaleConti);
             comps.Add(divPen);
         }
 
@@ -508,10 +521,8 @@ namespace BoSSS.Solution.XNSECommon.newXSpatialOperator {
     }
 
 
-    /// <summary>
-    /// 
-    /// </summary>
-    public interface IXNSE_Configuration {
+
+    public interface IBase_Configuration {
 
         PhysicalParameters GetPhysParams { get; }
 
@@ -519,6 +530,14 @@ namespace BoSSS.Solution.XNSECommon.newXSpatialOperator {
         /// advanced operator configuration
         /// </summary>
         DoNotTouchParameters GetDntParams { get; }
+
+    }
+
+
+    /// <summary>
+    /// 
+    /// </summary>
+    public interface IXNSE_Configuration : IBase_Configuration {
 
         /// <summary>
         /// include transport operator
@@ -544,6 +563,11 @@ namespace BoSSS.Solution.XNSECommon.newXSpatialOperator {
         /// switch for moving mesh flux discretizations
         /// </summary>
         bool isMovingMesh { get; }
+
+        /// <summary>
+        /// true if the interface is a material interface
+        /// </summary>
+        bool isMatInt { get; }
 
     }
 }

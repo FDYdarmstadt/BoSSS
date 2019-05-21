@@ -51,7 +51,7 @@ namespace BoSSS.Solution.XNSECommon.Operator.Continuity {
             scale = _vorZeichen / ((RescaleConti) ? rho : 1.0);
 
             int d = base.component;
-            base.bndFunction = this.m_bcmap.bndFunction[VariableNames.Velocity_d(d) + "#" + spcName];
+            base.bndFunction = _bcmap.bndFunction[VariableNames.Velocity_d(d) + "#" + spcName];
 
             this.m_bcmap = _bcmap;
         }
@@ -99,8 +99,7 @@ namespace BoSSS.Solution.XNSECommon.Operator.Continuity {
             : base(_component, _D) {
 
             m_spcId = spcId;
-            //vorZeichen = _vorZeichen;
-            //RescaleConti = _RescaleConti;
+
             scale = _vorZeichen / ((_RescaleConti) ? _rho : 1.0);
         }
 

@@ -16,6 +16,7 @@ limitations under the License.
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -155,7 +156,7 @@ namespace BoSSS.Solution.XNSECommon {
 
             // create Operator
             // ===============
-            m_OP = new XSpatialOperatorMk2(DomNameSelected, Params, CodNameSelected, (A, B, C) => _HMFdegree, null);
+            m_OP = new XSpatialOperatorMk2(DomNameSelected, Params, CodNameSelected, (A, B, C) => _HMFdegree, this.LsTrk.SpeciesIdS.ToArray());
 
             // build the operator
             // ==================
@@ -864,5 +865,6 @@ namespace BoSSS.Solution.XNSECommon {
 
             }
         }
+
     }
 }
