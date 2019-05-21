@@ -394,7 +394,8 @@ namespace BoSSS.Application.XNSE_Solver {
         /// <summary>
         /// OperatorConfiguration for the <see cref="XNSE_Operator"/>
         /// </summary>
-        OperatorConfiguration XOpConfig;
+        //OperatorConfiguration XOpConfig;
+        XNSE_OperatorConfiguration XOpConfig;
 
         /// <summary>
         /// Current Velocity: either extended or non-extended DG.
@@ -522,33 +523,34 @@ namespace BoSSS.Application.XNSE_Solver {
 
             int degU = this.CurrentVel[0].Basis.Degree;
 
-            if (base.Control.FakePoisson) {
-                Console.WriteLine("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
-                Console.WriteLine("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
-                Console.WriteLine("ACHTUNG: Fake-Poisson aktiviert!");
-                Console.WriteLine("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
-                Console.WriteLine("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
-            }
+            //if (base.Control.FakePoisson) {
+            //    Console.WriteLine("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
+            //    Console.WriteLine("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
+            //    Console.WriteLine("ACHTUNG: Fake-Poisson aktiviert!");
+            //    Console.WriteLine("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
+            //    Console.WriteLine("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
+            //}
 
-            if(this.Control.AdvancedDiscretizationOptions.SurfStressTensor == SurfaceSressTensor.SemiImplicit)
-                this.Control.PhysicalParameters.mu_I = this.Control.dtFixed * this.Control.PhysicalParameters.Sigma;
-
+            //if(this.Control.AdvancedDiscretizationOptions.SurfStressTensor == SurfaceSressTensor.SemiImplicit)
+            //    this.Control.PhysicalParameters.mu_I = this.Control.dtFixed * this.Control.PhysicalParameters.Sigma;      --> added to XNSE-operator config
+                
             #endregion
 
             #region Config and Generate XOperator
 
-            XOpConfig = new OperatorConfiguration() {
-                continuity = true,
-                Viscous = !base.Control.FakePoisson,
-                PressureGradient = true,
-                Transport = !base.Control.FakePoisson,
-                CodBlocks = new bool[] { true, true },
-                DomBlocks = new bool[] { true, true },
-                dntParams = this.Control.AdvancedDiscretizationOptions,
-                physParams = this.Control.PhysicalParameters,
-                thermParams = this.Control.ThermalParameters,
-                UseXDG4Velocity = this.Control.UseXDG4Velocity
-            };
+            //XOpConfig = new OperatorConfiguration() {
+            //    continuity = true,
+            //    Viscous = !base.Control.FakePoisson,
+            //    PressureGradient = true,
+            //    Transport = !base.Control.FakePoisson,
+            //    CodBlocks = new bool[] { true, true },
+            //    DomBlocks = new bool[] { true, true },
+            //    dntParams = this.Control.AdvancedDiscretizationOptions,
+            //    physParams = this.Control.PhysicalParameters,
+            //    thermParams = this.Control.ThermalParameters,
+            //    UseXDG4Velocity = this.Control.UseXDG4Velocity
+            //};
+            XOpConfig = new XNSE_OperatorConfiguration(this.Control);
 
             //Quadrature Order
             //----------------
@@ -559,33 +561,33 @@ namespace BoSSS.Application.XNSE_Solver {
             // Is Moving Mesh required?
             //------------------------------------->>> ADD TO OPERATOR CONFIG !!!
 
-            bool movingmesh;
-            MassMatrixShapeandDependence mmsd;
-            switch (this.Control.Timestepper_LevelSetHandling) {
-                case LevelSetHandling.Coupled_Once:
-                movingmesh = true;
-                mmsd = MassMatrixShapeandDependence.IsTimeDependent;
-                break;
+            //bool movingmesh;
+            //MassMatrixShapeandDependence mmsd;
+            //switch (this.Control.Timestepper_LevelSetHandling) {
+            //    case LevelSetHandling.Coupled_Once:
+            //    movingmesh = true;
+            //    mmsd = MassMatrixShapeandDependence.IsTimeDependent;
+            //    break;
 
-                case LevelSetHandling.Coupled_Iterative:
-                movingmesh = true;
-                mmsd = MassMatrixShapeandDependence.IsTimeAndSolutionDependent;
-                break;
+            //    case LevelSetHandling.Coupled_Iterative:
+            //    movingmesh = true;
+            //    mmsd = MassMatrixShapeandDependence.IsTimeAndSolutionDependent;
+            //    break;
 
-                case LevelSetHandling.LieSplitting:
-                case LevelSetHandling.StrangSplitting:
-                movingmesh = false;
-                mmsd = MassMatrixShapeandDependence.IsTimeDependent;
-                break;
+            //    case LevelSetHandling.LieSplitting:
+            //    case LevelSetHandling.StrangSplitting:
+            //    movingmesh = false;
+            //    mmsd = MassMatrixShapeandDependence.IsTimeDependent;
+            //    break;
 
-                case LevelSetHandling.None:
-                movingmesh = false;
-                mmsd = MassMatrixShapeandDependence.IsNonIdentity;
-                break;
+            //    case LevelSetHandling.None:
+            //    movingmesh = false;
+            //    mmsd = MassMatrixShapeandDependence.IsNonIdentity;
+            //    break;
 
-                default:
-                throw new NotImplementedException();
-            }
+            //    default:
+            //    throw new NotImplementedException();
+            //}
 
 
             // Create Spatial Operator
@@ -4641,7 +4643,6 @@ namespace BoSSS.Application.XNSE_Solver {
 
             // assemble the matrix & affine vector
             // ===================================
-
 
             // compute matrix
             if(OpMtx != null) {

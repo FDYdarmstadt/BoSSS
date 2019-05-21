@@ -174,8 +174,20 @@ namespace BoSSS.Solution.XNSECommon {
                         double LFFB = config.dntParams.LFFB;
 
 
-                        var conv = new Operator.Convection.ConvectionInBulk_LLF(D, BcMap, d, rhoA, rhoB, LFFA, LFFB, LsTrk);
-                        comps.Add(conv); // Bulk component
+                        //var conv = new Operator.Convection.ConvectionInBulk_LLF(D, BcMap, d, rhoA, rhoB, LFFA, LFFB, LsTrk);
+                        //comps.Add(conv); // Bulk component
+                        for(int spc = 0; spc < LsTrk.TotalNoOfSpecies; spc++) {
+                            double rhoSpc = 0.0;
+                            double LFFSpc = 0.0;
+                            switch(LsTrk.SpeciesNames[spc]) {
+                                case "A": rhoSpc = rhoA; LFFSpc = LFFA; break;
+                                case "B": rhoSpc = rhoB; LFFSpc = LFFB; break;
+                                default: throw new ArgumentException("Unknown species.");
+                            }
+                            var conv = new Operator.Convection.ConvectionInSpeciesBulk_LLF(D, BcMap, LsTrk.SpeciesNames[spc], LsTrk.SpeciesIdS[spc], d, rhoSpc, LFFSpc, LsTrk);
+                            comps.Add(conv); // Bulk component
+                        }
+
                         comps.Add(new Operator.Convection.ConvectionAtLevelSet_LLF(d, D, LsTrk, rhoA, rhoB, LFFA, LFFB, config.physParams.Material, BcMap, movingmesh));       // LevelSet component
 
                         if(evaporation) {
@@ -250,42 +262,19 @@ namespace BoSSS.Solution.XNSECommon {
 
                                     break;
                                 }
-                            case ViscosityMode.ExplicitTransformation: {
-                                    // Bulk operator
-                                    var Visc = new Operator.Viscosity.ViscosityInBulk_GradUTerm(
-                                        dntParams.UseGhostPenalties ? 0.0 : penalty, 1.0,
-                                        BcMap, d, D, muA, muB);
-                                    comps.Add(Visc);
-                                    if(dntParams.UseGhostPenalties) {
-                                        var ViscPenalty = new Operator.Viscosity.ViscosityInBulk_GradUTerm(penalty * 1.0, 0.0, BcMap, d, D, muA, muB);
-                                        m_OP.GhostEdgesOperator.EquationComponents[CodName[d]].Add(ViscPenalty);
-                                    }
-
-                                    //Level-Set operator:
-                                    //comps.Add(new Operator.Viscosity.ViscosityAtLevelSet_Explicit(d, D, LsTrk, penalty, muA, muB));
-                                    throw new NotSupportedException("Beim refact rausgeflogen, braucht eh kein Mensch. fk, 08jan16.");
-
-                                    //break;
-                                }
 
                             case ViscosityMode.FullySymmetric: {
                                     // Bulk operator
-                                    //var Visc1 = new Operator.Viscosity.ViscosityInBulk_GradUTerm(
-                                    //    dntParams.UseGhostPenalties ? 0.0 : penalty, 1.0,
-                                    //    BcMap, d, D, muA, muB, _betaA: this.physParams.betaS_A, _betaB: this.physParams.betaS_B);
-                                    //var Visc2 = new Operator.Viscosity.ViscosityInBulk_GradUtranspTerm(
-                                    //    dntParams.UseGhostPenalties ? 0.0 : penalty, 1.0,
-                                    //    BcMap, d, D, muA, muB, _betaA: this.physParams.betaS_A, _betaB: this.physParams.betaS_B);
-                                    ////var Visc3 = new Operator.Viscosity.ViscosityInBulk_divTerm(dntParams.UseGhostPenalties ? 0.0 : penalty, 1.0, BcMap, d, D, muA, muB);
-                                    //comps.Add(Visc1);
-                                    //comps.Add(Visc2);
-                                    ////comps.Add(Visc3);
-
                                     for(int spc = 0; spc < LsTrk.TotalNoOfSpecies; spc++) {
-                                        var Visc = new Operator.Viscosity.ViscosityInSpeciesBulk_GradUTerm(
+                                        var Visc1 = new Operator.Viscosity.ViscosityInSpeciesBulk_GradUTerm(
                                             dntParams.UseGhostPenalties ? 0.0 : penalty, 1.0,
                                             BcMap, LsTrk.SpeciesNames[spc], LsTrk.SpeciesIdS[spc], d, D, muA, muB);
-                                        comps.Add(Visc);
+                                        comps.Add(Visc1);
+
+                                        var Visc2 = new Operator.Viscosity.ViscosityInSpeciesBulk_GradUtranspTerm(
+                                            dntParams.UseGhostPenalties ? 0.0 : penalty, 1.0,
+                                            BcMap, LsTrk.SpeciesNames[spc], LsTrk.SpeciesIdS[spc], d, D, muA, muB);
+                                        comps.Add(Visc2);
                                     }
 
                                     if(dntParams.UseGhostPenalties) {
@@ -323,10 +312,22 @@ namespace BoSSS.Solution.XNSECommon {
                 if(config.continuity) {
 
                     for(int d = 0; d < D; d++) {
-                        var src = new Operator.Continuity.DivergenceInBulk_Volume(d, D, rhoA, rhoB, config.dntParams.ContiSign, config.dntParams.RescaleConti);
-                        var flx = new Operator.Continuity.DivergenceInBulk_Edge(d, BcMap, rhoA, rhoB, config.dntParams.ContiSign, config.dntParams.RescaleConti);
-                        m_OP.EquationComponents["div"].Add(flx);
-                        m_OP.EquationComponents["div"].Add(src);
+                        //var src = new Operator.Continuity.DivergenceInBulk_Volume(d, D, rhoA, rhoB, config.dntParams.ContiSign, config.dntParams.RescaleConti);
+                        //var flx = new Operator.Continuity.DivergenceInBulk_Edge(d, BcMap, rhoA, rhoB, config.dntParams.ContiSign, config.dntParams.RescaleConti);
+                        //m_OP.EquationComponents["div"].Add(flx);
+                        //m_OP.EquationComponents["div"].Add(src);
+                        for(int spc = 0; spc < LsTrk.TotalNoOfSpecies; spc++) {
+                            double rhoSpc = 0.0;
+                            switch(LsTrk.SpeciesNames[spc]) {
+                                case "A": rhoSpc = rhoA; break;
+                                case "B": rhoSpc = rhoB; break;
+                                default: throw new ArgumentException("Unknown species.");
+                            }
+                            var src = new Operator.Continuity.DivergenceInSpeciesBulk_Volume(d, D, LsTrk.SpeciesIdS[spc], rhoSpc, config.dntParams.ContiSign, config.dntParams.RescaleConti);
+                            var flx = new Operator.Continuity.DivergenceInSpeciesBulk_Edge(d, BcMap, LsTrk.SpeciesNames[spc], LsTrk.SpeciesIdS[spc], rhoSpc, config.dntParams.ContiSign, config.dntParams.RescaleConti);
+                            m_OP.EquationComponents["div"].Add(flx);
+                            m_OP.EquationComponents["div"].Add(src);
+                        }
                     }
 
                     var divPen = new Operator.Continuity.DivergenceAtLevelSet(D, LsTrk, rhoA, rhoB, MatInt, config.dntParams.ContiSign, config.dntParams.RescaleConti); //, dntParams.UseWeightedAverages, muA, muB);

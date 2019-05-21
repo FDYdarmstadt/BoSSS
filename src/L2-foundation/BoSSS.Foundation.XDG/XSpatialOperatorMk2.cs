@@ -113,7 +113,7 @@ namespace BoSSS.Foundation.XDG {
                     foreach(IEquationComponent iec in m_owner.m_EquationComponents[comps]) {
                         m_SpatialOperator.EquationComponents[comps].Add(iec);
                         if(iec is ISpeciesFilter) {
-                            SpeciesId spcId = ((ISpeciesFilter)iec).validSpecies;
+                            SpeciesId spcId = ((ISpeciesFilter)iec).validSpeciesId;
                             //if(spcId != null) {
                             //    if(m_owner.m_Species == null) {
                             //        throw new ArgumentException("error in equation components for key \"" + comps + "\" ISpeciesFilter was defined but not m_Species");

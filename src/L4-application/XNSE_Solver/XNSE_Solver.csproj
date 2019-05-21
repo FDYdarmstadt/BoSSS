@@ -94,6 +94,8 @@
     <Compile Include="Tests\TranspiratingChannelTest.cs" />
     <Compile Include="Tests\UnitTest.cs" />
     <Compile Include="Tests\ViscosityJumpTest.cs" />
+    <Compile Include="XNSE_OperatorConfiguration.cs" />
+    <Compile Include="XNSE_OperatorFactory.cs" />
     <Compile Include="XNSE_SolverMain.cs" />
   </ItemGroup>
   <ItemGroup>

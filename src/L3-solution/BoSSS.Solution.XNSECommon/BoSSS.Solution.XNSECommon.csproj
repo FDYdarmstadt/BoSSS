@@ -57,9 +57,13 @@
     <Compile Include="EnergyOperatorComponents.cs" />
     <Compile Include="EnergyUtils.cs" />
     <Compile Include="IncompressibleMultiphaseBoundaryCondMap.cs" />
+    <Compile Include="newXSpatialOperator\ConvectionInSpeciesBulk_LLF.cs" />
+    <Compile Include="newXSpatialOperator\XOperatorComponentsFactory.cs" />
     <Compile Include="newXSpatialOperator\OperatorConfigurationMk2.cs" />
+    <Compile Include="newXSpatialOperator\XOperatorFactoryBase.cs" />
     <Compile Include="newXSpatialOperator\OperatorFactoryMk2.cs" />
     <Compile Include="newXSpatialOperator\PressureInSpeciesBulk.cs" />
+    <Compile Include="newXSpatialOperator\SpeciesDivergence.cs" />
     <Compile Include="newXSpatialOperator\ViscosityInSpeciesBulk.cs" />
     <Compile Include="PatchRecovery.cs" />
     <Compile Include="XLaplace.cs" />
