@@ -26,9 +26,15 @@ namespace BoSSS.Foundation.Grid.Voronoi {
     [Serializable]
     public class VoronoiGrid : Aggregation.AggregationGrid
     {
+        //Generating Voronoi node of each cell jCell
         MultidimensionalArray voronoiNodes;
 
-        int[] voronoiNodeToCellMap;
+        public MultidimensionalArray VoronoiNodes {
+            get { return voronoiNodes;}
+        }
+        
+        //Velocity of each cell jCell
+        public MultidimensionalArray NodeVelocity;
 
         public VoronoiGrid(IGrid pGrid,
             int[][] AggregationCells,
@@ -36,6 +42,7 @@ namespace BoSSS.Foundation.Grid.Voronoi {
             : base(pGrid, AggregationCells)
         {
             this.voronoiNodes = voronoiNodes;
+            this.NodeVelocity = MultidimensionalArray.Create(NumberOfCells, 2);
         }
 
         VoronoiGrid() { }
