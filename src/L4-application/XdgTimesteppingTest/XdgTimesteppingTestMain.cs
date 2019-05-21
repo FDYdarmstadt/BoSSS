@@ -217,7 +217,7 @@ namespace BoSSS.Application.XdgTimesteppingTest {
             //PostInitial(Time);
         }
 
-        XSpatialOperator Operator;
+        XSpatialOperatorMk2 Operator;
 
         int LinearQuadratureDegree {
             get {
@@ -266,14 +266,14 @@ namespace BoSSS.Application.XdgTimesteppingTest {
                     }
                 }
 
-                Operator = new XSpatialOperator(1, 2, 1, (A, B, C) => quadOrder, "u", "Vx", "Vy", "Cod1");
+                Operator = new XSpatialOperatorMk2(1, 2, 1, (A, B, C) => quadOrder, null, "u", "Vx", "Vy", "Cod1");
                 Operator.EquationComponents["Cod1"].Add(new TranportFlux_Bulk() { Inflow = uBnd });
                 Operator.EquationComponents["Cod1"].Add(new TransportFlux_Interface(this.LsTrk, S));
                 Operator.Commit();
             } else if (this.Control.Eq == Equation.HeatEq) {
                 quadOrder = this.LinearQuadratureDegree;
 
-                Operator = new XSpatialOperator(1, 0, 1, (A, B, C) => quadOrder, "u", "Cod1");
+                Operator = new XSpatialOperatorMk2(1, 0, 1, (A, B, C) => quadOrder, null, "u", "Cod1");
 
                 var bulkFlx = new HeatFlux_Bulk() { m_muA = this.Control.muA, m_muB = this.Control.muB, m_rhsA = this.Control.rhsA, m_rhsB = this.Control.rhsB };
                 var intfFlx = new HeatFlux_Interface(this.LsTrk, S) { m_muA = this.Control.muA, m_muB = this.Control.muB };
@@ -285,7 +285,7 @@ namespace BoSSS.Application.XdgTimesteppingTest {
             } else if (this.Control.Eq == Equation.Burgers) {
                 quadOrder = this.NonlinearQuadratureDegree;
 
-                Operator = new XSpatialOperator(1, 1, 1, (A, B, C) => quadOrder, "u", "u0", "Cod1");
+                Operator = new XSpatialOperatorMk2(1, 1, 1, (A, B, C) => quadOrder, null, "u", "u0", "Cod1");
                 Operator.EquationComponents["Cod1"].Add(new BurgersFlux_Bulk() { Direction = this.Control.BurgersDirection, Inflow = this.Control.u_Ex });
                 Operator.EquationComponents["Cod1"].Add(new BurgersFlux_Interface(this.LsTrk, S, this.Control.BurgersDirection));
                 Operator.Commit();
@@ -385,11 +385,15 @@ namespace BoSSS.Application.XdgTimesteppingTest {
             // compute operator
             Debug.Assert(OpMtx.InfNorm() == 0.0);
             Debug.Assert(OpAffine.L2Norm() == 0.0);
-            Operator.ComputeMatrixEx(this.LsTrk,
-                Mapping, Params, Mapping,
-                OpMtx, OpAffine, false, phystime, true,
-                AgglomeratedCellLengthScales, null, null,
-                AgglomeratedCellLengthScales.Keys.ToArray());
+            //Operator.ComputeMatrixEx(this.LsTrk,
+            //    Mapping, Params, Mapping,
+            //    OpMtx, OpAffine, false, phystime, true,
+            //    AgglomeratedCellLengthScales, null, null,
+            //    AgglomeratedCellLengthScales.Keys.ToArray());
+            XSpatialOperatorMk2.XEvaluatorLinear mtxBuilder = Operator.GetMatrixBuilder(this.LsTrk, Mapping, Params, Mapping, AgglomeratedCellLengthScales.Keys.ToArray());
+            mtxBuilder.time = phystime;
+            mtxBuilder.MPITtransceive = true;
+            mtxBuilder.ComputeMatrix(OpMtx, OpAffine);
         }
 
         

@@ -391,7 +391,7 @@ namespace BoSSS.Application.MultigridTest {
 
                 XB = new XDGBasis(LsTrk, p);
 
-                XSpatialOperator Dummy = new XSpatialOperator(1, 0, 1, QuadOrderFunc.SumOfMaxDegrees(RoundUp: true), "C1", "u");
+                XSpatialOperatorMk2 Dummy = new XSpatialOperatorMk2(1, 0, 1, QuadOrderFunc.SumOfMaxDegrees(RoundUp: true), null, "C1", "u");
                 //Dummy.EquationComponents["c1"].Add(new 
                 Dummy.Commit();
 

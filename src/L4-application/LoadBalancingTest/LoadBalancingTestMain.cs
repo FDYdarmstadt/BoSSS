@@ -151,7 +151,7 @@ namespace BoSSS.Application.LoadBalancingTest {
         /// <summary>
         /// The operator d/dx
         /// </summary>
-        XSpatialOperator Op;
+        XSpatialOperatorMk2 Op;
 
         /// <summary>
         /// The BDF time integrator - makes load balancing challenging.
@@ -161,7 +161,7 @@ namespace BoSSS.Application.LoadBalancingTest {
         protected override void CreateEquationsAndSolvers(GridUpdateDataVaultBase L) {
             int quadorder = this.u.Basis.Degree * 2 + 1;
 
-            Op = new XSpatialOperator(1, 0, 1, (A, B, C) => quadorder, "u", "c1");
+            Op = new XSpatialOperatorMk2(1, 0, 1, (A, B, C) => quadorder, null, "u", "c1");
 
             var blkFlux = new DxFlux(this.LsTrk, alpha_A, alpha_B);
             Op.EquationComponents["c1"].Add(blkFlux); // Flux in Bulk Phase;
@@ -248,12 +248,15 @@ namespace BoSSS.Application.LoadBalancingTest {
                 OpMatrix.Clear();
             }
 
-            Op.ComputeMatrixEx(base.LsTrk,
-                u.Mapping, null, uResidual.Mapping,
-                OpMatrix, OpAffine, false,
-                phystime,
-                false,
-                base.LsTrk.SpeciesIdS.ToArray());
+            //Op.ComputeMatrixEx(base.LsTrk,
+            //    u.Mapping, null, uResidual.Mapping,
+            //    OpMatrix, OpAffine, false,
+            //    phystime,
+            //    false,
+            //    base.LsTrk.SpeciesIdS.ToArray());
+            XSpatialOperatorMk2.XEvaluatorLinear mtxBuilder = Op.GetMatrixBuilder(base.LsTrk, u.Mapping, null, uResidual.Mapping, base.LsTrk.SpeciesIdS.ToArray());
+            mtxBuilder.time = phystime;
+            mtxBuilder.ComputeMatrix(OpMatrix, OpAffine);
 
             if(Eval) {
                 OpMatrix.SpMV(1.0, new CoordinateVector(CurrentState), 1.0, OpAffine);

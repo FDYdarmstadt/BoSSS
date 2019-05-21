@@ -3927,7 +3927,7 @@ namespace BoSSS.Application.XNSE_Solver {
         /// <summary>
         /// spatial Operator for the kinetic energy balance
         /// </summary>
-        XSpatialOperator KineticEnergyBalanceOperator;
+        XSpatialOperatorMk2 KineticEnergyBalanceOperator;
 
         IDictionary<SpeciesId, IEnumerable<double>> MassScaleForEnergy {
             get {
@@ -4054,7 +4054,7 @@ namespace BoSSS.Application.XNSE_Solver {
 
             // create operator
             // ===============
-            KineticEnergyBalanceOperator = new XSpatialOperator(DomName, Params, CodName, (A, B, C) => degK * (this.Control.PhysicalParameters.IncludeConvection ? 3 : 2));
+            KineticEnergyBalanceOperator = new XSpatialOperatorMk2(DomName, Params, CodName, (A, B, C) => degK * (this.Control.PhysicalParameters.IncludeConvection ? 3 : 2), null);
 
 
             // build the operator
@@ -4267,7 +4267,7 @@ namespace BoSSS.Application.XNSE_Solver {
                 mtxBuilder.ComputeMatrix(OpMtx, OpAffine);
 
             } else {
-                XSpatialOperator.XEvaluatorNonlin eval = KineticEnergyBalanceOperator.GetEvaluatorEx(LsTrk,
+                XSpatialOperatorMk2.XEvaluatorNonlin eval = KineticEnergyBalanceOperator.GetEvaluatorEx(LsTrk,
                     CurrentState.ToArray(), Params, Mapping,
                     SpcToCompute);
 
@@ -4359,7 +4359,7 @@ namespace BoSSS.Application.XNSE_Solver {
         /// <summary>
         /// the spatial operator (heat equation)
         /// </summary>
-        XSpatialOperator Xheat_Operator;
+        XSpatialOperatorMk2 Xheat_Operator;
 
 
         /// <summary>
@@ -4493,7 +4493,7 @@ namespace BoSSS.Application.XNSE_Solver {
 
             // create operator
             // ===============
-            Xheat_Operator = new XSpatialOperator(DomName, Params, CodName, (A, B, C) => m_HMForder);
+            Xheat_Operator = new XSpatialOperatorMk2(DomName, Params, CodName, (A, B, C) => m_HMForder, null);
 
 
             // build the operator
@@ -4667,7 +4667,7 @@ namespace BoSSS.Application.XNSE_Solver {
                 mtxBuilder.ComputeMatrix(OpMtx, OpAffine);
 
             } else {
-                XSpatialOperator.XEvaluatorNonlin eval = Xheat_Operator.GetEvaluatorEx(LsTrk,
+                XSpatialOperatorMk2.XEvaluatorNonlin eval = Xheat_Operator.GetEvaluatorEx(LsTrk,
                     CurrentState.ToArray(), Params, Mapping,
                     SpcToCompute);
 

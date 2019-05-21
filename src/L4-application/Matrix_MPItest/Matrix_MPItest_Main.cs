@@ -145,13 +145,13 @@ namespace BoSSS.Application.Matrix_MPItest {
 
         }
 
-        XSpatialOperator Op;
+        XSpatialOperatorMk2 Op;
         int m_quadOrder;
 
         protected override void CreateEquationsAndSolvers(GridUpdateDataVaultBase L) {
             m_quadOrder = u1.Basis.Degree * 2;
 
-            Op = new XSpatialOperator(2, 0, 2, (A, B, c) => m_quadOrder, "u1", "u2", "c1", "c2");
+            Op = new XSpatialOperatorMk2(2, 0, 2, (A, B, c) => m_quadOrder, null, "u1", "u2", "c1", "c2");
             
             Op.EquationComponents["c1"].Add(new DxFlux("u1", -3.0)); // Flux in Bulk Phase;
             Op.EquationComponents["c1"].Add(new LevSetFlx(this.LsTrk, "u1", -3.0));
@@ -190,20 +190,24 @@ namespace BoSSS.Application.Matrix_MPItest {
             //Agg = new MultiphaseCellAgglomerator(new CutCellMetrics(MomentFittingVariant, m_quadOrder, LsTrk, LsTrk.GetSpeciesId("B")), this.THRESHOLD, false);
             Agg = LsTrk.GetAgglomerator(new SpeciesId[] { LsTrk.GetSpeciesId("B") }, m_quadOrder, __AgglomerationTreshold: this.THRESHOLD);
             Console.WriteLine("Inter-Process agglomeration? " + Agg.GetAgglomerator(LsTrk.GetSpeciesId("B")).AggInfo.InterProcessAgglomeration);
-            
+
             // operator matrix assembly
-            Op.ComputeMatrixEx(LsTrk,
-                ProblemMapping, null, ProblemMapping,
-                OperatorMatrix, Affine, false, 0.0, true,
-                Agg.CellLengthScales, null, null,
-                LsTrk.SpeciesIdS.ToArray());
+            //Op.ComputeMatrixEx(LsTrk,
+            //    ProblemMapping, null, ProblemMapping,
+            //    OperatorMatrix, Affine, false, 0.0, true,
+            //    Agg.CellLengthScales, null, null,
+            //    LsTrk.SpeciesIdS.ToArray());
+            XSpatialOperatorMk2.XEvaluatorLinear mtxBuilder = Op.GetMatrixBuilder(base.LsTrk, ProblemMapping, null, ProblemMapping, LsTrk.SpeciesIdS.ToArray());
+            mtxBuilder.time = 0.0;
+            mtxBuilder.ComputeMatrix(OperatorMatrix, Affine);
             Agg.ManipulateMatrixAndRHS(OperatorMatrix, Affine, this.ProblemMapping, this.ProblemMapping);
 
-            Op.ComputeMatrixEx(LsTrk,
-                ProblemMapping, null, ProblemMapping,
-                AltOperatorMatrix, Affine, false, 0.0, true,
-                Agg.CellLengthScales, null, null,
-                LsTrk.SpeciesIdS.ToArray());
+            //Op.ComputeMatrixEx(LsTrk,
+            //    ProblemMapping, null, ProblemMapping,
+            //    AltOperatorMatrix, Affine, false, 0.0, true,
+            //    Agg.CellLengthScales, null, null,
+            //    LsTrk.SpeciesIdS.ToArray());
+            mtxBuilder.ComputeMatrix(AltOperatorMatrix, Affine);
             Agg.ManipulateMatrixAndRHS(AltOperatorMatrix, Affine, this.ProblemMapping, this.ProblemMapping);
 
 

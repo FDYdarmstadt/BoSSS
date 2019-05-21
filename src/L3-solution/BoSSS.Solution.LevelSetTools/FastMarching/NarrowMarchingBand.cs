@@ -998,7 +998,7 @@ namespace BoSSS.Solution.LevelSetTools.Advection {
                 else
                     InterfaceFlux = new EllipticExtension.ScalarVelocityInterfaceForm(+penaltyBase, Tracker);
 
-                XSpatialOperator InterfaceOperator = InterfaceFlux.XOperator((int[] A, int[] B, int[] C) => HMForder);
+                XSpatialOperatorMk2 InterfaceOperator = InterfaceFlux.XOperator((int[] A, int[] B, int[] C) => HMForder);
 
                 var BulkForm = new EllipticExtension.ExtVelForm_bulk(penaltyBase, 0.0 ,InterfaceFlux,Tracker, subMask.GetBitMaskWithExternal());
 
@@ -1033,17 +1033,24 @@ namespace BoSSS.Solution.LevelSetTools.Advection {
                         IfParams = new DGField[] { Velocity[d] };
                     }
 
-                    InterfaceOperator.ComputeMatrixEx(
-                        lsTrk: Tracker,
-                        DomainMap: map,
-                        Parameters: IfParams,
-                        CodomainMap: map,
-                        Matrix: (d == 0 ? ExtVelMatrix : default(MsrMatrix)),
-                        AffineOffset: ExtVelRHS[d],
-                        OnlyAffine: d != 0,
-                        time: 0,
-                        MPIParameterExchange:false,
-                        whichSpc:Tracker.GetSpeciesId("A"));
+                    //InterfaceOperator.ComputeMatrixEx(
+                    //    lsTrk: Tracker,
+                    //    DomainMap: map,
+                    //    Parameters: IfParams,
+                    //    CodomainMap: map,
+                    //    Matrix: (d == 0 ? ExtVelMatrix : default(MsrMatrix)),
+                    //    AffineOffset: ExtVelRHS[d],
+                    //    OnlyAffine: d != 0,
+                    //    time: 0,
+                    //    MPIParameterExchange:false,
+                    //    whichSpc:Tracker.GetSpeciesId("A"));
+                    XSpatialOperatorMk2.XEvaluatorLinear mtxBuilder = InterfaceOperator.GetMatrixBuilder(Tracker, map, IfParams, map, Tracker.GetSpeciesId("A"));
+                    mtxBuilder.time = 0;
+                    mtxBuilder.MPITtransceive = false;
+                    if(d != 0)
+                        mtxBuilder.ComputeAffine(AffineOffset: ExtVelRHS[d]);
+                    else 
+                        mtxBuilder.ComputeMatrix(Matrix: (d == 0 ? ExtVelMatrix : default(MsrMatrix)), AffineOffset: ExtVelRHS[d]);
 
                     ExtVelRHS[d].ScaleV(-1.0);
 

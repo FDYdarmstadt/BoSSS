@@ -522,7 +522,7 @@ namespace BoSSS.Solution.XNSECommon.newXSpatialOperator {
 
 
 
-    public interface IBase_Configuration {
+    public interface ISolver_Configuration {
 
         PhysicalParameters GetPhysParams { get; }
 
@@ -537,7 +537,7 @@ namespace BoSSS.Solution.XNSECommon.newXSpatialOperator {
     /// <summary>
     /// 
     /// </summary>
-    public interface IXNSE_Configuration : IBase_Configuration {
+    public interface IXNSE_Configuration : ISolver_Configuration {
 
         /// <summary>
         /// include transport operator

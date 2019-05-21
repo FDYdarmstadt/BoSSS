@@ -59,7 +59,7 @@ namespace BoSSS.Solution.LevelSetTools.EllipticExtension {
         int D;
         private LevelSetTracker LevelSetTracker;
         SpatialOperator Operator_bulk;
-        XSpatialOperator Operator_interface;
+        XSpatialOperatorMk2 Operator_interface;
         LevelSet Phi;
         public SinglePhaseField MeanLevelSet;
 
@@ -250,18 +250,23 @@ namespace BoSSS.Solution.LevelSetTools.EllipticExtension {
 
             
 
-            Operator_interface.ComputeMatrixEx(
-                LevelSetTracker,
-                Extension.Mapping,
-                InterfaceParams,
-                Extension.Mapping,
-                OpMatrix_interface,
-                OpAffine_interface,
-                OnlyAffine: false,
-                time: 0,
-                MPIParameterExchange: false,
-                whichSpc: LevelSetTracker.GetSpeciesId("A")
-                );
+            //Operator_interface.ComputeMatrixEx(
+            //    LevelSetTracker,
+            //    Extension.Mapping,
+            //    InterfaceParams,
+            //    Extension.Mapping,
+            //    OpMatrix_interface,
+            //    OpAffine_interface,
+            //    OnlyAffine: false,
+            //    time: 0,
+            //    MPIParameterExchange: false,
+            //    whichSpc: LevelSetTracker.GetSpeciesId("A")
+            //    );
+            XSpatialOperatorMk2.XEvaluatorLinear mtxBuilder = Operator_interface.GetMatrixBuilder(LevelSetTracker,
+                Extension.Mapping, InterfaceParams, Extension.Mapping, LevelSetTracker.GetSpeciesId("A"));
+            mtxBuilder.time = 0;
+            mtxBuilder.MPITtransceive = false;
+            mtxBuilder.ComputeMatrix(OpMatrix_interface, OpAffine_interface);
 
 #if DEBUG
             OpMatrix_bulk.CheckForNanOrInfM();
@@ -302,20 +307,25 @@ namespace BoSSS.Solution.LevelSetTools.EllipticExtension {
 
             OpAffine.Clear();
 
-            XSpatialOperatorExtensions.ComputeMatrixEx(Operator_interface,
-            //Operator_interface.ComputeMatrixEx(
-               LevelSetTracker,
-                Extension.Mapping,
-                new List<DGField> { InterfaceValue },
-                Extension.Mapping,
-                OpMatrix_interface,
-                OpAffine_interface,
-                OnlyAffine: true,
-                time: 0,
-                MPIParameterExchange: false,
-                whichSpc: LevelSetTracker.GetSpeciesId("A"),
-                subGrid: nearfield ? LevelSetTracker.Regions.GetNearFieldSubgrid(1) : null
-                );
+            //XSpatialOperatorExtensions.ComputeMatrixEx(Operator_interface,
+            ////Operator_interface.ComputeMatrixEx(
+            //   LevelSetTracker,
+            //    Extension.Mapping,
+            //    new List<DGField> { InterfaceValue },
+            //    Extension.Mapping,
+            //    OpMatrix_interface,
+            //    OpAffine_interface,
+            //    OnlyAffine: true,
+            //    time: 0,
+            //    MPIParameterExchange: false,
+            //    whichSpc: LevelSetTracker.GetSpeciesId("A"),
+            //    subGrid: nearfield ? LevelSetTracker.Regions.GetNearFieldSubgrid(1) : null
+            //    );
+            XSpatialOperatorMk2.XEvaluatorLinear mtxBuilder = Operator_interface.GetMatrixBuilder(LevelSetTracker, 
+                Extension.Mapping, new List<DGField> { InterfaceValue }, Extension.Mapping, LevelSetTracker.GetSpeciesId("A"));
+            mtxBuilder.time = 0;
+            mtxBuilder.MPITtransceive = false;
+            mtxBuilder.ComputeAffine(OpAffine_interface);
 
             if (OpAffine.L2Norm() == 0) Console.WriteLine("RHS of Bulk equation is empty as expected.");
 

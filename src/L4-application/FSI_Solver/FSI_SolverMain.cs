@@ -152,8 +152,8 @@ namespace BoSSS.Application.FSI_Solver {
             if (IBM_Op_config.DomBlocks[1])
                 DomNameSelected = ArrayTools.Cat(DomNameSelected, DomName.GetSubVector(D, 1));
 
-            IBM_Op = new XSpatialOperator(DomNameSelected, Params, CodNameSelected,
-                (A, B, C) => this.HMForder
+            IBM_Op = new XSpatialOperatorMk2(DomNameSelected, Params, CodNameSelected,
+                (A, B, C) => this.HMForder, null
                 );
 
             // Momentum equation

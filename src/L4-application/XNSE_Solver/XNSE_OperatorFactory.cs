@@ -39,7 +39,7 @@ using BoSSS.Solution.XNSECommon.newXSpatialOperator;
 namespace BoSSS.Application.XNSE_Solver {
 
     /// <summary>
-    /// 
+    /// class for defining the equation components of the XNSE_Operator and assembly of the corresponding matrix 
     /// </summary>
     public class XNSE_OperatorFactory : XOperatorFactoryBase {
 
@@ -52,7 +52,7 @@ namespace BoSSS.Application.XNSE_Solver {
         int HMFDegree;
 
         /// <summary>
-        /// 
+        /// ctor for the operator factory, where the equation compnents are set
         /// </summary>
         /// <param name="config"></param>
         /// <param name="_LsTrk"></param>

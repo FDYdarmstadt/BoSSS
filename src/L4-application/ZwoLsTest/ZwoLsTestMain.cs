@@ -181,11 +181,11 @@ namespace BoSSS.Application.ZwoLsTest {
 
         }
 
-        XSpatialOperator Op;
+        XSpatialOperatorMk2 Op;
 
 
         protected override void CreateEquationsAndSolvers(GridUpdateDataVaultBase L) {
-            Op = new XSpatialOperator(1, 0, 1, QuadOrderFunc.SumOfMaxDegrees(RoundUp: true), "u", "c1");
+            Op = new XSpatialOperatorMk2(1, 0, 1, QuadOrderFunc.SumOfMaxDegrees(RoundUp: true), null, "u", "c1");
 
             Op.EquationComponents["c1"].Add(new DxFlux()); // Flux in Bulk Phase;
             Op.EquationComponents["c1"].Add(new LevSetFlx_phi0(this.LsTrk)); // flux am lev-set 0
@@ -350,11 +350,14 @@ namespace BoSSS.Application.ZwoLsTest {
             }
 
             // operator matrix assembly
-            Op.ComputeMatrixEx(LsTrk,
-                u.Mapping, null, u.Mapping,
-                OperatorMatrix, Affine, false, 0.0, true,
-                Agg.CellLengthScales, null, null,
-                LsTrk.GetSpeciesId("B"));
+            //Op.ComputeMatrixEx(LsTrk,
+            //    u.Mapping, null, u.Mapping,
+            //    OperatorMatrix, Affine, false, 0.0, true,
+            //    Agg.CellLengthScales, null, null,
+            //    LsTrk.GetSpeciesId("B"));
+            XSpatialOperatorMk2.XEvaluatorLinear mtxBuilder = Op.GetMatrixBuilder(base.LsTrk, u.Mapping, null, u.Mapping, LsTrk.GetSpeciesId("B"));
+            mtxBuilder.time = 0.0;
+            mtxBuilder.ComputeMatrix(OperatorMatrix, Affine);
             Agg.ManipulateMatrixAndRHS(OperatorMatrix, Affine, u.Mapping, u.Mapping);
 
             // mass matrix factory
@@ -466,7 +469,7 @@ namespace BoSSS.Application.ZwoLsTest {
             MsrMatrix ConMatrix = new MsrMatrix(new Partitioning(J));
             MsrMatrix ConMatrix2 = new MsrMatrix(new Partitioning(J));
             var map = new UnsetteledCoordinateMapping(new Basis(this.GridData, 0));
-            var FConMatrix = new XSpatialOperator.SpeciesFrameMatrix<MsrMatrix>(ConMatrix2, this.LsTrk.Regions, this.LsTrk.GetSpeciesId("B"), map, map);
+            var FConMatrix = new XSpatialOperatorMk2.SpeciesFrameMatrix<MsrMatrix>(ConMatrix2, this.LsTrk.Regions, this.LsTrk.GetSpeciesId("B"), map, map);
 
             int jCell0 = this.GridData.CellPartitioning.i0;
 

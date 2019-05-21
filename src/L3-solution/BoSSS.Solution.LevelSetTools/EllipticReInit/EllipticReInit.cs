@@ -82,7 +82,7 @@ namespace BoSSS.Solution.LevelSetTools.EllipticReInit {
 
         private LevelSetTracker LevelSetTracker;
         SpatialOperator Operator_bulk;
-        XSpatialOperator Operator_interface;
+        XSpatialOperatorMk2 Operator_interface;
         SpatialOperator Operator_RHS;
         SinglePhaseField Phi;
 
@@ -251,20 +251,24 @@ namespace BoSSS.Solution.LevelSetTools.EllipticReInit {
 
                 // Build the Quadrature-Scheme for the interface operator
                 // Note: The HMF-Quadrature over a surface is formally a volume quadrature, since it uses the volume quadrature nodes.
-                XSpatialOperatorExtensions.ComputeMatrixEx(Operator_interface,
-                //Operator_interface.ComputeMatrixEx(
-                    LevelSetTracker,
-                    Phi.Mapping,
-                    null,
-                    Phi.Mapping,
-                    OpMatrix_interface,
-                    OpAffine_interface,
-                    false,
-                    0,
-                    false,
-                    subGrid:Restriction,
-                    whichSpc: LevelSetTracker.GetSpeciesId("A")
-                    );
+                //XSpatialOperatorExtensions.ComputeMatrixEx(Operator_interface,
+                ////Operator_interface.ComputeMatrixEx(
+                //    LevelSetTracker,
+                //    Phi.Mapping,
+                //    null,
+                //    Phi.Mapping,
+                //    OpMatrix_interface,
+                //    OpAffine_interface,
+                //    false,
+                //    0,
+                //    false,
+                //    subGrid:Restriction,
+                //    whichSpc: LevelSetTracker.GetSpeciesId("A")
+                //    );
+                XSpatialOperatorMk2.XEvaluatorLinear mtxBuilder = Operator_interface.GetMatrixBuilder(LevelSetTracker, Phi.Mapping, null, Phi.Mapping, LevelSetTracker.GetSpeciesId("A"));
+                mtxBuilder.time = 0;
+                mtxBuilder.MPITtransceive = false;
+                mtxBuilder.ComputeMatrix(OpMatrix_interface, OpAffine_interface);
 
                 // Regenerate OpMatrix for subgrid -> adjacent cells must be trated as boundary
                 if (Restriction != null){
