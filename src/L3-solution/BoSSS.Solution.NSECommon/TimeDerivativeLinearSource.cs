@@ -16,11 +16,12 @@ limitations under the License.
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using BoSSS.Foundation;
 using BoSSS.Solution.Utils;
-
+using ilPSP.Utils;
 
 namespace BoSSS.Solution.NSECommon {
 
@@ -44,8 +45,7 @@ namespace BoSSS.Solution.NSECommon {
         /// <param name="ArgumentOrdering"></param>
         /// <param name="TimeStepSize"></param>
         public TimeDerivativeLinearSource(MaterialLaw EoS, double TimeStepSize, String[] ArgumentOrdering, bool conti = false) {
-            m_ArgumentOrdering = ArgumentOrdering;
-            //m_ParameterOrdering = ParameterOrdering;
+            m_ArgumentOrdering = ArgumentOrdering;//.Cat(VariableNames.Rho);
             this.EoS = EoS;
             dt = TimeStepSize;
             m_conti = conti;
@@ -75,7 +75,9 @@ namespace BoSSS.Solution.NSECommon {
         /// <param name="U"></param>
         /// <returns></returns>
         protected override double Source(double[] x, double[] parameters, double[] U) {
-            rho = EoS.GetDensity(parameters);
+            //rho = EoS.GetDensity(parameters);
+            Debug.Assert(ParameterOrdering[1] == VariableNames.Rho);
+            rho = parameters[1];
             if (m_conti)
                 return rho / dt;
             else

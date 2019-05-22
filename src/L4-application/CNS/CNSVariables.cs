@@ -24,18 +24,15 @@ using BoSSS.Solution;
 using BoSSS.Solution.CompressibleFlowCommon;
 using BoSSS.Solution.CompressibleFlowCommon.MaterialProperty;
 using BoSSS.Solution.CompressibleFlowCommon.ShockCapturing;
-using BoSSS.Solution.LevelSetTools;
 using BoSSS.Solution.Timestepping;
 using CNS.Convection;
-using CNS.IBM;
-using CNS.MaterialProperty;
 using CNS.ShockCapturing;
 using ilPSP;
 using System;
 using System.Diagnostics;
 using System.Linq;
 using static BoSSS.Foundation.Grid.Classic.GridData;
-using static CNS.Variable;
+using static BoSSS.Solution.CompressibleFlowCommon.Variable;
 
 namespace CNS {
 
@@ -44,23 +41,7 @@ namespace CNS {
     /// additional custom variables (e.g., for debugging purposes) can
     /// analogously be specified in the control file itself.
     /// </summary>
-    public static class Variables {
-
-        /// <summary>
-        /// <see cref="VariableTypes.Density"/>
-        /// </summary>
-        public static readonly Variable Density = new Variable("rho", VariableTypes.Density);
-
-        /// <summary>
-        /// <see cref="VariableTypes.Momentum"/>
-        /// </summary>
-        public static readonly Vector<Variable> Momentum = new Vector<Variable>(
-            d => new Variable("m" + d, VariableTypes.Momentum));
-
-        /// <summary>
-        /// <see cref="VariableTypes.Energy"/>
-        /// </summary>
-        public static readonly Variable Energy = new Variable("rhoE", VariableTypes.Energy);
+    public static class CNSVariables {
 
         /// <summary>
         /// The optional velocity field:
@@ -280,7 +261,7 @@ namespace CNS {
                     //        "Currently, computing vorticity requires calculating the velocity first");
                     //}
 
-                    //switch (CNSEnvironment.NumberOfDimensions) {
+                    //switch (CompressibleEnvironment.NumberOfDimensions) {
                     //    case 1:
                     //        throw new Exception(
                     //            "The concept of vorticity does not make sense for"

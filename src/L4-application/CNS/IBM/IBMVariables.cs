@@ -17,13 +17,14 @@ limitations under the License.
 using BoSSS.Foundation;
 using BoSSS.Foundation.Grid;
 using BoSSS.Platform;
+using BoSSS.Solution.CompressibleFlowCommon;
 using System;
-using static CNS.Variable;
+using static BoSSS.Solution.CompressibleFlowCommon.Variable;
 
 namespace CNS.IBM {
 
     /// <summary>
-    /// Variables that are specific for IBM runs
+    /// CNSVariables that are specific for IBM runs
     /// </summary>
     public class IBMVariables {
 

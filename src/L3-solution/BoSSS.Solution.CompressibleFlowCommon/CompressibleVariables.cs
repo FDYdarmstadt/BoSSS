@@ -14,29 +14,25 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+using static BoSSS.Solution.CompressibleFlowCommon.Variable;
 
-using BoSSS.Solution.CompressibleFlowCommon.MaterialProperty;
-
-namespace CNS.MaterialProperty {
-
-    /// <summary>
-    /// For materials with a constant viscosity
-    /// </summary>
-    [System.Serializable]
-    public class ConstantViscosity : IViscosityLaw {
-
-        #region IViscosityLaw Members
+namespace BoSSS.Solution.CompressibleFlowCommon {
+    public class CompressibleVariables {
 
         /// <summary>
-        /// Returns the constant dimensionless viscosity 1.
+        /// <see cref="VariableTypes.Density"/>
         /// </summary>
-        /// <param name="temperature">Ignored</param>
-        /// <param name="cellIndex"></param>
-        /// <returns>1</returns>
-        public double GetViscosity(double temperature, int cellIndex) {
-            return 1.0;
-        }
+        public static readonly Variable Density = new Variable("rho", VariableTypes.Density);
 
-        #endregion
+        /// <summary>
+        /// <see cref="VariableTypes.Momentum"/>
+        /// </summary>
+        public static readonly Vector<Variable> Momentum = new Vector<Variable>(
+            d => new Variable("m" + d, VariableTypes.Momentum));
+
+        /// <summary>
+        /// <see cref="VariableTypes.Energy"/>
+        /// </summary>
+        public static readonly Variable Energy = new Variable("rhoE", VariableTypes.Energy);
     }
 }

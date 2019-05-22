@@ -15,10 +15,11 @@ limitations under the License.
 */
 
 using BoSSS.Foundation.Grid.Classic;
+using BoSSS.Solution.CompressibleFlowCommon;
+using BoSSS.Solution.CompressibleFlowCommon.MaterialProperty;
 using BoSSS.Solution.Queries;
 using CNS.Convection;
 using CNS.EquationSystem;
-using CNS.MaterialProperty;
 using CNS.Residual;
 using CNS.Source;
 using ilPSP.Utils;
@@ -82,24 +83,24 @@ namespace CNS.Tests.BoundaryConditions {
                     c.EquationOfState = IdealGas.Air;
                     c.MachNumber = 1.0;
 
-                    c.AddVariable(Variables.Density, dgDegree);
-                    c.AddVariable(Variables.Momentum.xComponent, dgDegree);
-                    c.AddVariable(Variables.Energy, dgDegree);
-                    c.AddVariable(Variables.Velocity.xComponent, dgDegree);
-                    c.AddVariable(Variables.Pressure, dgDegree);
-                    c.AddVariable(Variables.LocalMachNumber, dgDegree);
+                    c.AddVariable(CompressibleVariables.Density, dgDegree);
+                    c.AddVariable(CompressibleVariables.Momentum.xComponent, dgDegree);
+                    c.AddVariable(CompressibleVariables.Energy, dgDegree);
+                    c.AddVariable(CNSVariables.Velocity.xComponent, dgDegree);
+                    c.AddVariable(CNSVariables.Pressure, dgDegree);
+                    c.AddVariable(CNSVariables.LocalMachNumber, dgDegree);
 
-                    c.InitialValues_Evaluators.Add(Variables.Density, exactDensity);
-                    c.InitialValues_Evaluators.Add(Variables.Velocity.xComponent, exactVelocity);
-                    c.InitialValues_Evaluators.Add(Variables.Pressure, exactPressure);
+                    c.InitialValues_Evaluators.Add(CompressibleVariables.Density, exactDensity);
+                    c.InitialValues_Evaluators.Add(CNSVariables.Velocity.xComponent, exactVelocity);
+                    c.InitialValues_Evaluators.Add(CNSVariables.Pressure, exactPressure);
 
                     c.CustomContinuitySources.Add(map => new AdHocSourceTerm(map, (x, t, state) => -Math.Sin(4.0 * x[0]) / 4.0));
                     c.CustomMomentumSources[0].Add(map => new AdHocSourceTerm(map, (x, t, state) => (160.0 - 35.0 * MaSquared - 56.0 * MaSquared * Math.Cos(2.0 * x[0]) + 21.0 * MaSquared * Math.Cos(4.0 * x[0])) * Math.Sin(2.0 * x[0]) / (224.0 * MaSquared)));
                     c.CustomEnergySources.Add(map => new AdHocSourceTerm(map, (x, t, state) => -(7.0 / 640.0) * Math.Sin(2 * x[0]) * ((160.0 + 3.0 * MaSquared) * Math.Cos(2 * x[0]) + MaSquared * (10.0 - 6.0 * Math.Cos(4.0 * x[0]) + Math.Cos(6.0 * x[0])))));
 
-                    c.Queries.Add("densityError", QueryLibrary.L2Error(Variables.Density, exactDensity, 10));
-                    c.Queries.Add("momentumError", QueryLibrary.L2Error(Variables.Momentum[0], exactMomentum, 10));
-                    c.Queries.Add("energyError", QueryLibrary.L2Error(Variables.Energy, exactEnergy, 10));
+                    c.Queries.Add("densityError", QueryLibrary.L2Error(CompressibleVariables.Density, exactDensity, 10));
+                    c.Queries.Add("momentumError", QueryLibrary.L2Error(CompressibleVariables.Momentum[0], exactMomentum, 10));
+                    c.Queries.Add("energyError", QueryLibrary.L2Error(CompressibleVariables.Energy, exactEnergy, 10));
 
                     c.Paramstudy_CaseIdentification = new Tuple<string, object>[] {
                         new Tuple<string, object>("divisions", divisions),
@@ -144,9 +145,9 @@ namespace CNS.Tests.BoundaryConditions {
                 };
                 c.ProjectName += "_supersonicAll";
 
-                c.AddBoundaryValue("supersonicInlet", Variables.Density, exactDensity);
-                c.AddBoundaryValue("supersonicInlet", Variables.Velocity[0], exactVelocity);
-                c.AddBoundaryValue("supersonicInlet", Variables.Pressure, exactPressure);
+                c.AddBoundaryValue("supersonicInlet", CompressibleVariables.Density, exactDensity);
+                c.AddBoundaryValue("supersonicInlet", CNSVariables.Velocity[0], exactVelocity);
+                c.AddBoundaryValue("supersonicInlet", CNSVariables.Pressure, exactPressure);
             }
 
             return templates.ToArray();
@@ -174,11 +175,11 @@ namespace CNS.Tests.BoundaryConditions {
                 };
                 c.ProjectName += "_subsonicOutlet";
 
-                c.AddBoundaryValue("supersonicInlet", Variables.Density, exactDensity);
-                c.AddBoundaryValue("supersonicInlet", Variables.Velocity[0], exactVelocity);
-                c.AddBoundaryValue("supersonicInlet", Variables.Pressure, exactPressure);
+                c.AddBoundaryValue("supersonicInlet", CompressibleVariables.Density, exactDensity);
+                c.AddBoundaryValue("supersonicInlet", CNSVariables.Velocity[0], exactVelocity);
+                c.AddBoundaryValue("supersonicInlet", CNSVariables.Pressure, exactPressure);
 
-                c.AddBoundaryValue("subsonicOutlet", Variables.Pressure, exactPressure);
+                c.AddBoundaryValue("subsonicOutlet", CNSVariables.Pressure, exactPressure);
             }
 
             return templates;
@@ -206,12 +207,12 @@ namespace CNS.Tests.BoundaryConditions {
                 };
                 c.ProjectName += "_subsonicInlet2";
 
-                c.AddBoundaryValue("subsonicInlet", Variables.Density, exactDensity);
-                c.AddBoundaryValue("subsonicInlet", Variables.Velocity[0], exactVelocity);
+                c.AddBoundaryValue("subsonicInlet", CompressibleVariables.Density, exactDensity);
+                c.AddBoundaryValue("subsonicInlet", CNSVariables.Velocity[0], exactVelocity);
 
-                c.AddBoundaryValue("supersonicInlet", Variables.Density, exactDensity);
-                c.AddBoundaryValue("supersonicInlet", Variables.Velocity[0], exactVelocity);
-                c.AddBoundaryValue("supersonicInlet", Variables.Pressure, exactPressure);
+                c.AddBoundaryValue("supersonicInlet", CompressibleVariables.Density, exactDensity);
+                c.AddBoundaryValue("supersonicInlet", CNSVariables.Velocity[0], exactVelocity);
+                c.AddBoundaryValue("supersonicInlet", CNSVariables.Pressure, exactPressure);
             }
 
             return templates;
@@ -240,10 +241,10 @@ namespace CNS.Tests.BoundaryConditions {
                 };
                 c.ProjectName += "_subsonicAll";
 
-                c.AddBoundaryValue("subsonicInlet", Variables.Density, exactDensity);
-                c.AddBoundaryValue("subsonicInlet", Variables.Velocity[0], exactVelocity);
+                c.AddBoundaryValue("subsonicInlet", CompressibleVariables.Density, exactDensity);
+                c.AddBoundaryValue("subsonicInlet", CNSVariables.Velocity[0], exactVelocity);
 
-                c.AddBoundaryValue("subsonicOutlet", Variables.Pressure, exactPressure);
+                c.AddBoundaryValue("subsonicOutlet", CNSVariables.Pressure, exactPressure);
             }
 
             return templates;
@@ -273,9 +274,9 @@ namespace CNS.Tests.BoundaryConditions {
                 c.AddBoundaryValue("subsonicPressureInlet", "p0", totalPressure);
                 c.AddBoundaryValue("subsonicPressureInlet", "T0", totalTemperature);
 
-                c.AddBoundaryValue("supersonicInlet", Variables.Density, exactDensity);
-                c.AddBoundaryValue("supersonicInlet", Variables.Velocity[0], exactVelocity);
-                c.AddBoundaryValue("supersonicInlet", Variables.Pressure, exactPressure);
+                c.AddBoundaryValue("supersonicInlet", CompressibleVariables.Density, exactDensity);
+                c.AddBoundaryValue("supersonicInlet", CNSVariables.Velocity[0], exactVelocity);
+                c.AddBoundaryValue("supersonicInlet", CNSVariables.Pressure, exactPressure);
             }
 
             return templates;
@@ -306,7 +307,7 @@ namespace CNS.Tests.BoundaryConditions {
                 c.AddBoundaryValue("subsonicPressureInlet", "p0", totalPressure);
                 c.AddBoundaryValue("subsonicPressureInlet", "T0", totalTemperature);
 
-                c.AddBoundaryValue("subsonicOutlet", Variables.Pressure, exactPressure);
+                c.AddBoundaryValue("subsonicOutlet", CNSVariables.Pressure, exactPressure);
             }
 
             return templates;

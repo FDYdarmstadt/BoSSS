@@ -107,7 +107,7 @@ namespace BoSSS.Application.FSI_Solver {
                 p.RunSolverMode();
 
                 Vector Dest_Should;
-                Dest_Should = new Vector(0.263026905796573, 0.788180688520332);
+                Dest_Should = new Vector(0.0997805269284095, 0.851065883016135);
 
                 Vector Dest_Is = new Vector(p.Particles[0].Position[0]);
 
@@ -118,6 +118,7 @@ namespace BoSSS.Application.FSI_Solver {
                 Assert.Less(dist, 0.1, "Particle to far from expected position");
             }
         }
+
 
         [Test]
         public static void StickyTrap()
@@ -130,15 +131,20 @@ namespace BoSSS.Application.FSI_Solver {
                 p.RunSolverMode();
 
                 Vector Dest_Should;
-                Dest_Should = new Vector(0.0, 5.01309683250003);
+                Dest_Should = new Vector(0.0, 0.115138000000001);
+                double VelY_Should = 0;
 
                 Vector Dest_Is = new Vector(p.Particles[0].Position[0]);
+                double VelY_Is = p.Particles[0].TranslationalVelocity[0][0];
 
                 double dist = (Dest_Should - Dest_Is).L2Norm();
+                double Vel_Div = Math.Abs(VelY_Should - VelY_Is);
 
                 Console.WriteLine("Particle reached position " + Dest_Is + ", expected at " + Dest_Should + ", distance is " + dist);
+                Console.WriteLine("Particle end velocitiy " + VelY_Is + ", expected velocity: " + VelY_Should + ", difference is " + Vel_Div);
 
-                Assert.Less(dist, 0.1, "Particle to far from expected position");
+                Assert.Less(dist, 0.1, "Particle to far from expected position.");
+                Assert.Less(Vel_Div, 0.01, "Particle is moving.");
             }
         }
 

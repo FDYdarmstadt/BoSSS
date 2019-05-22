@@ -208,6 +208,11 @@ namespace BoSSS.Solution.AdvancedSolvers {
             foreach (var s in this.SolverChain)
                 s.ResetStat();
         }
+
+        public ISolverSmootherTemplate Clone() {
+            throw new NotImplementedException("Clone of " + this.ToString() + " TODO");
+        }
+
     }
 
 }

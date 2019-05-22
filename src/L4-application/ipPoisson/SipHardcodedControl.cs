@@ -144,29 +144,30 @@ namespace BoSSS.Application.SipPoisson {
         /// <summary>
         /// Test on a Cartesian grid, with an exact polynomial solution.
         /// </summary>
-        public static SipControl TestCartesian3D(int xRes = 8, double xStretch = 1.0, int yRes = 16, double yStretch = 1.0, int zRes = 16, double zStretch = 1.0)
-        {
+        public static SipControl TestCartesian3D(int PowRes = 3, int DGdegree = 1, string blapath = null, int xRes = 2, double xStretch = 1.0, int yRes = 2, double yStretch = 1.0, int zRes = 2, double zStretch = 1.0) {
+            xRes = (int)Math.Pow(xRes, PowRes);
+            yRes = (int)Math.Pow(yRes, PowRes);
+            zRes = (int)Math.Pow(zRes, PowRes);
             var R = new SipControl();
             R.ProjectName = "ipPoison/cartesian";
             R.savetodb = false;
 
-            R.FieldOptions.Add("T", new FieldOpts() { Degree = 2, SaveToDB = FieldOpts.SaveToDBOpt.TRUE });
-            R.FieldOptions.Add("Tex", new FieldOpts() { Degree = 2 });
+            R.FieldOptions.Add("T", new FieldOpts() { Degree = DGdegree, SaveToDB = FieldOpts.SaveToDBOpt.TRUE });
+            R.FieldOptions.Add("Tex", new FieldOpts() { Degree = DGdegree });
             R.InitialValues_Evaluators.Add("RHS", X => 1.0);
             R.InitialValues_Evaluators.Add("Tex", X => (0.5 * X[0].Pow2() - 10 * X[0]));
             R.ExactSolution_provided = true;
 
-            R.GridFunc = delegate ()
-            {
+            R.GridFunc = delegate () {
                 double[] xNodes = CreateNodes(xRes, xStretch, 0, 10);
                 double[] yNodes = CreateNodes(yRes, yStretch, -1, +1);
-                double[] zNodes = CreateNodes(zRes, zStretch, -1, +1);
+                //double[] zNodes = CreateNodes(zRes, zStretch, -1, +1);
 
-                var grd = Grid3D.Cartesian3DGrid(xNodes, yNodes, zNodes);
+                //var grd = Grid3D.Cartesian3DGrid(xNodes, yNodes, zNodes);
+                var grd = Grid2D.Cartesian2DGrid(xNodes, yNodes);
                 grd.EdgeTagNames.Add(1, BoundaryType.Dirichlet.ToString());
                 grd.EdgeTagNames.Add(2, BoundaryType.Neumann.ToString());
-                grd.DefineEdgeTags(delegate (double[] X)
-                {
+                grd.DefineEdgeTags(delegate (double[] X) {
                     byte ret;
                     if (Math.Abs(X[0] - 0.0) <= 1.0e-6)
                         ret = 1;
@@ -178,9 +179,11 @@ namespace BoSSS.Application.SipPoisson {
                 return grd;
             };
 
-            R.LinearSolver.SolverCode = LinearSolverConfig.Code.exp_softpcg_mg;
-            R.LinearSolver.NoOfMultigridLevels = 5;
-            R.LinearSolver.TargetBlockSize = 1;
+            R.LinearSolver.SolverCode = LinearSolverConfig.Code.exp_softpcg_jacobi_mg;
+            //R.LinearSolver.SolverCode = LinearSolverConfig.Code.classic_mumps;
+            R.LinearSolver.NoOfMultigridLevels = 10;
+            R.LinearSolver.TargetBlockSize = 40;
+            //R.LinearSolver.MaxSolverIterations = 10;
 
             R.AddBoundaryValue(BoundaryType.Dirichlet.ToString());
             R.AddBoundaryValue(BoundaryType.Neumann.ToString());

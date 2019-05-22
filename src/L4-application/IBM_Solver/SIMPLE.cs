@@ -397,9 +397,11 @@ namespace BoSSS.Application.IBM_Solver {
             this.NoOfIterations = 0;
         }
 
-        
-        
-        
+        public ISolverSmootherTemplate Clone() {
+            throw new NotImplementedException("Clone of " + this.ToString() + " TODO");
+        }
+
+
         LevelSetTracker LsTrk;
 
 

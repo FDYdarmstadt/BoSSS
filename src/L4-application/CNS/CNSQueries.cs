@@ -22,7 +22,6 @@ using BoSSS.Solution.CompressibleFlowCommon.MaterialProperty;
 using BoSSS.Solution.Control;
 using BoSSS.Solution.Queries;
 using BoSSS.Solution.Utils;
-using CNS.MaterialProperty;
 using System;
 using System.Collections.Generic;
 using System.IO;
