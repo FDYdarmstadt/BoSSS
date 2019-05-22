@@ -70,7 +70,7 @@ namespace CNS.IBM {
                     equationComponent.CreateBoundaryConditionSource(control, speciesMap, boundaryCondition));
             }
 
-            for (int d = 0; d < CNSEnvironment.NumberOfDimensions; d++) {
+            for (int d = 0; d < CompressibleEnvironment.NumberOfDimensions; d++) {
                 foreach (var equationComponent in standardOperator.MomentumComponents[d]) {
                     boundaryOperator.MomentumComponents[d].Add(
                         equationComponent.CreateBoundaryConditionSource(control, speciesMap, boundaryCondition));

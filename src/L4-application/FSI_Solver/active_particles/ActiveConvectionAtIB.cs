@@ -50,7 +50,6 @@ namespace BoSSS.Solution.NSECommon.Operator.Convection {
         /// </summary>
         Func<double[], double,double[]> m_getParticleParams;
 
-        double pRadius;
         double fDensity;
         double LFFA;
         bool m_UseMovingMesh;
@@ -155,25 +154,26 @@ namespace BoSSS.Solution.NSECommon.Operator.Convection {
             var parameters_P = m_getParticleParams(inp.X, inp.time);
             double[] uLevSet = new double[] { parameters_P[0], parameters_P[1] };
             double wLevSet = parameters_P[2];
-            pRadius = parameters_P[3];
-            double scale = parameters_P[4];
+            double[] RadialNormalVector = new double[] { -cp.n[1], cp.n[0] };// { parameters_P[3], parameters_P[4] };
+            double RadialLength = parameters_P[5];
+            double scale = parameters_P[6];
 
 
             // Level-set velocity
             // =============================
             double[] uLevSet_temp = new double[1];
             if (m_d == 0) {
-                uLevSet_temp[0] = (uLevSet[0] + pRadius * wLevSet * -cp.n[1]);
+                uLevSet_temp[0] = (uLevSet[0] + RadialLength * wLevSet * RadialNormalVector[0]);
             }
             else {
-                uLevSet_temp[0] = (uLevSet[1] + pRadius * wLevSet * cp.n[0]);
+                uLevSet_temp[0] = (uLevSet[1] + RadialLength * wLevSet * RadialNormalVector[1]);
             }
 
 
             // Outer values for Velocity and VelocityMean
             // =============================
-            inp.Parameters_OUT[0] = uLevSet[0] + pRadius * wLevSet * -cp.n[1];
-            inp.Parameters_OUT[1] = uLevSet[1] + pRadius * wLevSet * cp.n[0];
+            inp.Parameters_OUT[0] = uLevSet[0] + RadialLength * wLevSet * RadialNormalVector[0];
+            inp.Parameters_OUT[1] = uLevSet[1] + RadialLength * wLevSet * RadialNormalVector[1];
             // Velocity0MeanVectorOut is set to zero, i.e. always LambdaIn is used.
             inp.Parameters_OUT[2] = 0;
             inp.Parameters_OUT[3] = 0;

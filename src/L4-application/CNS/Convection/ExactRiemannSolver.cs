@@ -16,7 +16,6 @@ limitations under the License.
 
 using BoSSS.Platform.LinAlg;
 using BoSSS.Solution.CompressibleFlowCommon;
-using CNS.MaterialProperty;
 using System;
 using BoSSS.Solution.CompressibleFlowCommon.MaterialProperty;
 using CNS.LinAlg;

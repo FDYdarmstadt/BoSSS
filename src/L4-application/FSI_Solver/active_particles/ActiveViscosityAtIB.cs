@@ -87,10 +87,11 @@ namespace BoSSS.Solution.NSECommon.Operator.Viscosity {
             double[] uLevSet = new double[] { parameters_P[0], parameters_P[1] };
             double wLevSet = parameters_P[2];
 
-            double pRadius = parameters_P[3];//distance between current position and center of mass
-            double active_stress = parameters_P[4];
-            double scale = parameters_P[5];
-            double Ang_P = parameters_P[6];
+            double[] RadialNormalVector = new double[] { -inp.n[1], inp.n[0] };// { parameters_P[3], parameters_P[4] };
+            double RadialLength = parameters_P[5];
+            double active_stress = parameters_P[6];
+            double scale = parameters_P[7];
+            double Ang_P = parameters_P[8];
 
             Debug.Assert(this.ArgumentOrdering.Count == D);
             Debug.Assert(Grad_uA.GetLength(0) == this.ArgumentOrdering.Count);
@@ -130,11 +131,11 @@ namespace BoSSS.Solution.NSECommon.Operator.Viscosity {
             // ============================= 
             //Defining boundary conditions (no slip/slip)
             if (component == 0) {
-                uAFict = (uLevSet[component] + pRadius * wLevSet * -inp.n[1]) * (1 - scale) + uA[component] * scale;
+                uAFict = (uLevSet[component] + RadialLength * wLevSet * RadialNormalVector[0]) * (1 - scale) + uA[component] * scale;
             }
             else
             {
-                uAFict = (uLevSet[component] + pRadius * wLevSet * inp.n[0]) * (1 - scale) + uA[component] * scale;
+                uAFict = (uLevSet[component] + RadialLength * wLevSet * RadialNormalVector[1]) * (1 - scale) + uA[component] * scale;
             }
             active_stress_visc[0] = active_stress * Math.Cos(Ang_P);
             active_stress_visc[1] = active_stress * Math.Sin(Ang_P);

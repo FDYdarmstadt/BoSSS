@@ -46,13 +46,13 @@ namespace CNS.Source {
         /// <see cref="FluxBuilder.BuildFluxes"/>
         /// </param>
         public override void BuildFluxes(Operator op) {
-            string[] argumentOrdering = CNSEnvironment.PrimalArgumentOrdering;
+            string[] argumentOrdering = CompressibleEnvironment.PrimalArgumentOrdering;
 
             foreach (var sourceFactory in control.CustomContinuitySources) {
                 op.DensityComponents.Add(sourceFactory(speciesMap));
             }
 
-            for (int d = 0; d < CNSEnvironment.NumberOfDimensions; d++) {
+            for (int d = 0; d < CompressibleEnvironment.NumberOfDimensions; d++) {
                 foreach (var sourceFactory in control.CustomMomentumSources[d]) {
                     op.MomentumComponents[d].Add(sourceFactory(speciesMap));
                 }

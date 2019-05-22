@@ -14,7 +14,7 @@ class RecentDataMethods extends DataMethods{
 
     save(filePath){
         this.recentDocuments.addRecentDocument(filePath);
-        return super.dataMethods.save(filePath);
+        return super.save(filePath);
     }
 
     openFileFromPath(filePath){
@@ -29,7 +29,6 @@ class RecentDataMethods extends DataMethods{
             }
         });
     }
-
 }
 
 module.exports = RecentDataMethods;

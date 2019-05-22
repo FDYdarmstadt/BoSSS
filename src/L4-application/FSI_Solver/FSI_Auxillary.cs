@@ -440,13 +440,155 @@ namespace FSI_Solver
             }
             if (NoCurrentCollision)
             {
-                CurrentParticle.skipForceIntegration = false;
+                //CurrentParticle.skipForceIntegration = false;
                 CurrentParticle.m_collidedWithWall[0] = false;
                 for (int p = 0; p < CurrentParticle.m_collidedWithParticle.Length; p++)
                 {
                     CurrentParticle.m_collidedWithParticle[p] = false;
                 }
             }
+        }
+
+        internal void GJK_DistanceAlgorithm(Particle p0, Particle p1, double[] Point0_old, double[] Point1_old, int SpatialDim, out double Min_Distance, out double[] ClosestPoint0, out double[] ClosestPoint1)
+        {
+            ClosestPoint0 = new double[SpatialDim];
+            ClosestPoint1 = new double[SpatialDim];
+            Initialize_GJK(SpatialDim, Point0_old, Point1_old, out double[] v0, out List<double[]> Simplex);
+            double[] v = v0.CloneAs();
+            double[] SupportPoint = new double[SpatialDim];
+            
+            for (int i = 0; i < 1000; i++)
+            {
+                double[] vt = v.CloneAs();
+                for (int d = 0; d < SpatialDim; d++)
+                {
+                    vt[d] = -v[d];
+                }
+                CalculateSupportPoint(p0, SpatialDim, vt, out ClosestPoint0);
+                CalculateSupportPoint(p1, SpatialDim, v, out ClosestPoint1);
+                for (int d = 0; d < SpatialDim; d++)
+                {
+                    SupportPoint[d] = ClosestPoint0[d] - ClosestPoint1[d];
+                }
+                double test = Math.Sqrt((v[0] - SupportPoint[0]).Pow2() + (v[1] - SupportPoint[1]).Pow2());
+                if (Math.Sqrt((v[0] - SupportPoint[0]).Pow2() + (v[1] - SupportPoint[1]).Pow2()) <= 1e-12)
+                    break;
+                Simplex.Add(SupportPoint.CloneAs());
+                DistanceAlgorithm(Simplex, out v);
+            }
+            Min_Distance = Math.Sqrt(v[0].Pow2() + v[1].Pow2());
+        }
+        private void Initialize_GJK(int SpatialDim, double[] Point0_old, double[] Point1_old, out double[] v0, out List<double[]> Simplex)
+        {
+            Simplex = new List<double[]>();
+            v0 = new double[SpatialDim];
+            for (int d = 0; d< SpatialDim; d++)
+            {
+                v0[d] = Point0_old[d] - Point1_old[d];
+            }
+            Simplex.Add(v0.CloneAs());
+        }
+        private void CalculateSupportPoint(Particle _Particle, int SpatialDim, double[] Vector, out double[] SupportPoint)
+        {
+            double VectorLength = Math.Sqrt(Vector[0].Pow2() + Vector[1].Pow2());
+            double CosT = Vector[0] / VectorLength;
+            double SinT = Vector[1] / VectorLength;
+            _Particle.GetSupportPoint(SpatialDim, CosT, SinT, out SupportPoint);
+        }
+
+        private void DistanceAlgorithm(List<double[]> Simplex, out double[] v)
+        {
+            v = new double[2];
+            
+            List<double[]> DotProd_Simplex = new List<double[]>();
+            for (int s1 = 0; s1 < Simplex.Count(); s1++)
+            {
+                DotProd_Simplex.Add(new double[Simplex.Count()]);
+                for (int s2 = s1; s2 < Simplex.Count(); s2++)
+                {
+                    DotProd_Simplex[s1][s2] = Simplex[s1][0] * Simplex[s2][0] + Simplex[s1][1] * Simplex[s2][1];
+                }
+            }
+            if(Simplex.Count() == 1)
+            {
+                v = Simplex[0];
+            }
+            else if (Simplex.Count() == 2)
+            {
+                if (DotProd_Simplex[0][0] - DotProd_Simplex[0][1] <= 0)
+                {
+                    v = Simplex[0].CloneAs();
+                    Simplex.RemoveAt(1);
+                }
+
+                else if (DotProd_Simplex[1][1] - DotProd_Simplex[0][1] <= 0)
+                {
+                    v = Simplex[1].CloneAs();
+                    Simplex.RemoveAt(0);
+                }
+                else
+                {
+                    double a0 = (Simplex[1][1] - Simplex[0][1]) / (Simplex[1][0] - Simplex[0][0]);
+                    double b = Simplex[1][1] - Simplex[1][0] * a0;
+                    double a1 = -(a0 + 1 / a0);
+                    v[0] = b / a1;
+                    v[1] = -v[0] / a0;
+                }
+            }
+            else if (Simplex.Count() == 3)
+            {
+                bool Return = false;
+                for (int s1 = 0; s1 < Simplex.Count(); s1++)
+                {
+                    int s2 = s1 == 2 ? 2 : 1;
+                    int s3 = s1 == 0 ? 0 : 1;
+                    double test1 = DotProd_Simplex[s1][s1] - DotProd_Simplex[0][s2];
+                    double test2 = DotProd_Simplex[s1][s1] - DotProd_Simplex[s3][2];
+                    if (DotProd_Simplex[s1][s1] - DotProd_Simplex[0][s2] <= 0 && DotProd_Simplex[s1][s1] - DotProd_Simplex[s3][2] <= 0)
+                    {
+                        v = Simplex[s1].CloneAs();
+                        Simplex.Clear();
+                        Simplex.Add(v.CloneAs());
+                        Return = true;
+                    }
+                }
+                if (!Return)
+                {
+                    for (int s1 = Simplex.Count() - 1; s1 >= 0; s1--)
+                    {
+                        int s2 = s1 == 2 ? 1 : 2;
+                        int s3 = s1 == 0 ? 2 : 0;
+                        int s4 = s1 == 0 ? 1 : 0;
+                        double temp1 = (Simplex[s2][0] - Simplex[s1][0]) * (Simplex[s2][1] - Simplex[s4][1]);
+                        double temp2 = (Simplex[s2][1] - Simplex[s1][1]) * (Simplex[s2][0] - Simplex[s4][0]);
+                        double CrossProd = Simplex[s2][0] * (-temp1 + temp2) * (Simplex[s2][1] - Simplex[s4][1]) + Simplex[s2][1] * (temp1 - temp2) * (Simplex[s2][0] - Simplex[s4][0]);
+                        CrossProd *= 1;
+                        double test1 = DotProd_Simplex[s4][s4] - DotProd_Simplex[s4][s2];
+                        double test2 = DotProd_Simplex[s2][s2] - DotProd_Simplex[s4][s2];
+                        if (DotProd_Simplex[s4][s4] - DotProd_Simplex[s4][s2] >= 0 && DotProd_Simplex[s2][s2] - DotProd_Simplex[s4][s2] >= 0 && CrossProd >= 0)
+                        {
+                            double a0 = (Simplex[s2][1] - Simplex[s4][1]) / (Simplex[s2][0] - Simplex[s4][0]);
+                            double b = Simplex[s2][1] - Simplex[s2][0] * a0;
+                            double a1 = -(a0 + 1 / a0);
+                            v[0] = b / a1;
+                            v[1] = -v[0] / a0;
+
+                            double[] test = new double[2];
+                            test[1] = Simplex[s2][1] - Simplex[s4][1];
+                            test[0] = (Simplex[s2][0] - Simplex[s4][0]);
+                            double[] test12 = new double[2];
+                            test12[0] = -test[1];
+                            test12[1] = test[0];
+                            double[] tempSimplex1 = Simplex[s2].CloneAs();
+                            double[] tempSimplex2 = Simplex[s4].CloneAs();
+                            Simplex.Clear();
+                            Simplex.Add(tempSimplex1.CloneAs());
+                            Simplex.Add(tempSimplex2.CloneAs());
+                            break;
+                        }
+                    }
+                }
+            }   
         }
     }
 }

@@ -86,7 +86,7 @@ namespace CNS.ShockCapturing {
             int noOfNodesPerCell = base.EvaluationPoints[iKref].NoOfNodes;
             double scaling = Math.Max(4.0 / 3.0, config.EquationOfState.HeatCapacityRatio / config.PrandtlNumber);
             MultidimensionalArray hmin = __gridData.Cells.h_min;
-            DGField artificialViscosity = workingSet.ParameterFields.Where(c => c.Identification.Equals(Variables.ArtificialViscosity)).Single();
+            DGField artificialViscosity = workingSet.ParameterFields.Where(c => c.Identification.Equals(CNSVariables.ArtificialViscosity)).Single();
             double cfl = double.MaxValue;
 
             switch (speciesMap) {
@@ -174,7 +174,7 @@ namespace CNS.ShockCapturing {
             } else {
                 int degree = workingSet.ConservativeVariables.Max(f => f.Basis.Degree);
                 int twoNPlusOne = 2 * degree + 1;
-                return cfl * GetBetaMax(degree) / twoNPlusOne / twoNPlusOne / Math.Sqrt(CNSEnvironment.NumberOfDimensions);
+                return cfl * GetBetaMax(degree) / twoNPlusOne / twoNPlusOne / Math.Sqrt(CompressibleEnvironment.NumberOfDimensions);
             }
         }
     }

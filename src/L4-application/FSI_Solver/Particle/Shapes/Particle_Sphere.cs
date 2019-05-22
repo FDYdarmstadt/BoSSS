@@ -113,10 +113,10 @@ namespace BoSSS.Application.FSI_Solver
             cellCollection = cells.Intersect(allCutCells);
             return cellCollection;
         }
-        override public bool Contains(double[] point, LevelSetTracker LsTrk)
+        override public bool Contains(double[] point, LevelSetTracker LsTrk, bool WithoutTolerance = false)
         {
             // only for squared cells
-            double radiusTolerance = radius_P + 2.0 * Math.Sqrt(2 * LsTrk.GridDat.Cells.h_minGlobal.Pow2());
+            double radiusTolerance = !WithoutTolerance ? 1.0 + 2.0 * Math.Sqrt(2 * LsTrk.GridDat.Cells.h_minGlobal.Pow2()) : 1;
             double length_P = 1;
             double thickness_P = 0.2;
             double test = -((((point[0] - Position[0][0]) * Math.Cos(Angle[0]) - (point[1] - Position[0][1]) * Math.Sin(Angle[0])).Pow2()) / length_P.Pow2()) + -(((point[0] - Position[0][0]) * Math.Sin(Angle[0]) + (point[1] - Position[0][1]) * Math.Cos(Angle[0])).Pow2() / thickness_P.Pow2()) + radiusTolerance.Pow2();
@@ -135,14 +135,14 @@ namespace BoSSS.Application.FSI_Solver
             return particleReynolds;
         }
 
-        override public MultidimensionalArray GetSurfacePoints(LevelSetTracker lsTrk)
+        override public MultidimensionalArray GetSurfacePoints(LevelSetTracker lsTrk, double[] Position, double Angle)
         {
             int SpatialDim = lsTrk.GridDat.SpatialDimension;
             if (SpatialDim != 2)
                 throw new NotImplementedException("Only two dimensions are supported at the moment");
 
             double hMin = lsTrk.GridDat.iGeomCells.h_min.Min();
-            int NoOfSurfacePoints = Convert.ToInt32(20 * Circumference_P / hMin) + 1;
+            int NoOfSurfacePoints = Convert.ToInt32(10 * Circumference_P / hMin) + 1;
             MultidimensionalArray SurfacePoints = MultidimensionalArray.Create(NoOfSurfacePoints, 2);
             double[] InfinitisemalAngle = GenericBlas.Linspace(0, 2 * Math.PI, NoOfSurfacePoints + 1);
             if (Math.Abs(10 * Circumference_P / hMin + 1) >= int.MaxValue)
@@ -150,10 +150,19 @@ namespace BoSSS.Application.FSI_Solver
             
             for (int j = 0; j < NoOfSurfacePoints; j++)
             {
-                SurfacePoints[j, 0] = Math.Cos(InfinitisemalAngle[j]) * radius_P + Position[0][0];
-                SurfacePoints[j, 1] = Math.Sin(InfinitisemalAngle[j]) * radius_P + Position[0][1];
+                SurfacePoints[j, 0] = Math.Cos(InfinitisemalAngle[j]) * radius_P + Position[0];
+                SurfacePoints[j, 1] = Math.Sin(InfinitisemalAngle[j]) * radius_P + Position[1];
             }
             return SurfacePoints;
+        }
+
+        override public void GetSupportPoint(int SpatialDim, double CosT, double SinT, out double[] SupportPoint)
+        {
+            SupportPoint = new double[SpatialDim];
+            if (SpatialDim != 2)
+                throw new NotImplementedException("Only two dimensions are supported at the moment");
+            SupportPoint[0] = CosT * radius_P + Position[0][0];
+            SupportPoint[1] = SinT * radius_P + Position[0][1];
         }
 
         override public double[] GetLengthScales()

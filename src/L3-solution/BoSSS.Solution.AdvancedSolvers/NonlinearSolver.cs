@@ -260,6 +260,6 @@ namespace BoSSS.Solution.AdvancedSolvers {
         }
 
 
-        
+
     }
 }
