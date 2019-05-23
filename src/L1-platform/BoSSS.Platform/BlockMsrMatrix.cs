@@ -1784,15 +1784,15 @@ namespace ilPSP.LinSolvers {
         static void GetExternalSubblockIndices(IBlockPartitioning part, int iBlk, out int i0, out int iE) {
             int Rank = part.FindProcessForBlock(iBlk);
             Debug.Assert(Rank != part.MpiRank);
-            int NoBlkLoc = part.GetLocalNoOfBlocks(Rank);
-            int L = part.GetLocalLength(Rank);
-            int FistBlock = part.GetFirstBlock(Rank);
-            int iBlkLoc = iBlk - FistBlock;
+            long NoBlkLoc = part.GetLocalNoOfBlocks(Rank);
+            long L = part.GetLocalLength(Rank);
+            long FistBlock = part.GetFirstBlock(Rank);
+            long iBlkLoc = iBlk - FistBlock;
             Debug.Assert(iBlkLoc >= 0);
             Debug.Assert(iBlkLoc < NoBlkLoc);
 
-            int i0Loc = iBlkLoc * L / NoBlkLoc;
-            int iELoc = (iBlkLoc + 1) * L / NoBlkLoc;
+            int i0Loc = (int)((iBlkLoc * L) / NoBlkLoc);
+            int iELoc = (int)(((iBlkLoc + 1) * L) / NoBlkLoc);
 
             int i0_rank = part.GetI0Offest(Rank);
             i0 = i0Loc + i0_rank;
