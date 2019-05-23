@@ -540,6 +540,8 @@ namespace BoSSS.Foundation {
             Debug.Assert(m_Basis.Polynomials[iKref][0].AbsoluteDegree == 0, "Polynomial degree of 0-th polynomial is expected to be 0.");
             Debug.Assert(m_Basis.Polynomials[iKref][0].Coeff.Length == 1, "Polynomial degree of 0-th polynomial is expected to be 0.");
 
+            // the orthonormal basis ensures that the polynomial at index 0 is constant,
+            // and that the mean value of all other polynomials is zero
             double sc;
             if (this.Basis.GridDat.iGeomCells.IsCellAffineLinear(j)) {
                 sc = Basis.Data.Scaling[j];
