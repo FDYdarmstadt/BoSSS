@@ -150,13 +150,15 @@ namespace BoSSS.Foundation.IO {
             }
 
             if (tracerfile != null) {
-                var zipper = new System.IO.Compression.GZipStream(tracerfile, System.IO.Compression.CompressionMode.Compress);
-                tracertxt = new StreamWriter(zipper);
+                //var zipper = new System.IO.Compression.GZipStream(tracerfile, System.IO.Compression.CompressionMode.Compress);
+                //tracertxt = new StreamWriter(zipper);
+                tracertxt = new StreamWriter(tracerfile);
             }
 
             if (tracertxt != null) {
                 TextWriterAppender fa = new TextWriterAppender();
                 fa.ImmediateFlush = true;
+                //fa.Writer = Console.Out;
                 fa.Writer = tracertxt;
                 fa.Layout = new PatternLayout("%date %-5level %logger: %message%newline");
                 fa.ActivateOptions();

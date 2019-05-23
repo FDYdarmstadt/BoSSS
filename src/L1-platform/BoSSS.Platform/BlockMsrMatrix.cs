@@ -1820,36 +1820,39 @@ namespace ilPSP.LinSolvers {
         static void GetExternalSubblockIndices(IBlockPartitioning part, int i, out int iBlk, out int i0, out int iE) {
             Debug.Assert(i < part.i0 || i >= part.iE);
 
+            // we use a lot of integer operations like (a*b)/c here, which give a much more even block distribution than a*(b/c)
+            // the downside is this can cause integer overflow
+
             int Rank = part.FindProcess(i);
-            int i0_Rank = part.GetI0Offest(Rank);
-            int iLoc = i - i0_Rank;
-            int L = part.GetLocalLength(Rank);
+            long i0_Rank = part.GetI0Offest(Rank);
+            long iLoc = i - i0_Rank;
+            long L = part.GetLocalLength(Rank);
             Debug.Assert(iLoc >= 0);
             Debug.Assert(iLoc < L);
-            int NoBlkLoc = part.GetLocalNoOfBlocks(Rank);
+            long NoBlkLoc = part.GetLocalNoOfBlocks(Rank);
 
-            int iBlkLoc = (int)Math.Floor(((double)(iLoc * NoBlkLoc)) / ((double)L));
-            int i0Loc = iBlkLoc * L / NoBlkLoc;
-            int iELoc = (iBlkLoc + 1) * L / NoBlkLoc;
+            long iBlkLoc = (long)Math.Floor(((double)(iLoc * NoBlkLoc)) / ((double)L)); // get a first guess
+            long i0Loc = iBlkLoc * L / NoBlkLoc;
+            long iELoc = (iBlkLoc + 1) * L / NoBlkLoc;
 
             while (iLoc < i0Loc) {
                 iBlkLoc--;
-                i0Loc = iBlkLoc * L / NoBlkLoc;
-                iELoc = (iBlkLoc + 1) * L / NoBlkLoc;
+                i0Loc = (iBlkLoc * L) / NoBlkLoc;
+                iELoc = ((iBlkLoc + 1) * L) / NoBlkLoc;
             }
             while (iLoc >= iELoc) {
                 iBlkLoc++;
-                i0Loc = iBlkLoc * L / NoBlkLoc;
-                iELoc = (iBlkLoc + 1) * L / NoBlkLoc;
+                i0Loc = (iBlkLoc * L) / NoBlkLoc;
+                iELoc = ((iBlkLoc + 1) * L) / NoBlkLoc;
             }
             Debug.Assert(iBlkLoc >= 0);
             Debug.Assert(iBlkLoc < NoBlkLoc);
             Debug.Assert(iLoc >= i0Loc);
             Debug.Assert(iLoc < iELoc);
 
-            iBlk = part.GetFirstBlock(Rank) + iBlkLoc;
-            i0 = i0Loc + i0_Rank;
-            iE = iELoc + i0_Rank;
+            iBlk = (int)(part.GetFirstBlock(Rank) + iBlkLoc);
+            i0 = (int)(i0Loc + i0_Rank);
+            iE = (int)(iELoc + i0_Rank);
         }
 
 
