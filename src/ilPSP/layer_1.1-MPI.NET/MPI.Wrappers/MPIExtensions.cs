@@ -776,7 +776,9 @@ namespace MPI.Wrappers {
             csMPI.Raw.Comm_Size(comm, out int size);
             csMPI.Raw.Comm_Rank(comm, out int rank);
 
-            int[] result = rank == root ? new int[recvcounts.Sum()] : null;
+            int rcs = recvcounts.Sum();
+            int[] result = rank == root ? new int[Math.Max(1, rcs)] : null;
+            
 
             unsafe {
                 int* displs = stackalloc int[size];
@@ -800,6 +802,11 @@ namespace MPI.Wrappers {
                         root,
                         comm);
                 }
+            }
+
+            if(result.Length > rcs) {
+                Debug.Assert(rcs == 0);
+                result = new int[0];
             }
 
             return result;
@@ -827,7 +834,9 @@ namespace MPI.Wrappers {
         static public ulong[] MPIGatherv(this ulong[] send, int[] recvcount, int root, MPI_Comm comm) {
             csMPI.Raw.Comm_Size(comm, out int size);
             csMPI.Raw.Comm_Rank(comm, out int rank);
-            ulong[] result = new ulong[recvcount.Sum()];
+
+            int rcs = recvcount.Sum();
+            ulong[] result = rank == root ? new ulong[Math.Max(1, rcs)] : null;
 
             unsafe {
                 int* displs = stackalloc int[size];
@@ -852,6 +861,11 @@ namespace MPI.Wrappers {
                 }
             }
 
+            if (result.Length > rcs) {
+                Debug.Assert(rcs == 0);
+                result = new ulong[0];
+            }
+
             return result;
         }
 
@@ -872,7 +886,9 @@ namespace MPI.Wrappers {
             csMPI.Raw.Comm_Size(comm, out int size);
             csMPI.Raw.Comm_Rank(comm, out int rank);
 
-            double[] result = rank == root ? new double[recvcounts.Sum()] : null;
+            int rcs = recvcounts.Sum();
+            double[] result = rank == root ? new double[Math.Max(1, rcs)] : null;
+
 
             unsafe {
                 int* displs = stackalloc int[size];
@@ -898,7 +914,12 @@ namespace MPI.Wrappers {
                     }
                 }
             }
-                       
+
+            if (result.Length > rcs) {
+                Debug.Assert(rcs == 0);
+                result = new double[0];
+            }
+
             return result;
         }
 

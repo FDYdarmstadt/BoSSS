@@ -1000,12 +1000,14 @@ namespace BoSSS.Application.IBM_Solver {
             using (new FuncTrace()) {
                 int D = this.GridData.SpatialDimension;
 
+              
                 this.DGLevSet.Current.Clear();
                 this.DGLevSet.Current.AccLaidBack(1.0, this.LevSet);
-                if (this.Control.LevelSetSmoothing) {
-                    //SpecFemSmoothing.Execute(this.DGLevSet.Current, this.LevSet, this.SmoothedLevelSet);
-                    throw new NotImplementedException("todo");
-                }
+
+               
+                PerformLevelSetSmoothing();
+                
+                
 
                 this.LsTrk.UpdateTracker();
                 this.DGLevSet.IncreaseHistoryLength(1);
@@ -1014,6 +1016,22 @@ namespace BoSSS.Application.IBM_Solver {
 
             }
         }
+
+        /// <summary>
+        /// Ensures that the level-set field <see cref="LevSet"/> is continuous
+        /// </summary>
+        protected void PerformLevelSetSmoothing() {
+            if (this.Control.LevelSetSmoothing) {
+                var ContinuityEnforcer = new BoSSS.Solution.LevelSetTools.ContinuityProjection(
+                    ContBasis: this.LevSet.Basis,
+                    DGBasis: this.DGLevSet.Current.Basis,
+                    gridData: GridData,
+                    Option: Solution.LevelSetTools.ContinuityProjectionOption.SpecFEM);
+
+                ContinuityEnforcer.MakeContinuous(this.DGLevSet.Current, this.LevSet, this.LsTrk.Regions.GetNearFieldMask(1), null, false);
+            }
+        }
+
 
         /// <summary>
         /// BDF timestepper init after restart

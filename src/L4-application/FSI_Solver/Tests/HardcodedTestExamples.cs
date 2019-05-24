@@ -539,7 +539,7 @@ namespace BoSSS.Application.FSI_Solver {
             C.AdaptiveMeshRefinement = false;
             C.SessionName = "fjkfjksdfhjk";
 
-            C.pureDryCollisions = true;
+            C.pureDryCollisions = false;
             C.SetDGdegree(k);
 
             // grid and boundary conditions
@@ -548,8 +548,7 @@ namespace BoSSS.Application.FSI_Solver {
             C.GridFunc = delegate
             {
 
-                int q = new int();
-                int r = new int();
+                int q, r;
 
                 q = 50;
                 r = 50;
@@ -572,6 +571,7 @@ namespace BoSSS.Application.FSI_Solver {
                         et = 1;
                     if (Math.Abs(X[0] + (-1.5 * BaseSize)) <= 1.0e-8)
                         et = 2;
+
                     if (Math.Abs(X[1] - (-1.5 * BaseSize)) <= 1.0e-8)
                         et = 3;
                     if (Math.Abs(X[1] + (-1.5 * BaseSize)) <= 1.0e-8)
@@ -612,6 +612,7 @@ namespace BoSSS.Application.FSI_Solver {
             //C.PhysicalParameters.mu_B = 0.1;
             //C.particleMass = 1;
 
+
             C.Particles.Add(new Particle_Sphere(new double[] { 0.0, 1 })
             {
                 radius_P = 0.2,
@@ -636,6 +637,7 @@ namespace BoSSS.Application.FSI_Solver {
                 IncludeRotation = false,
                 IncludeTranslation = false,
             });
+
 
             C.Particles.Add(new Particle_Ellipsoid(new double[] { -0.45, 0 }, startAngl: -45)
             {

@@ -24,6 +24,9 @@ using System.Reflection;
 using BoSSS.Solution.Gnuplot;
 using System.Linq;
 using ilPSP;
+using BoSSS.Foundation.Grid;
+using BoSSS.Foundation.Grid.Classic;
+using BoSSS.Foundation;
 
 namespace BoSSS.Application.BoSSSpad {
 
@@ -311,6 +314,19 @@ namespace BoSSS.Application.BoSSSpad {
 
                 return gp.PlotNow();
             }
+        }
+
+
+        /// <summary>
+        /// Driver interface for the <see cref="BoSSS.Solution.Tecplot.Tecplot"/> functionality.
+        /// </summary>
+        static public void Tecplot(string filename, IGridData grd) {
+
+            var g = new GridData((GridCommons)grd);
+            var dummy = new SinglePhaseField(new Basis(g, 0), "DummyData");
+            
+
+            Tecplot(filename, 0.0, 0, dummy);
         }
 
 
