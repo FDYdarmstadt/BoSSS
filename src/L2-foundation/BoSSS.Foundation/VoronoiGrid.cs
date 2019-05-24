@@ -15,9 +15,11 @@ limitations under the License.
 */
 
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.Serialization;
+using BoSSS.Platform.LinAlg;
 using ilPSP;
 
 
@@ -26,60 +28,71 @@ namespace BoSSS.Foundation.Grid.Voronoi {
     [Serializable]
     public class VoronoiGrid : Aggregation.AggregationGrid
     {
+        VoronoiInfo info;
 
         VoronoiNodes nodes;
-        //Generating Voronoi node of each cell jCell
-        
-        public VoronoiGrid(IGrid pGrid,
-            int[][] AggregationCells,
-            MultidimensionalArray voronoiNodes)
-            : base(pGrid, AggregationCells)
-        {
-            nodes = new VoronoiNodes(voronoiNodes, null);
-        }
-
-        VoronoiGrid() { }
 
         public VoronoiNodes Nodes {
             get { return nodes; }
         }
+
+        public VoronoiBoundary Boundary {
+            get { return info.Boundary; }
+        }
+
+        public VoronoiInfo Info {
+            get { return info; }
+        }
+
+        public VoronoiGrid(IGrid pGrid,
+            int[][] logialToGeometricalCellMap,
+            MultidimensionalArray nodePositions,
+            VoronoiInfo info
+            )
+            : base(pGrid, logialToGeometricalCellMap)
+        {
+            SetVoronoiNodes(nodePositions);
+            this.info = info;
+        }
+
+        void SetVoronoiNodes(MultidimensionalArray nodePositions)
+        {
+            long[] voronoiNodeIds = GetGlobalCellIds(this.AggregationCells);
+            nodes = new VoronoiNodes(nodePositions, voronoiNodeIds);
+        }
+
+        long[] GetGlobalCellIds(AggCell[] cells)
+        {
+            long[] ids = new long[cells.Length];
+            for (int i = 0; i < cells.Length; ++i)
+            {
+                ids[i] = cells[i].GlobalID;
+            }
+            return ids;
+        }
+
+        public VoronoiGrid(IGrid pGrid,
+            int[][] logialToGeometricalCellMap,
+            VoronoiNodes nodes,
+            VoronoiInfo voronoiInfo)
+            : base(pGrid, logialToGeometricalCellMap)
+        {
+            this.nodes = nodes;
+            info = voronoiInfo;
+        }
+
+        VoronoiGrid() { }
     }
 
-    public class VoronoiNodes
+    public class VoronoiInfo
     {
-        long[] globalIds;
+        public VoronoiBoundary Boundary;
+        public int NumberOfLloydIterations = 10;
+        public int FirstCellNode_indice = 0;
+    }
 
-        MultidimensionalArray voronoiNodes;
-
-        public MultidimensionalArray Nodes {
-            get { return voronoiNodes; }
-        }
-
-        //Velocity of each cell jCell
-        public MultidimensionalArray Velocity;
-
-        public VoronoiNodes(MultidimensionalArray nodes, long[] globalIds)
-        {
-            this.globalIds = globalIds;
-            int count = nodes.GetLength(0);
-            int dim = nodes.GetLength(1);
-            this.voronoiNodes = nodes;
-            this.Velocity = MultidimensionalArray.Create(count, 2);
-        }
-
-        public VoronoiNodes(int count, int dim)
-        {
-            this.globalIds = new long[count];
-            this.voronoiNodes = MultidimensionalArray.Create(count, dim);
-            this.Velocity = MultidimensionalArray.Create(count, dim);
-        }
-
-        public VoronoiNodes Copy()
-        {
-            throw new NotImplementedException();
-            //VoronoiNodes nodes = new VoronoiNodes()
-        }
-
-
+    public class VoronoiBoundary
+    {
+        public Vector[] Polygon;
     }
 }

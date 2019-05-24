@@ -53,13 +53,12 @@ namespace BoSSS.Foundation.Grid.Voronoi
         }
     }
 
-    class Cell
+    class Cell : VoronoiNode
     {
         public int ID { get; set; }
         public Vertex[] Vertices { get; set; }
         public Edge[] Edges { get; set; }
         public int IntersectionVertex { get; set; }
-        public Vector VoronoiNode { get; set; }
     }
 
     interface IIdMesh

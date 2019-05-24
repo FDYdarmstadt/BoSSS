@@ -16,17 +16,17 @@ namespace VoronoiTests.GridCreation
         public void LShapedGrid()
         {
             var LShapePolygon = LShape();
-            int[] NodeSeedsNumbers = { 100000 };
+            int[] NodeSeedsNumbers = { 200 };
             for(int i = 0; i < NodeSeedsNumbers.Length; ++i)
             {
                 int ammountOfNodeSeeds = NodeSeedsNumbers[i];
-                IGrid grid = VoronoiGrid2D.FromPolygonalDomain(LShapePolygon, 5, ammountOfNodeSeeds);
+                IGrid grid = VoronoiGrid2D.Polygonal(LShapePolygon, 5, ammountOfNodeSeeds);
             }
         }
 
         Vector[] LShape()
         {
-            double a = 10000;
+            double a = 1;
             Vector[] LShapedPolygon = new[] {
                     new Vector(-a,a),
                     new Vector(a,a),

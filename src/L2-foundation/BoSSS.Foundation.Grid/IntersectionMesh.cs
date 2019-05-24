@@ -244,7 +244,7 @@ namespace BoSSS.Foundation.Grid.Voronoi
             //New Ridges
             Edge[] newEdges;
             Edge[] newNeighborEdges;
-            Cell newCell = new Cell { VoronoiNode = cell.VoronoiNode };
+            Cell newCell = new Cell { Position = cell.Position };
             AddCell(newCell);
             CreateEdge(verticesOfNewRidgeBoundary, cell, newCell, out newEdges, out newNeighborEdges);
             //Link Ridges to old neighbors

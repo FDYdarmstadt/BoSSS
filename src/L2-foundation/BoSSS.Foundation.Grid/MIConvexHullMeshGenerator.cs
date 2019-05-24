@@ -276,7 +276,7 @@ namespace BoSSS.Foundation.Grid.Voronoi
                         VariableCell voronoiCell = null;
                         if (cells[vert.ID] == null)
                         {
-                            voronoiCell = new VariableCell { ID = vert.ID, VoronoiNode = new Vector(vert.Position)};
+                            voronoiCell = new VariableCell { ID = vert.ID, Position = new Vector(vert.Position)};
                             cells[vert.ID] = voronoiCell;
                         }
                         else
