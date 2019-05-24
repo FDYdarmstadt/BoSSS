@@ -62,7 +62,7 @@ namespace BoSSS.Solution.XdgTimestepping {
     /// <param name="UnderRelax">
     /// </param>
     /// <param name="incremental">
-    /// true for Splitting schmes with subdivided level-set evolution (e.g. Strang-Splitting)
+    /// true for Splitting schemes with subdivided level-set evolution (e.g. Strang-Splitting)
     /// </param>
     /// <returns>
     /// Some kind of level-set-residual in order to check convergence in a fully coupled simulation

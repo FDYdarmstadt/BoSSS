@@ -783,6 +783,12 @@ namespace BoSSS.Application.FSI_Solver
 
             // =======================================================
             // Step 5
+            // Smoothing
+            // =======================================================
+            PerformLevelSetSmoothing();
+
+            // =======================================================
+            // Step 6
             // Update level set tracker and coloring
             // =======================================================
             LsTrk.UpdateTracker(__NearRegionWith: 2);
@@ -1364,8 +1370,8 @@ namespace BoSSS.Application.FSI_Solver
         }
 
         // Initialize particles
-        protected override void SetInitial()
-        {
+        protected override void SetInitial() {
+
             // Setup particles
             m_Particles = ((FSI_Control)this.Control).Particles;
             hack_phystime = 0.0;
@@ -1374,12 +1380,10 @@ namespace BoSSS.Application.FSI_Solver
             // call base implementation
             base.SetInitial();
 
-            foreach (Particle p in m_Particles)
-            {
+            foreach (Particle p in m_Particles) {
                 p.m_collidedWithParticle = new bool[m_Particles.Count];
                 p.m_collidedWithWall = new bool[4];
                 p.m_closeInterfacePointTo = new double[m_Particles.Count][];
-
             }
         }
 
