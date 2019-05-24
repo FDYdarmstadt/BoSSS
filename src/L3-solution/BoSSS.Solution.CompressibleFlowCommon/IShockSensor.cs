@@ -56,7 +56,7 @@ namespace BoSSS.Solution.CompressibleFlowCommon.ShockCapturing {
             BitArray shockedCellArray = new BitArray(gridData.iLogicalCells.NoOfLocalUpdatedCells);
             for (int i = 0; i < gridData.iLogicalCells.NoOfLocalUpdatedCells; i++) {
                 double sensorValue = sensor.GetSensorValue(i);
-                shockedCellArray[i] = sensorValue >  (sensorLimit * cellSize / dgDegree);
+                shockedCellArray[i] = sensorValue > (sensorLimit * cellSize / dgDegree);
             }
             return new CellMask(gridData, shockedCellArray);
         }

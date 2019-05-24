@@ -353,7 +353,7 @@ namespace BoSSS.Application.FSI_Solver
 
             // Coupling Properties
             // =============================
-            C.Timestepper_LevelSetHandling = LevelSetHandling.FSI_LieSplittingFullyCoupled;
+            C.Timestepper_LevelSetHandling = LevelSetHandling.LieSplitting;
             C.LSunderrelax = 1;
             C.max_iterations_fully_coupled = 100000;
 

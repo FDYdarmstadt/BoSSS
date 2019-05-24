@@ -25,7 +25,6 @@ using BoSSS.Solution.CompressibleFlowCommon.MaterialProperty;
 using BoSSS.Solution.Control;
 using BoSSS.Solution.Queries;
 using BoSSS.Solution.Utils;
-using CNS.MaterialProperty;
 using ilPSP;
 using System;
 using System.Diagnostics;
@@ -175,8 +174,8 @@ namespace CNS.IBM {
                         MultidimensionalArray rho = MultidimensionalArray.Create(chunk.Len, rule.NoOfNodes);
                         density.Evaluate(chunk.i0, chunk.Len, nodes, rho);
 
-                        MultidimensionalArray[] m = new MultidimensionalArray[CNSEnvironment.NumberOfDimensions];
-                        for (int d = 0; d < CNSEnvironment.NumberOfDimensions; d++) {
+                        MultidimensionalArray[] m = new MultidimensionalArray[CompressibleEnvironment.NumberOfDimensions];
+                        for (int d = 0; d < CompressibleEnvironment.NumberOfDimensions; d++) {
                             m[d] = MultidimensionalArray.Create(chunk.Len, rule.NoOfNodes);
                             momentum[d].Evaluate(chunk.i0, chunk.Len, nodes, m[d]);
                         }
@@ -184,11 +183,11 @@ namespace CNS.IBM {
                         MultidimensionalArray rhoE = MultidimensionalArray.Create(chunk.Len, rule.NoOfNodes);
                         energy.Evaluate(chunk.i0, chunk.Len, nodes, rhoE);
 
-                        double[] X = new double[CNSEnvironment.NumberOfDimensions];
-                        Vector mVec = new Vector(CNSEnvironment.NumberOfDimensions);
+                        double[] X = new double[CompressibleEnvironment.NumberOfDimensions];
+                        Vector mVec = new Vector(CompressibleEnvironment.NumberOfDimensions);
                         for (int i = 0; i < chunk.Len; i++) {
                             for (int j = 0; j < rule.NoOfNodes; j++) {
-                                for (int d = 0; d < CNSEnvironment.NumberOfDimensions; d++) {
+                                for (int d = 0; d < CompressibleEnvironment.NumberOfDimensions; d++) {
                                     X[d] = input[i, j, d];
                                     mVec[d] = m[d][i, j];
                                 }
@@ -304,8 +303,8 @@ namespace CNS.IBM {
                 MultidimensionalArray rho = MultidimensionalArray.Create(Len, noOfNodes);
                 density.Evaluate(j0, Len, nodes, rho);
 
-                MultidimensionalArray[] m = new MultidimensionalArray[CNSEnvironment.NumberOfDimensions];
-                for (int d = 0; d < CNSEnvironment.NumberOfDimensions; d++) {
+                MultidimensionalArray[] m = new MultidimensionalArray[CompressibleEnvironment.NumberOfDimensions];
+                for (int d = 0; d < CompressibleEnvironment.NumberOfDimensions; d++) {
                     m[d] = MultidimensionalArray.Create(Len, noOfNodes);
                     momentum[d].Evaluate(j0, Len, nodes, m[d]);
                 }
@@ -332,7 +331,7 @@ namespace CNS.IBM {
                 Vector mVec = new Vector();
                 for (int i = 0; i < Len; i++) {
                     for (int j = 0; j < noOfNodes; j++) {
-                        for (int d = 0; d < CNSEnvironment.NumberOfDimensions; d++) {
+                        for (int d = 0; d < CompressibleEnvironment.NumberOfDimensions; d++) {
                             mVec[d] = m[d][i, j];
                         }
 

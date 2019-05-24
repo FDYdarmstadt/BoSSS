@@ -30,7 +30,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
     /// <summary>
     /// Block-Jacobi smoother, maybe only useful in combination with the multi-grid solver (<see cref="ClassicMultigrid"/>).
     /// </summary>
-    public class BlockJacobi : ISolverSmootherTemplate, ISolverWithCallback {
+    public class BlockJacobi : ISolverSmootherTemplate, ISolverWithCallback{
 
         MultigridOperator m_MultigridOp;
 
@@ -167,6 +167,15 @@ namespace BoSSS.Solution.AdvancedSolvers {
             m_Converged = false;
             m_ThisLevelIterations = 0;
 
+        }
+
+        public ISolverSmootherTemplate Clone() {
+            var clone = new BlockJacobi();
+            clone.IterationCallback = this.IterationCallback;
+            clone.NoOfIterations = this.NoOfIterations;
+            clone.m_Tolerance = this.m_Tolerance;
+            clone.omega = this.omega;
+            return clone;
         }
     }
 }

@@ -130,8 +130,9 @@ namespace BoSSS.Application.FSI_Solver
             cellCollection = cells.Intersect(allCutCells);
             return cellCollection;
         }
-        override public bool Contains(double[] point, LevelSetTracker LsTrk)
-        {
+
+        public override bool Contains(double[] point, LevelSetTracker LsTrk, bool WithoutTolerance = false) {
+            
             // only for squared cells
             double radiusTolerance = width_P + 2.0 * Math.Sqrt(2 * LsTrk.GridDat.Cells.h_minGlobal.Pow2());
             double length_P = 1;
@@ -152,8 +153,8 @@ namespace BoSSS.Application.FSI_Solver
             return particleReynolds;
         }
 
-        override public MultidimensionalArray GetSurfacePoints(LevelSetTracker lsTrk)
-        {
+        public override MultidimensionalArray GetSurfacePoints(LevelSetTracker lsTrk, double[] Position, double Angle) {
+            
             int SpatialDim = lsTrk.GridDat.SpatialDimension;
             if (SpatialDim != 2)
                 throw new NotImplementedException("Only two dimensions are supported at the moment");
@@ -167,8 +168,8 @@ namespace BoSSS.Application.FSI_Solver
 
             for (int j = 0; j < NoOfSurfacePoints; j++)
             {
-                SurfacePoints[j, 0] = Math.Cos(InfinitisemalAngle[j]) * width_P + Position[0][0];
-                SurfacePoints[j, 1] = Math.Sin(InfinitisemalAngle[j]) * width_P + Position[0][1];
+                SurfacePoints[j, 0] = Math.Cos(InfinitisemalAngle[j]) * width_P + Position[0];
+                SurfacePoints[j, 1] = Math.Sin(InfinitisemalAngle[j]) * width_P + Position[1];
             }
             return SurfacePoints;
         }

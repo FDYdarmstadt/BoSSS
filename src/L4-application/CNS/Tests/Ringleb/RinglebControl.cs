@@ -15,7 +15,6 @@ limitations under the License.
 */
 
 using BoSSS.Solution.CompressibleFlowCommon.MaterialProperty;
-using CNS.MaterialProperty;
 using static BoSSS.Solution.CompressibleFlowCommon.Boundary.ExactRinglebBoundaryState;
 
 namespace CNS.Tests.Ringleb {

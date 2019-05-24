@@ -17,6 +17,7 @@ limitations under the License.
 using BoSSS.Foundation;
 using BoSSS.Solution.CompressibleFlowCommon;
 using BoSSS.Solution.CompressibleFlowCommon.Boundary;
+using BoSSS.Solution.CompressibleFlowCommon.MaterialProperty;
 
 namespace CNS.EquationSystem {
 
@@ -31,7 +32,7 @@ namespace CNS.EquationSystem {
         /// Configuration options
         /// </summary>
         protected readonly CNSControl control;
-
+        
         /// <summary>
         /// The boundary mapping which is required for the construction of the
         /// specific fluxes

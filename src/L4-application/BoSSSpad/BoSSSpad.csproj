@@ -166,10 +166,6 @@
     <None Include="app.config" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\..\..\..\public\src\L4-application\XdgPoisson3\XdgPoisson3.csproj">
-      <Project>{efbeff7a-e40d-4808-be79-536040c0fadc}</Project>
-      <Name>XdgPoisson3</Name>
-    </ProjectReference>
     <ProjectReference Include="..\..\L2-foundation\BoSSS.Foundation.SpecFEM\BoSSS.Foundation.SpecFEM.csproj">
       <Project>{9d01688e-9372-4185-adcf-d64d47f3a44a}</Project>
       <Name>BoSSS.Foundation.SpecFEM</Name>
@@ -197,6 +193,10 @@
     <ProjectReference Include="..\RheologySolver2\Rheology2.csproj">
       <Project>{985a90c0-4e63-4b8d-bc9b-946af1ad3132}</Project>
       <Name>Rheology2</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\XdgPoisson3\XdgPoisson3.csproj">
+      <Project>{efbeff7a-e40d-4808-be79-536040c0fadc}</Project>
+      <Name>XdgPoisson3</Name>
     </ProjectReference>
     <ProjectReference Include="..\XNSE_Solver\XNSE_Solver.csproj">
       <Project>{3d867374-bf9a-475e-8f5c-e1c067605b9c}</Project>

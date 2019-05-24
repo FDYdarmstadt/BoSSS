@@ -18,7 +18,6 @@ using BoSSS.Foundation;
 using BoSSS.Foundation.Grid;
 using BoSSS.Foundation.Grid.Classic;
 using BoSSS.Foundation.XDG;
-using CNS.MaterialProperty;
 using System;
 using System.IO;
 using System.Linq;

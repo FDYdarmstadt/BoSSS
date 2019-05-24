@@ -16,6 +16,7 @@ limitations under the License.
 
 using BoSSS.Solution.CompressibleFlowCommon;
 using BoSSS.Solution.CompressibleFlowCommon.Boundary;
+using BoSSS.Solution.CompressibleFlowCommon.MaterialProperty;
 using CNS.EquationSystem;
 using CNS.IBM;
 using System;
@@ -48,7 +49,7 @@ namespace CNS.Convection {
         HLLC,
 
         /// <summary>
-        /// See <see cref="OptimizedHLLCFLuxBuilder"/>
+        /// See <see cref="OptimizedHLLCFluxBuilder"/>
         /// </summary>
         OptimizedHLLC,
 
@@ -97,7 +98,7 @@ namespace CNS.Convection {
                     return new HLLCFluxBuilder(control, boundaryMap, speciesMap);
 
                 case ConvectiveFluxTypes.OptimizedHLLC:
-                    return new OptimizedHLLCFLuxBuilder(control, boundaryMap, speciesMap);
+                    return new OptimizedHLLCFluxBuilder(control, boundaryMap, speciesMap);
 
                 case ConvectiveFluxTypes.Godunov:
                     return new GodunovFluxBuilder(control, boundaryMap, speciesMap);

@@ -376,8 +376,11 @@ namespace BoSSS.Application.FSI_Solver
         readonly private ParticleAcceleration Acceleration = new ParticleAcceleration();
         internal void UpdateParticleState(double dt)
         {
-            CalculateTranslationalVelocity(dt);
-            CalculateAngularVelocity(dt);
+            //if (!skipForceIntegration)
+            {
+                CalculateTranslationalVelocity(dt);
+                CalculateAngularVelocity(dt);
+            }
             CalculateParticlePosition(dt);
             CalculateParticleAngle(dt);
             //ComputeParticleRe(FluidViscosity);
@@ -399,15 +402,24 @@ namespace BoSSS.Application.FSI_Solver
 
             if (IncludeTranslation == true) {
                 for (int d = 0; d < SpatialDim; d++) {
-                    Position[0][d] = Position[1][d] + TranslationalVelocity[1][d] * dt + (TranslationalAcceleration[1][d] + TranslationalAcceleration[0][d]) * dt.Pow2() / 4;
+                    bool AnyCollision = false;
                     for (int p = 0; p < m_collidedWithParticle.Length; p++)
                     {
                         if (m_collidedWithParticle[p])
                         {
-                            Position[0][d] = Position[1][d] + (TranslationalVelocity[1][d] + TranslationalVelocity[0][d]) * dt / 2;
-                            
+                            AnyCollision = true;
                         }
                     }
+                    if (!AnyCollision)
+                        Position[0][d] = Position[1][d] + TranslationalVelocity[1][d] * dt + (TranslationalAcceleration[1][d] + TranslationalAcceleration[0][d]) * dt.Pow2() / 4;
+                    else
+                        Position[0][d] = Position[1][d] + dt * (0 + TranslationalVelocity[0][d]) / 2;
+                    Console.WriteLine("Position[1][" + d + "]: " + Position[1][d]);
+                    Console.WriteLine("Position[0][" + d + "]: " + Position[0][d]);
+                    Console.WriteLine("TranslationalVelocity[1][" + d + "]: " + TranslationalVelocity[1][d]);
+                    Console.WriteLine("TranslationalVelocity[0][" + d + "]: " + TranslationalVelocity[0][d]);
+                    Console.WriteLine("TranslationalAcceleration[1][" + d + "]: " + TranslationalAcceleration[1][d]);
+                    Console.WriteLine("TranslationalAcceleration[0][" + d + "]: " + TranslationalAcceleration[0][d]);
                     if (double.IsNaN(Position[0][d]) || double.IsInfinity(Position[0][d]))
                         throw new ArithmeticException("Error trying to update particle position. Value:  " + Position[0][d]);
                 }
@@ -439,14 +451,14 @@ namespace BoSSS.Application.FSI_Solver
                     throw new NotSupportedException("Unknown particle dimension: SpatialDim = " + SpatialDim);
 
                 Angle[0] = Angle[1] + RotationalVelocity[1] * dt + dt.Pow2() * (RotationalAcceleration[1] + RotationalAcceleration[0]) / 4;
-                for (int p = 0; p < m_collidedWithParticle.Length; p++)
-                {
-                    if (m_collidedWithParticle[p])
-                    {
-                        Angle[0] = Angle[1] + dt * (RotationalVelocity[1] + RotationalVelocity[0]) / 2;
-                        m_collidedWithParticle[p] = false;
-                    }
-                }
+                //for (int p = 0; p < m_collidedWithParticle.Length; p++)
+                //{
+                //    if (m_collidedWithParticle[p])
+                //    {
+                //        Angle[0] = Angle[1] + dt * (RotationalVelocity[1] + RotationalVelocity[0]) / 2;
+                //        m_collidedWithParticle[p] = false;
+                //    }
+                //}
                 if (double.IsNaN(Angle[0]) || double.IsInfinity(Angle[0]))
                     throw new ArithmeticException("Error trying to update particle angle. Value:  " + Angle[0]);
             } else {
@@ -517,15 +529,13 @@ namespace BoSSS.Application.FSI_Solver
             }
 
             // Include Gravitiy
-            HydrodynamicForces[0][1] += GravityVertical * Mass_P;
+            if(!skipForceIntegration)
+                HydrodynamicForces[0][1] += GravityVertical * Mass_P;
             double[,] CoefficientMatrix = Acceleration.CalculateCoefficients(AddedDampingTensor, Mass_P, MomentOfInertia_P, dt, AddedDampingCoefficient);
             double Denominator = Acceleration.CalculateDenominator(CoefficientMatrix);
 
             if (this.IncludeTranslation) { }
                 TranslationalAcceleration[0] = Acceleration.Translational(CoefficientMatrix, Denominator, HydrodynamicForces[0], HydrodynamicTorque[0]);
-
-
-
 
             for (int d = 0; d < SpatialDim; d++)
             {
@@ -559,7 +569,18 @@ namespace BoSSS.Application.FSI_Solver
             } else {
 
                 for (int d = 0; d < SpatialDim; d++) {
-                    TranslationalVelocity[0][d] = TranslationalVelocity[1][d] + (TranslationalAcceleration[1][d] + TranslationalAcceleration[0][d]) * dt / 2;
+                    bool AnyCollision = false;
+                    for (int p = 0; p < m_collidedWithParticle.Length; p++)
+                    {
+                        if (m_collidedWithParticle[p])
+                        {
+                            AnyCollision = true;
+                        }
+                    }
+                    if (!AnyCollision)
+                        TranslationalVelocity[0][d] = TranslationalVelocity[1][d] + (TranslationalAcceleration[1][d] + TranslationalAcceleration[0][d]) * dt / 2;
+                    else
+                        TranslationalVelocity[0][d] = TranslationalVelocity[1][d];
                     if (double.IsNaN(TranslationalVelocity[0][d]) || double.IsInfinity(TranslationalVelocity[0][d]))
                         throw new ArithmeticException("Error trying to calculate particle velocity Value:  " + TranslationalVelocity[0][d]);
                 }
@@ -802,11 +823,16 @@ namespace BoSSS.Application.FSI_Solver
         /// </summary>
         /// <param name="point"></param>
         /// <returns></returns>
-        abstract public bool Contains(double[] point, LevelSetTracker LsTrk);
+        abstract public bool Contains(double[] point, LevelSetTracker LsTrk, bool WithoutTolerance = false);
 
         abstract public double[] GetLengthScales();
 
-        virtual public MultidimensionalArray GetSurfacePoints(LevelSetTracker lsTrk)
+        virtual public MultidimensionalArray GetSurfacePoints(LevelSetTracker lsTrk, double[] Position, double Angle)
+        {
+            throw new NotImplementedException();
+        }
+
+        virtual public void GetSupportPoint(int SpatialDim, double CosT, double SinT, out double[] SupportPoint)
         {
             throw new NotImplementedException();
         }

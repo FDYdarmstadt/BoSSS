@@ -53,9 +53,9 @@ namespace CNS.Convection {
             op.DensityComponents.Add(new RusanovFlux(
                 control, boundaryMap, new EulerDensityComponent(), speciesMap));
 
-            for (int d = 0; d < CNSEnvironment.NumberOfDimensions; d++) {
+            for (int d = 0; d < CompressibleEnvironment.NumberOfDimensions; d++) {
                 op.MomentumComponents[d].Add(new RusanovFlux(
-                    control, boundaryMap, new EulerMomentumComponent(d, control.EquationOfState.HeatCapacityRatio, control.MachNumber, CNSEnvironment.NumberOfDimensions), speciesMap));
+                    control, boundaryMap, new EulerMomentumComponent(d, control.EquationOfState.HeatCapacityRatio, control.MachNumber, CompressibleEnvironment.NumberOfDimensions), speciesMap));
             }
 
             op.EnergyComponents.Add(new RusanovFlux(

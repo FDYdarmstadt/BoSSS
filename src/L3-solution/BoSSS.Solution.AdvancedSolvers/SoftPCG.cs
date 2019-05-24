@@ -271,7 +271,24 @@ namespace BoSSS.Solution.AdvancedSolvers {
             if(this.Precond != null)
                 this.Precond.ResetStat();
         }
+
+        /// <summary>
+        /// ToDo: Cloning of Preconditioner is not supported.
+        /// </summary>
+        /// <returns></returns>
+        public ISolverSmootherTemplate Clone() {
+            var clone = new SoftPCG();
+            clone.IterationCallback = this.IterationCallback;
+            clone.NoOfIterations = this.NoOfIterations;
+            clone.m_Tolerance = this.m_Tolerance;
+            clone.m_MaxIterations = this.m_MaxIterations;
+            clone.m_MinIterations = this.m_MinIterations;
+            clone.Precond = null;
+        return clone;
     }
+}
+
+   
 
 
 }

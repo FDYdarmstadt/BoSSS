@@ -18,21 +18,13 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 
-namespace CNS {
+namespace BoSSS.Solution.CompressibleFlowCommon {
 
     /// <summary>
     /// Static environment of a program run. Defines some global variables
     /// which never change at runtime.
     /// </summary>
-    public static class CNSEnvironment {
-
-        /// <summary>
-        /// Link to program instance.
-        /// </summary>
-        public static IProgram<CNSControl> Program {
-            get;
-            private set;
-        }
+    public static class CompressibleEnvironment {
 
         /// <summary>
         /// The number of spatial dimensions of the considered problem.
@@ -60,7 +52,7 @@ namespace CNS {
 
         /// <summary>
         /// Utility method to retrieve the keys part of
-        /// <see cref="CNSEnvironment.PrimalArgumentToIndexMap"/>
+        /// <see cref="CompressibleEnvironment.PrimalArgumentToIndexMap"/>
         /// </summary>
         public static string[] PrimalArgumentOrdering {
             get;
@@ -89,9 +81,8 @@ namespace CNS {
         /// <remarks>
         /// May only be called once, even though this is not checked.
         /// </remarks>
-        public static void Initialize(int numberOfDimensions, IProgram<CNSControl> _Program) {
+        public static void Initialize(int numberOfDimensions) {
             NumberOfDimensions = numberOfDimensions;
-            Program = _Program;
 
             switch (numberOfDimensions) {
                 case 1:
@@ -111,11 +102,11 @@ namespace CNS {
             }
 
             PrimalArgumentToIndexMap = new Dictionary<Variable, int>();
-            PrimalArgumentToIndexMap.Add(Variables.Density, 0);
+            PrimalArgumentToIndexMap.Add(CompressibleVariables.Density, 0);
             for (int d = 0; d < numberOfDimensions; d++) {
-                PrimalArgumentToIndexMap.Add(Variables.Momentum[d], d + 1);
+                PrimalArgumentToIndexMap.Add(CompressibleVariables.Momentum[d], d + 1);
             }
-            PrimalArgumentToIndexMap.Add(Variables.Energy, numberOfDimensions + 1);
+            PrimalArgumentToIndexMap.Add(CompressibleVariables.Energy, numberOfDimensions + 1);
 
             PrimalArgumentOrdering = PrimalArgumentToIndexMap.Keys.Select(v => v.Name).ToArray();
         }
