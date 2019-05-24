@@ -27,7 +27,7 @@ using BoSSS.Foundation;
 using BoSSS.Foundation.XDG;
 
 
-namespace BoSSS.Solution.XNSECommon.newXSpatialOperator {
+namespace BoSSS.Foundation.XDG {
 
     public abstract class XOperatorFactoryBase {
 
@@ -112,4 +112,5 @@ namespace BoSSS.Solution.XNSECommon.newXSpatialOperator {
             AssembleMatrix(OpMatrix, OpAffine, RowMapping, ColMapping, CurrentState, AgglomeratedCellLengthScales, time);
         }
     }
+
 }

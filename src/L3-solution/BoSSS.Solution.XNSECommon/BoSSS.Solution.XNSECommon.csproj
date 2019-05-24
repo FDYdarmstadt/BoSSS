@@ -57,14 +57,13 @@
     <Compile Include="EnergyOperatorComponents.cs" />
     <Compile Include="EnergyUtils.cs" />
     <Compile Include="IncompressibleMultiphaseBoundaryCondMap.cs" />
-    <Compile Include="newXSpatialOperator\ConvectionInSpeciesBulk_LLF.cs" />
-    <Compile Include="newXSpatialOperator\XOperatorComponentsFactory.cs" />
+    <Compile Include="ConvectionInSpeciesBulk_LLF.cs" />
+    <Compile Include="XNSE_OperatorComponents.cs" />
     <Compile Include="newXSpatialOperator\OperatorConfigurationMk2.cs" />
-    <Compile Include="newXSpatialOperator\XOperatorFactoryBase.cs" />
     <Compile Include="newXSpatialOperator\OperatorFactoryMk2.cs" />
-    <Compile Include="newXSpatialOperator\PressureInSpeciesBulk.cs" />
-    <Compile Include="newXSpatialOperator\SpeciesDivergence.cs" />
-    <Compile Include="newXSpatialOperator\ViscosityInSpeciesBulk.cs" />
+    <Compile Include="PressureInSpeciesBulk.cs" />
+    <Compile Include="SpeciesDivergence.cs" />
+    <Compile Include="ViscosityInSpeciesBulk.cs" />
     <Compile Include="PatchRecovery.cs" />
     <Compile Include="XLaplace.cs" />
     <Compile Include="ViscosityInBulk_Localized.cs" />
@@ -129,10 +128,6 @@
     <ProjectReference Include="..\BoSSS.Solution.LevelSetTools\BoSSS.Solution.LevelSetTools.csproj">
       <Project>{9ee2fcad-e8a4-4f14-b932-d1a4904d715d}</Project>
       <Name>BoSSS.Solution.LevelSetTools</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\BoSSS.Solution.XheatCommon\BoSSS.Solution.XheatCommon.csproj">
-      <Project>{556af24d-182b-4b77-a727-7e18b6488f78}</Project>
-      <Name>BoSSS.Solution.XheatCommon</Name>
     </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

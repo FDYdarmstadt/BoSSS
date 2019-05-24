@@ -25,12 +25,12 @@ using BoSSS.Foundation.XDG;
 
 using BoSSS.Solution.XNSECommon.Operator.SurfaceTension;
 
-namespace BoSSS.Solution.XNSECommon.newXSpatialOperator {
+namespace BoSSS.Solution.XNSECommon {
     
     /// <summary>
     /// 
     /// </summary>
-    public static class XOperatorComponentsFactory {
+    public static partial class XOperatorComponentsFactory {
 
         //=======================
         // Navier Stokes equation
@@ -49,7 +49,7 @@ namespace BoSSS.Solution.XNSECommon.newXSpatialOperator {
         /// <param name="config"></param>
         /// <param name="LsTrk"></param>
         public static void AddSpeciesNSE_component(XSpatialOperatorMk2 XOp, string CodName, int d, int D, string spcName, SpeciesId spcId, 
-            IncompressibleMultiphaseBoundaryCondMap BcMap, IXNSE_Configuration config, LevelSetTracker LsTrk, out bool U0meanrequired) {
+            IncompressibleMultiphaseBoundaryCondMap BcMap, INSE_Configuration config, LevelSetTracker LsTrk, out bool U0meanrequired) {
 
             // check input
             if(XOp.IsCommited)
@@ -159,7 +159,7 @@ namespace BoSSS.Solution.XNSECommon.newXSpatialOperator {
         /// <param name="config"></param>
         /// <param name="LsTrk"></param>
         public static void AddSpeciesNSE(XSpatialOperatorMk2 XOp, string[] CodName, string spcName, SpeciesId spcId,
-            IncompressibleMultiphaseBoundaryCondMap BcMap, IXNSE_Configuration config, LevelSetTracker LsTrk, out bool U0meanrequired) {
+            IncompressibleMultiphaseBoundaryCondMap BcMap, INSE_Configuration config, LevelSetTracker LsTrk, out bool U0meanrequired) {
 
             U0meanrequired = false;
 
@@ -429,7 +429,7 @@ namespace BoSSS.Solution.XNSECommon.newXSpatialOperator {
         /// <param name="config"></param>
         /// <param name="LsTrk"></param>
         public static void AddSpeciesContinuityEq(XSpatialOperatorMk2 XOp, string CodName, int D, string spcName, SpeciesId spcId,
-            IncompressibleMultiphaseBoundaryCondMap BcMap, IXNSE_Configuration config, LevelSetTracker LsTrk) {
+            IncompressibleMultiphaseBoundaryCondMap BcMap, INSE_Configuration config, LevelSetTracker LsTrk) {
 
             // check input
             if(XOp.IsCommited)
@@ -492,18 +492,6 @@ namespace BoSSS.Solution.XNSECommon.newXSpatialOperator {
             comps.Add(divPen);
         }
 
-        //==============
-        // Heat equation
-        //==============
-
-        public static void AddSpeciesHeatEq(XSpatialOperatorMk2 XOp) {
-
-        }
-
-
-        public static void AddInterfaceHeatEq(XSpatialOperatorMk2 XOp) {
-
-        }
 
 
         //========================
@@ -521,9 +509,14 @@ namespace BoSSS.Solution.XNSECommon.newXSpatialOperator {
     }
 
 
-
+    /// <summary>
+    /// base configuration options
+    /// </summary>
     public interface ISolver_Configuration {
 
+        /// <summary>
+        /// physical parameters
+        /// </summary>
         PhysicalParameters GetPhysParams { get; }
 
         /// <summary>
@@ -535,9 +528,9 @@ namespace BoSSS.Solution.XNSECommon.newXSpatialOperator {
 
 
     /// <summary>
-    /// 
+    /// configuration options for the bulk NSE including continuity equation
     /// </summary>
-    public interface IXNSE_Configuration : ISolver_Configuration {
+    public interface INSE_Configuration : ISolver_Configuration {
 
         /// <summary>
         /// include transport operator
@@ -559,6 +552,14 @@ namespace BoSSS.Solution.XNSECommon.newXSpatialOperator {
         /// </summary>
         bool isContinuity { get; }
 
+    }
+
+
+    /// <summary>
+    /// extended configuration options for interface discretizations
+    /// </summary>
+    public interface IXNSE_Configuration : INSE_Configuration {
+
         /// <summary>
         /// switch for moving mesh flux discretizations
         /// </summary>
@@ -570,4 +571,5 @@ namespace BoSSS.Solution.XNSECommon.newXSpatialOperator {
         bool isMatInt { get; }
 
     }
+
 }

@@ -121,6 +121,7 @@
     <Compile Include="XDGUtils.cs" />
     <Compile Include="Quadrature\XQuadFactoryHelper.cs" />
     <Compile Include="Quadrature\XQuadSchemeHelper.cs" />
+    <Compile Include="XOperatorFactoryBase.cs" />
     <Compile Include="XSpatialOperator.cs">
       <SubType>Code</SubType>
     </Compile>

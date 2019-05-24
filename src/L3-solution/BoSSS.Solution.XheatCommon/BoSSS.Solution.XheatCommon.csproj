@@ -59,6 +59,7 @@
     <Compile Include="ThermalBoundaryCondMap.cs" />
     <Compile Include="ThermalParameters.cs" />
     <Compile Include="XheatUtils.cs" />
+    <Compile Include="XHeat_OperatorComponents.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\ilPSP\layer_1.2-ilPSP\ilPSP\ilPSP.csproj">
@@ -92,6 +93,10 @@
     <ProjectReference Include="..\BoSSS.Solution.Tecplot\BoSSS.Solution.Tecplot.csproj">
       <Project>{d0546422-ec92-4964-82e9-8ee819a2f786}</Project>
       <Name>BoSSS.Solution.Tecplot</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\BoSSS.Solution.XNSECommon\BoSSS.Solution.XNSECommon.csproj">
+      <Project>{0d8f577e-316d-4362-816b-9f610c5eb4a5}</Project>
+      <Name>BoSSS.Solution.XNSECommon</Name>
     </ProjectReference>
     <ProjectReference Include="..\BoSSS.Solution\BoSSS.Solution.csproj">
       <Project>{df7f5abd-e606-41cd-beef-31a95d136dea}</Project>
