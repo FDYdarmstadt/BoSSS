@@ -17,7 +17,7 @@ namespace BoSSS.Foundation.Grid.Voronoi
 
     interface IIntersectableMesh<TCell, TRidge, TLine>
     {
-        (TCell, IEnumerator<TRidge>) getFirst(TLine boundaryLine);
+        (TCell, IEnumerator<TRidge>) GetFirst(TLine boundaryLine);
 
         bool intersect(TRidge ridge, TLine line, ref IntersectionCase intersectionCase, out double alphaCut);
 
@@ -48,14 +48,14 @@ namespace BoSSS.Foundation.Grid.Voronoi
         /// 
         /// </summary>
         public static void Intersect<TCell, TRidge, TLine>(IIntersectableMesh<TCell, TRidge, TLine> vMesh,
-                                                            IEnumerator<TLine> boundary)
+            IEnumerator<TLine> boundary)
         {
             //Setup
             TCell activeCell;
             IEnumerator<TRidge> ridgeEnum;
             IEnumerator<TRidge> runningEnum;
             boundary.MoveNext();
-            (activeCell, ridgeEnum) = vMesh.getFirst(boundary.Current);
+            (activeCell, ridgeEnum) = vMesh.GetFirst(boundary.Current);
             boundary.Reset();
             List<TLine> lines = new List<TLine>(10);
 

@@ -36,39 +36,8 @@ namespace BoSSS.Foundation.Grid.Voronoi {
             get { return nodes; }
         }
 
-        public VoronoiBoundary Boundary {
-            get { return info.Boundary; }
-        }
-
         public VoronoiInfo Info {
             get { return info; }
-        }
-
-        public VoronoiGrid(IGrid pGrid,
-            int[][] logialToGeometricalCellMap,
-            MultidimensionalArray nodePositions,
-            VoronoiInfo info
-            )
-            : base(pGrid, logialToGeometricalCellMap)
-        {
-            SetVoronoiNodes(nodePositions);
-            this.info = info;
-        }
-
-        void SetVoronoiNodes(MultidimensionalArray nodePositions)
-        {
-            long[] voronoiNodeIds = GetGlobalCellIds(this.AggregationCells);
-            nodes = new VoronoiNodes(nodePositions, voronoiNodeIds);
-        }
-
-        long[] GetGlobalCellIds(AggCell[] cells)
-        {
-            long[] ids = new long[cells.Length];
-            for (int i = 0; i < cells.Length; ++i)
-            {
-                ids[i] = cells[i].GlobalID;
-            }
-            return ids;
         }
 
         public VoronoiGrid(IGrid pGrid,
@@ -86,13 +55,14 @@ namespace BoSSS.Foundation.Grid.Voronoi {
 
     public class VoronoiInfo
     {
-        public VoronoiBoundary Boundary;
-        public int NumberOfLloydIterations = 10;
-        public int FirstCellNode_indice = 0;
+        public VoronoiMesherInfo MesherInfo;
     }
 
-    public class VoronoiBoundary
+    public class VoronoiMesherInfo
     {
-        public Vector[] Polygon;
+        public Vector[] BoundingBox;
+        public Vector[] Boundary;
+        public int NumberOfLloydIterations = 10;
+        public int FirstCellNode_indice = 0;
     }
 }
