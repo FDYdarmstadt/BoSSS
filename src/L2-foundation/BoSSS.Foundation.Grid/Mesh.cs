@@ -53,8 +53,12 @@ namespace BoSSS.Foundation.Grid.Voronoi
         }
     }
 
+    enum CType { Inside, NotDetermined }
+
     class Cell<T>
     {
+        public CType type = CType.NotDetermined;
+
         public T Node;
         public int ID { get; set; }
         public Vertex[] Vertices { get; set; }
@@ -128,7 +132,7 @@ namespace BoSSS.Foundation.Grid.Voronoi
         }
     }
 
-    class Mesh<T> : IIdMesh<T>
+    class Mesh<T>
     {
         IIdMesh<T> mesh;
 
@@ -311,6 +315,72 @@ namespace BoSSS.Foundation.Grid.Voronoi
                 twinEdges[count - 1 - i] = twinRidge;
             }
         }
+        
+        #region IIdMesh
+
+        protected IReadOnlyList<Cell<T>> Cells => mesh.Cells;
+
+        protected IReadOnlyList<Vertex> Vertices => mesh.Vertices;
+
+        public int AddCell(Cell<T> cell)
+        {
+            return mesh.AddCell(cell);
+        }
+
+        public Cell<T> GetCell(int ID)
+        {
+            return mesh.GetCell(ID);
+        }
+
+        public int AddVertex(Vertex vert)
+        {
+            return mesh.AddVertex(vert);
+        }
+
+        public Vertex GetVertex(int ID)
+        {
+            return mesh.GetVertex(ID);
+        }
+
+        #endregion
+    }
+
+    class BoundaryMesh<T> : Mesh<T>
+    {
+        List<Cell<T>> insideCells;
+
+        List<T> insideNodes;
+
+        protected Cell<T> insideCell;
+
+        public int Count {
+            get {
+                return insideCells.Count;
+            }
+        }
+
+        public virtual IReadOnlyList<Cell<T>> GetCells()
+        {
+            if (insideCells == null)
+            {
+                DetermineInsideCells();
+            }
+            return insideCells;
+            
+        }
+
+        public List<T> GetNodes()
+        {
+            if(insideNodes == null)
+            {
+                DetermineInsideNodes();
+            }
+            return insideNodes;
+        }
+
+        public BoundaryMesh(IIdMesh<T> mesh)
+            : base(mesh)
+        { }
 
         /// <summary>
         /// Enumerates the cells inside the boundary of this mesh.
@@ -320,7 +390,7 @@ namespace BoSSS.Foundation.Grid.Voronoi
         /// Enumeration starts with this cell and then return its neighbors and so on.
         /// </param>
         /// <returns></returns>
-        public IEnumerable<Cell<T>> ConnectedCells_Recursive(Cell<T> cell)
+        public IEnumerable<Cell<T>> CellsOnSameSideOfBoundary_Recursive(Cell<T> cell)
         {
             BitArray visited = new BitArray(Cells.Count);
             return YieldConnectedCells(cell, visited);
@@ -351,7 +421,7 @@ namespace BoSSS.Foundation.Grid.Voronoi
         /// Enumeration starts with this cell and then return its neighbors and so on.
         /// </param>
         /// <returns></returns>
-        public IEnumerable<Cell<T>> ConnectedCells_Iterative(Cell<T> cell)
+        public IEnumerable<Cell<T>> CellsOnSameSideOfBoundary_Iterative(Cell<T> cell)
         {
             BitArray visited = new BitArray(Cells.Count);
             LinkedList<Cell<T>> cells = new LinkedList<Cell<T>>();
@@ -374,103 +444,30 @@ namespace BoSSS.Foundation.Grid.Voronoi
             }
         }
 
-        (GridCommons grid, int[][] aggregation, MultidimensionalArray nodes) GetVoronoiData(Cell<T> insideCell)
+        protected void DetermineInsideCells()
         {
-            List<BoSSS.Foundation.Grid.Classic.Cell> cellsBoSSS = new List<BoSSS.Foundation.Grid.Classic.Cell>();
-            List<int[]> aggregation = new List<int[]>();
-            MultidimensionalArray nodes = MultidimensionalArray.Create(Cells.Count, 2);
-            foreach (Cell<T> cell in ConnectedCells_Iterative(insideCell))
+            insideCells = SetCellTypesOnSameSideOfBoundary(insideCell, CType.Inside, ref insideCells);
+        }
+
+        void DetermineInsideNodes()
+        {
+            IReadOnlyList<Cell<T>> cells = GetCells();
+            insideNodes = new List<T>(cells.Count);
+            foreach(Cell<T> cell in cells)
             {
-                //Convert to BoSSSCell : Triangulate
-                Vector[] VoronoiCell = cell.Vertices.Select(voVtx => voVtx.Position).ToArray();
-                int[,] iVtxTri = PolygonTesselation.TesselatePolygon(VoronoiCell);
-                int[] Agg2Pt = new int[iVtxTri.GetLength(0)];
-
-                for (int iTri = 0; iTri < iVtxTri.GetLength(0); iTri++)
-                { // loop over triangles of voronoi cell
-                    int iV0 = iVtxTri[iTri, 0];
-                    int iV1 = iVtxTri[iTri, 1];
-                    int iV2 = iVtxTri[iTri, 2];
-
-                    Vector V0 = VoronoiCell[iV0];
-                    Vector V1 = VoronoiCell[iV1];
-                    Vector V2 = VoronoiCell[iV2];
-
-                    Vector D1 = V1 - V0;
-                    Vector D2 = V2 - V0;
-
-                    if (D1.CrossProduct2D(D2) < 0)
-                    {
-                        int it = iV0;
-                        iV0 = iV2;
-                        iV2 = it;
-
-                        Vector vt = V0;
-                        V0 = V2;
-                        V2 = vt;
-
-                        D1 = V1 - V0;
-                        D2 = V2 - V0;
-                    }
-
-                    Debug.Assert(D1.CrossProduct2D(D2) > 1.0e-8);
-
-
-                    BoSSS.Foundation.Grid.Classic.Cell Cj = new BoSSS.Foundation.Grid.Classic.Cell();
-                    Cj.GlobalID = cellsBoSSS.Count;
-                    Cj.Type = CellType.Triangle_3;
-                    Cj.TransformationParams = MultidimensionalArray.Create(3, 2);
-                    Cj.NodeIndices = new int[] { cell.Vertices[iV0].ID, cell.Vertices[iV1].ID, cell.Vertices[iV2].ID };
-                    Cj.TransformationParams.SetRowPt(0, V0);
-                    Cj.TransformationParams.SetRowPt(1, V1);
-                    Cj.TransformationParams.SetRowPt(2, V2);
-
-                    Agg2Pt[iTri] = cellsBoSSS.Count;
-                    cellsBoSSS.Add(Cj);
-                }
-                aggregation.Add(Agg2Pt);
+                insideNodes.Add(cell.Node);
             }
-
-            GridCommons grd;
-            grd = new Grid2D(Triangle.Instance);
-            grd.Cells = cellsBoSSS.ToArray();
-            return (grd, aggregation.ToArray(), nodes);
-        } 
-
-        public VoronoiGrid ToVoronoiGrid(Cell<T> insideCell)
-        {
-            (GridCommons grid, int[][] aggregation, MultidimensionalArray nodes) = GetVoronoiData(insideCell);
-            VoronoiGrid voronoiGrid = new VoronoiGrid(grid, aggregation, new VoronoiNodes(nodes), new VoronoiInfo());
-            return voronoiGrid;
         }
 
-        #region IIdMesh
-
-        public IReadOnlyList<Cell<T>> Cells => mesh.Cells;
-
-        public IReadOnlyList<Vertex> Vertices => mesh.Vertices;
-
-        public int AddCell(Cell<T> cell)
+        protected List<Cell<T>> SetCellTypesOnSameSideOfBoundary(Cell<T> startingCell, CType type, ref List<Cell<T>> cells)
         {
-            return mesh.AddCell(cell);
+            List<Cell<T>> sameSideCells = new List<Cell<T>>();
+            foreach (Cell<T> cell in CellsOnSameSideOfBoundary_Iterative(startingCell))
+            {
+                cell.type = type;
+                sameSideCells.Add(cell);
+            }
+            return sameSideCells;
         }
-
-        public Cell<T> GetCell(int ID)
-        {
-            return mesh.GetCell(ID);
-        }
-
-        public int AddVertex(Vertex vert)
-        {
-            return mesh.AddVertex(vert);
-        }
-
-        public Vertex GetVertex(int ID)
-        {
-            return mesh.GetVertex(ID);
-        }
-
-        #endregion
     }
-
 }

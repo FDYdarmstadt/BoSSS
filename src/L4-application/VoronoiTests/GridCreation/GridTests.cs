@@ -16,7 +16,7 @@ namespace VoronoiTests.GridCreation
         public void LShapedGrid()
         {
             var LShapePolygon = LShape();
-            int[] NodeSeedsNumbers = { 200 };
+            int[] NodeSeedsNumbers = { 20 };
             for(int i = 0; i < NodeSeedsNumbers.Length; ++i)
             {
                 int ammountOfNodeSeeds = NodeSeedsNumbers[i];

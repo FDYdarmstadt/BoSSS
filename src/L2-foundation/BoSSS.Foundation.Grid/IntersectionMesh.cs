@@ -68,37 +68,51 @@ namespace BoSSS.Foundation.Grid.Voronoi
         public Vertex end { get; set; }
     }
 
-    class IntersectionMesh<T> : Mesh<T>, IIntersectableMesh<Cell<T>, Edge<T>, Line>
+    class IntersectionMesh<T> : BoundaryMesh<T>, IIntersectableMesh<Cell<T>, Edge<T>, Line>
     {
+        bool cutIsFresh = false;
+
+        public bool CutIsFresh {
+            set { cutIsFresh = value; } 
+        }
+
         public IntersectionMesh(IIdMesh<T> Mesh, int firstCell_NodeIndice) 
             : base(Mesh)
         {
-            FirstCell = Cells[firstCell_NodeIndice];
+            insideCell = Cells[firstCell_NodeIndice];
         }
 
         public IntersectionMesh(IIdMesh<T> Mesh) 
             : base(Mesh)
         {
-            FirstCell = null;
+            insideCell = null;
         }
 
         static EdgeComparer<T> ridgeComparer = new EdgeComparer<T>();
 
-        Cell<T> FirstCell;
+        public override IReadOnlyList<Cell<T>> GetCells() {
+            if (cutIsFresh)
+            {
+                DetermineInsideCells();
+                cutIsFresh = false;
+            }
+            return base.GetCells();
+        }
 
+        static double accuracy = 1e-10;
         public (Cell<T>, IEnumerator<Edge<T>>) GetFirst(Line boundaryLine)
         {
             //Find cell that contains boundaryLine.Start;
             bool foundFirstCell = false;
-            if(FirstCell == null)
+            if (insideCell == null)
             {
                 //SetFirst Cell: any random cell. Influences runtime, though
-                FirstCell = Cells[0];
+                insideCell = Cells[0];
                 foundFirstCell = true;
             }
 
             //Check if boundaryLine.Start is still in cell, else search neighborhood
-            foreach(Cell<T> cell in ConnectedCells_Iterative(FirstCell))
+            foreach (Cell<T> cell in CellsOnSameSideOfBoundary_Iterative(insideCell))
             {
                 Vector[] verts = Array.ConvertAll(cell.Vertices, item => (Vector)item);
                 //At this point, every cell is convex!
@@ -106,35 +120,21 @@ namespace BoSSS.Foundation.Grid.Voronoi
                 if (isInside)
                 {
                     foundFirstCell = true;
-                    FirstCell = cell;
+                    insideCell = cell;
                     break;
                 }
             }
-
             if (foundFirstCell)
             {
-                AfterCutRidgeEnumerator enumerator = new AfterCutRidgeEnumerator(FirstCell.Edges, FirstCell.Edges[1]);
+                AfterCutRidgeEnumerator enumerator = new AfterCutRidgeEnumerator(insideCell.Edges, insideCell.Edges[1]);
                 enumerator.Reset();
-                return (FirstCell, enumerator);
+                return (insideCell, enumerator);
             }
             else
             {
                 throw new Exception("First cell could not be found: boundaryLine.start not inside a cell");
             }
         }
-
-        public IEnumerable<Cell<T>> GetInsideCells()
-        {
-            return ConnectedCells_Iterative(FirstCell);
-        }
-
-        public VoronoiGrid ToVoronoiGrid()
-        {
-            return ToVoronoiGrid(FirstCell);
-        }
-
-        static double accuracy = 1e-10;
-
         //Return end of ridge if parallel and overlapping.
         public bool intersect(Edge<T> edge, Line line, ref IntersectionCase intersectionCase, out double alpha)
         {
@@ -157,10 +157,10 @@ namespace BoSSS.Foundation.Grid.Voronoi
                         if (alpha > 1 - accuracy)
                         {
                             alpha = 1;
-                            intersectionCase = IntersectionCase.IntersectionIsEndOfRidge;
+                            intersectionCase = IntersectionCase.EndOfRidge;
                             if (alpha2 > 1 - accuracy)
                             {
-                                intersectionCase = IntersectionCase.IntersectionIsEndOfRidgeAndLine;
+                                intersectionCase = IntersectionCase.EndOfRidgeAndLine;
                             }
                             return true;
                         }
@@ -168,11 +168,11 @@ namespace BoSSS.Foundation.Grid.Voronoi
                         {
                             if (alpha2 > 1 - accuracy)
                             {
-                                intersectionCase = IntersectionCase.IntersectionIsEndOfLine;
+                                intersectionCase = IntersectionCase.EndOfLine;
                             }
                             else
                             {
-                                intersectionCase = IntersectionCase.IntersectionInMiddle;
+                                intersectionCase = IntersectionCase.InMiddle;
                             }
                             return true;
                         }
@@ -197,16 +197,16 @@ namespace BoSSS.Foundation.Grid.Voronoi
                     if (alpha >= 1 - accuracy && alpha <= 1)
                     {
                         alpha = 1;
-                        intersectionCase = IntersectionCase.IntersectionIsEndOfRidgeAndLine;
+                        intersectionCase = IntersectionCase.EndOfRidgeAndLine;
                         return true;
                     }
                     if (absLine / absRidge < 1)
                     {
-                        intersectionCase = IntersectionCase.IntersectionIsEndOfLine;
+                        intersectionCase = IntersectionCase.EndOfLine;
                         return true;
                     }
                     alpha = 1;
-                    intersectionCase = IntersectionCase.IntersectionIsEndOfRidge;
+                    intersectionCase = IntersectionCase.EndOfRidge;
                     return true;
                 }
                 return false;
@@ -538,7 +538,7 @@ namespace BoSSS.Foundation.Grid.Voronoi
             return edge;
         }
 
-        public void AddRidge(Edge<T> edge)
+        public void AddEdge(Edge<T> edge)
         {
             edge.IsBoundary = true;
             edge.Twin.IsBoundary = true;
