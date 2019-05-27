@@ -68,7 +68,7 @@ namespace BoSSS.Foundation.Grid.Voronoi
                     NumberOfLloydIterations = NoOfLyyodsIter
                 },
             };
-            return Polygonal(nodes, info);
+            return VoronoiMesher.Polygonal(nodes, info);
         }
 
         /// <summary>
@@ -107,7 +107,7 @@ namespace BoSSS.Foundation.Grid.Voronoi
                     FirstCellNode_indice = FirstCellNode_Indice
                 },
             };
-            return Polygonal(nodes, info);
+            return VoronoiMesher.Polygonal(nodes, info);
         }
 
         static Vector[] BoundingBox(Vector[] polygon)
@@ -224,99 +224,6 @@ namespace BoSSS.Foundation.Grid.Voronoi
                 randomPosition[j] = center[j] - 0.5 * scales[j] + rnd.NextDouble() * scales[j];
             }
             return randomPosition;
-        }
-
-        /// <summary>
-        /// Creates a voronoi mesh inside a polygon.
-        /// </summary>
-        /// <param name="nodes">
-        /// Voronoi nodes: Center of each agglomerated cell. Will not be considered if outside of PolygonBoundary.
-        /// </param>
-        /// <param name="info">
-        /// Contains information of Voronoi grid,e.g. a boundary polygon.
-        /// </param>
-        /// <returns></returns>
-        public static VoronoiGrid Polygonal(
-            VoronoiNodes nodes,
-            VoronoiInfo info)
-        {
-            BoundaryMesh<VoronoiNode> mesh = VoronoiMesher<VoronoiNode>.Create(nodes.Nodes, info.MesherInfo);
-            VoronoiGrid grid = Convert2VoronoiGrid(mesh, info);
-            return grid;
-        }
-
-        static VoronoiGrid Convert2VoronoiGrid(BoundaryMesh<VoronoiNode> mesh, VoronoiInfo info)
-        {
-            IReadOnlyList<Cell<VoronoiNode>>cells = mesh.GetCells();
-            (GridCommons grid, int[][] aggregation) = GetVoronoiData(cells);
-
-            List<VoronoiNode> nodeList = mesh.GetNodes();
-            VoronoiNodes nodes = new VoronoiNodes(nodeList);
-
-            VoronoiGrid voronoiGrid = new VoronoiGrid(grid, aggregation, nodes, info);
-            return voronoiGrid;
-        }
-
-        static (GridCommons grid, int[][] aggregation) GetVoronoiData(IReadOnlyList<Cell<VoronoiNode>> cells)
-        {
-            List<BoSSS.Foundation.Grid.Classic.Cell> cellsBoSSS = new List<BoSSS.Foundation.Grid.Classic.Cell>();
-            List<int[]> aggregation = new List<int[]>();
-            foreach (Cell<VoronoiNode> cell in cells)
-            {
-                //Convert to BoSSSCell : Triangulate
-                Vector[] VoronoiCell = cell.Vertices.Select(voVtx => voVtx.Position).ToArray();
-                int[,] iVtxTri = PolygonTesselation.TesselatePolygon(VoronoiCell);
-                int[] Agg2Pt = new int[iVtxTri.GetLength(0)];
-
-                for (int iTri = 0; iTri < iVtxTri.GetLength(0); iTri++)
-                { // loop over triangles of voronoi cell
-                    int iV0 = iVtxTri[iTri, 0];
-                    int iV1 = iVtxTri[iTri, 1];
-                    int iV2 = iVtxTri[iTri, 2];
-
-                    Vector V0 = VoronoiCell[iV0];
-                    Vector V1 = VoronoiCell[iV1];
-                    Vector V2 = VoronoiCell[iV2];
-
-                    Vector D1 = V1 - V0;
-                    Vector D2 = V2 - V0;
-
-                    if (D1.CrossProduct2D(D2) < 0)
-                    {
-                        int it = iV0;
-                        iV0 = iV2;
-                        iV2 = it;
-
-                        Vector vt = V0;
-                        V0 = V2;
-                        V2 = vt;
-
-                        D1 = V1 - V0;
-                        D2 = V2 - V0;
-                    }
-
-                    Debug.Assert(D1.CrossProduct2D(D2) > 1.0e-8);
-
-
-                    BoSSS.Foundation.Grid.Classic.Cell Cj = new BoSSS.Foundation.Grid.Classic.Cell();
-                    Cj.GlobalID = cellsBoSSS.Count;
-                    Cj.Type = CellType.Triangle_3;
-                    Cj.TransformationParams = MultidimensionalArray.Create(3, 2);
-                    Cj.NodeIndices = new int[] { cell.Vertices[iV0].ID, cell.Vertices[iV1].ID, cell.Vertices[iV2].ID };
-                    Cj.TransformationParams.SetRowPt(0, V0);
-                    Cj.TransformationParams.SetRowPt(1, V1);
-                    Cj.TransformationParams.SetRowPt(2, V2);
-
-                    Agg2Pt[iTri] = cellsBoSSS.Count;
-                    cellsBoSSS.Add(Cj);
-                }
-                aggregation.Add(Agg2Pt);
-            }
-
-            GridCommons grd;
-            grd = new Grid2D(Triangle.Instance);
-            grd.Cells = cellsBoSSS.ToArray();
-            return (grd, aggregation.ToArray());
         }
     }
 }

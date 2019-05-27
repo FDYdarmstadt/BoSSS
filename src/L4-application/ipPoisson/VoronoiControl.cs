@@ -192,7 +192,7 @@ namespace BoSSS.Application.SipPoisson{
 
             Vector[] LShape()
             {
-                double a = 10000;
+                double a = 2;
                 Vector[] LShapedPolygon = new[] {
                     new Vector(-a,a),
                     new Vector(a,a),

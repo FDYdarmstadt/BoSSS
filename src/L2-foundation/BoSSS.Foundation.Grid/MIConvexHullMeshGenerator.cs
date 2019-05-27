@@ -11,8 +11,9 @@ namespace BoSSS.Foundation.Grid.Voronoi
     static class IntersectionMeshGenerator
     {
         public static IntersectionMesh<T> CreateMesh<T>(IList<T> nodes)
-            where T : INode
+            where T : INode, new()
         {
+            ResetDataIDCounters<T>();
             MICHVertex<T>[] startNodes = new MICHVertex<T>[nodes.Count];
             for (int i = 0; i < nodes.Count; ++i)
             {
@@ -23,8 +24,9 @@ namespace BoSSS.Foundation.Grid.Voronoi
         }
 
         public static IntersectionMesh<T> CreateMesh<T>(IList<T> nodes, int startCell_NodeIndice)
-            where T : INode
+            where T : INode, new()
         {
+            ResetDataIDCounters<T>();
             MICHVertex<T>[] startNodes = new MICHVertex<T>[nodes.Count];
             for (int i = 0; i < nodes.Count; ++i)
             {
@@ -34,7 +36,14 @@ namespace BoSSS.Foundation.Grid.Voronoi
             return mesh;
         }
 
+        static void ResetDataIDCounters<T>()
+        {
+            MICHVertex<T>.Clear();
+            MICHDelaunayCell<T>.Clear();
+        }
+
         static IntersectionMesh<T> CreateMesh<T>(IList<MICHVertex<T>> startNodes)
+            where T : INode, new()
         {
             SimpleIdMesh<T> mesh = MICMesher<T>.Create(startNodes);
             IntersectionMesh<T> intersectionMesh = new IntersectionMesh<T>(mesh);
@@ -43,6 +52,7 @@ namespace BoSSS.Foundation.Grid.Voronoi
         }
 
         static IntersectionMesh<T> CreateMesh<T>(IList<MICHVertex<T>> startNodes, int startCell_NodeIndice)
+            where T : INode, new()
         {
             SimpleIdMesh<T> mesh = MICMesher<T>.Create(startNodes);
             IntersectionMesh<T> intersectionMesh = new IntersectionMesh<T>(mesh, startCell_NodeIndice);
@@ -256,8 +266,8 @@ namespace BoSSS.Foundation.Grid.Voronoi
             var mICHMesh = CreateVoronoiMeshFromDLL(startNodes);
             var delaunayCells = mICHMesh.Vertices;
             var delaunayEdges = mICHMesh.Edges;
-
-            SimpleIdMesh<T> mesh = MeshFromVoronoiMesh(delaunayCells, delaunayEdges, startNodes.Count);
+           
+            SimpleIdMesh<T> mesh = MeshFromCellsAndEdges(delaunayCells, delaunayEdges, startNodes.Count);
             return mesh;
         }
 
@@ -265,8 +275,6 @@ namespace BoSSS.Foundation.Grid.Voronoi
             MIConvexHull.VoronoiEdge<MICHVertex<T>, MICHDelaunayCell<T>>>
             CreateVoronoiMeshFromDLL(IList<MICHVertex<T>> nodes)
         {
-            MICHVertex<T>.Clear();
-            MICHDelaunayCell<T>.Clear();
             var mICHMesh = MIConvexHull.VoronoiMesh.Create<
                     MICHVertex<T>,
                     MICHDelaunayCell<T>,
@@ -276,13 +284,14 @@ namespace BoSSS.Foundation.Grid.Voronoi
             return mICHMesh;
         }
 
-        static SimpleIdMesh<T> MeshFromVoronoiMesh(  
+        static SimpleIdMesh<T> MeshFromCellsAndEdges(  
             IEnumerable<MICHDelaunayCell<T>> delaCells, 
             IEnumerable<MIConvexHull.VoronoiEdge<MICHVertex<T>, MICHDelaunayCell<T>>> delaEdges, 
             int numberOfVoronois)
         {
             (VariableCell<T>[] vCells, Vertex[] arrVertices) = 
                 CreateMeshLists(delaCells, delaEdges, numberOfVoronois);
+
             for(int i = 0; i < vCells.Length; ++i)
             {
                 vCells[i].Init();
@@ -346,7 +355,7 @@ namespace BoSSS.Foundation.Grid.Voronoi
                     VariableCell<T> voronoiCell = null;
                     if (cells[vert.ID] == null)
                     {
-                        voronoiCell = new VariableCell<T> { ID = vert.ID, Position = new Vector(vert.Position), Node = vert.Node};
+                        voronoiCell = new VariableCell<T> { ID = vert.ID, Node = vert.Node};
                         cells[vert.ID] = voronoiCell;
                     }
                     else

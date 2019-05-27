@@ -69,6 +69,7 @@ namespace BoSSS.Foundation.Grid.Voronoi
     }
 
     class IntersectionMesh<T> : BoundaryMesh<T>, IIntersectableMesh<Cell<T>, Edge<T>, Line>
+        where T: INode, new()
     {
         bool cutIsFresh = false;
 
@@ -245,12 +246,12 @@ namespace BoSSS.Foundation.Grid.Voronoi
             //New Ridges
             Edge<T>[] newEdges;
             Edge<T>[] newNeighborEdges;
-            Cell<T> newCell = new Cell<T> { Position = cell.Position };
+            Cell<T> newCell = new Cell<T> { Node = new T() };
+            newCell.Node.Position = cell.Node.Position;
             AddCell(newCell);
             CreateEdge(verticesOfNewRidgeBoundary, cell, newCell, out newEdges, out newNeighborEdges);
             //Link Ridges to old neighbors
             InsertEdgesAndVertices(newEdges, newNeighborEdges);
-
 
             //dOnE, DoNe!
             return edge;
