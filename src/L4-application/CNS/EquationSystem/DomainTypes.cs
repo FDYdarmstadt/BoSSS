@@ -75,7 +75,7 @@ namespace CNS.EquationSystem {
                         if (!control.FieldOptions.ContainsKey(IBMVariables.LevelSetGradient[d])) {
                             control.AddVariable(
                                 IBMVariables.LevelSetGradient[d],
-                                control.VariableFields[IBMVariables.LevelSet] - 1);
+                                control.VariableToDegreeMap[IBMVariables.LevelSet] - 1);
                         }
                     }
                     return new IBMFieldSet(gridData, (IBMControl)control);
