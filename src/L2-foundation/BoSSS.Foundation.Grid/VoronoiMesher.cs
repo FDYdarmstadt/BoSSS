@@ -9,26 +9,103 @@ using System.Linq;
 
 namespace BoSSS.Foundation.Grid.Voronoi
 {
+    
+
     static class VoronoiMesher
-        
     {
+        public class Settings
+        {
+            public VoronoiInfo GridInfo;
+            public int NumberOfLloydIterations = 10;
+            public int FirstCellNode_indice = 0;
+        }
+
         /// <summary>
         /// Creates a voronoi mesh inside a polygon.
         /// </summary>
         /// <param name="nodes">
         /// Voronoi nodes: Center of each agglomerated cell. Will not be considered if outside of PolygonBoundary.
         /// </param>
-        /// <param name="info">
+        /// <param name="settings">
         /// Contains information of Voronoi grid,e.g. a boundary polygon.
         /// </param>
         /// <returns></returns>
-        public static VoronoiGrid Polygonal(
+        public static VoronoiGrid Create(
             VoronoiNodes nodes,
-            VoronoiInfo info)
+            Settings settings)
         {
-            BoundaryMesh<VoronoiNode> mesh = Create<VoronoiNode>(nodes.Nodes, info.MesherInfo);
-            VoronoiGrid grid = Convert2VoronoiGrid(mesh, info);
+            BoundaryMesh<VoronoiNode> mesh = Create(nodes.Nodes, settings);
+            VoronoiGrid grid = Convert2VoronoiGrid(mesh, settings.GridInfo);
+
             return grid;
+        }
+
+        static BoundaryMesh<T> Create<T>(IList<T> nodeList, Settings settings)
+            where T : INode, new()
+        {
+            // Create Voronoi mesh
+            // =================================
+            IEnumerator<Line> boundaryLines = Line.GetEnumerator(settings.GridInfo.Boundary);
+            IntersectionMesh<T> mesh = null;
+
+            for (int iLloyd = 0; iLloyd <= settings.NumberOfLloydIterations; ++iLloyd)
+            {
+                // Mesh generation
+                //-------------------------------------
+                AddDistantBoundingNodes(nodeList, settings.GridInfo.BoundingBox);
+                mesh = IntersectionMeshGenerator.CreateMesh(nodeList, settings.FirstCellNode_indice);
+                //Clip
+                //-------------------------------------
+                Intersecter.Intersect(mesh, boundaryLines);
+
+                // Lloyds algorithm (Voronoi relaxation)
+                // -------------------------------------
+                IReadOnlyList<Cell<T>> cells = mesh.GetCells(); //GetInsideCell : Return Cells in order of MeshArray.
+                if (iLloyd != settings.NumberOfLloydIterations)
+                {
+                    MoveNodesTowardsCellCenter(cells, ref settings.FirstCellNode_indice); 
+                }
+                nodeList = mesh.GetNodes();
+            }
+            return mesh;
+        }
+
+        static void AddDistantBoundingNodes<T>(IList<T> nodes, Vector[] boundingBox)
+            where T : INode, new()
+        {
+            Debug.Assert(nodes.Count > 0);
+            foreach(Vector corner in boundingBox)
+            {
+                T cornerNode = new T();
+                cornerNode.Position = corner * 10;
+                nodes.Add(cornerNode);
+            }
+        }
+
+        static void MoveNodesTowardsCellCenter<T>(IReadOnlyList<Cell<T>> Cells, ref int FirstCellNode_indice)
+            where T : INode, new()
+        {
+            //Mark inside nodes
+            //Use Original Nodes List and update. Use LinkedList?! Only iterate and cut some nodes, or insert
+            //Let's give it a try!
+            for (int i = 0; i < Cells.Count; ++i)
+            {
+                Cell<T> cell = Cells[i];
+                double relaxValue = 0.1;
+                Vector CenterOfGravity = new Vector(0, 0);
+                foreach (Vertex vertex in cell.Vertices)
+                {
+                    CenterOfGravity += vertex.Position;
+                }
+                CenterOfGravity.Scale(1.0 / cell.Vertices.Length);
+                CenterOfGravity = CenterOfGravity * relaxValue + new Vector(cell.Node.Position) * (1 - relaxValue);
+
+                cell.Node.Position = CenterOfGravity;
+                if (cell.ID == FirstCellNode_indice)
+                {
+                    FirstCellNode_indice = i;
+                }
+            }
         }
 
         static VoronoiGrid Convert2VoronoiGrid(BoundaryMesh<VoronoiNode> mesh, VoronoiInfo info)
@@ -103,74 +180,6 @@ namespace BoSSS.Foundation.Grid.Voronoi
             grid = new Grid2D(Triangle.Instance);
             grid.Cells = cells_GridCommons.ToArray();
             return (grid, aggregation.ToArray());
-        }
-
-        public static BoundaryMesh<T> Create<T>(IList<T> nodeList, VoronoiMesherInfo info)
-            where T : INode, new()
-        {
-            // Create Voronoi mesh
-            // =================================
-            IEnumerator<Line> boundaryLines = Line.GetEnumerator(info.Boundary);
-            IntersectionMesh<T> mesh = null;
-
-            for (int iLloyd = 0; iLloyd <= info.NumberOfLloydIterations; ++iLloyd)
-            {
-                // Mesh generation
-                //-------------------------------------
-                AddDistantBoundingNodes(nodeList, info.BoundingBox);
-                mesh = IntersectionMeshGenerator.CreateMesh(nodeList, info.FirstCellNode_indice);
-                //Clip
-                //-------------------------------------
-                Intersecter.Intersect(mesh, boundaryLines);
-
-                // Lloyds algorithm (Voronoi relaxation)
-                // -------------------------------------
-                IReadOnlyList<Cell<T>> cells = mesh.GetCells(); //GetInsideCell : Return Cells in order of MeshArray.
-                if (iLloyd != info.NumberOfLloydIterations)
-                {
-                    MoveNodesTowardsCellCenter(cells, ref info.FirstCellNode_indice); 
-                }
-                nodeList = mesh.GetNodes();
-            }
-            return mesh;
-        }
-
-        static void AddDistantBoundingNodes<T>(IList<T> nodes, Vector[] boundingBox)
-            where T : INode, new()
-        {
-            Debug.Assert(nodes.Count > 0);
-            foreach(Vector corner in boundingBox)
-            {
-                T cornerNode = new T();
-                cornerNode.Position = corner * 10;
-                nodes.Add(cornerNode);
-            }
-        }
-
-        static void MoveNodesTowardsCellCenter<T>(IReadOnlyList<Cell<T>> Cells, ref int FirstCellNode_indice)
-            where T : INode, new()
-        {
-            //Mark inside nodes
-            //Use Original Nodes List and update. Use LinkedList?! Only iterate and cut some nodes, or insert
-            //Let's give it a try!
-            for (int i = 0; i < Cells.Count; ++i)
-            {
-                Cell<T> cell = Cells[i];
-                double relaxValue = 0.1;
-                Vector CenterOfGravity = new Vector(0, 0);
-                foreach (Vertex vertex in cell.Vertices)
-                {
-                    CenterOfGravity += vertex.Position;
-                }
-                CenterOfGravity.Scale(1.0 / cell.Vertices.Length);
-                CenterOfGravity = CenterOfGravity * relaxValue + new Vector(cell.Node.Position) * (1 - relaxValue);
-
-                cell.Node.Position = CenterOfGravity;
-                if (cell.ID == FirstCellNode_indice)
-                {
-                    FirstCellNode_indice = i;
-                }
-            }
         }
     }
 }

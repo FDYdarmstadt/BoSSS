@@ -11,13 +11,13 @@ namespace BoSSS.Foundation.Grid.Voronoi
 {
     static class VoronoiIDProvider
     {
-        static long globalID = 0;
+        static ulong globalID = 0;
 
-        static Queue<long> returnedIds = new Queue<long>();
+        static Queue<ulong> returnedIds = new Queue<ulong>();
 
-        public static long GetID()
+        public static ulong GetID()
         {
-            long id;
+            ulong id;
             if(returnedIds.Count > 0)
             {
                 id = returnedIds.Dequeue();
@@ -30,7 +30,7 @@ namespace BoSSS.Foundation.Grid.Voronoi
             return id;
         }
 
-        public static void ReturnID(long id)
+        public static void ReturnID(ulong id)
         {
             returnedIds.Enqueue(id);
         }
@@ -38,9 +38,9 @@ namespace BoSSS.Foundation.Grid.Voronoi
 
     public class VoronoiNodes : MultidimensionalArrayOrList<VoronoiNode>
     {
-        long[] globalIds;
+        ulong[] globalIds;
 
-        public long[] GlobalIds {
+        public ulong[] GlobalIds {
             get { return globalIds; }
         }
 
@@ -72,14 +72,14 @@ namespace BoSSS.Foundation.Grid.Voronoi
 
         void SetGlobalIds()
         {
-            globalIds = new long[Count];
+            globalIds = new ulong[Count];
             for(int i = 0; i < Count; ++i)
             {
                 globalIds[i] = VoronoiIDProvider.GetID();
             }
         }
 
-        public VoronoiNodes(MultidimensionalArray positions, long[] globalIds)
+        public VoronoiNodes(MultidimensionalArray positions, ulong[] globalIds)
             : base(positions)
         {
             if (positions.GetLength(0) != globalIds.Length)
@@ -113,7 +113,7 @@ namespace BoSSS.Foundation.Grid.Voronoi
         {
             InitializeVelocity(nodes.Count, nodes[0].Dim);
             MultidimensionalArray positions = MultidimensionalArray.Create(nodes.Count, nodes[0].Dim);
-            globalIds = new long[nodes.Count];
+            globalIds = new ulong[nodes.Count];
             for (int i = 0; i < nodes.Count; ++i)
             {
                 Vector position = nodes[i].Position;
@@ -131,7 +131,7 @@ namespace BoSSS.Foundation.Grid.Voronoi
 
     public class VoronoiNode : INode
     {
-        public long GlobalID { get; }
+        public ulong GlobalID { get; }
 
         public Vector Position { get; set; }
 
@@ -150,7 +150,7 @@ namespace BoSSS.Foundation.Grid.Voronoi
             Position = position;
         }
 
-        public VoronoiNode(Vector position, long globalId)
+        public VoronoiNode(Vector position, ulong globalId)
         {
             GlobalID = globalId;
             Position = position;

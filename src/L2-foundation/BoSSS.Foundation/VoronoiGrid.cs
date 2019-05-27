@@ -55,14 +55,9 @@ namespace BoSSS.Foundation.Grid.Voronoi {
 
     public class VoronoiInfo
     {
-        public VoronoiMesherInfo MesherInfo;
-    }
-
-    public class VoronoiMesherInfo
-    {
         public Vector[] BoundingBox;
         public Vector[] Boundary;
-        public int NumberOfLloydIterations = 10;
-        public int FirstCellNode_indice = 0;
     }
+
+    
 }

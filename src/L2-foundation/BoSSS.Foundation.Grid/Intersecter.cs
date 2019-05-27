@@ -46,9 +46,6 @@ namespace BoSSS.Foundation.Grid.Voronoi
 
     static class Intersecter
     {
-        /// <summary>
-        /// 
-        /// </summary>
         public static void Intersect<TCell, TRidge, TLine>(IIntersectableMesh<TCell, TRidge, TLine> vMesh,
             IEnumerator<TLine> boundary)
         {
