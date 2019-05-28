@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace BoSSS.Foundation.Grid.Voronoi
+namespace BoSSS.Foundation.Grid.Voronoi.Meshing
 {
     enum IntersectionCase
     {

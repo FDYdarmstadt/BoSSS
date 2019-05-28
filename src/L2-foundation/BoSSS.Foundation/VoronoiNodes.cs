@@ -50,7 +50,7 @@ namespace BoSSS.Foundation.Grid.Voronoi
             get { return Array; }
         }
 
-        public List<VoronoiNode> Nodes {
+        public IList<VoronoiNode> Nodes {
             get { return List; }
         }
 
@@ -91,14 +91,14 @@ namespace BoSSS.Foundation.Grid.Voronoi
             InitializeVelocity(Count, dimension);
         }
 
-        public VoronoiNodes(List<VoronoiNode> nodes)
+        public VoronoiNodes(IList<VoronoiNode> nodes)
             : base(nodes)
         {
             int dimension = nodes[0].Dim;
             InitializeVelocity(Count, dimension);
         }
 
-        protected override List<VoronoiNode> ToList(MultidimensionalArray positions)
+        protected override IList<VoronoiNode> ToList(MultidimensionalArray positions)
         {
             List<VoronoiNode> nodeList = new List<VoronoiNode>(positions.GetLength(0));
             for (int i = 0; i < positions.GetLength(0); ++i)
@@ -109,7 +109,7 @@ namespace BoSSS.Foundation.Grid.Voronoi
             return nodeList;
         }
 
-        protected override MultidimensionalArray ToArray(List<VoronoiNode> nodes)
+        protected override MultidimensionalArray ToArray(IList<VoronoiNode> nodes)
         {
             InitializeVelocity(nodes.Count, nodes[0].Dim);
             MultidimensionalArray positions = MultidimensionalArray.Create(nodes.Count, nodes[0].Dim);
@@ -124,12 +124,7 @@ namespace BoSSS.Foundation.Grid.Voronoi
         }
     }
 
-    public interface INode
-    {
-        Vector Position { get; set; }
-    }
-
-    public class VoronoiNode : INode
+    public class VoronoiNode
     {
         public ulong GlobalID { get; }
 
@@ -145,8 +140,8 @@ namespace BoSSS.Foundation.Grid.Voronoi
         }
 
         public VoronoiNode(Vector position)
+            : this()
         {
-            GlobalID = VoronoiIDProvider.GetID();
             Position = position;
         }
 
@@ -162,17 +157,14 @@ namespace BoSSS.Foundation.Grid.Voronoi
         enum DataState { MultiDimensionalArray, List };
         DataState state;
 
-        List<T> list;
+        IList<T> list;
         MultidimensionalArray array;
-
-        Func<MultidimensionalArray, List<T>> ArrayToListCast;
-        Func<List<T>, MultidimensionalArray> ListToArrayCast;
 
         protected int Count {
             get { return DataStateMatches(DataState.List) ? list.Count : array.GetLength(0); }
         }
 
-        protected List<T> List {
+        protected IList<T> List {
             get {
                 if (!DataStateMatches(DataState.List))
                     UpdateList();
@@ -211,11 +203,11 @@ namespace BoSSS.Foundation.Grid.Voronoi
             array = ToArray(list);
         }
 
-        protected abstract MultidimensionalArray ToArray(List<T> list);
+        protected abstract MultidimensionalArray ToArray(IList<T> list);
 
-        protected abstract List<T> ToList(MultidimensionalArray array);
+        protected abstract IList<T> ToList(MultidimensionalArray array);
 
-        public MultidimensionalArrayOrList(List<T> list)
+        public MultidimensionalArrayOrList(IList<T> list)
         {
             state = DataState.List;
             this.list = list;

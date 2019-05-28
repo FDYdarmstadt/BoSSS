@@ -10,12 +10,13 @@ using BoSSS.Foundation.Grid.RefElements;
 using BoSSS.Platform.LinAlg;
 using BoSSS.Platform;
 
-namespace BoSSS.Foundation.Grid.Voronoi
+namespace BoSSS.Foundation.Grid.Voronoi.Meshing
 {
     class Vertex
     {
         public Vector Position { get; set; }
         public int ID { get; set; }
+
         public static explicit operator Vector(Vertex vtx)
         {
             return vtx.Position;
@@ -26,7 +27,7 @@ namespace BoSSS.Foundation.Grid.Voronoi
     {
         public bool IsBoundary = false;
         public Edge<T> Twin { get; set; }
-        public Cell<T> Cell { get; set; }
+        public MeshCell<T> Cell { get; set; }
         public Vertex Start { get; set; }
         public Vertex End { get; set; }
     }
@@ -53,11 +54,11 @@ namespace BoSSS.Foundation.Grid.Voronoi
         }
     }
 
-    enum CType { Inside, NotDetermined }
+    enum MeshCellType { Inside, NotDetermined }
 
-    class Cell<T>
+    class MeshCell<T>
     {
-        public CType type = CType.NotDetermined;
+        public MeshCellType type = MeshCellType.NotDetermined;
 
         public T Node;
         public int ID { get; set; }
@@ -70,32 +71,32 @@ namespace BoSSS.Foundation.Grid.Voronoi
 
     interface IIdMesh<T>
     {
-        IReadOnlyList<Cell<T>> Cells { get; }
+        IReadOnlyList<MeshCell<T>> Cells { get; }
         IReadOnlyList<Vertex> Vertices { get; }
-        int AddCell(Cell<T> cell);
-        Cell<T> GetCell(int ID);
+        int AddCell(MeshCell<T> cell);
+        MeshCell<T> GetCell(int ID);
         int AddVertex(Vertex vert);
         Vertex GetVertex(int ID);
     }
 
     class SimpleIdMesh<T> : IIdMesh<T>
     {
-        protected List<Cell<T>> cells;
+        protected List<MeshCell<T>> cells;
         protected List<Vertex> vertices;
 
         public SimpleIdMesh()
         {
-            cells = new List<Cell<T>>();
+            cells = new List<MeshCell<T>>();
             vertices = new List<Vertex>();
         }
 
-        public SimpleIdMesh(List<Cell<T>> Cells, List<Vertex> Vertices)
+        public SimpleIdMesh(List<MeshCell<T>> Cells, List<Vertex> Vertices)
         {
             cells = Cells;
             vertices = Vertices;
         }
 
-        public IReadOnlyList<Cell<T>> Cells {
+        public IReadOnlyList<MeshCell<T>> Cells {
             get {
                 return cells;
             }
@@ -107,14 +108,14 @@ namespace BoSSS.Foundation.Grid.Voronoi
             }
         }
 
-        public int AddCell(Cell<T> cell)
+        public int AddCell(MeshCell<T> cell)
         {
             cell.ID = cells.Count;
             cells.Add(cell);
             return cell.ID;
         }
 
-        public Cell<T> GetCell(int ID)
+        public MeshCell<T> GetCell(int ID)
         {
             return cells[ID];
         }
@@ -141,14 +142,14 @@ namespace BoSSS.Foundation.Grid.Voronoi
             mesh = Mesh;
         }
 
-        public Cell<T> getNeighbour(Edge<T> ridge)
+        public MeshCell<T> getNeighbour(Edge<T> ridge)
         {
             return ridge.Twin.Cell;
         }
 
         public void InsertEdgesAndVertices(params Edge<T>[] additionalEdges)
         {
-            Cell<T> cell = additionalEdges[0].Cell;
+            MeshCell<T> cell = additionalEdges[0].Cell;
             int countAdditionalRidges = additionalEdges.Length;
             Edge<T>[] newRidges = new Edge<T>[cell.Edges.Length + countAdditionalRidges];
             bool notInsertedYet = true;
@@ -184,8 +185,8 @@ namespace BoSSS.Foundation.Grid.Voronoi
 
         public void InsertEdgesAndVertices(Edge<T>[] newEdge, Edge<T>[] newNeighborEdges)
         {
-            Cell<T> cell = newEdge[0].Cell;
-            Cell<T> emptyNeighCell = newNeighborEdges[0].Cell;
+            MeshCell<T> cell = newEdge[0].Cell;
+            MeshCell<T> emptyNeighCell = newNeighborEdges[0].Cell;
             Edge<T>[] oldRidges = cell.Edges;
 
             List<Edge<T>> cellRidges = null;
@@ -289,7 +290,7 @@ namespace BoSSS.Foundation.Grid.Voronoi
             return newVertex;
         }
 
-        public void CreateEdge(Vertex[] vertices, Cell<T> cell, Cell<T> neighborCell, out Edge<T>[] ridges, out Edge<T>[] twinEdges)
+        public void CreateEdge(Vertex[] vertices, MeshCell<T> cell, MeshCell<T> neighborCell, out Edge<T>[] ridges, out Edge<T>[] twinEdges)
         {
             int count = vertices.Length - 1;
             ridges = new Edge<T>[count];
@@ -318,26 +319,26 @@ namespace BoSSS.Foundation.Grid.Voronoi
         
         #region IIdMesh
 
-        protected IReadOnlyList<Cell<T>> Cells => mesh.Cells;
+        protected IReadOnlyList<MeshCell<T>> Cells => mesh.Cells;
 
         protected IReadOnlyList<Vertex> Vertices => mesh.Vertices;
 
-        public int AddCell(Cell<T> cell)
+        protected int AddCell(MeshCell<T> cell)
         {
             return mesh.AddCell(cell);
         }
 
-        public Cell<T> GetCell(int ID)
+        protected MeshCell<T> GetCell(int ID)
         {
             return mesh.GetCell(ID);
         }
 
-        public int AddVertex(Vertex vert)
+        protected int AddVertex(Vertex vert)
         {
             return mesh.AddVertex(vert);
         }
 
-        public Vertex GetVertex(int ID)
+        protected Vertex GetVertex(int ID)
         {
             return mesh.GetVertex(ID);
         }
@@ -347,11 +348,11 @@ namespace BoSSS.Foundation.Grid.Voronoi
 
     class BoundaryMesh<T> : Mesh<T>
     {
-        List<Cell<T>> insideCells;
+        List<MeshCell<T>> insideCells;
 
         List<T> insideNodes;
 
-        protected Cell<T> insideCell;
+        protected MeshCell<T> insideCell;
 
         public int Count {
             get {
@@ -359,7 +360,7 @@ namespace BoSSS.Foundation.Grid.Voronoi
             }
         }
 
-        public virtual IReadOnlyList<Cell<T>> GetCells()
+        public virtual IReadOnlyList<MeshCell<T>> GetCells()
         {
             if (insideCells == null)
             {
@@ -369,7 +370,7 @@ namespace BoSSS.Foundation.Grid.Voronoi
             
         }
 
-        public List<T> GetNodes()
+        public IList<T> GetNodes()
         {
             if(insideNodes == null)
             {
@@ -390,13 +391,13 @@ namespace BoSSS.Foundation.Grid.Voronoi
         /// Enumeration starts with this cell and then return its neighbors and so on.
         /// </param>
         /// <returns></returns>
-        public IEnumerable<Cell<T>> CellsOnSameSideOfBoundary_Recursive(Cell<T> cell)
+        public IEnumerable<MeshCell<T>> CellsOnSameSideOfBoundary_Recursive(MeshCell<T> cell)
         {
             BitArray visited = new BitArray(Cells.Count);
             return YieldConnectedCells(cell, visited);
         }
 
-        private IEnumerable<Cell<T>> YieldConnectedCells(Cell<T> cell, BitArray visited)
+        private IEnumerable<MeshCell<T>> YieldConnectedCells(MeshCell<T> cell, BitArray visited)
         {
             visited[cell.ID] = true;
             yield return cell;
@@ -406,7 +407,7 @@ namespace BoSSS.Foundation.Grid.Voronoi
                 Edge<T> newRidge = edge.Twin;
                 if (!visited[newRidge.Cell.ID] && !newRidge.IsBoundary)
                 {
-                    foreach (Cell<T> neighbor in YieldConnectedCells(newRidge.Cell, visited))
+                    foreach (MeshCell<T> neighbor in YieldConnectedCells(newRidge.Cell, visited))
                     {
                         yield return neighbor;
                     }
@@ -421,15 +422,15 @@ namespace BoSSS.Foundation.Grid.Voronoi
         /// Enumeration starts with this cell and then return its neighbors and so on.
         /// </param>
         /// <returns></returns>
-        public IEnumerable<Cell<T>> CellsOnSameSideOfBoundary_Iterative(Cell<T> cell)
+        public IEnumerable<MeshCell<T>> CellsOnSameSideOfBoundary_Iterative(MeshCell<T> cell)
         {
             BitArray visited = new BitArray(Cells.Count);
-            LinkedList<Cell<T>> cells = new LinkedList<Cell<T>>();
+            LinkedList<MeshCell<T>> cells = new LinkedList<MeshCell<T>>();
             cells.AddFirst(cell);
             visited[cell.ID] = true;
             while (cells.Count > 0)
             {
-                Cell<T> current = cells.First.Value;
+                MeshCell<T> current = cells.First.Value;
                 yield return current;
                 cells.RemoveFirst();
                 foreach (Edge<T> edge in current.Edges)
@@ -446,23 +447,23 @@ namespace BoSSS.Foundation.Grid.Voronoi
 
         protected void DetermineInsideCells()
         {
-            insideCells = SetCellTypesOnSameSideOfBoundary(insideCell, CType.Inside, ref insideCells);
+            insideCells = SetCellTypesOnSameSideOfBoundary(insideCell, MeshCellType.Inside, ref insideCells);
         }
 
         void DetermineInsideNodes()
         {
-            IReadOnlyList<Cell<T>> cells = GetCells();
+            IReadOnlyList<MeshCell<T>> cells = GetCells();
             insideNodes = new List<T>(cells.Count);
-            foreach(Cell<T> cell in cells)
+            foreach(MeshCell<T> cell in cells)
             {
                 insideNodes.Add(cell.Node);
             }
         }
 
-        protected List<Cell<T>> SetCellTypesOnSameSideOfBoundary(Cell<T> startingCell, CType type, ref List<Cell<T>> cells)
+        protected List<MeshCell<T>> SetCellTypesOnSameSideOfBoundary(MeshCell<T> startingCell, MeshCellType type, ref List<MeshCell<T>> cells)
         {
-            List<Cell<T>> sameSideCells = new List<Cell<T>>();
-            foreach (Cell<T> cell in CellsOnSameSideOfBoundary_Iterative(startingCell))
+            List<MeshCell<T>> sameSideCells = new List<MeshCell<T>>();
+            foreach (MeshCell<T> cell in CellsOnSameSideOfBoundary_Iterative(startingCell))
             {
                 cell.type = type;
                 sameSideCells.Add(cell);

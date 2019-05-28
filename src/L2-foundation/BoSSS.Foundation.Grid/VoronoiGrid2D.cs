@@ -9,6 +9,7 @@ using BoSSS.Foundation.Grid.Aggregation;
 using BoSSS.Foundation.Grid.Classic;
 using BoSSS.Foundation.Grid.RefElements;
 using BoSSS.Platform.LinAlg;
+using BoSSS.Foundation.Grid.Voronoi.Meshing;
 using BoSSS.Platform;
 
 namespace BoSSS.Foundation.Grid.Voronoi
@@ -69,7 +70,7 @@ namespace BoSSS.Foundation.Grid.Voronoi
                 },
                 NumberOfLloydIterations = NoOfLyyodsIter
             };
-            return VoronoiMesher.Create(nodes, mesherSettings);
+            return VoronoiMesher.CreateGrid(nodes, mesherSettings);
         }
 
         /// <summary>
@@ -108,7 +109,7 @@ namespace BoSSS.Foundation.Grid.Voronoi
                 NumberOfLloydIterations = NoOfLyyodsIter,
                 FirstCellNode_indice = FirstCellNode_Indice
             };
-            return VoronoiMesher.Create(nodes, settings);
+            return VoronoiMesher.CreateGrid(nodes, settings);
         }
 
         static Vector[] BoundingBox(Vector[] polygon)
@@ -228,4 +229,3 @@ namespace BoSSS.Foundation.Grid.Voronoi
         }
     }
 }
-

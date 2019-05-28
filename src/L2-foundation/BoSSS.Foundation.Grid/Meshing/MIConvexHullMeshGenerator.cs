@@ -6,12 +6,12 @@ using System.Text;
 using System.Threading.Tasks;
 using BoSSS.Platform.LinAlg;
 
-namespace BoSSS.Foundation.Grid.Voronoi
+namespace BoSSS.Foundation.Grid.Voronoi.Meshing
 {
     static class IntersectionMeshGenerator
     {
         public static IntersectionMesh<T> CreateMesh<T>(IList<T> nodes)
-            where T : INode, new()
+            where T : IMesherNode, new()
         {
             ResetDataIDCounters<T>();
             MICHVertex<T>[] startNodes = new MICHVertex<T>[nodes.Count];
@@ -24,7 +24,7 @@ namespace BoSSS.Foundation.Grid.Voronoi
         }
 
         public static IntersectionMesh<T> CreateMesh<T>(IList<T> nodes, int startCell_NodeIndice)
-            where T : INode, new()
+            where T : IMesherNode, new()
         {
             ResetDataIDCounters<T>();
             MICHVertex<T>[] startNodes = new MICHVertex<T>[nodes.Count];
@@ -43,7 +43,7 @@ namespace BoSSS.Foundation.Grid.Voronoi
         }
 
         static IntersectionMesh<T> CreateMesh<T>(IList<MICHVertex<T>> startNodes)
-            where T : INode, new()
+            where T : IMesherNode, new()
         {
             SimpleIdMesh<T> mesh = MICMesher<T>.Create(startNodes);
             IntersectionMesh<T> intersectionMesh = new IntersectionMesh<T>(mesh);
@@ -52,7 +52,7 @@ namespace BoSSS.Foundation.Grid.Voronoi
         }
 
         static IntersectionMesh<T> CreateMesh<T>(IList<MICHVertex<T>> startNodes, int startCell_NodeIndice)
-            where T : INode, new()
+            where T : IMesherNode, new()
         {
             SimpleIdMesh<T> mesh = MICMesher<T>.Create(startNodes);
             IntersectionMesh<T> intersectionMesh = new IntersectionMesh<T>(mesh, startCell_NodeIndice);
@@ -176,7 +176,7 @@ namespace BoSSS.Foundation.Grid.Voronoi
         }
     }
 
-    class VariableCell<T> : Cell<T>
+    class VariableCell<T> : MeshCell<T>
     {
         public VariableCell()
         {
@@ -296,7 +296,7 @@ namespace BoSSS.Foundation.Grid.Voronoi
             {
                 vCells[i].Init();
             }
-            List<Cell<T>> cells = new List<Cell<T>>(vCells);
+            List<MeshCell<T>> cells = new List<MeshCell<T>>(vCells);
             List<Vertex> vertices = new List<Vertex>(arrVertices);
             SimpleIdMesh<T> mesh = new SimpleIdMesh<T>(cells, vertices);
             return mesh;

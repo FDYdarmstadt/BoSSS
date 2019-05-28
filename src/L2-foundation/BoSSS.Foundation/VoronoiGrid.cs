@@ -58,6 +58,4 @@ namespace BoSSS.Foundation.Grid.Voronoi {
         public Vector[] BoundingBox;
         public Vector[] Boundary;
     }
-
-    
 }

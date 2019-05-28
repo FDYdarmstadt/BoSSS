@@ -6,7 +6,7 @@ using BoSSS.Platform.LinAlg;
 using BoSSS.Platform;
 using BoSSS.Foundation.Grid.Aggregation;
 
-namespace BoSSS.Foundation.Grid.Voronoi
+namespace BoSSS.Foundation.Grid.Voronoi.Meshing
 {
     class ArrayEnum<T> : IEnumerator<T>
     {
@@ -68,8 +68,8 @@ namespace BoSSS.Foundation.Grid.Voronoi
         public Vertex end { get; set; }
     }
 
-    class IntersectionMesh<T> : BoundaryMesh<T>, IIntersectableMesh<Cell<T>, Edge<T>, Line>
-        where T: INode, new()
+    class IntersectionMesh<T> : BoundaryMesh<T>, IIntersectableMesh<MeshCell<T>, Edge<T>, Line>
+        where T: IMesherNode, new()
     {
         bool cutIsFresh = false;
 
@@ -91,7 +91,7 @@ namespace BoSSS.Foundation.Grid.Voronoi
 
         static EdgeComparer<T> ridgeComparer = new EdgeComparer<T>();
 
-        public override IReadOnlyList<Cell<T>> GetCells() {
+        public override IReadOnlyList<MeshCell<T>> GetCells() {
             if (cutIsFresh)
             {
                 DetermineInsideCells();
@@ -101,7 +101,7 @@ namespace BoSSS.Foundation.Grid.Voronoi
         }
 
         static double accuracy = 1e-10;
-        public (Cell<T>, IEnumerator<Edge<T>>) GetFirst(Line boundaryLine)
+        public (MeshCell<T>, IEnumerator<Edge<T>>) GetFirst(Line boundaryLine)
         {
             //Find cell that contains boundaryLine.Start;
             bool foundFirstCell = false;
@@ -113,7 +113,7 @@ namespace BoSSS.Foundation.Grid.Voronoi
             }
 
             //Check if boundaryLine.Start is still in cell, else search neighborhood
-            foreach (Cell<T> cell in CellsOnSameSideOfBoundary_Iterative(insideCell))
+            foreach (MeshCell<T> cell in CellsOnSameSideOfBoundary_Iterative(insideCell))
             {
                 Vector[] verts = Array.ConvertAll(cell.Vertices, item => (Vector)item);
                 //At this point, every cell is convex!
@@ -214,9 +214,9 @@ namespace BoSSS.Foundation.Grid.Voronoi
             }
         }
 
-        public (Cell<T>, IEnumerator<Edge<T>>) getNeighborFromEdgeNeighbor(Edge<T> edge)
+        public (MeshCell<T>, IEnumerator<Edge<T>>) getNeighborFromEdgeNeighbor(Edge<T> edge)
         {
-            Cell<T> newCell = getNeighbour(edge);
+            MeshCell<T> newCell = getNeighbour(edge);
             AfterCutRidgeEnumerator ridgeEnum = new AfterCutRidgeEnumerator(newCell.Edges, edge);
 
             return (newCell, ridgeEnum);
@@ -224,7 +224,7 @@ namespace BoSSS.Foundation.Grid.Voronoi
 
         public Edge<T> Subdivide(Edge<T> edge, List<Line> lines, double alpha)
         {
-            Cell<T> cell = edge.Cell;
+            MeshCell<T> cell = edge.Cell;
             //Divide Ridge and update Ridge Arrays
             //-------------------------------------
             Vertex newVertex = DivideEdge(edge, alpha, out Edge<T> newRidge);
@@ -246,7 +246,7 @@ namespace BoSSS.Foundation.Grid.Voronoi
             //New Ridges
             Edge<T>[] newEdges;
             Edge<T>[] newNeighborEdges;
-            Cell<T> newCell = new Cell<T> { Node = new T() };
+            MeshCell<T> newCell = new MeshCell<T> { Node = new T() };
             newCell.Node.Position = cell.Node.Position;
             AddCell(newCell);
             CreateEdge(verticesOfNewRidgeBoundary, cell, newCell, out newEdges, out newNeighborEdges);
@@ -327,7 +327,7 @@ namespace BoSSS.Foundation.Grid.Voronoi
 
         public void CloseMesh(List<Line> lines, Edge<T> firstCutEdge)
         {
-            Cell<T> cell = firstCutEdge.Cell;
+            MeshCell<T> cell = firstCutEdge.Cell;
             //Divide this cell
             //================================================================
             //NewVertices
@@ -346,7 +346,7 @@ namespace BoSSS.Foundation.Grid.Voronoi
             //New Ridges
             Edge<T>[] newRidges;
             Edge<T>[] newNeighborRidges;
-            Cell<T> newCell = new Cell<T>();
+            MeshCell<T> newCell = new MeshCell<T>();
             AddCell(newCell);
             CreateEdge(verticesOfNewRidgeBoundary, cell, newCell, out newRidges, out newNeighborRidges);
             InsertEdgesAndVertices(newRidges, newNeighborRidges);
@@ -383,7 +383,7 @@ namespace BoSSS.Foundation.Grid.Voronoi
 
         public void VertexCut(Edge<T> edge, double alphaCut)
         {
-            Cell<T> cell = edge.Cell;
+            MeshCell<T> cell = edge.Cell;
             Vertex newOldVertex = edge.End;
             cell.IntersectionVertex = newOldVertex.ID;
             cell = edge.Twin.Cell;
@@ -505,12 +505,12 @@ namespace BoSSS.Foundation.Grid.Voronoi
 
         public Edge<T> SubdivideWithoutNewVertex(Edge<T> edge, List<Line> lines)
         {
-            Cell<T> cell = edge.Cell;
+            MeshCell<T> cell = edge.Cell;
             Vertex cutVertex = edge.End;
             IEnumerator<Edge<T>> neighEdges = getConnectedRidgeEnum(edge);
             while (neighEdges.MoveNext())
             {
-                Cell<T> neighbor = neighEdges.Current.Cell;
+                MeshCell<T> neighbor = neighEdges.Current.Cell;
                 if (neighbor.ID != cell.ID)
                     neighbor.IntersectionVertex = cutVertex.ID;
             }
@@ -528,7 +528,7 @@ namespace BoSSS.Foundation.Grid.Voronoi
             //New Ridges
             Edge<T>[] newEdges;
             Edge<T>[] newNeighborEdges;
-            Cell<T> newCell = new Cell<T>();
+            MeshCell<T> newCell = new MeshCell<T>();
             AddCell(newCell);
             CreateEdge(verticesOfNewEdgeBoundary, cell, newCell, out newEdges, out newNeighborEdges);
             //Link Ridges to old neighbors
