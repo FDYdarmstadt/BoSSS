@@ -1,22 +1,54 @@
-﻿using BoSSS.Foundation.Grid.Classic;
-using BoSSS.Foundation.Grid.RefElements;
-using BoSSS.Platform;
+﻿using BoSSS.Foundation.Voronoi;
 using BoSSS.Platform.LinAlg;
-using ilPSP;
 using System.Collections.Generic;
-using System.Diagnostics;
-using System.Linq;
-using System;
 
 namespace BoSSS.Foundation.Grid.Voronoi.Meshing
 {
-    public static class VoronoiMesher
+    public class Node : IMesherNode, IVoronoiNodeCastable
     {
-        public static VoronoiGrid CreateGrid(VoronoiNodes nodes, TrackedVoronoiMesher.Settings settings)
+        VoronoiNode node;
+
+        public Node()
         {
-            TrackedVoronoiGrid grid = TrackedVoronoiMesher.CreateGrid(nodes, settings);
-            return grid.Result;
+            node = new VoronoiNode();
+        }
+
+        public Node(VoronoiNode node)
+        {
+            this.node = node;
+        }
+
+        public Vector Position {
+            get { return node.Position; }
+            set { node.Position = value; }
+        }
+
+        public VoronoiNode AsVoronoiNode()
+        {
+            return node;
+        }
+    } 
+
+    public class VoronoiMesher : Mesher
+    {
+        List<Node> WrapInMesherNodes(IList<VoronoiNode> voronoiNodes)
+        {
+            List<Node> wrappedNodes = new List<Node>(voronoiNodes.Count);
+            for (int i = 0; i < voronoiNodes.Count; ++i)
+            {
+                Node wrappedNode = new Node(voronoiNodes[i]);
+                wrappedNodes.Add(wrappedNode);
+            }
+            return wrappedNodes;
+        }
+
+        public VoronoiGrid CreateGrid(VoronoiNodes nodes, Settings settings)
+        {
+            List<Node> mesherNodes = WrapInMesherNodes(nodes.Nodes);
+            BoundaryMesh<Node> mesh = CreateMesh(mesherNodes, settings);
+
+            VoronoiGrid grid = GridConverter.Convert2VoronoiGrid(mesh, settings.GridInfo);
+            return grid;
         }
     }
-
 }

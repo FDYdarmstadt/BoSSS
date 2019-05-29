@@ -11,7 +11,7 @@ using BoSSS.Platform.LinAlg;
 
 namespace BoSSS.Foundation.Grid.Voronoi.Meshing
 {
-    interface IVoronoiNodeCastable
+    public interface IVoronoiNodeCastable
     {
         VoronoiNode AsVoronoiNode();
     }
