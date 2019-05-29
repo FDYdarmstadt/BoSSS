@@ -8,16 +8,18 @@ namespace BoSSS.Foundation.Grid.Voronoi
 {
     public class ArrayMap
     {
-        ArrayConnection[] map;
+        public ArrayConnection[] Map;
+
+        public ArrayMap() { }
 
         public ArrayMap(ArrayConnection[] map)
         {
-            this.map = map;
+            this.Map = map;
         }
 
         public ArrayConnection To(int j)
         {
-            return map[j];
+            return Map[j];
         }
 
         public ArrayMap Combine(ArrayMap map)
@@ -38,11 +40,5 @@ namespace BoSSS.Foundation.Grid.Voronoi
         public Connection Type;
 
         public int J;
-    }
-
-    public class MovingGrid
-    {
-        public ArrayMap Grid2PredecessorGrid;
-        public VoronoiGrid Grid;
     }
 }

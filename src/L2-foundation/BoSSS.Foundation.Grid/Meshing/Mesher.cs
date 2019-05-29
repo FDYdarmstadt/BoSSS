@@ -13,7 +13,7 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing
         Vector Position { get; set; }
     }
 
-    static class Mesher
+    class Mesher
     {
         public class Settings
         {
