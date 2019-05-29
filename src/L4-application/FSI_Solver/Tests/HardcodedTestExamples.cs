@@ -606,7 +606,7 @@ namespace BoSSS.Application.FSI_Solver {
             // Fluid Properties
             C.PhysicalParameters.rho_A = 1.0;
             C.PhysicalParameters.mu_A = 0.1;
-            C.CoefficientOfRestitution = 1;
+            C.CoefficientOfRestitution = 0;
 
             // Particle Properties
             //C.PhysicalParameters.mu_B = 0.1;
@@ -632,7 +632,7 @@ namespace BoSSS.Application.FSI_Solver {
                 thickness_P = 0.2,
                 length_P = 0.4,
                 //radius_P = 0.4,
-                superEllipsoidExponent = 12,
+                superEllipsoidExponent = 4,
                 GravityVertical = -9.81,
                 IncludeRotation = false,
                 IncludeTranslation = false,
@@ -674,7 +674,7 @@ namespace BoSSS.Application.FSI_Solver {
             C.dtMax = dt;
             C.dtMin = dt;
             C.Endtime = 10.0;
-            C.NoOfTimesteps = 8000;
+            C.NoOfTimesteps = 50;
 
             // haben fertig...
             // ===============

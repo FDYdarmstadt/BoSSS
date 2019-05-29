@@ -84,18 +84,6 @@ namespace BoSSS.Application.FSI_Solver {
                 return (1 / 4.0) * Mass_P * (length_P * length_P + thickness_P * thickness_P);
             }
         }
-        //override public void UpdateLevelSetFunction()
-        //{
-        //    double alpha = -(Angle[0]);
-        //    Phi_P = delegate (double[] X, double t) {
-        //        double r;
-        //        r = -Math.Pow(((X[0] - Position[0][0]) * Math.Cos(alpha) - (X[1] - Position[0][1]) * Math.Sin(alpha)) / length_P, superEllipsoidExponent) + -Math.Pow(((X[0] - Position[0][0]) * Math.Sin(alpha) + (X[1] - Position[0][1]) * Math.Cos(alpha)) / thickness_P, 
-        //            superEllipsoidExponent) + 1;
-        //        if (double.IsNaN(r) || double.IsInfinity(r))
-        //            throw new ArithmeticException();
-        //        return r;
-        //    };
-        //}
         public override double Phi_P(double[] X) {
             double alpha = -(Angle[0]);
             double r;
