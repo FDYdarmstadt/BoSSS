@@ -12,9 +12,9 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing
 {
     public static class VoronoiMesher
     {
-        public static VoronoiGrid CreateGrid(VoronoiNodes nodes, TrackableVoronoiMesher.Settings settings)
+        public static VoronoiGrid CreateGrid(VoronoiNodes nodes, TrackedVoronoiMesher.Settings settings)
         {
-            TrackableVoronoiGrid grid = TrackableVoronoiMesher.CreateGrid(nodes, settings);
+            TrackedVoronoiGrid grid = TrackedVoronoiMesher.CreateGrid(nodes, settings);
             return grid.Result;
         }
     }

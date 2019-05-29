@@ -8,14 +8,15 @@ using BoSSS.Foundation.Grid.Classic;
 using BoSSS.Foundation.Grid.RefElements;
 using BoSSS.Platform;
 using BoSSS.Platform.LinAlg;
+using BoSSS.Foundation.Voronoi;
 
 namespace BoSSS.Foundation.Grid.Voronoi.Meshing
 {
-    public class TrackableVoronoiGrid
+    public class TrackedVoronoiGrid
     {
         public VoronoiGrid Result;
-        public ArrayMap IncomingNodesToResultNodes;
-        public ArrayMap ResultNodesToIncomingNodes;
+        public OneWayArrayMap InputNodesToResultNodes;
+        public OneWayArrayMap ResultNodesToInputNodes;
     }
 
     class TrackableNode : IMesherNode, IVoronoiNodeCastable
@@ -24,13 +25,13 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing
 
         public ArrayConnection Type { get; set; }
 
-        public TrackableNode(VoronoiNode node, int j)
+        public TrackableNode(VoronoiNode node, int j, Connection type)
         {
             this.node = node;
             Type = new ArrayConnection
             {
                 J = j,
-                Type = Connection.Remained
+                Type = type
             };
         }
 
@@ -55,7 +56,7 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing
         }
     }
 
-    public class TrackableVoronoiMesher
+    public class TrackedVoronoiMesher
     {
         public class Settings
         {
@@ -64,17 +65,18 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing
             public int FirstCellNode_indice = 0;
         }
 
-        public static TrackableVoronoiGrid CreateGrid(VoronoiNodes nodes, Settings settings)
+        public static TrackedVoronoiGrid CreateGrid(VoronoiNodes nodes, Settings settings)
         {
             BoundaryMesh<TrackableNode> mesh = CreateBoundaryMesh(nodes, settings);
 
-            ArrayMap node2nodeMap = ExtractMapping(mesh.GetNodes());
             VoronoiGrid grid = GridConverter.Convert2VoronoiGrid(mesh, settings.GridInfo);
-            TrackableVoronoiGrid movingGrid = new TrackableVoronoiGrid
+            OneWayArrayMap resultMap = ExtractMap(mesh.GetNodes());
+            OneWayArrayMap inputMap = GetInputMap(resultMap, nodes.Count);
+            TrackedVoronoiGrid movingGrid = new TrackedVoronoiGrid
             {
                 Result = grid,
-                ResultNodesToIncomingNodes = node2nodeMap,
-                IncomingNodesToResultNodes = 
+                InputNodesToResultNodes = inputMap,
+                ResultNodesToInputNodes = resultMap
             };
             return movingGrid;
         }
@@ -83,6 +85,7 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing
         {
             Mesher.Settings mesherSettings = ConvertToMesherSettings(settings);
             List<TrackableNode> mesherNodes = WrapInMesherNodes(nodes.Nodes);
+            
             BoundaryMesh<TrackableNode> mesh = Mesher.Create(mesherNodes, mesherSettings);
             return mesh;
         }
@@ -104,21 +107,28 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing
             List<TrackableNode> wrappedNodes = new List<TrackableNode>(voronoiNodes.Count);
             for (int i = 0; i < voronoiNodes.Count; ++i)
             {
-                TrackableNode wrappedNode = new TrackableNode(voronoiNodes[i], i);
+                TrackableNode wrappedNode = new TrackableNode(voronoiNodes[i], i, Connection.Remained);
                 wrappedNodes.Add(wrappedNode);
             }
             return wrappedNodes;
         }
 
-        static ArrayMap ExtractMapping(IList<TrackableNode> processed)
+        static OneWayArrayMap ExtractMap(IList<TrackableNode> processed)
         {
             ArrayConnection[] connections = new ArrayConnection[processed.Count];
             for (int i = 0; i < processed.Count; ++i)
             {
                 connections[i] = processed[i].Type;
             }
-            ArrayMap backwardsMap = new ArrayMap(connections);
+            OneWayArrayMap backwardsMap = new OneWayArrayMap(connections);
             return backwardsMap;
+        }
+
+        static OneWayArrayMap GetInputMap(OneWayArrayMap result, int noOfInitialNodes)
+        {
+            OneWayArrayMap input = OneWayArrayMap.CreateEmpty(Connection.Removed, noOfInitialNodes);
+            input.AddReverse(result);
+            return input;
         }
     }
 }

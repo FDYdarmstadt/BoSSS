@@ -58,18 +58,19 @@
     <DocumentationFile>bin\Release\BoSSS.Foundation.Grid.XML</DocumentationFile>
   </PropertyGroup>
   <ItemGroup>
-    <Compile Include="ArrayMap.cs" />
     <Compile Include="Grid1D.cs">
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="Grid2D.cs" />
     <Compile Include="Grid3D.cs" />
     <Compile Include="GridRefinementController.cs" />
+    <Compile Include="Meshing\GridConverter.cs" />
     <Compile Include="Meshing\Intersecter.cs" />
     <Compile Include="Meshing\IntersectionMesh.cs" />
     <Compile Include="Meshing\Mesh.cs" />
     <Compile Include="Meshing\MIConvexHullMeshGenerator.cs" />
     <Compile Include="Meshing\Mesher.cs" />
+    <Compile Include="Meshing\TrackedVoronoiMesher.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="VoronoiGrid2D.cs" />
     <Compile Include="Meshing\VoronoiMesher.cs" />

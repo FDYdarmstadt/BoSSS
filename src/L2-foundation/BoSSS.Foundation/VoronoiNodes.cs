@@ -160,7 +160,7 @@ namespace BoSSS.Foundation.Grid.Voronoi
         IList<T> list;
         MultidimensionalArray array;
 
-        protected int Count {
+        public int Count {
             get { return DataStateMatches(DataState.List) ? list.Count : array.GetLength(0); }
         }
 

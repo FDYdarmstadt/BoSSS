@@ -61,7 +61,7 @@ namespace BoSSS.Foundation.Grid.Voronoi
             nodePositions.SetRowPt(0, PolygonBoundary[0]);
             VoronoiNodes nodes = new VoronoiNodes(nodePositions);
 
-            VoronoiMesher.Settings mesherSettings = new VoronoiMesher.Settings
+            TrackedVoronoiMesher.Settings mesherSettings = new TrackedVoronoiMesher.Settings
             {
                 GridInfo = new VoronoiInfo
                 {
@@ -99,7 +99,7 @@ namespace BoSSS.Foundation.Grid.Voronoi
             VoronoiNodes nodes = new VoronoiNodes(positions);
             Vector[] boundingBox = BoundingBox(PolygonBoundary);
 
-            VoronoiMesher.Settings settings = new VoronoiMesher.Settings
+            TrackedVoronoiMesher.Settings settings = new TrackedVoronoiMesher.Settings
             {
                 GridInfo = new VoronoiInfo
                 {

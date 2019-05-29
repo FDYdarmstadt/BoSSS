@@ -225,6 +225,7 @@
     <Compile Include="IQuadRuleFactory.cs" />
     <Compile Include="StandardQuadRuleFactory.cs" />
     <Compile Include="VoronoiGrid.cs" />
+    <Compile Include="VoronoiMap.cs" />
     <Compile Include="VoronoiNodes.cs" />
     <Compile Include="ZipStorer.cs" />
   </ItemGroup>
