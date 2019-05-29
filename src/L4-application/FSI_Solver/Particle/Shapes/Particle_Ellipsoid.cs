@@ -161,19 +161,6 @@ namespace BoSSS.Application.FSI_Solver {
         {
             SupportPoint = new double[SpatialDim];
 
-            //double CosA = Math.Cos(Angle[0]);
-            //double SinA = Math.Sin(Angle[0]);
-            //double test0 = Vector0 * CosA + Vector1 * SinA;
-            //double test1 = -Vector0 * SinA + Vector1 * CosA;
-            //double length = Math.Sqrt(test0.Pow2() + test1.Pow2());
-            //Vector0 = test0 / length;
-            //Vector1 = test1 / length;
-            //if (SpatialDim != 2)
-            //    throw new NotImplementedException("Only two dimensions are supported at the moment");
-            //double temp0 = Vector0 * length_P;
-            //double temp1 = Vector1 * thickness_P;
-            //SupportPoint[0] = temp0 * Math.Cos(Angle[0]) - temp1 * Math.Sin(Angle[0]) + Position[0][0];
-            //SupportPoint[1] = temp0 * Math.Sin(Angle[0]) + temp1 * Math.Cos(Angle[0]) + Position[0][1];
             double[] v = new double[2];
             v[0] = Vector0;
             v[1] = Vector1;

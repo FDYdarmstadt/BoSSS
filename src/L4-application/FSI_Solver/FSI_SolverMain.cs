@@ -1589,7 +1589,7 @@ namespace BoSSS.Application.FSI_Solver
             //_FSI_Collision.FindClosestPoint(hmin, SpatialDim, interfacePoints_P0, interfacePoints_P1, ref distanceVec, ref distance, out double[] tempPoint_P0, out double[] tempPoint_P1, out bool Overlapping);
             double[] point0 = particle0.Position[0];
             double[] point1 = particle1.Position[0];
-            _FSI_Auxillary.GJK_DistanceAlgorithm(particle0, particle1, point0, point1, SpatialDim, out distance, out distanceVec, out double[] tempPoint_P0, out double[] tempPoint_P1, out bool Overlapping);
+            _FSI_Auxillary.GJK_DistanceAlgorithm(particle0, particle1, LsTrk, point0, point1, SpatialDim, out distance, out distanceVec, out double[] tempPoint_P0, out double[] tempPoint_P1, out bool Overlapping);
             for (int d = 0; d < 2; d++)
             {
                 Console.WriteLine("tempPoint_P0[0][d] " + d + ": " + tempPoint_P0[d]);
@@ -1624,7 +1624,7 @@ namespace BoSSS.Application.FSI_Solver
                 tempPoint_P0 = new double[2] { 0.0, 0.0 };
                 tempPoint_P1 = new double[2] { 0.0, 0.0 };
                 //_FSI_Collision.FindClosestPoint(hmin, SpatialDim, interfacePoints_P0, interfacePoints_P1, ref distanceVec, ref distance, out tempPoint_P0, out tempPoint_P1, out bool Overlapping_NextTimestep);
-                _FSI_Auxillary.GJK_DistanceAlgorithm(particle0, particle1, VirtualPosition0, VirtualPosition1, SpatialDim, out distance, out distanceVec, out tempPoint_P0, out tempPoint_P1, out bool Overlapping_NextTimestep);
+                _FSI_Auxillary.GJK_DistanceAlgorithm(particle0, particle1, LsTrk, VirtualPosition0, VirtualPosition1, SpatialDim, out distance, out distanceVec, out tempPoint_P0, out tempPoint_P1, out bool Overlapping_NextTimestep);
                 _FSI_Collision.FindNormalAndTangentialVector(distanceVec, out normal, out tangential);
                 _FSI_Collision.FindRadialVector(VirtualPosition0, tempPoint_P0, out _, out double RadialLength0, out RadialNormalVector0);
                 _FSI_Collision.FindRadialVector(VirtualPosition1, tempPoint_P1, out _, out double RadialLength1, out RadialNormalVector1);
@@ -1669,7 +1669,7 @@ namespace BoSSS.Application.FSI_Solver
                 //tempPoint_P0 = particle0.m_closeInterfacePointTo[m_Particles.IndexOf(particle1)];
                 //tempPoint_P1 = particle1.m_closeInterfacePointTo[m_Particles.IndexOf(particle0)];
                 //_FSI_Collision.FindClosestPoint(hmin, SpatialDim, interfacePoints_P0, interfacePoints_P1, ref distanceVec, ref distance, out tempPoint_P0, out tempPoint_P1, out Overlapping);
-                _FSI_Auxillary.GJK_DistanceAlgorithm(particle0, particle1, VirtualPosition0, VirtualPosition1, SpatialDim, out distance, out distanceVec, out tempPoint_P0, out tempPoint_P1, out bool Overlapping_AfterReset);
+                _FSI_Auxillary.GJK_DistanceAlgorithm(particle0, particle1, LsTrk, VirtualPosition0, VirtualPosition1, SpatialDim, out distance, out distanceVec, out tempPoint_P0, out tempPoint_P1, out bool Overlapping_AfterReset);
                 realDistance = 0;
                 if (Overlapping_AfterReset)
                 {
