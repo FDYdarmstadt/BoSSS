@@ -166,6 +166,26 @@ namespace BoSSS.Application.FSI_Solver {
             }
             return SurfacePoints;
         }
+
+        //override public void GetSupportPoint(int SpatialDim, double[] Vector, out double[] SupportPoint)
+        //{
+        //    SupportPoint = new double[SpatialDim];
+        //    double VectorLength = Math.Sqrt(Vector[0].Pow2() + Vector[1].Pow2());
+        //    for (int d = 0; d < SpatialDim; d++)
+        //    {
+        //        Vector[d] = Vector[d] / VectorLength;
+        //    }
+        //    double[] VectorBodyCOS = Vector.CloneAs();
+        //    VectorBodyCOS[0] = Vector[0] * Math.Cos(Angle[0]) - Vector[1] * Math.Sin(Angle[0]);
+        //    VectorBodyCOS[1] = Vector[0] * Math.Sin(Angle[0]) - Vector[1] * Math.Cos(Angle[1]);
+        //    double VecBodyLength = Math.Pow(1 / (Math.Pow(VectorBodyCOS[0] / length_P, superEllipsoidExponent) + Math.Pow(VectorBodyCOS[1] / thickness_P, superEllipsoidExponent)), 1 / superEllipsoidExponent);
+        //    double[] StartPoint = new double[SpatialDim];
+        //    for (int d = 0; d < SpatialDim; d++)
+        //    {
+        //        StartPoint[d] = Position[0][d] + VecBodyLength * Vector[d];
+        //    }
+            
+        //}
     }
 }
 

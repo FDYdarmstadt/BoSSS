@@ -157,13 +157,10 @@ namespace BoSSS.Application.FSI_Solver {
             return SurfacePoints;
         }
 
-        override public void GetSupportPoint(int SpatialDim, double Vector0, double Vector1, out double[] SupportPoint)
+        override public void GetSupportPoint(int SpatialDim, double[] Vector, out double[] SupportPoint)
         {
             SupportPoint = new double[SpatialDim];
 
-            double[] v = new double[2];
-            v[0] = Vector0;
-            v[1] = Vector1;
             double[,] B = new double[2, 2];
             B[0, 0] = length_P * Math.Cos(Angle[0]);
             B[0, 1] = -thickness_P * Math.Sin(Angle[0]);
@@ -177,7 +174,7 @@ namespace BoSSS.Application.FSI_Solver {
             {
                 for (int j = 0; j < 2; j++)
                 {
-                    temp[i] += BT[i, j] * v[j];
+                    temp[i] += BT[i, j] * Vector[j];
                 }
             }
             double BetragTemp = Math.Sqrt(temp[0].Pow2() + temp[1].Pow2());
@@ -193,7 +190,6 @@ namespace BoSSS.Application.FSI_Solver {
                 }
                 SupportPoint[i] += Position[0][i];
             }
-
         }
         override public double[] GetLengthScales()
         {
