@@ -539,7 +539,7 @@ namespace BoSSS.Application.FSI_Solver {
             C.AdaptiveMeshRefinement = false;
             C.SessionName = "fjkfjksdfhjk";
 
-            C.pureDryCollisions = false;
+            C.pureDryCollisions = true;
             C.SetDGdegree(k);
 
             // grid and boundary conditions
@@ -626,26 +626,26 @@ namespace BoSSS.Application.FSI_Solver {
                 //neglectAddedDamping = false,
             });
 
-            C.Particles.Add(new Particle_Ellipsoid(new double[] { 0.45, 0 }, startAngl: 45)
+            C.Particles.Add(new Particle_superEllipsoid(new double[] { 0.45, 0 }, startAngl: 45)
             {
                 particleDensity = 1,
                 thickness_P = 0.2,
                 length_P = 0.4,
                 //radius_P = 0.4,
-                //superEllipsoidExponent = 4,
+                superEllipsoidExponent = 4,
                 GravityVertical = -9.81,
                 IncludeRotation = false,
                 IncludeTranslation = false,
             });
 
 
-            C.Particles.Add(new Particle_Ellipsoid(new double[] { -0.45, 0 }, startAngl: -45)
+            C.Particles.Add(new Particle_superEllipsoid(new double[] { -0.45, 0 }, startAngl: -45)
             {
                 particleDensity = 1,
                 thickness_P = 0.2,
                 length_P = 0.4,
                 //radius_P = 0.4,
-                //superEllipsoidExponent = 4,
+                superEllipsoidExponent = 4,
                 GravityVertical = -9.81,
                 IncludeRotation = false,
                 IncludeTranslation = false,
