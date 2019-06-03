@@ -911,12 +911,12 @@ namespace BoSSS.Solution.XdgTimestepping {
 
         private void UpdateChangeRate(double PhysTime, double[] k) {
 
-            //BlockMsrMatrix OpMtx = new BlockMsrMatrix(this.CurrentStateMapping);
+            BlockMsrMatrix OpMtx = new BlockMsrMatrix(this.CurrentStateMapping);
             double[] OpAff = new double[this.CurrentStateMapping.LocalLength];
-            base.ComputeOperatorMatrix(null, OpAff, this.CurrentStateMapping, this.CurrentStateMapping.Fields.ToArray(), base.GetAgglomeratedLengthScales(), PhysTime);
+            base.ComputeOperatorMatrix(OpMtx, OpAff, this.CurrentStateMapping, this.CurrentStateMapping.Fields.ToArray(), base.GetAgglomeratedLengthScales(), PhysTime);
 
             k.SetV(OpAff);
-            //OpMtx.SpMV(1.0, this.m_CurrentState, 1.0, k);
+            OpMtx.SpMV(1.0, this.m_CurrentState, 1.0, k);
         }
 
         void BlockSol<V1, V2>(BlockMsrMatrix M, V1 X, V2 B)
