@@ -718,18 +718,18 @@ namespace BoSSS.Foundation {
 
 
         /// <summary>
-        /// constructs a new evaluator object for explicit evaluation this spatial operator
+        /// Constructs a new evaluator object for the explicit evaluation of this spatial operator.
         /// </summary>
         /// <returns></returns>
         /// <remarks>
-        /// The
-        /// operator assembly must be finalized before by calling <see cref="Commit"/> before this method can be called.
+        /// Before this method can be called,
+        /// the operator assembly must be finalized by calling <see cref="Commit"/> .
         /// </remarks>
         /// <param name="CodomainVarMap">
         /// used to compute indices into the result vector
         /// </param>
         /// <param name="DomainFields">
-        /// domain which are evaluated to compute fluxes, ...
+        /// domains which are evaluated to compute fluxes, ...
         /// </param>
         /// <param name="ParameterMap">
         /// The parameter variables (of this differential operator);
