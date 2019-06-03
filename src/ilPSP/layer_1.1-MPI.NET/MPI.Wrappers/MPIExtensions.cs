@@ -776,7 +776,9 @@ namespace MPI.Wrappers {
             csMPI.Raw.Comm_Size(comm, out int size);
             csMPI.Raw.Comm_Rank(comm, out int rank);
 
-            int[] result = rank == root ? new int[recvcounts.Sum()] : null;
+            int rcs = recvcounts.Sum();
+            int[] result = rank == root ? new int[Math.Max(1, rcs)] : null;
+            
 
             unsafe {
                 int* displs = stackalloc int[size];
@@ -802,14 +804,21 @@ namespace MPI.Wrappers {
                 }
             }
 
+            if(result.Length > rcs) {
+                Debug.Assert(rcs == 0);
+                result = new int[0];
+            }
+
             return result;
         }
         /// <summary>
         /// MPI-process with rank 0 gathers this ulong[] of all MPI-processes in the
-        /// <paramref name="comm"/>-communicator with variable length. The length of the gathered long[] is specified by <paramref name="recvcount"/>
         /// </summary>
         /// <param name="recvcount">
-        /// Length of the receive buffer
+        /// number of items to receive from each sender
+        /// </param>
+        /// <param name="send">
+        /// data to send
         /// </param>
         static public ulong[] MPIGatherv(this ulong[] send, int[] recvcount) {
             return send.MPIGatherv(
@@ -822,12 +831,19 @@ namespace MPI.Wrappers {
         /// <paramref name="comm"/>-communicator with variable length. The length of the gathered long[] is specified by <paramref name="recvcount"/>
         /// </summary>
         /// <param name="recvcount">
-        /// Length of the receive buffer
+        /// number of items to receive from each sender
         /// </param>
+        /// <param name="send">
+        /// data to send
+        /// </param>
+        /// <param name="comm"></param>
+        /// <param name="root">rank of receiver process</param>
         static public ulong[] MPIGatherv(this ulong[] send, int[] recvcount, int root, MPI_Comm comm) {
             csMPI.Raw.Comm_Size(comm, out int size);
             csMPI.Raw.Comm_Rank(comm, out int rank);
-            ulong[] result = new ulong[recvcount.Sum()];
+
+            int rcs = recvcount.Sum();
+            ulong[] result = rank == root ? new ulong[Math.Max(1, rcs)] : null;
 
             unsafe {
                 int* displs = stackalloc int[size];
@@ -852,6 +868,11 @@ namespace MPI.Wrappers {
                 }
             }
 
+            if (result != null && result.Length > rcs) {
+                Debug.Assert(rcs == 0);
+                result = new ulong[0];
+            }
+
             return result;
         }
 
@@ -872,7 +893,9 @@ namespace MPI.Wrappers {
             csMPI.Raw.Comm_Size(comm, out int size);
             csMPI.Raw.Comm_Rank(comm, out int rank);
 
-            double[] result = rank == root ? new double[recvcounts.Sum()] : null;
+            int rcs = recvcounts.Sum();
+            double[] result = rank == root ? new double[Math.Max(1, rcs)] : null;
+
 
             unsafe {
                 int* displs = stackalloc int[size];
@@ -898,7 +921,14 @@ namespace MPI.Wrappers {
                     }
                 }
             }
-                       
+
+            if (result != null && result.Length > rcs) {
+                Debug.Assert(rcs == 0);
+                result = new double[0];
+            }
+
+           
+
             return result;
         }
 
