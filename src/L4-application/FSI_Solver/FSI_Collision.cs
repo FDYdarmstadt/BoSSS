@@ -103,9 +103,9 @@ namespace FSI_Solver
                     Threshold = Math.Abs(-DetectCollisionVn_P0 + DetectCollisionVn_P1) * dt;
                 }
             }
-            else if (Distance <= (-DetectCollisionVn_P0 + 0) * dt || Math.Abs((-DetectCollisionVn_P0 + 0)) <= 1e-14)
+            else if (Distance <= (DetectCollisionVn_P0) * dt || Math.Abs(DetectCollisionVn_P0) <= 1e-14)
             {
-                Threshold = Math.Abs(-DetectCollisionVn_P0) * dt;
+                Threshold = Math.Abs(DetectCollisionVn_P0) * dt;
             }
             
         }

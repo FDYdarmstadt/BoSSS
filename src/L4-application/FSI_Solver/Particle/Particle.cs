@@ -96,6 +96,7 @@ namespace BoSSS.Application.FSI_Solver
         /// </summary>
         public bool[] m_collidedWithWall;
 
+
         /// <summary>
         /// Check whether any particles is collided with the wall
         /// </summary>

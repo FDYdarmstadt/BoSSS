@@ -606,7 +606,7 @@ namespace BoSSS.Application.FSI_Solver {
             // Fluid Properties
             C.PhysicalParameters.rho_A = 1.0;
             C.PhysicalParameters.mu_A = 0.1;
-            C.CoefficientOfRestitution = 1;
+            C.CoefficientOfRestitution = 0;
 
             // Particle Properties
             //C.PhysicalParameters.mu_B = 0.1;
@@ -614,19 +614,6 @@ namespace BoSSS.Application.FSI_Solver {
 
 
             C.Particles.Add(new Particle_Sphere(new double[] { 0.0, 0.7 })
-            {
-                radius_P = 0.13,
-                //length_P = 0.2,
-                //thickness_P = 0.1,
-                particleDensity = 2.0,
-                GravityVertical = -9.81,
-                //AddaptiveUnderrelaxation = true,
-                //underrelaxation_factor = 1,
-                //ClearSmallValues = true,
-                //neglectAddedDamping = false,
-            });
-
-            C.Particles.Add(new Particle_Sphere(new double[] { 0.0, 1.2 })
             {
                 radius_P = 0.13,
                 //length_P = 0.2,
@@ -687,7 +674,7 @@ namespace BoSSS.Application.FSI_Solver {
             C.dtMax = dt;
             C.dtMin = dt;
             C.Endtime = 10.0;
-            C.NoOfTimesteps = 572;
+            C.NoOfTimesteps = 39;
 
             // haben fertig...
             // ===============
