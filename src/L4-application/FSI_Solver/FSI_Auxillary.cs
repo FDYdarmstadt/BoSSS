@@ -467,7 +467,8 @@ namespace FSI_Solver
                 {
                     vt[d] = -v[d];
                 }
-
+                if (v[0] == 0 && v[1] == 0)
+                    Console.WriteLine("Stupid");
                 if (double.IsNaN(vt[0]) || double.IsNaN(vt[1]))
                     throw new ArithmeticException("Error trying to calculate point0 Value:  " + vt[0] + " point1 " + vt[1]);
                 CalculateSupportPoint(p0, SpatialDim, vt, lsTrk, out ClosestPoint0);
@@ -492,6 +493,8 @@ namespace FSI_Solver
                     DistanceVec = v.CloneAs();
                     break;
                 }
+                if (v[0] == 0 && v[1] == 0)
+                    Console.WriteLine("Stupid");
             }
             Min_Distance = Math.Sqrt(v[0].Pow2() + v[1].Pow2());
         }
@@ -557,7 +560,7 @@ namespace FSI_Solver
             {
                 for (int s2 = s1 + 1; s2 < Simplex.Count(); s2++)
                 {
-                    if (Simplex[s1][0] == Simplex[s2][0] && Simplex[s1][1] == Simplex[s2][1])
+                    if (Math.Abs(Simplex[s1][0] - Simplex[s2][0]) < 1e-8 && Math.Abs(Simplex[s1][1] - Simplex[s2][1]) < 1e-8)
                     {
                         Simplex.RemoveAt(s2);
                     }
@@ -575,6 +578,8 @@ namespace FSI_Solver
             if(Simplex.Count() == 1)
             {
                 v = Simplex[0];
+                if (v[0] == 0 && v[1] == 0)
+                    Console.WriteLine("Stupid");
                 if (double.IsNaN(v[0]) || double.IsNaN(v[1]))
                     Console.WriteLine("Stupid");
             }
@@ -583,6 +588,8 @@ namespace FSI_Solver
                 if (DotProd_Simplex[0][0] - DotProd_Simplex[0][1] <= 0)
                 {
                     v = Simplex[0].CloneAs();
+                    if (v[0] == 0 && v[1] == 0)
+                        Console.WriteLine("Stupid");
                     if (double.IsNaN(v[0]) || double.IsNaN(v[1]))
                         Console.WriteLine("Stupid");
                     Simplex.RemoveAt(1);
@@ -591,6 +598,8 @@ namespace FSI_Solver
                 else if (DotProd_Simplex[1][1] - DotProd_Simplex[0][1] <= 0)
                 {
                     v = Simplex[1].CloneAs();
+                    if (v[0] == 0 && v[1] == 0)
+                        Console.WriteLine("Stupid");
                     if (double.IsNaN(v[0]) || double.IsNaN(v[1]))
                         Console.WriteLine("Stupid");
                     Simplex.RemoveAt(0);
@@ -610,6 +619,8 @@ namespace FSI_Solver
                     //double a1 = -(a0 + 1 / a0);
                     //v[0] = b / a1;
                     //v[1] = -v[0] / a0;
+                    if (v[0] == 0 && v[1] == 0)
+                        Console.WriteLine("Stupid");
                     if (double.IsNaN(v[0]) || double.IsNaN(v[1]))
                         Console.WriteLine("Stupid");
                 }
@@ -626,26 +637,53 @@ namespace FSI_Solver
                     if (DotProd_Simplex[s1][s1] - DotProd_Simplex[0][s2] <= 0 && DotProd_Simplex[s1][s1] - DotProd_Simplex[s3][2] <= 0)
                     {
                         v = Simplex[s1].CloneAs();
+                        if (v[0] == 0 && v[1] == 0)
+                            Console.WriteLine("Stupid");
                         if (double.IsNaN(v[0]) || double.IsNaN(v[1]))
                             Console.WriteLine("Stupid");
                         Simplex.Clear();
                         Simplex.Add(v.CloneAs());
                         Return = true;
+                        break;
                     }
                 }
                 if (!Return)
                 {
+                    int counter = 0;
                     for (int s1 = Simplex.Count() - 1; s1 >= 0; s1--)
                     {
-                        int s2 = s1 == 2 ? 1 : 2;
+                        int s2 = s1 == 0 ? 1 : 2;
                         int s3 = s1 == 0 ? 2 : 0;
-                        int s4 = s1 == 0 ? 1 : 0;
-                        double temp1 = (Simplex[s2][0] - Simplex[s1][0]) * (Simplex[s2][1] - Simplex[s4][1]);
-                        double temp2 = (Simplex[s2][1] - Simplex[s1][1]) * (Simplex[s2][0] - Simplex[s4][0]);
-                        double CrossProd = Simplex[s2][0] * (-temp1 + temp2) * (Simplex[s2][1] - Simplex[s4][1]) + Simplex[s2][1] * (temp1 - temp2) * (Simplex[s2][0] - Simplex[s4][0]);
+                        int s4 = s1 == 2 ? 1 : 0;
+                        double CrossProd = new double();
+                        switch (s1)
+                        {
+                            case 0:
+                                double temp1 = DotProd_Simplex[1][2] - DotProd_Simplex[0][2] - DotProd_Simplex[1][1] + DotProd_Simplex[0][1];
+                                double temp2 = DotProd_Simplex[0][1] - DotProd_Simplex[0][0] - DotProd_Simplex[1][2] + DotProd_Simplex[0][2];
+                                double temp3 = DotProd_Simplex[1][1] - 2 * DotProd_Simplex[0][1] + DotProd_Simplex[0][0];
+                                CrossProd = DotProd_Simplex[0][1] * temp1 + DotProd_Simplex[1][1] * temp2 + DotProd_Simplex[1][2] * temp3;
+                                break;
+                            case 1:
+                                temp1 = -DotProd_Simplex[2][2] + DotProd_Simplex[0][2] + DotProd_Simplex[1][2] - DotProd_Simplex[0][1];
+                                temp2 = DotProd_Simplex[2][2] - 2 * DotProd_Simplex[0][2] + DotProd_Simplex[0][0];
+                                temp3 = DotProd_Simplex[0][2] - DotProd_Simplex[0][0] - DotProd_Simplex[1][2] + DotProd_Simplex[0][1];
+                                CrossProd = DotProd_Simplex[0][2] * temp1 + DotProd_Simplex[1][2] * temp2 + DotProd_Simplex[2][2] * temp3;
+                                break;
+                            case 2:
+                                temp1 = DotProd_Simplex[2][2] - 2 * DotProd_Simplex[1][2] + DotProd_Simplex[1][1];
+                                temp2 = -DotProd_Simplex[2][2] + DotProd_Simplex[1][2] + DotProd_Simplex[0][2] - DotProd_Simplex[0][1];
+                                temp3 = DotProd_Simplex[1][2] - DotProd_Simplex[1][1] - DotProd_Simplex[0][2] + DotProd_Simplex[0][1];
+                                CrossProd = DotProd_Simplex[0][2] * temp1 + DotProd_Simplex[1][2] * temp2 + DotProd_Simplex[2][2] * temp3;
+                                break;
+                        }
+                        //double temp1 = (Simplex[s2][0] - Simplex[s1][0]) * (Simplex[s2][1] - Simplex[s4][1]);
+                        //double temp2 = (Simplex[s2][1] - Simplex[s1][1]) * (Simplex[s2][0] - Simplex[s4][0]);
+                        //double CrossProd = Simplex[s2][0] * (-temp1 + temp2) * (Simplex[s2][1] - Simplex[s4][1]) + Simplex[s2][1] * (temp1 - temp2) * (Simplex[s2][0] - Simplex[s4][0]);
                         CrossProd *= 1;
                         double test1 = DotProd_Simplex[s4][s4] - DotProd_Simplex[s4][s2];
                         double test2 = DotProd_Simplex[s2][s2] - DotProd_Simplex[s4][s2];
+                        counter += 1;
                         if (DotProd_Simplex[s4][s4] - DotProd_Simplex[s4][s2] >= 0 && DotProd_Simplex[s2][s2] - DotProd_Simplex[s4][s2] >= 0 && CrossProd >= 0 && !Return)
                         {
                             double[] AB = new double[2];
@@ -661,6 +699,8 @@ namespace FSI_Solver
                             //double a1 = -(a0 + 1 / a0);
                             //v[0] = b / a1;
                             //v[1] = -v[0] / a0;
+                            if (v[0] == 0 && v[1] == 0)
+                                Console.WriteLine("Stupid");
                             if (double.IsNaN(v[0]) || double.IsNaN(v[1]))
                                 Console.WriteLine("Stupid");
                             double[] test = new double[2];
@@ -676,6 +716,10 @@ namespace FSI_Solver
                             Simplex.Add(tempSimplex2.CloneAs());
                             Return = true;
                             break;
+                        }
+                        if (counter == 3)
+                        {
+                            Console.WriteLine("Warning");
                         }
                     }
                 }

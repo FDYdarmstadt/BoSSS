@@ -1604,21 +1604,27 @@ namespace BoSSS.Application.FSI_Solver
             //_FSI_Collision.FindClosestPoint(hmin, SpatialDim, interfacePoints_P0, interfacePoints_P1, ref distanceVec, ref distance, out double[] tempPoint_P0, out double[] tempPoint_P1, out bool Overlapping);
             double[] point0 = new double[2];
             double[] point1 = new double[2];
-            if ((particle0.ClosestPointToParticle[m_Particles.IndexOf(particle1), 0] == 0 && particle0.ClosestPointToParticle[m_Particles.IndexOf(particle1), 1] == 0) || (particle1.ClosestPointToParticle[m_Particles.IndexOf(particle0), 0] == 0 && particle1.ClosestPointToParticle[m_Particles.IndexOf(particle0), 1] == 0))
+            point0 = particle0.Position[0];
+            point1 = particle1.Position[0];
+            if (hack_phystime >= 5.65)
             {
-                point0 = particle0.Position[0];
-                point1 = particle1.Position[0];
+                Console.WriteLine("Starting time-step ");
             }
-            else
-            {
-                for (int d = 0; d < 2; d++)
-                {
-                    point0[d] = particle0.ClosestPointToParticle[m_Particles.IndexOf(particle1), d];
-                    point1[d] = particle1.ClosestPointToParticle[m_Particles.IndexOf(particle0), d];
-                    if (double.IsNaN(point0[d]) || double.IsNaN(point1[d]))
-                        throw new ArithmeticException("Error trying to calculate point0 Value:  " + point0[d] + " point1 " + point1[d]);
-                }
-            }
+            //if ((particle0.ClosestPointToParticle[m_Particles.IndexOf(particle1), 0] == 0 && particle0.ClosestPointToParticle[m_Particles.IndexOf(particle1), 1] == 0) || (particle1.ClosestPointToParticle[m_Particles.IndexOf(particle0), 0] == 0 && particle1.ClosestPointToParticle[m_Particles.IndexOf(particle0), 1] == 0))
+            //{
+            //    point0 = particle0.Position[0];
+            //    point1 = particle1.Position[0];
+            //}
+            //else
+            //{
+            //    for (int d = 0; d < 2; d++)
+            //    {
+            //        point0[d] = particle0.ClosestPointToParticle[m_Particles.IndexOf(particle1), d];
+            //        point1[d] = particle1.ClosestPointToParticle[m_Particles.IndexOf(particle0), d];
+            //        if (double.IsNaN(point0[d]) || double.IsNaN(point1[d]))
+            //            throw new ArithmeticException("Error trying to calculate point0 Value:  " + point0[d] + " point1 " + point1[d]);
+            //    }
+            //}
             _FSI_Auxillary.GJK_DistanceAlgorithm(particle0, particle1, LsTrk, point0, point1, SpatialDim, out distance, out distanceVec, out double[] tempPoint_P0, out double[] tempPoint_P1, out bool Overlapping);
             
             for (int d = 0; d < 2; d++)
@@ -1627,6 +1633,10 @@ namespace BoSSS.Application.FSI_Solver
                 particle1.ClosestPointToParticle[m_Particles.IndexOf(particle0), d] = tempPoint_P1[d];
             }
             double realDistance = distance;
+            if (realDistance == 0)
+            {
+                Console.WriteLine("Stupid");
+            }
             bool ForceCollision = false;
             _FSI_Collision.FindNormalAndTangentialVector(distanceVec, out double[] normal, out double[] tangential);
             _FSI_Collision.CalculateDynamicCollisionThreshold(particle0, particle1, tempPoint_P0, tempPoint_P1, normal, realDistance, dt, out threshold);
@@ -1673,37 +1683,40 @@ namespace BoSSS.Application.FSI_Solver
             particle0.m_closeInterfacePointTo[m_Particles.IndexOf(particle1)] = tempPoint_P0;
             particle1.m_closeInterfacePointTo[m_Particles.IndexOf(particle0)] = tempPoint_P1;
             // Important to get normal vector if distance is overlapping in the next timestep
-            if (Overlapping && particle0.m_closeInterfacePointTo[m_Particles.IndexOf(particle1)] != null && particle1.m_closeInterfacePointTo[m_Particles.IndexOf(particle0)] != null)
+            if (Overlapping)// && particle0.m_closeInterfacePointTo[m_Particles.IndexOf(particle1)] != null && particle1.m_closeInterfacePointTo[m_Particles.IndexOf(particle0)] != null)
             {
                 double[] VirtualPosition0 = new double[2];
                 double[] VirtualPosition1 = new double[2];
                 double VirtualAngle0 = particle0.Angle[1];
                 double VirtualAngle1 = particle1.Angle[1];
-                for (int d = 0; d < 2; d++)
-                {
-                    VirtualPosition0[d] = particle0.Position[1][d];
-                    VirtualPosition1[d] = particle1.Position[1][d];
-                }
+                particle0.Position[0] = particle0.Position[1].CloneAs();
+                particle1.Position[0] = particle1.Position[1].CloneAs();
+                //for (int d = 0; d < 2; d++)
+                //{
+                //    VirtualPosition0[d] = particle0.Position[1][d];
+                //    VirtualPosition1[d] = particle1.Position[1][d];
+                //}
                 //interfacePoints_P0 = particle0.GetSurfacePoints(LsTrk, VirtualPosition0, VirtualAngle0);
                 //interfacePoints_P1 = particle1.GetSurfacePoints(LsTrk, VirtualPosition1, VirtualAngle1);
                 //tempPoint_P0 = particle0.m_closeInterfacePointTo[m_Particles.IndexOf(particle1)];
                 //tempPoint_P1 = particle1.m_closeInterfacePointTo[m_Particles.IndexOf(particle0)];
                 //_FSI_Collision.FindClosestPoint(hmin, SpatialDim, interfacePoints_P0, interfacePoints_P1, ref distanceVec, ref distance, out tempPoint_P0, out tempPoint_P1, out Overlapping);
                 _FSI_Auxillary.GJK_DistanceAlgorithm(particle0, particle1, LsTrk, VirtualPosition0, VirtualPosition1, SpatialDim, out distance, out distanceVec, out tempPoint_P0, out tempPoint_P1, out bool Overlapping_AfterReset);
-                realDistance = 0;
-                if (Overlapping_AfterReset)
-                {
-                    for (int d = 0; d < 2; d++)
-                    {
-                        VirtualPosition0[d] = particle0.Position[1][d] - 1.5 * distanceVec[d];
-                        particle0.Position[0][d] = VirtualPosition0[d];
-                    }
-                    interfacePoints_P0 = particle0.GetSurfacePoints(LsTrk, VirtualPosition0, VirtualAngle0);
-                    interfacePoints_P1 = particle1.GetSurfacePoints(LsTrk, VirtualPosition1, VirtualAngle1);
-                    _FSI_Collision.FindClosestPoint(hmin, SpatialDim, interfacePoints_P0, interfacePoints_P1, ref distanceVec, ref distance, out tempPoint_P0, out tempPoint_P1, out _);
-                    realDistance = 0;
-                }
-                threshold = 1;
+                //realDistance = 0;
+                //if (Overlapping_AfterReset)
+                //{
+                //    for (int d = 0; d < 2; d++)
+                //    {
+                //        VirtualPosition0[d] = particle0.Position[2][d];
+                //        particle0.Position[0][d] = VirtualPosition0[d];
+                //    }
+                //    interfacePoints_P0 = particle0.GetSurfacePoints(LsTrk, VirtualPosition0, VirtualAngle0);
+                //    interfacePoints_P1 = particle1.GetSurfacePoints(LsTrk, VirtualPosition1, VirtualAngle1);
+                //    //_FSI_Auxillary.GJK_DistanceAlgorithm(particle0, particle1, LsTrk, VirtualPosition0, VirtualPosition1, SpatialDim, out distance, out distanceVec, out tempPoint_P0, out tempPoint_P1, out bool Overlapping_AfterReset);
+                //    _FSI_Collision.FindClosestPoint(hmin, SpatialDim, interfacePoints_P0, interfacePoints_P1, ref distanceVec, ref distance, out tempPoint_P0, out tempPoint_P1, out _);
+                //    realDistance = 0;
+                //}
+                threshold = 1e20;
                 _FSI_Collision.FindNormalAndTangentialVector(distanceVec, out normal, out tangential);
                 _FSI_Collision.ProjectVelocity(normal, tangential, particle0.TranslationalVelocity[0], out collisionVn_P0, out collisionVt_P0);
                 _FSI_Collision.ProjectVelocity(normal, tangential, particle1.TranslationalVelocity[0], out collisionVn_P1, out collisionVt_P1);
