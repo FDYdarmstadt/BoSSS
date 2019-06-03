@@ -813,10 +813,12 @@ namespace MPI.Wrappers {
         }
         /// <summary>
         /// MPI-process with rank 0 gathers this ulong[] of all MPI-processes in the
-        /// <paramref name="comm"/>-communicator with variable length. The length of the gathered long[] is specified by <paramref name="recvcount"/>
         /// </summary>
         /// <param name="recvcount">
-        /// Length of the receive buffer
+        /// number of items to receive from each sender
+        /// </param>
+        /// <param name="send">
+        /// data to send
         /// </param>
         static public ulong[] MPIGatherv(this ulong[] send, int[] recvcount) {
             return send.MPIGatherv(
@@ -829,8 +831,13 @@ namespace MPI.Wrappers {
         /// <paramref name="comm"/>-communicator with variable length. The length of the gathered long[] is specified by <paramref name="recvcount"/>
         /// </summary>
         /// <param name="recvcount">
-        /// Length of the receive buffer
+        /// number of items to receive from each sender
         /// </param>
+        /// <param name="send">
+        /// data to send
+        /// </param>
+        /// <param name="comm"></param>
+        /// <param name="root">rank of receiver process</param>
         static public ulong[] MPIGatherv(this ulong[] send, int[] recvcount, int root, MPI_Comm comm) {
             csMPI.Raw.Comm_Size(comm, out int size);
             csMPI.Raw.Comm_Rank(comm, out int rank);
@@ -861,7 +868,7 @@ namespace MPI.Wrappers {
                 }
             }
 
-            if (result.Length > rcs) {
+            if (result != null && result.Length > rcs) {
                 Debug.Assert(rcs == 0);
                 result = new ulong[0];
             }
@@ -915,10 +922,12 @@ namespace MPI.Wrappers {
                 }
             }
 
-            if (result.Length > rcs) {
+            if (result != null && result.Length > rcs) {
                 Debug.Assert(rcs == 0);
                 result = new double[0];
             }
+
+           
 
             return result;
         }
