@@ -26,18 +26,60 @@ namespace BoSSS.Foundation.Grid.Voronoi {
     [Serializable]
     public class VoronoiGrid : Aggregation.AggregationGrid
     {
-        MultidimensionalArray voronoiNodes;
 
-        int[] voronoiNodeToCellMap;
-
+        VoronoiNodes nodes;
+        //Generating Voronoi node of each cell jCell
+        
         public VoronoiGrid(IGrid pGrid,
             int[][] AggregationCells,
             MultidimensionalArray voronoiNodes)
             : base(pGrid, AggregationCells)
         {
-            this.voronoiNodes = voronoiNodes;
+            nodes = new VoronoiNodes(voronoiNodes, null);
         }
 
         VoronoiGrid() { }
+
+        public VoronoiNodes Nodes {
+            get { return nodes; }
+        }
+    }
+
+    public class VoronoiNodes
+    {
+        long[] globalIds;
+
+        MultidimensionalArray voronoiNodes;
+
+        public MultidimensionalArray Nodes {
+            get { return voronoiNodes; }
+        }
+
+        //Velocity of each cell jCell
+        public MultidimensionalArray Velocity;
+
+        public VoronoiNodes(MultidimensionalArray nodes, long[] globalIds)
+        {
+            this.globalIds = globalIds;
+            int count = nodes.GetLength(0);
+            int dim = nodes.GetLength(1);
+            this.voronoiNodes = nodes;
+            this.Velocity = MultidimensionalArray.Create(count, 2);
+        }
+
+        public VoronoiNodes(int count, int dim)
+        {
+            this.globalIds = new long[count];
+            this.voronoiNodes = MultidimensionalArray.Create(count, dim);
+            this.Velocity = MultidimensionalArray.Create(count, dim);
+        }
+
+        public VoronoiNodes Copy()
+        {
+            throw new NotImplementedException();
+            //VoronoiNodes nodes = new VoronoiNodes()
+        }
+
+
     }
 }

@@ -140,6 +140,10 @@ namespace BoSSS.Solution.AdvancedSolvers {
             m_ThisLevelIterations++;
         }
 
+        public ISolverSmootherTemplate Clone() {
+            throw new NotImplementedException("Clone of " + this.ToString() + " TODO");
+        }
+
     }
 
 
@@ -219,6 +223,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
             return acc;
         }
+       
 
     }
 }

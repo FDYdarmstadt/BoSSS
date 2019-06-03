@@ -18,9 +18,10 @@ using BoSSS.Foundation;
 using BoSSS.Foundation.Grid.Classic;
 using BoSSS.Foundation.IO;
 using BoSSS.Solution;
+using BoSSS.Solution.CompressibleFlowCommon;
+using BoSSS.Solution.CompressibleFlowCommon.MaterialProperty;
 using CNS.Diffusion;
 using CNS.EquationSystem;
-using CNS.MaterialProperty;
 using ilPSP.Utils;
 using NUnit.Framework;
 using System;
@@ -183,10 +184,10 @@ namespace CNS.Tests.DiffusiveFlux {
             c.ViscosityLaw = new SutherlandLaw();
             c.MachNumber = 1 / Math.Sqrt(c.EquationOfState.HeatCapacityRatio);
 
-            c.AddVariable(Variables.Density, dgDegree);
-            c.AddVariable(Variables.Momentum[0], dgDegree);
-            c.AddVariable(Variables.Momentum[1], dgDegree);
-            c.AddVariable(Variables.Energy, dgDegree);
+            c.AddVariable(CompressibleVariables.Density, dgDegree);
+            c.AddVariable(CompressibleVariables.Momentum[0], dgDegree);
+            c.AddVariable(CompressibleVariables.Momentum[1], dgDegree);
+            c.AddVariable(CompressibleVariables.Energy, dgDegree);
 
             c.GridFunc = delegate () {
                 GridCommons grid = Grid2D.Cartesian2DGrid(
@@ -205,15 +206,15 @@ namespace CNS.Tests.DiffusiveFlux {
             Func<double[], double> u1 = X => Math.Cos(X[0]) + Math.Sin(X[1]) + 1.0;
             Func<double[], double> p = X => Math.Cos(X[0]) + Math.Sin(X[0]) + 4.0;
 
-            c.InitialValues_Evaluators.Add(Variables.Density, rho);
-            c.InitialValues_Evaluators.Add(Variables.Velocity[0], u0);
-            c.InitialValues_Evaluators.Add(Variables.Velocity[1], u1);
-            c.InitialValues_Evaluators.Add(Variables.Pressure, p);
+            c.InitialValues_Evaluators.Add(CompressibleVariables.Density, rho);
+            c.InitialValues_Evaluators.Add(CNSVariables.Velocity[0], u0);
+            c.InitialValues_Evaluators.Add(CNSVariables.Velocity[1], u1);
+            c.InitialValues_Evaluators.Add(CNSVariables.Pressure, p);
 
-            c.AddBoundaryValue("supersonicinlet", Variables.Density, rho);
-            c.AddBoundaryValue("supersonicinlet", Variables.Velocity[0], u0);
-            c.AddBoundaryValue("supersonicinlet", Variables.Velocity[1], u1);
-            c.AddBoundaryValue("supersonicinlet", Variables.Pressure, p);
+            c.AddBoundaryValue("supersonicinlet", CompressibleVariables.Density, rho);
+            c.AddBoundaryValue("supersonicinlet", CNSVariables.Velocity[0], u0);
+            c.AddBoundaryValue("supersonicinlet", CNSVariables.Velocity[1], u1);
+            c.AddBoundaryValue("supersonicinlet", CNSVariables.Pressure, p);
 
             return c;
         }

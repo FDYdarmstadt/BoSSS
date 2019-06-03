@@ -258,6 +258,6 @@ namespace BoSSS.Solution.AdvancedSolvers {
         }
 
 
-        
+
     }
 }

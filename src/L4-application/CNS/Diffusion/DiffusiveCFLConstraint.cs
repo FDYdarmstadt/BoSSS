@@ -22,7 +22,6 @@ using BoSSS.Solution.CompressibleFlowCommon;
 using BoSSS.Solution.CompressibleFlowCommon.MaterialProperty;
 using CNS.EquationSystem;
 using CNS.IBM;
-using CNS.MaterialProperty;
 using ilPSP;
 using System;
 using System.Diagnostics;
@@ -160,7 +159,7 @@ namespace CNS.Diffusion {
                                 }
 
                                 Vector momentum = new Vector();
-                                for (int d = 0; d < CNSEnvironment.NumberOfDimensions; d++) {
+                                for (int d = 0; d < CompressibleEnvironment.NumberOfDimensions; d++) {
                                     momentum[d] = momentumValues[d][i, node];
                                 }
 
@@ -205,7 +204,7 @@ namespace CNS.Diffusion {
 
                             for (int node = 0; node < noOfNodesPerCell; node++) {
                                 Vector momentum = new Vector();
-                                for (int d = 0; d < CNSEnvironment.NumberOfDimensions; d++) {
+                                for (int d = 0; d < CompressibleEnvironment.NumberOfDimensions; d++) {
                                     momentum[d] = momentumValues[d][i, node];
                                 }
 
@@ -227,7 +226,7 @@ namespace CNS.Diffusion {
 
             int degree = workingSet.ConservativeVariables.Max(f => f.Basis.Degree);
             int twoNPlusOne = 2 * degree + 1;
-            return cfl * GetBetaMax(degree) / twoNPlusOne / twoNPlusOne / Math.Sqrt(CNSEnvironment.NumberOfDimensions);
+            return cfl * GetBetaMax(degree) / twoNPlusOne / twoNPlusOne / Math.Sqrt(CompressibleEnvironment.NumberOfDimensions);
         }
     }
 }

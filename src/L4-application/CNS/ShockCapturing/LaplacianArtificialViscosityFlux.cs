@@ -30,9 +30,9 @@ namespace CNS.ShockCapturing {
         private ISpeciesMap speciesMap;
 
         //public LaplacianArtificialViscosityFlux(int order, MultidimensionalArray cj, string[] arguments, int affectedComponent, IBoundaryConditionMap boundaryMap, ISpeciesMap speciesMap) :
-        //    base((order + 1) * (order + CNSEnvironment.NumberOfDimensions) / (double)CNSEnvironment.NumberOfDimensions, cj, arguments, affectedComponent) {
+        //    base((order + 1) * (order + CompressibleEnvironment.NumberOfDimensions) / (double)CompressibleEnvironment.NumberOfDimensions, cj, arguments, affectedComponent) {
         public LaplacianArtificialViscosityFlux(int order, MultidimensionalArray cj, Variable variable, IBoundaryConditionMap boundaryMap, ISpeciesMap speciesMap) :
-        base((order + 1) * (order + CNSEnvironment.NumberOfDimensions) / (double)CNSEnvironment.NumberOfDimensions, cj, variable) {
+        base((order + 1) * (order + CompressibleEnvironment.NumberOfDimensions) / (double)CompressibleEnvironment.NumberOfDimensions, cj, variable) {
             this.boundaryMap = boundaryMap;
             this.speciesMap = speciesMap;
         }

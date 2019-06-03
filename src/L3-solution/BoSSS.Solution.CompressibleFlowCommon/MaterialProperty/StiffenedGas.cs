@@ -14,11 +14,9 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-using BoSSS.Solution.CompressibleFlowCommon;
-using BoSSS.Solution.CompressibleFlowCommon.MaterialProperty;
 using System;
 
-namespace CNS.MaterialProperty {
+namespace BoSSS.Solution.CompressibleFlowCommon.MaterialProperty {
 
     /// <summary>
     /// Model equation for stiff fluids (e.g. water) where an ideal gas at a
