@@ -395,11 +395,11 @@ namespace BoSSS.Application.Rheology {
             C.DbPath = path;
             C.ProjectName = "Cylinder";
 
-            C.NonLinearSolver.MaxSolverIterations = 3;
+            C.NonLinearSolver.MaxSolverIterations = 50;
             C.NonLinearSolver.MinSolverIterations = 1;
             C.NonLinearSolver.ConvergenceCriterion = 1E-6;
 
-            C.LinearSolver.MaxSolverIterations = 3;
+            C.LinearSolver.MaxSolverIterations = 50;
             C.LinearSolver.MinSolverIterations = 1;          
             C.LinearSolver.ConvergenceCriterion = 1E-6;
 
@@ -409,6 +409,7 @@ namespace BoSSS.Application.Rheology {
             C.dtMin = C.dt;
             C.Timestepper_Scheme = RheologyControl.TimesteppingScheme.ImplicitEuler;
             C.NonLinearSolver.SolverCode = NonLinearSolverConfig.Code.Newton;
+            C.LinearSolver.SolverCode = LinearSolverConfig.Code.classic_pardiso;
             C.ObjectiveParam = 1.0;
 
             C.UsePerssonSensor = true;
@@ -423,7 +424,7 @@ namespace BoSSS.Application.Rheology {
 
             //Debugging and Solver Analysis
             C.OperatorMatrixAnalysis = false;
-            C.SkipSolveAndEvaluateResidual = true;
+            C.SkipSolveAndEvaluateResidual = false;
             C.SetInitialConditions = true;
             C.SetInitialPressure = false;
             C.SetParamsAnalyticalSol = false;
@@ -497,10 +498,10 @@ namespace BoSSS.Application.Rheology {
 
 
             //coarser grid - works without cluster!
-            //string grid = "f9aa12dc-53bb-4e2c-81b3-ffccc251a3f7";
+            string grid = "f9aa12dc-53bb-4e2c-81b3-ffccc251a3f7";
 
             //very coarse grid as starting point for refinement
-            string grid = "e296a1b2-98f9-4fdf-8a32-04e0954ff369";
+            //string grid = "e296a1b2-98f9-4fdf-8a32-04e0954ff369";
 
             //Dennis Zylinder for drag validation
             //string grid = "a67192f5-6b59-4caf-a95a-0a08730c3365";

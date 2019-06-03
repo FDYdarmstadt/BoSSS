@@ -110,10 +110,10 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 //double gamma = 0.9;
 
                 // Eval_F0 
+                
                 using (new BlockTrace("Slv Init", tr)) {
                     base.Init(SolutionVec, RHS, out x, out f0);
                 };
-               
                 //Console.WriteLine("Residual base.init:   " + f0.L2NormPow2().MPISum().Sqrt());
 
 
