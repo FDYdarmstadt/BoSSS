@@ -29,7 +29,7 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing
         }
     } 
 
-    public class VoronoiMesher : Mesher
+    public class VoronoiMesher : Mesher<Node>
     {
         List<Node> WrapInMesherNodes(IList<VoronoiNode> voronoiNodes)
         {
@@ -47,7 +47,7 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing
             List<Node> mesherNodes = WrapInMesherNodes(nodes.Nodes);
             BoundaryMesh<Node> mesh = CreateMesh(mesherNodes, settings);
 
-            VoronoiGrid grid = GridConverter.Convert2VoronoiGrid(mesh, settings.GridInfo);
+            VoronoiGrid grid = Convert2VoronoiGrid(mesh, settings);
             return grid;
         }
     }

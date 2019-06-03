@@ -35,13 +35,13 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing
         }
     }
 
-    public class TrackedVoronoiMesher : Mesher
+    public class TrackedVoronoiMesher : Mesher<TrackableNode>
     {
         public TrackedVoronoiGrid CreateGrid(VoronoiNodes nodes, Settings settings)
         {
             List<TrackableNode> mesherNodes = WrapInMesherNodes(nodes.Nodes);
             BoundaryMesh<TrackableNode> mesh = CreateMesh(mesherNodes, settings);
-            VoronoiGrid grid = GridConverter.Convert2VoronoiGrid(mesh, settings.GridInfo);
+            VoronoiGrid grid = Convert2VoronoiGrid(mesh, settings);
 
             OneWayArrayMap resultMap = ExtractMap(mesh.GetNodes());
             OneWayArrayMap inputMap = GetInputMap(resultMap, nodes.Count);

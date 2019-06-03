@@ -5,7 +5,8 @@ using System.Collections.Generic;
 
 namespace BoSSS.Foundation.Grid.Voronoi.Meshing
 {
-    public class Mesher
+    public class Mesher<T>
+        where T : IMesherNode, IVoronoiNodeCastable, new()
     {
         public class Settings
         {
@@ -13,6 +14,8 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing
             public int NumberOfLloydIterations = 10;
             public int FirstCellNode_indice = 0;
         }
+
+        Settings settings;
 
         MeshingAlgorithm.Settings ConvertToMesherSettings(Settings settings)
         {
@@ -26,12 +29,18 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing
             return mesherSettings;
         }
 
-        internal BoundaryMesh<T> CreateMesh<T>(List<T> nodes, Settings settings)
-            where T : IMesherNode, new()
+        internal BoundaryMesh<T> CreateMesh(List<T> nodes, Settings settings)
+            
         {
             MeshingAlgorithm.Settings meshingSettings = ConvertToMesherSettings(settings);
             BoundaryMesh<T> mesh = MeshingAlgorithm.ComputeMesh(nodes, meshingSettings);
             return mesh;
+        }
+
+        internal VoronoiGrid Convert2VoronoiGrid(BoundaryMesh<T> mesh, Settings settings)
+        {
+            VoronoiGrid grid = GridConverter.Convert2VoronoiGrid(mesh, settings.GridInfo);
+            return grid;
         }
     }
 }

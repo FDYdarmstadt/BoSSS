@@ -61,7 +61,7 @@ namespace BoSSS.Foundation.Grid.Voronoi
             nodePositions.SetRowPt(0, PolygonBoundary[0]);
             VoronoiNodes nodes = new VoronoiNodes(nodePositions);
 
-            TrackedVoronoiMesher.Settings mesherSettings = new TrackedVoronoiMesher.Settings
+            VoronoiMesher.Settings mesherSettings = new VoronoiMesher.Settings
             {
                 GridInfo = new VoronoiInfo
                 {
@@ -70,7 +70,9 @@ namespace BoSSS.Foundation.Grid.Voronoi
                 },
                 NumberOfLloydIterations = NoOfLyyodsIter
             };
-            return VoronoiMesher.CreateGrid(nodes, mesherSettings);
+
+            VoronoiMesher mesher = new VoronoiMesher();
+            return mesher.CreateGrid(nodes, mesherSettings);
         }
 
         /// <summary>
@@ -99,7 +101,7 @@ namespace BoSSS.Foundation.Grid.Voronoi
             VoronoiNodes nodes = new VoronoiNodes(positions);
             Vector[] boundingBox = BoundingBox(PolygonBoundary);
 
-            TrackedVoronoiMesher.Settings settings = new TrackedVoronoiMesher.Settings
+            VoronoiMesher.Settings settings = new VoronoiMesher.Settings
             {
                 GridInfo = new VoronoiInfo
                 {
@@ -109,7 +111,9 @@ namespace BoSSS.Foundation.Grid.Voronoi
                 NumberOfLloydIterations = NoOfLyyodsIter,
                 FirstCellNode_indice = FirstCellNode_Indice
             };
-            return VoronoiMesher.CreateGrid(nodes, settings);
+
+            VoronoiMesher mesher = new VoronoiMesher();
+            return mesher.CreateGrid(nodes, settings);
         }
 
         static Vector[] BoundingBox(Vector[] polygon)
