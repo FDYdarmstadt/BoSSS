@@ -449,7 +449,54 @@ namespace FSI_Solver
                 }
             }
         }
+        internal void Wall_GJK_DistanceAlgorithm(Particle particle, MultidimensionalArray WallVerticies, LevelSetTracker lsTrk, double[] Point0_old, double[] Point1_old, int SpatialDim, out double Min_Distance, out double[] DistanceVec, out double[] ClosestPoint0, out double[] ClosestPoint1, out bool Overlapping)
+        {
+            ClosestPoint0 = new double[SpatialDim];
+            ClosestPoint1 = new double[SpatialDim];
+            DistanceVec = new double[SpatialDim];
+            Overlapping = false;
+            Initialize_GJK(SpatialDim, Point0_old, Point1_old, out double[] v0, out List<double[]> Simplex);
+            double[] v = v0.CloneAs();
+            double[] SupportPoint = new double[SpatialDim];
 
+            for (int i = 0; i < 1000; i++)
+            {
+                double[] vt = v.CloneAs();
+                for (int d = 0; d < SpatialDim; d++)
+                {
+                    vt[d] = -v[d];
+                }
+                if (v[0] == 0 && v[1] == 0)
+                    Console.WriteLine("Stupid");
+                if (double.IsNaN(vt[0]) || double.IsNaN(vt[1]))
+                    throw new ArithmeticException("Error trying to calculate point0 Value:  " + vt[0] + " point1 " + vt[1]);
+                CalculateSupportPoint(particle, SpatialDim, vt, lsTrk, out ClosestPoint0);
+                if (double.IsNaN(ClosestPoint0[0]) || double.IsNaN(ClosestPoint0[1]))
+                    throw new ArithmeticException("Error trying to calculate point0 Value:  " + ClosestPoint0[0] + " point1 " + ClosestPoint0[1]);
+                Wall_CalculateSupportPoint(WallVerticies, SpatialDim, v, out ClosestPoint1);
+                for (int d = 0; d < SpatialDim; d++)
+                {
+                    SupportPoint[d] = ClosestPoint0[d] - ClosestPoint1[d];
+                }
+                double test = (v[0] * vt[0] + v[1] * vt[1]) - (SupportPoint[0] * vt[0] + SupportPoint[1] * vt[1]);
+                if ((v[0] * vt[0] + v[1] * vt[1]) >= (SupportPoint[0] * vt[0] + SupportPoint[1] * vt[1]))
+                {
+                    DistanceVec = v.CloneAs();
+                    Console.WriteLine("No of steps for distance algorithm: " + i);
+                    break;
+                }
+                Simplex.Insert(0, SupportPoint.CloneAs());
+                DistanceAlgorithm(Simplex, out v, out Overlapping);
+                if (Overlapping)
+                {
+                    DistanceVec = v.CloneAs();
+                    break;
+                }
+                if (v[0] == 0 && v[1] == 0)
+                    Console.WriteLine("Stupid");
+            }
+            Min_Distance = Math.Sqrt(v[0].Pow2() + v[1].Pow2());
+        }
         internal void GJK_DistanceAlgorithm(Particle p0, Particle p1, LevelSetTracker lsTrk, double[] Point0_old, double[] Point1_old, int SpatialDim, out double Min_Distance, out double[] DistanceVec, out double[] ClosestPoint0, out double[] ClosestPoint1, out bool Overlapping)
         {
             ClosestPoint0 = new double[SpatialDim];
@@ -510,7 +557,7 @@ namespace FSI_Solver
         }
         private void CalculateSupportPoint(Particle _Particle, int SpatialDim, double[] Vector, LevelSetTracker lsTrk, out double[] SupportPoint)
         {
-            SupportPoint = new double[2];
+            SupportPoint = new double[SpatialDim];
             if (_Particle is Particle_Ellipsoid || _Particle is Particle_Sphere)
             {
                 _Particle.GetSupportPoint(SpatialDim, Vector, out SupportPoint);
@@ -536,6 +583,29 @@ namespace FSI_Solver
                     else
                         R = Index - 1;
                 }
+            }
+        }
+
+        private void Wall_CalculateSupportPoint(MultidimensionalArray WallVerticies, int SpatialDim, double[] Vector, out double[] SupportPoint)
+        {
+            SupportPoint = new double[SpatialDim];
+            int L = 1;
+            int R = WallVerticies.GetLength(0) - 2;
+            int Counter = 0;
+            while (L <= R && L > 0 && R < WallVerticies.GetLength(0) - 1)
+            {
+                int Index = (L + R) / 2;
+                Counter = Counter + 1;
+                GetPointAndNeighbours(WallVerticies, Index, out SupportPoint, out double[] RightNeighbour, out double[] LeftNeighbour);
+                double DotSupportPoint = SupportPoint[0] * Vector[0] + SupportPoint[1] * Vector[1];
+                double DotRight = RightNeighbour[0] * Vector[0] + RightNeighbour[1] * Vector[1];
+                double DotLeft = LeftNeighbour[0] * Vector[0] + LeftNeighbour[1] * Vector[1];
+                if (DotSupportPoint > DotRight && DotSupportPoint > DotLeft)
+                    break;
+                else if (DotRight > DotLeft)
+                    L = Index + 1;
+                else
+                    R = Index - 1;
             }
         }
 

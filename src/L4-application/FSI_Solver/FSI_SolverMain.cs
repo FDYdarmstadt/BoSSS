@@ -1701,7 +1701,7 @@ namespace BoSSS.Application.FSI_Solver
                 //tempPoint_P0 = particle0.m_closeInterfacePointTo[m_Particles.IndexOf(particle1)];
                 //tempPoint_P1 = particle1.m_closeInterfacePointTo[m_Particles.IndexOf(particle0)];
                 //_FSI_Collision.FindClosestPoint(hmin, SpatialDim, interfacePoints_P0, interfacePoints_P1, ref distanceVec, ref distance, out tempPoint_P0, out tempPoint_P1, out Overlapping);
-                _FSI_Auxillary.GJK_DistanceAlgorithm(particle0, particle1, LsTrk, VirtualPosition0, VirtualPosition1, SpatialDim, out distance, out distanceVec, out tempPoint_P0, out tempPoint_P1, out bool Overlapping_AfterReset);
+                _FSI_Auxillary.GJK_DistanceAlgorithm(particle0, particle1, LsTrk, particle0.Position[0], particle1.Position[0], SpatialDim, out distance, out distanceVec, out tempPoint_P0, out tempPoint_P1, out bool Overlapping_AfterReset);
                 //realDistance = 0;
                 //if (Overlapping_AfterReset)
                 //{
@@ -1946,6 +1946,265 @@ namespace BoSSS.Application.FSI_Solver
             }
         }
 
+        public void WallCollisionForcesNew(Particle particle, double dt, double hmin)
+        {
+            if (CollisionModel == FSI_Control.CollisionModel.NoCollisionModel)
+                return;
+            // search for colored cells
+            FSI_LevelSetUpdate levelSetUpdate = new FSI_LevelSetUpdate();
+            FSI_Auxillary _FSI_Auxillary = new FSI_Auxillary();
+            FSI_Collision _FSI_Collision = new FSI_Collision();
+            int J = GridData.iLogicalCells.NoOfLocalUpdatedCells;
+            List<int[]> ColoredCellsSorted = levelSetUpdate.ColoredCellsFindAndSort(CellColor);
+            List<Particle> temp = new List<Particle> { particle };
+            int[] ParticleColorArray = levelSetUpdate.FindParticleColor(GridData, temp, ColoredCellsSorted);
+            CellMask ParticleCutCells = levelSetUpdate.CellsOneColor(GridData, ColoredCellsSorted, ParticleColorArray[0], J, false);
+            // all boundary cells
+            CellMask BoundaryCells = GridData.GetBoundaryCells();
+            // consider only colored boundary cells
+            CellMask ParticleBoundaryCells = BoundaryCells.Intersect(ParticleCutCells);
+
+            collision = false;
+            SubGrid ColoredCellsGrid = new SubGrid(ParticleBoundaryCells);
+            double distance = double.MaxValue;
+            double[] distanceVec = new double[Grid.SpatialDimension];
+            double[] ClosestPointParticle = new double[2];
+            double[] ClostestPointWall = new double[2];
+            bool Overlapping = false;
+            IList<Platform.LinAlg.AffineTrafo> trafo = GridData.iGeomEdges.Edge2CellTrafos;
+            
+            foreach (int iEdge in ColoredCellsGrid.BoundaryEdgesMask.ItemEnum)
+            {
+                // Collision forces have to act
+                if (GridData.iGeomEdges.IsEdgeBoundaryEdge(iEdge))
+                {
+                    collision = true;
+                    int jCell = GridData.iGeomEdges.CellIndices[iEdge, 0];
+                    int iKref = GridData.iGeomEdges.GetRefElementIndex(jCell);
+
+                    NodeSet[] refNodes = GridData.iGeomEdges.EdgeRefElements.Select(Kref2 => Kref2.GetQuadratureRule(5 * 2).Nodes).ToArray();
+                    NodeSet Nodes = refNodes.ElementAt(iKref);
+
+                    int trafoIdx = GridData.iGeomEdges.Edge2CellTrafoIndex[iEdge, 0];
+                    MultidimensionalArray transFormed = trafo[trafoIdx].Transform(Nodes);
+                    MultidimensionalArray WallVerticies = transFormed.CloneAs();
+                    GridData.TransformLocal2Global(transFormed, WallVerticies, jCell);
+                    double[] point0 = particle.Position[0].CloneAs();
+                    double[] point1 = WallVerticies.GetRow(0);
+                    _FSI_Auxillary.Wall_GJK_DistanceAlgorithm(particle, WallVerticies, LsTrk, point0, point1, 2, out double tempDistance, out distanceVec, out ClosestPointParticle, out ClostestPointWall, out Overlapping);
+                    if(tempDistance < distance)
+                    {
+                        distance = tempDistance;
+                    }
+                }
+            }
+            _FSI_Collision.FindNormalAndTangentialVector(distanceVec, out double[] normal, out double[] tangential);
+            _FSI_Collision.CalculateDynamicCollisionThreshold(particle, null, ClosestPointParticle, ClostestPointWall, normal, distance, dt, out double threshold);
+            _FSI_Collision.ProjectVelocity(normal, tangential, particle.TranslationalVelocity[0], out double collisionVn_P0, out double collisionVt_P0);
+            if (!Overlapping && threshold == 0)
+            {
+                bool Overlapping_NextTimestep = false;
+                _FSI_Collision.PredictParticleNextTimestep(particle, 2, dt, out double[] VirtualPosition0, out double[] VirtualVelocity0, out double VirtualAngle0, out double VirtualRotationalVelocity0);
+                foreach (int iEdge in ColoredCellsGrid.BoundaryEdgesMask.ItemEnum)
+                {
+                    // Collision forces have to act
+                    if (GridData.iGeomEdges.IsEdgeBoundaryEdge(iEdge))
+                    {
+                        collision = true;
+                        int jCell = GridData.iGeomEdges.CellIndices[iEdge, 0];
+                        int iKref = GridData.iGeomEdges.GetRefElementIndex(jCell);
+
+                        NodeSet[] refNodes = GridData.iGeomEdges.EdgeRefElements.Select(Kref2 => Kref2.GetQuadratureRule(5 * 2).Nodes).ToArray();
+                        NodeSet Nodes = refNodes.ElementAt(iKref);
+
+                        int trafoIdx = GridData.iGeomEdges.Edge2CellTrafoIndex[iEdge, 0];
+                        MultidimensionalArray transFormed = trafo[trafoIdx].Transform(Nodes);
+                        MultidimensionalArray WallVerticies = transFormed.CloneAs();
+                        GridData.TransformLocal2Global(transFormed, WallVerticies, jCell);
+                        double[] point0 = particle.Position[0].CloneAs();
+                        double[] point1 = WallVerticies.GetRow(0);
+                        _FSI_Auxillary.Wall_GJK_DistanceAlgorithm(particle, WallVerticies, LsTrk, point0, point1, 2, out double tempDistance, out distanceVec, out ClosestPointParticle, out ClostestPointWall, out Overlapping_NextTimestep);
+                        if (tempDistance < distance)
+                        {
+                            distance = tempDistance;
+                        }
+                    }
+                }
+                _FSI_Collision.FindNormalAndTangentialVector(distanceVec, out normal, out tangential);
+                _FSI_Collision.FindRadialVector(VirtualPosition0, ClosestPointParticle, out _, out double RadialLength0, out double[] RadialNormalVector0);
+                _FSI_Collision.TransformRotationalVelocity(VirtualRotationalVelocity0, RadialLength0, RadialNormalVector0, out double[] PointVelocityDueToRotation0);
+                double[] PointVelocity0 = new double[2];
+                for (int d = 0; d < 2; d++)
+                {
+                    PointVelocity0[d] = VirtualVelocity0[d] + PointVelocityDueToRotation0[d];
+                }
+                _FSI_Collision.ProjectVelocityOnVector(normal, VirtualVelocity0, out double DetectCollisionVn_P0);
+                _FSI_Collision.ProjectVelocity(normal, tangential, VirtualVelocity0, out collisionVn_P0, out collisionVt_P0);
+                if (distance <= Math.Abs((-DetectCollisionVn_P0 + 0) * dt))
+                {
+                    threshold = Math.Abs((-DetectCollisionVn_P0 + 0) * dt);
+                }
+                if (Overlapping_NextTimestep)
+                {
+                    threshold = 1e20;
+                }
+            }
+            if (Overlapping)// && particle0.m_closeInterfacePointTo[m_Particles.IndexOf(particle1)] != null && particle1.m_closeInterfacePointTo[m_Particles.IndexOf(particle0)] != null)
+            {
+                particle.Position[0] = particle.Position[1].CloneAs();
+                foreach (int iEdge in ColoredCellsGrid.BoundaryEdgesMask.ItemEnum)
+                {
+                    // Collision forces have to act
+                    if (GridData.iGeomEdges.IsEdgeBoundaryEdge(iEdge))
+                    {
+                        collision = true;
+                        int jCell = GridData.iGeomEdges.CellIndices[iEdge, 0];
+                        int iKref = GridData.iGeomEdges.GetRefElementIndex(jCell);
+
+                        NodeSet[] refNodes = GridData.iGeomEdges.EdgeRefElements.Select(Kref2 => Kref2.GetQuadratureRule(5 * 2).Nodes).ToArray();
+                        NodeSet Nodes = refNodes.ElementAt(iKref);
+
+                        int trafoIdx = GridData.iGeomEdges.Edge2CellTrafoIndex[iEdge, 0];
+                        MultidimensionalArray transFormed = trafo[trafoIdx].Transform(Nodes);
+                        MultidimensionalArray WallVerticies = transFormed.CloneAs();
+                        GridData.TransformLocal2Global(transFormed, WallVerticies, jCell);
+                        double[] point0 = particle.Position[0].CloneAs();
+                        double[] point1 = WallVerticies.GetRow(0);
+                        _FSI_Auxillary.Wall_GJK_DistanceAlgorithm(particle, WallVerticies, LsTrk, point0, point1, 2, out double tempDistance, out distanceVec, out ClosestPointParticle, out ClostestPointWall, out bool _);
+                        if (tempDistance < distance)
+                        {
+                            distance = tempDistance;
+                        }
+                    }
+                }
+                threshold = 1e20;
+                _FSI_Collision.FindNormalAndTangentialVector(distanceVec, out normal, out tangential);
+                _FSI_Collision.ProjectVelocity(normal, tangential, particle.TranslationalVelocity[0], out collisionVn_P0, out collisionVt_P0);
+            }
+
+            double realDistance = distance;
+
+            if (collision == false)
+            {
+                Console.WriteLine("Reset Wall");
+                particle.m_collidedWithWall[0] = false;
+                return;
+            }
+
+            Console.WriteLine("Closest Distance to wall is: " + distance);
+            Console.WriteLine("Wall threshold: " + threshold);
+            double eps = threshold.Pow2() / 2; // Turek paper
+            double epsPrime = threshold / 2; // Turek paper
+
+            double[] collisionForce;
+            switch (CollisionModel)
+            {
+                case (FSI_Solver.FSI_Control.CollisionModel.RepulsiveForce):
+                    if ((realDistance <= threshold))
+                    {
+                        Console.WriteLine("Strongly recommended to use conservation of momentum collision model. This one is highly experimental!!!!");
+
+                        // Modell 1
+                        distanceVec.ScaleV(1 / eps);
+                        distanceVec.ScaleV(((threshold - realDistance).Abs()));
+
+                        collisionForce = distanceVec;
+                        collisionForce.ScaleV(100.0);
+
+                        particle.HydrodynamicForces[0] = collisionForce;
+                        throw new NotImplementedException("The repulsive force model is not parallelized, please use the momentum conservation model.");
+                        //return;
+                    }
+
+
+                    if (realDistance <= (1.5 * hmin))
+                    {
+
+                        distanceVec.ScaleV((threshold - realDistance).Abs());
+                        distanceVec.ScaleV(1 / epsPrime);
+                        collisionForce = distanceVec;
+
+                        collisionForce.ScaleV(100.0);
+                        particle.HydrodynamicForces[0].AccV(1, collisionForce);
+                        particle.HydrodynamicTorque[0] -= (collisionForce[0] * (ClosestPointParticle[0] - particle.Position[0][0]) + collisionForce[1] * (ClosestPointParticle[1] - particle.Position[0][1]));
+                        Console.WriteLine("Collision information: Wall overlapping, force X " + collisionForce[0]);
+                        Console.WriteLine("Collision information: Wall overlapping, force Y " + collisionForce[1]);
+
+                        if (realDistance <= 1.5 * hmin)
+                        {
+                            Console.WriteLine("Entering wall overlapping loop....");
+                            triggerOnlyCollisionProcedure = true;
+
+                        }
+                        return;
+                    }
+                    break;
+
+                case (FSI_Solver.FSI_Control.CollisionModel.MomentumConservation):
+
+                    if (realDistance <= (threshold) && !particle.m_collidedWithWall[0])
+                    {
+                        Console.WriteLine("I'm trying to calculate the wand collision.");
+                        //coefficient of restitution (e=0 pastic; e=1 elastic)
+
+                        double e = 1.0;
+
+                        // Fully plastic for bottom wall
+                        if (particle.Position[0][1] < 0.5 && ((FSI_Control)Control).LowerWallFullyPlastic)
+                            e = 0.0;
+
+                        // if particle already collided with wall
+                        particle.m_collidedWithWall[0] = true;
+
+                        // Skip force integration for next timestep
+                        particle.skipForceIntegration = true;
+
+
+                        collisionVn_P0 = particle.TranslationalVelocity[0][0] * normal[0] + particle.TranslationalVelocity[0][1] * normal[1];
+                        Console.WriteLine("collisionVn_P0: " + collisionVn_P0);
+                        collisionVt_P0 = particle.TranslationalVelocity[0][0] * tangential[0] + particle.TranslationalVelocity[0][1] * tangential[1];
+                        Console.WriteLine("collisionVt_P0: " + collisionVt_P0);
+
+
+                        // exzentric collision
+                        // ----------------------------------------
+                        ClosestPointParticle.AccV(-1, particle.Position[0]);
+                        Console.WriteLine("tempPoint: " + ClosestPointParticle[0]);
+                        Console.WriteLine("tempPoint: " + ClosestPointParticle[1]);
+                        double a0 = (ClosestPointParticle[0] * tangential[0] + ClosestPointParticle[1] * tangential[1]);
+                        Console.WriteLine("a0: " + a0);
+
+                        if (particle is Particle_Sphere)
+                            a0 = 0.0;
+
+                        double Fx = (1 + e) * (collisionVn_P0) / (1 / particle.Mass_P + a0.Pow2() / particle.MomentOfInertia_P);
+                        Console.WriteLine("Fx: " + Fx);
+                        double Fxrot = (1 + e) * (-a0 * particle.RotationalVelocity[0]) / (1 / particle.Mass_P + a0.Pow2() / particle.MomentOfInertia_P);
+                        Console.WriteLine("Fxrot: " + Fxrot);
+
+                        double tempCollisionVn_P0 = collisionVn_P0 - (Fx + Fxrot) / particle.Mass_P;
+                        Console.WriteLine("tempCollisionVn_P0: " + tempCollisionVn_P0);
+                        double tempCollisionVt_P0 = collisionVt_P0;
+                        Console.WriteLine("tempCollisionVt_P0: " + tempCollisionVt_P0);
+
+                        particle.RotationalVelocity[0] = particle.RotationalVelocity[0] + a0 * (Fx + Fxrot) / particle.MomentOfInertia_P;
+
+                        particle.TranslationalVelocity[0] = new double[] { normal[0] * tempCollisionVn_P0 + tempCollisionVt_P0 * tangential[0], normal[1] * tempCollisionVn_P0 + tempCollisionVt_P0 * tangential[1] };
+
+                    }
+
+                    if (realDistance > threshold && particle.m_collidedWithWall[0])
+                    {
+                        Console.WriteLine("Reset Wall");
+                        particle.m_collidedWithWall[0] = false;
+                    }
+                    break;
+
+                default:
+                    throw new NotImplementedException("Collision model not available");
+            }
+        }
+
         /// <summary>
         /// Calculation of collision forces between particle and wall
         /// </summary>
@@ -2005,7 +2264,7 @@ namespace BoSSS.Application.FSI_Solver
                     MultidimensionalArray newVertices = transFormed.CloneAs();
                     GridData.TransformLocal2Global(transFormed, newVertices, jCell);
                     var tempDistance = 0.0;
-
+                    
                     for (int i = 0; i < interfacePoints.NoOfRows; i++)
                     {
                         for (int j = 0; j < newVertices.NoOfRows; j++)
