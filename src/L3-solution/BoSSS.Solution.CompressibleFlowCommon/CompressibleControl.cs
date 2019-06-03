@@ -148,7 +148,7 @@ namespace BoSSS.Solution.CompressibleFlowCommon {
         }
 
         /// <summary>
-        /// Backing field for <see cref="VariableFields"/>
+        /// Backing field for <see cref="VariableToDegreeMap"/>
         /// </summary>
         protected Dictionary<Variable, int> variableFields = new Dictionary<Variable, int>();
 
@@ -156,7 +156,7 @@ namespace BoSSS.Solution.CompressibleFlowCommon {
         /// Dictionary linking field variables (including derived ones) to
         /// the desired polynomial degree
         /// </summary>
-        public IReadOnlyDictionary<Variable, int> VariableFields {
+        public IReadOnlyDictionary<Variable, int> VariableToDegreeMap {
             get {
                 return variableFields;
             }
