@@ -181,7 +181,7 @@ namespace BoSSS.Solution.XdgTimestepping {
             if ((newVersion - oldVersion) != 1)
                 throw new ApplicationException("Expecting exactly one call to 'UpdateTracker(...)' in 'UpdateLevelset(...)'.");
             if (oldPushCount != newPushCount) {
-                throw new ApplicationException("Phushing the history stacks of the level-set tracker is reserved to the timestepper (during one timestep).");
+                throw new ApplicationException("Pushing the history stacks of the level-set tracker is reserved to the timestepper (during one timestep).");
             }
 
 
@@ -355,6 +355,7 @@ namespace BoSSS.Solution.XdgTimestepping {
 
             // update multigrid basis _once_ in object lifetime for steady level set:
             if (this.Config_LevelSetHandling == LevelSetHandling.None && OneTimeMgInit == false) {
+                UpdateAgglom(false);
                 base.MultigridBasis.UpdateXdgAggregationBasis(m_CurrentAgglomeration);
                 OneTimeMgInit = true;
             }

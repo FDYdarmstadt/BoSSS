@@ -37,17 +37,18 @@ namespace BoSSS.Application.FSI_Solver
 {
     [DataContract]
     [Serializable]
-    public class Particle_Sphere : Particle
+    public class Particle_Falle_Links : Particle
     {
         /// <summary>
         /// Empty constructor used during de-serialization
         /// </summary>
-        private Particle_Sphere() : base()
+        private Particle_Falle_Links() : base()
         {
 
         }
 
-        public Particle_Sphere(double[] startPos = null, double startAngl = 0) : base(2, startPos, startAngl) {
+        public Particle_Falle_Links(double[] startPos = null, double startAngl = 0) : base(2, startPos, startAngl)
+        {
 
 
         }
@@ -56,14 +57,16 @@ namespace BoSSS.Application.FSI_Solver
         /// Radius of the particle. Not necessary for particles defined by their length and thickness
         /// </summary>
         [DataMember]
-        public double radius_P;
+        public double width_P;
 
         /// <summary>
         /// %
         /// </summary>
-        protected override double AverageDistance {
-            get {
-                return radius_P;
+        protected override double AverageDistance
+        {
+            get
+            {
+                return width_P;
             }
         }
 
@@ -71,21 +74,21 @@ namespace BoSSS.Application.FSI_Solver
         {
             get
             {
-                return Math.PI * radius_P * radius_P;
+                return (7 * width_P * width_P) / 8;
             }
         }
         protected override double Circumference_P
         {
             get
             {
-                return 2 * Math.PI * radius_P;
+                return width_P * 5;
             }
         }
         override public double MomentOfInertia_P
         {
             get
             {
-                return (1 / 2.0) * (Mass_P * radius_P * radius_P);
+                return Math.Pow(width_P, 4) * 0.13785958;
             }
         }
         //override public void UpdateLevelSetFunction()
@@ -93,16 +96,34 @@ namespace BoSSS.Application.FSI_Solver
         //    double alpha = -(Angle[0]);
         //    Phi_P = (X, t) => -(X[0] - Position[0][0]).Pow2() + -(X[1] - Position[0][1]).Pow2() + radius_P.Pow2();
         //}
-        public override double Phi_P(double[] X) {
-            double x0 = Position[0][0];
-            double y0 = Position[0][1];
-            return -(X[0] - x0).Pow2() + -(X[1] - y0).Pow2() + radius_P.Pow2();
+        public override double Phi_P(double[] X)
+        {
+            double alpha = -(Angle[0]);
+            double r;
+            // Rechteck:
+            //        r = Math.Max(X[0] - Position[0][0]  - Width_P,  Position[0][0] - Width_P - X[0]);
+            //        r = Math.Max(r, X[1] - Position[0][1] - Width_P);
+            //        r = Math.Max(r,  Position[0][1] - 0.5*Width_P - X[1]);
+
+            // parallelogram
+            //          r = Math.Abs(Position[0][1] + 0.5 * width_P - X[1]);
+            //          r = Math.Max(r, Math.Abs(-X[1] - 0.5 * X[0] + Position[0][1] + width_P) + Math.Abs(X[1] - Position[0][1]));
+            //          r = Math.Max(r, Math.Abs(Position[0][0] - 0.5 * width_P - X[0]));
+
+            // Falle_Links:
+                      r = Math.Abs(Position[0][1] - X[1]);
+                      r = Math.Max(r, Math.Abs(-X[1] + 0.5*X[0] + Position[0][1] - Position[0][0] - width_P) - Math.Abs(X[1] - Position[0][1]));
+                      r = Math.Max(r, Math.Abs(Position[0][0] - X[0] + 1.5*width_P)); 
+                      r = r - 3.5*width_P;
+
+            r = -r;
+            return r;
         }
 
         override public CellMask CutCells_P(LevelSetTracker LsTrk)
         {
             // tolerance is very important
-            var radiusTolerance = radius_P + LsTrk.GridDat.Cells.h_minGlobal;// +2.0*Math.Sqrt(2*LsTrk.GridDat.Cells.h_minGlobal.Pow2());
+            var radiusTolerance = width_P + LsTrk.GridDat.Cells.h_minGlobal;// +2.0*Math.Sqrt(2*LsTrk.GridDat.Cells.h_minGlobal.Pow2());
 
             CellMask cellCollection;
             CellMask cells = null;
@@ -113,10 +134,11 @@ namespace BoSSS.Application.FSI_Solver
             cellCollection = cells.Intersect(allCutCells);
             return cellCollection;
         }
-        override public bool Contains(double[] point, LevelSetTracker LsTrk, bool WithoutTolerance = false)
-        {
+
+        public override bool Contains(double[] point, LevelSetTracker LsTrk, bool WithoutTolerance = false) {
+           
             // only for squared cells
-            double radiusTolerance = !WithoutTolerance ? 1.0 + 2.0 * Math.Sqrt(2 * LsTrk.GridDat.Cells.h_minGlobal.Pow2()) : 1;
+            double radiusTolerance = width_P + 2.0 * Math.Sqrt(2 * LsTrk.GridDat.Cells.h_minGlobal.Pow2());
             double length_P = 1;
             double thickness_P = 0.2;
             double test = -((((point[0] - Position[0][0]) * Math.Cos(Angle[0]) - (point[1] - Position[0][1]) * Math.Sin(Angle[0])).Pow2()) / length_P.Pow2()) + -(((point[0] - Position[0][0]) * Math.Sin(Angle[0]) + (point[1] - Position[0][1]) * Math.Cos(Angle[0])).Pow2() / thickness_P.Pow2()) + radiusTolerance.Pow2();
@@ -130,48 +152,35 @@ namespace BoSSS.Application.FSI_Solver
         override public double ComputeParticleRe(double mu_Fluid)
         {
             double particleReynolds = 0;
-            particleReynolds = Math.Sqrt(TranslationalVelocity[0][0] * TranslationalVelocity[0][0] + TranslationalVelocity[0][1] * TranslationalVelocity[0][1]) * 2 * radius_P * particleDensity / mu_Fluid;
+            particleReynolds = Math.Sqrt(TranslationalVelocity[0][0] * TranslationalVelocity[0][0] + TranslationalVelocity[0][1] * TranslationalVelocity[0][1]) * 2 * width_P * particleDensity / mu_Fluid;
             Console.WriteLine("Particle Reynolds number:  " + particleReynolds);
             return particleReynolds;
         }
 
-        override public MultidimensionalArray GetSurfacePoints(LevelSetTracker lsTrk, double[] Position, double Angle)
-        {
+        public override MultidimensionalArray GetSurfacePoints(LevelSetTracker lsTrk, double[] Position, double Angle) {
+           
             int SpatialDim = lsTrk.GridDat.SpatialDimension;
             if (SpatialDim != 2)
                 throw new NotImplementedException("Only two dimensions are supported at the moment");
 
             double hMin = lsTrk.GridDat.iGeomCells.h_min.Min();
-            int NoOfSurfacePoints = Convert.ToInt32(10 * Circumference_P / hMin) + 1;
+            int NoOfSurfacePoints = Convert.ToInt32(20 * Circumference_P / hMin) + 1;
             MultidimensionalArray SurfacePoints = MultidimensionalArray.Create(NoOfSurfacePoints, 2);
             double[] InfinitisemalAngle = GenericBlas.Linspace(0, 2 * Math.PI, NoOfSurfacePoints + 1);
             if (Math.Abs(10 * Circumference_P / hMin + 1) >= int.MaxValue)
                 throw new ArithmeticException("Error trying to calculate the number of surface points, overflow");
-            
+
             for (int j = 0; j < NoOfSurfacePoints; j++)
             {
-                SurfacePoints[j, 0] = Math.Cos(InfinitisemalAngle[j]) * radius_P + Position[0];
-                SurfacePoints[j, 1] = Math.Sin(InfinitisemalAngle[j]) * radius_P + Position[1];
+                SurfacePoints[j, 0] = Math.Cos(InfinitisemalAngle[j]) * width_P + Position[0];
+                SurfacePoints[j, 1] = Math.Sin(InfinitisemalAngle[j]) * width_P + Position[1];
             }
             return SurfacePoints;
         }
 
-        override public void GetSupportPoint(int SpatialDim, double Vector0, double Vector1, out double[] SupportPoint)
-        {
-            double length = Math.Sqrt(Vector0.Pow2() + Vector1.Pow2());
-            double CosT = Vector0 / length;
-            double SinT = Vector1 / length;
-            SupportPoint = new double[SpatialDim];
-            if (SpatialDim != 2)
-                throw new NotImplementedException("Only two dimensions are supported at the moment");
-            SupportPoint[0] = CosT * radius_P + Position[0][0];
-            SupportPoint[1] = SinT * radius_P + Position[0][1];
-        }
-
         override public double[] GetLengthScales()
         {
-            return new double[] { radius_P, radius_P };
+            return new double[] { width_P, width_P };
         }
     }
 }
-

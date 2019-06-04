@@ -157,15 +157,43 @@ namespace BoSSS.Application.FSI_Solver {
             return SurfacePoints;
         }
 
-        override public void GetSupportPoint(int SpatialDim, double CosT, double SinT, out double[] SupportPoint)
+        override public void GetSupportPoint(int SpatialDim, double Vector0, double Vector1, out double[] SupportPoint)
         {
             SupportPoint = new double[SpatialDim];
-            if (SpatialDim != 2)
-                throw new NotImplementedException("Only two dimensions are supported at the moment");
-            double temp0 = CosT * length_P;
-            double temp1 = SinT * thickness_P;
-            SupportPoint[0] = (temp0 * Math.Cos(Angle[0]) - temp1 * Math.Sin(Angle[0])) + Position[0][0];
-            SupportPoint[1] = (temp0 * Math.Sin(Angle[0]) + temp1 * Math.Cos(Angle[0])) + Position[0][1];
+
+            double[] v = new double[2];
+            v[0] = Vector0;
+            v[1] = Vector1;
+            double[,] B = new double[2, 2];
+            B[0, 0] = length_P * Math.Cos(Angle[0]);
+            B[0, 1] = -thickness_P * Math.Sin(Angle[0]);
+            B[1, 0] = length_P * Math.Sin(Angle[0]);
+            B[1, 1] = thickness_P * Math.Cos(Angle[0]);
+            double[,] BT = B.CloneAs();
+            BT[0, 1] = B[1, 0];
+            BT[1, 0] = B[0, 1];
+            double[] temp = new double[2];
+            for (int i = 0; i < 2; i++)
+            {
+                for (int j = 0; j < 2; j++)
+                {
+                    temp[i] += BT[i, j] * v[j];
+                }
+            }
+            double BetragTemp = Math.Sqrt(temp[0].Pow2() + temp[1].Pow2());
+            for (int i = 0; i < 2; i++)
+            {
+                temp[i] = temp[i] / BetragTemp;
+            }
+            for (int i = 0; i < 2; i++)
+            {
+                for (int j = 0; j < 2; j++)
+                {
+                    SupportPoint[i] += B[i, j] * temp[j];
+                }
+                SupportPoint[i] += Position[0][i];
+            }
+
         }
         override public double[] GetLengthScales()
         {

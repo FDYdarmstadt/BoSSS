@@ -759,7 +759,11 @@ namespace BoSSS.Application.XNSE_Solver {
 
                 //PlotCurrentState(hack_Phystime, new TimestepNumber(hack_TimestepIndex, 13), 2);
 
-                ContinuityEnforcer = new ContinuityProjection(DGLevelSet: this.DGLevSet.Current, gridData: GridData, Option: Control.LSContiProjectionMethod);
+                ContinuityEnforcer = new ContinuityProjection(
+                    ContBasis: this.LevSet.Basis, 
+                    DGBasis: this.DGLevSet.Current.Basis, 
+                    gridData: GridData, 
+                    Option: Control.LSContiProjectionMethod);
 
                 if(this.Control.Option_LevelSetEvolution == LevelSetEvolution.ExtensionVelocity) {
                     ReInitPDE = new EllipticReInit(this.LsTrk, this.Control.ReInitControl, DGLevSet.Current);
@@ -2517,7 +2521,8 @@ namespace BoSSS.Application.XNSE_Solver {
                 // =========================================
 
                 ContinuityEnforcer = new ContinuityProjection(
-                    DGLevelSet: this.DGLevSet.Current,
+                    ContBasis: this.LevSet.Basis,
+                    DGBasis: this.DGLevSet.Current.Basis,
                     gridData: GridData,
                     Option: Control.LSContiProjectionMethod
                     );
@@ -2576,7 +2581,8 @@ namespace BoSSS.Application.XNSE_Solver {
             //this.InitLevelSet();
 
             ContinuityEnforcer = new ContinuityProjection(
-                    DGLevelSet: this.DGLevSet.Current,
+                    ContBasis: this.LevSet.Basis,
+                    DGBasis: this.DGLevSet.Current.Basis,
                     gridData: GridData,
                     Option: Control.LSContiProjectionMethod
                     );

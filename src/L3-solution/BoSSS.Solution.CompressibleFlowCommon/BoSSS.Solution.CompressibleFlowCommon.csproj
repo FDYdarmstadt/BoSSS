@@ -57,7 +57,7 @@
     <Compile Include="Convection\OptimizedHLLCEnergyFlux.cs" />
     <Compile Include="Convection\OptimizedHLLCFlux.cs" />
     <Compile Include="Convection\OptimizedHLLCMomentumFlux.cs" />
-    <Compile Include="EquationSystem\CompressibleOperator.cs" />
+    <Compile Include="EquationSystem\CompressibleOperatorFactory.cs" />
     <Compile Include="ILimiter.cs" />
     <Compile Include="IShockSensor.cs" />
     <Compile Include="ISpeciesMap.cs" />

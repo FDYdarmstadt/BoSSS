@@ -17,6 +17,7 @@ limitations under the License.
 using BoSSS.Application.FSI_Solver;
 using BoSSS.Application.IBM_Solver;
 using BoSSS.Foundation.Grid;
+using BoSSS.Foundation.XDG;
 using BoSSS.Solution.XdgTimestepping;
 using ilPSP;
 using MPI.Wrappers;
@@ -449,10 +450,12 @@ namespace FSI_Solver
             }
         }
 
-        internal void GJK_DistanceAlgorithm(Particle p0, Particle p1, double[] Point0_old, double[] Point1_old, int SpatialDim, out double Min_Distance, out double[] ClosestPoint0, out double[] ClosestPoint1)
+        internal void GJK_DistanceAlgorithm(Particle p0, Particle p1, LevelSetTracker lsTrk, double[] Point0_old, double[] Point1_old, int SpatialDim, out double Min_Distance, out double[] DistanceVec, out double[] ClosestPoint0, out double[] ClosestPoint1, out bool Overlapping)
         {
             ClosestPoint0 = new double[SpatialDim];
             ClosestPoint1 = new double[SpatialDim];
+            DistanceVec = new double[SpatialDim];
+            Overlapping = false;
             Initialize_GJK(SpatialDim, Point0_old, Point1_old, out double[] v0, out List<double[]> Simplex);
             double[] v = v0.CloneAs();
             double[] SupportPoint = new double[SpatialDim];
@@ -464,17 +467,36 @@ namespace FSI_Solver
                 {
                     vt[d] = -v[d];
                 }
-                CalculateSupportPoint(p0, SpatialDim, vt, out ClosestPoint0);
-                CalculateSupportPoint(p1, SpatialDim, v, out ClosestPoint1);
+                CalculateSupportPoint(p0, SpatialDim, vt, lsTrk, out ClosestPoint0);
+                CalculateSupportPoint(p1, SpatialDim, v, lsTrk, out ClosestPoint1);
                 for (int d = 0; d < SpatialDim; d++)
                 {
                     SupportPoint[d] = ClosestPoint0[d] - ClosestPoint1[d];
                 }
-                double test = Math.Sqrt((v[0] - SupportPoint[0]).Pow2() + (v[1] - SupportPoint[1]).Pow2());
-                if (Math.Sqrt((v[0] - SupportPoint[0]).Pow2() + (v[1] - SupportPoint[1]).Pow2()) <= 1e-12)
+                //double test = Math.Sqrt((v[0] - SupportPoint[0]).Pow2() + (v[1] - SupportPoint[1]).Pow2());
+                //if (Math.Sqrt((v[0] - SupportPoint[0]).Pow2() + (v[1] - SupportPoint[1]).Pow2()) <= 1e-2)
+                //{
+                //    DistanceVec = v.CloneAs();
+                    
+                //    break;
+                //}
+                double test = (v[0] * vt[0] + v[1] * vt[1]) - (SupportPoint[0] * vt[0] + SupportPoint[1] * vt[1]);
+                if ((v[0] * vt[0] + v[1] * vt[1]) >= (SupportPoint[0] * vt[0] + SupportPoint[1] * vt[1]))
+                {
+                    DistanceVec = v.CloneAs();
+                    Console.WriteLine("test " + test);
+                    Console.WriteLine("v[0] " + v[0] + " v[1] " + v[1]);
+                    Console.WriteLine("SupportPoint[0] " + SupportPoint[0] + " SupportPoint[1] " + SupportPoint[1]);
+                    Console.WriteLine("No of steps for distance algorithm: " + i);
                     break;
-                Simplex.Add(SupportPoint.CloneAs());
-                DistanceAlgorithm(Simplex, out v);
+                }
+                Simplex.Insert(0, SupportPoint.CloneAs());
+                DistanceAlgorithm(Simplex, out v, out Overlapping);
+                if (Overlapping)
+                {
+                    DistanceVec = v.CloneAs();
+                    break;
+                }
             }
             Min_Distance = Math.Sqrt(v[0].Pow2() + v[1].Pow2());
         }
@@ -488,18 +510,52 @@ namespace FSI_Solver
             }
             Simplex.Add(v0.CloneAs());
         }
-        private void CalculateSupportPoint(Particle _Particle, int SpatialDim, double[] Vector, out double[] SupportPoint)
+        private void CalculateSupportPoint(Particle _Particle, int SpatialDim, double[] Vector, LevelSetTracker lsTrk, out double[] SupportPoint)
         {
-            double VectorLength = Math.Sqrt(Vector[0].Pow2() + Vector[1].Pow2());
-            double CosT = Vector[0] / VectorLength;
-            double SinT = Vector[1] / VectorLength;
-            _Particle.GetSupportPoint(SpatialDim, CosT, SinT, out SupportPoint);
+            SupportPoint = new double[2];
+            if (_Particle is Particle_Ellipsoid || _Particle is Particle_Sphere)
+            {
+                _Particle.GetSupportPoint(SpatialDim, Vector[0], Vector[1], out SupportPoint);
+            }
+            else
+            {
+                MultidimensionalArray SurfacePoints = _Particle.GetSurfacePoints(lsTrk, _Particle.Position[0], _Particle.Angle[0]);
+                int L = 1;
+                int R = SurfacePoints.GetLength(0) - 2;
+                while (L <= R && L > 0 && R < SurfacePoints.GetLength(0) - 1) 
+                {
+                    int Index = (L + R) / 2;
+                    GetPointAndNeighbours(SurfacePoints, Index, out SupportPoint, out double[] RightNeighbour, out double[] LeftNeighbour);
+                    double DotSupportPoint = SupportPoint[0] * Vector[0] + SupportPoint[1] * Vector[1];
+                    double DotRight = RightNeighbour[0] * Vector[0] + RightNeighbour[1] * Vector[1];
+                    double DotLeft = LeftNeighbour[0] * Vector[0] + LeftNeighbour[1] * Vector[1];
+                    if (DotSupportPoint > DotRight && DotSupportPoint > DotLeft)
+                        break;
+                    else if (DotRight > DotLeft) 
+                        L = Index + 1;
+                    else
+                        R = Index - 1;
+                }
+            }
         }
 
-        private void DistanceAlgorithm(List<double[]> Simplex, out double[] v)
+        private void GetPointAndNeighbours(MultidimensionalArray SurfacePoints, int Index, out double[] Point, out double[] RightNeighbour, out double[] LeftNeighbour)
+        {
+            Point = new double[2];
+            RightNeighbour = new double[2];
+            LeftNeighbour = new double[2];
+            for (int d = 0; d < 2; d++)
+            {
+                Point[d] = SurfacePoints[Index, d];
+                LeftNeighbour[d] = SurfacePoints[Index - 1, d];
+                RightNeighbour[d] = SurfacePoints[Index + 1, d];
+            }
+        }
+
+        private void DistanceAlgorithm(List<double[]> Simplex, out double[] v, out bool Overlapping)
         {
             v = new double[2];
-            
+            Overlapping = false;
             List<double[]> DotProd_Simplex = new List<double[]>();
             for (int s1 = 0; s1 < Simplex.Count(); s1++)
             {
@@ -565,7 +621,7 @@ namespace FSI_Solver
                         CrossProd *= 1;
                         double test1 = DotProd_Simplex[s4][s4] - DotProd_Simplex[s4][s2];
                         double test2 = DotProd_Simplex[s2][s2] - DotProd_Simplex[s4][s2];
-                        if (DotProd_Simplex[s4][s4] - DotProd_Simplex[s4][s2] >= 0 && DotProd_Simplex[s2][s2] - DotProd_Simplex[s4][s2] >= 0 && CrossProd >= 0)
+                        if (DotProd_Simplex[s4][s4] - DotProd_Simplex[s4][s2] >= 0 && DotProd_Simplex[s2][s2] - DotProd_Simplex[s4][s2] >= 0 && CrossProd >= 0 && !Return)
                         {
                             double a0 = (Simplex[s2][1] - Simplex[s4][1]) / (Simplex[s2][0] - Simplex[s4][0]);
                             double b = Simplex[s2][1] - Simplex[s2][0] * a0;
@@ -584,9 +640,14 @@ namespace FSI_Solver
                             Simplex.Clear();
                             Simplex.Add(tempSimplex1.CloneAs());
                             Simplex.Add(tempSimplex2.CloneAs());
+                            Return = true;
                             break;
                         }
                     }
+                }
+                if (!Return)
+                {
+                    Overlapping = true;
                 }
             }   
         }
