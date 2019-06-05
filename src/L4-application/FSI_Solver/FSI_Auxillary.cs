@@ -449,7 +449,7 @@ namespace FSI_Solver
                 }
             }
         }
-        internal void Wall_GJK_DistanceAlgorithm(Particle particle, MultidimensionalArray WallVerticies, LevelSetTracker lsTrk, double[] Point0_old, double[] Point1_old, int SpatialDim, out double Min_Distance, out double[] DistanceVec, out double[] ClosestPoint0, out double[] ClosestPoint1, out bool Overlapping)
+        internal void Wall_GJK_DistanceAlgorithm(Particle particle, LevelSetTracker lsTrk, double[] Point0_old, double[] Point1_old, int SpatialDim, out double Min_Distance, out double[] DistanceVec, out double[] ClosestPoint0, out double[] ClosestPoint1, out bool Overlapping)
         {
             ClosestPoint0 = new double[SpatialDim];
             ClosestPoint1 = new double[SpatialDim];
@@ -473,7 +473,13 @@ namespace FSI_Solver
                 CalculateSupportPoint(particle, SpatialDim, vt, lsTrk, out ClosestPoint0);
                 if (double.IsNaN(ClosestPoint0[0]) || double.IsNaN(ClosestPoint0[1]))
                     throw new ArithmeticException("Error trying to calculate point0 Value:  " + ClosestPoint0[0] + " point1 " + ClosestPoint0[1]);
-                Wall_CalculateSupportPoint(WallVerticies, SpatialDim, v, out ClosestPoint1);
+
+                ClosestPoint1 = ClosestPoint0.CloneAs();
+                if (Point0_old[0] == Point1_old[0])
+                    ClosestPoint1[1] = Point1_old[1];
+                else
+                    ClosestPoint1[0] = Point1_old[0];
+
                 for (int d = 0; d < SpatialDim; d++)
                 {
                     SupportPoint[d] = ClosestPoint0[d] - ClosestPoint1[d];
