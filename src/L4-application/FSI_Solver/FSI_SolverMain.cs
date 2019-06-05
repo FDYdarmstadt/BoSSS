@@ -1704,9 +1704,13 @@ namespace BoSSS.Application.FSI_Solver
             Console.WriteLine("Threshold: " + Threshold);
             Collided = false;
 
+            // =======================================================
+            // Step 6
+            // Skip integration of hydrodynamic forces (maybe no 
+            // longer necesarry, testing needed)
+            // =======================================================
             if (Distance < Threshold)
             {
-                // Bool if force integration should be skipped
                 Particle0.skipForceIntegration = true;
                 Particle1.skipForceIntegration = true;
             }
@@ -1720,6 +1724,8 @@ namespace BoSSS.Application.FSI_Solver
                 triggerOnlyCollisionProcedure = false;
                 return;
             }
+
+            // Sollte dafür sorgen, dass im Falle eines plastischen Stoßes beide Partikel auch zusammen bleiben, klappt so semigut.
             bool StuckedParticles = false;
             if (collisionVn_P0 == 0 && collisionVn_P1 == 0 && collisionVt_P0 == 0 && collisionVt_P1 == 0 && ((FSI_Control)Control).CoefficientOfRestitution == 0) 
             {
@@ -1727,6 +1733,11 @@ namespace BoSSS.Application.FSI_Solver
                 Console.WriteLine("StuckedParticles:    " + StuckedParticles);
             }
 
+            // =======================================================
+            // Step 7
+            // Main collision procedure, only the momentum 
+            // conservation model is fully supported.
+            // =======================================================
             switch (CollisionModel)
             {
                 case (FSI_Solver.FSI_Control.CollisionModel.RepulsiveForce):
@@ -1774,19 +1785,17 @@ namespace BoSSS.Application.FSI_Solver
                         //coefficient of restitution (e=0 pastic; e=1 elastic)
                         double e = ((FSI_Control)Control).CoefficientOfRestitution;
 
-                        // exzentric collision
-                        // ----------------------------------------                                                                  
-                        ClosestPoint_P0.AccV(-1, Particle0.Position[0]);
-                        double a0 = (ClosestPoint_P0[0] * TangentialVector[0] + ClosestPoint_P0[1] * TangentialVector[1]);
-                        ClosestPoint_P1.AccV(-1, Particle1.Position[0]);
-                        double a1 = (ClosestPoint_P1[0] * TangentialVector[0] + ClosestPoint_P1[1] * TangentialVector[1]);
+                        // Calculate excentric parameter
+                        double[] RadialDistance0 = new double[SpatialDim];
+                        double[] RadialDistance1 = new double[SpatialDim];
+                        for (int d = 0; d < SpatialDim; d++)
+                        {
+                            RadialDistance0[d] = ClosestPoint_P0[d] - Particle0.Position[0][d];
+                            RadialDistance1[d] = ClosestPoint_P1[d] - Particle1.Position[0][d];
+                        }
+                        double a0 = Particle0 is Particle_Sphere ? 0.0 : RadialDistance0[0] * TangentialVector[0] + RadialDistance0[1] * TangentialVector[1];
+                        double a1 = Particle1 is Particle_Sphere ? 0.0 : RadialDistance1[0] * TangentialVector[0] + RadialDistance1[1] * TangentialVector[1];
 
-                        // Fix for Sphere
-                        // ----------------------------------------  
-                        if (Particle0 is Particle_Sphere)
-                            a0 = 0.0;
-                        if (Particle1 is Particle_Sphere)
-                            a1 = 0.0;
                         double Fx;
                         double Fxrot;
                         double tempCollisionVn_P0;
@@ -1806,10 +1815,7 @@ namespace BoSSS.Application.FSI_Solver
                         {
                             Fx = (1 + e) * ((collisionVn_P0) / (1 / Particle0.Mass_P + a0.Pow2() / Particle0.MomentOfInertia_P));
                             Fxrot = (1 + e) * ((-a0 * Particle0.RotationalVelocity[0]) / (1 / Particle0.Mass_P + a0.Pow2() / Particle0.MomentOfInertia_P));
-                            Console.WriteLine("pre tempCollisionVn_P0:    " + collisionVn_P0);
                             tempCollisionVn_P0 = collisionVn_P0 - (Fx + Fxrot) / Particle0.Mass_P;
-                            Console.WriteLine("tempCollisionVn_P0:    " + tempCollisionVn_P0);
-                            Console.WriteLine("tempCollisionVt_P0:    " + collisionVt_P0 * e);
                             tempCollisionRot_P0 = Particle0.RotationalVelocity[0] + a0 * (Fx + Fxrot) / Particle0.MomentOfInertia_P;
                             tempCollisionVn_P1 = collisionVn_P1;
                             tempCollisionRot_P1 = 0;
@@ -1820,24 +1826,15 @@ namespace BoSSS.Application.FSI_Solver
                             Fxrot = (1 + e) * ((-a0 * Particle0.RotationalVelocity[0] + a1 * Particle1.RotationalVelocity[0]) / (1 / Particle0.Mass_P + 1 / Particle1.Mass_P + a0.Pow2() / Particle0.MomentOfInertia_P + a1.Pow2() / Particle1.MomentOfInertia_P));
                             tempCollisionVn_P0 = collisionVn_P0 - (Fx + Fxrot) / Particle0.Mass_P;
                             tempCollisionRot_P0 = Particle0.RotationalVelocity[0] + a0 * (Fx + Fxrot) / Particle0.MomentOfInertia_P;
-                            Console.WriteLine("particle0.RotationalVelocity[0]" + Particle0.RotationalVelocity[0]);
-                            Console.WriteLine("a0 * (Fx + Fxrot) / particle0.MomentOfInertia_P" + (a0 * (Fx + Fxrot) / Particle0.MomentOfInertia_P));
                             tempCollisionVn_P1 = collisionVn_P1 + (Fx + Fxrot) / Particle1.Mass_P;
                             tempCollisionRot_P1 = Particle1.RotationalVelocity[0] - a1 * (Fx + Fxrot) / Particle1.MomentOfInertia_P;
-                            Console.WriteLine("particle1.RotationalVelocity[0]" + Particle1.RotationalVelocity[0]);
-                            Console.WriteLine("-a1 * (Fx + Fxrot) / particle1.MomentOfInertia_P" + (-a1 * (Fx + Fxrot) / Particle1.MomentOfInertia_P));
                         }
 
-                        
                         double tempCollisionVt_P0 = collisionVt_P0 * e;
                         double tempCollisionVt_P1 = collisionVt_P1 * e;
                         Console.WriteLine("a0:    " + a0 + "   Fx:    " + (-Fx) + "      Fxrot:    " + (-Fxrot));
                         Console.WriteLine("a1:    " + a1 + "   Fx:    " + Fx + "      Fxrot:    " + Fxrot);
-                        //particle0.RotationalVelocity[0] = particle0.RotationalVelocity[0] + a0 * (Fx + Fxrot) / particle0.MomentOfInertia_P;
-                        //particle1.RotationalVelocity[0] = particle1.RotationalVelocity[0] - a1 * (Fx + Fxrot) / particle1.MomentOfInertia_P;
-                        //particle0.TranslationalVelocity[0] = new double[] { normal[0] * tempCollisionVn_P0 + tempCollisionVt_P0 * tangential[0], normal[1] * tempCollisionVn_P0 + tempCollisionVt_P0 * tangential[1] };
-                        //particle1.TranslationalVelocity[0] = new double[] { normal[0] * tempCollisionVn_P1 + tempCollisionVt_P1 * tangential[0], normal[1] * tempCollisionVn_P1 + tempCollisionVt_P1 * tangential[1] };
-
+                        
                         Particle0.CollisionNormal.Add(NormalVector);
                         Particle1.CollisionNormal.Add(NormalVector);
                         Particle0.CollisionTangential.Add(TangentialVector);
@@ -1846,6 +1843,7 @@ namespace BoSSS.Application.FSI_Solver
                         Particle1.CollisionRotationalVelocity.Add(tempCollisionRot_P1);
                         Particle0.CollisionTranslationalVelocity.Add(new double[] { tempCollisionVn_P0, tempCollisionVt_P0 });
                         Particle1.CollisionTranslationalVelocity.Add(new double[] { tempCollisionVn_P1, tempCollisionVt_P1 });
+
                         for (int d = 0; d < 2; d++)
                         {
                             Particle0.TranslationalVelocity[1][d] = 0;
@@ -1857,39 +1855,7 @@ namespace BoSSS.Application.FSI_Solver
                             Particle1.RotationalAcceleration[1] = 0;
                             Particle1.RotationalVelocity[1] = 0;
                         }
-                        //particle0.CollisionTranslationalVelocity.Add(new double[] { normal[0] * tempCollisionVn_P0 + tempCollisionVt_P0 * tangential[0], normal[1] * tempCollisionVn_P0 + tempCollisionVt_P0 * tangential[1] });
-                        //particle1.CollisionTranslationalVelocity.Add(new double[] { normal[0] * tempCollisionVn_P1 + tempCollisionVt_P1 * tangential[0], normal[1] * tempCollisionVn_P1 + tempCollisionVt_P1 * tangential[1] });
-                        
-
-                        // zentric collision
-                        // ----------------------------------------
-                        //double tempCollisionVn_P0 = (particle0.mass_P * collisionVn_P0 + particle1.mass_P * collisionVn_P1 + e * particle1.mass_P * (collisionVn_P1 - collisionVn_P0)) / (particle0.mass_P + particle1.mass_P);
-                        //double tempCollisionVt_P0 = collisionVt_P0;
-                        //double tempCollisionVn_P1 = (particle0.mass_P * collisionVn_P0 + particle1.mass_P * collisionVn_P1 + e * particle0.mass_P * (collisionVn_P0 - collisionVn_P1)) / (particle0.mass_P + particle1.mass_P);
-                        //double tempCollisionVt_P1 = collisionVt_P1;
-                        // ----------------------------------------
-
-
-
-                        //collided = true;
-
-                        //double contactForce = (1 + e)*(particle0.transVelocityAtIteration[0][0] - particle0.radius_P * particle0.rotationalVelocityAtIteration[0] - (particle1.transVelocityAtIteration[0][0] - particle1.radius_P * particle1.rotationalVelocityAtIteration[0])) / (1/particle0.mass_P+1/particle1.mass_P+particle0.radius_P.Pow2()/particle0.MomentOfInertia_P+particle1.radius_P.Pow2()/particle1.MomentOfInertia_P);
-                        //particle0.transVelocityAtIteration[0][0] -= contactForce / particle0.mass_P;
-                        //particle0.rotationalVelocityAtIteration[0] = particle0.rotationalVelocityAtIteration[0];
-                        //particle0.rotationalVelocityAtIteration[0] += particle0.radius_P * contactForce / particle0.MomentOfInertia_P;
-                        //particle1.transVelocityAtIteration[0][0] -= contactForce / particle1.mass_P;
-                        //particle1.rotationalVelocityAtIteration[0] = particle1.rotationalVelocityAtIteration[0];
-                        //particle1.rotationalVelocityAtIteration[0] += particle1.radius_P * contactForce / particle1.MomentOfInertia_P;
-
-
-                        //if (realDistance <= 0.05 * hmin)
-                        //{
-                        //    Console.WriteLine("Entering overlapping loop....");
-                        //    triggerOnlyCollisionProcedure = true;
-                        //}
                     }
-
-                    //if (realDistance > threshold && particle0.m_collidedWithParticle[m_Particles.IndexOf(particle1)] && particle1.m_collidedWithParticle[m_Particles.IndexOf(particle0)])
                     else
                     {
                         Particle0.m_collidedWithParticle[m_Particles.IndexOf(Particle1)] = false;
@@ -1897,10 +1863,8 @@ namespace BoSSS.Application.FSI_Solver
                         Particle0.m_closeInterfacePointTo[m_Particles.IndexOf(Particle1)] = null;
                         Particle1.m_closeInterfacePointTo[m_Particles.IndexOf(Particle0)] = null;
                     }
-
                     ForceCollision = false;
                     break;
-
 
                 default:
                     throw new NotImplementedException("Collision model not available");
@@ -2014,7 +1978,7 @@ namespace BoSSS.Application.FSI_Solver
                     continue;
 
                 bool Overlapping = false;
-                _FSI_Auxillary.Wall_GJK_DistanceAlgorithm(particle, LsTrk, point0, point1, 2, out Distance, out DistanceVec, out ClosestPointParticle, out ClosestPointWall, out Overlapping);
+                _FSI_Auxillary.Wall_GJK_DistanceAlgorithm(particle, LsTrk, point0, point1, particle.Angle[0], out Distance, out DistanceVec, out ClosestPointParticle, out ClosestPointWall, out Overlapping);
                 _FSI_Collision.FindNormalAndTangentialVector(DistanceVec, out double[] normal, out double[] tangential);
                 _FSI_Collision.CalculateDynamicCollisionThreshold(particle, null, ClosestPointParticle, ClosestPointWall, normal, Distance, dt, out double threshold);
                 _FSI_Collision.ProjectVelocity(normal, tangential, particle.TranslationalVelocity[0], out double collisionVn_P0, out double collisionVt_P0);
@@ -2022,13 +1986,14 @@ namespace BoSSS.Application.FSI_Solver
                 if (Overlapping)// && particle0.m_closeInterfacePointTo[m_Particles.IndexOf(particle1)] != null && particle1.m_closeInterfacePointTo[m_Particles.IndexOf(particle0)] != null)
                 {
                     particle.Position[0] = particle.Position[1].CloneAs();
+                    particle.Angle[0] = particle.Angle[1];
                     point0 = particle.Position[0].CloneAs();
                     point1 = point0.CloneAs();
                     if (WallPoints[i, 0] != 0)
                         point1[0] = WallPoints[i, 0];
                     else if (WallPoints[i, 1] != 0)
                         point1[1] = WallPoints[i, 1];
-                    _FSI_Auxillary.Wall_GJK_DistanceAlgorithm(particle, LsTrk, point0, point1, 2, out Distance, out DistanceVec, out ClosestPointParticle, out ClosestPointWall, out Overlapping);
+                    _FSI_Auxillary.Wall_GJK_DistanceAlgorithm(particle, LsTrk, point0, point1, particle.Angle[0], out Distance, out DistanceVec, out ClosestPointParticle, out ClosestPointWall, out Overlapping);
                     threshold = 1e20;
                     _FSI_Collision.FindNormalAndTangentialVector(DistanceVec, out normal, out tangential);
                     _FSI_Collision.ProjectVelocity(normal, tangential, particle.TranslationalVelocity[0], out collisionVn_P0, out collisionVt_P0);

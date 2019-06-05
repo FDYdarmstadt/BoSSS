@@ -449,13 +449,14 @@ namespace FSI_Solver
                 }
             }
         }
-        internal void Wall_GJK_DistanceAlgorithm(Particle particle, LevelSetTracker lsTrk, double[] Point0_old, double[] Point1_old, int SpatialDim, out double Min_Distance, out double[] DistanceVec, out double[] ClosestPoint0, out double[] ClosestPoint1, out bool Overlapping)
+        internal void Wall_GJK_DistanceAlgorithm(Particle particle, LevelSetTracker lsTrk, double[] Position0, double[] Point1_old, double Angle, out double Min_Distance, out double[] DistanceVec, out double[] ClosestPoint0, out double[] ClosestPoint1, out bool Overlapping)
         {
+            int SpatialDim = Position0.Length;
             ClosestPoint0 = new double[SpatialDim];
             ClosestPoint1 = new double[SpatialDim];
             DistanceVec = new double[SpatialDim];
             Overlapping = false;
-            Initialize_GJK(SpatialDim, Point0_old, Point1_old, out double[] v0, out List<double[]> Simplex);
+            Initialize_GJK(SpatialDim, Position0, Point1_old, out double[] v0, out List<double[]> Simplex);
             double[] v = v0.CloneAs();
             double[] SupportPoint = new double[SpatialDim];
 
@@ -470,12 +471,12 @@ namespace FSI_Solver
                     Console.WriteLine("Stupid");
                 if (double.IsNaN(vt[0]) || double.IsNaN(vt[1]))
                     throw new ArithmeticException("Error trying to calculate point0 Value:  " + vt[0] + " point1 " + vt[1]);
-                CalculateSupportPoint(particle, SpatialDim, vt, lsTrk, out ClosestPoint0);
+                CalculateSupportPoint(particle, Position0, Angle, SpatialDim, vt, lsTrk, out ClosestPoint0);
                 if (double.IsNaN(ClosestPoint0[0]) || double.IsNaN(ClosestPoint0[1]))
                     throw new ArithmeticException("Error trying to calculate point0 Value:  " + ClosestPoint0[0] + " point1 " + ClosestPoint0[1]);
 
                 ClosestPoint1 = ClosestPoint0.CloneAs();
-                if (Point0_old[0] == Point1_old[0])
+                if (Position0[0] == Point1_old[0])
                     ClosestPoint1[1] = Point1_old[1];
                 else
                     ClosestPoint1[0] = Point1_old[0];
