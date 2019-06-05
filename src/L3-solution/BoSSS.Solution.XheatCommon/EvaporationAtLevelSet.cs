@@ -138,7 +138,7 @@ namespace BoSSS.Solution.XheatCommon {
 
             //double qEvap = ComputeHeatFlux_Macro(cp.ParamsNeg.GetSubVector(0, D), cp.ParamsPos.GetSubVector(0, D), cp.n);
             //double qEvap = ComputeHeatFlux_Micro(cp.ParamsNeg[D], cp.ParamsPos[D], cp.ParamsNeg[D + 1], cp.ParamsNeg[D + 2]);
-            double qEvap = ComputeHeatFlux(cp.ParamsNeg, cp.ParamsPos, cp.n, evapMicroRegion[cp.jCell]);
+            double qEvap = -10.0; // ComputeHeatFlux(cp.ParamsNeg, cp.ParamsPos, cp.n, evapMicroRegion[cp.jCell]);
             if(qEvap == 0.0)
                 return 0.0;
 
