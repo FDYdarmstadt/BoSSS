@@ -155,7 +155,6 @@ namespace FSI_Solver
                 Position[d] = particle.Position[0][d] + particle.TranslationalVelocity[0][d] * dt + (particle.TranslationalAcceleration[1][d] + particle.TranslationalAcceleration[0][d]) * dt.Pow2() / 4;
                 TranslationalVelocity[d] = particle.TranslationalVelocity[0][d] + (particle.TranslationalAcceleration[1][d] + particle.TranslationalAcceleration[0][d]) * dt / 2;
             }
-            particle.RotationalVelocity[0] = RotationalVelocity;
         }
 
         internal void SetParticleToLastTimestep(Particle particle, int SpatialDim, out double[] Position, out double Angle)

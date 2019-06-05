@@ -838,7 +838,7 @@ namespace BoSSS.Application.FSI_Solver
             throw new NotImplementedException();
         }
 
-        virtual public void GetSupportPoint(int SpatialDim, double[] Vector, out double[] SupportPoint)
+        virtual public void GetSupportPoint(int SpatialDim, double[] Vector, double[] Position, double Angle, out double[] SupportPoint)
         {
             throw new NotImplementedException();
         }

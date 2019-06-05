@@ -156,7 +156,7 @@ namespace BoSSS.Application.FSI_Solver
             return SurfacePoints;
         }
 
-        override public void GetSupportPoint(int SpatialDim, double[] Vector, out double[] SupportPoint)
+        override public void GetSupportPoint(int SpatialDim, double[] Vector, double[] Position, double Angle, out double[] SupportPoint)
         {
             double length = Math.Sqrt(Vector[0].Pow2() + Vector[1].Pow2());
             double CosT = Vector[0] / length;
@@ -164,8 +164,8 @@ namespace BoSSS.Application.FSI_Solver
             SupportPoint = new double[SpatialDim];
             if (SpatialDim != 2)
                 throw new NotImplementedException("Only two dimensions are supported at the moment");
-            SupportPoint[0] = CosT * radius_P + Position[0][0];
-            SupportPoint[1] = SinT * radius_P + Position[0][1];
+            SupportPoint[0] = CosT * radius_P + Position[0];
+            SupportPoint[1] = SinT * radius_P + Position[1];
             if (double.IsNaN(SupportPoint[0]) || double.IsNaN(SupportPoint[1]))
                 throw new ArithmeticException("Error trying to calculate point0 Value:  " + SupportPoint[0] + " point1 " + SupportPoint[1]);
         }

@@ -503,13 +503,14 @@ namespace FSI_Solver
             }
             Min_Distance = Math.Sqrt(v[0].Pow2() + v[1].Pow2());
         }
-        internal void GJK_DistanceAlgorithm(Particle p0, Particle p1, LevelSetTracker lsTrk, double[] Point0_old, double[] Point1_old, int SpatialDim, out double Min_Distance, out double[] DistanceVec, out double[] ClosestPoint0, out double[] ClosestPoint1, out bool Overlapping)
+        internal void GJK_DistanceAlgorithm(Particle p0, Particle p1, LevelSetTracker lsTrk, double[] Position0, double[] Position1, double Angle0, double Angle1, out double Min_Distance, out double[] DistanceVec, out double[] ClosestPoint0, out double[] ClosestPoint1, out bool Overlapping)
         {
+            int SpatialDim = Position0.Length;
             ClosestPoint0 = new double[SpatialDim];
             ClosestPoint1 = new double[SpatialDim];
             DistanceVec = new double[SpatialDim];
             Overlapping = false;
-            Initialize_GJK(SpatialDim, Point0_old, Point1_old, out double[] v0, out List<double[]> Simplex);
+            Initialize_GJK(SpatialDim, Position0, Position1, out double[] v0, out List<double[]> Simplex);
             double[] v = v0.CloneAs();
             double[] SupportPoint = new double[SpatialDim];
             
@@ -524,10 +525,10 @@ namespace FSI_Solver
                     Console.WriteLine("Stupid");
                 if (double.IsNaN(vt[0]) || double.IsNaN(vt[1]))
                     throw new ArithmeticException("Error trying to calculate point0 Value:  " + vt[0] + " point1 " + vt[1]);
-                CalculateSupportPoint(p0, SpatialDim, vt, lsTrk, out ClosestPoint0);
+                CalculateSupportPoint(p0, Position0, Angle0, SpatialDim, vt, lsTrk, out ClosestPoint0);
                 if (double.IsNaN(ClosestPoint0[0]) || double.IsNaN(ClosestPoint0[1]))
                     throw new ArithmeticException("Error trying to calculate point0 Value:  " + ClosestPoint0[0] + " point1 " + ClosestPoint0[1]);
-                CalculateSupportPoint(p1, SpatialDim, v, lsTrk, out ClosestPoint1);
+                CalculateSupportPoint(p1, Position0, Angle1, SpatialDim, v, lsTrk, out ClosestPoint1);
                 for (int d = 0; d < SpatialDim; d++)
                 {
                     SupportPoint[d] = ClosestPoint0[d] - ClosestPoint1[d];
@@ -561,16 +562,16 @@ namespace FSI_Solver
             }
             Simplex.Add(v0.CloneAs());
         }
-        private void CalculateSupportPoint(Particle _Particle, int SpatialDim, double[] Vector, LevelSetTracker lsTrk, out double[] SupportPoint)
+        private void CalculateSupportPoint(Particle _Particle, double[] Position, double Angle, int SpatialDim, double[] Vector, LevelSetTracker lsTrk, out double[] SupportPoint)
         {
             SupportPoint = new double[SpatialDim];
             if (_Particle is Particle_Ellipsoid || _Particle is Particle_Sphere)
             {
-                _Particle.GetSupportPoint(SpatialDim, Vector, out SupportPoint);
+                _Particle.GetSupportPoint(SpatialDim, Vector, Position, Angle, out SupportPoint);
             }
             else
             {
-                MultidimensionalArray SurfacePoints = _Particle.GetSurfacePoints(lsTrk, _Particle.Position[0], _Particle.Angle[0]);
+                MultidimensionalArray SurfacePoints = _Particle.GetSurfacePoints(lsTrk, Position, Angle);
                 int L = 1;
                 int R = SurfacePoints.GetLength(0) - 2;
                 int Counter = 0;
