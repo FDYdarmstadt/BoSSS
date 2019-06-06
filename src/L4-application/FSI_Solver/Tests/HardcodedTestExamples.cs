@@ -277,9 +277,7 @@ namespace BoSSS.Application.FSI_Solver {
             // haben fertig...
             // ===============
 
-            C.LevelSetSmoothing = true;
             return C;
-
         }
 
         /// <summary>
