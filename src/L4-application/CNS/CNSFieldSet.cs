@@ -119,7 +119,7 @@ namespace CNS {
                 new Basis(gridData, config.EnergyDegree), CompressibleVariables.Energy);
 
             // Derived fields
-            foreach (var fieldConfig in config.VariableFields) {
+            foreach (var fieldConfig in config.VariableToDegreeMap) {
                 DerivedVariable key = fieldConfig.Key as DerivedVariable;
                 if (key == null) {
                     continue;

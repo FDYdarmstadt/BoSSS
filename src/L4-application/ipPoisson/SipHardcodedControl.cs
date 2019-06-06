@@ -109,6 +109,7 @@ namespace BoSSS.Application.SipPoisson {
             RR.InitialValues_Evaluators.Add("Tex", X => (0.5 * X[0].Pow2() - 10 * X[0]));
             RR.ExactSolution_provided = true;
 
+            
             RR.GridFunc = delegate ()
             {
                 double[] xNodes = CreateNodes(xRes, xStretch, 0, 10);
@@ -229,7 +230,6 @@ namespace BoSSS.Application.SipPoisson {
             R.LinearSolver.SolverCode = solver_name;
             //R.TargetBlockSize = 100;
 
-            R.TracingNamespaces = "BoSSS,ilPSP";
 
 
             R.GridFunc = delegate ()
