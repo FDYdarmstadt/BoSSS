@@ -42,6 +42,7 @@ using System.Collections;
 using BoSSS.Solution.LevelSetTools;
 using NUnit.Framework;
 using BoSSS.Foundation.Comm;
+using BoSSS.Foundation.Quadrature;
 
 namespace BoSSS.Application.FSI_Solver
 {
@@ -697,7 +698,10 @@ namespace BoSSS.Application.FSI_Solver
             // Step 2
             // Delete the old level set
             // =======================================================
+            //PlotCurrentState(0.0, new TimestepNumber(0), 3);
             DGLevSet.Current.Clear();
+            //PlotCurrentState(0.1, new TimestepNumber(1), 3);
+
 
             // =======================================================
             // Step 3
@@ -765,6 +769,9 @@ namespace BoSSS.Application.FSI_Solver
                 }
             }
 
+            //PlotCurrentState(0.2, new TimestepNumber(2), 3);
+
+
             // =======================================================
             // Step 4
             // Define level set of the remaining cells ("Fluid-Cells")
@@ -776,13 +783,13 @@ namespace BoSSS.Application.FSI_Solver
             CellMask FluidCells = AgglParticleMask != null ? AgglParticleMask.Complement() : CellMask.GetFullMask(GridData);
             SetLevelSet(phiFluid, FluidCells, hack_phystime);
 
-            PlotCurrentState(0.0, new TimestepNumber(0), 3);
+            //PlotCurrentState(0.3, new TimestepNumber(3), 3);
 
             // =======================================================
             // Step 5
             // Smoothing
             // =======================================================
-            PerformLevelSetSmoothing();
+            PerformLevelSetSmoothing(AgglParticleMask);
 
             // =======================================================
             // Step 6
@@ -791,7 +798,7 @@ namespace BoSSS.Application.FSI_Solver
             LsTrk.UpdateTracker(__NearRegionWith: 2);
             CellColor = UpdateColoring();
 
-            PlotCurrentState(0.1, new TimestepNumber(1), 3);
+            //PlotCurrentState(0.4, new TimestepNumber(4), 3);
         }
 
         /// <summary>
@@ -800,7 +807,7 @@ namespace BoSSS.Application.FSI_Solver
         private void SetLevelSet(Func<double[], double, double> phi, CellMask CurrentCells, double phystime)
         {
             ScalarFunction Function = NonVectorizedScalarFunction.Vectorize(phi, phystime);
-            DGLevSet.Current.ProjectField(Function);
+            DGLevSet.Current.ProjectField(1.0, Function, new CellQuadratureScheme(UseDefaultFactories: true, domain: CurrentCells));
             //LevSet.AccLaidBack(1.0, DGLevSet.Current, CurrentCells); // see 'PerformLevelSetSmoothing' 
         }
 
@@ -1064,9 +1071,6 @@ namespace BoSSS.Application.FSI_Solver
         {
             using (new FuncTrace())
             {
-
-                TimestepNumber TimestepNo = new TimestepNumber(TimestepInt, 0);
-                int D = GridData.SpatialDimension;
 
                 ResLogger.TimeStep = TimestepInt;
 
@@ -1427,13 +1431,13 @@ namespace BoSSS.Application.FSI_Solver
             hack_phystime = 0.0;
             UpdateLevelSetParticles();
 
-            PlotCurrentState(0.2, new TimestepNumber(2), 3);
+            //PlotCurrentState(0.2, new TimestepNumber(2), 3);
 
 
             // call base implementation
             base.SetInitial();
 
-            PlotCurrentState(0.4, new TimestepNumber(3), 3);
+            //PlotCurrentState(0.4, new TimestepNumber(3), 3);
 
             foreach (Particle p in m_Particles) {
                 p.m_collidedWithParticle = new bool[m_Particles.Count];
@@ -1442,7 +1446,7 @@ namespace BoSSS.Application.FSI_Solver
                 p.ClosestPointToParticle = new double[m_Particles.Count, 2];
             }
 
-            PlotCurrentState(0.4, new TimestepNumber(4), 3);
+            //PlotCurrentState(0.4, new TimestepNumber(4), 3);
         }
 
         public IList<Particle> Particles

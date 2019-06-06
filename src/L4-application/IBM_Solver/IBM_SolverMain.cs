@@ -1004,9 +1004,7 @@ namespace BoSSS.Application.IBM_Solver {
                 // therefore, after re-start we have to copy LevSet->DGLevSet
                 this.DGLevSet.Current.Clear();
                 this.DGLevSet.Current.AccLaidBack(1.0, this.LevSet);
-                
-                // 
-                PerformLevelSetSmoothing();
+             
                 
                 // we push the current state of the level-set, so we have an initial value
                 this.LsTrk.UpdateTracker();
@@ -1020,18 +1018,28 @@ namespace BoSSS.Application.IBM_Solver {
         /// <summary>
         /// Ensures that the level-set field <see cref="LevSet"/> is continuous, if <see cref="IBM_Control.LevelSetSmoothing"/> is true
         /// </summary>
-        protected void PerformLevelSetSmoothing() {
+        protected void PerformLevelSetSmoothing(CellMask domain) {
             if (this.Control.LevelSetSmoothing) {
+                // ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+                // smoothing on: perform some kind of C0-projection
+                // ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
                 var ContinuityEnforcer = new BoSSS.Solution.LevelSetTools.ContinuityProjection(
                     ContBasis: this.LevSet.Basis,
                     DGBasis: this.DGLevSet.Current.Basis,
                     gridData: GridData,
                     Option: Solution.LevelSetTools.ContinuityProjectionOption.SpecFEM);
 
-                ContinuityEnforcer.MakeContinuous(this.DGLevSet.Current, this.LevSet, this.LsTrk.Regions.GetNearFieldMask(1), null, false);
+                //CellMask domain = this.LsTrk.Regions.GetNearFieldMask(1);
+
+                ContinuityEnforcer.MakeContinuous(this.DGLevSet.Current, this.LevSet, domain, null, false);
             } else {
-                this.LevSet.Clear();
-                this.LevSet.AccLaidBack(1.0, this.LevSet);
+                // ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+                // no smoothing (not recommended): copy DGLevSet -> LevSet
+                // ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+                this.LevSet.Clear(domain);
+                this.LevSet.AccLaidBack(1.0, this.DGLevSet.Current, domain);
             }
         }
 
