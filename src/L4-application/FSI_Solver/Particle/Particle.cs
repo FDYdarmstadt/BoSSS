@@ -256,6 +256,18 @@ namespace BoSSS.Application.FSI_Solver
         public List<double[]> CollisionTangential = new List<double[]>();
 
         /// <summary>
+        /// The translational velocity of the particle in the current time step. This list is used by the momentum conservation model.
+        /// </summary>
+        [DataMember]
+        public List<double[]> CollisionPositionCorrection = new List<double[]>();
+
+        /// <summary>
+        /// The translational velocity of the particle in the current time step. This list is used by the momentum conservation model.
+        /// </summary>
+        [DataMember]
+        public double[] TotalCollisionPositionCorrection = new double[2];
+
+        /// <summary>
         /// The angular velocity of the particle in the current time step.
         /// </summary>
         [DataMember]
@@ -419,7 +431,10 @@ namespace BoSSS.Application.FSI_Solver
                     if (!AnyCollision)
                         Position[0][d] = Position[1][d] + TranslationalVelocity[1][d] * dt + (TranslationalAcceleration[1][d] + TranslationalAcceleration[0][d]) * dt.Pow2() / 4;
                     else
-                        Position[0][d] = Position[1][d] + dt * (0 + TranslationalVelocity[0][d]) / 2;
+                    {
+                        double TimePreCollision = TranslationalVelocity[1][d] != 0 ? TotalCollisionPositionCorrection[d] / TranslationalVelocity[1][d] : 0;
+                        Position[0][d] = Position[1][d] + (dt - TimePreCollision) * (0 + TranslationalVelocity[0][d]) / 2 - TotalCollisionPositionCorrection[d];
+                    }
                     Console.WriteLine("Position[1][" + d + "]: " + Position[1][d]);
                     Console.WriteLine("Position[0][" + d + "]: " + Position[0][d]);
                     Console.WriteLine("TranslationalVelocity[1][" + d + "]: " + TranslationalVelocity[1][d]);
@@ -563,7 +578,15 @@ namespace BoSSS.Application.FSI_Solver
         /// <returns></returns>
         public void CalculateTranslationalVelocity(double dt)
         {
-            if (iteration_counter_P == 0)
+            bool AnyCollision = false;
+            for (int p = 0; p < m_collidedWithParticle.Length; p++)
+            {
+                if (m_collidedWithParticle[p])
+                {
+                    AnyCollision = true;
+                }
+            }
+            if (iteration_counter_P == 0 && !AnyCollision)
             {
                 Aux.SaveMultidimValueOfLastTimestep(TranslationalVelocity);
             }
@@ -575,18 +598,11 @@ namespace BoSSS.Application.FSI_Solver
             } else {
 
                 for (int d = 0; d < SpatialDim; d++) {
-                    bool AnyCollision = false;
-                    for (int p = 0; p < m_collidedWithParticle.Length; p++)
-                    {
-                        if (m_collidedWithParticle[p])
-                        {
-                            AnyCollision = true;
-                        }
-                    }
+                    
                     if (!AnyCollision)
                         TranslationalVelocity[0][d] = TranslationalVelocity[1][d] + (TranslationalAcceleration[1][d] + TranslationalAcceleration[0][d]) * dt / 2;
-                    else
-                        TranslationalVelocity[0][d] = TranslationalVelocity[1][d];
+                    //else
+                    //    TranslationalVelocity[0][d] = TranslationalVelocity[1][d];
                     if (double.IsNaN(TranslationalVelocity[0][d]) || double.IsInfinity(TranslationalVelocity[0][d]))
                         throw new ArithmeticException("Error trying to calculate particle velocity Value:  " + TranslationalVelocity[0][d]);
                 }

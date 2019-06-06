@@ -1473,8 +1473,6 @@ namespace BoSSS.Application.FSI_Solver
                 if (ParticlesOfCurrentColor.Length > 1 && CurrentColor != 0)
                 {
                     bool[,] CollidedWith = new bool[ParticlesOfCurrentColor.Length, ParticlesOfCurrentColor.Length];
-                    bool AnyCollision = false;
-                    bool NotCollided = false;
                     for (int p1 = 0; p1 < ParticlesOfCurrentColor.Length; p1++)
                     {
                         Console.WriteLine("I'm particle " + ParticlesOfCurrentColor[p1]);
@@ -1485,45 +1483,41 @@ namespace BoSSS.Application.FSI_Solver
                             double[] distanceVec = new double[Grid.SpatialDimension];
                             ComputeCollisionModel(hmin, Particles[ParticlesOfCurrentColor[p1]], Particles[ParticlesOfCurrentColor[p2]], ref distance, ref distanceVec, dt, iteration_counter, out bool Collided);
                             CollidedWith[p1, p2] = Collided;
-                            if (Collided)
-                                AnyCollision = true;
-                            else
-                                NotCollided = true;
                         }
                     }
                     for (int p = 0; p < ParticlesOfCurrentColor.Length; p++)
                     {
                         SumOverCollisionVelocities(Particles[ParticlesOfCurrentColor[p]], false);
                     }
-                    if (AnyCollision && NotCollided)
-                    {
-                        Console.WriteLine("Some particles of color " + CurrentColor + " are collided, some are not. Thus, I will test whether they will collide with the new velocities");
-                        for (int p1 = 0; p1 < ParticlesOfCurrentColor.Length; p1++)
-                        {
+                    //if (AnyCollision && NotCollided)
+                    //{
+                    //    Console.WriteLine("Some particles of color " + CurrentColor + " are collided, some are not. Thus, I will test whether they will collide with the new velocities");
+                    //    for (int p1 = 0; p1 < ParticlesOfCurrentColor.Length; p1++)
+                    //    {
                             
-                            for (int p2 = p1 + 1; p2 < ParticlesOfCurrentColor.Length; p2++)
-                            {
-                                if (!CollidedWith[p1, p2])
-                                {
-                                    Console.WriteLine("I'm particle " + ParticlesOfCurrentColor[p1]);
-                                    Console.WriteLine("And I'm particle " + ParticlesOfCurrentColor[p2]);
-                                    double distance = 1E20;
-                                    double[] distanceVec = new double[Grid.SpatialDimension];
-                                    ComputeCollisionModel(hmin, Particles[ParticlesOfCurrentColor[p1]], Particles[ParticlesOfCurrentColor[p2]], ref distance, ref distanceVec, dt, iteration_counter, out bool Collided);
-                                    CollidedWith[p1, p2] = Collided;
-                                    AnyCollision = Collided;
-                                }
-                            }
-                        }
-                        if (!AnyCollision)
-                        {
-                            Console.WriteLine("No further collision");
-                        }
-                    }
-                    for(int p = 0; p < ParticlesOfCurrentColor.Length; p++)
-                    {
-                        SumOverCollisionVelocities(Particles[ParticlesOfCurrentColor[p]]);
-                    }
+                    //        for (int p2 = p1 + 1; p2 < ParticlesOfCurrentColor.Length; p2++)
+                    //        {
+                    //            if (!CollidedWith[p1, p2])
+                    //            {
+                    //                Console.WriteLine("I'm particle " + ParticlesOfCurrentColor[p1]);
+                    //                Console.WriteLine("And I'm particle " + ParticlesOfCurrentColor[p2]);
+                    //                double distance = 1E20;
+                    //                double[] distanceVec = new double[Grid.SpatialDimension];
+                    //                ComputeCollisionModel(hmin, Particles[ParticlesOfCurrentColor[p1]], Particles[ParticlesOfCurrentColor[p2]], ref distance, ref distanceVec, dt, iteration_counter, out bool Collided);
+                    //                CollidedWith[p1, p2] = Collided;
+                    //                AnyCollision = Collided;
+                    //            }
+                    //        }
+                    //    }
+                    //    if (!AnyCollision)
+                    //    {
+                    //        Console.WriteLine("No further collision");
+                    //    }
+                    //}
+                    //for(int p = 0; p < ParticlesOfCurrentColor.Length; p++)
+                    //{
+                    //    SumOverCollisionVelocities(Particles[ParticlesOfCurrentColor[p]]);
+                    //}
                 }
                 for(int j = 0; j < GlobalParticleColor.Length; j++)
                 {
@@ -1535,6 +1529,7 @@ namespace BoSSS.Application.FSI_Solver
 
         private void SumOverCollisionVelocities(Particle _Particle, bool FinalSummation = true)
         {
+            FinalSummation = true;
             int SpatialDim = GridData.SpatialDimension;
             if (_Particle.CollisionRotationalVelocity.Count() >= 1)
             {
@@ -1556,6 +1551,8 @@ namespace BoSSS.Application.FSI_Solver
                     {
                         Normal[d] += _Particle.CollisionNormal[t][d];
                         Tangential[d] += _Particle.CollisionTangential[t][d];
+                        //_Particle.Position[0][d] += _Particle.CollisionPositionCorrection[t][d];
+                        _Particle.TotalCollisionPositionCorrection[d] += _Particle.CollisionPositionCorrection[t][d];
                     }
                 }
                 Normal.ScaleV(1 / Math.Sqrt(Normal[0].Pow2() + Normal[1].Pow2()));
@@ -1573,9 +1570,11 @@ namespace BoSSS.Application.FSI_Solver
                     Sin[t] = Cos[t] == 1 ? 0 : _Particle.CollisionNormal[t][0] > Normal[0] ? Math.Sqrt(1 + 1e-15 - Cos[t].Pow2()) : -Math.Sqrt(1 + 1e-15 - Cos[t].Pow2());
                     temp_NormalVel += _Particle.CollisionTranslationalVelocity[t][0] * Cos[t] - _Particle.CollisionTranslationalVelocity[t][1] * Sin[t];
                     temp_TangentialVel += _Particle.CollisionTranslationalVelocity[t][0] * Sin[t] + _Particle.CollisionTranslationalVelocity[t][1] * Cos[t];
+                    
                 }
                 temp_NormalVel /= _Particle.CollisionTranslationalVelocity.Count();
                 temp_TangentialVel /= _Particle.CollisionTranslationalVelocity.Count();
+                _Particle.TranslationalVelocity.Insert(0, new double[2]);
                 for (int d = 0; d < SpatialDim; d++)
                 {
                     _Particle.TranslationalVelocity[0][d] = Normal[d] * temp_NormalVel + Tangential[d] * temp_TangentialVel;
@@ -1585,6 +1584,7 @@ namespace BoSSS.Application.FSI_Solver
                     _Particle.CollisionTranslationalVelocity.Clear();
                     _Particle.CollisionNormal.Clear();
                     _Particle.CollisionTangential.Clear();
+                    _Particle.CollisionPositionCorrection.Clear();
                 }
             }
         }
@@ -1615,8 +1615,6 @@ namespace BoSSS.Application.FSI_Solver
                 Particle0.ClosestPointToParticle[m_Particles.IndexOf(Particle1), d] = ClosestPoint_P0[d];
                 Particle1.ClosestPointToParticle[m_Particles.IndexOf(Particle0), d] = ClosestPoint_P1[d];
             }
-            if (DistanceVector[0] == 0 && DistanceVector[1] == 0)
-                Console.WriteLine("Stupid");
             // =======================================================
             // Step 2
             // Project velocity on normal/tangential vector.
@@ -1656,8 +1654,6 @@ namespace BoSSS.Application.FSI_Solver
                 _FSI_Collision.FindRadialVector(VirtualPosition1, ClosestPoint_P1, out _, out double RadialLength1, out double[] RadialNormalVector1);
                 _FSI_Collision.TransformRotationalVelocity(VirtualRotationalVelocity0, RadialLength0, RadialNormalVector0, out double[] PointVelocityDueToRotation0);
                 double[] PointVelocityDueToRotation1;
-                if (DistanceVector[0] == 0 && DistanceVector[1] == 0)
-                    Console.WriteLine("Stupid");
                 _FSI_Collision.TransformRotationalVelocity(VirtualRotationalVelocity1, RadialLength1, RadialNormalVector1, out PointVelocityDueToRotation1);
                 for (int d = 0; d < 2; d++)
                 {
@@ -1774,7 +1770,7 @@ namespace BoSSS.Application.FSI_Solver
 
                 case FSI_Control.CollisionModel.MomentumConservation:
 
-                    if (((Distance <= Threshold || ForceCollision || StuckedParticles) && (!Particle0.m_collidedWithParticle[m_Particles.IndexOf(Particle1)] && !Particle1.m_collidedWithParticle[m_Particles.IndexOf(Particle0)] || iteration_counter != 0)))
+                    if (((Distance <= Threshold || ForceCollision || StuckedParticles)))// && (!Particle0.m_collidedWithParticle[m_Particles.IndexOf(Particle1)] && !Particle1.m_collidedWithParticle[m_Particles.IndexOf(Particle0)] || iteration_counter != 0)))
                     {
                         // Bool if collided
                         Particle0.m_collidedWithParticle[m_Particles.IndexOf(Particle1)] = true;
@@ -1785,8 +1781,21 @@ namespace BoSSS.Application.FSI_Solver
                         Particle0.skipForceIntegration = true;
                         Particle1.skipForceIntegration = true;
 
-                        //coefficient of restitution (e=0 pastic; e=1 elastic)
+                        // coefficient of restitution (e=0 pastic; e=1 elastic)
                         double e = ((FSI_Control)Control).CoefficientOfRestitution;
+
+                        // Calculate the position correction
+                        double[] CollisionPositionCorrection0 = new double[SpatialDim];
+                        double[] CollisionPositionCorrection1 = new double[SpatialDim];
+                        for (int d=0; d< SpatialDim; d++)
+                        {
+                            double DistanceFraction0 = collisionVn_P0 / (collisionVn_P0 + collisionVn_P1);
+                            double DistanceFraction1 = collisionVn_P1 / (collisionVn_P0 + collisionVn_P1);
+                            CollisionPositionCorrection0[d] = -DistanceFraction0 * DistanceVector[d];
+                            CollisionPositionCorrection1[d] = DistanceFraction1 * DistanceVector[d];
+                        }
+                        Particle0.CollisionPositionCorrection.Add(CollisionPositionCorrection0);
+                        Particle1.CollisionPositionCorrection.Add(CollisionPositionCorrection1);
 
                         // Calculate excentric parameter
                         double[] RadialDistance0 = new double[SpatialDim];
@@ -1844,14 +1853,15 @@ namespace BoSSS.Application.FSI_Solver
                         Particle1.CollisionRotationalVelocity.Add(tempCollisionRot_P1);
                         Particle0.CollisionTranslationalVelocity.Add(new double[] { tempCollisionVn_P0, tempCollisionVt_P0 });
                         Particle1.CollisionTranslationalVelocity.Add(new double[] { tempCollisionVn_P1, tempCollisionVt_P1 });
+                        
 
                         for (int d = 0; d < 2; d++)
                         {
-                            Particle0.TranslationalVelocity[1][d] = 0;
+                            //Particle0.TranslationalVelocity[1][d] = 0;
                             Particle0.TranslationalAcceleration[1][d] = 0;
                             Particle0.RotationalAcceleration[1] = 0;
                             Particle0.RotationalVelocity[1] = 0;
-                            Particle1.TranslationalVelocity[1][d] = 0;
+                            //Particle1.TranslationalVelocity[1][d] = 0;
                             Particle1.TranslationalAcceleration[1][d] = 0;
                             Particle1.RotationalAcceleration[1] = 0;
                             Particle1.RotationalVelocity[1] = 0;
