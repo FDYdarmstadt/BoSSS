@@ -129,8 +129,9 @@ namespace FSI_Solver
             RadialVector = new double[ParticlePosition.Length];
             for (int d = 0; d < ParticlePosition.Length; d++)
             {
-                RadialVector[d] = SurfacePoint[d] - ParticlePosition[d];
+                RadialVector[d] = -SurfacePoint[d] + ParticlePosition[d];
             }
+            RadialVector.ScaleV(1 / Math.Sqrt(RadialVector[0].Pow2() + RadialVector[1].Pow2()));
             RadialNormalVector = new double[] { -RadialVector[1], RadialVector[0] };
             RadialLength = Math.Sqrt(RadialNormalVector[0].Pow2() + RadialNormalVector[1].Pow2());
             RadialNormalVector.ScaleV(1 / Math.Sqrt(RadialNormalVector[0].Pow2() + RadialNormalVector[1].Pow2()));

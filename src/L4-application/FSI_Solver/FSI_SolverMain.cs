@@ -256,6 +256,11 @@ namespace BoSSS.Application.FSI_Solver
                                             else if (containsParticle && p.ActiveParticle == false)
                                             {
                                                 result[0] = p.TranslationalVelocity[0][0];
+                                                double[] test = new double[2];
+                                                test[0] = p.Position[0][0] - X[0];
+                                                test[1] = p.Position[0][1] - X[1];
+                                                test[0] = test[0] / (Math.Sqrt(test[0].Pow2() + test[1].Pow2()));
+                                                test[1] = test[1] / (Math.Sqrt(test[0].Pow2() + test[1].Pow2()));
                                                 result[1] = p.TranslationalVelocity[0][1];
                                                 result[2] = p.RotationalVelocity[0];
                                                 result[3] = RadialNormalVector[0];
@@ -382,7 +387,7 @@ namespace BoSSS.Application.FSI_Solver
                                             result[2] = p.RotationalVelocity[0];
                                             result[3] = RadialNormalVector[0];
                                             result[4] = RadialNormalVector[1];
-                                            result[5] = p.Position[0].L2Distance(X); //RadialLength;
+                                            result[5] = p.Position[0].L2Distance(X);
                                             result[6] = p.ActiveStress;
                                             result[7] = -cos_theta;
                                             result[8] = p.Angle[0];
@@ -396,7 +401,7 @@ namespace BoSSS.Application.FSI_Solver
                                             result[2] = p.RotationalVelocity[0];
                                             result[3] = RadialNormalVector[0];
                                             result[4] = RadialNormalVector[1];
-                                            result[5] = p.Position[0].L2Distance(X); //RadialLength;
+                                            result[5] = p.Position[0].L2Distance(X);
                                             result[6] = 0;
                                             result[7] = 0;
                                             result[8] = p.Angle[0];
@@ -465,7 +470,7 @@ namespace BoSSS.Application.FSI_Solver
                                        result[2] = p.RotationalVelocity[0];
                                        result[3] = RadialNormalVector[0];
                                        result[4] = RadialNormalVector[1];
-                                       result[5] = p.Position[0].L2Distance(X); //RadialLength;
+                                       result[5] = p.Position[0].L2Distance(X);
                                        return result;
                                    }
                                }
@@ -1724,14 +1729,6 @@ namespace BoSSS.Application.FSI_Solver
                 return;
             }
 
-            // Sollte dafür sorgen, dass im Falle eines plastischen Stoßes beide Partikel auch zusammen bleiben, klappt so semigut.
-            bool StuckedParticles = false;
-            if (collisionVn_P0 == 0 && collisionVn_P1 == 0 && collisionVt_P0 == 0 && collisionVt_P1 == 0 && ((FSI_Control)Control).CoefficientOfRestitution == 0) 
-            {
-                StuckedParticles = true;
-                Console.WriteLine("StuckedParticles:    " + StuckedParticles);
-            }
-
             // =======================================================
             // Step 7
             // Main collision procedure, only the momentum 
@@ -1770,7 +1767,7 @@ namespace BoSSS.Application.FSI_Solver
 
                 case FSI_Control.CollisionModel.MomentumConservation:
 
-                    if (((Distance <= Threshold || ForceCollision || StuckedParticles)))// && (!Particle0.m_collidedWithParticle[m_Particles.IndexOf(Particle1)] && !Particle1.m_collidedWithParticle[m_Particles.IndexOf(Particle0)] || iteration_counter != 0)))
+                    if ((Distance <= Threshold || ForceCollision) && iteration_counter == 0)// && (!Particle0.m_collidedWithParticle[m_Particles.IndexOf(Particle1)] && !Particle1.m_collidedWithParticle[m_Particles.IndexOf(Particle0)] || iteration_counter != 0)))
                     {
                         // Bool if collided
                         Particle0.m_collidedWithParticle[m_Particles.IndexOf(Particle1)] = true;
