@@ -1615,7 +1615,8 @@ namespace BoSSS.Application.FSI_Solver
                 Particle0.ClosestPointToParticle[m_Particles.IndexOf(Particle1), d] = ClosestPoint_P0[d];
                 Particle1.ClosestPointToParticle[m_Particles.IndexOf(Particle0), d] = ClosestPoint_P1[d];
             }
-
+            if (DistanceVector[0] == 0 && DistanceVector[1] == 0)
+                Console.WriteLine("Stupid");
             // =======================================================
             // Step 2
             // Project velocity on normal/tangential vector.
@@ -1655,6 +1656,8 @@ namespace BoSSS.Application.FSI_Solver
                 _FSI_Collision.FindRadialVector(VirtualPosition1, ClosestPoint_P1, out _, out double RadialLength1, out double[] RadialNormalVector1);
                 _FSI_Collision.TransformRotationalVelocity(VirtualRotationalVelocity0, RadialLength0, RadialNormalVector0, out double[] PointVelocityDueToRotation0);
                 double[] PointVelocityDueToRotation1;
+                if (DistanceVector[0] == 0 && DistanceVector[1] == 0)
+                    Console.WriteLine("Stupid");
                 _FSI_Collision.TransformRotationalVelocity(VirtualRotationalVelocity1, RadialLength1, RadialNormalVector1, out PointVelocityDueToRotation1);
                 for (int d = 0; d < 2; d++)
                 {
@@ -1800,14 +1803,13 @@ namespace BoSSS.Application.FSI_Solver
                         double Fxrot;
                         double tempCollisionVn_P0;
                         double tempCollisionVn_P1;
-                        double tempCollisionRot_P0;
-                        double tempCollisionRot_P1;
+                        double tempCollisionRot_P0 = 0;
+                        double tempCollisionRot_P1 = 0;
                         if (!Particle0.IncludeTranslation && !Particle0.IncludeRotation)
                         {
                             Fx = (1 + e) * ((collisionVn_P1) / (1 / Particle1.Mass_P + a1.Pow2() / Particle1.MomentOfInertia_P));
                             Fxrot = (1 + e) * ((a1 * Particle1.RotationalVelocity[0]) / (1 / Particle1.Mass_P + a1.Pow2() / Particle1.MomentOfInertia_P));
                             tempCollisionVn_P0 = collisionVn_P0;
-                            tempCollisionRot_P0 = 0;
                             tempCollisionVn_P1 = collisionVn_P1 + (Fx + Fxrot) / Particle1.Mass_P;
                             tempCollisionRot_P1 = Particle1.RotationalVelocity[0] - a1 * (Fx + Fxrot) / Particle1.MomentOfInertia_P;
                         }
@@ -1818,7 +1820,6 @@ namespace BoSSS.Application.FSI_Solver
                             tempCollisionVn_P0 = collisionVn_P0 - (Fx + Fxrot) / Particle0.Mass_P;
                             tempCollisionRot_P0 = Particle0.RotationalVelocity[0] + a0 * (Fx + Fxrot) / Particle0.MomentOfInertia_P;
                             tempCollisionVn_P1 = collisionVn_P1;
-                            tempCollisionRot_P1 = 0;
                         }
                         else
                         {

@@ -514,8 +514,9 @@ namespace FSI_Solver
             Initialize_GJK(SpatialDim, Position0, Position1, out double[] v0, out List<double[]> Simplex);
             double[] v = v0.CloneAs();
             double[] SupportPoint = new double[SpatialDim];
-            
-            for (int i = 0; i < 1000; i++)
+            if (v[0] == 0 && v[1] == 0)
+                Console.WriteLine("Stupid");
+            for (int i = 0; i < 10000; i++)
             {
                 double[] vt = v.CloneAs();
                 for (int d = 0; d < SpatialDim; d++)
@@ -529,15 +530,17 @@ namespace FSI_Solver
                 CalculateSupportPoint(p0, Position0, Angle0, SpatialDim, vt, lsTrk, out ClosestPoint0);
                 if (double.IsNaN(ClosestPoint0[0]) || double.IsNaN(ClosestPoint0[1]))
                     throw new ArithmeticException("Error trying to calculate point0 Value:  " + ClosestPoint0[0] + " point1 " + ClosestPoint0[1]);
-                CalculateSupportPoint(p1, Position0, Angle1, SpatialDim, v, lsTrk, out ClosestPoint1);
+                CalculateSupportPoint(p1, Position1, Angle1, SpatialDim, v, lsTrk, out ClosestPoint1);
                 for (int d = 0; d < SpatialDim; d++)
                 {
                     SupportPoint[d] = ClosestPoint0[d] - ClosestPoint1[d];
                 }
                 double test = (v[0] * vt[0] + v[1] * vt[1]) - (SupportPoint[0] * vt[0] + SupportPoint[1] * vt[1]);
-                if ((v[0] * vt[0] + v[1] * vt[1]) >= (SupportPoint[0] * vt[0] + SupportPoint[1] * vt[1]))
+                if ((v[0] * vt[0] + v[1] * vt[1]) - (SupportPoint[0] * vt[0] + SupportPoint[1] * vt[1]) >= -1e-12)
                 {
                     DistanceVec = v.CloneAs();
+                    if (v[0] == 0 && v[1] == 0)
+                        Console.WriteLine("Stupid");
                     Console.WriteLine("No of steps for distance algorithm: " + i);
                     break;
                 }
@@ -550,6 +553,8 @@ namespace FSI_Solver
                 }
                 if (v[0] == 0 && v[1] == 0)
                     Console.WriteLine("Stupid");
+                if(i == 999)
+                    Console.WriteLine("SHittyshitshit: " + i);
             }
             Min_Distance = Math.Sqrt(v[0].Pow2() + v[1].Pow2());
         }

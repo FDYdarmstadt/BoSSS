@@ -17,6 +17,7 @@ limitations under the License.
 using BoSSS.Application.FSI_Solver;
 using BoSSS.Application.IBM_Solver;
 using BoSSS.Foundation.Grid;
+using BoSSS.Foundation.XDG;
 using BoSSS.Solution.XdgTimestepping;
 using ilPSP;
 using ilPSP.Utils;
@@ -31,6 +32,7 @@ namespace FSI_Solver
 {
     class FSI_Collision
     {
+        
         internal void FindClosestPoint(double hmin, int SpatialDim, MultidimensionalArray interfacePoints_P0, MultidimensionalArray interfacePoints_P1, ref double[] distanceVec, ref double distance, out double[] tempPoint_P0, out double[] tempPoint_P1, out bool Overlapping)
         {
             tempPoint_P0 = new double[SpatialDim];
