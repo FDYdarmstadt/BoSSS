@@ -151,15 +151,10 @@ namespace BoSSS.Solution.NSECommon.Operator.Convection {
 
             // Particle parameters
             // =============================
-            var parameters_P = m_getParticleParams(inp.X, inp.time);
+            double[] parameters_P = m_getParticleParams(inp.X, inp.time);
             double[] uLevSet = new double[] { parameters_P[0], parameters_P[1] };
             double wLevSet = parameters_P[2];
             double[] RadialNormalVector = new double[] { parameters_P[3], parameters_P[4] };
-            double[] test = new double[] { -cp.n[1], cp.n[0] };
-            if ((RadialNormalVector[0] - test[0]) > 1e-8 || (RadialNormalVector[1] - test[1]) > 1e-8)
-            {
-                Console.Write("STUPID");
-            }
             double RadialLength = parameters_P[5];
             double scale = parameters_P[6];
 

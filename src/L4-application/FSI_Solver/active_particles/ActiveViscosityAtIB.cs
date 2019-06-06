@@ -88,11 +88,6 @@ namespace BoSSS.Solution.NSECommon.Operator.Viscosity {
             double wLevSet = parameters_P[2];
 
             double[] RadialNormalVector = new double[] { parameters_P[3], parameters_P[4] };
-            double[] test = new double[] { -inp.n[1], inp.n[0] };
-            if ((RadialNormalVector[0] - test[0]) > 1e-8 || (RadialNormalVector[1] - test[1]) > 1e-8)
-            {
-                Console.Write("STUPID");
-            }
             double RadialLength = parameters_P[5];
             double active_stress = parameters_P[6];
             double scale = parameters_P[7];
