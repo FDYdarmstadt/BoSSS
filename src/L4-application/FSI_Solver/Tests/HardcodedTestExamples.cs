@@ -154,6 +154,8 @@ namespace BoSSS.Application.FSI_Solver {
             C.Endtime = 120;
             C.NoOfTimesteps = 100;
 
+           
+
             // haben fertig...
             // ===============
 
@@ -275,6 +277,7 @@ namespace BoSSS.Application.FSI_Solver {
             // haben fertig...
             // ===============
 
+            C.LevelSetSmoothing = true;
             return C;
 
         }
