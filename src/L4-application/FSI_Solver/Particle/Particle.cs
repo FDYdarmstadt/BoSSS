@@ -96,6 +96,12 @@ namespace BoSSS.Application.FSI_Solver
         /// </summary>
         public bool[] m_collidedWithWall;
 
+
+        /// <summary>
+        /// Check whether any particles is collided with the wall
+        /// </summary>
+        public double[,] ClosestPointToParticle;
+
         public double[][] m_closeInterfacePointTo;
 
         /// <summary>
@@ -832,7 +838,7 @@ namespace BoSSS.Application.FSI_Solver
             throw new NotImplementedException();
         }
 
-        virtual public void GetSupportPoint(int SpatialDim, double CosT, double SinT, out double[] SupportPoint)
+        virtual public void GetSupportPoint(int SpatialDim, double[] Vector, double[] Position, double Angle, out double[] SupportPoint)
         {
             throw new NotImplementedException();
         }

@@ -616,9 +616,9 @@ namespace BoSSS.Application.FSI_Solver {
             //C.particleMass = 1;
 
 
-            C.Particles.Add(new Particle_Sphere(new double[] { 0.0, 1 })
+            C.Particles.Add(new Particle_Sphere(new double[] { 0.0, 0.7 })
             {
-                radius_P = 0.2,
+                radius_P = 0.13,
                 //length_P = 0.2,
                 //thickness_P = 0.1,
                 particleDensity = 2.0,
@@ -677,7 +677,7 @@ namespace BoSSS.Application.FSI_Solver {
             C.dtMax = dt;
             C.dtMin = dt;
             C.Endtime = 10.0;
-            C.NoOfTimesteps = 50;
+            C.NoOfTimesteps = 39;
 
             // haben fertig...
             // ===============
