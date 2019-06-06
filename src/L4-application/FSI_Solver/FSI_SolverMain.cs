@@ -239,7 +239,7 @@ namespace BoSSS.Application.FSI_Solver
                                             else { containsParticle = p.Contains(X, LsTrk); }
 
                                             FSI_Collision _FSI_Collision = new FSI_Collision();
-                                            _FSI_Collision.FindRadialVector(p.Position[0], X, out _, out double RadialLength, out double[] RadialNormalVector);
+                                            _FSI_Collision.CalculateRadialVector(p.Position[0], X, out _, out double RadialLength, out double[] RadialNormalVector);
                                             // active particles
                                             if (containsParticle && p.ActiveParticle == true)
                                             {
@@ -367,7 +367,7 @@ namespace BoSSS.Application.FSI_Solver
                                         else { containsParticle = p.Contains(X, LsTrk); }
 
                                         FSI_Collision _FSI_Collision = new FSI_Collision();
-                                        _FSI_Collision.FindRadialVector(p.Position[0], X, out _, out double RadialLength, out double[] RadialNormalVector);
+                                        _FSI_Collision.CalculateRadialVector(p.Position[0], X, out _, out double RadialLength, out double[] RadialNormalVector);
                                         // active particles
                                         if (containsParticle && p.ActiveParticle == true)
                                         {
@@ -463,7 +463,7 @@ namespace BoSSS.Application.FSI_Solver
                                    }
                                    else { containsParticle = p.Contains(X, LsTrk); }
                                    FSI_Collision _FSI_Collision = new FSI_Collision();
-                                   _FSI_Collision.FindRadialVector(p.Position[0], X, out _, out double RadialLength, out double[] RadialNormalVector);
+                                   _FSI_Collision.CalculateRadialVector(p.Position[0], X, out _, out double RadialLength, out double[] RadialNormalVector);
                                    if (containsParticle)
                                    {
                                        result[0] = p.TranslationalVelocity[0][0];
@@ -1604,7 +1604,7 @@ namespace BoSSS.Application.FSI_Solver
             // Step 2
             // Project velocity on normal/tangential vector.
             // =======================================================
-            _FSI_Collision.FindNormalAndTangentialVector(DistanceVector, out double[] NormalVector, out double[] TangentialVector);
+            _FSI_Collision.CalculateNormalAndTangentialVector(DistanceVector, out double[] NormalVector, out double[] TangentialVector);
             _FSI_Collision.ProjectVelocity(NormalVector, TangentialVector, Particle0.TranslationalVelocity[0], out double collisionVn_P0, out double collisionVt_P0);
             _FSI_Collision.ProjectVelocity(NormalVector, TangentialVector, Particle1.TranslationalVelocity[0], out double collisionVn_P1, out double collisionVt_P1);
 
@@ -1634,9 +1634,9 @@ namespace BoSSS.Application.FSI_Solver
                 Collision.GJK_DistanceAlgorithm(Particle0, Particle1, LsTrk, VirtualPosition0, VirtualPosition1, VirtualAngle0, VirtualAngle1, out Distance, out DistanceVector, out ClosestPoint_P0, out ClosestPoint_P1, out bool Overlapping_NextTimestep);
 
                 // Calculate dynamic threshold.
-                _FSI_Collision.FindNormalAndTangentialVector(DistanceVector, out NormalVector, out TangentialVector);
-                _FSI_Collision.FindRadialVector(VirtualPosition0, ClosestPoint_P0, out _, out double RadialLength0, out double[] RadialNormalVector0);
-                _FSI_Collision.FindRadialVector(VirtualPosition1, ClosestPoint_P1, out _, out double RadialLength1, out double[] RadialNormalVector1);
+                _FSI_Collision.CalculateNormalAndTangentialVector(DistanceVector, out NormalVector, out TangentialVector);
+                _FSI_Collision.CalculateRadialVector(VirtualPosition0, ClosestPoint_P0, out _, out double RadialLength0, out double[] RadialNormalVector0);
+                _FSI_Collision.CalculateRadialVector(VirtualPosition1, ClosestPoint_P1, out _, out double RadialLength1, out double[] RadialNormalVector1);
                 _FSI_Collision.TransformRotationalVelocity(VirtualRotationalVelocity0, RadialLength0, RadialNormalVector0, out double[] PointVelocityDueToRotation0);
                 double[] PointVelocityDueToRotation1;
                 _FSI_Collision.TransformRotationalVelocity(VirtualRotationalVelocity1, RadialLength1, RadialNormalVector1, out PointVelocityDueToRotation1);
@@ -1674,7 +1674,7 @@ namespace BoSSS.Application.FSI_Solver
                 
                 // Ensure that the threshold is large enough
                 Threshold = double.MaxValue;
-                _FSI_Collision.FindNormalAndTangentialVector(DistanceVector, out NormalVector, out TangentialVector);
+                _FSI_Collision.CalculateNormalAndTangentialVector(DistanceVector, out NormalVector, out TangentialVector);
                 _FSI_Collision.ProjectVelocity(NormalVector, TangentialVector, Particle0.TranslationalVelocity[0], out collisionVn_P0, out collisionVt_P0);
                 _FSI_Collision.ProjectVelocity(NormalVector, TangentialVector, Particle1.TranslationalVelocity[0], out collisionVn_P1, out collisionVt_P1);
                 ForceCollision = true;
@@ -1958,7 +1958,7 @@ namespace BoSSS.Application.FSI_Solver
 
                 bool Overlapping = false;
                 Collision.GJK_DistanceAlgorithm(particle, null, LsTrk, point0, point1, particle.Angle[0], 0, out Distance, out DistanceVec, out ClosestPointParticle, out ClosestPointWall, out Overlapping); ;
-                _FSI_Collision.FindNormalAndTangentialVector(DistanceVec, out double[] normal, out double[] tangential);
+                _FSI_Collision.CalculateNormalAndTangentialVector(DistanceVec, out double[] normal, out double[] tangential);
                 _FSI_Collision.CalculateDynamicCollisionThreshold(particle, null, ClosestPointParticle, ClosestPointWall, normal, Distance, dt, out double threshold);
                 _FSI_Collision.ProjectVelocity(normal, tangential, particle.TranslationalVelocity[0], out double collisionVn_P0, out double collisionVt_P0);
 
@@ -1974,10 +1974,10 @@ namespace BoSSS.Application.FSI_Solver
                         point1[1] = WallPoints[i, 1];
                     Collision.GJK_DistanceAlgorithm(particle, null, LsTrk, point0, point1, particle.Angle[0], 0, out Distance, out DistanceVec, out ClosestPointParticle, out ClosestPointWall, out Overlapping);
                     threshold = 1e20;
-                    _FSI_Collision.FindNormalAndTangentialVector(DistanceVec, out normal, out tangential);
+                    _FSI_Collision.CalculateNormalAndTangentialVector(DistanceVec, out normal, out tangential);
                     _FSI_Collision.ProjectVelocity(normal, tangential, particle.TranslationalVelocity[0], out collisionVn_P0, out collisionVt_P0);
                     threshold = 1e20;
-                    _FSI_Collision.FindNormalAndTangentialVector(DistanceVec, out normal, out tangential);
+                    _FSI_Collision.CalculateNormalAndTangentialVector(DistanceVec, out normal, out tangential);
                     _FSI_Collision.ProjectVelocity(normal, tangential, particle.TranslationalVelocity[0], out collisionVn_P0, out collisionVt_P0);
                 }
                 #region oldstuff

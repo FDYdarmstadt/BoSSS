@@ -421,8 +421,25 @@ namespace FSI_Solver
                     Overlapping = true;
                 }
             }
-
         }
+
+        /// ====================================================================================
+        /// <summary>
+        /// Ensures the communication between the processes after a collision
+        /// </summary>
+        /// <param name="Particles">
+        /// A list of all particles.
+        /// </param>
+        /// <param name="CurrentParticle">
+        /// The current particle.
+        /// </param>
+        /// <param name="MPISize">
+        /// Number of mpi processes
+        /// </param>
+        /// <param name="WallCollision">
+        /// If the collision was a wall collision set this true.
+        /// </param>
+        /// ====================================================================================
         internal void Collision_MPICommunication(List<Particle> Particles, Particle CurrentParticle, int MPISize, bool WallCollision = false)
         {
             int NoOfVars = 3;
@@ -486,6 +503,10 @@ namespace FSI_Solver
                 }
             }
         }
+
+        /// <summary>
+        /// Obsolete, please use GJK-algorithm
+        /// </summary>
         internal void FindClosestPoint(double hmin, int SpatialDim, MultidimensionalArray interfacePoints_P0, MultidimensionalArray interfacePoints_P1, ref double[] distanceVec, ref double distance, out double[] tempPoint_P0, out double[] tempPoint_P1, out bool Overlapping)
         {
             tempPoint_P0 = new double[SpatialDim];
@@ -516,28 +537,37 @@ namespace FSI_Solver
             Console.WriteLine("Overlapping = " + Overlapping);
         }
 
-        internal void ProjectVelocity(double[] NormalVector, double[] TangentialVector, double[] TranslationalVelocity, out double collisionVn, out double collisionVt)
-        {
-            ProjectVelocityOnVector(NormalVector, TranslationalVelocity, out collisionVn);
-            ProjectVelocityOnVector(TangentialVector, TranslationalVelocity, out collisionVt);
-        }
-
-        internal void GetParticleState(Particle particle, int SpatialDim, out double[] ParticleState)
-        {
-            ParticleState = new double[2 * SpatialDim + 2];
-            for (int d = 0; d < SpatialDim; d++)
-            {
-                ParticleState[d] = particle.Position[0][d];
-                ParticleState[d + SpatialDim] = particle.TranslationalVelocity[0][d];
-            }
-            ParticleState[2 * SpatialDim] = particle.Angle[0];
-            ParticleState[2*SpatialDim +1] = particle.RotationalVelocity[0];
-        }
-
-        internal void CalculateDynamicCollisionThreshold(Particle particle0, Particle particle1, double[] tempPoint_P0, double[] tempPoint_P1, double[] NormalVector, double Distance, double dt, out double Threshold)
+        /// ====================================================================================
+        /// <summary>
+        /// Calculates the dynamic collision threshold based on the normal velocity of the two 
+        /// particles.
+        /// </summary>
+        /// <param name="particle0">
+        /// </param>
+        /// <param name="particle1">
+        /// </param>
+        /// <param name="ClosestPoint0">
+        /// The closest point on particle0 to particle1.
+        /// </param>
+        /// <param name="ClosestPoint1">
+        /// The closest point on particle1 to particle0.
+        /// </param>
+        /// <param name="NormalVector">
+        /// The collision normal vector.
+        /// </param>
+        /// <param name="Distance">
+        /// The minimum distance between the two particles.
+        /// </param>
+        /// <param name="dt">
+        /// The timestep.
+        /// </param>
+        /// <param name="Threshold">
+        /// </param>
+        /// ====================================================================================
+        internal void CalculateDynamicCollisionThreshold(Particle particle0, Particle particle1, double[] ClosestPoint0, double[] ClosestPoint1, double[] NormalVector, double Distance, double dt, out double Threshold)
         {
             Threshold = 0;
-            FindRadialVector(particle0.Position[0], tempPoint_P0, out _, out double RadialLength0, out double[] RadialNormalVector0);
+            CalculateRadialVector(particle0.Position[0], ClosestPoint0, out _, out double RadialLength0, out double[] RadialNormalVector0);
             TransformRotationalVelocity(particle0.RotationalVelocity[0], RadialLength0, RadialNormalVector0, out double[] PointVelocityDueToRotation0);
             double[] PointVelocity0 = new double[2];
             for (int d = 0; d < 2; d++)
@@ -545,7 +575,7 @@ namespace FSI_Solver
             ProjectVelocityOnVector(NormalVector, PointVelocity0, out double DetectCollisionVn_P0);
             if (particle1 != null)
             {
-                FindRadialVector(particle1.Position[0], tempPoint_P1, out _, out double RadialLength1, out double[] RadialNormalVector1);
+                CalculateRadialVector(particle1.Position[0], ClosestPoint1, out _, out double RadialLength1, out double[] RadialNormalVector1);
                 TransformRotationalVelocity(particle1.RotationalVelocity[0], RadialLength1, RadialNormalVector1, out double[] PointVelocityDueToRotation1);
                 double[] PointVelocity1 = new double[2];
                 for (int d = 0; d < 2; d++)
@@ -565,19 +595,82 @@ namespace FSI_Solver
             
         }
 
-        internal void FindNormalAndTangentialVector(double[] distanceVec, out double[] normal, out double[] tangential)
+        /// ====================================================================================
+        /// <summary>
+        /// Calculates the normal and tangential vector from the min distance vector between the
+        /// two particles.
+        /// </summary>
+        /// <param name="distanceVec">
+        /// The min distance vector between the two particles.
+        /// </param>
+        /// <param name="NormalVector">
+        /// The collision normal vector.
+        /// </param>
+        /// <param name="TangentialVector">
+        /// The collision tangential vector.
+        /// </param>
+        /// ====================================================================================
+        internal void CalculateNormalAndTangentialVector(double[] distanceVec, out double[] NormalVector, out double[] TangentialVector)
         {
-            normal = distanceVec.CloneAs();
-            normal.ScaleV(1 / Math.Sqrt(distanceVec[0].Pow2() + distanceVec[1].Pow2()));
-            tangential = new double[] { -normal[1], normal[0] };
+            NormalVector = distanceVec.CloneAs();
+            NormalVector.ScaleV(1 / Math.Sqrt(distanceVec[0].Pow2() + distanceVec[1].Pow2()));
+            TangentialVector = new double[] { -NormalVector[1], NormalVector[0] };
         }
 
+        /// ====================================================================================
+        /// <summary>
+        /// Calculates the normal and tangential components of the translational velocity.
+        /// </summary>
+        /// <param name="NormalVector">
+        /// </param>
+        /// <param name="TangentialVector">
+        /// </param>
+        /// <param name="TranslationalVelocity">
+        /// </param>
+        /// <param name="VelocityNormal">
+        /// </param>
+        /// <param name="VelocityTangential">
+        /// </param>
+        /// ====================================================================================
+        internal void ProjectVelocity(double[] NormalVector, double[] TangentialVector, double[] TranslationalVelocity, out double VelocityNormal, out double VelocityTangential)
+        {
+            ProjectVelocityOnVector(NormalVector, TranslationalVelocity, out VelocityNormal);
+            ProjectVelocityOnVector(TangentialVector, TranslationalVelocity, out VelocityTangential);
+        }
+
+        /// ====================================================================================
+        /// <summary>
+        /// Calculates the scalar product between the velocity and a vector.
+        /// </summary>
+        /// <param name="vector">
+        /// </param>
+        /// <param name="VelocityVector">
+        /// </param>
+        /// <param name="VelocityComponent">
+        /// </param>
+        /// ====================================================================================
         internal void ProjectVelocityOnVector(double[] vector, double[] VelocityVector, out double VelocityComponent)
         {
             VelocityComponent = VelocityVector[0] * vector[0] + VelocityVector[1] * vector[1];
         }
 
-        internal void FindRadialVector(double[] ParticlePosition, double[] SurfacePoint, out double[] RadialVector, out double RadialLength, out double[] RadialNormalVector)
+        /// ====================================================================================
+        /// <summary>
+        /// Calculates the radial vector (SurfacePoint-ParticlePosition)
+        /// </summary>
+        /// <param name="ParticlePosition">
+        /// </param>
+        /// <param name="SurfacePoint">
+        /// </param>
+        /// <param name="RadialVector">
+        /// </param>
+        /// <param name="RadialLength">
+        /// </param>
+        /// <param name="RadialNormalVector">
+        /// Vector normal to the radial vector.
+        /// </param>
+        /// ====================================================================================
+        internal void CalculateRadialVector(double[] ParticlePosition, double[] SurfacePoint, out double[] RadialVector, out double RadialLength, out double[] RadialNormalVector)
         {
             RadialVector = new double[ParticlePosition.Length];
             for (int d = 0; d < ParticlePosition.Length; d++)
@@ -590,6 +683,20 @@ namespace FSI_Solver
             RadialNormalVector.ScaleV(1 / Math.Sqrt(RadialNormalVector[0].Pow2() + RadialNormalVector[1].Pow2()));
         }
 
+        /// ====================================================================================
+        /// <summary>
+        /// Calculates the point velocity due to the rotaional velocity of the particle.
+        /// </summary>
+        /// <param name="RotationalVelocity">
+        /// </param>
+        /// <param name="RadialLength">
+        /// </param>
+        /// <param name="RadialNormalVector">
+        /// Vector normal to the radial vector.
+        /// </param>
+        /// <param name="PointVelocityDueToRotation">
+        /// </param>
+        /// ====================================================================================
         internal void TransformRotationalVelocity(double RotationalVelocity, double RadialLength, double[] RadialNormalVector, out double[] PointVelocityDueToRotation)
         {
             PointVelocityDueToRotation = new double[RadialNormalVector.Length];
@@ -599,6 +706,30 @@ namespace FSI_Solver
             }
         }
 
+        /// ====================================================================================
+        /// <summary>
+        /// Predicts the particle state at the next timestep.
+        /// </summary>
+        /// <param name="particle">
+        /// </param>
+        /// <param name="SpatialDim">
+        /// </param>
+        /// <param name="dt">
+        /// The timestep.
+        /// </param>
+        /// <param name="Position">
+        /// New position of the particle.
+        /// </param>
+        /// <param name="TranslationalVelocity">
+        /// New velocity of the particle.
+        /// </param>
+        /// <param name="Angle">
+        /// New angle of the particle.
+        /// </param>
+        /// <param name="RotationalVelocity">
+        /// New rotational velocity of the particle.
+        /// </param>
+        /// ====================================================================================
         internal void PredictParticleNextTimestep(Particle particle, int SpatialDim, double dt, out double[] Position, out double[] TranslationalVelocity, out double Angle, out double RotationalVelocity)
         {
             Position = new double[SpatialDim];
@@ -610,16 +741,6 @@ namespace FSI_Solver
             {
                 Position[d] = particle.Position[0][d] + particle.TranslationalVelocity[0][d] * dt + (particle.TranslationalAcceleration[1][d] + particle.TranslationalAcceleration[0][d]) * dt.Pow2() / 4;
                 TranslationalVelocity[d] = particle.TranslationalVelocity[0][d] + (particle.TranslationalAcceleration[1][d] + particle.TranslationalAcceleration[0][d]) * dt / 2;
-            }
-        }
-
-        internal void SetParticleToLastTimestep(Particle particle, int SpatialDim, out double[] Position, out double Angle)
-        {
-            Position = new double[SpatialDim];
-            Angle = particle.Angle[1];
-            for (int d = 0; d < SpatialDim; d++)
-            {
-                Position[d] = particle.Position[1][d];
             }
         }
     }
