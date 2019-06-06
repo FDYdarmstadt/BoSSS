@@ -96,9 +96,9 @@ namespace FSI_Solver
             }
             ProjectVelocityOnVector(NormalVector, PointVelocity0, out double DetectCollisionVn_P0);
             ProjectVelocityOnVector(NormalVector, PointVelocity1, out double DetectCollisionVn_P1);
-            if (Distance <= ((-DetectCollisionVn_P0 + DetectCollisionVn_P1) * dt))
+            if (Distance <= Math.Abs((-DetectCollisionVn_P0 + DetectCollisionVn_P1) * dt) || Math.Abs((-DetectCollisionVn_P0 + DetectCollisionVn_P1)) <= 1e-14)
             {
-                Threshold = (-DetectCollisionVn_P0 + DetectCollisionVn_P1) * dt;
+                Threshold = Math.Abs(-DetectCollisionVn_P0 + DetectCollisionVn_P1) + 1;
             }
         }
 
