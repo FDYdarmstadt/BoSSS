@@ -65,7 +65,7 @@ namespace CNS_MPITests.Tests.LoadBalancing {
             //TestRebalancingForDG2WithRK1AndAV_IBM_AggOn();
 
             //TestRebalancingForDG2WithLTS1AndAV_IBM_AggOff();    // ok
-            TestRebalancingForDG2WithLTS1AndAV_IBM_AggOn();   // ok
+            //TestRebalancingForDG2WithLTS1AndAV_IBM_AggOn();   // ok
             TearDown();
         }
 
