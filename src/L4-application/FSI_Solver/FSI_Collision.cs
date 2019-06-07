@@ -76,7 +76,7 @@ namespace FSI_Solver
         /// Is true if the two particles are overlapping.
         /// </param>
         /// ====================================================================================
-        internal void GJK_DistanceAlgorithm(Particle Particle0, Particle Particle1, LevelSetTracker lsTrk, double[] Position0, double[] Position1, double Angle0, double Angle1, out double Min_Distance, out double[] DistanceVec, out double[] ClosestPoint0, out double[] ClosestPoint1, out bool Overlapping)
+        internal void GJK_DistanceAlgorithm(Particle Particle0, int SubParticleID0, Particle Particle1, int SubParticleID1, LevelSetTracker lsTrk, double[] Position0, double[] Position1, double Angle0, double Angle1, out double Min_Distance, out double[] DistanceVec, out double[] ClosestPoint0, out double[] ClosestPoint1, out bool Overlapping)
         {
             int SpatialDim = Position0.Length;
             ClosestPoint0 = new double[SpatialDim];
@@ -99,11 +99,11 @@ namespace FSI_Solver
                 // and of the two particles (which are the closest points
                 // if the algorithm is finished.
                 // =======================================================
-                CalculateSupportPoint(Particle0, Position0, Angle0, vt, lsTrk, out ClosestPoint0);
+                CalculateSupportPoint(Particle0, SubParticleID0, Position0, Angle0, vt, lsTrk, out ClosestPoint0);
                 if (double.IsNaN(ClosestPoint0[0]) || double.IsNaN(ClosestPoint0[1]))
                     throw new ArithmeticException("Error trying to calculate point0 Value:  " + ClosestPoint0[0] + " point1 " + ClosestPoint0[1]);
                 if (Particle1 != null)
-                    CalculateSupportPoint(Particle1, Position1, Angle1, v, lsTrk, out ClosestPoint1);
+                    CalculateSupportPoint(Particle1, SubParticleID1, Position1, Angle1, v, lsTrk, out ClosestPoint1);
                 else
                 {
                     ClosestPoint1 = ClosestPoint0.CloneAs();    
@@ -196,7 +196,7 @@ namespace FSI_Solver
         /// The support point (Cpt. Obvious)
         /// </param>
         /// ====================================================================================
-        private void CalculateSupportPoint(Particle _Particle, double[] Position, double Angle, double[] Vector, LevelSetTracker lsTrk, out double[] SupportPoint)
+        private void CalculateSupportPoint(Particle _Particle, int SubParticleID, double[] Position, double Angle, double[] Vector, LevelSetTracker lsTrk, out double[] SupportPoint)
         {
             int SpatialDim = Position.Length;
             SupportPoint = new double[SpatialDim];
@@ -209,14 +209,15 @@ namespace FSI_Solver
             else
             {
                 MultidimensionalArray SurfacePoints = _Particle.GetSurfacePoints(lsTrk, Position, Angle);
+                MultidimensionalArray SurfacePointsSubParticle = SurfacePoints.ExtractSubArrayShallow(new int[]{ SubParticleID, -1, -1});
                 int L = 1;
                 int R = SurfacePoints.GetLength(0) - 2;
                 int Counter = 0;
-                while (L <= R && L > 0 && R < SurfacePoints.GetLength(0) - 1)
+                while (L <= R && L > 0 && R < SurfacePointsSubParticle.GetLength(0) - 1)
                 {
                     int Index = (L + R) / 2;
                     Counter = Counter + 1;
-                    GetPointAndNeighbours(SurfacePoints, Index, out SupportPoint, out double[] RightNeighbour, out double[] LeftNeighbour);
+                    GetPointAndNeighbours(SurfacePointsSubParticle, Index, out SupportPoint, out double[] RightNeighbour, out double[] LeftNeighbour);
                     double DotSupportPoint = SupportPoint[0] * Vector[0] + SupportPoint[1] * Vector[1];
                     double DotRight = RightNeighbour[0] * Vector[0] + RightNeighbour[1] * Vector[1];
                     double DotLeft = LeftNeighbour[0] * Vector[0] + LeftNeighbour[1] * Vector[1];

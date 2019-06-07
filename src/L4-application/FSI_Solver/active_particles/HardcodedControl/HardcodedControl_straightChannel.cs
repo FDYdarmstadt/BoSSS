@@ -30,7 +30,7 @@ namespace BoSSS.Application.FSI_Solver
 {
     public class HardcodedControl_straightChannel : IBM_Solver.HardcodedTestExamples
     {
-        public static FSI_Control ActiveRod_noBackroundFlow(int k = 2, double stressM = 1e5, double cellAgg = 0.2, double muA = 1e3, double timestepX = 1e-3)
+        public static FSI_Control ActiveRod_noBackroundFlow(int k = 2, double stressM = 1e5, double cellAgg = 0.2, double muA = 1e3, double timestepX = 1e-4)
         {
             FSI_Control C = new FSI_Control();
 
@@ -65,10 +65,10 @@ namespace BoSSS.Application.FSI_Solver
                 int q = new int(); // #Cells in x-dircetion + 1
                 int r = new int(); // #Cells in y-dircetion + 1
 
-                q = 75;
-                r = 30;
+                q = 25;
+                r = 20;
 
-                double[] Xnodes = GenericBlas.Linspace(-5 * BaseSize, 15 * BaseSize, q);
+                double[] Xnodes = GenericBlas.Linspace(-5 * BaseSize, 5 * BaseSize, q);
                 double[] Ynodes = GenericBlas.Linspace(-4 * BaseSize, 4 * BaseSize, r);
 
                 var grd = Grid2D.Cartesian2DGrid(Xnodes, Ynodes, periodicX: true, periodicY: false);
@@ -138,7 +138,7 @@ namespace BoSSS.Application.FSI_Solver
                     thickness_P = 0.6 * BaseSize,
                     length_P = 2 * BaseSize,
                     AddaptiveUnderrelaxation = true,
-                    underrelaxation_factor = 0.25,
+                    underrelaxation_factor = 0.5,
                     ClearSmallValues = true,
                     neglectAddedDamping = false
                 });
