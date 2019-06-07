@@ -116,7 +116,7 @@ namespace FSI_Solver
                 // Step 2
                 // Check max(x dot vt)
                 // =======================================================
-                if ((Aux.DotProduct(v,vt) - Aux.DotProduct(SupportPoint,vt)) >= -1e-12)
+                if ((Aux.DotProduct(v,vt) - Aux.DotProduct(SupportPoint,vt)) >= -1e-12 && i != 0)
                 {
                     Console.WriteLine("No of steps for distance algorithm: " + i);
                     break;

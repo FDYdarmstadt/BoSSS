@@ -1549,8 +1549,11 @@ namespace BoSSS.Application.FSI_Solver
                         Normal[d] += _Particle.CollisionNormal[t][d];
                         Tangential[d] += _Particle.CollisionTangential[t][d];
                         _Particle.TotalCollisionPositionCorrection[d] += _Particle.CollisionPositionCorrection[t][d];
+                        if (double.IsNaN(_Particle.TotalCollisionPositionCorrection[d]) || double.IsInfinity(_Particle.TotalCollisionPositionCorrection[d]))
+                            throw new ArithmeticException("Error trying to update particle position. Value:  " + _Particle.TotalCollisionPositionCorrection[d]);
                     }
                 }
+                
                 Normal.ScaleV(1 / Math.Sqrt(Normal[0].Pow2() + Normal[1].Pow2()));
                 Tangential.ScaleV(1 / Math.Sqrt(Tangential[0].Pow2() + Tangential[1].Pow2()));
                 double[] Cos = new double[_Particle.CollisionTranslationalVelocity.Count()];
@@ -1826,13 +1829,15 @@ namespace BoSSS.Application.FSI_Solver
                         double[] CollisionPositionCorrection1 = new double[SpatialDim];
                         for (int d=0; d< SpatialDim; d++)
                         {
-                            double DistanceFraction0 = collisionVn_P0 / (collisionVn_P0 + collisionVn_P1);
-                            double DistanceFraction1 = collisionVn_P1 / (collisionVn_P0 + collisionVn_P1);
+                            double DistanceFraction0 = Math.Abs(collisionVn_P0) / (Math.Abs(collisionVn_P0) + Math.Abs(collisionVn_P1));
+                            double DistanceFraction1 = Math.Abs(collisionVn_P1) / (Math.Abs(collisionVn_P0) + Math.Abs(collisionVn_P1));
                             CollisionPositionCorrection0[d] = -DistanceFraction0 * DistanceVector[d];
                             CollisionPositionCorrection1[d] = DistanceFraction1 * DistanceVector[d];
                         }
                         Particle0.CollisionPositionCorrection.Add(CollisionPositionCorrection0);
                         Particle1.CollisionPositionCorrection.Add(CollisionPositionCorrection1);
+                        if (double.IsNaN(CollisionPositionCorrection0[0]) || double.IsInfinity(CollisionPositionCorrection0[0]))
+                            throw new ArithmeticException("Error trying to update particle position. Value:  " + CollisionPositionCorrection0[0]);
 
                         // Calculate excentric parameter
                         double[] RadialDistance0 = Auxillary.VectorDiff(ClosestPoint_P0, Particle0.Position[0]);
@@ -2006,7 +2011,16 @@ namespace BoSSS.Application.FSI_Solver
                 int test = particle.NoOfSubParticles();
                 for (int j = 0; j < particle.NoOfSubParticles(); j++)
                 {
-                    Collision.GJK_DistanceAlgorithm(particle, j, null, 0, LsTrk, point0, point1, particle.Angle[0], 0, out Distance, out DistanceVec, out ClosestPointParticle, out ClosestPointWall, out Overlapping); ;
+                    Collision.GJK_DistanceAlgorithm(particle, j, null, 0, LsTrk, point0, point1, particle.Angle[0], 0, out double temp_Distance, out double[] temp_DistanceVector, out double[]  temp_ClosestPoint_P0, out double[]  temp_ClosestPoint_P1, out Overlapping); ;
+                    if (Overlapping)
+                        break;
+                    if (temp_Distance < Distance)
+                    {
+                        Distance = temp_Distance;
+                        DistanceVec = temp_DistanceVector;
+                        ClosestPointParticle = temp_ClosestPoint_P0;
+                        ClosestPointWall = temp_ClosestPoint_P1;
+                    }
                 }
                 _FSI_Collision.CalculateNormalAndTangentialVector(DistanceVec, out double[] normal, out double[] tangential);
                 _FSI_Collision.CalculateDynamicCollisionThreshold(particle, null, ClosestPointParticle, ClosestPointWall, normal, Distance, dt, out double threshold);
