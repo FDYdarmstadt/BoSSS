@@ -48,11 +48,9 @@ namespace BoSSS.Application.FSI_Solver
 {
     public class FSI_SolverMain : IBM_Solver.IBM_SolverMain
     {
-        /// ====================================================================================
         /// <summary>
         /// Set the inital state of the simulation.
         /// </summary>
-        /// ====================================================================================
         protected override void SetInitial()
         {
             // Setup particles
@@ -104,7 +102,7 @@ namespace BoSSS.Application.FSI_Solver
         double calculatedDampingTensors;
         readonly private FSI_Auxillary Auxillary = new FSI_Auxillary();
         readonly private FSI_Collision Collision = new FSI_Collision();
-        // =============================
+        
         /// <summary>
         /// Application entry point.
         /// </summary>
@@ -1145,7 +1143,7 @@ namespace BoSSS.Application.FSI_Solver
                     for (int p = 0; p < m_Particles.Count(); p++)
                     {
                         Particle CurrentParticle = m_Particles[p];
-                        WallCollisionForcesNew(CurrentParticle, dt, LsTrk.GridDat.Cells.h_minGlobal);
+                        WallCollisionForcesNew(CurrentParticle, dt);
                         Collision.Collision_MPICommunication(m_Particles, CurrentParticle, MPISize, true);
                     }
                     UpdateForcesAndTorque(m_Particles, dt, 0);
@@ -1204,7 +1202,7 @@ namespace BoSSS.Application.FSI_Solver
                         for (int p = 0; p< m_Particles.Count(); p++)
                         {
                             Particle CurrentParticle = m_Particles[p];
-                            WallCollisionForcesNew(CurrentParticle, p, LsTrk.GridDat.Cells.h_minGlobal);
+                            WallCollisionForcesNew(CurrentParticle, p);
                             Collision.Collision_MPICommunication(m_Particles, CurrentParticle, MPISize, true);
                         }
                         while (posResidual_splitting > ((FSI_Control)Control).ForceAndTorque_ConvergenceCriterion)
@@ -1923,12 +1921,13 @@ namespace BoSSS.Application.FSI_Solver
             }
         }
 
-        public void GetWall(CellMask ParticleBoundaryCells, IList<Platform.LinAlg.AffineTrafo> trafo, out double[,] WallPoints)
+        public void GetWall(CellMask ParticleBoundaryCells, out double[,] WallPoints)
         {
             int SpatialDim = ParticleBoundaryCells.GridData.SpatialDimension;
             int NoOfMaxWallEdges = 4;
             WallPoints = new double[NoOfMaxWallEdges, SpatialDim];
             int[][] Cells2Edges = ((GridData)this.GridData).Cells.Cells2Edges;
+            IList<Platform.LinAlg.AffineTrafo> trafo = GridData.iGeomEdges.Edge2CellTrafos;
             foreach (Chunk cnk in ParticleBoundaryCells)
             {
                 for (int i = cnk.i0; i < cnk.JE; i++)
@@ -1970,16 +1969,12 @@ namespace BoSSS.Application.FSI_Solver
                                     throw new ArithmeticException("Error trying to get wall position. Please use horizontal/vertical boudaries");
                             }
                         }
-                        else
-                        {
-                            Console.WriteLine("No walls to collide with");
-                        }
                     }
                 }
             }
         }
 
-        public void WallCollisionForcesNew(Particle particle, double dt, double hmin)
+        public void WallCollisionForcesNew(Particle particle, double dt)
         {
             if (CollisionModel == FSI_Control.CollisionModel.NoCollisionModel)
                 return;
@@ -1987,23 +1982,18 @@ namespace BoSSS.Application.FSI_Solver
             int SpatialDim = GridData.SpatialDimension;
             // search for colored cells
             FSI_LevelSetUpdate levelSetUpdate = new FSI_LevelSetUpdate();
-            FSI_Auxillary _FSI_Auxillary = new FSI_Auxillary();
             FSI_Collision _FSI_Collision = new FSI_Collision();
             int J = GridData.iLogicalCells.NoOfLocalUpdatedCells;
             List<int[]> ColoredCellsSorted = levelSetUpdate.ColoredCellsFindAndSort(CellColor);
-            List<Particle> temp = new List<Particle> { particle };
-            int[] ParticleColorArray = levelSetUpdate.FindParticleColor(GridData, temp, ColoredCellsSorted);
+            int[] ParticleColorArray = levelSetUpdate.FindParticleColor(GridData, new List<Particle> { particle }, ColoredCellsSorted);
             CellMask ParticleCutCells = levelSetUpdate.CellsOneColor(GridData, ColoredCellsSorted, ParticleColorArray[0], J, false);
-            // all boundary cells
-            CellMask BoundaryCells = GridData.GetBoundaryCells();
             // consider only colored boundary cells
-            CellMask ParticleBoundaryCells = BoundaryCells.Intersect(ParticleCutCells);
+            CellMask ParticleBoundaryCells = GridData.GetBoundaryCells().Intersect(ParticleCutCells);
             double Distance = double.MaxValue;
             double[] DistanceVec = new double[Grid.SpatialDimension];
             double[] ClosestPointParticle = new double[2];
             double[] ClosestPointWall = new double[2];
-            IList<Platform.LinAlg.AffineTrafo> trafo = GridData.iGeomEdges.Edge2CellTrafos;
-            GetWall(ParticleBoundaryCells, trafo, out double[,] WallPoints);
+            GetWall(ParticleBoundaryCells, out double[,] WallPoints);
             double[] point0 = particle.Position[0].CloneAs();
             double[] point1 = point0.CloneAs();
             double[,] TempTranslationalVelocity = new double[WallPoints.GetLength(0), 2];
@@ -2265,16 +2255,12 @@ namespace BoSSS.Application.FSI_Solver
 
 
                             collisionVn_P0 = particle.TranslationalVelocity[0][0] * normal[0] + particle.TranslationalVelocity[0][1] * normal[1];
-                            Console.WriteLine("collisionVn_P0: " + collisionVn_P0);
                             collisionVt_P0 = particle.TranslationalVelocity[0][0] * tangential[0] + particle.TranslationalVelocity[0][1] * tangential[1];
-                            Console.WriteLine("collisionVt_P0: " + collisionVt_P0);
 
 
                             // exzentric collision
                             // ----------------------------------------
                             ClosestPointParticle.AccV(-1, particle.Position[0]);
-                            Console.WriteLine("tempPoint: " + ClosestPointParticle[0]);
-                            Console.WriteLine("tempPoint: " + ClosestPointParticle[1]);
                             double a0 = 0;
                             if (particle is Particle_Sphere)
                                 a0 = 0.0;

@@ -65,8 +65,8 @@ namespace BoSSS.Application.FSI_Solver
                 int q = new int(); // #Cells in x-dircetion + 1
                 int r = new int(); // #Cells in y-dircetion + 1
 
-                q = 25;
-                r = 20;
+                q = 50;
+                r = 40;
 
                 double[] Xnodes = GenericBlas.Linspace(-5 * BaseSize, 5 * BaseSize, q);
                 double[] Ynodes = GenericBlas.Linspace(-4 * BaseSize, 4 * BaseSize, r);
@@ -84,7 +84,7 @@ namespace BoSSS.Application.FSI_Solver
                     byte et = 0;
                     if (Math.Abs(X[0] - (-5 * BaseSize)) <= 1.0e-8)
                         et = 1;
-                    if (Math.Abs(X[0] + (-15 * BaseSize)) <= 1.0e-8)
+                    if (Math.Abs(X[0] + (-5 * BaseSize)) <= 1.0e-8)
                         et = 2;
                     if (Math.Abs(X[1] - (-4 * BaseSize)) <= 1.0e-8)
                         et = 3;
@@ -106,7 +106,6 @@ namespace BoSSS.Application.FSI_Solver
             C.AdaptiveMeshRefinement = false;
             C.RefinementLevel = 2;
             C.maxCurvature = 2;
-
 
             // Boundary conditions
             // =============================
@@ -135,7 +134,7 @@ namespace BoSSS.Application.FSI_Solver
                     particleDensity = 1,
                     ActiveParticle = true,
                     ActiveStress = stressM,
-                    thickness_P = 0.6 * BaseSize,
+                    thickness_P = 1 * BaseSize,
                     length_P = 2 * BaseSize,
                     AddaptiveUnderrelaxation = true,
                     underrelaxation_factor = 0.5,
