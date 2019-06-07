@@ -65,10 +65,10 @@ namespace BoSSS.Application.FSI_Solver
                 int q = new int(); // #Cells in x-dircetion + 1
                 int r = new int(); // #Cells in y-dircetion + 1
 
-                q = 50;
-                r = 40;
+                q = 18;
+                r = 15;
 
-                double[] Xnodes = GenericBlas.Linspace(-5 * BaseSize, 5 * BaseSize, q);
+                double[] Xnodes = GenericBlas.Linspace(-6 * BaseSize, 6 * BaseSize, q);
                 double[] Ynodes = GenericBlas.Linspace(-4 * BaseSize, 4 * BaseSize, r);
 
                 var grd = Grid2D.Cartesian2DGrid(Xnodes, Ynodes, periodicX: true, periodicY: false);
@@ -82,9 +82,9 @@ namespace BoSSS.Application.FSI_Solver
                 grd.DefineEdgeTags(delegate (double[] X)
                 {
                     byte et = 0;
-                    if (Math.Abs(X[0] - (-5 * BaseSize)) <= 1.0e-8)
+                    if (Math.Abs(X[0] - (-6 * BaseSize)) <= 1.0e-8)
                         et = 1;
-                    if (Math.Abs(X[0] + (-5 * BaseSize)) <= 1.0e-8)
+                    if (Math.Abs(X[0] + (-6 * BaseSize)) <= 1.0e-8)
                         et = 2;
                     if (Math.Abs(X[1] - (-4 * BaseSize)) <= 1.0e-8)
                         et = 3;
