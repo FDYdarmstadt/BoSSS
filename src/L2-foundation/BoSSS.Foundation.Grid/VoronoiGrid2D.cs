@@ -37,6 +37,8 @@ namespace BoSSS.Foundation.Grid.Voronoi
             return Polygonal(polygonBoundary, 10, numberOfNodes);
         }
 
+        
+
         /// <summary>
         /// Creates a random voronoi mesh inside a polygon.
         /// </summary>
@@ -92,13 +94,13 @@ namespace BoSSS.Foundation.Grid.Voronoi
         /// </param>
         /// <returns></returns>
         public static VoronoiGrid Polygonal(
-            MultidimensionalArray positions,
+            MultidimensionalArray nodePositions,
             Vector[] PolygonBoundary,
             int NoOfLyyodsIter,
             int FirstCellNode_Indice)
         {
             //Short hack
-            VoronoiNodes nodes = new VoronoiNodes(positions);
+            VoronoiNodes nodes = new VoronoiNodes(nodePositions);
             Vector[] boundingBox = BoundingBox(PolygonBoundary);
 
             VoronoiMesher.Settings settings = new VoronoiMesher.Settings

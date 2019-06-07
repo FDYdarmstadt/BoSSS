@@ -6,18 +6,6 @@ using System.Threading.Tasks;
 
 namespace BoSSS.Foundation.Voronoi
 {
-    public class ArrayMap
-    {
-        public OneWayArrayMap AtoB;
-        public OneWayArrayMap BtoA;
-
-        public ArrayMap(OneWayArrayMap AtoB, OneWayArrayMap BtoA)
-        {
-            this.AtoB = AtoB;
-            this.BtoA = BtoA;
-        }
-    }
-
     public class OneWayArrayMap
     {
         public ArrayConnection[] Map;
