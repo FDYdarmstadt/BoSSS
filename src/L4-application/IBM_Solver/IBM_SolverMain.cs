@@ -1038,8 +1038,10 @@ namespace BoSSS.Application.IBM_Solver {
                 // no smoothing (not recommended): copy DGLevSet -> LevSet
                 // ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
-                this.LevSet.Clear(domain);
-                this.LevSet.AccLaidBack(1.0, this.DGLevSet.Current, domain);
+                //this.LevSet.Clear(domain);
+                //this.LevSet.AccLaidBack(1.0, this.DGLevSet.Current, domain);
+                this.LevSet.Clear();
+                this.LevSet.AccLaidBack(1.0, this.DGLevSet.Current);
             }
         }
 
