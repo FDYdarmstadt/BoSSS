@@ -206,10 +206,6 @@ namespace BoSSS.Application.FSI_Solver {
 
             C.AddBoundaryValue("Wall");
 
-            // Boundary values for level-set
-            //C.BoundaryFunc = new Func<double, double>[] { (t) => 0.1 * 2 * Math.PI * -Math.Sin(Math.PI * 2 * 1 * t), (t) =>  0};
-            //C.BoundaryFunc = new Func<double, double>[] { (t) => 0, (t) => 0 };
-
             // Initial Values
             // ==============
 
