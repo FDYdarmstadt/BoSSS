@@ -69,10 +69,10 @@ namespace BoSSS.Application.FSI_Solver
         static void Main(string[] args)
         {
             MultiphaseCellAgglomerator.Katastrophenplot = MegaArschKakke2;
-            //TestProgram.Init();
-            //TestProgram.TestFlowRotationalCoupling();
+            TestProgram.Init();
+            TestProgram.TestFlowRotationalCoupling();
 
-            //Assert.IsTrue(false, "Remember to remove testcode!");
+            Assert.IsTrue(false, "Remember to remove testcode!");
 
             _Main(args, false, delegate () {
                 var p = new FSI_SolverMain();
@@ -769,7 +769,7 @@ namespace BoSSS.Application.FSI_Solver
                 }
             }
 
-            //PlotCurrentState(0.2, new TimestepNumber(2), 3);
+            PlotCurrentState(0.2, new TimestepNumber(2), 3);
 
 
             // =======================================================
@@ -783,13 +783,15 @@ namespace BoSSS.Application.FSI_Solver
             CellMask FluidCells = AgglParticleMask != null ? AgglParticleMask.Complement() : CellMask.GetFullMask(GridData);
             SetLevelSet(phiFluid, FluidCells, hack_phystime);
 
-            //PlotCurrentState(0.3, new TimestepNumber(3), 3);
+            PlotCurrentState(0.3, new TimestepNumber(3), 3);
 
             // =======================================================
             // Step 5
             // Smoothing
             // =======================================================
             PerformLevelSetSmoothing(AgglParticleMask);
+
+            PlotCurrentState(0.3, new TimestepNumber(3), 3);
 
             // =======================================================
             // Step 6
@@ -807,6 +809,7 @@ namespace BoSSS.Application.FSI_Solver
         private void SetLevelSet(Func<double[], double, double> phi, CellMask CurrentCells, double phystime)
         {
             ScalarFunction Function = NonVectorizedScalarFunction.Vectorize(phi, phystime);
+            DGLevSet.Current.Clear(CurrentCells);
             DGLevSet.Current.ProjectField(1.0, Function, new CellQuadratureScheme(UseDefaultFactories: true, domain: CurrentCells));
             //LevSet.AccLaidBack(1.0, DGLevSet.Current, CurrentCells); // see 'PerformLevelSetSmoothing' 
         }
