@@ -51,12 +51,12 @@ namespace BoSSS.Application.FSI_Solver
 
         static int counter = 0;
 
-        public static void MegaArschKakke2(DGField[] f)
+        public static void AgglomerationFailDebugPlot(DGField[] f)
         {
             csMPI.Raw.Comm_Rank(csMPI.Raw._COMM.WORLD, out int rank);
 
 
-            Tecplot.PlotFields(f, "MegaArschKakke-" + counter, 0.0, 2);
+            Tecplot.PlotFields(f, "AgglomerationFailDebugPlot-" + counter, 0.0, 2);
             counter++;
         }
 
@@ -68,7 +68,7 @@ namespace BoSSS.Application.FSI_Solver
         /// </summary>
         static void Main(string[] args)
         {
-            MultiphaseCellAgglomerator.Katastrophenplot = MegaArschKakke2;
+            MultiphaseCellAgglomerator.Katastrophenplot = AgglomerationFailDebugPlot;
             TestProgram.Init();
             TestProgram.TestFlowRotationalCoupling();
 
@@ -698,10 +698,7 @@ namespace BoSSS.Application.FSI_Solver
             // Step 2
             // Delete the old level set
             // =======================================================
-            //PlotCurrentState(0.0, new TimestepNumber(0), 3);
             DGLevSet.Current.Clear();
-            //PlotCurrentState(0.1, new TimestepNumber(1), 3);
-
 
             // =======================================================
             // Step 3
@@ -769,9 +766,6 @@ namespace BoSSS.Application.FSI_Solver
                 }
             }
 
-            PlotCurrentState(0.2, new TimestepNumber(2), 3);
-
-
             // =======================================================
             // Step 4
             // Define level set of the remaining cells ("Fluid-Cells")
@@ -783,24 +777,19 @@ namespace BoSSS.Application.FSI_Solver
             CellMask FluidCells = AgglParticleMask != null ? AgglParticleMask.Complement() : CellMask.GetFullMask(GridData);
             SetLevelSet(phiFluid, FluidCells, hack_phystime);
 
-            PlotCurrentState(0.3, new TimestepNumber(3), 3);
-
+            
             // =======================================================
             // Step 5
             // Smoothing
             // =======================================================
             PerformLevelSetSmoothing(AgglParticleMask);
-
-            PlotCurrentState(0.3, new TimestepNumber(3), 3);
-
+                        
             // =======================================================
             // Step 6
             // Update level set tracker and coloring
             // =======================================================
             LsTrk.UpdateTracker(__NearRegionWith: 2);
             CellColor = UpdateColoring();
-
-            //PlotCurrentState(0.4, new TimestepNumber(4), 3);
         }
 
         /// <summary>
