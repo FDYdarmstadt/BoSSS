@@ -586,7 +586,7 @@ namespace BoSSS.Application.XNSE_Solver {
                 case LevelSetHandling.None:
                     movingmesh = false;
                     mmsd = MassMatrixShapeandDependence.IsNonIdentity;
-                    staticInterface = true;
+                    //staticInterface = true;
                     break;
 
                 default:
@@ -741,7 +741,7 @@ namespace BoSSS.Application.XNSE_Solver {
                         m_BDF_energyTimestepper.m_ResLogger = this.EnergyResLogger;
                         m_BDF_energyTimestepper.m_ResidualNames = this.CurrentEnergyResidual.Mapping.Fields.Select(f => f.Identification).ToArray();
                         //m_BDF_coupledTimestepper.Config_SolverConvergenceCriterion = this.Control.Solver_ConvergenceCriterion;
-                        m_BDF_coupledTimestepper.Config_LevelSetConvergenceCriterion = this.Control.LevelSet_ConvergenceCriterion;
+                        m_BDF_energyTimestepper.Config_LevelSetConvergenceCriterion = this.Control.LevelSet_ConvergenceCriterion;
                         //m_BDF_coupledTimestepper.Config_MaxIterations = this.Control.Solver_MaxIterations;
                         this.Control.NonLinearSolver.MinSolverIterations = (this.Control.Timestepper_LevelSetHandling == LevelSetHandling.Coupled_Iterative) ? 1 : this.Control.NonLinearSolver.MinSolverIterations;
                         //m_BDF_energyTimestepper.Config_MinIterations = (this.Control.Timestepper_LevelSetHandling == LevelSetHandling.Coupled_Iterative) ? 1 : this.Control.Solver_MinIterations;
@@ -1328,7 +1328,7 @@ namespace BoSSS.Application.XNSE_Solver {
 
                         if(this.Control.solveCoupledHeatEquation && m_BDF_coupledTimestepper != null) {
                             m_BDF_coupledTimestepper.Solve(phystime, dt, Control.SkipSolveAndEvaluateResidual);
-                            ComputeHeatflux();
+                            //ComputeHeatflux();
                         }
                         
                     } else {
@@ -2432,7 +2432,7 @@ namespace BoSSS.Application.XNSE_Solver {
                     this.Control.ThermalParameters.hVap_A != 0.0 && this.Control.ThermalParameters.hVap_B != 0.0) {
 
                     SinglePhaseField[] evapVelocity = new SinglePhaseField[D];
-                    BitArray EvapMicroRegion = this.LsTrk.GridDat.GetBoundaryCells().GetBitMask();
+                    BitArray EvapMicroRegion = new BitArray(this.LsTrk.GridDat.Cells.Count);  //this.LsTrk.GridDat.GetBoundaryCells().GetBitMask();
 
 
                     double kA = this.Control.ThermalParameters.k_A;
@@ -2513,9 +2513,9 @@ namespace BoSSS.Application.XNSE_Solver {
                                        }
 
 
-                                       double mEvap = qEvap / hVap; // mass flux
+                                       double mEvap = -0.1; // qEvap / hVap; // mass flux
                                        //result[j, k] = mEvap * ((1 / rho_v) - (1 / rho_l)) * Normals[j, k, d];   //
-                                       result[j, k] = mEvap * (1 / rho_v)* Normals[j, k, d];   //
+                                       result[j, k] = mEvap * (1 / rho_v) * Normals[j, k, d];   //
                                        //result[j, k] = - Normals[j, k, d];   //
                                    }
                                }
@@ -2619,25 +2619,28 @@ namespace BoSSS.Application.XNSE_Solver {
                     double evapVelY = VelocityEval[1].Sum() / nNodes;
                     Console.WriteLine("EvapVelocity: ({0},{1})", evapVelX, evapVelY);
 
-                    // plot
-                    Tecplot.PlotFields(Mevap.ToArray(), "Mevap" + hack_TimestepIndex, hack_Phystime, 2);
 
                     // construct evolution velocity
                     for(int d = 0; d < D; d++) {
-                        SinglePhaseField FiltEvapVeloc = new SinglePhaseField(evapVelocity[d].Basis);
-                        FiltEvapVeloc.AccLaidBack(1.0, evapVelocity[d]);
-                        Filter(FiltEvapVeloc, 2, LsTrk.Regions.GetCutCellMask());
-                        evapVelocity[d].Clear();
-                        evapVelocity[d].Acc(1.0, FiltEvapVeloc);
+                        //SinglePhaseField FiltEvapVeloc = new SinglePhaseField(evapVelocity[d].Basis);
+                        //FiltEvapVeloc.AccLaidBack(1.0, evapVelocity[d]);
+                        //Filter(FiltEvapVeloc, 2, LsTrk.Regions.GetCutCellMask());
+                        //evapVelocity[d].Clear();
+                        //evapVelocity[d].Acc(1.0, FiltEvapVeloc);
 
                         meanVelocity[d].Clear();
-                        if(this.Control.ThermalParameters.hVap_A < 0.0)
+                        if(this.Control.ThermalParameters.hVap_A > 0.0)
                             meanVelocity[d].Acc(1.0, ((XDGField)EvoVelocity[d]).GetSpeciesShadowField("B"), this.LsTrk.Regions.GetCutCellMask());
                         else
                             meanVelocity[d].Acc(1.0, ((XDGField)EvoVelocity[d]).GetSpeciesShadowField("A"), this.LsTrk.Regions.GetCutCellMask());
 
                         meanVelocity[d].Acc(1.0, evapVelocity[d]);
                     }
+
+                    // plot
+                    //Tecplot.PlotFields(Mevap.ToArray(), "Mevap" + hack_TimestepIndex, hack_Phystime, 2);
+                    //Tecplot.PlotFields(evapVelocity.ToArray(), "EvapVelocity" + hack_TimestepIndex, hack_Phystime, 2);
+                    //Tecplot.PlotFields(meanVelocity.ToArray(), "meanVelocity" + hack_TimestepIndex, hack_Phystime, 2);
                 }
 
                 #endregion
@@ -4543,6 +4546,32 @@ namespace BoSSS.Application.XNSE_Solver {
 
             var dntParams = this.Control.AdvancedDiscretizationOptions;
 
+            double f = this.Control.ThermalParameters.fc;
+            double R = this.Control.ThermalParameters.Rc;
+            double rho_l = 0.0;
+            double R_int = 0.0;
+            if (hVapA != 0.0 && hVapB != 0.0)
+            {
+                //double hVap;
+                //double mEvap;
+                //double prescribedVolumeFlux = 0.1;
+                //if(this.Control.ThermalParameters.hVap_A > 0) {
+                //    hVap = this.Control.ThermalParameters.hVap_A;
+                //    mEvap = -this.Control.ThermalParameters.rho_A * prescribedVolumeFlux;
+                //} else {
+                //    hVap = this.Control.ThermalParameters.hVap_B;
+                //    mEvap = this.Control.ThermalParameters.rho_B * prescribedVolumeFlux;
+                //}
+
+                if (hVapA > 0 && hVapB < 0) {
+                    rho_l = rhoA;
+                    R_int = ((2.0 - f) / (2 * f)) * Tsat * Math.Sqrt(2 * Math.PI * R * Tsat) / (rhoB * hVapA.Pow2());
+                } else if (hVapA < 0 && hVapB > 0) {
+                    rho_l = rhoB;
+                    R_int = ((2.0 - f) / (2 * f)) * Tsat * Math.Sqrt(2 * Math.PI * R * Tsat) / (rhoA * hVapB.Pow2());
+                }
+            }
+
             // create operator
             // ===============
             Xheat_Operator = new XSpatialOperator(DomName, Params, CodName, (A, B, C) => m_HMForder);
@@ -4585,7 +4614,15 @@ namespace BoSSS.Application.XNSE_Solver {
                                 throw new NotImplementedException();
                         }
 
-                        comps.Add(new HeatConvectionAtLevelSet(D, LsTrk, capA, capB, LFFA, LFFB, this.Control.PhysicalParameters.Material, coupledBcMap, movingmesh));       // LevelSet component
+                        comps.Add(new HeatConvectionAtLevelSet(D, LsTrk, capA, capB, LFFA, LFFB, coupledBcMap, movingmesh));       // LevelSet component
+
+                        if (hVapA != 0.0 && hVapB != 0.0) {
+                            //comps.Add(new HeatConvectionAtEvapLevelSet(D, LsTrk, capA, capB, LFFA, LFFB, coupledBcMap, hVapA, R_int, Tsat, rho_l,
+                            //this.Control.PhysicalParameters.Sigma, this.Control.ThermalParameters.pc, this.Control.ThermalParameters.k_A, this.Control.ThermalParameters.k_B, movingmesh));
+
+                            comps.Add(new HeatConvectionAtLevelSet_Divergence(D, LsTrk, capA, capB, rhoA, rhoB, this.Control.AdvancedDiscretizationOptions.ContiSign, this.Control.AdvancedDiscretizationOptions.RescaleConti, 
+                                kA, kB, hVapA, R_int, Tsat, this.Control.PhysicalParameters.Sigma, this.Control.ThermalParameters.pc));
+                        }
                     }
                 }
 
@@ -4615,29 +4652,6 @@ namespace BoSSS.Application.XNSE_Solver {
                 // ======================
                 {
                     if(hVapA != 0.0 && hVapB != 0.0) {
-                        //double hVap;
-                        //double mEvap;
-                        //double prescribedVolumeFlux = 0.1;
-                        //if(this.Control.ThermalParameters.hVap_A > 0) {
-                        //    hVap = this.Control.ThermalParameters.hVap_A;
-                        //    mEvap = -this.Control.ThermalParameters.rho_A * prescribedVolumeFlux;
-                        //} else {
-                        //    hVap = this.Control.ThermalParameters.hVap_B;
-                        //    mEvap = this.Control.ThermalParameters.rho_B * prescribedVolumeFlux;
-                        //}
-
-                        double f = this.Control.ThermalParameters.fc;
-                        double R = this.Control.ThermalParameters.Rc;
-
-                        double rho_l = 0.0;
-                        double R_int = 0.0;
-                        if(hVapA > 0 && hVapB < 0) {
-                            rho_l = rhoA;
-                            R_int = ((2.0 - f) / (2 * f)) * Tsat * Math.Sqrt(2 * Math.PI * R * Tsat) / (rhoB * hVapA.Pow2());
-                        } else if(hVapA < 0 && hVapB > 0) {
-                            rho_l = rhoB;
-                            R_int = ((2.0 - f) / (2 * f)) * Tsat * Math.Sqrt(2 * Math.PI * R * Tsat) / (rhoA * hVapB.Pow2());
-                        }
 
                         Xheat_Operator.EquationComponents[CodName[0]].Add(new EvaporationAtLevelSet(LsTrk, hVapA, R_int, Tsat, rho_l, 
                             this.Control.PhysicalParameters.Sigma, this.Control.ThermalParameters.pc, this.Control.ThermalParameters.k_A, this.Control.ThermalParameters.k_B));

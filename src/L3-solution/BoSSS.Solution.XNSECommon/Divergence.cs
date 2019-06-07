@@ -499,8 +499,8 @@ namespace BoSSS.Solution.XNSECommon.Operator.Continuity {
 
             //double M = ComputeEvaporationMass_Macro(cp.ParamsNeg.GetSubVector(0, D), cp.ParamsPos.GetSubVector(0, D), cp.n);
             //double M = ComputeEvaporationMass_Micro(cp.ParamsNeg[D], cp.ParamsPos[D], cp.ParamsNeg[D + 1], cp.ParamsNeg[D + 2]);
-            double M = ComputeEvaporationMass(cp.ParamsNeg, cp.ParamsPos, cp.n, evapMicroRegion[cp.jCell]);
-            if(M == 0.0)
+            double M = -0.1; // ComputeEvaporationMass(cp.ParamsNeg, cp.ParamsPos, cp.n, evapMicroRegion[cp.jCell]);
+            if (M == 0.0)
                 return 0.0;
 
             //Console.WriteLine("mEvap - GeneralizedDivergenceAtLevelSet: {0}", M);

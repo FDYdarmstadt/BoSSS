@@ -588,7 +588,7 @@ namespace BoSSS.Solution.XNSECommon.Operator.Viscosity {
 
             //double M = ComputeEvaporationMass_Macro(inp.ParamsNeg.GetSubVector(0, m_D), inp.ParamsPos.GetSubVector(0, m_D), N);
             //double M = ComputeEvaporationMass_Micro(inp.ParamsNeg[m_D], inp.ParamsPos[m_D], inp.ParamsNeg[m_D + 1], inp.ParamsNeg[m_D + 2]);
-            double M = ComputeEvaporationMass(inp.ParamsNeg, inp.ParamsPos, N, evapMicroRegion[inp.jCell]);
+            double M = -0.1; // ComputeEvaporationMass(inp.ParamsNeg, inp.ParamsPos, N, evapMicroRegion[inp.jCell]);
             if(M == 0.0)
                 return 0.0;
 

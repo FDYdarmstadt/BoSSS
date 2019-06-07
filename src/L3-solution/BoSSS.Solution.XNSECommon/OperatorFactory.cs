@@ -206,10 +206,14 @@ namespace BoSSS.Solution.XNSECommon {
 
                         var conv = new Operator.Convection.ConvectionInBulk_LLF(D, BcMap, d, rhoA, rhoB, LFFA, LFFB, LsTrk);
                         comps.Add(conv); // Bulk component
+
                         comps.Add(new Operator.Convection.ConvectionAtLevelSet_LLF(d, D, LsTrk, rhoA, rhoB, LFFA, LFFB, config.physParams.Material, BcMap, movingmesh));       // LevelSet component
 
-                        if(evaporation) {
-                            comps.Add(new Operator.Convection.GeneralizedConvectionAtLevelSet_DissipativePart(d, D, LsTrk, rhoA, rhoB, LFFA, LFFB, BcMap, kA, kB, hVapA, hVapB, R_int, Tsat, sigma, p_c));
+                        if (evaporation) {
+                            //comps.Add(new Operator.Convection.GeneralizedConvectionAtLevelSet_CentralPart(d, D, LsTrk, rhoA, rhoB, LFFA, LFFB, BcMap, kA, kB, hVapA, hVapB, R_int, Tsat, sigma, p_c));
+                            //comps.Add(new Operator.Convection.GeneralizedConvectionAtLevelSet_DissipativePart(d, D, LsTrk, rhoA, rhoB, LFFA, LFFB, BcMap, kA, kB, hVapA, hVapB, R_int, Tsat, sigma, p_c));
+
+                            comps.Add(new Operator.Convection.ConvectionAtLevelSet_Divergence(d, D, LsTrk, rhoA, rhoB, config.dntParams.ContiSign, config.dntParams.RescaleConti, kA, kB, hVapA, R_int, Tsat, sigma, p_c));
                         }
 
                         // variante 3:
@@ -240,6 +244,11 @@ namespace BoSSS.Solution.XNSECommon {
                         //    throw new NotSupportedException("New Style pressure coupling does not support non-material interface.");
                         var presLs = new Operator.Pressure.PressureFormAtLevelSet(d, D, LsTrk); //, dntParams.UseWeightedAverages, muA, muB);
                         comps.Add(presLs);
+
+                        //if (evaporation) {
+                        //    var presLSGen = new Operator.Pressure.GeneralizedPressureFormAtLevelSet(d, D, LsTrk, config.thermParams.p_sat, hVapA);
+                        //    comps.Add(presLSGen);
+                        //}
                     }
                 }
 
@@ -733,7 +742,7 @@ namespace BoSSS.Solution.XNSECommon {
                     mtxBuilder.SpeciesOperatorCoefficients[kv.Key].CellLengthScales = kv.Value;
                     mtxBuilder.SpeciesOperatorCoefficients[kv.Key].UserDefinedValues.Add("SlipLengths", SlipLengths);
                     if(evaporation) {
-                        BitArray EvapMicroRegion = this.LsTrk.GridDat.GetBoundaryCells().GetBitMask();
+                        BitArray EvapMicroRegion = new BitArray(this.LsTrk.GridDat.Cells.Count); ; // this.LsTrk.GridDat.GetBoundaryCells().GetBitMask();
                         mtxBuilder.SpeciesOperatorCoefficients[kv.Key].UserDefinedValues.Add("EvapMicroRegion", EvapMicroRegion);
                     }
                 }
@@ -757,7 +766,7 @@ namespace BoSSS.Solution.XNSECommon {
                     eval.SpeciesOperatorCoefficients[kv.Key].CellLengthScales = kv.Value;
                     eval.SpeciesOperatorCoefficients[kv.Key].UserDefinedValues.Add("SlipLengths", SlipLengths);
                     if(evaporation) {
-                        BitArray EvapMicroRegion = this.LsTrk.GridDat.GetBoundaryCells().GetBitMask();
+                        BitArray EvapMicroRegion = new BitArray(this.LsTrk.GridDat.Cells.Count);
                         eval.SpeciesOperatorCoefficients[kv.Key].UserDefinedValues.Add("EvapMicroRegion", EvapMicroRegion);
                     }
                 }

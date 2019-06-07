@@ -146,8 +146,8 @@ namespace BoSSS.Solution.XNSECommon.Operator.DynamicInterfaceConditions {
 
             //double M = ComputeEvaporationMass_Macro(cp.ParamsNeg.GetSubVector(0, m_D), cp.ParamsPos.GetSubVector(0, m_D), Normal);
             //double M = ComputeEvaporationMass_Micro(cp.ParamsNeg[m_D], cp.ParamsPos[m_D], cp.ParamsNeg[m_D + 1], cp.ParamsNeg[m_D + 2]);
-            double M = ComputeEvaporationMass(cp.ParamsNeg, cp.ParamsPos, cp.n, evapMicroRegion[cp.jCell]);
-            if(M == 0.0)
+            double M = -0.1; // ComputeEvaporationMass(cp.ParamsNeg, cp.ParamsPos, cp.n, evapMicroRegion[cp.jCell]);
+            if (M == 0.0)
                 return 0.0;
 
             //Console.WriteLine("mEvap - MassFluxAtInterface: {0}", M);

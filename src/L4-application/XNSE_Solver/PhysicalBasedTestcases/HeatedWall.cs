@@ -643,6 +643,8 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
 
             C.CutCellQuadratureType = XQuadFactoryHelper.MomentFittingVariants.Classic;
 
+            bool steady = true;
+
             //_DbPath = @"\\dc1\userspace\smuda\cluster\CapillaryRise\CapillaryRise_studyDB";
 
             // basic database options
@@ -710,7 +712,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             C.ThermalParameters.rho_A = C.PhysicalParameters.rho_A;
             C.ThermalParameters.rho_B = C.PhysicalParameters.rho_B;
             C.ThermalParameters.c_A = 1.0;
-            C.ThermalParameters.c_B = 0.1;
+            C.ThermalParameters.c_B = 0.001;
             C.ThermalParameters.k_A = 1.0;
             double kv = 0.1;
             C.ThermalParameters.k_B = kv;
@@ -721,11 +723,13 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             }
 
             double Tsat = 100.0;
-            C.ThermalParameters.T_sat = Tsat;    
+            C.ThermalParameters.T_sat = Tsat;
+            double pSat = 10;
+            C.ThermalParameters.p_sat = pSat;
 
 
-            C.PhysicalParameters.IncludeConvection = false;
-            C.ThermalParameters.IncludeConvection = false;
+            C.PhysicalParameters.IncludeConvection = true;
+            C.ThermalParameters.IncludeConvection = true;
             C.PhysicalParameters.Material = false;
 
             #endregion
@@ -735,15 +739,21 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             // ===============
             #region grid
 
-            double L = 1.0;
+            double L = 0.1;
 
             C.GridFunc = delegate () {
                 double[] Xnodes = GenericBlas.Linspace(0, L, kelemR + 1);
                 double[] Ynodes = GenericBlas.Linspace(0, L, kelemR + 1);
                 var grd = Grid2D.Cartesian2DGrid(Xnodes, Ynodes, periodicX:true);
 
-                grd.EdgeTagNames.Add(1, "wall_ConstantHeatFlux_lower");
-                grd.EdgeTagNames.Add(2, "pressure_Dirichlet_ZeroGradient_upper");
+                if (!steady) {
+                    grd.EdgeTagNames.Add(1, "wall_ConstantHeatFlux_lower");
+                    grd.EdgeTagNames.Add(2, "pressure_Dirichlet_ZeroGradient_upper");
+                } else {
+                    grd.EdgeTagNames.Add(1, "pressure_outlet_ConstantTemperature_lower");
+                    grd.EdgeTagNames.Add(2, "velocity_inlet_ZeroGradient_upper");
+                }
+
 
                 grd.DefineEdgeTags(delegate (double[] X) {
                     byte et = 0;
@@ -765,7 +775,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             // ==============
             #region init
 
-            double zi0 = 0.1;
+            double zi0 = 0.01;
 
             Func<double[], double> PhiFunc = (X => zi0 - X[1]);     // A: vapor ; B: liquid
 
@@ -775,9 +785,15 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             C.InitialValues_Evaluators.Add("Temperature#A", X => Tsat);
             C.InitialValues_Evaluators.Add("Temperature#B", X => Tsat + (qv/kv)*(zi0 - X[1]));
 
-            double p0 = 10;
-            C.InitialValues_Evaluators.Add("Pressure#A", X => p0);
-            C.InitialValues_Evaluators.Add("Pressure#B", X => p0 - (0.01)*(10 - 1));
+            if (!steady) {
+                C.InitialValues_Evaluators.Add("Pressure#A", X => pSat);
+                C.InitialValues_Evaluators.Add("Pressure#B", X => pSat - (0.01) * (10 - 1));
+
+                C.InitialValues_Evaluators.Add("VelocityY#A", X => 0.9);
+            } else {
+                C.InitialValues_Evaluators.Add("VelocityY#A", X => -0.1);
+                C.InitialValues_Evaluators.Add("VelocityY#B", X => -1.0);
+            }
 
 
             //C.RestartInfo = new Tuple<Guid, TimestepNumber>(restartID, null);
@@ -790,10 +806,17 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             // ===================
             #region BC
 
-            //C.AddBoundaryValue("wall_ConstantHeatFlux_lower", "HeatFlux#A", (X, t) => HeatFlux);
-            C.AddBoundaryValue("wall_ConstantHeatFlux_lower", "HeatFlux#B", (X, t) => -qv);
+            if (!steady)
+            {
+                //C.AddBoundaryValue("wall_ConstantHeatFlux_lower", "HeatFlux#A", (X, t) => HeatFlux);
+                C.AddBoundaryValue("wall_ConstantHeatFlux_lower", "HeatFlux#B", (X, t) => -qv);
 
-            C.AddBoundaryValue("pressure_Dirichlet_ZeroGradient_upper", "Pressure#A", (X,t) => p0);
+                C.AddBoundaryValue("pressure_Dirichlet_ZeroGradient_upper", "Pressure#A", (X, t) => pSat);
+            } else {
+                C.AddBoundaryValue("pressure_outlet_ConstantTemperature_lower", "Temperature#B", (X, t) => Tsat + (qv / kv) * (zi0 - X[1]));
+                C.AddBoundaryValue("velocity_inlet_ZeroGradient_upper", "VelocityY#A", (X, t) => -0.1);
+            }
+
 
 
             #endregion
@@ -840,7 +863,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             // =========
             #region levelset
 
-            C.Option_LevelSetEvolution = LevelSetEvolution.FastMarching;
+            C.Option_LevelSetEvolution = steady? LevelSetEvolution.None : LevelSetEvolution.FastMarching;
 
             #endregion
 
@@ -851,11 +874,11 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
 
             C.Timestepper_Scheme = XNSE_Control.TimesteppingScheme.ImplicitEuler;
             C.Timestepper_BDFinit = TimeStepperInit.SingleInit;
-            C.Timestepper_LevelSetHandling = LevelSetHandling.LieSplitting;
+            C.Timestepper_LevelSetHandling = steady ? LevelSetHandling.None : LevelSetHandling.LieSplitting;
 
             C.CompMode = AppControl._CompMode.Transient;
-            C.dtMax = 5e-3;
-            C.dtMin = 5e-3;
+            C.dtMax = 1e-3;
+            C.dtMin = 1e-3;
             C.Endtime = 10000;
             C.NoOfTimesteps = 1000;
             C.saveperiod = 1;

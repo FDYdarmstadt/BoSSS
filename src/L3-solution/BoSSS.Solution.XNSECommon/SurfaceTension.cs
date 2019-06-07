@@ -1009,7 +1009,6 @@ namespace BoSSS.Solution.XNSECommon.Operator.SurfaceTension {
                             // beta*(u*nL)
 
                             double g_D = m_staticInt ? 0 : this.velFunction[inp.EdgeTag](inp.X, inp.time);
-                            //double g_D = this.velFunction[inp.EdgeTag](inp.X, inp.time);
 
                             for(int d = 0; d < D; d++) {
                                 Flx_InCell += m_beta * ((_uA[d] - g_D) * PSnINormal_IN[d]) * PSnINormal_IN[m_comp];
