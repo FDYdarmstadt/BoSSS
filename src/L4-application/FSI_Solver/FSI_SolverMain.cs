@@ -48,11 +48,11 @@ namespace BoSSS.Application.FSI_Solver
 {
     public class FSI_SolverMain : IBM_Solver.IBM_SolverMain
     {
-        /// ====================================================================================
+        // ====================================================================================
         /// <summary>
         /// Set the inital state of the simulation.
         /// </summary>
-        /// ====================================================================================
+        // ====================================================================================
         protected override void SetInitial()
         {
             // Setup particles
@@ -110,11 +110,11 @@ namespace BoSSS.Application.FSI_Solver
         /// </summary>
         static void Main(string[] args)
         {
-            MultiphaseCellAgglomerator.Katastrophenplot = AgglomerationFailDebugPlot;
-            TestProgram.Init();
-            TestProgram.TestFlowRotationalCoupling();
+            //MultiphaseCellAgglomerator.Katastrophenplot = AgglomerationFailDebugPlot;
+            //TestProgram.Init();
+            //BoSSS.Application.FSI_Solver.TestProgram.SingleDryParticleAgainstWall(true);
 
-            Assert.IsTrue(false, "Remember to remove testcode!");
+            //Assert.IsTrue(false, "Remember to remove testcode!");
 
             _Main(args, false, delegate () {
                 var p = new FSI_SolverMain();
