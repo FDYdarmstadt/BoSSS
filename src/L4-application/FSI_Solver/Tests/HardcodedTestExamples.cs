@@ -226,7 +226,7 @@ namespace BoSSS.Application.FSI_Solver {
             C.Particles.Add(new Particle_Sphere(new double[] { -0.5, -0.5 }, startAngl: 90.0)
             {
                 particleDensity = 1.0,
-                radius_P = 0.1
+                radius_P = 0.1,
             });
             C.Particles[0].TranslationalVelocity[0][0] = +1;
             C.Particles[0].TranslationalVelocity[0][1] = -1;
@@ -675,7 +675,7 @@ namespace BoSSS.Application.FSI_Solver {
             C.dtMax = dt;
             C.dtMin = dt;
             C.Endtime = 10.0;
-            C.NoOfTimesteps = 39;
+            C.NoOfTimesteps = 390;
 
             // haben fertig...
             // ===============
