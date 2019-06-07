@@ -59,11 +59,6 @@ namespace BoSSS.Application.FSI_Solver
         [DataMember]
         public double width_P;
 
-        internal override bool Konvex()
-        {
-            return false;
-        }
-
         internal override int NoOfSubParticles()
         {
             return 2;

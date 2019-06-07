@@ -181,12 +181,7 @@ namespace BoSSS.Application.FSI_Solver
         /// </summary>
         [DataMember]
         private readonly int SpatialDim;
-
-        /// <summary>
-        /// Spatial Dimension of the particle 
-        /// </summary>
-        virtual internal bool Konvex() { return true; }
-
+        
         virtual internal int NoOfSubParticles() { return 1; }
 
         /// <summary>

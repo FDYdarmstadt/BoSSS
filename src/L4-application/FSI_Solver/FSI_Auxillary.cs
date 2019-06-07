@@ -33,7 +33,23 @@ namespace FSI_Solver
     {
         internal double[] VectorSum(double[] Vector0, double[] Vector1)
         {
-            int Dim = Vector0.Length;
+            int Dim = Vector0 != null ? Vector0.Length : Vector1.Length;
+            if (Vector0 == null)
+            {
+                Vector0 = Vector1.CloneAs();
+                for (int d = 0; d < Dim; d++)
+                {
+                    Vector0[d] = 0;
+                }
+            }
+            if (Vector1 == null)
+            {
+                Vector1 = Vector0.CloneAs();
+                for (int d = 0; d < Dim; d++)
+                {
+                    Vector1[d] = 0;
+                }
+            }
             double[] ResultVector = new double[Dim];
             if (Vector0.Length != Vector1.Length)
                 throw new ArithmeticException("Mismatch in vector dimension");
@@ -45,7 +61,23 @@ namespace FSI_Solver
         }
         internal double[] VectorDiff(double[] Vector0, double[] Vector1)
         {
-            int Dim = Vector0.Length;
+            int Dim = Vector0 != null ? Vector0.Length : Vector1.Length;
+            if (Vector0 == null)
+            {
+                Vector0 = Vector1.CloneAs();
+                for (int d = 0; d < Dim; d++)
+                {
+                    Vector0[d] = 0;
+                }
+            }
+            if (Vector1 == null)
+            {
+                Vector1 = Vector0.CloneAs();
+                for (int d = 0; d < Dim; d++)
+                {
+                    Vector1[d] = 0;
+                }
+            }
             double[] ResultVector = new double[Dim];
             if (Vector0.Length != Vector1.Length)
                 throw new ArithmeticException("Mismatch in vector dimension");

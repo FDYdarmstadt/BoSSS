@@ -1464,7 +1464,7 @@ namespace BoSSS.Application.FSI_Solver
 
         
 
-        bool collision = false;
+        //bool collision = false;
 
         bool triggerOnlyCollisionProcedure = false;
 
@@ -1983,7 +1983,6 @@ namespace BoSSS.Application.FSI_Solver
             CellMask BoundaryCells = GridData.GetBoundaryCells();
             // consider only colored boundary cells
             CellMask ParticleBoundaryCells = BoundaryCells.Intersect(ParticleCutCells);
-            collision = false;
             double Distance = double.MaxValue;
             double[] DistanceVec = new double[Grid.SpatialDimension];
             double[] ClosestPointParticle = new double[2];
@@ -2007,7 +2006,8 @@ namespace BoSSS.Application.FSI_Solver
                     continue;
 
                 bool Overlapping = false;
-                for (int j = 0; j < particle.NoOfSubParticles(); i++)
+                int test = particle.NoOfSubParticles();
+                for (int j = 0; j < particle.NoOfSubParticles(); j++)
                 {
                     Collision.GJK_DistanceAlgorithm(particle, j, null, 0, LsTrk, point0, point1, particle.Angle[0], 0, out Distance, out DistanceVec, out ClosestPointParticle, out ClosestPointWall, out Overlapping); ;
                 }
