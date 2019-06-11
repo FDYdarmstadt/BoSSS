@@ -285,6 +285,31 @@ namespace FSI_Solver
             _IterationCounter = IterationCounter + 1;
         }
 
+        internal void CalculateParticleResidual_Velocity(List<Particle> Particles, double[] VelocityOldSquared, double RotationalVelocityOldSquared, int IterationCounter, int MaximumIterations, out double Residual, out int _IterationCounter)
+        {
+            if (IterationCounter == 0)
+                Residual = 1e12;
+            else
+            {
+                double[] VelocityNewSquared = new double[2];
+                double RotationalVelocityNewSquared = new double();
+                foreach (Particle p in Particles)
+                {
+                    for (int d = 0; d < 2; d++)
+                        VelocityNewSquared[d] += p.TranslationalVelocity[0][d].Pow2();
+                    RotationalVelocityNewSquared += p.RotationalVelocity[0].Pow2();
+                }
+                Residual = Math.Sqrt((Math.Sqrt(VelocityNewSquared[0]) - Math.Sqrt(VelocityOldSquared[0])).Pow2() + (Math.Sqrt(VelocityNewSquared[1]) - Math.Sqrt(VelocityOldSquared[1])).Pow2() + (Math.Sqrt(RotationalVelocityNewSquared) - Math.Sqrt(RotationalVelocityOldSquared)).Pow2());
+            }
+            int PrintIteration = IterationCounter + 1;
+            Console.WriteLine("Fully coupled system, number of iterations:  " + PrintIteration);
+            Console.WriteLine("Velocity residual: " + Residual);
+            Console.WriteLine();
+            if (IterationCounter > MaximumIterations)
+                throw new ApplicationException("no convergence in coupled iterative solver, number of iterations: " + IterationCounter);
+            _IterationCounter = IterationCounter + 1;
+        }
+
         internal void PrintResultToConsole(List<Particle> Particles, double phystime, double dt, out double MPIangularVelocity, out double[] force)
         {
             double[] TranslationalMomentum = new double[2] { 0, 0 };
@@ -361,6 +386,32 @@ namespace FSI_Solver
                 ForcesOldSquared[0] += p.HydrodynamicForces[0][0].Pow2();
                 ForcesOldSquared[1] += p.HydrodynamicForces[0][1].Pow2();
                 TorqueOldSquared += p.HydrodynamicTorque[0].Pow2();
+                p.ForcesPrevIteration[0] = p.HydrodynamicForces[0][0];
+                p.ForcesPrevIteration[1] = p.HydrodynamicForces[0][1];
+                p.TorquePrevIteration = p.HydrodynamicTorque[0];
+            }
+        }
+
+        internal void SaveOldParticleState_Velocity(List<Particle> Particles, int IterationCounter, int SpatialDim, double ForceTorqueConvergenceCriterion, bool IsFullyCoupled, out double[] VelocityOldSquared, out double RotationalVelocityOldSquared)
+        {
+            VelocityOldSquared = new double[SpatialDim];
+            RotationalVelocityOldSquared = 0;
+            foreach (Particle p in Particles)
+            {
+                p.iteration_counter_P = IterationCounter;
+                // Save the old hydrondynamic forces, only necessary if no iteration is applied
+                // ============================================================================
+                if (IterationCounter == 0 && IsFullyCoupled == false)
+                {
+                    p.Aux.SaveMultidimValueOfLastTimestep(p.HydrodynamicForces);
+                    p.Aux.SaveValueOfLastTimestep(p.HydrodynamicTorque);
+                }
+                // Save status for residual
+                // ========================
+                p.ForceAndTorque_convergence = ForceTorqueConvergenceCriterion;
+                VelocityOldSquared[0] += p.TranslationalVelocity[0][0].Pow2();
+                VelocityOldSquared[1] += p.TranslationalVelocity[0][1].Pow2();
+                RotationalVelocityOldSquared += p.RotationalVelocity[0].Pow2();
                 p.ForcesPrevIteration[0] = p.HydrodynamicForces[0][0];
                 p.ForcesPrevIteration[1] = p.HydrodynamicForces[0][1];
                 p.TorquePrevIteration = p.HydrodynamicTorque[0];

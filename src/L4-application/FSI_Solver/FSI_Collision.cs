@@ -575,7 +575,45 @@ namespace FSI_Solver
             {
                 Threshold = Math.Abs(DetectCollisionVn_P0) * dt;
             }
-            
+        }
+
+        internal double DynamicTimestep(Particle particle0, Particle particle1, double[] ClosestPoint0, double[] ClosestPoint1, double[] NormalVector, double Distance, double dt)
+        {
+            double Dynamic_dt = 213;
+            double rMax_0 = particle0.GetLengthScales().Max();
+            double[] PointVelocity0 = new double[2];
+            for (int d = 0; d < 2; d++)
+                PointVelocity0[d] = particle0.TranslationalVelocity[0][d] + particle0.RotationalVelocity[0] * rMax_0;
+            ProjectVelocityOnVector(NormalVector, PointVelocity0, out double DetectCollisionVn_P0);
+            if (particle1 != null)
+            {
+                double rMax_1 = particle1.GetLengthScales().Max();
+                double[] PointVelocity1 = new double[2];
+                for (int d = 0; d < 2; d++)
+                    PointVelocity1[d] = particle1.TranslationalVelocity[0][d] + particle1.RotationalVelocity[0] * rMax_1;
+                ProjectVelocityOnVector(NormalVector, PointVelocity1, out double DetectCollisionVn_P1);
+                if (DetectCollisionVn_P1 - DetectCollisionVn_P0 == 0)
+                    return double.MaxValue;
+                
+                Dynamic_dt = Distance / (DetectCollisionVn_P1 - DetectCollisionVn_P0);
+
+                double test = Math.Abs(-DetectCollisionVn_P0 + DetectCollisionVn_P1) * dt;
+            }
+            else if(-DetectCollisionVn_P0 == 0)
+                return double.MaxValue;
+            else
+                Dynamic_dt = Distance / (-DetectCollisionVn_P0);
+                
+            return Dynamic_dt;
+        }
+
+        internal void UpdateParticleState(Particle particle, double Dynamic_dt, int SpatialDim)
+        {
+            for (int d = 0; d < SpatialDim; d++)
+            {
+                particle.Position[0][d] = particle.Position[0][d] + particle.TranslationalVelocity[0][d] * Dynamic_dt + (particle.TranslationalAcceleration[1][d] + particle.TranslationalAcceleration[0][d]) * Dynamic_dt.Pow2();
+            }
+            particle.Angle[0] = particle.Angle[0] + particle.RotationalVelocity[0] * Dynamic_dt + (particle.RotationalAcceleration[0] + particle.RotationalAcceleration[1]) * Dynamic_dt.Pow2();
         }
 
         /// <summary>
