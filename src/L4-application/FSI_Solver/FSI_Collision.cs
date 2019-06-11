@@ -87,7 +87,12 @@ namespace FSI_Solver
 
             for (int i = 0; i < 10000; i++)
             {
-                double[] vt = Aux.VectorDiff(null, v);
+                double[] vt = v.CloneAs();
+                for (int d = 0; d < SpatialDim; d++)
+                {
+                    vt[d] = -v[d];
+                }
+                //double[] vt = Aux.VectorDiff(null, v);
                 if (double.IsNaN(vt[0]) || double.IsNaN(vt[1]))
                     throw new ArithmeticException("Error trying to calculate point0 Value:  " + vt[0] + " point1 " + vt[1]);
 

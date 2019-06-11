@@ -95,7 +95,7 @@ namespace FSI_Solver
                 throw new ArithmeticException("Mismatch in vector dimension");
             for (int d = 0; d < Dim; d++)
             {
-                DotProduct += Vector0[d] - Vector1[d];
+                DotProduct += Vector0[d] * Vector1[d];
             }
             return DotProduct;
         }
