@@ -96,6 +96,12 @@ namespace BoSSS.Application.FSI_Solver
         /// </summary>
         public bool[] m_collidedWithWall;
 
+
+        /// <summary>
+        /// Check whether any particles is collided with the wall
+        /// </summary>
+        public double[,] ClosestPointToParticle;
+
         public double[][] m_closeInterfacePointTo;
 
         /// <summary>
@@ -166,7 +172,7 @@ namespace BoSSS.Application.FSI_Solver
         /// <summary>
         /// Scaling parameter for added damping.
         /// </summary>
-        private readonly double beta = 1;
+        private readonly double beta = 1.5;
         #endregion
 
         #region Geometric parameters
@@ -176,6 +182,8 @@ namespace BoSSS.Application.FSI_Solver
         [DataMember]
         private readonly int SpatialDim;
         
+        virtual internal int NoOfSubParticles() { return 1; }
+
         /// <summary>
         /// some length scale 
         /// </summary>
@@ -248,6 +256,18 @@ namespace BoSSS.Application.FSI_Solver
         /// </summary>
         [DataMember]
         public List<double[]> CollisionTangential = new List<double[]>();
+
+        /// <summary>
+        /// The translational velocity of the particle in the current time step. This list is used by the momentum conservation model.
+        /// </summary>
+        [DataMember]
+        public List<double[]> CollisionPositionCorrection = new List<double[]>();
+
+        /// <summary>
+        /// The translational velocity of the particle in the current time step. This list is used by the momentum conservation model.
+        /// </summary>
+        [DataMember]
+        public double[] TotalCollisionPositionCorrection = new double[2];
 
         /// <summary>
         /// The angular velocity of the particle in the current time step.
@@ -413,13 +433,10 @@ namespace BoSSS.Application.FSI_Solver
                     if (!AnyCollision)
                         Position[0][d] = Position[1][d] + TranslationalVelocity[1][d] * dt + (TranslationalAcceleration[1][d] + TranslationalAcceleration[0][d]) * dt.Pow2() / 4;
                     else
-                        Position[0][d] = Position[1][d] + dt * (0 + TranslationalVelocity[0][d]) / 2;
-                    Console.WriteLine("Position[1][" + d + "]: " + Position[1][d]);
-                    Console.WriteLine("Position[0][" + d + "]: " + Position[0][d]);
-                    Console.WriteLine("TranslationalVelocity[1][" + d + "]: " + TranslationalVelocity[1][d]);
-                    Console.WriteLine("TranslationalVelocity[0][" + d + "]: " + TranslationalVelocity[0][d]);
-                    Console.WriteLine("TranslationalAcceleration[1][" + d + "]: " + TranslationalAcceleration[1][d]);
-                    Console.WriteLine("TranslationalAcceleration[0][" + d + "]: " + TranslationalAcceleration[0][d]);
+                    {
+                        double TimePreCollision = TranslationalVelocity[1][d] != 0 ? TotalCollisionPositionCorrection[d] / TranslationalVelocity[1][d] : 0;
+                        Position[0][d] = Position[1][d] + (dt - TimePreCollision) * (0 + TranslationalVelocity[0][d]) / 2 - TotalCollisionPositionCorrection[d];
+                    }
                     if (double.IsNaN(Position[0][d]) || double.IsInfinity(Position[0][d]))
                         throw new ArithmeticException("Error trying to update particle position. Value:  " + Position[0][d]);
                 }
@@ -557,7 +574,15 @@ namespace BoSSS.Application.FSI_Solver
         /// <returns></returns>
         public void CalculateTranslationalVelocity(double dt)
         {
-            if (iteration_counter_P == 0)
+            bool AnyCollision = false;
+            for (int p = 0; p < m_collidedWithParticle.Length; p++)
+            {
+                if (m_collidedWithParticle[p])
+                {
+                    AnyCollision = true;
+                }
+            }
+            if (iteration_counter_P == 0 && !AnyCollision)
             {
                 Aux.SaveMultidimValueOfLastTimestep(TranslationalVelocity);
             }
@@ -569,18 +594,11 @@ namespace BoSSS.Application.FSI_Solver
             } else {
 
                 for (int d = 0; d < SpatialDim; d++) {
-                    bool AnyCollision = false;
-                    for (int p = 0; p < m_collidedWithParticle.Length; p++)
-                    {
-                        if (m_collidedWithParticle[p])
-                        {
-                            AnyCollision = true;
-                        }
-                    }
+                    
                     if (!AnyCollision)
                         TranslationalVelocity[0][d] = TranslationalVelocity[1][d] + (TranslationalAcceleration[1][d] + TranslationalAcceleration[0][d]) * dt / 2;
-                    else
-                        TranslationalVelocity[0][d] = TranslationalVelocity[1][d];
+                    //else
+                    //    TranslationalVelocity[0][d] = TranslationalVelocity[1][d];
                     if (double.IsNaN(TranslationalVelocity[0][d]) || double.IsInfinity(TranslationalVelocity[0][d]))
                         throw new ArithmeticException("Error trying to calculate particle velocity Value:  " + TranslationalVelocity[0][d]);
                 }
@@ -746,9 +764,12 @@ namespace BoSSS.Application.FSI_Solver
                 }
             }
 
-            if (iteration_counter_P == 1 || NotFullyCoupled)
+            if (iteration_counter_P == 1 || NotFullyCoupled || iteration_counter_P == 250)
             {
-                Console.WriteLine("First iteration of the current timestep, all relaxation factors are set to 1");
+                if(iteration_counter_P == 1)
+                    Console.WriteLine("First iteration of the current timestep, all relaxation factors are set to 1");
+                if (iteration_counter_P == 250)
+                    Console.WriteLine("250 iterations, I'm trying to jump closer to the real solution");
                 for (int d = 0; d < SpatialDim; d++)
                 {
                     HydrodynamicForces[0][d] = 0;
@@ -832,7 +853,7 @@ namespace BoSSS.Application.FSI_Solver
             throw new NotImplementedException();
         }
 
-        virtual public void GetSupportPoint(int SpatialDim, double CosT, double SinT, out double[] SupportPoint)
+        virtual public void GetSupportPoint(int SpatialDim, double[] Vector, double[] Position, double Angle, out double[] SupportPoint)
         {
             throw new NotImplementedException();
         }

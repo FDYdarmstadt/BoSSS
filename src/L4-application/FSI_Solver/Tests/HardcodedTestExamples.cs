@@ -154,6 +154,8 @@ namespace BoSSS.Application.FSI_Solver {
             C.Endtime = 120;
             C.NoOfTimesteps = 100;
 
+           
+
             // haben fertig...
             // ===============
 
@@ -204,10 +206,6 @@ namespace BoSSS.Application.FSI_Solver {
 
             C.AddBoundaryValue("Wall");
 
-            // Boundary values for level-set
-            //C.BoundaryFunc = new Func<double, double>[] { (t) => 0.1 * 2 * Math.PI * -Math.Sin(Math.PI * 2 * 1 * t), (t) =>  0};
-            //C.BoundaryFunc = new Func<double, double>[] { (t) => 0, (t) => 0 };
-
             // Initial Values
             // ==============
 
@@ -224,7 +222,7 @@ namespace BoSSS.Application.FSI_Solver {
             C.Particles.Add(new Particle_Sphere(new double[] { -0.5, -0.5 }, startAngl: 90.0)
             {
                 particleDensity = 1.0,
-                radius_P = 0.1
+                radius_P = 0.1,
             });
             C.Particles[0].TranslationalVelocity[0][0] = +1;
             C.Particles[0].TranslationalVelocity[0][1] = -1;
@@ -276,7 +274,6 @@ namespace BoSSS.Application.FSI_Solver {
             // ===============
 
             return C;
-
         }
 
         /// <summary>
@@ -613,9 +610,9 @@ namespace BoSSS.Application.FSI_Solver {
             //C.particleMass = 1;
 
 
-            C.Particles.Add(new Particle_Sphere(new double[] { 0.0, 1 })
+            C.Particles.Add(new Particle_Sphere(new double[] { 0.0, 0.7 })
             {
-                radius_P = 0.2,
+                radius_P = 0.13,
                 //length_P = 0.2,
                 //thickness_P = 0.1,
                 particleDensity = 2.0,
@@ -659,7 +656,7 @@ namespace BoSSS.Application.FSI_Solver {
 
             C.AdvancedDiscretizationOptions.PenaltySafety = 4;
             C.AdvancedDiscretizationOptions.CellAgglomerationThreshold = 0.2;
-            C.LevelSetSmoothing = false;
+            C.LevelSetSmoothing = true;
             C.LinearSolver.MaxSolverIterations = 10;
             C.NonLinearSolver.MaxSolverIterations = 10;
             C.LinearSolver.NoOfMultigridLevels = 1;
@@ -674,7 +671,7 @@ namespace BoSSS.Application.FSI_Solver {
             C.dtMax = dt;
             C.dtMin = dt;
             C.Endtime = 10.0;
-            C.NoOfTimesteps = 50;
+            C.NoOfTimesteps = 38;
 
             // haben fertig...
             // ===============

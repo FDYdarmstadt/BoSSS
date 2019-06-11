@@ -1745,7 +1745,6 @@ namespace BoSSS.Foundation.XDG {
 
                     throw exception;
                 }
-
             }
         }
 

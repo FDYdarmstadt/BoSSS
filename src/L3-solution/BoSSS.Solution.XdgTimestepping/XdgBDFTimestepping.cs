@@ -458,18 +458,17 @@ namespace BoSSS.Solution.XdgTimestepping {
         /// is the simulation does not depend on the initial value.
         /// </remarks>
         public void SingleInit() {
+            using (new FuncTrace()) {
 
-            using (new FuncTrace()) { }
+                InitTimestepping(true);
 
-            InitTimestepping(true);
+                if (Timestepper_Init == TimeStepperInit.IncrementInit) {
+                    if (incrementTimesteps <= 1)
+                        throw new ArgumentOutOfRangeException("incrementInit needs a number of increment timesteps larger than 1");
 
-            if (Timestepper_Init == TimeStepperInit.IncrementInit) {
-                if (incrementTimesteps <= 1)
-                    throw new ArgumentOutOfRangeException("incrementInit needs a number of increment timesteps larger than 1");
-
-                InitIncrementStack();
+                    InitIncrementStack();
+                }
             }
-
         }
 
         /// <summary>

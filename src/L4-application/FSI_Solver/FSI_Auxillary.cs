@@ -31,6 +31,74 @@ namespace FSI_Solver
 {
     class FSI_Auxillary 
     {
+        internal double[] VectorSum(double[] Vector0, double[] Vector1)
+        {
+            int Dim = Vector0 != null ? Vector0.Length : Vector1.Length;
+            if (Vector0 == null)
+            {
+                Vector0 = Vector1.CloneAs();
+                for (int d = 0; d < Dim; d++)
+                {
+                    Vector0[d] = 0;
+                }
+            }
+            if (Vector1 == null)
+            {
+                Vector1 = Vector0.CloneAs();
+                for (int d = 0; d < Dim; d++)
+                {
+                    Vector1[d] = 0;
+                }
+            }
+            double[] ResultVector = new double[Dim];
+            if (Vector0.Length != Vector1.Length)
+                throw new ArithmeticException("Mismatch in vector dimension");
+            for (int d = 0; d < Dim; d++)
+            {
+                ResultVector[d] = Vector0[d] + Vector1[d];
+            }
+            return ResultVector;
+        }
+        internal double[] VectorDiff(double[] Vector0, double[] Vector1)
+        {
+            int Dim = Vector0 != null ? Vector0.Length : Vector1.Length;
+            if (Vector0 == null)
+            {
+                Vector0 = Vector1.CloneAs();
+                for (int d = 0; d < Dim; d++)
+                {
+                    Vector0[d] = 0;
+                }
+            }
+            if (Vector1 == null)
+            {
+                Vector1 = Vector0.CloneAs();
+                for (int d = 0; d < Dim; d++)
+                {
+                    Vector1[d] = 0;
+                }
+            }
+            double[] ResultVector = new double[Dim];
+            if (Vector0.Length != Vector1.Length)
+                throw new ArithmeticException("Mismatch in vector dimension");
+            for (int d = 0; d < Dim; d++)
+            {
+                ResultVector[d] = Vector0[d] - Vector1[d];
+            }
+            return ResultVector;
+        }
+        internal double DotProduct(double[] Vector0, double[] Vector1)
+        {
+            int Dim = Vector0.Length;
+            double DotProduct = new double();
+            if (Vector0.Length != Vector1.Length)
+                throw new ArithmeticException("Mismatch in vector dimension");
+            for (int d = 0; d < Dim; d++)
+            {
+                DotProduct += Vector0[d] - Vector1[d];
+            }
+            return DotProduct;
+        }
         internal void Quicksort(int Leftelement, int RightElement, ref int[] Data)
         {
             if (Leftelement < RightElement)
@@ -379,277 +447,6 @@ namespace FSI_Solver
                     }
                 }
             }
-        }
-
-        internal void Collision_MPICommunication(List<Particle> Particles, Particle CurrentParticle, int MPISize, bool WallCollision = false)
-        {
-            int NoOfVars = 3;
-            double[] BoolSend = new double[1];
-            bool NoCurrentCollision = true;
-            if (CurrentParticle.m_collidedWithWall[0] && WallCollision)
-            {
-                BoolSend[0] = -1;
-            }
-            else
-            {
-                for (int p = 0; p < Particles.Count(); p++)
-                {
-                    if (CurrentParticle.m_collidedWithParticle[p])
-                    {
-                        BoolSend[0] = p + 1;
-                    }
-
-                }
-            }
-
-            double[] BoolReceive = new double[MPISize];
-            unsafe
-            {
-                fixed (double* pCheckSend = BoolSend, pCheckReceive = BoolReceive)
-                {
-                    csMPI.Raw.Allgather((IntPtr)pCheckSend, BoolSend.Length, csMPI.Raw._DATATYPE.DOUBLE, (IntPtr)pCheckReceive, BoolSend.Length, csMPI.Raw._DATATYPE.DOUBLE, csMPI.Raw._COMM.WORLD);
-                }
-            }
-            for (int i = 0; i < BoolReceive.Length; i++)
-            {
-                if (BoolReceive[i] != 0)
-                {
-                    double[] CheckSend = new double[NoOfVars];
-                    CheckSend[0] = CurrentParticle.RotationalVelocity[0];
-                    CheckSend[1] = CurrentParticle.TranslationalVelocity[0][0];
-                    CheckSend[2] = CurrentParticle.TranslationalVelocity[0][1];
-
-                    double[] CheckReceive = new double[NoOfVars * MPISize];
-                    unsafe
-                    {
-                        fixed (double* pCheckSend = CheckSend, pCheckReceive = CheckReceive)
-                        {
-                            csMPI.Raw.Allgather((IntPtr)pCheckSend, CheckSend.Length, csMPI.Raw._DATATYPE.DOUBLE, (IntPtr)pCheckReceive, CheckSend.Length, csMPI.Raw._DATATYPE.DOUBLE, csMPI.Raw._COMM.WORLD);
-                        }
-                    }
-                    CurrentParticle.RotationalVelocity[0] = CheckReceive[0 + i * 3];
-                    CurrentParticle.TranslationalVelocity[0][0] = CheckReceive[1 + i * 3];
-                    CurrentParticle.TranslationalVelocity[0][1] = CheckReceive[2 + i * 3];
-                    if (!WallCollision)
-                    {
-                        int p = Convert.ToInt32(BoolReceive[i]);
-                        CurrentParticle.m_collidedWithParticle[p - 1] = true;
-                        CurrentParticle.skipForceIntegration = true;
-                    }
-                    NoCurrentCollision = false;
-                }
-            }
-            if (NoCurrentCollision)
-            {
-                //CurrentParticle.skipForceIntegration = false;
-                CurrentParticle.m_collidedWithWall[0] = false;
-                for (int p = 0; p < CurrentParticle.m_collidedWithParticle.Length; p++)
-                {
-                    CurrentParticle.m_collidedWithParticle[p] = false;
-                }
-            }
-        }
-
-        internal void GJK_DistanceAlgorithm(Particle p0, Particle p1, LevelSetTracker lsTrk, double[] Point0_old, double[] Point1_old, int SpatialDim, out double Min_Distance, out double[] DistanceVec, out double[] ClosestPoint0, out double[] ClosestPoint1, out bool Overlapping)
-        {
-            ClosestPoint0 = new double[SpatialDim];
-            ClosestPoint1 = new double[SpatialDim];
-            DistanceVec = new double[SpatialDim];
-            Overlapping = false;
-            Initialize_GJK(SpatialDim, Point0_old, Point1_old, out double[] v0, out List<double[]> Simplex);
-            double[] v = v0.CloneAs();
-            double[] SupportPoint = new double[SpatialDim];
-            
-            for (int i = 0; i < 1000; i++)
-            {
-                double[] vt = v.CloneAs();
-                for (int d = 0; d < SpatialDim; d++)
-                {
-                    vt[d] = -v[d];
-                }
-                CalculateSupportPoint(p0, SpatialDim, vt, lsTrk, out ClosestPoint0);
-                CalculateSupportPoint(p1, SpatialDim, v, lsTrk, out ClosestPoint1);
-                for (int d = 0; d < SpatialDim; d++)
-                {
-                    SupportPoint[d] = ClosestPoint0[d] - ClosestPoint1[d];
-                }
-                //double test = Math.Sqrt((v[0] - SupportPoint[0]).Pow2() + (v[1] - SupportPoint[1]).Pow2());
-                //if (Math.Sqrt((v[0] - SupportPoint[0]).Pow2() + (v[1] - SupportPoint[1]).Pow2()) <= 1e-2)
-                //{
-                //    DistanceVec = v.CloneAs();
-                    
-                //    break;
-                //}
-                double test = (v[0] * vt[0] + v[1] * vt[1]) - (SupportPoint[0] * vt[0] + SupportPoint[1] * vt[1]);
-                if ((v[0] * vt[0] + v[1] * vt[1]) >= (SupportPoint[0] * vt[0] + SupportPoint[1] * vt[1]))
-                {
-                    DistanceVec = v.CloneAs();
-                    Console.WriteLine("test " + test);
-                    Console.WriteLine("v[0] " + v[0] + " v[1] " + v[1]);
-                    Console.WriteLine("SupportPoint[0] " + SupportPoint[0] + " SupportPoint[1] " + SupportPoint[1]);
-                    Console.WriteLine("No of steps for distance algorithm: " + i);
-                    break;
-                }
-                Simplex.Insert(0, SupportPoint.CloneAs());
-                DistanceAlgorithm(Simplex, out v, out Overlapping);
-                if (Overlapping)
-                {
-                    DistanceVec = v.CloneAs();
-                    break;
-                }
-            }
-            Min_Distance = Math.Sqrt(v[0].Pow2() + v[1].Pow2());
-        }
-        private void Initialize_GJK(int SpatialDim, double[] Point0_old, double[] Point1_old, out double[] v0, out List<double[]> Simplex)
-        {
-            Simplex = new List<double[]>();
-            v0 = new double[SpatialDim];
-            for (int d = 0; d< SpatialDim; d++)
-            {
-                v0[d] = Point0_old[d] - Point1_old[d];
-            }
-            Simplex.Add(v0.CloneAs());
-        }
-        private void CalculateSupportPoint(Particle _Particle, int SpatialDim, double[] Vector, LevelSetTracker lsTrk, out double[] SupportPoint)
-        {
-            SupportPoint = new double[2];
-            if (_Particle is Particle_Ellipsoid || _Particle is Particle_Sphere)
-            {
-                _Particle.GetSupportPoint(SpatialDim, Vector[0], Vector[1], out SupportPoint);
-            }
-            else
-            {
-                MultidimensionalArray SurfacePoints = _Particle.GetSurfacePoints(lsTrk, _Particle.Position[0], _Particle.Angle[0]);
-                int L = 1;
-                int R = SurfacePoints.GetLength(0) - 2;
-                while (L <= R && L > 0 && R < SurfacePoints.GetLength(0) - 1) 
-                {
-                    int Index = (L + R) / 2;
-                    GetPointAndNeighbours(SurfacePoints, Index, out SupportPoint, out double[] RightNeighbour, out double[] LeftNeighbour);
-                    double DotSupportPoint = SupportPoint[0] * Vector[0] + SupportPoint[1] * Vector[1];
-                    double DotRight = RightNeighbour[0] * Vector[0] + RightNeighbour[1] * Vector[1];
-                    double DotLeft = LeftNeighbour[0] * Vector[0] + LeftNeighbour[1] * Vector[1];
-                    if (DotSupportPoint > DotRight && DotSupportPoint > DotLeft)
-                        break;
-                    else if (DotRight > DotLeft) 
-                        L = Index + 1;
-                    else
-                        R = Index - 1;
-                }
-            }
-        }
-
-        private void GetPointAndNeighbours(MultidimensionalArray SurfacePoints, int Index, out double[] Point, out double[] RightNeighbour, out double[] LeftNeighbour)
-        {
-            Point = new double[2];
-            RightNeighbour = new double[2];
-            LeftNeighbour = new double[2];
-            for (int d = 0; d < 2; d++)
-            {
-                Point[d] = SurfacePoints[Index, d];
-                LeftNeighbour[d] = SurfacePoints[Index - 1, d];
-                RightNeighbour[d] = SurfacePoints[Index + 1, d];
-            }
-        }
-
-        private void DistanceAlgorithm(List<double[]> Simplex, out double[] v, out bool Overlapping)
-        {
-            v = new double[2];
-            Overlapping = false;
-            List<double[]> DotProd_Simplex = new List<double[]>();
-            for (int s1 = 0; s1 < Simplex.Count(); s1++)
-            {
-                DotProd_Simplex.Add(new double[Simplex.Count()]);
-                for (int s2 = s1; s2 < Simplex.Count(); s2++)
-                {
-                    DotProd_Simplex[s1][s2] = Simplex[s1][0] * Simplex[s2][0] + Simplex[s1][1] * Simplex[s2][1];
-                }
-            }
-            if(Simplex.Count() == 1)
-            {
-                v = Simplex[0];
-            }
-            else if (Simplex.Count() == 2)
-            {
-                if (DotProd_Simplex[0][0] - DotProd_Simplex[0][1] <= 0)
-                {
-                    v = Simplex[0].CloneAs();
-                    Simplex.RemoveAt(1);
-                }
-
-                else if (DotProd_Simplex[1][1] - DotProd_Simplex[0][1] <= 0)
-                {
-                    v = Simplex[1].CloneAs();
-                    Simplex.RemoveAt(0);
-                }
-                else
-                {
-                    double a0 = (Simplex[1][1] - Simplex[0][1]) / (Simplex[1][0] - Simplex[0][0]);
-                    double b = Simplex[1][1] - Simplex[1][0] * a0;
-                    double a1 = -(a0 + 1 / a0);
-                    v[0] = b / a1;
-                    v[1] = -v[0] / a0;
-                }
-            }
-            else if (Simplex.Count() == 3)
-            {
-                bool Return = false;
-                for (int s1 = 0; s1 < Simplex.Count(); s1++)
-                {
-                    int s2 = s1 == 2 ? 2 : 1;
-                    int s3 = s1 == 0 ? 0 : 1;
-                    double test1 = DotProd_Simplex[s1][s1] - DotProd_Simplex[0][s2];
-                    double test2 = DotProd_Simplex[s1][s1] - DotProd_Simplex[s3][2];
-                    if (DotProd_Simplex[s1][s1] - DotProd_Simplex[0][s2] <= 0 && DotProd_Simplex[s1][s1] - DotProd_Simplex[s3][2] <= 0)
-                    {
-                        v = Simplex[s1].CloneAs();
-                        Simplex.Clear();
-                        Simplex.Add(v.CloneAs());
-                        Return = true;
-                    }
-                }
-                if (!Return)
-                {
-                    for (int s1 = Simplex.Count() - 1; s1 >= 0; s1--)
-                    {
-                        int s2 = s1 == 2 ? 1 : 2;
-                        int s3 = s1 == 0 ? 2 : 0;
-                        int s4 = s1 == 0 ? 1 : 0;
-                        double temp1 = (Simplex[s2][0] - Simplex[s1][0]) * (Simplex[s2][1] - Simplex[s4][1]);
-                        double temp2 = (Simplex[s2][1] - Simplex[s1][1]) * (Simplex[s2][0] - Simplex[s4][0]);
-                        double CrossProd = Simplex[s2][0] * (-temp1 + temp2) * (Simplex[s2][1] - Simplex[s4][1]) + Simplex[s2][1] * (temp1 - temp2) * (Simplex[s2][0] - Simplex[s4][0]);
-                        CrossProd *= 1;
-                        double test1 = DotProd_Simplex[s4][s4] - DotProd_Simplex[s4][s2];
-                        double test2 = DotProd_Simplex[s2][s2] - DotProd_Simplex[s4][s2];
-                        if (DotProd_Simplex[s4][s4] - DotProd_Simplex[s4][s2] >= 0 && DotProd_Simplex[s2][s2] - DotProd_Simplex[s4][s2] >= 0 && CrossProd >= 0 && !Return)
-                        {
-                            double a0 = (Simplex[s2][1] - Simplex[s4][1]) / (Simplex[s2][0] - Simplex[s4][0]);
-                            double b = Simplex[s2][1] - Simplex[s2][0] * a0;
-                            double a1 = -(a0 + 1 / a0);
-                            v[0] = b / a1;
-                            v[1] = -v[0] / a0;
-
-                            double[] test = new double[2];
-                            test[1] = Simplex[s2][1] - Simplex[s4][1];
-                            test[0] = (Simplex[s2][0] - Simplex[s4][0]);
-                            double[] test12 = new double[2];
-                            test12[0] = -test[1];
-                            test12[1] = test[0];
-                            double[] tempSimplex1 = Simplex[s2].CloneAs();
-                            double[] tempSimplex2 = Simplex[s4].CloneAs();
-                            Simplex.Clear();
-                            Simplex.Add(tempSimplex1.CloneAs());
-                            Simplex.Add(tempSimplex2.CloneAs());
-                            Return = true;
-                            break;
-                        }
-                    }
-                }
-                if (!Return)
-                {
-                    Overlapping = true;
-                }
-            }   
         }
     }
 }
