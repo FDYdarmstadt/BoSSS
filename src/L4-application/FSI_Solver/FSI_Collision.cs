@@ -17,6 +17,7 @@ limitations under the License.
 using BoSSS.Application.FSI_Solver;
 using BoSSS.Application.IBM_Solver;
 using BoSSS.Foundation.Grid;
+using BoSSS.Foundation.XDG;
 using BoSSS.Solution.XdgTimestepping;
 using ilPSP;
 using ilPSP.Utils;
@@ -31,6 +32,7 @@ namespace FSI_Solver
 {
     class FSI_Collision
     {
+        
         internal void FindClosestPoint(double hmin, int SpatialDim, MultidimensionalArray interfacePoints_P0, MultidimensionalArray interfacePoints_P1, ref double[] distanceVec, ref double distance, out double[] tempPoint_P0, out double[] tempPoint_P1, out bool Overlapping)
         {
             tempPoint_P0 = new double[SpatialDim];
@@ -78,28 +80,36 @@ namespace FSI_Solver
             ParticleState[2 * SpatialDim] = particle.Angle[0];
             ParticleState[2*SpatialDim +1] = particle.RotationalVelocity[0];
         }
+
         internal void CalculateDynamicCollisionThreshold(Particle particle0, Particle particle1, double[] tempPoint_P0, double[] tempPoint_P1, double[] NormalVector, double Distance, double dt, out double Threshold)
         {
             Threshold = 0;
             FindRadialVector(particle0.Position[0], tempPoint_P0, out _, out double RadialLength0, out double[] RadialNormalVector0);
-            FindRadialVector(particle1.Position[0], tempPoint_P1, out _, out double RadialLength1, out double[] RadialNormalVector1);
             TransformRotationalVelocity(particle0.RotationalVelocity[0], RadialLength0, RadialNormalVector0, out double[] PointVelocityDueToRotation0);
-            TransformRotationalVelocity(particle1.RotationalVelocity[0], RadialLength1, RadialNormalVector1, out double[] PointVelocityDueToRotation1);
-
-            //general definitions of normal and tangential components
             double[] PointVelocity0 = new double[2];
-            double[] PointVelocity1 = new double[2];
             for (int d = 0; d < 2; d++)
-            {
                 PointVelocity0[d] = particle0.TranslationalVelocity[0][d] + PointVelocityDueToRotation0[d];
-                PointVelocity1[d] = particle1.TranslationalVelocity[0][d] + PointVelocityDueToRotation1[d];
-            }
             ProjectVelocityOnVector(NormalVector, PointVelocity0, out double DetectCollisionVn_P0);
-            ProjectVelocityOnVector(NormalVector, PointVelocity1, out double DetectCollisionVn_P1);
-            if (Distance <= Math.Abs((-DetectCollisionVn_P0 + DetectCollisionVn_P1) * dt) || Math.Abs((-DetectCollisionVn_P0 + DetectCollisionVn_P1)) <= 1e-14)
+            if (particle1 != null)
             {
-                Threshold = Math.Abs(-DetectCollisionVn_P0 + DetectCollisionVn_P1) + 1;
+                FindRadialVector(particle1.Position[0], tempPoint_P1, out _, out double RadialLength1, out double[] RadialNormalVector1);
+                TransformRotationalVelocity(particle1.RotationalVelocity[0], RadialLength1, RadialNormalVector1, out double[] PointVelocityDueToRotation1);
+                double[] PointVelocity1 = new double[2];
+                for (int d = 0; d < 2; d++)
+                {
+                    PointVelocity1[d] = particle1.TranslationalVelocity[0][d] + PointVelocityDueToRotation1[d];
+                }
+                ProjectVelocityOnVector(NormalVector, PointVelocity1, out double DetectCollisionVn_P1);
+                if (Distance <= (-DetectCollisionVn_P0 + DetectCollisionVn_P1) * dt || Math.Abs((-DetectCollisionVn_P0 + DetectCollisionVn_P1)) <= 1e-14)
+                {
+                    Threshold = Math.Abs(-DetectCollisionVn_P0 + DetectCollisionVn_P1) * dt;
+                }
             }
+            else if (Distance <= (-DetectCollisionVn_P0) * dt || Math.Abs(DetectCollisionVn_P0) <= 1e-14)
+            {
+                Threshold = Math.Abs(DetectCollisionVn_P0) * dt;
+            }
+            
         }
 
         internal void FindNormalAndTangentialVector(double[] distanceVec, out double[] normal, out double[] tangential)
@@ -147,7 +157,6 @@ namespace FSI_Solver
                 Position[d] = particle.Position[0][d] + particle.TranslationalVelocity[0][d] * dt + (particle.TranslationalAcceleration[1][d] + particle.TranslationalAcceleration[0][d]) * dt.Pow2() / 4;
                 TranslationalVelocity[d] = particle.TranslationalVelocity[0][d] + (particle.TranslationalAcceleration[1][d] + particle.TranslationalAcceleration[0][d]) * dt / 2;
             }
-            particle.RotationalVelocity[0] = RotationalVelocity;
         }
 
         internal void SetParticleToLastTimestep(Particle particle, int SpatialDim, out double[] Position, out double Angle)
