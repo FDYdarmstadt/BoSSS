@@ -34,7 +34,6 @@ namespace FSI_Solver
     {
         private FSI_Auxillary Aux = new FSI_Auxillary();
 
-        /// ====================================================================================
         /// <summary>
         /// Computes the distance between two objects (particles or walls). Algorithm based on
         /// E.G.Gilbert, D.W.Johnson, S.S.Keerthi.
@@ -75,7 +74,6 @@ namespace FSI_Solver
         /// <param name="Overlapping">
         /// Is true if the two particles are overlapping.
         /// </param>
-        /// ====================================================================================
         internal void GJK_DistanceAlgorithm(Particle Particle0, int SubParticleID0, Particle Particle1, int SubParticleID1, LevelSetTracker lsTrk, double[] Position0, double[] Position1, double Angle0, double Angle1, out double Min_Distance, out double[] DistanceVec, out double[] ClosestPoint0, out double[] ClosestPoint1, out bool Overlapping)
         {
             int SpatialDim = Position0.Length;
@@ -118,7 +116,7 @@ namespace FSI_Solver
                 // Step 2
                 // Check max(x dot vt)
                 // =======================================================
-                if ((Aux.DotProduct(v,vt) - Aux.DotProduct(SupportPoint,vt)) >= -1e-12)
+                if ((Aux.DotProduct(v,vt) - Aux.DotProduct(SupportPoint,vt)) >= -1e-12 && i != 0)
                 {
                     Console.WriteLine("No of steps for distance algorithm: " + i);
                     break;
@@ -149,7 +147,6 @@ namespace FSI_Solver
             DistanceVec = v.CloneAs();
         }
 
-        /// ====================================================================================
         /// <summary>
         /// Inititalizes the GJK-algorithm
         /// </summary>
@@ -165,7 +162,6 @@ namespace FSI_Solver
         /// <param name="Simplex">
         /// List of all support points defining the simplex. Initially it contains only v0.
         /// </param>
-        /// ====================================================================================
         private void Initialize_GJK(double[] Position0, double[] Position1, out double[] v0, out List<double[]> Simplex)
         {
             Simplex = new List<double[]>();
@@ -173,7 +169,6 @@ namespace FSI_Solver
             Simplex.Add(v0.CloneAs());
         }
 
-        /// ====================================================================================
         /// <summary>
         /// Calculates the support point on a single particle.
         /// </summary>
@@ -195,7 +190,6 @@ namespace FSI_Solver
         /// <param name="SupportPoint">
         /// The support point (Cpt. Obvious)
         /// </param>
-        /// ====================================================================================
         private void CalculateSupportPoint(Particle _Particle, int SubParticleID, double[] Position, double Angle, double[] Vector, LevelSetTracker lsTrk, out double[] SupportPoint)
         {
             int SpatialDim = Position.Length;
@@ -231,7 +225,6 @@ namespace FSI_Solver
             }
         }
 
-        /// ====================================================================================
         /// <summary>
         /// Searchs for a specific point and its neighbours on a particle surface.
         /// </summary>
@@ -250,7 +243,6 @@ namespace FSI_Solver
         /// <param name="LeftNeighbour">
         /// Its left neighbour (Index - 1)
         /// </param>
-        /// ====================================================================================
         private void GetPointAndNeighbours(MultidimensionalArray SurfacePoints, int Index, out double[] Point, out double[] RightNeighbour, out double[] LeftNeighbour)
         {
             Point = new double[2];
@@ -264,7 +256,6 @@ namespace FSI_Solver
             }
         }
 
-        /// ====================================================================================
         /// <summary>
         /// The core of the GJK-algorithm. Calculates the minimum distance between the current 
         /// simplex and the origin.
@@ -278,7 +269,6 @@ namespace FSI_Solver
         /// <param name="Overlapping">
         /// Is true if the simplex contains the origin
         /// </param>
-        /// ====================================================================================
         private void DistanceAlgorithm(List<double[]> Simplex, out double[] v, out bool Overlapping)
         {
             v = new double[2];
@@ -343,10 +333,6 @@ namespace FSI_Solver
                     if (DotProd_Simplex[s1][s1] - DotProd_Simplex[0][s2] <= 0 && DotProd_Simplex[s1][s1] - DotProd_Simplex[s3][2] <= 0)
                     {
                         v = Simplex[s1].CloneAs();
-                        if (v[0] == 0 && v[1] == 0)
-                            Console.WriteLine("Stupid");
-                        if (double.IsNaN(v[0]) || double.IsNaN(v[1]))
-                            Console.WriteLine("Stupid");
                         Simplex.Clear();
                         Simplex.Add(v.CloneAs());
                         Return = true;
@@ -424,7 +410,6 @@ namespace FSI_Solver
             }
         }
 
-        /// ====================================================================================
         /// <summary>
         /// Ensures the communication between the processes after a collision
         /// </summary>
@@ -440,7 +425,6 @@ namespace FSI_Solver
         /// <param name="WallCollision">
         /// If the collision was a wall collision set this true.
         /// </param>
-        /// ====================================================================================
         internal void Collision_MPICommunication(List<Particle> Particles, Particle CurrentParticle, int MPISize, bool WallCollision = false)
         {
             int NoOfVars = 3;
@@ -538,7 +522,6 @@ namespace FSI_Solver
             Console.WriteLine("Overlapping = " + Overlapping);
         }
 
-        /// ====================================================================================
         /// <summary>
         /// Calculates the dynamic collision threshold based on the normal velocity of the two 
         /// particles.
@@ -564,7 +547,6 @@ namespace FSI_Solver
         /// </param>
         /// <param name="Threshold">
         /// </param>
-        /// ====================================================================================
         internal void CalculateDynamicCollisionThreshold(Particle particle0, Particle particle1, double[] ClosestPoint0, double[] ClosestPoint1, double[] NormalVector, double Distance, double dt, out double Threshold)
         {
             Threshold = 0;
@@ -596,7 +578,6 @@ namespace FSI_Solver
             
         }
 
-        /// ====================================================================================
         /// <summary>
         /// Calculates the normal and tangential vector from the min distance vector between the
         /// two particles.
@@ -610,7 +591,6 @@ namespace FSI_Solver
         /// <param name="TangentialVector">
         /// The collision tangential vector.
         /// </param>
-        /// ====================================================================================
         internal void CalculateNormalAndTangentialVector(double[] distanceVec, out double[] NormalVector, out double[] TangentialVector)
         {
             NormalVector = distanceVec.CloneAs();
@@ -618,7 +598,6 @@ namespace FSI_Solver
             TangentialVector = new double[] { -NormalVector[1], NormalVector[0] };
         }
 
-        /// ====================================================================================
         /// <summary>
         /// Calculates the normal and tangential components of the translational velocity.
         /// </summary>
@@ -632,14 +611,12 @@ namespace FSI_Solver
         /// </param>
         /// <param name="VelocityTangential">
         /// </param>
-        /// ====================================================================================
         internal void ProjectVelocity(double[] NormalVector, double[] TangentialVector, double[] TranslationalVelocity, out double VelocityNormal, out double VelocityTangential)
         {
             ProjectVelocityOnVector(NormalVector, TranslationalVelocity, out VelocityNormal);
             ProjectVelocityOnVector(TangentialVector, TranslationalVelocity, out VelocityTangential);
         }
 
-        /// ====================================================================================
         /// <summary>
         /// Calculates the scalar product between the velocity and a vector.
         /// </summary>
@@ -649,13 +626,11 @@ namespace FSI_Solver
         /// </param>
         /// <param name="VelocityComponent">
         /// </param>
-        /// ====================================================================================
         internal void ProjectVelocityOnVector(double[] vector, double[] VelocityVector, out double VelocityComponent)
         {
             VelocityComponent = VelocityVector[0] * vector[0] + VelocityVector[1] * vector[1];
         }
 
-        /// ====================================================================================
         /// <summary>
         /// Calculates the radial vector (SurfacePoint-ParticlePosition)
         /// </summary>
@@ -670,7 +645,6 @@ namespace FSI_Solver
         /// <param name="RadialNormalVector">
         /// Vector normal to the radial vector.
         /// </param>
-        /// ====================================================================================
         internal void CalculateRadialVector(double[] ParticlePosition, double[] SurfacePoint, out double[] RadialVector, out double RadialLength, out double[] RadialNormalVector)
         {
             RadialVector = new double[ParticlePosition.Length];
@@ -684,7 +658,6 @@ namespace FSI_Solver
             RadialNormalVector.ScaleV(1 / Math.Sqrt(RadialNormalVector[0].Pow2() + RadialNormalVector[1].Pow2()));
         }
 
-        /// ====================================================================================
         /// <summary>
         /// Calculates the point velocity due to the rotaional velocity of the particle.
         /// </summary>
@@ -697,7 +670,6 @@ namespace FSI_Solver
         /// </param>
         /// <param name="PointVelocityDueToRotation">
         /// </param>
-        /// ====================================================================================
         internal void TransformRotationalVelocity(double RotationalVelocity, double RadialLength, double[] RadialNormalVector, out double[] PointVelocityDueToRotation)
         {
             PointVelocityDueToRotation = new double[RadialNormalVector.Length];
@@ -707,7 +679,6 @@ namespace FSI_Solver
             }
         }
 
-        /// ====================================================================================
         /// <summary>
         /// Predicts the particle state at the next timestep.
         /// </summary>
@@ -730,7 +701,6 @@ namespace FSI_Solver
         /// <param name="RotationalVelocity">
         /// New rotational velocity of the particle.
         /// </param>
-        /// ====================================================================================
         internal void PredictParticleNextTimestep(Particle particle, int SpatialDim, double dt, out double[] Position, out double[] TranslationalVelocity, out double Angle, out double RotationalVelocity)
         {
             Position = new double[SpatialDim];

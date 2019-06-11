@@ -437,12 +437,6 @@ namespace BoSSS.Application.FSI_Solver
                         double TimePreCollision = TranslationalVelocity[1][d] != 0 ? TotalCollisionPositionCorrection[d] / TranslationalVelocity[1][d] : 0;
                         Position[0][d] = Position[1][d] + (dt - TimePreCollision) * (0 + TranslationalVelocity[0][d]) / 2 - TotalCollisionPositionCorrection[d];
                     }
-                    Console.WriteLine("Position[1][" + d + "]: " + Position[1][d]);
-                    Console.WriteLine("Position[0][" + d + "]: " + Position[0][d]);
-                    Console.WriteLine("TranslationalVelocity[1][" + d + "]: " + TranslationalVelocity[1][d]);
-                    Console.WriteLine("TranslationalVelocity[0][" + d + "]: " + TranslationalVelocity[0][d]);
-                    Console.WriteLine("TranslationalAcceleration[1][" + d + "]: " + TranslationalAcceleration[1][d]);
-                    Console.WriteLine("TranslationalAcceleration[0][" + d + "]: " + TranslationalAcceleration[0][d]);
                     if (double.IsNaN(Position[0][d]) || double.IsInfinity(Position[0][d]))
                         throw new ArithmeticException("Error trying to update particle position. Value:  " + Position[0][d]);
                 }
@@ -770,9 +764,12 @@ namespace BoSSS.Application.FSI_Solver
                 }
             }
 
-            if (iteration_counter_P == 1 || NotFullyCoupled)
+            if (iteration_counter_P == 1 || NotFullyCoupled || iteration_counter_P == 250)
             {
-                Console.WriteLine("First iteration of the current timestep, all relaxation factors are set to 1");
+                if(iteration_counter_P == 1)
+                    Console.WriteLine("First iteration of the current timestep, all relaxation factors are set to 1");
+                if (iteration_counter_P == 250)
+                    Console.WriteLine("250 iterations, I'm trying to jump closer to the real solution");
                 for (int d = 0; d < SpatialDim; d++)
                 {
                     HydrodynamicForces[0][d] = 0;
