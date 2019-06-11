@@ -1646,7 +1646,8 @@ namespace BoSSS.Application.FSI_Solver
             // Calculate dynamic threshold.
             // =======================================================
             _FSI_Collision.CalculateDynamicCollisionThreshold(Particle0, Particle1, ClosestPoint_P0, ClosestPoint_P1, NormalVector, Distance, dt, out double Threshold);
-
+            if (double.IsNaN(collisionVn_P0) || double.IsInfinity(collisionVn_P0))
+                throw new ArithmeticException("Error trying to update particle position. Value:  " + collisionVn_P0);
             // =======================================================
             // Step 4
             // Check whether the particles would collide 
@@ -1742,6 +1743,8 @@ namespace BoSSS.Application.FSI_Solver
                 _FSI_Collision.ProjectVelocity(NormalVector, TangentialVector, Particle1.TranslationalVelocity[0], out collisionVn_P1, out collisionVt_P1);
                 ForceCollision = true;
             }
+            if (double.IsNaN(collisionVn_P0) || double.IsInfinity(collisionVn_P0))
+                throw new ArithmeticException("Error trying to update particle position. Value:  " + collisionVn_P0);
             double eps = Threshold.Pow2() / 2; // Turek paper
             double epsPrime = Threshold / 2; // Turek paper
 

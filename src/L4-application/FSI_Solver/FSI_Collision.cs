@@ -205,7 +205,7 @@ namespace FSI_Solver
                 MultidimensionalArray SurfacePoints = _Particle.GetSurfacePoints(lsTrk, Position, Angle);
                 MultidimensionalArray SurfacePointsSubParticle = SurfacePoints.ExtractSubArrayShallow(new int[]{ SubParticleID, -1, -1});
                 int L = 1;
-                int R = SurfacePoints.GetLength(0) - 2;
+                int R = SurfacePointsSubParticle.GetLength(0) - 2;
                 int Counter = 0;
                 while (L <= R && L > 0 && R < SurfacePointsSubParticle.GetLength(0) - 1)
                 {
