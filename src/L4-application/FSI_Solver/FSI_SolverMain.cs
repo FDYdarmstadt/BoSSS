@@ -1604,48 +1604,66 @@ namespace BoSSS.Application.FSI_Solver
             double[] ClosestPoint_P0 = new double[SpatialDim];
             double[] ClosestPoint_P1 = new double[SpatialDim];
             bool Overlapping = false;
-
-            // =======================================================
-            // Step 1
-            // Calculate the minimum distance between two particles.
-            // =======================================================
-            for (int i = 0; i < Particle0.NoOfSubParticles(); i++)
+            double Dynamic_dt = 0;
+            double max_Distance = 1e-4;
+            double collisionVn_P0 = 0;
+            double collisionVt_P0 = 0;
+            double collisionVn_P1 = 0;
+            double collisionVt_P1 = 0;
+            double[] NormalVector = new double[2];
+            double[] TangentialVector = new double[2];
+            double Threshold = 0;
+            while (Distance > max_Distance)
             {
-                for(int j = 0; j < Particle1.NoOfSubParticles(); j++)
+                // =======================================================
+                // Step 1
+                // Calculate the minimum distance between two particles.
+                // =======================================================
+                for (int i = 0; i < Particle0.NoOfSubParticles(); i++)
                 {
-                    Collision.GJK_DistanceAlgorithm(Particle0, i, Particle1, j, LsTrk, Particle0.Position[0], Particle1.Position[0], Particle0.Angle[0], Particle1.Angle[0], out double temp_Distance, out double[] temp_DistanceVector, out double[] temp_ClosestPoint_P0, out double[] temp_ClosestPoint_P1, out Overlapping);
-                    if (Overlapping)
-                        break;
-                    if (temp_Distance < Distance)
+                    for (int j = 0; j < Particle1.NoOfSubParticles(); j++)
                     {
-                        Distance = temp_Distance;
-                        DistanceVector = temp_DistanceVector;
-                        ClosestPoint_P0 = temp_ClosestPoint_P0;
-                        ClosestPoint_P1 = temp_ClosestPoint_P1;
+                        Collision.GJK_DistanceAlgorithm(Particle0, i, Particle1, j, LsTrk, Particle0.Position[0], Particle1.Position[0], Particle0.Angle[0], Particle1.Angle[0], out double temp_Distance, out double[] temp_DistanceVector, out double[] temp_ClosestPoint_P0, out double[] temp_ClosestPoint_P1, out Overlapping);
+                        if (Overlapping)
+                            break;
+                        if (temp_Distance < Distance)
+                        {
+                            Distance = temp_Distance;
+                            DistanceVector = temp_DistanceVector;
+                            ClosestPoint_P0 = temp_ClosestPoint_P0;
+                            ClosestPoint_P1 = temp_ClosestPoint_P1;
+                        }
                     }
                 }
-            }
-            
-            
-            // Save closest points to particle.cs
-            for (int d = 0; d < 2; d++)
-            {
-                Particle0.ClosestPointToParticle[m_Particles.IndexOf(Particle1), d] = ClosestPoint_P0[d];
-                Particle1.ClosestPointToParticle[m_Particles.IndexOf(Particle0), d] = ClosestPoint_P1[d];
-            }
-            // =======================================================
-            // Step 2
-            // Project velocity on normal/tangential vector.
-            // =======================================================
-            _FSI_Collision.CalculateNormalAndTangentialVector(DistanceVector, out double[] NormalVector, out double[] TangentialVector);
-            _FSI_Collision.ProjectVelocity(NormalVector, TangentialVector, Particle0.TranslationalVelocity[0], out double collisionVn_P0, out double collisionVt_P0);
-            _FSI_Collision.ProjectVelocity(NormalVector, TangentialVector, Particle1.TranslationalVelocity[0], out double collisionVn_P1, out double collisionVt_P1);
 
-            // =======================================================
-            // Step 3
-            // Calculate dynamic threshold.
-            // =======================================================
-            _FSI_Collision.CalculateDynamicCollisionThreshold(Particle0, Particle1, ClosestPoint_P0, ClosestPoint_P1, NormalVector, Distance, dt, out double Threshold);
+
+                // Save closest points to particle.cs
+                for (int d = 0; d < 2; d++)
+                {
+                    Particle0.ClosestPointToParticle[m_Particles.IndexOf(Particle1), d] = ClosestPoint_P0[d];
+                    Particle1.ClosestPointToParticle[m_Particles.IndexOf(Particle0), d] = ClosestPoint_P1[d];
+                }
+                // =======================================================
+                // Step 2
+                // Project velocity on normal/tangential vector.
+                // =======================================================
+                _FSI_Collision.CalculateNormalAndTangentialVector(DistanceVector, out NormalVector, out TangentialVector);
+                _FSI_Collision.ProjectVelocity(NormalVector, TangentialVector, Particle0.TranslationalVelocity[0], out collisionVn_P0, out collisionVt_P0);
+                _FSI_Collision.ProjectVelocity(NormalVector, TangentialVector, Particle1.TranslationalVelocity[0], out collisionVn_P1, out collisionVt_P1);
+
+                // =======================================================
+                // Step 3
+                // Calculate dynamic threshold.
+                // =======================================================
+                //_FSI_Collision.CalculateDynamicCollisionThreshold(Particle0, Particle1, ClosestPoint_P0, ClosestPoint_P1, NormalVector, Distance, dt, out double Threshold);
+                Dynamic_dt = _FSI_Collision.DynamicTimestep(Particle0, Particle1, ClosestPoint_P0, ClosestPoint_P1, NormalVector, Distance, dt);
+                if (Dynamic_dt > dt)
+                    break;
+                _FSI_Collision.UpdateParticleState(Particle0, Dynamic_dt, 2);
+                _FSI_Collision.UpdateParticleState(Particle1, Dynamic_dt, 2);
+            }
+
+
             if (double.IsNaN(collisionVn_P0) || double.IsInfinity(collisionVn_P0))
                 throw new ArithmeticException("Error trying to update particle position. Value:  " + collisionVn_P0);
             // =======================================================

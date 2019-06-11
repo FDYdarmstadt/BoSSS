@@ -600,14 +600,12 @@ namespace FSI_Solver
                 if (DetectCollisionVn_P1 - DetectCollisionVn_P0 == 0)
                     return double.MaxValue;
                 
-                Dynamic_dt = Distance / (DetectCollisionVn_P1 - DetectCollisionVn_P0);
-
-                double test = Math.Abs(-DetectCollisionVn_P0 + DetectCollisionVn_P1) * dt;
+                Dynamic_dt = 0.9 * Distance / (DetectCollisionVn_P1 - DetectCollisionVn_P0);
             }
             else if(-DetectCollisionVn_P0 == 0)
                 return double.MaxValue;
             else
-                Dynamic_dt = Distance / (-DetectCollisionVn_P0);
+                Dynamic_dt = 0.9 * Distance / (-DetectCollisionVn_P0);
                 
             return Dynamic_dt;
         }
