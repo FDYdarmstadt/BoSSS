@@ -643,7 +643,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
 
             C.CutCellQuadratureType = XQuadFactoryHelper.MomentFittingVariants.Classic;
 
-            bool steady = true;
+            bool steady = false;
 
             //_DbPath = @"\\dc1\userspace\smuda\cluster\CapillaryRise\CapillaryRise_studyDB";
 
@@ -738,7 +738,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             // grid generation
             // ===============
             #region grid
-
+            
             double L = 0.1;
 
             C.GridFunc = delegate () {
