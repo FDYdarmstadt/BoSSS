@@ -15,33 +15,30 @@ limitations under the License.
 */
 
 using BoSSS.Platform.LinAlg;
-using BoSSS.Solution.CompressibleFlowCommon;
-using BoSSS.Solution.CompressibleFlowCommon.Convection;
 
-namespace CNS.Convection {
+namespace BoSSS.Solution.CompressibleFlowCommon.Convection {
 
     /// <summary>
-    /// Represents the continuity equation which is part of the Euler system
+    /// Represents the energy equation which is part of the Euler system
     /// </summary>
-    public class EulerDensityComponent : IEulerEquationComponent {
+    public class EulerEnergyComponent : IEulerEquationComponent {
 
         /// <summary>
-        /// Calculates the convective flux associated with the continuity
-        /// equation (which is the momentum)
+        /// Calculates the convective flux associated with the energy equation
         /// </summary>
         /// <param name="state">The flow state inside a cell</param>
-        /// <returns>\f$ \rho \vec{u}\f$ </returns>
+        /// <returns>\f$ \vec{u} (\rho E + p)\f$ </returns>
         public Vector Flux(StateVector state) {
-            return state.Momentum;
+            return state.Velocity * (state.Energy + state.Pressure);
         }
 
         /// <summary>
-        /// Returns the density
+        /// Returns the energy
         /// </summary>
         /// <param name="state">The flow state inside a cell</param>
-        /// <returns>\f$ \rho\f$ </returns>
+        /// <returns>\f$ \rho E\f$ </returns>
         public double VariableValue(StateVector state) {
-            return state.Density;
+            return state.Energy;
         }
     }
 }

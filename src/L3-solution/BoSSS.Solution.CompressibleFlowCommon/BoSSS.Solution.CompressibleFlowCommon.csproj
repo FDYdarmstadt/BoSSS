@@ -51,7 +51,14 @@
     <Compile Include="Boundary\SupersonicOutlet.cs" />
     <Compile Include="CompressibleControl.cs" />
     <Compile Include="CompressibleEnvironment.cs" />
+    <Compile Include="Convection\EulerDensityComponent.cs" />
+    <Compile Include="Convection\EulerEnergyComponent.cs" />
+    <Compile Include="Convection\EulerFlux.cs" />
     <Compile Include="Convection\EulerMomentumComponent.cs" />
+    <Compile Include="Convection\HLLCDensityFlux.cs" />
+    <Compile Include="Convection\HLLCEnergyFlux.cs" />
+    <Compile Include="Convection\HLLCFlux.cs" />
+    <Compile Include="Convection\HLLCMomentumFlux.cs" />
     <Compile Include="Convection\IEulerEquationComponent.cs" />
     <Compile Include="Convection\OptimizedHLLCDensityFlux.cs" />
     <Compile Include="Convection\OptimizedHLLCEnergyFlux.cs" />

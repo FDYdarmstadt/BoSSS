@@ -186,14 +186,7 @@
     <Compile Include="Residual\ResidualLoggerTypes.cs" />
     <Compile Include="Residual\NullResidualLogger.cs" />
     <Compile Include="Residual\ChangeRateResidualLogger.cs" />
-    <Compile Include="Convection\EulerFlux.cs" />
-    <Compile Include="Convection\HLLCDensityFlux.cs" />
-    <Compile Include="Convection\HLLCEnergyFlux.cs" />
-    <Compile Include="Convection\HLLCFlux.cs" />
-    <Compile Include="Convection\HLLCMomentumFlux.cs" />
     <Compile Include="Convection\HLLFlux.cs" />
-    <Compile Include="Convection\EulerDensityComponent.cs" />
-    <Compile Include="Convection\EulerEnergyComponent.cs" />
     <Compile Include="Convection\HLLFluxBuilder.cs" />
     <Compile Include="Residual\ResidualLogger.cs" />
     <Compile Include="Residual\RigorousResidualLogger.cs" />
