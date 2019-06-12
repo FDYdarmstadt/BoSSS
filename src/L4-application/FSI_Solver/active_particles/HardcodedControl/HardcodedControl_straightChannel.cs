@@ -30,7 +30,7 @@ namespace BoSSS.Application.FSI_Solver
 {
     public class HardcodedControl_straightChannel : IBM_Solver.HardcodedTestExamples
     {
-        public static FSI_Control ActiveRod_noBackroundFlow(int k = 3, double stressM = 1e7, double cellAgg = 0.2, double muA = 1e3, double timestepX = 1e-4)
+        public static FSI_Control ActiveRod_noBackroundFlow(int k = 3, double stressM = 1e7, double cellAgg = 0.2, double muA = 1e3, double timestepX = 1e-3)
         {
             FSI_Control C = new FSI_Control();
 
@@ -65,10 +65,10 @@ namespace BoSSS.Application.FSI_Solver
                 int q = new int(); // #Cells in x-dircetion + 1
                 int r = new int(); // #Cells in y-dircetion + 1
 
-                q = 18;
+                q = 36;
                 r = 15;
 
-                double[] Xnodes = GenericBlas.Linspace(-6 * BaseSize, 6 * BaseSize, q);
+                double[] Xnodes = GenericBlas.Linspace(-6 * BaseSize, 18 * BaseSize, q);
                 double[] Ynodes = GenericBlas.Linspace(-4 * BaseSize, 4 * BaseSize, r);
 
                 var grd = Grid2D.Cartesian2DGrid(Xnodes, Ynodes, periodicX: true, periodicY: false);
@@ -84,7 +84,7 @@ namespace BoSSS.Application.FSI_Solver
                     byte et = 0;
                     if (Math.Abs(X[0] - (-6 * BaseSize)) <= 1.0e-8)
                         et = 1;
-                    if (Math.Abs(X[0] + (-6 * BaseSize)) <= 1.0e-8)
+                    if (Math.Abs(X[0] + (-18 * BaseSize)) <= 1.0e-8)
                         et = 2;
                     if (Math.Abs(X[1] - (-4 * BaseSize)) <= 1.0e-8)
                         et = 3;
@@ -137,7 +137,7 @@ namespace BoSSS.Application.FSI_Solver
                     thickness_P = 1 * BaseSize,
                     length_P = 2 * BaseSize,
                     AddaptiveUnderrelaxation = true,
-                    underrelaxation_factor = 0.5,
+                    underrelaxation_factor = 0.1,
                     ClearSmallValues = true,
                     neglectAddedDamping = false
                 });

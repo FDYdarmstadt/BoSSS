@@ -582,7 +582,7 @@ namespace FSI_Solver
             }
         }
 
-        internal double DynamicTimestep(Particle particle0, Particle particle1, double[] ClosestPoint0, double[] ClosestPoint1, double[] NormalVector, double Distance, double dt)
+        internal double DynamicTimestep(Particle particle0, Particle particle1, double[] ClosestPoint0, double[] ClosestPoint1, double[] NormalVector, double Distance)
         {
             double Dynamic_dt = 213;
             double rMax_0 = particle0.GetLengthScales().Max();
@@ -599,10 +599,9 @@ namespace FSI_Solver
                 ProjectVelocityOnVector(NormalVector, PointVelocity1, out double DetectCollisionVn_P1);
                 if (DetectCollisionVn_P1 - DetectCollisionVn_P0 == 0)
                     return double.MaxValue;
-                
                 Dynamic_dt = 0.9 * Distance / (DetectCollisionVn_P1 - DetectCollisionVn_P0);
             }
-            else if(-DetectCollisionVn_P0 == 0)
+            else if(DetectCollisionVn_P0 == 0)
                 return double.MaxValue;
             else
                 Dynamic_dt = 0.9 * Distance / (-DetectCollisionVn_P0);

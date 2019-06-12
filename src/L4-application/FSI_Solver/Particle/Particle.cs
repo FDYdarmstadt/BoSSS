@@ -172,7 +172,7 @@ namespace BoSSS.Application.FSI_Solver
         /// <summary>
         /// Scaling parameter for added damping.
         /// </summary>
-        private readonly double beta = 1.5;
+        private readonly double beta = 1;
         #endregion
 
         #region Geometric parameters
