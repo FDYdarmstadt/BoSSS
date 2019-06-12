@@ -107,7 +107,7 @@ namespace BoSSS.Application.IBM_Solver {
                 var _zNodes = GenericBlas.Linspace(-0.5, 0.5, cells_yz + 1);
 
                 // Cut Out
-                var grd = Grid3D.Cartesian3DGrid(_xNodes, _yNodes, _zNodes, false, true, false, CellType.Cube_Linear);
+                var grd = Grid3D.Cartesian3DGrid(_xNodes, _yNodes, _zNodes, CellType.Cube_Linear, false, true, false);
 
                 grd.EdgeTagNames.Add(1, "Velocity_inlet");
                 grd.EdgeTagNames.Add(2, "Wall");
@@ -348,7 +348,7 @@ namespace BoSSS.Application.IBM_Solver {
                     var _zNodes = GenericBlas.Linspace(-0.5, 0.5, cells_yz + 1);
 
                     // Cut Out
-                    var grd = Grid3D.Cartesian3DGrid(_xNodes, _yNodes, _zNodes, false, true, false, CellType.Cube_Linear);
+                    var grd = Grid3D.Cartesian3DGrid(_xNodes, _yNodes, _zNodes, CellType.Cube_Linear, false, true, false);
 
                     grd.EdgeTagNames.Add(1, "Velocity_inlet");
                     grd.EdgeTagNames.Add(2, "Wall");
