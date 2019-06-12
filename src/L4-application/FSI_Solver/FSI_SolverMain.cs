@@ -1498,7 +1498,6 @@ namespace BoSSS.Application.FSI_Solver
 
                 if (ParticlesOfCurrentColor.Length > 1 && CurrentColor != 0)
                 {
-                    bool[,] CollidedWith = new bool[ParticlesOfCurrentColor.Length, ParticlesOfCurrentColor.Length];
                     //for (int p1 = 0; p1 < ParticlesOfCurrentColor.Length; p1++)
                     //{
                     //    Console.WriteLine("I'm particle " + ParticlesOfCurrentColor[p1]);
@@ -1518,17 +1517,13 @@ namespace BoSSS.Application.FSI_Solver
                     MultidimensionalArray ClosestPoint_P0 = MultidimensionalArray.Create(ParticlesOfCurrentColor.Length, ParticlesOfCurrentColor.Length, SpatialDim);
                     MultidimensionalArray ClosestPoint_P1 = MultidimensionalArray.Create(ParticlesOfCurrentColor.Length, ParticlesOfCurrentColor.Length, SpatialDim);
                     double MinDistance = double.MaxValue;
-                    double[] MinDistanceVector = new double[SpatialDim];
-                    double[] MinClosestPoint_P0 = new double[SpatialDim];
-                    double[] MinClosestPoint_P1 = new double[SpatialDim];
                     double MaxDistance = 1e-4;
                     double AccDynamicTimestep = 0;
-                    int[] ClosestParticles = new int[2];
-                    double SaveTimeStep = double.MaxValue;
                     while (AccDynamicTimestep < dt)
                     {
                         while (MinDistance > MaxDistance)
                         {
+                            double SaveTimeStep = double.MaxValue;
                             for (int p0 = 0; p0 < ParticlesOfCurrentColor.Length; p0++)
                             {
                                 for (int p1 = p0 + 1; p1 < ParticlesOfCurrentColor.Length; p1++)
@@ -1569,6 +1564,8 @@ namespace BoSSS.Application.FSI_Solver
                                     double[] CurrentClosestPoint_P0 = ClosestPoint_P0.ExtractSubArrayShallow(new int[] { p0, p1, -1 }).To1DArray();
                                     double[] CurrentClosestPoint_P1 = ClosestPoint_P1.ExtractSubArrayShallow(new int[] { p0, p1, -1 }).To1DArray();
                                     ComputeMomentumBalanceCollision(Particle0, Particle1, CurrentDistanceVector, CurrentClosestPoint_P0, CurrentClosestPoint_P1);
+                                    Particle0.CollisionTimestep += AccDynamicTimestep;
+                                    Particle1.CollisionTimestep += AccDynamicTimestep;
                                 }
                                 else
                                 {
@@ -1618,9 +1615,9 @@ namespace BoSSS.Application.FSI_Solver
                     {
                         Normal[d] += _Particle.CollisionNormal[t][d];
                         Tangential[d] += _Particle.CollisionTangential[t][d];
-                        _Particle.TotalCollisionPositionCorrection[d] += _Particle.CollisionPositionCorrection[t][d];
-                        if (double.IsNaN(_Particle.TotalCollisionPositionCorrection[d]) || double.IsInfinity(_Particle.TotalCollisionPositionCorrection[d]))
-                            throw new ArithmeticException("Error trying to update particle position. Value:  " + _Particle.TotalCollisionPositionCorrection[d]);
+                        //_Particle.TotalCollisionPositionCorrection[d] += _Particle.CollisionPositionCorrection[t][d];
+                        //if (double.IsNaN(_Particle.TotalCollisionPositionCorrection[d]) || double.IsInfinity(_Particle.TotalCollisionPositionCorrection[d]))
+                        //    throw new ArithmeticException("Error trying to update particle position. Value:  " + _Particle.TotalCollisionPositionCorrection[d]);
                     }
                 }
                 
@@ -1689,7 +1686,6 @@ namespace BoSSS.Application.FSI_Solver
                             ClosestPoint_P0[d] = temp_ClosestPoint_P0[d];
                             ClosestPoint_P1[d] = temp_ClosestPoint_P1[d];
                         }
-                        
                     }
                 }
             }
