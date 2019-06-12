@@ -794,7 +794,7 @@ namespace MPI.Wrappers {
             csMPI.Raw.Comm_Size(comm, out int size);
             csMPI.Raw.Comm_Rank(comm, out int rank);
 
-            int rcs = recvcounts.Sum();
+            int rcs = rank == root ? recvcounts.Sum() : 0;
             int[] result = rank == root ? new int[Math.Max(1, rcs)] : null;
             
 
@@ -860,7 +860,7 @@ namespace MPI.Wrappers {
             csMPI.Raw.Comm_Size(comm, out int size);
             csMPI.Raw.Comm_Rank(comm, out int rank);
 
-            int rcs = recvcount.Sum();
+            int rcs = rank == root ? recvcount.Sum() : 0;
             ulong[] result = rank == root ? new ulong[Math.Max(1, rcs)] : null;
 
             unsafe {
@@ -911,7 +911,7 @@ namespace MPI.Wrappers {
             csMPI.Raw.Comm_Size(comm, out int size);
             csMPI.Raw.Comm_Rank(comm, out int rank);
 
-            int rcs = recvcounts.Sum();
+            int rcs = rank == root ? recvcounts.Sum() : 0;
             double[] result = rank == root ? new double[Math.Max(1, rcs)] : null;
 
 
