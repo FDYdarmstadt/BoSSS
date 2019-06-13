@@ -145,13 +145,14 @@ namespace BoSSS.Application.SipPoisson {
         /// <summary>
         /// Test on a Cartesian grid, with an exact polynomial solution.
         /// </summary>
-        public static SipControl TestCartesian3D(int PowRes = 3, int DGdegree = 1, string blapath = null, int xRes = 2, double xStretch = 1.0, int yRes = 2, double yStretch = 1.0, int zRes = 2, double zStretch = 1.0) {
+        public static SipControl TestCartesian3D(int PowRes = 5, int DGdegree = 1, string blapath = null, int xRes = 2, double xStretch = 1.0, int yRes = 2, double yStretch = 1.0, int zRes = 2, double zStretch = 1.0) {
             xRes = (int)Math.Pow(xRes, PowRes);
             yRes = (int)Math.Pow(yRes, PowRes);
             zRes = (int)Math.Pow(zRes, PowRes);
             var R = new SipControl();
             R.ProjectName = "ipPoison/cartesian";
             R.savetodb = false;
+            R.WriteMeSomeAnalyse = @"D:\Analysis\CCpoisson\Study0_vary_Mlevel_n_blocks\";
 
             R.FieldOptions.Add("T", new FieldOpts() { Degree = DGdegree, SaveToDB = FieldOpts.SaveToDBOpt.TRUE });
             R.FieldOptions.Add("Tex", new FieldOpts() { Degree = DGdegree });
@@ -182,7 +183,7 @@ namespace BoSSS.Application.SipPoisson {
 
             R.LinearSolver.SolverCode = LinearSolverConfig.Code.exp_softpcg_jacobi_mg;
             //R.LinearSolver.SolverCode = LinearSolverConfig.Code.classic_mumps;
-            R.LinearSolver.NoOfMultigridLevels = 10;
+            R.LinearSolver.NoOfMultigridLevels = 3;
             R.LinearSolver.TargetBlockSize = 40;
             //R.LinearSolver.MaxSolverIterations = 10;
 

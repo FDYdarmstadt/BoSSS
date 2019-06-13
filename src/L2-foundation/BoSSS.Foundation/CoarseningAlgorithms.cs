@@ -145,6 +145,22 @@ namespace BoSSS.Foundation.Grid.Aggregation {
             }
         }
 
+        //public static AggregationGridData Coarsen_plain(IGridData ag, int AggCellCount)
+        //{
+        //    using (new FuncTrace())
+        //    {
+
+        //        int[][] Coarsened_ComositeCells = AggregationKernel_plain(ag, AggCellCount);
+        //        return new AggregationGridData(ag, Coarsened_ComositeCells);
+        //    }
+        //}
+
+        //private static int[][] AggKernel_plain(IGridData ag, int AggCellCount)
+        //{
+
+        //}
+
+
         /// <summary>
         /// coarsens level <paramref name="ag"/> (aggregation of grid objects)
         /// </summary>
@@ -162,6 +178,7 @@ namespace BoSSS.Foundation.Grid.Aggregation {
                 return new AggregationGrid(ag, Coarsened_ComositeCells);
             }
         }
+
 
 
         private static int[][] AggregationKernel(IGridData ag, int AggCellCount) {
