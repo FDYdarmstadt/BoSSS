@@ -805,13 +805,13 @@ namespace BoSSS.Application.FSI_Solver
                 }
                 HydrodynamicTorque[0] = RelaxatedForceAndTorque[SpatialDim];
             }
-            for (int d = 0; d < SpatialDim; d++)// changes sign depending on the sign of Forces[d], should increase the convergence rate. (testing needed)
-            {
-                if (Math.Abs(HydrodynamicForces[0][d] - Forces[0]) > Math.Abs(Forces[d]))
-                {
-                    HydrodynamicForces[0][d] *= -1;
-                }
-            }
+            //for (int d = 0; d < SpatialDim; d++)// changes sign depending on the sign of Forces[d], should increase the convergence rate. (testing needed)
+            //{
+            //    if (Math.Abs(HydrodynamicForces[0][d] - Forces[0]) > Math.Abs(Forces[d]))
+            //    {
+            //        HydrodynamicForces[0][d] *= -1;
+            //    }
+            //}
             if (double.IsNaN(HydrodynamicForces[0][0]) || double.IsInfinity(HydrodynamicForces[0][0]))
                 throw new ArithmeticException("Error trying to calculate hydrodynamic forces (x). Value:  " + HydrodynamicForces[0][0]);
             if (double.IsNaN(HydrodynamicForces[0][1]) || double.IsInfinity(HydrodynamicForces[0][1]))

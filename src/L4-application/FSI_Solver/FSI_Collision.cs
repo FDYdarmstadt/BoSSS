@@ -35,6 +35,70 @@ namespace FSI_Solver
         private FSI_Auxillary Aux = new FSI_Auxillary();
 
         /// <summary>
+        /// Collision post-processing. Sums up the results of the multiple binary collisions of one timestep
+        /// </summary>
+        /// <param name="_Particle">
+        /// The particle to be processed
+        /// </param>
+        /// <param name="GridData">
+        /// The second particle, if Particle1 == null it is assumed to be a wall.
+        /// </param>
+        internal void SumOverCollisionVelocities(Particle _Particle)
+        {
+            int SpatialDim = _Particle.Position[0].Length;
+            if (_Particle.CollisionRotationalVelocity.Count() >= 1)
+            {
+                _Particle.RotationalVelocity[0] = 0;
+                for (int r = 0; r < _Particle.CollisionRotationalVelocity.Count(); r++)
+                {
+                    _Particle.RotationalVelocity[0] += _Particle.CollisionRotationalVelocity[r];
+                }
+            }
+            if (_Particle.CollisionTranslationalVelocity.Count() >= 1)
+            {
+                double[] Normal = new double[SpatialDim];
+                double[] Tangential = new double[SpatialDim];
+                for (int t = 0; t < _Particle.CollisionTranslationalVelocity.Count(); t++)
+                {
+                    for (int d = 0; d < SpatialDim; d++)
+                    {
+                        Normal[d] += _Particle.CollisionNormal[t][d];
+                        Tangential[d] += _Particle.CollisionTangential[t][d];
+                    }
+                }
+
+                Normal.ScaleV(1 / Math.Sqrt(Normal[0].Pow2() + Normal[1].Pow2()));
+                Tangential.ScaleV(1 / Math.Sqrt(Tangential[0].Pow2() + Tangential[1].Pow2()));
+                double[] Cos = new double[_Particle.CollisionTranslationalVelocity.Count()];
+                double[] Sin = new double[_Particle.CollisionTranslationalVelocity.Count()];
+                double temp_NormalVel = 0;
+                double temp_TangentialVel = 0;
+                for (int t = 0; t < _Particle.CollisionTranslationalVelocity.Count(); t++)
+                {
+                    for (int d = 0; d < SpatialDim; d++)
+                    {
+                        Cos[t] += Normal[d] * _Particle.CollisionNormal[t][d];
+                    }
+                    Sin[t] = Cos[t] == 1 ? 0 : _Particle.CollisionNormal[t][0] > Normal[0] ? Math.Sqrt(1 + 1e-15 - Cos[t].Pow2()) : -Math.Sqrt(1 + 1e-15 - Cos[t].Pow2());
+                    temp_NormalVel += _Particle.CollisionTranslationalVelocity[t][0] * Cos[t] - _Particle.CollisionTranslationalVelocity[t][1] * Sin[t];
+                    temp_TangentialVel += _Particle.CollisionTranslationalVelocity[t][0] * Sin[t] + _Particle.CollisionTranslationalVelocity[t][1] * Cos[t];
+
+                }
+                temp_NormalVel /= _Particle.CollisionTranslationalVelocity.Count();
+                temp_TangentialVel /= _Particle.CollisionTranslationalVelocity.Count();
+                _Particle.TranslationalVelocity.Insert(0, new double[2]);
+                for (int d = 0; d < SpatialDim; d++)
+                {
+                    _Particle.TranslationalVelocity[0][d] = Normal[d] * temp_NormalVel + Tangential[d] * temp_TangentialVel;
+                }
+                _Particle.CollisionTranslationalVelocity.Clear();
+                _Particle.CollisionNormal.Clear();
+                _Particle.CollisionTangential.Clear();
+                _Particle.CollisionPositionCorrection.Clear();
+            }
+        }
+
+        /// <summary>
         /// Computes the distance between two objects (particles or walls). Algorithm based on
         /// E.G.Gilbert, D.W.Johnson, S.S.Keerthi.
         /// </summary>

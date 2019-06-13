@@ -516,7 +516,7 @@ namespace BoSSS.Application.FSI_Solver {
             return C;
         }
 
-        public static FSI_Control StickyTrap(string _DbPath = null, int k = 3, double VelXBase = 0.0, double angle = 0.0)
+        public static FSI_Control StickyTrap(string _DbPath = null, int k = 2, double VelXBase = 0.0, double angle = 0.0)
         {
             FSI_Control C = new FSI_Control();
 
@@ -616,10 +616,10 @@ namespace BoSSS.Application.FSI_Solver {
                 radius_P = 0.13,
                 //length_P = 0.2,
                 //thickness_P = 0.1,
-                particleDensity = 1.01,
+                particleDensity = 4,
                 GravityVertical = -9.81,
                 AddaptiveUnderrelaxation = true,
-                underrelaxation_factor = 0.1,
+                underrelaxation_factor = 75,
                 ClearSmallValues = true,
                 neglectAddedDamping = false,
                 IncludeRotation = false,
@@ -662,7 +662,7 @@ namespace BoSSS.Application.FSI_Solver {
             C.LinearSolver.MaxSolverIterations = 10;
             C.NonLinearSolver.MaxSolverIterations = 10;
             C.LinearSolver.NoOfMultigridLevels = 1;
-            C.ForceAndTorque_ConvergenceCriterion = 1e-4;
+            C.ForceAndTorque_ConvergenceCriterion = 1e-2;
 
 
             // Timestepping
