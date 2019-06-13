@@ -842,9 +842,9 @@ namespace FSI_Solver
             }
             for (int d = 0; d < SpatialDim; d++)
             {
-                particle.Position[0][d] = particle.Position[0][d] + particle.TranslationalVelocity[0][d] * Dynamic_dt + (particle.TranslationalAcceleration[1][d] + particle.TranslationalAcceleration[0][d]) * Dynamic_dt.Pow2() / 4;
+                particle.Position[0][d] = particle.Position[0][d] + (particle.TranslationalVelocity[1][d] + particle.TranslationalVelocity[0][d]) * Dynamic_dt / 2 + (particle.TranslationalAcceleration[1][d] + particle.TranslationalAcceleration[0][d]) * Dynamic_dt.Pow2() / 4;
             }
-            particle.Angle[0] = particle.Angle[0] + particle.RotationalVelocity[0] * Dynamic_dt + (particle.RotationalAcceleration[0] + particle.RotationalAcceleration[1]) * Dynamic_dt.Pow2() / 4;
+            particle.Angle[0] = particle.Angle[0] + (particle.RotationalVelocity[1] + particle.RotationalVelocity[0]) * Dynamic_dt / 2 + (particle.RotationalAcceleration[0] + particle.RotationalAcceleration[1]) * Dynamic_dt.Pow2() / 4;
         }
 
         /// <summary>

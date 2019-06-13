@@ -310,7 +310,7 @@ namespace FSI_Solver
             _IterationCounter = IterationCounter + 1;
         }
 
-        internal void PrintResultToConsole(List<Particle> Particles, double phystime, double dt, out double MPIangularVelocity, out double[] force)
+        internal void PrintResultToConsole(List<Particle> Particles, double phystime, double dt, int IterationCounter, bool Finalresult, out double MPIangularVelocity, out double[] force)
         {
             double[] TranslationalMomentum = new double[2] { 0, 0 };
             double RotationalMomentum = 0;
@@ -349,7 +349,10 @@ namespace FSI_Solver
                 Particle CurrentP = Particles[p];
                 int PrintP = p + 1;
                 Console.WriteLine("=======================================================");
-                Console.WriteLine("Status report particle #" + PrintP + ",Time: " + phystime);
+                if (Finalresult)
+                    Console.WriteLine("Status report particle #" + PrintP + ",Time: " + phystime);
+                else
+                    Console.WriteLine("Status report particle #" + PrintP + ", Time: " + phystime + ", Iteration #" + IterationCounter);
                 Console.WriteLine("-------------------------------------------------------");
                 Console.WriteLine("Drag Force:   {0}", CurrentP.HydrodynamicForces[0][0]);
                 Console.WriteLine("Lift Force:   {0}", CurrentP.HydrodynamicForces[0][1]);
@@ -357,9 +360,12 @@ namespace FSI_Solver
                 Console.WriteLine("Transl VelocityX:   {0}", CurrentP.TranslationalVelocity[0][0]);
                 Console.WriteLine("Transl VelocityY:   {0}", CurrentP.TranslationalVelocity[0][1]);
                 Console.WriteLine("Angular Velocity:   {0}", CurrentP.RotationalVelocity[0]);
-                Console.WriteLine("X-position:   {0}", CurrentP.Position[0][0]);
-                Console.WriteLine("Y-position:   {0}", CurrentP.Position[0][1]);
-                Console.WriteLine("Angle:   {0}", CurrentP.Angle[0]);
+                if (Finalresult)
+                {
+                    Console.WriteLine("X-position:   {0}", CurrentP.Position[0][0]);
+                    Console.WriteLine("Y-position:   {0}", CurrentP.Position[0][1]);
+                    Console.WriteLine("Angle:   {0}", CurrentP.Angle[0]);
+                }
                 Console.WriteLine();
                 Console.WriteLine("=======================================================");
                 Console.WriteLine();
