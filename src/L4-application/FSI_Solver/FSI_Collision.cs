@@ -611,11 +611,19 @@ namespace FSI_Solver
 
         internal void UpdateParticleState(Particle particle, double Dynamic_dt, int SpatialDim)
         {
+            if (Dynamic_dt < 0)
+            {
+                for (int d = 0; d < SpatialDim; d++)
+                {
+                    particle.Position[0][d] = particle.Position[1][d];
+                }
+                particle.Angle[0] = particle.Angle[1];
+            }
             for (int d = 0; d < SpatialDim; d++)
             {
-                particle.Position[0][d] = particle.Position[0][d] + particle.TranslationalVelocity[0][d] * Dynamic_dt + (particle.TranslationalAcceleration[1][d] + particle.TranslationalAcceleration[0][d]) * Dynamic_dt.Pow2();
+                particle.Position[0][d] = particle.Position[0][d] + particle.TranslationalVelocity[0][d] * Dynamic_dt + (particle.TranslationalAcceleration[1][d] + particle.TranslationalAcceleration[0][d]) * Dynamic_dt.Pow2() / 4;
             }
-            particle.Angle[0] = particle.Angle[0] + particle.RotationalVelocity[0] * Dynamic_dt + (particle.RotationalAcceleration[0] + particle.RotationalAcceleration[1]) * Dynamic_dt.Pow2();
+            particle.Angle[0] = particle.Angle[0] + particle.RotationalVelocity[0] * Dynamic_dt + (particle.RotationalAcceleration[0] + particle.RotationalAcceleration[1]) * Dynamic_dt.Pow2() / 4;
         }
 
         /// <summary>

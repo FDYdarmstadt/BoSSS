@@ -547,7 +547,7 @@ namespace BoSSS.Application.FSI_Solver
         /// Calculate the new acceleration (translational and rotational)
         /// </summary>
         /// <param name="dt"></param>
-        public void CalculateAcceleration(double dt, bool FullyCoupled)
+        public void CalculateAcceleration(double dt, bool FullyCoupled, bool IncludeHydrodynamics)
         {
             if (iteration_counter_P == 0 || FullyCoupled == false)
             {
@@ -556,7 +556,7 @@ namespace BoSSS.Application.FSI_Solver
             }
 
             // Include Gravitiy
-            if(!skipForceIntegration)
+            if(!skipForceIntegration && !IncludeHydrodynamics)
                 HydrodynamicForces[0][1] += GravityVertical * Mass_P;
             double[,] CoefficientMatrix = Acceleration.CalculateCoefficients(AddedDampingTensor, Mass_P, MomentOfInertia_P, dt, AddedDampingCoefficient);
             double Denominator = Acceleration.CalculateDenominator(CoefficientMatrix);
@@ -746,9 +746,9 @@ namespace BoSSS.Application.FSI_Solver
             ).Execute();
 
             // add gravity
-            //{
-            //    Forces[1] += (particleDensity - fluidDensity) * Area_P * GravityVertical;
-            //}
+            {
+                Forces[1] += (particleDensity - fluidDensity) * Area_P * GravityVertical;
+            }
 
             if (neglectAddedDamping == false) {
                 Forces[0] = Forces[0] - AddedDampingCoefficient * dt * (AddedDampingTensor[0, 0] * TranslationalAcceleration[0][0] + AddedDampingTensor[1, 0] * TranslationalAcceleration[0][1] + AddedDampingTensor[0, 2] * RotationalAcceleration[0]);

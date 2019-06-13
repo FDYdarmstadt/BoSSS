@@ -516,7 +516,7 @@ namespace BoSSS.Application.FSI_Solver {
             return C;
         }
 
-        public static FSI_Control StickyTrap(string _DbPath = null, int k = 2, double VelXBase = 0.0, double angle = 0.0)
+        public static FSI_Control StickyTrap(string _DbPath = null, int k = 3, double VelXBase = 0.0, double angle = 0.0)
         {
             FSI_Control C = new FSI_Control();
 
@@ -537,7 +537,7 @@ namespace BoSSS.Application.FSI_Solver {
             C.AdaptiveMeshRefinement = false;
             C.SessionName = "fjkfjksdfhjk";
 
-            C.pureDryCollisions = true;
+            C.pureDryCollisions = false;
             C.SetDGdegree(k);
 
             // grid and boundary conditions
@@ -548,8 +548,8 @@ namespace BoSSS.Application.FSI_Solver {
 
                 int q, r;
 
-                q = 50;
-                r = 50;
+                q = 30;
+                r = 30;
 
                 double[] Xnodes = GenericBlas.Linspace(-1.5 * BaseSize, 1.5 * BaseSize, q + 1);
                 double[] Ynodes = GenericBlas.Linspace(-1.5 * BaseSize, 1.5 * BaseSize, r + 1);
@@ -558,7 +558,7 @@ namespace BoSSS.Application.FSI_Solver {
 
                 grd.EdgeTagNames.Add(1, "Wall_left");
                 grd.EdgeTagNames.Add(2, "Wall_right");
-                grd.EdgeTagNames.Add(3, "Wall_lower");
+                grd.EdgeTagNames.Add(3, "Pressure_Outlet_lower");
                 grd.EdgeTagNames.Add(4, "Pressure_Outlet_upper");
 
 
@@ -588,7 +588,7 @@ namespace BoSSS.Application.FSI_Solver {
 
             C.AddBoundaryValue("Wall_left");
             C.AddBoundaryValue("Wall_right");
-            C.AddBoundaryValue("Wall_lower");
+            C.AddBoundaryValue("Pressure_Outlet_lower");
             C.AddBoundaryValue("Pressure_Outlet_upper");
 
             // Boundary values for level-set
@@ -599,7 +599,7 @@ namespace BoSSS.Application.FSI_Solver {
             // ==============
 
             // Coupling Properties
-            C.Timestepper_LevelSetHandling = LevelSetHandling.LieSplitting;
+            C.Timestepper_LevelSetHandling = LevelSetHandling.FSI_LieSplittingFullyCoupled;
 
             // Fluid Properties
             C.PhysicalParameters.rho_A = 1.0;
@@ -611,17 +611,18 @@ namespace BoSSS.Application.FSI_Solver {
             //C.particleMass = 1;
 
 
-            C.Particles.Add(new Particle_Sphere(new double[] { 0.0, 0.7 })
+            C.Particles.Add(new Particle_Sphere(new double[] { 0.0, 0.55 })
             {
                 radius_P = 0.13,
                 //length_P = 0.2,
                 //thickness_P = 0.1,
-                particleDensity = 2.0,
+                particleDensity = 1.01,
                 GravityVertical = -9.81,
-                //AddaptiveUnderrelaxation = true,
-                //underrelaxation_factor = 1,
-                //ClearSmallValues = true,
-                //neglectAddedDamping = false,
+                AddaptiveUnderrelaxation = true,
+                underrelaxation_factor = 0.1,
+                ClearSmallValues = true,
+                neglectAddedDamping = false,
+                IncludeRotation = false,
             });
 
             C.Particles.Add(new Particle_superEllipsoid(new double[] { 0.45, 0 }, startAngl: 45)
@@ -631,7 +632,7 @@ namespace BoSSS.Application.FSI_Solver {
                 length_P = 0.4,
                 //radius_P = 0.4,
                 superEllipsoidExponent = 4,
-                GravityVertical = -9.81,
+                GravityVertical = -0,
                 IncludeRotation = false,
                 IncludeTranslation = false,
             });
@@ -644,7 +645,7 @@ namespace BoSSS.Application.FSI_Solver {
                 length_P = 0.4,
                 //radius_P = 0.4,
                 superEllipsoidExponent = 4,
-                GravityVertical = -9.81,
+                GravityVertical = -0,
                 IncludeRotation = false,
                 IncludeTranslation = false,
             });
@@ -657,10 +658,11 @@ namespace BoSSS.Application.FSI_Solver {
 
             C.AdvancedDiscretizationOptions.PenaltySafety = 4;
             C.AdvancedDiscretizationOptions.CellAgglomerationThreshold = 0.2;
-            C.LevelSetSmoothing = true;
+            C.LevelSetSmoothing = false;
             C.LinearSolver.MaxSolverIterations = 10;
             C.NonLinearSolver.MaxSolverIterations = 10;
             C.LinearSolver.NoOfMultigridLevels = 1;
+            C.ForceAndTorque_ConvergenceCriterion = 1e-4;
 
 
             // Timestepping
@@ -668,7 +670,7 @@ namespace BoSSS.Application.FSI_Solver {
 
             //C.Timestepper_Mode = FSI_Control.TimesteppingMode.Splitting;
             C.Timestepper_Scheme = FSI_Solver.FSI_Control.TimesteppingScheme.BDF2;
-            double dt = 1e-2;
+            double dt = 1e-3;
             C.dtMax = dt;
             C.dtMin = dt;
             C.Endtime = 10.0;
@@ -677,7 +679,6 @@ namespace BoSSS.Application.FSI_Solver {
             // haben fertig...
             // ===============
 
-            C.LevelSetSmoothing = false;
             return C;
         }
 

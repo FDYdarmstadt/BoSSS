@@ -255,7 +255,7 @@ namespace FSI_Solver
                 }
                 Particle.PredictAcceleration();
             } else {
-                Particle.CalculateAcceleration(dt, LieSplittingFullyCoupled);
+                Particle.CalculateAcceleration(dt, LieSplittingFullyCoupled, true);
             }
 
         }
