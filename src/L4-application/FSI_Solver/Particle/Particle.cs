@@ -440,14 +440,18 @@ namespace BoSSS.Application.FSI_Solver
                         Position[0][d] = Position[1][d] + TranslationalVelocity[1][d] * dt + (TranslationalAcceleration[1][d] + TranslationalAcceleration[0][d]) * dt.Pow2() / 4;
                     else
                     {
-                        double TimePreCollision = TranslationalVelocity[1][d] != 0 ? TotalCollisionPositionCorrection[d] / TranslationalVelocity[1][d] : 0;
-                        Position[0][d] = Position[1][d] + (dt - TimePreCollision) * (0 + TranslationalVelocity[0][d]) / 2 - TotalCollisionPositionCorrection[d];
+                        //double TimePreCollision = TranslationalVelocity[1][d] != 0 ? TotalCollisionPositionCorrection[d] / TranslationalVelocity[1][d] : 0;
+                        //Position[0][d] = Position[1][d] + (dt - TimePreCollision) * (0 + TranslationalVelocity[0][d]) / 2 - TotalCollisionPositionCorrection[d];
+                        Position[0][d] = Position[1][d] + TranslationalVelocity[0][d] * (dt - CollisionTimestep) + (TranslationalAcceleration[1][d] + TranslationalAcceleration[0][d]) * (dt - CollisionTimestep).Pow2() / 4;
                     }
                     if (double.IsNaN(Position[0][d]) || double.IsInfinity(Position[0][d]))
                         throw new ArithmeticException("Error trying to update particle position. Value:  " + Position[0][d]);
                 }
-            } else {
-                for (int d = 0; d < SpatialDim; d++) {
+            }
+            else
+            {
+                for (int d = 0; d < SpatialDim; d++)
+                {
                     Position[0][d] = Position[1][d];
                     TranslationalAcceleration[0][d] = 0;
                     TranslationalVelocity[0][d] = 0;

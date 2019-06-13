@@ -1516,11 +1516,11 @@ namespace BoSSS.Application.FSI_Solver
                     MultidimensionalArray DistanceVector = MultidimensionalArray.Create(ParticlesOfCurrentColor.Length, ParticlesOfCurrentColor.Length, SpatialDim);
                     MultidimensionalArray ClosestPoint_P0 = MultidimensionalArray.Create(ParticlesOfCurrentColor.Length, ParticlesOfCurrentColor.Length, SpatialDim);
                     MultidimensionalArray ClosestPoint_P1 = MultidimensionalArray.Create(ParticlesOfCurrentColor.Length, ParticlesOfCurrentColor.Length, SpatialDim);
-                    double MinDistance = double.MaxValue;
                     double MaxDistance = 1e-4;
                     double AccDynamicTimestep = 0;
                     while (AccDynamicTimestep < dt)
                     {
+                        double MinDistance = double.MaxValue;
                         while (MinDistance > MaxDistance)
                         {
                             double SaveTimeStep = double.MaxValue;
@@ -1537,7 +1537,7 @@ namespace BoSSS.Application.FSI_Solver
                                     DistanceVector.SetSubArray(temp_DistanceVector, new int[] { p0, p1, -1 });
                                     ClosestPoint_P0.SetSubArray(temp_ClosestPoint_p0, new int[] { p0, p1, -1 });
                                     ClosestPoint_P1.SetSubArray(temp_ClosestPoint_p1, new int[] { p0, p1, -1 });
-                                    if (temp_SaveTimeStep < SaveTimeStep)
+                                    if (temp_SaveTimeStep < SaveTimeStep && temp_SaveTimeStep < dt && temp_SaveTimeStep > 0)
                                     {
                                         SaveTimeStep = temp_SaveTimeStep;
                                         MinDistance = temp_Distance;
@@ -1545,13 +1545,18 @@ namespace BoSSS.Application.FSI_Solver
                                 }
                             }
                             AccDynamicTimestep += SaveTimeStep;
-                            if (AccDynamicTimestep > dt)
+                            if (AccDynamicTimestep > dt || MinDistance < MaxDistance)
+                            {
+                                AccDynamicTimestep -= SaveTimeStep;
                                 break;
+                            }
                             for (int p = 0; p < ParticlesOfCurrentColor.Length; p++)
                             {
                                 Collision.UpdateParticleState(Particles[ParticlesOfCurrentColor[p]], SaveTimeStep, 2);
                             }
                         }
+                        if (MinDistance > MaxDistance)
+                            break;
                         for (int p0 = 0; p0 < ParticlesOfCurrentColor.Length; p0++)
                         {
                             for (int p1 = p0 + 1; p1 < ParticlesOfCurrentColor.Length; p1++)
@@ -1564,8 +1569,8 @@ namespace BoSSS.Application.FSI_Solver
                                     double[] CurrentClosestPoint_P0 = ClosestPoint_P0.ExtractSubArrayShallow(new int[] { p0, p1, -1 }).To1DArray();
                                     double[] CurrentClosestPoint_P1 = ClosestPoint_P1.ExtractSubArrayShallow(new int[] { p0, p1, -1 }).To1DArray();
                                     ComputeMomentumBalanceCollision(Particle0, Particle1, CurrentDistanceVector, CurrentClosestPoint_P0, CurrentClosestPoint_P1);
-                                    Particle0.CollisionTimestep += AccDynamicTimestep;
-                                    Particle1.CollisionTimestep += AccDynamicTimestep;
+                                    Particle0.CollisionTimestep = AccDynamicTimestep;
+                                    Particle1.CollisionTimestep = AccDynamicTimestep;
                                 }
                                 else
                                 {
@@ -1583,11 +1588,11 @@ namespace BoSSS.Application.FSI_Solver
                         }
                     }
                 }
-                //for(int j = 0; j < GlobalParticleColor.Length; j++)
-                //{
-                //    if(GlobalParticleColor[j] == CurrentColor)
-                //        GlobalParticleColor[j] = 0;
-                //}
+                for (int j = 0; j < GlobalParticleColor.Length; j++)
+                {
+                    if (GlobalParticleColor[j] == CurrentColor)
+                        GlobalParticleColor[j] = 0;
+                }
             }
         }
 
@@ -1699,12 +1704,12 @@ namespace BoSSS.Application.FSI_Solver
             _FSI_Collision.ProjectVelocity(NormalVector, TangentialVector, Particle1.TranslationalVelocity[0], out double collisionVn_P1, out double collisionVt_P1);
 
             // Bool if collided
-            Particle0.m_collidedWithParticle[m_Particles.IndexOf(Particle1)] = true;
-            Particle1.m_collidedWithParticle[m_Particles.IndexOf(Particle0)] = true;
+            //Particle0.m_collidedWithParticle[m_Particles.IndexOf(Particle1)] = true;
+            //Particle1.m_collidedWithParticle[m_Particles.IndexOf(Particle0)] = true;
 
             // Bool if force integration should be skipped
-            Particle0.skipForceIntegration = true;
-            Particle1.skipForceIntegration = true;
+            //Particle0.skipForceIntegration = true;
+            //Particle1.skipForceIntegration = true;
 
             // coefficient of restitution (e=0 pastic; e=1 elastic)
             double e = ((FSI_Control)Control).CoefficientOfRestitution;
