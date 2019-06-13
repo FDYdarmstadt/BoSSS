@@ -1267,29 +1267,56 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             #region grid
 
             double baseL = 1e-3;
-            double theta = Math.PI * 1.0 / 4.0;
+            double theta = Math.PI * 2.0 / 3.0;
 
-            C.GridFunc = delegate () {
-                var grd = Grid2D.AcuteCornerTriangleGrid(baseL, theta, 5);
+            if (theta < (Math.PI / 2.0)) {
+                C.GridFunc = delegate () {
+                    var grd = Grid2D.AcuteCornerTriangleGrid(baseL, theta, 5);
 
-                grd.EdgeTagNames.Add(1, "navierslip_linear_lower");
-                grd.EdgeTagNames.Add(2, "wall_upper");
-                grd.EdgeTagNames.Add(3, "pressure_outlet_left");
+                    grd.EdgeTagNames.Add(1, "navierslip_linear_lower");
+                    grd.EdgeTagNames.Add(2, "wall_upper");
+                    grd.EdgeTagNames.Add(3, "pressure_outlet_left");
 
-                grd.DefineEdgeTags(delegate (double[] X) {
-                    byte et = 0;
-                    if (Math.Abs(X[1]) <= 1.0e-8)
-                        et = 1;
-                    if ((X[0] > -baseL * Math.Cos(theta)) && (X[1] > 0))
-                        et = 2;
-                    if ((X[0] < -baseL * Math.Cos(theta)) && (X[1] > 0))
-                        et = 3;
+                    grd.DefineEdgeTags(delegate (double[] X) {
+                        byte et = 0;
+                        if (Math.Abs(X[1]) <= 1.0e-8)
+                            et = 1;
+                        if ((X[0] > -baseL * Math.Cos(theta)) && (X[1] > 0))
+                            et = 2;
+                        if ((X[0] < -baseL * Math.Cos(theta)) && (X[1] > 0))
+                            et = 3;
 
-                    return et;
-                });
+                        return et;
+                    });
 
-                return grd;
-            };
+                    return grd;
+                };
+            } else {
+                C.GridFunc = delegate () {
+                    var grd = Grid2D.ObtuseCornerTriangleGrid(baseL, theta, 5);
+
+                    grd.EdgeTagNames.Add(1, "navierslip_linear_lower");
+                    grd.EdgeTagNames.Add(2, "wall_upper");
+                    grd.EdgeTagNames.Add(3, "pressure_outlet_left");
+                    grd.EdgeTagNames.Add(4, "pressure_outlet_upper");
+
+                    grd.DefineEdgeTags(delegate (double[] X) {
+                        byte et = 0;
+                        if (Math.Abs(X[1]) <= 1.0e-8)
+                            et = 1;
+                        if ((X[0] >= 0.0) && (X[1] < baseL * Math.Cos(theta - (Math.PI/2.0))))
+                            et = 2;
+                        if ((X[0] <= baseL * (Math.Sin(theta - (Math.PI / 2.0)) - 1)) && (X[1] >= 0.0))
+                            et = 3;
+                        if (Math.Abs(X[1] - baseL * Math.Cos(theta - (Math.PI / 2.0))) <= 1.0e-8)
+                            et = 4;
+
+                        return et;
+                    });
+
+                    return grd;
+                };
+            }
 
             #endregion
 
@@ -1319,6 +1346,9 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             C.AddBoundaryValue("navierslip_linear_lower", "VelocityX#A", (X, t) => Uwall);
             C.AddBoundaryValue("wall_upper");
             C.AddBoundaryValue("pressure_outlet_left");
+            if (theta >= (Math.PI / 2.0)) {
+                C.AddBoundaryValue("pressure_outlet_upper");
+            }
 
             C.AdvancedDiscretizationOptions.GNBC_Localization = NavierSlip_Localization.Bulk;
             C.AdvancedDiscretizationOptions.GNBC_SlipLength = NavierSlip_SlipLength.Prescribed_SlipLength;
