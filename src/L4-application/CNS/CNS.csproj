@@ -109,7 +109,6 @@
     <Compile Include="ShockCapturing\HeavisideArtificialViscosityLaw.cs" />
     <Compile Include="ShockCapturing\LaplacianArtificialViscosityFluxBuilder.cs" />
     <Compile Include="ShockCapturing\LaplacianArtificialViscosityFlux.cs" />
-    <Compile Include="ShockCapturing\OptimizedLaplacianArtificialViscosityFlux.cs" />
     <Compile Include="ShockCapturing\PerssonSensor.cs" />
     <Compile Include="ShockCapturing\PrimitiveFVMLimiter.cs" />
     <Compile Include="ShockCapturing\ZhangPosivityPreservingLimiter.cs" />
@@ -126,7 +125,6 @@
     <Compile Include="Tests\MovingIBMTests\MovingIBMIsentropicVortexTests.cs" />
     <Compile Include="Tests\MovingIBMTests\PistonTests.cs" />
     <Compile Include="Tests\TestUtils.cs" />
-    <Compile Include="Diffusion\INonlinear2ndOrderForm.cs" />
     <Compile Include="Diffusion\OptimizedSIPGMomentumFlux.cs" />
     <Compile Include="Diffusion\OptimizedSIPGFluxBuilder.cs" />
     <Compile Include="Diffusion\OptimizedSIPGEnergyFlux.cs" />

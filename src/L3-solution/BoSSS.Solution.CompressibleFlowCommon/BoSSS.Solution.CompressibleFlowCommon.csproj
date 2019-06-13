@@ -64,6 +64,7 @@
     <Compile Include="Convection\OptimizedHLLCEnergyFlux.cs" />
     <Compile Include="Convection\OptimizedHLLCFlux.cs" />
     <Compile Include="Convection\OptimizedHLLCMomentumFlux.cs" />
+    <Compile Include="Diffusion\INonlinear2ndOrderForm.cs" />
     <Compile Include="EquationSystem\CompressibleOperatorFactory.cs" />
     <Compile Include="ILimiter.cs" />
     <Compile Include="Shock-Capturing\IShockSensor.cs" />
@@ -81,6 +82,7 @@
     <Compile Include="Material\Material.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Shock-Capturing\IArtificialViscosityLaw.cs" />
+    <Compile Include="Shock-Capturing\OptimizedLaplacianArtificialViscosityFlux.cs" />
     <Compile Include="Shock-Capturing\SmoothedHeavisideArtificialViscosityLaw.cs" />
     <Compile Include="StateVector.cs" />
     <Compile Include="Variable.cs" />

@@ -16,15 +16,15 @@ limitations under the License.
 
 using BoSSS.Foundation;
 using BoSSS.Foundation.Grid.Classic;
-using CNS.Diffusion;
+using BoSSS.Solution.CompressibleFlowCommon.Diffusion;
 using ilPSP;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 
-namespace CNS.ShockCapturing {
+namespace BoSSS.Solution.CompressibleFlowCommon.ShockCapturing {
 
-    class OptimizedLaplacianArtificialViscosityFlux : INonlinear2ndOrderForm {
+    public class OptimizedLaplacianArtificialViscosityFlux : INonlinear2ndOrderForm {
 
         private GridData gridData;
 
@@ -32,7 +32,9 @@ namespace CNS.ShockCapturing {
 
         private string ArgumentName;
 
-        public bool AdiabaticWall { get; set; }
+        public bool AdiabaticWall {
+            get; set;
+        }
 
         private MultidimensionalArray cellLengthScale;
 
@@ -55,7 +57,7 @@ namespace CNS.ShockCapturing {
 
         IList<string> IEquationComponent.ParameterOrdering {
             get {
-                return new string[] { CNSVariables.ArtificialViscosity };
+                return new string[] { "artificialViscosity" };
             }
         }
         #endregion
@@ -176,7 +178,7 @@ namespace CNS.ShockCapturing {
                         flux -= 0.5 * (viscosityIn * GradUin[0][cell, node, d] + viscosityOut * GradUout[0][cell, node, d]) * n;
                     }
                     flux += Math.Max(viscosityIn, viscosityOut) * (Uin[0][cell, node] - Uout[0][cell, node]) * Penalty;
-                    
+
                     fin[cell, node] += flux;
                     fot[cell, node] -= flux;
                 }

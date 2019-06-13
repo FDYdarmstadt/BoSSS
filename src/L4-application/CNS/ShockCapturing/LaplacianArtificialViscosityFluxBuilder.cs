@@ -16,6 +16,7 @@ limitations under the License.
 
 using BoSSS.Solution.CompressibleFlowCommon;
 using BoSSS.Solution.CompressibleFlowCommon.Boundary;
+using BoSSS.Solution.CompressibleFlowCommon.ShockCapturing;
 using CNS.EquationSystem;
 
 namespace CNS.ShockCapturing {
