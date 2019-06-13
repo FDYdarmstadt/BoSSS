@@ -18,7 +18,7 @@ using BoSSS.Foundation.Grid;
 using BoSSS.Solution.CompressibleFlowCommon;
 using System.Collections;
 
-namespace CNS.ShockCapturing {
+namespace BoSSS.Solution.CompressibleFlowCommon.ShockCapturing {
 
     /// <summary>
     /// A law to determine the appropriate amount of artificial viscosity in

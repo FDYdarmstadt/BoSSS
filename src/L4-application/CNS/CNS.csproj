@@ -107,12 +107,10 @@
     <Compile Include="IBM\TimesteppingStrategies.cs" />
     <Compile Include="ShockCapturing\ConservativeFVMLimiter.cs" />
     <Compile Include="ShockCapturing\HeavisideArtificialViscosityLaw.cs" />
-    <Compile Include="ShockCapturing\IArtificialViscosityLaw.cs" />
     <Compile Include="ShockCapturing\LaplacianArtificialViscosityFluxBuilder.cs" />
     <Compile Include="ShockCapturing\LaplacianArtificialViscosityFlux.cs" />
     <Compile Include="ShockCapturing\OptimizedLaplacianArtificialViscosityFlux.cs" />
     <Compile Include="ShockCapturing\PerssonSensor.cs" />
-    <Compile Include="ShockCapturing\SmoothedHeavisideArtificialViscosityLaw.cs" />
     <Compile Include="ShockCapturing\PrimitiveFVMLimiter.cs" />
     <Compile Include="ShockCapturing\ZhangPosivityPreservingLimiter.cs" />
     <Compile Include="Source\SpongeLayerConfig.cs" />
