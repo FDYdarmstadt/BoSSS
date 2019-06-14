@@ -107,12 +107,9 @@
     <Compile Include="IBM\TimesteppingStrategies.cs" />
     <Compile Include="ShockCapturing\ConservativeFVMLimiter.cs" />
     <Compile Include="ShockCapturing\HeavisideArtificialViscosityLaw.cs" />
-    <Compile Include="ShockCapturing\IArtificialViscosityLaw.cs" />
     <Compile Include="ShockCapturing\LaplacianArtificialViscosityFluxBuilder.cs" />
     <Compile Include="ShockCapturing\LaplacianArtificialViscosityFlux.cs" />
-    <Compile Include="ShockCapturing\OptimizedLaplacianArtificialViscosityFlux.cs" />
     <Compile Include="ShockCapturing\PerssonSensor.cs" />
-    <Compile Include="ShockCapturing\SmoothedHeavisideArtificialViscosityLaw.cs" />
     <Compile Include="ShockCapturing\PrimitiveFVMLimiter.cs" />
     <Compile Include="ShockCapturing\ZhangPosivityPreservingLimiter.cs" />
     <Compile Include="Source\SpongeLayerConfig.cs" />
@@ -128,7 +125,6 @@
     <Compile Include="Tests\MovingIBMTests\MovingIBMIsentropicVortexTests.cs" />
     <Compile Include="Tests\MovingIBMTests\PistonTests.cs" />
     <Compile Include="Tests\TestUtils.cs" />
-    <Compile Include="Diffusion\INonlinear2ndOrderForm.cs" />
     <Compile Include="Diffusion\OptimizedSIPGMomentumFlux.cs" />
     <Compile Include="Diffusion\OptimizedSIPGFluxBuilder.cs" />
     <Compile Include="Diffusion\OptimizedSIPGEnergyFlux.cs" />
@@ -186,14 +182,7 @@
     <Compile Include="Residual\ResidualLoggerTypes.cs" />
     <Compile Include="Residual\NullResidualLogger.cs" />
     <Compile Include="Residual\ChangeRateResidualLogger.cs" />
-    <Compile Include="Convection\EulerFlux.cs" />
-    <Compile Include="Convection\HLLCDensityFlux.cs" />
-    <Compile Include="Convection\HLLCEnergyFlux.cs" />
-    <Compile Include="Convection\HLLCFlux.cs" />
-    <Compile Include="Convection\HLLCMomentumFlux.cs" />
     <Compile Include="Convection\HLLFlux.cs" />
-    <Compile Include="Convection\EulerDensityComponent.cs" />
-    <Compile Include="Convection\EulerEnergyComponent.cs" />
     <Compile Include="Convection\HLLFluxBuilder.cs" />
     <Compile Include="Residual\ResidualLogger.cs" />
     <Compile Include="Residual\RigorousResidualLogger.cs" />

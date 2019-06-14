@@ -19,6 +19,7 @@ using BoSSS.Foundation.Grid;
 using BoSSS.Foundation.Grid.Classic;
 using BoSSS.Solution.CompressibleFlowCommon;
 using BoSSS.Solution.CompressibleFlowCommon.Boundary;
+using BoSSS.Solution.CompressibleFlowCommon.Diffusion;
 using ilPSP;
 using System;
 using System.Collections.Generic;
