@@ -331,7 +331,7 @@ namespace CNS {
             });
 
         /// <summary>
-        /// The local non-dimensional artifical viscosity
+        /// The local non-dimensional artificial viscosity
         /// </summary>
         /// <remarks>
         /// IMPORTANT: UPDATE ONLY POSSIBLE AFTER SENSOR FIELD WAS UPDATED/CREATED
@@ -398,7 +398,7 @@ namespace CNS {
                     }
                 }
 
-                // Project visocsity onto continuous, multilinear space
+                // Project viscosity onto continuous, multi-linear space
                 if (D < 3) {
                     // Standard version
                     if (avSpecFEMBasis == null || !avField.Basis.Equals(avSpecFEMBasis.ContainingDGBasis)) {
