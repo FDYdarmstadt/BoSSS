@@ -61,9 +61,11 @@ namespace BoSSS.Application.FSI_Solver {
         /// <summary>
         /// %
         /// </summary>
-        protected override double AverageDistance {
-            get {
-                throw new NotImplementedException("todo");
+        protected override double AverageDistance
+        {
+            get
+            {
+                return 0.5 * (length_P + thickness_P);
             }
         }
 
