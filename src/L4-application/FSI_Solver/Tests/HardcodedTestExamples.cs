@@ -548,8 +548,8 @@ namespace BoSSS.Application.FSI_Solver {
 
                 int q, r;
 
-                q = 30;
-                r = 30;
+                q = 60;
+                r = 60;
 
                 double[] Xnodes = GenericBlas.Linspace(-1.5 * BaseSize, 1.5 * BaseSize, q + 1);
                 double[] Ynodes = GenericBlas.Linspace(-1.5 * BaseSize, 1.5 * BaseSize, r + 1);
@@ -599,7 +599,7 @@ namespace BoSSS.Application.FSI_Solver {
             // ==============
 
             // Coupling Properties
-            C.Timestepper_LevelSetHandling = LevelSetHandling.FSI_LieSplittingFullyCoupled;
+            C.Timestepper_LevelSetHandling = LevelSetHandling.LieSplitting;
 
             // Fluid Properties
             C.PhysicalParameters.rho_A = 1.0;
@@ -611,17 +611,17 @@ namespace BoSSS.Application.FSI_Solver {
             //C.particleMass = 1;
 
 
-            C.Particles.Add(new Particle_Sphere(new double[] { 0.0, 0.55 })
+            C.Particles.Add(new Particle_Sphere(new double[] { 0.0, 0.6 })
             {
-                radius_P = 0.13,
+                radius_P = 0.18,
                 //length_P = 0.2,
                 //thickness_P = 0.1,
                 particleDensity = 4,
                 GravityVertical = -9.81,
-                AddaptiveUnderrelaxation = true,
-                underrelaxation_factor = 75,
-                ClearSmallValues = true,
-                neglectAddedDamping = false,
+                //AddaptiveUnderrelaxation = true,
+                //underrelaxation_factor = 75,
+                ClearSmallValues = false,
+                neglectAddedDamping = true,
                 IncludeRotation = false,
             });
 
@@ -670,11 +670,11 @@ namespace BoSSS.Application.FSI_Solver {
 
             //C.Timestepper_Mode = FSI_Control.TimesteppingMode.Splitting;
             C.Timestepper_Scheme = FSI_Solver.FSI_Control.TimesteppingScheme.BDF2;
-            double dt = 1e-3;
+            double dt = 1e-2;
             C.dtMax = dt;
             C.dtMin = dt;
             C.Endtime = 10.0;
-            C.NoOfTimesteps = 380;
+            C.NoOfTimesteps = 800;
 
             // haben fertig...
             // ===============

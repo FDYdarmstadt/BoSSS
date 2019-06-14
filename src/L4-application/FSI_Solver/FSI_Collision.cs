@@ -66,8 +66,8 @@ namespace FSI_Solver
             //Particle1.m_collidedWithParticle[m_Particles.IndexOf(Particle0)] = true;
 
             // Bool if force integration should be skipped
-            Particle0.skipForceIntegration = true;
-            Particle1.skipForceIntegration = true;
+            //Particle0.skipForceIntegration = true;
+            //Particle1.skipForceIntegration = true;
 
             // coefficient of restitution (e=0 pastic; e=1 elastic)
             double e = CoefficientOfRestitution;
@@ -818,9 +818,14 @@ namespace FSI_Solver
                 for (int d = 0; d < 2; d++)
                     PointVelocity1[d] = particle1.TranslationalVelocity[0][d] + particle1.RotationalVelocity[0] * rMax_1;
                 ProjectVelocityOnVector(NormalVector, PointVelocity1, out double DetectCollisionVn_P1);
+                Console.WriteLine("NormalVector0: " + NormalVector[0]);
+                Console.WriteLine("NormalVector1: " + NormalVector[1]);
+                Console.WriteLine("DetectCollisionVn_P0: " + DetectCollisionVn_P0);
+                Console.WriteLine("DetectCollisionVn_P1: " + DetectCollisionVn_P1);
                 if (DetectCollisionVn_P1 - DetectCollisionVn_P0 == 0)
                     return double.MaxValue;
                 Dynamic_dt = 0.9 * Distance / (DetectCollisionVn_P1 - DetectCollisionVn_P0);
+                Console.WriteLine("Dynamic_dt: " + Dynamic_dt);
             }
             else if(DetectCollisionVn_P0 == 0)
                 return double.MaxValue;
