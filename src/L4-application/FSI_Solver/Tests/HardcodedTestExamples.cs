@@ -537,7 +537,7 @@ namespace BoSSS.Application.FSI_Solver {
             C.AdaptiveMeshRefinement = false;
             C.SessionName = "fjkfjksdfhjk";
 
-            C.pureDryCollisions = false;
+            C.pureDryCollisions = true;
             C.SetDGdegree(k);
 
             // grid and boundary conditions
@@ -604,7 +604,7 @@ namespace BoSSS.Application.FSI_Solver {
             // Fluid Properties
             C.PhysicalParameters.rho_A = 1.0;
             C.PhysicalParameters.mu_A = 0.1;
-            C.CoefficientOfRestitution = 1;
+            C.CoefficientOfRestitution = 0;
 
             // Particle Properties
             //C.PhysicalParameters.mu_B = 0.1;
@@ -669,7 +669,7 @@ namespace BoSSS.Application.FSI_Solver {
             C.dtMax = dt;
             C.dtMin = dt;
             C.Endtime = 10.0;
-            C.NoOfTimesteps = 1000;
+            C.NoOfTimesteps = 50;
 
             // haben fertig...
             // ===============
