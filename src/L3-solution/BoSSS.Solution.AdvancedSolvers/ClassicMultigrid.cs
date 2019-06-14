@@ -241,12 +241,6 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 double[] rl = new double[N];
                 double[] rlp1 = new double[NN];
 
-                if (this.IterationCallback != null) {
-                    var _bl = bl.ToArray();
-                    this.OpMatrix.SpMV(-1.0, xl, 1.0, _bl);
-                    this.IterationCallback(0, xl.ToArray(), _bl, this.m_MgOperator);
-                }
-
                 for (int iIter = 0; iIter < this.m_MaxIterations; iIter++) {
 
                     var DGBasis = m_MgOperator.BaseGridProblemMapping.BasisS[0];
@@ -256,6 +250,14 @@ namespace BoSSS.Solution.AdvancedSolvers {
                     if (PreSmoother != null)
                         PreSmoother.Solve(xl, bl); // Vorglättung
                     Residual(rl, xl, bl); // Residual on this level
+
+
+                    if (this.IterationCallback != null)
+                    {
+                        var _bl = bl.ToArray();
+                        this.OpMatrix.SpMV(-1.0, xl, 1.0, _bl);
+                        this.IterationCallback(0, xl.ToArray(), rl, this.m_MgOperator);
+                    }
 
                     //var ResAftJacobi = new XDGField((XDGBasis)DGBasis, "Resi_afJacobi");
                     //m_MgOperator.TransformRhsFrom(ResAftJacobi.CoordinatesAsVector, rl);
@@ -283,16 +285,21 @@ namespace BoSSS.Solution.AdvancedSolvers {
                     // Prolongation der Grobgitterkorrektur
                     this.m_MgOperator.CoarserLevel.Prolongate(1.0, xl, 1.0, vlp1);
 
+                    // check resudual after coarse grid correction
+                    Residual(rl, xl, bl); // Residual on this level
+
+                    
+                    if (this.IterationCallback != null)
+                    {
+                        var _bl = bl.ToArray();
+                        this.OpMatrix.SpMV(-1.0, xl, 1.0, _bl);
+                        this.IterationCallback(iIter, xl.ToArray(), rl, this.m_MgOperator);
+                    }
+                    
 
                     // Nachglättung
                     if (PostSmoother != null)
                         PostSmoother.Solve(xl, bl);
-
-                    if (this.IterationCallback != null) {
-                        var _bl = bl.ToArray();
-                        this.OpMatrix.SpMV(-1.0, xl, 1.0, _bl);
-                        this.IterationCallback(iIter + 1, xl.ToArray(), _bl, this.m_MgOperator);
-                    }
                 }
             }
         }

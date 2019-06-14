@@ -162,6 +162,7 @@ namespace BoSSS.Application.SipPoisson {
 
             R.GridFunc = delegate () {
                 double[] xNodes = CreateNodes(xRes, xStretch, 0, 10);
+                //double[] xNodes = CreateNodes(xRes, xStretch, -1, +1);
                 double[] yNodes = CreateNodes(yRes, yStretch, -1, +1);
                 //double[] zNodes = CreateNodes(zRes, zStretch, -1, +1);
 
@@ -183,8 +184,9 @@ namespace BoSSS.Application.SipPoisson {
 
             R.LinearSolver.SolverCode = LinearSolverConfig.Code.exp_softpcg_jacobi_mg;
             //R.LinearSolver.SolverCode = LinearSolverConfig.Code.classic_mumps;
-            R.LinearSolver.NoOfMultigridLevels = 3;
+            R.LinearSolver.NoOfMultigridLevels = 10;
             R.LinearSolver.TargetBlockSize = 40;
+            //R.LinearSolver.MaxSolverIterations = 1;
             //R.LinearSolver.MaxSolverIterations = 10;
 
             R.AddBoundaryValue(BoundaryType.Dirichlet.ToString());

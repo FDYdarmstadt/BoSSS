@@ -30,7 +30,7 @@ using BoSSS.Foundation.Grid.Aggregation;
 using ilPSP;
 using ilPSP.Utils;
 
-namespace BoSSS.Solution{
+namespace BoSSS.Solution {
 
     public class SolverFactory {
 
@@ -193,7 +193,7 @@ namespace BoSSS.Solution{
 
             SetNonLinItCallback(nonlinSolver);
 #if DEBUG
-            Console.WriteLine("nonlinear Solver: {0}",nc.SolverCode.ToString());
+            Console.WriteLine("nonlinear Solver: {0}", nc.SolverCode.ToString());
 #endif
             return nonlinSolver;
         }
@@ -717,7 +717,7 @@ namespace BoSSS.Solution{
             //((ISolverWithCallback)templinearSolve).IterationCallback += LinItCallback;
             SetLinItCallback(templinearSolve, isNonLinPrecond);
 #if DEBUG
-            Console.WriteLine("linear Solver: {0}",lc.SolverCode.ToString());
+            Console.WriteLine("linear Solver: {0}", lc.SolverCode.ToString());
 #endif
             return templinearSolve;
         }
@@ -801,12 +801,12 @@ namespace BoSSS.Solution{
                 m_Iterations[5]++;
                 string Its = "";
                 Array.ForEach<int>(m_Iterations, i => Its += i.ToString() + ",");
-                Console.WriteLine("{0} : {1}, {2}, {3}, {4}", Its, names, res, bla, Mgop.LevelIndex);
+                //Console.WriteLine("{0} : {1}, {2}, {3}, {4}", Its, names, res, bla, Mgop.LevelIndex);
             };
         }
 
         protected void SetNonLinItCallback(NonlinearSolver nonlinsolver) {
-            
+
             string[] _name = new string[2];
             int _caseselect = 5;
             _name[0] = "Solver";
@@ -860,7 +860,7 @@ namespace BoSSS.Solution{
         /// Is get and set by <see cref="Selfmade_linsolver"/> and used by <see cref="GenerateLinear"/>.
         /// </summary>
         private ISolverSmootherTemplate m_linsolver;
-        
+
         /// <summary>
         /// Is get and set by <see cref="Selfmade_nonlinsolver"/> and used by <see cref="GenerateNonLinear"/>.
         /// </summary>
@@ -934,7 +934,7 @@ namespace BoSSS.Solution{
         /// <summary>
         /// Automatic choice of linear solver depending on problem size, immersed boundary, polynomial degree, etc. In addition the nonlinearsolver config is considered as well.
         /// </summary>
-        private ISolverSmootherTemplate Automatic(NonLinearSolverConfig nc, LinearSolverConfig lc, int[] LDOF, int Dim,int NoCellsLoc, int NoCellsGlob) {
+        private ISolverSmootherTemplate Automatic(NonLinearSolverConfig nc, LinearSolverConfig lc, int[] LDOF, int Dim, int NoCellsLoc, int NoCellsGlob) {
 
 
 
@@ -942,7 +942,7 @@ namespace BoSSS.Solution{
 
             //int pV = Control.FieldOptions["VelocityX"].Degree;
             int pV = LDOF[0];
-            int pP = pV-1; //Control.FieldOptions["Pressure"].Degree;
+            int pP = pV - 1; //Control.FieldOptions["Pressure"].Degree;
 
 
             // Detecting variables for solver determination 
@@ -962,11 +962,11 @@ namespace BoSSS.Solution{
                     case 1:
                         break;
                         throw new NotImplementedException("Currently not implemented for " + D + " Dimensions");
-                        //break;
+                    //break;
 
                     case 2:
                         throw new NotImplementedException("Currently not implemented for " + D + " Dimensions");
-                        //break;
+                    //break;
 
                     case 3:
                         //var dofsPerCell3D = (3 * (pV * pV * pV + 6 * pV * pV + 11 * pV + 6) / 6 + 1 * (pP * pP * pP + 6 * pP * pP + 11 * pP + 6) / 6);
@@ -988,7 +988,7 @@ namespace BoSSS.Solution{
                                     NoOfPartsPerProcess = PPP,
                                 },
                                 Overlap = 1,
-                                CoarseSolver = DetermineMGSquence(lc.NoOfMultigridLevels - 2,lc)
+                                CoarseSolver = DetermineMGSquence(lc.NoOfMultigridLevels - 2, lc)
                             };
                         } else {
                             tempsolve = new SparseSolver() {
@@ -1007,11 +1007,11 @@ namespace BoSSS.Solution{
                     case 1:
                         break;
                         throw new NotImplementedException("Currently not implemented for " + D + " Dimensions");
-                        //break;
+                    //break;
 
                     case 2:
                         throw new NotImplementedException("Currently not implemented for " + D + " Dimensions");
-                        //break;
+                    //break;
 
                     case 3:
                         var dofsPerCell3D = LDOF[0] / NoCellsLoc;
@@ -1031,7 +1031,7 @@ namespace BoSSS.Solution{
                                         NoOfPartsPerProcess = (int)Math.Ceiling(dofsLoc / 6500.0),
                                     },
                                     Overlap = 1,
-                                    CoarseSolver = DetermineMGSquence(lc.NoOfMultigridLevels - 2,lc)
+                                    CoarseSolver = DetermineMGSquence(lc.NoOfMultigridLevels - 2, lc)
                                 },
                             };
                         } else {
@@ -1065,7 +1065,7 @@ namespace BoSSS.Solution{
         /// <param name="MGlevels"></param>
         /// <param name="CoarsestSolver"></param>
         /// <returns></returns>
-        private ISolverSmootherTemplate DetermineMGSquence(int MGlevels,LinearSolverConfig lc) {
+        private ISolverSmootherTemplate DetermineMGSquence(int MGlevels, LinearSolverConfig lc) {
             ISolverSmootherTemplate solver;
             if (MGlevels > 0) {
                 solver = new ClassicMultigrid() { CoarserLevelSolver = DetermineMGSquence(MGlevels - 1, lc) };
@@ -1130,6 +1130,53 @@ namespace BoSSS.Solution{
             return check;
         }
 
+        private int m_MG_Counter = 0;
+        private double[] ProlRes = new double[10];
+        private double[] RestRes = new double[10];
+        //private double[] ProlRes = {1,2,3,4,5};
+        //private double[] RestRes = {10,9,8,7,6};
+
+        private int m_MG_Depth=-1;
+        private int MG_Depth{
+            get{ return m_MG_Depth; }
+            set{ m_MG_Depth = Math.Max(value, m_MG_Depth); }
+            }
+
+        private void MultigridCallback(int iterIndex, double[] currentSol, double[] currentRes, MultigridOperator Mgop)
+        {
+            int currentMGLevel = Mgop.LevelIndex;
+
+            if (m_MG_Counter - currentMGLevel == +1)
+            {
+                double residualNormAf = currentRes.L2Norm().MPISum(Mgop.OperatorMatrix.MPI_Comm); // residual norm after coarse grid correction
+                ProlRes[currentMGLevel] = residualNormAf;
+                Console.WriteLine("after Prolongation {0}<-{1}: {2}", currentMGLevel, currentMGLevel+1 , ProlRes[currentMGLevel] - ProlRes[currentMGLevel+1]);
+            }
+
+            if(m_MG_Counter - currentMGLevel ==0 && currentMGLevel== MG_Depth)
+            {
+                double residualNormAf = currentRes.L2Norm().MPISum(Mgop.OperatorMatrix.MPI_Comm); // residual norm after coarse grid correction
+                ProlRes[currentMGLevel] = residualNormAf;
+                Console.WriteLine("after Prolongation {0}<-{1}: {2}", currentMGLevel, currentMGLevel+1, ProlRes[currentMGLevel]- RestRes[currentMGLevel]);
+            }
+
+            if (m_MG_Counter - currentMGLevel == 0 && currentMGLevel == 0)
+            {
+                Console.WriteLine(">>>>>>>>>>>>>>>>>>>>>>>>>>>>");
+                double residualNormB4 = currentRes.L2Norm().MPISum(Mgop.OperatorMatrix.MPI_Comm); // residual norm before coarse grid correction
+                RestRes[currentMGLevel] = residualNormB4;
+                Console.WriteLine("before Restriction {0}->{1}: {2}", currentMGLevel, currentMGLevel + 1, RestRes[currentMGLevel] - ProlRes[currentMGLevel]);
+            }
+
+            if (m_MG_Counter - currentMGLevel == -1)
+            {
+                double residualNormB4 = currentRes.L2Norm().MPISum(Mgop.OperatorMatrix.MPI_Comm); // residual norm before coarse grid correction
+                RestRes[currentMGLevel] = residualNormB4;
+                Console.WriteLine("before Restriction {0}->{1}: {2}", currentMGLevel, currentMGLevel + 1, RestRes[currentMGLevel] - RestRes[currentMGLevel-1]);
+            }
+            m_MG_Counter = currentMGLevel;
+            MG_Depth = currentMGLevel;
+        }
 
         private ISolverSmootherTemplate My_MG_Precond(LinearSolverConfig _lc, int[] _LocalDOF, int MSLength, bool isNonLinPrecond, ISolverSmootherTemplate[] prechain, ISolverSmootherTemplate[] postchain, ISolverSmootherTemplate toplevelpre, ISolverSmootherTemplate toplevelpst) {
 
@@ -1159,6 +1206,8 @@ namespace BoSSS.Solution{
                         m_MaxIterations = 1,
                         m_Tolerance = 0.0 // termination controlled by top level PCG
                     };
+
+                    ((ISolverWithCallback)MgLevel).IterationCallback += MultigridCallback;
 
                     MultigridChain[iLevel] = MgLevel;
 

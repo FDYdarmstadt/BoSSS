@@ -42,7 +42,7 @@ namespace BoSSS.Foundation.Grid.Aggregation {
         /// <param name="MaxDepth">maximum number of refinements</param>
         /// <returns></returns>
         public static AggregationGridData[] CreateSequence(IGridData GridDat, int MaxDepth = -1) {
-            using(new FuncTrace()) {
+            using (new FuncTrace()) {
                 int D = GridDat.SpatialDimension;
                 MaxDepth = MaxDepth >= 0 ? MaxDepth : int.MaxValue;
                 //int cutoff = MaxDepth < 0 ? int.MaxValue : MaxDepth * skip;
@@ -53,18 +53,19 @@ namespace BoSSS.Foundation.Grid.Aggregation {
 
                 List<AggregationGridData> aggGrids = new List<AggregationGridData>();
                 aggGrids.Add(ZeroAggregation(GridDat));
-                while(true) {
-                    if( aggGrids.Count >= MaxDepth)
+                while (true) {
+                    if (aggGrids.Count >= MaxDepth)
                         break;
 
-             
+
                     AggregationGridData grid = Coarsen(aggGrids.Last(), (int)(Math.Pow(2, D)));
+                    //AggregationGridData grid = Coarsen_hardcoded(aggGrids.Last(), (int)(Math.Pow(2, D)));
 
 
                     if ((grid.iLogicalCells.NoOfLocalUpdatedCells.MPISum() >= aggGrids.Last().iLogicalCells.NoOfLocalUpdatedCells.MPISum()))
                         // no more refinement possible
                         break;
-                    
+
                     aggGrids.Add(grid);
 
 
@@ -73,7 +74,7 @@ namespace BoSSS.Foundation.Grid.Aggregation {
                     int JFine = aggGrids[iLevel].iLogicalCells.Count;
                     int JCoarse = aggGrids[iLevel + 1].iLogicalCells.Count;
                     Debug.Assert(aggGrids[iLevel + 1].iLogicalCells.Count == (aggGrids[iLevel + 1].iLogicalCells.NoOfLocalUpdatedCells + aggGrids[iLevel + 1].iLogicalCells.NoOfExternalCells));
-                    
+
                     // test that the coarse grid has significantly less cells than the fine grid.
                     double dJfine = aggGrids[iLevel].iLogicalCells.NoOfLocalUpdatedCells;
                     double dJcoarse = aggGrids[iLevel + 1].iLogicalCells.NoOfLocalUpdatedCells;
@@ -84,13 +85,13 @@ namespace BoSSS.Foundation.Grid.Aggregation {
                     bool[] testMarker = new bool[JFine];
                     int[][] C2F = aggGrids[iLevel + 1].jCellCoarse2jCellFine;
                     Debug.Assert(C2F.Length == JCoarse);
-                    for(int jC = 0; jC < JCoarse; jC++) {
-                        foreach(int jF in C2F[jC]) {
+                    for (int jC = 0; jC < JCoarse; jC++) {
+                        foreach (int jF in C2F[jC]) {
                             Debug.Assert(testMarker[jF] == false);
                             testMarker[jF] = true;
                         }
                     }
-                    for(int jF = 0; jF < JFine; jF++) {
+                    for (int jF = 0; jF < JFine; jF++) {
                         Debug.Assert(testMarker[jF] == true);
                     }
 
@@ -119,12 +120,12 @@ namespace BoSSS.Foundation.Grid.Aggregation {
             int D = g.SpatialDimension;
 
             int[][] AggregateCells = new int[J][];
-            for(int j = 0; j < J; j++) {
+            for (int j = 0; j < J; j++) {
                 AggregateCells[j] = new int[] { j };
             }
 
             AggregationGridData ret = new AggregationGridData(g, AggregateCells);
-            
+
             return ret;
         }
 
@@ -138,28 +139,110 @@ namespace BoSSS.Foundation.Grid.Aggregation {
         /// desired number of parts for each aggregate cell
         /// </param>
         public static AggregationGridData Coarsen(IGridData ag, int AggCellCount) {
-            using(new FuncTrace()) {
+            using (new FuncTrace()) {
 
                 int[][] Coarsened_ComositeCells = AggregationKernel(ag, AggCellCount);
                 return new AggregationGridData(ag, Coarsened_ComositeCells);
             }
         }
 
-        //public static AggregationGridData Coarsen_plain(IGridData ag, int AggCellCount)
-        //{
-        //    using (new FuncTrace())
-        //    {
+        public static AggregationGridData Coarsen_hardcoded(IGridData ag, int AggCellCount)
+        {
+            using (new FuncTrace())
+            {
+                int[][] Coarsened_ComositeCells = AggregationKernel_hardcoded(ag, AggCellCount);
+                return new AggregationGridData(ag, Coarsened_ComositeCells);
+            }
+        }
 
-        //        int[][] Coarsened_ComositeCells = AggregationKernel_plain(ag, AggCellCount);
-        //        return new AggregationGridData(ag, Coarsened_ComositeCells);
-        //    }
-        //}
+        private static int[][] AggregationKernel_hardcoded(IGridData ag, int AggCellCount)
+        {
+            int Jloc = ag.iLogicalCells.NoOfLocalUpdatedCells;
+            int D = ag.SpatialDimension;
+            if (AggCellCount < 2)
+                throw new ArgumentOutOfRangeException();
 
-        //private static int[][] AggKernel_plain(IGridData ag, int AggCellCount)
-        //{
+            int[] Perm = Jloc.ForLoop(j => j).ToArray();
+            BitArray UsedCellMarker = new BitArray(Jloc);
 
-        //}
+            List<int[]> Coarsened_ComositeCells = new List<int[]>();
+            List<int> NeighCandidates = new List<int>();
+            //
+            List<int> aggCell = new List<int>();
+            int[][] Neighbourship = ag.iLogicalCells.CellNeighbours;
+            for (int i = 0; i < Jloc; i++)
+            {
+                int jCell = Perm[i];
+                if (!UsedCellMarker[jCell])
+                {
+                    aggCell.Clear();
+                    aggCell.Add(jCell);
+                    UsedCellMarker[jCell] = true;
 
+
+
+                    NeighCandidates.Clear();
+
+
+
+                    foreach (int jNeigh in Neighbourship[jCell])
+                    {
+                        if (jNeigh >= Jloc)
+                            continue;
+                        if (UsedCellMarker[jNeigh] == true)
+                            continue;
+                        Debug.Assert(aggCell.Contains(jNeigh) == false); // for all cells which are already in 'aggCell', the marker should be true
+                        if (!NeighCandidates.Contains(jNeigh))
+                        {
+                            NeighCandidates.Add(jNeigh);
+                            
+                        }
+                    }
+
+                    List<int> kabumm = new List<int>();
+                    foreach (var NC in NeighCandidates)
+                    {
+                        kabumm.AddRange(Neighbourship[NC].ToList<int>());
+                    }
+                    int[] intkabumm = kabumm.ToArray();
+                    Array.Sort(intkabumm);
+                    for(int ikabumm=0; ikabumm < intkabumm.Length-1; ikabumm++)
+                    {
+                        if (intkabumm[ikabumm] == jCell)
+                            continue;
+                        if (intkabumm[ikabumm] == intkabumm[ikabumm + 1])
+                        {
+                            NeighCandidates.Add(intkabumm[ikabumm]);
+                            break;
+                        }
+                    }
+
+                    aggCell.AddRange(NeighCandidates);
+                    NeighCandidates.ForEach(nc => UsedCellMarker.Set(nc,true));
+
+                    {
+                        int[] aggCell_Fix = aggCell.ToArray();
+#if DEBUG
+                        foreach (int j in aggCell_Fix)
+                        {
+                            Debug.Assert(j >= 0);
+                            Debug.Assert(j < Jloc);
+                            Debug.Assert(UsedCellMarker[j] == true);
+                        }
+
+#endif
+                        Coarsened_ComositeCells.Add(aggCell_Fix);
+                    }
+                }
+                else
+                {
+                    // cell already done.
+                    continue;
+                }
+            }
+            Debug.Assert(UsedCellMarker.ToBoolArray().Where(b => !b).Count() == 0, "some cell was not processed.");
+            return Coarsened_ComositeCells.ToArray();
+        }
 
         /// <summary>
         /// coarsens level <paramref name="ag"/> (aggregation of grid objects)

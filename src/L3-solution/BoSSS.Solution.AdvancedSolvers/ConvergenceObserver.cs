@@ -430,6 +430,8 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
         private int[] Iterationcounter {
             get {
+                if (m_SF.GetIterationcounter == null)
+                    throw new ArgumentNullException("switch verbose mode on for the solver you like to plot! Iterationcounter is null!");
                 Debug.Assert(m_SF.GetIterationcounter.Length == 6);
                 return m_SF.GetIterationcounter;
             }
