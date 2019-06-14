@@ -38,7 +38,7 @@ namespace BoSSS.Solution.Control {
             Picard = 1,
 
             /// <summary>
-            /// Newtons method (<see cref="BoSSS.Solution.AdvancedSolvers.Newton"/>) with linear solver (<see cref="LinearSolverConfig.Code"/>) used to approximate the inverse of the jacobian with the inverse operator matrix. 
+            /// Newtons method (<see cref="BoSSS.Solution.Advance"/>) with linear solver (<see cref="LinearSolverConfig.Code"/>) used to approximate the inverse of the jacobian with the inverse operator matrix. 
             /// </summary>
             Newton = 2,
 
