@@ -28,6 +28,7 @@ using BoSSS.Solution.Timestepping;
 using CNS.Convection;
 using CNS.ShockCapturing;
 using ilPSP;
+using ilPSP.Tracing;
 using System;
 using System.Diagnostics;
 using System.Linq;
@@ -342,131 +343,133 @@ namespace CNS {
             "artificialViscosity",
             VariableTypes.Other,
             delegate (DGField artificialViscosity, CellMask cellMask, IProgram<CNSControl> program) {
-                ConventionalDGField avField = artificialViscosity as ConventionalDGField;
-                int D = cellMask.GridData.SpatialDimension;
-                CellData cells = ((BoSSS.Foundation.Grid.Classic.GridData)program.GridData).Cells;
+                using (var tr = new FuncTrace()) {
+                    ConventionalDGField avField = artificialViscosity as ConventionalDGField;
+                    int D = cellMask.GridData.SpatialDimension;
+                    CellData cells = ((BoSSS.Foundation.Grid.Classic.GridData)program.GridData).Cells;
 
-                // h = shortest edge (not valid for true cut cells --> volume/surface)
-                var h_min = cells.h_min;
+                    // h = shortest edge (not valid for true cut cells --> volume/surface)
+                    var h_min = cells.h_min;
 
-                // h = volume / surface --> trying this for curved elements 
-                //var h_min = cells.h_min;
-                //h_min.Clear();
-                //foreach (int j in cellMask.ItemEnum) {
-                //    if (!cells.IsCellAffineLinear(j)) {
-                //        h_min[j] = cells.GetCellVolume(j) / cells.CellSurfaceArea[j];
-                //    }
-                //}
+                    // h = volume / surface --> trying this for curved elements 
+                    //var h_min = cells.h_min;
+                    //h_min.Clear();
+                    //foreach (int j in cellMask.ItemEnum) {
+                    //    if (!cells.IsCellAffineLinear(j)) {
+                    //        h_min[j] = cells.GetCellVolume(j) / cells.CellSurfaceArea[j];
+                    //    }
+                    //}
 
-                //var h_min = cells.CellLengthScale.CloneAs();
-                //h_min.ApplyAll(delegate (double x) {
-                //    return x * 2;
-                //});
+                    //var h_min = cells.CellLengthScale.CloneAs();
+                    //h_min.ApplyAll(delegate (double x) {
+                    //    return x * 2;
+                    //});
 
-                // Determine piecewise constant viscosity
-                avField.Clear();
-                foreach (Chunk chunk in cellMask) {
-                    // Compute local mean state in cell
-                    MultidimensionalArray meanValues = MultidimensionalArray.Create(chunk.Len, D + 2);
-                    program.WorkingSet.Density.EvaluateMean(
-                        chunk.i0,
-                        chunk.Len,
-                        meanValues.ExtractSubArrayShallow(-1, 0));
-                    for (int d = 0; d < D; d++) {
-                        program.WorkingSet.Momentum[d].EvaluateMean(
+                    // Determine piecewise constant viscosity
+                    avField.Clear();
+                    foreach (Chunk chunk in cellMask) {
+                        // Compute local mean state in cell
+                        MultidimensionalArray meanValues = MultidimensionalArray.Create(chunk.Len, D + 2);
+                        program.WorkingSet.Density.EvaluateMean(
                             chunk.i0,
                             chunk.Len,
-                            meanValues.ExtractSubArrayShallow(-1, d + 1));
-                    }
-                    program.WorkingSet.Energy.EvaluateMean(
-                        chunk.i0,
-                        chunk.Len,
-                        meanValues.ExtractSubArrayShallow(-1, D + 1));
+                            meanValues.ExtractSubArrayShallow(-1, 0));
+                        for (int d = 0; d < D; d++) {
+                            program.WorkingSet.Momentum[d].EvaluateMean(
+                                chunk.i0,
+                                chunk.Len,
+                                meanValues.ExtractSubArrayShallow(-1, d + 1));
+                        }
+                        program.WorkingSet.Energy.EvaluateMean(
+                            chunk.i0,
+                            chunk.Len,
+                            meanValues.ExtractSubArrayShallow(-1, D + 1));
 
-                    for (int i = 0; i < chunk.Len; i++) {
-                        int cell = chunk.i0 + i;
-                        StateVector state = new StateVector(
-                            meanValues.ExtractSubArrayShallow(i, -1).To1DArray(),
-                            program.SpeciesMap.GetMaterial(double.NaN));
+                        for (int i = 0; i < chunk.Len; i++) {
+                            int cell = chunk.i0 + i;
+                            StateVector state = new StateVector(
+                                meanValues.ExtractSubArrayShallow(i, -1).To1DArray(),
+                                program.SpeciesMap.GetMaterial(double.NaN));
 
-                        double localViscosity = program.Control.ArtificialViscosityLaw.GetViscosity(
-                           cell, h_min[cell], state);
+                            double localViscosity = program.Control.ArtificialViscosityLaw.GetViscosity(
+                               cell, h_min[cell], state);
 
-                        Debug.Assert(localViscosity >= 0.0);
+                            Debug.Assert(localViscosity >= 0.0);
 
-                        avField.SetMeanValue(cell, localViscosity);
-                    }
-                }
-
-                // Project visocsity onto continuous, multilinear space
-                if (D < 3) {
-                    // Standard version
-                    if (avSpecFEMBasis == null || !avField.Basis.Equals(avSpecFEMBasis.ContainingDGBasis)) {
-                        avSpecFEMBasis = new SpecFemBasis((BoSSS.Foundation.Grid.Classic.GridData)program.GridData, 2);
-                    }
-                    SpecFemField specFemField = new SpecFemField(avSpecFEMBasis);
-                    specFemField.ProjectDGFieldMaximum(1.0, avField);
-                    avField.Clear();
-                    specFemField.AccToDGField(1.0, avField);
-                    avField.Clear(CellMask.GetFullMask(program.GridData).Except(program.SpeciesMap.SubGrid.VolumeMask));
-
-                    // Continuous DG version
-                    //Basis continuousDGBasis = new Basis(program.GridData, 2);
-                    //ContinuousDGField continuousDGField = new ContinuousDGField(continuousDGBasis);
-                    //continuousDGField.ProjectDGField(1.0, avField);
-                    //avField.Clear();
-                    //continuousDGField.AccToDGField(1.0, avField);
-                    //avField.Clear(CellMask.GetFullMask(program.GridData).Except(program.SpeciesMap.SubGrid.VolumeMask));
-                } else {
-                    if (program.GridData.MpiSize > 1) {
-                        throw new NotImplementedException();
+                            avField.SetMeanValue(cell, localViscosity);
+                        }
                     }
 
-                    // Version that should finally also work in 3D
-                    RefElement refElement = ((BoSSS.Foundation.Grid.Classic.GridCommons)(program.Grid)).RefElements[0];
-                    int N = program.GridData.iLogicalCells.NoOfLocalUpdatedCells;
-                    int V = refElement.NoOfVertices;
+                    // Project visocsity onto continuous, multilinear space
+                    if (D < 3) {
+                        // Standard version
+                        if (avSpecFEMBasis == null || !avField.Basis.Equals(avSpecFEMBasis.ContainingDGBasis)) {
+                            avSpecFEMBasis = new SpecFemBasis((BoSSS.Foundation.Grid.Classic.GridData)program.GridData, 2);
+                        }
+                        SpecFemField specFemField = new SpecFemField(avSpecFEMBasis);
+                        specFemField.ProjectDGFieldMaximum(1.0, avField);
+                        avField.Clear();
+                        specFemField.AccToDGField(1.0, avField);
+                        avField.Clear(CellMask.GetFullMask(program.GridData).Except(program.SpeciesMap.SubGrid.VolumeMask));
 
-                    // Sample maximum at vertices
-                    MultidimensionalArray vertexValues = avField.Evaluate(refElement.Vertices);
-                    for (int cell = 0; cell < N; cell++) {
-                        for (int node = 0; node < vertexValues.GetLength(1); node++) {
-                            double x = vertexValues[cell, node, 0];
-                            double y = vertexValues[cell, node, 1];
-                            double z = vertexValues[cell, node, 2];
-                            double value = vertexValues[cell, node, D];
+                        // Continuous DG version
+                        //Basis continuousDGBasis = new Basis(program.GridData, 2);
+                        //ContinuousDGField continuousDGField = new ContinuousDGField(continuousDGBasis);
+                        //continuousDGField.ProjectDGField(1.0, avField);
+                        //avField.Clear();
+                        //continuousDGField.AccToDGField(1.0, avField);
+                        //avField.Clear(CellMask.GetFullMask(program.GridData).Except(program.SpeciesMap.SubGrid.VolumeMask));
+                    } else {
+                        if (program.GridData.MpiSize > 1) {
+                            throw new NotImplementedException();
+                        }
 
-                            for (int coCell = 0; coCell < cell; coCell++) {
-                                for (int coNode = 0; coNode < vertexValues.GetLength(1); coNode++) {
-                                    double coX = vertexValues[coCell, coNode, 0];
-                                    double coY = vertexValues[coCell, coNode, 1];
-                                    double coZ = vertexValues[coCell, coNode, 2];
+                        // Version that should finally also work in 3D
+                        RefElement refElement = ((BoSSS.Foundation.Grid.Classic.GridCommons)(program.Grid)).RefElements[0];
+                        int N = program.GridData.iLogicalCells.NoOfLocalUpdatedCells;
+                        int V = refElement.NoOfVertices;
 
-                                    if (Math.Abs(x - coX) < 1e-15
-                                        && Math.Abs(y - coY) < 1e-15
-                                        && Math.Abs(z - coZ) < 1e-15) {
-                                        // Same point in space!
+                        // Sample maximum at vertices
+                        MultidimensionalArray vertexValues = avField.Evaluate(refElement.Vertices);
+                        for (int cell = 0; cell < N; cell++) {
+                            for (int node = 0; node < vertexValues.GetLength(1); node++) {
+                                double x = vertexValues[cell, node, 0];
+                                double y = vertexValues[cell, node, 1];
+                                double z = vertexValues[cell, node, 2];
+                                double value = vertexValues[cell, node, D];
 
-                                        double coValue = vertexValues[coCell, coNode, D];
-                                        double max = Math.Max(value, coValue);
-                                        vertexValues[cell, node, D] = max;
-                                        vertexValues[coCell, coNode, D] = max;
-                                        break;
+                                for (int coCell = 0; coCell < cell; coCell++) {
+                                    for (int coNode = 0; coNode < vertexValues.GetLength(1); coNode++) {
+                                        double coX = vertexValues[coCell, coNode, 0];
+                                        double coY = vertexValues[coCell, coNode, 1];
+                                        double coZ = vertexValues[coCell, coNode, 2];
+
+                                        if (Math.Abs(x - coX) < 1e-15
+                                            && Math.Abs(y - coY) < 1e-15
+                                            && Math.Abs(z - coZ) < 1e-15) {
+                                            // Same point in space!
+
+                                            double coValue = vertexValues[coCell, coNode, D];
+                                            double max = Math.Max(value, coValue);
+                                            vertexValues[cell, node, D] = max;
+                                            vertexValues[coCell, coNode, D] = max;
+                                            break;
+                                        }
                                     }
                                 }
                             }
-                        }
 
-                        // Nodal projection using tri-linear coefficients only
-                        avField.Clear();
-                        ScalarFunctionEx func = delegate (int j0, int Len, NodeSet nodes, MultidimensionalArray result) {
-                            for (int i = j0; i < Len; i++) {
-                                for (int node = 0; node < vertexValues.GetLength(1); node++) {
-                                    result[i, node] = vertexValues[i, node, D];
+                            // Nodal projection using tri-linear coefficients only
+                            avField.Clear();
+                            ScalarFunctionEx func = delegate (int j0, int Len, NodeSet nodes, MultidimensionalArray result) {
+                                for (int i = j0; i < Len; i++) {
+                                    for (int node = 0; node < vertexValues.GetLength(1); node++) {
+                                        result[i, node] = vertexValues[i, node, D];
+                                    }
                                 }
-                            }
-                        };
-                        avField.ProjectNodalMultilinear(1.0, func, refElement.Vertices);
+                            };
+                            avField.ProjectNodalMultilinear(1.0, func, refElement.Vertices);
+                        }
                     }
                 }
             });
