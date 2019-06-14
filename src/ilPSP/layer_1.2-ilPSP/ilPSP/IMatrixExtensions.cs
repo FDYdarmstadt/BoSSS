@@ -1944,6 +1944,9 @@ namespace ilPSP {
             int I = Mtx.NoOfRows;
 
             (var RRE, var pivots, var cols, int rank) = ReducedRowEchelonForm(Mtx);
+
+            Console.WriteLine("The rank of the matrix coming from the Reduced Row Echelon Form: rank={0}", rank);
+
             if (cols.Length != Mtx.NoOfCols - rank)
                 throw new ArithmeticException("Error in reduced row echelon form.");
 
