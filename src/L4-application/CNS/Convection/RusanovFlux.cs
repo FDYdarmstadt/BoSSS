@@ -35,7 +35,7 @@ namespace CNS.Convection {
         /// <param name="boundaryMap"><see cref="EulerFlux"/></param>
         /// <param name="equationComponent"><see cref="EulerFlux"/></param>
         /// <param name="speciesMap"><see cref="EulerFlux"/></param>
-        public RusanovFlux(CNSControl config, IBoundaryConditionMap boundaryMap, IEulerEquationComponent equationComponent, ISpeciesMap speciesMap)
+        public RusanovFlux(CompressibleControl config, IBoundaryConditionMap boundaryMap, IEulerEquationComponent equationComponent, ISpeciesMap speciesMap)
             : base(config, boundaryMap, equationComponent, speciesMap) {
         }
 
@@ -70,7 +70,7 @@ namespace CNS.Convection {
         /// S^+ = \max \{|u_L| + a_L, |u_r| + a_R\}
         /// \f$ 
         /// </returns>
-        protected internal override double InnerEdgeFlux(double[] x, double time, StateVector stateIn, StateVector stateOut, ref Vector normal, int edgeIndex) {
+        protected override double InnerEdgeFlux(double[] x, double time, StateVector stateIn, StateVector stateOut, ref Vector normal, int edgeIndex) {
             double waveSpeedIn = Math.Abs(stateIn.Velocity * normal) + stateIn.SpeedOfSound;
             double waveSpeedOut = Math.Abs(stateOut.Velocity * normal) + stateOut.SpeedOfSound;
             double penalty = Math.Max(waveSpeedIn, waveSpeedOut);
