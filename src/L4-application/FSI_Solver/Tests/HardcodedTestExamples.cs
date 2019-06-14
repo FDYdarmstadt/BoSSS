@@ -548,8 +548,8 @@ namespace BoSSS.Application.FSI_Solver {
 
                 int q, r;
 
-                q = 60;
-                r = 60;
+                q = 30;
+                r = 30;
 
                 double[] Xnodes = GenericBlas.Linspace(-1.5 * BaseSize, 1.5 * BaseSize, q + 1);
                 double[] Ynodes = GenericBlas.Linspace(-1.5 * BaseSize, 1.5 * BaseSize, r + 1);
@@ -618,11 +618,6 @@ namespace BoSSS.Application.FSI_Solver {
                 //thickness_P = 0.1,
                 particleDensity = 4,
                 GravityVertical = -9.81,
-                //AddaptiveUnderrelaxation = true,
-                //underrelaxation_factor = 75,
-                ClearSmallValues = false,
-                neglectAddedDamping = true,
-                IncludeRotation = false,
             });
 
             C.Particles.Add(new Particle_superEllipsoid(new double[] { 0.45, 0 }, startAngl: 45)
@@ -674,7 +669,7 @@ namespace BoSSS.Application.FSI_Solver {
             C.dtMax = dt;
             C.dtMin = dt;
             C.Endtime = 10.0;
-            C.NoOfTimesteps = 800;
+            C.NoOfTimesteps = 1000;
 
             // haben fertig...
             // ===============

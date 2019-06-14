@@ -66,8 +66,8 @@ namespace FSI_Solver
             //Particle1.m_collidedWithParticle[m_Particles.IndexOf(Particle0)] = true;
 
             // Bool if force integration should be skipped
-            //Particle0.skipForceIntegration = true;
-            //Particle1.skipForceIntegration = true;
+            Particle0.skipForceIntegration = true;
+            Particle1.skipForceIntegration = true;
 
             // coefficient of restitution (e=0 pastic; e=1 elastic)
             double e = CoefficientOfRestitution;
@@ -824,20 +824,20 @@ namespace FSI_Solver
                 Console.WriteLine("DetectCollisionVn_P1: " + DetectCollisionVn_P1);
                 if (DetectCollisionVn_P1 - DetectCollisionVn_P0 == 0)
                     return double.MaxValue;
-                Dynamic_dt = 0.9 * Distance / (DetectCollisionVn_P1 - DetectCollisionVn_P0);
+                Dynamic_dt = 0.99 * Distance / (DetectCollisionVn_P1 - DetectCollisionVn_P0);
                 Console.WriteLine("Dynamic_dt: " + Dynamic_dt);
             }
             else if(DetectCollisionVn_P0 == 0)
                 return double.MaxValue;
             else
-                Dynamic_dt = 0.9 * Distance / (-DetectCollisionVn_P0);
+                Dynamic_dt = 0.99 * Distance / (-DetectCollisionVn_P0);
                 
             return Dynamic_dt;
         }
 
         internal void UpdateParticleState(Particle particle, double Dynamic_dt, int SpatialDim)
         {
-            if (Dynamic_dt < 0)
+            if (Dynamic_dt < 0 || Dynamic_dt == double.MaxValue)
             {
                 for (int d = 0; d < SpatialDim; d++)
                 {
@@ -845,11 +845,16 @@ namespace FSI_Solver
                 }
                 particle.Angle[0] = particle.Angle[1];
             }
-            for (int d = 0; d < SpatialDim; d++)
+            else
             {
-                particle.Position[0][d] = particle.Position[0][d] + (particle.TranslationalVelocity[1][d] + particle.TranslationalVelocity[0][d]) * Dynamic_dt / 2 + (particle.TranslationalAcceleration[1][d] + particle.TranslationalAcceleration[0][d]) * Dynamic_dt.Pow2() / 4;
+                for (int d = 0; d < SpatialDim; d++)
+                {
+                    particle.Position[0][d] = particle.Position[0][d] + (particle.TranslationalVelocity[1][d] + particle.TranslationalVelocity[0][d]) * Dynamic_dt / 2 + (particle.TranslationalAcceleration[1][d] + particle.TranslationalAcceleration[0][d]) * Dynamic_dt.Pow2() / 4;
+                    if (double.IsNaN(particle.Position[0][d]) || double.IsInfinity(particle.Position[0][d]))
+                        throw new ArithmeticException("Error trying to update particle position. Value:  " + particle.Position[0][d]);
+                }
+                particle.Angle[0] = particle.Angle[0] + (particle.RotationalVelocity[1] + particle.RotationalVelocity[0]) * Dynamic_dt / 2 + (particle.RotationalAcceleration[0] + particle.RotationalAcceleration[1]) * Dynamic_dt.Pow2() / 4;
             }
-            particle.Angle[0] = particle.Angle[0] + (particle.RotationalVelocity[1] + particle.RotationalVelocity[0]) * Dynamic_dt / 2 + (particle.RotationalAcceleration[0] + particle.RotationalAcceleration[1]) * Dynamic_dt.Pow2() / 4;
         }
 
         /// <summary>

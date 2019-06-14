@@ -1132,6 +1132,11 @@ namespace BoSSS.Application.FSI_Solver
                         p.CalculateAcceleration(dt, ((FSI_Control)Control).Timestepper_LevelSetHandling == LevelSetHandling.FSI_LieSplittingFullyCoupled, false);
                         p.UpdateParticleVelocity(dt);
                     }
+                    foreach (Particle p in m_Particles)
+                    {
+                        if (p.skipForceIntegration)
+                            p.skipForceIntegration = false;
+                    }
                     if (m_Particles.Count() > 1)
                         CalculateCollision(m_Particles, LsTrk.GridDat.Cells.h_minGlobal, dt, iteration_counter);
                     for (int p = 0; p < m_Particles.Count(); p++)
@@ -1151,11 +1156,6 @@ namespace BoSSS.Application.FSI_Solver
                     base.QueryHandler.ValueQuery("C_Lift", 2 * force[1], true); // Only for Diameter 1 (TestCase NSE stationary)
                     base.QueryHandler.ValueQuery("Angular_Velocity", MPIangularVelocity, true); // (TestCase FlowRotationalCoupling)
                     
-                    foreach (Particle p in m_Particles)
-                    {
-                        if (p.skipForceIntegration)
-                            p.skipForceIntegration = false;
-                    }
                 }
                 // =============================================
                 // particle motion & collisions plus flow solver
@@ -1214,6 +1214,11 @@ namespace BoSSS.Application.FSI_Solver
                                 break;
                             Auxillary.CalculateParticleResidual(m_Particles, ForcesOldSquared, TorqueOldSquared, iteration_counter, ((FSI_Control)Control).max_iterations_fully_coupled, out posResidual_splitting, out iteration_counter);
                         }
+                        foreach (Particle p in m_Particles)
+                        {
+                            if (p.skipForceIntegration)
+                                p.skipForceIntegration = false;
+                        }
                         if (m_Particles.Count() > 1)
                             CalculateCollision(m_Particles, LsTrk.GridDat.Cells.h_minGlobal, dt, iteration_counter);
                         for (int p = 0; p < m_Particles.Count(); p++)
@@ -1225,11 +1230,6 @@ namespace BoSSS.Application.FSI_Solver
                         foreach (Particle p in m_Particles)
                         {
                             p.UpdateParticlePositionAndAngle(dt);
-                        }
-                        foreach (Particle p in m_Particles)
-                        {
-                            if (p.skipForceIntegration)
-                                p.skipForceIntegration = false;
                         }
                         Auxillary.PrintResultToConsole(m_Particles, phystime, dt, iteration_counter, true, out double MPIangularVelocity, out force);
                         // Save for NUnit Test
@@ -1544,11 +1544,6 @@ namespace BoSSS.Application.FSI_Solver
                                     DistanceVector.SetSubArray(temp_DistanceVector, new int[] { p0, p1, -1 });
                                     ClosestPoint_P0.SetSubArray(temp_ClosestPoint_p0, new int[] { p0, p1, -1 });
                                     ClosestPoint_P1.SetSubArray(temp_ClosestPoint_p1, new int[] { p0, p1, -1 });
-                                    //if (temp_Distance < hmin * 1e0)
-                                    //{
-                                    //    Particle0.skipForceIntegration = true;
-                                    //    Particle1.skipForceIntegration = true;
-                                    //}
                                     if (temp_SaveTimeStep < SaveTimeStep && temp_SaveTimeStep > 0)
                                     {
                                         SaveTimeStep = temp_SaveTimeStep;
@@ -1559,16 +1554,12 @@ namespace BoSSS.Application.FSI_Solver
                                         SaveTimeStep = -dt;
                                         MinDistance = double.MaxValue;
                                         Overlapping = true;
-                                        Console.WriteLine("Overlapping");
                                     }
                                 }
                             }
-                            Console.WriteLine("SaveTimeStep: " + SaveTimeStep);
-                            Console.WriteLine("MinDistance: " + MinDistance);
                             if (SaveTimeStep != -dt)
                                 AccDynamicTimestep += SaveTimeStep;
-                            Console.WriteLine("AccDynamicTimestep: " + AccDynamicTimestep);
-                            if (MinDistance < MaxDistance && Overlapping)
+                            if (SaveTimeStep != -dt && Overlapping)
                                 Overlapping = false;
                             if ((AccDynamicTimestep > dt || MinDistance < MaxDistance) && !Overlapping)
                             {
