@@ -30,7 +30,7 @@ using BoSSS.Foundation.Grid.Aggregation;
 using ilPSP;
 using ilPSP.Utils;
 
-namespace BoSSS.Solution{
+namespace BoSSS.Solution {
 
     public class SolverFactory {
 

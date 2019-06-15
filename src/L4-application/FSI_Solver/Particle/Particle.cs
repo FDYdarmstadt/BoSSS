@@ -172,7 +172,7 @@ namespace BoSSS.Application.FSI_Solver
         /// <summary>
         /// Scaling parameter for added damping.
         /// </summary>
-        private readonly double beta = 1.5;
+        private readonly double beta = 1;
         #endregion
 
         #region Geometric parameters
@@ -262,6 +262,12 @@ namespace BoSSS.Application.FSI_Solver
         /// </summary>
         [DataMember]
         public List<double[]> CollisionPositionCorrection = new List<double[]>();
+
+        /// <summary>
+        /// The translational velocity of the particle in the current time step. This list is used by the momentum conservation model.
+        /// </summary>
+        [DataMember]
+        public double CollisionTimestep = new double();
 
         /// <summary>
         /// The translational velocity of the particle in the current time step. This list is used by the momentum conservation model.
@@ -394,16 +400,17 @@ namespace BoSSS.Application.FSI_Solver
         readonly private ParticleUnderrelaxation Underrelaxation = new ParticleUnderrelaxation();
         [NonSerialized]
         readonly private ParticleAcceleration Acceleration = new ParticleAcceleration();
-        internal void UpdateParticleState(double dt)
+        internal void UpdateParticleVelocity(double dt)
         {
-            //if (!skipForceIntegration)
-            {
-                CalculateTranslationalVelocity(dt);
-                CalculateAngularVelocity(dt);
-            }
+            CalculateTranslationalVelocity(dt);
+            CalculateAngularVelocity(dt);
+        }
+
+        internal void UpdateParticlePositionAndAngle(double dt)
+        {
             CalculateParticlePosition(dt);
             CalculateParticleAngle(dt);
-            //ComputeParticleRe(FluidViscosity);
+            CollisionTimestep = 0;
         }
 
         /// <summary>
@@ -420,28 +427,19 @@ namespace BoSSS.Application.FSI_Solver
             if (SpatialDim != 2 && SpatialDim != 3)
                 throw new NotSupportedException("Unknown particle dimension: SpatialDim = " + SpatialDim);
 
+            int ClearAcceleartion = CollisionTimestep != 0 ? 0 : 1;
             if (IncludeTranslation == true) {
-                for (int d = 0; d < SpatialDim; d++) {
-                    bool AnyCollision = false;
-                    for (int p = 0; p < m_collidedWithParticle.Length; p++)
-                    {
-                        if (m_collidedWithParticle[p])
-                        {
-                            AnyCollision = true;
-                        }
-                    }
-                    if (!AnyCollision)
-                        Position[0][d] = Position[1][d] + TranslationalVelocity[1][d] * dt + (TranslationalAcceleration[1][d] + TranslationalAcceleration[0][d]) * dt.Pow2() / 4;
-                    else
-                    {
-                        double TimePreCollision = TranslationalVelocity[1][d] != 0 ? TotalCollisionPositionCorrection[d] / TranslationalVelocity[1][d] : 0;
-                        Position[0][d] = Position[1][d] + (dt - TimePreCollision) * (0 + TranslationalVelocity[0][d]) / 2 - TotalCollisionPositionCorrection[d];
-                    }
+                for (int d = 0; d < SpatialDim; d++)
+                {
+                    Position[0][d] = Position[1][d] + (TranslationalVelocity[1][d] + TranslationalVelocity[0][d]) * (dt - CollisionTimestep) / 2 + ClearAcceleartion * (TranslationalAcceleration[1][d] + TranslationalAcceleration[0][d]) * (dt - CollisionTimestep).Pow2() / 4;
                     if (double.IsNaN(Position[0][d]) || double.IsInfinity(Position[0][d]))
                         throw new ArithmeticException("Error trying to update particle position. Value:  " + Position[0][d]);
                 }
-            } else {
-                for (int d = 0; d < SpatialDim; d++) {
+            }
+            else
+            {
+                for (int d = 0; d < SpatialDim; d++)
+                {
                     Position[0][d] = Position[1][d];
                     TranslationalAcceleration[0][d] = 0;
                     TranslationalVelocity[0][d] = 0;
@@ -467,7 +465,7 @@ namespace BoSSS.Application.FSI_Solver
                 if (SpatialDim != 2)
                     throw new NotSupportedException("Unknown particle dimension: SpatialDim = " + SpatialDim);
 
-                Angle[0] = Angle[1] + RotationalVelocity[1] * dt + dt.Pow2() * (RotationalAcceleration[1] + RotationalAcceleration[0]) / 4;
+                Angle[0] = Angle[1] + (RotationalVelocity[1] + RotationalVelocity[0]) * (dt - CollisionTimestep) / 2 + (dt - CollisionTimestep).Pow2() * (RotationalAcceleration[1] + RotationalAcceleration[0]) / 4;
                 //for (int p = 0; p < m_collidedWithParticle.Length; p++)
                 //{
                 //    if (m_collidedWithParticle[p])
@@ -537,7 +535,7 @@ namespace BoSSS.Application.FSI_Solver
         /// Calculate the new acceleration (translational and rotational)
         /// </summary>
         /// <param name="dt"></param>
-        public void CalculateAcceleration(double dt, bool FullyCoupled)
+        public void CalculateAcceleration(double dt, bool FullyCoupled, bool IncludeHydrodynamics)
         {
             if (iteration_counter_P == 0 || FullyCoupled == false)
             {
@@ -546,7 +544,7 @@ namespace BoSSS.Application.FSI_Solver
             }
 
             // Include Gravitiy
-            if(!skipForceIntegration)
+            if(!skipForceIntegration && !IncludeHydrodynamics)
                 HydrodynamicForces[0][1] += GravityVertical * Mass_P;
             double[,] CoefficientMatrix = Acceleration.CalculateCoefficients(AddedDampingTensor, Mass_P, MomentOfInertia_P, dt, AddedDampingCoefficient);
             double Denominator = Acceleration.CalculateDenominator(CoefficientMatrix);
@@ -736,9 +734,9 @@ namespace BoSSS.Application.FSI_Solver
             ).Execute();
 
             // add gravity
-            //{
-            //    Forces[1] += (particleDensity - fluidDensity) * Area_P * GravityVertical;
-            //}
+            {
+                Forces[1] += (particleDensity - fluidDensity) * Area_P * GravityVertical;
+            }
 
             if (neglectAddedDamping == false) {
                 Forces[0] = Forces[0] - AddedDampingCoefficient * dt * (AddedDampingTensor[0, 0] * TranslationalAcceleration[0][0] + AddedDampingTensor[1, 0] * TranslationalAcceleration[0][1] + AddedDampingTensor[0, 2] * RotationalAcceleration[0]);
@@ -795,6 +793,13 @@ namespace BoSSS.Application.FSI_Solver
                 }
                 HydrodynamicTorque[0] = RelaxatedForceAndTorque[SpatialDim];
             }
+            //for (int d = 0; d < SpatialDim; d++)// changes sign depending on the sign of Forces[d], should increase the convergence rate. (testing needed)
+            //{
+            //    if (Math.Abs(HydrodynamicForces[0][d] - Forces[0]) > Math.Abs(Forces[d]))
+            //    {
+            //        HydrodynamicForces[0][d] *= -1;
+            //    }
+            //}
             if (double.IsNaN(HydrodynamicForces[0][0]) || double.IsInfinity(HydrodynamicForces[0][0]))
                 throw new ArithmeticException("Error trying to calculate hydrodynamic forces (x). Value:  " + HydrodynamicForces[0][0]);
             if (double.IsNaN(HydrodynamicForces[0][1]) || double.IsInfinity(HydrodynamicForces[0][1]))
