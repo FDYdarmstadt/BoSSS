@@ -18,7 +18,7 @@ using BoSSS.Solution.CompressibleFlowCommon;
 using BoSSS.Solution.CompressibleFlowCommon.ShockCapturing;
 using System;
 
-namespace CNS.ShockCapturing {
+namespace BoSSS.Solution.CompressibleFlowCommon.ShockCapturing {
 
     /// <summary>
     /// An artificial viscosity law with a smooth transitioning between full

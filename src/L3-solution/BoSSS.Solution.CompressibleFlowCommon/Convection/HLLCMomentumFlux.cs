@@ -15,11 +15,9 @@ limitations under the License.
 */
 
 using BoSSS.Platform.LinAlg;
-using BoSSS.Solution.CompressibleFlowCommon;
-using BoSSS.Solution.CompressibleFlowCommon.Convection;
 using BoSSS.Solution.CompressibleFlowCommon.Boundary;
 
-namespace CNS.Convection {
+namespace BoSSS.Solution.CompressibleFlowCommon.Convection {
 
     /// <summary>
     /// Implements the parts of the HLLCFlux specific to the momentum
@@ -40,7 +38,7 @@ namespace CNS.Convection {
         /// <param name="boundaryMap"><see cref="HLLCFlux"/></param>
         /// <param name="equationComponent"><see cref="HLLCFlux"/></param>
         /// <param name="speciesMap"><see cref="HLLCFlux"/></param>
-        public HLLCMomentumFlux(CNSControl config, IBoundaryConditionMap boundaryMap, EulerMomentumComponent equationComponent, ISpeciesMap speciesMap)
+        public HLLCMomentumFlux(CompressibleControl config, IBoundaryConditionMap boundaryMap, EulerMomentumComponent equationComponent, ISpeciesMap speciesMap)
             : base(config, boundaryMap, equationComponent, speciesMap) {
             this.momentumComponent = equationComponent.MomentumComponent;
         }

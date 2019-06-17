@@ -85,6 +85,7 @@
     <Compile Include="active_particles\ActivePressureAtIB.cs" />
     <Compile Include="active_particles\HardcodedControl\HardcodedControl_tiltedChannel.cs" />
     <Compile Include="active_particles\HardcodedControl\HardcodedControl_straightChannel.cs" />
+    <Compile Include="active_particles\HardcodedControl\HowToCrashThisSolver.cs" />
     <Compile Include="active_particles\HardcodedControl\ParticleStokesFlow.cs" />
     <Compile Include="FSI_Collision.cs" />
     <Compile Include="FSI_TimestepInfo.cs" />
@@ -96,7 +97,7 @@
     <Compile Include="Particle\ParticleUnderrelaxation.cs" />
     <Compile Include="Particle\Shapes\Falle_Rechts.cs" />
     <Compile Include="Particle\Shapes\Falle_Links.cs" />
-    <Compile Include="Particle\Shapes\Pentagone.cs" />
+    <Compile Include="Particle\Shapes\Particle_Pentagone.cs" />
     <Compile Include="Particle\Shapes\Particle_Bean.cs" />
     <Compile Include="Particle\Shapes\Particle_superEllipsoid.cs" />
     <Compile Include="Particle\Shapes\Particle_Sphere.cs" />

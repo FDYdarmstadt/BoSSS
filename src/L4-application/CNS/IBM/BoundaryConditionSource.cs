@@ -27,6 +27,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using BoSSS.Solution.CompressibleFlowCommon.Diffusion;
 
 namespace CNS.IBM {
 

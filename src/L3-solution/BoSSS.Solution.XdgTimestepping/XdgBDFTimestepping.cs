@@ -70,11 +70,13 @@ namespace BoSSS.Solution.XdgTimestepping {
         /// <param name="_CutCellQuadOrder">Order of quadrature in cut cells, required e.g. for <see cref="LevelSetTracker.GetXDGSpaceMetrics(SpeciesId[], int, int)"/></param>
         /// <param name="_SpId">Species to compute, actually a subset of <see cref="LevelSetTracker.SpeciesIdS"/></param>
         /// <param name="_MultigridSequence"></param>
+        /// <param name="_ComputeMassMatrix"><see cref="XdgTimesteppingBase.ComputeMassMatrix"/></param>
         public XdgBDFTimestepping(IEnumerable<DGField> Fields,
             IEnumerable<DGField> IterationResiduals,
             LevelSetTracker LsTrk,
             bool DelayInit,
             DelComputeOperatorMatrix _ComputeOperatorMatrix,
+            DelComputeMassMatrix _ComputeMassMatrix,
             DelUpdateLevelset _UpdateLevelset,
             int BDForder,
             LevelSetHandling _LevelSetHandling,
@@ -107,6 +109,7 @@ namespace BoSSS.Solution.XdgTimestepping {
             this.Config_MassMatrixShapeandDependence = _MassMatrixShapeandDependence;
             this.Config_SpatialOperatorType = _SpatialOperatorType;
             this.ComputeOperatorMatrix = _ComputeOperatorMatrix;
+            this.ComputeMassMatrix = _ComputeMassMatrix;
             this.UpdateLevelset = _UpdateLevelset;
             this.Config_MassScale = _MassScale;
             this.Config_AgglomerationThreshold = _AgglomerationThreshold;
@@ -458,18 +461,17 @@ namespace BoSSS.Solution.XdgTimestepping {
         /// is the simulation does not depend on the initial value.
         /// </remarks>
         public void SingleInit() {
+            using (new FuncTrace()) {
 
-            using (new FuncTrace()) { }
+                InitTimestepping(true);
 
-            InitTimestepping(true);
+                if (Timestepper_Init == TimeStepperInit.IncrementInit) {
+                    if (incrementTimesteps <= 1)
+                        throw new ArgumentOutOfRangeException("incrementInit needs a number of increment timesteps larger than 1");
 
-            if (Timestepper_Init == TimeStepperInit.IncrementInit) {
-                if (incrementTimesteps <= 1)
-                    throw new ArgumentOutOfRangeException("incrementInit needs a number of increment timesteps larger than 1");
-
-                InitIncrementStack();
+                    InitIncrementStack();
+                }
             }
-
         }
 
         /// <summary>
@@ -596,9 +598,10 @@ namespace BoSSS.Solution.XdgTimestepping {
                     //MassMatrixFactory MassFact = new MassMatrixFactory(CurrentStateMapping.BasisS.ElementAtMax(b => b.Degree), m_CurrentAgglomeration);
 
                     // matrix for time derivative
-                    MassMatrixFactory MassFact = m_LsTrk.GetXDGSpaceMetrics(base.Config_SpeciesToCompute, base.Config_CutCellQuadratureOrder).MassMatrixFactory;
+                    //MassMatrixFactory MassFact = m_LsTrk.GetXDGSpaceMetrics(base.Config_SpeciesToCompute, base.Config_CutCellQuadratureOrder).MassMatrixFactory;
                     m_Stack_MassMatrix[0] = new BlockMsrMatrix(CurrentStateMapping);
-                    MassFact.AccMassMatrix(m_Stack_MassMatrix[0], CurrentStateMapping, _alpha: Config_MassScale);
+                    //MassFact.AccMassMatrix(m_Stack_MassMatrix[0], CurrentStateMapping, _alpha: Config_MassScale);
+                    base.ComputeMassMatrixImpl(m_Stack_MassMatrix[0], 0);
 
                 }
             }
@@ -1057,7 +1060,8 @@ namespace BoSSS.Solution.XdgTimestepping {
 
                         // mass matrix for time derivative
                         m_Stack_MassMatrix[0] = new BlockMsrMatrix(CurrentStateMapping);
-                        MassFact.AccMassMatrix(m_Stack_MassMatrix[0], CurrentStateMapping, _alpha: Config_MassScale);
+                        //MassFact.AccMassMatrix(m_Stack_MassMatrix[0], CurrentStateMapping, _alpha: Config_MassScale);
+                        base.ComputeMassMatrixImpl(m_Stack_MassMatrix[0], m_CurrentPhystime + m_CurrentDt);
                     }
 
                     PrecondMassMatrix = m_PrecondMassMatrix;

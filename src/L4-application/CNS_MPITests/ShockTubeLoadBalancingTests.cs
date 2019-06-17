@@ -22,6 +22,7 @@ using BoSSS.Platform.LinAlg;
 using BoSSS.Solution;
 using BoSSS.Solution.CompressibleFlowCommon;
 using BoSSS.Solution.CompressibleFlowCommon.MaterialProperty;
+using BoSSS.Solution.CompressibleFlowCommon.ShockCapturing;
 using BoSSS.Solution.Queries;
 using CNS;
 using CNS.Convection;
@@ -65,7 +66,7 @@ namespace CNS_MPITests.Tests.LoadBalancing {
             //TestRebalancingForDG2WithRK1AndAV_IBM_AggOn();
 
             //TestRebalancingForDG2WithLTS1AndAV_IBM_AggOff();    // ok
-            TestRebalancingForDG2WithLTS1AndAV_IBM_AggOn();   // ok
+            //TestRebalancingForDG2WithLTS1AndAV_IBM_AggOn();   // ok
             TearDown();
         }
 
