@@ -152,6 +152,7 @@ namespace BoSSS.Application.FSI_Solver {
                 double temp1 = Math.Sin(InfinitisemalAngle[j]) * thickness_P;
                 SurfacePoints[0, j, 0] = (temp0 * Math.Cos(AngleS) - temp1 * Math.Sin(AngleS)) + PositionS[0];
                 SurfacePoints[0, j, 1] = (temp0 * Math.Sin(AngleS) + temp1 * Math.Cos(AngleS)) + PositionS[1];
+
             }
             return SurfacePoints;
         }
@@ -159,12 +160,17 @@ namespace BoSSS.Application.FSI_Solver {
         override public void GetSupportPoint(int SpatialDim, double[] Vector, double[] Position, double Angle, out double[] SupportPoint)
         {
             SupportPoint = new double[SpatialDim];
-
+            if (double.IsNaN(Vector[0]) || double.IsNaN(Vector[1]))
+                throw new ArithmeticException("Error trying to calculate VectorVectorVector Value:  " + Vector[0] + " VectorVectorVector " + Vector[1]);
             double[,] B = new double[2, 2];
             B[0, 0] = length_P * Math.Cos(Angle);
+            if (double.IsNaN(B[0, 0]))
+                throw new ArithmeticException("Error trying to calculate Angle Value:  " + B[0, 0] + " length_P " + length_P + " Math.Cos(Angle): " + Math.Cos(Angle) + " Angle " + Angle);
             B[0, 1] = -thickness_P * Math.Sin(Angle);
             B[1, 0] = length_P * Math.Sin(Angle);
             B[1, 1] = thickness_P * Math.Cos(Angle);
+            if (double.IsNaN(Angle))
+                throw new ArithmeticException("Error trying to calculate Angle Value:  " + Angle + " Angle " + Angle);
             double[,] BT = B.CloneAs();
             BT[0, 1] = B[1, 0];
             BT[1, 0] = B[0, 1];
@@ -174,9 +180,13 @@ namespace BoSSS.Application.FSI_Solver {
                 for (int j = 0; j < 2; j++)
                 {
                     temp[i] += BT[i, j] * Vector[j];
+                    if (double.IsNaN(temp[0]) || double.IsNaN(temp[1]))
+                        throw new ArithmeticException("Error trying to calculate temp Value:  " + temp[i] + "VectorVectorVector Value: " + Vector[j] + " BT[i, j] " + BT[i, j] + " afuduiof" + i + j);
                 }
             }
             double BetragTemp = Math.Sqrt(temp[0].Pow2() + temp[1].Pow2());
+            if (double.IsNaN(temp[0]) || double.IsNaN(temp[1]))
+                throw new ArithmeticException("Error trying to calculate temp Value:  " + temp[0] + " temp " + temp[1] + "VectorVectorVector Value: " + Vector[0] + " VectorVectorVector " + Vector[1]);
             for (int i = 0; i < 2; i++)
             {
                 temp[i] = temp[i] / BetragTemp;

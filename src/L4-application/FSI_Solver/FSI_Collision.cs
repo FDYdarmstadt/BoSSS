@@ -55,7 +55,7 @@ namespace FSI_Solver
         /// <param name="CoefficientOfRestitution">
         /// Coefficient of restitution.
         /// </param>
-        internal void ComputeMomentumBalanceCollision(Particle Particle0, Particle Particle1, double[] DistanceVector, double[] ClosestPoint_P0, double[] ClosestPoint_P1, double CoefficientOfRestitution)
+        internal void ComputeMomentumBalanceCollision(List<Particle> Particles, Particle Particle0, Particle Particle1, double[] DistanceVector, double[] ClosestPoint_P0, double[] ClosestPoint_P1, double CoefficientOfRestitution)
         {
             CalculateNormalAndTangentialVector(DistanceVector, out double[] NormalVector, out double[] TangentialVector);
             ProjectVelocity(NormalVector, TangentialVector, Particle0.TranslationalVelocity[0], out double collisionVn_P0, out double collisionVt_P0);
@@ -113,6 +113,12 @@ namespace FSI_Solver
 
             double tempCollisionVt_P0 = collisionVt_P0 * e;
             double tempCollisionVt_P1 = collisionVt_P1 * e;
+            Console.WriteLine("Collision between particle " + Particles.IndexOf(Particle0) + " and particle " + Particles.IndexOf(Particle1));
+            Console.WriteLine("Particle0 position " + Particle0.Position[0][0] + ", " + Particle0.Position[0][1]);
+            Console.WriteLine("Particle1 position " + Particle1.Position[0][0] + ", " + Particle1.Position[0][1]);
+            Console.WriteLine("DistanceVector[0]:    " + DistanceVector[0] + "   DistanceVector[1]:    " + DistanceVector[1]);
+            Console.WriteLine("collisionVn_P0:    " + collisionVn_P0 + "   collisionVn_P1:    " + collisionVn_P1);
+            Console.WriteLine("tempCollisionRot_P0:    " + tempCollisionRot_P0 + "   tempCollisionRot_P1:    " + tempCollisionRot_P1);
             Console.WriteLine("a0:    " + a0 + "   Fx:    " + (-Fx) + "      Fxrot:    " + (-Fxrot));
             Console.WriteLine("a1:    " + a1 + "   Fx:    " + Fx + "      Fxrot:    " + Fxrot);
 
@@ -149,10 +155,18 @@ namespace FSI_Solver
             if (_Particle.CollisionRotationalVelocity.Count() >= 1)
             {
                 _Particle.RotationalVelocity[0] = 0;
+                double temp_RotationalVelocity = 0;
                 for (int r = 0; r < _Particle.CollisionRotationalVelocity.Count(); r++)
                 {
-                    _Particle.RotationalVelocity[0] += _Particle.CollisionRotationalVelocity[r];
+                    temp_RotationalVelocity += _Particle.CollisionRotationalVelocity[r];
+                    if (double.IsNaN(temp_RotationalVelocity) || double.IsInfinity(temp_RotationalVelocity))
+                        throw new ArithmeticException("1Error trying to update particle position. temp_RotationalVelocity:  " + temp_RotationalVelocity);
                 }
+                temp_RotationalVelocity /= _Particle.CollisionRotationalVelocity.Count();
+                if (double.IsNaN(temp_RotationalVelocity) || double.IsInfinity(temp_RotationalVelocity))
+                    throw new ArithmeticException("2Error trying to update particle position. temp_RotationalVelocity:  " + temp_RotationalVelocity);
+                _Particle.RotationalVelocity[0] = temp_RotationalVelocity;
+                _Particle.CollisionRotationalVelocity.Clear();
             }
             if (_Particle.CollisionTranslationalVelocity.Count() >= 1)
             {
@@ -175,15 +189,20 @@ namespace FSI_Solver
                 double temp_TangentialVel = 0;
                 for (int t = 0; t < _Particle.CollisionTranslationalVelocity.Count(); t++)
                 {
-                    for (int d = 0; d < SpatialDim; d++)
-                    {
-                        Cos[t] += Normal[d] * _Particle.CollisionNormal[t][d];
-                    }
-                    Sin[t] = Cos[t] == 1 ? 0 : _Particle.CollisionNormal[t][0] > Normal[0] ? Math.Sqrt(1 + 1e-15 - Cos[t].Pow2()) : -Math.Sqrt(1 + 1e-15 - Cos[t].Pow2());
-                    temp_NormalVel += _Particle.CollisionTranslationalVelocity[t][0] * Cos[t] - _Particle.CollisionTranslationalVelocity[t][1] * Sin[t];
-                    temp_TangentialVel += _Particle.CollisionTranslationalVelocity[t][0] * Sin[t] + _Particle.CollisionTranslationalVelocity[t][1] * Cos[t];
-
+                    temp_NormalVel += _Particle.CollisionTranslationalVelocity[t][0] * Normal[0] + _Particle.CollisionTranslationalVelocity[t][1] * Normal[1];
+                    temp_TangentialVel += _Particle.CollisionTranslationalVelocity[t][0] * Tangential[0] + _Particle.CollisionTranslationalVelocity[t][1] * Tangential[1];
                 }
+                //for (int t = 0; t < _Particle.CollisionTranslationalVelocity.Count(); t++)
+                //{
+                //    for (int d = 0; d < SpatialDim; d++)
+                //    {
+                //        Cos[t] += Normal[d] * _Particle.CollisionNormal[t][d];
+                //    }
+                //    Sin[t] = Cos[t] == 1 ? 0 : _Particle.CollisionNormal[t][0] > Normal[0] ? Math.Sqrt(1 + 1e-15 - Cos[t].Pow2()) : -Math.Sqrt(1 + 1e-15 - Cos[t].Pow2());
+                //    temp_NormalVel += _Particle.CollisionTranslationalVelocity[t][0] * Cos[t] - _Particle.CollisionTranslationalVelocity[t][1] * Sin[t];
+                //    temp_TangentialVel += _Particle.CollisionTranslationalVelocity[t][0] * Sin[t] + _Particle.CollisionTranslationalVelocity[t][1] * Cos[t];
+
+                //}
                 temp_NormalVel /= _Particle.CollisionTranslationalVelocity.Count();
                 temp_TangentialVel /= _Particle.CollisionTranslationalVelocity.Count();
                 _Particle.TranslationalVelocity.Insert(0, new double[2]);
@@ -315,7 +334,7 @@ namespace FSI_Solver
                 }
                 //double[] vt = Aux.VectorDiff(null, v);
                 if (double.IsNaN(vt[0]) || double.IsNaN(vt[1]))
-                    throw new ArithmeticException("Error trying to calculate point0 Value:  " + vt[0] + " point1 " + vt[1]);
+                    throw new ArithmeticException("Error trying to calculate vt Value:  " + vt[0] + " vt " + vt[1]);
 
                 // =======================================================
                 // Step 1
@@ -325,7 +344,7 @@ namespace FSI_Solver
                 // =======================================================
                 CalculateSupportPoint(Particle0, SubParticleID0, Position0, Angle0, vt, lsTrk, out ClosestPoint0);
                 if (double.IsNaN(ClosestPoint0[0]) || double.IsNaN(ClosestPoint0[1]))
-                    throw new ArithmeticException("Error trying to calculate point0 Value:  " + ClosestPoint0[0] + " point1 " + ClosestPoint0[1]);
+                    throw new ArithmeticException("Error trying to calculate ClosestPoint0 Value:  " + ClosestPoint0[0] + " ClosestPoint0 " + ClosestPoint0[1]);
                 if (Particle1 != null)
                     CalculateSupportPoint(Particle1, SubParticleID1, Position1, Angle1, v, lsTrk, out ClosestPoint1);
                 else
@@ -336,6 +355,9 @@ namespace FSI_Solver
                     else
                         ClosestPoint1[0] = Position1[0];
                 }
+
+                if (double.IsNaN(ClosestPoint1[0]) || double.IsNaN(ClosestPoint1[1]))
+                    throw new ArithmeticException("Error trying to calculate ClosestPoint1 Value:  " + ClosestPoint1[0] + " ClosestPoint1 " + ClosestPoint1[1]);
                 SupportPoint = Aux.VectorDiff(ClosestPoint0, ClosestPoint1);
 
                 // =======================================================
@@ -344,7 +366,6 @@ namespace FSI_Solver
                 // =======================================================
                 if ((Aux.DotProduct(v,vt) - Aux.DotProduct(SupportPoint,vt)) >= -1e-12 && i != 0)
                 {
-                    Console.WriteLine("No of steps for distance algorithm: " + i);
                     break;
                 }
 
@@ -352,6 +373,8 @@ namespace FSI_Solver
                 // Step 3
                 // Add new support point to simplex
                 // =======================================================
+                if (double.IsNaN(SupportPoint[0]) || double.IsNaN(SupportPoint[1]))
+                    throw new ArithmeticException("Error trying to calculate SupportPoint Value:  " + SupportPoint[0] + " SupportPoint " + SupportPoint[1]);
                 Simplex.Insert(0, SupportPoint.CloneAs());
 
                 // =======================================================
@@ -393,6 +416,8 @@ namespace FSI_Solver
             Simplex = new List<double[]>();
             v0 = Aux.VectorDiff(Position0, Position1);
             Simplex.Add(v0.CloneAs());
+            if (double.IsNaN(v0[0]) || double.IsNaN(v0[1]))
+                throw new ArithmeticException("Error trying to calculate v0 Value:  " + v0[0] + " v0 " + v0[1]);
         }
 
         /// <summary>
@@ -521,6 +546,8 @@ namespace FSI_Solver
             if (Simplex.Count() == 1)
             {
                 v = Simplex[0];
+                if (double.IsNaN(v[0]) || double.IsNaN(v[1]))
+                    throw new ArithmeticException("Error trying to calculate v Value:  " + v[0] + " v " + v[1] + " Simplex count == 1");
             }
             else if (Simplex.Count() == 2)
             {
@@ -528,12 +555,16 @@ namespace FSI_Solver
                 {
                     v = Simplex[0].CloneAs();
                     Simplex.RemoveAt(1);
+                    if (double.IsNaN(v[0]) || double.IsNaN(v[1]))
+                        throw new ArithmeticException("Error trying to calculate v Value:  " + v[0] + " v " + v[1] + " Simplex count == 2.0");
                 }
 
                 else if (DotProd_Simplex[1][1] - DotProd_Simplex[0][1] <= 0)
                 {
                     v = Simplex[1].CloneAs();
                     Simplex.RemoveAt(0);
+                    if (double.IsNaN(v[0]) || double.IsNaN(v[1]))
+                        throw new ArithmeticException("Error trying to calculate v Value:  " + v[0] + " v " + v[1] + " Simplex count == 2.1");
                 }
                 else
                 {
@@ -545,6 +576,8 @@ namespace FSI_Solver
                     double Lambda = (Simplex[1][1] * AB[0] - Simplex[1][0] * AB[1]) / (AB[0].Pow2() + AB[1].Pow2());
                     v[0] = -Lambda * AB[1];
                     v[1] = Lambda * AB[0];
+                    if (double.IsNaN(v[0]) || double.IsNaN(v[1]))
+                        throw new ArithmeticException("Error trying to calculate v Value:  " + v[0] + " v " + v[1] + " Simplex count == 2.2"+ "AB: " + AB[0] + AB[1] + "Simplex11 " +Simplex[1][1]+  "Simplex10 " +Simplex[1][0]);
                 }
             }
             else if (Simplex.Count() == 3)
@@ -562,6 +595,8 @@ namespace FSI_Solver
                         Simplex.Clear();
                         Simplex.Add(v.CloneAs());
                         Return = true;
+                        if (double.IsNaN(v[0]) || double.IsNaN(v[1]))
+                            throw new ArithmeticException("Error trying to calculate v Value:  " + v[0] + " v " + v[1] + " Simplex count == 3.0");
                         break;
                     }
                 }
@@ -621,6 +656,8 @@ namespace FSI_Solver
                             Simplex.Add(tempSimplex1.CloneAs());
                             Simplex.Add(tempSimplex2.CloneAs());
                             Return = true;
+                            if (double.IsNaN(v[0]) || double.IsNaN(v[1]))
+                                throw new ArithmeticException("Error trying to calculate v Value:  " + v[0] + " v " + v[1] + " Simplex count == 3." + s1);
                             break;
                         }
                         if (counter == 3)
@@ -818,14 +855,9 @@ namespace FSI_Solver
                 for (int d = 0; d < 2; d++)
                     PointVelocity1[d] = particle1.TranslationalVelocity[0][d] + particle1.RotationalVelocity[0] * rMax_1;
                 ProjectVelocityOnVector(NormalVector, PointVelocity1, out double DetectCollisionVn_P1);
-                Console.WriteLine("NormalVector0: " + NormalVector[0]);
-                Console.WriteLine("NormalVector1: " + NormalVector[1]);
-                Console.WriteLine("DetectCollisionVn_P0: " + DetectCollisionVn_P0);
-                Console.WriteLine("DetectCollisionVn_P1: " + DetectCollisionVn_P1);
                 if (DetectCollisionVn_P1 - DetectCollisionVn_P0 == 0)
                     return double.MaxValue;
                 Dynamic_dt = 0.99 * Distance / (DetectCollisionVn_P1 - DetectCollisionVn_P0);
-                Console.WriteLine("Dynamic_dt: " + Dynamic_dt);
             }
             else if(DetectCollisionVn_P0 == 0)
                 return double.MaxValue;
@@ -854,6 +886,8 @@ namespace FSI_Solver
                         throw new ArithmeticException("Error trying to update particle position. Value:  " + particle.Position[0][d]);
                 }
                 particle.Angle[0] = particle.Angle[0] + (particle.RotationalVelocity[1] + particle.RotationalVelocity[0]) * Dynamic_dt / 2 + (particle.RotationalAcceleration[0] + particle.RotationalAcceleration[1]) * Dynamic_dt.Pow2() / 4;
+                if (double.IsNaN(particle.Angle[0]) || double.IsInfinity(particle.Angle[0]))
+                    throw new ArithmeticException("Error trying to update particle position. Value:  " + particle.Angle[0] + " RotatinalVelcotiy "+ particle.RotationalVelocity[1]+"dfhn"+particle.RotationalVelocity[0] + " Acceleration " + particle.RotationalAcceleration[0] + "gsg" + particle.RotationalAcceleration[1]);
             }
         }
 
@@ -955,42 +989,6 @@ namespace FSI_Solver
             for (int d = 0; d < RadialNormalVector.Length; d++)
             {
                 PointVelocityDueToRotation[d] = RadialLength * RotationalVelocity * RadialNormalVector[d];
-            }
-        }
-
-        /// <summary>
-        /// Predicts the particle state at the next timestep.
-        /// </summary>
-        /// <param name="particle">
-        /// </param>
-        /// <param name="SpatialDim">
-        /// </param>
-        /// <param name="dt">
-        /// The timestep.
-        /// </param>
-        /// <param name="Position">
-        /// New position of the particle.
-        /// </param>
-        /// <param name="TranslationalVelocity">
-        /// New velocity of the particle.
-        /// </param>
-        /// <param name="Angle">
-        /// New angle of the particle.
-        /// </param>
-        /// <param name="RotationalVelocity">
-        /// New rotational velocity of the particle.
-        /// </param>
-        internal void PredictParticleNextTimestep(Particle particle, int SpatialDim, double dt, out double[] Position, out double[] TranslationalVelocity, out double Angle, out double RotationalVelocity)
-        {
-            Position = new double[SpatialDim];
-            TranslationalVelocity = new double[SpatialDim];
-            Angle = particle.Angle[0] + particle.RotationalVelocity[0] * dt + (particle.RotationalAcceleration[1] + particle.RotationalAcceleration[0]) * dt.Pow2() / 4;
-            RotationalVelocity = particle.RotationalVelocity[0] + (particle.RotationalAcceleration[1] + particle.RotationalAcceleration[0]) * dt / 2;
-
-            for (int d = 0; d < SpatialDim; d++)
-            {
-                Position[d] = particle.Position[0][d] + particle.TranslationalVelocity[0][d] * dt + (particle.TranslationalAcceleration[1][d] + particle.TranslationalAcceleration[0][d]) * dt.Pow2() / 4;
-                TranslationalVelocity[d] = particle.TranslationalVelocity[0][d] + (particle.TranslationalAcceleration[1][d] + particle.TranslationalAcceleration[0][d]) * dt / 2;
             }
         }
     }

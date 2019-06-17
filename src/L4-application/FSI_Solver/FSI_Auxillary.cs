@@ -61,6 +61,10 @@ namespace FSI_Solver
         }
         internal double[] VectorDiff(double[] Vector0, double[] Vector1)
         {
+            if (double.IsNaN(Vector0[0]) || double.IsNaN(Vector0[1]))
+                throw new ArithmeticException("1Error trying to calculate Vector0 Value:  " + Vector0[0] + " Vector0 " + Vector0[1]);
+            if (double.IsNaN(Vector1[0]) || double.IsNaN(Vector1[1]))
+                throw new ArithmeticException("1Error trying to calculate Vector1 Value:  " + Vector1[0] + " Vector1 " + Vector1[1]);
             int Dim = Vector0 != null ? Vector0.Length : Vector1.Length;
             if (Vector0 == null)
             {
@@ -70,6 +74,10 @@ namespace FSI_Solver
                     Vector0[d] = 0;
                 }
             }
+            if (double.IsNaN(Vector0[0]) || double.IsNaN(Vector0[1]))
+                throw new ArithmeticException("12Error trying to calculate Vector0 Value:  " + Vector0[0] + " Vector0 " + Vector0[1]);
+            if (double.IsNaN(Vector1[0]) || double.IsNaN(Vector1[1]))
+                throw new ArithmeticException("12Error trying to calculate Vector1 Value:  " + Vector1[0] + " Vector1 " + Vector1[1]);
             if (Vector1 == null)
             {
                 Vector1 = Vector0.CloneAs();
@@ -78,6 +86,10 @@ namespace FSI_Solver
                     Vector1[d] = 0;
                 }
             }
+            if (double.IsNaN(Vector0[0]) || double.IsNaN(Vector0[1]))
+                throw new ArithmeticException("13Error trying to calculate Vector0 Value:  " + Vector0[0] + " Vector0 " + Vector0[1]);
+            if (double.IsNaN(Vector1[0]) || double.IsNaN(Vector1[1]))
+                throw new ArithmeticException("13Error trying to calculate Vector1 Value:  " + Vector1[0] + " Vector1 " + Vector1[1]);
             double[] ResultVector = new double[Dim];
             if (Vector0.Length != Vector1.Length)
                 throw new ArithmeticException("Mismatch in vector dimension");
@@ -85,6 +97,8 @@ namespace FSI_Solver
             {
                 ResultVector[d] = Vector0[d] - Vector1[d];
             }
+            if (double.IsNaN(ResultVector[0]) || double.IsNaN(ResultVector[1]))
+                throw new ArithmeticException("Error trying to calculate ResultVector Value:  " + ResultVector[0] + " ResultVector " + ResultVector[1]);
             return ResultVector;
         }
         internal double DotProduct(double[] Vector0, double[] Vector1)

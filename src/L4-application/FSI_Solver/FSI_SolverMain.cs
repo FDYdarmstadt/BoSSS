@@ -1065,7 +1065,6 @@ namespace BoSSS.Application.FSI_Solver
             for (int p = 0; p < m_Particles.Count(); p++)
             {
                 Particle CurrentParticle = m_Particles[p];
-                Console.WriteLine("skipForceIntegration = " + CurrentParticle.skipForceIntegration);
                 if (!((FSI_Control)Control).pureDryCollisions && !CurrentParticle.skipForceIntegration)
                     CurrentParticle.UpdateForcesAndTorque(Velocity, Pressure, LsTrk, Control.PhysicalParameters.mu_A, dt, Control.PhysicalParameters.rho_A, ((FSI_Control)Control).Timestepper_LevelSetHandling != LevelSetHandling.FSI_LieSplittingFullyCoupled);
                 else
@@ -1502,19 +1501,6 @@ namespace BoSSS.Application.FSI_Solver
 
                 if (ParticlesOfCurrentColor.Length > 1 && CurrentColor != 0)
                 {
-                    //for (int p1 = 0; p1 < ParticlesOfCurrentColor.Length; p1++)
-                    //{
-                    //    Console.WriteLine("I'm particle " + ParticlesOfCurrentColor[p1]);
-                    //    for (int p2 = p1 + 1; p2 < ParticlesOfCurrentColor.Length; p2++)
-                    //    {
-                    //        Console.WriteLine("And I'm particle " + ParticlesOfCurrentColor[p2]);
-                    //        double distance = 1E20;
-                    //        double[] distanceVec = new double[Grid.SpatialDimension];
-                    //        //ComputeCollisionTrigger(Particles[ParticlesOfCurrentColor[p1]], Particles[ParticlesOfCurrentColor[p2]], dt, out double Dynamic_dt, out double Distance, out double[] DistanceVector, out double[] ClosestPoint_p1, out double[] ClosestPoint_p2, out bool Overlapping);
-                    //        ComputeCollisionModel(hmin, Particles[ParticlesOfCurrentColor[p1]], Particles[ParticlesOfCurrentColor[p2]], ref distance, ref distanceVec, dt, iteration_counter, out bool Collided);
-                    //        CollidedWith[p1, p2] = Collided;
-                    //    }
-                    //}
                     int SpatialDim = 2;
                     MultidimensionalArray SaveTimeStepArray = MultidimensionalArray.Create(ParticlesOfCurrentColor.Length, ParticlesOfCurrentColor.Length);
                     MultidimensionalArray Distance = MultidimensionalArray.Create(ParticlesOfCurrentColor.Length, ParticlesOfCurrentColor.Length);
@@ -1527,6 +1513,7 @@ namespace BoSSS.Application.FSI_Solver
                     while (AccDynamicTimestep < dt)
                     {
                         double MinDistance = double.MaxValue;
+                        bool FirstIteration = true;
                         while (MinDistance > MaxDistance)
                         {
                             double SaveTimeStep = double.MaxValue;
@@ -1561,7 +1548,7 @@ namespace BoSSS.Application.FSI_Solver
                                 AccDynamicTimestep += SaveTimeStep;
                             if (SaveTimeStep != -dt && Overlapping)
                                 Overlapping = false;
-                            if ((AccDynamicTimestep > dt || MinDistance < MaxDistance) && !Overlapping)
+                            if ((AccDynamicTimestep > dt || (MinDistance < MaxDistance && !FirstIteration)) && !Overlapping)
                             {
                                 AccDynamicTimestep -= SaveTimeStep;
                                 break;
@@ -1570,6 +1557,7 @@ namespace BoSSS.Application.FSI_Solver
                             {
                                 Collision.UpdateParticleState(Particles[ParticlesOfCurrentColor[p]], SaveTimeStep, 2);
                             }
+                            FirstIteration = false;
                         }
                         if (MinDistance > MaxDistance && !Overlapping)
                             break;
@@ -1584,7 +1572,9 @@ namespace BoSSS.Application.FSI_Solver
                                     double[] CurrentDistanceVector = DistanceVector.ExtractSubArrayShallow(new int[] { p0, p1, -1 }).To1DArray();
                                     double[] CurrentClosestPoint_P0 = ClosestPoint_P0.ExtractSubArrayShallow(new int[] { p0, p1, -1 }).To1DArray();
                                     double[] CurrentClosestPoint_P1 = ClosestPoint_P1.ExtractSubArrayShallow(new int[] { p0, p1, -1 }).To1DArray();
-                                    Collision.ComputeMomentumBalanceCollision(Particle0, Particle1, CurrentDistanceVector, CurrentClosestPoint_P0, CurrentClosestPoint_P1, ((FSI_Control)Control).CoefficientOfRestitution);
+                                    Console.WriteLine("Computing collision, acc dynamic dt: " + AccDynamicTimestep + ", Distance: " + Distance[p0, p1] + ", SaveTimeStep " + SaveTimeStepArray[p0,p1]);
+                                    Console.WriteLine("Particle0 Velocity: " + Particle0.TranslationalVelocity[0][0] + ", Particle0.TranslationalVelocity[0][1]: " + Particle0.TranslationalVelocity[0][1] + ", Particle0.TranslationalVelocity[1][0]: " + Particle0.TranslationalVelocity[1][0] + ", Particle0.TranslationalVelocity[1][1]: " + Particle0.TranslationalVelocity[1][1]);
+                                    Collision.ComputeMomentumBalanceCollision(m_Particles, Particle0, Particle1, CurrentDistanceVector, CurrentClosestPoint_P0, CurrentClosestPoint_P1, ((FSI_Control)Control).CoefficientOfRestitution);
                                     Particle0.CollisionTimestep = AccDynamicTimestep;
                                     Particle1.CollisionTimestep = AccDynamicTimestep;
                                 }
