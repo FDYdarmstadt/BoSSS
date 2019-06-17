@@ -189,13 +189,16 @@ namespace BoSSS.Application.FSI_Solver {
                 throw new ArithmeticException("Error trying to calculate temp Value:  " + temp[0] + " temp " + temp[1] + "VectorVectorVector Value: " + Vector[0] + " VectorVectorVector " + Vector[1]);
             for (int i = 0; i < 2; i++)
             {
-                temp[i] = temp[i] / BetragTemp;
+                if(BetragTemp != 0)
+                    temp[i] = temp[i] / BetragTemp;
             }
             for (int i = 0; i < 2; i++)
             {
                 for (int j = 0; j < 2; j++)
                 {
                     SupportPoint[i] += B[i, j] * temp[j];
+                    if (double.IsNaN(SupportPoint[i]) || double.IsInfinity(SupportPoint[i]))
+                        throw new ArithmeticException("Error trying to calculate SupportPoint Value:  " + SupportPoint[i] + "temp Value: " + temp[j] + " B[i, j] " + B[i, j] + "BetragTemp" + BetragTemp + "ij" +i +j);
                 }
                 SupportPoint[i] += Position[i];
             }

@@ -128,8 +128,8 @@ namespace FSI_Solver
             Particle1.CollisionTangential.Add(TangentialVector);
             Particle0.CollisionRotationalVelocity.Add(tempCollisionRot_P0);
             Particle1.CollisionRotationalVelocity.Add(tempCollisionRot_P1);
-            Particle0.CollisionTranslationalVelocity.Add(new double[] { tempCollisionVn_P0, tempCollisionVt_P0 });
-            Particle1.CollisionTranslationalVelocity.Add(new double[] { tempCollisionVn_P1, tempCollisionVt_P1 });
+            Particle0.CollisionTranslationalVelocity.Add(new double[] { tempCollisionVn_P0, tempCollisionVt_P0});
+            Particle1.CollisionTranslationalVelocity.Add(new double[] { tempCollisionVn_P1, tempCollisionVt_P1});
 
 
             for (int d = 0; d < 2; d++)
@@ -187,22 +187,22 @@ namespace FSI_Solver
                 double[] Sin = new double[_Particle.CollisionTranslationalVelocity.Count()];
                 double temp_NormalVel = 0;
                 double temp_TangentialVel = 0;
-                for (int t = 0; t < _Particle.CollisionTranslationalVelocity.Count(); t++)
-                {
-                    temp_NormalVel += _Particle.CollisionTranslationalVelocity[t][0] * Normal[0] + _Particle.CollisionTranslationalVelocity[t][1] * Normal[1];
-                    temp_TangentialVel += _Particle.CollisionTranslationalVelocity[t][0] * Tangential[0] + _Particle.CollisionTranslationalVelocity[t][1] * Tangential[1];
-                }
                 //for (int t = 0; t < _Particle.CollisionTranslationalVelocity.Count(); t++)
                 //{
-                //    for (int d = 0; d < SpatialDim; d++)
-                //    {
-                //        Cos[t] += Normal[d] * _Particle.CollisionNormal[t][d];
-                //    }
-                //    Sin[t] = Cos[t] == 1 ? 0 : _Particle.CollisionNormal[t][0] > Normal[0] ? Math.Sqrt(1 + 1e-15 - Cos[t].Pow2()) : -Math.Sqrt(1 + 1e-15 - Cos[t].Pow2());
-                //    temp_NormalVel += _Particle.CollisionTranslationalVelocity[t][0] * Cos[t] - _Particle.CollisionTranslationalVelocity[t][1] * Sin[t];
-                //    temp_TangentialVel += _Particle.CollisionTranslationalVelocity[t][0] * Sin[t] + _Particle.CollisionTranslationalVelocity[t][1] * Cos[t];
-
+                //    temp_NormalVel += _Particle.CollisionTranslationalVelocity[t][0] * Normal[0] + _Particle.CollisionTranslationalVelocity[t][1] * Normal[1];
+                //    temp_TangentialVel += _Particle.CollisionTranslationalVelocity[t][0] * Tangential[0] + _Particle.CollisionTranslationalVelocity[t][1] * Tangential[1];
                 //}
+                for (int t = 0; t < _Particle.CollisionTranslationalVelocity.Count(); t++)
+                {
+                    for (int d = 0; d < SpatialDim; d++)
+                    {
+                        Cos[t] += Normal[d] * _Particle.CollisionNormal[t][d];
+                    }
+                    Sin[t] = Cos[t] == 1 ? 0 : _Particle.CollisionNormal[t][0] > Normal[0] ? Math.Sqrt(1 + 1e-15 - Cos[t].Pow2()) : -Math.Sqrt(1 + 1e-15 - Cos[t].Pow2());
+                    temp_NormalVel += _Particle.CollisionTranslationalVelocity[t][0] * Cos[t] - _Particle.CollisionTranslationalVelocity[t][1] * Sin[t];
+                    temp_TangentialVel += _Particle.CollisionTranslationalVelocity[t][0] * Sin[t] + _Particle.CollisionTranslationalVelocity[t][1] * Cos[t];
+
+                }
                 temp_NormalVel /= _Particle.CollisionTranslationalVelocity.Count();
                 temp_TangentialVel /= _Particle.CollisionTranslationalVelocity.Count();
                 _Particle.TranslationalVelocity.Insert(0, new double[2]);
@@ -857,12 +857,12 @@ namespace FSI_Solver
                 ProjectVelocityOnVector(NormalVector, PointVelocity1, out double DetectCollisionVn_P1);
                 if (DetectCollisionVn_P1 - DetectCollisionVn_P0 == 0)
                     return double.MaxValue;
-                Dynamic_dt = 0.99 * Distance / (DetectCollisionVn_P1 - DetectCollisionVn_P0);
+                Dynamic_dt = 0.9 * Distance / (DetectCollisionVn_P1 - DetectCollisionVn_P0);
             }
             else if(DetectCollisionVn_P0 == 0)
                 return double.MaxValue;
             else
-                Dynamic_dt = 0.99 * Distance / (-DetectCollisionVn_P0);
+                Dynamic_dt = 0.9 * Distance / (-DetectCollisionVn_P0);
                 
             return Dynamic_dt;
         }
@@ -871,10 +871,7 @@ namespace FSI_Solver
         {
             if (Dynamic_dt < 0 || Dynamic_dt == double.MaxValue)
             {
-                for (int d = 0; d < SpatialDim; d++)
-                {
-                    particle.Position[0][d] = particle.Position[1][d];
-                }
+                particle.Position[0] = particle.Position[1].CloneAs();
                 particle.Angle[0] = particle.Angle[1];
             }
             else
