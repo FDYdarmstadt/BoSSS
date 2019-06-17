@@ -797,7 +797,7 @@ namespace CNS {
         }
 
 
-        public static CNSControl ShockVortexInteractionHiOCFD5(string dbPath = null, int savePeriod = 1000, int dgDegree = 2, double sensorLimit = 1e-3, double CFLFraction = 0.1, int explicitScheme = 1, int explicitOrder = 1, int numberOfSubGrids = 3, int reclusteringInterval = 1, int maxNumOfSubSteps = 0, double Mv = 0.9, double Ms = 1.5, int numOfCellsX = 200, int numOfCellsY = 100, double endTime = 0.7) {
+        public static CNSControl ShockVortexInteractionHiOCFD5(string dbPath = null, int savePeriod = 1000, int dgDegree = 2, double sensorLimit = 1e-3, double CFLFraction = 0.1, int explicitScheme = 1, int explicitOrder = 1, int numberOfSubGrids = 3, int reclusteringInterval = 1, int maxNumOfSubSteps = 0, double Mv = 0.9, double Ms = 1.5, int numOfCellsX = 200, int numOfCellsY = 100, double endTime = 0.7, string restart = "False") {
             CNSControl c = new CNSControl();
 
             // ### Database ###
@@ -891,31 +891,37 @@ namespace CNS {
             double yMin = 0;
             double yMax = 1;
 
-            c.GridFunc = delegate {
-                double[] xNodes = GenericBlas.Linspace(xMin, xMax, numOfCellsX + 1);
-                double[] yNodes = GenericBlas.Linspace(yMin, yMax, numOfCellsY + 1);
-                var grid = Grid2D.Cartesian2DGrid(xNodes, yNodes, periodicX: false, periodicY: false);
+            if (restart == "True") {
+                // Restart Lichtenberg "paper_ibmdmr"
+                c.RestartInfo = new Tuple<Guid, TimestepNumber>(new Guid("03785964-854e-4c7f-8cc3-352629732b55"), -1);
+                c.GridGuid = new Guid("2169a3f6-9254-4df9-8e77-0565c3f15422");
+            } else {
+                c.GridFunc = delegate {
+                    double[] xNodes = GenericBlas.Linspace(xMin, xMax, numOfCellsX + 1);
+                    double[] yNodes = GenericBlas.Linspace(yMin, yMax, numOfCellsY + 1);
+                    var grid = Grid2D.Cartesian2DGrid(xNodes, yNodes, periodicX: false, periodicY: false);
 
-                grid.EdgeTagNames.Add(1, "SupersonicInlet");
-                grid.EdgeTagNames.Add(2, "SubsonicOutlet");
-                grid.EdgeTagNames.Add(3, "AdiabaticSlipWall");
+                    grid.EdgeTagNames.Add(1, "SupersonicInlet");
+                    grid.EdgeTagNames.Add(2, "SubsonicOutlet");
+                    grid.EdgeTagNames.Add(3, "AdiabaticSlipWall");
 
-                grid.DefineEdgeTags(delegate (double[] X) {
-                    if (Math.Abs(X[1]) < 1e-14) {   // bottom
-                        return 3;
-                    } else if (Math.Abs(X[1] - (yMax - yMin)) < 1e-14) {    // top
-                        return 3;
-                    } else if (Math.Abs(X[0]) < 1e-14) {                    // left
-                        return 1;
-                    } else if (Math.Abs(X[0] - (xMax - xMin)) < 1e-14) {    // right
-                        return 2;
-                    } else {
-                        throw new System.Exception("Boundary condition not specified");
-                    }
-                });
+                    grid.DefineEdgeTags(delegate (double[] X) {
+                        if (Math.Abs(X[1]) < 1e-14) {   // bottom
+                            return 3;
+                        } else if (Math.Abs(X[1] - (yMax - yMin)) < 1e-14) {    // top
+                            return 3;
+                        } else if (Math.Abs(X[0]) < 1e-14) {                    // left
+                            return 1;
+                        } else if (Math.Abs(X[0] - (xMax - xMin)) < 1e-14) {    // right
+                            return 2;
+                        } else {
+                            throw new System.Exception("Boundary condition not specified");
+                        }
+                    });
 
-                return grid;
-            };
+                    return grid;
+                };
+            }
 
             // ### Initial condtions ###
 
@@ -1060,10 +1066,12 @@ namespace CNS {
             //c.InitialValues_Evaluators.Add(CNSVariables.Pressure, X => PressureShock(X, 0));
 
             // Stationary shock wave and vortex
-            c.InitialValues_Evaluators.Add(CompressibleVariables.Density, X => Radius(X) <= b ? DensityVortex(X) : DensityShock(X));
-            c.InitialValues_Evaluators.Add(CNSVariables.Velocity.xComponent, X => Radius(X) <= b ? VelocityXVortex(X) : VelocityXShock(X));
-            c.InitialValues_Evaluators.Add(CNSVariables.Velocity.yComponent, X => Radius(X) <= b ? VelocityYVortex(X) : VelocityYShock(X));
-            c.InitialValues_Evaluators.Add(CNSVariables.Pressure, X => Radius(X) <= b ? PressureVortex(X) : PressureShock(X));
+            if (restart == "False") {
+                c.InitialValues_Evaluators.Add(CompressibleVariables.Density, X => Radius(X) <= b ? DensityVortex(X) : DensityShock(X));
+                c.InitialValues_Evaluators.Add(CNSVariables.Velocity.xComponent, X => Radius(X) <= b ? VelocityXVortex(X) : VelocityXShock(X));
+                c.InitialValues_Evaluators.Add(CNSVariables.Velocity.yComponent, X => Radius(X) <= b ? VelocityYVortex(X) : VelocityYShock(X));
+                c.InitialValues_Evaluators.Add(CNSVariables.Pressure, X => Radius(X) <= b ? PressureVortex(X) : PressureShock(X));
+            }
 
             // ### Boundary condtions ###
             c.AddBoundaryValue("SupersonicInlet", CompressibleVariables.Density, (X, t) => DensityShock(X));
@@ -1124,11 +1132,11 @@ namespace CNS {
         }
 
 
-        public static CNSControl DoubleMachReflection(string dbPath = null, int savePeriod = 1, int dgDegree = 3, double xMax = 4.0, double yMax = 1.0, int numOfCellsX = 400, int numOfCellsY = 100, double sensorLimit = 1e-3, double CFLFraction = 0.1, int explicitScheme = 1, int explicitOrder = 1, int numberOfSubGrids = 3, int reclusteringInterval = 1, int maxNumOfSubSteps = 0, double endTime = 0.2, string restart = "False", int cores = int.MaxValue) {
+        public static CNSControl DoubleMachReflection(string dbPath = null, int savePeriod = int.MaxValue, int dgDegree = 2, double xMax = 4.0, double yMax = 1.0, int numOfCellsX = 800, int numOfCellsY = 200, double sensorLimit = 1e-3, double CFLFraction = 0.1, int explicitScheme = 1, int explicitOrder = 1, int numberOfSubGrids = 3, int reclusteringInterval = 1, int maxNumOfSubSteps = 0, double endTime = 0.2, string restart = "False", int cores = int.MaxValue) {
             CNSControl c = new CNSControl();
 
             //dbPath = @"/work/scratch/yp19ysog/bosss_db_dmr_video";          // Lichtenberg
-            //dbPath = @"c:\bosss_db";                                          // Local
+            dbPath = @"c:\bosss_db";                                          // Local
             //dbPath = @"E:\geisenhofer\bosss_db_paper_ibmdmr";                   // HPC cluster
             //dbPath = @"\\dc1\userspace\geisenhofer\bosss_db_IBMShockTube";    // Network
 
@@ -1341,7 +1349,7 @@ namespace CNS {
             c.dtMax = 1.0;
             c.Endtime = endTime;
             c.CFLFraction = CFLFraction;
-            c.NoOfTimesteps = int.MaxValue;
+            c.NoOfTimesteps = 10;
 
             c.ProjectName = "dmr";
 
