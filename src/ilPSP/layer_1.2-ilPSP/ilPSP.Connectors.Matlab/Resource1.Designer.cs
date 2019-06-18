@@ -82,7 +82,8 @@ namespace ilPSP.Connectors.Matlab {
         ///for i = 1:NoOfRows
         ///    NonZerosInRow = fscanf(fid,&apos;%d&apos;,1);
         ///    if(l0 ~= NonZerosInRow)
-        ///        str = char(zeros(1,NonZer [rest of string was truncated]&quot;;.
+        ///        str = char(zeros(1,NonZerosInRow*6));
+        ///         [rest of string was truncated]&quot;;.
         /// </summary>
         internal static string ReadMsr {
             get {

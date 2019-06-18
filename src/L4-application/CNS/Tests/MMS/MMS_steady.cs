@@ -15,10 +15,11 @@ limitations under the License.
 */
 
 using BoSSS.Foundation.Grid.Classic;
+using BoSSS.Solution.CompressibleFlowCommon;
+using BoSSS.Solution.CompressibleFlowCommon.MaterialProperty;
 using BoSSS.Solution.Queries;
 using CNS.Convection;
 using CNS.EquationSystem;
-using CNS.MaterialProperty;
 using CNS.Residual;
 using CNS.Source;
 using ilPSP.Utils;
@@ -81,12 +82,12 @@ namespace CNS.Tests.MMS {
             c.ExplicitOrder = 1;
             c.EquationOfState = IdealGas.Air;
 
-            c.AddVariable(Variables.Density, dgDegree);
-            c.AddVariable(Variables.Momentum.xComponent, dgDegree);
-            c.AddVariable(Variables.Energy, dgDegree);
-            c.AddVariable(Variables.Velocity.xComponent, dgDegree);
-            c.AddVariable(Variables.Pressure, dgDegree);
-            c.AddVariable(Variables.LocalMachNumber, dgDegree);
+            c.AddVariable(CompressibleVariables.Density, dgDegree);
+            c.AddVariable(CompressibleVariables.Momentum.xComponent, dgDegree);
+            c.AddVariable(CompressibleVariables.Energy, dgDegree);
+            c.AddVariable(CNSVariables.Velocity.xComponent, dgDegree);
+            c.AddVariable(CNSVariables.Pressure, dgDegree);
+            c.AddVariable(CNSVariables.LocalMachNumber, dgDegree);
 
             c.GridFunc = delegate {
                 double[] nodes = GenericBlas.Linspace(0.0, 1.0, noOfCellsPerDirection + 1);
@@ -111,13 +112,13 @@ namespace CNS.Tests.MMS {
             Func<double[], double, double> u0 = (X, t) => 1;
             Func<double[], double, double> p = (X, t) => (gamma - 1) * (rhoE(X, t) - 0.5 * MachScaling * rho(X, t) * u0(X, t) * u0(X, t));
 
-            c.InitialValues_Evaluators.Add(Variables.Density, X => rho(X, 0.0));
-            c.InitialValues_Evaluators.Add(Variables.Momentum.xComponent, X => m0(X, 0.0));
-            c.InitialValues_Evaluators.Add(Variables.Energy, X => rhoE(X, 0.0));
+            c.InitialValues_Evaluators.Add(CompressibleVariables.Density, X => rho(X, 0.0));
+            c.InitialValues_Evaluators.Add(CompressibleVariables.Momentum.xComponent, X => m0(X, 0.0));
+            c.InitialValues_Evaluators.Add(CompressibleVariables.Energy, X => rhoE(X, 0.0));
 
-            c.AddBoundaryValue("supersonicInlet", Variables.Density, rho);
-            c.AddBoundaryValue("supersonicInlet", Variables.Velocity.xComponent, u0);
-            c.AddBoundaryValue("supersonicInlet", Variables.Pressure, p);
+            c.AddBoundaryValue("supersonicInlet", CompressibleVariables.Density, rho);
+            c.AddBoundaryValue("supersonicInlet", CNSVariables.Velocity.xComponent, u0);
+            c.AddBoundaryValue("supersonicInlet", CNSVariables.Pressure, p);
 
             // MMS Sources
             c.CustomContinuitySources.Add(map => new AdHocSourceTerm(map,
@@ -130,9 +131,9 @@ namespace CNS.Tests.MMS {
                     (X, t, state) => -((a * b * Math.Cos(a * X[0])) * (2 * rho(X, t) + (gamma - 1) * (2 * rho(X, t) - 0.5 * MachScaling)))
                     ));
 
-            c.Queries.Add("L2ErrorDensity", QueryLibrary.L2Error(Variables.Density, rho));
-            c.Queries.Add("L2ErrorPressure", QueryLibrary.L2Error(Variables.Pressure, p));
-            c.Queries.Add("L2ErrorVelocity", QueryLibrary.L2Error(Variables.Velocity.xComponent, u0));
+            c.Queries.Add("L2ErrorDensity", QueryLibrary.L2Error(CompressibleVariables.Density, rho));
+            c.Queries.Add("L2ErrorPressure", QueryLibrary.L2Error(CNSVariables.Pressure, p));
+            c.Queries.Add("L2ErrorVelocity", QueryLibrary.L2Error(CNSVariables.Velocity.xComponent, u0));
 
             c.dtMin = 0.0;
             c.dtMax = 1.0;
@@ -199,12 +200,12 @@ namespace CNS.Tests.MMS {
             c.ExplicitOrder = 1;
             c.EquationOfState = IdealGas.Air;
 
-            c.AddVariable(Variables.Density, dgDegree);
-            c.AddVariable(Variables.Momentum.xComponent, dgDegree);
-            c.AddVariable(Variables.Energy, dgDegree);
-            c.AddVariable(Variables.Velocity.xComponent, dgDegree);
-            c.AddVariable(Variables.Pressure, dgDegree);
-            c.AddVariable(Variables.LocalMachNumber, dgDegree);
+            c.AddVariable(CompressibleVariables.Density, dgDegree);
+            c.AddVariable(CompressibleVariables.Momentum.xComponent, dgDegree);
+            c.AddVariable(CompressibleVariables.Energy, dgDegree);
+            c.AddVariable(CNSVariables.Velocity.xComponent, dgDegree);
+            c.AddVariable(CNSVariables.Pressure, dgDegree);
+            c.AddVariable(CNSVariables.LocalMachNumber, dgDegree);
 
             c.GridFunc = delegate {
                 double[] nodes = GenericBlas.Linspace(0.0, Math.PI / 2, noOfCellsPerDirection + 1);
@@ -230,15 +231,15 @@ namespace CNS.Tests.MMS {
             Func<double[], double, double> m0 = (X, t) => rho(X, t) * u0(X, t);
             Func<double[], double, double> m1 = (X, t) => rho(X, t) * u1(X, t);
 
-            c.InitialValues_Evaluators.Add(Variables.Density, X => rho(X, 0.0));
-            c.InitialValues_Evaluators.Add(Variables.Momentum.xComponent, X => m0(X, 0.0));
-            c.InitialValues_Evaluators.Add(Variables.Momentum.yComponent, X => m1(X, 0.0));
-            c.InitialValues_Evaluators.Add(Variables.Energy, X => rhoE(X, 0.0));
+            c.InitialValues_Evaluators.Add(CompressibleVariables.Density, X => rho(X, 0.0));
+            c.InitialValues_Evaluators.Add(CompressibleVariables.Momentum.xComponent, X => m0(X, 0.0));
+            c.InitialValues_Evaluators.Add(CompressibleVariables.Momentum.yComponent, X => m1(X, 0.0));
+            c.InitialValues_Evaluators.Add(CompressibleVariables.Energy, X => rhoE(X, 0.0));
 
-            c.AddBoundaryValue("supersonicInlet", Variables.Density, rho);
-            c.AddBoundaryValue("supersonicInlet", Variables.Velocity.xComponent, u0);
-            c.AddBoundaryValue("supersonicInlet", Variables.Velocity.yComponent, u1);
-            c.AddBoundaryValue("supersonicInlet", Variables.Pressure, p);
+            c.AddBoundaryValue("supersonicInlet", CompressibleVariables.Density, rho);
+            c.AddBoundaryValue("supersonicInlet", CNSVariables.Velocity.xComponent, u0);
+            c.AddBoundaryValue("supersonicInlet", CNSVariables.Velocity.yComponent, u1);
+            c.AddBoundaryValue("supersonicInlet", CNSVariables.Pressure, p);
 
             // MMS Sources
             c.CustomContinuitySources.Add(map => new AdHocSourceTerm(map,
@@ -254,10 +255,10 @@ namespace CNS.Tests.MMS {
                     (X, t, state) => (7.0 * (1600.0 + 1019.0 * MachSq + (2240.0 + 3762.0 * MachSq) * Math.Cos(2.0 * (X[0] + X[1])) + 12.0 * (80.0 + 113.0 * MachSq) * Math.Cos(4.0 * (X[0] + X[1])) + 978.0 * MachSq * Math.Cos(6.0 * (X[0] + X[1])) + 333.0 * MachSq * Math.Cos(8.0 * (X[0] + X[1])) + 84.0 * MachSq * Math.Cos(10.0 * (X[0] + X[1])) + 28.0 * MachSq * Math.Cos(12.0 * (X[0] + X[1]))) * Math.Sin(2.0 * (X[0] + X[1]))) / 1280.0
                     ));
 
-            c.Queries.Add("densityError", QueryLibrary.L2Error(Variables.Density, rho));
-            c.Queries.Add("momentum0Error", QueryLibrary.L2Error(Variables.Momentum.xComponent, m0));
-            c.Queries.Add("momentum1Error", QueryLibrary.L2Error(Variables.Momentum.xComponent, m1));
-            c.Queries.Add("energyError", QueryLibrary.L2Error(Variables.Energy, rhoE));
+            c.Queries.Add("densityError", QueryLibrary.L2Error(CompressibleVariables.Density, rho));
+            c.Queries.Add("momentum0Error", QueryLibrary.L2Error(CompressibleVariables.Momentum.xComponent, m0));
+            c.Queries.Add("momentum1Error", QueryLibrary.L2Error(CompressibleVariables.Momentum.xComponent, m1));
+            c.Queries.Add("energyError", QueryLibrary.L2Error(CompressibleVariables.Energy, rhoE));
 
             c.dtMin = 0.0;
             c.dtMax = 1.0;

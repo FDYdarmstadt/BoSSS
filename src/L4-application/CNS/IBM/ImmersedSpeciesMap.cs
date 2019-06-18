@@ -18,7 +18,6 @@ using BoSSS.Foundation;
 using BoSSS.Foundation.Grid;
 using BoSSS.Foundation.Grid.Classic;
 using BoSSS.Foundation.XDG;
-using CNS.MaterialProperty;
 using System;
 using System.IO;
 using System.Linq;
@@ -80,7 +79,6 @@ namespace CNS.IBM {
             }
         }
 
-
         System.Collections.BitArray m_cutCellsThatAreNotSourceCells;
         int m_cutCellsThatAreNotSourceCells_TrackerVersion;
 
@@ -98,6 +96,25 @@ namespace CNS.IBM {
                 }
 
                 return m_cutCellsThatAreNotSourceCells;
+            }
+        }
+
+        System.Collections.BitArray m_sourceCells;
+        int m_sourceCells_TrackerVersion;
+        /// <summary>
+        /// Cached for performance reasons; required for the CFL computation.
+        /// </summary>
+        public System.Collections.BitArray sourceCells {
+            get {
+                if (m_sourceCells_TrackerVersion != Tracker.VersionCnt)
+                    m_sourceCells = null;
+
+                if (m_sourceCells == null) {
+                    m_sourceCells = Agglomerator.AggInfo.SourceCells.GetBitMask();
+                    m_sourceCells_TrackerVersion = Tracker.VersionCnt;
+                }
+
+                return m_sourceCells;
             }
         }
 

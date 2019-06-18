@@ -21,7 +21,6 @@ using BoSSS.Platform.LinAlg;
 using BoSSS.Solution.CompressibleFlowCommon;
 using CNS.EquationSystem;
 using CNS.IBM;
-using CNS.MaterialProperty;
 using ilPSP;
 using System;
 using System.Diagnostics;
@@ -100,17 +99,18 @@ namespace CNS.Convection {
                         SpeciesId species = ibmMap.Tracker.GetSpeciesId(ibmMap.Control.FluidSpeciesName);
                         MultidimensionalArray hminCut = ibmMap.CellAgglomeration.CellLengthScales[species];
 
-                        //CellMask cutCellsThatAreNotSourceCells = ibmMap.Tracker.Regions.GetCutCellMask().Except(ibmMap.Agglomerator.AggInfo.SourceCells);
-                        //foreach (int cell in cutCellsThatAreNotSourceCells.ItemEnum) {
-                        //    hmin[cell] = hminCut[cell];
-                        //}
-
                         for (int i = 0; i < Length; i++) {
                             int cell = i0 + i;
 
                             //double hminLocal = hmin[cell];
                             double hminLocal = double.NaN;
-                            //if (cutCellsThatAreNotSourceCells.ItemEnum.Contains(cell)) {
+
+                            // Return double.MaxValue in all IBM source cells
+                            //if (ibmMap.sourceCells[cell]) {
+                            //    cfl = double.MaxValue;
+                            //    break;
+                            //} else if (ibmMap.cutCellsThatAreNotSourceCells[cell]) {
+
                             if (ibmMap.cutCellsThatAreNotSourceCells[cell]) {
                                 hminLocal = hminCut[cell];
                             } else {
@@ -147,8 +147,8 @@ namespace CNS.Convection {
                                     throw new Exception("Could not determine CFL number");
                                 }
 
-                                Vector momentum = new Vector(CNSEnvironment.NumberOfDimensions);
-                                for (int d = 0; d < CNSEnvironment.NumberOfDimensions; d++) {
+                                Vector momentum = new Vector(CompressibleEnvironment.NumberOfDimensions);
+                                for (int d = 0; d < CompressibleEnvironment.NumberOfDimensions; d++) {
                                     momentum[d] = momentumValues[d][i, node];
                                 }
 
@@ -173,15 +173,15 @@ namespace CNS.Convection {
                         SpeciesId species = ibmMap.Tracker.GetSpeciesId(ibmMap.Control.FluidSpeciesName);
                         MultidimensionalArray hminCut = ibmMap.CellAgglomeration.CellLengthScales[species];
 
-                        //CellMask cutCellsThatAreNotSourceCells = ibmMap.Tracker.Regions.GetCutCellMask().Except(ibmMap.Agglomerator.AggInfo.SourceCells);
-                        //foreach (int cell in cutCellsThatAreNotSourceCells.ItemEnum) {
-                        //    hmin[cell] = hminCut[cell];
-                        //}
-
                         for (int i = 0; i < Length; i++) {
                             int cell = i0 + i;
                             double hminLocal = double.NaN;
-                            //if (cutCellsThatAreNotSourceCells.ItemEnum.Contains(cell)) {
+
+                            // Return double.MaxValue in all IBM source cells
+                            //if (ibmMap.sourceCells[cell]) {
+                            //    cfl = double.MaxValue;
+                            //    break;
+                            //} else if (ibmMap.cutCellsThatAreNotSourceCells[cell]) {
                             if (ibmMap.cutCellsThatAreNotSourceCells[cell]) {
                                 hminLocal = hminCut[cell];
                             } else {
@@ -199,7 +199,7 @@ namespace CNS.Convection {
                                 }
 
                                 Vector momentum = new Vector();
-                                for (int d = 0; d < CNSEnvironment.NumberOfDimensions; d++) {
+                                for (int d = 0; d < CompressibleEnvironment.NumberOfDimensions; d++) {
                                     momentum[d] = momentumValues[d][i, node];
                                 }
 
@@ -261,8 +261,8 @@ namespace CNS.Convection {
                                     throw new Exception("Could not determine CFL number");
                                 }
 
-                                Vector momentum = new Vector(CNSEnvironment.NumberOfDimensions);
-                                for (int d = 0; d < CNSEnvironment.NumberOfDimensions; d++) {
+                                Vector momentum = new Vector(CompressibleEnvironment.NumberOfDimensions);
+                                for (int d = 0; d < CompressibleEnvironment.NumberOfDimensions; d++) {
                                     momentum[d] = momentumValues[d][i, node];
                                 }
 
@@ -303,8 +303,8 @@ namespace CNS.Convection {
                             for (int node = 0; node < noOfNodesPerCell; node++) {
                                 double cflhere = double.MaxValue;
 
-                                Vector momentum = new Vector(CNSEnvironment.NumberOfDimensions);
-                                for (int d = 0; d < CNSEnvironment.NumberOfDimensions; d++) {
+                                Vector momentum = new Vector(CompressibleEnvironment.NumberOfDimensions);
+                                for (int d = 0; d < CompressibleEnvironment.NumberOfDimensions; d++) {
                                     momentum[d] = momentumValues[d][i, node];
                                 }
 

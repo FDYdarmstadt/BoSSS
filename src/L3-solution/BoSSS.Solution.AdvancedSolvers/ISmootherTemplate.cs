@@ -76,6 +76,8 @@ namespace BoSSS.Solution.AdvancedSolvers {
         /// Reset solver statistics, i.e. set <see cref="IterationsInNested"/>, <see cref="ThisLevelIterations"/>, etc. to 0.
         /// </summary>
         void ResetStat();
+
+        ISolverSmootherTemplate Clone();
     }
 
     /// <summary>

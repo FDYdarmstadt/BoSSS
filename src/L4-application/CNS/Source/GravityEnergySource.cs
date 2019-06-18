@@ -18,6 +18,7 @@ using System.Linq;
 using System.Collections.Generic;
 using BoSSS.Foundation;
 using ilPSP;
+using BoSSS.Solution.CompressibleFlowCommon;
 
 namespace CNS.Source {
 
@@ -74,7 +75,7 @@ namespace CNS.Source {
         /// </summary>
         public IList<string> ArgumentOrdering {
             get {
-                return new string[] { Variables.Momentum.Last() };
+                return new string[] { CompressibleVariables.Momentum.Last() };
             }
         }
 

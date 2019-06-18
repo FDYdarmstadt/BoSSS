@@ -20,6 +20,7 @@ using System.Linq;
 using System.Runtime.Serialization;
 using System.Text;
 using BoSSS.Foundation;
+using ilPSP;
 
 namespace BoSSS.Solution.NSECommon {
 
@@ -54,15 +55,15 @@ namespace BoSSS.Solution.NSECommon {
 
         double T_ref;
         MaterialParamsMode MatParamsMode;
-
+        bool rhoOne;
         /// <summary>
         /// Ctor.
         /// </summary>
         /// <param name="T_ref">Reference temperature - used in Sutherland's law.</param>
         /// <param name="MatParamsMode"></param>
-        public MaterialLawLowMach(double T_ref, MaterialParamsMode MatParamsMode)
+        public MaterialLawLowMach(double T_ref, MaterialParamsMode MatParamsMode, bool rhoOne)
             : base() {
-
+            this.rhoOne = rhoOne;
             this.T_ref = T_ref;
             this.MatParamsMode = MatParamsMode;
         }
@@ -72,7 +73,7 @@ namespace BoSSS.Solution.NSECommon {
         /// </summary>
         public override IList<string> ParameterOrdering {
             get {
-                return new string[] { VariableNames.Temperature0 };
+                return new string[] { VariableNames.Temperature0, VariableNames.Rho };
                 //, VariableNames.MassFraction0_0, VariableNames.MassFraction1_0, VariableNames.MassFraction2_0, VariableNames.MassFraction3_0}; 
             }
         }
@@ -115,8 +116,9 @@ namespace BoSSS.Solution.NSECommon {
         public override double GetDensity(params double[] phi) {
             if (IsInitialized) {
                 double rho = this.ThermodynamicPressure.Current.GetMeanValue(0) / phi[0];
-              //rho = 1.0;
-                //Console.WriteLine("USING RHO = 1!!!!!!!!!");
+                if (rhoOne)  
+                rho = 1.0;
+                
                 return rho;
             } else {
                 throw new ApplicationException("ThermodynamicPressure is not initialized.");
@@ -230,9 +232,26 @@ namespace BoSSS.Solution.NSECommon {
         /// <param name="Temperature"></param>
         /// <returns></returns>
         public override double GetMassDeterminedThermodynamicPressure(double InitialMass, SinglePhaseField Temperature) {
-            SinglePhaseField OneOverTemperature = new SinglePhaseField(Temperature.Basis);
-            OneOverTemperature.ProjectPow(1.0, Temperature, -1.0);
-            return (InitialMass / OneOverTemperature.IntegralOver(null));
+
+
+
+            SinglePhaseField omega = new SinglePhaseField(Temperature.Basis);
+            omega.ProjectField(1.0,
+                delegate (int j0, int Len, NodeSet NS, MultidimensionalArray result) {
+                    int K = result.GetLength(1); // No nof Nodes
+                    MultidimensionalArray temp = MultidimensionalArray.Create(Len, K);
+                    Temperature.Evaluate(j0, Len, NS, temp);
+                    for (int j = 0; j < Len; j++) {
+                        for (int k = 0; k < K; k++) {                       
+                            result[j, k] = 1 / temp[j, k];
+                        }
+                    }
+                }, new Foundation.Quadrature.CellQuadratureScheme(true, null));
+            return (InitialMass / omega.IntegralOver(null));
+
+            //SinglePhaseField OneOverTemperature = new SinglePhaseField(Temperature.Basis);
+            // OneOverTemperature.ProjectPow(1.0, Temperature, -1.0);
+            //return (InitialMass / OneOverTemperature.IntegralOver(null));
         }
         /// <summary>
         /// 

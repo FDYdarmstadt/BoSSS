@@ -169,43 +169,12 @@ namespace BoSSS.Foundation {
             if (Len > result.GetLength(0) + ResultCellindexOffset)
                 throw new ArgumentOutOfRangeException("mismatch between Len and 0-th length of result");
 
-            // we assume that the polynomial at index 0 is constant,
-            // and that the mean value of all other polynomials is zero
-            var Krefs = Basis.GridDat.iGeomCells.RefElements;
-            MultidimensionalArray zerothOrderBasisValue = MultidimensionalArray.Create(1);
-            double[] bv = new double[Krefs.Length];
-            for (int l = 0; l < Krefs.Length; l++) {
-                zerothOrderBasisValue.Clear();
-                Debug.Assert(Basis.Polynomials[l][0].AbsoluteDegree == 0);
-                Debug.Assert(Basis.Polynomials[l][0].Coeff.Length == 1);
-                Basis.Polynomials[l][0].Evaluate(zerothOrderBasisValue, Krefs[l].Center);
-
-                bv[l] = zerothOrderBasisValue[0];
-            }
-
-            MultidimensionalArray scales = Basis.Data.Scaling;
-            MultidimensionalArray nonLinOrtho = null;
             for (int j = 0; j < Len; j++) {
-                int iKref = Basis.GridDat.iGeomCells.GetRefElementIndex(j + j0);
-
-                double scaling;
-                if (this.GridDat.iGeomCells.IsCellAffineLinear(j + j0)) {
-                    scaling = scales[j + j0];
-                } else {
-                    if (nonLinOrtho == null)
-                        nonLinOrtho = this.GridDat.ChefBasis.OrthonormalizationTrafo.GetValue_Cell(j0, Len, 0);
-
-                    scaling = Basis.Data.OrthonormalizationTrafo.GetValue_Cell(j, 1, 0)[0, 0, 0];
+                if (ResultPreScale != 0.0)
+                {
+                    result[j + ResultCellindexOffset] *= ResultPreScale;
                 }
-
-                double value = 0.0;
-                if (ResultPreScale != 0.0) {
-                    value = result[j + ResultCellindexOffset] * ResultPreScale;
-                }
-
-                value += bv[iKref] * Coordinates[j + j0, 0] * scaling;
-
-                result[j + ResultCellindexOffset] = value;
+                result[j + ResultCellindexOffset] = GetMeanValue(j + j0);
             }
         }
 

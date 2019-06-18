@@ -14,9 +14,10 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+using BoSSS.Solution.CompressibleFlowCommon;
+using BoSSS.Solution.CompressibleFlowCommon.MaterialProperty;
 using BoSSS.Solution.Queries;
 using CNS.EquationSystem;
-using CNS.MaterialProperty;
 using System;
 using static BoSSS.Solution.CompressibleFlowCommon.Boundary.ExactRinglebBoundaryState;
 
@@ -46,12 +47,12 @@ namespace CNS.Tests.Ringleb {
 
             c.MachNumber = 1 / Math.Sqrt(c.EquationOfState.HeatCapacityRatio);
 
-            c.AddVariable(Variables.Density, dgDegree);
-            c.AddVariable(Variables.Momentum.xComponent, dgDegree);
-            c.AddVariable(Variables.Momentum.yComponent, dgDegree);
-            c.AddVariable(Variables.Energy, dgDegree);
-            c.AddVariable(Variables.Pressure, dgDegree);
-            c.AddVariable(Variables.Entropy, dgDegree);
+            c.AddVariable(CompressibleVariables.Density, dgDegree);
+            c.AddVariable(CompressibleVariables.Momentum.xComponent, dgDegree);
+            c.AddVariable(CompressibleVariables.Momentum.yComponent, dgDegree);
+            c.AddVariable(CompressibleVariables.Energy, dgDegree);
+            c.AddVariable(CNSVariables.Pressure, dgDegree);
+            c.AddVariable(CNSVariables.Entropy, dgDegree);
 
             Func<double[], RinglebExactSolution.FlowState> solution = X => RinglebExactSolution.GetFlowState(
                 X[0],
@@ -61,15 +62,15 @@ namespace CNS.Tests.Ringleb {
                 c.RinglebReferenceSpeedOfSound,
                 c.RinglebReferenceTotalPressure);
 
-            c.InitialValues_Evaluators.Add(Variables.Density, X => solution(X).Density);
-            c.InitialValues_Evaluators.Add(Variables.Momentum.xComponent, X => solution(X).Momentum[0]);
-            c.InitialValues_Evaluators.Add(Variables.Momentum.yComponent, X => solution(X).Momentum[1]);
-            c.InitialValues_Evaluators.Add(Variables.Energy, X => solution(X).Energy);
+            c.InitialValues_Evaluators.Add(CompressibleVariables.Density, X => solution(X).Density);
+            c.InitialValues_Evaluators.Add(CompressibleVariables.Momentum.xComponent, X => solution(X).Momentum[0]);
+            c.InitialValues_Evaluators.Add(CompressibleVariables.Momentum.yComponent, X => solution(X).Momentum[1]);
+            c.InitialValues_Evaluators.Add(CompressibleVariables.Energy, X => solution(X).Energy);
 
             c.AddBoundaryValue("ringleb");
 
-            c.Queries.Add("L2ErrorDensity", QueryLibrary.L2Error(Variables.Density, (X, t) => solution(X).Density));
-            c.Queries.Add("L2ErrorPressure", QueryLibrary.L2Error(Variables.Pressure, (X, t) => solution(X).Pressure));
+            c.Queries.Add("L2ErrorDensity", QueryLibrary.L2Error(CompressibleVariables.Density, (X, t) => solution(X).Density));
+            c.Queries.Add("L2ErrorPressure", QueryLibrary.L2Error(CNSVariables.Pressure, (X, t) => solution(X).Pressure));
 
             c.dtMin = 0.0;
             c.dtMax = 1.0;
@@ -90,7 +91,7 @@ namespace CNS.Tests.Ringleb {
             c.GridGuid = new Guid("499a52ea-9a36-48c4-9c3a-a13d1414b936");
             c.ConvectiveFluxType = Convection.ConvectiveFluxTypes.Rusanov;
 
-            c.Queries.Add("L2ErrorEntropy", QueryLibrary.L2Error(Variables.Entropy, (X, t) => 0.7142857142857142));
+            c.Queries.Add("L2ErrorEntropy", QueryLibrary.L2Error(CNSVariables.Entropy, (X, t) => 0.7142857142857142));
 
             return c;
         }
@@ -107,7 +108,7 @@ namespace CNS.Tests.Ringleb {
             c.RinglebReferenceSpeedOfSound = 5.0;
             c.RinglebReferenceTotalPressure = 30.0;
 
-            c.Queries.Add("L2ErrorEntropy", QueryLibrary.L2Error(Variables.Entropy, (X, t) => 1.80939686135e-6));
+            c.Queries.Add("L2ErrorEntropy", QueryLibrary.L2Error(CNSVariables.Entropy, (X, t) => 1.80939686135e-6));
 
             return c;
         }

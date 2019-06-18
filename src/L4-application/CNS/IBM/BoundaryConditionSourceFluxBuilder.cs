@@ -24,7 +24,7 @@ namespace CNS.IBM {
     /// <summary>
     /// Flux builder for the boundary conditions at immersed interfaces which
     /// are implemented via source terms. Note that currently, the convective
-    /// fluxes are considered only.
+    /// fluxes are considered only, maybe.
     /// </summary>
     public class BoundaryConditionSourceFluxBuilder : FluxBuilder {
 
@@ -70,7 +70,7 @@ namespace CNS.IBM {
                     equationComponent.CreateBoundaryConditionSource(control, speciesMap, boundaryCondition));
             }
 
-            for (int d = 0; d < CNSEnvironment.NumberOfDimensions; d++) {
+            for (int d = 0; d < CompressibleEnvironment.NumberOfDimensions; d++) {
                 foreach (var equationComponent in standardOperator.MomentumComponents[d]) {
                     boundaryOperator.MomentumComponents[d].Add(
                         equationComponent.CreateBoundaryConditionSource(control, speciesMap, boundaryCondition));

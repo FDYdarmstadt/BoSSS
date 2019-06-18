@@ -56,10 +56,10 @@ namespace CNS.ShockCapturing {
             //IProgram<CNSControl> program;
             //CNSFieldSet fieldSet = program.WorkingSet;
 
-            DGField Density = ConservativeVariables.Single(f => f.Identification == Variables.Density.Name);
-            DGField Momentum_0 = ConservativeVariables.Single(f => f.Identification == Variables.Momentum[0].Name);
-            DGField Momentum_1 = ConservativeVariables.Single(f => f.Identification == Variables.Momentum[1].Name);
-            DGField Energy = ConservativeVariables.Single(f => f.Identification == Variables.Energy.Name);
+            DGField Density = ConservativeVariables.Single(f => f.Identification == CompressibleVariables.Density.Name);
+            DGField Momentum_0 = ConservativeVariables.Single(f => f.Identification == CompressibleVariables.Momentum[0].Name);
+            DGField Momentum_1 = ConservativeVariables.Single(f => f.Identification == CompressibleVariables.Momentum[1].Name);
+            DGField Energy = ConservativeVariables.Single(f => f.Identification == CompressibleVariables.Energy.Name);
 
             foreach (var chunkRulePair in quadRuleSet) {
                 if (chunkRulePair.Chunk.Len > 1) {

@@ -323,11 +323,11 @@ namespace BoSSS.Solution.CompressibleFlowCommon {
         public double[] ToArray() {
             int D = this.Dimension;
 
-            //Debug.Assert(CNSEnvironment.PrimalArgumentToIndexMap[Variables.Density] == 0);
+            //Debug.Assert(CompressibleEnvironment.PrimalArgumentToIndexMap[Variables.Density] == 0);
             //for (int d = 0; d < D; d++) {
-            //    Debug.Assert(CNSEnvironment.PrimalArgumentToIndexMap[Variables.Momentum[d]] == d + 1);
+            //    Debug.Assert(CompressibleEnvironment.PrimalArgumentToIndexMap[Variables.Momentum[d]] == d + 1);
             //}
-            //Debug.Assert(CNSEnvironment.PrimalArgumentToIndexMap[Variables.Energy] == D + 1);
+            //Debug.Assert(CompressibleEnvironment.PrimalArgumentToIndexMap[Variables.Energy] == D + 1);
 
             double[] ret = new double[D + 2];
             ret[0] = Density;

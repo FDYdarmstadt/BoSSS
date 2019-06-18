@@ -56,6 +56,7 @@ namespace CNS {
         static void Main(string[] args) {
 
             //Application.InitMPI(args);
+            //CNS.Tests.ConvectiveFlux.ShockTubeTests.Toro1RusanovTest();
             //CNS.Tests.ConvectiveFlux.ShockTubeTests.Toro1AllButRusanovTest(ConvectiveFluxTypes.Godunov);
             //CNS.Tests.IBMTests.IBMCylinderTest.IBMCylinder0th();
             //CNS.Tests.IBMTests.IBMCylinderTest.IBMCylinder1st();
@@ -148,14 +149,14 @@ namespace CNS {
         }
 
         /// <summary>
-        /// Initializes <see cref="CNSEnvironment"/> after the grid has been
+        /// Initializes <see cref="CompressibleEnvironment"/> after the grid has been
         /// loaded regularly via <see cref="Application{T}.CreateOrLoadGrid"/>
         /// </summary>
         /// <returns></returns>
         protected override IGrid CreateOrLoadGrid() {
             using (var ht = new FuncTrace()) {
                 IGrid grid = base.CreateOrLoadGrid();
-                CNSEnvironment.Initialize(grid.SpatialDimension, this);
+                CompressibleEnvironment.Initialize(grid.SpatialDimension);
                 return grid;
             }
         }
@@ -165,7 +166,7 @@ namespace CNS {
         /// fields to the list of IO variables
         /// </summary>
         /// <remarks>
-        /// Initializes <see cref="CNSEnvironment"/> since it is the first
+        /// Initializes <see cref="CompressibleEnvironment"/> since it is the first
         /// method be called by <see cref="Application{T}._Main"/>.
         /// </remarks>
         protected override void CreateFields() {
@@ -354,7 +355,7 @@ namespace CNS {
 
         /// <summary>
         /// Plots the current state using Tecplot (if
-        /// <see cref="CNSEnvironment.NumberOfDimensions"/> is greater than 1)
+        /// <see cref="CompressibleEnvironment.NumberOfDimensions"/> is greater than 1)
         /// </summary>
         /// <param name="physTime">The physical (simulation time)</param>
         /// <param name="timestepNo">The time step</param>
@@ -362,7 +363,7 @@ namespace CNS {
         protected override void PlotCurrentState(double physTime, TimestepNumber timestepNo, int superSampling = 0) {
             using (var ht = new FuncTrace()) {
                 if (plotDriver == null) {
-                    if (CNSEnvironment.NumberOfDimensions == 1) {
+                    if (CompressibleEnvironment.NumberOfDimensions == 1) {
                         plotDriver = new CurveExportDriver(GridData, true, (uint)superSampling);
                     } else {
                         plotDriver = new Tecplot(GridData, true, false, (uint)superSampling);
@@ -382,6 +383,8 @@ namespace CNS {
             }
         }
 
+        private int firstTimeStepToLog;
+
         /// <summary>
         /// Sets the simulation time of the restart (needed for time stepping)
         /// and recomputes all derived variables
@@ -393,6 +396,10 @@ namespace CNS {
 
                 if (SpeciesMap is ImmersedSpeciesMap ibmMap) {
                     LsTrk = ibmMap.Tracker;
+                }
+
+                if (this.Control.WriteLTSLog) {
+                    this.firstTimeStepToLog = timestep.MajorNumber + Control.ExplicitOrder - 1;
                 }
             }
         }
@@ -514,8 +521,17 @@ namespace CNS {
                     InitLTSLogFile(this.CurrentSessionInfo.ID);
                 }
 
+                // Start logging when start-up phase of LTS time stepper has been finished
+                // There is also a variant when the simulation has been restarted
+                bool logIt;
+                if (firstTimeStepToLog > 0) {
+                    logIt = TimeStepper.TimeInfo.TimeStepNumber > firstTimeStepToLog;
+                } else {
+                    logIt = TimeStepper.TimeInfo.TimeStepNumber > Control.ExplicitOrder - 1;
+                }
+
                 // Write a line
-                if (TimeStepper.TimeInfo.TimeStepNumber > Control.ExplicitOrder - 1) {
+                if (logIt) {
                     AdamsBashforthLTS LTS = TimeStepper as AdamsBashforthLTS;
                     string line = String.Format("{0}\t{1}\t{2}", LTS.TimeInfo.TimeStepNumber, LTS.TimeInfo.PhysicalTime, dt);
                     for (int i = 0; i < LTS.NumberOfClustersInitial; i++) {

@@ -20,12 +20,12 @@ using BoSSS.Foundation.Grid.Classic;
 using BoSSS.Solution.CompressibleFlowCommon;
 using BoSSS.Solution.CompressibleFlowCommon.MaterialProperty;
 using BoSSS.Solution.CompressibleFlowCommon.Boundary;
-using CNS.MaterialProperty;
 using ilPSP;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using BoSSS.Solution.CompressibleFlowCommon.Diffusion;
 
 namespace CNS.Diffusion {
 
@@ -102,11 +102,11 @@ namespace CNS.Diffusion {
 
         #region IEquationComponent Members
         /// <summary>
-        /// <see cref="CNSEnvironment.PrimalArgumentOrdering"/>
+        /// <see cref="CompressibleEnvironment.PrimalArgumentOrdering"/>
         /// </summary>
         public IList<string> ArgumentOrdering {
             get {
-                return CNSEnvironment.PrimalArgumentOrdering;
+                return CompressibleEnvironment.PrimalArgumentOrdering;
             }
         }
 

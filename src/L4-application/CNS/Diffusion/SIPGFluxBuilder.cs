@@ -86,13 +86,13 @@ namespace CNS.Diffusion {
             op.DensityComponents.Add(
                 new SIPGDensityFlux(control, boundaryMap, speciesMap, gridData, 0, cellMetricFunc));
 
-            for (int i = 0; i < CNSEnvironment.NumberOfDimensions; i++) {
+            for (int i = 0; i < CompressibleEnvironment.NumberOfDimensions; i++) {
                 op.MomentumComponents[i].Add(
                     new SIPGMomentumFlux(control, boundaryMap, speciesMap, gridData, i + 1, cellMetricFunc));
             }
 
             op.EnergyComponents.Add(
-                new SIPGEnergyFlux(control, boundaryMap, speciesMap, gridData, CNSEnvironment.NumberOfDimensions + 1, cellMetricFunc));
+                new SIPGEnergyFlux(control, boundaryMap, speciesMap, gridData, CompressibleEnvironment.NumberOfDimensions + 1, cellMetricFunc));
         }
     }
 }

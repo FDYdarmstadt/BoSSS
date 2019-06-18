@@ -166,21 +166,17 @@
     <None Include="app.config" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\..\..\..\public\src\L4-application\XdgPoisson3\XdgPoisson3.csproj">
-      <Project>{efbeff7a-e40d-4808-be79-536040c0fadc}</Project>
-      <Name>XdgPoisson3</Name>
-    </ProjectReference>
     <ProjectReference Include="..\..\L2-foundation\BoSSS.Foundation.SpecFEM\BoSSS.Foundation.SpecFEM.csproj">
       <Project>{9d01688e-9372-4185-adcf-d64d47f3a44a}</Project>
       <Name>BoSSS.Foundation.SpecFEM</Name>
     </ProjectReference>
+    <ProjectReference Include="..\..\L3-solution\BoSSS.Solution.AdvancedSolvers\BoSSS.Solution.AdvancedSolvers.csproj">
+      <Project>{efe8c307-09bc-4f58-b991-6ef8fd6d5eff}</Project>
+      <Name>BoSSS.Solution.AdvancedSolvers</Name>
+    </ProjectReference>
     <ProjectReference Include="..\..\Utils\btail\btail.csproj">
       <Project>{dfafe1d1-0235-4125-9364-e8de47546cc6}</Project>
       <Name>btail</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\FSI_Solver\FSI_Solver.csproj">
-      <Project>{5c52e2f7-a6dd-4e3e-a31e-1b0ff34c0cc2}</Project>
-      <Name>FSI_Solver</Name>
     </ProjectReference>
     <ProjectReference Include="..\..\L3-solution\BoSSS.Solution.LevelSetTools\BoSSS.Solution.LevelSetTools.csproj">
       <Project>{9ee2fcad-e8a4-4f14-b932-d1a4904d715d}</Project>
@@ -265,10 +261,6 @@
     <ProjectReference Include="..\..\L3-solution\BoSSS.Solution.GridImport\BoSSS.Solution.GridImport.csproj">
       <Project>{28E4A331-ECA2-43A6-A11F-6D6A5E410434}</Project>
       <Name>BoSSS.Solution.GridImport</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\..\L3-solution\BoSSS.Solution.AdvancedSolvers\BoSSS.Solution.AdvancedSolvers.csproj">
-      <Project>{efe8c307-09bc-4f58-b991-6ef8fd6d5eff}</Project>
-      <Name>BoSSS.Solution.AdvancedSolvers</Name>
     </ProjectReference>
     <ProjectReference Include="..\..\L3-solution\BoSSS.Solution.Statistic\BoSSS.Solution.Statistic.csproj">
       <Project>{45BCA5F9-27E7-43C0-B021-4312BF442C7D}</Project>
