@@ -147,10 +147,17 @@ namespace BoSSS.Application.XNSE_Solver {
         public RefinementStrategy RefineStrategy = RefinementStrategy.constantInterface;
 
         /// <summary>
-        /// desired minimum refinement level
+        /// desired minimum refinement level at interface
+        /// </summary>
+        [DataMember]
+        public int BaseRefinementLevel = 1;
+
+        /// <summary>
+        /// maximum refinement level including additional refinement (contact line, curvature, etc.)
         /// </summary>
         [DataMember]
         public int RefinementLevel = 1;
+
 
         /// <summary>
         /// additional refinement of the navier slip boundary 
@@ -158,6 +165,14 @@ namespace BoSSS.Application.XNSE_Solver {
         [DataMember]
         public bool RefineNavierSlipBoundary = false;
 
+        /// <summary>
+        /// option for clearing the velocities for restart
+        /// </summary>
+        [DataMember]
+        public bool ClearVelocitiesOnRestart = false;
+
+        [DataMember]
+        public int ReInitPeriod = 0;
 
         /// <summary>
         /// Expert options regarding the spatial discretization.
@@ -371,6 +386,7 @@ namespace BoSSS.Application.XNSE_Solver {
         /// <summary>
         /// Block-Preconditiond for the velocity/momentum-block of the saddle-point system
         /// </summary>
+        [DataMember]
         public MultigridOperator.Mode VelocityBlockPrecondMode = MultigridOperator.Mode.SymPart_DiagBlockEquilib;
 
         /// <summary>
@@ -440,7 +456,12 @@ namespace BoSSS.Application.XNSE_Solver {
             /// <summary>
             /// density weighted average
             /// </summary>
-            density           
+            density,
+
+            /// <summary>
+            /// viscosity weighted average
+            /// </summary>
+            viscosity
 
         }
 
@@ -488,25 +509,36 @@ namespace BoSSS.Application.XNSE_Solver {
         /// <summary>
         /// switch for the computation of the coupled heat solver
         /// </summary>
-        public bool solveCoupledHeatSolver = false;
+        public bool solveCoupledHeatEquation = false;
+
+        /// <summary>
+        /// switch for computations with evaporation
+        /// </summary>
+        //public bool withEvaporation = false;
 
         /// <summary>
         /// Block-Precondition for the Temperature-block
         /// </summary>
         public MultigridOperator.Mode TemperatureBlockPrecondMode = MultigridOperator.Mode.SymPart_DiagBlockEquilib;
 
+
+        /// <summary>
+        /// function for the disjoining pressure
+        /// </summary>
+        [NonSerialized]
+        public Func<double[], double> DisjoiningPressureFunc;
+
         /// <summary>
         /// density, heat capacity and thermal conductivity
         /// </summary>
         [DataMember]
         public ThermalParameters ThermalParameters = new ThermalParameters() {
-            Material = true,
             rho_A = 1.0,
             rho_B = 1.0,
             c_A = 1.0,
             c_B = 1.0,
             k_A = 1.0,
-            k_B = 1.0
+            k_B = 1.0,
         };
     }
 }

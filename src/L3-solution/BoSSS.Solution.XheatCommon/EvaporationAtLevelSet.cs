@@ -26,11 +26,12 @@ using BoSSS.Platform;
 using System.Diagnostics;
 using BoSSS.Solution.NSECommon;
 using ilPSP;
+using System.Collections;
 
 namespace BoSSS.Solution.XheatCommon {
 
 
-    public class EvaporationAtLevelSet : ILevelSetForm {
+    public class EvaporationAtLevelSet : ILevelSetForm, ILevelSetEquationComponentCoefficient {
 
         LevelSetTracker m_LsTrk;
 
@@ -41,46 +42,127 @@ namespace BoSSS.Solution.XheatCommon {
         /// <param name="_D">spatial dimension</param>
         /// <param name="LsTrk"></param>
         /// <param name="_sigma">surface-tension constant</param>
-        public EvaporationAtLevelSet(int _d, int _D, LevelSetTracker LsTrk, double _mInt, double _rhoA, double _rhoB) {
+        public EvaporationAtLevelSet(LevelSetTracker LsTrk, double _hVapA, double _Rint, double _Tsat, double _rho, double _sigma, double _pc, double _kA, double _kB) {
             m_LsTrk = LsTrk;
-            if(_d >= _D)
-                throw new ArgumentOutOfRangeException();
-            this.m_D = _D;
-            this.m_d = _d;
-            this.mInt = _mInt;
-            this.rhoA = _rhoA;
-            this.rhoB = _rhoB;
+            //this.mEvap = _mEvap;
+            //this.hVap = _hVap;
+            this.hVapA = _hVapA;
+            this.Rint = _Rint;
+            this.Tsat = _Tsat;
+            this.rho = _rho;
+            this.sigma = _sigma;
+            this.pc = _pc;
+
+            this.kA = _kA;
+            this.kB = _kB;
+
+            this.D = LsTrk.GridDat.SpatialDimension;
         }
 
-        int m_D;
-        int m_d;
+        //double mEvap;
+        //double hVap;
 
-        double mInt;
+        double hVapA;   // for the identification of the liquid phase
+        double Rint;
+        double Tsat;
+        double rho;     // density of liquid phase 
+        double sigma;
+        double pc;
 
-        double rhoA;
-        double rhoB;
+        double kA;
+        double kB;
+
+        int D;
+
+
+        private double ComputeHeatFlux_Macro(double[] GradT_A, double[] GradT_B, double[] n) {
+
+            double hVap = 0.0;
+            double qEvap = 0.0;
+            if(hVapA > 0) {
+                hVap = hVapA;
+                for(int d = 0; d < D; d++)
+                    qEvap += (kA * GradT_A[d] - kB * GradT_B[d]) * n[d];
+            } else {
+                hVap = -hVapA;
+                for(int d = 0; d < D; d++)
+                    qEvap += (kB * GradT_B[d] - kA * GradT_A[d]) * n[d];
+            }
+
+            return qEvap;
+        }
+
+        private double ComputeHeatFlux_Micro(double T_A, double T_B, double curv, double p_disp) {
+
+            if(hVapA == 0.0)
+                return 0.0;
+
+            double pc0 = (pc < 0.0) ? sigma * curv + p_disp : pc;      // augmented capillary pressure (without nonlinear evaporative masss part)
+
+            double TintMin = 0.0;
+            double hVap = 0.0;
+            double qEvap = 0.0;
+            if(hVapA > 0) {
+                hVap = hVapA;
+                TintMin = Tsat * (1 + (pc0 / (hVap * rho)));
+                if(T_A > TintMin)
+                    qEvap = -(T_A - TintMin) / Rint;
+            } else if(hVapA < 0) {
+                hVap = -hVapA;
+                TintMin = Tsat * (1 + (pc0 / (hVap * rho)));
+                if(T_B > TintMin)
+                    qEvap = (T_B - TintMin) / Rint;
+            }
+
+            return qEvap;
+        }
+
+        private double ComputeHeatFlux(double[] paramsNeg, double[] paramsPos, double[] N, bool microRegion) {
+
+            double qEvap = 0.0;
+            if(microRegion) {
+                qEvap = ComputeHeatFlux_Micro(paramsNeg[D], paramsPos[D], paramsNeg[D + 1], paramsNeg[D + 2]);
+            } else {
+                qEvap = ComputeHeatFlux_Macro(paramsNeg.GetSubVector(0, D), paramsPos.GetSubVector(0, D), N);
+            }
+
+            return qEvap;
+
+        }
 
 
         public double LevelSetForm(ref CommonParamsLs cp, double[] uA, double[] uB, double[,] Grad_uA, double[,] Grad_uB, double vA, double vB, double[] Grad_vA, double[] Grad_vB) {
 
-    
-            double[] Normal = cp.n;
+            Debug.Assert(cp.ParamsPos[D + 1] == cp.ParamsNeg[D + 1], "curvature must be continuous across interface");
+            Debug.Assert(cp.ParamsPos[D + 2] == cp.ParamsNeg[D + 2], "disjoining pressure must be continuous across interface");
 
-            double massFlux = mInt.Pow2() * Normal[m_d];
-            if(rhoA > rhoB)
-                massFlux *= ((1 / rhoB) - (1 / rhoA));
-            else
-                massFlux *= ((1 / rhoA) - (1 / rhoB));
+            //double qEvap = ComputeHeatFlux_Macro(cp.ParamsNeg.GetSubVector(0, D), cp.ParamsPos.GetSubVector(0, D), cp.n);
+            //double qEvap = ComputeHeatFlux_Micro(cp.ParamsNeg[D], cp.ParamsPos[D], cp.ParamsNeg[D + 1], cp.ParamsNeg[D + 2]);
+            double qEvap = -10.0; // ComputeHeatFlux(cp.ParamsNeg, cp.ParamsPos, cp.n, evapMicroRegion[cp.jCell]);
+            if(qEvap == 0.0)
+                return 0.0;
 
-            double FlxNeg = -0.5 * massFlux;
-            double FlxPos = +0.5 * massFlux;
+            //Console.WriteLine("qEvap - EvaporationAtLevelSet: {0}", qEvap);
 
+            double FlxNeg = -0.5 * qEvap;
+            double FlxPos = +0.5 * qEvap;
 
             Debug.Assert(!(double.IsNaN(FlxNeg) || double.IsInfinity(FlxNeg)));
             Debug.Assert(!(double.IsNaN(FlxPos) || double.IsInfinity(FlxPos)));
 
             return FlxNeg * vA - FlxPos * vB;
         }
+
+
+        BitArray evapMicroRegion;
+
+        public void CoefficientUpdate(CoefficientSet csA, CoefficientSet csB, int[] DomainDGdeg, int TestDGdeg) {
+
+            if(csA.UserDefinedValues.Keys.Contains("EvapMicroRegion"))
+                evapMicroRegion = (BitArray)csA.UserDefinedValues["EvapMicroRegion"];
+
+        }
+
 
         public IList<string> ArgumentOrdering {
             get {
@@ -91,7 +173,7 @@ namespace BoSSS.Solution.XheatCommon {
 
         public IList<string> ParameterOrdering {
             get {
-                return new string[] { };
+                return ArrayTools.Cat( new string[] { "GradTemp0_X", "GradTemp0_Y", "GradTemp0_Z" }.GetSubVector(0, D), "Temperature0", "Curvature", "DisjoiningPressure" );
             }
         }
 
@@ -112,6 +194,5 @@ namespace BoSSS.Solution.XheatCommon {
         }
 
     }
-
 
 }
