@@ -876,7 +876,7 @@ namespace BoSSS.Solution.XNSECommon.Operator.Convection {
             //double M = ComputeEvaporationMass_Micro(cp.ParamsNeg[D], cp.ParamsPos[D], cp.ParamsNeg[D + 1], cp.ParamsNeg[D + 2]);
             double M = -0.1; // ComputeEvaporationMass(cp.ParamsNeg, cp.ParamsPos, cp.n, evapMicroRegion[cp.jCell]);
 
-            double UintxN = 1.0;
+            double UintxN = 0.0;
 
             double uAxN = 0.0;
             double uBxN = 0.0;
@@ -884,10 +884,10 @@ namespace BoSSS.Solution.XNSECommon.Operator.Convection {
             // [[ rho(u*n) ]] {{u}} * {{v}}
             // ============================
 
-            for (int d = 0; d < D; d++) {
-                uAxN += rhoA * cp.ParamsNeg[d] * cp.n[d];
-                uBxN += rhoB * cp.ParamsPos[d] * cp.n[d];
-            }
+            //for (int d = 0; d < D; d++) {
+            //    uAxN += rhoA * cp.ParamsNeg[d] * cp.n[d];
+            //    uBxN += rhoB * cp.ParamsPos[d] * cp.n[d];
+            //}
 
             uAxN += -rhoA * UintxN;
             uBxN += -rhoB * UintxN;
@@ -906,8 +906,8 @@ namespace BoSSS.Solution.XNSECommon.Operator.Convection {
                 UnCentral += 0.5 * (rhoA * cp.ParamsNeg[d] + rhoB * cp.ParamsPos[d]) * cp.n[d];
             }
 
-            uAxN += UnCentral * (U_Neg[0] - (-M * (1 / rhoA) * cp.n[m_d]));
-            uBxN += UnCentral * (U_Pos[0] - (-M * (1 / rhoB) * cp.n[m_d]));
+            uAxN += UnCentral * (0.0 - (-M * (1 / rhoA) * cp.n[m_d]));
+            uBxN += UnCentral * (0.0 - (-M * (1 / rhoB) * cp.n[m_d]));
 
 
             // ====================================================================

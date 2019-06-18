@@ -215,13 +215,13 @@ namespace BoSSS.Solution.XNSECommon {
                         var conv = new Operator.Convection.ConvectionInBulk_LLF(D, BcMap, d, rhoA, rhoB, LFFA, LFFB, LsTrk);
                         comps.Add(conv); // Bulk component
 
-                        comps.Add(new Operator.Convection.ConvectionAtLevelSet_LLF(d, D, LsTrk, rhoA, rhoB, LFFA, LFFB, config.physParams.Material, BcMap, movingmesh));       // LevelSet component
-                        //comps.Add(new Operator.Convection.ConvectionAtLevelSet_weightedLLF(d, D, LsTrk, rhoA, rhoB, LFFA, LFFB, BcMap, movingmesh));       // LevelSet component
+                        //comps.Add(new Operator.Convection.ConvectionAtLevelSet_LLF(d, D, LsTrk, rhoA, rhoB, LFFA, LFFB, config.physParams.Material, BcMap, movingmesh));       // LevelSet component
+                        comps.Add(new Operator.Convection.ConvectionAtLevelSet_weightedLLF(d, D, LsTrk, rhoA, rhoB, LFFA, LFFB, BcMap, movingmesh));       // LevelSet component
 
                         if (evaporation) {
                             //comps.Add(new Operator.Convection.ConvectionAtLevelSet_Divergence(d, D, LsTrk, rhoA, rhoB, config.dntParams.ContiSign, config.dntParams.RescaleConti, kA, kB, hVapA, R_int, Tsat, sigma, p_c));
-                            //comps.Add(new Operator.Convection.ConvectionAtLevelSet_nonMaterialLLF(d, D, LsTrk, rhoA, rhoB, kA, kB, hVapA, R_int, Tsat, sigma, p_c));
-                            //comps.Add(new Operator.Convection.ConvectionAtLevelSet_nonMaterial(d, D, LsTrk, rhoA, rhoB, kA, kB, hVapA, R_int, Tsat, sigma, p_c));
+                            comps.Add(new Operator.Convection.ConvectionAtLevelSet_nonMaterialLLF(d, D, LsTrk, rhoA, rhoB, kA, kB, hVapA, R_int, Tsat, sigma, p_c));
+                            comps.Add(new Operator.Convection.ConvectionAtLevelSet_nonMaterial(d, D, LsTrk, rhoA, rhoB, kA, kB, hVapA, R_int, Tsat, sigma, p_c));
                         }
 
                         // variante 3:
@@ -532,8 +532,8 @@ namespace BoSSS.Solution.XNSECommon {
                 // evaporation (mass flux)
                 // =======================
 
-                if(evaporation) {
-                    for(int d = 0; d < D; d++) {
+                if (evaporation) {
+                    for (int d = 0; d < D; d++) {
                         m_OP.EquationComponents[CodName[d]].Add(new Operator.DynamicInterfaceConditions.MassFluxAtInterface(d, D, LsTrk, rhoA, rhoB, kA, kB, hVapA, R_int, Tsat, sigma, p_c));
                     }
                 }
