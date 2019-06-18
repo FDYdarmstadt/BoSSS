@@ -90,7 +90,7 @@ namespace BoSSS.Application.FSI_Solver
         /// <summary>
         /// Check whether any particles is collided with another particle
         /// </summary>
-        public bool[] m_collidedWithParticle;
+        public bool Collided;
 
         /// <summary>
         /// Check whether any particles is collided with the wall
@@ -581,15 +581,15 @@ namespace BoSSS.Application.FSI_Solver
         /// <returns></returns>
         public void CalculateTranslationalVelocity(double dt)
         {
-            bool AnyCollision = false;
-            for (int p = 0; p < m_collidedWithParticle.Length; p++)
-            {
-                if (m_collidedWithParticle[p])
-                {
-                    AnyCollision = true;
-                }
-            }
-            if (iteration_counter_P == 0 && !AnyCollision)
+            //bool AnyCollision = false;
+            //for (int p = 0; p < Collided.Length; p++)
+            //{
+            //    if (Collided[p])
+            //    {
+            //        AnyCollision = true;
+            //    }
+            //}
+            if (iteration_counter_P == 0 && !Collided)
             {
                 Aux.SaveMultidimValueOfLastTimestep(TranslationalVelocity);
             }
@@ -608,7 +608,7 @@ namespace BoSSS.Application.FSI_Solver
                 tempActiveVelcotiy[1] = Math.Sin(Angle[0]) * ActiveVelocity;
                 for (int d = 0; d < SpatialDim; d++)
                 {
-                    if (!AnyCollision)
+                    if (!Collided)
                         TranslationalVelocity[0][d] = tempActiveVelcotiy[d];
                     if (double.IsNaN(TranslationalVelocity[0][d]) || double.IsInfinity(TranslationalVelocity[0][d]))
                         throw new ArithmeticException("Error trying to calculate particle velocity Value:  " + TranslationalVelocity[0][d]);
@@ -618,7 +618,7 @@ namespace BoSSS.Application.FSI_Solver
 
                 for (int d = 0; d < SpatialDim; d++) {
                     
-                    if (!AnyCollision)
+                    if (!Collided)
                         TranslationalVelocity[0][d] = TranslationalVelocity[1][d] + (TranslationalAcceleration[1][d] + TranslationalAcceleration[0][d]) * dt / 2;
                     //else
                     //    TranslationalVelocity[0][d] = TranslationalVelocity[1][d];

@@ -58,13 +58,13 @@ namespace BoSSS.Application.FSI_Solver
             // grid and boundary conditions
             // ============================
 
-            double[] Xnodes = GenericBlas.Linspace(-30, 30, 300);
-            double[] Ynodes = GenericBlas.Linspace(-10, 10, 100);
+            double[] Xnodes = GenericBlas.Linspace(-5, 5, 50);
+            double[] Ynodes = GenericBlas.Linspace(-5, 5, 50);
             double h = Math.Min((Xnodes[1] - Xnodes[0]), (Ynodes[1] - Ynodes[0]));
 
             C.GridFunc = delegate {
-                var grd = Grid2D.Cartesian2DGrid(Xnodes, Ynodes, periodicX: true, periodicY: true);
-                grd.EdgeTagNames.Add(1, "Velocity_Inlet");
+                var grd = Grid2D.Cartesian2DGrid(Xnodes, Ynodes, periodicX: false, periodicY: false);
+                grd.EdgeTagNames.Add(1, "Wall");
                 grd.DefineEdgeTags(delegate (double[] X) {
                     byte et = 1;
                     return et;
@@ -73,7 +73,7 @@ namespace BoSSS.Application.FSI_Solver
                 return grd;
             };
 
-            C.AddBoundaryValue("Velocity_Inlet");
+            C.AddBoundaryValue("Wall");
 
             // Boundary values for level-set
             //C.BoundaryFunc = new Func<double, double>[] { (t) => 0.1 * 2 * Math.PI * -Math.Sin(Math.PI * 2 * 1 * t), (t) =>  0};
@@ -92,17 +92,18 @@ namespace BoSSS.Application.FSI_Solver
 
             // Particles
             // =========
-            for (int i = 0; i < 29; i++)
+            for (int i = 0; i < 1; i++)
             {
-                for (int j = 0; j < 9; j++)
+                for (int j = 0; j < 1; j++)
                 {
-                    double StartAngle = 10 * i - 10 * i * j;
-                    C.Particles.Add(new Particle_Ellipsoid(new double[] { -28 + 2 * i, 8 - 2 * j }, StartAngle)
+                    double StartAngle = 10 * i - 10 * i * j + 8;
+                    C.Particles.Add(new Particle_Ellipsoid(new double[] { -4 + 2 * i, 4 - 2 * j }, StartAngle)
                     {
                         particleDensity = 1.0,
                         length_P = 0.5,
                         thickness_P = 0.2,
-                        ActiveVelocity = 1,
+                        GravityVertical = 9.81,
+                        //ActiveVelocity = 1,
                     });
                 }
             }
@@ -138,8 +139,8 @@ namespace BoSSS.Application.FSI_Solver
             C.dtMax = dt;
             C.dtMin = dt;
 
-            C.Endtime = 100000.0;
-            C.NoOfTimesteps = 50000;
+            C.Endtime = 100000000.0;
+            C.NoOfTimesteps = 50000000;
 
             // haben fertig...
             // ===============
