@@ -222,6 +222,8 @@ namespace BoSSS.Solution.XNSECommon {
                             //comps.Add(new Operator.Convection.ConvectionAtLevelSet_Divergence(d, D, LsTrk, rhoA, rhoB, config.dntParams.ContiSign, config.dntParams.RescaleConti, kA, kB, hVapA, R_int, Tsat, sigma, p_c));
                             comps.Add(new Operator.Convection.ConvectionAtLevelSet_nonMaterialLLF(d, D, LsTrk, rhoA, rhoB, kA, kB, hVapA, R_int, Tsat, sigma, p_c));
                             comps.Add(new Operator.Convection.ConvectionAtLevelSet_nonMaterial(d, D, LsTrk, rhoA, rhoB, kA, kB, hVapA, R_int, Tsat, sigma, p_c));
+
+                            comps.Add(new Operator.DynamicInterfaceConditions.MassFluxAtInterface(d, D, LsTrk, rhoA, rhoB, kA, kB, hVapA, R_int, Tsat, sigma, p_c));
                         }
 
                         // variante 3:
@@ -532,11 +534,11 @@ namespace BoSSS.Solution.XNSECommon {
                 // evaporation (mass flux)
                 // =======================
 
-                if (evaporation) {
-                    for (int d = 0; d < D; d++) {
-                        m_OP.EquationComponents[CodName[d]].Add(new Operator.DynamicInterfaceConditions.MassFluxAtInterface(d, D, LsTrk, rhoA, rhoB, kA, kB, hVapA, R_int, Tsat, sigma, p_c));
-                    }
-                }
+                //if (evaporation) {
+                //    for (int d = 0; d < D; d++) {
+                //        m_OP.EquationComponents[CodName[d]].Add(new Operator.DynamicInterfaceConditions.MassFluxAtInterface(d, D, LsTrk, rhoA, rhoB, kA, kB, hVapA, R_int, Tsat, sigma, p_c));
+                //    }
+                //}
 
 
             }
@@ -704,7 +706,7 @@ namespace BoSSS.Solution.XNSECommon {
             }
 
             // Temperature gradient for evaporation
-            VectorField<DGField> GradTemp = new VectorField<DGField>(D, U0[0].Basis, XDGField.Factory);
+            VectorField<DGField> GradTemp = new VectorField<DGField>(D, new Basis(LsTrk.GridDat, 0), XDGField.Factory);
             if(CoupledCurrentState != null) {
                 DGField Temp = CoupledCurrentState.ToArray()[0];
                 GradTemp = new VectorField<DGField>(D, Temp.Basis, "GradTemp", XDGField.Factory);

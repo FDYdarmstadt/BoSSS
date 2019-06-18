@@ -728,7 +728,8 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             C.ThermalParameters.p_sat = pSat;
 
 
-            C.PhysicalParameters.IncludeConvection = true;
+            bool includeConv = true;
+            C.PhysicalParameters.IncludeConvection = includeConv;
             C.ThermalParameters.IncludeConvection = true;
             C.PhysicalParameters.Material = false;
 
@@ -787,7 +788,8 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
 
             if (!steady) {
                 C.InitialValues_Evaluators.Add("Pressure#A", X => pSat);
-                C.InitialValues_Evaluators.Add("Pressure#B", X => pSat - (0.01) * (10 - 1));
+                if (includeConv) 
+                    C.InitialValues_Evaluators.Add("Pressure#B", X => pSat - (0.01) * (10 - 1));
 
                 C.InitialValues_Evaluators.Add("VelocityY#A", X => 0.9);
             } else {
