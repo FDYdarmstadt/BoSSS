@@ -293,7 +293,6 @@ namespace BoSSS.Solution.XNSECommon.Operator.Convection {
         //}
 
         public Double LevelSetForm(ref CommonParamsLs cp, double[] U_Neg, double[] U_Pos, double[,] Grad_uA, double[,] Grad_uB, double v_Neg, double v_Pos, double[] Grad_vA, double[] Grad_vB) {
-            double[] U_NegFict, U_PosFict;
 
             double UinBkUp = U_Neg[0];
             double UoutBkUp = U_Pos[0];
@@ -306,16 +305,18 @@ namespace BoSSS.Solution.XNSECommon.Operator.Convection {
 
             double flx = 0.0;
 
+            double[] Uint = new double[] { 0.0, 1.0 };
+
             // Calculate central part
             // ======================
 
             //// 2 * {u_i * u_j} * n_j,
             //// resp. 2 * {rho * u_i * u_j} * n_j for variable density
-            flx += rhoA * U_Neg[0] * (cp.ParamsNeg[0] * cp.n[0] + cp.ParamsNeg[1] * cp.n[1]);
-            flx += rhoB * U_Pos[0] * (cp.ParamsPos[0] * cp.n[0] + cp.ParamsPos[1] * cp.n[1]);
-            if (m_D == 3) {
-                flx += rhoA * U_Neg[0] * cp.ParamsNeg[2] * cp.n[2] + rhoB * U_Pos[0] * cp.ParamsPos[2] * cp.n[2];
-            }
+            flx += rhoA * (U_Neg[0] - Uint[0]) * ((cp.ParamsNeg[0] - Uint[0]) * cp.n[0] + (cp.ParamsNeg[1] - Uint[1]) * cp.n[1]);
+            flx += rhoB * (U_Pos[0] - Uint[0]) * ((cp.ParamsPos[0] - Uint[0]) * cp.n[0] + (cp.ParamsPos[1] - Uint[1]) * cp.n[1]);
+            //if (m_D == 3) {
+            //    flx += rhoA * U_Neg[0] * cp.ParamsNeg[2] * cp.n[2] + rhoB * U_Pos[0] * cp.ParamsPos[2] * cp.n[2];
+            //}
 
             // Calculate dissipative part
             // ==========================
@@ -323,8 +324,8 @@ namespace BoSSS.Solution.XNSECommon.Operator.Convection {
             double[] VelocityMeanIn = new double[m_D];
             double[] VelocityMeanOut = new double[m_D];
             for (int d = 0; d < m_D; d++) {
-                VelocityMeanIn[d] = cp.ParamsNeg[m_D + d];
-                VelocityMeanOut[d] = cp.ParamsPos[m_D + d];
+                VelocityMeanIn[d] = cp.ParamsNeg[m_D + d] - Uint[d];
+                VelocityMeanOut[d] = cp.ParamsPos[m_D + d] - Uint[d];
             }
 
             double LambdaIn;
@@ -696,11 +697,13 @@ namespace BoSSS.Solution.XNSECommon.Operator.Convection {
             //double M = ComputeEvaporationMass_Micro(cp.ParamsNeg[D], cp.ParamsPos[D], cp.ParamsNeg[D + 1], cp.ParamsNeg[D + 2]);
             double M = -0.1; // ComputeEvaporationMass(cp.ParamsNeg, cp.ParamsPos, cp.n, evapMicroRegion[cp.jCell]);
 
+            double[] Uint = new double[] { 0.0, 1.0 };
+
             double[] VelocityMeanIn = new double[D];
             double[] VelocityMeanOut = new double[D];
             for (int d = 0; d < D; d++) {
-                VelocityMeanIn[d] = cp.ParamsNeg[D + d];
-                VelocityMeanOut[d] = cp.ParamsPos[D + d];
+                VelocityMeanIn[d] = cp.ParamsNeg[D + d] - Uint[d];
+                VelocityMeanOut[d] = cp.ParamsPos[D + d] - Uint[d];
             }
 
             double LambdaIn;
@@ -876,7 +879,8 @@ namespace BoSSS.Solution.XNSECommon.Operator.Convection {
             //double M = ComputeEvaporationMass_Micro(cp.ParamsNeg[D], cp.ParamsPos[D], cp.ParamsNeg[D + 1], cp.ParamsNeg[D + 2]);
             double M = -0.1; // ComputeEvaporationMass(cp.ParamsNeg, cp.ParamsPos, cp.n, evapMicroRegion[cp.jCell]);
 
-            double UintxN = 0.0;
+            double[] Uint = new double[] { 0.0, 1.0 };
+            double UintxN = 1.0;
 
             double uAxN = 0.0;
             double uBxN = 0.0;
@@ -892,7 +896,7 @@ namespace BoSSS.Solution.XNSECommon.Operator.Convection {
             uAxN += -rhoA * UintxN;
             uBxN += -rhoB * UintxN;
 
-            double Uaver = 0.5 * (U_Neg[0] + U_Pos[0]);
+            double Uaver = 0.5 * ((U_Neg[0] - Uint[0]) + (U_Pos[0] - Uint[0]));
 
             uAxN *= Uaver;
             uBxN *= Uaver;
@@ -903,7 +907,7 @@ namespace BoSSS.Solution.XNSECommon.Operator.Convection {
 
             double UnCentral = 0.0;
             for (int d = 0; d < D; d++) {
-                UnCentral += 0.5 * (rhoA * cp.ParamsNeg[d] + rhoB * cp.ParamsPos[d]) * cp.n[d];
+                UnCentral += 0.5 * (rhoA * (cp.ParamsNeg[d] - Uint[d]) + rhoB * (cp.ParamsPos[d] - Uint[d])) * cp.n[d];
             }
 
             uAxN += UnCentral * (0.0 - (-M * (1 / rhoA) * cp.n[m_d]));

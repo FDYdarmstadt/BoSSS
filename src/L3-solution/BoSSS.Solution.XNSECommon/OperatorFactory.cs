@@ -215,8 +215,8 @@ namespace BoSSS.Solution.XNSECommon {
                         var conv = new Operator.Convection.ConvectionInBulk_LLF(D, BcMap, d, rhoA, rhoB, LFFA, LFFB, LsTrk);
                         comps.Add(conv); // Bulk component
 
-                        //comps.Add(new Operator.Convection.ConvectionAtLevelSet_LLF(d, D, LsTrk, rhoA, rhoB, LFFA, LFFB, config.physParams.Material, BcMap, movingmesh));       // LevelSet component
-                        comps.Add(new Operator.Convection.ConvectionAtLevelSet_weightedLLF(d, D, LsTrk, rhoA, rhoB, LFFA, LFFB, BcMap, movingmesh));       // LevelSet component
+                        comps.Add(new Operator.Convection.ConvectionAtLevelSet_LLF(d, D, LsTrk, rhoA, rhoB, LFFA, LFFB, config.physParams.Material, BcMap, movingmesh));       // LevelSet component
+                        //comps.Add(new Operator.Convection.ConvectionAtLevelSet_weightedLLF(d, D, LsTrk, rhoA, rhoB, LFFA, LFFB, BcMap, movingmesh));       // LevelSet component
 
                         if (evaporation) {
                             //comps.Add(new Operator.Convection.ConvectionAtLevelSet_Divergence(d, D, LsTrk, rhoA, rhoB, config.dntParams.ContiSign, config.dntParams.RescaleConti, kA, kB, hVapA, R_int, Tsat, sigma, p_c));
@@ -706,7 +706,7 @@ namespace BoSSS.Solution.XNSECommon {
             }
 
             // Temperature gradient for evaporation
-            VectorField<DGField> GradTemp = new VectorField<DGField>(D, new Basis(LsTrk.GridDat, 0), XDGField.Factory);
+            VectorField<DGField> GradTemp = new VectorField<DGField>(D, new XDGBasis(LsTrk, 0), XDGField.Factory);
             if(CoupledCurrentState != null) {
                 DGField Temp = CoupledCurrentState.ToArray()[0];
                 GradTemp = new VectorField<DGField>(D, Temp.Basis, "GradTemp", XDGField.Factory);
