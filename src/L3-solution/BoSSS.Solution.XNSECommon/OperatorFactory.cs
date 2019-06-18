@@ -153,15 +153,23 @@ namespace BoSSS.Solution.XNSECommon {
 
             MatInt = !evaporation;
 
-            double kA = config.thermParams.k_A;
-            double kB = config.thermParams.k_B;
-            double hVapA = config.thermParams.hVap_A;
-            double hVapB = config.thermParams.hVap_B;
+            double kA = 0.0;
+            double kB = 0.0;
+            double hVapA = 0.0;
+            double hVapB = 0.0;
 
-            double Tsat = config.thermParams.T_sat;
+            double Tsat = 0.0;
             double R_int = 0.0;
-            //double T_intMin = 0.0;
-            if(evaporation) {
+            double p_c = 0.0;
+            if (evaporation) {
+                kA = config.thermParams.k_A;
+                kB = config.thermParams.k_B;
+                hVapA = config.thermParams.hVap_A;
+                hVapB = config.thermParams.hVap_B;
+
+                Tsat = config.thermParams.T_sat;
+                p_c = config.thermParams.pc;
+                //double T_intMin = 0.0;
                 double f = config.thermParams.fc;
                 double R = config.thermParams.Rc;
                 //double pc = config.thermParams.pc;
@@ -175,7 +183,7 @@ namespace BoSSS.Solution.XNSECommon {
                 }
                 this.CurvatureRequired = true;
             }
-            double p_c = config.thermParams.pc;
+
 
 
             //if (!MatInt)
