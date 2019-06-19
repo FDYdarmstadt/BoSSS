@@ -457,8 +457,8 @@ namespace HilbertTest {
 
             if (AV) {
                 Variable sensorVariable = CompressibleVariables.Density;
-                c.ShockSensor = new PerssonSensor(sensorVariable, sensorLimit);
-                c.ArtificialViscosityLaw = new SmoothedHeavisideArtificialViscosityLaw(c.ShockSensor, dgDegree, sensorLimit, epsilon0, kappa);
+                c.CNSShockSensor = new PerssonSensor(sensorVariable, sensorLimit);
+                c.ArtificialViscosityLaw = new SmoothedHeavisideArtificialViscosityLaw(c.CNSShockSensor, dgDegree, sensorLimit, epsilon0, kappa);
             }
 
             c.EquationOfState = IdealGas.Air;
@@ -550,8 +550,8 @@ namespace HilbertTest {
 
             if (AV) {
                 Variable sensorVariable = CompressibleVariables.Density;
-                c.ShockSensor = new PerssonSensor(sensorVariable, sensorLimit);
-                c.ArtificialViscosityLaw = new SmoothedHeavisideArtificialViscosityLaw(c.ShockSensor, dgDegree, sensorLimit, epsilon0, kappa);
+                c.CNSShockSensor = new PerssonSensor(sensorVariable, sensorLimit);
+                c.ArtificialViscosityLaw = new SmoothedHeavisideArtificialViscosityLaw(c.CNSShockSensor, dgDegree, sensorLimit, epsilon0, kappa);
             }
 
             c.EquationOfState = IdealGas.Air;
@@ -723,8 +723,8 @@ namespace HilbertTest {
 
             if (AV) {
                 Variable sensorVariable = CompressibleVariables.Density;
-                c.ShockSensor = new PerssonSensor(sensorVariable, sensorLimit);
-                c.ArtificialViscosityLaw = new SmoothedHeavisideArtificialViscosityLaw(c.ShockSensor, dgDegree, sensorLimit, epsilon0, kappa);
+                c.CNSShockSensor = new PerssonSensor(sensorVariable, sensorLimit);
+                c.ArtificialViscosityLaw = new SmoothedHeavisideArtificialViscosityLaw(c.CNSShockSensor, dgDegree, sensorLimit, epsilon0, kappa);
             }
 
             c.EquationOfState = IdealGas.Air;

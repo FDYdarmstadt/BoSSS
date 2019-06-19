@@ -29,7 +29,7 @@ using System.Linq;
 
 namespace CNS.ShockCapturing {
 
-    public class PerssonSensor : IShockSensor {
+    public class PerssonSensor : ICNSShockSensor {
 
         private string m_sensorVariableName;
 
