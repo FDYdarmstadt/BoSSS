@@ -312,8 +312,8 @@ namespace BoSSS.Solution.XNSECommon.Operator.Convection {
 
             //// 2 * {u_i * u_j} * n_j,
             //// resp. 2 * {rho * u_i * u_j} * n_j for variable density
-            flx += rhoA * (U_Neg[0] - Uint[0]) * ((cp.ParamsNeg[0] - Uint[0]) * cp.n[0] + (cp.ParamsNeg[1] - Uint[1]) * cp.n[1]);
-            flx += rhoB * (U_Pos[0] - Uint[0]) * ((cp.ParamsPos[0] - Uint[0]) * cp.n[0] + (cp.ParamsPos[1] - Uint[1]) * cp.n[1]);
+            flx += rhoA * (U_Neg[0] - Uint[m_d]) * ((cp.ParamsNeg[0] - Uint[0]) * cp.n[0] + (cp.ParamsNeg[1] - Uint[1]) * cp.n[1]);
+            flx += rhoB * (U_Pos[0] - Uint[m_d]) * ((cp.ParamsPos[0] - Uint[0]) * cp.n[0] + (cp.ParamsPos[1] - Uint[1]) * cp.n[1]);
             //if (m_D == 3) {
             //    flx += rhoA * U_Neg[0] * cp.ParamsNeg[2] * cp.n[2] + rhoB * U_Pos[0] * cp.ParamsPos[2] * cp.n[2];
             //}
@@ -896,7 +896,7 @@ namespace BoSSS.Solution.XNSECommon.Operator.Convection {
             uAxN += -rhoA * UintxN;
             uBxN += -rhoB * UintxN;
 
-            double Uaver = 0.5 * ((U_Neg[0] - Uint[0]) + (U_Pos[0] - Uint[0]));
+            double Uaver = 0.5 * ((U_Neg[0] - Uint[m_d]) + (U_Pos[0] - Uint[m_d]));
 
             uAxN *= Uaver;
             uBxN *= Uaver;
