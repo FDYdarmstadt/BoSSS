@@ -464,7 +464,7 @@ namespace FSI_Solver
                 // =======================================================
                 DistanceAlgorithm(Simplex, out v, out Overlapping);
 
-                // End algorithm if the two object are overlapping.
+                // End algorithm if the two objects are overlapping.
                 if (Overlapping)
                     break;
             }
@@ -654,6 +654,10 @@ namespace FSI_Solver
                         AB[d] = Simplex[1][d] - Simplex[0][d];
                     }
                     double Lambda = (Simplex[1][1] * AB[0] - Simplex[1][0] * AB[1]) / (AB[0].Pow2() + AB[1].Pow2());
+                    if(Lambda == 0)
+                    {
+                        Overlapping = true;
+                    }
                     v[0] = -Lambda * AB[1];
                     v[1] = Lambda * AB[0];
                     if (double.IsNaN(v[0]) || double.IsNaN(v[1]))
@@ -739,10 +743,6 @@ namespace FSI_Solver
                             if (double.IsNaN(v[0]) || double.IsNaN(v[1]))
                                 throw new ArithmeticException("Error trying to calculate v Value:  " + v[0] + " v " + v[1] + " Simplex count == 3." + s1);
                             break;
-                        }
-                        if (counter == 3)
-                        {
-                            Console.WriteLine("Warning");
                         }
                     }
                 }
@@ -929,15 +929,17 @@ namespace FSI_Solver
             double Dynamic_dt = 213;
             double rMax_0 = particle0.GetLengthScales().Max();
             double[] PointVelocity0 = new double[2];
-            for (int d = 0; d < 2; d++)
-                PointVelocity0[d] = particle0.TranslationalVelocity[0][d] + particle0.RotationalVelocity[0] * rMax_0;
+            CalculateRadialVector(particle0.Position[0], ClosestPoint0, out double[] RadialVector0, out double RadialLength0, out double[] _);
+            PointVelocity0[0] = particle0.TranslationalVelocity[0][0] - particle0.RotationalVelocity[0] * RadialLength0 * RadialVector0[1];
+            PointVelocity0[1] = particle0.TranslationalVelocity[0][1] + particle0.RotationalVelocity[0] * RadialLength0 * RadialVector0[0];
             ProjectVelocityOnVector(NormalVector, PointVelocity0, out double DetectCollisionVn_P0);
             if (particle1 != null)
             {
                 double rMax_1 = particle1.GetLengthScales().Max();
                 double[] PointVelocity1 = new double[2];
-                for (int d = 0; d < 2; d++)
-                    PointVelocity1[d] = particle1.TranslationalVelocity[0][d] + particle1.RotationalVelocity[0] * rMax_1;
+                CalculateRadialVector(particle1.Position[0], ClosestPoint1, out double[] RadialVector1, out double RadialLength1, out double[] _);
+                PointVelocity1[0] = particle1.TranslationalVelocity[0][0] - particle1.RotationalVelocity[0] * RadialLength1 * RadialVector1[1];
+                PointVelocity1[1] = particle1.TranslationalVelocity[0][1] + particle1.RotationalVelocity[0] * RadialLength1 * RadialVector1[0];
                 ProjectVelocityOnVector(NormalVector, PointVelocity1, out double DetectCollisionVn_P1);
                 if (DetectCollisionVn_P1 - DetectCollisionVn_P0 == 0)
                     return double.MaxValue;
@@ -951,24 +953,31 @@ namespace FSI_Solver
             return Dynamic_dt;
         }
 
-        internal void UpdateParticleState(Particle particle, double Dynamic_dt, int SpatialDim)
+        internal void UpdateParticleState(Particle particle, double dt, double Dynamic_dt, int SpatialDim)
         {
-            if (Dynamic_dt < 0 || Dynamic_dt == double.MaxValue)
+            if (Dynamic_dt != 0)
             {
-                particle.Position[0] = particle.Position[1].CloneAs();
-                particle.Angle[0] = particle.Angle[1];
-            }
-            else
-            {
+                //double[] Temp_TranslationalVelocity = new double[SpatialDim];
+                //double Temp_RotationalVelocity = new double();
+                //for (int d = 0; d < SpatialDim; d++)
+                //{
+                //    Temp_TranslationalVelocity[d] = particle.TranslationalVelocity[1][d] + (particle.TranslationalAcceleration[1][d] + particle.TranslationalAcceleration[0][d]) * Dynamic_dt / 2;
+                //    if (double.IsNaN(Temp_TranslationalVelocity[d]) || double.IsInfinity(Temp_TranslationalVelocity[d]))
+                //        throw new ArithmeticException("Error trying to update particle position. Value:  " + particle.Position[0][d]);
+                //}
+                //Temp_RotationalVelocity = particle.RotationalVelocity[1] + (particle.RotationalAcceleration[0] + particle.RotationalAcceleration[1]) * Dynamic_dt / 2;
+                //if (double.IsNaN(Temp_RotationalVelocity) || double.IsInfinity(Temp_RotationalVelocity))
+                //    throw new ArithmeticException("Error trying to update particle position. Value:  " + particle.Angle[0]);
+
                 for (int d = 0; d < SpatialDim; d++)
                 {
-                    particle.Position[0][d] = particle.Position[0][d] + (particle.TranslationalVelocity[1][d] + particle.TranslationalVelocity[0][d]) * Dynamic_dt / 2 + (particle.TranslationalAcceleration[1][d] + particle.TranslationalAcceleration[0][d]) * Dynamic_dt.Pow2() / 4;
+                    particle.Position[0][d] = particle.Position[0][d] + (particle.TranslationalVelocity[1][d] * 0 + 2 * particle.TranslationalVelocity[0][d]) * Dynamic_dt / 2 + 0 * (particle.TranslationalAcceleration[1][d] + particle.TranslationalAcceleration[0][d]) * Dynamic_dt.Pow2() / 4;
                     if (double.IsNaN(particle.Position[0][d]) || double.IsInfinity(particle.Position[0][d]))
                         throw new ArithmeticException("Error trying to update particle position. Value:  " + particle.Position[0][d]);
                 }
-                particle.Angle[0] = particle.Angle[0] + (particle.RotationalVelocity[1] + particle.RotationalVelocity[0]) * Dynamic_dt / 2 + (particle.RotationalAcceleration[0] + particle.RotationalAcceleration[1]) * Dynamic_dt.Pow2() / 4;
+                particle.Angle[0] = particle.Angle[0] + (particle.RotationalVelocity[1] * 0 + 2 * particle.RotationalVelocity[0]) * Dynamic_dt / 2 + 0 * (particle.RotationalAcceleration[0] + particle.RotationalAcceleration[1]) * Dynamic_dt.Pow2() / 4;
                 if (double.IsNaN(particle.Angle[0]) || double.IsInfinity(particle.Angle[0]))
-                    throw new ArithmeticException("Error trying to update particle position. Value:  " + particle.Angle[0] + " RotatinalVelcotiy "+ particle.RotationalVelocity[1]+"dfhn"+particle.RotationalVelocity[0] + " Acceleration " + particle.RotationalAcceleration[0] + "gsg" + particle.RotationalAcceleration[1]);
+                    throw new ArithmeticException("Error trying to update particle position. Value:  " + particle.Angle[0]);
             }
         }
 
@@ -1044,11 +1053,11 @@ namespace FSI_Solver
             RadialVector = new double[ParticlePosition.Length];
             for (int d = 0; d < ParticlePosition.Length; d++)
             {
-                RadialVector[d] = -SurfacePoint[d] + ParticlePosition[d];
+                RadialVector[d] = SurfacePoint[d] - ParticlePosition[d];
             }
+            RadialLength = Math.Sqrt(RadialVector[0].Pow2() + RadialVector[1].Pow2());
             RadialVector.ScaleV(1 / Math.Sqrt(RadialVector[0].Pow2() + RadialVector[1].Pow2()));
             RadialNormalVector = new double[] { -RadialVector[1], RadialVector[0] };
-            RadialLength = Math.Sqrt(RadialNormalVector[0].Pow2() + RadialNormalVector[1].Pow2());
             RadialNormalVector.ScaleV(1 / Math.Sqrt(RadialNormalVector[0].Pow2() + RadialNormalVector[1].Pow2()));
         }
 

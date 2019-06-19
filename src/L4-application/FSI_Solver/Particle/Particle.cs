@@ -274,6 +274,12 @@ namespace BoSSS.Application.FSI_Solver
         /// The translational velocity of the particle in the current time step. This list is used by the momentum conservation model.
         /// </summary>
         [DataMember]
+        public double CollisionPreviousTimestep = new double();
+
+        /// <summary>
+        /// The translational velocity of the particle in the current time step. This list is used by the momentum conservation model.
+        /// </summary>
+        [DataMember]
         public double[] TotalCollisionPositionCorrection = new double[2];
 
         /// <summary>
