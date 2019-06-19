@@ -643,7 +643,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
 
             C.CutCellQuadratureType = XQuadFactoryHelper.MomentFittingVariants.Classic;
 
-            bool steady = false;
+            bool steady = true;
 
             //_DbPath = @"\\dc1\userspace\smuda\cluster\CapillaryRise\CapillaryRise_studyDB";
 
@@ -788,8 +788,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
 
             if (!steady) {
                 C.InitialValues_Evaluators.Add("Pressure#A", X => pSat);
-                if (includeConv) 
-                    C.InitialValues_Evaluators.Add("Pressure#B", X => pSat - (0.01) * (10 - 1));
+                C.InitialValues_Evaluators.Add("Pressure#B", X => pSat - (0.01) * (10 - 1));
 
                 C.InitialValues_Evaluators.Add("VelocityY#A", X => 0.9);
             } else {
