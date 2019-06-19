@@ -24,9 +24,11 @@ namespace BoSSS.Solution.XheatCommon {
 
     public enum ThermalBcType {
 
-        Dirichlet = 0,
+        ConstantTemperature = 0,
 
-        ZeroGradient = 1
+        ZeroGradient = 1,
+
+        ConstantHeatFlux = 2
 
     }
 

@@ -73,7 +73,8 @@ namespace BoSSS.Solution.XheatCommon {
 
         void SetBndfunction(string S) {
             int D = base.m_D;
-            base.tempFunction = D.ForLoop(d => this.m_bcMap.bndFunction[VariableNames.Temperature + "#" + S]);
+            base.tempFunction = this.m_bcMap.bndFunction[VariableNames.Temperature + "#" + S];
+            base.fluxFunction = this.m_bcMap.bndFunction["HeatFlux#" + S];
         }
 
         protected override double Conductivity(double[] Parameters) {
@@ -103,10 +104,15 @@ namespace BoSSS.Solution.XheatCommon {
 
         /// <summary>
         /// Dirichlet boundary values; <br/>
-        ///  - 1st index: spatial dimension <br/>
-        ///  - 2nd index: edge tag
+        ///  - 1st index: edge tag
         /// </summary>
-        protected Func<double[], double, double>[][] tempFunction;
+        protected Func<double[], double, double>[] tempFunction;
+
+        /// <summary>
+        /// flux boundary values; <br/>
+        ///  - 1st index: edge tag
+        /// </summary>
+        protected Func<double[], double, double>[] fluxFunction;
 
 
         public swipConductivity(double _penaltyBase, int D, ThermalBoundaryCondMap bcmap) {
@@ -114,7 +120,8 @@ namespace BoSSS.Solution.XheatCommon {
             this.m_penalty_base = _penaltyBase;
             this.m_D = D;
 
-            tempFunction = D.ForLoop(d => bcmap.bndFunction[VariableNames.Temperature]);
+            tempFunction = bcmap.bndFunction[VariableNames.Temperature];
+            fluxFunction = bcmap.bndFunction["HeatFlux"];
             EdgeTag2Type = bcmap.EdgeTag2Type;
         }
 
@@ -160,17 +167,17 @@ namespace BoSSS.Solution.XheatCommon {
             double Acc = 0.0;
 
             double pnlty = this.penalty(inp.jCellIn, inp.jCellOut);//, inp.GridDat.Cells.cj);
-            double muA = this.Conductivity(inp.Parameters_IN);
-            double muB = this.Conductivity(inp.Parameters_OUT);
+            double kA = this.Conductivity(inp.Parameters_IN);
+            double kB = this.Conductivity(inp.Parameters_OUT);
 
 
             for(int d = 0; d < inp.D; d++) {
-                Acc += 0.5 * (muA * _Grad_uA[0, d] + muB * _Grad_uB[0, d]) * (_vA - _vB) * inp.Normale[d];  // consistency term
-                Acc += 0.5 * (muA * _Grad_vA[d] + muB * _Grad_vB[d]) * (_uA[0] - _uB[0]) * inp.Normale[d];  // symmetry term
+                Acc += 0.5 * (kA * _Grad_uA[0, d] + kB * _Grad_uB[0, d]) * (_vA - _vB) * inp.Normale[d];  // consistency term
+                Acc += 0.5 * (kA * _Grad_vA[d] + kB * _Grad_vB[d]) * (_uA[0] - _uB[0]) * inp.Normale[d];  // symmetry term
             }
             Acc *= this.m_alpha;
 
-            double muMax = (Math.Abs(muA) > Math.Abs(muB)) ? muA : muB;
+            double muMax = (Math.Abs(kA) > Math.Abs(kB)) ? kA : kB;
             Acc -= (_uA[0] - _uB[0]) * (_vA - _vB) * pnlty * muMax; // penalty term
 
             return -Acc;
@@ -180,36 +187,50 @@ namespace BoSSS.Solution.XheatCommon {
             double Acc = 0.0;
 
             double pnlty = 2 * this.penalty(inp.jCellIn, -1);//, inp.GridDat.Cells.cj);
-            double muA = this.Conductivity(inp.Parameters_IN);
+            double kA = this.Conductivity(inp.Parameters_IN);
             ThermalBcType edgType = this.EdgeTag2Type[inp.EdgeTag];
 
             switch(edgType) {
-                case ThermalBcType.Dirichlet: {
+                case ThermalBcType.ConstantTemperature: {
                         // inhom. Dirichlet b.c.
                         // +++++++++++++++++++++
 
-                        double g_D = this.g_Diri(inp.X, inp.time, inp.EdgeTag, 0);
+                        double g_D = this.g_Diri(inp.X, inp.time, inp.EdgeTag);
 
                         for(int d = 0; d < inp.D; d++) {
                             double nd = inp.Normale[d];
-                            Acc += (muA * _Grad_uA[0, d]) * (_vA) * nd;
-                            Acc += (muA * _Grad_vA[d]) * (_uA[0] - g_D) * nd;
+                            Acc += (kA * _Grad_uA[0, d]) * (_vA) * nd;
+                            Acc += (kA * _Grad_vA[d]) * (_uA[0] - g_D) * nd;
                         }
                         Acc *= this.m_alpha;
 
-                        Acc -= muA * (_uA[0] - g_D) * (_vA - 0) * pnlty;
+                        Acc -= kA * (_uA[0] - g_D) * (_vA - 0) * pnlty;
                         break;
                     }
                 case ThermalBcType.ZeroGradient: {
 
                         for(int d = 0; d < inp.D; d++) {
                             double nd = inp.Normale[d];
-                            Acc += (muA * _Grad_uA[0, d]) * (_vA) * nd;
+                            //Acc += (muA * _Grad_uA[0, d]) * (_vA) * nd;
                             //Acc += (muA * _Grad_vA[d]) * (_uA[0] - g_D) * nd;
                         }
                         Acc *= this.m_alpha;
 
                         //Acc -= muA * (_uA[0] - g_D) * (_vA - 0) * pnlty;
+                        break;
+                    }
+                case ThermalBcType.ConstantHeatFlux: {
+
+                        double g_D = this.g_Flux(inp.X, inp.time, inp.EdgeTag);
+
+                        for(int d = 0; d < inp.D; d++) {
+                            double nd = inp.Normale[d];
+                            Acc += g_D * (_vA) * nd;
+                            //Acc += (kA * _Grad_vA[d]) * (_uA[0] - g_D) * nd;
+                        }
+                        Acc *= this.m_alpha;
+
+                        //Acc -= kA * (_uA[0] - g_D) * (_vA - 0) * pnlty;
                         break;
                     }
                 default:
@@ -224,41 +245,41 @@ namespace BoSSS.Solution.XheatCommon {
         /// very dirty hack to 'inject' an alternate boundary condition value for unit testing,
         /// designed to match <see cref="BoSSS.Application.ipViscosity.TestSolution.U"/>
         /// </summary>
-        public Func<int, double[], double> g_Diri_Override;
+        public Func<double[], double, double> g_Diri_Override;
 
         /// <summary>
         /// very dirty hack to 'inject' an alternate boundary condition value for unit testing,
         /// designed to match <see cref="BoSSS.Application.ipViscosityTestSolution.dU"/>
         /// </summary>
-        public Func<int, double[], int, double> g_Neu_Override;
+        public Func<double[], double, double> g_Flux_Override;
 
 
         /// <summary>
         /// Dirichlet boundary value: the given temperature at the boundary.
         /// </summary>
-        protected double g_Diri(double[] X, double time, int EdgeTag, int d) {
+        protected double g_Diri(double[] X, double time, int EdgeTag) {
             if(this.g_Diri_Override == null) {
-                Func<double[], double, double> boundVel = this.tempFunction[d][EdgeTag];
+                Func<double[], double, double> boundVel = this.tempFunction[EdgeTag];
                 double ret = boundVel(X, time);
 
                 return ret;
             } else {
-                return g_Diri_Override(d, X);
+                return g_Diri_Override(X, time);
             }
         }
 
         /// <summary>
         /// Neumann boundary value;
         /// </summary>
-        double g_Neu(double[] X, double[] N, int EdgeTag, int d) {
-            if(this.g_Neu_Override == null) {
-                return 0.0;
+        double g_Flux(double[] X, double time, int EdgeTag) {
+            if(this.g_Flux_Override == null) {
+                Func<double[], double, double> boundVel = this.fluxFunction[EdgeTag];
+                double ret = boundVel(X, time);
+
+                return ret;
+
             } else {
-                double Acc = 0;
-                for(int i = 0; i < this.m_D; i++) {
-                    Acc += N[i] * g_Neu_Override(d, X, i);
-                }
-                return Acc;
+                return g_Flux_Override(X, time);
             }
         }
 
