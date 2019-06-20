@@ -1213,9 +1213,7 @@ namespace BoSSS.Solution {
                         throw new ApplicationException("Control object error: 'AppControl.GridFunc' and 'AppControl.GridGuid' are exclusive, cannot be unequal null at the same time.");
 
                     if (this.Control.GridFunc != null) {
-                        Console.WriteLine("3.1");
                         var g = this.Control.GridFunc();
-                        Console.WriteLine("3.2");
                         return g;
                     } else if (this.Control.GridGuid != null) {
                         if (this.Control.RestartInfo != null) {

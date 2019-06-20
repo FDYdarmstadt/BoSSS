@@ -104,7 +104,7 @@ namespace BoSSS.Foundation.Grid.Classic {
         /// constructor 
         /// </summary>
         public GridData(GridCommons grd) {
-            Console.WriteLine("3.1.10.1");
+            //Console.WriteLine("3.1.10.1");
             if (grd.RefElements.Length != 1)
                 throw new ApplicationException("Currently only grids with _one_ RefElement are supported!!!");
 
@@ -169,13 +169,11 @@ namespace BoSSS.Foundation.Grid.Classic {
                 // ---------
 
                 ParallelSetup();
-                Console.WriteLine("3.1.10.7");
                 m_Cells.Init();
 
                 // collect edges
                 // -------------
 
-                Console.WriteLine("3.1.10.8");
                 m_Edges.CollectEdges();
                 m_Edges.DetermineEdgeTrafo();
                 m_Edges.CollectBoundaryEdges();
@@ -185,7 +183,6 @@ namespace BoSSS.Foundation.Grid.Classic {
                 m_Edges.FinalizeAssembly();
                 m_Cells.CellNeighbours_global_tmp = null;
                 this.m_BcCells_tmp = null;
-                Console.WriteLine("3.1.10.9");
                 // some edges metrics
                 // ------------------
                 //Logger.Info("edge metrics...");
@@ -485,8 +482,7 @@ namespace BoSSS.Foundation.Grid.Classic {
 
             // init + argcheck
             // ===============
-            Console.WriteLine("..........1");
-
+            
             RefElement Kref = this.Cells.GetRefElement(j0);
             CellType ct = this.Cells.GetCell(j0).Type;
             int D = this.SpatialDimension;
@@ -500,11 +496,9 @@ namespace BoSSS.Foundation.Grid.Classic {
                     throw new NotSupportedException("One evaluation junk may contain only type of cells.");
             }
 #endif
-            Console.WriteLine("..........2");
-
+            
             PolynomialList[] Deriv = Kref.GetInterpolationPolynomials1stDeriv(ct);
-            Console.WriteLine("..........3");
-            Debug.Assert(Deriv.Length == D);
+             Debug.Assert(Deriv.Length == D);
 
             Debug.Assert(output.Dimension == 4);
             Debug.Assert(output.GetLength(0) == Len);
@@ -513,9 +507,9 @@ namespace BoSSS.Foundation.Grid.Classic {
             Debug.Assert(output.GetLength(3) == D);
             int K = NS.NoOfNodes;
 
-                Console.WriteLine("..........4");
-            bool islin = ct.IsLinear();
-                Console.WriteLine("..........5");
+            //    Console.WriteLine("..........4");
+            //bool islin = ct.IsLinear();
+            //    Console.WriteLine("..........5");
 
             if (ct.IsLinear() && this.Cells.Transformation != null) {
                 // evaluate linear
@@ -530,7 +524,7 @@ namespace BoSSS.Foundation.Grid.Classic {
                         output.SetSubArray(Trf_jCell, i, k, -1, -1); // Jacobian is equal for all nodes.
                     }
                 }
-                Console.WriteLine("..........6");
+                //Console.WriteLine("..........6");
 
 
             } else {
