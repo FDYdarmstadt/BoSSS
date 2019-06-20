@@ -104,8 +104,8 @@ namespace BoSSS.Foundation.Grid.Classic {
         /// constructor 
         /// </summary>
         public GridData(GridCommons grd) {
-
-            if(grd.RefElements.Length != 1)
+            Console.WriteLine("3.1.10.1");
+            if (grd.RefElements.Length != 1)
                 throw new ApplicationException("Currently only grids with _one_ RefElement are supported!!!");
 
             {
@@ -134,6 +134,7 @@ namespace BoSSS.Foundation.Grid.Classic {
 
 
             using(var ft = new ilPSP.Tracing.FuncTrace()) {
+
                 // Test Grid
                 // ---------
                 //grd.TestJacobianForAllCells();
@@ -143,6 +144,7 @@ namespace BoSSS.Foundation.Grid.Classic {
                 int myRank = this.MpiRank;
                 if (m_Grid.NoOfUpdateCells <= 0)
                     throw new ApplicationException("grid contains no cells on processor " + myRank + ";");
+
 
                 // start init
                 // ----------
@@ -165,24 +167,25 @@ namespace BoSSS.Foundation.Grid.Classic {
 
                 // cell init
                 // ---------
+
                 ParallelSetup();
+                Console.WriteLine("3.1.10.7");
                 m_Cells.Init();
 
                 // collect edges
                 // -------------
 
-                
+                Console.WriteLine("3.1.10.8");
                 m_Edges.CollectEdges();
                 m_Edges.DetermineEdgeTrafo();
                 m_Edges.CollectBoundaryEdges();
                 m_Edges.SetEdgeTags();
                 m_Edges.NegogiateNeighbourship();
-
                 m_Edges.InitCells2Edges();
                 m_Edges.FinalizeAssembly();
                 m_Cells.CellNeighbours_global_tmp = null;
                 this.m_BcCells_tmp = null;
-
+                Console.WriteLine("3.1.10.9");
                 // some edges metrics
                 // ------------------
                 //Logger.Info("edge metrics...");
@@ -482,6 +485,7 @@ namespace BoSSS.Foundation.Grid.Classic {
 
             // init + argcheck
             // ===============
+            Console.WriteLine("..........1");
 
             RefElement Kref = this.Cells.GetRefElement(j0);
             CellType ct = this.Cells.GetCell(j0).Type;
@@ -496,8 +500,10 @@ namespace BoSSS.Foundation.Grid.Classic {
                     throw new NotSupportedException("One evaluation junk may contain only type of cells.");
             }
 #endif
+            Console.WriteLine("..........2");
 
             PolynomialList[] Deriv = Kref.GetInterpolationPolynomials1stDeriv(ct);
+            Console.WriteLine("..........3");
             Debug.Assert(Deriv.Length == D);
 
             Debug.Assert(output.Dimension == 4);
@@ -505,17 +511,18 @@ namespace BoSSS.Foundation.Grid.Classic {
             Debug.Assert(output.GetLength(1) == NS.NoOfNodes);
             Debug.Assert(output.GetLength(2) == D);
             Debug.Assert(output.GetLength(3) == D);
-
             int K = NS.NoOfNodes;
 
-            if(ct.IsLinear() && this.Cells.Transformation != null) {
+                Console.WriteLine("..........4");
+            bool islin = ct.IsLinear();
+                Console.WriteLine("..........5");
+
+            if (ct.IsLinear() && this.Cells.Transformation != null) {
                 // evaluate linear
                 // ===============
-
                 MultidimensionalArray Trf = this.Cells.Transformation;
 
-
-                for(int i = 0; i < Len; i++) { // loop over cells...
+                for (int i = 0; i < Len; i++) { // loop over cells...
                     int jCell = i + j0;
                     MultidimensionalArray Trf_jCell = Trf.ExtractSubArrayShallow(jCell, -1, -1);
 
@@ -523,6 +530,7 @@ namespace BoSSS.Foundation.Grid.Classic {
                         output.SetSubArray(Trf_jCell, i, k, -1, -1); // Jacobian is equal for all nodes.
                     }
                 }
+                Console.WriteLine("..........6");
 
 
             } else {

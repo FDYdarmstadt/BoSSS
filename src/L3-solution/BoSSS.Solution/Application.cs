@@ -387,9 +387,7 @@ namespace BoSSS.Solution {
                 }
 
                 ctrlfileContent = ctrlfileContent.MPIBroadcast(0, csMPI.Raw._COMM.WORLD);
-
                 ControlObjFromCode(ctrlfileContent, out ctrlV2, out ctrlV2_ParameterStudy);
-
             } else if (ControlFilePath.ToLower().EndsWith(".obj")) {
                 // +++++++++++++++++++++
                 // control object
@@ -884,7 +882,6 @@ namespace BoSSS.Solution {
             }
 
             csMPI.Raw.Barrier(csMPI.Raw._COMM.WORLD);
-
             if (!passiveIo) {
                 CurrentSessionInfo = m_Database.Controller.DBDriver.CreateNewSession(m_Database);
 
@@ -909,7 +906,6 @@ namespace BoSSS.Solution {
             }
 
             this.DatabaseDriver.InitTraceFile(CurrentSessionInfo);
-
             using (var ht = new FuncTrace()) {
                 // create or load grid
                 //====================
@@ -918,6 +914,7 @@ namespace BoSSS.Solution {
                 if (Grid == null) {
                     throw new ApplicationException("No grid loaded through CreateOrLoadGrid");
                 }
+
 
                 //// Make sure grid guid is accessible even if the user has some
                 //// custom handling of the grid loading
@@ -930,7 +927,6 @@ namespace BoSSS.Solution {
                     && MPIRank == 0
                     && DatabaseDriver != null
                     && (!this.CurrentSessionInfo.ID.Equals(Guid.Empty));
-
                 if (DoDbLogging && this.Control != null) {
                     //TextWriter tw = DatabaseDriver.FsDriver.GetNewLog("Control", this.CurrentSessionInfo.ID);
                     //if (this.Control.ControlFileText != null)
@@ -1217,7 +1213,10 @@ namespace BoSSS.Solution {
                         throw new ApplicationException("Control object error: 'AppControl.GridFunc' and 'AppControl.GridGuid' are exclusive, cannot be unequal null at the same time.");
 
                     if (this.Control.GridFunc != null) {
-                        return this.Control.GridFunc();
+                        Console.WriteLine("3.1");
+                        var g = this.Control.GridFunc();
+                        Console.WriteLine("3.2");
+                        return g;
                     } else if (this.Control.GridGuid != null) {
                         if (this.Control.RestartInfo != null) {
                             ISessionInfo session = m_Database.Controller.GetSessionInfo(this.Control.RestartInfo.Item1);

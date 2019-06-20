@@ -278,6 +278,7 @@ namespace BoSSS.Foundation.Grid.Classic {
             /// </summary>
             internal void Init() {
                 using (new FuncTrace()) {
+                    
                     int JE = Count;
                     int J = NoOfLocalUpdatedCells;
                     int D = m_owner.SpatialDimension;
@@ -299,9 +300,10 @@ namespace BoSSS.Foundation.Grid.Classic {
                     IEnumerable<CellType>[] Types = m_owner.Grid.RefElements.Select(x => x.SupportedCellTypes).ToArray();
 
                     int NegativeJacobianFlag = 0;
-
+                    
                     for (int j = 0; j < JE; j++) {
                         var Cj = this.GetCell(j);
+                        Console.WriteLine("3.1.10.7.2" + j + ".1");
 
                         int iKref = Types.IndexOfMax(suppTypes => suppTypes.Contains(Cj.Type));
                         if (iKref < 0)
@@ -317,12 +319,14 @@ namespace BoSSS.Foundation.Grid.Classic {
                         // affine-linear cell ?
                         if (Cj.Type.IsLinear()) {
                             InfoFlags[j] |= CellInfo.CellIsAffineLinear;
+                            Console.WriteLine("3.1.10.7.2" + j + ".2a");
 
 
                             //Kref.JacobianOfTransformation(vtx, Trf, 0, Cj.Type, Cj.TransformationParams);
                             m_owner.EvaluateJacobian(Kref.Center, j, 1, Trf);
+                            Console.WriteLine("3.1.10.7.2" + j + ".3a");
                             m_owner.TransformLocal2Global(Kref.Center, j, 1, _CellCenters, j);
-                            _Transformation.ExtractSubArrayShallow(j, -1, -1).Set(_Trf);
+                             _Transformation.ExtractSubArrayShallow(j, -1, -1).Set(_Trf);
 
                             Tr.Set(_Trf);
                             _JacobiDet[j] = Tr.Determinant();
@@ -330,12 +334,16 @@ namespace BoSSS.Foundation.Grid.Classic {
                                 NegativeJacobianFlag++;
                             }
 
+
                             Tr.InvertTo(invTr);
                             _InverseTransformation.ExtractSubArrayShallow(j, -1, -1).SetMatrix(invTr);
+                            
 
                         } else {
                             // metrics are non-constant
                             // ++++++++++++++++++++++++
+
+                            
 
                             // mark to prevent miss-use
                             _JacobiDet[j] = double.NaN;
@@ -368,8 +376,8 @@ namespace BoSSS.Foundation.Grid.Classic {
 
                             }
                         }
+                        
                     }
-
                     if (NegativeJacobianFlag > 0) {
                         for (int j = 0; j < JE; j++) {
                             if (_JacobiDet[j] < 0)

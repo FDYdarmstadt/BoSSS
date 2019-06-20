@@ -400,7 +400,8 @@ namespace BoSSS.Foundation.Grid.Classic {
             params BoundingBox[] CutOuts) {
             using (var tr = new FuncTrace()) {
                 MPICollectiveWatchDog.Watch();
-               
+
+
                 // Some Checks
                 // ===========
                 CheckMonotonicity(xNodes);
@@ -622,6 +623,7 @@ namespace BoSSS.Foundation.Grid.Classic {
                     }
 
                 }
+
                 grid.Cells = Cells.ToArray();
 
                 /*
@@ -719,14 +721,13 @@ namespace BoSSS.Foundation.Grid.Classic {
                     grid.CompressGlobalID();
                     grid.CompressNodeIndices();
                 }
-
-                foreach(var cl in grid.Cells) {
+  
+                foreach (var cl in grid.Cells) {
                     if (cl.GlobalID < 0)
                         throw new ApplicationException("Internal error - illegal GlobalID.");
                     if (cl.GlobalID >= cnt)
                         throw new ApplicationException("Internal error - illegal GlobalID.");
                 }
-
 
                 return grid;
             }
