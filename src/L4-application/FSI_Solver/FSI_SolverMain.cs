@@ -1574,7 +1574,7 @@ namespace BoSSS.Application.FSI_Solver
                     int J = GridData.iLogicalCells.NoOfLocalUpdatedCells;
                     List<int[]> ColoredCellsSorted = LevelSetUpdate.ColoredCellsFindAndSort(CellColor);
                     CellMask ParticleCutCells = LevelSetUpdate.CellsOneColor(GridData, ColoredCellsSorted, CurrentColor, J, false);
-                    if (TimestepInt >= 175)
+                    if (TimestepInt >= 50)
                         Console.Write("df");
 
                     while (AccDynamicTimestep < dt)
@@ -1756,6 +1756,10 @@ namespace BoSSS.Application.FSI_Solver
                             }
                         }
                         AccDynamicTimestep += PostCollisionTimestep;
+                        for (int p = 0; p < ParticlesOfCurrentColor.Length; p++)
+                        {
+                            Particles[ParticlesOfCurrentColor[p]].CollisionTimestep = AccDynamicTimestep;
+                        }
                     }
                 }
                 for (int j = 0; j < GlobalParticleColor.Length; j++)

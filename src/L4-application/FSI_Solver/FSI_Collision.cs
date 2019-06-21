@@ -134,10 +134,10 @@ namespace FSI_Solver
 
             for (int d = 0; d < 2; d++)
             {
-                Particle0.TranslationalVelocity[1][d] = 0;
-                Particle1.TranslationalVelocity[1][d] = 0;
-                Particle0.RotationalVelocity[1] = 0;
-                Particle1.RotationalVelocity[1] = 0;
+                Particle0.TranslationalVelocity[0][d] = 0;
+                Particle1.TranslationalVelocity[0][d] = 0;
+                Particle0.RotationalVelocity[0] = 0;
+                Particle1.RotationalVelocity[0] = 0;
             }
         }
 
@@ -177,8 +177,8 @@ namespace FSI_Solver
 
             for (int d = 0; d < 2; d++)
             {
-                Particle.TranslationalVelocity[1][d] = 0;
-                Particle.RotationalVelocity[1] = 0;
+                Particle.TranslationalVelocity[0][d] = 0;
+                Particle.RotationalVelocity[0] = 0;
             }
         }
 
