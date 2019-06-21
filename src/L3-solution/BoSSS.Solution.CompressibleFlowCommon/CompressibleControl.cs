@@ -15,6 +15,7 @@ limitations under the License.
 */
 
 using BoSSS.Solution.CompressibleFlowCommon.MaterialProperty;
+using BoSSS.Solution.CompressibleFlowCommon.ShockCapturing;
 using BoSSS.Solution.Control;
 using System;
 using System.Collections.Generic;
@@ -117,6 +118,13 @@ namespace BoSSS.Solution.CompressibleFlowCommon {
                 return base.FieldOptions[BoSSS.Solution.CompressibleFlowCommon.CompressibleVariables.Energy].Degree;
             }
         }
+
+        /// <summary>
+        /// An optional viscosity law to determine the magnitude of the
+        /// artificial viscosity if <see cref="ActiveOperators"/> includes
+        /// <see cref="Operators.ArtificialViscosity"/>
+        /// </summary>
+        public IArtificialViscosityLaw ArtificialViscosityLaw = null;
 
         /// <summary>
         /// Utility function to add a new variable to the solver.

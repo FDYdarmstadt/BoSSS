@@ -467,9 +467,9 @@ namespace CNS_MPITests.Tests.LoadBalancing {
                 c.AddVariable(CNSVariables.ArtificialViscosity, 1);
             }
             c.ActiveOperators |= Operators.ArtificialViscosity;
-            c.ShockSensor = new PerssonSensor(sensorVariable, sensorLimit);
+            c.CNSShockSensor = new PerssonSensor(sensorVariable, sensorLimit);
             c.AddVariable(CNSVariables.ShockSensor, 0);
-            c.ArtificialViscosityLaw = new SmoothedHeavisideArtificialViscosityLaw(c.ShockSensor, dgDegree, sensorLimit, epsilon0, kappa, lambdaMax: 2);
+            c.ArtificialViscosityLaw = new SmoothedHeavisideArtificialViscosityLaw(c.CNSShockSensor, dgDegree, sensorLimit, epsilon0, kappa, lambdaMax: 2);
             c.Endtime = endTime;
 
             return c;
@@ -520,9 +520,9 @@ namespace CNS_MPITests.Tests.LoadBalancing {
 
             if (AV) {
                 Variable sensorVariable = CompressibleVariables.Density;
-                c.ShockSensor = new PerssonSensor(sensorVariable, sensorLimit);
+                c.CNSShockSensor = new PerssonSensor(sensorVariable, sensorLimit);
                 c.AddVariable(CNSVariables.ShockSensor, 0);
-                c.ArtificialViscosityLaw = new SmoothedHeavisideArtificialViscosityLaw(c.ShockSensor, dgDegree, sensorLimit, epsilon0, kappa, lambdaMax: 2);
+                c.ArtificialViscosityLaw = new SmoothedHeavisideArtificialViscosityLaw(c.CNSShockSensor, dgDegree, sensorLimit, epsilon0, kappa, lambdaMax: 2);
             }
 
             c.ExplicitScheme = explicitScheme;

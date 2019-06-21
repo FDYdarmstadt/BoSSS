@@ -603,7 +603,7 @@ namespace BoSSS.Application.FSI_Solver
                 ArrayTools.Cat(this.ResidualMomentum, this.ResidualContinuity),
                 LsTrk,
                 true,
-                DelComputeOperatorMatrix, DelUpdateLevelset,
+                DelComputeOperatorMatrix, null, DelUpdateLevelset,
                 bdfOrder,
                 ((FSI_Control)this.Control).Timestepper_LevelSetHandling,
                 MassMatrixShape,
