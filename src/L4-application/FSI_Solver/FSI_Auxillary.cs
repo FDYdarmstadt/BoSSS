@@ -462,10 +462,8 @@ namespace FSI_Solver
 
                     // scalar values
                     CheckSend[p * NoOfVars + 0] = P.Angle[0];
-                    Console.WriteLine("Angle " + CheckSend[p * NoOfVars + 0]);
                     CheckSend[p * NoOfVars + 1] = P.Angle[1];
                     CheckSend[p * NoOfVars + 2] = P.RotationalVelocity[0];
-                    Console.WriteLine("RotationalVelocity " + CheckSend[p * NoOfVars + 2]);
                     //CheckSend[iP*NoOfVars + 2] = P.Area_P;
                     CheckSend[p * NoOfVars + 3] = P.ClearSmallValues ? 1.0 : 0.0;
                     CheckSend[p * NoOfVars + 4] = P.ForceAndTorque_convergence;
