@@ -1574,8 +1574,6 @@ namespace BoSSS.Application.FSI_Solver
                     int J = GridData.iLogicalCells.NoOfLocalUpdatedCells;
                     List<int[]> ColoredCellsSorted = LevelSetUpdate.ColoredCellsFindAndSort(CellColor);
                     CellMask ParticleCutCells = LevelSetUpdate.CellsOneColor(GridData, ColoredCellsSorted, CurrentColor, J, false);
-                    if (TimestepInt >= 50)
-                        Console.Write("df");
 
                     while (AccDynamicTimestep < dt)
                     {
