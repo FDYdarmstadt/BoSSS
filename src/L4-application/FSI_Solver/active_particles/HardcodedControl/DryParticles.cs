@@ -47,7 +47,6 @@ namespace BoSSS.Application.FSI_Solver
             C.ProjectDescription = "Gravity";
             C.SessionName = C.ProjectName;
             C.Tags.Add("with immersed boundary method");
-            C.AdaptiveMeshRefinement = false;
             C.pureDryCollisions = true;
 
             // DG degrees
@@ -59,7 +58,7 @@ namespace BoSSS.Application.FSI_Solver
             // ============================
 
             double[] Xnodes = GenericBlas.Linspace(-5, 5, 50);
-            double[] Ynodes = GenericBlas.Linspace(-5, 5, 50);
+            double[] Ynodes = GenericBlas.Linspace(-3, 3, 30);
             double h = Math.Min((Xnodes[1] - Xnodes[0]), (Ynodes[1] - Ynodes[0]));
 
             C.GridFunc = delegate {
@@ -94,15 +93,15 @@ namespace BoSSS.Application.FSI_Solver
             // =========
             for (int i = 0; i < 1; i++)
             {
-                for (int j = 0; j < 2; j++)
+                for (int j = 0; j < 1; j++)
                 {
                     double StartAngle = 10 * i - 10 * i * j + 8;
-                    C.Particles.Add(new Particle_Ellipsoid(new double[] { -4 + 2 * i, -4 + 2 * j }, StartAngle)
+                    C.Particles.Add(new Particle_Ellipsoid(new double[] { -4 + 2 * i, -2 + 2 * j }, StartAngle)
                     {
-                        particleDensity = 1.0,
+                        particleDensity = 10.0,
                         length_P = 0.5,
                         thickness_P = 0.4,
-                        GravityVertical = -0.1,
+                        GravityVertical = -0.01,
                         //ActiveVelocity = 1,
                     });
                 }
@@ -140,7 +139,7 @@ namespace BoSSS.Application.FSI_Solver
             C.dtMin = dt;
 
             C.Endtime = 100000000.0;
-            C.NoOfTimesteps = 60000000;
+            C.NoOfTimesteps = 18000000;
 
             // haben fertig...
             // ===============

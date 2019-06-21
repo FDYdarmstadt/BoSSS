@@ -473,12 +473,12 @@ namespace BoSSS.Application.FSI_Solver
             {
                 Aux.SaveValueOfLastTimestep(Angle);
             }
-
+            int ClearAcceleartion = CollisionTimestep != 0 ? 0 : 1;
             if (IncludeRotation == true) {
                 if (SpatialDim != 2)
                     throw new NotSupportedException("Unknown particle dimension: SpatialDim = " + SpatialDim);
 
-                Angle[0] = Angle[1] + (RotationalVelocity[1] + RotationalVelocity[0]) * (dt - CollisionTimestep) / 2 + (dt - CollisionTimestep).Pow2() * (RotationalAcceleration[1] + RotationalAcceleration[0]) / 4;
+                Angle[0] = Angle[1] + (RotationalVelocity[1] + RotationalVelocity[0]) * (dt - CollisionTimestep) / 2 + ClearAcceleartion * (dt - CollisionTimestep).Pow2() * (RotationalAcceleration[1] + RotationalAcceleration[0]) / 4;
                 //for (int p = 0; p < m_collidedWithParticle.Length; p++)
                 //{
                 //    if (m_collidedWithParticle[p])
@@ -555,9 +555,9 @@ namespace BoSSS.Application.FSI_Solver
                 Aux.SaveMultidimValueOfLastTimestep(TranslationalAcceleration);
                 Aux.SaveValueOfLastTimestep(RotationalAcceleration);
             }
-
+            IncludeHydrodynamics = false;
             // Include Gravitiy
-            if (!skipForceIntegration && !IncludeHydrodynamics)
+            if (!Collided && !IncludeHydrodynamics)
             {
                 HydrodynamicForces[0][1] += GravityVertical * Mass_P;
             }

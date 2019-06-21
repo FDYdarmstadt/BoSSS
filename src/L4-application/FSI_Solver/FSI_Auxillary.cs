@@ -462,7 +462,10 @@ namespace FSI_Solver
 
                     // scalar values
                     CheckSend[p * NoOfVars + 0] = P.Angle[0];
+                    Console.WriteLine("Angle " + CheckSend[p * NoOfVars + 0]);
                     CheckSend[p * NoOfVars + 1] = P.Angle[1];
+                    CheckSend[p * NoOfVars + 2] = P.RotationalVelocity[0];
+                    Console.WriteLine("RotationalVelocity " + CheckSend[p * NoOfVars + 2]);
                     //CheckSend[iP*NoOfVars + 2] = P.Area_P;
                     CheckSend[p * NoOfVars + 3] = P.ClearSmallValues ? 1.0 : 0.0;
                     CheckSend[p * NoOfVars + 4] = P.ForceAndTorque_convergence;
@@ -513,7 +516,7 @@ namespace FSI_Solver
                                 + idx_l;
 
                             if (Math.Abs(CheckReceive[idx_g] - CheckSend[idx_l]) > VarTol)
-                                throw new ApplicationException("Mismatch in particle state among MPI ranks. Index:  " + idx_l);
+                                throw new ApplicationException("Mismatch in particle state among MPI ranks. Index:  " + idx_l + " iP " + iP + " NoOfVars " + NoOfVars + " iVar " + iVar + " CheckReceive[idx_g] " + CheckReceive[idx_g] + " CheckSend[idx_l] " + CheckSend[idx_l] + " idx_g " + idx_g + "idx_l" + idx_l + " r " + r);
                         }
                     }
                 }

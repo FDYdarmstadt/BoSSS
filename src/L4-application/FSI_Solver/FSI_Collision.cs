@@ -134,11 +134,9 @@ namespace FSI_Solver
 
             for (int d = 0; d < 2; d++)
             {
-                Particle0.TranslationalAcceleration[1][d] = 0;
-                Particle0.RotationalAcceleration[1] = 0;
+                Particle0.TranslationalVelocity[1][d] = 0;
+                Particle1.TranslationalVelocity[1][d] = 0;
                 Particle0.RotationalVelocity[1] = 0;
-                Particle1.TranslationalAcceleration[1][d] = 0;
-                Particle1.RotationalAcceleration[1] = 0;
                 Particle1.RotationalVelocity[1] = 0;
             }
         }
@@ -179,8 +177,7 @@ namespace FSI_Solver
 
             for (int d = 0; d < 2; d++)
             {
-                Particle.TranslationalAcceleration[1][d] = 0;
-                Particle.RotationalAcceleration[1] = 0;
+                Particle.TranslationalVelocity[1][d] = 0;
                 Particle.RotationalVelocity[1] = 0;
             }
         }
@@ -770,20 +767,10 @@ namespace FSI_Solver
         /// </param>
         internal void Collision_MPICommunication(List<Particle> Particles, Particle CurrentParticle, int MPISize, bool WallCollision = false)
         {
-            int NoOfVars = 3;
+            int NoOfVars = 13;
             double[] BoolSend = new double[1];
             bool NoCurrentCollision = true;
             BoolSend[0] = CurrentParticle.Collided ? 1 : 0;
-            //if (CurrentParticle.m_collidedWithWall[0] && WallCollision)
-            //    BoolSend[0] = -1;
-            //else
-            //{
-            //    for (int p = 0; p < Particles.Count(); p++)
-            //    {
-            //        if (CurrentParticle.Collided[p])
-            //            BoolSend[0] = p + 1;
-            //    }
-            //}
 
             double[] BoolReceive = new double[MPISize];
             unsafe
@@ -795,12 +782,22 @@ namespace FSI_Solver
             }
             for (int i = 0; i < BoolReceive.Length; i++)
             {
-                if (BoolReceive[i] != 0)
+                //if (BoolReceive[i] != 0)
                 {
                     double[] CheckSend = new double[NoOfVars];
                     CheckSend[0] = CurrentParticle.RotationalVelocity[0];
                     CheckSend[1] = CurrentParticle.TranslationalVelocity[0][0];
                     CheckSend[2] = CurrentParticle.TranslationalVelocity[0][1];
+                    CheckSend[3] = CurrentParticle.Angle[0];
+                    CheckSend[4] = CurrentParticle.Position[0][0];
+                    CheckSend[5] = CurrentParticle.Position[0][1];
+                    CheckSend[6] = CurrentParticle.CollisionTimestep;
+                    CheckSend[7] = CurrentParticle.RotationalVelocity[1];
+                    CheckSend[8] = CurrentParticle.TranslationalVelocity[1][0];
+                    CheckSend[9] = CurrentParticle.TranslationalVelocity[1][1];
+                    CheckSend[10] = CurrentParticle.Angle[1];
+                    CheckSend[11] = CurrentParticle.Position[1][0];
+                    CheckSend[12] = CurrentParticle.Position[1][1];
 
                     double[] CheckReceive = new double[NoOfVars * MPISize];
                     unsafe
@@ -810,18 +807,24 @@ namespace FSI_Solver
                             csMPI.Raw.Allgather((IntPtr)pCheckSend, CheckSend.Length, csMPI.Raw._DATATYPE.DOUBLE, (IntPtr)pCheckReceive, CheckSend.Length, csMPI.Raw._DATATYPE.DOUBLE, csMPI.Raw._COMM.WORLD);
                         }
                     }
-                    CurrentParticle.RotationalVelocity[0] = CheckReceive[0 + i * 3];
-                    CurrentParticle.TranslationalVelocity[0][0] = CheckReceive[1 + i * 3];
-                    CurrentParticle.TranslationalVelocity[0][1] = CheckReceive[2 + i * 3];
-                    if (BoolSend[0] == 1)
+                    CurrentParticle.RotationalVelocity[0] = CheckReceive[0 + i * NoOfVars];
+                    CurrentParticle.TranslationalVelocity[0][0] = CheckReceive[1 + i * NoOfVars];
+                    CurrentParticle.TranslationalVelocity[0][1] = CheckReceive[2 + i * NoOfVars];
+                    CurrentParticle.Angle[0] = CheckReceive[3 + i * NoOfVars];
+                    CurrentParticle.Position[0][0] = CheckReceive[4 + i * NoOfVars];
+                    CurrentParticle.Position[0][1] = CheckReceive[5 + i * NoOfVars];
+                    CurrentParticle.CollisionTimestep = CheckReceive[6 + i * NoOfVars];
+                    CurrentParticle.RotationalVelocity[1] = CheckReceive[7 + i * NoOfVars];
+                    CurrentParticle.TranslationalVelocity[1][0] = CheckReceive[8 + i * NoOfVars];
+                    CurrentParticle.TranslationalVelocity[1][1] = CheckReceive[9 + i * NoOfVars];
+                    CurrentParticle.Angle[1] = CheckReceive[10 + i * NoOfVars];
+                    CurrentParticle.Position[1][0] = CheckReceive[11 + i * NoOfVars];
+                    CurrentParticle.Position[1][1] = CheckReceive[12 + i * NoOfVars];
+                    if (BoolReceive[i] != 0)
+                    {
                         CurrentParticle.Collided = true;
-                    //if (!WallCollision)
-                    //{
-                    //    int p = Convert.ToInt32(BoolReceive[i]);
-                    //    CurrentParticle.Collided[p - 1] = true;
-                    //    CurrentParticle.skipForceIntegration = true;
-                    //}
-                    NoCurrentCollision = false;
+                        NoCurrentCollision = false;
+                    }
                 }
             }
             if (NoCurrentCollision)
