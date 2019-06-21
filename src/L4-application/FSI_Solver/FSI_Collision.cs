@@ -780,9 +780,10 @@ namespace FSI_Solver
                     csMPI.Raw.Allgather((IntPtr)pCheckSend, BoolSend.Length, csMPI.Raw._DATATYPE.DOUBLE, (IntPtr)pCheckReceive, BoolSend.Length, csMPI.Raw._DATATYPE.DOUBLE, csMPI.Raw._COMM.WORLD);
                 }
             }
+
             for (int i = 0; i < BoolReceive.Length; i++)
             {
-                //if (BoolReceive[i] != 0)
+                if (BoolReceive[i] != 0)
                 {
                     double[] CheckSend = new double[NoOfVars];
                     CheckSend[0] = CurrentParticle.RotationalVelocity[0];
@@ -820,7 +821,7 @@ namespace FSI_Solver
                     CurrentParticle.Angle[1] = CheckReceive[10 + i * NoOfVars];
                     CurrentParticle.Position[1][0] = CheckReceive[11 + i * NoOfVars];
                     CurrentParticle.Position[1][1] = CheckReceive[12 + i * NoOfVars];
-                    if (BoolReceive[i] != 0)
+                    //if (BoolReceive[i] != 0)
                     {
                         CurrentParticle.Collided = true;
                         NoCurrentCollision = false;
