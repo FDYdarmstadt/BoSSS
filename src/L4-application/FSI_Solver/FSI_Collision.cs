@@ -1060,7 +1060,7 @@ namespace FSI_Solver
             }
             RadialLength = Math.Sqrt(RadialVector[0].Pow2() + RadialVector[1].Pow2());
             RadialVector.ScaleV(1 / Math.Sqrt(RadialVector[0].Pow2() + RadialVector[1].Pow2()));
-            RadialNormalVector = new double[] { -RadialVector[1], RadialVector[0] };
+            RadialNormalVector = new double[] { RadialVector[1], -RadialVector[0] };
             RadialNormalVector.ScaleV(1 / Math.Sqrt(RadialNormalVector[0].Pow2() + RadialNormalVector[1].Pow2()));
         }
 
