@@ -4634,7 +4634,7 @@ namespace BoSSS.Application.XNSE_Solver {
                             //comps.Add(new HeatConvectionAtEvapLevelSet(D, LsTrk, capA, capB, LFFA, LFFB, coupledBcMap, hVapA, R_int, Tsat, rho_l,
                             //this.Control.PhysicalParameters.Sigma, this.Control.ThermalParameters.pc, this.Control.ThermalParameters.k_A, this.Control.ThermalParameters.k_B, movingmesh));
 
-                            comps.Add(new HeatConvectionAtLevelSet_Divergence(D, LsTrk, capA, capB, rhoA, rhoB, this.Control.AdvancedDiscretizationOptions.ContiSign, this.Control.AdvancedDiscretizationOptions.RescaleConti, 
+                            comps.Add(new HeatConvectionAtLevelSet_Divergence(D, LsTrk, capA, capB, rhoA, rhoB, 
                                 kA, kB, hVapA, R_int, Tsat, this.Control.PhysicalParameters.Sigma, this.Control.ThermalParameters.pc));
                         }
                     }
@@ -4667,7 +4667,7 @@ namespace BoSSS.Application.XNSE_Solver {
                 {
                     if(hVapA != 0.0 && hVapB != 0.0) {
 
-                        Xheat_Operator.EquationComponents[CodName[0]].Add(new EvaporationAtLevelSet(LsTrk, hVapA, R_int, Tsat, rho_l, 
+                        Xheat_Operator.EquationComponents[CodName[0]].Add(new HeatFluxAtLevelSet(LsTrk, hVapA, R_int, Tsat, rho_l, 
                             this.Control.PhysicalParameters.Sigma, this.Control.ThermalParameters.pc, this.Control.ThermalParameters.k_A, this.Control.ThermalParameters.k_B));
                     }
 

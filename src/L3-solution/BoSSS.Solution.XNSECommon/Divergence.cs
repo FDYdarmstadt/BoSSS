@@ -18,6 +18,7 @@ using BoSSS.Foundation;
 using BoSSS.Foundation.XDG;
 using BoSSS.Platform;
 using BoSSS.Solution.NSECommon;
+using BoSSS.Solution.XheatCommon;
 using ilPSP;
 using ilPSP.Utils;
 using System;
@@ -376,16 +377,15 @@ namespace BoSSS.Solution.XNSECommon.Operator.Continuity {
     /// <summary>
     /// velocity jump penalty for the divergence operator, on the level set
     /// </summary>
-    public class GeneralizedDivergenceAtLevelSet : ILevelSetForm, ILevelSetEquationComponentCoefficient {
+    public class GeneralizedDivergenceAtLevelSet : EvaporationAtLevelSet{
 
-        LevelSetTracker m_lsTrk;
 
         public GeneralizedDivergenceAtLevelSet(int _D, LevelSetTracker lsTrk, double _rhoA, double _rhoB,
             double vorZeichen, bool RescaleConti, double _kA, double _kB, double _hVapA, double _Rint, double _Tsat, double _sigma, double _pc) {
             this.D = _D;
             this.rhoA = _rhoA;
             this.rhoB = _rhoB;
-            this.m_lsTrk = lsTrk;
+            this.m_LsTrk = lsTrk;
 
             scaleA = vorZeichen;
             scaleB = vorZeichen;
@@ -395,115 +395,51 @@ namespace BoSSS.Solution.XNSECommon.Operator.Continuity {
                 scaleB /= rhoB;
             }
 
-            //this.M = _M;
             this.kA = _kA;
             this.kB = _kB;
             this.hVapA = _hVapA;
             this.Rint = _Rint;
-            //this.TintMin = _TintMin;
+
             this.Tsat = _Tsat;
             this.sigma = _sigma;
             this.pc = _pc;
         }
 
-        int D;
+
         double rhoA;
         double rhoB;
 
         double scaleA;
         double scaleB;
 
-        double kA;
-        double kB;
-        double hVapA;   // for the identification of the liquid phase
-        double Rint;
-        //double TintMin;
-        double Tsat;
-        double sigma;
-        double pc;
 
 
-        //double M;
+        private double ComputeEvaporationMass(double[] paramsNeg, double[] paramsPos, double[] N, int jCell) {
 
+            double qEvap = ComputeHeatFlux(paramsNeg, paramsPos, N, jCell);
 
-        public TermActivationFlags LevelSetTerms {
-            get {
-                return TermActivationFlags.V;
-            }
-        }
-
-
-        private double ComputeEvaporationMass_Macro(double[] GradT_A, double[] GradT_B, double[] n) {
-
-            double hVap = 0.0;
-            double qEvap = 0.0;
-            if(hVapA > 0) {
-                hVap = hVapA;
-                for(int d = 0; d < D; d++)
-                    qEvap += (kA * GradT_A[d] - kB * GradT_B[d]) * n[d];
-            } else {
-                hVap = -hVapA;
-                for(int d = 0; d < D; d++)
-                    qEvap += (kB * GradT_B[d] - kA * GradT_A[d]) * n[d];
-            }
-
-            return qEvap / hVap;
-        }
-
-        private double ComputeEvaporationMass_Micro(double T_A, double T_B, double curv, double p_disp) {
-
-            if(hVapA == 0.0)
+            if (qEvap == 0.0)
                 return 0.0;
 
-            double pc0 = (pc < 0.0) ? sigma * curv + p_disp : pc;      // augmented capillary pressure (without nonlinear evaporative masss part)
+            double hVap = (hVapA > 0) ? hVapA : -hVapA;
+            double M = qEvap / hVap;
 
-            double TintMin = 0.0;
-            double hVap = 0.0;
-            double qEvap = 0.0;
-            if(hVapA > 0) {
-                hVap = hVapA;
-                TintMin = Tsat * (1 + (pc0 / (hVap * rhoA)));
-                if(T_A > TintMin)
-                    qEvap = -(T_A - TintMin) / Rint;
-            } else if(hVapA < 0) {
-                hVap = -hVapA;
-                TintMin = Tsat * (1 + (pc0 / (hVap * rhoB)));
-                if(T_B > TintMin)
-                    qEvap = (T_B - TintMin) / Rint;
-            }
-
-            return qEvap / hVap;
-        }
-
-
-        private double ComputeEvaporationMass(double[] paramsNeg, double[] paramsPos, double[] N, bool microRegion) {
-
-            double M = 0.0;
-            if(microRegion) {
-                M = ComputeEvaporationMass_Micro(paramsNeg[D], paramsPos[D], paramsNeg[D + 1], paramsNeg[D + 2]);
-            } else {
-                M = ComputeEvaporationMass_Macro(paramsNeg.GetSubVector(0, D), paramsPos.GetSubVector(0, D), N);
-            }
+            //Console.WriteLine("mEvap - GeneralizedDivergenceAtLevelSet: {0}", M);
 
             return M;
 
         }
 
 
-        public double LevelSetForm(ref Foundation.XDG.CommonParamsLs cp,
+        public override double LevelSetForm(ref Foundation.XDG.CommonParamsLs cp,
             double[] U_Neg, double[] U_Pos, double[,] Grad_uA, double[,] Grad_uB,
             double vA, double vB, double[] Grad_vA, double[] Grad_vB) {
 
-            Debug.Assert(cp.ParamsPos[D + 1] == cp.ParamsNeg[D + 1], "curvature must be continuous across interface");
-            Debug.Assert(cp.ParamsPos[D + 2] == cp.ParamsNeg[D + 2], "disjoining pressure must be continuous across interface");
 
-            //double M = ComputeEvaporationMass_Macro(cp.ParamsNeg.GetSubVector(0, D), cp.ParamsPos.GetSubVector(0, D), cp.n);
-            //double M = ComputeEvaporationMass_Micro(cp.ParamsNeg[D], cp.ParamsPos[D], cp.ParamsNeg[D + 1], cp.ParamsNeg[D + 2]);
-            double M = -0.1; // ComputeEvaporationMass(cp.ParamsNeg, cp.ParamsPos, cp.n, evapMicroRegion[cp.jCell]);
+            double M = ComputeEvaporationMass(cp.ParamsNeg, cp.ParamsPos, cp.n, cp.jCell);
             if (M == 0.0)
                 return 0.0;
 
-            //Console.WriteLine("mEvap - GeneralizedDivergenceAtLevelSet: {0}", M);
 
             double uAxN = -M * (1 / rhoA);
             double uBxN = -M * (1 / rhoB);
@@ -541,41 +477,13 @@ namespace BoSSS.Solution.XNSECommon.Operator.Continuity {
         }
 
 
-        BitArray evapMicroRegion;
 
-        public void CoefficientUpdate(CoefficientSet csA, CoefficientSet csB, int[] DomainDGdeg, int TestDGdeg) {
-
-            if(csA.UserDefinedValues.Keys.Contains("EvapMicroRegion"))
-                evapMicroRegion = (BitArray)csA.UserDefinedValues["EvapMicroRegion"];
-
-        }
-
-
-        public IList<string> ArgumentOrdering {
+        public override IList<string> ParameterOrdering {
             get {
-                return new string[] { };
+                return ArrayTools.Cat(new string[] { "GradTempX", "GradTempY", "GradTempZ" }.GetSubVector(0, D), VariableNames.Temperature, "Curvature", "DisjoiningPressure"); 
             }
         }
 
-
-        public IList<string> ParameterOrdering {
-            get {
-                return ArrayTools.Cat(new string[] { "GradTempX", "GradTempY", "GradTempZ" }.GetSubVector(0, D), VariableNames.Temperature, "Curvature", "DisjoiningPressure"); //;
-            }
-        }
-
-
-        public int LevelSetIndex {
-            get { return 0; }
-        }
-
-        public SpeciesId PositiveSpecies {
-            get { return this.m_lsTrk.GetSpeciesId("B"); }
-        }
-
-        public SpeciesId NegativeSpecies {
-            get { return this.m_lsTrk.GetSpeciesId("A"); }
-        }
     }
 
 

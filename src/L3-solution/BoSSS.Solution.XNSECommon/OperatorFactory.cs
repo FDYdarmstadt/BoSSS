@@ -248,15 +248,10 @@ namespace BoSSS.Solution.XNSECommon {
                         var pres = new Operator.Pressure.PressureInBulk(d, BcMap);
                         comps.Add(pres);
 
-                        //if (!MatInt)
-                        //    throw new NotSupportedException("New Style pressure coupling does not support non-material interface.");
+
                         var presLs = new Operator.Pressure.PressureFormAtLevelSet(d, D, LsTrk); //, dntParams.UseWeightedAverages, muA, muB);
                         comps.Add(presLs);
 
-                        //if (evaporation) {
-                        //    var presLSGen = new Operator.Pressure.GeneralizedPressureFormAtLevelSet(d, D, LsTrk, config.thermParams.p_sat, hVapA);
-                        //    comps.Add(presLSGen);
-                        //}
                     }
                 }
 
