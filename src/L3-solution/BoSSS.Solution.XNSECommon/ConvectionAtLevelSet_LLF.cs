@@ -712,16 +712,13 @@ namespace BoSSS.Solution.XNSECommon.Operator.Convection {
             LambdaIn = LambdaConvection.GetLambda(VelocityMeanIn, cp.n, false);
             LambdaOut = LambdaConvection.GetLambda(VelocityMeanOut, cp.n, false);
 
-            LambdaIn *= rhoA;
-            LambdaOut *= rhoB;
-
             double Lambda = Math.Max(LambdaIn, LambdaOut);
 
             double uJump = -M * ((1 / rhoA) - (1 / rhoB)) * cp.n[m_d];
 
             double flx = Lambda * uJump * 0.8;
 
-            return -flx * (vA - vB); ;
+            return -flx * (rhoA * vA - rhoB * vB);
         }
 
 
@@ -1034,7 +1031,7 @@ namespace BoSSS.Solution.XNSECommon.Operator.Convection {
 
         public TermActivationFlags LevelSetTerms {
             get {
-                return TermActivationFlags.V;
+                return TermActivationFlags.UxV | TermActivationFlags.V;
             }
         }
 
@@ -1111,8 +1108,18 @@ namespace BoSSS.Solution.XNSECommon.Operator.Convection {
 
             //Console.WriteLine("mEvap - GeneralizedDivergenceAtLevelSet: {0}", M);
 
-            double uAxN = (-M * (1 / rhoA) * cp.n[m_d]);
-            double uBxN = (-M * (1 / rhoB) * cp.n[m_d]);
+            //double Ucentral = 0.5 * (cp.ParamsNeg[m_d] + cp.ParamsPos[m_d]);
+            //double Ucentral = 0.5 * (U_Neg[0] + U_Pos[0]);
+            double Ucentral = 0.0;
+            for (int d = 0; d < D; d++) {
+                Ucentral += 0.5 * (cp.ParamsNeg[d] + cp.ParamsPos[d]) * cp.n[d];
+            }
+
+            double uAxN = Ucentral * (-M * (1 / rhoA) * cp.n[m_d]);
+            double uBxN = Ucentral * (-M * (1 / rhoB) * cp.n[m_d]);
+
+            uAxN += -M * (1 / rhoA) * 0.5 * (U_Neg[0] + U_Pos[0]);
+            uBxN += -M * (1 / rhoB) * 0.5 * (U_Neg[0] + U_Pos[0]);
 
             // transform from species B to A: we call this the "A-fictitious" value
             double uAxN_fict;
@@ -1129,15 +1136,8 @@ namespace BoSSS.Solution.XNSECommon.Operator.Convection {
             double FlxNeg = -Flux(uAxN, uAxN_fict); // flux on A-side
             double FlxPos = +Flux(uBxN_fict, uBxN);  // flux on B-side
 
-            //double Ucentral = 0.5 * (cp.ParamsNeg[m_d] + cp.ParamsPos[m_d]);
-            //double Ucentral = 0.5 * (U_Neg[0] + U_Pos[0]);
-            double Ucentral = 0.0;
-            for (int d = 0; d < D; d++) {
-                Ucentral += 0.5 * (rhoA * cp.ParamsNeg[d] + rhoB * cp.ParamsPos[d]) * cp.n[d];
-            }
-
-            FlxNeg *= Ucentral;
-            FlxPos *= Ucentral;
+            FlxNeg *= rhoA;
+            FlxPos *= rhoB;
 
             double Ret = FlxNeg * vA - FlxPos * vB;
 

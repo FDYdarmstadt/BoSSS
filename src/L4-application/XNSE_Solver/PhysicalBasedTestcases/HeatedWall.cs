@@ -643,7 +643,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
 
             C.CutCellQuadratureType = XQuadFactoryHelper.MomentFittingVariants.Classic;
 
-            bool steady = true;
+            bool steady = false;
 
             //_DbPath = @"\\dc1\userspace\smuda\cluster\CapillaryRise\CapillaryRise_studyDB";
 
@@ -877,7 +877,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             C.Timestepper_BDFinit = TimeStepperInit.SingleInit;
             C.Timestepper_LevelSetHandling = steady ? LevelSetHandling.None : LevelSetHandling.LieSplitting;
 
-            C.CompMode = AppControl._CompMode.Transient;
+            C.CompMode = steady ? AppControl._CompMode.Steady : AppControl._CompMode.Transient;
             C.dtMax = 1e-3;
             C.dtMin = 1e-3;
             C.Endtime = 10000;

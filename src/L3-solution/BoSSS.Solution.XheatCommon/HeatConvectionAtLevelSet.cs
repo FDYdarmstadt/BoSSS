@@ -301,9 +301,10 @@ namespace BoSSS.Solution.XheatCommon {
                 return 0.0;
 
             //Console.WriteLine("mEvap - GeneralizedDivergenceAtLevelSet: {0}", M);
+            double T_avg = 0.5 * (U_Neg[0] + U_Pos[0]);
 
-            double uAxN = -M * (1 / rhoA) * U_Neg[0];
-            double uBxN = -M * (1 / rhoB) * U_Pos[0];
+            double uAxN = -M * (1 / rhoA) * T_avg;
+            double uBxN = -M * (1 / rhoB) * T_avg;
 
             // transform from species B to A: we call this the "A-fictitious" value
             double uAxN_fict;
@@ -325,6 +326,9 @@ namespace BoSSS.Solution.XheatCommon {
             FlxPos *= capB;
 
             double Ret = FlxNeg * vA - FlxPos * vB;
+
+            //double uInt = 0.0;
+            //double Ret = (U_Neg[0] - U_Pos[0]) * uInt * (capA * vA - capB * vB);
 
             return -Ret;
         }
