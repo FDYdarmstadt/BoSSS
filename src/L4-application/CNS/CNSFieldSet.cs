@@ -23,6 +23,7 @@ using BoSSS.Solution.CompressibleFlowCommon;
 using BoSSS.Solution.Utils;
 using CNS.EquationSystem;
 using CNS.IBM;
+using CNS.ShockCapturing;
 using ilPSP.Tracing;
 using System;
 using System.Collections.Generic;
@@ -247,11 +248,11 @@ namespace CNS {
         public void UpdateDerivedVariables(IProgram<CNSControl> program, CellMask cellMask) {
             using (var tr = new FuncTrace()) {
 
-                program.Control.ShockSensor?.UpdateSensorValues(program.WorkingSet.AllFields, program.SpeciesMap, cellMask);
+                program.Control.CNSShockSensor?.UpdateSensorValues(program.WorkingSet.AllFields, program.SpeciesMap, cellMask);
                 foreach (var pair in DerivedFields) {
-                    using (new BlockTrace("UpdateFunction:" + pair.Value.Identification + "-" + pair.Key.Name, tr)) {
-                        pair.Key.UpdateFunction(pair.Value, cellMask, program);
-                    }
+                    //using (new BlockTrace("UpdateDerivedVariables:" + pair.Value.Identification + "-" + pair.Key.Name, tr)) {
+                    pair.Key.UpdateFunction(pair.Value, cellMask, program);
+                    //}
                 }
 
                 // Test
@@ -273,19 +274,21 @@ namespace CNS {
         public void UpdateShockCapturingVariables(IProgram<CNSControl> program, CellMask cellMask) {
             using (var tr = new FuncTrace()) {
                 // Update sensor
-                program.Control.ShockSensor.UpdateSensorValues(program.WorkingSet.AllFields, program.SpeciesMap, cellMask);
+                //using (new BlockTrace("UpdateShockCapturingVariables.Sensor", tr)) {
+                program.Control.CNSShockSensor.UpdateSensorValues(program.WorkingSet.AllFields, program.SpeciesMap, cellMask);
+                //}
 
                 // Update sensor variable (not necessary as only needed for IO)
-                using (new BlockTrace("ShockSensor.UpdateFunction", tr)) {
+                using (new BlockTrace("UpdateShockCapturingVariables.Sensor_Plot", tr)) {
                     var sensorField = program.WorkingSet.DerivedFields[CNSVariables.ShockSensor];
                     CNSVariables.ShockSensor.UpdateFunction(sensorField, program.SpeciesMap.SubGrid.VolumeMask, program);
                 }
 
                 // Update artificial viscosity variable
-                using (new BlockTrace("ArtificialViscosity.UpdateFunction", tr)) {
-                    var avField = program.WorkingSet.DerivedFields[CNSVariables.ArtificialViscosity];
-                    CNSVariables.ArtificialViscosity.UpdateFunction(avField, program.SpeciesMap.SubGrid.VolumeMask, program);
-                }
+                //using (new BlockTrace("UpdateShockCapturingVariables.ArtificialViscosity", tr)) {
+                var avField = program.WorkingSet.DerivedFields[CNSVariables.ArtificialViscosity];
+                CNSVariables.ArtificialViscosity.UpdateFunction(avField, program.SpeciesMap.SubGrid.VolumeMask, program);
+                //}
 
                 // Test
                 //double sensorNorm = program.WorkingSet.DerivedFields[CNSVariables.ShockSensor].L2Norm();

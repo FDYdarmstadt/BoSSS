@@ -31,19 +31,33 @@ namespace BoSSS.Solution.XNSECommon.Operator.Pressure {
 
         LevelSetTracker m_LsTrk;
 
-        public PressureFormAtLevelSet(int _d, int _D, LevelSetTracker LsTrk) {
+        public PressureFormAtLevelSet(int _d, int _D, LevelSetTracker LsTrk, bool _weighted = false, double _wA = 1.0, double _wB = 1.0) {
             m_d = _d;
             m_D = _D;
             m_LsTrk = LsTrk;
             if (_d >= _D)
                 throw new ArgumentException();
+
+            weighted = _weighted;
+            wA = _wA;
+            wB = _wB;
         }
 
         int m_d;
         int m_D;
 
+        bool weighted;
+        double wA;
+        double wB;
+
         public double LevelSetForm(ref CommonParamsLs inp, double[] pA, double[] pB, double[,] Grad_pA, double[,] Grad_pB, double vA, double vB, double[] Grad_vA, double[] Grad_vB) {
-            return -(vB - vA)*inp.n[m_d]*0.5*(pB[0] + pA[0]);
+
+            if (!weighted) {
+                return -(vB - vA) * inp.n[m_d] * 0.5 * (pB[0] + pA[0]);
+            } else {
+                return -(vB - vA) * inp.n[m_d] * (wA * pB[0] + wB * pA[0]) / (wA + wB);
+            }
+            
         }
 
        
@@ -77,66 +91,70 @@ namespace BoSSS.Solution.XNSECommon.Operator.Pressure {
         }
     }
 
-    ///// <summary>
-    ///// 
-    ///// </summary>
-    //public class GeneralizedPressureFormAtLevelSet : ILevelSetForm {
+    /// <summary>
+    /// 
+    /// </summary>
+    public class GeneralizedPressureFormAtLevelSet : ILevelSetForm {
 
-    //    LevelSetTracker m_LsTrk;
+        LevelSetTracker m_LsTrk;
 
-    //    public GeneralizedPressureFormAtLevelSet(int _d, int _D, LevelSetTracker LsTrk, , double _rhoA, double _rhoB, double _M) {
-    //        m_d = _d;
-    //        m_D = _D;
-    //        m_LsTrk = LsTrk;
-    //        if(_d >= _D)
-    //            throw new ArgumentException();
+        public GeneralizedPressureFormAtLevelSet(int _d, int _D, LevelSetTracker LsTrk, double _pSat, double _hVapA) {
+            m_d = _d;
+            m_D = _D;
+            m_LsTrk = LsTrk;
+            if (_d >= _D)
+                throw new ArgumentException();
 
-    //        this.rhoA = _rhoA;
-    //        this.rhoB = _rhoB;
-    //        this.M = _M;
-    //    }
+            this.pSat = _pSat;
+            this.hVapA = _hVapA;
+        }
 
-    //    int m_d;
-    //    int m_D;
+        int m_d;
+        int m_D;
 
-    //    double rhoA;
-    //    double rhoB;
-    //    double M;
+        double pSat;
+        double hVapA;
 
 
-    //    public double LevelSetForm(ref CommonParamsLs inp, double[] pA, double[] pB, double[,] Grad_pA, double[,] Grad_pB, double vA, double vB, double[] Grad_vA, double[] Grad_vB) {
-    //        return -(vB - vA) * inp.n[m_d] * 0.5 * (pB[0] + pA[0]);
-    //    }
+        public double LevelSetForm(ref CommonParamsLs inp, double[] pA, double[] pB, double[,] Grad_pA, double[,] Grad_pB, double vA, double vB, double[] Grad_vA, double[] Grad_vB) {
+
+            if (hVapA > 0.0)
+                return (0 - vA) * inp.n[m_d] * pSat;
+            else
+                return (vB - 0) * inp.n[m_d] * pSat;
+
+            //return (vB - vA) * inp.n[m_d] * pSat;
+        }
 
 
 
-    //    public IList<string> ArgumentOrdering {
-    //        get {
-    //            return new string[] { VariableNames.Pressure };
-    //        }
-    //    }
+        public IList<string> ArgumentOrdering {
+            get {
+                return new string[] { VariableNames.Pressure };
+            }
+        }
 
-    //    public int LevelSetIndex {
-    //        get { return 0; }
-    //    }
+        public int LevelSetIndex {
+            get { return 0; }
+        }
 
-    //    public SpeciesId PositiveSpecies {
-    //        get { return this.m_LsTrk.GetSpeciesId("B"); }
-    //    }
+        public SpeciesId PositiveSpecies {
+            get { return this.m_LsTrk.GetSpeciesId("B"); }
+        }
 
-    //    public SpeciesId NegativeSpecies {
-    //        get { return this.m_LsTrk.GetSpeciesId("A"); }
-    //    }
+        public SpeciesId NegativeSpecies {
+            get { return this.m_LsTrk.GetSpeciesId("A"); }
+        }
 
-    //    public TermActivationFlags LevelSetTerms {
-    //        get {
-    //            return TermActivationFlags.UxV;
-    //        }
-    //    }
+        public TermActivationFlags LevelSetTerms {
+            get {
+                return TermActivationFlags.UxV;
+            }
+        }
 
-    //    public IList<string> ParameterOrdering {
-    //        get { return null; }
-    //    }
-    //}
+        public IList<string> ParameterOrdering {
+            get { return null; }
+        }
+    }
 
 }

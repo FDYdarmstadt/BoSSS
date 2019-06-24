@@ -14,22 +14,25 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+using BoSSS.Foundation;
+using BoSSS.Foundation.Grid;
+using BoSSS.Solution.CompressibleFlowCommon;
+using BoSSS.Solution.CompressibleFlowCommon.ShockCapturing;
 using System;
+using System.Collections;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 
-namespace BoSSS.Solution.XheatCommon {
+namespace CNS.ShockCapturing {
 
+    /// <summary>
+    /// Defines a sensor that yields large positive values in regions with
+    /// strong oscillations and small values otherwise
+    /// </summary>
+    public interface ICNSShockSensor : IShockSensor {
 
-    public enum ThermalBcType {
-
-        ConstantTemperature = 0,
-
-        ZeroGradient = 1,
-
-        ConstantHeatFlux = 2
-
+        /// <summary>
+        /// Updates the sensor values in all cells
+        /// </summary>
+        void UpdateSensorValues(IEnumerable<DGField> fieldSet, ISpeciesMap speciesMap, CellMask cellMask);
     }
-
 }

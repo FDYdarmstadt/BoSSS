@@ -19,6 +19,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using BoSSS.Foundation;
+using BoSSS.Solution.XheatCommon;
 
 namespace BoSSS.Solution.XNSECommon {
     
@@ -26,6 +27,8 @@ namespace BoSSS.Solution.XNSECommon {
     
     public class OperatorConfiguration {
         public PhysicalParameters physParams;
+
+        public ThermalParameters thermParams;
 
         /// <summary>
         /// advanced operator configuration

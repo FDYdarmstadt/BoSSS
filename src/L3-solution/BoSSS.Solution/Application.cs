@@ -1982,7 +1982,6 @@ namespace BoSSS.Solution {
                         // mesh adaptation
                         // ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
-                        //PlotCurrentState(0, new TimestepNumber(new int[] { 0, 9 }), 2);
 
                         // backup old data
                         // ===============
@@ -2087,7 +2086,6 @@ namespace BoSSS.Solution {
                         CreateFields(); // full user control   
                         PostRestart(physTime, TimeStepNo);
 
-                        //PlotCurrentState(0, new TimestepNumber(new int[] { 0, 10 }), 2);
 
                         // re-set Level-Set tracker
                         int trackerVersion = remshDat.SetNewTracker(this.LsTrk);

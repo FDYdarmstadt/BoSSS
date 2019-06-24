@@ -44,7 +44,7 @@ namespace CNS.Convection {
         /// <param name="speciesMap">
         /// <see cref="EulerFlux.EulerFlux"/>
         /// </param>
-        public GodunovFlux(CNSControl config, IBoundaryConditionMap boundaryMap, IEulerEquationComponent equationComponent, ISpeciesMap speciesMap)
+        public GodunovFlux(CompressibleControl config, IBoundaryConditionMap boundaryMap, IEulerEquationComponent equationComponent, ISpeciesMap speciesMap)
             : base(config, boundaryMap, equationComponent, speciesMap) {
             if (config.EquationOfState is IdealGas == false) {
                 throw new Exception("Riemann solver currently only supports ideal gases");
@@ -76,7 +76,7 @@ namespace CNS.Convection {
         /// <returns>
         /// <see cref="ExactRiemannSolver.GetCentralState"/>
         /// </returns>
-        protected internal override double InnerEdgeFlux(double[] x, double time, StateVector stateIn, StateVector stateOut, ref Vector normal, int edgeIndex) {
+        protected override double InnerEdgeFlux(double[] x, double time, StateVector stateIn, StateVector stateOut, ref Vector normal, int edgeIndex) {
             ExactRiemannSolver riemannSolver = new ExactRiemannSolver(
                 stateIn, stateOut, normal);
 
