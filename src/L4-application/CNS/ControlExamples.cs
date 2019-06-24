@@ -1010,9 +1010,9 @@ namespace CNS {
             if (AV) {
                 c.ActiveOperators |= Operators.ArtificialViscosity;
                 Variable sensorVariable = CompressibleVariables.Density;
-                c.ShockSensor = new PerssonSensor(sensorVariable, sensorLimit);
+                c.CNSShockSensor = new PerssonSensor(sensorVariable, sensorLimit);
                 c.AddVariable(CNSVariables.ShockSensor, 0);
-                c.ArtificialViscosityLaw = new SmoothedHeavisideArtificialViscosityLaw(c.ShockSensor, dgDegree, sensorLimit, epsilon0, kappa, lambdaMax: 2);
+                c.ArtificialViscosityLaw = new SmoothedHeavisideArtificialViscosityLaw(c.CNSShockSensor, dgDegree, sensorLimit, epsilon0, kappa, lambdaMax: 2);
             }
 
             // Runge-Kutta
@@ -1275,8 +1275,8 @@ namespace CNS {
                 c.AddVariable(CNSVariables.ArtificialViscosity, 1);
             }
             c.ActiveOperators |= Operators.ArtificialViscosity;
-            c.ShockSensor = new PerssonSensor(sensorVariable, sensorLimit);
-            c.ArtificialViscosityLaw = new SmoothedHeavisideArtificialViscosityLaw(c.ShockSensor, dgDegree, sensorLimit, epsilon0, kappa, lambdaMax: 2);
+            c.CNSShockSensor = new PerssonSensor(sensorVariable, sensorLimit);
+            c.ArtificialViscosityLaw = new SmoothedHeavisideArtificialViscosityLaw(c.CNSShockSensor, dgDegree, sensorLimit, epsilon0, kappa, lambdaMax: 2);
             c.Endtime = endTime;
 
             c.DynamicLoadBalancing_Period = 5;
@@ -1338,9 +1338,9 @@ namespace CNS {
             double kappa = 0.5;
             if (AV) {
                 Variable sensorVariable = CompressibleVariables.Density;
-                c.ShockSensor = new PerssonSensor(sensorVariable, sensorLimit);
+                c.CNSShockSensor = new PerssonSensor(sensorVariable, sensorLimit);
                 c.AddVariable(CNSVariables.ShockSensor, 0);
-                c.ArtificialViscosityLaw = new SmoothedHeavisideArtificialViscosityLaw(c.ShockSensor, dgDegree, sensorLimit, epsilon0, kappa, lambdaMax: 2);
+                c.ArtificialViscosityLaw = new SmoothedHeavisideArtificialViscosityLaw(c.CNSShockSensor, dgDegree, sensorLimit, epsilon0, kappa, lambdaMax: 2);
             }
 
             // ### Time-Stepping ###
@@ -1522,10 +1522,10 @@ namespace CNS {
             double kappa = 0.5;
 
             Variable sensorVariable = CompressibleVariables.Density;
-            c.ShockSensor = new PerssonSensor(sensorVariable, sensorLimit);
+            c.CNSShockSensor = new PerssonSensor(sensorVariable, sensorLimit);
 
             if (AV) {
-                c.ArtificialViscosityLaw = new SmoothedHeavisideArtificialViscosityLaw(c.ShockSensor, dgDegree, sensorLimit, epsilon0, kappa);
+                c.ArtificialViscosityLaw = new SmoothedHeavisideArtificialViscosityLaw(c.CNSShockSensor, dgDegree, sensorLimit, epsilon0, kappa);
             }
 
             // Runge-Kutta
@@ -1694,10 +1694,10 @@ namespace CNS {
             double kappa = 0.5;
 
             Variable sensorVariable = CompressibleVariables.Density;
-            c.ShockSensor = new PerssonSensor(sensorVariable, sensorLimit);
+            c.CNSShockSensor = new PerssonSensor(sensorVariable, sensorLimit);
 
             if (AV) {
-                c.ArtificialViscosityLaw = new SmoothedHeavisideArtificialViscosityLaw(c.ShockSensor, dgDegree, sensorLimit, epsilon0, kappa);
+                c.ArtificialViscosityLaw = new SmoothedHeavisideArtificialViscosityLaw(c.CNSShockSensor, dgDegree, sensorLimit, epsilon0, kappa);
             }
 
             // Runge-Kutta
@@ -1862,13 +1862,13 @@ namespace CNS {
 
             // Shock-capturing
             Variable sensorVariable = CompressibleVariables.Density;
-            c.ShockSensor = new PerssonSensor(sensorVariable, sensorLimit);
+            c.CNSShockSensor = new PerssonSensor(sensorVariable, sensorLimit);
             c.AddVariable(CNSVariables.ShockSensor, 0);
 
             if (AV) {
                 double epsilon0 = 1.0;
                 double kappa = 0.5;
-                c.ArtificialViscosityLaw = new SmoothedHeavisideArtificialViscosityLaw(c.ShockSensor, dgDegree, sensorLimit, epsilon0, kappa, lambdaMax: 2);
+                c.ArtificialViscosityLaw = new SmoothedHeavisideArtificialViscosityLaw(c.CNSShockSensor, dgDegree, sensorLimit, epsilon0, kappa, lambdaMax: 2);
             }
 
             // Level set
@@ -2070,8 +2070,8 @@ namespace CNS {
 
             if (AV) {
                 Variable sensorVariable = CompressibleVariables.Density;
-                c.ShockSensor = new PerssonSensor(sensorVariable, sensorLimit);
-                c.ArtificialViscosityLaw = new SmoothedHeavisideArtificialViscosityLaw(c.ShockSensor, dgDegree, sensorLimit, epsilon0, kappa, lambdaMax);
+                c.CNSShockSensor = new PerssonSensor(sensorVariable, sensorLimit);
+                c.ArtificialViscosityLaw = new SmoothedHeavisideArtificialViscosityLaw(c.CNSShockSensor, dgDegree, sensorLimit, epsilon0, kappa, lambdaMax);
             }
 
             c.EquationOfState = IdealGas.Air;
@@ -2332,14 +2332,14 @@ namespace CNS {
             // Shock-capturing
             if (dgDegree >= 1) {
                 Variable sensorVariable = CompressibleVariables.Density;
-                c.ShockSensor = new PerssonSensor(sensorVariable, sensorLimit);
+                c.CNSShockSensor = new PerssonSensor(sensorVariable, sensorLimit);
             }
 
             double lambdaMax = 20;
             if (AV) {
                 double epsilon0 = 1.0;
                 double kappa = 1.0;
-                c.ArtificialViscosityLaw = new SmoothedHeavisideArtificialViscosityLaw(c.ShockSensor, dgDegree, sensorLimit, epsilon0, kappa, lambdaMax);
+                c.ArtificialViscosityLaw = new SmoothedHeavisideArtificialViscosityLaw(c.CNSShockSensor, dgDegree, sensorLimit, epsilon0, kappa, lambdaMax);
             }
 
             c.EquationOfState = IdealGas.Air;
@@ -2860,14 +2860,14 @@ namespace CNS {
             // Shock-capturing
             {
                 Variable sensorVariable = CompressibleVariables.Density;
-                c.ShockSensor = new PerssonSensor(sensorVariable, sensorLimit);
+                c.CNSShockSensor = new PerssonSensor(sensorVariable, sensorLimit);
                 c.ActiveOperators |= Operators.ArtificialViscosity;
 
                 double epsilon0 = 1.0;
                 double kappa = 1.0;
 
                 c.ArtificialViscosityLaw = new SmoothedHeavisideArtificialViscosityLaw(
-                    c.ShockSensor, dgDegree, sensorLimit, epsilon0, kappa);
+                    c.CNSShockSensor, dgDegree, sensorLimit, epsilon0, kappa);
 
                 c.AddVariable(CNSVariables.ShockSensor, 0);
                 c.AddVariable(CNSVariables.ArtificialViscosity, 2);
@@ -3028,14 +3028,14 @@ namespace CNS {
             // Shock-capturing
             {
                 Variable sensorVariable = CompressibleVariables.Density;
-                c.ShockSensor = new PerssonSensor(sensorVariable, sensorLimit);
+                c.CNSShockSensor = new PerssonSensor(sensorVariable, sensorLimit);
                 c.ActiveOperators |= Operators.ArtificialViscosity;
 
                 double epsilon0 = 1.0;
                 double kappa = 1.0;
                 //double lambdaMax = 2.0;    // determined manually in Visit
                 c.ArtificialViscosityLaw = new SmoothedHeavisideArtificialViscosityLaw(
-                    c.ShockSensor, dgDegree, sensorLimit, epsilon0, kappa);
+                    c.CNSShockSensor, dgDegree, sensorLimit, epsilon0, kappa);
 
                 c.AddVariable(CNSVariables.ShockSensor, 0);
                 c.AddVariable(CNSVariables.ArtificialViscosity, 3);
@@ -3218,8 +3218,8 @@ namespace CNS {
 
             if (AV) {
                 Variable sensorVariable = CompressibleVariables.Density;
-                c.ShockSensor = new PerssonSensor(sensorVariable, sensorLimit);
-                c.ArtificialViscosityLaw = new SmoothedHeavisideArtificialViscosityLaw(c.ShockSensor, dgDegree, sensorLimit, epsilon0, kappa);
+                c.CNSShockSensor = new PerssonSensor(sensorVariable, sensorLimit);
+                c.ArtificialViscosityLaw = new SmoothedHeavisideArtificialViscosityLaw(c.CNSShockSensor, dgDegree, sensorLimit, epsilon0, kappa);
                 //c.ArtificialViscosityLaw = new SmoothedHeavisideArtificialViscosityLaw(c.ShockSensor, dgDegree, sensorLimit, epsilon0, kappa, lambdaMax: 2);
             }
 
@@ -3452,9 +3452,9 @@ namespace CNS {
             if (AV) {
                 c.ActiveOperators |= Operators.ArtificialViscosity;
                 Variable sensorVariable = CompressibleVariables.Density;
-                c.ShockSensor = new PerssonSensor(sensorVariable, sensorLimit);
+                c.CNSShockSensor = new PerssonSensor(sensorVariable, sensorLimit);
                 c.AddVariable(CNSVariables.ShockSensor, 0);
-                c.ArtificialViscosityLaw = new SmoothedHeavisideArtificialViscosityLaw(c.ShockSensor, dgDegree, sensorLimit, epsilon0, kappa, lambdaMax: 2);
+                c.ArtificialViscosityLaw = new SmoothedHeavisideArtificialViscosityLaw(c.CNSShockSensor, dgDegree, sensorLimit, epsilon0, kappa, lambdaMax: 2);
             }
 
             c.EquationOfState = IdealGas.Air;
@@ -3673,8 +3673,8 @@ namespace CNS {
 
             if (AV) {
                 Variable sensorVariable = CompressibleVariables.Density;
-                c.ShockSensor = new PerssonSensor(sensorVariable, sensorLimit);
-                c.ArtificialViscosityLaw = new SmoothedHeavisideArtificialViscosityLaw(c.ShockSensor, dgDegree, sensorLimit, epsilon0, kappa, lambdaMax);
+                c.CNSShockSensor = new PerssonSensor(sensorVariable, sensorLimit);
+                c.ArtificialViscosityLaw = new SmoothedHeavisideArtificialViscosityLaw(c.CNSShockSensor, dgDegree, sensorLimit, epsilon0, kappa, lambdaMax);
             }
 
             c.EquationOfState = IdealGas.Air;

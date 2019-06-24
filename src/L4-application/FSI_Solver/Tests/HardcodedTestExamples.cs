@@ -165,7 +165,7 @@ namespace BoSSS.Application.FSI_Solver {
         /// <summary>
         /// Testing of particle/wall interactions using a single particle
         /// </summary>
-        public static FSI_Control SingleDryParticleAgainstWall(string _DbPath = null, bool MeshRefine = false) {
+        public static FSI_Control SingleDryParticleAgainstWall(string _DbPath = null, bool MeshRefine = true) {
             FSI_Control C = new FSI_Control();
 
             // basic database options
@@ -422,7 +422,6 @@ namespace BoSSS.Application.FSI_Solver {
             C.ProjectDescription = "Gravity";
             C.SessionName = C.ProjectName;
             C.Tags.Add("with immersed boundary method");
-            C.AdaptiveMeshRefinement = true;
 
 
             // DG degrees
@@ -484,6 +483,7 @@ namespace BoSSS.Application.FSI_Solver {
 
             C.pureDryCollisions = true;
             C.PhysicalParameters.IncludeConvection = true;
+            C.CoefficientOfRestitution = 1;
 
 
             // misc. solver options
@@ -508,7 +508,7 @@ namespace BoSSS.Application.FSI_Solver {
             C.dtMin = dt;
 
             C.Endtime = 2;
-            C.NoOfTimesteps = 111;
+            C.NoOfTimesteps = 116;
 
             // haben fertig...
             // ===============

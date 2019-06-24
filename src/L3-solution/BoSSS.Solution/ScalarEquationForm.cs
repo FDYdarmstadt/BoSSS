@@ -20,7 +20,7 @@ namespace BoSSS.Solution.Utils
         public ScalarEquationForm(string VarName) {
             m_ArgumentOrdering = new string[] { VarName };
         }
-        
+
 
         /// <summary>
         /// set to <see cref="TermActivationFlags.AllOn"/>
@@ -72,7 +72,7 @@ namespace BoSSS.Solution.Utils
         /// redirected to <see cref="BoundaryEdgeForm(ref CommonParamsBnd, double, double[], double, double[])"/>
         /// </summary>
         public double BoundaryEdgeForm(ref CommonParamsBnd inp, double[] _uA, double[,] _Grad_uA, double _vA, double[] _Grad_vA) {
-            return BoundaryEdgeForm(ref inp, _uA[0], _Grad_uA.GetColumn(0),  _vA, _Grad_vA);
+            return BoundaryEdgeForm(ref inp, _uA[0], _Grad_uA.GetRow(0), _vA, _Grad_vA);
         }
 
 
@@ -80,14 +80,14 @@ namespace BoSSS.Solution.Utils
         ///  redirected to <see cref="InnerEdgeForm(ref CommonParams, double, double, double[], double[], double, double, double[], double[])"/>
         /// </summary>
         public double InnerEdgeForm(ref CommonParams inp, double[] _uIN, double[] _uOUT, double[,] _Grad_uIN, double[,] _Grad_uOUT, double _vIN, double _vOUT, double[] _Grad_vIN, double[] _Grad_vOUT) {
-            return InnerEdgeForm(ref inp, _uIN[0],_uOUT[0], _Grad_uIN.GetColumn(0), _Grad_uOUT.GetColumn(0),   _vIN,   _vOUT,   _Grad_vIN,   _Grad_vOUT);
+            return InnerEdgeForm(ref inp, _uIN[0], _uOUT[0], _Grad_uIN.GetRow(0), _Grad_uOUT.GetRow(0), _vIN, _vOUT, _Grad_vIN, _Grad_vOUT);
         }
 
         /// <summary>
         /// redirected to <see cref="VolumeForm(ref CommonParamsVol, double, double[], double, double[])"/>
         /// </summary>
         public double VolumeForm(ref CommonParamsVol cpv, double[] U, double[,] GradU, double V, double[] GradV) {
-            return VolumeForm(ref cpv, U[0], GradU.GetColumn(0), V, GradV);
+            return VolumeForm(ref cpv, U[0], GradU.GetRow(0), V, GradV);
         }
 
         /// <summary>

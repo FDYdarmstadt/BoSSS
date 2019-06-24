@@ -14,7 +14,7 @@ using System.Threading.Tasks;
 namespace BoSSS.Foundation.XDG {
 
     /// <summary>
-    /// Extensions/legacy interfaced for the spatial operator
+    /// Extensions/legacy interface for the spatial operator
     /// </summary>
     public static class XSpatialOperatorExtensions {
 

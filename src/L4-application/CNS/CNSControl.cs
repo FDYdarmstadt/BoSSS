@@ -237,18 +237,6 @@ namespace CNS {
         public ILimiter Limiter = null;
 
         /// <summary>
-        /// An optional sensor to detect shocks
-        /// </summary>
-        public IShockSensor ShockSensor = null;
-        
-        /// <summary>
-        /// An optional viscosity law to determine the magnitude of the
-        /// artificial viscosity if <see cref="ActiveOperators"/> includes
-        /// <see cref="Operators.ArtificialViscosity"/>
-        /// </summary>
-        public IArtificialViscosityLaw ArtificialViscosityLaw = null;
-
-        /// <summary>
         /// Configuration for an option sponge layer defining a non-reflecting
         /// boundary condition.
         /// </summary>
@@ -275,6 +263,11 @@ namespace CNS {
         /// Enable console output for LTS time stepper
         /// </summary>
         public bool WriteLTSConsoleOutput = false;
+
+        /// <summary>
+        /// An optional sensor to detect shocks
+        /// </summary>
+        public ICNSShockSensor CNSShockSensor = null;
 
         /// <summary>
         /// Clones this object, but beware: I'm not sure (yet) that I've

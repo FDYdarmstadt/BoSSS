@@ -483,7 +483,7 @@ namespace CNS {
             delegate (DGField s, CellMask cellMask, IProgram<CNSControl> program) {
                 s.Clear();  // Just to be sure that we get new values only
 
-                IShockSensor sensor = program.Control.ShockSensor;
+                ICNSShockSensor sensor = program.Control.CNSShockSensor;
                 foreach (Chunk chunk in cellMask) {
                     foreach (int cell in chunk.Elements) {
                         s.SetMeanValue(cell, sensor.GetSensorValue(cell));
