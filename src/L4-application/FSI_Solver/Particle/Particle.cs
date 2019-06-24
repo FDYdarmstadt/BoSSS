@@ -45,6 +45,7 @@ namespace BoSSS.Application.FSI_Solver
     abstract public class Particle : ICloneable {
 
         /// <summary>
+        /// <summary>
         /// Empty constructor used during de-serialization
         /// </summary>
         protected Particle()
@@ -89,7 +90,7 @@ namespace BoSSS.Application.FSI_Solver
         /// <summary>
         /// Check whether any particles is collided with another particle
         /// </summary>
-        public bool[] m_collidedWithParticle;
+        public bool Collided;
 
         /// <summary>
         /// Check whether any particles is collided with the wall
@@ -273,6 +274,12 @@ namespace BoSSS.Application.FSI_Solver
         /// The translational velocity of the particle in the current time step. This list is used by the momentum conservation model.
         /// </summary>
         [DataMember]
+        public double CollisionPreviousTimestep = new double();
+
+        /// <summary>
+        /// The translational velocity of the particle in the current time step. This list is used by the momentum conservation model.
+        /// </summary>
+        [DataMember]
         public double[] TotalCollisionPositionCorrection = new double[2];
 
         /// <summary>
@@ -356,7 +363,13 @@ namespace BoSSS.Application.FSI_Solver
         /// Active stress on the current particle.
         /// </summary>
         public double ActiveStress = 0;
-        
+
+        /// <summary>
+        /// Active velocity (alternative to active stress) on the current particle.
+        /// </summary>
+        [DataMember]
+        public double ActiveVelocity;
+
         /// <summary>
         /// Area of the current particle.
         /// </summary>
@@ -460,12 +473,12 @@ namespace BoSSS.Application.FSI_Solver
             {
                 Aux.SaveValueOfLastTimestep(Angle);
             }
-
+            int ClearAcceleartion = CollisionTimestep != 0 ? 0 : 1;
             if (IncludeRotation == true) {
                 if (SpatialDim != 2)
                     throw new NotSupportedException("Unknown particle dimension: SpatialDim = " + SpatialDim);
 
-                Angle[0] = Angle[1] + (RotationalVelocity[1] + RotationalVelocity[0]) * (dt - CollisionTimestep) / 2 + (dt - CollisionTimestep).Pow2() * (RotationalAcceleration[1] + RotationalAcceleration[0]) / 4;
+                Angle[0] = Angle[1] + (RotationalVelocity[1] + RotationalVelocity[0]) * (dt - CollisionTimestep) / 2 + ClearAcceleartion * (dt - CollisionTimestep).Pow2() * (RotationalAcceleration[1] + RotationalAcceleration[0]) / 4;
                 //for (int p = 0; p < m_collidedWithParticle.Length; p++)
                 //{
                 //    if (m_collidedWithParticle[p])
@@ -542,10 +555,12 @@ namespace BoSSS.Application.FSI_Solver
                 Aux.SaveMultidimValueOfLastTimestep(TranslationalAcceleration);
                 Aux.SaveValueOfLastTimestep(RotationalAcceleration);
             }
-
+            IncludeHydrodynamics = false;
             // Include Gravitiy
-            if(!skipForceIntegration && !IncludeHydrodynamics)
+            if (!Collided && !IncludeHydrodynamics)
+            {
                 HydrodynamicForces[0][1] += GravityVertical * Mass_P;
+            }
             double[,] CoefficientMatrix = Acceleration.CalculateCoefficients(AddedDampingTensor, Mass_P, MomentOfInertia_P, dt, AddedDampingCoefficient);
             double Denominator = Acceleration.CalculateDenominator(CoefficientMatrix);
 
@@ -572,28 +587,44 @@ namespace BoSSS.Application.FSI_Solver
         /// <returns></returns>
         public void CalculateTranslationalVelocity(double dt)
         {
-            bool AnyCollision = false;
-            for (int p = 0; p < m_collidedWithParticle.Length; p++)
-            {
-                if (m_collidedWithParticle[p])
-                {
-                    AnyCollision = true;
-                }
-            }
-            if (iteration_counter_P == 0 && !AnyCollision)
+            //bool AnyCollision = false;
+            //for (int p = 0; p < Collided.Length; p++)
+            //{
+            //    if (Collided[p])
+            //    {
+            //        AnyCollision = true;
+            //    }
+            //}
+            if (iteration_counter_P == 0 && !Collided)
             {
                 Aux.SaveMultidimValueOfLastTimestep(TranslationalVelocity);
             }
+
+            double[] tempActiveVelcotiy = new double[2];
+            
 
             if (this.IncludeTranslation == false) {
                 for (int d = 0; d < SpatialDim; d++) {
                     TranslationalVelocity[0][d] = 0;
                 }
-            } else {
+            }
+            else if (ActiveVelocity != 0)
+            {
+                tempActiveVelcotiy[0] = Math.Cos(Angle[0]) * ActiveVelocity;
+                tempActiveVelcotiy[1] = Math.Sin(Angle[0]) * ActiveVelocity;
+                for (int d = 0; d < SpatialDim; d++)
+                {
+                    if (!Collided)
+                        TranslationalVelocity[0][d] = tempActiveVelcotiy[d];
+                    if (double.IsNaN(TranslationalVelocity[0][d]) || double.IsInfinity(TranslationalVelocity[0][d]))
+                        throw new ArithmeticException("Error trying to calculate particle velocity Value:  " + TranslationalVelocity[0][d]);
+                }
+            }
+            else {
 
                 for (int d = 0; d < SpatialDim; d++) {
                     
-                    if (!AnyCollision)
+                    if (!Collided)
                         TranslationalVelocity[0][d] = TranslationalVelocity[1][d] + (TranslationalAcceleration[1][d] + TranslationalAcceleration[0][d]) * dt / 2;
                     //else
                     //    TranslationalVelocity[0][d] = TranslationalVelocity[1][d];

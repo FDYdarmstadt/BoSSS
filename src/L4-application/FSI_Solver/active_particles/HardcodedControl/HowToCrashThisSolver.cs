@@ -30,7 +30,7 @@ namespace BoSSS.Application.FSI_Solver
 {
     public class HowToCrashThisSolver : IBM_Solver.HardcodedTestExamples
     {
-        public static FSI_Control StickyTrap(string _DbPath = null, int k = 2, double VelXBase = 0.0, double angle = 0.0)
+        public static FSI_Control StickyTrap(string _DbPath = null, int k = 3, double VelXBase = 0.0, double angle = 0.0)
         {
             FSI_Control C = new FSI_Control();
 
@@ -62,8 +62,8 @@ namespace BoSSS.Application.FSI_Solver
 
                 int q, r;
 
-                q = 30;
-                r = 30;
+                q = 40;
+                r = 40;
 
                 double[] Xnodes = GenericBlas.Linspace(-1.5 * BaseSize, 1.5 * BaseSize, q + 1);
                 double[] Ynodes = GenericBlas.Linspace(-1.5 * BaseSize, 1.5 * BaseSize, r + 1);
@@ -123,6 +123,32 @@ namespace BoSSS.Application.FSI_Solver
                 particleDensity = 4,
                 GravityVertical = -9.81,
             });
+
+
+            C.Particles.Add(new Particle_superEllipsoid(new double[] { 0.45, 0 }, startAngl: 45)
+            {
+                particleDensity = 1,
+                thickness_P = 0.2,
+                length_P = 0.4,
+                //radius_P = 0.4,
+                superEllipsoidExponent = 4,
+                GravityVertical = -0,
+                IncludeRotation = false,
+                IncludeTranslation = false,
+            });
+
+
+            C.Particles.Add(new Particle_superEllipsoid(new double[] { -0.45, 0 }, startAngl: -45)
+            {
+                particleDensity = 1,
+                thickness_P = 0.2,
+                length_P = 0.4,
+                //radius_P = 0.4,
+                superEllipsoidExponent = 4,
+                GravityVertical = -0,
+                IncludeRotation = false,
+                IncludeTranslation = false,
+            });
             C.InitialValues_Evaluators.Add("VelocityX", X => 0);
             C.InitialValues_Evaluators.Add("VelocityY", X => 0);
             C.PhysicalParameters.IncludeConvection = false;
@@ -148,7 +174,7 @@ namespace BoSSS.Application.FSI_Solver
             C.dtMax = dt;
             C.dtMin = dt;
             C.Endtime = 10.0;
-            C.NoOfTimesteps = 50;
+            C.NoOfTimesteps = 5000;
 
             // haben fertig...
             // ===============

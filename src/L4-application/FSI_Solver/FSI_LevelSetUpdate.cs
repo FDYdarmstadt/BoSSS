@@ -174,14 +174,12 @@ namespace FSI_Solver
             return CurrentColor.ToArray();
         }
 
-        /// ====================================================================================
         /// <summary>
         /// method to sort all cells by their color
         /// </summary>
         /// <param name="CellColor">
         /// all cells with their color
         /// </param>
-        /// ====================================================================================
         internal List<int[]> ColoredCellsFindAndSort(int[] CellColor)
         {
             List<int[]> ColoredCellsSorted = new List<int[]>();
@@ -204,6 +202,18 @@ namespace FSI_Solver
             return ColoredCellsSorted;
         }
 
+        /// <summary>
+        /// method to sort all cells by their color combined with MPI communication
+        /// </summary>
+        /// <param name="CellColor">
+        /// all cells with their color
+        /// </param>
+        /// <param name="GridData">
+        /// IGridData
+        /// </param>
+        /// <param name="Particles">
+        /// A list of all particles.
+        /// </param>
         internal void DetermineGlobalParticleColor(IGridData GridData, int[] CellColor, List<Particle> Particles, out int[] GlobalParticleColor)
         {
             List<int[]> ColoredCellsSorted = ColoredCellsFindAndSort(CellColor);
