@@ -260,6 +260,36 @@ namespace FSI_Solver
             }
         }
 
+        internal void CalculateParticleVelcity(List<Particle> Particles, double dt, bool FullyCoupled, int IterationCounter)
+        {
+
+            foreach (Particle p in Particles)
+            {
+                p.iteration_counter_P = IterationCounter;
+                if (IterationCounter == 0 && FullyCoupled)
+                {
+                    if (p.neglectAddedDamping == false)
+                    {
+                        p.UpdateDampingTensors();
+                        //ExchangeDampingTensors(Particles);
+                    }
+                    p.PredictAcceleration();
+                }
+                else
+                {
+                    p.CalculateAcceleration(dt, FullyCoupled, true);
+                }
+                p.UpdateParticleVelocity(dt);
+            }
+        }
+
+        internal void CalculateParticlePosition(List<Particle> Particles, double dt)
+        {
+            foreach (Particle p in Particles)
+            {
+                p.UpdateParticlePositionAndAngle(dt);
+            }
+        }
         internal void CalculateParticleAccelerationAndDamping(Particle Particle, int IterationCounter, double dt, bool LieSplittingFullyCoupled) {
 
             if (IterationCounter == 0 && LieSplittingFullyCoupled) {
@@ -299,7 +329,7 @@ namespace FSI_Solver
                 Console.WriteLine();
             }
             if (IterationCounter > MaximumIterations)
-                throw new ApplicationException("no convergence in coupled iterative solver, number of iterations: " + IterationCounter);
+                throw new ApplicationException("No convergence in coupled iterative solver, number of iterations: " + IterationCounter);
             _IterationCounter = IterationCounter + 1;
         }
 

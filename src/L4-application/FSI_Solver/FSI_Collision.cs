@@ -35,6 +35,15 @@ namespace FSI_Solver
     {
         private FSI_Auxillary Aux = new FSI_Auxillary();
 
+        internal void ResetCollisionState(List<Particle> Particles)
+        {
+            foreach (Particle p in Particles)
+            {
+                p.skipForceIntegration = false;
+                p.Collided = false;
+            }
+        }
+
         internal void PrintCollisionResults(List<Particle> Particles, Particle Particle0, Particle Particle1, double Distance, double AccDynamicTimestep)
         {
             Console.WriteLine("-------------------------------------------------------");
@@ -162,9 +171,6 @@ namespace FSI_Solver
             CalculateNormalAndTangentialVector(DistanceVector, out double[] NormalVector, out double[] TangentialVector);
             ProjectVelocity(NormalVector, TangentialVector, Particle.TranslationalVelocity[0], out double collisionVn_P0, out double collisionVt_P0);
 
-            // if particle already collided with wall
-            Particle.m_collidedWithWall[0] = true;
-
             // Skip force integration for next timestep
             Particle.skipForceIntegration = true;
 
@@ -196,6 +202,8 @@ namespace FSI_Solver
                 Particle.TranslationalVelocity[0][d] = 0;
                 Particle.RotationalVelocity[0] = 0;
             }
+
+            Particle.Collided = true;
         }
 
         internal void GetWall(IGridData GridData, CellMask ParticleBoundaryCells, out double[,] WallPoints)

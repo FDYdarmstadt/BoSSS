@@ -14,35 +14,31 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using BoSSS.Foundation.XDG;
-using BoSSS.Solution.NSECommon;
-using BoSSS.Solution;
 using BoSSS.Foundation;
+using BoSSS.Foundation.Comm;
 using BoSSS.Foundation.Grid;
-using BoSSS.Solution.Tecplot;
-using ilPSP.Utils;
-using ilPSP.Tracing;
-using BoSSS.Solution.Utils;
-using MPI.Wrappers;
-using BoSSS.Foundation.IO;
-using System.Diagnostics;
-using System.IO;
-using ilPSP;
-using BoSSS.Solution.XdgTimestepping;
-using BoSSS.Solution.XNSECommon;
 using BoSSS.Foundation.Grid.Classic;
+using BoSSS.Foundation.IO;
+using BoSSS.Foundation.Quadrature;
+using BoSSS.Foundation.XDG;
+using BoSSS.Solution;
+using BoSSS.Solution.NSECommon;
+using BoSSS.Solution.Tecplot;
+using BoSSS.Solution.Utils;
+using BoSSS.Solution.XdgTimestepping;
+using FSI_Solver;
+using ilPSP;
+using ilPSP.Tracing;
+using ilPSP.Utils;
+using MPI.Wrappers;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Bson;
-using BoSSS.Foundation.Grid.RefElements;
-using FSI_Solver;
+using System;
 using System.Collections;
-using BoSSS.Solution.LevelSetTools;
-using NUnit.Framework;
-using BoSSS.Foundation.Comm;
-using BoSSS.Foundation.Quadrature;
+using System.Collections.Generic;
+using System.Diagnostics;
+using System.IO;
+using System.Linq;
 
 namespace BoSSS.Application.FSI_Solver
 {
@@ -60,12 +56,6 @@ namespace BoSSS.Application.FSI_Solver
 
             // call base implementation
             base.SetInitial();
-
-            foreach (Particle p in m_Particles)
-            {
-                p.m_collidedWithWall = new bool[4];
-                p.ClosestPointToParticle = new double[m_Particles.Count, 2];
-            }
         }
 
         public IList<Particle> Particles
@@ -97,7 +87,7 @@ namespace BoSSS.Application.FSI_Solver
             counter++;
         }
 
-        double calculatedDampingTensors;
+        bool CalculatedDampingTensors = false;
         readonly private FSI_Auxillary Auxillary = new FSI_Auxillary();
         readonly private FSI_Collision Collision = new FSI_Collision();
         readonly private FSI_LevelSetUpdate LevelSetUpdate = new FSI_LevelSetUpdate();
@@ -553,7 +543,7 @@ namespace BoSSS.Application.FSI_Solver
 
                 case LevelSetHandling.LieSplitting:
                     MassMatrixShape = MassMatrixShapeandDependence.IsTimeAndSolutionDependent;
-                    if (calculatedDampingTensors == 0)
+                    if (!CalculatedDampingTensors)
                     {
                         foreach (Particle p in m_Particles)
                         {
@@ -564,12 +554,12 @@ namespace BoSSS.Application.FSI_Solver
                             }
                         }
                     }
-                    calculatedDampingTensors = 1;
+                    CalculatedDampingTensors = true;
                     break;
 
                 case LevelSetHandling.FSI_LieSplittingFullyCoupled:
                     MassMatrixShape = MassMatrixShapeandDependence.IsTimeAndSolutionDependent;
-                    if (calculatedDampingTensors == 0)
+                    if (!CalculatedDampingTensors)
                     {
                         foreach (Particle p in m_Particles)
                         {
@@ -580,7 +570,7 @@ namespace BoSSS.Application.FSI_Solver
                             }
                         }
                     }
-                    calculatedDampingTensors = 1;
+                    CalculatedDampingTensors = true;
                     break;
 
                 case LevelSetHandling.StrangSplitting:
@@ -643,7 +633,7 @@ namespace BoSSS.Application.FSI_Solver
                 case LevelSetHandling.Coupled_Iterative:
                     Console.WriteLine("WARNING: Coupled iterative solver is not tested!");
                     Auxillary.ParticleState_MPICheck(m_Particles, GridData, MPISize);
-                    CalculateHyrdodynamicForces(m_Particles, dt, 0);
+                    CalculateHyrdodynamicForces(m_Particles, dt);
                     UpdateLevelSetParticles();
                     foreach (Particle p in m_Particles)
                     {
@@ -1104,7 +1094,7 @@ namespace BoSSS.Application.FSI_Solver
             }
         }
 
-        private void CalculateHyrdodynamicForces(List<Particle> Particles, double dt, int iteration_counter)
+        private void CalculateHyrdodynamicForces(List<Particle> Particles, double dt)
         {
             //
             // Note on MPI parallelization of particle solver:
@@ -1119,9 +1109,9 @@ namespace BoSSS.Application.FSI_Solver
             // ===============================================
             // Update forces
             // =============
-            for (int p = 0; p < m_Particles.Count(); p++)
+            for (int p = 0; p < Particles.Count(); p++)
             {
-                Particle CurrentParticle = m_Particles[p];
+                Particle CurrentParticle = Particles[p];
                 if (!((FSI_Control)Control).pureDryCollisions && !CurrentParticle.skipForceIntegration)
                     CurrentParticle.UpdateForcesAndTorque(Velocity, Pressure, LsTrk, Control.PhysicalParameters.mu_A, dt, Control.PhysicalParameters.rho_A, ((FSI_Control)Control).Timestepper_LevelSetHandling != LevelSetHandling.FSI_LieSplittingFullyCoupled);
                 else
@@ -1134,57 +1124,13 @@ namespace BoSSS.Application.FSI_Solver
             // MPISum over Forces moved to Particle.cs 
         }
 
-        private void CalculateParticleVelcity(List<Particle> Particles, double dt, bool FullyCoupled, int IterationCounter)
-        {
-           
-            foreach (Particle p in Particles)
-            {
-                p.iteration_counter_P = IterationCounter;
-                if (IterationCounter == 0 && FullyCoupled)
-                {
-                    if (p.neglectAddedDamping == false)
-                    {
-                        p.UpdateDampingTensors();
-                        //ExchangeDampingTensors(Particles);
-                    }
-                    p.PredictAcceleration();
-                }
-                else
-                {
-                    p.CalculateAcceleration(dt, FullyCoupled, true);
-                }
-                p.UpdateParticleVelocity(dt);
-            }
-        }
-
-        private void CalculateParticlePosition(List<Particle> Particles, double dt)
-        {
-            foreach (Particle p in m_Particles)
-            {
-                p.UpdateParticlePositionAndAngle(dt);
-            }
-        }
-
         private void CalculateCollision(List<Particle> Particles, double Hmin, double dt, double TimestepInt, int iteration_counter)
         {
-            // Particle-Particle collisions
-            foreach ( Particle p in m_Particles)
-            {
-                p.Collided = false;
-            }
             UpdateCollisionForces(Particles, dt);
             foreach (Particle p in m_Particles)
             {
                 Collision.Collision_MPICommunication(m_Particles, p, MPISize);
             }
-
-            // Particle-Wall collisions
-            //for (int p = 0; p < m_Particles.Count(); p++)
-            //{
-            //    Particle CurrentParticle = m_Particles[p];
-            //    UpdateCollisionForces(Particles, dt, WallCollision: true);
-            //    Collision.Collision_MPICommunication(m_Particles, CurrentParticle, MPISize, true);
-            //}
         }
 
         protected override double RunSolverOneStep(int TimestepInt, double phystime, double dt)
@@ -1211,11 +1157,11 @@ namespace BoSSS.Application.FSI_Solver
                     // in other branches, called by the BDF timestepper
                     LsTrk.PushStacks();
                     DGLevSet.Push();
-                    ResetCollisionState(m_Particles);
-                    CalculateHyrdodynamicForces(m_Particles, dt, 0);
-                    CalculateParticleVelcity(m_Particles, dt, ((FSI_Control)Control).Timestepper_LevelSetHandling == LevelSetHandling.FSI_LieSplittingFullyCoupled, 0);
+                    Collision.ResetCollisionState(m_Particles);
+                    CalculateHyrdodynamicForces(m_Particles, dt);
+                    Auxillary.CalculateParticleVelcity(m_Particles, dt, ((FSI_Control)Control).Timestepper_LevelSetHandling == LevelSetHandling.FSI_LieSplittingFullyCoupled, 0);
                     CalculateCollision(m_Particles, LsTrk.GridDat.Cells.h_minGlobal, dt, TimestepInt, IterationCounter);
-                    CalculateParticlePosition(m_Particles, dt);
+                    Auxillary.CalculateParticlePosition(m_Particles, dt);
                     Auxillary.ParticleState_MPICheck(m_Particles, GridData, MPISize);
                     UpdateLevelSetParticles();
                     Auxillary.PrintResultToConsole(m_Particles, phystime, dt, TimestepInt, 0, true, out double MPIangularVelocity, out force);
@@ -1256,7 +1202,7 @@ namespace BoSSS.Application.FSI_Solver
                     {
                         IterationCounter = 0;
                         double posResidual_splitting = 1e12;
-                        ResetCollisionState(m_Particles);
+                        Collision.ResetCollisionState(m_Particles);
                         while (posResidual_splitting > ((FSI_Control)Control).ForceAndTorque_ConvergenceCriterion)
                         {
                             Auxillary.SaveOldParticleState(m_Particles, IterationCounter, 2, ((FSI_Control)Control).ForceAndTorque_ConvergenceCriterion, ((FSI_Control)Control).Timestepper_LevelSetHandling == LevelSetHandling.FSI_LieSplittingFullyCoupled, out double[] ForcesOldSquared, out double TorqueOldSquared);
@@ -1264,9 +1210,9 @@ namespace BoSSS.Application.FSI_Solver
                             {
                                 m_BDF_Timestepper.Solve(phystime, dt, false);
                                 Auxillary.ParticleState_MPICheck(m_Particles, GridData, MPISize);
-                                CalculateHyrdodynamicForces(m_Particles, dt, IterationCounter);
+                                CalculateHyrdodynamicForces(m_Particles, dt);
                             }
-                            CalculateParticleVelcity(m_Particles, dt, ((FSI_Control)Control).Timestepper_LevelSetHandling == LevelSetHandling.FSI_LieSplittingFullyCoupled, IterationCounter);
+                            Auxillary.CalculateParticleVelcity(m_Particles, dt, ((FSI_Control)Control).Timestepper_LevelSetHandling == LevelSetHandling.FSI_LieSplittingFullyCoupled, IterationCounter);
                             if (IterationCounter != 0 || ((FSI_Control)Control).Timestepper_LevelSetHandling != LevelSetHandling.FSI_LieSplittingFullyCoupled)
                                 Auxillary.PrintResultToConsole(m_Particles, phystime, dt, TimestepInt, IterationCounter, false, out double _, out force);
                             if (((FSI_Control)Control).Timestepper_LevelSetHandling != LevelSetHandling.FSI_LieSplittingFullyCoupled)
@@ -1274,7 +1220,7 @@ namespace BoSSS.Application.FSI_Solver
                             Auxillary.CalculateParticleResidual(m_Particles, ForcesOldSquared, TorqueOldSquared, IterationCounter, ((FSI_Control)Control).max_iterations_fully_coupled, out posResidual_splitting, out IterationCounter);
                         }
                         CalculateCollision(m_Particles, LsTrk.GridDat.Cells.h_minGlobal, dt, TimestepInt, IterationCounter);
-                        CalculateParticlePosition(m_Particles, dt);
+                        Auxillary.CalculateParticlePosition(m_Particles, dt);
                         Auxillary.PrintResultToConsole(m_Particles, phystime, dt, TimestepInt, IterationCounter, true, out double MPIangularVelocity, out force);
                         // Save for NUnit Test
                         base.QueryHandler.ValueQuery("C_Drag", 2 * force[0], true); // Only for Diameter 1 (TestCase NSE stationary)
@@ -1437,13 +1383,7 @@ namespace BoSSS.Application.FSI_Solver
 
             // call base shit
             var R = base.RestartFromDatabase(out time);
-
-            foreach (Particle p in m_Particles)
-            {
-                p.m_collidedWithWall = new bool[4];
-
-            }
-
+            
             // return
             return R;
         }
@@ -1515,14 +1455,6 @@ namespace BoSSS.Application.FSI_Solver
 
             //PlotCurrentState(0.4, new TimestepNumber(4), 3);
 
-        private void ResetCollisionState(List<Particle> Particles)
-        {
-            foreach (Particle p in m_Particles)
-            {
-                p.skipForceIntegration = false;
-                p.Collided = false;
-            }
-        }
 
         bool triggerOnlyCollisionProcedure = false;
 
@@ -1776,11 +1708,11 @@ namespace BoSSS.Application.FSI_Solver
             }
 
             // Save closest points to particle.cs
-            for (int d = 0; d < 2; d++)
-            {
-                Particle0.ClosestPointToParticle[m_Particles.IndexOf(Particle1), d] = ClosestPoint_P0[d];
-                Particle1.ClosestPointToParticle[m_Particles.IndexOf(Particle0), d] = ClosestPoint_P1[d];
-            }
+            //for (int d = 0; d < 2; d++)
+            //{
+            //    Particle0.ClosestPointToParticle[m_Particles.IndexOf(Particle1), d] = ClosestPoint_P0[d];
+            //    Particle1.ClosestPointToParticle[m_Particles.IndexOf(Particle0), d] = ClosestPoint_P1[d];
+            //}
             // =======================================================
             // Step 2
             // Project velocity on normal/tangential vector.
@@ -2342,7 +2274,8 @@ namespace BoSSS.Application.FSI_Solver
 
                     case (FSI_Solver.FSI_Control.CollisionModel.MomentumConservation):
 
-                        if (Distance <= (threshold) && !particle.m_collidedWithWall[0])
+                        //if (Distance <= (threshold) && !particle.m_collidedWithWall[0])
+                        if (Distance <= (threshold))
                         {
                             Console.WriteLine("I'm trying to calculate the wand collision.");
                             //coefficient of restitution (e=0 pastic; e=1 elastic)
@@ -2354,7 +2287,7 @@ namespace BoSSS.Application.FSI_Solver
                                 e = 0.0;
 
                             // if particle already collided with wall
-                            particle.m_collidedWithWall[0] = true;
+                            //particle.m_collidedWithWall[0] = true;
 
                             // Skip force integration for next timestep
                             particle.skipForceIntegration = true;
@@ -2399,11 +2332,11 @@ namespace BoSSS.Application.FSI_Solver
 
                         }
 
-                        if (Distance > threshold && particle.m_collidedWithWall[0])
-                        {
-                            Console.WriteLine("Reset Wall");
-                            particle.m_collidedWithWall[0] = false;
-                        }
+                        //if (Distance > threshold && particle.m_collidedWithWall[0])
+                        //{
+                        //    Console.WriteLine("Reset Wall");
+                        //    particle.m_collidedWithWall[0] = false;
+                        //}
                         break;
 
                     default:
