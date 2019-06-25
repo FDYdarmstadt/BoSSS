@@ -332,7 +332,7 @@ namespace CNS {
             });
 
         /// <summary>
-        /// The local non-dimensional artifical viscosity
+        /// The local non-dimensional artificial viscosity
         /// </summary>
         /// <remarks>
         /// IMPORTANT: UPDATE ONLY POSSIBLE AFTER SENSOR FIELD WAS UPDATED/CREATED
@@ -400,6 +400,7 @@ namespace CNS {
                         }
                     }
 
+
                     // Project visocsity onto continuous, multilinear space
                     if (D < 3) {
                         // Standard version
@@ -423,6 +424,7 @@ namespace CNS {
                         if (program.GridData.MpiSize > 1) {
                             throw new NotImplementedException();
                         }
+
 
                         // Version that should finally also work in 3D
                         RefElement refElement = ((BoSSS.Foundation.Grid.Classic.GridCommons)(program.Grid)).RefElements[0];

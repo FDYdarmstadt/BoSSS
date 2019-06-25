@@ -245,7 +245,7 @@ namespace BoSSS.Foundation.Grid.RefElements {
         /// linear transformation to physical space.
         /// </summary>
         static public bool IsLinear(this CellType type) {
-            return (type == CellType.Square_Linear
+              return (type == CellType.Square_Linear
                 || type == CellType.Tetra_Linear
                 || type == CellType.Cube_Linear
                 || type == CellType.Triangle_3

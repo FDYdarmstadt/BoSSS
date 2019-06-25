@@ -155,7 +155,7 @@ namespace BoSSS.Foundation.Grid.Classic {
         /// </summary>
         /// <param name="EdgeTagFunc"></param>
         public void DefineEdgeTags(Func<double[], byte> EdgeTagFunc) {
-            
+
             int Jloc = this.Cells.Length;
             int minJloc = Jloc.MPIMin();
             if (minJloc <= 0) {
@@ -163,7 +163,7 @@ namespace BoSSS.Foundation.Grid.Classic {
                 this.Redistribute(null, GridPartType.METIS, null);
             }
 
-            
+
             var GrdDatTmp = new GridData(this);
 
             int D = SpatialDimension;
@@ -201,6 +201,7 @@ namespace BoSSS.Foundation.Grid.Classic {
                     CFT.AddToArray(ref this.Cells[jCell].CellFaceTags);
                 }
             }
+         
         }
 
         /// <summary>
