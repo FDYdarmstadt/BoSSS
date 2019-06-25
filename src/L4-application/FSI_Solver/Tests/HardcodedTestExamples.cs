@@ -534,7 +534,8 @@ namespace BoSSS.Application.FSI_Solver {
             C.ProjectDescription = "Gravity";
             C.SessionName = C.ProjectName;
             C.Tags.Add("with immersed boundary method");
-            C.AdaptiveMeshRefinement = false;
+            C.AdaptiveMeshRefinement = true;
+            C.RefinementLevel = 1;
             C.SessionName = "fjkfjksdfhjk";
 
             C.pureDryCollisions = true;
@@ -604,7 +605,7 @@ namespace BoSSS.Application.FSI_Solver {
             // Fluid Properties
             C.PhysicalParameters.rho_A = 1.0;
             C.PhysicalParameters.mu_A = 0.1;
-            C.CoefficientOfRestitution = 0;
+            C.CoefficientOfRestitution = 1;
 
             // Particle Properties
             //C.PhysicalParameters.mu_B = 0.1;
@@ -617,7 +618,7 @@ namespace BoSSS.Application.FSI_Solver {
                 //length_P = 0.2,
                 //thickness_P = 0.1,
                 particleDensity = 4,
-                GravityVertical = -9.81,
+                GravityVertical = -9.81 /  4,
             });
 
             C.Particles.Add(new Particle_superEllipsoid(new double[] { 0.45, 0 }, startAngl: 45)
@@ -669,7 +670,7 @@ namespace BoSSS.Application.FSI_Solver {
             C.dtMax = dt;
             C.dtMin = dt;
             C.Endtime = 10.0;
-            C.NoOfTimesteps = 50;
+            C.NoOfTimesteps = 500;
 
             // haben fertig...
             // ===============
@@ -778,8 +779,8 @@ namespace BoSSS.Application.FSI_Solver {
                     underrelaxation_factor = 1,// underrelaxation with [factor * 10^exponent]
                     ClearSmallValues = true,
                     neglectAddedDamping = false,
-                    IncludeRotation = false,
-                    IncludeTranslation = false
+                    IncludeRotation = true,
+                    IncludeTranslation = true
                 });
             }
             //Define level-set
@@ -838,8 +839,8 @@ namespace BoSSS.Application.FSI_Solver {
             double dt = 1e-3;
             C.dtMax = dt;
             C.dtMin = dt;
-            C.Endtime = 1e-3;
-            C.NoOfTimesteps = 1;
+            C.Endtime = 5e3;
+            C.NoOfTimesteps = 2000;
 
             // haben fertig...
             // ===============

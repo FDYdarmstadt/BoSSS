@@ -16,6 +16,7 @@ limitations under the License.
 
 using BoSSS.Application.FSI_Solver;
 using BoSSS.Application.IBM_Solver;
+using BoSSS.Foundation;
 using BoSSS.Foundation.Grid;
 using BoSSS.Foundation.XDG;
 using BoSSS.Solution.XdgTimestepping;
@@ -33,6 +34,18 @@ namespace FSI_Solver
     class FSI_Collision
     {
         private FSI_Auxillary Aux = new FSI_Auxillary();
+
+        internal void PrintCollisionResults(List<Particle> Particles, Particle Particle0, Particle Particle1, double Distance, double AccDynamicTimestep)
+        {
+            Console.WriteLine("-------------------------------------------------------");
+            if (Particle1 != null)
+                Console.WriteLine("Collision between particle #" + Particles.IndexOf(Particle0) + " and particle #" + Particles.IndexOf(Particle1));
+            else
+                Console.WriteLine("Collision between particle #" + Particles.IndexOf(Particle0) + " and particle the wall.");
+            Console.WriteLine("The minimal distance is: " + Distance);
+            Console.WriteLine("The dynamic timestep is: " + AccDynamicTimestep);
+            Console.WriteLine("-------------------------------------------------------");
+        }
 
         /// <summary>
         /// Computes the minimal distance between two particles or one particle and the wall.
@@ -113,14 +126,14 @@ namespace FSI_Solver
 
             double tempCollisionVt_P0 = collisionVt_P0 * e;
             double tempCollisionVt_P1 = collisionVt_P1 * e;
-            Console.WriteLine("Collision between particle " + Particles.IndexOf(Particle0) + " and particle " + Particles.IndexOf(Particle1));
-            Console.WriteLine("Particle0 position " + Particle0.Position[0][0] + ", " + Particle0.Position[0][1]);
-            Console.WriteLine("Particle1 position " + Particle1.Position[0][0] + ", " + Particle1.Position[0][1]);
-            Console.WriteLine("DistanceVector[0]:    " + DistanceVector[0] + "   DistanceVector[1]:    " + DistanceVector[1]);
-            Console.WriteLine("collisionVn_P0:    " + collisionVn_P0 + "   collisionVn_P1:    " + collisionVn_P1);
-            Console.WriteLine("tempCollisionRot_P0:    " + tempCollisionRot_P0 + "   tempCollisionRot_P1:    " + tempCollisionRot_P1);
-            Console.WriteLine("a0:    " + a0 + "   Fx:    " + (-Fx) + "      Fxrot:    " + (-Fxrot));
-            Console.WriteLine("a1:    " + a1 + "   Fx:    " + Fx + "      Fxrot:    " + Fxrot);
+            //Console.WriteLine("Collision between particle " + Particles.IndexOf(Particle0) + " and particle " + Particles.IndexOf(Particle1));
+            //Console.WriteLine("Particle0 position " + Particle0.Position[0][0] + ", " + Particle0.Position[0][1]);
+            //Console.WriteLine("Particle1 position " + Particle1.Position[0][0] + ", " + Particle1.Position[0][1]);
+            //Console.WriteLine("DistanceVector[0]:    " + DistanceVector[0] + "   DistanceVector[1]:    " + DistanceVector[1]);
+            //Console.WriteLine("collisionVn_P0:    " + collisionVn_P0 + "   collisionVn_P1:    " + collisionVn_P1);
+            //Console.WriteLine("tempCollisionRot_P0:    " + tempCollisionRot_P0 + "   tempCollisionRot_P1:    " + tempCollisionRot_P1);
+            //Console.WriteLine("a0:    " + a0 + "   Fx:    " + (-Fx) + "      Fxrot:    " + (-Fxrot));
+            //Console.WriteLine("a1:    " + a1 + "   Fx:    " + Fx + "      Fxrot:    " + Fxrot);
 
             Particle0.CollisionNormal.Add(NormalVector);
             Particle1.CollisionNormal.Add(NormalVector);
@@ -132,13 +145,16 @@ namespace FSI_Solver
             Particle1.CollisionTranslationalVelocity.Add(new double[] { tempCollisionVn_P1, tempCollisionVt_P1});
 
 
-            for (int d = 0; d < 2; d++)
-            {
-                Particle0.TranslationalVelocity[0][d] = 0;
-                Particle1.TranslationalVelocity[0][d] = 0;
-                Particle0.RotationalVelocity[0] = 0;
-                Particle1.RotationalVelocity[0] = 0;
-            }
+            //for (int d = 0; d < 2; d++)
+            //{
+            //    Particle0.TranslationalVelocity[0][d] = 0;
+            //    Particle1.TranslationalVelocity[0][d] = 0;
+            //    Particle0.RotationalVelocity[0] = 0;
+            //    Particle1.RotationalVelocity[0] = 0;
+            //}
+
+            Particle0.Collided = true;
+            Particle1.Collided = true;
         }
 
         internal void Wall_MomentumBalance(Particle Particle, double[] DistanceVector, double[] ClosestPointParticle, double CoefficientOfRestitution)
@@ -179,6 +195,59 @@ namespace FSI_Solver
             {
                 Particle.TranslationalVelocity[0][d] = 0;
                 Particle.RotationalVelocity[0] = 0;
+            }
+        }
+
+        internal void GetWall(IGridData GridData, CellMask ParticleBoundaryCells, out double[,] WallPoints)
+        {
+            int SpatialDim = ParticleBoundaryCells.GridData.SpatialDimension;
+            int NoOfMaxWallEdges = 4;
+            WallPoints = new double[NoOfMaxWallEdges, SpatialDim];
+            int[][] Cells2Edges = GridData.iLogicalCells.Cells2Edges;
+            IList<BoSSS.Platform.LinAlg.AffineTrafo> trafo = GridData.iGeomEdges.Edge2CellTrafos;
+            foreach (Chunk cnk in ParticleBoundaryCells)
+            {
+                for (int i = cnk.i0; i < cnk.JE; i++)
+                {
+                    foreach (int e in Cells2Edges[i])
+                    {
+                        int eId = (e < 0) ? -e - 1 : e - 1;
+                        byte et = GridData.iGeomEdges.EdgeTags[eId];
+                        if (GridData.EdgeTagNames[et].Contains("wall") || GridData.EdgeTagNames[et].Contains("Wall"))
+                        {
+                            int jCell = GridData.iGeomEdges.CellIndices[eId, 0];
+                            int iKref = GridData.iGeomEdges.GetRefElementIndex(jCell);
+
+                            NodeSet[] refNodes = GridData.iGeomEdges.EdgeRefElements.Select(Kref2 => Kref2.GetQuadratureRule(5 * 2).Nodes).ToArray();
+                            NodeSet Nodes = refNodes.ElementAt(iKref);
+
+                            int trafoIdx = GridData.iGeomEdges.Edge2CellTrafoIndex[eId, 0];
+                            MultidimensionalArray transFormed = trafo[trafoIdx].Transform(Nodes);
+                            MultidimensionalArray WallVerticies = transFormed.CloneAs();
+                            GridData.TransformLocal2Global(transFormed, WallVerticies, jCell);
+                            double[] WallPoint1 = WallVerticies.GetRow(0);
+                            double[] WallPoint2 = WallVerticies.GetRow(1);
+                            if (Math.Abs(WallPoint1[0] - WallPoint2[0]) < 1e-12)
+                            {
+                                if (WallPoints[0, 0] == 0 || Math.Abs(WallPoint1[0] - WallPoints[0, 0]) < 1e-12)
+                                    WallPoints[0, 0] = WallPoint1[0];
+                                else if (WallPoints[1, 0] == 0 || Math.Abs(WallPoint1[0] - WallPoints[1, 0]) < 1e-12)
+                                    WallPoints[1, 0] = WallPoint1[0];
+                                else
+                                    throw new ArithmeticException("Error trying to get wall position. Please use horizontal/vertical boudaries");
+                            }
+                            if (Math.Abs(WallPoint1[1] - WallPoint2[1]) < 1e-12)
+                            {
+                                if (WallPoints[2, 1] == 0 || Math.Abs(WallPoint1[1] - WallPoints[2, 1]) < 1e-12)
+                                    WallPoints[2, 1] = WallPoint1[1];
+                                else if (WallPoints[3, 1] == 0 || Math.Abs(WallPoint1[1] - WallPoints[3, 1]) < 1e-12)
+                                    WallPoints[3, 1] = WallPoint1[1];
+                                else
+                                    throw new ArithmeticException("Error trying to get wall position. Please use horizontal/vertical boudaries");
+                            }
+                        }
+                    }
+                }
             }
         }
 

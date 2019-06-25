@@ -260,7 +260,7 @@ namespace FSI_Solver
             }
         }
 
-        internal void UpdateParticleAccelerationAndDamping(Particle Particle, int IterationCounter, double dt, bool LieSplittingFullyCoupled) {
+        internal void CalculateParticleAccelerationAndDamping(Particle Particle, int IterationCounter, double dt, bool LieSplittingFullyCoupled) {
 
             if (IterationCounter == 0 && LieSplittingFullyCoupled) {
                 if (Particle.neglectAddedDamping == false) {
@@ -290,10 +290,14 @@ namespace FSI_Solver
                 }
                 Residual = Math.Sqrt((Math.Sqrt(ForcesNewSquared[0]) - Math.Sqrt(ForcesOldSquared[0])).Pow2() + (Math.Sqrt(ForcesNewSquared[1]) - Math.Sqrt(ForcesOldSquared[1])).Pow2() + (Math.Sqrt(TorqueNewSquared) - Math.Sqrt(TorqueOldSquared)).Pow2());
             }
-            int PrintIteration = IterationCounter + 1;
-            Console.WriteLine("Fully coupled system, number of iterations:  " + PrintIteration);
-            Console.WriteLine("Forces and torque residual: " + Residual);
-            Console.WriteLine();
+            //int PrintIteration = IterationCounter + 1;
+            if (IterationCounter != 0)
+            {
+                Console.WriteLine();
+                Console.WriteLine("Forces and torque residual: " + Residual);
+                Console.WriteLine("=======================================================");
+                Console.WriteLine();
+            }
             if (IterationCounter > MaximumIterations)
                 throw new ApplicationException("no convergence in coupled iterative solver, number of iterations: " + IterationCounter);
             _IterationCounter = IterationCounter + 1;
@@ -324,7 +328,7 @@ namespace FSI_Solver
             _IterationCounter = IterationCounter + 1;
         }
 
-        internal void PrintResultToConsole(List<Particle> Particles, double phystime, double dt, int IterationCounter, bool Finalresult, out double MPIangularVelocity, out double[] force)
+        internal void PrintResultToConsole(List<Particle> Particles, double phystime, double dt, int TimestepInt, int IterationCounter, bool Finalresult, out double MPIangularVelocity, out double[] force)
         {
             double[] TranslationalMomentum = new double[2] { 0, 0 };
             double RotationalMomentum = 0;
@@ -364,7 +368,7 @@ namespace FSI_Solver
                 int PrintP = p + 1;
                 Console.WriteLine("=======================================================");
                 if (Finalresult)
-                    Console.WriteLine("Status report particle #" + PrintP + ",Time: " + phystime);
+                    Console.WriteLine("Final status report for timestep #" + TimestepInt + ", particle #" + PrintP + ", Time: " + phystime);
                 else
                     Console.WriteLine("Status report particle #" + PrintP + ", Time: " + phystime + ", Iteration #" + IterationCounter);
                 Console.WriteLine("-------------------------------------------------------");
@@ -379,10 +383,10 @@ namespace FSI_Solver
                     Console.WriteLine("X-position:   {0}", CurrentP.Position[0][0]);
                     Console.WriteLine("Y-position:   {0}", CurrentP.Position[0][1]);
                     Console.WriteLine("Angle:   {0}", CurrentP.Angle[0]);
+                    Console.WriteLine();
+                    Console.WriteLine("=======================================================");
+                    Console.WriteLine();
                 }
-                Console.WriteLine();
-                Console.WriteLine("=======================================================");
-                Console.WriteLine();
             }
         }
 

@@ -122,7 +122,7 @@ namespace FSI_Solver
 
         /// ====================================================================================
         /// <summary>
-        /// method to find the color of a specific particle
+        /// method to find the color of a all particle
         /// </summary>
         /// <param name="gridData">
         /// the grid that this mask will be associated with
@@ -203,7 +203,7 @@ namespace FSI_Solver
         }
 
         /// <summary>
-        /// method to sort all cells by their color combined with MPI communication
+        /// Method to sort all cells by their color combined with MPI communication.
         /// </summary>
         /// <param name="CellColor">
         /// all cells with their color

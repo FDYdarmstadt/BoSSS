@@ -103,8 +103,6 @@ namespace BoSSS.Application.FSI_Solver
         /// </summary>
         public double[,] ClosestPointToParticle;
 
-        public double[][] m_closeInterfacePointTo;
-
         /// <summary>
         /// Skip calculation of hydrodynamic force and Torque if particles are too close
         /// </summary>
@@ -444,7 +442,7 @@ namespace BoSSS.Application.FSI_Solver
             if (IncludeTranslation == true) {
                 for (int d = 0; d < SpatialDim; d++)
                 {
-                    Position[0][d] = Position[1][d] + (TranslationalVelocity[1][d] + TranslationalVelocity[0][d]) * (dt - CollisionTimestep) / 2 + ClearAcceleartion * (TranslationalAcceleration[1][d] + TranslationalAcceleration[0][d]) * (dt - CollisionTimestep).Pow2() / 4;
+                    Position[0][d] = Position[1][d] + (ClearAcceleartion * TranslationalVelocity[1][d] + TranslationalVelocity[0][d]) * (dt - CollisionTimestep) / 2 + ClearAcceleartion * (TranslationalAcceleration[1][d] + TranslationalAcceleration[0][d]) * (dt - CollisionTimestep).Pow2() / 4;
                     if (double.IsNaN(Position[0][d]) || double.IsInfinity(Position[0][d]))
                         throw new ArithmeticException("Error trying to update particle position. Value:  " + Position[0][d]);
                 }
@@ -555,7 +553,6 @@ namespace BoSSS.Application.FSI_Solver
                 Aux.SaveMultidimValueOfLastTimestep(TranslationalAcceleration);
                 Aux.SaveValueOfLastTimestep(RotationalAcceleration);
             }
-            IncludeHydrodynamics = false;
             // Include Gravitiy
             if (!Collided && !IncludeHydrodynamics)
             {
@@ -595,7 +592,7 @@ namespace BoSSS.Application.FSI_Solver
             //        AnyCollision = true;
             //    }
             //}
-            if (iteration_counter_P == 0 && !Collided)
+            if (iteration_counter_P == 0)
             {
                 Aux.SaveMultidimValueOfLastTimestep(TranslationalVelocity);
             }
