@@ -17,6 +17,7 @@ limitations under the License.
 using BoSSS.Solution.CompressibleFlowCommon;
 using BoSSS.Solution.CompressibleFlowCommon.ShockCapturing;
 using System;
+using System.Diagnostics;
 
 namespace BoSSS.Solution.CompressibleFlowCommon.ShockCapturing {
 
@@ -73,7 +74,7 @@ namespace BoSSS.Solution.CompressibleFlowCommon.ShockCapturing {
         /// <param name="fudgeFactor">
         /// Correction factor, typically set to 0.5 for the compressible Euler equations (Kloeckner et al. 2011)
         /// </param>
-        public SmoothedHeavisideArtificialViscosityLaw(IShockSensor sensor, int dgDegree, double refSensorLimit, double refMaxViscosity, double kappa, double? lambdaMax = null, double? fudgeFactor = null) {
+        public SmoothedHeavisideArtificialViscosityLaw(IShockSensor sensor, int dgDegree, double refSensorLimit, double refMaxViscosity = 1.0, double kappa = 0.5, double? lambdaMax = null, double? fudgeFactor = null) {
             this.sensor = sensor;
             this.dgDegree = dgDegree;
             this.sensorLimit = Math.Log10(refSensorLimit / (double)Math.Pow(dgDegree, 4));
@@ -120,12 +121,15 @@ namespace BoSSS.Solution.CompressibleFlowCommon.ShockCapturing {
             }
 
             double lambdaMax = this.lambdaMax ?? state.SpeedOfSound + state.Velocity.Abs();
+            Debug.Assert(lambdaMax >= 0.0, "lambdaMax is NaN or negative");
+
             //lambdaMax = 20; //DMR
             //lambdaMax = 2; //Shock Tube
 
             double fudgeFactor = this.fudgeFactor ?? 0.5;   // Kloeckner (2011)
 
             epsilonE = fudgeFactor * epsilonE * lambdaMax * cellSize / dgDegree;
+            Debug.Assert(epsilonE >= 0.0, "AV is NaN or negative");
 
             return epsilonE;
         }
