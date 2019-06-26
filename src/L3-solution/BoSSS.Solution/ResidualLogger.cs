@@ -439,7 +439,10 @@ namespace BoSSS.Solution {
 
                 if (m_WriteResidualsToTextFile && m_MPIrank == 0) {
                     if (SessionGuid == Guid.Empty) {
-                        m_LogResiduals = new StreamWriter(TextFileFileName + ".txt");
+                        var timecode = DateTime.Now;
+                        var s_timecode = timecode.ToString("yyyyMMMdd_HH-mm-ss"); // time-code prevents file access errors if multiple solver instances are used
+                        //                                                           (does not work if some moron instantiates thousands of solver instances in seconds)
+                        m_LogResiduals = new StreamWriter(TextFileFileName + "." + s_timecode + ".txt");
                     } else {
                         m_LogResiduals = m_IOMaster.FsDriver.GetNewLog(TextFileFileName, SessionGuid);
                     }
