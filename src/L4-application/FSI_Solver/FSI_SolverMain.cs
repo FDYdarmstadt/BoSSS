@@ -157,6 +157,17 @@ namespace BoSSS.Application.FSI_Solver
             }
         }
 
+        bool FullyCoupled
+        {
+            get
+            {
+                if (((FSI_Control)this.Control).Timestepper_LevelSetHandling == LevelSetHandling.FSI_LieSplittingFullyCoupled)
+                    return true;
+                else
+                    return false;
+            }
+        }
+
         protected override void CreateEquationsAndSolvers(GridUpdateDataVaultBase L)
         {
 
@@ -961,18 +972,19 @@ namespace BoSSS.Application.FSI_Solver
             int[] Cells = new int[J];
             for (int p = 0; p < m_Particles.Count; p++)
             {
-                double Hmin = AdaptiveMeshRefinement ? Math.Sqrt(GridData.iGeomCells.GetCellVolume(0)) * 2 : Math.Sqrt(GridData.iGeomCells.GetCellVolume(0));
-                double[] ParticlePos = m_Particles[p].Position[0];
-                double ParticleAngle = m_Particles[p].Angle[0];
-                double[] ParticleScales = m_Particles[p].GetLengthScales();
-                double Upperedge = ParticlePos[1] + ParticleScales[1] * Math.Abs(Math.Cos(ParticleAngle)) + ParticleScales[0] * Math.Abs(Math.Sin(ParticleAngle)) + 0 * Hmin;
-                double Loweredge = ParticlePos[1] - ParticleScales[1] * Math.Abs(Math.Cos(ParticleAngle)) - ParticleScales[0] * Math.Abs(Math.Sin(ParticleAngle)) - 0 * Hmin;
-                double Leftedge = ParticlePos[0] - ParticleScales[0] * Math.Abs(Math.Cos(ParticleAngle)) - ParticleScales[1] * Math.Abs(Math.Sin(ParticleAngle)) - 0 * Hmin;
-                double Rightedge = ParticlePos[0] + ParticleScales[0] * Math.Abs(Math.Cos(ParticleAngle)) + ParticleScales[1] * Math.Abs(Math.Sin(ParticleAngle)) + 0 * Hmin;
+                Particle Particle = m_Particles[p];
+                //double Hmin = AdaptiveMeshRefinement ? Math.Sqrt(GridData.iGeomCells.GetCellVolume(0)) * 2 : Math.Sqrt(GridData.iGeomCells.GetCellVolume(0));
+                //double[] ParticlePos = m_Particles[p].Position[0];
+                //double ParticleAngle = m_Particles[p].Angle[0];
+                //double[] ParticleScales = m_Particles[p].GetLengthScales();
+                //double Upperedge = ParticlePos[1] + ParticleScales[1] * Math.Abs(Math.Cos(ParticleAngle)) + ParticleScales[0] * Math.Abs(Math.Sin(ParticleAngle)) + 0 * Hmin;
+                //double Loweredge = ParticlePos[1] - ParticleScales[1] * Math.Abs(Math.Cos(ParticleAngle)) - ParticleScales[0] * Math.Abs(Math.Sin(ParticleAngle)) - 0 * Hmin;
+                //double Leftedge = ParticlePos[0] - ParticleScales[0] * Math.Abs(Math.Cos(ParticleAngle)) - ParticleScales[1] * Math.Abs(Math.Sin(ParticleAngle)) - 0 * Hmin;
+                //double Rightedge = ParticlePos[0] + ParticleScales[0] * Math.Abs(Math.Cos(ParticleAngle)) + ParticleScales[1] * Math.Abs(Math.Sin(ParticleAngle)) + 0 * Hmin;
                 for (int j = 0; j < J; j++)
                 {
                     double[] center = GridData.iLogicalCells.GetCenter(j);
-                    if (center[0] > Leftedge && center[0] < Rightedge && center[1] > Loweredge && center[1] < Upperedge)
+                    if (Particle.Contains(center, LsTrk))
                     {
                         ParticleColor.SetMeanValue(j, p + 1);
                         m_Particles[p].ParticleColoredCells.Add(new int[2] { j, p + 1 });
@@ -1119,16 +1131,15 @@ namespace BoSSS.Application.FSI_Solver
                         while (posResidual_splitting > ((FSI_Control)Control).ForceAndTorque_ConvergenceCriterion)
                         {
                             Auxillary.ParticleState_MPICheck(m_Particles, GridData, MPISize);
-                            Auxillary.SaveOldParticleState(m_Particles, IterationCounter, 2, ((FSI_Control)Control).ForceAndTorque_ConvergenceCriterion, ((FSI_Control)Control).Timestepper_LevelSetHandling == LevelSetHandling.FSI_LieSplittingFullyCoupled, out double[] ForcesOldSquared, out double TorqueOldSquared);
+                            Auxillary.SaveOldParticleState(m_Particles, IterationCounter, 2, ((FSI_Control)Control).ForceAndTorque_ConvergenceCriterion, FullyCoupled, out double[] ForcesOldSquared, out double TorqueOldSquared);
                             if (IterationCounter != 0 || ((FSI_Control)Control).Timestepper_LevelSetHandling != LevelSetHandling.FSI_LieSplittingFullyCoupled)
                             {
                                 m_BDF_Timestepper.Solve(phystime, dt, false);
                                 CalculateHydrodynamicForces(m_Particles, dt);
                             }
-                            Auxillary.CalculateParticleVelocity(m_Particles, dt, ((FSI_Control)Control).Timestepper_LevelSetHandling == LevelSetHandling.FSI_LieSplittingFullyCoupled, IterationCounter);
+                            Auxillary.CalculateParticleVelocity(m_Particles, dt, FullyCoupled, IterationCounter);
                             if (IterationCounter != 0 || ((FSI_Control)Control).Timestepper_LevelSetHandling != LevelSetHandling.FSI_LieSplittingFullyCoupled)
                                 Auxillary.PrintResultToConsole(m_Particles, phystime, dt, TimestepInt, IterationCounter, false, out double _, out force);
-                            Auxillary.ParticleState_MPICheck(m_Particles, GridData, MPISize);
                             if (((FSI_Control)Control).Timestepper_LevelSetHandling != LevelSetHandling.FSI_LieSplittingFullyCoupled)
                                 break;
                             Auxillary.CalculateParticleResidual(m_Particles, ForcesOldSquared, TorqueOldSquared, IterationCounter, ((FSI_Control)Control).max_iterations_fully_coupled, out posResidual_splitting, out IterationCounter);
@@ -1145,7 +1156,6 @@ namespace BoSSS.Application.FSI_Solver
                             LsTrk.IncreaseHistoryLength(1);
                             LsTrk.PushStacks();
                         }
-                        int afn = MPISize;
                         /*
                         if (phystime == 0) {
                             if ((base.MPIRank == 0) && (CurrentSessionInfo.ID != Guid.Empty) && iteration_counter == 0) {

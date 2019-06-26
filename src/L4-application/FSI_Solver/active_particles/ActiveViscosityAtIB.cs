@@ -131,11 +131,11 @@ namespace BoSSS.Solution.NSECommon.Operator.Viscosity {
             // ============================= 
             //Defining boundary conditions (no slip/slip)
             if (component == 0) {
-                uAFict = (uLevSet[component] + RadialLength * wLevSet * RadialNormalVector[0]) * (1 - scale);// + uA[component] * scale;
+                uAFict = (uLevSet[component] + RadialLength * wLevSet * RadialNormalVector[0]) * (1 - scale) + uA[component] * scale;
             }
             else
             {
-                uAFict = (uLevSet[component] + RadialLength * wLevSet * RadialNormalVector[1]) * (1 - scale);// + uA[component] * scale;
+                uAFict = (uLevSet[component] + RadialLength * wLevSet * RadialNormalVector[1]) * (1 - scale) + uA[component] * scale;
             }
             active_stress_visc[0] = active_stress * Math.Cos(Ang_P);
             active_stress_visc[1] = active_stress * Math.Sin(Ang_P);
