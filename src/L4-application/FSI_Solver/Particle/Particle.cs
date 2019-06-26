@@ -70,7 +70,6 @@ namespace BoSSS.Application.FSI_Solver
                 HydrodynamicTorque.Add(new double());
             }
 
-            #region Initial values
             // ============================= 
             if (startPos == null) {
                 startPos = new double[Dim];
@@ -82,29 +81,19 @@ namespace BoSSS.Application.FSI_Solver
             Angle[1] = startAngl * 2 * Math.PI / 360;
 
             //UpdateLevelSetFunction();
-            #endregion
         }
 
-
-        #region Collision parameters
         /// <summary>
         /// Check whether any particles is collided with another particle
         /// </summary>
         public bool Collided;
-
-        /// <summary>
-        /// Check whether any particles is collided with the wall
-        /// </summary>
-        public double[,] ClosestPointToParticle;
-
+        
         /// <summary>
         /// Skip calculation of hydrodynamic force and Torque if particles are too close
         /// </summary>
         [DataMember]
         public bool skipForceIntegration = false;
-        #endregion
 
-        #region Iteration parameters
         /// <summary>
         /// Number of iterations
         /// </summary>
@@ -127,14 +116,13 @@ namespace BoSSS.Application.FSI_Solver
         /// Underrelaxation factor
         /// </summary>
         [DataMember]
-        public double underrelaxation_factor = 1;
+        public double underrelaxation_factor = -1;
 
         /// <summary>
         /// Set true if you want to delete all values of the Forces anf Torque smaller than convergenceCriterion*1e-2
         /// </summary>
         [DataMember]
         public bool ClearSmallValues = false;
-        #endregion
 
         #region Misc parameters
 
@@ -161,11 +149,6 @@ namespace BoSSS.Application.FSI_Solver
         /// </summary>
         [DataMember]
         public double[,] AddedDampingTensor = new double[6, 6];
-
-        /// <summary>
-        /// Scaling parameter for added damping.
-        /// </summary>
-        private readonly double beta = 1;
         #endregion
 
         #region Geometric parameters
@@ -326,7 +309,7 @@ namespace BoSSS.Application.FSI_Solver
         /// AddedDampingCoefficient
         /// </summary>
         [DataMember]
-        public double AddedDampingCoefficient = 1;
+        public double AddedDampingCoefficient = 1.5;
 
         /// <summary>
         /// Level set function describing the particle.
@@ -506,18 +489,19 @@ namespace BoSSS.Application.FSI_Solver
             }
             for (int d = 0; d < SpatialDim; d++)
             {
-                TranslationalAcceleration[0][d] = 2 * TranslationalAcceleration[1][d] - TranslationalAcceleration[2][d];
-                
-                HydrodynamicForces[0][d] = 2 * HydrodynamicForces[1][d] - HydrodynamicForces[2][d];
+                //TranslationalAcceleration[0][d] = 2 * TranslationalAcceleration[1][d] - TranslationalAcceleration[2][d];
+                TranslationalAcceleration[0][d] = (TranslationalAcceleration[1][d] + 4 * TranslationalAcceleration[2][d] + TranslationalAcceleration[3][d]) / 8;
+                //HydrodynamicForces[0][d] = 2 * HydrodynamicForces[1][d] - HydrodynamicForces[2][d];
                 if (Math.Abs(TranslationalAcceleration[0][d]) < 1e-20)// || double.IsNaN(TranslationalAcceleration[0][d]))
                     TranslationalAcceleration[0][d] = 0;
             }
-
-            RotationalAcceleration[0] = 2 * RotationalAcceleration[1] - RotationalAcceleration[2];
-            
-            HydrodynamicTorque[0] = 2 * HydrodynamicTorque[1] - HydrodynamicTorque[2];
+            TranslationalAcceleration.MPIBroadcast(0);
+            //RotationalAcceleration[0] = 2 * RotationalAcceleration[1] - RotationalAcceleration[2];
+            RotationalAcceleration[0] = (RotationalAcceleration[1] + 4 * RotationalAcceleration[2] + RotationalAcceleration[3]) / 8;
+            //HydrodynamicTorque[0] = 2 * HydrodynamicTorque[1] - HydrodynamicTorque[2];
             if (Math.Abs(RotationalAcceleration[0]) < 1e-20)// || double.IsNaN(RotationalAcceleration[0]))
                 RotationalAcceleration[0] = 0;
+            RotationalAcceleration.MPIBroadcast(0);
         }
 
         /// <summary>
@@ -564,11 +548,12 @@ namespace BoSSS.Application.FSI_Solver
                     TranslationalAcceleration[0][d] = 0;
             }
 
+            TranslationalAcceleration.MPIBroadcast(0);
             if (IncludeRotation)
                 RotationalAcceleration[0] = Acceleration.Rotational(CoefficientMatrix, Denominator, HydrodynamicForces[0], HydrodynamicTorque[0]);
             if (Math.Abs(RotationalAcceleration[0]) < 1e-20 || IncludeRotation == false)
                 RotationalAcceleration[0] = 0;
-
+            RotationalAcceleration.MPIBroadcast(0);
         }
 
         /// <summary>
@@ -578,14 +563,6 @@ namespace BoSSS.Application.FSI_Solver
         /// <returns></returns>
         public void CalculateTranslationalVelocity(double dt)
         {
-            //bool AnyCollision = false;
-            //for (int p = 0; p < Collided.Length; p++)
-            //{
-            //    if (Collided[p])
-            //    {
-            //        AnyCollision = true;
-            //    }
-            //}
             if (iteration_counter_P == 0)
             {
                 Aux.SaveMultidimValueOfLastTimestep(TranslationalVelocity);
@@ -645,6 +622,7 @@ namespace BoSSS.Application.FSI_Solver
                 if (double.IsNaN(RotationalVelocity[0]) || double.IsInfinity(RotationalVelocity[0]))
                     throw new ArithmeticException("Error trying to calculate particle angluar velocity. Value:  " + RotationalVelocity[0]);
             }
+            RotationalVelocity.MPIBroadcast(0);
         }
         
         /// <summary>
@@ -759,13 +737,6 @@ namespace BoSSS.Application.FSI_Solver
             {
                 Forces[1] += (particleDensity - fluidDensity) * Area_P * GravityVertical;
             }
-
-            if (neglectAddedDamping == false) {
-                Forces[0] = Forces[0] - AddedDampingCoefficient * dt * (AddedDampingTensor[0, 0] * TranslationalAcceleration[0][0] + AddedDampingTensor[1, 0] * TranslationalAcceleration[0][1] + AddedDampingTensor[0, 2] * RotationalAcceleration[0]);
-                Forces[1] = Forces[1] - AddedDampingCoefficient * dt * (AddedDampingTensor[0, 1] * TranslationalAcceleration[0][0] + AddedDampingTensor[1, 1] * TranslationalAcceleration[0][1] + AddedDampingTensor[1, 2] * RotationalAcceleration[0]);
-                Torque = Torque - AddedDampingCoefficient * dt * (AddedDampingTensor[2, 0] * TranslationalAcceleration[0][0] + AddedDampingTensor[2, 1] * TranslationalAcceleration[0][1] + AddedDampingTensor[2, 2] * RotationalAcceleration[0]);
-            }
-
             // Sum forces and moments over all MPI processors
             // ==============================================
             {
@@ -783,9 +754,18 @@ namespace BoSSS.Application.FSI_Solver
                     Forces[d] = GlobalStateBuffer[1 + d];
                 }
             }
+            if (neglectAddedDamping == false)
+            {
+                double fest = Forces[0];
+                Forces[0] = Forces[0] + AddedDampingCoefficient * dt * (AddedDampingTensor[0, 0] * TranslationalAcceleration[0][0] + AddedDampingTensor[1, 0] * TranslationalAcceleration[0][1] + AddedDampingTensor[0, 2] * RotationalAcceleration[0]);
+                double test = AddedDampingCoefficient * dt * (AddedDampingTensor[0, 0] * TranslationalAcceleration[0][0] + AddedDampingTensor[1, 0] * TranslationalAcceleration[0][1] + AddedDampingTensor[0, 2] * RotationalAcceleration[0]);
+                Forces[1] = Forces[1] + AddedDampingCoefficient * dt * (AddedDampingTensor[0, 1] * TranslationalAcceleration[0][0] + AddedDampingTensor[1, 1] * TranslationalAcceleration[0][1] + AddedDampingTensor[1, 2] * RotationalAcceleration[0]);
+                Torque = Torque + AddedDampingCoefficient * dt * (AddedDampingTensor[2, 0] * TranslationalAcceleration[0][0] + AddedDampingTensor[2, 1] * TranslationalAcceleration[0][1] + AddedDampingTensor[2, 2] * RotationalAcceleration[0]);
+            }
 
             if (iteration_counter_P == 1 || NotFullyCoupled || iteration_counter_P == 250)
             {
+                Console.WriteLine("");
                 if(iteration_counter_P == 1)
                     Console.WriteLine("First iteration of the current timestep, all relaxation factors are set to 1");
                 if (iteration_counter_P == 250)
@@ -837,9 +817,9 @@ namespace BoSSS.Application.FSI_Solver
             double[] temp = new double[SpatialDim + 1];
             for (int d = 0; d < SpatialDim; d++)
             {
-                temp[d] = (Mass_P + dt * beta * AddedDampingTensor[d, d]) * TranslationalVelocity[0][d] + AddedDampingTensor[1 - d, d] * TranslationalVelocity[0][1 - d] + AddedDampingTensor[d, 2] * RotationalVelocity[0];
+                temp[d] = (Mass_P + dt * AddedDampingCoefficient * AddedDampingTensor[d, d]) * TranslationalVelocity[0][d] + AddedDampingTensor[1 - d, d] * TranslationalVelocity[0][1 - d] + AddedDampingTensor[d, 2] * RotationalVelocity[0];
             }
-            temp[SpatialDim] = (MomentOfInertia_P + beta * dt * AddedDampingTensor[2, 2] * RotationalVelocity[0]) + beta * dt * AddedDampingTensor[2, 1] * TranslationalVelocity[0][1] + beta * dt * AddedDampingTensor[2, 0] * TranslationalVelocity[0][0];
+            temp[SpatialDim] = (MomentOfInertia_P + AddedDampingCoefficient * dt * AddedDampingTensor[2, 2] * RotationalVelocity[0]) + AddedDampingCoefficient * dt * AddedDampingTensor[2, 1] * TranslationalVelocity[0][1] + AddedDampingCoefficient * dt * AddedDampingTensor[2, 0] * TranslationalVelocity[0][0];
             return temp;
         }
 
@@ -848,9 +828,9 @@ namespace BoSSS.Application.FSI_Solver
             double[] temp = new double[SpatialDim + 1];
             for (int d = 0; d < SpatialDim; d++)
             {
-                temp[d] = 0.5 *((Mass_P + dt * beta * AddedDampingTensor[d, d]) * TranslationalVelocity[0][d].Pow2() + AddedDampingTensor[1 - d, d] * TranslationalVelocity[0][1 - d].Pow2() + AddedDampingTensor[d, 2] * RotationalVelocity[0].Pow2());
+                temp[d] = 0.5 *((Mass_P + dt * AddedDampingCoefficient * AddedDampingTensor[d, d]) * TranslationalVelocity[0][d].Pow2() + AddedDampingTensor[1 - d, d] * TranslationalVelocity[0][1 - d].Pow2() + AddedDampingTensor[d, 2] * RotationalVelocity[0].Pow2());
             }
-            temp[SpatialDim] = 0.5 * ((MomentOfInertia_P + beta * dt * AddedDampingTensor[2, 2] * RotationalVelocity[0].Pow2()) + beta * dt * AddedDampingTensor[2, 1] * TranslationalVelocity[0][1].Pow2() + beta * dt * AddedDampingTensor[2, 0] * TranslationalVelocity[0][0].Pow2());
+            temp[SpatialDim] = 0.5 * ((MomentOfInertia_P + AddedDampingCoefficient * dt * AddedDampingTensor[2, 2] * RotationalVelocity[0].Pow2()) + AddedDampingCoefficient * dt * AddedDampingTensor[2, 1] * TranslationalVelocity[0][1].Pow2() + AddedDampingCoefficient * dt * AddedDampingTensor[2, 0] * TranslationalVelocity[0][0].Pow2());
             return temp;
         }
         

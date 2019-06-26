@@ -177,8 +177,24 @@ namespace BoSSS.Application.FSI_Solver
             if (UnderrelaxationCoeff >= predefinedFactor * 1e-1)
                 UnderrelaxationCoeff = predefinedFactor * 1e-1;
 
-            double GlobalStateBuffer = UnderrelaxationCoeff.MPIMin();
-            UnderrelaxationCoeff = GlobalStateBuffer;
+            //double GlobalStateBuffer = UnderrelaxationCoeff.MPIMin();
+            //UnderrelaxationCoeff = GlobalStateBuffer;
+            double[] CheckSend = new double[1];
+            CheckSend[0] = UnderrelaxationCoeff;
+            double[] CheckReceive = new double[1 * 7];
+            unsafe
+            {
+                fixed (double* pCheckSend = CheckSend, pCheckReceive = CheckReceive)
+                {
+                    csMPI.Raw.Allgather((IntPtr)pCheckSend, CheckSend.Length, csMPI.Raw._DATATYPE.DOUBLE, (IntPtr)pCheckReceive, CheckSend.Length, csMPI.Raw._DATATYPE.DOUBLE, csMPI.Raw._COMM.WORLD);
+                }
+            }
+            for(int i = 0; i < CheckReceive.Length; i++)
+            {
+                Console.WriteLine("sdjgjsgh " + CheckReceive[i]);
+                if (UnderrelaxationCoeff <= CheckReceive[i])
+                    UnderrelaxationCoeff = CheckReceive[i];
+            }
 
             return UnderrelaxationCoeff * ConvergenceHelperFactor;
         }

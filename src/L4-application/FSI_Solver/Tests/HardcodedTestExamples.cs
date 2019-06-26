@@ -704,13 +704,13 @@ namespace BoSSS.Application.FSI_Solver {
                 int q = new int(); // #Cells in x-dircetion + 1
                 int r = new int(); // #Cells in y-dircetion + 1
 
-                q = 80;
+                q = 40;
                 r = 30;
 
-                double[] Xnodes = GenericBlas.Linspace(-4, 12, q);
+                double[] Xnodes = GenericBlas.Linspace(-4, 4, q);
                 double[] Ynodes = GenericBlas.Linspace(-3, 3, r);
 
-                var grd = Grid2D.Cartesian2DGrid(Xnodes, Ynodes, periodicX: true, periodicY: false);
+                var grd = Grid2D.Cartesian2DGrid(Xnodes, Ynodes, periodicX: false, periodicY: false);
 
                 grd.EdgeTagNames.Add(1, "Pressure_Outlet_left");
                 grd.EdgeTagNames.Add(2, "Pressure_Outlet_right");
@@ -723,7 +723,7 @@ namespace BoSSS.Application.FSI_Solver {
                     byte et = 0;
                     if (Math.Abs(X[0] - (-4)) <= 1.0e-8)
                         et = 1;
-                    if (Math.Abs(X[0] + (-12)) <= 1.0e-8)
+                    if (Math.Abs(X[0] + (-4)) <= 1.0e-8)
                         et = 2;
                     if (Math.Abs(X[1] - (-3)) <= 1.0e-8)
                         et = 3;
@@ -767,7 +767,7 @@ namespace BoSSS.Application.FSI_Solver {
             int numOfParticles = 1;
             for (int d = 0; d < numOfParticles; d++)
             {
-                C.Particles.Add(new Particle_Ellipsoid(new double[] { -2.0, 0.0 }, startAngl: 0)
+                C.Particles.Add(new Particle_Ellipsoid(new double[] { 0.0, 0.0 }, startAngl: 0)
                 {
                     particleDensity = 1,
                     ActiveParticle = true,
@@ -778,8 +778,8 @@ namespace BoSSS.Application.FSI_Solver {
                     underrelaxation_factor = 1,// underrelaxation with [factor * 10^exponent]
                     ClearSmallValues = true,
                     neglectAddedDamping = false,
-                    IncludeRotation = true,
-                    IncludeTranslation = true
+                    IncludeRotation = false,
+                    IncludeTranslation = false
                 });
             }
             //Define level-set
@@ -827,7 +827,7 @@ namespace BoSSS.Application.FSI_Solver {
             // =============================
             C.Timestepper_LevelSetHandling = LevelSetHandling.FSI_LieSplittingFullyCoupled;
             C.LSunderrelax = 1;
-            C.max_iterations_fully_coupled = 250;
+            C.max_iterations_fully_coupled = 1000;
 
 
 
@@ -838,8 +838,8 @@ namespace BoSSS.Application.FSI_Solver {
             double dt = 1e-3;
             C.dtMax = dt;
             C.dtMin = dt;
-            C.Endtime = 5e3;
-            C.NoOfTimesteps = 2000;
+            C.Endtime = 1e-3;
+            C.NoOfTimesteps = 1;
 
             // haben fertig...
             // ===============

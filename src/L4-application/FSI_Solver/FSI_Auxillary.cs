@@ -23,6 +23,7 @@ using ilPSP;
 using MPI.Wrappers;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -260,7 +261,7 @@ namespace FSI_Solver
             }
         }
 
-        internal void CalculateParticleVelcity(List<Particle> Particles, double dt, bool FullyCoupled, int IterationCounter)
+        internal void CalculateParticleVelocity(List<Particle> Particles, double dt, bool FullyCoupled, int IterationCounter)
         {
 
             foreach (Particle p in Particles)
@@ -270,15 +271,19 @@ namespace FSI_Solver
                 {
                     if (p.neglectAddedDamping == false)
                     {
+                        csMPI.Raw.Barrier(csMPI.Raw._COMM.WORLD);
                         p.UpdateDampingTensors();
                         //ExchangeDampingTensors(Particles);
                     }
+                    csMPI.Raw.Barrier(csMPI.Raw._COMM.WORLD);
                     p.PredictAcceleration();
                 }
                 else
                 {
+                    csMPI.Raw.Barrier(csMPI.Raw._COMM.WORLD);
                     p.CalculateAcceleration(dt, FullyCoupled, true);
                 }
+                csMPI.Raw.Barrier(csMPI.Raw._COMM.WORLD);
                 p.UpdateParticleVelocity(dt);
             }
         }
@@ -306,6 +311,7 @@ namespace FSI_Solver
 
         internal void CalculateParticleResidual(List<Particle> Particles, double[] ForcesOldSquared, double TorqueOldSquared, int IterationCounter, int MaximumIterations, out double Residual, out int _IterationCounter)
         {
+            csMPI.Raw.Barrier(csMPI.Raw._COMM.WORLD);
             if (IterationCounter == 0)
                 Residual = 1e12;
             else
@@ -363,7 +369,7 @@ namespace FSI_Solver
             double[] TranslationalMomentum = new double[2] { 0, 0 };
             double RotationalMomentum = 0;
             double[] totalKE = new double[3] { 0, 0, 0 };
-
+            csMPI.Raw.Barrier(csMPI.Raw._COMM.WORLD);
             foreach (Particle p in Particles)
             {
                 double[] SingleParticleMomentum = p.CalculateParticleMomentum(dt);
@@ -422,6 +428,7 @@ namespace FSI_Solver
 
         internal void SaveOldParticleState(List<Particle> Particles, int IterationCounter, int SpatialDim, double ForceTorqueConvergenceCriterion, bool IsFullyCoupled, out double[] ForcesOldSquared, out double TorqueOldSquared)
         {
+            csMPI.Raw.Barrier(csMPI.Raw._COMM.WORLD);
             ForcesOldSquared = new double[SpatialDim];
             TorqueOldSquared = 0;
             foreach (Particle p in Particles)
@@ -478,7 +485,7 @@ namespace FSI_Solver
         {
             int D = GridData.SpatialDimension;
             int NoOfParticles = Particles.Count;
-
+            csMPI.Raw.Barrier(csMPI.Raw._COMM.WORLD);
             {
                 // verify that we have the same number of particles on each processor
                 int NoOfParticles_min = NoOfParticles.MPIMin();
@@ -503,6 +510,7 @@ namespace FSI_Solver
                     CheckSend[p * NoOfVars + 4] = P.ForceAndTorque_convergence;
                     CheckSend[p * NoOfVars + 5] = P.Mass_P;
                     CheckSend[p * NoOfVars + 6] = P.particleDensity;
+                    CheckSend[p * NoOfVars + 7] = P.AddedDampingTensor[0,0];
                     // todo: add more values here that might be relevant for the particle state;
 
                     // vector values

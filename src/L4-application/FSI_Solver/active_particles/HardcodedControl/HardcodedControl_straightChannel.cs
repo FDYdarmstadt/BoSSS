@@ -177,7 +177,7 @@ namespace BoSSS.Application.FSI_Solver
             C.LinearSolver.NoOfMultigridLevels = 1;
             C.LinearSolver.MaxSolverIterations = 1000;
             C.LinearSolver.MinSolverIterations = 1;
-            C.ForceAndTorque_ConvergenceCriterion = 1e3;
+            C.ForceAndTorque_ConvergenceCriterion = 1e-3;
             C.LSunderrelax = 1.0;
             
 
@@ -196,7 +196,7 @@ namespace BoSSS.Application.FSI_Solver
             C.dtMax = dt;
             C.dtMin = dt;
             C.Endtime = 1000000000;
-            C.NoOfTimesteps = 1000000000;
+            C.NoOfTimesteps = 1;
             
             // haben fertig...
             // ===============
