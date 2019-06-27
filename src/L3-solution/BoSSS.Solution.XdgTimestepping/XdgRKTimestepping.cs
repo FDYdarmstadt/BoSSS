@@ -85,7 +85,7 @@ namespace BoSSS.Solution.XdgTimestepping {
             int _CutCellQuadOrder,
             double _AgglomerationThreshold, bool useX,
             Control.NonLinearSolverConfig nonlinconfig,
-            Control.LinearSolverConfig linearconfig) : base (nonlinconfig, linearconfig) {
+            Control.LinearSolverConfig linearconfig) : base(nonlinconfig, linearconfig) {
 
             // check args, set internals
             // -------------------------
@@ -860,7 +860,7 @@ namespace BoSSS.Solution.XdgTimestepping {
                     // (c[s]/dt)*M0*(us - u0) + sum(k[l]*a[s,l], l=0..(s-1)) = 0
                     // +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
-                    Debug.Assert(Mass.Length == 1);
+                    //Debug.Assert(Mass.Length == 1);       // Uncommented for usage in XDGShock
                     var Ms = Mass[0];
 
                     // left-hand-side
@@ -909,9 +909,7 @@ namespace BoSSS.Solution.XdgTimestepping {
             }
         }
 
-
-
-        private void UpdateChangeRate(double PhysTime, double[] k) {
+        protected virtual void UpdateChangeRate(double PhysTime, double[] k) {
 
             BlockMsrMatrix OpMtx = new BlockMsrMatrix(this.CurrentStateMapping);
             double[] OpAff = new double[this.CurrentStateMapping.LocalLength];
