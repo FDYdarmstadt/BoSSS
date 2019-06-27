@@ -106,19 +106,12 @@ namespace BoSSS.Application.FSI_Solver {
             if (h_max == 0)
                 h_max = h_min;
             double radiusTolerance = !WithoutTolerance ? 1.0 + Math.Sqrt(h_max.Pow2() + h_min.Pow2()) : 1;
-            if (-Math.Pow(((point[0] - Position[0][0]) * Math.Cos(Angle[0]) - (point[1] - Position[0][1]) * Math.Sin(Angle[0])) / length_P, superEllipsoidExponent) + -Math.Pow(((point[0] - Position[0][0]) * Math.Sin(Angle[0]) + (point[1] - Position[0][1]) * Math.Cos(Angle[0])) / thickness_P, superEllipsoidExponent) + radiusTolerance.Pow(superEllipsoidExponent) > 0) {
+            double Superellipsoid = Math.Pow(((point[0] - Position[0][0]) * Math.Cos(Angle[0] + (point[1] - Position[0][1]) * Math.Sin(Angle[0]))).Pow2() / length_P.Pow2(), superEllipsoidExponent) + Math.Pow((-(point[0] - Position[0][0]) * Math.Sin(Angle[0]) + (point[1] - Position[0][1]) * Math.Cos(Angle[0])).Pow2() / thickness_P.Pow2(),superEllipsoidExponent);
+            if (Superellipsoid < radiusTolerance)
                 return true;
-            }
-            return false;
+            else
+                return false;
         }
-
-        override public double ComputeParticleRe(double mu_Fluid) {
-            double particleReynolds = 0;
-            particleReynolds = Math.Sqrt(TranslationalVelocity[0][0] * TranslationalVelocity[0][0] + TranslationalVelocity[0][1] * TranslationalVelocity[0][1]) * 2 * length_P * particleDensity / mu_Fluid;
-            Console.WriteLine("Particle Reynolds number:  " + particleReynolds);
-            return particleReynolds;
-        }
-
         override public double[] GetLengthScales()
         {
             return new double[] { length_P, thickness_P };

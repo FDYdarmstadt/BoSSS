@@ -261,7 +261,7 @@ namespace FSI_Solver
             }
         }
 
-        internal void CalculateParticleVelocity(List<Particle> Particles, double dt, bool FullyCoupled, int IterationCounter)
+        internal void CalculateParticleVelocity(List<Particle> Particles, double dt, bool FullyCoupled, int IterationCounter, bool IncludeHydrodynamics = true)
         {
 
             foreach (Particle p in Particles)
@@ -271,17 +271,14 @@ namespace FSI_Solver
                 {
                     if (p.neglectAddedDamping == false)
                     {
-                        csMPI.Raw.Barrier(csMPI.Raw._COMM.WORLD);
                         p.UpdateDampingTensors();
                         //ExchangeDampingTensors(Particles);
                     }
-                    csMPI.Raw.Barrier(csMPI.Raw._COMM.WORLD);
                     p.PredictAcceleration();
                 }
                 else
                 {
-                    csMPI.Raw.Barrier(csMPI.Raw._COMM.WORLD);
-                    p.CalculateAcceleration(dt, FullyCoupled, true);
+                    p.CalculateAcceleration(dt, FullyCoupled, IncludeHydrodynamics);
                 }
                 csMPI.Raw.Barrier(csMPI.Raw._COMM.WORLD);
                 p.UpdateParticleVelocity(dt);
@@ -364,11 +361,12 @@ namespace FSI_Solver
             _IterationCounter = IterationCounter + 1;
         }
 
-        internal void PrintResultToConsole(List<Particle> Particles, double phystime, double dt, int TimestepInt, int IterationCounter, bool Finalresult, out double MPIangularVelocity, out double[] force)
+        internal void PrintResultToConsole(List<Particle> Particles, double FluidViscosity, double phystime, double dt, int TimestepInt, int IterationCounter, bool Finalresult, out double MPIangularVelocity, out double[] force)
         {
             double[] TranslationalMomentum = new double[2] { 0, 0 };
             double RotationalMomentum = 0;
             double[] totalKE = new double[3] { 0, 0, 0 };
+            double[] ParticleReynoldsNumber = new double[Particles.Count()];
             csMPI.Raw.Barrier(csMPI.Raw._COMM.WORLD);
             foreach (Particle p in Particles)
             {
@@ -380,6 +378,7 @@ namespace FSI_Solver
                 totalKE[0] += SingleParticleKineticEnergy[0];
                 totalKE[1] += SingleParticleKineticEnergy[1];
                 totalKE[2] += SingleParticleKineticEnergy[SingleParticleMomentum.Length - 1];
+                ParticleReynoldsNumber[Particles.IndexOf(p)] = p.ComputeParticleRe(FluidViscosity);
             }
 
             Console.WriteLine("Total momentum in system:  " + Math.Sqrt(TranslationalMomentum[0].Pow2() + TranslationalMomentum[1].Pow2()));
@@ -419,6 +418,8 @@ namespace FSI_Solver
                     Console.WriteLine("X-position:   {0}", CurrentP.Position[0][0]);
                     Console.WriteLine("Y-position:   {0}", CurrentP.Position[0][1]);
                     Console.WriteLine("Angle:   {0}", CurrentP.Angle[0]);
+                    Console.WriteLine();
+                    Console.WriteLine("Particle Reynolds number: " + ParticleReynoldsNumber[p]);
                     Console.WriteLine();
                     Console.WriteLine("=======================================================");
                     Console.WriteLine();

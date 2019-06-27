@@ -977,18 +977,12 @@ namespace BoSSS.Application.FSI_Solver
             for (int p = 0; p < m_Particles.Count; p++)
             {
                 Particle Particle = m_Particles[p];
-                //double Hmin = AdaptiveMeshRefinement ? Math.Sqrt(GridData.iGeomCells.GetCellVolume(0)) * 2 : Math.Sqrt(GridData.iGeomCells.GetCellVolume(0));
-                //double[] ParticlePos = m_Particles[p].Position[0];
-                //double ParticleAngle = m_Particles[p].Angle[0];
-                //double[] ParticleScales = m_Particles[p].GetLengthScales();
-                //double Upperedge = ParticlePos[1] + ParticleScales[1] * Math.Abs(Math.Cos(ParticleAngle)) + ParticleScales[0] * Math.Abs(Math.Sin(ParticleAngle)) + 0 * Hmin;
-                //double Loweredge = ParticlePos[1] - ParticleScales[1] * Math.Abs(Math.Cos(ParticleAngle)) - ParticleScales[0] * Math.Abs(Math.Sin(ParticleAngle)) - 0 * Hmin;
-                //double Leftedge = ParticlePos[0] - ParticleScales[0] * Math.Abs(Math.Cos(ParticleAngle)) - ParticleScales[1] * Math.Abs(Math.Sin(ParticleAngle)) - 0 * Hmin;
-                //double Rightedge = ParticlePos[0] + ParticleScales[0] * Math.Abs(Math.Cos(ParticleAngle)) + ParticleScales[1] * Math.Abs(Math.Sin(ParticleAngle)) + 0 * Hmin;
+                double h_min = GridData.iGeomCells.h_min.Min();
+                double h_max = GridData.iGeomCells.h_max.Max();
                 for (int j = 0; j < J; j++)
                 {
                     double[] center = GridData.iLogicalCells.GetCenter(j);
-                    if (Particle.Contains(center, GridData.iGeomCells.h_min.Min()))
+                    if (Particle.Contains(center, h_min, h_max))
                     {
                         ParticleColor.SetMeanValue(j, p + 1);
                         ColoredCells.Add(j);
@@ -1088,12 +1082,12 @@ namespace BoSSS.Application.FSI_Solver
                     DGLevSet.Push();
                     Collision.ResetCollisionState(m_Particles);
                     CalculateHydrodynamicForces(m_Particles, dt);
-                    Auxillary.CalculateParticleVelocity(m_Particles, dt, ((FSI_Control)Control).Timestepper_LevelSetHandling == LevelSetHandling.FSI_LieSplittingFullyCoupled, 0);
+                    Auxillary.CalculateParticleVelocity(m_Particles, dt, ((FSI_Control)Control).Timestepper_LevelSetHandling == LevelSetHandling.FSI_LieSplittingFullyCoupled, 0, false);
                     CalculateCollision(m_Particles, GridData, LsTrk, CellColor, dt);
                     Auxillary.CalculateParticlePosition(m_Particles, dt);
                     Auxillary.ParticleState_MPICheck(m_Particles, GridData, MPISize);
                     UpdateLevelSetParticles();
-                    Auxillary.PrintResultToConsole(m_Particles, phystime, dt, TimestepInt, 0, true, out double MPIangularVelocity, out force);
+                    Auxillary.PrintResultToConsole(m_Particles, 1, phystime, dt, TimestepInt, 0, true, out double MPIangularVelocity, out force);
                     // Save for NUnit Test
                     base.QueryHandler.ValueQuery("C_Drag", 2 * force[0], true); // Only for Diameter 1 (TestCase NSE stationary)
                     base.QueryHandler.ValueQuery("C_Lift", 2 * force[1], true); // Only for Diameter 1 (TestCase NSE stationary)
@@ -1143,14 +1137,14 @@ namespace BoSSS.Application.FSI_Solver
                             }
                             Auxillary.CalculateParticleVelocity(m_Particles, dt, FullyCoupled, IterationCounter);
                             if (IterationCounter != 0 || ((FSI_Control)Control).Timestepper_LevelSetHandling != LevelSetHandling.FSI_LieSplittingFullyCoupled)
-                                Auxillary.PrintResultToConsole(m_Particles, phystime, dt, TimestepInt, IterationCounter, false, out double _, out force);
+                                Auxillary.PrintResultToConsole(m_Particles, ((FSI_Control)Control).PhysicalParameters.mu_A, phystime, dt, TimestepInt, IterationCounter, false, out double _, out force);
                             if (((FSI_Control)Control).Timestepper_LevelSetHandling != LevelSetHandling.FSI_LieSplittingFullyCoupled)
                                 break;
                             Auxillary.CalculateParticleResidual(m_Particles, ForcesOldSquared, TorqueOldSquared, IterationCounter, ((FSI_Control)Control).max_iterations_fully_coupled, out posResidual_splitting, out IterationCounter);
                         }
                         CalculateCollision(m_Particles, GridData, LsTrk, CellColor, dt);
                         Auxillary.CalculateParticlePosition(m_Particles, dt);
-                        Auxillary.PrintResultToConsole(m_Particles, phystime, dt, TimestepInt, IterationCounter, true, out double MPIangularVelocity, out force);
+                        Auxillary.PrintResultToConsole(m_Particles, ((FSI_Control)Control).PhysicalParameters.mu_A, phystime, dt, TimestepInt, IterationCounter, true, out double MPIangularVelocity, out force);
                         // Save for NUnit Test
                         base.QueryHandler.ValueQuery("C_Drag", 2 * force[0], true); // Only for Diameter 1 (TestCase NSE stationary)
                         base.QueryHandler.ValueQuery("C_Lift", 2 * force[1], true); // Only for Diameter 1 (TestCase NSE stationary)

@@ -514,22 +514,6 @@ namespace BoSSS.Application.FSI_Solver
         /// Calculate the new acceleration (translational and rotational)
         /// </summary>
         /// <param name="dt"></param>
-        public void PredictAccelerationWithinIteration()
-        {
-            for (int d = 0; d < SpatialDim; d++)
-            {
-                TranslationalAcceleration[0][d] = 2 * TranslationalAcceleration[0][d] - TranslationalAcceleration[1][d];
-                HydrodynamicForces[0][d] = 2 * HydrodynamicForces[1][d] - HydrodynamicForces[2][d];
-            }
-
-            RotationalAcceleration[0] = 2 * RotationalAcceleration[0] - RotationalAcceleration[1];
-            HydrodynamicTorque[0] = 2 * HydrodynamicTorque[1] - HydrodynamicTorque[2];
-        }
-
-        /// <summary>
-        /// Calculate the new acceleration (translational and rotational)
-        /// </summary>
-        /// <param name="dt"></param>
         public void CalculateAcceleration(double dt, bool FullyCoupled, bool IncludeHydrodynamics)
         {
             if (iteration_counter_P == 0 || FullyCoupled == false)
@@ -841,9 +825,12 @@ namespace BoSSS.Application.FSI_Solver
         }
         
         /// <summary>
-        /// Calculating the particle reynolds number according to paper Turek and testcase ParticleUnderGravity
+        /// Calculating the particle reynolds number
         /// </summary>
-        abstract public double ComputeParticleRe(double ViscosityFluid);
+        public double ComputeParticleRe(double ViscosityFluid)
+        {
+            return Math.Sqrt(TranslationalVelocity[0][0] * TranslationalVelocity[0][0] + TranslationalVelocity[0][1] * TranslationalVelocity[0][1]) * GetLengthScales().Max() / ViscosityFluid;
+        }
 
         /// <summary>
         /// get cut cells describing the boundary of this particle
@@ -861,9 +848,8 @@ namespace BoSSS.Application.FSI_Solver
                 CellArray[i] = Contains(new double[] { CellCenters[i, 0], CellCenters[i, 1] }, h_min, h_max, false);
             }
             CellMask CutCells = new CellMask(LsTrk.GridDat, CellArray, MaskType.Logical);
-            CellMask allCutCells = LsTrk.Regions.GetCutCellMask();
-            CellMask cellCollection = CutCells.Intersect(allCutCells);
-            return cellCollection;
+            CutCells = CutCells.Intersect(LsTrk.Regions.GetCutCellMask());
+            return CutCells;
         }
 
         /// <summary>

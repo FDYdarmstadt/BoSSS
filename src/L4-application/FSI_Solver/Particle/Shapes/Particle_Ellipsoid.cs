@@ -106,13 +106,6 @@ namespace BoSSS.Application.FSI_Solver {
                 return false;
         }
 
-        override public double ComputeParticleRe(double mu_Fluid) {
-            double particleReynolds = 0;
-            particleReynolds = Math.Sqrt(TranslationalVelocity[0][0] * TranslationalVelocity[0][0] + TranslationalVelocity[0][1] * TranslationalVelocity[0][1]) * 2 * length_P * 1 / mu_Fluid;
-            Console.WriteLine("Particle Reynolds number:  " + particleReynolds);
-            return particleReynolds;
-        }
-
         override public MultidimensionalArray GetSurfacePoints(LevelSetTracker lsTrk, double[] PositionS, double AngleS)
         {
             int SpatialDim = lsTrk.GridDat.SpatialDimension;

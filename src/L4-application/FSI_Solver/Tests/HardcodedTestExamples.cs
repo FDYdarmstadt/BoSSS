@@ -534,7 +534,7 @@ namespace BoSSS.Application.FSI_Solver {
             C.ProjectDescription = "Gravity";
             C.SessionName = C.ProjectName;
             C.Tags.Add("with immersed boundary method");
-            C.AdaptiveMeshRefinement = true;
+            C.AdaptiveMeshRefinement = false;
             C.RefinementLevel = 1;
             C.SessionName = "fjkfjksdfhjk";
 
@@ -549,8 +549,8 @@ namespace BoSSS.Application.FSI_Solver {
 
                 int q, r;
 
-                q = 30;
-                r = 30;
+                q = 40;
+                r = 40;
 
                 double[] Xnodes = GenericBlas.Linspace(-1.5 * BaseSize, 1.5 * BaseSize, q + 1);
                 double[] Ynodes = GenericBlas.Linspace(-1.5 * BaseSize, 1.5 * BaseSize, r + 1);
@@ -605,7 +605,7 @@ namespace BoSSS.Application.FSI_Solver {
             // Fluid Properties
             C.PhysicalParameters.rho_A = 1.0;
             C.PhysicalParameters.mu_A = 0.1;
-            C.CoefficientOfRestitution = 1;
+            C.CoefficientOfRestitution = 0;
 
             // Particle Properties
             //C.PhysicalParameters.mu_B = 0.1;
@@ -618,7 +618,7 @@ namespace BoSSS.Application.FSI_Solver {
                 //length_P = 0.2,
                 //thickness_P = 0.1,
                 particleDensity = 4,
-                GravityVertical = -9.81 /  4,
+                GravityVertical = -9.81,
             });
 
             C.Particles.Add(new Particle_superEllipsoid(new double[] { 0.45, 0 }, startAngl: 45)
@@ -670,7 +670,7 @@ namespace BoSSS.Application.FSI_Solver {
             C.dtMax = dt;
             C.dtMin = dt;
             C.Endtime = 10.0;
-            C.NoOfTimesteps = 500;
+            C.NoOfTimesteps = 50;
 
             // haben fertig...
             // ===============
