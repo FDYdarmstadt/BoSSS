@@ -33,6 +33,7 @@ using BoSSS.Foundation.Grid.RefElements;
 using MPI.Wrappers;
 using NUnit.Framework;
 using FSI_Solver;
+using System.Collections;
 
 namespace BoSSS.Application.FSI_Solver
 {
@@ -127,9 +128,14 @@ namespace BoSSS.Application.FSI_Solver
         #region Misc parameters
 
         /// <summary>
+        /// The color of the particle.
+        /// </summary>
+        public int ParticleColor = new int();
+
+        /// <summary>
         /// Colored cells of this particle. 0: CellID, 1: Color
         /// </summary>
-        public List<int[]> ParticleColoredCells = new List<int[]>();
+        public int[] ParticleColoredCells;
 
         /// <summary>
         /// Length of history for time, velocity, position etc.
@@ -722,7 +728,7 @@ namespace BoSSS.Application.FSI_Solver
                 }
             }
             var SchemeHelper2 = LsTrk.GetXDGSpaceMetrics(new[] { LsTrk.GetSpeciesId("A") }, RequiredOrder, 1).XQuadSchemeHelper;
-            CellQuadratureScheme cqs2 = SchemeHelper2.GetLevelSetquadScheme(0, this.CutCells_P(LsTrk));
+            CellQuadratureScheme cqs2 = SchemeHelper2.GetLevelSetquadScheme(0, CutCells_P(LsTrk));
             CellQuadrature.GetQuadrature(new int[] { 1 }, LsTrk.GridDat,
                 cqs2.Compile(LsTrk.GridDat, RequiredOrder),
                 delegate (int i0, int Length, QuadRule QR, MultidimensionalArray EvalResult) {
@@ -838,20 +844,34 @@ namespace BoSSS.Application.FSI_Solver
         /// Calculating the particle reynolds number according to paper Turek and testcase ParticleUnderGravity
         /// </summary>
         abstract public double ComputeParticleRe(double ViscosityFluid);
-        
+
         /// <summary>
         /// get cut cells describing the boundary of this particle
         /// </summary>
         /// <param name="LsTrk"></param>
         /// <returns></returns>
-        abstract public CellMask CutCells_P(LevelSetTracker LsTrk);
+        public CellMask CutCells_P(LevelSetTracker LsTrk)
+        {
+            BitArray CellArray = new BitArray(LsTrk.GridDat.Cells.NoOfLocalUpdatedCells);
+            MultidimensionalArray CellCenters = LsTrk.GridDat.Cells.CellCenter;
+            double h_min = LsTrk.GridDat.Cells.h_minGlobal;
+            double h_max = LsTrk.GridDat.Cells.h_maxGlobal;
+            for (int i = 0; i < CellArray.Length; i++)
+            {
+                CellArray[i] = Contains(new double[] { CellCenters[i, 0], CellCenters[i, 1] }, h_min, h_max, false);
+            }
+            CellMask CutCells = new CellMask(LsTrk.GridDat, CellArray, MaskType.Logical);
+            CellMask allCutCells = LsTrk.Regions.GetCutCellMask();
+            CellMask cellCollection = CutCells.Intersect(allCutCells);
+            return cellCollection;
+        }
 
         /// <summary>
         /// Gives a bool whether the particle contains a certain point or not
         /// </summary>
         /// <param name="point"></param>
         /// <returns></returns>
-        abstract public bool Contains(double[] point, LevelSetTracker LsTrk, bool WithoutTolerance = false);
+        public abstract bool Contains(double[] point, double h_min, double h_max = 0, bool WithoutTolerance = false);
 
         abstract public double[] GetLengthScales();
 

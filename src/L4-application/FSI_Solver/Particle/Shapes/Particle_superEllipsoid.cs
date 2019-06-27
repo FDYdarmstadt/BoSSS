@@ -100,27 +100,12 @@ namespace BoSSS.Application.FSI_Solver {
                 throw new ArithmeticException();
             return r;
         }
-        
-
-        override public CellMask CutCells_P(LevelSetTracker LsTrk) {
-            // tolerance is very important
-            var radiusTolerance = Math.Min(length_P, thickness_P) + LsTrk.GridDat.Cells.h_minGlobal;// +2.0*Math.Sqrt(2*LsTrk.GridDat.Cells.h_minGlobal.Pow2());
-
-            CellMask cellCollection;
-            CellMask cells = null;
-            double alpha = -(Angle[0]);
-            cells = CellMask.GetCellMask(LsTrk.GridDat, 
-                X => -(((((X[0] - Position[0][0]) * Math.Cos(alpha) - (X[1] - Position[0][1]) * Math.Sin(alpha)) / length_P).Pow(superEllipsoidExponent) + (((X[0] - Position[0][0]) * Math.Sin(alpha) + (X[1] - Position[0][1]) * Math.Cos(alpha)) / thickness_P).Pow(superEllipsoidExponent)) - radiusTolerance.Pow(superEllipsoidExponent)) > 0);
-
-            CellMask allCutCells = LsTrk.Regions.GetCutCellMask();
-            cellCollection = cells.Intersect(allCutCells);
-            return cellCollection;
-        }
-        override public bool Contains(double[] point, LevelSetTracker LsTrk, bool WithoutTolerance = false)
+        public override bool Contains(double[] point, double h_min, double h_max = 0, bool WithoutTolerance = false)
         {
-            // only for squared cells
-            WithoutTolerance = true;
-            double radiusTolerance = !WithoutTolerance ? 1.0 + 2.0 * Math.Sqrt(2 * LsTrk.GridDat.Cells.h_minGlobal.Pow2()) : 1;
+            // only for rectangular cells
+            if (h_max == 0)
+                h_max = h_min;
+            double radiusTolerance = !WithoutTolerance ? 1.0 + Math.Sqrt(h_max.Pow2() + h_min.Pow2()) : 1;
             if (-Math.Pow(((point[0] - Position[0][0]) * Math.Cos(Angle[0]) - (point[1] - Position[0][1]) * Math.Sin(Angle[0])) / length_P, superEllipsoidExponent) + -Math.Pow(((point[0] - Position[0][0]) * Math.Sin(Angle[0]) + (point[1] - Position[0][1]) * Math.Cos(Angle[0])) / thickness_P, superEllipsoidExponent) + radiusTolerance.Pow(superEllipsoidExponent) > 0) {
                 return true;
             }

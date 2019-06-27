@@ -276,7 +276,7 @@ namespace BoSSS.Application.FSI_Solver
                                             {
                                                 containsParticle = true;
                                             }
-                                            else { containsParticle = p.Contains(X, LsTrk); }
+                                            else { containsParticle = p.Contains(X, GridData.iGeomCells.h_min.Min()); }//, LsTrk
 
                                             FSI_Collision _FSI_Collision = new FSI_Collision();
                                             _FSI_Collision.CalculateRadialVector(p.Position[0], X, out _, out double RadialLength, out double[] RadialNormalVector);
@@ -399,7 +399,7 @@ namespace BoSSS.Application.FSI_Solver
                                         {
                                             containsParticle = true;
                                         }
-                                        else { containsParticle = p.Contains(X, LsTrk); }
+                                        else { containsParticle = p.Contains(X, GridData.iGeomCells.h_min.Min()); }//, LsTrk
 
                                         FSI_Collision _FSI_Collision = new FSI_Collision();
                                         _FSI_Collision.CalculateRadialVector(p.Position[0], X, out _, out double RadialLength, out double[] RadialNormalVector);
@@ -496,7 +496,7 @@ namespace BoSSS.Application.FSI_Solver
                                    {
                                        containsParticle = true;
                                    }
-                                   else { containsParticle = p.Contains(X, LsTrk); }
+                                   else { containsParticle = p.Contains(X, GridData.iGeomCells.h_min.Min()); }
                                    FSI_Collision _FSI_Collision = new FSI_Collision();
                                    _FSI_Collision.CalculateRadialVector(p.Position[0], X, out _, out double RadialLength, out double[] RadialNormalVector);
                                    if (containsParticle)
@@ -764,15 +764,16 @@ namespace BoSSS.Application.FSI_Solver
             for (int p = 0; p < GlobalParticleColor.Length; p++)
             {
                 int CurrentColor = GlobalParticleColor[p];
-                int CurrentParticle = p;
                 bool ContainsCurrentColor = false;
                 BitArray ColoredCells = new BitArray(J);
+                List<int> CCA = new List<int>();
                 for (int j = 0; j < J; j++)
                 {
                     if (CellColor[j] == CurrentColor && CurrentColor != 0)
                     {
                         ContainsCurrentColor = true;
                         ColoredCells[j] = true;
+                        CCA.Add(j);
                     }
                 }
                 if (ContainsCurrentColor)
@@ -798,8 +799,10 @@ namespace BoSSS.Application.FSI_Solver
                         // ====================================================================
                         for (int pc = 0; pc < ParticlesOfCurrentColor.Length; pc++)
                         {
-                            phi *= m_Particles[ParticlesOfCurrentColor[pc]].Phi_P(X);
-
+                            Particle Particle0 = m_Particles[ParticlesOfCurrentColor[pc]];
+                            phi *= Particle0.Phi_P(X);
+                            Particle0.ParticleColor = CurrentColor;
+                            Particle0.ParticleColoredCells = CCA.ToArray();
                             // Delete all particles within the current color from the particle color array
                             // ===========================================================================
                             GlobalParticleColor[ParticlesOfCurrentColor[pc]] = 0;
@@ -970,6 +973,7 @@ namespace BoSSS.Application.FSI_Solver
         private int[] InitializeColoring(int J, IGridData GridData, bool AdaptiveMeshRefinement)
         {
             int[] Cells = new int[J];
+            List<int> ColoredCells = new List<int>();
             for (int p = 0; p < m_Particles.Count; p++)
             {
                 Particle Particle = m_Particles[p];
@@ -984,10 +988,10 @@ namespace BoSSS.Application.FSI_Solver
                 for (int j = 0; j < J; j++)
                 {
                     double[] center = GridData.iLogicalCells.GetCenter(j);
-                    if (Particle.Contains(center, LsTrk))
+                    if (Particle.Contains(center, GridData.iGeomCells.h_min.Min()))
                     {
                         ParticleColor.SetMeanValue(j, p + 1);
-                        m_Particles[p].ParticleColoredCells.Add(new int[2] { j, p + 1 });
+                        ColoredCells.Add(j);
                         Cells[j] = p + 1;
                     }
                 }
