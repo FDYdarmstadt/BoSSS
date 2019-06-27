@@ -654,7 +654,7 @@ namespace BoSSS.Application.FSI_Solver {
 
             C.AdvancedDiscretizationOptions.PenaltySafety = 4;
             C.AdvancedDiscretizationOptions.CellAgglomerationThreshold = 0.2;
-            C.LevelSetSmoothing = false;
+            C.LevelSetSmoothing = true;
             C.LinearSolver.MaxSolverIterations = 10;
             C.NonLinearSolver.MaxSolverIterations = 10;
             C.LinearSolver.NoOfMultigridLevels = 1;

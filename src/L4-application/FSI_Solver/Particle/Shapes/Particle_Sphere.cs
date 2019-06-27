@@ -104,7 +104,7 @@ namespace BoSSS.Application.FSI_Solver
             // only for rectangular cells
             if (h_max == 0)
                 h_max = h_min;
-            double radiusTolerance = !WithoutTolerance ? 1.0 + Math.Sqrt(h_max.Pow2() + h_min.Pow2()) : 1;
+            double radiusTolerance = !WithoutTolerance ? radius_P + Math.Sqrt(h_max.Pow2() + h_min.Pow2()) : radius_P;
             var distance = point.L2Distance(Position[0]);
             if (distance < (radiusTolerance))
             {

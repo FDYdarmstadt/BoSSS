@@ -824,13 +824,17 @@ namespace BoSSS.Application.FSI_Solver
             CellMask FluidCells = AgglParticleMask != null ? AgglParticleMask.Complement() : CellMask.GetFullMask(GridData);
             SetLevelSet(phiFluid, FluidCells, hack_phystime);
 
-            
+
             // =======================================================
             // Step 5
             // Smoothing
             // =======================================================
-            PerformLevelSetSmoothing(AgglParticleMask);
-                        
+            CellMask allCellss = CellMask.GetFullMask(GridData);
+
+            PlotCurrentState(hack_phystime, new TimestepNumber(new int[] { 0, 10 }), 2);
+            PerformLevelSetSmoothing(AgglParticleMask, FluidCells, true);
+            PlotCurrentState(hack_phystime, new TimestepNumber(new int[] { 0, 11 }), 2);
+
             // =======================================================
             // Step 6
             // Update level set tracker and coloring
