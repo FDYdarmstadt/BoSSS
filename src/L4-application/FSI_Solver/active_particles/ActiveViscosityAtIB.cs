@@ -155,10 +155,10 @@ namespace BoSSS.Solution.NSECommon.Operator.Viscosity {
             }
             
             //Computing flux
-            Ret -= Grad_uA_xN * (vA) * muA * (1 - scale);                    // consistency term
-            Ret -= Grad_vA_xN * (uA[component] - uAFict) * muA;              // symmetry term
-            Ret += _penalty * (uA[component] - uAFict) * (vA) * muA;         // penalty term
-            Ret += f_xN * (vA) * scale;                                // active term (Neumann boundary condition)
+            Ret -= Grad_uA_xN * (vA) * muA * (1 - scale);                   // consistency term
+            Ret -= Grad_vA_xN * (uA[component] - uAFict) * muA;             // symmetry term
+            Ret += _penalty * (uA[component] - uAFict) * (vA) * muA;        // penalty term
+            Ret += f_xN * (vA) * scale;                                     // active term (Neumann boundary condition)
 
             Debug.Assert(!(double.IsInfinity(Ret) || double.IsNaN(Ret)));
             return Ret;

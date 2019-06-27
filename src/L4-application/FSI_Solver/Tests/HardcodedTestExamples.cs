@@ -535,6 +535,7 @@ namespace BoSSS.Application.FSI_Solver {
             C.SessionName = C.ProjectName;
             C.Tags.Add("with immersed boundary method");
             C.AdaptiveMeshRefinement = false;
+            C.RefinementLevel = 1;
             C.SessionName = "fjkfjksdfhjk";
 
             C.pureDryCollisions = true;
@@ -548,8 +549,8 @@ namespace BoSSS.Application.FSI_Solver {
 
                 int q, r;
 
-                q = 30;
-                r = 30;
+                q = 40;
+                r = 40;
 
                 double[] Xnodes = GenericBlas.Linspace(-1.5 * BaseSize, 1.5 * BaseSize, q + 1);
                 double[] Ynodes = GenericBlas.Linspace(-1.5 * BaseSize, 1.5 * BaseSize, r + 1);
@@ -653,7 +654,7 @@ namespace BoSSS.Application.FSI_Solver {
 
             C.AdvancedDiscretizationOptions.PenaltySafety = 4;
             C.AdvancedDiscretizationOptions.CellAgglomerationThreshold = 0.2;
-            C.LevelSetSmoothing = false;
+            C.LevelSetSmoothing = true;
             C.LinearSolver.MaxSolverIterations = 10;
             C.NonLinearSolver.MaxSolverIterations = 10;
             C.LinearSolver.NoOfMultigridLevels = 1;
@@ -742,8 +743,7 @@ namespace BoSSS.Application.FSI_Solver {
             // Mesh refinement
             // =============================
             C.AdaptiveMeshRefinement = false;
-            C.RefinementLevel = 2;
-            C.maxCurvature = 2;
+            C.RefinementLevel = 1;
 
 
             // Boundary conditions
@@ -827,7 +827,7 @@ namespace BoSSS.Application.FSI_Solver {
             // =============================
             C.Timestepper_LevelSetHandling = LevelSetHandling.FSI_LieSplittingFullyCoupled;
             C.LSunderrelax = 1;
-            C.max_iterations_fully_coupled = 250;
+            C.max_iterations_fully_coupled = 1000;
 
 
 
