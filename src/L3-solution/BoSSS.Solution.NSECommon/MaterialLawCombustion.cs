@@ -32,7 +32,7 @@ namespace BoSSS.Solution.NSECommon {
 
         MaterialParamsMode MatParamsMode;
         double[] MolarMasses;
-
+        bool rhoOne;
   
         /// <summary>
         /// Ctor.
@@ -40,12 +40,11 @@ namespace BoSSS.Solution.NSECommon {
         /// <param name="T_ref">Reference temperature - used in Sutherland's law.</param>
         /// <param name="MatParamsMode">The selected material parameter mode.</param>
         /// <param name="MolarMasses">Array of the molar masses of the fuel, oxidizer and products.</param>
-        /// <param name="speciesTransportOK"> Used for switching between a density calculated with and without species transport </param>
-        public MaterialLawCombustion(double T_ref, MaterialParamsMode MatParamsMode, double[] MolarMasses)
-            : base(T_ref, MatParamsMode) {
+        public MaterialLawCombustion(double T_ref, MaterialParamsMode MatParamsMode, double[] MolarMasses, bool rhoOne)
+            : base(T_ref, MatParamsMode, rhoOne) {
             this.MatParamsMode = MatParamsMode;
             this.MolarMasses = MolarMasses;
-
+            this.rhoOne = rhoOne;
 
         }
 
@@ -73,7 +72,10 @@ namespace BoSSS.Solution.NSECommon {
                 rho = base.ThermodynamicPressure.Current.GetMeanValue(0) / (phi[0] * MassFractionsOverMolarFractions);
                 
                 Debug.Assert(!(double.IsNaN(rho) || double.IsInfinity(rho)));
-               // rho = 1.0;
+
+                if (rhoOne) // JUST FOR DEBUGGING PURPOSES!!!!!!!!!!!!!!!!!!!!!!
+                    rho = 1.0;
+
                 return rho;
             }
             else {

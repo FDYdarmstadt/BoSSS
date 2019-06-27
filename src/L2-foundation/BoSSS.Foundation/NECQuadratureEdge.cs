@@ -898,7 +898,8 @@ namespace BoSSS.Foundation.Quadrature.NonLin {
 #endif
 
                 // set out-cell flux
-                FluxValuesOT.Acc(-1.0, FluxValuesIN);
+                if(FluxValuesIN != null)
+                    FluxValuesOT.Acc(-1.0, FluxValuesIN);
 
 
                 // ----------------------------------
@@ -1072,9 +1073,6 @@ namespace BoSSS.Foundation.Quadrature.NonLin {
                 if(m_GradientFluxValuesOT[e] != null)
                     m_GradientFluxValuesOT[e].CheckForNanOrInf(true, true, true);
 #endif
-
-
-                
             }
 
 
@@ -1091,9 +1089,10 @@ namespace BoSSS.Foundation.Quadrature.NonLin {
 
             // multiply fluxes with Jacobi determinat (integral transformation metric):
             for(int i = 0; i < NoOfEquations; i++) {
-
-                m_FluxValuesIN[i].Multiply(1.0, m_FluxValuesIN[i], QuadScalings, 0.0, "jk", "jk", affine ? "j" : "jk");
-                m_FluxValuesOT[i].Multiply(1.0, m_FluxValuesOT[i], QuadScalings, 0.0, "jk", "jk", affine ? "j" : "jk");
+                if (m_FluxValuesIN[i] != null) {
+                    m_FluxValuesIN[i].Multiply(1.0, m_FluxValuesIN[i], QuadScalings, 0.0, "jk", "jk", affine ? "j" : "jk");
+                    m_FluxValuesOT[i].Multiply(1.0, m_FluxValuesOT[i], QuadScalings, 0.0, "jk", "jk", affine ? "j" : "jk");
+                }
 
                 if(m_GradientFluxValuesIN[i] != null) {
                     m_GradientFluxValuesIN[i].Multiply(1.0, m_GradientFluxValuesIN[i], QuadScalings, 0.0, "jkd", "jkd", affine ? "j" : "jk");
@@ -1190,28 +1189,30 @@ namespace BoSSS.Foundation.Quadrature.NonLin {
                         } else {
                             _TestFunction = TstFuncXwgt;
                         }
+                        if (m_FluxValuesIN[gamma] != null) {
+                            int[,] trfIdx = grid.iGeomEdges.Edge2CellTrafoIndex;
+                            unsafe
+                            {
+                                fixed (int* pTrfIdx = trfIdx) {
+                                    // QuadResultIN[j,n] = sum_{k}  _TestFunction[T(j),k,n]*m_FluxValuesIN[gamma][j,k] 
+                                    //    where j: edge index,
+                                    //          n: DG mode index/test function index
+                                    //          k: quadrature node index
+                                    //       T(j) = trfIdx[i0 + j, 0]
+                                    QuadResultIN.Multiply(1.0, _TestFunction, m_FluxValuesIN[gamma], cF, ref mp_jn_Tjkn_jk,
+                                        pTrfIdx, pTrfIdx,
+                                        trfPreOffset_A: (2 * i0), trfCycle_A: 2, trfPostOffset_A: 0, trfPreOffset_B: 0, trfCycle_B: 0, trfPostOffset_B: 0);
 
-                        int[,] trfIdx = grid.iGeomEdges.Edge2CellTrafoIndex;
-                        unsafe {
-                            fixed(int* pTrfIdx = trfIdx) {
-                                // QuadResultIN[j,n] = sum_{k}  _TestFunction[T(j),k,n]*m_FluxValuesIN[gamma][j,k] 
-                                //    where j: edge index,
-                                //          n: DG mode index/test function index
-                                //          k: quadrature node index
-                                //       T(j) = trfIdx[i0 + j, 0]
-                                QuadResultIN.Multiply(1.0, _TestFunction, m_FluxValuesIN[gamma], cF, ref mp_jn_Tjkn_jk,
-                                    pTrfIdx, pTrfIdx,
-                                    trfPreOffset_A: (2 * i0), trfCycle_A: 2, trfPostOffset_A: 0, trfPreOffset_B: 0, trfCycle_B: 0, trfPostOffset_B: 0);
+                                    // analog, aber mit T(j) = trfIdx[i0 + j, 1]
+                                    QuadResultOT.Multiply(1.0, _TestFunction, m_FluxValuesOT[gamma], cF, ref mp_jn_Tjkn_jk,
+                                        pTrfIdx, pTrfIdx,
+                                        trfPreOffset_A: (2 * i0 + 1), trfCycle_A: 2, trfPostOffset_A: 0, trfPreOffset_B: 0, trfCycle_B: 0, trfPostOffset_B: 0);
+                                }
 
-                                // analog, aber mit T(j) = trfIdx[i0 + j, 1]
-                                QuadResultOT.Multiply(1.0, _TestFunction, m_FluxValuesOT[gamma], cF, ref mp_jn_Tjkn_jk,
-                                    pTrfIdx, pTrfIdx,
-                                    trfPreOffset_A: (2 * i0 + 1), trfCycle_A: 2, trfPostOffset_A: 0, trfPreOffset_B: 0, trfCycle_B: 0, trfPostOffset_B: 0);
                             }
-
+                            cF = 1;
                         }
-
-                        cF = 1;
+                        
                     }
 
                     if(maxTestGradientBasis != null) {
@@ -1237,9 +1238,10 @@ namespace BoSSS.Foundation.Quadrature.NonLin {
                                         trfPreOffset_A: (2 * i0 + 1), trfCycle_A: 2, trfPostOffset_A: 0, trfPreOffset_B: 0, trfCycle_B: 0, trfPostOffset_B: 0);
                                 }
                             }
+                            cF = 1;
                         }
 
-                        cF = 1;
+                       
                     }
 
                     if(cF == 0) {

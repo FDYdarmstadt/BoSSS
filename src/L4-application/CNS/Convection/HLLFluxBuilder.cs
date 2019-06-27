@@ -54,9 +54,9 @@ namespace CNS.Convection {
             op.DensityComponents.Add(new HLLFlux(
                 control, boundaryMap, new EulerDensityComponent(), speciesMap));
 
-            for (int i = 0; i < CNSEnvironment.NumberOfDimensions; i++) {
+            for (int i = 0; i < CompressibleEnvironment.NumberOfDimensions; i++) {
                 op.MomentumComponents[i].Add(new HLLFlux(
-                    control, boundaryMap, new EulerMomentumComponent(i, control.EquationOfState.HeatCapacityRatio, control.MachNumber, CNSEnvironment.NumberOfDimensions), speciesMap));
+                    control, boundaryMap, new EulerMomentumComponent(i, control.EquationOfState.HeatCapacityRatio, control.MachNumber, CompressibleEnvironment.NumberOfDimensions), speciesMap));
             }
 
             op.EnergyComponents.Add(new HLLFlux(

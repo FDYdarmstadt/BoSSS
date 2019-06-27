@@ -336,7 +336,7 @@ namespace BoSSS.Foundation.XDG {
                 int[] ColorMap = new int[Je];
                 int ColorCounter;
                 {
-                    CellMask SpMask = this.GetSpeciesMask(SpId); 
+                    CellMask SpMask = this.GetSpeciesMask(SpId);
                     BitArray SpBitMask = SpMask.GetBitMaskWithExternal();
 
                     //int ColorCounter = this.GridDat.CellPartitioning.i0; // (more-than) worst case estimation of used colors on previous processors
@@ -599,7 +599,7 @@ namespace BoSSS.Foundation.XDG {
                     
                     BitArray marker = new BitArray(Je);
                     for (int j = 0; j < J; j++) {
-                        int newColor = ColorMap[j]; // beim dritten durchgang stehen hier nur nullen 
+                        int newColor = ColorMap[j]; 
                         if (newColor != 0 && marker[j] == false) {
                             oldColors.Clear();
                             FindColorsRecursive(oldColors, marker, j, newColor, ColorMap, oldColorMap, this.GridDat);

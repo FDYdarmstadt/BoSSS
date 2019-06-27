@@ -181,7 +181,7 @@ namespace BoSSS.Solution.XdgTimestepping {
             if ((newVersion - oldVersion) != 1)
                 throw new ApplicationException("Expecting exactly one call to 'UpdateTracker(...)' in 'UpdateLevelset(...)'.");
             if (oldPushCount != newPushCount) {
-                throw new ApplicationException("Phushing the history stacks of the level-set tracker is reserved to the timestepper (during one timestep).");
+                throw new ApplicationException("Pushing the history stacks of the level-set tracker is reserved to the timestepper (during one timestep).");
             }
 
 
@@ -307,7 +307,8 @@ namespace BoSSS.Solution.XdgTimestepping {
         /// <param name="ScaledMassMatrix">
         /// No agglomeration, but with <see cref="XdgTimesteppingBase.Config_MassScale"/> applied.
         /// </param>
-        void UpdateMassMatrix(out BlockMsrMatrix PrecondMassMatrix, out BlockMsrMatrix ScaledMassMatrix) {
+        /// <param name="time"></param>
+        void UpdateMassMatrix(out BlockMsrMatrix PrecondMassMatrix, out BlockMsrMatrix ScaledMassMatrix, double time) {
             if (this.Config_MassMatrixShapeandDependence == MassMatrixShapeandDependence.IsIdentity) {
                 // may occur e.g. if one runs the FSI solver as a pure single-phase solver,
                 // i.e. if the Level-Set is outside the domain.
@@ -336,7 +337,8 @@ namespace BoSSS.Solution.XdgTimestepping {
                     ScaledMassMatrix = new BlockMsrMatrix(CurrentStateMapping);
 
                     int NF = this.CurrentStateMapping.Fields.Count;
-                    MassFact.AccMassMatrix(ScaledMassMatrix, CurrentStateMapping, _alpha: Config_MassScale);
+                    //MassFact.AccMassMatrix(ScaledMassMatrix, CurrentStateMapping, _alpha: Config_MassScale);
+                    base.ComputeMassMatrixImpl(ScaledMassMatrix, time);
                 } else {
                     throw new NotSupportedException();
                 }
@@ -355,6 +357,7 @@ namespace BoSSS.Solution.XdgTimestepping {
 
             // update multigrid basis _once_ in object lifetime for steady level set:
             if (this.Config_LevelSetHandling == LevelSetHandling.None && OneTimeMgInit == false) {
+                UpdateAgglom(false);
                 base.MultigridBasis.UpdateXdgAggregationBasis(m_CurrentAgglomeration);
                 OneTimeMgInit = true;
             }
@@ -419,7 +422,7 @@ namespace BoSSS.Solution.XdgTimestepping {
             this.UpdateAgglom(false);
             base.MultigridBasis.UpdateXdgAggregationBasis(m_CurrentAgglomeration);
             BlockMsrMatrix PM, SM;
-            UpdateMassMatrix(out PM, out SM);
+            UpdateMassMatrix(out PM, out SM, phystime);
             MassMatrix[0] = SM;
             m_PrecondMassMatrix = PM;
 
@@ -694,7 +697,7 @@ namespace BoSSS.Solution.XdgTimestepping {
                     ) {
 
                         BlockMsrMatrix PM, SM;
-                        UpdateMassMatrix(out PM, out SM);
+                        UpdateMassMatrix(out PM, out SM, m_ImplStParams.m_CurrentPhystime + m_ImplStParams.m_CurrentDt * m_ImplStParams.m_RelTime);
                         m_ImplStParams.m_Mass[1] = SM;
                         m_PrecondMassMatrix = PM;
                     }
@@ -819,7 +822,7 @@ namespace BoSSS.Solution.XdgTimestepping {
 
                         this.UpdateAgglom(false);
                         BlockMsrMatrix PM, SM;
-                        UpdateMassMatrix(out PM, out SM);
+                        UpdateMassMatrix(out PM, out SM, PhysTime + dt * RelTime);
                         Mass[1] = SM;
                     }
 

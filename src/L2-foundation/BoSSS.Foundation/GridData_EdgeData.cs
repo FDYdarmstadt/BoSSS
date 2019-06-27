@@ -773,7 +773,6 @@ namespace BoSSS.Foundation.Grid.Classic {
                         }
 
                         {
-#if DEBUG
                             var KrefEdge = this.EdgeRefElements[Edge.EdgeKrefIndex];
                             
                             NodeSet V1 = new NodeSet(Kref1, KrefEdge.NoOfVertices, D);
@@ -793,23 +792,23 @@ namespace BoSSS.Foundation.Grid.Classic {
                             //var JacDet1 = MultidimensionalArray.Create(1, V1.GetLength(0));
                             //Kref1.JacobianDetTransformation(V1, JacDet1, 0, K_j1.Type, K_j1.TransformationParams);
                             var JacDet1 = m_owner.JacobianDeterminat.GetValue_Cell(V1, j1, 1);
-                            
+                           
                             //var JacDet2 = MultidimensionalArray.Create(1, V1.GetLength(0));
                             //Kref1.JacobianDetTransformation(V2, JacDet2, 0, K_j2.Type, K_j2.TransformationParams);
                             var JacDet2 = m_owner.JacobianDeterminat.GetValue_Cell(V2, j2, 1);
 
-                            var RelScale = Math.Min(JacDet1.Min(), JacDet2.Min());
                             if(JacDet1.Min() <= 0)
                                 throw new ArithmeticException("Non-positive Jacobian found in cell " + j1 + ".");
                             if(JacDet2.Min() <= 0)
                                 throw new ArithmeticException("Non-positive Jacobian found in cell " + j2 + ".");
+                            
+                            var RelScale = Math.Max(Math.Max(V1G.MaxdistBetweenRows(), V2G.MaxdistBetweenRows()), Math.Max(JacDet1.Max(), JacDet2.Max()));
 
                             var Diff = V1G.CloneAs();
                             Diff.Acc(-1.0, V2G);
                             var err = Diff.L2Norm()/RelScale;
-                            Debug.Assert(err <= 1.0e-8 || Edge.IsPeriodic);
-
-#endif
+                            if (!(err <= 1.0e-8 || Edge.IsPeriodic))
+                                throw new ArithmeticException("Edges do not match geometrically.");
                         }
 
                         int iKref1 = this.m_owner.Cells.GetRefElementIndex(j1); 

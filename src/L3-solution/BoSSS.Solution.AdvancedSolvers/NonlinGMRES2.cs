@@ -321,6 +321,9 @@ namespace BoSSS.Solution.AdvancedSolvers {
             EqSys.Solve(alpha, RHS);
             return alpha;
         }
+        public ISolverSmootherTemplate Clone() {
+            throw new NotImplementedException("Clone of " + this.ToString() + " TODO");
+        }
     }
 
 }

@@ -1,4 +1,5 @@
 #ignore buildfiles in ./dist
+/boSSSpad/*.js
 /dist/*.js
 #ignore node specific build files
 node_modules/
@@ -6,3 +7,5 @@ package-lock.json
 #ignore packaged program, ignore installer files
 InnoSetup/bin/BoSSSpad-win32-x64/
 InnoSetup/installer/
+#ignore Userdata
+userData.txt

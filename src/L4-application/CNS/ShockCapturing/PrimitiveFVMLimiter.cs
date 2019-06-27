@@ -17,6 +17,7 @@ limitations under the License.
 using BoSSS.Foundation;
 using BoSSS.Foundation.Grid;
 using BoSSS.Foundation.Quadrature;
+using BoSSS.Solution.CompressibleFlowCommon;
 using BoSSS.Solution.CompressibleFlowCommon.ShockCapturing;
 using System.Collections.Generic;
 using System.Linq;
@@ -31,11 +32,14 @@ namespace CNS.ShockCapturing {
 
         private int dgDegree;
 
-        public PrimitiveFVMLimiter(IShockSensor sensor, double sensorLimit, double cellSize, int dgDegree) {
+        private IProgram<CNSControl> program;
+
+        public PrimitiveFVMLimiter(IShockSensor sensor, double sensorLimit, double cellSize, int dgDegree, IProgram<CNSControl> program) {
             this.Sensor = sensor;
             this.sensorLimit = sensorLimit;
             this.cellSize = cellSize;
             this.dgDegree = dgDegree;
+            this.program = program;
         }
 
         public IShockSensor Sensor {
@@ -46,21 +50,21 @@ namespace CNS.ShockCapturing {
         public void LimitFieldValues(IEnumerable<DGField> ConservativeVariables, IEnumerable<DGField> DerivedFields) {
 
             var GridData = ConservativeVariables.First().GridDat;
-            
+
             // Make sure primitive fields are up-to-date
-            for (int d = 0; d < CNSEnvironment.NumberOfDimensions; d++) {
-                Variables.Velocity[d].UpdateFunction(
-                    DerivedFields.Single(f => f.Identification == Variables.Velocity[d].Name),
+            for (int d = 0; d < CompressibleEnvironment.NumberOfDimensions; d++) {
+                CNSVariables.Velocity[d].UpdateFunction(
+                    DerivedFields.Single(f => f.Identification == CNSVariables.Velocity[d].Name),
                     CellMask.GetFullMask(GridData),
-                    CNSEnvironment.Program);
+                    program);
             }
-            Variables.Pressure.UpdateFunction(
-                DerivedFields.Single(f => f.Identification == Variables.Pressure.Name),
+            CNSVariables.Pressure.UpdateFunction(
+                DerivedFields.Single(f => f.Identification == CNSVariables.Pressure.Name),
                 CellMask.GetFullMask(GridData),
-                CNSEnvironment.Program);
+                program);
 
             // Limit and store primitive fields
-            string[] primitiveFieldNames = { Variables.Density, Variables.Velocity.xComponent, Variables.Velocity.yComponent, Variables.Pressure };
+            string[] primitiveFieldNames = { CompressibleVariables.Density, CNSVariables.Velocity.xComponent, CNSVariables.Velocity.yComponent, CNSVariables.Pressure };
             DGField[] primitiveFields = new DGField[primitiveFieldNames.Length];
             CellMask shockedCells = Sensor.GetShockedCellMask(GridData, sensorLimit, cellSize, dgDegree);
             int k = 0;
@@ -83,10 +87,10 @@ namespace CNS.ShockCapturing {
             }
 
             // Update conservative variables by using limited primitive variables only in shocked cells
-            int D = CNSEnvironment.NumberOfDimensions;
+            int D = CompressibleEnvironment.NumberOfDimensions;
 
             for (int d = 0; d < D; d++) {
-                DGField mom_d = ConservativeVariables.Single(f => f.Identification == Variables.Momentum[d].Name);
+                DGField mom_d = ConservativeVariables.Single(f => f.Identification == CompressibleVariables.Momentum[d].Name);
                 mom_d.Clear(shockedCells);
                 mom_d.ProjectFunction(
                     1.0,
@@ -96,7 +100,7 @@ namespace CNS.ShockCapturing {
             }
 
             // Update total energy
-            DGField Energy = ConservativeVariables.Single(f => f.Identification == Variables.Energy.Name);
+            DGField Energy = ConservativeVariables.Single(f => f.Identification == CompressibleVariables.Energy.Name);
             Energy.Clear(shockedCells);
             Energy.ProjectFunction(
                 1.0,
@@ -105,7 +109,7 @@ namespace CNS.ShockCapturing {
                     for (int d = 0; d < D; d++) {
                         K += U[d + 1] * U[d + 1];
                     }
-                    return U[D + 1] / (CNSEnvironment.Program.Control.EquationOfState.HeatCapacityRatio - 1.0) + 0.5 * U[0] * K;
+                    return U[D + 1] / (program.Control.EquationOfState.HeatCapacityRatio - 1.0) + 0.5 * U[0] * K;
                 },
                 new CellQuadratureScheme(true, shockedCells),
                 primitiveFields);

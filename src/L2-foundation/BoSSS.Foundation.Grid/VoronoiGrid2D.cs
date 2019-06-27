@@ -19,6 +19,24 @@ namespace BoSSS.Foundation.Grid.Voronoi
     public static class VoronoiGrid2D
     {
         /// <summary>
+        /// Create a random voronoi mesh inside a rectangle
+        /// </summary>
+        /// <param name="width"></param>
+        /// <param name="height"></param>
+        /// <param name="numberOfNodes"></param>
+        /// <returns></returns>
+        public static VoronoiGrid Rectangle(double width, double height, int numberOfNodes) {
+            Vector[] polygonBoundary = new Vector[]
+            {
+                new Vector(-width / 2, height / 2),
+                new Vector(width / 2, height / 2),
+                new Vector(width / 2, -height / 2),
+                new Vector(-width / 2, -height / 2)
+            };
+            return FromPolygonalDomain(polygonBoundary, 10, numberOfNodes);
+        }
+
+        /// <summary>
         /// Creates a random voronoi mesh inside a polygon.
         /// </summary>
         /// <param name="PolygonBoundary">

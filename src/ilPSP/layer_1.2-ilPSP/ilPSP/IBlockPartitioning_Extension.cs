@@ -134,7 +134,7 @@ namespace ilPSP {
             }
 
             Debug.Assert(LocalLength == SubvectorIdx.Count());
-            Debug.Assert(BlockType.Count == B.LocalNoOfBlocks);
+ //           Debug.Assert(BlockType.Count == B.LocalNoOfBlocks);
 
 
 

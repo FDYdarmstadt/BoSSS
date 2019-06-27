@@ -86,24 +86,26 @@ namespace CNS.ShockCapturing {
             int noOfNodesPerCell = base.EvaluationPoints[iKref].NoOfNodes;
             double scaling = Math.Max(4.0 / 3.0, config.EquationOfState.HeatCapacityRatio / config.PrandtlNumber);
             MultidimensionalArray hmin = __gridData.Cells.h_min;
-            DGField artificialViscosity = workingSet.ParameterFields.Where(c => c.Identification.Equals(Variables.ArtificialViscosity)).Single();
+            DGField artificialViscosity = workingSet.ParameterFields.Where(c => c.Identification.Equals(CNSVariables.ArtificialViscosity)).Single();
             double cfl = double.MaxValue;
 
             switch (speciesMap) {
                 case ImmersedSpeciesMap ibmMap: {
                         MultidimensionalArray levelSetValues = ibmMap.Tracker.DataHistories[0].Current.GetLevSetValues(base.EvaluationPoints[iKref], i0, Length);
                         SpeciesId species = ibmMap.Tracker.GetSpeciesId(ibmMap.Control.FluidSpeciesName);
-                        MultidimensionalArray hminCut = ibmMap.CellAgglomeration.CellLengthScales[species];
-
-                        //ibmMap.Agglomerator.AggInfo.SourceCells
-
-                        // cutCellsThatAreNotSourceCells = 
-                        //    ibmMap.Tracker.Regions.GetCutCellMask().Except(ibmMap.Agglomerator.AggInfo.SourceCells);
+                        MultidimensionalArray hminCut = ibmMap.CellAgglomeration.CellLengthScales[species];                                             
 
                         for (int i = 0; i < Length; i++) { // loop over cells...
                             int cell = i0 + i;
 
                             double hminLocal = double.NaN;
+
+                            // Return double.MaxValue in all IBM source cells
+                            //if (ibmMap.sourceCells[cell]) {
+                            //    cfl = double.MaxValue;
+                            //    break;
+                            //} else if (ibmMap.cutCellsThatAreNotSourceCells[cell]) {
+
                             if (ibmMap.cutCellsThatAreNotSourceCells[cell]) {
                                 hminLocal = hminCut[cell];
                             } else {
@@ -172,7 +174,7 @@ namespace CNS.ShockCapturing {
             } else {
                 int degree = workingSet.ConservativeVariables.Max(f => f.Basis.Degree);
                 int twoNPlusOne = 2 * degree + 1;
-                return cfl * GetBetaMax(degree) / twoNPlusOne / twoNPlusOne / Math.Sqrt(CNSEnvironment.NumberOfDimensions);
+                return cfl * GetBetaMax(degree) / twoNPlusOne / twoNPlusOne / Math.Sqrt(CompressibleEnvironment.NumberOfDimensions);
             }
         }
     }

@@ -328,9 +328,12 @@ namespace BoSSS.Solution.AdvancedSolvers {
             if(this.CoarserLevelSolver != null)
                 this.CoarserLevelSolver.ResetStat();
         }
+        public ISolverSmootherTemplate Clone() {
+            throw new NotImplementedException("Clone of " + this.ToString() + " TODO");
+        }
     }
 
-
+    
 
     static class Utils {
 

@@ -19,12 +19,14 @@ using BoSSS.Foundation.Grid;
 using BoSSS.Foundation.Grid.Classic;
 using BoSSS.Platform.LinAlg;
 using BoSSS.Solution;
+using BoSSS.Solution.CompressibleFlowCommon;
+using BoSSS.Solution.CompressibleFlowCommon.MaterialProperty;
+using BoSSS.Solution.CompressibleFlowCommon.ShockCapturing;
 using BoSSS.Solution.Queries;
 using CNS;
 using CNS.Convection;
 using CNS.EquationSystem;
 using CNS.LoadBalancing;
-using CNS.MaterialProperty;
 using CNS.ShockCapturing;
 using CNS.Tests;
 using ilPSP;
@@ -454,9 +456,9 @@ namespace HilbertTest {
             double kappa = 0.5;
 
             if (AV) {
-                Variable sensorVariable = Variables.Density;
-                c.ShockSensor = new PerssonSensor(sensorVariable, sensorLimit);
-                c.ArtificialViscosityLaw = new SmoothedHeavisideArtificialViscosityLaw(c.ShockSensor, dgDegree, sensorLimit, epsilon0, kappa);
+                Variable sensorVariable = CompressibleVariables.Density;
+                c.CNSShockSensor = new PerssonSensor(sensorVariable, sensorLimit);
+                c.ArtificialViscosityLaw = new SmoothedHeavisideArtificialViscosityLaw(c.CNSShockSensor, dgDegree, sensorLimit, epsilon0, kappa);
             }
 
             c.EquationOfState = IdealGas.Air;
@@ -465,33 +467,33 @@ namespace HilbertTest {
             c.ReynoldsNumber = 1.0;
             c.PrandtlNumber = 0.71;
 
-            c.AddVariable(Variables.Density, dgDegree);
-            c.AddVariable(Variables.Momentum.xComponent, dgDegree);
-            c.AddVariable(Variables.Energy, dgDegree);
+            c.AddVariable(CompressibleVariables.Density, dgDegree);
+            c.AddVariable(CompressibleVariables.Momentum.xComponent, dgDegree);
+            c.AddVariable(CompressibleVariables.Energy, dgDegree);
             if (true1D == false) {
-                c.AddVariable(Variables.Momentum.yComponent, dgDegree);
-                c.AddVariable(Variables.Velocity.yComponent, dgDegree);
+                c.AddVariable(CompressibleVariables.Momentum.yComponent, dgDegree);
+                c.AddVariable(CNSVariables.Velocity.yComponent, dgDegree);
                 if (AV) {
-                    c.AddVariable(Variables.ArtificialViscosity, 2);
+                    c.AddVariable(CNSVariables.ArtificialViscosity, 2);
                 }
             } else {
                 if (AV) {
-                    c.AddVariable(Variables.ArtificialViscosity, 1);
+                    c.AddVariable(CNSVariables.ArtificialViscosity, 1);
                 }
             }
-            c.AddVariable(Variables.Velocity.xComponent, dgDegree);
-            c.AddVariable(Variables.Pressure, dgDegree);
-            c.AddVariable(Variables.Entropy, dgDegree);
-            c.AddVariable(Variables.LocalMachNumber, dgDegree);
-            c.AddVariable(Variables.Rank, 0);
+            c.AddVariable(CNSVariables.Velocity.xComponent, dgDegree);
+            c.AddVariable(CNSVariables.Pressure, dgDegree);
+            c.AddVariable(CNSVariables.Entropy, dgDegree);
+            c.AddVariable(CNSVariables.LocalMachNumber, dgDegree);
+            c.AddVariable(CNSVariables.Rank, 0);
             
-            c.AddVariable(Variables.CFL, 0);
-            c.AddVariable(Variables.CFLConvective, 0);
+            c.AddVariable(CNSVariables.CFL, 0);
+            c.AddVariable(CNSVariables.CFLConvective, 0);
             if (AV) {
-                c.AddVariable(Variables.CFLArtificialViscosity, 0);
+                c.AddVariable(CNSVariables.CFLArtificialViscosity, 0);
             }
             if (c.ExplicitScheme.Equals(ExplicitSchemes.LTS)) {
-                c.AddVariable(Variables.LTSClusters, 0);
+                c.AddVariable(CNSVariables.LTSClusters, 0);
             }
 
             c.AddBoundaryValue("AdiabaticSlipWall");
@@ -547,9 +549,9 @@ namespace HilbertTest {
             double kappa = 0.5;
 
             if (AV) {
-                Variable sensorVariable = Variables.Density;
-                c.ShockSensor = new PerssonSensor(sensorVariable, sensorLimit);
-                c.ArtificialViscosityLaw = new SmoothedHeavisideArtificialViscosityLaw(c.ShockSensor, dgDegree, sensorLimit, epsilon0, kappa);
+                Variable sensorVariable = CompressibleVariables.Density;
+                c.CNSShockSensor = new PerssonSensor(sensorVariable, sensorLimit);
+                c.ArtificialViscosityLaw = new SmoothedHeavisideArtificialViscosityLaw(c.CNSShockSensor, dgDegree, sensorLimit, epsilon0, kappa);
             }
 
             c.EquationOfState = IdealGas.Air;
@@ -558,33 +560,33 @@ namespace HilbertTest {
             c.ReynoldsNumber = 1.0;
             c.PrandtlNumber = 0.71;
 
-            c.AddVariable(Variables.Density, dgDegree);
-            c.AddVariable(Variables.Momentum.xComponent, dgDegree);
-            c.AddVariable(Variables.Energy, dgDegree);
+            c.AddVariable(CompressibleVariables.Density, dgDegree);
+            c.AddVariable(CompressibleVariables.Momentum.xComponent, dgDegree);
+            c.AddVariable(CompressibleVariables.Energy, dgDegree);
             if (true1D == false) {
-                c.AddVariable(Variables.Momentum.yComponent, dgDegree);
-                c.AddVariable(Variables.Velocity.yComponent, dgDegree);
+                c.AddVariable(CompressibleVariables.Momentum.yComponent, dgDegree);
+                c.AddVariable(CNSVariables.Velocity.yComponent, dgDegree);
                 if (AV) {
-                    c.AddVariable(Variables.ArtificialViscosity, 2);
+                    c.AddVariable(CNSVariables.ArtificialViscosity, 2);
                 }
             } else {
                 if (AV) {
-                    c.AddVariable(Variables.ArtificialViscosity, 1);
+                    c.AddVariable(CNSVariables.ArtificialViscosity, 1);
                 }
             }
-            c.AddVariable(Variables.Velocity.xComponent, dgDegree);
-            c.AddVariable(Variables.Pressure, dgDegree);
-            c.AddVariable(Variables.Entropy, dgDegree);
-            c.AddVariable(Variables.LocalMachNumber, dgDegree);
-            c.AddVariable(Variables.Rank, 0);
+            c.AddVariable(CNSVariables.Velocity.xComponent, dgDegree);
+            c.AddVariable(CNSVariables.Pressure, dgDegree);
+            c.AddVariable(CNSVariables.Entropy, dgDegree);
+            c.AddVariable(CNSVariables.LocalMachNumber, dgDegree);
+            c.AddVariable(CNSVariables.Rank, 0);
 
-            c.AddVariable(Variables.CFL, 0);
-            c.AddVariable(Variables.CFLConvective, 0);
+            c.AddVariable(CNSVariables.CFL, 0);
+            c.AddVariable(CNSVariables.CFLConvective, 0);
             if (AV) {
-                c.AddVariable(Variables.CFLArtificialViscosity, 0);
+                c.AddVariable(CNSVariables.CFLArtificialViscosity, 0);
             }
             if (c.ExplicitScheme.Equals(ExplicitSchemes.LTS)) {
-                c.AddVariable(Variables.LTSClusters, 0);
+                c.AddVariable(CNSVariables.LTSClusters, 0);
             }
 
             c.AddBoundaryValue("AdiabaticSlipWall");
@@ -676,7 +678,7 @@ namespace HilbertTest {
             c.AddBoundaryValue("AdiabaticSlipWall");
 
             // Initial conditions
-            c.InitialValues_Evaluators.Add(Variables.Density, delegate (double[] X) {
+            c.InitialValues_Evaluators.Add(CompressibleVariables.Density, delegate (double[] X) {
                 double x = X[0];
 
                 if (true1D == false) {
@@ -689,7 +691,7 @@ namespace HilbertTest {
                     return 0.125;
                 }
             });
-            c.InitialValues_Evaluators.Add(Variables.Pressure, delegate (double[] X) {
+            c.InitialValues_Evaluators.Add(CNSVariables.Pressure, delegate (double[] X) {
                 double x = X[0];
 
                 if (true1D == false) {
@@ -702,9 +704,9 @@ namespace HilbertTest {
                     return 0.1;
                 }
             });
-            c.InitialValues_Evaluators.Add(Variables.Velocity.xComponent, X => 0.0);
+            c.InitialValues_Evaluators.Add(CNSVariables.Velocity.xComponent, X => 0.0);
             if (true1D == false) {
-                c.InitialValues_Evaluators.Add(Variables.Velocity.yComponent, X => 0.0);
+                c.InitialValues_Evaluators.Add(CNSVariables.Velocity.yComponent, X => 0.0);
             }
 
 
@@ -720,9 +722,9 @@ namespace HilbertTest {
             double kappa = 0.5;
 
             if (AV) {
-                Variable sensorVariable = Variables.Density;
-                c.ShockSensor = new PerssonSensor(sensorVariable, sensorLimit);
-                c.ArtificialViscosityLaw = new SmoothedHeavisideArtificialViscosityLaw(c.ShockSensor, dgDegree, sensorLimit, epsilon0, kappa);
+                Variable sensorVariable = CompressibleVariables.Density;
+                c.CNSShockSensor = new PerssonSensor(sensorVariable, sensorLimit);
+                c.ArtificialViscosityLaw = new SmoothedHeavisideArtificialViscosityLaw(c.CNSShockSensor, dgDegree, sensorLimit, epsilon0, kappa);
             }
 
             c.EquationOfState = IdealGas.Air;
@@ -731,33 +733,33 @@ namespace HilbertTest {
             c.ReynoldsNumber = 1.0;
             c.PrandtlNumber = 0.71;
 
-            c.AddVariable(Variables.Density, dgDegree);
-            c.AddVariable(Variables.Momentum.xComponent, dgDegree);
-            c.AddVariable(Variables.Energy, dgDegree);
+            c.AddVariable(CompressibleVariables.Density, dgDegree);
+            c.AddVariable(CompressibleVariables.Momentum.xComponent, dgDegree);
+            c.AddVariable(CompressibleVariables.Energy, dgDegree);
             if (true1D == false) {
-                c.AddVariable(Variables.Momentum.yComponent, dgDegree);
-                c.AddVariable(Variables.Velocity.yComponent, dgDegree);
+                c.AddVariable(CompressibleVariables.Momentum.yComponent, dgDegree);
+                c.AddVariable(CNSVariables.Velocity.yComponent, dgDegree);
                 if (AV) {
-                    c.AddVariable(Variables.ArtificialViscosity, 2);
+                    c.AddVariable(CNSVariables.ArtificialViscosity, 2);
                 }
             } else {
                 if (AV) {
-                    c.AddVariable(Variables.ArtificialViscosity, 1);
+                    c.AddVariable(CNSVariables.ArtificialViscosity, 1);
                 }
             }
-            c.AddVariable(Variables.Velocity.xComponent, dgDegree);
-            c.AddVariable(Variables.Pressure, dgDegree);
-            c.AddVariable(Variables.Entropy, dgDegree);
-            c.AddVariable(Variables.LocalMachNumber, dgDegree);
-            c.AddVariable(Variables.Rank, 0);
+            c.AddVariable(CNSVariables.Velocity.xComponent, dgDegree);
+            c.AddVariable(CNSVariables.Pressure, dgDegree);
+            c.AddVariable(CNSVariables.Entropy, dgDegree);
+            c.AddVariable(CNSVariables.LocalMachNumber, dgDegree);
+            c.AddVariable(CNSVariables.Rank, 0);
 
-            c.AddVariable(Variables.CFL, 0);
-            c.AddVariable(Variables.CFLConvective, 0);
+            c.AddVariable(CNSVariables.CFL, 0);
+            c.AddVariable(CNSVariables.CFLConvective, 0);
             if (AV) {
-                c.AddVariable(Variables.CFLArtificialViscosity, 0);
+                c.AddVariable(CNSVariables.CFLArtificialViscosity, 0);
             }
             if (c.ExplicitScheme.Equals(ExplicitSchemes.LTS)) {
-                c.AddVariable(Variables.LTSClusters, 0);
+                c.AddVariable(CNSVariables.LTSClusters, 0);
             }
 
 

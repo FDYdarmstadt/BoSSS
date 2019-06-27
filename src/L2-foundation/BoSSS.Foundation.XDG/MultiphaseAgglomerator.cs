@@ -1077,7 +1077,7 @@ namespace BoSSS.Foundation.XDG {
 
                         Basis b = new Basis(grdDat, 0);
                         DGField[] CellVolumesViz = new DGField[1 + (oldCellVolumes != null ? oldCellVolumes.Length : 0)];
-                        for(int n = -1; n < CellVolumesViz.Length; n++) {
+                        for(int n = -1; n < CellVolumesViz.Length - 1; n++) {
                             MultidimensionalArray vol = n < 0 ? CellVolumes : oldCellVolumes[n];
                             CellVolumesViz[n + 1] = new SinglePhaseField(b, "VolumeAtTime" + (-n));
                             for (int j = 0; j < Jup; j++) {
@@ -1095,7 +1095,8 @@ namespace BoSSS.Foundation.XDG {
                             FailedViz.SetMeanValue(j, 1);
                         }
 
-                        Katastrophenplot(CellVolumesViz.Cat(AgglomCellsViz, FailedViz, Tracker.LevelSets));
+                        if(Katastrophenplot != null)
+                            Katastrophenplot(CellVolumesViz.Cat(AgglomCellsViz, FailedViz, Tracker.LevelSets[0]));
 
                         string message = ("Agglomeration failed - no candidate for agglomeration found");
                         if (ExceptionOnFailedAgglomeration)

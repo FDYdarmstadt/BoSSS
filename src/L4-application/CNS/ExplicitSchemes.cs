@@ -232,7 +232,7 @@ namespace CNS {
             }
 
             // Make sure shock sensor is updated before every flux evaluation
-            if (control.ShockSensor != null) {
+            if (control.CNSShockSensor != null) {
                 ExplicitEuler explicitEulerBasedTimestepper = timeStepper as ExplicitEuler;
                 if (explicitEulerBasedTimestepper == null) {
                     throw new Exception(String.Format(
@@ -242,17 +242,17 @@ namespace CNS {
 
                 explicitEulerBasedTimestepper.OnBeforeComputeChangeRate += delegate (double absTime, double relTime) {
                     // Note: Only shock sensor is updated, _NOT_ the corresponding variable
-                    program.Control.ShockSensor.UpdateSensorValues(
+                    program.Control.CNSShockSensor.UpdateSensorValues(
                         program.WorkingSet.AllFields,
                         program.SpeciesMap,
                         explicitEulerBasedTimestepper.SubGrid.VolumeMask);
                     // Note: When being called, artificial viscosity is updated in the _ENTIRE_ (fluid) domain
-                    var avField = program.WorkingSet.DerivedFields[Variables.ArtificialViscosity];
-                    Variables.ArtificialViscosity.UpdateFunction(avField, program.SpeciesMap.SubGrid.VolumeMask, program);
+                    var avField = program.WorkingSet.DerivedFields[CNSVariables.ArtificialViscosity];
+                    CNSVariables.ArtificialViscosity.UpdateFunction(avField, program.SpeciesMap.SubGrid.VolumeMask, program);
 
                     // Test
-                    //double sensorNorm = program.WorkingSet.DerivedFields[Variables.ShockSensor].L2Norm();
-                    //double avNorm = program.WorkingSet.DerivedFields[Variables.ArtificialViscosity].L2Norm();
+                    //double sensorNorm = program.WorkingSet.DerivedFields[CNSVariables.ShockSensor].L2Norm();
+                    //double avNorm = program.WorkingSet.DerivedFields[CNSVariables.ArtificialViscosity].L2Norm();
                     //Console.WriteLine("\r\nThis is OnBeforeComputeChangeRate");
                     //Console.WriteLine("SensorNeu: {0}", sensorNorm);
                     //Console.WriteLine("AVNeu: {0}", avNorm);

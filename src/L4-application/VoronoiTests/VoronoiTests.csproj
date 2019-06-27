@@ -12,6 +12,7 @@
     <FileAlignment>512</FileAlignment>
     <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
     <Deterministic>true</Deterministic>
+    <TargetFrameworkProfile />
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <PlatformTarget>x64</PlatformTarget>
@@ -50,14 +51,16 @@
     <Compile Include="Database\DatabaseTest.cs" />
     <Compile Include="Database\GridIOTests.cs" />
     <Compile Include="Database\GridMethods.cs" />
+    <Compile Include="Database\Session\ArrayExtensions.cs" />
     <Compile Include="Database\Session\BoSSSpadTests.cs" />
     <Compile Include="Database\Session\SessionMethods.cs" />
     <Compile Include="Database\Session\SessionIOTests.cs" />
     <Compile Include="Database\Session\DGFieldArithmeticTests.cs" />
     <Compile Include="Database\Session\SessionTest.cs" />
+    <Compile Include="GridCreation\GridTests.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="RunnableTest.cs" />
+    <Compile Include="BoSSSTestBench.cs" />
     <Compile Include="TestBench.cs" />
   </ItemGroup>
   <ItemGroup>
@@ -98,8 +101,10 @@
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
-    <Folder Include="GridCreation\" />
     <Folder Include="ScalarTransport\" />
+  </ItemGroup>
+  <ItemGroup>
+    <Service Include="{82A7F48D-3B50-4B1E-B82E-3ADA8210C358}" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

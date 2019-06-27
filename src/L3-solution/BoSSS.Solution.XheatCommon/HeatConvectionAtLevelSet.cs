@@ -27,7 +27,7 @@ using ilPSP.Utils;
 using BoSSS.Foundation;
 using BoSSS.Foundation.XDG;
 using BoSSS.Solution.NSECommon;
-
+using System.Collections;
 
 namespace BoSSS.Solution.XheatCommon {
 
@@ -38,14 +38,14 @@ namespace BoSSS.Solution.XheatCommon {
 
         bool movingmesh;
 
-        public HeatConvectionAtLevelSet(int _D, LevelSetTracker LsTrk, double _capA, double _capB, double _LFFA, double _LFFB, bool _MaterialInterface, ThermalMultiphaseBoundaryCondMap _bcmap, bool _movingmesh) {
+        public HeatConvectionAtLevelSet(int _D, LevelSetTracker LsTrk, double _capA, double _capB, double _LFFA, double _LFFB, ThermalMultiphaseBoundaryCondMap _bcmap, bool _movingmesh) {
             m_D = _D;
 
             capA = _capA;
             capB = _capB;
             m_LsTrk = LsTrk;
 
-            MaterialInterface = _MaterialInterface;
+            //MaterialInterface = _MaterialInterface;
             movingmesh = _movingmesh;
 
             NegFlux = new HeatConvectionInBulk(_D, _bcmap, _capA, _capB, _LFFA, double.NaN, LsTrk);
@@ -55,7 +55,7 @@ namespace BoSSS.Solution.XheatCommon {
 
         }
 
-        bool MaterialInterface;
+        //bool MaterialInterface;
         double capA;
         double capB;
         int m_D;
@@ -83,6 +83,16 @@ namespace BoSSS.Solution.XheatCommon {
 
             this.TransformU(ref U_Neg, ref U_Pos, out U_NegFict, out U_PosFict);
 
+            //double[] U_LS = new double[] { 0, 1.0 };    // !!! prescribed
+            //cp.ParamsNeg[0] = U_LS[0];
+            //cp.ParamsNeg[1] = U_LS[1];
+            //cp.ParamsNeg[m_D] = U_LS[0];
+            //cp.ParamsNeg[m_D + 1] = U_LS[1];
+            //cp.ParamsPos[0] = U_LS[0];
+            //cp.ParamsPos[1] = U_LS[1];
+            //cp.ParamsPos[m_D] = U_LS[0];
+            //cp.ParamsPos[m_D + 1] = U_LS[1];
+
             double[] ParamsNeg = cp.ParamsNeg;
             double[] ParamsPos = cp.ParamsPos;
             double[] ParamsPosFict, ParamsNegFict;
@@ -101,6 +111,7 @@ namespace BoSSS.Solution.XheatCommon {
                 inp.time = cp.time;
 
                 FlxNeg = this.NegFlux.IEF(ref inp, U_Neg, U_NegFict);
+                //Console.WriteLine("FlxNeg = {0}", FlxNeg);
             }
             // Flux for positive side
             double FlxPos;
@@ -116,6 +127,7 @@ namespace BoSSS.Solution.XheatCommon {
                 inp.time = cp.time;
 
                 FlxPos = this.PosFlux.IEF(ref inp, U_PosFict, U_Pos);
+                //Console.WriteLine("FlxPos = {0}", FlxPos);
             }
 
             if(movingmesh)
@@ -153,6 +165,118 @@ namespace BoSSS.Solution.XheatCommon {
                 return TermActivationFlags.UxV;
             }
         }
+    }
+
+
+    public class HeatConvectionAtLevelSet_Divergence : EvaporationAtLevelSet {
+
+
+        public HeatConvectionAtLevelSet_Divergence(int _D, LevelSetTracker lsTrk, double _capA, double _capB, double _rhoA, double _rhoB,
+            double _kA, double _kB, double _hVapA, double _Rint, double _Tsat, double _sigma, double _pc) {
+            this.D = _D;
+            this.rhoA = _rhoA;
+            this.rhoB = _rhoB;
+            this.capA = _capA;
+            this.capB = _capB;
+
+            this.m_LsTrk = lsTrk;
+
+
+            this.kA = _kA;
+            this.kB = _kB;
+            this.hVapA = _hVapA;
+            this.Rint = _Rint;
+
+            this.Tsat = _Tsat;
+            this.sigma = _sigma;
+            this.pc = _pc;
+        }
+ 
+        double rhoA;
+        double rhoB;
+        double capA;
+        double capB;
+
+
+
+        public override TermActivationFlags LevelSetTerms {
+            get {
+                return TermActivationFlags.UxV;
+            }
+        }
+
+
+        private double ComputeEvaporationMass(double[] paramsNeg, double[] paramsPos, double[] N, int jCell) {
+
+            double qEvap = ComputeHeatFlux(paramsNeg, paramsPos, N, jCell);
+
+            if (qEvap == 0.0)
+                return 0.0;
+
+            double hVap = (hVapA > 0) ? hVapA : -hVapA;
+            double M = qEvap / hVap;
+
+            //Console.WriteLine("mEvap - GeneralizedDivergenceAtLevelSet: {0}", M);
+
+            return M;
+
+        }
+
+        public override double LevelSetForm(ref Foundation.XDG.CommonParamsLs cp,
+            double[] U_Neg, double[] U_Pos, double[,] Grad_uA, double[,] Grad_uB,
+            double vA, double vB, double[] Grad_vA, double[] Grad_vB) {
+
+
+            double M = ComputeEvaporationMass(cp.ParamsNeg, cp.ParamsPos, cp.n, cp.jCell);
+            if (M == 0.0)
+                return 0.0;
+
+
+            double T_avg = 0.5 * (U_Neg[0] + U_Pos[0]);
+
+            double uAxN = -M * (1 / rhoA) * T_avg;
+            double uBxN = -M * (1 / rhoB) * T_avg;
+
+            // transform from species B to A: we call this the "A-fictitious" value
+            double uAxN_fict;
+            //uAxN_fict = (1 / rhoA) * (rhoB * uBxN);
+            uAxN_fict = uBxN;
+
+            // transform from species A to B: we call this the "B-fictitious" value
+            double uBxN_fict;
+            //uBxN_fict = (1 / rhoB) * (rhoA * uAxN);
+            uBxN_fict = uAxN;
+
+
+            // compute the fluxes: note that for the continuity equation, we use not a real flux,
+            // but some kind of penalization, therefore the fluxes have opposite signs!
+            double FlxNeg = -Flux(uAxN, uAxN_fict); // flux on A-side
+            double FlxPos = +Flux(uBxN_fict, uBxN);  // flux on B-side
+
+            FlxNeg *= capA;
+            FlxPos *= capB;
+
+            double Ret = FlxNeg * vA - FlxPos * vB;
+
+            return -Ret;
+        }
+
+
+        /// <summary>
+        /// the penalty flux
+        /// </summary>
+        static double Flux(double UxN_in, double UxN_out) {
+            return 0.5 * (UxN_in - UxN_out);
+        }
+
+
+        public override IList<string> ArgumentOrdering {
+            get {
+                return new string[] { VariableNames.Temperature };
+            }
+        }
+
+
     }
 
 

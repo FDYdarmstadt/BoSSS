@@ -53,28 +53,28 @@ namespace BoSSS.Solution.LevelSetTools {
 
 
     /// <summary>
-    /// Projects a DG Field onto another DGField of higher order
+    /// Projects a DG Field onto another DGField of higher order, without any discontinuities at the boundary.
+    /// 
     /// </summary>
     public class ContinuityProjection {
+        
         /// <summary>
         /// Selects algorithm variant based on the <paramref name="Option"/>
         /// </summary>
-        /// <param name="DGLevelSet">Discontinuous Field</param>
+        /// <param name="ContBasis">DG basis for the continuous output data</param>
+        /// <param name="DGBasis">DG basis for the discontinuous input data</param>
         /// <param name="gridData"></param>
         /// <param name="Option">Choice of algorithm</param>
-        /// <param name="SmoothedLevelSet">The Continuous Field</param>
-        public ContinuityProjection(SinglePhaseField DGLevelSet, IGridData gridData, ContinuityProjectionOption Option) {
-            int k = DGLevelSet.Basis.Degree + 1;
+        public ContinuityProjection(Basis ContBasis, Basis DGBasis, IGridData gridData, ContinuityProjectionOption Option) {
             myOption = Option;
             switch (Option) {
                 case ContinuityProjectionOption.SpecFEM: {
-                        var ContinuousLevelSetBasis = new SpecFemBasis((BoSSS.Foundation.Grid.Classic.GridData)gridData, k);
+                        var ContinuousLevelSetBasis = new SpecFemBasis((BoSSS.Foundation.Grid.Classic.GridData)gridData, DGBasis.Degree + 1);
                         MyProjection = new ContinuityProjectionSpecFem(ContinuousLevelSetBasis);
                         break;
                     }
                 case ContinuityProjectionOption.ContinuousDG: {
-                        var ContinuousLevelSetDGBasis = new Basis(gridData, k);
-                        MyProjection = new ContinuityProjectionCDG(ContinuousLevelSetDGBasis);
+                        MyProjection = new ContinuityProjectionCDG(ContBasis);
                         break;
                     }
                 case ContinuityProjectionOption.None: {
@@ -183,7 +183,8 @@ namespace BoSSS.Solution.LevelSetTools {
         public void MakeContinuous(SinglePhaseField DGLevelSet, SinglePhaseField LevelSet, CellMask Domain) {
             FEMLevSet.ProjectDGField(1.0, DGLevelSet, Domain);
             LevelSet.Clear();
-            FEMLevSet.AccToDGField(1.0, LevelSet);
+            FEMLevSet.AccToDGField(1.0, LevelSet, Domain);
+            LevelSet.AccLaidBack(1.0, DGLevelSet, Domain.Complement());
         }
     }
 

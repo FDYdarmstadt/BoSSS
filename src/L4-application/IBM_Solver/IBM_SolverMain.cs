@@ -428,7 +428,7 @@ namespace BoSSS.Application.IBM_Solver {
                     m_BDF_Timestepper = new XdgBDFTimestepping(
                         Unknowns, Residual,
                         LsTrk, true,
-                        DelComputeOperatorMatrix, DelUpdateLevelset,
+                        DelComputeOperatorMatrix, null, DelUpdateLevelset,
                         bdfOrder,
                         lsh,
                         MassMatrixShapeandDependence.IsTimeDependent,
@@ -628,7 +628,7 @@ namespace BoSSS.Application.IBM_Solver {
 
                 dt = base.GetFixedTimestep();
 
-                Console.WriteLine("Instationary solve, timestep #{0}, dt = {1} ...", TimestepNo, dt);
+                Console.WriteLine("In-stationary solve, time-step #{0}, dt = {1} ...", TimestepNo, dt);
 
                 m_BDF_Timestepper.Solve(phystime, dt);
 
@@ -999,14 +999,14 @@ namespace BoSSS.Application.IBM_Solver {
         private void After_SetInitialOrLoadRestart() {
             using (new FuncTrace()) {
                 int D = this.GridData.SpatialDimension;
-
+                
+                // we only save 'LevSet', but not the 'DGLevSet'
+                // therefore, after re-start we have to copy LevSet->DGLevSet
                 this.DGLevSet.Current.Clear();
                 this.DGLevSet.Current.AccLaidBack(1.0, this.LevSet);
-                if (this.Control.LevelSetSmoothing) {
-                    //SpecFemSmoothing.Execute(this.DGLevSet.Current, this.LevSet, this.SmoothedLevelSet);
-                    throw new NotImplementedException("todo");
-                }
-
+             
+                
+                // we push the current state of the level-set, so we have an initial value
                 this.LsTrk.UpdateTracker();
                 this.DGLevSet.IncreaseHistoryLength(1);
                 this.LsTrk.PushStacks();
@@ -1014,6 +1014,37 @@ namespace BoSSS.Application.IBM_Solver {
 
             }
         }
+
+        /// <summary>
+        /// Ensures that the level-set field <see cref="LevSet"/> is continuous, if <see cref="IBM_Control.LevelSetSmoothing"/> is true
+        /// </summary>
+        protected void PerformLevelSetSmoothing(CellMask domain) {
+            if (this.Control.LevelSetSmoothing) {
+                // ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+                // smoothing on: perform some kind of C0-projection
+                // ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+                var ContinuityEnforcer = new BoSSS.Solution.LevelSetTools.ContinuityProjection(
+                    ContBasis: this.LevSet.Basis,
+                    DGBasis: this.DGLevSet.Current.Basis,
+                    gridData: GridData,
+                    Option: Solution.LevelSetTools.ContinuityProjectionOption.SpecFEM);
+
+                //CellMask domain = this.LsTrk.Regions.GetNearFieldMask(1);
+
+                ContinuityEnforcer.MakeContinuous(this.DGLevSet.Current, this.LevSet, domain, null, false);
+            } else {
+                // ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+                // no smoothing (not recommended): copy DGLevSet -> LevSet
+                // ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+                //this.LevSet.Clear(domain);
+                //this.LevSet.AccLaidBack(1.0, this.DGLevSet.Current, domain);
+                this.LevSet.Clear();
+                this.LevSet.AccLaidBack(1.0, this.DGLevSet.Current);
+            }
+        }
+
 
         /// <summary>
         /// BDF timestepper init after restart

@@ -61,9 +61,9 @@ namespace CNS.IBM {
             op.DensityComponents.Add(new MovingFrameRusanovFlux(
                 control, boundaryMap, new EulerDensityComponent(), ibmSpeciesMap));
 
-            for (int d = 0; d < CNSEnvironment.NumberOfDimensions; d++) {
+            for (int d = 0; d < CompressibleEnvironment.NumberOfDimensions; d++) {
                 op.MomentumComponents[d].Add(new MovingFrameRusanovFlux(
-                    control, boundaryMap, new EulerMomentumComponent(d, control.EquationOfState.HeatCapacityRatio, control.MachNumber, CNSEnvironment.NumberOfDimensions), ibmSpeciesMap));
+                    control, boundaryMap, new EulerMomentumComponent(d, control.EquationOfState.HeatCapacityRatio, control.MachNumber, CompressibleEnvironment.NumberOfDimensions), ibmSpeciesMap));
             }
 
             op.EnergyComponents.Add(new MovingFrameRusanovFlux(

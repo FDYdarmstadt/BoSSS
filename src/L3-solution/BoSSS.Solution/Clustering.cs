@@ -16,6 +16,7 @@ limitations under the License.
 
 using BoSSS.Foundation.Grid;
 using BoSSS.Foundation.Grid.Classic;
+using BoSSS.Foundation.XDG;
 using ilPSP;
 using MPI.Wrappers;
 using System;
@@ -23,6 +24,8 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using static BoSSS.Foundation.XDG.CellAgglomerator;
+using BoSSS.Foundation.Comm;
 
 namespace BoSSS.Solution.Utils {
 
@@ -77,17 +80,20 @@ namespace BoSSS.Solution.Utils {
 
         private bool consoleOutput;
 
+        private CellAgglomerator cellAgglomerator;
+
         /// <summary>
         /// Constructor for the grid clustering
         /// </summary>
         /// <param name="gridData">Information about the grid</param>
-        public Clusterer(IGridData gridData, int maxNumOfSubSteps, bool consoleOutput = false) {
+        public Clusterer(IGridData gridData, int maxNumOfSubSteps, bool consoleOutput = false, CellAgglomerator cellAgglomerator = null) {
             this.gridData = gridData;
             this.MaxSubSteps = maxNumOfSubSteps;
             if (this.MaxSubSteps != 0) {
                 this.Restrict = true;
             }
             this.consoleOutput = consoleOutput;
+            this.cellAgglomerator = cellAgglomerator;
         }
 
         /// <summary>
@@ -96,72 +102,107 @@ namespace BoSSS.Solution.Utils {
         /// <param name="numOfClusters">Number of clusters</param>
         /// <returns>A list of sub-grids</returns>
         public Clustering CreateClustering(int numOfClusters, IList<TimeStepConstraint> timeStepConstraints, SubGrid subGrid = null) {
-            if (subGrid == null) {
-                subGrid = new SubGrid(CellMask.GetFullMask(gridData));
-            }
-
-            // Attention: numOfCells can equal all local cells or only the local cells of a subgrid,
-            // e.g., the fluid cells in an IBM simulation
-            int numOfCells = subGrid.LocalNoOfCells;
-
-            MultidimensionalArray cellMetric = GetStableTimestepSize(subGrid, timeStepConstraints);
-            MultidimensionalArray means = CreateInitialMeans(cellMetric, numOfClusters);
-            Kmeans Kmean = new Kmeans(cellMetric.To1DArray(), numOfClusters, means.To1DArray());
-
-            // The corresponding sub-grid IDs
-            int[] subGridCellToClusterMap = Kmean.Cluster();
-            int[] noOfCellsPerCluster = Kmean.ClusterCount;
-
-            unsafe {
-                int[] globalCC = new int[numOfClusters];
-                // send = means[]
-                // receive = globalMeans[]
-                fixed (int* pSend = &noOfCellsPerCluster[0], pRcv = &globalCC[0]) {
-                    csMPI.Raw.Allreduce((IntPtr)(pSend), (IntPtr)(pRcv), numOfClusters, csMPI.Raw._DATATYPE.INT, csMPI.Raw._OP.SUM, csMPI.Raw._COMM.WORLD);
+            //using (var tr = new ilPSP.Tracing.FuncTrace()) {
+                if (subGrid == null) {
+                    subGrid = new SubGrid(CellMask.GetFullMask(gridData));
                 }
-                noOfCellsPerCluster = globalCC;
-            }
 
-            int counter = numOfClusters;
-            for (int i = 0; i < numOfClusters; i++) {
-                if (noOfCellsPerCluster[i] == 0) {
-                    if (consoleOutput) {
-                        Console.WriteLine("Sub-grid/Cluster " + (i + 1) + ", with mean value " + Kmean.Means[i] + ", is empty and not used anymore!");
+                // Attention: numOfCells can equal all local cells or only the local cells of a subgrid,
+                // e.g., the fluid cells in an IBM simulation
+                int numOfCells = subGrid.LocalNoOfCells;
+
+                MultidimensionalArray cellMetric = GetStableTimestepSize(subGrid, timeStepConstraints);
+                MultidimensionalArray means = CreateInitialMeans(cellMetric, numOfClusters);
+                Kmeans Kmean = new Kmeans(cellMetric.To1DArray(), numOfClusters, means.To1DArray());
+
+                // The corresponding sub-grid IDs
+                int[] subGridCellToClusterMap = Kmean.Cluster();
+                int[] noOfCellsPerCluster = Kmean.ClusterCount;
+
+                unsafe {
+                    int[] globalCC = new int[numOfClusters];
+                    // send = means[]
+                    // receive = globalMeans[]
+                    fixed (int* pSend = &noOfCellsPerCluster[0], pRcv = &globalCC[0]) {
+                        csMPI.Raw.Allreduce((IntPtr)(pSend), (IntPtr)(pRcv), numOfClusters, csMPI.Raw._DATATYPE.INT, csMPI.Raw._OP.SUM, csMPI.Raw._COMM.WORLD);
                     }
-                    counter--;
+                    noOfCellsPerCluster = globalCC;
                 }
-            }
 
-            // Generating BitArray for all Subgrids, even for those which are empty, i.e ClusterCount == 0
-            BitArray[] baMatrix = new BitArray[numOfClusters];
-            for (int i = 0; i < numOfClusters; i++) {
-                //baMatrix[i] = new BitArray(gridData.iLogicalCells.NoOfCells);
-                baMatrix[i] = new BitArray(gridData.iLogicalCells.NoOfLocalUpdatedCells);
-            }
-
-            // Filling the BitArrays
-            for (int i = 0; i < numOfCells; i++) {
-                baMatrix[subGridCellToClusterMap[i]][subGrid.SubgridIndex2LocalCellIndex[i]] = true;
-            }
-
-            // Generating the sub-grids
-            List<SubGrid> clusters = new List<SubGrid>(counter);
-            for (int i = 0; i < numOfClusters; i++) {
-                // Generating only the sub-grids which are not empty
-                if (noOfCellsPerCluster[i] != 0) {
-                    BitArray ba = baMatrix[i];
-                    clusters.Add(new SubGrid(new CellMask(gridData, ba)));
+                int counter = numOfClusters;
+                for (int i = 0; i < numOfClusters; i++) {
+                    if (noOfCellsPerCluster[i] == 0) {
+                        if (consoleOutput) {
+                            Console.WriteLine("Sub-grid/Cluster " + (i + 1) + ", with mean value " + Kmean.Means[i] + ", is empty and not used anymore!");
+                        }
+                        counter--;
+                    }
                 }
-            }
 
-            if (consoleOutput) {
-                for (int i = 0; i < clusters.Count; i++) {
-                    Console.WriteLine("CreateClustering:\t id=" + i + " ->\t\telements=" + clusters[i].GlobalNoOfCells);
+                // Generating BitArray for all Subgrids, even for those which are empty, i.e ClusterCount == 0
+                BitArray[] baMatrix = new BitArray[numOfClusters];
+                for (int i = 0; i < numOfClusters; i++) {
+                    //baMatrix[i] = new BitArray(gridData.iLogicalCells.NoOfCells);
+                    baMatrix[i] = new BitArray(gridData.iLogicalCells.NoOfLocalUpdatedCells);
                 }
-            }
 
-            return new Clustering(clusters, subGrid);
-        }
+                // Filling the BitArrays
+                for (int i = 0; i < numOfCells; i++) {
+                    baMatrix[subGridCellToClusterMap[i]][subGrid.SubgridIndex2LocalCellIndex[i]] = true;
+                }
+
+                // IBM source cells are assigned to the cluster of the corresponding target cells
+                // This code is only excuted in IBM simulation runs
+                if (this.cellAgglomerator != null) {
+                    // MPI exchange in order to get cellToClusterMap (local + external cells)
+                    int JE = gridData.iLogicalCells.Count;
+                    int J = gridData.iLogicalCells.NoOfLocalUpdatedCells;
+                    int[] cellToClusterMap = new int[JE];
+
+                    int JSub = subGrid.LocalNoOfCells;
+                    int[] jSub2j = subGrid.SubgridIndex2LocalCellIndex;
+                    for (int jsub = 0; jsub < JSub; jsub++) {
+                        cellToClusterMap[jSub2j[jsub]] = subGridCellToClusterMap[jsub];
+                    }
+                    cellToClusterMap.MPIExchange(gridData);
+
+                    foreach (AgglomerationPair aggPair in this.cellAgglomerator.AggInfo.AgglomerationPairs) {
+                        // AgglomerationPairs can contain combinations where jCellSource is on one MPI rank
+                        // and the corresponding target cell is on another MPI rank. These duplications have to be eleminated.
+                        if (aggPair.jCellSource < J) {
+                            // Assign source cell to the cluster of the corresponding target cell
+                            int clusterOfTargetCell = cellToClusterMap[aggPair.jCellTarget];
+                            baMatrix[clusterOfTargetCell][aggPair.jCellSource] = true;
+
+                            // Delete source cell from other clusters
+                            for (int j = 0; j < numOfClusters; j++) {
+                                if (clusterOfTargetCell != j) {
+                                    baMatrix[j][aggPair.jCellSource] = false;
+                                }
+                            }
+                        }
+                    }
+                }
+
+                // Generating the sub-grids
+                List<SubGrid> clusters = new List<SubGrid>(counter);
+                for (int i = 0; i < numOfClusters; i++) {
+                    // Generating only the sub-grids which are not empty
+                    if (noOfCellsPerCluster[i] != 0) {
+                        BitArray ba = baMatrix[i];
+                        clusters.Add(new SubGrid(new CellMask(gridData, ba)));
+                    }
+                }
+
+                if (consoleOutput) {
+                    for (int i = 0; i < clusters.Count; i++) {
+                        Console.WriteLine("CreateClustering:\t id=" + i + " ->\t\telements=" + clusters[i].GlobalNoOfCells);
+                    }
+                }
+
+                return new Clustering(clusters, subGrid);
+            }
+        //}
 
         /// <summary>
         /// Creates an array with an tanh spaced distribution of the mean
@@ -244,7 +285,7 @@ namespace BoSSS.Solution.Utils {
                 foreach (TimeStepConstraint constraint in timeStepConstraints) {
                     result.Add(constraint.GetLocalStepSize(localCellIndex, 1));
                 }
-                if (result.All(c => c == double.MaxValue)) {                    // For IBM source cells: All timeStepConstraints return double.MaxValue --> No influence on clustering
+                if (result.All(c => c >= double.MaxValue)) {                    // For IBM source cells: All timeStepConstraints return double.MaxValue --> No influence on clustering FUNKTIONIERT NICHT!!!!!!!!!!
                     cellMetric[subGridCell] = double.MaxValue;
                 } else {
                     cellMetric[subGridCell] = 1.0 / result.Sum(c => 1.0 / c);  // cell metric based on harmonic sum of time step constraints
@@ -255,40 +296,43 @@ namespace BoSSS.Solution.Utils {
         }
 
         public Clustering TuneClustering(Clustering clustering, double time, IList<TimeStepConstraint> timeStepConstraints) {
-            // Calculate cluster time step sizes and sub-steps
-            var result = GetPerCluster_dtMin_SubSteps(clustering, timeStepConstraints, 1.0e-2);
-            List<int> subSteps = result.Item2;
+            //using (var tr = new ilPSP.Tracing.FuncTrace()) {
 
-            // Combine clusters with same number of sub-steps
-            List<SubGrid> newClusters = new List<SubGrid>();
-            List<int> newSubSteps = new List<int>();
-            newClusters.Add(clustering.Clusters.First());
-            newSubSteps.Add(subSteps.First());
+                // Calculate cluster time step sizes and sub-steps
+                var result = GetPerCluster_dtMin_SubSteps(clustering, timeStepConstraints, 1.0e-2);
+                List<int> subSteps = result.Item2;
 
-            for (int i = 1; i < clustering.NumberOfClusters; i++) {
-                if (subSteps[i] == newSubSteps.Last()) {
-                    // Combine both clusters and remove the previous one
-                    SubGrid combinedSubGrid = new SubGrid(newClusters.Last().VolumeMask.Union(clustering.Clusters[i].VolumeMask));
-                    newClusters.RemoveAt(newClusters.Count - 1);    // LATER: Implement this without removing old clusters, just adding, when combination is finished
-                    newClusters.Add(combinedSubGrid);
-                    if (consoleOutput) {
-                        Console.WriteLine("TuneClustering: Clustering leads to clusters which are too similar. They are combined.");
+                // Combine clusters with same number of sub-steps
+                List<SubGrid> newClusters = new List<SubGrid>();
+                List<int> newSubSteps = new List<int>();
+                newClusters.Add(clustering.Clusters.First());
+                newSubSteps.Add(subSteps.First());
+
+                for (int i = 1; i < clustering.NumberOfClusters; i++) {
+                    if (subSteps[i] == newSubSteps.Last()) {
+                        // Combine both clusters and remove the previous one
+                        SubGrid combinedSubGrid = new SubGrid(newClusters.Last().VolumeMask.Union(clustering.Clusters[i].VolumeMask));
+                        newClusters.RemoveAt(newClusters.Count - 1);    // LATER: Implement this without removing old clusters, just adding, when combination is finished
+                        newClusters.Add(combinedSubGrid);
+                        if (consoleOutput) {
+                            Console.WriteLine("TuneClustering: Clustering leads to clusters which are too similar. They are combined.");
+                        }
+                        //newSubSteps.Add(subSteps[i]);
+                        //i++;
+                    } else {
+                        newClusters.Add(clustering.Clusters[i]);
+                        newSubSteps.Add(subSteps[i]);
                     }
-                    //newSubSteps.Add(subSteps[i]);
-                    //i++;
-                } else {
-                    newClusters.Add(clustering.Clusters[i]);
-                    newSubSteps.Add(subSteps[i]);
                 }
-            }
-            if (consoleOutput) {
-                for (int i = 0; i < newClusters.Count; i++) {
-                    Console.WriteLine("TuneClustering:\t\t id=" + i + " -> sub-steps=" + newSubSteps[i] + "\telements=" + newClusters[i].GlobalNoOfCells);
+                if (consoleOutput) {
+                    for (int i = 0; i < newClusters.Count; i++) {
+                        Console.WriteLine("TuneClustering:\t\t id=" + i + " -> sub-steps=" + newSubSteps[i] + "\telements=" + newClusters[i].GlobalNoOfCells);
+                    }
                 }
-            }
 
-            return new Clustering(newClusters, clustering.SubGrid, newSubSteps);
-        }
+                return new Clustering(newClusters, clustering.SubGrid, newSubSteps);
+            }
+        //}
 
         public (double[], List<int>) GetPerCluster_dtHarmonicSum_SubSteps(Clustering clustering, double time, IList<TimeStepConstraint> timeStepConstraints, double eps) {
             double[] clusterDts = new double[clustering.NumberOfClusters];
@@ -398,6 +442,13 @@ namespace BoSSS.Solution.Utils {
             return subSteps;
         }
 
+        /// <summary>
+        /// CAUTION: Check if it is properly working in IBM simulations!!! Maybe, there is also a parallel bug
+        /// Not needed right now, as IBM + LTS works also for a great difference in sub-steps between clusters
+        /// </summary>
+        /// <param name="clusterDts"></param>
+        /// <param name="subSteps"></param>
+        /// <returns></returns>
         private (double[], List<int>) RestrictDtsAndSubSteps(double[] clusterDts, List<int> subSteps) {
             // Restrict sub-steps
             List<int> restrictedSubSteps = new List<int>(subSteps);

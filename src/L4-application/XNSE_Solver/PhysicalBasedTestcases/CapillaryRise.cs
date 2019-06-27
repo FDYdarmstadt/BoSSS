@@ -376,18 +376,24 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
                         //restartID = new Guid("1d31b648-d19f-4a5a-b374-cde08f8106a9");
 
                         //restartID = new Guid("a32df5ae-393d-416a-bdd0-24a4437136fb");   //restart with sigma dt (2.5E-5)
+
                         //ts_restart = 235300;
                         //restartID = new Guid("5046ba97-36a6-4369-8e1e-670a71d1914f");
                         //restartID = new Guid("55cce159-23cd-4598-b30b-b8f097dd2272");
                         //restartID = new Guid("2a8e7b3d-bf81-48fe-b26d-6a2e6d22e5c1");
-                        restartID = new Guid("244774e6-5ef1-4e3f-a9b1-d6158d865731");
+                        //restartID = new Guid("244774e6-5ef1-4e3f-a9b1-d6158d865731");
 
                         //restartID = new Guid("d801a5bd-35e7-4ef1-a150-4a93227f12cd");   //restart2
+
+
+                        //restartID = new Guid("1d679e3c-03f3-41ee-8f1e-7e80ec497926"); // restart with Reinit semi implicit
+                        //ts_restart = 270100;
+
 
                         //restartID = new Guid("2f9deaa6-fab9-48ac-9279-319a1efa5547");
 
                         //C.ClearVelocitiesOnRestart = true;
-                        C.ReInitPeriod = 250;
+                        C.ReInitPeriod = 400;
 
                         break;
                     }
@@ -447,7 +453,8 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
 
                         //restartID = new Guid("f37c9194-1bfb-4250-8dc6-a4d1bbe01ed9");
 
-                        restartID = new Guid("2facee3d-9041-4212-bfeb-dc0564de0a95");
+                        restartID = new Guid("c572378f-edd9-4b96-9917-bb037ae4fdac");   //startUp2
+                        C.ClearVelocitiesOnRestart = true;
 
                         break;
                     }
@@ -594,7 +601,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             if(startUp) {
                 C.AddBoundaryValue("wall_lower");
             } else {
-                //C.AddBoundaryCondition("wall_lower");
+                //C.AddBoundaryValue("wall_lower");
                 //C.ChangeBoundaryCondition("wall_lower", "pressure_outlet_lower");
                 C.AddBoundaryValue("pressure_outlet_lower");
             }
@@ -638,7 +645,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             C.LevelSet_ConvergenceCriterion = 1e-6;
 
 
-            C.AdvancedDiscretizationOptions.FilterConfiguration = CurvatureAlgorithms.FilterConfiguration.NoFilter;
+            C.AdvancedDiscretizationOptions.FilterConfiguration = CurvatureAlgorithms.FilterConfiguration.Default;
 
             C.AdvancedDiscretizationOptions.SurfStressTensor = SurfaceSressTensor.Isotropic;
             //C.PhysicalParameters.mu_I = 1 * C.PhysicalParameters.Sigma;

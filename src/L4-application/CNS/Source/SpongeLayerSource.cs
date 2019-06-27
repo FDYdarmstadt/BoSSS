@@ -15,6 +15,7 @@ limitations under the License.
 */
 
 using BoSSS.Foundation;
+using BoSSS.Solution.CompressibleFlowCommon;
 using ilPSP;
 using System;
 using System.Collections.Generic;
@@ -65,7 +66,7 @@ namespace CNS.Source {
             this.dampingEnd = dampingEnd;
             this.dampingStrength = dampingStrength;
 
-            this.argumentOrdering = CNSEnvironment.PrimalArgumentOrdering;
+            this.argumentOrdering = CompressibleEnvironment.PrimalArgumentOrdering;
         }
 
         /// <summary>
@@ -84,7 +85,7 @@ namespace CNS.Source {
         /// <param name="Lenght"></param>
         /// <param name="Output"></param>
         public void Source(double time, MultidimensionalArray x, MultidimensionalArray[] U, int IndexOffset, int FirstCellInd, int Lenght, MultidimensionalArray Output) {
-            int D = CNSEnvironment.NumberOfDimensions;
+            int D = CompressibleEnvironment.NumberOfDimensions;
             int NoOfNodes = x.GetLength(1);
             double dampingWidth = dampingEnd - dampingStart;
 
@@ -100,7 +101,7 @@ namespace CNS.Source {
         }
 
         /// <summary>
-        /// <see cref="CNSEnvironment.PrimalArgumentOrdering"/>
+        /// <see cref="CompressibleEnvironment.PrimalArgumentOrdering"/>
         /// </summary>
         public IList<string> ArgumentOrdering {
             get {

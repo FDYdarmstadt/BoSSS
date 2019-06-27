@@ -26,15 +26,14 @@ using BoSSS.Platform;
 using System.Diagnostics;
 using BoSSS.Solution.NSECommon;
 using ilPSP;
-
+using System.Collections;
+using BoSSS.Solution.XheatCommon;
 
 namespace BoSSS.Solution.XNSECommon.Operator.DynamicInterfaceConditions {
 
 
-    public class MassFluxAtInterface : ILevelSetForm {
+    public class MassFluxAtInterface : EvaporationAtLevelSet {
 
-
-        LevelSetTracker m_LsTrk;
 
         /// <summary>
         /// 
@@ -46,107 +45,57 @@ namespace BoSSS.Solution.XNSECommon.Operator.DynamicInterfaceConditions {
             m_LsTrk = LsTrk;
             if(_d >= _D)
                 throw new ArgumentOutOfRangeException();
-            this.m_D = _D;
+            this.D = _D;
             this.m_d = _d;
 
             this.rhoA = _rhoA;
             this.rhoB = _rhoB;
-            //this.M = _M;
+
             this.kA = _kA;
             this.kB = _kB;
             this.hVapA = _hVapA;
             this.Rint = _Rint;
-            //this.TintMin = _TintMin;
+
             this.Tsat = _Tsat;
             this.sigma = _sigma;
             this.pc = _pc;
         }
 
-        int m_D;
         int m_d;
 
         double rhoA;
         double rhoB;
 
-        double kA;
-        double kB;
-        double hVapA;   // for the identification of the liquid phase
-        double Rint;
-        //double TintMin;
-        double Tsat;
-        double sigma;
-        double pc;
-
-        //double M;
 
 
-        private double ComputeEvaporationMass_Macro(double[] GradT_A, double[] GradT_B, double[] n) {
+        private double ComputeEvaporationMass(double[] paramsNeg, double[] paramsPos, double[] N, int jCell) {
 
-            double hVap = 0.0;
-            double qEvap = 0.0;
-            if(hVapA > 0) {
-                hVap = hVapA;
-                for(int d = 0; d < m_D; d++)
-                    qEvap += (kA * GradT_A[d] - kB * GradT_B[d]) * n[d];
-            } else {
-                hVap = -hVapA;
-                for(int d = 0; d < m_D; d++)
-                    qEvap += (kB * GradT_B[d] - kA * GradT_A[d]) * n[d];
-            }
+            double qEvap = ComputeHeatFlux(paramsNeg, paramsPos, N, jCell);
 
-            return qEvap / hVap;
-        }
-
-        private double ComputeEvaporationMass_Micro(double T_A, double T_B, double curv, double p_disp) {
-
-            if(hVapA == 0.0)
+            if (qEvap == 0.0)
                 return 0.0;
 
-            double pc0 = (pc < 0.0) ? sigma * curv + p_disp : pc;      // augmented capillary pressure (without nonlinear evaporative masss part)
-
-            double TintMin = 0.0;
-            double hVap = 0.0;
-            double qEvap = 0.0;
-            if(hVapA > 0) {
-                hVap = hVapA;
-                TintMin = Tsat * (1 + (pc0 / (hVap * rhoA)));
-                if(T_A > TintMin)
-                    qEvap = -(T_A - TintMin) / Rint;
-            } else if(hVapA < 0) {
-                hVap = -hVapA;
-                TintMin = Tsat * (1 + (pc0 / (hVap * rhoB)));
-                if(T_B > TintMin)
-                    qEvap = (T_B - TintMin) / Rint;
-            }
-
-            return qEvap / hVap;
-        }
-
-
-        public double LevelSetForm(ref CommonParamsLs cp, double[] uA, double[] uB, double[,] Grad_uA, double[,] Grad_uB, double vA, double vB, double[] Grad_vA, double[] Grad_vB) {
-
-            double[] Normal = cp.n;
-
-            Debug.Assert(cp.ParamsPos[m_D + 1] == cp.ParamsNeg[m_D + 1], "curvature must be continuous across interface");
-            Debug.Assert(cp.ParamsPos[m_D + 2] == cp.ParamsNeg[m_D + 2], "disjoining pressure must be continuous across interface");
-
-            double M = ComputeEvaporationMass_Macro(cp.ParamsNeg.GetSubVector(0, m_D), cp.ParamsPos.GetSubVector(0, m_D), Normal);
-            //double M = ComputeEvaporationMass_Micro(cp.ParamsNeg[m_D], cp.ParamsPos[m_D], cp.ParamsNeg[m_D + 1], cp.ParamsNeg[m_D + 2]);
-            if(M == 0.0)
-                return 0.0;
+            double hVap = (hVapA > 0) ? hVapA : -hVapA;
+            double M = qEvap / hVap;
 
             //Console.WriteLine("mEvap - MassFluxAtInterface: {0}", M);
 
+            return M;
+
+        }
+
+
+        public override double LevelSetForm(ref CommonParamsLs cp, double[] uA, double[] uB, double[,] Grad_uA, double[,] Grad_uB, double vA, double vB, double[] Grad_vA, double[] Grad_vB) {
+
+            double[] Normal = cp.n;
+
+            double M = ComputeEvaporationMass(cp.ParamsNeg, cp.ParamsPos, cp.n, cp.jCell);
+            if (M == 0.0)
+                return 0.0;
+
             double massFlux = M.Pow2() * ((1 / rhoA) - (1 / rhoB)) * Normal[m_d];
-            //if(hVapA > 0) {
-            //    massFlux *= ((1 / rhoB) - (1 / rhoA)) * Normal[m_d];
-            //} else {
-            //    massFlux *= ((1 / rhoA) - (1 / rhoB)) * Normal[m_d];
-            //}
-
-
+               
             double p_disp = cp.ParamsNeg[1];
-
             // augmented capillary pressure
             //double acp_jump = 0.0;
             //if(!double.IsNaN(p_disp))
@@ -167,34 +116,15 @@ namespace BoSSS.Solution.XNSECommon.Operator.DynamicInterfaceConditions {
             return Ret;
         }
 
-        public IList<string> ArgumentOrdering {
+
+
+        public override IList<string> ParameterOrdering {
             get {
-                return new string[] {  };
+                return ArrayTools.Cat( new string[] { "GradTempX", "GradTempY", "GradTempZ" }.GetSubVector(0, D), VariableNames.Temperature, "Curvature", "DisjoiningPressure" ); //;
             }
         }
 
 
-        public IList<string> ParameterOrdering {
-            get {
-                return ArrayTools.Cat( new string[] { "GradTempX", "GradTempY", "GradTempZ" }.GetSubVector(0, m_D), VariableNames.Temperature, "Curvature", "DisjoiningPressure" ); //;
-            }
-        }
-
-        public int LevelSetIndex {
-            get { return 0; }
-        }
-
-        public SpeciesId PositiveSpecies {
-            get { return this.m_LsTrk.GetSpeciesId("B"); }
-        }
-
-        public SpeciesId NegativeSpecies {
-            get { return this.m_LsTrk.GetSpeciesId("A"); }
-        }
-
-        public TermActivationFlags LevelSetTerms {
-            get { return TermActivationFlags.V; }
-        }
     }
 
 

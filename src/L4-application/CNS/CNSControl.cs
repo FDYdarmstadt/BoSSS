@@ -24,7 +24,6 @@ using CNS.Convection;
 using CNS.Diffusion;
 using CNS.EquationSystem;
 using CNS.LoadBalancing;
-using CNS.MaterialProperty;
 using CNS.Residual;
 using CNS.ShockCapturing;
 using CNS.Source;
@@ -40,23 +39,23 @@ namespace CNS {
     /// Specialized control file for CNS
     /// </summary>
     [Serializable]
-    public class CNSControl : AppControl, ICloneable {
+    public class CNSControl : CompressibleControl {
 
         /// <summary>
         /// Verifies the configuration
         /// </summary>
         public override void Verify() {
             {
-                int degree = FieldOptions[Variables.Momentum.xComponent].Degree;
+                int degree = FieldOptions[BoSSS.Solution.CompressibleFlowCommon.CompressibleVariables.Momentum.xComponent].Degree;
 
-                if (FieldOptions.ContainsKey(Variables.Momentum.yComponent)
-                    && FieldOptions[Variables.Momentum.yComponent].Degree != degree) {
+                if (FieldOptions.ContainsKey(BoSSS.Solution.CompressibleFlowCommon.CompressibleVariables.Momentum.yComponent)
+                    && FieldOptions[BoSSS.Solution.CompressibleFlowCommon.CompressibleVariables.Momentum.yComponent].Degree != degree) {
                     throw new Exception(
                         "All momentum components must have the same polynomial degree");
                 }
 
-                if (FieldOptions.ContainsKey(Variables.Momentum.zComponent)
-                    && FieldOptions[Variables.Momentum.zComponent].Degree != degree) {
+                if (FieldOptions.ContainsKey(BoSSS.Solution.CompressibleFlowCommon.CompressibleVariables.Momentum.zComponent)
+                    && FieldOptions[BoSSS.Solution.CompressibleFlowCommon.CompressibleVariables.Momentum.zComponent].Degree != degree) {
                     throw new Exception(
                         "All momentum components must have the same polynomial degree");
                 }
@@ -73,52 +72,27 @@ namespace CNS {
         [ExclusiveLowerBound(0.0)]
         public double CFLFraction;
 
-        /// <summary>
-        /// The configured polynomial DG degree of the density
-        /// </summary>
-        public int DensityDegree {
-            get {
-                return base.FieldOptions[Variables.Density].Degree;
-            }
-        }
 
-        /// <summary>
-        /// The configured polynomial DG degree of the momentum components.
-        /// </summary>
-        public int MomentumDegree {
-            get {
-                return base.FieldOptions[Variables.Momentum.xComponent].Degree;
-            }
-        }
-
-        /// <summary>
-        /// The configured polynomial DG degree of the energy
-        /// </summary>
-        public int EnergyDegree {
-            get {
-                return base.FieldOptions[Variables.Energy].Degree;
-            }
-        }
 
         /// <summary>
         /// Or-combination of all variables for which initial value definitions
         /// exist
         /// </summary>
         public VariableTypes GetInitialValueVariables() {
-            bool conservative = InitialValues_Evaluators.ContainsKey(Variables.Density)
-                && InitialValues_Evaluators.ContainsKey(Variables.Energy);
-            for (int d = 0; d < CNSEnvironment.NumberOfDimensions; d++) {
-                conservative &= InitialValues_Evaluators.ContainsKey(Variables.Momentum[d]);
+            bool conservative = InitialValues_Evaluators.ContainsKey(BoSSS.Solution.CompressibleFlowCommon.CompressibleVariables.Density)
+                && InitialValues_Evaluators.ContainsKey(BoSSS.Solution.CompressibleFlowCommon.CompressibleVariables.Energy);
+            for (int d = 0; d < CompressibleEnvironment.NumberOfDimensions; d++) {
+                conservative &= InitialValues_Evaluators.ContainsKey(BoSSS.Solution.CompressibleFlowCommon.CompressibleVariables.Momentum[d]);
             }
 
             if (conservative) {
                 return VariableTypes.ConservativeVariables;
             }
 
-            bool primitive = InitialValues_Evaluators.ContainsKey(Variables.Density)
-                && InitialValues_Evaluators.ContainsKey(Variables.Pressure);
-            for (int d = 0; d < CNSEnvironment.NumberOfDimensions; d++) {
-                primitive &= InitialValues_Evaluators.ContainsKey(Variables.Velocity[d]);
+            bool primitive = InitialValues_Evaluators.ContainsKey(BoSSS.Solution.CompressibleFlowCommon.CompressibleVariables.Density)
+                && InitialValues_Evaluators.ContainsKey(CNSVariables.Pressure);
+            for (int d = 0; d < CompressibleEnvironment.NumberOfDimensions; d++) {
+                primitive &= InitialValues_Evaluators.ContainsKey(CNSVariables.Velocity[d]);
             }
 
             if (primitive) {
@@ -126,50 +100,6 @@ namespace CNS {
             }
 
             return VariableTypes.None;
-        }
-
-        /// <summary>
-        /// Utility function to add a new variable to the solver.
-        /// </summary>
-        /// <param name="variable">
-        /// The variable to be added
-        /// </param>
-        /// <param name="degree">
-        /// The desired polynomial degree of the variable
-        /// </param>
-        /// <param name="saveToDB">
-        /// Bool indicating whether the given variable shall be saved to the
-        /// database in each saved time-step
-        /// </param>
-        public void AddVariable(Variable variable, int degree, bool saveToDB = true) {
-            variableFields.Add(variable, degree);
-
-            FieldOpts.SaveToDBOpt option;
-            if (saveToDB) {
-                option = FieldOpts.SaveToDBOpt.TRUE;
-            } else {
-                option = FieldOpts.SaveToDBOpt.FALSE;
-            }
-
-            FieldOptions.Add(variable, new FieldOpts() {
-                Degree = degree,
-                SaveToDB = option
-            });
-        }
-
-        /// <summary>
-        /// Backing field for <see cref="VariableFields"/>
-        /// </summary>
-        private Dictionary<Variable, int> variableFields = new Dictionary<Variable, int>();
-
-        /// <summary>
-        /// Dictionary linking field variables (including derived ones) to
-        /// the desired polynomial degree
-        /// </summary>
-        public IReadOnlyDictionary<Variable, int> VariableFields {
-            get {
-                return variableFields;
-            }
         }
 
         /// <summary>
@@ -249,59 +179,10 @@ namespace CNS {
         public bool FluxCorrection = true;
 
         /// <summary>
-        /// The configured Mach Number in the far field.
-        /// </summary>
-        [ExclusiveLowerBound(0.0)]
-        public double MachNumber;
-
-        /// <summary>
-        /// The configured Reynolds number in the far field.
-        /// </summary>
-        /// <remarks>
-        /// This option is ignored if <see cref="DomainType"/> is equal
-        /// to "Euler"
-        /// </remarks>
-        public double ReynoldsNumber;
-
-        /// <summary>
-        /// The configured Prandtl number in the far field.
-        /// </summary>
-        /// <remarks>
-        /// This option is ignored if <see cref="DomainType"/> is equal
-        /// to "Euler"
-        /// </remarks>
-        public double PrandtlNumber;
-
-        /// <summary>
-        /// The ratio of a characteristic flow velocity to the velocity of a
-        /// gravitational wave.
-        /// </summary>
-        [InclusiveLowerBound(0.0)]
-        public double FroudeNumber;
-
-        /// <summary>
-        /// The ratio of the bulk viscosity to the shear viscosity.
-        /// </summary>
-        [InclusiveLowerBound(0.0)]
-        public double ViscosityRatio = 0.0;
-
-        /// <summary>
-        /// The viscosity law to be used, i.e. the variation of the viscosity
-        /// due to temperature changes.
-        /// </summary>
-        public IViscosityLaw ViscosityLaw = new ConstantViscosity();
-
-        /// <summary>
         /// Required for the SIPG method. Should be > 1
         /// </summary>
         [ExclusiveLowerBound(0.0)]
         public double SIPGPenaltyScaling = 1.0;
-
-        /// <summary>
-        /// Material parameters to be used
-        /// </summary>
-        [NotNull]
-        public IEquationOfState EquationOfState = IdealGas.Air;
 
         /// <summary>
         /// The type of residual logger to be used, see
@@ -315,14 +196,6 @@ namespace CNS {
         /// </summary>
         [InclusiveLowerBound(0)]
         public int ResidualInterval = 1;
-
-        /// <summary>
-        /// If set to a positive value, defines the interval (in terms of the
-        /// time-step number) between log messages on the console (e.g., to
-        /// keep file sizes smaller for long runs)
-        /// </summary>
-        [InclusiveLowerBound(0.0)]
-        public int PrintInterval = 1;
 
         /// <summary>
         /// A mapping between residual variables and the corresponding
@@ -364,18 +237,6 @@ namespace CNS {
         public ILimiter Limiter = null;
 
         /// <summary>
-        /// An optional sensor to detect shocks
-        /// </summary>
-        public IShockSensor ShockSensor = null;
-        
-        /// <summary>
-        /// An optional viscosity law to determine the magnitude of the
-        /// artificial viscosity if <see cref="ActiveOperators"/> includes
-        /// <see cref="Operators.ArtificialViscosity"/>
-        /// </summary>
-        public IArtificialViscosityLaw ArtificialViscosityLaw = null;
-
-        /// <summary>
         /// Configuration for an option sponge layer defining a non-reflecting
         /// boundary condition.
         /// </summary>
@@ -404,11 +265,16 @@ namespace CNS {
         public bool WriteLTSConsoleOutput = false;
 
         /// <summary>
+        /// An optional sensor to detect shocks
+        /// </summary>
+        public ICNSShockSensor CNSShockSensor = null;
+
+        /// <summary>
         /// Clones this object, but beware: I'm not sure (yet) that I've
         /// covered all cases
         /// </summary>
         /// <returns></returns>
-        public object Clone() {
+        public override object Clone() {
             var clone = (CNSControl)this.MemberwiseClone();
             clone.CustomContinuitySources = new List<Func<ISpeciesMap, INonlinearSource>>();
             clone.CustomContinuitySources.AddRange(this.CustomContinuitySources);
@@ -436,13 +302,5 @@ namespace CNS {
         public override Type GetSolverType() {
             return typeof(CNS.Program);
         }
-
-        /// <summary>
-        /// %
-        /// </summary>
-        virtual public Material GetMaterial() {
-            return new Material(EquationOfState, ViscosityLaw, MachNumber, ReynoldsNumber, PrandtlNumber, FroudeNumber, ViscosityRatio);
-        }
-
     }
 }

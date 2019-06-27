@@ -31,6 +31,8 @@ namespace BoSSS.Solution.Tecplot {
     /// </summary>
     public class Tecplot : PlotDriver {
 
+        private readonly string path = null;
+
         /// <summary>
         /// see <see cref="PlotDriver.PlotDriver"/>.
         /// </summary>
@@ -43,6 +45,15 @@ namespace BoSSS.Solution.Tecplot {
         /// </summary>
         public Tecplot(IGridData context, bool showJumps, bool ghostZone, uint superSampling, CellMask mask = null)
             : base(context, showJumps, ghostZone, superSampling, mask) {
+        }
+
+        /// <summary>
+        /// see <see cref="PlotDriver.PlotDriver"/>.
+        /// </summary>
+        /// <param name="path">path to output folder</param>
+        public Tecplot(IGridData context, uint superSampling, string path)
+            : this(context, superSampling) {
+            this.path = path;
         }
 
         /// <summary>
@@ -116,17 +127,21 @@ namespace BoSSS.Solution.Tecplot {
 
             int Debug = 0;
             int VIsDouble = 1;
-            string ScratchDir = ".";
+            string ScratchDir = path != null ? path : ".";
             string Variables = stw.ToString();
+            string filenameWithPath = path != null ? Path.Combine(path, filename) : filename;
 
             IntPtr ptrTitle, ptrVariables, ptrFName, ptrScratchDir;
             ptrTitle = Marshal.StringToHGlobalAnsi(filename);
             ptrScratchDir = Marshal.StringToHGlobalAnsi(ScratchDir);
-            ptrFName = Marshal.StringToHGlobalAnsi(filename);
+            ptrFName = Marshal.StringToHGlobalAnsi(filenameWithPath);
             ptrVariables = Marshal.StringToHGlobalAnsi(Variables);
 
-            tecini110(ptrTitle, ptrVariables, ptrFName, ptrScratchDir, ref Debug, ref VIsDouble);
-
+            int errorWhileOpening = tecini110(ptrTitle, ptrVariables, ptrFName, ptrScratchDir, ref Debug, ref VIsDouble);
+            if (errorWhileOpening == -1)
+            {
+                throw new Exception("Tecplot could not create file. Do you have writing permission?");
+            }
             Marshal.FreeHGlobal(ptrTitle);
             Marshal.FreeHGlobal(ptrScratchDir);
             Marshal.FreeHGlobal(ptrFName);

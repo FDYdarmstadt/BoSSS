@@ -610,13 +610,13 @@ namespace BoSSS.Solution.Control {
         /// <remarks>
         /// A negative value indicates that this is not initialized;
         /// </remarks>
+        [DataMember]
         public double dtMax = -1;
 
         /// <summary>
         /// Sets/Gets a fixed time-step size.
         /// </summary>
-        //[JsonIgnore]  
-        [DataMember]
+        [JsonIgnore]  
         public double dtFixed {
             get {
                 if(dtMin != dtMax) {

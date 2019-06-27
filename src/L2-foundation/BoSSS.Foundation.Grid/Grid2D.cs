@@ -56,6 +56,7 @@ namespace BoSSS.Foundation.Grid.Classic {
             : base(new RefElement[] { Square.Instance }, new RefElement[] { Line.Instance }) {
         }
 
+        /*
         static private bool IsInCutoutRegion(int indX, int indY, double[] xNodes, double[] yNodes, Vector[] cutoutMin, Vector[] cutoutMax) {
             double Xcenter = 0.5 * (xNodes[indX] + xNodes[indX + 1]);
             double Ycenter = 0.5 * (yNodes[indY] + yNodes[indY + 1]);
@@ -73,6 +74,7 @@ namespace BoSSS.Foundation.Grid.Classic {
 
             return false;
         }
+        */
 
         /*
         /// <summary>
@@ -391,23 +393,28 @@ namespace BoSSS.Foundation.Grid.Classic {
         /// <param name="NonlinearGridTrafo">
         /// Arbitrary transformation (i.e. a diffeomorphism, i.e. bijective and differnetiable) applied to <paramref name="xNodes"/> and <paramref name="yNodes"/>, optioanl
         /// </param>
-        public static Grid2D Cartesian2DGrid(double[] xNodes, double[] yNodes, CellType type = CellType.Square_Linear, 
+        public static Grid2D Cartesian2DGrid(double[] xNodes, double[] yNodes, 
+            CellType type = CellType.Square_Linear, 
             bool periodicX = false, bool periodicY = false, 
             Func<Vector,Vector> NonlinearGridTrafo = null,
             params BoundingBox[] CutOuts) {
             using (var tr = new FuncTrace()) {
                 MPICollectiveWatchDog.Watch();
+               
+                // Some Checks
+                // ===========
                 CheckMonotonicity(xNodes);
                 CheckMonotonicity(yNodes);
-                Grid2D grid;
-                using (new BlockTrace("grid_object_instantiation", tr)) {
-                    grid = new Grid2D(Square.Instance);
-                }
 
                 // split along x-Axis (cells can be redistributed by ParMETIS anyway)
                 // ==================================================================
                 int nX = xNodes.Length - 1;
                 int nY = yNodes.Length - 1;
+
+                if (nX < 3 && periodicX)
+                    throw new ArithmeticException("At least 3 Elements are required for Periodic Boundary Condition to work");
+                if (nY < 3 && periodicY)
+                    throw new ArithmeticException("At least 3 Elements are required for Periodic Boundary Condition to work");
 
                 int myrank;
                 int size;
@@ -417,64 +424,96 @@ namespace BoSSS.Foundation.Grid.Classic {
                 int i0 = nX * myrank / size;        // 1st x-Index on this proc.
                 int iE = nX * (myrank + 1) / size;  // 1st x-Index on next proc. rank
 
+                // Return object 
+                // =============
+
+                Grid2D grid;
+                using (new BlockTrace("grid_object_instantiation", tr)) {
+                    grid = new Grid2D(Square.Instance);
+                }
+
+                // define periodic transformations, if necessary
+                // =============================================
+                byte perxTag = 0;
+                byte peryTag = 0;
+
+                if (periodicX) {
+                    if (NonlinearGridTrafo != null)
+                        throw new NotSupportedException("grid transformation is not supported for periodic domains");
+                    double[][] x = { new double[] { xNodes[0], yNodes[0] }, new double[] { xNodes[0], yNodes[nY] } };
+                    double[][] y = { new double[] { xNodes[nX], yNodes[0] }, new double[] { xNodes[nX], yNodes[nY] } };
+                    grid.ConstructPeriodicEdgeTrafo(y, new double[] { 1.0, 0 }, x, new double[] { 1.0, 0 }, out perxTag);
+                    grid.EdgeTagNames.Add(perxTag, "Periodic-X");
+                }
+
+                if (periodicY) {
+                    if (NonlinearGridTrafo != null)
+                        throw new NotSupportedException("grid transformation is not supported for periodic domains");
+                    double[][] x = { new double[] { xNodes[0], yNodes[0] }, new double[] { xNodes[nX], yNodes[0] } };
+                    double[][] y = { new double[] { xNodes[0], yNodes[nY] }, new double[] { xNodes[nX], yNodes[nY] } };
+                    grid.ConstructPeriodicEdgeTrafo(y, new double[] { 0, 1.0 }, x, new double[] { 0, 1.0 }, out peryTag);
+                    grid.EdgeTagNames.Add(peryTag, "Periodic-Y");
+                }
+
+                // set cells
+                // =========
+                int LocalNoOfCells = (iE - i0) * (yNodes.Length - 1);
+                List<Cell> Cells = new List<Cell>(LocalNoOfCells);
+
+                bool IsInCutOut(int i, int j) {
+                    if (i < -1)
+                        throw new IndexOutOfRangeException();
+                    if (i > nX + 1)
+                        throw new IndexOutOfRangeException();
+                    if (i < 0)
+                        i = nX - 1;
+                    if (i >= nX)
+                        i = 0;
+
+                    if (j < -1)
+                        throw new IndexOutOfRangeException();
+                    if (j > nY + 1)
+                        throw new IndexOutOfRangeException();
+                    if (j < 0)
+                        j = nY - 1;
+                    if (j >= nY)
+                        j = 0;
+
+                    if (CutOuts != null) {
+                        double xC = 0.5 * (xNodes[i] + xNodes[(i + 1)]);
+                        double yC = 0.5 * (yNodes[j] + yNodes[(j + 1)]);
+
+                        return (CutOuts.Any(BB => BB.Contains(xC, yC)));
+
+                    } else {
+                        return false;
+                    }
+                }
+
+
+                int cnt = 0;
                 if (Math.Abs(i0 - iE) <= 0) {
                     //throw new ApplicationException("unable to do partitioning; X-Slice on processor " + myrank + " is empty; Try to load grid from database;");
-                    grid.Cells = new Cell[0];
-                }
-                else {
+                    cnt = 0;
+                } else {
 
-                    int D = grid.SpatialDimension;
                     var Kref = grid.RefElements.Single(re => re.GetType() == typeof(Square));
                     if (!Kref.SupportedCellTypes.Contains(type))
                         throw new ArgumentException("unsupported cell type");
 
-                    // define periodic transformations, if necessary
-                    // =============================================
-                    byte perxTag = 0;
-                    byte peryTag = 0;
-
-                    if (periodicX) {
-                        if (NonlinearGridTrafo != null)
-                            throw new NotSupportedException("grid transformation is not supported for periodic domains");
-                        double[][] x = { new double[] { xNodes[0], yNodes[0] }, new double[] { xNodes[0], yNodes[nY] } };
-                        double[][] y = { new double[] { xNodes[nX], yNodes[0] }, new double[] { xNodes[nX], yNodes[nY] } };
-                        grid.ConstructPeriodicEdgeTrafo(y, new double[] { 1.0, 0 }, x, new double[] { 1.0, 0 }, out perxTag);
-                        grid.EdgeTagNames.Add(perxTag, "Periodic-X");
-                    }
-
-                    if (periodicY) {
-                        if (NonlinearGridTrafo != null)
-                            throw new NotSupportedException("grid transformation is not supported for periodic domains");
-                        double[][] x = { new double[] { xNodes[0], yNodes[0] }, new double[] { xNodes[nX], yNodes[0] } };
-                        double[][] y = { new double[] { xNodes[0], yNodes[nY] }, new double[] { xNodes[nX], yNodes[nY] } };
-                        grid.ConstructPeriodicEdgeTrafo(y, new double[] { 0, 1.0 }, x, new double[] { 0, 1.0 }, out peryTag);
-                        grid.EdgeTagNames.Add(peryTag, "Periodic-Y");
-                    }
-
-                    // set cells
-                    // =========
-                    int LocalNoOfCells = (iE - i0) * (yNodes.Length - 1);
                     var RefNodes = Kref.GetInterpolationNodes(type);
                     int NoOfNodes = Kref.GetInterpolationNodes(type).GetLength(0);
 
-                    List<Cell> Cells = new List<Cell>(LocalNoOfCells);
-
-                    int cnt = -1;
-                    //int Cellcounter = 0;
                     for (int i = i0; i < iE; i++) {
                         for (int j = 0; j < nY; j++) {
-                            cnt++;
 
                             // cut-out regions test
                             // ====================
 
-                            if (CutOuts != null) {
-                                double xC = 0.5 * (xNodes[i] + xNodes[i + 1]);
-                                double yC = 0.5 * (yNodes[j] + yNodes[j + 1]);
-
-                                if (CutOuts.Any(BB => BB.Contains(xC, yC)))
-                                    continue;
+                            if (IsInCutOut(i,j)) {
+                                continue;
                             }
+                            cnt++;
 
                             Cell C_cnt = new Cell();
                             Cells.Add(C_cnt);
@@ -486,10 +525,10 @@ namespace BoSSS.Foundation.Grid.Classic {
 
                             // transformation
                             // ==============
-                            C_cnt.TransformationParams = MultidimensionalArray.Create(NoOfNodes, D);
+                            C_cnt.TransformationParams = MultidimensionalArray.Create(NoOfNodes, 2);
                             {
                                 NoOfNodes = RefNodes.GetLength(0);
-                                Debug.Assert(RefNodes.GetLength(1) == D);
+                                Debug.Assert(RefNodes.GetLength(1) == 2);
 
                                 //C_cnt.TransformationParams = MultidimensionalArray.Create(NoOfNodes, D);
 
@@ -532,7 +571,7 @@ namespace BoSSS.Foundation.Grid.Classic {
 
                                 int iNeigh = i;
                                 int jNeigh = j + 1;
-                                if (periodicY && jNeigh >= nY) {
+                                if (periodicY && jNeigh >= nY && !IsInCutOut(iNeigh, jNeigh)) {
                                     (new CellFaceTag() {
                                         EdgeTag = peryTag,
                                         PeriodicInverse = false,
@@ -545,7 +584,7 @@ namespace BoSSS.Foundation.Grid.Classic {
 
                                 iNeigh = i + 1;
                                 jNeigh = j;
-                                if (periodicX && iNeigh >= nX) {
+                                if (periodicX && iNeigh >= nX && !IsInCutOut(iNeigh, jNeigh)) {
                                     (new CellFaceTag() {
                                         EdgeTag = perxTag,
                                         PeriodicInverse = false,
@@ -557,7 +596,7 @@ namespace BoSSS.Foundation.Grid.Classic {
 
                                 iNeigh = i - 1;
                                 jNeigh = j;
-                                if (periodicX && iNeigh < 0) {
+                                if (periodicX && iNeigh < 0 && !IsInCutOut(iNeigh, jNeigh)) {
                                     (new CellFaceTag() {
                                         EdgeTag = perxTag,
                                         PeriodicInverse = true,
@@ -569,7 +608,7 @@ namespace BoSSS.Foundation.Grid.Classic {
 
                                 iNeigh = i;
                                 jNeigh = j - 1;
-                                if (periodicY && jNeigh < 0) {
+                                if (periodicY && jNeigh < 0 && !IsInCutOut(iNeigh, jNeigh)) {
                                     (new CellFaceTag() {
                                         EdgeTag = peryTag,
                                         PeriodicInverse = true,
@@ -582,8 +621,8 @@ namespace BoSSS.Foundation.Grid.Classic {
                         }
                     }
 
-                    grid.Cells = Cells.ToArray();
                 }
+                grid.Cells = Cells.ToArray();
 
                 /*
                 // boundary cells
@@ -668,6 +707,11 @@ namespace BoSSS.Foundation.Grid.Classic {
                 }
                  */
 
+                cnt = cnt.MPISum();
+                if(cnt <= 0) {
+                    throw new ArgumentException("Grid is empty - check arguments (cut-outs).");
+                }
+
                 // return
                 // ======
 
@@ -675,6 +719,14 @@ namespace BoSSS.Foundation.Grid.Classic {
                     grid.CompressGlobalID();
                     grid.CompressNodeIndices();
                 }
+
+                foreach(var cl in grid.Cells) {
+                    if (cl.GlobalID < 0)
+                        throw new ApplicationException("Internal error - illegal GlobalID.");
+                    if (cl.GlobalID >= cnt)
+                        throw new ApplicationException("Internal error - illegal GlobalID.");
+                }
+
 
                 return grid;
             }
@@ -1486,6 +1538,203 @@ namespace BoSSS.Foundation.Grid.Classic {
                 return grid;
             }
         }
+
+
+        static public Grid2D AcuteCornerTriangleGrid(double baseL, double theta, int lvl, bool inlet = false) {
+            using (new FuncTrace()) {
+                MPICollectiveWatchDog.Watch();
+                Grid2D grid = new Grid2D(Triangle.Instance);
+
+                if ((theta <= 0) || (theta > Math.PI / 2.0))
+                    throw new ArgumentOutOfRangeException();
+
+                int myrank;
+                int size;
+                csMPI.Raw.Comm_Rank(csMPI.Raw._COMM.WORLD, out myrank);
+                csMPI.Raw.Comm_Size(csMPI.Raw._COMM.WORLD, out size);
+
+                if (myrank == 0) {
+                    // create all cells on process 0
+                    // (can be redistributed later on)
+                    // ++++++++++++++++++++++++++++++++++
+
+                    int J = (int)Math.Pow(Math.Pow(2, lvl), 2);
+                    grid.Cells = new Cell[J];
+
+                    int stages = (int)Math.Pow(2, lvl);
+                    double stageL = baseL / stages;
+                    double height = baseL * Math.Sin(theta);
+                    double[] yNodes = GenericBlas.Linspace(-height, 0, stages + 1);
+                    yNodes.ScaleV(-1.0);
+                    double heightX = -baseL * Math.Cos(theta);
+
+                    int j = 0;
+                    int nIdx1 = 0; int nIdx2 = 0;
+                    for (int s = 0; s < stages; s++) {
+
+                        double x1 = heightX + (s * stageL * Math.Cos(theta));
+                        double[] xNodes1 = (s == 0) ? new double[] { heightX } : GenericBlas.Linspace(x1-(s*stageL), x1, s+1);
+                        nIdx1 += xNodes1.Length - 1;
+                        double x2 = heightX + ((s + 1) * stageL * Math.Cos(theta));
+                        double[] xNodes2 = GenericBlas.Linspace(x2 - ((s+1) * stageL), x2, s + 2);
+                        nIdx2 += xNodes2.Length - 1;
+
+                        int stageJ = xNodes1.Length + xNodes2.Length - 2;
+                        for (int sj = 0; sj < stageJ; sj++) {
+
+                            Cell Cj0 = new Cell();
+
+                            Cj0.GlobalID = j;
+                            Cj0.Type = CellType.Triangle_3;
+                            Cj0.TransformationParams = MultidimensionalArray.Create(3, 2);
+
+                            int sjIdx = sj / 2;
+                            if ((sj % 2) == 0) {
+
+                                Cj0.TransformationParams[0, 0] = xNodes1[sjIdx];
+                                Cj0.TransformationParams[0, 1] = yNodes[s];
+                                Cj0.TransformationParams[1, 0] = xNodes2[sjIdx];
+                                Cj0.TransformationParams[1, 1] = yNodes[s + 1];
+                                Cj0.TransformationParams[2, 0] = xNodes2[sjIdx + 1];
+                                Cj0.TransformationParams[2, 1] = yNodes[s + 1];
+
+                                Cj0.NodeIndices = new int[] {
+                                        nIdx1 + sjIdx,
+                                        nIdx2 + sjIdx,
+                                        nIdx2 + sjIdx + 1 };
+
+                            } else {
+
+                                Cj0.TransformationParams[0, 0] = xNodes1[sjIdx];
+                                Cj0.TransformationParams[0, 1] = yNodes[s];
+                                Cj0.TransformationParams[1, 0] = xNodes2[sjIdx + 1];
+                                Cj0.TransformationParams[1, 1] = yNodes[s + 1];
+                                Cj0.TransformationParams[2, 0] = xNodes1[sjIdx + 1];
+                                Cj0.TransformationParams[2, 1] = yNodes[s];
+
+                                Cj0.NodeIndices = new int[] {
+                                        nIdx1 + sjIdx,
+                                        nIdx2 + sjIdx + 1,
+                                        nIdx1 + sjIdx + 1 };
+
+                            }
+
+                            grid.Cells[j] = Cj0;
+                            j++;
+                        }
+
+                    }
+
+                } else {
+                    // all MPI processes with rank > 0
+                    // return empty grid (use Redistribution)
+                    // ++++++++++++++++++++++++++++++++++++++++
+
+                    grid.Cells = new Cell[0];
+                }
+
+                return grid;
+            }
+        }
+
+
+        static public Grid2D ObtuseCornerTriangleGrid(double baseL, double theta, double lvl) {
+            using (new FuncTrace()) {
+                MPICollectiveWatchDog.Watch();
+                Grid2D grid = new Grid2D(Triangle.Instance);
+
+                if ((theta < Math.PI / 2.0) || (theta > Math.PI))
+                    throw new ArgumentOutOfRangeException();
+
+                int myrank;
+                int size;
+                csMPI.Raw.Comm_Rank(csMPI.Raw._COMM.WORLD, out myrank);
+                csMPI.Raw.Comm_Size(csMPI.Raw._COMM.WORLD, out size);
+
+                if (myrank == 0) {
+                    // create all cells on process 0
+                    // (can be redistributed later on)
+                    // ++++++++++++++++++++++++++++++++++
+
+                    int J = (int)Math.Pow(Math.Pow(2, lvl), 2) * 2;
+                    grid.Cells = new Cell[J];
+
+                    int stages = (int)Math.Pow(2, lvl);
+                    double stageL = baseL / stages;
+                    double height = baseL * Math.Cos(theta - (Math.PI / 2.0));
+                    double[] yNodes = GenericBlas.Linspace(-height, 0, stages + 1);
+                    yNodes.ScaleV(-1.0);
+                    double heightX = baseL * Math.Sin(theta - (Math.PI / 2.0));
+
+                    int j = 0;
+                    int nIdx1 = -(stages + 1); int nIdx2 = 0;
+                    for (int s = 0; s < stages; s++) {
+
+                        double x1 = heightX - (s * stageL * Math.Sin(theta - (Math.PI / 2.0)));
+                        double[] xNodes1 = GenericBlas.Linspace(x1 - baseL, x1, stages + 1);
+                        nIdx1 += xNodes1.Length;
+                        double x2 = heightX - ((s + 1) * stageL * Math.Sin(theta - (Math.PI / 2.0)));
+                        double[] xNodes2 = GenericBlas.Linspace(x2 - baseL, x2, stages + 1);
+                        nIdx2 += xNodes2.Length;
+
+                        int stageJ = xNodes1.Length + xNodes2.Length - 2;
+                        for (int sj = 0; sj < stageJ; sj++) {
+
+                            Cell Cj0 = new Cell();
+
+                            Cj0.GlobalID = j;
+                            Cj0.Type = CellType.Triangle_3;
+                            Cj0.TransformationParams = MultidimensionalArray.Create(3, 2);
+
+                            int sjIdx = sj / 2;
+                            if ((sj % 2) == 0) {
+
+                                Cj0.TransformationParams[0, 0] = xNodes1[sjIdx];
+                                Cj0.TransformationParams[0, 1] = yNodes[s];
+                                Cj0.TransformationParams[1, 0] = xNodes2[sjIdx];
+                                Cj0.TransformationParams[1, 1] = yNodes[s + 1];
+                                Cj0.TransformationParams[2, 0] = xNodes2[sjIdx + 1];
+                                Cj0.TransformationParams[2, 1] = yNodes[s + 1];
+
+                                Cj0.NodeIndices = new int[] {
+                                        nIdx1 + sjIdx,
+                                        nIdx2 + sjIdx,
+                                        nIdx2 + sjIdx + 1 };
+
+                            } else {
+
+                                Cj0.TransformationParams[0, 0] = xNodes1[sjIdx];
+                                Cj0.TransformationParams[0, 1] = yNodes[s];
+                                Cj0.TransformationParams[1, 0] = xNodes2[sjIdx + 1];
+                                Cj0.TransformationParams[1, 1] = yNodes[s + 1];
+                                Cj0.TransformationParams[2, 0] = xNodes1[sjIdx + 1];
+                                Cj0.TransformationParams[2, 1] = yNodes[s];
+
+                                Cj0.NodeIndices = new int[] {
+                                        nIdx1 + sjIdx,
+                                        nIdx2 + sjIdx + 1,
+                                        nIdx1 + sjIdx + 1 };
+
+                            }
+
+                            grid.Cells[j] = Cj0;
+                            j++;
+                        }
+
+                    }
+
+                } else {
+                    // all MPI processes with rank > 0
+                    // return empty grid (use Redistribution)
+                    // ++++++++++++++++++++++++++++++++++++++++
+
+                    grid.Cells = new Cell[0];
+                }
+
+                return grid;
+            }
+        }
+
 
         /// <summary>
         /// Creates a grid in 2D with hanging nodes. 

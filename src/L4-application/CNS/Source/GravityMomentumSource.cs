@@ -16,6 +16,7 @@ limitations under the License.
 
 using System.Collections.Generic;
 using BoSSS.Foundation;
+using BoSSS.Solution.CompressibleFlowCommon;
 using ilPSP;
 
 namespace CNS.Source {
@@ -72,7 +73,7 @@ namespace CNS.Source {
         public IList<string> ArgumentOrdering {
             get {
                 // Select density
-                return new string[] { Variables.Density };
+                return new string[] { CompressibleVariables.Density };
             }
         }
 
