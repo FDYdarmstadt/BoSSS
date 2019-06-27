@@ -59,8 +59,6 @@
     <Compile Include="IncompressibleMultiphaseBoundaryCondMap.cs" />
     <Compile Include="ConvectionInSpeciesBulk_LLF.cs" />
     <Compile Include="XNSE_OperatorComponents.cs" />
-    <Compile Include="newXSpatialOperator\OperatorConfigurationMk2.cs" />
-    <Compile Include="newXSpatialOperator\OperatorFactoryMk2.cs" />
     <Compile Include="PressureInSpeciesBulk.cs" />
     <Compile Include="SpeciesDivergence.cs" />
     <Compile Include="ViscosityInSpeciesBulk.cs" />

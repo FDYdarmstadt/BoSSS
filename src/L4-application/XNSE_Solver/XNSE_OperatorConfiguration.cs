@@ -23,11 +23,13 @@ using System.Threading.Tasks;
 using BoSSS.Solution.XdgTimestepping;
 using BoSSS.Solution.XheatCommon;
 using BoSSS.Solution.XNSECommon;
-using BoSSS.Solution.XNSECommon.newXSpatialOperator;
+
 
 namespace BoSSS.Application.XNSE_Solver {
 
     public class XNSE_OperatorConfiguration : IXNSE_Configuration {
+
+        public XNSE_OperatorConfiguration() {}
 
         public XNSE_OperatorConfiguration(XNSE_Control control) {
 
@@ -84,6 +86,7 @@ namespace BoSSS.Application.XNSE_Solver {
                     throw new NotImplementedException();
             }
         }
+
 
         public PhysicalParameters physParams;
 

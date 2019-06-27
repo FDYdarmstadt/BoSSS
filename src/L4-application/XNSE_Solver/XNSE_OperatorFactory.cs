@@ -33,7 +33,6 @@ using BoSSS.Foundation.XDG;
 
 using BoSSS.Solution.NSECommon;
 using BoSSS.Solution.XNSECommon;
-using BoSSS.Solution.XNSECommon.newXSpatialOperator;
 
 
 namespace BoSSS.Application.XNSE_Solver {
@@ -75,8 +74,12 @@ namespace BoSSS.Application.XNSE_Solver {
                 if(config.DomBlocks.GetLength(0) != 2 || config.CodBlocks.GetLength(0) != 2)
                     throw new ArgumentException();
 
-                if((config.physParams.mu_A <= 0) || (config.physParams.mu_B <= 0))
+                if ((config.physParams.mu_A <= 0) && (config.physParams.mu_B <= 0)) {
+                    config.Viscous = false;
+                } else {
+                    if ((config.physParams.mu_A <= 0) || (config.physParams.mu_B <= 0))
                         throw new ArgumentException();
+                }
 
                 if((config.physParams.rho_A <= 0) || (config.physParams.rho_B <= 0))
                     throw new ArgumentException();
@@ -126,14 +129,16 @@ namespace BoSSS.Application.XNSE_Solver {
                 XOperatorComponentsFactory.AddSpeciesNSE(m_XOp, CodName.GetSubVector(0, D), LsTrk.SpeciesNames[spc], LsTrk.SpeciesIdS[spc], BcMap, config, LsTrk, out U0meanrequired);
 
                 // continuity equation
-                XOperatorComponentsFactory.AddSpeciesContinuityEq(m_XOp, CodName[D], D, LsTrk.SpeciesNames[spc], LsTrk.SpeciesIdS[spc], BcMap, config, LsTrk);
+                if(config.Continuity)
+                    XOperatorComponentsFactory.AddSpeciesContinuityEq(m_XOp, CodName[D], D, LsTrk.SpeciesNames[spc], LsTrk.SpeciesIdS[spc], BcMap, config, LsTrk);
             }
 
             // interface components
             XOperatorComponentsFactory.AddInterfaceNSE(m_XOp, CodName.GetSubVector(0, D), BcMap, config, LsTrk);    // surface stress tensor
             XOperatorComponentsFactory.AddSurfaceTensionForce(m_XOp, CodName.GetSubVector(0, D), BcMap, config, LsTrk, degU, out NormalsRequired, out CurvatureRequired);     // surface tension force
 
-            XOperatorComponentsFactory.AddInterfaceContinuityEq(m_XOp, CodName[D], D, BcMap, config, LsTrk);       // continuity equation
+            if (config.Continuity)
+                XOperatorComponentsFactory.AddInterfaceContinuityEq(m_XOp, CodName[D], D, BcMap, config, LsTrk);       // continuity equation
 
 
 
@@ -287,8 +292,8 @@ namespace BoSSS.Application.XNSE_Solver {
             }
 
             // Temperature gradient for evaporation
-            VectorField<DGField> GradTemp = new VectorField<DGField>(D, U0[0].Basis, XDGField.Factory);
-            if(CoupledCurrentState != null) {
+            VectorField<DGField> GradTemp = new VectorField<DGField>(D, new XDGBasis(LsTrk, 0), XDGField.Factory);
+            if (CoupledCurrentState != null) {
                 DGField Temp = CoupledCurrentState.ToArray()[0];
                 GradTemp = new VectorField<DGField>(D, Temp.Basis, "GradTemp", XDGField.Factory);
                 XNSEUtils.ComputeGradientForParam(Temp, GradTemp, this.LsTrk);

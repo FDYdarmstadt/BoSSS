@@ -95,7 +95,7 @@
       <Name>BoSSS.Solution.Tecplot</Name>
     </ProjectReference>
     <ProjectReference Include="..\BoSSS.Solution.XNSECommon\BoSSS.Solution.XNSECommon.csproj">
-      <Project>{0d8f577e-316d-4362-816b-9f610c5eb4a5}</Project>
+      <Project>{0D8F577E-316D-4362-816B-9F610C5EB4A5}</Project>
       <Name>BoSSS.Solution.XNSECommon</Name>
     </ProjectReference>
     <ProjectReference Include="..\BoSSS.Solution\BoSSS.Solution.csproj">
