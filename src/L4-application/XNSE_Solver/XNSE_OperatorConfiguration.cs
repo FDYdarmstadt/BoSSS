@@ -170,12 +170,20 @@ namespace BoSSS.Application.XNSE_Solver {
         // getter for interface
         // ====================
 
-        public PhysicalParameters GetPhysParams {
+        public PhysicalParameters getPhysParams {
             get { return physParams; }
         }
 
-        public DoNotTouchParameters GetDntParams {
+        public DoNotTouchParameters getDntParams {
             get { return dntParams; }
+        }
+
+        public bool[] getDomBlocks {
+            get { return DomBlocks; }
+        }
+
+        public bool[] getCodBlocks {
+            get { return CodBlocks; }
         }
 
         public bool isTransport {
@@ -184,6 +192,7 @@ namespace BoSSS.Application.XNSE_Solver {
 
         public bool isViscous {
             get { return Viscous; }
+            set { Viscous = value; }
         }
 
         public bool isPressureGradient {

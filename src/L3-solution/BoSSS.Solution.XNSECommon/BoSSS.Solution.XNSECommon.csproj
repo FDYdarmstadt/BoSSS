@@ -80,6 +80,7 @@
     <Compile Include="ViscosityAtLevelSet_V1.cs" />
     <Compile Include="ViscosityAtLevelSet_V2.cs" />
     <Compile Include="ViscosityInBulk.cs" />
+    <Compile Include="XNSE_OperatorFactory.cs" />
     <Compile Include="XVelocityProjection.cs" />
   </ItemGroup>
   <ItemGroup>

@@ -57,8 +57,8 @@ namespace BoSSS.Solution.XNSECommon {
             if(!XOp.CodomainVar.Contains(CodName))
                 throw new ArgumentException("CoDomain variable \"" + CodName + "\" is not defined in Spatial Operator");
 
-            PhysicalParameters physParams = config.GetPhysParams;
-            DoNotTouchParameters dntParams = config.GetDntParams;
+            PhysicalParameters physParams = config.getPhysParams;
+            DoNotTouchParameters dntParams = config.getDntParams;
 
             // set species arguments
             double rhoSpc, LFFSpc, muSpc;
@@ -190,8 +190,8 @@ namespace BoSSS.Solution.XNSECommon {
             if(!XOp.CodomainVar.Contains(CodName))
                 throw new ArgumentException("CoDomain variable \"" + CodName + "\" is not defined in Spatial Operator");
 
-            PhysicalParameters physParams = config.GetPhysParams;
-            DoNotTouchParameters dntParams = config.GetDntParams;
+            PhysicalParameters physParams = config.getPhysParams;
+            DoNotTouchParameters dntParams = config.getDntParams;
 
             // set species arguments
             double rhoA = physParams.rho_A;
@@ -280,8 +280,8 @@ namespace BoSSS.Solution.XNSECommon {
             if(!XOp.CodomainVar.Contains(CodName))
                 throw new ArgumentException("CoDomain variable \"" + CodName + "\" is not defined in Spatial Operator");
 
-            PhysicalParameters physParams = config.GetPhysParams;
-            DoNotTouchParameters dntParams = config.GetDntParams;
+            PhysicalParameters physParams = config.getPhysParams;
+            DoNotTouchParameters dntParams = config.getDntParams;
 
             // set arguments
             double sigma = physParams.Sigma;
@@ -437,8 +437,8 @@ namespace BoSSS.Solution.XNSECommon {
             if(!XOp.CodomainVar.Contains(CodName))
                 throw new ArgumentException("CoDomain variable \"" + CodName + "\" is not defined in Spatial Operator");
 
-            PhysicalParameters physParams = config.GetPhysParams;
-            DoNotTouchParameters dntParams = config.GetDntParams;
+            PhysicalParameters physParams = config.getPhysParams;
+            DoNotTouchParameters dntParams = config.getDntParams;
 
             // set species arguments
             double rhoSpc;
@@ -478,8 +478,8 @@ namespace BoSSS.Solution.XNSECommon {
             if(!XOp.CodomainVar.Contains(CodName))
                 throw new ArgumentException("CoDomain variable \"" + CodName + "\" is not defined in Spatial Operator");
 
-            PhysicalParameters physParams = config.GetPhysParams;
-            DoNotTouchParameters dntParams = config.GetDntParams;
+            PhysicalParameters physParams = config.getPhysParams;
+            DoNotTouchParameters dntParams = config.getDntParams;
 
             // set species arguments
             double rhoA = physParams.rho_A;
@@ -517,12 +517,24 @@ namespace BoSSS.Solution.XNSECommon {
         /// <summary>
         /// physical parameters
         /// </summary>
-        PhysicalParameters GetPhysParams { get; }
+        PhysicalParameters getPhysParams { get; }
 
         /// <summary>
         /// advanced operator configuration
         /// </summary>
-        DoNotTouchParameters GetDntParams { get; }
+        DoNotTouchParameters getDntParams { get; }
+
+        /// <summary>
+        /// Controls the domain variables that the operator should contain. <br/>
+        /// This controls only the formal operator shape, not the actual components.
+        /// </summary>
+        bool[] getDomBlocks { get; }
+
+        /// <summary>
+        /// Controls the codomain variables that the operator should contain. <br/>
+        ///This controls only the formal operator shape, not the actual components.
+        /// </summary>
+        bool[] getCodBlocks { get; }
 
     }
 
@@ -540,7 +552,7 @@ namespace BoSSS.Solution.XNSECommon {
         /// <summary>
         /// include viscous operator
         /// </summary>
-        bool isViscous { get; }
+        bool isViscous { get; set; }
 
         /// <summary>
         /// include pressure gradient
