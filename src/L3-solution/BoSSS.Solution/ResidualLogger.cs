@@ -441,8 +441,16 @@ namespace BoSSS.Solution {
                     if (SessionGuid == Guid.Empty) {
                         var timecode = DateTime.Now;
                         var s_timecode = timecode.ToString("yyyyMMMdd_HH-mm-ss"); // time-code prevents file access errors if multiple solver instances are used
-                        //                                                           (does not work if some moron instantiates thousands of solver instances in seconds)
-                        m_LogResiduals = new StreamWriter(TextFileFileName + "." + s_timecode + ".txt");
+
+
+                        string FileName = TextFileFileName + "." + s_timecode + ".txt";
+                        int cnt = 1;
+                        while (File.Exists(FileName)) {
+                            cnt++;
+                            FileName = TextFileFileName + "." + s_timecode + "." + cnt + ".txt";
+                        }
+                        
+                        m_LogResiduals = new StreamWriter(FileName);
                     } else {
                         m_LogResiduals = m_IOMaster.FsDriver.GetNewLog(TextFileFileName, SessionGuid);
                     }
