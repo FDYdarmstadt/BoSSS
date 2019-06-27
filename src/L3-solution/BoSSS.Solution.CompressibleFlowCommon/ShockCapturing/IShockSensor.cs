@@ -29,8 +29,14 @@ namespace BoSSS.Solution.CompressibleFlowCommon.ShockCapturing {
         /// Returns the current value of the sensor in cell <paramref name="cell"/>
         /// </summary>
         /// <param name="cell"></param>
-        /// <returns></returns>
+        /// <returns>The sensor value as a double</returns>
         double GetSensorValue(int cell);
+
+        /// <summary>
+        /// Returns the sensor values stored in a DG field
+        /// </summary>
+        /// <returns>Sensor values in a DG field</returns>
+        DGField GetSensorField();
     }
 
     /// <summary>

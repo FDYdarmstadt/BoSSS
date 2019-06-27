@@ -120,13 +120,6 @@ namespace BoSSS.Solution.CompressibleFlowCommon {
         }
 
         /// <summary>
-        /// An optional viscosity law to determine the magnitude of the
-        /// artificial viscosity if <see cref="ActiveOperators"/> includes
-        /// <see cref="Operators.ArtificialViscosity"/>
-        /// </summary>
-        public IArtificialViscosityLaw ArtificialViscosityLaw = null;
-
-        /// <summary>
         /// Utility function to add a new variable to the solver.
         /// </summary>
         /// <param name="variable">

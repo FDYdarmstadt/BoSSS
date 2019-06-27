@@ -211,5 +211,9 @@ namespace CNS.ShockCapturing {
         public double GetSensorValue(int cellIndex) {
             return sensorValues[cellIndex];
         }
+
+        public DGField GetSensorField() {
+            throw new System.NotImplementedException();
+        }
     }
 }

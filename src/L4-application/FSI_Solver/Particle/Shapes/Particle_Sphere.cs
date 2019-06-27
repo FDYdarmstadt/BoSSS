@@ -99,40 +99,18 @@ namespace BoSSS.Application.FSI_Solver
             return -(X[0] - x0).Pow2() + -(X[1] - y0).Pow2() + radius_P.Pow2();
         }
 
-        override public CellMask CutCells_P(LevelSetTracker LsTrk)
+        public override bool Contains(double[] point, double h_min, double h_max = 0, bool WithoutTolerance = false)
         {
-            // tolerance is very important
-            var radiusTolerance = radius_P + LsTrk.GridDat.Cells.h_minGlobal;// +2.0*Math.Sqrt(2*LsTrk.GridDat.Cells.h_minGlobal.Pow2());
-
-            CellMask cellCollection;
-            CellMask cells = null;
-            double alpha = -(Angle[0]);
-            cells = CellMask.GetCellMask(LsTrk.GridDat, X => (-(X[0] - Position[0][0]).Pow2() + -(X[1] - Position[0][1]).Pow2() + radiusTolerance.Pow2()) > 0);
-
-            CellMask allCutCells = LsTrk.Regions.GetCutCellMask();
-            cellCollection = cells.Intersect(allCutCells);
-            return cellCollection;
-        }
-        override public bool Contains(double[] point, LevelSetTracker LsTrk, bool WithoutTolerance = false)
-        {
-            // only for squared cells
-            double radiusTolerance = !WithoutTolerance ? 1.0 + 2.0 * Math.Sqrt(2 * LsTrk.GridDat.Cells.h_minGlobal.Pow2()) : 1;
-            double length_P = 1;
-            double thickness_P = 0.2;
-            double test = -((((point[0] - Position[0][0]) * Math.Cos(Angle[0]) - (point[1] - Position[0][1]) * Math.Sin(Angle[0])).Pow2()) / length_P.Pow2()) + -(((point[0] - Position[0][0]) * Math.Sin(Angle[0]) + (point[1] - Position[0][1]) * Math.Cos(Angle[0])).Pow2() / thickness_P.Pow2()) + radiusTolerance.Pow2();
+            // only for rectangular cells
+            if (h_max == 0)
+                h_max = h_min;
+            double radiusTolerance = !WithoutTolerance ? 1.0 + Math.Sqrt(h_max.Pow2() + h_min.Pow2()) : 1;
             var distance = point.L2Distance(Position[0]);
             if (distance < (radiusTolerance))
             {
                 return true;
             }
             return false;
-        }
-        override public double ComputeParticleRe(double mu_Fluid)
-        {
-            double particleReynolds = 0;
-            particleReynolds = Math.Sqrt(TranslationalVelocity[0][0] * TranslationalVelocity[0][0] + TranslationalVelocity[0][1] * TranslationalVelocity[0][1]) * 2 * radius_P * particleDensity / mu_Fluid;
-            Console.WriteLine("Particle Reynolds number:  " + particleReynolds);
-            return particleReynolds;
         }
 
         override public MultidimensionalArray GetSurfacePoints(LevelSetTracker lsTrk, double[] Position, double Angle)

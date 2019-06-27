@@ -23,6 +23,7 @@ using ilPSP;
 using MPI.Wrappers;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -260,7 +261,38 @@ namespace FSI_Solver
             }
         }
 
-        internal void UpdateParticleAccelerationAndDamping(Particle Particle, int IterationCounter, double dt, bool LieSplittingFullyCoupled) {
+        internal void CalculateParticleVelocity(List<Particle> Particles, double dt, bool FullyCoupled, int IterationCounter, bool IncludeHydrodynamics = true)
+        {
+
+            foreach (Particle p in Particles)
+            {
+                p.iteration_counter_P = IterationCounter;
+                if (IterationCounter == 0 && FullyCoupled)
+                {
+                    if (p.neglectAddedDamping == false)
+                    {
+                        p.UpdateDampingTensors();
+                        //ExchangeDampingTensors(Particles);
+                    }
+                    p.PredictAcceleration();
+                }
+                else
+                {
+                    p.CalculateAcceleration(dt, FullyCoupled, IncludeHydrodynamics);
+                }
+                csMPI.Raw.Barrier(csMPI.Raw._COMM.WORLD);
+                p.UpdateParticleVelocity(dt);
+            }
+        }
+
+        internal void CalculateParticlePosition(List<Particle> Particles, double dt)
+        {
+            foreach (Particle p in Particles)
+            {
+                p.UpdateParticlePositionAndAngle(dt);
+            }
+        }
+        internal void CalculateParticleAccelerationAndDamping(Particle Particle, int IterationCounter, double dt, bool LieSplittingFullyCoupled) {
 
             if (IterationCounter == 0 && LieSplittingFullyCoupled) {
                 if (Particle.neglectAddedDamping == false) {
@@ -276,6 +308,7 @@ namespace FSI_Solver
 
         internal void CalculateParticleResidual(List<Particle> Particles, double[] ForcesOldSquared, double TorqueOldSquared, int IterationCounter, int MaximumIterations, out double Residual, out int _IterationCounter)
         {
+            csMPI.Raw.Barrier(csMPI.Raw._COMM.WORLD);
             if (IterationCounter == 0)
                 Residual = 1e12;
             else
@@ -290,12 +323,16 @@ namespace FSI_Solver
                 }
                 Residual = Math.Sqrt((Math.Sqrt(ForcesNewSquared[0]) - Math.Sqrt(ForcesOldSquared[0])).Pow2() + (Math.Sqrt(ForcesNewSquared[1]) - Math.Sqrt(ForcesOldSquared[1])).Pow2() + (Math.Sqrt(TorqueNewSquared) - Math.Sqrt(TorqueOldSquared)).Pow2());
             }
-            int PrintIteration = IterationCounter + 1;
-            Console.WriteLine("Fully coupled system, number of iterations:  " + PrintIteration);
-            Console.WriteLine("Forces and torque residual: " + Residual);
-            Console.WriteLine();
+            //int PrintIteration = IterationCounter + 1;
+            if (IterationCounter != 0)
+            {
+                Console.WriteLine();
+                Console.WriteLine("Forces and torque residual: " + Residual);
+                Console.WriteLine("=======================================================");
+                Console.WriteLine();
+            }
             if (IterationCounter > MaximumIterations)
-                throw new ApplicationException("no convergence in coupled iterative solver, number of iterations: " + IterationCounter);
+                throw new ApplicationException("No convergence in coupled iterative solver, number of iterations: " + IterationCounter);
             _IterationCounter = IterationCounter + 1;
         }
 
@@ -324,12 +361,13 @@ namespace FSI_Solver
             _IterationCounter = IterationCounter + 1;
         }
 
-        internal void PrintResultToConsole(List<Particle> Particles, double phystime, double dt, int IterationCounter, bool Finalresult, out double MPIangularVelocity, out double[] force)
+        internal void PrintResultToConsole(List<Particle> Particles, double FluidViscosity, double phystime, double dt, int TimestepInt, int IterationCounter, bool Finalresult, out double MPIangularVelocity, out double[] force)
         {
             double[] TranslationalMomentum = new double[2] { 0, 0 };
             double RotationalMomentum = 0;
             double[] totalKE = new double[3] { 0, 0, 0 };
-
+            double[] ParticleReynoldsNumber = new double[Particles.Count()];
+            csMPI.Raw.Barrier(csMPI.Raw._COMM.WORLD);
             foreach (Particle p in Particles)
             {
                 double[] SingleParticleMomentum = p.CalculateParticleMomentum(dt);
@@ -340,6 +378,7 @@ namespace FSI_Solver
                 totalKE[0] += SingleParticleKineticEnergy[0];
                 totalKE[1] += SingleParticleKineticEnergy[1];
                 totalKE[2] += SingleParticleKineticEnergy[SingleParticleMomentum.Length - 1];
+                ParticleReynoldsNumber[Particles.IndexOf(p)] = p.ComputeParticleRe(FluidViscosity);
             }
 
             Console.WriteLine("Total momentum in system:  " + Math.Sqrt(TranslationalMomentum[0].Pow2() + TranslationalMomentum[1].Pow2()));
@@ -364,7 +403,7 @@ namespace FSI_Solver
                 int PrintP = p + 1;
                 Console.WriteLine("=======================================================");
                 if (Finalresult)
-                    Console.WriteLine("Status report particle #" + PrintP + ",Time: " + phystime);
+                    Console.WriteLine("Final status report for timestep #" + TimestepInt + ", particle #" + PrintP + ", Time: " + phystime);
                 else
                     Console.WriteLine("Status report particle #" + PrintP + ", Time: " + phystime + ", Iteration #" + IterationCounter);
                 Console.WriteLine("-------------------------------------------------------");
@@ -379,15 +418,18 @@ namespace FSI_Solver
                     Console.WriteLine("X-position:   {0}", CurrentP.Position[0][0]);
                     Console.WriteLine("Y-position:   {0}", CurrentP.Position[0][1]);
                     Console.WriteLine("Angle:   {0}", CurrentP.Angle[0]);
+                    Console.WriteLine();
+                    Console.WriteLine("Particle Reynolds number: " + ParticleReynoldsNumber[p]);
+                    Console.WriteLine();
+                    Console.WriteLine("=======================================================");
+                    Console.WriteLine();
                 }
-                Console.WriteLine();
-                Console.WriteLine("=======================================================");
-                Console.WriteLine();
             }
         }
 
         internal void SaveOldParticleState(List<Particle> Particles, int IterationCounter, int SpatialDim, double ForceTorqueConvergenceCriterion, bool IsFullyCoupled, out double[] ForcesOldSquared, out double TorqueOldSquared)
         {
+            csMPI.Raw.Barrier(csMPI.Raw._COMM.WORLD);
             ForcesOldSquared = new double[SpatialDim];
             TorqueOldSquared = 0;
             foreach (Particle p in Particles)
@@ -444,7 +486,7 @@ namespace FSI_Solver
         {
             int D = GridData.SpatialDimension;
             int NoOfParticles = Particles.Count;
-
+            csMPI.Raw.Barrier(csMPI.Raw._COMM.WORLD);
             {
                 // verify that we have the same number of particles on each processor
                 int NoOfParticles_min = NoOfParticles.MPIMin();
@@ -469,6 +511,7 @@ namespace FSI_Solver
                     CheckSend[p * NoOfVars + 4] = P.ForceAndTorque_convergence;
                     CheckSend[p * NoOfVars + 5] = P.Mass_P;
                     CheckSend[p * NoOfVars + 6] = P.particleDensity;
+                    CheckSend[p * NoOfVars + 7] = P.AddedDampingTensor[0,0];
                     // todo: add more values here that might be relevant for the particle state;
 
                     // vector values
