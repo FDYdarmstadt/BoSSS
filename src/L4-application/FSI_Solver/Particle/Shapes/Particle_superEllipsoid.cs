@@ -102,11 +102,14 @@ namespace BoSSS.Application.FSI_Solver {
         }
         public override bool Contains(double[] point, double h_min, double h_max = 0, bool WithoutTolerance = false)
         {
+            WithoutTolerance = false;
             // only for rectangular cells
             if (h_max == 0)
                 h_max = h_min;
-            double radiusTolerance = !WithoutTolerance ? 1.0 + Math.Sqrt(h_max.Pow2() + h_min.Pow2()) : 1;
-            double Superellipsoid = Math.Pow(((point[0] - Position[0][0]) * Math.Cos(Angle[0]) + (point[1] - Position[0][1]) * Math.Sin(Angle[0])) / length_P, superEllipsoidExponent) + (Math.Pow((-(point[0] - Position[0][0]) * Math.Sin(Angle[0]) + (point[1] - Position[0][1]) * Math.Cos(Angle[0])) / thickness_P,superEllipsoidExponent));
+            double radiusTolerance = 1;
+            double a = !WithoutTolerance ? length_P + h_min : length_P;
+            double b = !WithoutTolerance ? thickness_P + h_min : thickness_P;
+            double Superellipsoid = Math.Pow(((point[0] - Position[0][0]) * Math.Cos(Angle[0]) + (point[1] - Position[0][1]) * Math.Sin(Angle[0])) / a, superEllipsoidExponent) + (Math.Pow((-(point[0] - Position[0][0]) * Math.Sin(Angle[0]) + (point[1] - Position[0][1]) * Math.Cos(Angle[0])) / b,superEllipsoidExponent));
             if (Superellipsoid < radiusTolerance)
                 return true;
             else
