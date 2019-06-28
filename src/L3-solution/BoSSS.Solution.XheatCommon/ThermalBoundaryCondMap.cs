@@ -20,6 +20,9 @@ using System.Runtime.Serialization;
 using System.Linq;
 using System.Text;
 
+using ilPSP;
+using ilPSP.Utils;
+
 using BoSSS.Foundation.Grid;
 using BoSSS.Foundation.Grid.Classic;
 using BoSSS.Solution.Control;
@@ -33,8 +36,9 @@ namespace BoSSS.Solution.XheatCommon {
     public class ThermalBoundaryCondMap : BoundaryCondMap<ThermalBcType> {
 
         static string[] BndFunctions(IGridData g) {
+            int D = g.SpatialDimension;
 
-            return new string[] { VariableNames.Temperature };
+            return ArrayTools.Cat(VariableNames.VelocityVector(D), VariableNames.Temperature, "HeatFlux");
 
         }
 
@@ -58,11 +62,15 @@ namespace BoSSS.Solution.XheatCommon {
     public class ThermalMultiphaseBoundaryCondMap : ThermalBoundaryCondMap {
 
         static string[] BndFunctions(IGridData g, string[] SpeciesNames) {
-
+            int D = g.SpatialDimension;
             List<string> scalarFields = new List<string>();
 
             foreach(var S in SpeciesNames) {
+                for(int d = 0; d < D; d++) {
+                    scalarFields.Add(VariableNames.Velocity_d(d) + "#" + S);
+                }
                 scalarFields.Add(VariableNames.Temperature + "#" + S);
+                scalarFields.Add("HeatFlux" + "#" + S);
             }
 
             return scalarFields.ToArray();
@@ -74,8 +82,16 @@ namespace BoSSS.Solution.XheatCommon {
         {
             string S0 = "#" + SpeciesNames[0];
 
+            int D = f.SpatialDimension;
+            for(int d = 0; d < D; d++) {
+                base.bndFunction.Add(VariableNames.Velocity_d(d), base.bndFunction[VariableNames.Velocity_d(d) + S0]);
+            }
             base.bndFunction.Add(VariableNames.Temperature, base.bndFunction[VariableNames.Temperature + S0]);
+            base.bndFunction.Add("HeatFlux", base.bndFunction["HeatFlux" + S0]);
+
         }
 
     }
+
+
 }

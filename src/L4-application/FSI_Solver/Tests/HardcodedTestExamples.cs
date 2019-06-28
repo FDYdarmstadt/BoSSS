@@ -165,7 +165,7 @@ namespace BoSSS.Application.FSI_Solver {
         /// <summary>
         /// Testing of particle/wall interactions using a single particle
         /// </summary>
-        public static FSI_Control SingleDryParticleAgainstWall(string _DbPath = null, bool MeshRefine = false) {
+        public static FSI_Control SingleDryParticleAgainstWall(string _DbPath = null, bool MeshRefine = true) {
             FSI_Control C = new FSI_Control();
 
             // basic database options
@@ -422,7 +422,6 @@ namespace BoSSS.Application.FSI_Solver {
             C.ProjectDescription = "Gravity";
             C.SessionName = C.ProjectName;
             C.Tags.Add("with immersed boundary method");
-            C.AdaptiveMeshRefinement = true;
 
 
             // DG degrees
@@ -484,6 +483,7 @@ namespace BoSSS.Application.FSI_Solver {
 
             C.pureDryCollisions = true;
             C.PhysicalParameters.IncludeConvection = true;
+            C.CoefficientOfRestitution = 1;
 
 
             // misc. solver options
@@ -508,7 +508,7 @@ namespace BoSSS.Application.FSI_Solver {
             C.dtMin = dt;
 
             C.Endtime = 2;
-            C.NoOfTimesteps = 111;
+            C.NoOfTimesteps = 116;
 
             // haben fertig...
             // ===============
@@ -535,6 +535,7 @@ namespace BoSSS.Application.FSI_Solver {
             C.SessionName = C.ProjectName;
             C.Tags.Add("with immersed boundary method");
             C.AdaptiveMeshRefinement = false;
+            C.RefinementLevel = 1;
             C.SessionName = "fjkfjksdfhjk";
 
             C.pureDryCollisions = true;
@@ -548,8 +549,8 @@ namespace BoSSS.Application.FSI_Solver {
 
                 int q, r;
 
-                q = 30;
-                r = 30;
+                q = 40;
+                r = 40;
 
                 double[] Xnodes = GenericBlas.Linspace(-1.5 * BaseSize, 1.5 * BaseSize, q + 1);
                 double[] Ynodes = GenericBlas.Linspace(-1.5 * BaseSize, 1.5 * BaseSize, r + 1);
@@ -742,8 +743,7 @@ namespace BoSSS.Application.FSI_Solver {
             // Mesh refinement
             // =============================
             C.AdaptiveMeshRefinement = false;
-            C.RefinementLevel = 2;
-            C.maxCurvature = 2;
+            C.RefinementLevel = 1;
 
 
             // Boundary conditions
@@ -827,7 +827,7 @@ namespace BoSSS.Application.FSI_Solver {
             // =============================
             C.Timestepper_LevelSetHandling = LevelSetHandling.FSI_LieSplittingFullyCoupled;
             C.LSunderrelax = 1;
-            C.max_iterations_fully_coupled = 250;
+            C.max_iterations_fully_coupled = 1000;
 
 
 

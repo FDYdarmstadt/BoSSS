@@ -90,10 +90,10 @@ namespace CNS.Tests.IBMTests {
             double kappa = 0.5;
 
             Variable sensorVariable = CompressibleVariables.Density;
-            c.ShockSensor = new PerssonSensor(sensorVariable, sensorLimit);
+            c.CNSShockSensor = new PerssonSensor(sensorVariable, sensorLimit);
 
             if (AV) {
-                c.ArtificialViscosityLaw = new SmoothedHeavisideArtificialViscosityLaw(c.ShockSensor, dgDegree, sensorLimit, epsilon0, kappa);
+                c.ArtificialViscosityLaw = new SmoothedHeavisideArtificialViscosityLaw(c.CNSShockSensor, dgDegree, sensorLimit, epsilon0, kappa);
             }
 
             // Runge-Kutta

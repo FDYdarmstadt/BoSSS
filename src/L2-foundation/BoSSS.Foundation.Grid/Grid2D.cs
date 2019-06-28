@@ -400,7 +400,8 @@ namespace BoSSS.Foundation.Grid.Classic {
             params BoundingBox[] CutOuts) {
             using (var tr = new FuncTrace()) {
                 MPICollectiveWatchDog.Watch();
-               
+
+
                 // Some Checks
                 // ===========
                 CheckMonotonicity(xNodes);
@@ -622,6 +623,7 @@ namespace BoSSS.Foundation.Grid.Classic {
                     }
 
                 }
+
                 grid.Cells = Cells.ToArray();
 
                 /*
@@ -719,14 +721,13 @@ namespace BoSSS.Foundation.Grid.Classic {
                     grid.CompressGlobalID();
                     grid.CompressNodeIndices();
                 }
-
-                foreach(var cl in grid.Cells) {
+  
+                foreach (var cl in grid.Cells) {
                     if (cl.GlobalID < 0)
                         throw new ApplicationException("Internal error - illegal GlobalID.");
                     if (cl.GlobalID >= cnt)
                         throw new ApplicationException("Internal error - illegal GlobalID.");
                 }
-
 
                 return grid;
             }
@@ -1538,6 +1539,203 @@ namespace BoSSS.Foundation.Grid.Classic {
                 return grid;
             }
         }
+
+
+        static public Grid2D AcuteCornerTriangleGrid(double baseL, double theta, int lvl, bool inlet = false) {
+            using (new FuncTrace()) {
+                MPICollectiveWatchDog.Watch();
+                Grid2D grid = new Grid2D(Triangle.Instance);
+
+                if ((theta <= 0) || (theta > Math.PI / 2.0))
+                    throw new ArgumentOutOfRangeException();
+
+                int myrank;
+                int size;
+                csMPI.Raw.Comm_Rank(csMPI.Raw._COMM.WORLD, out myrank);
+                csMPI.Raw.Comm_Size(csMPI.Raw._COMM.WORLD, out size);
+
+                if (myrank == 0) {
+                    // create all cells on process 0
+                    // (can be redistributed later on)
+                    // ++++++++++++++++++++++++++++++++++
+
+                    int J = (int)Math.Pow(Math.Pow(2, lvl), 2);
+                    grid.Cells = new Cell[J];
+
+                    int stages = (int)Math.Pow(2, lvl);
+                    double stageL = baseL / stages;
+                    double height = baseL * Math.Sin(theta);
+                    double[] yNodes = GenericBlas.Linspace(-height, 0, stages + 1);
+                    yNodes.ScaleV(-1.0);
+                    double heightX = -baseL * Math.Cos(theta);
+
+                    int j = 0;
+                    int nIdx1 = 0; int nIdx2 = 0;
+                    for (int s = 0; s < stages; s++) {
+
+                        double x1 = heightX + (s * stageL * Math.Cos(theta));
+                        double[] xNodes1 = (s == 0) ? new double[] { heightX } : GenericBlas.Linspace(x1-(s*stageL), x1, s+1);
+                        nIdx1 += xNodes1.Length - 1;
+                        double x2 = heightX + ((s + 1) * stageL * Math.Cos(theta));
+                        double[] xNodes2 = GenericBlas.Linspace(x2 - ((s+1) * stageL), x2, s + 2);
+                        nIdx2 += xNodes2.Length - 1;
+
+                        int stageJ = xNodes1.Length + xNodes2.Length - 2;
+                        for (int sj = 0; sj < stageJ; sj++) {
+
+                            Cell Cj0 = new Cell();
+
+                            Cj0.GlobalID = j;
+                            Cj0.Type = CellType.Triangle_3;
+                            Cj0.TransformationParams = MultidimensionalArray.Create(3, 2);
+
+                            int sjIdx = sj / 2;
+                            if ((sj % 2) == 0) {
+
+                                Cj0.TransformationParams[0, 0] = xNodes1[sjIdx];
+                                Cj0.TransformationParams[0, 1] = yNodes[s];
+                                Cj0.TransformationParams[1, 0] = xNodes2[sjIdx];
+                                Cj0.TransformationParams[1, 1] = yNodes[s + 1];
+                                Cj0.TransformationParams[2, 0] = xNodes2[sjIdx + 1];
+                                Cj0.TransformationParams[2, 1] = yNodes[s + 1];
+
+                                Cj0.NodeIndices = new int[] {
+                                        nIdx1 + sjIdx,
+                                        nIdx2 + sjIdx,
+                                        nIdx2 + sjIdx + 1 };
+
+                            } else {
+
+                                Cj0.TransformationParams[0, 0] = xNodes1[sjIdx];
+                                Cj0.TransformationParams[0, 1] = yNodes[s];
+                                Cj0.TransformationParams[1, 0] = xNodes2[sjIdx + 1];
+                                Cj0.TransformationParams[1, 1] = yNodes[s + 1];
+                                Cj0.TransformationParams[2, 0] = xNodes1[sjIdx + 1];
+                                Cj0.TransformationParams[2, 1] = yNodes[s];
+
+                                Cj0.NodeIndices = new int[] {
+                                        nIdx1 + sjIdx,
+                                        nIdx2 + sjIdx + 1,
+                                        nIdx1 + sjIdx + 1 };
+
+                            }
+
+                            grid.Cells[j] = Cj0;
+                            j++;
+                        }
+
+                    }
+
+                } else {
+                    // all MPI processes with rank > 0
+                    // return empty grid (use Redistribution)
+                    // ++++++++++++++++++++++++++++++++++++++++
+
+                    grid.Cells = new Cell[0];
+                }
+
+                return grid;
+            }
+        }
+
+
+        static public Grid2D ObtuseCornerTriangleGrid(double baseL, double theta, double lvl) {
+            using (new FuncTrace()) {
+                MPICollectiveWatchDog.Watch();
+                Grid2D grid = new Grid2D(Triangle.Instance);
+
+                if ((theta < Math.PI / 2.0) || (theta > Math.PI))
+                    throw new ArgumentOutOfRangeException();
+
+                int myrank;
+                int size;
+                csMPI.Raw.Comm_Rank(csMPI.Raw._COMM.WORLD, out myrank);
+                csMPI.Raw.Comm_Size(csMPI.Raw._COMM.WORLD, out size);
+
+                if (myrank == 0) {
+                    // create all cells on process 0
+                    // (can be redistributed later on)
+                    // ++++++++++++++++++++++++++++++++++
+
+                    int J = (int)Math.Pow(Math.Pow(2, lvl), 2) * 2;
+                    grid.Cells = new Cell[J];
+
+                    int stages = (int)Math.Pow(2, lvl);
+                    double stageL = baseL / stages;
+                    double height = baseL * Math.Cos(theta - (Math.PI / 2.0));
+                    double[] yNodes = GenericBlas.Linspace(-height, 0, stages + 1);
+                    yNodes.ScaleV(-1.0);
+                    double heightX = baseL * Math.Sin(theta - (Math.PI / 2.0));
+
+                    int j = 0;
+                    int nIdx1 = -(stages + 1); int nIdx2 = 0;
+                    for (int s = 0; s < stages; s++) {
+
+                        double x1 = heightX - (s * stageL * Math.Sin(theta - (Math.PI / 2.0)));
+                        double[] xNodes1 = GenericBlas.Linspace(x1 - baseL, x1, stages + 1);
+                        nIdx1 += xNodes1.Length;
+                        double x2 = heightX - ((s + 1) * stageL * Math.Sin(theta - (Math.PI / 2.0)));
+                        double[] xNodes2 = GenericBlas.Linspace(x2 - baseL, x2, stages + 1);
+                        nIdx2 += xNodes2.Length;
+
+                        int stageJ = xNodes1.Length + xNodes2.Length - 2;
+                        for (int sj = 0; sj < stageJ; sj++) {
+
+                            Cell Cj0 = new Cell();
+
+                            Cj0.GlobalID = j;
+                            Cj0.Type = CellType.Triangle_3;
+                            Cj0.TransformationParams = MultidimensionalArray.Create(3, 2);
+
+                            int sjIdx = sj / 2;
+                            if ((sj % 2) == 0) {
+
+                                Cj0.TransformationParams[0, 0] = xNodes1[sjIdx];
+                                Cj0.TransformationParams[0, 1] = yNodes[s];
+                                Cj0.TransformationParams[1, 0] = xNodes2[sjIdx];
+                                Cj0.TransformationParams[1, 1] = yNodes[s + 1];
+                                Cj0.TransformationParams[2, 0] = xNodes2[sjIdx + 1];
+                                Cj0.TransformationParams[2, 1] = yNodes[s + 1];
+
+                                Cj0.NodeIndices = new int[] {
+                                        nIdx1 + sjIdx,
+                                        nIdx2 + sjIdx,
+                                        nIdx2 + sjIdx + 1 };
+
+                            } else {
+
+                                Cj0.TransformationParams[0, 0] = xNodes1[sjIdx];
+                                Cj0.TransformationParams[0, 1] = yNodes[s];
+                                Cj0.TransformationParams[1, 0] = xNodes2[sjIdx + 1];
+                                Cj0.TransformationParams[1, 1] = yNodes[s + 1];
+                                Cj0.TransformationParams[2, 0] = xNodes1[sjIdx + 1];
+                                Cj0.TransformationParams[2, 1] = yNodes[s];
+
+                                Cj0.NodeIndices = new int[] {
+                                        nIdx1 + sjIdx,
+                                        nIdx2 + sjIdx + 1,
+                                        nIdx1 + sjIdx + 1 };
+
+                            }
+
+                            grid.Cells[j] = Cj0;
+                            j++;
+                        }
+
+                    }
+
+                } else {
+                    // all MPI processes with rank > 0
+                    // return empty grid (use Redistribution)
+                    // ++++++++++++++++++++++++++++++++++++++++
+
+                    grid.Cells = new Cell[0];
+                }
+
+                return grid;
+            }
+        }
+
 
         /// <summary>
         /// Creates a grid in 2D with hanging nodes. 

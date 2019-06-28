@@ -85,6 +85,7 @@ namespace BoSSS.Application.TutorialTests {
             "CsharpAndBoSSSpad/CsharpAndBoSSSpad.tex",
             "convergenceStudyTutorial/convStudy.tex"
             //"ParameterStudy/ParameterStudy.tex"
+
             )] string TexFileName) {
 
 
