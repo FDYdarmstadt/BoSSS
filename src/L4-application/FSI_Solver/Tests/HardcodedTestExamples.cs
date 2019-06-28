@@ -686,8 +686,8 @@ namespace BoSSS.Application.FSI_Solver {
 
                 int q, r;
 
-                q = 20;
-                r = 20;
+                q = 40;
+                r = 40;
 
                 double[] Xnodes = GenericBlas.Linspace(-1.5 * BaseSize, 1.5 * BaseSize, q + 1);
                 double[] Ynodes = GenericBlas.Linspace(-1.5 * BaseSize, 1.5 * BaseSize, r + 1);
@@ -737,7 +737,7 @@ namespace BoSSS.Application.FSI_Solver {
             // ==============
 
             // Coupling Properties
-            C.Timestepper_LevelSetHandling = LevelSetHandling.FSI_LieSplittingFullyCoupled;
+            C.Timestepper_LevelSetHandling = LevelSetHandling.LieSplitting;
 
             // Fluid Properties
             C.PhysicalParameters.rho_A = 1.0;
@@ -752,8 +752,6 @@ namespace BoSSS.Application.FSI_Solver {
             C.Particles.Add(new Particle_Sphere(new double[] { 0.0, 0.6 })
             {
                 radius_P = 0.18,
-                //length_P = 0.2,
-                //thickness_P = 0.1,
                 particleDensity = 4,
                 GravityVertical = -9.81,
                 AddaptiveUnderrelaxation = true,

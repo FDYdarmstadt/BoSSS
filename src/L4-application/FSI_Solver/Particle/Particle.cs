@@ -88,7 +88,7 @@ namespace BoSSS.Application.FSI_Solver
         /// Check whether any particles is collided with another particle
         /// </summary>
         public bool Collided;
-        
+        int stupidcounter = 0;
         /// <summary>
         /// Skip calculation of hydrodynamic force and Torque if particles are too close
         /// </summary>
@@ -117,7 +117,7 @@ namespace BoSSS.Application.FSI_Solver
         /// Underrelaxation factor
         /// </summary>
         [DataMember]
-        public double underrelaxation_factor = -1;
+        public double underrelaxation_factor = 1;
 
         /// <summary>
         /// Set true if you want to delete all values of the Forces anf Torque smaller than convergenceCriterion*1e-2
@@ -315,7 +315,7 @@ namespace BoSSS.Application.FSI_Solver
         /// AddedDampingCoefficient
         /// </summary>
         [DataMember]
-        public double AddedDampingCoefficient = 1;
+        public double AddedDampingCoefficient = -1;
 
         /// <summary>
         /// Level set function describing the particle.
@@ -490,8 +490,8 @@ namespace BoSSS.Application.FSI_Solver
             {
                 Aux.SaveMultidimValueOfLastTimestep(TranslationalAcceleration);
                 Aux.SaveValueOfLastTimestep(RotationalAcceleration);
-                Aux.SaveMultidimValueOfLastTimestep(HydrodynamicForces);
-                Aux.SaveValueOfLastTimestep(HydrodynamicTorque);
+                //Aux.SaveMultidimValueOfLastTimestep(HydrodynamicForces);
+                //Aux.SaveValueOfLastTimestep(HydrodynamicTorque);
             }
             for (int d = 0; d < SpatialDim; d++)
             {
@@ -591,7 +591,7 @@ namespace BoSSS.Application.FSI_Solver
                 }
             }
         }
-
+        
         /// <summary>
         /// Calculate the new angular velocity of the particle using explicit Euler scheme.
         /// </summary>
@@ -637,7 +637,31 @@ namespace BoSSS.Application.FSI_Solver
         {
             AddedDampingTensor = AddedDamping.RotateTensor(Angle[0], StartingAngle, AddedDampingTensor);
         }
-        
+
+        /// <summary>
+        /// Calculate the new acceleration (translational and rotational)
+        /// </summary>
+        /// <param name="dt"></param>
+        public void PredictForceAndTorque()
+        {
+            if (iteration_counter_P == 0)
+            {
+                Aux.SaveMultidimValueOfLastTimestep(TranslationalAcceleration);
+                Aux.SaveValueOfLastTimestep(RotationalAcceleration);
+                Aux.SaveMultidimValueOfLastTimestep(HydrodynamicForces);
+                Aux.SaveValueOfLastTimestep(HydrodynamicTorque);
+            }
+            for (int d = 0; d < SpatialDim; d++)
+            {
+                HydrodynamicForces[0][d] = (HydrodynamicForces[1][d] + 4 * HydrodynamicForces[2][d] + HydrodynamicForces[3][d]) / 8;
+                if (Math.Abs(HydrodynamicForces[0][d]) < 1e-20)
+                    TranslationalAcceleration[0][d] = 0;
+            }
+            HydrodynamicTorque[0] = (HydrodynamicTorque[1] + 4 * HydrodynamicTorque[2] + HydrodynamicTorque[3]) / 8;
+            if (Math.Abs(HydrodynamicTorque[0]) < 1e-20)
+                HydrodynamicTorque[0] = 0;
+        }
+
         /// <summary>
         /// Update Forces and Torque acting from fluid onto the particle
         /// </summary>
@@ -764,12 +788,11 @@ namespace BoSSS.Application.FSI_Solver
             {
                 double fest = Forces[0];
                 Forces[0] = Forces[0] + AddedDampingCoefficient * dt * (AddedDampingTensor[0, 0] * TranslationalAcceleration[0][0] + AddedDampingTensor[1, 0] * TranslationalAcceleration[0][1] + AddedDampingTensor[0, 2] * RotationalAcceleration[0]);
-                double test = AddedDampingCoefficient * dt * (AddedDampingTensor[0, 0] * TranslationalAcceleration[0][0] + AddedDampingTensor[1, 0] * TranslationalAcceleration[0][1] + AddedDampingTensor[0, 2] * RotationalAcceleration[0]);
                 Forces[1] = Forces[1] + AddedDampingCoefficient * dt * (AddedDampingTensor[0, 1] * TranslationalAcceleration[0][0] + AddedDampingTensor[1, 1] * TranslationalAcceleration[0][1] + AddedDampingTensor[1, 2] * RotationalAcceleration[0]);
                 Torque += AddedDampingCoefficient * dt * (AddedDampingTensor[2, 0] * TranslationalAcceleration[0][0] + AddedDampingTensor[2, 1] * TranslationalAcceleration[0][1] + AddedDampingTensor[2, 2] * RotationalAcceleration[0]);
             }
 
-            if (iteration_counter_P == 1 || NotFullyCoupled || iteration_counter_P == 250)
+            if (iteration_counter_P == -1 || NotFullyCoupled || iteration_counter_P == 250 || stupidcounter == 0)
             {
                 Console.WriteLine();
                 if(iteration_counter_P == 1)
@@ -791,6 +814,7 @@ namespace BoSSS.Application.FSI_Solver
                     Torque = 0;
                 }
                 HydrodynamicTorque[0] = Torque;
+                stupidcounter = 1;
             }
             else
             {
