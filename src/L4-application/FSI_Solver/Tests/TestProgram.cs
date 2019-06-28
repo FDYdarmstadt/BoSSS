@@ -47,6 +47,34 @@ namespace BoSSS.Application.FSI_Solver {
         }
 
         [Test]
+        public static void Test_ParticleParameter()
+        {
+            using (FSI_SolverMain p = new FSI_SolverMain())
+            {
+
+                var ctrl = BoSSS.Application.FSI_Solver.HardcodedTestExamples.Test_ParticleParameter();
+                //ctrl.ImmediatePlotPeriod = 1;
+                //ctrl.SuperSampling = 2;
+                p.Init(ctrl);
+                p.RunSolverMode();
+
+                double p0_area = p.Particles[0].Area_P;
+                double p0_area_soll = Math.PI;
+                double p0_Mass = p.Particles[0].Mass_P;
+                double p1_area = p.Particles[1].Area_P;
+
+
+                double diff_Area1 = Math.Abs(p0_area - p0_area_soll);
+                double diff_Area2 = Math.Abs(p0_area - p1_area);
+                double diff_Mass = Math.Abs(2 * p0_area - p0_Mass);
+                Assert.LessOrEqual(diff_Area1, 1e-12, "Error in calculation of particle area");
+                Assert.LessOrEqual(diff_Area2, 1e-12, "Error in calculation of particle area");
+                Assert.LessOrEqual(diff_Mass, 1e-12, "Error in calculation of particle mass");
+
+            }
+        }
+
+        [Test]
         public static void TestFlowRotationalCoupling() {
             using (FSI_SolverMain p = new FSI_SolverMain()) {
 

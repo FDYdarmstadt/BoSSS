@@ -354,7 +354,7 @@ namespace BoSSS.Application.FSI_Solver
         /// <summary>
         /// Area of the current particle.
         /// </summary>
-        abstract protected double Area_P {
+        abstract public double Area_P {
             get;
         }
 

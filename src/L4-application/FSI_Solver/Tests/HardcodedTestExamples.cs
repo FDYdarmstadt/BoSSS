@@ -66,16 +66,16 @@ namespace BoSSS.Application.FSI_Solver {
 
                 int q, r;
 
-                q = 10;
-                r = 10;
+                q = 30;
+                r = 20;
 
-                double[] Xnodes = GenericBlas.Linspace(-1 * BaseSize, 1 * BaseSize, q + 1);
-                double[] Ynodes = GenericBlas.Linspace(-1 * BaseSize, 1 * BaseSize, r + 1);
+                double[] Xnodes = GenericBlas.Linspace(-1 * BaseSize, 7 * BaseSize, q + 1);
+                double[] Ynodes = GenericBlas.Linspace(-2 * BaseSize, 2 * BaseSize, r + 1);
 
                 var grd = Grid2D.Cartesian2DGrid(Xnodes, Ynodes, periodicX: false, periodicY: false);
 
-                grd.EdgeTagNames.Add(1, "Wall_left");
-                grd.EdgeTagNames.Add(2, "Wall_right");
+                grd.EdgeTagNames.Add(1, "Pressure_Outlet_left");
+                grd.EdgeTagNames.Add(2, "Pressure_Outlet_right");
                 grd.EdgeTagNames.Add(3, "Pressure_Outlet_lower");
                 grd.EdgeTagNames.Add(4, "Pressure_Outlet_upper");
 
@@ -85,12 +85,12 @@ namespace BoSSS.Application.FSI_Solver {
                     byte et = 0;
                     if (Math.Abs(X[0] - (-1 * BaseSize)) <= 1.0e-8)
                         et = 1;
-                    if (Math.Abs(X[0] + (-1 * BaseSize)) <= 1.0e-8)
+                    if (Math.Abs(X[0] + (-7 * BaseSize)) <= 1.0e-8)
                         et = 2;
 
-                    if (Math.Abs(X[1] - (-1 * BaseSize)) <= 1.0e-8)
+                    if (Math.Abs(X[1] - (-2 * BaseSize)) <= 1.0e-8)
                         et = 3;
-                    if (Math.Abs(X[1] + (-1 * BaseSize)) <= 1.0e-8)
+                    if (Math.Abs(X[1] + (-2 * BaseSize)) <= 1.0e-8)
                         et = 4;
 
 
@@ -104,8 +104,8 @@ namespace BoSSS.Application.FSI_Solver {
 
             C.GridPartType = GridPartType.Hilbert;
 
-            C.AddBoundaryValue("Wall_left");
-            C.AddBoundaryValue("Wall_right");
+            C.AddBoundaryValue("Pressure_Outlet_left");
+            C.AddBoundaryValue("Pressure_Outlet_right");
             C.AddBoundaryValue("Pressure_Outlet_lower");
             C.AddBoundaryValue("Pressure_Outlet_upper");
 
@@ -127,7 +127,7 @@ namespace BoSSS.Application.FSI_Solver {
             C.Particles.Add(new Particle_Sphere(new double[] { 0.0, 0.0 })
             {
                 radius_P = 1,
-                particleDensity = 1,
+                particleDensity = 2,
             });
             C.Particles.Add(new Particle_Ellipsoid(new double[] { 0.0, 4.0 }, startAngl: 0)
             {
