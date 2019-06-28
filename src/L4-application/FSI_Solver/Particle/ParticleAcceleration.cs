@@ -28,10 +28,7 @@ namespace BoSSS.Application.FSI_Solver
             {
                 for (int j = 0; j < 3; j++)
                 {
-                    if (i == j)
-                        temp[i, j] = MassMatrix[i, j] + Timestep * AddedDampingCoefficient * AddedDampingTensor[i, j];
-                    else
-                        temp[i, j] = 0;
+                    temp[i, j] = MassMatrix[i, j] + Timestep * AddedDampingCoefficient * AddedDampingTensor[i, j];
                 }
             }
             return temp;

@@ -315,7 +315,7 @@ namespace BoSSS.Application.FSI_Solver
         /// AddedDampingCoefficient
         /// </summary>
         [DataMember]
-        public double AddedDampingCoefficient = -1;
+        public double AddedDampingCoefficient = 1;
 
         /// <summary>
         /// Level set function describing the particle.

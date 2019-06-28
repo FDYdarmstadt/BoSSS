@@ -919,7 +919,7 @@ namespace BoSSS.Application.FSI_Solver {
                     ClearSmallValues = true,
                     neglectAddedDamping = false,
                     IncludeRotation = false,
-                    IncludeTranslation = false
+                    IncludeTranslation = true
                 });
             }
             //Define level-set
