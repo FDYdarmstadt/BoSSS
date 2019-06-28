@@ -367,11 +367,10 @@ namespace FSI_Solver
             double RotationalMomentum = 0;
             double[] totalKE = new double[3] { 0, 0, 0 };
             double[] ParticleReynoldsNumber = new double[Particles.Count()];
-            csMPI.Raw.Barrier(csMPI.Raw._COMM.WORLD);
             foreach (Particle p in Particles)
             {
-                double[] SingleParticleMomentum = p.CalculateParticleMomentum(dt);
-                double[] SingleParticleKineticEnergy = p.CalculateParticleKineticEnergy(dt);
+                double[] SingleParticleMomentum = p.CalculateParticleMomentum();
+                double[] SingleParticleKineticEnergy = p.CalculateParticleKineticEnergy();
                 TranslationalMomentum[0] += SingleParticleMomentum[0];
                 TranslationalMomentum[1] += SingleParticleMomentum[1];
                 RotationalMomentum += SingleParticleMomentum[SingleParticleMomentum.Length - 1];

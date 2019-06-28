@@ -829,11 +829,7 @@ namespace BoSSS.Application.FSI_Solver
             // Step 5
             // Smoothing
             // =======================================================
-            CellMask allCellss = CellMask.GetFullMask(GridData);
-
-            PlotCurrentState(hack_phystime, new TimestepNumber(new int[] { 0, 10 }), 2);
             PerformLevelSetSmoothing(AgglParticleMask, FluidCells, true);
-            PlotCurrentState(hack_phystime, new TimestepNumber(new int[] { 0, 11 }), 2);
 
             // =======================================================
             // Step 6
