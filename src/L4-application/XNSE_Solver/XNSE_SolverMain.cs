@@ -395,13 +395,11 @@ namespace BoSSS.Application.XNSE_Solver {
         /// <summary>
         /// the spatial operator (momentum and continuity equation)
         /// </summary>
-        //OperatorFactoryMk2 XNSE_Operator;
         XNSE_OperatorFactory XNSE_Operator;
 
         /// <summary>
         /// OperatorConfiguration for the <see cref="XNSE_Operator"/>
         /// </summary>
-        //OperatorConfigurationMk2 XOpConfig;
         XNSE_OperatorConfiguration XOpConfig;
 
         /// <summary>
@@ -457,29 +455,6 @@ namespace BoSSS.Application.XNSE_Solver {
             }
         }
 
-        /*
-        CoordinateVector m_PreviousSolution;
-
-        /// <summary>
-        /// In instationary calculations, the previous timestep, i.e. 
-        /// the initial condition for the current timestep.
-        /// </summary>
-        CoordinateVector PreviousSolution {
-            get {
-                //if (m_PreviousSolution == null) {
-                if (base.Control.UseXDG4Velocity)
-                    m_PreviousSolution = new CoordinateVector(ArrayTools.Cat(this.XDGvelocity.Velocity, this.Pressure));
-                else
-                    m_PreviousSolution = new CoordinateVector(ArrayTools.Cat(this.DGvelocity.Velocity, this.Pressure));
-                //} else {
-                //    for (int d = 0; d < base.GridData.SpatialDimension; d++) {
-                //        Debug.Assert(object.ReferenceEquals(m_PreviousSolution.Mapping.Fields[d], this.XDGvelocity.Velocity[0][d]));
-                //    }
-                //}
-                return m_PreviousSolution;
-            }
-        }
-        */
 
         /// <summary>
         /// output of <see cref="AssembleMatrix"/>;
@@ -545,19 +520,6 @@ namespace BoSSS.Application.XNSE_Solver {
 
             #region Config and Generate XOperator
 
-            //XOpConfig = new OperatorConfigurationMk2() {
-            //    continuity = true,
-            //    Viscous = !base.Control.FakePoisson,
-            //    PressureGradient = true,
-            //    Transport = !base.Control.FakePoisson,
-            //    CodBlocks = new bool[] { true, true },
-            //    DomBlocks = new bool[] { true, true },
-            //    dntParams = this.Control.AdvancedDiscretizationOptions,
-            //    physParams = this.Control.PhysicalParameters,
-            //    thermParams = this.Control.ThermalParameters,
-            //    UseXDG4Velocity = this.Control.UseXDG4Velocity
-            //};
-            XOpConfig = new XNSE_OperatorConfiguration(this.Control);
 
             //Quadrature Order
             //----------------
@@ -565,55 +527,12 @@ namespace BoSSS.Application.XNSE_Solver {
             m_HMForder = degU * (this.Control.PhysicalParameters.IncludeConvection ? 3 : 2);
 
 
-            // Is Moving Mesh required?
-            //------------------------------------->>> ADD TO OPERATOR CONFIG !!!
-
-
-            //bool movingmesh;
-            //MassMatrixShapeandDependence mmsd;
-            //bool staticInterface = false;
-            //switch (this.Control.Timestepper_LevelSetHandling) {
-            //    case LevelSetHandling.Coupled_Once:
-            //        movingmesh = true;
-            //        mmsd = MassMatrixShapeandDependence.IsTimeDependent;
-            //        break;
-
-            //    case LevelSetHandling.Coupled_Iterative:
-            //        movingmesh = true;
-            //        mmsd = MassMatrixShapeandDependence.IsTimeAndSolutionDependent;
-            //        break;
-
-            //    case LevelSetHandling.LieSplitting:
-            //    case LevelSetHandling.StrangSplitting:
-            //        movingmesh = false;
-            //        mmsd = MassMatrixShapeandDependence.IsTimeDependent;
-            //        break;
-
-            //    case LevelSetHandling.None:
-            //        movingmesh = false;
-            //        mmsd = MassMatrixShapeandDependence.IsNonIdentity;
-            //        //staticInterface = true;
-            //        break;
-
-            //    default:
-            //    throw new NotImplementedException();
-            //}
-
-
             // Create Spatial Operator
             // ======================= 
 
-            //XNSE_Operator = new OperatorFactoryMk2(
-            //   XOpConfig,
-            //   this.LsTrk,
-            //   this.m_HMForder,
-            //   degU,
-            //   this.BcMap,
-            //   movingmesh,
-            //   (this.Control.ThermalParameters.hVap_A != 0.0 && this.Control.ThermalParameters.hVap_B != 0.0));         // -> ADD TO OPERATOR CONFIG !!!
-            //staticInterface);
-            XNSE_Operator = new XNSE_OperatorFactory(XOpConfig, this.LsTrk, this.m_HMForder, this.BcMap, degU);
+            XOpConfig = new XNSE_OperatorConfiguration(this.Control);
 
+            XNSE_Operator = new XNSE_OperatorFactory(XOpConfig, this.LsTrk, this.m_HMForder, this.BcMap, degU);
 
 
             // kinetic energy balance Operator
@@ -912,19 +831,6 @@ namespace BoSSS.Application.XNSE_Solver {
             var codMap = Mapping;
             var domMap = Mapping;
 
-            //this.XNSE_Operator.AssembleMatrix_Timestepper(
-            //    this.m_HMForder,
-            //    OpMtx, OpAffine,
-            //    AgglomeratedCellLengthScales,
-            //    CurrentState,
-            //    SurfaceForce,
-            //    filtLevSetGradient,
-            //    this.Curvature,
-            //    codMap,
-            //    domMap,
-            //    phystime,
-            //    (this.Control.solveCoupledHeatEquation ? this.Temperature.ToEnumerable() : null),
-            //    (this.Control.solveCoupledHeatEquation ? this.DisjoiningPressure.ToEnumerable() : null));
             this.XNSE_Operator.AssembleMatrix(
                 OpMtx, OpAffine, codMap, domMap,
                 CurrentState, AgglomeratedCellLengthScales, phystime,
@@ -1346,7 +1252,7 @@ namespace BoSSS.Application.XNSE_Solver {
 
                         if(this.Control.solveCoupledHeatEquation && m_BDF_coupledTimestepper != null) {
                             m_BDF_coupledTimestepper.Solve(phystime, dt, Control.SkipSolveAndEvaluateResidual);
-                            //ComputeHeatflux();
+                            ComputeHeatflux();
                         }
                         
                     } else {
@@ -2533,7 +2439,7 @@ namespace BoSSS.Application.XNSE_Solver {
                                        }
 
 
-                                       double mEvap = -0.1; // qEvap / hVap; // mass flux
+                                       double mEvap = qEvap / hVap; // mass flux
                                        //result[j, k] = mEvap * ((1 / rho_v) - (1 / rho_l)) * Normals[j, k, d];   //
                                        result[j, k] = mEvap * (1 / rho_v) * Normals[j, k, d];   //
                                        //result[j, k] = - Normals[j, k, d];   //
@@ -3609,6 +3515,7 @@ namespace BoSSS.Application.XNSE_Solver {
 
 
         #endregion
+
 
         #region logging
 
