@@ -820,7 +820,7 @@ namespace BoSSS.Application.FSI_Solver {
             return C;
         }
 
-        public static FSI_Control ActiveParticle_ForceTest(int k = 2)
+        public static FSI_Control Test_ActiveForce(int k = 2)
         {
             FSI_Control C = new FSI_Control();
 
@@ -1121,7 +1121,7 @@ namespace BoSSS.Application.FSI_Solver {
             // =============================  
             C.AdvancedDiscretizationOptions.PenaltySafety = 4;
             C.AdvancedDiscretizationOptions.CellAgglomerationThreshold = 0.2;
-            C.LevelSetSmoothing = true;
+            C.LevelSetSmoothing = false;
             C.NonLinearSolver.MaxSolverIterations = 1000;
             C.NonLinearSolver.MinSolverIterations = 1;
             C.LinearSolver.NoOfMultigridLevels = 1;
