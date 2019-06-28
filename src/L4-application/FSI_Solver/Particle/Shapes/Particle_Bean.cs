@@ -60,7 +60,7 @@ namespace BoSSS.Application.FSI_Solver
                 return 2 * Math.PI * radius_P;
             }
         }
-        protected override double Area_P
+        public override double Area_P
         {
             get
             {

@@ -60,7 +60,7 @@ namespace BoSSS.Application.FSI_Solver {
             }
         }
 
-        protected override double Area_P {
+        public override double Area_P {
             get {
                 double a = length_P * thickness_P * Math.PI;
                 if (a <= 0.0 || double.IsNaN(a) || double.IsInfinity(a))

@@ -75,7 +75,7 @@ namespace BoSSS.Application.FSI_Solver
             }
         }
 
-        protected override double Area_P
+        public override double Area_P
         {
             get
             {

@@ -75,7 +75,7 @@ namespace BoSSS.Application.FSI_Solver {
             }
         }
 
-        protected override double Area_P {
+        public override double Area_P {
             get {
                 return 4 * length_P * thickness_P * (SpecialFunctions.Gamma(1 + 1 / superEllipsoidExponent)).Pow2() / SpecialFunctions.Gamma(1 + 2 / superEllipsoidExponent);
             }
