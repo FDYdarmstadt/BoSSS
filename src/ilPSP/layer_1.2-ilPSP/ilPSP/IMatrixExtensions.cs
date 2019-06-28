@@ -1995,10 +1995,9 @@ namespace ilPSP {
             var M = MultidimensionalArray.Create(Mtx.NoOfRows, Mtx.NoOfCols);
             M.Acc(1.0, Mtx);
             Mtx = default(T);
-            double tol = BLAS.MachineEps;
-
             int I = M.NoOfRows;
             int J = M.NoOfCols;
+            double tol = BLAS.MachineEps * Math.Max(I, J) * M.InfNorm(); 
 
             var cols = new List<int>();
             var pivots = new List<int>();
