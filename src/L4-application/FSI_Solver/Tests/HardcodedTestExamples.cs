@@ -672,10 +672,10 @@ namespace BoSSS.Application.FSI_Solver {
             C.SessionName = C.ProjectName;
             C.Tags.Add("with immersed boundary method");
             C.AdaptiveMeshRefinement = false;
-            C.RefinementLevel = 1;
+            C.RefinementLevel = 2;
             C.SessionName = "fjkfjksdfhjk";
 
-            C.pureDryCollisions = false;
+            C.pureDryCollisions = true;
             C.SetDGdegree(k);
 
             // grid and boundary conditions
@@ -686,8 +686,8 @@ namespace BoSSS.Application.FSI_Solver {
 
                 int q, r;
 
-                q = 40;
-                r = 40;
+                q = 20;
+                r = 20;
 
                 double[] Xnodes = GenericBlas.Linspace(-1.5 * BaseSize, 1.5 * BaseSize, q + 1);
                 double[] Ynodes = GenericBlas.Linspace(-1.5 * BaseSize, 1.5 * BaseSize, r + 1);
@@ -742,7 +742,7 @@ namespace BoSSS.Application.FSI_Solver {
             // Fluid Properties
             C.PhysicalParameters.rho_A = 1.0;
             C.PhysicalParameters.mu_A = 0.1;
-            C.CoefficientOfRestitution = 1;
+            C.CoefficientOfRestitution = 0;
 
             // Particle Properties
             //C.PhysicalParameters.mu_B = 0.1;
@@ -760,6 +760,7 @@ namespace BoSSS.Application.FSI_Solver {
                 underrelaxation_factor = 9,// underrelaxation with [factor * 10^exponent]
                 ClearSmallValues = true,
                 neglectAddedDamping = false,
+                IncludeRotation = false
             });
 
             C.Particles.Add(new Particle_superEllipsoid(new double[] { 0.45, 0 }, startAngl: 45)
