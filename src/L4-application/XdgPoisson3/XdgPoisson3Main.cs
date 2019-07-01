@@ -41,6 +41,7 @@ using NUnit.Framework;
 using BoSSS.Foundation.IO;
 using BoSSS.Foundation.Grid.Aggregation;
 using ilPSP.Tracing;
+using Code = BoSSS.Solution.Control.LinearSolverConfig.Code;
 
 namespace BoSSS.Application.XdgPoisson3 {
 
@@ -51,6 +52,10 @@ namespace BoSSS.Application.XdgPoisson3 {
         static void Main(string[] args) {
             BatchmodeConnector.Flav = BatchmodeConnector.Flavor.Octave;
             //BatchmodeConnector.MatlabExecuteable = "D:\\cygwin\\bin\\bash.exe";
+
+            //BoSSS.Application.XdgPoisson3.Tests.TestFixtureSetUp();
+            //BoSSS.Application.XdgPoisson3.Tests.SolverTest(Code.exp_softpcg_mg);
+            //Assert.IsTrue(false, "remove me");
 
             BoSSS.Solution.Application<XdgPoisson3Control>._Main(args, false, delegate () {
                 return new XdgPoisson3Main();

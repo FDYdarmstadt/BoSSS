@@ -50,7 +50,7 @@ namespace BoSSS.Application.ZwoLsTest {
             XQuadFactoryHelper.CheckQuadRules = true;
 
             //AllUpTest.SetUp();
-            //BoSSS.Application.ZwoLsTest.AllUpTest.AllUp(0.3d, 0, true);
+            //BoSSS.Application.ZwoLsTest.AllUpTest.AllUp(0.3d, 1, true);
             //AllUpTest.Teardown();
             //Assert.IsTrue(false, "Remove me");
             //return;
@@ -185,7 +185,7 @@ namespace BoSSS.Application.ZwoLsTest {
 
 
         protected override void CreateEquationsAndSolvers(GridUpdateDataVaultBase L) {
-            Op = new XSpatialOperatorMk2(1, 0, 1, QuadOrderFunc.SumOfMaxDegrees(RoundUp: true), null, "u", "c1");
+            Op = new XSpatialOperatorMk2(1, 0, 1, QuadOrderFunc.SumOfMaxDegrees(RoundUp: true), new SpeciesId[] { LsTrk.GetSpeciesId("B") }, "u", "c1");
 
             Op.EquationComponents["c1"].Add(new DxFlux()); // Flux in Bulk Phase;
             Op.EquationComponents["c1"].Add(new LevSetFlx_phi0(this.LsTrk)); // flux am lev-set 0
