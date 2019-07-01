@@ -1045,6 +1045,10 @@ namespace BoSSS.Solution.LevelSetTools.Advection {
                     //    MPIParameterExchange:false,
                     //    whichSpc:Tracker.GetSpeciesId("A"));
                     XSpatialOperatorMk2.XEvaluatorLinear mtxBuilder = InterfaceOperator.GetMatrixBuilder(Tracker, map, IfParams, map, Tracker.GetSpeciesId("A"));
+
+                    MultiphaseCellAgglomerator dummy = Tracker.GetAgglomerator(Tracker.SpeciesIdS.ToArray(), HMForder, 0.0);
+                    mtxBuilder.SpeciesOperatorCoefficients[Tracker.GetSpeciesId("A")].CellLengthScales = dummy.CellLengthScales[Tracker.GetSpeciesId("A")];
+
                     mtxBuilder.time = 0;
                     mtxBuilder.MPITtransceive = false;
                     if(d != 0)
