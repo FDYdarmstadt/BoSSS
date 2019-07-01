@@ -292,12 +292,26 @@ namespace BoSSS.Solution.XNSECommon {
         /// </summary>
         [DataMember]
         public bool UseLevelSetStabilization = false;
-            
+
+
+        /// <summary>
+        /// Turn the use of weighted averages at the interface on or off
+        /// </summary>
+        [DataMember]
+        public bool UseWeightedAverages = false;
+
+
         /// <summary>
         /// implementation variant of the isotropic surface stress
         /// </summary>
         [DataMember]
         public SurfaceStressTensor_IsotropicMode SST_isotropicMode = SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_Flux;
+
+        /// <summary>
+        /// in case of a Laplace-Beltrami surface tension computation the curvature is need as parameter
+        /// </summary>
+        [DataMember]
+        public bool CurvatureNeeded = false;
 
         /// <summary>
         /// Expert options regarding the evaluation of the curvature.
@@ -333,6 +347,7 @@ namespace BoSSS.Solution.XNSECommon {
                 SurfStressTensor = this.SurfStressTensor,
                 SST_isotropicMode = this.SST_isotropicMode,
                 UseLevelSetStabilization = this.UseLevelSetStabilization,
+                UseWeightedAverages = this.UseWeightedAverages,
                 ViscosityMode = this.ViscosityMode,
                 //ViscosityImplementation = this.ViscosityImplementation,
                 UseGhostPenalties = this.UseGhostPenalties,

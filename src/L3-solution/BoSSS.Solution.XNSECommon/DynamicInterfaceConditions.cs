@@ -26,12 +26,12 @@ using BoSSS.Platform;
 using System.Diagnostics;
 using BoSSS.Solution.NSECommon;
 using ilPSP;
-
+using System.Collections;
 
 namespace BoSSS.Solution.XNSECommon.Operator.DynamicInterfaceConditions {
 
 
-    public class PrescribedMassFlux : ILevelSetForm {
+    public class MassFluxAtInterface : ILevelSetForm, ILevelSetEquationComponentCoefficient {
 
 
         LevelSetTracker m_LsTrk;
@@ -42,8 +42,7 @@ namespace BoSSS.Solution.XNSECommon.Operator.DynamicInterfaceConditions {
         /// <param name="_d">spatial direction</param>
         /// <param name="_D">spatial dimension</param>
         /// <param name="LsTrk"></param>
-        /// <param name="_sigma">surface-tension constant</param>
-        public PrescribedMassFlux(int _d, int _D, LevelSetTracker LsTrk, double _rhoA, double _rhoB, double _M) {
+        public MassFluxAtInterface(int _d, int _D, LevelSetTracker LsTrk, double _rhoA, double _rhoB, double _kA, double _kB, double _hVapA, double _Rint, double _Tsat, double _sigma, double _pc) {
             m_LsTrk = LsTrk;
             if(_d >= _D)
                 throw new ArgumentOutOfRangeException();
@@ -52,7 +51,15 @@ namespace BoSSS.Solution.XNSECommon.Operator.DynamicInterfaceConditions {
 
             this.rhoA = _rhoA;
             this.rhoB = _rhoB;
-            this.M = _M;
+            //this.M = _M;
+            this.kA = _kA;
+            this.kB = _kB;
+            this.hVapA = _hVapA;
+            this.Rint = _Rint;
+            //this.TintMin = _TintMin;
+            this.Tsat = _Tsat;
+            this.sigma = _sigma;
+            this.pc = _pc;
         }
 
         int m_D;
@@ -60,14 +67,108 @@ namespace BoSSS.Solution.XNSECommon.Operator.DynamicInterfaceConditions {
 
         double rhoA;
         double rhoB;
-        double M;
+
+        double kA;
+        double kB;
+        double hVapA;   // for the identification of the liquid phase
+        double Rint;
+        //double TintMin;
+        double Tsat;
+        double sigma;
+        double pc;
+
+        //double M;
+
+
+        private double ComputeEvaporationMass_Macro(double[] GradT_A, double[] GradT_B, double[] n) {
+
+            double hVap = 0.0;
+            double qEvap = 0.0;
+            if(hVapA > 0) {
+                hVap = hVapA;
+                for(int d = 0; d < m_D; d++)
+                    qEvap += (kA * GradT_A[d] - kB * GradT_B[d]) * n[d];
+            } else {
+                hVap = -hVapA;
+                for(int d = 0; d < m_D; d++)
+                    qEvap += (kB * GradT_B[d] - kA * GradT_A[d]) * n[d];
+            }
+
+            return qEvap / hVap;
+        }
+
+        private double ComputeEvaporationMass_Micro(double T_A, double T_B, double curv, double p_disp) {
+
+            if(hVapA == 0.0)
+                return 0.0;
+
+            double pc0 = (pc < 0.0) ? sigma * curv + p_disp : pc;      // augmented capillary pressure (without nonlinear evaporative masss part)
+
+            double TintMin = 0.0;
+            double hVap = 0.0;
+            double qEvap = 0.0;
+            if(hVapA > 0) {
+                hVap = hVapA;
+                TintMin = Tsat * (1 + (pc0 / (hVap * rhoA)));
+                if(T_A > TintMin)
+                    qEvap = -(T_A - TintMin) / Rint;
+            } else if(hVapA < 0) {
+                hVap = -hVapA;
+                TintMin = Tsat * (1 + (pc0 / (hVap * rhoB)));
+                if(T_B > TintMin)
+                    qEvap = (T_B - TintMin) / Rint;
+            }
+
+            return qEvap / hVap;
+        }
+
+
+        private double ComputeEvaporationMass(double[] paramsNeg, double[] paramsPos, double[] N, bool microRegion) {
+
+            double M = 0.0;
+            if(microRegion) {
+                M = ComputeEvaporationMass_Micro(paramsNeg[m_D], paramsPos[m_D], paramsNeg[m_D + 1], paramsNeg[m_D + 2]);
+            } else {
+                M = ComputeEvaporationMass_Macro(paramsNeg.GetSubVector(0, m_D), paramsPos.GetSubVector(0, m_D), N);
+            }
+
+            return M;
+
+        }
 
 
         public double LevelSetForm(ref CommonParamsLs cp, double[] uA, double[] uB, double[,] Grad_uA, double[,] Grad_uB, double vA, double vB, double[] Grad_vA, double[] Grad_vB) {
 
             double[] Normal = cp.n;
 
-            double massFlux = -M.Pow2() * ((1/rhoA) - (1/rhoB)) * Normal[m_d];
+            Debug.Assert(cp.ParamsPos[m_D + 1] == cp.ParamsNeg[m_D + 1], "curvature must be continuous across interface");
+            Debug.Assert(cp.ParamsPos[m_D + 2] == cp.ParamsNeg[m_D + 2], "disjoining pressure must be continuous across interface");
+
+            //double M = ComputeEvaporationMass_Macro(cp.ParamsNeg.GetSubVector(0, m_D), cp.ParamsPos.GetSubVector(0, m_D), Normal);
+            //double M = ComputeEvaporationMass_Micro(cp.ParamsNeg[m_D], cp.ParamsPos[m_D], cp.ParamsNeg[m_D + 1], cp.ParamsNeg[m_D + 2]);
+            double M = -0.1; // ComputeEvaporationMass(cp.ParamsNeg, cp.ParamsPos, cp.n, evapMicroRegion[cp.jCell]);
+            if (M == 0.0)
+                return 0.0;
+
+            //Console.WriteLine("mEvap - MassFluxAtInterface: {0}", M);
+
+            double massFlux = M.Pow2() * ((1 / rhoA) - (1 / rhoB)) * Normal[m_d];
+            //if(hVapA > 0) {
+            //    massFlux *= ((1 / rhoB) - (1 / rhoA)) * Normal[m_d];
+            //} else {
+            //    massFlux *= ((1 / rhoA) - (1 / rhoB)) * Normal[m_d];
+            //}
+
+
+            double p_disp = cp.ParamsNeg[1];
+
+            // augmented capillary pressure
+            //double acp_jump = 0.0;
+            //if(!double.IsNaN(p_disp))
+            //    acp_jump = massFlux + p_disp;
+            //else
+            //    acp_jump = massFlux;
+
 
             double FlxNeg = -0.5 * massFlux;
             double FlxPos = +0.5 * massFlux;
@@ -76,19 +177,32 @@ namespace BoSSS.Solution.XNSECommon.Operator.DynamicInterfaceConditions {
             Debug.Assert(!(double.IsNaN(FlxNeg) || double.IsInfinity(FlxNeg)));
             Debug.Assert(!(double.IsNaN(FlxPos) || double.IsInfinity(FlxPos)));
 
-            return FlxNeg * vA - FlxPos * vB;
+            double Ret = FlxNeg * vA - FlxPos * vB;
+
+            return Ret;
         }
+
+
+        BitArray evapMicroRegion;
+
+        public void CoefficientUpdate(CoefficientSet csA, CoefficientSet csB, int[] DomainDGdeg, int TestDGdeg) {
+
+            if(csA.UserDefinedValues.Keys.Contains("EvapMicroRegion"))
+                evapMicroRegion = (BitArray)csA.UserDefinedValues["EvapMicroRegion"];
+
+        }
+
 
         public IList<string> ArgumentOrdering {
             get {
-                return new string[] { };
+                return new string[] {  };
             }
         }
 
 
         public IList<string> ParameterOrdering {
             get {
-                return new string[] { };
+                return ArrayTools.Cat( new string[] { "GradTempX", "GradTempY", "GradTempZ" }.GetSubVector(0, m_D), VariableNames.Temperature, "Curvature", "DisjoiningPressure" ); //;
             }
         }
 
@@ -108,7 +222,6 @@ namespace BoSSS.Solution.XNSECommon.Operator.DynamicInterfaceConditions {
             get { return TermActivationFlags.V; }
         }
     }
-
 
 
 }

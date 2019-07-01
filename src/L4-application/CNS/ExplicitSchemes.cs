@@ -232,7 +232,7 @@ namespace CNS {
             }
 
             // Make sure shock sensor is updated before every flux evaluation
-            if (control.ShockSensor != null) {
+            if (control.CNSShockSensor != null) {
                 ExplicitEuler explicitEulerBasedTimestepper = timeStepper as ExplicitEuler;
                 if (explicitEulerBasedTimestepper == null) {
                     throw new Exception(String.Format(
@@ -242,7 +242,7 @@ namespace CNS {
 
                 explicitEulerBasedTimestepper.OnBeforeComputeChangeRate += delegate (double absTime, double relTime) {
                     // Note: Only shock sensor is updated, _NOT_ the corresponding variable
-                    program.Control.ShockSensor.UpdateSensorValues(
+                    program.Control.CNSShockSensor.UpdateSensorValues(
                         program.WorkingSet.AllFields,
                         program.SpeciesMap,
                         explicitEulerBasedTimestepper.SubGrid.VolumeMask);

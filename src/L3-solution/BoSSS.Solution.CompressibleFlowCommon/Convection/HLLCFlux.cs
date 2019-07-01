@@ -15,13 +15,11 @@ limitations under the License.
 */
 
 using BoSSS.Platform.LinAlg;
-using BoSSS.Solution.CompressibleFlowCommon;
-using BoSSS.Solution.CompressibleFlowCommon.Convection;
 using BoSSS.Solution.CompressibleFlowCommon.Boundary;
 using System;
 using BoSSS.Solution.CompressibleFlowCommon.MaterialProperty;
 
-namespace CNS.Convection {
+namespace BoSSS.Solution.CompressibleFlowCommon.Convection {
 
     /// <summary>
     /// Abstract base class for the components of the HLLC flux as described in
@@ -36,7 +34,7 @@ namespace CNS.Convection {
         /// <param name="boundaryMap"><see cref="EulerFlux"/></param>
         /// <param name="equationComponent"><see cref="EulerFlux"/></param>
         /// <param name="speciesMap"><see cref="EulerFlux"/></param>
-        protected HLLCFlux(CNSControl config, IBoundaryConditionMap boundaryMap, IEulerEquationComponent equationComponent, ISpeciesMap speciesMap)
+        protected HLLCFlux(CompressibleControl config, IBoundaryConditionMap boundaryMap, IEulerEquationComponent equationComponent, ISpeciesMap speciesMap)
             : base(config, boundaryMap, equationComponent, speciesMap) {
             if (config.EquationOfState is IdealGas == false) {
                 throw new Exception("HLLC flux currently only works for ideal gases");

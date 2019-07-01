@@ -1307,8 +1307,8 @@ namespace BoSSS.Foundation {
                 foreach(string codVarName in owner.CodomainVar) {
                     var comps = owner.EquationComponents[codVarName];
 
-                    if (comps.Where(cmp => cmp is INonlinearFlux).Count() > 0)
-                        throw new NotSupportedException("'INonlinearFlux' is not supported for linearization; (codomain variable '" + codVarName + "')");
+                    //if (comps.Where(cmp => cmp is INonlinearFlux).Count() > 0)
+                    //    throw new NotSupportedException("'INonlinearFlux' is not supported for linearization; (codomain variable '" + codVarName + "')");
                     if (comps.Where(cmp => cmp is INonlinearFluxEx).Count() > 0)
                         throw new NotSupportedException("'INonlinearFluxEx' is not supported for linearization; (codomain variable '" + codVarName + "')");
                     //if (comps.Where(cmp => cmp is IDualValueFlux).Count() > 0)

@@ -15,6 +15,7 @@ limitations under the License.
 */
 
 using BoSSS.Solution.CompressibleFlowCommon.MaterialProperty;
+using BoSSS.Solution.CompressibleFlowCommon.ShockCapturing;
 using BoSSS.Solution.Control;
 using System;
 using System.Collections.Generic;
@@ -148,7 +149,7 @@ namespace BoSSS.Solution.CompressibleFlowCommon {
         }
 
         /// <summary>
-        /// Backing field for <see cref="VariableFields"/>
+        /// Backing field for <see cref="VariableToDegreeMap"/>
         /// </summary>
         protected Dictionary<Variable, int> variableFields = new Dictionary<Variable, int>();
 
@@ -156,7 +157,7 @@ namespace BoSSS.Solution.CompressibleFlowCommon {
         /// Dictionary linking field variables (including derived ones) to
         /// the desired polynomial degree
         /// </summary>
-        public IReadOnlyDictionary<Variable, int> VariableFields {
+        public IReadOnlyDictionary<Variable, int> VariableToDegreeMap {
             get {
                 return variableFields;
             }
