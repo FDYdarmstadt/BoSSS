@@ -217,7 +217,7 @@ namespace BoSSS.Application.XdgPoisson3 {
 
                 int order = this.u.Basis.Degree * 2;
 
-                XSpatialOperatorMk2 Op = new XSpatialOperatorMk2(1, 1, (A, B, C) => order, "u", "c1");
+                XSpatialOperatorMk2 Op = new XSpatialOperatorMk2(1, 1, (A, B, C) => order, this.LsTrk.SpeciesIdS.ToArray(), "u", "c1");
                 var lengthScales = ((BoSSS.Foundation.Grid.Classic.GridData)GridData).Cells.PenaltyLengthScales;
                 var lap = new XLaplace_Bulk(this.LsTrk, penalty_multiplyer * penalty_base, "u", this.Control.xLaplaceBCs, 1.0, MU_A, MU_B, lengthScales, this.Control.ViscosityMode);
                 Op.EquationComponents["c1"].Add(lap);      // Bulk form

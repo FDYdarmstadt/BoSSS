@@ -1994,8 +1994,8 @@ namespace BoSSS.Foundation.XDG {
         /// <summary>
         /// ctor, see <see cref="SpatialOperator.SpatialOperator(int,int,Func{int[],int[],int[],int},string[])"/>
         /// </summary>
-        public XSpatialOperatorMk2(int NoOfDomFields, int NoOfCodomFields, Func<int[], int[], int[], int> QuadOrderFunc, params string[] __varnames)
-           : this(GetSubarray(__varnames, 0, NoOfDomFields), GetSubarray(__varnames, NoOfDomFields, NoOfCodomFields), QuadOrderFunc) {
+        public XSpatialOperatorMk2(int NoOfDomFields, int NoOfCodomFields, Func<int[], int[], int[], int> QuadOrderFunc, SpeciesId[] __Species, params string[] __varnames)
+           : this(GetSubarray(__varnames, 0, NoOfDomFields), GetSubarray(__varnames, NoOfDomFields, NoOfCodomFields), QuadOrderFunc, __Species) {
             if(NoOfCodomFields + NoOfDomFields != __varnames.Length)
                 throw new ArgumentException("mismatch between number of provided variable names and given number of domain and codomain fields.");
         }
@@ -2003,8 +2003,8 @@ namespace BoSSS.Foundation.XDG {
         /// <summary>
         /// ctor, see <see cref="SpatialOperator.SpatialOperator(IList{string},IList{string},Func{int[],int[],int[],int})"/>
         /// </summary>
-        public XSpatialOperatorMk2(IList<string> __DomainVar, IList<string> __CoDomainVar, Func<int[], int[], int[], int> QuadOrderFunc)
-            : this(__DomainVar, null, __CoDomainVar, QuadOrderFunc, null) {
+        public XSpatialOperatorMk2(IList<string> __DomainVar, IList<string> __CoDomainVar, Func<int[], int[], int[], int> QuadOrderFunc, SpeciesId[] __Species)
+            : this(__DomainVar, null, __CoDomainVar, QuadOrderFunc, __Species) {
         }
 
         /// <summary>
