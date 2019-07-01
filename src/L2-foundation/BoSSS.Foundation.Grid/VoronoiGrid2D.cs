@@ -37,8 +37,6 @@ namespace BoSSS.Foundation.Grid.Voronoi
             return Polygonal(polygonBoundary, 10, numberOfNodes);
         }
 
-        
-
         /// <summary>
         /// Creates a random voronoi mesh inside a polygon.
         /// </summary>
@@ -183,7 +181,7 @@ namespace BoSSS.Foundation.Grid.Voronoi
             Debug.Assert(boundingBox.Length > 0);
             int dim = boundingBox[0].Dim;
             MultidimensionalArray positions = MultidimensionalArray.Create(nSeedVoronois, dim);
-            Random rnd = new Random(0);
+            Random rnd = new Random();
 
             double[] scales = ScalesFromRandomIntervalToBoundingBox(boundingBox);
             Vector center = CenterOfBoundingBox(boundingBox);

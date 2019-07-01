@@ -36,7 +36,7 @@ namespace BoSSS.Foundation.Grid.Voronoi
         }
     }
 
-    public class VoronoiNodes : MultidimensionalArrayOrList<VoronoiNode>
+    public class VoronoiNodes : DataChameleon<MultidimensionalArray[], IList<VoronoiNode>>
     {
         ulong[] globalIds;
 
@@ -44,83 +44,113 @@ namespace BoSSS.Foundation.Grid.Voronoi
             get { return globalIds; }
         }
 
-        MultidimensionalArrayOrList<VoronoiNode> nodes;
-
         public MultidimensionalArray Positions {
-            get { return Array; }
+            get { return Red[0]; }
         }
 
         public IList<VoronoiNode> Nodes {
-            get { return List; }
+            get { return Blue; }
         }
 
         //Velocity of each cell jCell
-        public MultidimensionalArray Velocity;
-
-        void InitializeVelocity(int count, int dimension)
-        {
-            this.Velocity = MultidimensionalArray.Create(count, dimension);
+        public MultidimensionalArray Velocity {
+            get { return Red[1]; }
         }
 
         public VoronoiNodes(MultidimensionalArray positions)
-            :base(positions)
-        {
-            int dimension = positions.GetLength(1);
-            SetGlobalIds();
-            InitializeVelocity(Count, dimension);
-        }
-
-        void SetGlobalIds()
-        {
-            globalIds = new ulong[Count];
-            for(int i = 0; i < Count; ++i)
+            : base(new MultidimensionalArray[]
             {
-                globalIds[i] = VoronoiIDProvider.GetID();
-            }
+                positions,
+                InitializeVelocityFrom(positions)
+            })
+        {
+            SetGlobalIds();
         }
 
         public VoronoiNodes(MultidimensionalArray positions, ulong[] globalIds)
-            : base(positions)
+            : base(new MultidimensionalArray[]
+            {
+                positions,
+                InitializeVelocityFrom(positions)
+            })
         {
             if (positions.GetLength(0) != globalIds.Length)
             {
                 throw new Exception("Dimension mismatch of nodes and globalIds.");
             }
             this.globalIds = globalIds;
-            int dimension = positions.GetLength(1);
-            InitializeVelocity(Count, dimension);
+        }
+
+        public VoronoiNodes(MultidimensionalArray positions, MultidimensionalArray velocity, ulong[] globalIds)
+            : base(new MultidimensionalArray[]
+            {
+                positions,
+                velocity
+            })
+        {
+            if (positions.GetLength(0) != globalIds.Length)
+            {
+                throw new Exception("Dimension mismatch: Cannot create Nodes.");
+            }
+            if (velocity.GetLength(0) != globalIds.Length)
+            {
+                throw new Exception("Dimension mismatch: Cannot create Nodes.");
+            }
+            this.globalIds = globalIds;
         }
 
         public VoronoiNodes(IList<VoronoiNode> nodes)
             : base(nodes)
+        { }
+
+        static MultidimensionalArray InitializeVelocityFrom(MultidimensionalArray positions)
         {
-            int dimension = nodes[0].Dim;
-            InitializeVelocity(Count, dimension);
+            return MultidimensionalArray.Create(positions.Lengths);
+        } 
+
+        void SetGlobalIds()
+        {
+            int numberOfNodes = Positions.GetLength(0);
+            globalIds = new ulong[numberOfNodes];
+            for(int i = 0; i < numberOfNodes; ++i)
+            {
+                globalIds[i] = VoronoiIDProvider.GetID();
+            }
         }
 
-        protected override IList<VoronoiNode> ToList(MultidimensionalArray positions)
+        protected override IList<VoronoiNode> ToBlue(MultidimensionalArray[] positionsAndVelocity)
         {
-            List<VoronoiNode> nodeList = new List<VoronoiNode>(positions.GetLength(0));
-            for (int i = 0; i < positions.GetLength(0); ++i)
+            int numberOfNodes = positionsAndVelocity[0].GetLength(0);
+            List<VoronoiNode> nodeList = new List<VoronoiNode>(numberOfNodes);
+            for (int i = 0; i < numberOfNodes; ++i)
             {
-                VoronoiNode node = new VoronoiNode( new Vector(positions.GetRow(i)), GlobalIds[i]);
+                VoronoiNode node = new VoronoiNode(
+                    new Vector(positionsAndVelocity[0].GetRow(i)),
+                    new Vector(positionsAndVelocity[1].GetRow(i)),
+                    GlobalIds[i]);
                 nodeList.Add(node);
             }
             return nodeList;
         }
 
-        protected override MultidimensionalArray ToArray(IList<VoronoiNode> nodes)
+        protected override MultidimensionalArray[] ToRed(IList<VoronoiNode> nodes)
         {
-            InitializeVelocity(nodes.Count, nodes[0].Dim);
             MultidimensionalArray positions = MultidimensionalArray.Create(nodes.Count, nodes[0].Dim);
+            MultidimensionalArray velocities = MultidimensionalArray.Create(nodes.Count, nodes[0].Dim);
             globalIds = new ulong[nodes.Count];
             for (int i = 0; i < nodes.Count; ++i)
             {
                 Vector position = nodes[i].Position;
                 positions.SetRowPt(i, position);
+                Vector velocity = nodes[i].Velocity;
+                velocities.SetRowPt(i, velocity);
                 globalIds[i] = nodes[i].GlobalID;
             }
-            return positions;
+            return new[] { positions, velocities };
+        }
+
+        public int Count {
+            get { return State == Color.Red ? Red[0].GetLength(0) : Blue.Count; }
         }
     }
 
@@ -129,6 +159,8 @@ namespace BoSSS.Foundation.Grid.Voronoi
         public ulong GlobalID { get; }
 
         public Vector Position { get; set; }
+
+        public Vector Velocity{get; set;}
 
         public int Dim {
             get { return Position.Dim; }
@@ -139,84 +171,89 @@ namespace BoSSS.Foundation.Grid.Voronoi
             GlobalID = VoronoiIDProvider.GetID();
         }
 
-        public VoronoiNode(Vector position)
+        public VoronoiNode(Vector position, Vector velocity)
             : this()
         {
             Position = position;
+            Velocity = velocity;
         }
 
-        public VoronoiNode(Vector position, ulong globalId)
+        public VoronoiNode(Vector position, Vector velocity, ulong globalId)
         {
             GlobalID = globalId;
             Position = position;
+            Velocity = velocity; 
         }
     }
 
-    public abstract class MultidimensionalArrayOrList<T>
+    public abstract class DataChameleon<TRed, TBlue>
     {
-        enum DataState { MultiDimensionalArray, List };
-        DataState state;
+        protected enum Color { Red, Blue };
 
-        IList<T> list;
-        MultidimensionalArray array;
-
-        public int Count {
-            get { return DataStateMatches(DataState.List) ? list.Count : array.GetLength(0); }
+        protected Color State {
+            get;
+            private set;
         }
 
-        protected IList<T> List {
+        TBlue blue;
+
+        TRed red;
+
+        protected TBlue Blue {
             get {
-                if (!DataStateMatches(DataState.List))
-                    UpdateList();
-                return list;
+                if (!DataStateMatches(Color.Blue))
+                    UpdateBlue();
+                State = Color.Blue;
+                return blue;
             }
             set {
-                state = DataState.List;
-                list = value;
+                State = Color.Blue;
+                blue = value;
             }
         }
 
-        bool DataStateMatches(DataState incoming)
-        {
-            return incoming == state;
-        }
-
-        void UpdateList()
-        {
-            list = ToList(array);
-        }
-
-        protected MultidimensionalArray Array {
+        protected TRed Red {
             get {
-                if (!DataStateMatches(DataState.MultiDimensionalArray))
-                    UpdateArray();
-                return array;
+                if (!DataStateMatches(Color.Red))
+                    UpdateRed();
+                State = Color.Red;
+                return red;
             }
             set {
-                state = DataState.MultiDimensionalArray;
-                array = value;
+                State = Color.Red;
+                red = value;
             }
         }
 
-        void UpdateArray()
+        public DataChameleon(TBlue blue)
         {
-            array = ToArray(list);
+            State = Color.Blue;
+            this.blue = blue;
         }
 
-        protected abstract MultidimensionalArray ToArray(IList<T> list);
-
-        protected abstract IList<T> ToList(MultidimensionalArray array);
-
-        public MultidimensionalArrayOrList(IList<T> list)
+        public DataChameleon(TRed red)
         {
-            state = DataState.List;
-            this.list = list;
+            State = Color.Red;
+            this.red = red;
+        }
+        
+        bool DataStateMatches(Color incoming)
+        {
+            return incoming == State;
         }
 
-        public MultidimensionalArrayOrList(MultidimensionalArray array)
+        void UpdateBlue()
         {
-            state = DataState.MultiDimensionalArray;
-            this.array = array;
+            blue = ToBlue(red);
         }
+
+        void UpdateRed()
+        {
+            red = ToRed(blue);
+        }
+
+        protected abstract TRed ToRed(TBlue data);
+
+        protected abstract TBlue ToBlue(TRed data);
     }
 }
