@@ -102,6 +102,12 @@ namespace BoSSS.Application.FSI_Solver
         public int iteration_counter_P = 0;
 
         /// <summary>
+        /// Number of iterations
+        /// </summary>
+        [DataMember]
+        public double ForceTorqueResidual;
+
+        /// <summary>
         /// Constant Forces and Torque underrelaxation?
         /// </summary>
         [DataMember]

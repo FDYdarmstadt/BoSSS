@@ -767,14 +767,14 @@ namespace BoSSS.Application.FSI_Solver
                 int CurrentColor = GlobalParticleColor[p];
                 bool ContainsCurrentColor = false;
                 BitArray ColoredCells = new BitArray(J);
-                List<int> CCA = new List<int>();
+                List<int> ColoredCell_P = new List<int>();
                 for (int j = 0; j < J; j++)
                 {
                     if (CellColor[j] == CurrentColor && CurrentColor != 0)
                     {
                         ContainsCurrentColor = true;
                         ColoredCells[j] = true;
-                        CCA.Add(j);
+                        ColoredCell_P.Add(j);
                     }
                 }
                 if (ContainsCurrentColor)
@@ -803,7 +803,7 @@ namespace BoSSS.Application.FSI_Solver
                             Particle Particle0 = m_Particles[ParticlesOfCurrentColor[pc]];
                             phi *= Particle0.Phi_P(X);
                             Particle0.ParticleColor = CurrentColor;
-                            Particle0.ParticleColoredCells = CCA.ToArray();
+                            Particle0.ParticleColoredCells = ColoredCell_P.ToArray();
                             // Delete all particles within the current color from the particle color array
                             // ===========================================================================
                             GlobalParticleColor[ParticlesOfCurrentColor[pc]] = 0;
