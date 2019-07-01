@@ -51,12 +51,14 @@
   <ItemGroup>
     <Compile Include="ConductivityAtLevelSet.cs" />
     <Compile Include="ConductivityInBulk.cs" />
+    <Compile Include="ConductivityInSpeciesBulk.cs" />
     <Compile Include="ConvectionAtLevelSet_withEvaporation.cs" />
     <Compile Include="DivergenceAtLevelSet_withEvaporation.cs" />
     <Compile Include="DynamicInterfaceConditions.cs" />
     <Compile Include="EvaporationAtLevelSet.cs" />
     <Compile Include="HeatConvectionAtLevelSet.cs" />
     <Compile Include="HeatConvectionInBulk.cs" />
+    <Compile Include="HeatConvectionInSpeciesBulk.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="ThermalBcType.cs" />
     <Compile Include="ThermalBoundaryCondMap.cs" />

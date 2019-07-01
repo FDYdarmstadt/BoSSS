@@ -35,12 +35,11 @@ namespace BoSSS.Solution.XheatCommon {
 
         LevelSetTracker m_LsTrk;
 
-        public ConductivityAtLevelSet(LevelSetTracker lstrk, double _kA, double _kB, double _penalty, double _Tsat) {
-            this.m_LsTrk = lstrk;
+        public ConductivityAtLevelSet(LevelSetTracker lstrk, double _kA, double _kB, double _penalty) { 
             this.kA = _kA;
             this.kB = _kB;
             this.penalty = _penalty;
-            this.Tsat = _Tsat;
+            //this.Tsat = _Tsat;
             this.m_D = lstrk.GridDat.SpatialDimension;
 
         }
@@ -50,7 +49,7 @@ namespace BoSSS.Solution.XheatCommon {
 
         double penalty;
 
-        double Tsat;
+        //double Tsat;
 
         int m_D;
 

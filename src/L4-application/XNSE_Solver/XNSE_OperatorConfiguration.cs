@@ -49,15 +49,15 @@ namespace BoSSS.Application.XNSE_Solver {
             DomBlocks = new bool[] { true, true };
             dntParams = control.AdvancedDiscretizationOptions;
             physParams = control.PhysicalParameters;
-            thermParams = control.ThermalParameters;
+            //thermParams = control.ThermalParameters;
             UseXDG4Velocity = control.UseXDG4Velocity;
 
             if(control.AdvancedDiscretizationOptions.SurfStressTensor == SurfaceSressTensor.SemiImplicit)
                 control.PhysicalParameters.mu_I = control.dtFixed * control.PhysicalParameters.Sigma;
 
-            Heat = control.solveCoupledHeatEquation;
-            Evaporation = (control.ThermalParameters.hVap_A != 0.0 && control.ThermalParameters.hVap_B != 0.0);
-            MatInt = !Evaporation;
+            //Heat = control.solveCoupledHeatEquation;
+            //Evaporation = (control.ThermalParameters.hVap_A != 0.0 && control.ThermalParameters.hVap_B != 0.0);
+            //MatInt = !Evaporation;
             
 
             switch(control.Timestepper_LevelSetHandling) {
@@ -90,7 +90,7 @@ namespace BoSSS.Application.XNSE_Solver {
 
         public PhysicalParameters physParams;
 
-        public ThermalParameters thermParams;
+        //public ThermalParameters thermParams;
 
         /// <summary>
         /// advanced operator configuration
@@ -139,17 +139,17 @@ namespace BoSSS.Application.XNSE_Solver {
         /// <summary>
         /// include heat equation
         /// </summary>
-        public bool Heat;
+        //public bool Heat;
 
         /// <summary>
         /// include evaporation
         /// </summary>
-        public bool Evaporation;
+        //public bool Evaporation;
 
         /// <summary>
         /// true if the interface is a material interface
         /// </summary>
-        public bool MatInt;
+        public bool MatInt = true;
 
         /// <summary>
         /// Switch to turn velocity extension on/off.
@@ -173,6 +173,10 @@ namespace BoSSS.Application.XNSE_Solver {
         public PhysicalParameters getPhysParams {
             get { return physParams; }
         }
+
+        //public ThermalParameters getThermParams {
+        //    get { return thermParams; }
+        //}
 
         public DoNotTouchParameters getDntParams {
             get { return dntParams; }
@@ -212,5 +216,36 @@ namespace BoSSS.Application.XNSE_Solver {
         }
     }
 
-       
+
+    public class XNSEHeat_OperatorConfiguration : XNSE_OperatorConfiguration, IXHeat_Configuration {
+
+
+        public XNSEHeat_OperatorConfiguration(XNSE_Control control) 
+            : base(control) {
+
+            thermParams = control.ThermalParameters;
+
+            Heat = control.solveCoupledHeatEquation;
+            Evaporation = (control.ThermalParameters.hVap_A != 0.0 && control.ThermalParameters.hVap_B != 0.0);
+            MatInt = !Evaporation;
+
+        }
+
+
+        public ThermalParameters thermParams;
+
+        /// <summary>
+        /// include heat equation
+        /// </summary>
+        public bool Heat;
+
+        /// <summary>
+        /// include evaporation
+        /// </summary>
+        public bool Evaporation;
+
+        public ThermalParameters getThermParams {
+            get { return thermParams; }
+        }
+    }
 }

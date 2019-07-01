@@ -71,7 +71,8 @@ namespace BoSSS.Application.XNSE_Solver {
         static void Main(string[] args) {
 
             //BoSSS.Application.XNSE_Solver.Tests.UnitTest.TestFixtureSetUp();
-            //BoSSS.Application.XNSE_Solver.Tests.UnitTest.PolynomialTestForConvectionTest(3,0,false);
+            ////BoSSS.Application.XNSE_Solver.Tests.UnitTest.PolynomialTestForConvectionTest(3, 0, false);
+            //BoSSS.Application.XNSE_Solver.Tests.UnitTest.TestCapillaryWave();
             ////BoSSS.Application.XNSE_Solver.Tests.ElementalTestProgramm.LineMovementTest(LevelSetEvolution.ScalarConvection, LevelSetHandling.Coupled_Once, XNSE_Control.TimesteppingScheme.ImplicitEuler, 0.5);
             //Assert.IsFalse(true, "remove me");
 
@@ -400,7 +401,7 @@ namespace BoSSS.Application.XNSE_Solver {
         /// <summary>
         /// OperatorConfiguration for the <see cref="XNSE_Operator"/>
         /// </summary>
-        XNSE_OperatorConfiguration XOpConfig;
+        XNSEHeat_OperatorConfiguration XOpConfig;
 
         /// <summary>
         /// Current Velocity: either extended or non-extended DG.
@@ -530,7 +531,7 @@ namespace BoSSS.Application.XNSE_Solver {
             // Create Spatial Operator
             // ======================= 
 
-            XOpConfig = new XNSE_OperatorConfiguration(this.Control);
+            XOpConfig = new XNSEHeat_OperatorConfiguration(this.Control);
 
             XNSE_Operator = new XNSE_OperatorFactory(XOpConfig, this.LsTrk, this.m_HMForder, this.BcMap, degU);
 
@@ -2299,7 +2300,7 @@ namespace BoSSS.Application.XNSE_Solver {
         /// <param name="dt"></param>
         /// <param name="CurrentState">
         /// The current solution (velocity and pressure), since the complete solution is provided by the time stepper,
-        /// only the velocity components(supposed to be at the beginning)  are used.
+        /// only the velocity components(supposed to be at the beginning) are used.
         /// </param>
         /// <param name="underrelax">
         /// </param>
@@ -2571,9 +2572,9 @@ namespace BoSSS.Application.XNSE_Solver {
 
                 #endregion
 
-                // ==================================================================
+                // ===================================================================
                 // backup interface properties (mass conservation, surface changerate)
-                // ==================================================================
+                // ===================================================================
 
                 #region backup interface props
 
@@ -4515,82 +4516,30 @@ namespace BoSSS.Application.XNSE_Solver {
             // ==================
             {
 
-                // convective part
-                // ================
-                {
-                    if(this.Control.ThermalParameters.IncludeConvection) {
+                // species bulk components
+                for (int spc = 0; spc < LsTrk.TotalNoOfSpecies; spc++) {
+                    // heat equation
+                    Solution.XheatCommon.XOperatorComponentsFactory.AddSpeciesHeatEq(Xheat_Operator,
+                        CodName[0], D, LsTrk.SpeciesNames[spc], LsTrk.SpeciesIdS[spc], coupledBcMap, XOpConfig, LsTrk);
+                }
 
+                // interface components
+                Solution.XheatCommon.XOperatorComponentsFactory.AddInterfaceHeatEq(Xheat_Operator,
+                        CodName[0], D, coupledBcMap, XOpConfig, LsTrk);
+
+
+                if (hVapA != 0.0 && hVapB != 0.0) {
+
+                    // mass flux at interface
+                    Xheat_Operator.EquationComponents[CodName[0]].Add(new HeatFluxAtLevelSet(LsTrk, hVapA, R_int, Tsat, rho_l,
+                           this.Control.PhysicalParameters.Sigma, this.Control.ThermalParameters.pc, this.Control.ThermalParameters.k_A, this.Control.ThermalParameters.k_B));
+
+                    // convective part
+                    if (this.Control.ThermalParameters.IncludeConvection) {
                         var comps = Xheat_Operator.EquationComponents[CodName[0]];
-
-                        double capA = rhoA * cA;
-                        double capB = rhoB * cB;
-
-                        double LFFA = this.Control.AdvancedDiscretizationOptions.LFFA;
-                        double LFFB = this.Control.AdvancedDiscretizationOptions.LFFB;
-
-
-                        var conv = new HeatConvectionInBulk(D, coupledBcMap, capA, capB, LFFA, LFFB, LsTrk);
-                        comps.Add(conv); // Bulk component
-
-
-                        bool movingmesh;
-                        switch(this.Control.Timestepper_LevelSetHandling) {
-                            case LevelSetHandling.Coupled_Once:
-                                movingmesh = true;
-                                break;
-                            case LevelSetHandling.LieSplitting:
-                            case LevelSetHandling.StrangSplitting:
-                            case LevelSetHandling.None:
-                                movingmesh = false;
-                                break;
-                            case LevelSetHandling.Coupled_Iterative:
-                            default:
-                                throw new NotImplementedException();
-                        }
-
-                        comps.Add(new HeatConvectionAtLevelSet(D, LsTrk, capA, capB, LFFA, LFFB, coupledBcMap, movingmesh));       // LevelSet component
-
-                        if (hVapA != 0.0 && hVapB != 0.0) {
-                            //comps.Add(new HeatConvectionAtEvapLevelSet(D, LsTrk, capA, capB, LFFA, LFFB, coupledBcMap, hVapA, R_int, Tsat, rho_l,
-                            //this.Control.PhysicalParameters.Sigma, this.Control.ThermalParameters.pc, this.Control.ThermalParameters.k_A, this.Control.ThermalParameters.k_B, movingmesh));
-
-                            comps.Add(new HeatConvectionAtLevelSet_Divergence(D, LsTrk, capA, capB, rhoA, rhoB, 
-                                kA, kB, hVapA, R_int, Tsat, this.Control.PhysicalParameters.Sigma, this.Control.ThermalParameters.pc));
-                        }
+                        comps.Add(new HeatConvectionAtLevelSet_Divergence(D, LsTrk,  cA, cB, rhoA, rhoB,
+                            kA, kB, hVapA, R_int, Tsat, this.Control.PhysicalParameters.Sigma, this.Control.ThermalParameters.pc));
                     }
-                }
-
-                // viscous operator (laplace)
-                // ==========================
-                {
-                    var comps = Xheat_Operator.EquationComponents[CodName[0]];
-
-                    double penalty = dntParams.PenaltySafety;
-
-                    var Visc = new ConductivityInBulk(
-                        dntParams.UseGhostPenalties ? 0.0 : penalty, 1.0,
-                        coupledBcMap, D, kA, kB);
-
-                    comps.Add(Visc);
-
-                    if(dntParams.UseGhostPenalties) {
-                        var ViscPenalty = new ConductivityInBulk(penalty * 1.0, 0.0, coupledBcMap, D, kA, kB);
-                        Xheat_Operator.GhostEdgesOperator.EquationComponents[CodName[0]].Add(ViscPenalty);
-                    }
-
-                    // Level-Set operator:
-                    comps.Add(new ConductivityAtLevelSet(LsTrk, kA, kB, penalty * 1.0, Tsat));
-                }
-
-                // mass flux at interface
-                // ======================
-                {
-                    if(hVapA != 0.0 && hVapB != 0.0) {
-
-                        Xheat_Operator.EquationComponents[CodName[0]].Add(new HeatFluxAtLevelSet(LsTrk, hVapA, R_int, Tsat, rho_l, 
-                            this.Control.PhysicalParameters.Sigma, this.Control.ThermalParameters.pc, this.Control.ThermalParameters.k_A, this.Control.ThermalParameters.k_B));
-                    }
-
                 }
 
 

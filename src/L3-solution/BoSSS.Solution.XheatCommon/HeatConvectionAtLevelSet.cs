@@ -171,13 +171,13 @@ namespace BoSSS.Solution.XheatCommon {
     public class HeatConvectionAtLevelSet_Divergence : EvaporationAtLevelSet {
 
 
-        public HeatConvectionAtLevelSet_Divergence(int _D, LevelSetTracker lsTrk, double _capA, double _capB, double _rhoA, double _rhoB,
+        public HeatConvectionAtLevelSet_Divergence(int _D, LevelSetTracker lsTrk, double _cA, double _cB, double _rhoA, double _rhoB,
             double _kA, double _kB, double _hVapA, double _Rint, double _Tsat, double _sigma, double _pc) {
             this.D = _D;
             this.rhoA = _rhoA;
             this.rhoB = _rhoB;
-            this.capA = _capA;
-            this.capB = _capB;
+            this.capA = _cA * _rhoA;
+            this.capB = _cB * _rhoB;
 
             this.m_LsTrk = lsTrk;
 

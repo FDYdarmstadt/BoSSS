@@ -35,12 +35,108 @@ namespace BoSSS.Solution.XheatCommon {
         // Heat equation
         //==============
 
-        public static void AddSpeciesHeatEq(XSpatialOperatorMk2 XOp) {
+        public static void AddSpeciesHeatEq(XSpatialOperatorMk2 XOp, string CodName, int D,  string spcName, SpeciesId spcId,
+            ThermalMultiphaseBoundaryCondMap BcMap, IHeat_Configuration config, LevelSetTracker LsTrk) {
+
+            // check input
+            if (XOp.IsCommited)
+                throw new InvalidOperationException("Spatial Operator is already comitted. Adding of new components is not allowed");
+            if (!XOp.CodomainVar.Contains(CodName))
+                throw new ArgumentException("CoDomain variable \"" + CodName + "\" is not defined in Spatial Operator");
+
+            ThermalParameters thermParams = config.getThermParams;
+            DoNotTouchParameters dntParams = config.getDntParams;
+
+            // set species arguments
+            double capSpc, LFFSpc, kSpc;
+            switch (spcName) {
+                case "A": { capSpc = thermParams.rho_A * thermParams.c_A; LFFSpc = dntParams.LFFA; kSpc = thermParams.k_A; break; }
+                case "B": { capSpc = thermParams.rho_B * thermParams.c_B; LFFSpc = dntParams.LFFB; kSpc = thermParams.k_B; break; }
+                default: throw new ArgumentException("Unknown species.");
+            }
+
+            // set components
+            var comps = XOp.EquationComponents[CodName];
+
+
+            // convective part
+            // ================
+            if (thermParams.IncludeConvection) {
+
+                var conv = new HeatConvectionInSpeciesBulk(D, BcMap, spcName, spcId, capSpc, LFFSpc, LsTrk);
+                comps.Add(conv); 
+
+            }
+
+
+            // viscous operator (laplace)
+            // ==========================
+            {
+                double penalty = dntParams.PenaltySafety;
+
+                var Visc = new ConductivityInSpeciesBulk(
+                    dntParams.UseGhostPenalties ? 0.0 : penalty, 1.0,
+                    BcMap, D, spcName, spcId, thermParams.k_A, thermParams.k_B);
+
+                comps.Add(Visc);
+
+                if (dntParams.UseGhostPenalties) {
+                    var ViscPenalty = new ConductivityInSpeciesBulk(penalty * 1.0, 0.0, BcMap, D, 
+                        spcName, spcId, thermParams.k_A, thermParams.k_B);
+                    XOp.GhostEdgesOperator.EquationComponents[CodName].Add(ViscPenalty);
+                }
+
+            }
+
 
         }
 
 
-        public static void AddInterfaceHeatEq(XSpatialOperatorMk2 XOp) {
+        public static void AddInterfaceHeatEq(XSpatialOperatorMk2 XOp, string CodName, int D, 
+            ThermalMultiphaseBoundaryCondMap BcMap, IXHeat_Configuration config, LevelSetTracker LsTrk) {
+
+            // check input
+            if (XOp.IsCommited)
+                throw new InvalidOperationException("Spatial Operator is already comitted. Adding of new components is not allowed");
+            if (!XOp.CodomainVar.Contains(CodName))
+                throw new ArgumentException("CoDomain variable \"" + CodName + "\" is not defined in Spatial Operator");
+
+            ThermalParameters thermParams = config.getThermParams;
+            DoNotTouchParameters dntParams = config.getDntParams;
+
+            // set species arguments
+            double capA = thermParams.rho_A * thermParams.c_A;
+            double LFFA = dntParams.LFFA;
+            double kA = thermParams.k_A;
+
+            double capB = thermParams.rho_B * thermParams.c_B;
+            double LFFB = dntParams.LFFB;
+            double kB = thermParams.k_B; 
+
+
+            // set components
+            var comps = XOp.EquationComponents[CodName];
+
+
+            // convective part
+            // ================
+            if (thermParams.IncludeConvection) {
+
+                var conv = new HeatConvectionAtLevelSet(D, LsTrk, capA, capB, LFFA, LFFB, BcMap, config.isMovingMesh);
+                comps.Add(conv);
+
+            }
+
+
+            // viscous operator (laplace)
+            // ==========================
+            {
+                double penalty = dntParams.PenaltySafety;
+
+                var Visc = new ConductivityAtLevelSet(LsTrk, kA, kB, penalty * 1.0);
+                comps.Add(Visc);
+
+            }
 
         }
 
@@ -55,7 +151,7 @@ namespace BoSSS.Solution.XheatCommon {
         /// <summary>
         /// thermal parameters
         /// </summary>
-        ThermalParameters GetThermParams { get; }
+        ThermalParameters getThermParams { get; }
 
         /// <summary>
         /// include transport operator
