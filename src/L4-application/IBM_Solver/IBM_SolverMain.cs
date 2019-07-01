@@ -1019,7 +1019,8 @@ namespace BoSSS.Application.IBM_Solver {
         /// <summary>
         /// Ensures that the level-set field <see cref="LevSet"/> is continuous, if <see cref="IBM_Control.LevelSetSmoothing"/> is true
         /// </summary>
-        protected void PerformLevelSetSmoothing(CellMask domain) {
+        protected void PerformLevelSetSmoothing(CellMask domain, CellMask NegMask, bool SetFarField) {
+
             if (this.Control.LevelSetSmoothing) {
                 // ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
                 // smoothing on: perform some kind of C0-projection
@@ -1029,11 +1030,16 @@ namespace BoSSS.Application.IBM_Solver {
                     ContBasis: this.LevSet.Basis,
                     DGBasis: this.DGLevSet.Current.Basis,
                     gridData: GridData,
-                    Option: Solution.LevelSetTools.ContinuityProjectionOption.SpecFEM);
+                    Option: Solution.LevelSetTools.ContinuityProjectionOption.ContinuousDG);
 
                 //CellMask domain = this.LsTrk.Regions.GetNearFieldMask(1);
 
                 ContinuityEnforcer.MakeContinuous(this.DGLevSet.Current, this.LevSet, domain, null, false);
+                if (SetFarField)
+                {
+                    LevSet.Clear(NegMask);
+                    LevSet.AccConstant(-1, NegMask);
+                }
             } else {
                 // ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
                 // no smoothing (not recommended): copy DGLevSet -> LevSet

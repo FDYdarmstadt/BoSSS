@@ -32,6 +32,12 @@ namespace FSI_Solver
 {
     class FSI_Auxillary 
     {
+        /// <summary>
+        /// Calculate componentwise sum of two vectors.
+        /// </summary>
+        /// <param name="Vector0">
+        /// </param>
+        /// <param name="Vector1"></param>
         internal double[] VectorSum(double[] Vector0, double[] Vector1)
         {
             int Dim = Vector0 != null ? Vector0.Length : Vector1.Length;
@@ -60,6 +66,13 @@ namespace FSI_Solver
             }
             return ResultVector;
         }
+
+        /// <summary>
+        /// Calculate componentwise difference of two vectors.
+        /// </summary>
+        /// <param name="Vector0">
+        /// </param>
+        /// <param name="Vector1"></param>
         internal double[] VectorDiff(double[] Vector0, double[] Vector1)
         {
             if (double.IsNaN(Vector0[0]) || double.IsNaN(Vector0[1]))
@@ -102,6 +115,13 @@ namespace FSI_Solver
                 throw new ArithmeticException("Error trying to calculate ResultVector Value:  " + ResultVector[0] + " ResultVector " + ResultVector[1]);
             return ResultVector;
         }
+
+        /// <summary>
+        /// Calculate teh dot product of two vectors.
+        /// </summary>
+        /// <param name="Vector0">
+        /// </param>
+        /// <param name="Vector1"></param>
         internal double DotProduct(double[] Vector0, double[] Vector1)
         {
             int Dim = Vector0.Length;
@@ -114,17 +134,42 @@ namespace FSI_Solver
             }
             return DotProduct;
         }
+
+        /// <summary>
+        /// Quicksort algorithm
+        /// </summary>
+        /// <param name="Leftelement">
+        /// The first element of the list to be sorted
+        /// </param>
+        /// <param name="RightElement">
+        /// The last element of the list to be sorted
+        /// </param>
+        /// <param name="Data">
+        /// The data to be sorted.
+        /// </param>
         internal void Quicksort(int Leftelement, int RightElement, ref int[] Data)
         {
             if (Leftelement < RightElement)
             {
-                int division = Divide(Leftelement, RightElement, ref Data);
+                int division = Quicksort_Divide(Leftelement, RightElement, ref Data);
                 Quicksort(Leftelement, division - 1, ref Data);
                 Quicksort(division + 1, RightElement, ref Data);
             }
         }
 
-        private int Divide(int Leftelement, int RightElement, ref int[] Data)
+        /// <summary>
+        /// Core routine of the quicksort algorithm, splits the list to be sorted
+        /// </summary>
+        /// <param name="Leftelement">
+        /// The first element of the list to be sorted
+        /// </param>
+        /// <param name="RightElement">
+        /// The last element of the list to be sorted
+        /// </param>
+        /// <param name="Data">
+        /// The data to be sorted.
+        /// </param>
+        private int Quicksort_Divide(int Leftelement, int RightElement, ref int[] Data)
         {
             int i = Leftelement;
             int j = RightElement - 1;
@@ -156,6 +201,15 @@ namespace FSI_Solver
             return i; 
         }
 
+        /// <summary>
+        /// Binary search algorithm
+        /// </summary>
+        /// <param name="SortedList">
+        /// A sorted list of all elements
+        /// </param>
+        /// <param name="Target">
+        /// The element to be found
+        /// </param>
         int BinarySearch(List<int> SortedList, int Target)
         {
             int L = 0;
@@ -176,6 +230,15 @@ namespace FSI_Solver
             return TargetIndex;
         }
 
+        /// <summary>
+        /// Binary search algorithm, output is the target and its neighbours
+        /// </summary>
+        /// <param name="SortedList">
+        /// A sorted list of all elements
+        /// </param>
+        /// <param name="Target">
+        /// The element to be found
+        /// </param>
         internal int[] BinarySearchWithNeighbors(List<int> SortedList, int Target)
         {
             int StartIndex = BinarySearch(SortedList, Target);
@@ -214,48 +277,30 @@ namespace FSI_Solver
 
         internal void ExchangeDampingTensors(List<Particle> Particles)
         {
-            // Sum forces and moments over all MPI processors
-            // ==============================================
+            int NoOfParticles = Particles.Count;
+            int NoOfVars = 3;
+            double[] StateBuffer = new double[NoOfParticles * NoOfVars * NoOfParticles * NoOfVars];
+            for (int p = 0; p < NoOfParticles; p++)
             {
-                // step 1: collect all variables that we need to sum up
-                int NoOfParticles = Particles.Count;
-                int NoOfVars = 3; //only for 2D at the moment
-                double[] StateBuffer = new double[NoOfParticles * NoOfVars * NoOfParticles * NoOfVars];
-                for (int p = 0; p < NoOfParticles; p++)
+                Particle P = Particles[p];
+                for (int i = 0; i < 3; i++)
                 {
-                    Particle P = Particles[p];
-                    for (int i = 0; i < 3; i++)
+                    for (int j = 0; j < 3; j++)
                     {
-                        for (int j = 0; j < 3; j++)
-                        {
-                            StateBuffer[NoOfVars * NoOfVars * p + i + NoOfVars * j] = P.AddedDampingTensor[i, j];
-                        }
+                        StateBuffer[NoOfVars * NoOfVars * p + i + NoOfVars * j] = P.AddedDampingTensor[i, j];
                     }
-
                 }
-                // step 2: sum over MPI processors
-                // note: we want to sum all variables by a single MPI call, which is way more efficient
-                // B. Deußen: a single call of MPISum() would only consider the first entry of StateBuffer, thus I implemented the loop over all entries
-                //double[,] GlobalStateBuffer = new double[NoOfParticles * NoOfVars, NoOfParticles * NoOfVars];
-                //for (int i = 0; i < NoOfParticles * NoOfVars; i++)
-                //{
-                //    for (int j = 0; j < NoOfParticles * NoOfVars; j++)
-                //    {
-                //        GlobalStateBuffer[i, j] = StateBuffer[i, j].MPISum();
-                //    }
 
-                //}
-                double[] GlobalStateBuffer = StateBuffer.MPISum();
-                // step 3: write sum variables back 
-                for (int p = 0; p < NoOfParticles; p++)
+            }
+            double[] GlobalStateBuffer = StateBuffer.MPISum();
+            for (int p = 0; p < NoOfParticles; p++)
+            {
+                var P = Particles[p];
+                for (int i = 0; i < 3; i++)
                 {
-                    var P = Particles[p];
-                    for (int i = 0; i < 3; i++)
+                    for (int j = 0; j < 3; j++)
                     {
-                        for (int j = 0; j < 3; j++)
-                        {
-                            P.AddedDampingTensor[i, j] = GlobalStateBuffer[NoOfVars * NoOfVars * p + i + NoOfVars * j];
-                        }
+                        P.AddedDampingTensor[i, j] = GlobalStateBuffer[NoOfVars * NoOfVars * p + i + NoOfVars * j];
                     }
                 }
             }
@@ -274,7 +319,8 @@ namespace FSI_Solver
                         p.UpdateDampingTensors();
                         //ExchangeDampingTensors(Particles);
                     }
-                    p.PredictAcceleration();
+                    p.PredictForceAndTorque();
+                    //p.PredictAcceleration();
                 }
                 else
                 {
@@ -367,11 +413,10 @@ namespace FSI_Solver
             double RotationalMomentum = 0;
             double[] totalKE = new double[3] { 0, 0, 0 };
             double[] ParticleReynoldsNumber = new double[Particles.Count()];
-            csMPI.Raw.Barrier(csMPI.Raw._COMM.WORLD);
             foreach (Particle p in Particles)
             {
-                double[] SingleParticleMomentum = p.CalculateParticleMomentum(dt);
-                double[] SingleParticleKineticEnergy = p.CalculateParticleKineticEnergy(dt);
+                double[] SingleParticleMomentum = p.CalculateParticleMomentum();
+                double[] SingleParticleKineticEnergy = p.CalculateParticleKineticEnergy();
                 TranslationalMomentum[0] += SingleParticleMomentum[0];
                 TranslationalMomentum[1] += SingleParticleMomentum[1];
                 RotationalMomentum += SingleParticleMomentum[SingleParticleMomentum.Length - 1];

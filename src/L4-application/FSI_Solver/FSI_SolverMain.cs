@@ -720,6 +720,7 @@ namespace BoSSS.Application.FSI_Solver
         /// Array of all local cells with their specific color.
         /// </summary>
         private int[] CellColor = null;
+        private CellMask ColoredCellMask = null;
 
 
         /// <summary>
@@ -732,7 +733,7 @@ namespace BoSSS.Application.FSI_Solver
             // Define an array with the respective cell colors
             // =======================================================
             int J = GridData.iLogicalCells.NoOfLocalUpdatedCells;
-            //CellColor = ((FSI_Control)Control).AdaptiveMeshRefinement ? InitializeColoring(J, ((FSI_Control)Control).AdaptiveMeshRefinement) : CellColor ?? InitializeColoring(J, ((FSI_Control)Control).AdaptiveMeshRefinement);
+            //CellColor = ((FSI_Control)Control).AdaptiveMeshRefinement ? InitializeColoring(J, GridData, ((FSI_Control)Control).AdaptiveMeshRefinement) : CellColor ?? InitializeColoring(J, GridData, ((FSI_Control)Control).AdaptiveMeshRefinement);
             CellColor = CellColor == null ? InitializeColoring(J, GridData, ((FSI_Control)Control).AdaptiveMeshRefinement) : LsTrk.Regions.ColorMap4Spc[LsTrk.GetSpeciesId("B")]; 
 
             // =======================================================
@@ -780,7 +781,7 @@ namespace BoSSS.Application.FSI_Solver
                 {
                     int[] ParticlesOfCurrentColor = levelSetUpdate.FindParticlesOneColor(GlobalParticleColor, CurrentColor);
                     //CellMask ColoredCellMask = levelSetUpdate.CellsOneColor(GridData, ColoredCellsSorted, CurrentColor, J, false);
-                    CellMask ColoredCellMask = new CellMask(GridData, ColoredCells);
+                    ColoredCellMask = new CellMask(GridData, ColoredCells);
                     ColoredCellMask.Union(ColoredCellMask.AllNeighbourCells());
 
                     // Save all colored cells (of any color) in one mask
@@ -824,13 +825,13 @@ namespace BoSSS.Application.FSI_Solver
             CellMask FluidCells = AgglParticleMask != null ? AgglParticleMask.Complement() : CellMask.GetFullMask(GridData);
             SetLevelSet(phiFluid, FluidCells, hack_phystime);
 
-            
+
             // =======================================================
             // Step 5
             // Smoothing
             // =======================================================
-            PerformLevelSetSmoothing(AgglParticleMask);
-                        
+            PerformLevelSetSmoothing(AgglParticleMask, FluidCells, true);
+
             // =======================================================
             // Step 6
             // Update level set tracker and coloring
@@ -982,7 +983,7 @@ namespace BoSSS.Application.FSI_Solver
                 for (int j = 0; j < J; j++)
                 {
                     double[] center = GridData.iLogicalCells.GetCenter(j);
-                    if (Particle.Contains(center, h_min, h_max))
+                    if (Particle.Contains(center, h_max, h_max))
                     {
                         ParticleColor.SetMeanValue(j, p + 1);
                         ColoredCells.Add(j);
@@ -2172,7 +2173,7 @@ namespace BoSSS.Application.FSI_Solver
         //            MultidimensionalArray newVertices = transFormed.CloneAs();
         //            GridData.TransformLocal2Global(transFormed, newVertices, jCell);
         //            var tempDistance = 0.0;
-                    
+
         //            for (int i = 0; i < interfacePoints.NoOfRows; i++)
         //            {
         //                for (int j = 0; j < newVertices.NoOfRows; j++)
@@ -2219,7 +2220,7 @@ namespace BoSSS.Application.FSI_Solver
         //            if ((realDistance <= threshold))
         //            {
         //                Console.WriteLine("Strongly recommended to use conservation of momentum collision model. This one is highly experimental!!!!");
-                        
+
         //                // Modell 1
         //                distanceVec.ScaleV(1 / eps);
         //                distanceVec.ScaleV(((threshold - realDistance).Abs()));
@@ -2311,7 +2312,7 @@ namespace BoSSS.Application.FSI_Solver
         //                particle.RotationalVelocity[0] = particle.RotationalVelocity[0] + a0 * (Fx + Fxrot) / particle.MomentOfInertia_P;
 
         //                particle.TranslationalVelocity[0] = new double[] { normal[0] * tempCollisionVn_P0 + tempCollisionVt_P0 * tangential[0], normal[1] * tempCollisionVn_P0 + tempCollisionVt_P0 * tangential[1] };
-                        
+
         //            }
 
         //            if (realDistance > threshold && particle.m_collidedWithWall[0])
@@ -2336,27 +2337,27 @@ namespace BoSSS.Application.FSI_Solver
         {
             int J = GridData.iLogicalCells.NoOfLocalUpdatedCells;
             FSI_LevelSetUpdate levelSetUpdate = new FSI_LevelSetUpdate();
-            CellMask ColoredCellMask = null;
+            //CellMask ColoredCellMask = null;
             List<int[]> ColoredCellsSorted = levelSetUpdate.ColoredCellsFindAndSort(CellColor);
             int[] ParticleColorArray = levelSetUpdate.FindParticleColor(GridData, m_Particles, ColoredCellsSorted);
-            for (int p = 0; p < ParticleColorArray.Length; p++)
-            {
-                if (ParticleColorArray[p] != 0)
-                {
-                    ColoredCellMask = levelSetUpdate.CellsOneColor(GridData, ColoredCellsSorted, ParticleColorArray[p], J, false);
-                }
-            }
+            //for (int p = 0; p < ParticleColorArray.Length; p++)
+            //{
+            //    if (ParticleColorArray[p] != 0)
+            //    {
+            //        ColoredCellMask = ColoredCellMask.Union(levelSetUpdate.CellsOneColor(GridData, ColoredCellsSorted, ParticleColorArray[p], J, false));
+            //    }
+            //}
             CellMask LevSetCells = LsTrk.Regions.GetCutCellMask();
             //CellMask LevSetNeighbours = LsTrk.Regions.GetNearFieldMask(1);
             int DesiredLevel_j = 0;
-            if (ColoredCellMask != null && LevSetCells.Contains(j))
+            if (LevSetCells.Contains(j))//ColoredCellMask != null &&
             {
                 DesiredLevel_j = ((FSI_Control)this.Control).RefinementLevel;
             }
-            //else if (LevSetNeighbours.Contains(j))
-            //{
-            //    DesiredLevel_j = 1;
-            //}
+            else if (LevSetCells.AllNeighbourCells().Contains(j))
+            {
+                DesiredLevel_j = ((FSI_Control)this.Control).RefinementLevel;
+            }
 
             return DesiredLevel_j;
         }
