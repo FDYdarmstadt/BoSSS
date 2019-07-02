@@ -142,6 +142,12 @@ namespace BoSSS.Application.XNSE_Solver {
                 XOperatorComponentsFactory.AddInterfaceContinuityEq(m_XOp, CodName[D], D, BcMap, config, LsTrk);       // continuity equation
 
 
+            // evaporation
+            // ===========
+
+            //dumdidum
+
+
 
             m_XOp.Commit();
         }

@@ -891,7 +891,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
         }
 
 
-        public static XNSE_Control MicroLayerRegime_Test(int p = 2, int kelem = 16, string _DbPath = null) {
+        public static XNSE_Control MicroLayerRegime_Test(int p = 2, int kelem = 64, string _DbPath = null) {
 
             XNSE_Control C = new XNSE_Control();
 
@@ -1004,7 +1004,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
                 var grd = Grid2D.Cartesian2DGrid(Xnodes, Ynodes, periodicX: false);
 
 
-                    grd.EdgeTagNames.Add(1, "wall_ConstantTemprature_lower");
+                    grd.EdgeTagNames.Add(1, "wall_ConstantTemperature_lower");
                     grd.EdgeTagNames.Add(2, "pressure_Outlet_ZeroGradient_right");
                     grd.EdgeTagNames.Add(3, "pressure_Outlet_ZeroGradient_upper");
                     grd.EdgeTagNames.Add(4, "slipsymmetry_ZeroGradient_left");
@@ -1034,12 +1034,12 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             // ==============
             #region init
 
-            double R = 0.06;
-            double Theta_e = Math.PI * (5.0 / 18.0);
+            double R = 0.06e-3;
+            double Theta_e = Math.PI * (13.0 / 18.0);
             double s = 2 * R * Math.Sin(Theta_e);
             double h = Math.Sqrt(R.Pow2() - (0.25 * s.Pow2()));
 
-            double[] center = new double[] { 0, -h };
+            double[] center = new double[] { 0, h };
 
             Func<double[], double> PhiFunc = (X => ((X[0] - center[0]).Pow2() + (X[1] - center[1]).Pow2()).Sqrt() - R);
 
@@ -1078,8 +1078,8 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             #region BC
 
 
-            C.AddBoundaryValue("wall_ConstantTemprature_lower", "Temperature#A", (X, t) => T_w);
-            C.AddBoundaryValue("wall_ConstantTemprature_lower", "Temperature#B", (X, t) => T_w);
+            C.AddBoundaryValue("wall_ConstantTemperature_lower", "Temperature#A", (X, t) => T_w);
+            C.AddBoundaryValue("wall_ConstantTemperature_lower", "Temperature#B", (X, t) => T_w);
 
             C.AddBoundaryValue("pressure_Outlet_ZeroGradient_right");
             C.AddBoundaryValue("pressure_Outlet_ZeroGradient_upper");
@@ -1144,10 +1144,10 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             C.Timestepper_LevelSetHandling = LevelSetHandling.LieSplitting;
 
             C.CompMode = AppControl._CompMode.Transient;
-            C.dtMax = 1e-3;
-            C.dtMin = 1e-3;
-            C.Endtime = 10000;
-            C.NoOfTimesteps = 1000;
+            C.dtMax = 1e-5;
+            C.dtMin = 1e-5;
+            C.Endtime = 1e-4;
+            C.NoOfTimesteps = 100;
             C.saveperiod = 1;
 
             #endregion

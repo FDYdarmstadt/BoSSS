@@ -41,6 +41,7 @@ namespace BoSSS.Solution.XheatCommon {
             this.penalty = _penalty;
             //this.Tsat = _Tsat;
             this.m_D = lstrk.GridDat.SpatialDimension;
+            m_LsTrk = lstrk;
 
         }
 

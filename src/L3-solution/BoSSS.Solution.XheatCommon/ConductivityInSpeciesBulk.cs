@@ -40,6 +40,8 @@ namespace BoSSS.Solution.XheatCommon {
             base.m_alpha = sw;
             this.m_bcMap = bcMap;
 
+            this.m_spcId = spcId;
+
             switch (spcName) {
                 case "A": currentk = _kA; complementk = _kB; break;
                 case "B": currentk = _kB; complementk = _kA; break;

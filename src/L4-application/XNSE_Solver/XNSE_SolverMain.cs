@@ -4509,7 +4509,7 @@ namespace BoSSS.Application.XNSE_Solver {
 
             // create operator
             // ===============
-            Xheat_Operator = new XSpatialOperatorMk2(DomName, Params, CodName, (A, B, C) => m_HMForder, null);
+            Xheat_Operator = new XSpatialOperatorMk2(DomName, Params, CodName, (A, B, C) => m_HMForder, this.LsTrk.SpeciesIdS.ToArray());
 
 
             // build the operator
