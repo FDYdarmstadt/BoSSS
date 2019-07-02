@@ -97,6 +97,8 @@
     <Compile Include="Tests\ViscosityJumpTest.cs" />
     <Compile Include="XNSE_OperatorConfiguration.cs" />
     <Compile Include="XNSE_SolverMain.cs" />
+    <Compile Include="XNSFE_OperatorComponents.cs" />
+    <Compile Include="XNSFE_OperatorFactory.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\ilPSP\layer_1.2-ilPSP\ilPSP.LinSolvers.monkey\ilPSP.LinSolvers.monkey.csproj">

@@ -29,7 +29,7 @@ using ilPSP;
 using System.Collections;
 using BoSSS.Solution.XheatCommon;
 
-namespace BoSSS.Solution.XNSECommon.Operator.DynamicInterfaceConditions {
+namespace BoSSS.Solution.XheatCommon {
 
 
     public class MassFluxAtInterface : EvaporationAtLevelSet {
@@ -41,7 +41,8 @@ namespace BoSSS.Solution.XNSECommon.Operator.DynamicInterfaceConditions {
         /// <param name="_d">spatial direction</param>
         /// <param name="_D">spatial dimension</param>
         /// <param name="LsTrk"></param>
-        public MassFluxAtInterface(int _d, int _D, LevelSetTracker LsTrk, double _rhoA, double _rhoB, double _kA, double _kB, double _hVapA, double _Rint, double _Tsat, double _sigma, double _pc) {
+        public MassFluxAtInterface(int _d, int _D, LevelSetTracker LsTrk, double _rhoA, double _rhoB, ThermalParameters thermParams, double _Rint, double _sigma) {
+            //double _kA, double _kB, double _hVapA, double _Rint, double _Tsat, double _sigma, double _pc) {
             m_LsTrk = LsTrk;
             if(_d >= _D)
                 throw new ArgumentOutOfRangeException();
@@ -51,14 +52,14 @@ namespace BoSSS.Solution.XNSECommon.Operator.DynamicInterfaceConditions {
             this.rhoA = _rhoA;
             this.rhoB = _rhoB;
 
-            this.kA = _kA;
-            this.kB = _kB;
-            this.hVapA = _hVapA;
+            this.kA = thermParams.k_A;
+            this.kB = thermParams.k_B;
+            this.hVapA = thermParams.hVap_A;
             this.Rint = _Rint;
 
-            this.Tsat = _Tsat;
+            this.Tsat = thermParams.T_sat;
             this.sigma = _sigma;
-            this.pc = _pc;
+            this.pc = thermParams.pc;
         }
 
         int m_d;

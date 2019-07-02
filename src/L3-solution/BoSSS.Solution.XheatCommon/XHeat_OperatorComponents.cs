@@ -140,6 +140,7 @@ namespace BoSSS.Solution.XheatCommon {
 
         }
 
+
     }
 
 
@@ -156,7 +157,7 @@ namespace BoSSS.Solution.XheatCommon {
         /// <summary>
         /// include transport operator
         /// </summary>
-        bool isTransport { get; }
+        bool isHeatTransport { get; }
 
     }
 
@@ -172,9 +173,9 @@ namespace BoSSS.Solution.XheatCommon {
         bool isMovingMesh { get; }
 
         /// <summary>
-        /// true if the interface is a material interface
+        /// true if the interface allows for evaporative mass flux
         /// </summary>
-        bool isMatInt { get; }
+        bool isEvaporation { get; }
 
     }
 

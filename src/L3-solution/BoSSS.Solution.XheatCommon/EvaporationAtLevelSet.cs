@@ -99,6 +99,8 @@ namespace BoSSS.Solution.XheatCommon {
                 qEvap = ComputeHeatFlux_Macro(paramsNeg.GetSubVector(0, D), paramsPos.GetSubVector(0, D), N);
             }
 
+            qEvap = -10.0;
+
             return qEvap;
 
         }
@@ -161,18 +163,19 @@ namespace BoSSS.Solution.XheatCommon {
         /// <param name="_D">spatial dimension</param>
         /// <param name="LsTrk"></param>
         /// <param name="_sigma">surface-tension constant</param>
-        public HeatFluxAtLevelSet(LevelSetTracker LsTrk, double _hVapA, double _Rint, double _Tsat, double _rho, double _sigma, double _pc, double _kA, double _kB) {
+        public HeatFluxAtLevelSet(LevelSetTracker LsTrk, double _rho, ThermalParameters thermParams, double _Rint, double _sigma) {
             m_LsTrk = LsTrk;
 
-            this.hVapA = _hVapA;
-            this.Rint = _Rint;
-            this.Tsat = _Tsat;
             this.rho = _rho;
-            this.sigma = _sigma;
-            this.pc = _pc;
 
-            this.kA = _kA;
-            this.kB = _kB;
+            this.kA = thermParams.k_A;
+            this.kB = thermParams.k_B;
+            this.hVapA = thermParams.hVap_A;
+            this.Rint = _Rint;
+
+            this.Tsat = thermParams.T_sat;
+            this.sigma = _sigma;
+            this.pc = thermParams.pc;
 
             this.D = LsTrk.GridDat.SpatialDimension;
         }

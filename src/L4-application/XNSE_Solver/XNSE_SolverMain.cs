@@ -396,12 +396,13 @@ namespace BoSSS.Application.XNSE_Solver {
         /// <summary>
         /// the spatial operator (momentum and continuity equation)
         /// </summary>
-        XNSE_OperatorFactory XNSE_Operator;
+        //XNSE_OperatorFactory XNSE_Operator;
+        XNSFE_OperatorFactory XNSFE_Operator;
 
         /// <summary>
         /// OperatorConfiguration for the <see cref="XNSE_Operator"/>
         /// </summary>
-        XNSEHeat_OperatorConfiguration XOpConfig;
+        XNSFE_OperatorConfiguration XOpConfig;
 
         /// <summary>
         /// Current Velocity: either extended or non-extended DG.
@@ -495,7 +496,7 @@ namespace BoSSS.Application.XNSE_Solver {
             #region Checks
             // CreateEquationsAndSolvers might be called multiple times
             // exit if so, and no LoadBalancing
-            if (XNSE_Operator != null && L == null)
+            if (XNSFE_Operator != null && L == null)
                 return;
 
 
@@ -531,9 +532,9 @@ namespace BoSSS.Application.XNSE_Solver {
             // Create Spatial Operator
             // ======================= 
 
-            XOpConfig = new XNSEHeat_OperatorConfiguration(this.Control);
+            XOpConfig = new XNSFE_OperatorConfiguration(this.Control);
 
-            XNSE_Operator = new XNSE_OperatorFactory(XOpConfig, this.LsTrk, this.m_HMForder, this.BcMap, degU);
+            XNSFE_Operator = new XNSFE_OperatorFactory(XOpConfig, this.LsTrk, this.m_HMForder, this.BcMap, degU);
 
 
             // kinetic energy balance Operator
@@ -791,7 +792,7 @@ namespace BoSSS.Application.XNSE_Solver {
                             this.Control.AdvancedDiscretizationOptions.FilterConfiguration,
                             out filtLevSetGradient, this.LsTrk,
                             this.DGLevSet.Current);
-                        if(this.Control.AdvancedDiscretizationOptions.CurvatureNeeded) {
+                        if(this.Control.AdvancedDiscretizationOptions.CurvatureNeeded || XOpConfig.isEvaporation) {
                             VectorField<SinglePhaseField> filtLevSetGradient_dummy;
                             CurvatureAlgorithms.CurvatureDriver(
                                 SurfaceStressTensor_IsotropicMode.Curvature_Projected,
@@ -832,7 +833,7 @@ namespace BoSSS.Application.XNSE_Solver {
             var codMap = Mapping;
             var domMap = Mapping;
 
-            this.XNSE_Operator.AssembleMatrix(
+            this.XNSFE_Operator.AssembleMatrix(
                 OpMtx, OpAffine, codMap, domMap,
                 CurrentState, AgglomeratedCellLengthScales, phystime,
                 this.m_HMForder, SurfaceForce, filtLevSetGradient, Curvature,
@@ -2440,7 +2441,7 @@ namespace BoSSS.Application.XNSE_Solver {
                                        }
 
 
-                                       double mEvap = qEvap / hVap; // mass flux
+                                       double mEvap = -0.1; // qEvap / hVap; // mass flux
                                        //result[j, k] = mEvap * ((1 / rho_v) - (1 / rho_l)) * Normals[j, k, d];   //
                                        result[j, k] = mEvap * (1 / rho_v) * Normals[j, k, d];   //
                                        //result[j, k] = - Normals[j, k, d];   //
@@ -4467,46 +4468,6 @@ namespace BoSSS.Application.XNSE_Solver {
             string[] DomName = new string[] { VariableNames.Temperature };
 
 
-            double rhoA = this.Control.ThermalParameters.rho_A;
-            double rhoB = this.Control.ThermalParameters.rho_B;
-            double cA = this.Control.ThermalParameters.c_A;
-            double cB = this.Control.ThermalParameters.c_B;
-            double kA = this.Control.ThermalParameters.k_A;
-            double kB = this.Control.ThermalParameters.k_B;
-
-            double hVapA = this.Control.ThermalParameters.hVap_A;
-            double hVapB = this.Control.ThermalParameters.hVap_B;
-
-            double Tsat = this.Control.ThermalParameters.T_sat;
-
-            var dntParams = this.Control.AdvancedDiscretizationOptions;
-
-            double f = this.Control.ThermalParameters.fc;
-            double R = this.Control.ThermalParameters.Rc;
-            double rho_l = 0.0;
-            double R_int = 0.0;
-            if (hVapA != 0.0 && hVapB != 0.0)
-            {
-                //double hVap;
-                //double mEvap;
-                //double prescribedVolumeFlux = 0.1;
-                //if(this.Control.ThermalParameters.hVap_A > 0) {
-                //    hVap = this.Control.ThermalParameters.hVap_A;
-                //    mEvap = -this.Control.ThermalParameters.rho_A * prescribedVolumeFlux;
-                //} else {
-                //    hVap = this.Control.ThermalParameters.hVap_B;
-                //    mEvap = this.Control.ThermalParameters.rho_B * prescribedVolumeFlux;
-                //}
-
-                if (hVapA > 0 && hVapB < 0) {
-                    rho_l = rhoA;
-                    R_int = ((2.0 - f) / (2 * f)) * Tsat * Math.Sqrt(2 * Math.PI * R * Tsat) / (rhoB * hVapA.Pow2());
-                } else if (hVapA < 0 && hVapB > 0) {
-                    rho_l = rhoB;
-                    R_int = ((2.0 - f) / (2 * f)) * Tsat * Math.Sqrt(2 * Math.PI * R * Tsat) / (rhoA * hVapB.Pow2());
-                }
-            }
-
             // create operator
             // ===============
             Xheat_Operator = new XSpatialOperatorMk2(DomName, Params, CodName, (A, B, C) => m_HMForder, this.LsTrk.SpeciesIdS.ToArray());
@@ -4528,19 +4489,8 @@ namespace BoSSS.Application.XNSE_Solver {
                         CodName[0], D, coupledBcMap, XOpConfig, LsTrk);
 
 
-                if (hVapA != 0.0 && hVapB != 0.0) {
-
-                    // mass flux at interface
-                    Xheat_Operator.EquationComponents[CodName[0]].Add(new HeatFluxAtLevelSet(LsTrk, hVapA, R_int, Tsat, rho_l,
-                           this.Control.PhysicalParameters.Sigma, this.Control.ThermalParameters.pc, this.Control.ThermalParameters.k_A, this.Control.ThermalParameters.k_B));
-
-                    // convective part
-                    if (this.Control.ThermalParameters.IncludeConvection) {
-                        var comps = Xheat_Operator.EquationComponents[CodName[0]];
-                        comps.Add(new HeatConvectionAtLevelSet_Divergence(D, LsTrk,  cA, cB, rhoA, rhoB,
-                            kA, kB, hVapA, R_int, Tsat, this.Control.PhysicalParameters.Sigma, this.Control.ThermalParameters.pc));
-                    }
-                }
+                if (XOpConfig.isEvaporation)
+                    XOperatorComponentsFactory.AddInterfaceHeatEq_withEvaporation(Xheat_Operator, CodName[0], D, XOpConfig, LsTrk);
 
 
                 // finalize
@@ -4598,17 +4548,21 @@ namespace BoSSS.Application.XNSE_Solver {
 
 
 
+            BitArray EvapMicroRegion = this.LsTrk.GridDat.GetBoundaryCells().GetBitMask();
+            EvapMicroRegion.SetAll(false);
+
+
             // assemble the matrix & affine vector
             // ===================================
 
             // compute matrix
-            if(OpMtx != null) {
+            if (OpMtx != null) {
 
                 var mtxBuilder = Xheat_Operator.GetMatrixBuilder(LsTrk, Mapping, Params, Mapping, SpcToCompute);
 
                 mtxBuilder.time = phystime;
 
-                BitArray EvapMicroRegion = this.LsTrk.GridDat.GetBoundaryCells().GetBitMask();
+               
                 foreach(var kv in AgglomeratedCellLengthScales) {
                     mtxBuilder.SpeciesOperatorCoefficients[kv.Key].CellLengthScales = kv.Value;
                     //eval.SpeciesOperatorCoefficients[kv.Key].UserDefinedValues.Add("SlipLengths", kv.Value);
@@ -4622,7 +4576,6 @@ namespace BoSSS.Application.XNSE_Solver {
                     CurrentState.ToArray(), Params, Mapping,
                     SpcToCompute);
 
-                BitArray EvapMicroRegion = this.LsTrk.GridDat.GetBoundaryCells().GetBitMask();
                 foreach(var kv in AgglomeratedCellLengthScales) {
                     eval.SpeciesOperatorCoefficients[kv.Key].CellLengthScales = kv.Value;
                     //eval.SpeciesOperatorCoefficients[kv.Key].UserDefinedValues.Add("SlipLengths", kv.Value);

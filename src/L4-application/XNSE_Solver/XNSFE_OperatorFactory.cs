@@ -33,14 +33,16 @@ using BoSSS.Foundation.XDG;
 
 using BoSSS.Solution.NSECommon;
 using BoSSS.Solution.XNSECommon;
-
+using BoSSS.Solution.XheatCommon;
+using System.Collections;
 
 namespace BoSSS.Application.XNSE_Solver {
 
     /// <summary>
-    /// class for defining the equation components of the XNSE_Operator and assembly of the corresponding matrix 
+    /// class for defining the equation components of the XNSFE_Operator (extended Navier-Stokes-Fourier equations) 
+    /// and assembly of the corresponding matrix 
     /// </summary>
-    public class XNSE_OperatorFactory : XOperatorFactoryBase {
+    public class XNSFE_OperatorFactory : XOperatorFactoryBase {
 
 
         string[] CodNameSelected = new string[0];
@@ -58,7 +60,7 @@ namespace BoSSS.Application.XNSE_Solver {
         /// <param name="_HMFdegree"></param>
         /// <param name="BcMap"></param>
         /// <param name="degU"></param>
-        public XNSE_OperatorFactory(IXNSE_Configuration config, LevelSetTracker _LsTrk, int _HMFdegree, IncompressibleMultiphaseBoundaryCondMap BcMap, int degU) {
+        public XNSFE_OperatorFactory(XNSFE_OperatorConfiguration config, LevelSetTracker _LsTrk, int _HMFdegree, IncompressibleMultiphaseBoundaryCondMap BcMap, int degU) {
 
             this.LsTrk = _LsTrk;
             this.D = _LsTrk.GridDat.SpatialDimension;
@@ -72,7 +74,7 @@ namespace BoSSS.Application.XNSE_Solver {
             // test input
             // ==========
             {
-                if(config.getDomBlocks.GetLength(0) != 2 || config.getCodBlocks.GetLength(0) != 2)
+                if (config.getDomBlocks.GetLength(0) != 2 || config.getCodBlocks.GetLength(0) != 2)
                     throw new ArgumentException();
 
                 if ((config.getPhysParams.mu_A <= 0) && (config.getPhysParams.mu_B <= 0)) {
@@ -82,12 +84,12 @@ namespace BoSSS.Application.XNSE_Solver {
                         throw new ArgumentException();
                 }
 
-                if((config.getPhysParams.rho_A <= 0) || (config.getPhysParams.rho_B <= 0))
+                if ((config.getPhysParams.rho_A <= 0) || (config.getPhysParams.rho_B <= 0))
                     throw new ArgumentException();
 
-                if(_LsTrk.SpeciesNames.Count != 2)
+                if (_LsTrk.SpeciesNames.Count != 2)
                     throw new ArgumentException();
-                if(!(_LsTrk.SpeciesNames.Contains("A") && _LsTrk.SpeciesNames.Contains("B")))
+                if (!(_LsTrk.SpeciesNames.Contains("A") && _LsTrk.SpeciesNames.Contains("B")))
                     throw new ArgumentException();
             }
 
@@ -106,14 +108,14 @@ namespace BoSSS.Application.XNSE_Solver {
             DomName = ArrayTools.Cat(VariableNames.VelocityVector(D), VariableNames.Pressure);
 
             // selected part:
-            if(config.getCodBlocks[0])
+            if (config.getCodBlocks[0])
                 CodNameSelected = ArrayTools.Cat(CodNameSelected, CodName.GetSubVector(0, D));
-            if(config.getCodBlocks[1])
+            if (config.getCodBlocks[1])
                 CodNameSelected = ArrayTools.Cat(CodNameSelected, CodName.GetSubVector(D, 1));
 
-            if(config.getDomBlocks[0])
+            if (config.getDomBlocks[0])
                 DomNameSelected = ArrayTools.Cat(DomNameSelected, DomName.GetSubVector(0, D));
-            if(config.getDomBlocks[1])
+            if (config.getDomBlocks[1])
                 DomNameSelected = ArrayTools.Cat(DomNameSelected, DomName.GetSubVector(D, 1));
 
 
@@ -121,25 +123,38 @@ namespace BoSSS.Application.XNSE_Solver {
             // ===============
             m_XOp = new XSpatialOperatorMk2(DomNameSelected, Params, CodNameSelected, (A, B, C) => _HMFdegree, this.LsTrk.SpeciesIdS.ToArray());
 
-            // add components
-            // ==============
+            // add Navier-Stokes components
+            // ============================
 
             // species bulk components
-            for(int spc = 0; spc < LsTrk.TotalNoOfSpecies; spc++) {
+            for (int spc = 0; spc < LsTrk.TotalNoOfSpecies; spc++) {
                 // Navier Stokes equations
-                XOperatorComponentsFactory.AddSpeciesNSE(m_XOp, CodName.GetSubVector(0, D), LsTrk.SpeciesNames[spc], LsTrk.SpeciesIdS[spc], BcMap, config, LsTrk, out U0meanrequired);
+                Solution.XNSECommon.XOperatorComponentsFactory.AddSpeciesNSE(m_XOp, CodName.GetSubVector(0, D), LsTrk.SpeciesNames[spc], LsTrk.SpeciesIdS[spc], BcMap, config, LsTrk, out U0meanrequired);
 
                 // continuity equation
-                if(config.isContinuity)
-                    XOperatorComponentsFactory.AddSpeciesContinuityEq(m_XOp, CodName[D], D, LsTrk.SpeciesNames[spc], LsTrk.SpeciesIdS[spc], BcMap, config, LsTrk);
+                if (config.isContinuity)
+                    Solution.XNSECommon.XOperatorComponentsFactory.AddSpeciesContinuityEq(m_XOp, CodName[D], D, LsTrk.SpeciesNames[spc], LsTrk.SpeciesIdS[spc], BcMap, config, LsTrk);
             }
 
             // interface components
-            XOperatorComponentsFactory.AddInterfaceNSE(m_XOp, CodName.GetSubVector(0, D), BcMap, config, LsTrk);    // surface stress tensor
-            XOperatorComponentsFactory.AddSurfaceTensionForce(m_XOp, CodName.GetSubVector(0, D), BcMap, config, LsTrk, degU, out NormalsRequired, out CurvatureRequired);     // surface tension force
+            Solution.XNSECommon.XOperatorComponentsFactory.AddInterfaceNSE(m_XOp, CodName.GetSubVector(0, D), BcMap, config, LsTrk);    // surface stress tensor
+            Solution.XNSECommon.XOperatorComponentsFactory.AddSurfaceTensionForce(m_XOp, CodName.GetSubVector(0, D), BcMap, config, LsTrk, degU, out NormalsRequired, out CurvatureRequired);     // surface tension force
 
             if (config.isContinuity)
-                XOperatorComponentsFactory.AddInterfaceContinuityEq(m_XOp, CodName[D], D, BcMap, config, LsTrk);       // continuity equation
+                Solution.XNSECommon.XOperatorComponentsFactory.AddInterfaceContinuityEq(m_XOp, CodName[D], D, BcMap, config, LsTrk);       // continuity equation
+
+
+            // add Evaporation interface components
+            // ====================================
+
+            if (config.isEvaporation) {
+
+                XOperatorComponentsFactory.AddInterfaceNSE_withEvaporation(m_XOp, CodName.GetSubVector(0, D), config, LsTrk);
+
+                if (config.isContinuity)
+                    XOperatorComponentsFactory.AddInterfaceContinuityEq_withEvaporation(m_XOp, CodName[D], D, config, LsTrk);
+
+            }
 
 
             m_XOp.Commit();
@@ -177,20 +192,20 @@ namespace BoSSS.Application.XNSE_Solver {
             IEnumerable<T> CoupledCurrentState = null, IEnumerable<T> CoupledParams = null) where T : DGField {
 
             // checks:
-            if(ColMapping.BasisS.Count != this.m_XOp.DomainVar.Count)
+            if (ColMapping.BasisS.Count != this.m_XOp.DomainVar.Count)
                 throw new ArgumentException();
-            if(RowMapping.BasisS.Count != this.m_XOp.CodomainVar.Count)
+            if (RowMapping.BasisS.Count != this.m_XOp.CodomainVar.Count)
                 throw new ArgumentException();
 
             int D = this.LsTrk.GridDat.SpatialDimension;
-            if(CurrentState != null && CurrentState.Count() != (D + 1))
+            if (CurrentState != null && CurrentState.Count() != (D + 1))
                 throw new ArgumentException();
 
-            if(OpMatrix == null && CurrentState == null)
+            if (OpMatrix == null && CurrentState == null)
                 throw new ArgumentException();
 
             DGField[] U0;
-            if(CurrentState != null)
+            if (CurrentState != null)
                 U0 = CurrentState.Take(D).ToArray();
             else
                 U0 = null;
@@ -201,7 +216,7 @@ namespace BoSSS.Application.XNSE_Solver {
             // ========================================================
 
             CellMask SlipArea;
-            switch(this.dntParams.GNBC_Localization) {
+            switch (this.dntParams.GNBC_Localization) {
                 case NavierSlip_Localization.Bulk: {
                         SlipArea = this.LsTrk.GridDat.BoundaryCells.VolumeMask;
                         break;
@@ -226,10 +241,10 @@ namespace BoSSS.Application.XNSE_Solver {
             SlipLengths = this.LsTrk.GridDat.Cells.h_min.CloneAs();
             SlipLengths.Clear();
             //SlipLengths.AccConstant(-1.0);
-            if(SlipArea != null) {
-                foreach(Chunk cnk in SlipArea) {
-                    for(int i = cnk.i0; i < cnk.JE; i++) {
-                        switch(this.dntParams.GNBC_SlipLength) {
+            if (SlipArea != null) {
+                foreach (Chunk cnk in SlipArea) {
+                    for (int i = cnk.i0; i < cnk.JE; i++) {
+                        switch (this.dntParams.GNBC_SlipLength) {
                             case NavierSlip_SlipLength.hmin_DG: {
                                     int degU = ColMapping.BasisS.ToArray()[0].Degree;
                                     SlipLengths[i] = this.LsTrk.GridDat.Cells.h_min[i] / (degU + 1);
@@ -262,8 +277,8 @@ namespace BoSSS.Application.XNSE_Solver {
 
             // normals:
             SinglePhaseField[] Normals; // Normal vectors: length not normalized - will be normalized at each quad node within the flux functions.
-            if(this.NormalsRequired) {
-                if(LevelSetGradient == null) {
+            if (this.NormalsRequired) {
+                if (LevelSetGradient == null) {
                     LevelSetGradient = new VectorField<SinglePhaseField>(D, Phi.Basis, SinglePhaseField.Factory);
                     LevelSetGradient.Gradient(1.0, Phi);
                 }
@@ -274,7 +289,7 @@ namespace BoSSS.Application.XNSE_Solver {
 
             // curvature:
             SinglePhaseField Curvature;
-            if(this.CurvatureRequired) {
+            if (this.CurvatureRequired) {
                 Curvature = ExternalyProvidedCurvature;
             } else {
                 Curvature = null;
@@ -282,7 +297,7 @@ namespace BoSSS.Application.XNSE_Solver {
 
             // linearization velocity:
             DGField[] U0_U0mean;
-            if(this.U0meanrequired) {
+            if (this.U0meanrequired) {
                 XDGBasis U0meanBasis = new XDGBasis(this.LsTrk, 0);
                 VectorField<XDGField> U0mean = new VectorField<XDGField>(D, U0meanBasis, "U0mean_", XDGField.Factory);
 
@@ -310,11 +325,11 @@ namespace BoSSS.Application.XNSE_Solver {
                 ((CoupledCurrentState != null) ? CoupledParams.ToArray<DGField>() : new SinglePhaseField[1]));  //((evaporation) ? GradTemp.ToArray() : new SinglePhaseField[D]));
 
             // linearization velocity:
-            if(this.U0meanrequired) {
+            if (this.U0meanrequired) {
                 VectorField<XDGField> U0mean = new VectorField<XDGField>(U0_U0mean.Skip(D).Take(D).Select(f => ((XDGField)f)).ToArray());
 
                 U0mean.Clear();
-                if(this.physParams.IncludeConvection)
+                if (this.physParams.IncludeConvection)
                     ComputeAverageU(U0, U0mean, CutCellQuadOrder, LsTrk.GetXDGSpaceMetrics(SpcToCompute, CutCellQuadOrder, 1).XQuadSchemeHelper);
             }
 
@@ -325,19 +340,24 @@ namespace BoSSS.Application.XNSE_Solver {
 
             IDictionary<SpeciesId, MultidimensionalArray> InterfaceLengths = this.LsTrk.GetXDGSpaceMetrics(this.LsTrk.SpeciesIdS.ToArray(), CutCellQuadOrder).CutCellMetrics.InterfaceArea;
 
+            BitArray EvapMicroRegion = this.LsTrk.GridDat.GetBoundaryCells().GetBitMask();
+            EvapMicroRegion.SetAll(false);
+
             // compute matrix
-            if(OpMatrix != null) {
+            if (OpMatrix != null) {
 
                 XSpatialOperatorMk2.XEvaluatorLinear mtxBuilder = this.m_XOp.GetMatrixBuilder(LsTrk, ColMapping, Params, RowMapping, SpcToCompute);
 
-                foreach(var kv in AgglomeratedCellLengthScales) {
+                foreach (var kv in AgglomeratedCellLengthScales) {
                     mtxBuilder.SpeciesOperatorCoefficients[kv.Key].CellLengthScales = kv.Value;
                     mtxBuilder.SpeciesOperatorCoefficients[kv.Key].UserDefinedValues.Add("SlipLengths", SlipLengths);
+                    mtxBuilder.SpeciesOperatorCoefficients[kv.Key].UserDefinedValues.Add("EvapMicroRegion", EvapMicroRegion);
                 }
 
-                if(this.m_XOp.SurfaceElementOperator.TotalNoOfComponents > 0) {
-                    foreach(var kv in InterfaceLengths)
+                if (this.m_XOp.SurfaceElementOperator.TotalNoOfComponents > 0) {
+                    foreach (var kv in InterfaceLengths) {
                         mtxBuilder.SpeciesOperatorCoefficients[kv.Key].UserDefinedValues.Add("InterfaceLengths", kv.Value);
+                    }
                 }
 
                 mtxBuilder.time = time;
@@ -349,14 +369,16 @@ namespace BoSSS.Application.XNSE_Solver {
                     CurrentState.ToArray(), Params, RowMapping,
                     SpcToCompute);
 
-                foreach(var kv in AgglomeratedCellLengthScales) {
+                foreach (var kv in AgglomeratedCellLengthScales) {
                     eval.SpeciesOperatorCoefficients[kv.Key].CellLengthScales = kv.Value;
                     eval.SpeciesOperatorCoefficients[kv.Key].UserDefinedValues.Add("SlipLengths", SlipLengths);
+                    eval.SpeciesOperatorCoefficients[kv.Key].UserDefinedValues.Add("EvapMicroRegion", EvapMicroRegion);
                 }
 
-                if(this.m_XOp.SurfaceElementOperator.TotalNoOfComponents > 0) {
-                    foreach(var kv in InterfaceLengths)
+                if (this.m_XOp.SurfaceElementOperator.TotalNoOfComponents > 0) {
+                    foreach (var kv in InterfaceLengths) {
                         eval.SpeciesOperatorCoefficients[kv.Key].UserDefinedValues.Add("InterfaceLengths", kv.Value);
+                    }
                 }
 
                 eval.time = time;
@@ -369,7 +391,7 @@ namespace BoSSS.Application.XNSE_Solver {
 
 
         private void ComputeAverageU<T>(IEnumerable<T> U0, VectorField<XDGField> U0mean, int order, XQuadSchemeHelper qh) where T : DGField {
-            using(FuncTrace ft = new FuncTrace()) {
+            using (FuncTrace ft = new FuncTrace()) {
 
                 var CC = this.LsTrk.Regions.GetCutCellMask();
                 int D = this.LsTrk.GridDat.SpatialDimension;
@@ -377,7 +399,7 @@ namespace BoSSS.Application.XNSE_Solver {
 
 
                 //var qh = new XQuadSchemeHelper(agg);
-                foreach(var Spc in this.LsTrk.SpeciesIdS) { // loop over species...
+                foreach (var Spc in this.LsTrk.SpeciesIdS) { // loop over species...
                     //var Spc = this.LsTrk.GetSpeciesId("B"); {
                     // shadow fields
                     DGField[] U0_Spc = U0.Select(U0_d => (U0_d is XDGField) ? ((DGField)((U0_d as XDGField).GetSpeciesShadowField(Spc))) : ((DGField)U0_d)).ToArray();
@@ -385,7 +407,7 @@ namespace BoSSS.Application.XNSE_Solver {
 
 
                     // normal cells:
-                    for(int d = 0; d < D; d++) {
+                    for (int d = 0; d < D; d++) {
                         U0mean_Spc[d].AccLaidBack(1.0, U0_Spc[d], this.LsTrk.Regions.GetSpeciesMask(Spc));
                     }
 
@@ -397,21 +419,21 @@ namespace BoSSS.Application.XNSE_Solver {
                         rule,
                         delegate (int i0, int Length, QuadRule QR, MultidimensionalArray EvalResult) {
                             EvalResult.Clear();
-                            for(int d = 0; d < D; d++)
+                            for (int d = 0; d < D; d++)
                                 U0_Spc[d].Evaluate(i0, Length, QR.Nodes, EvalResult.ExtractSubArrayShallow(-1, -1, d));
                             var Vol = EvalResult.ExtractSubArrayShallow(-1, -1, D);
                             Vol.SetAll(1.0);
                         },
                         delegate (int i0, int Length, MultidimensionalArray ResultsOfIntegration) {
-                            for(int i = 0; i < Length; i++) {
+                            for (int i = 0; i < Length; i++) {
                                 int jCell = i + i0;
 
                                 double Volume = ResultsOfIntegration[i, D];
-                                if(Math.Abs(Volume) < minvol * 1.0e-12) {
+                                if (Math.Abs(Volume) < minvol * 1.0e-12) {
                                     // keep current value
                                     // since the volume of species 'Spc' in cell 'jCell' is 0.0, the value in this cell should have no effect
                                 } else {
-                                    for(int d = 0; d < D; d++) {
+                                    for (int d = 0; d < D; d++) {
                                         double IntVal = ResultsOfIntegration[i, d];
                                         U0mean_Spc[d].SetMeanValue(jCell, IntVal / Volume);
                                     }
@@ -428,17 +450,17 @@ namespace BoSSS.Application.XNSE_Solver {
 
 
                     VectorField<SinglePhaseField> U0mean_check = new VectorField<SinglePhaseField>(D, new Basis(LsTrk.GridDat, 0), SinglePhaseField.Factory);
-                    for(int d = 0; d < D; d++) {
+                    for (int d = 0; d < D; d++) {
                         U0mean_check[d].ProjectField(1.0, U0.ElementAt(d).Evaluate,
                             new CellQuadratureScheme(false, Uncut).AddFixedOrderRules(LsTrk.GridDat, U0.ElementAt(d).Basis.Degree + 1));
                     }
 
-                    foreach(var _Spc in this.LsTrk.SpeciesIdS) { // loop over species...
-                        for(int d = 0; d < D; d++) {
+                    foreach (var _Spc in this.LsTrk.SpeciesIdS) { // loop over species...
+                        for (int d = 0; d < D; d++) {
                             U0mean_check[d].AccLaidBack(-1.0, U0mean[d].GetSpeciesShadowField(_Spc), Uncut.Intersect(LsTrk.Regions.GetSpeciesMask(_Spc)));
                         }
                     }
-                    
+
                     double checkNorm = U0mean_check.L2Norm();
                     Debug.Assert(checkNorm < 1.0e-6);
                 }
@@ -452,3 +474,4 @@ namespace BoSSS.Application.XNSE_Solver {
 
     }
 }
+

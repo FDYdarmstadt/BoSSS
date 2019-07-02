@@ -44,20 +44,16 @@ namespace BoSSS.Application.XNSE_Solver {
             Continuity = true;
             Viscous = !control.FakePoisson;
             PressureGradient = true;
-            Transport = !control.FakePoisson;
+            Transport = control.FakePoisson ? false : control.PhysicalParameters.IncludeConvection;
             CodBlocks = new bool[] { true, true };
             DomBlocks = new bool[] { true, true };
             dntParams = control.AdvancedDiscretizationOptions;
             physParams = control.PhysicalParameters;
-            //thermParams = control.ThermalParameters;
+
             UseXDG4Velocity = control.UseXDG4Velocity;
 
             if(control.AdvancedDiscretizationOptions.SurfStressTensor == SurfaceSressTensor.SemiImplicit)
                 control.PhysicalParameters.mu_I = control.dtFixed * control.PhysicalParameters.Sigma;
-
-            //Heat = control.solveCoupledHeatEquation;
-            //Evaporation = (control.ThermalParameters.hVap_A != 0.0 && control.ThermalParameters.hVap_B != 0.0);
-            //MatInt = !Evaporation;
             
 
             switch(control.Timestepper_LevelSetHandling) {
@@ -217,10 +213,10 @@ namespace BoSSS.Application.XNSE_Solver {
     }
 
 
-    public class XNSEHeat_OperatorConfiguration : XNSE_OperatorConfiguration, IXHeat_Configuration {
+    public class XNSFE_OperatorConfiguration : XNSE_OperatorConfiguration, IXHeat_Configuration {
 
 
-        public XNSEHeat_OperatorConfiguration(XNSE_Control control) 
+        public XNSFE_OperatorConfiguration(XNSE_Control control) 
             : base(control) {
 
             thermParams = control.ThermalParameters;
@@ -240,12 +236,25 @@ namespace BoSSS.Application.XNSE_Solver {
         public bool Heat;
 
         /// <summary>
+        /// include transport operator
+        /// </summary>
+        public bool HeatTransport;
+
+        /// <summary>
         /// include evaporation
         /// </summary>
         public bool Evaporation;
 
+
         public ThermalParameters getThermParams {
             get { return thermParams; }
+        }
+        public bool isHeatTransport {
+            get { return HeatTransport; }
+        }
+
+        public bool isEvaporation {
+            get { return Evaporation; }
         }
     }
 }

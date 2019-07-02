@@ -36,7 +36,8 @@ namespace BoSSS.Solution.XheatCommon {
 
 
         public ViscosityAtLevelSet_FullySymmetric_withEvap(LevelSetTracker lstrk, double _muA, double _muB, double _penalty, int _component, double _rhoA, double _rhoB,
-            double _kA, double _kB, double _hVapA, double _Rint, double _Tsat, double _sigma, double _pc) {
+            ThermalParameters thermParams, double _Rint, double _sigma) {
+            //double _kA, double _kB, double _hVapA, double _Rint, double _Tsat, double _sigma, double _pc) {
             this.m_LsTrk = lstrk;
             this.muA = _muA;
             this.muB = _muB;
@@ -47,14 +48,14 @@ namespace BoSSS.Solution.XheatCommon {
             this.rhoA = _rhoA;
             this.rhoB = _rhoB;
 
-            this.kA = _kA;
-            this.kB = _kB;
-            this.hVapA = _hVapA;
+            this.kA = thermParams.k_A;
+            this.kB = thermParams.k_B;
+            this.hVapA = thermParams.hVap_A;
             this.Rint = _Rint;
 
-            this.Tsat = _Tsat;
+            this.Tsat = thermParams.T_sat;
             this.sigma = _sigma;
-            this.pc = _pc;
+            this.pc = thermParams.pc;
         }
 
         double muA;
