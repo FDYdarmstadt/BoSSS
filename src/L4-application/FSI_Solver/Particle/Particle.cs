@@ -396,13 +396,6 @@ namespace BoSSS.Application.FSI_Solver
         [NonSerialized]
         readonly private ParticleAcceleration Acceleration = new ParticleAcceleration();
 
-        internal void UpdateParticlePositionAndAngle(double dt)
-        {
-            CalculateParticlePosition(dt);
-            CalculateParticleAngle(dt);
-            CollisionTimestep = 0;
-        }
-
         /// <summary>
         /// Calculate the new particle position
         /// </summary>
