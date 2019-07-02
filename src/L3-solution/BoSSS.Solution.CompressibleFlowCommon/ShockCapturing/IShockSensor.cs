@@ -23,23 +23,20 @@ using System.Collections.Generic;
 
 namespace BoSSS.Solution.CompressibleFlowCommon.ShockCapturing {
 
-    /// <summary>
-    /// Defines a sensor that yields large positive values in regions with
-    /// strong oscillations and small values otherwise
-    /// </summary>
     public interface IShockSensor {
-
-        /// <summary>
-        /// Updates the sensor values in all cells
-        /// </summary>
-        void UpdateSensorValues(IEnumerable<DGField> fieldSet, ISpeciesMap speciesMap, CellMask cellMask);
 
         /// <summary>
         /// Returns the current value of the sensor in cell <paramref name="cell"/>
         /// </summary>
         /// <param name="cell"></param>
-        /// <returns></returns>
+        /// <returns>The sensor value as a double</returns>
         double GetSensorValue(int cell);
+
+        /// <summary>
+        /// Returns the sensor values stored in a DG field
+        /// </summary>
+        /// <returns>Sensor values in a DG field</returns>
+        DGField GetSensorField();
     }
 
     /// <summary>

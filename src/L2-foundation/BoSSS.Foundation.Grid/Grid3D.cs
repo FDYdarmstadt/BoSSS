@@ -42,26 +42,7 @@ namespace BoSSS.Foundation.Grid.Classic {
             : base(new RefElement[] { _RefElement }, new RefElement[] { _RefElement.FaceRefElement }) {
         }
 
-        /// <summary>
-        /// used by constructor to determine whether a cell is in a cutout-region or not 
-        /// </summary>
-        /// <returns>
-        /// true, if the center of some cell lies within the cutout region
-        /// </returns>
-        private bool IsInCutoutRegion(int indX, int indY, int indZ, double[] xNodes, double[] yNodes, double[] zNodes, double[,] cutoutMin, double[,] cutoutMax) {
-            double Xcenter = 0.5 * (xNodes[indX] + xNodes[indX + 1]);
-            double Ycenter = 0.5 * (yNodes[indY] + yNodes[indY + 1]);
-            double Zcenter = 0.5 * (zNodes[indZ] + zNodes[indZ + 1]);
-
-            for (int l = cutoutMin.GetLength(0) - 1; l >= 0; l--) {
-                if (Xcenter >= cutoutMin[l, 0] && Xcenter <= cutoutMax[l, 0]
-                    && Ycenter >= cutoutMin[l, 1] && Ycenter <= cutoutMax[l, 1]
-                    && Zcenter >= cutoutMin[l, 2] && Zcenter <= cutoutMax[l, 2])
-                    return true;
-            }
-
-            return false;
-        }
+        
 
         /// <summary>
         /// Constructs a Cartesian 3D Grid
@@ -93,7 +74,10 @@ namespace BoSSS.Foundation.Grid.Classic {
         /// <returns>
         /// A Cartesian 3D grid with the given nodes.
         /// </returns>
-        public static Grid3D Cartesian3DGrid(double[] xNodes, double[] yNodes, double[] zNodes, bool periodicX = false, bool periodicY = false, bool periodicZ = false, CellType _CellType = CellType.Cube_Linear,params BoundingBox[] CutOuts) {
+        public static Grid3D Cartesian3DGrid(double[] xNodes, double[] yNodes, double[] zNodes, 
+            CellType _CellType = CellType.Cube_Linear,
+            bool periodicX = false, bool periodicY = false, bool periodicZ = false, 
+            params BoundingBox[] CutOuts) {
             using (var tr = new FuncTrace()) {
                 MPICollectiveWatchDog.Watch();
 
@@ -128,10 +112,6 @@ namespace BoSSS.Foundation.Grid.Classic {
 
                 int i0 = nX * myrank / size;        // 1st x-Index on this proc.
                 int iE = nX * (myrank + 1) / size;  // 1st x-Index on next proc. rank
-
-                if (Math.Abs(i0 - iE) <= 0)
-                    throw new ApplicationException("unable to do partitioning; X-Slice on processor " + myrank + " is empty; Try to load grid from database;");
-
 
                 // Return object
                 // =============
@@ -188,217 +168,251 @@ namespace BoSSS.Foundation.Grid.Classic {
                 // set cells
                 // =========
                 int LocalNoOfCells = (iE - i0) * (yNodes.Length - 1) * (zNodes.Length - 1);
-
-                // Needed for CutOuts
                 List<Cell> Cells = new List<Cell>(LocalNoOfCells);
 
+                bool IsInCutOut(int i, int j, int k) {
+                    if (i < -1)
+                        throw new IndexOutOfRangeException();
+                    if (i > nX + 1)
+                        throw new IndexOutOfRangeException();
+                    if (i < 0)
+                        i = nX - 1;
+                    if (i >= nX)
+                        i = 0;
 
-                grid.Cells = new Cell[LocalNoOfCells];
+                    if (j < -1)
+                        throw new IndexOutOfRangeException();
+                    if (j > nY + 1)
+                        throw new IndexOutOfRangeException();
+                    if (j < 0)
+                        j = nY - 1;
+                    if (j >= nY)
+                        j = 0;
 
+                    if (k < -1)
+                        throw new IndexOutOfRangeException();
+                    if (k > nZ + 1)
+                        throw new IndexOutOfRangeException();
+                    if (k < 0)
+                        k = nZ - 1;
+                    if (k >= nZ)
+                        k = 0;
 
-                var Kref = grid.RefElements.Single(KK => KK.GetType() == typeof(Cube));
-                MultidimensionalArray InterpolationNodes = Kref.GetInterpolationNodes(_CellType);
-                int NoOfNodes = Kref.GetInterpolationNodes(_CellType).GetLength(0);
+                    if (CutOuts != null) {
+                        double xC = 0.5 * (xNodes[i] + xNodes[(i + 1)]);
+                        double yC = 0.5 * (yNodes[j] + yNodes[(j + 1)]);
+                        double zC = 0.5 * (zNodes[k] + zNodes[(k + 1)]);
 
+                        return (CutOuts.Any(BB => BB.Contains(xC, yC, zC)));
 
-                int cnt = -1;
-                for (int i = i0; i < iE; i++) {
-                    for (int j = 0; j < nY; j++) {
-                        for (int k = 0; k < nZ; k++) {
-                            cnt++;
-
-                            // cut-out regions test
-                            // ====================
-                                if (CutOuts != null) {
-                                double xC = 0.5 * (xNodes[i] + xNodes[i + 1]);
-                                double yC = 0.5 * (yNodes[j] + yNodes[j + 1]);
-                                double zC = 0.5 * (zNodes[k] + zNodes[k + 1]);
-
-                                if (CutOuts.Any(BB => BB.Contains(xC, yC,zC)))
-                                    continue;
-                            }
-
-
-                            Cell C_cnt = new Cell();
-
-                            // Needed for CutOuts
-                            Cells.Add(C_cnt);
-
-                            // define cell
-                            // ===========
-                            C_cnt.GlobalID = i + j * nX + k * nX * nY;
-                            C_cnt.Type = _CellType;
-
-                            C_cnt.TransformationParams = MultidimensionalArray.Create(NoOfNodes, 3);
-                            Vector xyzPoint = new Vector(3);
-                            //  var Bild0 = Cj0.TransformationParams;
-
-
-
-
-                            for (int PointNumber = 0; PointNumber < NoOfNodes; PointNumber++) {
-                                xyzPoint[0] = xNodes[i] + (xNodes[i + 1] - xNodes[i]) * 0.5 * (InterpolationNodes[PointNumber, 0] + 1);
-                                xyzPoint[1] = yNodes[j] + (yNodes[j + 1] - yNodes[j]) * 0.5 * (InterpolationNodes[PointNumber, 1] + 1);
-                                xyzPoint[2] = zNodes[k] + (zNodes[k + 1] - zNodes[k]) * 0.5 * (InterpolationNodes[PointNumber, 2] + 1);
-                                // Write Physical Coordinates to TransformParams
-                                for (int dim = 0; dim < 3; dim++) {
-                                    C_cnt.TransformationParams[PointNumber, dim] = xyzPoint[dim];
-                                }
-                            }
-
-                            // cell neighbourship
-                            // ==================
-                            //C_cnt.NodeIndices = new int[8];
-                            //C_cnt.NodeIndices[0] = i + j * xNodes.Length + k * xNodes.Length * yNodes.Length;
-                            //C_cnt.NodeIndices[1] = (i + 1) + j * xNodes.Length + k * xNodes.Length * yNodes.Length;
-                            //C_cnt.NodeIndices[2] = i + (j + 1) * xNodes.Length + k * xNodes.Length * yNodes.Length;
-                            //C_cnt.NodeIndices[3] = (i + 1) + (j + 1) * xNodes.Length + k * xNodes.Length * yNodes.Length;
-                            //C_cnt.NodeIndices[4] = i + j * xNodes.Length + (k + 1) * xNodes.Length * yNodes.Length;
-                            //C_cnt.NodeIndices[5] = (i + 1) + j * xNodes.Length + (k + 1) * xNodes.Length * yNodes.Length;
-                            //C_cnt.NodeIndices[6] = i + (j + 1) * xNodes.Length + (k + 1) * xNodes.Length * yNodes.Length;
-                            //C_cnt.NodeIndices[7] = (i + 1) + (j + 1) * xNodes.Length + (k + 1) * xNodes.Length * yNodes.Length;
-
-                            int[,] Vertices = new int[3, 8];
-                            Vertices[0, 0] = 0;
-                            Vertices[0, 2] = 0;
-                            Vertices[0, 3] = 0;
-                            Vertices[0, 7] = 0;
-                            Vertices[0, 6] = 1;
-                            Vertices[0, 5] = 1;
-                            Vertices[0, 4] = 1;
-                            Vertices[0, 1] = 1;
-
-                            Vertices[1, 0] = 0;
-                            Vertices[1, 1] = 0;
-                            Vertices[1, 3] = 0;
-                            Vertices[1, 6] = 0;
-                            Vertices[1, 7] = 1;
-                            Vertices[1, 5] = 1;
-                            Vertices[1, 4] = 1;
-                            Vertices[1, 2] = 1;
-
-                            Vertices[2, 0] = 0;
-                            Vertices[2, 1] = 0;
-                            Vertices[2, 2] = 0;
-                            Vertices[2, 4] = 0;
-                            Vertices[2, 6] = 1;
-                            Vertices[2, 7] = 1;
-                            Vertices[2, 5] = 1;
-                            Vertices[2, 3] = 1;
-
-                            C_cnt.NodeIndices = new int[8];
-                            for (int pointnumber = 0; pointnumber < 8; pointnumber++) {
-                                C_cnt.NodeIndices[pointnumber] = i + Vertices[0, pointnumber] + (j + Vertices[1, pointnumber]) * xNodes.Length + (k + Vertices[2, pointnumber]) * xNodes.Length * yNodes.Length;
-                            }
-
-
-
-                            // Edge tags (only periodic)
-                            // =========================
-                            if (periodicY || periodicX || periodicZ) {
-
-                                int iNeigh;
-                                int jNeigh;
-                                int kNeigh;
-
-
-                                if (periodicX) {
-                                    iNeigh = i + 1;
-                                    jNeigh = j;
-                                    kNeigh = k;
-                                    if (iNeigh >= nX) {
-                                        (new CellFaceTag() {
-                                            EdgeTag = perxTag,
-                                            PeriodicInverse = false,
-                                            FaceIndex = (int)Cube.Edge.Right,
-                                            NeighCell_GlobalID = 0 + (jNeigh) * (nX) + kNeigh * (nX) * (nY)
-                                        }).AddToArray(ref C_cnt.CellFaceTags);
-                                        //System.Diagnostics.Debugger.Break();
-
-                                    }
-                                    iNeigh = i - 1;
-                                    jNeigh = j;
-                                    kNeigh = k;
-                                    if (iNeigh < 0) {
-                                        (new CellFaceTag() {
-                                            EdgeTag = perxTag,
-                                            PeriodicInverse = true,
-                                            FaceIndex = (int)Cube.Edge.Left,
-                                            NeighCell_GlobalID = (nX - 1) + (jNeigh) * (nX) + kNeigh * nX * nY
-                                        }).AddToArray(ref C_cnt.CellFaceTags);
-                                        //System.Diagnostics.Debugger.Break();
-                                    }
-                                }
-
-                                if (periodicY) {
-                                    iNeigh = i;
-                                    jNeigh = j + 1;
-                                    kNeigh = k;
-                                    if (jNeigh >= nY) {
-                                        (new CellFaceTag() {
-                                            EdgeTag = peryTag,
-                                            PeriodicInverse = false,
-                                            FaceIndex = (int)Cube.Edge.Top,
-                                            NeighCell_GlobalID = iNeigh + (0) * (nX) + kNeigh * (nX) * (nY)
-                                        }).AddToArray(ref C_cnt.CellFaceTags);
-                                    }
-
-                                    iNeigh = i;
-                                    jNeigh = j - 1;
-                                    kNeigh = k;
-                                    if (jNeigh < 0) {
-                                        (new CellFaceTag() {
-                                            EdgeTag = peryTag,
-                                            PeriodicInverse = true,
-                                            FaceIndex = (int)Cube.Edge.Bottom,
-                                            NeighCell_GlobalID = iNeigh + (nY - 1) * (nX) + kNeigh * nX * nY
-                                        }).AddToArray(ref C_cnt.CellFaceTags);
-                                    }
-                                }
-
-                                if (periodicZ) {
-                                    iNeigh = i;
-                                    jNeigh = j;
-                                    kNeigh = k + 1;
-                                    if (periodicZ && kNeigh >= nZ) {
-                                        (new CellFaceTag() {
-                                            EdgeTag = perzTag,
-                                            PeriodicInverse = false,
-                                            FaceIndex = (int)Cube.Edge.Front,
-                                            NeighCell_GlobalID = iNeigh + jNeigh * (nX) + 0 * (nX) * (nY)
-                                        }).AddToArray(ref C_cnt.CellFaceTags);
-                                    }
-
-                                    iNeigh = i;
-                                    jNeigh = j;
-                                    kNeigh = k - 1;
-                                    if (periodicZ && kNeigh < 0) {
-                                        (new CellFaceTag() {
-                                            EdgeTag = perzTag,
-                                            PeriodicInverse = true,
-                                            FaceIndex = (int)Cube.Edge.Back,
-                                            NeighCell_GlobalID = iNeigh + jNeigh * (nX) + (nZ - 1) * (nX) * (nY)
-                                        }).AddToArray(ref C_cnt.CellFaceTags);
-                                    }
-                                }
-
-                            }
-
-                            grid.Cells[cnt] = C_cnt;
-                            //Console.WriteLine("Cell {0} of {1} created.", cnt, nX * nY * nZ);
-                        }
+                    } else {
+                        return false;
                     }
                 }
 
+
+                int cnt = 0;
+                if (Math.Abs(i0 - iE) <= 0) {
+                    //throw new ApplicationException("unable to do partitioning; X-Slice on processor " + myrank + " is empty; Try to load grid from database;");
+                    cnt = 0;
+                } else {
+
+                    var Kref = grid.RefElements.Single(KK => KK.GetType() == typeof(Cube));
+                    MultidimensionalArray InterpolationNodes = Kref.GetInterpolationNodes(_CellType);
+                    int NoOfNodes = Kref.GetInterpolationNodes(_CellType).GetLength(0);
+
+                    for (int i = i0; i < iE; i++) {
+                        for (int j = 0; j < nY; j++) {
+                            for (int k = 0; k < nZ; k++) {
+
+                                // cut-out regions test
+                                // ====================
+                                if (IsInCutOut(i, j, k)) {
+                                    continue;
+                                }
+                                cnt++;
+
+
+                                Cell C_cnt = new Cell();
+                                Cells.Add(C_cnt);
+
+                                // define cell
+                                // ===========
+                                C_cnt.GlobalID = i + j * nX + k * nX * nY;
+                                C_cnt.Type = _CellType;
+
+                                C_cnt.TransformationParams = MultidimensionalArray.Create(NoOfNodes, 3);
+                                Vector xyzPoint = new Vector(3);
+                                //  var Bild0 = Cj0.TransformationParams;
+
+
+
+
+                                for (int PointNumber = 0; PointNumber < NoOfNodes; PointNumber++) {
+                                    xyzPoint[0] = xNodes[i] + (xNodes[i + 1] - xNodes[i]) * 0.5 * (InterpolationNodes[PointNumber, 0] + 1);
+                                    xyzPoint[1] = yNodes[j] + (yNodes[j + 1] - yNodes[j]) * 0.5 * (InterpolationNodes[PointNumber, 1] + 1);
+                                    xyzPoint[2] = zNodes[k] + (zNodes[k + 1] - zNodes[k]) * 0.5 * (InterpolationNodes[PointNumber, 2] + 1);
+                                    // Write Physical Coordinates to TransformParams
+                                    for (int dim = 0; dim < 3; dim++) {
+                                        C_cnt.TransformationParams[PointNumber, dim] = xyzPoint[dim];
+                                    }
+                                }
+
+                                // cell neighbourship
+                                // ==================
+                                
+                                int[,] Vertices = new int[3, 8]; 
+                                Vertices[0, 0] = 0;
+                                Vertices[0, 2] = 0;
+                                Vertices[0, 3] = 0;
+                                Vertices[0, 7] = 0;
+                                Vertices[0, 6] = 1;
+                                Vertices[0, 5] = 1;
+                                Vertices[0, 4] = 1;
+                                Vertices[0, 1] = 1;
+
+                                Vertices[1, 0] = 0;
+                                Vertices[1, 1] = 0;
+                                Vertices[1, 3] = 0;
+                                Vertices[1, 6] = 0;
+                                Vertices[1, 7] = 1;
+                                Vertices[1, 5] = 1;
+                                Vertices[1, 4] = 1;
+                                Vertices[1, 2] = 1;
+
+                                Vertices[2, 0] = 0;
+                                Vertices[2, 1] = 0;
+                                Vertices[2, 2] = 0;
+                                Vertices[2, 4] = 0;
+                                Vertices[2, 6] = 1;
+                                Vertices[2, 7] = 1;
+                                Vertices[2, 5] = 1;
+                                Vertices[2, 3] = 1;
+
+                                C_cnt.NodeIndices = new int[8];
+                                for (int pointnumber = 0; pointnumber < 8; pointnumber++) {
+                                    C_cnt.NodeIndices[pointnumber] = i + Vertices[0, pointnumber] + (j + Vertices[1, pointnumber]) * xNodes.Length + (k + Vertices[2, pointnumber]) * xNodes.Length * yNodes.Length;
+                                }
+
+
+
+                                // Edge tags (only periodic)
+                                // =========================
+                                if (periodicY || periodicX || periodicZ) {
+
+                                    int iNeigh;
+                                    int jNeigh;
+                                    int kNeigh;
+
+
+                                    if (periodicX) {
+                                        iNeigh = i + 1;
+                                        jNeigh = j;
+                                        kNeigh = k;
+                                        if (iNeigh >= nX && !IsInCutOut(iNeigh, jNeigh, kNeigh)) {
+                                            (new CellFaceTag() {
+                                                EdgeTag = perxTag,
+                                                PeriodicInverse = false,
+                                                FaceIndex = (int)Cube.Edge.Right,
+                                                NeighCell_GlobalID = 0 + (jNeigh) * (nX) + kNeigh * (nX) * (nY)
+                                            }).AddToArray(ref C_cnt.CellFaceTags);
+                                            //System.Diagnostics.Debugger.Break();
+
+                                        }
+                                        iNeigh = i - 1;
+                                        jNeigh = j;
+                                        kNeigh = k;
+                                        if (iNeigh < 0 && !IsInCutOut(iNeigh, jNeigh, kNeigh)) {
+                                            (new CellFaceTag() {
+                                                EdgeTag = perxTag,
+                                                PeriodicInverse = true,
+                                                FaceIndex = (int)Cube.Edge.Left,
+                                                NeighCell_GlobalID = (nX - 1) + (jNeigh) * (nX) + kNeigh * nX * nY
+                                            }).AddToArray(ref C_cnt.CellFaceTags);
+                                            //System.Diagnostics.Debugger.Break();
+                                        }
+                                    }
+
+                                    if (periodicY) {
+                                        iNeigh = i;
+                                        jNeigh = j + 1;
+                                        kNeigh = k;
+                                        if (jNeigh >= nY && !IsInCutOut(iNeigh, jNeigh, kNeigh)) {
+                                            (new CellFaceTag() {
+                                                EdgeTag = peryTag,
+                                                PeriodicInverse = false,
+                                                FaceIndex = (int)Cube.Edge.Top,
+                                                NeighCell_GlobalID = iNeigh + (0) * (nX) + kNeigh * (nX) * (nY)
+                                            }).AddToArray(ref C_cnt.CellFaceTags);
+                                        }
+
+                                        iNeigh = i;
+                                        jNeigh = j - 1;
+                                        kNeigh = k;
+                                        if (jNeigh < 0 && !IsInCutOut(iNeigh, jNeigh, kNeigh)) {
+                                            (new CellFaceTag() {
+                                                EdgeTag = peryTag,
+                                                PeriodicInverse = true,
+                                                FaceIndex = (int)Cube.Edge.Bottom,
+                                                NeighCell_GlobalID = iNeigh + (nY - 1) * (nX) + kNeigh * nX * nY
+                                            }).AddToArray(ref C_cnt.CellFaceTags);
+                                        }
+                                    }
+
+                                    if (periodicZ) {
+                                        iNeigh = i;
+                                        jNeigh = j;
+                                        kNeigh = k + 1;
+                                        if (kNeigh >= nZ && !IsInCutOut(iNeigh, jNeigh, kNeigh)) {
+                                            (new CellFaceTag() {
+                                                EdgeTag = perzTag,
+                                                PeriodicInverse = false,
+                                                FaceIndex = (int)Cube.Edge.Front,
+                                                NeighCell_GlobalID = iNeigh + jNeigh * (nX) + 0 * (nX) * (nY)
+                                            }).AddToArray(ref C_cnt.CellFaceTags);
+                                        }
+
+                                        iNeigh = i;
+                                        jNeigh = j;
+                                        kNeigh = k - 1;
+                                        if (kNeigh < 0 && !IsInCutOut(iNeigh, jNeigh, kNeigh)) {
+                                            (new CellFaceTag() {
+                                                EdgeTag = perzTag,
+                                                PeriodicInverse = true,
+                                                FaceIndex = (int)Cube.Edge.Back,
+                                                NeighCell_GlobalID = iNeigh + jNeigh * (nX) + (nZ - 1) * (nX) * (nY)
+                                            }).AddToArray(ref C_cnt.CellFaceTags);
+                                        }
+                                    }
+
+                                }
+
+                                
+                            }
+                        }
+                    }
+                }
+                grid.Cells = Cells.ToArray();
+
+                cnt = cnt.MPISum();
+                if(cnt <= 0) {
+                    throw new ArgumentException("Grid is empty - check arguments (cut-outs).");
+                }
 
                 // return
                 // ======
                 //Console.WriteLine("Returning Cartesian 3D-Grid with {0} Cells", nX * nY * nZ);
 
                 if (CutOuts != null && CutOuts.Length > 0) {
-                    grid.Cells = Cells.ToArray();
                     grid.CompressGlobalID();
                     grid.CompressNodeIndices();
+                }
+
+                foreach(var cl in grid.Cells) {
+                    if (cl.GlobalID < 0)
+                        throw new ApplicationException("Internal error - illegal GlobalID.");
+                    if (cl.GlobalID >= cnt)
+                        throw new ApplicationException("Internal error - illegal GlobalID.");
                 }
 
                 return grid;

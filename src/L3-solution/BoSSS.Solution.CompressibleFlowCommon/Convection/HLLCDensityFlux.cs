@@ -15,10 +15,9 @@ limitations under the License.
 */
 
 using BoSSS.Platform.LinAlg;
-using BoSSS.Solution.CompressibleFlowCommon;
 using BoSSS.Solution.CompressibleFlowCommon.Boundary;
 
-namespace CNS.Convection {
+namespace BoSSS.Solution.CompressibleFlowCommon.Convection {
 
     /// <summary>
     /// Implements the parts of the HLLCFlux specific to the continuity
@@ -33,7 +32,7 @@ namespace CNS.Convection {
         /// <param name="boundaryMap"><see cref="HLLCFlux"/></param>
         /// <param name="equationComponent"><see cref="HLLCFlux"/></param>
         /// <param name="speciesMap"><see cref="HLLCFlux"/></param>
-        public HLLCDensityFlux(CNSControl config, IBoundaryConditionMap boundaryMap, EulerDensityComponent equationComponent, ISpeciesMap speciesMap)
+        public HLLCDensityFlux(CompressibleControl config, IBoundaryConditionMap boundaryMap, EulerDensityComponent equationComponent, ISpeciesMap speciesMap)
             : base(config, boundaryMap, equationComponent, speciesMap) {
         }
 

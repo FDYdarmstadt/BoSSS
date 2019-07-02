@@ -16,7 +16,7 @@ limitations under the License.
 
 using BoSSS.Foundation;
 
-namespace CNS.Diffusion {
+namespace BoSSS.Solution.CompressibleFlowCommon.Diffusion {
 
     /// <summary>
     /// Simply a combination of <see cref="INonlinEdgeForm_GradV"/>,
