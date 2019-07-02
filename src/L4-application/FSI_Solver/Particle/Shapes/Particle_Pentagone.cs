@@ -63,7 +63,7 @@ namespace BoSSS.Application.FSI_Solver
         {
             get
             {
-                return (5 * width_P * width_P) / 4;
+                return (5 * width_P.Pow2()) / 4;
             }
         }
         protected override double Circumference_P

@@ -168,6 +168,7 @@ namespace BoSSS.Application.FSI_Solver {
                 SupportPoint[i] += Position[i];
             }
         }
+
         override public double[] GetLengthScales()
         {
             return new double[] { length_P, thickness_P };

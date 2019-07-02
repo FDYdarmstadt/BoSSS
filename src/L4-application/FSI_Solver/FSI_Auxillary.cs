@@ -320,13 +320,8 @@ namespace FSI_Solver
                         //ExchangeDampingTensors(Particles);
                     }
                     p.PredictForceAndTorque();
-                    //p.PredictAcceleration();
                 }
-                else
-                {
-                    p.CalculateAcceleration(dt, FullyCoupled, IncludeHydrodynamics);
-                }
-                csMPI.Raw.Barrier(csMPI.Raw._COMM.WORLD);
+                p.CalculateAcceleration(dt, FullyCoupled, IncludeHydrodynamics);
                 p.UpdateParticleVelocity(dt);
             }
         }

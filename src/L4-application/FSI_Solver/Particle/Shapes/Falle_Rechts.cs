@@ -105,10 +105,10 @@ namespace BoSSS.Application.FSI_Solver
             //          r = Math.Max(r, Math.Abs(Position[0][0] - 0.5 * width_P - X[0]));
 
             // Falle_Rechts:
-                      r = Math.Abs(Position[0][1] - X[1]);
-                      r = Math.Max(r, Math.Abs(-X[1] - 0.5*X[0] + Position[0][1] + Position[0][0] - width_P) - Math.Abs(X[1] - Position[0][1]));
-                      r = Math.Max(r, Math.Abs(Position[0][0] - 1.5*width_P - X[0])); 
-                      r = r - 3.5*width_P;
+            r = Math.Abs(Position[0][1] - X[1]);
+            r = Math.Max(r, Math.Abs(-X[1] - 0.5 * X[0] + Position[0][1] + Position[0][0] - width_P) - Math.Abs(X[1] - Position[0][1]));
+            r = Math.Max(r, Math.Abs(Position[0][0] - 1.5 * width_P - X[0]));
+            r = r - 3.5 * width_P;
             r = -r;
             return r;
         }
@@ -157,7 +157,6 @@ namespace BoSSS.Application.FSI_Solver
             }
             return SurfacePoints;
         }
-
 
         override public double[] GetLengthScales()
         {

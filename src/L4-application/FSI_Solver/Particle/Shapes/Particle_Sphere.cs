@@ -62,7 +62,7 @@ namespace BoSSS.Application.FSI_Solver
         {
             get
             {
-                return Math.PI * radius_P * radius_P;
+                return Math.PI * radius_P.Pow2();
             }
         }
         protected override double Circumference_P
@@ -76,7 +76,7 @@ namespace BoSSS.Application.FSI_Solver
         {
             get
             {
-                return (1 / 2.0) * (Mass_P * radius_P * radius_P);
+                return (1 / 2.0) * (Mass_P * radius_P.Pow2());
             }
         }
 
