@@ -19,12 +19,10 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
 using BoSSS.Platform.LinAlg;
-using BoSSS.Solution.CompressibleFlowCommon;
-using BoSSS.Solution.CompressibleFlowCommon.Convection;
 using BoSSS.Solution.Utils;
 using BoSSS.Solution.CompressibleFlowCommon.Boundary;
 
-namespace CNS.Convection {
+namespace BoSSS.Solution.CompressibleFlowCommon.Convection {
 
     /// <summary>
     /// Abstract class for all numerical flux function applicable to the Euler
@@ -35,7 +33,7 @@ namespace CNS.Convection {
         /// <summary>
         /// Configuration options
         /// </summary>
-        protected CNSControl config;
+        protected CompressibleControl config;
 
         /// <summary>
         /// Boundary value definition
@@ -63,7 +61,7 @@ namespace CNS.Convection {
         /// <param name="speciesMap">
         /// Mapping that determines the active species in some point.
         /// </param>
-        protected EulerFlux(CNSControl config, IBoundaryConditionMap boundaryMap, IEulerEquationComponent equationComponent, ISpeciesMap speciesMap) {
+        protected EulerFlux(CompressibleControl config, IBoundaryConditionMap boundaryMap, IEulerEquationComponent equationComponent, ISpeciesMap speciesMap) {
             this.config = config;
             this.boundaryMap = boundaryMap;
             this.equationComponent = equationComponent;

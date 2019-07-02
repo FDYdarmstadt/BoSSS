@@ -18,6 +18,7 @@ using BoSSS.Foundation.Grid.Classic;
 using BoSSS.Platform.LinAlg;
 using BoSSS.Solution.CompressibleFlowCommon;
 using BoSSS.Solution.CompressibleFlowCommon.MaterialProperty;
+using BoSSS.Solution.CompressibleFlowCommon.ShockCapturing;
 using BoSSS.Solution.Queries;
 using CNS.Convection;
 using CNS.EquationSystem;
@@ -208,8 +209,8 @@ namespace CNS.Tests.ArtificialViscosity {
             double epsilon0 = 1.0;
             double kappa = 0.5;
             Variable sensorVariable = CompressibleVariables.Density;
-            c.ShockSensor = new PerssonSensor(sensorVariable, sensorLimit);
-            c.ArtificialViscosityLaw = new SmoothedHeavisideArtificialViscosityLaw(c.ShockSensor, dgDegree, sensorLimit, epsilon0, kappa);
+            c.CNSShockSensor = new PerssonSensor(sensorVariable, sensorLimit);
+            c.ArtificialViscosityLaw = new SmoothedHeavisideArtificialViscosityLaw(c.CNSShockSensor, dgDegree, sensorLimit, epsilon0, kappa);
 
             c.AddVariable(CompressibleVariables.Density, dgDegree);
             c.AddVariable(CompressibleVariables.Momentum.xComponent, dgDegree);

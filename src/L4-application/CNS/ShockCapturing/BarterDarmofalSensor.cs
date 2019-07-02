@@ -28,7 +28,7 @@ using System.Linq;
 
 namespace CNS.ShockCapturing {
 
-    public class BarterDarmofalSensor : IShockSensor {
+    public class BarterDarmofalSensor : ICNSShockSensor {
 
         private Variable sensorVariable;
 
@@ -36,6 +36,10 @@ namespace CNS.ShockCapturing {
 
         public BarterDarmofalSensor(Variable sensorVariable) {
             this.sensorVariable = sensorVariable;
+        }
+
+        public DGField GetSensorField() {
+            throw new NotImplementedException();
         }
 
         public double GetSensorValue(int cellIndex) {

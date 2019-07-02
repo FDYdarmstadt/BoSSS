@@ -183,7 +183,8 @@ namespace BoSSS.Solution.LevelSetTools {
         public void MakeContinuous(SinglePhaseField DGLevelSet, SinglePhaseField LevelSet, CellMask Domain) {
             FEMLevSet.ProjectDGField(1.0, DGLevelSet, Domain);
             LevelSet.Clear();
-            FEMLevSet.AccToDGField(1.0, LevelSet);
+            FEMLevSet.AccToDGField(1.0, LevelSet, Domain);
+            LevelSet.AccLaidBack(1.0, DGLevelSet, Domain.Complement());
         }
     }
 

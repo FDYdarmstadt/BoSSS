@@ -150,7 +150,7 @@ namespace BoSSS.Application.FSI_Solver
         /// <param name="iterationCounter">
         /// No. of iterations.
         /// </param>
-        private double CalculateAdaptiveUnderrelaxation(double variable, double variableAtPrevIteration, double averageValueOfVar, double convergenceLimit, int iterationCounter, double predefinedFactor = 1)
+        private double CalculateAdaptiveUnderrelaxation(double variable, double variableAtPrevIteration, double averageValueOfVar, double convergenceLimit, int iterationCounter, double predefinedFactor)
         {
             int IterationHelper = 1;
             double ConvergenceHelperFactor = 1;
@@ -172,8 +172,9 @@ namespace BoSSS.Application.FSI_Solver
                 UnderrelaxationCoeff = predefinedFactor * Math.Pow(10, UnderrelaxationExponent);
             }
 
-            if (Math.Abs(UnderrelaxationCoeff * variable) < convergenceLimit * 100 && 10000 * Math.Abs(variable) > Math.Abs(averageValueOfVar))
-                UnderrelaxationCoeff = convergenceLimit * 100;
+            //if (Math.Abs(UnderrelaxationCoeff * variable) < convergenceLimit * 100 && 10000 * Math.Abs(variable) > Math.Abs(averageValueOfVar))
+            //    UnderrelaxationCoeff = convergenceLimit * 10;
+
             if (UnderrelaxationCoeff >= predefinedFactor * 1e-1)
                 UnderrelaxationCoeff = predefinedFactor * 1e-1;
 

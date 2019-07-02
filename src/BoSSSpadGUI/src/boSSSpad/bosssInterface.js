@@ -12,7 +12,7 @@ class BoSSS{
                 typeName: 'BoSSS.Application.BoSSSpad.ElectronInterface',
                 methodName: 'Invoke', // This must be Func<object,Task<object>>
             });
-            var BoSSS_Dir = path.join(__dirname, '../src/cs/bin/Debug/');
+            var BoSSS_Dir = path.join(__dirname, '../src/cs/bin/Release/');
             this.BoSSSRuntime = requireBoSSS( BoSSS_Dir, true);
             this.constructor.prototype.instance = this;
         }
