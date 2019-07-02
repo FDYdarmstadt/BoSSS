@@ -64,17 +64,6 @@ namespace BoSSS.Application.FSI_Solver
             return 2;
         }
 
-        /// <summary>
-        /// %
-        /// </summary>
-        protected override double AverageDistance
-        {
-            get
-            {
-                return width_P;
-            }
-        }
-
         public override double Area_P
         {
             get

@@ -451,7 +451,7 @@ namespace BoSSS.Application.FSI_Solver
 
             // Boundary conditions
             // =============================
-            C.AddBoundaryValue("Velocity_Inlet_left", "VelocityY", X => 1.0);
+            C.AddBoundaryValue("Velocity_Inlet_left", "VelocityX", X => 1.0);
             C.AddBoundaryValue("Pressure_Outlet_right");
             C.AddBoundaryValue("Wall_lower");
             C.AddBoundaryValue("Wall_upper");
@@ -541,7 +541,7 @@ namespace BoSSS.Application.FSI_Solver
             C.LinearSolver.NoOfMultigridLevels = 1;
             C.LinearSolver.MaxSolverIterations = 1000;
             C.LinearSolver.MinSolverIterations = 1;
-            C.ForceAndTorque_ConvergenceCriterion = 25;
+            C.ForceAndTorque_ConvergenceCriterion = 65;
             C.LSunderrelax = 1.0;
 
 

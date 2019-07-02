@@ -58,17 +58,6 @@ namespace BoSSS.Application.FSI_Solver {
         [DataMember]
         public double superEllipsoidExponent;
 
-        /// <summary>
-        /// %
-        /// </summary>
-        protected override double AverageDistance
-        {
-            get
-            {
-                return 0.5 * (length_P + thickness_P);
-            }
-        }
-
         protected override double Circumference_P {
             get {
                 return (2 * length_P + 2 * thickness_P + 2 * Math.PI * thickness_P) / 2;

@@ -53,12 +53,7 @@ namespace BoSSS.Application.FSI_Solver {
                 return (1 / 2.0) * (Mass_P * radius_P * radius_P);
             }
         }
-        //override public void UpdateLevelSetFunction() {
-        //    double a = 4.0 * radius_P.Pow2();
-        //    double b = 1.0 * radius_P.Pow2();
-        //    double alpha = -(Angle[0]);
-        //    Phi_P = (X, t) => -((((X[0] - Position[0][0]) * Math.Cos(alpha) - (X[1] - Position[0][1]) * Math.Sin(alpha)).Pow(2) + ((X[0] - Position[0][0]) * Math.Sin(alpha) + (X[1] - Position[0][1]) * Math.Cos(alpha)).Pow(2)).Pow2() - a * ((X[0] - Position[0][0]) * Math.Cos(alpha) - (X[1] - Position[0][1]) * Math.Sin(alpha)).Pow2() - b * ((X[0] - Position[0][0]) * Math.Sin(alpha) + (X[1] - Position[0][1]) * Math.Cos(alpha)).Pow2());
-        //}
+
         public override double Phi_P(double[] X) {
             double a = 4.0 * radius_P.Pow2();
             double b = 1.0 * radius_P.Pow2();
@@ -84,15 +79,6 @@ namespace BoSSS.Application.FSI_Solver {
         /// </summary>
         [DataMember]
         public double thickness_P;
-
-        /// <summary>
-        /// %
-        /// </summary>
-        protected override double AverageDistance {
-            get {
-                throw new NotImplementedException("todo");
-            }
-        }
         public override bool Contains(double[] point, double h_min, double h_max = 0, bool WithoutTolerance = false)
         {
             // only for rectangular cells

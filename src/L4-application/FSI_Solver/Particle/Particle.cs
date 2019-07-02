@@ -171,11 +171,6 @@ namespace BoSSS.Application.FSI_Solver
         private readonly int SpatialDim;
         
         virtual internal int NoOfSubParticles() { return 1; }
-
-        /// <summary>
-        /// some length scale 
-        /// </summary>
-        abstract protected double AverageDistance { get; }
         #endregion
 
         #region Virtual force model parameter
@@ -824,7 +819,7 @@ namespace BoSSS.Application.FSI_Solver
             }
             else
             {
-                double[] RelaxatedForceAndTorque = Underrelaxation.RelaxatedForcesAndTorque(Forces, Torque, ForcesPrevIteration, TorquePrevIteration, ForceAndTorque_convergence, underrelaxation_factor, ClearSmallValues, AddaptiveUnderrelaxation, AverageDistance, iteration_counter_P);
+                double[] RelaxatedForceAndTorque = Underrelaxation.RelaxatedForcesAndTorque(Forces, Torque, ForcesPrevIteration, TorquePrevIteration, ForceAndTorque_convergence, underrelaxation_factor, ClearSmallValues, AddaptiveUnderrelaxation, GetLengthScales().Max(), iteration_counter_P);
                 for (int d = 0; d < SpatialDim; d++)
                 {
                     HydrodynamicForces[0][d] = RelaxatedForceAndTorque[d];

@@ -58,15 +58,6 @@ namespace BoSSS.Application.FSI_Solver
         [DataMember]
         public double radius_P;
 
-        /// <summary>
-        /// %
-        /// </summary>
-        protected override double AverageDistance {
-            get {
-                return radius_P;
-            }
-        }
-
         public override double Area_P
         {
             get
@@ -88,11 +79,7 @@ namespace BoSSS.Application.FSI_Solver
                 return (1 / 2.0) * (Mass_P * radius_P * radius_P);
             }
         }
-        //override public void UpdateLevelSetFunction()
-        //{
-        //    double alpha = -(Angle[0]);
-        //    Phi_P = (X, t) => -(X[0] - Position[0][0]).Pow2() + -(X[1] - Position[0][1]).Pow2() + radius_P.Pow2();
-        //}
+
         public override double Phi_P(double[] X) {
             double x0 = Position[0][0];
             double y0 = Position[0][1];

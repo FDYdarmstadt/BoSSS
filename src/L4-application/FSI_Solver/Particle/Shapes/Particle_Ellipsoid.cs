@@ -51,15 +51,6 @@ namespace BoSSS.Application.FSI_Solver {
         [DataMember]
         public double thickness_P;
 
-        /// <summary>
-        /// %
-        /// </summary>
-        protected override double AverageDistance {
-            get {
-                return 0.5 * (length_P + thickness_P);
-            }
-        }
-
         public override double Area_P {
             get {
                 double a = length_P * thickness_P * Math.PI;

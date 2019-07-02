@@ -44,15 +44,6 @@ namespace BoSSS.Application.FSI_Solver
         [DataMember]
         public double radius_P;
 
-        /// <summary>
-        /// %
-        /// </summary>
-        protected override double AverageDistance {
-            get {
-                return radius_P;
-            }
-        }
-
         protected override double Circumference_P
         {
             get
