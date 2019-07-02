@@ -1,8 +1,15 @@
 @echo off
 setlocal EnableDelayedExpansion
 
+set "TARGET=%1"
+if not defined TARGET echo No directory specified: Define target directory!
+if not defined TARGET goto :EOF
+echo target database: %TARGET%
+echo %TARGET% > tmp.txt
+set "TARGET=%TARGET%\sessions"
 "%BOSSS_INSTALL%\bin\Release\BoSSSpad.exe" --batch GetSomeInfo.bws
-set "TARGET=E:\bosss_db_performance\sessions"
+del tmp.txt
+::set "TARGET=E:\bosss_db_performance\sessions"
 set "CUBEPATH=ilPSP.Cube_new"
 
 ::for /f %%I in (projectinfo.txt) do mkdir ilPSP.Cube_new\%%I
@@ -20,9 +27,10 @@ for /d %%D in (%TARGET%\*) do (
 		)
 		echo !counter!
 		(
-		start cmd /c %CUBEPATH%\ilPSP.Cube.exe
-		)| pause
+		start cmd /c %CUBEPATH%\ilPSP.Cube.exe & pause
+		)
 		rename "calc.p!counter!.r1" "calc.%%H.r1"
 		)
 	)
 )
+:EOF
