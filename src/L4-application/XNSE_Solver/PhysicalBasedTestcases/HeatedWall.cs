@@ -637,11 +637,11 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
         /// <param name="kelemR"></param>
         /// <param name="_DbPath"></param>
         /// <returns></returns>
-        public static XNSE_Control ThermodynamicEquilibrium_Test(int p = 2, int kelemR = 16, string _DbPath = null) {
+        public static XNSE_Control ThermodynamicEquilibrium_Test(int p = 2, int kelemR = 17, string _DbPath = null) {
 
             XNSE_Control C = new XNSE_Control();
 
-            C.CutCellQuadratureType = XQuadFactoryHelper.MomentFittingVariants.Classic;
+            //C.CutCellQuadratureType = XQuadFactoryHelper.MomentFittingVariants.Classic;
 
             bool steady = false;
 
@@ -728,9 +728,9 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             C.ThermalParameters.p_sat = pSat;
 
 
-            bool includeConv = false;
+            bool includeConv = true;
             C.PhysicalParameters.IncludeConvection = includeConv;
-            C.ThermalParameters.IncludeConvection = false;
+            C.ThermalParameters.IncludeConvection = true;
             C.PhysicalParameters.Material = false;
 
             #endregion

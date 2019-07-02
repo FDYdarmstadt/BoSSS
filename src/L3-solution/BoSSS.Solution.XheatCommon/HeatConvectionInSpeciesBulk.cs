@@ -33,7 +33,7 @@ using BoSSS.Solution.Utils;
 
 namespace BoSSS.Solution.XheatCommon {
 
-    public class HeatConvectionInSpeciesBulk : LinearizedHeatConvection, ISpeciesFilter {
+    public class HeatConvectionInSpeciesBulk : LinearizedHeatConvection, ISpeciesFilter, IEquationComponentCoefficient {
 
 
         public HeatConvectionInSpeciesBulk(int SpatDim, ThermalMultiphaseBoundaryCondMap _bcmap, string spcName, SpeciesId spcId, 
@@ -54,7 +54,7 @@ namespace BoSSS.Solution.XheatCommon {
 
             base.TempFunction = m_bcmap.bndFunction[VariableNames.Temperature + "#" + spcName];
 
-            SubGrdMask = lsTrk.Regions.GetSpeciesSubGrid(spcId).VolumeMask.GetBitMaskWithExternal();
+            //SubGrdMask = lsTrk.Regions.GetSpeciesSubGrid(spcId).VolumeMask.GetBitMaskWithExternal();
         }
 
         ThermalMultiphaseBoundaryCondMap m_bcmap;
@@ -150,6 +150,10 @@ namespace BoSSS.Solution.XheatCommon {
             output.ScaleV(cap);
         }
 
+
+        public void CoefficientUpdate(CoefficientSet cs, int[] DomainDGdeg, int TestDGdeg) {
+            SubGrdMask = lsTrk.Regions.GetSpeciesSubGrid(m_spcId).VolumeMask.GetBitMaskWithExternal();
+        }
 
 
     }

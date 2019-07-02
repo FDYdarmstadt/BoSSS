@@ -178,7 +178,7 @@ namespace BoSSS.Solution.XheatCommon {
             this.rhoA = _rhoA;
             this.rhoB = _rhoB;
             this.capA = thermParams.c_A * _rhoA;
-            this.capB = thermParams.c_A * _rhoB;
+            this.capB = thermParams.c_B * _rhoB;
 
             this.m_LsTrk = lsTrk;
 

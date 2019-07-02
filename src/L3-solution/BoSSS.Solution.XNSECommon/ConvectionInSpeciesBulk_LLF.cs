@@ -18,19 +18,21 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using BoSSS.Solution.NSECommon;
-using BoSSS.Foundation.XDG;
 using System.Diagnostics;
-using ilPSP.Utils;
-using BoSSS.Platform;
-using BoSSS.Solution.Utils;
-using BoSSS.Foundation.Grid;
+
 using ilPSP;
+using ilPSP.Utils;
+
+using BoSSS.Foundation;
 using BoSSS.Foundation.Grid.Classic;
+using BoSSS.Foundation.XDG;
+
+using BoSSS.Solution.NSECommon;
+
 
 namespace BoSSS.Solution.XNSECommon.Operator.Convection {
 
-    public class ConvectionInSpeciesBulk_LLF : LinearizedConvection, ISpeciesFilter {
+    public class ConvectionInSpeciesBulk_LLF : LinearizedConvection, ISpeciesFilter, IEquationComponentCoefficient {
 
         public ConvectionInSpeciesBulk_LLF(int SpatDim, IncompressibleMultiphaseBoundaryCondMap _bcmap, string spcName, SpeciesId spcId, int _component, 
             double _rho, double _LFF, LevelSetTracker _lsTrk) :
@@ -50,7 +52,7 @@ namespace BoSSS.Solution.XNSECommon.Operator.Convection {
             for(int d = 0; d < SpatDim; d++)
                 base.velFunction.SetColumn(m_bcmap.bndFunction[VariableNames.Velocity_d(d) + "#" + spcName], d);
 
-            SubGrdMask = lsTrk.Regions.GetSpeciesSubGrid(spcId).VolumeMask.GetBitMaskWithExternal();
+            //SubGrdMask = lsTrk.Regions.GetSpeciesSubGrid(spcId).VolumeMask.GetBitMaskWithExternal();
         }
 
         IncompressibleMultiphaseBoundaryCondMap m_bcmap;
@@ -146,5 +148,8 @@ namespace BoSSS.Solution.XNSECommon.Operator.Convection {
             output.ScaleV(rho);
         }
 
+        public void CoefficientUpdate(CoefficientSet cs, int[] DomainDGdeg, int TestDGdeg) {
+            SubGrdMask = lsTrk.Regions.GetSpeciesSubGrid(m_spcId).VolumeMask.GetBitMaskWithExternal();
+        }
     }
 }
