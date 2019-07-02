@@ -52,6 +52,7 @@
   <ItemGroup>
     <Compile Include="AggregationGridBasis.cs" />
     <Compile Include="BlockJacobi.cs" />
+    <Compile Include="OrthonormalizedMultigrid.cs" />
     <Compile Include="ClassicMultigrid.cs" />
     <Compile Include="ConvergenceObserver.cs" />
     <Compile Include="SolverChooser.cs" />
@@ -80,6 +81,7 @@
     <Compile Include="SoftGMRES.cs" />
     <Compile Include="SoftPCG.cs" />
     <Compile Include="SolverSquence.cs" />
+    <Compile Include="Utils.cs" />
     <Compile Include="XdgAggregationBasis.cs" />
   </ItemGroup>
   <ItemGroup>

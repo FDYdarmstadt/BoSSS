@@ -849,7 +849,6 @@ namespace BoSSS.Application.SipPoisson {
                 Console.WriteLine("Pardiso phase 22: " + ilPSP.LinSolvers.PARDISO.PARDISOSolver.Phase_22.Elapsed.TotalSeconds);
                 Console.WriteLine("Pardiso phase 33: " + ilPSP.LinSolvers.PARDISO.PARDISOSolver.Phase_33.Elapsed.TotalSeconds);
 
-
                 ipSolver.Dispose();
             }
         }
@@ -1134,7 +1133,7 @@ namespace BoSSS.Application.SipPoisson {
                 //CO.WriteTrendToCSV(false, true, true, bla + "_res");
                 //CO.WriteTrendToCSV(true, true, true, bla + "_err");
             }
-
+           
             string condfile = String.Concat(AnalyseOutputpath, "condnum", identify, ".txt");
 
             using (StreamWriter CondStream = new StreamWriter(condfile)) {

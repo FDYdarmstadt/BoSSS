@@ -182,7 +182,8 @@ namespace BoSSS.Application.SipPoisson {
                 return grd;
             };
 
-            R.LinearSolver.SolverCode = LinearSolverConfig.Code.exp_softpcg_jacobi_mg;
+            //R.LinearSolver.SolverCode = LinearSolverConfig.Code.exp_softpcg_jacobi_mg;
+            R.LinearSolver.SolverCode = LinearSolverConfig.Code.exp_decomposedMG_OrthoScheme;
             //R.LinearSolver.SolverCode = LinearSolverConfig.Code.classic_mumps;
             R.LinearSolver.NoOfMultigridLevels = 10;
             R.LinearSolver.TargetBlockSize = 40;
@@ -191,7 +192,6 @@ namespace BoSSS.Application.SipPoisson {
 
             R.AddBoundaryValue(BoundaryType.Dirichlet.ToString());
             R.AddBoundaryValue(BoundaryType.Neumann.ToString());
-
 
             return R;
         }
