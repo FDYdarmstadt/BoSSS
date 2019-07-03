@@ -354,7 +354,8 @@ namespace BoSSS.Application.FSI_Solver
                         double penalty = this.Control.AdvancedDiscretizationOptions.PenaltySafety;
 
 
-                        var Visc = new swipViscosity_Term1(penalty, d, D, BcMap, ViscosityOption.ConstantViscosity, this.Control.PhysicalParameters.mu_A / this.Control.PhysicalParameters.rho_A, double.NaN, null);
+                        swipViscosity_Term1 Visc = new swipViscosity_Term1(penalty, d, D, BcMap, ViscosityOption.ConstantViscosity, this.Control.PhysicalParameters.mu_A,// / this.Control.PhysicalParameters.rho_A,
+                            double.NaN, null);
 
                         comps.Add(Visc);
 
@@ -383,7 +384,7 @@ namespace BoSSS.Application.FSI_Solver
                         }
                         else
                         {
-                            var ViscLs = new BoSSS.Solution.NSECommon.Operator.Viscosity.ActiveViscosityAtIB(d, D, LsTrk,
+                            Solution.NSECommon.Operator.Viscosity.ActiveViscosityAtIB ViscLs = new BoSSS.Solution.NSECommon.Operator.Viscosity.ActiveViscosityAtIB(d, D, LsTrk,
                                 penalty, this.ComputePenaltyIB,
                                 this.Control.PhysicalParameters.mu_A / this.Control.PhysicalParameters.rho_A,
                                 delegate (double[] X, double time)

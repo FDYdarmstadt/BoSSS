@@ -355,14 +355,14 @@ namespace BoSSS.Application.IBM_Solver {
                         //var Visc = new Solution.XNSECommon.Operator.Viscosity.ViscosityInBulk_GradUTerm(penalty, 1.0, BcMap, d, D, this.Control.PhysicalParameters.mu_A, 1, ViscosityImplementation.H);
                         var Visc = new swipViscosity_Term1(penalty_bulk, d, D, BcMap,
                             ViscosityOption.ConstantViscosity,
-                            this.Control.PhysicalParameters.mu_A / this.Control.PhysicalParameters.rho_A,
+                            this.Control.PhysicalParameters.mu_A ,// / this.Control.PhysicalParameters.rho_A
                             double.NaN, null);
                         //delegate (double p, int i, int j, double[] cell) { return ComputePenalty(p, i, j, cell); });
                         // IBM_Op.OnIntegratingBulk += Visc.SetParameter;
                         comps.Add(Visc); // bulk component GradUTerm 
                         var ViscLs = new BoSSS.Solution.NSECommon.Operator.Viscosity.ViscosityAtIB(d, D, LsTrk,
                             penalty, this.ComputePenaltyIB,
-                            this.Control.PhysicalParameters.mu_A / this.Control.PhysicalParameters.rho_A,
+                            this.Control.PhysicalParameters.mu_A,// / this.Control.PhysicalParameters.rho_A,
                             delegate (double[] X, double time) { return new double[] { 0.0, 0.0, 0.0, 0.0 }; });
                         comps.Add(ViscLs); // immersed boundary component
                     }
