@@ -184,8 +184,8 @@ namespace BoSSS.Solution.NSECommon {
         protected int m_D;
 
         /// <summary>
-        /// Dirichlet boundary values; <br/>
-        ///  - 1st index: spatial dimension <br/>
+        /// Dirichlet boundary values; 
+        ///  - 1st index: spatial dimension 
         ///  - 2nd index: edge tag
         /// </summary>
         protected Func<double[], double, double>[][] velFunction;

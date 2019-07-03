@@ -20,6 +20,7 @@ using System.Linq;
 using System.Text;
 using ilPSP.LinSolvers;
 using System.Diagnostics;
+using ilPSP.Tracing;
 
 namespace BoSSS.Solution.AdvancedSolvers {
     public class GenericRestriction : ISolverSmootherTemplate {
@@ -42,23 +43,23 @@ namespace BoSSS.Solution.AdvancedSolvers {
             where U : IList<double>
             where V : IList<double> {
             //
+            using (var tr = new FuncTrace()) {
 
 
-            int N = this.m_OpThisLevel.CoarserLevel.Mapping.LocalLength;
-            double[] xc = new double[N], bc = new double[N];
-            //this.RestrictionOperator.SpMVpara(1.0, X, 0.0, xc);
-            //this.RestrictionOperator.SpMVpara(1.0, B, 0.0, bc);
+                int N = this.m_OpThisLevel.CoarserLevel.Mapping.LocalLength;
+                double[] xc = new double[N], bc = new double[N];
+                //this.RestrictionOperator.SpMVpara(1.0, X, 0.0, xc);
+                //this.RestrictionOperator.SpMVpara(1.0, B, 0.0, bc);
 
-            this.m_OpThisLevel.CoarserLevel.Restrict(B, bc);
-            this.m_OpThisLevel.CoarserLevel.Restrict(X, xc);
+                this.m_OpThisLevel.CoarserLevel.Restrict(B, bc);
+                this.m_OpThisLevel.CoarserLevel.Restrict(X, xc);
 
-            CoarserLevelSolver.Solve(xc, bc);
+                CoarserLevelSolver.Solve(xc, bc);
 
-            //this.PrologateOperator.SpMV(1.0, xc, 0.0, X);
-            this.m_OpThisLevel.CoarserLevel.Prolongate(1.0, X, 0.0, xc);
+                //this.PrologateOperator.SpMV(1.0, xc, 0.0, X);
+                this.m_OpThisLevel.CoarserLevel.Prolongate(1.0, X, 0.0, xc);
+            }
         }
-
-
         
 
         public int IterationsInNested {

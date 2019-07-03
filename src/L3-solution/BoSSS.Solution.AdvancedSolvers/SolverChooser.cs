@@ -1333,7 +1333,13 @@ namespace BoSSS.Solution {
                 useDirect |= (SysSize < DirectKickIn);
                 useDirect |= iLevel == _lc.NoOfMultigridLevels - 1;
                 useDirect |= NoOfBlocks.MPISum() <= 1;
-
+                if (iLevel == 0) {
+                    useDirect = false;
+                    NoOfBlocks = Math.Max(NoOfBlocks, 4);
+                }
+                if (iLevel == 1) {
+                    useDirect = true;
+                }
 
                 ISolverSmootherTemplate levelSolver;
                 if (useDirect) {
@@ -1352,16 +1358,16 @@ namespace BoSSS.Solution {
                         Overlap = 2 // overlap seems to help
                     };
 
-                    SoftPCG pcg1 = new SoftPCG() {
-                        m_MinIterations = 5,
-                        m_MaxIterations = 5
-                    };
+                    //SoftPCG pcg1 = new SoftPCG() {
+                    //    m_MinIterations = 5,
+                    //    m_MaxIterations = 5
+                    //};
 
                     //*/
 
-                    var pre = new SolverSquence() {
-                        SolverChain = new ISolverSmootherTemplate[] { swz1, pcg1 }
-                    };
+                    //var pre = new SolverSquence() {
+                    //    SolverChain = new ISolverSmootherTemplate[] { swz1, pcg1 }
+                    //};
 
                     levelSolver = swz1;
                 }
@@ -1406,7 +1412,7 @@ namespace BoSSS.Solution {
             }
 
             solver.PrecondS = PrecondChain.ToArray();
-            solver.MaxKrylovDim = solver.PrecondS.Length * 4;
+            solver.MaxKrylovDim = 100;// solver.PrecondS.Length * 4;
 
             return solver;
         }
