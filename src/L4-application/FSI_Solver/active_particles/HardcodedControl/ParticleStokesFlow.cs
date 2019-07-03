@@ -114,7 +114,7 @@ namespace BoSSS.Application.FSI_Solver
             // Fluid Properties
             // =============================
             C.PhysicalParameters.rho_A = 1;//pg/(mum^3)
-            C.PhysicalParameters.mu_A = 1e2;//pg(mum*s)
+            C.PhysicalParameters.mu_A = 1;//pg(mum*s)
             C.PhysicalParameters.Material = true;
 
 
@@ -127,11 +127,11 @@ namespace BoSSS.Application.FSI_Solver
             {
                 C.Particles.Add(new Particle_Sphere(new double[] { 0, 14 }, startAngl: 10)
                 {
-                    particleDensity = 1.01,
+                    particleDensity = 2,
                     radius_P = 0.5,
                     GravityVertical = -9.81,
                     AddaptiveUnderrelaxation = true,
-                    underrelaxation_factor = 1,
+                    underrelaxation_factor = 5,
                     ClearSmallValues = false,
                     neglectAddedDamping = false
                 });
@@ -169,7 +169,7 @@ namespace BoSSS.Application.FSI_Solver
             C.LinearSolver.NoOfMultigridLevels = 1;
             C.LinearSolver.MaxSolverIterations = 1000;
             C.LinearSolver.MinSolverIterations = 1;
-            C.ForceAndTorque_ConvergenceCriterion = 1e-3;
+            C.ForceAndTorque_ConvergenceCriterion = 1e-1;
             C.LSunderrelax = 1.0;
 
 
@@ -487,7 +487,7 @@ namespace BoSSS.Application.FSI_Solver
                     ActiveParticle = true,
                     ActiveStress = 1000,
                     AddaptiveUnderrelaxation = true,
-                    underrelaxation_factor = 3,
+                    underrelaxation_factor = 5,
                     ClearSmallValues = true,
                     neglectAddedDamping = false
                 });
@@ -541,7 +541,7 @@ namespace BoSSS.Application.FSI_Solver
             C.LinearSolver.NoOfMultigridLevels = 1;
             C.LinearSolver.MaxSolverIterations = 1000;
             C.LinearSolver.MinSolverIterations = 1;
-            C.ForceAndTorque_ConvergenceCriterion = 65;
+            C.ForceAndTorque_ConvergenceCriterion = 10;
             C.LSunderrelax = 1.0;
 
 

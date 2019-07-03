@@ -342,19 +342,20 @@ namespace FSI_Solver
         /// No of iterations
         /// </param>
         /// <param name="IncludeHydrodynamics"></param>
-        internal void CalculateParticleVelocity(List<Particle> Particles, double dt, bool FullyCoupled, int IterationCounter, bool IncludeHydrodynamics = true)
+        internal void CalculateParticleVelocity(List<Particle> Particles, double dt, bool FullyCoupled, int IterationCounter, int TimestepInt, bool IncludeHydrodynamics = true)
         {
             foreach (Particle p in Particles)
             {
                 p.iteration_counter_P = IterationCounter;
                 if (IterationCounter == 0 && FullyCoupled)
                 {
+                    Console.WriteLine("Predicting forces for the next timestep...");
                     if (p.neglectAddedDamping == false)
                     {
                         p.UpdateDampingTensors();
                         //ExchangeDampingTensors(Particles);
                     }
-                    p.PredictForceAndTorque();
+                    p.PredictForceAndTorque(TimestepInt);
                 }
                 p.CalculateAcceleration(dt, FullyCoupled, IncludeHydrodynamics);
                 p.UpdateParticleVelocity(dt);
@@ -410,6 +411,7 @@ namespace FSI_Solver
                     Residual += p.ForceTorqueResidual;
                 }
             }
+            Residual /= Particles.Count();
             if (IterationCounter_In != 0)
             {
                 Console.WriteLine();

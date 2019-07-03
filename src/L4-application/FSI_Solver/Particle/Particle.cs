@@ -99,9 +99,7 @@ namespace BoSSS.Application.FSI_Solver
         /// Check whether any particles is collided with another particle
         /// </summary>
         public bool Collided;
-
-        int stupidcounter = 0;
-
+        
         /// <summary>
         /// Skip calculation of hydrodynamic force and Torque if particles are too close -----> to be tested whether it is still necessary
         /// </summary>
@@ -622,8 +620,13 @@ namespace BoSSS.Application.FSI_Solver
         /// Calculate the new acceleration (translational and rotational)
         /// </summary>
         /// <param name="dt"></param>
-        public void PredictForceAndTorque()
+        public void PredictForceAndTorque(int TimestepInt)
         {
+            if (TimestepInt == 1)
+            {
+                HydrodynamicForces[0][0] = 20 * Math.Cos(Angle[0]) * ActiveStress * Circumference_P;
+                HydrodynamicForces[0][1] = 20 * Math.Sin(Angle[0]) * ActiveStress * Circumference_P;
+            }
             if (iteration_counter_P == 0)
             {
                 Aux.SaveMultidimValueOfLastTimestep(TranslationalAcceleration);
@@ -633,11 +636,11 @@ namespace BoSSS.Application.FSI_Solver
             }
             for (int d = 0; d < SpatialDim; d++)
             {
-                HydrodynamicForces[0][d] = (HydrodynamicForces[1][d] + 4 * HydrodynamicForces[2][d] + HydrodynamicForces[3][d]) / 8;
+                HydrodynamicForces[0][d] = (HydrodynamicForces[1][d] + 4 * HydrodynamicForces[2][d] + HydrodynamicForces[3][d]) / 6;
                 if (Math.Abs(HydrodynamicForces[0][d]) < 1e-20)
                     HydrodynamicForces[0][d] = 0;
             }
-            HydrodynamicTorque[0] = (HydrodynamicTorque[1] + 4 * HydrodynamicTorque[2] + HydrodynamicTorque[3]) / 8;
+            HydrodynamicTorque[0] = (HydrodynamicTorque[1] + 4 * HydrodynamicTorque[2] + HydrodynamicTorque[3]) / 6;
             if (Math.Abs(HydrodynamicTorque[0]) < 1e-20)
                 HydrodynamicTorque[0] = 0;
         }
@@ -776,11 +779,30 @@ namespace BoSSS.Application.FSI_Solver
                 Torque += AddedDampingCoefficient * dt * (AddedDampingTensor[2, 0] * TranslationalAcceleration[0][0] + AddedDampingTensor[2, 1] * TranslationalAcceleration[0][1] + AddedDampingTensor[2, 2] * RotationalAcceleration[0]);
             }
 
-            if (iteration_counter_P == -1 || NotFullyCoupled || stupidcounter == 0)
+            if (iteration_counter_P == 1 || NotFullyCoupled)
             {
                 Console.WriteLine();
-                if(iteration_counter_P == 1)
-                    Console.WriteLine("First iteration of the current timestep, all relaxation factors are set to 1");
+                if(iteration_counter_P == 1 && !NotFullyCoupled)
+                {
+
+                    Console.WriteLine("First iteration of the current timestep, all relaxation factors are set to " + underrelaxation_factor * 1e-1);
+                    for (int d = 0; d < SpatialDim; d++)
+                    {
+                        HydrodynamicForces[0][d] = 0;
+                        if (Math.Abs(Forces[d]) < ForceAndTorque_convergence * 1e-2 && ClearSmallValues == true)
+                        {
+                            Forces[d] = 0;
+                        }
+                        HydrodynamicForces[0][d] = underrelaxation_factor * 1e-1 * Forces[d] + (1 - underrelaxation_factor * 1e-1) * HydrodynamicForces[0][d];
+                    }
+
+                    HydrodynamicTorque[0] = 0;
+                    if (Math.Abs(Torque) < ForceAndTorque_convergence * 1e-2 && ClearSmallValues == true)
+                    {
+                        Torque = 0;
+                    }
+                    HydrodynamicTorque[0] = underrelaxation_factor * 1e-1 * Torque + (1 - underrelaxation_factor * 1e-1) * HydrodynamicTorque[0];
+                }
 
                 for (int d = 0; d < SpatialDim; d++)
                 {
@@ -798,8 +820,6 @@ namespace BoSSS.Application.FSI_Solver
                     Torque = 0;
                 }
                 HydrodynamicTorque[0] = Torque;
-
-                stupidcounter = 1;
             }
             else
             {

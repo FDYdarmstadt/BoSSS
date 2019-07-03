@@ -181,7 +181,7 @@ namespace BoSSS.Application.FSI_Solver
             BcMap = new IncompressibleBoundaryCondMap(this.GridData, this.Control.BoundaryValues, PhysicsMode.Incompressible);
 
             int degU = this.Velocity[0].Basis.Degree;
-            var IBM_Op_config = new NSEOperatorConfiguration
+            NSEOperatorConfiguration IBM_Op_config = new NSEOperatorConfiguration
             {
                 convection = this.Control.PhysicalParameters.IncludeConvection,
                 continuity = true,
@@ -192,11 +192,11 @@ namespace BoSSS.Application.FSI_Solver
                 DomBlocks = new bool[] { true, true },
             };
 
-            var CodName = ((new string[] { "momX", "momY", "momZ" }).GetSubVector(0, D)).Cat("div");
-            var Params = ArrayTools.Cat(
+            string[] CodName = ((new string[] { "momX", "momY", "momZ" }).GetSubVector(0, D)).Cat("div");
+            string[] Params = ArrayTools.Cat(
                  VariableNames.Velocity0Vector(D),
                  VariableNames.Velocity0MeanVector(D));
-            var DomName = ArrayTools.Cat(VariableNames.VelocityVector(D), VariableNames.Pressure);
+            string[] DomName = ArrayTools.Cat(VariableNames.VelocityVector(D), VariableNames.Pressure);
 
             // selected part:
             if (IBM_Op_config.CodBlocks[0])
@@ -795,13 +795,13 @@ namespace BoSSS.Application.FSI_Solver
                         // Generating the correct sign
                         // ===========================
                         double phi = Math.Pow(-1, ParticlesOfCurrentColor.Length - 1);
-
                         // Multiplication over all particle-level-sets within the current color
                         // ====================================================================
                         for (int pc = 0; pc < ParticlesOfCurrentColor.Length; pc++)
                         {
                             Particle Particle0 = m_Particles[ParticlesOfCurrentColor[pc]];
                             phi *= Particle0.Phi_P(X);
+                            //phi = Math.Max(Particle0.Phi_P(X), phi);
                             Particle0.ParticleColor = CurrentColor;
                             Particle0.ParticleColoredCells = ColoredCell_P.ToArray();
                             // Delete all particles within the current color from the particle color array
@@ -1083,7 +1083,7 @@ namespace BoSSS.Application.FSI_Solver
                     DGLevSet.Push();
                     Collision.ResetCollisionState(m_Particles);
                     CalculateHydrodynamicForces(m_Particles, dt);
-                    Auxillary.CalculateParticleVelocity(m_Particles, dt, ((FSI_Control)Control).Timestepper_LevelSetHandling == LevelSetHandling.FSI_LieSplittingFullyCoupled, 0, false);
+                    Auxillary.CalculateParticleVelocity(m_Particles, dt, ((FSI_Control)Control).Timestepper_LevelSetHandling == LevelSetHandling.FSI_LieSplittingFullyCoupled, 0, TimestepInt, false);
                     CalculateCollision(m_Particles, GridData, LsTrk, CellColor, dt);
                     Auxillary.CalculateParticlePosition(m_Particles, dt);
                     Auxillary.ParticleState_MPICheck(m_Particles, GridData, MPISize);
@@ -1136,8 +1136,8 @@ namespace BoSSS.Application.FSI_Solver
                                 m_BDF_Timestepper.Solve(phystime, dt, false);
                                 CalculateHydrodynamicForces(m_Particles, dt);
                             }
-                            Auxillary.CalculateParticleVelocity(m_Particles, dt, FullyCoupled, IterationCounter);
-                            if (IterationCounter != 0 || ((FSI_Control)Control).Timestepper_LevelSetHandling != LevelSetHandling.FSI_LieSplittingFullyCoupled)
+                            Auxillary.CalculateParticleVelocity(m_Particles, dt, FullyCoupled, IterationCounter, TimestepInt);
+                            if (IterationCounter != 100000 || ((FSI_Control)Control).Timestepper_LevelSetHandling != LevelSetHandling.FSI_LieSplittingFullyCoupled)
                                 Auxillary.PrintResultToConsole(m_Particles, ((FSI_Control)Control).PhysicalParameters.mu_A, phystime, TimestepInt, IterationCounter, false, out double _, out Test_Force);
                             if (((FSI_Control)Control).Timestepper_LevelSetHandling != LevelSetHandling.FSI_LieSplittingFullyCoupled)
                                 break;
