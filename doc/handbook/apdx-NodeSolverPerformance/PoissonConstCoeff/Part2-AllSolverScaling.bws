@@ -5,18 +5,7 @@ restart
   _______________________
 
 Databases loaded:
-List of 11 instances of IDatabaseInfo {
-  0: { Session Count = 0; Grid Count = 34; Path = C:\BoSSS_DB }
-  1: { Session Count = 144; Grid Count = 6; Path = C:\tmp\fk_temp_db }
-  2: { Session Count = 0; Grid Count = 6; Path = P:\Performance_DB }
-  3: { Session Count = 12; Grid Count = 31; Path = P:\testDB }
-  4: { Session Count = 112; Grid Count = 6; Path = E:\Performance_oldLibs_DB }
-  5: { Session Count = 0; Grid Count = 4; Path = E:\db_2delete }
-  6: { Session Count = 192; Grid Count = 12; Path = E:\XdgPerformance }
-  7: { Session Count = 112; Grid Count = 136; Path = E:\bosss_db_performance }
-  8: { Session Count = 19; Grid Count = 3; Path = F:\test_db }
-  9: { Session Count = 144; Grid Count = 139; Path = Z:\weber\Performance_Kram\bosss_db_performance }
-  10: { Session Count = 200; Grid Count = 6; Path = E:\Performance_newLibs_DB }
+List of 0 instances of IDatabaseInfo {
 }
 
  Console ready for input. Type 'help' for help.
@@ -298,8 +287,6 @@ SubTab_2.Print();
 **************
 ==============
 **************
-Incomplete statement - missing closing parentheses?.
-
 ==============
 //extract all Degrees and put them into array
 int rowcount          = SubTab.Rows.Count;
@@ -560,7 +547,7 @@ name is: exp_softpcg_schwarz_directcoarse
 name is: classic_mumps
 name is: classic_mumps
 name is: classic_mumps
-Using gnuplot: C:\Program Files (x86)\FDY\BoSSS\bin\native\win\gnuplot-gp510-20160418-win32-mingw\gnuplot\bin\gnuplot.exe
+Using gnuplot: C:\Program Files\FDY\BoSSS\bin\native\win\gnuplot-gp510-20160418-win32-mingw\gnuplot\bin\gnuplot.exe
 set key inside top left Left reverse 
 System.Drawing.Bitmap
 ==============
@@ -573,7 +560,7 @@ LastError;
 ==============
 var CL = multiplots.ToGnuplot().PlotCairolatex(xSize:14,ySize:12);
 **************
-Using gnuplot: C:\Program Files (x86)\FDY\BoSSS\bin\native\win\gnuplot-gp510-20160418-win32-mingw\gnuplot\bin\gnuplot.exe
+Using gnuplot: C:\Program Files\FDY\BoSSS\bin\native\win\gnuplot-gp510-20160418-win32-mingw\gnuplot\bin\gnuplot.exe
 set key inside top left Left reverse 
 
 ==============
@@ -582,99 +569,15 @@ set key inside top left Left reverse
 ==============
 CL.PlotNow();
 **************
-System.ComponentModel.Win32Exception occurred: Das System kann die angegebene Datei nicht finden. Type 'LastError' for details.
+Unable to convert to png, 'magick.exe' exited with: -1073740791
 
 ==============
 LastError
 **************
-System.ComponentModel.Win32Exception (0x80004005): Das System kann die angegebene Datei nicht finden
-   bei System.Diagnostics.Process.StartWithShellExecuteEx(ProcessStartInfo startInfo)
-   bei BoSSS.Application.BoSSSpad.GnuplotExtensions.CairolatexContainer.Preview(Boolean trimPage, Int32 dpi) in C:\BoSSS\BoSSS-SolverPerformance\public\src\L4-application\BoSSSpad\GnuplotExtensions.cs:Zeile 325.
-   bei <InteractiveExpressionClass>.Host(Object& $retval)
-   bei Mono.CSharp.Evaluator.Evaluate(String input, Object& result, Boolean& result_set)
-   bei BoSSS.Application.BoSSSpad.ReadEvalPrintLoop.EvalPrint(String line, Assembly& AssemblyProduced) in C:\BoSSS\BoSSS-SolverPerformance\public\src\L4-application\BoSSSpad\ReadEvalPrintLoop.cs:Zeile 322.
 ==============
 CL.WriteMinimalCompileableExample(
    Path.Combine(CurrentDocDir, "plots", "MainConstCoeffPoissonScaling.tex"),
    "ConstCoeffPoissonScaling.tex");
-**************
-==============
-**************
-==============
-**************
-==============
-**************
-==============
-**************
-==============
-**************
-==============
-**************
-==============
-**************
-==============
-**************
-==============
-**************
-==============
-**************
-==============
-**************
-==============
-**************
-==============
-**************
-==============
-**************
-==============
-**************
-==============
-**************
-==============
-**************
-==============
-**************
-==============
-**************
-==============
-**************
-==============
-**************
-==============
-**************
-==============
-**************
-==============
-**************
-==============
-**************
-==============
-**************
-==============
-**************
-==============
-**************
-==============
-**************
-==============
-**************
-==============
-**************
-==============
-**************
-==============
-**************
-==============
-**************
-==============
-**************
-==============
-**************
-==============
-**************
-==============
-**************
-==============
 **************
 ==============
 **************
