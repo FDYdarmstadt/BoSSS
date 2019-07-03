@@ -430,6 +430,8 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
         private int[] Iterationcounter {
             get {
+                if (m_SF.GetIterationcounter == null)
+                    throw new ArgumentNullException("switch verbose mode on for the solver you like to plot! Iterationcounter is null!");
                 Debug.Assert(m_SF.GetIterationcounter.Length == 6);
                 return m_SF.GetIterationcounter;
             }
@@ -453,11 +455,81 @@ namespace BoSSS.Solution.AdvancedSolvers {
             Ptr_mgOp.TransformSolFrom(DecompVec, vec_i);
             //DecompVec.AccV(1, vec_i);
 
-            string plotName = TecplotOut + "Res-decomp" + "."+Iterationcounter[4] + "."+Iterationcounter[3];
+            string plotName = TecplotOut + "Res-decomp" + "."+Iterationcounter[3] + "."+ ItWithinMGCycle();
 
 
-            //Tecplot.Tecplot.PlotFields(DecompVec.Mapping.Fields, plotName, 0.0, 3);
+            Tecplot.Tecplot.PlotFields(DecompVec.Mapping.Fields, plotName, 0.0, 3);
             //DecomposedDGFields.AddRange(DecompVec.Mapping.Fields);
+        }
+
+        private int CurrentMLevel_down=0;
+        private int CurrentMLevel_up = 0;
+
+        private bool IsDownstep(int currentIt)
+        {
+            bool stepdown = false;
+            if (CurrentMLevel_down - currentIt == -1)
+            {
+                stepdown = true;
+            } 
+            if (ItWithinMGCycle() == 1)
+            {
+                stepdown = true;
+            }
+
+            CurrentMLevel_down = currentIt;
+            return stepdown;
+        }
+
+        private bool IsUpstep (int currentIt)
+        {
+            bool stepup = false;
+            if (CurrentMLevel_up - currentIt == +1)
+            {
+                stepup = true;
+            }
+
+            CurrentMLevel_up = currentIt;
+            return stepup;
+        }
+
+        private int CurrentMCycle = 0;
+        private int MG_internal_counter = 0;
+
+        private int ItWithinMGCycle() {
+                if(Iterationcounter[3]> CurrentMCycle)
+                {
+                    CurrentMCycle = Iterationcounter[3];
+                    MG_internal_counter = Iterationcounter[5]-1;
+                }
+            return Iterationcounter[5] - MG_internal_counter;
+        }
+
+        public void ResItCallbackAtDownstep(int iter, double[] xI, double[] rI, MultigridOperator mgOp)
+        {
+
+            if (IsDownstep(mgOp.LevelIndex)||IsUpstep(mgOp.LevelIndex))
+            {
+                var Ptr_mgOp = mgOp;
+                int iLevel = mgOp.LevelIndex;
+                double[] vec_i = rI;
+
+                CoordinateVector DecompVec = this.InitProblemDGFields("Res");
+
+                for (int k = iLevel; k > 0; k--)
+                {
+                    double[] vec_i1 = new double[Ptr_mgOp.FinerLevel.Mapping.LocalLength];
+                    Ptr_mgOp.Prolongate(1.0, vec_i1, 0.0, vec_i);
+                    vec_i = vec_i1;
+                    Ptr_mgOp = Ptr_mgOp.FinerLevel;
+                }
+
+                Ptr_mgOp.TransformSolFrom(DecompVec, vec_i);
+                //DecompVec.AccV(1, vec_i);
+
+                string plotName = TecplotOut + "Res-decomp" + "." + Iterationcounter[3] + "." + ItWithinMGCycle();
+                Tecplot.Tecplot.PlotFields(DecompVec.Mapping.Fields, plotName, 0.0, 3);
+            }
         }
 
         private CoordinateVector InitProblemDGFields(string NamePrefix) {

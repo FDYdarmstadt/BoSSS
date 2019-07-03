@@ -153,6 +153,10 @@ namespace BoSSS.Solution.Control {
             /// </summary>
             exp_softpcg_schwarz_mg = 46,
 
+            /// <summary>
+            /// highly experimental shit
+            /// </summary>
+            exp_decomposedMG_OrthoScheme=50,
 
             selfmade = 999,
         }
