@@ -26,7 +26,6 @@ namespace BoSSS.Application.FSI_Solver
 {
     internal class ParticleForceIntegration
     {
-        /// ====================================================================================
         /// <summary>
         /// Main method the integral over the level set to obtain the hydrodynamic forces.
         /// </summary>
@@ -55,7 +54,6 @@ namespace BoSSS.Application.FSI_Solver
         /// <param name="currentDimension">
         /// The current dimension to be calculated.
         /// </param>
-        /// ====================================================================================
         public double CalculateStressTensor(MultidimensionalArray Grad_UARes, MultidimensionalArray pARes, MultidimensionalArray NormalVector, double FluidViscosity, int k, int j, int SpatialDim, int currentDimension)
         {
             double temp;
@@ -75,7 +73,6 @@ namespace BoSSS.Application.FSI_Solver
             return temp;
         }
 
-        /// ====================================================================================
         /// <summary>
         /// This method calculates the stress tensor in case of a 2D-probem
         /// torque.
@@ -101,7 +98,6 @@ namespace BoSSS.Application.FSI_Solver
         /// <param name="currentDimension">
         /// The current dimension to be calculated.
         /// </param>
-        /// ====================================================================================
         private double CalculateStressTensor2D(MultidimensionalArray Grad_UARes, MultidimensionalArray pARes, MultidimensionalArray NormalVector, double FluidViscosity, int k, int j, int currentDimension)
         {
             double acc;
@@ -120,7 +116,6 @@ namespace BoSSS.Application.FSI_Solver
             return acc;
         }
 
-        /// ====================================================================================
         /// <summary>
         /// This method performs the integration in x-direction
         /// torque.
@@ -143,7 +138,6 @@ namespace BoSSS.Application.FSI_Solver
         /// <param name="j">
         /// The current cell ID
         /// </param>
-        /// ====================================================================================
         private double CalculateStressTensorX(MultidimensionalArray Grad_UARes, MultidimensionalArray pARes, MultidimensionalArray NormalVector, double FluidViscosity, int k, int j)
         {
             double[] SummandsVelGradient = new double[3];
@@ -155,7 +149,6 @@ namespace BoSSS.Application.FSI_Solver
             return ParticleAuxillary.SummationWithNeumaier(SummandsVelGradient, SummandsPressure, FluidViscosity);
         }
 
-        /// ====================================================================================
         /// <summary>
         /// This method performs the integration in y-direction
         /// torque.
@@ -178,7 +171,6 @@ namespace BoSSS.Application.FSI_Solver
         /// <param name="j">
         /// The current cell ID
         /// </param>
-        /// ====================================================================================
         private double CalculateStressTensorY(MultidimensionalArray Grad_UARes, MultidimensionalArray pARes, MultidimensionalArray NormalVector, double FluidViscosity, int k, int j)
         {
             double[] SummandsVelGradient = new double[3];
@@ -187,10 +179,9 @@ namespace BoSSS.Application.FSI_Solver
             SummandsVelGradient[1] = -Grad_UARes[j, k, 1, 0] * NormalVector[j, k, 0];
             SummandsVelGradient[2] = -Grad_UARes[j, k, 0, 1] * NormalVector[j, k, 0];
             SummandsPressure = pARes[j, k] * NormalVector[j, k, 1];
-            return ParticleAuxillary.SummationWithNeumaier(SummandsVelGradient, SummandsPressure, FluidViscosity);
+            return ParticleAuxillary.SummationWithNeumaier(SummandsVelGradient, SummandsPressure, FluidViscosity) * 0;
         }
 
-        /// ====================================================================================
         /// <summary>
         /// This method calculates the stress tensor in case of a 3D-probem
         /// torque.
@@ -216,7 +207,6 @@ namespace BoSSS.Application.FSI_Solver
         /// <param name="currentDimension">
         /// The current dimension to be calculated.
         /// </param>
-        /// ====================================================================================
         private double CalculateStressTensor3D(MultidimensionalArray Grad_UARes, MultidimensionalArray pARes, MultidimensionalArray NormalVector, double FluidViscosity, int k, int j, int currentDimension)
         {
             double acc = 0.0;
@@ -257,7 +247,6 @@ namespace BoSSS.Application.FSI_Solver
             return acc;
         }
 
-        /// ====================================================================================
         /// <summary>
         /// Main method the integral over the level set to obtain the hydrodynamic torque.
         /// </summary>
@@ -286,7 +275,6 @@ namespace BoSSS.Application.FSI_Solver
         /// <param name="currentPosition">
         /// The current position of the particle.
         /// </param>
-        /// ====================================================================================
         public double CalculateTorqueFromStressTensor2D(MultidimensionalArray Grad_UARes, MultidimensionalArray pARes, MultidimensionalArray NormalVector, MultidimensionalArray NodeSetClone, double FluidViscosity, int k, int j, double[] currentPosition)
         {
             double temp1;

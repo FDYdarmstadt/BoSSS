@@ -60,13 +60,13 @@ namespace BoSSS.Application.FSI_Solver
                 int q = new int(); // #Cells in x-dircetion + 1
                 int r = new int(); // #Cells in y-dircetion + 1
 
-                q = 30;
-                r = 60;
+                q = 20;
+                r = 160;
 
                 double[] Xnodes = GenericBlas.Linspace(-4 * BaseSize, 4 * BaseSize, q);
-                double[] Ynodes = GenericBlas.Linspace(-0 * BaseSize, 16 * BaseSize, r);
+                double[] Ynodes = GenericBlas.Linspace(-32 * BaseSize, 32 * BaseSize, r);
 
-                var grd = Grid2D.Cartesian2DGrid(Xnodes, Ynodes, periodicX: false, periodicY: false);
+                var grd = Grid2D.Cartesian2DGrid(Xnodes, Ynodes, periodicX: true, periodicY: true);
 
                 grd.EdgeTagNames.Add(1, "Pressure_Outlet_left");
                 grd.EdgeTagNames.Add(2, "Pressure_Outlet_right");
@@ -108,7 +108,6 @@ namespace BoSSS.Application.FSI_Solver
             C.AddBoundaryValue("Pressure_Outlet_left");
             C.AddBoundaryValue("Pressure_Outlet_right");
             C.AddBoundaryValue("Wall_lower");
-            C.LowerWallFullyPlastic = true;
             C.AddBoundaryValue("Pressure_Outlet_upper");
 
             // Fluid Properties
@@ -125,15 +124,15 @@ namespace BoSSS.Application.FSI_Solver
             int numOfParticles = 1;
             for (int d = 0; d < numOfParticles; d++)
             {
-                C.Particles.Add(new Particle_Sphere(new double[] { 0, 14 }, startAngl: 10)
+                C.Particles.Add(new Particle_Sphere(new double[] { 0, 0 }, startAngl: 0)
                 {
-                    particleDensity = 2,
-                    radius_P = 0.5,
+                    particleDensity = 1.01,
+                    radius_P = 1,
                     GravityVertical = -9.81,
                     AddaptiveUnderrelaxation = true,
-                    underrelaxation_factor = 5,
-                    ClearSmallValues = false,
-                    neglectAddedDamping = false
+                    underrelaxation_factor = 1,
+                    ClearSmallValues = true,
+                    neglectAddedDamping = true
                 });
             }
 
@@ -169,7 +168,7 @@ namespace BoSSS.Application.FSI_Solver
             C.LinearSolver.NoOfMultigridLevels = 1;
             C.LinearSolver.MaxSolverIterations = 1000;
             C.LinearSolver.MinSolverIterations = 1;
-            C.ForceAndTorque_ConvergenceCriterion = 1e-1;
+            C.ForceAndTorque_ConvergenceCriterion = 1e-6;
             C.LSunderrelax = 1.0;
 
 
@@ -187,8 +186,8 @@ namespace BoSSS.Application.FSI_Solver
             double dt = 1e-3;
             C.dtMax = dt;
             C.dtMin = dt;
-            C.Endtime = 600;
-            C.NoOfTimesteps = 60000000;
+            C.Endtime = 60000;
+            C.NoOfTimesteps = 600000000;
 
             // haben fertig...
             // ===============
