@@ -1333,13 +1333,16 @@ namespace BoSSS.Solution {
                 useDirect |= (SysSize < DirectKickIn);
                 useDirect |= iLevel == _lc.NoOfMultigridLevels - 1;
                 useDirect |= NoOfBlocks.MPISum() <= 1;
-                if (iLevel == 0) {
-                    useDirect = false;
-                    NoOfBlocks = Math.Max(NoOfBlocks, 4);
-                }
-                if (iLevel == 1) {
-                    useDirect = true;
-                }
+                //if (iLevel == 0) {
+                //    useDirect = false;
+                //    NoOfBlocks = Math.Max(NoOfBlocks, 4);
+                //}
+                //if (iLevel == 1) {
+                //    useDirect = true;
+                //}
+
+                if(iLevel == 0)
+                    Console.WriteLine("No of block on level 0 : " + NoOfBlocks);
 
                 ISolverSmootherTemplate levelSolver;
                 if (useDirect) {

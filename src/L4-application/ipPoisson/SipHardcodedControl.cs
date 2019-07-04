@@ -240,8 +240,10 @@ namespace BoSSS.Application.SipPoisson {
                     grd = Grid2D.Cartesian2DGrid(xNodes, yNodes);
                 } else if (Dim == 3) {
                     double[] xNodes = GenericBlas.Linspace(0, 10, Res * 5 + 1);
-                    double[] yNodes = GenericBlas.SinLinSpacing(-1, +1, 0.6, Res + 1);
-                    double[] zNodes = GenericBlas.SinLinSpacing(-1, +1, 0.6, Res + 1);
+                    //double[] yNodes = GenericBlas.SinLinSpacing(-1, +1, 0.6, Res + 1);
+                    //double[] zNodes = GenericBlas.SinLinSpacing(-1, +1, 0.6, Res + 1);
+                    double[] yNodes = GenericBlas.Linspace(-1, +1, Res + 1);
+                    double[] zNodes = GenericBlas.Linspace(-1, +1, Res + 1);
 
                     grd = Grid3D.Cartesian3DGrid(xNodes, yNodes, zNodes);
                 } else {

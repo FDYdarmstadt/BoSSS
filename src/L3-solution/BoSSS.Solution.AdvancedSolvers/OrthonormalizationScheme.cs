@@ -110,16 +110,19 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 MultidimensionalArray MassMatrix = MultidimensionalArray.Create(MaxKrylovDim, MaxKrylovDim);
 
                 int PCcounter = 0;
+                double[] prevAlpha = null;
                 for (int iIter = 0; iIter < MaxIter; iIter++) {
-                    m_ThisLevelIterations++;
                     Debug.Assert(SolHistory.Count == MxxHistory.Count);
                     Debug.Assert(SolHistory.Count == KrylovDim);
 
                     // select preconditioner
                     var Precond = PrecondS[PCcounter];
                     PCcounter++;
-                    if (PCcounter >= PrecondS.Length)
+                    if (PCcounter >= PrecondS.Length) {
                         PCcounter = 0;
+                        m_ThisLevelIterations++; // because we abuse the Orthonormalization to do some multi-grid stuff, 
+                        //                          we only count every full cycle of preconditiones.
+                    }
 
                     // solve the residual equation: M*Correction = prev. Residual
                     PreviousRes.SetV(CurrentRes);
@@ -161,7 +164,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                     SolHistory.Add(Correction.CloneAs());
                     KrylovDim++;
 
-                    bool updateEveryIteration = false;
+                    bool updateEveryIteration = true;
 
 
                     // RHS of the minimization problem (LHS is identity matrix)
@@ -183,6 +186,14 @@ namespace BoSSS.Solution.AdvancedSolvers {
                         alpha = new double[KrylovDim];
                         minimi_lhs.Solve(alpha, minimi_rhs);
                     }
+                    if(prevAlpha != null) {
+                        var del = alpha.GetSubVector(0, prevAlpha.Length);
+                        del.AccV(-1.0, prevAlpha);
+                        Console.WriteLine("alpha change = " + del.L2Norm());
+
+                    }
+                    prevAlpha = alpha;
+
 
                     Debug.Assert(alpha.Length == SolHistory.Count);
                     Debug.Assert(alpha.Length == MxxHistory.Count);
@@ -200,13 +211,13 @@ namespace BoSSS.Solution.AdvancedSolvers {
                     if (this.IterationCallback != null)
                         this.IterationCallback(iIter + 1, CurrentSol.CloneAs(), CurrentRes.CloneAs(), this.m_mgop);
 
-                    if (crL2 < Tolerance && iIter >= 5) {
-                        Console.WriteLine("    Kcy converged:");
-                        for (int iii = 0; iii < KrylovDim; iii++) {
-                            Console.WriteLine("       fac #" + iii + "  :  " + alpha[iii]);
-                        }
-
-
+                    if (crL2 < Tolerance) {
+                        //Console.WriteLine("    Kcy converged:");
+                        //for (int iii = 0; iii < KrylovDim; iii++) {
+                        //    Console.WriteLine("       fac #" + iii + "  :  " + alpha[iii]);
+                        //}
+                        if (PCcounter > 0)
+                            m_ThisLevelIterations += 1;
 
                         m_Converged = true;
                         break;
