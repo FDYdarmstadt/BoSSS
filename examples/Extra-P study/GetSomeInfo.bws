@@ -1,0 +1,150 @@
+restart
+**************
+
+  BoSSSpad C# interpreter
+  _______________________
+
+
+System.IO.IOException occurred with message 'Could not find or access a database located at 'P:\testDB'' while loading the databases. Type 'LastError' for details.
+
+ Console ready for input. Type 'help' for help.
+
+==============
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.IO;
+using System.Windows.Forms;
+**************
+(1,2): warning CS0105: The using directive for `System' appeared previously in this namespace
+(2,1): warning CS0105: The using directive for `System.Collections.Generic' appeared previously in this namespace
+(3,1): warning CS0105: The using directive for `System.Linq' appeared previously in this namespace
+(6,22): error CS0234: The type or namespace name `Forms' does not exist in the namespace `System.Windows'. Are you missing `System.Windows.Forms' assembly reference?
+No. of errors|warnings: 1|3.
+
+==============
+string path;
+using (StreamReader reader = new StreamReader("tmp.txt"))
+    {
+    path = reader.ReadLine();
+    }
+path=Path.GetFullPath(path.TrimEnd(new char[]{' '}));
+Console.WriteLine(path);
+//var tmpDB = OpenOrCreateDatabase(@"D:\Performance_CNS_Koop_Informatik\DMR_cores_n_DOF_study_1");
+var tmpDB = OpenOrCreateDatabase(path);
+**************
+D:\Performance_CNS_Koop_Informatik\DMR_cores_n_DOF_study_1
+Opening existing database 'D:\Performance_CNS_Koop_Informatik\DMR_cores_n_DOF_study_1'.
+
+==============
+LastError;
+**************
+==============
+using (StreamWriter sw = new StreamWriter("sessioninfo.txt"))
+{
+foreach(KeyValuePair<String,IEnumerable<ISessionInfo>> prj in tmpDB.Projects){
+    foreach(ISessionInfo session in prj.Value){
+        if(session.SuccessfulTermination==false)
+            continue;
+    string txt = String.Format("{0}:cores{1}.cells{2}:project{3}",session.ID,session.NumberOfCores(),session.GetGrids().Pick(0).NumberOfCells,session.ProjectName);
+    sw.WriteLine(txt);
+    System.Console.WriteLine(txt);
+    }
+    }
+}
+**************
+f03acc3c-a1c0-4bbd-a48f-6f46e8f7d911:cores4.cells40000:projectDMR_Performance
+d48f2d2b-3364-46b2-bbf0-3a15ec537985:cores4.cells10000:projectDMR_Performance
+e884bd26-4592-4b7b-879e-1011b1966499:cores4.cells2500:projectDMR_Performance
+1e86d6a7-8429-41db-8463-b8fa807f01ea:cores2.cells40000:projectDMR_Performance
+1096e625-77ec-498f-b6aa-e01d1c229515:cores2.cells10000:projectDMR_Performance
+a753facd-5819-40f2-b959-ad13c36ff153:cores2.cells2500:projectDMR_Performance
+
+==============
+using (StreamWriter sw = new StreamWriter("projectinfo.txt"))
+{
+    foreach(var project in tmpDB.Projects){
+    string txt = String.Format("{0}",project.Key);
+    sw.WriteLine(txt);
+    System.Console.WriteLine(txt);
+    }
+}
+**************
+DMR_Performance
+
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============

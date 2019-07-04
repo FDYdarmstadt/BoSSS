@@ -5,7 +5,7 @@ namespace VoronoiTests
     class Program
     {
         public static void Main() {
-            TestBench selectedTest = availableTests["GridTests"];
+            TestBench selectedTest = availableTests["Solver_IpPoisson"];
             RunTest(selectedTest);
         }
 
@@ -22,7 +22,8 @@ namespace VoronoiTests
             {"SessionIOTests", new Database.Session.SessionIOTests() },
             {"GridIOTests", new Database.GridIOTests()},
             {"BoSSSpadTests", new Database.Session.BoSSSpadTests()},
-            {"GridTests", new GridCreation.GridTests()}
+            {"GridTests", new GridCreation.GridTests()},
+            {"Solver_IpPoisson", new Solver.IpPoissonTests()}
         };
     }
 }

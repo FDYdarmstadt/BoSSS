@@ -80,6 +80,7 @@
     <Compile Include="SoftGMRES.cs" />
     <Compile Include="SoftPCG.cs" />
     <Compile Include="SolverSquence.cs" />
+    <Compile Include="Utils.cs" />
     <Compile Include="XdgAggregationBasis.cs" />
   </ItemGroup>
   <ItemGroup>
