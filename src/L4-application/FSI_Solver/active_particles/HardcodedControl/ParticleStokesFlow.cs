@@ -60,11 +60,11 @@ namespace BoSSS.Application.FSI_Solver
                 int q = new int(); // #Cells in x-dircetion + 1
                 int r = new int(); // #Cells in y-dircetion + 1
 
-                q = 20;
-                r = 160;
+                q = 60;
+                r = 120;
 
                 double[] Xnodes = GenericBlas.Linspace(-4 * BaseSize, 4 * BaseSize, q);
-                double[] Ynodes = GenericBlas.Linspace(-32 * BaseSize, 32 * BaseSize, r);
+                double[] Ynodes = GenericBlas.Linspace(-8 * BaseSize, 8 * BaseSize, r);
 
                 var grd = Grid2D.Cartesian2DGrid(Xnodes, Ynodes, periodicX: true, periodicY: true);
 
@@ -127,10 +127,10 @@ namespace BoSSS.Application.FSI_Solver
                 C.Particles.Add(new Particle_Sphere(new double[] { 0, 0 }, startAngl: 0)
                 {
                     particleDensity = 1.01,
-                    radius_P = 1,
+                    radius_P = 0.1,
                     GravityVertical = -9.81,
                     AddaptiveUnderrelaxation = true,
-                    underrelaxation_factor = 1,
+                    underrelaxation_factor = 9,
                     ClearSmallValues = true,
                     neglectAddedDamping = true
                 });
@@ -168,7 +168,7 @@ namespace BoSSS.Application.FSI_Solver
             C.LinearSolver.NoOfMultigridLevels = 1;
             C.LinearSolver.MaxSolverIterations = 1000;
             C.LinearSolver.MinSolverIterations = 1;
-            C.ForceAndTorque_ConvergenceCriterion = 1e-6;
+            C.ForceAndTorque_ConvergenceCriterion = 1e-4;
             C.LSunderrelax = 1.0;
 
 
@@ -181,9 +181,8 @@ namespace BoSSS.Application.FSI_Solver
 
             // Timestepping
             // =============================  
-            C.instationarySolver = true;
             C.Timestepper_Scheme = IBM_Solver.IBM_Control.TimesteppingScheme.BDF2;
-            double dt = 1e-3;
+            double dt = 1e-2;
             C.dtMax = dt;
             C.dtMin = dt;
             C.Endtime = 60000;

@@ -179,7 +179,7 @@ namespace BoSSS.Application.FSI_Solver
             SummandsVelGradient[1] = -Grad_UARes[j, k, 1, 0] * NormalVector[j, k, 0];
             SummandsVelGradient[2] = -Grad_UARes[j, k, 0, 1] * NormalVector[j, k, 0];
             SummandsPressure = pARes[j, k] * NormalVector[j, k, 1];
-            return ParticleAuxillary.SummationWithNeumaier(SummandsVelGradient, SummandsPressure, FluidViscosity) * 0;
+            return ParticleAuxillary.SummationWithNeumaier(SummandsVelGradient, SummandsPressure, FluidViscosity);
         }
 
         /// <summary>

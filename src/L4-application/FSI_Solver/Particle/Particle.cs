@@ -786,7 +786,7 @@ namespace BoSSS.Application.FSI_Solver
                 if(iteration_counter_P == 1 && !NotFullyCoupled)
                 {
 
-                    Console.WriteLine("First iteration of the current timestep, all relaxation factors are set to " + underrelaxation_factor * 1e-1);
+                    Console.WriteLine("First iteration of the current timestep, all relaxation factors are set to " + 1);
                     for (int d = 0; d < SpatialDim; d++)
                     {
                         HydrodynamicForces[0][d] = 0;
@@ -794,7 +794,7 @@ namespace BoSSS.Application.FSI_Solver
                         {
                             Forces[d] = 0;
                         }
-                        HydrodynamicForces[0][d] = underrelaxation_factor * 1e-1 * Forces[d] + (1 - underrelaxation_factor * 1e-1) * HydrodynamicForces[0][d];
+                        HydrodynamicForces[0][d] = 1 * Forces[d] + (1 - 1) * HydrodynamicForces[0][d];
                     }
 
                     HydrodynamicTorque[0] = 0;
@@ -802,7 +802,7 @@ namespace BoSSS.Application.FSI_Solver
                     {
                         Torque = 0;
                     }
-                    HydrodynamicTorque[0] = underrelaxation_factor * 1e-1 * Torque + (1 - underrelaxation_factor * 1e-1) * HydrodynamicTorque[0];
+                    HydrodynamicTorque[0] = 1 * Torque + (1 - 1) * HydrodynamicTorque[0];
                 }
 
                 for (int d = 0; d < SpatialDim; d++)
