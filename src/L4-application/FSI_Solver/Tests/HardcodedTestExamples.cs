@@ -671,7 +671,7 @@ namespace BoSSS.Application.FSI_Solver {
             C.ProjectDescription = "Gravity";
             C.SessionName = C.ProjectName;
             C.Tags.Add("with immersed boundary method");
-            C.AdaptiveMeshRefinement = true;
+            C.AdaptiveMeshRefinement = false;
             C.RefinementLevel = 2;
             C.SessionName = "fjkfjksdfhjk";
 
@@ -752,7 +752,7 @@ namespace BoSSS.Application.FSI_Solver {
             C.Particles.Add(new Particle_Sphere(new double[] { 0.0, 0.6 })
             {
                 radius_P = 0.18,
-                particleDensity = 1.01,
+                particleDensity = 4,
                 GravityVertical = -9.81,
                 AddaptiveUnderrelaxation = true,
                 underrelaxation_factor = 9,// underrelaxation with [factor * 10^exponent]
@@ -810,7 +810,7 @@ namespace BoSSS.Application.FSI_Solver {
             C.dtMax = dt;
             C.dtMin = dt;
             C.Endtime = 10.0;
-            C.NoOfTimesteps = 500;
+            C.NoOfTimesteps = 50;
 
             // haben fertig...
             // ===============
