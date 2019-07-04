@@ -60,8 +60,8 @@ namespace BoSSS.Application.FSI_Solver
                 int q = new int(); // #Cells in x-dircetion + 1
                 int r = new int(); // #Cells in y-dircetion + 1
 
-                q = 60;
-                r = 120;
+                q = 20;
+                r = 40;
 
                 double[] Xnodes = GenericBlas.Linspace(-4 * BaseSize, 4 * BaseSize, q);
                 double[] Ynodes = GenericBlas.Linspace(-8 * BaseSize, 8 * BaseSize, r);
@@ -127,10 +127,10 @@ namespace BoSSS.Application.FSI_Solver
                 C.Particles.Add(new Particle_Sphere(new double[] { 0, 0 }, startAngl: 0)
                 {
                     particleDensity = 1.01,
-                    radius_P = 0.1,
+                    radius_P = 1,
                     GravityVertical = -9.81,
                     AddaptiveUnderrelaxation = true,
-                    underrelaxation_factor = 9,
+                    underrelaxation_factor = 5,
                     ClearSmallValues = true,
                     neglectAddedDamping = true
                 });
@@ -168,7 +168,7 @@ namespace BoSSS.Application.FSI_Solver
             C.LinearSolver.NoOfMultigridLevels = 1;
             C.LinearSolver.MaxSolverIterations = 1000;
             C.LinearSolver.MinSolverIterations = 1;
-            C.ForceAndTorque_ConvergenceCriterion = 1e-4;
+            C.ForceAndTorque_ConvergenceCriterion = 1e-3;
             C.LSunderrelax = 1.0;
 
 

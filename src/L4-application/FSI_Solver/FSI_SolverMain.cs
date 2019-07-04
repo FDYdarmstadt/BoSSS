@@ -2338,18 +2338,7 @@ namespace BoSSS.Application.FSI_Solver
         {
             int J = GridData.iLogicalCells.NoOfLocalUpdatedCells;
             FSI_LevelSetUpdate levelSetUpdate = new FSI_LevelSetUpdate();
-            //CellMask ColoredCellMask = null;
-            List<int[]> ColoredCellsSorted = levelSetUpdate.ColoredCellsFindAndSort(CellColor);
-            int[] ParticleColorArray = levelSetUpdate.FindParticleColor(GridData, m_Particles, ColoredCellsSorted);
-            //for (int p = 0; p < ParticleColorArray.Length; p++)
-            //{
-            //    if (ParticleColorArray[p] != 0)
-            //    {
-            //        ColoredCellMask = ColoredCellMask.Union(levelSetUpdate.CellsOneColor(GridData, ColoredCellsSorted, ParticleColorArray[p], J, false));
-            //    }
-            //}
             CellMask LevSetCells = LsTrk.Regions.GetCutCellMask();
-            //CellMask LevSetNeighbours = LsTrk.Regions.GetNearFieldMask(1);
             int DesiredLevel_j = 0;
             if (LevSetCells.Contains(j))//ColoredCellMask != null &&
             {
@@ -2357,8 +2346,10 @@ namespace BoSSS.Application.FSI_Solver
             }
             else if (LevSetCells.AllNeighbourCells().Contains(j))
             {
-                DesiredLevel_j = ((FSI_Control)this.Control).RefinementLevel;
+                DesiredLevel_j = ((FSI_Control)this.Control).RefinementLevel - 1;
             }
+            else
+                DesiredLevel_j = 0;
 
             return DesiredLevel_j;
         }
