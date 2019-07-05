@@ -135,7 +135,7 @@ namespace BoSSS.Solution.XheatCommon {
 
         public override IList<string> ParameterOrdering {
             get {
-                return ArrayTools.Cat(new string[] { "GradTempX", "GradTempY", "GradTempZ" }.GetSubVector(0, D), VariableNames.Temperature, "Curvature", "DisjoiningPressure");
+                return ArrayTools.Cat(VariableNames.Temperature0Gradient(D), VariableNames.Temperature0, VariableNames.Curvature, VariableNames.DisjoiningPressure);
             }
         }
 

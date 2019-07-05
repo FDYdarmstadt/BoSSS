@@ -95,17 +95,19 @@ namespace BoSSS.Application.XNSE_Solver {
 
             // full operator:
             // ==============
-            CodName = ((new string[] { "momX", "momY", "momZ" }).GetSubVector(0, D)).Cat("div");
+            CodName = ArrayTools.Cat(EquationNames.MomentumEquations(D), EquationNames.ContinuityEquation);
             Params = ArrayTools.Cat(
                 VariableNames.Velocity0Vector(D),
                 VariableNames.Velocity0MeanVector(D),
-                "Curvature",
-                (new string[] { "surfForceX", "surfForceY", "surfForceZ" }).GetSubVector(0, D),
-                (new string[] { "NX", "NY", "NZ" }).GetSubVector(0, D),
-                (new string[] { "GradTempX", "GradTempY", "GradTempZ" }.GetSubVector(0, D)),
-                VariableNames.Temperature,
-                "DisjoiningPressure");
+                VariableNames.NormalVector(D),
+                VariableNames.Curvature,
+                VariableNames.SurfaceForceVector(D),
+                VariableNames.Temperature0,
+                VariableNames.Temperature0Gradient(D),
+                VariableNames.DisjoiningPressure
+                );
             DomName = ArrayTools.Cat(VariableNames.VelocityVector(D), VariableNames.Pressure);
+
 
             // selected part:
             if (config.getCodBlocks[0])
@@ -129,19 +131,19 @@ namespace BoSSS.Application.XNSE_Solver {
             // species bulk components
             for (int spc = 0; spc < LsTrk.TotalNoOfSpecies; spc++) {
                 // Navier Stokes equations
-                Solution.XNSECommon.XOperatorComponentsFactory.AddSpeciesNSE(m_XOp, CodName.GetSubVector(0, D), LsTrk.SpeciesNames[spc], LsTrk.SpeciesIdS[spc], BcMap, config, LsTrk, out U0meanrequired);
+                Solution.XNSECommon.XOperatorComponentsFactory.AddSpeciesNSE(m_XOp, config, D,  LsTrk.SpeciesNames[spc], LsTrk.SpeciesIdS[spc], BcMap, LsTrk, out U0meanrequired);
 
                 // continuity equation
                 if (config.isContinuity)
-                    Solution.XNSECommon.XOperatorComponentsFactory.AddSpeciesContinuityEq(m_XOp, CodName[D], D, LsTrk.SpeciesNames[spc], LsTrk.SpeciesIdS[spc], BcMap, config, LsTrk);
+                    Solution.XNSECommon.XOperatorComponentsFactory.AddSpeciesContinuityEq(m_XOp, config, D, LsTrk.SpeciesNames[spc], LsTrk.SpeciesIdS[spc], BcMap);
             }
 
             // interface components
-            Solution.XNSECommon.XOperatorComponentsFactory.AddInterfaceNSE(m_XOp, CodName.GetSubVector(0, D), BcMap, config, LsTrk);    // surface stress tensor
-            Solution.XNSECommon.XOperatorComponentsFactory.AddSurfaceTensionForce(m_XOp, CodName.GetSubVector(0, D), BcMap, config, LsTrk, degU, out NormalsRequired, out CurvatureRequired);     // surface tension force
+            Solution.XNSECommon.XOperatorComponentsFactory.AddInterfaceNSE(m_XOp, config, D, BcMap, LsTrk);     // surface stress tensor
+            Solution.XNSECommon.XOperatorComponentsFactory.AddSurfaceTensionForce(m_XOp, config, D, BcMap, LsTrk, degU, out NormalsRequired, out CurvatureRequired);     // surface tension force
 
             if (config.isContinuity)
-                Solution.XNSECommon.XOperatorComponentsFactory.AddInterfaceContinuityEq(m_XOp, CodName[D], D, BcMap, config, LsTrk);       // continuity equation
+                Solution.XNSECommon.XOperatorComponentsFactory.AddInterfaceContinuityEq(m_XOp, config, D, LsTrk);       // continuity equation
 
 
             // add Evaporation interface components
@@ -149,10 +151,10 @@ namespace BoSSS.Application.XNSE_Solver {
 
             if (config.isEvaporation) {
 
-                XOperatorComponentsFactory.AddInterfaceNSE_withEvaporation(m_XOp, CodName.GetSubVector(0, D), config, LsTrk);
+                XOperatorComponentsFactory.AddInterfaceNSE_withEvaporation(m_XOp, config, D, LsTrk);
 
                 if (config.isContinuity)
-                    XOperatorComponentsFactory.AddInterfaceContinuityEq_withEvaporation(m_XOp, CodName[D], D, config, LsTrk);
+                    XOperatorComponentsFactory.AddInterfaceContinuityEq_withEvaporation(m_XOp, config, D, LsTrk);
 
             }
 
@@ -317,12 +319,12 @@ namespace BoSSS.Application.XNSE_Solver {
             // concatenate everything
             var Params = ArrayTools.Cat<DGField>(
                 U0_U0mean,
+                Normals,
                 Curvature,
                 ((SurfaceForce != null) ? SurfaceForce.ToArray() : new SinglePhaseField[D]),
-                Normals,
-                ((CoupledCurrentState != null) ? GradTemp.ToArray() : new SinglePhaseField[D]),
                 ((CoupledCurrentState != null) ? CoupledCurrentState.ToArray<DGField>() : new SinglePhaseField[1]),
-                ((CoupledCurrentState != null) ? CoupledParams.ToArray<DGField>() : new SinglePhaseField[1]));  //((evaporation) ? GradTemp.ToArray() : new SinglePhaseField[D]));
+                ((CoupledCurrentState != null) ? GradTemp.ToArray() : new SinglePhaseField[D]),
+                ((CoupledCurrentState != null) ? CoupledParams.ToArray<DGField>() : new SinglePhaseField[1])); 
 
             // linearization velocity:
             if (this.U0meanrequired) {

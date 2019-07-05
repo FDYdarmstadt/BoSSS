@@ -93,16 +93,14 @@ namespace BoSSS.Application.XNSE_Solver {
 
             // full operator:
             // ==============
-            CodName = ((new string[] { "momX", "momY", "momZ" }).GetSubVector(0, D)).Cat("div");
+            CodName = ArrayTools.Cat(EquationNames.MomentumEquations(D), EquationNames.ContinuityEquation);
             Params = ArrayTools.Cat(
                 VariableNames.Velocity0Vector(D),
                 VariableNames.Velocity0MeanVector(D),
-                "Curvature",
-                (new string[] { "surfForceX", "surfForceY", "surfForceZ" }).GetSubVector(0, D),
-                (new string[] { "NX", "NY", "NZ" }).GetSubVector(0, D),
-                (new string[] { "GradTempX", "GradTempY", "GradTempZ" }.GetSubVector(0, D)),
-                VariableNames.Temperature,
-                "DisjoiningPressure");
+                VariableNames.NormalVector(D),
+                VariableNames.Curvature,
+                VariableNames.SurfaceForceVector(D)
+                );
             DomName = ArrayTools.Cat(VariableNames.VelocityVector(D), VariableNames.Pressure);
 
             // selected part:
@@ -127,19 +125,19 @@ namespace BoSSS.Application.XNSE_Solver {
             // species bulk components
             for(int spc = 0; spc < LsTrk.TotalNoOfSpecies; spc++) {
                 // Navier Stokes equations
-                XOperatorComponentsFactory.AddSpeciesNSE(m_XOp, CodName.GetSubVector(0, D), LsTrk.SpeciesNames[spc], LsTrk.SpeciesIdS[spc], BcMap, config, LsTrk, out U0meanrequired);
+                XOperatorComponentsFactory.AddSpeciesNSE(m_XOp, config, D, LsTrk.SpeciesNames[spc], LsTrk.SpeciesIdS[spc], BcMap,  LsTrk, out U0meanrequired);
 
                 // continuity equation
                 if(config.isContinuity)
-                    XOperatorComponentsFactory.AddSpeciesContinuityEq(m_XOp, CodName[D], D, LsTrk.SpeciesNames[spc], LsTrk.SpeciesIdS[spc], BcMap, config, LsTrk);
+                    XOperatorComponentsFactory.AddSpeciesContinuityEq(m_XOp, config, D, LsTrk.SpeciesNames[spc], LsTrk.SpeciesIdS[spc], BcMap);
             }
 
             // interface components
-            XOperatorComponentsFactory.AddInterfaceNSE(m_XOp, CodName.GetSubVector(0, D), BcMap, config, LsTrk);    // surface stress tensor
-            XOperatorComponentsFactory.AddSurfaceTensionForce(m_XOp, CodName.GetSubVector(0, D), BcMap, config, LsTrk, degU, out NormalsRequired, out CurvatureRequired);     // surface tension force
+            XOperatorComponentsFactory.AddInterfaceNSE(m_XOp, config, D, BcMap, LsTrk);    // surface stress tensor
+            XOperatorComponentsFactory.AddSurfaceTensionForce(m_XOp, config, D, BcMap, LsTrk, degU, out NormalsRequired, out CurvatureRequired);     // surface tension force
 
             if (config.isContinuity)
-                XOperatorComponentsFactory.AddInterfaceContinuityEq(m_XOp, CodName[D], D, BcMap, config, LsTrk);       // continuity equation
+                XOperatorComponentsFactory.AddInterfaceContinuityEq(m_XOp, config, D, LsTrk);       // continuity equation
 
 
             m_XOp.Commit();
@@ -173,8 +171,7 @@ namespace BoSSS.Application.XNSE_Solver {
             UnsetteledCoordinateMapping RowMapping, UnsetteledCoordinateMapping ColMapping,
             IEnumerable<T> CurrentState, Dictionary<SpeciesId, MultidimensionalArray> AgglomeratedCellLengthScales, double time,
             int CutCellQuadOrder, VectorField<SinglePhaseField> SurfaceForce,
-            VectorField<SinglePhaseField> LevelSetGradient, SinglePhaseField ExternalyProvidedCurvature,
-            IEnumerable<T> CoupledCurrentState = null, IEnumerable<T> CoupledParams = null) where T : DGField {
+            VectorField<SinglePhaseField> LevelSetGradient, SinglePhaseField ExternalyProvidedCurvature) where T : DGField {
 
             // checks:
             if(ColMapping.BasisS.Count != this.m_XOp.DomainVar.Count)
@@ -292,22 +289,19 @@ namespace BoSSS.Application.XNSE_Solver {
             }
 
             // Temperature gradient for evaporation
-            VectorField<DGField> GradTemp = new VectorField<DGField>(D, new XDGBasis(LsTrk, 0), XDGField.Factory);
-            if (CoupledCurrentState != null) {
-                DGField Temp = CoupledCurrentState.ToArray()[0];
-                GradTemp = new VectorField<DGField>(D, Temp.Basis, "GradTemp", XDGField.Factory);
-                XNSEUtils.ComputeGradientForParam(Temp, GradTemp, this.LsTrk);
-            }
+            //VectorField<DGField> GradTemp = new VectorField<DGField>(D, new XDGBasis(LsTrk, 0), XDGField.Factory);
+            //if (CoupledCurrentState != null) {
+            //    DGField Temp = CoupledCurrentState.ToArray()[0];
+            //    GradTemp = new VectorField<DGField>(D, Temp.Basis, "GradTemp", XDGField.Factory);
+            //    XNSEUtils.ComputeGradientForParam(Temp, GradTemp, this.LsTrk);
+            //}
 
             // concatenate everything
             var Params = ArrayTools.Cat<DGField>(
                 U0_U0mean,
-                Curvature,
-                ((SurfaceForce != null) ? SurfaceForce.ToArray() : new SinglePhaseField[D]),
                 Normals,
-                ((CoupledCurrentState != null) ? GradTemp.ToArray() : new SinglePhaseField[D]),
-                ((CoupledCurrentState != null) ? CoupledCurrentState.ToArray<DGField>() : new SinglePhaseField[1]),
-                ((CoupledCurrentState != null) ? CoupledParams.ToArray<DGField>() : new SinglePhaseField[1]));  //((evaporation) ? GradTemp.ToArray() : new SinglePhaseField[D]));
+                Curvature,
+                ((SurfaceForce != null) ? SurfaceForce.ToArray() : new SinglePhaseField[D]));
 
             // linearization velocity:
             if(this.U0meanrequired) {

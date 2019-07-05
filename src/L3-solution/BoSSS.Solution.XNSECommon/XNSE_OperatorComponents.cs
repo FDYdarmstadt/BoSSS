@@ -23,6 +23,7 @@ using System.Threading.Tasks;
 using BoSSS.Foundation;
 using BoSSS.Foundation.XDG;
 
+using BoSSS.Solution.NSECommon;
 using BoSSS.Solution.XNSECommon.Operator.SurfaceTension;
 
 namespace BoSSS.Solution.XNSECommon {
@@ -40,7 +41,6 @@ namespace BoSSS.Solution.XNSECommon {
         /// 
         /// </summary>
         /// <param name="XOp"></param>
-        /// <param name="CodName"></param>
         /// <param name="d"></param>
         /// <param name="D"></param>
         /// <param name="spcName"></param>
@@ -48,12 +48,15 @@ namespace BoSSS.Solution.XNSECommon {
         /// <param name="BcMap"></param>
         /// <param name="config"></param>
         /// <param name="LsTrk"></param>
-        public static void AddSpeciesNSE_component(XSpatialOperatorMk2 XOp, string CodName, int d, int D, string spcName, SpeciesId spcId, 
-            IncompressibleMultiphaseBoundaryCondMap BcMap, INSE_Configuration config, LevelSetTracker LsTrk, out bool U0meanrequired) {
+        /// <param name="U0meanrequired"></param>
+        public static void AddSpeciesNSE_component(XSpatialOperatorMk2 XOp, INSE_Configuration config, int d, int D, string spcName, SpeciesId spcId, 
+            IncompressibleMultiphaseBoundaryCondMap BcMap, LevelSetTracker LsTrk, out bool U0meanrequired) {
 
             // check input
             if(XOp.IsCommited)
                 throw new InvalidOperationException("Spatial Operator is already comitted. Adding of new components is not allowed");
+
+            string CodName = EquationNames.MomentumEquationComponent(d);
             if(!XOp.CodomainVar.Contains(CodName))
                 throw new ArgumentException("CoDomain variable \"" + CodName + "\" is not defined in Spatial Operator");
 
@@ -147,25 +150,23 @@ namespace BoSSS.Solution.XNSECommon {
 
         }
 
-
         /// <summary>
         /// 
         /// </summary>
         /// <param name="XOp"></param>
-        /// <param name="CodName"></param>
+        /// <param name="config"></param>
         /// <param name="spcName"></param>
         /// <param name="spcId"></param>
         /// <param name="BcMap"></param>
-        /// <param name="config"></param>
         /// <param name="LsTrk"></param>
-        public static void AddSpeciesNSE(XSpatialOperatorMk2 XOp, string[] CodName, string spcName, SpeciesId spcId,
-            IncompressibleMultiphaseBoundaryCondMap BcMap, INSE_Configuration config, LevelSetTracker LsTrk, out bool U0meanrequired) {
+        /// <param name="U0meanrequired"></param>
+        public static void AddSpeciesNSE(XSpatialOperatorMk2 XOp, INSE_Configuration config, int D, string spcName, SpeciesId spcId,
+            IncompressibleMultiphaseBoundaryCondMap BcMap, LevelSetTracker LsTrk, out bool U0meanrequired) {
 
             U0meanrequired = false;
 
-            int D = CodName.Length;
             for(int d = 0; d < D; d++) {
-                AddSpeciesNSE_component(XOp, CodName[d], d, D, spcName, spcId, BcMap, config, LsTrk, out U0meanrequired);
+                AddSpeciesNSE_component(XOp, config, d, D, spcName, spcId, BcMap, LsTrk, out U0meanrequired);
             }
 
         }
@@ -175,19 +176,20 @@ namespace BoSSS.Solution.XNSECommon {
         /// 
         /// </summary>
         /// <param name="XOp"></param>
-        /// <param name="CodName"></param>
+        /// <param name="config"></param>
         /// <param name="d"></param>
         /// <param name="D"></param>
         /// <param name="BcMap"></param>
-        /// <param name="config"></param>
         /// <param name="LsTrk"></param>
-        public static void AddInterfaceNSE_component(XSpatialOperatorMk2 XOp, string CodName, int d, int D,
-            IncompressibleMultiphaseBoundaryCondMap BcMap, IXNSE_Configuration config, LevelSetTracker LsTrk) {
+        public static void AddInterfaceNSE_component(XSpatialOperatorMk2 XOp, IXNSE_Configuration config, int d, int D,
+            IncompressibleMultiphaseBoundaryCondMap BcMap, LevelSetTracker LsTrk) {
 
             // check input
             if(XOp.IsCommited)
                 throw new InvalidOperationException("Spatial Operator is already comitted. Adding of new components is not allowed");
-            if(!XOp.CodomainVar.Contains(CodName))
+
+            string CodName = EquationNames.MomentumEquationComponent(d);
+            if (!XOp.CodomainVar.Contains(CodName))
                 throw new ArgumentException("CoDomain variable \"" + CodName + "\" is not defined in Spatial Operator");
 
             PhysicalParameters physParams = config.getPhysParams;
@@ -247,16 +249,14 @@ namespace BoSSS.Solution.XNSECommon {
         /// 
         /// </summary>
         /// <param name="XOp"></param>
-        /// <param name="CodName"></param>
-        /// <param name="BcMap"></param>
         /// <param name="config"></param>
+        /// <param name="BcMap"></param>
         /// <param name="LsTrk"></param>
-        public static void AddInterfaceNSE(XSpatialOperatorMk2 XOp, string[] CodName,
-            IncompressibleMultiphaseBoundaryCondMap BcMap, IXNSE_Configuration config, LevelSetTracker LsTrk) {
+        public static void AddInterfaceNSE(XSpatialOperatorMk2 XOp, IXNSE_Configuration config, int D,
+            IncompressibleMultiphaseBoundaryCondMap BcMap,  LevelSetTracker LsTrk) {
 
-            int D = CodName.Length;
             for(int d = 0; d < D; d++) {
-                AddInterfaceNSE_component(XOp, CodName[d], d, D, BcMap, config, LsTrk);
+                AddInterfaceNSE_component(XOp, config, d, D, BcMap, LsTrk);
             }
         }
 
@@ -265,19 +265,24 @@ namespace BoSSS.Solution.XNSECommon {
         /// 
         /// </summary>
         /// <param name="XOp"></param>
-        /// <param name="CodName"></param>
+        /// <param name="config"></param>
+        /// <param name="d"></param>
         /// <param name="D"></param>
         /// <param name="BcMap"></param>
-        /// <param name="config"></param>
         /// <param name="LsTrk"></param>
-        public static void AddSurfaceTensionForce_component(XSpatialOperatorMk2 XOp, string CodName, int d, int D,
-            IncompressibleMultiphaseBoundaryCondMap BcMap, IXNSE_Configuration config, LevelSetTracker LsTrk, int degU,
+        /// <param name="degU"></param>
+        /// <param name="NormalsRequired"></param>
+        /// <param name="CurvatureRequired"></param>
+        public static void AddSurfaceTensionForce_component(XSpatialOperatorMk2 XOp, IXNSE_Configuration config, int d, int D,
+            IncompressibleMultiphaseBoundaryCondMap BcMap,  LevelSetTracker LsTrk, int degU,
             out bool NormalsRequired, out bool CurvatureRequired) {
 
             // check input
             if(XOp.IsCommited)
                 throw new InvalidOperationException("Spatial Operator is already comitted. Adding of new components is not allowed");
-            if(!XOp.CodomainVar.Contains(CodName))
+
+            string CodName = EquationNames.MomentumEquationComponent(d);
+            if (!XOp.CodomainVar.Contains(CodName))
                 throw new ArgumentException("CoDomain variable \"" + CodName + "\" is not defined in Spatial Operator");
 
             PhysicalParameters physParams = config.getPhysParams;
@@ -389,22 +394,21 @@ namespace BoSSS.Solution.XNSECommon {
         /// 
         /// </summary>
         /// <param name="XOp"></param>
-        /// <param name="CodName"></param>
-        /// <param name="d"></param>
-        /// <param name="D"></param>
-        /// <param name="BcMap"></param>
         /// <param name="config"></param>
+        /// <param name="BcMap"></param>
         /// <param name="LsTrk"></param>
-        public static void AddSurfaceTensionForce(XSpatialOperatorMk2 XOp, string[] CodName,
-            IncompressibleMultiphaseBoundaryCondMap BcMap, IXNSE_Configuration config, LevelSetTracker LsTrk, int degU,
+        /// <param name="degU"></param>
+        /// <param name="NormalsRequired"></param>
+        /// <param name="CurvatureRequired"></param>
+        public static void AddSurfaceTensionForce(XSpatialOperatorMk2 XOp, IXNSE_Configuration config, int D,
+            IncompressibleMultiphaseBoundaryCondMap BcMap, LevelSetTracker LsTrk, int degU,
             out bool NormalsRequired, out bool CurvatureRequired) {
 
             NormalsRequired = false;
             CurvatureRequired = false;
 
-            int D = CodName.Length;
             for(int d = 0; d < D; d++) {
-                AddSurfaceTensionForce_component(XOp, CodName[d], d, D, BcMap, config, LsTrk, degU, out NormalsRequired, out CurvatureRequired);
+                AddSurfaceTensionForce_component(XOp, config, d, D, BcMap,LsTrk, degU, out NormalsRequired, out CurvatureRequired);
             }
 
 
@@ -421,19 +425,19 @@ namespace BoSSS.Solution.XNSECommon {
         /// 
         /// </summary>
         /// <param name="XOp"></param>
-        /// <param name="CodName"></param>
+        /// <param name="config"></param>
         /// <param name="D"></param>
         /// <param name="spcName"></param>
         /// <param name="spcId"></param>
         /// <param name="BcMap"></param>
-        /// <param name="config"></param>
-        /// <param name="LsTrk"></param>
-        public static void AddSpeciesContinuityEq(XSpatialOperatorMk2 XOp, string CodName, int D, string spcName, SpeciesId spcId,
-            IncompressibleMultiphaseBoundaryCondMap BcMap, INSE_Configuration config, LevelSetTracker LsTrk) {
+        public static void AddSpeciesContinuityEq(XSpatialOperatorMk2 XOp, INSE_Configuration config, int D, 
+            string spcName, SpeciesId spcId, IncompressibleMultiphaseBoundaryCondMap BcMap ) {
 
             // check input
             if(XOp.IsCommited)
                 throw new InvalidOperationException("Spatial Operator is already comitted. Adding of new components is not allowed");
+
+            string CodName = EquationNames.ContinuityEquation;
             if(!XOp.CodomainVar.Contains(CodName))
                 throw new ArgumentException("CoDomain variable \"" + CodName + "\" is not defined in Spatial Operator");
 
@@ -469,12 +473,13 @@ namespace BoSSS.Solution.XNSECommon {
         /// <param name="BcMap"></param>
         /// <param name="config"></param>
         /// <param name="LsTrk"></param>
-        public static void AddInterfaceContinuityEq(XSpatialOperatorMk2 XOp, string CodName, int D,
-            IncompressibleMultiphaseBoundaryCondMap BcMap, IXNSE_Configuration config, LevelSetTracker LsTrk) {
+        public static void AddInterfaceContinuityEq(XSpatialOperatorMk2 XOp, IXNSE_Configuration config, int D, LevelSetTracker LsTrk) {
 
             // check input
             if(XOp.IsCommited)
                 throw new InvalidOperationException("Spatial Operator is already comitted. Adding of new components is not allowed");
+
+            string CodName = EquationNames.ContinuityEquation;
             if(!XOp.CodomainVar.Contains(CodName))
                 throw new ArgumentException("CoDomain variable \"" + CodName + "\" is not defined in Spatial Operator");
 
@@ -523,6 +528,7 @@ namespace BoSSS.Solution.XNSECommon {
         /// advanced operator configuration
         /// </summary>
         DoNotTouchParameters getDntParams { get; }
+
 
         /// <summary>
         /// Controls the domain variables that the operator should contain. <br/>

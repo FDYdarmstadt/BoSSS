@@ -224,9 +224,7 @@ namespace BoSSS.Solution.XNSECommon.Operator.SurfaceTension {
 
         public IList<string> ParameterOrdering {
             get {
-                return new string[] { "Curvature", 
-                //    "NX", "NY" 
-                };
+                return new string[] { VariableNames.Curvature };
             }
         }
 
@@ -340,7 +338,7 @@ namespace BoSSS.Solution.XNSECommon.Operator.SurfaceTension {
 
         public IList<string> ParameterOrdering {
             get {
-                return new string[] { (new string[] { "surfForceX", "surfForceY", "surfForceZ" })[this.m_d] };
+                return new string[] { VariableNames.SurfaceForceComponent(m_d) };
             }
         }
 
@@ -447,7 +445,7 @@ namespace BoSSS.Solution.XNSECommon.Operator.SurfaceTension {
 
         public override IList<string> ParameterOrdering {
             get {
-                return new string[] { "NX", "NY" };
+                return VariableNames.NormalVector(2);
             }
         }
 
@@ -488,7 +486,7 @@ namespace BoSSS.Solution.XNSECommon.Operator.SurfaceTension {
 
         public override IList<string> ParameterOrdering {
             get {
-                return new string[] { "NX", "NY" };
+                return VariableNames.NormalVector(2);
             }
         }
 
@@ -879,22 +877,13 @@ namespace BoSSS.Solution.XNSECommon.Operator.SurfaceTension {
 
         public virtual IList<string> ParameterOrdering {
             get {
-                switch(m_D) {
-                    case 2:
-                        return new string[] { "NX", "NY" };
-                    case 3:
-                        return new string[] { "NX", "NY", "NZ" };
-                    default:
-                        return new string[] { };
-                }
-                //return new string[] { "NX", "NY" };
+                return VariableNames.NormalVector(m_D);
             }
         }
 
         public IList<string> ArgumentOrdering {
             get {
                 return VariableNames.VelocityVector(m_D);
-                //return new string[] { VariableNames.Velocity_d(0), VariableNames.Velocity_d(1) };
             }
         }
 
@@ -1183,6 +1172,8 @@ namespace BoSSS.Solution.XNSECommon.Operator.SurfaceTension {
     public abstract class SurfaceFluxBase : IVolumeForm, IEdgeForm, BoSSS.Foundation.IEquationComponentCoefficient {
 
 
+        protected int m_D;
+
         protected int m_comp;
 
         /// <summary>
@@ -1213,13 +1204,13 @@ namespace BoSSS.Solution.XNSECommon.Operator.SurfaceTension {
 
         public virtual IList<string> ParameterOrdering {
             get {
-                return new string[] { "NX", "NY" };
+                return VariableNames.NormalVector(m_D);
             }
         }
 
         public virtual IList<string> ArgumentOrdering {
             get {
-                return new string[] { VariableNames.Velocity_d(0), VariableNames.Velocity_d(1) };
+                return VariableNames.VelocityVector(m_D);
             }
         }
 
@@ -1822,22 +1813,13 @@ namespace BoSSS.Solution.XNSECommon.Operator.SurfaceTension {
 
         public virtual IList<string> ParameterOrdering {
             get {
-                switch(m_D) {
-                    case 2:
-                        return new string[] { "NX", "NY" };
-                    case 3:
-                        return new string[] { "NX", "NY", "NZ" };
-                    default:
-                        return new string[] { };
-                }
-                //return new string[] { "NX", "NY" };
+                return VariableNames.NormalVector(m_D);
             }
         }
 
         public IList<string> ArgumentOrdering {
             get {
                 return VariableNames.VelocityVector(m_D);
-                //return new string[] { VariableNames.Velocity_d(0), VariableNames.Velocity_d(1) };
             }
         }
 

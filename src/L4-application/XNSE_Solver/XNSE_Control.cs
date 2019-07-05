@@ -196,13 +196,6 @@ namespace BoSSS.Application.XNSE_Solver {
 
         /// <summary>
         /// Only for debugging purpose:
-        /// switches Off Viscosity and Pressure
-        /// XNSE becomes a potential Solver.
-        /// </summary>
-        public bool FakePoisson = false;
-
-        /// <summary>
-        /// Only for debugging purpose:
         /// solver is turned of and residual of initial value/exact solution is evaluated, used to 
         /// test the consistency of the implementation.
         /// </summary>

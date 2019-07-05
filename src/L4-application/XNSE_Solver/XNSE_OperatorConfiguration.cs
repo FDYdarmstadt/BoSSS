@@ -33,18 +33,11 @@ namespace BoSSS.Application.XNSE_Solver {
 
         public XNSE_OperatorConfiguration(XNSE_Control control) {
 
-            if(control.FakePoisson) {
-                Console.WriteLine("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
-                Console.WriteLine("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
-                Console.WriteLine("ACHTUNG: Fake-Poisson aktiviert!");
-                Console.WriteLine("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
-                Console.WriteLine("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
-            }
 
             Continuity = true;
-            Viscous = !control.FakePoisson;
+            Viscous = true;
             PressureGradient = true;
-            Transport = control.FakePoisson ? false : control.PhysicalParameters.IncludeConvection;
+            Transport = control.PhysicalParameters.IncludeConvection;
             CodBlocks = new bool[] { true, true };
             DomBlocks = new bool[] { true, true };
             dntParams = control.AdvancedDiscretizationOptions;
@@ -92,6 +85,7 @@ namespace BoSSS.Application.XNSE_Solver {
         /// advanced operator configuration
         /// </summary>
         public DoNotTouchParameters dntParams;
+
 
         /// <summary>
         /// Controls the domain variables that the operator should contain. <br/>
@@ -177,6 +171,7 @@ namespace BoSSS.Application.XNSE_Solver {
         public DoNotTouchParameters getDntParams {
             get { return dntParams; }
         }
+
 
         public bool[] getDomBlocks {
             get { return DomBlocks; }

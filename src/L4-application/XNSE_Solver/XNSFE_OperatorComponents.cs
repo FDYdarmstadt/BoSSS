@@ -23,6 +23,7 @@ using System.Threading.Tasks;
 using ilPSP;
 using BoSSS.Foundation;
 using BoSSS.Foundation.XDG;
+using BoSSS.Solution.NSECommon;
 using BoSSS.Solution.XNSECommon;
 using BoSSS.Solution.XheatCommon;
 
@@ -39,18 +40,18 @@ namespace BoSSS.Application.XNSE_Solver {
         /// 
         /// </summary>
         /// <param name="XOp"></param>
-        /// <param name="CodName"></param>
+        /// <param name="config"></param>
         /// <param name="d"></param>
         /// <param name="D"></param>
-        /// <param name="BcMap"></param>
-        /// <param name="config"></param>
         /// <param name="LsTrk"></param>
-        public static void AddInterfaceNSE_withEvaporation_component(XSpatialOperatorMk2 XOp, string CodName, int d, int D,
-            XNSFE_OperatorConfiguration config, LevelSetTracker LsTrk) {
+        public static void AddInterfaceNSE_withEvaporation_component(XSpatialOperatorMk2 XOp, XNSFE_OperatorConfiguration config,
+            int d, int D, LevelSetTracker LsTrk) {
 
             // check input
             if (XOp.IsCommited)
                 throw new InvalidOperationException("Spatial Operator is already comitted. Adding of new components is not allowed");
+
+            string CodName = EquationNames.MomentumEquationComponent(d);
             if (!XOp.CodomainVar.Contains(CodName))
                 throw new ArgumentException("CoDomain variable \"" + CodName + "\" is not defined in Spatial Operator");
 
@@ -102,22 +103,17 @@ namespace BoSSS.Application.XNSE_Solver {
 
         }
 
-
         /// <summary>
         /// 
         /// </summary>
         /// <param name="XOp"></param>
-        /// <param name="CodName"></param>
-        /// <param name="BcMap"></param>
         /// <param name="config"></param>
+        /// <param name="D"></param>
         /// <param name="LsTrk"></param>
-        public static void AddInterfaceNSE_withEvaporation(XSpatialOperatorMk2 XOp, string[] CodName,
-            XNSFE_OperatorConfiguration config, LevelSetTracker LsTrk) {
+        public static void AddInterfaceNSE_withEvaporation(XSpatialOperatorMk2 XOp, XNSFE_OperatorConfiguration config, int D, LevelSetTracker LsTrk) {
 
-
-            int D = CodName.Length;
             for (int d = 0; d < D; d++) {
-                AddInterfaceNSE_withEvaporation_component(XOp, CodName[d], d, D, config, LsTrk);
+                AddInterfaceNSE_withEvaporation_component(XOp, config, d, D, LsTrk);
             }
         }
 
@@ -127,17 +123,16 @@ namespace BoSSS.Application.XNSE_Solver {
         /// 
         /// </summary>
         /// <param name="XOp"></param>
-        /// <param name="CodName"></param>
-        /// <param name="_D"></param>
-        /// <param name="BcMap"></param>
         /// <param name="config"></param>
+        /// <param name="D"></param>
         /// <param name="LsTrk"></param>
-        public static void AddInterfaceContinuityEq_withEvaporation(XSpatialOperatorMk2 XOp, string CodName, int D,
-            XNSFE_OperatorConfiguration config, LevelSetTracker LsTrk) {
+        public static void AddInterfaceContinuityEq_withEvaporation(XSpatialOperatorMk2 XOp, XNSFE_OperatorConfiguration config, int D, LevelSetTracker LsTrk) {
 
             // check input
             if (XOp.IsCommited)
                 throw new InvalidOperationException("Spatial Operator is already comitted. Adding of new components is not allowed");
+
+            string CodName = EquationNames.ContinuityEquation;
             if (!XOp.CodomainVar.Contains(CodName))
                 throw new ArgumentException("CoDomain variable \"" + CodName + "\" is not defined in Spatial Operator");
 
@@ -179,22 +174,20 @@ namespace BoSSS.Application.XNSE_Solver {
 
 
 
-
         /// <summary>
         /// 
         /// </summary>
         /// <param name="XOp"></param>
-        /// <param name="CodName"></param>
-        /// <param name="D"></param>
-        /// <param name="BcMap"></param>
         /// <param name="config"></param>
+        /// <param name="D"></param>
         /// <param name="LsTrk"></param>
-        public static void AddInterfaceHeatEq_withEvaporation(XSpatialOperatorMk2 XOp, string CodName, int D,
-            XNSFE_OperatorConfiguration config, LevelSetTracker LsTrk) {
+        public static void AddInterfaceHeatEq_withEvaporation(XSpatialOperatorMk2 XOp, XNSFE_OperatorConfiguration config, int D, LevelSetTracker LsTrk) {
 
             // check input
             if (XOp.IsCommited)
                 throw new InvalidOperationException("Spatial Operator is already comitted. Adding of new components is not allowed");
+
+            string CodName = EquationNames.HeatEquation;
             if (!XOp.CodomainVar.Contains(CodName))
                 throw new ArgumentException("CoDomain variable \"" + CodName + "\" is not defined in Spatial Operator");
 

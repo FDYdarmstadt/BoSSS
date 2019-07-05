@@ -893,18 +893,11 @@ namespace BoSSS.Application.XNSE_Solver {
             // ============================
             // Generate MassMatrix
             // ============================
-
-            
+          
             // mass matrix factory
             MassFact = this.LsTrk.GetXDGSpaceMetrics(this.LsTrk.SpeciesIdS.ToArray(), m_HMForder, 1).MassMatrixFactory;// new MassMatrixFactory(maxB, CurrentAgg);
             var WholeMassMatrix = MassFact.GetMassMatrix(Mapping, MassScale); // mass matrix scaled with density rho
 
-            // ============================
-            //  'FakePoisson'
-            // ============================
-
-            //if (base.Control.FakePoisson)
-            //    OpMtx.Acc(1.0, WholeMassMatrix);
 
             // ============================
             //  Add Gravity
@@ -912,6 +905,7 @@ namespace BoSSS.Application.XNSE_Solver {
             // Dimension: [ rho * G ] = mass / time^2 / len^2 == [ d/dt rho U ]
             var WholeGravity = new CoordinateVector(ArrayTools.Cat<DGField>(this.XDGvelocity != null ? this.XDGvelocity.Gravity.ToArray<DGField>() : this.DGvelocity.Gravity.ToArray<DGField>(), new XDGField(this.Pressure.Basis)));
             WholeMassMatrix.SpMV(1.0, WholeGravity, 1.0, OpAffine);
+
 
             // ============================
             // Set Pressure Reference Point
@@ -2448,17 +2442,17 @@ namespace BoSSS.Application.XNSE_Solver {
 
                     }
 
-                    SinglePhaseField[] Mevap = new SinglePhaseField[D];
-                    for(int d = 0; d < D; d++) {
-                        Mevap[d] = new SinglePhaseField(meanVelocity[0].Basis, "Mevap_d" + d);
-                        double rho_v = 0.0;
-                        if(this.Control.ThermalParameters.hVap_A > 0) {
-                            rho_v = this.Control.PhysicalParameters.rho_B;
-                        } else {
-                            rho_v = this.Control.PhysicalParameters.rho_A;
-                        }
-                        Mevap[d].Acc(rho_v, evapVelocity[d]);
-                    }
+                    //SinglePhaseField[] Mevap = new SinglePhaseField[D];
+                    //for(int d = 0; d < D; d++) {
+                    //    Mevap[d] = new SinglePhaseField(meanVelocity[0].Basis, "Mevap_d" + d);
+                    //    double rho_v = 0.0;
+                    //    if(this.Control.ThermalParameters.hVap_A > 0) {
+                    //        rho_v = this.Control.PhysicalParameters.rho_B;
+                    //    } else {
+                    //        rho_v = this.Control.PhysicalParameters.rho_A;
+                    //    }
+                    //    Mevap[d].Acc(rho_v, evapVelocity[d]);
+                    //}
 
 
                     // evaporation for micro region 
@@ -4457,13 +4451,15 @@ namespace BoSSS.Application.XNSE_Solver {
 
             int D = this.GridData.SpatialDimension;
 
-            string[] CodName = new string[] { "heat" };
+            string[] CodName = new string[] {EquationNames.HeatEquation };
             string[] Params = ArrayTools.Cat(
-                 VariableNames.VelocityVector(D),
-                 (new string[] { "VelocityX_Mean", "VelocityY_Mean", "VelocityZ_Mean" }).GetSubVector(0, D),
-                 (new string[] { "NX", "NY", "NZ" }).GetSubVector(0, D),
-                 (new string[] { "GradTemp0_X", "GradTemp0_Y", "GradTemp0_Z" }.GetSubVector(0, D)),
-                 "Temperature0", "Curvature", "DisjoiningPressure");
+                 VariableNames.Velocity0Vector(D),
+                 VariableNames.Velocity0MeanVector(D),
+                 VariableNames.NormalVector(D),
+                 VariableNames.Temperature0Gradient(D),
+                 VariableNames.Temperature0, 
+                 VariableNames.Curvature,
+                 VariableNames.DisjoiningPressure);
             string[] DomName = new string[] { VariableNames.Temperature };
 
 
@@ -4489,7 +4485,7 @@ namespace BoSSS.Application.XNSE_Solver {
 
 
                 if (XOpConfig.isEvaporation)
-                    XOperatorComponentsFactory.AddInterfaceHeatEq_withEvaporation(Xheat_Operator, CodName[0], D, XOpConfig, LsTrk);
+                    XOperatorComponentsFactory.AddInterfaceHeatEq_withEvaporation(Xheat_Operator, XOpConfig, D, LsTrk);
 
 
                 // finalize

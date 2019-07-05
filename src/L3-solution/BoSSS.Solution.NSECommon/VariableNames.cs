@@ -65,6 +65,76 @@ namespace BoSSS.Solution.NSECommon {
         Viscoelastic
 
     }
+
+
+    /// <summary>
+    /// predefined equations names, that should be used by all Solvers
+    /// </summary>
+    public static class EquationNames {
+
+        /// <summary>
+        /// momentum equation component in x - direction; 
+        /// </summary>
+        public const string MomentumEquationX = "MomentumX";
+
+        /// <summary>
+        /// momentum equation component in y - direction; 
+        /// </summary>
+        public const string MomentumEquationY = "MomentumY";
+
+        /// <summary>
+        /// momentum equation component in z - direction; 
+        /// </summary>
+        public const string MomentumEquationZ = "MomentumZ";
+
+        /// <summary>
+        /// The name of the <paramref name="d"/>-th momentum equation component.
+        /// </summary>
+        /// <param name="d">
+        /// spatial component {0,1} in 2D, {0,1,2} in 3D;
+        /// </param>
+        /// <returns></returns>
+        static public string MomentumEquationComponent(int d) {
+            switch (d) {
+                case 0: return MomentumEquationX;
+                case 1: return MomentumEquationY;
+                case 2: return MomentumEquationZ;
+                default: throw new NotSupportedException("unsupported spatial dimension: d = " + d + ".");
+            }
+        }
+
+        /// <summary>
+        /// vector of momentum equation names
+        /// </summary>
+        /// <param name="D">
+        /// spatial dimension
+        /// </param>
+        public static string[] MomentumEquations(int D) {
+            if (D == 2)
+                return new string[] { MomentumEquationX, MomentumEquationY };
+            else if (D == 3)
+                return new string[] { MomentumEquationX, MomentumEquationY, MomentumEquationZ };
+            else
+                throw new NotSupportedException("unsupported spatial dimension: D = " + D + ".");
+        }
+
+        /// <summary>
+        /// continuity equation
+        /// </summary>
+        public const string ContinuityEquation = "ContiEq";
+
+        /// <summary>
+        /// energy equation
+        /// </summary>
+        public const string EnergyEquation = "EnergyEq";
+
+        /// <summary>
+        /// heat equation
+        /// </summary>
+        public const string HeatEquation = "HeatEq";
+
+    }
+
     
     /// <summary>
     /// predefined variable names for velocity, pressure, etc. that should be used
@@ -314,6 +384,7 @@ namespace BoSSS.Solution.NSECommon {
         /// </summary>
         public const string Rho = "Density";
 
+
         /// <summary>
         /// variable name for temperature
         /// </summary>
@@ -328,6 +399,73 @@ namespace BoSSS.Solution.NSECommon {
         /// variable name for mean value of temperature (linearization point)
         /// </summary>
         public const string Temperature0Mean = "Temperature0Mean";
+
+        /// <summary>
+        /// x - component of the Tenperature gradient
+        /// </summary>
+        public const string TemperatureGradient0 = "TemperatureGradient[0]";
+
+        /// <summary>
+        /// y - component of the Tenperature gradient
+        /// </summary>
+        public const string TemperatureGradient1 = "TemperatureGradient[1]";
+
+        /// <summary>
+        /// z - component of the Tenperature gradient
+        /// </summary>
+        public const string TemperatureGradient2 = "TemperatureGradient[2]";
+
+        /// <summary>
+        /// x - component of the Tenperature gradient (linearization point)
+        /// </summary>
+        public const string Temperature0Gradient0 = "Temperature0Gradient[0]";
+
+        /// <summary>
+        /// y - component of the Tenperature gradient (linearization point)
+        /// </summary>
+        public const string Temperature0Gradient1 = "Temperature0Gradient[1]";
+
+        /// <summary>
+        /// z - component of the Tenperature gradient (linearization point)
+        /// </summary>
+        public const string Temperature0Gradient2 = "Temperature0Gradient[2]";
+
+        /// <summary>
+        /// variable name for the Gradient of the Temperature
+        /// </summary>
+        static public string[] TemperatureGradient(int D) {
+            switch (D) {
+                case 1: return new string[] { TemperatureGradient0 };
+                case 2: return new string[] { TemperatureGradient0, TemperatureGradient1 };
+                case 3: return new string[] { TemperatureGradient0, TemperatureGradient1, TemperatureGradient2 };
+                default: throw new NotSupportedException("unsupported number of species.");
+            }
+        }
+
+        /// <summary>
+        /// Components of the Temeprature gradient
+        /// </summary>
+        static public string TemperatureGradientComponent(int i) {
+            switch (i) {
+                case 0: return TemperatureGradient0;
+                case 1: return TemperatureGradient1;
+                case 2: return TemperatureGradient2;
+                default: throw new NotSupportedException("unsupported number of species.");
+            }
+        }
+
+        /// <summary>
+        /// variable name for the Gradient of the Temperature (linearization point)
+        /// </summary>
+        static public string[] Temperature0Gradient(int D) {
+            switch (D) {
+                case 1: return new string[] { Temperature0Gradient0 };
+                case 2: return new string[] { Temperature0Gradient0, Temperature0Gradient1 };
+                case 3: return new string[] { Temperature0Gradient0, Temperature0Gradient1, Temperature0Gradient2 };
+                default: throw new NotSupportedException("unsupported number of species.");
+            }
+        }
+
 
         /// <summary>
         /// variable name for a single Level Set
@@ -372,6 +510,96 @@ namespace BoSSS.Solution.NSECommon {
                 default: throw new NotSupportedException("unsupported number of species.");
             }
         }
+
+
+        /// <summary>
+        /// Interface normal component in x - direction;
+        /// </summary>
+        public const string NormalX = "NormalX";
+
+        /// <summary>
+        /// Interface normal component in y - direction;
+        /// </summary>
+        public const string NormalY = "NormalY";
+
+        /// <summary>
+        /// Interface normal component in z - direction;
+        /// </summary>
+        public const string NormalZ = "NormalZ";
+
+        /// <summary>
+        /// mean curvature of the interface
+        /// </summary>
+        public const string Curvature = "Curvature";
+
+        /// <summary>
+        /// artificial surface force (usually only used in manufactured solutions) - x component
+        /// </summary>
+        public const string SurfaceForceX = "SurfaceForceX";
+
+        /// <summary>
+        /// artificial surface force (usually only used in manufactured solutions) - y component
+        /// </summary>
+        public const string SurfaceForceY = "SurfaceForceY";
+
+        /// <summary>
+        /// artificial surface force (usually only used in manufactured solutions) - z component
+        /// </summary>
+        public const string SurfaceForceZ = "SurfaceForceZ";
+
+        /// <summary>
+        /// additional pressure near walls due to intermolecular forces
+        /// </summary>
+        public const string DisjoiningPressure = "DisjoiningPressure";
+
+        /// <summary>
+        /// variable name for the interface normal
+        /// </summary>
+        static public string[] NormalVector(int D) {
+            switch (D) {
+                case 1: return new string[] { NormalX };
+                case 2: return new string[] { NormalX, NormalY };
+                case 3: return new string[] { NormalX, NormalY, NormalZ };
+                default: throw new NotSupportedException("unsupported number of species.");
+            }
+        }
+
+        /// <summary>
+        /// Components of the interface normal
+        /// </summary>
+        static public string NormalVectorComponent(int i) {
+            switch (i) {
+                case 0: return NormalX;
+                case 1: return NormalY;
+                case 2: return NormalZ;
+                default: throw new NotSupportedException("unsupported number of species.");
+            }
+        }
+
+        /// <summary>
+        /// variable name for the surface force
+        /// </summary>
+        static public string[] SurfaceForceVector(int D) {
+            switch (D) {
+                case 1: return new string[] { SurfaceForceX };
+                case 2: return new string[] { SurfaceForceX, SurfaceForceY };
+                case 3: return new string[] { SurfaceForceX, SurfaceForceY, SurfaceForceZ };
+                default: throw new NotSupportedException("unsupported number of species.");
+            }
+        }
+
+        /// <summary>
+        /// Components of the surface force
+        /// </summary>
+        static public string SurfaceForceComponent(int i) {
+            switch (i) {
+                case 0: return SurfaceForceX;
+                case 1: return SurfaceForceY;
+                case 2: return SurfaceForceZ;
+                default: throw new NotSupportedException("unsupported number of species.");
+            }
+        }
+
 
         /// <summary>
         ///  x - component of cell-wise mean value of the Level-Set gradient
