@@ -54,6 +54,8 @@
     <Compile Include="BlockJacobi.cs" />
     <Compile Include="ClassicMultigrid.cs" />
     <Compile Include="ConvergenceObserver.cs" />
+    <Compile Include="DynamicMultigrid.cs" />
+    <Compile Include="OrthonormalizationMultigrid.cs" />
     <Compile Include="SolverChooser.cs" />
     <Compile Include="SparseSolver.cs" />
     <Compile Include="ExtensionMethods.cs" />

@@ -942,7 +942,7 @@ namespace BoSSS.Application.SipPoisson {
 
                     Action<int, double[], double[], MultigridOperator>[] ItCallbacks_Kollekte = { CustomItCallback, CO.ResItCallbackAtAll };
                     SF.GenerateLinear(out solver, MgSeq, MgConfig, ItCallbacks_Kollekte);
-                    
+
                     using (new BlockTrace("Solver_Init", tr)) {
                         solver.Init(MultigridOp);
                     }
@@ -952,10 +952,17 @@ namespace BoSSS.Application.SipPoisson {
                     Console.WriteLine("Running solver...");
                     var solverIteration = new Stopwatch();
                     solverIteration.Start();
+                    T.Clear();
+                    T.ProjectField(X => X[0] * X[1]);
                     double[] T2 = this.T.CoordinateVector.ToArray();
                     using (new BlockTrace("Solver_Run", tr)) {
                         solver.ResetStat();
-                        T2.Clear();
+                        //Random rnd = new Random();
+                        //for(int i = 0; i < T2.Length; i++) {
+                        //    T2[i] = rnd.NextDouble();
+                        //}
+                        //T2.ClearEntries();
+                        
                         var RHSvec = RHS.CoordinateVector.ToArray();
                         BLAS.daxpy(RHSvec.Length, -1.0, this.LaplaceAffine, 1, RHSvec, 1);
                         MultigridOp.UseSolver(solver, T2, RHSvec);

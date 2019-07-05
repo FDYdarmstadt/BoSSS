@@ -599,6 +599,7 @@ namespace BoSSS.Solution {
 
                 case LinearSolverConfig.Code.exp_Kcycle_schwarz:
                     templinearSolve = KcycleMultiSchwarz(lc, LocalDOF);
+                    //templinearSolve = new DynamicMultigrid();
                     break;
 
                 //testing area, please wear a helmet ...
@@ -800,6 +801,7 @@ namespace BoSSS.Solution {
                 string Its = "";
                 Array.ForEach<int>(m_Iterations, i => Its += i.ToString() + ",");
                 Console.WriteLine("{0} : {1}, {2}, {3}, {4}", Its, names, res, bla, Mgop.LevelIndex);
+               
             };
         }
 
@@ -1313,18 +1315,14 @@ namespace BoSSS.Solution {
         /// 
         /// </summary>
         ISolverSmootherTemplate KcycleMultiSchwarz(LinearSolverConfig _lc, int[] _LocalDOF) {
-            var solver = new OrthonormalizationScheme() {
-                MaxIter = 500,
-                Tolerance = 1.0e-10,
-
-            };
+            
 
             // my tests show that the ideal block size may be around 10'000
             int DirectKickIn = _lc.TargetBlockSize;
 
 
             //MultigridOperator Current = op;
-            var PrecondChain = new List<ISolverSmootherTemplate>();
+            var SolverChain = new List<ISolverSmootherTemplate>();
             for (int iLevel = 0; iLevel < _lc.NoOfMultigridLevels; iLevel++) {
                 int SysSize = _LocalDOF[iLevel].MPISum();
                 int NoOfBlocks = (int)Math.Ceiling(((double)SysSize) / ((double)DirectKickIn));
@@ -1333,13 +1331,7 @@ namespace BoSSS.Solution {
                 useDirect |= (SysSize < DirectKickIn);
                 useDirect |= iLevel == _lc.NoOfMultigridLevels - 1;
                 useDirect |= NoOfBlocks.MPISum() <= 1;
-                //if (iLevel == 0) {
-                //    useDirect = false;
-                //    NoOfBlocks = Math.Max(NoOfBlocks, 4);
-                //}
-                //if (iLevel == 1) {
-                //    useDirect = true;
-                //}
+                
 
                 if(iLevel == 0)
                     Console.WriteLine("No of block on level 0 : " + NoOfBlocks);
@@ -1350,9 +1342,10 @@ namespace BoSSS.Solution {
                         WhichSolver = SparseSolver._whichSolver.PARDISO,
                         TestSolution = false
                     };
+
                 } else {
 
-                    Schwarz swz1 = new Schwarz() {
+                    var smoother = new Schwarz() {
                         m_MaxIterations = 1,
                         CoarseSolver = null,
                         m_BlockingStrategy = new Schwarz.METISBlockingStrategy() {
@@ -1361,35 +1354,18 @@ namespace BoSSS.Solution {
                         Overlap = 2 // overlap seems to help
                     };
 
-                    //SoftPCG pcg1 = new SoftPCG() {
-                    //    m_MinIterations = 5,
-                    //    m_MaxIterations = 5
-                    //};
-
-                    //*/
-
-                    //var pre = new SolverSquence() {
-                    //    SolverChain = new ISolverSmootherTemplate[] { swz1, pcg1 }
-                    //};
-
-                    levelSolver = swz1;
+                    levelSolver = new OrthonormalizationMultigrid() {
+                        m_MaxIterations = 1,
+                        Smoother = smoother,
+                    };
                 }
+                SolverChain.Add(levelSolver);
 
                 if (iLevel > 0) {
 
-                    GenericRestriction[] R = new GenericRestriction[iLevel];
-                    for (int ir = 0; ir < R.Length; ir++) {
-                        R[ir] = new GenericRestriction();
-                        if (ir >= 1)
-                            R[ir - 1].CoarserLevelSolver = R[ir];
-                    }
-                    R[iLevel - 1].CoarserLevelSolver = levelSolver;
-                    PrecondChain.Add(R[0]);
-
-                } else {
-                    PrecondChain.Add(levelSolver);
-                }
-
+                    ((OrthonormalizationMultigrid)(SolverChain[iLevel - 1])).CoarserLevelSolver = levelSolver;
+                    
+                } 
 
                 if (useDirect) {
                     Console.WriteLine("Kswz: using {0} levels, lowest level DOF is {1}, target size is {2}.", iLevel + 1, SysSize, DirectKickIn);
@@ -1400,24 +1376,9 @@ namespace BoSSS.Solution {
             }
 
 
-            if (PrecondChain.Count > 1) {
-                /*
-                // construct a V-cycle
-                for (int i = PrecondChain.Count - 2; i>= 0; i--) {
-                    PrecondChain.Add(PrecondChain[i]);
-                }
-                */
+            
 
-                var tmp = PrecondChain.ToArray();
-                for (int i = 0; i < PrecondChain.Count; i++) {
-                    PrecondChain[i] = tmp[PrecondChain.Count - 1 - i];
-                }
-            }
-
-            solver.PrecondS = PrecondChain.ToArray();
-            solver.MaxKrylovDim = 100;// solver.PrecondS.Length * 4;
-
-            return solver;
+            return SolverChain[0];
         }
     }
 }
