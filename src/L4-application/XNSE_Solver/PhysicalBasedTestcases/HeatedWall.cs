@@ -633,9 +633,6 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
         /// <summary>
         /// 
         /// </summary>
-        /// <param name="p"></param>
-        /// <param name="kelemR"></param>
-        /// <param name="_DbPath"></param>
         /// <returns></returns>
         public static XNSE_Control ThermodynamicEquilibrium_Test(int p = 2, int kelemR = 17, string _DbPath = null) {
 
@@ -891,12 +888,267 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
         }
 
 
-        public static XNSE_Control MicroLayerRegime_Test(int p = 2, int kelem = 64, string _DbPath = null) {
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <returns></returns>
+        public static XNSE_Control DropVaporization(int p = 2, int kelem = 16, string _DbPath = null) {
 
             XNSE_Control C = new XNSE_Control();
 
 
             //C.CutCellQuadratureType = XQuadFactoryHelper.MomentFittingVariants.Classic;
+
+            //_DbPath = @"\\dc1\userspace\smuda\cluster\CapillaryRise\CapillaryRise_studyDB";
+
+            // basic database options
+            // ======================
+            #region db
+
+            C.DbPath = _DbPath;
+            C.savetodb = false; // C.DbPath != null;
+            C.ProjectName = "XNSE/DropVaporization";
+
+            C.ContinueOnIoError = false;
+
+            #endregion
+
+
+            // DG degrees
+            // ==========
+            #region degrees
+
+            C.FieldOptions.Add("VelocityX", new FieldOpts() {
+                Degree = p,
+                SaveToDB = FieldOpts.SaveToDBOpt.TRUE
+            });
+            C.FieldOptions.Add("VelocityY", new FieldOpts() {
+                Degree = p,
+                SaveToDB = FieldOpts.SaveToDBOpt.TRUE
+            });
+            C.FieldOptions.Add("Pressure", new FieldOpts() {
+                Degree = p - 1,
+                SaveToDB = FieldOpts.SaveToDBOpt.TRUE
+            });
+            C.FieldOptions.Add("PhiDG", new FieldOpts() {
+                SaveToDB = FieldOpts.SaveToDBOpt.TRUE
+            });
+            C.FieldOptions.Add("Phi", new FieldOpts() {
+                Degree = p,
+                SaveToDB = FieldOpts.SaveToDBOpt.TRUE
+            });
+            C.FieldOptions.Add("Curvature", new FieldOpts() {
+                Degree = p,
+                SaveToDB = FieldOpts.SaveToDBOpt.TRUE
+            });
+            C.FieldOptions.Add("GravityY", new FieldOpts() {
+                Degree = p,
+                SaveToDB = FieldOpts.SaveToDBOpt.TRUE
+            });
+            C.FieldOptions.Add("Temperature", new FieldOpts() {
+                Degree = p,
+                SaveToDB = FieldOpts.SaveToDBOpt.TRUE
+            });
+
+            #endregion
+
+
+            // Physical Parameters
+            // ===================
+            #region physics
+
+
+            // Water (A: liquid, B: vapor)
+            C.PhysicalParameters.rho_A = 200;
+            C.PhysicalParameters.rho_B = 5;
+            C.PhysicalParameters.mu_A = 0.1;
+            C.PhysicalParameters.mu_B = 0.005;
+            C.PhysicalParameters.Sigma = 0.1;
+
+            C.solveCoupledHeatEquation = true;
+            C.ThermalParameters.rho_A = C.PhysicalParameters.rho_A;
+            C.ThermalParameters.rho_B = C.PhysicalParameters.rho_B;
+            C.ThermalParameters.c_A = 400;
+            C.ThermalParameters.c_B = 200;
+            C.ThermalParameters.k_A = 40;
+            C.ThermalParameters.k_B = 1;
+
+
+            if (C.solveCoupledHeatEquation) {
+                C.ThermalParameters.hVap_A = 10e+3;
+                C.ThermalParameters.hVap_B = 10e+3;
+            }
+
+            double T_sat = 0.0;
+            C.ThermalParameters.T_sat = T_sat;
+            //double pSat = 10;
+            //C.ThermalParameters.p_sat = pSat;
+
+
+            C.PhysicalParameters.IncludeConvection = true;
+            C.ThermalParameters.IncludeConvection = true;
+            C.PhysicalParameters.Material = false;
+
+            #endregion
+
+
+            // grid generation
+            // ===============
+            #region grid
+
+            double g = 9.81;
+            double lambda = 2 * Math.PI * Math.Sqrt(3*0.1/(-g*(5-200)));
+
+            C.GridFunc = delegate () {
+                double[] Xnodes = GenericBlas.Linspace(-lambda / 2.0, lambda / 2.0, kelem + 1);
+                double[] Ynodes = GenericBlas.Linspace(-lambda / 2.0, lambda / 2.0, kelem + 1);
+                var grd = Grid2D.Cartesian2DGrid(Xnodes, Ynodes, periodicX: false);
+
+
+                grd.EdgeTagNames.Add(1, "pressure_outlet_ConstantTemperature");
+
+
+                grd.DefineEdgeTags(delegate (double[] X) {
+                    byte et = 0;
+                    if (Math.Abs(X[1] + (lambda / 2.0)) <= 1.0e-8)
+                        et = 1;
+                    if (Math.Abs(X[0] - (lambda / 2.0)) <= 1.0e-8)
+                        et = 1;
+                    if (Math.Abs(X[1] - (lambda / 2.0)) <= 1.0e-8)
+                        et = 1;
+                    if (Math.Abs(X[0] + (lambda / 2.0)) <= 1.0e-8)
+                        et = 1;
+
+                    return et;
+                });
+
+                return grd;
+            };
+
+            #endregion
+
+
+            // Initial Values
+            // ==============
+            #region init
+
+            double R = 0.02;
+            double[] center = new double[] { 0, 0 };
+
+            Func<double[], double> PhiFunc = (X => ((X[0] - center[0]).Pow2() + (X[1] - center[1]).Pow2()).Sqrt() - R);
+
+            C.InitialValues_Evaluators.Add("Phi", PhiFunc);
+
+
+            //C.InitialValues_Evaluators.Add("GravityY#A", (X => -g));
+            //C.InitialValues_Evaluators.Add("GravityY#B", (X => -g));
+
+
+            #endregion
+
+
+            // boundary conditions
+            // ===================
+            #region BC
+
+
+            C.AddBoundaryValue("pressure_Outlet_ConstantTemperature", "Temperature#A", (X, t) => 10);
+            C.AddBoundaryValue("pressure_Outlet_ConstantTemperature", "Temperature#B", (X, t) => 10);
+
+
+            #endregion
+
+
+            // misc. solver options
+            // ====================
+            #region solver
+
+            C.ComputeEnergy = false;
+
+            C.LSContiProjectionMethod = Solution.LevelSetTools.ContinuityProjectionOption.ContinuousDG;
+
+            C.VelocityBlockPrecondMode = MultigridOperator.Mode.SymPart_DiagBlockEquilib;
+            C.LinearSolver.NoOfMultigridLevels = 1;
+            C.NonLinearSolver.MaxSolverIterations = 50;
+            C.LinearSolver.MaxSolverIterations = 50;
+            //C.Solver_MaxIterations = 50;
+            C.NonLinearSolver.ConvergenceCriterion = 1e-8;
+            C.LinearSolver.ConvergenceCriterion = 1e-8;
+            //C.Solver_ConvergenceCriterion = 1e-8;
+            C.LevelSet_ConvergenceCriterion = 1e-6;
+
+
+            C.AdvancedDiscretizationOptions.FilterConfiguration = CurvatureAlgorithms.FilterConfiguration.NoFilter;
+
+            C.AdvancedDiscretizationOptions.SurfStressTensor = SurfaceSressTensor.Isotropic;
+            //C.PhysicalParameters.mu_I = dt * 0.2;
+            C.AdvancedDiscretizationOptions.UseLevelSetStabilization = false;
+
+            C.AdvancedDiscretizationOptions.SST_isotropicMode = Solution.XNSECommon.SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_ContactLine;
+            //C.AdvancedDiscretizationOptions.CurvatureNeeded = true;
+
+
+            C.AdaptiveMeshRefinement = true;
+            C.RefineStrategy = XNSE_Control.RefinementStrategy.constantInterface;
+            C.RefineNavierSlipBoundary = false;
+            C.BaseRefinementLevel = 1;
+            C.AMR_startUpSweeps = 1;
+
+            #endregion
+
+
+            // level-set
+            // =========
+            #region levelset
+
+            C.Option_LevelSetEvolution = LevelSetEvolution.FastMarching;
+
+            #endregion
+
+
+            // Timestepping
+            // ============
+            #region time
+
+            C.Timestepper_Scheme = XNSE_Control.TimesteppingScheme.ImplicitEuler;
+            C.Timestepper_BDFinit = TimeStepperInit.SingleInit;
+            C.Timestepper_LevelSetHandling = LevelSetHandling.LieSplitting;
+
+            C.CompMode = AppControl._CompMode.Transient;
+            C.dtMax = 5e-4;
+            C.dtMin = 5e-4;
+            C.Endtime = 6;
+            C.NoOfTimesteps = 12000;
+            C.saveperiod = 1;
+
+            #endregion
+
+
+            return C;
+
+        }
+
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <returns></returns>
+        public static XNSE_Control FilmBoiling(int p = 2, int kelem = 16, string _DbPath = null) {
+
+            XNSE_Control C = new XNSE_Control();
+
+
+            return C;
+
+        }
+
+
+        public static XNSE_Control MicroLayerRegime_Test(int p = 2, int kelem = 32, string _DbPath = null) {
+
+            XNSE_Control C = new XNSE_Control();
+
+
+            C.CutCellQuadratureType = XQuadFactoryHelper.MomentFittingVariants.Classic;
 
             //_DbPath = @"\\dc1\userspace\smuda\cluster\CapillaryRise\CapillaryRise_studyDB";
 
@@ -941,6 +1193,10 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
                 Degree = p,
                 SaveToDB = FieldOpts.SaveToDBOpt.TRUE
             });
+            C.FieldOptions.Add("GravityY", new FieldOpts() {
+                Degree = p,
+                SaveToDB = FieldOpts.SaveToDBOpt.TRUE
+            });
             C.FieldOptions.Add("Temperature", new FieldOpts() {
                 Degree = p,
                 SaveToDB = FieldOpts.SaveToDBOpt.TRUE
@@ -963,7 +1219,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             C.PhysicalParameters.mu_B = mu_l;
             C.PhysicalParameters.Sigma = 0.058;
 
-            C.solveCoupledHeatEquation = true;
+            C.solveCoupledHeatEquation = false;
             C.ThermalParameters.rho_A = C.PhysicalParameters.rho_A;
             C.ThermalParameters.rho_B = C.PhysicalParameters.rho_B;
             C.ThermalParameters.c_A = 2034;
@@ -975,8 +1231,8 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
 
 
             if (C.solveCoupledHeatEquation) {
-                C.ThermalParameters.hVap_A = -2.256e6;
-                C.ThermalParameters.hVap_B = 2.256e6;
+                C.ThermalParameters.hVap_A = -2.256e+6;
+                C.ThermalParameters.hVap_B = 2.256e+6;
             }
 
             double T_sat = 373.12;
@@ -986,7 +1242,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
 
 
             C.PhysicalParameters.IncludeConvection = true;
-            C.ThermalParameters.IncludeConvection = true;
+            C.ThermalParameters.IncludeConvection = false;
             C.PhysicalParameters.Material = false;
 
             #endregion
@@ -997,6 +1253,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             #region grid
 
             double L = 2e-3;
+            double hmin = L / kelem;
 
             C.GridFunc = delegate () {
                 double[] Xnodes = GenericBlas.Linspace(0, L, kelem + 1);
@@ -1004,7 +1261,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
                 var grd = Grid2D.Cartesian2DGrid(Xnodes, Ynodes, periodicX: false);
 
 
-                    grd.EdgeTagNames.Add(1, "wall_ConstantTemperature_lower");
+                    grd.EdgeTagNames.Add(1, "navierslip_linear_ConstantTemperature_lower");
                     grd.EdgeTagNames.Add(2, "pressure_Outlet_ZeroGradient_right");
                     grd.EdgeTagNames.Add(3, "pressure_Outlet_ZeroGradient_upper");
                     grd.EdgeTagNames.Add(4, "slipsymmetry_ZeroGradient_left");
@@ -1036,6 +1293,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
 
             double R = 0.06e-3;
             double Theta_e = Math.PI * (13.0 / 18.0);
+            C.PhysicalParameters.theta_e = Theta_e;
             double s = 2 * R * Math.Sin(Theta_e);
             double h = Math.Sqrt(R.Pow2() - (0.25 * s.Pow2()));
 
@@ -1066,8 +1324,11 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
                 return Temp;
             };
 
-            C.InitialValues_Evaluators.Add("Temperature#A", TempFunc);
-            C.InitialValues_Evaluators.Add("Temperature#B", TempFunc);
+            //C.InitialValues_Evaluators.Add("Temperature#A", (X => T_sat));
+            //C.InitialValues_Evaluators.Add("Temperature#B", TempFunc);
+
+            C.InitialValues_Evaluators.Add("GravityY#A", (X => -g));
+            C.InitialValues_Evaluators.Add("GravityY#B", (X => -g));
 
 
             #endregion
@@ -1078,12 +1339,17 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             #region BC
 
 
-            C.AddBoundaryValue("wall_ConstantTemperature_lower", "Temperature#A", (X, t) => T_w);
-            C.AddBoundaryValue("wall_ConstantTemperature_lower", "Temperature#B", (X, t) => T_w);
+            C.AddBoundaryValue("navierslip_linear_ConstantTemperature_lower", "Temperature#A", (X, t) => T_w);
+            C.AddBoundaryValue("navierslip_linear_ConstantTemperature_lower", "Temperature#B", (X, t) => T_w);
 
             C.AddBoundaryValue("pressure_Outlet_ZeroGradient_right");
             C.AddBoundaryValue("pressure_Outlet_ZeroGradient_upper");
             C.AddBoundaryValue("slipsymmetry_ZeroGradient_left");
+
+
+            C.AdvancedDiscretizationOptions.GNBC_Localization = NavierSlip_Localization.Bulk;
+            C.AdvancedDiscretizationOptions.GNBC_SlipLength = NavierSlip_SlipLength.Prescribed_SlipLength;
+            C.PhysicalParameters.sliplength = hmin / 2.0;
 
 
             #endregion
@@ -1118,10 +1384,11 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             //C.AdvancedDiscretizationOptions.CurvatureNeeded = true;
 
 
-            C.AdaptiveMeshRefinement = false;
+            C.AdaptiveMeshRefinement = true;
             C.RefineStrategy = XNSE_Control.RefinementStrategy.constantInterface;
-            C.RefineNavierSlipBoundary = false;
-            C.BaseRefinementLevel = 1;
+            C.RefineNavierSlipBoundary = true;
+            C.BaseRefinementLevel = 3;
+            C.AMR_startUpSweeps = 3;
 
             #endregion
 
@@ -1144,10 +1411,10 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             C.Timestepper_LevelSetHandling = LevelSetHandling.LieSplitting;
 
             C.CompMode = AppControl._CompMode.Transient;
-            C.dtMax = 1e-5;
-            C.dtMin = 1e-5;
-            C.Endtime = 1e-4;
-            C.NoOfTimesteps = 100;
+            C.dtMax = 1e-7;
+            C.dtMin = 1e-7;
+            C.Endtime = 1e-3;
+            C.NoOfTimesteps = 1000;
             C.saveperiod = 1;
 
             #endregion

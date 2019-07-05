@@ -1724,7 +1724,8 @@ namespace BoSSS.Solution {
                 csMPI.Raw.Barrier(csMPI.Raw._COMM.WORLD);
 
                 int i = i0.MajorNumber;
-                this.MpiRedistributeAndMeshAdapt(i, physTime);
+                for(int s = 0; s < this.Control.AMR_startUpSweeps; s++)
+                    this.MpiRedistributeAndMeshAdapt(i, physTime);
 
                 for (i = i0.MajorNumber + 1; (i <= i0.MajorNumber + (long)NoOfTimesteps) && EndTime - physTime > 1.0E-10 && !TerminationKey; i++) {
                     tr.Info("performing timestep " + i + ", physical time = " + physTime);

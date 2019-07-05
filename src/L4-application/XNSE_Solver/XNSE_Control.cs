@@ -168,8 +168,8 @@ namespace BoSSS.Application.XNSE_Solver {
         /// <summary>
         /// option for clearing the velocities for restart
         /// </summary>
-        [DataMember]
-        public bool ClearVelocitiesOnRestart = false;
+        //[DataMember]
+        //public bool ClearVelocitiesOnRestart = false;
 
         [DataMember]
         public int ReInitPeriod = 0;

@@ -800,6 +800,12 @@ namespace BoSSS.Solution.Control {
         public bool AdaptiveMeshRefinement = false;
 
         /// <summary>
+        /// number of AMR-sweeps before simulation start
+        /// </summary>
+        [DataMember]
+        public int AMR_startUpSweeps = 1;
+
+        /// <summary>
         /// Actual type of cut cell quadrature to use; If no XDG, is used, resp. no cut cells are present,
         /// this setting has no effect.
         /// </summary>

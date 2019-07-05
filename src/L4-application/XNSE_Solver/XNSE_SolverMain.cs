@@ -203,13 +203,6 @@ namespace BoSSS.Application.XNSE_Solver {
         /// </summary>
         VelocityRelatedVars<XDGField> XDGvelocity;
 
-        //// <summary>
-        //// Continuous high-order finite element basis for the level-set in toder to ensure continuity,
-        //// see <see cref="XNSE_Control.EnforceLevelSetContinuity"/>.
-        //// </summary>
-        //SpecFemBasis ContinuousLevelSetBasis;
-
-        //Basis ContinuousLevelSetDGBasis;
 
         /// <summary>
         /// The velocity for the level-set evolution; 
@@ -289,8 +282,10 @@ namespace BoSSS.Application.XNSE_Solver {
                     this.ResidualHeat = new XDGField(this.Temperature.Basis, "ResidualHeat");
                     base.RegisterField(this.ResidualHeat);
 
-                    this.Heatflux = new VectorField<XDGField>(D.ForLoop(d => new XDGField(new XDGBasis(this.LsTrk, this.Control.FieldOptions[VariableNames.Temperature].Degree), "Heatflux_[" + d + "]")));
+                    this.Heatflux = new VectorField<XDGField>(D.ForLoop(d => new XDGField(new XDGBasis(this.LsTrk, this.Control.FieldOptions[VariableNames.Temperature].Degree - 1), "Heatflux_[" + d + "]")));
                     base.RegisterField(this.Heatflux);
+                    this.EvapFlowRate = new SinglePhaseField(new Basis(this.LsTrk.GridDat, this.Control.FieldOptions[VariableNames.Temperature].Degree - 1), "EvapFlowRate");
+                    base.RegisterField(this.EvapFlowRate);
 
                     this.DisjoiningPressure = new SinglePhaseField(new Basis(this.GridData, this.Control.FieldOptions[VariableNames.Pressure].Degree), "DisjoiningPressure");
                     if(this.Control.DisjoiningPressureFunc != null) {
@@ -396,11 +391,10 @@ namespace BoSSS.Application.XNSE_Solver {
         /// <summary>
         /// the spatial operator (momentum and continuity equation)
         /// </summary>
-        //XNSE_OperatorFactory XNSE_Operator;
         XNSFE_OperatorFactory XNSFE_Operator;
 
         /// <summary>
-        /// OperatorConfiguration for the <see cref="XNSE_Operator"/>
+        /// OperatorConfiguration for the <see cref="XNSFE_Operator"/>
         /// </summary>
         XNSFE_OperatorConfiguration XOpConfig;
 
@@ -741,6 +735,13 @@ namespace BoSSS.Application.XNSE_Solver {
 
                 Debug.Assert(object.ReferenceEquals(this.MultigridSequence[0].ParentGrid, this.GridData));
 
+
+                if (this.Control.AdaptiveMeshRefinement && hack_TimestepIndex == 0) {
+                    base.SetInitial();
+                    this.InitLevelSet();
+                }
+
+
                 m_BDF_Timestepper.DataRestoreAfterBalancing(L, 
                     ArrayTools.Cat<DGField>(this.XDGvelocity.Velocity.ToArray(), this.Pressure), 
                     ArrayTools.Cat<DGField>(this.XDGvelocity.ResidualMomentum.ToArray(), this.ResidualContinuity), 
@@ -853,9 +854,9 @@ namespace BoSSS.Application.XNSE_Solver {
                        
 
 
-            // ============================
+            // ====================================
             // something with surface tension ?????
-            // ============================
+            // ====================================
 
             {
                 if (this.Control.PhysicalParameters.useArtificialSurfaceForce == true)
@@ -1710,15 +1711,11 @@ namespace BoSSS.Application.XNSE_Solver {
 
             //PlotCurrentState(hack_Phystime, new TimestepNumber(new int[] { hack_TimestepIndex, 20 }), 2);
 
-            // hack for restart
-            //Console.WriteLine("Warning: hack for restart!");
-            //this.XDGvelocity.Gravity[1].GetSpeciesShadowField("A").AccConstant(-9.81e2);
-            //this.XDGvelocity.Gravity[1].GetSpeciesShadowField("B").AccConstant(-9.81e2);
 
-            if(this.Control.ClearVelocitiesOnRestart) {
-                Console.WriteLine("clearing all velocities");
-                this.XDGvelocity.Velocity.Clear();
-            }                
+            //if (this.Control.ClearVelocitiesOnRestart) {
+            //    Console.WriteLine("clearing all velocities");
+            //    this.XDGvelocity.Velocity.Clear();
+            //}
              
 
             // Load the sample Points for the restart of the Fourier LevelSet
@@ -2441,7 +2438,7 @@ namespace BoSSS.Application.XNSE_Solver {
                                        }
 
 
-                                       double mEvap = -0.1; // qEvap / hVap; // mass flux
+                                       double mEvap = qEvap / hVap; // mass flux
                                        //result[j, k] = mEvap * ((1 / rho_v) - (1 / rho_l)) * Normals[j, k, d];   //
                                        result[j, k] = mEvap * (1 / rho_v) * Normals[j, k, d];   //
                                        //result[j, k] = - Normals[j, k, d];   //
@@ -2534,18 +2531,18 @@ namespace BoSSS.Application.XNSE_Solver {
 
 
                     // check interface velocity
-                    int p = evapVelocity[0].Basis.Degree;
-                    SubGrid sgrd = LsTrk.Regions.GetCutCellSubgrid4LevSet(0);
-                    NodeSet[] Nodes = LsTrk.GridDat.Grid.RefElements.Select(Kref => Kref.GetQuadratureRule(p * 2).Nodes).ToArray();
+                    //int p = evapVelocity[0].Basis.Degree;
+                    //SubGrid sgrd = LsTrk.Regions.GetCutCellSubgrid4LevSet(0);
+                    //NodeSet[] Nodes = LsTrk.GridDat.Grid.RefElements.Select(Kref => Kref.GetQuadratureRule(p * 2).Nodes).ToArray();
 
-                    var cp = new ClosestPointFinder(LsTrk, 0, sgrd, Nodes);
+                    //var cp = new ClosestPointFinder(LsTrk, 0, sgrd, Nodes);
 
-                    MultidimensionalArray[] VelocityEval = evapVelocity.Select(sf => cp.EvaluateAtCp(sf)).ToArray();
+                    //MultidimensionalArray[] VelocityEval = evapVelocity.Select(sf => cp.EvaluateAtCp(sf)).ToArray();
 
-                    double nNodes = VelocityEval[0].Length;
-                    double evapVelX = VelocityEval[0].Sum() / nNodes;
-                    double evapVelY = VelocityEval[1].Sum() / nNodes;
-                    Console.WriteLine("EvapVelocity: ({0},{1})", evapVelX, evapVelY);
+                    //double nNodes = VelocityEval[0].Length;
+                    //double evapVelX = VelocityEval[0].Sum() / nNodes;
+                    //double evapVelY = VelocityEval[1].Sum() / nNodes;
+                    //Console.WriteLine("EvapVelocity: ({0},{1})", evapVelX, evapVelY);
 
 
                     // construct evolution velocity
@@ -4345,6 +4342,8 @@ namespace BoSSS.Application.XNSE_Solver {
 
 
         VectorField<XDGField> Heatflux;
+
+        SinglePhaseField EvapFlowRate;
 
 
         /// <summary>

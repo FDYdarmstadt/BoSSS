@@ -99,8 +99,6 @@ namespace BoSSS.Solution.XheatCommon {
                 qEvap = ComputeHeatFlux_Macro(paramsNeg.GetSubVector(0, D), paramsPos.GetSubVector(0, D), N);
             }
 
-            qEvap = -10.0;
-
             return qEvap;
 
         }
