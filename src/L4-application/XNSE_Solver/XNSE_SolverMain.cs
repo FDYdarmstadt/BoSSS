@@ -97,7 +97,7 @@ namespace BoSSS.Application.XNSE_Solver {
         /// Artificial force term at the fluid interface, usually only to support manufactured solutions.
         /// </summary>
         [InstantiateFromControlFile(
-            new string[] { "SurfaceForceX", "SurfaceForceY", "SurfaceForceZ" },
+            new string[] { VariableNames.SurfaceForceX, VariableNames.SurfaceForceY, VariableNames.SurfaceForceZ },
             new string[] { VariableNames.VelocityX, VariableNames.VelocityY, VariableNames.VelocityZ },
             true, true,
             IOListOption.ControlFileDetermined)]
@@ -128,7 +128,7 @@ namespace BoSSS.Application.XNSE_Solver {
         /// <summary>
         /// Curvature; DG-polynomial degree should be 2 times the polynomial degree of <see cref="LevSet"/>.
         /// </summary>
-        [InstantiateFromControlFile("Curvature", "Curvature", IOListOption.ControlFileDetermined)]
+        [InstantiateFromControlFile(VariableNames.Curvature, VariableNames.Curvature, IOListOption.ControlFileDetermined)]
         SinglePhaseField Curvature;
 
         /// <summary>
@@ -196,7 +196,7 @@ namespace BoSSS.Application.XNSE_Solver {
         /// <summary>
         /// Velocity and related variables for the non-extended case, <see cref="XNSE_Control.UseXDG4Velocity"/> == false.
         /// </summary>
-        VelocityRelatedVars<SinglePhaseField> DGvelocity;
+        //VelocityRelatedVars<SinglePhaseField> DGvelocity;
 
         /// <summary>
         /// Velocity and related variables for the extended case, <see cref="XNSE_Control.UseXDG4Velocity"/> == false.
@@ -259,24 +259,13 @@ namespace BoSSS.Application.XNSE_Solver {
                 base.RegisterField(this.Pressure);
                 this.ResidualContinuity = new XDGField(this.Pressure.Basis, "ResidualConti");
                 base.RegisterField(this.ResidualContinuity);
-        
-
-                if (base.Control.UseXDG4Velocity) {
-
-                    XDGvelocity = new VelocityRelatedVars<XDGField>();
-                    InitFromAttributes.CreateFieldsAuto(XDGvelocity, this.GridData, base.Control.FieldOptions, base.Control.CutCellQuadratureType, base.IOFields, base.m_RegisteredFields);
-
-                } else {
-
-                    DGvelocity = new VelocityRelatedVars<SinglePhaseField>();
-                    InitFromAttributes.CreateFieldsAuto(DGvelocity, this.GridData, base.Control.FieldOptions, base.Control.CutCellQuadratureType, base.IOFields, base.m_RegisteredFields);
-
-                    //if(base.Control.AdvancedDiscretizationOptions.CellAgglomerationThreshold > 0.0)
-                    //    throw new NotSupportedException("Agglomearion currently not supported for non-extended velocity.");
-                }
 
 
-                if(this.Control.solveCoupledHeatEquation) {
+                this.XDGvelocity = new VelocityRelatedVars<XDGField>();
+                InitFromAttributes.CreateFieldsAuto(this.XDGvelocity, this.GridData, base.Control.FieldOptions, base.Control.CutCellQuadratureType, base.IOFields, base.m_RegisteredFields);
+
+
+                if (this.Control.solveCoupledHeatEquation) {
                     this.Temperature = new XDGField(new XDGBasis(this.LsTrk, this.Control.FieldOptions[VariableNames.Temperature].Degree), VariableNames.Temperature);
                     base.RegisterField(this.Temperature);
                     this.ResidualHeat = new XDGField(this.Temperature.Basis, "ResidualHeat");
@@ -399,21 +388,15 @@ namespace BoSSS.Application.XNSE_Solver {
         XNSFE_OperatorConfiguration XOpConfig;
 
         /// <summary>
-        /// Current Velocity: either extended or non-extended DG.
+        /// Current Velocity
         /// </summary>
-        DGField[] CurrentVel {
+        XDGField[] CurrentVel {
             get {
-                Debug.Assert((this.XDGvelocity != null) != (this.DGvelocity != null));
-                Debug.Assert((this.XDGvelocity != null) == base.Control.UseXDG4Velocity);
-                Debug.Assert((this.DGvelocity == null) == base.Control.UseXDG4Velocity);
-                if (base.Control.UseXDG4Velocity)
-                    return this.XDGvelocity.Velocity.ToArray();
-                else
-                    return this.DGvelocity.Velocity.ToArray();
+                return this.XDGvelocity.Velocity.ToArray();
             }
         }
 
-        DGField[] prevVel;
+        XDGField[] prevVel;
 
         CoordinateVector m_CurrentSolution;
 
@@ -442,10 +425,7 @@ namespace BoSSS.Application.XNSE_Solver {
         internal CoordinateVector CurrentResidual {
             get {
                 if (m_CurrentResidual == null) {
-                    if (base.Control.UseXDG4Velocity)
-                        m_CurrentResidual = new CoordinateVector(ArrayTools.Cat<DGField>(XDGvelocity.ResidualMomentum, ResidualContinuity));
-                    else
-                        m_CurrentResidual = new CoordinateVector(ArrayTools.Cat<DGField>(DGvelocity.ResidualMomentum, ResidualContinuity));
+                    m_CurrentResidual = new CoordinateVector(ArrayTools.Cat<DGField>(XDGvelocity.ResidualMomentum, ResidualContinuity));
                 }
                 return m_CurrentResidual;
             }
@@ -476,8 +456,8 @@ namespace BoSSS.Application.XNSE_Solver {
         //XdgRKTimestepping m_RK_Timestepper;
 
         RungeKuttaScheme rksch = null;
-        int bdfOrder = -1000;
 
+        int bdfOrder = -1000;
 
 
 
@@ -500,17 +480,6 @@ namespace BoSSS.Application.XNSE_Solver {
             }
 
             int degU = this.CurrentVel[0].Basis.Degree;
-
-            //if(base.Control.FakePoisson) {
-            //    Console.WriteLine("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
-            //    Console.WriteLine("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
-            //    Console.WriteLine("ACHTUNG: Fake-Poisson aktiviert!");
-            //    Console.WriteLine("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
-            //    Console.WriteLine("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
-            //}
-
-            //if(this.Control.AdvancedDiscretizationOptions.SurfStressTensor == SurfaceSressTensor.SemiImplicit)
-            //    this.Control.PhysicalParameters.mu_I = this.Control.dtFixed * this.Control.PhysicalParameters.Sigma; //--> added to XNSE-operator config
 
             #endregion
 
@@ -582,11 +551,7 @@ namespace BoSSS.Application.XNSE_Solver {
 
                 }
 
-                //Herr Smuda bitte anpassen ...
 
-
-                //if no Runge Kutta Timesteper is initialized
-                // we are using bdf or screwed things up
                 if (rksch == null) {
                     m_BDF_Timestepper = new XdgBDFTimestepping(
                         this.CurrentSolution.Mapping.Fields,
@@ -612,19 +577,14 @@ namespace BoSSS.Application.XNSE_Solver {
                     m_BDF_Timestepper.incrementTimesteps = this.Control.incrementTimesteps;
                     m_BDF_Timestepper.PushLevelSet = this.PushLevelSetAndRelatedStuff;
                     m_BDF_Timestepper.IterUnderrelax = this.Control.Timestepper_LevelSetHandling == LevelSetHandling.Coupled_Iterative ? this.Control.LSunderrelax : 1.0;
-                    //m_BDF_Timestepper.config_LinearSolver.SolverCode = LinearSolverConfig.Code.classic_mumps;
+
+                    m_BDF_Timestepper.Config_LevelSetConvergenceCriterion = this.Control.LevelSet_ConvergenceCriterion;
                     //m_BDF_Timestepper.CustomIterationCallback += this.PlotOnIterationCallback;
 
 
                     // solver 
-                    //m_BDF_Timestepper.config_NonLinearSolver.ConvergenceCriterion= this.Control.Solver_ConvergenceCriterion;
-                    m_BDF_Timestepper.Config_LevelSetConvergenceCriterion = this.Control.LevelSet_ConvergenceCriterion;
-                    //m_BDF_Timestepper.config_NonLinearSolver.MaxSolverIterations = this.Control.Solver_MaxIterations;
-                    
                     this.Control.NonLinearSolver.MinSolverIterations = (this.Control.Timestepper_LevelSetHandling == LevelSetHandling.Coupled_Iterative) ? 1 : this.Control.NonLinearSolver.MinSolverIterations; //m_BDF_Timestepper.config_NonLinearSolver.MinSolverIterations = (this.Control.Timestepper_LevelSetHandling == LevelSetHandling.Coupled_Iterative) ? 1 : this.Control.Solver_MinIterations;
 
-                    //m_BDF_Timestepper.config_NonLinearSolver.MaxKrylovDim = this.Control.Solver_MaxKrylovDim;
-                    //m_BDF_Timestepper.config_NonLinearSolver.SolverCode = NonLinearSolverConfig.Code.Picard;
                     if (this.Control.NonLinearSolver.SolverCode == NonLinearSolverConfig.Code.NewtonGMRES) {
                         m_BDF_Timestepper.XdgSolverFactory.Selfmade_precond =
                                             new Schwarz() {
@@ -861,8 +821,6 @@ namespace BoSSS.Application.XNSE_Solver {
             {
                 if (this.Control.PhysicalParameters.useArtificialSurfaceForce == true)
                     throw new NotSupportedException("Not supported for this hack.");
-                if (this.Control.UseXDG4Velocity != true)
-                    throw new NotSupportedException("Not supported for this hack.");
 
 
                 var TmpRhs = new CoordinateVector(CurrentState.Select(f => (DGField)f.Clone()).ToArray());
@@ -903,7 +861,7 @@ namespace BoSSS.Application.XNSE_Solver {
             //  Add Gravity
             // ============================
             // Dimension: [ rho * G ] = mass / time^2 / len^2 == [ d/dt rho U ]
-            var WholeGravity = new CoordinateVector(ArrayTools.Cat<DGField>(this.XDGvelocity != null ? this.XDGvelocity.Gravity.ToArray<DGField>() : this.DGvelocity.Gravity.ToArray<DGField>(), new XDGField(this.Pressure.Basis)));
+            var WholeGravity = new CoordinateVector(ArrayTools.Cat<DGField>(this.XDGvelocity.Gravity.ToArray<DGField>(), new XDGField(this.Pressure.Basis)));
             WholeMassMatrix.SpMV(1.0, WholeGravity, 1.0, OpAffine);
 
 
@@ -1112,11 +1070,7 @@ namespace BoSSS.Application.XNSE_Solver {
 
                     foreach(string spc in LsTrk.SpeciesNames) {
                         for(int d = 0; d < this.GridData.SpatialDimension; d++) {
-                            ConventionalDGField Vel_d;
-                            if(this.CurrentVel[d] is XDGField)
-                                Vel_d = ((XDGField)this.CurrentVel[d]).GetSpeciesShadowField(spc);
-                            else
-                                Vel_d = (ConventionalDGField)this.CurrentVel[d];
+                            ConventionalDGField Vel_d = ((XDGField)this.CurrentVel[d]).GetSpeciesShadowField(spc);
                             Vel_d.ProjectField(Control.ExactSolutionVelocity[spc][d].Convert_Xt2X(phystime + dt));
                         }
                         Pressure.GetSpeciesShadowField(spc).ProjectField(Control.ExactSolutionPressure[spc].Convert_Xt2X(phystime + dt));
@@ -1139,9 +1093,9 @@ namespace BoSSS.Application.XNSE_Solver {
 
 
 
-                    // =====================================================
-                    // setup transient 
-                    // =====================================================
+                // =====================================================
+                // setup transient 
+                // =====================================================
                 } else if(base.Control.CompMode == AppControl._CompMode.Transient) {
 
                     // push stacks
@@ -1162,19 +1116,15 @@ namespace BoSSS.Application.XNSE_Solver {
 
                     // fields setup
                     // ------------
-                    if(this.XDGvelocity != null) {
-                        for(int d = 0; d < D; d++) {
-                            // Gravity must be set up like this to avoid regions of zero gravity when updating the level-set
-                            this.XDGvelocity.Gravity[d].UpdateBehaviour = BehaveUnder_LevSetMoovement.AutoExtrapolate;
-                        }
-                    } else {
-                        throw new NotSupportedException();
+                    for (int d = 0; d < D; d++) {
+                        // Gravity must be set up like this to avoid regions of zero gravity when updating the level-set
+                        this.XDGvelocity.Gravity[d].UpdateBehaviour = BehaveUnder_LevSetMoovement.AutoExtrapolate;
                     }
 
 
-                // +++++++++++++++++++++++++++++++++++++
-                // compute/check time step restrictions
-                // +++++++++++++++++++++++++++++++++++++
+                    // +++++++++++++++++++++++++++++++++++++
+                    // compute/check time step restrictions
+                    // +++++++++++++++++++++++++++++++++++++
 
                     dt = base.Control.dtFixed;
 
@@ -2319,22 +2269,7 @@ namespace BoSSS.Application.XNSE_Solver {
 
                 #region Calculate density averaged Velocity for each cell
 
-                ConventionalDGField[] meanVelocity;
-
-                if (EvoVelocity[0] is XDGField) {
-                    meanVelocity = GetMeanVelocityFromXDGField(EvoVelocity);
-                }
-                else if (EvoVelocity[0] is ConventionalDGField) {
-                    // +++++++++++++++++
-                    // plain DG velocity 
-                    // +++++++++++++++++
-                    Debug.Assert(this.XDGvelocity == null);
-                    Debug.Assert(this.DGvelocity != null);  // make sure that we *do not* run velocity enrichment
-
-                    meanVelocity = EvoVelocity.Select(v => ((ConventionalDGField)v)).ToArray();
-                } else {
-                    throw new ApplicationException("Should not happen.");
-                }
+                ConventionalDGField[] meanVelocity = GetMeanVelocityFromXDGField(EvoVelocity);
 
                 #endregion
 
@@ -2846,7 +2781,6 @@ namespace BoSSS.Application.XNSE_Solver {
             ConventionalDGField[] meanVelocity;
 
             Debug.Assert(this.XDGvelocity != null);
-            Debug.Assert(this.DGvelocity == null);  // make sure that we run velocity enrichment
 
             meanVelocity = new ConventionalDGField[D];
 
@@ -3438,13 +3372,8 @@ namespace BoSSS.Application.XNSE_Solver {
 
 
                     for(int d = 0; d < D; d++) {
-                        ConventionalDGField Vel_d;
-                        if(this.CurrentVel[d] is XDGField) {
-                            Vel_d = ((XDGField)this.CurrentVel[d]).GetSpeciesShadowField(spc);
-                        } else {
-                            Vel_d = ((ConventionalDGField)this.CurrentVel[d]);
-                        }
-
+                        ConventionalDGField Vel_d = ((XDGField)this.CurrentVel[d]).GetSpeciesShadowField(spc);
+    
                         L2Error_Species[spc][d] = Vel_d.L2Error(this.Control.ExactSolutionVelocity[spc][d].Vectorize(time), order, scheme);
                         L2Error[d] += L2Error_Species[spc][d].Pow2();
 

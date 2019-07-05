@@ -468,7 +468,7 @@ namespace BoSSS.Application.XNSE_Solver {
         /// Turn XDG for the velocity on/off; if off, only the pressure is approximated by XDG,
         /// the velocity is plain DG.
         /// </summary>
-        public bool UseXDG4Velocity = true;
+        //public bool UseXDG4Velocity = true;
 
         /// <summary>
         /// An explicit expression of the Level-set over time.

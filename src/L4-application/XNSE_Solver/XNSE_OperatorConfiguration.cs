@@ -43,7 +43,6 @@ namespace BoSSS.Application.XNSE_Solver {
             dntParams = control.AdvancedDiscretizationOptions;
             physParams = control.PhysicalParameters;
 
-            UseXDG4Velocity = control.UseXDG4Velocity;
 
             if(control.AdvancedDiscretizationOptions.SurfStressTensor == SurfaceSressTensor.SemiImplicit)
                 control.PhysicalParameters.mu_I = control.dtFixed * control.PhysicalParameters.Sigma;
