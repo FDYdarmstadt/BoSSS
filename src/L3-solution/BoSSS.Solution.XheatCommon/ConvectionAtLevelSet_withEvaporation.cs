@@ -115,7 +115,7 @@ namespace BoSSS.Solution.XheatCommon {
         public override IList<string> ParameterOrdering {
             get {
                 return ArrayTools.Cat(VariableNames.Velocity0Vector(D), VariableNames.Velocity0MeanVector(D),
-                    new string[] { "GradTempX", "GradTempY", "GradTempZ" }.GetSubVector(0, D), VariableNames.Temperature, "Curvature", "DisjoiningPressure");
+                    VariableNames.Temperature0Gradient(D), VariableNames.Temperature0, VariableNames.Curvature, VariableNames.DisjoiningPressure);
             }
         }
 
@@ -250,7 +250,7 @@ namespace BoSSS.Solution.XheatCommon {
         public override IList<string> ParameterOrdering {
             get {
                 return ArrayTools.Cat(VariableNames.Velocity0Vector(D), VariableNames.Velocity0MeanVector(D),
-                    new string[] { "GradTempX", "GradTempY", "GradTempZ" }.GetSubVector(0, D), VariableNames.Temperature, "Curvature", "DisjoiningPressure");
+                    VariableNames.Temperature0Gradient(D), VariableNames.Temperature0, VariableNames.Curvature, VariableNames.DisjoiningPressure);
             }
         }
 

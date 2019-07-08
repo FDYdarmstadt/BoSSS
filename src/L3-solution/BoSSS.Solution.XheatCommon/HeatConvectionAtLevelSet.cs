@@ -144,7 +144,7 @@ namespace BoSSS.Solution.XheatCommon {
 
         public IList<string> ParameterOrdering {
             get {
-                return ArrayTools.Cat(VariableNames.VelocityVector(m_D), (new string[] { "VelocityX_Mean", "VelocityY_Mean", "VelocityZ_Mean" }).GetSubVector(0, m_D));
+                return ArrayTools.Cat(VariableNames.Velocity0Vector(m_D), VariableNames.Velocity0MeanVector(m_D));
             }
         }
 
@@ -234,9 +234,10 @@ namespace BoSSS.Solution.XheatCommon {
 
 
             double T_avg = 0.5 * (U_Neg[0] + U_Pos[0]);
+            double T_sat = 0.0;
 
-            double uAxN = -M * (1 / rhoA) * T_avg;
-            double uBxN = -M * (1 / rhoB) * T_avg;
+            double uAxN = -M * (1 / rhoA) * (T_avg - T_sat);
+            double uBxN = -M * (1 / rhoB) * (T_avg - T_sat);
 
             // transform from species B to A: we call this the "A-fictitious" value
             double uAxN_fict;

@@ -410,196 +410,196 @@ namespace BoSSS.Application.XNSE_Solver {
         /// <param name="degree"></param>
         /// <param name="elipsDelta"></param>
         /// <param name="IncludeConvection">true: Navier-Stokes; false: Stokes.</param>
-        public static XNSE_Control StaticDroplet(
-            string _DbPath = null,
-            int sizeFactor = 2, int degree = 3, double elipsDelta = 0.0, bool IncludeConvection = false) {
-            XNSE_Control C = new XNSE_Control();
+//        public static XNSE_Control StaticDroplet(
+//            string _DbPath = null,
+//            int sizeFactor = 2, int degree = 3, double elipsDelta = 0.0, bool IncludeConvection = false) {
+//            XNSE_Control C = new XNSE_Control();
 
-            if (sizeFactor < 1)
-                throw new ArgumentOutOfRangeException();
-            if (degree < 1)
-                throw new ArgumentOutOfRangeException();
+//            if (sizeFactor < 1)
+//                throw new ArgumentOutOfRangeException();
+//            if (degree < 1)
+//                throw new ArgumentOutOfRangeException();
 
-            const double VelXBase = 0.0;
-            const double BaseSize = 1.0;
-            bool xPeriodic = false;
-            C.FakePoisson = true;
+//            const double VelXBase = 0.0;
+//            const double BaseSize = 1.0;
+//            bool xPeriodic = false;
+//            C.FakePoisson = true;
 
-            // basic database options
-            // ======================
+//            // basic database options
+//            // ======================
 
-            C.DbPath = _DbPath;
-            C.savetodb = _DbPath != null;
-            C.ProjectName = "XNSE/Droplet";
-            C.ProjectDescription = "Multiphase Droplet";
-            C.Tags.Add("h/p conv_study");
-            C.Tags.Add("Stokes");
-            C.Tags.Add(string.Format("k={0}", degree));
-            C.Tags.Add(string.Format("sizeFactor={0}", sizeFactor));
+//            C.DbPath = _DbPath;
+//            C.savetodb = _DbPath != null;
+//            C.ProjectName = "XNSE/Droplet";
+//            C.ProjectDescription = "Multiphase Droplet";
+//            C.Tags.Add("h/p conv_study");
+//            C.Tags.Add("Stokes");
+//            C.Tags.Add(string.Format("k={0}", degree));
+//            C.Tags.Add(string.Format("sizeFactor={0}", sizeFactor));
 
-            #region DG Degrees
+//            #region DG Degrees
 
-            C.AddFieldOption("VelocityX", degree, FieldOpts.SaveToDBOpt.TRUE);
-            C.AddFieldOption("VelocityY", degree, FieldOpts.SaveToDBOpt.TRUE);
-            C.AddFieldOption("SurfaceForceDiagnosticX", SaveOpt: FieldOpts.SaveToDBOpt.FALSE);
-            C.AddFieldOption("SurfaceForceDiagnosticY", SaveOpt: FieldOpts.SaveToDBOpt.FALSE);
-            C.AddFieldOption("Pressure", degree - 1, SaveOpt: FieldOpts.SaveToDBOpt.TRUE);
-            C.AddFieldOption("PhiDG", SaveOpt: FieldOpts.SaveToDBOpt.TRUE);
-            C.AddFieldOption("Phi", Degree: 2, SaveOpt: FieldOpts.SaveToDBOpt.TRUE);
-            C.AddFieldOption("Curvature", Degree: 8, SaveOpt: FieldOpts.SaveToDBOpt.TRUE);
+//            C.AddFieldOption("VelocityX", degree, FieldOpts.SaveToDBOpt.TRUE);
+//            C.AddFieldOption("VelocityY", degree, FieldOpts.SaveToDBOpt.TRUE);
+//            C.AddFieldOption("SurfaceForceDiagnosticX", SaveOpt: FieldOpts.SaveToDBOpt.FALSE);
+//            C.AddFieldOption("SurfaceForceDiagnosticY", SaveOpt: FieldOpts.SaveToDBOpt.FALSE);
+//            C.AddFieldOption("Pressure", degree - 1, SaveOpt: FieldOpts.SaveToDBOpt.TRUE);
+//            C.AddFieldOption("PhiDG", SaveOpt: FieldOpts.SaveToDBOpt.TRUE);
+//            C.AddFieldOption("Phi", Degree: 2, SaveOpt: FieldOpts.SaveToDBOpt.TRUE);
+//            C.AddFieldOption("Curvature", Degree: 8, SaveOpt: FieldOpts.SaveToDBOpt.TRUE);
             
 
-            #endregion
-            // grid and boundary conditions
-            // ============================
-            #region Grid and BC's
-            double h = 3.0 * BaseSize / sizeFactor;
-            C.GridFunc = delegate {
-                double[] Xnodes = GenericBlas.Linspace(-1.5 * BaseSize, 1.5 * BaseSize, 9 * sizeFactor + 1);
-                double[] Ynodes = GenericBlas.Linspace(-1.5 * BaseSize, 1.5 * BaseSize, 9 * sizeFactor + 1);
-                var grd = Grid2D.Cartesian2DGrid(Xnodes, Ynodes, periodicX: xPeriodic);
-                //var grd = Grid2D.UnstructuredTriangleGrid(Xnodes, Ynodes);
+//            #endregion
+//            // grid and boundary conditions
+//            // ============================
+//            #region Grid and BC's
+//            double h = 3.0 * BaseSize / sizeFactor;
+//            C.GridFunc = delegate {
+//                double[] Xnodes = GenericBlas.Linspace(-1.5 * BaseSize, 1.5 * BaseSize, 9 * sizeFactor + 1);
+//                double[] Ynodes = GenericBlas.Linspace(-1.5 * BaseSize, 1.5 * BaseSize, 9 * sizeFactor + 1);
+//                var grd = Grid2D.Cartesian2DGrid(Xnodes, Ynodes, periodicX: xPeriodic);
+//                //var grd = Grid2D.UnstructuredTriangleGrid(Xnodes, Ynodes);
 
-                grd.EdgeTagNames.Add(1, "wall_lower");
-                grd.EdgeTagNames.Add(2, "wall_upper");
-                if (!xPeriodic) {
-                    grd.EdgeTagNames.Add(3, "wall_left");
-                    grd.EdgeTagNames.Add(4, "wall_right");
-                }
+//                grd.EdgeTagNames.Add(1, "wall_lower");
+//                grd.EdgeTagNames.Add(2, "wall_upper");
+//                if (!xPeriodic) {
+//                    grd.EdgeTagNames.Add(3, "wall_left");
+//                    grd.EdgeTagNames.Add(4, "wall_right");
+//                }
 
-                grd.DefineEdgeTags(delegate (double[] X) {
-                    byte et = 0;
-                    if (Math.Abs(X[1] - (-1.5 * BaseSize)) <= 1.0e-8)
-                        et = 1;
-                    if (Math.Abs(X[1] - (+1.5 * BaseSize)) <= 1.0e-8)
-                        et = 2;
-                    if (!xPeriodic && Math.Abs(X[0] - (-1.5 * BaseSize)) <= 1.0e-8)
-                        et = 3;
-                    if (!xPeriodic && Math.Abs(X[0] - (+1.5 * BaseSize)) <= 1.0e-8)
-                        et = 4;
-
-
-                    Debug.Assert(et != 0);
-                    return et;
-                });
-
-                return grd;
-            };
-
-            C.AddBoundaryValue("wall_lower", "VelocityX#A", (X, t) => VelXBase);
-            C.AddBoundaryValue("wall_upper", "VelocityX#A", (X, t) => VelXBase);
-            C.AddBoundaryValue("wall_lower", "VelocityX#B", (X, t) => VelXBase);
-            C.AddBoundaryValue("wall_upper", "VelocityX#B", (X, t) => VelXBase);
-            if (!xPeriodic) {
-                C.AddBoundaryValue("wall_left", "VelocityX#A", (X, t) => VelXBase);
-                C.AddBoundaryValue("wall_right", "VelocityX#A", (X, t) => VelXBase);
-                C.AddBoundaryValue("wall_left", "VelocityX#B", (X, t) => VelXBase);
-                C.AddBoundaryValue("wall_right", "VelocityX#B", (X, t) => VelXBase);
-
-#pragma warning disable 162
-                if (VelXBase != 0.0) {
-                    C.BoundaryValues["wall_left"].type = IncompressibleBcType.Velocity_Inlet.ToString();
-                    C.BoundaryValues["wall_right"].type = IncompressibleBcType.Velocity_Inlet.ToString();
-                }
-#pragma warning restore 162
-            }
-
-            #endregion
-
-            #region Initial Values
-            // Initial Values
-            // ==============
+//                grd.DefineEdgeTags(delegate (double[] X) {
+//                    byte et = 0;
+//                    if (Math.Abs(X[1] - (-1.5 * BaseSize)) <= 1.0e-8)
+//                        et = 1;
+//                    if (Math.Abs(X[1] - (+1.5 * BaseSize)) <= 1.0e-8)
+//                        et = 2;
+//                    if (!xPeriodic && Math.Abs(X[0] - (-1.5 * BaseSize)) <= 1.0e-8)
+//                        et = 3;
+//                    if (!xPeriodic && Math.Abs(X[0] - (+1.5 * BaseSize)) <= 1.0e-8)
+//                        et = 4;
 
 
-            double xShift = h * 0.0;
-            double yShift = 0.0 * h;
+//                    Debug.Assert(et != 0);
+//                    return et;
+//                });
 
-            C.InitialValues_Evaluators.Add("Phi",
-                //(X => ((X[0] - xShift) / (0.8 * BaseSize * (1.0 + elipsDelta))).Pow2() + ((X[1] - yShift) / (0.8 * BaseSize * (1.0 - elipsDelta))).Pow2() - 1.0)   // quadratic form
-                (X => (0.8 - ((X[0] - xShift).Pow2() + (X[1] - yShift).Pow2()).Sqrt()))
-                //(X => (0.8*0.8 - ((X[0] - xShift).Pow2() + (X[1] - yShift).Pow2()))) 
-                );
-            C.InitialValues_Evaluators.Add("VelocityX", X => VelXBase);
+//                return grd;
+//            };
 
+//            C.AddBoundaryValue("wall_lower", "VelocityX#A", (X, t) => VelXBase);
+//            C.AddBoundaryValue("wall_upper", "VelocityX#A", (X, t) => VelXBase);
+//            C.AddBoundaryValue("wall_lower", "VelocityX#B", (X, t) => VelXBase);
+//            C.AddBoundaryValue("wall_upper", "VelocityX#B", (X, t) => VelXBase);
+//            if (!xPeriodic) {
+//                C.AddBoundaryValue("wall_left", "VelocityX#A", (X, t) => VelXBase);
+//                C.AddBoundaryValue("wall_right", "VelocityX#A", (X, t) => VelXBase);
+//                C.AddBoundaryValue("wall_left", "VelocityX#B", (X, t) => VelXBase);
+//                C.AddBoundaryValue("wall_right", "VelocityX#B", (X, t) => VelXBase);
 
-            // Physical Parameters
-            // ===================
+//#pragma warning disable 162
+//                if (VelXBase != 0.0) {
+//                    C.BoundaryValues["wall_left"].type = IncompressibleBcType.Velocity_Inlet.ToString();
+//                    C.BoundaryValues["wall_right"].type = IncompressibleBcType.Velocity_Inlet.ToString();
+//                }
+//#pragma warning restore 162
+//            }
 
+//            #endregion
 
-            // Air-Water
-            C.PhysicalParameters.rho_A = 1000;
-            C.PhysicalParameters.rho_B = 1.2;
-            C.PhysicalParameters.mu_A = 1.0e-3;
-            C.PhysicalParameters.mu_B = 17.1e-6;
-            C.PhysicalParameters.Sigma = 72.75e-3;
-            //*/
-
-            /*
-            // Lame
-            C.PhysicalParameters.rho_A = 10;
-            C.PhysicalParameters.rho_B = 0.1;
-            C.PhysicalParameters.mu_A = 0.5;
-            C.PhysicalParameters.mu_B = 0.005;
-            C.PhysicalParameters.Sigma = 0.1;
-            //*/
-
-
-            /*
-            // convective not stable
-            C.PhysicalParameters.rho_A = 10;
-            C.PhysicalParameters.rho_B = 0.1;
-            C.PhysicalParameters.mu_A = 0.05;
-            C.PhysicalParameters.mu_B = 0.001;
-            C.PhysicalParameters.Sigma = 0.1;
-             */
-
-            /*
-            // Lamer
-            C.PhysicalParameters.rho_A = 1;
-            C.PhysicalParameters.rho_B = 1;
-            C.PhysicalParameters.mu_A = 1;
-            C.PhysicalParameters.mu_B = 1;
-            C.PhysicalParameters.Sigma = 0.1;
-            */
-
-            C.PhysicalParameters.IncludeConvection = IncludeConvection;
-            C.PhysicalParameters.Material = true;
-            #endregion
-            // misc. solver options
-            // ====================
-
-            C.AdvancedDiscretizationOptions.CellAgglomerationThreshold = 0.0;
-            C.Option_LevelSetEvolution = LevelSetEvolution.None;
-            C.UseXDG4Velocity = true;
-
-            C.LinearSolver.NoOfMultigridLevels = 3;
-            C.VelocityBlockPrecondMode = MultigridOperator.Mode.SymPart_DiagBlockEquilib_DropIndefinite;
-            C.PressureBlockPrecondMode = MultigridOperator.Mode.IdMass_DropIndefinite;
-            C.LinearSolver.MaxKrylovDim = 100;
-            //C.Solver_MaxKrylovDim = 100;
-
-            C.FakePoisson = false;
-
-            C.AdvancedDiscretizationOptions.FilterConfiguration = CurvatureAlgorithms.FilterConfiguration.Default;
-            C.AdvancedDiscretizationOptions.SST_isotropicMode = Solution.XNSECommon.SurfaceStressTensor_IsotropicMode.Curvature_Projected;
-            C.AdvancedDiscretizationOptions.FilterConfiguration.FilterCurvatureCycles = 0;
+//            #region Initial Values
+//            // Initial Values
+//            // ==============
 
 
-            C.LinearSolver.MaxSolverIterations = 1000;
-            C.NonLinearSolver.MaxSolverIterations = 1000;
-            //C.Solver_MaxIterations = 1000;
+//            double xShift = h * 0.0;
+//            double yShift = 0.0 * h;
 
-            // NO Timestepping
-            // ===============
+//            C.InitialValues_Evaluators.Add("Phi",
+//                //(X => ((X[0] - xShift) / (0.8 * BaseSize * (1.0 + elipsDelta))).Pow2() + ((X[1] - yShift) / (0.8 * BaseSize * (1.0 - elipsDelta))).Pow2() - 1.0)   // quadratic form
+//                (X => (0.8 - ((X[0] - xShift).Pow2() + (X[1] - yShift).Pow2()).Sqrt()))
+//                //(X => (0.8*0.8 - ((X[0] - xShift).Pow2() + (X[1] - yShift).Pow2()))) 
+//                );
+//            C.InitialValues_Evaluators.Add("VelocityX", X => VelXBase);
 
-            C.CompMode = AppControl._CompMode.Steady;
-            C.Timestepper_LevelSetHandling = LevelSetHandling.None;
 
-            // haben fertig...
-            // ===============
+//            // Physical Parameters
+//            // ===================
 
-            return C;
-        }
+
+//            // Air-Water
+//            C.PhysicalParameters.rho_A = 1000;
+//            C.PhysicalParameters.rho_B = 1.2;
+//            C.PhysicalParameters.mu_A = 1.0e-3;
+//            C.PhysicalParameters.mu_B = 17.1e-6;
+//            C.PhysicalParameters.Sigma = 72.75e-3;
+//            //*/
+
+//            /*
+//            // Lame
+//            C.PhysicalParameters.rho_A = 10;
+//            C.PhysicalParameters.rho_B = 0.1;
+//            C.PhysicalParameters.mu_A = 0.5;
+//            C.PhysicalParameters.mu_B = 0.005;
+//            C.PhysicalParameters.Sigma = 0.1;
+//            //*/
+
+
+//            /*
+//            // convective not stable
+//            C.PhysicalParameters.rho_A = 10;
+//            C.PhysicalParameters.rho_B = 0.1;
+//            C.PhysicalParameters.mu_A = 0.05;
+//            C.PhysicalParameters.mu_B = 0.001;
+//            C.PhysicalParameters.Sigma = 0.1;
+//             */
+
+//            /*
+//            // Lamer
+//            C.PhysicalParameters.rho_A = 1;
+//            C.PhysicalParameters.rho_B = 1;
+//            C.PhysicalParameters.mu_A = 1;
+//            C.PhysicalParameters.mu_B = 1;
+//            C.PhysicalParameters.Sigma = 0.1;
+//            */
+
+//            C.PhysicalParameters.IncludeConvection = IncludeConvection;
+//            C.PhysicalParameters.Material = true;
+//            #endregion
+//            // misc. solver options
+//            // ====================
+
+//            C.AdvancedDiscretizationOptions.CellAgglomerationThreshold = 0.0;
+//            C.Option_LevelSetEvolution = LevelSetEvolution.None;
+//            C.UseXDG4Velocity = true;
+
+//            C.LinearSolver.NoOfMultigridLevels = 3;
+//            C.VelocityBlockPrecondMode = MultigridOperator.Mode.SymPart_DiagBlockEquilib_DropIndefinite;
+//            C.PressureBlockPrecondMode = MultigridOperator.Mode.IdMass_DropIndefinite;
+//            C.LinearSolver.MaxKrylovDim = 100;
+//            //C.Solver_MaxKrylovDim = 100;
+
+//            C.FakePoisson = false;
+
+//            C.AdvancedDiscretizationOptions.FilterConfiguration = CurvatureAlgorithms.FilterConfiguration.Default;
+//            C.AdvancedDiscretizationOptions.SST_isotropicMode = Solution.XNSECommon.SurfaceStressTensor_IsotropicMode.Curvature_Projected;
+//            C.AdvancedDiscretizationOptions.FilterConfiguration.FilterCurvatureCycles = 0;
+
+
+//            C.LinearSolver.MaxSolverIterations = 1000;
+//            C.NonLinearSolver.MaxSolverIterations = 1000;
+//            //C.Solver_MaxIterations = 1000;
+
+//            // NO Timestepping
+//            // ===============
+
+//            C.CompMode = AppControl._CompMode.Steady;
+//            C.Timestepper_LevelSetHandling = LevelSetHandling.None;
+
+//            // haben fertig...
+//            // ===============
+
+//            return C;
+//        }
 
         /// <summary>
         /// A very simple example for debugging purposes
@@ -608,276 +608,276 @@ namespace BoSSS.Application.XNSE_Solver {
         /// <param name="degree"></param>
         /// <param name="IncludeConvection"></param>
         /// <returns></returns>
-        public static XNSE_Control Pseudo1D(
-            string _DbPath = null,
-            int degree = 1, bool IncludeConvection = false) {
-            XNSE_Control C = new XNSE_Control();
+//        public static XNSE_Control Pseudo1D(
+//            string _DbPath = null,
+//            int degree = 1, bool IncludeConvection = false) {
+//            XNSE_Control C = new XNSE_Control();
 
-            if (degree < 1)
-                throw new ArgumentOutOfRangeException();
+//            if (degree < 1)
+//                throw new ArgumentOutOfRangeException();
 
-            const double VelXBase = 1.0;
+//            const double VelXBase = 1.0;
 
-            // basic database options
-            // ======================
+//            // basic database options
+//            // ======================
 
-            C.DbPath = _DbPath;
-            C.savetodb = _DbPath != null;
-            C.ProjectName = "XNSE/Pseudo1D";
-            C.ProjectDescription = "Pseudo 1D calculation";
-            C.Tags.Add(string.Format("k={0}", degree));
+//            C.DbPath = _DbPath;
+//            C.savetodb = _DbPath != null;
+//            C.ProjectName = "XNSE/Pseudo1D";
+//            C.ProjectDescription = "Pseudo 1D calculation";
+//            C.Tags.Add(string.Format("k={0}", degree));
 
 
-            // DG degrees
-            // ==========
+//            // DG degrees
+//            // ==========
 
-            C.SetFieldOptions(degree, 2);
+//            C.SetFieldOptions(degree, 2);
             
-            // grid and boundary conditions
-            // ============================
+//            // grid and boundary conditions
+//            // ============================
 
-            C.GridFunc = delegate {
-                double[] Xnodes = new double[] { -5, -3, -1, 1, 3, 7 };
-                double[] Ynodes = new double[] { -1, 1 };
-                var grd = Grid2D.Cartesian2DGrid(Xnodes, Ynodes);
-                grd.EdgeTagNames.Add(1, "wall_lower");
-                grd.EdgeTagNames.Add(2, "wall_upper");
-                grd.EdgeTagNames.Add(3, "wall_left");
-                grd.EdgeTagNames.Add(4, "wall_right");
+//            C.GridFunc = delegate {
+//                double[] Xnodes = new double[] { -5, -3, -1, 1, 3, 7 };
+//                double[] Ynodes = new double[] { -1, 1 };
+//                var grd = Grid2D.Cartesian2DGrid(Xnodes, Ynodes);
+//                grd.EdgeTagNames.Add(1, "wall_lower");
+//                grd.EdgeTagNames.Add(2, "wall_upper");
+//                grd.EdgeTagNames.Add(3, "wall_left");
+//                grd.EdgeTagNames.Add(4, "wall_right");
 
-                grd.DefineEdgeTags(delegate (double[] X) {
-                    byte et = 0;
-                    if (Math.Abs(X[1] - (-1)) <= 1.0e-8)
-                        et = 1;
-                    if (Math.Abs(X[1] - (+1)) <= 1.0e-8)
-                        et = 2;
-                    if (Math.Abs(X[0] - (-5)) <= 1.0e-8)
-                        et = 3;
-                    if (Math.Abs(X[0] - (+7)) <= 1.0e-8)
-                        et = 4;
-
-
-                    Debug.Assert(et != 0);
-                    return et;
-                });
-
-                return grd;
-            };
-
-            C.AddBoundaryValue("wall_lower", "VelocityX#A", (X, t) => VelXBase);
-            C.AddBoundaryValue("wall_upper", "VelocityX#A", (X, t) => VelXBase);
-            C.AddBoundaryValue("wall_lower", "VelocityX#B", (X, t) => VelXBase);
-            C.AddBoundaryValue("wall_upper", "VelocityX#B", (X, t) => VelXBase);
-            C.AddBoundaryValue("wall_left", "VelocityX#A", (X, t) => VelXBase);
-            C.AddBoundaryValue("wall_right", "VelocityX#A", (X, t) => VelXBase);
-            C.AddBoundaryValue("wall_left", "VelocityX#B", (X, t) => VelXBase);
-            C.AddBoundaryValue("wall_right", "VelocityX#B", (X, t) => VelXBase);
-
-#pragma warning disable 162
-            if (VelXBase != 0.0) {
-                C.BoundaryValues["wall_left"].type = IncompressibleBcType.Velocity_Inlet.ToString();
-                C.BoundaryValues["wall_right"].type = IncompressibleBcType.Velocity_Inlet.ToString();
-            }
-#pragma warning restore 162
+//                grd.DefineEdgeTags(delegate (double[] X) {
+//                    byte et = 0;
+//                    if (Math.Abs(X[1] - (-1)) <= 1.0e-8)
+//                        et = 1;
+//                    if (Math.Abs(X[1] - (+1)) <= 1.0e-8)
+//                        et = 2;
+//                    if (Math.Abs(X[0] - (-5)) <= 1.0e-8)
+//                        et = 3;
+//                    if (Math.Abs(X[0] - (+7)) <= 1.0e-8)
+//                        et = 4;
 
 
-            // Initial Values
-            // ==============
+//                    Debug.Assert(et != 0);
+//                    return et;
+//                });
+
+//                return grd;
+//            };
+
+//            C.AddBoundaryValue("wall_lower", "VelocityX#A", (X, t) => VelXBase);
+//            C.AddBoundaryValue("wall_upper", "VelocityX#A", (X, t) => VelXBase);
+//            C.AddBoundaryValue("wall_lower", "VelocityX#B", (X, t) => VelXBase);
+//            C.AddBoundaryValue("wall_upper", "VelocityX#B", (X, t) => VelXBase);
+//            C.AddBoundaryValue("wall_left", "VelocityX#A", (X, t) => VelXBase);
+//            C.AddBoundaryValue("wall_right", "VelocityX#A", (X, t) => VelXBase);
+//            C.AddBoundaryValue("wall_left", "VelocityX#B", (X, t) => VelXBase);
+//            C.AddBoundaryValue("wall_right", "VelocityX#B", (X, t) => VelXBase);
+
+//#pragma warning disable 162
+//            if (VelXBase != 0.0) {
+//                C.BoundaryValues["wall_left"].type = IncompressibleBcType.Velocity_Inlet.ToString();
+//                C.BoundaryValues["wall_right"].type = IncompressibleBcType.Velocity_Inlet.ToString();
+//            }
+//#pragma warning restore 162
 
 
-            C.InitialValues_Evaluators.Add("Phi", (X => (X[0] - 0.9)));
-            C.InitialValues_Evaluators.Add("VelocityX", X => VelXBase);
+//            // Initial Values
+//            // ==============
 
 
-            // Physical Parameters
-            // ===================
-
-            // Lame
-            C.PhysicalParameters.rho_A = 10;
-            C.PhysicalParameters.rho_B = 0.1;
-            C.PhysicalParameters.mu_A = 0.5;
-            C.PhysicalParameters.mu_B = 0.005;
-            C.PhysicalParameters.Sigma = 0.1;
-            //*/
+//            C.InitialValues_Evaluators.Add("Phi", (X => (X[0] - 0.9)));
+//            C.InitialValues_Evaluators.Add("VelocityX", X => VelXBase);
 
 
-            C.PhysicalParameters.IncludeConvection = IncludeConvection;
-            C.PhysicalParameters.Material = true;
+//            // Physical Parameters
+//            // ===================
 
-            // misc. solver options
-            // ====================
+//            // Lame
+//            C.PhysicalParameters.rho_A = 10;
+//            C.PhysicalParameters.rho_B = 0.1;
+//            C.PhysicalParameters.mu_A = 0.5;
+//            C.PhysicalParameters.mu_B = 0.005;
+//            C.PhysicalParameters.Sigma = 0.1;
+//            //*/
 
-            C.AdvancedDiscretizationOptions.CellAgglomerationThreshold = 0.2;
-            C.Option_LevelSetEvolution = LevelSetEvolution.None;
-            C.UseXDG4Velocity = false;
+
+//            C.PhysicalParameters.IncludeConvection = IncludeConvection;
+//            C.PhysicalParameters.Material = true;
+
+//            // misc. solver options
+//            // ====================
+
+//            C.AdvancedDiscretizationOptions.CellAgglomerationThreshold = 0.2;
+//            C.Option_LevelSetEvolution = LevelSetEvolution.None;
+//            C.UseXDG4Velocity = false;
 
 
-            C.LinearSolver.NoOfMultigridLevels = 3;
-            C.VelocityBlockPrecondMode = MultigridOperator.Mode.SymPart_DiagBlockEquilib;
-            C.LinearSolver.MaxKrylovDim = 100;
-            //C.Solver_MaxKrylovDim = 100;
-            C.AdvancedDiscretizationOptions.FilterConfiguration.LevelSetSource = Solution.XNSECommon.CurvatureAlgorithms.LevelSetSource.fromDG;
+//            C.LinearSolver.NoOfMultigridLevels = 3;
+//            C.VelocityBlockPrecondMode = MultigridOperator.Mode.SymPart_DiagBlockEquilib;
+//            C.LinearSolver.MaxKrylovDim = 100;
+//            //C.Solver_MaxKrylovDim = 100;
+//            C.AdvancedDiscretizationOptions.FilterConfiguration.LevelSetSource = Solution.XNSECommon.CurvatureAlgorithms.LevelSetSource.fromDG;
 
             
 
-            //C.Solver_MaxIterations = 1000;
-            C.LinearSolver.MaxSolverIterations = 1000;
-            C.NonLinearSolver.MaxSolverIterations = 1000;
+//            //C.Solver_MaxIterations = 1000;
+//            C.LinearSolver.MaxSolverIterations = 1000;
+//            C.NonLinearSolver.MaxSolverIterations = 1000;
 
-            // NO Timestepping
-            // ===============
+//            // NO Timestepping
+//            // ===============
 
-            C.CompMode = AppControl._CompMode.Steady;
-            C.dtMax = 0.1;
-            C.dtMin = 0.1;
-            C.Endtime = 1000;
-            C.NoOfTimesteps = 1;
+//            C.CompMode = AppControl._CompMode.Steady;
+//            C.dtMax = 0.1;
+//            C.dtMin = 0.1;
+//            C.Endtime = 1000;
+//            C.NoOfTimesteps = 1;
 
-            // haben fertig...
-            // ===============
+//            // haben fertig...
+//            // ===============
 
-            return C;
-        }
-
-
-
-        static public XNSE_Control[] StaticDroplet_LinearSolver_ParamStudy() {
-            List<XNSE_Control> R = new List<XNSE_Control>();
-
-            foreach (int sizefactor in new int[] { 1, 2, 4, 8 }) {
-                foreach (int dgdeg in new int[] { 1, 2, 3 }) {
-
-                    if (dgdeg >= 3 && sizefactor >= 8)
-                        continue;
-
-                    foreach (var pcMode in new MultigridOperator.Mode[] { MultigridOperator.Mode.IdMass, MultigridOperator.Mode.SymPart_DiagBlockEquilib }) {
-
-                        var BasicDesc = new Tuple<string, object>[] {
-                            new Tuple<string,object>("Grid", 18*sizefactor),
-                            new Tuple<string,object>("DG-Degree", dgdeg),
-                            new Tuple<string,object>("VelBlockPrecond", pcMode)
-                        };
-
-
-                        /*
-                        // "iterativesimple_classic"
-                        // =================
-                        {
-                            var C1 = StaticDroplet(sizeFactor: sizefactor, degree: dgdeg);
-                            C1.VelocityBlockPrecondMode = pcMode;
-
-                            C1.option_solver = "iterativesimple_classic";
-                            C1.Paramstudy_ContinueOnError = true;
-                            C1.Paramstudy_CaseIdentification = new Tuple<string, object>[] {
-                                new Tuple<string,object>("option_solver", C1.option_solver)
-                            }.Cat(BasicDesc);
-                            R.Add(C1);
-                        }
-
-                        // "iterativesimple_resmini"
-                        // =================
-                        {
-                            var C5 = StaticDroplet(sizeFactor: sizefactor, degree: dgdeg);
-                            C5.VelocityBlockPrecondMode = pcMode;
-
-                            C5.option_solver = "iterativesimple_resmini";
-                            C5.Paramstudy_ContinueOnError = true;
-                            C5.Paramstudy_CaseIdentification = new Tuple<string, object>[] {
-                                new Tuple<string,object>("option_solver", C5.option_solver)
-                            }.Cat(BasicDesc);
-                            R.Add(C5);
-                        }
-
-                        // "iterativesimpler"
-                        // ==================
-                        {
-                            var C6 = StaticDroplet(sizeFactor: sizefactor, degree: dgdeg);
-                            C6.VelocityBlockPrecondMode = pcMode;
-
-                            C6.option_solver = "iterativesimpler";
-                            C6.Paramstudy_ContinueOnError = true;
-                            C6.Paramstudy_CaseIdentification = new Tuple<string, object>[] {
-                                new Tuple<string,object>("option_solver", C6.option_solver)
-                            }.Cat(BasicDesc);
-                            R.Add(C6);
-                        }
-                        */
-
-                        foreach (int kdim in new int[] { 10, 20, 100 }) {
-
-                            /*
-                            // orthonormalization
-                            // ==================
-                            {
-                                var C2 = StaticDroplet(sizeFactor: sizefactor, degree: dgdeg);
-                                C2.VelocityBlockPrecondMode = pcMode;
-                                C2.option_solver = "orthonormalization";
-                                C2.MaxKrylovDim = kdim;
-                                C2.Paramstudy_ContinueOnError = true;
-                                C2.Paramstudy_CaseIdentification = new Tuple<string, object>[] {
-                                    new Tuple<string,object>("option_solver", C2.option_solver),
-                                    new Tuple<string,object>("KrylovDim", kdim)
-                                }.Cat(BasicDesc);
-                                R.Add(C2);
-                            }
-                             */
-
-                            /*
-                            // gmres+schwarz
-                            // =============
-                            {
-                                var C3 = StaticDroplet(sizeFactor: sizefactor, degree: dgdeg);
-                                C3.VelocityBlockPrecondMode = pcMode;
-                                C3.option_solver = "gmres+schwarz";
-                                C3.MaxKrylovDim = kdim;
-                                C3.Paramstudy_CaseIdentification = new Tuple<string, object>[] {
-                                    new Tuple<string,object>("option_solver", C3.option_solver),
-                                    new Tuple<string,object>("KrylovDim", kdim)
-                                }.Cat(BasicDesc);
-
-
-                                R.Add(C3);
-                            }*/
-
-
-                            // gmres+schwarz
-                            // =============
-                            {
-                                var C7 = StaticDroplet(sizeFactor: sizefactor, degree: dgdeg);
-                                C7.VelocityBlockPrecondMode = pcMode;
-                                C7.LinearSolver.MaxKrylovDim = kdim;
-                                //C7.Solver_MaxKrylovDim = kdim;
-                                C7.Paramstudy_CaseIdentification = new Tuple<string, object>[] {
-                                    new Tuple<string,object>("KrylovDim", kdim)
-                                }.Cat(BasicDesc);
-                                R.Add(C7);
-                            }
-
-                            /*
-                            // gmres+simple
-                            // ============
-                            {
-                                var C4 = StaticDroplet(sizeFactor: sizefactor, degree: dgdeg);
-                                C4.VelocityBlockPrecondMode = pcMode;
-                                C4.option_solver = "gmres+simple";
-                                C4.MaxKrylovDim = kdim;
-                                C4.Paramstudy_CaseIdentification = new Tuple<string, object>[] {
-                                    new Tuple<string,object>("option_solver", C4.option_solver),
-                                    new Tuple<string,object>("KrylovDim", kdim)
-                                }.Cat(BasicDesc);
-                                R.Add(C4);
-                            }
-                             */
-                        }
-
-                    }
-                }
-            }
+//            return C;
+//        }
 
 
 
-            return R.ToArray();
-        }
+        //static public XNSE_Control[] StaticDroplet_LinearSolver_ParamStudy() {
+        //    List<XNSE_Control> R = new List<XNSE_Control>();
+
+        //    foreach (int sizefactor in new int[] { 1, 2, 4, 8 }) {
+        //        foreach (int dgdeg in new int[] { 1, 2, 3 }) {
+
+        //            if (dgdeg >= 3 && sizefactor >= 8)
+        //                continue;
+
+        //            foreach (var pcMode in new MultigridOperator.Mode[] { MultigridOperator.Mode.IdMass, MultigridOperator.Mode.SymPart_DiagBlockEquilib }) {
+
+        //                var BasicDesc = new Tuple<string, object>[] {
+        //                    new Tuple<string,object>("Grid", 18*sizefactor),
+        //                    new Tuple<string,object>("DG-Degree", dgdeg),
+        //                    new Tuple<string,object>("VelBlockPrecond", pcMode)
+        //                };
+
+
+        //                /*
+        //                // "iterativesimple_classic"
+        //                // =================
+        //                {
+        //                    var C1 = StaticDroplet(sizeFactor: sizefactor, degree: dgdeg);
+        //                    C1.VelocityBlockPrecondMode = pcMode;
+
+        //                    C1.option_solver = "iterativesimple_classic";
+        //                    C1.Paramstudy_ContinueOnError = true;
+        //                    C1.Paramstudy_CaseIdentification = new Tuple<string, object>[] {
+        //                        new Tuple<string,object>("option_solver", C1.option_solver)
+        //                    }.Cat(BasicDesc);
+        //                    R.Add(C1);
+        //                }
+
+        //                // "iterativesimple_resmini"
+        //                // =================
+        //                {
+        //                    var C5 = StaticDroplet(sizeFactor: sizefactor, degree: dgdeg);
+        //                    C5.VelocityBlockPrecondMode = pcMode;
+
+        //                    C5.option_solver = "iterativesimple_resmini";
+        //                    C5.Paramstudy_ContinueOnError = true;
+        //                    C5.Paramstudy_CaseIdentification = new Tuple<string, object>[] {
+        //                        new Tuple<string,object>("option_solver", C5.option_solver)
+        //                    }.Cat(BasicDesc);
+        //                    R.Add(C5);
+        //                }
+
+        //                // "iterativesimpler"
+        //                // ==================
+        //                {
+        //                    var C6 = StaticDroplet(sizeFactor: sizefactor, degree: dgdeg);
+        //                    C6.VelocityBlockPrecondMode = pcMode;
+
+        //                    C6.option_solver = "iterativesimpler";
+        //                    C6.Paramstudy_ContinueOnError = true;
+        //                    C6.Paramstudy_CaseIdentification = new Tuple<string, object>[] {
+        //                        new Tuple<string,object>("option_solver", C6.option_solver)
+        //                    }.Cat(BasicDesc);
+        //                    R.Add(C6);
+        //                }
+        //                */
+
+        //                foreach (int kdim in new int[] { 10, 20, 100 }) {
+
+        //                    /*
+        //                    // orthonormalization
+        //                    // ==================
+        //                    {
+        //                        var C2 = StaticDroplet(sizeFactor: sizefactor, degree: dgdeg);
+        //                        C2.VelocityBlockPrecondMode = pcMode;
+        //                        C2.option_solver = "orthonormalization";
+        //                        C2.MaxKrylovDim = kdim;
+        //                        C2.Paramstudy_ContinueOnError = true;
+        //                        C2.Paramstudy_CaseIdentification = new Tuple<string, object>[] {
+        //                            new Tuple<string,object>("option_solver", C2.option_solver),
+        //                            new Tuple<string,object>("KrylovDim", kdim)
+        //                        }.Cat(BasicDesc);
+        //                        R.Add(C2);
+        //                    }
+        //                     */
+
+        //                    /*
+        //                    // gmres+schwarz
+        //                    // =============
+        //                    {
+        //                        var C3 = StaticDroplet(sizeFactor: sizefactor, degree: dgdeg);
+        //                        C3.VelocityBlockPrecondMode = pcMode;
+        //                        C3.option_solver = "gmres+schwarz";
+        //                        C3.MaxKrylovDim = kdim;
+        //                        C3.Paramstudy_CaseIdentification = new Tuple<string, object>[] {
+        //                            new Tuple<string,object>("option_solver", C3.option_solver),
+        //                            new Tuple<string,object>("KrylovDim", kdim)
+        //                        }.Cat(BasicDesc);
+
+
+        //                        R.Add(C3);
+        //                    }*/
+
+
+        //                    // gmres+schwarz
+        //                    // =============
+        //                    {
+        //                        var C7 = StaticDroplet(sizeFactor: sizefactor, degree: dgdeg);
+        //                        C7.VelocityBlockPrecondMode = pcMode;
+        //                        C7.LinearSolver.MaxKrylovDim = kdim;
+        //                        //C7.Solver_MaxKrylovDim = kdim;
+        //                        C7.Paramstudy_CaseIdentification = new Tuple<string, object>[] {
+        //                            new Tuple<string,object>("KrylovDim", kdim)
+        //                        }.Cat(BasicDesc);
+        //                        R.Add(C7);
+        //                    }
+
+        //                    /*
+        //                    // gmres+simple
+        //                    // ============
+        //                    {
+        //                        var C4 = StaticDroplet(sizeFactor: sizefactor, degree: dgdeg);
+        //                        C4.VelocityBlockPrecondMode = pcMode;
+        //                        C4.option_solver = "gmres+simple";
+        //                        C4.MaxKrylovDim = kdim;
+        //                        C4.Paramstudy_CaseIdentification = new Tuple<string, object>[] {
+        //                            new Tuple<string,object>("option_solver", C4.option_solver),
+        //                            new Tuple<string,object>("KrylovDim", kdim)
+        //                        }.Cat(BasicDesc);
+        //                        R.Add(C4);
+        //                    }
+        //                     */
+        //                }
+
+        //            }
+        //        }
+        //    }
+
+
+
+        //    return R.ToArray();
+        //}
 
 
         public static XNSE_Control ManufacturedDroplet() {

@@ -127,7 +127,7 @@ namespace BoSSS.Solution.XheatCommon {
 
         public virtual IList<string> ParameterOrdering {
             get {
-                return ArrayTools.Cat(new string[] { "GradTemp0_X", "GradTemp0_Y", "GradTemp0_Z" }.GetSubVector(0, D), "Temperature0", "Curvature", "DisjoiningPressure");
+                return ArrayTools.Cat(VariableNames.Temperature0Gradient(D), VariableNames.Temperature0, VariableNames.Curvature, VariableNames.DisjoiningPressure);
             }
         }
 
