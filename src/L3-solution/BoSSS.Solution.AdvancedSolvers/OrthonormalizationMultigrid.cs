@@ -94,7 +94,10 @@ namespace BoSSS.Solution.AdvancedSolvers {
         }
 
 
-        public double m_Tolerance = 0.0;
+        /// <summary>
+        /// Threshold for convergence detection
+        /// </summary>
+        public double Tolerance = 1E-10;
 
 
         /// <summary>
@@ -110,9 +113,6 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
 
         public int m_MaxIterations = 1;
-
-        bool m_converged = false;
-        int NoOfIterations = 0;
 
 
         List<double[]> SolHistory = new List<double[]>();
@@ -144,30 +144,42 @@ namespace BoSSS.Solution.AdvancedSolvers {
             X = null;
         }
 
-        void MinimizeResidual<U,V>(U outX, V B)
-            where U : IList<double>
+        double MinimizeResidual<U,V,W,Q>(U outX, V Sol0, W Res0, Q outRes)
+            where U : IList<double> //
             where V : IList<double> //
+            where W : IList<double> //
+            where Q : IList<double> //
         {
             Debug.Assert(SolHistory.Count == MxxHistory.Count);
             int KrylovDim = SolHistory.Count;
 
             double[] alpha = new double[KrylovDim];
             for (int i = 0; i < KrylovDim; i++) {
-                alpha[i] = GenericBlas.InnerProd(MxxHistory[i], B).MPISum();
+                alpha[i] = GenericBlas.InnerProd(MxxHistory[i], Res0).MPISum();
             }
 
-            outX.ClearEntries();
-            for (int i = 0; i < KrylovDim; i++)
+            outX.SetV(Sol0);
+            outRes.SetV(Res0);
+            for (int i = 0; i < KrylovDim; i++) {
                 outX.AccV(alpha[i], SolHistory[i]);
+                outRes.AccV(-alpha[i], MxxHistory[i]);
+            }
 
+            return outRes.L2NormPow2().MPISum().Sqrt();
+
+            /* we cannot do the following 
+            // since the 'MxxHistory' vectors form an orthonormal system,
+            // the L2-norm is the L2-Norm of the 'alpha'-coordinates (Parceval's equality)
+            return alpha.L2Norm();            
+            */
         }
 
         /// <summary>
         /// the multigrid iterations for a linear problem
         /// </summary>
         /// <param name="_xl">on input, the initial guess; on exit, the result of the multigrid iteration</param>
-        /// <param name="bl">the right-hand-side of the problem</param>
-        public void Solve<U, V>(U _xl, V bl)
+        /// <param name="B">the right-hand-side of the problem</param>
+        public void Solve<U, V>(U _xl, V B)
             where U : IList<double>
             where V : IList<double> //
         {
@@ -178,19 +190,16 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 double[] rl = new double[L];
                 double[] rlc = new double[Lc];
 
-                /*
+                
                 if (this.IterationCallback != null) {
-                    var _bl = bl.ToArray();
-                    this.OpMatrix.SpMV(-1.0, xl, 1.0, _bl);
-                    this.IterationCallback(0, xl.ToArray(), _bl, this.m_MgOperator);
+                    var _bl = B.ToArray();
+                    this.OpMatrix.SpMV(-1.0, _xl, 1.0, _bl);
+                    this.IterationCallback(0, _xl.ToArray(), _bl, this.m_MgOperator);
                 }
-                */
-
-                {
-                    double[] Sol0 = _xl.ToArray();
-                    AddSol(ref Sol0);
-                }
-
+                
+                double[] Sol0 = _xl.ToArray();
+                double[] Res0 = new double[L];
+                Residual(Res0, Sol0, B);
 
                 for (int iIter = 0; iIter < this.m_MaxIterations; iIter++) {
 
@@ -199,7 +208,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
                     {
 
-                        Residual(rl, _xl, bl); // Residual on this level
+                        Residual(rl, _xl, B); // Residual on this level
 
                         // compute correction
                         double[] PreCorr = new double[L];
@@ -207,14 +216,18 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
                         // orthonormalization and residual minimization
                         AddSol(ref PreCorr);
-                        MinimizeResidual(_xl, bl);
+                        double resNorm = MinimizeResidual(_xl, Sol0, Res0, rl);
+                        if(resNorm < this.Tolerance) {
+                            Converged = true;
+                            return;
+                        }
                     }
 
 
                     // coarse grid correction
-                    // ======================
+                    // ----------------------
                     {
-                        Residual(rl, _xl, bl); // Residual on this level
+                        Residual(rl, _xl, B); // Residual on this level
                         this.m_MgOperator.CoarserLevel.Restrict(rl, rlc);
 
                         // Berechnung der Grobgitterkorrektur
@@ -227,7 +240,11 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
                         // orthonormalization and residual minimization
                         AddSol(ref vl);
-                        MinimizeResidual(_xl, bl);
+                        double resNorm = MinimizeResidual(_xl, Sol0, Res0, rl);
+                        if (resNorm < this.Tolerance) {
+                            Converged = true;
+                            return;
+                        }
 
                     }
 
@@ -235,8 +252,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                     // -------------
 
                     {
-
-                        Residual(rl, _xl, bl); // Residual on this level
+                        Residual(rl, _xl, B); // Residual on this level
 
                         // compute correction
                         double[] PreCorr = new double[L];
@@ -244,16 +260,24 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
                         // orthonormalization and residual minimization
                         AddSol(ref PreCorr);
-                        MinimizeResidual(_xl, bl);
+                        double resNorm = MinimizeResidual(_xl, Sol0, Res0, rl);
+                        if (resNorm < this.Tolerance) {
+                            Converged = true;
+                            return;
+                        }
                     }
 
-                    /*
+                    // iteration callback
+                    // ------------------
+
+                    this.ThisLevelIterations++;
+
                     if (this.IterationCallback != null) {
-                        var _bl = bl.ToArray();
-                        this.OpMatrix.SpMV(-1.0, xl, 1.0, _bl);
-                        this.IterationCallback(iIter + 1, xl.ToArray(), _bl, this.m_MgOperator);
+                        var _bl = B.ToArray();
+                        this.OpMatrix.SpMV(-1.0, _xl, 1.0, _bl);
+                        this.IterationCallback(iIter + 1, _xl.ToArray(), _bl, this.m_MgOperator);
                     }
-                    */
+                    
                 }
             }
         }
@@ -267,20 +291,18 @@ namespace BoSSS.Solution.AdvancedSolvers {
         }
 
         public int ThisLevelIterations {
-            get {
-                return this.NoOfIterations;
-            }
+            get;
+            private set;
         }
 
         public bool Converged {
-            get {
-                return this.m_converged;
-            }
+            get;
+            private set;
         }
 
         public void ResetStat() {
-            this.m_converged = false;
-            this.NoOfIterations = 0;
+            this.Converged = false;
+            this.ThisLevelIterations = 0;
             if (this.Smoother != null)
                 this.Smoother.ResetStat();
             if (this.CoarserLevelSolver != null)

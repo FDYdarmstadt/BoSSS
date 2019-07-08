@@ -1315,17 +1315,19 @@ namespace BoSSS.Solution {
         /// 
         /// </summary>
         ISolverSmootherTemplate KcycleMultiSchwarz(LinearSolverConfig _lc, int[] _LocalDOF) {
-            
+
 
             // my tests show that the ideal block size may be around 10'000
             int DirectKickIn = _lc.TargetBlockSize;
-
+            _lc.ConvergenceCriterion = 1e-10;
 
             //MultigridOperator Current = op;
             var SolverChain = new List<ISolverSmootherTemplate>();
             for (int iLevel = 0; iLevel < _lc.NoOfMultigridLevels; iLevel++) {
                 int SysSize = _LocalDOF[iLevel].MPISum();
                 int NoOfBlocks = (int)Math.Ceiling(((double)SysSize) / ((double)DirectKickIn));
+
+                
 
                 bool useDirect = false;
                 useDirect |= (SysSize < DirectKickIn);
@@ -1355,9 +1357,12 @@ namespace BoSSS.Solution {
                     };
 
                     levelSolver = new OrthonormalizationMultigrid() {
-                        m_MaxIterations = 1,
+                        m_MaxIterations = iLevel == 0 ? _lc.MaxSolverIterations : 1,
                         Smoother = smoother,
+                        Tolerance = iLevel == 0 ? _lc.ConvergenceCriterion : 0.0
                     };
+
+                  
                 }
                 SolverChain.Add(levelSolver);
 

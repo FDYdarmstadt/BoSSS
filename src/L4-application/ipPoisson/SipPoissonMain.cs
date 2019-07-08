@@ -860,7 +860,7 @@ namespace BoSSS.Application.SipPoisson {
 
         MultigridOperator.ChangeOfBasisConfig[][] MgConfig {
             get {
-                Console.WriteLine("Polynomgrad wird nicht mehr reduziert!!!");
+                //Console.WriteLine("Polynomgrad wird nicht mehr reduziert!!!");
                 int p = this.T.Basis.Degree;
                 int NoOfLevels = this.MultigridSequence.Length;
                 var config = new MultigridOperator.ChangeOfBasisConfig[NoOfLevels][];
@@ -871,8 +871,8 @@ namespace BoSSS.Application.SipPoisson {
                         new MultigridOperator.ChangeOfBasisConfig() {
                             VarIndex = new int[] {0},
                             mode = MultigridOperator.Mode.DiagBlockEquilib,
-                            Degree = Math.Max(p, p - iLevel)
-                            //Degree = Math.Max(1, p - iLevel)
+                            //Degree = Math.Max(p, p - iLevel)
+                            Degree = Math.Max(1, p - iLevel)
                         }
                     };
 

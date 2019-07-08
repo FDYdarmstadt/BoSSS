@@ -311,6 +311,9 @@ namespace BoSSS.Solution.AdvancedSolvers {
         /// </summary>
         public int MaxIter = 100;
 
+        /// <summary>
+        /// Threshold for convergence detection
+        /// </summary>
         public double Tolerance = 1E-10;
 
         public int MaxKrylovDim = 80;
