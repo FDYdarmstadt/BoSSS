@@ -307,7 +307,7 @@ namespace FSI_Solver
                 {
                     for (int j = 0; j < 3; j++)
                     {
-                        StateBuffer[NoOfVars * NoOfVars * p + i + NoOfVars * j] = P.AddedDampingTensor[i, j];
+                        StateBuffer[NoOfVars * NoOfVars * p + i + NoOfVars * j] = P.addedDampingTensor[i, j];
                     }
                 }
 
@@ -320,7 +320,7 @@ namespace FSI_Solver
                 {
                     for (int j = 0; j < 3; j++)
                     {
-                        P.AddedDampingTensor[i, j] = GlobalStateBuffer[NoOfVars * NoOfVars * p + i + NoOfVars * j];
+                        P.addedDampingTensor[i, j] = GlobalStateBuffer[NoOfVars * NoOfVars * p + i + NoOfVars * j];
                     }
                 }
             }
@@ -350,7 +350,7 @@ namespace FSI_Solver
                 if (IterationCounter == 0 && FullyCoupled)
                 {
                     Console.WriteLine("Predicting forces for the next timestep...");
-                    if (p.neglectAddedDamping == false)
+                    if (p.UseAddedDamping)
                     {
                         p.UpdateDampingTensors();
                         //ExchangeDampingTensors(Particles);
@@ -404,7 +404,7 @@ namespace FSI_Solver
                 Residual = 0;
                 foreach (Particle p in Particles)
                 {
-                    p.ForceTorqueResidual = Math.Sqrt((p.ForcesPrevIteration[0] - p.HydrodynamicForces[0][0]).Pow2() + (p.ForcesPrevIteration[1] - p.HydrodynamicForces[0][1]).Pow2() + (p.TorquePrevIteration - p.HydrodynamicTorque[0]).Pow2());
+                    p.ForceTorqueResidual = Math.Sqrt((p.forcesPrevIteration[0] - p.HydrodynamicForces[0][0]).Pow2() + (p.forcesPrevIteration[1] - p.HydrodynamicForces[0][1]).Pow2() + (p.torquePrevIteration - p.HydrodynamicTorque[0]).Pow2());
                     for (int d = 0; d < 2; d++)
                         ForcesNewSquared[d] += p.HydrodynamicForces[0][d].Pow2();
                     TorqueNewSquared += p.HydrodynamicTorque[0].Pow2();
@@ -437,12 +437,13 @@ namespace FSI_Solver
         /// /// <param name="Finalresult"></param>
         /// <param name="MPIangularVelocity"></param>
         /// <param name="Force"></param>
-        internal void PrintResultToConsole(List<Particle> Particles, double FluidViscosity, double phystime, int TimestepInt, int IterationCounter, bool Finalresult, out double MPIangularVelocity, out double[] Force)
+        internal void PrintResultToConsole(List<Particle> Particles, double FluidViscosity, double FluidDensity, double phystime, int TimestepInt, int IterationCounter, bool Finalresult, out double MPIangularVelocity, out double[] Force)
         {
             double[] TranslationalMomentum = new double[2] { 0, 0 };
             double RotationalMomentum = 0;
             double[] totalKE = new double[3] { 0, 0, 0 };
             double[] ParticleReynoldsNumber = new double[Particles.Count()];
+            double[] ParticleStokesNumber = new double[Particles.Count()];
 
             for (int p = 0; p < Particles.Count(); p++) //5 times faster than foreach loop
             {
@@ -456,6 +457,7 @@ namespace FSI_Solver
                 totalKE[1] += SingleParticleKineticEnergy[1];
                 totalKE[2] += SingleParticleKineticEnergy[SingleParticleMomentum.Length - 1];
                 ParticleReynoldsNumber[Particles.IndexOf(CurrentParticle)] = CurrentParticle.ComputeParticleRe(FluidViscosity);
+                ParticleStokesNumber[Particles.IndexOf(CurrentParticle)] = CurrentParticle.ComputeParticleSt(FluidViscosity, FluidDensity);
             }
 
             Console.WriteLine("Total kinetic energy in system:  " + (totalKE[0] + totalKE[1] + totalKE[2]));
@@ -501,6 +503,7 @@ namespace FSI_Solver
                         Console.WriteLine("Angle:   {0}", CurrentParticle.Angle[0]);
                         Console.WriteLine();
                         Console.WriteLine("Particle Reynolds number: " + ParticleReynoldsNumber[p]);
+                        Console.WriteLine("Particle Stokes number: " + ParticleStokesNumber[p]);
                         Console.WriteLine();
                         Console.WriteLine("=======================================================");
                         Console.WriteLine();
@@ -532,10 +535,10 @@ namespace FSI_Solver
                 }
                 // Save status for residual
                 // ========================
-                p.ForceAndTorque_convergence = ForceTorqueConvergenceCriterion;
-                p.ForcesPrevIteration[0] = p.HydrodynamicForces[0][0];
-                p.ForcesPrevIteration[1] = p.HydrodynamicForces[0][1];
-                p.TorquePrevIteration = p.HydrodynamicTorque[0];
+                p.forceAndTorque_convergence = ForceTorqueConvergenceCriterion;
+                p.forcesPrevIteration[0] = p.HydrodynamicForces[0][0];
+                p.forcesPrevIteration[1] = p.HydrodynamicForces[0][1];
+                p.torquePrevIteration = p.HydrodynamicTorque[0];
             }
         }
 
@@ -576,11 +579,11 @@ namespace FSI_Solver
                     CheckSend[p * NoOfVars + 1] = P.Angle[1];
                     CheckSend[p * NoOfVars + 2] = P.RotationalVelocity[0];
                     //CheckSend[iP*NoOfVars + 2] = P.Area_P;
-                    CheckSend[p * NoOfVars + 3] = P.ClearSmallValues ? 1.0 : 0.0;
-                    CheckSend[p * NoOfVars + 4] = P.ForceAndTorque_convergence;
+                    CheckSend[p * NoOfVars + 3] = P.clearSmallValues ? 1.0 : 0.0;
+                    CheckSend[p * NoOfVars + 4] = P.forceAndTorque_convergence;
                     CheckSend[p * NoOfVars + 5] = P.Mass_P;
                     CheckSend[p * NoOfVars + 6] = P.particleDensity;
-                    CheckSend[p * NoOfVars + 7] = P.AddedDampingTensor[0,0];
+                    CheckSend[p * NoOfVars + 7] = P.addedDampingTensor[0,0];
                     // todo: add more values here that might be relevant for the particle state;
 
                     // vector values
@@ -589,8 +592,8 @@ namespace FSI_Solver
                         int Offset = 10;
                         CheckSend[p * NoOfVars + Offset + 0 * D + d] = P.Position[0][d];
                         CheckSend[p * NoOfVars + Offset + 1 * D + d] = P.Position[1][d];
-                        CheckSend[p * NoOfVars + Offset + 2 * D + d] = P.TranslationalAcceleration[0][d];
-                        CheckSend[p * NoOfVars + Offset + 3 * D + d] = P.TranslationalAcceleration[1][d];
+                        CheckSend[p * NoOfVars + Offset + 2 * D + d] = P.translationalAcceleration[0][d];
+                        CheckSend[p * NoOfVars + Offset + 3 * D + d] = P.translationalAcceleration[1][d];
                         CheckSend[p * NoOfVars + Offset + 4 * D + d] = P.TranslationalVelocity[0][d];
                         CheckSend[p * NoOfVars + Offset + 5 * D + d] = P.TranslationalVelocity[1][d];
                         CheckSend[p * NoOfVars + Offset + 6 * D + d] = P.HydrodynamicForces[0][d];

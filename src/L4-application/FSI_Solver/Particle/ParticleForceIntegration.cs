@@ -146,7 +146,7 @@ namespace BoSSS.Application.FSI_Solver
             SummandsVelGradient[1] = -Grad_UARes[j, k, 0, 1] * NormalVector[j, k, 1];
             SummandsVelGradient[2] = -Grad_UARes[j, k, 1, 0] * NormalVector[j, k, 1];
             SummandsPressure = pARes[j, k] * NormalVector[j, k, 0];
-            return ParticleAuxillary.SummationWithNeumaier(SummandsVelGradient, SummandsPressure, FluidViscosity);
+            return SummationWithNeumaier(SummandsVelGradient, SummandsPressure, FluidViscosity);
         }
 
         /// <summary>
@@ -179,7 +179,7 @@ namespace BoSSS.Application.FSI_Solver
             SummandsVelGradient[1] = -Grad_UARes[j, k, 1, 0] * NormalVector[j, k, 0];
             SummandsVelGradient[2] = -Grad_UARes[j, k, 0, 1] * NormalVector[j, k, 0];
             SummandsPressure = pARes[j, k] * NormalVector[j, k, 1];
-            return ParticleAuxillary.SummationWithNeumaier(SummandsVelGradient, SummandsPressure, FluidViscosity);
+            return SummationWithNeumaier(SummandsVelGradient, SummandsPressure, FluidViscosity);
         }
 
         /// <summary>
@@ -221,7 +221,7 @@ namespace BoSSS.Application.FSI_Solver
                     SummandsVelGradient[2] = -Grad_UARes[j, k, 0, 1] * NormalVector[j, k, 1];
                     SummandsVelGradient[3] = -Grad_UARes[j, k, 1, 0] * NormalVector[j, k, 1];
                     SummandsVelGradient[4] = -Grad_UARes[j, k, 2, 0] * NormalVector[j, k, 2];
-                    acc += ParticleAuxillary.SummationWithNeumaier(SummandsVelGradient, SummandsPressure, FluidViscosity);
+                    acc += SummationWithNeumaier(SummandsVelGradient, SummandsPressure, FluidViscosity);
                     break;
                 case 1:
                     SummandsPressure = pARes[j, k] * NormalVector[j, k, 1];
@@ -230,7 +230,7 @@ namespace BoSSS.Application.FSI_Solver
                     SummandsVelGradient[2] = -Grad_UARes[j, k, 1, 0] * NormalVector[j, k, 0];
                     SummandsVelGradient[3] = -Grad_UARes[j, k, 0, 1] * NormalVector[j, k, 0];
                     SummandsVelGradient[4] = -Grad_UARes[j, k, 2, 1] * NormalVector[j, k, 2];
-                    acc += ParticleAuxillary.SummationWithNeumaier(SummandsVelGradient, SummandsPressure, FluidViscosity);
+                    acc += SummationWithNeumaier(SummandsVelGradient, SummandsPressure, FluidViscosity);
                     break;
                 case 2:
                     SummandsPressure = pARes[j, k] * NormalVector[j, k, 2];
@@ -239,7 +239,7 @@ namespace BoSSS.Application.FSI_Solver
                     SummandsVelGradient[2] = -Grad_UARes[j, k, 2, 1] * NormalVector[j, k, 1];
                     SummandsVelGradient[3] = -Grad_UARes[j, k, 0, 2] * NormalVector[j, k, 0];
                     SummandsVelGradient[4] = -Grad_UARes[j, k, 1, 2] * NormalVector[j, k, 1];
-                    acc += ParticleAuxillary.SummationWithNeumaier(SummandsVelGradient, SummandsPressure, FluidViscosity);
+                    acc += SummationWithNeumaier(SummandsVelGradient, SummandsPressure, FluidViscosity);
                     break;
                 default:
                     throw new NotImplementedException();
@@ -288,6 +288,53 @@ namespace BoSSS.Application.FSI_Solver
             if (double.IsNaN(temp2) || double.IsInfinity(temp2))
                 throw new ArithmeticException("Error trying to calculate the particle torque");
             return temp1 + temp2;
+        }
+
+        /// <summary>
+        /// This method performs the Neumaier algorithm form the sum of the entries of an array.
+        /// It is specifically designed to sum up the velocity gradient and the pressure to 
+        /// calculate the hydrodynamic forces.
+        /// </summary>
+        /// <param name="SummandsVelGradient">
+        /// The array of the velocity gradient.
+        /// </param>
+        /// <param name="SummandsPressure">
+        /// The pressure.
+        /// </param>
+        /// <param name="muA">
+        /// The fluid viscosity.
+        /// </param>
+        static internal double SummationWithNeumaier(double[] SummandsVelGradient, double SummandsPressure, double muA)
+        {
+            double sum = SummandsVelGradient[0];
+            double naiveSum;
+            double c = 0;
+            for (int i = 1; i < SummandsVelGradient.Length; i++)
+            {
+                naiveSum = sum + SummandsVelGradient[i];
+                if (Math.Abs(sum) >= SummandsVelGradient[i])
+                {
+                    c += (sum - naiveSum) + SummandsVelGradient[i];
+                }
+                else
+                {
+                    c += (SummandsVelGradient[i] - naiveSum) + sum;
+                }
+                sum = naiveSum;
+            }
+            sum *= muA;
+            c *= muA;
+            naiveSum = sum + SummandsPressure;
+            if (Math.Abs(sum) >= SummandsPressure)
+            {
+                c += (sum - naiveSum) + SummandsPressure;
+            }
+            else
+            {
+                c += (SummandsPressure - naiveSum) + sum;
+            }
+            sum = naiveSum;
+            return sum + c;
         }
     }
 }
