@@ -30,7 +30,7 @@ namespace BoSSS.Application.FSI_Solver
 {
     public class ParticleStokesFlow : IBM_Solver.HardcodedTestExamples
     {
-        public static FSI_Control ParticleUnderGravity(int k = 2)
+        public static FSI_Control ParticleUnderGravity(int k = 2, int MeshFactor = 1)
         {
             FSI_Control C = new FSI_Control();
 
@@ -60,11 +60,11 @@ namespace BoSSS.Application.FSI_Solver
                 int q = new int(); // #Cells in x-dircetion + 1
                 int r = new int(); // #Cells in y-dircetion + 1
 
-                q = 20;
-                r = 40;
+                q = 60 * MeshFactor;
+                r = 120 * MeshFactor;
 
-                double[] Xnodes = GenericBlas.Linspace(-4 * BaseSize, 4 * BaseSize, q);
-                double[] Ynodes = GenericBlas.Linspace(-8 * BaseSize, 8 * BaseSize, r);
+                double[] Xnodes = GenericBlas.Linspace(-6 * BaseSize, 6 * BaseSize, q);
+                double[] Ynodes = GenericBlas.Linspace(-12 * BaseSize, 12 * BaseSize, r);
 
                 var grd = Grid2D.Cartesian2DGrid(Xnodes, Ynodes, periodicX: true, periodicY: true);
 
@@ -168,7 +168,7 @@ namespace BoSSS.Application.FSI_Solver
             C.LinearSolver.NoOfMultigridLevels = 1;
             C.LinearSolver.MaxSolverIterations = 1000;
             C.LinearSolver.MinSolverIterations = 1;
-            C.ForceAndTorque_ConvergenceCriterion = 1e-3;
+            C.ForceAndTorque_ConvergenceCriterion = 1e-4;
             C.LSunderrelax = 1.0;
 
 
@@ -367,6 +367,170 @@ namespace BoSSS.Application.FSI_Solver
             C.dtMin = dt;
             C.Endtime = 600;
             C.NoOfTimesteps = 60000000;
+
+            // haben fertig...
+            // ===============
+
+            return C;
+        }
+
+        public static FSI_Control WetParticleCollision(int k = 2, int MeshFactor = 1)
+        {
+            FSI_Control C = new FSI_Control();
+
+            // General scaling parameter
+            // =============================
+            const double BaseSize = 1.0;
+
+            // basic database options
+            // =============================
+            C.DbPath = @"\\hpccluster\hpccluster-scratch\deussen\cluster_db\straightChannel";
+            C.savetodb = false;
+            C.saveperiod = 1;
+            C.ProjectName = "ParticleUnderGravity";
+            C.ProjectDescription = "Active";
+            C.SessionName = C.ProjectName;
+            C.Tags.Add("with immersed boundary method");
+
+            // DG degrees
+            // =============================
+            C.SetDGdegree(k);
+
+            // Grid 
+            // =============================
+            //Generating grid
+            C.GridFunc = delegate
+            {
+                int q = new int(); // #Cells in x-dircetion + 1
+                int r = new int(); // #Cells in y-dircetion + 1
+
+                q = 80 * MeshFactor;
+                r = 20 * MeshFactor;
+
+                double[] Xnodes = GenericBlas.Linspace(-4 * BaseSize, 4 * BaseSize, q);
+                double[] Ynodes = GenericBlas.Linspace(-1 * BaseSize, 1 * BaseSize, r);
+
+                var grd = Grid2D.Cartesian2DGrid(Xnodes, Ynodes, periodicX: false, periodicY: false);
+
+                grd.EdgeTagNames.Add(1, "Pressure_Outlet_left");
+                grd.EdgeTagNames.Add(2, "Pressure_Outlet_right");
+                grd.EdgeTagNames.Add(3, "Wall_lower");
+                grd.EdgeTagNames.Add(4, "Pressure_Outlet_upper");
+
+
+                grd.DefineEdgeTags(delegate (double[] X)
+                {
+                    byte et = 0;
+                    if (Math.Abs(X[0] - (-4 * BaseSize)) <= 1.0e-8)
+                        et = 1;
+                    if (Math.Abs(X[0] + (-4 * BaseSize)) <= 1.0e-8)
+                        et = 2;
+                    if (Math.Abs(X[1] - (-1 * BaseSize)) <= 1.0e-8)
+                        et = 3;
+                    if (Math.Abs(X[1] + (-1 * BaseSize)) <= 1.0e-8)
+                        et = 4;
+
+                    Debug.Assert(et != 0);
+                    return et;
+                });
+
+                Console.WriteLine("Cells:" + grd.NumberOfCells);
+
+                return grd;
+            };
+
+
+            // Mesh refinement
+            // =============================
+            C.AdaptiveMeshRefinement = false;
+            C.RefinementLevel = 2;
+            C.maxCurvature = 2;
+
+
+            // Boundary conditions
+            // =============================
+            C.AddBoundaryValue("Pressure_Outlet_left");
+            C.AddBoundaryValue("Pressure_Outlet_right");
+            C.AddBoundaryValue("Wall_lower");
+            C.AddBoundaryValue("Pressure_Outlet_upper");
+
+            // Fluid Properties
+            // =============================
+            C.PhysicalParameters.rho_A = 1;//pg/(mum^3)
+            C.PhysicalParameters.mu_A = 1e-6;//pg(mum*s)
+            C.PhysicalParameters.Material = true;
+
+
+            // Particle Properties
+            // =============================   
+            // Defining particles
+            C.Particles = new List<Particle>();
+            int numOfParticles = 1;
+            for (int d = 0; d < numOfParticles; d++)
+            {
+                C.Particles.Add(new Particle_Sphere(new double[] { 0, -0.4 }, startAngl: 0)
+                {
+                    particleDensity = 7.8,
+                    radius_P = 0.5,
+                    GravityVertical = -9.81,
+                    AddaptiveUnderrelaxation = true,
+                    underrelaxation_factor = 5,
+                    ClearSmallValues = true,
+                    neglectAddedDamping = true
+                });
+            }
+
+            // Quadrature rules
+            // =============================   
+            C.CutCellQuadratureType = Foundation.XDG.XQuadFactoryHelper.MomentFittingVariants.Saye;
+
+            //Initial Values
+            // =============================   
+            //C.InitialValues_Evaluators.Add("Phi", X => phiComplete(X, 0));
+            C.InitialValues_Evaluators.Add("VelocityX", X => 0);
+            C.InitialValues_Evaluators.Add("VelocityY", X => 0);
+
+
+            // For restart
+            // =============================  
+            //C.RestartInfo = new Tuple<Guid, TimestepNumber>(new Guid("42c82f3c-bdf1-4531-8472-b65feb713326"), 400);
+            //C.GridGuid = new Guid("f1659eb6 -b249-47dc-9384-7ee9452d05df");
+
+
+            // Physical Parameters
+            // =============================  
+            C.PhysicalParameters.IncludeConvection = false;
+
+
+            // misc. solver options
+            // =============================  
+            C.AdvancedDiscretizationOptions.PenaltySafety = 4;
+            C.AdvancedDiscretizationOptions.CellAgglomerationThreshold = 0.2;
+            C.LevelSetSmoothing = false;
+            C.NonLinearSolver.MaxSolverIterations = 1000;
+            C.NonLinearSolver.MinSolverIterations = 1;
+            C.LinearSolver.NoOfMultigridLevels = 1;
+            C.LinearSolver.MaxSolverIterations = 1000;
+            C.LinearSolver.MinSolverIterations = 1;
+            C.ForceAndTorque_ConvergenceCriterion = 1e-2;
+            C.LSunderrelax = 1.0;
+
+
+            // Coupling Properties
+            // =============================
+            C.Timestepper_LevelSetHandling = LevelSetHandling.FSI_LieSplittingFullyCoupled;
+            C.LSunderrelax = 1;
+            C.max_iterations_fully_coupled = 100000;
+
+
+            // Timestepping
+            // =============================  
+            C.Timestepper_Scheme = IBM_Solver.IBM_Control.TimesteppingScheme.BDF2;
+            double dt = 1e-2;
+            C.dtMax = dt;
+            C.dtMin = dt;
+            C.Endtime = 60000;
+            C.NoOfTimesteps = 600000000;
 
             // haben fertig...
             // ===============

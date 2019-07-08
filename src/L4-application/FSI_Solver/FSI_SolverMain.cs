@@ -1127,10 +1127,10 @@ namespace BoSSS.Application.FSI_Solver
                     {
                         IterationCounter = 0;
                         double posResidual_splitting = 1e12;
-                        Collision.ResetCollisionState(m_Particles);
                         while (posResidual_splitting > ((FSI_Control)Control).ForceAndTorque_ConvergenceCriterion)
                         {
                             Auxillary.ParticleState_MPICheck(m_Particles, GridData, MPISize);
+                            Collision.ResetCollisionState(m_Particles);
                             Auxillary.SaveOldParticleState(m_Particles, IterationCounter, ((FSI_Control)Control).ForceAndTorque_ConvergenceCriterion, FullyCoupled);
                             if (IterationCounter != 0 || ((FSI_Control)Control).Timestepper_LevelSetHandling != LevelSetHandling.FSI_LieSplittingFullyCoupled)
                             {
@@ -1577,8 +1577,8 @@ namespace BoSSS.Application.FSI_Solver
             // =======================================================
             if (Distance < Threshold)
             {
-                Particle0.skipForceIntegration = true;
-                Particle1.skipForceIntegration = true;
+                //Particle0.skipForceIntegration = true;
+                //Particle1.skipForceIntegration = true;
             }
 
             if (Distance > Threshold)
@@ -1637,8 +1637,8 @@ namespace BoSSS.Application.FSI_Solver
                         Collided = true;
 
                         // Bool if force integration should be skipped
-                        Particle0.skipForceIntegration = true;
-                        Particle1.skipForceIntegration = true;
+                        //Particle0.skipForceIntegration = true;
+                        //Particle1.skipForceIntegration = true;
 
                         // coefficient of restitution (e=0 pastic; e=1 elastic)
                         double e = ((FSI_Control)Control).CoefficientOfRestitution;
@@ -2024,7 +2024,7 @@ namespace BoSSS.Application.FSI_Solver
                             //particle.m_collidedWithWall[0] = true;
 
                             // Skip force integration for next timestep
-                            particle.skipForceIntegration = true;
+                            //particle.skipForceIntegration = true;
 
 
                             collisionVn_P0 = particle.TranslationalVelocity[0][0] * normal[0] + particle.TranslationalVelocity[0][1] * normal[1];
