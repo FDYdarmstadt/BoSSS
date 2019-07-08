@@ -60,7 +60,8 @@ namespace BoSSS.Application.FSI_Solver
 
             // Particle history
             // =============================   
-            for (int i = 0; i < m_HistoryLength; i++) {
+            for (int i = 0; i < 4; i++)// made history_length = 4 hardcoded, it is nothing you need to change in any simulation
+            {
                 Position.Add(new double[Dim]);
                 Angle.Add(new double());
                 TranslationalVelocity.Add(new double[Dim]);
@@ -80,17 +81,27 @@ namespace BoSSS.Application.FSI_Solver
             //From degree to radiant
             Angle[0] = StartingAngle = startAngl * 2 * Math.PI / 360;
             Angle[1] = startAngl * 2 * Math.PI / 360;
-
-            //UpdateLevelSetFunction();
         }
+
+        /// <summary>
+        /// Set true if translation of the particle should be induced by hydrodynamical forces.
+        /// </summary>
+        [DataMember]
+        public bool IncludeTranslation = true;
+
+        /// <summary>
+        /// Set true if rotation of the particle should be induced by hydrodynamical torque.
+        /// </summary>
+        [DataMember]
+        public bool IncludeRotation = true;
 
         /// <summary>
         /// Check whether any particles is collided with another particle
         /// </summary>
         public bool Collided;
-        int stupidcounter = 0;
+        
         /// <summary>
-        /// Skip calculation of hydrodynamic force and Torque if particles are too close
+        /// Skip calculation of hydrodynamic force and Torque if particles are too close -----> to be tested whether it is still necessary
         /// </summary>
         [DataMember]
         public bool skipForceIntegration = false;
@@ -100,6 +111,12 @@ namespace BoSSS.Application.FSI_Solver
         /// </summary>
         [DataMember]
         public int iteration_counter_P = 0;
+
+        /// <summary>
+        /// Number of iterations
+        /// </summary>
+        [DataMember]
+        public double ForceTorqueResidual;
 
         /// <summary>
         /// Constant Forces and Torque underrelaxation?
@@ -125,8 +142,6 @@ namespace BoSSS.Application.FSI_Solver
         [DataMember]
         public bool ClearSmallValues = false;
 
-        #region Misc parameters
-
         /// <summary>
         /// The color of the particle.
         /// </summary>
@@ -138,13 +153,6 @@ namespace BoSSS.Application.FSI_Solver
         public int[] ParticleColoredCells;
 
         /// <summary>
-        /// Length of history for time, velocity, position etc.
-        /// </summary>
-        readonly int m_HistoryLength = 4;
-        #endregion
-
-        #region Added dampig parameters
-        /// <summary>
         /// Set false if you want to include the effects of added damping
         /// </summary>
         [DataMember]
@@ -155,9 +163,13 @@ namespace BoSSS.Application.FSI_Solver
         /// </summary>
         [DataMember]
         public double[,] AddedDampingTensor = new double[6, 6];
-        #endregion
 
-        #region Geometric parameters
+        /// <summary>
+        /// AddedDampingCoefficient
+        /// </summary>
+        [DataMember]
+        public double AddedDampingCoefficient = 1;
+
         /// <summary>
         /// Spatial Dimension of the particle 
         /// </summary>
@@ -165,12 +177,6 @@ namespace BoSSS.Application.FSI_Solver
         private readonly int SpatialDim;
         
         virtual internal int NoOfSubParticles() { return 1; }
-
-        /// <summary>
-        /// some length scale 
-        /// </summary>
-        abstract protected double AverageDistance { get; }
-        #endregion
 
         #region Virtual force model parameter
         ///// <summary>
@@ -311,11 +317,6 @@ namespace BoSSS.Application.FSI_Solver
         [DataMember]
         public double TorquePrevIteration = new double();
 
-        /// <summary>
-        /// AddedDampingCoefficient
-        /// </summary>
-        [DataMember]
-        public double AddedDampingCoefficient = 1;
 
         /// <summary>
         /// Level set function describing the particle.
@@ -354,18 +355,20 @@ namespace BoSSS.Application.FSI_Solver
         /// <summary>
         /// Area of the current particle.
         /// </summary>
-        abstract public double Area_P {
-            get;
-        }
+        abstract public double Area_P { get; }
 
         /// <summary>
         /// Mass of the current particle.
         /// </summary>
-        public double Mass_P {
-            get {
-                double a = Area_P;
-                if (a <= 0.0 || double.IsNaN(a) || double.IsInfinity(a))
-                    throw new ArithmeticException("Particle volume/area is " + a);
+        public double Mass_P
+        {
+            get
+            {
+                if (Area_P <= 0.0 || double.IsNaN(Area_P) || double.IsInfinity(Area_P))
+                    throw new ArithmeticException("Particle volume/area is " + Area_P);
+                if (particleDensity <= 0.0 || double.IsNaN(particleDensity) || double.IsInfinity(particleDensity))
+                    throw new ArithmeticException("Particle volume/area is " + particleDensity);
+
                 return Area_P * particleDensity;
             }
         }
@@ -373,16 +376,12 @@ namespace BoSSS.Application.FSI_Solver
         /// <summary>
         /// Circumference of the current particle.
         /// </summary>
-        abstract protected double Circumference_P {
-            get;
-        }
+        abstract protected double Circumference_P { get; }
 
         /// <summary>
         /// Moment of inertia of the current particle.
         /// </summary>
-        abstract public double MomentOfInertia_P {
-            get;
-        }
+        abstract public double MomentOfInertia_P { get; }
 
         [NonSerialized]
         readonly internal ParticleAuxillary Aux = new ParticleAuxillary();
@@ -394,18 +393,6 @@ namespace BoSSS.Application.FSI_Solver
         readonly private ParticleUnderrelaxation Underrelaxation = new ParticleUnderrelaxation();
         [NonSerialized]
         readonly private ParticleAcceleration Acceleration = new ParticleAcceleration();
-        internal void UpdateParticleVelocity(double dt)
-        {
-            CalculateTranslationalVelocity(dt);
-            CalculateAngularVelocity(dt);
-        }
-
-        internal void UpdateParticlePositionAndAngle(double dt)
-        {
-            CalculateParticlePosition(dt);
-            CalculateParticleAngle(dt);
-            CollisionTimestep = 0;
-        }
 
         /// <summary>
         /// Calculate the new particle position
@@ -425,7 +412,7 @@ namespace BoSSS.Application.FSI_Solver
             if (IncludeTranslation == true) {
                 for (int d = 0; d < SpatialDim; d++)
                 {
-                    Position[0][d] = Position[1][d] + (ClearAcceleartion * TranslationalVelocity[1][d] + TranslationalVelocity[0][d]) * (dt - CollisionTimestep) / 2 + ClearAcceleartion * (TranslationalAcceleration[1][d] + TranslationalAcceleration[0][d]) * (dt - CollisionTimestep).Pow2() / 4;
+                    Position[0][d] = Position[1][d] + (ClearAcceleartion * TranslationalVelocity[1][d] + TranslationalVelocity[0][d]) * (dt - CollisionTimestep) / 2;
                     if (double.IsNaN(Position[0][d]) || double.IsInfinity(Position[0][d]))
                         throw new ArithmeticException("Error trying to update particle position. Value:  " + Position[0][d]);
                 }
@@ -437,9 +424,6 @@ namespace BoSSS.Application.FSI_Solver
                     Position[0][d] = Position[1][d];
                     TranslationalAcceleration[0][d] = 0;
                     TranslationalVelocity[0][d] = 0;
-                    //Assert.LessOrEqual(TranslationalVelocity[1][d].Abs(), 0, "Non-zero velocity for stationary particle");
-                    //Assert.LessOrEqual(TranslationalAcceleration[1][d].Abs(), 0, "Non-zero acceleration for stationary particle");
-                    //Assert.LessOrEqual(TranslationalAcceleration[0][d].Abs(), 0, "Non-zero acceleration for stationary particle");// does not work together with collison models
                 }
             }
         }
@@ -454,34 +438,27 @@ namespace BoSSS.Application.FSI_Solver
             {
                 Aux.SaveValueOfLastTimestep(Angle);
             }
-            int ClearAcceleartion = CollisionTimestep != 0 ? 0 : 1;
-            if (IncludeRotation == true) {
-                if (SpatialDim != 2)
-                    throw new NotSupportedException("Unknown particle dimension: SpatialDim = " + SpatialDim);
 
-                Angle[0] = Angle[1] + (RotationalVelocity[1] + RotationalVelocity[0]) * (dt - CollisionTimestep) / 2 + ClearAcceleartion * (dt - CollisionTimestep).Pow2() * (RotationalAcceleration[1] + RotationalAcceleration[0]) / 4;
-                //for (int p = 0; p < m_collidedWithParticle.Length; p++)
-                //{
-                //    if (m_collidedWithParticle[p])
-                //    {
-                //        Angle[0] = Angle[1] + dt * (RotationalVelocity[1] + RotationalVelocity[0]) / 2;
-                //        m_collidedWithParticle[p] = false;
-                //    }
-                //}
+            if (SpatialDim != 2)
+                throw new NotSupportedException("Unknown particle dimension: SpatialDim = " + SpatialDim);
+
+            int ClearAcceleartion = CollisionTimestep != 0 ? 0 : 1;
+            if (IncludeRotation == true)
+            {
+                Angle[0] = Angle[1] + (RotationalVelocity[1] + RotationalVelocity[0]) * (dt - CollisionTimestep) / 2;
                 if (double.IsNaN(Angle[0]) || double.IsInfinity(Angle[0]))
                     throw new ArithmeticException("Error trying to update particle angle. Value:  " + Angle[0]);
-            } else {
+            }
+            else
+            {
                 Angle[0] = Angle[1];
                 RotationalAcceleration[0] = 0;
                 RotationalVelocity[0] = 0;
-                //Assert.LessOrEqual(RotationalVelocity[1].Abs(), 0, "Non-zero rotational acceleration for non-rotating particle");
-                //Assert.LessOrEqual(RotationalAcceleration[1].Abs(), 0, "Non-zero rotational acceleration for non-rotating particle");
-                //Assert.LessOrEqual(RotationalAcceleration[0] .Abs(), 0, "Non-zero rotational acceleration for non-rotating particle");
             }
         }
 
         /// <summary>
-        /// Calculate the new acceleration (translational and rotational)
+        /// Predict the new acceleration (translational and rotational)
         /// </summary>
         /// <param name="dt"></param>
         public void PredictAcceleration()
@@ -493,21 +470,17 @@ namespace BoSSS.Application.FSI_Solver
                 //Aux.SaveMultidimValueOfLastTimestep(HydrodynamicForces);
                 //Aux.SaveValueOfLastTimestep(HydrodynamicTorque);
             }
+
             for (int d = 0; d < SpatialDim; d++)
             {
-                //TranslationalAcceleration[0][d] = 2 * TranslationalAcceleration[1][d] - TranslationalAcceleration[2][d];
                 TranslationalAcceleration[0][d] = (TranslationalAcceleration[1][d] + 4 * TranslationalAcceleration[2][d] + TranslationalAcceleration[3][d]) / 8;
-                //HydrodynamicForces[0][d] = 2 * HydrodynamicForces[1][d] - HydrodynamicForces[2][d];
-                if (Math.Abs(TranslationalAcceleration[0][d]) < 1e-20)// || double.IsNaN(TranslationalAcceleration[0][d]))
+                if (Math.Abs(TranslationalAcceleration[0][d]) < 1e-20)
                     TranslationalAcceleration[0][d] = 0;
             }
-            TranslationalAcceleration.MPIBroadcast(0);
-            //RotationalAcceleration[0] = 2 * RotationalAcceleration[1] - RotationalAcceleration[2];
+
             RotationalAcceleration[0] = (RotationalAcceleration[1] + 4 * RotationalAcceleration[2] + RotationalAcceleration[3]) / 8;
-            //HydrodynamicTorque[0] = 2 * HydrodynamicTorque[1] - HydrodynamicTorque[2];
-            if (Math.Abs(RotationalAcceleration[0]) < 1e-20)// || double.IsNaN(RotationalAcceleration[0]))
+            if (Math.Abs(RotationalAcceleration[0]) < 1e-20)
                 RotationalAcceleration[0] = 0;
-            RotationalAcceleration.MPIBroadcast(0);
         }
 
         /// <summary>
@@ -521,15 +494,17 @@ namespace BoSSS.Application.FSI_Solver
                 Aux.SaveMultidimValueOfLastTimestep(TranslationalAcceleration);
                 Aux.SaveValueOfLastTimestep(RotationalAcceleration);
             }
-            // Include Gravitiy
+
+            // Include gravitiy for dry simulations
             if (!Collided && !IncludeHydrodynamics)
             {
                 HydrodynamicForces[0][1] += GravityVertical * Mass_P;
             }
+
             double[,] CoefficientMatrix = Acceleration.CalculateCoefficients(AddedDampingTensor, Mass_P, MomentOfInertia_P, dt, AddedDampingCoefficient);
             double Denominator = Acceleration.CalculateDenominator(CoefficientMatrix);
 
-            if (IncludeTranslation) { }
+            if (IncludeTranslation) 
                 TranslationalAcceleration[0] = Acceleration.Translational(CoefficientMatrix, Denominator, HydrodynamicForces[0], HydrodynamicTorque[0]);
 
             for (int d = 0; d < SpatialDim; d++)
@@ -538,12 +513,16 @@ namespace BoSSS.Application.FSI_Solver
                     TranslationalAcceleration[0][d] = 0;
             }
 
-            TranslationalAcceleration.MPIBroadcast(0);
             if (IncludeRotation)
                 RotationalAcceleration[0] = Acceleration.Rotational(CoefficientMatrix, Denominator, HydrodynamicForces[0], HydrodynamicTorque[0]);
             if (Math.Abs(RotationalAcceleration[0]) < 1e-20 || IncludeRotation == false)
                 RotationalAcceleration[0] = 0;
-            RotationalAcceleration.MPIBroadcast(0);
+        }
+
+        internal void UpdateParticleVelocity(double dt)
+        {
+            CalculateTranslationalVelocity(dt);
+            CalculateAngularVelocity(dt);
         }
 
         /// <summary>
@@ -561,8 +540,10 @@ namespace BoSSS.Application.FSI_Solver
             double[] tempActiveVelcotiy = new double[2];
             
 
-            if (this.IncludeTranslation == false) {
-                for (int d = 0; d < SpatialDim; d++) {
+            if (this.IncludeTranslation == false)
+            {
+                for (int d = 0; d < SpatialDim; d++)
+                {
                     TranslationalVelocity[0][d] = 0;
                 }
             }
@@ -572,20 +553,17 @@ namespace BoSSS.Application.FSI_Solver
                 tempActiveVelcotiy[1] = Math.Sin(Angle[0]) * ActiveVelocity;
                 for (int d = 0; d < SpatialDim; d++)
                 {
-                    if (!Collided)
-                        TranslationalVelocity[0][d] = tempActiveVelcotiy[d];
+                    TranslationalVelocity[0][d] = tempActiveVelcotiy[d];
                     if (double.IsNaN(TranslationalVelocity[0][d]) || double.IsInfinity(TranslationalVelocity[0][d]))
                         throw new ArithmeticException("Error trying to calculate particle velocity Value:  " + TranslationalVelocity[0][d]);
                 }
             }
-            else {
-
+            else
+            {
                 for (int d = 0; d < SpatialDim; d++) {
-                    
-                    if (!Collided)
-                        TranslationalVelocity[0][d] = TranslationalVelocity[1][d] + (TranslationalAcceleration[1][d] + TranslationalAcceleration[0][d]) * dt / 2;
-                    //else
-                    //    TranslationalVelocity[0][d] = TranslationalVelocity[1][d];
+
+                    //TranslationalVelocity[0][d] = TranslationalVelocity[1][d] + (TranslationalAcceleration[1][d] + TranslationalAcceleration[0][d]) * dt / 2;
+                    TranslationalVelocity[0][d] = TranslationalVelocity[1][d] + (TranslationalAcceleration[0][d] + 4 * TranslationalAcceleration[1][d] + TranslationalAcceleration[2][d]) * dt / 6;
                     if (double.IsNaN(TranslationalVelocity[0][d]) || double.IsInfinity(TranslationalVelocity[0][d]))
                         throw new ArithmeticException("Error trying to calculate particle velocity Value:  " + TranslationalVelocity[0][d]);
                 }
@@ -607,12 +585,13 @@ namespace BoSSS.Application.FSI_Solver
             if (this.IncludeRotation == false) {
                 RotationalVelocity[0] = 0;
                 return;
-            } else {
+            }
+            else
+            {
                 RotationalVelocity[0] = RotationalVelocity[1] + dt * (RotationalAcceleration[1] + RotationalAcceleration[0]) / 2;
                 if (double.IsNaN(RotationalVelocity[0]) || double.IsInfinity(RotationalVelocity[0]))
                     throw new ArithmeticException("Error trying to calculate particle angluar velocity. Value:  " + RotationalVelocity[0]);
             }
-            RotationalVelocity.MPIBroadcast(0);
         }
         
         /// <summary>
@@ -642,8 +621,13 @@ namespace BoSSS.Application.FSI_Solver
         /// Calculate the new acceleration (translational and rotational)
         /// </summary>
         /// <param name="dt"></param>
-        public void PredictForceAndTorque()
+        public void PredictForceAndTorque(int TimestepInt)
         {
+            if (TimestepInt == 1)
+            {
+                HydrodynamicForces[0][0] = 20 * Math.Cos(Angle[0]) * ActiveStress * Circumference_P;
+                HydrodynamicForces[0][1] = 20 * Math.Sin(Angle[0]) * ActiveStress * Circumference_P;
+            }
             if (iteration_counter_P == 0)
             {
                 Aux.SaveMultidimValueOfLastTimestep(TranslationalAcceleration);
@@ -653,11 +637,11 @@ namespace BoSSS.Application.FSI_Solver
             }
             for (int d = 0; d < SpatialDim; d++)
             {
-                HydrodynamicForces[0][d] = (HydrodynamicForces[1][d] + 4 * HydrodynamicForces[2][d] + HydrodynamicForces[3][d]) / 8;
+                HydrodynamicForces[0][d] = (HydrodynamicForces[1][d] + 4 * HydrodynamicForces[2][d] + HydrodynamicForces[3][d]) / 6;
                 if (Math.Abs(HydrodynamicForces[0][d]) < 1e-20)
-                    TranslationalAcceleration[0][d] = 0;
+                    HydrodynamicForces[0][d] = 0;
             }
-            HydrodynamicTorque[0] = (HydrodynamicTorque[1] + 4 * HydrodynamicTorque[2] + HydrodynamicTorque[3]) / 8;
+            HydrodynamicTorque[0] = (HydrodynamicTorque[1] + 4 * HydrodynamicTorque[2] + HydrodynamicTorque[3]) / 6;
             if (Math.Abs(HydrodynamicTorque[0]) < 1e-20)
                 HydrodynamicTorque[0] = 0;
         }
@@ -669,21 +653,28 @@ namespace BoSSS.Application.FSI_Solver
         /// <param name="P"></param>
         /// <param name="LsTrk"></param>
         /// <param name="muA"></param>
-        public void UpdateForcesAndTorque(VectorField<SinglePhaseField> U, SinglePhaseField P, LevelSetTracker LsTrk, double muA, double dt, double fluidDensity, bool NotFullyCoupled) {
+        public void UpdateForcesAndTorque(VectorField<SinglePhaseField> U, SinglePhaseField P, LevelSetTracker LsTrk, double muA, double dt, double fluidDensity, bool NotFullyCoupled, int MPISize) {
 
-            if (skipForceIntegration) {
+            if (skipForceIntegration) //will never hit atm
+            {
                 skipForceIntegration = false;
                 return;
             }
+
             HydrodynamicForces[0][0] = 0;
             HydrodynamicForces[0][1] = 0;
             HydrodynamicTorque[0] = 0;
+
             int RequiredOrder = U[0].Basis.Degree * 3 + 2;
+            
             Console.WriteLine("Forces coeff: {0}, order = {1}", LsTrk.CutCellQuadratureType, RequiredOrder);
+
             double[] Forces = new double[SpatialDim];
+            double Torque = new double();
             SinglePhaseField[] UA = U.ToArray();
             ConventionalDGField pA = null;
             pA = P;
+
             if (IncludeTranslation)
             {
                 for (int d = 0; d < SpatialDim; d++)
@@ -691,10 +682,10 @@ namespace BoSSS.Application.FSI_Solver
                     void ErrFunc(int CurrentCellID, int Length, NodeSet Ns, MultidimensionalArray result)
                     {
 
-                        int NumberOfNodes = result.GetLength(1);
-                        MultidimensionalArray Grad_UARes = MultidimensionalArray.Create(Length, NumberOfNodes, SpatialDim, SpatialDim);
-                        MultidimensionalArray pARes = MultidimensionalArray.Create(Length, NumberOfNodes);
-                        var Normals = LsTrk.DataHistories[0].Current.GetLevelSetNormals(Ns, CurrentCellID, Length);
+                        int K = result.GetLength(1);
+                        MultidimensionalArray Grad_UARes = MultidimensionalArray.Create(Length, K, SpatialDim, SpatialDim);
+                        MultidimensionalArray pARes = MultidimensionalArray.Create(Length, K);
+                        MultidimensionalArray Normals = LsTrk.DataHistories[0].Current.GetLevelSetNormals(Ns, CurrentCellID, Length);
                         for (int i = 0; i < SpatialDim; i++)
                         {
                             UA[i].EvaluateGradient(CurrentCellID, Length, Ns, Grad_UARes.ExtractSubArrayShallow(-1, -1, i, -1), 0, 1);
@@ -702,7 +693,7 @@ namespace BoSSS.Application.FSI_Solver
                         pA.Evaluate(CurrentCellID, Length, Ns, pARes);
                         for (int j = 0; j < Length; j++)
                         {
-                            for (int k = 0; k < NumberOfNodes; k++)
+                            for (int k = 0; k < K; k++)
                             {
                                 result[j, k] = ForceIntegration.CalculateStressTensor(Grad_UARes, pARes, Normals, muA, k, j, this.SpatialDim, d);
                             }
@@ -710,8 +701,7 @@ namespace BoSSS.Application.FSI_Solver
                     }
                     var SchemeHelper = LsTrk.GetXDGSpaceMetrics(new[] { LsTrk.GetSpeciesId("A") }, RequiredOrder, 1).XQuadSchemeHelper;
                     CellQuadratureScheme cqs = SchemeHelper.GetLevelSetquadScheme(0, CutCells_P(LsTrk));
-                    CellQuadrature.GetQuadrature(new int[] { 1 }, LsTrk.GridDat,
-                        cqs.Compile(LsTrk.GridDat, RequiredOrder),
+                    CellQuadrature.GetQuadrature(new int[] { 1 }, LsTrk.GridDat, cqs.Compile(LsTrk.GridDat, RequiredOrder),
                         delegate (int i0, int Length, QuadRule QR, MultidimensionalArray EvalResult)
                         {
                             ErrFunc(i0, Length, QR.Nodes, EvalResult.ExtractSubArrayShallow(-1, -1, 0));
@@ -724,16 +714,14 @@ namespace BoSSS.Application.FSI_Solver
                 }
             }
 
-            double Torque = 0;
             if (IncludeRotation)
             {
                 void ErrFunc2(int j0, int Len, NodeSet Ns, MultidimensionalArray result)
                 {
-                    int K = result.GetLength(1); // No nof Nodes
+                    int K = result.GetLength(1); 
                     MultidimensionalArray Grad_UARes = MultidimensionalArray.Create(Len, K, SpatialDim, SpatialDim); ;
                     MultidimensionalArray pARes = MultidimensionalArray.Create(Len, K);
-                    // Evaluate tangential velocity to level-set surface
-                    var Normals = LsTrk.DataHistories[0].Current.GetLevelSetNormals(Ns, j0, Len);
+                    MultidimensionalArray Normals = LsTrk.DataHistories[0].Current.GetLevelSetNormals(Ns, j0, Len);
                     for (int i = 0; i < SpatialDim; i++)
                     {
                         UA[i].EvaluateGradient(j0, Len, Ns, Grad_UARes.ExtractSubArrayShallow(-1, -1, i, -1), 0, 1);
@@ -741,18 +729,17 @@ namespace BoSSS.Application.FSI_Solver
                     pA.Evaluate(j0, Len, Ns, pARes);
                     for (int j = 0; j < Len; j++)
                     {
-                        MultidimensionalArray tempArray = Ns.CloneAs();
-                        LsTrk.GridDat.TransformLocal2Global(Ns, tempArray, j0 + j);
+                        MultidimensionalArray Ns_Global = Ns.CloneAs();
+                        LsTrk.GridDat.TransformLocal2Global(Ns, Ns_Global, j0 + j);
                         for (int k = 0; k < K; k++)
                         {
-                            result[j, k] = ForceIntegration.CalculateTorqueFromStressTensor2D(Grad_UARes, pARes, Normals, tempArray, muA, k, j, Position[0]);
+                            result[j, k] = ForceIntegration.CalculateTorqueFromStressTensor2D(Grad_UARes, pARes, Normals, Ns_Global, muA, k, j, Position[0]);
                         }
                     }
                 }
                 var SchemeHelper2 = LsTrk.GetXDGSpaceMetrics(new[] { LsTrk.GetSpeciesId("A") }, RequiredOrder, 1).XQuadSchemeHelper;
                 CellQuadratureScheme cqs2 = SchemeHelper2.GetLevelSetquadScheme(0, CutCells_P(LsTrk));
-                CellQuadrature.GetQuadrature(new int[] { 1 }, LsTrk.GridDat,
-                    cqs2.Compile(LsTrk.GridDat, RequiredOrder),
+                CellQuadrature.GetQuadrature(new int[] { 1 }, LsTrk.GridDat, cqs2.Compile(LsTrk.GridDat, RequiredOrder),
                     delegate (int i0, int Length, QuadRule QR, MultidimensionalArray EvalResult)
                     {
                         ErrFunc2(i0, Length, QR.Nodes, EvalResult.ExtractSubArrayShallow(-1, -1, 0));
@@ -765,8 +752,9 @@ namespace BoSSS.Application.FSI_Solver
             }
             // add gravity
             {
-                Forces[1] += (particleDensity - fluidDensity) * Area_P * GravityVertical;
+                Forces[1] += (particleDensity - fluidDensity) * Area_P * GravityVertical / MPISize;
             }
+
             // Sum forces and moments over all MPI processors
             // ==============================================
             {
@@ -784,21 +772,39 @@ namespace BoSSS.Application.FSI_Solver
                     Forces[d] = GlobalStateBuffer[1 + d];
                 }
             }
+
             if (neglectAddedDamping == false)
             {
-                double fest = Forces[0];
                 Forces[0] = Forces[0] + AddedDampingCoefficient * dt * (AddedDampingTensor[0, 0] * TranslationalAcceleration[0][0] + AddedDampingTensor[1, 0] * TranslationalAcceleration[0][1] + AddedDampingTensor[0, 2] * RotationalAcceleration[0]);
                 Forces[1] = Forces[1] + AddedDampingCoefficient * dt * (AddedDampingTensor[0, 1] * TranslationalAcceleration[0][0] + AddedDampingTensor[1, 1] * TranslationalAcceleration[0][1] + AddedDampingTensor[1, 2] * RotationalAcceleration[0]);
                 Torque += AddedDampingCoefficient * dt * (AddedDampingTensor[2, 0] * TranslationalAcceleration[0][0] + AddedDampingTensor[2, 1] * TranslationalAcceleration[0][1] + AddedDampingTensor[2, 2] * RotationalAcceleration[0]);
             }
 
-            if (iteration_counter_P == -1 || NotFullyCoupled || iteration_counter_P == 250 || stupidcounter == 0)
+            if (iteration_counter_P == 1 || NotFullyCoupled)
             {
                 Console.WriteLine();
-                if(iteration_counter_P == 1)
-                    Console.WriteLine("First iteration of the current timestep, all relaxation factors are set to 1");
-                if (iteration_counter_P == 250)
-                    Console.WriteLine("250 iterations, I'm trying to jump closer to the real solution");
+                if(iteration_counter_P == 1 && !NotFullyCoupled)
+                {
+
+                    Console.WriteLine("First iteration of the current timestep, all relaxation factors are set to " + 1);
+                    for (int d = 0; d < SpatialDim; d++)
+                    {
+                        HydrodynamicForces[0][d] = 0;
+                        if (Math.Abs(Forces[d]) < ForceAndTorque_convergence * 1e-2 && ClearSmallValues == true)
+                        {
+                            Forces[d] = 0;
+                        }
+                        HydrodynamicForces[0][d] = 1 * Forces[d] + (1 - 1) * HydrodynamicForces[0][d];
+                    }
+
+                    HydrodynamicTorque[0] = 0;
+                    if (Math.Abs(Torque) < ForceAndTorque_convergence * 1e-2 && ClearSmallValues == true)
+                    {
+                        Torque = 0;
+                    }
+                    HydrodynamicTorque[0] = 1 * Torque + (1 - 1) * HydrodynamicTorque[0];
+                }
+
                 for (int d = 0; d < SpatialDim; d++)
                 {
                     HydrodynamicForces[0][d] = 0;
@@ -808,30 +814,24 @@ namespace BoSSS.Application.FSI_Solver
                     }
                     HydrodynamicForces[0][d] = Forces[d];
                 }
+
                 HydrodynamicTorque[0] = 0;
                 if (Math.Abs(Torque) < ForceAndTorque_convergence * 1e-2 && ClearSmallValues == true)
                 {
                     Torque = 0;
                 }
                 HydrodynamicTorque[0] = Torque;
-                stupidcounter = 1;
             }
             else
             {
-                double[] RelaxatedForceAndTorque = Underrelaxation.RelaxatedForcesAndTorque(Forces, Torque, ForcesPrevIteration, TorquePrevIteration, ForceAndTorque_convergence, underrelaxation_factor, ClearSmallValues, AddaptiveUnderrelaxation, AverageDistance, iteration_counter_P);
+                double[] RelaxatedForceAndTorque = Underrelaxation.RelaxatedForcesAndTorque(Forces, Torque, ForcesPrevIteration, TorquePrevIteration, ForceAndTorque_convergence, underrelaxation_factor, ClearSmallValues, AddaptiveUnderrelaxation, GetLengthScales().Max(), iteration_counter_P);
                 for (int d = 0; d < SpatialDim; d++)
                 {
                     HydrodynamicForces[0][d] = RelaxatedForceAndTorque[d];
                 }
                 HydrodynamicTorque[0] = RelaxatedForceAndTorque[SpatialDim];
             }
-            //for (int d = 0; d < SpatialDim; d++)// changes sign depending on the sign of Forces[d], should increase the convergence rate. (testing needed)
-            //{
-            //    if (Math.Abs(HydrodynamicForces[0][d] - Forces[0]) > Math.Abs(Forces[d]))
-            //    {
-            //        HydrodynamicForces[0][d] *= -1;
-            //    }
-            //}
+
             if (double.IsNaN(HydrodynamicForces[0][0]) || double.IsInfinity(HydrodynamicForces[0][0]))
                 throw new ArithmeticException("Error trying to calculate hydrodynamic forces (x). Value:  " + HydrodynamicForces[0][0]);
             if (double.IsNaN(HydrodynamicForces[0][1]) || double.IsInfinity(HydrodynamicForces[0][1]))
@@ -839,8 +839,6 @@ namespace BoSSS.Application.FSI_Solver
             if (double.IsNaN(HydrodynamicTorque[0]) || double.IsInfinity(HydrodynamicTorque[0]))
                 throw new ArithmeticException("Error trying to calculate hydrodynamic torque. Value:  " + HydrodynamicTorque[0]);
         }
-
-        
 
         public double[] CalculateParticleMomentum()
         {
@@ -869,8 +867,9 @@ namespace BoSSS.Application.FSI_Solver
         /// </summary>
         public double ComputeParticleRe(double ViscosityFluid)
         {
-            return Math.Sqrt(TranslationalVelocity[0][0] * TranslationalVelocity[0][0] + TranslationalVelocity[0][1] * TranslationalVelocity[0][1]) * GetLengthScales().Max() / ViscosityFluid;
+            return TranslationalVelocity[0].L2Norm() * GetLengthScales().Max() / ViscosityFluid;
         }
+        
 
         /// <summary>
         /// get cut cells describing the boundary of this particle
@@ -883,6 +882,7 @@ namespace BoSSS.Application.FSI_Solver
             MultidimensionalArray CellCenters = LsTrk.GridDat.Cells.CellCenter;
             double h_min = LsTrk.GridDat.Cells.h_minGlobal;
             double h_max = LsTrk.GridDat.Cells.h_maxGlobal;
+
             for (int i = 0; i < CellArray.Length; i++)
             {
                 CellArray[i] = Contains(new double[] { CellCenters[i, 0], CellCenters[i, 1] }, h_min, h_max, false);
@@ -913,18 +913,6 @@ namespace BoSSS.Application.FSI_Solver
         {
             throw new NotImplementedException();
         }
-
-        /// <summary>
-        /// Set true if translation of the particle should be induced by hydrodynamical forces.
-        /// </summary>
-        [DataMember]
-        public bool IncludeTranslation = true;
-
-        /// <summary>
-        /// Set true if rotation of the particle should be induced by hydrodynamical torque.
-        /// </summary>
-        [DataMember]
-        public bool IncludeRotation = true;
     }
 }
 

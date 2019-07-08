@@ -24,7 +24,6 @@ using System.Threading.Tasks;
 namespace BoSSS.Application.FSI_Solver {
     class ParticleAuxillary {
 
-        /// ====================================================================================
         /// <summary>
         /// This method saves the list value at list position "0" to the next position.
         /// Use this method for onedimensional vars.
@@ -32,14 +31,12 @@ namespace BoSSS.Application.FSI_Solver {
         /// <param name="variable">
         /// Name of the list.
         /// </param>
-        /// ====================================================================================
         internal void SaveValueOfLastTimestep(List<double> variable) {
             variable.Insert(0, new double());
             variable[0] = 0;
             variable.RemoveAt(variable.Count - 1);
         }
 
-        /// ====================================================================================
         /// <summary>
         /// This method saves the list value at list position "0" to the next position.
         /// Use this method for multidimensional vars.
@@ -47,7 +44,6 @@ namespace BoSSS.Application.FSI_Solver {
         /// <param name="variable">
         /// Name of the list.
         /// </param>
-        /// ====================================================================================
         internal void SaveMultidimValueOfLastTimestep(List<double[]> variable) {
             int Dim = variable[0].Length;
             variable.Insert(0, new double[Dim]);
@@ -58,7 +54,6 @@ namespace BoSSS.Application.FSI_Solver {
             variable.RemoveAt(variable.Count - 1);
         }
 
-        /// ====================================================================================
         /// <summary>
         /// This method performs the Neumaier algorithm form the sum of the entries of an array.
         /// </summary>
@@ -71,7 +66,6 @@ namespace BoSSS.Application.FSI_Solver {
         /// <param name="Length">
         /// The number of summands.
         /// </param>
-        /// ====================================================================================
         static internal double ForceTorqueSummationWithNeumaierArray(double ResultVariable, MultidimensionalArray Summands, double Length)
         {
             double sum = ResultVariable;
@@ -92,7 +86,7 @@ namespace BoSSS.Application.FSI_Solver {
             }
             return sum + c;
         }
-        /// ====================================================================================
+
         /// <summary>
         /// This method performs the Neumaier algorithm form the sum of the entries of an array.
         /// It is specifically designed to sum up the velocity gradient and the pressure to 
@@ -107,7 +101,6 @@ namespace BoSSS.Application.FSI_Solver {
         /// <param name="muA">
         /// The fluid viscosity.
         /// </param>
-        /// ====================================================================================
         static internal double SummationWithNeumaier(double[] SummandsVelGradient, double SummandsPressure, double muA)
         {
             double sum = SummandsVelGradient[0];

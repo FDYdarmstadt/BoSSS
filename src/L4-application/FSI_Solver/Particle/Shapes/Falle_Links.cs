@@ -64,17 +64,6 @@ namespace BoSSS.Application.FSI_Solver
             return 2;
         }
 
-        /// <summary>
-        /// %
-        /// </summary>
-        protected override double AverageDistance
-        {
-            get
-            {
-                return width_P;
-            }
-        }
-
         public override double Area_P
         {
             get
@@ -82,6 +71,7 @@ namespace BoSSS.Application.FSI_Solver
                 return (7 * width_P * width_P) / 8;
             }
         }
+
         protected override double Circumference_P
         {
             get
@@ -89,6 +79,7 @@ namespace BoSSS.Application.FSI_Solver
                 return width_P * 5;
             }
         }
+
         override public double MomentOfInertia_P
         {
             get
@@ -96,11 +87,7 @@ namespace BoSSS.Application.FSI_Solver
                 return Math.Pow(width_P, 4) * 0.13785958;
             }
         }
-        //override public void UpdateLevelSetFunction()
-        //{
-        //    double alpha = -(Angle[0]);
-        //    Phi_P = (X, t) => -(X[0] - Position[0][0]).Pow2() + -(X[1] - Position[0][1]).Pow2() + radius_P.Pow2();
-        //}
+
         public override double Phi_P(double[] X)
         {
             double alpha = -(Angle[0]);
@@ -171,7 +158,6 @@ namespace BoSSS.Application.FSI_Solver
             }
             return SurfacePoints;
         }
-
 
         override public double[] GetLengthScales()
         {
