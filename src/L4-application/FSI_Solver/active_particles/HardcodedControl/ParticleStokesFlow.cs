@@ -468,9 +468,9 @@ namespace BoSSS.Application.FSI_Solver
             int numOfParticles = 1;
             for (int d = 0; d < numOfParticles; d++)
             {
-                C.Particles.Add(new Particle_Sphere(new double[] { 0, -0.4 }, startAngl: 0)
+                C.Particles.Add(new Particle_Sphere(new double[] { 0, 0 }, startAngl: 0)
                 {
-                    particleDensity = 7.8,
+                    particleDensity = 7.8e4,
                     radius_P = 0.5,
                     GravityVertical = -9.81,
                     useAddaptiveUnderrelaxation = true,

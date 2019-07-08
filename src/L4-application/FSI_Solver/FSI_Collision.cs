@@ -112,6 +112,9 @@ namespace FSI_Solver
                                     DistanceVector.SetSubArray(temp_DistanceVector, new int[] { p0, ParticleOffset + w, -1 });
                                     ClosestPoint_P0.SetSubArray(temp_ClosestPoint_p0, new int[] { p0, ParticleOffset + w, -1 });
                                     ClosestPoint_P1.SetSubArray(temp_ClosestPoint_p1, new int[] { p0, ParticleOffset + w, -1 });
+                                    double testMinDistance = double.MaxValue;
+                                    if (testMinDistance > temp_Distance)
+                                        testMinDistance = temp_Distance;
                                     if (temp_SaveTimeStep < SaveTimeStep && temp_SaveTimeStep > 0)
                                     {
                                         SaveTimeStep = temp_SaveTimeStep;
@@ -126,9 +129,7 @@ namespace FSI_Solver
                                         MinDistance = double.MaxValue;
                                         Overlapping = true;
                                     }
-                                    Particle0.skipForceIntegration = MinDistance < 0.2 * LsTrk.GridDat.Cells.h_minGlobal;
-                                    if (MinDistance < 0.2 * LsTrk.GridDat.Cells.h_minGlobal)
-                                        Console.WriteLine("jfgauifd");
+                                    Particle0.skipForceIntegration = testMinDistance < 0.1 * LsTrk.GridDat.Cells.h_minGlobal;
                                 }
                                 for (int p1 = p0 + 1; p1 < ParticlesOfCurrentColor.Length; p1++)
                                 {
@@ -141,6 +142,9 @@ namespace FSI_Solver
                                     DistanceVector.SetSubArray(temp_DistanceVector, new int[] { p0, p1, -1 });
                                     ClosestPoint_P0.SetSubArray(temp_ClosestPoint_p0, new int[] { p0, p1, -1 });
                                     ClosestPoint_P1.SetSubArray(temp_ClosestPoint_p1, new int[] { p0, p1, -1 });
+                                    double testMinDistance = double.MaxValue;
+                                    if (testMinDistance > temp_Distance)
+                                        testMinDistance = temp_Distance;
                                     if (temp_SaveTimeStep < SaveTimeStep && temp_SaveTimeStep > 0)
                                     {
                                         SaveTimeStep = temp_SaveTimeStep;
@@ -155,6 +159,7 @@ namespace FSI_Solver
                                         MinDistance = double.MaxValue;
                                         Overlapping = true;
                                     }
+                                    Particle0.skipForceIntegration = testMinDistance < 0.1 * LsTrk.GridDat.Cells.h_minGlobal;
                                 }
                             }
                             if (SaveTimeStep != -dt)

@@ -679,38 +679,6 @@ namespace BoSSS.Application.FSI_Solver
             CalculateGravitationalForce(ref tempForces, fluidDensity);
             if (UseAddedDamping)
                 ForceAddedDamping(ref tempForces, dt);
-            
-        }
-
-        private void CalculateHydrodynamicTorque(VectorField<SinglePhaseField> U, SinglePhaseField P, LevelSetTracker LsTrk, double muA, double dt, out double tempTorque)
-        {
-            HydrodynamicTorque[0] = 0;
-            tempTorque = new double();
-            int RequiredOrder = U[0].Basis.Degree * 3 + 2;
-            SinglePhaseField[] UA = U.ToArray();
-            ConventionalDGField pA = P;
-
-            if (IncludeRotation)
-                TorqueIntegration(UA, pA, LsTrk, RequiredOrder, muA, out tempTorque);
-
-            Torque_MPISum(ref tempTorque);
-
-            if (UseAddedDamping)
-                TorqueAddedDamping(ref tempTorque, dt);
-        }
-
-        private void HydrodynamicsPostprocessing(double[] tempForces, double tempTorque, bool firstIteration)
-        {
-            if (!firstIteration)
-            {
-                Underrelaxation.CalculateAverageForces(tempForces, tempTorque, GetLengthScales().Max(), out double averagedForces);
-                Underrelaxation.Forces(ref tempForces, forcesPrevIteration, forceAndTorque_convergence, underrelaxation_factor, useAddaptiveUnderrelaxation, averagedForces);
-                Underrelaxation.Torque(ref tempTorque, torquePrevIteration, forceAndTorque_convergence, underrelaxation_factor, useAddaptiveUnderrelaxation, averagedForces);
-            }
-            ForceClearSmallValues(tempForces);
-            TorqueClearSmallValues(tempTorque);
-            ForcesCheckPlausibility();
-            TorqueCheckPlausibility();
         }
 
         private void ForcesIntegration(SinglePhaseField[] UA, ConventionalDGField pA, LevelSetTracker LsTrk, int RequiredOrder, double FluidViscosity, out double[] tempForces)
@@ -755,6 +723,46 @@ namespace BoSSS.Application.FSI_Solver
             tempForces = IntegrationForces.CloneAs();
         }
 
+        private void Force_MPISum(ref double[] forces)
+        {
+            double[] stateBuffer = forces.CloneAs();
+            double[] globalStateBuffer = stateBuffer.MPISum();
+            for (int d = 0; d < spatialDim; d++)
+            {
+                forces[d] = globalStateBuffer[d];
+            }
+        }
+
+        private void CalculateGravitationalForce(ref double[] Forces, double fluidDensity)
+        {
+            Forces[1] += (particleDensity - fluidDensity) * Area_P * GravityVertical;
+        }
+
+        private void ForceAddedDamping(ref double[] forces, double dt)
+        {
+            for (int d = 0; d < spatialDim; d++)
+            {
+                forces[d] += addedDampingCoefficient * dt * (addedDampingTensor[0, d] * translationalAcceleration[0][0] + addedDampingTensor[1, d] * translationalAcceleration[0][1] + addedDampingTensor[d, 2] * rotationalAcceleration[0]);
+            }
+        }
+
+        private void CalculateHydrodynamicTorque(VectorField<SinglePhaseField> U, SinglePhaseField P, LevelSetTracker LsTrk, double muA, double dt, out double tempTorque)
+        {
+            HydrodynamicTorque[0] = 0;
+            tempTorque = new double();
+            int RequiredOrder = U[0].Basis.Degree * 3 + 2;
+            SinglePhaseField[] UA = U.ToArray();
+            ConventionalDGField pA = P;
+
+            if (IncludeRotation)
+                TorqueIntegration(UA, pA, LsTrk, RequiredOrder, muA, out tempTorque);
+
+            Torque_MPISum(ref tempTorque);
+
+            if (UseAddedDamping)
+                TorqueAddedDamping(ref tempTorque, dt);
+        }
+
         private void TorqueIntegration(SinglePhaseField[] UA, ConventionalDGField pA, LevelSetTracker LsTrk, int RequiredOrder, double FluidViscosity, out double tempTorque)
         {
             double IntegrationTorque = new double();
@@ -794,16 +802,6 @@ namespace BoSSS.Application.FSI_Solver
             tempTorque = IntegrationTorque;
         }
 
-        private void Force_MPISum(ref double[] forces)
-        {
-            double[] stateBuffer = forces.CloneAs();
-            double[] globalStateBuffer = stateBuffer.MPISum();
-            for (int d = 0; d < spatialDim; d++)
-            {
-                forces[d] = globalStateBuffer[d];
-            }
-        }
-
         private void Torque_MPISum(ref double torque)
         {
             double stateBuffer = torque;
@@ -811,22 +809,23 @@ namespace BoSSS.Application.FSI_Solver
             torque = globalStateBuffer;
         }
 
-        private void CalculateGravitationalForce(ref double[] Forces, double fluidDensity)
-        {
-            Forces[1] += (particleDensity - fluidDensity) * Area_P * GravityVertical;
-        }
-
-        private void ForceAddedDamping(ref double[] forces, double dt)
-        {
-            for(int d = 0; d < spatialDim; d++)
-            {
-                forces[d] += addedDampingCoefficient * dt * (addedDampingTensor[0, d] * translationalAcceleration[0][0] + addedDampingTensor[1, d] * translationalAcceleration[0][1] + addedDampingTensor[d, 2] * rotationalAcceleration[0]);
-            }
-        }
-
         private void TorqueAddedDamping(ref double torque, double dt)
         {
             torque += addedDampingCoefficient * dt * (addedDampingTensor[2, 0] * translationalAcceleration[0][0] + addedDampingTensor[2, 1] * translationalAcceleration[0][1] + addedDampingTensor[2, 2] * rotationalAcceleration[0]);
+        }
+
+        private void HydrodynamicsPostprocessing(double[] tempForces, double tempTorque, bool firstIteration)
+        {
+            if (!firstIteration)
+            {
+                Underrelaxation.CalculateAverageForces(tempForces, tempTorque, GetLengthScales().Max(), out double averagedForces);
+                Underrelaxation.Forces(ref tempForces, forcesPrevIteration, forceAndTorque_convergence, underrelaxation_factor, useAddaptiveUnderrelaxation, averagedForces);
+                Underrelaxation.Torque(ref tempTorque, torquePrevIteration, forceAndTorque_convergence, underrelaxation_factor, useAddaptiveUnderrelaxation, averagedForces);
+            }
+            ForceClearSmallValues(tempForces);
+            TorqueClearSmallValues(tempTorque);
+            ForcesCheckPlausibility();
+            TorqueCheckPlausibility();
         }
 
         private void ForceClearSmallValues(double[] tempForces)
