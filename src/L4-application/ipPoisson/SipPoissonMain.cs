@@ -871,8 +871,8 @@ namespace BoSSS.Application.SipPoisson {
                         new MultigridOperator.ChangeOfBasisConfig() {
                             VarIndex = new int[] {0},
                             mode = MultigridOperator.Mode.DiagBlockEquilib,
-                            //Degree = Math.Max(p, p - iLevel)
-                            Degree = Math.Max(1, p - iLevel)
+                            Degree = p
+                            //Degree = Math.Max(1, p - iLevel)
                         }
                     };
 

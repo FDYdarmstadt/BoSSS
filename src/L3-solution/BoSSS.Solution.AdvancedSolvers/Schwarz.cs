@@ -731,7 +731,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
 #endif
                         blockSolvers[iPart] = new PARDISOSolver() {
                             CacheFactorization = true,
-                            UseDoublePrecision = true
+                            UseDoublePrecision = false
                         };
                         //blockSolvers[iPart] = new FullDirectSolver();
                         //blockSolvers[iPart] = new ilPSP.LinSolvers.MUMPS.MUMPSSolver();
