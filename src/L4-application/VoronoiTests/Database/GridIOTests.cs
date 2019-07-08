@@ -30,7 +30,7 @@ namespace VoronoiTests.Database
                         new Vector(1,-1),
                         new Vector(-1,-1)
                     };
-            VoronoiGrid grid = VoronoiGrid2D.FromPolygonalDomain(DomainBndyPolygon, 0, 400);
+            VoronoiGrid grid = VoronoiGrid2D.Polygonal(DomainBndyPolygon, 0, 400);
             return grid;
         }
 

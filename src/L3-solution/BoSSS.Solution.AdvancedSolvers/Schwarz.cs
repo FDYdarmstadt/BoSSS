@@ -258,6 +258,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
             /// <summary>
             /// Number of parts/additive Schwarz blocks on current MPI process.
             /// </summary>
+
             public int NoOfPartsPerProcess = 4;
 
             internal override IEnumerable<List<int>> GetBlocking(MultigridOperator op) {
@@ -309,7 +310,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                             for (int i = 0; i < localBlocks[blkIdx]; i++) {
                                 part.SetValue(blkIdx, i + sum);
                             }
-                            sum = localBlocks[blkIdx];
+                            sum += localBlocks[blkIdx];
                         }
 
                     } else {

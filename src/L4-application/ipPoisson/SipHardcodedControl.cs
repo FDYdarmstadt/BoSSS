@@ -145,13 +145,14 @@ namespace BoSSS.Application.SipPoisson {
         /// <summary>
         /// Test on a Cartesian grid, with an exact polynomial solution.
         /// </summary>
-        public static SipControl TestCartesian3D(int PowRes = 3, int DGdegree = 1, string blapath = null, int xRes = 2, double xStretch = 1.0, int yRes = 2, double yStretch = 1.0, int zRes = 2, double zStretch = 1.0) {
+        public static SipControl TestCartesian3D(int PowRes = 5, int DGdegree = 1, string blapath = null, int xRes = 2, double xStretch = 1.0, int yRes = 2, double yStretch = 1.0, int zRes = 2, double zStretch = 1.0) {
             xRes = (int)Math.Pow(xRes, PowRes);
             yRes = (int)Math.Pow(yRes, PowRes);
             zRes = (int)Math.Pow(zRes, PowRes);
             var R = new SipControl();
             R.ProjectName = "ipPoison/cartesian";
             R.savetodb = false;
+            R.WriteMeSomeAnalyse = @"D:\Analysis\CCpoisson\Study0_vary_Mlevel_n_blocks\";
 
             R.FieldOptions.Add("T", new FieldOpts() { Degree = DGdegree, SaveToDB = FieldOpts.SaveToDBOpt.TRUE });
             R.FieldOptions.Add("Tex", new FieldOpts() { Degree = DGdegree });
@@ -161,6 +162,7 @@ namespace BoSSS.Application.SipPoisson {
 
             R.GridFunc = delegate () {
                 double[] xNodes = CreateNodes(xRes, xStretch, 0, 10);
+                //double[] xNodes = CreateNodes(xRes, xStretch, -1, +1);
                 double[] yNodes = CreateNodes(yRes, yStretch, -1, +1);
                 //double[] zNodes = CreateNodes(zRes, zStretch, -1, +1);
 
@@ -180,15 +182,17 @@ namespace BoSSS.Application.SipPoisson {
                 return grd;
             };
 
-            R.LinearSolver.SolverCode = LinearSolverConfig.Code.exp_schwarz_Kcycle_directcoarse;
+
+            //R.LinearSolver.SolverCode = LinearSolverConfig.Code.exp_softpcg_jacobi_mg;
+            R.LinearSolver.SolverCode = LinearSolverConfig.Code.exp_decomposedMG_OrthoScheme;
             //R.LinearSolver.SolverCode = LinearSolverConfig.Code.classic_mumps;
             R.LinearSolver.NoOfMultigridLevels = 10;
             R.LinearSolver.TargetBlockSize = 40;
+            //R.LinearSolver.MaxSolverIterations = 1;
             //R.LinearSolver.MaxSolverIterations = 10;
 
             R.AddBoundaryValue(BoundaryType.Dirichlet.ToString());
             R.AddBoundaryValue(BoundaryType.Neumann.ToString());
-
 
             return R;
         }

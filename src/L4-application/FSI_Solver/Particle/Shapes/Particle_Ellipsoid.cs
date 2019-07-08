@@ -51,16 +51,7 @@ namespace BoSSS.Application.FSI_Solver {
         [DataMember]
         public double thickness_P;
 
-        /// <summary>
-        /// %
-        /// </summary>
-        protected override double AverageDistance {
-            get {
-                return 0.5 * (length_P + thickness_P);
-            }
-        }
-
-        protected override double Area_P {
+        public override double Area_P {
             get {
                 double a = length_P * thickness_P * Math.PI;
                 if (a <= 0.0 || double.IsNaN(a) || double.IsInfinity(a))
@@ -96,8 +87,10 @@ namespace BoSSS.Application.FSI_Solver {
             // only for rectangular cells
             if (h_max == 0)
                 h_max = h_min;
-            double radiusTolerance = !WithoutTolerance ? 1.0 + 2 * Math.Sqrt(h_max.Pow2() + h_min.Pow2()) : 1;
-            double Ellipse = ((point[0] - Position[0][0]) * Math.Cos(Angle[0] + (point[1] - Position[0][1]) * Math.Sin(Angle[0]))).Pow2() / length_P.Pow2() + (-(point[0] - Position[0][0]) * Math.Sin(Angle[0]) + (point[1] - Position[0][1]) * Math.Cos(Angle[0])).Pow2() / thickness_P.Pow2();
+            double radiusTolerance = 1;
+            double a = !WithoutTolerance ? length_P + Math.Sqrt(h_max.Pow2() + h_min.Pow2()) : length_P;
+            double b = !WithoutTolerance ? thickness_P + Math.Sqrt(h_max.Pow2() + h_min.Pow2()) : thickness_P;
+            double Ellipse = ((point[0] - Position[0][0]) * Math.Cos(Angle[0]) + (point[1] - Position[0][1]) * Math.Sin(Angle[0])).Pow2() / a.Pow2() + (-(point[0] - Position[0][0]) * Math.Sin(Angle[0]) + (point[1] - Position[0][1]) * Math.Cos(Angle[0])).Pow2() / b.Pow2();
             if (Ellipse < radiusTolerance)
             {
                 return true;
@@ -175,6 +168,7 @@ namespace BoSSS.Application.FSI_Solver {
                 SupportPoint[i] += Position[i];
             }
         }
+
         override public double[] GetLengthScales()
         {
             return new double[] { length_P, thickness_P };

@@ -33,6 +33,19 @@ namespace FSI_Solver
 {
     class FSI_Collision
     {
+        double m_FluidViscosity;
+        double m_FluidDensity;
+
+        public FSI_Collision(double fluidViscosity, double fluidDensity)
+        {
+            m_FluidViscosity = fluidViscosity;
+            m_FluidDensity = fluidDensity;
+        }
+
+        public FSI_Collision()
+        {
+        }
+
         private FSI_Auxillary Aux = new FSI_Auxillary();
         private FSI_LevelSetUpdate LevelSetUpdate = new FSI_LevelSetUpdate();
 
@@ -99,6 +112,9 @@ namespace FSI_Solver
                                     DistanceVector.SetSubArray(temp_DistanceVector, new int[] { p0, ParticleOffset + w, -1 });
                                     ClosestPoint_P0.SetSubArray(temp_ClosestPoint_p0, new int[] { p0, ParticleOffset + w, -1 });
                                     ClosestPoint_P1.SetSubArray(temp_ClosestPoint_p1, new int[] { p0, ParticleOffset + w, -1 });
+                                    double testMinDistance = double.MaxValue;
+                                    if (testMinDistance > temp_Distance)
+                                        testMinDistance = temp_Distance;
                                     if (temp_SaveTimeStep < SaveTimeStep && temp_SaveTimeStep > 0)
                                     {
                                         SaveTimeStep = temp_SaveTimeStep;
@@ -113,6 +129,7 @@ namespace FSI_Solver
                                         MinDistance = double.MaxValue;
                                         Overlapping = true;
                                     }
+                                    Particle0.skipForceIntegration = testMinDistance < 0.1 * LsTrk.GridDat.Cells.h_minGlobal;
                                 }
                                 for (int p1 = p0 + 1; p1 < ParticlesOfCurrentColor.Length; p1++)
                                 {
@@ -125,6 +142,9 @@ namespace FSI_Solver
                                     DistanceVector.SetSubArray(temp_DistanceVector, new int[] { p0, p1, -1 });
                                     ClosestPoint_P0.SetSubArray(temp_ClosestPoint_p0, new int[] { p0, p1, -1 });
                                     ClosestPoint_P1.SetSubArray(temp_ClosestPoint_p1, new int[] { p0, p1, -1 });
+                                    double testMinDistance = double.MaxValue;
+                                    if (testMinDistance > temp_Distance)
+                                        testMinDistance = temp_Distance;
                                     if (temp_SaveTimeStep < SaveTimeStep && temp_SaveTimeStep > 0)
                                     {
                                         SaveTimeStep = temp_SaveTimeStep;
@@ -139,6 +159,7 @@ namespace FSI_Solver
                                         MinDistance = double.MaxValue;
                                         Overlapping = true;
                                     }
+                                    Particle0.skipForceIntegration = testMinDistance < 0.1 * LsTrk.GridDat.Cells.h_minGlobal;
                                 }
                             }
                             if (SaveTimeStep != -dt)
@@ -238,15 +259,6 @@ namespace FSI_Solver
             }
         }
 
-        internal void ResetCollisionState(List<Particle> Particles)
-        {
-            foreach (Particle p in Particles)
-            {
-                p.skipForceIntegration = false;
-                p.Collided = false;
-            }
-        }
-
         internal void PrintCollisionResults(List<Particle> Particles, Particle Particle0, Particle Particle1, double Distance, double AccDynamicTimestep)
         {
             Console.WriteLine("-------------------------------------------------------");
@@ -257,6 +269,17 @@ namespace FSI_Solver
             Console.WriteLine("The minimal distance is: " + Distance);
             Console.WriteLine("The dynamic timestep is: " + AccDynamicTimestep);
             Console.WriteLine("-------------------------------------------------------");
+        }
+
+        private void ModelCoefficientOfRestitution(double StokesNumber, out double CoefficientOfRestitution)
+        {
+            // following G.G. Joseph, R. Zenit, M.L. Hunt, A.M. Rosenwinkel Particle-wall collisions in a viscous fluid
+            if (StokesNumber < 10)
+                CoefficientOfRestitution = 0;
+            else if (StokesNumber < 500)
+                CoefficientOfRestitution = (StokesNumber + 10) / 490;
+            else
+                CoefficientOfRestitution = 1;
         }
 
         /// <summary>
@@ -285,17 +308,8 @@ namespace FSI_Solver
             CalculateNormalAndTangentialVector(DistanceVector, out double[] NormalVector, out double[] TangentialVector);
             ProjectVelocity(NormalVector, TangentialVector, Particle0.TranslationalVelocity[0], out double collisionVn_P0, out double collisionVt_P0);
             ProjectVelocity(NormalVector, TangentialVector, Particle1.TranslationalVelocity[0], out double collisionVn_P1, out double collisionVt_P1);
-
-            // Bool if collided
-            //Particle0.m_collidedWithParticle[m_Particles.IndexOf(Particle1)] = true;
-            //Particle1.m_collidedWithParticle[m_Particles.IndexOf(Particle0)] = true;
-
-            // Bool if force integration should be skipped
-            Particle0.skipForceIntegration = true;
-            Particle1.skipForceIntegration = true;
-
-            // coefficient of restitution (e=0 pastic; e=1 elastic)
-            double e = CoefficientOfRestitution;
+            ModelCoefficientOfRestitution(Particle0.ComputeParticleSt(m_FluidViscosity, m_FluidDensity), out double temp_CoefficientOfRestitution);
+            double e = temp_CoefficientOfRestitution * CoefficientOfRestitution;
 
             // Calculate excentric parameter
             double[] RadialDistance0 = Aux.VectorDiff(ClosestPoint_P0, Particle0.Position[0]);
@@ -338,14 +352,6 @@ namespace FSI_Solver
 
             double tempCollisionVt_P0 = collisionVt_P0 * e;
             double tempCollisionVt_P1 = collisionVt_P1 * e;
-            //Console.WriteLine("Collision between particle " + Particles.IndexOf(Particle0) + " and particle " + Particles.IndexOf(Particle1));
-            //Console.WriteLine("Particle0 position " + Particle0.Position[0][0] + ", " + Particle0.Position[0][1]);
-            //Console.WriteLine("Particle1 position " + Particle1.Position[0][0] + ", " + Particle1.Position[0][1]);
-            //Console.WriteLine("DistanceVector[0]:    " + DistanceVector[0] + "   DistanceVector[1]:    " + DistanceVector[1]);
-            //Console.WriteLine("collisionVn_P0:    " + collisionVn_P0 + "   collisionVn_P1:    " + collisionVn_P1);
-            //Console.WriteLine("tempCollisionRot_P0:    " + tempCollisionRot_P0 + "   tempCollisionRot_P1:    " + tempCollisionRot_P1);
-            //Console.WriteLine("a0:    " + a0 + "   Fx:    " + (-Fx) + "      Fxrot:    " + (-Fxrot));
-            //Console.WriteLine("a1:    " + a1 + "   Fx:    " + Fx + "      Fxrot:    " + Fxrot);
 
             Particle0.CollisionNormal.Add(NormalVector);
             Particle1.CollisionNormal.Add(NormalVector);
@@ -356,15 +362,6 @@ namespace FSI_Solver
             Particle0.CollisionTranslationalVelocity.Add(new double[] { tempCollisionVn_P0, tempCollisionVt_P0});
             Particle1.CollisionTranslationalVelocity.Add(new double[] { tempCollisionVn_P1, tempCollisionVt_P1});
 
-
-            //for (int d = 0; d < 2; d++)
-            //{
-            //    Particle0.TranslationalVelocity[0][d] = 0;
-            //    Particle1.TranslationalVelocity[0][d] = 0;
-            //    Particle0.RotationalVelocity[0] = 0;
-            //    Particle1.RotationalVelocity[0] = 0;
-            //}
-
             Particle0.Collided = true;
             Particle1.Collided = true;
         }
@@ -373,9 +370,10 @@ namespace FSI_Solver
         {
             CalculateNormalAndTangentialVector(DistanceVector, out double[] NormalVector, out double[] TangentialVector);
             ProjectVelocity(NormalVector, TangentialVector, Particle.TranslationalVelocity[0], out double collisionVn_P0, out double collisionVt_P0);
-
+            ModelCoefficientOfRestitution(Particle.ComputeParticleSt(m_FluidViscosity, m_FluidDensity), out double temp_CoefficientOfRestitution);
+            CoefficientOfRestitution = temp_CoefficientOfRestitution * CoefficientOfRestitution;
             // Skip force integration for next timestep
-            Particle.skipForceIntegration = true;
+            //Particle.skipForceIntegration = true;
 
             // exzentric collision
             // ----------------------------------------
@@ -1049,8 +1047,25 @@ namespace FSI_Solver
         {
             int NoOfVars = 13;
             double[] BoolSend = new double[1];
+            double[] MPI_SkipForceIntegration = new double[1];
             bool NoCurrentCollision = true;
             BoolSend[0] = CurrentParticle.Collided ? 1 : 0;
+            MPI_SkipForceIntegration[0] = CurrentParticle.skipForceIntegration ? 1 : 0;
+
+            double[] Receive_SkipForceIntegration = new double[MPISize];
+            unsafe
+            {
+                fixed (double* pCheckSend = MPI_SkipForceIntegration, pCheckReceive = Receive_SkipForceIntegration)
+                {
+                    csMPI.Raw.Allgather((IntPtr)pCheckSend, BoolSend.Length, csMPI.Raw._DATATYPE.DOUBLE, (IntPtr)pCheckReceive, MPI_SkipForceIntegration.Length, csMPI.Raw._DATATYPE.DOUBLE, csMPI.Raw._COMM.WORLD);
+                }
+            }
+
+            for(int i = 0; i < Receive_SkipForceIntegration.Length; i++)
+            {
+                if (Receive_SkipForceIntegration[i] == 1)
+                    CurrentParticle.skipForceIntegration = true;
+            }
 
             double[] BoolReceive = new double[MPISize];
             unsafe
@@ -1111,12 +1126,6 @@ namespace FSI_Solver
             if (NoCurrentCollision)
             {
                 CurrentParticle.Collided = false;
-                //CurrentParticle.skipForceIntegration = false;
-                //CurrentParticle.m_collidedWithWall[0] = false;
-                //for (int p = 0; p < CurrentParticle.Collided.Length; p++)
-                //{
-                //    CurrentParticle.Collided[p] = false;
-                //}
             }
         }
 
@@ -1243,11 +1252,11 @@ namespace FSI_Solver
             {
                 for (int d = 0; d < SpatialDim; d++)
                 {
-                    particle.Position[0][d] = particle.Position[0][d] + (particle.TranslationalVelocity[1][d] * 0 + 2 * particle.TranslationalVelocity[0][d]) * Dynamic_dt / 2 + 0 * (particle.TranslationalAcceleration[1][d] + particle.TranslationalAcceleration[0][d]) * Dynamic_dt.Pow2() / 4;
+                    particle.Position[0][d] = particle.Position[0][d] + (particle.TranslationalVelocity[1][d] * 0 + 2 * particle.TranslationalVelocity[0][d]) * Dynamic_dt / 2;
                     if (double.IsNaN(particle.Position[0][d]) || double.IsInfinity(particle.Position[0][d]))
                         throw new ArithmeticException("Error trying to update particle position. Value:  " + particle.Position[0][d]);
                 }
-                particle.Angle[0] = particle.Angle[0] + (particle.RotationalVelocity[1] * 0 + 2 * particle.RotationalVelocity[0]) * Dynamic_dt / 2 + 0 * (particle.RotationalAcceleration[0] + particle.RotationalAcceleration[1]) * Dynamic_dt.Pow2() / 4;
+                particle.Angle[0] = particle.Angle[0] + (particle.RotationalVelocity[1] * 0 + 2 * particle.RotationalVelocity[0]) * Dynamic_dt / 2;
                 if (double.IsNaN(particle.Angle[0]) || double.IsInfinity(particle.Angle[0]))
                     throw new ArithmeticException("Error trying to update particle position. Value:  " + particle.Angle[0]);
             }

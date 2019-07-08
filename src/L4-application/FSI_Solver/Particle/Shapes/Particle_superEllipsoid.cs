@@ -58,34 +58,25 @@ namespace BoSSS.Application.FSI_Solver {
         [DataMember]
         public double superEllipsoidExponent;
 
-        /// <summary>
-        /// %
-        /// </summary>
-        protected override double AverageDistance
-        {
-            get
-            {
-                return 0.5 * (length_P + thickness_P);
-            }
-        }
-
         protected override double Circumference_P {
             get {
                 return (2 * length_P + 2 * thickness_P + 2 * Math.PI * thickness_P) / 2;
             }
         }
 
-        protected override double Area_P {
+        public override double Area_P {
             get {
                 return 4 * length_P * thickness_P * (SpecialFunctions.Gamma(1 + 1 / superEllipsoidExponent)).Pow2() / SpecialFunctions.Gamma(1 + 2 / superEllipsoidExponent);
             }
 
         }
+
         override public double MomentOfInertia_P {
             get {
                 return (1 / 4.0) * Mass_P * (length_P * length_P + thickness_P * thickness_P);
             }
         }
+
         public override double Phi_P(double[] X) {
             double alpha = -(Angle[0]);
             double r;
@@ -100,13 +91,17 @@ namespace BoSSS.Application.FSI_Solver {
                 throw new ArithmeticException();
             return r;
         }
+
         public override bool Contains(double[] point, double h_min, double h_max = 0, bool WithoutTolerance = false)
         {
+            WithoutTolerance = false;
             // only for rectangular cells
             if (h_max == 0)
                 h_max = h_min;
-            double radiusTolerance = !WithoutTolerance ? 1.0 + Math.Sqrt(h_max.Pow2() + h_min.Pow2()) : 1;
-            double Superellipsoid = Math.Pow(((point[0] - Position[0][0]) * Math.Cos(Angle[0] + (point[1] - Position[0][1]) * Math.Sin(Angle[0]))).Pow2() / length_P.Pow2(), superEllipsoidExponent) + Math.Pow((-(point[0] - Position[0][0]) * Math.Sin(Angle[0]) + (point[1] - Position[0][1]) * Math.Cos(Angle[0])).Pow2() / thickness_P.Pow2(),superEllipsoidExponent);
+            double radiusTolerance = 1;
+            double a = !WithoutTolerance ? length_P + Math.Sqrt(h_max.Pow2() + h_min.Pow2()) : length_P;
+            double b = !WithoutTolerance ? thickness_P + Math.Sqrt(h_max.Pow2() + h_min.Pow2()) : thickness_P;
+            double Superellipsoid = Math.Pow(((point[0] - Position[0][0]) * Math.Cos(Angle[0]) + (point[1] - Position[0][1]) * Math.Sin(Angle[0])) / a, superEllipsoidExponent) + (Math.Pow((-(point[0] - Position[0][0]) * Math.Sin(Angle[0]) + (point[1] - Position[0][1]) * Math.Cos(Angle[0])) / b,superEllipsoidExponent));
             if (Superellipsoid < radiusTolerance)
                 return true;
             else
@@ -146,26 +141,6 @@ namespace BoSSS.Application.FSI_Solver {
             }
             return SurfacePoints;
         }
-
-        //override public void GetSupportPoint(int SpatialDim, double[] Vector, out double[] SupportPoint)
-        //{
-        //    SupportPoint = new double[SpatialDim];
-        //    double VectorLength = Math.Sqrt(Vector[0].Pow2() + Vector[1].Pow2());
-        //    for (int d = 0; d < SpatialDim; d++)
-        //    {
-        //        Vector[d] = Vector[d] / VectorLength;
-        //    }
-        //    double[] VectorBodyCOS = Vector.CloneAs();
-        //    VectorBodyCOS[0] = Vector[0] * Math.Cos(Angle[0]) - Vector[1] * Math.Sin(Angle[0]);
-        //    VectorBodyCOS[1] = Vector[0] * Math.Sin(Angle[0]) - Vector[1] * Math.Cos(Angle[1]);
-        //    double VecBodyLength = Math.Pow(1 / (Math.Pow(VectorBodyCOS[0] / length_P, superEllipsoidExponent) + Math.Pow(VectorBodyCOS[1] / thickness_P, superEllipsoidExponent)), 1 / superEllipsoidExponent);
-        //    double[] StartPoint = new double[SpatialDim];
-        //    for (int d = 0; d < SpatialDim; d++)
-        //    {
-        //        StartPoint[d] = Position[0][d] + VecBodyLength * Vector[d];
-        //    }
-            
-        //}
     }
 }
 

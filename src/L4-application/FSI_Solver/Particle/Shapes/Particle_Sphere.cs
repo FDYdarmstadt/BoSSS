@@ -58,20 +58,11 @@ namespace BoSSS.Application.FSI_Solver
         [DataMember]
         public double radius_P;
 
-        /// <summary>
-        /// %
-        /// </summary>
-        protected override double AverageDistance {
-            get {
-                return radius_P;
-            }
-        }
-
-        protected override double Area_P
+        public override double Area_P
         {
             get
             {
-                return Math.PI * radius_P * radius_P;
+                return Math.PI * radius_P.Pow2();
             }
         }
         protected override double Circumference_P
@@ -85,14 +76,10 @@ namespace BoSSS.Application.FSI_Solver
         {
             get
             {
-                return (1 / 2.0) * (Mass_P * radius_P * radius_P);
+                return (1 / 2.0) * (Mass_P * radius_P.Pow2());
             }
         }
-        //override public void UpdateLevelSetFunction()
-        //{
-        //    double alpha = -(Angle[0]);
-        //    Phi_P = (X, t) => -(X[0] - Position[0][0]).Pow2() + -(X[1] - Position[0][1]).Pow2() + radius_P.Pow2();
-        //}
+
         public override double Phi_P(double[] X) {
             double x0 = Position[0][0];
             double y0 = Position[0][1];
@@ -104,7 +91,7 @@ namespace BoSSS.Application.FSI_Solver
             // only for rectangular cells
             if (h_max == 0)
                 h_max = h_min;
-            double radiusTolerance = !WithoutTolerance ? 1.0 + Math.Sqrt(h_max.Pow2() + h_min.Pow2()) : 1;
+            double radiusTolerance = !WithoutTolerance ? radius_P + Math.Sqrt(h_max.Pow2() + h_min.Pow2()) : radius_P;
             var distance = point.L2Distance(Position[0]);
             if (distance < (radiusTolerance))
             {
