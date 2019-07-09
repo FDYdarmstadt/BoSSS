@@ -917,7 +917,7 @@ namespace BoSSS.Application.FSI_Solver
             throw new NotImplementedException();
         }
 
-        virtual public MultidimensionalArray GetSurfacePoints(LevelSetTracker lsTrk, double[] Position, double Angle)
+        virtual public MultidimensionalArray GetSurfacePoints(double hMin, double[] Position, double Angle)
         {
             throw new NotImplementedException();
         }
