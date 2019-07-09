@@ -404,8 +404,8 @@ namespace BoSSS.Application.FSI_Solver
                 int q = new int(); // #Cells in x-dircetion + 1
                 int r = new int(); // #Cells in y-dircetion + 1
 
-                q = 20 * MeshFactor;
-                r = 20 * MeshFactor;
+                q = 40 * MeshFactor;
+                r = 40 * MeshFactor;
 
                 double[] Xnodes = GenericBlas.Linspace(-1 * BaseSize, 1 * BaseSize, q);
                 double[] Ynodes = GenericBlas.Linspace(-1 * BaseSize, 1 * BaseSize, r);
@@ -470,7 +470,7 @@ namespace BoSSS.Application.FSI_Solver
             {
                 C.Particles.Add(new Particle_Sphere(new double[] { 0, 0 }, startAngl: 0)
                 {
-                    particleDensity = 7.8e4,
+                    particleDensity = 7.8e0,
                     radius_P = 0.5,
                     GravityVertical = -9.81,
                     useAddaptiveUnderrelaxation = true,
@@ -529,8 +529,8 @@ namespace BoSSS.Application.FSI_Solver
             double dt = 1e-2;
             C.dtMax = dt;
             C.dtMin = dt;
-            C.Endtime = 60000;
-            C.NoOfTimesteps = 600000000;
+            C.Endtime = 60;
+            C.NoOfTimesteps = 6000;
 
             // haben fertig...
             // ===============

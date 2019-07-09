@@ -1091,7 +1091,7 @@ namespace BoSSS.Application.FSI_Solver
                     Auxillary.CalculateParticlePosition(m_Particles, dt);
                     Auxillary.ParticleState_MPICheck(m_Particles, GridData, MPISize);
                     UpdateLevelSetParticles();
-                    Auxillary.PrintResultToConsole(m_Particles, 1, 1, phystime, TimestepInt, 0, true, out double MPIangularVelocity, out Test_Force);
+                    Auxillary.PrintResultToConsole(m_Particles, 0, 0, phystime, TimestepInt, 0, true, out double MPIangularVelocity, out Test_Force);
                     // Save for NUnit Test
                     base.QueryHandler.ValueQuery("C_Drag", 2 * Test_Force[0], true); // Only for Diameter 1 (TestCase NSE stationary)
                     base.QueryHandler.ValueQuery("C_Lift", 2 * Test_Force[1], true); // Only for Diameter 1 (TestCase NSE stationary)
@@ -1401,8 +1401,8 @@ namespace BoSSS.Application.FSI_Solver
 
             if (CollisionModel == FSI_Control.CollisionModel.RepulsiveForce)
                 throw new NotImplementedException("Repulsive force model is currently unsupported, please use the momentum conservation model.");
-            FSI_Collision _Collision = new FSI_Collision(((FSI_Control)Control).PhysicalParameters.mu_A, ((FSI_Control)Control).PhysicalParameters.rho_A);
-            _Collision.CalculateCollision(Particles, GridData, LsTrk, CellColor, dt, ((FSI_Control)Control).CoefficientOfRestitution);
+            FSI_Collision _Collision = new FSI_Collision(((FSI_Control)Control).PhysicalParameters.mu_A, ((FSI_Control)Control).PhysicalParameters.rho_A, ((FSI_Control)Control).CoefficientOfRestitution, dt);
+            _Collision.CalculateCollision(Particles, GridData, LsTrk, CellColor);
             foreach (Particle p in m_Particles)
             {
                 _Collision.Collision_MPICommunication(m_Particles, p, MPISize);

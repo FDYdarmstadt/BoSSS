@@ -53,14 +53,17 @@ namespace BoSSS.Application.FSI_Solver
         {
             // noop
         }
-        
+
+        private const int historyLength = 4;
+        protected static int spatialDim = 2;
+
         public Particle(int Dim, double[] startPos = null, double startAngl = 0.0) {
             
             spatialDim = Dim;
 
             // Particle history
             // =============================   
-            for (int i = 0; i < 4; i++)// made history_length = 4 hardcoded, it is nothing you need to change in any simulation
+            for (int i = 0; i < historyLength; i++)
             {
                 Position.Add(new double[Dim]);
                 Angle.Add(new double());
@@ -82,7 +85,7 @@ namespace BoSSS.Application.FSI_Solver
             Angle[0] = StartingAngle = startAngl * 2 * Math.PI / 360;
             Angle[1] = startAngl * 2 * Math.PI / 360;
         }
-
+        
         /// <summary>
         /// Set true if translation of the particle should be induced by hydrodynamical forces.
         /// </summary>
@@ -169,33 +172,8 @@ namespace BoSSS.Application.FSI_Solver
         /// </summary>
         [DataMember]
         public double addedDampingCoefficient = 1;
-
-        /// <summary>
-        /// Spatial Dimension of the particle 
-        /// </summary>
-        [DataMember]
-        private readonly int spatialDim;
         
         virtual internal int NoOfSubParticles() { return 1; }
-
-        #region Virtual force model parameter
-        ///// <summary>
-        ///// needed for second velocity model
-        ///// </summary>
-        //public double C_v = 0.5;
-
-        ///// <summary>
-        ///// needed for second velocity model, obsolete?
-        ///// </summary>
-        //public double velResidual_ConvergenceCriterion = 1e-6;
-
-        ///// <summary>
-        ///// needed for second velocity model, obsolete?
-        ///// </summary>
-        //public double MaxParticleVelIterations = 10000;
-
-        //private int vel_iteration_counter;
-        #endregion
 
         /// <summary>
         /// Density of the particle.
@@ -261,13 +239,25 @@ namespace BoSSS.Application.FSI_Solver
         /// The translational velocity of the particle in the current time step. This list is used by the momentum conservation model.
         /// </summary>
         [DataMember]
+        public double[] closestPointToOtherObject = new double[spatialDim];
+
+        /// <summary>
+        /// The translational velocity of the particle in the current time step. This list is used by the momentum conservation model.
+        /// </summary>
+        [DataMember]
+        public double[] closestPointOnOtherObjectToThis = new double[spatialDim];
+
+        /// <summary>
+        /// The translational velocity of the particle in the current time step. This list is used by the momentum conservation model.
+        /// </summary>
+        [DataMember]
         public double CollisionPreviousTimestep = new double();
 
         /// <summary>
         /// The translational velocity of the particle in the current time step. This list is used by the momentum conservation model.
         /// </summary>
         [DataMember]
-        public double[] TotalCollisionPositionCorrection = new double[2];
+        public double[] TotalCollisionPositionCorrection = new double[spatialDim];
 
         /// <summary>
         /// The angular velocity of the particle in the current time step.
@@ -303,7 +293,7 @@ namespace BoSSS.Application.FSI_Solver
         /// The force acting on the particle in the current time step.
         /// </summary>
         [DataMember]
-        public double[] forcesPrevIteration = new double[2];
+        public double[] forcesPrevIteration = new double[spatialDim];
 
         /// <summary>
         /// The Torque acting on the particle in the current time step.
