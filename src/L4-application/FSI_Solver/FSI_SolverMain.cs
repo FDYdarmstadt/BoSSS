@@ -1401,8 +1401,8 @@ namespace BoSSS.Application.FSI_Solver
 
             if (CollisionModel == FSI_Control.CollisionModel.RepulsiveForce)
                 throw new NotImplementedException("Repulsive force model is currently unsupported, please use the momentum conservation model.");
-            FSI_Collision _Collision = new FSI_Collision(((FSI_Control)Control).PhysicalParameters.mu_A, ((FSI_Control)Control).PhysicalParameters.rho_A, ((FSI_Control)Control).CoefficientOfRestitution, dt);
-            _Collision.CalculateCollision(Particles, GridData, LsTrk, CellColor);
+            FSI_Collision _Collision = new FSI_Collision(((FSI_Control)Control).PhysicalParameters.mu_A, ((FSI_Control)Control).PhysicalParameters.rho_A, ((FSI_Control)Control).CoefficientOfRestitution, dt, LsTrk.GridDat.Cells.h_minGlobal);
+            _Collision.CalculateCollision(Particles, GridData, CellColor);
             foreach (Particle p in m_Particles)
             {
                 _Collision.Collision_MPICommunication(m_Particles, p, MPISize);

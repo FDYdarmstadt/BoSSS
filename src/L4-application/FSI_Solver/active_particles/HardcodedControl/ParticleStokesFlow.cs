@@ -302,7 +302,7 @@ namespace BoSSS.Application.FSI_Solver
             }
             for (int d = 0; d < numOfParticles; d++)
             {
-                C.Particles.Add(new Particle_Ellipsoid(new double[] { 0, 12 }, startAngl: 10)
+                C.Particles.Add(new Particle_Ellipsoid(new double[] { 0, 10 }, startAngl: 10)
                 {
                     particleDensity = 1.01,
                     length_P = 0.5,
