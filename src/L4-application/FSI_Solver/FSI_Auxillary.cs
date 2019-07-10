@@ -445,7 +445,7 @@ namespace FSI_Solver
             double[] ParticleReynoldsNumber = new double[Particles.Count()];
             double[] ParticleStokesNumber = new double[Particles.Count()];
 
-            for (int p = 0; p < Particles.Count(); p++) //5 times faster than foreach loop
+            for (int p = 0; p < Particles.Count(); p++) 
             {
                 Particle CurrentParticle = Particles[p];
                 double[] SingleParticleMomentum = CurrentParticle.CalculateParticleMomentum();
@@ -467,16 +467,6 @@ namespace FSI_Solver
             Force = Particles[0].HydrodynamicForces[0];
             MPIangularVelocity = Particles[0].RotationalVelocity[0];
 
-            /*
-            if ((base.MPIRank == 0) && (Log_DragAndLift != null)) {
-                double drag = force[0];
-                double lift = force[1];
-                //string line = String.Format("{0}\t{1}\t{2}\t{3}\t{4}\t{5}\t{6}\t{7}\t{8}\t{9}", TimestepNo, phystime, m_Particles[0].positionAtIteration[0][0], m_Particles[0].positionAtIteration[0][1], m_Particles[0].particleAnglePerIteration[0], m_Particles[0].transVelocityAtIteration[0][0], m_Particles[0].transVelocityAtIteration[0][1], 0.0, (totalKE[0] + totalKE[1] + totalKE[2]), Math.Sqrt(TranslationalMomentum[0].Pow2() + TranslationalMomentum[1].Pow2()));
-                string line = String.Format("{0}\t{1}\t{2}\t{3}\t{4}\t{5}\t{6}\t{7}\t{8}", phystime, m_Particles[0].Position[0][0], m_Particles[0].Position[0][1], m_Particles[0].Angle[0], m_Particles[0].TranslationalVelocity[0][0], m_Particles[0].TranslationalVelocity[0][1], 0.0, (totalKE[0] + totalKE[1] + totalKE[2]), Math.Sqrt(TranslationalMomentum[0].Pow2() + TranslationalMomentum[1].Pow2()));
-                Log_DragAndLift.WriteLine(line);
-                Log_DragAndLift.Flush();
-            }
-            */
             for (int p = 0; p < Particles.Count(); p++)
             {
                 Particle CurrentParticle = Particles[p];
