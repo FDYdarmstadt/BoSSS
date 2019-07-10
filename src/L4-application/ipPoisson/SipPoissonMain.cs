@@ -140,8 +140,8 @@ namespace BoSSS.Application.SipPoisson {
             BoSSS.Application.SipPoisson.Tests.TestProgram.Init();
             //BoSSS.Application.SipPoisson.Tests.TestProgram.TestIterativeSolver(3, 8, 3, LinearSolverConfig.Code.exp_softpcg_schwarz_directcoarse);
             //BoSSS.Application.SipPoisson.Tests.TestProgram.Cleanup();
-            BoSSS.Application.SipPoisson.Tests.TestProgram.TestIterativeSolver(3, 8, 3, LinearSolverConfig.Code.exp_softpcg_schwarz);
-            Assert.AreEqual(1, 2, "Remove Me!!");
+            //BoSSS.Application.SipPoisson.Tests.TestProgram.TestIterativeSolver(3, 8, 3, LinearSolverConfig.Code.exp_softpcg_schwarz);
+            //Assert.AreEqual(1, 2, "Remove Me!!");
 
 
             if (System.Environment.MachineName.ToLowerInvariant().EndsWith("terminal03")
