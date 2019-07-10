@@ -209,6 +209,12 @@ namespace BoSSS.Application.FSI_Solver
         /// The translational velocity of the particle in the current time step. This list is used by the momentum conservation model.
         /// </summary>
         [DataMember]
+        public double[] PreCollisionVelocity;
+
+        /// <summary>
+        /// The translational velocity of the particle in the current time step. This list is used by the momentum conservation model.
+        /// </summary>
+        [DataMember]
         public List<double[]> CollisionTranslationalVelocity = new List<double[]>();
 
         /// <summary>
@@ -925,6 +931,33 @@ namespace BoSSS.Application.FSI_Solver
         virtual public void GetSupportPoint(int SpatialDim, double[] Vector, double[] Position, double Angle, out double[] SupportPoint)
         {
             throw new NotImplementedException();
+        }
+
+        /// <summary>
+        /// Calculates the radial vector (SurfacePoint-ParticlePosition)
+        /// </summary>
+        /// <param name="ParticlePosition">
+        /// </param>
+        /// <param name="SurfacePoint">
+        /// </param>
+        /// <param name="RadialVector">
+        /// </param>
+        /// <param name="RadialLength">
+        /// </param>
+        /// <param name="RadialNormalVector">
+        /// Vector normal to the radial vector.
+        /// </param>
+        internal void CalculateRadialVector(double[] SurfacePoint, out double[] RadialVector, out double RadialLength)
+        {
+            RadialVector = new double[] { SurfacePoint[0] - Position[0][0], SurfacePoint[1] - Position[0][1] };
+            RadialLength = RadialVector.L2Norm();
+            RadialVector.ScaleV(1 / RadialLength);
+        }
+
+        internal void CalculateRadialNormalVector(double[] SurfacePoint, out double[] RadialNormalVector)
+        {
+            RadialNormalVector = new double[] { SurfacePoint[1] - Position[0][1], -SurfacePoint[0] + Position[0][0] };
+            RadialNormalVector.ScaleV(1 / RadialNormalVector.L2Norm());
         }
 
         /// <summary>

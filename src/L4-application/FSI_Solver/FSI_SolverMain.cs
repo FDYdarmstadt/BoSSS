@@ -277,8 +277,7 @@ namespace BoSSS.Application.FSI_Solver
                                             }
                                             else { containsParticle = p.Contains(X, GridData.iGeomCells.h_min.Min()); }//, LsTrk
 
-                                            FSI_Collision _FSI_Collision = new FSI_Collision();
-                                            _FSI_Collision.CalculateRadialVector(p.Position[0], X, out _, out double RadialLength, out double[] RadialNormalVector);
+                                            p.CalculateRadialNormalVector(X, out double[] RadialNormalVector);
                                             // active particles
                                             if (containsParticle && p.ActiveParticle == true)
                                             {
@@ -401,8 +400,7 @@ namespace BoSSS.Application.FSI_Solver
                                         }
                                         else { containsParticle = p.Contains(X, GridData.iGeomCells.h_min.Min()); }//, LsTrk
 
-                                        FSI_Collision _FSI_Collision = new FSI_Collision();
-                                        _FSI_Collision.CalculateRadialVector(p.Position[0], X, out _, out double RadialLength, out double[] RadialNormalVector);
+                                        p.CalculateRadialNormalVector(X, out double[] RadialNormalVector);
                                         // active particles
                                         if (containsParticle && p.ActiveParticle == true)
                                         {
@@ -497,8 +495,7 @@ namespace BoSSS.Application.FSI_Solver
                                        containsParticle = true;
                                    }
                                    else { containsParticle = p.Contains(X, GridData.iGeomCells.h_min.Min()); }
-                                   FSI_Collision _FSI_Collision = new FSI_Collision();
-                                   _FSI_Collision.CalculateRadialVector(p.Position[0], X, out _, out double RadialLength, out double[] RadialNormalVector);
+                                   p.CalculateRadialNormalVector(X, out double[] RadialNormalVector);
                                    if (containsParticle)
                                    {
                                        result[0] = p.TranslationalVelocity[0][0];
@@ -1401,7 +1398,10 @@ namespace BoSSS.Application.FSI_Solver
 
             if (CollisionModel == FSI_Control.CollisionModel.RepulsiveForce)
                 throw new NotImplementedException("Repulsive force model is currently unsupported, please use the momentum conservation model.");
-            FSI_Collision _Collision = new FSI_Collision(((FSI_Control)Control).PhysicalParameters.mu_A, ((FSI_Control)Control).PhysicalParameters.rho_A, ((FSI_Control)Control).CoefficientOfRestitution, dt, LsTrk.GridDat.Cells.h_minGlobal);
+
+            double fluidViscosity = ((FSI_Control)Control).pureDryCollisions ? 0 : ((FSI_Control)Control).PhysicalParameters.mu_A;
+            double fluidDensity = ((FSI_Control)Control).pureDryCollisions ? 0 : ((FSI_Control)Control).PhysicalParameters.rho_A;
+            FSI_Collision _Collision = new FSI_Collision(fluidViscosity, fluidDensity, ((FSI_Control)Control).CoefficientOfRestitution, dt, LsTrk.GridDat.Cells.h_minGlobal);
             _Collision.CalculateCollision(Particles, GridData, CellColor);
             foreach (Particle p in m_Particles)
             {

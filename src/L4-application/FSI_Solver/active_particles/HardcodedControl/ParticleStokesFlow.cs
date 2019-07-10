@@ -224,16 +224,16 @@ namespace BoSSS.Application.FSI_Solver
                 int q = new int(); // #Cells in x-dircetion + 1
                 int r = new int(); // #Cells in y-dircetion + 1
 
-                q = 30;
-                r = 60;
+                q = 20;
+                r = 40;
 
                 double[] Xnodes = GenericBlas.Linspace(-4 * BaseSize, 4 * BaseSize, q);
                 double[] Ynodes = GenericBlas.Linspace(-0 * BaseSize, 16 * BaseSize, r);
 
                 var grd = Grid2D.Cartesian2DGrid(Xnodes, Ynodes, periodicX: false, periodicY: false);
 
-                grd.EdgeTagNames.Add(1, "Pressure_Outlet_left");
-                grd.EdgeTagNames.Add(2, "Pressure_Outlet_right");
+                grd.EdgeTagNames.Add(1, "Wall_left");
+                grd.EdgeTagNames.Add(2, "Wall_right");
                 grd.EdgeTagNames.Add(3, "Wall_lower");
                 grd.EdgeTagNames.Add(4, "Pressure_Outlet_upper");
 
@@ -269,8 +269,8 @@ namespace BoSSS.Application.FSI_Solver
 
             // Boundary conditions
             // =============================
-            C.AddBoundaryValue("Pressure_Outlet_left");
-            C.AddBoundaryValue("Pressure_Outlet_right");
+            C.AddBoundaryValue("Wall_left");
+            C.AddBoundaryValue("Wall_right");
             C.AddBoundaryValue("Wall_lower");
             C.LowerWallFullyPlastic = true;
             C.AddBoundaryValue("Pressure_Outlet_upper");
@@ -291,26 +291,26 @@ namespace BoSSS.Application.FSI_Solver
             {
                 C.Particles.Add(new Particle_Sphere(new double[] { 0, 14 }, startAngl: 10)
                 {
-                    particleDensity = 1.01,
+                    particleDensity = 7.8,
                     radius_P = 0.5,
                     GravityVertical = -9.81,
                     useAddaptiveUnderrelaxation = true,
-                    underrelaxation_factor = 1,
-                    clearSmallValues = false,
+                    underrelaxation_factor = 5,
+                    clearSmallValues = true,
                     UseAddedDamping = true
                 });
             }
             for (int d = 0; d < numOfParticles; d++)
             {
-                C.Particles.Add(new Particle_Ellipsoid(new double[] { 0, 10 }, startAngl: 10)
+                C.Particles.Add(new Particle_Ellipsoid(new double[] { 0, 12 }, startAngl: 10)
                 {
                     particleDensity = 1.01,
                     length_P = 0.5,
                     thickness_P = 0.25,
                     GravityVertical = -9.81,
                     useAddaptiveUnderrelaxation = true,
-                    underrelaxation_factor = 1,
-                    clearSmallValues = false,
+                    underrelaxation_factor = 5,
+                    clearSmallValues = true,
                     UseAddedDamping = true
                 });
             }
@@ -347,7 +347,7 @@ namespace BoSSS.Application.FSI_Solver
             C.LinearSolver.NoOfMultigridLevels = 1;
             C.LinearSolver.MaxSolverIterations = 1000;
             C.LinearSolver.MinSolverIterations = 1;
-            C.ForceAndTorque_ConvergenceCriterion = 1e-3;
+            C.ForceAndTorque_ConvergenceCriterion = 1e-2;
             C.LSunderrelax = 1.0;
 
 
