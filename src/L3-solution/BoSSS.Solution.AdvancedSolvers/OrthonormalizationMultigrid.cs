@@ -80,13 +80,16 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
             // init smoother
             // =============
-            if (this.Smoother != null)
-                this.Smoother.Init(op);
+            if (PreSmoother != null)
+                PreSmoother.Init(op);
+            if (PostSmoother != null && !object.ReferenceEquals(PreSmoother, PostSmoother))
+                PostSmoother.Init(op);
         }
 
 
         public ISolverSmootherTemplate CoarserLevelSolver;
-        public ISolverSmootherTemplate Smoother;
+        public ISolverSmootherTemplate PreSmoother;
+        public ISolverSmootherTemplate PostSmoother;
 
         public Action<int, double[], double[], MultigridOperator> IterationCallback {
             get;
@@ -118,8 +121,35 @@ namespace BoSSS.Solution.AdvancedSolvers {
         List<double[]> SolHistory = new List<double[]>();
         List<double[]> MxxHistory = new List<double[]>();
 
-
+        
         void AddSol(ref double[] X) {
+
+            var Xlo = X.CloneAs();
+            var Xhi = X.CloneAs();
+
+            int J = m_MgOperator.GridData.iLogicalCells.NoOfLocalUpdatedCells;
+            int Np = m_MgOperator.Mapping.AggBasis[0].MaximalLength;
+            if (J * Np != X.Length)
+                throw new NotSupportedException("experimental stuff failed");
+
+            int Ncut = 4;
+            for(int j = 0; j < J; j++) {
+                for(int n = 0; n < Np; n++) {
+                    int l = m_MgOperator.Mapping.LocalUniqueIndex(0, j, n);
+                    if (n < Ncut)
+                        Xhi[l] = 0;
+                    else
+                        Xlo[l] = 0;
+                }
+            }
+
+            __AddSol(ref Xlo);
+            __AddSol(ref Xhi);
+
+        }
+        
+
+        void __AddSol(ref double[] X) {
             Debug.Assert(SolHistory.Count == MxxHistory.Count);
             Debug.Assert(X.Length == OpMatrix._RowPartitioning.LocalLength);
             int L = X.Length;
@@ -165,7 +195,16 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 outRes.AccV(-alpha[i], MxxHistory[i]);
             }
 
-            return outRes.L2NormPow2().MPISum().Sqrt();
+            double ResNorm = outRes.L2NormPow2().MPISum().Sqrt();
+
+            if(ResNorm < Tolerance) {
+                alpha.SaveToStream(Console.Out, m_MgOperator.BaseGridProblemMapping.MPI_Comm);
+
+                alpha.SaveToTextFile("ConvScheisse.txt", m_MgOperator.BaseGridProblemMapping.MPI_Comm);
+            }
+
+
+            return ResNorm;
 
             /* we cannot do the following 
             // since the 'MxxHistory' vectors form an orthonormal system,
@@ -212,7 +251,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
                         // compute correction
                         double[] PreCorr = new double[L];
-                        Smoother.Solve(PreCorr, rl); // Vorglättung
+                        PreSmoother.Solve(PreCorr, rl); // Vorglättung
 
                         // orthonormalization and residual minimization
                         AddSol(ref PreCorr);
@@ -250,13 +289,13 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
                     // post-smoother
                     // -------------
-
+                    
                     {
                         Residual(rl, _xl, B); // Residual on this level
 
                         // compute correction
                         double[] PreCorr = new double[L];
-                        Smoother.Solve(PreCorr, rl); // Vorglättung
+                        PostSmoother.Solve(PreCorr, rl); // Vorglättung
 
                         // orthonormalization and residual minimization
                         AddSol(ref PreCorr);
@@ -266,7 +305,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                             return;
                         }
                     }
-
+                    
                     // iteration callback
                     // ------------------
 
@@ -284,9 +323,17 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
         public int IterationsInNested {
             get {
-                return
-                    ((this.Smoother != null) ? (this.Smoother.IterationsInNested + this.Smoother.ThisLevelIterations) : 0)
-                    + (this.CoarserLevelSolver.IterationsInNested + this.CoarserLevelSolver.ThisLevelIterations);
+                int iter = 0;
+
+                if (PreSmoother != null)
+                    iter += this.PreSmoother.IterationsInNested + this.PreSmoother.ThisLevelIterations;
+
+                if (this.PostSmoother != null && !object.ReferenceEquals(PreSmoother, PostSmoother))
+                    iter += this.PostSmoother.IterationsInNested + this.PostSmoother.ThisLevelIterations;
+
+                iter += this.CoarserLevelSolver.IterationsInNested + this.CoarserLevelSolver.ThisLevelIterations;
+
+                return iter;
             }
         }
 
@@ -303,8 +350,10 @@ namespace BoSSS.Solution.AdvancedSolvers {
         public void ResetStat() {
             this.Converged = false;
             this.ThisLevelIterations = 0;
-            if (this.Smoother != null)
-                this.Smoother.ResetStat();
+            if (this.PreSmoother != null)
+                this.PreSmoother.ResetStat();
+            if (this.PostSmoother != null && !object.ReferenceEquals(PreSmoother, PostSmoother))
+                this.PostSmoother.ResetStat();
             if (this.CoarserLevelSolver != null)
                 this.CoarserLevelSolver.ResetStat();
         }

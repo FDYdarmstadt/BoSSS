@@ -1166,7 +1166,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
                         var SolScale = this.SolutionScaling;
                         for(int l = 0; l < LocLength; l++) {
-                            X[l] *= SolScale[l];
+                            //X[l] *= SolScale[l];
                         }
                     }
                 }

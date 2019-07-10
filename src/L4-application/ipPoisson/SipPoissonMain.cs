@@ -137,10 +137,11 @@ namespace BoSSS.Application.SipPoisson {
         /// </summary>
         /// <param name="args"></param>
         static void Main(string[] args) {
-            //BoSSS.Application.SipPoisson.Tests.TestProgram.Init();
+            BoSSS.Application.SipPoisson.Tests.TestProgram.Init();
             //BoSSS.Application.SipPoisson.Tests.TestProgram.TestIterativeSolver(3, 8, 3, LinearSolverConfig.Code.exp_softpcg_schwarz_directcoarse);
             //BoSSS.Application.SipPoisson.Tests.TestProgram.Cleanup();
-            //return;
+            BoSSS.Application.SipPoisson.Tests.TestProgram.TestIterativeSolver(3, 8, 3, LinearSolverConfig.Code.exp_softpcg_schwarz);
+            Assert.AreEqual(1, 2, "Remove Me!!");
 
 
             if (System.Environment.MachineName.ToLowerInvariant().EndsWith("terminal03")
@@ -247,6 +248,8 @@ namespace BoSSS.Application.SipPoisson {
             */
 
             _Main(args, false, delegate () {
+               
+
                 SipPoissonMain p = new SipPoissonMain();
 
                 Console.WriteLine("ipPoisson: " + ilPSP.Environment.MPIEnv.MPI_Rank + " of " + ilPSP.Environment.MPIEnv.MPI_Size
