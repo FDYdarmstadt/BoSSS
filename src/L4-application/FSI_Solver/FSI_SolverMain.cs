@@ -1403,6 +1403,8 @@ namespace BoSSS.Application.FSI_Solver
             double fluidDensity = ((FSI_Control)Control).pureDryCollisions ? 0 : ((FSI_Control)Control).PhysicalParameters.rho_A;
             FSI_Collision _Collision = new FSI_Collision(fluidViscosity, fluidDensity, ((FSI_Control)Control).CoefficientOfRestitution, dt, LsTrk.GridDat.Cells.h_minGlobal);
             _Collision.CalculateCollision(Particles, GridData, CellColor);
+                ((GridData)GridData).Cells.h_minGlobal
+                );
             foreach (Particle p in m_Particles)
             {
                 _Collision.Collision_MPICommunication(m_Particles, p, MPISize);

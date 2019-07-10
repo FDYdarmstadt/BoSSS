@@ -1558,7 +1558,7 @@ namespace BoSSS.Solution {
 
                 } else {
 
-                    var smoother = new Schwarz() {
+                    var smoother1 = new Schwarz() {
                         m_MaxIterations = 1,
                         CoarseSolver = null,
                         m_BlockingStrategy = new Schwarz.METISBlockingStrategy() {
@@ -1567,9 +1567,17 @@ namespace BoSSS.Solution {
                         Overlap = 2 // overlap seems to help
                     };
 
+                    /*
+                    var smoother2 = new BlockJacobi() {
+                        NoOfIterations = 2,
+                        m_Tolerance = 0
+                    };
+                    */
+
                     levelSolver = new OrthonormalizationMultigrid() {
                         m_MaxIterations = iLevel == 0 ? _lc.MaxSolverIterations : 1,
-                        Smoother = smoother,
+                        PreSmoother = smoother1,
+                        PostSmoother = smoother1,
                         Tolerance = iLevel == 0 ? _lc.ConvergenceCriterion : 0.0
                     };
 

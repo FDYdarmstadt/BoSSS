@@ -148,7 +148,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
 
         SinglePhaseField ProlongateToDg(double[] V, string name) {
-            double[] Curr = Prolongate(V);
+            double[] Curr = ProlongateToTop(V);
 
             var gdat = m_mgop.BaseGridProblemMapping.GridDat;
             var basis = m_mgop.BaseGridProblemMapping.BasisS[0];
@@ -157,7 +157,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
             return dgCurrentSol;
         }
 
-        private double[] Prolongate(double[] V) {
+        private double[] ProlongateToTop(double[] V) {
             int iLv = FindLevel(V.Length);
 
 
@@ -214,14 +214,12 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
                     Console.WriteLine("    Level " + iLv);
 
-                    //double[] LevelRes;
                     if (iLv == 0) {
                         CurrSol[iLv].SetV(X);
                         Rhs[iLv].SetV(B);
 
                         CurrRestRes[iLv].SetV(Rhs[iLv]);
                         Mtx4Level[iLv].SpMV(-1.0, CurrSol[iLv], 1.0, CurrRestRes[iLv]);
-                        //LevelRes = CurrRestRes[iLv];
 
 
                     } else {
@@ -229,11 +227,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                         Op4Level[iLv].Restrict(Rhs[iLv - 1], Rhs[iLv]);
                         Op4Level[iLv].Restrict(CurrRestRes[iLv - 1], CurrRestRes[iLv]);
 
-                        //LevelRes = new double[L[iLv]];
-                        //LevelRes.SetV(Rhs[iLv]);
-                        //Mtx4Level[iLv].SpMV(-1.0, CurrSol[iLv], 1.0, LevelRes);
-
-                        //double ResDist = GenericBlas.L2DistPow2(LevelRes, CurrRestRes[iLv]).MPISum().Sqrt();
+                        
                         //Console.WriteLine("       dist b level " + iLv + " residual and rest. residual " + ResDist);
                     }
                     //CurrRes[iLv] = LevelRes;
