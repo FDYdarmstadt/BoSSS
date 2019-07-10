@@ -352,11 +352,11 @@ namespace FSI_Solver
 
             for (int p = 0; p < collidedParticles.Count(); p++)
             {
-                double tempCollisionVn = collidedParticles[p].IncludeTranslation ? collidedParticles[p].PreCollisionVelocity[0] - collisionCoefficient / collidedParticles[p].Mass_P : 0;
+                double tempCollisionVn = collidedParticles[p].IncludeTranslation ? collidedParticles[p].PreCollisionVelocity[0] + Math.Pow(-1, p + 1) * collisionCoefficient / collidedParticles[p].Mass_P : 0;
                 double tempCollisionVt = collidedParticles[p].IncludeTranslation ? collidedParticles[p].PreCollisionVelocity[1] * m_CoefficientOfRestitution : 0;
-                double tempCollisionRot = collidedParticles[p].IncludeRotation ? collidedParticles[p].RotationalVelocity[0] + collidedParticles[p].eccentricity * collisionCoefficient / collidedParticles[p].MomentOfInertia_P : 0;
+                double tempCollisionRot = collidedParticles[p].IncludeRotation ? collidedParticles[p].RotationalVelocity[0] + Math.Pow(-1, p + 1) * collidedParticles[p].eccentricity * collisionCoefficient / collidedParticles[p].MomentOfInertia_P : 0;
                 collidedParticles[p].CollisionTranslationalVelocity.Add(new double[] { tempCollisionVn, tempCollisionVt });
-                collidedParticles[p].CollisionRotationalVelocity.Add(tempCollisionRot * m_CoefficientOfRestitution);
+                collidedParticles[p].CollisionRotationalVelocity.Add(tempCollisionRot);
             }
         }
 
