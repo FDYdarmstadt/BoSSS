@@ -215,6 +215,12 @@ namespace BoSSS.Application.FSI_Solver
         /// The translational velocity of the particle in the current time step. This list is used by the momentum conservation model.
         /// </summary>
         [DataMember]
+        public double eccentricity;
+
+        /// <summary>
+        /// The translational velocity of the particle in the current time step. This list is used by the momentum conservation model.
+        /// </summary>
+        [DataMember]
         public List<double[]> CollisionTranslationalVelocity = new List<double[]>();
 
         /// <summary>
@@ -958,6 +964,21 @@ namespace BoSSS.Application.FSI_Solver
         {
             RadialNormalVector = new double[] { SurfacePoint[1] - Position[0][1], -SurfacePoint[0] + Position[0][0] };
             RadialNormalVector.ScaleV(1 / RadialNormalVector.L2Norm());
+        }
+
+        internal void CalculateEccentricity()
+        {
+            CalculateRadialVector(closestPointToOtherObject, out double[] RadialVector, out _);
+            double[] tangentialVector = CollisionTangentialVector.Last();
+            eccentricity = RadialVector[0] * tangentialVector[0] + RadialVector[1] * tangentialVector[1];
+        }
+
+        internal void CalculateNormalAndTangentialVelocity()
+        {
+            double[] Velocity = TranslationalVelocity[0];
+            double[] NormalVector = CollisionNormalVector.Last();
+            double[] TangentialVector = CollisionTangentialVector.Last();
+            PreCollisionVelocity = new double[] { Velocity[0] * NormalVector[0] + Velocity[1] * NormalVector[1], Velocity[0] * TangentialVector[0] + Velocity[1] * TangentialVector[1] };
         }
 
         /// <summary>
