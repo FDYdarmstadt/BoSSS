@@ -754,10 +754,6 @@ namespace BoSSS.Application.FSI_Solver {
                 radius_P = 0.18,
                 particleDensity = 4,
                 GravityVertical = -9.81,
-                useAddaptiveUnderrelaxation = true,
-                underrelaxation_factor = 9,// underrelaxation with [factor * 10^exponent]
-                clearSmallValues = true,
-                UseAddedDamping = true,
                 IncludeRotation = false
             });
 

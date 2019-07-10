@@ -353,10 +353,10 @@ namespace FSI_Solver
             for (int p = 0; p < collidedParticles.Count(); p++)
             {
                 double tempCollisionVn = collidedParticles[p].IncludeTranslation ? collidedParticles[p].PreCollisionVelocity[0] - collisionCoefficient / collidedParticles[p].Mass_P : 0;
-                double tempCollisionVt = collidedParticles[p].IncludeTranslation ? collidedParticles[p].PreCollisionVelocity[1] : 0;
+                double tempCollisionVt = collidedParticles[p].IncludeTranslation ? collidedParticles[p].PreCollisionVelocity[1] * m_CoefficientOfRestitution : 0;
                 double tempCollisionRot = collidedParticles[p].IncludeRotation ? collidedParticles[p].RotationalVelocity[0] + collidedParticles[p].eccentricity * collisionCoefficient / collidedParticles[p].MomentOfInertia_P : 0;
                 collidedParticles[p].CollisionTranslationalVelocity.Add(new double[] { tempCollisionVn, tempCollisionVt });
-                collidedParticles[p].CollisionRotationalVelocity.Add(tempCollisionRot);
+                collidedParticles[p].CollisionRotationalVelocity.Add(tempCollisionRot * m_CoefficientOfRestitution);
             }
         }
 
@@ -380,8 +380,15 @@ namespace FSI_Solver
 
         private void CalculateCollisionCoefficient(List<Particle> collidedParticles, out double collisionCoefficient)
         {
-            collisionCoefficient = (1 + m_CoefficientOfRestitution) * ((collidedParticles[0].PreCollisionVelocity[0] - collidedParticles[1].PreCollisionVelocity[0]) / (1 / collidedParticles[0].Mass_P + 1 / collidedParticles[1].Mass_P + collidedParticles[0].eccentricity.Pow2() / collidedParticles[0].MomentOfInertia_P + collidedParticles[1].eccentricity.Pow2() / collidedParticles[1].MomentOfInertia_P));
-            collisionCoefficient += (1 + m_CoefficientOfRestitution) * ((-collidedParticles[0].eccentricity * collidedParticles[0].RotationalVelocity[0] + collidedParticles[1].eccentricity * collidedParticles[1].RotationalVelocity[0]) / (1 / collidedParticles[0].Mass_P + 1 / collidedParticles[1].Mass_P + collidedParticles[0].eccentricity.Pow2() / collidedParticles[0].MomentOfInertia_P + collidedParticles[1].eccentricity.Pow2() / collidedParticles[1].MomentOfInertia_P));
+            double[] massReciprocal = new double[2];
+            double[] momentOfInertiaReciprocal = new double[2];
+            for (int p = 0; p < collidedParticles.Count(); p++)
+            {
+                massReciprocal[p] = collidedParticles[p].IncludeTranslation ? 1 / collidedParticles[p].Mass_P : 0;
+                momentOfInertiaReciprocal[p] = collidedParticles[p].IncludeRotation ? collidedParticles[p].eccentricity.Pow2() / collidedParticles[p].MomentOfInertia_P : 0;
+            }
+            collisionCoefficient = (1 + m_CoefficientOfRestitution) * ((collidedParticles[0].PreCollisionVelocity[0] - collidedParticles[1].PreCollisionVelocity[0]) / (massReciprocal[0] + massReciprocal[1] + momentOfInertiaReciprocal[0] + momentOfInertiaReciprocal[1]));
+            collisionCoefficient += (1 + m_CoefficientOfRestitution) * ((-collidedParticles[0].eccentricity * collidedParticles[0].RotationalVelocity[0] + collidedParticles[1].eccentricity * collidedParticles[1].RotationalVelocity[0]) / (massReciprocal[0] + massReciprocal[1] + momentOfInertiaReciprocal[0] + momentOfInertiaReciprocal[1]));
         }
 
         private void CalculateCollisionCoefficient(Particle particle, out double collisionCoefficient)
@@ -459,12 +466,10 @@ namespace FSI_Solver
                 for (int r = 0; r < _Particle.CollisionRotationalVelocity.Count(); r++)
                 {
                     temp_RotationalVelocity += _Particle.CollisionRotationalVelocity[r];
-                    if (double.IsNaN(temp_RotationalVelocity) || double.IsInfinity(temp_RotationalVelocity))
-                        throw new ArithmeticException("1Error trying to update particle position. temp_RotationalVelocity:  " + temp_RotationalVelocity);
                 }
                 temp_RotationalVelocity /= _Particle.CollisionRotationalVelocity.Count();
                 if (double.IsNaN(temp_RotationalVelocity) || double.IsInfinity(temp_RotationalVelocity))
-                    throw new ArithmeticException("2Error trying to update particle position. temp_RotationalVelocity:  " + temp_RotationalVelocity);
+                    throw new ArithmeticException("Error trying to update particle position. temp_RotationalVelocity:  " + temp_RotationalVelocity);
                 _Particle.RotationalVelocity[0] = temp_RotationalVelocity;
                 _Particle.CollisionRotationalVelocity.Clear();
             }
