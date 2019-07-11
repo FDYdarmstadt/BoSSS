@@ -238,7 +238,7 @@ namespace BoSSS.Application.SipPoisson {
             R.GridFunc = delegate () {
                 GridCommons grd = null;
                 if (Dim == 2) {
-                    double[] xNodes = GenericBlas.Linspace(0, Math.PI*2, Res * 5 + 1);
+                    double[] xNodes = GenericBlas.Linspace(0, 10, Res * 5 + 1);
                     double[] yNodes = GenericBlas.SinLinSpacing(-1, +1, 0.6, Res + 1);
 
                     grd = Grid2D.Cartesian2DGrid(xNodes, yNodes);
@@ -258,7 +258,7 @@ namespace BoSSS.Application.SipPoisson {
                 grd.DefineEdgeTags(delegate (double[] X) {
                     byte ret;
                     double x = X[0];
-                    if (Math.Abs(x - 0.0) <= 1.0e-8 || Math.Abs(x - Math.PI * 2) <= 1.0e-8)
+                    if (Math.Abs(x - 0.0) <= 1.0e-8)
                         ret = 1; // Dirichlet
                     else
                         ret = 2; // Neumann
