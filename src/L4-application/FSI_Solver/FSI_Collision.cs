@@ -50,8 +50,8 @@ namespace FSI_Solver
 
         public FSI_Collision(){ }
 
-        private FSI_Auxillary Aux = new FSI_Auxillary();
-        private FSI_LevelSetUpdate LevelSetUpdate = new FSI_LevelSetUpdate();
+        private readonly FSI_Auxillary Aux = new FSI_Auxillary();
+        private readonly FSI_LevelSetUpdate LevelSetUpdate = new FSI_LevelSetUpdate();
 
 
         /// <summary>
@@ -181,6 +181,7 @@ namespace FSI_Solver
                                         Overlapping = true;
                                     }
                                     Particle0.skipForceIntegration = testMinDistance < 0.2 * m_hMin;
+                                    Particle1.skipForceIntegration = testMinDistance < 0.2 * m_hMin;
                                 }
                             }
                             if (SaveTimeStep != -m_dt)
@@ -338,9 +339,6 @@ namespace FSI_Solver
         /// <param name="collidedParticles">
         /// List of the two colliding particles
         /// </param>
-        /// <param name="distanceVector">
-        /// The vector of the minimal distance between the two objects.
-        /// </param>
         internal void ComputeMomentumBalanceCollision(List<Particle> collidedParticles)
         {
             ModelCoefficientOfRestitution(collidedParticles[0].ComputeParticleSt(m_FluidViscosity, m_FluidDensity, Aux.VectorDiff(collidedParticles[0].TranslationalVelocity[0], collidedParticles[1].TranslationalVelocity[0])), out m_CoefficientOfRestitution);
@@ -458,65 +456,68 @@ namespace FSI_Solver
         /// <summary>
         /// Collision post-processing. Sums up the results of the multiple binary collisions of one timestep
         /// </summary>
-        /// <param name="_Particle">
+        /// <param name="particle">
         /// The particle to be processed
         /// </param>
-        internal void PostProcessCollisionTranslation(Particle _Particle)
+        private void PostProcessCollisionTranslation(Particle particle)
         {
-            int SpatialDim = _Particle.Position[0].Length;
-            if (_Particle.CollisionTranslationalVelocity.Count() >= 1)
+            int SpatialDim = particle.Position[0].Length;
+            if (particle.CollisionTranslationalVelocity.Count() >= 1)
             {
                 double[] Normal = new double[SpatialDim];
                 double[] Tangential = new double[SpatialDim];
-                for (int t = 0; t < _Particle.CollisionTranslationalVelocity.Count(); t++)
+                for (int t = 0; t < particle.CollisionTranslationalVelocity.Count(); t++)
                 {
                     for (int d = 0; d < SpatialDim; d++)
                     {
-                        Normal[d] += _Particle.CollisionNormalVector[t][d];
-                        Tangential[d] += _Particle.CollisionTangentialVector[t][d];
+                        Normal[d] += particle.CollisionNormalVector[t][d];
+                        Tangential[d] += particle.CollisionTangentialVector[t][d];
                     }
                 }
 
                 Normal.ScaleV(1 / Math.Sqrt(Normal[0].Pow2() + Normal[1].Pow2()));
                 Tangential.ScaleV(1 / Math.Sqrt(Tangential[0].Pow2() + Tangential[1].Pow2()));
-                double[] Cos = new double[_Particle.CollisionTranslationalVelocity.Count()];
-                double[] Sin = new double[_Particle.CollisionTranslationalVelocity.Count()];
+                double[] Cos = new double[particle.CollisionTranslationalVelocity.Count()];
+                double[] Sin = new double[particle.CollisionTranslationalVelocity.Count()];
                 double temp_NormalVel = 0;
                 double temp_TangentialVel = 0;
-                for (int t = 0; t < _Particle.CollisionTranslationalVelocity.Count(); t++)
+                for (int t = 0; t < particle.CollisionTranslationalVelocity.Count(); t++)
                 {
                     for (int d = 0; d < SpatialDim; d++)
                     {
-                        Cos[t] += Normal[d] * _Particle.CollisionNormalVector[t][d];
+                        Cos[t] += Normal[d] * particle.CollisionNormalVector[t][d];
                     }
-                    Sin[t] = Cos[t] == 1 ? 0 : _Particle.CollisionNormalVector[t][0] > Normal[0] ? Math.Sqrt(1 + 1e-15 - Cos[t].Pow2()) : -Math.Sqrt(1 + 1e-15 - Cos[t].Pow2());
-                    temp_NormalVel += _Particle.CollisionTranslationalVelocity[t][0] * Cos[t] - _Particle.CollisionTranslationalVelocity[t][1] * Sin[t];
-                    temp_TangentialVel += _Particle.CollisionTranslationalVelocity[t][0] * Sin[t] + _Particle.CollisionTranslationalVelocity[t][1] * Cos[t];
+                    Sin[t] = Cos[t] == 1 ? 0 : particle.CollisionNormalVector[t][0] > Normal[0] ? Math.Sqrt(1 + 1e-15 - Cos[t].Pow2()) : -Math.Sqrt(1 + 1e-15 - Cos[t].Pow2());
+                    temp_NormalVel += particle.CollisionTranslationalVelocity[t][0] * Cos[t] - particle.CollisionTranslationalVelocity[t][1] * Sin[t];
+                    temp_TangentialVel += particle.CollisionTranslationalVelocity[t][0] * Sin[t] + particle.CollisionTranslationalVelocity[t][1] * Cos[t];
 
                 }
-                temp_NormalVel /= _Particle.CollisionTranslationalVelocity.Count();
-                temp_TangentialVel /= _Particle.CollisionTranslationalVelocity.Count();
-                _Particle.TranslationalVelocity.Insert(0, new double[2]);
+                temp_NormalVel /= particle.CollisionTranslationalVelocity.Count();
+                temp_TangentialVel /= particle.CollisionTranslationalVelocity.Count();
+
+                particle.TranslationalVelocity.Insert(0, new double[2]);
                 for (int d = 0; d < SpatialDim; d++)
                 {
-                    _Particle.TranslationalVelocity[0][d] = Normal[d] * temp_NormalVel + Tangential[d] * temp_TangentialVel;
+                    particle.TranslationalVelocity[0][d] = Normal[d] * temp_NormalVel + Tangential[d] * temp_TangentialVel;
                 }
-                _Particle.CollisionTranslationalVelocity.Clear();
-                _Particle.CollisionNormalVector.Clear();
-                _Particle.CollisionTangentialVector.Clear();
-                _Particle.CollisionPositionCorrection.Clear();
+
+                particle.CollisionTranslationalVelocity.Clear();
+                particle.CollisionNormalVector.Clear();
+                particle.CollisionTangentialVector.Clear();
             }
         }
 
+        /// <summary>
+        /// Collision post-processing. Sums up the results for the angular velocity of the multiple binary collisions of one timestep
+        /// </summary>
+        /// <param name="particle">
+        /// The particle to be processed
+        /// </param>
         private void PostProcessCollisionRotation(Particle particle)
         {
             if (particle.CollisionRotationalVelocity.Count() >= 1)
             {
-                for (int r = 0; r < particle.CollisionRotationalVelocity.Count(); r++)
-                {
-                    particle.RotationalVelocity[0] += particle.CollisionRotationalVelocity[r];
-                }
-                particle.RotationalVelocity[0] /= particle.CollisionRotationalVelocity.Count();
+                particle.RotationalVelocity[0] = particle.CollisionRotationalVelocity.Sum() / particle.CollisionRotationalVelocity.Count();
                 particle.CollisionRotationalVelocity.Clear();
 
                 if (double.IsNaN(particle.RotationalVelocity[0]) || double.IsInfinity(particle.RotationalVelocity[0]))
@@ -592,18 +593,6 @@ namespace FSI_Solver
         ///  <param name="Particle1">
         /// The second particle, if Particle1 == null it is assumed to be a wall.
         /// </param>
-        /// <param name="Position0">
-        /// Position vector of the first object.
-        /// </param>
-        /// <param name="Position1">
-        /// Position vector of the second object.
-        /// </param>
-        /// <param name="Angle0">
-        /// Angle of the first object.
-        /// </param>
-        /// <param name="Angle1">
-        /// Angle of the second object.
-        /// </param>
         /// <param name="Min_Distance">
         /// The minimal distance between the two objects.
         /// </param>
@@ -622,22 +611,15 @@ namespace FSI_Solver
         internal void GJK_DistanceAlgorithm(Particle Particle0, int SubParticleID0, Particle Particle1, int SubParticleID1, out double Min_Distance, out double[] DistanceVec, out double[] ClosestPoint0, out double[] ClosestPoint1, out bool Overlapping)
         {
             double[] Position0 = Particle0.Position[0].CloneAs();
-            double Angle0 = Particle0.Angle[0];
-            double[] Position1 = Particle1 == null ? Particle0.closestPointOnOtherObjectToThis.CloneAs() : Particle1.Position[0].CloneAs();
-            double Angle1 = Particle1 == null ? 0 : Particle1.Angle[0];
-            if (Position1[0] == Position0[0] && Position1[1] == Position0[1])
-            {
-                throw new ArithmeticException("oshfauoshfioshfähwioefhawäf"+ Particle1.Position[0][0] + "isjdfg" + Particle1.Position[0][1]);
-            }
             int SpatialDim = Position0.Length;
+            double[] Position1 = Particle1 == null ? Particle0.closestPointOnOtherObjectToThis.CloneAs() : Particle1.Position[0].CloneAs();
+            double[] v = Aux.VectorDiff(Position0, Position1);
+            Aux.TestArithmeticException(v, nameof(v));
+            List<double[]> Simplex = new List<double[]> { v.CloneAs() };
+
             ClosestPoint0 = new double[SpatialDim];
             ClosestPoint1 = new double[SpatialDim];
-            double[] SupportPoint = new double[SpatialDim];
-            DistanceVec = new double[SpatialDim];
             Overlapping = false;
-
-
-            Initialize_GJK(Position0, Position1, out double[] v, out List<double[]> Simplex);
 
             for (int i = 0; i < 10000; i++)
             {
@@ -646,10 +628,6 @@ namespace FSI_Solver
                 {
                     vt[d] = -v[d];
                 }
-                if (double.IsNaN(vt[0]) || double.IsNaN(vt[1]))
-                    throw new ArithmeticException("Error trying to calculate vt Value:  " + vt[0] + " vt " + vt[1]);
-
-                
 
                 // =======================================================
                 // Step 1
@@ -657,11 +635,10 @@ namespace FSI_Solver
                 // and of the two particles (which are the closest points
                 // if the algorithm is finished.
                 // =======================================================
-                CalculateSupportPoint(Particle0, SubParticleID0, Position0, Angle0, vt, out ClosestPoint0);
-                if (double.IsNaN(ClosestPoint0[0]) || double.IsNaN(ClosestPoint0[1]))
-                    throw new ArithmeticException("Error trying to calculate ClosestPoint0 Value:  " + ClosestPoint0[0] + " ClosestPoint0 " + ClosestPoint0[1]);
+                CalculateSupportPoint(Particle0, SubParticleID0, vt, out ClosestPoint0);
+                Aux.TestArithmeticException(ClosestPoint0, nameof(ClosestPoint0));
                 if (Particle1 != null)
-                    CalculateSupportPoint(Particle1, SubParticleID1, Position1, Angle1, v, out ClosestPoint1);
+                    CalculateSupportPoint(Particle1, SubParticleID1, v, out ClosestPoint1);
                 else
                 {
                     ClosestPoint1 = ClosestPoint0.CloneAs();    
@@ -670,26 +647,22 @@ namespace FSI_Solver
                     else
                         ClosestPoint1[0] = Position1[0];
                 }
+                Aux.TestArithmeticException(ClosestPoint1, nameof(ClosestPoint1));
 
-                if (double.IsNaN(ClosestPoint1[0]) || double.IsNaN(ClosestPoint1[1]))
-                    throw new ArithmeticException("Error trying to calculate ClosestPoint1 Value:  " + ClosestPoint1[0] + " ClosestPoint1 " + ClosestPoint1[1]);
-                SupportPoint = Aux.VectorDiff(ClosestPoint0, ClosestPoint1);
+                double[] SupportPoint = Aux.VectorDiff(ClosestPoint0, ClosestPoint1);
+                Aux.TestArithmeticException(SupportPoint, nameof(SupportPoint));
 
                 // =======================================================
                 // Step 2
                 // Check max(x dot vt)
                 // =======================================================
                 if ((Aux.DotProduct(v,vt) - Aux.DotProduct(SupportPoint,vt)) >= -1e-12 && i != 0)
-                {
                     break;
-                }
 
                 // =======================================================
                 // Step 3
                 // Add new support point to simplex
                 // =======================================================
-                if (double.IsNaN(SupportPoint[0]) || double.IsNaN(SupportPoint[1]))
-                    throw new ArithmeticException("Error trying to calculate SupportPoint Value:  " + SupportPoint[0] + " SupportPoint " + SupportPoint[1]);
                 Simplex.Insert(0, SupportPoint.CloneAs());
 
                 // =======================================================
@@ -712,33 +685,9 @@ namespace FSI_Solver
         }
 
         /// <summary>
-        /// Inititalizes the GJK-algorithm
-        /// </summary>
-        /// <param name="Position0">
-        /// Position vector of the first object.
-        /// </param>
-        /// <param name="Position1">
-        /// Position vector of the second object.
-        /// </param>
-        /// <param name="v0">
-        /// Initial guess for the min distance vector (diff. between the two position vectors)
-        /// </param>
-        /// <param name="Simplex">
-        /// List of all support points defining the simplex. Initially it contains only v0.
-        /// </param>
-        private void Initialize_GJK(double[] Position0, double[] Position1, out double[] v0, out List<double[]> Simplex)
-        {
-            Simplex = new List<double[]>();
-            v0 = Aux.VectorDiff(Position0, Position1);
-            Simplex.Add(v0.CloneAs());
-            if (double.IsNaN(v0[0]) || double.IsNaN(v0[1]))
-                throw new ArithmeticException("Error trying to calculate v0 Value:  " + v0[0] + " v0 " + v0[1]);
-        }
-
-        /// <summary>
         /// Calculates the support point on a single particle.
         /// </summary>
-        /// <param name="_Particle">
+        /// <param name="particle">
         /// Current particle.
         /// </param>
         /// <param name="Position">
@@ -756,69 +705,40 @@ namespace FSI_Solver
         /// <param name="SupportPoint">
         /// The support point (Cpt. Obvious)
         /// </param>
-        private void CalculateSupportPoint(Particle _Particle, int SubParticleID, double[] Position, double Angle, double[] Vector, out double[] SupportPoint)
+        private void CalculateSupportPoint(Particle particle, int SubParticleID, double[] Vector, out double[] SupportPoint)
         {
-            int SpatialDim = Position.Length;
+            int SpatialDim = particle.Position[0].Length;
             SupportPoint = new double[SpatialDim];
             // A direct formulation of the support function for a sphere exists, thus it is possible to map it to an ellipsoid.
-            if (_Particle is Particle_Ellipsoid || _Particle is Particle_Sphere)
+            if (particle is Particle_Ellipsoid || particle is Particle_Sphere)
             {
-                _Particle.GetSupportPoint(SpatialDim, Vector, Position, Angle, out SupportPoint);
+                particle.GetSupportPoint(SpatialDim, Vector, out SupportPoint);
             }
             // Binary search in all other cases.
             else
             {
-                MultidimensionalArray SurfacePoints = _Particle.GetSurfacePoints(m_hMin, Position, Angle);
+                MultidimensionalArray SurfacePoints = particle.GetSurfacePoints(m_hMin);
                 MultidimensionalArray SurfacePointsSubParticle = SurfacePoints.ExtractSubArrayShallow(new int[]{ SubParticleID, -1, -1});
                 int L = 1;
                 int R = SurfacePointsSubParticle.GetLength(0) - 2;
-                int Counter = 0;
                 while (L <= R && L > 0 && R < SurfacePointsSubParticle.GetLength(0) - 1)
                 {
                     int Index = (L + R) / 2;
-                    Counter = Counter + 1;
-                    GetPointAndNeighbours(SurfacePointsSubParticle, Index, out SupportPoint, out double[] RightNeighbour, out double[] LeftNeighbour);
-                    double DotSupportPoint = SupportPoint[0] * Vector[0] + SupportPoint[1] * Vector[1];
-                    double DotRight = RightNeighbour[0] * Vector[0] + RightNeighbour[1] * Vector[1];
-                    double DotLeft = LeftNeighbour[0] * Vector[0] + LeftNeighbour[1] * Vector[1];
-                    if (DotSupportPoint > DotRight && DotSupportPoint > DotLeft)
-                        break;
-                    else if (DotRight > DotLeft)
-                        L = Index + 1;
+                    double[] RightNeighbour = new double[2];
+                    double[] LeftNeighbour = new double[2];
+                    for (int d = 0; d < 2; d++)
+                    {
+                        SupportPoint[d] = SurfacePointsSubParticle[Index, d];
+                        LeftNeighbour[d] = SurfacePointsSubParticle[Index - 1, d];
+                        RightNeighbour[d] = SurfacePointsSubParticle[Index + 1, d];
+                    }
+                    if (Aux.DotProduct(SupportPoint, Vector) > Aux.DotProduct(RightNeighbour, Vector) && Aux.DotProduct(SupportPoint, Vector) > Aux.DotProduct(LeftNeighbour, Vector))
+                        break; // The current temp_supportPoint is the actual support point.
+                    else if (Aux.DotProduct(RightNeighbour, Vector) > Aux.DotProduct(LeftNeighbour, Vector))
+                        L = Index + 1; // Search on the right side of the current point.
                     else
-                        R = Index - 1;
+                        R = Index - 1; // Search on the left side.
                 }
-            }
-        }
-
-        /// <summary>
-        /// Searchs for a specific point and its neighbours on a particle surface.
-        /// </summary>
-        /// <param name="SurfacePoints">
-        /// All surface points of the current particle
-        /// </param>
-        /// <param name="Index">
-        /// Index of the current point.
-        /// </param>
-        /// <param name="Point">
-        /// Coordinates of the current point.
-        /// </param>
-        /// <param name="RightNeighbour">
-        /// Its right neighbour (Index + 1)
-        /// </param>
-        /// <param name="LeftNeighbour">
-        /// Its left neighbour (Index - 1)
-        /// </param>
-        private void GetPointAndNeighbours(MultidimensionalArray SurfacePoints, int Index, out double[] Point, out double[] RightNeighbour, out double[] LeftNeighbour)
-        {
-            Point = new double[2];
-            RightNeighbour = new double[2];
-            LeftNeighbour = new double[2];
-            for (int d = 0; d < 2; d++)
-            {
-                Point[d] = SurfacePoints[Index, d];
-                LeftNeighbour[d] = SurfacePoints[Index - 1, d];
-                RightNeighbour[d] = SurfacePoints[Index + 1, d];
             }
         }
 
@@ -837,8 +757,15 @@ namespace FSI_Solver
         /// </param>
         private void DistanceAlgorithm(List<double[]> Simplex, out double[] v, out bool Overlapping)
         {
-            v = new double[2];
+            int spatialDim = Simplex[0].Length;
+            v = new double[spatialDim];
             Overlapping = false;
+
+            // =======================================================
+            // Step 1
+            // Test for multiple Simplex-points 
+            // and remove the duplicates
+            // =======================================================
             for (int s1 = 0; s1 < Simplex.Count(); s1++)
             {
                 for (int s2 = s1 + 1; s2 < Simplex.Count(); s2++)
@@ -849,54 +776,59 @@ namespace FSI_Solver
                     }
                 }
             }
+
+            // =======================================================
+            // Step 2
+            // Calculate dot product between all position vectors
+            // =======================================================
             List<double[]> DotProd_Simplex = new List<double[]>();
             for (int s1 = 0; s1 < Simplex.Count(); s1++)
             {
                 DotProd_Simplex.Add(new double[Simplex.Count()]);
                 for (int s2 = s1; s2 < Simplex.Count(); s2++)
                 {
-                    DotProd_Simplex[s1][s2] = Simplex[s1][0] * Simplex[s2][0] + Simplex[s1][1] * Simplex[s2][1];
+                    DotProd_Simplex[s1][s2] = Aux.DotProduct(Simplex[s1], Simplex[s2]);
                 }
             }
+
+            // =======================================================
+            // Step 3
+            // Main test to determine the relatve position of
+            // the simplex towards the origin.
+            // =======================================================
             if (Simplex.Count() == 1)
             {
-                v = Simplex[0];
-                if (double.IsNaN(v[0]) || double.IsNaN(v[1]))
-                    throw new ArithmeticException("Error trying to calculate v Value:  " + v[0] + " v " + v[1] + " Simplex count == 1");
+                v = Simplex[0];// the only possibility
+                Aux.TestArithmeticException(v, nameof(v));
             }
             else if (Simplex.Count() == 2)
             {
+                // The first simplex point is closest to the origin, choose this and delete the other one.
                 if (DotProd_Simplex[0][0] - DotProd_Simplex[0][1] <= 0)
                 {
                     v = Simplex[0].CloneAs();
                     Simplex.RemoveAt(1);
-                    if (double.IsNaN(v[0]) || double.IsNaN(v[1]))
-                        throw new ArithmeticException("Error trying to calculate v Value:  " + v[0] + " v " + v[1] + " Simplex count == 2.0");
+                    Aux.TestArithmeticException(v, nameof(v));
                 }
-
+                // The second simplex point is closest to the origin, choose this and delete the other one.
                 else if (DotProd_Simplex[1][1] - DotProd_Simplex[0][1] <= 0)
                 {
                     v = Simplex[1].CloneAs();
                     Simplex.RemoveAt(0);
-                    if (double.IsNaN(v[0]) || double.IsNaN(v[1]))
-                        throw new ArithmeticException("Error trying to calculate v Value:  " + v[0] + " v " + v[1] + " Simplex count == 2.1");
+                    Aux.TestArithmeticException(v, nameof(v));
                 }
+                // A point at the line between the two simplex point is closest to the origin, thus we need to keep both points.
                 else
                 {
-                    double[] AB = new double[2];
-                    for (int d = 0; d < 2; d++)
-                    {
-                        AB[d] = Simplex[1][d] - Simplex[0][d];
-                    }
-                    double Lambda = (Simplex[1][1] * AB[0] - Simplex[1][0] * AB[1]) / (AB[0].Pow2() + AB[1].Pow2());
+                    double[] simplexDistanceVector = Aux.VectorDiff(Simplex[1], Simplex[0]); 
+                    double Lambda = Math.Abs(-Simplex[1][1] * simplexDistanceVector[0] + Simplex[1][0] * simplexDistanceVector[1]) / (simplexDistanceVector[0].Pow2() + simplexDistanceVector[1].Pow2());
                     if(Lambda == 0)
                     {
                         Overlapping = true;
                     }
-                    v[0] = -Lambda * AB[1];
-                    v[1] = Lambda * AB[0];
-                    if (double.IsNaN(v[0]) || double.IsNaN(v[1]))
-                        throw new ArithmeticException("Error trying to calculate v Value:  " + v[0] + " v " + v[1] + " Simplex count == 2.2"+ "AB: " + AB[0] + AB[1] + "Simplex11 " +Simplex[1][1]+  "Simplex10 " +Simplex[1][0]);
+                    v[0] = -Lambda * simplexDistanceVector[1];
+                    v[1] = Lambda * simplexDistanceVector[0];
+                    Aux.TestArithmeticException(v, nameof(v));
                 }
             }
             else if (Simplex.Count() == 3)
