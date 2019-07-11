@@ -50,7 +50,6 @@ namespace BoSSS.Solution.Tecplot {
         /// <summary>
         /// see <see cref="PlotDriver.PlotDriver"/>.
         /// </summary>
-        /// <param name="path">path to output folder</param>
         public Tecplot(IGridData context, uint superSampling, string path)
             : this(context, superSampling) {
             this.path = path;

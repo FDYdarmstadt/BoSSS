@@ -1,16 +1,5 @@
 restart
 **************
-
-  BoSSSpad C# interpreter
-  _______________________
-
-
-System.IO.IOException occurred with message 'Could not find or access a database located at 'D:\cubefiles_fromDMR_c-study'' while loading the databases. Type 'LastError' for details.
-
- Console ready for input. Type 'help' for help.
-
-==============
-**************
 ==============
 string WFlowName = "SIP_SingleNodePerformance_0";
 WorkflowMgm.Init(WFlowName);
@@ -155,21 +144,6 @@ SubTab.Print();
 SubTab_2.Print();
 //SubTab_2.ToCSVFile(WFlowName);
 **************
-    SessionName                                                     DGdegree:T Grid:NoOfCells LinearSolver.SolverCode DOFs    minSolRunT    maxSolRunT    NoIter RegularTerminated Conv SipMatrixAssembly_time Aggregation_basis_init_time Solver_Init_time Solver_Run_time BlockSize 
-0:  PoissonConstCoeff_J20480_k2_classic_mumps_1                     2          20480          1                       204800  122.4512579   122.4512579   1      True              1    6.8362271              0                           0                0               10        
-1:  PoissonConstCoeff_J20480_k2_exp_softpcg_mg_2                    2          20480          42                      204800  124.9530279   124.9530279   44     True              1    6.6608439              7.3651153                   7.9440229        116.9464938     10        
-2:  PoissonConstCoeff_J20480_k2_exp_softpcg_schwarz_directcoarse_1  2          20480          44                      204800  286.9949845   286.9949845   5      True              1    6.5561406              7.3536124                   9.3780112        277.563788      10        
-3:  PoissonConstCoeff_J20480_k2_exp_softpcg_mg_4                    2          20480          42                      204800  121.6572022   121.6572022   44     True              1    6.4858247              7.6626303                   7.7239278        113.8742572     10        
-4:  PoissonConstCoeff_J20480_k2_exp_softpcg_schwarz_directcoarse_4  2          20480          44                      204800  807.7566881   807.7566881   17     True              1    6.604177               7.5238936                   10.0274906       797.6751184     10        
-5:  PoissonConstCoeff_J20480_k2_exp_softpcg_mg_1                    2          20480          42                      204800  289.3189869   289.3189869   5      True              1    6.7597073              7.576242                    5.7083606        283.5534869     10        
-6:  PoissonConstCoeff_J20480_k2_exp_softpcg_schwarz_directcoarse_2  2          20480          44                      204800  1007.1664985  1007.1664985  17     True              1    6.5989105              7.5233729                   9.5165341        997.5970053     10        
-7:  PoissonConstCoeff_J163840_k2_exp_softpcg_mg_1                   2          163840         42                      1638400 1267.7870369  1267.7870369  40     True              1    49.6727601             288.2250338                 67.0538018       1199.4053846    10        
-8:  PoissonConstCoeff_J163840_k2_exp_softpcg_mg_2                   2          163840         42                      1638400 1441.2931192  1441.2931192  41     True              1    50.2203389             288.4573184                 80.4183891       1360.7280741    10        
-9:  PoissonConstCoeff_J163840_k2_exp_softpcg_mg_4                   2          163840         42                      1638400 2001.520484   2001.520484   87     True              1    49.8803472             290.4047376                 271.0598766      1730.3228567    10        
-10: PoissonConstCoeff_J163840_k2_classic_mumps_1                    2          163840         1                       1638400 4980.6094286  4980.6094286  1      True              1    49.0142183             0                           0                0               10        
-11: PoissonConstCoeff_J163840_k2_exp_softpcg_schwarz_directcoarse_4 2          163840         44                      1638400 43836.3262862 43836.3262862 16     True              1    50.8881373             287.9263483                 80.9390832       43755.2488802   10        
-12: PoissonConstCoeff_J163840_k2_exp_softpcg_schwarz_directcoarse_1 2          163840         44                      1638400 18001.6300445 18001.6300445 5      True              1    49.5131832             291.4273491                 74.4080811       17927.1075112   10        
-13: PoissonConstCoeff_J163840_k2_exp_softpcg_schwarz_directcoarse_2 2          163840         44                      1638400 48037.9727554 48037.9727554 16     True              1    49.7568652             287.7882896                 79.8335668       47957.981779    10        
 ==============
 **************
 ==============
@@ -370,19 +344,6 @@ name is: classic_mumps
 name is: exp_softpcg_mg
 name is: exp_softpcg_schwarz_directcoarse
 name is: exp_softpcg_mg
-name is: exp_softpcg_schwarz_directcoarse
-name is: exp_softpcg_mg
-name is: exp_softpcg_schwarz_directcoarse
-name is: exp_softpcg_mg
-name is: exp_softpcg_mg
-name is: exp_softpcg_mg
-name is: classic_mumps
-name is: exp_softpcg_schwarz_directcoarse
-name is: exp_softpcg_schwarz_directcoarse
-name is: exp_softpcg_schwarz_directcoarse
-Using gnuplot: G:\BoSSS-BIN\bin\native\win\gnuplot-gp510-20160418-win32-mingw\gnuplot\bin\gnuplot.exe
-set key inside top left Left reverse 
-System.Drawing.Bitmap
 ==============
 LastError;
 **************
@@ -394,112 +355,21 @@ LastError;
 var CL = multiplots.ToGnuplot().PlotCairolatex(xSize:14,ySize:12);
 **************
 Using gnuplot: G:\BoSSS-BIN\bin\native\win\gnuplot-gp510-20160418-win32-mingw\gnuplot\bin\gnuplot.exe
-set key inside top left Left reverse 
-
 ==============
 //CL.SaveTo(Path.Combine(CurrentDocDir, "ConstCoeffPoissonScaling.tex"));
 **************
 ==============
 CL.PlotNow();
 **************
-System.ComponentModel.Win32Exception occurred: Das System kann die angegebene Datei nicht finden. Type 'LastError' for details.
+Unable to convert to png, 'magick.exe' exited with: -1073740791
 
 ==============
 LastError
 **************
-System.ComponentModel.Win32Exception (0x80004005): Das System kann die angegebene Datei nicht finden
-   bei System.Diagnostics.Process.StartWithShellExecuteEx(ProcessStartInfo startInfo)
-   bei BoSSS.Application.BoSSSpad.GnuplotExtensions.CairolatexContainer.Preview(Boolean trimPage, Int32 dpi) in C:\BoSSS\BoSSS-SolverPerformance\public\src\L4-application\BoSSSpad\GnuplotExtensions.cs:Zeile 325.
-   bei <InteractiveExpressionClass>.Host(Object& $retval)
-   bei Mono.CSharp.Evaluator.Evaluate(String input, Object& result, Boolean& result_set)
-   bei BoSSS.Application.BoSSSpad.ReadEvalPrintLoop.EvalPrint(String line, Assembly& AssemblyProduced) in C:\BoSSS\BoSSS-SolverPerformance\public\src\L4-application\BoSSSpad\ReadEvalPrintLoop.cs:Zeile 322.
 ==============
 CL.WriteMinimalCompileableExample(
    Path.Combine(CurrentDocDir, "plots", "MainConstCoeffPoissonScaling.tex"),
    "ConstCoeffPoissonScaling.tex");
 **************
 ==============
-**************
-==============
-**************
-==============
-**************
-==============
-**************
-==============
-**************
-==============
-**************
-==============
-**************
-==============
-**************
-==============
-**************
-==============
-**************
-==============
-**************
-==============
-**************
-==============
-**************
-==============
-**************
-==============
-**************
-==============
-**************
-==============
-**************
-==============
-**************
-==============
-**************
-==============
-**************
-==============
-**************
-==============
-**************
-==============
-**************
-==============
-**************
-==============
-**************
-==============
-**************
-==============
-**************
-==============
-**************
-==============
-**************
-==============
-**************
-==============
-**************
-==============
-**************
-==============
-**************
-==============
-**************
-==============
-**************
-==============
-**************
-==============
-**************
-==============
-**************
-==============
-**************
-==============
-**************
-==============
-**************
-==============
-**************
-==============
+

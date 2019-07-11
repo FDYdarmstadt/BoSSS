@@ -136,10 +136,10 @@ namespace BoSSS.Application.FSI_Solver
                     ActiveStress = stressM,
                     thickness_P = 1 * BaseSize,
                     length_P = 2 * BaseSize,
-                    AddaptiveUnderrelaxation = true,
+                    useAddaptiveUnderrelaxation = true,
                     underrelaxation_factor = 1,
-                    ClearSmallValues = true,
-                    neglectAddedDamping = false
+                    clearSmallValues = true,
+                    UseAddedDamping = true
                 });
             }
 
@@ -311,10 +311,10 @@ namespace BoSSS.Application.FSI_Solver
                     ActiveStress = stressM,
                     thickness_P = 0.5 * BaseSize,
                     length_P = 2.5 * BaseSize,
-                    AddaptiveUnderrelaxation = true,// set true if you want to define a constant underrelaxation (not recommended)
+                    useAddaptiveUnderrelaxation = true,// set true if you want to define a constant underrelaxation (not recommended)
                     underrelaxation_factor = 0.2,// underrelaxation with [factor * 10^exponent]
-                    ClearSmallValues = true,
-                    neglectAddedDamping = false
+                    clearSmallValues = true,
+                    UseAddedDamping = true
                 });
             }
             //Define level-set

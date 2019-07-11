@@ -754,10 +754,6 @@ namespace BoSSS.Application.FSI_Solver {
                 radius_P = 0.18,
                 particleDensity = 4,
                 GravityVertical = -9.81,
-                AddaptiveUnderrelaxation = true,
-                underrelaxation_factor = 9,// underrelaxation with [factor * 10^exponent]
-                ClearSmallValues = true,
-                neglectAddedDamping = false,
                 IncludeRotation = false
             });
 
@@ -914,10 +910,10 @@ namespace BoSSS.Application.FSI_Solver {
                     ActiveStress = 1e5,
                     thickness_P = 0.4,
                     length_P = 1,
-                    AddaptiveUnderrelaxation = true,
+                    useAddaptiveUnderrelaxation = true,
                     underrelaxation_factor = 1,// underrelaxation with [factor * 10^exponent]
-                    ClearSmallValues = true,
-                    neglectAddedDamping = false,
+                    clearSmallValues = true,
+                    UseAddedDamping = true,
                     IncludeRotation = false,
                     IncludeTranslation = true
                 });
@@ -1081,10 +1077,10 @@ namespace BoSSS.Application.FSI_Solver {
                     particleDensity = 1,
                     radius_P = 0.5,
                     GravityVertical = 0,
-                    AddaptiveUnderrelaxation = true,
+                    useAddaptiveUnderrelaxation = true,
                     underrelaxation_factor = 9,// underrelaxation with [factor * 10^exponent]
-                    ClearSmallValues = true,
-                    neglectAddedDamping = false,
+                    clearSmallValues = true,
+                    UseAddedDamping = true,
                 });
             }
             //Define level-set

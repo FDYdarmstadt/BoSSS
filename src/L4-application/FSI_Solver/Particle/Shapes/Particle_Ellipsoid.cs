@@ -99,15 +99,13 @@ namespace BoSSS.Application.FSI_Solver {
                 return false;
         }
 
-        override public MultidimensionalArray GetSurfacePoints(LevelSetTracker lsTrk, double[] PositionS, double AngleS)
+        override public MultidimensionalArray GetSurfacePoints(double hMin, double[] PositionS, double AngleS)
         {
-            int SpatialDim = lsTrk.GridDat.SpatialDimension;
-            if (SpatialDim != 2)
+            if (spatialDim != 2)
                 throw new NotImplementedException("Only two dimensions are supported at the moment");
 
-            double hMin = lsTrk.GridDat.iGeomCells.h_min.Min();
             int NoOfSurfacePoints = Convert.ToInt32(5 * Circumference_P / hMin);
-            MultidimensionalArray SurfacePoints = MultidimensionalArray.Create(NoOfSubParticles(), NoOfSurfacePoints, SpatialDim);
+            MultidimensionalArray SurfacePoints = MultidimensionalArray.Create(NoOfSubParticles(), NoOfSurfacePoints, spatialDim);
             double[] InfinitisemalAngle = GenericBlas.Linspace(0, Math.PI * 2, NoOfSurfacePoints + 1);
             if (Math.Abs(10 * Circumference_P / hMin + 1) >= int.MaxValue)
                 throw new ArithmeticException("Error trying to calculate the number of surface points, overflow");
