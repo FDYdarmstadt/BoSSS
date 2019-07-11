@@ -896,6 +896,16 @@ namespace BoSSS.Application.FSI_Solver
             return ComputeParticleRe(ViscosityFluid) * particleDensity / (9 * DensityFluid);
         }
 
+        public double ComputeParticleRe(double ViscosityFluid, double[] relativeVelocity)
+        {
+            return relativeVelocity.L2Norm() * GetLengthScales().Max() / ViscosityFluid;
+        }
+
+        public double ComputeParticleSt(double ViscosityFluid, double DensityFluid, double[] relativeVelocity)
+        {
+            return ComputeParticleRe(ViscosityFluid, relativeVelocity) * particleDensity / (9 * DensityFluid);
+        }
+
         /// <summary>
         /// get cut cells describing the boundary of this particle
         /// </summary>

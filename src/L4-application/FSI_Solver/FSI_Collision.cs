@@ -35,9 +35,9 @@ namespace FSI_Solver
     {
         private readonly double m_FluidViscosity;
         private readonly double m_FluidDensity;
-        private readonly double m_CoefficientOfRestitution;
         private readonly double m_dt;
         private readonly double m_hMin;
+        private double m_CoefficientOfRestitution;
 
         public FSI_Collision(double fluidViscosity, double fluidDensity, double CoefficientOfRestitution, double dt, double hMin)
         {
@@ -243,7 +243,8 @@ namespace FSI_Solver
                         }
                         for (int p = 0; p < ParticlesOfCurrentColor.Length; p++)
                         {
-                            SumOverCollisionVelocities(Particles[ParticlesOfCurrentColor[p]]);
+                            PostProcessCollisionTranslation(Particles[ParticlesOfCurrentColor[p]]);
+                            PostProcessCollisionRotation(Particles[ParticlesOfCurrentColor[p]]);
                         }
                         PostCollisionTimestep = (m_dt - AccDynamicTimestep) * 2;
                         bool PostCollisionOverlapping = true;
@@ -342,6 +343,8 @@ namespace FSI_Solver
         /// </param>
         internal void ComputeMomentumBalanceCollision(List<Particle> collidedParticles)
         {
+            ModelCoefficientOfRestitution(collidedParticles[0].ComputeParticleSt(m_FluidViscosity, m_FluidDensity, Aux.VectorDiff(collidedParticles[0].TranslationalVelocity[0], collidedParticles[1].TranslationalVelocity[0])), out m_CoefficientOfRestitution);
+
             for (int p = 0; p < collidedParticles.Count(); p++)
             {
                 collidedParticles[p].CalculateNormalAndTangentialVelocity();
@@ -354,7 +357,7 @@ namespace FSI_Solver
             {
                 double tempCollisionVn = collidedParticles[p].IncludeTranslation ? collidedParticles[p].PreCollisionVelocity[0] + Math.Pow(-1, p + 1) * collisionCoefficient / collidedParticles[p].Mass_P : 0;
                 double tempCollisionVt = collidedParticles[p].IncludeTranslation ? collidedParticles[p].PreCollisionVelocity[1] * m_CoefficientOfRestitution : 0;
-                double tempCollisionRot = collidedParticles[p].IncludeRotation ? collidedParticles[p].RotationalVelocity[0] + Math.Pow(-1, p + 1) * collidedParticles[p].eccentricity * collisionCoefficient / collidedParticles[p].MomentOfInertia_P : 0;
+                double tempCollisionRot = collidedParticles[p].IncludeRotation ? collidedParticles[p].RotationalVelocity[0] + Math.Pow(-1, p) * collidedParticles[p].eccentricity * collisionCoefficient / collidedParticles[p].MomentOfInertia_P : 0;
                 collidedParticles[p].CollisionTranslationalVelocity.Add(new double[] { tempCollisionVn, tempCollisionVt });
                 collidedParticles[p].CollisionRotationalVelocity.Add(tempCollisionRot);
             }
@@ -366,6 +369,8 @@ namespace FSI_Solver
         /// <param name="particle"></param>
         internal void ComputeMomentumBalanceCollision(Particle particle)
         {
+            ModelCoefficientOfRestitution(particle.ComputeParticleSt(m_FluidViscosity, m_FluidDensity), out m_CoefficientOfRestitution);
+
             particle.CalculateNormalAndTangentialVelocity();
             particle.CalculateEccentricity();
 
@@ -456,23 +461,9 @@ namespace FSI_Solver
         /// <param name="_Particle">
         /// The particle to be processed
         /// </param>
-        internal void SumOverCollisionVelocities(Particle _Particle)
+        internal void PostProcessCollisionTranslation(Particle _Particle)
         {
             int SpatialDim = _Particle.Position[0].Length;
-            if (_Particle.CollisionRotationalVelocity.Count() >= 1)
-            {
-                _Particle.RotationalVelocity[0] = 0;
-                double temp_RotationalVelocity = 0;
-                for (int r = 0; r < _Particle.CollisionRotationalVelocity.Count(); r++)
-                {
-                    temp_RotationalVelocity += _Particle.CollisionRotationalVelocity[r];
-                }
-                temp_RotationalVelocity /= _Particle.CollisionRotationalVelocity.Count();
-                if (double.IsNaN(temp_RotationalVelocity) || double.IsInfinity(temp_RotationalVelocity))
-                    throw new ArithmeticException("Error trying to update particle position. temp_RotationalVelocity:  " + temp_RotationalVelocity);
-                _Particle.RotationalVelocity[0] = temp_RotationalVelocity;
-                _Particle.CollisionRotationalVelocity.Clear();
-            }
             if (_Particle.CollisionTranslationalVelocity.Count() >= 1)
             {
                 double[] Normal = new double[SpatialDim];
@@ -514,6 +505,22 @@ namespace FSI_Solver
                 _Particle.CollisionNormalVector.Clear();
                 _Particle.CollisionTangentialVector.Clear();
                 _Particle.CollisionPositionCorrection.Clear();
+            }
+        }
+
+        private void PostProcessCollisionRotation(Particle particle)
+        {
+            if (particle.CollisionRotationalVelocity.Count() >= 1)
+            {
+                for (int r = 0; r < particle.CollisionRotationalVelocity.Count(); r++)
+                {
+                    particle.RotationalVelocity[0] += particle.CollisionRotationalVelocity[r];
+                }
+                particle.RotationalVelocity[0] /= particle.CollisionRotationalVelocity.Count();
+                particle.CollisionRotationalVelocity.Clear();
+
+                if (double.IsNaN(particle.RotationalVelocity[0]) || double.IsInfinity(particle.RotationalVelocity[0]))
+                    throw new ArithmeticException("Error trying to update particle angular velocity during collision post-processing. The angular velocity is:  " + particle.RotationalVelocity[0]);
             }
         }
 
