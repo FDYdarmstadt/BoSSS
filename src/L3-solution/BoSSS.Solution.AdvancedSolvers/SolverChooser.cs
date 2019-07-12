@@ -1534,12 +1534,11 @@ namespace BoSSS.Solution {
 
             //MultigridOperator Current = op;
             var SolverChain = new List<ISolverSmootherTemplate>();
-            /*
+            
+
             for (int iLevel = 0; iLevel < _lc.NoOfMultigridLevels; iLevel++) {
                 int SysSize = _LocalDOF[iLevel].MPISum();
                 int NoOfBlocks = (int)Math.Ceiling(((double)SysSize) / ((double)DirectKickIn));
-
-
 
                 bool useDirect = false;
                 useDirect |= (SysSize < DirectKickIn);
@@ -1600,17 +1599,18 @@ namespace BoSSS.Solution {
 
                 //Current = Current.CoarserLevel;
             }
-            */
+            
 
             //SolverChain.Add(new DynamicMultigrid());
 
+            /*
             var S = new SoftGMRES() {
                 m_Tolerance = _lc.ConvergenceCriterion,
                 Precond = new LevelPmg()
             };
 
             SolverChain.Add(S);
-
+            */
 
 
             return SolverChain[0];
