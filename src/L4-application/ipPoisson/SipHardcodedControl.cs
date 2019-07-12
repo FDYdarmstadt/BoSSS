@@ -216,7 +216,7 @@ namespace BoSSS.Application.SipPoisson {
         /// <param name="solver_name">
         /// Name of solver to use.
         /// </param>
-        public static SipControl TestCartesian2(int Res, int Dim, LinearSolverConfig.Code solver_name = LinearSolverConfig.Code.exp_gmres_levelpmg, int deg = 3) {
+        public static SipControl TestCartesian2(int Res, int Dim, LinearSolverConfig.Code solver_name = LinearSolverConfig.Code.classic_pardiso, int deg = 3) {
             if (Dim != 2 && Dim != 3)
                 throw new ArgumentOutOfRangeException();
 
@@ -225,10 +225,10 @@ namespace BoSSS.Application.SipPoisson {
             R.savetodb = false;
 
             R.FieldOptions.Add("T", new FieldOpts() { Degree = deg, SaveToDB = FieldOpts.SaveToDBOpt.TRUE });
-            R.FieldOptions.Add("Tex", new FieldOpts() { Degree = deg * 2 });
+            R.FieldOptions.Add("Tex", new FieldOpts() { Degree = deg + 2 });
             R.InitialValues_Evaluators.Add("RHS", X => -Math.Sin(X[0]));
-            R.InitialValues_Evaluators.Add("Tex", X => Math.Sin(X[0]));
-            R.ExactSolution_provided = true;
+            //R.InitialValues_Evaluators.Add("Tex", X => Math.Sin(X[0]));
+            //R.ExactSolution_provided = true;
             R.LinearSolver.NoOfMultigridLevels = int.MaxValue;
             R.LinearSolver.SolverCode = solver_name;
             //R.TargetBlockSize = 100;
