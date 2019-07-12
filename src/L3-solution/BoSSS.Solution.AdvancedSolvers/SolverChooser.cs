@@ -602,6 +602,13 @@ namespace BoSSS.Solution {
                     //templinearSolve = new DynamicMultigrid();
                     break;
 
+                case LinearSolverConfig.Code.exp_gmres_levelpmg:
+                    templinearSolve = new SoftGMRES() {
+                        m_Tolerance = lc.ConvergenceCriterion,
+                        Precond = new LevelPmg()
+                    };
+                    break;
+
                 //testing area, please wear a helmet ...
                 case LinearSolverConfig.Code.exp_softpcg_jacobi_mg:
 
@@ -1527,11 +1534,9 @@ namespace BoSSS.Solution {
         /// </summary>
         ISolverSmootherTemplate KcycleMultiSchwarz(LinearSolverConfig _lc, int[] _LocalDOF) {
 
-
             // my tests show that the ideal block size may be around 10'000
             int DirectKickIn = _lc.TargetBlockSize;
-            _lc.ConvergenceCriterion = 1e-10;
-
+            
             //MultigridOperator Current = op;
             var SolverChain = new List<ISolverSmootherTemplate>();
             
