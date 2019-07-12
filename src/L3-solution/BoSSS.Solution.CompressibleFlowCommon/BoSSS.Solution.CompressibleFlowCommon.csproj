@@ -40,7 +40,7 @@
     <Compile Include="Boundary\AdiabaticWall.cs" />
     <Compile Include="Boundary\BoundaryCondition.cs" />
     <Compile Include="Boundary\CompressibleBcType.cs" />
-    <Compile Include="Boundary\CompressibleBoundaryConditionMap.cs" />
+    <Compile Include="Boundary\BoundaryConditionMap.cs" />
     <Compile Include="Boundary\ExactRinglebBoundaryState.cs" />
     <Compile Include="Boundary\IBoundaryConditionMap.cs" />
     <Compile Include="Boundary\IsothermalWall.cs" />
