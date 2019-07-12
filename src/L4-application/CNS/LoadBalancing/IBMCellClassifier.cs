@@ -37,7 +37,7 @@ namespace CNS.LoadBalancing {
             }
 
             // Pure fluid cells are "0"
-            int J = program.GridData.iLogicalCells.NoOfLocalUpdatedCells;
+            int J = program.gridData.iLogicalCells.NoOfLocalUpdatedCells;
             int[] cellToPerformanceClassMap = new int[J];
 
             // Cut cells are "1"

@@ -121,7 +121,7 @@ namespace BoSSS.Application.XdgPoisson3 {
 
             this.MGColoring = new SinglePhaseField[base.MultigridSequence.Length];
             for (int iLevel = 0; iLevel < base.MultigridSequence.Length; iLevel++) {
-                this.MGColoring[iLevel] = new SinglePhaseField(new Basis(this.GridData, 0), "MGColoring_level_" + iLevel);
+                this.MGColoring[iLevel] = new SinglePhaseField(new Basis(this.gridData, 0), "MGColoring_level_" + iLevel);
                 base.MultigridSequence[iLevel].ColorDGField(this.MGColoring[iLevel]);
             }
 
@@ -157,7 +157,7 @@ namespace BoSSS.Application.XdgPoisson3 {
             AssembleMatrix(1.0, 1.0, out Mref, out bRef, out aggRef, out massRef);
 
             SpeciesId IdA = this.LsTrk.GetSpeciesId("A");
-            int J = this.GridData.iLogicalCells.NoOfLocalUpdatedCells;
+            int J = this.gridData.iLogicalCells.NoOfLocalUpdatedCells;
             int N = this.u.Basis.NonX_Basis.Length;
             int[] ColIdx = null;
             for (int j = 0; j < J; j++) {
@@ -199,7 +199,7 @@ namespace BoSSS.Application.XdgPoisson3 {
                     this.Control.xLaplaceBCs.IsDirichlet = (inp => true);
                 }
 
-                double D = this.GridData.SpatialDimension;
+                double D = this.gridData.SpatialDimension;
                 int p = u.Basis.Degree;
                 double penalty_base = (p + 1) * (p + D) / D;
                 double penalty_multiplyer = base.Control.penalty_multiplyer;
@@ -213,7 +213,7 @@ namespace BoSSS.Application.XdgPoisson3 {
                 int order = this.u.Basis.Degree * 2;
 
                 XSpatialOperator Op = new XSpatialOperator(1, 1, (A, B, C) => order, "u", "c1");
-                var lengthScales = ((BoSSS.Foundation.Grid.Classic.GridData)GridData).Cells.PenaltyLengthScales;
+                var lengthScales = ((BoSSS.Foundation.Grid.Classic.GridData)gridData).Cells.PenaltyLengthScales;
                 var lap = new XLaplace_Bulk(this.LsTrk, penalty_multiplyer * penalty_base, "u", this.Control.xLaplaceBCs, 1.0, MU_A, MU_B, lengthScales, this.Control.ViscosityMode);
                 Op.EquationComponents["c1"].Add(lap);      // Bulk form
                 Op.EquationComponents["c1"].Add(new XLaplace_Interface(this.LsTrk, MU_A, MU_B, penalty_base * 2, this.Control.ViscosityMode));   // coupling form
@@ -338,7 +338,7 @@ namespace BoSSS.Application.XdgPoisson3 {
                 int BlkSize_min = u.Mapping.MinTotalNoOfCoordinatesPerCell;
                 int BlkSize_max = u.Mapping.MaxTotalNoOfCoordinatesPerCell;
                 int NoOfMtxBlocks = 0;
-                foreach (int[] Neigs in this.GridData.iLogicalCells.CellNeighbours) {
+                foreach (int[] Neigs in this.gridData.iLogicalCells.CellNeighbours) {
                     NoOfMtxBlocks++; //               diagonal block
                     NoOfMtxBlocks += Neigs.Length; // off-diagonal block
                 }
@@ -395,8 +395,8 @@ namespace BoSSS.Application.XdgPoisson3 {
                 var A_scheme = scheme.GetVolumeQuadScheme(this.LsTrk.GetSpeciesId("A"));
                 var B_scheme = scheme.GetVolumeQuadScheme(this.LsTrk.GetSpeciesId("B"));
 
-                ICompositeQuadRule<QuadRule> A_rule = A_scheme.Compile(this.GridData, order);
-                ICompositeQuadRule<QuadRule> B_rule = B_scheme.Compile(this.GridData, order);
+                ICompositeQuadRule<QuadRule> A_rule = A_scheme.Compile(this.gridData, order);
+                ICompositeQuadRule<QuadRule> B_rule = B_scheme.Compile(this.gridData, order);
 
                 foreach (var _rule in new ICompositeQuadRule<QuadRule>[] { A_rule, B_rule }) {
                     foreach (var ckR in _rule) {

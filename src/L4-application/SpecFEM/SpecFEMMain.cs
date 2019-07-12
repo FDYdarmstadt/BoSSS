@@ -111,7 +111,7 @@ namespace BoSSS.Application.SpecFEM {
         protected override void CreateFields() {
             
             
-            spec_basis = new SpecFemBasis((GridData) this.GridData, 4);
+            spec_basis = new SpecFemBasis((GridData) this.gridData, 4);
             var dg_basis = spec_basis.ContainingDGBasis;
             //var dg_basis = new Basis(this.GridData, 2);
 

@@ -50,7 +50,7 @@ namespace BoSSS.Application.Rheology {
                         TestVec.Clear();
                         Random rnd = new Random(rnd_seed);
                         DGField Pressack = TestVec.Mapping.Fields[D] as DGField;
-                        int J = solver.GridData.iLogicalCells.NoOfLocalUpdatedCells;
+                        int J = solver.gridData.iLogicalCells.NoOfLocalUpdatedCells;
                         for (int j = 0; j < J; j++) {
                             int N = Pressack.Basis.GetLength(j);
 

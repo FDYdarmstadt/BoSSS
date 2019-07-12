@@ -116,8 +116,8 @@ namespace BoSSS.Application.CDG_ProjectionTest {
             //specField = new SpecFemField(specBasis);
             //specFieldDG = new SinglePhaseField(dgBasis, "specFEM");
 
-            Basis dgBasis = new Basis(this.GridData, degree);
-            Basis cdgBasis = new Basis(this.GridData, degree);
+            Basis dgBasis = new Basis(this.gridData, degree);
+            Basis cdgBasis = new Basis(this.gridData, degree);
 
             origin = new SinglePhaseField(dgBasis, "origin");
             cdgField = new ContinuousDGField(cdgBasis);
@@ -143,7 +143,7 @@ namespace BoSSS.Application.CDG_ProjectionTest {
             //origin.ProjectField((x, y) => Math.Sin(2 * Math.PI * (x / 3.0)));
 
 
-            CellMask msk2D = CellMask.GetCellMask((BoSSS.Foundation.Grid.Classic.GridData)(this.GridData), X => (X[0] > 0.0 && X[0] < 4.0 && X[1] > 0.0 && X[1] < 1.0));
+            CellMask msk2D = CellMask.GetCellMask((BoSSS.Foundation.Grid.Classic.GridData)(this.gridData), X => (X[0] > 0.0 && X[0] < 4.0 && X[1] > 0.0 && X[1] < 1.0));
             //|| (X[0] > 1.0 && X[0] < 3.0 && X[1] > 1.0 && X[1] < 2.0)
             //|| (X[0] > 2.0 && X[0] < 4.0 && X[1] > 2.0 && X[1] < 3.0)
             //|| (X[0] > 3.0 && X[0] < 4.0 && X[1] > 3.0 && X[1] < 4.0));

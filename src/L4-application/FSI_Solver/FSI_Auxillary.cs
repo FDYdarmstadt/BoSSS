@@ -522,6 +522,8 @@ namespace FSI_Solver
                         OutputBuilder.AppendLine("Final status report for timestep #" + TimestepInt + ", particle #" + PrintP + ", Time: " + phystime);
                     else
                         OutputBuilder.AppendLine("Status report particle #" + PrintP + ", Time: " + phystime + ", Iteration #" + IterationCounter);
+                    if (CurrentParticle.Collided)
+                        OutputBuilder.AppendLine("The particle is collided");
                     OutputBuilder.AppendLine("-------------------------------------------------------");
                     OutputBuilder.AppendLine("Drag Force: " + CurrentParticle.HydrodynamicForces[0][0]);
                     OutputBuilder.AppendLine("Lift Force: " + CurrentParticle.HydrodynamicForces[0][1]);

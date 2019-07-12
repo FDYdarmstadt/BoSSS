@@ -224,8 +224,8 @@ namespace BoSSS.Application.FSI_Solver
                 int q = new int(); // #Cells in x-dircetion + 1
                 int r = new int(); // #Cells in y-dircetion + 1
 
-                q = 20;
-                r = 20;
+                q = 40;
+                r = 40;
 
                 double[] Xnodes = GenericBlas.Linspace(-4 * BaseSize, 4 * BaseSize, q);
                 double[] Ynodes = GenericBlas.Linspace(-0 * BaseSize, 8 * BaseSize, r);
@@ -348,7 +348,7 @@ namespace BoSSS.Application.FSI_Solver
             C.LinearSolver.NoOfMultigridLevels = 1;
             C.LinearSolver.MaxSolverIterations = 1000;
             C.LinearSolver.MinSolverIterations = 1;
-            C.ForceAndTorque_ConvergenceCriterion = 1e-1;
+            C.ForceAndTorque_ConvergenceCriterion = 1e-2;
             C.LSunderrelax = 1.0;
 
 
@@ -375,7 +375,7 @@ namespace BoSSS.Application.FSI_Solver
             return C;
         }
 
-        public static FSI_Control WetParticleCollision(int k = 2, int MeshFactor = 1)
+        public static FSI_Control WetParticleCollision(int k = 2, double DensityFactor = 1e0)
         {
             FSI_Control C = new FSI_Control();
 
@@ -405,8 +405,8 @@ namespace BoSSS.Application.FSI_Solver
                 int q = new int(); // #Cells in x-dircetion + 1
                 int r = new int(); // #Cells in y-dircetion + 1
 
-                q = 40 * MeshFactor;
-                r = 40 * MeshFactor;
+                q = 12;
+                r = 12;
 
                 double[] Xnodes = GenericBlas.Linspace(-1 * BaseSize, 1 * BaseSize, q);
                 double[] Ynodes = GenericBlas.Linspace(-1 * BaseSize, 1 * BaseSize, r);
@@ -443,9 +443,8 @@ namespace BoSSS.Application.FSI_Solver
 
             // Mesh refinement
             // =============================
-            C.AdaptiveMeshRefinement = false;
+            C.AdaptiveMeshRefinement = true;
             C.RefinementLevel = 2;
-            C.maxCurvature = 2;
 
 
             // Boundary conditions
@@ -458,7 +457,7 @@ namespace BoSSS.Application.FSI_Solver
             // Fluid Properties
             // =============================
             C.PhysicalParameters.rho_A = 1;//pg/(mum^3)
-            C.PhysicalParameters.mu_A = 1e0;//pg(mum*s)
+            C.PhysicalParameters.mu_A = 1;//pg(mum*s)
             C.PhysicalParameters.Material = true;
 
 
@@ -471,7 +470,7 @@ namespace BoSSS.Application.FSI_Solver
             {
                 C.Particles.Add(new Particle_Sphere(new double[] { 0, 0 }, startAngl: 0)
                 {
-                    particleDensity = 7.8e0,
+                    particleDensity = 7.8 * DensityFactor,
                     radius_P = 0.5,
                     GravityVertical = -9.81,
                     useAddaptiveUnderrelaxation = true,
@@ -531,7 +530,7 @@ namespace BoSSS.Application.FSI_Solver
             C.dtMax = dt;
             C.dtMin = dt;
             C.Endtime = 60;
-            C.NoOfTimesteps = 6000;
+            C.NoOfTimesteps = 600;
 
             // haben fertig...
             // ===============

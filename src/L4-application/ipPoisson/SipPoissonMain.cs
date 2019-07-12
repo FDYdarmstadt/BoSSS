@@ -82,17 +82,17 @@ namespace BoSSS.Application.SipPoisson {
         protected override void CreateFields() {
             base.CreateFields();
 
-            ResiualKP1 = new SinglePhaseField(new Basis(this.GridData, T.Basis.Degree + 1), "ResidualKP1");
+            ResiualKP1 = new SinglePhaseField(new Basis(this.gridData, T.Basis.Degree + 1), "ResidualKP1");
             base.IOFields.Add(ResiualKP1);
 
-            Error = new SinglePhaseField(new Basis(this.GridData, Math.Max(T.Basis.Degree + 1, Tex.Basis.Degree)), "Error");
+            Error = new SinglePhaseField(new Basis(this.gridData, Math.Max(T.Basis.Degree + 1, Tex.Basis.Degree)), "Error");
             base.m_IOFields.Add(Error);
 
             // mg coloring
             int iLevel = 0;
             this.MGColoring.Clear();
             foreach (var MgL in this.MultigridSequence) {
-                SinglePhaseField c = new SinglePhaseField(new Basis(this.GridData, 0), "MgLevel_" + iLevel);
+                SinglePhaseField c = new SinglePhaseField(new Basis(this.gridData, 0), "MgLevel_" + iLevel);
                 Foundation.Grid.Aggregation.CoarseningAlgorithms.ColorDGField(MgL, c);
                 this.MGColoring.Add(c);
                 base.IOFields.Add(c);
@@ -309,19 +309,19 @@ namespace BoSSS.Application.SipPoisson {
                 // create operator
                 // ===============
                 {
-                    double D = this.GridData.SpatialDimension;
+                    double D = this.gridData.SpatialDimension;
                     double penalty_base = (T.Basis.Degree + 1) * (T.Basis.Degree + D) / D;
                     double penalty_factor = base.Control.penalty_poisson;
 
-                    BoundaryCondMap<BoundaryType> PoissonBcMap = new BoundaryCondMap<BoundaryType>(this.GridData, this.Control.BoundaryValues, "T");
+                    BoundaryCondMap<BoundaryType> PoissonBcMap = new BoundaryCondMap<BoundaryType>(this.gridData, this.Control.BoundaryValues, "T");
 
                     LapaceIp = new SpatialOperator(1, 1, QuadOrderFunc.SumOfMaxDegrees(), "T", "T");
 
                     MultidimensionalArray LengthScales;
-                    if (this.GridData is GridData) {
-                        LengthScales = ((GridData)GridData).Cells.cj;
-                    } else if (this.GridData is AggregationGridData) {
-                        LengthScales = ((AggregationGridData)GridData).AncestorGrid.Cells.cj;
+                    if (this.gridData is GridData) {
+                        LengthScales = ((GridData)gridData).Cells.cj;
+                    } else if (this.gridData is AggregationGridData) {
+                        LengthScales = ((AggregationGridData)gridData).AncestorGrid.Cells.cj;
                     } else {
                         throw new NotImplementedException();
                     }
@@ -354,7 +354,7 @@ namespace BoSSS.Application.SipPoisson {
                 {
                     int BlkSize = T.Mapping.MaxTotalNoOfCoordinatesPerCell;
                     int NoOfMtxBlocks = 0;
-                    foreach (int[] Neigs in this.GridData.iLogicalCells.CellNeighbours) {
+                    foreach (int[] Neigs in this.gridData.iLogicalCells.CellNeighbours) {
                         NoOfMtxBlocks++; //               diagonal block
                         NoOfMtxBlocks += Neigs.Length; // off-diagonal block
                     }
@@ -385,8 +385,8 @@ namespace BoSSS.Application.SipPoisson {
 
 
                 // quadrature domain
-                var volQrSch = new CellQuadratureScheme(true, CellMask.GetFullMask(this.GridData, MaskType.Geometrical));
-                var edgQrSch = new EdgeQuadratureScheme(true, EdgeMask.GetFullMask(this.GridData, MaskType.Geometrical));
+                var volQrSch = new CellQuadratureScheme(true, CellMask.GetFullMask(this.gridData, MaskType.Geometrical));
+                var edgQrSch = new EdgeQuadratureScheme(true, EdgeMask.GetFullMask(this.gridData, MaskType.Geometrical));
 
 #if DEBUG
                 // in DEBUG mode, we compare 'MsrMatrix' (old, reference implementation) and 'BlockMsrMatrix' (new standard)
@@ -555,7 +555,7 @@ namespace BoSSS.Application.SipPoisson {
                     //Error.AccLaidBack(-1.0, Tex);
                 }
 
-                int oldJ = this.GridData.CellPartitioning.TotalLength;
+                int oldJ = this.gridData.CellPartitioning.TotalLength;
 
                 double LocNormPow2 = this.ResiualKP1.CoordinateVector.L2NormPow2(); // norm of residual on this processor
                 double TotNormPow2 = LocNormPow2.MPISum(); //                          norm of residual over all processors
@@ -591,7 +591,7 @@ namespace BoSSS.Application.SipPoisson {
                 }
 
 
-                bool AnyChange = GridRefinementController.ComputeGridChange((GridData)(this.GridData), null, MyLevelIndicator, out List<int> CellsToRefineList, out List<int[]> Coarsening);
+                bool AnyChange = GridRefinementController.ComputeGridChange((GridData)(this.gridData), null, MyLevelIndicator, out List<int> CellsToRefineList, out List<int[]> Coarsening);
                 int NoOfCellsToRefine = 0;
                 int NoOfCellsToCoarsen = 0;
                 if (AnyChange) {
@@ -616,7 +616,7 @@ namespace BoSSS.Application.SipPoisson {
                     Console.WriteLine("       Refining " + NoOfCellsToRefine + " of " + oldJ + " cells");
                     Console.WriteLine("       Coarsening " + NoOfCellsToCoarsen + " of " + oldJ + " cells");
 
-                    newGrid = ((GridData)(this.GridData)).Adapt(CellsToRefineList, Coarsening, out old2NewGrid);
+                    newGrid = ((GridData)(this.gridData)).Adapt(CellsToRefineList, Coarsening, out old2NewGrid);
 
                 } else {
 
@@ -740,7 +740,7 @@ namespace BoSSS.Application.SipPoisson {
                 base.QueryHandler.ValueQuery("maxSolRunT", maxtime, true);
                 base.QueryHandler.ValueQuery("Conv", converged ? 1.0 : 0.0, true);
                 base.QueryHandler.ValueQuery("NoIter", NoOfIterations, true);
-                base.QueryHandler.ValueQuery("NoOfCells", this.GridData.CellPartitioning.TotalLength, true);
+                base.QueryHandler.ValueQuery("NoOfCells", this.gridData.CellPartitioning.TotalLength, true);
                 base.QueryHandler.ValueQuery("DOFs", T.Mapping.TotalLength, true);
                 base.QueryHandler.ValueQuery("BlockSize", T.Basis.Length, true);
 

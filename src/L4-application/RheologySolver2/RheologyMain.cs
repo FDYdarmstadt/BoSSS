@@ -285,7 +285,7 @@ namespace BoSSS.Application.Rheology {
             get {
                 double rho = 1; // this.Control.PhysicalParameters.rho_A;
 
-                int D = this.GridData.SpatialDimension;
+                int D = this.gridData.SpatialDimension;
 
                 double[] _rho = new double[D + 4];
                 _rho.SetAll(rho);
@@ -339,7 +339,7 @@ namespace BoSSS.Application.Rheology {
                 this.IOFields.Add(perssonsensor.GetField());
             }
             if (Control.UseArtificialDiffusion == true) {
-                artificalViscosity = new SinglePhaseField(new Basis(GridData, 1), "artificalViscosity");
+                artificalViscosity = new SinglePhaseField(new Basis(gridData, 1), "artificalViscosity");
                 this.IOFields.Add(artificalViscosity);
 
             }
@@ -380,8 +380,8 @@ namespace BoSSS.Application.Rheology {
 
                 using (new FuncTrace()) {
 
-                    D = this.GridData.SpatialDimension;
-                    BcMap = new IncompressibleBoundaryCondMap(this.GridData, this.Control.BoundaryValues, PhysicsMode.Viscoelastic);
+                    D = this.gridData.SpatialDimension;
+                    BcMap = new IncompressibleBoundaryCondMap(this.gridData, this.Control.BoundaryValues, PhysicsMode.Viscoelastic);
 
                     string[] CodName = new string[] { "momX", "momY", "div", "constitutiveXX", "constitutiveXY", "constitutiveYY" };
 
@@ -412,7 +412,7 @@ namespace BoSSS.Application.Rheology {
                         }
 
                         // viscous part:
-                        Type GridType = GridData.iGeomCells.RefElements[0].GetType();
+                        Type GridType = gridData.iGeomCells.RefElements[0].GetType();
                         double PenaltyBase;
                         int DegreeVelocity = this.Velocity.Current.Max(DGF => DGF.Basis.Degree);
                         if ((GridType == typeof(Triangle)) || (GridType == typeof(Tetra))) {
@@ -488,9 +488,9 @@ namespace BoSSS.Application.Rheology {
                     // artificial diffusion part
                     if (this.Control.UseArtificialDiffusion == true)
                     {
-                        XOP.EquationComponents["constitutiveXX"].Add(new ConstitutiveEqns_Diffusion(this.StressXX.Basis.Degree, Grid.SpatialDimension, ((GridData)GridData).Cells.cj, VariableNames.StressXX));
-                        XOP.EquationComponents["constitutiveXY"].Add(new ConstitutiveEqns_Diffusion(this.StressXY.Basis.Degree, Grid.SpatialDimension, ((GridData)GridData).Cells.cj, VariableNames.StressXY));
-                        XOP.EquationComponents["constitutiveYY"].Add(new ConstitutiveEqns_Diffusion(this.StressYY.Basis.Degree, Grid.SpatialDimension, ((GridData)GridData).Cells.cj, VariableNames.StressYY));
+                        XOP.EquationComponents["constitutiveXX"].Add(new ConstitutiveEqns_Diffusion(this.StressXX.Basis.Degree, Grid.SpatialDimension, ((GridData)gridData).Cells.cj, VariableNames.StressXX));
+                        XOP.EquationComponents["constitutiveXY"].Add(new ConstitutiveEqns_Diffusion(this.StressXY.Basis.Degree, Grid.SpatialDimension, ((GridData)gridData).Cells.cj, VariableNames.StressXY));
+                        XOP.EquationComponents["constitutiveYY"].Add(new ConstitutiveEqns_Diffusion(this.StressYY.Basis.Degree, Grid.SpatialDimension, ((GridData)gridData).Cells.cj, VariableNames.StressYY));
                     }
 
                     // Build spatial operator
@@ -678,7 +678,7 @@ namespace BoSSS.Application.Rheology {
                 }
 
                 TimestepNumber TimestepNo = new TimestepNumber(TimestepInt, 0);
-                int D = this.GridData.SpatialDimension;
+                int D = this.gridData.SpatialDimension;
 
                 if (TimestepNo[0] > 1) {
                     this.Control.RaiseWeissenberg = false;
@@ -918,7 +918,7 @@ namespace BoSSS.Application.Rheology {
         /// </summary>
         public void AssembleMatrix(out BlockMsrMatrix OpMatrix, out double[] OpAffine, DGField[] CurrentState, bool Linearization) {
 
-            D = this.GridData.SpatialDimension;
+            D = this.gridData.SpatialDimension;
             var U0 = new VectorField<SinglePhaseField>(CurrentState.Take(D).Select(F => (SinglePhaseField)F).ToArray());
             var Stress0 = new VectorField<SinglePhaseField>(CurrentState.Skip(D+1).Take(3).Select(F => (SinglePhaseField)F).ToArray());
 
@@ -933,7 +933,7 @@ namespace BoSSS.Application.Rheology {
             //============================================================
             SinglePhaseField[] U0_U0mean;
             if (this.U0MeanRequired) {
-                Basis U0meanBasis = new Basis(GridData, 0);
+                Basis U0meanBasis = new Basis(gridData, 0);
                 VectorField<SinglePhaseField> U0mean = new VectorField<SinglePhaseField>(D, U0meanBasis, "U0mean_", SinglePhaseField.Factory);
                 U0mean.Clear();
                                 
@@ -992,13 +992,13 @@ namespace BoSSS.Application.Rheology {
 
                         IBMSolverUtils.SetPressureReferencePoint(
                             CurrentSolution.Mapping,
-                            this.GridData.SpatialDimension,
+                            this.gridData.SpatialDimension,
                             this.LsTrk,
                             OpMatrix, OpAffine);
                     } else {
                         IBMSolverUtils.SetPressureReferencePointResidual(
                             new CoordinateVector(CurrentState),
-                            this.GridData.SpatialDimension,
+                            this.gridData.SpatialDimension,
                             this.LsTrk,
                             OpAffine);
                     }
@@ -1031,7 +1031,7 @@ namespace BoSSS.Application.Rheology {
                 int pVel = this.Velocity.Current[0].Basis.Degree;
                 int pPrs = this.Pressure.Basis.Degree;
                 int pStr = this.StressXX.Basis.Degree;
-                int D = this.GridData.SpatialDimension;
+                int D = this.gridData.SpatialDimension;
 
                 // set the MultigridOperator configuration for each level:
                 // it is not necessary to have exactly as many configurations as actual multigrid levels:
@@ -1122,8 +1122,8 @@ namespace BoSSS.Application.Rheology {
             VelocityYGradient = new VectorField<SinglePhaseField>(D, Velocity.Current[1].Basis, "VelocityY_Gradient", SinglePhaseField.Factory);
 
             if (this.Control.SetParamsAnalyticalSol == true) {
-                U = new SinglePhaseField(new Basis(this.GridData, Velocity.Current[0].Basis.Degree), "UAnalytical");
-                V = new SinglePhaseField(new Basis(this.GridData, Velocity.Current[0].Basis.Degree), "VAnalytical");
+                U = new SinglePhaseField(new Basis(this.gridData, Velocity.Current[0].Basis.Degree), "UAnalytical");
+                V = new SinglePhaseField(new Basis(this.gridData, Velocity.Current[0].Basis.Degree), "VAnalytical");
                 U.ProjectField(this.Control.VelFunctionU);
                 V.ProjectField(this.Control.VelFunctionV);
 
@@ -1162,8 +1162,8 @@ namespace BoSSS.Application.Rheology {
         public override void PostRestart(double time, TimestepNumber timestep) {
             base.PostRestart(time, timestep);
 
-            VelocityXGradient = new VectorField<SinglePhaseField>(this.GridData.SpatialDimension, Velocity.Current[0].Basis, "VelocityX_Gradient", SinglePhaseField.Factory);
-            VelocityYGradient = new VectorField<SinglePhaseField>(this.GridData.SpatialDimension, Velocity.Current[1].Basis, "VelocityY_Gradient", SinglePhaseField.Factory);
+            VelocityXGradient = new VectorField<SinglePhaseField>(this.gridData.SpatialDimension, Velocity.Current[0].Basis, "VelocityX_Gradient", SinglePhaseField.Factory);
+            VelocityYGradient = new VectorField<SinglePhaseField>(this.gridData.SpatialDimension, Velocity.Current[1].Basis, "VelocityY_Gradient", SinglePhaseField.Factory);
         }
 
 
@@ -1241,7 +1241,7 @@ namespace BoSSS.Application.Rheology {
             }
 
 
-            int D = this.GridData.SpatialDimension;
+            int D = this.gridData.SpatialDimension;
 
             int order = Velocity.Current[0].Basis.Degree * 2;
             var SchemeHelper = LsTrk.GetXDGSpaceMetrics(this.FluidSpecies, order).XQuadSchemeHelper;
@@ -1362,7 +1362,7 @@ namespace BoSSS.Application.Rheology {
 
             if (this.Control.AdaptiveMeshRefinement) {
 
-                bool AnyChange = GridRefinementController.ComputeGridChange((GridData)(this.GridData), null, LevelIndicator, out List<int> CellsToRefineList, out List<int[]> Coarsening);
+                bool AnyChange = GridRefinementController.ComputeGridChange((GridData)(this.gridData), null, LevelIndicator, out List<int> CellsToRefineList, out List<int[]> Coarsening);
                 ChangeMesh = AnyChange;
                 int NoOfCellsToRefine = 0;
                 int NoOfCellsToCoarsen = 0;
@@ -1374,7 +1374,7 @@ namespace BoSSS.Application.Rheology {
                     NoOfCellsToRefine = glb[0];
                     NoOfCellsToCoarsen = glb[1];
                 }
-                int oldJ = this.GridData.CellPartitioning.TotalLength;
+                int oldJ = this.gridData.CellPartitioning.TotalLength;
 
                 // Update Grid
                 // ===========
@@ -1386,7 +1386,7 @@ namespace BoSSS.Application.Rheology {
                     Console.WriteLine("       Refining " + NoOfCellsToRefine + " of " + oldJ + " cells");
                     Console.WriteLine("       Coarsening " + NoOfCellsToCoarsen + " of " + oldJ + " cells");
 
-                    newGrid = ((GridData)(this.GridData)).Adapt(CellsToRefineList, Coarsening, out old2NewGrid);
+                    newGrid = ((GridData)(this.gridData)).Adapt(CellsToRefineList, Coarsening, out old2NewGrid);
 
                     //PlotCurrentState(hack_Phystime, new TimestepNumber(new int[] { hack_TimestepIndex, 2 }), 2);#
 

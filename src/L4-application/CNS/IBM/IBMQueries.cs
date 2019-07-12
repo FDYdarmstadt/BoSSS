@@ -144,7 +144,7 @@ namespace CNS.IBM {
                 int order = control.LevelSetQuadratureOrder;
                 CellQuadratureScheme scheme = speciesMap.QuadSchemeHelper.GetVolumeQuadScheme(
                     species, true, speciesMap.SubGrid.VolumeMask);
-                var composititeRule = scheme.Compile(program.GridData, order);
+                var composititeRule = scheme.Compile(program.gridData, order);
                 IChunkRulePair<QuadRule>[] chunkRulePairs = composititeRule.ToArray();
 
                 DGField density = program.WorkingSet.Density;
@@ -153,12 +153,12 @@ namespace CNS.IBM {
 
                 // Construct dummy field since L2Error is currently only supported
                 // for Field's; However, _avoid_ a projection.
-                DGField dummy = new SinglePhaseField(new Basis(program.GridData, 0));
+                DGField dummy = new SinglePhaseField(new Basis(program.gridData, 0));
                 Material material = speciesMap.GetMaterial(double.NaN);
                 int index = 0;
                 double value = dummy.LxError(
                     (ScalarFunctionEx)delegate (int j0, int Len, NodeSet nodes, MultidimensionalArray result) {
-                        MultidimensionalArray input = program.GridData.GlobalNodes.GetValue_Cell(nodes, j0, Len);
+                        MultidimensionalArray input = program.gridData.GlobalNodes.GetValue_Cell(nodes, j0, Len);
 
                         Chunk chunk = chunkRulePairs[index].Chunk;
                         QuadRule rule = chunkRulePairs[index].Rule;
