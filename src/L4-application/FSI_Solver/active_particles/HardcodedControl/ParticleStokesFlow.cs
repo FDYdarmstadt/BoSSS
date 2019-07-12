@@ -385,8 +385,8 @@ namespace BoSSS.Application.FSI_Solver
 
             // basic database options
             // =============================
-            C.DbPath = @"\\hpccluster\hpccluster-scratch\deussen\cluster_db\straightChannel";
-            C.savetodb = false;
+            C.DbPath = @"\\hpccluster\hpccluster-scratch\deussen\cluster_db\WetParticleCollision";
+            C.savetodb = true;
             C.saveperiod = 1;
             C.ProjectName = "ParticleUnderGravity";
             C.ProjectDescription = "Active";
@@ -526,11 +526,11 @@ namespace BoSSS.Application.FSI_Solver
             // Timestepping
             // =============================  
             C.Timestepper_Scheme = IBM_Solver.IBM_Control.TimesteppingScheme.BDF2;
-            double dt = 1e-2;
+            double dt = 1e-3;
             C.dtMax = dt;
             C.dtMin = dt;
             C.Endtime = 60;
-            C.NoOfTimesteps = 600;
+            C.NoOfTimesteps = 5000;
 
             // haben fertig...
             // ===============
@@ -730,9 +730,6 @@ namespace BoSSS.Application.FSI_Solver
             return C;
         }
 
-        /// <summary>
-        /// Testing of particle/wall interactions using a single particle
-        /// </summary>
         public static FSI_Control MultipleDryParticleAgainstWall(string _DbPath = null, bool MeshRefine = false)
         {
             FSI_Control C = new FSI_Control();
@@ -1557,6 +1554,4 @@ namespace BoSSS.Application.FSI_Solver
             return C;
         }
     }
-
-    
 }
