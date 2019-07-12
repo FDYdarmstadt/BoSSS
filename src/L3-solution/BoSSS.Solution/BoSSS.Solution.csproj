@@ -79,7 +79,7 @@
     <Compile Include="AppControl.cs" />
     <Compile Include="Application.cs" />
     <Compile Include="TimeStepping\BDFCommon.cs" />
-    <Compile Include="BoundaryConditionMap.cs" />
+    <Compile Include="BoundaryCondMap.cs" />
     <Compile Include="Kmeans.cs" />
     <Compile Include="ControlOptionRequirementAttribute.cs" />
     <Compile Include="EdgeIntegral.cs" />
