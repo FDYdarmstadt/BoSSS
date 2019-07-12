@@ -867,7 +867,7 @@ namespace BoSSS.Application.SipPoisson {
                     config[iLevel] = new MultigridOperator.ChangeOfBasisConfig[] {
                         new MultigridOperator.ChangeOfBasisConfig() {
                             VarIndex = new int[] {0},
-                            mode = MultigridOperator.Mode.DiagBlockEquilib,
+                            mode = MultigridOperator.Mode.IdMass,
                             Degree = p
                             //Degree = Math.Max(1, p - iLevel)
                         }
@@ -982,7 +982,6 @@ namespace BoSSS.Application.SipPoisson {
                     var solverIteration = new Stopwatch();
                     solverIteration.Start();
                     T.Clear();
-                    T.ProjectField(X => X[0] * X[1]);
                     double[] T2 = this.T.CoordinateVector.ToArray();
                     using (new BlockTrace("Solver_Run", tr)) {
                         solver.ResetStat();
