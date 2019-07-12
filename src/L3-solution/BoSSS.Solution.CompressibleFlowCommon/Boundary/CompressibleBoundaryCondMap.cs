@@ -26,9 +26,9 @@ namespace BoSSS.Solution.CompressibleFlowCommon.Boundary {
 
     /// <summary>
     /// Standard implementation of <see cref="IBoundaryConditionMap"/> which
-    /// works with instances of <see cref="BoundaryConditionMap"/>.
+    /// works with instances of <see cref="CompressibleBoundaryCondMap"/>.
     /// </summary>
-    public class BoundaryConditionMap : BoSSS.Solution.Utils.BoundaryCondMap<CompressibleBcType>, IBoundaryConditionMap {
+    public class CompressibleBoundaryCondMap : BoSSS.Solution.Utils.BoundaryCondMap<CompressibleBcType>, IBoundaryConditionMap {
 
         private IGridData gridData;
 
@@ -92,12 +92,12 @@ namespace BoSSS.Solution.CompressibleFlowCommon.Boundary {
         /// <summary>
         /// Constructs a new map by searching through all the edge tags
         /// (<see cref="GridData.EdgeData.EdgeTags"/> and instantiating sub classes
-        /// of <see cref="BoundaryConditionMap"/> specific for the compressible
+        /// of <see cref="CompressibleBoundaryCondMap"/> specific for the compressible
         /// Navier-Stokes solver depending on their edge tag names.
         /// </summary>
         /// <param name="gridData">The omnipresent grid data</param>
         /// <param name="control">Configuration options</param>
-        public BoundaryConditionMap(IGridData gridData, AppControl control, MaterialProperty.Material __material) : base(gridData, control.BoundaryValues, bndFuncNames) {
+        public CompressibleBoundaryCondMap(IGridData gridData, AppControl control, MaterialProperty.Material __material) : base(gridData, control.BoundaryValues, bndFuncNames) {
             this.gridData = gridData;
             this.Material = __material;
             InitConditionMap();

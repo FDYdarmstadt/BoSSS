@@ -982,7 +982,6 @@ namespace BoSSS.Application.SipPoisson {
                     var solverIteration = new Stopwatch();
                     solverIteration.Start();
                     T.Clear();
-                    T.ProjectField(X => X[0] * X[1]);
                     double[] T2 = this.T.CoordinateVector.ToArray();
                     using (new BlockTrace("Solver_Run", tr)) {
                         solver.ResetStat();

@@ -33,7 +33,7 @@ namespace CNS.Convection {
         /// <param name="control"></param>
         /// <param name="boundaryMap"></param>
         /// <param name="speciesMap"></param>
-        public OptimizedHLLCFluxBuilder(CNSControl control, BoundaryConditionMap boundaryMap, ISpeciesMap speciesMap)
+        public OptimizedHLLCFluxBuilder(CNSControl control, CompressibleBoundaryCondMap boundaryMap, ISpeciesMap speciesMap)
             : base(control, boundaryMap, speciesMap) {
         }
 

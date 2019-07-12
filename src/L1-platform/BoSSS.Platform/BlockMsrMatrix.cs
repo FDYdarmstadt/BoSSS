@@ -4361,7 +4361,7 @@ namespace ilPSP.LinSolvers {
             /// <param name="C">Output; the merge of <paramref name="A"/> and <paramref name="B"/></param>
             /// <param name="A">First Input.</param>
             /// <param name="B">Second Input.</param>
-            /// <param name="AscaleM_left"></param>
+            /// <param name="_AscaleM_left"></param>
             /// <param name="AscaleM_I"></param>
             /// <param name="AscaleM_J"></param>
             unsafe static public void Merge(TempBlockRow C, TempBlockRow A, TempBlockRow B, double* _AscaleM_left, int AscaleM_I, int AscaleM_J) {
@@ -4529,9 +4529,17 @@ namespace ilPSP.LinSolvers {
                         }
                     }
                 } else {
+                    // C  <--  C*Cscale  +  AscaleM_left*pA*Ascale
+                    // C                : NoRows * NoCols,     row skip: C_Ci
+                    // AscaleM_left     : NoRows * AscaleM_J,  row skip: AscaleM_J
+                    // pA               : AscaleM_J * NoCols,  row skip: A_Ci
+                    
+                    /*
+                    double[] pCcheck = new double[C_Ci * NoRows];
+
                     for (int i = 0; i < NoRows; i++) {
                         for (int j = 0; j < NoCols; j++) {
-                            double a = 0;
+                            double a = 0; // accumulator
 
                             for (int k = 0; k < AscaleM_J; k++) {
                                 a += AscaleM_left[AscaleM_J * i + k] * pA[A_Ci * k + j];
@@ -4539,13 +4547,29 @@ namespace ilPSP.LinSolvers {
 
                             // --------------
                             if (Cscale != 0) {
-                                pC[i * C_Ci + j] *= Cscale;
-                                pC[i * C_Ci + j] += a * Ascale;
+                                //pC[i * C_Ci + j] *= Cscale;
+                                //pC[i * C_Ci + j] += a * Ascale;
+                                pCcheck[i * C_Ci + j] = pC[i * C_Ci + j] * Cscale + a * Ascale;
+
                             } else {
-                                pC[i * C_Ci + j] = a * Ascale;
+                                //pC[i * C_Ci + j] = a * Ascale;
+
+                                pCcheck[i * C_Ci + j] = a * Ascale;
                             }
                         }
                     }
+                    */
+
+                    BLAS.dgemm('n', 'n', NoCols, NoRows, AscaleM_J, Ascale, pA, A_Ci, AscaleM_left, AscaleM_J, Cscale, pC, C_Ci);
+                    /*
+                    double eps = Math.Sqrt(BLAS.MachineEps);
+                    for (int i = 0; i < NoRows; i++) {
+                        for (int j = 0; j < NoCols; j++) {
+                            if (!(Math.Abs(pCcheck[i * C_Ci + j] - pC[i * C_Ci + j]) <= Math.Max(eps, 1e-7 * Math.Abs(pCcheck[i * C_Ci + j]))))
+                                throw new Exception("fuck blas.");
+                        }
+                    }
+                    */
                 }
             }
 
