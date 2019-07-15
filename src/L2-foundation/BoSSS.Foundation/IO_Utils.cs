@@ -157,11 +157,20 @@ namespace BoSSS.Foundation.IO {
         }
 
         /// <summary>
-        /// Finds the plotting directory (%LOCALAPPDATA%/BoSSS/plots);
         /// If not existent (1st time plot), the directory is created
         /// </summary>
         public static string GetExportOutputPath() {
-            string TempDir = System.Environment.GetEnvironmentVariable("LOCALAPPDATA");
+            string TempDir;
+            if (System.Environment.OSVersion.Platform == PlatformID.Win32NT) {
+                TempDir = System.Environment.GetEnvironmentVariable("LOCALAPPDATA");
+            } else {
+                TempDir = System.Environment.GetEnvironmentVariable("HOME");
+            }
+
+            if(TempDir.IsEmptyOrWhite()) {
+                TempDir = Directory.GetCurrentDirectory();
+            }
+
             DirectoryInfo BoSSSTempDir = new DirectoryInfo(Path.Combine(TempDir, "BoSSS"));
             if (!BoSSSTempDir.Exists)
                 BoSSSTempDir.Create();

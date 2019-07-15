@@ -96,7 +96,7 @@ namespace BoSSS.Application.IBM_Solver {
         /// <summary>
         /// Enforce the level-set to be continuous; 
         /// </summary>
-        public bool LevelSetSmoothing = false;
+        public bool LevelSetSmoothing = true;
 
         [NonSerialized]
         Func<double[], double, double>[] m_ExSol_Velocity_Evaluator = null;

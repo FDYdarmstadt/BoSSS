@@ -25,6 +25,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using BoSSS.Solution.CompressibleFlowCommon.Diffusion;
 
 namespace CNS.Diffusion {
 
@@ -77,7 +78,7 @@ namespace CNS.Diffusion {
             }
         }
 
-        public OptimizedSIPGEnergyFlux(CNSControl config, BoundaryConditionMap boundaryMap, ISpeciesMap speciesMap, IGridData gridData, Func<MultidimensionalArray> cellMetricFunc) {
+        public OptimizedSIPGEnergyFlux(CNSControl config, CompressibleBoundaryCondMap boundaryMap, ISpeciesMap speciesMap, IGridData gridData, Func<MultidimensionalArray> cellMetricFunc) {
             this.config = config;
             this.speciesMap = speciesMap;
             this.boundaryMap = boundaryMap;

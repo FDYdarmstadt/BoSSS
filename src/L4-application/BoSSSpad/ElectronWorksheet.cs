@@ -7,6 +7,7 @@ using System.Threading;
 using System.Diagnostics;
 using System.Globalization;
 using BoSSS.Foundation.IO;
+using System.IO;
 
 namespace BoSSS.Application.BoSSSpad{
 
@@ -77,6 +78,12 @@ namespace BoSSS.Application.BoSSSpad{
 
             //Save document
             document.Serialize(path);
+
+            var fi = (new FileInfo(path));
+            if (fi.Exists)
+                InteractiveShell._CurrentDocFile = fi.FullName;
+            else
+                InteractiveShell._CurrentDocFile = null;
         }
 
         public Tuple<string[], string[]> Load(string path){
@@ -90,6 +97,11 @@ namespace BoSSS.Application.BoSSSpad{
                 results[i] = document.CommandAndResult[i].InterpreterTextOutput;
             }
 
+            var fi = (new FileInfo(path));
+            if (fi.Exists)
+                InteractiveShell._CurrentDocFile = fi.FullName;
+            else
+                InteractiveShell._CurrentDocFile = null;
             return new Tuple<string[], string[]>(commands, results);
         }
 

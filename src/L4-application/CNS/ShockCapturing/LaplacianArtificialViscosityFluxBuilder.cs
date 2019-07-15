@@ -16,13 +16,14 @@ limitations under the License.
 
 using BoSSS.Solution.CompressibleFlowCommon;
 using BoSSS.Solution.CompressibleFlowCommon.Boundary;
+using BoSSS.Solution.CompressibleFlowCommon.ShockCapturing;
 using CNS.EquationSystem;
 
 namespace CNS.ShockCapturing {
 
     class LaplacianArtificialViscosityFluxBuilder : FluxBuilder {
 
-        public LaplacianArtificialViscosityFluxBuilder(CNSControl control, BoundaryConditionMap boundaryMap, ISpeciesMap speciesMap)
+        public LaplacianArtificialViscosityFluxBuilder(CNSControl control, CompressibleBoundaryCondMap boundaryMap, ISpeciesMap speciesMap)
             : base(control, boundaryMap, speciesMap) {
         }
 

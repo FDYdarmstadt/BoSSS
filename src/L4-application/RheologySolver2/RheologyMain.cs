@@ -562,7 +562,7 @@ namespace BoSSS.Application.Rheology {
                     m_BDF_Timestepper = new XdgBDFTimestepping(ArrayTools.Cat(this.Velocity.Current, this.Pressure, this.StressXX, this.StressXY, this.StressYY),
                         ArrayTools.Cat(this.ResidualMomentum, this.ResidualConti, this.ResidualStressXX, this.ResidualStressXY, this.ResidualStressYY),
                         LsTrk, false,
-                        DelComputeOperatorMatrix, DelUpdateLevelset,
+                        DelComputeOperatorMatrix, null, DelUpdateLevelset,
                         bdfOrder,
                         lsh,
                         MassMatrixShapeandDependence.IsTimeDependent,

@@ -30,7 +30,7 @@ namespace BoSSS.Application.FSI_Solver
 {
     public class HardcodedControl_straightChannel : IBM_Solver.HardcodedTestExamples
     {
-        public static FSI_Control ActiveRod_noBackroundFlow(int k = 2, double stressM = 1e4, double cellAgg = 0.2, double muA = 1e3, double timestepX = 1e-3)
+        public static FSI_Control ActiveRod_noBackroundFlow(int k = 3, double stressM = 1e4, double cellAgg = 0.2, double muA = 1e3, double timestepX = 1e-3)
         {
             FSI_Control C = new FSI_Control();
 
@@ -65,10 +65,10 @@ namespace BoSSS.Application.FSI_Solver
                 int q = new int(); // #Cells in x-dircetion + 1
                 int r = new int(); // #Cells in y-dircetion + 1
 
-                q = 150;
-                r = 20;
+                q = 36;
+                r = 15;
 
-                double[] Xnodes = GenericBlas.Linspace(-30 * BaseSize, 30 * BaseSize, q);
+                double[] Xnodes = GenericBlas.Linspace(-6 * BaseSize, 18 * BaseSize, q);
                 double[] Ynodes = GenericBlas.Linspace(-4 * BaseSize, 4 * BaseSize, r);
 
                 var grd = Grid2D.Cartesian2DGrid(Xnodes, Ynodes, periodicX: true, periodicY: false);
@@ -82,9 +82,9 @@ namespace BoSSS.Application.FSI_Solver
                 grd.DefineEdgeTags(delegate (double[] X)
                 {
                     byte et = 0;
-                    if (Math.Abs(X[0] - (-30 * BaseSize)) <= 1.0e-8)
+                    if (Math.Abs(X[0] - (-6 * BaseSize)) <= 1.0e-8)
                         et = 1;
-                    if (Math.Abs(X[0] + (-30 * BaseSize)) <= 1.0e-8)
+                    if (Math.Abs(X[0] + (-18 * BaseSize)) <= 1.0e-8)
                         et = 2;
                     if (Math.Abs(X[1] - (-4 * BaseSize)) <= 1.0e-8)
                         et = 3;
@@ -106,7 +106,6 @@ namespace BoSSS.Application.FSI_Solver
             C.AdaptiveMeshRefinement = false;
             C.RefinementLevel = 2;
             C.maxCurvature = 2;
-
 
             // Boundary conditions
             // =============================
@@ -130,17 +129,17 @@ namespace BoSSS.Application.FSI_Solver
             int numOfParticles = 1;
             for (int d = 0; d < numOfParticles; d++)
             {
-                C.Particles.Add(new Particle_Ellipsoid(new double[] { 0 + 8 * d, 0 }, startAngl: 21 - 180 * d)
+                C.Particles.Add(new Particle_Ellipsoid(new double[] { 0 + 8 * d, 0 }, startAngl: 180 * d)
                 {
                     particleDensity = 1,
                     ActiveParticle = true,
                     ActiveStress = stressM,
-                    thickness_P = 0.4 * BaseSize,
+                    thickness_P = 1 * BaseSize,
                     length_P = 2 * BaseSize,
-                    AddaptiveUnderrelaxation = true,
-                    underrelaxation_factor = 0.25,
-                    ClearSmallValues = true,
-                    neglectAddedDamping = false
+                    useAddaptiveUnderrelaxation = true,
+                    underrelaxation_factor = 1,
+                    clearSmallValues = true,
+                    UseAddedDamping = true
                 });
             }
 
@@ -178,7 +177,7 @@ namespace BoSSS.Application.FSI_Solver
             C.LinearSolver.NoOfMultigridLevels = 1;
             C.LinearSolver.MaxSolverIterations = 1000;
             C.LinearSolver.MinSolverIterations = 1;
-            C.ForceAndTorque_ConvergenceCriterion = 1e1;
+            C.ForceAndTorque_ConvergenceCriterion = 1e-1;
             C.LSunderrelax = 1.0;
             
 
@@ -197,7 +196,7 @@ namespace BoSSS.Application.FSI_Solver
             C.dtMax = dt;
             C.dtMin = dt;
             C.Endtime = 1000000000;
-            C.NoOfTimesteps = 1000000000;
+            C.NoOfTimesteps = 100000000;
             
             // haben fertig...
             // ===============
@@ -312,10 +311,10 @@ namespace BoSSS.Application.FSI_Solver
                     ActiveStress = stressM,
                     thickness_P = 0.5 * BaseSize,
                     length_P = 2.5 * BaseSize,
-                    AddaptiveUnderrelaxation = true,// set true if you want to define a constant underrelaxation (not recommended)
+                    useAddaptiveUnderrelaxation = true,// set true if you want to define a constant underrelaxation (not recommended)
                     underrelaxation_factor = 0.2,// underrelaxation with [factor * 10^exponent]
-                    ClearSmallValues = true,
-                    neglectAddedDamping = false
+                    clearSmallValues = true,
+                    UseAddedDamping = true
                 });
             }
             //Define level-set

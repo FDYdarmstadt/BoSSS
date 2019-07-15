@@ -87,7 +87,7 @@ namespace BoSSS.Solution.NSECommon.Operator.Viscosity {
             double[] uLevSet = new double[] { parameters_P[0], parameters_P[1] };
             double wLevSet = parameters_P[2];
 
-            double[] RadialNormalVector = new double[] { -inp.n[1], inp.n[0] };// { parameters_P[3], parameters_P[4] };
+            double[] RadialNormalVector = new double[] { parameters_P[3], parameters_P[4] };
             double RadialLength = parameters_P[5];
             double active_stress = parameters_P[6];
             double scale = parameters_P[7];
@@ -155,10 +155,10 @@ namespace BoSSS.Solution.NSECommon.Operator.Viscosity {
             }
             
             //Computing flux
-            Ret -= Grad_uA_xN * (vA) * muA * (1 - scale);                    // consistency term
-            Ret -= Grad_vA_xN * (uA[component] - uAFict) * muA;              // symmetry term
-            Ret += _penalty * (uA[component] - uAFict) * (vA) * muA;         // penalty term
-            Ret += f_xN * (vA) * scale;                                // active term (Neumann boundary condition)
+            Ret -= Grad_uA_xN * (vA) * muA * (1 - scale);                   // consistency term 
+            Ret -= Grad_vA_xN * (uA[component] - uAFict) * muA;             // symmetry term 
+            Ret += _penalty * (uA[component] - uAFict) * (vA) * muA ;        // penalty term
+            Ret += f_xN * (vA) * scale;                                     // active term (Neumann boundary condition)
 
             Debug.Assert(!(double.IsInfinity(Ret) || double.IsNaN(Ret)));
             return Ret;

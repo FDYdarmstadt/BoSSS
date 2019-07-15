@@ -13,7 +13,7 @@ using System.Threading.Tasks;
 namespace BoSSS.Foundation.Grid.Aggregation {
 
     /// <summary>
-    /// A grid, which is composed throug the aggregation of cells in a parent grid (<see cref="ParentGrid"/>).
+    /// A grid, which is composed through the aggregation of cells in a parent grid (<see cref="ParentGrid"/>).
     /// </summary>
     [Serializable]
     [DataContract]

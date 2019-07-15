@@ -34,7 +34,8 @@ namespace BoSSS.Solution.XdgTimestepping {
     /// Callback-template for level-set updates.
     /// </summary>
     /// <param name="OpMtx">
-    /// Output for the linear part.
+    /// Output for the linear part; the operator matrix must be stored in the valeu that is passes to the function, i.e. the caller allocates memory;
+    /// if null, an explixit evaluation of the operator is required, which should be stored the affine part.
     /// </param>
     /// <param name="OpAffine">
     /// Output for the affine part.
@@ -48,7 +49,12 @@ namespace BoSSS.Solution.XdgTimestepping {
     /// </param>
     /// <param name="time"></param>
     public delegate void DelComputeOperatorMatrix(BlockMsrMatrix OpMtx, double[] OpAffine, UnsetteledCoordinateMapping Mapping, DGField[] CurrentState, Dictionary<SpeciesId, MultidimensionalArray> AgglomeratedCellLengthScales, double time);
-
+    
+    /// <summary>
+    /// Callback-Template for the mass matrix update.
+    /// </summary>
+    public delegate void DelComputeMassMatrix(BlockMsrMatrix MassMtx, UnsetteledCoordinateMapping Mapping, DGField[] CurrentState, double time);
+ 
     /// <summary>
     /// Callback-template for level-set updates.
     /// </summary>
@@ -298,6 +304,30 @@ namespace BoSSS.Solution.XdgTimestepping {
             protected set;
         }
 
+        /// <summary>
+        /// Optional callback routine to update the mass matrix in the case of  <see cref="Config_MassMatrixShapeandDependence"/> == <see cref="MassMatrixShapeandDependence.IsTimeAndSolutionDependent"/>.
+        /// </summary>
+        public DelComputeMassMatrix ComputeMassMatrix {
+            get;
+            protected set;
+        }
+
+        protected void ComputeMassMatrixImpl(BlockMsrMatrix MassMatrix, double time) {
+            if (!MassMatrix._RowPartitioning.EqualsPartition(CurrentStateMapping))
+                throw new ArgumentException("Internal error.");
+            if (!MassMatrix._ColPartitioning.EqualsPartition(CurrentStateMapping))
+                throw new ArgumentException("Internal error.");
+
+            if (ComputeMassMatrix == null) {
+                // ++++++++++++++
+                // default branch
+                // ++++++++++++++
+                MassMatrixFactory MassFact = m_LsTrk.GetXDGSpaceMetrics(this.Config_SpeciesToCompute, this.Config_CutCellQuadratureOrder).MassMatrixFactory;
+                MassFact.AccMassMatrix(MassMatrix, CurrentStateMapping, _alpha: Config_MassScale);
+            } else {
+                ComputeMassMatrix(MassMatrix, CurrentStateMapping, CurrentStateMapping.Fields.ToArray(), time);
+            }
+        }
 
         /// <summary>
         /// Callback routine to update the level set.

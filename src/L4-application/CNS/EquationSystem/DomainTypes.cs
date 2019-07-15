@@ -75,7 +75,7 @@ namespace CNS.EquationSystem {
                         if (!control.FieldOptions.ContainsKey(IBMVariables.LevelSetGradient[d])) {
                             control.AddVariable(
                                 IBMVariables.LevelSetGradient[d],
-                                control.VariableFields[IBMVariables.LevelSet] - 1);
+                                control.VariableToDegreeMap[IBMVariables.LevelSet] - 1);
                         }
                     }
                     return new IBMFieldSet(gridData, (IBMControl)control);
@@ -136,7 +136,7 @@ namespace CNS.EquationSystem {
         /// <see cref="CNSControl.DiffusiveFluxType"/>.
         /// </returns>
         public static OperatorFactory GetOperatorFactory(
-            this DomainTypes formulation, CNSControl control, IGridData gridData, BoundaryConditionMap boundaryMap, CNSFieldSet workingSet, ISpeciesMap speciesMap) {
+            this DomainTypes formulation, CNSControl control, IGridData gridData, CompressibleBoundaryCondMap boundaryMap, CNSFieldSet workingSet, ISpeciesMap speciesMap) {
             switch (formulation) {
                 case DomainTypes.Standard:
                     return new OperatorFactory(

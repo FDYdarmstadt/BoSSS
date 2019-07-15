@@ -355,14 +355,14 @@ namespace BoSSS.Application.IBM_Solver {
                         //var Visc = new Solution.XNSECommon.Operator.Viscosity.ViscosityInBulk_GradUTerm(penalty, 1.0, BcMap, d, D, this.Control.PhysicalParameters.mu_A, 1, ViscosityImplementation.H);
                         var Visc = new swipViscosity_Term1(penalty_bulk, d, D, BcMap,
                             ViscosityOption.ConstantViscosity,
-                            this.Control.PhysicalParameters.mu_A / this.Control.PhysicalParameters.rho_A,
+                            this.Control.PhysicalParameters.mu_A ,// / this.Control.PhysicalParameters.rho_A
                             double.NaN, null);
                         //delegate (double p, int i, int j, double[] cell) { return ComputePenalty(p, i, j, cell); });
                         // IBM_Op.OnIntegratingBulk += Visc.SetParameter;
                         comps.Add(Visc); // bulk component GradUTerm 
                         var ViscLs = new BoSSS.Solution.NSECommon.Operator.Viscosity.ViscosityAtIB(d, D, LsTrk,
                             penalty, this.ComputePenaltyIB,
-                            this.Control.PhysicalParameters.mu_A / this.Control.PhysicalParameters.rho_A,
+                            this.Control.PhysicalParameters.mu_A,// / this.Control.PhysicalParameters.rho_A,
                             delegate (double[] X, double time) { return new double[] { 0.0, 0.0, 0.0, 0.0 }; });
                         comps.Add(ViscLs); // immersed boundary component
                     }
@@ -428,7 +428,7 @@ namespace BoSSS.Application.IBM_Solver {
                     m_BDF_Timestepper = new XdgBDFTimestepping(
                         Unknowns, Residual,
                         LsTrk, true,
-                        DelComputeOperatorMatrix, DelUpdateLevelset,
+                        DelComputeOperatorMatrix, null, DelUpdateLevelset,
                         bdfOrder,
                         lsh,
                         MassMatrixShapeandDependence.IsTimeDependent,
@@ -610,7 +610,7 @@ namespace BoSSS.Application.IBM_Solver {
         //}
 
         //protected TextWriter Log_DragAndLift,Log_DragAndLift_P1;
-        protected double[] force = new double[3];
+        protected double[] Test_Force = new double[3];
         protected double torque = new double();
         protected double oldtorque = new double();
 
@@ -628,7 +628,7 @@ namespace BoSSS.Application.IBM_Solver {
 
                 dt = base.GetFixedTimestep();
 
-                Console.WriteLine("Instationary solve, timestep #{0}, dt = {1} ...", TimestepNo, dt);
+                Console.WriteLine("In-stationary solve, time-step #{0}, dt = {1} ...", TimestepNo, dt);
 
                 m_BDF_Timestepper.Solve(phystime, dt);
 
@@ -655,7 +655,7 @@ namespace BoSSS.Application.IBM_Solver {
                 }
                 */
 
-                force = IBMSolverUtils.GetForces(Velocity, Pressure, this.LsTrk, this.Control.PhysicalParameters.mu_A/this.Control.PhysicalParameters.rho_A);
+                Test_Force = IBMSolverUtils.GetForces(Velocity, Pressure, this.LsTrk, this.Control.PhysicalParameters.mu_A/this.Control.PhysicalParameters.rho_A);
                 //oldtorque = torque;
                 torque = IBMSolverUtils.GetTorque(Velocity, Pressure, this.LsTrk, this.Control.PhysicalParameters.mu_A / this.Control.PhysicalParameters.rho_A, this.Control.particleRadius);
 
@@ -672,17 +672,17 @@ namespace BoSSS.Application.IBM_Solver {
                 }
                 */
                 
-                Console.WriteLine("x-Force:   {0}", force[0]);
-                Console.WriteLine("y-Force:   {0}", force[1]);
+                Console.WriteLine("x-Force:   {0}", Test_Force[0]);
+                Console.WriteLine("y-Force:   {0}", Test_Force[1]);
                 if (this.GridData.SpatialDimension == 3)
-                    Console.WriteLine("z-Force:   {0}", force[2]);
+                    Console.WriteLine("z-Force:   {0}", Test_Force[2]);
                 Console.WriteLine("Torqe:   {0}", torque);
                 Console.WriteLine();
 
 
                 // Save for NUnit Test
-                base.QueryHandler.ValueQuery("C_Drag", 2 * force[0], true); // Only for Diameter 1 (TestCase NSE stationary)
-                base.QueryHandler.ValueQuery("C_Lift", 2 * force[1], true); // Only for Diameter 1 (TestCase NSE stationary)
+                base.QueryHandler.ValueQuery("C_Drag", 2 * Test_Force[0], true); // Only for Diameter 1 (TestCase NSE stationary)
+                base.QueryHandler.ValueQuery("C_Lift", 2 * Test_Force[1], true); // Only for Diameter 1 (TestCase NSE stationary)
                 #endregion
 
                 return dt;
@@ -999,16 +999,14 @@ namespace BoSSS.Application.IBM_Solver {
         private void After_SetInitialOrLoadRestart() {
             using (new FuncTrace()) {
                 int D = this.GridData.SpatialDimension;
-
-              
+                
+                // we only save 'LevSet', but not the 'DGLevSet'
+                // therefore, after re-start we have to copy LevSet->DGLevSet
                 this.DGLevSet.Current.Clear();
                 this.DGLevSet.Current.AccLaidBack(1.0, this.LevSet);
-
-               
-                PerformLevelSetSmoothing();
+             
                 
-                
-
+                // we push the current state of the level-set, so we have an initial value
                 this.LsTrk.UpdateTracker();
                 this.DGLevSet.IncreaseHistoryLength(1);
                 this.LsTrk.PushStacks();
@@ -1018,17 +1016,38 @@ namespace BoSSS.Application.IBM_Solver {
         }
 
         /// <summary>
-        /// Ensures that the level-set field <see cref="LevSet"/> is continuous
+        /// Ensures that the level-set field <see cref="LevSet"/> is continuous, if <see cref="IBM_Control.LevelSetSmoothing"/> is true
         /// </summary>
-        protected void PerformLevelSetSmoothing() {
+        protected void PerformLevelSetSmoothing(CellMask domain, CellMask NegMask, bool SetFarField) {
+
             if (this.Control.LevelSetSmoothing) {
+                // ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+                // smoothing on: perform some kind of C0-projection
+                // ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
                 var ContinuityEnforcer = new BoSSS.Solution.LevelSetTools.ContinuityProjection(
                     ContBasis: this.LevSet.Basis,
                     DGBasis: this.DGLevSet.Current.Basis,
                     gridData: GridData,
-                    Option: Solution.LevelSetTools.ContinuityProjectionOption.SpecFEM);
+                    Option: Solution.LevelSetTools.ContinuityProjectionOption.ContinuousDG);
 
-                ContinuityEnforcer.MakeContinuous(this.DGLevSet.Current, this.LevSet, this.LsTrk.Regions.GetNearFieldMask(1), null, false);
+                //CellMask domain = this.LsTrk.Regions.GetNearFieldMask(1);
+
+                ContinuityEnforcer.MakeContinuous(this.DGLevSet.Current, this.LevSet, domain, null, false);
+                if (SetFarField)
+                {
+                    LevSet.Clear(NegMask);
+                    LevSet.AccConstant(-1, NegMask);
+                }
+            } else {
+                // ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+                // no smoothing (not recommended): copy DGLevSet -> LevSet
+                // ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+                //this.LevSet.Clear(domain);
+                //this.LevSet.AccLaidBack(1.0, this.DGLevSet.Current, domain);
+                this.LevSet.Clear();
+                this.LevSet.AccLaidBack(1.0, this.DGLevSet.Current);
             }
         }
 

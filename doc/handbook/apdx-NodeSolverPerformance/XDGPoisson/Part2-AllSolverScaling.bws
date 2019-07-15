@@ -1,6 +1,5 @@
 restart
 **************
-
   BoSSSpad C# interpreter
   _______________________
 
@@ -597,6 +596,8 @@ System.ComponentModel.Win32Exception (0x80004005): Das System kann die angegeben
 CL.WriteMinimalCompileableExample(
    Path.Combine(CurrentDocDir, "plots", "MainXdgPoissonScaling.tex"),
    "XdgPoissonScaling.tex");
+**************
+==============
 **************
 ==============
 **************

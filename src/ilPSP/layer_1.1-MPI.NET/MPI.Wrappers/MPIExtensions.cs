@@ -692,7 +692,14 @@ namespace MPI.Wrappers {
         /// </summary>
         static private int[] Int_MPIAllGatherv(this int[] send, int[] m_recvcounts, MPI_Comm comm) {
             csMPI.Raw.Comm_Size(csMPI.Raw._COMM.WORLD, out int size);
-            int[] result = new int[m_recvcounts.Sum()];
+            int rcs = m_recvcounts.Sum();
+            if (rcs == 0)
+                return new int[0];
+
+
+            int[] result = new int[rcs];
+            if (send.Length == 0)
+                send = new int[1];
 
             unsafe {
                 int* displs = stackalloc int[size];
@@ -718,17 +725,24 @@ namespace MPI.Wrappers {
         }
 
         /// <summary>
-        /// Gathers all ulong[] send Arrays on all MPI-processes, at which every jth block of data is from the jth process.
+        /// Gathers all ulong[] send Arrays on all MPI-processes, at which every j-th block of data is from the j-th process.
         /// </summary>
         static public ulong[] MPIAllGatherv(this ulong[] send, int[] recvcounts) {
             return send.Long_MPIAllGatherv(recvcounts, csMPI.Raw._COMM.WORLD);
         }
         /// <summary>
-        /// Gathers all send Arrays on all MPI-processes, at which every jth block of data is from the jth process.
+        /// Gathers all send Arrays on all MPI-processes, at which every j-th block of data is from the j-th process.
         /// </summary>
         static private ulong[] Long_MPIAllGatherv(this ulong[] send, int[] m_recvcounts, MPI_Comm comm) {
             csMPI.Raw.Comm_Size(csMPI.Raw._COMM.WORLD, out int size);
-            ulong[] result = new ulong[m_recvcounts.Sum()];
+            int rcs = m_recvcounts.Sum();
+            if (rcs == 0)
+                return new ulong[0];
+
+            ulong[] result = new ulong[rcs];
+
+            if (send.Length == 0)
+                send = new ulong[1];
 
             unsafe {
                 int* displs = stackalloc int[size];
@@ -750,15 +764,19 @@ namespace MPI.Wrappers {
                 }
             }
 
+            
             return result;
         }
 
         /// <summary>
-        /// MPI-process with rank 0 gathers this int[] of all MPI-processes in the
-        /// <paramref name="comm"/>-communicator with variable length. The length of the gathered int[] is specified by <paramref name="recvcount"/>
+        /// MPI-process with rank 0 gathers this int[] over all MPI-processes in the world-communicator.
+        /// The length of the gathered int[] is specified by <paramref name="recvcount"/>
         /// </summary>
         /// <param name="recvcount">
-        /// Length of the receive buffer
+        /// number of items to receive from each rank
+        /// </param>
+        /// <param name="send">
+        /// data to send from current process to rank 0
         /// </param>
         static public int[] MPIGatherv(this int[] send, int[] recvcount) {
             return send.MPIGatherv(
@@ -776,7 +794,7 @@ namespace MPI.Wrappers {
             csMPI.Raw.Comm_Size(comm, out int size);
             csMPI.Raw.Comm_Rank(comm, out int rank);
 
-            int rcs = recvcounts.Sum();
+            int rcs = rank == root ? recvcounts.Sum() : 0;
             int[] result = rank == root ? new int[Math.Max(1, rcs)] : null;
             
 
@@ -804,7 +822,7 @@ namespace MPI.Wrappers {
                 }
             }
 
-            if(result.Length > rcs) {
+            if(result != null && result.Length > rcs) {
                 Debug.Assert(rcs == 0);
                 result = new int[0];
             }
@@ -842,7 +860,7 @@ namespace MPI.Wrappers {
             csMPI.Raw.Comm_Size(comm, out int size);
             csMPI.Raw.Comm_Rank(comm, out int rank);
 
-            int rcs = recvcount.Sum();
+            int rcs = rank == root ? recvcount.Sum() : 0;
             ulong[] result = rank == root ? new ulong[Math.Max(1, rcs)] : null;
 
             unsafe {
@@ -893,7 +911,7 @@ namespace MPI.Wrappers {
             csMPI.Raw.Comm_Size(comm, out int size);
             csMPI.Raw.Comm_Rank(comm, out int rank);
 
-            int rcs = recvcounts.Sum();
+            int rcs = rank == root ? recvcounts.Sum() : 0;
             double[] result = rank == root ? new double[Math.Max(1, rcs)] : null;
 
 

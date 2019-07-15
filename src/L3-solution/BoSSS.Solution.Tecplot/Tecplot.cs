@@ -50,7 +50,6 @@ namespace BoSSS.Solution.Tecplot {
         /// <summary>
         /// see <see cref="PlotDriver.PlotDriver"/>.
         /// </summary>
-        /// <param name="path">path to output folder</param>
         public Tecplot(IGridData context, uint superSampling, string path)
             : this(context, superSampling) {
             this.path = path;
@@ -127,7 +126,7 @@ namespace BoSSS.Solution.Tecplot {
 
             int Debug = 0;
             int VIsDouble = 1;
-            string ScratchDir = ".";
+            string ScratchDir = path != null ? path : ".";
             string Variables = stw.ToString();
             string filenameWithPath = path != null ? Path.Combine(path, filename) : filename;
 

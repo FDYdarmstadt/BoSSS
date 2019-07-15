@@ -56,6 +56,7 @@
     <UseVSHostingProcess>true</UseVSHostingProcess>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Include="ScalarEquationForm.cs" />
     <Compile Include="Solver\LinearSolver.cs" />
     <Compile Include="Solver\NonLinearSolver.cs" />
     <Compile Include="CommandLineOptions.cs" />
@@ -78,7 +79,7 @@
     <Compile Include="AppControl.cs" />
     <Compile Include="Application.cs" />
     <Compile Include="TimeStepping\BDFCommon.cs" />
-    <Compile Include="BoundaryConditionMap.cs" />
+    <Compile Include="BoundaryCondMap.cs" />
     <Compile Include="Kmeans.cs" />
     <Compile Include="ControlOptionRequirementAttribute.cs" />
     <Compile Include="EdgeIntegral.cs" />

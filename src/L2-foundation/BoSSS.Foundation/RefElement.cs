@@ -2328,8 +2328,8 @@ namespace BoSSS.Foundation.Grid.RefElements {
         /// element/the specific <paramref name="type"/>.
         /// </summary>
         public PolynomialList[] GetInterpolationPolynomials1stDeriv(CellType type) {
+           
             InitMinorType(type);
-
             PolynomialList[] R;
             if(!this.m_InterpolationPolynomials1stDeriv.TryGetValue(type, out R)) {
 

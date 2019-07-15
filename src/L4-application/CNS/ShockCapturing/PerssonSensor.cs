@@ -29,7 +29,7 @@ using System.Linq;
 
 namespace CNS.ShockCapturing {
 
-    public class PerssonSensor : IShockSensor {
+    public class PerssonSensor : ICNSShockSensor {
 
         private string m_sensorVariableName;
 
@@ -210,6 +210,10 @@ namespace CNS.ShockCapturing {
 
         public double GetSensorValue(int cellIndex) {
             return sensorValues[cellIndex];
+        }
+
+        public DGField GetSensorField() {
+            throw new System.NotImplementedException();
         }
     }
 }
