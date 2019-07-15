@@ -56,8 +56,44 @@ namespace BoSSS.Application.Rheology {
     /// </summary>
     public class Rheology : BoSSS.Solution.Application<RheologyControl> {
         static void Main(string[] args) {
-            
+            /*
+            long Len = 436609779;
+            long GB = 1024 * 1024 * 1024;
+            Console.WriteLine("Len = " + Len + " <= int-Max? " + (Len <= int.MaxValue));
+
+
+
+            IntPtr size = (IntPtr)((long)Len * sizeof(double));
+            Console.WriteLine("allocating " + (((long)size)/GB) +  " gigabyte ...");
+            Console.Out.Flush();
+
+            unsafe
+            {
+                IntPtr Mem = System.Runtime.InteropServices.Marshal.AllocHGlobal(size);
+
+                //double[] test = new double[Len];
+                Console.WriteLine("done.");
+
+                Console.WriteLine("populating...");
+
+                double* test = (double*)Mem;
+                test[0] = 0.4;
+                test++;
+                for (long i = 1; i < Len; i++)
+                {
+                    *test = Math.Cos(*(test - 1));
+                    test++;
+                }
+
+                Console.WriteLine("done.");
+
+                Console.WriteLine("Last value is: " + *(test - 1));
+            }
+            return;
+            */
+
             Rheology._Main(args, false,
+
                 delegate () {
                     var app = new Rheology();
                     return app;

@@ -81,7 +81,12 @@ namespace ilPSP {
             m_i0Offset = new int[m_size + 1];
             m_i0Offset[0] = 0;
             for (int i = 1; i <= m_size; i++)
+            {
+                long _i0oL = (long)(m_i0Offset[i - 1]) + (long)(m_LocalLengths[i - 1]);
+                if (_i0oL > int.MaxValue)
+                    throw new OverflowException("Partition exceeds the range of 32-bit integer.");
                 m_i0Offset[i] = m_i0Offset[i - 1] + m_LocalLengths[i - 1];
+            }
         }
 
         /// <summary>

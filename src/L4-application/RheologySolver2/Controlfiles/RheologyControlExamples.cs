@@ -411,6 +411,7 @@ namespace BoSSS.Application.Rheology {
             C.NonLinearSolver.SolverCode = NonLinearSolverConfig.Code.Newton;
             C.LinearSolver.SolverCode = LinearSolverConfig.Code.classic_pardiso;
             C.ObjectiveParam = 1.0;
+            C.useJacobianForOperatorMatrix = false;
 
             C.UsePerssonSensor = true;
             C.SensorLimit = 1e-4;
@@ -418,7 +419,7 @@ namespace BoSSS.Application.Rheology {
             C.AdaptiveMeshRefinement = false;
             C.RefinementLevel = 10;
 
-            C.UseArtificialDiffusion = true;
+            C.UseArtificialDiffusion = false;
 
             C.Bodyforces = true;
 

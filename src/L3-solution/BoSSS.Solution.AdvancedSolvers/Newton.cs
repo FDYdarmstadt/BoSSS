@@ -154,7 +154,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                             step = Krylov(SolutionVec, x, f0, out errstep);
                         } else if (ApproxJac == ApproxInvJacobianOptions.DirectSolver) {
                             var CurrentJac = CurrentLin.OperatorMatrix;
-                            var solver = new ilPSP.LinSolvers.MUMPS.MUMPSSolver();
+                            var solver = new ilPSP.LinSolvers.PARDISO.PARDISOSolver();      // .MUMPS.MUMPSSolver();
                             solver.DefineMatrix(CurrentJac);
                             step.ClearEntries();
                             f0.ScaleV(-1.0);
