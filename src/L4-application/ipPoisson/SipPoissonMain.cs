@@ -996,9 +996,12 @@ namespace BoSSS.Application.SipPoisson {
                     solverIteration.Stop();
                     Console.WriteLine("done. (" + solverIteration.Elapsed.TotalSeconds + " sec)");
 
-                    Console.WriteLine("Pardiso phase 11: " + ilPSP.LinSolvers.PARDISO.PARDISOSolver.Phase_11.Elapsed.TotalSeconds);
-                    Console.WriteLine("Pardiso phase 22: " + ilPSP.LinSolvers.PARDISO.PARDISOSolver.Phase_22.Elapsed.TotalSeconds);
-                    Console.WriteLine("Pardiso phase 33: " + ilPSP.LinSolvers.PARDISO.PARDISOSolver.Phase_33.Elapsed.TotalSeconds);
+                    //Console.WriteLine("Pardiso phase 11: " + ilPSP.LinSolvers.PARDISO.PARDISOSolver.Phase_11.Elapsed.TotalSeconds);
+                    //Console.WriteLine("Pardiso phase 22: " + ilPSP.LinSolvers.PARDISO.PARDISOSolver.Phase_22.Elapsed.TotalSeconds);
+                    //Console.WriteLine("Pardiso phase 33: " + ilPSP.LinSolvers.PARDISO.PARDISOSolver.Phase_33.Elapsed.TotalSeconds);
+
+                    Console.WriteLine("SPMV total: " + BlockMsrMatrix.SPMV_total.Elapsed.TotalSeconds);
+                    Console.WriteLine("     inner: " + BlockMsrMatrix.SPMV_inner.Elapsed.TotalSeconds);
 
                     // time measurement, statistics
                     stw.Stop();
