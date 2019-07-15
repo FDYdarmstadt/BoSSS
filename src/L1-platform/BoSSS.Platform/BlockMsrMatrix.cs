@@ -2447,15 +2447,16 @@ namespace ilPSP.LinSolvers {
                                 int[] RowLenSblk = _RowPartitioning.GetSubblkLen(RowBlockType);
                                 bool ContainsExternal = false;
 
-
+                                //double[] _arschKakke = new double[RowBlockLength];
                                 if (VecAccu == null || VecAccu.Length < RowBlockLength) {
                                     VecAccu = new double[RowBlockLength];
                                 } else {
                                     for (int i = 0; i < RowBlockLength; i++) {
                                         VecAccu[i] = 0.0;
+                                        //_arschKakke[i] = 0.0;
                                     }
                                 }
-                                fixed (double* pVecAccu = VecAccu) {
+                                fixed (double* pVecAccu = VecAccu) { //, arschKakke = _arschKakke) {
 
                                     foreach (var kv in BlockRow) { // loop over block columns...
                                         BlockEntry BE = kv.Value;
@@ -2505,38 +2506,49 @@ namespace ilPSP.LinSolvers {
                                                             int iRowLoc = _iRowLoc; // local row index
                                                             int iRowBlockLoc = _iRowBlockLoc; // row index within block
                                                             SPMV_inner.Start();
-                                                            
-                                                            for (int i = 0; i < I; i++) { // loop over sub-block rows...
 
-                                                                double Accu = 0;
+                                                            if (CJ != 1 || I * J < 40) {
 
-                                                                //int jColLoc = _jColLoc;
-                                                                double* pRow = pRawMem + Offset + CI * i;
-                                                                double* pCol = pa + _jColLoc;
-                                                                for (int j = 0; j < J; j++) { // loop over sub-block columns...
-                                                                    // .
-                                                                                              //int iStorage = Offset + CI * i + CJ * j; // index into memory bank
-                                                                                              //Accu += RawMem[iStorage] * a[jColLoc];
-                                                                                              //jColLoc++;
+                                                                for (int i = 0; i < I; i++) { // loop over sub-block rows...
 
-                                                                    Accu += *pRow * *pCol;
-                                                                    pCol++;
-                                                                    pRow += CJ;
+                                                                    double Accu = 0;
+
+                                                                    //int jColLoc = _jColLoc;
+                                                                    double* pRow = pRawMem + Offset + CI * i;
+                                                                    double* pCol = pa + _jColLoc;
+                                                                    for (int j = 0; j < J; j++) { // loop over sub-block columns...
+                                                                                                  // .
+                                                                                                  //int iStorage = Offset + CI * i + CJ * j; // index into memory bank
+                                                                                                  //Accu += RawMem[iStorage] * a[jColLoc];
+                                                                                                  //jColLoc++;
+
+                                                                        Accu += *pRow * *pCol;
+                                                                        pCol++;
+                                                                        pRow += CJ;
+                                                                    }
+
+                                                                    VecAccu[iRowBlockLoc] += Accu;
+                                                                    iRowLoc++;
+                                                                    iRowBlockLoc++;
                                                                 }
+                                                            } else {
 
-                                                                VecAccu[iRowBlockLoc] += Accu;
-                                                                iRowLoc++;
-                                                                iRowBlockLoc++;
+                                                                BLAS.dgemv('t', I, J, 1.0, pRawMem + Offset, CI, pa + _jColLoc, 1, 1.0,
+                                                                    //arschKakke, 
+                                                                    pVecAccu + _iRowBlockLoc, 
+                                                                    1);
                                                             }
-                                                            /*
-                                                            double* arschKakke = stackalloc double[I];
-                                                            BLAS.dgemv('t', J, I, 1.0, pRawMem + Offset, CI, pa + _jColLoc, 1, 0.0, 
-                                                                arschKakke, //pVecAccu + _iRowBlockLoc, 
-                                                                1);
-                                                            for (int i = 0; i < I; i++) {
-                                                                Debug.Assert(arschKakke[i] == *(pVecAccu + _iRowBlockLoc + i));
-                                                            }
-                                                            */
+
+                                                            //for (int i = 0; i < I; i++) {
+                                                            //    double zahl1 = arschKakke[i];
+                                                            //    double zahl2 = pVecAccu[_iRowBlockLoc + i];
+                                                            //    double tol = Math.Max(Math.Abs(zahl1), Math.Abs(zahl2))*1e-3;
+                                                            //    double dist = Math.Abs(zahl1 - zahl2);
+
+                                                            //    if (dist > tol)
+                                                            //        throw new ArithmeticException();
+                                                            //}
+                                                            
 
                                                             SPMV_inner.Stop();
 
