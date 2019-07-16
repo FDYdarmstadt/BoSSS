@@ -227,8 +227,8 @@ namespace BoSSS.Application.SipPoisson {
             R.FieldOptions.Add("T", new FieldOpts() { Degree = deg, SaveToDB = FieldOpts.SaveToDBOpt.TRUE });
             R.FieldOptions.Add("Tex", new FieldOpts() { Degree = deg + 2 });
             R.InitialValues_Evaluators.Add("RHS", X => -Math.Sin(X[0]));
-            //R.InitialValues_Evaluators.Add("Tex", X => Math.Sin(X[0]));
-            //R.ExactSolution_provided = true;
+            R.InitialValues_Evaluators.Add("Tex", X => Math.Sin(X[0]));
+            R.ExactSolution_provided = true;
             R.LinearSolver.NoOfMultigridLevels = int.MaxValue;
             R.LinearSolver.SolverCode = solver_name;
             //R.TargetBlockSize = 100;
