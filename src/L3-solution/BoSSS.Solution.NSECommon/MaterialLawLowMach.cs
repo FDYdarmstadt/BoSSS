@@ -233,8 +233,6 @@ namespace BoSSS.Solution.NSECommon {
         /// <returns></returns>
         public override double GetMassDeterminedThermodynamicPressure(double InitialMass, SinglePhaseField Temperature) {
 
-
-
             SinglePhaseField omega = new SinglePhaseField(Temperature.Basis);
             omega.ProjectField(1.0,
                 delegate (int j0, int Len, NodeSet NS, MultidimensionalArray result) {
