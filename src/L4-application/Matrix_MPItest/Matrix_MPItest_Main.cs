@@ -91,9 +91,9 @@ namespace BoSSS.Application.Matrix_MPItest {
 
 
         protected override void CreateFields() {
-            Phi = new LevelSet(new Basis(this.gridData, 2), "Phi");
+            Phi = new LevelSet(new Basis(this.GridData, 2), "Phi");
    
-            LsTrk = new LevelSetTracker((BoSSS.Foundation.Grid.Classic.GridData)this.gridData, XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes, 1, new string[] { "A", "B" }, Phi);
+            LsTrk = new LevelSetTracker((BoSSS.Foundation.Grid.Classic.GridData)this.GridData, XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes, 1, new string[] { "A", "B" }, Phi);
 
             if (m_DGorder < 1)
                 throw new ArgumentException();
@@ -102,22 +102,22 @@ namespace BoSSS.Application.Matrix_MPItest {
                 u1 = new XDGField(new XDGBasis(this.LsTrk, m_DGorder), "u1");
                 u2 = new XDGField(new XDGBasis(this.LsTrk, m_DGorder -1), "u2");
             } else if (m_UseXdg == XDGusage.none) {
-                u1 = new SinglePhaseField(new Basis(this.gridData, m_DGorder), "u1");
-                u2 = new SinglePhaseField(new Basis(this.gridData, m_DGorder - 1), "u2");
+                u1 = new SinglePhaseField(new Basis(this.GridData, m_DGorder), "u1");
+                u2 = new SinglePhaseField(new Basis(this.GridData, m_DGorder - 1), "u2");
             } else if(m_UseXdg == XDGusage.mixed1) {
                 u1 = new XDGField(new XDGBasis(this.LsTrk, m_DGorder), "u1");
-                u2 = new SinglePhaseField(new Basis(this.gridData, m_DGorder - 1), "u2");
+                u2 = new SinglePhaseField(new Basis(this.GridData, m_DGorder - 1), "u2");
             } else if(m_UseXdg == XDGusage.mixed2) {
-                u1 = new SinglePhaseField(new Basis(this.gridData, m_DGorder), "u1");
+                u1 = new SinglePhaseField(new Basis(this.GridData, m_DGorder), "u1");
                 u2 = new XDGField(new XDGBasis(this.LsTrk, m_DGorder - 1), "u2");
             } else {
                 throw new NotImplementedException();
             }
 
-            Amarker = new SinglePhaseField(new Basis(this.gridData, 0), "Amarker");
-            Bmarker = new SinglePhaseField(new Basis(this.gridData, 0), "Bmarker");
+            Amarker = new SinglePhaseField(new Basis(this.GridData, 0), "Amarker");
+            Bmarker = new SinglePhaseField(new Basis(this.GridData, 0), "Bmarker");
 
-            MPIrank = new SinglePhaseField(new Basis(this.gridData, 0), "MPIRank");
+            MPIrank = new SinglePhaseField(new Basis(this.GridData, 0), "MPIRank");
             MPIrank.AccConstant(this.MPIRank);
 
         }

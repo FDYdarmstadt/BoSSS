@@ -101,9 +101,9 @@ namespace HilbertTest {
                 solver.RunSolverMode();
                 bool result = true;
 
-                int Jloc = solver.gridData.CellPartitioning.LocalLength;
+                int Jloc = solver.GridData.CellPartitioning.LocalLength;
                 for (int j = 0; j < Jloc; j++) {
-                    double[] XC = solver.gridData.iLogicalCells.GetCenter(j);
+                    double[] XC = solver.GridData.iLogicalCells.GetCenter(j);
                     double xC = XC[0];
                     double yC = XC[1];
                     switch (solver.MPIRank) {
@@ -138,9 +138,9 @@ namespace HilbertTest {
                 solver.RunSolverMode();
                 bool result = true;
 
-                int Jloc = solver.gridData.CellPartitioning.LocalLength;
+                int Jloc = solver.GridData.CellPartitioning.LocalLength;
                 for (int j = 0; j < Jloc; j++) {
-                    double[] XC = solver.gridData.iLogicalCells.GetCenter(j);
+                    double[] XC = solver.GridData.iLogicalCells.GetCenter(j);
                     double xC = XC[0];
                     double yC = XC[1];
                     switch (solver.MPIRank) {
@@ -173,9 +173,9 @@ namespace HilbertTest {
                 solver.RunSolverMode();
                 bool result = true;
 
-                int Jloc = solver.gridData.CellPartitioning.LocalLength;
+                int Jloc = solver.GridData.CellPartitioning.LocalLength;
                 for (int j = 0; j < Jloc; j++) {
-                    double[] XC = solver.gridData.iLogicalCells.GetCenter(j);
+                    double[] XC = solver.GridData.iLogicalCells.GetCenter(j);
                     double xC = XC[0];
                     double yC = XC[1];
                     switch (solver.MPIRank) {
@@ -209,9 +209,9 @@ namespace HilbertTest {
                 solver.RunSolverMode();
                 bool result = true;
 
-                int Jloc = solver.gridData.CellPartitioning.LocalLength;
+                int Jloc = solver.GridData.CellPartitioning.LocalLength;
                 for (int j = 0; j < Jloc; j++) {
-                    double[] XC = solver.gridData.iLogicalCells.GetCenter(j);
+                    double[] XC = solver.GridData.iLogicalCells.GetCenter(j);
                     double xC = XC[0];
                     double yC = XC[1];
                     switch (solver.MPIRank) {
@@ -257,7 +257,7 @@ namespace HilbertTest {
 
                     if (field.GetMeanValue(i) == 1) {
                         //Cell cj=solver.GridData.Cells.GetCell(i);
-                        solver.gridData.iLogicalCells.GetCellBoundingBox(i, CellBB);
+                        solver.GridData.iLogicalCells.GetCellBoundingBox(i, CellBB);
                         BB.AddBB(CellBB);
                     }
                 }
@@ -274,8 +274,8 @@ namespace HilbertTest {
                     //Comparing checkLTS to Distribution along HilbertCurve of Testcase
                     int[] checkLTS = { 0, 0, 0, 1, 1, 1, 1, 1, 2, 2, 3, 3, 0, 0, 2, 2, 2, 3, 3, 3 };
                     //result = ItemsAreEqual(solver.Grid.GetHilbertSortedRanks(),checkLTS);
-                    int J0 = solver.gridData.CellPartitioning.i0;
-                    int JE = solver.gridData.CellPartitioning.iE;
+                    int J0 = solver.GridData.CellPartitioning.i0;
+                    int JE = solver.GridData.CellPartitioning.iE;
 
                     ulong[] discreteCenter = new ulong[D];
                     ulong[] local_HilbertIndex = new ulong[JE - J0];

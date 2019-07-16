@@ -104,8 +104,8 @@ namespace BoSSS.Application.ZwoLsTest {
 
 
         protected override void CreateFields() {
-            Phi0 = new LevelSet(new Basis(this.gridData, 2), "Phi_0");
-            Phi1 = new LevelSet(new Basis(this.gridData, 2), "Phi_1");
+            Phi0 = new LevelSet(new Basis(this.GridData, 2), "Phi_0");
+            Phi1 = new LevelSet(new Basis(this.GridData, 2), "Phi_1");
 
 
             {
@@ -115,18 +115,18 @@ namespace BoSSS.Application.ZwoLsTest {
                 speciesTable[1, 0] = "X"; // 'verbotene' Species: sollte in der geg. LevelSet-Konstellation nicht vorkommen!
                 speciesTable[1, 1] = "A"; // linker Rand von A
                
-                base.LsTrk = new LevelSetTracker((BoSSS.Foundation.Grid.Classic.GridData)(this.gridData), MomentFittingVariant, 1, speciesTable, Phi0, Phi1);
+                base.LsTrk = new LevelSetTracker((BoSSS.Foundation.Grid.Classic.GridData)(this.GridData), MomentFittingVariant, 1, speciesTable, Phi0, Phi1);
             }
 
-            u = new SinglePhaseField(new Basis(this.gridData, DEGREE), "U");
-            du_dx = new SinglePhaseField(new Basis(this.gridData, DEGREE), "du_dx");
-            du_dx_Exact = new SinglePhaseField(new Basis(this.gridData, DEGREE), "du_dx_exact");
-            ERR = new SinglePhaseField(new Basis(this.gridData, DEGREE), "ERROR");
+            u = new SinglePhaseField(new Basis(this.GridData, DEGREE), "U");
+            du_dx = new SinglePhaseField(new Basis(this.GridData, DEGREE), "du_dx");
+            du_dx_Exact = new SinglePhaseField(new Basis(this.GridData, DEGREE), "du_dx_exact");
+            ERR = new SinglePhaseField(new Basis(this.GridData, DEGREE), "ERROR");
             XERR = new XDGField(new XDGBasis(LsTrk, DEGREE), "ERROR_xdg");
 
-            Amarker = new SinglePhaseField(new Basis(this.gridData, 0), "Amarker");
-            Bmarker = new SinglePhaseField(new Basis(this.gridData, 0), "Bmarker");
-            Xmarker = new SinglePhaseField(new Basis(this.gridData, 0), "Xmarker");
+            Amarker = new SinglePhaseField(new Basis(this.GridData, 0), "Amarker");
+            Bmarker = new SinglePhaseField(new Basis(this.GridData, 0), "Bmarker");
+            Xmarker = new SinglePhaseField(new Basis(this.GridData, 0), "Xmarker");
 
             base.m_RegisteredFields.Add(Phi0);
             base.m_RegisteredFields.Add(Phi1);
@@ -267,7 +267,7 @@ namespace BoSSS.Application.ZwoLsTest {
             // ------------------------------------------------
             // project the polynomial onto a single-phase field
             // ------------------------------------------------
-            SinglePhaseField NonAgglom = new SinglePhaseField(new Basis(this.gridData, degree), "NonAgglom");
+            SinglePhaseField NonAgglom = new SinglePhaseField(new Basis(this.GridData, degree), "NonAgglom");
             NonAgglom.ProjectField(1.0,
                 SomePolynomial.Vectorize(),
                 new CellQuadratureScheme(true, Bmask));
@@ -282,7 +282,7 @@ namespace BoSSS.Application.ZwoLsTest {
             SinglePhaseField xt = new SinglePhaseField(NonAgglom.Basis, "test");
             xt.ProjectField(1.0,
                 SomePolynomial.Vectorize(),
-                qsh.GetVolumeQuadScheme(this.LsTrk.GetSpeciesId("B")).Compile(this.gridData, Agg.CutCellQuadratureOrder));
+                qsh.GetVolumeQuadScheme(this.LsTrk.GetSpeciesId("B")).Compile(this.GridData, Agg.CutCellQuadratureOrder));
                        
             CoordinateMapping map = xt.Mapping;
 
@@ -434,11 +434,11 @@ namespace BoSSS.Application.ZwoLsTest {
         protected override int[] ComputeNewCellDistribution(int TimeStepNo, double physTime) {
             
             if(DYNAMIC_BALANCE && MPISize == 4) {
-                int J = this.gridData.iLogicalCells.NoOfLocalUpdatedCells;
+                int J = this.GridData.iLogicalCells.NoOfLocalUpdatedCells;
                 int[] Part = new int[J];
 
                 for(int j = 0; j < J; j++) {
-                    double[] X = this.gridData.iLogicalCells.GetCenter(j);
+                    double[] X = this.GridData.iLogicalCells.GetCenter(j);
                     double x = X[0];
                     double y = X[1];
 
@@ -459,16 +459,16 @@ namespace BoSSS.Application.ZwoLsTest {
         /// some helper for manual debugging
         /// </summary>
         private void MatrixTests(MsrMatrix OpMatrix) {
-            int J = this.gridData.iLogicalCells.NoOfLocalUpdatedCells;
-            int E = this.gridData.iLogicalEdges.Count;
-            int[,] e2c = this.gridData.iLogicalEdges.CellIndices;
+            int J = this.GridData.iLogicalCells.NoOfLocalUpdatedCells;
+            int E = this.GridData.iLogicalEdges.Count;
+            int[,] e2c = this.GridData.iLogicalEdges.CellIndices;
 
             MsrMatrix ConMatrix = new MsrMatrix(new Partitioning(J));
             MsrMatrix ConMatrix2 = new MsrMatrix(new Partitioning(J));
-            var map = new UnsetteledCoordinateMapping(new Basis(this.gridData, 0));
+            var map = new UnsetteledCoordinateMapping(new Basis(this.GridData, 0));
             var FConMatrix = new XSpatialOperator.SpeciesFrameMatrix<MsrMatrix>(ConMatrix2, this.LsTrk.Regions, this.LsTrk.GetSpeciesId("B"), map, map);
 
-            int jCell0 = this.gridData.CellPartitioning.i0;
+            int jCell0 = this.GridData.CellPartitioning.i0;
 
 
 
@@ -479,7 +479,7 @@ namespace BoSSS.Application.ZwoLsTest {
 
                 int j0G;
                 if (j0 >= J) {
-                    j0G = (int)(this.gridData.iParallel.GlobalIndicesExternalCells[j0 - J]);
+                    j0G = (int)(this.GridData.iParallel.GlobalIndicesExternalCells[j0 - J]);
                 } else {
                     j0G = j0 + jCell0;
                 }
@@ -487,7 +487,7 @@ namespace BoSSS.Application.ZwoLsTest {
                 int j1G;
                 if (j1 >= 0) {
                     if (j1 >= J) {
-                        j1G = (int)(this.gridData.iParallel.GlobalIndicesExternalCells[j1 - J]);
+                        j1G = (int)(this.GridData.iParallel.GlobalIndicesExternalCells[j1 - J]);
                     } else {
                         j1G = j1 + jCell0;
                     }
@@ -502,7 +502,7 @@ namespace BoSSS.Application.ZwoLsTest {
                     ConMatrix[j0G, j1G] += 1.0;
                     FConMatrix[j0G, j1G] += 1.0;
 
-                    if (this.gridData.CellPartitioning.IsInLocalRange(j1G)) {
+                    if (this.GridData.CellPartitioning.IsInLocalRange(j1G)) {
                         ConMatrix[j1G, j1G] += 1.0;
                         FConMatrix[j1G, j1G] += 1.0;
                         ConMatrix[j1G, j0G] += 1.0;
@@ -513,11 +513,11 @@ namespace BoSSS.Application.ZwoLsTest {
 
 
             for (int jCell = 0; jCell < J; jCell++) {
-                Debug.Assert(jCell + jCell0 == this.gridData.iLogicalCells.GetGlobalID(jCell));
+                Debug.Assert(jCell + jCell0 == this.GridData.iLogicalCells.GetGlobalID(jCell));
             }
 
 
-            if (gridData.MpiSize == 1) {
+            if (GridData.MpiSize == 1) {
                 OpMatrix.SaveToFile("matrix.bin");
                 ConMatrix.SaveToFile("conMtx.bin");
                 ConMatrix2.SaveToFile("conMtx2.bin");

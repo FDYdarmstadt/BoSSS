@@ -83,9 +83,9 @@ namespace CNS {
                     CoordinateMapping mapping = new CoordinateMapping(
                         densityField, m0Field, m1Field, energyField, DrhoDx, DrhoDy, Dm0Dx, Dm0Dy, Dm1Dx, Dm1Dy);
 
-                    dragIntegral = new EdgeIntegral((BoSSS.Foundation.Grid.Classic.GridData) (app.gridData), edgeTag, new ForceFlux(
+                    dragIntegral = new EdgeIntegral((BoSSS.Foundation.Grid.Classic.GridData) (app.GridData), edgeTag, new ForceFlux(
                         c.ReynoldsNumber, prog.SpeciesMap.GetMaterial(double.NaN), 0), mapping);
-                    liftIntegral = new EdgeIntegral((BoSSS.Foundation.Grid.Classic.GridData) (app.gridData), edgeTag, new ForceFlux(
+                    liftIntegral = new EdgeIntegral((BoSSS.Foundation.Grid.Classic.GridData) (app.GridData), edgeTag, new ForceFlux(
                         c.ReynoldsNumber, prog.SpeciesMap.GetMaterial(double.NaN), 1), mapping);
 
                     if (logger == null && app.CurrentSessionInfo.ID != Guid.Empty && app.MPIRank == 0) {

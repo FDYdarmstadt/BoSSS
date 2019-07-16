@@ -173,7 +173,7 @@ namespace CNS {
                 }
 
                 // Query each cell individually so we get local results
-                int J = program.gridData.iLogicalCells.NoOfLocalUpdatedCells;
+                int J = program.GridData.iLogicalCells.NoOfLocalUpdatedCells;
                 for (int i = 0; i < J; i++) {
                     // Use "harmonic sum" of individual step sizes - see ExplicitEuler
                     double localCFL = 1.0 / program.FullOperator.CFLConstraints.Sum(c => 1.0 / (program.Control.CFLFraction * c.GetLocalStepSize(i, 1)));
@@ -196,7 +196,7 @@ namespace CNS {
                 TimeStepConstraint cflConstraint = program.FullOperator.CFLConstraints.OfType<ConvectiveCFLConstraint>().Single();
 
                 // Query each cell individually so we get local results
-                int J = program.gridData.iLogicalCells.NoOfLocalUpdatedCells;
+                int J = program.GridData.iLogicalCells.NoOfLocalUpdatedCells;
                 for (int i = 0; i < J; i++) {
                     double localCFL = program.Control.CFLFraction * cflConstraint.GetLocalStepSize(i, 1);
                     cfl.SetMeanValue(i, localCFL);
@@ -218,7 +218,7 @@ namespace CNS {
                 TimeStepConstraint cflConstraint = program.FullOperator.CFLConstraints.OfType<ArtificialViscosityCFLConstraint>().Single();
 
                 // Query each cell individually so we get local results
-                int J = program.gridData.iLogicalCells.NoOfLocalUpdatedCells;
+                int J = program.GridData.iLogicalCells.NoOfLocalUpdatedCells;
                 for (int i = 0; i < J; i++) {
                     double localCFL = program.Control.CFLFraction * cflConstraint.GetLocalStepSize(i, 1);
                     cfl.SetMeanValue(i, localCFL);
@@ -295,9 +295,9 @@ namespace CNS {
             VariableTypes.Other,
             delegate (DGField rank, CellMask cellMask, IProgram<CNSControl> program) {
                 // Ignore cell mask, we want it everywhere!
-                foreach (Chunk chunk in CellMask.GetFullMask(program.gridData)) {
+                foreach (Chunk chunk in CellMask.GetFullMask(program.GridData)) {
                     foreach (int cell in chunk.Elements) {
-                        rank.SetMeanValue(cell, program.gridData.MpiRank);
+                        rank.SetMeanValue(cell, program.GridData.MpiRank);
                     }
                 }
             });
@@ -346,7 +346,7 @@ namespace CNS {
                 using (var tr = new FuncTrace()) {
                     ConventionalDGField avField = artificialViscosity as ConventionalDGField;
                     int D = cellMask.GridData.SpatialDimension;
-                    CellData cells = ((BoSSS.Foundation.Grid.Classic.GridData)program.gridData).Cells;
+                    CellData cells = ((BoSSS.Foundation.Grid.Classic.GridData)program.GridData).Cells;
 
                     // h = shortest edge (not valid for true cut cells --> volume/surface)
                     var h_min = cells.h_min;
@@ -405,13 +405,13 @@ namespace CNS {
                     if (D < 3) {
                         // Standard version
                         if (avSpecFEMBasis == null || !avField.Basis.Equals(avSpecFEMBasis.ContainingDGBasis)) {
-                            avSpecFEMBasis = new SpecFemBasis((BoSSS.Foundation.Grid.Classic.GridData)program.gridData, 2);
+                            avSpecFEMBasis = new SpecFemBasis((BoSSS.Foundation.Grid.Classic.GridData)program.GridData, 2);
                         }
                         SpecFemField specFemField = new SpecFemField(avSpecFEMBasis);
                         specFemField.ProjectDGFieldMaximum(1.0, avField);
                         avField.Clear();
                         specFemField.AccToDGField(1.0, avField);
-                        avField.Clear(CellMask.GetFullMask(program.gridData).Except(program.SpeciesMap.SubGrid.VolumeMask));
+                        avField.Clear(CellMask.GetFullMask(program.GridData).Except(program.SpeciesMap.SubGrid.VolumeMask));
 
                         // Continuous DG version
                         //Basis continuousDGBasis = new Basis(program.GridData, 2);
@@ -421,14 +421,14 @@ namespace CNS {
                         //continuousDGField.AccToDGField(1.0, avField);
                         //avField.Clear(CellMask.GetFullMask(program.GridData).Except(program.SpeciesMap.SubGrid.VolumeMask));
                     } else {
-                        if (program.gridData.MpiSize > 1) {
+                        if (program.GridData.MpiSize > 1) {
                             throw new NotImplementedException();
                         }
 
 
                         // Version that should finally also work in 3D
                         RefElement refElement = ((BoSSS.Foundation.Grid.Classic.GridCommons)(program.Grid)).RefElements[0];
-                        int N = program.gridData.iLogicalCells.NoOfLocalUpdatedCells;
+                        int N = program.GridData.iLogicalCells.NoOfLocalUpdatedCells;
                         int V = refElement.NoOfVertices;
 
                         // Sample maximum at vertices
@@ -529,7 +529,7 @@ namespace CNS {
             VariableTypes.Other,
             delegate (DGField schlierenField, CellMask cellMask, IProgram<CNSControl> program) {
                 schlierenField.Clear();
-                int D = program.gridData.SpatialDimension;
+                int D = program.GridData.SpatialDimension;
 
                 // Old version by Björn
                 /*

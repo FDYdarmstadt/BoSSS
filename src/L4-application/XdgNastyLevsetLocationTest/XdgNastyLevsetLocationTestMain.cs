@@ -79,8 +79,8 @@ namespace BoSSS.Application.XdgNastyLevsetLocationTest {
 
         LevelSet Phi;
         protected override void CreateFields() {
-            Phi = new LevelSet(new Basis(this.gridData, 2), "LevelSet");
-            base.LsTrk = new LevelSetTracker((GridData) this.gridData, this.momentFittingVariant, 1, new string[] { "A", "B" }, Phi);
+            Phi = new LevelSet(new Basis(this.GridData, 2), "LevelSet");
+            base.LsTrk = new LevelSetTracker((GridData) this.GridData, this.momentFittingVariant, 1, new string[] { "A", "B" }, Phi);
         }
 
 
@@ -150,7 +150,7 @@ namespace BoSSS.Application.XdgNastyLevsetLocationTest {
                         Console.WriteLine("Edge error for species A: " + EdgeAL2err);
                         */
 
-                        var EdgeB = EdgeQuadrature(edgeSchemeB.Compile(this.gridData, this.QUAD_ORDER));
+                        var EdgeB = EdgeQuadrature(edgeSchemeB.Compile(this.GridData, this.QUAD_ORDER));
                         var EdgeBref = EdgeAreaRef("B");
                         var EdgeBErr = EdgeB.CloneAs();
                         EdgeBErr.Acc(-1.0, EdgeBref);
@@ -162,7 +162,7 @@ namespace BoSSS.Application.XdgNastyLevsetLocationTest {
                     }
 
                     if (test.LevelsetTestSupported) {
-                        var Surf = CellQuadrature(surfScheme.Compile(this.gridData, this.QUAD_ORDER));
+                        var Surf = CellQuadrature(surfScheme.Compile(this.GridData, this.QUAD_ORDER));
                         var SurfRef = SurfAreaRef();
                         var surfErr = Surf.CloneAs();
                         surfErr.Acc(-1.0, SurfRef);
@@ -184,7 +184,7 @@ namespace BoSSS.Application.XdgNastyLevsetLocationTest {
                         Console.WriteLine("Volume error for species A: " + volAL2err);
                         */
 
-                        var VolB = CellQuadrature(volSchemeB.Compile(this.gridData, this.QUAD_ORDER));
+                        var VolB = CellQuadrature(volSchemeB.Compile(this.GridData, this.QUAD_ORDER));
                         var VolBref = CellVolumeRef(cutCells, "B");
                         var volBErr = VolB.CloneAs();
                         volBErr.Acc(-1.0, VolBref);
@@ -196,8 +196,8 @@ namespace BoSSS.Application.XdgNastyLevsetLocationTest {
 
 
                     if (test.BoundaryPlusLevelsetTestSupported) {
-                        var LevelSetArea = CellQuadrature(surfScheme.Compile(this.gridData, this.QUAD_ORDER));
-                        var BoundaryB = EdgeQuadrature2CellBoundary(edgeSchemeB.Compile(this.gridData, this.QUAD_ORDER));
+                        var LevelSetArea = CellQuadrature(surfScheme.Compile(this.GridData, this.QUAD_ORDER));
+                        var BoundaryB = EdgeQuadrature2CellBoundary(edgeSchemeB.Compile(this.GridData, this.QUAD_ORDER));
                         var RefAreaB = CellBoundaryPlusLevelsetAreaRef(cutCells, "B");
 
                         var ErrB = RefAreaB.CloneAs();
@@ -225,44 +225,44 @@ namespace BoSSS.Application.XdgNastyLevsetLocationTest {
 
 
         private MultidimensionalArray EdgeAreaRef(string Species) {
-            int E = this.gridData.iLogicalEdges.Count;
+            int E = this.GridData.iLogicalEdges.Count;
             var ret = MultidimensionalArray.Create(E);
 
             for (int iEdge = 0; iEdge < E; iEdge++) {
-                ret[iEdge] = this.test.EdgeArea(iEdge, Species, (GridData) this.gridData);
+                ret[iEdge] = this.test.EdgeArea(iEdge, Species, (GridData) this.GridData);
             }
 
             return ret;
         }
 
         private MultidimensionalArray SurfAreaRef() {
-            int J = this.gridData.iLogicalCells.NoOfLocalUpdatedCells;
+            int J = this.GridData.iLogicalCells.NoOfLocalUpdatedCells;
             var ret = MultidimensionalArray.Create(J);
 
             for (int jCell = 0; jCell < J; jCell++) {
-                ret[jCell] = this.test.LevelsetArea(jCell, (GridData) this.gridData);
+                ret[jCell] = this.test.LevelsetArea(jCell, (GridData) this.GridData);
             }
 
             return ret;
         }
 
         private MultidimensionalArray CellVolumeRef(CellMask cutCells, string Species) {
-            int J = this.gridData.iLogicalCells.NoOfLocalUpdatedCells;
+            int J = this.GridData.iLogicalCells.NoOfLocalUpdatedCells;
             var ret = MultidimensionalArray.Create(J);
 
             for (int jCell = 0; jCell < J; jCell++) {
-                ret[jCell] = this.test.CellVolume(jCell, Species, (GridData) this.gridData);
+                ret[jCell] = this.test.CellVolume(jCell, Species, (GridData) this.GridData);
             }
 
             return ret;
         }
 
         private MultidimensionalArray CellBoundaryPlusLevelsetAreaRef(CellMask cutCells, string Species) {
-            int J = this.gridData.iLogicalCells.NoOfLocalUpdatedCells;
+            int J = this.GridData.iLogicalCells.NoOfLocalUpdatedCells;
             var ret = MultidimensionalArray.Create(J);
 
             for (int jCell = 0; jCell < J; jCell++) {
-                ret[jCell] = this.test.CellBoundaryPlusLevelsetArea(jCell, Species, (GridData) this.gridData);
+                ret[jCell] = this.test.CellBoundaryPlusLevelsetArea(jCell, Species, (GridData) this.GridData);
             }
 
             return ret;
@@ -270,11 +270,11 @@ namespace BoSSS.Application.XdgNastyLevsetLocationTest {
 
 
         private MultidimensionalArray CellQuadrature(ICompositeQuadRule<QuadRule> surfRule) {
-            int J = this.gridData.iLogicalCells.NoOfLocalUpdatedCells;
+            int J = this.GridData.iLogicalCells.NoOfLocalUpdatedCells;
             var ret = MultidimensionalArray.Create(J);
 
             BoSSS.Foundation.Quadrature.CellQuadrature.GetQuadrature(
-                new int[] { 1 }, this.gridData,
+                new int[] { 1 }, this.GridData,
                 surfRule,
                 delegate(int i0, int Length, QuadRule QR, MultidimensionalArray EvalResult) { // Evaluate
                     //Integrand.Evaluate(i0, Length, 0, EvalResult.ExtractSubArrayShallow(-1, -1, 0));
@@ -292,11 +292,11 @@ namespace BoSSS.Application.XdgNastyLevsetLocationTest {
 
 
         private MultidimensionalArray EdgeQuadrature(ICompositeQuadRule<QuadRule> surfRule) {
-            int E = this.gridData.iLogicalEdges.Count;
+            int E = this.GridData.iLogicalEdges.Count;
             var ret = MultidimensionalArray.Create(E);
 
             BoSSS.Foundation.Quadrature.EdgeQuadrature.GetQuadrature(
-                new int[] { 1 }, this.gridData,
+                new int[] { 1 }, this.GridData,
                 surfRule,
                 delegate(int i0, int Length, QuadRule QR, MultidimensionalArray EvalResult) { // Evaluate
                     EvalResult.SetAll(1.0);
@@ -310,12 +310,12 @@ namespace BoSSS.Application.XdgNastyLevsetLocationTest {
         }
 
         private MultidimensionalArray EdgeQuadrature2CellBoundary(ICompositeQuadRule<QuadRule> surfRule) {
-            int J = this.gridData.iLogicalCells.NoOfLocalUpdatedCells;
+            int J = this.GridData.iLogicalCells.NoOfLocalUpdatedCells;
             var ret = MultidimensionalArray.Create(J);
-            var E2C = this.gridData.iLogicalEdges.CellIndices;
+            var E2C = this.GridData.iLogicalEdges.CellIndices;
 
             BoSSS.Foundation.Quadrature.EdgeQuadrature.GetQuadrature(
-                new int[] { 1 }, this.gridData,
+                new int[] { 1 }, this.GridData,
                 surfRule,
                 delegate(int i0, int Length, QuadRule Qr, MultidimensionalArray EvalResult) { // Evaluate
                     EvalResult.SetAll(1.0);
@@ -337,9 +337,9 @@ namespace BoSSS.Application.XdgNastyLevsetLocationTest {
 
 
         void PlotEdgeRule(ICompositeQuadRule<QuadRule> edgeRule) {
-            var E2C = this.gridData.iLogicalEdges.CellIndices;
+            var E2C = this.GridData.iLogicalEdges.CellIndices;
             //var Trafos = this.GridData.Edges.Edge2CellTrafos;
-            var trfIdx = this.gridData.iGeomEdges.Edge2CellTrafoIndex;
+            var trfIdx = this.GridData.iGeomEdges.Edge2CellTrafoIndex;
 
             using (TextWriter tw = new StreamWriter("edges.csv")) {
 
@@ -354,10 +354,10 @@ namespace BoSSS.Application.XdgNastyLevsetLocationTest {
                         int iTrf = trfIdx[iEdge, 0];
 
                         //var NodesCell = Trafos[iTrf].Transform(Nodes);
-                        NodeSet NodesCell = Nodes.GetVolumeNodeSet(this.gridData, iTrf);
+                        NodeSet NodesCell = Nodes.GetVolumeNodeSet(this.GridData, iTrf);
                         var NodesGlob = MultidimensionalArray.Create(NodesCell.Lengths);
 
-                        this.gridData.TransformLocal2Global(NodesCell, NodesGlob, jCell);
+                        this.GridData.TransformLocal2Global(NodesCell, NodesGlob, jCell);
 
                         int K = NodesGlob.GetLength(0);
                         int D = NodesGlob.GetLength(1);

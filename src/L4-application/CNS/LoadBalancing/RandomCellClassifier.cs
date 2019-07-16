@@ -34,7 +34,7 @@ namespace CNS.LoadBalancing {
             // random numbers for all cores
             Random rand = new Random(program.ResLogger.TimeStep + program.MPIRank);
 
-            int[] cellToPerformanceClassMap = new int[program.gridData.iLogicalCells.NoOfLocalUpdatedCells];
+            int[] cellToPerformanceClassMap = new int[program.GridData.iLogicalCells.NoOfLocalUpdatedCells];
             for (int i = 0; i < cellToPerformanceClassMap.Length; i++) {
                 cellToPerformanceClassMap[i] = rand.Next(0, noOfClasses);
             }

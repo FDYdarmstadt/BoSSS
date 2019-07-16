@@ -96,9 +96,9 @@ namespace BoSSS.Application.XdgTimesteppingTest {
             if(Control.CutCellQuadratureType != base.LsTrk.CutCellQuadratureType)
                 throw new ApplicationException();
 
-            CutMarker = new SinglePhaseField(new Basis(this.gridData, 0), "CutMarker");
-            NearMarker = new SinglePhaseField(new Basis(this.gridData, 0), "NearMarker");
-            DOFMarker = new SinglePhaseField(new Basis(this.gridData, 0), "DOFMarker");
+            CutMarker = new SinglePhaseField(new Basis(this.GridData, 0), "CutMarker");
+            NearMarker = new SinglePhaseField(new Basis(this.GridData, 0), "NearMarker");
+            DOFMarker = new SinglePhaseField(new Basis(this.GridData, 0), "DOFMarker");
             base.RegisterField(CutMarker, IOListOption.Always);
             base.RegisterField(NearMarker, IOListOption.Always);
             base.RegisterField(DOFMarker, IOListOption.Always);
@@ -116,7 +116,7 @@ namespace BoSSS.Application.XdgTimesteppingTest {
             foreach (int j in this.LsTrk.Regions.GetNearFieldMask(1).ItemEnum) {
                 NearMarker.SetMeanValue(j, 1);
             }
-            int J = this.gridData.iLogicalCells.NoOfLocalUpdatedCells;
+            int J = this.GridData.iLogicalCells.NoOfLocalUpdatedCells;
             for (int j = 0; j < J; j++) {
                 DOFMarker.SetMeanValue(j, this.u.Basis.GetLength(j));
             }

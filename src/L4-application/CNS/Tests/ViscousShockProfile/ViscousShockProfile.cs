@@ -35,10 +35,10 @@ namespace CNS.Tests.ViscousShockProfile {
             string viscosityLaw = Control.ViscosityLaw.ToString();
 
             if (true) {
-                DGField mpiRank = new SinglePhaseField(new Basis(gridData, 0), "rank");
+                DGField mpiRank = new SinglePhaseField(new Basis(GridData, 0), "rank");
                 m_IOFields.Add(mpiRank);
 
-                int J = gridData.iLogicalCells.NoOfLocalUpdatedCells;
+                int J = GridData.iLogicalCells.NoOfLocalUpdatedCells;
                 for (int j = 0; j < J; j++) {
                     mpiRank.SetMeanValue(j, DatabaseDriver.MyRank);
                 }
@@ -48,7 +48,7 @@ namespace CNS.Tests.ViscousShockProfile {
             int p = Control.MomentumDegree;
             CellQuadratureScheme scheme = new CellQuadratureScheme(true);
             int order = WorkingSet.Momentum[0].Basis.Degree * 2 + 2;
-            int noOfNodesPerCell = scheme.Compile(gridData, order).First().Rule.NoOfNodes;
+            int noOfNodesPerCell = scheme.Compile(GridData, order).First().Rule.NoOfNodes;
             int offset = Grid.CellPartitioning.i0 * noOfNodesPerCell;
             long K = Grid.NumberOfCells;
 
@@ -84,7 +84,7 @@ namespace CNS.Tests.ViscousShockProfile {
             p = Control.EnergyDegree;
             scheme = new CellQuadratureScheme(true);
             order = WorkingSet.Energy.Basis.Degree * 2 + 2;
-            noOfNodesPerCell = scheme.Compile(gridData, order).First().Rule.NoOfNodes;
+            noOfNodesPerCell = scheme.Compile(GridData, order).First().Rule.NoOfNodes;
             offset = Grid.CellPartitioning.i0 * noOfNodesPerCell;
 
             func = new ScalarFunction(
@@ -109,7 +109,7 @@ namespace CNS.Tests.ViscousShockProfile {
             p = Control.DensityDegree;
             scheme = new CellQuadratureScheme(true);
             order = WorkingSet.Density.Basis.Degree * 2 + 2;
-            noOfNodesPerCell = scheme.Compile(gridData, order).First().Rule.NoOfNodes;
+            noOfNodesPerCell = scheme.Compile(GridData, order).First().Rule.NoOfNodes;
             offset = Grid.CellPartitioning.i0 * noOfNodesPerCell;
 
             func = new ScalarFunction(
@@ -130,7 +130,7 @@ namespace CNS.Tests.ViscousShockProfile {
                 );
 
             WorkingSet.Density.ProjectField(func);
-            WorkingSet.UpdateDerivedVariables(this, CellMask.GetFullMask(gridData));
+            WorkingSet.UpdateDerivedVariables(this, CellMask.GetFullMask(GridData));
 
             //string guidString = "00000000-0000-0000-0000-000000000000";
 

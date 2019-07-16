@@ -262,7 +262,7 @@ namespace BoSSS.Application.DerivativeTest {
         /// </summary>
         protected override void CreateFields() {
             int GridDeg;
-            int D = this.gridData.SpatialDimension;
+            int D = this.GridData.SpatialDimension;
 
             if (this.Grid is GridCommons) {
                 GridCommons _Grid = (GridCommons)this.Grid;
@@ -278,7 +278,7 @@ namespace BoSSS.Application.DerivativeTest {
                 GridDeg = 1; // aggregation grid
             }
 
-            Basis b = new Basis(this.gridData, 2 + GridDeg);
+            Basis b = new Basis(this.GridData, 2 + GridDeg);
 
 
             Console.WriteLine("Grid degree is " + GridDeg + " => Using DG order: " + b.Degree);
@@ -610,7 +610,7 @@ namespace BoSSS.Application.DerivativeTest {
         /// </summary>
         protected override void SetInitial() {
 
-            if (this.gridData.SpatialDimension == 3) {
+            if (this.GridData.SpatialDimension == 3) {
 
                 f1.ProjectField((x, y, z) => (3 * x + z));
                 f1Gradient_Analytical[0].ProjectField((x, y, z) => 3.0);
@@ -625,7 +625,7 @@ namespace BoSSS.Application.DerivativeTest {
                 Laplace_f1_Analytical.ProjectField((x, y, z) => 0.0);
                 Laplace_f2_Analytical.ProjectField((x, y, z) => 0.0);
 
-            } else if (this.gridData.SpatialDimension == 2) {
+            } else if (this.GridData.SpatialDimension == 2) {
                 if (AltRefSol == false) {
                     f1.ProjectField((x, y) => (3 * x));
                     f1Gradient_Analytical[0].ProjectField((x, y) => 3);
@@ -642,7 +642,7 @@ namespace BoSSS.Application.DerivativeTest {
                     f1Gradient_Analytical[0].ProjectField((x, y) => (-4 * Math.Cos(4 * Math.Atan(y / x)) * y / (x * x) / (1 + (y * y) / (x * x))));
                     f1Gradient_Analytical[1].ProjectField((x, y) => (4 * Math.Cos(4 * Math.Atan(y / x)) / x / (1 + (y * y) / (x * x))));
                 }
-            } else if (this.gridData.SpatialDimension == 1) {
+            } else if (this.GridData.SpatialDimension == 1) {
                 f1.ProjectField((x) => (3 * x));
                 f1Gradient_Analytical[0].ProjectField((_1D)((x) => 3));
 
@@ -663,7 +663,7 @@ namespace BoSSS.Application.DerivativeTest {
             Tecplot.PlotFields(
                 ArrayTools.Cat<DGField>(
                     f1Gradient_Analytical, f1Gradient_Numerical, f1, 
-                    gridData.BoundaryMark(), Laplace_f1_Numerical, Laplace_f2_Numerical, f2),
+                    GridData.BoundaryMark(), Laplace_f1_Numerical, Laplace_f2_Numerical, f2),
                 "derivatives", 0.0, superSampling);
         }
 
@@ -690,8 +690,8 @@ namespace BoSSS.Application.DerivativeTest {
             base.EndTime = 0.0;
             base.NoOfTimesteps = 0;
 
-            int D = this.gridData.SpatialDimension;
-            int J = this.gridData.iLogicalCells.NoOfLocalUpdatedCells;
+            int D = this.GridData.SpatialDimension;
+            int J = this.GridData.iLogicalCells.NoOfLocalUpdatedCells;
 
             Console.WriteLine("DerivativeTest.exe, test case #" + GRID_CASE + " ******************************");
 
@@ -704,8 +704,8 @@ namespace BoSSS.Application.DerivativeTest {
             // sealing test
             // =================
 
-            if(this.gridData is Foundation.Grid.Classic.GridData)
-                TestSealing(this.gridData); 
+            if(this.GridData is Foundation.Grid.Classic.GridData)
+                TestSealing(this.GridData); 
 
             // cell volume and edge area check, if possible
             // ===============================================
@@ -717,7 +717,7 @@ namespace BoSSS.Application.DerivativeTest {
 
 
                 for (int j = 0; j < J; j++) {
-                    err += Math.Abs(this.gridData.iLogicalCells.GetCellVolume(j) - this.CellVolume);
+                    err += Math.Abs(this.GridData.iLogicalCells.GetCellVolume(j) - this.CellVolume);
                 }
 
                 bool passed = (err < Treshold);
@@ -731,10 +731,10 @@ namespace BoSSS.Application.DerivativeTest {
                 double err = 0;
                 double Treshold = 1.0e-10;
 
-                int E = this.gridData.iLogicalEdges.Count;
+                int E = this.GridData.iLogicalEdges.Count;
 
                 for (int e = 0; e < E; e++) {
-                    err += Math.Abs(this.gridData.iLogicalEdges.GetEdgeArea(e) - this.EdgeArea);
+                    err += Math.Abs(this.GridData.iLogicalEdges.GetEdgeArea(e) - this.EdgeArea);
                 }
 
                 bool passed = (err < Treshold);
@@ -750,16 +750,16 @@ namespace BoSSS.Application.DerivativeTest {
             {
                 Basis Bs = this.f1.Basis;
                 int N = Bs.Length;
-                int degQuad = this.gridData.iLogicalCells.GetInterpolationDegree(0) * D + Bs.Degree + 3;
-                int[] jG2jL = this.gridData.iGeomCells.GeomCell2LogicalCell;
+                int degQuad = this.GridData.iLogicalCells.GetInterpolationDegree(0) * D + Bs.Degree + 3;
+                int[] jG2jL = this.GridData.iGeomCells.GeomCell2LogicalCell;
 
 
                 // mass matrix: should be identity!
                 MultidimensionalArray MassMatrix = MultidimensionalArray.Create(J, N, N);
 
                 // compute mass matrix by quadrature.
-                var quad = CellQuadrature.GetQuadrature(new int[] { N, N }, base.gridData,
-                    (new CellQuadratureScheme()).Compile(base.gridData, degQuad),
+                var quad = CellQuadrature.GetQuadrature(new int[] { N, N }, base.GridData,
+                    (new CellQuadratureScheme()).Compile(base.GridData, degQuad),
                     delegate (int i0, int Length, QuadRule QR, MultidimensionalArray EvalResult) {
                         NodeSet QuadNodes = QR.Nodes;
                         MultidimensionalArray BasisVals = Bs.CellEval(QuadNodes, i0, Length);
@@ -802,7 +802,7 @@ namespace BoSSS.Application.DerivativeTest {
             // Broken Derivatives
             // =================
 
-            double totalVolume = (new SubGrid(CellMask.GetFullMask(this.gridData))).Volume;
+            double totalVolume = (new SubGrid(CellMask.GetFullMask(this.GridData))).Volume;
 
             for (int d = 0; d < D; d++) {
 

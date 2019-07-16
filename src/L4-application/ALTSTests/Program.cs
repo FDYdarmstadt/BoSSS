@@ -98,10 +98,10 @@ namespace ALTSTests {
         protected override void CreateFields() {
             //Debugger.Launch();
 
-            Basis cBasis = new Basis(this.gridData, dgDegree);
+            Basis cBasis = new Basis(this.GridData, dgDegree);
             c = new SinglePhaseField(cBasis, "c");
-            Velocity = new VectorField<SinglePhaseField>(this.gridData.SpatialDimension, new Basis(this.gridData, dgDegree), "Velocity", SinglePhaseField.Factory);
-            viscosity = new SinglePhaseField(new Basis(gridData, 2), "viscosity");
+            Velocity = new VectorField<SinglePhaseField>(this.GridData.SpatialDimension, new Basis(this.GridData, dgDegree), "Velocity", SinglePhaseField.Factory);
+            viscosity = new SinglePhaseField(new Basis(GridData, 2), "viscosity");
 
             m_IOFields.Add(c);
         }
@@ -142,7 +142,7 @@ namespace ALTSTests {
             metricTwo[2] = 0.25;
             metricTwo[3] = 1;
 
-            CustomTimestepConstraint = new SurrogateConstraint(gridData, dtFixed, dtFixed, double.MaxValue, endTime, metricOne, metricTwo);
+            CustomTimestepConstraint = new SurrogateConstraint(GridData, dtFixed, dtFixed, double.MaxValue, endTime, metricOne, metricTwo);
 
             timeStepper = new AdamsBashforthLTS(
                 diffOp,
@@ -195,7 +195,7 @@ namespace ALTSTests {
         }
 
         protected override void PlotCurrentState(double physTime, TimestepNumber timestepNo, int superSampling = 0) {
-            Tecplot plt1 = new Tecplot(gridData, true, false, (uint)superSampling);
+            Tecplot plt1 = new Tecplot(GridData, true, false, (uint)superSampling);
             plt1.PlotFields("ALTSTests_" + timestepNo, physTime, m_IOFields);
         }
 

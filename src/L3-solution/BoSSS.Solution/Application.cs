@@ -858,7 +858,7 @@ namespace BoSSS.Solution {
         /// <list type="number">
         ///     <item>Opening a database <see cref="GetDatabase"/></item>
         ///     <item>Loading a grid via <see cref="CreateOrLoadGrid"/></item>
-        ///     <item>Initializing <see cref="gridData"/></item>
+        ///     <item>Initializing <see cref="GridData"/></item>
         ///     <item>Creating fields via <see cref="CreateFields"/></item>
         ///     <item>
         ///     Loading the query handler via <see cref="QueryHandlerFactory"/>
@@ -1003,7 +1003,7 @@ namespace BoSSS.Solution {
 
 
                     if (this.Control == null || this.Control.LinearSolver.NoOfMultigridLevels > 0) {
-                        this.MultigridSequence = CoarseningAlgorithms.CreateSequence(this.gridData, MaxDepth: (this.Control != null ? this.Control.LinearSolver.NoOfMultigridLevels : 1));
+                        this.MultigridSequence = CoarseningAlgorithms.CreateSequence(this.GridData, MaxDepth: (this.Control != null ? this.Control.LinearSolver.NoOfMultigridLevels : 1));
                     } else {
                         this.MultigridSequence = new AggregationGridData[0];
                     }
@@ -1018,9 +1018,9 @@ namespace BoSSS.Solution {
                     try //ToDo
                     { 
                         if (!this.CurrentSessionInfo.KeysAndQueries.ContainsKey("Grid:hMax"))
-                            this.CurrentSessionInfo.KeysAndQueries.Add("Grid:hMax", ((GridData)gridData).Cells.h_maxGlobal);
+                            this.CurrentSessionInfo.KeysAndQueries.Add("Grid:hMax", ((GridData)GridData).Cells.h_maxGlobal);
                         if (!this.CurrentSessionInfo.KeysAndQueries.ContainsKey("Grid:hMin"))
-                            this.CurrentSessionInfo.KeysAndQueries.Add("Grid:hMin", ((GridData)gridData).Cells.h_minGlobal);
+                            this.CurrentSessionInfo.KeysAndQueries.Add("Grid:hMin", ((GridData)GridData).Cells.h_minGlobal);
                     }
                     catch (InvalidCastException e)
                     {
@@ -1033,14 +1033,14 @@ namespace BoSSS.Solution {
 
                 // Make sure everything that is loaded from disk uses this grid
                 // data object (if it corresponds to the same grid)
-                m_Database.Controller.AddGridInitializationContext(gridData);
+                m_Database.Controller.AddGridInitializationContext(GridData);
 
                 // create fields
                 //=============
                 csMPI.Raw.Barrier(csMPI.Raw._COMM.WORLD);
                 if (this.Control != null) {
                     InitFromAttributes.CreateFieldsAuto(
-                        this, gridData, this.Control.FieldOptions, this.Control.CutCellQuadratureType, this.m_IOFields, this.m_RegisteredFields);
+                        this, GridData, this.Control.FieldOptions, this.Control.CutCellQuadratureType, this.m_IOFields, this.m_RegisteredFields);
                 }
                 CreateFields(); // full user control                
 
@@ -1154,7 +1154,7 @@ namespace BoSSS.Solution {
         /// <summary>
         /// Extended grid information.
         /// </summary>
-        public IGridData gridData {
+        public IGridData GridData {
             get {
                 return Grid.iGridData;
             }
@@ -1162,7 +1162,7 @@ namespace BoSSS.Solution {
 
         /// <summary>
         /// Multigrid levels, sorted from fine to coarse, i.e. the 0-th entry contains the finest grid.
-        /// The number of levels is controlled by <see cref="Control.AppControl.NoOfMultigridLevels"/>.
+        /// The number of levels is controlled by <see cref="Control.LinearSolverConfig.NoOfMultigridLevels"/>.
         /// </summary>
         public AggregationGridData[] MultigridSequence {
             get;
@@ -1430,7 +1430,7 @@ namespace BoSSS.Solution {
 
                 time = tsi_toLoad.PhysicalTime;
 
-                DatabaseDriver.LoadFieldData(tsi_toLoad, ((GridData)(this.gridData)), this.IOFields);
+                DatabaseDriver.LoadFieldData(tsi_toLoad, ((GridData)(this.GridData)), this.IOFields);
                 return tsi_toLoad.TimeStepNumber;
             }
         }
@@ -1860,7 +1860,7 @@ namespace BoSSS.Solution {
                         // nothing to do
                         return;
 
-                    int JupOld = this.gridData.iLogicalCells.NoOfLocalUpdatedCells;
+                    int JupOld = this.GridData.iLogicalCells.NoOfLocalUpdatedCells;
                     int NoOfRedistCells = CheckPartition(NewPartition, JupOld);
 
                     if (NoOfRedistCells <= 0) {
@@ -1873,7 +1873,7 @@ namespace BoSSS.Solution {
 
                     // backup old data
                     // ===============
-                    GridData oldGridData = ((GridData)(this.gridData));
+                    GridData oldGridData = ((GridData)(this.GridData));
                     Permutation tau;
                     GridUpdateDataVault_LoadBal loadbal = new GridUpdateDataVault_LoadBal(oldGridData, this.LsTrk);
                     BackupData(oldGridData, this.LsTrk, loadbal, out tau);
@@ -1892,7 +1892,7 @@ namespace BoSSS.Solution {
                         }
 
                         if (this.Control == null || this.Control.LinearSolver.NoOfMultigridLevels > 0)
-                            this.MultigridSequence = CoarseningAlgorithms.CreateSequence(this.gridData, MaxDepth: (this.Control != null ? this.Control.LinearSolver.NoOfMultigridLevels : 1));
+                            this.MultigridSequence = CoarseningAlgorithms.CreateSequence(this.GridData, MaxDepth: (this.Control != null ? this.Control.LinearSolver.NoOfMultigridLevels : 1));
                         else
                             this.MultigridSequence = new AggregationGridData[0];
 
@@ -1941,7 +1941,7 @@ namespace BoSSS.Solution {
                     // re-create fields
                     if (this.Control != null) {
                         InitFromAttributes.CreateFieldsAuto(
-                            this, gridData, this.Control.FieldOptions, this.Control.CutCellQuadratureType, this.m_IOFields, this.m_RegisteredFields);
+                            this, GridData, this.Control.FieldOptions, this.Control.CutCellQuadratureType, this.m_IOFields, this.m_RegisteredFields);
                     }
                     CreateFields(); // full user control   
                     PostRestart(physTime, TimeStepNo);
@@ -1986,7 +1986,7 @@ namespace BoSSS.Solution {
                         // backup old data
                         // ===============
 
-                        GridData oldGridData = (GridData)this.gridData;
+                        GridData oldGridData = (GridData)this.GridData;
                         GridCommons oldGrid = oldGridData.Grid;
                         Guid oldGridId = oldGrid.ID;
                         Permutation tau;
@@ -2049,7 +2049,7 @@ namespace BoSSS.Solution {
                             oldGridData = null;
 
                             if(this.Control == null || this.Control.LinearSolver.NoOfMultigridLevels > 0)
-                                this.MultigridSequence = CoarseningAlgorithms.CreateSequence(this.gridData,
+                                this.MultigridSequence = CoarseningAlgorithms.CreateSequence(this.GridData,
                                     MaxDepth: (this.Control != null ? this.Control.LinearSolver.NoOfMultigridLevels : 1));
                             else
                                 this.MultigridSequence = new AggregationGridData[0];
@@ -2081,7 +2081,7 @@ namespace BoSSS.Solution {
                         // re-create fields
                         if (this.Control != null) {
                             InitFromAttributes.CreateFieldsAuto(
-                                this, gridData, this.Control.FieldOptions, this.Control.CutCellQuadratureType, this.m_IOFields, this.m_RegisteredFields);
+                                this, GridData, this.Control.FieldOptions, this.Control.CutCellQuadratureType, this.m_IOFields, this.m_RegisteredFields);
                         }
                         CreateFields(); // full user control   
                         PostRestart(physTime, TimeStepNo);
@@ -2198,7 +2198,7 @@ namespace BoSSS.Solution {
         /// <summary>
         /// Additional backup (e.g. internal states of time integrators before grid redistribution)
         /// during dynamic load balancing.
-        /// May also be used to invalidate internal states related to the old <see cref="gridData"/> or <see cref="LsTrk"/> objects.
+        /// May also be used to invalidate internal states related to the old <see cref="GridData"/> or <see cref="LsTrk"/> objects.
         /// </summary>
         public virtual void DataBackupBeforeBalancing(GridUpdateDataVaultBase L) {
 
@@ -2436,9 +2436,9 @@ namespace BoSSS.Solution {
                         CorrectlyTerminated = true;
                         nlog.LogValue("pstudy_case_successful", true);
                         nlog.LogValue("GrdRes:NumberOfCells", app.Grid.NumberOfCells);
-                        if (app.gridData is GridData) {
-                            nlog.LogValue("GrdRes:h_min", ((GridData)(app.gridData)).Cells.h_minGlobal);
-                            nlog.LogValue("GrdRes:h_max", ((GridData)(app.gridData)).Cells.h_maxGlobal);
+                        if (app.GridData is GridData) {
+                            nlog.LogValue("GrdRes:h_min", ((GridData)(app.GridData)).Cells.h_minGlobal);
+                            nlog.LogValue("GrdRes:h_max", ((GridData)(app.GridData)).Cells.h_maxGlobal);
                         } else {
                             Console.WriteLine("Warning: unable to obtain grid resolution");
                         }
@@ -2680,7 +2680,7 @@ namespace BoSSS.Solution {
         /// </summary>
         protected virtual void LoadField(ITimestepInfo tsi, string fieldName, string newFieldName = null) {
             using (new ilPSP.Tracing.FuncTrace()) {
-                DGField field = DatabaseDriver.LoadFields(tsi, (GridData)gridData, new[] { fieldName }).Single();
+                DGField field = DatabaseDriver.LoadFields(tsi, (GridData)GridData, new[] { fieldName }).Single();
                 field.Identification = newFieldName ?? fieldName;
                 m_IOFields.Add(field);
             }

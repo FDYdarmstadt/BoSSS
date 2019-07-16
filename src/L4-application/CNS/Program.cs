@@ -171,12 +171,12 @@ namespace CNS {
         /// </remarks>
         protected override void CreateFields() {
             using (var ht = new FuncTrace()) {
-                WorkingSet = Control.DomainType.CreateWorkingSet(gridData, Control);
-                SpeciesMap = Control.DomainType.CreateSpeciesMap(WorkingSet, Control, gridData);
+                WorkingSet = Control.DomainType.CreateWorkingSet(GridData, Control);
+                SpeciesMap = Control.DomainType.CreateSpeciesMap(WorkingSet, Control, GridData);
 
                 CompressibleBoundaryCondMap map = GetBoundaryConditionMap();
                 operatorFactory = Control.DomainType.GetOperatorFactory(
-                    Control, gridData, map, WorkingSet, SpeciesMap);
+                    Control, GridData, map, WorkingSet, SpeciesMap);
 
                 m_IOFields.AddRange(WorkingSet.AllFields);
                 m_RegisteredFields.AddRange(WorkingSet.AllFields);
@@ -364,9 +364,9 @@ namespace CNS {
             using (var ht = new FuncTrace()) {
                 if (plotDriver == null) {
                     if (CompressibleEnvironment.NumberOfDimensions == 1) {
-                        plotDriver = new CurveExportDriver(gridData, true, (uint)superSampling);
+                        plotDriver = new CurveExportDriver(GridData, true, (uint)superSampling);
                     } else {
-                        plotDriver = new Tecplot(gridData, true, false, (uint)superSampling);
+                        plotDriver = new Tecplot(GridData, true, false, (uint)superSampling);
                     }
                 }
 
@@ -465,7 +465,7 @@ namespace CNS {
         /// </summary>
         /// <returns></returns>
         protected virtual CompressibleBoundaryCondMap GetBoundaryConditionMap() {
-            return new CompressibleBoundaryCondMap(GridData, Control, Control.GetMaterial());
+            return new CompressibleBoundaryCondMap( this.GridData, Control, Control.GetMaterial());
         }
 
         /// <summary>

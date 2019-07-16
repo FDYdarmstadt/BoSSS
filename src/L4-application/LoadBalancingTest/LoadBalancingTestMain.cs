@@ -61,17 +61,17 @@ namespace BoSSS.Application.LoadBalancingTest {
         LevelSet LevSet;
 
         protected override void CreateFields() {
-            LevSet = new LevelSet(new Basis(this.gridData, 2), "LevelSet");
-            base.LsTrk = new LevelSetTracker((GridData)this.gridData, XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes, 1, new string[] { "A", "B" }, LevSet);
+            LevSet = new LevelSet(new Basis(this.GridData, 2), "LevelSet");
+            base.LsTrk = new LevelSetTracker((GridData)this.GridData, XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes, 1, new string[] { "A", "B" }, LevSet);
 
             var xBasis = new XDGBasis(base.LsTrk, DEGREE);
             u = new XDGField(xBasis, "u");
             uResidual = new XDGField(xBasis, "Res");
             uEx = new XDGField(xBasis, "uEx");
 
-            Amarker = new SinglePhaseField(new Basis(this.gridData, 0), "Amarker");
-            Bmarker = new SinglePhaseField(new Basis(this.gridData, 0), "Bmarker");
-            MPICellRank = new SinglePhaseField(new Basis(this.gridData, 0), "MPIRank");
+            Amarker = new SinglePhaseField(new Basis(this.GridData, 0), "Amarker");
+            Bmarker = new SinglePhaseField(new Basis(this.GridData, 0), "Bmarker");
+            MPICellRank = new SinglePhaseField(new Basis(this.GridData, 0), "MPIRank");
             base.m_RegisteredFields.Add(LevSet);
             base.m_RegisteredFields.Add(u);
             base.m_RegisteredFields.Add(uEx);
@@ -190,7 +190,7 @@ namespace BoSSS.Application.LoadBalancingTest {
                     this.Control.NonLinearSolver,
                     this.Control.LinearSolver);
             } else {
-                Debug.Assert(object.ReferenceEquals(this.MultigridSequence[0].ParentGrid, this.gridData));
+                Debug.Assert(object.ReferenceEquals(this.MultigridSequence[0].ParentGrid, this.GridData));
                 TimeIntegration.DataRestoreAfterBalancing(L, new DGField[] { u }, new DGField[] { uResidual }, base.LsTrk, this.MultigridSequence);
             }
         }
@@ -344,7 +344,7 @@ namespace BoSSS.Application.LoadBalancingTest {
 
             //if(MPIRank == 0)
             //    Debugger.Launch();
-            int J = this.gridData.iLogicalCells.NoOfLocalUpdatedCells;
+            int J = this.GridData.iLogicalCells.NoOfLocalUpdatedCells;
             int[] NewPart;
             
             int[] PerformanceClasses = new int[J];

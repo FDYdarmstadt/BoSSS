@@ -108,10 +108,10 @@ namespace BoSSS.Application.ScalarTransport {
         /// creates the field <see cref="u"/>;
         /// </summary>
         protected override void CreateFields() {
-            u = new SinglePhaseField(new Basis(this.gridData, 2), "u");
-            OpValue = new SinglePhaseField(new Basis(this.gridData, 2), "operator");
-            mpi_rank = new SinglePhaseField(new Basis(this.gridData, 0), "MPI_rank");
-            Velocity = new VectorField<SinglePhaseField>(this.gridData.SpatialDimension, new Basis(this.gridData, 2), "Velocity", SinglePhaseField.Factory);
+            u = new SinglePhaseField(new Basis(this.GridData, 2), "u");
+            OpValue = new SinglePhaseField(new Basis(this.GridData, 2), "operator");
+            mpi_rank = new SinglePhaseField(new Basis(this.GridData, 0), "MPI_rank");
+            Velocity = new VectorField<SinglePhaseField>(this.GridData.SpatialDimension, new Basis(this.GridData, 2), "Velocity", SinglePhaseField.Factory);
 
             m_IOFields.Add(u);
 
@@ -134,12 +134,12 @@ namespace BoSSS.Application.ScalarTransport {
         /// </summary>
         protected override void CreateEquationsAndSolvers(GridUpdateDataVaultBase L) {
             diffOp = new SpatialOperator(new string[] { "u" },
-                Solution.NSECommon.VariableNames.VelocityVector(this.gridData.SpatialDimension),
+                Solution.NSECommon.VariableNames.VelocityVector(this.GridData.SpatialDimension),
                 new string[] { "codom1" },
                 QuadOrderFunc.Linear());
 
 
-            switch (this.gridData.SpatialDimension) {
+            switch (this.GridData.SpatialDimension) {
                 case 2:
                     diffOp.EquationComponents["codom1"].Add(new ScalarTransportFlux());
                     break;
@@ -168,7 +168,7 @@ namespace BoSSS.Application.ScalarTransport {
             double[] dummy = new double[this.u.CoordinateVector.Count];
 
             var eval = diffOp.GetEvaluatorEx(new DGField[] { this.u }, this.Velocity.ToArray(), this.u.Mapping,
-                edgeQrCtx:new EdgeQuadratureScheme(false, EdgeMask.GetEmptyMask(this.gridData)),
+                edgeQrCtx:new EdgeQuadratureScheme(false, EdgeMask.GetEmptyMask(this.GridData)),
                 volQrCtx:new CellQuadratureScheme(true,null));
 
             Stopwatch stw = new Stopwatch();
@@ -189,14 +189,14 @@ namespace BoSSS.Application.ScalarTransport {
                  stw.Stop();
                  
                 double runTime = stw.Elapsed.TotalSeconds;
-                Console.WriteLine("{0}\t{2}\t{1}", bulkSize, runTime.ToStringDot("0.####E-00"),this.gridData.iGeomCells.Count/bulkSize);
+                Console.WriteLine("{0}\t{2}\t{1}", bulkSize, runTime.ToStringDot("0.####E-00"),this.GridData.iGeomCells.Count/bulkSize);
             }
         }
 
 
         public void SimplifiedPerformance() {
-            int J = this.gridData.iGeomCells.Count;
-            var NodeSet = this.gridData.iGeomCells.RefElements[0].GetQuadratureRule(12).Nodes;
+            int J = this.GridData.iGeomCells.Count;
+            var NodeSet = this.GridData.iGeomCells.RefElements[0].GetQuadratureRule(12).Nodes;
 
             int[] ChunkSize = new[] { J / 2, J };
             if (J % 2 != 0)
@@ -218,7 +218,7 @@ namespace BoSSS.Application.ScalarTransport {
                     stw.Start();
                     for (int j = 0; j < J; j += sz) {
                         //var invJac = this.GridData.InverseJacobian.GetValue_Cell(NodeSet, j, sz);
-                        var detJac = this.gridData.JacobianDeterminat.GetValue_Cell(NodeSet, j, sz);
+                        var detJac = this.GridData.JacobianDeterminat.GetValue_Cell(NodeSet, j, sz);
 
                         //dummyRes += invJac.Storage.L2NormPow2();
                         dummyRes += detJac.Storage.L2NormPow2();
@@ -239,7 +239,7 @@ namespace BoSSS.Application.ScalarTransport {
 
         protected override int[] ComputeNewCellDistribution(int TimeStepNo, double physTime) {
             if(this.MPISize == 2) {
-                int J = this.gridData.iLogicalCells.NoOfLocalUpdatedCells;
+                int J = this.GridData.iLogicalCells.NoOfLocalUpdatedCells;
                 int[] part = new int[J];
 
                 int R0Cells = 0;
@@ -288,8 +288,8 @@ namespace BoSSS.Application.ScalarTransport {
 
 
                 double dtCFL;
-                if(this.gridData is GridData) {
-                    dtCFL = this.gridData.ComputeCFLTime(this.Velocity, 1.0e10);
+                if(this.GridData is GridData) {
+                    dtCFL = this.GridData.ComputeCFLTime(this.Velocity, 1.0e10);
                 } else {
                     Console.WriteLine("Nix CFL");
                     dtCFL = 1e-3;
@@ -311,8 +311,8 @@ namespace BoSSS.Application.ScalarTransport {
                 Timestepper.Perform(dt);
 
                 // set mpi_rank
-                int J = this.gridData.iLogicalCells.NoOfLocalUpdatedCells;
-                double rank = gridData.MpiRank;
+                int J = this.GridData.iLogicalCells.NoOfLocalUpdatedCells;
+                double rank = GridData.MpiRank;
                 for (int j = 0; j < J; j++) {
                     mpi_rank.SetMeanValue(j, rank);
                 }
@@ -331,7 +331,7 @@ namespace BoSSS.Application.ScalarTransport {
         /// performs Tecplot output of field <see cref="u"/>
         /// </summary>
         protected override void PlotCurrentState(double phystime, TimestepNumber timestepNo, int superSampling) {
-            Tecplot plt1 = new Tecplot(gridData, true, false, (uint) superSampling);
+            Tecplot plt1 = new Tecplot(GridData, true, false, (uint) superSampling);
             plt1.PlotFields("transport." + timestepNo, phystime, u, mpi_rank, OpValue);
         }
 
@@ -339,7 +339,7 @@ namespace BoSSS.Application.ScalarTransport {
         /// sets some initial value for field <see cref="u"/>;
         /// </summary>
         protected override void SetInitial() {
-           switch (gridData.SpatialDimension) {
+           switch (GridData.SpatialDimension) {
                 case 2:
 
                 
@@ -373,8 +373,8 @@ namespace BoSSS.Application.ScalarTransport {
 
 
 
-            double rank = gridData.MpiRank;
-            int J = gridData.iLogicalCells.NoOfLocalUpdatedCells;
+            double rank = GridData.MpiRank;
+            int J = GridData.iLogicalCells.NoOfLocalUpdatedCells;
             for (int j = 0; j < J; j++) {
                 mpi_rank.SetMeanValue(j, rank);
             }

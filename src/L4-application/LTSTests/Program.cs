@@ -82,7 +82,7 @@ namespace LTSTests {
         }
 
         protected override void CreateFields() {
-            Basis uBasis = new Basis(this.gridData, pol_order);
+            Basis uBasis = new Basis(this.GridData, pol_order);
             u = new SinglePhaseField(uBasis, "u");
             m_IOFields.Add(u);
         }
@@ -107,7 +107,7 @@ namespace LTSTests {
             diffOp.EquationComponents["codom1"].Add(new ScalarTransportFlux());
             diffOp.Commit();
 
-            CustomTimestepConstraint = new SurrogateConstraint(gridData, dt_input, dt_input, double.MaxValue, endTime);
+            CustomTimestepConstraint = new SurrogateConstraint(GridData, dt_input, dt_input, double.MaxValue, endTime);
 
             if (LTS) {
                 AdamsBashforthLTS ltsTimeStepper = new AdamsBashforthLTS(

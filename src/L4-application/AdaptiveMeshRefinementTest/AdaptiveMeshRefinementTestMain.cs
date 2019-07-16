@@ -88,18 +88,18 @@ namespace BoSSS.Application.AdaptiveMeshRefinementTest {
         LevelSet LevSet;
 
         protected override void CreateFields() {
-            var Basis = new Basis(base.gridData, DEGREE);
+            var Basis = new Basis(base.GridData, DEGREE);
             u = new SinglePhaseField(Basis, "u");
-            Grad_u = new VectorField<SinglePhaseField>(base.gridData.SpatialDimension, Basis, "Grad_u", (bs, nmn) => new SinglePhaseField(bs, nmn));
-            MagGrad_u = new SinglePhaseField(new Basis(base.gridData, 0), "Magnitude_Grad_u");
+            Grad_u = new VectorField<SinglePhaseField>(base.GridData.SpatialDimension, Basis, "Grad_u", (bs, nmn) => new SinglePhaseField(bs, nmn));
+            MagGrad_u = new SinglePhaseField(new Basis(base.GridData, 0), "Magnitude_Grad_u");
             TestData = new SinglePhaseField(Basis, "TestData");
             base.m_RegisteredFields.Add(u);
             base.m_RegisteredFields.AddRange(Grad_u);
             base.m_RegisteredFields.Add(MagGrad_u);
             base.m_RegisteredFields.Add(TestData);
 
-            LevSet = new LevelSet(new Basis(this.gridData, 2), "LevelSet");
-            base.LsTrk = new LevelSetTracker((BoSSS.Foundation.Grid.Classic.GridData) this.gridData, XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes, 1, new string[] { "A", "B" }, LevSet);
+            LevSet = new LevelSet(new Basis(this.GridData, 2), "LevelSet");
+            base.LsTrk = new LevelSetTracker((BoSSS.Foundation.Grid.Classic.GridData) this.GridData, XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes, 1, new string[] { "A", "B" }, LevSet);
             base.m_RegisteredFields.Add(LevSet);
 
             var xBasis = new XDGBasis(base.LsTrk, DEGREE);
@@ -275,7 +275,7 @@ namespace BoSSS.Application.AdaptiveMeshRefinementTest {
             // Check grid changes
             // ==================
 
-            bool AnyChange = GridRefinementController.ComputeGridChange((GridData) this.gridData, LsTrk.Regions.GetCutCellMask(), LevelInicator, out List<int> CellsToRefineList, out List<int[]> Coarsening);
+            bool AnyChange = GridRefinementController.ComputeGridChange((GridData) this.GridData, LsTrk.Regions.GetCutCellMask(), LevelInicator, out List<int> CellsToRefineList, out List<int[]> Coarsening);
             int NoOfCellsToRefine = 0;
             int NoOfCellsToCoarsen = 0;
             if(AnyChange) {
@@ -286,7 +286,7 @@ namespace BoSSS.Application.AdaptiveMeshRefinementTest {
                 NoOfCellsToRefine = glb[0];
                 NoOfCellsToCoarsen = glb[1];
             }
-            int oldJ = this.gridData.CellPartitioning.TotalLength;
+            int oldJ = this.GridData.CellPartitioning.TotalLength;
 
             // Update Grid
             // ===========
@@ -299,7 +299,7 @@ namespace BoSSS.Application.AdaptiveMeshRefinementTest {
                 Console.WriteLine("       Coarsening " + NoOfCellsToCoarsen + " of " + oldJ + " cells");
 
 
-                newGrid = ((GridData)this.gridData).Adapt(CellsToRefineList, Coarsening, out old2NewGrid);
+                newGrid = ((GridData)this.GridData).Adapt(CellsToRefineList, Coarsening, out old2NewGrid);
                 
             } else {
                 newGrid = null;
