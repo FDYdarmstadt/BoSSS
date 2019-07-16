@@ -133,19 +133,20 @@ namespace BoSSS.Solution {
                 //Besides NonLinearSolverConfig Newton needs also LinearSolverConfig
                 //Newton uses MUMPS as linearsolver by default
                 case NonLinearSolverConfig.Code.Newton:
-                    
-                        nonlinSolver = new Newton(
-                            ts_AssembleMatrixCallback,
-                            ts_MultigridBasis,
-                            MultigridOperatorConfig) {
-                            maxKrylovDim = lc.MaxKrylovDim, 
-                            MaxIter = nc.MaxSolverIterations,
-                            MinIter = nc.MinSolverIterations,
-                            ApproxJac = Newton.ApproxInvJacobianOptions.DirectSolver, //MUMPS is taken, todo: enable all linear solvers
-                            Precond = PrecondSolver,
-                            GMRESConvCrit = lc.ConvergenceCriterion,
-                            ConvCrit = nc.ConvergenceCriterion,
-                            m_SessionPath = SessionPath,
+
+                    nonlinSolver = new Newton(
+                        ts_AssembleMatrixCallback,
+                        ts_MultigridBasis,
+                        MultigridOperatorConfig) {
+                        maxKrylovDim = lc.MaxKrylovDim,
+                        MaxIter = nc.MaxSolverIterations,
+                        MinIter = nc.MinSolverIterations,
+                        ApproxJac = Newton.ApproxInvJacobianOptions.DirectSolver, //MUMPS is taken, todo: enable all linear solvers
+                        linsolver = LinSolver,
+                        Precond = PrecondSolver,
+                        GMRESConvCrit = lc.ConvergenceCriterion,
+                        ConvCrit = nc.ConvergenceCriterion,
+                        m_SessionPath = SessionPath,
                         };
                         break;
 
