@@ -2296,20 +2296,10 @@ namespace ilPSP.LinSolvers {
 
             //#else
 
-            if (SPMV_inner == null)
-                SPMV_inner = new Stopwatch();
-            if (SPMV_total == null)
-                SPMV_total = new Stopwatch();
-
-
             this.__SpMV(alpha, a, beta, acc);
-
-
 //#endif
         }
 
-        public static Stopwatch SPMV_inner;
-        public static Stopwatch SPMV_total;
 
 
 
@@ -2335,8 +2325,7 @@ namespace ilPSP.LinSolvers {
             where VectorType2 : IList<double> //
         {
             using (new FuncTrace()) {
-                SPMV_total.Start();
-
+                
                 if (_a.Count != this._ColPartitioning.LocalLength)
                     throw new ArgumentException("Mismatch in number of columns.");
                 if (acc.Count != this._RowPartitioning.LocalLength)
@@ -2505,8 +2494,7 @@ namespace ilPSP.LinSolvers {
 
                                                             int iRowLoc = _iRowLoc; // local row index
                                                             int iRowBlockLoc = _iRowBlockLoc; // row index within block
-                                                            SPMV_inner.Start();
-
+                                                            
                                                             if (CJ != 1 || I * J < 40) {
 
                                                                 for (int i = 0; i < I; i++) { // loop over sub-block rows...
@@ -2550,9 +2538,6 @@ namespace ilPSP.LinSolvers {
                                                             //}
                                                             
 
-                                                            SPMV_inner.Stop();
-
-                                                            
                                                         }
 
                                                     }
@@ -2693,8 +2678,6 @@ namespace ilPSP.LinSolvers {
                         }
                     }
                 }
-
-                SPMV_total.Stop();
             }
         }
 
