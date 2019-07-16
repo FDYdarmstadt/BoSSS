@@ -30,7 +30,7 @@ namespace CNS.LoadBalancing {
         /// <param name="program"></param>
         /// <returns></returns>
         public (int noOfClasses, int[] cellToPerformanceClassMap) ClassifyCells(IProgram<CNSControl> program) {
-            return (1, new int[program.GridData.iLogicalCells.NoOfLocalUpdatedCells]);
+            return (1, new int[program.gridData.iLogicalCells.NoOfLocalUpdatedCells]);
         }
     }
 }

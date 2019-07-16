@@ -51,7 +51,7 @@ namespace QuadratureAndProjectionTest {
         [TestFixtureSetUp]
         public void SetUp() {
             testApplication = new TestApplication(this);
-            context = testApplication.GridData;
+            context = testApplication.gridData;
         }
 
         /// <summary>

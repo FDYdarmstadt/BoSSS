@@ -32,6 +32,48 @@ namespace FSI_Solver
 {
     class FSI_Auxillary 
     {
+        internal void TestArithmeticException(double[] variable, string variableName)
+        {
+            ThrowIsNaNException(variable, variableName);
+            ThrowIsInfinityException(variable, variableName);
+        }
+
+        internal void TestArithmeticException(double variable, string variableName)
+        {
+            ThrowIsNaNException(variable, variableName);
+            ThrowIsInfinityException(variable, variableName);
+        }
+
+        internal void ThrowIsNaNException(double[] variable, string variableName)
+        {
+            for (int i = 0; i < variable.Length; i++)
+            {
+                if (double.IsNaN(variable[i]))
+                    throw new ArithmeticException("Error during update of " + variableName + ", value is NaN.");
+            }
+        }
+
+        internal void ThrowIsNaNException(double variable, string variableName)
+        {
+            if (double.IsNaN(variable))
+                throw new ArithmeticException("Error during update of " + variableName + ", value is NaN.");
+        }
+
+        internal void ThrowIsInfinityException(double[] variable, string variableName)
+        {
+            for (int i = 0; i < variable.Length; i++)
+            {
+                if (double.IsInfinity(variable[i]))
+                    throw new ArithmeticException("Error during update of " + variableName + ", value is infinity.");
+            }
+        }
+
+        internal void ThrowIsInfinityException(double variable, string variableName)
+        {
+            if (double.IsInfinity(variable))
+                throw new ArithmeticException("Error during update of " + variableName + ", value is infinity.");
+        }
+
         /// <summary>
         /// Calculate componentwise sum of two vectors.
         /// </summary>
@@ -460,13 +502,14 @@ namespace FSI_Solver
                 ParticleStokesNumber[Particles.IndexOf(CurrentParticle)] = CurrentParticle.ComputeParticleSt(FluidViscosity, FluidDensity);
             }
 
-            Console.WriteLine("Total kinetic energy in system:  " + (totalKE[0] + totalKE[1] + totalKE[2]));
-            Console.WriteLine("Total momentum in system:  " + Math.Sqrt(TranslationalMomentum[0].Pow2() + TranslationalMomentum[1].Pow2()));
-            Console.WriteLine("Total kinetic energy in system:  " + (totalKE[0] + totalKE[1] + totalKE[2]));
-
             Force = Particles[0].HydrodynamicForces[0];
             MPIangularVelocity = Particles[0].RotationalVelocity[0];
 
+            StringBuilder OutputBuilder = new StringBuilder();
+
+            OutputBuilder.AppendLine("Total kinetic energy in system:  " + (totalKE[0] + totalKE[1] + totalKE[2]));
+            OutputBuilder.AppendLine("Total momentum in system:  " + Math.Sqrt(TranslationalMomentum[0].Pow2() + TranslationalMomentum[1].Pow2()));
+            OutputBuilder.AppendLine("Total kinetic energy in system:  " + (totalKE[0] + totalKE[1] + totalKE[2]));
             for (int p = 0; p < Particles.Count(); p++)
             {
                 Particle CurrentParticle = Particles[p];
@@ -474,32 +517,35 @@ namespace FSI_Solver
                 if(CurrentParticle.IncludeTranslation || CurrentParticle.IncludeRotation)
                 {
                     int PrintP = p + 1;
-                    Console.WriteLine("=======================================================");
+                    OutputBuilder.AppendLine("=======================================================");
                     if (Finalresult)
-                        Console.WriteLine("Final status report for timestep #" + TimestepInt + ", particle #" + PrintP + ", Time: " + phystime);
+                        OutputBuilder.AppendLine("Final status report for timestep #" + TimestepInt + ", particle #" + PrintP + ", Time: " + phystime);
                     else
-                        Console.WriteLine("Status report particle #" + PrintP + ", Time: " + phystime + ", Iteration #" + IterationCounter);
-                    Console.WriteLine("-------------------------------------------------------");
-                    Console.WriteLine("Drag Force:   {0}", CurrentParticle.HydrodynamicForces[0][0]);
-                    Console.WriteLine("Lift Force:   {0}", CurrentParticle.HydrodynamicForces[0][1]);
-                    Console.WriteLine("Torqe:   {0}", CurrentParticle.HydrodynamicTorque[0]);
-                    Console.WriteLine("Transl VelocityX:   {0}", CurrentParticle.TranslationalVelocity[0][0]);
-                    Console.WriteLine("Transl VelocityY:   {0}", CurrentParticle.TranslationalVelocity[0][1]);
-                    Console.WriteLine("Angular Velocity:   {0}", CurrentParticle.RotationalVelocity[0]);
+                        OutputBuilder.AppendLine("Status report particle #" + PrintP + ", Time: " + phystime + ", Iteration #" + IterationCounter);
+                    if (CurrentParticle.Collided)
+                        OutputBuilder.AppendLine("The particle is collided");
+                    OutputBuilder.AppendLine("-------------------------------------------------------");
+                    OutputBuilder.AppendLine("Drag Force: " + CurrentParticle.HydrodynamicForces[0][0]);
+                    OutputBuilder.AppendLine("Lift Force: " + CurrentParticle.HydrodynamicForces[0][1]);
+                    OutputBuilder.AppendLine("Torqe: " + CurrentParticle.HydrodynamicTorque[0]);
+                    OutputBuilder.AppendLine("Transl VelocityX: " + CurrentParticle.TranslationalVelocity[0][0]);
+                    OutputBuilder.AppendLine("Transl VelocityY: " + CurrentParticle.TranslationalVelocity[0][1]);
+                    OutputBuilder.AppendLine("Angular Velocity: " + CurrentParticle.RotationalVelocity[0]);
                     if (Finalresult)
                     {
-                        Console.WriteLine("X-position:   {0}", CurrentParticle.Position[0][0]);
-                        Console.WriteLine("Y-position:   {0}", CurrentParticle.Position[0][1]);
-                        Console.WriteLine("Angle:   {0}", CurrentParticle.Angle[0]);
-                        Console.WriteLine();
-                        Console.WriteLine("Particle Reynolds number: " + ParticleReynoldsNumber[p]);
-                        Console.WriteLine("Particle Stokes number: " + ParticleStokesNumber[p]);
-                        Console.WriteLine();
-                        Console.WriteLine("=======================================================");
-                        Console.WriteLine();
+                        OutputBuilder.AppendLine("X-position: " + CurrentParticle.Position[0][0]);
+                        OutputBuilder.AppendLine("Y-position: " + CurrentParticle.Position[0][1]);
+                        OutputBuilder.AppendLine("Angle: " + CurrentParticle.Angle[0]);
+                        OutputBuilder.AppendLine();
+                        OutputBuilder.AppendLine("Particle Reynolds number: " + ParticleReynoldsNumber[p]);
+                        OutputBuilder.AppendLine("Particle Stokes number: " + ParticleStokesNumber[p]);
+                        OutputBuilder.AppendLine();
+                        OutputBuilder.AppendLine("=======================================================");
+                        OutputBuilder.AppendLine();
                     }
                 }
             }
+            Console.WriteLine(OutputBuilder.ToString());
         }
 
         /// <summary>

@@ -231,11 +231,11 @@ namespace BoSSS.Application.XNSE_Solver {
         protected override void CreateFields() {
             using (new FuncTrace()) {
                 base.CreateFields();
-                int D = this.GridData.SpatialDimension;
+                int D = this.gridData.SpatialDimension;
 
 
                 this.DGLevSet = new ScalarFieldHistory<SinglePhaseField>(
-                       new SinglePhaseField(new Basis(this.GridData, this.Control.FieldOptions["Phi"].Degree), "PhiDG"));
+                       new SinglePhaseField(new Basis(this.gridData, this.Control.FieldOptions["Phi"].Degree), "PhiDG"));
 
                 if (this.Control.FieldOptions["PhiDG"].Degree >= 0 && this.Control.FieldOptions["PhiDG"].Degree != this.DGLevSet.Current.Basis.Degree) {
                     throw new ApplicationException("Specification of polynomial degree for 'PhiDG' is not supportet, since it is induced by polynomial degree of 'Phi'.");
@@ -247,11 +247,11 @@ namespace BoSSS.Application.XNSE_Solver {
                 // ==============================
                 this.LevSet = ContinuityProjection.CreateField(
                     DGLevelSet: this.DGLevSet.Current,
-                    gridData: (GridData)GridData,
+                    gridData: (GridData)gridData,
                     Option: Control.LSContiProjectionMethod
                     );
 
-                this.LsTrk = new LevelSetTracker((GridData) this.GridData, base.Control.CutCellQuadratureType, base.Control.LS_TrackerWidth, new string[] { "A", "B" }, this.LevSet);
+                this.LsTrk = new LevelSetTracker((GridData) this.gridData, base.Control.CutCellQuadratureType, base.Control.LS_TrackerWidth, new string[] { "A", "B" }, this.LevSet);
                 base.RegisterField(this.LevSet);
                 this.LevSetGradient = new VectorField<SinglePhaseField>(D.ForLoop(d => new SinglePhaseField(this.LevSet.Basis, "dPhi_dx[" + d + "]")));
                 base.RegisterField(this.LevSetGradient);
@@ -269,12 +269,12 @@ namespace BoSSS.Application.XNSE_Solver {
                 if (base.Control.UseXDG4Velocity) {
 
                     XDGvelocity = new VelocityRelatedVars<XDGField>();
-                    InitFromAttributes.CreateFieldsAuto(XDGvelocity, this.GridData, base.Control.FieldOptions, base.Control.CutCellQuadratureType, base.IOFields, base.m_RegisteredFields);
+                    InitFromAttributes.CreateFieldsAuto(XDGvelocity, this.gridData, base.Control.FieldOptions, base.Control.CutCellQuadratureType, base.IOFields, base.m_RegisteredFields);
 
                 } else {
 
                     DGvelocity = new VelocityRelatedVars<SinglePhaseField>();
-                    InitFromAttributes.CreateFieldsAuto(DGvelocity, this.GridData, base.Control.FieldOptions, base.Control.CutCellQuadratureType, base.IOFields, base.m_RegisteredFields);
+                    InitFromAttributes.CreateFieldsAuto(DGvelocity, this.gridData, base.Control.FieldOptions, base.Control.CutCellQuadratureType, base.IOFields, base.m_RegisteredFields);
 
                     //if(base.Control.AdvancedDiscretizationOptions.CellAgglomerationThreshold > 0.0)
                     //    throw new NotSupportedException("Agglomearion currently not supported for non-extended velocity.");
@@ -290,7 +290,7 @@ namespace BoSSS.Application.XNSE_Solver {
                     this.Heatflux = new VectorField<XDGField>(D.ForLoop(d => new XDGField(new XDGBasis(this.LsTrk, this.Control.FieldOptions[VariableNames.Temperature].Degree), "Heatflux_[" + d + "]")));
                     base.RegisterField(this.Heatflux);
 
-                    this.DisjoiningPressure = new SinglePhaseField(new Basis(this.GridData, this.Control.FieldOptions[VariableNames.Pressure].Degree), "DisjoiningPressure");
+                    this.DisjoiningPressure = new SinglePhaseField(new Basis(this.gridData, this.Control.FieldOptions[VariableNames.Pressure].Degree), "DisjoiningPressure");
                     if(this.Control.DisjoiningPressureFunc != null) {
                         DisjoiningPressure.ProjectField(this.Control.DisjoiningPressureFunc);
                     }
@@ -310,7 +310,7 @@ namespace BoSSS.Application.XNSE_Solver {
                 }
 
                 if (this.Control.CheckJumpConditions) {
-                    Basis basis = new Basis(this.GridData, 0);
+                    Basis basis = new Basis(this.gridData, 0);
 
                     //Basis basis = new Basis(this.GridData, this.Control.FieldOptions[VariableNames.VelocityX].Degree);
                     this.MassBalanceAtInterface = new SinglePhaseField(basis, "MassBalanceAtInterface");
@@ -360,7 +360,7 @@ namespace BoSSS.Application.XNSE_Solver {
                 double rho_A = this.Control.PhysicalParameters.rho_A,
                     rho_B = this.Control.PhysicalParameters.rho_B;
 
-                int D = this.GridData.SpatialDimension;
+                int D = this.gridData.SpatialDimension;
 
                 double[] _rho_A = new double[D + 1];
                 _rho_A.SetAll(rho_A); // mass matrix in momentum equation
@@ -385,7 +385,7 @@ namespace BoSSS.Application.XNSE_Solver {
         IncompressibleMultiphaseBoundaryCondMap BcMap {
             get {
                 if (m_BcMap == null) {
-                    m_BcMap = new IncompressibleMultiphaseBoundaryCondMap(this.GridData, this.Control.BoundaryValues, this.LsTrk.SpeciesNames.ToArray());
+                    m_BcMap = new IncompressibleMultiphaseBoundaryCondMap(this.gridData, this.Control.BoundaryValues, this.LsTrk.SpeciesNames.ToArray());
                 }
                 return m_BcMap;
             }
@@ -428,7 +428,7 @@ namespace BoSSS.Application.XNSE_Solver {
                 if (m_CurrentSolution == null) {
                     m_CurrentSolution = new CoordinateVector(ArrayTools.Cat(this.CurrentVel, this.Pressure));
                 } else {
-                    for (int d = 0; d < base.GridData.SpatialDimension; d++) {
+                    for (int d = 0; d < base.gridData.SpatialDimension; d++) {
                         Debug.Assert(object.ReferenceEquals(m_CurrentSolution.Mapping.Fields[d], this.CurrentVel[d]));
                     }
                 }
@@ -811,7 +811,7 @@ namespace BoSSS.Application.XNSE_Solver {
 
                 //PlotCurrentState(hack_Phystime, new TimestepNumber(hack_TimestepIndex, 12), 2);
 
-                Debug.Assert(object.ReferenceEquals(this.MultigridSequence[0].ParentGrid, this.GridData));
+                Debug.Assert(object.ReferenceEquals(this.MultigridSequence[0].ParentGrid, this.gridData));
 
                 m_BDF_Timestepper.DataRestoreAfterBalancing(L, 
                     ArrayTools.Cat<DGField>(this.XDGvelocity.Velocity.ToArray(), this.Pressure), 
@@ -829,7 +829,7 @@ namespace BoSSS.Application.XNSE_Solver {
                 ContinuityEnforcer = new ContinuityProjection(
                     ContBasis: this.LevSet.Basis, 
                     DGBasis: this.DGLevSet.Current.Basis, 
-                    gridData: GridData, 
+                    gridData: gridData, 
                     Option: Control.LSContiProjectionMethod);
 
                 if(this.Control.Option_LevelSetEvolution == LevelSetEvolution.ExtensionVelocity) {
@@ -848,7 +848,7 @@ namespace BoSSS.Application.XNSE_Solver {
 
         void DelComputeOperatorMatrix(BlockMsrMatrix OpMtx, double[] OpAffine, UnsetteledCoordinateMapping Mapping, DGField[] CurrentState, Dictionary<SpeciesId, MultidimensionalArray> AgglomeratedCellLengthScales, double phystime) {
 
-            int D = this.GridData.SpatialDimension;
+            int D = this.gridData.SpatialDimension;
 
             // ============================
             // treatment of surface tension
@@ -999,14 +999,14 @@ namespace BoSSS.Application.XNSE_Solver {
                 if (!this.BcMap.DirichletPressureBoundary) {
                     XNSEUtils.SetPressureReferencePoint(
                         Mapping,
-                        this.GridData.SpatialDimension,
+                        this.gridData.SpatialDimension,
                         this.LsTrk, OpMtx, OpAffine);
                 }
             } else {
                 if (!this.BcMap.DirichletPressureBoundary) {
                     XNSEUtils.SetPressureReferencePointResidual(
                         new CoordinateVector(CurrentState),
-                        this.GridData.SpatialDimension,
+                        this.gridData.SpatialDimension,
                         this.LsTrk, OpAffine);
                 }
             }
@@ -1180,7 +1180,7 @@ namespace BoSSS.Application.XNSE_Solver {
             using(var tr = new FuncTrace()) {
 
                 TimestepNumber TimestepNo = new TimestepNumber(TimestepInt, 0);
-                int D = this.GridData.SpatialDimension;
+                int D = this.gridData.SpatialDimension;
                 base.ResLogger.TimeStep = TimestepInt;
                 hack_TimestepIndex = TimestepInt;
                 hack_Phystime = phystime;
@@ -1195,7 +1195,7 @@ namespace BoSSS.Application.XNSE_Solver {
                     // +++++++++++++++++++++++++++++++++++++++++++++++++
 
                     foreach(string spc in LsTrk.SpeciesNames) {
-                        for(int d = 0; d < this.GridData.SpatialDimension; d++) {
+                        for(int d = 0; d < this.gridData.SpatialDimension; d++) {
                             ConventionalDGField Vel_d;
                             if(this.CurrentVel[d] is XDGField)
                                 Vel_d = ((XDGField)this.CurrentVel[d]).GetSpeciesShadowField(spc);
@@ -1265,7 +1265,7 @@ namespace BoSSS.Application.XNSE_Solver {
                     // Level-Set motion-CFL
                     double LevSet_Deg2 = this.DGLevSet.Current.Basis.Degree;
                     LevSet_Deg2 = LevSet_Deg2 * LevSet_Deg2;
-                    double dt_LevSetCFL = base.GridData.ComputeCFLTime(this.ExtensionVelocity.Current, dt * LevSet_Deg2);
+                    double dt_LevSetCFL = base.gridData.ComputeCFLTime(this.ExtensionVelocity.Current, dt * LevSet_Deg2);
                     dt_LevSetCFL = dt_LevSetCFL / LevSet_Deg2;
                     if(this.Control.Timestepper_LevelSetHandling == LevelSetHandling.Coupled_Iterative && this.Control.LSunderrelax == 1.0) {
                         if(dt / dt_LevSetCFL > 1.0) {
@@ -1282,7 +1282,7 @@ namespace BoSSS.Application.XNSE_Solver {
 
                     // Capillary Timestep restriction
                     if(this.Control.PhysicalParameters.Sigma != 0.0) {
-                        MultidimensionalArray h_mins = ((GridData)this.GridData).Cells.h_min;
+                        MultidimensionalArray h_mins = ((GridData)this.gridData).Cells.h_min;
                         double h = h_mins.Min();
                         double LevSet_Deg = this.LevSet.Basis.Degree + 1;
                         h /= LevSet_Deg;
@@ -1461,7 +1461,7 @@ namespace BoSSS.Application.XNSE_Solver {
                         TestVec.Clear();
                         Random rnd = new Random(rnd_seed);
                         XDGField Pressack = TestVec.Mapping.Fields[D] as XDGField;
-                        int J = this.GridData.iLogicalCells.NoOfLocalUpdatedCells;
+                        int J = this.gridData.iLogicalCells.NoOfLocalUpdatedCells;
                         for (int j = 0; j < J; j++) {
                             int N = Pressack.Basis.GetLength(j);
 
@@ -1720,7 +1720,7 @@ namespace BoSSS.Application.XNSE_Solver {
             ContinuityEnforcer = new ContinuityProjection(
                     ContBasis: this.LevSet.Basis,
                     DGBasis: this.DGLevSet.Current.Basis,
-                    gridData: GridData,
+                    gridData: gridData,
                     Option: Control.LSContiProjectionMethod
                     );
 
@@ -1764,7 +1764,7 @@ namespace BoSSS.Application.XNSE_Solver {
                 ISessionInfo reloadSession = GetDatabase().Controller.GetSessionInfo(this.CurrentSessionInfo.RestartedFrom);
                 tsi_toLoad = reloadSession.Timesteps.Single(t => t.TimeStepNumber.Equals(new TimestepNumber(TimestepIndex)));
             }
-            DatabaseDriver.LoadFieldData(tsi_toLoad, this.GridData, this.IOFields);
+            DatabaseDriver.LoadFieldData(tsi_toLoad, this.gridData, this.IOFields);
 
             // level-set
             // ---------
@@ -1850,7 +1850,7 @@ namespace BoSSS.Application.XNSE_Solver {
             get {
                 int pVel = this.CurrentVel[0].Basis.Degree;
                 int pPrs = this.Pressure.Basis.Degree;
-                int D = this.GridData.SpatialDimension;
+                int D = this.gridData.SpatialDimension;
 
                 // set the MultigridOperator configuration for each level:
                 // it is not necessary to have exactly as many configurations as actual multigrid levels:
@@ -1920,7 +1920,7 @@ namespace BoSSS.Application.XNSE_Solver {
                     // additional refinement
                     switch(this.Control.RefineStrategy) {
                         case XNSE_Control.RefinementStrategy.CurvatureRefined: {
-                                double curv_max = 1.0 / (2.0 * ((GridData)this.GridData).Cells.h_min[j]);
+                                double curv_max = 1.0 / (2.0 * ((GridData)this.gridData).Cells.h_min[j]);
                                 double mean_curv = Math.Abs(this.Curvature.GetMeanValue(j));
                                 double minCurv, maxCurv;
                                 this.Curvature.GetExtremalValuesInCell(out minCurv, out maxCurv, j);
@@ -1935,7 +1935,7 @@ namespace BoSSS.Application.XNSE_Solver {
                                 break;
                             }
                         case XNSE_Control.RefinementStrategy.ContactLineRefined: {
-                                CellMask BCells = ((GridData)this.GridData).BoundaryCells.VolumeMask;
+                                CellMask BCells = ((GridData)this.gridData).BoundaryCells.VolumeMask;
                                 if(ccm.Contains(j) && BCells.Contains(j) && CurrentLevel < this.Control.RefinementLevel) {
                                     DesiredLevel_j++;
                                 } else if(!BCells.Contains(j)) { // && CurrentLevel == this.Control.RefinementLevel + 1) {
@@ -2089,23 +2089,23 @@ namespace BoSSS.Application.XNSE_Solver {
 
 
                     // navier slip boundary cells
-                    NScm = new CellMask(this.GridData);
-                    NSbuffer = new CellMask(this.GridData);
+                    NScm = new CellMask(this.gridData);
+                    NSbuffer = new CellMask(this.gridData);
                     if(this.Control.RefineNavierSlipBoundary) {
-                        BitArray NSc = new BitArray(((GridData)this.GridData).Cells.Count);
-                        CellMask bnd = ((GridData)this.GridData).BoundaryCells.VolumeMask;
-                        int[][] c2e = ((GridData)this.GridData).Cells.Cells2Edges;
+                        BitArray NSc = new BitArray(((GridData)this.gridData).Cells.Count);
+                        CellMask bnd = ((GridData)this.gridData).BoundaryCells.VolumeMask;
+                        int[][] c2e = ((GridData)this.gridData).Cells.Cells2Edges;
                         foreach(Chunk cnk in bnd) {
                             for(int i = cnk.i0; i < cnk.JE; i++) {
                                 foreach(int e in c2e[i]) {
                                     int eId = (e < 0) ? -e - 1 : e - 1;
-                                    byte et = ((GridData)this.GridData).Edges.EdgeTags[eId];
-                                    if(this.GridData.EdgeTagNames[et].Contains("navierslip_linear"))
+                                    byte et = ((GridData)this.gridData).Edges.EdgeTags[eId];
+                                    if(this.gridData.EdgeTagNames[et].Contains("navierslip_linear"))
                                         NSc[i] = true;
                                 }
                             }
                         }
-                        NScm = new CellMask(this.GridData, NSc);
+                        NScm = new CellMask(this.gridData, NSc);
                         CellMask bndNScm = NScm.AllNeighbourCells();
                         int bndLvl = 2;
                         for(int lvl = 1; lvl < bndLvl; lvl++) {
@@ -2120,7 +2120,7 @@ namespace BoSSS.Application.XNSE_Solver {
                     //PlotCurrentState(hack_Phystime, new TimestepNumber(TimestepNo, 1), 2);
 
 
-                bool AnyChange = GridRefinementController.ComputeGridChange((BoSSS.Foundation.Grid.Classic.GridData) this.GridData, BlockedCells, LevelIndicator, out List<int> CellsToRefineList, out List<int[]> Coarsening);
+                bool AnyChange = GridRefinementController.ComputeGridChange((BoSSS.Foundation.Grid.Classic.GridData) this.gridData, BlockedCells, LevelIndicator, out List<int> CellsToRefineList, out List<int[]> Coarsening);
                 int NoOfCellsToRefine = 0;
                 int NoOfCellsToCoarsen = 0;
                 if (AnyChange) {
@@ -2132,7 +2132,7 @@ namespace BoSSS.Application.XNSE_Solver {
                         NoOfCellsToRefine = glb[0];
                         NoOfCellsToCoarsen = glb[1];
                     }
-                    int oldJ = this.GridData.CellPartitioning.TotalLength;
+                    int oldJ = this.gridData.CellPartitioning.TotalLength;
 
                     // Update Grid
                     // ===========
@@ -2144,7 +2144,7 @@ namespace BoSSS.Application.XNSE_Solver {
                         Console.WriteLine("       Refining " + NoOfCellsToRefine + " of " + oldJ + " cells");
                         Console.WriteLine("       Coarsening " + NoOfCellsToCoarsen + " of " + oldJ + " cells");
 
-                        newGrid = ((GridData)this.GridData).Adapt(CellsToRefineList, Coarsening, out old2NewGrid);
+                        newGrid = ((GridData)this.gridData).Adapt(CellsToRefineList, Coarsening, out old2NewGrid);
 
                         //PlotCurrentState(hack_Phystime, new TimestepNumber(new int[] { hack_TimestepIndex, 2 }), 2);
 
@@ -2330,7 +2330,7 @@ namespace BoSSS.Application.XNSE_Solver {
                 ContinuityEnforcer = new ContinuityProjection(
                     ContBasis: this.LevSet.Basis,
                     DGBasis: this.DGLevSet.Current.Basis,
-                    gridData: GridData,
+                    gridData: gridData,
                     Option: Control.LSContiProjectionMethod
                     );
 
@@ -2755,13 +2755,13 @@ namespace BoSSS.Application.XNSE_Solver {
                             // Fast Marching: Specify the Domains first
                             // Perform Fast Marching only on the Far Field
                             if(this.Control.AdaptiveMeshRefinement) {
-                                int NoCells = ((GridData)this.GridData).Cells.Count;
+                                int NoCells = ((GridData)this.gridData).Cells.Count;
                                 BitArray Refined = new BitArray(NoCells);
                                 for(int j = 0; j < NoCells; j++) {
-                                    if(((GridData)this.GridData).Cells.GetCell(j).RefinementLevel > 0)
+                                    if(((GridData)this.gridData).Cells.GetCell(j).RefinementLevel > 0)
                                         Refined[j] = true;
                                 }
-                                CellMask Accepted = new CellMask(this.GridData, Refined);
+                                CellMask Accepted = new CellMask(this.gridData, Refined);
                                 CellMask AcceptedNeigh = Accepted.AllNeighbourCells();
 
                                 Accepted = Accepted.Union(AcceptedNeigh);
@@ -3343,19 +3343,19 @@ namespace BoSSS.Application.XNSE_Solver {
                 EdgeQuadratureScheme SurfaceElement_Edge = SchemeHelper.Get_SurfaceElement_EdgeQuadScheme(this.LsTrk.GetSpeciesId("A"));
 
                 var QuadDom = SurfaceElement_Edge.Domain;
-                var boundaryCutEdge = QuadDom.Intersect(this.GridData.GetBoundaryEdgeMask());
+                var boundaryCutEdge = QuadDom.Intersect(this.gridData.GetBoundaryEdgeMask());
 
-                var innerDom = QuadDom.Except(this.GridData.GetBoundaryEdgeMask());
+                var innerDom = QuadDom.Except(this.gridData.GetBoundaryEdgeMask());
 
-                System.Collections.BitArray lowerBits = new System.Collections.BitArray(((GridData)this.GridData).Edges.Count);
+                System.Collections.BitArray lowerBits = new System.Collections.BitArray(((GridData)this.gridData).Edges.Count);
                 foreach(Chunk cnk in boundaryCutEdge) {
                     for(int iE = cnk.i0; iE < cnk.JE; iE++) {
-                        if(((GridData)this.GridData).Edges.EdgeTags[iE] == 1) {
+                        if(((GridData)this.gridData).Edges.EdgeTags[iE] == 1) {
                             lowerBits[iE] = true;
                         }
                     }
                 }
-                EdgeMask lowerDom = new EdgeMask(this.GridData, lowerBits);
+                EdgeMask lowerDom = new EdgeMask(this.gridData, lowerBits);
 
                 EdgeMask dom = lowerDom;
 
@@ -3495,7 +3495,7 @@ namespace BoSSS.Application.XNSE_Solver {
         /// (<see cref="XNSE_Control.ExactSolutionVelocity"/> and <see cref="XNSE_Control.ExactSolutionPressure"/>).
         /// </summary>
         internal double[] ComputeL2Error(double time) {
-            int D = this.GridData.SpatialDimension;
+            int D = this.gridData.SpatialDimension;
             double[] Ret = new double[D + 1];
 
             if(this.Control.ExactSolutionVelocity == null && this.Control.ExactSolutionPressure == null)
@@ -3559,12 +3559,12 @@ namespace BoSSS.Application.XNSE_Solver {
 
                     SpeciesId spId = this.LsTrk.GetSpeciesId(spc);
                     var scheme = SchemeHelper.GetVolumeQuadScheme(spId);
-                    var rule = scheme.Compile(this.GridData, order);
+                    var rule = scheme.Compile(this.gridData, order);
 
                     DiffInt += this.Pressure.GetSpeciesShadowField(spc).LxError(this.Control.ExactSolutionPressure[spc].Vectorize(time), (X, a, b) => (a - b), rule);
                     //Volume +=  this.Pressure.GetSpeciesShadowField(spc).LxError(null, (a, b) => (1.0), rule);
                 }
-                double Volume2 = (new SubGrid(CellMask.GetFullMask(this.GridData))).Volume;
+                double Volume2 = (new SubGrid(CellMask.GetFullMask(this.gridData))).Volume;
                 double PressureDiffMean = DiffInt / Volume2;
 
 
@@ -3575,7 +3575,7 @@ namespace BoSSS.Application.XNSE_Solver {
 
                     SpeciesId spId = this.LsTrk.GetSpeciesId(spc);
                     var scheme = SchemeHelper.GetVolumeQuadScheme(spId);
-                    var rule = scheme.Compile(this.GridData, order);
+                    var rule = scheme.Compile(this.gridData, order);
 
                     double IdV = this.Pressure.GetSpeciesShadowField(spc).LxError(this.Control.ExactSolutionPressure[spc].Vectorize(time), (X, a, b) => (a - b - PressureDiffMean).Pow2(), rule);
                     L2Error += IdV;
@@ -3758,8 +3758,8 @@ namespace BoSSS.Application.XNSE_Solver {
                         EdgeQuadratureScheme SurfaceElement_Edge = SchemeHelper.Get_SurfaceElement_EdgeQuadScheme(this.LsTrk.GetSpeciesId("A"));
 
                         var QuadDom = SurfaceElement_Edge.Domain;
-                        var boundaryEdge = ((GridData)this.GridData).GetBoundaryEdgeMask().GetBitMask();
-                        var boundaryCutEdge = QuadDom.Intersect(new EdgeMask((GridData)this.GridData, boundaryEdge, MaskType.Geometrical));
+                        var boundaryEdge = ((GridData)this.gridData).GetBoundaryEdgeMask().GetBitMask();
+                        var boundaryCutEdge = QuadDom.Intersect(new EdgeMask((GridData)this.gridData, boundaryEdge, MaskType.Geometrical));
 
                         var factory = this.LsTrk.GetXDGSpaceMetrics(this.LsTrk.SpeciesIdS.ToArray(), this.m_HMForder).XQuadFactoryHelper.GetSurfaceElement_BoundaryRuleFactory(0, LsTrk.GridDat.Grid.RefElements[0]);
                         SurfaceElement_Edge = new EdgeQuadratureScheme(factory, boundaryCutEdge);
@@ -4045,7 +4045,7 @@ namespace BoSSS.Application.XNSE_Solver {
         EnergyMultiphaseBoundaryCondMap energyBcMap {
             get {
                 if(m_energyBcMap == null) {
-                    m_energyBcMap = new EnergyMultiphaseBoundaryCondMap(this.GridData, this.Control.BoundaryValues, this.LsTrk.SpeciesNames.ToArray());
+                    m_energyBcMap = new EnergyMultiphaseBoundaryCondMap(this.gridData, this.Control.BoundaryValues, this.LsTrk.SpeciesNames.ToArray());
                 }
                 return m_energyBcMap;
             }
@@ -4091,7 +4091,7 @@ namespace BoSSS.Application.XNSE_Solver {
 
             int degK = this.KineticEnergy.Basis.Degree;
             
-            int D = this.GridData.SpatialDimension;
+            int D = this.gridData.SpatialDimension;
 
             string[] CodName = new string[] { "kinBalance" };
             string[] Params = ArrayTools.Cat(
@@ -4236,7 +4236,7 @@ namespace BoSSS.Application.XNSE_Solver {
 
         void DelComputeEnergyOperatorMatrix(BlockMsrMatrix OpMtx, double[] OpAffine, UnsetteledCoordinateMapping Mapping, DGField[] CurrentState, Dictionary<SpeciesId, MultidimensionalArray> AgglomeratedCellLengthScales, double phystime) {
 
-            int D = this.GridData.SpatialDimension;
+            int D = this.gridData.SpatialDimension;
 
             SpeciesId[] SpcToCompute = AgglomeratedCellLengthScales.Keys.ToArray();
 
@@ -4488,7 +4488,7 @@ namespace BoSSS.Application.XNSE_Solver {
         ThermalMultiphaseBoundaryCondMap coupledBcMap {
             get {
                 if(m_coupledBcMap == null) {
-                    m_coupledBcMap = new ThermalMultiphaseBoundaryCondMap(this.GridData, this.Control.BoundaryValues, this.LsTrk.SpeciesNames.ToArray());
+                    m_coupledBcMap = new ThermalMultiphaseBoundaryCondMap(this.gridData, this.Control.BoundaryValues, this.LsTrk.SpeciesNames.ToArray());
                 }
                 return m_coupledBcMap;
             }
@@ -4534,7 +4534,7 @@ namespace BoSSS.Application.XNSE_Solver {
 
             int degT = this.Temperature.Basis.Degree;
 
-            int D = this.GridData.SpatialDimension;
+            int D = this.gridData.SpatialDimension;
 
             string[] CodName = new string[] { "heat" };
             string[] Params = ArrayTools.Cat(
@@ -4686,7 +4686,7 @@ namespace BoSSS.Application.XNSE_Solver {
 
         void DelComputeCoupledOperatorMatrix(BlockMsrMatrix OpMtx, double[] OpAffine, UnsetteledCoordinateMapping Mapping, DGField[] CurrentState, Dictionary<SpeciesId, MultidimensionalArray> AgglomeratedCellLengthScales, double phystime) {
 
-            int D = this.GridData.SpatialDimension;
+            int D = this.gridData.SpatialDimension;
 
             SpeciesId[] SpcToCompute = AgglomeratedCellLengthScales.Keys.ToArray();
 

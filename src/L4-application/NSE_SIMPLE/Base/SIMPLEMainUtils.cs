@@ -103,7 +103,7 @@ namespace NSE_SIMPLE {
         /// Initialize logging of energy for Orr-Sommerfeld problem
         /// </summary>
         void InitLogEnergyOrrSommerfeld() {
-            Energy = new SinglePhaseField(new Basis(base.GridData, 20));
+            Energy = new SinglePhaseField(new Basis(base.gridData, 20));
 
             if (base.MPIRank == 0) {
                 Log_Energy = base.DatabaseDriver.FsDriver.GetNewLog("PerturbationEnergy", CurrentSessionInfo.ID);

@@ -72,7 +72,7 @@ namespace NSE_SIMPLE {
             ZMomentIntegral = new EdgeIntegral[NoOfEdges];
 
 
-            if (m_app.GridData.SpatialDimension == 3) {
+            if (m_app.gridData.SpatialDimension == 3) {
                 ZForceIntegral = new EdgeIntegral[NoOfEdges];
                 XMomentIntegral = new EdgeIntegral[NoOfEdges];
                 YMomentIntegral = new EdgeIntegral[NoOfEdges];
@@ -82,23 +82,23 @@ namespace NSE_SIMPLE {
         }
 
         void InitEdgeIntegrals() {
-            if (m_app.GridData.SpatialDimension == 2) {
+            if (m_app.gridData.SpatialDimension == 2) {
                 for (int edge = 0; edge < NoOfEdges; edge++) {
                     CoordinateMapping m_CoordinateMapping = new CoordinateMapping(m_app.WorkingSet.Pressure, DuDx, DuDy, DvDx, DvDy);
                     var QuadratureOrder = m_CoordinateMapping.BasisS.Max(basis => basis.Degree) * 2 + 1;
-                    XForceIntegral[edge] = new EdgeIntegral( (BoSSS.Foundation.Grid.Classic.GridData)( m_app.GridData),
+                    XForceIntegral[edge] = new EdgeIntegral( (BoSSS.Foundation.Grid.Classic.GridData)( m_app.gridData),
                         edgeTagNames[edge],
                         new ForceFlux2D(0, m_app),
                         m_CoordinateMapping,
                         QuadratureOrder);
 
-                    YForceIntegral[edge] = new EdgeIntegral((BoSSS.Foundation.Grid.Classic.GridData)( m_app.GridData),
+                    YForceIntegral[edge] = new EdgeIntegral((BoSSS.Foundation.Grid.Classic.GridData)( m_app.gridData),
                         edgeTagNames[edge],
                         new ForceFlux2D(1, m_app),
                         m_CoordinateMapping,
                         QuadratureOrder);
 
-                    ZMomentIntegral[edge] = new EdgeIntegral((BoSSS.Foundation.Grid.Classic.GridData)( m_app.GridData),
+                    ZMomentIntegral[edge] = new EdgeIntegral((BoSSS.Foundation.Grid.Classic.GridData)( m_app.gridData),
                         edgeTagNames[edge],
                         new MomentFlux2D(m_app),
                         m_CoordinateMapping,
@@ -108,37 +108,37 @@ namespace NSE_SIMPLE {
                 for (int edge = 0; edge < NoOfEdges; edge++) {
                     var m_CoordMap = new CoordinateMapping(m_app.WorkingSet.Pressure, DuDx, DuDy, DuDz, DvDx, DvDy, DvDz, DwDx, DwDy, DwDz);
                     var QuadOrder = m_CoordMap.BasisS.Max(basis => basis.Degree) * 2 + 1;
-                    XForceIntegral[edge] = new EdgeIntegral((BoSSS.Foundation.Grid.Classic.GridData)( m_app.GridData),
+                    XForceIntegral[edge] = new EdgeIntegral((BoSSS.Foundation.Grid.Classic.GridData)( m_app.gridData),
                         edgeTagNames[edge],
                         new ForceFlux3D(0, m_app),
                         m_CoordMap,
                         QuadOrder);
 
-                    YForceIntegral[edge] = new EdgeIntegral((BoSSS.Foundation.Grid.Classic.GridData)( m_app.GridData),
+                    YForceIntegral[edge] = new EdgeIntegral((BoSSS.Foundation.Grid.Classic.GridData)( m_app.gridData),
                         edgeTagNames[edge],
                         new ForceFlux3D(1, m_app),
                         m_CoordMap,
                         QuadOrder);
 
-                    ZForceIntegral[edge] = new EdgeIntegral((BoSSS.Foundation.Grid.Classic.GridData)( m_app.GridData),
+                    ZForceIntegral[edge] = new EdgeIntegral((BoSSS.Foundation.Grid.Classic.GridData)( m_app.gridData),
                         edgeTagNames[edge],
                         new ForceFlux3D(2, m_app),
                         m_CoordMap,
                         QuadOrder);
 
-                    XMomentIntegral[edge] = new EdgeIntegral((BoSSS.Foundation.Grid.Classic.GridData)( m_app.GridData),
+                    XMomentIntegral[edge] = new EdgeIntegral((BoSSS.Foundation.Grid.Classic.GridData)( m_app.gridData),
                         edgeTagNames[edge],
                         new MomentFlux3D(0, m_app),
                         m_CoordMap,
                         QuadOrder);
 
-                    YMomentIntegral[edge] = new EdgeIntegral((BoSSS.Foundation.Grid.Classic.GridData)( m_app.GridData),
+                    YMomentIntegral[edge] = new EdgeIntegral((BoSSS.Foundation.Grid.Classic.GridData)( m_app.gridData),
                         edgeTagNames[edge],
                         new MomentFlux3D(1, m_app),
                         m_CoordMap,
                         QuadOrder);
 
-                    ZMomentIntegral[edge] = new EdgeIntegral((BoSSS.Foundation.Grid.Classic.GridData)( m_app.GridData),
+                    ZMomentIntegral[edge] = new EdgeIntegral((BoSSS.Foundation.Grid.Classic.GridData)( m_app.gridData),
                         edgeTagNames[edge],
                         new MomentFlux3D(2, m_app),
                         m_CoordMap,
@@ -150,14 +150,14 @@ namespace NSE_SIMPLE {
      
         void CreateFields() {
             int DGOrder = m_app.WorkingSet.VelBasis.Degree;
-            Basis DGBasis = new Basis(m_app.GridData, DGOrder);
+            Basis DGBasis = new Basis(m_app.gridData, DGOrder);
 
             DuDx = new SinglePhaseField(DGBasis);
             DuDy = new SinglePhaseField(DGBasis);
             DvDx = new SinglePhaseField(DGBasis);
             DvDy = new SinglePhaseField(DGBasis);
 
-            if (m_app.GridData.SpatialDimension == 3) {
+            if (m_app.gridData.SpatialDimension == 3) {
                 DuDz = new SinglePhaseField(DGBasis);
                 DvDz = new SinglePhaseField(DGBasis);
                 DwDx = new SinglePhaseField(DGBasis);
@@ -177,7 +177,7 @@ namespace NSE_SIMPLE {
             DvDx.Derivative(1.0, m_app.WorkingSet.Velocity.Current[1], 0);
             DvDy.Derivative(1.0, m_app.WorkingSet.Velocity.Current[1], 1);
 
-            if (m_app.GridData.SpatialDimension == 3) {
+            if (m_app.gridData.SpatialDimension == 3) {
                 DuDz.Clear();
                 DvDz.Clear();
                 DwDx.Clear();
@@ -203,7 +203,7 @@ namespace NSE_SIMPLE {
             DvDx.DerivativeByFlux(1.0, m_app.WorkingSet.Velocity.Current[1], 0);
             DvDy.DerivativeByFlux(1.0, m_app.WorkingSet.Velocity.Current[1], 1);
 
-            if (m_app.GridData.SpatialDimension == 3) {
+            if (m_app.gridData.SpatialDimension == 3) {
                 DuDz.Clear();
                 DvDz.Clear();
                 DwDx.Clear();
@@ -334,7 +334,7 @@ namespace NSE_SIMPLE {
                 m_YForce += GlobalYForce;
                 m_ZMoment += GlobalZMoment;
 
-                if (m_app.GridData.SpatialDimension == 3) {
+                if (m_app.gridData.SpatialDimension == 3) {
                     LocalZForce = ZForceIntegral[edge].Evaluate();
                     LocalXMoment = XMomentIntegral[edge].Evaluate();
                     LocalYMoment = YMomentIntegral[edge].Evaluate();

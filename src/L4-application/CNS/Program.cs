@@ -171,12 +171,12 @@ namespace CNS {
         /// </remarks>
         protected override void CreateFields() {
             using (var ht = new FuncTrace()) {
-                WorkingSet = Control.DomainType.CreateWorkingSet(GridData, Control);
-                SpeciesMap = Control.DomainType.CreateSpeciesMap(WorkingSet, Control, GridData);
+                WorkingSet = Control.DomainType.CreateWorkingSet(gridData, Control);
+                SpeciesMap = Control.DomainType.CreateSpeciesMap(WorkingSet, Control, gridData);
 
                 CompressibleBoundaryCondMap map = GetBoundaryConditionMap();
                 operatorFactory = Control.DomainType.GetOperatorFactory(
-                    Control, GridData, map, WorkingSet, SpeciesMap);
+                    Control, gridData, map, WorkingSet, SpeciesMap);
 
                 m_IOFields.AddRange(WorkingSet.AllFields);
                 m_RegisteredFields.AddRange(WorkingSet.AllFields);
@@ -364,9 +364,9 @@ namespace CNS {
             using (var ht = new FuncTrace()) {
                 if (plotDriver == null) {
                     if (CompressibleEnvironment.NumberOfDimensions == 1) {
-                        plotDriver = new CurveExportDriver(GridData, true, (uint)superSampling);
+                        plotDriver = new CurveExportDriver(gridData, true, (uint)superSampling);
                     } else {
-                        plotDriver = new Tecplot(GridData, true, false, (uint)superSampling);
+                        plotDriver = new Tecplot(gridData, true, false, (uint)superSampling);
                     }
                 }
 

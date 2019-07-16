@@ -81,14 +81,14 @@ namespace NSE_SIMPLE {
             using (new FuncTrace()) {
 
                 // create fields for flow field               
-                WorkingSet = new VariableSet(base.GridData, Control, base.m_IOFields, base.m_RegisteredFields);
+                WorkingSet = new VariableSet(base.gridData, Control, base.m_IOFields, base.m_RegisteredFields);
 
                 // create extended fields for variable density solvers
                 WorkingSet.CreateExtendedVariables(Control);
 
                 // read settings for SIMPLE-algorithm
                 SolverConf = new SolverConfiguration(
-                    Control, GridData, WorkingSet, base.MPIRank);
+                    Control, gridData, WorkingSet, base.MPIRank);
 
                 // Plot analytic solution
                 PlotAnalyticSolution(Control.AnalyticVelocityX, WorkingSet.VelBasis, "VelocityX_Ana");
@@ -145,12 +145,12 @@ namespace NSE_SIMPLE {
                     break;
                 case PhysicsMode.LowMach:
                     LowMachSIMPLEControl lowMachConf = Control as LowMachSIMPLEControl;
-                    m_WorkingSetMatrices = new VariableMatrices(base.GridData, WorkingSet.VelBasis, WorkingSet.PressureBasis,
+                    m_WorkingSetMatrices = new VariableMatrices(base.gridData, WorkingSet.VelBasis, WorkingSet.PressureBasis,
                         lowMachConf.EoS, WorkingSet.Temperature.Current);
                     break;
                 case PhysicsMode.Multiphase:
                     MultiphaseSIMPLEControl multiphaseConf = Control as MultiphaseSIMPLEControl;
-                    m_WorkingSetMatrices = new VariableMatrices(base.GridData, WorkingSet.VelBasis, WorkingSet.PressureBasis,
+                    m_WorkingSetMatrices = new VariableMatrices(base.gridData, WorkingSet.VelBasis, WorkingSet.PressureBasis,
                         multiphaseConf.EoS, WorkingSet.Phi.Current);
                     break;
                 default:
@@ -177,12 +177,12 @@ namespace NSE_SIMPLE {
                     break;
                 case PhysicsMode.LowMach:
                     LowMachSIMPLEControl lowMachConf = Control as LowMachSIMPLEControl;
-                    m_WorkingSetMatrices = new VariableMatrices(base.GridData, WorkingSet.VelBasis, WorkingSet.PressureBasis,
+                    m_WorkingSetMatrices = new VariableMatrices(base.gridData, WorkingSet.VelBasis, WorkingSet.PressureBasis,
                         lowMachConf.EoS, WorkingSet.Temperature.Current);
                     break;
                 case PhysicsMode.Multiphase:
                     MultiphaseSIMPLEControl multiphaseConf = Control as MultiphaseSIMPLEControl;
-                    m_WorkingSetMatrices = new VariableMatrices(base.GridData, WorkingSet.VelBasis, WorkingSet.PressureBasis,
+                    m_WorkingSetMatrices = new VariableMatrices(base.gridData, WorkingSet.VelBasis, WorkingSet.PressureBasis,
                         multiphaseConf.EoS, WorkingSet.Phi.Current);
                     break;
                 default:
@@ -282,7 +282,7 @@ namespace NSE_SIMPLE {
                     }
 
                     if ((Control.PhysicsMode == PhysicsMode.LowMach) && (SolverConf.Control.As<LowMachSIMPLEControl>().EdgeTagsNusselt != null))
-                        CalculateNusselt(SIMPLEStatus.Timestep, base.GridData, WorkingSet.Temperature.Current, Control);
+                        CalculateNusselt(SIMPLEStatus.Timestep, base.gridData, WorkingSet.Temperature.Current, Control);
 
                     // save to database
                     if (SIMPLEStatus.SaveStep) {

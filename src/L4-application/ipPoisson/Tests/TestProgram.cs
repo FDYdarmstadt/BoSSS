@@ -134,7 +134,7 @@ namespace BoSSS.Application.SipPoisson.Tests {
 
 
             double err = (double)p.QueryHandler.QueryResults["SolL2err"];
-            double h = ((Foundation.Grid.Classic.GridData)(p.GridData)).Cells.h_maxGlobal;
+            double h = ((Foundation.Grid.Classic.GridData)(p.gridData)).Cells.h_maxGlobal;
             double thres = 0.01 * Math.Pow(h, dgDeg);
 
             Console.WriteLine("L2 Error of solution: " + err + " (threshold is " + thres + ")");

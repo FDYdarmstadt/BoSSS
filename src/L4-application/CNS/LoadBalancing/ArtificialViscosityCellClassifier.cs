@@ -33,7 +33,7 @@ namespace CNS.LoadBalancing {
             }
 
             int noOfClasses = 2;
-            int J = program.GridData.iLogicalCells.NoOfLocalUpdatedCells;
+            int J = program.gridData.iLogicalCells.NoOfLocalUpdatedCells;
             int[] cellToPerformanceClassMap = new int[J];
 
             // old

@@ -155,8 +155,8 @@ namespace BoSSS.Application.ipViscosity {
 
 
         protected override void CreateFields() {
-            var b = new Basis(this.GridData, this.PolynomialDegree);
-            int D = this.GridData.SpatialDimension;
+            var b = new Basis(this.gridData, this.PolynomialDegree);
+            int D = this.gridData.SpatialDimension;
 
             var _U = new SinglePhaseField[D] ;
             for(int d = 0; d < D; d++) 
@@ -185,7 +185,7 @@ namespace BoSSS.Application.ipViscosity {
         protected override void CreateEquationsAndSolvers(GridUpdateDataVaultBase L) {
             using(FuncTrace tr = new FuncTrace()) {
 
-                this.BcMap = new IncompressibleBoundaryCondMap(this.GridData, grid.GetBoundaryConfig(), PhysicsMode.Incompressible);
+                this.BcMap = new IncompressibleBoundaryCondMap(this.gridData, grid.GetBoundaryConfig(), PhysicsMode.Incompressible);
 
 
                 // assemble system, create matrix
@@ -193,7 +193,7 @@ namespace BoSSS.Application.ipViscosity {
 
                 
 
-                int D = GridData.SpatialDimension;
+                int D = gridData.SpatialDimension;
                 //double penalty_base = ((double)((U[0].Basis.Degree + 1) * (U[0].Basis.Degree + D))) / ((double)D);
                 double penalty_base = 1.0;
                 double penalty_factor = 1.2;
@@ -255,10 +255,10 @@ namespace BoSSS.Application.ipViscosity {
             int L = this.bnd.CoordinateVector.Count();
 
             // need to assure to use the same quadrature oder on both evaluation variants
-            var volQrSch = (new CellQuadratureScheme(false, CellMask.GetFullMask(this.GridData, MaskType.Geometrical)))
-                                    .AddFixedOrderRules(this.GridData, this.PolynomialDegree*3);
-            var edgQrSch = new EdgeQuadratureScheme(true, EdgeMask.GetFullMask(this.GridData, MaskType.Geometrical))
-                                    .AddFixedOrderRules(this.GridData, this.PolynomialDegree*3);
+            var volQrSch = (new CellQuadratureScheme(false, CellMask.GetFullMask(this.gridData, MaskType.Geometrical)))
+                                    .AddFixedOrderRules(this.gridData, this.PolynomialDegree*3);
+            var edgQrSch = new EdgeQuadratureScheme(true, EdgeMask.GetFullMask(this.gridData, MaskType.Geometrical))
+                                    .AddFixedOrderRules(this.gridData, this.PolynomialDegree*3);
 
             //var volQrSch = new CellQuadratureScheme(true, CellMask.GetEmptyMask(this.GridData));
             //var edgQrSch = new EdgeQuadratureScheme(true, EdgeMask.GetEmptyMask(this.GridData));
@@ -332,7 +332,7 @@ namespace BoSSS.Application.ipViscosity {
 
 
         protected override void SetInitial() {
-            int D = this.GridData.SpatialDimension;
+            int D = this.gridData.SpatialDimension;
 
             var sol = this.solution;
 
@@ -357,7 +357,7 @@ namespace BoSSS.Application.ipViscosity {
             using (new FuncTrace()) {
                 base.NoOfTimesteps = -1;
                 base.TerminationKey = true;
-                int D = this.GridData.SpatialDimension;
+                int D = this.gridData.SpatialDimension;
 
                 this.Err.Clear();
                 this.Err.Acc(-1.0, this.U);
