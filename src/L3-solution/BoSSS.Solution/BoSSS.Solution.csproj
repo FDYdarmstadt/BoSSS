@@ -125,6 +125,7 @@
     <Compile Include="TimeStepping\TimeStepConstraint.cs" />
     <Compile Include="TimeStepping\TimeStepperCommon.cs" />
     <Compile Include="VariableHistory.cs" />
+    <Compile Include="VariousFunctions.cs" />
   </ItemGroup>
   <ItemGroup>
     <Reference Include="Mono.CSharp">
