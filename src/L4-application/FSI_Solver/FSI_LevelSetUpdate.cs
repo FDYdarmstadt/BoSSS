@@ -33,7 +33,6 @@ namespace FSI_Solver
     {
         readonly private FSI_Auxillary Auxillary = new FSI_Auxillary();
 
-        /// ====================================================================================
         /// <summary>
         /// compiles a cell mask from all cells with a specific color and their direct neighbors
         /// </summary>
@@ -49,7 +48,6 @@ namespace FSI_Solver
         /// /// <param name="J">
         /// the number of locally updated cells
         /// </param>
-        /// ====================================================================================
         internal CellMask CellsOneColor(IGridData gridData, List<int[]> ColoredCellsSorted, int CurrentColor, int J, bool FindNeighbours = true)
         {
             int[] CellIDCurrentColor = FindCellIDs(ColoredCellsSorted, CurrentColor);
@@ -69,7 +67,6 @@ namespace FSI_Solver
             return ColoredCellMask;
         }
 
-        /// ====================================================================================
         /// <summary>
         /// searchs for all cell ID with the current color
         /// </summary>
@@ -79,7 +76,6 @@ namespace FSI_Solver
         /// <param name="CurrentColor">
         /// the color which is associated with the Cell Mask
         /// </param>
-        /// ====================================================================================
         private int[] FindCellIDs(List<int[]> ColoredCellsSorted, int CurrentColor)
         {
             List<int> ColorList = new List<int>();
@@ -96,7 +92,6 @@ namespace FSI_Solver
             return CellID;
         }
 
-        /// ====================================================================================
         /// <summary>
         /// searchs for all particles with the same color
         /// </summary>
@@ -106,7 +101,6 @@ namespace FSI_Solver
         /// <param name="CurrentColor">
         /// the color which is associated with the Cell Mask
         /// </param
-        /// ====================================================================================
         internal int[] FindParticlesOneColor(int[] ParticleColor, int CurrentColor)
         {
             List<int> temp = new List<int>();
@@ -120,9 +114,30 @@ namespace FSI_Solver
             return temp.ToArray();
         }
 
-        /// ====================================================================================
         /// <summary>
-        /// method to find the color of a specific particle
+        /// searchs for all particles with the same color
+        /// </summary>
+        /// <param name="ParticleColor">
+        /// a list of all particles with their specific color
+        /// </param>
+        /// <param name="CurrentColor">
+        /// the color which is associated with the Cell Mask
+        /// </param
+        internal List<Particle> GetParticleListOneColor(List<Particle> AllParticles, int[] ParticleColor, int CurrentColor)
+        {
+            List<Particle> temp = new List<Particle>();
+            for (int i = 0; i < ParticleColor.Length; i++)
+            {
+                if (ParticleColor[i] == CurrentColor)
+                {
+                    temp.Add(AllParticles[i]);
+                }
+            }
+            return temp;
+        }
+
+        /// <summary>
+        /// method to find the color of all particle
         /// </summary>
         /// <param name="gridData">
         /// the grid that this mask will be associated with
@@ -133,7 +148,6 @@ namespace FSI_Solver
         /// <param name="Particles">
         /// a list of all particles
         /// </param>
-        /// ====================================================================================
         public int[] FindParticleColor(IGridData gridData, List<Particle> Particles, List<int[]> ColoredCellsSorted)
         {
             int J = gridData.iLogicalCells.NoOfLocalUpdatedCells;
@@ -144,10 +158,6 @@ namespace FSI_Solver
                 double Hmin = Math.Sqrt(gridData.iGeomCells.GetCellVolume(0));
                 double ParticleAngle = Particles[p].Angle[0];
                 double[] ParticlePos = Particles[p].Position[0];
-                //double Upperedge = ParticlePos[1] + ParticleScales[1] * Math.Abs(Math.Cos(ParticleAngle)) + ParticleScales[0] * Math.Abs(Math.Sin(ParticleAngle)) + Hmin / 2;
-                //double Loweredge = ParticlePos[1] - ParticleScales[1] * Math.Abs(Math.Cos(ParticleAngle)) - ParticleScales[0] * Math.Abs(Math.Sin(ParticleAngle)) - Hmin / 2;
-                //double Leftedge = ParticlePos[0] - ParticleScales[0] * Math.Abs(Math.Cos(ParticleAngle)) - ParticleScales[1] * Math.Abs(Math.Sin(ParticleAngle)) - Hmin / 2;
-                //double Rightedge = ParticlePos[0] + ParticleScales[0] * Math.Abs(Math.Cos(ParticleAngle)) + ParticleScales[1] * Math.Abs(Math.Sin(ParticleAngle)) + Hmin / 2;
                 double Upperedge = ParticlePos[1] + Hmin;
                 double Loweredge = ParticlePos[1] - Hmin;
                 double Leftedge = ParticlePos[0] - Hmin;
@@ -174,14 +184,12 @@ namespace FSI_Solver
             return CurrentColor.ToArray();
         }
 
-        /// ====================================================================================
         /// <summary>
         /// method to sort all cells by their color
         /// </summary>
         /// <param name="CellColor">
         /// all cells with their color
         /// </param>
-        /// ====================================================================================
         internal List<int[]> ColoredCellsFindAndSort(int[] CellColor)
         {
             List<int[]> ColoredCellsSorted = new List<int[]>();
@@ -204,6 +212,18 @@ namespace FSI_Solver
             return ColoredCellsSorted;
         }
 
+        /// <summary>
+        /// Method find the color of all particles combined with MPI communication.
+        /// </summary>
+        /// <param name="CellColor">
+        /// all cells with their color
+        /// </param>
+        /// <param name="GridData">
+        /// IGridData
+        /// </param>
+        /// <param name="Particles">
+        /// A list of all particles.
+        /// </param>
         internal void DetermineGlobalParticleColor(IGridData GridData, int[] CellColor, List<Particle> Particles, out int[] GlobalParticleColor)
         {
             List<int[]> ColoredCellsSorted = ColoredCellsFindAndSort(CellColor);

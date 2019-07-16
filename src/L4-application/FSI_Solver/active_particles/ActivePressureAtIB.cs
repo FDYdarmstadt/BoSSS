@@ -36,7 +36,6 @@ namespace BoSSS.Solution.NSECommon.Operator.Pressure
                 throw new ArgumentException();
         }
         
-
         LevelSetTracker m_LsTrk;
         int m_d;
         int m_D;

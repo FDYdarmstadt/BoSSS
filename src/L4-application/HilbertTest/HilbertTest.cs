@@ -96,34 +96,35 @@ namespace HilbertTest {
             //TestCase: 4x4 grid, AV=false, dgdegree=0, Timestepping=RK1
             CNSControl control = ShockTube_PartTest(dbPath, "7ac582f5-8913-439b-9f2b-9fbf96141d76", "b7793aee-44b6-44c7-91e7-5debd7f44c3b", 4, 4);
 
-            var solver = new HilbertTest();
-            solver.Init(control);
-            solver.RunSolverMode();
-            bool result = true;
+            using (var solver = new HilbertTest()) {
+                solver.Init(control);
+                solver.RunSolverMode();
+                bool result = true;
 
-            int Jloc = solver.GridData.CellPartitioning.LocalLength;
-            for (int j = 0; j < Jloc; j++) {
-                double[] XC = solver.GridData.iLogicalCells.GetCenter(j);
-                double xC = XC[0];
-                double yC = XC[1];
-                switch (solver.MPIRank) {
-                    case 0:
-                        result &= (xC > 0) && (xC < 0.5) && (yC > 0) && (yC < 0.5);
-                        break;
-                    case 1:
-                        result &= (xC > 0.5) && (xC < 1) && (yC > 0) && (yC < 0.5);
-                        break;
-                    case 2:
-                        result &= (xC > 0.5) && (xC < 1) && (yC > 0.5) && (yC < 1);
-                        break;
-                    case 3:
-                        result &= (xC > 0) && (xC < 0.5) && (yC > 0.5) && (yC < 1);
-                        break;
+                int Jloc = solver.GridData.CellPartitioning.LocalLength;
+                for (int j = 0; j < Jloc; j++) {
+                    double[] XC = solver.GridData.iLogicalCells.GetCenter(j);
+                    double xC = XC[0];
+                    double yC = XC[1];
+                    switch (solver.MPIRank) {
+                        case 0:
+                            result &= (xC > 0) && (xC < 0.5) && (yC > 0) && (yC < 0.5);
+                            break;
+                        case 1:
+                            result &= (xC > 0.5) && (xC < 1) && (yC > 0) && (yC < 0.5);
+                            break;
+                        case 2:
+                            result &= (xC > 0.5) && (xC < 1) && (yC > 0.5) && (yC < 1);
+                            break;
+                        case 3:
+                            result &= (xC > 0) && (xC < 0.5) && (yC > 0.5) && (yC < 1);
+                            break;
+                    }
                 }
+                Console.WriteLine("Test Grid Distribution even");
+                Console.WriteLine("Process{0}: {1}", solver.MPIRank, result);
+                return result;
             }
-            Console.WriteLine("Test Grid Distribution even");
-            Console.WriteLine("Process{0}: {1}", solver.MPIRank, result);
-            return result;
         }
 
         static private bool TestingdirectHilbertEven() {
@@ -132,221 +133,227 @@ namespace HilbertTest {
             //TestCase: 4x4 grid, AV=false, dgdegree=0, Timestepping=RK1
             CNSControl control = ShockTube_directHilbert(dbPath, "7ac582f5-8913-439b-9f2b-9fbf96141d76", "b7793aee-44b6-44c7-91e7-5debd7f44c3b", 4, 4);
 
-            var solver = new HilbertTest();
-            solver.Init(control);
-            solver.RunSolverMode();
-            bool result = true;
+            using (var solver = new HilbertTest()) {
+                solver.Init(control);
+                solver.RunSolverMode();
+                bool result = true;
 
-            int Jloc = solver.GridData.CellPartitioning.LocalLength;
-            for (int j = 0; j < Jloc; j++) {
-                double[] XC = solver.GridData.iLogicalCells.GetCenter(j);
-                double xC = XC[0];
-                double yC = XC[1];
-                switch (solver.MPIRank) {
-                    case 0:
-                        result &= (xC > 0) && (xC < 0.5) && (yC > 0) && (yC < 0.5);
-                        break;
-                    case 1:
-                        result &= (xC > 0.5) && (xC < 1) && (yC > 0) && (yC < 0.5);
-                        break;
-                    case 2:
-                        result &= (xC > 0.5) && (xC < 1) && (yC > 0.5) && (yC < 1);
-                        break;
-                    case 3:
-                        result &= (xC > 0) && (xC < 0.5) && (yC > 0.5) && (yC < 1);
-                        break;
+                int Jloc = solver.GridData.CellPartitioning.LocalLength;
+                for (int j = 0; j < Jloc; j++) {
+                    double[] XC = solver.GridData.iLogicalCells.GetCenter(j);
+                    double xC = XC[0];
+                    double yC = XC[1];
+                    switch (solver.MPIRank) {
+                        case 0:
+                            result &= (xC > 0) && (xC < 0.5) && (yC > 0) && (yC < 0.5);
+                            break;
+                        case 1:
+                            result &= (xC > 0.5) && (xC < 1) && (yC > 0) && (yC < 0.5);
+                            break;
+                        case 2:
+                            result &= (xC > 0.5) && (xC < 1) && (yC > 0.5) && (yC < 1);
+                            break;
+                        case 3:
+                            result &= (xC > 0) && (xC < 0.5) && (yC > 0.5) && (yC < 1);
+                            break;
+                    }
                 }
+                Console.WriteLine("Test directHilbert: Grid Distribution even");
+                Console.WriteLine("Process{0}: {1}", solver.MPIRank, result);
+                return result;
             }
-            Console.WriteLine("Test directHilbert: Grid Distribution even");
-            Console.WriteLine("Process{0}: {1}", solver.MPIRank, result);
-            return result;
         }
 
         static private bool TestingGridDistributionUneven() {
             string dbPath = @"..\..\Tests.zip";
             //TestCase: 3x3 grid, AV=false, dgdegree=0, Timestepping=RK1
             CNSControl control = ShockTube_PartTest(dbPath, "ccb23f25-04e9-467a-b667-bb3d642b6447", "9b24a2e6-2ce5-4de2-bd08-37a930f0df06", 3, 3);
-            var solver = new HilbertTest();
-            solver.Init(control);
-            solver.RunSolverMode();
-            bool result = true;
+            using (var solver = new HilbertTest()) {
+                solver.Init(control);
+                solver.RunSolverMode();
+                bool result = true;
 
-            int Jloc = solver.GridData.CellPartitioning.LocalLength;
-            for (int j = 0; j < Jloc; j++) {
-                double[] XC = solver.GridData.iLogicalCells.GetCenter(j);
-                double xC = XC[0];
-                double yC = XC[1];
-                switch (solver.MPIRank) {
-                    case 0:
-                        result &= ((xC > 0) && (xC < 0.33) && (yC > 0) && (yC < 0.33)) ||
-                        ((xC > 0) && (xC < 0.67) && (yC > 0.33) && (yC < 0.67));
-                        break;
-                    case 1:
-                        result &= (xC > 0.33) && (xC < 1) && (yC > 0) && (yC < 0.33);
-                        break;
-                    case 2:
-                        result &= (xC > 0.67) && (xC < 1) && (yC > 0.33) && (yC < 1);
-                        break;
-                    case 3:
-                        result &= (xC > 0) && (xC < 0.67) && (yC > 0.67) && (yC < 1);
-                        break;
+                int Jloc = solver.GridData.CellPartitioning.LocalLength;
+                for (int j = 0; j < Jloc; j++) {
+                    double[] XC = solver.GridData.iLogicalCells.GetCenter(j);
+                    double xC = XC[0];
+                    double yC = XC[1];
+                    switch (solver.MPIRank) {
+                        case 0:
+                            result &= ((xC > 0) && (xC < 0.33) && (yC > 0) && (yC < 0.33)) ||
+                            ((xC > 0) && (xC < 0.67) && (yC > 0.33) && (yC < 0.67));
+                            break;
+                        case 1:
+                            result &= (xC > 0.33) && (xC < 1) && (yC > 0) && (yC < 0.33);
+                            break;
+                        case 2:
+                            result &= (xC > 0.67) && (xC < 1) && (yC > 0.33) && (yC < 1);
+                            break;
+                        case 3:
+                            result &= (xC > 0) && (xC < 0.67) && (yC > 0.67) && (yC < 1);
+                            break;
+                    }
                 }
+                Console.WriteLine("Test Grid Distribution uneven");
+                Console.WriteLine("Process{0}: {1}", solver.MPIRank, result);
+                return result;
             }
-            Console.WriteLine("Test Grid Distribution uneven");
-            Console.WriteLine("Process{0}: {1}", solver.MPIRank, result);
-            return result;
         }
 
         static private bool TestingdirectHilbertUneven() {
             string dbPath = @"..\..\Tests.zip";
             //TestCase: 3x3 grid, AV=false, dgdegree=0, Timestepping=RK1
             CNSControl control = ShockTube_directHilbert(dbPath, "ccb23f25-04e9-467a-b667-bb3d642b6447", "9b24a2e6-2ce5-4de2-bd08-37a930f0df06", 3, 3);
-            var solver = new HilbertTest();
-            solver.Init(control);
-            solver.RunSolverMode();
-            bool result = true;
+            using (var solver = new HilbertTest()) {
+                solver.Init(control);
+                solver.RunSolverMode();
+                bool result = true;
 
-            int Jloc = solver.GridData.CellPartitioning.LocalLength;
-            for (int j = 0; j < Jloc; j++) {
-                double[] XC = solver.GridData.iLogicalCells.GetCenter(j);
-                double xC = XC[0];
-                double yC = XC[1];
-                switch (solver.MPIRank) {
-                    case 0:
-                        result &= (xC > 0) && (xC < 0.33) && (yC > 0) && (yC < 0.67);
-                        break;
-                    case 1:
-                        result &= (xC > 0.33) && (xC < 0.67) && (yC > 0) && (yC < 0.67);
-                        break;
-                    case 2:
-                        result &= (xC > 0.67) && (xC < 1) && (yC > 0) && (yC < 0.67);
-                        break;
-                    case 3:
-                        result &= (xC > 0) && (xC < 1) && (yC > 0.67) && (yC < 1);
-                        break;
+                int Jloc = solver.GridData.CellPartitioning.LocalLength;
+                for (int j = 0; j < Jloc; j++) {
+                    double[] XC = solver.GridData.iLogicalCells.GetCenter(j);
+                    double xC = XC[0];
+                    double yC = XC[1];
+                    switch (solver.MPIRank) {
+                        case 0:
+                            result &= (xC > 0) && (xC < 0.33) && (yC > 0) && (yC < 0.67);
+                            break;
+                        case 1:
+                            result &= (xC > 0.33) && (xC < 0.67) && (yC > 0) && (yC < 0.67);
+                            break;
+                        case 2:
+                            result &= (xC > 0.67) && (xC < 1) && (yC > 0) && (yC < 0.67);
+                            break;
+                        case 3:
+                            result &= (xC > 0) && (xC < 1) && (yC > 0.67) && (yC < 1);
+                            break;
+                    }
                 }
+                Console.WriteLine("Test directHilbert: Grid Distribution uneven");
+                Console.WriteLine("Process{0}: {1}", solver.MPIRank, result);
+                return result;
             }
-            Console.WriteLine("Test directHilbert: Grid Distribution uneven");
-            Console.WriteLine("Process{0}: {1}", solver.MPIRank, result);
-            return result;
         }
 
         static private bool TestingGridDistributionDynamic() {
             //string dbPath = @"D:\Weber\BoSSS\test_db";
             //TestCase: 5x4 grid, Timesteps, LTS-Cluster, PartOn,recInt,AV=false, dgdegree=0, Timestepping=LTS
             CNSControl control = ShockTube_PartTest_Dynamic(5,4,1,2,true,1);
-            var solver = new HilbertTest();
-            solver.Init(control);
-            solver.RunSolverMode();
-            bool result = false;
+            using (var solver = new HilbertTest()) {
+                solver.Init(control);
+                solver.RunSolverMode();
+                bool result = false;
 
-            List<DGField> listOfDGFields = (List<DGField>)solver.IOFields;
-            DGField field = listOfDGFields[12];
-            int D = field.GridDat.SpatialDimension;
-            int J = field.GridDat.iLogicalCells.NoOfLocalUpdatedCells;
+                List<DGField> listOfDGFields = (List<DGField>)solver.IOFields;
+                DGField field = listOfDGFields[12];
+                int D = field.GridDat.SpatialDimension;
+                int J = field.GridDat.iLogicalCells.NoOfLocalUpdatedCells;
 
-            //intention:Checking if BoundaryBox of LTSCluster==1 is as expected
-            //Therefore Computing BoundaryBox of LTSCluster==1
-            var BB = new BoSSS.Platform.Utils.Geom.BoundingBox(D);
-            var CellBB = new BoSSS.Platform.Utils.Geom.BoundingBox(D);
-            for (int i = 0; i < J; i++) {
+                //intention:Checking if BoundaryBox of LTSCluster==1 is as expected
+                //Therefore Computing BoundaryBox of LTSCluster==1
+                var BB = new BoSSS.Platform.Utils.Geom.BoundingBox(D);
+                var CellBB = new BoSSS.Platform.Utils.Geom.BoundingBox(D);
+                for (int i = 0; i < J; i++) {
 
-                if (field.GetMeanValue(i) == 1) {
-                    //Cell cj=solver.GridData.Cells.GetCell(i);
-                    solver.GridData.iLogicalCells.GetCellBoundingBox(i, CellBB);
-                    BB.AddBB(CellBB);
-                }
-            }
-            BB.Max = BB.Max.MPIMax();
-            BB.Min = BB.Min.MPIMin();
-            for (int i = 0; i < D; i++) {
-                BB.Max[i] = Math.Round(BB.Max[i] * 100) / 100;
-                BB.Min[i] = Math.Round(BB.Min[i] * 100) / 100;
-            }
-            double[] MaxRef = { 0.6, 1 };
-            double[] MinRef = { 0, 0 };
-
-            if (ItemsAreEqual(BB.Max, MaxRef) && ItemsAreEqual(BB.Min, MinRef)) {
-                //Comparing checkLTS to Distribution along HilbertCurve of Testcase
-                int[] checkLTS = { 0, 0, 0, 1, 1, 1, 1, 1, 2, 2, 3, 3, 0, 0, 2, 2, 2, 3, 3, 3 };
-                //result = ItemsAreEqual(solver.Grid.GetHilbertSortedRanks(),checkLTS);
-                int J0 = solver.GridData.CellPartitioning.i0;
-                int JE = solver.GridData.CellPartitioning.iE;
-
-                ulong[] discreteCenter = new ulong[D];
-                ulong[] local_HilbertIndex = new ulong[JE - J0];
-                int[] local_RankIndex = new int[JE - J0];
-
-                var _Grid = (GridCommons)(solver.Grid);
-
-                for (int j = J0; j < JE; j++) {
-                    Cell Cj = _Grid.Cells[j - J0];
-                    int NoOfNodes = Cj.TransformationParams.NoOfRows;
-                    for (int d = 0; d < D; d++) {
-                        double center = 0;
-                        for (int k = 0; k < NoOfNodes; k++) {
-                            center += Cj.TransformationParams[k, d];
-                        }
-
-                        center = center / ((double)NoOfNodes);
-                        double centerTrf = center * Math.Pow(2, 32);
-                        
-                        centerTrf = Math.Round(centerTrf);
-                        if (centerTrf < 0)
-                            centerTrf = 0;
-                        if (centerTrf > ulong.MaxValue)
-                            centerTrf = ulong.MaxValue;
-                        discreteCenter[d] = (ulong)centerTrf;
-            
+                    if (field.GetMeanValue(i) == 1) {
+                        //Cell cj=solver.GridData.Cells.GetCell(i);
+                        solver.GridData.iLogicalCells.GetCellBoundingBox(i, CellBB);
+                        BB.AddBB(CellBB);
                     }
-                    ulong iH = ilPSP.HilbertCurve.HilbertCurve.hilbert_c2i(32, discreteCenter);
-                    local_HilbertIndex[j - J0] = iH;
-                    local_RankIndex[j - J0] = solver.MPIRank;
                 }
-                int[] CellsPerRank = { 5, 5, 5, 5 };
-                ulong[] HilbertIndex = local_HilbertIndex.MPIAllGatherv(CellsPerRank);
-                int[] RankIndex = local_RankIndex.MPIAllGatherv(CellsPerRank);
-                Array.Sort(HilbertIndex, RankIndex);
-                result = ItemsAreEqual(RankIndex,checkLTS);
-            } else {
-                //catching error caused by changes to LTS-Clustering
-                Console.WriteLine("Unexpected result for LTS Clusters! Computation of LTS Clusters changed. Test aborted.");
-                result = false;
+                BB.Max = BB.Max.MPIMax();
+                BB.Min = BB.Min.MPIMin();
+                for (int i = 0; i < D; i++) {
+                    BB.Max[i] = Math.Round(BB.Max[i] * 100) / 100;
+                    BB.Min[i] = Math.Round(BB.Min[i] * 100) / 100;
+                }
+                double[] MaxRef = { 0.6, 1 };
+                double[] MinRef = { 0, 0 };
+
+                if (ItemsAreEqual(BB.Max, MaxRef) && ItemsAreEqual(BB.Min, MinRef)) {
+                    //Comparing checkLTS to Distribution along HilbertCurve of Testcase
+                    int[] checkLTS = { 0, 0, 0, 1, 1, 1, 1, 1, 2, 2, 3, 3, 0, 0, 2, 2, 2, 3, 3, 3 };
+                    //result = ItemsAreEqual(solver.Grid.GetHilbertSortedRanks(),checkLTS);
+                    int J0 = solver.GridData.CellPartitioning.i0;
+                    int JE = solver.GridData.CellPartitioning.iE;
+
+                    ulong[] discreteCenter = new ulong[D];
+                    ulong[] local_HilbertIndex = new ulong[JE - J0];
+                    int[] local_RankIndex = new int[JE - J0];
+
+                    var _Grid = (GridCommons)(solver.Grid);
+
+                    for (int j = J0; j < JE; j++) {
+                        Cell Cj = _Grid.Cells[j - J0];
+                        int NoOfNodes = Cj.TransformationParams.NoOfRows;
+                        for (int d = 0; d < D; d++) {
+                            double center = 0;
+                            for (int k = 0; k < NoOfNodes; k++) {
+                                center += Cj.TransformationParams[k, d];
+                            }
+
+                            center = center / ((double)NoOfNodes);
+                            double centerTrf = center * Math.Pow(2, 32);
+
+                            centerTrf = Math.Round(centerTrf);
+                            if (centerTrf < 0)
+                                centerTrf = 0;
+                            if (centerTrf > ulong.MaxValue)
+                                centerTrf = ulong.MaxValue;
+                            discreteCenter[d] = (ulong)centerTrf;
+
+                        }
+                        ulong iH = ilPSP.HilbertCurve.HilbertCurve.hilbert_c2i(32, discreteCenter);
+                        local_HilbertIndex[j - J0] = iH;
+                        local_RankIndex[j - J0] = solver.MPIRank;
+                    }
+                    int[] CellsPerRank = { 5, 5, 5, 5 };
+                    ulong[] HilbertIndex = local_HilbertIndex.MPIAllGatherv(CellsPerRank);
+                    int[] RankIndex = local_RankIndex.MPIAllGatherv(CellsPerRank);
+                    Array.Sort(HilbertIndex, RankIndex);
+                    result = ItemsAreEqual(RankIndex, checkLTS);
+                } else {
+                    //catching error caused by changes to LTS-Clustering
+                    Console.WriteLine("Unexpected result for LTS Clusters! Computation of LTS Clusters changed. Test aborted.");
+                    result = false;
+                }
+                Console.WriteLine("Test Grid Distribution Dynamic LTS");
+                Console.WriteLine("Testresult: {0}", result);
+                return result;
             }
-            Console.WriteLine("Test Grid Distribution Dynamic LTS");
-            Console.WriteLine("Testresult: {0}", result);
-            return result;
         }
 
         static private bool TestingReclusteringIndependency() {
-            
+
             //TestCase: 5x4 grid, AV=false, dgdegree=0, Timestepping=LTS&RK
-            CNSControl ctrRepON = ShockTube_PartTest_Dynamic(5, 4, int.MaxValue, 2, true,5);
-            CNSControl ctrRepOFF = ShockTube_PartTest_Dynamic(5, 4, int.MaxValue, 2, false,5);
-            var solverRepON = new HilbertTest();
-            var solverRepOFF = new HilbertTest();
-            solverRepON.Init(ctrRepON);
-            solverRepON.RunSolverMode();
-            solverRepOFF.Init(ctrRepOFF);
-            solverRepOFF.RunSolverMode();
+            CNSControl ctrRepON = ShockTube_PartTest_Dynamic(5, 4, int.MaxValue, 2, true, 5);
+            CNSControl ctrRepOFF = ShockTube_PartTest_Dynamic(5, 4, int.MaxValue, 2, false, 5);
+            using (var solverRepON = new HilbertTest())
+            using (var solverRepOFF = new HilbertTest()) {
+                solverRepON.Init(ctrRepON);
+                solverRepON.RunSolverMode();
+                solverRepOFF.Init(ctrRepOFF);
+                solverRepOFF.RunSolverMode();
 
-            bool result = true;
-            string[] varname = { "Desity", "x-Momentum", "y-Momentum", "Energy" };
-            for (int i = 0; i < 4; i++) {
-                List<DGField> listOfDGFields_RepON = (List<DGField>)solverRepON.IOFields;
-                DGField variableRepON = listOfDGFields_RepON[i];
-                double L2NormRepON = variableRepON.L2Norm();
-                List<DGField> listOfDGFields_RepOFF = (List<DGField>)solverRepOFF.IOFields;
-                DGField vriableRepOFF= listOfDGFields_RepOFF[i];
-                double L2NormRepOFF = vriableRepOFF.L2Norm();
+                bool result = true;
+                string[] varname = { "Desity", "x-Momentum", "y-Momentum", "Energy" };
+                for (int i = 0; i < 4; i++) {
+                    List<DGField> listOfDGFields_RepON = (List<DGField>)solverRepON.IOFields;
+                    DGField variableRepON = listOfDGFields_RepON[i];
+                    double L2NormRepON = variableRepON.L2Norm();
+                    List<DGField> listOfDGFields_RepOFF = (List<DGField>)solverRepOFF.IOFields;
+                    DGField vriableRepOFF = listOfDGFields_RepOFF[i];
+                    double L2NormRepOFF = vriableRepOFF.L2Norm();
 
-                Console.WriteLine("{0}-L2Norm Rep ON: {1}", varname[i],L2NormRepON);
-                Console.WriteLine("{0}-L2Norm Rep OFF: {1}", varname[i], L2NormRepOFF);
-                bool normequal=(Math.Abs(L2NormRepON - L2NormRepOFF) <= 1e-14);
-                result &= normequal;
-                Console.WriteLine("{0}-L2Norm equal: {1}", varname[i],normequal);
+                    Console.WriteLine("{0}-L2Norm Rep ON: {1}", varname[i], L2NormRepON);
+                    Console.WriteLine("{0}-L2Norm Rep OFF: {1}", varname[i], L2NormRepOFF);
+                    bool normequal = (Math.Abs(L2NormRepON - L2NormRepOFF) <= 1e-14);
+                    result &= normequal;
+                    Console.WriteLine("{0}-L2Norm equal: {1}", varname[i], normequal);
+                }
+                return result;
             }
-            return result;
+
         }
 
         static private bool ItemsAreEqual(double[] item1, double[] item2) {
@@ -457,8 +464,8 @@ namespace HilbertTest {
 
             if (AV) {
                 Variable sensorVariable = CompressibleVariables.Density;
-                c.ShockSensor = new PerssonSensor(sensorVariable, sensorLimit);
-                c.ArtificialViscosityLaw = new SmoothedHeavisideArtificialViscosityLaw(c.ShockSensor, dgDegree, sensorLimit, epsilon0, kappa);
+                c.CNSShockSensor = new PerssonSensor(sensorVariable, sensorLimit);
+                c.ArtificialViscosityLaw = new SmoothedHeavisideArtificialViscosityLaw(c.CNSShockSensor, dgDegree, sensorLimit, epsilon0, kappa);
             }
 
             c.EquationOfState = IdealGas.Air;
@@ -550,8 +557,8 @@ namespace HilbertTest {
 
             if (AV) {
                 Variable sensorVariable = CompressibleVariables.Density;
-                c.ShockSensor = new PerssonSensor(sensorVariable, sensorLimit);
-                c.ArtificialViscosityLaw = new SmoothedHeavisideArtificialViscosityLaw(c.ShockSensor, dgDegree, sensorLimit, epsilon0, kappa);
+                c.CNSShockSensor = new PerssonSensor(sensorVariable, sensorLimit);
+                c.ArtificialViscosityLaw = new SmoothedHeavisideArtificialViscosityLaw(c.CNSShockSensor, dgDegree, sensorLimit, epsilon0, kappa);
             }
 
             c.EquationOfState = IdealGas.Air;
@@ -723,8 +730,8 @@ namespace HilbertTest {
 
             if (AV) {
                 Variable sensorVariable = CompressibleVariables.Density;
-                c.ShockSensor = new PerssonSensor(sensorVariable, sensorLimit);
-                c.ArtificialViscosityLaw = new SmoothedHeavisideArtificialViscosityLaw(c.ShockSensor, dgDegree, sensorLimit, epsilon0, kappa);
+                c.CNSShockSensor = new PerssonSensor(sensorVariable, sensorLimit);
+                c.ArtificialViscosityLaw = new SmoothedHeavisideArtificialViscosityLaw(c.CNSShockSensor, dgDegree, sensorLimit, epsilon0, kappa);
             }
 
             c.EquationOfState = IdealGas.Air;

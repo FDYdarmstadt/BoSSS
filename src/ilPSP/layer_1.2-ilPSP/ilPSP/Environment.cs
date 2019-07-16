@@ -149,24 +149,25 @@ namespace ilPSP {
                 SetDllDirectory(nativeDir.FullName);
                 ret = nativeDir.FullName;
 
-                // MPI init
-                // ========
-
-                csMPI.Raw.Init(CommandLineArgs);
-                mpiInitialized = true;
                 m_BootStrapDone = true;
 
             } else if (System.Environment.OSVersion.Platform == PlatformID.Unix || System.Environment.OSVersion.Platform == PlatformID.MacOSX) {
                 // Unix
                 // currently, nothing is done
 
-                csMPI.Raw.Init(CommandLineArgs);
-                mpiInitialized = true;
 				m_BootStrapDone = true;
             } else {
                 Console.WriteLine("WARNING: Unable to determine os type (MS Windows od Unix?).");
                 Console.WriteLine("WARNING: No bootstrapping performed");
             }
+
+            // MPI init
+            // ========
+            if (!csMPI.Raw.Initialized()) {
+                csMPI.Raw.Init(CommandLineArgs);
+                mpiInitialized = true;
+            }
+     
 
             // init MPI enviroment
             // ===================

@@ -21,6 +21,7 @@ using System.Text;
 using BoSSS.Solution.Control;
 using BoSSS.Foundation;
 using System.Runtime.Serialization;
+using System.IO;
 
 namespace BoSSS.Application.SipPoisson {
     
@@ -41,6 +42,8 @@ namespace BoSSS.Application.SipPoisson {
             base.NoOfTimesteps = 1;
             base.LinearSolver.verbose = true;
         }
+
+
 
         /// <summary>
         /// Type of <see cref="SipPoissonMain"/>.
@@ -102,9 +105,16 @@ namespace BoSSS.Application.SipPoisson {
         public bool ExactSolution_provided = false;
 
         /// <summary>
-        /// Suppresses exception prompt, which disturbes local batch run with MiniBatchprocessor.
+        /// Suppresses exception prompt, which disturbs local batch run with MiniBatchprocessor.
         /// </summary>
         [DataMember]
         public bool SuppressExceptionPrompt = false;
+
+        /// <summary>
+        /// Outputpath for analysis data. Set path to enable analysis output, e.g. calculation of condition number, residual plots for each multigridlevel, etc.
+        /// </summary>
+        [DataMember]
+        public string WriteMeSomeAnalyse = null;
+
     }
 }

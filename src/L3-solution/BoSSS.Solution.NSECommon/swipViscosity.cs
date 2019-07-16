@@ -184,8 +184,8 @@ namespace BoSSS.Solution.NSECommon {
         protected int m_D;
 
         /// <summary>
-        /// Dirichlet boundary values; <br/>
-        ///  - 1st index: spatial dimension <br/>
+        /// Dirichlet boundary values; 
+        ///  - 1st index: spatial dimension 
         ///  - 2nd index: edge tag
         /// </summary>
         protected Func<double[], double, double>[][] velFunction;
@@ -827,7 +827,7 @@ namespace BoSSS.Solution.NSECommon {
                     Acc *= base.m_alpha;
 
                     // penalty
-                    //Acc -= muA * (_uA[m_iComp] - this.g_Diri(inp.X, inp.time, inp.EdgeTag, base.m_iComp)) * (_vA - 0) * pnlty;
+                    Acc -= muA * (_uA[m_iComp] - this.g_Diri(inp.X, inp.time, inp.EdgeTag, base.m_iComp)) * (_vA - 0) * pnlty;
 
                     break;
                 }
@@ -854,7 +854,7 @@ namespace BoSSS.Solution.NSECommon {
                             }
                             g_D = this.g_Diri(inp.X, inp.time, inp.EdgeTag, dN);
                             // penalty
-                            //Acc -= muA * ((_uA[dN] - g_D) * inp.Normale[dN]) * ((_vA - 0) * inp.Normale[m_iComp]) * pnlty;
+                            Acc -= muA * ((_uA[dN] - g_D) * inp.Normale[dN]) * ((_vA - 0) * inp.Normale[m_iComp]) * pnlty;
                         }
 
                         break;

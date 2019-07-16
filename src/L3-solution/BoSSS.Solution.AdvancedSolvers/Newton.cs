@@ -465,7 +465,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 double[] fx = new double[f0.Length];
 
                 // Scale the step
-                if (w.L2Norm().MPISum() == 0) {
+                if (w.L2NormPow2().MPISum().Sqrt() == 0) {
                     fx.Clear();
                     return fx;
                 }
@@ -477,7 +477,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 if (xs != 0) {
                     epsnew = epsnew * Math.Max(Math.Abs(xs), 1) * Math.Sign(xs);
                 }
-                epsnew = epsnew / w.L2Norm().MPISum();
+                epsnew = epsnew / w.L2NormPow2().MPISum().Sqrt();
 
                 var del = currentX.CloneAs();
 

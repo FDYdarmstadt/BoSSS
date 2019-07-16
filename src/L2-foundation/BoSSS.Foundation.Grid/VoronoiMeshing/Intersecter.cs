@@ -4,20 +4,20 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace BoSSS.Foundation.Grid.Voronoi
+namespace BoSSS.Foundation.Grid.Voronoi.Meshing
 {
     enum IntersectionCase
     {
         NotIntersecting,
-        IntersectionInMiddle,
-        IntersectionIsEndOfLine,
-        IntersectionIsEndOfRidge,
-        IntersectionIsEndOfRidgeAndLine
+        InMiddle,
+        EndOfLine,
+        EndOfRidge,
+        EndOfRidgeAndLine
     }
 
     interface IIntersectableMesh<TCell, TRidge, TLine>
     {
-        (TCell, IEnumerator<TRidge>) getFirst(TLine boundaryLine);
+        (TCell, IEnumerator<TRidge>) GetFirst(TLine boundaryLine);
 
         bool intersect(TRidge ridge, TLine line, ref IntersectionCase intersectionCase, out double alphaCut);
 
@@ -39,23 +39,22 @@ namespace BoSSS.Foundation.Grid.Voronoi
 
         TRidge AddLineSegment(TRidge ridge, double alpha);
 
-        void AddRidge(TRidge ridge);
+        void AddEdge(TRidge ridge);
+
+        bool CutIsFresh{ set; } 
     }
 
     static class Intersecter
     {
-        /// <summary>
-        /// 
-        /// </summary>
         public static void Intersect<TCell, TRidge, TLine>(IIntersectableMesh<TCell, TRidge, TLine> vMesh,
-                                                            IEnumerator<TLine> boundary)
+            IEnumerator<TLine> boundary)
         {
             //Setup
             TCell activeCell;
             IEnumerator<TRidge> ridgeEnum;
             IEnumerator<TRidge> runningEnum;
             boundary.MoveNext();
-            (activeCell, ridgeEnum) = vMesh.getFirst(boundary.Current);
+            (activeCell, ridgeEnum) = vMesh.GetFirst(boundary.Current);
             boundary.Reset();
             List<TLine> lines = new List<TLine>(10);
 
@@ -92,12 +91,12 @@ namespace BoSSS.Foundation.Grid.Voronoi
                             case IntersectionCase.NotIntersecting:
                                 ridgeEnum.Reset();
                                 break;
-                            case IntersectionCase.IntersectionInMiddle:
+                            case IntersectionCase.InMiddle:
                                 //if intersection was successfull, select next cell
                                 activeRidge = vMesh.FirstCut(activeRidge, alphaCut);
                                 (activeCell, ridgeEnum) = vMesh.getNeighborFromEdgeNeighbor(activeRidge);
                                 break;
-                            case IntersectionCase.IntersectionIsEndOfLine:
+                            case IntersectionCase.EndOfLine:
                                 activeRidge = vMesh.FirstCut(activeRidge, alphaCut);
                                 if (boundary.MoveNext())
                                 {
@@ -109,12 +108,12 @@ namespace BoSSS.Foundation.Grid.Voronoi
                                     found = false;
                                 }
                                 break;
-                            case IntersectionCase.IntersectionIsEndOfRidge:
+                            case IntersectionCase.EndOfRidge:
                                 vMesh.VertexCut(activeRidge, alphaCut);
                                 runningEnum = vMesh.getConnectedRidgeEnum(activeRidge);
                                 ridgeEnum = RunningOnRidges(vMesh, boundary, runningEnum, activeRidge);
                                 break;
-                            case IntersectionCase.IntersectionIsEndOfRidgeAndLine:
+                            case IntersectionCase.EndOfRidgeAndLine:
                                 vMesh.VertexCut(activeRidge, alphaCut);
                                 if (boundary.MoveNext())
                                 {
@@ -152,12 +151,12 @@ namespace BoSSS.Foundation.Grid.Voronoi
                             case IntersectionCase.NotIntersecting:
                                 ridgeEnum.Reset();
                                 break;
-                            case IntersectionCase.IntersectionInMiddle:
+                            case IntersectionCase.InMiddle:
                                 //if intersection was successfull, select next cell
                                 activeRidge = vMesh.Subdivide(activeRidge, lines, alphaCut);
                                 (activeCell, ridgeEnum) = vMesh.getNeighborFromEdgeNeighbor(activeRidge);
                                 break;
-                            case IntersectionCase.IntersectionIsEndOfLine:
+                            case IntersectionCase.EndOfLine:
                                 activeRidge = vMesh.Subdivide(activeRidge, lines, alphaCut);
                                 if (boundary.MoveNext())
                                 {
@@ -169,12 +168,12 @@ namespace BoSSS.Foundation.Grid.Voronoi
                                     found = false;
                                 }
                                 break;
-                            case IntersectionCase.IntersectionIsEndOfRidge:
+                            case IntersectionCase.EndOfRidge:
                                 activeRidge = vMesh.SubdivideWithoutNewVertex(activeRidge, lines);
                                 runningEnum = vMesh.getConnectedRidgeEnum(activeRidge);
                                 ridgeEnum = RunningOnRidges(vMesh, boundary, runningEnum, activeRidge);
                                 break;
-                            case IntersectionCase.IntersectionIsEndOfRidgeAndLine:
+                            case IntersectionCase.EndOfRidgeAndLine:
                                 activeRidge = vMesh.SubdivideWithoutNewVertex(activeRidge, lines);
                                 if (boundary.MoveNext())
                                 {
@@ -204,21 +203,22 @@ namespace BoSSS.Foundation.Grid.Voronoi
                 case IntersectionCase.NotIntersecting:
                     vMesh.CloseMesh(linesFirstCell, firstCellCutRidge);
                     break;
-                case IntersectionCase.IntersectionIsEndOfLine:
-                case IntersectionCase.IntersectionIsEndOfRidgeAndLine:
+                case IntersectionCase.EndOfLine:
+                case IntersectionCase.EndOfRidgeAndLine:
                     break;
-                case IntersectionCase.IntersectionIsEndOfRidge:
-                case IntersectionCase.IntersectionInMiddle:
+                case IntersectionCase.EndOfRidge:
+                case IntersectionCase.InMiddle:
                 default:
                     throw new Exception();
             }
             boundary.Reset();
+            vMesh.CutIsFresh = true;
         }
 
         static IEnumerator<TRidge> RunningOnRidges<TCell, TRidge, TLine>(IIntersectableMesh<TCell, TRidge, TLine> vMesh,
-                                                                            IEnumerator<TLine> boundary,
-                                                                            IEnumerator<TRidge> ridgeEnum,
-                                                                            TRidge outerRidge)
+            IEnumerator<TLine> boundary,
+            IEnumerator<TRidge> ridgeEnum,
+            TRidge outerRidge)
         {
             bool keepOnRunning = true;
             TRidge activeRidge = default(TRidge);
@@ -238,7 +238,7 @@ namespace BoSSS.Foundation.Grid.Voronoi
                 {
                     case IntersectionCase.NotIntersecting:
                         break;
-                    case IntersectionCase.IntersectionIsEndOfLine:
+                    case IntersectionCase.EndOfLine:
                         activeRidge = vMesh.AddLineSegment(activeRidge, alphaCut);
                         ridgeEnum = vMesh.getConnectedRidgeEnum(activeRidge);
                         outerRidge = activeRidge;
@@ -247,13 +247,13 @@ namespace BoSSS.Foundation.Grid.Voronoi
                             keepOnRunning = false;
                         }
                         break;
-                    case IntersectionCase.IntersectionIsEndOfRidge:
-                        vMesh.AddRidge(activeRidge);
+                    case IntersectionCase.EndOfRidge:
+                        vMesh.AddEdge(activeRidge);
                         ridgeEnum = vMesh.getConnectedRidgeEnum(activeRidge);
                         outerRidge = activeRidge;
                         break;
-                    case IntersectionCase.IntersectionIsEndOfRidgeAndLine:
-                        vMesh.AddRidge(activeRidge);
+                    case IntersectionCase.EndOfRidgeAndLine:
+                        vMesh.AddEdge(activeRidge);
                         ridgeEnum = vMesh.getConnectedRidgeEnum(activeRidge);
                         outerRidge = activeRidge;
                         if (!boundary.MoveNext())
@@ -261,7 +261,7 @@ namespace BoSSS.Foundation.Grid.Voronoi
                             keepOnRunning = false;
                         }
                         break;
-                    case IntersectionCase.IntersectionInMiddle:
+                    case IntersectionCase.InMiddle:
                     default:
                         throw new InvalidOperationException();
                 }

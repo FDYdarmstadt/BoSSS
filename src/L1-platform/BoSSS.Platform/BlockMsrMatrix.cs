@@ -2264,40 +2264,44 @@ namespace ilPSP.LinSolvers {
             where VectorType1 : IList<double>
             where VectorType2 : IList<double> //
         {
-//#if DEBUG
-//            this.VerifyDataStructure("SpMV");
-            
-//            double aNorm = a.L2NormPow2().MPISum(this.MPI_Comm).Sqrt();
-//            double accNorm = acc.L2NormPow2().MPISum(this.MPI_Comm).Sqrt();
+            //#if DEBUG
+            //            this.VerifyDataStructure("SpMV");
 
-//            var T = this.ToMsrMatrix();
-//            double[] accB4 = acc.ToArray();
-//            double[] aB4 = a.ToArray();
+            //            double aNorm = a.L2NormPow2().MPISum(this.MPI_Comm).Sqrt();
+            //            double accNorm = acc.L2NormPow2().MPISum(this.MPI_Comm).Sqrt();
 
-//            double[] accB4B4 = acc.ToArray();
+            //            var T = this.ToMsrMatrix();
+            //            double[] accB4 = acc.ToArray();
+            //            double[] aB4 = a.ToArray();
 
-//            T.SpMVpara(alpha, a, beta, acc);
+            //            double[] accB4B4 = acc.ToArray();
 
-          
-//            this.__SpMV(alpha, aB4, beta, accB4);
+            //            T.SpMVpara(alpha, a, beta, acc);
 
-//            double aErr = GenericBlas.L2DistPow2(aB4, a).MPISum(this.MPI_Comm).Sqrt();
-//            double accErr = GenericBlas.L2DistPow2(accB4, acc).MPISum(this.MPI_Comm).Sqrt();
 
-//            double compNorm = T.InfNorm() * Math.Max(aNorm, accNorm);
-//            compNorm = Math.Max(Math.Sqrt(double.Epsilon), compNorm);
-//            double aErr_rel = aErr / compNorm;
-//            double accErr_rel = accErr / compNorm;
-//            if (aErr_rel > 1.0e-8 || double.IsInfinity(aErr_rel) || double.IsNaN(aErr_rel))
-//                throw new ArithmeticException("SpMV error");
-//            if (accErr_rel > 1.0e-8 || double.IsInfinity(accErr_rel) || double.IsNaN(accErr_rel)) {
-//                throw new ArithmeticException("SpMV error");
-//            }
-            
-//#else
+            //            this.__SpMV(alpha, aB4, beta, accB4);
+
+            //            double aErr = GenericBlas.L2DistPow2(aB4, a).MPISum(this.MPI_Comm).Sqrt();
+            //            double accErr = GenericBlas.L2DistPow2(accB4, acc).MPISum(this.MPI_Comm).Sqrt();
+
+            //            double compNorm = T.InfNorm() * Math.Max(aNorm, accNorm);
+            //            compNorm = Math.Max(Math.Sqrt(double.Epsilon), compNorm);
+            //            double aErr_rel = aErr / compNorm;
+            //            double accErr_rel = accErr / compNorm;
+            //            if (aErr_rel > 1.0e-8 || double.IsInfinity(aErr_rel) || double.IsNaN(aErr_rel))
+            //                throw new ArithmeticException("SpMV error");
+            //            if (accErr_rel > 1.0e-8 || double.IsInfinity(accErr_rel) || double.IsNaN(accErr_rel)) {
+            //                throw new ArithmeticException("SpMV error");
+            //            }
+
+            //#else
+
             this.__SpMV(alpha, a, beta, acc);
 //#endif
         }
+
+
+
 
         /// <summary>
         /// Sparse Matrix/Vector multiplication;
@@ -2309,24 +2313,31 @@ namespace ilPSP.LinSolvers {
         /// <typeparam name="VectorType1"></typeparam>
         /// <typeparam name="VectorType2"></typeparam>
         /// <param name="alpha"></param>
-        /// <param name="a">
+        /// <param name="_a">
         /// input; vector to be multiplied with this matrix from the right
         /// </param>
         /// <param name="beta"></param>
         /// <param name="acc">
         /// length of accumulator must be at least the update length 
         /// </param>
-        private void __SpMV<VectorType1, VectorType2>(double alpha, VectorType1 a, double beta, VectorType2 acc)
+        private void __SpMV<VectorType1, VectorType2>(double alpha, VectorType1 _a, double beta, VectorType2 acc)
             where VectorType1 : IList<double>
             where VectorType2 : IList<double> //
         {
             using (new FuncTrace()) {
-                if (a.Count != this._ColPartitioning.LocalLength)
+                
+                if (_a.Count != this._ColPartitioning.LocalLength)
                     throw new ArgumentException("Mismatch in number of columns.");
                 if (acc.Count != this._RowPartitioning.LocalLength)
                     throw new ArgumentException("Mismatch in number of rows.");
-                if (object.ReferenceEquals(acc, a))
+                if (object.ReferenceEquals(acc, _a))
                     throw new ArgumentException("In-Place computation is not supported.", "acc");
+
+                double[] a;
+                if (_a is double[])
+                    a = _a as double[];
+                else
+                    a = _a.ToArray(); // still faster than accessing via IList
 
                 this.UpdateCommPattern(this.MPI_Comm);
                 int MPIsize = this._RowPartitioning.MpiSize;
@@ -2390,7 +2401,7 @@ namespace ilPSP.LinSolvers {
                             for (int iRow = i0; iRow < iE; iRow++) {
                                 Debug.Assert(_ColPartitioning.IsInLocalRange(iRow));
                                 int iRowLoc = iRow - iFirstCol;
-                                Debug.Assert(iRowLoc >= 0 && iRowLoc < a.Count);
+                                Debug.Assert(iRowLoc >= 0 && iRowLoc < a.Length);
                                 *sb = a[iRowLoc];
                                 sb++;
                             }
@@ -2405,108 +2416,156 @@ namespace ilPSP.LinSolvers {
 
                 // local multiplication
                 // ====================
+
                 int NoOfBlockRows = _RowPartitioning.LocalNoOfBlocks;
                 Debug.Assert(NoOfBlockRows == m_BlockRows.Length);
                 int FirstRowBlock = _RowPartitioning.FirstBlock;
-                double[] VecAccu = null;
-                for (int iBlockLoc = 0; iBlockLoc < NoOfBlockRows; iBlockLoc++) { // loop over block rows...
-                    var BlockRow = m_BlockRows[iBlockLoc];
+                unsafe {
+                    fixed (double* pa = a) {
+                        double[] VecAccu = null;
+                        for (int iBlockLoc = 0; iBlockLoc < NoOfBlockRows; iBlockLoc++) { // loop over block rows...
+                            var BlockRow = m_BlockRows[iBlockLoc];
 
-                    int iBlock = iBlockLoc + FirstRowBlock;
-                    int RowBlockLength = _RowPartitioning.GetBlockLen(iBlock);
-                    int locBlockRowOffset = _RowPartitioning.GetBlockI0(iBlock) - _RowPartitioning.i0;
+                            int iBlock = iBlockLoc + FirstRowBlock;
+                            int RowBlockLength = _RowPartitioning.GetBlockLen(iBlock);
+                            int locBlockRowOffset = _RowPartitioning.GetBlockI0(iBlock) - _RowPartitioning.i0;
 
-                    if (BlockRow != null) {
-                        int RowBlockType = _RowPartitioning.GetBlockType(iBlock);
-                        int[] Row_i0Sblk = _RowPartitioning.GetSubblk_i0(RowBlockType);
-                        int[] RowLenSblk = _RowPartitioning.GetSubblkLen(RowBlockType);
-                        bool ContainsExternal = false;
+                            if (BlockRow != null) {
+                                int RowBlockType = _RowPartitioning.GetBlockType(iBlock);
+                                int[] Row_i0Sblk = _RowPartitioning.GetSubblk_i0(RowBlockType);
+                                int[] RowLenSblk = _RowPartitioning.GetSubblkLen(RowBlockType);
+                                bool ContainsExternal = false;
 
-                        
-                        if(VecAccu == null || VecAccu.Length < RowBlockLength) {
-                            VecAccu = new double[RowBlockLength];
-                        } else {
-                            for(int i = 0; i < RowBlockLength; i++) {
-                                VecAccu[i] = 0.0;
-                            }
-                        }
+                                //double[] _arschKakke = new double[RowBlockLength];
+                                if (VecAccu == null || VecAccu.Length < RowBlockLength) {
+                                    VecAccu = new double[RowBlockLength];
+                                } else {
+                                    for (int i = 0; i < RowBlockLength; i++) {
+                                        VecAccu[i] = 0.0;
+                                        //_arschKakke[i] = 0.0;
+                                    }
+                                }
+                                fixed (double* pVecAccu = VecAccu) { //, arschKakke = _arschKakke) {
 
-                        foreach (var kv in BlockRow) { // loop over block columns...
-                            BlockEntry BE = kv.Value;
-                            int jBlkCol = kv.Key;
-                            Debug.Assert(BE.jBlkCol == jBlkCol);
-                            if (_ColPartitioning.IsLocalBlock(jBlkCol)) {
+                                    foreach (var kv in BlockRow) { // loop over block columns...
+                                        BlockEntry BE = kv.Value;
+                                        int jBlkCol = kv.Key;
+                                        Debug.Assert(BE.jBlkCol == jBlkCol);
+                                        if (_ColPartitioning.IsLocalBlock(jBlkCol)) {
 
-                                int locBlockColOffset = _ColPartitioning.GetBlockI0(jBlkCol) - _ColPartitioning.i0;
+                                            int locBlockColOffset = _ColPartitioning.GetBlockI0(jBlkCol) - _ColPartitioning.i0;
 
-                                int ColBlockType = _ColPartitioning.GetBlockType(jBlkCol);
-                                int[] Col_i0Sblk = _ColPartitioning.GetSubblk_i0(ColBlockType);
-                                int[] ColLenSblk = _ColPartitioning.GetSubblkLen(ColBlockType);
+                                            int ColBlockType = _ColPartitioning.GetBlockType(jBlkCol);
+                                            int[] Col_i0Sblk = _ColPartitioning.GetSubblk_i0(ColBlockType);
+                                            int[] ColLenSblk = _ColPartitioning.GetSubblkLen(ColBlockType);
 
-                                Debug.Assert(BE.MembnkIdx.GetLength(0) == BE.InMembnk.GetLength(0));
-                                Debug.Assert(BE.MembnkIdx.GetLength(1) == BE.InMembnk.GetLength(1));
-                                int NoOfSblk_Rows = BE.MembnkIdx.GetLength(0);
-                                int NoOfSblk_Cols = BE.MembnkIdx.GetLength(1);
-                                Debug.Assert(Row_i0Sblk.Length == NoOfSblk_Rows);
-                                Debug.Assert(RowLenSblk.Length == NoOfSblk_Rows);
-                                Debug.Assert(Col_i0Sblk.Length == NoOfSblk_Cols);
-                                Debug.Assert(ColLenSblk.Length == NoOfSblk_Cols);
+                                            Debug.Assert(BE.MembnkIdx.GetLength(0) == BE.InMembnk.GetLength(0));
+                                            Debug.Assert(BE.MembnkIdx.GetLength(1) == BE.InMembnk.GetLength(1));
+                                            int NoOfSblk_Rows = BE.MembnkIdx.GetLength(0);
+                                            int NoOfSblk_Cols = BE.MembnkIdx.GetLength(1);
+                                            Debug.Assert(Row_i0Sblk.Length == NoOfSblk_Rows);
+                                            Debug.Assert(RowLenSblk.Length == NoOfSblk_Rows);
+                                            Debug.Assert(Col_i0Sblk.Length == NoOfSblk_Cols);
+                                            Debug.Assert(ColLenSblk.Length == NoOfSblk_Cols);
 
-                                for (int iSblkRow = 0; iSblkRow < NoOfSblk_Rows; iSblkRow++) { // loop over sub-block rows
-                                    for (int jSblkCol = 0; jSblkCol < NoOfSblk_Cols; jSblkCol++) { // loop over sub-block columns
-                                        int MembnkIdx = BE.MembnkIdx[iSblkRow, jSblkCol];
-                                        int InMembnk = BE.InMembnk[iSblkRow, jSblkCol];
-                                        Debug.Assert((MembnkIdx >= 0) == (InMembnk >= 0));
+                                            for (int iSblkRow = 0; iSblkRow < NoOfSblk_Rows; iSblkRow++) { // loop over sub-block rows
 
-                                        if (InMembnk >= 0) {
-                                            int Offset, CI, CJ;
-                                            bool isDense;
-                                            m_Membanks[MembnkIdx].GetFastBlockAccessInfo(out double[] RawMem, out Offset, out CI, out CJ, out isDense, InMembnk);
-                                           
-                                            int I = RowLenSblk[iSblkRow];
-                                            int J = ColLenSblk[jSblkCol];
-                                            Debug.Assert(m_Membanks[MembnkIdx].Mem.GetLength(1) == I);
-                                            Debug.Assert(m_Membanks[MembnkIdx].Mem.GetLength(2) == J);
+                                                int _iRowLoc = locBlockRowOffset + Row_i0Sblk[iSblkRow]; // local row index
+                                                int _iRowBlockLoc = Row_i0Sblk[iSblkRow]; // row index within block
 
-                                            for (int i = 0; i < I; i++) { // loop over sub-block rows...
-                                                int iRowLoc = locBlockRowOffset + i + Row_i0Sblk[iSblkRow]; // local row index
-                                                int iRowBlockLoc = i + Row_i0Sblk[iSblkRow]; // row index within block
-                                                double Accu = 0;
+                                                for (int jSblkCol = 0; jSblkCol < NoOfSblk_Cols; jSblkCol++) { // loop over sub-block columns
+                                                    int MembnkIdx = BE.MembnkIdx[iSblkRow, jSblkCol];
+                                                    int InMembnk = BE.InMembnk[iSblkRow, jSblkCol];
+                                                    Debug.Assert((MembnkIdx >= 0) == (InMembnk >= 0));
 
-                                                for (int j = 0; j < J; j++) { // loop over sub-block columns...
-                                                    int jColLoc = locBlockColOffset + j + Col_i0Sblk[jSblkCol]; // local storage index
-                                                    int iStorage = Offset + CI * i + CJ * j; // index into memory bank
-                                                    
-                                                    Accu += RawMem[iStorage] * a[jColLoc];
+                                                    if (InMembnk >= 0) {
+                                                        int Offset, CI, CJ;
+                                                        bool isDense;
+                                                        m_Membanks[MembnkIdx].GetFastBlockAccessInfo(out double[] RawMem, out Offset, out CI, out CJ, out isDense, InMembnk);
+
+                                                        fixed (double* pRawMem = RawMem) {
+
+                                                            int _jColLoc = locBlockColOffset + Col_i0Sblk[jSblkCol]; // local storage index
+
+                                                            int I = RowLenSblk[iSblkRow];
+                                                            int J = ColLenSblk[jSblkCol];
+                                                            Debug.Assert(m_Membanks[MembnkIdx].Mem.GetLength(1) == I);
+                                                            Debug.Assert(m_Membanks[MembnkIdx].Mem.GetLength(2) == J);
+
+                                                            int iRowLoc = _iRowLoc; // local row index
+                                                            int iRowBlockLoc = _iRowBlockLoc; // row index within block
+                                                            
+                                                            if (CJ != 1 || I * J < 40) {
+
+                                                                for (int i = 0; i < I; i++) { // loop over sub-block rows...
+
+                                                                    double Accu = 0;
+
+                                                                    //int jColLoc = _jColLoc;
+                                                                    double* pRow = pRawMem + Offset + CI * i;
+                                                                    double* pCol = pa + _jColLoc;
+                                                                    for (int j = 0; j < J; j++) { // loop over sub-block columns...
+                                                                                                  // .
+                                                                                                  //int iStorage = Offset + CI * i + CJ * j; // index into memory bank
+                                                                                                  //Accu += RawMem[iStorage] * a[jColLoc];
+                                                                                                  //jColLoc++;
+
+                                                                        Accu += *pRow * *pCol;
+                                                                        pCol++;
+                                                                        pRow += CJ;
+                                                                    }
+
+                                                                    VecAccu[iRowBlockLoc] += Accu;
+                                                                    iRowLoc++;
+                                                                    iRowBlockLoc++;
+                                                                }
+                                                            } else {
+
+                                                                BLAS.dgemv('t', I, J, 1.0, pRawMem + Offset, CI, pa + _jColLoc, 1, 1.0,
+                                                                    //arschKakke, 
+                                                                    pVecAccu + _iRowBlockLoc, 
+                                                                    1);
+                                                            }
+
+                                                            //for (int i = 0; i < I; i++) {
+                                                            //    double zahl1 = arschKakke[i];
+                                                            //    double zahl2 = pVecAccu[_iRowBlockLoc + i];
+                                                            //    double tol = Math.Max(Math.Abs(zahl1), Math.Abs(zahl2))*1e-3;
+                                                            //    double dist = Math.Abs(zahl1 - zahl2);
+
+                                                            //    if (dist > tol)
+                                                            //        throw new ArithmeticException();
+                                                            //}
+                                                            
+
+                                                        }
+
+                                                    }
                                                 }
-
-                                                VecAccu[iRowBlockLoc] += Accu;
                                             }
+                                        } else {
+                                            ContainsExternal = true;
                                         }
 
                                     }
-                                    
+
+                                    for (int __i = 0; __i < RowBlockLength; __i++) {
+                                        int __iRowLoc = __i + locBlockRowOffset;
+                                        double ri = acc[__iRowLoc] * beta + alpha * VecAccu[__i];
+                                        acc[__iRowLoc] = ri;
+                                        Debug.Assert(acc[__iRowLoc] == ri);
+                                    }
                                 }
+
+                                Debug.Assert(m_ExternalBlock[iBlockLoc] == ContainsExternal);
                             } else {
-                                ContainsExternal = true;
+                                for (int __i = 0; __i < RowBlockLength; __i++) {
+                                    int __iRowLoc = __i + locBlockRowOffset;
+                                    double ri = acc[__iRowLoc] * beta;
+                                    acc[__iRowLoc] = ri;
+                                    Debug.Assert(acc[__iRowLoc] == ri);
+                                }
                             }
-
-                        }
-
-                        for (int __i = 0; __i < RowBlockLength; __i++) {
-                            int __iRowLoc = __i + locBlockRowOffset;
-                            double ri = acc[__iRowLoc] * beta + alpha * VecAccu[__i];
-                            acc[__iRowLoc] = ri;
-                            Debug.Assert(acc[__iRowLoc] == ri);
-                        }
-
-                        Debug.Assert(m_ExternalBlock[iBlockLoc] == ContainsExternal);
-                    } else {
-                        for (int __i = 0; __i < RowBlockLength; __i++) {
-                            int __iRowLoc = __i + locBlockRowOffset;
-                            double ri = acc[__iRowLoc] * beta;
-                            acc[__iRowLoc] = ri;
-                            Debug.Assert(acc[__iRowLoc] == ri);
                         }
                     }
                 }
@@ -4361,7 +4420,7 @@ namespace ilPSP.LinSolvers {
             /// <param name="C">Output; the merge of <paramref name="A"/> and <paramref name="B"/></param>
             /// <param name="A">First Input.</param>
             /// <param name="B">Second Input.</param>
-            /// <param name="AscaleM_left"></param>
+            /// <param name="_AscaleM_left"></param>
             /// <param name="AscaleM_I"></param>
             /// <param name="AscaleM_J"></param>
             unsafe static public void Merge(TempBlockRow C, TempBlockRow A, TempBlockRow B, double* _AscaleM_left, int AscaleM_I, int AscaleM_J) {
@@ -4529,9 +4588,17 @@ namespace ilPSP.LinSolvers {
                         }
                     }
                 } else {
+                    // C  <--  C*Cscale  +  AscaleM_left*pA*Ascale
+                    // C                : NoRows * NoCols,     row skip: C_Ci
+                    // AscaleM_left     : NoRows * AscaleM_J,  row skip: AscaleM_J
+                    // pA               : AscaleM_J * NoCols,  row skip: A_Ci
+                    
+                    /*
+                    double[] pCcheck = new double[C_Ci * NoRows];
+
                     for (int i = 0; i < NoRows; i++) {
                         for (int j = 0; j < NoCols; j++) {
-                            double a = 0;
+                            double a = 0; // accumulator
 
                             for (int k = 0; k < AscaleM_J; k++) {
                                 a += AscaleM_left[AscaleM_J * i + k] * pA[A_Ci * k + j];
@@ -4539,13 +4606,29 @@ namespace ilPSP.LinSolvers {
 
                             // --------------
                             if (Cscale != 0) {
-                                pC[i * C_Ci + j] *= Cscale;
-                                pC[i * C_Ci + j] += a * Ascale;
+                                //pC[i * C_Ci + j] *= Cscale;
+                                //pC[i * C_Ci + j] += a * Ascale;
+                                pCcheck[i * C_Ci + j] = pC[i * C_Ci + j] * Cscale + a * Ascale;
+
                             } else {
-                                pC[i * C_Ci + j] = a * Ascale;
+                                //pC[i * C_Ci + j] = a * Ascale;
+
+                                pCcheck[i * C_Ci + j] = a * Ascale;
                             }
                         }
                     }
+                    */
+
+                    BLAS.dgemm('n', 'n', NoCols, NoRows, AscaleM_J, Ascale, pA, A_Ci, AscaleM_left, AscaleM_J, Cscale, pC, C_Ci);
+                    /*
+                    double eps = Math.Sqrt(BLAS.MachineEps);
+                    for (int i = 0; i < NoRows; i++) {
+                        for (int j = 0; j < NoCols; j++) {
+                            if (!(Math.Abs(pCcheck[i * C_Ci + j] - pC[i * C_Ci + j]) <= Math.Max(eps, 1e-7 * Math.Abs(pCcheck[i * C_Ci + j]))))
+                                throw new Exception("fuck blas.");
+                        }
+                    }
+                    */
                 }
             }
 

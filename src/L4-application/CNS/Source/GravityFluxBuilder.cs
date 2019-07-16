@@ -32,7 +32,7 @@ namespace CNS.Source {
         /// <param name="control"></param>
         /// <param name="boundaryMap"></param>
         /// <param name="speciesMap"></param>
-        public GravityFluxBuilder(CNSControl control, BoundaryConditionMap boundaryMap, ISpeciesMap speciesMap)
+        public GravityFluxBuilder(CNSControl control, CompressibleBoundaryCondMap boundaryMap, ISpeciesMap speciesMap)
             : base(control, boundaryMap, speciesMap) {
         }
 

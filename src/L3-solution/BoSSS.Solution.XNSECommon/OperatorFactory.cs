@@ -220,10 +220,8 @@ namespace BoSSS.Solution.XNSECommon {
 
                         if (evaporation) {
                             //comps.Add(new Operator.Convection.ConvectionAtLevelSet_Divergence(d, D, LsTrk, rhoA, rhoB, config.dntParams.ContiSign, config.dntParams.RescaleConti, kA, kB, hVapA, R_int, Tsat, sigma, p_c));
-                            comps.Add(new Operator.Convection.ConvectionAtLevelSet_nonMaterialLLF(d, D, LsTrk, rhoA, rhoB, kA, kB, hVapA, R_int, Tsat, sigma, p_c));
-                            comps.Add(new Operator.Convection.ConvectionAtLevelSet_nonMaterial(d, D, LsTrk, rhoA, rhoB, kA, kB, hVapA, R_int, Tsat, sigma, p_c));
-
-                            comps.Add(new Operator.DynamicInterfaceConditions.MassFluxAtInterface(d, D, LsTrk, rhoA, rhoB, kA, kB, hVapA, R_int, Tsat, sigma, p_c));
+                            //comps.Add(new Operator.Convection.ConvectionAtLevelSet_nonMaterialLLF(d, D, LsTrk, rhoA, rhoB, kA, kB, hVapA, R_int, Tsat, sigma, p_c));
+                            //comps.Add(new Operator.Convection.ConvectionAtLevelSet_nonMaterial(d, D, LsTrk, rhoA, rhoB, kA, kB, hVapA, R_int, Tsat, sigma, p_c));
                         }
 
                         // variante 3:
@@ -534,11 +532,11 @@ namespace BoSSS.Solution.XNSECommon {
                 // evaporation (mass flux)
                 // =======================
 
-                //if (evaporation) {
-                //    for (int d = 0; d < D; d++) {
-                //        m_OP.EquationComponents[CodName[d]].Add(new Operator.DynamicInterfaceConditions.MassFluxAtInterface(d, D, LsTrk, rhoA, rhoB, kA, kB, hVapA, R_int, Tsat, sigma, p_c));
-                //    }
-                //}
+                if (evaporation) {
+                    for (int d = 0; d < D; d++) {
+                        m_OP.EquationComponents[CodName[d]].Add(new Operator.DynamicInterfaceConditions.MassFluxAtInterface(d, D, LsTrk, rhoA, rhoB, kA, kB, hVapA, R_int, Tsat, sigma, p_c));
+                    }
+                }
 
 
             }
@@ -767,30 +765,6 @@ namespace BoSSS.Solution.XNSECommon {
 
                 mtxBuilder.ComputeMatrix(OpMatrix, OpAffine);
 
-            } else {
-                XSpatialOperator.XEvaluatorNonlin eval = Op.GetEvaluatorEx(Tracker,
-                    CurrentState.ToArray(), Params, RowMapping,
-                    SpcToCompute);
-
-                foreach(var kv in AgglomeratedCellLengthScales) {
-                    eval.SpeciesOperatorCoefficients[kv.Key].CellLengthScales = kv.Value;
-                    eval.SpeciesOperatorCoefficients[kv.Key].UserDefinedValues.Add("SlipLengths", SlipLengths);
-                    if(evaporation) {
-                        BitArray EvapMicroRegion = new BitArray(this.LsTrk.GridDat.Cells.Count);
-                        eval.SpeciesOperatorCoefficients[kv.Key].UserDefinedValues.Add("EvapMicroRegion", EvapMicroRegion);
-                    }
-                }
-
-                if(Op.SurfaceElementOperator.TotalNoOfComponents > 0) {
-                    foreach(var kv in InterfaceLengths) {
-                        eval.SpeciesOperatorCoefficients[kv.Key].UserDefinedValues.Add("InterfaceLengths", kv.Value);
-                    }
-                }
-
-                eval.time = time;
-
-                eval.Evaluate(1.0, 1.0, OpAffine);
-
 #if DEBUG
                 // remark: remove this piece in a few months from now on (09may18) if no problems occur
                 {
@@ -817,6 +791,31 @@ namespace BoSSS.Solution.XNSECommon {
                     Debug.Assert(L2_dist < RefNorm * 1.0e-6);
                 }
 #endif
+
+            } else {
+                XSpatialOperator.XEvaluatorNonlin eval = Op.GetEvaluatorEx(Tracker,
+                    CurrentState.ToArray(), Params, RowMapping,
+                    SpcToCompute);
+
+                foreach(var kv in AgglomeratedCellLengthScales) {
+                    eval.SpeciesOperatorCoefficients[kv.Key].CellLengthScales = kv.Value;
+                    eval.SpeciesOperatorCoefficients[kv.Key].UserDefinedValues.Add("SlipLengths", SlipLengths);
+                    if(evaporation) {
+                        BitArray EvapMicroRegion = new BitArray(this.LsTrk.GridDat.Cells.Count);
+                        eval.SpeciesOperatorCoefficients[kv.Key].UserDefinedValues.Add("EvapMicroRegion", EvapMicroRegion);
+                    }
+                }
+
+                if(Op.SurfaceElementOperator.TotalNoOfComponents > 0) {
+                    foreach(var kv in InterfaceLengths) {
+                        eval.SpeciesOperatorCoefficients[kv.Key].UserDefinedValues.Add("InterfaceLengths", kv.Value);
+                    }
+                }
+
+                eval.time = time;
+
+                eval.Evaluate(1.0, 1.0, OpAffine);
+
             }
 
 

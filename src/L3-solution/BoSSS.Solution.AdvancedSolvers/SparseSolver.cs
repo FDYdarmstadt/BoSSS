@@ -176,9 +176,6 @@ namespace BoSSS.Solution.AdvancedSolvers {
             ISparseSolver solver;
 
 
-
-
-
             switch (WhichSolver) {
                 case _whichSolver.PARDISO:
                 solver = new PARDISOSolver();

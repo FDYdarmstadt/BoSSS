@@ -64,13 +64,17 @@
     <Compile Include="Grid2D.cs" />
     <Compile Include="Grid3D.cs" />
     <Compile Include="GridRefinementController.cs" />
-    <Compile Include="Intersecter.cs" />
-    <Compile Include="IntersectionMesh.cs" />
-    <Compile Include="MatlabMeshGenerator.cs" />
-    <Compile Include="Mesh.cs" />
-    <Compile Include="MIConvexHullMeshGenerator.cs" />
+    <Compile Include="VoronoiMeshing\Mesher.cs" />
+    <Compile Include="VoronoiMeshing\GridConverter.cs" />
+    <Compile Include="VoronoiMeshing\Intersecter.cs" />
+    <Compile Include="VoronoiMeshing\IntersectionMesh.cs" />
+    <Compile Include="VoronoiMeshing\Mesh.cs" />
+    <Compile Include="VoronoiMeshing\MIConvexHullMeshGenerator.cs" />
+    <Compile Include="VoronoiMeshing\MeshingAlgorithm.cs" />
+    <Compile Include="VoronoiMeshing\TrackedVoronoiMesher.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="VoronoiGrid2D.cs" />
+    <Compile Include="VoronoiMeshing\VoronoiMesher.cs" />
   </ItemGroup>
   <ItemGroup>
     <BootstrapperPackage Include="Microsoft.Net.Client.3.5">
