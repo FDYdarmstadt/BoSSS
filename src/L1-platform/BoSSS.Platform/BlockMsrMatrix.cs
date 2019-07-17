@@ -2520,8 +2520,10 @@ namespace ilPSP.LinSolvers {
                                                                     iRowBlockLoc++;
                                                                 }
                                                             } else {
+                                                                //if (I != J || CI != I)
+                                                                //    Console.Write("");
 
-                                                                BLAS.dgemv('t', I, J, 1.0, pRawMem + Offset, CI, pa + _jColLoc, 1, 1.0,
+                                                                BLAS.dgemv('t', J, I, 1.0, pRawMem + Offset, CI, pa + _jColLoc, 1, 1.0,
                                                                     //arschKakke, 
                                                                     pVecAccu + _iRowBlockLoc, 
                                                                     1);
