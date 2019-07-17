@@ -15,21 +15,16 @@ limitations under the License.
 */
 
 using BoSSS.Foundation;
-using BoSSS.Foundation.Grid;
 using BoSSS.Foundation.Quadrature;
 using BoSSS.Foundation.XDG;
 using ilPSP;
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace BoSSS.Application.FSI_Solver
 {
     class ParticleAddedDamping
     {
-        public double[,] IntegrationOverLevelSet(LevelSetTracker LsTrk, double muA, double rhoA, double dt, double[] currentPosition)
+        public double[,] IntegrationOverLevelSet(Particle particle, LevelSetTracker LsTrk, double muA, double rhoA, double dt, double[] currentPosition)
         {
             double[,] addedDampingTensor = new double[6, 6];
             double alpha = 0.5;
@@ -125,7 +120,7 @@ namespace BoSSS.Application.FSI_Solver
                         var SchemeHelper = LsTrk.GetXDGSpaceMetrics(new[] { LsTrk.GetSpeciesId("A") }, RequiredOrder, 1).XQuadSchemeHelper;
                         //var SchemeHelper = new XQuadSchemeHelper(LsTrk, momentFittingVariant, );
 
-                        CellQuadratureScheme cqs = SchemeHelper.GetLevelSetquadScheme(0, LsTrk.Regions.GetCutCellMask());
+                        CellQuadratureScheme cqs = SchemeHelper.GetLevelSetquadScheme(0, particle.CutCells_P(LsTrk));
                         //CellQuadratureScheme cqs = SchemeHelper.GetLevelSetquadScheme(0, ParticleCutCells);
 
                         CellQuadrature.GetQuadrature(new int[] { 1 }, LsTrk.GridDat,

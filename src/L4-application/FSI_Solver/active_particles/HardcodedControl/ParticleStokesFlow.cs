@@ -1657,7 +1657,7 @@ namespace BoSSS.Application.FSI_Solver
                 useAddaptiveUnderrelaxation = true,
                 underrelaxation_factor = 5,
                 clearSmallValues = true,
-                UseAddedDamping = false
+                UseAddedDamping = true
             });
             C.Particles.Add(new Particle_Falle_Links(new double[] { 0.975, 4.75 }, startAngl: 0)
             {
@@ -1680,7 +1680,7 @@ namespace BoSSS.Application.FSI_Solver
 
             C.InitialValues_Evaluators.Add("VelocityX", X => 0);
             C.InitialValues_Evaluators.Add("VelocityY", X => 0);
-            C.ForceAndTorque_ConvergenceCriterion = 1e-5;
+            C.ForceAndTorque_ConvergenceCriterion = 1e-4;
 
 
             // Physical Parameters
