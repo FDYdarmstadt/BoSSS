@@ -142,6 +142,7 @@ namespace BoSSS.Solution {
                         MaxIter = nc.MaxSolverIterations,
                         MinIter = nc.MinSolverIterations,
                         ApproxJac = Newton.ApproxInvJacobianOptions.DirectSolver, //MUMPS is taken, todo: enable all linear solvers
+                        linsolver = LinSolver,
                         Precond = PrecondSolver,
                         GMRESConvCrit = lc.ConvergenceCriterion,
                         ConvCrit = nc.ConvergenceCriterion,

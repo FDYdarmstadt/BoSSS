@@ -44,10 +44,10 @@ namespace BoSSS.Solution.NSECommon {
     /// <summary>
     /// SIP discretization of diffusion operators for scalar transport equations (i.e. species mass transport and temperature). Analog to swipViscosity_Term1.
     /// </summary>
-    public class SIPDiffusion : BoSSS.Foundation.IEdgeForm, BoSSS.Foundation.IVolumeForm {
-
-        double Reynolds;
-        double Schmidt;
+    public class SIPDiffusion : BoSSS.Foundation.IEdgeForm, BoSSS.Foundation.IVolumeForm, IEquationComponentCoefficient    {
+ 
+        double m_Reynolds;
+        double m_Schmidt;
         MaterialLaw EoS;
         DiffusionMode Mode;
 
@@ -72,8 +72,8 @@ namespace BoSSS.Solution.NSECommon {
         /// <param name="Argument">The argument of the flux. Must be compatible with the DiffusionMode.</param>
         /// <param name="PenaltyLengthScales"></param>
         public SIPDiffusion(double Reynolds, double Schmidt, MaterialLaw EoS, double PenaltyBase, MultidimensionalArray PenaltyLengthScales, IncompressibleBoundaryCondMap BcMap, DiffusionMode Mode, string Argument) {
-            this.Reynolds = Reynolds;
-            this.Schmidt = Schmidt;
+            this.m_Reynolds = Reynolds;
+            this.m_Schmidt = Schmidt;
             this.EoS = EoS;
             this.PenaltyBase = PenaltyBase;
             this.BcMap = BcMap;
@@ -177,7 +177,7 @@ namespace BoSSS.Solution.NSECommon {
                     throw new NotImplementedException();
             }
 
-            Acc *= 1.0 / (Reynolds * Schmidt);
+            Acc *= 1.0 / (m_Reynolds * m_Schmidt);
             return -Acc;
         }
 
@@ -264,7 +264,7 @@ namespace BoSSS.Solution.NSECommon {
                     throw new NotSupportedException();
             }
 
-            Acc *= 1.0 / (Reynolds * Schmidt);
+            Acc *= 1.0 / (m_Reynolds * m_Schmidt);
             return -Acc;
         }
 
@@ -287,8 +287,16 @@ namespace BoSSS.Solution.NSECommon {
                 default:
                     throw new NotImplementedException();
             }
-            Acc *= 1.0 / (Reynolds * Schmidt);
+            Acc *= 1.0 / (m_Reynolds * m_Schmidt);
             return -Acc;
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        public void CoefficientUpdate(CoefficientSet cs, int[] DomainDGdeg, int TestDGdeg) {
+            if (cs.UserDefinedValues.Keys.Contains("Reynolds"))
+                m_Reynolds = (double)cs.UserDefinedValues["Reynolds"];
         }
 
         /// <summary>
