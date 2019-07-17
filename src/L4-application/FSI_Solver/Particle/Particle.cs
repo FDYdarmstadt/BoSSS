@@ -622,7 +622,7 @@ namespace BoSSS.Application.FSI_Solver
             if (TimestepInt == 1)
             {
                 HydrodynamicForces[0][0] = 20 * Math.Cos(Angle[0]) * ActiveStress * Circumference_P;
-                HydrodynamicForces[0][1] = 20 * Math.Sin(Angle[0]) * ActiveStress * Circumference_P;
+                HydrodynamicForces[0][1] = 20 * Math.Sin(Angle[0]) * ActiveStress * Circumference_P + GravityVertical * Mass_P;
             }
             if (iteration_counter_P == 0)
             {

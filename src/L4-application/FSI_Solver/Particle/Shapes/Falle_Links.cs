@@ -103,11 +103,10 @@ namespace BoSSS.Application.FSI_Solver
             //          r = Math.Max(r, Math.Abs(Position[0][0] - 0.5 * width_P - X[0]));
 
             // Falle_Links:
-                      r = Math.Abs(Position[0][1] - X[1]);
-                      r = Math.Max(r, Math.Abs(-X[1] + 0.5*X[0] + Position[0][1] - Position[0][0] - width_P) - Math.Abs(X[1] - Position[0][1]));
-                      r = Math.Max(r, Math.Abs(Position[0][0] - X[0] + 1.5*width_P)); 
-                      r = r - 3.5*width_P;
-
+            r = Math.Abs(Position[0][1] - X[1]);
+            r = Math.Max(r, Math.Abs(-X[1] + 0.5 * X[0] + Position[0][1] - Position[0][0] - width_P) - Math.Abs(X[1] - Position[0][1]));
+            r = Math.Max(r, Math.Abs(Position[0][0] - X[0] - 0.5 * width_P));
+            r = r - 4.5 * width_P;
             r = -r;
             return r;
         }
@@ -117,7 +116,7 @@ namespace BoSSS.Application.FSI_Solver
             // only for rectangular cells
             if (h_max == 0)
                 h_max = h_min;
-            double radiusTolerance = !WithoutTolerance ? width_P + Math.Sqrt(h_max.Pow2() + h_min.Pow2()) : 1;
+            double radiusTolerance = !WithoutTolerance ? 5 * width_P + Math.Sqrt(h_max.Pow2() + h_min.Pow2()) : 1;
             var distance = point.L2Distance(Position[0]);
             if (distance < (radiusTolerance))
             {
@@ -141,7 +140,7 @@ namespace BoSSS.Application.FSI_Solver
             for (int k = 0; k < NoOfSurfacePoints; k++)
             {
                 SurfacePoints[0, k, 0] = Position[0][0] - width_P / 2 + InfinitisemalLength[k];
-                SurfacePoints[0, k, 1] = Position[0][1] - width_P / 2 - 1.5 * SurfacePoints[k, 0] + width_P / 2;
+                SurfacePoints[0, k, 1] = Position[0][1] - width_P / 2 - 1.5 * SurfacePoints[0, k, 0] + width_P / 2;
             }
 
             for (int j = 0; j < NoOfSurfacePoints; j++)

@@ -1553,5 +1553,169 @@ namespace BoSSS.Application.FSI_Solver
 
             return C;
         }
+
+        public static FSI_Control FalleTest(string _DbPath = null, int k = 2, double VelXBase = 0.0, double angle = 0.0)
+        {
+            FSI_Control C = new FSI_Control();
+
+
+            const double BaseSize = 1.0;
+
+
+            // basic database options
+            // ======================
+
+            //C.DbPath = @"\\dc1\userspace\deriabina\bosss_db";
+            C.savetodb = false;
+            C.saveperiod = 1;
+            C.ProjectName = "ParticleCollisionTest";
+            C.ProjectDescription = "Gravity";
+            C.SessionName = C.ProjectName;
+            C.Tags.Add("with immersed boundary method");
+            C.AdaptiveMeshRefinement = true;
+            C.SessionName = "fjkfjksdfhjk";
+            C.RefinementLevel = 1;
+
+            C.pureDryCollisions = false;
+            C.SetDGdegree(k);
+
+            // grid and boundary conditions
+            // ============================
+
+            C.GridFunc = delegate
+            {
+
+                int q = new int();
+                int r = new int();
+
+                q = 22;
+                r = 20;
+
+                double[] Xnodes = GenericBlas.Linspace(-2.0 * BaseSize, 2.0 * BaseSize, q + 1);
+                double[] Ynodes = GenericBlas.Linspace(3.5 * BaseSize, 7.00 * BaseSize, r + 1);
+
+                var grd = Grid2D.Cartesian2DGrid(Xnodes, Ynodes, periodicX: false, periodicY: false);
+
+                grd.EdgeTagNames.Add(1, "Wall_left");
+                grd.EdgeTagNames.Add(2, "Wall_right");
+                grd.EdgeTagNames.Add(3, "Pressure_Outlet");
+                grd.EdgeTagNames.Add(4, "Wall_upper");
+
+
+                grd.DefineEdgeTags(delegate (double[] X)
+                {
+                    byte et = 0;
+                    if (Math.Abs(X[0] - (-2.0 * BaseSize)) <= 1.0e-8)
+                        et = 1;
+                    if (Math.Abs(X[0] + (-2.0 * BaseSize)) <= 1.0e-8)
+                        et = 2;
+                    if (Math.Abs(X[1] - (3.5 * BaseSize)) <= 1.0e-8)
+                        et = 3;
+                    if (Math.Abs(X[1] + (-7.00 * BaseSize)) <= 1.0e-8)
+                        et = 4;
+
+
+                    return et;
+                });
+
+                Console.WriteLine("Cells:" + grd.NumberOfCells);
+
+                return grd;
+            };
+
+            C.GridPartType = GridPartType.Hilbert;
+
+            C.AddBoundaryValue("Wall_left");
+            C.AddBoundaryValue("Wall_right");
+            C.AddBoundaryValue("Pressure_Outlet");
+            C.AddBoundaryValue("Wall_upper");
+
+            // Boundary values for level-set
+            //C.BoundaryFunc = new Func<double, double>[] { (t) => 0.1 * 2 * Math.PI * -Math.Sin(Math.PI * 2 * 1 * t), (t) =>  0};
+            //C.BoundaryFunc = new Func<double, double>[] { (t) => 0, (t) => 0 };
+
+            // Initial Values
+            // ==============
+
+            // Coupling Properties
+            C.Timestepper_LevelSetHandling = LevelSetHandling.FSI_LieSplittingFullyCoupled;
+
+            // Fluid Properties
+            C.PhysicalParameters.rho_A = 1.0;
+            C.PhysicalParameters.mu_A = 1.0;
+            C.CoefficientOfRestitution = 0;
+
+            // Particle Properties
+            //C.PhysicalParameters.mu_B = 0.1;
+            //C.particleMass = 1;
+
+            C.Particles.Add(new Particle_Sphere(new double[] { 0.0, 6.00 })
+            {
+                radius_P = 0.35,
+                particleDensity = 1.01,
+                GravityVertical = -9.81,
+                useAddaptiveUnderrelaxation = true,
+                underrelaxation_factor = 5,
+                clearSmallValues = true,
+                UseAddedDamping = false
+            });
+            C.Particles.Add(new Particle_Falle_Links(new double[] { 0.975, 4.75 }, startAngl: 0)
+            {
+                particleDensity = 1,
+                width_P = 0.15,
+                GravityVertical = 0,
+                IncludeRotation = false,
+                IncludeTranslation = false,
+            });
+
+
+            C.Particles.Add(new Particle_Falle_Rechts(new double[] { -0.975, 4.75 }, startAngl: 0)
+            {
+                particleDensity = 1,
+                width_P = 0.15,
+                GravityVertical = 0,
+                IncludeRotation = false,
+                IncludeTranslation = false,
+            });
+
+            C.InitialValues_Evaluators.Add("VelocityX", X => 0);
+            C.InitialValues_Evaluators.Add("VelocityY", X => 0);
+            C.ForceAndTorque_ConvergenceCriterion = 1e-5;
+
+
+            // Physical Parameters
+            // ===================
+
+            C.PhysicalParameters.IncludeConvection = false;
+
+            // misc. solver options
+            // ====================
+
+            C.AdvancedDiscretizationOptions.PenaltySafety = 4;
+            C.AdvancedDiscretizationOptions.CellAgglomerationThreshold = 0.2;
+            C.LevelSetSmoothing = false;
+            C.LinearSolver.MaxSolverIterations = 10;
+            C.NonLinearSolver.MaxSolverIterations = 10;
+            C.LinearSolver.NoOfMultigridLevels = 1;
+
+
+            // Timestepping
+            // ============
+
+            //C.Timestepper_Mode = FSI_Control.TimesteppingMode.Splitting;
+            C.Timestepper_Scheme = FSI_Solver.FSI_Control.TimesteppingScheme.BDF2;
+            double dt = 1e-2;
+            C.dtMax = dt;
+            C.dtMin = dt;
+            C.Endtime = 15.0;
+            C.NoOfTimesteps = 1000000;
+
+            // haben fertig...
+            // ===============
+
+            return C;
+        }
+
+
     }
 }
