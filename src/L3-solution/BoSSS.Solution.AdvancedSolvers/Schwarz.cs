@@ -363,6 +363,8 @@ namespace BoSSS.Solution.AdvancedSolvers {
             }
         }
 
+
+
         /// <summary>
         /// ~
         /// </summary>
@@ -801,7 +803,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 // solution scaling in overlapping regions
                 // =======================================
 
-                if (Overlap > 0) {
+                if (Overlap > 0 && EnableOverlapScaling) {
                     int LocalLength = MgMap.LocalLength;
                     this.SolutionScaling = new double[LocalLength];
                     var SolScale = this.SolutionScaling;
@@ -977,6 +979,16 @@ namespace BoSSS.Solution.AdvancedSolvers {
         }
 
         double[] SolutionScaling;
+
+        /// <summary>
+        /// If <see cref="Overlap"/> > 0, the solution, in cells which are covered by multiple blocks, 
+        /// is scaled in the overlapping region by one over the multiplicity.
+        /// This option might be useful in some applications but may also fail in others:
+        /// - seems to **fail** e.g. if this is used as a preconditioner for PCG (<see cref="SoftPCG"/>)
+        /// - improves number of iterations if used e.g. as a smoother for <see cref="OrthonormalizationMultigrid"/>
+        /// </summary>
+        public bool EnableOverlapScaling = false;
+
 
 
         BlockMsrMatrix MtxFull;
@@ -1156,7 +1168,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                         }
                     }
 
-                    if (Overlap > 0) {
+                    if (Overlap > 0 && EnableOverlapScaling) {
                         // block solutions stored on *external* indices will be accumulated on other processors.
                         XExchange.TransceiveStartImReturn();
                         XExchange.TransceiveFinish(1.0);
@@ -1166,7 +1178,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
                         var SolScale = this.SolutionScaling;
                         for(int l = 0; l < LocLength; l++) {
-                            //X[l] *= SolScale[l];
+                            X[l] *= SolScale[l];
                         }
                     }
                 }

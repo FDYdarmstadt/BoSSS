@@ -216,7 +216,7 @@ namespace BoSSS.Application.SipPoisson {
         /// <param name="solver_name">
         /// Name of solver to use.
         /// </param>
-        public static SipControl TestCartesian2(int Res, int Dim, LinearSolverConfig.Code solver_name = LinearSolverConfig.Code.exp_Kcycle_schwarz, int deg = 3) {
+        public static SipControl TestCartesian2(int Res, int Dim, LinearSolverConfig.Code solver_name = LinearSolverConfig.Code.exp_gmres_levelpmg, int deg = 5) {
             if (Dim != 2 && Dim != 3)
                 throw new ArgumentOutOfRangeException();
 
@@ -225,7 +225,7 @@ namespace BoSSS.Application.SipPoisson {
             R.savetodb = false;
 
             R.FieldOptions.Add("T", new FieldOpts() { Degree = deg, SaveToDB = FieldOpts.SaveToDBOpt.TRUE });
-            R.FieldOptions.Add("Tex", new FieldOpts() { Degree = deg * 2 });
+            R.FieldOptions.Add("Tex", new FieldOpts() { Degree = deg + 2 });
             R.InitialValues_Evaluators.Add("RHS", X => -Math.Sin(X[0]));
             R.InitialValues_Evaluators.Add("Tex", X => Math.Sin(X[0]));
             R.ExactSolution_provided = true;
@@ -257,10 +257,11 @@ namespace BoSSS.Application.SipPoisson {
                 grd.EdgeTagNames.Add(2, BoundaryType.Neumann.ToString());
                 grd.DefineEdgeTags(delegate (double[] X) {
                     byte ret;
-                    if (Math.Abs(X[0] - 0.0) <= 1.0e-6)
-                        ret = 1;
+                    double x = X[0];
+                    if (Math.Abs(x - 0.0) <= 1.0e-8)
+                        ret = 1; // Dirichlet
                     else
-                        ret = 2;
+                        ret = 2; // Neumann
                     return ret;
                 });
 
@@ -271,24 +272,28 @@ namespace BoSSS.Application.SipPoisson {
                  delegate (double[] X) {
                      double x = X[0], y = X[1];
 
-                     if (Math.Abs(X[0] - (0.0)) < 1.0e-8)
-                         return 0.0;
 
-                     throw new ArgumentOutOfRangeException();
+                     return Math.Sin(x);
+                     //if (Math.Abs(X[0] - (0.0)) < 1.0e-8)
+                     //    return 0.0;
+
+                     //throw new ArgumentOutOfRangeException();
                  });
 
             R.AddBoundaryValue(BoundaryType.Neumann.ToString(), "T",
                  delegate (double[] X) {
-                     if (Math.Abs(X[1] - 1.0) < 1.0e-8 || Math.Abs(X[1] + 1.0) < 1.0e-8) // y = -1, y = +1
+                     double x = X[0], y = X[1], z = X.Length > 2 ? X[2] : 0.0;
+
+                     if (Math.Abs(y - 1.0) < 1.0e-8 || Math.Abs(y + 1.0) < 1.0e-8) // y = -1, y = +1
                          return 0;
 
-                     if (X.Length > 2 && (Math.Abs(X[2] - 1.0) < 1.0e-8 || Math.Abs(X[2] + 1.0) < 1.0e-8)) // z = -1, z = +1
+                     if (X.Length > 2 && (Math.Abs(z - 1.0) < 1.0e-8 || Math.Abs(z + 1.0) < 1.0e-8)) // z = -1, z = +1
                          return 0;
 
-                     if (Math.Abs(X[0] - (+10.0)) < 1.0e-8)
-                         return Math.Cos(10.0);
+                     //if (Math.Abs(X[0] - (+10.0)) < 1.0e-8)
+                         return Math.Cos(x);
 
-                     throw new ArgumentOutOfRangeException();
+                     //throw new ArgumentOutOfRangeException();
                  });
             return R;
         }

@@ -126,7 +126,7 @@ namespace BoSSS.Application.FSI_Solver
             return false;
         }
 
-        override public MultidimensionalArray GetSurfacePoints(double hMin, double[] Position, double Angle)
+        override public MultidimensionalArray GetSurfacePoints(double hMin)
         {
             if (spatialDim != 2)
                 throw new NotImplementedException("Only two dimensions are supported at the moment");
@@ -140,19 +140,19 @@ namespace BoSSS.Application.FSI_Solver
 
             for (int k = 0; k < NoOfSurfacePoints; k++)
             {
-                SurfacePoints[0, k, 0] = Position[0] - width_P / 2 + InfinitisemalLength[k];
-                SurfacePoints[0, k, 1] = Position[1] - width_P / 2 - 1.5 * SurfacePoints[k, 0] + width_P / 2;
+                SurfacePoints[0, k, 0] = Position[0][0] - width_P / 2 + InfinitisemalLength[k];
+                SurfacePoints[0, k, 1] = Position[0][1] - width_P / 2 - 1.5 * SurfacePoints[k, 0] + width_P / 2;
             }
 
             for (int j = 0; j < NoOfSurfacePoints; j++)
             {
-                SurfacePoints[0, j, 0] = Math.Sign(Math.Cos(InfinitisemalAngle[j])) * width_P * 7 + Position[0] + 7 * width_P / 4;
-                SurfacePoints[0, j, 1] = Math.Sign(Math.Sin(InfinitisemalAngle[j])) * width_P * 7 + Position[1] + 7 * width_P / 2;
+                SurfacePoints[0, j, 0] = Math.Sign(Math.Cos(InfinitisemalAngle[j])) * width_P * 7 + Position[0][0] + 7 * width_P / 4;
+                SurfacePoints[0, j, 1] = Math.Sign(Math.Sin(InfinitisemalAngle[j])) * width_P * 7 + Position[0][1] + 7 * width_P / 2;
             }
             for (int j = 0; j < NoOfSurfacePoints; j++)
             {
-                SurfacePoints[1, j, 0] = -Math.Sign(Math.Cos(InfinitisemalAngle[j])) * width_P * 2.5 + Position[0];
-                SurfacePoints[1, j, 1] = -Math.Sign(Math.Sin(InfinitisemalAngle[j])) * width_P * 2.5 + Position[1];
+                SurfacePoints[1, j, 0] = -Math.Sign(Math.Cos(InfinitisemalAngle[j])) * width_P * 2.5 + Position[0][0];
+                SurfacePoints[1, j, 1] = -Math.Sign(Math.Sin(InfinitisemalAngle[j])) * width_P * 2.5 + Position[0][1];
             }
             return SurfacePoints;
         }

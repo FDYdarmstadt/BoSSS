@@ -142,6 +142,7 @@ namespace BoSSS.Solution {
                         MaxIter = nc.MaxSolverIterations,
                         MinIter = nc.MinSolverIterations,
                         ApproxJac = Newton.ApproxInvJacobianOptions.DirectSolver, //MUMPS is taken, todo: enable all linear solvers
+                        linsolver = LinSolver,
                         Precond = PrecondSolver,
                         GMRESConvCrit = lc.ConvergenceCriterion,
                         ConvCrit = nc.ConvergenceCriterion,
@@ -600,6 +601,13 @@ namespace BoSSS.Solution {
                 case LinearSolverConfig.Code.exp_Kcycle_schwarz:
                     templinearSolve = KcycleMultiSchwarz(lc, LocalDOF);
                     //templinearSolve = new DynamicMultigrid();
+                    break;
+
+                case LinearSolverConfig.Code.exp_gmres_levelpmg:
+                    templinearSolve = new SoftGMRES() {
+                        m_Tolerance = lc.ConvergenceCriterion,
+                        Precond = new LevelPmg()
+                    };
                     break;
 
                 //testing area, please wear a helmet ...
@@ -1527,18 +1535,16 @@ namespace BoSSS.Solution {
         /// </summary>
         ISolverSmootherTemplate KcycleMultiSchwarz(LinearSolverConfig _lc, int[] _LocalDOF) {
 
-
             // my tests show that the ideal block size may be around 10'000
             int DirectKickIn = _lc.TargetBlockSize;
-            _lc.ConvergenceCriterion = 1e-10;
-
+            
             //MultigridOperator Current = op;
             var SolverChain = new List<ISolverSmootherTemplate>();
+            
+
             for (int iLevel = 0; iLevel < _lc.NoOfMultigridLevels; iLevel++) {
                 int SysSize = _LocalDOF[iLevel].MPISum();
                 int NoOfBlocks = (int)Math.Ceiling(((double)SysSize) / ((double)DirectKickIn));
-
-
 
                 bool useDirect = false;
                 useDirect |= (SysSize < DirectKickIn);
@@ -1564,15 +1570,16 @@ namespace BoSSS.Solution {
                         m_BlockingStrategy = new Schwarz.METISBlockingStrategy() {
                             NoOfPartsPerProcess = NoOfBlocks
                         },
-                        Overlap = 2 // overlap seems to help
+                        Overlap = 2, // overlap seems to help; more overlap seems to help more
+                        EnableOverlapScaling = true
                     };
 
-                    /*
-                    var smoother2 = new BlockJacobi() {
-                        NoOfIterations = 2,
-                        m_Tolerance = 0
-                    };
-                    */
+                    
+                    //var smoother2 = new BlockJacobi() {
+                    //    NoOfIterations = 2,
+                    //    m_Tolerance = 0
+                    //};
+                    
 
                     levelSolver = new OrthonormalizationMultigrid() {
                         m_MaxIterations = iLevel == 0 ? _lc.MaxSolverIterations : 1,
@@ -1598,8 +1605,18 @@ namespace BoSSS.Solution {
 
                 //Current = Current.CoarserLevel;
             }
+            
 
+            //SolverChain.Add(new DynamicMultigrid());
 
+            /*
+            var S = new SoftGMRES() {
+                m_Tolerance = _lc.ConvergenceCriterion,
+                Precond = new LevelPmg()
+            };
+
+            SolverChain.Add(S);
+            */
 
 
             return SolverChain[0];
