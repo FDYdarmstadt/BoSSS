@@ -153,8 +153,20 @@ namespace BoSSS.Solution.NSECommon {
                 case PhysicsMode.LowMach:
                     double TemperatureMeanIn = inp.Parameters_IN[2 * m_SpatialDimension + 1];
                     double TemperatureMeanOut = inp.Parameters_OUT[2 * m_SpatialDimension + 1];
+
+                    Debug.Assert(TemperatureMeanOut != 0);
+
                     LambdaIn = LambdaConvection.GetLambda(VelocityMeanIn, inp.Normale, EoS, false, TemperatureMeanIn);
                     LambdaOut = LambdaConvection.GetLambda(VelocityMeanOut, inp.Normale, EoS, false, TemperatureMeanOut);
+
+
+                    if (double.IsNaN(LambdaIn) || double.IsInfinity(LambdaIn))
+                        throw new NotFiniteNumberException();
+
+                    if (double.IsNaN(LambdaOut) || double.IsInfinity(LambdaOut))
+                        throw new NotFiniteNumberException();
+
+
                     break;
                 case PhysicsMode.Combustion:
                     double[] ScalarMeanIn = new double[NumberOfReactants + 1];
@@ -174,6 +186,9 @@ namespace BoSSS.Solution.NSECommon {
             r += Lambda * (Uin[0] - Uout[0]);
 
             r *= 0.5;
+            if (double.IsNaN(r))
+                throw new NotFiniteNumberException();
+            
             return r;
         }
 
@@ -252,7 +267,8 @@ namespace BoSSS.Solution.NSECommon {
                         // Calculate BorderEdgeFlux as InnerEdgeFlux
                         // =========================================    
                         r = InnerEdgeFlux(ref inp2, Uin, Uout);
-
+                        if (double.IsNaN(r))
+                            throw new NotFiniteNumberException();
                         return r;
                     }
                 case IncompressibleBcType.Velocity_Inlet: {
@@ -323,7 +339,8 @@ namespace BoSSS.Solution.NSECommon {
                         // Calculate BorderEdgeFlux as InnerEdgeFlux
                         // =========================================    
                         r = InnerEdgeFlux(ref inp2, Uin, Uout);
-
+                        if (double.IsNaN(r))
+                            throw new NotFiniteNumberException();
                         return r;
                     }
                 case IncompressibleBcType.Pressure_Dirichlet:
@@ -355,7 +372,8 @@ namespace BoSSS.Solution.NSECommon {
                             double rho = EoS.GetDensity(args);
                             r *= rho;
                         }
-
+                        if (double.IsNaN(r))
+                            throw new NotFiniteNumberException();
                         return r;
                     }
                 default:
@@ -396,6 +414,10 @@ namespace BoSSS.Solution.NSECommon {
                 double rho = EoS.GetDensity(args);
                 for (int d = 0; d < m_SpatialDimension; d++)
                     output[d] *= rho;
+            }
+            for (int d = 0; d < m_SpatialDimension; d++) {
+                if (double.IsNaN(output[d]))
+                    throw new NotFiniteNumberException();
             }
         }
 

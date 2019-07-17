@@ -119,7 +119,7 @@ namespace BoSSS.Solution.Control {
             //CG versions
 
             /// <summary>
-            /// Conjugate gradient (<see cref="ilPSP.LinSolvers.monkey.CG"/>) without any preconditioning.
+            /// Conjugate gradient (from monkey library) without any preconditioning.
             /// </summary>
             classic_cg = 40,
 
@@ -144,14 +144,19 @@ namespace BoSSS.Solution.Control {
             exp_softpcg_schwarz_directcoarse = 44,
 
             /// <summary>
-            /// Congjugate gradient with Block Jacobi and multigrid.
+            /// Conjugate gradient with Block Jacobi and multigrid.
             /// </summary>
             exp_softpcg_jacobi_mg = 45,
 
             /// <summary>
-            /// Congjugate gradient with Schwarz and multigrid.
+            /// Conjugate gradient with Schwarz and multigrid.
             /// </summary>
             exp_softpcg_schwarz_mg = 46,
+
+            /// <summary>
+            /// GMRES with p-multigrid on the same mesh level; direct solver is used for 
+            /// </summary>
+            exp_gmres_levelpmg = 47,
 
             /// <summary>
             /// highly experimental shit
@@ -190,7 +195,7 @@ namespace BoSSS.Solution.Control {
         /// Convergence criterion for linear solver.
         /// </summary>
         [DataMember]
-        public double ConvergenceCriterion = 1e-8;
+        public double ConvergenceCriterion = 1e-10;
 
         /// <summary>
         /// Sets the algorithm to use for linear solving, e.g. MUMPS or GMRES.

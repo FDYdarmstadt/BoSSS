@@ -137,7 +137,7 @@ namespace BoSSS.Application.SipPoisson {
         /// </summary>
         /// <param name="args"></param>
         static void Main(string[] args) {
-            BoSSS.Application.SipPoisson.Tests.TestProgram.Init();
+            //BoSSS.Application.SipPoisson.Tests.TestProgram.Init();
             //BoSSS.Application.SipPoisson.Tests.TestProgram.TestIterativeSolver(3, 8, 3, LinearSolverConfig.Code.exp_softpcg_schwarz_directcoarse);
             //BoSSS.Application.SipPoisson.Tests.TestProgram.Cleanup();
             //BoSSS.Application.SipPoisson.Tests.TestProgram.TestIterativeSolver(3, 8, 3, LinearSolverConfig.Code.exp_softpcg_schwarz);
@@ -248,10 +248,7 @@ namespace BoSSS.Application.SipPoisson {
             */
 
             _Main(args, false, delegate () {
-               
-
                 SipPoissonMain p = new SipPoissonMain();
-
                 Console.WriteLine("ipPoisson: " + ilPSP.Environment.MPIEnv.MPI_Rank + " of " + ilPSP.Environment.MPIEnv.MPI_Size
                     + " on compute node '" + ilPSP.Environment.MPIEnv.Hostname + "';");
                 return p;
@@ -982,7 +979,6 @@ namespace BoSSS.Application.SipPoisson {
                     var solverIteration = new Stopwatch();
                     solverIteration.Start();
                     T.Clear();
-                    T.ProjectField(X => X[0] * X[1]);
                     double[] T2 = this.T.CoordinateVector.ToArray();
                     using (new BlockTrace("Solver_Run", tr)) {
                         solver.ResetStat();
@@ -1000,9 +996,9 @@ namespace BoSSS.Application.SipPoisson {
                     solverIteration.Stop();
                     Console.WriteLine("done. (" + solverIteration.Elapsed.TotalSeconds + " sec)");
 
-                    Console.WriteLine("Pardiso phase 11: " + ilPSP.LinSolvers.PARDISO.PARDISOSolver.Phase_11.Elapsed.TotalSeconds);
-                    Console.WriteLine("Pardiso phase 22: " + ilPSP.LinSolvers.PARDISO.PARDISOSolver.Phase_22.Elapsed.TotalSeconds);
-                    Console.WriteLine("Pardiso phase 33: " + ilPSP.LinSolvers.PARDISO.PARDISOSolver.Phase_33.Elapsed.TotalSeconds);
+                    //Console.WriteLine("Pardiso phase 11: " + ilPSP.LinSolvers.PARDISO.PARDISOSolver.Phase_11.Elapsed.TotalSeconds);
+                    //Console.WriteLine("Pardiso phase 22: " + ilPSP.LinSolvers.PARDISO.PARDISOSolver.Phase_22.Elapsed.TotalSeconds);
+                    //Console.WriteLine("Pardiso phase 33: " + ilPSP.LinSolvers.PARDISO.PARDISOSolver.Phase_33.Elapsed.TotalSeconds);
 
                     // time measurement, statistics
                     stw.Stop();

@@ -29,7 +29,6 @@ namespace BoSSS.Solution.AdvancedSolvers {
         /// </summary>
         public int LowestLevelDOFthreshold = 100;
 
-
         /// <summary>
         /// Multigrid Operators for each grid level
         /// </summary>
@@ -205,7 +204,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
                 double[][] CurrSol = new double[NoLevels][];
                 double[][] CurrRestRes = new double[NoLevels][];  // restricted residual
-                //double[][] CurrRes = new double[NoLevels][];  // residual on level
+               
                 double[][] Rhs = new double[NoLevels][];
                 for (int iLv = 0; iLv < NoLevels; iLv++) {
                     CurrSol[iLv] = new double[L[iLv]];
@@ -236,6 +235,22 @@ namespace BoSSS.Solution.AdvancedSolvers {
                     //double l2_Res_iLv = LevelRes.L2NormPow2().MPISum().Sqrt();
                     //Console.WriteLine("          " + l2_RestRes_iLv + "    " + CurrSol[iLv].L2Norm());
                 }
+
+                double[][] LevelRestRes = new double[NoLevels][];  // residual on level
+                for (int iLv = 0; iLv < NoLevels - 1; iLv++) {
+                    LevelRestRes[iLv] = CurrRestRes[iLv].CloneAs();
+                    Op4Level[iLv + 1].Prolongate(-1.0, LevelRestRes[iLv], 1.0, CurrRestRes[iLv + 1]);
+                }
+                LevelRestRes[NoLevels - 1] = CurrRestRes[NoLevels - 1].CloneAs();
+
+                for (int iLv = 0; iLv < NoLevels; iLv++) {
+                    Console.WriteLine("       level " + iLv + ":     " + CurrRestRes[iLv].L2Norm() + "       " + LevelRestRes[iLv].L2Norm());
+                }
+
+                
+
+                PlotVectors(new[] { CurrRestRes[0], CurrRestRes[1], LevelRestRes[0] }, new[] { "Res0", "Res1", "Res0f" });
+
 
                 /*
                 int CsLv = NoLevels - 1; // index of coarsest level

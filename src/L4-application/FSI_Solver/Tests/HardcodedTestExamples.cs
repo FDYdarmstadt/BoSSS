@@ -169,7 +169,7 @@ namespace BoSSS.Application.FSI_Solver {
         }
 
 
-        public static FSI_Control ParticleInShearFlow(string _DbPath = null, int k = 2, double VelXBase = 0.0) {
+        public static FSI_Control Test_ParticleInShearFlow(string _DbPath = null, int k = 2, double VelXBase = 0.0) {
             FSI_Control C = new FSI_Control();
 
             const double BaseSize = 1.0;
@@ -302,7 +302,7 @@ namespace BoSSS.Application.FSI_Solver {
         /// <summary>
         /// Testing of particle/wall interactions using a single particle
         /// </summary>
-        public static FSI_Control SingleDryParticleAgainstWall(string _DbPath = null, bool MeshRefine = true) {
+        public static FSI_Control Test_SingleDryParticleAgainstWall(string _DbPath = null, bool MeshRefine = true) {
             FSI_Control C = new FSI_Control();
 
             // basic database options
@@ -417,7 +417,7 @@ namespace BoSSS.Application.FSI_Solver {
         /// <summary>
         /// Testing of particle/wall interactions using a single particle
         /// </summary>
-        public static FSI_Control DryParticleCollision(string _DbPath = null, bool MeshRefine = false) {
+        public static FSI_Control Test_DryParticleCollision(string _DbPath = null, bool MeshRefine = false) {
             FSI_Control C = new FSI_Control();
 
             // basic database options
@@ -545,7 +545,7 @@ namespace BoSSS.Application.FSI_Solver {
         /// <summary>
         /// Testing particle bouncing
         /// </summary>
-        public static FSI_Control DryParticleBounce(string _DbPath = null)
+        public static FSI_Control Test_DryParticleBounce(string _DbPath = null)
         {
             FSI_Control C = new FSI_Control();
 
@@ -653,7 +653,7 @@ namespace BoSSS.Application.FSI_Solver {
             return C;
         }
 
-        public static FSI_Control StickyTrap(string _DbPath = null, int k = 2, double VelXBase = 0.0, double angle = 0.0)
+        public static FSI_Control Test_StickyTrap(string _DbPath = null, int k = 2, double VelXBase = 0.0, double angle = 0.0)
         {
             FSI_Control C = new FSI_Control();
 

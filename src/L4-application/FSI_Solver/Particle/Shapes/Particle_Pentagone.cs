@@ -115,7 +115,7 @@ namespace BoSSS.Application.FSI_Solver
             return false;
         }
 
-        public override MultidimensionalArray GetSurfacePoints(double hMin, double[] Position, double Angle)
+        public override MultidimensionalArray GetSurfacePoints(double hMin)
         {
             if (spatialDim != 2)
                 throw new NotImplementedException("Only two dimensions are supported at the moment");
@@ -128,8 +128,8 @@ namespace BoSSS.Application.FSI_Solver
 
             for (int j = 0; j < NoOfSurfacePoints; j++)
             {
-                SurfacePoints[j, 0] = Math.Cos(InfinitisemalAngle[j]) * width_P + Position[0];
-                SurfacePoints[j, 1] = Math.Sin(InfinitisemalAngle[j]) * width_P + Position[1];
+                SurfacePoints[j, 0] = Math.Cos(InfinitisemalAngle[j]) * width_P + Position[0][0];
+                SurfacePoints[j, 1] = Math.Sin(InfinitisemalAngle[j]) * width_P + Position[0][1];
             }
             return SurfacePoints;
         }

@@ -357,15 +357,6 @@ namespace BoSSS.Application.FSI_Solver
 
                         comps.Add(Visc);
 
-
-                        //var Visc = new Solution.XNSECommon.Operator.Viscosity.ViscosityInBulk_GradUTerm(penalty, 1.0, BcMap, d, D, this.Control.PhysicalParameters.mu_A, 0, ViscosityImplementation.H);
-                        //IBM_Op.OnIntegratingBulk += Visc.SetParameter;
-                        //comps.Add(Visc); // bulk component GradUTerm
-
-                        //delegate (double p, int i, int j, double[] cell) { return ComputePenalty(p, i, j, cell); });
-                        //delegate (double p, int i, int j, double[] cell) { return ComputePenalty(p, i, j, cell); });
-                        //FSI_Op.OnIntegratingBulk += Visc.SetParameter;                
-
                         if (((FSI_Control)this.Control).Timestepper_LevelSetHandling == LevelSetHandling.None)
                         {
 
@@ -457,12 +448,7 @@ namespace BoSSS.Application.FSI_Solver
                 {
                     for (int d = 0; d < D; d++)
                     {
-                        //var src = new Solution.XNSECommon.Operator.Continuity.DivergenceInBulk_Volume(d, D, 1, 0, 1, false);
-                        //IBM_Op.OnIntegratingBulk += src.SetParameter;
-                        //var flx = new Solution.XNSECommon.Operator.Continuity.DivergenceInBulk_Edge(d, BcMap, 1, 0, 1, false);
-                        //IBM_Op.OnIntegratingBulk += flx.SetParameter;
                         var src = new Divergence_DerivativeSource(d, D);
-                        //IBM_Op.OnIntegratingBulk += src.SetParameter;
                         var flx = new Divergence_DerivativeSource_Flux(d, BcMap);
                         IBM_Op.EquationComponents["div"].Add(src);
                         IBM_Op.EquationComponents["div"].Add(flx);
@@ -475,7 +461,6 @@ namespace BoSSS.Application.FSI_Solver
                         var divPen = new BoSSS.Solution.NSECommon.Operator.Continuity.DivergenceAtIB(D, LsTrk, 1, delegate (double[] X, double time)
                         {
                             throw new NotImplementedException("Currently not implemented for fixed motion");
-                            //return new double[] { 0.0, 0.0 };
                         });
                         IBM_Op.EquationComponents["div"].Add(divPen);  // immersed boundary component
                     }
@@ -528,8 +513,6 @@ namespace BoSSS.Application.FSI_Solver
             int bdfOrder;
             if (this.Control.Timestepper_Scheme == FSI_Control.TimesteppingScheme.CrankNicolson)
                 bdfOrder = -1;
-            //else if (this.Control.Timestepper_Scheme == IBM_Control.TimesteppingScheme.ExplicitEuler)
-            //    bdfOrder = 0;
             else if (this.Control.Timestepper_Scheme == FSI_Control.TimesteppingScheme.ImplicitEuler)
                 bdfOrder = 1;
             else if (this.Control.Timestepper_Scheme.ToString().StartsWith("BDF"))
@@ -628,8 +611,6 @@ namespace BoSSS.Application.FSI_Solver
             {
                 case LevelSetHandling.None:
                     ScalarFunction Posfunction = NonVectorizedScalarFunction.Vectorize(((FSI_Control)Control).MovementFunc, phystime);
-                    //newTransVelocity[0] = (((FSI_Control)this.Control).transVelocityFunc[0])(phystime);
-                    //newTransVelocity[1] = (((FSI_Control)this.Control).transVelocityFunc[1])(phystime);
                     LevSet.ProjectField(Posfunction);
                     LsTrk.UpdateTracker();
                     break;
@@ -1401,11 +1382,121 @@ namespace BoSSS.Application.FSI_Solver
 
             double fluidViscosity = ((FSI_Control)Control).pureDryCollisions ? 0 : ((FSI_Control)Control).PhysicalParameters.mu_A;
             double fluidDensity = ((FSI_Control)Control).pureDryCollisions ? 0 : ((FSI_Control)Control).PhysicalParameters.rho_A;
-            FSI_Collision _Collision = new FSI_Collision(fluidViscosity, fluidDensity, ((FSI_Control)Control).CoefficientOfRestitution, dt, LsTrk.GridDat.Cells.h_minGlobal);
-            _Collision.CalculateCollision(Particles, GridData, CellColor);
+
+            LevelSetUpdate.DetermineGlobalParticleColor(GridData, CellColor, Particles, out int[] GlobalParticleColor);
+            for (int i = 0; i < GlobalParticleColor.Length; i++)
+            {
+                int CurrentColor = GlobalParticleColor[i];
+                int[] ParticlesOfCurrentColor = LevelSetUpdate.FindParticlesOneColor(GlobalParticleColor, CurrentColor);
+                if (ParticlesOfCurrentColor.Length >= 1 && CurrentColor != 0)
+                {
+                    List<Particle> currentParticles = LevelSetUpdate.GetParticleListOneColor(m_Particles, GlobalParticleColor, CurrentColor);
+                    FSI_Collision _Collision = new FSI_Collision(CurrentColor, fluidViscosity, fluidDensity, ((FSI_Control)Control).CoefficientOfRestitution, dt, LsTrk.GridDat.Cells.h_minGlobal);
+                    _Collision.CalculateCollision(currentParticles, GridData, CellColor);
+                }
+                for (int j = 0; j < GlobalParticleColor.Length; j++)
+                {
+                    if (GlobalParticleColor[j] == CurrentColor)
+                        GlobalParticleColor[j] = 0;
+                }
+            }
             foreach (Particle p in m_Particles)
             {
-                _Collision.Collision_MPICommunication(m_Particles, p, MPISize);
+                Collision_MPICommunication(p, MPISize);
+            }
+        }
+
+        /// <summary>
+        /// Ensures the communication between the processes after a collision
+        /// </summary>
+        /// <param name="Particles">
+        /// A list of all particles.
+        /// </param>
+        /// <param name="CurrentParticle">
+        /// The current particle.
+        /// </param>
+        /// <param name="MPISize">
+        /// Number of mpi processes
+        /// </param>
+        /// <param name="WallCollision">
+        /// If the collision was a wall collision set this true.
+        /// </param>
+        private void Collision_MPICommunication(Particle CurrentParticle, int MPISize)
+        {
+            int NoOfVars = 13;
+            double[] BoolSend = new double[1];
+            double[] sendSkipForceIntegration = new double[1];
+            bool NoCurrentCollision = true;
+            BoolSend[0] = CurrentParticle.Collided ? 1 : 0;
+            sendSkipForceIntegration[0] = CurrentParticle.skipForceIntegration ? 1 : 0;
+
+            double[] receiveSkipForceIntegration = new double[MPISize];
+            MPISendAndReceive(sendSkipForceIntegration, ref receiveSkipForceIntegration);
+            for (int i = 0; i < receiveSkipForceIntegration.Length; i++)
+            {
+                if (receiveSkipForceIntegration[i] == 1)
+                    CurrentParticle.skipForceIntegration = true;
+            }
+
+            double[] BoolReceive = new double[MPISize];
+            MPISendAndReceive(BoolSend, ref BoolReceive);
+
+            for (int i = 0; i < BoolReceive.Length; i++)
+            {
+                if (BoolReceive[i] != 0)
+                {
+                    double[] CheckSend = new double[NoOfVars];
+                    CheckSend[0] = CurrentParticle.RotationalVelocity[0];
+                    CheckSend[1] = CurrentParticle.TranslationalVelocity[0][0];
+                    CheckSend[2] = CurrentParticle.TranslationalVelocity[0][1];
+                    CheckSend[3] = CurrentParticle.Angle[0];
+                    CheckSend[4] = CurrentParticle.Position[0][0];
+                    CheckSend[5] = CurrentParticle.Position[0][1];
+                    CheckSend[6] = CurrentParticle.CollisionTimestep;
+                    CheckSend[7] = CurrentParticle.RotationalVelocity[1];
+                    CheckSend[8] = CurrentParticle.TranslationalVelocity[1][0];
+                    CheckSend[9] = CurrentParticle.TranslationalVelocity[1][1];
+                    CheckSend[10] = CurrentParticle.Angle[1];
+                    CheckSend[11] = CurrentParticle.Position[1][0];
+                    CheckSend[12] = CurrentParticle.Position[1][1];
+
+                    double[] CheckReceive = new double[NoOfVars * MPISize];
+                    MPISendAndReceive(CheckSend, ref CheckReceive);
+
+                    CurrentParticle.RotationalVelocity[0] = CheckReceive[0 + i * NoOfVars];
+                    CurrentParticle.TranslationalVelocity[0][0] = CheckReceive[1 + i * NoOfVars];
+                    CurrentParticle.TranslationalVelocity[0][1] = CheckReceive[2 + i * NoOfVars];
+                    CurrentParticle.Angle[0] = CheckReceive[3 + i * NoOfVars];
+                    CurrentParticle.Position[0][0] = CheckReceive[4 + i * NoOfVars];
+                    CurrentParticle.Position[0][1] = CheckReceive[5 + i * NoOfVars];
+                    CurrentParticle.CollisionTimestep = CheckReceive[6 + i * NoOfVars];
+                    CurrentParticle.RotationalVelocity[1] = CheckReceive[7 + i * NoOfVars];
+                    CurrentParticle.TranslationalVelocity[1][0] = CheckReceive[8 + i * NoOfVars];
+                    CurrentParticle.TranslationalVelocity[1][1] = CheckReceive[9 + i * NoOfVars];
+                    CurrentParticle.Angle[1] = CheckReceive[10 + i * NoOfVars];
+                    CurrentParticle.Position[1][0] = CheckReceive[11 + i * NoOfVars];
+                    CurrentParticle.Position[1][1] = CheckReceive[12 + i * NoOfVars];
+                    //if (BoolReceive[i] != 0)
+                    {
+                        CurrentParticle.Collided = true;
+                        NoCurrentCollision = false;
+                    }
+                }
+            }
+            if (NoCurrentCollision)
+            {
+                CurrentParticle.Collided = false;
+            }
+        }
+
+        private void MPISendAndReceive(double[] variableSend, ref double[] variableReceive)
+        {
+            unsafe
+            {
+                fixed (double* pVariableSend = variableSend, pVariableReceive = variableReceive)
+                {
+                    csMPI.Raw.Allgather((IntPtr)pVariableSend, variableSend.Length, csMPI.Raw._DATATYPE.DOUBLE, (IntPtr)pVariableReceive, variableSend.Length, csMPI.Raw._DATATYPE.DOUBLE, csMPI.Raw._COMM.WORLD);
+                }
             }
         }
 
@@ -1416,19 +1507,19 @@ namespace BoSSS.Application.FSI_Solver
         int LevelIndicator(int j, int CurrentLevel)
         {
             int J = GridData.iLogicalCells.NoOfLocalUpdatedCells;
-            FSI_LevelSetUpdate levelSetUpdate = new FSI_LevelSetUpdate();
             CellMask LevSetCells = LsTrk.Regions.GetCutCellMask();
             int DesiredLevel_j = 0;
-            if (LevSetCells.Contains(j))//ColoredCellMask != null &&
+
+            Pressure.GetExtremalValuesInCell(out double minPressure, out double maxPressure, j);
+            if (Math.Abs(maxPressure - minPressure) > Math.Abs(Pressure.GetMeanValueTotal(CellMask.GetFullMask(GridData))) && LevSetCells.Contains(j))
             {
                 DesiredLevel_j = ((FSI_Control)this.Control).RefinementLevel;
             }
-            else if (LevSetCells.AllNeighbourCells().Contains(j))
-            {
-                DesiredLevel_j = ((FSI_Control)this.Control).RefinementLevel - 1;
-            }
             else
                 DesiredLevel_j = 0;
+
+            
+           
 
             return DesiredLevel_j;
         }
@@ -1437,7 +1528,7 @@ namespace BoSSS.Application.FSI_Solver
         protected override void AdaptMesh(int TimestepNo, out GridCommons newGrid, out GridCorrelation old2NewGrid)
         {
 
-            if (((FSI_Control)Control).AdaptiveMeshRefinement && IterationCounter == 0)
+            if (((FSI_Control)Control).AdaptiveMeshRefinement)
             {
                 if (TimestepNo > 3 && TimestepNo % 3 != 0)
                 {

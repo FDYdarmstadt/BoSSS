@@ -1368,7 +1368,7 @@ namespace BoSSS.Foundation {
             /// returns parameter fields
             /// </summary>
             protected override DGField[] GetTrxFields() {
-                if(Parameters != null) {
+                if(Parameters == null) {
                     return new DGField[0];
                 } else {
                     List<DGField> FieldsForTransciever = new List<DGField>(Parameters.Count);
@@ -1507,6 +1507,7 @@ namespace BoSSS.Foundation {
                 eps = Math.Sqrt(eps);
 
                 Eval = __Eval;
+                Eval.MPITtransceive = true;
                 DelParamUpdate = __delParameterUpdate;
 
                 BuildGridColoring();

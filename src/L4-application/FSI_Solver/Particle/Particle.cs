@@ -239,12 +239,6 @@ namespace BoSSS.Application.FSI_Solver
         /// The translational velocity of the particle in the current time step. This list is used by the momentum conservation model.
         /// </summary>
         [DataMember]
-        public List<double[]> CollisionPositionCorrection = new List<double[]>();
-
-        /// <summary>
-        /// The translational velocity of the particle in the current time step. This list is used by the momentum conservation model.
-        /// </summary>
-        [DataMember]
         public double CollisionTimestep = new double();
 
         /// <summary>
@@ -939,12 +933,12 @@ namespace BoSSS.Application.FSI_Solver
             throw new NotImplementedException();
         }
 
-        virtual public MultidimensionalArray GetSurfacePoints(double hMin, double[] Position, double Angle)
+        virtual public MultidimensionalArray GetSurfacePoints(double hMin)
         {
             throw new NotImplementedException();
         }
 
-        virtual public void GetSupportPoint(int SpatialDim, double[] Vector, double[] Position, double Angle, out double[] SupportPoint)
+        virtual public void GetSupportPoint(int SpatialDim, double[] Vector, out double[] SupportPoint)
         {
             throw new NotImplementedException();
         }
