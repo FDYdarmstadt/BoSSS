@@ -268,7 +268,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
         /// <summary>
         /// Restricts a right-hand-side or solution vector <paramref name="IN_fine"/> 
         /// from the finer multi-grid level (see <see cref="FinerLevel"/>)
-        /// to this multigrid level.
+        /// to this multi-grid level.
         /// </summary>
         /// <param name="IN_fine">Input: vector on finer level.</param>
         /// <param name="OUT_coarse">Output: vector on this level, i.e. the coarser level.</param>
@@ -657,10 +657,10 @@ namespace BoSSS.Solution.AdvancedSolvers {
         }
 
         /// <summary>
-        /// 
+        /// transform from this operators domain to the original operator domain (for the trial space)
         /// </summary>
-        /// <param name="u_Out">output</param>
-        /// <param name="v_In">input</param>
+        /// <param name="u_Out">output; coordinate vector in the trial space of the original operator, <see cref="BaseGridProblemMapping"/></param>
+        /// <param name="v_In">input: coordinate vector in the trial space of this operator</param>
         public void TransformSolFrom<T1, T2>(T1 u_Out, T2 v_In)
             where T1 : IList<double>
             where T2 : IList<double> //
@@ -684,12 +684,12 @@ namespace BoSSS.Solution.AdvancedSolvers {
             u_Out.ClearEntries();
             u_Out.AccV(1.0, uc, this.IndexIntoProblemMapping_Local, default(int[]));
         }
-        
+
         /// <summary>
-        /// 
+        /// transform from this operators domain to the original operator domain (for the test space)
         /// </summary>
-        /// <param name="u_Out">output</param>
-        /// <param name="v_In">input</param>
+        /// <param name="u_Out">output; coordinate vector in the test space of the original operator, <see cref="BaseGridProblemMapping"/></param>
+        /// <param name="v_In">input: coordinate vector in the test space of this operator</param>
         public void TransformRhsFrom<T1, T2>(T1 u_Out, T2 v_In)
             where T1 : IList<double>
             where T2 : IList<double>  //
@@ -698,6 +698,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 throw new NotSupportedException("Only supported on finest level.");
             if(u_Out.Count != this.Mapping.ProblemMapping.LocalLength)
                 throw new ArgumentException("Mismatch in length of output vector.", "u");
+            Debug.Assert(this.BaseGridProblemMapping.EqualsPartition(this.Mapping.ProblemMapping));
             if(v_In.Count != this.Mapping.LocalLength)
                 throw new ArgumentException("Mismatch in length of input vector.", "v");
 

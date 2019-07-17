@@ -174,7 +174,7 @@ namespace CNS {
                 WorkingSet = Control.DomainType.CreateWorkingSet(GridData, Control);
                 SpeciesMap = Control.DomainType.CreateSpeciesMap(WorkingSet, Control, GridData);
 
-                BoundaryConditionMap map = GetBoundaryConditionMap();
+                CompressibleBoundaryCondMap map = GetBoundaryConditionMap();
                 operatorFactory = Control.DomainType.GetOperatorFactory(
                     Control, GridData, map, WorkingSet, SpeciesMap);
 
@@ -464,8 +464,8 @@ namespace CNS {
         /// custom boundary conditions.
         /// </summary>
         /// <returns></returns>
-        protected virtual BoundaryConditionMap GetBoundaryConditionMap() {
-            return new BoundaryConditionMap(GridData, Control, Control.GetMaterial());
+        protected virtual CompressibleBoundaryCondMap GetBoundaryConditionMap() {
+            return new CompressibleBoundaryCondMap( this.GridData, Control, Control.GetMaterial());
         }
 
         /// <summary>

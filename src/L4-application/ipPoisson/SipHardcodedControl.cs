@@ -145,13 +145,14 @@ namespace BoSSS.Application.SipPoisson {
         /// <summary>
         /// Test on a Cartesian grid, with an exact polynomial solution.
         /// </summary>
-        public static SipControl TestCartesian3D(int PowRes = 3, int DGdegree = 1, string blapath = null, int xRes = 2, double xStretch = 1.0, int yRes = 2, double yStretch = 1.0, int zRes = 2, double zStretch = 1.0) {
+        public static SipControl TestCartesian3D(int PowRes = 5, int DGdegree = 1, string blapath = null, int xRes = 2, double xStretch = 1.0, int yRes = 2, double yStretch = 1.0, int zRes = 2, double zStretch = 1.0) {
             xRes = (int)Math.Pow(xRes, PowRes);
             yRes = (int)Math.Pow(yRes, PowRes);
             zRes = (int)Math.Pow(zRes, PowRes);
             var R = new SipControl();
             R.ProjectName = "ipPoison/cartesian";
             R.savetodb = false;
+            R.WriteMeSomeAnalyse = @"D:\Analysis\CCpoisson\Study0_vary_Mlevel_n_blocks\";
 
             R.FieldOptions.Add("T", new FieldOpts() { Degree = DGdegree, SaveToDB = FieldOpts.SaveToDBOpt.TRUE });
             R.FieldOptions.Add("Tex", new FieldOpts() { Degree = DGdegree });
@@ -161,6 +162,7 @@ namespace BoSSS.Application.SipPoisson {
 
             R.GridFunc = delegate () {
                 double[] xNodes = CreateNodes(xRes, xStretch, 0, 10);
+                //double[] xNodes = CreateNodes(xRes, xStretch, -1, +1);
                 double[] yNodes = CreateNodes(yRes, yStretch, -1, +1);
                 //double[] zNodes = CreateNodes(zRes, zStretch, -1, +1);
 
@@ -180,15 +182,17 @@ namespace BoSSS.Application.SipPoisson {
                 return grd;
             };
 
-            R.LinearSolver.SolverCode = LinearSolverConfig.Code.exp_softpcg_jacobi_mg;
+
+            //R.LinearSolver.SolverCode = LinearSolverConfig.Code.exp_softpcg_jacobi_mg;
+            R.LinearSolver.SolverCode = LinearSolverConfig.Code.exp_decomposedMG_OrthoScheme;
             //R.LinearSolver.SolverCode = LinearSolverConfig.Code.classic_mumps;
             R.LinearSolver.NoOfMultigridLevels = 10;
             R.LinearSolver.TargetBlockSize = 40;
+            //R.LinearSolver.MaxSolverIterations = 1;
             //R.LinearSolver.MaxSolverIterations = 10;
 
             R.AddBoundaryValue(BoundaryType.Dirichlet.ToString());
             R.AddBoundaryValue(BoundaryType.Neumann.ToString());
-
 
             return R;
         }
@@ -212,8 +216,7 @@ namespace BoSSS.Application.SipPoisson {
         /// <param name="solver_name">
         /// Name of solver to use.
         /// </param>
-        public static SipControl TestCartesian2(int Res, int Dim, LinearSolverConfig.Code solver_name = LinearSolverConfig.Code.exp_softpcg_schwarz_directcoarse, int deg = 3)
-        {
+        public static SipControl TestCartesian2(int Res, int Dim, LinearSolverConfig.Code solver_name = LinearSolverConfig.Code.exp_gmres_levelpmg, int deg = 5) {
             if (Dim != 2 && Dim != 3)
                 throw new ArgumentOutOfRangeException();
 
@@ -222,7 +225,7 @@ namespace BoSSS.Application.SipPoisson {
             R.savetodb = false;
 
             R.FieldOptions.Add("T", new FieldOpts() { Degree = deg, SaveToDB = FieldOpts.SaveToDBOpt.TRUE });
-            R.FieldOptions.Add("Tex", new FieldOpts() { Degree = deg * 2 });
+            R.FieldOptions.Add("Tex", new FieldOpts() { Degree = deg + 2 });
             R.InitialValues_Evaluators.Add("RHS", X => -Math.Sin(X[0]));
             R.InitialValues_Evaluators.Add("Tex", X => Math.Sin(X[0]));
             R.ExactSolution_provided = true;
@@ -232,37 +235,33 @@ namespace BoSSS.Application.SipPoisson {
 
 
 
-            R.GridFunc = delegate ()
-            {
+            R.GridFunc = delegate () {
                 GridCommons grd = null;
-                if (Dim == 2)
-                {
+                if (Dim == 2) {
                     double[] xNodes = GenericBlas.Linspace(0, 10, Res * 5 + 1);
                     double[] yNodes = GenericBlas.SinLinSpacing(-1, +1, 0.6, Res + 1);
 
                     grd = Grid2D.Cartesian2DGrid(xNodes, yNodes);
-                }
-                else if (Dim == 3)
-                {
+                } else if (Dim == 3) {
                     double[] xNodes = GenericBlas.Linspace(0, 10, Res * 5 + 1);
-                    double[] yNodes = GenericBlas.SinLinSpacing(-1, +1, 0.6, Res + 1);
-                    double[] zNodes = GenericBlas.SinLinSpacing(-1, +1, 0.6, Res + 1);
+                    //double[] yNodes = GenericBlas.SinLinSpacing(-1, +1, 0.6, Res + 1);
+                    //double[] zNodes = GenericBlas.SinLinSpacing(-1, +1, 0.6, Res + 1);
+                    double[] yNodes = GenericBlas.Linspace(-1, +1, Res + 1);
+                    double[] zNodes = GenericBlas.Linspace(-1, +1, Res + 1);
 
                     grd = Grid3D.Cartesian3DGrid(xNodes, yNodes, zNodes);
-                }
-                else
-                {
+                } else {
                     throw new NotSupportedException();
                 }
                 grd.EdgeTagNames.Add(1, BoundaryType.Dirichlet.ToString());
                 grd.EdgeTagNames.Add(2, BoundaryType.Neumann.ToString());
-                grd.DefineEdgeTags(delegate (double[] X)
-                {
+                grd.DefineEdgeTags(delegate (double[] X) {
                     byte ret;
-                    if (Math.Abs(X[0] - 0.0) <= 1.0e-6)
-                        ret = 1;
+                    double x = X[0];
+                    if (Math.Abs(x - 0.0) <= 1.0e-8)
+                        ret = 1; // Dirichlet
                     else
-                        ret = 2;
+                        ret = 2; // Neumann
                     return ret;
                 });
 
@@ -270,41 +269,39 @@ namespace BoSSS.Application.SipPoisson {
             };
 
             R.AddBoundaryValue(BoundaryType.Dirichlet.ToString(), "T",
-                 delegate (double[] X)
-                 {
+                 delegate (double[] X) {
                      double x = X[0], y = X[1];
 
-                     if (Math.Abs(X[0] - (0.0)) < 1.0e-8)
-                         return 0.0;
 
-                     throw new ArgumentOutOfRangeException();
+                     return Math.Sin(x);
+                     //if (Math.Abs(X[0] - (0.0)) < 1.0e-8)
+                     //    return 0.0;
+
+                     //throw new ArgumentOutOfRangeException();
                  });
 
             R.AddBoundaryValue(BoundaryType.Neumann.ToString(), "T",
-                 delegate (double[] X)
-                 {
-                     if (Math.Abs(X[1] - 1.0) < 1.0e-8 || Math.Abs(X[1] + 1.0) < 1.0e-8) // y = -1, y = +1
+                 delegate (double[] X) {
+                     double x = X[0], y = X[1], z = X.Length > 2 ? X[2] : 0.0;
+
+                     if (Math.Abs(y - 1.0) < 1.0e-8 || Math.Abs(y + 1.0) < 1.0e-8) // y = -1, y = +1
                          return 0;
 
-                     if (X.Length > 2 && (Math.Abs(X[2] - 1.0) < 1.0e-8 || Math.Abs(X[2] + 1.0) < 1.0e-8)) // z = -1, z = +1
+                     if (X.Length > 2 && (Math.Abs(z - 1.0) < 1.0e-8 || Math.Abs(z + 1.0) < 1.0e-8)) // z = -1, z = +1
                          return 0;
 
-                     if (Math.Abs(X[0] - (+10.0)) < 1.0e-8)
-                         return Math.Cos(10.0);
+                     //if (Math.Abs(X[0] - (+10.0)) < 1.0e-8)
+                         return Math.Cos(x);
 
-                     throw new ArgumentOutOfRangeException();
+                     //throw new ArgumentOutOfRangeException();
                  });
             return R;
         }
 
-
-
-
         /// <summary>
         /// Poisson Equation on a (-1,1)x(-1,1), Dirichlet everywhere
         /// </summary>
-        public static SipControl Square(int xRes = 5, int yRes = 5, int deg = 5)
-        {
+        public static SipControl Square(int xRes = 5, int yRes = 5, int deg = 5) {
 
             //Func<double[], double> exRhs = X => 2 * X[0] * X[0] + 2 * X[1] * X[1] - 4;
             //Func<double[], double> exSol = X => (1.0 - X[0] * X[0]) * (1.0 - X[1] * X[1]);
@@ -332,15 +329,13 @@ namespace BoSSS.Application.SipPoisson {
             R.SuppressExceptionPrompt = true;
             //R.LinearSolver.SolverCode = LinearSolverConfig.Code.classic_mumps;
 
-            R.GridFunc = delegate ()
-            {
+            R.GridFunc = delegate () {
                 double[] xNodes = GenericBlas.Linspace(-1, 1, xRes);
                 double[] yNodes = GenericBlas.Linspace(-1, 1, yRes);
                 var grd = Grid2D.Cartesian2DGrid(xNodes, yNodes);
 
                 grd.EdgeTagNames.Add(1, BoundaryType.Dirichlet.ToString());
-                grd.DefineEdgeTags(delegate (double[] X)
-                {
+                grd.DefineEdgeTags(delegate (double[] X) {
                     byte ret = 1;
                     return ret;
                 });
@@ -363,11 +358,9 @@ namespace BoSSS.Application.SipPoisson {
         /// <summary>
         /// Adaptive mesh refinement on a manufactured solution
         /// </summary>
-        public static SipControl RefinementManufactured(int xRes = 2, int yRes = 2, int deg = 3)
-        {
+        public static SipControl RefinementManufactured(int xRes = 2, int yRes = 2, int deg = 3) {
 
-            double RHS(double[] X)
-            {
+            double RHS(double[] X) {
                 double x = X[0];
                 double y = X[1];
                 return (0.001 * Math.Pow(y, 2) * Math.Pow(y - 1, 2) * Math.Exp(10 * Math.Pow(x, 2) + 10 * y) * (200 * Math.Pow(x, 6)
@@ -376,8 +369,7 @@ namespace BoSSS.Application.SipPoisson {
                     - 60 * Math.Pow(y, 3)
                     - 4 * Math.Pow(y, 2) + 14 * y + 1));
             }
-            double Tex(double[] X)
-            {
+            double Tex(double[] X) {
                 double x = X[0];
                 double y = X[1];
                 return (0.0005 * Math.Pow(x, 2) * Math.Pow(x - 1, 2) * Math.Pow(y, 2) * Math.Pow(y - 1, 2) * Math.Exp(10 * Math.Pow(x, 2)
@@ -404,15 +396,13 @@ namespace BoSSS.Application.SipPoisson {
             R.SuppressExceptionPrompt = true;
             //R.LinearSolver.SolverCode = LinearSolverConfig.Code.classic_mumps;
 
-            R.GridFunc = delegate ()
-            {
+            R.GridFunc = delegate () {
                 double[] xNodes = GenericBlas.Linspace(0, 1, xRes + 1);
                 double[] yNodes = GenericBlas.Linspace(0, 1, yRes + 1);
                 var grd = Grid2D.Cartesian2DGrid(xNodes, yNodes);
 
                 grd.EdgeTagNames.Add(1, BoundaryType.Dirichlet.ToString());
-                grd.DefineEdgeTags(delegate (double[] X)
-                {
+                grd.DefineEdgeTags(delegate (double[] X) {
                     byte ret = 1;
                     return ret;
                 });

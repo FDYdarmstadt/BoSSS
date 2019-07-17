@@ -82,6 +82,9 @@ namespace BoSSS.Solution.NSECommon {
             if (FactorTwo)
                 Lambda *= 2.0;
 
+            if (double.IsNaN(Lambda) || double.IsInfinity(Lambda))
+                throw new NotFiniteNumberException();
+
             return Math.Abs(Lambda);
         }
     }

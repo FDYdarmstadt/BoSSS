@@ -210,7 +210,12 @@ namespace BoSSS.Solution.AdvancedSolvers {
         }
 
         public ISolverSmootherTemplate Clone() {
-            throw new NotImplementedException("Clone of " + this.ToString() + " TODO");
+            var clone = new SolverSquence();
+            List<ISolverSmootherTemplate> clonelist =new List<ISolverSmootherTemplate>();
+            foreach (ISolverSmootherTemplate solver in this.SolverChain)
+                clonelist.Add(solver.Clone());
+            clone.SolverChain=clonelist.ToArray();
+            return clone;
         }
 
     }

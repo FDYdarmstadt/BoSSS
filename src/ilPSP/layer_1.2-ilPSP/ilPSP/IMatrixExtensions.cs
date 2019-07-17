@@ -1045,6 +1045,7 @@ namespace ilPSP {
         /// <remarks>
         /// on exit, Diag(<paramref name="Diag"/>)*<paramref name="B"/>^T*<paramref name="Mtx"/>*<paramref name="B"/> = EYE;
         /// </remarks>
+        /// <param name="Mtx">input; remains unchanged</param>
         /// <param name="B">output; will be overwritten</param>
         /// <param name="Diag">
         /// output; can be null, if just a Choleski factorization is required -- in that case,
@@ -2143,8 +2144,6 @@ namespace ilPSP {
         /// <summary>
         /// multiplies row <paramref name="i"/> by a factor <paramref name="alpha"/>;
         /// </summary>
-        /// <param name="i"></param>
-        /// <param name="alpha"></param>
         static public void RowScale<T>(this T M, int i, double alpha) where T : IMatrix {
             M.CheckRowAndCol(i, 0);
             for (int l = 0; l < M.NoOfCols; l++)
@@ -2154,8 +2153,6 @@ namespace ilPSP {
         /// <summary>
         /// multiplies column <paramref name="i"/> by a factor <paramref name="alpha"/>;
         /// </summary>
-        /// <param name="i"></param>
-        /// <param name="alpha"></param>
         static public void ColScale<T>(this T M, int i, double alpha) where T : IMatrix {
             M.CheckRowAndCol(0, i);
             for (int l = 0; l < M.NoOfRows; l++)
@@ -2166,9 +2163,6 @@ namespace ilPSP {
         /// accumulates row <paramref name="iSrc"/> times
         /// <paramref name="alpha"/> to row <paramref name="iDst"/>;
         /// </summary>
-        /// <param name="iSrc"></param>
-        /// <param name="iDst"></param>
-        /// <param name="alpha"></param>
         static public void RowAdd<T>(this T M, int iSrc, int iDst, double alpha) where T : IMatrix {
             M.CheckRowAndCol(iDst, 0);
             M.CheckRowAndCol(iSrc, 0);
@@ -2190,8 +2184,6 @@ namespace ilPSP {
         /// <summary>
         /// throws an exception if either column or row index are our of range
         /// </summary>
-        /// <param name="i">row index</param>
-        /// <param name="j">column index</param>
         static private void CheckRowAndCol<T>(this T M, int i, int j) where T : IMatrix {
             if (i < 0 || i >= M.NoOfRows)
                 throw new IndexOutOfRangeException("row index out of range");

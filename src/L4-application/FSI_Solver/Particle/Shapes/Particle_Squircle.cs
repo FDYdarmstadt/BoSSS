@@ -44,15 +44,6 @@ namespace BoSSS.Application.FSI_Solver
         [DataMember]
         public double radius_P;
 
-        /// <summary>
-        /// %
-        /// </summary>
-        protected override double AverageDistance {
-            get {
-                return radius_P;
-            }
-        }
-
         protected override double Circumference_P
         {
             get
@@ -67,7 +58,7 @@ namespace BoSSS.Application.FSI_Solver
         [DataMember]
         public int superEllipsoidExponent;
 
-        protected override double Area_P
+        public override double Area_P
         {
             get
             {
@@ -81,15 +72,12 @@ namespace BoSSS.Application.FSI_Solver
                 return (1 / 2.0) * (Mass_P * radius_P * radius_P);
             }
         }
-        //override public void UpdateLevelSetFunction()
-        //{
-        //    double alpha = -(Angle[0]);
-        //    Phi_P = (X, t) => -((((X[0] - Position[0][0]) * Math.Cos(alpha) - (X[1] - Position[0][1]) * Math.Sin(alpha)).Pow(4) + ((X[0] - Position[0][0]) * Math.Sin(alpha) + (X[1] - Position[0][1]) * Math.Cos(alpha)).Pow(4)) - radius_P.Pow(4));
-        //}
+
         public override double Phi_P(double[] X) {
             double alpha = -(Angle[0]);
             return -((((X[0] - Position[0][0]) * Math.Cos(alpha) - (X[1] - Position[0][1]) * Math.Sin(alpha)).Pow(4) + ((X[0] - Position[0][0]) * Math.Sin(alpha) + (X[1] - Position[0][1]) * Math.Cos(alpha)).Pow(4)) - radius_P.Pow(4));
         }
+
         public override bool Contains(double[] point, double h_min, double h_max = 0, bool WithoutTolerance = false)
         {
             // only for rectangular cells

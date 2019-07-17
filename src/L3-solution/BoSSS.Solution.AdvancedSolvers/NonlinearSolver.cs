@@ -80,7 +80,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
         
 
         /// <summary>
-        /// Helper routine for the inial phase of <see cref="SolverDriver{S}"/>
+        /// Helper routine for the initial phase of <see cref="SolverDriver{S}"/>
         /// </summary>
         /// <param name="X">initial guess</param>
         /// <param name="RHS"></param>
