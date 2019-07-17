@@ -54,17 +54,17 @@ namespace BoSSS.Application.MultigridTest {
 
             //TestProgram.XDG_ProlongationTest(0, 0.3, 1, MultigridOperator.Mode.IdMass);
             //BoSSS.Application.MultigridTest.TestProgram.XDG_MatrixPolynomialRestAndPrlgTest(0, 0.0d, 0);
-            BoSSS.Application.MultigridTest.TestProgram.XDG_MatrixPolynomialRestAndPrlgTest(2, 0.0d, 0);
-
+            //BoSSS.Application.MultigridTest.TestProgram.XDG_MatrixPolynomialRestAndPrlgTest(2, 0.0d, 0);
+            //BoSSS.Application.MultigridTest.TestProgram.XDG_MatrixPolynomialRestAndPrlgTest(3, 0.0d, 1);
 
             foreach (int w in new int[] { 0 }) {
                 for (int p = 1; p <= 1; p++) {
-                    TestProgram.ProlongationTest(p);
+                    //TestProgram.ProlongationTest(p);
                     //TestProgram.PolynomialRestAndPrlgTest(p);
                     //XDG_MatrixPolynomialRestAndPrlgTest_2
                     //TestProgram.RestictionMatrixTest(p);
                     //TestProgram.XDG_PolynomialRestAndPrlgTest(p, 0.3, w);
-                    TestProgram.XDG_MatrixPolynomialRestAndPrlgTest_2(p, 0.3);
+                    //TestProgram.XDG_MatrixPolynomialRestAndPrlgTest_2(p, 0.3);
                     //TestProgram.XDG_MatrixPolynomialRestAndPrlgTest_2(p, 0.3, w, MultigridOperator.Mode.IdMass);
                     //TestProgram.XDG_ProlongationTest(0, 0.0, w, MultigridOperator.Mode.IdMass);
                 }
