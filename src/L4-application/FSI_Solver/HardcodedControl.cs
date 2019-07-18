@@ -813,8 +813,8 @@ namespace BoSSS.Application.FSI_Solver {
                 radius_P = 0.2,
                 particleDensity = 1.0,        
             });
-            C.Particles[1].TranslationalVelocity[0][0] = 0.5;
-            C.Particles[1].TranslationalVelocity[0][1] = 1.0;
+            C.Particles[1].translationalVelocity[0][0] = 0.5;
+            C.Particles[1].translationalVelocity[0][1] = 1.0;
 
             C.Particles.Add(new Particle_Sphere(new double[] { 0.5, 2.0 }) {
                 radius_P = 0.2,
@@ -1029,8 +1029,8 @@ namespace BoSSS.Application.FSI_Solver {
                 thickness_P = 0.05,
                 length_P = 0.1
             });
-            C.Particles[0].TranslationalVelocity[0][0] = -5.0;
-            C.Particles[0].RotationalVelocity[0] = -10;
+            C.Particles[0].translationalVelocity[0][0] = -5.0;
+            C.Particles[0].rotationalVelocity[0] = -10;
 
             C.Particles.Add(new Particle_Sphere(new double[] { -0.6, 0.3},startAngl:-90.0) {
                 radius_P = 0.25,
@@ -1043,21 +1043,21 @@ namespace BoSSS.Application.FSI_Solver {
                 particleDensity = 1.0,
             });
 
-            C.Particles[2].TranslationalVelocity[0] = new double[2] { -5.0,0.0};
+            C.Particles[2].translationalVelocity[0] = new double[2] { -5.0,0.0};
 
             C.Particles.Add(new Particle_Squircle(new double[] { 1.0, 1.0 }, startAngl: -20.0) {
                 radius_P = 0.25,
                 particleDensity = 1.0,
             });
-            C.Particles[3].TranslationalVelocity[0] = new double[2] { -5.0, -5.0 };
+            C.Particles[3].translationalVelocity[0] = new double[2] { -5.0, -5.0 };
 
             C.Particles.Add(new Particle_Bean(new double[] { 1.0, -1.0 }, startAngl: -20.0) {
                 radius_P = 0.25,
                 particleDensity = 1.0,
             });
-            C.Particles[4].TranslationalVelocity[0] = new double[2] { -5.0, 5.0 };
+            C.Particles[4].translationalVelocity[0] = new double[2] { -5.0, 5.0 };
 
-            C.Particles[4].RotationalVelocity[0] = -10;
+            C.Particles[4].rotationalVelocity[0] = -10;
             C.pureDryCollisions = true;
             C.collisionModel = FSI_Control.CollisionModel.MomentumConservation;
 

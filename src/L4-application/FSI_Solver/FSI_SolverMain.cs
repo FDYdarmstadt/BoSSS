@@ -259,9 +259,9 @@ namespace BoSSS.Application.FSI_Solver
                                             // Separating different boundary regions (for active particles)
                                             double cos_theta;
                                             // The posterior side of the particle (Neumann boundary)
-                                            if (Math.Cos(p.Angle[0]) * (X[0] - p.Position[0][0]) + Math.Sin(p.Angle[0]) * (X[1] - p.Position[0][1]) < 1e-8)// && Math.Cos(p.particleAnglePerIteration[0]) * (X[0] - p.positionAtIteration[0][0]) + Math.Sin(p.particleAnglePerIteration[0]) * (X[1] - p.positionAtIteration[0][1]) > -0.25)
+                                            if (Math.Cos(p.angle[0]) * (X[0] - p.position[0][0]) + Math.Sin(p.angle[0]) * (X[1] - p.position[0][1]) < 1e-8)// && Math.Cos(p.particleAnglePerIteration[0]) * (X[0] - p.positionAtIteration[0][0]) + Math.Sin(p.particleAnglePerIteration[0]) * (X[1] - p.positionAtIteration[0][1]) > -0.25)
                                             {
-                                                cos_theta = (Math.Cos(p.Angle[0]) * (X[0] - p.Position[0][0]) + Math.Sin(p.Angle[0]) * (X[1] - p.Position[0][1])) / (Math.Sqrt((X[0] - p.Position[0][0]).Pow2() + (X[1] - p.Position[0][1]).Pow2()));
+                                                cos_theta = (Math.Cos(p.angle[0]) * (X[0] - p.position[0][0]) + Math.Sin(p.angle[0]) * (X[1] - p.position[0][1])) / (Math.Sqrt((X[0] - p.position[0][0]).Pow2() + (X[1] - p.position[0][1]).Pow2()));
                                             }
                                             // The anterior side of the particle (Dirichlet boundary)
                                             else
@@ -281,12 +281,12 @@ namespace BoSSS.Application.FSI_Solver
                                             // active particles
                                             if (containsParticle && p.ActiveParticle == true)
                                             {
-                                                result[0] = p.TranslationalVelocity[0][0];
-                                                result[1] = p.TranslationalVelocity[0][1];
-                                                result[2] = p.RotationalVelocity[0];
+                                                result[0] = p.translationalVelocity[0][0];
+                                                result[1] = p.translationalVelocity[0][1];
+                                                result[2] = p.rotationalVelocity[0];
                                                 result[3] = RadialNormalVector[0];
                                                 result[4] = RadialNormalVector[1];
-                                                result[5] = p.Position[0].L2Distance(X); //RadialLength;
+                                                result[5] = p.position[0].L2Distance(X); //RadialLength;
                                                 result[6] = -cos_theta;
                                                 return result;
                                             }
@@ -294,12 +294,12 @@ namespace BoSSS.Application.FSI_Solver
                                             // passive particles
                                             else if (containsParticle && p.ActiveParticle == false)
                                             {
-                                                result[0] = p.TranslationalVelocity[0][0];
-                                                result[1] = p.TranslationalVelocity[0][1];
-                                                result[2] = p.RotationalVelocity[0];
+                                                result[0] = p.translationalVelocity[0][0];
+                                                result[1] = p.translationalVelocity[0][1];
+                                                result[2] = p.rotationalVelocity[0];
                                                 result[3] = RadialNormalVector[0];
                                                 result[4] = RadialNormalVector[1];
-                                                result[5] = p.Position[0].L2Distance(X); //RadialLength;
+                                                result[5] = p.position[0].L2Distance(X); //RadialLength;
                                                 result[6] = 0;
                                                 return result;
                                             }
@@ -398,38 +398,38 @@ namespace BoSSS.Application.FSI_Solver
                                             // Separating different boundary regions (for active particles)
                                             double cos_theta;
                                             // The posterior side of the particle (Neumann boundary)
-                                            if (Math.Cos(p.Angle[0]) * (X[0] - p.Position[0][0]) + Math.Sin(p.Angle[0]) * (X[1] - p.Position[0][1]) < 1e-8)// && Math.Cos(p.particleAnglePerIteration[0]) * (X[0] - p.positionAtIteration[0][0]) + Math.Sin(p.particleAnglePerIteration[0]) * (X[1] - p.positionAtIteration[0][1]) > -0.25)
+                                            if (Math.Cos(p.angle[0]) * (X[0] - p.position[0][0]) + Math.Sin(p.angle[0]) * (X[1] - p.position[0][1]) < 1e-8)// && Math.Cos(p.particleAnglePerIteration[0]) * (X[0] - p.positionAtIteration[0][0]) + Math.Sin(p.particleAnglePerIteration[0]) * (X[1] - p.positionAtIteration[0][1]) > -0.25)
                                             {
-                                                cos_theta = (Math.Cos(p.Angle[0]) * (X[0] - p.Position[0][0]) + Math.Sin(p.Angle[0]) * (X[1] - p.Position[0][1])) / (Math.Sqrt((X[0] - p.Position[0][0]).Pow2() + (X[1] - p.Position[0][1]).Pow2()));
+                                                cos_theta = (Math.Cos(p.angle[0]) * (X[0] - p.position[0][0]) + Math.Sin(p.angle[0]) * (X[1] - p.position[0][1])) / (Math.Sqrt((X[0] - p.position[0][0]).Pow2() + (X[1] - p.position[0][1]).Pow2()));
                                             }
                                             // The anterior side of the particle (Dirichlet boundary)
                                             else
                                             {
                                                 cos_theta = 0;
                                             }
-                                            result[0] = p.TranslationalVelocity[0][0];
-                                            result[1] = p.TranslationalVelocity[0][1];
-                                            result[2] = p.RotationalVelocity[0];
+                                            result[0] = p.translationalVelocity[0][0];
+                                            result[1] = p.translationalVelocity[0][1];
+                                            result[2] = p.rotationalVelocity[0];
                                             result[3] = RadialNormalVector[0];
                                             result[4] = RadialNormalVector[1];
-                                            result[5] = p.Position[0].L2Distance(X);
+                                            result[5] = p.position[0].L2Distance(X);
                                             result[6] = p.ActiveStress;
                                             result[7] = -cos_theta;
-                                            result[8] = p.Angle[0];
+                                            result[8] = p.angle[0];
                                         }
 
                                         // passive particles
                                         else if (containsParticle && p.ActiveParticle == false)
                                         {
-                                            result[0] = p.TranslationalVelocity[0][0];
-                                            result[1] = p.TranslationalVelocity[0][1];
-                                            result[2] = p.RotationalVelocity[0];
+                                            result[0] = p.translationalVelocity[0][0];
+                                            result[1] = p.translationalVelocity[0][1];
+                                            result[2] = p.rotationalVelocity[0];
                                             result[3] = RadialNormalVector[0];
                                             result[4] = RadialNormalVector[1];
-                                            result[5] = p.Position[0].L2Distance(X);
+                                            result[5] = p.position[0].L2Distance(X);
                                             result[6] = 0;
                                             result[7] = 0;
-                                            result[8] = p.Angle[0];
+                                            result[8] = p.angle[0];
                                         }
                                     }
                                     return result;
@@ -483,12 +483,12 @@ namespace BoSSS.Application.FSI_Solver
                                    p.CalculateRadialNormalVector(X, out double[] RadialNormalVector);
                                    if (containsParticle)
                                    {
-                                       result[0] = p.TranslationalVelocity[0][0];
-                                       result[1] = p.TranslationalVelocity[0][1];
-                                       result[2] = p.RotationalVelocity[0];
+                                       result[0] = p.translationalVelocity[0][0];
+                                       result[1] = p.translationalVelocity[0][1];
+                                       result[2] = p.rotationalVelocity[0];
                                        result[3] = RadialNormalVector[0];
                                        result[4] = RadialNormalVector[1];
-                                       result[5] = p.Position[0].L2Distance(X);
+                                       result[5] = p.position[0].L2Distance(X);
                                        return result;
                                    }
                                }
@@ -1271,7 +1271,7 @@ namespace BoSSS.Application.FSI_Solver
             int L = b.Particles.Length;
             for (int l = 0; l < L; l++)
             { // loop over particles
-                Debug.Assert(GenericBlas.L2Dist(b.Particles[l].Position[0], o.Particles[l].Position[0]) < 1e-13);
+                Debug.Assert(GenericBlas.L2Dist(b.Particles[l].position[0], o.Particles[l].position[0]) < 1e-13);
             }
 
         }
@@ -1446,36 +1446,36 @@ namespace BoSSS.Application.FSI_Solver
                 if (BoolReceive[i] != 0)
                 {
                     double[] CheckSend = new double[NoOfVars];
-                    CheckSend[0] = CurrentParticle.RotationalVelocity[0];
-                    CheckSend[1] = CurrentParticle.TranslationalVelocity[0][0];
-                    CheckSend[2] = CurrentParticle.TranslationalVelocity[0][1];
-                    CheckSend[3] = CurrentParticle.Angle[0];
-                    CheckSend[4] = CurrentParticle.Position[0][0];
-                    CheckSend[5] = CurrentParticle.Position[0][1];
+                    CheckSend[0] = CurrentParticle.rotationalVelocity[0];
+                    CheckSend[1] = CurrentParticle.translationalVelocity[0][0];
+                    CheckSend[2] = CurrentParticle.translationalVelocity[0][1];
+                    CheckSend[3] = CurrentParticle.angle[0];
+                    CheckSend[4] = CurrentParticle.position[0][0];
+                    CheckSend[5] = CurrentParticle.position[0][1];
                     CheckSend[6] = CurrentParticle.CollisionTimestep;
-                    CheckSend[7] = CurrentParticle.RotationalVelocity[1];
-                    CheckSend[8] = CurrentParticle.TranslationalVelocity[1][0];
-                    CheckSend[9] = CurrentParticle.TranslationalVelocity[1][1];
-                    CheckSend[10] = CurrentParticle.Angle[1];
-                    CheckSend[11] = CurrentParticle.Position[1][0];
-                    CheckSend[12] = CurrentParticle.Position[1][1];
+                    CheckSend[7] = CurrentParticle.rotationalVelocity[1];
+                    CheckSend[8] = CurrentParticle.translationalVelocity[1][0];
+                    CheckSend[9] = CurrentParticle.translationalVelocity[1][1];
+                    CheckSend[10] = CurrentParticle.angle[1];
+                    CheckSend[11] = CurrentParticle.position[1][0];
+                    CheckSend[12] = CurrentParticle.position[1][1];
 
                     double[] CheckReceive = new double[NoOfVars * MPISize];
                     MPISendAndReceive(CheckSend, ref CheckReceive);
 
-                    CurrentParticle.RotationalVelocity[0] = CheckReceive[0 + i * NoOfVars];
-                    CurrentParticle.TranslationalVelocity[0][0] = CheckReceive[1 + i * NoOfVars];
-                    CurrentParticle.TranslationalVelocity[0][1] = CheckReceive[2 + i * NoOfVars];
-                    CurrentParticle.Angle[0] = CheckReceive[3 + i * NoOfVars];
-                    CurrentParticle.Position[0][0] = CheckReceive[4 + i * NoOfVars];
-                    CurrentParticle.Position[0][1] = CheckReceive[5 + i * NoOfVars];
+                    CurrentParticle.rotationalVelocity[0] = CheckReceive[0 + i * NoOfVars];
+                    CurrentParticle.translationalVelocity[0][0] = CheckReceive[1 + i * NoOfVars];
+                    CurrentParticle.translationalVelocity[0][1] = CheckReceive[2 + i * NoOfVars];
+                    CurrentParticle.angle[0] = CheckReceive[3 + i * NoOfVars];
+                    CurrentParticle.position[0][0] = CheckReceive[4 + i * NoOfVars];
+                    CurrentParticle.position[0][1] = CheckReceive[5 + i * NoOfVars];
                     CurrentParticle.CollisionTimestep = CheckReceive[6 + i * NoOfVars];
-                    CurrentParticle.RotationalVelocity[1] = CheckReceive[7 + i * NoOfVars];
-                    CurrentParticle.TranslationalVelocity[1][0] = CheckReceive[8 + i * NoOfVars];
-                    CurrentParticle.TranslationalVelocity[1][1] = CheckReceive[9 + i * NoOfVars];
-                    CurrentParticle.Angle[1] = CheckReceive[10 + i * NoOfVars];
-                    CurrentParticle.Position[1][0] = CheckReceive[11 + i * NoOfVars];
-                    CurrentParticle.Position[1][1] = CheckReceive[12 + i * NoOfVars];
+                    CurrentParticle.rotationalVelocity[1] = CheckReceive[7 + i * NoOfVars];
+                    CurrentParticle.translationalVelocity[1][0] = CheckReceive[8 + i * NoOfVars];
+                    CurrentParticle.translationalVelocity[1][1] = CheckReceive[9 + i * NoOfVars];
+                    CurrentParticle.angle[1] = CheckReceive[10 + i * NoOfVars];
+                    CurrentParticle.position[1][0] = CheckReceive[11 + i * NoOfVars];
+                    CurrentParticle.position[1][1] = CheckReceive[12 + i * NoOfVars];
                     //if (BoolReceive[i] != 0)
                     {
                         CurrentParticle.Collided = true;

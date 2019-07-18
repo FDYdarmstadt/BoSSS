@@ -503,7 +503,7 @@ namespace FSI_Solver
             }
 
             Force = Particles[0].HydrodynamicForces[0];
-            MPIangularVelocity = Particles[0].RotationalVelocity[0];
+            MPIangularVelocity = Particles[0].rotationalVelocity[0];
 
             StringBuilder OutputBuilder = new StringBuilder();
 
@@ -528,14 +528,14 @@ namespace FSI_Solver
                     OutputBuilder.AppendLine("Drag Force: " + CurrentParticle.HydrodynamicForces[0][0]);
                     OutputBuilder.AppendLine("Lift Force: " + CurrentParticle.HydrodynamicForces[0][1]);
                     OutputBuilder.AppendLine("Torqe: " + CurrentParticle.HydrodynamicTorque[0]);
-                    OutputBuilder.AppendLine("Transl VelocityX: " + CurrentParticle.TranslationalVelocity[0][0]);
-                    OutputBuilder.AppendLine("Transl VelocityY: " + CurrentParticle.TranslationalVelocity[0][1]);
-                    OutputBuilder.AppendLine("Angular Velocity: " + CurrentParticle.RotationalVelocity[0]);
+                    OutputBuilder.AppendLine("Transl VelocityX: " + CurrentParticle.translationalVelocity[0][0]);
+                    OutputBuilder.AppendLine("Transl VelocityY: " + CurrentParticle.translationalVelocity[0][1]);
+                    OutputBuilder.AppendLine("Angular Velocity: " + CurrentParticle.rotationalVelocity[0]);
                     if (Finalresult)
                     {
-                        OutputBuilder.AppendLine("X-position: " + CurrentParticle.Position[0][0]);
-                        OutputBuilder.AppendLine("Y-position: " + CurrentParticle.Position[0][1]);
-                        OutputBuilder.AppendLine("Angle: " + CurrentParticle.Angle[0]);
+                        OutputBuilder.AppendLine("X-position: " + CurrentParticle.position[0][0]);
+                        OutputBuilder.AppendLine("Y-position: " + CurrentParticle.position[0][1]);
+                        OutputBuilder.AppendLine("Angle: " + CurrentParticle.angle[0]);
                         OutputBuilder.AppendLine();
                         OutputBuilder.AppendLine("Particle Reynolds number: " + ParticleReynoldsNumber[p]);
                         OutputBuilder.AppendLine("Particle Stokes number: " + ParticleStokesNumber[p]);
@@ -611,9 +611,9 @@ namespace FSI_Solver
                     var P = Particles[p];
 
                     // scalar values
-                    CheckSend[p * NoOfVars + 0] = P.Angle[0];
-                    CheckSend[p * NoOfVars + 1] = P.Angle[1];
-                    CheckSend[p * NoOfVars + 2] = P.RotationalVelocity[0];
+                    CheckSend[p * NoOfVars + 0] = P.angle[0];
+                    CheckSend[p * NoOfVars + 1] = P.angle[1];
+                    CheckSend[p * NoOfVars + 2] = P.rotationalVelocity[0];
                     //CheckSend[iP*NoOfVars + 2] = P.Area_P;
                     CheckSend[p * NoOfVars + 3] = P.clearSmallValues ? 1.0 : 0.0;
                     CheckSend[p * NoOfVars + 4] = P.forceAndTorque_convergence;
@@ -626,12 +626,12 @@ namespace FSI_Solver
                     for (int d = 0; d < D; d++)
                     {
                         int Offset = 10;
-                        CheckSend[p * NoOfVars + Offset + 0 * D + d] = P.Position[0][d];
-                        CheckSend[p * NoOfVars + Offset + 1 * D + d] = P.Position[1][d];
+                        CheckSend[p * NoOfVars + Offset + 0 * D + d] = P.position[0][d];
+                        CheckSend[p * NoOfVars + Offset + 1 * D + d] = P.position[1][d];
                         CheckSend[p * NoOfVars + Offset + 2 * D + d] = P.translationalAcceleration[0][d];
                         CheckSend[p * NoOfVars + Offset + 3 * D + d] = P.translationalAcceleration[1][d];
-                        CheckSend[p * NoOfVars + Offset + 4 * D + d] = P.TranslationalVelocity[0][d];
-                        CheckSend[p * NoOfVars + Offset + 5 * D + d] = P.TranslationalVelocity[1][d];
+                        CheckSend[p * NoOfVars + Offset + 4 * D + d] = P.translationalVelocity[0][d];
+                        CheckSend[p * NoOfVars + Offset + 5 * D + d] = P.translationalVelocity[1][d];
                         CheckSend[p * NoOfVars + Offset + 6 * D + d] = P.HydrodynamicForces[0][d];
                         CheckSend[p * NoOfVars + Offset + 7 * D + d] = P.HydrodynamicForces[1][d];
                         // todo: add more vector values here that might be relevant for the particle state;

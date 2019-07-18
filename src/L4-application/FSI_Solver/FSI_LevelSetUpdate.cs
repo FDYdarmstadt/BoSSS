@@ -156,8 +156,8 @@ namespace FSI_Solver
             {
                 double[] ParticleScales = Particles[p].GetLengthScales();
                 double Hmin = Math.Sqrt(gridData.iGeomCells.GetCellVolume(0));
-                double ParticleAngle = Particles[p].Angle[0];
-                double[] ParticlePos = Particles[p].Position[0];
+                double ParticleAngle = Particles[p].angle[0];
+                double[] ParticlePos = Particles[p].position[0];
                 double Upperedge = ParticlePos[1] + Hmin;
                 double Loweredge = ParticlePos[1] - Hmin;
                 double Leftedge = ParticlePos[0] - Hmin;

@@ -361,15 +361,15 @@ namespace BoSSS.Application.FSI_Solver {
                 particleDensity = 1.0,
                 radius_P = 0.1,
             });
-            C.Particles[0].TranslationalVelocity[0][0] = +1;
-            C.Particles[0].TranslationalVelocity[0][1] = -1;
-            C.Particles[0].RotationalVelocity[0] = 0;
+            C.Particles[0].translationalVelocity[0][0] = +1;
+            C.Particles[0].translationalVelocity[0][1] = -1;
+            C.Particles[0].rotationalVelocity[0] = 0;
             C.pureDryCollisions = true;
             C.collisionModel = FSI_Control.CollisionModel.MomentumConservation;
 
             double V = 0;
             foreach (var p in C.Particles) {
-                V = Math.Max(V, p.TranslationalVelocity[0].L2Norm());
+                V = Math.Max(V, p.translationalVelocity[0].L2Norm());
             }
 
             if (V <= 0)
@@ -481,23 +481,23 @@ namespace BoSSS.Application.FSI_Solver {
                 particleDensity = 1.0,
                 radius_P = 0.15
             });
-            C.Particles[0].TranslationalVelocity[0][0] = +1;
-            C.Particles[0].TranslationalVelocity[0][1] = 0;
-            C.Particles[0].RotationalVelocity[0] = 0;
+            C.Particles[0].translationalVelocity[0][0] = +1;
+            C.Particles[0].translationalVelocity[0][1] = 0;
+            C.Particles[0].rotationalVelocity[0] = 0;
 
             C.Particles.Add(new Particle_Sphere(new double[] { +0.6, -0.1 }, startAngl: 90.0) {
                 particleDensity = 1.0,
                 radius_P = 0.15
             });
-            C.Particles[1].TranslationalVelocity[0][0] = -1;
-            C.Particles[1].TranslationalVelocity[0][1] = 0;
-            C.Particles[1].RotationalVelocity[0] = 0;
+            C.Particles[1].translationalVelocity[0][0] = -1;
+            C.Particles[1].translationalVelocity[0][1] = 0;
+            C.Particles[1].rotationalVelocity[0] = 0;
             
             C.collisionModel = FSI_Control.CollisionModel.MomentumConservation;
 
             double V = 0;
             foreach (var p in C.Particles) {
-                V = Math.Max(V, p.TranslationalVelocity[0].L2Norm());
+                V = Math.Max(V, p.translationalVelocity[0].L2Norm());
             }
 
             if (V <= 0)
