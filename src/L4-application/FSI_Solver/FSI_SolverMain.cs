@@ -279,7 +279,7 @@ namespace BoSSS.Application.FSI_Solver
 
                                             p.CalculateRadialNormalVector(X, out double[] RadialNormalVector);
                                             // active particles
-                                            if (containsParticle && p.ActiveParticle == true)
+                                            if (containsParticle && p.ActiveStress != 0)
                                             {
                                                 result[0] = p.translationalVelocity[0][0];
                                                 result[1] = p.translationalVelocity[0][1];
@@ -292,7 +292,7 @@ namespace BoSSS.Application.FSI_Solver
                                             }
 
                                             // passive particles
-                                            else if (containsParticle && p.ActiveParticle == false)
+                                            else if (containsParticle && p.ActiveStress == 0)
                                             {
                                                 result[0] = p.translationalVelocity[0][0];
                                                 result[1] = p.translationalVelocity[0][1];
@@ -393,7 +393,7 @@ namespace BoSSS.Application.FSI_Solver
 
                                         p.CalculateRadialNormalVector(X, out double[] RadialNormalVector);
                                         // active particles
-                                        if (containsParticle && p.ActiveParticle == true)
+                                        if (containsParticle && p.ActiveStress != 0)
                                         {
                                             // Separating different boundary regions (for active particles)
                                             double cos_theta;
@@ -419,7 +419,7 @@ namespace BoSSS.Application.FSI_Solver
                                         }
 
                                         // passive particles
-                                        else if (containsParticle && p.ActiveParticle == false)
+                                        else if (containsParticle && p.ActiveStress == 0)
                                         {
                                             result[0] = p.translationalVelocity[0][0];
                                             result[1] = p.translationalVelocity[0][1];
@@ -664,14 +664,14 @@ namespace BoSSS.Application.FSI_Solver
                 foreach (Particle p in m_Particles)
                 {
                     // forces and torque of the previous iteration
-                    acc_force_P_x_old += p.HydrodynamicForces[1][0];
-                    acc_force_P_y_old += p.HydrodynamicForces[1][1];
-                    acc_torque_P_old += p.HydrodynamicTorque[1];
+                    acc_force_P_x_old += p.hydrodynamicForces[1][0];
+                    acc_force_P_y_old += p.hydrodynamicForces[1][1];
+                    acc_torque_P_old += p.hydrodynamicTorque[1];
 
                     // forces and torque of the current iteration
-                    acc_force_P_x += p.HydrodynamicForces[0][0];
-                    acc_force_P_y += p.HydrodynamicForces[0][1];
-                    acc_torque_P += p.HydrodynamicTorque[0];
+                    acc_force_P_x += p.hydrodynamicForces[0][0];
+                    acc_force_P_y += p.hydrodynamicForces[0][1];
+                    acc_torque_P += p.hydrodynamicTorque[0];
                     iterationCounter = p.iteration_counter_P;
                 }
                 // first iteration, to ensure at least two iterations per timestep
@@ -1030,9 +1030,9 @@ namespace BoSSS.Application.FSI_Solver
                 }
                 else
                 {
-                    CurrentParticle.HydrodynamicForces[0][0] = 0;
-                    CurrentParticle.HydrodynamicForces[0][1] = 0;
-                    CurrentParticle.HydrodynamicTorque[0] = 0;
+                    CurrentParticle.hydrodynamicForces[0][0] = 0;
+                    CurrentParticle.hydrodynamicForces[0][1] = 0;
+                    CurrentParticle.hydrodynamicTorque[0] = 0;
                 }
             }
             // MPISum over Forces moved to Particle.cs 
