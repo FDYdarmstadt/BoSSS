@@ -15,19 +15,13 @@ limitations under the License.
 */
 
 using BoSSS.Application.FSI_Solver;
-using BoSSS.Application.IBM_Solver;
 using BoSSS.Foundation;
 using BoSSS.Foundation.Grid;
-using BoSSS.Foundation.XDG;
-using BoSSS.Solution.XdgTimestepping;
 using ilPSP;
 using ilPSP.Utils;
-using MPI.Wrappers;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace FSI_Solver
 {
@@ -150,7 +144,7 @@ namespace FSI_Solver
                             SaveTimeStepArray[p0, ParticleOffset + w] = temp_SaveTimeStep;
                             DistanceVector.SetSubArray(temp_DistanceVector, new int[] { p0, ParticleOffset + w, -1 });
                             ClosestPoint_P0.SetSubArray(temp_ClosestPoint_p0, new int[] { p0, ParticleOffset + w, -1 });
-                            particles[p0].skipForceIntegration = temp_Distance < 0.2 * m_hMin;
+                            //particles[p0].skipForceIntegration = temp_Distance < 0.2 * m_hMin;
                             if (temp_SaveTimeStep < SaveTimeStep && temp_SaveTimeStep > 0)
                             {
                                 SaveTimeStep = temp_SaveTimeStep;

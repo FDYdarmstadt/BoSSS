@@ -1069,7 +1069,7 @@ namespace BoSSS.Application.FSI_Solver
                     Auxillary.CalculateParticlePosition(m_Particles, dt);
                     Auxillary.ParticleState_MPICheck(m_Particles, GridData, MPISize);
                     UpdateLevelSetParticles();
-                    Auxillary.PrintResultToConsole(m_Particles, 0, 0, phystime, TimestepInt, 0, true, out double MPIangularVelocity, out Test_Force);
+                    Auxillary.PrintResultToConsole(m_Particles, 0, 0, phystime, TimestepInt, out double MPIangularVelocity, out Test_Force);
                     // Save for NUnit Test
                     base.QueryHandler.ValueQuery("C_Drag", 2 * Test_Force[0], true); // Only for Diameter 1 (TestCase NSE stationary)
                     base.QueryHandler.ValueQuery("C_Lift", 2 * Test_Force[1], true); // Only for Diameter 1 (TestCase NSE stationary)
@@ -1118,7 +1118,7 @@ namespace BoSSS.Application.FSI_Solver
                             }
                             Auxillary.CalculateParticleVelocity(m_Particles, dt, FullyCoupled, IterationCounter, TimestepInt);
                             if (IterationCounter != 100000 || ((FSI_Control)Control).Timestepper_LevelSetHandling != LevelSetHandling.FSI_LieSplittingFullyCoupled)
-                                Auxillary.PrintResultToConsole(m_Particles, ((FSI_Control)Control).PhysicalParameters.mu_A, ((FSI_Control)Control).PhysicalParameters.rho_A, phystime, TimestepInt, IterationCounter, false, out double _, out Test_Force);
+                                Auxillary.PrintResultToConsole(m_Particles, phystime, IterationCounter, out double _, out Test_Force);
                             if (((FSI_Control)Control).Timestepper_LevelSetHandling != LevelSetHandling.FSI_LieSplittingFullyCoupled)
                                 break;
                             Auxillary.CalculateParticleResidual(m_Particles, IterationCounter, ((FSI_Control)Control).max_iterations_fully_coupled, out posResidual_splitting, out IterationCounter);
@@ -1126,7 +1126,7 @@ namespace BoSSS.Application.FSI_Solver
                         ResetCollisionState(m_Particles);
                         CalculateCollision(m_Particles, GridData, LsTrk, CellColor, dt);
                         Auxillary.CalculateParticlePosition(m_Particles, dt);
-                        Auxillary.PrintResultToConsole(m_Particles, ((FSI_Control)Control).PhysicalParameters.mu_A, ((FSI_Control)Control).PhysicalParameters.rho_A, phystime, TimestepInt, IterationCounter, true, out double Test_RotationalVelocity, out Test_Force);
+                        Auxillary.PrintResultToConsole(m_Particles, ((FSI_Control)Control).PhysicalParameters.mu_A, ((FSI_Control)Control).PhysicalParameters.rho_A, phystime, TimestepInt, out double Test_RotationalVelocity, out Test_Force);
                         // Save for NUnit Test
                         base.QueryHandler.ValueQuery("C_Drag", 2 * Test_Force[0], true); // Only for Diameter 1 (TestCase NSE stationary)
                         base.QueryHandler.ValueQuery("C_Lift", 2 * Test_Force[1], true); // Only for Diameter 1 (TestCase NSE stationary)
@@ -1506,20 +1506,31 @@ namespace BoSSS.Application.FSI_Solver
         /// </summary>
         int LevelIndicator(int j, int CurrentLevel)
         {
+            int RefinementLevel = ((FSI_Control)this.Control).RefinementLevel;
+            int DesiredLevel_j = 0;
             int J = GridData.iLogicalCells.NoOfLocalUpdatedCells;
             CellMask LevSetCells = LsTrk.Regions.GetCutCellMask();
-            int DesiredLevel_j = 0;
             BitArray CellsToRefine = new BitArray(J);
-            double TotalPressure = Pressure.GetMeanValueTotal(CellMask.GetFullMask(GridData));
+            //double TotalPressure = Pressure.GetMeanValueTotal(CellMask.GetFullMask(GridData));
+            CellMask boundaryCells = GridData.GetBoundaryCells();
             for (int i = 0; i < J; i++)
             {
                 Pressure.GetExtremalValuesInCell(out double minPressure, out double maxPressure, i);
-                if (Math.Abs(maxPressure - minPressure) > Math.Abs(TotalPressure) && LevSetCells.Contains(i))
+                if (Math.Abs(maxPressure - minPressure) > 1 && LevSetCells.Contains(i))//Math.Abs(TotalPressure)
                     CellsToRefine[i] = true;
             }
             CellMask cellMaskToRefine = new CellMask(GridData, CellsToRefine);
-            int RefinementLevel = ((FSI_Control)this.Control).RefinementLevel;
             bool refined = false;
+            for (int k = 0; k < RefinementLevel; k++)
+            {
+                if (boundaryCells.Contains(j) && ParticleColor.GetMeanValue(j) != 0 && CurrentLevel < RefinementLevel)
+                {
+                    DesiredLevel_j = CurrentLevel + 1;
+                    refined = true;
+                }
+                boundaryCells = boundaryCells.AllNeighbourCells();
+                RefinementLevel -= 1;
+            }
             for (int k = 0; k < RefinementLevel; k++)
             {
                 if(cellMaskToRefine.Contains(j) && CurrentLevel < RefinementLevel)
@@ -1574,13 +1585,9 @@ namespace BoSSS.Application.FSI_Solver
                 int NoOfCellsToCoarsen = 0;
                 if (AnyChange)
                 {
-                    int[] glb = (new int[] {
-
-                    CellsToRefineList.Count,
-                    Coarsening.Sum(L => L.Length),
-                }).MPISum();
-                    NoOfCellsToRefine = glb[0];
-                    NoOfCellsToCoarsen = glb[1];
+                    //int[] glb = (new int[] { CellsToRefineList.Count, Coarsening.Sum(L => L.Length)}).MPISum();
+                    NoOfCellsToRefine = CellsToRefineList.Count();// glb[0];
+                    NoOfCellsToCoarsen = Coarsening.Sum(L => L.Length); // glb[1];
                 }
                 int oldJ = this.GridData.CellPartitioning.TotalLength;
 

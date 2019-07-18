@@ -375,7 +375,7 @@ namespace BoSSS.Application.FSI_Solver
             return C;
         }
 
-        public static FSI_Control WetParticleCollision(int k = 2, double DensityFactor = 50)
+        public static FSI_Control WetParticleCollision(int k = 2, double DensityFactor = 1e3)
         {
             FSI_Control C = new FSI_Control();
 
@@ -386,7 +386,7 @@ namespace BoSSS.Application.FSI_Solver
             // basic database options
             // =============================
             C.DbPath = @"\\hpccluster\hpccluster-scratch\deussen\cluster_db\WetParticleCollision";
-            C.savetodb = true;
+            C.savetodb = false;
             C.saveperiod = 1;
             C.ProjectName = "ParticleUnderGravity";
             C.ProjectDescription = "Active";
@@ -405,8 +405,8 @@ namespace BoSSS.Application.FSI_Solver
                 int q = new int(); // #Cells in x-dircetion + 1
                 int r = new int(); // #Cells in y-dircetion + 1
 
-                q = 8;
-                r = 8;
+                q = 5;
+                r = 5;
 
                 double[] Xnodes = GenericBlas.Linspace(-3 * BaseSize, 3 * BaseSize, q);
                 double[] Ynodes = GenericBlas.Linspace(-1 * BaseSize, 5 * BaseSize, r);
@@ -444,7 +444,7 @@ namespace BoSSS.Application.FSI_Solver
             // Mesh refinement
             // =============================
             C.AdaptiveMeshRefinement = true;
-            C.RefinementLevel = 3;
+            C.RefinementLevel = 6;
 
 
             // Boundary conditions
@@ -468,9 +468,9 @@ namespace BoSSS.Application.FSI_Solver
             int numOfParticles = 1;
             for (int d = 0; d < numOfParticles; d++)
             {
-                C.Particles.Add(new Particle_Sphere(new double[] { 0, 0 }, startAngl: 0)
+                C.Particles.Add(new Particle_Sphere(new double[] { 0.1, -0.4 }, startAngl: 0)
                 {
-                    particleDensity = 7.8 * 1e4 * DensityFactor,
+                    particleDensity = 7.8 * DensityFactor,
                     radius_P = 0.5,
                     GravityVertical = -9.81,
                     useAddaptiveUnderrelaxation = true,
@@ -479,7 +479,7 @@ namespace BoSSS.Application.FSI_Solver
                     UseAddedDamping = false
                 });
             }
-
+            C.Particles[0].translationalVelocity[0][1] = -0.5;
             // Quadrature rules
             // =============================   
             C.CutCellQuadratureType = Foundation.XDG.XQuadFactoryHelper.MomentFittingVariants.Saye;
@@ -646,7 +646,6 @@ namespace BoSSS.Application.FSI_Solver
                     particleDensity = 1,
                     radius_P = 0.1,
                     GravityVertical = 0,
-                    ActiveParticle = true,
                     ActiveStress = 1000,
                     useAddaptiveUnderrelaxation = true,
                     underrelaxation_factor = 5,
@@ -1659,7 +1658,7 @@ namespace BoSSS.Application.FSI_Solver
                 clearSmallValues = true,
                 UseAddedDamping = true
             });
-            C.Particles[0].translationalVelocity[0][1] = 0.25;
+            C.Particles[0].translationalVelocity[0][1] = -0.25;
             C.Particles.Add(new Particle_Falle_Links(new double[] { 0.975, 4.75 }, startAngl: 0)
             {
                 particleDensity = 1,

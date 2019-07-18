@@ -93,7 +93,6 @@
     <Compile Include="FSI_LevelSetUpdate.cs" />
     <Compile Include="Particle\ParticleAcceleration.cs" />
     <Compile Include="Particle\ParticleAddedDamping.cs" />
-    <Compile Include="Particle\ParticleAuxillary.cs" />
     <Compile Include="Particle\ParticleForceIntegration.cs" />
     <Compile Include="Particle\ParticleUnderrelaxation.cs" />
     <Compile Include="Particle\Shapes\Falle_Rechts.cs" />

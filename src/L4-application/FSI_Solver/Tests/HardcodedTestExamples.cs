@@ -906,7 +906,6 @@ namespace BoSSS.Application.FSI_Solver {
                 C.Particles.Add(new Particle_Ellipsoid(new double[] { 0.0, 0.0 }, startAngl: 0)
                 {
                     particleDensity = 1,
-                    ActiveParticle = true,
                     ActiveStress = 1e5,
                     thickness_P = 0.4,
                     length_P = 1,
