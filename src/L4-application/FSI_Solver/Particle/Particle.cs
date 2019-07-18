@@ -341,11 +341,8 @@ namespace BoSSS.Application.FSI_Solver
         {
             get
             {
-                if (Area_P <= 0.0 || double.IsNaN(Area_P) || double.IsInfinity(Area_P))
-                    throw new ArithmeticException("Particle volume/area is " + Area_P);
-                if (particleDensity <= 0.0 || double.IsNaN(particleDensity) || double.IsInfinity(particleDensity))
-                    throw new ArithmeticException("Particle volume/area is " + particleDensity);
-
+                Aux.TestArithmeticException(Area_P, "particle area");
+                Aux.TestArithmeticException(particleDensity, "particle density");
                 return Area_P * particleDensity;
             }
         }
@@ -391,7 +388,6 @@ namespace BoSSS.Application.FSI_Solver
                 {
                     position[0][d] = position[1][d] + ( translationalVelocity[0][d] + ClearAcceleartion * (4 * translationalVelocity[1][d] + translationalVelocity[2][d])) * (dt - CollisionTimestep) / 6;
                 }
-                Aux.TestArithmeticException(position[0], "particle position");
             }
             else
             {
@@ -402,6 +398,7 @@ namespace BoSSS.Application.FSI_Solver
                     translationalVelocity[0][d] = 0;
                 }
             }
+            Aux.TestArithmeticException(position[0], "particle position");
         }
 
         /// <summary>
@@ -422,7 +419,6 @@ namespace BoSSS.Application.FSI_Solver
             if (IncludeRotation == true)
             {
                 angle[0] = angle[1] + (rotationalVelocity[0] + ClearAcceleartion * (4 * rotationalVelocity[1] + rotationalVelocity[2])) * (dt - CollisionTimestep) / 6;
-                Aux.TestArithmeticException(angle[0], "particle angle");
             }
             else
             {
@@ -430,6 +426,7 @@ namespace BoSSS.Application.FSI_Solver
                 rotationalAcceleration[0] = 0;
                 rotationalVelocity[0] = 0;
             }
+            Aux.TestArithmeticException(angle[0], "particle angle");
         }
 
         /// <summary>
