@@ -1509,17 +1509,35 @@ namespace BoSSS.Application.FSI_Solver
             int J = GridData.iLogicalCells.NoOfLocalUpdatedCells;
             CellMask LevSetCells = LsTrk.Regions.GetCutCellMask();
             int DesiredLevel_j = 0;
-
-            Pressure.GetExtremalValuesInCell(out double minPressure, out double maxPressure, j);
-            if (Math.Abs(maxPressure - minPressure) > Math.Abs(Pressure.GetMeanValueTotal(CellMask.GetFullMask(GridData))) && LevSetCells.Contains(j))
+            BitArray CellsToRefine = new BitArray(J);
+            double TotalPressure = Pressure.GetMeanValueTotal(CellMask.GetFullMask(GridData));
+            for (int i = 0; i < J; i++)
             {
-                DesiredLevel_j = ((FSI_Control)this.Control).RefinementLevel;
+                Pressure.GetExtremalValuesInCell(out double minPressure, out double maxPressure, i);
+                if (Math.Abs(maxPressure - minPressure) > Math.Abs(TotalPressure) && LevSetCells.Contains(i))
+                    CellsToRefine[i] = true;
             }
-            else
-                DesiredLevel_j = 0;
-
-            
-           
+            CellMask cellMaskToRefine = new CellMask(GridData, CellsToRefine);
+            int RefinementLevel = ((FSI_Control)this.Control).RefinementLevel;
+            bool refined = false;
+            for (int k = 0; k < RefinementLevel; k++)
+            {
+                if(cellMaskToRefine.Contains(j) && CurrentLevel < RefinementLevel)
+                {
+                    DesiredLevel_j = CurrentLevel + 1;
+                    refined = true;
+                }
+                cellMaskToRefine = cellMaskToRefine.AllNeighbourCells();
+                RefinementLevel -= 1;
+            }
+            if (!refined && CurrentLevel > 0)
+                DesiredLevel_j = CurrentLevel - 1;
+            //if (cellMaskToRefine.Contains(j) && CurrentLevel < ((FSI_Control)this.Control).RefinementLevel)
+            //{
+            //    DesiredLevel_j = CurrentLevel + 1;
+            //}
+            //else
+            //    DesiredLevel_j = 0;
 
             return DesiredLevel_j;
         }
