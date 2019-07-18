@@ -78,7 +78,7 @@ namespace BoSSS.Application.FSI_Solver {
         public static void TestFlowRotationalCoupling() {
             using (FSI_SolverMain p = new FSI_SolverMain()) {
 
-                var ctrl = BoSSS.Application.FSI_Solver.HardcodedTestExamples.ParticleInShearFlow(k: 1);
+                var ctrl = BoSSS.Application.FSI_Solver.HardcodedTestExamples.Test_ParticleInShearFlow(k: 1);
                 //ctrl.ImmediatePlotPeriod = 1;
                 //ctrl.SuperSampling = 2;
                 p.Init(ctrl);
@@ -103,7 +103,7 @@ namespace BoSSS.Application.FSI_Solver {
         public static void SingleDryParticleAgainstWall([Values(false, true)]  bool MeshRefine) { 
             using (FSI_SolverMain p = new FSI_SolverMain()) {
 
-                var ctrl = BoSSS.Application.FSI_Solver.HardcodedTestExamples.SingleDryParticleAgainstWall(MeshRefine:MeshRefine);
+                var ctrl = BoSSS.Application.FSI_Solver.HardcodedTestExamples.Test_SingleDryParticleAgainstWall(MeshRefine:MeshRefine);
                 p.Init(ctrl);
                 p.RunSolverMode();
 
@@ -130,7 +130,7 @@ namespace BoSSS.Application.FSI_Solver {
             using (FSI_SolverMain p = new FSI_SolverMain())
             {
 
-                var ctrl = BoSSS.Application.FSI_Solver.HardcodedTestExamples.DryParticleBounce();
+                var ctrl = BoSSS.Application.FSI_Solver.HardcodedTestExamples.Test_DryParticleBounce();
                 p.Init(ctrl);
                 p.RunSolverMode();
 
@@ -154,7 +154,7 @@ namespace BoSSS.Application.FSI_Solver {
             using (FSI_SolverMain p = new FSI_SolverMain())
             {
 
-                var ctrl = BoSSS.Application.FSI_Solver.HardcodedTestExamples.StickyTrap();
+                var ctrl = BoSSS.Application.FSI_Solver.HardcodedTestExamples.Test_StickyTrap();
                 p.Init(ctrl);
                 p.RunSolverMode();
 
@@ -185,7 +185,7 @@ namespace BoSSS.Application.FSI_Solver {
                 p.Init(ctrl);
                 p.RunSolverMode();
 
-                double ForcesSoll = 11129.7411681657;
+                double ForcesSoll = 30251.7764996821;
 
                 double Forces = p.Particles[0].HydrodynamicForces[0][0];
 
@@ -204,7 +204,7 @@ namespace BoSSS.Application.FSI_Solver {
                 p.Init(ctrl);
                 p.RunSolverMode();
 
-                double ForcesSoll = 12.471222692466;
+                double ForcesSoll = 5.62199895597732;
 
                 double Forces = p.Particles[0].HydrodynamicForces[0][0];
 

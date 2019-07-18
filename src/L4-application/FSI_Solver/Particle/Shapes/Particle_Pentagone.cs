@@ -59,22 +59,11 @@ namespace BoSSS.Application.FSI_Solver
         [DataMember]
         public double width_P;
 
-        /// <summary>
-        /// %
-        /// </summary>
-        protected override double AverageDistance
-        {
-            get
-            {
-                return width_P;
-            }
-        }
-
         public override double Area_P
         {
             get
             {
-                return (5 * width_P * width_P) / 4;
+                return (5 * width_P.Pow2()) / 4;
             }
         }
         protected override double Circumference_P
@@ -91,11 +80,7 @@ namespace BoSSS.Application.FSI_Solver
                 return Math.Pow(width_P, 4) * 0.2887963;
             }
         }
-        //override public void UpdateLevelSetFunction()
-        //{
-        //    double alpha = -(Angle[0]);
-        //    Phi_P = (X, t) => -(X[0] - Position[0][0]).Pow2() + -(X[1] - Position[0][1]).Pow2() + radius_P.Pow2();
-        //}
+
         public override double Phi_P(double[] X)
         {
             double alpha = -(Angle[0]);
@@ -130,23 +115,21 @@ namespace BoSSS.Application.FSI_Solver
             return false;
         }
 
-        public override MultidimensionalArray GetSurfacePoints(LevelSetTracker lsTrk, double[] Position, double Angle) {
-            
-            int SpatialDim = lsTrk.GridDat.SpatialDimension;
-            if (SpatialDim != 2)
+        public override MultidimensionalArray GetSurfacePoints(double hMin)
+        {
+            if (spatialDim != 2)
                 throw new NotImplementedException("Only two dimensions are supported at the moment");
 
-            double hMin = lsTrk.GridDat.iGeomCells.h_min.Min();
             int NoOfSurfacePoints = Convert.ToInt32(20 * Circumference_P / hMin) + 1;
-            MultidimensionalArray SurfacePoints = MultidimensionalArray.Create(NoOfSurfacePoints, 2);
+            MultidimensionalArray SurfacePoints = MultidimensionalArray.Create(NoOfSurfacePoints, spatialDim);
             double[] InfinitisemalAngle = GenericBlas.Linspace(0, 2 * Math.PI, NoOfSurfacePoints + 1);
             if (Math.Abs(10 * Circumference_P / hMin + 1) >= int.MaxValue)
                 throw new ArithmeticException("Error trying to calculate the number of surface points, overflow");
 
             for (int j = 0; j < NoOfSurfacePoints; j++)
             {
-                SurfacePoints[j, 0] = Math.Cos(InfinitisemalAngle[j]) * width_P + Position[0];
-                SurfacePoints[j, 1] = Math.Sin(InfinitisemalAngle[j]) * width_P + Position[1];
+                SurfacePoints[j, 0] = Math.Cos(InfinitisemalAngle[j]) * width_P + Position[0][0];
+                SurfacePoints[j, 1] = Math.Sin(InfinitisemalAngle[j]) * width_P + Position[0][1];
             }
             return SurfacePoints;
         }

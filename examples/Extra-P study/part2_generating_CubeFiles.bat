@@ -1,6 +1,8 @@
 @echo off
 setlocal EnableDelayedExpansion
 
+:: ilPSP.Cube.exe needed! make sure it is located at CUBEPATH.
+
 set "TARGET=%1"
 if not defined TARGET echo No directory specified: Define target directory!
 if not defined TARGET goto :EOF

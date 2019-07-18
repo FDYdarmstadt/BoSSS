@@ -355,14 +355,14 @@ namespace BoSSS.Application.IBM_Solver {
                         //var Visc = new Solution.XNSECommon.Operator.Viscosity.ViscosityInBulk_GradUTerm(penalty, 1.0, BcMap, d, D, this.Control.PhysicalParameters.mu_A, 1, ViscosityImplementation.H);
                         var Visc = new swipViscosity_Term1(penalty_bulk, d, D, BcMap,
                             ViscosityOption.ConstantViscosity,
-                            this.Control.PhysicalParameters.mu_A / this.Control.PhysicalParameters.rho_A,
+                            this.Control.PhysicalParameters.mu_A ,// / this.Control.PhysicalParameters.rho_A
                             double.NaN, null);
                         //delegate (double p, int i, int j, double[] cell) { return ComputePenalty(p, i, j, cell); });
                         // IBM_Op.OnIntegratingBulk += Visc.SetParameter;
                         comps.Add(Visc); // bulk component GradUTerm 
                         var ViscLs = new BoSSS.Solution.NSECommon.Operator.Viscosity.ViscosityAtIB(d, D, LsTrk,
                             penalty, this.ComputePenaltyIB,
-                            this.Control.PhysicalParameters.mu_A / this.Control.PhysicalParameters.rho_A,
+                            this.Control.PhysicalParameters.mu_A,// / this.Control.PhysicalParameters.rho_A,
                             delegate (double[] X, double time) { return new double[] { 0.0, 0.0, 0.0, 0.0 }; });
                         comps.Add(ViscLs); // immersed boundary component
                     }
@@ -610,7 +610,7 @@ namespace BoSSS.Application.IBM_Solver {
         //}
 
         //protected TextWriter Log_DragAndLift,Log_DragAndLift_P1;
-        protected double[] force = new double[3];
+        protected double[] Test_Force = new double[3];
         protected double torque = new double();
         protected double oldtorque = new double();
 
@@ -655,7 +655,7 @@ namespace BoSSS.Application.IBM_Solver {
                 }
                 */
 
-                force = IBMSolverUtils.GetForces(Velocity, Pressure, this.LsTrk, this.Control.PhysicalParameters.mu_A/this.Control.PhysicalParameters.rho_A);
+                Test_Force = IBMSolverUtils.GetForces(Velocity, Pressure, this.LsTrk, this.Control.PhysicalParameters.mu_A/this.Control.PhysicalParameters.rho_A);
                 //oldtorque = torque;
                 torque = IBMSolverUtils.GetTorque(Velocity, Pressure, this.LsTrk, this.Control.PhysicalParameters.mu_A / this.Control.PhysicalParameters.rho_A, this.Control.particleRadius);
 
@@ -672,17 +672,17 @@ namespace BoSSS.Application.IBM_Solver {
                 }
                 */
                 
-                Console.WriteLine("x-Force:   {0}", force[0]);
-                Console.WriteLine("y-Force:   {0}", force[1]);
+                Console.WriteLine("x-Force:   {0}", Test_Force[0]);
+                Console.WriteLine("y-Force:   {0}", Test_Force[1]);
                 if (this.GridData.SpatialDimension == 3)
-                    Console.WriteLine("z-Force:   {0}", force[2]);
+                    Console.WriteLine("z-Force:   {0}", Test_Force[2]);
                 Console.WriteLine("Torqe:   {0}", torque);
                 Console.WriteLine();
 
 
                 // Save for NUnit Test
-                base.QueryHandler.ValueQuery("C_Drag", 2 * force[0], true); // Only for Diameter 1 (TestCase NSE stationary)
-                base.QueryHandler.ValueQuery("C_Lift", 2 * force[1], true); // Only for Diameter 1 (TestCase NSE stationary)
+                base.QueryHandler.ValueQuery("C_Drag", 2 * Test_Force[0], true); // Only for Diameter 1 (TestCase NSE stationary)
+                base.QueryHandler.ValueQuery("C_Lift", 2 * Test_Force[1], true); // Only for Diameter 1 (TestCase NSE stationary)
                 #endregion
 
                 return dt;

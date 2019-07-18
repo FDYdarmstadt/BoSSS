@@ -51,15 +51,6 @@ namespace BoSSS.Application.FSI_Solver {
         [DataMember]
         public double thickness_P;
 
-        /// <summary>
-        /// %
-        /// </summary>
-        protected override double AverageDistance {
-            get {
-                return 0.5 * (length_P + thickness_P);
-            }
-        }
-
         public override double Area_P {
             get {
                 double a = length_P * thickness_P * Math.PI;
@@ -108,15 +99,13 @@ namespace BoSSS.Application.FSI_Solver {
                 return false;
         }
 
-        override public MultidimensionalArray GetSurfacePoints(LevelSetTracker lsTrk, double[] PositionS, double AngleS)
+        override public MultidimensionalArray GetSurfacePoints(double hMin)
         {
-            int SpatialDim = lsTrk.GridDat.SpatialDimension;
-            if (SpatialDim != 2)
+            if (spatialDim != 2)
                 throw new NotImplementedException("Only two dimensions are supported at the moment");
 
-            double hMin = lsTrk.GridDat.iGeomCells.h_min.Min();
             int NoOfSurfacePoints = Convert.ToInt32(5 * Circumference_P / hMin);
-            MultidimensionalArray SurfacePoints = MultidimensionalArray.Create(NoOfSubParticles(), NoOfSurfacePoints, SpatialDim);
+            MultidimensionalArray SurfacePoints = MultidimensionalArray.Create(NoOfSubParticles(), NoOfSurfacePoints, spatialDim);
             double[] InfinitisemalAngle = GenericBlas.Linspace(0, Math.PI * 2, NoOfSurfacePoints + 1);
             if (Math.Abs(10 * Circumference_P / hMin + 1) >= int.MaxValue)
                 throw new ArithmeticException("Error trying to calculate the number of surface points, overflow");
@@ -124,26 +113,26 @@ namespace BoSSS.Application.FSI_Solver {
             {
                 double temp0 = Math.Cos(InfinitisemalAngle[j]) * length_P;
                 double temp1 = Math.Sin(InfinitisemalAngle[j]) * thickness_P;
-                SurfacePoints[0, j, 0] = (temp0 * Math.Cos(AngleS) - temp1 * Math.Sin(AngleS)) + PositionS[0];
-                SurfacePoints[0, j, 1] = (temp0 * Math.Sin(AngleS) + temp1 * Math.Cos(AngleS)) + PositionS[1];
+                SurfacePoints[0, j, 0] = (temp0 * Math.Cos(Angle[0]) - temp1 * Math.Sin(Angle[0])) + Position[0][0];
+                SurfacePoints[0, j, 1] = (temp0 * Math.Sin(Angle[0]) + temp1 * Math.Cos(Angle[0])) + Position[0][1];
 
             }
             return SurfacePoints;
         }
 
-        override public void GetSupportPoint(int SpatialDim, double[] Vector, double[] Position, double Angle, out double[] SupportPoint)
+        override public void GetSupportPoint(int SpatialDim, double[] Vector, out double[] SupportPoint)
         {
             SupportPoint = new double[SpatialDim];
             if (double.IsNaN(Vector[0]) || double.IsNaN(Vector[1]))
                 throw new ArithmeticException("Error trying to calculate VectorVectorVector Value:  " + Vector[0] + " VectorVectorVector " + Vector[1]);
             double[,] B = new double[2, 2];
-            B[0, 0] = length_P * Math.Cos(Angle);
+            B[0, 0] = length_P * Math.Cos(Angle[0]);
             if (double.IsNaN(B[0, 0]))
-                throw new ArithmeticException("Error trying to calculate Angle Value:  " + B[0, 0] + " length_P " + length_P + " Math.Cos(Angle): " + Math.Cos(Angle) + " Angle " + Angle);
-            B[0, 1] = -thickness_P * Math.Sin(Angle);
-            B[1, 0] = length_P * Math.Sin(Angle);
-            B[1, 1] = thickness_P * Math.Cos(Angle);
-            if (double.IsNaN(Angle))
+                throw new ArithmeticException("Error trying to calculate Angle Value:  " + B[0, 0] + " length_P " + length_P + " Math.Cos(Angle): " + Math.Cos(Angle[0]) + " Angle " + Angle[0]);
+            B[0, 1] = -thickness_P * Math.Sin(Angle[0]);
+            B[1, 0] = length_P * Math.Sin(Angle[0]);
+            B[1, 1] = thickness_P * Math.Cos(Angle[0]);
+            if (double.IsNaN(Angle[0]))
                 throw new ArithmeticException("Error trying to calculate Angle Value:  " + Angle + " Angle " + Angle);
             double[,] BT = B.CloneAs();
             BT[0, 1] = B[1, 0];
@@ -174,9 +163,10 @@ namespace BoSSS.Application.FSI_Solver {
                     if (double.IsNaN(SupportPoint[i]) || double.IsInfinity(SupportPoint[i]))
                         throw new ArithmeticException("Error trying to calculate SupportPoint Value:  " + SupportPoint[i] + "temp Value: " + temp[j] + " B[i, j] " + B[i, j] + "BetragTemp" + BetragTemp + "ij" +i +j);
                 }
-                SupportPoint[i] += Position[i];
+                SupportPoint[i] += Position[0][i];
             }
         }
+
         override public double[] GetLengthScales()
         {
             return new double[] { length_P, thickness_P };

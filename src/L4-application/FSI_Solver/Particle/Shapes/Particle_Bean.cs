@@ -44,15 +44,6 @@ namespace BoSSS.Application.FSI_Solver
         [DataMember]
         public double radius_P;
 
-        /// <summary>
-        /// equal to radius
-        /// </summary>
-        protected override double AverageDistance {
-            get {
-                return radius_P;
-            }
-        }
-
         protected override double Circumference_P
         {
             get
@@ -76,13 +67,7 @@ namespace BoSSS.Application.FSI_Solver
                 return (1 / 2.0) * (Mass_P * radius_P * radius_P);
             }
         }
-        //override public void UpdateLevelSetFunction()
-        //{
-        //    double a = 3.0 * radius_P.Pow2();
-        //    double b = 1.0 * radius_P.Pow2();
-        //    double alpha = -(Angle[0]);
-        //    Phi_P = (X, t) => -((((X[0] - Position[0][0]) * Math.Cos(alpha) - (X[1] - Position[0][1]) * Math.Sin(alpha)).Pow(2) + ((X[0] - Position[0][0]) * Math.Sin(alpha) + (X[1] - Position[0][1]) * Math.Cos(alpha)).Pow(2)).Pow2() - a * ((X[0] - Position[0][0]) * Math.Cos(alpha) - (X[1] - Position[0][1]) * Math.Sin(alpha)).Pow(3) - b * ((X[0] - Position[0][0]) * Math.Sin(alpha) + (X[1] - Position[0][1]) * Math.Cos(alpha)).Pow2());
-        //}
+
         public override double Phi_P(double[] X) {
             double alpha = -(Angle[0]);
             double a = 3.0 * radius_P.Pow2();

@@ -39,7 +39,7 @@ namespace CNS.Convection {
         /// <param name="speciesMap">
         /// <see cref="FluxBuilder"/>
         /// </param>
-        public GodunovFluxBuilder(CNSControl control, BoundaryConditionMap boundaryMap, ISpeciesMap speciesMap)
+        public GodunovFluxBuilder(CNSControl control, CompressibleBoundaryCondMap boundaryMap, ISpeciesMap speciesMap)
             : base(control, boundaryMap, speciesMap) {
         }
 
