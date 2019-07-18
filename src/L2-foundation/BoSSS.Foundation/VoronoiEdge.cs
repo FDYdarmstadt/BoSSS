@@ -5,7 +5,7 @@ using System;
 
 namespace BoSSS.Foundation.Grid.Voronoi
 {
-    static class VoronoiEdge
+    public static class VoronoiEdge
     {
         //Galiliean-invariant cosmological hydronamical simulations on a moving mesh, p17, equation 33
         public static double NormalVelocity(double[] posR, double[] velR, double[] posL, double[] velL, double[] x, Vector normal)
@@ -17,7 +17,7 @@ namespace BoSSS.Foundation.Grid.Voronoi
 
         //Galiliean-invariant cosmological hydronamical simulations on a moving mesh, p17, equation 32
         //Maybe caching would improve performance
-        static double RotationVelocity(double[] posR, double[] velR, double[] posL, double[] velL, double[] x)
+        public static double RotationVelocity(double[] posR, double[] velR, double[] posL, double[] velL, double[] x)
         {
             //Eq 32
             Vector rR_minus_rL = new Vector(
@@ -34,17 +34,5 @@ namespace BoSSS.Foundation.Grid.Voronoi
             return result;
         }
 
-        public static void TestRotationVelocity()
-        {
-            double rotation = RotationVelocity(
-                new double[] { 1, 0 },
-                new double[] { 0, 1 },
-                new double[] { -1, 0 },
-                new double[] { 0, -1 },
-                new double[] { 0, -1 });
-            double expectedRotation = 1;
-            //Assert.IsTrue(Math.Abs(rotation - expectedRotation) < 1e-12,
-            //    "Speed of rotation is not correct.");
-        }
     }
 }
