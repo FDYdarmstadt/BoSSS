@@ -57,7 +57,8 @@
     <Compile Include="Database\Session\SessionIOTests.cs" />
     <Compile Include="Database\Session\DGFieldArithmeticTests.cs" />
     <Compile Include="Database\Session\SessionTest.cs" />
-    <Compile Include="GridCreation\GridTests.cs" />
+    <Compile Include="Grid\EdgeTests.cs" />
+    <Compile Include="Grid\GridCreationTests.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="BoSSSTestBench.cs" />

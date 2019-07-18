@@ -33,6 +33,5 @@ namespace BoSSS.Foundation.Grid.Voronoi
             result /= rR_minus_rL.L2Norm();
             return result;
         }
-
     }
 }
