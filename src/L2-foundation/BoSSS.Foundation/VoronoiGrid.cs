@@ -51,6 +51,23 @@ namespace BoSSS.Foundation.Grid.Voronoi {
         }
 
         VoronoiGrid() { }
+
+        public double EdgeVelocity(int jEdge, double[] x, Vector normal)
+        {
+            int jCellIn = this.iGridData.iGeomEdges.CellIndices[jEdge, 1];
+            int jCellOut = this.iGridData.iGeomEdges.CellIndices[jEdge, 0];
+            int jCell_in = this.iGridData.iGeomCells.GeomCell2LogicalCell[jCellIn];
+            int jCell_ot = this.iGridData.iGeomCells.GeomCell2LogicalCell[jCellOut];
+            MultidimensionalArray positions = Nodes.Positions;
+            MultidimensionalArray velocities = Nodes.Velocity;
+
+            double[] posOt = positions.GetRow(jCell_ot);
+            double[] posIn = positions.GetRow(jCell_in);
+            double[] velOt = velocities.GetRow(jCell_ot);
+            double[] velIn = velocities.GetRow(jCell_in);
+            double result = VoronoiEdge.NormalVelocity(posOt, velOt, posIn, velIn, x, normal);
+            return result;
+        }
     }
 
     public class VoronoiInfo
