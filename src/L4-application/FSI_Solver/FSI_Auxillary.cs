@@ -63,6 +63,13 @@ namespace FSI_Solver
             }
             variable.RemoveAt(variable.Count - 1);
         }
+
+        internal void TestArithmeticException(double[,] variable, string variableName)
+        {
+            ThrowIsNaNException(variable, variableName);
+            ThrowIsInfinityException(variable, variableName);
+        }
+
         internal void TestArithmeticException(double[] variable, string variableName)
         {
             ThrowIsNaNException(variable, variableName);
@@ -73,6 +80,18 @@ namespace FSI_Solver
         {
             ThrowIsNaNException(variable, variableName);
             ThrowIsInfinityException(variable, variableName);
+        }
+
+        internal void ThrowIsNaNException(double[,] variable, string variableName)
+        {
+            for (int i = 0; i < variable.GetLength(0); i++)
+            {
+                for (int j = 0; j < variable.GetLength(1); j++)
+                {
+                    if (double.IsNaN(variable[i, j]))
+                        throw new ArithmeticException("Error during update of " + variableName + ", value is NaN.");
+                }
+            }
         }
 
         internal void ThrowIsNaNException(double[] variable, string variableName)
@@ -88,6 +107,18 @@ namespace FSI_Solver
         {
             if (double.IsNaN(variable))
                 throw new ArithmeticException("Error during update of " + variableName + ", value is NaN.");
+        }
+
+        internal void ThrowIsInfinityException(double[,] variable, string variableName)
+        {
+            for (int i = 0; i < variable.GetLength(0); i++)
+            {
+                for (int j = 0; j < variable.GetLength(1); j++)
+                {
+                    if (double.IsInfinity(variable[i, j]))
+                        throw new ArithmeticException("Error during update of " + variableName + ", value is infinity.");
+                }
+            }
         }
 
         internal void ThrowIsInfinityException(double[] variable, string variableName)

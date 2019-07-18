@@ -478,11 +478,13 @@ namespace BoSSS.Application.FSI_Solver
                 hydrodynamicForces[0][1] += GravityVertical * Mass_P;
             }
 
-            double[,] CoefficientMatrix = Acceleration.CalculateCoefficientMatrix(addedDampingTensor, Mass_P, MomentOfInertia_P, dt, addedDampingCoefficient);
-            double Denominator = Acceleration.CalculateDenominator(CoefficientMatrix);
+            double[,] coefficientMatrix = Acceleration.CalculateCoefficientMatrix(addedDampingTensor, Mass_P, MomentOfInertia_P, dt, addedDampingCoefficient);
+            Aux.TestArithmeticException(coefficientMatrix, "particle acceleration coefficients");
+            double Denominator = Acceleration.CalculateDenominator(coefficientMatrix);
+            Aux.TestArithmeticException(Denominator, "particle acceleration denominator");
 
             if (IncludeTranslation) 
-                translationalAcceleration[0] = Acceleration.Translational(CoefficientMatrix, Denominator, hydrodynamicForces[0], hydrodynamicTorque[0]);
+                translationalAcceleration[0] = Acceleration.Translational(coefficientMatrix, Denominator, hydrodynamicForces[0], hydrodynamicTorque[0]);
 
             for (int d = 0; d < spatialDim; d++)
             {
@@ -492,7 +494,7 @@ namespace BoSSS.Application.FSI_Solver
             Aux.TestArithmeticException(translationalAcceleration[0], "particle acceleration");
 
             if (IncludeRotation)
-                rotationalAcceleration[0] = Acceleration.Rotational(CoefficientMatrix, Denominator, hydrodynamicForces[0], hydrodynamicTorque[0]);
+                rotationalAcceleration[0] = Acceleration.Rotational(coefficientMatrix, Denominator, hydrodynamicForces[0], hydrodynamicTorque[0]);
             if (Math.Abs(rotationalAcceleration[0]) < 1e-20 || IncludeRotation == false)
                 rotationalAcceleration[0] = 0;
             Aux.TestArithmeticException(rotationalAcceleration[0], "particle angular acceleration");
@@ -502,6 +504,8 @@ namespace BoSSS.Application.FSI_Solver
         {
             CalculateTranslationalVelocity(dt);
             CalculateAngularVelocity(dt);
+            Aux.TestArithmeticException(translationalVelocity[0], "particle velocity");
+            Aux.TestArithmeticException(rotationalVelocity[0], "particle angular velocity");
         }
 
         /// <summary>
@@ -542,7 +546,6 @@ namespace BoSSS.Application.FSI_Solver
                     translationalVelocity[0][d] = translationalVelocity[1][d] + (translationalAcceleration[0][d] + ClearAcceleartion * (4 * translationalAcceleration[1][d] + translationalAcceleration[2][d])) * dt / 6;
                 }
             }
-            Aux.TestArithmeticException(translationalVelocity[0], "particle velocity");
         }
         
         /// <summary>
@@ -566,7 +569,6 @@ namespace BoSSS.Application.FSI_Solver
             {
                 rotationalVelocity[0] = rotationalVelocity[1] + dt * (rotationalAcceleration[0] + ClearAcceleartion * (4 * rotationalAcceleration[1] + rotationalAcceleration[2])) / 6;
             }
-            Aux.TestArithmeticException(rotationalVelocity[0], "particle angular velocity");
         }
         
         /// <summary>
@@ -582,6 +584,7 @@ namespace BoSSS.Application.FSI_Solver
         public void CalculateDampingTensor(Particle particle, LevelSetTracker LsTrk, double muA, double rhoA, double dt)
         {
             addedDampingTensor = AddedDamping.IntegrationOverLevelSet(particle, LsTrk, muA, rhoA, dt, position[0]);
+            Aux.TestArithmeticException(addedDampingTensor, "particle added damping tensor");
         }
 
         /// <summary>
@@ -590,6 +593,7 @@ namespace BoSSS.Application.FSI_Solver
         public void UpdateDampingTensors()
         {
             addedDampingTensor = AddedDamping.RotateTensor(angle[0], StartingAngle, addedDampingTensor);
+            Aux.TestArithmeticException(addedDampingTensor, "particle added damping tensor");
         }
 
         /// <summary>
