@@ -4,9 +4,9 @@ using BoSSS.Platform.LinAlg;
 using ilPSP;
 using NUnit.Framework;
 
-namespace VoronoiTests.GridCreation
+namespace VoronoiTests.Grid
 {
-    class GridTests : BoSSSTestBench
+    class GridCreationTests : BoSSSTestBench
     {
         public override void Run()
         {

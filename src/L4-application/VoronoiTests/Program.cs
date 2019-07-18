@@ -22,8 +22,9 @@ namespace VoronoiTests
             {"SessionIOTests", new Database.Session.SessionIOTests() },
             {"GridIOTests", new Database.GridIOTests()},
             {"BoSSSpadTests", new Database.Session.BoSSSpadTests()},
-            {"GridTests", new GridCreation.GridTests()},
-            {"Solver_IpPoisson", new Solver.IpPoissonTests()}
+            {"GridTests", new Grid.GridCreationTests()},
+            {"Solver_IpPoisson", new Solver.IpPoissonTests()},
+            {"EdgeTests", new Grid.EdgeTests()},
         };
     }
 }
