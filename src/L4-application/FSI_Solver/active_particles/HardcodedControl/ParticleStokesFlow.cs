@@ -375,7 +375,7 @@ namespace BoSSS.Application.FSI_Solver
             return C;
         }
 
-        public static FSI_Control WetParticleCollision(int k = 2, double DensityFactor = 1e3)
+        public static FSI_Control WetParticleCollision(int k = 3, double DensityFactor = 1e3)
         {
             FSI_Control C = new FSI_Control();
 
@@ -386,7 +386,7 @@ namespace BoSSS.Application.FSI_Solver
             // basic database options
             // =============================
             C.DbPath = @"\\hpccluster\hpccluster-scratch\deussen\cluster_db\WetParticleCollision";
-            C.savetodb = false;
+            C.savetodb = true;
             C.saveperiod = 1;
             C.ProjectName = "ParticleUnderGravity";
             C.ProjectDescription = "Active";
@@ -444,7 +444,7 @@ namespace BoSSS.Application.FSI_Solver
             // Mesh refinement
             // =============================
             C.AdaptiveMeshRefinement = true;
-            C.RefinementLevel = 6;
+            C.RefinementLevel = 10;
 
 
             // Boundary conditions
@@ -468,7 +468,7 @@ namespace BoSSS.Application.FSI_Solver
             int numOfParticles = 1;
             for (int d = 0; d < numOfParticles; d++)
             {
-                C.Particles.Add(new Particle_Sphere(new double[] { 0.1, -0.4 }, startAngl: 0)
+                C.Particles.Add(new Particle_Sphere(new double[] { 0.1, 0.0 }, startAngl: 0)
                 {
                     particleDensity = 7.8 * DensityFactor,
                     radius_P = 0.5,

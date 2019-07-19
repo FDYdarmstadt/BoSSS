@@ -1511,12 +1511,12 @@ namespace BoSSS.Application.FSI_Solver
             int J = GridData.iLogicalCells.NoOfLocalUpdatedCells;
             CellMask LevSetCells = LsTrk.Regions.GetCutCellMask();
             BitArray CellsToRefine = new BitArray(J);
-            //double TotalPressure = Pressure.GetMeanValueTotal(CellMask.GetFullMask(GridData));
+            double TotalPressure = Pressure.GetMeanValueTotal(CellMask.GetFullMask(GridData));
             CellMask boundaryCells = GridData.GetBoundaryCells();
             for (int i = 0; i < J; i++)
             {
                 Pressure.GetExtremalValuesInCell(out double minPressure, out double maxPressure, i);
-                if (Math.Abs(maxPressure - minPressure) > 1 && LevSetCells.Contains(i))//Math.Abs(TotalPressure)
+                if (Math.Abs(maxPressure - minPressure) > Math.Abs(TotalPressure) && LevSetCells.Contains(i))//Math.Abs(TotalPressure)
                     CellsToRefine[i] = true;
             }
             CellMask cellMaskToRefine = new CellMask(GridData, CellsToRefine);
@@ -1559,22 +1559,12 @@ namespace BoSSS.Application.FSI_Solver
 
             if (((FSI_Control)Control).AdaptiveMeshRefinement)
             {
-                if (TimestepNo > 3 && TimestepNo % 3 != 0)
-                {
-                    newGrid = null;
-                    old2NewGrid = null;
-                    return;
-                }
-
-                // Check grid changes
-                // ==================
-
-                // compute curvature for levelindicator 
-                //CurvatureAlgorithms.CurvatureDriver(
-                //SurfaceStressTensor_IsotropicMode.Curvature_Projected,
-                //CurvatureAlgorithms.FilterConfiguration.Default,
-                //this.Curvature, out VectorField<SinglePhaseField> LevSetGradient, this.LsTrk,
-                //this.HMForder, this.DGLevSet.Current);
+                //if (TimestepNo > 3 && TimestepNo % 3 != 0)
+                //{
+                //    newGrid = null;
+                //    old2NewGrid = null;
+                //    return;
+                //}
 
                 CellMask CutCells = LsTrk.Regions.GetCutCellMask();
                 CellMask CutCellNeighbors = LsTrk.Regions.GetNearFieldMask(1);
@@ -1585,9 +1575,9 @@ namespace BoSSS.Application.FSI_Solver
                 int NoOfCellsToCoarsen = 0;
                 if (AnyChange)
                 {
-                    //int[] glb = (new int[] { CellsToRefineList.Count, Coarsening.Sum(L => L.Length)}).MPISum();
-                    NoOfCellsToRefine = CellsToRefineList.Count();// glb[0];
-                    NoOfCellsToCoarsen = Coarsening.Sum(L => L.Length); // glb[1];
+                    int[] glb = (new int[] { CellsToRefineList.Count, Coarsening.Sum(L => L.Length)}).MPISum();
+                    NoOfCellsToRefine = glb[0];
+                    NoOfCellsToCoarsen = glb[1];
                 }
                 int oldJ = this.GridData.CellPartitioning.TotalLength;
 
