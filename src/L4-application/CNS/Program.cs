@@ -465,7 +465,7 @@ namespace CNS {
         /// </summary>
         /// <returns></returns>
         protected virtual CompressibleBoundaryCondMap GetBoundaryConditionMap() {
-            return new CompressibleBoundaryCondMap(GridData, Control, Control.GetMaterial());
+            return new CompressibleBoundaryCondMap( this.GridData, Control, Control.GetMaterial());
         }
 
         /// <summary>

@@ -257,7 +257,7 @@ namespace BoSSS.Solution.AdvancedSolvers
 
                         for (int k = 1; k <= i - 1; k++)
                         {
-                            // apply Givens rotation, H is Hessenbergmatrix
+                            // apply Givens rotation, H is Hessenberg-Matrix
                             temp = cs[k - 1] * H[k - 1, i - 1] + sn[k - 1] * H[k + 1 - 1, i - 1];
                             H[k + 1 - 1, i - 1] = -sn[k - 1] * H[k - 1, i - 1] + cs[k - 1] * H[k + 1 - 1, i - 1];
                             H[k - 1, i - 1] = temp;
@@ -274,25 +274,7 @@ namespace BoSSS.Solution.AdvancedSolvers
                         s[i + 1 - 1] = -sn[i - 1] * s[i - 1];
                         s[i - 1] = temp;
                         error = Math.Abs(s[i + 1 - 1]) / bnrm2;
-                        //{
-                        //    int rootRank = Matrix.RowPartitioning.FindProcess(i + 1 - 1);
-                        //    if (Matrix.RowPartitioning.Rank == rootRank) {
-
-
-                        //    } else {
-                        //        error = double.NaN;
-                        //    }
-                        //    unsafe {
-                        //        csMPI.Raw.Bcast((IntPtr)(&error), 1, csMPI.Raw._DATATYPE.DOUBLE, rootRank, Matrix.RowPartitioning.MPI_Comm);
-                        //    }
-                        //}
-
-                        //using (StreamWriter writer = new StreamWriter(m_SessionPath + "//GMRES_Stats.txt", true))
-                        //{
-                        Console.WriteLine(i + "   " + error);
-                        //}
-
-
+                        
 
                         if (error <= m_Tolerance)
                         {
@@ -324,7 +306,7 @@ namespace BoSSS.Solution.AdvancedSolvers
 
                     if (error <= this.m_Tolerance)
                     {
-                        Console.WriteLine("Picard completed after:   " + i + "steps");
+                        //Console.WriteLine("Picard completed after:   " + i + "steps");
                         this.m_Converged = true;
                         break;
                     }

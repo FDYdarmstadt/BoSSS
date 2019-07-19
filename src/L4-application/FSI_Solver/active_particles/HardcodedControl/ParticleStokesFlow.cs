@@ -224,13 +224,13 @@ namespace BoSSS.Application.FSI_Solver
                 int q = new int(); // #Cells in x-dircetion + 1
                 int r = new int(); // #Cells in y-dircetion + 1
 
-                q = 20;
-                r = 40;
+                q = 40;
+                r = 80;
 
                 double[] Xnodes = GenericBlas.Linspace(-4 * BaseSize, 4 * BaseSize, q);
-                double[] Ynodes = GenericBlas.Linspace(-0 * BaseSize, 16 * BaseSize, r);
+                double[] Ynodes = GenericBlas.Linspace(-8 * BaseSize, 8 * BaseSize, r);
 
-                var grd = Grid2D.Cartesian2DGrid(Xnodes, Ynodes, periodicX: false, periodicY: false);
+                var grd = Grid2D.Cartesian2DGrid(Xnodes, Ynodes, periodicX: true, periodicY: true);
 
                 grd.EdgeTagNames.Add(1, "Wall_left");
                 grd.EdgeTagNames.Add(2, "Wall_right");
@@ -245,9 +245,9 @@ namespace BoSSS.Application.FSI_Solver
                         et = 1;
                     if (Math.Abs(X[0] + (-4 * BaseSize)) <= 1.0e-8)
                         et = 2;
-                    if (Math.Abs(X[1] - (-0 * BaseSize)) <= 1.0e-8)
+                    if (Math.Abs(X[1] - (-8 * BaseSize)) <= 1.0e-8)
                         et = 3;
-                    if (Math.Abs(X[1] + (-16 * BaseSize)) <= 1.0e-8)
+                    if (Math.Abs(X[1] + (-8 * BaseSize)) <= 1.0e-8)
                         et = 4;
 
                     Debug.Assert(et != 0);
@@ -278,7 +278,7 @@ namespace BoSSS.Application.FSI_Solver
             // Fluid Properties
             // =============================
             C.PhysicalParameters.rho_A = 1;//pg/(mum^3)
-            C.PhysicalParameters.mu_A = 1e2;//pg(mum*s)
+            C.PhysicalParameters.mu_A = 1e-1;//pg(mum*s)
             C.PhysicalParameters.Material = true;
 
 
@@ -289,7 +289,7 @@ namespace BoSSS.Application.FSI_Solver
             int numOfParticles = 1;
             for (int d = 0; d < numOfParticles; d++)
             {
-                C.Particles.Add(new Particle_Sphere(new double[] { 0, 14 }, startAngl: 10)
+                C.Particles.Add(new Particle_Sphere(new double[] { 0, 6 }, startAngl: 0)
                 {
                     particleDensity = 7.8,
                     radius_P = 0.5,
@@ -302,11 +302,12 @@ namespace BoSSS.Application.FSI_Solver
             }
             for (int d = 0; d < numOfParticles; d++)
             {
-                C.Particles.Add(new Particle_Ellipsoid(new double[] { 0, 12 }, startAngl: 10)
+                C.Particles.Add(new Particle_Sphere(new double[] { 0, 4 }, startAngl: 0)
                 {
-                    particleDensity = 1.01,
-                    length_P = 0.5,
-                    thickness_P = 0.25,
+                    particleDensity = 7.8,
+                    //length_P = 0.5,
+                    //thickness_P = 0.25,
+                    radius_P = 0.5,
                     GravityVertical = -9.81,
                     useAddaptiveUnderrelaxation = true,
                     underrelaxation_factor = 5,
@@ -334,7 +335,7 @@ namespace BoSSS.Application.FSI_Solver
 
             // Physical Parameters
             // =============================  
-            C.PhysicalParameters.IncludeConvection = false;
+            C.PhysicalParameters.IncludeConvection = true;
 
 
             // misc. solver options
@@ -374,7 +375,7 @@ namespace BoSSS.Application.FSI_Solver
             return C;
         }
 
-        public static FSI_Control WetParticleCollision(int k = 2, int MeshFactor = 1)
+        public static FSI_Control WetParticleCollision(int k = 2, double DensityFactor = 50)
         {
             FSI_Control C = new FSI_Control();
 
@@ -384,7 +385,7 @@ namespace BoSSS.Application.FSI_Solver
 
             // basic database options
             // =============================
-            C.DbPath = @"\\hpccluster\hpccluster-scratch\deussen\cluster_db\straightChannel";
+            C.DbPath = @"\\hpccluster\hpccluster-scratch\deussen\cluster_db\WetParticleCollision";
             C.savetodb = false;
             C.saveperiod = 1;
             C.ProjectName = "ParticleUnderGravity";
@@ -404,11 +405,11 @@ namespace BoSSS.Application.FSI_Solver
                 int q = new int(); // #Cells in x-dircetion + 1
                 int r = new int(); // #Cells in y-dircetion + 1
 
-                q = 40 * MeshFactor;
-                r = 40 * MeshFactor;
+                q = 8;
+                r = 8;
 
-                double[] Xnodes = GenericBlas.Linspace(-1 * BaseSize, 1 * BaseSize, q);
-                double[] Ynodes = GenericBlas.Linspace(-1 * BaseSize, 1 * BaseSize, r);
+                double[] Xnodes = GenericBlas.Linspace(-3 * BaseSize, 3 * BaseSize, q);
+                double[] Ynodes = GenericBlas.Linspace(-1 * BaseSize, 5 * BaseSize, r);
 
                 var grd = Grid2D.Cartesian2DGrid(Xnodes, Ynodes, periodicX: false, periodicY: false);
 
@@ -421,13 +422,13 @@ namespace BoSSS.Application.FSI_Solver
                 grd.DefineEdgeTags(delegate (double[] X)
                 {
                     byte et = 0;
-                    if (Math.Abs(X[0] - (-1 * BaseSize)) <= 1.0e-8)
+                    if (Math.Abs(X[0] - (-3 * BaseSize)) <= 1.0e-8)
                         et = 1;
-                    if (Math.Abs(X[0] + (-1 * BaseSize)) <= 1.0e-8)
+                    if (Math.Abs(X[0] + (-3 * BaseSize)) <= 1.0e-8)
                         et = 2;
                     if (Math.Abs(X[1] - (-1 * BaseSize)) <= 1.0e-8)
                         et = 3;
-                    if (Math.Abs(X[1] + (-1 * BaseSize)) <= 1.0e-8)
+                    if (Math.Abs(X[1] + (-5 * BaseSize)) <= 1.0e-8)
                         et = 4;
 
                     Debug.Assert(et != 0);
@@ -442,9 +443,8 @@ namespace BoSSS.Application.FSI_Solver
 
             // Mesh refinement
             // =============================
-            C.AdaptiveMeshRefinement = false;
-            C.RefinementLevel = 2;
-            C.maxCurvature = 2;
+            C.AdaptiveMeshRefinement = true;
+            C.RefinementLevel = 6;
 
 
             // Boundary conditions
@@ -457,7 +457,7 @@ namespace BoSSS.Application.FSI_Solver
             // Fluid Properties
             // =============================
             C.PhysicalParameters.rho_A = 1;//pg/(mum^3)
-            C.PhysicalParameters.mu_A = 1e0;//pg(mum*s)
+            C.PhysicalParameters.mu_A = 1;//pg(mum*s)
             C.PhysicalParameters.Material = true;
 
 
@@ -470,7 +470,7 @@ namespace BoSSS.Application.FSI_Solver
             {
                 C.Particles.Add(new Particle_Sphere(new double[] { 0, 0 }, startAngl: 0)
                 {
-                    particleDensity = 7.8e0,
+                    particleDensity = 7.8 * DensityFactor,
                     radius_P = 0.5,
                     GravityVertical = -9.81,
                     useAddaptiveUnderrelaxation = true,
@@ -518,7 +518,7 @@ namespace BoSSS.Application.FSI_Solver
 
             // Coupling Properties
             // =============================
-            C.Timestepper_LevelSetHandling = LevelSetHandling.FSI_LieSplittingFullyCoupled;
+            C.Timestepper_LevelSetHandling = LevelSetHandling.LieSplitting;
             C.LSunderrelax = 1;
             C.max_iterations_fully_coupled = 100000;
 
@@ -526,11 +526,11 @@ namespace BoSSS.Application.FSI_Solver
             // Timestepping
             // =============================  
             C.Timestepper_Scheme = IBM_Solver.IBM_Control.TimesteppingScheme.BDF2;
-            double dt = 1e-2;
+            double dt = 1e-3;
             C.dtMax = dt;
             C.dtMin = dt;
             C.Endtime = 60;
-            C.NoOfTimesteps = 6000;
+            C.NoOfTimesteps = 5000;
 
             // haben fertig...
             // ===============
@@ -730,9 +730,6 @@ namespace BoSSS.Application.FSI_Solver
             return C;
         }
 
-        /// <summary>
-        /// Testing of particle/wall interactions using a single particle
-        /// </summary>
         public static FSI_Control MultipleDryParticleAgainstWall(string _DbPath = null, bool MeshRefine = false)
         {
             FSI_Control C = new FSI_Control();
@@ -1557,6 +1554,4 @@ namespace BoSSS.Application.FSI_Solver
             return C;
         }
     }
-
-    
 }

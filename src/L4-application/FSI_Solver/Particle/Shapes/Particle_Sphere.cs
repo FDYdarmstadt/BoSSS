@@ -100,7 +100,7 @@ namespace BoSSS.Application.FSI_Solver
             return false;
         }
 
-        override public MultidimensionalArray GetSurfacePoints(double hMin, double[] Position, double Angle)
+        override public MultidimensionalArray GetSurfacePoints(double hMin)
         {
             if (spatialDim != 2)
                 throw new NotImplementedException("Only two dimensions are supported at the moment");
@@ -113,13 +113,13 @@ namespace BoSSS.Application.FSI_Solver
             
             for (int j = 0; j < NoOfSurfacePoints; j++)
             {
-                SurfacePoints[0, j, 0] = Math.Cos(InfinitisemalAngle[j]) * radius_P + Position[0];
-                SurfacePoints[0, j, 1] = Math.Sin(InfinitisemalAngle[j]) * radius_P + Position[1];
+                SurfacePoints[0, j, 0] = Math.Cos(InfinitisemalAngle[j]) * radius_P + Position[0][0];
+                SurfacePoints[0, j, 1] = Math.Sin(InfinitisemalAngle[j]) * radius_P + Position[0][1];
             }
             return SurfacePoints;
         }
 
-        override public void GetSupportPoint(int SpatialDim, double[] Vector, double[] Position, double Angle, out double[] SupportPoint)
+        override public void GetSupportPoint(int SpatialDim, double[] Vector, out double[] SupportPoint)
         {
             double length = Math.Sqrt(Vector[0].Pow2() + Vector[1].Pow2());
             double CosT = Vector[0] / length;
@@ -127,8 +127,8 @@ namespace BoSSS.Application.FSI_Solver
             SupportPoint = new double[SpatialDim];
             if (SpatialDim != 2)
                 throw new NotImplementedException("Only two dimensions are supported at the moment");
-            SupportPoint[0] = CosT * radius_P + Position[0];
-            SupportPoint[1] = SinT * radius_P + Position[1];
+            SupportPoint[0] = CosT * radius_P + Position[0][0];
+            SupportPoint[1] = SinT * radius_P + Position[0][1];
             if (double.IsNaN(SupportPoint[0]) || double.IsNaN(SupportPoint[1]))
                 throw new ArithmeticException("Error trying to calculate point0 Value:  " + SupportPoint[0] + " point1 " + SupportPoint[1]);
         }
