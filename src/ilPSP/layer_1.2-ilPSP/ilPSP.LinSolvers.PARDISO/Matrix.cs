@@ -20,6 +20,8 @@ using System.IO;
 using System.Diagnostics;
 using MPI.Wrappers;
 using System.Collections.Generic;
+using ilPSP.Tracing;
+using System.Runtime.InteropServices;
 
 namespace ilPSP.LinSolvers.PARDISO {
     class Matrix {
@@ -47,16 +49,19 @@ namespace ilPSP.LinSolvers.PARDISO {
         public int[] ja;
         
         /// <summary>
-        /// PARDISO parameter: matrix values, when using double precision (<see cref="PARDISOSolver.UseDoublePrecision"/>)
-        /// Attention: FORTRAN indexing: starts at 1! only initialized on MPI processor rank 0.
+        /// PARDISO parameter: pointer to matrix values;
+        /// these can be either double's or float's, depending on the state of <see cref="PARDISOSolver.UseDoublePrecision"/>;
+        /// only initialized on MPI processor rank 0.
         /// </summary>
-        public double[] a_D;
+        public IntPtr aPtr;
 
         /// <summary>
-        /// PARDISO parameter: matrix values, when using double precision (<see cref="PARDISOSolver.UseDoublePrecision"/>)
-        /// Attention: FORTRAN indexing: starts at 1! only initialized on MPI processor rank 0.
+        /// Whether <see cref="aPtr"/> is either a double or a float array
         /// </summary>
-        public float[] a_S;
+        public bool UseDoublePrecision {
+            get;
+            private set;
+        }
 
 
         public bool Symmetric = false;
@@ -66,268 +71,359 @@ namespace ilPSP.LinSolvers.PARDISO {
         /// <summary>
         /// initializes this matrix as a copy of the matrix <paramref name="M"/>.
         /// </summary>
-        public Matrix(IMutableMatrixEx M, bool UseDoublePrecision) {
-            if (M.RowPartitioning.IsMutable)
-                throw new NotSupportedException();
-            if (M.ColPartition.IsMutable)
-                throw new NotSupportedException();
+        public Matrix(IMutableMatrixEx M, bool __UseDoublePrecision)
+        {
+            using (var tr = new FuncTrace())
+            {
+                this.UseDoublePrecision = __UseDoublePrecision;
+                if (M.RowPartitioning.IsMutable)
+                    throw new NotSupportedException();
+                if (M.ColPartition.IsMutable)
+                    throw new NotSupportedException();
 
-            if (M.NoOfCols != M.NoOfRows)
-                throw new ArgumentException("Matrix must be quadratic.", "M");
-            this.Symmetric = (M is MsrMatrix) && ((MsrMatrix)M).AssumeSymmetric;
-            RowPart = M.RowPartitioning;
+                if (M.NoOfCols != M.NoOfRows)
+                    throw new ArgumentException("Matrix must be quadratic.", "M");
+                this.Symmetric = (M is MsrMatrix) && ((MsrMatrix)M).AssumeSymmetric;
+                RowPart = M.RowPartitioning;
 
-            int size = M.RowPartitioning.MpiSize, rank = M.RowPartitioning.MpiRank;
-            Debug.Assert(M.RowPartitioning.MpiRank == M.ColPartition.MpiRank);
-            Debug.Assert(M.RowPartitioning.MpiSize == M.ColPartition.MpiSize);
-            m_comm = M.MPI_Comm;
+                int size = M.RowPartitioning.MpiSize, rank = M.RowPartitioning.MpiRank;
+                Debug.Assert(M.RowPartitioning.MpiRank == M.ColPartition.MpiRank);
+                Debug.Assert(M.RowPartitioning.MpiSize == M.ColPartition.MpiSize);
+                m_comm = M.MPI_Comm;
 
-            int LR;
-            int[] col = null;
-            double[] val = null;
+                int LR;
+                int[] col = null;
+                double[] val = null;
 
-            if (size == 1) {
-                // serial init on one processor
-                // ++++++++++++++++++++++++++++
+                if (size == 1)
+                {
+                    // serial init on one processor
+                    // ++++++++++++++++++++++++++++
+                    using (new BlockTrace("serial init", tr))
+                    {
 
-                n = (int)M.RowPartitioning.TotalLength;
+                        n = (int)M.RowPartitioning.TotalLength;
 
-                int len;
-                if (Symmetric) {
-                    // upper triangle + diagonal (diagonal entries are 
-                    // always required, even if 0.0, for symmetric matrices in PARDISO)
+                        int len;
+                        if (Symmetric)
+                        {
+                            // upper triangle + diagonal (diagonal entries are 
+                            // always required, even if 0.0, for symmetric matrices in PARDISO)
 
-                    len = M.GetGlobalNoOfUpperTriangularNonZeros() + n;
-                } else {
-                    len = M.GetTotalNoOfNonZerosPerProcess();
-                }
-                int Nrows = M.RowPartitioning.LocalLength;
-
-                int cnt = 0;
-                ia = new int[n + 1];
-                ja = new int[len];
-                if (UseDoublePrecision)
-                    a_D = new double[len];
-                else
-                    a_S = new float[len];
-                for (int i = 0; i < Nrows; i++) {
-                    ia[i] = cnt + 1; // fortran indexing
-                    int iRow = M.RowPartitioning.i0 + i;
-
-                    LR = M.GetRow(iRow, ref col, ref val);
-
-                    double diagelem = M[iRow, iRow];
-                    if (Symmetric && diagelem == 0) {
-                        // in the symmetric case, we always need to provide the diagonal element
-                        ja[cnt] = iRow + 1; // fortran indexing
-                        if (UseDoublePrecision)
-                            a_D[cnt] = 0.0;
+                            len = M.GetGlobalNoOfUpperTriangularNonZeros() + n;
+                        }
                         else
-                            a_S[cnt] = 0.0f;
-                        cnt++;
+                        {
+                            len = M.GetTotalNoOfNonZerosPerProcess();
+                        }
+                        int Nrows = M.RowPartitioning.LocalLength;
+
+                        int cnt = 0;
+                        ia = new int[n + 1];
+                        ja = new int[len];
+                        IntPtr ObjectSize;
+                        if (UseDoublePrecision)
+                            ObjectSize = (IntPtr)(((long)len) * sizeof(double));
+                        else
+                            ObjectSize = (IntPtr)(((long)len) * sizeof(float));
+                        this.aPtr = Marshal.AllocHGlobal(ObjectSize);
+
+                        unsafe
+                        {
+                            float* a_S = (float*)aPtr;
+                            double* a_D = (double*)aPtr;
+
+
+                            for (int i = 0; i < Nrows; i++)
+                            {
+                                ia[i] = cnt + 1; // fortran indexing
+                                int iRow = M.RowPartitioning.i0 + i;
+
+                                LR = M.GetRow(iRow, ref col, ref val);
+
+                                double diagelem = M[iRow, iRow];
+                                if (Symmetric && diagelem == 0)
+                                {
+                                    // in the symmetric case, we always need to provide the diagonal element
+                                    ja[cnt] = iRow + 1; // fortran indexing
+                                    if (UseDoublePrecision)
+                                        //a_D[cnt] = 0.0;
+                                        *a_D = 0.0;
+                                    else
+                                        //a_S[cnt] = 0.0f;
+                                        *(a_S) = 0.0f;
+                                    cnt++;
+                                    a_D++;
+                                    a_S++;
+                                }
+                                for (int j = 0; j < LR; j++)
+                                {
+
+                                    if (val[j] != 0.0)
+                                    {
+
+                                        if (Symmetric && col[j] < iRow)
+                                        {
+                                            // entry is in lower triangular matrix -> ignore (for symmetric mtx.)
+                                            continue;
+                                        }
+                                        else
+                                        {
+                                            ja[cnt] = col[j] + 1; // fortran indexing
+                                            if (UseDoublePrecision)
+                                                //a_D[cnt] = val[j];
+                                                *a_D = val[j];
+                                            else
+                                                //a_S[cnt] = (float)(val[j]);
+                                                *a_S = (float)(val[j]);
+                                            cnt++;
+                                            a_D++;
+                                            a_S++;
+                                        }
+                                    }
+                                }
+
+                                //if (M.GetTotalNoOfNonZeros() != len)
+                                //    throw new Exception();
+                            }
+                            ia[Nrows] = cnt + 1; // fortran indexing
+
+                            if (len != cnt)
+                                throw new ApplicationException("internal error.");
+                        }
                     }
-                    for (int j = 0; j < LR; j++) {
+                }
+                else
+                {
+                    // collect matrix on processor 0
+                    // +++++++++++++++++++++++++++++
+                    using (new BlockTrace("Collect matrix on proc 0", tr))
+                    {
 
-                        if (val[j] != 0.0) {
+                        // Number of elements, start indices for index pointers
+                        // ====================================================
 
-                            if (Symmetric && col[j] < iRow) {
-                                // entry is in lower triangular matrix -> ignore (for symmetric mtx.)
-                                continue;
-                            } else {
-                                ja[cnt] = col[j] + 1; // fortran indexing
-                                if (UseDoublePrecision)
-                                    a_D[cnt] = val[j];
-                                else
-                                    a_S[cnt] = (float)(val[j]);
-                                cnt++;
+                        int len_loc;
+                        if (Symmetric)
+                            // number of entries is:
+                            // upper triangle + diagonal (diagonal entries are 
+                            // always required, even if 0.0, for symmetric matrices in PARDISO)
+                            len_loc = M.GetLocalNoOfUpperTriangularNonZeros() + M.RowPartitioning.LocalLength;
+                        else
+                            len_loc = M.GetTotalNoOfNonZerosPerProcess();
+
+
+                        Partitioning part = new Partitioning(len_loc, m_comm);
+                        if (part.TotalLength > int.MaxValue)
+                            throw new ApplicationException("too many matrix entries for PARDISO - more than maximum 32-bit signed integer");
+
+                        // local matrix assembly
+                        // =====================
+
+                        int n_loc = M.RowPartitioning.LocalLength;
+                        int[] ia_loc = new int[n_loc];
+                        int[] ja_loc = new int[len_loc];
+                        double[] a_loc_D = null;
+                        float[] a_loc_S = null;
+                        using (new BlockTrace("local mATRIX ASSEMBLY", tr))
+                        {
+                            if (UseDoublePrecision)
+                            {
+                                a_loc_D = new double[len_loc];
+                            }
+                            else
+                            {
+                                a_loc_S = new float[len_loc];
+                            }
+                            {
+
+                                int cnt = 0;
+                                int i0 = (int)part.i0;
+
+                                for (int i = 0; i < n_loc; i++)
+                                {
+                                    ia_loc[i] = cnt + 1 + i0; // fortran indexing
+                                    int iRow = i + (int)M.RowPartitioning.i0;
+
+                                    LR = M.GetRow(iRow, ref col, ref val);
+
+                                    double diagelem = M[iRow, iRow];
+                                    if (Symmetric && diagelem == 0)
+                                    {
+                                        // in the symmetric case, we always need to provide the diagonal element
+                                        ja_loc[cnt] = iRow + 1; // fortran indexing
+                                        if (UseDoublePrecision)
+                                            a_loc_D[cnt] = 0.0;
+                                        else
+                                            a_loc_S[cnt] = 0.0f;
+                                        cnt++;
+                                    }
+                                    for (int j = 0; j < LR; j++)
+                                    {
+
+                                        if (val[j] != 0.0)
+                                        {
+
+                                            if (Symmetric && col[j] < iRow)
+                                            {
+                                                // entry is in lower triangular matrix -> ignore (for symmetric mtx.)
+                                                continue;
+                                            }
+                                            else
+                                            {
+                                                ja_loc[cnt] = col[j] + 1; // fortran indexing
+                                                if (UseDoublePrecision)
+                                                    a_loc_D[cnt] = val[j];
+                                                else
+                                                    a_loc_S[cnt] = (float)val[j];
+                                                cnt++;
+                                            }
+                                        }
+                                    }
+
+                                }
+
+                                if (cnt != len_loc)
+                                    throw new ApplicationException("internal error.");
                             }
                         }
-                    }
 
-                    //if (M.GetTotalNoOfNonZeros() != len)
-                    //    throw new Exception();
-                }
-                ia[Nrows] = cnt + 1; // fortran indexing
+                        // assemble complete matrix on proc. 0
+                        // ===================================
+                        if (rank == 0)
+                        {
+                            n = M.RowPartitioning.TotalLength;
 
-                if (len != cnt)
-                    throw new ApplicationException("internal error.");
+                            // process 0: collect data from other processors
+                            // +++++++++++++++++++++++++++++++++++++++++++++
+                            this.ia = new int[M.RowPartitioning.TotalLength + 1];
+                            this.ja = new int[part.TotalLength];
+                            int partLeng = part.TotalLength;
+                            //long partLeng2 = (long)part.TotalLength;
+                            //Console.WriteLine("Partitioning total length is as int: "+ partLeng + "and in 64-bit: "+ partLeng2);
 
-            } else {
-                // collect matrix on processor 0
-                // +++++++++++++++++++++++++++++
+                            //if (UseDoublePrecision)
+                            //{
+                            //    Console.WriteLine("if UseDoublePrecision");
+                            //    this.a_D = new double[part.TotalLength];
+                            //}
+                            //else
+                            //{
+                            //    Console.WriteLine("else...");
+                            //    this.a_S = new float[part.TotalLength];
+                            //}
 
-                // Number of elements, start indices for index pointers
-                // ====================================================
-
-                int len_loc;
-                if (Symmetric)
-                    // number of entries is:
-                    // upper triangle + diagonal (diagonal entries are 
-                    // always required, even if 0.0, for symmetric matrices in PARDISO)
-                    len_loc = M.GetLocalNoOfUpperTriangularNonZeros() + M.RowPartitioning.LocalLength;
-                else
-                    len_loc = M.GetTotalNoOfNonZerosPerProcess();
-
-                Partitioning part = new Partitioning(len_loc, m_comm);
-                if (part.TotalLength > int.MaxValue)
-                    throw new ApplicationException("too many matrix entries for PARDISO - more than maximum 32-bit signed integer");
-
-
-                // local matrix assembly
-                // =====================
-                int n_loc = M.RowPartitioning.LocalLength;
-                int[] ia_loc = new int[n_loc];
-                int[] ja_loc = new int[len_loc];
-                double[] a_loc_D = null;
-                float[] a_loc_S = null;
-                if (UseDoublePrecision) {
-                    a_loc_D = new double[len_loc];
-                } else {
-                    a_loc_S = new float[len_loc];
-                }
-                {
-
-                    int cnt = 0;
-                    int i0 = (int)part.i0;
-
-                    for (int i = 0; i < n_loc; i++) {
-                        ia_loc[i] = cnt + 1 + i0; // fortran indexing
-                        int iRow = i + (int)M.RowPartitioning.i0;
-
-                        LR = M.GetRow(iRow, ref col, ref val);
-
-                        double diagelem = M[iRow, iRow];
-                        if (Symmetric && diagelem == 0) {
-                            // in the symmetric case, we always need to provide the diagonal element
-                            ja_loc[cnt] = iRow + 1; // fortran indexing
+                            IntPtr ObjectSize;
                             if (UseDoublePrecision)
-                                a_loc_D[cnt] = 0.0;
+                                ObjectSize = (IntPtr)(((long)partLeng) * sizeof(double));
                             else
-                                a_loc_S[cnt] = 0.0f;
-                            cnt++;
+                                ObjectSize = (IntPtr)(((long)partLeng) * sizeof(float));
+                            aPtr = Marshal.AllocHGlobal(ObjectSize);
                         }
-                        for (int j = 0; j < LR; j++) {
+                        else
+                        {
+                            aPtr = IntPtr.Zero;
+                        }
+                        //int partLeng = part.TotalLength;
+                        //long partLeng2 = (long)part.TotalLength;
+                        //Console.WriteLine("Partitioning total length is as int: "+ partLeng + "and in 64-bit: "+ partLeng2);
+                        Console.Out.Flush();
 
-                            if (val[j] != 0.0) {
+                        using (new BlockTrace("UNSAFE", tr))
+                        {
+                            unsafe
+                            {
+                                float* pa_S = (float*)aPtr;
+                                double* pa_D = (double*)aPtr;
 
-                                if (Symmetric && col[j] < iRow) {
-                                    // entry is in lower triangular matrix -> ignore (for symmetric mtx.)
-                                    continue;
-                                } else {
-                                    ja_loc[cnt] = col[j] + 1; // fortran indexing
+
+                                Console.WriteLine("in unsafe");
+                                int* displs = stackalloc int[size];
+                                int* recvcounts = stackalloc int[size];
+                                for (int i = 0; i < size; i++)
+                                {
+                                    recvcounts[i] = part.GetLocalLength(i);
+                                    displs[i] = part.GetI0Offest(i);
+                                }
+
+
+                                fixed (void* pa_loc_D = a_loc_D, pa_loc_S = a_loc_S)
+                                {
                                     if (UseDoublePrecision)
-                                        a_loc_D[cnt] = val[j];
+                                    {
+                                        csMPI.Raw.Gatherv(
+                                            (IntPtr)pa_loc_D,
+                                            a_loc_D.Length,
+                                            csMPI.Raw._DATATYPE.DOUBLE,
+                                            (IntPtr)pa_D,
+                                            (IntPtr)recvcounts,
+                                            (IntPtr)displs,
+                                            csMPI.Raw._DATATYPE.DOUBLE,
+                                            0,
+                                            m_comm);
+                                    }
                                     else
-                                        a_loc_S[cnt] = (float)val[j];
-                                    cnt++;
+                                    {
+                                        csMPI.Raw.Gatherv(
+                                            (IntPtr)pa_loc_S,
+                                            a_loc_S.Length,
+                                            csMPI.Raw._DATATYPE.FLOAT,
+                                            (IntPtr)pa_S,
+                                            (IntPtr)recvcounts,
+                                            (IntPtr)displs,
+                                            csMPI.Raw._DATATYPE.FLOAT,
+                                            0,
+                                            m_comm);
+                                    }
+                                }
+
+                                fixed (void* pja_loc = ja_loc, pja = ja)
+                                {
+                                    csMPI.Raw.Gatherv(
+                                            (IntPtr)pja_loc,
+                                            ja_loc.Length,
+                                            csMPI.Raw._DATATYPE.INT,
+                                            (IntPtr)pja,
+                                            (IntPtr)recvcounts,
+                                            (IntPtr)displs,
+                                            csMPI.Raw._DATATYPE.INT,
+                                            0,
+                                            m_comm);
+                                }
+
+                                for (int i = 0; i < size; i++)
+                                {
+                                    displs[i] = M.RowPartitioning.GetI0Offest(i);
+                                    recvcounts[i] = M.RowPartitioning.GetLocalLength(i);
+                                }
+
+                                fixed (void* pia_loc = ia_loc, pia = ia)
+                                {
+                                    csMPI.Raw.Gatherv(
+                                            (IntPtr)pia_loc,
+                                            ia_loc.Length,
+                                            csMPI.Raw._DATATYPE.INT,
+                                            (IntPtr)pia,
+                                            (IntPtr)recvcounts,
+                                            (IntPtr)displs,
+                                            csMPI.Raw._DATATYPE.INT,
+                                            0,
+                                            m_comm);
                                 }
                             }
                         }
 
-                    }
 
-                    if (cnt != len_loc)
-                        throw new ApplicationException("internal error.");
-                }
-
-                // assemble complete matrix on proc. 0
-                // ===================================
-                if (rank == 0) {
-
-                    n = M.RowPartitioning.TotalLength;
-
-                    // process 0: collect data from other processors
-                    // +++++++++++++++++++++++++++++++++++++++++++++
-
-                    this.ia = new int[M.RowPartitioning.TotalLength + 1]; 
-                    this.ja = new int[part.TotalLength];
-                    if (UseDoublePrecision)
-                        this.a_D = new double[part.TotalLength];
-                    else
-                        this.a_S = new float[part.TotalLength];
-                }
+                        if (rank == 0)
+                            this.ia[M.RowPartitioning.TotalLength] = (int)part.TotalLength + 1;
 
 
-                unsafe
-                {
-                    unsafe
-                    {
-                        int* displs = stackalloc int[size];
-                        int* recvcounts = stackalloc int[size];
-                        for (int i = 0; i < size; i++) {
-                            recvcounts[i] = part.GetLocalLength(i);
-                            displs[i] = part.GetI0Offest(i);
-                        }
-
-                        
-                        fixed (void* pa_loc_D = a_loc_D, pa_D = a_D, pa_loc_S = a_loc_S, pa_S = a_S) {
-                            if (UseDoublePrecision) {
-                                csMPI.Raw.Gatherv(
-                                    (IntPtr)pa_loc_D,
-                                    a_loc_D.Length,
-                                    csMPI.Raw._DATATYPE.DOUBLE,
-                                    (IntPtr)pa_D,
-                                    (IntPtr)recvcounts,
-                                    (IntPtr)displs,
-                                    csMPI.Raw._DATATYPE.DOUBLE,
-                                    0,
-                                    m_comm);
-                            } else {
-                                csMPI.Raw.Gatherv(
-                                    (IntPtr)pa_loc_S,
-                                    a_loc_S.Length,
-                                    csMPI.Raw._DATATYPE.FLOAT,
-                                    (IntPtr)pa_S,
-                                    (IntPtr)recvcounts,
-                                    (IntPtr)displs,
-                                    csMPI.Raw._DATATYPE.FLOAT,
-                                    0,
-                                    m_comm);
-                            }
-                        }
-
-                        fixed(void* pja_loc = ja_loc, pja = ja) {
-                            csMPI.Raw.Gatherv(
-                                    (IntPtr)pja_loc,
-                                    ja_loc.Length,
-                                    csMPI.Raw._DATATYPE.INT,
-                                    (IntPtr)pja,
-                                    (IntPtr)recvcounts,
-                                    (IntPtr)displs,
-                                    csMPI.Raw._DATATYPE.INT,
-                                    0,
-                                    m_comm);
-                        }
-
-                        for (int i = 0; i < size; i++) {
-                            displs[i] = M.RowPartitioning.GetI0Offest(i);
-                            recvcounts[i] = M.RowPartitioning.GetLocalLength(i);
-                        }
-
-                        fixed(void* pia_loc = ia_loc, pia = ia) {
-                            csMPI.Raw.Gatherv(
-                                    (IntPtr)pia_loc,
-                                    ia_loc.Length,
-                                    csMPI.Raw._DATATYPE.INT,
-                                    (IntPtr)pia,
-                                    (IntPtr)recvcounts,
-                                    (IntPtr)displs,
-                                    csMPI.Raw._DATATYPE.INT,
-                                    0,
-                                    m_comm);
-                        }
+                        ia_loc = null; ja_loc = null; a_loc_S = null; a_loc_D = null;
+                        GC.Collect();
                     }
                 }
-
-                if(rank == 0)
-                    this.ia[M.RowPartitioning.TotalLength] = (int)part.TotalLength + 1;
-
-
-                ia_loc = null; ja_loc = null; a_loc_S = null; a_loc_D = null;
-                GC.Collect();
             }
         }
-
 
         /// <summary>
         /// Writes the matrix into a text file (for debugging purposes).
@@ -354,36 +450,48 @@ namespace ilPSP.LinSolvers.PARDISO {
             int NoOfCols = (int)RowPart.TotalLength; // assume quadratic matrix
             StreamWriter writer = new StreamWriter(path + append);
             int cnt = 0;
-            for (int i = 0; i < RowPart.TotalLength; i++) {
+            unsafe
+            {
+                float* a_S = (float*)aPtr;
+                double* a_D = (double*)aPtr;
+               
 
-                string separator = "";
-                int currentColumn = -1;
-                int len = ia[i + 1] - ia[i];
-                for (int j = 0; j < len; j++) {
+                for (int i = 0; i < RowPart.TotalLength; i++)
+                {
 
-                    // Add zeros for missing columns (the sparse format does
-                    // not store zero values)
-                    for (int k = currentColumn + 1; k < (ja[cnt]-1); k++) {
-                        writer.Write(separator + "{0,14:F0}", 0.0);
+                    string separator = "";
+                    int currentColumn = -1;
+                    int len = ia[i + 1] - ia[i];
+                    for (int j = 0; j < len; j++)
+                    {
+
+                        // Add zeros for missing columns (the sparse format does
+                        // not store zero values)
+                        for (int k = currentColumn + 1; k < (ja[cnt] - 1); k++)
+                        {
+                            writer.Write(separator + "{0,14:F0}", 0.0);
+                            separator = "\t";
+                        }
+
+                        // Enforce use of . as decimal separator in scientific format
+
+                        if (a_D != null)
+                            writer.Write(separator + a_D[cnt].ToString("E", System.Globalization.CultureInfo.InvariantCulture).PadLeft(14));
+                        else
+                            writer.Write(separator + a_S[cnt].ToString("E", System.Globalization.CultureInfo.InvariantCulture).PadLeft(14));
+                        currentColumn = ja[cnt] - 1;
+                        cnt++;
                         separator = "\t";
                     }
 
-                    // Enforce use of . as decimal separator in scientific format
-                    if(a_D != null)
-                        writer.Write(separator + a_D[cnt].ToString("E", System.Globalization.CultureInfo.InvariantCulture).PadLeft(14));
-                    else
-                        writer.Write(separator + a_S[cnt].ToString("E", System.Globalization.CultureInfo.InvariantCulture).PadLeft(14));
-                    currentColumn = ja[cnt]-1;
-                    cnt++;
-                    separator = "\t";
-                }
+                    // Add zeros for columns following after the last entry
+                    for (int j = currentColumn + 1; j < NoOfCols; j++)
+                    {
+                        writer.Write("\t{0,14:F0}", 0.0);
+                    }
 
-                // Add zeros for columns following after the last entry
-                for (int j = currentColumn + 1; j < NoOfCols; j++) {
-                    writer.Write("\t{0,14:F0}", 0.0);
+                    writer.Write("\n");
                 }
-
-                writer.Write("\n");
             }
             writer.Close();
         }
