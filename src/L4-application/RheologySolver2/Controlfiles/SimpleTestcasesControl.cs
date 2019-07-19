@@ -64,6 +64,8 @@ namespace BoSSS.Application.Rheology
             C.dtMin = C.dt;
             C.Timestepper_Scheme = RheologyControl.TimesteppingScheme.ImplicitEuler;
             C.NonLinearSolver.SolverCode = NonLinearSolverConfig.Code.Newton;
+            //C.LinearSolver.SolverCode = LinearSolverConfig.Code.exp_gmres_levelpmg;
+            C.LinearSolver.SolverCode = LinearSolverConfig.Code.classic_pardiso;
             C.ObjectiveParam = 1.0;
 
             C.UsePerssonSensor = false;
@@ -93,8 +95,8 @@ namespace BoSSS.Application.Rheology
             C.FixedStreamwisePeriodicBC = false;
             C.beta = 0.59;
             C.Reynolds = 1;
-            C.Weissenberg = 1.0; //aim Weissenberg number!
-            C.RaiseWeissenberg = false;
+            C.Weissenberg = 0.5; //aim Weissenberg number!
+            C.RaiseWeissenberg = true;
             C.WeissenbergIncrement = 0.1;
 
             //Grid Params
