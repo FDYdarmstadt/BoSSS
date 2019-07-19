@@ -131,8 +131,8 @@ namespace BoSSS.Foundation.Grid {
             int JE = CurrentGrid.Cells.Count;
             int J = CurrentGrid.Cells.NoOfLocalUpdatedCells;
 
-            if (Ok2Coarsen.Length != JE)
-                throw new ArgumentException();
+            //if (Ok2Coarsen.Length != JE)
+            //    throw new ArgumentException();
 
             int[][] CellNeighbours = CurrentGrid.Cells.CellNeighbours;
 

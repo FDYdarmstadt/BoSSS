@@ -532,6 +532,12 @@ namespace FSI_Solver
         /// <param name="Force"></param>
         internal void PrintResultToConsole(List<Particle> Particles, double phystime, int IterationCounter, out double MPIangularVelocity, out double[] Force)
         {
+            if (Particles.Count() == 0)
+            {
+                MPIangularVelocity = 0;
+                Force = new double[1];
+                return;
+            }
             double[] TranslationalMomentum = new double[2] { 0, 0 };
             double RotationalMomentum = 0;
             double[] totalKE = new double[3] { 0, 0, 0 };
@@ -595,6 +601,12 @@ namespace FSI_Solver
         /// <param name="Force"></param>
         internal void PrintResultToConsole(List<Particle> Particles, double FluidViscosity, double FluidDensity, double phystime, int TimestepInt, out double MPIangularVelocity, out double[] Force)
         {
+            if (Particles.Count() == 0)
+            {
+                MPIangularVelocity = 0;
+                Force = new double[1];
+                return;
+            }
             double[] TranslationalMomentum = new double[2] { 0, 0 };
             double RotationalMomentum = 0;
             double[] totalKE = new double[3] { 0, 0, 0 };
