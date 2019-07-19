@@ -38,7 +38,8 @@ namespace BoSSS.Solution.XheatCommon {
         static string[] BndFunctions(IGridData g) {
             int D = g.SpatialDimension;
 
-            return ArrayTools.Cat(VariableNames.VelocityVector(D), VariableNames.Temperature, "HeatFlux");
+            //return ArrayTools.Cat(VariableNames.VelocityVector(D), VariableNames.Temperature, "HeatFlux");
+            return ArrayTools.Cat(VariableNames.HeatFluxVector(D), VariableNames.Temperature, VariableNames.VelocityVector(D));
 
         }
 
@@ -67,10 +68,11 @@ namespace BoSSS.Solution.XheatCommon {
 
             foreach(var S in SpeciesNames) {
                 for(int d = 0; d < D; d++) {
+                    scalarFields.Add(VariableNames.HeatFluxVectorComponent(d) + "#" + S);
                     scalarFields.Add(VariableNames.Velocity_d(d) + "#" + S);
                 }
                 scalarFields.Add(VariableNames.Temperature + "#" + S);
-                scalarFields.Add("HeatFlux" + "#" + S);
+                //scalarFields.Add("HeatFlux" + "#" + S);
             }
 
             return scalarFields.ToArray();
@@ -84,10 +86,11 @@ namespace BoSSS.Solution.XheatCommon {
 
             int D = f.SpatialDimension;
             for(int d = 0; d < D; d++) {
+                base.bndFunction.Add(VariableNames.HeatFluxVectorComponent(d), base.bndFunction[VariableNames.HeatFluxVectorComponent(d) + S0]);
                 base.bndFunction.Add(VariableNames.Velocity_d(d), base.bndFunction[VariableNames.Velocity_d(d) + S0]);
             }
             base.bndFunction.Add(VariableNames.Temperature, base.bndFunction[VariableNames.Temperature + S0]);
-            base.bndFunction.Add("HeatFlux", base.bndFunction["HeatFlux" + S0]);
+            //base.bndFunction.Add("HeatFlux", base.bndFunction["HeatFlux" + S0]);
 
         }
 

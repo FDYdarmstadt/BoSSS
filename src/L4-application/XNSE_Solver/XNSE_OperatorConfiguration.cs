@@ -219,10 +219,16 @@ namespace BoSSS.Application.XNSE_Solver {
             Evaporation = (control.ThermalParameters.hVap_A != 0.0 && control.ThermalParameters.hVap_B != 0.0);
             MatInt = !Evaporation;
 
+            auxHeatFlux = control.separatedHeatEq;
         }
 
 
         public ThermalParameters thermParams;
+
+        /// <summary>
+        /// true if the heat equation is solved via the auxiliary heat flux formulation
+        /// </summary>
+        public bool auxHeatFlux;
 
         /// <summary>
         /// include heat equation
@@ -243,6 +249,11 @@ namespace BoSSS.Application.XNSE_Solver {
         public ThermalParameters getThermParams {
             get { return thermParams; }
         }
+
+        public bool isSeparated {
+            get { return auxHeatFlux; }
+        }
+
         public bool isHeatTransport {
             get { return HeatTransport; }
         }

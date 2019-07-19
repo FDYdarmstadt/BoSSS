@@ -99,7 +99,7 @@ namespace BoSSS.Solution.XheatCommon {
                 qEvap = ComputeHeatFlux_Macro(paramsNeg.GetSubVector(0, D), paramsPos.GetSubVector(0, D), N);
             }
 
-            return qEvap;
+            return -10.0; // qEvap;
 
         }
 
@@ -199,6 +199,54 @@ namespace BoSSS.Solution.XheatCommon {
 
     }
 
+
+    public class HeatFluxEvaporationAtLevelSet : EvaporationAtLevelSet {
+
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="_d">spatial direction</param>
+        /// <param name="_D">spatial dimension</param>
+        /// <param name="LsTrk"></param>
+        /// <param name="_sigma">surface-tension constant</param>
+        public HeatFluxEvaporationAtLevelSet(LevelSetTracker LsTrk, double _rho, ThermalParameters thermParams, double _Rint, double _sigma) {
+            m_LsTrk = LsTrk;
+
+            this.rho = _rho;
+
+            this.kA = thermParams.k_A;
+            this.kB = thermParams.k_B;
+            this.hVapA = thermParams.hVap_A;
+            this.Rint = _Rint;
+
+            this.Tsat = thermParams.T_sat;
+            this.sigma = _sigma;
+            this.pc = thermParams.pc;
+
+            this.D = LsTrk.GridDat.SpatialDimension;
+        }
+
+
+        public override double LevelSetForm(ref CommonParamsLs cp, double[] uA, double[] uB, double[,] Grad_uA, double[,] Grad_uB, double vA, double vB, double[] Grad_vA, double[] Grad_vB) {
+
+            double qEvap = ComputeHeatFlux(cp.ParamsNeg, cp.ParamsPos, cp.n, cp.jCell);
+            //Console.WriteLine("qEvap - HeatFluxAtLevelSet: {0}", qEvap);
+            if (qEvap == 0.0)
+                return 0.0;
+
+
+            double FlxNeg = qEvap;
+            double FlxPos = qEvap;
+
+            Debug.Assert(!(double.IsNaN(FlxNeg) || double.IsInfinity(FlxNeg)));
+            Debug.Assert(!(double.IsNaN(FlxPos) || double.IsInfinity(FlxPos)));
+
+            return FlxNeg * vA - FlxPos * vB;
+        }
+
+
+    }
 
 
 }

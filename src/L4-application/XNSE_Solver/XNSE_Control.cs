@@ -507,7 +507,7 @@ namespace BoSSS.Application.XNSE_Solver {
         /// <summary>
         /// switch for computations with evaporation
         /// </summary>
-        //public bool withEvaporation = false;
+        public bool separatedHeatEq = false;
 
         /// <summary>
         /// Block-Precondition for the Temperature-block

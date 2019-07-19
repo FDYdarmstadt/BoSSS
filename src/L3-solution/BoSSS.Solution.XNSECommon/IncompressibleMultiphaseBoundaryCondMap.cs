@@ -46,7 +46,7 @@ namespace BoSSS.Solution.XNSECommon {
             scalarFields.Add(VariableNames.LevelSet);
 
             return scalarFields.ToArray();
-        }
+         }
 
 
          public IncompressibleMultiphaseBoundaryCondMap(IGridData f, IDictionary<string, BoSSS.Solution.Control.AppControl.BoundaryValueCollection> b, string[] SpeciesNames)
@@ -59,6 +59,6 @@ namespace BoSSS.Solution.XNSECommon {
                  base.bndFunction.Add(VariableNames.Velocity_d(d), base.bndFunction[VariableNames.Velocity_d(d) + S0]);
              }
              base.bndFunction.Add(VariableNames.Pressure, base.bndFunction[VariableNames.Pressure + S0]);
-        }
+         }
     }
 }

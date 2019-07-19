@@ -133,6 +133,50 @@ namespace BoSSS.Solution.NSECommon {
         /// </summary>
         public const string HeatEquation = "HeatEq";
 
+        /// <summary>
+        /// auxiliary heat flux x - component
+        /// </summary>
+        public const string AuxHeatFluxX = "AuxHeatFluxX";
+
+        /// <summary>
+        /// auxiliary heat flux y - component
+        /// </summary>
+        public const string AuxHeatFluxY = "AuxHeatFluxY";
+
+        /// <summary>
+        /// auxiliary heat flux z - component
+        /// </summary>
+        public const string AuxHeatFluxZ = "AuxHeatFluxZ";
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="d"></param>
+        /// <returns></returns>
+        static public string AuxHeatFluxComponent(int d) {
+            switch (d) {
+                case 0: return AuxHeatFluxX;
+                case 1: return AuxHeatFluxY;
+                case 2: return AuxHeatFluxZ;
+                default: throw new NotSupportedException("unsupported spatial dimension: d = " + d + ".");
+            }
+        }
+
+        /// <summary>
+        /// vector of the auxiliary heat flux
+        /// </summary>
+        /// <param name="D">
+        /// spatial dimension
+        /// </param>
+        public static string[] AuxHeatFlux(int D) {
+            if (D == 2)
+                return new string[] { AuxHeatFluxX, AuxHeatFluxY };
+            else if (D == 3)
+                return new string[] { AuxHeatFluxX, AuxHeatFluxY, AuxHeatFluxZ };
+            else
+                throw new NotSupportedException("unsupported spatial dimension: D = " + D + ".");
+        }
+
     }
 
     
@@ -453,6 +497,86 @@ namespace BoSSS.Solution.NSECommon {
                 default: throw new NotSupportedException("unsupported number of species.");
             }
         }
+
+        /// <summary>
+        /// x - component of the heat flux
+        /// </summary>
+        public const string HeatFluxX = "HeatFluxX";
+
+        /// <summary>
+        /// y - component of the  heat flux
+        /// </summary>
+        public const string HeatFluxY = "HeatFluxY";
+
+        /// <summary>
+        /// z - component of the  heat flux
+        /// </summary>
+        public const string HeatFluxZ = "HeatFluxZ";
+
+        /// <summary>
+        /// variable name for the heat flux vector
+        /// </summary>
+        static public string[] HeatFluxVector(int D) {
+            switch (D) {
+                case 1: return new string[] { HeatFluxX };
+                case 2: return new string[] { HeatFluxX, HeatFluxY };
+                case 3: return new string[] { HeatFluxX, HeatFluxY, HeatFluxZ };
+                default: throw new NotSupportedException("unsupported number of species.");
+            }
+        }
+
+        /// <summary>
+        /// Components of the heat flux vector
+        /// </summary>
+        static public string HeatFluxVectorComponent(int i) {
+            switch (i) {
+                case 0: return HeatFluxX;
+                case 1: return HeatFluxY;
+                case 2: return HeatFluxZ;
+                default: throw new NotSupportedException("unsupported number of species.");
+            }
+        }
+
+        /// <summary>
+        /// x - component of the heat flux
+        /// </summary>
+        public const string ResidualAuxHeatFluxX = "ResAuxHeatFluxX";
+
+        /// <summary>
+        /// y - component of the  heat flux
+        /// </summary>
+        public const string ResidualAuxHeatFluxY = "ResAuxHeatFluxY";
+
+        /// <summary>
+        /// z - component of the  heat flux
+        /// </summary>
+        public const string ResidualAuxHeatFluxZ = "ResAuxHeatFluxZ";
+
+        /// <summary>
+        /// variable name for the heat flux vector
+        /// </summary>
+        static public string[] ResidualAuxHeatFluxVector(int D) {
+            switch (D) {
+                case 1: return new string[] { ResidualAuxHeatFluxX };
+                case 2: return new string[] { ResidualAuxHeatFluxX, ResidualAuxHeatFluxY };
+                case 3: return new string[] { ResidualAuxHeatFluxX, ResidualAuxHeatFluxY, ResidualAuxHeatFluxZ };
+                default: throw new NotSupportedException("unsupported number of species.");
+            }
+        }
+
+        /// <summary>
+        /// Components of the heat flux vector
+        /// </summary>
+        static public string ResidualAuxHeatFluxVectorComponent(int i) {
+            switch (i) {
+                case 0: return ResidualAuxHeatFluxX;
+                case 1: return ResidualAuxHeatFluxY;
+                case 2: return ResidualAuxHeatFluxZ;
+                default: throw new NotSupportedException("unsupported number of species.");
+            }
+        }
+
+
 
         /// <summary>
         /// variable name for the Gradient of the Temperature (linearization point)

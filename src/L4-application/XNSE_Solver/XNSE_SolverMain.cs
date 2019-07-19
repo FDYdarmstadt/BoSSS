@@ -271,8 +271,13 @@ namespace BoSSS.Application.XNSE_Solver {
                     this.ResidualHeat = new XDGField(this.Temperature.Basis, "ResidualHeat");
                     base.RegisterField(this.ResidualHeat);
 
-                    this.Heatflux = new VectorField<XDGField>(D.ForLoop(d => new XDGField(new XDGBasis(this.LsTrk, this.Control.FieldOptions[VariableNames.Temperature].Degree - 1), "Heatflux_[" + d + "]")));
-                    base.RegisterField(this.Heatflux);
+                    if (this.Control.separatedHeatEq) {
+                        this.HeatFlux = new VectorField<XDGField>(D.ForLoop(d => new XDGField(new XDGBasis(this.LsTrk, this.Control.FieldOptions[VariableNames.HeatFluxVectorComponent(d)].Degree), VariableNames.HeatFluxVectorComponent(d))));
+                        base.RegisterField(this.HeatFlux);
+                        this.ResidualAuxHeatFlux = new VectorField<XDGField>(D.ForLoop(d => new XDGField(new XDGBasis(this.LsTrk, this.Control.FieldOptions[VariableNames.HeatFluxVectorComponent(d)].Degree), VariableNames.ResidualAuxHeatFluxVectorComponent(d))));
+                        base.RegisterField(this.ResidualAuxHeatFlux);
+                    }
+
                     this.EvapFlowRate = new SinglePhaseField(new Basis(this.LsTrk.GridDat, this.Control.FieldOptions[VariableNames.Temperature].Degree - 1), "EvapFlowRate");
                     base.RegisterField(this.EvapFlowRate);
 
@@ -1199,7 +1204,7 @@ namespace BoSSS.Application.XNSE_Solver {
 
                         if(this.Control.solveCoupledHeatEquation && m_BDF_coupledTimestepper != null) {
                             m_BDF_coupledTimestepper.Solve(phystime, dt, Control.SkipSolveAndEvaluateResidual);
-                            ComputeHeatflux();
+                            //ComputeHeatflux();
                         }
                         
                     } else {
@@ -2367,7 +2372,7 @@ namespace BoSSS.Application.XNSE_Solver {
                                        }
 
 
-                                       double mEvap = qEvap / hVap; // mass flux
+                                       double mEvap = -0.1; // qEvap / hVap; // mass flux
                                        //result[j, k] = mEvap * ((1 / rho_v) - (1 / rho_l)) * Normals[j, k, d];   //
                                        result[j, k] = mEvap * (1 / rho_v) * Normals[j, k, d];   //
                                        //result[j, k] = - Normals[j, k, d];   //
@@ -4258,13 +4263,15 @@ namespace BoSSS.Application.XNSE_Solver {
         /// </summary>
         XDGField Temperature;
 
+        VectorField<XDGField> HeatFlux;
+
         /// <summary>
         /// Residual of the heat equation
         /// </summary>
         XDGField ResidualHeat;
 
+        VectorField<XDGField> ResidualAuxHeatFlux;
 
-        VectorField<XDGField> Heatflux;
 
         SinglePhaseField EvapFlowRate;
 
@@ -4286,10 +4293,24 @@ namespace BoSSS.Application.XNSE_Solver {
                 double c_A = this.Control.ThermalParameters.c_A,
                     c_B = this.Control.ThermalParameters.c_B;
 
-                double[] scale_A = new double[1];
-                scale_A[0] = rho_A * c_A;
-                double[] scale_B = new double[1];
-                scale_B[0] = rho_B * c_B;
+                double[] scale_A;
+                double[] scale_B;
+                if (!XOpConfig.isSeparated) {
+                    scale_A = new double[1];
+                    scale_A[0] = rho_A * c_A;
+                    scale_B = new double[1];
+                    scale_B[0] = rho_B * c_B;
+                } else {
+                    scale_A = new double[3];
+                    scale_A[0] = rho_A * c_A;
+                    scale_A[1] = 1.0;
+                    scale_A[2] = 1.0;
+                    scale_B = new double[3];
+                    scale_B[0] = rho_B * c_B;
+                    scale_B[1] = 1.0;
+                    scale_B[2] = 1.0;
+                }
+
 
                 Dictionary<SpeciesId, IEnumerable<double>> R = new Dictionary<SpeciesId, IEnumerable<double>>();
                 R.Add(this.LsTrk.GetSpeciesId("A"), scale_A);
@@ -4303,12 +4324,14 @@ namespace BoSSS.Application.XNSE_Solver {
             get {
                 int pTemp = this.Temperature.Basis.Degree;
 
+                int D = LsTrk.GridDat.SpatialDimension;
+
                 // set the MultigridOperator configuration for each level:
                 // it is not necessary to have exactly as many configurations as actual multigrid levels:
                 // the last configuration enty will be used for all higher level
-                MultigridOperator.ChangeOfBasisConfig[][] configs = new MultigridOperator.ChangeOfBasisConfig[1][];
+                MultigridOperator.ChangeOfBasisConfig[][] configs = new MultigridOperator.ChangeOfBasisConfig[3][];
                 for(int iLevel = 0; iLevel < configs.Length; iLevel++) {
-                    configs[iLevel] = new MultigridOperator.ChangeOfBasisConfig[1];
+                    configs[iLevel] = (!XOpConfig.isSeparated) ? new MultigridOperator.ChangeOfBasisConfig[1] : new MultigridOperator.ChangeOfBasisConfig[1+D];
 
                     // configuration for Temperature
                     configs[iLevel][0] = new MultigridOperator.ChangeOfBasisConfig() {
@@ -4316,6 +4339,21 @@ namespace BoSSS.Application.XNSE_Solver {
                         mode = this.Control.TemperatureBlockPrecondMode,
                         VarIndex = new int[] { 0 }
                     };
+
+
+                    // configuration for auxiliary heat flux
+                    if (XOpConfig.isSeparated) {
+                        int pFlux = this.HeatFlux[0].Basis.Degree;
+                        for (int d = 0; d < D; d++) {
+                            configs[iLevel][d + 1] = new MultigridOperator.ChangeOfBasisConfig() {
+                                Degree = Math.Max(0, pFlux - iLevel),
+                                mode = MultigridOperator.Mode.SymPart_DiagBlockEquilib,
+                                VarIndex = new int[] { d + 1 }
+                            };
+                        }
+                    }
+
+
                 }
 
 
@@ -4346,7 +4384,10 @@ namespace BoSSS.Application.XNSE_Solver {
         internal CoordinateVector CurrentCoupledSolution {
             get {
                 if(m_CurrentCoupledSolution == null) {
-                    m_CurrentCoupledSolution = new CoordinateVector(this.Temperature);
+                    if (!XOpConfig.isSeparated)
+                        m_CurrentCoupledSolution = new CoordinateVector(this.Temperature);
+                    else
+                        m_CurrentCoupledSolution = new CoordinateVector(new DGField[] { this.Temperature, this.HeatFlux[0], this.HeatFlux[1] });
                 }
                 return m_CurrentCoupledSolution;
             }
@@ -4360,7 +4401,10 @@ namespace BoSSS.Application.XNSE_Solver {
         internal CoordinateVector CurrentCoupledResidual {
             get {
                 if(m_CurrentCoupledResidual == null) {
-                    m_CurrentCoupledResidual = new CoordinateVector(this.ResidualHeat);
+                    if (!XOpConfig.isSeparated)
+                        m_CurrentCoupledResidual = new CoordinateVector(this.ResidualHeat);
+                    else
+                        m_CurrentCoupledResidual = new CoordinateVector(new DGField[] { this.ResidualHeat, this.ResidualAuxHeatFlux[0], this.ResidualAuxHeatFlux[1] });
                 }
                 return m_CurrentCoupledResidual;
             }
@@ -4376,11 +4420,9 @@ namespace BoSSS.Application.XNSE_Solver {
 
         public void generateCoupledOperator() {
 
-            int degT = this.Temperature.Basis.Degree;
-
             int D = this.GridData.SpatialDimension;
 
-            string[] CodName = new string[] {EquationNames.HeatEquation };
+            string[] CodName = new string[] { EquationNames.HeatEquation };
             string[] Params = ArrayTools.Cat(
                  VariableNames.Velocity0Vector(D),
                  VariableNames.Velocity0MeanVector(D),
@@ -4390,6 +4432,20 @@ namespace BoSSS.Application.XNSE_Solver {
                  VariableNames.Curvature,
                  VariableNames.DisjoiningPressure);
             string[] DomName = new string[] { VariableNames.Temperature };
+
+            if (XOpConfig.isSeparated) {
+                CodName = ArrayTools.Cat(CodName, EquationNames.AuxHeatFlux(D));
+                //string[] Params = ArrayTools.Cat(
+                //     VariableNames.Velocity0Vector(D),
+                //     VariableNames.Velocity0MeanVector(D),
+                //     VariableNames.NormalVector(D),
+                //     VariableNames.Temperature0Gradient(D),
+                //     VariableNames.Temperature0,
+                //     VariableNames.Curvature,
+                //     VariableNames.DisjoiningPressure);
+                DomName = ArrayTools.Cat(DomName, VariableNames.HeatFluxVector(D));
+            }
+
 
 
             // create operator
@@ -4404,17 +4460,16 @@ namespace BoSSS.Application.XNSE_Solver {
                 // species bulk components
                 for (int spc = 0; spc < LsTrk.TotalNoOfSpecies; spc++) {
                     // heat equation
-                    Solution.XheatCommon.XOperatorComponentsFactory.AddSpeciesHeatEq(Xheat_Operator,
-                        CodName[0], D, LsTrk.SpeciesNames[spc], LsTrk.SpeciesIdS[spc], coupledBcMap, XOpConfig, LsTrk);
+                    Solution.XheatCommon.XOperatorComponentsFactory.AddSpeciesHeatEq(Xheat_Operator, XOpConfig,
+                         D, LsTrk.SpeciesNames[spc], LsTrk.SpeciesIdS[spc], coupledBcMap, LsTrk);
                 }
 
                 // interface components
-                Solution.XheatCommon.XOperatorComponentsFactory.AddInterfaceHeatEq(Xheat_Operator,
-                        CodName[0], D, coupledBcMap, XOpConfig, LsTrk);
+                Solution.XheatCommon.XOperatorComponentsFactory.AddInterfaceHeatEq(Xheat_Operator, XOpConfig, D, coupledBcMap, LsTrk);
 
 
-                if (XOpConfig.isEvaporation)
-                    XOperatorComponentsFactory.AddInterfaceHeatEq_withEvaporation(Xheat_Operator, XOpConfig, D, LsTrk);
+                //if (XOpConfig.isEvaporation)
+                //    XOperatorComponentsFactory.AddInterfaceHeatEq_withEvaporation(Xheat_Operator, XOpConfig, D, LsTrk);
 
 
                 // finalize
@@ -4550,31 +4605,31 @@ namespace BoSSS.Application.XNSE_Solver {
         /// <summary>
         /// 
         /// </summary>
-        public void ComputeHeatflux() {
-            using(FuncTrace ft = new FuncTrace()) {
+        //public void ComputeHeatflux() {
+        //    using(FuncTrace ft = new FuncTrace()) {
 
-                int D = LsTrk.GridDat.SpatialDimension;
-                for(int d = 0; d < D; d++) {
+        //        int D = LsTrk.GridDat.SpatialDimension;
+        //        for(int d = 0; d < D; d++) {
 
-                    foreach(var Spc in LsTrk.SpeciesNames) { // loop over species...
-                        // shadow fields
-                        DGField Temp_Spc = (this.Temperature.GetSpeciesShadowField(Spc));
+        //            foreach(var Spc in LsTrk.SpeciesNames) { // loop over species...
+        //                // shadow fields
+        //                DGField Temp_Spc = (this.Temperature.GetSpeciesShadowField(Spc));
 
-                        double kSpc = 0.0;
-                        switch(Spc) {
-                            case "A": kSpc = this.Control.ThermalParameters.k_A; break;
-                            case "B": kSpc = this.Control.ThermalParameters.k_B; break;
-                            default: throw new NotSupportedException("Unknown species name '" + Spc + "'");
-                        }
+        //                double kSpc = 0.0;
+        //                switch(Spc) {
+        //                    case "A": kSpc = this.Control.ThermalParameters.k_A; break;
+        //                    case "B": kSpc = this.Control.ThermalParameters.k_B; break;
+        //                    default: throw new NotSupportedException("Unknown species name '" + Spc + "'");
+        //                }
 
-                        (this.Heatflux[d] as XDGField).GetSpeciesShadowField(Spc).Derivative(kSpc, Temp_Spc, d);
-                    }
-                }
+        //                (this.Heatflux[d] as XDGField).GetSpeciesShadowField(Spc).Derivative(kSpc, Temp_Spc, d);
+        //            }
+        //        }
 
-                this.Heatflux.ForEach(F => F.CheckForNanOrInf(true, true, true));
+        //        this.Heatflux.ForEach(F => F.CheckForNanOrInf(true, true, true));
 
-            }
-        }
+        //    }
+        //}
 
 
         #endregion

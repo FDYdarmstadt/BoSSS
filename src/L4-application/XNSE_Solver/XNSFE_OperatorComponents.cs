@@ -191,6 +191,13 @@ namespace BoSSS.Application.XNSE_Solver {
             if (!XOp.CodomainVar.Contains(CodName))
                 throw new ArgumentException("CoDomain variable \"" + CodName + "\" is not defined in Spatial Operator");
 
+            if (config.isSeparated) {
+                foreach (string cn in EquationNames.AuxHeatFlux(D)) {
+                    if (!XOp.CodomainVar.Contains(cn))
+                        throw new ArgumentException("CoDomain variable \"" + cn + "\" is not defined in Spatial Operator");
+                }
+            }
+
             PhysicalParameters physParams = config.getPhysParams;
             ThermalParameters thermParams = config.getThermParams;
 
@@ -227,7 +234,9 @@ namespace BoSSS.Application.XNSE_Solver {
 
             // mass flux at interface
             // ======================
-            comps.Add(new HeatFluxAtLevelSet(LsTrk, rho_l, thermParams, R_int, sigma));
+            if (!config.isSeparated) {
+                comps.Add(new HeatFluxAtLevelSet(LsTrk, rho_l, thermParams, R_int, sigma));
+            }
 
 
             // convective part
