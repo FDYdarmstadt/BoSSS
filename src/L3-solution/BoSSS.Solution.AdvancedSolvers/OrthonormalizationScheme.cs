@@ -111,6 +111,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
                 int PCcounter = 0;
                 double[] prevAlpha = null;
+                double crL2 = double.MaxValue;
                 for (int iIter = 0; iIter < MaxIter; iIter++) {
                     Debug.Assert(SolHistory.Count == MxxHistory.Count);
                     Debug.Assert(SolHistory.Count == KrylovDim);
@@ -194,9 +195,6 @@ namespace BoSSS.Solution.AdvancedSolvers {
                     }
                     prevAlpha = alpha;
 
-                    Console.WriteLine("Correction factor: " + alpha.Last() + ", solution " + SolHistory.Last().L2Norm() + " Resi " + Mxx.L2Norm());
-
-
                     Debug.Assert(alpha.Length == SolHistory.Count);
                     Debug.Assert(alpha.Length == MxxHistory.Count);
                     Debug.Assert(alpha.Length == KrylovDim);
@@ -207,7 +205,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                     // compute new Residual
                     CurrentRes.SetV(B);
                     Mtx.SpMV(-1.0, CurrentSol, 1.0, CurrentRes);
-                    double crL2 = CurrentRes.L2Norm();
+                    crL2 = CurrentRes.L2NormPow2().MPISum().Sqrt();
 
                     // diagnostic output
                     if (this.IterationCallback != null)
@@ -289,7 +287,6 @@ namespace BoSSS.Solution.AdvancedSolvers {
                         }
                     }
                 }
-
 
                 X.SetV(CurrentSol, 1.0);
                 //raw_Mxx.SaveToTextFile("C:\\temp\\raw_Mxx.txt");

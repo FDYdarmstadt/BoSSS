@@ -999,7 +999,6 @@ namespace ilPSP.LinSolvers {
             out int Offset, out int CI, out int CJ, // offset pointer and i,j cycles into 'Storage'
             out int MembnkIdx, out int InMembnk //     membank index and index within membank
             ) {
-
             // default values if not allocated, and no allocation requested (bAlloc == false).
             Storage = null;
             Offset = int.MinValue;
@@ -1040,7 +1039,6 @@ namespace ilPSP.LinSolvers {
             // =========
             // mem alloc
             // =========
-
             var BlockRows = this.m_BlockRows[iBlkLoc];
             if (BlockRows == null) {
                 if (!bAlloc) {
@@ -1064,7 +1062,6 @@ namespace ilPSP.LinSolvers {
                 // =====================
 
                 int j0, jBlkLoc, jLoc, jBlkT, j0_Sblk, NoOfColSblk, RemVoidCols;
-
                 TranslateIndex(j, m_ColPartitioning, true, out BlkCol, out jBlkLoc, out j0, out jLoc, out jBlkT, out colSblkIdx, out j0_Sblk, out JSblk, out NoOfColSblk, out RemVoidCols);
                 if (j0_Sblk < 0) {
                     // void region
@@ -1084,7 +1081,6 @@ namespace ilPSP.LinSolvers {
                 // ============
                 // access block
                 // ============
-
                 BlockEntry BE;
                 if (!BlockRows.TryGetValue(BlkCol, out BE)) {
                     if (!bAlloc) {
@@ -1138,7 +1134,6 @@ namespace ilPSP.LinSolvers {
                             // +++++++++++++++++++++++++++++++++++++
 
                             // block range
-
                             int OwnerRank = m_ColPartitioning.FindProcess(j);
                             Debug.Assert(OwnerRank != m_ColPartitioning.MpiRank);
                             HashSet<int> BlockIndicesByProcessor;
@@ -1157,7 +1152,9 @@ namespace ilPSP.LinSolvers {
 
                 // get access pattern
                 bool isDense;
+
                 B.GetFastBlockAccessInfo(out Storage, out Offset, out CI, out CJ, out isDense, InMembnk);
+
             }
         }
 
@@ -1341,13 +1338,15 @@ namespace ilPSP.LinSolvers {
 
                 int IWRT = -1;
                 while (j < J) {
-
+                    
                     int iSblk, jSblk; //   row/col index within sub-block, which correspond to (i0 + i),(j0 + j)
                     int ISblk, JSblk; //   sub-block size
                     double[] Storage; //   sub-block memory: where the result should be accumulated
                     int Offset, CI, CJ; // offset pointer and i,j cycles into 'Storage'
 
                     GetSetAlloc(true, i + i0, j + j0, out iSblk, out jSblk, out ISblk, out JSblk, out Storage, out Offset, out CI, out CJ);
+                    
+                    //this.ColPartition.MpiRank
 
                     int IWrt = Math.Min(I - i, ISblk - iSblk); // number of rows to write
                     int JWrt = Math.Min(J - j, JSblk - jSblk); // number of columns to write

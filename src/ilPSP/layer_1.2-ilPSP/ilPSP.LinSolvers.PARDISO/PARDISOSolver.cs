@@ -552,7 +552,7 @@ namespace ilPSP.LinSolvers.PARDISO {
         /// only executed on proc 0
         /// </summary>
         bool PARDISOInitAndSolve(IMutableMatrixEx Mtx, double[] _x, double[] _b) {
-            using (new FuncTrace()) {
+            using (var tr = new FuncTrace()) {
                 //InitAndSolve.Start();
 
 
@@ -564,117 +564,132 @@ namespace ilPSP.LinSolvers.PARDISO {
                 csMPI.Raw.Comm_Rank(MpiComm, out rank);
                 if (rank == 0) {
 #if DEBUG
-                    double[] a_DClone = null;
-                    float[] a_SClone = null;
-                    if(UseDoublePrecision)
-                        a_DClone = m_PardisoMatrix.a_D.CloneAs();
-                    else
-                        a_SClone = m_PardisoMatrix.a_S.CloneAs();
+                    long aSize = m_PardisoMatrix.ja.LongLength * (UseDoublePrecision ? sizeof(double) : sizeof(float));
+                    //double[] a_DClone = null;
+                    //float[] a_SClone = null;
+                    //if(UseDoublePrecision)
+                    //    a_DClone = m_PardisoMatrix.a_D.CloneAs();
+                    //else
+                    //    a_SClone = m_PardisoMatrix.a_S.CloneAs();
+                    IntPtr aClone = Marshal.AllocHGlobal((IntPtr)aSize);
+                    unsafe
+                    {
+                        int* psrc = (int*)m_PardisoMatrix.aPtr;
+                        int* pdst = (int*)aClone;
+                        for(long l = 0; l < aSize; l+=sizeof(int))
+                        {
+                            *pdst = *psrc;
+                            pdst++;
+                            psrc++;
+                        }
+                    }
+
                     int[] iaClone = m_PardisoMatrix.ia.CloneAs();
                     int[] jaClone = m_PardisoMatrix.ja.CloneAs();
 #endif
                     unsafe
                     {
-                        fixed (float* pa_S = m_PardisoMatrix.a_S) {
-                            fixed (double* pa_D = m_PardisoMatrix.a_D, px = _x, pb = _b, dparam = m_PardInt.m_dparam) {
-                                fixed (int* ia = m_PardisoMatrix.ia, ja = m_PardisoMatrix.ja, iparm = m_PardInt.m_parm, __pt = m_PardInt.m_pt) {
-                                    int n = m_PardisoMatrix.n;
-                                    //int nnz = ia[n];
-                                    int mtype = GetMType();
+                        fixed (double* px = _x, pb = _b, dparam = m_PardInt.m_dparam) {
+                            fixed (int* ia = m_PardisoMatrix.ia, ja = m_PardisoMatrix.ja, iparm = m_PardInt.m_parm, __pt = m_PardInt.m_pt) {
+                                int n = m_PardisoMatrix.n;
+                                //int nnz = ia[n];
+                                int mtype = GetMType();
 
-                                    int nrhs = 1;                       /* Number of right hand sides. */
-
-
-                                    /* Internal solver memory pointer pt,                  */
-                                    /* 32-bit: int pt[64]; 64-bit: long int pt[64]         */
-                                    /* or void *pt[64] should be OK on both architectures  */
-                                    void* pt = (void*)__pt;
+                                int nrhs = 1;                       /* Number of right hand sides. */
 
 
-                                    /* Pardiso control parameters. */
-                                    int maxfct = m_PardInt.maxfct, mnum = m_PardInt.mnum, msglvl = m_PardInt.msglvl;
-                                    int phase, error;
-
-                                    /* Auxiliary variables. */
-                                    //int      i;
-
-                                    double ddum;              /* Double dummy */
-                                    int idum;              /* Integer dummy. */
+                                /* Internal solver memory pointer pt,                  */
+                                /* 32-bit: int pt[64]; 64-bit: long int pt[64]         */
+                                /* or void *pt[64] should be OK on both architectures  */
+                                void* pt = (void*)__pt;
 
 
-                                    double* a, b, x;
-                                    if (UseDoublePrecision) {
-                                        a = pa_D;
-                                        b = pb;
-                                        x = px;
-                                    } else {
-                                        a = (double*)pa_S;
+                                /* Pardiso control parameters. */
+                                int maxfct = m_PardInt.maxfct, mnum = m_PardInt.mnum, msglvl = m_PardInt.msglvl;
+                                int phase, error;
 
-                                        b = (double*)Marshal.AllocHGlobal(n * sizeof(float));
-                                        x = (double*)Marshal.AllocHGlobal(n * sizeof(float));
+                                /* Auxiliary variables. */
+                                //int      i;
 
-                                        float* bS = (float*)b;
-                                        float* xS = (float*)x;
-                                        
-                                        for (int i = 0; i < n; i++) {
-                                            bS[i] = (float)(pb[i]);
-                                            xS[i] = (float)(px[i]);
-                                        }
-                                        //SingleCalls.Start();
+                                double ddum;              /* Double dummy */
+                                int idum;              /* Integer dummy. */
 
+                                void* a = (void*)(m_PardisoMatrix.aPtr);
+                                double* b, x;
+                                if (UseDoublePrecision) {
+                                    b = pb;
+                                    x = px;
+                                } else {
+                                  
+                                    b = (double*)Marshal.AllocHGlobal(n * sizeof(float));
+                                    x = (double*)Marshal.AllocHGlobal(n * sizeof(float));
+
+                                    float* bS = (float*)b;
+                                    float* xS = (float*)x;
+
+                                    for (int i = 0; i < n; i++) {
+                                        bS[i] = (float)(pb[i]);
+                                        xS[i] = (float)(px[i]);
                                     }
-                                    //Inner.Start();
+                                    //SingleCalls.Start();
+
+                                }
+                                //Inner.Start();
 
 
-                                    if (!m_PardInt.m_PardisoInitialized) {
+                                if (!m_PardInt.m_PardisoInitialized) {
 
 
 
-                                        /* -------------------------------------------------------------------- */
-                                        /* ..  Setup Pardiso control parameters und initialize the solvers      */
-                                        /*     internal adress pointers. This is only necessary for the FIRST   */
-                                        /*     call of the PARDISO solver.                                      */
-                                        /* ---------------------------------------------------------------------*/
+                                    /* -------------------------------------------------------------------- */
+                                    /* ..  Setup Pardiso control parameters und initialize the solvers      */
+                                    /*     internal adress pointers. This is only necessary for the FIRST   */
+                                    /*     call of the PARDISO solver.                                      */
+                                    /* ---------------------------------------------------------------------*/
 
-                                        if (this.Version == PARDISO.Version.MKL) {
-                                            // Do nothing NUM_THREADS is set by environment variables in MKLPardiso
-                                            // iparm[2] stays set to zero
-                                            // If you want to control this manually, do something like this:
-                                            //System.Environment.SetEnvironmentVariable("OMP_NUM_THREADS", "4");
-                                            //System.Environment.SetEnvironmentVariable("MKL_NUM_THREADS", "4");
-                                            //If this is true: MKL determines the number of OMP threads automatically, based on proc information
-                                            //System.Environment.SetEnvironmentVariable("MKL_DYNAMIC", "false");
+                                    if (this.Version == PARDISO.Version.MKL) {
+                                        // Do nothing NUM_THREADS is set by environment variables in MKLPardiso
+                                        // iparm[2] stays set to zero
+                                        // If you want to control this manually, do something like this:
+                                        //System.Environment.SetEnvironmentVariable("OMP_NUM_THREADS", "4");
+                                        //System.Environment.SetEnvironmentVariable("MKL_NUM_THREADS", "4");
+                                        //If this is true: MKL determines the number of OMP threads automatically, based on proc information
+                                        //System.Environment.SetEnvironmentVariable("MKL_DYNAMIC", "false");
 
-                                        } else if ((this.Version == PARDISO.Version.v4) || (this.Version == PARDISO.Version.v5)) {
-                                            // Get Value for IPARM(3) from the Environment Variable
-                                            int NumOfProcs = Convert.ToInt32(System.Environment.GetEnvironmentVariable("OMP_NUM_THREADS"));
-                                            iparm[2] = NumOfProcs;
+                                    } else if ((this.Version == PARDISO.Version.v4) || (this.Version == PARDISO.Version.v5)) {
+                                        // Get Value for IPARM(3) from the Environment Variable
+                                        int NumOfProcs = Convert.ToInt32(System.Environment.GetEnvironmentVariable("OMP_NUM_THREADS"));
+                                        iparm[2] = NumOfProcs;
 #if DEBUG
                                             Console.WriteLine("IPARM(3) - NumberOfProcessors set to {0}", iparm[2]);
 #endif
 
-                                        }
+                                    }
 
-
+                                    using (new BlockTrace("PARDISOINIT", tr))
+                                    {
                                         wrapper.PARDISOINIT(pt, &mtype, iparm, dparam);
+                                    }
 
-                                        //Console.WriteLine("init: IPARAM(22) = {0}, IPARAM(23) = {1}", iparm[21], iparm[22]);
+                                    //Console.WriteLine("init: IPARAM(22) = {0}, IPARAM(23) = {1}", iparm[21], iparm[22]);
 
-                                        iparm[27] = this.UseDoublePrecision ? 0 : 1; // set single or double precision
-
-
-
-                                        maxfct = 1;         /* Maximum number of numerical factorizations.  */
-                                        mnum = 1;         /* Which factorization to use. */
-
-                                        msglvl = 0;         /* Print statistical information  */
-                                        error = 0;         /* Initialize error flag */
+                                    iparm[27] = this.UseDoublePrecision ? 0 : 1; // set single or double precision
 
 
-                                        /* -------------------------------------------------------------------- */
-                                        /* ..  Reordering and Symbolic Factorization.  This step also allocates */
-                                        /*     all memory that is necessary for the factorization.              */
-                                        /* -------------------------------------------------------------------- */
+
+                                    maxfct = 1;         /* Maximum number of numerical factorizations.  */
+                                    mnum = 1;         /* Which factorization to use. */
+
+                                    msglvl = 0;         /* Print statistical information  */
+                                    error = 0;         /* Initialize error flag */
+
+
+                                    /* -------------------------------------------------------------------- */
+                                    /* ..  Reordering and Symbolic Factorization.  This step also allocates */
+                                    /*     all memory that is necessary for the factorization.              */
+                                    /* -------------------------------------------------------------------- */
+                                    using (new BlockTrace("PARDISO_phase11", tr))
+                                    {
                                         phase = 11;
                                         iparm[59] = 0; // in-core (1 == out-of-core)
 
@@ -685,19 +700,21 @@ namespace ilPSP.LinSolvers.PARDISO {
                                                           iparm, &msglvl, &ddum, &ddum, &error, dparam);
                                         Phase_11.Stop();
                                         //Console.WriteLine("11: IPARAM(22) = {0}, IPARAM(23) = {1}", iparm[21], iparm[22]);
+                                    }
+                                    if (error != 0) {
+                                        PARDISODispose();
+                                        Console.WriteLine("PARDISO ERROR: " + wrapper.PARDISOerror2string(error));
+                                        return false;
+                                    }
+                                    //Console.Write("\nReordering completed ... ");
+                                    //Console.Write("\nNumber of nonzeros in factors  = %d", iparm[17]);
+                                    //Console.Write("\nNumber of factorization MFLOPS = %d", iparm[18]);
 
-                                        if (error != 0) {
-                                            PARDISODispose();
-                                            Console.WriteLine("PARDISO ERROR: " + wrapper.PARDISOerror2string(error));
-                                            return false;
-                                        }
-                                        //Console.Write("\nReordering completed ... ");
-                                        //Console.Write("\nNumber of nonzeros in factors  = %d", iparm[17]);
-                                        //Console.Write("\nNumber of factorization MFLOPS = %d", iparm[18]);
-
-                                        /* -------------------------------------------------------------------- */
-                                        /* ..  Numerical factorization.                                         */
-                                        /* -------------------------------------------------------------------- */
+                                    /* -------------------------------------------------------------------- */
+                                    /* ..  Numerical factorization.                                         */
+                                    /* -------------------------------------------------------------------- */
+                                    using (new BlockTrace("PARDISO_phase22", tr))
+                                    {
                                         phase = 22;
 
                                         Phase_22.Start();
@@ -705,60 +722,79 @@ namespace ilPSP.LinSolvers.PARDISO {
                                                           &n, a, ia, ja, &idum, &nrhs,
                                                           iparm, &msglvl, &ddum, &ddum, &error, dparam);
                                         Phase_22.Stop();
-                                        if (error != 0) {
-                                            // some error occured: release mem, dispose objects...
-                                            PARDISODispose();
-                                            Console.WriteLine("PARDISO ERROR: " + wrapper.PARDISOerror2string(error));
-                                            //InitAndSolve.Stop();
-                                            return false;
-                                        }
                                     }
 
-                                    /* -------------------------------------------------------------------- */
-                                    /* ..  Back substitution and iterative refinement.                      */
-                                    /* -------------------------------------------------------------------- */
-                                    phase = 33;
-
-                                    iparm[7] = 0;       /* Max numbers of iterative refinement steps, 0 == auto */
-
-                                    //m_foo.mkl_serv_mkl_set_num_threads(num_procs);
-                                    Phase_33.Start();
-                                    wrapper.PARDISO(pt, &maxfct, &mnum, &mtype, &phase,
-                                                      &n, a, ia, ja, &idum, &nrhs,
-                                                      iparm, &msglvl, b, x, &error, dparam);
-                                    Phase_33.Stop();
                                     if (error != 0) {
-                                        // some error occurred: release mem, dispose objects...
+                                        // some error occured: release mem, dispose objects...
                                         PARDISODispose();
                                         Console.WriteLine("PARDISO ERROR: " + wrapper.PARDISOerror2string(error));
                                         //InitAndSolve.Stop();
                                         return false;
                                     }
+                                }
 
-                                    //Inner.Stop();
-                                    if (UseDoublePrecision) {
+                                /* -------------------------------------------------------------------- */
+                                /* ..  Back substitution and iterative refinement.                      */
+                                /* -------------------------------------------------------------------- */
+                                phase = 33;
 
-                                    } else {
-                                        //SingleCalls.Stop();
-                                        float* bS = (float*)b;
-                                        float* xS = (float*)x;
-                                        for (int i = 0; i < n; i++) {
-                                            pb[i] = (bS[i]);
-                                            px[i] = (xS[i]);
-                                        }
+                                iparm[7] = 0;       /* Max numbers of iterative refinement steps, 0 == auto */
 
-                                        Marshal.FreeHGlobal((IntPtr)b);
-                                        Marshal.FreeHGlobal((IntPtr)x);
+                                //m_foo.mkl_serv_mkl_set_num_threads(num_procs);
+                                using (new BlockTrace("PARDISO_phase33", tr))
+                                {
+                                    Phase_33.Start();
+                                    wrapper.PARDISO(pt, &maxfct, &mnum, &mtype, &phase,
+                                                      &n, a, ia, ja, &idum, &nrhs,
+                                                      iparm, &msglvl, b, x, &error, dparam);
+                                    Phase_33.Stop();
+                                }
+                                if (error != 0) {
+                                    // some error occurred: release mem, dispose objects...
+                                    PARDISODispose();
+                                    Console.WriteLine("PARDISO ERROR: " + wrapper.PARDISOerror2string(error));
+                                    //InitAndSolve.Stop();
+                                    return false;
+                                }
+
+                                //Inner.Stop();
+                                if (UseDoublePrecision) {
+
+                                } else {
+                                    //SingleCalls.Stop();
+                                    float* bS = (float*)b;
+                                    float* xS = (float*)x;
+                                    for (int i = 0; i < n; i++) {
+                                        pb[i] = (bS[i]);
+                                        px[i] = (xS[i]);
                                     }
+
+                                    Marshal.FreeHGlobal((IntPtr)b);
+                                    Marshal.FreeHGlobal((IntPtr)x);
                                 }
                             }
                         }
                     }
+
 #if DEBUG
-                    if(UseDoublePrecision)
-                        Debug.Assert(ArrayTools.ListEquals<double>(a_DClone, m_PardisoMatrix.a_D), "PARDISO changed the matrix.");
-                    else
-                        Debug.Assert(ArrayTools.ListEquals<float>(a_SClone, m_PardisoMatrix.a_S), "PARDISO changed the matrix.");
+                    //if(UseDoublePrecision)
+                    //    Debug.Assert(ArrayTools.ListEquals<double>(a_DClone, m_PardisoMatrix.a_D), "PARDISO changed the matrix.");
+                    //else
+                    //    Debug.Assert(ArrayTools.ListEquals<float>(a_SClone, m_PardisoMatrix.a_S), "PARDISO changed the matrix.");
+
+                    unsafe
+                    {
+                        int* psrc = (int*)m_PardisoMatrix.aPtr;
+                        int* pdst = (int*)aClone;
+                        for (long l = 0; l < aSize; l += sizeof(int))
+                        {
+                            Debug.Assert( *pdst == *psrc, "PARDISO changed the matrix.");
+                            pdst++;
+                            psrc++;
+                        }
+                    }
+
+
                     Debug.Assert(ArrayTools.ListEquals<int>(iaClone, m_PardisoMatrix.ia), "PARDISO changed the matrix.");
                     Debug.Assert(ArrayTools.ListEquals<int>(jaClone, m_PardisoMatrix.ja), "PARDISO changed the matrix.");
 #endif
