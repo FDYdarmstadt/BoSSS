@@ -194,7 +194,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
                             Console.WriteLine("    conv: " + solver.Converged + " /iter = " + solver.ThisLevelIterations + " /dist  = " + dist + " /resNrm = " + check_norm + " /parresNrm = " + _check_norm);
                             */
-                            step.SetV(step);
+                            //step.SetV(step);
 
                             //if (solver.Converged == false)
                             //    Debugger.Launch();
