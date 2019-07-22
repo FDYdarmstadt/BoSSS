@@ -74,5 +74,12 @@ namespace BoSSS.Foundation.Grid.Voronoi {
     {
         public Vector[] BoundingBox;
         public Vector[] Boundary;
+        //public VoronoiBoundary Boundary;
+    }
+
+    public class VoronoiBoundary
+    {
+        Vector[] EdgePolygon;
+        byte[] EdgeTag;
     }
 }
