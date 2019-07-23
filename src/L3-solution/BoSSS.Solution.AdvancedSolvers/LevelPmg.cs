@@ -67,7 +67,13 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 lowLocalBlocks__N.Add(0);
 
                 for (int iVar = 0; iVar < NoVars; iVar++) {
-                    int Np = BS[iVar].GetLength(jLoc, 1);
+                    int pReq;
+                    if (iVar == 2)
+                        pReq = 0;
+                    else
+                        pReq = 1;
+
+                    int Np = BS[iVar].GetLength(jLoc, pReq);
                     lowLocalBlocks__N[jLoc] += Np;
 
                     for (int n = 0; n < Np; n++) {

@@ -395,11 +395,11 @@ namespace BoSSS.Application.Rheology {
             C.DbPath = path;
             C.ProjectName = "Cylinder";
 
-            C.NonLinearSolver.MaxSolverIterations = 3;
+            C.NonLinearSolver.MaxSolverIterations = 50;
             C.NonLinearSolver.MinSolverIterations = 1;
             C.NonLinearSolver.ConvergenceCriterion = 1E-6;
 
-            C.LinearSolver.MaxSolverIterations = 3;
+            C.LinearSolver.MaxSolverIterations = 50;
             C.LinearSolver.MinSolverIterations = 1;          
             C.LinearSolver.ConvergenceCriterion = 1E-6;
 
@@ -411,6 +411,7 @@ namespace BoSSS.Application.Rheology {
             C.NonLinearSolver.SolverCode = NonLinearSolverConfig.Code.Newton;
             C.LinearSolver.SolverCode = LinearSolverConfig.Code.exp_gmres_levelpmg;
             C.ObjectiveParam = 1.0;
+            C.useJacobianForOperatorMatrix = false;
 
             C.UsePerssonSensor = true;
             C.SensorLimit = 1e-4;
@@ -418,13 +419,13 @@ namespace BoSSS.Application.Rheology {
             C.AdaptiveMeshRefinement = false;
             C.RefinementLevel = 10;
 
-            C.UseArtificialDiffusion = true;
+            C.UseArtificialDiffusion = false;
 
             C.Bodyforces = true;
 
             //Debugging and Solver Analysis
             C.OperatorMatrixAnalysis = false;
-            C.SkipSolveAndEvaluateResidual = true;
+            C.SkipSolveAndEvaluateResidual = false;
             C.SetInitialConditions = true;
             C.SetInitialPressure = false;
             C.SetParamsAnalyticalSol = false;
@@ -498,10 +499,10 @@ namespace BoSSS.Application.Rheology {
 
 
             //coarser grid - works without cluster!
-            //string grid = "f9aa12dc-53bb-4e2c-81b3-ffccc251a3f7";
+            string grid = "f9aa12dc-53bb-4e2c-81b3-ffccc251a3f7";
 
             //very coarse grid as starting point for refinement
-            string grid = "e296a1b2-98f9-4fdf-8a32-04e0954ff369";
+            //string grid = "e296a1b2-98f9-4fdf-8a32-04e0954ff369";
 
             //Dennis Zylinder for drag validation
             //string grid = "a67192f5-6b59-4caf-a95a-0a08730c3365";

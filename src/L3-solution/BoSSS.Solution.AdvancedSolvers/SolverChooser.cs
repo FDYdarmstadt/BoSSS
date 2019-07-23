@@ -606,8 +606,15 @@ namespace BoSSS.Solution {
                 case LinearSolverConfig.Code.exp_gmres_levelpmg:
                     templinearSolve = new SoftGMRES() {
                         m_Tolerance = lc.ConvergenceCriterion,
+                        m_MaxIterations = 2,
                         Precond = new LevelPmg()
                     };
+                    
+                    //templinearSolve = new OrthonormalizationScheme() {
+                    //    Tolerance = 0.0, //lc.ConvergenceCriterion,
+                    //    MaxIter = 320,
+                    //    PrecondS = new ISolverSmootherTemplate[] { new LevelPmg() }
+                    //};
                     break;
 
                 //testing area, please wear a helmet ...
