@@ -878,6 +878,7 @@ namespace BoSSS.Application.BoSSSpad {
         /// Writes plot commands to a gnuplot object.
         /// </summary>
         public void ToGnuplot(Gnuplot gp) {
+            //gp.Cmd("set terminal enhanced font \"Helvetica, 30\" ");
 
             // =======
             // margins
@@ -1009,7 +1010,7 @@ namespace BoSSS.Application.BoSSSpad {
 
                 if (this.ShowLegend) {
                     gp.Cmd("unset key");
-                    string command="set key ";
+                    string command= "set key font \",16\"";
 
                     if ((this.LegendPosition != null) & (this.LegendAlignment != null))
                         System.Console.WriteLine("legend position and legend alignment is set. Choose only one of them! Ignoring alignment ...");
@@ -1063,9 +1064,10 @@ namespace BoSSS.Application.BoSSSpad {
             // ====
             {
                 if (this.ShowXtics) {
-                    if (this.LogX)
+                    if (this.LogX){
                         gp.Cmd("set xtics format \"$" + this.LogBaseX + "^{%L}$\" ");
-                    else
+                        gp.Cmd("set xtics offset 0, 0-0.4 font \"sans, 18\" ");
+                    }else
                         gp.Cmd("set xtics ");
                 } else {
                     gp.Cmd("set xtics format \" \" "); // shows ticks/marks, but hides numbers
@@ -1081,9 +1083,10 @@ namespace BoSSS.Application.BoSSSpad {
                 }
 
                 if (this.ShowYtics) {
-                    if (this.LogY)
+                    if (this.LogY){
                         gp.Cmd("set ytics format \"$" + this.LogBaseY + "^{%L}$\" ");
-                    else
+                        gp.Cmd("set ytics font \"sans, 16\" ");
+                    }else
                         gp.Cmd("set ytics ");
                 } else {
                     gp.Cmd("set ytics format \" \" "); // shows ticks/marks, but hides numbers
