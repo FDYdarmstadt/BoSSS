@@ -324,76 +324,7 @@ namespace BoSSS.Solution {
             T ctrlV2 = null;
             T[] ctrlV2_ParameterStudy = null;
             if (!noControlFile) {
-                if (opt.ControlfilePath.IsNullOrEmpty()) {
-                    throw new Exception("No control file specified.");
-                }
-
-                if (opt.ControlfilePath.ToLower().StartsWith("cs:")) {
-                    // ++++++++++++++++++++++++++++++++++++++++++++++++++++
-                    // C#-instruction provided as argument 
-                    // usually redicts to some pre-compiled static function
-                    // ++++++++++++++++++++++++++++++++++++++++++++++++++++
-
-
-                    var StringwithoutPrefix = opt.ControlfilePath.Substring(3);
-
-
-
-                    ControlObjFromCode(StringwithoutPrefix, out ctrlV2, out ctrlV2_ParameterStudy);
-
-                } else if (opt.ControlfilePath.ToLower().EndsWith(".cs")) {
-                    // +++++++++
-                    // C#-script
-                    // +++++++++
-                    string ctrlfileContent = "";
-                    if (ilPSP.Environment.MPIEnv.MPI_Rank == 0) {
-
-                        if (opt.ControlfilePath != null) {
-                            StreamReader rd = new StreamReader(opt.ControlfilePath);
-                            // Trim trailing empty lines since they would
-                            // return an empty string instead of a control object
-                            ctrlfileContent = rd.ReadToEnd().TrimEnd();
-                            rd.Close();
-                        }
-
-                    }
-
-                    ctrlfileContent = ctrlfileContent.MPIBroadcast(0, csMPI.Raw._COMM.WORLD);
-
-                    ControlObjFromCode(ctrlfileContent, out ctrlV2, out ctrlV2_ParameterStudy);
-
-                } else if (opt.ControlfilePath.ToLower().EndsWith(".obj")) {
-                    // +++++++++++++++++++++
-                    // control object
-                    // +++++++++++++++++++++
-
-                    string JSON = File.ReadAllText(opt.ControlfilePath);
-                    object controlObj = AppControl.Deserialize(JSON);//, typeof(T));
-                    //using (var fs = new FileStream(opt.ControlfilePath, FileMode.Open, FileAccess.Read, FileShare.Read)) {
-                    //    var bf = new BinaryFormatter();
-                    //    controlObj = bf.Deserialize(fs);
-                    //}
-
-                    ctrlV2 = controlObj as T;
-                    //Debugger.Launch();
-                    //if (controlObj is T) {
-                    //    ctrlV2 = (T)controlObj;
-
-                    //} else if (controlObj is IEnumerable<T>) {
-                    //    ctrlV2_ParameterStudy = ((IEnumerable<T>)controlObj).ToArray();
-
-                    //} 
-
-                    if (ctrlV2 == null) {
-                        throw new ApplicationException(string.Format(
-                            "Invalid control instruction: unable to cast the last result of the control file/cs-script of type {0} to type {1}",
-                            controlObj.GetType().FullName,
-                            typeof(T).FullName));
-                    }
-
-                } else {
-                    throw new ArgumentException("unable to interpret: " + opt);
-                }
+                LoadControlFile(opt.ControlfilePath, out ctrlV2, out ctrlV2_ParameterStudy);
             } else {
                 ctrlV2 = new T();
             }
@@ -401,6 +332,94 @@ namespace BoSSS.Solution {
             AppEntry(ApplicationFactory, opt, ctrlV2, ctrlV2_ParameterStudy);
 
             FinalizeMPI();
+        }
+
+        /// <summary>
+        /// Loads the control object from the given file path
+        /// </summary>
+        /// <param name="ControlFilePath">
+        /// This could be either
+        ///  - the path to a cs - script, or an object file
+        ///  - an instruction, starting with cs:, which refers to an internal function which generates the control object
+        /// </param>
+        /// <param name="ctrlV2">
+        /// a single control object, in the case of a normal solver run
+        /// </param>
+        /// <param name="ctrlV2_ParameterStudy">
+        /// a list of control objects, in the case of a parameter study
+        /// </param>
+        public static void LoadControlFile(string ControlFilePath, out T ctrlV2, out T[] ctrlV2_ParameterStudy) {
+            ctrlV2 = null;
+            ctrlV2_ParameterStudy = null;
+
+            if (ControlFilePath.IsNullOrEmpty()) {
+                throw new Exception("No control file specified.");
+            }
+
+            if (ControlFilePath.ToLower().StartsWith("cs:")) {
+                // ++++++++++++++++++++++++++++++++++++++++++++++++++++
+                // C#-instruction provided as argument 
+                // usually redicts to some pre-compiled static function
+                // ++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+
+                var StringwithoutPrefix = ControlFilePath.Substring(3);
+
+
+
+                ControlObjFromCode(StringwithoutPrefix, out ctrlV2, out ctrlV2_ParameterStudy);
+
+            } else if (ControlFilePath.ToLower().EndsWith(".cs")) {
+                // +++++++++
+                // C#-script
+                // +++++++++
+                string ctrlfileContent = "";
+                if (ilPSP.Environment.MPIEnv.MPI_Rank == 0) {
+
+                    if (ControlFilePath != null) {
+                        StreamReader rd = new StreamReader(ControlFilePath);
+                        // Trim trailing empty lines since they would
+                        // return an empty string instead of a control object
+                        ctrlfileContent = rd.ReadToEnd().TrimEnd();
+                        rd.Close();
+                    }
+
+                }
+
+                ctrlfileContent = ctrlfileContent.MPIBroadcast(0, csMPI.Raw._COMM.WORLD);
+                ControlObjFromCode(ctrlfileContent, out ctrlV2, out ctrlV2_ParameterStudy);
+            } else if (ControlFilePath.ToLower().EndsWith(".obj")) {
+                // +++++++++++++++++++++
+                // control object
+                // +++++++++++++++++++++
+
+                string JSON = File.ReadAllText(ControlFilePath);
+                object controlObj = AppControl.Deserialize(JSON);//, typeof(T));
+                                                                 //using (var fs = new FileStream(opt.ControlfilePath, FileMode.Open, FileAccess.Read, FileShare.Read)) {
+                                                                 //    var bf = new BinaryFormatter();
+                                                                 //    controlObj = bf.Deserialize(fs);
+                                                                 //}
+
+                ctrlV2 = controlObj as T;
+                //Debugger.Launch();
+                //if (controlObj is T) {
+                //    ctrlV2 = (T)controlObj;
+
+                //} else if (controlObj is IEnumerable<T>) {
+                //    ctrlV2_ParameterStudy = ((IEnumerable<T>)controlObj).ToArray();
+
+                //} 
+
+                if (ctrlV2 == null) {
+                    throw new ApplicationException(string.Format(
+                        "Invalid control instruction: unable to cast the last result of the control file/cs-script of type {0} to type {1}",
+                        controlObj.GetType().FullName,
+                        typeof(T).FullName));
+                }
+
+            } else {
+                throw new ArgumentException("unable to interpret: " + ControlFilePath);
+            }
         }
 
         /// <summary>
@@ -497,13 +516,10 @@ namespace BoSSS.Solution {
                 // run app
                 // -------
 
-                Application<T> app = ApplicationFactory();
-
-                app.Init(ctrlV2);
-                app.RunSolverMode();
-                app.Dispose();
-
-
+                using (Application<T> app = ApplicationFactory()) {
+                    app.Init(ctrlV2);
+                    app.RunSolverMode();
+                }
             } else {
                 // no control file 
 
@@ -832,8 +848,6 @@ namespace BoSSS.Solution {
                     }
                 }
             }
-
-
         }
 
 
@@ -868,7 +882,6 @@ namespace BoSSS.Solution {
             }
 
             csMPI.Raw.Barrier(csMPI.Raw._COMM.WORLD);
-
             if (!passiveIo) {
                 CurrentSessionInfo = m_Database.Controller.DBDriver.CreateNewSession(m_Database);
 
@@ -893,7 +906,6 @@ namespace BoSSS.Solution {
             }
 
             this.DatabaseDriver.InitTraceFile(CurrentSessionInfo);
-
             using (var ht = new FuncTrace()) {
                 // create or load grid
                 //====================
@@ -902,6 +914,7 @@ namespace BoSSS.Solution {
                 if (Grid == null) {
                     throw new ApplicationException("No grid loaded through CreateOrLoadGrid");
                 }
+
 
                 //// Make sure grid guid is accessible even if the user has some
                 //// custom handling of the grid loading
@@ -914,7 +927,6 @@ namespace BoSSS.Solution {
                     && MPIRank == 0
                     && DatabaseDriver != null
                     && (!this.CurrentSessionInfo.ID.Equals(Guid.Empty));
-
                 if (DoDbLogging && this.Control != null) {
                     //TextWriter tw = DatabaseDriver.FsDriver.GetNewLog("Control", this.CurrentSessionInfo.ID);
                     //if (this.Control.ControlFileText != null)
@@ -1016,6 +1028,8 @@ namespace BoSSS.Solution {
                     }
                 }
 
+                // initialize solver residual logger
+                m_ResLogger = new ResidualLogger(this.MPIRank, this.DatabaseDriver, this.CurrentSessionInfo.ID);
 
                 // Make sure everything that is loaded from disk uses this grid
                 // data object (if it corresponds to the same grid)
@@ -1148,7 +1162,7 @@ namespace BoSSS.Solution {
 
         /// <summary>
         /// Multigrid levels, sorted from fine to coarse, i.e. the 0-th entry contains the finest grid.
-        /// The number of levels is controlled by <see cref="Control.AppControl.NoOfMultigridLevels"/>.
+        /// The number of levels is controlled by <see cref="Control.LinearSolverConfig.NoOfMultigridLevels"/>.
         /// </summary>
         public AggregationGridData[] MultigridSequence {
             get;
@@ -1199,7 +1213,8 @@ namespace BoSSS.Solution {
                         throw new ApplicationException("Control object error: 'AppControl.GridFunc' and 'AppControl.GridGuid' are exclusive, cannot be unequal null at the same time.");
 
                     if (this.Control.GridFunc != null) {
-                        return this.Control.GridFunc();
+                        var g = this.Control.GridFunc();
+                        return g;
                     } else if (this.Control.GridGuid != null) {
                         if (this.Control.RestartInfo != null) {
                             ISessionInfo session = m_Database.Controller.GetSessionInfo(this.Control.RestartInfo.Item1);
@@ -1674,16 +1689,14 @@ namespace BoSSS.Solution {
         /// </list>
         /// </remarks>
         public virtual void RunSolverMode() {
-            SetUpEnvironment();
-            // remark: tracer is not avail before function 'CreateContextAndWhatFollows()'
-
+            SetUpEnvironment(); // remark: tracer is not avail before setup
+            
             using (var tr = new FuncTrace()) {
 
                 var rollingSavesTsi = new List<Tuple<int, ITimestepInfo>>();
 
                 csMPI.Raw.Barrier(csMPI.Raw._COMM.WORLD);
 
-                m_ResLogger = new ResidualLogger(this.MPIRank, this.DatabaseDriver, this.CurrentSessionInfo.ID);
 
                 double physTime = 0.0;
                 TimestepNumber i0 = 0;
@@ -1772,8 +1785,7 @@ namespace BoSSS.Solution {
                     SaveToDatabase(i, physTime);
                 }
 
-                m_ResLogger.Close();
-
+               
                 // Evaluate queries and write log file (either to session directory
                 // or current directory)
                 m_queryHandler.EvaluateQueries(this.m_RegisteredFields.Union(m_IOFields), physTime);
@@ -2289,6 +2301,11 @@ namespace BoSSS.Solution {
                 sessTags.Remove(SessionInfo.NOT_TERMINATED_TAG);
                 this.CurrentSessionInfo.Tags = sessTags;
             }
+
+            if(m_ResLogger != null) {
+                m_ResLogger.Close();
+                m_ResLogger = null;
+            }
         }
 
         /// <summary>
@@ -2787,7 +2804,7 @@ namespace BoSSS.Solution {
         }
 
         /// <summary>
-        /// The residual logger for this application.
+        /// The solver residual logger for this application.
         /// </summary>
         public ResidualLogger ResLogger {
             get {

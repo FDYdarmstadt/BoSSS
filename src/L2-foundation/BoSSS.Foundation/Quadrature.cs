@@ -395,6 +395,7 @@ namespace BoSSS.Foundation.Quadrature {
                     if(MaxChunkLength < 1)
                         MaxChunkLength = 1;
 
+
                     //if (OberOasch && Bulkcnt == 0)
                     //    Console.WriteLine("Max Chunk length: " + MaxChunkLength);
 
@@ -461,7 +462,6 @@ namespace BoSSS.Foundation.Quadrature {
                         // inc
                         j += ChunkLength;
                     }
-
 
                     lastQuadRuleNodes = m_CurrentRule.Nodes;
                 }

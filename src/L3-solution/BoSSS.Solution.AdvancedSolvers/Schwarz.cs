@@ -51,7 +51,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
             /// </summary>
             /// <param name="op"></param>
             /// <returns>
-            /// - outer enumeration: correcponts to domain-decomposition blocks
+            /// - outer enumeration: corresponds to domain-decomposition blocks
             /// - inner index: indices within the sub-blocks
             /// - content: local cell indices which form the respective additive-Schwarz block (<see cref="MultigridOperator"/>
             /// </returns>
@@ -258,6 +258,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
             /// <summary>
             /// Number of parts/additive Schwarz blocks on current MPI process.
             /// </summary>
+
             public int NoOfPartsPerProcess = 4;
 
             internal override IEnumerable<List<int>> GetBlocking(MultigridOperator op) {
@@ -298,18 +299,18 @@ namespace BoSSS.Solution.AdvancedSolvers {
                         var temp = (int)Math.Ceiling(part.Length / (double)NoOfPartsPerProcess);
                         int[] localBlocks = new int[NoOfPartsPerProcess];
                         int sum = 0;
-                        for (int i = 0; i < (NoOfPartsPerProcess-1); i++) {
+                        for (int i = 0; i < (NoOfPartsPerProcess - 1); i++) {
                             localBlocks[i] = temp;
                             sum += temp;
                         }
-                        localBlocks[NoOfPartsPerProcess-1] = (part.Length - sum);
+                        localBlocks[NoOfPartsPerProcess - 1] = (part.Length - sum);
 
                         sum = 0;
                         for (int blkIdx = 0; blkIdx < NoOfPartsPerProcess; blkIdx++) {
                             for (int i = 0; i < localBlocks[blkIdx]; i++) {
                                 part.SetValue(blkIdx, i + sum);
                             }
-                            sum = localBlocks[blkIdx];
+                            sum += localBlocks[blkIdx];
                         }
 
                     } else {
@@ -363,6 +364,10 @@ namespace BoSSS.Solution.AdvancedSolvers {
         }
 
 
+
+        /// <summary>
+        /// ~
+        /// </summary>
         public void Init(MultigridOperator op) {
             using (new FuncTrace()) {
                 if (m_MgOp != null) {
@@ -727,13 +732,12 @@ namespace BoSSS.Solution.AdvancedSolvers {
                             Blocks.Add(Block);
                         }
 #endif
-                        //blockSolvers[iPart] = new PARDISOSolver()
-                        //{
-                        //    CacheFactorization = true,
-                        //    UseDoublePrecision = false
-                        //};
+                        blockSolvers[iPart] = new PARDISOSolver() {
+                            CacheFactorization = true,
+                            UseDoublePrecision = false
+                        };
                         //blockSolvers[iPart] = new FullDirectSolver();
-                        blockSolvers[iPart] = new ilPSP.LinSolvers.MUMPS.MUMPSSolver();
+                        //blockSolvers[iPart] = new ilPSP.LinSolvers.MUMPS.MUMPSSolver();
                         blockSolvers[iPart].DefineMatrix(Block);
                     }
 
@@ -795,6 +799,47 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 if (CoarseSolver != null) {
                     CoarseSolver.Init(op.CoarserLevel);
                 }
+
+                // solution scaling in overlapping regions
+                // =======================================
+
+                if (Overlap > 0 && EnableOverlapScaling) {
+                    int LocalLength = MgMap.LocalLength;
+                    this.SolutionScaling = new double[LocalLength];
+                    var SolScale = this.SolutionScaling;
+                    
+                    var XExchange = new MPIexchangeInverse<double[]>(this.m_MgOp.Mapping, SolScale);
+
+                    for (int iPart = 0; iPart < NoOfSchwzBlocks; iPart++) {
+                        int[] ci = BlockIndices_Local[iPart];
+                        int[] ciE = BlockIndices_External[iPart];
+                        int L = ci.Length;
+                        int Le = ciE != null ? ciE.Length : 0;
+
+
+                        // accumulate block solution 'xi' to global solution 'X'
+                        //X.AccV(1.0, xi, ci, default(int[]));
+                        for (int l = 0; l < L; l++) {
+                            SolScale[ci[l]] += 1.0;
+                        }
+
+                        if (ciE != null && ciE.Length > 0) {
+                            //XExchange.Vector_Ext.AccV(1.0, xi, ciE, default(int[]), acc_index_shift: (-LocLength), b_index_shift: ci.Length);
+                            for (int l = 0; l < Le; l++) {
+                                XExchange.Vector_Ext[ciE[l] - LocalLength] += 1.0;
+                            }
+                        }
+                    }
+
+                    XExchange.TransceiveStartImReturn();
+                    XExchange.TransceiveFinish(1.0);
+
+                    for(int l = 0; l < LocalLength; l++) {
+                        SolScale[l] = 1.0 / SolScale[l];
+                    }
+                    
+                }
+
 
                 // Debug & Test-Code 
                 // =================
@@ -933,28 +978,18 @@ namespace BoSSS.Solution.AdvancedSolvers {
             }
         }
 
-        /*
-        class FullDirectSolver : ISparseSolver {
-            public void DefineMatrix(IMutableMatrixEx M) {
-                fullMtx = M.ToFullMatrixOnProc0();
-            }
+        double[] SolutionScaling;
 
-            MultidimensionalArray fullMtx;
+        /// <summary>
+        /// If <see cref="Overlap"/> > 0, the solution, in cells which are covered by multiple blocks, 
+        /// is scaled in the overlapping region by one over the multiplicity.
+        /// This option might be useful in some applications but may also fail in others:
+        /// - seems to **fail** e.g. if this is used as a preconditioner for PCG (<see cref="SoftPCG"/>)
+        /// - improves number of iterations if used e.g. as a smoother for <see cref="OrthonormalizationMultigrid"/>
+        /// </summary>
+        public bool EnableOverlapScaling = false;
 
-            public void Dispose() {
-            }
 
-            public SolverResult Solve<Tunknowns, Trhs>(Tunknowns x, Trhs rhs)
-                where Tunknowns : IList<double>
-                where Trhs : IList<double> {
-                double[] _x = x.ToArray();
-                double[] _rhs = rhs.ToArray();
-                fullMtx.Solve(_x, _rhs);
-                x.SetV(_x);
-                return new SolverResult() { Converged = true, NoOfIterations = 1, };
-            }
-        }
-        */
 
         BlockMsrMatrix MtxFull;
 
@@ -1033,6 +1068,9 @@ namespace BoSSS.Solution.AdvancedSolvers {
         //}
 
 
+        /// <summary>
+        /// ~
+        /// </summary>
         public void Solve<U, V>(U X, V B)
             where U : IList<double>
             where V : IList<double> //
@@ -1130,13 +1168,18 @@ namespace BoSSS.Solution.AdvancedSolvers {
                         }
                     }
 
-                    if (Overlap > 0) {
+                    if (Overlap > 0 && EnableOverlapScaling) {
                         // block solutions stored on *external* indices will be accumulated on other processors.
                         XExchange.TransceiveStartImReturn();
                         XExchange.TransceiveFinish(1.0);
 
                         if (iIter < m_MaxIterations - 1)
                             XExchange.Vector_Ext.ClearEntries();
+
+                        var SolScale = this.SolutionScaling;
+                        for(int l = 0; l < LocLength; l++) {
+                            X[l] *= SolScale[l];
+                        }
                     }
                 }
             }
@@ -1193,8 +1236,8 @@ namespace BoSSS.Solution.AdvancedSolvers {
             Clone.m_MaxIterations = this.m_MaxIterations;
             Clone.m_Overlap = this.m_Overlap;
             Clone.IterationCallback = this.IterationCallback;
-            if(this.CoarseSolver!=null)
-                 Clone.CoarseSolver = this.CoarseSolver.Clone();
+            if (this.CoarseSolver != null)
+                Clone.CoarseSolver = this.CoarseSolver.Clone();
             return Clone;
         }
 

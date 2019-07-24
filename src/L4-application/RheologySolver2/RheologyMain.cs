@@ -56,8 +56,44 @@ namespace BoSSS.Application.Rheology {
     /// </summary>
     public class Rheology : BoSSS.Solution.Application<RheologyControl> {
         static void Main(string[] args) {
-            
+            /*
+            long Len = 436609779;
+            long GB = 1024 * 1024 * 1024;
+            Console.WriteLine("Len = " + Len + " <= int-Max? " + (Len <= int.MaxValue));
+
+
+
+            IntPtr size = (IntPtr)((long)Len * sizeof(double));
+            Console.WriteLine("allocating " + (((long)size)/GB) +  " gigabyte ...");
+            Console.Out.Flush();
+
+            unsafe
+            {
+                IntPtr Mem = System.Runtime.InteropServices.Marshal.AllocHGlobal(size);
+
+                //double[] test = new double[Len];
+                Console.WriteLine("done.");
+
+                Console.WriteLine("populating...");
+
+                double* test = (double*)Mem;
+                test[0] = 0.4;
+                test++;
+                for (long i = 1; i < Len; i++)
+                {
+                    *test = Math.Cos(*(test - 1));
+                    test++;
+                }
+
+                Console.WriteLine("done.");
+
+                Console.WriteLine("Last value is: " + *(test - 1));
+            }
+            return;
+            */
+
             Rheology._Main(args, false,
+
                 delegate () {
                     var app = new Rheology();
                     return app;
@@ -692,6 +728,7 @@ namespace BoSSS.Application.Rheology {
                 int NoIncrementTimestep;
 
                 Console.WriteLine("Instationary solve, timestep #{0}, dt = {1} ...", TimestepNo, dt);
+                var overallstart = DateTime.Now;
                 bool m_SkipSolveAndEvaluateResidual = this.Control.SkipSolveAndEvaluateResidual;
 
                 if (Control.RaiseWeissenberg == true) {
@@ -858,6 +895,11 @@ namespace BoSSS.Application.Rheology {
                     }
                 }
 
+                var overallstop = DateTime.Now;
+                var overallduration = overallstop - overallstart;
+
+                Console.WriteLine("Duration of this timestep: " + overallduration);
+
                 if (Control.ComputeL2Error == true) {
                     this.ComputeL2Error();
                 }
@@ -926,7 +968,7 @@ namespace BoSSS.Application.Rheology {
                 throw new ArgumentException("Spatial dimesion and number of velocity parameter components does not match!");
 
             if (Stress0.Count != D+1)
-                throw new ArgumentException("Spatial dimesion and number of stress parameter components does not match!");      
+                throw new ArgumentException("Spatial dimesion and number of stress parameter components does not match!");
 
 
             // parameters
@@ -955,10 +997,10 @@ namespace BoSSS.Application.Rheology {
             //===========================================================
             if (Linearization) {
 
-                bool useJacobianForOperatorMatrix = true;
+                bool useJacobianForOperatorMatrix = this.Control.useJacobianForOperatorMatrix;
 
-                //if (this.Control.NonlinearMethod == NonlinearSolverMethod.Picard)
-                    useJacobianForOperatorMatrix = false;
+                //if (this.Control.NonLinearSolver.SolverCode == )
+                //    useJacobianForOperatorMatrix = false;
 
                 // create matrix and affine vector:
                 OpMatrix = new BlockMsrMatrix(codMap, domMap);
@@ -967,7 +1009,6 @@ namespace BoSSS.Application.Rheology {
 
                 // 'custom' Linearization 
                 if (!useJacobianForOperatorMatrix) {
-
                     var Mbuilder = XOP.GetMatrixBuilder(domMap, Params, codMap);
                     this.ParameterUpdate(domMap.Fields, Params);
                     Mbuilder.ComputeMatrix(OpMatrix, OpAffine);
@@ -975,7 +1016,6 @@ namespace BoSSS.Application.Rheology {
 
                 } else {
                     // Finite Difference Linearization
-
                     var FDbuilder = XOP.GetFDJacobianBuilder(domMap, Params, codMap, this.ParameterUpdate);
                     FDbuilder.ComputeMatrix(OpMatrix, OpAffine);
 
@@ -1010,7 +1050,6 @@ namespace BoSSS.Application.Rheology {
 
                 // explicit evaluation of the operator
                 //========================================================
-
                 OpMatrix = null;
                 OpAffine = new double[codMap.LocalLength];
                 var eval = XOP.GetEvaluatorEx(CurrentState, Params, codMap);

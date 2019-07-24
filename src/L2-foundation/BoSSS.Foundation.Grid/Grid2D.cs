@@ -400,7 +400,8 @@ namespace BoSSS.Foundation.Grid.Classic {
             params BoundingBox[] CutOuts) {
             using (var tr = new FuncTrace()) {
                 MPICollectiveWatchDog.Watch();
-               
+
+
                 // Some Checks
                 // ===========
                 CheckMonotonicity(xNodes);
@@ -622,6 +623,7 @@ namespace BoSSS.Foundation.Grid.Classic {
                     }
 
                 }
+
                 grid.Cells = Cells.ToArray();
 
                 /*
@@ -719,14 +721,13 @@ namespace BoSSS.Foundation.Grid.Classic {
                     grid.CompressGlobalID();
                     grid.CompressNodeIndices();
                 }
-
-                foreach(var cl in grid.Cells) {
+  
+                foreach (var cl in grid.Cells) {
                     if (cl.GlobalID < 0)
                         throw new ApplicationException("Internal error - illegal GlobalID.");
                     if (cl.GlobalID >= cnt)
                         throw new ApplicationException("Internal error - illegal GlobalID.");
                 }
-
 
                 return grid;
             }
@@ -2365,12 +2366,12 @@ namespace BoSSS.Foundation.Grid.Classic {
                 //}
                 double hrFinest = ximax / (NoOfXinodes0 * Math.Pow(XiRefinementGrades, NoOfXiRefinements - 1));
                 double sum = hrList.Sum();
-                double numberOfMissingCells = Math.Round((1.0 - sum) / hrFinest)+1;
+                double numberOfMissingCells = Math.Round((rmax - sum) / hrFinest)+1;
 
                 //for (int j = 0; j < (int)numberOfMissingCells; j++) {
                 //    hrList.Add(hrFinest);
                 //}
-                while (sum <= 1.0){
+                while (sum <= rmax){
                     hrList.Add(hrFinest);
                     sum += hrFinest;
                 }

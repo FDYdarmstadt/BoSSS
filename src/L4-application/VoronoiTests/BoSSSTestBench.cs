@@ -7,7 +7,7 @@ namespace VoronoiTests
     /// <summary>
     ///  Base class for tests that run an BoSSS application.
     /// </summary>
-    class BoSSSTestBench : TestBench
+    public class BoSSSTestBench : TestBench
     {
         /// <summary>
         /// Performs bootstrapping.

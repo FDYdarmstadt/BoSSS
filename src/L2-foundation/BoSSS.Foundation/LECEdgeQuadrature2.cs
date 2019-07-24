@@ -109,6 +109,7 @@ namespace BoSSS.Foundation.Quadrature.Linear {
         public void Execute(ICompositeQuadRule<QuadRule> domNrule,
             UnsetteledCoordinateMapping RowMap, IList<DGField> ParamsMap, UnsetteledCoordinateMapping ColMap,
             M Matrix, V AffineVector, double time) {
+
             if (RowMap.BasisS.Count != GAMMA)
                 throw new ArgumentException("Mismatch in number of codomain (rew. row-variables, resp. test-variables) variables.", "RowMap");
             if (ColMap.BasisS.Count != DELTA)
@@ -159,7 +160,6 @@ namespace BoSSS.Foundation.Quadrature.Linear {
             this.Loops = q.CustomTimers[2];
             this.ParametersAndNormals = q.CustomTimers[3];
             this.FluxTrafo = q.CustomTimers[4];
-
 
             Debug.Assert(Array.IndexOf(q.CustomTimers_Names, "Flux-Eval") == 0);
             this.m_Edgeform_UxV_Watches = this.m_Edgeform_UxV.InitStopWatches(0, q);
@@ -1383,7 +1383,7 @@ namespace BoSSS.Foundation.Quadrature.Linear {
                     int jCell_cr = Edge2Cell[jEdge, cr];
 
                     // Matrix part
-                    if(bLinearRequired && jCell_cr < Jup) {
+                    if (bLinearRequired && jCell_cr < Jup) {
                         for (int cc = 0; cc < CC; cc++) {
                             int jCell_cc = Edge2Cell[jEdge, cc];
 
@@ -1399,7 +1399,7 @@ namespace BoSSS.Foundation.Quadrature.Linear {
                             var BlockRes = ResultsOfIntegration.ExtractSubArrayShallow(
                                 new int[] { i, cr, cc, 0, 0 },
                                 new int[] { i - 1, cr - 1, cc - 1, M - 1, N - 1 });
-      
+
                             //for (int m = 0; m < M; m++) {
                             //    for (int n = 0; n < N; n++) {
                             //        //m_Matrix[m0 + m, n0 + n] += BlockRes[m, n];

@@ -86,6 +86,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
         public string m_SessionPath;
 
+        public ISolverSmootherTemplate linsolver;
 
         //bool solveVelocity = true;
 
@@ -110,10 +111,10 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 //double gamma = 0.9;
 
                 // Eval_F0 
+                
                 using (new BlockTrace("Slv Init", tr)) {
                     base.Init(SolutionVec, RHS, out x, out f0);
                 };
-               
                 //Console.WriteLine("Residual base.init:   " + f0.L2NormPow2().MPISum().Sqrt());
 
 
@@ -126,7 +127,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 EvaluateOperator(1, SolutionVec.Mapping.ToArray(), f0);
 
                 Console.WriteLine("Residual base.init:   " + f0.L2NormPow2().MPISum().Sqrt());
-                //base.EvalResidual(x, ref f0);
+               //base.EvalResidual(x, ref f0);
 
                 // fnorm
                 double fnorm = f0.L2NormPow2().MPISum().Sqrt();
@@ -149,18 +150,57 @@ namespace BoSSS.Solution.AdvancedSolvers {
                             if (Precond != null) {
                                 Precond.Init(CurrentLin);
                             }
-                            //base.EvalResidual(x, ref f0);
+                            //base.EvalResidual(x, ref f0); 
                             f0.ScaleV(-1.0);
                             step = Krylov(SolutionVec, x, f0, out errstep);
-                        } else if (ApproxJac == ApproxInvJacobianOptions.DirectSolver) {
-                            var CurrentJac = CurrentLin.OperatorMatrix;
-                            var solver = new ilPSP.LinSolvers.MUMPS.MUMPSSolver();
-                            solver.DefineMatrix(CurrentJac);
-                            step.ClearEntries();
-                            f0.ScaleV(-1.0);
-                            solver.Solve(step, f0);
+                        }
+                        else if (ApproxJac == ApproxInvJacobianOptions.DirectSolver) {
+                            /*
+                            double[] _step = step.ToArray();
+                            double[] _f0 = f0.ToArray();
+                            double _check_norm;
+                            {
+                                var CurrentJac = CurrentLin.OperatorMatrix;
+                                var _solver = new ilPSP.LinSolvers.PARDISO.PARDISOSolver();      // .MUMPS.MUMPSSolver();
+                                _solver.DefineMatrix(CurrentJac);
+                                _step.ClearEntries();
+                                var _check = _f0.CloneAs();
+                                _f0.ScaleV(-1.0);
+                                _solver.Solve(_step, _f0);
 
-                        } else {
+                                CurrentLin.OperatorMatrix.SpMV(-1.0, _step, -1.0, _check);
+                                _check_norm = _check.L2Norm();
+                            }
+                            */
+
+                            var solver = linsolver;
+                            //var mgo = new MultigridOperator(m_AggBasisSeq, SolutionVec.Mapping, CurrentJac, null, m_MultigridOperatorConfig);
+                            solver.Init(CurrentLin);
+                            step.ClearEntries();
+                            var check = f0.CloneAs();
+                            f0.ScaleV(-1.0);
+                            solver.ResetStat();
+                            solver.Solve(step, f0);
+                            /*
+                            double check_norm; 
+                            {
+                                CurrentLin.OperatorMatrix.SpMV(-1.0, step, -1.0, check);
+                                check_norm = check.L2Norm();
+                            }
+
+
+                            double dist = GenericBlas.L2Dist(step, _step);
+
+
+                            Console.WriteLine("    conv: " + solver.Converged + " /iter = " + solver.ThisLevelIterations + " /dist  = " + dist + " /resNrm = " + check_norm + " /parresNrm = " + _check_norm);
+                            */
+                            //step.SetV(step);
+
+                            //if (solver.Converged == false)
+                            //    Debugger.Launch();
+                            
+                        }
+                        else {
                             throw new NotImplementedException("Your approximation option for the jacobian seems not to be existent.");
                         }
 
@@ -219,7 +259,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                         base.Update(SolutionVec.Mapping.Fields, ref xt);
 
                         // residual evaluation & callback
-                        //base.EvalResidual(xt, ref ft);
+                        base.EvalResidual(xt, ref ft);
 
                         EvaluateOperator(1, SolutionVec.Mapping.Fields, ft);
 
@@ -455,7 +495,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 double[] fx = new double[f0.Length];
 
                 // Scale the step
-                if (w.L2Norm().MPISum() == 0) {
+                if (w.L2NormPow2().MPISum().Sqrt() == 0) {
                     fx.Clear();
                     return fx;
                 }
@@ -467,7 +507,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 if (xs != 0) {
                     epsnew = epsnew * Math.Max(Math.Abs(xs), 1) * Math.Sign(xs);
                 }
-                epsnew = epsnew / w.L2Norm().MPISum();
+                epsnew = epsnew / w.L2NormPow2().MPISum().Sqrt();
 
                 var del = currentX.CloneAs();
 

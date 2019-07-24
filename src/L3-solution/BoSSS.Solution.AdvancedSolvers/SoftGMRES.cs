@@ -68,7 +68,7 @@ namespace BoSSS.Solution.AdvancedSolvers
         public double m_Tolerance = 1.0e-10;
         public int m_MaxIterations = 10000;
 
-        public int NoOfIterations = 0;
+        private int NoOfIterations = 0;
 
 
         public Action<int, double[], double[], MultigridOperator> IterationCallback {
@@ -224,7 +224,7 @@ namespace BoSSS.Solution.AdvancedSolvers
                     for (i = 1; i <= m; i++)
                     {
                         this.NoOfIterations++;
-
+                       
                         #region Arnoldi procdure
 
                         //w = M \ (A*V(:,i));                         
@@ -257,7 +257,7 @@ namespace BoSSS.Solution.AdvancedSolvers
 
                         for (int k = 1; k <= i - 1; k++)
                         {
-                            // apply Givens rotation, H is Hessenbergmatrix
+                            // apply Givens rotation, H is Hessenberg-Matrix
                             temp = cs[k - 1] * H[k - 1, i - 1] + sn[k - 1] * H[k + 1 - 1, i - 1];
                             H[k + 1 - 1, i - 1] = -sn[k - 1] * H[k - 1, i - 1] + cs[k - 1] * H[k + 1 - 1, i - 1];
                             H[k - 1, i - 1] = temp;
@@ -274,40 +274,15 @@ namespace BoSSS.Solution.AdvancedSolvers
                         s[i + 1 - 1] = -sn[i - 1] * s[i - 1];
                         s[i - 1] = temp;
                         error = Math.Abs(s[i + 1 - 1]) / bnrm2;
-                        //{
-                        //    int rootRank = Matrix.RowPartitioning.FindProcess(i + 1 - 1);
-                        //    if (Matrix.RowPartitioning.Rank == rootRank) {
-
-
-                        //    } else {
-                        //        error = double.NaN;
-                        //    }
-                        //    unsafe {
-                        //        csMPI.Raw.Bcast((IntPtr)(&error), 1, csMPI.Raw._DATATYPE.DOUBLE, rootRank, Matrix.RowPartitioning.MPI_Comm);
-                        //    }
-                        //}
-
-                        //using (StreamWriter writer = new StreamWriter(m_SessionPath + "//GMRES_Stats.txt", true))
-                        //{
-                        Console.WriteLine(i + "   " + error);
-                        //}
-
-
+                        
 
                         if (error <= m_Tolerance)
                         {
                             // update approximation and exit
-                            //using (StreamWriter writer = new StreamWriter(m_SessionPath + "//GMRES_Stats.txt", true))
-                            //{
-                            //    writer.WriteLine("");
-                            //}
-
                             //y = H(1:i,1:i) \ s(1:i);    
                             y = new double[i];
                             H.ExtractSubArrayShallow(new int[] { 0, 0 }, new int[] { i - 1, i - 1 })
                                 .Solve(y, s.GetSubVector(0, i));
-
-
 
                             // x = x + V(:,1:i)*y;
                             for (int ii = 0; ii < i; ii++)
@@ -324,7 +299,6 @@ namespace BoSSS.Solution.AdvancedSolvers
 
                     if (error <= this.m_Tolerance)
                     {
-                        Console.WriteLine("Picard completed after:   " + i + "steps");
                         this.m_Converged = true;
                         break;
                     }

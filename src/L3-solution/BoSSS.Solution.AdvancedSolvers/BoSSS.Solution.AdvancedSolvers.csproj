@@ -54,6 +54,9 @@
     <Compile Include="BlockJacobi.cs" />
     <Compile Include="ClassicMultigrid.cs" />
     <Compile Include="ConvergenceObserver.cs" />
+    <Compile Include="DynamicMultigrid.cs" />
+    <Compile Include="LevelPmg.cs" />
+    <Compile Include="OrthonormalizationMultigrid.cs" />
     <Compile Include="SolverChooser.cs" />
     <Compile Include="SparseSolver.cs" />
     <Compile Include="ExtensionMethods.cs" />
@@ -72,7 +75,6 @@
     <Compile Include="MultigridOperator_ChangeOfBasis.cs" />
     <Compile Include="NonlinearSolver.cs" />
     <Compile Include="NonlinGMRES.cs" />
-    <Compile Include="NonlinGMRES2.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="RheologyJacobiPrecond.cs" />
     <Compile Include="SchurPrecond.cs" />
@@ -80,6 +82,7 @@
     <Compile Include="SoftGMRES.cs" />
     <Compile Include="SoftPCG.cs" />
     <Compile Include="SolverSquence.cs" />
+    <Compile Include="Utils.cs" />
     <Compile Include="XdgAggregationBasis.cs" />
   </ItemGroup>
   <ItemGroup>

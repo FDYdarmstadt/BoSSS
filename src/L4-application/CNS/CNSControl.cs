@@ -270,6 +270,13 @@ namespace CNS {
         public ICNSShockSensor CNSShockSensor = null;
 
         /// <summary>
+        /// An optional viscosity law to determine the magnitude of the
+        /// artificial viscosity if <see cref="ActiveOperators"/> includes
+        /// <see cref="Operators.ArtificialViscosity"/>
+        /// </summary>
+        public IArtificialViscosityLaw ArtificialViscosityLaw = null;
+
+        /// <summary>
         /// Clones this object, but beware: I'm not sure (yet) that I've
         /// covered all cases
         /// </summary>

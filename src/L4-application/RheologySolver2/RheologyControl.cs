@@ -158,6 +158,12 @@ namespace BoSSS.Application.Rheology {
         public bool UseArtificialDiffusion = false;
 
         /// <summary>
+        /// Use finite differences Jacobian for Linearization
+        /// </summary>
+        [DataMember]
+        public bool useJacobianForOperatorMatrix = false;
+
+        /// <summary>
         /// periodic BC?
         /// </summary>
         [DataMember]

@@ -67,6 +67,8 @@ namespace CNS_MPITests.Tests.LoadBalancing {
 
             //TestRebalancingForDG2WithLTS1AndAV_IBM_AggOff();    // ok
             //TestRebalancingForDG2WithLTS1AndAV_IBM_AggOn();   // ok
+            TestRebalancingForDG0WithAB1();
+            //TestRebalancingForDG0WithLTS1SingleSubGrid();
             TearDown();
         }
 
@@ -688,6 +690,15 @@ namespace CNS_MPITests.Tests.LoadBalancing {
             //    CompareErrors(refSolver.WorkingSet, loadBalSolver.WorkingSet, differenceThreshold);
             //}
             CompareNorms(refSolver, loadBalSolvers, differenceThreshold);
+
+            try {
+                refSolver.Dispose();
+            } catch (Exception) { }
+            foreach(var s in loadBalSolvers) {
+                try {
+                    s.Dispose();
+                } catch (Exception) { }
+            }
         }
 
         /// <summary>

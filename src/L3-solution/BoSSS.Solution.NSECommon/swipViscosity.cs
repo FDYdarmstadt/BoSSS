@@ -184,8 +184,8 @@ namespace BoSSS.Solution.NSECommon {
         protected int m_D;
 
         /// <summary>
-        /// Dirichlet boundary values; <br/>
-        ///  - 1st index: spatial dimension <br/>
+        /// Dirichlet boundary values; 
+        ///  - 1st index: spatial dimension 
         ///  - 2nd index: edge tag
         /// </summary>
         protected Func<double[], double, double>[][] velFunction;
@@ -289,6 +289,10 @@ namespace BoSSS.Solution.NSECommon {
 
             if(cs.UserDefinedValues.Keys.Contains("SlipLengths"))
                 Lslip = (MultidimensionalArray)cs.UserDefinedValues["SlipLengths"];
+            // Set the Reynolds number to a user defined value contained in the CoefficientSet cs
+            // Useful in case that the Reynolds number changes during a simulation...
+            if (cs.UserDefinedValues.Keys.Contains("Reynolds"))
+                m_reynolds = (double)cs.UserDefinedValues["Reynolds"];
         }
 
         /// <summary>
