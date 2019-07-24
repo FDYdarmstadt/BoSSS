@@ -220,6 +220,7 @@ namespace BoSSS.Application.XNSE_Solver {
             MatInt = !Evaporation;
 
             auxHeatFlux = control.separatedHeatEq;
+            auxHeatStabi = control.separatedHeatEqWithStabi;
         }
 
 
@@ -229,6 +230,11 @@ namespace BoSSS.Application.XNSE_Solver {
         /// true if the heat equation is solved via the auxiliary heat flux formulation
         /// </summary>
         public bool auxHeatFlux;
+
+        /// <summary>
+        /// additional penalty terms
+        /// </summary>
+        public bool auxHeatStabi;
 
         /// <summary>
         /// include heat equation
@@ -252,6 +258,10 @@ namespace BoSSS.Application.XNSE_Solver {
 
         public bool isSeparated {
             get { return auxHeatFlux; }
+        }
+
+        public bool withStabilization {
+            get { return auxHeatStabi; }
         }
 
         public bool isHeatTransport {

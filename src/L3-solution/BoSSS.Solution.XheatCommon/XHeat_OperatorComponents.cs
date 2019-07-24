@@ -73,14 +73,8 @@ namespace BoSSS.Solution.XheatCommon {
             // ================
             if (thermParams.IncludeConvection) {
 
-                if (!config.isSeparated) {
-                    var conv = new HeatConvectionInSpeciesBulk(D, BcMap, spcName, spcId, capSpc, LFFSpc, LsTrk);
-                    comps.Add(conv);
-                } else {
-
-                    // TODO
-
-                }
+                var conv = new HeatConvectionInSpeciesBulk(D, BcMap, spcName, spcId, capSpc, LFFSpc, LsTrk);
+                comps.Add(conv);
 
             }
 
@@ -105,14 +99,16 @@ namespace BoSSS.Solution.XheatCommon {
             } else {
 
                 comps.Add(new HeatFluxDivergenceInSpeciesBulk(D, BcMap, spcName, spcId));
-                comps.Add(new AuxiliaryStabilizationForm(D, BcMap, spcName, spcId));
+                if (config.withStabilization)
+                    comps.Add(new AuxiliaryStabilizationForm(D, BcMap, spcName, spcId));
 
                 for (int d = 0; d < D; d++) {
                     comps = XOp.EquationComponents[EquationNames.AuxHeatFluxComponent(d)];
 
-                    comps.Add(new AuxiliaryHeatFlux_Identity(d));   // cell local
+                    comps.Add(new AuxiliaryHeatFlux_Identity(d, spcId));   // cell local
                     comps.Add(new TemperatureGradientInSpeciesBulk(d, BcMap, spcName, spcId, kSpc));
-                    comps.Add(new TemperatureStabilizationForm(d, BcMap, spcName, spcId));
+                    if (config.withStabilization)
+                        comps.Add(new TemperatureStabilizationForm(d, BcMap, spcName, spcId));
                 }
 
             }
@@ -161,14 +157,8 @@ namespace BoSSS.Solution.XheatCommon {
             // ================
             if (thermParams.IncludeConvection) {
 
-                if (!config.isSeparated) {
-                    var conv = new HeatConvectionAtLevelSet(D, LsTrk, capA, capB, LFFA, LFFB, BcMap, config.isMovingMesh);
-                    comps.Add(conv);
-                } else {
-
-                    // TODO
-
-                }
+                var conv = new HeatConvectionAtLevelSet(D, LsTrk, capA, capB, LFFA, LFFB, BcMap, config.isMovingMesh, config.isEvaporation, Tsat);
+                comps.Add(conv);
 
             }
 
@@ -184,14 +174,16 @@ namespace BoSSS.Solution.XheatCommon {
 
             } else {
 
-                comps.Add(new HeatFluxDivergencetAtLevelSet(LsTrk));
-                comps.Add(new AuxiliaryStabilizationFormAtLevelSet(LsTrk));
+                comps.Add(new HeatFluxDivergencetAtLevelSet(LsTrk, config.isEvaporation)); 
+                //if(config.withStabilization)
+                //    comps.Add(new AuxiliaryStabilizationFormAtLevelSet(LsTrk, config.isEvaporation));
 
                 for (int d = 0; d < D; d++) {
                     comps = XOp.EquationComponents[EquationNames.AuxHeatFluxComponent(d)];
 
-                    comps.Add(new TemperatureGradientAtLevelSet(d, LsTrk, kA, kB, Tsat));
-                    comps.Add(new TemperatureStabilizationFormAtLevelSet(d, LsTrk, Tsat));
+                    comps.Add(new TemperatureGradientAtLevelSet(d, LsTrk, kA, kB, config.isEvaporation, Tsat));
+                    //if (config.withStabilization)
+                    //    comps.Add(new TemperatureStabilizationFormAtLevelSet(d, LsTrk, config.isEvaporation, Tsat));
                 }
 
             }
@@ -216,6 +208,11 @@ namespace BoSSS.Solution.XheatCommon {
         /// true if the heat equation is separated via the auxiliary heat flux formulation
         /// </summary>
         bool isSeparated { get; }
+
+        /// <summary>
+        /// additional stabilizations form via penalty terms
+        /// </summary>
+        bool withStabilization { get;  }
 
         /// <summary>
         /// include transport operator

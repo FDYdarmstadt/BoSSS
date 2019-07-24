@@ -510,6 +510,11 @@ namespace BoSSS.Application.XNSE_Solver {
         public bool separatedHeatEq = false;
 
         /// <summary>
+        /// additional penalty terms 
+        /// </summary>
+        public bool separatedHeatEqWithStabi = false;
+
+        /// <summary>
         /// Block-Precondition for the Temperature-block
         /// </summary>
         public MultigridOperator.Mode TemperatureBlockPrecondMode = MultigridOperator.Mode.SymPart_DiagBlockEquilib;

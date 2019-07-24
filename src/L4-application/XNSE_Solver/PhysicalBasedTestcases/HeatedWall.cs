@@ -716,6 +716,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
 
             C.solveCoupledHeatEquation = true;
             C.separatedHeatEq = separated;
+            C.separatedHeatEqWithStabi = false;
             C.ThermalParameters.rho_A = C.PhysicalParameters.rho_A;
             C.ThermalParameters.rho_B = C.PhysicalParameters.rho_B;
             C.ThermalParameters.c_A = 1.0;
@@ -737,7 +738,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
 
             bool includeConv = false;
             C.PhysicalParameters.IncludeConvection = includeConv;
-            C.ThermalParameters.IncludeConvection = false;
+            C.ThermalParameters.IncludeConvection = true;
             C.PhysicalParameters.Material = false;
 
             #endregion
@@ -820,7 +821,11 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             if (!steady)
             {
                 //C.AddBoundaryValue("wall_ConstantHeatFlux_lower", "HeatFlux#A", (X, t) => HeatFlux);
-                C.AddBoundaryValue("wall_ConstantHeatFlux_lower", "HeatFluxY#B", (X, t) => qv);
+                if (separated) {
+                    C.AddBoundaryValue("wall_ConstantHeatFlux_lower", "HeatFluxY#B", (X, t) => qv);
+                } else {
+                    C.AddBoundaryValue("wall_ConstantHeatFlux_lower", "HeatFluxY#B", (X, t) => -qv);
+                }
 
                 C.AddBoundaryValue("pressure_Dirichlet_ZeroGradient_upper", "Pressure#A", (X, t) => pSat);
             } else {
@@ -1968,6 +1973,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             XNSE_Control C = new XNSE_Control();
 
             bool Xheat = true;
+            bool separated = true;
 
             //_DbPath = @"\\dc1\userspace\smuda\cluster\CapillaryRise\CapillaryRise_studyDB";
 
@@ -2041,20 +2047,20 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             C.PhysicalParameters.Sigma = 0.0;
 
             C.solveCoupledHeatEquation = true;
-            C.separatedHeatEq = true;
+            C.separatedHeatEq = separated;
             C.ThermalParameters.rho_A = C.PhysicalParameters.rho_A;
             C.ThermalParameters.rho_B = C.PhysicalParameters.rho_B;
             C.ThermalParameters.c_A = 1.0;
             C.ThermalParameters.c_B = 1.0;
             C.ThermalParameters.k_A = 1.0;
             C.ThermalParameters.k_B = 0.1;
-            C.ThermalParameters.T_sat = 8.0;
+            //C.ThermalParameters.T_sat = 8.0;
 
             //C.ThermalParameters.hVap_A = 1.0;
             //C.ThermalParameters.hVap_B = -1.0;
 
             C.PhysicalParameters.IncludeConvection = false;
-            C.ThermalParameters.IncludeConvection = false;
+            C.ThermalParameters.IncludeConvection = true;
             C.PhysicalParameters.Material = false;
 
             #endregion
@@ -2074,8 +2080,13 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
 
 
                 grd.EdgeTagNames.Add(1, "wall_ConstantTemperature_lower");
-                //grd.EdgeTagNames.Add(2, "wall_ConstantTemperature_upper");
                 grd.EdgeTagNames.Add(2, "pressure_outlet_ZeroGradient_upper");
+
+                //grd.EdgeTagNames.Add(1, "wall_ConstantTemperature_lower");
+                //grd.EdgeTagNames.Add(2, "wall_ConstantTemperature_upper");
+                //grd.EdgeTagNames.Add(1, "wall_ConstantHeatFlux_lower");
+                //grd.EdgeTagNames.Add(2, "wall_ConstantHeatFlux_upper");
+
                 //grd.EdgeTagNames.Add(3, "freeslip_ZeroGradient_left");
                 //grd.EdgeTagNames.Add(4, "freeslip_ZeroGradient_right");
 
@@ -2118,7 +2129,10 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
 
             if (!Xheat) {
                 C.InitialValues_Evaluators.Add("Temperature#A", X => 10 - 3 * X[1]);
-                //C.InitialValues_Evaluators.Add("Temperature#A", X => Math.Sin((2 * Math.PI / H) * X[1]) + 10); 
+                //C.InitialValues_Evaluators.Add("Temperature#A", X => Math.Sin((2 * Math.PI / H) * X[1]) + 10);
+
+                //C.InitialValues_Evaluators.Add("HeatFluxY#A", X => 3);
+
             } else {
                 C.InitialValues_Evaluators.Add("Temperature#A", X => 10 - 3 * h0);
                 C.InitialValues_Evaluators.Add("Temperature#B", X => 10 - 3 * X[1]);
@@ -2142,6 +2156,12 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
 
             //C.AddBoundaryValue("wall_ConstantTemperature_upper", "Temperature#A", (X, t) => 10.0);
             C.AddBoundaryValue("pressure_outlet_ZeroGradient_upper");
+
+            //C.AddBoundaryValue("wall_ConstantTemperature_lower", "Temperature#A", (X, t) => 10.0);
+            //C.AddBoundaryValue("wall_ConstantTemperature_upper", "Temperature#A", (X, t) => 1);
+            //C.AddBoundaryValue("wall_ConstantHeatFlux_lower", "HeatFluxY#A", (X, t) => 3);
+            //C.AddBoundaryValue("wall_ConstantHeatFlux_upper", "HeatFluxY#A", (X, t) => 3);
+
             //C.AddBoundaryValue("freeslip_ZeroGradient_left");
             //C.AddBoundaryValue("freeslip_ZeroGradient_right");
 
@@ -2203,10 +2223,10 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             C.Timestepper_LevelSetHandling = LevelSetHandling.None;
 
             C.CompMode = AppControl._CompMode.Transient;
-            C.dtMax = 5e-2;
-            C.dtMin = 5e-2;
+            C.dtMax = 5e-1;
+            C.dtMin = 5e-1;
             C.Endtime = 10000;
-            C.NoOfTimesteps = 1000;
+            C.NoOfTimesteps = 200;
             C.saveperiod = 1;
 
             #endregion

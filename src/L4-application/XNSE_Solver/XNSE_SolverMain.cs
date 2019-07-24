@@ -4342,12 +4342,12 @@ namespace BoSSS.Application.XNSE_Solver {
 
 
                     // configuration for auxiliary heat flux
-                    if (XOpConfig.isSeparated) {
+                    if (XOpConfig.isSeparated) { 
                         int pFlux = this.HeatFlux[0].Basis.Degree;
                         for (int d = 0; d < D; d++) {
                             configs[iLevel][d + 1] = new MultigridOperator.ChangeOfBasisConfig() {
                                 Degree = Math.Max(0, pFlux - iLevel),
-                                mode = MultigridOperator.Mode.SymPart_DiagBlockEquilib,
+                                mode = MultigridOperator.Mode.Eye,
                                 VarIndex = new int[] { d + 1 }
                             };
                         }

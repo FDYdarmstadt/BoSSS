@@ -234,9 +234,9 @@ namespace BoSSS.Application.XNSE_Solver {
 
             // mass flux at interface
             // ======================
-            if (!config.isSeparated) {
-                comps.Add(new HeatFluxAtLevelSet(LsTrk, rho_l, thermParams, R_int, sigma));
-            }
+            //if (!config.isSeparated) {
+            //    comps.Add(new HeatFluxAtLevelSet(LsTrk, rho_l, thermParams, R_int, sigma));
+            //}
 
 
             // convective part

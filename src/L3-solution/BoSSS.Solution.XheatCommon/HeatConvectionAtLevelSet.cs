@@ -38,11 +38,11 @@ namespace BoSSS.Solution.XheatCommon {
 
         bool movingmesh;
 
-        public HeatConvectionAtLevelSet(int _D, LevelSetTracker LsTrk, double _capA, double _capB, double _LFFA, double _LFFB, ThermalMultiphaseBoundaryCondMap _bcmap, bool _movingmesh) {
+        public HeatConvectionAtLevelSet(int _D, LevelSetTracker LsTrk, double _capA, double _capB, double _LFFA, double _LFFB, 
+            ThermalMultiphaseBoundaryCondMap _bcmap, bool _movingmesh, bool _DiriCond, double _Tsat) {
+
             m_D = _D;
 
-            capA = _capA;
-            capB = _capB;
             m_LsTrk = LsTrk;
 
             //MaterialInterface = _MaterialInterface;
@@ -53,12 +53,27 @@ namespace BoSSS.Solution.XheatCommon {
             PosFlux = new HeatConvectionInBulk(_D, _bcmap, _capA, _capB, double.NaN, _LFFB, LsTrk);
             PosFlux.SetParameter("B", LsTrk.GetSpeciesId("B"));
 
+
+            DirichletCond = _DiriCond;
+            Tsat = _Tsat;
+
+            capA = _capA;
+            capB = _capB;
+            LFFA = _LFFA;
+            LFFB = _LFFB;
+
         }
 
         //bool MaterialInterface;
+        int m_D;
+
         double capA;
         double capB;
-        int m_D;
+        double LFFA;
+        double LFFB;
+
+        bool DirichletCond;
+        double Tsat;
 
         // Use Fluxes as in Bulk Convection
         HeatConvectionInBulk NegFlux;
@@ -81,25 +96,45 @@ namespace BoSSS.Solution.XheatCommon {
         public double LevelSetForm(ref CommonParamsLs cp, double[] U_Neg, double[] U_Pos, double[,] Grad_uA, double[,] Grad_uB, double v_Neg, double v_Pos, double[] Grad_vA, double[] Grad_vB) {
             double[] U_NegFict, U_PosFict;
 
-            this.TransformU(ref U_Neg, ref U_Pos, out U_NegFict, out U_PosFict);
 
-            //double[] U_LS = new double[] { 0, 1.0 };    // !!! prescribed
-            //cp.ParamsNeg[0] = U_LS[0];
-            //cp.ParamsNeg[1] = U_LS[1];
-            //cp.ParamsNeg[m_D] = U_LS[0];
-            //cp.ParamsNeg[m_D + 1] = U_LS[1];
-            //cp.ParamsPos[0] = U_LS[0];
-            //cp.ParamsPos[1] = U_LS[1];
-            //cp.ParamsPos[m_D] = U_LS[0];
-            //cp.ParamsPos[m_D + 1] = U_LS[1];
+            this.TransformU(ref U_Neg, ref U_Pos, out U_NegFict, out U_PosFict);
 
             double[] ParamsNeg = cp.ParamsNeg;
             double[] ParamsPos = cp.ParamsPos;
             double[] ParamsPosFict, ParamsNegFict;
             this.TransformU(ref ParamsNeg, ref ParamsPos, out ParamsNegFict, out ParamsPosFict);
+
             //Flux for negativ side
             double FlxNeg;
-            {
+            if (DirichletCond) {
+
+                double r = 0.0;
+
+                // Calculate central part
+                // ======================
+                r += Tsat * (ParamsNeg[0] * cp.n[0] + ParamsNeg[1] * cp.n[1]);
+                if (m_D == 3) {
+                    r += Tsat * ParamsNeg[2] * cp.n[2];
+                }
+
+                // Calculate dissipative part
+                // ==========================
+
+                double[] VelocityMeanIn = new double[m_D];
+                for (int d = 0; d < m_D; d++) {
+                    VelocityMeanIn[d] = ParamsNeg[m_D + d];
+                }
+
+                double LambdaIn = LambdaConvection.GetLambda(VelocityMeanIn, cp.n, true);
+
+                double uJump = U_Neg[0] - Tsat;
+
+                r += LambdaIn * uJump * LFFA;
+
+                FlxNeg = capA * r;
+
+
+            } else { 
 
                 BoSSS.Foundation.CommonParams inp; // = default(BoSSS.Foundation.InParams);
                 inp.Parameters_IN = ParamsNeg;
@@ -113,9 +148,37 @@ namespace BoSSS.Solution.XheatCommon {
                 FlxNeg = this.NegFlux.IEF(ref inp, U_Neg, U_NegFict);
                 //Console.WriteLine("FlxNeg = {0}", FlxNeg);
             }
+
             // Flux for positive side
             double FlxPos;
-            {
+            if (DirichletCond) {
+
+                double r = 0.0;
+
+                // Calculate central part
+                // ======================
+                r += Tsat * (ParamsPos[0] * cp.n[0] + ParamsPos[1] * cp.n[1]);
+                if (m_D == 3) {
+                    r += Tsat * ParamsPos[2] * cp.n[2];
+                }
+
+                // Calculate dissipative part
+                // ==========================
+
+                double[] VelocityMeanOut = new double[m_D];
+                for (int d = 0; d < m_D; d++) {
+                    VelocityMeanOut[d] = ParamsPos[m_D + d];
+                }
+
+                double LambdaOut = LambdaConvection.GetLambda(VelocityMeanOut, cp.n, true);
+
+                double uJump = Tsat - U_Pos[0];
+
+                r += LambdaOut * uJump * LFFB;
+
+                FlxPos = capB * r;
+
+            } else {
 
                 BoSSS.Foundation.CommonParams inp; // = default(BoSSS.Foundation.InParams);
                 inp.Parameters_IN = ParamsPosFict;
@@ -162,7 +225,7 @@ namespace BoSSS.Solution.XheatCommon {
 
         public TermActivationFlags LevelSetTerms {
             get {
-                return TermActivationFlags.UxV;
+                return TermActivationFlags.UxV | TermActivationFlags.V;
             }
         }
     }
@@ -172,7 +235,7 @@ namespace BoSSS.Solution.XheatCommon {
 
 
         public HeatConvectionAtLevelSet_Divergence(int _D, LevelSetTracker lsTrk, double _rhoA, double _rhoB,
-            ThermalParameters thermParams, double _Rint, double _sigma) {
+            ThermalParameters thermParams, double _Rint, double _sigma, bool _DiriCond = true) {
             //double _kA, double _kB, double _hVapA, double _Rint, double _Tsat, double _sigma, double _pc) {
             this.D = _D;
             this.rhoA = _rhoA;
@@ -191,6 +254,8 @@ namespace BoSSS.Solution.XheatCommon {
             this.Tsat = thermParams.T_sat;
             this.sigma = _sigma;
             this.pc = thermParams.pc;
+
+            this.DirichletCond = _DiriCond;
         }
  
         double rhoA;
@@ -198,11 +263,12 @@ namespace BoSSS.Solution.XheatCommon {
         double capA;
         double capB;
 
+        bool DirichletCond;
 
 
         public override TermActivationFlags LevelSetTerms {
             get {
-                return TermActivationFlags.UxV;
+                return TermActivationFlags.UxV | TermActivationFlags.V;
             }
         }
 
@@ -233,11 +299,11 @@ namespace BoSSS.Solution.XheatCommon {
                 return 0.0;
 
 
-            double T_avg = 0.5 * (U_Neg[0] + U_Pos[0]);
-            double T_sat = 0.0;
+            double Tavg = (DirichletCond) ? Tsat : 0.5 * (U_Neg[0] + U_Pos[0]);
+            //double T_sat = 0.0;
 
-            double uAxN = -M * (1 / rhoA) * (T_avg - T_sat);
-            double uBxN = -M * (1 / rhoB) * (T_avg - T_sat);
+            double uAxN = -M * (1 / rhoA) * (Tavg);
+            double uBxN = -M * (1 / rhoB) * (Tavg);
 
             // transform from species B to A: we call this the "A-fictitious" value
             double uAxN_fict;

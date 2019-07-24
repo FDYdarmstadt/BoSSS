@@ -106,6 +106,7 @@ namespace BoSSS.Solution.XheatCommon {
             this.m_D = D;
 
             this.m_spcId = spcId;
+            //this.ksqrt = Math.Sqrt(_k);
 
             fluxFunction = D.ForLoop(d => bcMap.bndFunction[VariableNames.HeatFluxVectorComponent(d) + "#" + spcName]);
             EdgeTag2Type = bcMap.EdgeTag2Type;
@@ -247,6 +248,7 @@ namespace BoSSS.Solution.XheatCommon {
             fluxFunction = m_D.ForLoop(d => bcMap.bndFunction[VariableNames.HeatFluxVectorComponent(d) + "#" + spcName]);
 
             this.m_spcId = spcId;
+            //this.ksqrt = Math.Sqrt(_k);
         }
 
 
@@ -339,16 +341,25 @@ namespace BoSSS.Solution.XheatCommon {
     /// <summary>
     /// Volume integral of identity part of auxiliary heat flux .
     /// </summary>
-    public class AuxiliaryHeatFlux_Identity : IVolumeForm, IEquationComponent {
+    public class AuxiliaryHeatFlux_Identity : IVolumeForm, IEquationComponent, ISpeciesFilter {
 
         private int component;
 
         /// <summary>
         /// Initialize identity
         /// </summary>
-        public AuxiliaryHeatFlux_Identity(int component) {
+        public AuxiliaryHeatFlux_Identity(int component, SpeciesId spcId) {
             this.component = component;
+
+            this.m_spcId = spcId;
         }
+
+        SpeciesId m_spcId;
+
+        public SpeciesId validSpeciesId {
+            get { return m_spcId; }
+        }
+
 
         /// <summary>
         /// Choosing the required terms (These Flags control, whether certain terms are evaluated during quadrature of the forms)
@@ -505,6 +516,7 @@ namespace BoSSS.Solution.XheatCommon {
             tempFunction = bcMap.bndFunction[VariableNames.Temperature + "#" + spcName];
 
             this.m_spcId = spcId;
+            //this.ksqrt = Math.Sqrt(_k);
         }
 
 

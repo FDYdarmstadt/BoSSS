@@ -99,7 +99,7 @@ namespace BoSSS.Solution.XheatCommon {
         /// saturation temperature, is defined as the temperature of the vapor phase adjacent to the interface
         /// </summary>
         [DataMember]
-        public double T_sat = 0.0;
+        public double T_sat = -1.0;
 
         [DataMember]
         public double p_sat = 0.0;
