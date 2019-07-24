@@ -14,8 +14,10 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+using System;
 using System.Collections.Generic;
 using BoSSS.Foundation;
+using BoSSS.Foundation.XDG;
 using BoSSS.Solution.CompressibleFlowCommon;
 using BoSSS.Solution.CompressibleFlowCommon.Boundary;
 using BoSSS.Solution.CompressibleFlowCommon.MaterialProperty;
@@ -26,7 +28,7 @@ namespace BoSSS.Solution.CompressibleFlowCommon.Convection {
     /// <summary>
     /// Base class for optimized versions of the HLLC flux
     /// </summary>
-    public abstract class OptimizedHLLCFlux : INonlinearFlux {
+    public abstract class OptimizedHLLCFlux : INonlinearFlux, IEquationComponentSpeciesNotification {
 
         /// <summary>
         /// <see cref="OptimizedHLLCDensityFlux.OptimizedHLLCDensityFlux"/>
@@ -34,6 +36,8 @@ namespace BoSSS.Solution.CompressibleFlowCommon.Convection {
         protected readonly IBoundaryConditionMap boundaryMap;
 
         protected readonly Material material;
+
+        private string speciesName;
 
         /// <summary>
         /// Constructs a new flux
@@ -95,8 +99,16 @@ namespace BoSSS.Solution.CompressibleFlowCommon.Convection {
                     }
 
                     StateVector stateIn = new StateVector(material, Uin, edge, n, D);
-                    StateVector stateBoundary = boundaryMap.GetBoundaryState(
-                        EdgeTags[e + EdgeTagsOffset], time, xLocal, normalLocal, stateIn);
+
+                    StateVector stateBoundary;
+                    // XDG version
+                    if (this.boundaryMap is XDGCompressibleBoundaryCondMap xdgBoudaryMap) {
+                        stateBoundary = xdgBoudaryMap.GetBoundaryState(
+                            EdgeTags[e + EdgeTagsOffset], time, xLocal, normalLocal, stateIn, this.speciesName);
+                    } else {    // Standard version
+                        stateBoundary = this.boundaryMap.GetBoundaryState(
+                            EdgeTags[e + EdgeTagsOffset], time, xLocal, normalLocal, stateIn);
+                    }
 
                     Uout[0][edge, n] = stateBoundary.Density;
                     for (int d = 0; d < D; d++) {
@@ -133,6 +145,10 @@ namespace BoSSS.Solution.CompressibleFlowCommon.Convection {
         /// <param name="Length"></param>
         /// <param name="Output"></param>
         public abstract void Flux(double time, MultidimensionalArray x, ilPSP.MultidimensionalArray[] U, int Offset, int Length, MultidimensionalArray Output);
+
+        public void SetParameter(string speciesName, SpeciesId SpcId) {
+            this.speciesName = speciesName;
+        }
 
         #endregion
 

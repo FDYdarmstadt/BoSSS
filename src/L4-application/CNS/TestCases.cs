@@ -2450,7 +2450,7 @@ namespace CNS {
                 c.CNSShockSensor = new PerssonSensor(sensorVariable, sensorLimit);
                 c.AddVariable(CNSVariables.ShockSensor, 0);
                 c.ArtificialViscosityLaw = new SmoothedHeavisideArtificialViscosityLaw(c.CNSShockSensor, dgDegree, sensorLimit, epsilon0, kappa, lambdaMax: 25);    // fix lambdaMax
-                                                                                                                                                                 //c.ArtificialViscosityLaw = new SmoothedHeavisideArtificialViscosityLaw(c.ShockSensor, dgDegree, sensorLimit, epsilon0, kappa, fudgeFactor: fugdeFactor);    // dynamic lambdaMax
+                                                                                                                                                                    //c.ArtificialViscosityLaw = new SmoothedHeavisideArtificialViscosityLaw(c.ShockSensor, dgDegree, sensorLimit, epsilon0, kappa, fudgeFactor: fugdeFactor);    // dynamic lambdaMax
             }
 
             c.EquationOfState = IdealGas.Air;
@@ -2883,7 +2883,7 @@ namespace CNS {
                 c.CNSShockSensor = new PerssonSensor(sensorVariable, sensorLimit);
                 c.AddVariable(CNSVariables.ShockSensor, 0);
                 c.ArtificialViscosityLaw = new SmoothedHeavisideArtificialViscosityLaw(c.CNSShockSensor, dgDegree, sensorLimit, epsilon0, kappa, lambdaMax: 5);    // fix lambdaMax
-                                                                                                                                                                //c.ArtificialViscosityLaw = new SmoothedHeavisideArtificialViscosityLaw(c.ShockSensor, dgDegree, sensorLimit, epsilon0, kappa, fudgeFactor: fugdeFactor);    // dynamic lambdaMax
+                                                                                                                                                                   //c.ArtificialViscosityLaw = new SmoothedHeavisideArtificialViscosityLaw(c.ShockSensor, dgDegree, sensorLimit, epsilon0, kappa, fudgeFactor: fugdeFactor);    // dynamic lambdaMax
             }
 
             c.EquationOfState = IdealGas.Air;
@@ -3260,5 +3260,146 @@ namespace CNS {
 
             return c;
         }
+
+        public static CNSControl StationaryShockWave(string dbPath = null, int savePeriod = 100, int dgDegree = 2, int numOfCellsX = 20, int numOfCellsY = 10, double dtFixed = 1e-5) {
+            CNSControl c = new CNSControl();
+
+            // ### Database ###
+            //dbPath = @"c:\bosss_db";
+
+            c.DbPath = dbPath;
+            c.savetodb = dbPath != null;
+            c.saveperiod = savePeriod;
+            c.PrintInterval = 1;
+
+            // ### Time-Stepping ###
+            c.ExplicitScheme = ExplicitSchemes.RungeKutta;
+            c.ExplicitOrder = 1;
+
+            // ### Physics ###
+            c.EquationOfState = IdealGas.Air;
+            c.MachNumber = 1.0 / Math.Sqrt(c.EquationOfState.HeatCapacityRatio);
+            c.ReynoldsNumber = 1.0;
+            c.PrandtlNumber = 0.71;
+
+            // ### Output variables ###
+            c.AddVariable(CompressibleVariables.Density, dgDegree);
+            c.AddVariable(CompressibleVariables.Momentum.xComponent, dgDegree);
+            c.AddVariable(CompressibleVariables.Momentum.yComponent, dgDegree);
+            c.AddVariable(CompressibleVariables.Energy, dgDegree);
+
+            c.AddVariable(CNSVariables.Pressure, dgDegree);
+            c.AddVariable(CNSVariables.Velocity.xComponent, dgDegree);
+            c.AddVariable(CNSVariables.Velocity.yComponent, dgDegree);
+
+            // ### Shock-capturing ###
+            //if (dgDegree > 0) {
+            //    double epsilon0 = 1.0;
+            //    double kappa = 1.0;
+            //    double sensorLimit = 1e-8;
+
+            //    Variable sensorVariable = CompressibleVariables.Density;
+            //    c.CNSShockSensor = new PerssonSensor(sensorVariable, sensorLimit);
+            //    c.ArtificialViscosityLaw = new SmoothedHeavisideArtificialViscosityLaw(c.CNSShockSensor, dgDegree, sensorLimit, epsilon0, kappa);
+
+            //    c.AddVariable(CNSVariables.ShockSensor, 0);
+            //    c.AddVariable(CNSVariables.ArtificialViscosity, 2);
+            //}
+
+            // ### Grid ###
+            double xMin = 0;
+            double xMax = 2.0;
+            double yMin = 0;
+            double yMax = 1.0;
+
+            c.GridFunc = delegate {
+                double[] xNodes = GenericBlas.Linspace(xMin, xMax, numOfCellsX + 1);
+                double[] yNodes = GenericBlas.Linspace(yMin, yMax, numOfCellsY + 1);
+                var grid = Grid2D.Cartesian2DGrid(xNodes, yNodes, periodicX: false, periodicY: false);
+
+                grid.EdgeTagNames.Add(1, "SupersonicInlet");
+                grid.EdgeTagNames.Add(2, "SubsonicOutlet");
+                //grid.EdgeTagNames.Add(3, "AdiabaticSlipWall");
+
+                grid.DefineEdgeTags(delegate (double[] X) {
+                    if (Math.Abs(X[1]) < 1e-14) {   // bottom
+                        return 1;
+                    } else if (Math.Abs(X[1] - (yMax - yMin)) < 1e-14) {    // top
+                        return 1;
+                    } else if (Math.Abs(X[0]) < 1e-14) {                    // left
+                        return 1;
+                    } else if (Math.Abs(X[0] - (xMax - xMin)) < 1e-14) {    // right
+                        return 2;
+                    } else {
+                        throw new Exception("Boundary condition not specified");
+                    }
+                });
+
+                return grid;
+            };
+
+            // ### Initial conditions ###
+
+            // #########################
+            // Parameters
+            // #########################
+            double gamma = IdealGas.Air.HeatCapacityRatio;
+            double Ms = 1.5;
+
+            // #########################
+            // Shock
+            // #########################
+            double densityLeft = 1;
+            double densityRight = (gamma + 1) * Ms * Ms / (2 + (gamma - 1) * Ms * Ms) * densityLeft;
+            double pressureLeft = 1;
+            double pressureRight = (1 + 2 * gamma / (gamma + 1) * (Ms * Ms - 1)) * pressureLeft;
+            double velocityXLeft = Ms * Math.Sqrt(gamma * pressureLeft / densityLeft);
+            double velocityXRight = (2 + (gamma - 1) * Ms * Ms) / ((gamma + 1) * Ms * Ms) * velocityXLeft;    // (1)
+            //double velocityXRight = velocityXLeft * densityLeft / densityRight; // equivalent to (1)
+            //double MsPostShock = Math.Sqrt((1 + ((gamma - 1) / 2) * Ms * Ms) / (gamma * Ms * Ms - (gamma - 1) / 2));
+            //double velocityXRight3 = MsPostShock * Math.Sqrt(gamma * pressureRight / densityRight);     // equivalent to (1)
+            double velocityYLeft = 0;
+            double velocityYRight = 0;
+
+            double cellSize = Math.Min((xMax - xMin) / numOfCellsX, (yMax - yMin) / numOfCellsY);
+
+            double shockPosition = 0.5;
+
+            c.AddBoundaryValue("SupersonicInlet", CompressibleVariables.Density, (X, t) => X[0] <= shockPosition ? densityLeft : densityRight);
+            c.AddBoundaryValue("SupersonicInlet", CNSVariables.Velocity.xComponent, (X, t) => X[0] <= shockPosition ? velocityXLeft : velocityXRight);
+            c.AddBoundaryValue("SupersonicInlet", CNSVariables.Velocity.yComponent, (X, t) => X[0] <= shockPosition ? velocityYLeft : velocityYRight);
+            c.AddBoundaryValue("SupersonicInlet", CNSVariables.Pressure, (X, t) => X[0] <= shockPosition ? pressureLeft : pressureRight);
+            c.AddBoundaryValue("SubsonicOutlet", CNSVariables.Pressure, (X, t) => pressureRight);
+
+            // Initial conditions
+            c.InitialValues_Evaluators.Add(CompressibleVariables.Density, X => X[0] <= shockPosition ? densityLeft : densityRight);
+            c.InitialValues_Evaluators.Add(CNSVariables.Velocity.xComponent, X => X[0] <= shockPosition ? velocityXLeft : velocityXRight);
+            c.InitialValues_Evaluators.Add(CNSVariables.Velocity.yComponent, X => X[0] <= shockPosition ? velocityYLeft : velocityYRight);
+            c.InitialValues_Evaluators.Add(CNSVariables.Pressure, X => X[0] <= shockPosition ? pressureLeft : pressureRight);
+
+            // ### Time configuration ###
+            c.dtMin = 0.0;
+            c.dtMax = 1.0;
+            c.dtFixed = dtFixed;
+
+            c.Endtime = 1e-1;
+            c.NoOfTimesteps = 100;
+
+            // ### Project and sessions name ###
+            c.ProjectName = "CNS_SSW";
+
+            string tempSessionName;
+
+            if (c.ExplicitScheme == ExplicitSchemes.RungeKutta) {
+                tempSessionName = String.Format("CNS_SSW_p{0}_xCells{1}_yCells{2}_RK{3}", dgDegree, numOfCellsX, numOfCellsY, c.ExplicitOrder);
+            } else {
+                throw new NotImplementedException("Session name is not available for this type of time stepper");
+            }
+
+            c.SessionName = tempSessionName;
+
+            return c;
+        }
+
     }
 }
