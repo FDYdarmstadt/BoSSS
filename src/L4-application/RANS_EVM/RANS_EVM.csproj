@@ -30,8 +30,9 @@
     <Reference Include="System" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Program.cs" />
+    <Compile Include="RANS_Main.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="RANS_Control.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
 </Project>
