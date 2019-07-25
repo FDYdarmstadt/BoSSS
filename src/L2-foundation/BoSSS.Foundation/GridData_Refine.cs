@@ -291,9 +291,7 @@ namespace BoSSS.Foundation.Grid.Classic
                             Old2New.MappingIndex[j] = new int[] { Cj.CoarseningLeafIndex };
                             Old2New.DestGlobalId[j] = new long[] { restoredCell.GlobalID };
                         }
-                        
                         newCells.Add(restoredCell);
-
                     }
                 }
 
@@ -301,7 +299,7 @@ namespace BoSSS.Foundation.Grid.Classic
                 // ----------
 
                 double[] SendOffset = new double[1];
-                SendOffset[0] = CellsToRefine.Count();
+                SendOffset[0] = CellsToRefine.Count() - CellsToCoarsen.Count();
                 double[] ReceiveOffset = new double[MpiSize];
                 unsafe
                 {
@@ -412,7 +410,6 @@ namespace BoSSS.Foundation.Grid.Classic
                 }
                 Debugger.Launch();
                 newGrid.Cells = newCells.ToArray();
-                var CafafaasfasffNglb = newGrid.GetCellNeighbourship(true);
 
 
                 // fix neighborship
