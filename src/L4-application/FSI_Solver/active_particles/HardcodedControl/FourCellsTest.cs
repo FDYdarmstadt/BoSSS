@@ -62,8 +62,8 @@ namespace BoSSS.Application.FSI_Solver
 
             C.GridFunc = delegate
             {
-                double[] Xnodes = GenericBlas.Linspace(-1 * BaseSize, 1 * BaseSize, 4);
-                double[] Ynodes = GenericBlas.Linspace(-1 * BaseSize, 1 * BaseSize, 4);
+                double[] Xnodes = GenericBlas.Linspace(-1 * BaseSize, 1 * BaseSize, 14);
+                double[] Ynodes = GenericBlas.Linspace(-1 * BaseSize, 1 * BaseSize, 14);
 
                 var grd = Grid2D.Cartesian2DGrid(Xnodes, Ynodes, periodicX: false, periodicY: false);
 

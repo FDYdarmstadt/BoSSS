@@ -96,11 +96,11 @@ namespace BoSSS.Foundation.Grid.Classic
                 if (CellsToRefine != null)
                 {
                     ThrowExceptionForDoubleEntryInEnumeration(CellsToRefine);
-                    CellsToRefineBitmask = GetCellsToRefine(CellsToRefine);
+                    CellsToRefineBitmask = GetCellBitMask(CellsToRefine);
                     GetLocalAndExternalNeighbourCells(CellsToRefine, ref AdaptNeighborsBitmask);
                 }
 
-                Debugger.Launch();
+                //Debugger.Launch();
                 if (CellsToCoarsen != null) {
                     foreach(int[] coarseningCluster in CellsToCoarsen)
                     {
@@ -130,16 +130,9 @@ namespace BoSSS.Foundation.Grid.Classic
                             Cell Cj = Cells.GetCell(j);
                             if(CoarseningClusterID != Cj.CoarseningClusterID)
                                 throw new ArgumentException("Mismatch of 'CoarseningClusterID' within cluster.");
-
-                            this.GetCellNeighbours(j, GetCellNeighbours_Mode.ViaVertices, out int[] Neighs, out _);
-
-                            foreach (int jNeigh in Neighs) {
-                                if(Array.IndexOf(coarseningCluster, jNeigh) < 0) {
-                                    AdaptNeighborsBitmask[jNeigh] = true;
-                                }
-                            }
                         }
                     }
+                    CellsToCoarseBitmask = GetCellBitMask(CellsToCoarsen);
                     GetLocalAndExternalNeighbourCells(CellsToCoarsen, ref AdaptNeighborsBitmask);
                 }
 
@@ -417,7 +410,7 @@ namespace BoSSS.Foundation.Grid.Classic
 
                     }
                 }
-                
+                Debugger.Launch();
                 newGrid.Cells = newCells.ToArray();
                 var CafafaasfasffNglb = newGrid.GetCellNeighbourship(true);
 
@@ -832,7 +825,7 @@ namespace BoSSS.Foundation.Grid.Classic
             }
         }
 
-        private BitArray GetCellsToRefine(IEnumerable<int> cellsToRefine)
+        private BitArray GetCellBitMask(IEnumerable<int> cellsToRefine)
         {
             int noOfLocalCells = this.Cells.NoOfLocalUpdatedCells;
             BitArray cellsToRefineBitMask = new BitArray(noOfLocalCells);
@@ -840,6 +833,24 @@ namespace BoSSS.Foundation.Grid.Classic
             foreach (int currentCellLocalIndex in cellsToRefine)
             {
                 cellsToRefineBitMask[currentCellLocalIndex] = true;
+            }
+
+            return cellsToRefineBitMask;
+        }
+
+        private BitArray GetCellBitMask(IEnumerable<int[]> cellsToCoarsen)
+        {
+            int noOfLocalCells = this.Cells.NoOfLocalUpdatedCells;
+            BitArray cellsToRefineBitMask = new BitArray(noOfLocalCells);
+
+            foreach (int[] coarseningCluster in cellsToCoarsen)
+            {
+                Cell[] coarseningCellCluster = coarseningCluster.Select(j => Cells.GetCell(j)).ToArray();
+                for (int z = 0; z < coarseningCellCluster.Length; z++)
+                {
+                    int currentCellLocalIndex = coarseningCluster[z];
+                    cellsToRefineBitMask[currentCellLocalIndex] = true;
+                }
             }
 
             return cellsToRefineBitMask;
@@ -881,8 +892,11 @@ namespace BoSSS.Foundation.Grid.Classic
 
             foreach(int[] coarseningClusterID in coarseningClusters)
             {
-                foreach (int currentCellIndex in coarseningClusterID)
+                Cell[] coarseningCellCluster = coarseningClusterID.Select(j => Cells.GetCell(j)).ToArray();
+                for (int z = 0; z < coarseningCellCluster.Length; z++)
                 {
+                    int currentCellIndex = coarseningClusterID[z];
+
                     this.GetCellNeighbours(currentCellIndex, GetCellNeighbours_Mode.ViaVertices, out int[] neighbourCells, out _);
 
                     foreach (int neighbourCellIndex in neighbourCells)
