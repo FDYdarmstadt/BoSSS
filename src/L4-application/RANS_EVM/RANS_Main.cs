@@ -2,11 +2,11 @@
 
 namespace RANS_EVM
 {
-    class MainClass
+    public class RANS_EVM //: BoSSS.Solution.Application<RANS_Control>
     {
         public static void Main(string[] args)
         {
-            Console.WriteLine("Hello World!");
+            Console.WriteLine("Not implemented yet!");
         }
     }
 }
