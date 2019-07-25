@@ -117,7 +117,7 @@ namespace BoSSS.Foundation.XDG {
             m_CCBasis.Tracker.Subscribe(this);
             this.OnNext(m_CCBasis.Tracker.Regions); // initialize data structures.
         }
-        
+
         XDGBasis m_CCBasis;
 
         /// <summary>
@@ -357,22 +357,22 @@ namespace BoSSS.Foundation.XDG {
             //MultidimensionalArray basisValues = m_Basis.Evaluate(NodeSet);
             //int NoOfNodesPerCell = basisValues.GetLength(0);
             int NoOfNodes = NodeSet.NoOfNodes;
-            if(result.GetLength(1) != NoOfNodes)
+            if (result.GetLength(1) != NoOfNodes)
                 throw new ArgumentException();
-                        
+
             var _result = result.ExtractSubArrayShallow(new int[] { ResultCellindexOffset, 0, }, new int[] { ResultCellindexOffset + Len - 1, NoOfNodes - 1 });
-            if(ResultPreScale == 0.0)
+            if (ResultPreScale == 0.0)
                 _result.Clear();
-            else if(ResultPreScale != 1.0)
+            else if (ResultPreScale != 1.0)
                 _result.Scale(ResultPreScale);
-            
+
             this.GetSpeciesShadowField(SpeciesIdB).Evaluate(j0, Len, NodeSet, _result, 1.0);
             this.GetSpeciesShadowField(SpeciesIdA).Evaluate(j0, Len, NodeSet, _result, -1.0);
             _result.Scale(-1.0);
         }
 
         MultidimensionalArray[] m_Evaluate_SpeciesEvalBuffer = new MultidimensionalArray[0];
-        
+
         /// <summary>
         /// Evaluates the cut-cell DG - field;
         /// </summary>
@@ -405,8 +405,8 @@ namespace BoSSS.Foundation.XDG {
                 DGField.EvaluateInternal,
                 ref m_Evaluate_SpeciesEvalBuffer,
                 __M => new int[] { 1, __M },
-                delegate(MultidimensionalArray R, int offset, int m, int SpcInd, MultidimensionalArray[] SR) {
-                    double r = R[offset, m]*_ResultPreScale;
+                delegate (MultidimensionalArray R, int offset, int m, int SpcInd, MultidimensionalArray[] SR) {
+                    double r = R[offset, m] * _ResultPreScale;
                     r += SR[SpcInd][0, m];
                     R[offset, m] = r;
                 });
@@ -440,7 +440,7 @@ namespace BoSSS.Foundation.XDG {
         /// see <paramref name="result"/>
         /// </param>
         public override void EvaluateGradient(int j0, int Len, NodeSet NodeSet, MultidimensionalArray result, int ResultCellindexOffset, double ResultPreScale) {
-           
+
             int D = this.GridDat.SpatialDimension; // spatial dimension
             int M = NodeSet.NoOfNodes; // number of nodes per cell
 
@@ -455,9 +455,9 @@ namespace BoSSS.Foundation.XDG {
                 DGField.EvaluateGradientInternal,
                 ref m_EvaluateGradient_SpeciesEvalBuffer,
                 _M => new int[] { 1, _M, D },
-                delegate(MultidimensionalArray R, int offset, int m, int SpcInd, MultidimensionalArray[] SR) {
+                delegate (MultidimensionalArray R, int offset, int m, int SpcInd, MultidimensionalArray[] SR) {
                     for (int d = 0; d < D; d++) {
-                        double r = R[offset, m, d]*ResultPreScale;
+                        double r = R[offset, m, d] * ResultPreScale;
                         r += SR[SpcInd][0, m, d];
                         R[offset, m, d] = r;
                     }
@@ -484,11 +484,39 @@ namespace BoSSS.Foundation.XDG {
         /// </param>
         /// <param name="ResultPreScale">
         /// see <paramref name="result"/>
-        /// </param>
+        /// </param> 
         public override void EvaluateMean(int j0, int Len, MultidimensionalArray result, int ResultCellindexOffset, double ResultPreScale) {
             throw new NotImplementedException("will come soon");
         }
 
+        public void EvaluateMeanAB(int j0, int Len, MultidimensionalArray result, LevelSetTracker levelSetTracker, int ResultCellindexOffset = 0, double ResultPreScale = 0.0) {
+            CellMask cutCells = levelSetTracker.Regions.GetCutCellMask();
+            CellMask speciesA = levelSetTracker.Regions.GetSpeciesMask("A");
+
+            for (int j = 0; j < Len; j++) {
+                int cell = j0 + j;
+                double temp;
+
+                // Take average of species A and B in cut cells
+                if (cutCells.Contains(cell)) {
+                    double valueA = this.GetSpeciesShadowField("A").GetMeanValue(cell);
+                    double valueB = this.GetSpeciesShadowField("B").GetMeanValue(cell);
+                    temp = 0.5 * (valueA + valueB);
+                } else {
+                    if (speciesA.Contains(cell)) {
+                        temp = this.GetSpeciesShadowField("A").GetMeanValue(cell);
+                    } else {
+                        temp = this.GetSpeciesShadowField("B").GetMeanValue(cell);
+                    }
+                }
+
+                if (ResultPreScale != 0.0) {
+                    result[j + ResultCellindexOffset] *= ResultPreScale;
+                }
+                //result[j + ResultCellindexOffset] = GetMeanValue(j + j0);
+                result[j + ResultCellindexOffset] = temp;
+            }
+        }
 
         /// <summary>
         /// the DG coordinated of the cut field;
@@ -628,7 +656,7 @@ namespace BoSSS.Foundation.XDG {
 
             CellMask ExtrapolateTo = NearBand.VolumeMask.Intersect(LsTrk.Regions.GetSpeciesSubGrid(Id).VolumeMask);
             CellMask ExtrapolateFrom = oldSpeciesSubGrid.VolumeMask;
-            
+
             SpeciesField.CellExtrapolation(ExtrapolateTo, ExtrapolateFrom);
         }
 
@@ -790,7 +818,7 @@ namespace BoSSS.Foundation.XDG {
             //        int NoOfSpec = tracker.GetNoOfSpecies(j, out rrc);
             //        double Acc = 0;
 
-                    
+
 
             //        double facSum = 0;
             //        for (int iSpec = 0; iSpec < NoOfSpec; iSpec++) {
@@ -819,6 +847,11 @@ namespace BoSSS.Foundation.XDG {
             throw new NotImplementedException();
         }
 
+        public void SetMeanValueAB(int j, double v) {
+            this.GetSpeciesShadowField("A").SetMeanValue(j, v);
+            this.GetSpeciesShadowField("B").SetMeanValue(j, v);
+        }
+
         /// <summary>
         /// performs the projection of <paramref name="func"/> for each species.
         /// </summary>
@@ -830,7 +863,7 @@ namespace BoSSS.Foundation.XDG {
                     var domain = lsTrk.Regions.GetSpeciesSubGrid(spc).VolumeMask;
                     CellQuadratureScheme _scheme;
                     if (scheme == null) {
-                        _scheme = new CellQuadratureScheme(UseDefaultFactories: true, domain:domain);
+                        _scheme = new CellQuadratureScheme(UseDefaultFactories: true, domain: domain);
                     } else {
                         if (scheme.Domain != null)
                             domain = domain.Intersect(scheme.Domain);
@@ -1005,14 +1038,14 @@ namespace BoSSS.Foundation.XDG {
             }
         }
 
-        
+
         /// <summary>
         /// equal to implementation in base class, see
         /// <see cref="DGField.DerivativeByFlux(double,DGField,int,SubGrid,SpatialOperator.SubGridBoundaryModes)"/>;
         /// The DG coordinates of all species are computed equally;
         /// </summary>
-        public override void DerivativeByFlux(double alpha, DGField f, int d, 
-            SubGrid optionalSubGrid = null, 
+        public override void DerivativeByFlux(double alpha, DGField f, int d,
+            SubGrid optionalSubGrid = null,
             SpatialOperator.SubGridBoundaryModes bndMode = SpatialOperator.SubGridBoundaryModes.OpenBoundary) {
 
             foreach (var SpcId in this.Basis.Tracker.SpeciesIdS) {
@@ -1164,7 +1197,7 @@ namespace BoSSS.Foundation.XDG {
         /// </summary>
         public SinglePhaseField ProjectToSinglePhaseField(int BasisDegreeMultiplicator = 2, CellMask cellMask = null) {
             var QRs = GridDat.iGeomCells.RefElements.Select(Kref => Kref.GetQuadratureRule(this.Basis.Degree * BasisDegreeMultiplicator));
-            SinglePhaseField FieldReturn = new SinglePhaseField(this.Basis.NonX_Basis,this.Identification);
+            SinglePhaseField FieldReturn = new SinglePhaseField(this.Basis.NonX_Basis, this.Identification);
             CellQuadratureScheme CQS = new CellQuadratureScheme(false, cellMask).AddFixedRuleS(QRs);
             FieldReturn.ProjectField(1.0,
                 this.Evaluate,
@@ -1193,7 +1226,7 @@ namespace BoSSS.Foundation.XDG {
         //    }
         //}
 
-#region IObserver<LevelSetInfo> Members
+        #region IObserver<LevelSetInfo> Members
 
         /// <summary>
         /// Do nothing.
@@ -1220,7 +1253,7 @@ namespace BoSSS.Foundation.XDG {
             m_Coordinates.BeginResize(m_CCBasis.MaximalLength);
 
             if (m_UpdateBehaviour == BehaveUnder_LevSetMoovement.PreserveMemory || m_UpdateBehaviour == BehaveUnder_LevSetMoovement.AutoExtrapolate) {
-                if(trk.HistoryLength < 1)
+                if (trk.HistoryLength < 1)
                     throw new NotSupportedException("LevelSettracker must have at a history length >= 1 in order to support 'PreserveMemory' or 'AutoExtrapolate'.");
             }
 
@@ -1370,6 +1403,6 @@ namespace BoSSS.Foundation.XDG {
             }
         }
 
-#endregion
+        #endregion
     }
 }
