@@ -504,7 +504,19 @@ namespace BoSSS.Solution.AdvancedSolvers {
             get;
             private set;
         }
-        
+
+        /// <summary>
+        /// Pointer to operator on finest level.
+        /// </summary>
+        public MultigridOperator FinestLevel {
+            get {
+                if (FinerLevel != null)
+                    return FinerLevel.FinestLevel;
+                else
+                    return this;
+            }
+        }
+
         /// <summary>
         /// Pointer to operator on coarser level.
         /// </summary>

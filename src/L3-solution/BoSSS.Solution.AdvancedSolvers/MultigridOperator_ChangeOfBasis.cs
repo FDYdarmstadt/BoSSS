@@ -115,7 +115,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
         /// <summary>
         /// the DG degrees on this level
         /// </summary>
-        int[] Degrees {
+        public int[] Degrees {
             get {
                 VerifyConfig();
                 int[] R = new int[this.BaseGridProblemMapping.BasisS.Count()];
