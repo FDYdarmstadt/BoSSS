@@ -51,7 +51,7 @@ namespace BoSSS.Application.FSI_Solver
             C.AdaptiveMeshRefinement = false;
             C.SessionName = "fjkfjksdfhjk";
 
-            C.pureDryCollisions = false;
+            C.pureDryCollisions = true;
             C.SetDGdegree(2);
 
             // grid and boundary conditions

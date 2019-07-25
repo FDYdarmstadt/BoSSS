@@ -1515,7 +1515,7 @@ namespace BoSSS.Application.FSI_Solver
             //CellMask LevSetCells = LsTrk.Regions.GetCutCellMask();
             //BitArray CellsToRefine = new BitArray(J);
             //double TotalPressure = Pressure.GetMeanValueTotal(CellMask.GetFullMask(GridData));
-            //CellMask boundaryCells = GridData.GetBoundaryCells();
+            CellMask boundaryCells = GridData.GetBoundaryCells();
             //for (int i = 0; i < J; i++)
             //{
             //    Pressure.GetExtremalValuesInCell(out double minPressure, out double maxPressure, i);
@@ -1536,8 +1536,9 @@ namespace BoSSS.Application.FSI_Solver
             //}
             //if (!refined && CurrentLevel > 0)
             //    DesiredLevel_j = CurrentLevel - 1;
-
-            int DesiredLevel_j = CurrentLevel + 1;
+            int DesiredLevel_j = 1;
+            if (CurrentLevel == 1)
+                DesiredLevel_j = 0;
             return DesiredLevel_j;
         }
 

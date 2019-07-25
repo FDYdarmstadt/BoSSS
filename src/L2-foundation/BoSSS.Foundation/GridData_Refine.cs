@@ -87,7 +87,7 @@ namespace BoSSS.Foundation.Grid.Classic
 
                 BitArray AdaptNeighboursOtherProcess = new BitArray(JE);
                 List<long>[] exchangeNeighbours = new List<long>[MpiSize];
-                Debugger.Launch();
+
                 long[] externalCellsGlobalIndices = iParallel.GlobalIndicesExternalCells;
                 int firstGlobalIndex = cellPartitioning.i0;
                 // Check Input, set Bitmasks
@@ -97,29 +97,29 @@ namespace BoSSS.Foundation.Grid.Classic
                 {
                     ThrowExceptionForDoubleEntryInEnumeration(CellsToRefine);
                     CellsToRefineBitmask = GetCellsToRefine(CellsToRefine);
-                    AdaptNeighborsBitmask = GetNeighbourCellsOfCellsToRefine(CellsToRefine);
+                    GetLocalAndExternalNeighbourCells(CellsToRefine, ref AdaptNeighborsBitmask);
                 }
 
+                Debugger.Launch();
                 if (CellsToCoarsen != null) {
-                    foreach(int[] jCellS in CellsToCoarsen) { // loop over all coarsening clusters...
+                    foreach(int[] coarseningCluster in CellsToCoarsen)
+                    {
+                        Cell[] coarseningCellCluster = coarseningCluster.Select(j => Cells.GetCell(j)).ToArray();
 
-                        // cluster of cells to coarsen
-                        Cell[] CellS = jCellS.Select(j => this.Cells.GetCell(j)).ToArray();
-
-                        int CoarseningClusterID = CellS[0].CoarseningClusterID;
-                        int iKref = this.Cells.GetRefElementIndex(jCellS[0]);
-                        int RefinementLevel = CellS[0].RefinementLevel;
+                        int CoarseningClusterID = coarseningCellCluster[0].CoarseningClusterID;
+                        int iKref = Cells.GetRefElementIndex(coarseningCluster[0]);
+                        int RefinementLevel = coarseningCellCluster[0].RefinementLevel;
                         
-                        if(jCellS.Length != KrefS_SubdivLeaves[iKref].Length)
+                        if(coarseningCluster.Length != KrefS_SubdivLeaves[iKref].Length)
                             throw new ArgumentException("Number of elements in coarsening cluster does not match refinement template for respective element type.");
                         if(RefinementLevel <= 0 || CoarseningClusterID <= 0)
                             throw new ArgumentException("Coarsening not available for respective cell.");
 
-                        if(CellS.Where(cl => cl.ParentCell != null).Count() != 1)
+                        if(coarseningCellCluster.Where(cl => cl.ParentCell != null).Count() != 1)
                             throw new ArgumentException("Coarsening cluster seems wrong, or internal data may be corrupted.");
 
-                        for(int z = 0; z < CellS.Length; z++) {
-                            int j = jCellS[z];
+                        for(int z = 0; z < coarseningCellCluster.Length; z++) {
+                            int j = coarseningCluster[z];
 
                             if(CellsToRefineBitmask[j] == true)
                                 throw new ArgumentException("Cannot refine and coarsen the same cell.");
@@ -127,20 +127,20 @@ namespace BoSSS.Foundation.Grid.Classic
                                 throw new ArgumentException("Double entry.", "CellsToCoarsen");
                             CellsToCoarseBitmask[j] = true;
 
-                            Cell Cj = this.Cells.GetCell(j);
+                            Cell Cj = Cells.GetCell(j);
                             if(CoarseningClusterID != Cj.CoarseningClusterID)
                                 throw new ArgumentException("Mismatch of 'CoarseningClusterID' within cluster.");
 
-                            int[] Neighs, dummy;
-                            this.GetCellNeighbours(j, GetCellNeighbours_Mode.ViaVertices, out Neighs, out dummy);
+                            this.GetCellNeighbours(j, GetCellNeighbours_Mode.ViaVertices, out int[] Neighs, out _);
 
-                            foreach(int jNeigh in Neighs) {
-                                if(Array.IndexOf(jCellS, jNeigh) < 0) {
+                            foreach (int jNeigh in Neighs) {
+                                if(Array.IndexOf(coarseningCluster, jNeigh) < 0) {
                                     AdaptNeighborsBitmask[jNeigh] = true;
                                 }
                             }
                         }
                     }
+                    GetLocalAndExternalNeighbourCells(CellsToCoarsen, ref AdaptNeighborsBitmask);
                 }
 
                 BitArray CellsToRefineBitmaskExchange = new BitArray(JE);
@@ -215,7 +215,7 @@ namespace BoSSS.Foundation.Grid.Classic
                             if(newCell.CellFaceTags != null && newCell.CellFaceTags.Length > 0) {
                                 int[] oldNeighs = this.Cells.CellNeighbours[j];
                                 foreach(int jNeigh in oldNeighs) {
-                                    if(CellsToRefineBitmask[jNeigh] || CellsToCoarseBitmask[jNeigh]) {
+                                    if(CellsToRefineBitmaskExchange[jNeigh] || CellsToCoarseBitmaskExchange[jNeigh]) {
                                         // one of the neighbors has changed, so _potentially_ the cell face tags have to be updated
                                         long gId_Neigh = this.Cells.GetGlobalID(jNeigh);
 
@@ -469,6 +469,16 @@ namespace BoSSS.Foundation.Grid.Classic
                         continue;
                     }
 
+                    Debug.Assert((CellsToRefineBitmaskExchange[jCell1] && CellsToCoarseBitmaskExchange[jCell1]) == false);
+                    Debug.Assert((CellsToRefineBitmaskExchange[jCell2] && CellsToCoarseBitmaskExchange[jCell2]) == false);
+
+                    bool C1changed = CellsToRefineBitmaskExchange[jCell1] || CellsToCoarseBitmaskExchange[jCell1];
+                    bool C2changed = CellsToRefineBitmaskExchange[jCell2] || CellsToCoarseBitmaskExchange[jCell2];
+
+                    if ((C1changed || C2changed) == false)
+                        // edge between two un-changed cells -- this neighborship remains the same.
+                        continue;
+
                     Cell[] adaptedCells1 = new Cell[1];
                     Cell[] adaptedCells2 = new Cell[1];
 
@@ -493,15 +503,7 @@ namespace BoSSS.Foundation.Grid.Classic
                     ThrowExceptionIfCellIsMissing(jCell1, adaptedCells1);
                     ThrowExceptionIfCellIsMissing(jCell2, adaptedCells2);
 
-                    Debug.Assert((CellsToRefineBitmaskExchange[jCell1] && CellsToCoarseBitmaskExchange[jCell1]) == false);
-                    Debug.Assert((CellsToRefineBitmaskExchange[jCell2] && CellsToCoarseBitmaskExchange[jCell2]) == false);
-
-                    bool C1changed = CellsToRefineBitmaskExchange[jCell1] || CellsToCoarseBitmaskExchange[jCell1];
-                    bool C2changed = CellsToRefineBitmaskExchange[jCell2] || CellsToCoarseBitmaskExchange[jCell2];
-
-                    if ((C1changed || C2changed) == false)
-                        // edge between two un-changed cells -- this neighborship remains the same.
-                        continue;
+                    
 
                     if (CellsToCoarseBitmaskExchange[jCell1] && CellsToCoarseBitmaskExchange[jCell2])
                     {
@@ -843,12 +845,10 @@ namespace BoSSS.Foundation.Grid.Classic
             return cellsToRefineBitMask;
         }
 
-        private BitArray GetNeighbourCellsOfCellsToRefine(IEnumerable<int> cellsToRefine)
+        private void GetLocalAndExternalNeighbourCells(IEnumerable<int> cellsToRefine, ref BitArray AdaptNeighborsBitmask)
         {
             int noOfLocalCells = this.Cells.NoOfLocalUpdatedCells;
-            BitArray AdaptNeighborsBitmask = new BitArray(noOfLocalCells);
             long[] externalCellsGlobalIndices = this.iParallel.GlobalIndicesExternalCells;
-            int firstGlobalIndex = this.CellPartitioning.i0;
             List<long>[] exchangeNeighbours = new List<long>[MpiSize];
 
             foreach (int currentCellIndex in cellsToRefine)
@@ -870,9 +870,52 @@ namespace BoSSS.Foundation.Grid.Classic
                 }
             }
 
+            GetAndExchangeExternalNeighbours(exchangeNeighbours, ref AdaptNeighborsBitmask);
+        }
+
+        private void GetLocalAndExternalNeighbourCells(IEnumerable<int[]> coarseningClusters, ref BitArray AdaptNeighborsBitmask)
+        {
+            int noOfLocalCells = this.Cells.NoOfLocalUpdatedCells;
+            long[] externalCellsGlobalIndices = this.iParallel.GlobalIndicesExternalCells;
+            List<long>[] exchangeNeighbours = new List<long>[MpiSize];
+
+            foreach(int[] coarseningClusterID in coarseningClusters)
+            {
+                foreach (int currentCellIndex in coarseningClusterID)
+                {
+                    this.GetCellNeighbours(currentCellIndex, GetCellNeighbours_Mode.ViaVertices, out int[] neighbourCells, out _);
+
+                    foreach (int neighbourCellIndex in neighbourCells)
+                    {
+                        if (IsPartOfLocalCells(noOfLocalCells, neighbourCellIndex))
+                            AdaptNeighborsBitmask[neighbourCellIndex] = true;
+                        else
+                        {
+                            int neighbourGlobalIndex = (int)externalCellsGlobalIndices[neighbourCellIndex - noOfLocalCells];
+                            int neighbourProcess = CellPartitioning.FindProcess(neighbourGlobalIndex);
+                            if (exchangeNeighbours[neighbourProcess] == null)
+                                exchangeNeighbours[neighbourProcess] = new List<long>();
+                            exchangeNeighbours[neighbourProcess].Add(neighbourGlobalIndex);
+                        }
+                    }
+                }
+            }
+            GetAndExchangeExternalNeighbours(exchangeNeighbours, ref AdaptNeighborsBitmask);
+        }
+
+        private void GetAndExchangeExternalNeighbours(List<long>[] exchangeNeighbours, ref BitArray AdaptNeighborsBitmask)
+        {
+            List<long> externalNeighbours = ExchangeExternalNeighbours(exchangeNeighbours);
+            GetExternalNeighbours(externalNeighbours, ref AdaptNeighborsBitmask);
+        }
+
+        private List<long> ExchangeExternalNeighbours(List<long>[] exchangeNeighbours)
+        {
+            List<long> externalNeighbours = new List<long>();
+
             List<long>[][] tempExchange = exchangeNeighbours.MPIGatherO(0);
             tempExchange = tempExchange.MPIBroadcast(0);
-            List<long> externalNeighbours = new List<long>();
+
             for (int m = 0; m < MpiSize; m++)
             {
                 if (m != MpiRank)
@@ -881,12 +924,20 @@ namespace BoSSS.Foundation.Grid.Classic
                         externalNeighbours.AddRange(tempExchange[m][MpiRank]);
                 }
             }
+
+            return externalNeighbours;
+        }
+
+        private void GetExternalNeighbours(List<long> externalNeighbours, ref BitArray AdaptNeighborsBitmask)
+        {
+            int firstGlobalIndex = this.CellPartitioning.i0;
+            int noOfLocalCells = this.Cells.NoOfLocalUpdatedCells;
+
             for (int j = 0; j < externalNeighbours.Count(); j++)
             {
                 int externalNeighbour = (int)externalNeighbours[j] - firstGlobalIndex;
                 AdaptNeighborsBitmask[externalNeighbour] = true;
             }
-            return AdaptNeighborsBitmask;
         }
 
         private static bool IsPartOfLocalCells(int noOfLocalCells, int currentCellIndex)
