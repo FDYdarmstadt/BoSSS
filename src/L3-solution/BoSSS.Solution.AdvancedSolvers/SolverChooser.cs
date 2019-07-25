@@ -606,14 +606,18 @@ namespace BoSSS.Solution {
                 case LinearSolverConfig.Code.exp_gmres_levelpmg:
                     templinearSolve = new SoftGMRES() {
                         m_Tolerance = lc.ConvergenceCriterion,
-                        m_MaxIterations = 2,
-                        Precond = new LevelPmg()
+                        m_MaxIterations = lc.MaxSolverIterations,
+                        Precond = new LevelPmg() { UseHiOrderSmoothing = true }
                     };
-                    
+
+
                     //templinearSolve = new OrthonormalizationScheme() {
-                    //    Tolerance = 0.0, //lc.ConvergenceCriterion,
-                    //    MaxIter = 320,
-                    //    PrecondS = new ISolverSmootherTemplate[] { new LevelPmg() }
+                    //    Tolerance = lc.ConvergenceCriterion,
+                    //    MaxIter = lc.MaxSolverIterations,
+                    //    PrecondS = new ISolverSmootherTemplate[] {
+                    //        new LevelPmg() { UseHiOrderSmoothing = true }
+                    //        //new BlockJacobi() { NoOfIterations = 1, omega = 0.5 }
+                    //    }
                     //};
                     break;
 
