@@ -27,15 +27,10 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
-namespace BoSSS.Foundation.Grid.Classic {
+namespace BoSSS.Foundation.Grid.Classic
+{
     partial class GridData {
-
-        
-
-
 
         /// <summary>
         /// Creates a new grid, which is an adaptive refinement (cell by cell) of this grid.
@@ -56,16 +51,12 @@ namespace BoSSS.Foundation.Grid.Classic {
 
                 // templates for subdivision
                 // =========================
-                Debugger.Launch();
                 RefElement[] KrefS = oldGrid.RefElements; // all ref elements used
                 RefElement.SubdivisionTreeNode[] KrefS_SubDiv = new RefElement.SubdivisionTreeNode[KrefS.Length]; // subdivision tree for each ref element
                 RefElement.SubdivisionTreeNode[][] KrefS_SubdivLeaves = new RefElement.SubdivisionTreeNode[KrefS.Length][]; // actual subdivision elements
                 Tuple<int, int>[][,] KrefS_SubdivConnections = new Tuple<int, int>[KrefS.Length][,]; // connections between elements; 1st idx: ref elem; 2nd idx: subdiv elm; 3rd idx: face of subdiv elm; content: [idx of subdiv elm,idx of face]
                 int[][][] KrefS_Faces2Subdiv = new int[KrefS.Length][][]; // mapping: [ref elm, face of ref elm] -> Subdivision elements which bound to this face.
                 Old2New.GeometricMapping = new AffineTrafo[KrefS.Length][];
-                //List<AffineTrafo> InterCellTrafos = new List<AffineTrafo>();
-                //int[][] RefinementIctIdx = new int[KrefS.Length][];
-                //int[][] CoarseningIctIdx = new int[KrefS.Length][];
 
                 for(int iKref = 0; iKref < KrefS.Length; iKref++) {
                     RefElement Kref = KrefS[iKref];
@@ -86,15 +77,9 @@ namespace BoSSS.Foundation.Grid.Classic {
                         }
                     }
 
-                    //RefinementIctIdx[iKref] = new int[KrefS_SubdivLeaves[iKref].Length];
-                    //CoarseningIctIdx[iKref] = new int[KrefS_SubdivLeaves[iKref].Length];
                     Old2New.GeometricMapping[iKref] = new AffineTrafo[KrefS_SubdivLeaves[iKref].Length];
                     for(int iSubDiv = 0; iSubDiv < KrefS_SubdivLeaves[iKref].Length; iSubDiv++) {
                         Old2New.GeometricMapping[iKref][iSubDiv] = KrefS_SubdivLeaves[iKref][iSubDiv].TrafoFromRoot;
-                        //InterCellTrafos.Add(KrefS_SubdivLeaves[iKref][iSubDiv].TrafoFromRoot);
-                        //RefinementIctIdx[iKref][iSubDiv] = InterCellTrafos.Count - 1;
-                        //InterCellTrafos.Add(KrefS_SubdivLeaves[iKref][iSubDiv].Trafo2Root);
-                        //CoarseningIctIdx[iKref][iSubDiv] = InterCellTrafos.Count - 1;
                     }
                 }
 
@@ -103,48 +88,17 @@ namespace BoSSS.Foundation.Grid.Classic {
                 BitArray AdaptNeighboursOtherProcess = new BitArray(JE);
                 List<long>[] exchangeNeighbours = new List<long>[MpiSize];
 
-                long[] externalCellsGlobalID = this.iParallel.GlobalIndicesExternalCells;
+                Debugger.Launch();
+                long[] externalCellsGlobalIndices = iParallel.GlobalIndicesExternalCells;
+                int firstGlobalIndex = cellPartitioning.i0;
                 // Check Input, set Bitmasks
                 // =========================
-                if (CellsToRefine != null) {
-                    foreach(int jCell in CellsToRefine) {
-                        if(CellsToRefineBitmask[jCell] == true)
-                            throw new ArgumentException("Double entry.", "CellsToRefine");
 
-                        CellsToRefineBitmask[jCell] = true;
-
-                        int[] Neighs, dummy;
-                        this.GetCellNeighbours(jCell, GetCellNeighbours_Mode.ViaEdges, out Neighs, out dummy);
-
-                        foreach(int jNeigh in Neighs) {
-                            if (jNeigh < J)
-                                AdaptNeighborsBitmask[jNeigh] = true;
-                            else
-                            {
-                                long neighbourGlobalID = externalCellsGlobalID[jNeigh - J];
-                                int neighbourProcess = cellPartitioning.FindProcess(neighbourGlobalID);
-                                if (exchangeNeighbours[neighbourProcess] == null)
-                                    exchangeNeighbours[neighbourProcess] = new List<long>();
-                                exchangeNeighbours[neighbourProcess].Add(neighbourGlobalID);
-                            }
-                        }
-                    }
-                }
-                List<long>[][] tempExchange = exchangeNeighbours.MPIGatherO(0);
-                tempExchange = tempExchange.MPIBroadcast(0);
-                List<long> externalNeighbours = new List<long>();
-                for (int m = 0; m < MpiSize; m++)
+                if (CellsToRefine != null)
                 {
-                    if (m != MpiRank)
-                    {
-                        externalNeighbours.AddRange(tempExchange[m][MpiRank]);
-                    }
-                }
-                IDictionary<long, int> Global2LocalID = oldGrid.GetGlobalId2CellIndexMap();
-                for(int j = 0; j < externalNeighbours.Count(); j++)
-                {
-                    int externalNeighbour = Global2LocalID[externalNeighbours[j]];
-                    AdaptNeighborsBitmask[externalNeighbour] = true;
+                    ThrowExceptionForDoubleEntryInEnumeration(CellsToRefine);
+                    CellsToRefineBitmask = GetCellsToRefine(CellsToRefine);
+                    AdaptNeighborsBitmask = GetNeighbourCellsOfCellsToRefine(CellsToRefine);
                 }
 
                 if (CellsToCoarsen != null) {
@@ -372,7 +326,7 @@ namespace BoSSS.Foundation.Grid.Classic {
                     globalIDOffset += Convert.ToInt32(ReceiveOffset[m]) * 3;
                 }
 
-                Debugger.Launch();
+                //Debugger.Launch();
 
 
                 long[][] cellMapping = new long[globalJ][];
@@ -471,62 +425,6 @@ namespace BoSSS.Foundation.Grid.Classic {
 
                     }
                 }
-
-                //long[][][] exchangeCellMapping = cellMapping.MPIGatherO(0);
-                //if(MpiRank == 0)
-                //{
-                //    for (int m = 0; m < MpiSize; m++)
-                //    {
-                //        for (int j = 0; j < globalJ; j++)
-                //        {
-                //            if (cellMapping[j] == null && exchangeCellMapping[m][j] != null)
-                //                cellMapping[j] = exchangeCellMapping[m][j];
-                //        }
-                //    }
-                //}
-                //cellMapping = cellMapping.MPIBroadcast(0);
-
-                //for(int j = 0; j < globalJ; j++)
-                //{
-                //    if(cellMapping[j] != null)
-                //    {
-                //        Old2New.MappingIndex[j] = new int[4];
-                //        for (int i = 0; i < 4; i++)
-                //        {
-                //            Old2New.MappingIndex[j][i] = i;
-                //        }
-                //        Old2New.DestGlobalId[j] = cellMapping[j];
-                //    }
-                //}
-
-                //List<long> cellsToRefineGlobalID = new List<long>();
-                //foreach (int j in CellsToRefine)
-                //{
-                //    cellsToRefineGlobalID.Add(oldGrid.Cells[j].GlobalID);
-                //}
-                //List<long>[] allCellsToRefine = cellsToRefineGlobalID.MPIGatherO(0);
-                //allCellsToRefine = allCellsToRefine.MPIBroadcast(0);
-
-
-                //List<Cell>[] gatherNewCells = newCells.MPIGatherO(0);
-                //List<Cell> globalNewCell = new List<Cell>();
-                //if(MpiRank == 0)
-                //{
-                //    for(int m = 0; m < MpiSize; m++)
-                //    {
-                //        globalNewCell.AddRange(gatherNewCells[m]);
-                //    }
-                //}
-                //gatherNewCells = gatherNewCells.MPIBroadcast(0);
-
-                //for(int m = 0; m < MpiSize; m++)
-                //{
-                //    for (int j = 0; j < J; j++)
-                //    {
-                //        Debug.Assert(Old2New.DestGlobalId[j] == null);
-                //        Old2New.DestGlobalId[j] = gatherNewCells[m].Select(Cl => Cl.GlobalID).ToArray();
-                //    }
-                //}
                 
                 newGrid.Cells = newCells.ToArray();
                 var CafafaasfasffNglb = newGrid.GetCellNeighbourship(true);
@@ -536,9 +434,7 @@ namespace BoSSS.Foundation.Grid.Classic {
                 // ================
 
                 byte[,] Edge2Face = this.Edges.FaceIndices;
-                //int[][] Cells2Edges = this.Cells.Cells2Edges;
                 int[,] Edge2Cell = this.Edges.CellIndices;
-                //byte[] EdgeTags = this.Edges.EdgeTags;
                 MultidimensionalArray[] VerticesFor_KrefEdge = this.Edges.EdgeRefElements.Select(KrefEdge => KrefEdge.Vertices).ToArray();
 
                 int[] ONE_NULL = new int[] { 0 };
@@ -547,25 +443,16 @@ namespace BoSSS.Foundation.Grid.Classic {
                 Debug.Assert(Edge2Face.GetLength(0) == NoOfEdges);
                 Debug.Assert(Edge2Cell.GetLength(0) == NoOfEdges);
 
+                List<Tuple<int, Cell[]>> cellsOnNeighbourProcess = ExchangeCellData(adaptedCells);
 
                 for (int iEdge = 0; iEdge < NoOfEdges; iEdge++) {
                     int jCell1 = Edge2Cell[iEdge, 0];
                     int jCell2 = Edge2Cell[iEdge, 1];
 
-                    bool[] CellOnMPIProcess = new bool[2];
-                    if (jCell1 < J)
-                    {
-                        CellOnMPIProcess[0] = true;
-                    }
-                    if (jCell2 < J)
-                    {
-                        CellOnMPIProcess[1] = true;
-                    }
-                    if (!CellOnMPIProcess[0] && !CellOnMPIProcess[1])
-                        throw new Exception("Both cells not on the current process");
+                    
                     
 
-                    if (jCell2 < 0 && CellOnMPIProcess[0]) {
+                    if (jCell2 < 0) {
                         Debug.Assert((CellsToRefineBitmask[jCell1] && CellsToCoarseBitmask[jCell1]) == false);
                         if((CellsToRefineBitmask[jCell1] || CellsToCoarseBitmask[jCell1]) == false)
                             continue;
@@ -587,6 +474,54 @@ namespace BoSSS.Foundation.Grid.Classic {
                         }
 
                         continue;
+                    }
+
+                    Cell[] adaptedCells1 = new Cell[1];
+                    Cell[] adaptedCells2 = new Cell[1];
+
+                    bool[] CellOnMPIProcess = new bool[2];
+                    if (IsPartOfLocalCells(J, jCell1) && IsPartOfLocalCells(J, jCell2))
+                    {
+                        adaptedCells1 = adaptedCells[jCell1];
+                        adaptedCells2 = adaptedCells[jCell2];
+                    }
+                    else if (IsPartOfLocalCells(J, jCell1) && !IsPartOfLocalCells(J, jCell2))
+                    {
+                        adaptedCells1 = adaptedCells[jCell1];
+                        int jCell2GlobalIndex = (int)externalCellsGlobalIndices[jCell2 - J];
+                        for (int j = 0; j < cellsOnNeighbourProcess.Count(); j++)
+                        {
+                            if (jCell2GlobalIndex == cellsOnNeighbourProcess[j].Item1)
+                            {
+                                adaptedCells2 = cellsOnNeighbourProcess[j].Item2;
+                                break;
+                            }
+                        }
+                    }
+                    else if (!IsPartOfLocalCells(J, jCell1) && IsPartOfLocalCells(J, jCell2))
+                    {
+                        adaptedCells2 = adaptedCells[jCell2];
+                        int jCell1GlobalIndex = (int)externalCellsGlobalIndices[jCell2 - J];
+                        for (int j = 0; j < cellsOnNeighbourProcess.Count(); j++)
+                        {
+                            if (jCell1GlobalIndex == cellsOnNeighbourProcess[j].Item1)
+                            {
+                                adaptedCells1 = cellsOnNeighbourProcess[j].Item2;
+                                break;
+                            }   
+
+                        }
+                    }
+                    else
+                        throw new Exception("Both cells not on the current process");
+
+                    if(adaptedCells1 == null)
+                    {
+                        throw new Exception("Cell " + jCell1 + "does not exist!");
+                    }
+                    if (adaptedCells2 == null)
+                    {
+                        throw new Exception("Cell " + jCell2 + "does not exist!");
                     }
 
                     BitArray CellsToRefineBitmaskExchange = new BitArray(JE);
@@ -612,69 +547,72 @@ namespace BoSSS.Foundation.Grid.Classic {
                     List<Cell[]> temp_ExternalCell = new List<Cell[]>();
                     Dictionary<long, int> Gl2LocExt = this.iParallel.Global2LocalIdx;
 
-                    List<int> cellIDList = new List<int>();
-                    cellIDList.Add(jCell1);
-                    cellIDList.Add(jCell2);
-                    Cell[] adaptedCells1 = new Cell[1];
-                    Cell[] adaptedCells2 = new Cell[1];
+                    //if (!CellOnMPIProcess[0] || !CellOnMPIProcess[1])
+                    //{
+                    //    Dictionary<int, List<Tuple<int, Cell[], int>>> exchangeCellData = new Dictionary<int, List<Tuple<int, Cell[], int>>>();
+                    //    int cellIDOnCurretProc = new int();
+                    //    int cellIDOn_iProc = new int();
+                    //    if (CellOnMPIProcess[0])
+                    //    {
+                    //        cellIDOnCurretProc = cellIDList[0];
+                    //        cellIDOn_iProc = cellIDList[1];
+                    //    }
+                    //    else if (CellOnMPIProcess[0])
+                    //    {
+                    //        cellIDOnCurretProc = cellIDList[1];
+                    //        cellIDOn_iProc = cellIDList[0];
+                    //    }
+                    //    if (cellIDOnCurretProc < J && cellIDOn_iProc >= J)
+                    //    {
+                    //        int globalCellIDOn_iProc = (int)externalCellsGlobalIndices[cellIDOn_iProc - J];
+                    //        int iProc = cellPartitioning.FindProcess(globalCellIDOn_iProc);
+                    //        int cellIDOnCurrentProc = cellIDOnCurretProc + cellPartitioning.i0;
+                    //        int myRank = MpiRank;
 
-                    if (MpiSize > 1)
-                    {
-                        Dictionary<int, List<Tuple<int, Cell[], int>>> exchangeCellData = new Dictionary<int, List<Tuple<int, Cell[], int>>>();
-                        for (int i = 0; i < cellIDList.Count(); i++)
-                        {
-                            int cellIDOnCurretProc = cellIDList[i];
-                            int cellIDOn_iProc = cellIDList[Math.Abs(i - 1)];
-                            if (cellIDOnCurretProc < J && cellIDOn_iProc >= J)
-                            {
-                                int globalCellIDOn_iProc = (int)externalCellsGlobalID[cellIDOn_iProc - J];
-                                int iProc = cellPartitioning.FindProcess(globalCellIDOn_iProc);
-                                int cellIDOnCurrentProc = cellIDOnCurretProc + cellPartitioning.i0;
+                    //        if (!exchangeCellData.TryGetValue(iProc, out List<Tuple<int, Cell[], int>> ExchData_iProc))
+                    //        {
+                    //            ExchData_iProc = new List<Tuple<int, Cell[], int>>();
+                    //            exchangeCellData.Add(iProc, ExchData_iProc);
+                    //        }
+                    //        ExchData_iProc.Add(new Tuple<int, Cell[], int>(cellIDOnCurrentProc, adaptedCells[cellIDOnCurretProc], globalCellIDOn_iProc));
+                    //    }
 
-                                if (!exchangeCellData.TryGetValue(iProc, out List<Tuple<int, Cell[], int>> ExchData_iProc))
-                                {
-                                    ExchData_iProc = new List<Tuple<int, Cell[], int>>();
-                                    exchangeCellData.Add(iProc, ExchData_iProc);
-                                }
-                                ExchData_iProc.Add(new Tuple<int, Cell[], int>(cellIDOnCurrentProc, adaptedCells[cellIDOnCurretProc], globalCellIDOn_iProc));
-                            }
-                        }
+                    //    IDictionary<int, List<Tuple<int, Cell[], int>>> receiveCellData = SerialisationMessenger.ExchangeData(exchangeCellData);
 
-                        IDictionary<int, List<Tuple<int, Cell[], int>>> receiveCellData = SerialisationMessenger.ExchangeData(exchangeCellData);
+                    //    Dictionary<int, List<int>> ExtColor = new Dictionary<int, List<int>>();
 
-                        Dictionary<int, List<int>> ExtColor = new Dictionary<int, List<int>>();
+                    //    foreach (KeyValuePair<int, List<Tuple<int, Cell[], int>>> kv in receiveCellData)
+                    //    {
+                    //        List<Tuple<int, Cell[], int>> list = kv.Value;
 
-                        foreach (KeyValuePair<int, List<Tuple<int, Cell[], int>>> kv in receiveCellData)
-                        {
-                            List<Tuple<int, Cell[], int>> list = kv.Value;
+                    //        foreach (Tuple<int, Cell[], int> t in list)
+                    //        {
+                    //            int globalCellIDOnOtherProc = t.Item1;
+                    //            Cell[] cellOnOtherProc = t.Item2;
+                    //            int globalCellIDOnCurrentProc = t.Item3;
 
-                            foreach (Tuple<int, Cell[], int> t in list)
-                            {
-                                int globalCellIDOnOtherProc = t.Item1;
-                                Cell[] cellOnOtherProc = t.Item2;
-                                int globalCellIDOnCurrentProc = t.Item3;
+                    //            int cellIDOnCurrentProc = globalCellIDOnCurrentProc - cellPartitioning.i0;
+                    //            int cellIDOnOtherProc = Gl2LocExt[globalCellIDOnOtherProc];
 
-                                int cellIDOnCurrentProc = globalCellIDOnCurrentProc - cellPartitioning.i0;
-                                int cellIDOnOtherProc = Gl2LocExt[globalCellIDOnOtherProc];
-
-                                if (!CellOnMPIProcess[0] || !CellOnMPIProcess[1])
-                                {
-                                    adaptedCells1 = adaptedCells[jCell1];
-                                    adaptedCells2 = cellOnOtherProc;
-                                }
-                                else
-                                {
-                                    adaptedCells1 = adaptedCells[jCell1];
-                                    adaptedCells2 = adaptedCells[jCell2];
-                                }
-                            }
-                        }
-                    }
-                    else
-                    {
-                        adaptedCells1 = adaptedCells[jCell1];
-                        adaptedCells2 = adaptedCells[jCell2];
-                    }
+                    //            if (!CellOnMPIProcess[0] || !CellOnMPIProcess[1])
+                    //            {
+                    //                adaptedCells1 = adaptedCells[jCell1];
+                    //                adaptedCells2 = cellOnOtherProc;
+                    //            }
+                    //            else
+                    //            {
+                    //                adaptedCells1 = adaptedCells[jCell1];
+                    //                adaptedCells2 = adaptedCells[jCell2];
+                    //            }
+                    //        }
+                    //    }
+                    //}
+                    //else
+                    //{
+                    //    adaptedCells1 = adaptedCells[jCell1];
+                    //    adaptedCells2 = adaptedCells[jCell2];
+                    //}
+                    
 
                     if (CellsToCoarseBitmaskExchange[jCell1] && CellsToCoarseBitmaskExchange[jCell2]) {
                         Debug.Assert(adaptedCells1.Length == 1);
@@ -859,81 +797,166 @@ namespace BoSSS.Foundation.Grid.Classic {
                     }
                     Debug.Assert(c2 == old2NewGid.Count);
                 }
-                //var CafafafNglb = oldGrid.GetCellNeighbourship(true);
-                //csMPI.Raw.Barrier(csMPI.Raw._COMM.WORLD);
-                //List<Cell>[] newCellsExchange = newCells.MPIGatherO(0);
-                //int noOfNewCells = 3 * newCells.Count() / 4;
-                //int[] globalNoOfOldCells = J.MPIGatherO(0);
-                //int[] globalNoOfNewCells = noOfNewCells.MPIGatherO(0);
-                //List<int> cellToProcess = new List<int>();
-                //SerialisationMessenger sm = new SerialisationMessenger(csMPI.Raw._COMM.WORLD);
-                //int Size = MpiSize;
-                //int MyRank = MpiRank;
-                //List<Cell>[] exchangeCellList = new List<Cell>[Size];
-                //if (MpiRank == 0)
-                //{
-                //    for(int j = 0; j < newCells.Count(); j++)
-                //    {
-                //        cellToProcess.Add(0);
-                //    }
-                //    for (int m = 1; m < MpiSize; m++) 
-                //    {
-                //        for(int j = 0; j < newCellsExchange[m].Count(); j++)
-                //        {
-                //            newCells.Add(newCellsExchange[m][j]);
-                //            cellToProcess.Add(m);
-                //        }
-                //    }
-                //    newGrid.Cells = newCells.ToArray();
 
-                //}
-                //csMPI.Raw.Barrier(csMPI.Raw._COMM.WORLD);
-                //int[] part = cellToProcess.Count() != 0 ? cellToProcess.ToArray() : null;
-                //int[] itemCount = new int[Size];
-                //int tempJ = MpiRank == 0 ? newGrid.NoOfUpdateCells : 0;
-                //for (int j = 0; j < tempJ; j++)
-                //    itemCount[part[j]]++;
-
-                //for (int p = 0; p < Size; p++)
-                //    if (itemCount[p] > 0 && p != MyRank)
-                //        sm.SetCommPath(p);
-                //sm.CommitCommPaths();
-
-                //for (int p = 0; p < Size; p++)
-                //    if (itemCount[p] > 0 || p == MyRank)
-                //    {
-                //        exchangeCellList[p] = new List<Cell>(itemCount[p]);
-                //    }
-                //for (int j = 0; j < tempJ; j++)
-                //{
-                //    exchangeCellList[part[j]].Add(newGrid.Cells[j]);
-                //}
-
-                //for (int p = 0; p < Size; p++)
-                //{
-                //    if (exchangeCellList[p] != null && p != MyRank)
-                //        sm.Transmitt(p, exchangeCellList[p]);
-                //}
-                //List<Cell> myown = exchangeCellList[MyRank];
-                //List<Cell> o;
-                //int prc;
-                //while (sm.GetNext<List<Cell>>(out prc, out o))
-                //{
-                //    myown.AddRange(o);
-                //}
-                //newGrid.Cells = myown.ToArray();
-                csMPI.Raw.Barrier(csMPI.Raw._COMM.WORLD);
-
-                var Cell1 = adaptedCells[0][0];
-                var Cell2 = adaptedCells[0][1];
-                var Cell3 = adaptedCells[0][2];
-                var Cell4 = adaptedCells[0][3];
                 var CNglb = newGrid.GetCellNeighbourship(true);
                 csMPI.Raw.Barrier(csMPI.Raw._COMM.WORLD);
                 return newGrid;
             }
         }
+
+        private List<Tuple<int, Cell[]>> ExchangeCellData(Cell[][] Cells)
+        {
+            List<Tuple<int, Cell[]>> exchangedCellData = new List<Tuple<int, Cell[]>>();
+            Dictionary<int, List<Tuple<int, Cell[]>>> sendCellData = GetBoundaryCellsAndProcessToSend(Cells);
+            IDictionary<int, List<Tuple<int, Cell[]>>> receiveCellData = SerialisationMessenger.ExchangeData(sendCellData);
+
+            foreach (KeyValuePair<int, List<Tuple<int, Cell[]>>> kv in receiveCellData)
+            {
+                List<Tuple<int, Cell[]>> list = kv.Value;
+
+                foreach (Tuple<int, Cell[]> t in list)
+                { 
+                    int globalCellIndex = t.Item1;
+                    Cell[] cellOnOtherProc = t.Item2;
+
+                    int localCellIndex = globalCellIndex + CellPartitioning.i0;
+
+                    exchangedCellData.Add(new Tuple<int, Cell[]>(globalCellIndex, cellOnOtherProc));
+                }
+            }
+
+            return exchangedCellData;
+        }
+
+        private Dictionary<int, List<Tuple<int, Cell[]>>> GetBoundaryCellsAndProcessToSend(Cell[][] Cells)
+        {
+            Dictionary<int, List<Tuple<int, Cell[]>>> boundaryCellsProcess = new Dictionary<int, List<Tuple<int, Cell[]>>>();
+            int noOfLocalCells = this.Cells.NoOfLocalUpdatedCells;
+
+            for (int j = 0; j < noOfLocalCells; j++)
+            {
+                this.GetCellNeighbours(j, GetCellNeighbours_Mode.ViaEdges, out int[] neighbourCells, out _);
+
+                for (int i = 0; i < neighbourCells.Length; i++)
+                {
+                    if (!IsPartOfLocalCells(noOfLocalCells, neighbourCells[i]))
+                    {
+                        int currentProcess = GetExternalCellProcess(neighbourCells[i]);
+                        int globalCellIndex = CellPartitioning.i0 + j;
+                        if (!boundaryCellsProcess.TryGetValue(currentProcess, out List<Tuple<int, Cell[]>> exchangeCellData))
+                        {
+                            exchangeCellData = new List<Tuple<int, Cell[]>>();
+                            boundaryCellsProcess.Add(currentProcess, exchangeCellData);
+                        }
+                        foreach (KeyValuePair<int, List<Tuple<int, Cell[]>>> kv in boundaryCellsProcess)
+                        {
+                            List<Tuple<int, Cell[]>> list = kv.Value;
+                            bool processAlreadyIncluded = false;
+                            foreach (Tuple<int, Cell[]> t in list)
+                            {
+                                if (t.Item1 == j)
+                                {
+                                    processAlreadyIncluded = true;
+                                    break;
+                                }
+                            }
+                            if(!processAlreadyIncluded)
+                                exchangeCellData.Add(new Tuple<int, Cell[]>(globalCellIndex, Cells[j]));
+                        }
+                    }
+                }
+            }
+
+            return boundaryCellsProcess;
+        }
+
+        private int GetExternalCellProcess(int externalCellIndex)
+        {
+            int noOfLocalCells = this.Cells.NoOfLocalUpdatedCells;
+            long[] externalCellsGlobalIndices = iParallel.GlobalIndicesExternalCells;
+
+            int globalCellIndex = (int)externalCellsGlobalIndices[externalCellIndex - noOfLocalCells];
+            int currentProcess = CellPartitioning.FindProcess(globalCellIndex);
+
+            return currentProcess;
+        }
         
+        private void ThrowExceptionForDoubleEntryInEnumeration(IEnumerable<int> enumeration)
+        {
+            for(int i = 0; i < enumeration.Count(); i++)
+            {
+                int currentEntry = enumeration.ElementAt(i);
+                for (int j = i + 1; j < enumeration.Count(); j++)
+                {
+                    if(currentEntry == enumeration.ElementAt(j))
+                        throw new ArgumentException("Double entry.", "CellsToRefine");
+                }
+            }
+        }
+
+        private BitArray GetCellsToRefine(IEnumerable<int> cellsToRefine)
+        {
+            int noOfLocalCells = this.Cells.NoOfLocalUpdatedCells;
+            BitArray cellsToRefineBitMask = new BitArray(noOfLocalCells);
+
+            foreach (int currentCellLocalIndex in cellsToRefine)
+            {
+                cellsToRefineBitMask[currentCellLocalIndex] = true;
+            }
+
+            return cellsToRefineBitMask;
+        }
+
+        private BitArray GetNeighbourCellsOfCellsToRefine(IEnumerable<int> cellsToRefine)
+        {
+            int noOfLocalCells = this.Cells.NoOfLocalUpdatedCells;
+            BitArray AdaptNeighborsBitmask = new BitArray(noOfLocalCells);
+            long[] externalCellsGlobalIndices = this.iParallel.GlobalIndicesExternalCells;
+            int firstGlobalIndex = this.CellPartitioning.i0;
+            List<long>[] exchangeNeighbours = new List<long>[MpiSize];
+
+            foreach (int currentCellIndex in cellsToRefine)
+            {
+                this.GetCellNeighbours(currentCellIndex, GetCellNeighbours_Mode.ViaEdges, out int[] neighbourCells, out _);
+
+                foreach (int neighbourCellIndex in neighbourCells)
+                {
+                    if (IsPartOfLocalCells(noOfLocalCells, neighbourCellIndex))
+                        AdaptNeighborsBitmask[neighbourCellIndex] = true;
+                    else
+                    {
+                        int neighbourGlobalIndex = (int)externalCellsGlobalIndices[neighbourCellIndex - noOfLocalCells];
+                        int neighbourProcess = CellPartitioning.FindProcess(neighbourGlobalIndex);
+                        if (exchangeNeighbours[neighbourProcess] == null)
+                            exchangeNeighbours[neighbourProcess] = new List<long>();
+                        exchangeNeighbours[neighbourProcess].Add(neighbourGlobalIndex);
+                    }
+                }
+            }
+
+            List<long>[][] tempExchange = exchangeNeighbours.MPIGatherO(0);
+            tempExchange = tempExchange.MPIBroadcast(0);
+            List<long> externalNeighbours = new List<long>();
+            for (int m = 0; m < MpiSize; m++)
+            {
+                if (m != MpiRank)
+                {
+                    externalNeighbours.AddRange(tempExchange[m][MpiRank]);
+                }
+            }
+            for (int j = 0; j < externalNeighbours.Count(); j++)
+            {
+                int externalNeighbour = (int)externalNeighbours[j] - firstGlobalIndex;
+                AdaptNeighborsBitmask[externalNeighbour] = true;
+            }
+            return AdaptNeighborsBitmask;
+        }
+
+        private static bool IsPartOfLocalCells(int noOfLocalCells, int currentCellIndex)
+        {
+            return currentCellIndex < noOfLocalCells;
+        }
+
         static private void TestCellIntersection(Cell A, Cell B) {
             Debug.Assert(A.TransformationParams.GetLength(1) == B.TransformationParams.GetLength(1));
 

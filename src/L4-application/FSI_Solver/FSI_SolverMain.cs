@@ -1536,7 +1536,9 @@ namespace BoSSS.Application.FSI_Solver
             }
             if (!refined && CurrentLevel > 0)
                 DesiredLevel_j = CurrentLevel - 1;
-            return RefinementLevel;// DesiredLevel_j;
+
+            DesiredLevel_j = CurrentLevel + 1;
+            return DesiredLevel_j;
         }
 
 

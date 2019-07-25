@@ -444,7 +444,7 @@ namespace BoSSS.Application.FSI_Solver
             // Mesh refinement
             // =============================
             C.AdaptiveMeshRefinement = true;
-            C.RefinementLevel = 10;
+            C.RefinementLevel = 6;
 
 
             // Boundary conditions
