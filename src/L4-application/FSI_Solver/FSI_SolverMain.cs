@@ -1509,35 +1509,35 @@ namespace BoSSS.Application.FSI_Solver
         /// </summary>
         int LevelIndicator(int j, int CurrentLevel)
         {
-            int RefinementLevel = ((FSI_Control)this.Control).RefinementLevel;
-            int DesiredLevel_j = 0;
-            int J = GridData.iLogicalCells.NoOfLocalUpdatedCells;
-            CellMask LevSetCells = LsTrk.Regions.GetCutCellMask();
-            BitArray CellsToRefine = new BitArray(J);
-            double TotalPressure = Pressure.GetMeanValueTotal(CellMask.GetFullMask(GridData));
-            CellMask boundaryCells = GridData.GetBoundaryCells();
-            for (int i = 0; i < J; i++)
-            {
-                Pressure.GetExtremalValuesInCell(out double minPressure, out double maxPressure, i);
-                if (Math.Abs(maxPressure - minPressure) > Math.Abs(TotalPressure) && LevSetCells.Contains(i))
-                    CellsToRefine[i] = true;
-            }
-            CellMask cellMaskToRefine = new CellMask(GridData, CellsToRefine);
-            bool refined = false;
-            for (int k = 0; k < RefinementLevel; k++)
-            {
-                if ((cellMaskToRefine.Contains(j) || (boundaryCells.Contains(j) && ParticleColor.GetMeanValue(j) != 0)) && CurrentLevel < RefinementLevel)
-                {
-                    DesiredLevel_j = CurrentLevel + 1;
-                    refined = true;
-                }
-                boundaryCells = boundaryCells.AllNeighbourCells();
-                RefinementLevel -= 1;
-            }
-            if (!refined && CurrentLevel > 0)
-                DesiredLevel_j = CurrentLevel - 1;
+            //int RefinementLevel = ((FSI_Control)this.Control).RefinementLevel;
+            //int DesiredLevel_j = 0;
+            //int J = GridData.iLogicalCells.NoOfLocalUpdatedCells;
+            //CellMask LevSetCells = LsTrk.Regions.GetCutCellMask();
+            //BitArray CellsToRefine = new BitArray(J);
+            //double TotalPressure = Pressure.GetMeanValueTotal(CellMask.GetFullMask(GridData));
+            //CellMask boundaryCells = GridData.GetBoundaryCells();
+            //for (int i = 0; i < J; i++)
+            //{
+            //    Pressure.GetExtremalValuesInCell(out double minPressure, out double maxPressure, i);
+            //    if (Math.Abs(maxPressure - minPressure) > Math.Abs(TotalPressure) && LevSetCells.Contains(i))
+            //        CellsToRefine[i] = true;
+            //}
+            //CellMask cellMaskToRefine = new CellMask(GridData, CellsToRefine);
+            //bool refined = false;
+            //for (int k = 0; k < RefinementLevel; k++)
+            //{
+            //    if ((cellMaskToRefine.Contains(j) || (boundaryCells.Contains(j) && ParticleColor.GetMeanValue(j) != 0)) && CurrentLevel < RefinementLevel)
+            //    {
+            //        DesiredLevel_j = CurrentLevel + 1;
+            //        refined = true;
+            //    }
+            //    boundaryCells = boundaryCells.AllNeighbourCells();
+            //    RefinementLevel -= 1;
+            //}
+            //if (!refined && CurrentLevel > 0)
+            //    DesiredLevel_j = CurrentLevel - 1;
 
-            DesiredLevel_j = CurrentLevel + 1;
+            int DesiredLevel_j = CurrentLevel + 1;
             return DesiredLevel_j;
         }
 

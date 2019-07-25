@@ -62,8 +62,8 @@ namespace BoSSS.Application.FSI_Solver
 
             C.GridFunc = delegate
             {
-                double[] Xnodes = GenericBlas.Linspace(-1 * BaseSize, 1 * BaseSize, 3);
-                double[] Ynodes = GenericBlas.Linspace(-0 * BaseSize, 1 * BaseSize, 2);
+                double[] Xnodes = GenericBlas.Linspace(-1 * BaseSize, 1 * BaseSize, 4);
+                double[] Ynodes = GenericBlas.Linspace(-1 * BaseSize, 1 * BaseSize, 4);
 
                 var grd = Grid2D.Cartesian2DGrid(Xnodes, Ynodes, periodicX: false, periodicY: false);
 
@@ -81,7 +81,7 @@ namespace BoSSS.Application.FSI_Solver
                     if (Math.Abs(X[0] + (-1 * BaseSize)) <= 1.0e-8)
                         et = 2;
 
-                    if (Math.Abs(X[1] - (-0 * BaseSize)) <= 1.0e-8)
+                    if (Math.Abs(X[1] - (-1 * BaseSize)) <= 1.0e-8)
                         et = 3;
                     if (Math.Abs(X[1] + (-1 * BaseSize)) <= 1.0e-8)
                         et = 4;
