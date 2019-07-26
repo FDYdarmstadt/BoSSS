@@ -38,13 +38,17 @@ namespace BoSSS.Foundation.Grid.Classic
         public GridCommons Adapt(IEnumerable<int> cellsToRefine, IEnumerable<int[]> cellsToCoarse, out GridCorrelation Old2New) {
             using(new FuncTrace())
             {
-                GridCommons oldGrid = this.m_Grid;
+                Debugger.Launch();
+                bool anyRefinement = GetMPIGlobalIsNotNullOrEmpty(cellsToRefine);
+                bool anyCoarsening = GetMPIGlobalIsNotNullOrEmpty(cellsToCoarse);
+
+                GridCommons oldGrid = m_Grid;
                 GridCommons newGrid = new GridCommons(oldGrid.RefElements, oldGrid.EdgeRefElements);
-                Partitioning cellPartitioning = this.CellPartitioning;
+                Partitioning cellPartitioning = CellPartitioning;
                 Old2New = new GridCorrelation();
 
-                int J = this.Cells.NoOfLocalUpdatedCells;
-                int JE = this.Cells.NoOfExternalCells + this.Cells.NoOfLocalUpdatedCells;
+                int J = Cells.NoOfLocalUpdatedCells;
+                int JE = Cells.NoOfExternalCells + Cells.NoOfLocalUpdatedCells;
 
                 BitArray cellsToRefineBitmask = new BitArray(JE);
                 BitArray cellsToCoarseBitmask = new BitArray(JE);
@@ -97,27 +101,63 @@ namespace BoSSS.Foundation.Grid.Classic
                 Old2New.OldGlobalId = CurrentGlobalIdPermutation.Values.CloneAs();
                 Old2New.MappingIndex = new int[J][];
                 Old2New.DestGlobalId = new long[J][];
-                // Check Input, set Bitmasks
-                // =========================
-                if (!cellsToRefine.IsNullOrEmpty())
+
+                Cell[][] adaptedCells = new Cell[J][];
+                List<Cell> cellsInNewGrid = new List<Cell>();
+
+
+
+                if (anyRefinement)
                 {
-                    ThrowExceptionForDoubleEntryInEnumeration(cellsToRefine);
+                    CheckForDoubleEntryInEnumeration(cellsToRefine);
+
                     cellsToRefineBitmask = GetCellBitMask(cellsToRefine);
                     GetLocalAndExternalNeighbourCells(cellsToRefine, ref AdaptNeighborsBitmask);
+                    int NewCoarseningClusterId = GetNewCoarseningClusterID(cellsToRefine, oldGrid);
+
+                    foreach (int j in cellsToRefine)
+                    {
+                        CheckForDoubleEntries(Old2New, adaptedCells, j);
+
+                        Cell oldCell = oldGrid.Cells[j];
+                        int iKref = Cells.GetRefElementIndex(j);
+                        RefElement Kref = KrefS[iKref];
+                        RefElement.SubdivisionTreeNode[] Leaves = KrefS_SubdivLeaves[iKref];
+                        Cell[] refinedCells = new Cell[Leaves.Length];
+
+                        for (int iSubDiv = 0; iSubDiv < Leaves.Length; iSubDiv++)
+                        {
+                            Cell newCell = GetRefindedCell(ref GlobalIdCounter, globalIDOffset, NewCoarseningClusterId, oldCell, Leaves, iSubDiv);
+                            refinedCells[iSubDiv] = newCell;
+
+                            NodeSet RefNodes = Kref.GetInterpolationNodes(oldCell.Type);
+                            GetNewNodesOfRefinedCells(j, RefNodes, Leaves, iSubDiv, newCell);
+                            newCell.NodeIndices = GetNodeIndicesOfRefinedCells(newVertexCounter, Kref.NoOfVertices, newCell);
+                        }
+                        NewCoarseningClusterId++;
+
+                        Old2New.MappingIndex[j] = GetOldToNewCorrelation(Leaves);
+
+                        Tuple<int, int>[,] Connections = KrefS_SubdivConnections[iKref];
+                        AdaptNeighbourshipWithinOldCell(Kref.NoOfFaces, Leaves.Length, Connections, refinedCells);
+
+                        Debug.Assert(Old2New.DestGlobalId[j] == null);
+                        Old2New.DestGlobalId[j] = refinedCells.Select(Cl => Cl.GlobalID).ToArray();
+                        cellsInNewGrid.AddRange(refinedCells);
+                        adaptedCells[j] = refinedCells;
+                    }
                 }
 
-                List<Cell> cellsInNewGrid = new List<Cell>();
-                Cell[][] adaptedCells = new Cell[J][];
-                int bCoarsened = 0;
-                if (!cellsToCoarse.IsNullOrEmpty())
+                int coarsedFlag = 0;
+                if (anyCoarsening)
                 {
-                    ThrowExceptionsForErrorsInCoarseningCluster(cellsToCoarse, cellsToRefineBitmask, cellsToCoarseBitmask, KrefS_SubdivLeaves);
+                    CheckCoarseningCluster(cellsToCoarse, cellsToRefineBitmask, cellsToCoarseBitmask, KrefS_SubdivLeaves);
                     cellsToCoarseBitmask = GetCellBitMask(cellsToCoarse);
                     GetLocalAndExternalNeighbourCells(cellsToCoarse, ref AdaptNeighborsBitmask);
 
                     foreach (int[] cellClusterID in cellsToCoarse)
                     {
-                        bCoarsened = 0xFFFF;
+                        coarsedFlag = 0xFFFF;
                         CoarseCells(Old2New, cellsInNewGrid, adaptedCells, cellClusterID);
                     }
                 }
@@ -125,15 +165,9 @@ namespace BoSSS.Foundation.Grid.Classic
                 cellsToRefineBitmask.MPIExchange(this);
                 cellsToCoarseBitmask.MPIExchange(this);
 
-
-                // clone neighbors of refined/coarsened cells
-                // ------------------------------------------
                 for (int j = 0; j < J; j++)
                 {
-                    Debug.Assert(Old2New.OldGlobalId[j] == this.Cells.GetCell(j).GlobalID);
-                    Debug.Assert(Old2New.OldGlobalId[j] == oldGrid.Cells[j].GlobalID);
-                    Debug.Assert(ReferenceEquals(Cells.GetCell(j), oldGrid.Cells[j]));
-                    Debug.Assert((cellsToRefineBitmask[j] && cellsToCoarseBitmask[j]) == false, "Cannot refine and coarsen the same cell.");
+                    CheckCells(Old2New, oldGrid, cellsToRefineBitmask, cellsToCoarseBitmask, j);
 
                     if ((cellsToRefineBitmask[j] || cellsToCoarseBitmask[j]) == false)
                     {
@@ -152,57 +186,12 @@ namespace BoSSS.Foundation.Grid.Classic
                     }
                 }
 
-
-
-                // refinement
-                // ----------
-
-                if (cellsToRefine != null)
-                {
-                    int NewCoarseningClusterId = GetNewCoarseningClusterID(cellsToRefine, oldGrid);
-
-                    foreach (int j in cellsToRefine)
-                    {
-                        CheckForDoubleEntries(Old2New, adaptedCells, j);
-
-                        Cell oldCell = oldGrid.Cells[j];
-                        int iKref = Cells.GetRefElementIndex(j);
-                        RefElement Kref = KrefS[iKref];
-                        NodeSet RefNodes = Kref.GetInterpolationNodes(oldCell.Type);
-                        RefElement.SubdivisionTreeNode[] Leaves = KrefS_SubdivLeaves[iKref];
-                        Tuple<int, int>[,] Connections = KrefS_SubdivConnections[iKref];
-
-                        Cell[] refinedCells = new Cell[Leaves.Length];
-                        adaptedCells[j] = refinedCells;
-
-                        Old2New.MappingIndex[j] = new int[Leaves.Length];
-                        for (int iSubDiv = 0; iSubDiv < Leaves.Length; iSubDiv++)
-                        {
-                            Cell newCell = RefineCell(ref GlobalIdCounter, globalIDOffset, NewCoarseningClusterId, oldCell, Leaves, iSubDiv);
-                            refinedCells[iSubDiv] = newCell;
-
-                            GetNewVerticesOfRefinedCells(j, RefNodes, Leaves, iSubDiv, newCell);
-
-                            newCell.NodeIndices = GetNodeIndicesOfRefinedCells(newVertexCounter, Kref, newCell);
-
-                            // correlation
-                            Old2New.MappingIndex[j][iSubDiv] = iSubDiv;
-                        }
-                        NewCoarseningClusterId++;
-                        AdaptNeighbourshipWithinOldCell(Kref, Leaves, Connections, refinedCells);
-
-                        Debug.Assert(Old2New.DestGlobalId[j] == null);
-                        Old2New.DestGlobalId[j] = refinedCells.Select(Cl => Cl.GlobalID).ToArray();
-                        cellsInNewGrid.AddRange(refinedCells);
-                    }
-                }
-
                 newGrid.Cells = cellsInNewGrid.ToArray();
 
 
                 // fix neighborship
                 // ================
-
+                Debugger.Launch();
                 byte[,] Edge2Face = this.Edges.FaceIndices;
                 int[,] Edge2Cell = this.Edges.CellIndices;
                 MultidimensionalArray[] VerticesFor_KrefEdge = this.Edges.EdgeRefElements.Select(KrefEdge => KrefEdge.Vertices).ToArray();
@@ -213,77 +202,63 @@ namespace BoSSS.Foundation.Grid.Classic
                 Debug.Assert(Edge2Face.GetLength(0) == NoOfEdges);
                 Debug.Assert(Edge2Cell.GetLength(0) == NoOfEdges);
 
-                List<Tuple<int, Cell[]>> cellsOnNeighbourProcess = ExchangeCellData(adaptedCells);
+                List<Tuple<int, Cell[]>> cellsOnNeighbourProcess = SerialExchangeCellData(adaptedCells);
 
                 for (int iEdge = 0; iEdge < NoOfEdges; iEdge++)
                 {
-                    int jCell1 = Edge2Cell[iEdge, 0];
-                    int jCell2 = Edge2Cell[iEdge, 1];
-
-                    if (jCell2 < 0)
+                    int localCellIndex1 = Edge2Cell[iEdge, 0];
+                    int localCellIndex2 = Edge2Cell[iEdge, 1];
+                    int iFace1 = Edge2Face[iEdge, 0];
+                    int iFace2 = Edge2Face[iEdge, 1];
+                    if (localCellIndex2 < 0)
                     {
-                        Debug.Assert((cellsToRefineBitmask[jCell1] && cellsToCoarseBitmask[jCell1]) == false);
-                        if ((cellsToRefineBitmask[jCell1] || cellsToCoarseBitmask[jCell1]) == false)
+                        Debug.Assert((cellsToRefineBitmask[localCellIndex1] && cellsToCoarseBitmask[localCellIndex1]) == false);
+                        if ((cellsToRefineBitmask[localCellIndex1] || cellsToCoarseBitmask[localCellIndex1]) == false)
                             continue;
-
-                        Cell[] adaptedBCells1 = adaptedCells[jCell1];
-                        Debug.Assert(adaptedBCells1 != null);
-
-                        int iBFace = Edge2Face[iEdge, 0];
-
-                        foreach (Cell cl in adaptedBCells1)
-                        {
-                            if (cl.CellFaceTags.Where(cft => cft.FaceIndex == iBFace).Count() == 0 && this.Edges.EdgeTags[iEdge] > 0)
-                            {
-                                ArrayTools.AddToArray(new CellFaceTag()
-                                {
-                                    EdgeTag = this.Edges.EdgeTags[iEdge],
-                                    ConformalNeighborship = false,
-                                    NeighCell_GlobalID = long.MinValue,
-                                    FaceIndex = iBFace
-                                }, ref cl.CellFaceTags);
-                            }
-                        }
+                        AdaptBoundaryCellFaces(adaptedCells, Edge2Face, iEdge, localCellIndex1);
                         continue;
                     }
 
-                    Debug.Assert((cellsToRefineBitmask[jCell1] && cellsToCoarseBitmask[jCell1]) == false);
-                    Debug.Assert((cellsToRefineBitmask[jCell2] && cellsToCoarseBitmask[jCell2]) == false);
+                    int iKref1 = Cells.GetRefElementIndex(localCellIndex1);
+                    int iKref2 = Cells.GetRefElementIndex(localCellIndex2);
+                    RefElement Kref1 = Cells.GetRefElement(localCellIndex1);
+                    RefElement Kref2 = Cells.GetRefElement(localCellIndex2);
 
-                    bool C1changed = cellsToRefineBitmask[jCell1] || cellsToCoarseBitmask[jCell1];
-                    bool C2changed = cellsToRefineBitmask[jCell2] || cellsToCoarseBitmask[jCell2];
+
+                    Debug.Assert((cellsToRefineBitmask[localCellIndex1] && cellsToCoarseBitmask[localCellIndex1]) == false);
+                    Debug.Assert((cellsToRefineBitmask[localCellIndex2] && cellsToCoarseBitmask[localCellIndex2]) == false);
+
+                    bool C1changed = cellsToRefineBitmask[localCellIndex1] || cellsToCoarseBitmask[localCellIndex1];
+                    bool C2changed = cellsToRefineBitmask[localCellIndex2] || cellsToCoarseBitmask[localCellIndex2];
 
                     if ((C1changed || C2changed) == false)
-                        // edge between two un-changed cells -- this neighborship remains the same.
                         continue;
 
                     Cell[] adaptedCells1 = new Cell[1];
                     Cell[] adaptedCells2 = new Cell[1];
 
-                    if (IsPartOfLocalCells(J, jCell1) && IsPartOfLocalCells(J, jCell2))
+                    if (IsPartOfLocalCells(J, localCellIndex1) && IsPartOfLocalCells(J, localCellIndex2))
                     {
-                        adaptedCells1 = adaptedCells[jCell1];
-                        adaptedCells2 = adaptedCells[jCell2];
+                        adaptedCells1 = adaptedCells[localCellIndex1];
+                        adaptedCells2 = adaptedCells[localCellIndex2];
                     }
-                    else if (IsPartOfLocalCells(J, jCell1) && !IsPartOfLocalCells(J, jCell2))
+                    else if (IsPartOfLocalCells(J, localCellIndex1) && !IsPartOfLocalCells(J, localCellIndex2))
                     {
-                        adaptedCells1 = adaptedCells[jCell1];
-                        adaptedCells2 = FindCellOnNeighbourProcess(cellsOnNeighbourProcess, jCell2);
+                        adaptedCells1 = adaptedCells[localCellIndex1];
+                        adaptedCells2 = FindCellOnNeighbourProcess(cellsOnNeighbourProcess, localCellIndex2);
                     }
-                    else if (!IsPartOfLocalCells(J, jCell1) && IsPartOfLocalCells(J, jCell2))
+                    else if (!IsPartOfLocalCells(J, localCellIndex1) && IsPartOfLocalCells(J, localCellIndex2))
                     {
-                        adaptedCells1 = FindCellOnNeighbourProcess(cellsOnNeighbourProcess, jCell1);
-                        adaptedCells2 = adaptedCells[jCell2];
+                        adaptedCells1 = FindCellOnNeighbourProcess(cellsOnNeighbourProcess, localCellIndex1);
+                        adaptedCells2 = adaptedCells[localCellIndex2];
                     }
                     else
-                        throw new Exception("Both cells not on the current process");
+                        throw new Exception("Error in refinement and coarsening algorithm: Both cells not on the current process");
 
-                    ThrowExceptionIfCellIsMissing(jCell1, adaptedCells1);
-                    ThrowExceptionIfCellIsMissing(jCell2, adaptedCells2);
+                    CheckIfCellIsMissing(localCellIndex1, adaptedCells1);
+                    CheckIfCellIsMissing(localCellIndex2, adaptedCells2);
 
-
-
-                    if (cellsToCoarseBitmask[jCell1] && cellsToCoarseBitmask[jCell2])
+                    if (cellsToCoarseBitmask[localCellIndex1] && cellsToCoarseBitmask[localCellIndex2])
                     {
                         Debug.Assert(adaptedCells1.Length == 1);
                         Debug.Assert(adaptedCells2.Length == 1);
@@ -295,19 +270,11 @@ namespace BoSSS.Foundation.Grid.Classic
                         }
                     }
 
-                    int iFace1 = Edge2Face[iEdge, 0];
-                    int iFace2 = Edge2Face[iEdge, 1];
-
-                    Debug.Assert((adaptedCells1.Length > 1) == (cellsToRefineBitmask[jCell1]));
-                    Debug.Assert((adaptedCells2.Length > 1) == (cellsToRefineBitmask[jCell2]));
-
-                    int iKref1 = this.Cells.GetRefElementIndex(jCell1);
-                    int iKref2 = this.Cells.GetRefElementIndex(jCell2);
-                    RefElement Kref1 = this.Cells.GetRefElement(jCell1);
-                    RefElement Kref2 = this.Cells.GetRefElement(jCell2);
+                    Debug.Assert((adaptedCells1.Length > 1) == (cellsToRefineBitmask[localCellIndex1]));
+                    Debug.Assert((adaptedCells2.Length > 1) == (cellsToRefineBitmask[localCellIndex2]));
 
                     int[] idx1, idx2;
-                    if (cellsToRefineBitmask[jCell1])
+                    if (cellsToRefineBitmask[localCellIndex1])
                     {
                         idx1 = KrefS_Faces2Subdiv[iKref1][iFace1];
                     }
@@ -317,7 +284,7 @@ namespace BoSSS.Foundation.Grid.Classic
                         idx1 = ONE_NULL;
                     }
 
-                    if (cellsToRefineBitmask[jCell2])
+                    if (cellsToRefineBitmask[localCellIndex2])
                     {
                         idx2 = KrefS_Faces2Subdiv[iKref2][iFace2];
                     }
@@ -329,9 +296,8 @@ namespace BoSSS.Foundation.Grid.Classic
 
                     foreach (int i1 in idx1)
                     {
-
                         MultidimensionalArray VtxFace1;
-                        if (cellsToRefineBitmask[jCell1])
+                        if (cellsToRefineBitmask[localCellIndex1])
                         {
                             VtxFace1 = KrefS_SubdivLeaves[iKref1][i1].GetFaceVertices(iFace1);
                         }
@@ -377,7 +343,7 @@ namespace BoSSS.Foundation.Grid.Classic
                             MultidimensionalArray VtxFace2;
                             {
                                 MultidimensionalArray VtxFace2_L;
-                                if (cellsToRefineBitmask[jCell2])
+                                if (cellsToRefineBitmask[localCellIndex2])
                                 {
                                     VtxFace2_L = KrefS_SubdivLeaves[iKref2][i2].GetFaceVertices(iFace2);
                                 }
@@ -388,14 +354,14 @@ namespace BoSSS.Foundation.Grid.Classic
 
                                 MultidimensionalArray VtxFace2_G = MultidimensionalArray.Create(VtxFace2_L.GetLength(0), VtxFace2_L.GetLength(1));
                                 VtxFace2 = MultidimensionalArray.Create(VtxFace2_L.GetLength(0), VtxFace2_L.GetLength(1));
-                                this.TransformLocal2Global(VtxFace2_L, VtxFace2_G, jCell2);
+                                this.TransformLocal2Global(VtxFace2_L, VtxFace2_G, localCellIndex2);
                                 bool[] Converged = new bool[VtxFace2_L.NoOfRows];
-                                this.TransformGlobal2Local(VtxFace2_G, VtxFace2, jCell1, Converged);
+                                this.TransformGlobal2Local(VtxFace2_G, VtxFace2, localCellIndex1, Converged);
                                 if (Converged.Any(t => t == false))
                                     throw new ArithmeticException("Newton divergence");
                             }
 
-                            bool bIntersect = GridData.EdgeData.FaceIntersect(VtxFace1, VtxFace2,
+                            bool bIntersect = EdgeData.FaceIntersect(VtxFace1, VtxFace2,
                                 Kref1.GetFaceTrafo(iFace1), Kref1.GetInverseFaceTrafo(iFace1),
                                 VerticesFor_KrefEdge,
                                 out bool conformal1, out bool conformal2, out AffineTrafo newTrafo, out int Edg_idx);
@@ -420,28 +386,16 @@ namespace BoSSS.Foundation.Grid.Classic
                     }
                 }
 
-                // add EdgeTagNames and periodic Transformations
-                for (int etCnt = 1; etCnt < this.EdgeTagNames.Count; etCnt++)
-                {
-                    KeyValuePair<byte, string> etPair = this.EdgeTagNames.ElementAt(etCnt);
-                    newGrid.EdgeTagNames.Add(etPair);
-                }
+                AddEdgeTagNames(newGrid);
 
-                foreach (AffineTrafo trafo in this.Grid.PeriodicTrafo)
-                {
-                    newGrid.PeriodicTrafo.Add(trafo);
-                }
-                foreach (AffineTrafo itrafo in this.Grid.InversePeriodicTrafo)
-                {
-                    newGrid.InversePeriodicTrafo.Add(itrafo);
-                }
+                AddPeriodicTransformations(newGrid);
 
 
 
                 // finalize
                 // ========
-                int bCoarsenedGlobal = bCoarsened.MPIMax();
-                if (bCoarsenedGlobal > 0)
+                int globalCoarsedFlag = coarsedFlag.MPIMax();
+                if (globalCoarsedFlag > 0)
                 {
 #if DEBUG
                     if (this.MpiSize == 1)
@@ -474,14 +428,16 @@ namespace BoSSS.Foundation.Grid.Classic
                     }
 #endif
 
-                    List<long> old2NewGid = new List<long>();
-                    Debug.Assert(Old2New.DestGlobalId.Length == J);
+                    if (Old2New.DestGlobalId.Length != J)
+                        throw new Exception("Error in coarsening algorithm: No of global ID does not fit to no of locally updated cells");
+
+                    List<long> old2NewGlobalId = new List<long>();
                     for (int j = 0; j < J; j++)
                     {
-                        old2NewGid.AddRange(Old2New.DestGlobalId[j]);
+                        old2NewGlobalId.AddRange(Old2New.DestGlobalId[j]);
                     }
 
-                    newGrid.CompressGlobalID(old2NewGid);
+                    newGrid.CompressGlobalID(old2NewGlobalId);
 
                     int c2 = 0;
                     for (int j = 0; j < J; j++)
@@ -490,25 +446,85 @@ namespace BoSSS.Foundation.Grid.Classic
                         int K = o2nj.Length;
                         for (int k = 0; k < K; k++)
                         {
-                            o2nj[k] = old2NewGid[c2];
+                            o2nj[k] = old2NewGlobalId[c2];
                             c2++;
                         }
                     }
-                    Debug.Assert(c2 == old2NewGid.Count);
+                    Debug.Assert(c2 == old2NewGlobalId.Count);
                 }
 
-                var CNglb = newGrid.GetCellNeighbourship(true);
                 csMPI.Raw.Barrier(csMPI.Raw._COMM.WORLD);
                 return newGrid;
             }
         }
 
-        private static void AdaptNeighbourshipWithinOldCell(RefElement Kref, RefElement.SubdivisionTreeNode[] Leaves, Tuple<int, int>[,] Connections, Cell[] refinedCells)
+        private void AddPeriodicTransformations(GridCommons newGrid)
         {
+            foreach (AffineTrafo trafo in this.Grid.PeriodicTrafo)
+            {
+                newGrid.PeriodicTrafo.Add(trafo);
+            }
+            foreach (AffineTrafo itrafo in this.Grid.InversePeriodicTrafo)
+            {
+                newGrid.InversePeriodicTrafo.Add(itrafo);
+            }
+        }
+
+        private void AddEdgeTagNames(GridCommons newGrid)
+        {
+            for (int etCnt = 1; etCnt < this.EdgeTagNames.Count; etCnt++)
+            {
+                KeyValuePair<byte, string> etPair = this.EdgeTagNames.ElementAt(etCnt);
+                newGrid.EdgeTagNames.Add(etPair);
+            }
+        }
+
+        private void AdaptBoundaryCellFaces(Cell[][] adaptedCells, byte[,] Edge2Face, int iEdge, int localCellIndex1)
+        {
+            Cell[] adaptedBCells1 = adaptedCells[localCellIndex1];
+            Debug.Assert(adaptedBCells1 != null);
+
+            int iBFace = Edge2Face[iEdge, 0];
+
+            foreach (Cell cl in adaptedBCells1)
+            {
+                if (cl.CellFaceTags.Where(cft => cft.FaceIndex == iBFace).Count() == 0 && this.Edges.EdgeTags[iEdge] > 0)
+                {
+                    ArrayTools.AddToArray(new CellFaceTag()
+                    {
+                        EdgeTag = this.Edges.EdgeTags[iEdge],
+                        ConformalNeighborship = false,
+                        NeighCell_GlobalID = long.MinValue,
+                        FaceIndex = iBFace
+                    }, ref cl.CellFaceTags);
+                }
+            }
+        }
+
+        private void CheckCells(GridCorrelation Old2New, GridCommons oldGrid, BitArray cellsToRefineBitmask, BitArray cellsToCoarseBitmask, int j)
+        {
+            Debug.Assert(Old2New.OldGlobalId[j] == Cells.GetCell(j).GlobalID);
+            Debug.Assert(Old2New.OldGlobalId[j] == oldGrid.Cells[j].GlobalID);
+            Debug.Assert(ReferenceEquals(Cells.GetCell(j), oldGrid.Cells[j]));
+            Debug.Assert((cellsToRefineBitmask[j] && cellsToCoarseBitmask[j]) == false, "Cannot refine and coarsen the same cell.");
+        }
+
+        private static int[] GetOldToNewCorrelation(RefElement.SubdivisionTreeNode[] Leaves)
+        {
+            int[] mappingIndex = new int[Leaves.Length];
             for (int iSubDiv = 0; iSubDiv < Leaves.Length; iSubDiv++)
             {
-                // neighbors within
-                for (int iFace = 0; iFace < Kref.NoOfFaces; iFace++)
+                mappingIndex[iSubDiv] = iSubDiv;
+            }
+
+            return mappingIndex;
+        }
+
+        private static void AdaptNeighbourshipWithinOldCell(int noOfFaces, int noOfLeaves, Tuple<int, int>[,] Connections, Cell[] refinedCells)
+        {
+            for (int iSubDiv = 0; iSubDiv < noOfLeaves; iSubDiv++)
+            {
+                for (int iFace = 0; iFace < noOfFaces; iFace++)
                 {
                     int iSubDiv_Neigh = Connections[iSubDiv, iFace].Item1;
                     if (iSubDiv_Neigh >= 0)
@@ -532,7 +548,7 @@ namespace BoSSS.Foundation.Grid.Classic
                 throw new Exception("Error in refinement algorithm: Mapping index already exists.");
         }
 
-        private static Cell RefineCell(ref long GlobalIdCounter, int globalIDOffset, int NewCoarseningClusterId, Cell oldCell, RefElement.SubdivisionTreeNode[] Leaves, int iSubDiv)
+        private static Cell GetRefindedCell(ref long GlobalIdCounter, int globalIDOffset, int NewCoarseningClusterId, Cell oldCell, RefElement.SubdivisionTreeNode[] Leaves, int iSubDiv)
         {
             Cell newCell = new Cell
             {
@@ -556,19 +572,19 @@ namespace BoSSS.Foundation.Grid.Classic
             return newCell;
         }
 
-        private void GetNewVerticesOfRefinedCells(int j, NodeSet RefNodes, RefElement.SubdivisionTreeNode[] Leaves, int iSubDiv, Cell newCell)
+        private void GetNewNodesOfRefinedCells(int j, NodeSet RefNodes, RefElement.SubdivisionTreeNode[] Leaves, int iSubDiv, Cell newCell)
         {
             MultidimensionalArray RefNodesRoot = Leaves[iSubDiv].Trafo2Root.Transform(RefNodes);
             newCell.TransformationParams = MultidimensionalArray.Create(RefNodes.Lengths);
             TransformLocal2Global(RefNodesRoot, newCell.TransformationParams, j);
         }
 
-        private static int[] GetNodeIndicesOfRefinedCells(int newVertexCounter, RefElement Kref, Cell newCell)
+        private static int[] GetNodeIndicesOfRefinedCells(int newVertexCounter, int noOfVertices, Cell newCell)
         {
-            int[] tempNodeIndices = new int[Kref.NoOfVertices];
-            for (int i = 0; i < Kref.NoOfVertices; i++)
+            int[] tempNodeIndices = new int[noOfVertices];
+            for (int i = 0; i < noOfVertices; i++)
             {
-                tempNodeIndices[i] = newVertexCounter + i + (int)newCell.GlobalID * Kref.NoOfVertices;
+                tempNodeIndices[i] = newVertexCounter + i + (int)newCell.GlobalID * noOfVertices;
             }
 
             return tempNodeIndices;
@@ -610,6 +626,44 @@ namespace BoSSS.Foundation.Grid.Classic
             }
 
             return globalIDOffset;
+        }
+
+        private bool GetMPIGlobalIsNotNullOrEmpty(IEnumerable<int> enumeration)
+        {
+            int[] sendAnyRefinement = new int[1];
+            sendAnyRefinement[0] = enumeration.IsNullOrEmpty() ? 0 : 1;
+            int[] receiveAnyRefinement = new int[MpiSize];
+            unsafe
+            {
+                fixed (int* pCheckSend = sendAnyRefinement, pCheckReceive = receiveAnyRefinement)
+                {
+                    csMPI.Raw.Allgather((IntPtr)pCheckSend, sendAnyRefinement.Length, csMPI.Raw._DATATYPE.INT, (IntPtr)pCheckReceive, sendAnyRefinement.Length, csMPI.Raw._DATATYPE.INT, csMPI.Raw._COMM.WORLD);
+                }
+            }
+            csMPI.Raw.Barrier(csMPI.Raw._COMM.WORLD);
+            if (receiveAnyRefinement.Sum() > 0)
+                return true;
+            else
+                return false;
+        }
+
+        private bool GetMPIGlobalIsNotNullOrEmpty(IEnumerable<int[]> enumeration)
+        {
+            int[] sendTestingVariable = new int[1];
+            sendTestingVariable[0] = enumeration.IsNullOrEmpty() ? 0 : 1;
+            int[] receiveTestingVariable = new int[MpiSize];
+            unsafe
+            {
+                fixed (int* pCheckSend = sendTestingVariable, pCheckReceive = receiveTestingVariable)
+                {
+                    csMPI.Raw.Allgather((IntPtr)pCheckSend, sendTestingVariable.Length, csMPI.Raw._DATATYPE.INT, (IntPtr)pCheckReceive, sendTestingVariable.Length, csMPI.Raw._DATATYPE.INT, csMPI.Raw._COMM.WORLD);
+                }
+            }
+            csMPI.Raw.Barrier(csMPI.Raw._COMM.WORLD);
+            if (receiveTestingVariable.Sum() > 0)
+                return true;
+            else
+                return false;
         }
 
         private void CoarseCells(GridCorrelation Old2New, List<Cell> cellsInNewGrid, Cell[][] adaptedCells, int[] cellClusterID)
@@ -750,7 +804,7 @@ namespace BoSSS.Foundation.Grid.Classic
             Old2New.DestGlobalId[j] = new long[] { cellsInNewGrid[cellsInNewGrid.Count - 1].GlobalID };
         }
 
-        private void ThrowExceptionsForErrorsInCoarseningCluster(IEnumerable<int[]> CellsToCoarsen, BitArray CellsToRefineBitmask, BitArray CellsToCoarseBitmask, RefElement.SubdivisionTreeNode[][] KrefS_SubdivLeaves)
+        private void CheckCoarseningCluster(IEnumerable<int[]> CellsToCoarsen, BitArray CellsToRefineBitmask, BitArray CellsToCoarseBitmask, RefElement.SubdivisionTreeNode[][] KrefS_SubdivLeaves)
         {
             foreach (int[] coarseningCluster in CellsToCoarsen)
             {
@@ -785,7 +839,7 @@ namespace BoSSS.Foundation.Grid.Classic
             }
         }
 
-        private static void ThrowExceptionIfCellIsMissing(int jCell, Cell[] adaptedCells)
+        private static void CheckIfCellIsMissing(int jCell, Cell[] adaptedCells)
         {
             if (adaptedCells == null)
             {
@@ -812,7 +866,7 @@ namespace BoSSS.Foundation.Grid.Classic
             return adaptedCell;
         }
 
-        private List<Tuple<int, Cell[]>> ExchangeCellData(Cell[][] Cells)
+        private List<Tuple<int, Cell[]>> SerialExchangeCellData(Cell[][] Cells)
         {
             List<Tuple<int, Cell[]>> exchangedCellData = new List<Tuple<int, Cell[]>>();
             Dictionary<int, List<Tuple<int, Cell[]>>> sendCellData = GetBoundaryCellsAndProcessToSend(Cells);
@@ -889,7 +943,7 @@ namespace BoSSS.Foundation.Grid.Classic
             return currentProcess;
         }
         
-        private void ThrowExceptionForDoubleEntryInEnumeration(IEnumerable<int> enumeration)
+        private void CheckForDoubleEntryInEnumeration(IEnumerable<int> enumeration)
         {
             for(int i = 0; i < enumeration.Count(); i++)
             {
