@@ -80,10 +80,8 @@ namespace BoSSS.Solution.CompressibleFlowCommon.Boundary {
             }
         }
 
-        public StateVector GetBoundaryState(byte EdgeTag, double time, double[] x, double[] normal, StateVector stateVector, string speciesName) {
-            return XDGConditionMap[EdgeTag][speciesName].GetBoundaryState(time, x, normal, stateVector);
+        public BoundaryCondition GetBoundaryConditionForSpecies(byte EdgeTag, string speciesName) {
+            return XDGConditionMap[EdgeTag][speciesName];
         }
     }
-
-
 }
