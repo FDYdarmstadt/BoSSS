@@ -36,17 +36,17 @@ namespace BoSSS.Foundation.Grid {
         /// (inputs for <see cref="GridData.Adapt(IEnumerable{int}, IEnumerable{int[]}, out GridCorrelation)"/>),
         /// based on a refinement indicator.
         /// </summary>
-        /// <param name="CurrentGrid">
+        /// <param name="currentGrid">
         /// Current grid.
         /// </param>
-        /// <param name="LevelIndicator">
+        /// <param name="levelIndicator">
         /// Mapping from (local cell index, current refinement level) to desired refinement level for the respective cell,
         /// see <see cref="Cell.RefinementLevel"/>.
         /// </param>
-        /// <param name="CellsToRefine">
+        /// <param name="cellsToRefine">
         /// Output, local indices of cells which should be refined.
         /// </param>
-        /// <param name="CellsToCoarsen">
+        /// <param name="clustersOfCellsToCoarsen">
         /// Output, clusters of cells (identified by local cell indices) which can be combined into coarser cells.
         /// </param>
         /// <param name="CutCells">
@@ -55,27 +55,23 @@ namespace BoSSS.Foundation.Grid {
         /// <returns>
         /// True if any refinement or coarsening of the current grid should be performed; otherwise false.
         /// </returns>
-        public static bool ComputeGridChange(GridData CurrentGrid, CellMask CutCells, Func<int, int, int> LevelIndicator, out List<int> CellsToRefine, out List<int[]> CellsToCoarsen)
+        public static bool ComputeGridChange(GridData currentGrid, CellMask CutCells, Func<int, int, int> levelIndicator, out List<int> cellsToRefine, out List<int[]> clustersOfCellsToCoarsen)
         {
-            int oldJ = CurrentGrid.Cells.NoOfLocalUpdatedCells;
-            int oldJE = CurrentGrid.Cells.NoOfExternalCells + oldJ;
+            int oldJE = currentGrid.Cells.NoOfExternalCells + currentGrid.Cells.NoOfLocalUpdatedCells;
+            int[] desiredLevel = new int[oldJE];
 
-            bool isRefining = true;
-            int[] DesiredLevel = new int[oldJE];
+            FindRefiningCells(currentGrid, levelIndicator, desiredLevel);
+            cellsToRefine = GetRefiningCells(currentGrid, desiredLevel);
 
-            FindRefiningCells(CurrentGrid, LevelIndicator, DesiredLevel);
-            CellsToRefine = GetRefiningCells(CurrentGrid, DesiredLevel);
+            desiredLevel.MPIExchange(currentGrid);
 
-            DesiredLevel.MPIExchange(CurrentGrid);
+            BitArray oK2Coarsen = GetCellsOk2Coarsen(currentGrid, CutCells, desiredLevel);
+            int[][] coarseningClusters = FindCoarseningClusters(oK2Coarsen, currentGrid);
+            clustersOfCellsToCoarsen = GetCoarseningCells(currentGrid, coarseningClusters);
 
-            BitArray Ok2Coarsen = GetCellsOk2Coarsen(CurrentGrid, CutCells, DesiredLevel);
-            int[][] CClusters = FindCoarseningClusters(Ok2Coarsen, CurrentGrid);
-            CellsToCoarsen = GetCoarseningCells(CurrentGrid, CClusters);
+            bool anyChangeInGrid = CheckForRefineOrCoarsening(cellsToRefine, clustersOfCellsToCoarsen);
 
-            if (CellsToRefine.Count == 0 && CellsToCoarsen.Count == 0)
-                isRefining = false;
-
-            return (isRefining);
+            return (anyChangeInGrid);
         }
 
         private static void FindRefiningCells(GridData CurrentGrid, Func<int, int, int> LevelIndicator, int[] DesiredLevel)
@@ -94,6 +90,22 @@ namespace BoSSS.Foundation.Grid {
             }
         }
 
+        static void RefineNeighboursRecursive(GridData gdat, int[] DesiredLevel, int j, int DesiredLevelNeigh)
+        {
+            if (DesiredLevelNeigh <= 0)
+                return;
+
+            foreach (var jNeigh in gdat.Cells.CellNeighbours[j])
+            {
+                var cl = gdat.Cells.GetCell(jNeigh);
+                if (cl.RefinementLevel < DesiredLevelNeigh && DesiredLevel[jNeigh] < DesiredLevelNeigh)
+                {
+                    DesiredLevel[jNeigh] = DesiredLevelNeigh;
+                    RefineNeighboursRecursive(gdat, DesiredLevel, jNeigh, DesiredLevelNeigh - 1);
+                }
+            }
+        }
+
         private static List<int> GetRefiningCells(GridData CurrentGrid, int[] DesiredLevel)
         {
             int oldJ = CurrentGrid.Cells.NoOfLocalUpdatedCells;
@@ -106,31 +118,7 @@ namespace BoSSS.Foundation.Grid {
                 if (ActualLevel_j < DesiredLevel_j)
                     CellsToRefineList.Add(j);
             }
-
             return CellsToRefineList;
-        }
-
-        private static List<int[]> GetCoarseningCells(GridData CurrentGrid, int[][] CClusters)
-        {
-            int oldJ = CurrentGrid.Cells.NoOfLocalUpdatedCells;
-            List<int[]> Coarsening = new List<int[]>();
-            int NoOfCellsToCoarsen = 0;
-            for (int j = 0; j < oldJ; j++)
-            {
-
-                if (CClusters[j] != null)
-                {
-                    NoOfCellsToCoarsen++;
-
-                    Debug.Assert(CClusters[j].Contains(j));
-                    if (j == CClusters[j].Min())
-                    {
-                        Coarsening.Add(CClusters[j]);
-                    }
-                }
-            }
-
-            return Coarsening;
         }
 
         private static BitArray GetCellsOk2Coarsen(GridData CurrentGrid, CellMask CutCells, int[] DesiredLevel)
@@ -156,11 +144,11 @@ namespace BoSSS.Foundation.Grid {
                     Ok2Coarsen[j] = false;
                 }
             }
-
             return Ok2Coarsen;
         }
 
-        static int[][] FindCoarseningClusters(BitArray Ok2Coarsen, GridData CurrentGrid) {
+        static int[][] FindCoarseningClusters(BitArray Ok2Coarsen, GridData CurrentGrid)
+        {
             int JE = CurrentGrid.Cells.Count;
             int J = CurrentGrid.Cells.NoOfLocalUpdatedCells;
 
@@ -184,9 +172,9 @@ namespace BoSSS.Foundation.Grid {
 
             int[][] CoarseningCluster = new int[JE][];
 
-
             BitArray marker = new BitArray(JE);
-            for (int j = 0; j < J; j++) {
+            for (int j = 0; j < J; j++)
+            {
                 if (marker[j])
                     continue;
                 if (!Ok2Coarsen[j])
@@ -195,7 +183,8 @@ namespace BoSSS.Foundation.Grid {
                 Cell Cell_j = CurrentGrid.Cells.GetCell(j);
                 int Level = Cell_j.RefinementLevel;
 
-                if (Level == 0) {
+                if (Level == 0)
+                {
                     marker[j] = true;
                     continue;
                 }
@@ -206,45 +195,46 @@ namespace BoSSS.Foundation.Grid {
                 tempCC.Clear();
                 tempCC.Add(j);
 
-                //SearchGids = new long[Cell_j.CoarseningPeers.Length + 1];
-                //Array.Copy(Cell_j.CoarseningPeers, SearchGids, SearchGids.Length - 1);
-                //SearchGids[SearchGids.Length - 1] = Cell_j.GlobalID;
                 int SearchID = Cell_j.CoarseningClusterID;
                 int ClusterSize = Cell_j.CoarseningClusterSize;
                 Debug.Assert(SearchID > 0);
 
-
                 bool complete = false;
                 FindCoarseiningClusterRecursive(j, RecursionDepht, CellNeighbours, marker, CurrentGrid.Cells.GetCell, Level, SearchID, ClusterSize, tempCC, ref complete);
-                foreach (int jC in tempCC) {
+                foreach (int jC in tempCC)
+                {
                     marker[jC] = true;
                 }
 
-                if (complete) {
-                    if (!tempCC.Any(jC => Ok2Coarsen[jC] == false)) {
+                if (complete)
+                {
+                    if (!tempCC.Any(jC => Ok2Coarsen[jC] == false))
+                    {
                         int[] CC = tempCC.ToArray();
-                        foreach (int jC in CC) {
+                        foreach (int jC in CC)
+                        {
                             Debug.Assert(CoarseningCluster[jC] == null);
                             CoarseningCluster[jC] = CC;
                         }
-                    } else {
+                    }
+                    else
+                    {
                         //Console.WriteLine("Not ok to coarsen.");
                     }
                 }
             }
-
-
             return CoarseningCluster;
         }
 
-        static void FindCoarseiningClusterRecursive(int j, int MaxRecursionDeph,
+        private static void FindCoarseiningClusterRecursive(int j, int MaxRecursionDeph,
             int[][] CellNeighbours, BitArray marker, Func<int, Cell> GetCell, int Level, int SearchID, int ClusterSize,
-            List<int> CoarseiningCluster, ref bool complete) {
-
+            List<int> CoarseiningCluster, ref bool complete)
+        {
             Debug.Assert(CoarseiningCluster.Contains(j) == true);
 
             int[] Neighs = CellNeighbours[j];
-            foreach (var jNeigh in Neighs) {
+            foreach (var jNeigh in Neighs)
+            {
                 if (marker[jNeigh] == true)
                     continue;
                 if (CoarseiningCluster.Contains(jNeigh))
@@ -259,21 +249,17 @@ namespace BoSSS.Foundation.Grid {
 
                 CoarseiningCluster.Add(jNeigh);
 
-                if (CoarseiningCluster.Count == ClusterSize) {
+                if (CoarseiningCluster.Count == ClusterSize)
+                {
                     complete = true;
 #if DEBUG
-                    foreach (int j1 in CoarseiningCluster) {
+                    foreach (int j1 in CoarseiningCluster)
+                    {
                         Cell Cell_j1 = GetCell(j1);
                         Debug.Assert(Cell_j1.RefinementLevel > 0);
-                        //Debug.Assert(Cell_j1.CoarseningPeers != null);
-                        //Debug.Assert(Cell_j1.CoarseningPeers.Length == CoarseiningCluster.Count - 1);
                         Debug.Assert(Cell_j1.RefinementLevel == Level);
                         Debug.Assert(Cell_j1.CoarseningClusterID == SearchID);
                         Debug.Assert(Cell_j1.CoarseningClusterSize == ClusterSize);
-                        //Debug.Assert(Array.IndexOf(SearchGids, Cell_j1.GlobalID) >= 0);
-                        //foreach(long gid_cp in Cell_j1.CoarseningPeers) {
-                        //    Debug.Assert(Array.IndexOf(SearchGids, gid_cp) >= 0);
-                        //}
                     }
 #endif
                     return;
@@ -283,26 +269,38 @@ namespace BoSSS.Foundation.Grid {
                     FindCoarseiningClusterRecursive(jNeigh, MaxRecursionDeph - 1,
                         CellNeighbours, marker, GetCell, Level, SearchID, ClusterSize, CoarseiningCluster, ref complete);
 
-                if (complete) {
+                if (complete)
+                {
                     return;
                 }
             }
-
         }
 
-        static void RefineNeighboursRecursive(GridData gdat, int[] DesiredLevel, int j, int DesiredLevelNeigh) {
-            if (DesiredLevelNeigh <= 0)
-                return;
-
-            foreach (var jNeigh in gdat.Cells.CellNeighbours[j]) {
-                var cl = gdat.Cells.GetCell(jNeigh);
-                if (cl.RefinementLevel < DesiredLevelNeigh && DesiredLevel[jNeigh] < DesiredLevelNeigh) {
-                    DesiredLevel[jNeigh] = DesiredLevelNeigh;
-                    RefineNeighboursRecursive(gdat, DesiredLevel, jNeigh, DesiredLevelNeigh - 1);
+        private static List<int[]> GetCoarseningCells(GridData currentGrid, int[][] coarseningClusters)
+        {
+            int oldJ = currentGrid.Cells.NoOfLocalUpdatedCells;
+            List<int[]> coarseningCells = new List<int[]>();
+            for (int j = 0; j < oldJ; j++)
+            {
+                if (coarseningClusters[j] != null)
+                {
+                    Debug.Assert(coarseningClusters[j].Contains(j));
+                    if (j == coarseningClusters[j].Min())
+                    {
+                        coarseningCells.Add(coarseningClusters[j]);
+                    }
                 }
             }
+            return coarseningCells;
         }
 
+        private static bool CheckForRefineOrCoarsening(List<int> cellsToRefine, List<int[]> cellsToCoarsen)
+        {
+            bool isRefining = true;
+            if (cellsToRefine.Count == 0 && cellsToCoarsen.Count == 0)
+                isRefining = false;
+            return isRefining;
+        }
     }
 }
 

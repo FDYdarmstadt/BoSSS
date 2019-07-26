@@ -1537,12 +1537,14 @@ namespace BoSSS.Application.FSI_Solver
             //if (!refined && CurrentLevel > 0)
             //    DesiredLevel_j = CurrentLevel - 1;
             int DesiredLevel_j = 0;
+            //if (boundaryCells.Contains(j))
+            //    DesiredLevel_j = CurrentLevel + 1;
             if (CurrentLevel < 2)
                 DesiredLevel_j = CurrentLevel + 1;
-            else if (!boundaryCells.Contains(j))
-                DesiredLevel_j = CurrentLevel - 1;
+            //else if (!boundaryCells.Contains(j))
+            //    DesiredLevel_j = CurrentLevel - 1;
             else
-                DesiredLevel_j = CurrentLevel;
+                DesiredLevel_j = CurrentLevel - 1;
             return DesiredLevel_j;
         }
 
