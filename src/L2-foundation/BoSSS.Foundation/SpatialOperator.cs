@@ -718,18 +718,18 @@ namespace BoSSS.Foundation {
 
 
         /// <summary>
-        /// constructs a new evaluator object for explicit evaluation this spatial operator
+        /// Constructs a new evaluator object for the explicit evaluation of this spatial operator.
         /// </summary>
         /// <returns></returns>
         /// <remarks>
-        /// The
-        /// operator assembly must be finalized before by calling <see cref="Commit"/> before this method can be called.
+        /// Before this method can be called,
+        /// the operator assembly must be finalized by calling <see cref="Commit"/> .
         /// </remarks>
         /// <param name="CodomainVarMap">
         /// used to compute indices into the result vector
         /// </param>
         /// <param name="DomainFields">
-        /// domain which are evaluated to compute fluxes, ...
+        /// domains which are evaluated to compute fluxes, ...
         /// </param>
         /// <param name="ParameterMap">
         /// The parameter variables (of this differential operator);
@@ -1307,8 +1307,8 @@ namespace BoSSS.Foundation {
                 foreach(string codVarName in owner.CodomainVar) {
                     var comps = owner.EquationComponents[codVarName];
 
-                    if (comps.Where(cmp => cmp is INonlinearFlux).Count() > 0)
-                        throw new NotSupportedException("'INonlinearFlux' is not supported for linearization; (codomain variable '" + codVarName + "')");
+                    //if (comps.Where(cmp => cmp is INonlinearFlux).Count() > 0)
+                    //    throw new NotSupportedException("'INonlinearFlux' is not supported for linearization; (codomain variable '" + codVarName + "')");
                     if (comps.Where(cmp => cmp is INonlinearFluxEx).Count() > 0)
                         throw new NotSupportedException("'INonlinearFluxEx' is not supported for linearization; (codomain variable '" + codVarName + "')");
                     //if (comps.Where(cmp => cmp is IDualValueFlux).Count() > 0)
@@ -1368,7 +1368,7 @@ namespace BoSSS.Foundation {
             /// returns parameter fields
             /// </summary>
             protected override DGField[] GetTrxFields() {
-                if(Parameters != null) {
+                if(Parameters == null) {
                     return new DGField[0];
                 } else {
                     List<DGField> FieldsForTransciever = new List<DGField>(Parameters.Count);
@@ -1376,8 +1376,9 @@ namespace BoSSS.Foundation {
                         if(ff != null)
                             FieldsForTransciever.Add(ff);
                     return FieldsForTransciever.ToArray();
-                }
+                }          
             }
+            
 
             /// <summary>
             /// matrix evaluation
@@ -1393,8 +1394,7 @@ namespace BoSSS.Foundation {
                     // check arguments
                     // ===============
                     {
-
-                        if(AffineOffset != null && AffineOffset.Count < base.CodomainMapping.LocalLength)
+                        if (AffineOffset != null && AffineOffset.Count < base.CodomainMapping.LocalLength)
                             throw new ArgumentException("vector to short", "AffineOffset");
                         if(OnlyAffine == false) {
                             if(!Matrix.RowPartitioning.EqualsPartition(base.CodomainMapping))
@@ -1414,9 +1414,8 @@ namespace BoSSS.Foundation {
 
                     // do work
                     // =======
-
                     // transceiver is only needed for parameters
-                    if(base.MPITtransceive) {
+                    if (base.MPITtransceive) {
                         if(GetTrxFields().Length > 0) {
                             base.m_TRX.TransceiveStartImReturn();
                             base.m_TRX.TransceiveFinish();
@@ -1426,7 +1425,7 @@ namespace BoSSS.Foundation {
 
                     // volume integration
                     // ------------------
-                    if(volRule.Any()
+                    if (volRule.Any()
                         && Owner.ContainesComponentType(typeof(IVolumeForm), typeof(IVolumeForm_UxV), typeof(IVolumeForm_UxGradV), typeof(IVolumeForm_GradUxV), typeof(IVolumeForm_GradUxGradV))) {
                         using(new BlockTrace("Volume_Integration_(new)", tr)) {
                             var mtxBuilder = new LECVolumeQuadrature2<M, V>(this.Owner);
@@ -1434,7 +1433,6 @@ namespace BoSSS.Foundation {
                             mtxBuilder.Execute(volRule,
                                 CodomainMapping, Parameters, DomainMapping,
                                 OnlyAffine ? default(M) : Matrix, AffineOffset, time);
-                            
                         }
 
                     } else {
@@ -1443,14 +1441,12 @@ namespace BoSSS.Foundation {
 
                     // edge integration
                     // ----------------
-                    if(!(edgeRule.IsNullOrEmpty())
+                    if (!(edgeRule.IsNullOrEmpty())
                          && Owner.ContainesComponentType(typeof(IEdgeForm), typeof(IEdgeform_UxV), typeof(IEdgeform_UxGradV), typeof(IEdgeform_UxV), typeof(IEdgeSource_V))) {
-
-                        using(new BlockTrace("Edge_Integration_(new)", tr)) {
+                        using (new BlockTrace("Edge_Integration_(new)", tr)) {
                             var mxtbuilder2 = new LECEdgeQuadrature2<M, V>(this.Owner);
                             mxtbuilder2.Execute(edgeRule, CodomainMapping, Parameters, DomainMapping, OnlyAffine ? default(M) : Matrix, AffineOffset, time);
                             mxtbuilder2 = null;
-                            
                         }
                     }
                 }
@@ -1507,6 +1503,7 @@ namespace BoSSS.Foundation {
                 eps = Math.Sqrt(eps);
 
                 Eval = __Eval;
+                Eval.MPITtransceive = true;
                 DelParamUpdate = __delParameterUpdate;
 
                 BuildGridColoring();

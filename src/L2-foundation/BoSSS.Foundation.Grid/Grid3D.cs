@@ -42,7 +42,14 @@ namespace BoSSS.Foundation.Grid.Classic {
             : base(new RefElement[] { _RefElement }, new RefElement[] { _RefElement.FaceRefElement }) {
         }
 
-        
+
+        /// <summary>
+        /// Private constructor to support de-serialization
+        /// </summary>
+        private Grid3D()
+            : base(new RefElement[] { Cube.Instance }, new RefElement[] { Square.Instance }) {
+        }
+
 
         /// <summary>
         /// Constructs a Cartesian 3D Grid

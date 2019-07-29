@@ -551,7 +551,8 @@ namespace BoSSS.Application.XdgPoisson3 {
                 ISolverSmootherTemplate exsolver;
 
                 SolverFactory SF = new SolverFactory(this.Control.NonLinearSolver, this.Control.LinearSolver);
-                Action<int, double[],double[],MultigridOperator>[] Callbacks = { CustomItCallback};
+                List<Action<int, double[], double[], MultigridOperator>> Callbacks=new List<Action<int, double[], double[], MultigridOperator>>();
+                Callbacks.Add(CustomItCallback);
                 SF.GenerateLinear(out exsolver, MultigridSequence, OpConfig, Callbacks);
 
 

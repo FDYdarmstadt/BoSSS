@@ -82,7 +82,7 @@ namespace ilPSP {
 					return BB;
                 }
 
-                // (re-) allocation neccessary
+                // (re-) allocation necessary
                 if(iAlloc < 0)
                     throw new ApplicationException("running out of temp buffers.");
 

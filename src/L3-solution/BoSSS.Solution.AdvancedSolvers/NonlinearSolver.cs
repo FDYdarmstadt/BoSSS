@@ -80,7 +80,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
         
 
         /// <summary>
-        /// Helper routine for the inial phase of <see cref="SolverDriver{S}"/>
+        /// Helper routine for the initial phase of <see cref="SolverDriver{S}"/>
         /// </summary>
         /// <param name="X">initial guess</param>
         /// <param name="RHS"></param>
@@ -103,7 +103,6 @@ namespace BoSSS.Solution.AdvancedSolvers {
             } else {
                 this.RHSRaw = null;
             }
-
             this.UpdateLinearization(X.Mapping.Fields);
             
             int Ltrf = this.CurrentLin.Mapping.LocalLength;
@@ -231,8 +230,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 this.m_MultigridOperatorConfig);
 
             OpAffineRaw = OpAffineRaw.CloneAs();
-
-            if(this.RHSRaw != null)
+            if (this.RHSRaw != null)
                 OpAffineRaw.AccV(-1.0, this.RHSRaw);
             if(LinearizationRHS == null || LinearizationRHS.Length != this.CurrentLin.Mapping.LocalLength)
                 LinearizationRHS = new double[this.CurrentLin.Mapping.LocalLength];

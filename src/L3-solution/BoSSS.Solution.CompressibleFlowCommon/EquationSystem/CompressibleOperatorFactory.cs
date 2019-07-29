@@ -28,7 +28,7 @@ namespace BoSSS.Solution.CompressibleFlowCommon.EquationSystem {
 
             // Boundary condition map
             Material material = control.GetMaterial();
-            IBoundaryConditionMap boundaryMap = new BoundaryConditionMap(gridData, control, material);
+            IBoundaryConditionMap boundaryMap = new CompressibleBoundaryCondMap(gridData, control, material);
 
             // Initialize operator
             SpatialOperator EulerOperator = new SpatialOperator(

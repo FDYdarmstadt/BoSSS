@@ -3,7 +3,7 @@
 namespace VoronoiTests
 {
     [TestFixture]
-    abstract class TestBench
+    public abstract class TestBench
     {
         [TestFixtureSetUp]
         public abstract void SetUp();

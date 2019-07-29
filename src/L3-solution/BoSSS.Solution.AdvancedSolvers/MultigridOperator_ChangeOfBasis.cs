@@ -115,7 +115,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
         /// <summary>
         /// the DG degrees on this level
         /// </summary>
-        int[] Degrees {
+        public int[] Degrees {
             get {
                 VerifyConfig();
                 int[] R = new int[this.BaseGridProblemMapping.BasisS.Count()];
@@ -612,8 +612,10 @@ namespace BoSSS.Solution.AdvancedSolvers {
                     double infNorm = In_OperatorMatrixBlock.InfNorm();
 
                     if(symmErr / infNorm > 1.0e-8)
-                        throw new NotSupportedException(string.Format("LDL_DiagBlock is not supported on unsymmetric matrices (Symm-Err: {0:0.####E-00}, Inf-Norm: {1:0.####E-00}, Quotient {2:0.####E-00}).", symmErr, infNorm, symmErr / infNorm));
+                        throw new ArithmeticException(string.Format("LDL_DiagBlock is not supported on unsymmetric matrices (Symm-Err: {0:0.####E-00}, Inf-Norm: {1:0.####E-00}, Quotient {2:0.####E-00}).", symmErr, infNorm, symmErr / infNorm));
                     SymmInv(In_OperatorMatrixBlock, OUT_LeftPC, OUT_rightPC);
+                    //In_OperatorMatrixBlock.SymmetricLDLInversion(OUT_rightPC, null);
+                    //OUT_rightPC.TransposeTo(OUT_LeftPC);
                     break;
                 }
 

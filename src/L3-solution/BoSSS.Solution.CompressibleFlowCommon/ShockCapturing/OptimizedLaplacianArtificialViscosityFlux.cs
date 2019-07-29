@@ -26,26 +26,35 @@ namespace BoSSS.Solution.CompressibleFlowCommon.ShockCapturing {
 
     public class OptimizedLaplacianArtificialViscosityFlux : INonlinear2ndOrderForm {
 
-        private GridData gridData;
-
-        private int dimension;
-
-        private string ArgumentName;
+        public GridData GridData {
+            private set;
+            get;
+        }
 
         public bool AdiabaticWall {
             get; set;
         }
 
-        private MultidimensionalArray cellLengthScale;
+        public MultidimensionalArray CellLengthScale {
+            private set;
+            get;
+        }
 
-        private double penaltyFactor;
+        public double PenaltyFactor {
+            private set;
+            get;
+        }
+
+        private int dimension;
+
+        private string ArgumentName;
 
         public OptimizedLaplacianArtificialViscosityFlux(GridData gridData, double order, int dimension, string ArgumentVarName) {
             this.dimension = dimension;
-            cellLengthScale = gridData.Cells.cj;
-            this.gridData = gridData;
-            penaltyFactor = (order + 1) * (order + (double)dimension) / (double)dimension;
-            ArgumentName = ArgumentVarName;
+            this.CellLengthScale = gridData.Cells.cj;
+            this.GridData = gridData;
+            this.PenaltyFactor = (order + 1) * (order + (double)dimension) / (double)dimension;
+            this.ArgumentName = ArgumentVarName;
         }
 
         #region IEquationComponent Members
@@ -159,13 +168,41 @@ namespace BoSSS.Solution.CompressibleFlowCommon.ShockCapturing {
             Debug.Assert(fot.GetLength(0) == NumOfCells);
             int NumOfNodes = fin.GetLength(1); // no of nodes per cell
 
+            double[] penalties = new double[NumOfCells];
+            for (int cell = 0; cell < NumOfCells; cell++) { // loop over cells...
+                int iEdge = efp.e0 + cell;
+                int jCellIn = GridData.Edges.CellIndices[iEdge, 0];
+                int jCellOut = GridData.Edges.CellIndices[iEdge, 1];
+                double penalty = this.PenaltyFactor * Math.Max(CellLengthScale[jCellIn], CellLengthScale[jCellOut]);
+                penalties[cell] = penalty;
+            }
+
+            InternalEdgeForXDG(efp, Uin, Uout, GradUin, GradUout, fin, fot, penalties);
+        }
+
+        /// <summary>
+        /// Hack in order to use the bulk AV flux as AV interface flux in XDG simulations.
+        /// The question is how to pass the penalty factors in a suitable way. According to Florian,
+        /// this is a general issue and has to be tackle in a global manner.
+        /// Currently, we do not have any better idea.
+        /// </summary>
+        /// <param name="efp"></param>
+        /// <param name="Uin"></param>
+        /// <param name="Uout"></param>
+        /// <param name="GradUin"></param>
+        /// <param name="GradUout"></param>
+        /// <param name="fin"></param>
+        /// <param name="fot"></param>
+        /// <param name="penalties"></param>
+        public void InternalEdgeForXDG(EdgeFormParams efp, MultidimensionalArray[] Uin, MultidimensionalArray[] Uout, MultidimensionalArray[] GradUin, MultidimensionalArray[] GradUout, MultidimensionalArray fin, MultidimensionalArray fot, double[] penalties) {
+            int NumOfNodes = fin.GetLength(1); // no of nodes per cell
+            int NumOfCells = efp.Len;
+
             for (int cell = 0; cell < NumOfCells; cell++) { // loop over cells...
                 int iEdge = efp.e0 + cell;
                 //double Penalty = penalty(gridDat.Edges.CellIndices[iEdge, 0], gridDat.Edges.CellIndices[iEdge, 1], gridDat.Cells.cj);
 
-                int jCellIn = gridData.Edges.CellIndices[iEdge, 0];
-                int jCellOut = gridData.Edges.CellIndices[iEdge, 1];
-                double Penalty = penaltyFactor * Math.Max(cellLengthScale[jCellIn], cellLengthScale[jCellOut]);
+                double penalty = penalties[cell];
 
                 for (int node = 0; node < NumOfNodes; node++) { // loop over nodes...
                     // SIPG Flux Loops
@@ -175,9 +212,9 @@ namespace BoSSS.Solution.CompressibleFlowCommon.ShockCapturing {
                     double flux = 0.0;
                     for (int d = 0; d < dimension; d++) {
                         double n = efp.Normals[cell, node, d];
-                        flux -= 0.5 * (viscosityIn * GradUin[0][cell, node, d] + viscosityOut * GradUout[0][cell, node, d]) * n;
+                        flux -= 0.5 * (viscosityIn * GradUin[0][cell, node, d] + viscosityOut * GradUout[0][cell, node, d]) * n;    // Consistency term
                     }
-                    flux += Math.Max(viscosityIn, viscosityOut) * (Uin[0][cell, node] - Uout[0][cell, node]) * Penalty;
+                    flux += Math.Max(viscosityIn, viscosityOut) * (Uin[0][cell, node] - Uout[0][cell, node]) * penalty; // Penalty term
 
                     fin[cell, node] += flux;
                     fot[cell, node] -= flux;

@@ -30,7 +30,7 @@ namespace BoSSS.Application.FSI_Solver
 {
     public class HardcodedControl_straightChannel : IBM_Solver.HardcodedTestExamples
     {
-        public static FSI_Control ActiveRod_noBackroundFlow(int k = 3, double stressM = 1e7, double cellAgg = 0.2, double muA = 1e3, double timestepX = 1e-3)
+        public static FSI_Control ActiveRod_noBackroundFlow(int k = 3, double stressM = 1e4, double cellAgg = 0.2, double muA = 1e3, double timestepX = 1e-3)
         {
             FSI_Control C = new FSI_Control();
 
@@ -136,10 +136,10 @@ namespace BoSSS.Application.FSI_Solver
                     ActiveStress = stressM,
                     thickness_P = 1 * BaseSize,
                     length_P = 2 * BaseSize,
-                    AddaptiveUnderrelaxation = true,
-                    underrelaxation_factor = 0.1,
-                    ClearSmallValues = true,
-                    neglectAddedDamping = false
+                    useAddaptiveUnderrelaxation = true,
+                    underrelaxation_factor = 1,
+                    clearSmallValues = true,
+                    UseAddedDamping = true
                 });
             }
 
@@ -177,7 +177,7 @@ namespace BoSSS.Application.FSI_Solver
             C.LinearSolver.NoOfMultigridLevels = 1;
             C.LinearSolver.MaxSolverIterations = 1000;
             C.LinearSolver.MinSolverIterations = 1;
-            C.ForceAndTorque_ConvergenceCriterion = 1e3;
+            C.ForceAndTorque_ConvergenceCriterion = 1e-1;
             C.LSunderrelax = 1.0;
             
 
@@ -196,7 +196,7 @@ namespace BoSSS.Application.FSI_Solver
             C.dtMax = dt;
             C.dtMin = dt;
             C.Endtime = 1000000000;
-            C.NoOfTimesteps = 1000000000;
+            C.NoOfTimesteps = 100000000;
             
             // haben fertig...
             // ===============
@@ -311,10 +311,10 @@ namespace BoSSS.Application.FSI_Solver
                     ActiveStress = stressM,
                     thickness_P = 0.5 * BaseSize,
                     length_P = 2.5 * BaseSize,
-                    AddaptiveUnderrelaxation = true,// set true if you want to define a constant underrelaxation (not recommended)
+                    useAddaptiveUnderrelaxation = true,// set true if you want to define a constant underrelaxation (not recommended)
                     underrelaxation_factor = 0.2,// underrelaxation with [factor * 10^exponent]
-                    ClearSmallValues = true,
-                    neglectAddedDamping = false
+                    clearSmallValues = true,
+                    UseAddedDamping = true
                 });
             }
             //Define level-set

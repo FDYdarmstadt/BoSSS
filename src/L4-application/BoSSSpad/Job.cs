@@ -583,9 +583,6 @@ namespace BoSSS.Application.BoSSSpad {
                 throw new NotSupportedException("Job can only be activated once.");
             AssignedBatchProc = bpc;
 
-            if (this.Name == "J2560_k2_exp_softpcg_mg")
-                Console.WriteLine();
-
             // ================
             // check job status
             // ================

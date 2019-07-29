@@ -38,6 +38,10 @@ namespace CNS.ShockCapturing {
             this.sensorVariable = sensorVariable;
         }
 
+        public DGField GetSensorField() {
+            throw new NotImplementedException();
+        }
+
         public double GetSensorValue(int cellIndex) {
             return sensorValues.GetMeanValue(cellIndex);
         }
