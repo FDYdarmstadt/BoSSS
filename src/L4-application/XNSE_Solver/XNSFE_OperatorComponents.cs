@@ -191,7 +191,7 @@ namespace BoSSS.Application.XNSE_Solver {
             if (!XOp.CodomainVar.Contains(CodName))
                 throw new ArgumentException("CoDomain variable \"" + CodName + "\" is not defined in Spatial Operator");
 
-            if (config.isSeparated) {
+            if (config.getConductMode != ConductivityInSpeciesBulk.ConductivityMode.SIP) {
                 foreach (string cn in EquationNames.AuxHeatFlux(D)) {
                     if (!XOp.CodomainVar.Contains(cn))
                         throw new ArgumentException("CoDomain variable \"" + cn + "\" is not defined in Spatial Operator");

@@ -35,6 +35,28 @@ namespace BoSSS.Solution.XheatCommon {
     /// </summary>
     public class ConductivityInSpeciesBulk : swipConductivity, ISpeciesFilter {
 
+        /// <summary>
+        /// different implementations for the conductivity part (laplace operator) of the heat equation 
+        /// </summary>
+        public enum ConductivityMode {
+
+            /// <summary>
+            /// direct discretization of the laplace operator via symmetric interior penalty
+            /// </summary>
+            SIP,
+
+            /// <summary>
+            /// splitting into two first order differential equations, explicit computation of the heat flux
+            /// </summary>
+            LDG,
+
+            /// <summary>
+            /// splitting into two first order differential equations, explicit computation of the heat flux
+            /// additional stabilization via penalty terms
+            /// </summary>
+            LDGstabi
+        }
+
 
         public ConductivityInSpeciesBulk(double penalty, double sw, ThermalMultiphaseBoundaryCondMap bcMap, int D,
             string spcName, SpeciesId spcId, double _kA, double _kB)

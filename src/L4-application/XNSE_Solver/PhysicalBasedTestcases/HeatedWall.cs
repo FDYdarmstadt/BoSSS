@@ -641,7 +641,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             //C.CutCellQuadratureType = XQuadFactoryHelper.MomentFittingVariants.Classic;
 
             bool steady = false;
-            bool separated = true; 
+            bool separated = false; 
 
             //_DbPath = @"\\dc1\userspace\smuda\cluster\CapillaryRise\CapillaryRise_studyDB";
 
@@ -715,8 +715,9 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             C.PhysicalParameters.Sigma = 0.0; 
 
             C.solveCoupledHeatEquation = true;
-            C.separatedHeatEq = separated;
-            C.separatedHeatEqWithStabi = false;
+            if (separated)
+                C.conductMode = Solution.XheatCommon.ConductivityInSpeciesBulk.ConductivityMode.LDG;
+
             C.ThermalParameters.rho_A = C.PhysicalParameters.rho_A;
             C.ThermalParameters.rho_B = C.PhysicalParameters.rho_B;
             C.ThermalParameters.c_A = 1.0;
@@ -991,7 +992,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             C.PhysicalParameters.Sigma = 0.0;
 
             C.solveCoupledHeatEquation = true;
-            C.separatedHeatEq = true;
+
             C.ThermalParameters.rho_A = C.PhysicalParameters.rho_A;
             C.ThermalParameters.rho_B = C.PhysicalParameters.rho_B;
             C.ThermalParameters.c_A = 9.35e+3;
@@ -2047,7 +2048,8 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             C.PhysicalParameters.Sigma = 0.0;
 
             C.solveCoupledHeatEquation = true;
-            C.separatedHeatEq = separated;
+            if (separated)
+                C.conductMode = Solution.XheatCommon.ConductivityInSpeciesBulk.ConductivityMode.LDG;
             C.ThermalParameters.rho_A = C.PhysicalParameters.rho_A;
             C.ThermalParameters.rho_B = C.PhysicalParameters.rho_B;
             C.ThermalParameters.c_A = 1.0;

@@ -271,7 +271,7 @@ namespace BoSSS.Application.XNSE_Solver {
                     this.ResidualHeat = new XDGField(this.Temperature.Basis, "ResidualHeat");
                     base.RegisterField(this.ResidualHeat);
 
-                    if (this.Control.separatedHeatEq) {
+                    if (this.Control.conductMode != ConductivityInSpeciesBulk.ConductivityMode.SIP) {
                         this.HeatFlux = new VectorField<XDGField>(D.ForLoop(d => new XDGField(new XDGBasis(this.LsTrk, this.Control.FieldOptions[VariableNames.HeatFluxVectorComponent(d)].Degree), VariableNames.HeatFluxVectorComponent(d))));
                         base.RegisterField(this.HeatFlux);
                         this.ResidualAuxHeatFlux = new VectorField<XDGField>(D.ForLoop(d => new XDGField(new XDGBasis(this.LsTrk, this.Control.FieldOptions[VariableNames.HeatFluxVectorComponent(d)].Degree), VariableNames.ResidualAuxHeatFluxVectorComponent(d))));
@@ -2312,7 +2312,7 @@ namespace BoSSS.Application.XNSE_Solver {
 
                                MultidimensionalArray HeatFluxA_Res = MultidimensionalArray.Create(Len, K, D);
                                MultidimensionalArray HeatFluxB_Res = MultidimensionalArray.Create(Len, K, D);
-                               if (this.Control.separatedHeatEq) {
+                               if (XOpConfig.getConductMode != ConductivityInSpeciesBulk.ConductivityMode.SIP) {
                                    for (int dd = 0; dd < D; dd++) {
                                        this.HeatFlux[dd].GetSpeciesShadowField("A").Evaluate(j0, Len, NS, HeatFluxA_Res.ExtractSubArrayShallow(new int[] { -1, -1, dd }));
                                        this.HeatFlux[dd].GetSpeciesShadowField("B").Evaluate(j0, Len, NS, HeatFluxB_Res.ExtractSubArrayShallow(new int[] { -1, -1, dd }));
@@ -2370,7 +2370,7 @@ namespace BoSSS.Application.XNSE_Solver {
                                                rho_l = this.Control.PhysicalParameters.rho_A;
                                                rho_v = this.Control.PhysicalParameters.rho_B;
                                                for (int dd = 0; dd < D; dd++) {
-                                                   if (this.Control.separatedHeatEq)
+                                                   if (XOpConfig.getConductMode != ConductivityInSpeciesBulk.ConductivityMode.SIP)
                                                        qEvap -= (HeatFluxA_Res[j, k, dd] - HeatFluxB_Res[j, k, dd]) * Normals[j, k, dd];
                                                    else
                                                        qEvap += (kA * GradTempA_Res[j, k, dd] - kB * GradTempB_Res[j, k, dd]) * Normals[j, k, dd];
@@ -2380,7 +2380,7 @@ namespace BoSSS.Application.XNSE_Solver {
                                                rho_l = this.Control.PhysicalParameters.rho_B;
                                                rho_v = this.Control.PhysicalParameters.rho_A;
                                                for (int dd = 0; dd < D; dd++) {
-                                                   if (this.Control.separatedHeatEq)
+                                                   if (XOpConfig.getConductMode != ConductivityInSpeciesBulk.ConductivityMode.SIP)
                                                        qEvap -= (HeatFluxB_Res[j, k, dd] - HeatFluxA_Res[j, k, dd]) * Normals[j, k, dd];
                                                    else
                                                        qEvap += (kB * GradTempB_Res[j, k, dd] - kA * GradTempA_Res[j, k, dd]) * Normals[j, k, dd];
@@ -4314,7 +4314,7 @@ namespace BoSSS.Application.XNSE_Solver {
 
                 double[] scale_A;
                 double[] scale_B;
-                if (!XOpConfig.isSeparated) {
+                if (this.Control.conductMode == ConductivityInSpeciesBulk.ConductivityMode.SIP) {
                     scale_A = new double[1];
                     scale_A[0] = rho_A * c_A;
                     scale_B = new double[1];
@@ -4350,7 +4350,7 @@ namespace BoSSS.Application.XNSE_Solver {
                 // the last configuration enty will be used for all higher level
                 MultigridOperator.ChangeOfBasisConfig[][] configs = new MultigridOperator.ChangeOfBasisConfig[3][];
                 for(int iLevel = 0; iLevel < configs.Length; iLevel++) {
-                    configs[iLevel] = (!XOpConfig.isSeparated) ? new MultigridOperator.ChangeOfBasisConfig[1] : new MultigridOperator.ChangeOfBasisConfig[1+D];
+                    configs[iLevel] = (this.Control.conductMode == ConductivityInSpeciesBulk.ConductivityMode.SIP) ? new MultigridOperator.ChangeOfBasisConfig[1] : new MultigridOperator.ChangeOfBasisConfig[1+D];
 
                     // configuration for Temperature
                     configs[iLevel][0] = new MultigridOperator.ChangeOfBasisConfig() {
@@ -4361,7 +4361,7 @@ namespace BoSSS.Application.XNSE_Solver {
 
 
                     // configuration for auxiliary heat flux
-                    if (XOpConfig.isSeparated) { 
+                    if (this.Control.conductMode != ConductivityInSpeciesBulk.ConductivityMode.SIP) { 
                         int pFlux = this.HeatFlux[0].Basis.Degree;
                         for (int d = 0; d < D; d++) {
                             configs[iLevel][d + 1] = new MultigridOperator.ChangeOfBasisConfig() {
@@ -4403,7 +4403,7 @@ namespace BoSSS.Application.XNSE_Solver {
         internal CoordinateVector CurrentCoupledSolution {
             get {
                 if(m_CurrentCoupledSolution == null) {
-                    if (!XOpConfig.isSeparated)
+                    if (this.Control.conductMode == ConductivityInSpeciesBulk.ConductivityMode.SIP)
                         m_CurrentCoupledSolution = new CoordinateVector(this.Temperature);
                     else
                         m_CurrentCoupledSolution = new CoordinateVector(new DGField[] { this.Temperature, this.HeatFlux[0], this.HeatFlux[1] });
@@ -4420,7 +4420,7 @@ namespace BoSSS.Application.XNSE_Solver {
         internal CoordinateVector CurrentCoupledResidual {
             get {
                 if(m_CurrentCoupledResidual == null) {
-                    if (!XOpConfig.isSeparated)
+                    if (this.Control.conductMode == ConductivityInSpeciesBulk.ConductivityMode.SIP)
                         m_CurrentCoupledResidual = new CoordinateVector(this.ResidualHeat);
                     else
                         m_CurrentCoupledResidual = new CoordinateVector(new DGField[] { this.ResidualHeat, this.ResidualAuxHeatFlux[0], this.ResidualAuxHeatFlux[1] });
@@ -4452,7 +4452,7 @@ namespace BoSSS.Application.XNSE_Solver {
                  VariableNames.DisjoiningPressure);
             string[] DomName = new string[] { VariableNames.Temperature };
 
-            if (XOpConfig.isSeparated) {
+            if (this.Control.conductMode != ConductivityInSpeciesBulk.ConductivityMode.SIP) {
                 CodName = ArrayTools.Cat(CodName, EquationNames.AuxHeatFlux(D));
                 DomName = ArrayTools.Cat(DomName, VariableNames.HeatFluxVector(D));
             }
@@ -4522,7 +4522,7 @@ namespace BoSSS.Application.XNSE_Solver {
 
             // heat flux for evaporation
             DGField[] HeatFluxParam;
-            if (this.Control.separatedHeatEq) {
+            if (this.Control.conductMode != ConductivityInSpeciesBulk.ConductivityMode.SIP) {
                 var HeatFluxMap = new CoordinateMapping(this.HeatFlux.ToArray());
                 HeatFluxParam = HeatFluxMap.Fields.ToArray();
             } else {

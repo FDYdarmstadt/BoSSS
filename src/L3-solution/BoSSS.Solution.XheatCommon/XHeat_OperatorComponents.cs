@@ -47,7 +47,7 @@ namespace BoSSS.Solution.XheatCommon {
             if (!XOp.CodomainVar.Contains(CodName))
                 throw new ArgumentException("CoDomain variable \"" + CodName + "\" is not defined in Spatial Operator");
 
-            if (config.isSeparated) {
+            if (config.getConductMode != ConductivityInSpeciesBulk.ConductivityMode.SIP) {
                 foreach (string cn in EquationNames.AuxHeatFlux(D)) {
                     if (!XOp.CodomainVar.Contains(cn))
                         throw new ArgumentException("CoDomain variable \"" + cn + "\" is not defined in Spatial Operator");
@@ -81,7 +81,7 @@ namespace BoSSS.Solution.XheatCommon {
 
             // viscous operator (laplace)
             // ==========================
-            if (!config.isSeparated) {
+            if (config.getConductMode == ConductivityInSpeciesBulk.ConductivityMode.SIP) {
                 double penalty = dntParams.PenaltySafety;
 
                 var Visc = new ConductivityInSpeciesBulk(
@@ -99,7 +99,7 @@ namespace BoSSS.Solution.XheatCommon {
             } else {
 
                 comps.Add(new HeatFluxDivergenceInSpeciesBulk(D, BcMap, spcName, spcId));
-                if (config.withStabilization)
+                if (config.getConductMode == ConductivityInSpeciesBulk.ConductivityMode.LDGstabi)
                     comps.Add(new AuxiliaryStabilizationForm(D, BcMap, spcName, spcId));
 
                 for (int d = 0; d < D; d++) {
@@ -107,7 +107,7 @@ namespace BoSSS.Solution.XheatCommon {
 
                     comps.Add(new AuxiliaryHeatFlux_Identity(d, spcId));   // cell local
                     comps.Add(new TemperatureGradientInSpeciesBulk(d, BcMap, spcName, spcId, kSpc));
-                    if (config.withStabilization)
+                    if (config.getConductMode == ConductivityInSpeciesBulk.ConductivityMode.LDGstabi)
                         comps.Add(new TemperatureStabilizationForm(d, BcMap, spcName, spcId));
                 }
 
@@ -127,7 +127,7 @@ namespace BoSSS.Solution.XheatCommon {
             if (!XOp.CodomainVar.Contains(CodName))
                 throw new ArgumentException("CoDomain variable \"" + CodName + "\" is not defined in Spatial Operator");
 
-            if (config.isSeparated) {
+            if (config.getConductMode != ConductivityInSpeciesBulk.ConductivityMode.SIP) {
                 foreach (string cn in EquationNames.AuxHeatFlux(D)) {
                     if (!XOp.CodomainVar.Contains(cn))
                         throw new ArgumentException("CoDomain variable \"" + cn + "\" is not defined in Spatial Operator");
@@ -165,7 +165,7 @@ namespace BoSSS.Solution.XheatCommon {
 
             // viscous operator (laplace)
             // ==========================
-            if (!config.isSeparated) {
+            if (config.getConductMode == ConductivityInSpeciesBulk.ConductivityMode.SIP) {
 
                 double penalty = dntParams.PenaltySafety;
 
@@ -175,14 +175,14 @@ namespace BoSSS.Solution.XheatCommon {
             } else {
 
                 comps.Add(new HeatFluxDivergencetAtLevelSet(LsTrk, config.isEvaporation)); 
-                if(config.withStabilization)
+                if(config.getConductMode == ConductivityInSpeciesBulk.ConductivityMode.LDGstabi)
                     comps.Add(new AuxiliaryStabilizationFormAtLevelSet(LsTrk, config.isEvaporation));
 
                 for (int d = 0; d < D; d++) {
                     comps = XOp.EquationComponents[EquationNames.AuxHeatFluxComponent(d)];
 
                     comps.Add(new TemperatureGradientAtLevelSet(d, LsTrk, kA, kB, config.isEvaporation, Tsat));
-                    if (config.withStabilization)
+                    if (config.getConductMode == ConductivityInSpeciesBulk.ConductivityMode.LDGstabi)
                         comps.Add(new TemperatureStabilizationFormAtLevelSet(d, LsTrk, config.isEvaporation, Tsat));
                 }
 
@@ -207,12 +207,7 @@ namespace BoSSS.Solution.XheatCommon {
         /// <summary>
         /// true if the heat equation is separated via the auxiliary heat flux formulation
         /// </summary>
-        bool isSeparated { get; }
-
-        /// <summary>
-        /// additional stabilizations form via penalty terms
-        /// </summary>
-        bool withStabilization { get;  }
+        ConductivityInSpeciesBulk.ConductivityMode getConductMode { get; }
 
         /// <summary>
         /// include transport operator

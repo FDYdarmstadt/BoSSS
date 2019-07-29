@@ -505,14 +505,9 @@ namespace BoSSS.Application.XNSE_Solver {
         public bool solveCoupledHeatEquation = false;
 
         /// <summary>
-        /// switch for computations with evaporation
+        /// implementations for the conductivity part (laplace operator) of the heat equation 
         /// </summary>
-        public bool separatedHeatEq = false;
-
-        /// <summary>
-        /// additional penalty terms 
-        /// </summary>
-        public bool separatedHeatEqWithStabi = false;
+        public ConductivityInSpeciesBulk.ConductivityMode conductMode = ConductivityInSpeciesBulk.ConductivityMode.SIP;
 
         /// <summary>
         /// Block-Precondition for the Temperature-block

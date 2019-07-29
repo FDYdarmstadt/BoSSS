@@ -219,8 +219,7 @@ namespace BoSSS.Application.XNSE_Solver {
             Evaporation = (control.ThermalParameters.hVap_A != 0.0 && control.ThermalParameters.hVap_B != 0.0);
             MatInt = !Evaporation;
 
-            auxHeatFlux = control.separatedHeatEq;
-            auxHeatStabi = control.separatedHeatEqWithStabi;
+            this.conductMode = control.conductMode;
         }
 
 
@@ -229,12 +228,7 @@ namespace BoSSS.Application.XNSE_Solver {
         /// <summary>
         /// true if the heat equation is solved via the auxiliary heat flux formulation
         /// </summary>
-        public bool auxHeatFlux;
-
-        /// <summary>
-        /// additional penalty terms
-        /// </summary>
-        public bool auxHeatStabi;
+        public ConductivityInSpeciesBulk.ConductivityMode conductMode;
 
         /// <summary>
         /// include heat equation
@@ -256,13 +250,10 @@ namespace BoSSS.Application.XNSE_Solver {
             get { return thermParams; }
         }
 
-        public bool isSeparated {
-            get { return auxHeatFlux; }
+        public ConductivityInSpeciesBulk.ConductivityMode getConductMode {
+            get { return conductMode; }
         }
 
-        public bool withStabilization {
-            get { return auxHeatStabi; }
-        }
 
         public bool isHeatTransport {
             get { return HeatTransport; }
