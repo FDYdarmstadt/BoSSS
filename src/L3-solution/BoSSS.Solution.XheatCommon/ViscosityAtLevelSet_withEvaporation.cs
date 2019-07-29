@@ -77,7 +77,8 @@ namespace BoSSS.Solution.XheatCommon {
             double hVap = (hVapA > 0) ? hVapA : -hVapA;
             double M = qEvap / hVap;
 
-            //Console.WriteLine("mEvap - GeneralizedViscosityAtLevelSet_FullySymmetric: {0}", M);
+            //if (M > -0.099 || M < -0.101)
+            //    Console.WriteLine("mEvap - ViscosityAtLevelSet_FullySymmetric_withEvap: {0}", M);
 
             return M;
 
@@ -153,7 +154,7 @@ namespace BoSSS.Solution.XheatCommon {
 
         public override IList<string> ParameterOrdering {
             get {
-                return ArrayTools.Cat(VariableNames.Temperature0Gradient(D), VariableNames.Temperature0, VariableNames.Curvature, VariableNames.DisjoiningPressure); //;
+                return ArrayTools.Cat(VariableNames.HeatFlux0Vector(D), VariableNames.Temperature0, VariableNames.Curvature, VariableNames.DisjoiningPressure); //;
             }
         }
 

@@ -35,10 +35,12 @@ namespace BoSSS.Solution.XheatCommon {
 
         LevelSetTracker m_LsTrk;
 
-        public ConductivityAtLevelSet(LevelSetTracker lstrk, double _kA, double _kB, double _penalty, double _Tsat) {
+        public ConductivityAtLevelSet(LevelSetTracker lstrk, double _kA, double _kB, double _penalty, bool _DiriCond, double _Tsat) {
             this.kA = _kA;
             this.kB = _kB;
             this.penalty = _penalty;
+
+            this.DirichletCond = _DiriCond;
             this.Tsat = _Tsat;
 
             m_LsTrk = lstrk;
@@ -50,6 +52,7 @@ namespace BoSSS.Solution.XheatCommon {
 
         double penalty;
 
+        bool DirichletCond;
         double Tsat;
 
 
@@ -91,19 +94,21 @@ namespace BoSSS.Solution.XheatCommon {
 
             double Ret = 0.0;
 
+            if (DirichletCond) {
+                Ret -= (kA * Grad_uA_xN) * (vA - 0);                           // consistency term
+                Ret -= (kB * Grad_uB_xN) * (0 - vB);                           // consistency term
+                Ret -= (kA * Grad_vA_xN) * (uA[0] - Tsat);                     // symmetry term
+                Ret -= (kB * Grad_vB_xN) * (Tsat - uB[0]);                     // symmetry term
 
-            //Ret -= 0.5 * (kA * Grad_uA_xN + kB * Grad_uB_xN) * (vA - vB);                           // consistency term
-            Ret -= (kA * Grad_uA_xN) * (vA - 0);                           // consistency term
-            Ret -= (kB * Grad_uB_xN) * (0 - vB);                           // consistency term
+                Ret += (2.0 * penalty / hCutCellMin) * (uA[0] - Tsat) * (vA - 0) * kA; // penalty term
+                Ret += (2.0 * penalty / hCutCellMin) * (Tsat - uB[0]) * (0 - vB) * kB; // penalty term
 
-            //Ret -= 0.5 * (kA * Grad_vA_xN + kB * Grad_vB_xN) * (uA[0] - uB[0]);                     // symmetry term
-            Ret -= (kA * Grad_vA_xN) * (uA[0] - Tsat);                     // symmetry term
-            Ret -= (kB * Grad_vB_xN) * (Tsat - uB[0]);                     // symmetry term
+            } else {
+                Ret -= 0.5 * (kA * Grad_uA_xN + kB * Grad_uB_xN) * (vA - vB);                           // consistency term
+                Ret -= 0.5 * (kA * Grad_vA_xN + kB * Grad_vB_xN) * (uA[0] - uB[0]);                     // symmetry term
 
-            //Ret += (penalty / hCutCellMin) * (uA[0] - uB[0]) * (vA - vB) * (Math.Abs(kA) > Math.Abs(kB) ? kA : kB); // penalty term
-            Ret += (2.0*penalty / hCutCellMin) * (uA[0] - Tsat) * (vA - 0) * kA; // penalty term
-            Ret += (2.0*penalty / hCutCellMin) * (Tsat - uB[0]) * (0 - vB) * kB; // penalty term
-
+                Ret += (penalty / hCutCellMin) * (uA[0] - uB[0]) * (vA - vB) * (Math.Abs(kA) > Math.Abs(kB) ? kA : kB); // penalty term
+            }
 
 
             Debug.Assert(!(double.IsInfinity(Ret) || double.IsNaN(Ret)));
@@ -138,7 +143,7 @@ namespace BoSSS.Solution.XheatCommon {
 
         public TermActivationFlags LevelSetTerms {
             get {
-                return TermActivationFlags.UxV | TermActivationFlags.UxGradV | TermActivationFlags.GradUxV;
+                return TermActivationFlags.V | TermActivationFlags.UxV | TermActivationFlags.GradV | TermActivationFlags.UxGradV | TermActivationFlags.GradUxV;
             }
         }
 
@@ -296,7 +301,10 @@ namespace BoSSS.Solution.XheatCommon {
 
         public TermActivationFlags LevelSetTerms {
             get {
-                return TermActivationFlags.UxV;
+                if (DirichletCond)
+                    return TermActivationFlags.V;
+                else
+                    return TermActivationFlags.UxV | TermActivationFlags.V;
             }
         }
 
@@ -364,7 +372,10 @@ namespace BoSSS.Solution.XheatCommon {
 
         public TermActivationFlags LevelSetTerms {
             get {
-                return TermActivationFlags.UxV | TermActivationFlags.V;
+                if(DirichletCond)
+                    return TermActivationFlags.V;
+                else
+                    return TermActivationFlags.UxV | TermActivationFlags.V;
             }
         }
 
@@ -434,7 +445,10 @@ namespace BoSSS.Solution.XheatCommon {
 
         public TermActivationFlags LevelSetTerms {
             get {
-                return TermActivationFlags.UxV | TermActivationFlags.V;
+                if(DirichletCond)
+                    return TermActivationFlags.UxV | TermActivationFlags.V;
+                else
+                    return TermActivationFlags.UxV;
             }
         }
 

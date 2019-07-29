@@ -641,7 +641,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             //C.CutCellQuadratureType = XQuadFactoryHelper.MomentFittingVariants.Classic;
 
             bool steady = false;
-            bool separated = true;
+            bool separated = true; 
 
             //_DbPath = @"\\dc1\userspace\smuda\cluster\CapillaryRise\CapillaryRise_studyDB";
 
@@ -736,7 +736,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             C.ThermalParameters.p_sat = pSat;
 
 
-            bool includeConv = false;
+            bool includeConv = true;
             C.PhysicalParameters.IncludeConvection = includeConv;
             C.ThermalParameters.IncludeConvection = true;
             C.PhysicalParameters.Material = false;
@@ -896,7 +896,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             C.dtMax = 1e-3;
             C.dtMin = 1e-3;
             C.Endtime = 10000;
-            C.NoOfTimesteps = 1000;
+            C.NoOfTimesteps = 100;
             C.saveperiod = 1;
 
             #endregion
@@ -967,11 +967,11 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
                 SaveToDB = FieldOpts.SaveToDBOpt.TRUE
             });
             C.FieldOptions.Add("HeatFluxX", new FieldOpts() {
-                Degree = p - 1,
+                Degree = p,
                 SaveToDB = FieldOpts.SaveToDBOpt.TRUE
             });
             C.FieldOptions.Add("HeatFluxY", new FieldOpts() {
-                Degree = p - 1,
+                Degree = p,
                 SaveToDB = FieldOpts.SaveToDBOpt.TRUE
             });
 
@@ -1008,8 +1008,8 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             C.ThermalParameters.T_sat = Tsat;
 
 
-            C.PhysicalParameters.IncludeConvection = false;
-            C.ThermalParameters.IncludeConvection = false;
+            C.PhysicalParameters.IncludeConvection = true;
+            C.ThermalParameters.IncludeConvection = true;
             C.PhysicalParameters.Material = false;
 
             #endregion
@@ -1129,7 +1129,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             // =========
             #region levelset
 
-            C.Option_LevelSetEvolution = LevelSetEvolution.None;
+            C.Option_LevelSetEvolution = LevelSetEvolution.FastMarching;
 
             #endregion
 
@@ -1140,11 +1140,11 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
 
             C.Timestepper_Scheme = XNSE_Control.TimesteppingScheme.ImplicitEuler;
             C.Timestepper_BDFinit = TimeStepperInit.SingleInit;
-            C.Timestepper_LevelSetHandling = LevelSetHandling.None;
+            C.Timestepper_LevelSetHandling = LevelSetHandling.LieSplitting;
 
             C.CompMode = AppControl._CompMode.Transient;
-            C.dtMax = 1e-1;
-            C.dtMin = 1e-1; 
+            C.dtMax = 1e-3;
+            C.dtMin = 1e-3; 
             C.Endtime = 6;
             C.NoOfTimesteps = 6000;
             C.saveperiod = 1;

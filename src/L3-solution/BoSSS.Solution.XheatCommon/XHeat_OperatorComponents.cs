@@ -169,21 +169,21 @@ namespace BoSSS.Solution.XheatCommon {
 
                 double penalty = dntParams.PenaltySafety;
 
-                var Visc = new ConductivityAtLevelSet(LsTrk, kA, kB, penalty * 1.0, Tsat);
+                var Visc = new ConductivityAtLevelSet(LsTrk, kA, kB, penalty * 1.0, config.isEvaporation, Tsat);
                 comps.Add(Visc);
 
             } else {
 
                 comps.Add(new HeatFluxDivergencetAtLevelSet(LsTrk, config.isEvaporation)); 
-                //if(config.withStabilization)
-                //    comps.Add(new AuxiliaryStabilizationFormAtLevelSet(LsTrk, config.isEvaporation));
+                if(config.withStabilization)
+                    comps.Add(new AuxiliaryStabilizationFormAtLevelSet(LsTrk, config.isEvaporation));
 
                 for (int d = 0; d < D; d++) {
                     comps = XOp.EquationComponents[EquationNames.AuxHeatFluxComponent(d)];
 
                     comps.Add(new TemperatureGradientAtLevelSet(d, LsTrk, kA, kB, config.isEvaporation, Tsat));
-                    //if (config.withStabilization)
-                    //    comps.Add(new TemperatureStabilizationFormAtLevelSet(d, LsTrk, config.isEvaporation, Tsat));
+                    if (config.withStabilization)
+                        comps.Add(new TemperatureStabilizationFormAtLevelSet(d, LsTrk, config.isEvaporation, Tsat));
                 }
 
             }

@@ -45,18 +45,18 @@ namespace BoSSS.Solution.XheatCommon {
 
         protected int D;
 
-        private double ComputeHeatFlux_Macro(double[] GradT_A, double[] GradT_B, double[] n) {
+        private double ComputeHeatFlux_Macro(double[] HeatFlux_A, double[] HeatFlux_B, double[] n) {
 
-            double hVap = 0.0;
+            //double hVap = 0.0;
             double qEvap = 0.0;
             if (hVapA > 0) {
-                hVap = hVapA;
+                //hVap = hVapA;
                 for (int d = 0; d < D; d++)
-                    qEvap += (kA * GradT_A[d] - kB * GradT_B[d]) * n[d];
+                    qEvap -= (HeatFlux_A[d] - HeatFlux_B[d]) * n[d];
             } else {
-                hVap = -hVapA;
+                //hVap = -hVapA;
                 for (int d = 0; d < D; d++)
-                    qEvap += (kB * GradT_B[d] - kA * GradT_A[d]) * n[d];
+                    qEvap -= (HeatFlux_B[d] - HeatFlux_A[d]) * n[d];
             }
 
             return qEvap;
@@ -99,7 +99,10 @@ namespace BoSSS.Solution.XheatCommon {
                 qEvap = ComputeHeatFlux_Macro(paramsNeg.GetSubVector(0, D), paramsPos.GetSubVector(0, D), N);
             }
 
-            return -10.0; // qEvap;
+            //if(qEvap > -9.9 || qEvap < -10.1)
+            //Console.WriteLine("qEvap = {0}", qEvap); 
+
+            return qEvap;
 
         }
 
@@ -127,7 +130,7 @@ namespace BoSSS.Solution.XheatCommon {
 
         public virtual IList<string> ParameterOrdering {
             get {
-                return ArrayTools.Cat(VariableNames.Temperature0Gradient(D), VariableNames.Temperature0, VariableNames.Curvature, VariableNames.DisjoiningPressure);
+                return ArrayTools.Cat(VariableNames.HeatFlux0Vector(D), VariableNames.Temperature0, VariableNames.Curvature, VariableNames.DisjoiningPressure);
             }
         }
 

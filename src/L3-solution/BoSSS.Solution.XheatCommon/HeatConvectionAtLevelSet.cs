@@ -268,7 +268,10 @@ namespace BoSSS.Solution.XheatCommon {
 
         public override TermActivationFlags LevelSetTerms {
             get {
-                return TermActivationFlags.UxV | TermActivationFlags.V;
+                if (DirichletCond)
+                    return TermActivationFlags.V;
+                else
+                    return TermActivationFlags.UxV | TermActivationFlags.V;
             }
         }
 
@@ -283,7 +286,7 @@ namespace BoSSS.Solution.XheatCommon {
             double hVap = (hVapA > 0) ? hVapA : -hVapA;
             double M = qEvap / hVap;
 
-            //Console.WriteLine("mEvap - GeneralizedDivergenceAtLevelSet: {0}", M);
+            //Console.WriteLine("mEvap - HeatConvectionAtLevelSet_Divergence: {0}", M);
 
             return M;
 

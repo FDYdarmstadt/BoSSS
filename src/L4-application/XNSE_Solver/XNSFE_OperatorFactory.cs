@@ -68,6 +68,7 @@ namespace BoSSS.Application.XNSE_Solver {
             this.HMFDegree = _HMFdegree;
 
             this.physParams = config.getPhysParams;
+            this.thermParams = config.getThermParams;
             this.dntParams = config.getDntParams;
 
 
@@ -103,7 +104,7 @@ namespace BoSSS.Application.XNSE_Solver {
                 VariableNames.Curvature,
                 VariableNames.SurfaceForceVector(D),
                 VariableNames.Temperature0,
-                VariableNames.Temperature0Gradient(D),
+                VariableNames.HeatFlux0Vector(D),
                 VariableNames.DisjoiningPressure
                 );
             DomName = ArrayTools.Cat(VariableNames.VelocityVector(D), VariableNames.Pressure);
@@ -163,6 +164,7 @@ namespace BoSSS.Application.XNSE_Solver {
         }
 
         PhysicalParameters physParams;
+        ThermalParameters thermParams;
         DoNotTouchParameters dntParams;
 
         bool NormalsRequired;
@@ -308,13 +310,31 @@ namespace BoSSS.Application.XNSE_Solver {
                 U0_U0mean = new DGField[2 * D];
             }
 
-            // Temperature gradient for evaporation
-            VectorField<DGField> GradTemp = new VectorField<DGField>(D, new XDGBasis(LsTrk, 0), XDGField.Factory);
+
+            // heat flux for evaporation
+            DGField[] HeatFluxParam = new DGField[D];
             if (CoupledCurrentState != null) {
-                DGField Temp = CoupledCurrentState.ToArray()[0];
-                GradTemp = new VectorField<DGField>(D, Temp.Basis, "GradTemp", XDGField.Factory);
-                XNSEUtils.ComputeGradientForParam(Temp, GradTemp, this.LsTrk);
+                if (CoupledCurrentState.ToArray().Length == 3) {
+                    var HeatFluxMap = new CoordinateMapping(CoupledCurrentState.ToArray().GetSubVector(1, D));
+                    HeatFluxParam = HeatFluxMap.Fields.ToArray();
+                } else if (CoupledCurrentState.ToArray().Length == 1) {
+                    HeatFluxParam = new VectorField<XDGField>(D, CoupledCurrentState.ToArray()[0].Basis, "HeatFlux0_", XDGField.Factory).ToArray();
+                    Dictionary<string, double> kSpc = new Dictionary<string, double>();
+                    kSpc.Add("A", -thermParams.k_A);
+                    kSpc.Add("B", -thermParams.k_B);
+                    XNSEUtils.ComputeGradientForParam(CoupledCurrentState.ToArray()[0], HeatFluxParam, this.LsTrk, kSpc);
+                } else {
+                    throw new ArgumentException("wrong length of coupled current state");
+                }
             }
+
+            // Temperature gradient for evaporation
+            //VectorField<DGField> GradTemp = new VectorField<DGField>(D, new XDGBasis(LsTrk, 0), XDGField.Factory);
+            //if (CoupledCurrentState != null) {
+            //    DGField Temp = CoupledCurrentState.ToArray()[0];
+            //    GradTemp = new VectorField<DGField>(D, Temp.Basis, "GradTemp", XDGField.Factory);
+            //    XNSEUtils.ComputeGradientForParam(Temp, GradTemp, this.LsTrk);
+            //}
 
             // concatenate everything
             var Params = ArrayTools.Cat<DGField>(
@@ -323,8 +343,9 @@ namespace BoSSS.Application.XNSE_Solver {
                 Curvature,
                 ((SurfaceForce != null) ? SurfaceForce.ToArray() : new SinglePhaseField[D]),
                 ((CoupledCurrentState != null) ? CoupledCurrentState.ToArray<DGField>() : new SinglePhaseField[1]),
-                ((CoupledCurrentState != null) ? GradTemp.ToArray() : new SinglePhaseField[D]),
+                ((CoupledCurrentState != null) ? HeatFluxParam : new SinglePhaseField[D]),
                 ((CoupledCurrentState != null) ? CoupledParams.ToArray<DGField>() : new SinglePhaseField[1])); 
+
 
             // linearization velocity:
             if (this.U0meanrequired) {

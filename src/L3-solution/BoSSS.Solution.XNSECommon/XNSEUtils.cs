@@ -1187,22 +1187,22 @@ namespace BoSSS.Solution.XNSECommon {
 
 
 
-        static public void ComputeGradientForParam(DGField f, VectorField<DGField> fGrad, LevelSetTracker LsTrk) {
+        static public void ComputeGradientForParam(DGField f, DGField[] fGrad, LevelSetTracker LsTrk, Dictionary<string, double> a = null) {
             using(FuncTrace ft = new FuncTrace()) {
 
                 int D = LsTrk.GridDat.SpatialDimension;
                 for(int d = 0; d < D; d++) {
 
-                    foreach(var Spc in LsTrk.SpeciesIdS) { // loop over species...
+                    foreach(var Spc in LsTrk.SpeciesNames) { // loop over species...
                         // shadow fields
                         DGField f_Spc = ((f as XDGField).GetSpeciesShadowField(Spc));
 
-                        (fGrad[d] as XDGField).GetSpeciesShadowField(Spc).Derivative(1.0, f_Spc, d);
+                        double aSpc = (a != null && a.ContainsKey(Spc)) ? a[Spc] : 1.0;
+                        (fGrad[d] as XDGField).GetSpeciesShadowField(Spc).Derivative(aSpc, f_Spc, d);
                     }
                 }
 
                 fGrad.ForEach(F => F.CheckForNanOrInf(true, true, true));
-
             }
         }
 

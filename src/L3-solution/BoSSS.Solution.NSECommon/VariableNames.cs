@@ -462,17 +462,17 @@ namespace BoSSS.Solution.NSECommon {
         /// <summary>
         /// x - component of the Tenperature gradient (linearization point)
         /// </summary>
-        public const string Temperature0Gradient0 = "Temperature0Gradient[0]";
+        //public const string Temperature0Gradient0 = "Temperature0Gradient[0]";
 
         /// <summary>
         /// y - component of the Tenperature gradient (linearization point)
         /// </summary>
-        public const string Temperature0Gradient1 = "Temperature0Gradient[1]";
+        //public const string Temperature0Gradient1 = "Temperature0Gradient[1]";
 
         /// <summary>
         /// z - component of the Tenperature gradient (linearization point)
         /// </summary>
-        public const string Temperature0Gradient2 = "Temperature0Gradient[2]";
+        //public const string Temperature0Gradient2 = "Temperature0Gradient[2]";
 
         /// <summary>
         /// variable name for the Gradient of the Temperature
@@ -577,18 +577,57 @@ namespace BoSSS.Solution.NSECommon {
         }
 
 
+        /// <summary>
+        /// x - component of the heat flux
+        /// </summary>
+        public const string HeatFlux0X = "HeatFlux0X";
+
+        /// <summary>
+        /// y - component of the  heat flux
+        /// </summary>
+        public const string HeatFlux0Y = "HeatFlux0Y";
+
+        /// <summary>
+        /// z - component of the  heat flux
+        /// </summary>
+        public const string HeatFlux0Z = "HeatFlux0Z";
+
+        /// <summary>
+        /// variable name for the heat flux vector
+        /// </summary>
+        static public string[] HeatFlux0Vector(int D) {
+            switch (D) {
+                case 1: return new string[] { HeatFlux0X };
+                case 2: return new string[] { HeatFlux0X, HeatFlux0Y };
+                case 3: return new string[] { HeatFlux0X, HeatFlux0Y, HeatFlux0Z };
+                default: throw new NotSupportedException("unsupported number of species.");
+            }
+        }
+
+        /// <summary>
+        /// Components of the heat flux vector
+        /// </summary>
+        static public string HeatFlux0VectorComponent(int i) {
+            switch (i) {
+                case 0: return HeatFlux0X;
+                case 1: return HeatFlux0Y;
+                case 2: return HeatFlux0Z;
+                default: throw new NotSupportedException("unsupported number of species.");
+            }
+        }
+
 
         /// <summary>
         /// variable name for the Gradient of the Temperature (linearization point)
         /// </summary>
-        static public string[] Temperature0Gradient(int D) {
-            switch (D) {
-                case 1: return new string[] { Temperature0Gradient0 };
-                case 2: return new string[] { Temperature0Gradient0, Temperature0Gradient1 };
-                case 3: return new string[] { Temperature0Gradient0, Temperature0Gradient1, Temperature0Gradient2 };
-                default: throw new NotSupportedException("unsupported number of species.");
-            }
-        }
+        //static public string[] Temperature0Gradient(int D) {
+        //    switch (D) {
+        //        case 1: return new string[] { Temperature0Gradient0 };
+        //        case 2: return new string[] { Temperature0Gradient0, Temperature0Gradient1 };
+        //        case 3: return new string[] { Temperature0Gradient0, Temperature0Gradient1, Temperature0Gradient2 };
+        //        default: throw new NotSupportedException("unsupported number of species.");
+        //    }
+        //}
 
 
         /// <summary>

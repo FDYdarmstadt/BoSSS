@@ -779,7 +779,7 @@ namespace BoSSS.Solution.XNSECommon.Operator.Convection {
         public IList<string> ParameterOrdering {
             get {
                 return ArrayTools.Cat(VariableNames.Velocity0Vector(D), VariableNames.Velocity0MeanVector(D),
-                    VariableNames.Temperature0Gradient(D), VariableNames.Temperature0, VariableNames.Curvature, VariableNames.DisjoiningPressure);
+                    VariableNames.HeatFlux0Vector(D), VariableNames.Temperature0, VariableNames.Curvature, VariableNames.DisjoiningPressure);
             }
         }
 

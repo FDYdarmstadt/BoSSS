@@ -2310,6 +2310,15 @@ namespace BoSSS.Application.XNSE_Solver {
                                this.Temperature.GetSpeciesShadowField("A").EvaluateGradient(j0, Len, NS, GradTempA_Res);
                                this.Temperature.GetSpeciesShadowField("B").EvaluateGradient(j0, Len, NS, GradTempB_Res);
 
+                               MultidimensionalArray HeatFluxA_Res = MultidimensionalArray.Create(Len, K, D);
+                               MultidimensionalArray HeatFluxB_Res = MultidimensionalArray.Create(Len, K, D);
+                               if (this.Control.separatedHeatEq) {
+                                   for (int dd = 0; dd < D; dd++) {
+                                       this.HeatFlux[dd].GetSpeciesShadowField("A").Evaluate(j0, Len, NS, HeatFluxA_Res.ExtractSubArrayShallow(new int[] { -1, -1, dd }));
+                                       this.HeatFlux[dd].GetSpeciesShadowField("B").Evaluate(j0, Len, NS, HeatFluxB_Res.ExtractSubArrayShallow(new int[] { -1, -1, dd }));
+                                   }
+                               }
+
                                MultidimensionalArray TempA_Res = MultidimensionalArray.Create(Len, K);
                                MultidimensionalArray TempB_Res = MultidimensionalArray.Create(Len, K);
                                MultidimensionalArray Curv_Res = MultidimensionalArray.Create(Len, K);
@@ -2360,19 +2369,29 @@ namespace BoSSS.Application.XNSE_Solver {
                                                hVap = this.Control.ThermalParameters.hVap_A;
                                                rho_l = this.Control.PhysicalParameters.rho_A;
                                                rho_v = this.Control.PhysicalParameters.rho_B;
-                                               for(int dd = 0; dd < D; dd++)
-                                                   qEvap += (kA * GradTempA_Res[j, k, dd] - kB * GradTempB_Res[j, k, dd]) * Normals[j, k, dd];
+                                               for (int dd = 0; dd < D; dd++) {
+                                                   if (this.Control.separatedHeatEq)
+                                                       qEvap -= (HeatFluxA_Res[j, k, dd] - HeatFluxB_Res[j, k, dd]) * Normals[j, k, dd];
+                                                   else
+                                                       qEvap += (kA * GradTempA_Res[j, k, dd] - kB * GradTempB_Res[j, k, dd]) * Normals[j, k, dd];
+                                               }
                                            } else {
                                                hVap = -this.Control.ThermalParameters.hVap_A;
                                                rho_l = this.Control.PhysicalParameters.rho_B;
                                                rho_v = this.Control.PhysicalParameters.rho_A;
-                                               for(int dd = 0; dd < D; dd++)
-                                                   qEvap += (kB * GradTempB_Res[j, k, dd] - kA * GradTempA_Res[j, k, dd]) * Normals[j, k, dd];
+                                               for (int dd = 0; dd < D; dd++) {
+                                                   if (this.Control.separatedHeatEq)
+                                                       qEvap -= (HeatFluxB_Res[j, k, dd] - HeatFluxA_Res[j, k, dd]) * Normals[j, k, dd];
+                                                   else
+                                                       qEvap += (kB * GradTempB_Res[j, k, dd] - kA * GradTempA_Res[j, k, dd]) * Normals[j, k, dd];
+                                               }
                                            }
                                        }
 
+                                       //if (qEvap > -9.99 || qEvap < -10.01)
+                                       //    Console.WriteLine("qEvap - DelUpdateLevelSet = {0}", qEvap);
 
-                                       double mEvap = -0.1; // qEvap / hVap; // mass flux
+                                       double mEvap = qEvap / hVap; // mass flux
                                        //result[j, k] = mEvap * ((1 / rho_v) - (1 / rho_l)) * Normals[j, k, d];   //
                                        result[j, k] = mEvap * (1 / rho_v) * Normals[j, k, d];   //
                                        //result[j, k] = - Normals[j, k, d];   //
@@ -2708,7 +2727,7 @@ namespace BoSSS.Application.XNSE_Solver {
                 this.LsTrk.UpdateTracker(incremental: true);
 
                 // update near field (in case of adaptive mesh refinement)
-                if(this.Control.AdaptiveMeshRefinement && this.Control.Option_LevelSetEvolution == LevelSetEvolution.FastMarching) {
+                if (this.Control.AdaptiveMeshRefinement && this.Control.Option_LevelSetEvolution == LevelSetEvolution.FastMarching) {
                     Near1 = LsTrk.Regions.GetNearMask4LevSet(0, 1);
                     PosFF = LsTrk.Regions.GetLevelSetWing(0, +1).VolumeMask;
                     ContinuityEnforcer.SetFarField(this.DGLevSet.Current, Near1, PosFF);
@@ -4427,22 +4446,14 @@ namespace BoSSS.Application.XNSE_Solver {
                  VariableNames.Velocity0Vector(D),
                  VariableNames.Velocity0MeanVector(D),
                  VariableNames.NormalVector(D),
-                 VariableNames.Temperature0Gradient(D),
-                 VariableNames.Temperature0, 
+                 VariableNames.Temperature0,
+                 VariableNames.HeatFlux0Vector(D),
                  VariableNames.Curvature,
                  VariableNames.DisjoiningPressure);
             string[] DomName = new string[] { VariableNames.Temperature };
 
             if (XOpConfig.isSeparated) {
                 CodName = ArrayTools.Cat(CodName, EquationNames.AuxHeatFlux(D));
-                //string[] Params = ArrayTools.Cat(
-                //     VariableNames.Velocity0Vector(D),
-                //     VariableNames.Velocity0MeanVector(D),
-                //     VariableNames.NormalVector(D),
-                //     VariableNames.Temperature0Gradient(D),
-                //     VariableNames.Temperature0,
-                //     VariableNames.Curvature,
-                //     VariableNames.DisjoiningPressure);
                 DomName = ArrayTools.Cat(DomName, VariableNames.HeatFluxVector(D));
             }
 
@@ -4505,14 +4516,22 @@ namespace BoSSS.Application.XNSE_Solver {
             LevelSetGradient.Gradient(1.0, LevSet);
             Normals = LevelSetGradient.ToArray();
 
-            // Temperature0
+            // temperature
             var TempMap = new CoordinateMapping(this.Temperature);
             DGField[] TempParam = TempMap.Fields.ToArray();
 
-            // Temperature gradient for evaporation
-            VectorField<DGField> GradTempParam = new VectorField<DGField>(D, TempParam[0].Basis, XDGField.Factory);
-            GradTempParam = new VectorField<DGField>(D, TempParam[0].Basis, "GradTemp0_", XDGField.Factory);
-            XNSEUtils.ComputeGradientForParam(TempParam[0], GradTempParam, this.LsTrk);
+            // heat flux for evaporation
+            DGField[] HeatFluxParam;
+            if (this.Control.separatedHeatEq) {
+                var HeatFluxMap = new CoordinateMapping(this.HeatFlux.ToArray());
+                HeatFluxParam = HeatFluxMap.Fields.ToArray();
+            } else {
+                HeatFluxParam = new VectorField<XDGField>(D, TempParam[0].Basis, "HeatFlux0_", XDGField.Factory).ToArray();
+                Dictionary<string, double> kSpc = new Dictionary<string, double>();
+                kSpc.Add("A", -this.Control.ThermalParameters.k_A);
+                kSpc.Add("B", -this.Control.ThermalParameters.k_B);
+                XNSEUtils.ComputeGradientForParam(TempParam[0], HeatFluxParam, this.LsTrk, kSpc);
+            }
 
 
             // concatenate everything
@@ -4520,8 +4539,8 @@ namespace BoSSS.Application.XNSE_Solver {
                 VelParam,
                 VelMeanParam,
                 Normals,
-                GradTempParam,
                 TempParam,
+                HeatFluxParam,
                 this.Curvature,
                 this.DisjoiningPressure);
 
@@ -4605,28 +4624,28 @@ namespace BoSSS.Application.XNSE_Solver {
         /// <summary>
         /// 
         /// </summary>
-        //public void ComputeHeatflux() {
-        //    using(FuncTrace ft = new FuncTrace()) {
+        //public void ComputeHeatFluxForParam(DGField TempP, DGField[] HeatFluxP, LevelSetTracker LsTrk) {
+        //    using (FuncTrace ft = new FuncTrace()) {
 
         //        int D = LsTrk.GridDat.SpatialDimension;
-        //        for(int d = 0; d < D; d++) {
+        //        for (int d = 0; d < D; d++) {
 
-        //            foreach(var Spc in LsTrk.SpeciesNames) { // loop over species...
+        //            foreach (var Spc in LsTrk.SpeciesNames) { // loop over species...
         //                // shadow fields
-        //                DGField Temp_Spc = (this.Temperature.GetSpeciesShadowField(Spc));
+        //                DGField Temp_Spc = ((TempP as XDGField).GetSpeciesShadowField(Spc));
 
         //                double kSpc = 0.0;
-        //                switch(Spc) {
+        //                switch (Spc) {
         //                    case "A": kSpc = this.Control.ThermalParameters.k_A; break;
         //                    case "B": kSpc = this.Control.ThermalParameters.k_B; break;
         //                    default: throw new NotSupportedException("Unknown species name '" + Spc + "'");
         //                }
 
-        //                (this.Heatflux[d] as XDGField).GetSpeciesShadowField(Spc).Derivative(kSpc, Temp_Spc, d);
+        //                (HeatFluxP[d] as XDGField).GetSpeciesShadowField(Spc).Derivative(kSpc, Temp_Spc, d);
         //            }
         //        }
 
-        //        this.Heatflux.ForEach(F => F.CheckForNanOrInf(true, true, true));
+        //        HeatFluxP.ForEach(F => F.CheckForNanOrInf(true, true, true));
 
         //    }
         //}
