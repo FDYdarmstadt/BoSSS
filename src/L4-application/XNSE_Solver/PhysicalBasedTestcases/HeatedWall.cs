@@ -1254,8 +1254,8 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             //C.ThermalParameters.p_sat = pSat;
 
 
-            C.PhysicalParameters.IncludeConvection = true;
-            C.ThermalParameters.IncludeConvection = true;
+            C.PhysicalParameters.IncludeConvection = false;
+            C.ThermalParameters.IncludeConvection = false;
             C.PhysicalParameters.Material = false;
 
             #endregion
@@ -1309,8 +1309,8 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             C.InitialValues_Evaluators.Add("Phi", PhiFunc);
 
             double T_wall = 10;
-            //C.InitialValues_Evaluators.Add("Temperature#A", (X => T_sat));
-            //C.InitialValues_Evaluators.Add("Temperature#B", (X => T_wall));
+            C.InitialValues_Evaluators.Add("Temperature#A", (X => T_sat));
+            C.InitialValues_Evaluators.Add("Temperature#B", (X => T_wall));
 
 
             #endregion
@@ -1370,7 +1370,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             // =========
             #region levelset
 
-            C.Option_LevelSetEvolution = LevelSetEvolution.FastMarching;
+            C.Option_LevelSetEvolution = LevelSetEvolution.None;
 
             #endregion
 
@@ -1381,11 +1381,11 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
 
             C.Timestepper_Scheme = XNSE_Control.TimesteppingScheme.ImplicitEuler;
             C.Timestepper_BDFinit = TimeStepperInit.SingleInit;
-            C.Timestepper_LevelSetHandling = LevelSetHandling.LieSplitting;
+            C.Timestepper_LevelSetHandling = LevelSetHandling.None;
 
             C.CompMode = AppControl._CompMode.Transient;
-            C.dtMax = 1e-5;
-            C.dtMin = 1e-5;
+            C.dtMax = 1e-4;
+            C.dtMin = 1e-4;
             C.Endtime = 6;
             C.NoOfTimesteps = 12000;
             C.saveperiod = 1;
