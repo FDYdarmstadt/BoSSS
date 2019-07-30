@@ -58,12 +58,12 @@ namespace BoSSS.Application.FSI_Solver
             // ============================
 
             C.AdaptiveMeshRefinement = true;
-            C.RefinementLevel = 6;
+            C.RefinementLevel = 3;
 
             C.GridFunc = delegate
             {
-                double[] Xnodes = GenericBlas.Linspace(-1 * BaseSize, 1 * BaseSize, 4);
-                double[] Ynodes = GenericBlas.Linspace(-1 * BaseSize, 1 * BaseSize, 4);
+                double[] Xnodes = GenericBlas.Linspace(-1 * BaseSize, 1 * BaseSize, 14);
+                double[] Ynodes = GenericBlas.Linspace(-1 * BaseSize, 1 * BaseSize, 14);
 
                 var grd = Grid2D.Cartesian2DGrid(Xnodes, Ynodes, periodicX: false, periodicY: false);
 
@@ -98,7 +98,7 @@ namespace BoSSS.Application.FSI_Solver
             C.Particles.Add(new Particle_Sphere(new double[] { 0, 0 }, startAngl: 0)
             {
                 particleDensity = 7.8,
-                radius_P = 0.5,
+                radius_P = 0.1,
                 GravityVertical = -9.81,
                 useAddaptiveUnderrelaxation = true,
                 underrelaxation_factor = 5,

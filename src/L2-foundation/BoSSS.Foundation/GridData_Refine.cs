@@ -38,7 +38,6 @@ namespace BoSSS.Foundation.Grid.Classic
         public GridCommons Adapt(IEnumerable<int> cellsToRefine, IEnumerable<int[]> cellsToCoarse, out GridCorrelation Old2New) {
             using(new FuncTrace())
             {
-                Debugger.Launch();
                 bool anyRefinement = GetMPIGlobalIsNotNullOrEmpty(cellsToRefine);
                 bool anyCoarsening = GetMPIGlobalIsNotNullOrEmpty(cellsToCoarse);
 
@@ -95,7 +94,8 @@ namespace BoSSS.Foundation.Grid.Classic
 
                 Old2New.KrefS_SubdivLeaves = KrefS_SubdivLeaves;
                 long GlobalIdCounter = GetGlobalIDCounter(oldGrid);
-                int globalIDOffset = GetGlobalIdMPIOffset(cellsToRefine, cellsToCoarse);
+                int globalIDOffset = GetGlobalMPIOffset(cellsToRefine);
+                int globalVertexOffset = GetGlobalMPIOffset(cellsToRefine);
                 int newVertexCounter = (oldGrid.Cells.Max(cl => cl.NodeIndices.Max()) + 1).MPIMax();
 
                 Old2New.OldGlobalId = CurrentGlobalIdPermutation.Values.CloneAs();
@@ -132,7 +132,7 @@ namespace BoSSS.Foundation.Grid.Classic
 
                             NodeSet RefNodes = Kref.GetInterpolationNodes(oldCell.Type);
                             GetNewNodesOfRefinedCells(j, RefNodes, Leaves, iSubDiv, newCell);
-                            newCell.NodeIndices = GetNodeIndicesOfRefinedCells(newVertexCounter, Kref.NoOfVertices, newCell);
+                            newCell.NodeIndices = GetNodeIndicesOfRefinedCells(newVertexCounter, globalVertexOffset, Kref.NoOfVertices, newCell);
                         }
                         NewCoarseningClusterId++;
 
@@ -162,6 +162,8 @@ namespace BoSSS.Foundation.Grid.Classic
                     }
                 }
 
+                
+
                 cellsToRefineBitmask.MPIExchange(this);
                 cellsToCoarseBitmask.MPIExchange(this);
 
@@ -185,13 +187,10 @@ namespace BoSSS.Foundation.Grid.Classic
                         Debug.Assert(cellsToRefineBitmask[j] || cellsToCoarseBitmask[j]);
                     }
                 }
-
+                
                 newGrid.Cells = cellsInNewGrid.ToArray();
-
-
                 // fix neighborship
                 // ================
-                Debugger.Launch();
                 byte[,] Edge2Face = this.Edges.FaceIndices;
                 int[,] Edge2Cell = this.Edges.CellIndices;
                 MultidimensionalArray[] VerticesFor_KrefEdge = this.Edges.EdgeRefElements.Select(KrefEdge => KrefEdge.Vertices).ToArray();
@@ -453,6 +452,13 @@ namespace BoSSS.Foundation.Grid.Classic
                     Debug.Assert(c2 == old2NewGlobalId.Count);
                 }
 
+                List<int[]> nodeIndices = new List<int[]>();
+                for (int j = 0; j < cellsInNewGrid.Count(); j++)
+                {
+                    nodeIndices.Add(cellsInNewGrid.ElementAt(j).NodeIndices);
+                }
+
+                var CNglb = newGrid.GetCellNeighbourship(true);
                 csMPI.Raw.Barrier(csMPI.Raw._COMM.WORLD);
                 return newGrid;
             }
@@ -550,6 +556,8 @@ namespace BoSSS.Foundation.Grid.Classic
 
         private static Cell GetRefindedCell(ref long GlobalIdCounter, int globalIDOffset, int NewCoarseningClusterId, Cell oldCell, RefElement.SubdivisionTreeNode[] Leaves, int iSubDiv)
         {
+            if (oldCell.GlobalID == 48)
+                Console.WriteLine("");
             Cell newCell = new Cell
             {
                 Type = oldCell.Type,
@@ -579,7 +587,7 @@ namespace BoSSS.Foundation.Grid.Classic
             TransformLocal2Global(RefNodesRoot, newCell.TransformationParams, j);
         }
 
-        private static int[] GetNodeIndicesOfRefinedCells(int newVertexCounter, int noOfVertices, Cell newCell)
+        private static int[] GetNodeIndicesOfRefinedCells(int newVertexCounter, int vertexOffset, int noOfVertices, Cell newCell)
         {
             int[] tempNodeIndices = new int[noOfVertices];
             for (int i = 0; i < noOfVertices; i++)
@@ -607,11 +615,32 @@ namespace BoSSS.Foundation.Grid.Classic
             return NewCoarseningClusterId;
         }
 
-        private int GetGlobalIdMPIOffset(IEnumerable<int> cellsToRefine, IEnumerable<int[]> cellsToCoarse)
+        private int GetGlobalMPIOffset(IEnumerable<int> cellsToRefine, IEnumerable<int[]> cellsToCoarse)
         {
             int globalIDOffset = 0;
             double[] SendOffset = new double[1];
             SendOffset[0] = cellsToRefine.Count() - cellsToCoarse.Count();
+            double[] ReceiveOffset = new double[MpiSize];
+            unsafe
+            {
+                fixed (double* pCheckSend = SendOffset, pCheckReceive = ReceiveOffset)
+                {
+                    csMPI.Raw.Allgather((IntPtr)pCheckSend, SendOffset.Length, csMPI.Raw._DATATYPE.DOUBLE, (IntPtr)pCheckReceive, SendOffset.Length, csMPI.Raw._DATATYPE.DOUBLE, csMPI.Raw._COMM.WORLD);
+                }
+            }
+            for (int m = 0; m < MpiRank; m++)
+            {
+                globalIDOffset += Convert.ToInt32(ReceiveOffset[m]) * 3;
+            }
+
+            return globalIDOffset;
+        }
+
+        private int GetGlobalMPIOffset(IEnumerable<int> cellsToRefine)
+        {
+            int globalIDOffset = 0;
+            double[] SendOffset = new double[1];
+            SendOffset[0] = cellsToRefine.Count();
             double[] ReceiveOffset = new double[MpiSize];
             unsafe
             {
@@ -676,6 +705,8 @@ namespace BoSSS.Foundation.Grid.Classic
 
             Cell Cell0 = currentCellClusterToCoarsen.Single(cl => cl.ParentCell != null);
             Cell Mother = Cell0.ParentCell;
+            if (Mother.GlobalID == 0)
+                Console.WriteLine("jsgbdjkgbsjkdfgbdbfjlg");
             CheckMotherCell(currentCellClusterToCoarsen, RefinementLevel, Cell0, Mother);
 
             Cell restoredCell = RestoreCell(RefinementLevel, Cell0, Mother);
@@ -707,7 +738,7 @@ namespace BoSSS.Foundation.Grid.Classic
                 throw new Exception("Error in coarsening algorithm: Mother and child cell are of different types.");
             if (Mother.RefinementLevel != RefinementLevel)
                 throw new Exception("Error in coarsening algorithm: Mother cell has a different refinement level.");
-            if (currentCellCluster.Where(cl => cl.GlobalID == Mother.GlobalID).Count() != 1)
+            if (currentCellCluster.Where(cl => cl.GlobalID == Mother.GlobalID).Count() > 1)
                 throw new Exception("Error in coarsening algorithm: GlobalID of mother cell occurs multiple times in child cells");
         }
 
@@ -734,6 +765,7 @@ namespace BoSSS.Foundation.Grid.Classic
                 restoredCell.CellFaceTags = Mother.CellFaceTags.Where(cftag => cftag.EdgeTag > 0 && cftag.EdgeTag < GridCommons.FIRST_PERIODIC_BC_TAG).ToArray();
             }
         }
+
         private static void AdaptGlobalIDOfRestoredCell(GridCorrelation Old2New, Cell[][] adaptedCells, int[] cellClusterID, Cell[] currentCellCluster, Cell restoredCell)
         {
             for (int iSubDiv = 0; iSubDiv < cellClusterID.Length; iSubDiv++)

@@ -815,7 +815,7 @@ namespace BoSSS.Application.FSI_Solver
             // Update level set tracker and coloring
             // =======================================================
             LsTrk.UpdateTracker(__NearRegionWith: 2);
-            CellColor = UpdateColoring();
+            //CellColor = UpdateColoring();
         }
 
         /// <summary>
@@ -1522,22 +1522,39 @@ namespace BoSSS.Application.FSI_Solver
             //    if (Math.Abs(maxPressure - minPressure) > Math.Abs(TotalPressure) && LevSetCells.Contains(i))
             //        CellsToRefine[i] = true;
             //}
-            if (LevSetCells.Contains(j) && CurrentLevel < RefinementLevel)
-                CellsToRefine[j] = true;
-            CellMask cellMaskToRefine = new CellMask(GridData, CellsToRefine);
-            bool refined = false;
-            for (int k = 0; k < RefinementLevel; k++)
-            {
-                if ((cellMaskToRefine.Contains(j) || (boundaryCells.Contains(j) && ParticleColor.GetMeanValue(j) != 0)) && CurrentLevel < RefinementLevel)
-                {
-                    DesiredLevel_j = CurrentLevel + 1;
-                    refined = true;
-                }
-                boundaryCells = boundaryCells.AllNeighbourCells();
-                RefinementLevel -= 1;
-            }
-            if (!refined && CurrentLevel > 0)
-                DesiredLevel_j = CurrentLevel - 1;
+            //if (LevSetCells.Contains(j) && CurrentLevel < RefinementLevel)
+            //    CellsToRefine[j] = true;
+            //CellMask cellMaskToRefine = new CellMask(GridData, CellsToRefine);
+            //bool refined = false;
+            //for (int k = 0; k < RefinementLevel; k++)
+            //{
+            //    if ((cellMaskToRefine.Contains(j) || (boundaryCells.Contains(j) && ParticleColor.GetMeanValue(j) != 0)) && CurrentLevel < RefinementLevel)
+            //    {
+            //        DesiredLevel_j = CurrentLevel + 1;
+            //        refined = true;
+            //    }
+            //    boundaryCells = boundaryCells.AllNeighbourCells();
+            //    RefinementLevel -= 1;
+            //}
+            //if (!refined && CurrentLevel > 0)
+            //    DesiredLevel_j = CurrentLevel - 1;
+
+            //for (int k = 0; k < RefinementLevel; k++)
+            //{
+            //    if ((cellMaskToRefine.Contains(j) || (boundaryCells.Contains(j) && ParticleColor.GetMeanValue(j) != 0)) && CurrentLevel < RefinementLevel)
+            //    {
+            //        DesiredLevel_j = CurrentLevel + 1;
+            //        refined = true;
+            //    }
+            //}
+
+            if (CurrentLevel == 0)
+                DesiredLevel_j = 1;
+            if (CurrentLevel == 1 && MPIRank == 0 && j == 0)
+                DesiredLevel_j = 0;
+            if (CurrentLevel == 1 && MPIRank == 1)
+                DesiredLevel_j = 2;
+
             return DesiredLevel_j;
         }
 
@@ -1551,7 +1568,7 @@ namespace BoSSS.Application.FSI_Solver
                 CellMask CutCellNeighbors = LsTrk.Regions.GetNearFieldMask(1);
                 CutCells = CutCells.Union(CutCellNeighbors);
 
-                bool AnyChange = GridRefinementController.ComputeGridChange((GridData)GridData, CutCells, LevelIndicator, out List<int> CellsToRefineList, out List<int[]> Coarsening);
+                bool AnyChange = GridRefinementController.ComputeGridChange((GridData)GridData, CutCells, ((FSI_Control)this.Control).RefinementLevel, out List<int> CellsToRefineList, out List<int[]> Coarsening);
                 int NoOfCellsToRefine = 0;
                 int NoOfCellsToCoarsen = 0;
                 int[] glb = (new int[] { CellsToRefineList.Count, Coarsening.Sum(L => L.Length) }).MPISum();
