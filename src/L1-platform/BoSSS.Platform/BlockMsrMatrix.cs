@@ -2847,6 +2847,11 @@ namespace ilPSP.LinSolvers {
         /// Additional/optional row indices into this matrix in the external range (<see cref="IPartitioning.IsInLocalRange(int)"/> evaluates to false).
         /// These are not exchanged over MPI.
         /// </param>
+        /// <remarks>
+        /// Note on MPI parallelization: it is *not* necessary to exchange column indices, this can be done by the method internally.
+        /// The parameters <paramref name="ExternalColumnIndicesSource"/> and <paramref name="ExternalColIndicesTarget"/> can be used if
+        /// the <paramref name="ColIndicesTarget"/> is on another MPI communicator as this object (<see cref="MPI_Comm"/>).
+        /// </remarks>
         public void AccSubMatrixTo<V1, V2, V3, V4, V5, V6>(
             double alpha, IMutableMatrixEx Target,
             V1 RowIndicesSource, V2 RowIndicesTarget,
@@ -4708,6 +4713,10 @@ namespace ilPSP.LinSolvers {
         /// <param name="A">Left operand.</param>
         /// <param name="B">Right operand.</param>
         public static void Multiply(BlockMsrMatrix C, BlockMsrMatrix A, BlockMsrMatrix B) {
+            if (multiply == null)
+                multiply = new Stopwatch();
+            if (multiply_core == null)
+                multiply_core = new Stopwatch();
 #if DEBUG
             // Deactivated by Florian, 10feb2018
             // testcode was in here for more than a year, no complaints, should be fine
@@ -4735,9 +4744,15 @@ namespace ilPSP.LinSolvers {
             //if (ErrRel > 1.0e-8 || double.IsNaN(ErrRel) || double.IsInfinity(ErrRel))
             //    throw new ArithmeticException("Error in multiply");
 #else
+            multiply.Start();
             __Multiply(C, A, B);
+            multiply.Stop();
 #endif
         }
+
+        public static Stopwatch multiply;
+        public static Stopwatch multiply_core;
+
 
         /// <summary>
         /// Sparse Matrix-Matrix multiplication.
@@ -5098,7 +5113,9 @@ namespace ilPSP.LinSolvers {
                                             bR.Clear(j0, jE);
                                             bR.Init(B, jBlock, true);
                                             Cnext.Clear(Caccu.i0, Caccu.iE);
+                                            multiply_core.Start();
                                             TempBlockRow.Merge(Cnext, bR, Caccu, pAij, NoRows, NoCols);
+                                            multiply_core.Stop();
                                             var _Caccu = Caccu;
                                             Caccu = Cnext;
                                             Cnext = _Caccu;

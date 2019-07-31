@@ -197,12 +197,13 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
             double ResNorm = outRes.L2NormPow2().MPISum().Sqrt();
 
+            /*
             if(ResNorm < Tolerance) {
                 alpha.SaveToStream(Console.Out, m_MgOperator.BaseGridProblemMapping.MPI_Comm);
 
                 alpha.SaveToTextFile("ConvScheisse.txt", m_MgOperator.BaseGridProblemMapping.MPI_Comm);
             }
-
+            */
 
             return ResNorm;
 

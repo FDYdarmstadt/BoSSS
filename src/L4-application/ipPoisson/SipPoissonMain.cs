@@ -990,15 +990,22 @@ namespace BoSSS.Application.SipPoisson {
                         
                         var RHSvec = RHS.CoordinateVector.ToArray();
                         BLAS.daxpy(RHSvec.Length, -1.0, this.LaplaceAffine, 1, RHSvec, 1);
+                        ilPSP.IMatrixExtensions.DGETRF_stopwatch = new Stopwatch();
                         MultigridOp.UseSolver(solver, T2, RHSvec);
                         T.CoordinateVector.SetV(T2);
                     }
+                    double dgetrf_time = ilPSP.IMatrixExtensions.DGETRF_stopwatch.Elapsed.TotalSeconds;
+                    ilPSP.IMatrixExtensions.DGETRF_stopwatch = null;
                     solverIteration.Stop();
                     Console.WriteLine("done. (" + solverIteration.Elapsed.TotalSeconds + " sec)");
 
                     //Console.WriteLine("Pardiso phase 11: " + ilPSP.LinSolvers.PARDISO.PARDISOSolver.Phase_11.Elapsed.TotalSeconds);
                     //Console.WriteLine("Pardiso phase 22: " + ilPSP.LinSolvers.PARDISO.PARDISOSolver.Phase_22.Elapsed.TotalSeconds);
                     //Console.WriteLine("Pardiso phase 33: " + ilPSP.LinSolvers.PARDISO.PARDISOSolver.Phase_33.Elapsed.TotalSeconds);
+                    Console.WriteLine("  spmm total " + BlockMsrMatrix.multiply.Elapsed.TotalSeconds);
+                    Console.WriteLine("  spmm core " + BlockMsrMatrix.multiply_core.Elapsed.TotalSeconds);
+
+                    Console.WriteLine("  dgetrf core " + dgetrf_time);
 
                     // time measurement, statistics
                     stw.Stop();

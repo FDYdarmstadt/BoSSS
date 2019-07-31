@@ -642,6 +642,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
         /// <param name="b">DG basis on original grid</param>
         /// <param name="ag"></param>
         /// <param name="Injection">injection operator</param>
+        /// <param name="parentBasis"></param>
         protected AggregationGridBasis(Basis b, AggregationGridBasis parentBasis, AggregationGridData ag, MultidimensionalArray[] Injection) {
             using (new FuncTrace()) {
                 if (!object.ReferenceEquals(b.GridDat, GetGridData(ag)))

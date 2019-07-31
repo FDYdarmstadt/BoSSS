@@ -168,8 +168,8 @@ namespace BoSSS.Application.XNSE_Solver {
         /// <summary>
         /// option for clearing the velocities for restart
         /// </summary>
-        [DataMember]
-        public bool ClearVelocitiesOnRestart = false;
+        //[DataMember]
+        //public bool ClearVelocitiesOnRestart = false;
 
         [DataMember]
         public int ReInitPeriod = 0;
@@ -193,13 +193,6 @@ namespace BoSSS.Application.XNSE_Solver {
             rho_B = 1.0,
             Sigma = 0.0
         };       
-
-        /// <summary>
-        /// Only for debugging purpose:
-        /// switches Off Viscosity and Pressure
-        /// XNSE becomes a potential Solver.
-        /// </summary>
-        public bool FakePoisson = false;
 
         /// <summary>
         /// Only for debugging purpose:
@@ -475,7 +468,7 @@ namespace BoSSS.Application.XNSE_Solver {
         /// Turn XDG for the velocity on/off; if off, only the pressure is approximated by XDG,
         /// the velocity is plain DG.
         /// </summary>
-        public bool UseXDG4Velocity = true;
+        //public bool UseXDG4Velocity = true;
 
         /// <summary>
         /// An explicit expression of the Level-set over time.
@@ -512,9 +505,9 @@ namespace BoSSS.Application.XNSE_Solver {
         public bool solveCoupledHeatEquation = false;
 
         /// <summary>
-        /// switch for computations with evaporation
+        /// implementations for the conductivity part (laplace operator) of the heat equation 
         /// </summary>
-        //public bool withEvaporation = false;
+        public ConductivityInSpeciesBulk.ConductivityMode conductMode = ConductivityInSpeciesBulk.ConductivityMode.SIP;
 
         /// <summary>
         /// Block-Precondition for the Temperature-block
