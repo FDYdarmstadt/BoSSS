@@ -103,7 +103,7 @@ namespace BoSSS.Platform.LinAlg {
                 throw new ArgumentException("dimension mismatch");
 
             double[] ret = (double[])Affine.Clone();
-            Matrix.gemv(1.0, vtx, 1.0, ret);
+            Matrix.GEMV(1.0, vtx, 1.0, ret);
 
             return ret;
         }
@@ -213,7 +213,7 @@ namespace BoSSS.Platform.LinAlg {
             this.Matrix.InvertTo(inv.Matrix);
 
             inv.Affine = new double[D];
-            inv.Matrix.gemv(-1.0, this.Affine, 0.0, inv.Affine);
+            inv.Matrix.GEMV(-1.0, this.Affine, 0.0, inv.Affine);
 
             return inv;
         }
@@ -260,7 +260,7 @@ namespace BoSSS.Platform.LinAlg {
 
             ret.Matrix.GEMM(1.0, left.Matrix, right.Matrix, 0.0);
             Array.Copy(left.Affine, ret.Affine, left.Affine.Length);
-            left.Matrix.gemv(1.0, right.Affine, 1.0, ret.Affine);
+            left.Matrix.GEMV(1.0, right.Affine, 1.0, ret.Affine);
 
             return ret;
         }

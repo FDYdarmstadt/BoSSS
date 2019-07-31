@@ -517,54 +517,158 @@ namespace ilPSP {
         /// </param>
         /// <param name="transpose">true for transpose multiplication</param>
         /// <param name="M">the matrix</param>
-        static public void gemv<MatrixType, VectorType1, VectorType2>(this MatrixType M, double xScaling, VectorType1 x, double yScaling, VectorType2 y, bool transpose = false)
+        static public void GEMV<MatrixType, VectorType1, VectorType2>(this MatrixType M, double xScaling, VectorType1 x, double yScaling, VectorType2 y, bool transpose = false)
             where MatrixType : IMatrix
             where VectorType1 : IList<double>
             where VectorType2 : IList<double> //
         {
-
-            // Make sure $x is "cloned" if it is also the target of the
-            // operation
-            IList<double> xCopy = x;
-            if (ReferenceEquals(x, y)) {
-                xCopy = x.ToList();
-            }
-
             int m_NoOfCols = M.NoOfCols, m_NoOfRows = M.NoOfRows;
-
             if (!transpose) {
                 if (m_NoOfCols != x.Count)
                     throw new ArgumentException("Length of vector x must be equal to number of columns.");
                 if (m_NoOfRows != y.Count)
                     throw new ArgumentException("Length of vector y must be equal to number of rows.");
-
-
-                for (int i = 0; i < m_NoOfRows; i++) {
-                    double yi = 0;
-
-                    for (int j = 0; j < m_NoOfCols; j++)
-                        yi += M[i, j] * xCopy[j];
-
-                    y[i] = y[i] * yScaling + yi * xScaling;
-                }
-
             } else {
                 if (m_NoOfRows != x.Count)
                     throw new ArgumentException("Length of vector x must be equal to number of rows (transpose matrix multiply was selected!).");
                 if (m_NoOfCols != y.Count)
                     throw new ArgumentException("Length of vector y must be equal to number of columns (transpose matrix multiply was selected!).");
+            }
+            if (m_NoOfCols == 0 || m_NoOfRows == 0)
+                return;
+            if (ReferenceEquals(x, y))
+                throw new ArgumentException("in-place matrix-vector product is not supported");
 
 
-                for (int i = 0; i < m_NoOfCols; i++) {
-                    double yi = 0;
+            if (typeof(MatrixType) == typeof(MultidimensionalArray)) {
+                // +++++++++++++++++
+                // optimized version
+                // +++++++++++++++++
 
-                    for (int j = 0; j < m_NoOfRows; j++)
-                        yi += M[j, i] * xCopy[j];
+                MultidimensionalArray mdaM = M as MultidimensionalArray;
+                if (mdaM.Dimension != 2)
+                    throw new ArgumentException("Multidimensional Array must have 2 dimensions to be a matrix.");
 
-                    y[i] = y[i] * yScaling + yi * xScaling;
+                int off = mdaM.Index(0, 0);
+                int LD = mdaM.Index(1, 0) - off; // leading dimension
+                int SD = mdaM.Index(0, 1) - off; // small dimension
+
+                double[] _x;
+                if (typeof(VectorType1) == typeof(double[]))
+                    _x = x as double[];
+                else
+                    _x = x.ToArray();
+
+
+                if (SD == 1 && m_NoOfCols * m_NoOfRows >= 32) {
+                    // ++++++++++++++++
+                    // BLAS can be used
+                    // ++++++++++++++++
+
+
+                    double[] _y;
+                    bool backCopy = false;
+                    if (typeof(VectorType1) == typeof(double[]))
+                        _y = y as double[];
+                    else {
+                        _y = y.ToArray();
+                        backCopy = true;
+                    }
+
+                    unsafe {
+                        fixed (double* _pmdaM = mdaM.Storage, px = _x, py = _y) {
+                            double* pmdaM = _pmdaM + off;
+
+                            BLAS.dgemv(transpose ? 'N' : 'T', m_NoOfCols, m_NoOfRows, xScaling, pmdaM, LD, px, 1, yScaling, py, 1);
+
+                        }
+                    }
+
+                    if (backCopy) {
+                        int I = _y.Length;
+                        for (int i = 0; i < I; i++) {
+                            y[i] = _y[i];
+                        }
+                    }
+
+                } else {
+                    // ++++++++++++++++++++++++++++++++++++++++++++
+                    // use internal implementation
+                    // (either because very small or spread matrix)
+                    // ++++++++++++++++++++++++++++++++++++++++++++
+
+                    unsafe {
+                        fixed (double* _pmdaM = mdaM.Storage, _px = _x) {
+                            
+
+                            if (!transpose) {
+                                double* pmdaM = _pmdaM + off;
+                                for (int i = 0; i < m_NoOfRows; i++) {
+                                    double yi = 0;
+                                    double* px = _px;
+
+                                    for (int j = 0; j < m_NoOfCols; j++) {
+                                        yi += *pmdaM * *px;
+                                        px++;
+                                        pmdaM += SD;
+                                    }
+
+                                    y[i] = y[i] * yScaling + yi * xScaling;
+                                }
+
+                            } else {
+
+                                for (int i = 0; i < m_NoOfCols; i++) {
+                                    double* pmdaM = _pmdaM + off + SD;
+                                    double* px = _px;
+                                    double yi = 0;
+
+                                    for (int j = 0; j < m_NoOfRows; j++) {
+                                        yi += *pmdaM * *px;
+                                        px++;
+                                        pmdaM += LD;
+                                    }
+                                    y[i] = y[i] * yScaling + yi * xScaling;
+                                }
+                            }
+
+                        }
+                    }
+                }
+
+
+
+            } else {
+                // +++++++++++++++++
+                // Reference version
+                // +++++++++++++++++
+
+               
+
+
+                if (!transpose) {
+                    
+                    for (int i = 0; i < m_NoOfRows; i++) {
+                        double yi = 0;
+
+                        for (int j = 0; j < m_NoOfCols; j++)
+                            yi += M[i, j] * x[j];
+
+                        y[i] = y[i] * yScaling + yi * xScaling;
+                    }
+
+                } else {
+                    
+                    for (int i = 0; i < m_NoOfCols; i++) {
+                        double yi = 0;
+
+                        for (int j = 0; j < m_NoOfRows; j++)
+                            yi += M[j, i] * x[j];
+
+                        y[i] = y[i] * yScaling + yi * xScaling;
+                    }
                 }
             }
-
         }
 
         /// <summary>
@@ -578,14 +682,14 @@ namespace ilPSP {
         }
 
         /// <summary>
-        /// Alias for <see cref="gemv"/>
+        /// Alias for <see cref="GEMV"/>
         /// </summary>
         static public void MtxVecMul<MatrixType, VectorType1, VectorType2>(this MatrixType M, double xScaling, VectorType1 x, double yScaling, VectorType2 y, bool transpose = false)
             where MatrixType : IMatrix
             where VectorType1 : IList<double>
             where VectorType2 : IList<double> //
         {
-            M.gemv(xScaling, x, yScaling, y, transpose);
+            M.GEMV(xScaling, x, yScaling, y, transpose);
         }
 
 

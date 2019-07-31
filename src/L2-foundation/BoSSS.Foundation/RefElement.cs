@@ -1480,7 +1480,7 @@ namespace BoSSS.Foundation.Grid.RefElements {
                         double[] Normal = Kref.FaceNormals.GetRow(iFace);
                         double[] TrfNormal = new double[Normal.Length];
                         Debug.Assert(Normal.Length == Kref.SpatialDimension);
-                        this.Trafo2Root.Matrix.gemv(1.0, Normal, 0.0, TrfNormal, true);
+                        this.Trafo2Root.Matrix.GEMV(1.0, Normal, 0.0, TrfNormal, true);
 
                         int OrgFace = -1;
                         for (int iOrgFace = 0; iOrgFace < Kref.NoOfFaces; iOrgFace++) {

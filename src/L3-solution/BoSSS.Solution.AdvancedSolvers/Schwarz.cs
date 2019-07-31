@@ -1443,7 +1443,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                                         biHi[n] = bi[ciHi[ptr_CiHi + n]];
                                     }
 
-                                    HiModeSolver.gemv(1.0, biHi, 0.0, xiHi);
+                                    HiModeSolver.GEMV(1.0, biHi, 0.0, xiHi);
 
                                     for (int n = 0; n < Np; n++) {
                                         xi[ciHi[ptr_CiHi + n]] = xiHi[n];

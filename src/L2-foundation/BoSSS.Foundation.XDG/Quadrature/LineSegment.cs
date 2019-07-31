@@ -360,7 +360,7 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
                     // Do projection
                     switch (SpatialDimension) {
                         case 1:
-                            T[0].gemv(1.0, originalCoefficients.Storage, 0.0, coefficients);
+                            T[0].GEMV(1.0, originalCoefficients.Storage, 0.0, coefficients);
                             break;
 
                         case 2:

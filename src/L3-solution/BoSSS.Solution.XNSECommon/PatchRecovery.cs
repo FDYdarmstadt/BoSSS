@@ -288,7 +288,7 @@ namespace BoSSS.Solution.XNSECommon.Operator.SurfaceTension {
                     Trf.Acc(1.0, ExPolMtx.ExtractSubArrayShallow(0, -1, -1));
 
                     //Trf.Solve(FulCoords, AggCoords);
-                    Trf.gemv(1.0, RHS, 0.0, g1);
+                    Trf.GEMV(1.0, RHS, 0.0, g1);
 
 
                     if(Nlim != null && Nlim[jCell] > 0) {

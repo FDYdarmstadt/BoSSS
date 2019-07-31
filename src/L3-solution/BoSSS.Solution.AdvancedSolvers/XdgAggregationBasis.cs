@@ -442,7 +442,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                         MultidimensionalArray Trf = base.CompositeBasis[jAgg].ExtractSubArrayShallow(k, -1, -1);
 
                         //Trf.Solve(FulCoords, AggCoords);
-                        Trf.gemv(1.0, AggCoords, 0.0, FulCoords);
+                        Trf.GEMV(1.0, AggCoords, 0.0, FulCoords);
 
                         for(int n = 0; n < N; n++) {
                             FullGridVector[j0 + n] = FulCoords[n];
@@ -476,7 +476,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                             else
                                 Trf = this.XCompositeBasis[jAgg][iSpcAgg].ExtractSubArrayShallow(k, -1, -1);
 
-                            Trf.gemv(1.0, AggCoords, 0.0, FulCoords);
+                            Trf.GEMV(1.0, AggCoords, 0.0, FulCoords);
 
                             for(int n = 0; n < N; n++) {
                                 FullGridVector[j0 + n] = FulCoords[n];
