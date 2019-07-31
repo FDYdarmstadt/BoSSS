@@ -1100,14 +1100,16 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             double Ll0 = 5.3e-3;
             double L = Lv0 + Ll0;
 
+            kelemR = 3;
+
             C.GridFunc = delegate () {
-                double[] Xnodes = GenericBlas.Linspace(0, Lv0, kelemR + 1);
-                double[] Ynodes = GenericBlas.Linspace(0, L, 2*kelemR + 1);
-                var grd = Grid2D.Cartesian2DGrid(Xnodes, Ynodes, periodicX: false);
+                double[] Xnodes = GenericBlas.Linspace(0, Lv0/2.0, kelemR + 1);
+                double[] Ynodes = GenericBlas.Linspace(0, L, 4*kelemR + 1);
+                var grd = Grid2D.Cartesian2DGrid(Xnodes, Ynodes, periodicX: true);
 
                 grd.EdgeTagNames.Add(1, "wall_ConstantTemperature_lower");
                 grd.EdgeTagNames.Add(2, "pressure_Dirichlet_ConstantTemperature_upper");
-                grd.EdgeTagNames.Add(3, "slipsymmetry_ZeroGradient");
+                //grd.EdgeTagNames.Add(3, "slipsymmetry_ZeroGradient");
 
                 grd.DefineEdgeTags(delegate (double[] X) {
                     byte et = 0;
@@ -1115,8 +1117,8 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
                         et = 1;
                     if (Math.Abs(X[1] - L) <= 1.0e-8)
                         et = 2;
-                    if (Math.Abs(X[0]) <= 1.0e-8 || Math.Abs(X[0] - Lv0) <= 1.0e-8)
-                        et = 3;
+                    //if (Math.Abs(X[0]) <= 1.0e-8 || Math.Abs(X[0] - Lv0) <= 1.0e-8)
+                    //    et = 3;
 
                     return et;
                 });
@@ -1188,7 +1190,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
 
             C.AddBoundaryValue("pressure_Dirichlet_ConstantTemperature_upper", "Pressure#A", (X, t) => P0);
 
-            C.AddBoundaryValue("slipsymmetry_ZeroGradient");
+            //C.AddBoundaryValue("slipsymmetry_ZeroGradient");
 
             #endregion
 
@@ -1225,7 +1227,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             C.AdaptiveMeshRefinement = true;
             C.RefineStrategy = XNSE_Control.RefinementStrategy.constantInterface;
             C.RefineNavierSlipBoundary = false;
-            C.BaseRefinementLevel = 2;
+            C.BaseRefinementLevel = 1;
 
             #endregion
 
@@ -1248,8 +1250,8 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             C.Timestepper_LevelSetHandling = LevelSetHandling.LieSplitting;
 
             C.CompMode = AppControl._CompMode.Transient;
-            C.dtMax = 1e-2;
-            C.dtMin = 1e-2; 
+            C.dtMax = 1e-1;
+            C.dtMin = 1e-1; 
             C.Endtime = 16;
             C.NoOfTimesteps = 1600;
             C.saveperiod = 1;

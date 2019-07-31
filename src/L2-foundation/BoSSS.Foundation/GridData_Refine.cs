@@ -533,6 +533,7 @@ namespace BoSSS.Foundation.Grid.Classic {
                             if(conCount1 > 0)
                                 continue;
 
+                            byte iEdgeTag = 0;
                             MultidimensionalArray VtxFace2;
                             {
                                 MultidimensionalArray VtxFace2_L;
@@ -545,6 +546,14 @@ namespace BoSSS.Foundation.Grid.Classic {
                                 MultidimensionalArray VtxFace2_G = MultidimensionalArray.Create(VtxFace2_L.GetLength(0), VtxFace2_L.GetLength(1));
                                 VtxFace2 = MultidimensionalArray.Create(VtxFace2_L.GetLength(0), VtxFace2_L.GetLength(1));
                                 this.TransformLocal2Global(VtxFace2_L, VtxFace2_G, jCell2);
+
+                                if(this.Grid.GridData.Edges.EdgeTags[iEdge] >= GridCommons.FIRST_PERIODIC_BC_TAG) {
+                                    var perTrf = this.Grid.GridData.Edges.GetPeriodicTrafo(iEdge, false);
+                                    MultidimensionalArray VtxFace2_Gtmp = VtxFace2_G.CloneAs();
+                                    perTrf.Transform(VtxFace2_Gtmp, VtxFace2_G);
+                                    iEdgeTag = this.Grid.GridData.Edges.EdgeTags[iEdge];
+                                }
+
                                 bool[] Converged = new bool[VtxFace2_L.NoOfRows];
                                 this.TransformGlobal2Local(VtxFace2_G, VtxFace2, jCell1, Converged);
                                 if(Converged.Any(t => t == false))
@@ -552,22 +561,26 @@ namespace BoSSS.Foundation.Grid.Classic {
                             }
 
                             bool bIntersect = GridData.EdgeData.FaceIntersect(VtxFace1, VtxFace2,
-                                Kref1.GetFaceTrafo(iFace1), Kref1.GetInverseFaceTrafo(iFace1),
-                                VerticesFor_KrefEdge,
-                                out bool conformal1, out bool conformal2, out AffineTrafo newTrafo, out int Edg_idx);
+                                    Kref1.GetFaceTrafo(iFace1), Kref1.GetInverseFaceTrafo(iFace1),
+                                    VerticesFor_KrefEdge,
+                                    out bool conformal1, out bool conformal2, out AffineTrafo newTrafo, out int Edg_idx);
 
                             if(bIntersect) {
 
                                 ArrayTools.AddToArray(new CellFaceTag() {
                                     ConformalNeighborship = false,
                                     NeighCell_GlobalID = Cl2.GlobalID,
-                                    FaceIndex = iFace1
+                                    FaceIndex = iFace1,
+                                    EdgeTag = iEdgeTag,
+                                    PeriodicInverse = (iEdgeTag >= GridCommons.FIRST_PERIODIC_BC_TAG) ? true : false
                                 }, ref Cl1.CellFaceTags);
 
                                 ArrayTools.AddToArray(new CellFaceTag() {
                                     ConformalNeighborship = false,
                                     NeighCell_GlobalID = Cl1.GlobalID,
-                                    FaceIndex = iFace2
+                                    FaceIndex = iFace2,
+                                    EdgeTag = iEdgeTag,
+                                    PeriodicInverse = false
                                 }, ref Cl2.CellFaceTags);
                             }
                         }

@@ -2718,6 +2718,15 @@ namespace BoSSS.Application.XNSE_Solver {
                 for (int d = 0; d < D; d++)
                     this.XDGvelocity.Velocity[d].UpdateBehaviour = BehaveUnder_LevSetMoovement.AutoExtrapolate;
 
+                if (this.Control.solveCoupledHeatEquation) {
+                    this.Temperature.UpdateBehaviour = BehaveUnder_LevSetMoovement.AutoExtrapolate;
+                    if (this.Control.conductMode != ConductivityInSpeciesBulk.ConductivityMode.SIP) {
+                        for (int d = 0; d < D; d++)
+                            this.HeatFlux[d].UpdateBehaviour = BehaveUnder_LevSetMoovement.AutoExtrapolate;
+                    }
+                }
+
+                //PlotCurrentState(hack_Phystime, new TimestepNumber(new int[] { hack_TimestepIndex, 3 }), 2);
 
 
                 // ===============
@@ -2726,6 +2735,8 @@ namespace BoSSS.Application.XNSE_Solver {
 
                 this.LsTrk.UpdateTracker(incremental: true);
 
+                //PlotCurrentState(hack_Phystime, new TimestepNumber(new int[] { hack_TimestepIndex, 4 }), 2);
+
                 // update near field (in case of adaptive mesh refinement)
                 if (this.Control.AdaptiveMeshRefinement && this.Control.Option_LevelSetEvolution == LevelSetEvolution.FastMarching) {
                     Near1 = LsTrk.Regions.GetNearMask4LevSet(0, 1);
@@ -2733,6 +2744,8 @@ namespace BoSSS.Application.XNSE_Solver {
                     ContinuityEnforcer.SetFarField(this.DGLevSet.Current, Near1, PosFF);
                     ContinuityEnforcer.SetFarField(this.LevSet, Near1, PosFF);
                 }
+
+                //PlotCurrentState(hack_Phystime, new TimestepNumber(new int[] { hack_TimestepIndex, 5 }), 2);
 
 
                 // ==================================================================
