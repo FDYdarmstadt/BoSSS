@@ -218,8 +218,6 @@ namespace BoSSS.Foundation.Grid {
 
             for (int j = 0; j < globalJ; j++)
             {
-                if (j == 15)
-                    Console.WriteLine("jsngj");
                 int CurrentLevel_j = globalCurrentLevel[j];
                 int desiredLevel_j;
                 desiredLevel_j = GetGlobalLevelIndicator(currentGrid, j, LevelIndicator);
@@ -246,8 +244,6 @@ namespace BoSSS.Foundation.Grid {
 
             for (int j = 0; j < globalJ; j++)
             {
-                if (j == 15)
-                    Console.WriteLine("jsngj");
                 int CurrentLevel_j = globalCurrentLevel[j];
                 int desiredLevel_j;
                 desiredLevel_j = LevelIndicator[j];
@@ -306,8 +302,6 @@ namespace BoSSS.Foundation.Grid {
 
             foreach (int jNeigh in globalNeighbourship[j])
             {
-                if (jNeigh == 15)
-                    Console.WriteLine("jsngj");
                 if (currentLevel < DesiredLevelNeigh && DesiredLevel[jNeigh] < DesiredLevelNeigh)
                 {
                     DesiredLevel[jNeigh] = DesiredLevelNeigh;

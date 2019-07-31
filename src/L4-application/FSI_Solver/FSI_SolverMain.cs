@@ -815,7 +815,7 @@ namespace BoSSS.Application.FSI_Solver
             // Update level set tracker and coloring
             // =======================================================
             LsTrk.UpdateTracker(__NearRegionWith: 2);
-            //CellColor = UpdateColoring();
+            CellColor = UpdateColoring();
         }
 
         /// <summary>

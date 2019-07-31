@@ -58,7 +58,7 @@ namespace BoSSS.Application.FSI_Solver
             // ============================
 
             C.AdaptiveMeshRefinement = true;
-            C.RefinementLevel = 3;
+            C.RefinementLevel = 4;
 
             C.GridFunc = delegate
             {
