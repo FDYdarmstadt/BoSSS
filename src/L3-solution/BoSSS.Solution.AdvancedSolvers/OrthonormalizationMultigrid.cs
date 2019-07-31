@@ -52,6 +52,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
             this.m_MgOperator = op;
             var Mtx = op.OperatorMatrix;
             var MgMap = op.Mapping;
+            viz = new MGViz(op);
 
             if (!Mtx.RowPartitioning.EqualsPartition(MgMap.Partitioning))
                 throw new ArgumentException("Row partitioning mismatch.");
@@ -87,6 +88,8 @@ namespace BoSSS.Solution.AdvancedSolvers {
         }
 
 
+        MGViz viz;
+
         public ISolverSmootherTemplate CoarserLevelSolver;
         public ISolverSmootherTemplate PreSmoother;
         public ISolverSmootherTemplate PostSmoother;
@@ -106,12 +109,52 @@ namespace BoSSS.Solution.AdvancedSolvers {
         /// <summary>
         /// computes the residual on this level.
         /// </summary>
-        public void Residual<V1, V2, V3>(V1 rl, V2 xl, V3 bl)
+        public void Residual<V1, V2, V3>(V1 Res, V2 X, V3 B)
             where V1 : IList<double>
             where V2 : IList<double>
             where V3 : IList<double> {
-            OpMatrix.SpMV(-1.0, xl, 0.0, rl);
-            rl.AccV(1.0, bl);
+            OpMatrix.SpMV(-1.0, X, 0.0, Res);
+            Res.AccV(1.0, B);
+
+            /*
+            int L = Res.Count;
+
+            var OpMatrix_coarse = m_MgOperator.CoarserLevel.OperatorMatrix;
+            int Lc = OpMatrix_coarse._RowPartitioning.LocalLength;
+
+            double[] Xc = new double[Lc];
+            double[] Bc = new double[Lc];
+            m_MgOperator.CoarserLevel.Restrict(X, Xc);
+            m_MgOperator.CoarserLevel.Restrict(B, Bc);
+
+            double[] Res_coarse = Bc; Bc = null;
+            OpMatrix_coarse.SpMV(-1.0, Xc, 1.0, Res_coarse);
+
+            m_MgOperator.CoarserLevel.Restrict(Res, Res_coarse);
+
+            double[] Res1 = new double[L];// Res.ToArray();
+            m_MgOperator.CoarserLevel.Prolongate(-1.0, Res1, 0.0, Res_coarse);
+
+            double alpha = ParallelBlas.MPI_ddot(Res, Res1) / Res1.L2NormPow2().MPISum();
+
+
+
+            double[] RemRes = Res.ToArray();
+            RemRes.AccV(-alpha, Res1);
+
+            Res1.ScaleV(alpha);
+
+
+            int iLevel = m_MgOperator.LevelIndex;
+            Console.Write("    ");
+            for(int iLv = 0; iLv <= iLevel; iLv++) {
+                Console.Write("  ");
+            }
+
+            Console.WriteLine(iLevel + " " + Res.L2Norm().ToString("0.####E-00") + "   " + RemRes.L2Norm().ToString("0.####E-00") + "   " + Res1.L2Norm().ToString("0.####E-00") + "   " + GenericBlas.InnerProd(RemRes, Res1));
+
+            //viz.PlotVectors(new double[][] { Res.ToArray(), Res1, Res_coarse, RemRes }, new[] { "Residual", "ProloResi", "CarseResi", "RestResi" });
+            */
         }
 
 
@@ -123,7 +166,10 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
         
         void AddSol(ref double[] X) {
+            __AddSol(ref X);
 
+            // split solution in high and low modes
+            /*
             var Xlo = X.CloneAs();
             var Xhi = X.CloneAs();
 
@@ -145,7 +191,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
             __AddSol(ref Xlo);
             __AddSol(ref Xhi);
-
+            */
         }
         
 
@@ -246,7 +292,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                     // pre-smoother
                     // ------------
 
-                    {
+                    /*{
 
                         Residual(rl, _xl, B); // Residual on this level
 
@@ -261,7 +307,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                             Converged = true;
                             return;
                         }
-                    }
+                    }*/
 
 
                     // coarse grid correction
@@ -286,12 +332,14 @@ namespace BoSSS.Solution.AdvancedSolvers {
                             return;
                         }
 
+                        //if (m_MgOperator.LevelIndex == 0)
+                        //    this.viz.PlotVectors(new double[][] { _xl.ToArray(), this.SolHistory.Last(), rl.ToArray() }, new[] { "Solution", "LastCorrection", "Residual" });
                     }
 
                     // post-smoother
                     // -------------
                     
-                    {
+                    for(int g = 0; g < 2; g++) {
                         Residual(rl, _xl, B); // Residual on this level
 
                         // compute correction

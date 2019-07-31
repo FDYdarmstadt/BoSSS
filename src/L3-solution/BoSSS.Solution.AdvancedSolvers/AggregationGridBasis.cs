@@ -943,6 +943,13 @@ namespace BoSSS.Solution.AdvancedSolvers {
             return m_Lengths[p];
         }
 
+
+        /// <summary>
+        /// Always equal 1 for a non-XDG basis.
+        /// </summary>
+        public virtual int GetNoOfSpecies(int jCell) {
+            return 1;
+        }
        
         /// <summary>
         /// The projector in the L2 Norm, from the space defined by the basis <see cref="DGBasis"/> on the original,

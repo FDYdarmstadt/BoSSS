@@ -1582,7 +1582,8 @@ namespace BoSSS.Solution {
                             NoOfPartsPerProcess = NoOfBlocks
                         },
                         Overlap = 2, // overlap seems to help; more overlap seems to help more
-                        EnableOverlapScaling = true
+                        EnableOverlapScaling = true,
+                        UsePMGinBlocks = true
                     };
 
                     

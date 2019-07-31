@@ -327,7 +327,8 @@ namespace BoSSS.Solution.AdvancedSolvers {
         /// </summary>
         int[] NoOfSpecies;
 
-        
+       
+
         /// <summary>
         /// Mapping from species indices in composite/aggregate cells to species index in base grid.
         ///  - 1st index: composite cell index;
@@ -383,13 +384,13 @@ namespace BoSSS.Solution.AdvancedSolvers {
         /// <summary>
         /// Number of species in composite/aggregate cell <paramref name="jAgg"/>.
         /// </summary>
-        public int GetNoOfSpecies(int jAgg) {
-            return this.NoOfSpecies[jAgg];
+        override public int GetNoOfSpecies(int jAgg) {
+            return NoOfSpecies[jAgg];
         }
 
 
         /// <summary>
-        /// local vector-sapce dimension.
+        /// local vector-space dimension.
         /// </summary>
         override public int LocalDim {
             get {

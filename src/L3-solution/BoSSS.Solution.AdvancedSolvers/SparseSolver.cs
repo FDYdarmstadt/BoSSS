@@ -40,10 +40,6 @@ namespace BoSSS.Solution.AdvancedSolvers {
     /// </summary>
     public class SparseSolver : ISolverSmootherTemplate, ISolverWithCallback {
 
-
-        /// <summary>
-        /// 
-        /// </summary>
         /// <summary>
         /// 
         /// </summary>
@@ -60,7 +56,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
             MUMPS,
 
             /// <summary>
-            /// Using <see cref="IMatrixExtensions.Solve{T}(T, double[], double[])"/>
+            /// Using LU-decomposition from LAPACK, see also <see cref="IMatrixExtensions.Solve{T}(T, double[], double[])"/>
             /// </summary>
             Lapack,
 

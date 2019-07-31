@@ -520,8 +520,8 @@ namespace ilPSP {
         static public void gemv<MatrixType, VectorType1, VectorType2>(this MatrixType M, double xScaling, VectorType1 x, double yScaling, VectorType2 y, bool transpose = false)
             where MatrixType : IMatrix
             where VectorType1 : IList<double>
-            where VectorType2 : IList<double> {
-            //
+            where VectorType2 : IList<double> //
+        {
 
             // Make sure $x is "cloned" if it is also the target of the
             // operation
@@ -566,6 +566,28 @@ namespace ilPSP {
             }
 
         }
+
+        /// <summary>
+        /// alias for <see cref="GEMM{Matrix2, Matrix3}(Matrix2, Matrix3)"/>
+        /// </summary>
+        static public MultidimensionalArray MtxMtxMul<Matrix2, Matrix3>(this Matrix2 A, Matrix3 B)
+            where Matrix2 : IMatrix
+            where Matrix3 : IMatrix //    
+        {
+            return A.GEMM(B);
+        }
+
+        /// <summary>
+        /// Alias for <see cref="gemv"/>
+        /// </summary>
+        static public void MtxVecMul<MatrixType, VectorType1, VectorType2>(this MatrixType M, double xScaling, VectorType1 x, double yScaling, VectorType2 y, bool transpose = false)
+            where MatrixType : IMatrix
+            where VectorType1 : IList<double>
+            where VectorType2 : IList<double> //
+        {
+            M.gemv(xScaling, x, yScaling, y, transpose);
+        }
+
 
         /// <summary>
         /// General matrix/matrix multiplication:
@@ -1615,7 +1637,7 @@ namespace ilPSP {
         /// Least-squares-solve (LAPACK function DGELSY) with multiple right-hand-side vectors.
         /// </summary>
         /// <param name="Mtx">
-        /// The matrix, size \f$ M \times N \f$, i.e. \f$ M \f$ is the number of equations anf \f$ N \f$ the number of unknowns. </param>
+        /// The matrix, size \f$ M \times N \f$, i.e. \f$ M \f$ is the number of equations and \f$ N \f$ the number of unknowns. </param>
         /// <param name="B">
         /// Input for the right-hand-side, size is \f$  M  \times L \f$,
         /// i.e. \f$ L \f$ is the number of right-hand-sides.

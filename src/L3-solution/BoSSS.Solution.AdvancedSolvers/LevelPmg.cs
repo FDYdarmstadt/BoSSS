@@ -12,6 +12,73 @@ using System.Threading.Tasks;
 namespace BoSSS.Solution.AdvancedSolvers {
 
     /// <summary>
+    /// Utility class for visualization of intermediate results.
+    /// </summary>
+    internal class MGViz {
+
+        public MGViz(MultigridOperator op) {
+            m_op = op;
+        }
+
+        MultigridOperator m_op;
+
+        public int FindLevel(int L) {
+            int iLv = 0;
+            for (var Op4Level = m_op.FinestLevel; Op4Level != null; Op4Level = Op4Level.CoarserLevel) {
+                if (L == Op4Level.Mapping.LocalLength) {
+                    return iLv;
+                }
+                iLv++;
+            }
+            return -1;
+        }
+
+        public SinglePhaseField ProlongateToDg(double[] V, string name) {
+            double[] Curr = ProlongateToTop(V);
+
+            var gdat = m_op.BaseGridProblemMapping.GridDat;
+            var basis = m_op.BaseGridProblemMapping.BasisS[0];
+            var dgCurrentSol = new SinglePhaseField(basis, name);
+            m_op.FinestLevel.TransformSolFrom(dgCurrentSol.CoordinateVector, Curr);
+            return dgCurrentSol;
+        }
+
+        public double[] ProlongateToTop(double[] V) {
+            int iLv = FindLevel(V.Length);
+
+            MultigridOperator op_iLv = m_op;
+            for (int i = 0; i < iLv; i++)
+                op_iLv = op_iLv.CoarserLevel;
+
+
+            double[] Curr = V;
+            for (var Op4Level = op_iLv; Op4Level.FinerLevel != null; Op4Level = Op4Level.FinerLevel) {
+                double[] Next = new double[Op4Level.FinerLevel.Mapping.LocalLength];
+                Op4Level.Prolongate(1.0, Next, 0.0, Curr);
+                Curr = Next;
+            }
+
+            return Curr;
+        }
+
+        int counter = 0;
+        public void PlotVectors(IEnumerable<double[]> VV, string[] names) {
+
+            DGField[] all = new DGField[names.Length];
+            for (int i = 0; i < VV.Count(); i++) {
+                all[i] = ProlongateToDg(VV.ElementAt(i), names[i]);
+            }
+
+            Tecplot.Tecplot.PlotFields(all, "MGviz-" + counter, counter, 2);
+            counter++;
+
+        }
+        
+    }
+
+
+
+    /// <summary>
     /// p-Multigrid on a single grid level
     /// </summary>
     public class LevelPmg : ISolverSmootherTemplate {
@@ -64,54 +131,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
         int[][][] HighOrderBlocks_LUpivots;
         MultidimensionalArray[][] HighLoOrderBlocks;
 
-        /*
-        int FindLevel(int L) {
-            int iLv = 0;
-            for (var Op4Level = m_op.FinestLevel; Op4Level != null; Op4Level = Op4Level.CoarserLevel) {
-                if (L == Op4Level.Mapping.LocalLength) {
-                    return iLv;
-                }
-                iLv++;
-            }
-            return -1;
-        }
-
-        SinglePhaseField ProlongateToDg(double[] V, string name) {
-            double[] Curr = ProlongateToTop(V);
-
-            var gdat = m_op.BaseGridProblemMapping.GridDat;
-            var basis = m_op.BaseGridProblemMapping.BasisS[0];
-            var dgCurrentSol = new SinglePhaseField(basis, name);
-            m_op.FinestLevel.TransformSolFrom(dgCurrentSol.CoordinateVector, Curr);
-            return dgCurrentSol;
-        }
-
-        private double[] ProlongateToTop(double[] V) {
-            int iLv = FindLevel(V.Length);
-
-
-            double[] Curr = V;
-            for (var Op4Level = m_op; Op4Level.FinerLevel != null; Op4Level = Op4Level.FinerLevel) {
-                double[] Next = new double[Op4Level.FinerLevel.Mapping.LocalLength];
-                Op4Level.Prolongate(1.0, Next, 0.0, Curr);
-                Curr = Next;
-            }
-
-            return Curr;
-        }
-
-        int counter = 0;
-        void PlotVectors(IEnumerable<double[]> VV, string[] names) {
-
-            DGField[] all = new DGField[names.Length];
-            for (int i = 0; i < VV.Count(); i++) {
-                all[i] = ProlongateToDg(VV.ElementAt(i), names[i]);
-            }
-
-            Tecplot.Tecplot.PlotFields(all, "PMG-" + counter, counter, 2);
-
-        }
-        */
+        
 
 
         public void Init(MultigridOperator op) {
