@@ -782,6 +782,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                     blockSolvers = new ISparseSolver[NoOfSchwzBlocks];
                     if(UsePMGinBlocks) {
                         BlockMatrices = new BlockMsrMatrix[NoOfSchwzBlocks];
+                        //BlockMatrices = new ilPSP.LinSolvers.monkey.CPU.RefMatrix[NoOfSchwzBlocks];
                         PmgBlock_HiModeSolvers = new MultidimensionalArray[NoOfSchwzBlocks][];
                     }
 #if DEBUG
@@ -851,6 +852,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
                             // record matrix
                             BlockMatrices[iPart] = Block;
+                            //BlockMatrices[iPart] = new ilPSP.LinSolvers.monkey.CPU.RefMatrix(Block.ToMsrMatrix());
 
                             // define high-oder sub-block solvers
                             var Nhi = Blk_NHiModes[iPart];
@@ -1180,6 +1182,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
         /// - content: matrix 
         /// </summary>
         BlockMsrMatrix[] BlockMatrices;
+        //ilPSP.LinSolvers.monkey.CPU.RefMatrix[] BlockMatrices;
 
         /// <summary>
         /// List of low-order modes local indices in block (only used for <see cref="UsePMGinBlocks"/>).

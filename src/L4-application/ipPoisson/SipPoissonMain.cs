@@ -1004,6 +1004,8 @@ namespace BoSSS.Application.SipPoisson {
                     Console.WriteLine("  Pardiso phase 33: " + ilPSP.LinSolvers.PARDISO.PARDISOSolver.Phase_33.Elapsed.TotalSeconds);
                     Console.WriteLine("  spmm total " + BlockMsrMatrix.multiply.Elapsed.TotalSeconds);
                     Console.WriteLine("  spmm core " + BlockMsrMatrix.multiply_core.Elapsed.TotalSeconds);
+                    Console.WriteLine("  spmv total " + BlockMsrMatrix.SPMV_tot.Elapsed.TotalSeconds);
+                    Console.WriteLine("  spmv core " + BlockMsrMatrix.SPMV_inner.Elapsed.TotalSeconds);
 
                     Console.WriteLine("  dgetrf core " + dgetrf_time);
 

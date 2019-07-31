@@ -674,7 +674,7 @@ namespace ilPSP {
         /// <summary>
         /// alias for <see cref="GEMM{Matrix2, Matrix3}(Matrix2, Matrix3)"/>
         /// </summary>
-        static public MultidimensionalArray MtxMtxMul<Matrix2, Matrix3>(this Matrix2 A, Matrix3 B)
+        static public MultidimensionalArray MatMatMul<Matrix2, Matrix3>(this Matrix2 A, Matrix3 B)
             where Matrix2 : IMatrix
             where Matrix3 : IMatrix //    
         {
@@ -684,12 +684,23 @@ namespace ilPSP {
         /// <summary>
         /// Alias for <see cref="GEMV"/>
         /// </summary>
-        static public void MtxVecMul<MatrixType, VectorType1, VectorType2>(this MatrixType M, double xScaling, VectorType1 x, double yScaling, VectorType2 y, bool transpose = false)
+        static public void MatVecMul<MatrixType, VectorType1, VectorType2>(this MatrixType M, double xScaling, VectorType1 x, double yScaling, VectorType2 y, bool transpose = false)
             where MatrixType : IMatrix
             where VectorType1 : IList<double>
             where VectorType2 : IList<double> //
         {
             M.GEMV(xScaling, x, yScaling, y, transpose);
+        }
+        
+        /// <summary>
+        /// Alias for <see cref="GEMV"/>
+        /// </summary>
+        static public void MatVecMulInplace<MatrixType, VectorType1>(this MatrixType M, double xScaling, VectorType1 x, bool transpose = false)
+            where MatrixType : IMatrix
+            where VectorType1 : IList<double> //
+        {
+            double[] xc = x.ToArray();
+            M.GEMV(xScaling, xc, 0.0, x, transpose);
         }
 
 
