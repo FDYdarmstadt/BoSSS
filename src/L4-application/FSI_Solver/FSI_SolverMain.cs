@@ -1571,15 +1571,31 @@ namespace BoSSS.Application.FSI_Solver
                 bool AnyChange = GridRefinementController.ComputeGridChange((GridData)GridData, CutCells, ((FSI_Control)this.Control).RefinementLevel, out List<int> CellsToRefineList, out List<int[]> Coarsening);
                 int NoOfCellsToRefine = 0;
                 int NoOfCellsToCoarsen = 0;
+                int oldJ = this.GridData.CellPartitioning.TotalLength;
+                int localJ = GridData.CellPartitioning.LocalLength;
                 int[] glb = (new int[] { CellsToRefineList.Count, Coarsening.Sum(L => L.Length) }).MPISum();
+                int[] localDataRefine = (CellsToRefineList.Count()).MPIGatherO(0);
+                int[] localDataCoarse = (Coarsening.Sum(L => L.Length)).MPIGatherO(0);
+                int[] localDataNoOfCells = localJ.MPIGatherO(0);
+                if (localDataRefine == null && localDataCoarse != null)
+                {
+                    localDataRefine = new int[localDataCoarse.Length];
+                }
                 NoOfCellsToRefine = glb[0];
                 NoOfCellsToCoarsen = glb[1];
-                int oldJ = this.GridData.CellPartitioning.TotalLength;
 
                 if (AnyChange || MPISize > 1)
                 {
                     Console.WriteLine("       Refining " + NoOfCellsToRefine + " of " + oldJ + " cells");
                     Console.WriteLine("       Coarsening " + NoOfCellsToCoarsen + " of " + oldJ + " cells");
+                    if(localDataRefine != null)
+                    {
+                        for (int m = 0; m < localDataRefine.Length; m++)
+                        {
+                            Console.WriteLine("Refining on process " + m + ", " + localDataRefine[m] + " of " + localDataNoOfCells[m] + " cells");
+                            Console.WriteLine("Coarsening on process " + m + ", " + localDataCoarse[m] + " of " + localDataNoOfCells[m] + " cells");
+                        }
+                    }
                     newGrid = ((GridData)this.GridData).Adapt(CellsToRefineList, Coarsening, out old2NewGrid);
                 }
                 else

@@ -94,7 +94,7 @@ namespace BoSSS.Foundation.Grid.Classic
 
                 Old2New.KrefS_SubdivLeaves = KrefS_SubdivLeaves;
                 long GlobalIdCounter = GetGlobalIDCounter(oldGrid);
-                int globalIDOffset = GetGlobalMPIOffset(cellsToRefine);
+                int globalIDOffset = GetGlobalMPIOffset(cellsToRefine, cellsToCoarse);
                 int globalVertexOffset = GetGlobalMPIOffset(cellsToRefine);
                 int newVertexCounter = (oldGrid.Cells.Max(cl => cl.NodeIndices.Max()) + 1).MPIMax();
 
@@ -177,7 +177,7 @@ namespace BoSSS.Foundation.Grid.Classic
                         }
                         else
                         {
-                            CloneAllOtherCellsToNewGrid(Old2New, oldGrid, cellsInNewGrid, j);
+                            CloneAllOtherCellsToNewGrid(Old2New, oldGrid, cellsInNewGrid, adaptedCells, j);
                         }
                     }
                     else
@@ -199,7 +199,7 @@ namespace BoSSS.Foundation.Grid.Classic
                 Debug.Assert(Edge2Face.GetLength(0) == NoOfEdges);
                 Debug.Assert(Edge2Cell.GetLength(0) == NoOfEdges);
 
-                List<Tuple<int, Cell[]>> cellsOnNeighbourProcess = SerialExchangeCellData(adaptedCells);
+                List<Tuple<int, Cell[]>> cellsOnNeighbourProcess = SerialExchangeCellData(adaptedCells, newGrid);
 
                 for (int iEdge = 0; iEdge < NoOfEdges; iEdge++)
                 {
@@ -252,8 +252,15 @@ namespace BoSSS.Foundation.Grid.Classic
                     else
                         throw new Exception("Error in refinement and coarsening algorithm: Both cells not on the current process");
 
-                    CheckIfCellIsMissing(localCellIndex1, adaptedCells1, adaptedCells);
-                    CheckIfCellIsMissing(localCellIndex2, adaptedCells2, adaptedCells);
+                    int i0 = CellPartitioning.i0;
+                    
+                    if (adaptedCells2 == null)
+                    {
+                        Debugger.Launch();
+                        throw new Exception("Cell with global index " + (i0 + localCellIndex2) + ", i0 = " + i0 + ", does not exist!");
+                    }
+                    CheckIfCellIsMissing(localCellIndex1, adaptedCells1, i0);
+                    CheckIfCellIsMissing(localCellIndex2, adaptedCells2, i0);
 
                     if (cellsToCoarseBitmask[localCellIndex1] && cellsToCoarseBitmask[localCellIndex2])
                     {
@@ -456,27 +463,22 @@ namespace BoSSS.Foundation.Grid.Classic
 
         private bool GetMPIGlobalIsNotNullOrEmpty(IEnumerable<int> enumeration)
         {
-            int[] sendAnyRefinement = new int[1];
-            sendAnyRefinement[0] = enumeration.IsNullOrEmpty() ? 0 : 1;
-            int[] receiveAnyRefinement = new int[MpiSize];
-            unsafe
-            {
-                fixed (int* pCheckSend = sendAnyRefinement, pCheckReceive = receiveAnyRefinement)
-                {
-                    csMPI.Raw.Allgather((IntPtr)pCheckSend, sendAnyRefinement.Length, csMPI.Raw._DATATYPE.INT, (IntPtr)pCheckReceive, sendAnyRefinement.Length, csMPI.Raw._DATATYPE.INT, csMPI.Raw._COMM.WORLD);
-                }
-            }
-            csMPI.Raw.Barrier(csMPI.Raw._COMM.WORLD);
-            if (receiveAnyRefinement.Sum() > 0)
-                return true;
-            else
-                return false;
+            int[] sendTestingVariable = new int[1];
+            sendTestingVariable[0] = enumeration.IsNullOrEmpty() ? 0 : 1;
+            int[] receiveTestingVariable = MPISendReceiveOnAllProcesses(sendTestingVariable);
+            return receiveTestingVariable.Sum() > 0;
         }
         
         private bool GetMPIGlobalIsNotNullOrEmpty(IEnumerable<int[]> enumeration)
         {
             int[] sendTestingVariable = new int[1];
             sendTestingVariable[0] = enumeration.IsNullOrEmpty() ? 0 : 1;
+            int[] receiveTestingVariable = MPISendReceiveOnAllProcesses(sendTestingVariable);
+            return receiveTestingVariable.Sum() > 0;
+        }
+
+        private int[] MPISendReceiveOnAllProcesses(int[] sendTestingVariable)
+        {
             int[] receiveTestingVariable = new int[MpiSize];
             unsafe
             {
@@ -486,18 +488,33 @@ namespace BoSSS.Foundation.Grid.Classic
                 }
             }
             csMPI.Raw.Barrier(csMPI.Raw._COMM.WORLD);
-            if (receiveTestingVariable.Sum() > 0)
-                return true;
-            else
-                return false;
+            return receiveTestingVariable;
         }
 
         private static long GetGlobalIDCounter(GridCommons oldGrid)
         {
-            long GlobalIdCounter = oldGrid.NumberOfCells_l;
-            Convert.ToDouble(GlobalIdCounter).MPISum();
-            Convert.ToInt64(GlobalIdCounter);
-            return GlobalIdCounter;
+            long globalIdCounter = oldGrid.NumberOfCells_l;
+            return globalIdCounter;
+        }
+        private int GetGlobalMPIOffset(IEnumerable<int> cellsToRefine, IEnumerable<int[]> cellsToCoarse)
+        {
+            int globalIDOffset = 0;
+            double[] SendOffset = new double[1];
+            SendOffset[0] = cellsToRefine.Count() - cellsToCoarse.Count();
+            double[] ReceiveOffset = new double[MpiSize];
+            unsafe
+            {
+                fixed (double* pCheckSend = SendOffset, pCheckReceive = ReceiveOffset)
+                {
+                    csMPI.Raw.Allgather((IntPtr)pCheckSend, SendOffset.Length, csMPI.Raw._DATATYPE.DOUBLE, (IntPtr)pCheckReceive, SendOffset.Length, csMPI.Raw._DATATYPE.DOUBLE, csMPI.Raw._COMM.WORLD);
+                }
+            }
+            for (int m = 0; m < MpiRank; m++)
+            {
+                globalIDOffset += Convert.ToInt32(ReceiveOffset[m]) * 3;
+            }
+
+            return globalIDOffset;
         }
 
         private int GetGlobalMPIOffset(IEnumerable<int> cellsToRefine)
@@ -642,7 +659,6 @@ namespace BoSSS.Foundation.Grid.Classic
         private void GetExternalNeighbours(List<long> externalNeighbours, ref BitArray AdaptNeighborsBitmask)
         {
             int firstGlobalIndex = this.CellPartitioning.i0;
-            int noOfLocalCells = this.Cells.NoOfLocalUpdatedCells;
 
             for (int j = 0; j < externalNeighbours.Count(); j++)
             {
@@ -697,8 +713,6 @@ namespace BoSSS.Foundation.Grid.Classic
 
         private static Cell GetRefindedCell(ref long GlobalIdCounter, int globalIDOffset, int NewCoarseningClusterId, Cell oldCell, RefElement.SubdivisionTreeNode[] Leaves, int iSubDiv)
         {
-            if (oldCell.GlobalID == 48)
-                Console.WriteLine("");
             Cell newCell = new Cell
             {
                 Type = oldCell.Type,
@@ -932,9 +946,11 @@ namespace BoSSS.Foundation.Grid.Classic
             AdaptGlobalIDOfUnchangedCells(Old2New, cellsInNewGrid, j);
         }
 
-        private static void CloneAllOtherCellsToNewGrid(GridCorrelation Old2New, GridCommons oldGrid, List<Cell> cellsInNewGrid, int j)
+        private static void CloneAllOtherCellsToNewGrid(GridCorrelation Old2New, GridCommons oldGrid, List<Cell> cellsInNewGrid, Cell[][] adaptedCells, int j)
         {
-            cellsInNewGrid.Add(oldGrid.Cells[j]);
+            Cell newCell = oldGrid.Cells[j].CloneAs();
+            cellsInNewGrid.Add(newCell);
+            adaptedCells[j] = new Cell[] { newCell };
             AdaptGlobalIDOfUnchangedCells(Old2New, cellsInNewGrid, j);
         }
 
@@ -946,10 +962,10 @@ namespace BoSSS.Foundation.Grid.Classic
             Old2New.DestGlobalId[j] = new long[] { cellsInNewGrid[cellsInNewGrid.Count - 1].GlobalID };
         }
 
-        private List<Tuple<int, Cell[]>> SerialExchangeCellData(Cell[][] Cells)
+        private List<Tuple<int, Cell[]>> SerialExchangeCellData(Cell[][] Cells, GridCommons newGrid)
         {
             List<Tuple<int, Cell[]>> exchangedCellData = new List<Tuple<int, Cell[]>>();
-            Dictionary<int, List<Tuple<int, Cell[]>>> sendCellData = GetBoundaryCellsAndProcessToSend(Cells);
+            Dictionary<int, List<Tuple<int, Cell[]>>> sendCellData = GetBoundaryCellsAndProcessToSend(Cells, newGrid);
             IDictionary<int, List<Tuple<int, Cell[]>>> receiveCellData = SerialisationMessenger.ExchangeData(sendCellData);
 
             foreach (KeyValuePair<int, List<Tuple<int, Cell[]>>> kv in receiveCellData)
@@ -969,10 +985,34 @@ namespace BoSSS.Foundation.Grid.Classic
 
             return exchangedCellData;
         }
-        private Dictionary<int, List<Tuple<int, Cell[]>>> GetBoundaryCellsAndProcessToSend(Cell[][] Cells)
+
+        private Dictionary<int, List<Tuple<int, Cell[]>>> GetBoundaryCellsAndProcessToSend(Cell[][] Cells, GridCommons newGrid)
         {
             Dictionary<int, List<Tuple<int, Cell[]>>> boundaryCellsProcess = new Dictionary<int, List<Tuple<int, Cell[]>>>();
             int noOfLocalCells = this.Cells.NoOfLocalUpdatedCells;
+            //for (int j = 0; j < noOfLocalCells; j++)
+            //{
+            //    int globalCellIndex = CellPartitioning.i0 + j;
+
+            //    for (int m = 0; m < this.MpiSize; m++)
+            //    {
+            //        if (m != this.MpiRank)
+            //        {
+            //            int currentProcess = m;
+            //            if (!boundaryCellsProcess.TryGetValue(currentProcess, out List<Tuple<int, Cell[]>> exchangeCellData))
+            //            {
+            //                exchangeCellData = new List<Tuple<int, Cell[]>>();
+            //                boundaryCellsProcess.Add(currentProcess, exchangeCellData);
+            //            }
+
+            //            foreach (KeyValuePair<int, List<Tuple<int, Cell[]>>> key in boundaryCellsProcess)
+            //            {
+            //                exchangeCellData.Add(new Tuple<int, Cell[]>(globalCellIndex, Cells[j]));
+            //            }
+            //        }
+            //    }
+            //}
+
 
             for (int j = 0; j < noOfLocalCells; j++)
             {
@@ -1066,12 +1106,11 @@ namespace BoSSS.Foundation.Grid.Classic
             }
         }
 
-        private static void CheckIfCellIsMissing(int jCell, Cell[] adaptedCell, Cell[][] adaptedCells)
+        private static void CheckIfCellIsMissing(int jCell, Cell[] adaptedCell, int i0)
         {
-            Debugger.Launch();
             if (adaptedCell == null)
             {
-                throw new Exception("Cell " + jCell + "does not exist!");
+                throw new Exception("Cell with global index " + (i0 + jCell) + ", i0 = " + i0 + ", does not exist!");
             }
         }
 

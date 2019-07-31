@@ -234,11 +234,7 @@ namespace BoSSS.Foundation.Grid {
         private static void FindRefiningCells(GridData currentGrid, int[] LevelIndicator, int[] desiredLevel, int[][] globalNeighbourship)
         {
             Partitioning cellPartitioning = currentGrid.CellPartitioning;
-            int J = currentGrid.Cells.NoOfLocalUpdatedCells;
             int globalJ = cellPartitioning.TotalLength;
-            int[] globalLevelIndicator = new int[globalJ];
-            int[] localLevelIndicator = new int[J];
-            int[] i0 = cellPartitioning.GetI0s();
 
             int[] globalCurrentLevel = GetGlobalCurrentLevel(currentGrid);
 
