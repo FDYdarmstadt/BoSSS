@@ -413,20 +413,9 @@ namespace BoSSS.Application.SipPoisson {
 
 
 
+                
 
-                //var JB = LapaceIp.GetFDJacobianBuilder(T.Mapping.Fields, null, T.Mapping, edgQrSch, volQrSch);
-                //var JacobiMtx = new BlockMsrMatrix(T.Mapping);
-                //var JacobiAffine = new double[T.Mapping.LocalLength];
-                //JB.ComputeMatrix(JacobiMtx, JacobiAffine);
-                //double L2ErrAffine = GenericBlas.L2Dist(JacobiAffine, LaplaceAffine);
-                //var ErrMtx2 = LaplaceMtx.CloneAs();
-                //ErrMtx2.Acc(-1.0, JacobiMtx);
-                //double LinfErrMtx2 = ErrMtx2.InfNorm();
 
-                //JacobiMtx.SaveToTextFileSparse("D:\\tmp\\Jac.txt");
-                //LaplaceMtx.SaveToTextFileSparse("D:\\tmp\\Lap.txt");
-
-                //Console.WriteLine("FD Jacobi Mtx: {0:e14}, Affine: {1:e14}", LinfErrMtx2, L2ErrAffine);
             }
         }
 
@@ -1005,7 +994,8 @@ namespace BoSSS.Application.SipPoisson {
                     Console.WriteLine("  spmm total " + BlockMsrMatrix.multiply.Elapsed.TotalSeconds);
                     Console.WriteLine("  spmm core " + BlockMsrMatrix.multiply_core.Elapsed.TotalSeconds);
                     Console.WriteLine("  spmv total " + BlockMsrMatrix.SPMV_tot.Elapsed.TotalSeconds);
-                    Console.WriteLine("  spmv core " + BlockMsrMatrix.SPMV_inner.Elapsed.TotalSeconds);
+                    Console.WriteLine("  spmv inner " + BlockMsrMatrix.SPMV_inner.Elapsed.TotalSeconds);
+                    Console.WriteLine("  spmv outer " + BlockMsrMatrix.SPMV_outer.Elapsed.TotalSeconds);
 
                     Console.WriteLine("  dgetrf core " + dgetrf_time);
 

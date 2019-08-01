@@ -1142,10 +1142,6 @@ namespace BoSSS.Solution {
         /// <summary>
         /// experimental. Is connected to Decomposed MG OrthoScheme. Can be deleted if not used anymore ...
         /// </summary>
-        /// <param name="MGlevels"></param>
-        /// <param name="lc"></param>
-        /// <param name="coarseSolver"></param>
-        /// <returns></returns>
         private ISolverSmootherTemplate BareMGSquence(int MGlevels, ISolverSmootherTemplate coarseSolver, ISolverSmootherTemplate smoother=null)
         {
             ISolverSmootherTemplate solver;

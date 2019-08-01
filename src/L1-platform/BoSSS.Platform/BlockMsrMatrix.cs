@@ -2257,6 +2257,7 @@ namespace ilPSP.LinSolvers {
 
         public static Stopwatch SPMV_tot = new Stopwatch();
         public static Stopwatch SPMV_inner = new Stopwatch();
+        public static Stopwatch SPMV_outer = new Stopwatch();
 
         /// <summary>
         /// Sparse Matrix/Vector multiplication;
@@ -2405,7 +2406,7 @@ namespace ilPSP.LinSolvers {
                                         int jBlkCol = kv.Key;
                                         Debug.Assert(BE.jBlkCol == jBlkCol);
                                         if (_ColPartitioning.IsLocalBlock(jBlkCol)) {
-
+                SPMV_outer.Start();
                                             int locBlockColOffset = _ColPartitioning.GetBlockI0(jBlkCol) - _ColPartitioning.i0;
 
                                             int ColBlockType = _ColPartitioning.GetBlockType(jBlkCol);
@@ -2420,8 +2421,7 @@ namespace ilPSP.LinSolvers {
                                             Debug.Assert(RowLenSblk.Length == NoOfSblk_Rows);
                                             Debug.Assert(Col_i0Sblk.Length == NoOfSblk_Cols);
                                             Debug.Assert(ColLenSblk.Length == NoOfSblk_Cols);
-
-                SPMV_inner.Start();
+                SPMV_outer.Stop();
                                             for (int iSblkRow = 0; iSblkRow < NoOfSblk_Rows; iSblkRow++) { // loop over sub-block rows
 
                                                 int _iRowLoc = locBlockRowOffset + Row_i0Sblk[iSblkRow]; // local row index
@@ -2477,10 +2477,12 @@ namespace ilPSP.LinSolvers {
                                                                 //if (I != J || CI != I)
                                                                 //    Console.Write("");
 
+                SPMV_inner.Start();
                                                                 BLAS.dgemv('t', J, I, 1.0, pRawMem + Offset, CI, pa + _jColLoc, 1, 1.0,
                                                                     //arschKakke, 
                                                                     pVecAccu + _iRowBlockLoc, 
                                                                     1);
+                SPMV_inner.Stop();
                                                             }
 
                                                             //for (int i = 0; i < I; i++) {
@@ -2500,7 +2502,6 @@ namespace ilPSP.LinSolvers {
                                                 }
                                             }
                                             
-                SPMV_inner.Stop();
                                         } else {
                                             ContainsExternal = true;
                                         }

@@ -1421,40 +1421,42 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
                                 xi.AccV(1.0, xiLo, ciLo, default(int[]));
 
-                                // re-evaluate the residual
-                                this.BlockMatrices[iPart].SpMV(-1.0, xi, 1.0, bi);
+                                {
+                                    // re-evaluate the residual
+                                    this.BlockMatrices[iPart].SpMV(-1.0, xi, 1.0, bi);
 
-                                // solve the high-order system
-                                int[] ciHi = PmgBlock_HiModes[iPart];
-                                var HiModeSolvers = PmgBlock_HiModeSolvers[iPart];
-                                int NoCells = HiModeSolvers.Length;
+                                    // solve the high-order system
+                                    int[] ciHi = PmgBlock_HiModes[iPart];
+                                    var HiModeSolvers = PmgBlock_HiModeSolvers[iPart];
+                                    int NoCells = HiModeSolvers.Length;
 
-                                double[] xiHi = null;
-                                double[] biHi = null;
+                                    double[] xiHi = null;
+                                    double[] biHi = null;
 
-                                int ptr_CiHi = 0;
-                                for (int j = 0; j < NoCells; j++) {
-                                    var HiModeSolver = HiModeSolvers[j];
-                                    int Np = HiModeSolver.NoOfRows;
+                                    int ptr_CiHi = 0;
+                                    for (int j = 0; j < NoCells; j++) {
+                                        var HiModeSolver = HiModeSolvers[j];
+                                        int Np = HiModeSolver.NoOfRows;
 
-                                    if (xiHi == null || xiHi.Length != Np)
-                                        xiHi = new double[Np];
-                                    if (biHi == null || biHi.Length != Np)
-                                        biHi = new double[Np];
+                                        if (xiHi == null || xiHi.Length != Np)
+                                            xiHi = new double[Np];
+                                        if (biHi == null || biHi.Length != Np)
+                                            biHi = new double[Np];
 
-                                    for(int n = 0; n < Np; n++) {
-                                        biHi[n] = bi[ciHi[ptr_CiHi + n]];
+                                        for (int n = 0; n < Np; n++) {
+                                            biHi[n] = bi[ciHi[ptr_CiHi + n]];
+                                        }
+
+                                        HiModeSolver.GEMV(1.0, biHi, 0.0, xiHi);
+
+                                        for (int n = 0; n < Np; n++) {
+                                            xi[ciHi[ptr_CiHi + n]] = xiHi[n];
+                                        }
+                                        ptr_CiHi += Np;
                                     }
-
-                                    HiModeSolver.GEMV(1.0, biHi, 0.0, xiHi);
-
-                                    for (int n = 0; n < Np; n++) {
-                                        xi[ciHi[ptr_CiHi + n]] = xiHi[n];
-                                    }
-                                    ptr_CiHi += Np;
+                                    Debug.Assert(ptr_CiHi == ciHi.Length);
                                 }
-                                Debug.Assert(ptr_CiHi == ciHi.Length);
-
+                            
                             } else {
                                 // ++++++++++++++++++++++++++++++
                                 // use block solver for all modes
