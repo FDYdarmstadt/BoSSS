@@ -8,35 +8,6 @@ using BoSSS.Foundation.Grid.Aggregation;
 
 namespace BoSSS.Foundation.Grid.Voronoi.Meshing
 {
-    class ArrayEnum<T> : IEnumerator<T>
-    {
-        int pointer;
-        IList<T> arr;
-        public ArrayEnum(IList<T> Arr)
-        {
-            arr = Arr;
-            pointer = -1;
-        }
-
-        public T Current => arr[pointer];
-
-        object IEnumerator.Current => Current;
-
-        public void Dispose()
-        {
-        }
-
-        public bool MoveNext()
-        {
-            return (++pointer < arr.Count);
-        }
-
-        public void Reset()
-        {
-            pointer = -1;
-        }
-    }
-
     class Line
     {
         public static Line[] ToLines(Vector[] polygon)
@@ -58,14 +29,18 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing
             return lines;
         }
 
-        public static IEnumerator<Line> GetEnumerator(Vector[] polygon)
+        public static IBoundaryEnumerator<Line> GetEnumerator(Vector[] polygon)
         {
             Line[] lines = ToLines(polygon);
-            return new ArrayEnum<Line>(lines);
+            ArrayEnum<Line> lineEnum = new ArrayEnum<Line>(lines);
+            BoundaryLineEnumerator countTheLines = new BoundaryLineEnumerator(lineEnum, polygon.Length);
+            return countTheLines;
         }
 
         public Vertex start { get; set; }
         public Vertex end { get; set; }
+
+        public int Count { get; set; }
     }
 
     class IntersectionMesh<T> : BoundaryMesh<T>, IIntersectableMesh<MeshCell<T>, Edge<T>, Line>
@@ -101,6 +76,7 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing
         }
 
         static double accuracy = 1e-10;
+
         public (MeshCell<T>, IEnumerator<Edge<T>>) GetFirst(Line boundaryLine)
         {
             //Find cell that contains boundaryLine.Start;
@@ -137,7 +113,7 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing
             }
         }
         //Return end of ridge if parallel and overlapping.
-        public bool intersect(Edge<T> edge, Line line, ref IntersectionCase intersectionCase, out double alpha)
+        public bool Intersect(Edge<T> edge, Line line, ref IntersectionCase intersectionCase, out double alpha)
         {
             double alpha2;
             Vector vector;
@@ -214,7 +190,7 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing
             }
         }
 
-        public (MeshCell<T>, IEnumerator<Edge<T>>) getNeighborFromEdgeNeighbor(Edge<T> edge)
+        public (MeshCell<T>, IEnumerator<Edge<T>>) GetNeighborFromEdgeNeighbor(Edge<T> edge)
         {
             MeshCell<T> newCell = getNeighbour(edge);
             AfterCutRidgeEnumerator ridgeEnum = new AfterCutRidgeEnumerator(newCell.Edges, edge);
@@ -222,7 +198,7 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing
             return (newCell, ridgeEnum);
         }
 
-        public Edge<T> Subdivide(Edge<T> edge, List<Line> lines, double alpha)
+        public Edge<T> Subdivide(Edge<T> edge, List<Line> lines, double alpha, CyclicInterval boundaryCount)
         {
             MeshCell<T> cell = edge.Cell;
             //Divide Ridge and update Ridge Arrays
@@ -249,7 +225,7 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing
             MeshCell<T> newCell = new MeshCell<T> { Node = new T() };
             newCell.Node.Position = cell.Node.Position;
             AddCell(newCell);
-            CreateEdge(verticesOfNewRidgeBoundary, cell, newCell, out newEdges, out newNeighborEdges);
+            CreateEdge(verticesOfNewRidgeBoundary, cell, newCell, out newEdges, out newNeighborEdges, boundaryCount);
             //Link Ridges to old neighbors
             InsertEdgesAndVertices(newEdges, newNeighborEdges);
 
@@ -325,7 +301,7 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing
             return edge;
         }
 
-        public void CloseMesh(List<Line> lines, Edge<T> firstCutEdge)
+        public void CloseMesh(List<Line> lines, Edge<T> firstCutEdge, CyclicInterval boundaryCount)
         {
             MeshCell<T> cell = firstCutEdge.Cell;
             //Divide this cell
@@ -348,11 +324,11 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing
             Edge<T>[] newNeighborRidges;
             MeshCell<T> newCell = new MeshCell<T>();
             AddCell(newCell);
-            CreateEdge(verticesOfNewRidgeBoundary, cell, newCell, out newRidges, out newNeighborRidges);
+            CreateEdge(verticesOfNewRidgeBoundary, cell, newCell, out newRidges, out newNeighborRidges, boundaryCount);
             InsertEdgesAndVertices(newRidges, newNeighborRidges);
         }
 
-        public IEnumerator<Edge<T>> getConnectedRidgeEnum(Edge<T> edge)
+        public IEnumerator<Edge<T>> GetConnectedRidgeEnum(Edge<T> edge)
         {
             List<Edge<T>> outgoingEdges = new List<Edge<T>>();
             bool newNeighbor = true;
@@ -392,7 +368,7 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing
 
         public IEnumerator<Edge<T>> getNeighborFromLineDirection(Edge<T> edge, Line line)
         {
-            IEnumerator<Edge<T>> outgoingEdges = getConnectedRidgeEnum(edge);
+            IEnumerator<Edge<T>> outgoingEdges = GetConnectedRidgeEnum(edge);
             Edge<T> A = null;
             Edge<T> B = null;
             if (outgoingEdges.MoveNext())
@@ -493,21 +469,23 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing
             }
         }
 
-        public Edge<T> AddLineSegment(Edge<T> edge, double alpha)
+        public Edge<T> AddLineSegment(Edge<T> edge, double alpha, CyclicInterval boundaryCount)
         {
             DivideEdge(edge, alpha, out Edge<T> newRidge);
             edge.IsBoundary = true;
             edge.Twin.IsBoundary = true;
+            edge.BoundaryEdgeNumber = boundaryCount.Current();
+            edge.Twin.BoundaryEdgeNumber = boundaryCount.Current();
             edge.Cell.IntersectionVertex = edge.End.ID;
             edge.Twin.Cell.IntersectionVertex = edge.End.ID;
             return edge;
         }
 
-        public Edge<T> SubdivideWithoutNewVertex(Edge<T> edge, List<Line> lines)
+        public Edge<T> SubdivideWithoutNewVertex(Edge<T> edge, List<Line> lines, CyclicInterval boundaryCount)
         {
             MeshCell<T> cell = edge.Cell;
             Vertex cutVertex = edge.End;
-            IEnumerator<Edge<T>> neighEdges = getConnectedRidgeEnum(edge);
+            IEnumerator<Edge<T>> neighEdges = GetConnectedRidgeEnum(edge);
             while (neighEdges.MoveNext())
             {
                 MeshCell<T> neighbor = neighEdges.Current.Cell;
@@ -530,7 +508,7 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing
             Edge<T>[] newNeighborEdges;
             MeshCell<T> newCell = new MeshCell<T>();
             AddCell(newCell);
-            CreateEdge(verticesOfNewEdgeBoundary, cell, newCell, out newEdges, out newNeighborEdges);
+            CreateEdge(verticesOfNewEdgeBoundary, cell, newCell, out newEdges, out newNeighborEdges, boundaryCount);
             //Link Ridges to old neighbors
             InsertEdgesAndVertices(newEdges, newNeighborEdges);
 
@@ -539,10 +517,12 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing
             return edge;
         }
 
-        public void AddEdge(Edge<T> edge)
+        public void AddEdge(Edge<T> edge, CyclicInterval boundaryCount)
         {
             edge.IsBoundary = true;
             edge.Twin.IsBoundary = true;
+            edge.BoundaryEdgeNumber = boundaryCount.Current();
+            edge.Twin.BoundaryEdgeNumber = boundaryCount.Current();
             edge.Cell.IntersectionVertex = edge.End.ID;
             edge.Twin.Cell.IntersectionVertex = edge.End.ID;
         }

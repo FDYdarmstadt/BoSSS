@@ -23,6 +23,8 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing
             set { node.Position = value; }
         }
 
+        
+
         public VoronoiNode AsVoronoiNode()
         {
             return node;

@@ -10,7 +10,21 @@ namespace VoronoiTests.Grid
     {
         public override void Run()
         {
-            LShapedGrid();
+            FiveNodesInRectangle();
+        }
+
+        [Test]
+        public void FiveNodesInRectangle()
+        {
+            var rectangle = Rectangle(2, 2);
+            MultidimensionalArray nodes = MultidimensionalArray.Create(5, 2);
+            nodes.SetRow(0, new double[] { -0.5, 0.5});
+            nodes.SetRow(1, new double[] { -0.8, -0.4});
+            nodes.SetRow(2, new double[] { 0, 0 });
+            nodes.SetRow(3, new double[] { 0.8, 0.4 });
+            nodes.SetRow(4, new double[] { 0.5, -0.5 });
+
+            IGrid grid = VoronoiGrid2D.Polygonal( nodes,rectangle, 10, 0);
         }
 
         [Test]

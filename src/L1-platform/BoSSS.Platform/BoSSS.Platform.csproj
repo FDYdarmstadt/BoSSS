@@ -64,6 +64,7 @@
     <Compile Include="AffineTrafo.cs" />
     <Compile Include="BlockDiagonalMatrix.cs" />
     <Compile Include="BlockMsrMatrix.cs" />
+    <Compile Include="DataStructures.cs" />
     <Compile Include="Enum.cs" />
     <Compile Include="ExpirableLazy.cs" />
     <Compile Include="GeomTools.cs" />

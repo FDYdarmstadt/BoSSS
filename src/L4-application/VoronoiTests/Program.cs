@@ -5,7 +5,7 @@ namespace VoronoiTests
     class Program
     {
         public static void Main() {
-            TestBench selectedTest = availableTests["Solver_IpPoisson"];
+            TestBench selectedTest = availableTests["GridTests"];
             RunTest(selectedTest);
         }
 

@@ -10,19 +10,17 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing
     {
         public class Settings
         {
-            public VoronoiInfo GridInfo;
+            public VoronoiBoundary Boundary;
             public int NumberOfLloydIterations = 10;
             public int FirstCellNode_indice = 0;
         }
 
-        Settings settings;
-
-        MeshingAlgorithm.Settings ConvertToMesherSettings(Settings settings)
+        MeshingAlgorithm.Settings ConvertToMeshingAlgoSettings(Settings settings)
         {
             MeshingAlgorithm.Settings mesherSettings = new MeshingAlgorithm.Settings
             {
-                Boundary = settings.GridInfo.Boundary,
-                BoundingBox = settings.GridInfo.BoundingBox,
+                Boundary = settings.Boundary.Edge.Polygon,
+                BoundingBox = settings.Boundary.BoundingBox,
                 NumberOfLloydIterations = settings.NumberOfLloydIterations,
                 FirstCellNode_indice = settings.FirstCellNode_indice
             };
@@ -32,14 +30,14 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing
         internal BoundaryMesh<T> CreateMesh(List<T> nodes, Settings settings)
             
         {
-            MeshingAlgorithm.Settings meshingSettings = ConvertToMesherSettings(settings);
+            MeshingAlgorithm.Settings meshingSettings = ConvertToMeshingAlgoSettings(settings);
             BoundaryMesh<T> mesh = MeshingAlgorithm.ComputeMesh(nodes, meshingSettings);
             return mesh;
         }
 
         internal VoronoiGrid Convert2VoronoiGrid(BoundaryMesh<T> mesh, Settings settings)
         {
-            VoronoiGrid grid = GridConverter.Convert2VoronoiGrid(mesh, settings.GridInfo);
+            VoronoiGrid grid = GridConverter.Convert2VoronoiGrid(mesh, settings.Boundary);
             return grid;
         }
     }

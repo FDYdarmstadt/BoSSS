@@ -1,13 +1,11 @@
-﻿using System.Diagnostics;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using ilPSP;
-using BoSSS.Foundation.Grid.Classic;
+﻿using BoSSS.Foundation.Grid.Classic;
 using BoSSS.Foundation.Grid.RefElements;
 using BoSSS.Platform;
 using BoSSS.Platform.LinAlg;
+using ilPSP;
+using System.Collections.Generic;
+using System.Diagnostics;
+using System.Linq;
 
 namespace BoSSS.Foundation.Grid.Voronoi.Meshing
 {
@@ -18,21 +16,21 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing
 
     class GridConverter
     {
-        public static VoronoiGrid Convert2VoronoiGrid<T>(BoundaryMesh<T> mesh, VoronoiInfo info)
+        public static VoronoiGrid Convert2VoronoiGrid<T>(BoundaryMesh<T> mesh, VoronoiBoundary info)
             where T : IVoronoiNodeCastable
         {
             IReadOnlyList<MeshCell<T>> cells = mesh.GetCells();
-            (GridCommons grid, int[][] aggregation) = ExtractGridCommonsAndCellAggregation(cells);
+            (GridCommons grid, int[][] aggregation) = ExtractGridCommonsAndCellAggregation(cells, new CyclicArray<byte>(info.Edge.EdgeTags));
 
             IList<T> nodeList = mesh.GetNodes();
-            IList<VoronoiNode> voronoiNodeList = Cast(nodeList);
+            IList<VoronoiNode> voronoiNodeList = CastAsVoronoiNodes(nodeList);
             VoronoiNodes nodes = new VoronoiNodes(voronoiNodeList);
 
             VoronoiGrid voronoiGrid = new VoronoiGrid(grid, aggregation, nodes, info);
             return voronoiGrid;
         }
 
-        static (GridCommons grid, int[][] aggregation) ExtractGridCommonsAndCellAggregation<T>(IEnumerable<MeshCell<T>> cells)
+        static (GridCommons grid, int[][] aggregation) ExtractGridCommonsAndCellAggregation<T>(IEnumerable<MeshCell<T>> cells, CyclicArray<byte> EdgeTags)
         {
             List<BoSSS.Foundation.Grid.Classic.Cell> cells_GridCommons = new List<BoSSS.Foundation.Grid.Classic.Cell>();
             List<int[]> aggregation = new List<int[]>();
@@ -42,6 +40,10 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing
                 Vector[] VoronoiCell = cell.Vertices.Select(voVtx => voVtx.Position).ToArray();
                 int[,] iVtxTri = PolygonTesselation.TesselatePolygon(VoronoiCell);
                 int[] Agg2Pt = new int[iVtxTri.GetLength(0)];
+                if (IsBoundary(cell))
+                {
+                    int a = 4;
+                }
 
                 for (int iTri = 0; iTri < iVtxTri.GetLength(0); iTri++)
                 { // loop over triangles of voronoi cell
@@ -72,16 +74,18 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing
 
                     Debug.Assert(D1.CrossProduct2D(D2) > 1.0e-8);
 
-
-                    BoSSS.Foundation.Grid.Classic.Cell Cj = new BoSSS.Foundation.Grid.Classic.Cell();
-                    Cj.GlobalID = cells_GridCommons.Count;
-                    Cj.Type = CellType.Triangle_3;
+                    BoSSS.Foundation.Grid.Classic.Cell Cj = new BoSSS.Foundation.Grid.Classic.Cell()
+                    {
+                        GlobalID = cells_GridCommons.Count,
+                        Type = CellType.Triangle_3,
+                        NodeIndices = new int[] { cell.Vertices[iV0].ID, cell.Vertices[iV1].ID, cell.Vertices[iV2].ID },
+                    };
                     Cj.TransformationParams = MultidimensionalArray.Create(3, 2);
-                    Cj.NodeIndices = new int[] { cell.Vertices[iV0].ID, cell.Vertices[iV1].ID, cell.Vertices[iV2].ID };
                     Cj.TransformationParams.SetRowPt(0, V0);
                     Cj.TransformationParams.SetRowPt(1, V1);
                     Cj.TransformationParams.SetRowPt(2, V2);
-
+                    Cj.CellFaceTags = new CellFaceTag[] { };
+                    
                     Agg2Pt[iTri] = cells_GridCommons.Count;
                     cells_GridCommons.Add(Cj);
                 }
@@ -94,7 +98,19 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing
             return (grid, aggregation.ToArray());
         }
 
-        static IList<VoronoiNode> Cast<T>(IList<T> nodes)
+        static bool IsBoundary<T>(MeshCell<T> cell)
+        {
+            foreach (Edge<T> edge in cell.Edges)
+            {
+                if (edge.IsBoundary)
+                {
+                    return true;
+                };
+            }
+            return false;
+        }
+
+        static IList<VoronoiNode> CastAsVoronoiNodes<T>(IList<T> nodes)
             where T : IVoronoiNodeCastable
         {
             IList<VoronoiNode> voronoiNodes = new List<VoronoiNode>(nodes.Count);

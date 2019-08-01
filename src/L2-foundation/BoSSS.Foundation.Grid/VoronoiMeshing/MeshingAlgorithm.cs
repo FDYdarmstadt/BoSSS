@@ -1,9 +1,5 @@
-﻿using System;
+﻿using BoSSS.Platform.LinAlg;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using BoSSS.Platform.LinAlg;
 using System.Diagnostics;
 
 namespace BoSSS.Foundation.Grid.Voronoi.Meshing
@@ -28,7 +24,7 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing
         {
             // Create Voronoi mesh
             // =================================
-            IEnumerator<Line> boundaryLines = Line.GetEnumerator(settings.Boundary);
+            IBoundaryEnumerator<Line> boundaryLines = Line.GetEnumerator(settings.Boundary);
             IntersectionMesh<T> mesh = null;
 
             for (int iLloyd = 0; iLloyd <= settings.NumberOfLloydIterations; ++iLloyd)

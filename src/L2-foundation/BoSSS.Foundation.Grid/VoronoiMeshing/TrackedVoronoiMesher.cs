@@ -3,7 +3,7 @@ using System.Collections.Generic;
 
 namespace BoSSS.Foundation.Grid.Voronoi.Meshing
 {
-    public class TrackedVoronoiGrid
+    public class MappedVoronoiGrid
     {
         public VoronoiGrid Result;
         public OneWayArrayMap InputNodesToResultNodes;
@@ -37,7 +37,7 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing
 
     public class TrackedVoronoiMesher : Mesher<TrackableNode>
     {
-        public TrackedVoronoiGrid CreateGrid(VoronoiNodes nodes, Settings settings)
+        public MappedVoronoiGrid CreateGrid(VoronoiNodes nodes, Settings settings)
         {
             List<TrackableNode> mesherNodes = WrapInMesherNodes(nodes.Nodes);
             BoundaryMesh<TrackableNode> mesh = CreateMesh(mesherNodes, settings);
@@ -45,7 +45,7 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing
 
             OneWayArrayMap resultMap = ExtractMap(mesh.GetNodes());
             OneWayArrayMap inputMap = GetInputMap(resultMap, nodes.Count);
-            TrackedVoronoiGrid movingGrid = new TrackedVoronoiGrid
+            MappedVoronoiGrid movingGrid = new MappedVoronoiGrid
             {
                 Result = grid,
                 InputNodesToResultNodes = inputMap,

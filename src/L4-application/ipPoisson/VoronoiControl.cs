@@ -8,8 +8,6 @@ using BoSSS.Foundation.Grid.Aggregation;
 using BoSSS.Platform.LinAlg;
 using BoSSS.Foundation.Grid;
 
-
-
 namespace BoSSS.Application.SipPoisson{
 
     static public class VoronoiControl {

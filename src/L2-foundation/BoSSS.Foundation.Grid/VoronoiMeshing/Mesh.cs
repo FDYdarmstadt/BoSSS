@@ -1,14 +1,7 @@
-﻿using System;
+﻿using BoSSS.Platform;
+using BoSSS.Platform.LinAlg;
 using System.Collections;
 using System.Collections.Generic;
-using System.Linq;
-using System.Diagnostics;
-using ilPSP;
-using BoSSS.Foundation.Grid.Aggregation;
-using BoSSS.Foundation.Grid.Classic;
-using BoSSS.Foundation.Grid.RefElements;
-using BoSSS.Platform.LinAlg;
-using BoSSS.Platform;
 
 namespace BoSSS.Foundation.Grid.Voronoi.Meshing
 {
@@ -26,9 +19,15 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing
     class Edge<T>
     {
         public bool IsBoundary = false;
+
+        public int BoundaryEdgeNumber = -1;
+
         public Edge<T> Twin { get; set; }
+
         public MeshCell<T> Cell { get; set; }
+
         public Vertex Start { get; set; }
+
         public Vertex End { get; set; }
     }
 
@@ -290,7 +289,13 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing
             return newVertex;
         }
 
-        public void CreateEdge(Vertex[] vertices, MeshCell<T> cell, MeshCell<T> neighborCell, out Edge<T>[] ridges, out Edge<T>[] twinEdges)
+        public void CreateEdge(
+            Vertex[] vertices, 
+            MeshCell<T> cell, 
+            MeshCell<T> neighborCell, 
+            out Edge<T>[] ridges, 
+            out Edge<T>[] twinEdges,
+            CyclicInterval boundaryCount)
         {
             int count = vertices.Length - 1;
             ridges = new Edge<T>[count];
@@ -301,7 +306,9 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing
                 {
                     Start = vertices[i],
                     End = vertices[i + 1],
-                    Cell = cell
+                    Cell = cell,
+                    IsBoundary = true,
+                    BoundaryEdgeNumber = boundaryCount.Current(),
                 };
                 Edge<T> twinRidge = new Edge<T>
                 {
@@ -309,11 +316,13 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing
                     End = vertices[i],
                     Twin = ridge,
                     Cell = neighborCell,
-                    IsBoundary = true
+                    IsBoundary = true,
+                    BoundaryEdgeNumber = boundaryCount.Current(),
                 };
                 ridge.Twin = twinRidge;
                 ridges[i] = ridge;
                 twinEdges[count - 1 - i] = twinRidge;
+                boundaryCount.Next();
             }
         }
         

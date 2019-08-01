@@ -28,7 +28,7 @@ namespace BoSSS.Foundation.Grid.Voronoi {
     [Serializable]
     public class VoronoiGrid : Aggregation.AggregationGrid
     {
-        VoronoiInfo info;
+        VoronoiBoundary boundary;
 
         VoronoiNodes nodes;
 
@@ -36,21 +36,40 @@ namespace BoSSS.Foundation.Grid.Voronoi {
             get { return nodes; }
         }
 
-        public VoronoiInfo Info {
-            get { return info; }
+        public VoronoiBoundary Boundary {
+            get { return boundary; }
         }
+
+        VoronoiGrid() { }
 
         public VoronoiGrid(IGrid pGrid,
             int[][] logialToGeometricalCellMap,
             VoronoiNodes nodes,
-            VoronoiInfo voronoiInfo)
+            VoronoiBoundary boundary)
             : base(pGrid, logialToGeometricalCellMap)
         {
             this.nodes = nodes;
-            info = voronoiInfo;
+            this.boundary = boundary;
+
+            DefineEdgeTags(boundary.BoundaryCells);
+            if (boundary.EdgeTagNames != null)
+            {
+                RegisterEdgeTagNames(EdgeTagNames);
+            }
         }
 
-        VoronoiGrid() { }
+        private void DefineEdgeTags(BoundaryCellIndice[] cellsIndices)
+        {
+
+        }
+
+        private void RegisterEdgeTagNames(IDictionary<byte, string> EdgeTagNames)
+        {
+            foreach(KeyValuePair<byte, string> tagName in EdgeTagNames)
+            {
+                this.EdgeTagNames.Add(tagName);
+            }
+        }
 
         public double EdgeVelocity(int jEdge, double[] x, Vector normal)
         {
@@ -70,16 +89,27 @@ namespace BoSSS.Foundation.Grid.Voronoi {
         }
     }
 
-    public class VoronoiInfo
-    {
-        public Vector[] BoundingBox;
-        public Vector[] Boundary;
-        //public VoronoiBoundary Boundary;
-    }
-
     public class VoronoiBoundary
     {
-        Vector[] EdgePolygon;
-        byte[] EdgeTag;
+        public Vector[] BoundingBox;
+
+        public Edge Edge;
+
+        public BoundaryCellIndice[] BoundaryCells;
+
+        public IDictionary<byte, string> EdgeTagNames;
+    }
+
+    public class Edge
+    {
+        public Vector[] Polygon;
+
+        public byte[] EdgeTags;
+    }
+
+    public class BoundaryCellIndice
+    {
+        public int CellIndice;
+        public int EdgeIndice;
     }
 }

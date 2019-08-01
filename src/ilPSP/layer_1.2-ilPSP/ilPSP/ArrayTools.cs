@@ -1020,7 +1020,7 @@ namespace ilPSP.Utils {
         /// </summary>
         /// <param name="a"></param>
         /// <param name="val"></param>
-        public static void SetAll<T,V>(this T a, V val) where T: IList<V> {
+        public static void SetAll<T, V>(this T a, V val) where T: IList<V> {
 
             for (int i = a.Count - 1; i >= 0; i--)
                 a[i] = val;

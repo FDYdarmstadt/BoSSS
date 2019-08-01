@@ -63,16 +63,27 @@ namespace BoSSS.Foundation.Grid.Voronoi
 
             VoronoiMesher.Settings mesherSettings = new VoronoiMesher.Settings
             {
-                GridInfo = new VoronoiInfo
+                Boundary = new VoronoiBoundary()
                 {
                     BoundingBox = boundingBox,
-                    Boundary = PolygonBoundary
+                    Edge = new Edge
+                    {
+                        Polygon = PolygonBoundary,
+                        EdgeTags = DefaultEdgeTags(PolygonBoundary.Length),
+                    }
                 },
                 NumberOfLloydIterations = NoOfLyyodsIter
             };
 
             VoronoiMesher mesher = new VoronoiMesher();
             return mesher.CreateGrid(nodes, mesherSettings);
+        }
+
+        static byte[] DefaultEdgeTags(int count)
+        {
+            byte[] edgetag = new byte[count];
+            edgetag.SetAll((byte)1);
+            return edgetag;
         }
 
         /// <summary>
@@ -103,10 +114,13 @@ namespace BoSSS.Foundation.Grid.Voronoi
 
             VoronoiMesher.Settings settings = new VoronoiMesher.Settings
             {
-                GridInfo = new VoronoiInfo
+                Boundary = new VoronoiBoundary()
                 {
                     BoundingBox = boundingBox,
-                    Boundary = PolygonBoundary
+                    Edge = new Edge {
+                        Polygon = PolygonBoundary,
+                        EdgeTags = DefaultEdgeTags(PolygonBoundary.Length),
+                    }
                 },
                 NumberOfLloydIterations = NoOfLyyodsIter,
                 FirstCellNode_indice = FirstCellNode_Indice
