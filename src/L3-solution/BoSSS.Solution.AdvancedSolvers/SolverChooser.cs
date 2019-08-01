@@ -606,8 +606,19 @@ namespace BoSSS.Solution {
                 case LinearSolverConfig.Code.exp_gmres_levelpmg:
                     templinearSolve = new SoftGMRES() {
                         m_Tolerance = lc.ConvergenceCriterion,
-                        Precond = new LevelPmg()
+                        m_MaxIterations = lc.MaxSolverIterations,
+                        Precond = new LevelPmg() { UseHiOrderSmoothing = true }
                     };
+
+
+                    //templinearSolve = new OrthonormalizationScheme() {
+                    //    Tolerance = lc.ConvergenceCriterion,
+                    //    MaxIter = lc.MaxSolverIterations,
+                    //    PrecondS = new ISolverSmootherTemplate[] {
+                    //        new LevelPmg() { UseHiOrderSmoothing = true }
+                    //        //new BlockJacobi() { NoOfIterations = 1, omega = 0.5 }
+                    //    }
+                    //};
                     break;
 
                 //testing area, please wear a helmet ...
@@ -1571,7 +1582,8 @@ namespace BoSSS.Solution {
                             NoOfPartsPerProcess = NoOfBlocks
                         },
                         Overlap = 2, // overlap seems to help; more overlap seems to help more
-                        EnableOverlapScaling = true
+                        EnableOverlapScaling = true,
+                        UsePMGinBlocks = false
                     };
 
                     

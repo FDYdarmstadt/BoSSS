@@ -141,7 +141,7 @@ namespace BoSSS.Solution.CompressibleFlowCommon.Convection {
                     //   + state.Pressure * ComponentVector;
                     if (intermediateWaveSpeed > 0.0) {
                         edgeFlux = normalVelocityIn * Uin[component + 1][e + Offset, n]
-                            + pIn/MachScaling * normal[e + Offset, n, component];
+                            + pIn / MachScaling * normal[e + Offset, n, component];
                         if (waveSpeedIn <= 0.0) {
                             double modifiedMomentum = densityIn *
                                 (waveSpeedIn - normalVelocityIn) /
@@ -152,7 +152,7 @@ namespace BoSSS.Solution.CompressibleFlowCommon.Convection {
                         }
                     } else {
                         edgeFlux = normalVelocityOut * Uout[component + 1][e + Offset, n]
-                            + pOut/MachScaling * normal[e + Offset, n, component];
+                            + pOut / MachScaling * normal[e + Offset, n, component];
                         if (waveSpeedOut >= 0.0) {
                             double modifiedMomentum = densityOut *
                                 (waveSpeedOut - normalVelocityOut) /

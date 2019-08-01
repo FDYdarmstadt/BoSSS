@@ -216,7 +216,7 @@ namespace BoSSS.Application.SipPoisson {
         /// <param name="solver_name">
         /// Name of solver to use.
         /// </param>
-        public static SipControl TestCartesian2(int Res, int Dim, LinearSolverConfig.Code solver_name = LinearSolverConfig.Code.exp_gmres_levelpmg, int deg = 5) {
+        public static SipControl TestCartesian2(int Res, int Dim, LinearSolverConfig.Code solver_name = LinearSolverConfig.Code.exp_Kcycle_schwarz, int deg = 5) {
             if (Dim != 2 && Dim != 3)
                 throw new ArgumentOutOfRangeException();
 
@@ -231,8 +231,12 @@ namespace BoSSS.Application.SipPoisson {
             R.ExactSolution_provided = true;
             R.LinearSolver.NoOfMultigridLevels = int.MaxValue;
             R.LinearSolver.SolverCode = solver_name;
-            //R.TargetBlockSize = 100;
+            // exp_Kcycle_schwarz
+            // exp_gmres_levelpmg
 
+#if DEBUG
+            R.LinearSolver.TargetBlockSize = 100;
+#endif
 
 
             R.GridFunc = delegate () {

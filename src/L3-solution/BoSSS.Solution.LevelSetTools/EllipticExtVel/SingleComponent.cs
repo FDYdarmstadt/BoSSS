@@ -52,7 +52,8 @@ namespace BoSSS.Solution.LevelSetTools.EllipticExtension {
 
         public void CoefficientUpdate(CoefficientSet csA, CoefficientSet csB, int[] DomainDGdeg, int TestDGdeg) {
             NegCellLengthScaleS = csA.CellLengthScales;
-            PosCellLengthScaleS = csB.CellLengthScales;
+            if (csB != null)
+                PosCellLengthScaleS = csB.CellLengthScales;
         }
 
 
@@ -73,7 +74,8 @@ namespace BoSSS.Solution.LevelSetTools.EllipticExtension {
         /// <returns>the evaluated penalty flux</returns>
         public double LevelSetForm(ref CommonParamsLs inp, double[] uA, double[] uB, double[,] Grad_uA, double[,] Grad_uB, double vA, double vB, double[] Grad_vA, double[] Grad_vB) {
             double NegCellLengthScale = NegCellLengthScaleS[inp.jCell];
-            double PosCellLengthScale = PosCellLengthScaleS[inp.jCell];
+            double PosCellLengthScale = (PosCellLengthScaleS != null) ? PosCellLengthScaleS[inp.jCell] : NegCellLengthScaleS[inp.jCell];
+
 
             double hmin;
             if (NegCellLengthScale.IsNaN()) {

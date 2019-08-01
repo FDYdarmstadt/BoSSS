@@ -249,7 +249,7 @@ namespace BoSSS.Foundation.XDG.Quadrature
             jacobian = jacobian.ExtractSubArrayShallow(new int[] { 0, 0, -1, -1 });
 
             double[] tmp_grad = gradient.Storage;
-            jacobian.gemv(1, tmp_grad, 0, tmp_grad);
+            jacobian.GEMV(1, tmp_grad, 0, tmp_grad);
 
             return gradient;
         }
