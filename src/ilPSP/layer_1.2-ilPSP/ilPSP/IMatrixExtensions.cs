@@ -633,37 +633,13 @@ namespace ilPSP {
                                 }
                                 
                             }
-                            
-                            /*
-                            if (!transpose) {
-
-                                for (int i = 0; i < m_NoOfRows; i++) {
-                                    double yi = 0;
-
-                                    for (int j = 0; j < m_NoOfCols; j++)
-                                        yi += M[i, j] * x[j];
-
-                                    y[i] = y[i] * yScaling + yi * xScaling;
-                                }
-
-                            } else {
-
-                                
-                            }
-                            */
                         }
                     }
                 }
-
-
-
             } else {
                 // +++++++++++++++++
                 // Reference version
                 // +++++++++++++++++
-
-               
-
 
                 if (!transpose) {
                     
