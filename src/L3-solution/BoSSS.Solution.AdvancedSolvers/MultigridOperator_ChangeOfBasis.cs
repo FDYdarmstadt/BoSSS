@@ -492,9 +492,9 @@ namespace BoSSS.Solution.AdvancedSolvers {
 #if DEBUG
             var Mbefore = M.CloneAs();
 #endif
+            int n = M.NoOfRows;
             unsafe
             {
-                int n = M.NoOfRows;
 
                 void RowScale(double* pS, int i, double alpha, int RowCyc)
                 {
