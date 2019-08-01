@@ -168,16 +168,7 @@ namespace BoSSS.Solution.CompressibleFlowCommon.ShockCapturing {
             Debug.Assert(fot.GetLength(0) == NumOfCells);
             int NumOfNodes = fin.GetLength(1); // no of nodes per cell
 
-            double[] penalties = new double[NumOfCells];
-            for (int cell = 0; cell < NumOfCells; cell++) { // loop over cells...
-                int iEdge = efp.e0 + cell;
-                int jCellIn = GridData.Edges.CellIndices[iEdge, 0];
-                int jCellOut = GridData.Edges.CellIndices[iEdge, 1];
-                double penalty = this.PenaltyFactor * Math.Max(CellLengthScale[jCellIn], CellLengthScale[jCellOut]);
-                penalties[cell] = penalty;
-            }
-
-            InternalEdgeForXDG(efp, Uin, Uout, GradUin, GradUout, fin, fot, penalties);
+            InternalEdgeForXDG(efp, Uin, Uout, GradUin, GradUout, fin, fot, null);
         }
 
         /// <summary>
@@ -199,10 +190,20 @@ namespace BoSSS.Solution.CompressibleFlowCommon.ShockCapturing {
             int NumOfCells = efp.Len;
 
             for (int cell = 0; cell < NumOfCells; cell++) { // loop over cells...
-                int iEdge = efp.e0 + cell;
                 //double Penalty = penalty(gridDat.Edges.CellIndices[iEdge, 0], gridDat.Edges.CellIndices[iEdge, 1], gridDat.Cells.cj);
+                int iEdge = efp.e0 + cell;
 
-                double penalty = penalties[cell];
+                double penalty;
+                if (penalties != null) {
+                    // Use given penalties at the interface
+                    Debug.Assert(iEdge == efp.e0, "Cell index should be the edge index at the interface, int cell should always be zero");
+                    penalty = penalties[iEdge];
+                } else {
+                    // Penalty is calculated according to the formula in background cells
+                    int jCellIn = this.GridData.Edges.CellIndices[iEdge, 0];
+                    int jCellOut = this.GridData.Edges.CellIndices[iEdge, 1];
+                    penalty = this.PenaltyFactor * Math.Max(this.CellLengthScale[jCellIn], this.CellLengthScale[jCellOut]);
+                }
 
                 for (int node = 0; node < NumOfNodes; node++) { // loop over nodes...
                     // SIPG Flux Loops
