@@ -492,9 +492,9 @@ namespace BoSSS.Solution.AdvancedSolvers {
 #if DEBUG
             var Mbefore = M.CloneAs();
 #endif
+            int n = M.NoOfRows;
             unsafe
             {
-                int n = M.NoOfRows;
 
                 void RowScale(double* pS, int i, double alpha, int RowCyc)
                 {
@@ -598,7 +598,6 @@ namespace BoSSS.Solution.AdvancedSolvers {
             //var Q = MultidimensionalArray.Create(M.Lengths);
             //Test.AccEye(1.0);
             Test.Multiply(-1.0, L, Mbefore, R, 1.0, "ij", "ik", "kl", "lj");
-            int n = Test.NoOfRows;
             for(int i = 0; i < n; i++) {
                 //Debug.Assert((Test[i, i].Abs() - 1.0).Abs() < 1.0e-8);
                 //Test[i, i] -= Math.Sign(Test[i, i]);
