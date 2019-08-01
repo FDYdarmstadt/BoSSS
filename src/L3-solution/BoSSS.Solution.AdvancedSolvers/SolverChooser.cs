@@ -72,7 +72,7 @@ namespace BoSSS.Solution {
 
             //This is a hack to get DOFperCell in every Multigridlevel
 
-            precondsolver = GenerateLinear_body(m_lc, m_nc, ts_MGS, ts_MultigridOperatorConfig, true);
+            precondsolver = GenerateLinear_body(m_nc.PrecondSolver, m_nc, ts_MGS, ts_MultigridOperatorConfig, true);
             linsolver = GenerateLinear_body(m_lc, m_nc, ts_MGS, ts_MultigridOperatorConfig);
             Debug.Assert(linsolver != null);
             Debug.Assert(precondsolver != null);
@@ -230,8 +230,8 @@ namespace BoSSS.Solution {
             // the linear solvers:
             // +++++++++++++++++++++++++++++++++++++++++++++
 
-            if (lc == null)
-                throw new ArgumentNullException();
+            //if (lc == null)
+            //    throw new ArgumentNullException();
 
             ISolverSmootherTemplate templinearSolve = null;
 
