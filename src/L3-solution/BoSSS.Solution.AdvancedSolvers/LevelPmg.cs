@@ -210,7 +210,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
             m_LsubIdx = LsubIdx.ToArray();
 
 
-            BlockPartitioning localBlocking = new BlockPartitioning(GsubIdx.Count, lowLocalBlocks_i0, lowLocalBlocks__N, Map.MPI_Comm);
+            BlockPartitioning localBlocking = new BlockPartitioning(GsubIdx.Count, lowLocalBlocks_i0, lowLocalBlocks__N, Map.MPI_Comm, i0isLocal:true);
             var P01SubMatrix = new BlockMsrMatrix(localBlocking);
             op.OperatorMatrix.AccSubMatrixTo(1.0, P01SubMatrix, GsubIdx, default(int[]), GsubIdx, default(int[]));
 
@@ -315,7 +315,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                         HighOrderBlocks_LU[j][iVar].BacksubsLU(HighOrderBlocks_LUpivots[j][iVar], xhi, bHi);
                         //HighOrderBlocks_LU[j][iVar].gemv(1.0, bHi, 0.0, xhi);
 
-                        X.AccV(1.0, xhi, offset_acc: i0_hi);
+                        X.AccV(1.0, xhi, offset_acc: i0_hi - Mapi0);
                     }
                 }
             }
