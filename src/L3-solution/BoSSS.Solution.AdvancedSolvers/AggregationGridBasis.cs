@@ -792,7 +792,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                     var Trf = this.CompositeBasis[jAgg].ExtractSubArrayShallow(k, -1, -1);
 
                     //Trf.Solve(FulCoords, AggCoords);
-                    Trf.gemv(1.0, AggCoords, 0.0, FulCoords);
+                    Trf.GEMV(1.0, AggCoords, 0.0, FulCoords);
 
                     for(int n = 0; n < N; n++) {
                         FullGridVector[j0 + n] = FulCoords[n];
@@ -943,6 +943,13 @@ namespace BoSSS.Solution.AdvancedSolvers {
             return m_Lengths[p];
         }
 
+
+        /// <summary>
+        /// Always equal 1 for a non-XDG basis.
+        /// </summary>
+        public virtual int GetNoOfSpecies(int jCell) {
+            return 1;
+        }
        
         /// <summary>
         /// The projector in the L2 Norm, from the space defined by the basis <see cref="DGBasis"/> on the original,

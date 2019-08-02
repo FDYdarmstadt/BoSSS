@@ -234,6 +234,9 @@ namespace BoSSS.Application.SipPoisson {
             // exp_Kcycle_schwarz
             // exp_gmres_levelpmg
 
+#if DEBUG
+            R.LinearSolver.TargetBlockSize = 100;
+#endif
 
 
             R.GridFunc = delegate () {
