@@ -58,12 +58,12 @@ namespace BoSSS.Application.FSI_Solver
             // ============================
 
             C.AdaptiveMeshRefinement = true;
-            C.RefinementLevel = 4;
+            C.RefinementLevel = 20;
 
             C.GridFunc = delegate
             {
-                double[] Xnodes = GenericBlas.Linspace(-1 * BaseSize, 1 * BaseSize, 14);
-                double[] Ynodes = GenericBlas.Linspace(-1 * BaseSize, 1 * BaseSize, 14);
+                double[] Xnodes = GenericBlas.Linspace(-1 * BaseSize, 1 * BaseSize, 28);
+                double[] Ynodes = GenericBlas.Linspace(-1 * BaseSize, 1 * BaseSize, 28);
 
                 var grd = Grid2D.Cartesian2DGrid(Xnodes, Ynodes, periodicX: false, periodicY: false);
 
