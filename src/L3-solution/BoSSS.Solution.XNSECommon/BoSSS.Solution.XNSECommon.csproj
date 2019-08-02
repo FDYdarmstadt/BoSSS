@@ -53,10 +53,14 @@
     <Compile Include="ConvectionInBulk_LLF.cs" />
     <Compile Include="ConvectionInBulk_Localized.cs" />
     <Compile Include="CutCellBoundingBoxes.cs" />
-    <Compile Include="DynamicInterfaceConditions.cs" />
     <Compile Include="EnergyOperatorComponents.cs" />
     <Compile Include="EnergyUtils.cs" />
     <Compile Include="IncompressibleMultiphaseBoundaryCondMap.cs" />
+    <Compile Include="ConvectionInSpeciesBulk_LLF.cs" />
+    <Compile Include="XNSE_OperatorComponents.cs" />
+    <Compile Include="PressureInSpeciesBulk.cs" />
+    <Compile Include="SpeciesDivergence.cs" />
+    <Compile Include="ViscosityInSpeciesBulk.cs" />
     <Compile Include="PatchRecovery.cs" />
     <Compile Include="XLaplace.cs" />
     <Compile Include="ViscosityInBulk_Localized.cs" />
@@ -75,6 +79,7 @@
     <Compile Include="ViscosityAtLevelSet_V1.cs" />
     <Compile Include="ViscosityAtLevelSet_V2.cs" />
     <Compile Include="ViscosityInBulk.cs" />
+    <Compile Include="XNSE_OperatorFactory.cs" />
     <Compile Include="XVelocityProjection.cs" />
   </ItemGroup>
   <ItemGroup>
@@ -93,10 +98,6 @@
     <ProjectReference Include="..\..\L2-foundation\BoSSS.Foundation.XDG\BoSSS.Foundation.XDG.csproj">
       <Project>{9A8CDC1F-64F7-441E-849D-66F2C56600F2}</Project>
       <Name>BoSSS.Foundation.XDG</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\..\L3-solution\BoSSS.Solution.NSECommon\BoSSS.Solution.NSECommon.csproj">
-      <Project>{E56B9CE4-14DC-4256-A337-46E5D298B722}</Project>
-      <Name>BoSSS.Solution.NSECommon</Name>
     </ProjectReference>
     <ProjectReference Include="..\..\L3-solution\BoSSS.Solution.Tecplot\BoSSS.Solution.Tecplot.csproj">
       <Project>{D0546422-EC92-4964-82E9-8EE819A2F786}</Project>
@@ -126,9 +127,9 @@
       <Project>{9ee2fcad-e8a4-4f14-b932-d1a4904d715d}</Project>
       <Name>BoSSS.Solution.LevelSetTools</Name>
     </ProjectReference>
-    <ProjectReference Include="..\BoSSS.Solution.XheatCommon\BoSSS.Solution.XheatCommon.csproj">
-      <Project>{556af24d-182b-4b77-a727-7e18b6488f78}</Project>
-      <Name>BoSSS.Solution.XheatCommon</Name>
+    <ProjectReference Include="..\BoSSS.Solution.NSECommon\BoSSS.Solution.NSECommon.csproj">
+      <Project>{e56b9ce4-14dc-4256-a337-46e5d298b722}</Project>
+      <Name>BoSSS.Solution.NSECommon</Name>
     </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
