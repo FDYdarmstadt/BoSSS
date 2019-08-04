@@ -966,7 +966,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
         public MultidimensionalArray[] CompositeBasis {
             get {
                 if(m_CompositeBasis == null) {
-                    SetupCompositeBasis();
+                    //SetupCompositeBasis();
                 }
                 return m_CompositeBasis;
             }
