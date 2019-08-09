@@ -244,7 +244,7 @@ namespace BoSSS.Solution {
                 var CoordTrf = new double[Np];
 
                 //if (Oasch) {
-                trafo.gemv(1.0, CoordOrg, 0.0, CoordTrf, transpose: false);
+                trafo.GEMV(1.0, CoordOrg, 0.0, CoordTrf, transpose: false);
                 //} else {
                 //    CoordTrf.SetV(CoordOrg);
                 //}
@@ -459,7 +459,7 @@ namespace BoSSS.Solution {
                 for (int n = 0; n < Np; n++) {
                     ReDistDGCoords_jl[n] = ReDistDGCoords_j[0][N0rcv + n];
                 }
-                Trafo.gemv(1.0, ReDistDGCoords_jl, 1.0, Coords_j, transpose: false);
+                Trafo.GEMV(1.0, ReDistDGCoords_jl, 1.0, Coords_j, transpose: false);
                 BckTrafo(Coords_j, Np, 0, NewGrid, j, pDeg, scale.Sqrt());
 
             } else {
@@ -476,7 +476,7 @@ namespace BoSSS.Solution {
                 //    Trafo.gemv(1.0, ReDistDGCoords_jl, 1.0, Coords_j, transpose: true);
                 //} else {
                 double[] buf = new double[Np];
-                Trafo.gemv(1.0, ReDistDGCoords_jl, 1.0, buf, transpose: true);
+                Trafo.GEMV(1.0, ReDistDGCoords_jl, 1.0, buf, transpose: true);
                 BckTrafo(buf, Np, 0, NewGrid, j, pDeg, 1.0 / scale.Sqrt());
 
                 Coords_j.AccV(1.0, buf);

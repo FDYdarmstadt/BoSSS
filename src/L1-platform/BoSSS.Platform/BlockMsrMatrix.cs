@@ -2255,62 +2255,16 @@ namespace ilPSP.LinSolvers {
             ComPatternValid = true;
         }
 
-        /// <summary>
-        /// 'Sp'arse 'M'atrix/'V'ector 'M'ultiplication;<br/>
-        /// Performs the calculation
-        /// <paramref name="acc"/> = <paramref name="acc"/>*<paramref name="beta"/> + this*<paramref name="a"/>*<paramref name="alpha"/>;
-        public void SpMV<VectorType1, VectorType2>(double alpha, VectorType1 a, double beta, VectorType2 acc)
-            where VectorType1 : IList<double>
-            where VectorType2 : IList<double> //
-        {
-            //#if DEBUG
-            //            this.VerifyDataStructure("SpMV");
-
-            //            double aNorm = a.L2NormPow2().MPISum(this.MPI_Comm).Sqrt();
-            //            double accNorm = acc.L2NormPow2().MPISum(this.MPI_Comm).Sqrt();
-
-            //            var T = this.ToMsrMatrix();
-            //            double[] accB4 = acc.ToArray();
-            //            double[] aB4 = a.ToArray();
-
-            //            double[] accB4B4 = acc.ToArray();
-
-            //            T.SpMVpara(alpha, a, beta, acc);
-
-
-            //            this.__SpMV(alpha, aB4, beta, accB4);
-
-            //            double aErr = GenericBlas.L2DistPow2(aB4, a).MPISum(this.MPI_Comm).Sqrt();
-            //            double accErr = GenericBlas.L2DistPow2(accB4, acc).MPISum(this.MPI_Comm).Sqrt();
-
-            //            double compNorm = T.InfNorm() * Math.Max(aNorm, accNorm);
-            //            compNorm = Math.Max(Math.Sqrt(double.Epsilon), compNorm);
-            //            double aErr_rel = aErr / compNorm;
-            //            double accErr_rel = accErr / compNorm;
-            //            if (aErr_rel > 1.0e-8 || double.IsInfinity(aErr_rel) || double.IsNaN(aErr_rel))
-            //                throw new ArithmeticException("SpMV error");
-            //            if (accErr_rel > 1.0e-8 || double.IsInfinity(accErr_rel) || double.IsNaN(accErr_rel)) {
-            //                throw new ArithmeticException("SpMV error");
-            //            }
-
-            //#else
-
-            this.__SpMV(alpha, a, beta, acc);
-//#endif
-        }
-
-
-
+        public static Stopwatch SPMV_tot = new Stopwatch();
+        public static Stopwatch SPMV_inner = new Stopwatch();
+        public static Stopwatch SPMV_outer = new Stopwatch();
 
         /// <summary>
         /// Sparse Matrix/Vector multiplication;
         /// the calculation 
-        /// <paramref name="acc"/> = <paramref name="acc"/>*<paramref name="beta"/>
-        /// + this*<paramref name="a"/>*<paramref name="alpha"/>
+        /// <paramref name="acc"/> = <paramref name="acc"/>*<paramref name="beta"/> + this*<paramref name="_a"/>*<paramref name="alpha"/>
         /// is performed;
         /// </summary>
-        /// <typeparam name="VectorType1"></typeparam>
-        /// <typeparam name="VectorType2"></typeparam>
         /// <param name="alpha"></param>
         /// <param name="_a">
         /// input; vector to be multiplied with this matrix from the right
@@ -2319,12 +2273,13 @@ namespace ilPSP.LinSolvers {
         /// <param name="acc">
         /// length of accumulator must be at least the update length 
         /// </param>
-        private void __SpMV<VectorType1, VectorType2>(double alpha, VectorType1 _a, double beta, VectorType2 acc)
+        public void SpMV<VectorType1, VectorType2>(double alpha, VectorType1 _a, double beta, VectorType2 acc)
             where VectorType1 : IList<double>
             where VectorType2 : IList<double> //
         {
             using (new FuncTrace()) {
-                
+                SPMV_tot.Start();
+
                 if (_a.Count != this._ColPartitioning.LocalLength)
                     throw new ArgumentException("Mismatch in number of columns.");
                 if (acc.Count != this._RowPartitioning.LocalLength)
@@ -2451,7 +2406,7 @@ namespace ilPSP.LinSolvers {
                                         int jBlkCol = kv.Key;
                                         Debug.Assert(BE.jBlkCol == jBlkCol);
                                         if (_ColPartitioning.IsLocalBlock(jBlkCol)) {
-
+                SPMV_outer.Start();
                                             int locBlockColOffset = _ColPartitioning.GetBlockI0(jBlkCol) - _ColPartitioning.i0;
 
                                             int ColBlockType = _ColPartitioning.GetBlockType(jBlkCol);
@@ -2466,7 +2421,7 @@ namespace ilPSP.LinSolvers {
                                             Debug.Assert(RowLenSblk.Length == NoOfSblk_Rows);
                                             Debug.Assert(Col_i0Sblk.Length == NoOfSblk_Cols);
                                             Debug.Assert(ColLenSblk.Length == NoOfSblk_Cols);
-
+                SPMV_outer.Stop();
                                             for (int iSblkRow = 0; iSblkRow < NoOfSblk_Rows; iSblkRow++) { // loop over sub-block rows
 
                                                 int _iRowLoc = locBlockRowOffset + Row_i0Sblk[iSblkRow]; // local row index
@@ -2522,10 +2477,12 @@ namespace ilPSP.LinSolvers {
                                                                 //if (I != J || CI != I)
                                                                 //    Console.Write("");
 
+                SPMV_inner.Start();
                                                                 BLAS.dgemv('t', J, I, 1.0, pRawMem + Offset, CI, pa + _jColLoc, 1, 1.0,
                                                                     //arschKakke, 
                                                                     pVecAccu + _iRowBlockLoc, 
                                                                     1);
+                SPMV_inner.Stop();
                                                             }
 
                                                             //for (int i = 0; i < I; i++) {
@@ -2544,6 +2501,7 @@ namespace ilPSP.LinSolvers {
                                                     }
                                                 }
                                             }
+                                            
                                         } else {
                                             ContainsExternal = true;
                                         }
@@ -2679,6 +2637,7 @@ namespace ilPSP.LinSolvers {
                         }
                     }
                 }
+                SPMV_tot.Stop();
             }
         }
 
