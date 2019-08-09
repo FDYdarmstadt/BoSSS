@@ -108,35 +108,29 @@ namespace BoSSS.Solution.AdvancedSolvers
 
         public bool m_Converged = false;
 
+        /// <summary>
+        /// ~
+        /// </summary>
         public void Solve<V1, V2>(V1 _X, V2 _B)
             where V1 : IList<double>
-            where V2 : IList<double>
-        {
+            where V2 : IList<double> {
 
-            using (var tr = new FuncTrace())
-            {
+            using (var tr = new FuncTrace()) {
                 double[] X, B;
-                if (_X is double[])
-                {
+                if (_X is double[]) {
                     X = _X as double[];
-                }
-                else
-                {
+                } else {
                     X = _X.ToArray();
                 }
-                if (_B is double[])
-                {
+                if (_B is double[]) {
                     B = _B as double[];
-                }
-                else
-                {
+                } else {
                     B = _B.ToArray();
                 }
 
 
                 double bnrm2 = B.L2NormPow2().MPISum().Sqrt();
-                if (bnrm2 == 0.0)
-                {
+                if (bnrm2 == 0.0) {
                     bnrm2 = 1.0;
                 }
 
@@ -149,17 +143,13 @@ namespace BoSSS.Solution.AdvancedSolvers
                 //r = M \ ( b-A*x );, where M is the precond
                 z.SetV(B);
                 Matrix.SpMV(-1.0, X, 1.0, z);
-                if (IterationCallback != null)
-                {
+                if (IterationCallback != null) {
                     IterationCallback(0, X.CloneAs(), z.CloneAs(), this.m_mgop);
                 }
-                if (this.Precond != null)
-                {
+                if (this.Precond != null) {
                     r.Clear();
                     this.Precond.Solve(r, z);
-                }
-                else
-                {
+                } else {
                     r.SetV(z);
                 }
 
@@ -167,8 +157,7 @@ namespace BoSSS.Solution.AdvancedSolvers
                 double error2 = z.L2NormPow2().MPISum().Sqrt();
 
                 double error = (r.L2NormPow2().MPISum().Sqrt()) / bnrm2;
-                if (error < this.m_Tolerance)
-                {
+                if (error < this.m_Tolerance) {
                     if (!object.ReferenceEquals(_X, X))
                         _X.SetV(X);
                     B.SetV(z);
@@ -193,21 +182,17 @@ namespace BoSSS.Solution.AdvancedSolvers
                 double[] s = new double[Nloc], w = new double[Nloc], y;
                 double temp;
                 int iter;
-                for (iter = 1; iter <= m_MaxIterations; iter++)
-                { // GMRES iterations
-                  // r = M \ ( b-A*x );
+                for (iter = 1; iter <= m_MaxIterations; iter++) { // GMRES iterations
+                                                                  // r = M \ ( b-A*x );
                     z.SetV(B);
                     Matrix.SpMV(-1.0, X, 1.0, z);
 
                     error2 = z.L2NormPow2().MPISum().Sqrt();
 
-                    if (this.Precond != null)
-                    {
+                    if (this.Precond != null) {
                         r.Clear();
                         this.Precond.Solve(r, z);
-                    }
-                    else
-                    {
+                    } else {
                         r.SetV(z);
                     }
 
@@ -220,27 +205,22 @@ namespace BoSSS.Solution.AdvancedSolvers
 
                     int i;
 
-                    #region Gram-Schmidt (construct orthonormal  basis using Gram-Schmidt)
-                    for (i = 1; i <= m; i++)
-                    {
+                    #region Gram-Schmidt (construct orthonormal basis using Gram-Schmidt)
+                    for (i = 1; i <= m; i++) {
                         this.NoOfIterations++;
-                       
+
                         #region Arnoldi procdure
 
                         //w = M \ (A*V(:,i));                         
                         Matrix.SpMV(1.0, V[i - 1], 0.0, z);
-                        if (this.Precond != null)
-                        {
+                        if (this.Precond != null) {
                             w.Clear();
                             this.Precond.Solve(w, z);
-                        }
-                        else
-                        {
+                        } else {
                             w.SetV(z);
                         }
 
-                        for (int k = 1; k <= i; k++)
-                        {
+                        for (int k = 1; k <= i; k++) {
                             H[k - 1, i - 1] = GenericBlas.InnerProd(w, V[k - 1]).MPISum();
                             //w = w - H(k,i)*V(:,k);
                             w.AccV(-H[k - 1, i - 1], V[k - 1]);
@@ -255,8 +235,7 @@ namespace BoSSS.Solution.AdvancedSolvers
 
                         #region Givens rotation
 
-                        for (int k = 1; k <= i - 1; k++)
-                        {
+                        for (int k = 1; k <= i - 1; k++) {
                             // apply Givens rotation, H is Hessenberg-Matrix
                             temp = cs[k - 1] * H[k - 1, i - 1] + sn[k - 1] * H[k + 1 - 1, i - 1];
                             H[k + 1 - 1, i - 1] = -sn[k - 1] * H[k - 1, i - 1] + cs[k - 1] * H[k + 1 - 1, i - 1];
@@ -274,10 +253,9 @@ namespace BoSSS.Solution.AdvancedSolvers
                         s[i + 1 - 1] = -sn[i - 1] * s[i - 1];
                         s[i - 1] = temp;
                         error = Math.Abs(s[i + 1 - 1]) / bnrm2;
-                        
 
-                        if (error <= m_Tolerance)
-                        {
+
+                        if (error <= m_Tolerance) {
                             // update approximation and exit
                             //y = H(1:i,1:i) \ s(1:i);    
                             y = new double[i];
@@ -285,8 +263,7 @@ namespace BoSSS.Solution.AdvancedSolvers
                                 .Solve(y, s.GetSubVector(0, i));
 
                             // x = x + V(:,1:i)*y;
-                            for (int ii = 0; ii < i; ii++)
-                            {
+                            for (int ii = 0; ii < i; ii++) {
                                 X.AccV(y[ii], V[ii]);
                             }
                             this.m_Converged = true;
@@ -297,8 +274,7 @@ namespace BoSSS.Solution.AdvancedSolvers
                     //Debugger.Launch();
 
 
-                    if (error <= this.m_Tolerance)
-                    {
+                    if (error <= this.m_Tolerance) {
                         this.m_Converged = true;
                         break;
                     }
@@ -309,27 +285,22 @@ namespace BoSSS.Solution.AdvancedSolvers
                     H.ExtractSubArrayShallow(new int[] { 0, 0 }, new int[] { m - 1, m - 1 })
                         .Solve(y, s.GetSubVector(0, m));
                     // update approximation: x = x + V(:,1:m)*y;  
-                    for (int ii = 0; ii < m; ii++)
-                    {
+                    for (int ii = 0; ii < m; ii++) {
                         X.AccV(y[ii], V[ii]);
                     }
 
                     // compute residual: r = M \ ( b-A*x )     
                     z.SetV(B);
                     Matrix.SpMV(-1.0, X, 1.0, z);
-                    if (IterationCallback != null)
-                    {
+                    if (IterationCallback != null) {
                         error2 = z.L2NormPow2().MPISum().Sqrt();
                         IterationCallback(iter, X.CloneAs(), z.CloneAs(), this.m_mgop);
                         //IterationCallback(this.NoOfIterations, X.CloneAs(), z.CloneAs(), this.m_mgop);
                     }
-                    if (this.Precond != null)
-                    {
+                    if (this.Precond != null) {
                         r.Clear();
                         this.Precond.Solve(r, z);
-                    }
-                    else
-                    {
+                    } else {
                         r.SetV(z);
                     }
 
@@ -337,12 +308,11 @@ namespace BoSSS.Solution.AdvancedSolvers
                     norm_r = r.L2NormPow2().MPISum().Sqrt();
                     s[i + 1 - 1] = norm_r;
                     error = s[i + 1 - 1] / bnrm2;        // % check convergence
-                  //  if (error2 <= m_Tolerance) Check for error not error2
-                        //break;
+                                                         //  if (error2 <= m_Tolerance) Check for error not error2
+                                                         //break;
                 }
 
-                if (IterationCallback != null)
-                {
+                if (IterationCallback != null) {
                     z.SetV(B);
                     Matrix.SpMV(-1.0, X, 1.0, z);
                     IterationCallback(iter, X.CloneAs(), z.CloneAs(), this.m_mgop);

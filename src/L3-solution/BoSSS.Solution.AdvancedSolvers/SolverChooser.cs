@@ -606,14 +606,18 @@ namespace BoSSS.Solution {
                 case LinearSolverConfig.Code.exp_gmres_levelpmg:
                     templinearSolve = new SoftGMRES() {
                         m_Tolerance = lc.ConvergenceCriterion,
-                        m_MaxIterations = 2,
-                        Precond = new LevelPmg()
+                        m_MaxIterations = lc.MaxSolverIterations,
+                        Precond = new LevelPmg() { UseHiOrderSmoothing = true }
                     };
-                    
+
+
                     //templinearSolve = new OrthonormalizationScheme() {
-                    //    Tolerance = 0.0, //lc.ConvergenceCriterion,
-                    //    MaxIter = 320,
-                    //    PrecondS = new ISolverSmootherTemplate[] { new LevelPmg() }
+                    //    Tolerance = lc.ConvergenceCriterion,
+                    //    MaxIter = lc.MaxSolverIterations,
+                    //    PrecondS = new ISolverSmootherTemplate[] {
+                    //        new LevelPmg() { UseHiOrderSmoothing = true }
+                    //        //new BlockJacobi() { NoOfIterations = 1, omega = 0.5 }
+                    //    }
                     //};
                     break;
 
@@ -1138,10 +1142,6 @@ namespace BoSSS.Solution {
         /// <summary>
         /// experimental. Is connected to Decomposed MG OrthoScheme. Can be deleted if not used anymore ...
         /// </summary>
-        /// <param name="MGlevels"></param>
-        /// <param name="lc"></param>
-        /// <param name="coarseSolver"></param>
-        /// <returns></returns>
         private ISolverSmootherTemplate BareMGSquence(int MGlevels, ISolverSmootherTemplate coarseSolver, ISolverSmootherTemplate smoother=null)
         {
             ISolverSmootherTemplate solver;
@@ -1578,7 +1578,8 @@ namespace BoSSS.Solution {
                             NoOfPartsPerProcess = NoOfBlocks
                         },
                         Overlap = 2, // overlap seems to help; more overlap seems to help more
-                        EnableOverlapScaling = true
+                        EnableOverlapScaling = true,
+                        UsePMGinBlocks = false
                     };
 
                     
