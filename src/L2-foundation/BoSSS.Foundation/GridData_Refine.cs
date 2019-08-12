@@ -141,7 +141,8 @@ namespace BoSSS.Foundation.Grid.Classic {
 
                             // remove out-dated neighborship info
                             if (newCell.CellFaceTags != null && newCell.CellFaceTags.Length > 0) {
-                                int[] oldNeighs = this.Cells.CellNeighbours[j];
+                                //int[] oldNeighs = this.Cells.CellNeighbours[j];
+                                int[] oldNeighs = GetNeighboursViaEdgesAndVertices(j);
                                 foreach (int jNeigh in oldNeighs) {
                                     if (cellsToRefineBitmask[jNeigh] || cellsToCoarseBitmask[jNeigh]) {
                                         // one of the neighbors has changed, so _potentially_ the cell face tags have to be updated
@@ -548,7 +549,7 @@ namespace BoSSS.Foundation.Grid.Classic {
             List<long>[] exchangeNeighbours = new List<long>[MpiSize];
 
             foreach (int currentCellIndex in cellsToRefine) {
-                this.GetCellNeighbours(currentCellIndex, GetCellNeighbours_Mode.ViaEdges, out int[] neighbourCells, out _);
+                int[] neighbourCells = GetNeighboursViaEdgesAndVertices(currentCellIndex);
 
                 foreach (int neighbourCellIndex in neighbourCells) {
                     if (IsPartOfLocalCells(noOfLocalCells, neighbourCellIndex))
@@ -564,6 +565,20 @@ namespace BoSSS.Foundation.Grid.Classic {
             }
 
             GetAndExchangeExternalNeighbours(exchangeNeighbours, ref AdaptNeighborsBitmask);
+        }
+
+        private int[] GetNeighboursViaEdgesAndVertices(int currentCellIndex) {
+            this.GetCellNeighbours(currentCellIndex, GetCellNeighbours_Mode.ViaEdges, out int[] neighbourCellsEdges, out _);
+            this.GetCellNeighbours(currentCellIndex, GetCellNeighbours_Mode.ViaVertices, out int[] neighbourCellsVertices, out _);
+            int[] neighbourCells = new int[neighbourCellsEdges.Length + neighbourCellsVertices.Length];
+            for (int i = 0; i < neighbourCellsEdges.Length; i++) {
+                neighbourCells[i] = neighbourCellsEdges[i];
+            }
+            for (int i = 0; i < neighbourCellsVertices.Length; i++) {
+                neighbourCells[i + neighbourCellsEdges.Length] = neighbourCellsVertices[i];
+            }
+
+            return neighbourCells;
         }
 
         /// <summary>
@@ -582,7 +597,8 @@ namespace BoSSS.Foundation.Grid.Classic {
                 for (int z = 0; z < coarseningCellCluster.Length; z++) {
                     int currentCellIndex = coarseningClusterID[z];
 
-                    int[] neighbourCells = this.Cells.CellNeighbours[currentCellIndex];
+                    //int[] neighbourCells = this.Cells.CellNeighbours[currentCellIndex];
+                    int[] neighbourCells = GetNeighboursViaEdgesAndVertices(currentCellIndex);
 
                     foreach (int neighbourCellIndex in neighbourCells) {
 
@@ -926,7 +942,8 @@ namespace BoSSS.Foundation.Grid.Classic {
             int noOfLocalCells = this.Cells.NoOfLocalUpdatedCells;
 
             for (int j = 0; j < noOfLocalCells; j++) {
-                this.GetCellNeighbours(j, GetCellNeighbours_Mode.ViaEdges, out int[] neighbourCells, out _);
+                //this.GetCellNeighbours(j, GetCellNeighbours_Mode.ViaEdges, out int[] neighbourCells, out _);
+                int[] neighbourCells = GetNeighboursViaEdgesAndVertices(j);
 
                 for (int i = 0; i < neighbourCells.Length; i++) {
                     if (!IsPartOfLocalCells(noOfLocalCells, neighbourCells[i])) {

@@ -65,7 +65,7 @@ namespace BoSSS.Foundation.Grid
             int[][] coarseningClusters = FindCoarseningClusters(oK2Coarsen, currentGrid);
             cellsToCoarsen = GetCoarseningCells(currentGrid, coarseningClusters);
 
-            bool anyChangeInGrid = (cellsToRefine.Count() == 0 || cellsToCoarsen.Count() == 0) ? false : true;
+            bool anyChangeInGrid = (cellsToRefine.Count() == 0 && cellsToCoarsen.Count() == 0) ? false : true;
             return (anyChangeInGrid);
         }
         
@@ -111,7 +111,7 @@ namespace BoSSS.Foundation.Grid
             int[][] coarseningClusters = FindCoarseningClusters(oK2Coarsen, currentGrid);
             cellsToCoarsen = GetCoarseningCells(currentGrid, coarseningClusters);
 
-            bool anyChangeInGrid = (cellsToRefine.Count() == 0 || cellsToCoarsen.Count() == 0) ? false : true;
+            bool anyChangeInGrid = (cellsToRefine.Count() == 0 && cellsToCoarsen.Count() == 0) ? false : true;
             return (anyChangeInGrid);
         }
 
